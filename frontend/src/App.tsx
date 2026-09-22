@@ -47,6 +47,7 @@ import { LicenseLockScreen } from "@/components/editor/system/license-lock-scree
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useAutoSave } from "@/hooks/use-autosave";
 import { useEditorStore } from "@/lib/editor-store";
+import { addImageFromSrc } from "@/lib/canvas/load-image";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { warmupOpenCV } from "@/components/editor/document-scanner/opencv-loader";
 import { useShallow } from "zustand/react/shallow";
@@ -186,16 +187,7 @@ export default function App() {
         try {
           if (typeof GetStartupFile === "function") {
             const startupUrl = await GetStartupFile();
-            if (startupUrl) {
-              const img = new window.Image();
-              img.onload = () => {
-                const aspect = (img.naturalWidth && img.naturalHeight) ? img.naturalWidth / img.naturalHeight : 1;
-                const store = useEditorStore.getState();
-                store.setMode("single");
-                store.addImageElement(startupUrl, aspect);
-              };
-              img.src = startupUrl;
-            }
+            if (startupUrl) void addImageFromSrc(startupUrl, { setSingleMode: true });
           }
         } catch {
           // تجاهل الخطأ في بيئة الاختبارات عند عدم توفر واجهة Wails
@@ -247,16 +239,7 @@ export default function App() {
             const src = typeof ProcessLocalImageFile === "function"
               ? await ProcessLocalImageFile(filePath)
               : filePath;
-            if (src) {
-              const img = new window.Image();
-              img.onload = () => {
-                const aspect = (img.naturalWidth && img.naturalHeight) ? img.naturalWidth / img.naturalHeight : 1;
-                const store = useEditorStore.getState();
-                store.setMode("single");
-                store.addImageElement(src, aspect);
-              };
-              img.src = src;
-            }
+            if (src) void addImageFromSrc(src, { setSingleMode: true });
           } catch (err) {
             console.error("Failed to open file from Wails event:", err);
           }
@@ -264,14 +247,8 @@ export default function App() {
 
         unbindFileDrop = EventsOn("native-file-drop", (data: { x: number; y: number; images: string[] }) => {
           if (!data || !data.images || data.images.length === 0) return;
-          const store = useEditorStore.getState();
           data.images.forEach((src) => {
-            const img = new window.Image();
-            img.onload = () => {
-              const aspect = (img.naturalWidth && img.naturalHeight) ? img.naturalWidth / img.naturalHeight : 1;
-              store.addImageElement(src, aspect);
-            };
-            img.src = src;
+            void addImageFromSrc(src);
           });
         });
 
@@ -383,7 +360,7 @@ export default function App() {
       <ErrorBoundary>
       <header
         className={cn(
-          "border-b border-border bg-sidebar/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-30 fluent-specular shadow-2xs",
+          "border-b border-border bg-sidebar/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-(--z-panel) fluent-specular shadow-2xs",
           !isFocused && "opacity-75"
         )}
         dir="ltr"
@@ -657,7 +634,7 @@ export default function App() {
         }
         floatingFeedback={
           activeOperation ? (
-            <div className="absolute top-4 end-4 z-30 font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-auto">
+            <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-auto">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
               <span className="text-xs font-bold text-foreground truncate max-w-xs">{activeOperation.title}</span>
               {activeOperation.canCancel && (
@@ -672,7 +649,7 @@ export default function App() {
               )}
             </div>
           ) : isBusy ? (
-            <div className="absolute top-4 end-4 z-30 font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 px-3 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-none">
+            <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 px-3 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-none">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
               <span className="text-xs font-bold text-primary">جاري الترميم ...</span>
             </div>

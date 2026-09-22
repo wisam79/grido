@@ -40,7 +40,10 @@ export function saveStickerPreset(
     createdAt: Date.now(),
   };
 
-  const updated = [newPreset, ...current.filter((p) => p.name !== newPreset.name)].slice(0, 50);
+  // #16 — تقييد الحذف بـ templateId أيضاً لمنع محو preset قالب آخر بنفس الاسم الافتراضي
+  const updated = [newPreset, ...current.filter((p) =>
+    !(p.templateId === newPreset.templateId && p.name === newPreset.name)
+  )].slice(0, 50);
   try {
     localStorage.setItem(STICKER_PRESETS_STORAGE_KEY, JSON.stringify(updated));
   } catch (e) {

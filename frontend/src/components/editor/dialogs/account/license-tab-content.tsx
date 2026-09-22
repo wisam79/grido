@@ -6,6 +6,7 @@ import { Spinner } from "@/components/ui/huge-icon";
 import { Warning, Key, ShieldCheck, DownloadSimple, ArrowSquareOut } from "@phosphor-icons/react";
 import { ExportSupportLogs } from "../../../../../wailsjs/go/main/App";
 import { toast } from "sonner";
+import { toErrorMessage } from "@/lib/wails-error";
 import type { UserProfile } from "@/lib/store/slices/license-slice";
 
 interface LicenseTabContentProps {
@@ -49,7 +50,7 @@ export function LicenseTabContent({
       await onActivate(licenseKey.trim());
     } catch (err) {
       if (!isMountedRef.current) return;
-      const errMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "مفتاح الترخيص غير صالح.");
+      const errMsg = toErrorMessage(err, "مفتاح الترخيص غير صالح.");
       onError(errMsg);
       toast.error(errMsg);
     } finally {

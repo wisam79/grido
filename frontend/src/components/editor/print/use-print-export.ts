@@ -255,6 +255,7 @@ export function usePrintExport(ctx: PrintExportContext) {
       canvasWidthMM: imageWidthMM,
       canvasHeightMM: imageHeightMM,
       backgroundColor: backgroundColor || previewWhite(),
+      backgroundGradientColor2: useEditorStore.getState().backgroundGradientColor2,
     });
 
     const isSimpleRaster = singleCompRes.eligible && !!singleCompRes.composition;

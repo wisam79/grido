@@ -13,6 +13,8 @@ import {
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+// #12 — استخدام readStoredList/writeStoredList لضمان قراءة string[] فقط وسقف 60
+import { readStoredList, writeStoredList } from "@/lib/local-prefs";
 
 interface TextFontSelectorProps {
   element: TextElement;
@@ -36,25 +38,15 @@ export const TextFontSelector = React.memo(function TextFontSelector({
   const originalFamilyRef = useRef<string>(element.fontFamily || "");
   const hasCommittedRef = useRef<boolean>(false);
 
-  // Favorites state
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : ["cairo", "tajawal", "amiri"];
-    } catch {
-      return ["cairo", "tajawal", "amiri"];
-    }
-  });
+  // #12 — Favorites: readStoredList يضمن string[] + يتعامل مع JSON تالف بأمان
+  const [favorites, setFavorites] = useState<string[]>(() =>
+    readStoredList(FAVORITES_STORAGE_KEY, ["cairo", "tajawal", "amiri"])
+  );
 
-  // Recents state
-  const [recents, setRecents] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(RECENTS_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  // #12 — Recents: readStoredList بدلاً من JSON.parse الخام
+  const [recents, setRecents] = useState<string[]>(() =>
+    readStoredList(RECENTS_STORAGE_KEY, [])
+  );
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
@@ -70,11 +62,8 @@ export const TextFontSelector = React.memo(function TextFontSelector({
     e.stopPropagation();
     setFavorites((prev) => {
       const next = prev.includes(fontId) ? prev.filter((id) => id !== fontId) : [...prev, fontId];
-      try {
-        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Ignore localstorage errors
-      }
+      // #12 — writeStoredList يطبق السقف MAX_FAVORITES=60 تلقائياً
+      writeStoredList(FAVORITES_STORAGE_KEY, next);
       return next;
     });
   };
@@ -83,14 +72,12 @@ export const TextFontSelector = React.memo(function TextFontSelector({
     setRecents((prev) => {
       const filtered = prev.filter((id) => id !== fontId);
       const next = [fontId, ...filtered].slice(0, 6);
-      try {
-        localStorage.setItem(RECENTS_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Ignore
-      }
+      // #12 — writeStoredList بدلاً من localStorage.setItem المباشر
+      writeStoredList(RECENTS_STORAGE_KEY, next);
       return next;
     });
   }, []);
+
 
   const handleOpenChange = (open: boolean) => {
     if (open) {

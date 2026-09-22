@@ -274,9 +274,14 @@ export function useScannerDetection(
       setDetectionMode("multi");
       const cards = splitQuadIntoIdCards(corners, "vertical");
       if (cards.length === 2) {
-        setDetectedDocs(cards);
+        // #3 — دمج البطاقتين في القائمة الموجودة بدل استبدال المستندات كلها
+        setDetectedDocs((prev) => {
+          // إزالة أي مستند يشترك في ID مع البطاقات الجديدة (تحديث في الحالة الغريبة)
+          const others = prev.filter((d) => !cards.some((c) => c.id === d.id));
+          return [...others, ...cards];
+        });
         setSelectedDocIds(cards.map((c) => c.id));
-        setActiveDocIndex(0);
+        setActiveDocIndex((prev) => prev); // يبقى index الحالي صالحاً بعد الإضافة للآخر
         cornersSetter(cards[0].corners);
         aspectSetter("id_card");
         previewResetter();

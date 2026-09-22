@@ -7,10 +7,21 @@ import { FluentSection } from "@/components/ui/blocks";
 import { PaintBrush } from "@phosphor-icons/react";
 
 export function GeneralSettings() {
-  const { backgroundColor, setBackgroundColor } = useEditorStore(
+  const {
+    backgroundColor,
+    setBackgroundColor,
+    backgroundGradientColor2,
+    setBackgroundGradientColor2,
+    backgroundGradientAngle,
+    setBackgroundGradientAngle,
+  } = useEditorStore(
     useShallow((state) => ({
       backgroundColor: state.backgroundColor,
       setBackgroundColor: state.setBackgroundColor,
+      backgroundGradientColor2: state.backgroundGradientColor2,
+      setBackgroundGradientColor2: state.setBackgroundGradientColor2,
+      backgroundGradientAngle: state.backgroundGradientAngle,
+      setBackgroundGradientAngle: state.setBackgroundGradientAngle,
     }))
   );
 
@@ -27,6 +38,10 @@ export function GeneralSettings() {
         <StudioCanvasColorDeck
           color={backgroundColor}
           onChange={setBackgroundColor}
+          gradientColor2={backgroundGradientColor2}
+          onChangeGradientColor2={setBackgroundGradientColor2}
+          gradientAngle={backgroundGradientAngle}
+          onChangeGradientAngle={setBackgroundGradientAngle}
         />
       </FluentSection>
 

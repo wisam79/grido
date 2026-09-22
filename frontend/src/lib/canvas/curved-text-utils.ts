@@ -107,7 +107,11 @@ function shapeArabicGraphemes(text: string): string[] {
       const prevShapes = prevChar && ARABIC_FORMS_MAP[prevChar];
       const prevConnects = prevShapes && (prevShapes[1] || prevShapes[2]);
       const shapedLigature = prevConnects ? LAM_ALEF_MAP[nextChar][1] : LAM_ALEF_MAP[nextChar][0];
-      out.push(shapedLigature + diacritics);
+      // #13 — إلحاق تشكيل الألف أيضاً (كان يُرمى مع تخطّي حرف الألف)
+      const alefChar = chars[i + 1] || "";
+      const alefBase = alefChar.replace(TASHKEEL_REGEX, "");
+      const alefDiacritics = alefChar.slice(alefBase.length);
+      out.push(shapedLigature + diacritics + alefDiacritics);
       i++; // Skip alef
       continue;
     }
@@ -140,11 +144,25 @@ function shapeArabicGraphemes(text: string): string[] {
   return out;
 }
 
-function extractGraphemes(text: string): string[] {
+// #14 — Segmenter كـ module-level singleton: يُنشأ مرة واحدة، لا في كل إطار رسم
+let _cachedSegmenter: Intl.Segmenter | null = null;
+function getGraphemeSegmenter(): Intl.Segmenter | null {
+  if (_cachedSegmenter) return _cachedSegmenter;
   if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
     try {
-      const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
-      return Array.from(segmenter.segment(text)).map((s) => s.segment);
+      _cachedSegmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    } catch {
+      // بيئة بدون دعم Segmenter — نرجع null ونستخدم Array.from fallback
+    }
+  }
+  return _cachedSegmenter;
+}
+
+function extractGraphemes(text: string): string[] {
+  const seg = getGraphemeSegmenter();
+  if (seg) {
+    try {
+      return Array.from(seg.segment(text)).map((s) => s.segment);
     } catch {
       // fallback
     }
@@ -223,18 +241,26 @@ export function drawCurvedText(
   // Start angle & step direction:
   // For LTR (Latin): starts from Left side, advances towards Right
   // For RTL (Arabic): starts from Right side, advances towards Left so it reads right-to-left naturally!
+  // #7 — textAlign: left/right يُزيح نقطة البداية على القوس بنصف العرض الزاوي؛ center = الافتراضي
+  const textAlign = options.textAlign || "center";
+  const alignOffset = textAlign === "left"
+    ? angularSpan / 2         // ابدأ من أقصى اليسار (نص بالكامل في النصف الأيمن)
+    : textAlign === "right"
+    ? -angularSpan / 2        // ابدأ من أقصى اليمين (نص بالكامل في النصف الأيسر)
+    : 0;                      // center: متمركز على القوس (الوضع الافتراضي)
+
   let currentAngle: number;
   if (isArabic) {
     if (isUpward) {
-      currentAngle = -Math.PI / 2 + (angularSpan / 2); // Start top-right
+      currentAngle = -Math.PI / 2 + (angularSpan / 2) + alignOffset; // Start top-right
     } else {
-      currentAngle = Math.PI / 2 - (angularSpan / 2); // Start bottom-right
+      currentAngle = Math.PI / 2 - (angularSpan / 2) - alignOffset; // Start bottom-right
     }
   } else {
     if (isUpward) {
-      currentAngle = -Math.PI / 2 - (angularSpan / 2); // Start top-left
+      currentAngle = -Math.PI / 2 - (angularSpan / 2) + alignOffset; // Start top-left
     } else {
-      currentAngle = Math.PI / 2 + (angularSpan / 2); // Start bottom-left
+      currentAngle = Math.PI / 2 + (angularSpan / 2) - alignOffset; // Start bottom-left
     }
   }
 

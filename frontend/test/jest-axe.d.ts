@@ -11,6 +11,6 @@ declare module 'jest-axe' {
     incomplete: unknown[];
     inapplicable: unknown[];
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- توافق مع توقيع expect.extend في Vitest
+
   export const toHaveNoViolations: any;
 }

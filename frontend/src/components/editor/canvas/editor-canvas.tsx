@@ -11,7 +11,6 @@ import { KonvaCanvas } from "../konva/konva-canvas";
 import { useShallow } from "zustand/react/shallow";
 import { ContextMenuPosition, ContextMenuTarget } from "./context-menu";
 import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from "./canvas-rulers";
-import { RulerUnit } from "./ruler";
 import { TextEditingOverlay } from "./text-editing-overlay";
 import { CanvasContextMenu } from "./canvas-context-menu";
 import { CanvasQuickBar } from "./canvas-quick-bar";
@@ -22,6 +21,7 @@ import { useImageDrop } from "./use-image-drop";
 import { useRulerMetricsPreview } from "./use-ruler-metrics";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { CanvasBleedGuides } from "./canvas-bleed-guides";
+import { formatGuideMeasurement } from "@/lib/canvas/units";
 
 /**
  * شريط الأدوات السريع للخانة المحددة (إزالة/استبدال الصورة).
@@ -74,7 +74,9 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
 
   return (
     <div
-      className="absolute pointer-events-none z-30"
+      // R7: داخل CanvasOverlayHost (مقصوص على الكانفس) + طبقة موحدة — لا Portal هنا
+      // لأن الشريط يجب أن يُقص مع الكانفس ولا يطفو فوق الألواح الجانبية.
+      className="absolute pointer-events-none z-(--z-quick-bar)"
       style={{
         left: `${left}px`,
         top: `${top}px`,
@@ -87,7 +89,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              className="w-7 h-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors"
+              className="w-7 h-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center cursor-pointer transition-colors touch-hit-44"
               onClick={async (e) => {
                 e.stopPropagation();
                 if (isLoading) return;
@@ -125,7 +127,7 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              className="w-7 h-7 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center cursor-pointer transition-colors"
+              className="w-7 h-7 rounded-md hover:bg-destructive/15 text-muted-foreground hover:text-destructive flex items-center justify-center cursor-pointer transition-colors touch-hit-44"
               onClick={(e) => {
                 e.stopPropagation();
                 updateSlot(selectedSlot.id, { imageSrc: undefined });
@@ -141,33 +143,6 @@ const SelectedSlotQuickBar = React.memo(function SelectedSlotQuickBar({
     </div>
   );
 });
-
-function formatGuideMeasurement(
-  relPos: number,
-  isH: boolean,
-  unit: RulerUnit,
-  widthMM: number,
-  heightMM: number,
-  canvasWidth: number,
-  canvasHeight: number
-): string {
-  const clamped = Math.min(1, Math.max(0, relPos));
-  if (unit === "px") {
-    const px = Math.round(clamped * (isH ? canvasHeight : canvasWidth));
-    return `${px} px`;
-  }
-  if (unit === "cm") {
-    const cm = ((clamped * (isH ? heightMM : widthMM)) / 10).toFixed(2);
-    return `${cm} cm`;
-  }
-  if (unit === "in") {
-    const inch = ((clamped * (isH ? heightMM : widthMM)) / 25.4).toFixed(2);
-    return `${inch} in`;
-  }
-  // mm
-  const mm = (clamped * (isH ? heightMM : widthMM)).toFixed(1);
-  return `${mm} mm`;
-}
 
 export interface EditorCanvasProps {
   printMode?: boolean;
@@ -470,7 +445,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
       role="presentation"
     >
       {isLoading && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center fluent-smoke-backdrop rounded-md gap-2">
+        <div className="absolute inset-0 z-(--z-canvas-overlay) flex flex-col items-center justify-center fluent-smoke-backdrop rounded-md gap-2">
           <Spinner className="w-8 h-8 text-primary" size={32} />
           <span className="text-xs font-bold text-white font-cairo">جاري تجهيز الصورة ...</span>
         </div>
@@ -560,7 +535,7 @@ export const EditorCanvas = React.memo(React.forwardRef<
             <div
               className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded-md ${
                 lockUserGuides ? "bg-amber-600" : "bg-primary"
-              } text-white font-mono text-micro font-bold shadow-fluent-8 z-50 pointer-events-none ${
+              } text-white font-mono text-micro font-bold shadow-fluent-8 z-(--z-canvas-guides) pointer-events-none ${
                 isH ? "left-3 -top-5" : "top-3 left-2"
               }`}
             >

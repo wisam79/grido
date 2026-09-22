@@ -111,6 +111,28 @@ export const URLImage = React.memo(function URLImage({
   const nodeW = element.width * canvasWidth;
   const nodeH = element.height * canvasHeight;
 
+  // ✨ لمسة الرفع أثناء السحب: ظل ناعم يجعل الصورة «ترتفع» عن الورقة
+  // (سلوك Figma/Fluent). يُفعَّل فقط للصور بلا ظل مخصص من المستخدم
+  // كي لا نطغى على تنسيقه، وينطفئ فور انتهاء السحب.
+  const [isDragLifted, setIsDragLifted] = React.useState(false);
+  const hasCustomShadow = (element.shadowOpacity ?? 0) > 0;
+  const liftActive = isDragLifted && !hasCustomShadow;
+
+  // 🧷 شبكة أمان: Konva لا يُطلق أحداث dragend إن انتهى السحب خارج النافذة أو
+  // فقد التطبيق التركيز — بدون هذا كان ظل الرفع يبقى عالقاً على الصورة.
+  React.useEffect(() => {
+    if (!isDragLifted) return;
+    const clear = () => setIsDragLifted(false);
+    window.addEventListener("pointerup", clear);
+    window.addEventListener("pointercancel", clear);
+    window.addEventListener("blur", clear);
+    return () => {
+      window.removeEventListener("pointerup", clear);
+      window.removeEventListener("pointercancel", clear);
+      window.removeEventListener("blur", clear);
+    };
+  }, [isDragLifted]);
+
   return (
     <Group
       ref={elementRef as unknown as React.Ref<Konva.Group>}
@@ -125,10 +147,16 @@ export const URLImage = React.memo(function URLImage({
       visible={element.visible !== false}
       id={element.id}
       draggable={!element.locked && isSelected}
-      onDragStart={onDragStart}
+      onDragStart={() => {
+        setIsDragLifted(true);
+        onDragStart();
+      }}
       dragBoundFunc={dragBoundFunc}
       onDragMove={onDragMove}
-      onDragEnd={onDragEnd}
+      onDragEnd={(e) => {
+        setIsDragLifted(false);
+        onDragEnd(e);
+      }}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       onClick={onClick}
@@ -163,11 +191,11 @@ export const URLImage = React.memo(function URLImage({
           width={nodeW}
           height={nodeH}
           perfectDrawEnabled={false}
-          shadowColor={element.shadowColor}
-          shadowBlur={element.shadowBlur || 0}
-          shadowOffsetX={element.shadowOffsetX || 0}
-          shadowOffsetY={element.shadowOffsetY || 0}
-          shadowOpacity={element.shadowOpacity ?? 0}
+          shadowColor={liftActive ? "rgba(15, 23, 42, 0.45)" : element.shadowColor}
+          shadowBlur={liftActive ? 16 : element.shadowBlur || 0}
+          shadowOffsetX={liftActive ? 0 : element.shadowOffsetX || 0}
+          shadowOffsetY={liftActive ? 7 : element.shadowOffsetY || 0}
+          shadowOpacity={liftActive ? 0.32 : element.shadowOpacity ?? 0}
           cornerRadius={element.cornerRadius || 0}
           filters={filters}
           brightness={filterProps.brightness}

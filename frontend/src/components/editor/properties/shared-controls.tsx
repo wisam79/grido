@@ -8,10 +8,12 @@ import {
   Check,
   PaintBrush,
   Copy,
+  Drop,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/lib/editor-store";
 import { previewWhite, checkerColor, STUDIO_PALETTE } from "@/lib/canvas/canvas-colors";
+import { GradientPicker } from "./gradient-picker";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { BACKGROUND_COLORS } from "@/lib/templates";
 
@@ -487,14 +489,47 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
   onChange,
   className,
   compact = false,
+  gradientColor2,
+  onChangeGradientColor2,
+  gradientAngle,
+  onChangeGradientAngle,
 }: {
   color: string;
   onChange: (hex: string) => void;
   className?: string;
   /** وضع مضغوط: عينات وقطارة في سطر واحد للأدوات المدمجة */
   compact?: boolean;
+  /** 🎨 تدرج الخلفية: لون النهاية — تفعيل التدرج يبدأ من اللون الأساسي الحالي */
+  gradientColor2?: string | null;
+  onChangeGradientColor2?: (c: string | null) => void;
+  /** زاوية التدرج الخطي بالدرجات */
+  gradientAngle?: number;
+  onChangeGradientAngle?: (deg: number) => void;
 }) {
   const isTransparent = color === "transparent";
+  const hasGradientProps = typeof onChangeGradientColor2 === "function";
+  const isGradientActive = Boolean(gradientColor2);
+
+  /** stops المكافئة للتدرج الحالي: بداية = اللون الأساسي، نهاية = اللون الثاني */
+  const gradientStops: Array<number | string> = isGradientActive
+    ? [0, color === "transparent" ? previewWhite() : color, 1, gradientColor2 as string]
+    : [0, color === "transparent" ? previewWhite() : color, 1, "#2563EB"];
+
+  /** استقبال stops من GradientPicker: اللون الأول = اللون الأساسي، الأخير = لون النهاية */
+  const handleGradientStops = (stops: Array<number | string>) => {
+    if (!hasGradientProps || stops.length < 4) return;
+    const first = String(stops[1]);
+    const last = String(stops[stops.length - 1]);
+    onChange(first);
+    onChangeGradientColor2(last);
+  };
+
+  /** تفعيل/إيقاف التدرج: التفعيل يبدأ التدرج من اللون الأساسي الحالي */
+  const toggleGradient = () => {
+    if (!hasGradientProps) return;
+    onChangeGradientColor2(isGradientActive ? null : "#2563EB");
+    useEditorStore.getState().pushHistory();
+  };
 
   const handleEyeDropper = async () => {
     if (typeof window !== "undefined" && "EyeDropper" in window) {
@@ -635,6 +670,52 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
           </Tooltip>
         )}
       </div>
+
+      {/* 🎨 تدرج الخلفية — مكوّن GradientPicker الموحد الجاهز (نفس محرر
+          تعبئة الأشكال والنصوص): مبدّل نوع + محرر stops + عكس + زاوية
+          سلايدر وزوايا سريعة + معارض تدرجات جاهزة مصنفة. */}
+      {hasGradientProps && (
+        <div className="pt-1 border-t border-border/30">
+          <div className="flex items-center justify-between gap-2 py-2">
+            <span className="text-xs text-foreground/90 font-semibold flex items-center gap-1.5">
+              <Drop className={cn("w-4 h-4", isGradientActive ? "text-primary" : "text-muted-foreground")} weight="duotone" />
+              <span>تعبئة متدرجة</span>
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isGradientActive}
+              onClick={toggleGradient}
+              className={cn(
+                "relative h-5 w-9 rounded-full transition-colors cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                isGradientActive ? "bg-primary" : "bg-muted-foreground/30"
+              )}
+              title={isGradientActive ? "إيقاف التدرج والعودة للون المصمت" : "تفعيل التدرج بدءاً من اللون الحالي"}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-all",
+                  isGradientActive ? "right-0.5" : "right-[calc(100%-1.125rem)]"
+                )}
+              />
+            </button>
+          </div>
+
+          {isGradientActive && (
+            <GradientPicker
+              fillType="linear"
+              color={color === "transparent" ? previewWhite() : color}
+              colorStops={gradientStops}
+              onChangeType={() => {}}
+              onChangeSolidColor={onChange}
+              onChangeColorStops={handleGradientStops}
+              angle={gradientAngle ?? 135}
+              onChangeAngle={(deg) => onChangeGradientAngle?.(deg)}
+              onCommitAngle={() => useEditorStore.getState().pushHistory()}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 });

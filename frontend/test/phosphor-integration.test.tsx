@@ -1,13 +1,12 @@
 import { describe, it, expect } from "vitest";
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import {
   PhosphorProvider,
 } from "@/components/ui/phosphor-provider";
 import {
   Sparkle,
   Eye,
-  EyeSlash,
   LockSimple,
   LockSimpleOpen,
   Stack,

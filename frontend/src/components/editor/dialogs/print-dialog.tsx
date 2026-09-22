@@ -43,6 +43,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     slots,
     mode,
     backgroundColor,
+    backgroundGradientColor2,
+    backgroundGradientAngle,
     collageTemplate,
     collageMargin,
     collageGap,
@@ -61,6 +63,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     slots: state.slots,
     mode: state.mode,
     backgroundColor: state.backgroundColor,
+    backgroundGradientColor2: state.backgroundGradientColor2,
+    backgroundGradientAngle: state.backgroundGradientAngle,
     collageTemplate: state.collageTemplate,
     collageMargin: state.collageMargin,
     collageGap: state.collageGap,
@@ -378,6 +382,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     cutLineStyle={printSettings.cutLineStyle || "dashed"}
                     mode={mode}
                     backgroundColor={backgroundColor}
+                    backgroundGradientColor2={backgroundGradientColor2}
+                    backgroundGradientAngle={backgroundGradientAngle}
                     previewImageSrc={previewImageSrc}
                     paperWidthMM={paperWidth}
                     paperHeightMM={paperHeight}

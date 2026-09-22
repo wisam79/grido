@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useShallow } from "zustand/react/shallow";
 import { FluentSection, FluentSettingRow } from "@/components/ui/blocks";
+import { mmToPx, pxToMm } from "@/lib/canvas/units";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // canvas-dimensions-panel.tsx — لوحة "مساحة العمل" (المقاس + الأبعاد + الاتجاه)
@@ -81,7 +82,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     (px: number) =>
       activeUnit === "px"
         ? px.toString()
-        : Number(((px / currentDpi) * 25.4).toFixed(1)).toString(),
+        : Number(pxToMm(px, currentDpi).toFixed(1)).toString(),
     [activeUnit, currentDpi]
   );
 
@@ -155,7 +156,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       setWidthVal(clampPx(num).toString());
     } else {
       const mm = Math.min(Math.max(MIN_MM, num), MAX_MM);
-      commitWidthPx((mm * currentDpi) / 25.4);
+      commitWidthPx(mmToPx(mm, currentDpi));
       setWidthVal(mm.toString());
     }
   };
@@ -177,7 +178,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       setHeightVal(clampPx(num).toString());
     } else {
       const mm = Math.min(Math.max(MIN_MM, num), MAX_MM);
-      commitHeightPx((mm * currentDpi) / 25.4);
+      commitHeightPx(mmToPx(mm, currentDpi));
       setHeightVal(mm.toString());
     }
   };
@@ -202,8 +203,8 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     const cardOrLabel = CARD_AND_LABEL_SIZES.find((p) => p.id === presetId);
     if (cardOrLabel) {
       const dpi = currentDpi;
-      let targetW = (cardOrLabel.widthMM * dpi) / 25.4;
-      let targetH = (cardOrLabel.heightMM * dpi) / 25.4;
+      let targetW = mmToPx(cardOrLabel.widthMM, dpi);
+      let targetH = mmToPx(cardOrLabel.heightMM, dpi);
 
       const isCurrentLandscape = canvasWidth > canvasHeight;
       if (isCurrentLandscape && targetW < targetH) {
@@ -224,8 +225,8 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     if (!paper) return;
 
     const dpi = currentDpi;
-    let targetW = (paper.widthMM * dpi) / 25.4;
-    let targetH = (paper.heightMM * dpi) / 25.4;
+    let targetW = mmToPx(paper.widthMM, dpi);
+    let targetH = mmToPx(paper.heightMM, dpi);
 
     const isCurrentLandscape = canvasWidth > canvasHeight;
     if (isCurrentLandscape && targetW < targetH) {
@@ -263,8 +264,8 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   const activePaperPreset = PAPER_SIZES.find((p) => {
     const dpi = currentDpi;
-    const currentWMM = (canvasWidth / dpi) * 25.4;
-    const currentHMM = (canvasHeight / dpi) * 25.4;
+    const currentWMM = pxToMm(canvasWidth, dpi);
+    const currentHMM = pxToMm(canvasHeight, dpi);
     return (
       (Math.abs(currentWMM - p.widthMM) <= 1.5 && Math.abs(currentHMM - p.heightMM) <= 1.5) ||
       (Math.abs(currentWMM - p.heightMM) <= 1.5 && Math.abs(currentHMM - p.widthMM) <= 1.5)
@@ -273,8 +274,8 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   const activeCardPreset = CARD_AND_LABEL_SIZES.find((p) => {
     const dpi = currentDpi;
-    const currentWMM = (canvasWidth / dpi) * 25.4;
-    const currentHMM = (canvasHeight / dpi) * 25.4;
+    const currentWMM = pxToMm(canvasWidth, dpi);
+    const currentHMM = pxToMm(canvasHeight, dpi);
     return (
       (Math.abs(currentWMM - p.widthMM) <= 1.5 && Math.abs(currentHMM - p.heightMM) <= 1.5) ||
       (Math.abs(currentWMM - p.heightMM) <= 1.5 && Math.abs(currentHMM - p.widthMM) <= 1.5)
@@ -287,7 +288,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   const presetSizeLabel = (widthMM: number, heightMM: number) =>
     activeUnit === "px"
-      ? `${Math.round((widthMM * currentDpi) / 25.4)}×${Math.round((heightMM * currentDpi) / 25.4)} بكسل`
+      ? `${Math.round(mmToPx(widthMM, currentDpi))}×${Math.round(mmToPx(heightMM, currentDpi))} بكسل`
       : `${widthMM}×${heightMM} مم`;
 
   const unitOptions: { id: "mm" | "px"; label: string; title: string }[] = [
@@ -314,7 +315,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
         >
           {activeUnit === "px"
             ? `${canvasWidth} × ${canvasHeight} px`
-            : `${Number(((canvasWidth / currentDpi) * 25.4).toFixed(1))} × ${Number(((canvasHeight / currentDpi) * 25.4).toFixed(1))} mm`}
+            : `${Number(pxToMm(canvasWidth, currentDpi).toFixed(1))} × ${Number(pxToMm(canvasHeight, currentDpi).toFixed(1))} mm`}
         </span>
       }
     >

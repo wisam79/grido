@@ -6,6 +6,10 @@ export interface ProjectStateData {
   canvasWidth: number;
   canvasHeight: number;
   backgroundColor: string;
+  /** لون نهاية تدرج خلفية الورقة — غيابه يعني تعبئة مصمتة */
+  backgroundGradientColor2?: string | null;
+  /** زاوية التدرج الخطي بالدرجات */
+  backgroundGradientAngle?: number;
   elements?: CanvasElement[];
   slots?: CanvasSlot[];
   template?: PhotoTemplate | null;
@@ -144,6 +148,12 @@ export interface HistoryEntry {
   canvasWidth?: number;
   canvasHeight?: number;
   backgroundColor?: string;
+  // القالبان يؤثران على الناتج والمعاينة — بدونهما كان التراجع بعد setTemplate
+  // يستعيد العناصر والأبعاد ويُبقي القالب الجديد (حالة متناقضة)
+  template?: PhotoTemplate | null;
+  collageTemplate?: CollageTemplate | null;
+  backgroundGradientColor2?: string | null;
+  backgroundGradientAngle?: number;
   collageGap?: number;
   collageMargin?: number;
   collageRadius?: number;

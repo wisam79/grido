@@ -72,9 +72,9 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 opacity-70 transition-all hover:opacity-100 hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none cursor-pointer">
+        <SheetPrimitive.Close className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none cursor-pointer">
           <X className="size-4 shrink-0" weight="bold" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">إغلاق</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>
     </SheetPortal>

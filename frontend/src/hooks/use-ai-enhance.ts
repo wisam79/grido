@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { SaveImageFromBase64, EnhanceImageWithAI } from "../../wailsjs/go/main/App";
 import { useEditorStore } from "@/lib/editor-store";
+import { toErrorMessage } from "@/lib/wails-error";
 import { useOperationStatusStore } from "@/lib/ui/operation-status";
 import { create } from "zustand";
 
@@ -248,7 +249,7 @@ export function useAiEnhance(onUpdate: (id: string, patch: Partial<Record<string
       if (err instanceof Error && /طويلاً/.test(err.message)) {
         toast.error(err.message);
       } else {
-        const errorMsg = typeof err === "string" ? err : (err instanceof Error ? err.message : "فشل تحسين الصورة بالذكاء الاصطناعي");
+        const errorMsg = toErrorMessage(err, "فشل تحسين الصورة بالذكاء الاصطناعي");
         toast.error(errorMsg);
       }
     } finally {

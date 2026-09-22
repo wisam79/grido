@@ -136,9 +136,11 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 	}
 
 	srv := s.server
-	listenURL := s.url // capture before goroutine: Stop() may clear s.url under s.mu concurrently
+	// ⚠️ لا نُسجّل s.url أبداً: يحتوي توكن الجلسة في سلسلة الاستعلام، وسجلّ
+	// التطبيق ملف على القرص (تسريب توكن الجسر لكل من يقرأ السجلّات)
+	listenAddress := fmt.Sprintf("%s:%d", s.ip, s.port)
 	go func() {
-		slog.Info("Phone bridge server listening", "url", listenURL)
+		slog.Info("Phone bridge server listening", "address", listenAddress)
 		if serveErr := srv.Serve(listener); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
 			slog.Error("Phone bridge server stopped unexpectedly", "error", serveErr)
 		}
@@ -186,11 +188,35 @@ func (s *PhoneBridgeService) GetStatus() *BridgeStatus {
 	}
 }
 
+// tokenMatches يتحقق من توكن جلسة الجسر (ترويسة X-Bridge-Token أو معامل
+// استعلام) بمقارنة زمن ثابت. صفحة الهاتف تقرأ التوكن من رابط الـQR وتُرسله
+// في الترويسة، لذا لا يمنع التحقّق أي مسار مشروع للاستخدام.
+func (s *PhoneBridgeService) tokenMatches(r *http.Request) bool {
+	reqToken := r.URL.Query().Get("token")
+	if reqToken == "" {
+		reqToken = r.Header.Get("X-Bridge-Token")
+	}
+
+	s.mu.RLock()
+	activeToken := s.token
+	s.mu.RUnlock()
+
+	if activeToken == "" {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(reqToken), []byte(activeToken)) == 1
+}
+
 func (s *PhoneBridgeService) handleMobilePage(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
+
+	// ℹ️ الصفحة **مقصود** أن تكون عامة: الهاتف يفتح رابط الـQR أولاً ثم يقرأ
+	// التوكن من سلسلة الاستعلام، ولا تحمل الصفحة أي سر (الرفع وحده محميّ
+	// بتوكن زمن-ثابت). لا نضيف بوابة توكن هنا لأنها لا تحمي شيئاً وتمنع
+	// الاستخدام اليدوي، والتوثيق في phone_bridge_service_test.go يشترط 200.
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0")
@@ -201,6 +227,8 @@ func (s *PhoneBridgeService) handleMobilePage(w http.ResponseWriter, r *http.Req
 }
 
 func (s *PhoneBridgeService) handlePing(w http.ResponseWriter, r *http.Request) {
+	// ℹ️ عام عن عمد: يُستخدم لاختبار الوصول من الهاتف قبل الاقتران، ولا يكشف
+	// شيئاً غير "ok" (تعقّب الجهاز/إصدار التوكن يقع في GetStatus المحلي).
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"status": "ok",
@@ -237,16 +265,7 @@ func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Re
 	}
 
 	// 1. Verify token
-	reqToken := r.URL.Query().Get("token")
-	if reqToken == "" {
-		reqToken = r.Header.Get("X-Bridge-Token")
-	}
-
-	s.mu.RLock()
-	activeToken := s.token
-	s.mu.RUnlock()
-
-	if activeToken == "" || subtle.ConstantTimeCompare([]byte(reqToken), []byte(activeToken)) != 1 {
+	if !s.tokenMatches(r) {
 		http.Error(w, "Unauthorized: invalid session token", http.StatusUnauthorized)
 		return
 	}

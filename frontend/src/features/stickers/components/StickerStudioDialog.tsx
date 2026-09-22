@@ -189,9 +189,15 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         1000 / selectedTemplate.aspectRatio,
         [params.fontFamily || "Cairo"]
       );
+      // #9 — تحويل spacingMm → gapPx بناءً على DPI الشيت المستهدف (2400px / 200mm = 12 px/mm)
+      const SHEET_WIDTH_PX = 2400;
+      const SHEET_WIDTH_MM = 200; // 20 سم
+      const pxPerMm = SHEET_WIDTH_PX / SHEET_WIDTH_MM;
+      const gapPx = Math.max(0, Math.round(gridConfig.spacingMm * pxPerMm));
       const sheetPng = await generateStickerSheet(singlePng, {
         rows: gridConfig.rows,
         cols: gridConfig.cols,
+        gapPx,
         sheetWidth: 2400,
         sheetHeight: 2400,
       });

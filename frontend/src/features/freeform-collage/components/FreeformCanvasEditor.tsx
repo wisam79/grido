@@ -327,7 +327,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
           <div
             key={line.id}
             className={cn(
-              "absolute bg-primary z-30 pointer-events-none transition-opacity duration-75",
+              "absolute bg-primary z-(--z-canvas-guides) pointer-events-none transition-opacity duration-75",
               line.axis === "x" ? "w-px top-0 bottom-0" : "h-px left-0 right-0"
             )}
             style={{
@@ -337,7 +337,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(fu
         ))}
 
         {/* شارة أبعاد الورقة المليمترية مع عدد الخلايا ونسبة الاستغلال */}
-        <div className="absolute bottom-1.5 left-1.5 bg-foreground/85 backdrop-blur-sm text-background text-micro px-2 py-0.5 rounded-md font-mono z-30 pointer-events-none tracking-wide shadow-xs flex items-center gap-1.5" dir="ltr">
+        <div className="absolute bottom-1.5 left-1.5 bg-foreground/85 backdrop-blur-sm text-background text-micro px-2 py-0.5 rounded-md font-mono z-(--z-canvas-overlay) pointer-events-none tracking-wide shadow-xs flex items-center gap-1.5" dir="ltr">
           <span className="font-bold">{paperWidthMM}×{paperHeightMM}mm</span>
           <span className="opacity-40">|</span>
           <span>{slots.length} صور</span>

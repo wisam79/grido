@@ -23,6 +23,33 @@ export function invalidateCanvasColors() {
   _computed = null;
 }
 
+/**
+ * تحويل لون إلى rgba بشفافية معطاة.
+ * يدعم hex (#RGB/#RRGGBB/#RRGGBBAA) و rgb()/rgba() — أما hsl() وما لا يمكن
+ * تحليله فيُمرَّر كما هو (بلا شفافية) بدل إنتاج لون غير صالح.
+ */
+function withAlpha(color: string, alpha: number): string {
+  const c = color.trim();
+  if (c.startsWith("#")) {
+    const hex = c.slice(1);
+    const full = hex.length === 3 ? hex.split("").map(ch => ch + ch).join("") : hex;
+    // 8 خانات (مع شفافية أصلية) نأخذ منها RGB فقط ونطبّق الشفافية المطلوبة
+    if (full.length === 6 || full.length === 8) {
+      const r = parseInt(full.slice(0, 2), 16);
+      const g = parseInt(full.slice(2, 4), 16);
+      const b = parseInt(full.slice(4, 6), 16);
+      if (!isNaN(r) && !isNaN(g) && !isNaN(b)) return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    return c;
+  }
+  const rgb = c.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgb) {
+    const channels = rgb[1].split(/[\s,/]+/).filter(Boolean);
+    if (channels.length >= 3) return `rgba(${channels[0]}, ${channels[1]}, ${channels[2]}, ${alpha})`;
+  }
+  return c;
+}
+
 // ── Checker Pattern ─────────────────────────────────────────────────────────
 export const checkerColor = () => css("--canvas-checker-a", "#e2e8f0");
 
@@ -49,7 +76,9 @@ export const gradientEnd   = () => css("--canvas-gradient-end",   "#8b5cf6");
 // ── Collage Layer ────────────────────────────────────────────────────────────
 export const collageCut    = () => css("--canvas-collage-cut",     "#94a3b8");
 export const collageEndCut = () => css("--canvas-collage-end-cut", "#3b82f6");
-export const slotPlaceholderBg   = () => css("--canvas-slot-placeholder-bg",   "#f1f5f9");
+// شبه شفاف افتراضياً (alpha اختياري): الخلية الفارغة إشارة فوق خلفية الورقة
+// لا غطاء معتماً — كان التعتيق الكامل يخفي تدرج/لون الورقة خلفها
+export const slotPlaceholderBg   = (alpha = 0.55) => withAlpha(css("--canvas-slot-placeholder-bg", "#f1f5f9"), alpha);
 export const slotPlaceholderText = () => css("--canvas-slot-placeholder-text", "#94a3b8");
 
 // ── Magic AI Scanner ─────────────────────────────────────────────────────────

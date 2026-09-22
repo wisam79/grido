@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { CheckForUpdate, DownloadAndInstallUpdate } from "../../../../wailsjs/go/main/App";
 import { service } from "../../../../wailsjs/go/models";
 import { EventsOn, EventsOff, BrowserOpenURL } from "../../../../wailsjs/runtime/runtime";
+import { toErrorMessage } from "@/lib/wails-error";
 
 /**
  * معالجة وتنسيق ملاحظات التحديث لتحويل أسطر Markdown إلى عناصر واجهة نقية
@@ -140,12 +141,7 @@ export function UpdateNotifier() {
       await DownloadAndInstallUpdate(url, updateInfo.sha256 || "");
     } catch (err: unknown) {
       console.error("Failed to update:", err);
-      const errMsg =
-        typeof err === "string"
-          ? err
-          : err instanceof Error
-          ? err.message
-          : "فشل تحميل وتثبيت التحديث.";
+      const errMsg = toErrorMessage(err, "فشل تحميل وتثبيت التحديث.");
       setError(errMsg);
       setIsDownloading(false);
     }
@@ -271,7 +267,8 @@ export function UpdateNotifier() {
                     if (typeof BrowserOpenURL === "function") {
                       BrowserOpenURL(url);
                     } else {
-                      window.open(url, "_blank");
+                      // noopener/noreferrer: لا يُمنح الموقع المفتوح مرجع نافذة التطبيق
+                      window.open(url, "_blank", "noopener,noreferrer");
                     }
                   }}
                   className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm cursor-pointer"

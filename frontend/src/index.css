@@ -73,6 +73,7 @@
   --color-canvas-guide-center: var(--canvas-guide-center);
   --color-canvas-guide-edge: var(--canvas-guide-edge);
   /* مقياس الطبقات الموحد (Unified Z-Index Scale) — يُمنع استخدام z-[رقم] خارج هذه القيم */
+  --z-panel: 40;
   --z-canvas-overlay: 45;
   --z-canvas-guides: 60;
   --z-ruler: 100;
@@ -404,6 +405,28 @@
     background: var(--muted-foreground);
   }
 
+  /* إزالة أسهم الحقول الرقمية الأصلية (Spin Buttons) — تظهر بشكل بدائي في
+     WebView2 وتكسر تناسق الحقول المصممة؛ الرفع/الخفض يتم بلوحة المفاتيح
+     أو أزرار الحقل المصممة خصيصاً. */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  /* الأرقام الجدولية لكل القراءات الرقمية الدقيقة (أبعاد، زوم، إحداثيات)
+     — تعمل مع أي عائلة خط تدعم الميزة دون خطوط مونو أجنبية. للحاويات النصية
+     العادية استخدم أداة Tailwind `tabular-nums` مباشرة. */
+  input[type="number"],
+  input[inputmode="numeric"],
+  input[inputmode="decimal"] {
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Fluent 2: احترام وضع تقليل الحركة (prefers-reduced-motion) */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -655,6 +678,20 @@
   .native-header-elevated {
     border-bottom-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  /* R24: توسيع منطقة النقر إلى 44px دون تغيير الحجم البصري المدمج (28-32px).
+     أضف `touch-hit-44 relative` لأي زر أيقوني مدمج — يبقى المظهر Figma-like
+     لكن الإمساك بالفأرة/اللمس يصبح 44×44 عبر طبقة شبحية. */
+  .touch-hit-44 {
+    position: relative;
+  }
+  .touch-hit-44::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .checkerboard {

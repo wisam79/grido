@@ -63,14 +63,24 @@ func CleanupTempUpdates() {
 	}
 
 	for _, entry := range entries {
-		name := entry.Name()
-		lowerName := strings.ToLower(name)
-		if strings.HasPrefix(lowerName, "gridostudio-") ||
-			strings.HasPrefix(lowerName, "grido_") ||
-			strings.HasPrefix(lowerName, "grido-") {
-			fullPath := filepath.Join(tempDir, name)
-			_ = os.RemoveAll(fullPath)
+		// 🔒 الحذف كان بأي بادئة grido- في مجلد %TEMP% المشترك: يطال ملفات لا
+		// تخصنا، أو ملفات يُعِدّها مثبّت/عملية أخرى في هذه اللحظة. نقصره على
+		// مثبّتاتنا وسكريبتاتنا وبصيغها المعروفة.
+		if entry.IsDir() {
+			continue
 		}
+		name := strings.ToLower(entry.Name())
+		if !strings.HasPrefix(name, "gridostudio-") &&
+			!strings.HasPrefix(name, "grido_") &&
+			!strings.HasPrefix(name, "grido-") {
+			continue
+		}
+		switch filepath.Ext(name) {
+		case ".exe", ".msi", ".bat", ".cmd", ".ps1", ".tmp", ".log":
+		default:
+			continue
+		}
+		_ = os.RemoveAll(filepath.Join(tempDir, entry.Name()))
 	}
 }
 
@@ -390,10 +400,16 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 		return fmt.Errorf("فشل تشغيل مثبت التحديث كمسؤول: %w", err)
 	}
 
+	// ⏱️ بدل نوم أعمى 200ms: ننتظر رصد عملية المثبت نفسها (بحد أقصى 3s) ثم نُغلق.
+	// النوم الثابت كان سابقاً زمنياً حقيقياً: إن لم يكن المثبت قد بدأ بعدُ فقد
+	// نُغلق التطبيق وملفّاته مقفلة أمامه، وإن بدأ بسرعة فقد تأخّرنا بلا سبب.
+	if !waitForInstallerStart(installerPath, 3*time.Second) {
+		slog.Warn("Installer process not observed before shutdown window — quitting anyway", "installer", installerPath)
+	}
+
 	// إغلاق نظيف عبر Wails Runtime بدل os.Exit — يضمن تنفيذ OnShutdown
 	// (حفظ حالة النافذة، إيقاف مهام الخلفية، وإغلاق قاعدة البيانات) قبل خروج العملية،
 	// ويحرر أقفال الملفات و Single-Instance Mutex بشكل طبيعي ليستبدلها المثبت.
-	time.Sleep(200 * time.Millisecond)
 	if application.Get() != nil {
 		application.Get().Quit()
 	}

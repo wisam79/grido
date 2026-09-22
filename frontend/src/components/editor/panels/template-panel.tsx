@@ -46,21 +46,16 @@ export const TemplatePanel = React.memo(function TemplatePanel({
   const { 
     setCollageTemplate, 
     collageTemplate, 
-    slots, 
-    mode, 
+    slots,
+    mode,
     elements,
-    workflowMode,
   } = useEditorStore(useShallow((state) => ({
     setCollageTemplate: state.setCollageTemplate,
     collageTemplate: state.collageTemplate,
     slots: state.slots,
     mode: state.mode,
     elements: state.elements,
-    workflowMode: state.workflowMode,
   })));
-
-  // في مسار الإنتاج السريع: نعامل الوضع دائماً كـ collage لإخفاء استوديو التصميم الحر
-  const effectiveMode = workflowMode === "quick" ? "collage" : mode;
 
   const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -90,12 +85,23 @@ export const TemplatePanel = React.memo(function TemplatePanel({
   const loadTemplates = useCallback(async () => {
     try {
       const templates = await GetCustomTemplates();
-      const mapped = (templates || []).map((t) => ({
-        id: "collage-user-" + t.id,
-        name: t.name,
-        slots: t.slots,
-        cells: typeof t.cells === "string" ? JSON.parse(t.cells) : t.cells,
-      }));
+      const mapped = (templates || []).flatMap((t) => {
+        // #11 — try/catch مستقل لكل عنصر لمنع قالب تالف من إسقاط القائمة كلها
+        let parsedCells: NormalizedCell[] | null = null;
+        try {
+          const raw = typeof t.cells === "string" ? JSON.parse(t.cells) : t.cells;
+          if (Array.isArray(raw)) parsedCells = raw as NormalizedCell[];
+        } catch {
+          console.warn(`Template "${t.name}" has corrupt cells JSON — excluded from list`);
+        }
+        if (parsedCells === null) return []; // استبعاد القوالب ذات البيانات التالفة
+        return [{
+          id: "collage-user-" + t.id,
+          name: t.name,
+          slots: t.slots,
+          cells: parsedCells,
+        }];
+      });
       setSavedTemplates(mapped);
     } catch (e) {
       console.error("Failed to load user templates", e);
@@ -133,7 +139,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
   };
 
   // العنوان والوصف والأيقونة تُقرأ من سجل الأدوات الموحّد (كانت 4 سلاسل شروط ثلاثية)
-  const activeTool = effectiveMode === "collage" ? getCollageTool(activeCollageTab) : getStudioTool(activeStudioTab);
+  const activeTool = mode === "collage" ? getCollageTool(activeCollageTab) : getStudioTool(activeStudioTab);
   const ActiveToolIcon = activeTool.icon;
 
   return (
@@ -176,7 +182,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
         }}
       />
 
-      {effectiveMode === "collage" ? (
+      {mode === "collage" ? (
         <div className="space-y-4">
           <CustomCollageCard
             onSelect={handleSelectTemplate}

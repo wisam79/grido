@@ -1,4 +1,5 @@
 import { StateCreator } from "zustand";
+import type { EditorState } from "../index";
 
 // ─── الأنواع ───────────────────────────────────────────────────────────────
 
@@ -57,12 +58,18 @@ export const DEFAULT_WORKFLOW_STATE = {
 
 // ─── إنشاء الـ Slice ───────────────────────────────────────────────────────
 
-export const createWorkflowSlice: StateCreator<WorkflowSlice> = (set) => ({
+export const createWorkflowSlice: StateCreator<EditorState, [], [], WorkflowSlice> = (set) => ({
   ...DEFAULT_WORKFLOW_STATE,
 
   setWorkflowMode: (mode) => {
     persistMode(mode);
-    set({ workflowMode: mode, hasSeenWelcome: true });
+    set({
+      workflowMode: mode,
+      hasSeenWelcome: true,
+      // مسار الإنتاج السريع مسار إنتاج كولاج بطبيعته، فنفرض وضع الكانفاس عند
+      // اختياره حتى يبدأ المستخدم بواجهة مبسّطة مطابقة لما يراه على الكانفاس
+      ...(mode === "quick" ? { mode: "collage" as const } : {}),
+    });
   },
 
   resetWorkflow: () => {

@@ -2,11 +2,20 @@ import { describe, it, expect } from "vitest";
 import {
   COLLAGE_TOOLS,
   STUDIO_TOOLS,
+  QUICK_COLLAGE_TOOLS,
   WORKSPACE_COMMANDS,
   WORKSPACE_STATE_COMMANDS,
+  MAX_TOOL_SHORTCUTS,
   getCollageTool,
   getStudioTool,
+  getToolsForWorkflow,
+  getCollageToolsForWorkflow,
+  getStateCommandGroups,
+  groupCommands,
   groupTools,
+  isCollageTab,
+  isStudioTab,
+  selectStateCommandInput,
   toolShortcut,
   type WorkspaceTool,
 } from "../src/lib/workspace-tools";
@@ -192,5 +201,102 @@ describe("أوامر الحالة الحية (WORKSPACE_STATE_COMMANDS)", () => 
     useEditorStore.setState({ canvasZoom: 0.1 });
     expect(zoomIn.getSnapshot().disabled).toBe(false);
     expect(zoomOut.getSnapshot().disabled).toBe(true);
+  });
+
+  it("يستخرج قيم الحالة المشتركة التي تبني عليها اللوحة لقطاتها", () => {
+    useEditorStore.setState({ canvasZoom: 2, showRuler: true, showGrid: true });
+    const state = useEditorStore.getState();
+    expect(selectStateCommandInput(state)).toEqual({
+      historyIndex: state.historyIndex,
+      historyLength: state.history.length,
+      canvasZoom: 2,
+      showRuler: true,
+      showGrid: true,
+    });
+  });
+
+  it("يبني مجموعات أوامر الحالة بلقطاتها الحالية بلا فقدان أي أمر", () => {
+    useEditorStore.setState({ canvasZoom: 1.5 });
+    const groups = getStateCommandGroups();
+    expect(groups.map((group) => group.name)).toEqual(["تحرير", "عرض الكانفاس"]);
+
+    const items = groups.flatMap((group) => group.items);
+    expect(items).toHaveLength(WORKSPACE_STATE_COMMANDS.length);
+    const zoomInItem = items.find((item) => item.command.id === "zoom-in");
+    expect(zoomInItem?.snapshot.subtitle).toBe("الحالي 150%");
+  });
+
+  it("يقرأ القيم الممرّرة (input) بدل المتجر فتتبع اللقطة الحالة الحقيقية", () => {
+    useEditorStore.setState({ showRuler: false, showGrid: false });
+    const rulers = WORKSPACE_STATE_COMMANDS.find((c) => c.id === "toggle-rulers")!;
+    const grid = WORKSPACE_STATE_COMMANDS.find((c) => c.id === "toggle-grid")!;
+    const input = { historyIndex: 0, historyLength: 1, canvasZoom: 1, showRuler: true, showGrid: true };
+
+    expect(rulers.getSnapshot(input).subtitle).toBe("ظاهرة الآن — للإخفاء");
+    expect(grid.getSnapshot(input).subtitle).toBe("ظاهرة الآن — للإخفاء");
+
+    // بلا input يعود الأمر للقراءة من المتجر مباشرة
+    expect(rulers.getSnapshot().subtitle).toBe("مخفية الآن — للإظهار");
+    expect(grid.getSnapshot().subtitle).toBe("مخفية الآن — للإظهار");
+  });
+});
+
+describe("قائمة الأدوات الموحّدة ومسار الإنتاج السريع", () => {
+  it("يستثني أدوات الإنتاج السريع المتقدمة ويحفظ ترتيب السجل", () => {
+    const ids = QUICK_COLLAGE_TOOLS.map((tool) => tool.id);
+    expect(ids).toEqual(["custom", "presets", "paper", "autofill", "backdrop"]);
+    // القائمة الفرعية تبقى بالترتيب نفسه، فأرقام Alt+الرقم لا تتغيّر
+    expect(COLLAGE_TOOLS.filter((tool) => ids.includes(tool.id))).toEqual(QUICK_COLLAGE_TOOLS);
+  });
+
+  it("يختار القائمة حسب وضع الكانفاس ويبسّط الكولاج في مسار الإنتاج السريع فقط", () => {
+    expect(getToolsForWorkflow("collage", "quick")).toBe(QUICK_COLLAGE_TOOLS);
+    expect(getToolsForWorkflow("collage", "studio")).toBe(COLLAGE_TOOLS);
+    expect(getToolsForWorkflow("collage", null)).toBe(COLLAGE_TOOLS);
+    // وضع التعديل الحر يتبع الكانفاس دائماً ولا يُستبدل بأدوات الكولاج
+    expect(getToolsForWorkflow("single", "quick")).toBe(STUDIO_TOOLS);
+    expect(getCollageToolsForWorkflow("quick")).toBe(QUICK_COLLAGE_TOOLS);
+    expect(getCollageToolsForWorkflow(null)).toBe(COLLAGE_TOOLS);
+  });
+
+  it("لا يمنح اختصاراً لأداة تتجاوز حد Alt+9", () => {
+    expect(MAX_TOOL_SHORTCUTS).toBe(9);
+    expect(toolShortcut(MAX_TOOL_SHORTCUTS - 1)).toBe("Alt+9");
+    expect(toolShortcut(MAX_TOOL_SHORTCUTS)).toBe("");
+    expect(toolShortcut(-1)).toBe("");
+  });
+
+  it("يرفض تبويباً محذوفاً أو قيمة محفوظة قديمة", () => {
+    expect(isCollageTab("paper")).toBe(true);
+    expect(isStudioTab("layers")).toBe(true);
+    expect(isCollageTab("elements")).toBe(false);
+    expect(isStudioTab("elements")).toBe(false);
+    expect(isStudioTab(undefined)).toBe(false);
+    expect(isCollageTab(null)).toBe(false);
+    expect(isStudioTab(7)).toBe(false);
+  });
+});
+
+describe("تجميع أوامر لوحة الأوامر", () => {
+  /** لا أمر مفقود ولا مكرّر، والعناوين متجاورة بترتيب أول ظهور لها */
+  function expectGroupingKeepsEveryItem<T extends { group: string }>(items: T[]) {
+    const groups = groupCommands(items);
+    expect(groups.flatMap((group) => group.items)).toEqual(items);
+
+    const names = groups.map((group) => group.name);
+    expect(new Set(names).size).toBe(names.length);
+    expect(names).toEqual([...new Set(items.map((item) => item.group))]);
+  }
+
+  it("يعرض أوامر الحالة تحت عناوين مجموعاتها الحقيقية", () => {
+    expectGroupingKeepsEveryItem(WORKSPACE_STATE_COMMANDS);
+    expect(groupCommands(WORKSPACE_STATE_COMMANDS).map((group) => group.name)).toEqual([
+      "تحرير",
+      "عرض الكانفاس",
+    ]);
+  });
+
+  it("يجمع الأوامر العالمية بلا فقدان أي أمر", () => {
+    expectGroupingKeepsEveryItem(WORKSPACE_COMMANDS);
   });
 });

@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -63,9 +64,9 @@ func main() {
 	backupSvc := service.NewBackupService(projectRepo, licenseRepo)
 	backupHandler := handlers.NewBackupHandler(backupSvc)
 
-	// استعادة أبعاد وموقع النافذة من الجلسة السابقة
-	initialWidth := 1024
-	initialHeight := 720
+	// استعادة أبعاد وموقع النافذة من الجلسة السابقة (الأبعاد الافتراضية المدمجة 960×640)
+	initialWidth := 960
+	initialHeight := 640
 	initialX := 0
 	initialY := 0
 	hasSavedPos := false
@@ -73,8 +74,14 @@ func main() {
 
 	if state, err := loadWindowState(); err == nil {
 		if state.Width > 0 && state.Height > 0 {
-			initialWidth = state.Width
-			initialHeight = state.Height
+			// إذا كانت القيمة المحفوظة هي القيمة القديمة الكبيرة 1024×720، يتم تحديثها للقياس المدمج الجديد
+			if state.Width == 1024 && state.Height == 720 {
+				initialWidth = 960
+				initialHeight = 640
+			} else {
+				initialWidth = state.Width
+				initialHeight = state.Height
+			}
 		}
 		const maxScreenSize = 50000
 		if state.X > -maxScreenSize && state.X < maxScreenSize &&
@@ -182,8 +189,8 @@ func main() {
 		Title:              "Grido Studio",
 		Width:              initialWidth,
 		Height:             initialHeight,
-		MinWidth:           900,
-		MinHeight:          600,
+		MinWidth:           840,
+		MinHeight:          560,
 		Frameless:          true,
 		Hidden:             false,
 		ZoomControlEnabled: false,
@@ -275,6 +282,22 @@ func main() {
 func createAssetHandler(app *App) http.Handler {
 	fileServer := application.AssetFileServerFS(assets)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 🛡️ حماية مسارات /api المحلية من CSRF وإعادة ربط DNS:
+		// هذه المسارات تُنفّذ كتابة ملفات (Media/Exports) وقد تُظهر حوارات نظام،
+		// وكانت تقبل أي طلب بلا فحص أصل — أي صفحة ويب في متصفح المستخدم تستطيع
+		// إرسال POST متجاوز للأصل (بدون preflight) وتستفيد من امتيازات التطبيق.
+		// نسمح فقط بطلب بلا Origin (أدوات محلية/اختبارات) أو بأصل يطابق مضيف الخدمة.
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			if origin := strings.TrimSpace(r.Header.Get("Origin")); origin != "" {
+				parsedOrigin, parseErr := url.Parse(origin)
+				if parseErr != nil || !strings.EqualFold(parsedOrigin.Host, r.Host) {
+					slog.Warn("Blocked cross-origin API request", "path", r.URL.Path, "origin", origin)
+					http.Error(w, "Forbidden: cross-origin API access", http.StatusForbidden)
+					return
+				}
+			}
+		}
+
 		if r.Method == http.MethodPost && r.URL.Path == "/api/apply-mask" {
 			src := r.URL.Query().Get("src")
 			wStr := r.URL.Query().Get("w")

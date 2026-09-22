@@ -55,6 +55,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const canvasWidth = useEditorStore((s) => s.canvasWidth);
   const canvasHeight = useEditorStore((s) => s.canvasHeight);
   const backgroundColor = useEditorStore((s) => s.backgroundColor);
+  const backgroundGradientColor2 = useEditorStore((s) => s.backgroundGradientColor2);
+  const backgroundGradientAngle = useEditorStore((s) => s.backgroundGradientAngle);
   const selectedId = useEditorStore((s) => s.selectedId);
   const selectedIds = useEditorStore(useShallow((s) => s.selectedIds));
   const snapToGrid = useEditorStore((s) => s.snapToGrid);
@@ -242,6 +244,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
         canvasWidth={canvasWidth}
         canvasHeight={canvasHeight}
         backgroundColor={backgroundColor}
+        backgroundGradientColor2={backgroundGradientColor2}
+        backgroundGradientAngle={backgroundGradientAngle}
         mode={mode}
         showGrid={showGrid}
         gridSize={gridSize}

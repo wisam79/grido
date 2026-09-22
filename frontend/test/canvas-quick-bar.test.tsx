@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { CanvasQuickBar } from '../src/components/editor/canvas/canvas-quick-bar';
+import { CanvasOverlayHost } from '../src/components/editor/canvas/canvas-overlay-host';
 import { useEditorStore } from '../src/lib/editor-store';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 
@@ -105,6 +106,30 @@ describe('CanvasQuickBar Component Tests', () => {
     expect(screen.queryByText('ترميم الوجه')).not.toBeInTheDocument();
     expect(screen.queryByText(/تكرار/)).not.toBeInTheDocument();
     expect(screen.queryByText(/حذف/)).not.toBeInTheDocument();
+  });
+
+  /**
+   * 🧷 حارس الحدّ المكاني: كان الشريط يُرسم portal على `document.body` بـ`fixed`
+   * فيطفو فوق شريط الأدوات ويمتد على الشريط الجانبي والألواح. الآن يجب أن يُرسم
+   * داخل حاوية لوح الكانفاس وبتموضع `absolute` — أي مقصيّاً ضمن منطقة الكانفاس.
+   */
+  it('renders inside the canvas overlay host with absolute positioning', () => {
+    selectSingleImage();
+
+    render(
+      <TooltipProvider>
+        <CanvasOverlayHost>
+          <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+        </CanvasOverlayHost>
+      </TooltipProvider>
+    );
+
+    const host = screen.getByTestId('canvas-overlay-host');
+    const bar = screen.getByTestId('canvas-quick-bar');
+
+    expect(host.contains(bar)).toBe(true);
+    expect(bar.className).toContain('absolute');
+    expect(bar.className).not.toContain('fixed');
   });
 
   it('hides itself for a two-element selection (nothing left to distribute)', () => {

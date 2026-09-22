@@ -13,6 +13,7 @@ import {
 import { CANVAS_SIZE_PRESETS, CanvasSizePreset } from "./freeform-panel-constants";
 import { cn } from "@/lib/utils";
 import { FluentFilterChips } from "@/components/ui/blocks";
+import { canvasMm } from "@/lib/canvas/units";
 
 export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
   const {
@@ -34,8 +35,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const currentDpi = template?.dpi || printSettings?.dpi || 300;
-  const currentW_MM = Math.round((canvasWidth / currentDpi) * 25.4);
-  const currentH_MM = Math.round((canvasHeight / currentDpi) * 25.4);
+  const { wMM: currentW_MM, hMM: currentH_MM } = canvasMm(canvasWidth, canvasHeight, currentDpi);
 
   // تصفية المقاسات حسب الفئة المختارة
   const filteredPresets = useMemo(() => {

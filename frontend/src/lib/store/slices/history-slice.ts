@@ -1,5 +1,5 @@
 import { StateCreator } from "zustand";
-import { CanvasElement, CanvasSlot, HistoryEntry } from "../types";
+import { CanvasElement, CanvasSlot, HistoryEntry, PhotoTemplate, CollageTemplate } from "../types";
 import { DEFAULT_COLLAGE_STATE } from "./collage-slice";
 
 export interface HistorySlice {
@@ -16,6 +16,11 @@ export const DEFAULT_HISTORY_ENTRY_EXTRAS = {
   canvasWidth: 2480,
   canvasHeight: 3508,
   backgroundColor: "#FFFFFF",
+  // يطابق الحالة الابتدائية الفعلية (نفس مرجع قالب الكولاج الافتراضي)
+  template: null as PhotoTemplate | null,
+  collageTemplate: DEFAULT_COLLAGE_STATE.collageTemplate as CollageTemplate | null,
+  backgroundGradientColor2: null as string | null,
+  backgroundGradientAngle: 135,
   collageGap: 0,
   collageMargin: 0,
   collageRadius: 0,
@@ -48,6 +53,10 @@ export type HistoryCross = HistorySlice & {
   canvasWidth?: number;
   canvasHeight?: number;
   backgroundColor?: string;
+  template?: PhotoTemplate | null;
+  collageTemplate?: CollageTemplate | null;
+  backgroundGradientColor2?: string | null;
+  backgroundGradientAngle?: number;
   collageGap?: number;
   collageMargin?: number;
   collageRadius?: number;
@@ -68,6 +77,11 @@ const captureSnapshot = (s: HistoryCross): HistoryEntry => ({
   canvasWidth: s.canvasWidth,
   canvasHeight: s.canvasHeight,
   backgroundColor: s.backgroundColor,
+  template: s.template ?? null,
+  collageTemplate: s.collageTemplate ?? null,
+  // تسوية undefined إلى null لتطابق الـ dedupe مع الإدخال الابتدائي
+  backgroundGradientColor2: s.backgroundGradientColor2 ?? null,
+  backgroundGradientAngle: s.backgroundGradientAngle ?? 135,
   collageGap: s.collageGap,
   collageMargin: s.collageMargin,
   collageRadius: s.collageRadius,
@@ -88,6 +102,8 @@ const restoreEntry = (entry: HistoryEntry) => {
   };
   const optionalKeys = [
     "mode", "canvasWidth", "canvasHeight", "backgroundColor",
+    "template", "collageTemplate",
+    "backgroundGradientColor2", "backgroundGradientAngle",
     "collageGap", "collageMargin", "collageRadius",
     "collageShowCutLines", "collageShowEndCutLine", "collageStrokeWidth", "collageStrokeColor",
     "lastEditedImage", "lastEditedImageAspect",
@@ -113,6 +129,9 @@ const isSameSnapshot = (a: HistoryEntry, b: HistoryEntry): boolean => {
 
   const scalarKeys = [
     "mode", "canvasWidth", "canvasHeight", "backgroundColor",
+    // القالبان يُقارنان بالمرجع (الستور immutable) — تغييرهما يُسجّل خطوة فعلاً
+    "template", "collageTemplate",
+    "backgroundGradientColor2", "backgroundGradientAngle",
     "collageGap", "collageMargin", "collageRadius",
     "collageShowCutLines", "collageShowEndCutLine",
     "collageStrokeWidth", "collageStrokeColor",
@@ -206,6 +225,8 @@ const estimateEntryBytes = (entry: HistoryEntry): number => {
   }
   for (const sl of entry.slots) {
     if (typeof sl.imageSrc === "string") total += sl.imageSrc.length;
+    // كانت مُهمَلة فيقدّر السقف نصف الحجم الفعلي عند وجود صورة أصلية محفوظة
+    if (typeof sl.originalImageSrc === "string") total += sl.originalImageSrc.length;
   }
   return total;
 };

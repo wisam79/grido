@@ -1,6 +1,5 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
 import {
   Ruler,
   GridFour,
@@ -17,9 +16,14 @@ import {
 } from "@phosphor-icons/react";
 import { PageOrientationIcon } from "@/components/ui/image-icons";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { FluentCapsuleButton } from "@/components/ui/blocks/fluent-capsule-button";
+import { FluentKbd } from "@/components/ui/blocks/fluent-kbd";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { PAPER_SIZES } from "@/lib/templates";
+import { useCanvasZoom } from "@/hooks/use-canvas-zoom";
+import { useCanvasContext, useCollageViewFlags, useGridControls } from "@/lib/store/selectors";
+import { canvasMm, findPaperByMm, formatDimensions } from "@/lib/canvas/units";
 
 export interface CanvasViewportDeckProps {
   className?: string;
@@ -32,49 +36,22 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
   isZenMode = false,
   onToggleZenMode,
 }: CanvasViewportDeckProps) {
+  // الحالة عبر المحددات المشتركة (كانت 16 حقلاً في useShallow واحد هنا)
+  const { template, canvasWidth, canvasHeight, mode, printSettings } = useCanvasContext();
   const {
-    showRuler,
-    setShowRuler,
     showGrid,
     setShowGrid,
     snapToGrid,
     setSnapToGrid,
+    showRuler,
+    setShowRuler,
     showUserGuides,
     setShowUserGuides,
-    collageShowCutLines,
-    setCollageShowCutLines,
-    canvasWidth,
-    canvasHeight,
-    setCanvasSize,
-    canvasZoom,
-    setCanvasZoom,
-    mode,
-    template,
     rulerUnit,
-    printSettings,
-  } = useEditorStore(
-    useShallow((state) => ({
-      showRuler: state.showRuler,
-      setShowRuler: state.setShowRuler,
-      showGrid: state.showGrid,
-      setShowGrid: state.setShowGrid,
-      snapToGrid: state.snapToGrid,
-      setSnapToGrid: state.setSnapToGrid,
-      showUserGuides: state.showUserGuides,
-      setShowUserGuides: state.setShowUserGuides,
-      collageShowCutLines: state.collageShowCutLines,
-      setCollageShowCutLines: state.setCollageShowCutLines,
-      canvasWidth: state.canvasWidth,
-      canvasHeight: state.canvasHeight,
-      setCanvasSize: state.setCanvasSize,
-      canvasZoom: state.canvasZoom,
-      setCanvasZoom: state.setCanvasZoom,
-      mode: state.mode,
-      template: state.template,
-      rulerUnit: state.rulerUnit,
-      printSettings: state.printSettings,
-    }))
-  );
+  } = useGridControls();
+  const { collageShowCutLines, setCollageShowCutLines } = useCollageViewFlags();
+  const setCanvasSize = useEditorStore((s) => s.setCanvasSize);
+  const { percentLabel, zoomIn, zoomOut, resetZoom, fitZoom } = useCanvasZoom();
 
   const isLandscape = canvasWidth > canvasHeight;
 
@@ -82,40 +59,10 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
     setCanvasSize(canvasHeight, canvasWidth);
   }, [canvasWidth, canvasHeight, setCanvasSize]);
 
-  const handleZoomOut = useCallback(() => {
-    setCanvasZoom((prev) => Math.max(0.1, parseFloat((prev - 0.1).toFixed(2))));
-  }, [setCanvasZoom]);
-
-  const handleZoomIn = useCallback(() => {
-    setCanvasZoom((prev) => Math.min(5, parseFloat((prev + 0.1).toFixed(2))));
-  }, [setCanvasZoom]);
-
-  const handleResetZoom = useCallback(() => {
-    setCanvasZoom(1);
-  }, [setCanvasZoom]);
-
   const currentDpi = template?.dpi || printSettings.dpi || 300;
-  const activePaper = PAPER_SIZES.find((p) => {
-    return (
-      (Math.round((canvasWidth / currentDpi) * 25.4) === p.widthMM && Math.round((canvasHeight / currentDpi) * 25.4) === p.heightMM) ||
-      (Math.round((canvasWidth / currentDpi) * 25.4) === p.heightMM && Math.round((canvasHeight / currentDpi) * 25.4) === p.widthMM)
-    );
-  });
-
-  const formattedDimensions = useMemo(() => {
-    if (rulerUnit === "px") {
-      return `${Math.round(canvasWidth)} × ${Math.round(canvasHeight)} px`;
-    }
-    const wMM = (canvasWidth / currentDpi) * 25.4;
-    const hMM = (canvasHeight / currentDpi) * 25.4;
-    if (rulerUnit === "cm") {
-      return `${(wMM / 10).toFixed(1)} × ${(hMM / 10).toFixed(1)} cm`;
-    }
-    if (rulerUnit === "in") {
-      return `${(wMM / 25.4).toFixed(2)} × ${(hMM / 25.4).toFixed(2)} in`;
-    }
-    return `${Math.round(wMM)} × ${Math.round(hMM)} mm`;
-  }, [rulerUnit, canvasWidth, canvasHeight, currentDpi]);
+  const { wMM, hMM } = canvasMm(canvasWidth, canvasHeight, currentDpi);
+  const activePaper = findPaperByMm(wMM, hMM, PAPER_SIZES);
+  const formattedDimensions = formatDimensions(canvasWidth, canvasHeight, currentDpi, rulerUnit);
 
   return (
     <div
@@ -159,149 +106,65 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
       {/* 2. الوسط: كبسولة أدوات المحاذاة والرؤية الموحدة (Fluent 2 Icon Capsule) */}
       <div className="h-8 flex items-center gap-0.5 bg-card/90 dark:bg-card/75 backdrop-blur-xl p-0.5 rounded-lg border border-border/80 dark:border-white/10 shadow-2xs select-none fluent-specular">
         {/* زر المساطر */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={() => setShowRuler(!showRuler)}
-              data-testid="canvas-ruler-toggle"
-              aria-label="المساطر (Ctrl + R)"
-              className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
-                showRuler
-                  ? "text-primary hover:bg-primary/10"
-                  : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
-              )}
-            >
-              <Ruler className="w-4 h-4" weight={showRuler ? "duotone" : "regular"} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
-            <div className="flex items-center gap-1.5">
-              <span>{showRuler ? "إخفاء المساطر" : "إظهار المساطر"}</span>
-              <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+R</kbd>
-            </div>
-          </TooltipContent>
-        </Tooltip>
+        <FluentCapsuleButton
+          icon={<Ruler className="w-4 h-4" weight={showRuler ? "duotone" : "regular"} />}
+          label="المساطر (Ctrl + R)"
+          tooltip={showRuler ? "إخفاء المساطر" : "إظهار المساطر"}
+          shortcut="Ctrl+R"
+          active={showRuler}
+          onClick={() => setShowRuler(!showRuler)}
+          testId="canvas-ruler-toggle"
+        />
 
         {/* زر الشبكة */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={() => setShowGrid(!showGrid)}
-              aria-label="الشبكة (Ctrl + ')"
-              className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
-                showGrid
-                  ? "text-primary hover:bg-primary/10"
-                  : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
-              )}
-            >
-              <GridFour className="w-4 h-4" weight={showGrid ? "duotone" : "regular"} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
-            <div className="flex items-center gap-1.5">
-              <span>{showGrid ? "إخفاء شبكة المحاذاة" : "إظهار شبكة المحاذاة"}</span>
-              <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+'</kbd>
-            </div>
-          </TooltipContent>
-        </Tooltip>
+        <FluentCapsuleButton
+          icon={<GridFour className="w-4 h-4" weight={showGrid ? "duotone" : "regular"} />}
+          label="الشبكة (Ctrl + ')"
+          tooltip={showGrid ? "إخفاء شبكة المحاذاة" : "إظهار شبكة المحاذاة"}
+          shortcut="Ctrl+'"
+          active={showGrid}
+          onClick={() => setShowGrid(!showGrid)}
+        />
 
         {/* زر المغناطيس والمحاذاة الذكية */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={() => setSnapToGrid(!snapToGrid)}
-              aria-label="المغناطيس والمحاذاة الذكية"
-              className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
-                snapToGrid
-                  ? "text-primary hover:bg-primary/10"
-                  : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
-              )}
-            >
-              <Magnet className="w-4 h-4" weight={snapToGrid ? "duotone" : "regular"} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
-            {snapToGrid ? "إيقاف الالتصاق المغناطيسي والمحاذاة الذكية" : "تفعيل الالتصاق المغناطيسي والمحاذاة الذكية"}
-          </TooltipContent>
-        </Tooltip>
+        <FluentCapsuleButton
+          icon={<Magnet className="w-4 h-4" weight={snapToGrid ? "duotone" : "regular"} />}
+          label="المغناطيس والمحاذاة الذكية"
+          tooltip={snapToGrid ? "إيقاف الالتصاق المغناطيسي والمحاذاة الذكية" : "تفعيل الالتصاق المغناطيسي والمحاذاة الذكية"}
+          active={snapToGrid}
+          onClick={() => setSnapToGrid(!snapToGrid)}
+        />
 
         {/* زر الخطوط الإرشادية للمستخدم */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              onClick={() => setShowUserGuides(!showUserGuides)}
-              aria-label="الخطوط الإرشادية (Ctrl + ;)"
-              className={cn(
-                "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
-                showUserGuides
-                  ? "text-primary hover:bg-primary/10"
-                  : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
-              )}
-            >
-              <Columns className="w-4 h-4" weight={showUserGuides ? "duotone" : "regular"} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
-            <div className="flex items-center gap-1.5">
-              <span>{showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}</span>
-              <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+;</kbd>
-            </div>
-          </TooltipContent>
-        </Tooltip>
+        <FluentCapsuleButton
+          icon={<Columns className="w-4 h-4" weight={showUserGuides ? "duotone" : "regular"} />}
+          label="الخطوط الإرشادية (Ctrl + ;)"
+          tooltip={showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}
+          shortcut="Ctrl+;"
+          active={showUserGuides}
+          onClick={() => setShowUserGuides(!showUserGuides)}
+        />
 
         {/* زر خطوط القص (يظهر في الكولاج) */}
         {mode === "collage" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={() => setCollageShowCutLines(!collageShowCutLines)}
-                aria-label="خطوط القص للطباعة"
-                className={cn(
-                  "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
-                  collageShowCutLines
-                    ? "text-primary hover:bg-primary/10"
-                    : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
-                )}
-              >
-                <Scissors className="w-4 h-4" weight={collageShowCutLines ? "duotone" : "regular"} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
-              {collageShowCutLines ? "إخفاء علامات وخطوط قص الصور" : "إظهار علامات وخطوط قص الصور للطباعة"}
-            </TooltipContent>
-          </Tooltip>
+          <FluentCapsuleButton
+            icon={<Scissors className="w-4 h-4" weight={collageShowCutLines ? "duotone" : "regular"} />}
+            label="خطوط القص للطباعة"
+            tooltip={collageShowCutLines ? "إخفاء علامات وخطوط قص الصور" : "إظهار علامات وخطوط قص الصور للطباعة"}
+            active={collageShowCutLines}
+            onClick={() => setCollageShowCutLines(!collageShowCutLines)}
+          />
         )}
 
         {/* زر وضع التركيز / المعاينة النظيفة */}
         {onToggleZenMode && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={onToggleZenMode}
-                aria-label={isZenMode ? "استعادة الألواح الجانبية" : "وضع التركيز"}
-                className={cn(
-                  "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none active:scale-95",
-                  isZenMode
-                    ? "text-primary hover:bg-primary/10"
-                    : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60"
-                )}
-              >
-                {isZenMode ? <EyeSlash className="w-4 h-4" weight="fill" /> : <Eye className="w-4 h-4" weight="regular" />}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
-              {isZenMode ? "استعادة الألواح الجانبية" : "وضع التركيز (إخفاء الألواح الجانبية)"}
-            </TooltipContent>
-          </Tooltip>
+          <FluentCapsuleButton
+            icon={isZenMode ? <EyeSlash className="w-4 h-4" weight="fill" /> : <Eye className="w-4 h-4" weight="regular" />}
+            label={isZenMode ? "استعادة الألواح الجانبية" : "وضع التركيز"}
+            tooltip={isZenMode ? "استعادة الألواح الجانبية" : "وضع التركيز (إخفاء الألواح الجانبية)"}
+            active={isZenMode}
+            onClick={onToggleZenMode}
+          />
         )}
       </div>
 
@@ -312,25 +175,14 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
           dir="ltr"
         >
           {/* زر تصغير */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className="w-7 h-7 flex items-center justify-center hover:bg-muted/60 hover:text-foreground rounded-md transition-all duration-150 cursor-pointer text-muted-foreground/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent"
-                onClick={handleZoomOut}
-                data-testid="canvas-zoom-out"
-                aria-label="تصغير"
-              >
-                <MagnifyingGlassMinus className="w-4 h-4" weight="regular" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
-              <div className="flex items-center gap-1.5">
-                <span>تصغير</span>
-                <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+-</kbd>
-              </div>
-            </TooltipContent>
-          </Tooltip>
+          <FluentCapsuleButton
+            icon={<MagnifyingGlassMinus className="w-4 h-4" weight="regular" />}
+            label="تصغير"
+            tooltip="تصغير"
+            shortcut="Ctrl+-"
+            onClick={zoomOut}
+            testId="canvas-zoom-out"
+          />
 
           {/* نسبة الزوم الرقمية */}
           <Tooltip>
@@ -338,83 +190,59 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
               <button
                 type="button"
                 className="h-7 min-w-[46px] px-1.5 text-xs font-mono font-bold text-center select-none cursor-pointer hover:bg-muted/60 hover:text-primary rounded-md transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
-                onClick={handleResetZoom}
+                onClick={resetZoom}
                 aria-label="إعادة تعيين المقياس إلى 100%"
               >
-                {Math.round(canvasZoom * 100)}%
+                {percentLabel}
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
               <div className="flex items-center gap-1.5">
                 <span>المقياس الفعلي (100%)</span>
-                <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
+                <FluentKbd keys="Ctrl+1" />
               </div>
             </TooltipContent>
           </Tooltip>
 
           {/* زر تكبير */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className="w-7 h-7 flex items-center justify-center hover:bg-muted/60 hover:text-foreground rounded-md transition-all duration-150 cursor-pointer text-muted-foreground/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent"
-                onClick={handleZoomIn}
-                data-testid="canvas-zoom-in"
-                aria-label="تكبير"
-              >
-                <MagnifyingGlassPlus className="w-4 h-4" weight="regular" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
-              <div className="flex items-center gap-1.5">
-                <span>تكبير</span>
-                <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl++</kbd>
-              </div>
-            </TooltipContent>
-          </Tooltip>
+          <FluentCapsuleButton
+            icon={<MagnifyingGlassPlus className="w-4 h-4" weight="regular" />}
+            label="تكبير"
+            tooltip="تكبير"
+            shortcut="Ctrl++"
+            onClick={zoomIn}
+            testId="canvas-zoom-in"
+          />
 
-          {/* زر ملاءمة الورقة للشاشة (Zoom = 100% = Fit) */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className="w-7 h-7 flex items-center justify-center hover:bg-muted/60 hover:text-foreground rounded-md transition-all duration-150 cursor-pointer text-muted-foreground/80 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent"
-                onClick={handleResetZoom}
-                aria-label="ملاءمة الورقة للشاشة"
-              >
-                <ArrowsOut className="w-4 h-4" weight="regular" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
-              <div className="flex items-center gap-1.5">
-                <span>ملاءمة الورقة للشاشة</span>
-                <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+0</kbd>
-              </div>
-            </TooltipContent>
-          </Tooltip>
+          {/* زر الحجم الفعلي 100% */}
+          <FluentCapsuleButton
+            icon={<ArrowsOut className="w-4 h-4" weight="regular" />}
+            label="الحجم الفعلي 100%"
+            tooltip="الحجم الفعلي 100%"
+            shortcut="Ctrl+1"
+            onClick={resetZoom}
+          />
+
+          {/* زر ملاءمة الورقة للشاشة (Fit) — منفصل عن 100% */}
+          <FluentCapsuleButton
+            icon={<FileText className="w-4 h-4" weight="regular" />}
+            label="ملاءمة الورقة للشاشة"
+            tooltip="ملاءمة الورقة للشاشة"
+            shortcut="Ctrl+0"
+            onClick={fitZoom}
+          />
 
           <Separator orientation="vertical" className="h-4 bg-border/60 mx-0.5" />
 
           {/* زر اختصارات لوحة المفاتيح المدمج داخل الكبسولة */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className="w-7 h-7 flex items-center justify-center text-muted-foreground/80 hover:text-foreground hover:bg-muted/60 rounded-md transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent"
-                onClick={() => window.dispatchEvent(new CustomEvent("grido:open-shortcuts"))}
-                data-testid="canvas-shortcuts"
-                aria-label="اختصارات لوحة المفاتيح"
-              >
-                <Keyboard className="w-4 h-4" weight="regular" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={8} align="center" className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8">
-              <div className="flex items-center gap-1.5">
-                <span>اختصارات لوحة المفاتيح</span>
-                <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+/</kbd>
-              </div>
-            </TooltipContent>
-          </Tooltip>
+          <FluentCapsuleButton
+            icon={<Keyboard className="w-4 h-4" weight="regular" />}
+            label="اختصارات لوحة المفاتيح"
+            tooltip="اختصارات لوحة المفاتيح"
+            shortcut="Ctrl+/"
+            onClick={() => window.dispatchEvent(new CustomEvent("grido:open-shortcuts"))}
+            testId="canvas-shortcuts"
+          />
         </div>
       </div>
     </div>

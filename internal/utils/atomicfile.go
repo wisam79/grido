@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -16,8 +17,8 @@ import (
 // phone_bridge_service.go، print_export.go) بصلاحيات وسياسات أخطاء مختلفة.
 // هذا الملف هو المصدر الوحيد للدورة.
 //
-// ثابت الاستخدام: كاتب واحد لكل مسار هدف — إما mutex عند المستدعي أو اسم
-// هدف فريد لكل عملية (كما في media_service/phone_bridge عبر UnixNano).
+// ثابت الاستخدام: قفل المسار الهدف مُفروض داخلياً (pathLocks أدناه)، فيمكن
+// لأكثر من goroutine الكتابة لنفس المسار بأمان دون mutex عند المستدعي.
 // الاصطلاح الموحّد للملف المؤقت هو <path>.tmp ليبقى متوافقاً مع مسّاحات
 // الملفات المؤقتة القائمة (تنظيف Exports في print_export.go وتنظيف
 // التحديثات في updater.go).
@@ -32,18 +33,44 @@ type AtomicFile struct {
 	tmpPath string
 	dstPath string
 	done    bool
+	release func()
+}
+
+// pathLocks: قفل واحد لكل مسار هدف **داخل العملية**. العقد الموثّق سابقاً
+// (كاتب واحد لكل مسار) لم يكن مفروضاً بشيء، وكثير من المستدعين بلا mutex خاص
+// به (مثل crypto.go)، بينما Wails يستدعي الخدمات في goroutines مستقلة: كاتبان
+// متزامنان كانا يتشاركان <path>.tmp نفسه (بـO_TRUNC) فيتداخل المحتوى ثم يُنفَّذ
+// rename على نتيجة مدموجة — توكن/ترخيص تالف بلا أي خطأ.
+var pathLocks sync.Map // map[string]*sync.Mutex
+
+// lockTargetPath يحتجز قفل المسار ويعيد دالة تحريره (idempotent عبر releaseLock).
+func lockTargetPath(path string) func() {
+	value, _ := pathLocks.LoadOrStore(path, &sync.Mutex{})
+	mu := value.(*sync.Mutex)
+	mu.Lock()
+	return mu.Unlock
 }
 
 // CreateAtomic ينشئ الملف المؤقت للهدف المطلوب بالصلاحيات المعطاة.
 // الصلاحيات صريحة دائماً (لا تعتمد على umask): 0600 للملفات الحساسة
 // (التوكنات ومفاتيح الترخيص) و0644 لبقية المخرجات.
 func CreateAtomic(path string, perm os.FileMode) (*AtomicFile, error) {
+	release := lockTargetPath(path)
 	tmpPath := path + ".tmp"
 	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	if err != nil {
+		release()
 		return nil, fmt.Errorf("create temp file %s: %w", tmpPath, err)
 	}
-	return &AtomicFile{file: f, tmpPath: tmpPath, dstPath: path}, nil
+	return &AtomicFile{file: f, tmpPath: tmpPath, dstPath: path, release: release}, nil
+}
+
+// releaseLock يحرّر قفل المسار مرة واحدة فقط (nil-safe بعد التحرير).
+func (a *AtomicFile) releaseLock() {
+	if a.release != nil {
+		a.release()
+		a.release = nil
+	}
 }
 
 // Write يكتب دفعة بايتات في الملف المؤقت.
@@ -66,6 +93,7 @@ func (a *AtomicFile) Commit() error {
 		return errors.New("atomic file: already committed or aborted")
 	}
 	a.done = true
+	defer a.releaseLock()
 
 	if err := a.file.Sync(); err != nil {
 		_ = a.file.Close()
@@ -93,6 +121,7 @@ func (a *AtomicFile) Abort() {
 	a.done = true
 	_ = a.file.Close()
 	_ = os.Remove(a.tmpPath)
+	a.releaseLock()
 }
 
 // AtomicWriteFile غلاف للحمولات الصغيرة الجاهزة في الذاكرة.

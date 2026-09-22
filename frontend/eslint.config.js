@@ -57,6 +57,19 @@ export default tseslint.config(
     },
   },
   {
+    //  - تُفحص الاختبارات والـ e2e ضمن نفس معيار الجودة (كانت خارج نطاق lint سابقاً،
+    //    فمرّت فيها مخلفات مثل استيرادات ميتة).
+    //  - أي (any) في الـ mocks جزء من طبيعتها: محاكاة canvas/wasm/Wails تحتاج
+    //    أشكالاً مرنة لا يصفها نوع المصدر.
+    //  - alias لـ this (canvas) ضروري لحفظ المرجع داخل الدوال المتداخلة في mock
+    //    سياق الـ 2d، حيث يُعاد ربط this.
+    files: ['test/**/*.{ts,tsx}', 'e2e/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-this-alias': ['error', { allowedNames: ['canvas'] }],
+    },
+  },
+  {
     // ملفات تصدّر أنواع/interfaces بجانب المكوّنات — Fast Refresh لا يتأثر
     // بتصدير الأنواع (type-only exports تُمحى في الـ build)
     files: [

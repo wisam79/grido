@@ -59,7 +59,10 @@ export function KeyboardShortcutsDialog() {
         { label: "حذف العنصر المحدد", keys: ["Delete"] },
         { label: "تجميع العناصر", keys: ["Ctrl", "G"] },
         { label: "فك التجميع", keys: ["Ctrl", "Shift", "G"] },
+        { label: "نسخ العنصر", keys: ["Ctrl", "C"] },
+        { label: "قص العنصر", keys: ["Ctrl", "X"] },
         { label: "لصق صورة", keys: ["Ctrl", "V"] },
+        { label: "إلغاء التحديد", keys: ["Esc"] },
       ],
     },
     {
@@ -75,8 +78,10 @@ export function KeyboardShortcutsDialog() {
     {
       title: "التحريك والمحاذاة",
       items: [
-        { label: "تحريك دقيق (1px)", keys: ["الأسهم"] },
-        { label: "تحريك سريع (10px)", keys: ["Shift", "الأسهم"] },
+        { label: "تحريك دقيق", keys: ["الأسهم"] },
+        { label: "تحريك سريع", keys: ["Shift", "الأسهم"] },
+        { label: "تكبير/تصغير العنصر", keys: ["Alt", "↑/↓"] },
+        { label: "تكبير/تصغير بخطوة أكبر", keys: ["Alt", "Shift", "↑/↓"] },
       ],
     },
     {
@@ -87,8 +92,19 @@ export function KeyboardShortcutsDialog() {
         { label: "إعادة الضبط (100%)", keys: ["Ctrl", "0"] },
         { label: "المساطر", keys: ["Ctrl", "R"] },
         { label: "الشبكة", keys: ["Ctrl", "'"] },
+        { label: "الخطوط الإرشادية", keys: ["Ctrl", ";"] },
         { label: "القوالب", keys: ["Ctrl", "B"] },
         { label: "الخصائص", keys: ["Ctrl", "Shift", "B"] },
+      ],
+    },
+    {
+      title: "الأدوات ومسارات العمل",
+      items: [
+        { label: "لوحة كل الأدوات", keys: ["Ctrl", "K"] },
+        { label: "فتح أداة بالترتيب", keys: ["Alt", "1 … 9"] },
+        { label: "تبديل وضع العمل (كولاج / تعديل حر)", keys: ["Ctrl", "Alt", "1 / 2"] },
+        { label: "وضع التركيز", keys: ["Ctrl", "."] },
+        { label: "لوحة الاختصارات", keys: ["Ctrl", "/"] },
       ],
     },
   ];

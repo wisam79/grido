@@ -20,6 +20,7 @@ import {
 } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
+import { toErrorMessage } from "@/lib/wails-error";
 import {
   StartPhoneBridge,
   StopPhoneBridge,
@@ -60,7 +61,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
       }
     } catch (err) {
       console.error("[PhoneBridgeDialog] Failed to start phone bridge:", err);
-      const msg = typeof err === "string" ? err : (err instanceof Error ? err.message : "تعذر تشغيل جسر الهاتف");
+      const msg = toErrorMessage(err, "تعذر تشغيل جسر الهاتف");
       setError(msg);
     } finally {
       setIsLoading(false);

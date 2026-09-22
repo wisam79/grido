@@ -2,16 +2,7 @@ import { StateCreator } from "zustand";
 import { CanvasElement, CanvasSlot, PhotoTemplate, CollageTemplate, PrintSettings, HistoryEntry } from "../types";
 import { uid } from "../../utils";
 import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
-
-// قياس نسبة أبعاد الصورة — لاستبدال قُصَّ الصور عند تغيّر الأبعاد
-export function measureImageAspect(src: string): Promise<number> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve(img.width > 0 && img.height > 0 ? img.width / img.height : NaN);
-    img.onerror = () => resolve(NaN);
-    img.src = src;
-  });
-}
+import { measureImageAspect } from "../../canvas/measure-image";
 
 export interface CollageSlice {
   template: PhotoTemplate | null;
@@ -54,9 +45,60 @@ export interface CollageSlice {
 
 const initialCollage = COLLAGE_TEMPLATES[0];
 
+/**
+ * إعادة ربط خلايا الشبكة الجديدة بالخلايا القديمة **بأقرب مركز** لا بالفهرس.
+ * تغيير الفجوة/الهامش قد يغيّر عدد الصفوف والأعمدة، والربط بالفهرس
+ * (`existingSlots[i]`) كان ينقل الصور إلى خلايا أخرى بلا أي سبب مرئي.
+ * المطابقة الجشعة تُبقي كل صورة في أقرب خلية لموضعها السابق وتحفظ معرّفها
+ * (فلا ينقطع التحديد ولا يتضخم سجل التراجع بمعرّفات جديدة).
+ */
+function remapSlotsToCells(
+  existing: CanvasSlot[],
+  cells: Array<{ x: number; y: number; w: number; h: number }>
+): CanvasSlot[] {
+  const pool = existing.map((slot) => ({
+    slot,
+    cx: slot.x + slot.w / 2,
+    cy: slot.y + slot.h / 2,
+  }));
+
+  return cells.map((cell, index) => {
+    const cx = cell.x + cell.w / 2;
+    const cy = cell.y + cell.h / 2;
+    let bestIndex = -1;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < pool.length; i++) {
+      const distance = (pool[i].cx - cx) ** 2 + (pool[i].cy - cy) ** 2;
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = i;
+      }
+    }
+    const matched = bestIndex >= 0 ? pool.splice(bestIndex, 1)[0].slot : undefined;
+
+    return {
+      ...(matched ?? {}),
+      id: matched?.id || uid(),
+      cellIndex: index,
+      x: cell.x,
+      y: cell.y,
+      w: cell.w,
+      h: cell.h,
+      filter: matched?.filter ?? "none",
+      brightness: matched?.brightness ?? 100,
+      contrast: matched?.contrast ?? 100,
+      saturation: matched?.saturation ?? 100,
+      zoom: matched?.zoom ?? 1,
+      dragX: matched?.dragX ?? 0,
+      dragY: matched?.dragY ?? 0,
+    };
+  });
+}
+
 export function generateInitialSlots(): CanvasSlot[] {
   return initialCollage.cells.map((c, i) => ({
-    id: "slot_" + i + "_" + Math.random().toString(36).slice(2, 9),
+    // uid() (crypto.randomUUID) مثل بقية التطبيق بدل Math.random
+    id: uid(),
     cellIndex: i,
     x: c.x,
     y: c.y,
@@ -197,6 +239,12 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           label: c.label ?? existingSlot?.label,
           rotation: c.rotation ?? existingSlot?.rotation ?? 0,
           imageSrc: existingSlot?.imageSrc || undefined,
+          // 🔁 كانت هذه الحقول الأربعة تُسقط عند تبديل القالب: يضيع لون الخلية
+          // والقلب الأفقي/الرأسي ومصدر الصورة الأصلي («استعادة الأصل» يتعطل)
+          originalImageSrc: existingSlot?.originalImageSrc,
+          bgColor: existingSlot?.bgColor,
+          flipX: existingSlot?.flipX,
+          flipY: existingSlot?.flipY,
           filter: existingSlot?.filter || "none",
           brightness: existingSlot?.brightness || 100,
           contrast: existingSlot?.contrast || 100,
@@ -341,6 +389,8 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   clearSlots: () => {
     set((state) => ({
       slots: state.slots.map((sl: CanvasSlot) => ({ ...sl, imageSrc: undefined })),
+      // ℹ️ lastEditedImage **يبقى** عن قصد: زر «آخر صورة معدلة» في لوحة الخلية
+      // الفارغة يُستخدم لإعادة تعبئة الشبكة بعد مسحها (سير عمل مقصود، لا شبح).
     }));
     get().pushHistory();
   },
@@ -351,10 +401,18 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       slots: state.slots.map((sl: CanvasSlot) => ({
         ...sl,
         imageSrc: src,
+        // 🔁 نسخ كامل تعديلات الخلية المصدر (كان ينقل المرشّح/الألوان فقط
+        // فيبقى اقتصاص zoom/drag والقلب من الصورة السابقة على بقية الخلايا)
         filter: targetSlot?.filter || "none",
         brightness: targetSlot?.brightness ?? 100,
         contrast: targetSlot?.contrast ?? 100,
         saturation: targetSlot?.saturation ?? 100,
+        zoom: targetSlot?.zoom ?? sl.zoom,
+        dragX: targetSlot?.dragX ?? sl.dragX,
+        dragY: targetSlot?.dragY ?? sl.dragY,
+        flipX: targetSlot?.flipX ?? sl.flipX,
+        flipY: targetSlot?.flipY ?? sl.flipY,
+        rotation: targetSlot?.rotation ?? sl.rotation,
         bgColor: targetSlot?.bgColor ?? sl.bgColor,
       })),
     }));
@@ -421,18 +479,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           s.collageMargin
         );
         if (dynamicCells) {
-          adjustedSlots = dynamicCells.map((c, i) => {
-            const existingSlot = (s.slots || [])[i] || {};
-            return {
-              ...existingSlot,
-              id: existingSlot.id || uid(),
-              cellIndex: i,
-              x: c.x,
-              y: c.y,
-              w: c.w,
-              h: c.h,
-            };
-          });
+          adjustedSlots = remapSlotsToCells(s.slots || [], dynamicCells);
         }
       }
       return {
@@ -461,18 +508,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           margin
         );
         if (dynamicCells) {
-          adjustedSlots = dynamicCells.map((c, i) => {
-            const existingSlot = (s.slots || [])[i] || {};
-            return {
-              ...existingSlot,
-              id: existingSlot.id || uid(),
-              cellIndex: i,
-              x: c.x,
-              y: c.y,
-              w: c.w,
-              h: c.h,
-            };
-          });
+          adjustedSlots = remapSlotsToCells(s.slots || [], dynamicCells);
         }
       }
       return {
@@ -567,11 +603,14 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         if (sl.id !== slotId) return sl;
         const currentRot = sl.rotation || 0;
         const newRot = ((currentRot + angleDelta) % 360 + 360) % 360;
+        // التدوير يبدّل المحاور: نُصفّر أيضاً zoom كما نُصفّر الإزاحات
+        // (وإلا بقي اقتصاص الصورة السابق داخل إطار مقلوب)
         return {
           ...sl,
           rotation: newRot,
           dragX: 0,
           dragY: 0,
+          zoom: 1,
         };
       }),
     }));

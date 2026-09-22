@@ -92,14 +92,26 @@ export function PrintSettingsToolbar({
       bleedMM: bleed,
     });
 
+    // اتجاه الورقة يُشتق من الأبعاد التي حسبها المونتاج مقابل الأبعاد المخزّنة
+    // (لا من التسمية وحدها) — فورق مخزّن بترتيب عرضي كان يُصنَّف «portrait»
+    // فتبقى الورقة بعرضها الأصلي وتخالف الشبكة المحسوبة.
+    const storedWidth = printSettings.paperWidthMM || 210;
+    const storedHeight = printSettings.paperHeightMM || 297;
+    const orientation: "portrait" | "landscape" =
+      Math.abs(result.paperWidthMM - storedWidth) < 0.01 ? "portrait" : "landscape";
+
     setPrintSettings({
-      orientation: result.orientation,
+      orientation,
       copiesPerSheet: result.maxCopies,
       repeatMode: "all",
       showCutLines: true,
     });
-    const rotationNote = result.rotateItem ? " (مع تدوير التصميم 90°)" : "";
-    toast.success(`تم المونتاج: ${result.maxCopies} نسخة (${result.cols} أعمدة × ${result.rows} صفوف)${rotationNote} - الهدر ${result.wastePercentage}%`);
+    // لا نُعلن «تدوير التصميم» هنا: المونتاج يعادل تدوير العنصر بتدوير الورقة
+    // (نسخة القالب المدوّرة تُفوَّض لمرشّح الورقة المقابلة) — والوعد بتدوير لا
+    // يُنفِّذه أي مسار في خط الأنابيب.
+    toast.success(
+      `تم المونتاج: ${result.maxCopies} نسخة (${result.cols} أعمدة × ${result.rows} صفوف) - الهدر ${result.wastePercentage}%`
+    );
   };
 
   return (

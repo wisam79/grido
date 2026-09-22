@@ -37,7 +37,8 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
 
   return (
     <>
-      <div className="flex items-center gap-1 text-xs font-bold px-1.5 text-primary">
+      <div className="flex items-center gap-1 text-xs font-bold px-1.5 text-primary tracking-tight select-none" title={slot.id}>
+        <span aria-hidden="true" className="size-1.5 rounded-full bg-primary/70 shadow-[0_0_4px_rgba(37,99,235,0.45)]" />
         <span>خلية كولاج</span>
       </div>
 

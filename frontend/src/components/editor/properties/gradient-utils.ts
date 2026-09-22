@@ -1,27 +1,14 @@
-// حساب زاوية التدرج الخطي من نقطتي البداية/النهاية (0° = يسار→يمين، وتدور مع عقارب الساعة نزولاً)
-export function gradientAngleFromPoints(
-  start?: { x: number; y: number },
-  end?: { x: number; y: number }
-): number {
-  const s = start || { x: 0, y: 0 };
-  const e = end || { x: 1, y: 1 };
-  const deg = (Math.atan2(e.y - s.y, e.x - s.x) * 180) / Math.PI;
-  return Math.round(((deg + 360) % 360) * 10) / 10;
-}
+import { canvasAngleToCss } from "@/lib/canvas/gradient-geometry";
 
-// توليد نقطتي البداية/النهاية حول مركز العنصر من زاوية معطاة (إحداثيات نسبية 0-1 كما في Konva)
-export function gradientPointsFromAngle(deg: number): {
-  start: { x: number; y: number };
-  end: { x: number; y: number };
-} {
-  const rad = (deg * Math.PI) / 180;
-  const dx = Math.cos(rad) * 0.5;
-  const dy = Math.sin(rad) * 0.5;
-  return {
-    start: { x: 0.5 - dx, y: 0.5 - dy },
-    end: { x: 0.5 + dx, y: 0.5 + dy },
-  };
-}
+// هندسة التدرج موحّدة في lib/canvas/gradient-geometry (يشترك فيها المرسم والتصدير
+// ومعاينة الطباعة) — نُعيد تصديرها هنا حفاظاً على مسار الاستيراد المعتاد للأدوات
+// والمحررات القائمة.
+export {
+  gradientAngleFromPoints,
+  gradientPointsFromAngle,
+  gradientPixelPoints,
+  canvasAngleToCss,
+} from "@/lib/canvas/gradient-geometry";
 
 /** تحويل مصفوفة Color Stops إلى صيغة CSS صالحة للعرض المباشر */
 export function formatGradientCss(
@@ -39,7 +26,7 @@ export function formatGradientCss(
   if (type === "radial") {
     return `radial-gradient(circle, ${stopParts.join(", ")})`;
   }
-  return `linear-gradient(${angle}deg, ${stopParts.join(", ")})`;
+  return `linear-gradient(${canvasAngleToCss(angle)}deg, ${stopParts.join(", ")})`;
 }
 
 export interface GradientPreset {

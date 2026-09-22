@@ -4,6 +4,7 @@ import type Konva from "konva";
 import type { KonvaEventObject } from "konva/lib/Node";
 import { KonvaCollageImage } from "../elements/collage-image";
 import type { CanvasSlot as Slot, CollageTemplate } from "@/lib/store/types";
+import { getCollageGeometry, getSlotRect } from "@/lib/canvas/collage-geometry";
 import {
   collageCut, collageEndCut,
   slotPlaceholderBg, slotPlaceholderText,
@@ -48,11 +49,15 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   updateSlot,
   pushHistory,
 }: KonvaCollageLayerProps) {
-  const hasPhysical = Boolean(collageTemplate?.physicalLayout);
-  const margin = hasPhysical ? 0 : collageMargin;
-  const gap = hasPhysical ? 0 : collageGap;
-  const availW = canvasWidth - 2 * margin;
-  const availH = canvasHeight - 2 * margin;
+  // 📐 هندسة الشبكة من مصدر واحد يشاركه الشريط السريع العائم (collage-geometry)
+  const geo = getCollageGeometry(
+    canvasWidth,
+    canvasHeight,
+    collageMargin,
+    collageGap,
+    Boolean(collageTemplate?.physicalLayout)
+  );
+  const { margin, gap, availW, availH } = geo;
 
   // ✂️ حساب خطوط الشبكة الممتدة المفردة لمنتصف الفجوة 50% (Single Midpoint Cut Lines)
   const cutLinesData = React.useMemo(() => {
@@ -156,10 +161,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
         const radius = collageRadius;
         const borderW = collageStrokeWidth;
 
-        const left = margin + slot.x * availW + gap / 2;
-        const top = margin + slot.y * availH + gap / 2;
-        const width = slot.w * availW - gap;
-        const height = slot.h * availH - gap;
+        const { left, top, width, height } = getSlotRect(slot, geo);
 
         const isSelected = selectedId === slot.id;
 
@@ -232,13 +234,19 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                 />
               ) : (
                 // Placeholder background & centered clean geometric plus
-                <Group onClick={() => handleSlotClick?.(slot.id)}>
+                // الاسم يجعل عنصراً واجهة نقية: يُخفى عند التصدير والتقاط الطباعة
+                // (withHiddenOverlays) فلا تُطبع مربعات رمادية مكان خلايا فارغة
+                <Group name="slot-placeholder" onClick={() => handleSlotClick?.(slot.id)}>
                   <Rect
                     x={0}
                     y={0}
                     width={width}
                     height={height}
-                    fill={slotPlaceholderBg()}
+                    // شبه شفاف (55%) — كان معتماً فيطغى على لون/تدرج خلفية
+                    // الورقة فتظهر الورقة كلون مصمت (الخلية الفارغة تغطي معظم
+                    // المساحة). الشفافية الجزئية تُبقي إشارة الخلية الفارغة
+                    // وتُظهر التدرج خلفها في آن واحد.
+                    fill={slotPlaceholderBg(0.55)}
                     stroke="#e2e8f0"
                     strokeWidth={1}
                     cornerRadius={radius}

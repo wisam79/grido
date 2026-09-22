@@ -118,6 +118,22 @@ export const PrintSettingsSchema = z.object({
   orientation: z.enum(["portrait", "landscape"]),
   fitToPage: z.boolean().optional(),
   repeatMode: z.enum(["all", "row", "column"]).optional(),
+  // كانتا تُسقطان عند الحفظ/الفتح (zod يحذف المفاتيح غير المعلنة) فيضيع
+  // نمط خط القص ومحاذاة الشبكة المختاران ويعودان للافتراضي — إصلاح فقدان إعداد.
+  cutLineStyle: z.enum(["dashed", "dotted", "solid", "cropmarks"]).optional(),
+  gridAlign: z
+    .enum([
+      "top-left",
+      "top-center",
+      "top-right",
+      "center",
+      "center-left",
+      "center-right",
+      "bottom-left",
+      "bottom-center",
+      "bottom-right",
+    ])
+    .optional(),
 });
 
 export const PhotoTemplateSchema = z.object({
@@ -171,9 +187,14 @@ export const CollageTemplateSchema = z.object({
 
 export const ProjectSchema = z.object({
   mode: z.enum(["single", "collage"]).default("single"),
-  canvasWidth: z.number().default(413),
-  canvasHeight: z.number().default(531),
+  // الافتراضي يطابق DEFAULT_CORE_STATE (2480×3508 ≈ A4@300DPI) — كان 413×531
+  // (مقاس جواز) فيُحمَّل ملف قديم بلا أبعاد على كانفاس غير مقصود
+  canvasWidth: z.number().default(2480),
+  canvasHeight: z.number().default(3508),
   backgroundColor: z.string().default("#FFFFFF"),
+  // تدرج خلفية الورقة — اختياريان للتوافق مع الملفات القديمة (المصمت = غياب color2)
+  backgroundGradientColor2: z.string().nullable().optional(),
+  backgroundGradientAngle: z.number().min(0).max(360).optional(),
   elements: z.array(CanvasElementSchema).default([]),
   slots: z.array(CanvasSlotSchema).default([]),
   template: PhotoTemplateSchema.nullable().default(null),
@@ -182,12 +203,14 @@ export const ProjectSchema = z.object({
   
   // إعدادات شبكة الإرشاد
   showGrid: z.boolean().optional().default(false),
-  gridSize: z.number().optional().default(50),
+  gridSize: z.number().optional().default(48),
   gridColor: z.string().optional().default("#000000"),
   gridOpacity: z.number().optional().default(0.15),
   gridSubdivisions: z.number().optional().default(5),
   gridType: z.enum(["lines", "dots"]).optional().default("lines"),
-  snapToGrid: z.boolean().optional().default(false),
+  // يطابق DEFAULT_GRID_STATE.snapToGrid (true) — كان false فينطفئ المغناطيس
+  // صامتاً بعد فتح أي مشروع محفوظ
+  snapToGrid: z.boolean().optional().default(true),
   
   // إعدادات أعمدة التخطيط
   showColumns: z.boolean().optional().default(false),
@@ -201,7 +224,8 @@ export const ProjectSchema = z.object({
   collageMargin: z.number().optional().default(0),
   collageRadius: z.number().optional().default(0),
   collageShowCutLines: z.boolean().optional().default(false),
-  collageShowEndCutLine: z.boolean().optional(),
+  // يطابق DEFAULT_COLLAGE_STATE.collageShowEndCutLine (true)
+  collageShowEndCutLine: z.boolean().optional().default(true),
   collageStrokeWidth: z.number().optional().default(0),
   collageStrokeColor: z.string().optional().default("#000000"),
   embeddedAssets: z.record(z.string(), z.string()).optional(),

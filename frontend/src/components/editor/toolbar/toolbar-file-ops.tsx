@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useEditorStore } from "@/lib/editor-store";
 import { Button } from "@/components/ui/button";
 import { useShallow } from "zustand/react/shallow";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { FluentTooltip as TooltipBtn } from "@/components/ui/blocks";
 import { toast } from "sonner";
 import {
   Stack,
@@ -36,11 +36,6 @@ import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
 import { wailsIsDesktop } from "@/lib/wails-env";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
 
-interface TooltipBtnProps {
-  content: string;
-  children: React.ReactElement;
-}
-
 // معالجة متوازية مقيدة التزامن — تمنع تجميد الزر أثناء حفظ/قياس دفعات الصور
 // (التسلسل الكامل كان يفك ترميز كل صورة واحدة تلو الأخرى)
 async function mapWithConcurrency<T, R>(
@@ -58,20 +53,6 @@ async function mapWithConcurrency<T, R>(
   });
   await Promise.all(workers);
   return results;
-}
-
-function TooltipBtn({ content, children }: TooltipBtnProps) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent
-        side="bottom"
-        className="font-cairo text-xs py-1.5 px-3 bg-primary text-primary-foreground border-0 shadow-fluent-8 rounded-md font-medium"
-      >
-        {content}
-      </TooltipContent>
-    </Tooltip>
-  );
 }
 
 export function ToolbarFileOps() {
