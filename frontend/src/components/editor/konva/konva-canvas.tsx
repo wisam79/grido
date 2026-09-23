@@ -271,7 +271,13 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
         e.evt.preventDefault();
         onContextMenu?.(e);
       }}
-      ref={(stage) => { stageContextRef.current = stage; }}
+      ref={(stage) => {
+        stageContextRef.current = stage;
+        // 🧪 DEV-only: مقبض اختبار E2E لفحص المحوّل (يُزال من الإنتاج بالتقسيم الميت)
+        if (import.meta.env.DEV && typeof window !== "undefined") {
+          (window as unknown as { __gridoStage?: Konva.Stage | null }).__gridoStage = stage;
+        }
+      }}
     >
       <KonvaBackgroundLayer
         canvasWidth={canvasWidth}
