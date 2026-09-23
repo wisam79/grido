@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { getToolsForWorkflow } from "@/lib/workspace-tools";
+import { getToolsForMode } from "@/lib/workspace-tools";
 import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
 import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
 import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
@@ -173,11 +173,9 @@ export function useKeyboardShortcuts() {
   // (كانت مكتوبة يدوياً لكل تبويب؛ الربط بالفهرس يوسّعها تلقائياً عند إضافة أداة)
   const selectTabByIndex = (e: KeyboardEvent, index: number) => {
     e.preventDefault();
-    const { mode, workflowMode } = useEditorStore.getState();
-    // نفس مصدر الحقيقة المستخدم في الشريط الجانبي — فلا تختلف الأداة
-    // التي يفتحها Alt+الرقم عن الأداة التي يحمل الرقم نفسه في الشريط
+    const { mode } = useEditorStore.getState();
     const isCollage = mode === "collage";
-    const tool = getToolsForWorkflow(mode, workflowMode)[index];
+    const tool = getToolsForMode(mode)[index];
     if (!tool) return;
     window.dispatchEvent(
       new CustomEvent(isCollage ? "grido:select-collage-tab" : "grido:select-studio-tab", {
@@ -185,6 +183,7 @@ export function useKeyboardShortcuts() {
       })
     );
   };
+
 
   useHotkeys("alt+1", (e) => selectTabByIndex(e, 0));
   useHotkeys("alt+2", (e) => selectTabByIndex(e, 1));

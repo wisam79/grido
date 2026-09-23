@@ -20,7 +20,7 @@ import {
   WORKSPACE_COMMANDS,
   dispatchWorkspaceCommand,
   getStateCommandGroups,
-  getToolsForWorkflow,
+  getToolsForMode,
   groupCommands,
   groupTools,
   isCollageTab,
@@ -201,10 +201,9 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   onToggleZenMode,
   className,
 }: WorkspacePanelRailProps) {
-  const { mode, workflowMode, elementsCount, collageTemplate } = useEditorStore(
+  const { mode, elementsCount, collageTemplate } = useEditorStore(
     useShallow((state) => ({
       mode: state.mode,
-      workflowMode: state.workflowMode,
       elementsCount: state.elements.length,
       collageTemplate: state.collageTemplate,
     }))
@@ -221,10 +220,10 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
     return () => window.removeEventListener('grido:open-tool-launcher', openLauncher);
   }, []);
 
-  // قائمة الأدوات تتبع وضع الكانفاس (`mode`) — نفس المصدر الذي تستخدمه الاختصارات،
-  // وتُبسَّط تلقائياً في مسار الإنتاج السريع (quick)
+  // قائمة الأدوات تتبع وضع الكانفاس (`mode`) مباشرة
   const isCollage = mode === 'collage';
-  const tools = useMemo(() => getToolsForWorkflow(mode, workflowMode), [mode, workflowMode]);
+  const tools = useMemo(() => getToolsForMode(mode), [mode]);
+
 
   const isCustomGridInUse = collageTemplate?.id === 'collage-custom';
   const isFreeformInUse =

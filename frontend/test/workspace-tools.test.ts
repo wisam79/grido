@@ -2,12 +2,12 @@ import { describe, it, expect } from "vitest";
 import {
   COLLAGE_TOOLS,
   STUDIO_TOOLS,
-  QUICK_COLLAGE_TOOLS,
   WORKSPACE_COMMANDS,
   WORKSPACE_STATE_COMMANDS,
   MAX_TOOL_SHORTCUTS,
   getCollageTool,
   getStudioTool,
+  getToolsForMode,
   getToolsForWorkflow,
   getCollageToolsForWorkflow,
   getStateCommandGroups,
@@ -249,23 +249,18 @@ describe("أوامر الحالة الحية (WORKSPACE_STATE_COMMANDS)", () => 
   });
 });
 
-describe("قائمة الأدوات الموحّدة ومسار الإنتاج السريع", () => {
-  it("يستثني أدوات الإنتاج السريع المتقدمة ويحفظ ترتيب السجل", () => {
-    const ids = QUICK_COLLAGE_TOOLS.map((tool) => tool.id);
-    expect(ids).toEqual(["custom", "presets", "paper", "autofill", "backdrop"]);
-    // القائمة الفرعية تبقى بالترتيب نفسه، فأرقام Alt+الرقم لا تتغيّر
-    expect(COLLAGE_TOOLS.filter((tool) => ids.includes(tool.id))).toEqual(QUICK_COLLAGE_TOOLS);
+describe("قائمة الأدوات الموحّدة حسب وضع الكانفاس", () => {
+  it("يرجع أدوات الكولاج الكاملة عند وضع collage", () => {
+    expect(getToolsForMode("collage")).toBe(COLLAGE_TOOLS);
+    expect(getCollageToolsForWorkflow()).toBe(COLLAGE_TOOLS);
+    expect(getToolsForWorkflow("collage")).toBe(COLLAGE_TOOLS);
   });
 
-  it("يختار القائمة حسب وضع الكانفاس ويبسّط الكولاج في مسار الإنتاج السريع فقط", () => {
-    expect(getToolsForWorkflow("collage", "quick")).toBe(QUICK_COLLAGE_TOOLS);
-    expect(getToolsForWorkflow("collage", "studio")).toBe(COLLAGE_TOOLS);
-    expect(getToolsForWorkflow("collage", null)).toBe(COLLAGE_TOOLS);
-    // وضع التعديل الحر يتبع الكانفاس دائماً ولا يُستبدل بأدوات الكولاج
-    expect(getToolsForWorkflow("single", "quick")).toBe(STUDIO_TOOLS);
-    expect(getCollageToolsForWorkflow("quick")).toBe(QUICK_COLLAGE_TOOLS);
-    expect(getCollageToolsForWorkflow(null)).toBe(COLLAGE_TOOLS);
+  it("يرجع أدوات التعديل الحر عند وضع single", () => {
+    expect(getToolsForMode("single")).toBe(STUDIO_TOOLS);
+    expect(getToolsForWorkflow("single")).toBe(STUDIO_TOOLS);
   });
+
 
   it("لا يمنح اختصاراً لأداة تتجاوز حد Alt+9", () => {
     expect(MAX_TOOL_SHORTCUTS).toBe(9);

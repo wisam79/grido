@@ -188,9 +188,6 @@ describe('Component Testing: UI Rendering', () => {
     useEditorStore.getState().reset();
     useEditorStore.setState({
       mode: 'collage',
-      // تجاوز شاشة الترحيب في بيئة الاختبار — الاختبارات تفترض وجود المحرر
-      workflowMode: 'quick',
-      hasSeenWelcome: true,
       user: {
         plan: 'pro',
         status: 'active',
@@ -212,11 +209,12 @@ describe('Component Testing: UI Rendering', () => {
 
   it('renders the TemplatePanel correctly', async () => {
     localStorage.setItem('grido_workspace_layout_v1', JSON.stringify({ lastActivePanel: 'templates' }));
-    // الطبقات تظهر في وضع single + مسار studio (ليس quick الذي يخفي FreeformStudioPanel)
-    useEditorStore.setState({ mode: 'single', workflowMode: 'studio' });
+    // الطبقات تظهر في وضع single (FreeformStudioPanel)
+    useEditorStore.setState({ mode: 'single' });
     render(<App />);
     expect(await screen.findByText('الطبقات')).toBeInTheDocument();
   }, 15000);
+
 
   it('renders initial collage templates correctly', async () => {
     useEditorStore.setState({ mode: 'collage' });

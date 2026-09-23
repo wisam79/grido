@@ -45,8 +45,8 @@ description: دليل معمارية وخريطة كود Grido Studio المكت
     - `slices/grid-slice.ts`: إعدادات الشبكة الإرشادية والأعمدة والمحاذاة المغناطيسية (`snapToGrid`).
     - `slices/history-slice.ts`: التراجع والإعادة (Undo/Redo) بنسخ سطحي محفّز وسقف 30 لقطة.
     - `slices/license-slice.ts`: مصادقة المستخدم، التراخيص، الحصص اليومية، والدخول عبر جوجل.
-    - `slices/print-slice.ts`: إعدادات الطباعة، الهوامش، النزيف (Bleed)، وتوزيع النسخ وخطوط القص.
-    - `slices/workflow-slice.ts`: حالة الوضع التشغيلي (`WorkflowMode`) وشاشة الترحيب — إجمالي الشِرائح ثماني تُدمج في `useEditorStore` (مرة عبر `src/lib/editor-store.ts` الأحدث).
+    - `slices/print-slice.ts`: إعدادات الطباعة، الهوامش، النزيف (Bleed)، وتوزيع النسخ وخطوط القص — إجمالي الشِرائح سبع تُدمج في `useEditorStore` (عبر `src/lib/store/index.ts`).
+
   - **`print/`**: محركات الطباعة والقص (`print-layout-math.ts`, `cut-lines-utils.ts` + اختباراته، `single-print-composition.ts`).
   - **`canvas/`**: هندسة الكانفاس والمحاذاة والتصدير (`snap-utils.ts`, `stage-context.tsx`, `render-quality.ts`, `konva-export-utils.ts`, `text-stroke-filter.ts` لفلتر التمدد الشكلي، `zoom.ts`...).
   - **`filters/`**: فلاتر الصور وتأطير الوجوه الذكي (`custom-filters.ts`, `konva-filters.ts`, `face-frame-utils.ts`).

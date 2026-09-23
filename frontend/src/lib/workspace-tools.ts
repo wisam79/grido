@@ -1,5 +1,4 @@
 import type { Icon } from "@/components/ui/icons";
-import type { WorkflowMode } from "@/lib/store/slices/workflow-slice";
 import type { EditorMode } from "@/lib/store/types";
 import {
   Stack,
@@ -229,40 +228,35 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════
-   أدوات مسار الإنتاج السريع — فرعية من COLLAGE_TOOLS بدون الأدوات
-   المتقدمة غير الضرورية لإنتاج صور الهوية الفوري.
+   أدوات وضع الكانفاس الموحّدة:
+   مصدر الحقيقة هو `mode` وحده ("collage" أو "single") — نفس القيمة
+   التي يرسم بها الكانفاس وتعتمدها اختصارات Alt+الرقم.
    ═══════════════════════════════════════════════════════════════ */
 
-/** أدوات "فرز وترتيب" و "كولاج حر بالملم" لا يحتاجها مسار الإنتاج السريع */
-const QUICK_EXCLUDED_IDS: ReadonlySet<string> = new Set(["freeform", "arrange"]);
-
-export const QUICK_COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] =
-  COLLAGE_TOOLS.filter((tool) => !QUICK_EXCLUDED_IDS.has(tool.id));
-
-/** أدوات الكولاج المناسبة لمسار العمل — مبسطة في مسار الإنتاج السريع */
-export function getCollageToolsForWorkflow(
-  workflowMode: WorkflowMode | null
-): WorkspaceTool<CollageTab>[] {
-  return workflowMode === "quick" ? QUICK_COLLAGE_TOOLS : COLLAGE_TOOLS;
+/** أدوات الكولاج المتاحة بالكامل */
+export function getCollageTools(): WorkspaceTool<CollageTab>[] {
+  return COLLAGE_TOOLS;
 }
 
-/**
- * ترجع مصفوفة الأدوات المناسبة لوضع الكانفاس الحالي.
- *
- * مصدر الحقيقة هو `mode` وحده — نفس القيمة التي يرسم بها الكانفاس — ومسار
- * الإنتاج السريع يبسّط قائمة أدوات الكولاج فقط. أي مكان يعرض قائمة أدوات
- * (الشريط، لوحة الأوامر، تبويبات الشاشات المدمجة، اختصارات Alt+الرقم) يجب
- * أن يمرّ من هنا وإلا اختلفت الأداة المعروضة عن الاختصار المسجّل فعلاً.
- */
+/** أدوات الكولاج — اسم بديل للتوافقية */
+export const getCollageToolsForWorkflow = getCollageTools;
+
+/** ترجع مصفوفة الأدوات المناسبة لوضع الكانفاس الحالي */
+export function getToolsForMode(mode: EditorMode): WorkspaceTool<string>[] {
+  return mode === "collage" ? COLLAGE_TOOLS : STUDIO_TOOLS;
+}
+
+/** اسم بديل للتوافقية مع أي استيرادات سابقة */
 export function getToolsForWorkflow(
   mode: EditorMode,
-  workflowMode: WorkflowMode | null
+  _workflowMode?: unknown
 ): WorkspaceTool<string>[] {
-  return mode === "collage" ? getCollageToolsForWorkflow(workflowMode) : STUDIO_TOOLS;
+  return getToolsForMode(mode);
 }
 
 /** الحد الأقصى لاختصارات Alt+1..Alt+9 — لا يوجد اختصار Alt+10 */
 export const MAX_TOOL_SHORTCUTS = 9;
+
 
 /** اختصار Alt+الرقم يتكوّن من ترتيب الأداة في شريطها (بحد أقصى 9 أدوات) */
 export function toolShortcut(index: number): string {

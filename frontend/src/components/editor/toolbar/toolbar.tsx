@@ -22,22 +22,15 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useEditorStore } from "@/lib/editor-store";
 
 interface ToolbarProps {
+
   onPrint: () => void;
   onExport: () => void;
   onSave: () => void;
 }
 
 export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
-  // في مسار الإنتاج السريع: إخفاء أدوات الإضافة (نص/أشكال) لتبسيط الواجهة.
-  // التبسيط يخصّ مسار الكولاج المبسّط فقط — في وضع التعديل الحر تبقى الأدوات
-  // ظاهرة لأن الكانفاس فعلاً يقبل عناصر حرة
-  const workflowMode = useEditorStore((state) => state.workflowMode);
-  const mode = useEditorStore((state) => state.mode);
-  const isQuickMode = workflowMode === "quick" && mode === "collage";
-
   return (
     <div
       data-testid="workspace-toolbar"
@@ -54,13 +47,11 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
 
           <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
-          {/* المجموعة 2: إضافة عناصر — تُخفى في مسار الإنتاج السريع */}
-          {!isQuickMode && (
-            <>
-              <ToolbarAddTools />
-              <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
-            </>
-          )}
+          {/* المجموعة 2: إضافة عناصر (نص / أشكال / ملصقات) متاحة دائماً */}
+          <ToolbarAddTools />
+
+          <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
+
 
           {/* المجموعة 3: أدوات التحديد — تتغير مع السياق */}
           <ToolbarSelectionTools />
