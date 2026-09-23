@@ -133,7 +133,11 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const elementsRefs = useRef<Record<string, Konva.Node>>({});
   // 🚀 آخر عقد مربوطة بالمحول — تخطي nodes()+forceUpdate()+batchDraw()
   // عندما لا يتغير شيء فعلياً (sortedElements تتبدل هويتها مع كل tick ستور).
+  // ⚠️ يجب تتبع هوية المحوّل نفسه أيضاً: إلغاء التحديد يفكّ تركيب المحوّل
+  // (selectedIds.length > 0 شرط العرض) وإعادة التحديد تركّب نسخة جديدة —
+  // فتخطي الربط عند تشابه العقد فقط كان يترك المحوّل الجديد بلا عقد.
   const attachedTrNodesRef = useRef<Konva.Node[]>([]);
+  const attachedTrInstanceRef = useRef<Konva.Transformer | null>(null);
   // 🚀 تسجيل طبقة السحب الرسمية + مزود إضافاتها (المحوّل وشارة الأبعاد
   // يرافقان العقدة المسحوبة لطبقة السحب حتى لا يختفيا تحتها).
   useEffect(() => {
@@ -190,25 +194,33 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   }, []);
 
   useEffect(() => {
-    if (trRef.current) {
-      if (mode === "single" && selectedIds.length > 0) {
-        const nodes = selectedIds
-          .map((id) => elementsRefs.current[id])
-          .filter(Boolean);
-        const prev = attachedTrNodesRef.current;
-        const same =
-          nodes.length === prev.length && nodes.every((n, i) => n === prev[i]);
-        if (same) return;
-        attachedTrNodesRef.current = nodes;
-        trRef.current.nodes(nodes);
-        trRef.current.forceUpdate();
-        trRef.current.getLayer()?.batchDraw();
-      } else {
-        if (attachedTrNodesRef.current.length === 0) return;
-        attachedTrNodesRef.current = [];
-        trRef.current.nodes([]);
-        trRef.current.getLayer()?.batchDraw();
-      }
+    const tr = trRef.current;
+    if (!tr) {
+      // المحوّل مفكوك (لا تحديد) — صفّر المتتبع ولا شيء يُمسح.
+      attachedTrNodesRef.current = [];
+      attachedTrInstanceRef.current = null;
+      return;
+    }
+    if (mode === "single" && selectedIds.length > 0) {
+      const nodes = selectedIds
+        .map((id) => elementsRefs.current[id])
+        .filter(Boolean);
+      const prev = attachedTrNodesRef.current;
+      const sameNodes =
+        nodes.length === prev.length && nodes.every((n, i) => n === prev[i]);
+      // التخطي فقط عند ثبات العقد وثبات نسخة المحوّل معاً.
+      if (sameNodes && attachedTrInstanceRef.current === tr) return;
+      attachedTrNodesRef.current = nodes;
+      attachedTrInstanceRef.current = tr;
+      tr.nodes(nodes);
+      tr.forceUpdate();
+      tr.getLayer()?.batchDraw();
+    } else {
+      if (attachedTrNodesRef.current.length === 0 && attachedTrInstanceRef.current === tr) return;
+      attachedTrNodesRef.current = [];
+      attachedTrInstanceRef.current = tr;
+      tr.nodes([]);
+      tr.getLayer()?.batchDraw();
     }
   }, [selectedIds, mode, sortedElements]);
 

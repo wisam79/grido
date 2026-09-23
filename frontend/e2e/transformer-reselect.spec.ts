@@ -82,8 +82,9 @@ test.describe('Transformer survives deselect/reselect cycle', () => {
     // 2. إلغاء التحديد بلوحة المفاتيح (مسار حتمي: Escape → selectElement(null) —
     // نفس مسار النقر على الخلفية في الـ store، دون هشاشة إحداثيات الزوايا).
     await page.keyboard.press('Escape');
+    // المحوّل نفسه يُفك تركيبه عند انعدام التحديد (عرض مشروط) — لا nodes أصلاً.
     await expect.poll(() => transformerState(page), { timeout: 10000 }).toMatchObject({
-      found: true, attached: true, nodes: 0,
+      found: true, attached: false,
     });
 
     // 3. إعادة التحديد: المحوّل يجب أن يعود — هذا هو الانحدار المُبلغ عنه
