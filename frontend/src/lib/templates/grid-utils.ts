@@ -206,8 +206,9 @@ function getTravelerCells(
   const availW = paperW - 2 * marginX;
   const availH = paperH - 2 * marginY;
 
-  const topW = 2 * 50 + gapMM;
-  const topH = 50;
+  // الصف العلوي: جوازات رسمية 35×45 (المصدر الموحد photo-templates.ts) — كان 50×50 خطأً.
+  const topW = 2 * 35 + gapMM;
+  const topH = 45;
   const bottomW = 2 * 35 + gapMM;
   const bottomH = 2 * 45 + gapMM;
 
@@ -219,13 +220,12 @@ function getTravelerCells(
     scale = Math.min(availW / totalW_raw, availH / totalH_raw);
   }
 
-  const final50 = 50 * scale;
   const final35 = 35 * scale;
   const final45 = 45 * scale;
   const finalGap = gapMM * scale;
 
-  const finalTopW = 2 * final50 + finalGap;
-  const finalTopH = final50;
+  const finalTopW = 2 * final35 + finalGap;
+  const finalTopH = final45;
   const finalBottomW = 2 * final35 + finalGap;
   const finalBottomH = 2 * final45 + finalGap;
 
@@ -263,14 +263,14 @@ function getTravelerCells(
 
   const cells = [];
 
-  // Top row: 2 slots of 50x50 mm (centered horizontally relative to gridW)
+  // Top row: 2 slots of 35x45 mm (centered horizontally relative to gridW)
   const topOffsetX = (gridW - finalTopW) / 2;
   for (let c = 0; c < 2; c++) {
     cells.push({
-      x: (startX + topOffsetX + c * (final50 + finalGap)) / paperW,
+      x: (startX + topOffsetX + c * (final35 + finalGap)) / paperW,
       y: startY / paperH,
-      w: final50 / paperW,
-      h: final50 / paperH,
+      w: final35 / paperW,
+      h: final45 / paperH,
     });
   }
 
@@ -337,8 +337,8 @@ export function computeDynamicCollageCells(
     wMM = 30;
     hMM = 40;
   } else if (type === "visa") {
-    wMM = 50;
-    hMM = 50;
+    wMM = 35;
+    hMM = 45;
   } else {
     return null;
   }

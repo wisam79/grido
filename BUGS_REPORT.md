@@ -36,6 +36,7 @@
 > - **[BUG-LOW-01/02/03/06/07]** مُصلحة: لا `select-visible`، و`DialogCloseButton` موحد (منها `refine-bg-dialog.tsx:531`)، و`FluentSliderField` بدل `input range`، وNSIS بوسوم `is_silent/done:93-97`، ولا استدعاء `fontSize` على `Group`.
 > - **[BUG-LOW-04]** مُصلح: `update-notifier.tsx:123-130` يصفّر `isDownloading/progress/error` عند الإغلاق.
 > - **[BUG-LOW-05]** مُصلح: الأزرار مختصرة (`تصدير`، `إدراج`، `إعادة ضبط`، `حفظ`).
+> - **[تكرار المقاسات]** وُحِّد في 2026-09-23 على القياسات العراقية الرسمية (`photo-templates.ts` مصدراً): الجواز 50×50 ← 35×45 في `freeform-math.ts:45` و`packUniform:721` و`combo:733` والتسميات، والفيزا 50×50 ← شنغن 35×45 في `collage-grid-math.ts:39` و`grid-utils.ts:339` وصف المسافر العلوي، والهوية `iq-civil-id` ← 32×40، والنوع العام `id` ← 35×45 — مع تحديث توقعات `test/freeform-collage.test.ts`.
 
 ---
 

@@ -26,7 +26,7 @@ import type { FreeformSlot, FreeformLayout } from "../src/features/freeform-coll
 
 describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
   const initialSlots: FreeformSlot[] = [
-    { id: "slot1", x: 0, y: 0, w: 1, h: 1, presetType: "passport", label: "جواز 5×5", rotation: 0 },
+    { id: "slot1", x: 0, y: 0, w: 1, h: 1, presetType: "passport", label: "جواز 3.5×4.5", rotation: 0 },
   ];
 
   it("splits a slot horizontally into two equal slots", () => {
@@ -58,7 +58,7 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
       paperWidthMM: 100,
       paperHeightMM: 150,
       slots: [
-        { id: "s1", x: 0, y: 0, w: 0.5, h: 0.5, presetType: "passport", label: "جواز 5×5", rotation: 90 },
+        { id: "s1", x: 0, y: 0, w: 0.5, h: 0.5, presetType: "passport", label: "جواز 3.5×4.5", rotation: 90 },
       ],
     };
 
@@ -72,7 +72,7 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
     expect(gridoTemplate.cells[0]).toHaveProperty("w");
     expect(gridoTemplate.cells[0]).toHaveProperty("h");
     expect(gridoTemplate.cells[0].presetType).toBe("passport");
-    expect(gridoTemplate.cells[0].label).toBe("جواز 5×5");
+    expect(gridoTemplate.cells[0].label).toBe("جواز 3.5×4.5");
     expect(gridoTemplate.cells[0].rotation).toBe(90);
   });
 
@@ -162,8 +162,8 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
     const updated = addPresetSlot(slots, "passport", 100, 150);
     expect(updated).toHaveLength(2);
     expect(updated[1].presetType).toBe("passport");
-    expect(updated[1].w).toBe(0.5); // 50mm / 100mm = 0.5
-    expect(updated[1].h).toBeCloseTo(0.3333, 2); // 50mm / 150mm
+    expect(updated[1].w).toBe(0.35); // 35mm / 100mm = 0.35
+    expect(updated[1].h).toBeCloseTo(0.3, 2); // 45mm / 150mm
   });
 
   it("auto-packs maximum ID photos on 10x15cm paper (8 slots in 2x4 grid)", () => {
@@ -177,10 +177,10 @@ describe("Freeform Collage Feature Unit Tests (10x Suite)", () => {
 
   it("auto-packs maximum passport photos on 10x15cm paper (6 slots in 2x3 grid)", () => {
     const packed = autoPackSlots("passport-max", 100, 150);
-    // 100mm / 50mm = 2 cols, 150mm / 50mm = 3 rows => 6 slots
+    // 100mm / 35mm = 2 cols, 150mm / 45mm = 3 rows => 6 slots
     expect(packed).toHaveLength(6);
-    expect(packed[0].w).toBe(0.5);
-    expect(packed[0].h).toBeCloseTo(0.3333, 2);
+    expect(packed[0].w).toBe(0.35);
+    expect(packed[0].h).toBeCloseTo(0.3, 2);
   });
 
   it("auto-packs combo-standard with top passports row and bottom ID rows", () => {

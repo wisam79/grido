@@ -39,14 +39,16 @@ export function newSlotId(prefix: string = "slot"): string {
 }
 
 /**
- * خريطة أبعاد المقاسات القياسية بالمليمتر
+ * خريطة أبعاد المقاسات القياسية بالمليمتر — المصدر الموحد: القياسات العراقية
+ * الرسمية (جواز 35×45، هوية أحوال 32×40، شنغن 35×45) المطابقة لقوالب
+ * `lib/templates/photo-templates.ts`. أي انحراف هنا يعني طباعة بمقاس خاطئ.
  */
 export const PHOTO_PRESET_DIMENSIONS_MM: Record<PhotoPresetType, { w: number; h: number }> = {
-  passport: { w: 50, h: 50 },
+  passport: { w: 35, h: 45 },
   id: { w: 35, h: 45 },
   visa: { w: 35, h: 45 },
   "iq-national-id": { w: 35, h: 45 },
-  "iq-civil-id": { w: 35, h: 45 },
+  "iq-civil-id": { w: 32, h: 40 },
   "iq-general-id": { w: 40, h: 60 },
   "iq-transactions": { w: 30, h: 40 },
   "portrait-4x6": { w: 40, h: 60 },
@@ -718,7 +720,7 @@ export function autoPackSlots(
   }
 
   if (strategy === "passport-max") {
-    return packUniform(50, 50, "passport", "جواز");
+    return packUniform(35, 45, "passport", "جواز");
   }
 
   if (strategy === "transactions-max") {
@@ -730,8 +732,8 @@ export function autoPackSlots(
   }
 
   if (strategy === "combo-standard") {
-    const pW = 50;
-    const pH = 50;
+    const pW = 35;
+    const pH = 45;
     const iW = 35;
     const iH = 45;
 
@@ -751,7 +753,7 @@ export function autoPackSlots(
         w: Number(pWRel.toFixed(4)),
         h: Number(pHRel.toFixed(4)),
         presetType: "passport",
-        label: `جواز 5×5 (${c + 1})`,
+        label: `جواز 3.5×4.5 (${c + 1})`,
       });
     }
 

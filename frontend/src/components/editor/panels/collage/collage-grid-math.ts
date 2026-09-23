@@ -3,16 +3,9 @@
  * كانت هذه الحسابات مكررة ثلاث مرات داخل custom-collage-card (الحدود، التطبيق، الحفظ).
  */
 
-export type GridAlignment =
-  | "center"
-  | "top-left"
-  | "top-center"
-  | "top-right"
-  | "center-left"
-  | "center-right"
-  | "bottom-left"
-  | "bottom-center"
-  | "bottom-right";
+import type { GridAlignment } from "@/lib/print/print-layout-math";
+// إعادة تصدير للمستهلكين الحاليين (arrange-tab، custom-grid-tab) — المصدر الوحيد print-layout-math.
+export type { GridAlignment };
 
 export type PhotoGridType =
   | "stretch"
@@ -41,10 +34,11 @@ export function getPhotoDimensions(photoType: PhotoGridType): PhotoDimensions {
     case "iq-general-id":
       return { wMM: 40, hMM: 60, label: "هوية عامة" };
     case "iq-transactions":
+      return { wMM: 30, hMM: 40, label: "معاملات" };
     case "id":
-      return { wMM: 30, hMM: 40, label: "متقاعدون / معاملات" };
+      return { wMM: 35, hMM: 45, label: "هوية قياسية" };
     case "visa":
-      return { wMM: 50, hMM: 50, label: "فيزا سفر 5×5" };
+      return { wMM: 35, hMM: 45, label: "فيزا شنغن" };
     default:
       return { wMM: 35, hMM: 45, label: "بطاقة وطنية" };
   }
