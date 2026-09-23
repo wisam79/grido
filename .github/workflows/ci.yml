@@ -373,12 +373,11 @@ jobs:
   #   chromium فقط. تُشغَّل مواصفات @smoke فقط (engine-smoke.spec.ts) وهي ضحلة
   #   ومستقرة ومستقلّة عن وضع الكانفاس: إقلاع وترسيم الكانفاس (سياق 2d)،
   #   وCtrl+K يفتح لوحة الأدوات وEsc يغلقها، واختيار أداة من الشريط يفتح لوحتها.
-  #   إعلامية حالياً (continue-on-error) حتى تثبت على CI، ثم تُرفع إلى مُعطِّلة.
+  #   أُثبتت على CI (نجاح سحابي متكرر) فصارت مُعطِّلة: فشلها يفشل البناء.
   # ───────────────────────────────────────────────
   webkit-smoke:
     name: WebKit Smoke (Shipping Engine)
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -451,6 +450,6 @@ jobs:
         run: |
           node scripts/ci-step-summary.mjs \
             --title "🧭 WebKit Smoke (Shipping Engine) Summary" \
-            --note "WebKit أقرب محرك إلى WebKitGTK/WebView2 الذي يُشحن به التطبيق. الفحص إعلامي (continue-on-error) حتى يثبت على CI." \
+            --note "WebKit أقرب محرك إلى WebKitGTK/WebView2 الذي يُشحن به التطبيق. الفحص مُلزم: فشله يفشل البناء." \
             --row "Playwright @smoke on WebKit=${{ steps.webkit.outcome }}" \
             --row "WebKit Browser Installation=${{ steps.install_browsers.outcome }}"
