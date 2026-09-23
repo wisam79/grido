@@ -578,7 +578,7 @@ export function usePrintExport(ctx: PrintExportContext) {
           if (res && !res.success) {
             toast.error("فشل فتح نافذة طباعة الصور: " + (res.error || "خطأ غير معروف"));
           } else {
-            toast.success("تم فتح نافذة طباعة الصور بنجاح");
+            toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح");
           }
         })
         .catch((err) => {

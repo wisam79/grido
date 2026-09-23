@@ -16,6 +16,26 @@
 > - **[BUG-LOW-08] Goroutines غير مقيدة عند كل طباعة:** مُصلح — الحارس الذري موجود في `print_export.go:57` (`exportsCleanup.CompareAndSwap`).
 > - **أرقام الاختبارات (§5):** الحالي **60 ملف اختبار واجهة** و**15 ملف E2E** (كان 50 ملفاً وقت التقرير).
 > - **`release.yml` ومسارات البناء:** كانت الخطوات تقود Wails v2 (`wails build -nsis`، `build\bin`) وصُححت في 2026-09-18 إلى `wails3 task package` و`bin/` — راجع `CHANGELOG.md` قسم `[BUILD-FIX]`.
+>
+> **تصحيح ثالث (2026-09-23 — تحقق أسطر فعلي قبل إصدار 9.5):** البنود التالية **مُصلحة فعلاً** في الكود الحالي ولا يجوز إعادة العمل عليها:
+> - **[BUG-CRIT-03]** مُصلح: `image-properties.tsx:315` يفحص `startsWith("data:image/")` قبل `SaveImageFromBase64`.
+> - **[BUG-HIGH-05]** مُصلح: `export-image.ts:394` يمرر `(canvasWidth, canvasHeight)` في `drawImage`، و`konva-export-utils.ts:147` بسقف `MAX_EXPORT_RATIO=8` مع ميزانية `256MB`.
+> - **[BUG-HIGH-06]** مُصلح: `collage-image.tsx:131-137` يفرّغ الكاش عند `onDragStart` ويعيد بناءه عند `onDragEnd:197-204`.
+> - **[BUG-HIGH-07]** مُصلح: `export-image.ts:885-904` يقرأ `collageMargin/collageGap` الحقيقية مع `physicalLayout`.
+> - **[BUG-HIGH-08]** مُصلح: `toolbar-selection-tools.tsx:63` يستدعي `alignSelectedElements`، و`element-slice.ts:761,854` يستخدم `unitMap` للمحاذاة والتوزيع.
+> - **[BUG-HIGH-09]** مُصلح: `projects-dialog.tsx` و`template-panel.tsx` يستخدمان `toErrorMessage(err, ...)` في كل المعالجات.
+> - **[BUG-HIGH-10]** مُصلح: `toolbar-file-ops.tsx:148` يستخدم `setSlotImagesBatch` و`addImageElementsBatch:181` بلقطة واحدة.
+> - **[BUG-HIGH-11]** مُصلح: `core-slice.ts:145-183` يعيد موازنة خانات `physicalLayout` عند `setMode("collage")`.
+> - **[BUG-MED-02]** مُصلح: `media_service.go:151-154` يوجّه `print_*` إلى `Exports/`.
+> - **[BUG-MED-03]** مُصلح: `export-image.ts:580` يستخدم `strokeBatch` المجمّعة.
+> - **[BUG-MED-04]** مُصلح: `ruler-utils.ts:65` بـ `midStep = labelStep/2` و`ruler.tsx:114` بالفحص `|u % labelStep - labelStep/2| < subStep/2`.
+> - **[BUG-MED-05]** مُصلح: `supabase/migrations/20260907000000_grant_rpc_permissions.sql` يمنح `authenticated` و`service_role` مع `NOTIFY pgrst`.
+> - **[BUG-MED-06]** مُصلح: محددات E2E مرنة `getByRole(...).or(getByTitle(...))` في كل المواصفات.
+> - **[BUG-MED-08]** مُصلح: صفر `h-8.5` في الكود — كل الأشرطة على `h-8` القياسي.
+> - **[BUG-MED-09]** مُصلح في 2026-09-23: أزرار AI في `toolbar-ai-tools.tsx` رُقيت إلى `h-9` (Hero Actions).
+> - **[BUG-LOW-01/02/03/06/07]** مُصلحة: لا `select-visible`، و`DialogCloseButton` موحد (منها `refine-bg-dialog.tsx:531`)، و`FluentSliderField` بدل `input range`، وNSIS بوسوم `is_silent/done:93-97`، ولا استدعاء `fontSize` على `Group`.
+> - **[BUG-LOW-04]** مُصلح: `update-notifier.tsx:123-130` يصفّر `isDownloading/progress/error` عند الإغلاق.
+> - **[BUG-LOW-05]** مُصلح: الأزرار مختصرة (`تصدير`، `إدراج`، `إعادة ضبط`، `حفظ`).
 
 ---
 

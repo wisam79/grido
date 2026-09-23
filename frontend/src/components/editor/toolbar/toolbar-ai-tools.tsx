@@ -58,7 +58,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           size="sm"
           aria-label="عزل الخلفية"
           className={cn(
-            "h-8 px-2 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
+            "h-9 px-2 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
             isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(selectedItem)}
@@ -84,7 +84,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
             variant="outline"
             size="sm"
             aria-label="تعديل العزل يدوياً"
-            className="h-8 px-2 gap-1 text-xs font-semibold border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-2xs"
+            className="h-9 px-2 gap-1 text-xs font-semibold border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground rounded-md cursor-pointer shadow-2xs"
             onClick={() => setRefineOpen(true)}
           >
             <PaintBrush className="w-4 h-4 text-primary shrink-0" weight="duotone" />
@@ -101,7 +101,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           aria-label="تأطير الوجه"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "h-8 px-2 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
+            "h-9 px-2 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
             isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
           )}
@@ -136,7 +136,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           aria-label="ترميم الوجه"
           disabled={isEnhancing || isRemovingBg || isFraming}
           className={cn(
-            "h-8 px-2 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
+            "h-9 px-2 gap-1.5 border border-primary/30 dark:border-primary/40 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
             (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
           )}
           onClick={() => handleEnhance(selectedItem)}

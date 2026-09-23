@@ -66,7 +66,7 @@ test.describe('Print & Export Workflows E2E', () => {
     // المعاينة النهائية تُرسم داخل نافذة الطباعة الرئيسية
     await expect(printModal.locator('img.w-full.h-full.object-contain')).toBeVisible({ timeout: 15000 });
 
-    const exportBtn = printModal.getByRole('button', { name: /تصدير وعرض/ });
+    const exportBtn = printModal.getByRole('button', { name: /طباعة|تصدير وعرض/ }).last();
     await expect(exportBtn).toBeEnabled();
     await exportBtn.click();
 
@@ -87,7 +87,7 @@ test.describe('Print & Export Workflows E2E', () => {
       });
     });
 
-    // تجاوز mock ليعيد وثيقة HTML — يُفعّل مسار iframe نافذة الطباعة
+    // تجاوز mock ليعيد وثيقة HTML ويحاكي تعذر الطباعة الأصلية لاختبار مسار المتصفح الاحتياطي
     // 334009393 = ExportPrintSheet (انظر WAILS_V3_METHOD_HANDLERS)
     await setupWailsV3Bridge(page, {
       334009393: async () => ({
@@ -95,6 +95,9 @@ test.describe('Print & Export Workflows E2E', () => {
         filePath: 'C:/mock/sheet.png',
         htmlDoc: '<!DOCTYPE html><html><body><img src="/local-image/e2e-print.png"></body></html>',
       }),
+      100771007: async () => {
+        throw new Error('Native print unavailable, testing browser fallback');
+      },
     });
 
     const printBtn = page.getByRole('button', { name: /طباعة/ }).or(page.getByTitle(/طباعة/)).first();
@@ -102,7 +105,7 @@ test.describe('Print & Export Workflows E2E', () => {
     const printModal = page.getByRole('dialog').filter({ hasText: /طباعة/ });
     await expect(printModal).toBeVisible();
 
-    const exportBtn = printModal.getByRole('button', { name: /تصدير وعرض/ });
+    const exportBtn = printModal.getByRole('button', { name: /طباعة|تصدير وعرض/ }).last();
     await expect(exportBtn).toBeEnabled();
 
     // مراقب race-free: حاوية الطباعة تُزال ذاتياً بعد الطباعة (afterprint/مهلة)،
