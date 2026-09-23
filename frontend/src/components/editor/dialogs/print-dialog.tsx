@@ -425,9 +425,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             disabled={isExporting || !hasContent}
           >
             {isExporting ? (
-              <><Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التصدير ...</span></>
+              <><Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التجهيز ...</span></>
             ) : (
-              <><Printer className="w-3.5 h-3.5 shrink-0" weight="bold" /> <span>تصدير وعرض</span></>
+              <><Printer className="w-3.5 h-3.5 shrink-0" weight="bold" /> <span>طباعة</span></>
             )}
           </Button>
         </DialogFooter>

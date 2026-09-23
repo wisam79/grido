@@ -26,23 +26,21 @@ export function usePrintLayout({
     const originalImageWidthMM = template ? template.widthMM : (canvasWidth / dpi) * 25.4;
     const originalImageHeightMM = template ? template.heightMM : (canvasHeight / dpi) * 25.4;
 
-    const paperWidth =
-      printSettings.orientation === "portrait"
-        ? printSettings.paperWidthMM
-        : printSettings.paperHeightMM;
-    const paperHeight =
-      printSettings.orientation === "portrait"
-        ? printSettings.paperHeightMM
-        : printSettings.paperWidthMM;
+    const isCanvasPaper = printSettings.paperId === "canvas";
+    const baseW = isCanvasPaper ? originalImageWidthMM : printSettings.paperWidthMM;
+    const baseH = isCanvasPaper ? originalImageHeightMM : printSettings.paperHeightMM;
+    const isLandscape = printSettings.orientation === "landscape";
+    const paperWidth = isLandscape ? Math.max(baseW, baseH) : Math.min(baseW, baseH);
+    const paperHeight = isLandscape ? Math.min(baseW, baseH) : Math.max(baseW, baseH);
 
     // If the image is A4 (or whatever the full paper size is), ignore the print margins 
     // because the user is designing a full page layout.
-    const isFullPage = originalImageWidthMM >= paperWidth - 1 && originalImageHeightMM >= paperHeight - 1;
+    const isFullPage = isCanvasPaper || (originalImageWidthMM >= paperWidth - 1 && originalImageHeightMM >= paperHeight - 1);
     // التصفيح الحدودي التلقائي يحدث فقط عندما doc≈paper والهامش لم يُضبط يدوياً
     // (لا يزال على الافتراضي أو «بدون هوامش» صريح). هامش مخصص اختيار يُحترم.
     const marginUntouched =
       printSettings.marginMM === 0 || printSettings.marginMM === DEFAULT_PRINT_SETTINGS.marginMM;
-    const effectiveMarginMM = isFullPage && marginUntouched ? 0 : printSettings.marginMM;
+    const effectiveMarginMM = isCanvasPaper ? 0 : (isFullPage && marginUntouched ? 0 : printSettings.marginMM);
 
     const availableWidthMM = paperWidth - 2 * effectiveMarginMM;
     const availableHeightMM = paperHeight - 2 * effectiveMarginMM;

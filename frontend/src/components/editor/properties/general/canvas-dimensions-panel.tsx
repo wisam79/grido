@@ -366,7 +366,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               ))}
 
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>كروت عمل</DropdownMenuLabel>
+              <DropdownMenuLabel>كروت وبطاقات</DropdownMenuLabel>
               {CARD_AND_LABEL_SIZES.filter((p) => p.category === "card").map((p) => (
                 <DropdownMenuItem
                   key={p.id}
@@ -379,7 +379,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               ))}
 
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>ملصقات تجارية</DropdownMenuLabel>
+              <DropdownMenuLabel>ملصقات الشحن والباركود</DropdownMenuLabel>
               {CARD_AND_LABEL_SIZES.filter((p) => p.category !== "card").map((p) => (
                 <DropdownMenuItem
                   key={p.id}

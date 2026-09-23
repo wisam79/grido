@@ -13,6 +13,7 @@ import { computeBlockPosition, computeSlotAspect, computeSlotRectMM } from "@/li
 import { buildSingleComposition } from "@/lib/print/single-print-composition";
 import type { usePrintLayout } from "@/hooks/use-print-layout";
 import type { PrintSettings } from "@/lib/store/types";
+import { wailsIsDesktop } from "@/lib/wails-env";
 
 /** المدخلات المشتركة لمولّد العناصر والتصدير — من usePrintLayout والدالة الأصل */
 export interface PrintExportContext {
@@ -375,19 +376,9 @@ export function usePrintExport(ctx: PrintExportContext) {
   ]);
 
   /**
-   * عرض حوار الطباعة من المستوى الأعلى — iframe المخفي يفقد سياق @page
-   * في Chromium/WebView2 فتُطبَع الورقة على Letter مع هوامش المتصفح (المشكلتان
-   * في لقطات المستخدم). نحقن الورقة في المستند الحالي داخل #print-container
-   * (مخفيّة على الشاشة، والوحيدة الظاهرة في @media print) فتُطبَع بلا هوامش،
-   * والاستعادة = إزالة العقدتين المحقونتين دون لمس شجرة React.
+   * مسار الطباعة الاحتياطي في المتصفح — يُستخدم فقط عند تشغيل التطبيق في بيئة الويب العادية
    */
-  const showPrintResult = useCallback((result: domain.PrintResult) => {
-    setIsExporting(false);
-    if (!result.success) {
-      toast.error("فشل التصدير: " + (result.error || "خطأ غير معروف"));
-      return;
-    }
-
+  const fallbackBrowserPrint = useCallback((result: domain.PrintResult) => {
     if (result.htmlDoc) {
       const win = window as Window & {
         __gridoPrintCleanup?: (() => void) | null;
@@ -414,9 +405,12 @@ export function usePrintExport(ctx: PrintExportContext) {
       const styleEl = document.createElement("style");
       styleEl.id = "grido-print-sheet-style";
       styleEl.textContent =
-        `@page { margin: 0; size: ${paperWidth}mm ${paperHeight}mm; }\n` +
+        `@page { margin: 0 !important; size: ${paperWidth}mm ${paperHeight}mm; }\n` +
+        `@page :left { margin: 0 !important; }\n` +
+        `@page :right { margin: 0 !important; }\n` +
+        `@page :first { margin: 0 !important; }\n` +
         `@media print {\n` +
-        `  * { box-sizing: border-box !important; }\n` +
+        `  * { box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }\n` +
         `  html, body {\n` +
         `    margin: 0 !important;\n` +
         `    padding: 0 !important;\n` +
@@ -448,7 +442,7 @@ export function usePrintExport(ctx: PrintExportContext) {
         `    height: ${paperHeight}mm !important;\n` +
         `    max-width: none !important;\n` +
         `    max-height: none !important;\n` +
-        `    object-fit: contain !important;\n` +
+        `    object-fit: fill !important;\n` +
         `    display: block !important;\n` +
         `    margin: 0 !important;\n` +
         `    padding: 0 !important;\n` +
@@ -564,6 +558,38 @@ export function usePrintExport(ctx: PrintExportContext) {
         .catch(console.error);
     }
   }, [paperWidth, paperHeight]);
+
+  /**
+   * 🧭 إطلاق حوار الطباعة:
+   * - في بيئة سطح المكتب (Wails Desktop): إطلاق معالج طباعة الصور الأصلي لنظام Windows 11 مباشرة
+   *   عبر PrintNative (خالٍ من أي روابط localhost، تواريخ، أو هوامش متصفح إضافية).
+   * - في المتصفح العادي (Web Dev Mode): استخدام مسار الطباعة الاحتياطي fallbackBrowserPrint.
+   */
+  const showPrintResult = useCallback((result: domain.PrintResult) => {
+    setIsExporting(false);
+    if (!result.success) {
+      toast.error("فشل التصدير: " + (result.error || "خطأ غير معروف"));
+      return;
+    }
+
+    if (wailsIsDesktop() && result.filePath && typeof PrintNative === "function") {
+      PrintNative(result.filePath)
+        .then((res) => {
+          if (res && !res.success) {
+            toast.error("فشل فتح نافذة طباعة الصور: " + (res.error || "خطأ غير معروف"));
+          } else {
+            toast.success("تم فتح نافذة طباعة الصور بنجاح");
+          }
+        })
+        .catch((err) => {
+          console.error("PrintNative failed, falling back to browser print:", err);
+          fallbackBrowserPrint(result);
+        });
+      return;
+    }
+
+    fallbackBrowserPrint(result);
+  }, [fallbackBrowserPrint]);
 
   const handlePrint = useCallback(async (
     colorSpace: "sRGB" | "CMYK",

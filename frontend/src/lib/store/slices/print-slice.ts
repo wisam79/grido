@@ -12,7 +12,7 @@ export interface PrintSlice {
 }
 
 export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
-  paperId: "a4",
+  paperId: "canvas",
   paperWidthMM: 210,
   paperHeightMM: 297,
   marginMM: 0,

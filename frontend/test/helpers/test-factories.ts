@@ -91,6 +91,7 @@ export function createMockShapeElement(overrides: Partial<ShapeElement> = {}): S
 export function createMockPrintSettings(overrides: Partial<PrintSettings> = {}): PrintSettings {
   return {
     ...DEFAULT_PRINT_SETTINGS,
+    paperId: "a4",
     paperWidthMM: 210,
     paperHeightMM: 297,
     orientation: "portrait",

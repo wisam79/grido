@@ -82,9 +82,13 @@ export function PrintSettingsToolbar({
     const { showBleedGuides, bleedMarginMM } = useEditorStore.getState();
     const bleed = showBleedGuides && bleedMarginMM > 0 ? bleedMarginMM : 0;
 
+    const targetPaper = printSettings.paperId === "canvas"
+      ? (PAPER_SIZES.find((p) => p.id === "a4") || { widthMM: 210, heightMM: 297 })
+      : { widthMM: printSettings.paperWidthMM || 210, heightMM: printSettings.paperHeightMM || 297 };
+
     const result = calculateOptimalSheetImposition({
-      paperWidthMM: printSettings.paperWidthMM || 210,
-      paperHeightMM: printSettings.paperHeightMM || 297,
+      paperWidthMM: targetPaper.widthMM,
+      paperHeightMM: targetPaper.heightMM,
       itemWidthMM: imageWidthMM,
       itemHeightMM: imageHeightMM,
       marginMM: printSettings.marginMM ?? 5,
@@ -95,12 +99,14 @@ export function PrintSettingsToolbar({
     // اتجاه الورقة يُشتق من الأبعاد التي حسبها المونتاج مقابل الأبعاد المخزّنة
     // (لا من التسمية وحدها) — فورق مخزّن بترتيب عرضي كان يُصنَّف «portrait»
     // فتبقى الورقة بعرضها الأصلي وتخالف الشبكة المحسوبة.
-    const storedWidth = printSettings.paperWidthMM || 210;
-    const storedHeight = printSettings.paperHeightMM || 297;
+    const storedWidth = targetPaper.widthMM;
     const orientation: "portrait" | "landscape" =
       Math.abs(result.paperWidthMM - storedWidth) < 0.01 ? "portrait" : "landscape";
 
     setPrintSettings({
+      paperId: printSettings.paperId === "canvas" ? "a4" : printSettings.paperId,
+      paperWidthMM: targetPaper.widthMM,
+      paperHeightMM: targetPaper.heightMM,
       orientation,
       copiesPerSheet: result.maxCopies,
       repeatMode: "all",
@@ -120,8 +126,17 @@ export function PrintSettingsToolbar({
       <div className="flex items-center gap-2.5 flex-wrap select-none shrink-0">
         {/* قائمة اختيارات قياس الورقة */}
         <Select
-          value={printSettings.paperId || "a4"}
+          value={printSettings.paperId || "canvas"}
           onValueChange={(val) => {
+            if (val === "canvas") {
+              setPrintSettings({
+                paperId: "canvas",
+                paperWidthMM: imageWidthMM || 210,
+                paperHeightMM: imageHeightMM || 297,
+                marginMM: 0,
+              });
+              return;
+            }
             const selected = PAPER_SIZES.find((p) => p.id === val);
             if (selected) {
               setPrintSettings({
@@ -132,10 +147,13 @@ export function PrintSettingsToolbar({
             }
           }}
         >
-          <SelectTrigger className="h-8 text-xs font-semibold w-[150px] bg-background border-border/50 shadow-2xs focus:ring-primary/20">
+          <SelectTrigger className="h-8 text-xs font-semibold w-[175px] bg-background border-border/50 shadow-2xs focus:ring-primary/20">
             <SelectValue placeholder="مقاس الورقة" />
           </SelectTrigger>
           <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
+            <SelectItem value="canvas" className="text-xs font-bold text-primary cursor-pointer">
+              {`مقاس الكانفاس (${Math.round(imageWidthMM || 0)}×${Math.round(imageHeightMM || 0)} مم)`}
+            </SelectItem>
             {PAPER_SIZES.map((size) => (
               <SelectItem key={size.id} value={size.id} className="text-xs font-semibold cursor-pointer">
                 {size.name}

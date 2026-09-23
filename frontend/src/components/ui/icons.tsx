@@ -372,14 +372,18 @@ function createIcon(def: Def): Icon {
 }
 
 export const CircleNotch: Icon = React.forwardRef<SVGSVGElement, IconProps>(function CircleNotch({ size, weight, className, style, mirrored, ...rest }, ref) {
-  const r = 104;
-  const strokeWidth = weight === "thin" ? 2 : weight === "light" ? 3 : weight === "regular" ? 4 : weight === "bold" ? 6 : 8;
+  const strokeWidth =
+    weight === "thin" ? 8 :
+    weight === "light" ? 12 :
+    weight === "bold" ? 24 :
+    weight === "fill" ? 24 :
+    weight === "duotone" ? 20 : 16;
   return React.createElement("svg", {
     ...rest, ref,
     viewBox: "0 0 256 256", width: size ?? "1em", height: size ?? "1em",
-    className, style: mirrored ? { ...style, transform: `scaleX(-1)` } : style,
-    fill: "none", stroke: "currentColor", strokeWidth, strokeLinecap: "round",
-  }, React.createElement("path", { d: `M128 24a1${r} 1${r} 0 1 0 1${r} 1${r}` }));
+    className, style: mirrored ? { ...style, transform: `scaleX(-1) ${style?.transform ?? ""}`.trim() } : style,
+    fill: "none", stroke: "currentColor", strokeWidth, strokeLinecap: "round", strokeLinejoin: "round",
+  }, React.createElement("path", { d: "M224 128a96 96 0 1 1-96-96" }));
 });
 
 export const AirplaneTilt: Icon = createIcon({ R: _AirplaneR, F: _AirplaneF });
