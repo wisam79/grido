@@ -6,6 +6,7 @@ import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { TEXT_COLOR_DEFAULT } from "@/lib/canvas/canvas-colors";
 import { ElementProps, propsAreEqual } from "./types";
 import { getFillProps } from "./fill-utils";
+import { withShadowlessDrag } from "./drag-shadow";
 import { drawCurvedText } from "@/lib/canvas/curved-text-utils";
 import { loadGoogleFont } from "@/lib/io/fonts";
 import { ensureTextStrokeFilter } from "@/lib/canvas/text-stroke-filter";
@@ -140,6 +141,14 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const strokeColor = element.stroke || TEXT_COLOR_DEFAULT;
   const strokeFilterId = strokeW > 0 ? ensureTextStrokeFilter(strokeW, strokeColor) : "";
 
+  // 🚀 إطفاء الظلال أثناء السحب بلا إعادة رسم React (انظر drag-shadow.ts).
+  const { handleStart: handleShadowlessStart, handleEnd: handleShadowlessEnd } =
+    withShadowlessDrag(
+      () => elementRef.current as unknown as Konva.Group | null,
+      onDragStart,
+      onDragEnd
+    );
+
   return (
     <Group
       ref={elementRef as unknown as React.Ref<Konva.Group>}
@@ -154,10 +163,10 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       visible={element.visible !== false}
       id={element.id}
       draggable={!element.locked && isSelected}
-      onDragStart={onDragStart}
+      onDragStart={handleShadowlessStart}
       dragBoundFunc={dragBoundFunc}
       onDragMove={onDragMove}
-      onDragEnd={onDragEnd}
+      onDragEnd={handleShadowlessEnd}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       onClick={onClick}

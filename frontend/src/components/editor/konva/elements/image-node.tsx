@@ -6,6 +6,7 @@ import { ImageElement } from "@/lib/editor-store";
 import { getKonvaFilters } from "@/lib/filters/konva-filters";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { useFilterCache } from "@/hooks/use-filter-cache";
+import { getDisplayImage } from "@/lib/canvas/display-image";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import { MagicAiScanner } from "./magic-ai-scanner";
@@ -31,6 +32,9 @@ export const URLImage = React.memo(function URLImage({
 }: ElementProps) {
   const element = _element as ImageElement;
   const [image] = useAsyncImage(element.imageSrc || "");
+  // 🚀 نسخة عرض مخفّضة (سقف 2048px) للرسم التفاعلي — المصدر الكامل يبقى
+  // للتصدير والذكاء الاصطناعي. useMemo متزامن: توليد مرة واحدة لكل صورة.
+  const displayImage = React.useMemo(() => getDisplayImage(image), [image]);
   const hasAnimatedRef = React.useRef(false);
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = enhancingElementId === element.id;
@@ -88,7 +92,7 @@ export const URLImage = React.memo(function URLImage({
   const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}`;
   const hasFilters = filters.length > 0;
 
-  const recacheFilters = useFilterCache({ nodeRef: imageNodeRef, image, hasFilters, canvasWidth, filterKey });
+  const recacheFilters = useFilterCache({ nodeRef: imageNodeRef, image: displayImage as HTMLImageElement, hasFilters, canvasWidth, filterKey });
 
   // إعادة الكاش بعد استقرار التحجيم فقط (الستور يُكتب عند onTransformEnd لا أثناءه،
   // فيطلق هذا الأثر مرة واحدة بدل كل إطار تحجيم)
@@ -185,17 +189,19 @@ export const URLImage = React.memo(function URLImage({
         )}
         <KonvaImage
           ref={imageNodeRef as unknown as React.RefObject<Konva.Image>}
-          image={image}
+          image={(displayImage ?? image) as unknown as HTMLImageElement}
           x={0}
           y={0}
           width={nodeW}
           height={nodeH}
           perfectDrawEnabled={false}
+          // 🚀 أثناء السحب: ظل الرفع مخفّض (blur 8 بدل 16) والظل المخصص
+          // مُطفأ تماماً — تمريرة الضبابية خارج الشاشة هي أغلى عملية/إطار.
           shadowColor={liftActive ? "rgba(15, 23, 42, 0.45)" : element.shadowColor}
-          shadowBlur={liftActive ? 16 : element.shadowBlur || 0}
+          shadowBlur={isDragLifted ? (liftActive ? 8 : 0) : (element.shadowBlur || 0)}
           shadowOffsetX={liftActive ? 0 : element.shadowOffsetX || 0}
-          shadowOffsetY={liftActive ? 7 : element.shadowOffsetY || 0}
-          shadowOpacity={liftActive ? 0.32 : element.shadowOpacity ?? 0}
+          shadowOffsetY={liftActive ? 4 : element.shadowOffsetY || 0}
+          shadowOpacity={isDragLifted ? (liftActive ? 0.25 : 0) : (element.shadowOpacity ?? 0)}
           cornerRadius={element.cornerRadius || 0}
           filters={filters}
           brightness={filterProps.brightness}

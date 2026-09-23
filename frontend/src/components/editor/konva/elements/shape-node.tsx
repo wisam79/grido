@@ -12,6 +12,7 @@ import { ShapeElement } from "@/lib/editor-store";
 import { useKonvaDrag } from "@/hooks/use-konva-drag";
 import { ElementProps, propsAreEqual } from "./types";
 import { getFillProps } from "./fill-utils";
+import { withShadowlessDrag } from "./drag-shadow";
 import { VECTOR_SHAPES } from "@/lib/io/svg-paths";
 import { gradientStart, TEXT_COLOR_DEFAULT } from "@/lib/canvas/canvas-colors";
 
@@ -114,7 +115,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
           y={0}
           height={lineH}
           points={[0, lineH / 2, w, lineH / 2]}
-          hitStrokeWidth={Math.max(30, strokeW + 20)}
+          hitStrokeWidth={Math.max(20, strokeW + 12)}
         />
       );
     }
@@ -160,6 +161,14 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     );
   };
 
+  // 🚀 إطفاء الظلال أثناء السحب بلا إعادة رسم React (انظر drag-shadow.ts).
+  const { handleStart: handleShadowlessStart, handleEnd: handleShadowlessEnd } =
+    withShadowlessDrag(
+      () => elementRef.current as unknown as Konva.Group | null,
+      onDragStart,
+      onDragEnd
+    );
+
   return (
     <KonvaGroup
       ref={elementRef as unknown as React.Ref<Konva.Group>}
@@ -174,10 +183,10 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
       visible={element.visible !== false}
       id={element.id}
       draggable={!element.locked && isSelected}
-      onDragStart={onDragStart}
+      onDragStart={handleShadowlessStart}
       dragBoundFunc={dragBoundFunc}
       onDragMove={onDragMove}
-      onDragEnd={onDragEnd}
+      onDragEnd={handleShadowlessEnd}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       onClick={onClick}

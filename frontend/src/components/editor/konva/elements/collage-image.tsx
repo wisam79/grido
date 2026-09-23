@@ -5,6 +5,7 @@ import { useAsyncImage } from "@/hooks/use-async-image";
 import { getKonvaFilters } from "@/lib/filters/konva-filters";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { useFilterCache } from "@/hooks/use-filter-cache";
+import { getDisplayImage } from "@/lib/canvas/display-image";
 import { MagicAiScanner } from "./magic-ai-scanner";
 
 export const KonvaCollageImage = React.memo(function KonvaCollageImage({
@@ -53,9 +54,18 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   onDblClick?: () => void;
 }) {
   const [image] = useAsyncImage(imageSrc);
+  // 🚀 نسخة عرض مخفّضة للرسم التفاعلي — المصدر الكامل للتصدير فقط.
+  const displayImage = React.useMemo(() => getDisplayImage(image), [image]);
   const imageRef = useRef<Konva.Image | null>(null);
   const accumulatedDrag = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
   const dragStartRef = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
+  // 🚀 معكوس مصفوفة التحويل يُحسب مرة واحدة عند بدء السحب — التحويل لا يتغير
+  // أثناء السحب (القص فقط يتغير) فيُعاد استخدامه لكل حدث بدل invert() مكلف.
+  const dragXfRef = useRef<{
+    inv: { point: (p: { x: number; y: number }) => { x: number; y: number } };
+    absX: number;
+    absY: number;
+  } | null>(null);
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = Boolean(id && enhancingElementId === id);
 
@@ -85,7 +95,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
   const hasFilters = filterResult.filters.length > 0;
   const hasTransform = flipX || flipY || rotation !== 0;
 
-  useFilterCache({ nodeRef: imageRef, image, hasFilters, canvasWidth, filterKey });
+  useFilterCache({ nodeRef: imageRef, image: displayImage as unknown as HTMLImageElement, hasFilters, canvasWidth, filterKey });
 
   if (!image) return null;
 
@@ -135,6 +145,17 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
           if (node && typeof node.isCached === "function" && node.isCached()) {
             node.clearCache();
           }
+          // 🚀 التقاط معكوس التحويل مرة واحدة — يُعاد استخدامه طوال السحب.
+          if (node) {
+            const abs0 = node.getAbsolutePosition();
+            dragXfRef.current = {
+              inv: node.getAbsoluteTransform().copy().invert(),
+              absX: abs0.x,
+              absY: abs0.y,
+            };
+          } else {
+            dragXfRef.current = null;
+          }
           dragStartRef.current = {
             dragX: accumulatedDrag.current.dragX,
             dragY: accumulatedDrag.current.dragY,
@@ -145,8 +166,9 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
           if (!node || !image) return pos;
 
           // تحويل حركة المؤشر المطلقة إلى المحاور المحلية للخلية والصورة
-          const nodeAbsPos = node.getAbsolutePosition();
-          const inv = node.getAbsoluteTransform().copy().invert();
+          const cached = dragXfRef.current;
+          const nodeAbsPos = cached ? { x: cached.absX, y: cached.absY } : node.getAbsolutePosition();
+          const inv = cached ? cached.inv : node.getAbsoluteTransform().copy().invert();
           const p0 = inv.point({ x: nodeAbsPos.x, y: nodeAbsPos.y });
           const p1 = inv.point({ x: pos.x, y: pos.y });
           const dxLocal = p1.x - p0.x;
@@ -169,7 +191,8 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
 
           accumulatedDrag.current = { dragX: clampedX, dragY: clampedY };
 
-          node.getLayer()?.batchDraw();
+          // 🚀 بلا batchDraw هنا — الموضع لا يتغير (يُعاد nodeAbsPos ثابتاً)
+          // والتحديث البصري يأتي من crop في onDragMove برسمة واحدة.
           return nodeAbsPos;
         }}
         onDragMove={() => {
@@ -190,6 +213,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
           node.getLayer()?.batchDraw();
         }}
         onDragEnd={() => {
+          dragXfRef.current = null;
           if (draggable && accumulatedDrag.current) {
             // إعادة بناء الكاش بعد استقرار الإزاحة — الفلاتر تعود للعمل
             // بدقة الشاشة العادية بعد الحركة
@@ -206,7 +230,7 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
             onDragEndRef.current?.();
           }
         }}
-        image={image}
+        image={(displayImage ?? image) as unknown as HTMLImageElement}
         cropX={sx}
         cropY={sy}
         cropWidth={sw}

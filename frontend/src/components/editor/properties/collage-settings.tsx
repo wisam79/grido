@@ -23,8 +23,9 @@ export function CollageSettings() {
     collageShowEndCutLine,
     collageStrokeWidth,
     collageStrokeColor,
-    setCollageGap,
-    setCollageMargin,
+    previewCollageGap,
+    previewCollageMargin,
+    commitCollageSpacing,
     setCollageRadius,
     setCollageShowCutLines,
     setCollageShowEndCutLine,
@@ -38,8 +39,9 @@ export function CollageSettings() {
     collageShowEndCutLine: state.collageShowEndCutLine,
     collageStrokeWidth: state.collageStrokeWidth,
     collageStrokeColor: state.collageStrokeColor,
-    setCollageGap: state.setCollageGap,
-    setCollageMargin: state.setCollageMargin,
+    previewCollageGap: state.previewCollageGap,
+    previewCollageMargin: state.previewCollageMargin,
+    commitCollageSpacing: state.commitCollageSpacing,
     setCollageRadius: state.setCollageRadius,
     setCollageShowCutLines: state.setCollageShowCutLines,
     setCollageShowEndCutLine: state.setCollageShowEndCutLine,
@@ -82,8 +84,11 @@ export function CollageSettings() {
             max={30}
             step={2}
             unit="px"
-            onChange={setCollageGap}
-            onCommit={() => useEditorStore.getState().pushHistory()}
+            onChange={previewCollageGap}
+            onCommit={() => {
+              commitCollageSpacing();
+              useEditorStore.getState().pushHistory();
+            }}
           />
           <FluentSliderField
             label="الهوامش الخارجية"
@@ -93,8 +98,11 @@ export function CollageSettings() {
             max={100}
             step={2}
             unit="px"
-            onChange={setCollageMargin}
-            onCommit={() => useEditorStore.getState().pushHistory()}
+            onChange={previewCollageMargin}
+            onCommit={() => {
+              commitCollageSpacing();
+              useEditorStore.getState().pushHistory();
+            }}
           />
           <FluentSliderField
             label="استدارة الزوايا"

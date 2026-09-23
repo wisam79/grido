@@ -194,11 +194,15 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       if (cancelled) return;
       const stage = stageRef.current;
       if (!stage || stage.width() <= 0) {
-        if (attempts < 8) {
+        // 🚀 سقف منخفض للمحاولات (3 بدل 8) — التأخير الطويل كان يطلق
+        // toDataURL كاملاً فجأة على الخيط الرئيسي بعد فتح متعثر.
+        if (attempts < 3) {
           attempts++;
           retryTimer = setTimeout(generatePreview, 80);
         } else {
-          const firstImg = elements.find((el): el is import("@/lib/store/types").ImageElement => el.type === "image" && Boolean(el.imageSrc));
+          // قراءة طازجة لحظة التوليد (قاعدة Stale Closures) بدل تبعية elements.
+          const freshElements = useEditorStore.getState().elements;
+          const firstImg = freshElements.find((el): el is import("@/lib/store/types").ImageElement => el.type === "image" && Boolean(el.imageSrc));
           if (firstImg?.imageSrc) {
             setPreviewImageSrc(firstImg.imageSrc);
           }
@@ -232,7 +236,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         }
       } catch (err) {
         console.error("Failed to generate print preview image:", err);
-        const firstImg = elements.find((el): el is import("@/lib/store/types").ImageElement => el.type === "image" && Boolean(el.imageSrc));
+        const freshElements = useEditorStore.getState().elements;
+        const firstImg = freshElements.find((el): el is import("@/lib/store/types").ImageElement => el.type === "image" && Boolean(el.imageSrc));
         if (firstImg?.imageSrc) {
           setPreviewImageSrc(firstImg.imageSrc);
         }
@@ -251,7 +256,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       clearTimeout(timer);
       if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [open, stageRef, elements, slots, backgroundColor, mode, canvasWidth, canvasHeight]);
+    // 🚀 المعاينة تُولَّد عند الفتح فقط — ربطها بـ elements/slots كان يعيد
+    // ترميز JPEG متزامناً (toDataURL) مع كل تعديل والحوار مفتوح فيجمد الخيط.
+    // أي تغيير أثناء فتح الحوار يتطلب إغلاقه وإعادة فتحه للتحديث.
+  }, [open, stageRef, mode]);
 
   const spaceUsedPercent = Math.round(
     ((actualCopies * imageWidthMM * imageHeightMM) /

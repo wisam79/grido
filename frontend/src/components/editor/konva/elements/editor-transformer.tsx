@@ -107,14 +107,30 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       updateInfo();
     };
 
+    // 🚀 خنق تحديث الشارة لإطار واحد — updateInfo يقيس نصاً ويعيد رسم
+    // الطبقة، واستدعاؤه كل tick تحويل يضاعف العمل لكل إطار.
+    let badgeRafId = 0;
+    const scheduleBadgeUpdate = () => {
+      if (badgeRafId !== 0) return;
+      badgeRafId = requestAnimationFrame(() => {
+        badgeRafId = 0;
+        updateInfo();
+      });
+    };
+
     const handleTransform = () => {
       if (transformer && altPressedRef) {
         transformer.centeredScaling(altPressedRef.current);
       }
-      updateInfo();
+      scheduleBadgeUpdate();
     };
 
     const handleTransformEndInternal = () => {
+      if (badgeRafId !== 0) {
+        cancelAnimationFrame(badgeRafId);
+        badgeRafId = 0;
+      }
+      updateInfo();
       if (badgeRef.current) {
         badgeRef.current.visible(false);
         badgeRef.current.getLayer()?.batchDraw();
@@ -126,6 +142,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     transformer.on("transformend dragend", handleTransformEndInternal);
 
     return () => {
+      if (badgeRafId !== 0) cancelAnimationFrame(badgeRafId);
       transformer.off("transformstart dragstart", handleTransformStart);
       transformer.off("transform dragmove", handleTransform);
       transformer.off("transformend dragend", handleTransformEndInternal);
@@ -164,12 +181,8 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             : ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right", "top-center", "bottom-center"]
         }
         anchorStyleFunc={(anchor: Konva.Rect) => {
-          // تأثير العمق والظل ثلاثي الأبعاد لنظام Fluent 2 على كافة المقابض
-          anchor.shadowColor("rgba(0, 0, 0, 0.22)");
-          anchor.shadowBlur(4);
-          anchor.shadowOffset({ x: 0, y: 1 });
-          anchor.shadowOpacity(0.7);
-
+          // 🚀 بلا ظلال على المقابض — كل مقبض مظلل يعني تمريرة ضبابية
+          // إضافية في كل إطار تحويل ×8 مقابض. العمق يبقى عبر التعبئة والحدود.
           if (
             anchor.hasName("top-left") ||
             anchor.hasName("top-right") ||
@@ -215,9 +228,6 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             anchor.fill(primaryColor);
             anchor.stroke(transformerAnchorFill());
             anchor.strokeWidth(2);
-            anchor.shadowBlur(6);
-            anchor.shadowOffset({ x: 0, y: 2 });
-            anchor.shadowOpacity(0.75);
           }
         }}
         boundBoxFunc={(oldBox, newBox) => {
@@ -248,10 +258,6 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           stroke="rgba(255, 255, 255, 0.22)"
           strokeWidth={1}
           cornerRadius={7}
-          shadowColor="rgba(0, 0, 0, 0.45)"
-          shadowBlur={10}
-          shadowOpacity={0.28}
-          shadowOffsetY={3}
         />
         <Text
           ref={textRef}

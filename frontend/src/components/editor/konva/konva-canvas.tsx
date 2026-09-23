@@ -129,6 +129,9 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
 
   const trRef = useRef<Konva.Transformer | null>(null);
   const elementsRefs = useRef<Record<string, Konva.Node>>({});
+  // 🚀 آخر عقد مربوطة بالمحول — تخطي nodes()+forceUpdate()+batchDraw()
+  // عندما لا يتغير شيء فعلياً (sortedElements تتبدل هويتها مع كل tick ستور).
+  const attachedTrNodesRef = useRef<Konva.Node[]>([]);
   const altPressedRef = useRef(false);
   const shiftPressedRef = useRef(false);
   const stageContextRef = useStageRef();
@@ -169,10 +172,17 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
         const nodes = selectedIds
           .map((id) => elementsRefs.current[id])
           .filter(Boolean);
+        const prev = attachedTrNodesRef.current;
+        const same =
+          nodes.length === prev.length && nodes.every((n, i) => n === prev[i]);
+        if (same) return;
+        attachedTrNodesRef.current = nodes;
         trRef.current.nodes(nodes);
         trRef.current.forceUpdate();
         trRef.current.getLayer()?.batchDraw();
       } else {
+        if (attachedTrNodesRef.current.length === 0) return;
+        attachedTrNodesRef.current = [];
         trRef.current.nodes([]);
         trRef.current.getLayer()?.batchDraw();
       }

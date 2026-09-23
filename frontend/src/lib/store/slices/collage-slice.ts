@@ -29,6 +29,9 @@ export interface CollageSlice {
 
   setCollageGap: (gap: number) => void;
   setCollageMargin: (margin: number) => void;
+  previewCollageGap: (gap: number) => void;
+  previewCollageMargin: (margin: number) => void;
+  commitCollageSpacing: () => void;
   setCollageRadius: (radius: number) => void;
   setCollageShowCutLines: (show: boolean) => void;
   setCollageShowEndCutLine: (show: boolean) => void;
@@ -488,6 +491,29 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       };
     });
     // الدفع عبر onCommit من الواجهة — لا pushHistory هنا (إصلاح Bug#2)
+  },
+
+  // 🚀 معاينة عابرة أثناء سحب السلايدر: تُحدَّث القيمة فقط بلا إعادة حساب
+  // الخلايا (O(خلايا×خانات) + مصفوفة slots جديدة كل إطار تسقط طبقة الكولاج).
+  // التثبيت الحسابي يتم مرة واحدة في commitCollageSpacing عند الإفلات.
+  previewCollageGap: (gap) => { set({ collageGap: gap }); },
+  previewCollageMargin: (margin) => { set({ collageMargin: margin }); },
+  commitCollageSpacing: () => {
+    const s = get();
+    if (s.mode !== "collage" || !s.collageTemplate?.physicalLayout) return;
+    const storedDpi = s.printSettings?.dpi || 300;
+    const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
+    const dynamicCells = computeDynamicCollageCells(
+      s.collageTemplate,
+      s.canvasWidth,
+      s.canvasHeight,
+      dpi,
+      s.collageGap,
+      s.collageMargin
+    );
+    if (dynamicCells) {
+      set({ slots: remapSlotsToCells(s.slots || [], dynamicCells) });
+    }
   },
 
   setCollageMargin: (margin) => {

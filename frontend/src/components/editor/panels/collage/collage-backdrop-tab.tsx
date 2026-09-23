@@ -31,9 +31,10 @@ export function CollageBackdropTab() {
   const {
     backgroundColor,
     collageGap,
-    setCollageGap,
+    previewCollageGap,
+    commitCollageSpacing,
     collageMargin,
-    setCollageMargin,
+    previewCollageMargin,
     collageRadius,
     setCollageRadius,
     collageStrokeColor,
@@ -44,9 +45,10 @@ export function CollageBackdropTab() {
     useShallow((state) => ({
       backgroundColor: state.backgroundColor,
       collageGap: state.collageGap,
-      setCollageGap: state.setCollageGap,
+      previewCollageGap: state.previewCollageGap,
+      commitCollageSpacing: state.commitCollageSpacing,
       collageMargin: state.collageMargin,
-      setCollageMargin: state.setCollageMargin,
+      previewCollageMargin: state.previewCollageMargin,
       collageRadius: state.collageRadius,
       setCollageRadius: state.setCollageRadius,
       collageStrokeColor: state.collageStrokeColor,
@@ -81,7 +83,11 @@ export function CollageBackdropTab() {
           max={40}
           step={1}
           unit="px"
-          onChange={setCollageGap}
+          onChange={previewCollageGap}
+          onCommit={() => {
+            commitCollageSpacing();
+            useEditorStore.getState().pushHistory();
+          }}
         />
         <FluentSliderField
           label="هامش الورقة"
@@ -90,7 +96,11 @@ export function CollageBackdropTab() {
           max={80}
           step={1}
           unit="px"
-          onChange={setCollageMargin}
+          onChange={previewCollageMargin}
+          onCommit={() => {
+            commitCollageSpacing();
+            useEditorStore.getState().pushHistory();
+          }}
         />
         <FluentSliderField
           label="استدارة زوايا الصور"

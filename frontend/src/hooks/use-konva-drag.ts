@@ -35,6 +35,9 @@ export function useKonvaDrag({
   } | null>(null);
   const dragStartPositionsRef = React.useRef<Record<string, { x: number; y: number }>>({});
   const prevGuidesRef = React.useRef<SnapGuide[]>([]);
+  // 🚀 أدلة آخر تمريرة سناب — dragBoundFunc تحسب الموضع والأدلة معاً،
+  // وonDragMove يعيد استخدامها بدل إعادة الحساب المكلفة لكل حدث.
+  const pendingGuidesRef = React.useRef<SnapGuide[] | null>(null);
 
   const onDragStart = () => {
     const currentElements = useEditorStore.getState().elements;
@@ -153,10 +156,14 @@ export function useKonvaDrag({
         null,
         targets.gridSnap
       );
+      // الأدلة المحسوبة هنا تُستهلك في onDragMove — لا إعادة حساب هناك.
+      pendingGuidesRef.current = snapResult.guides;
       const snappedVisualX = snapResult.x * canvasWidth;
       const snappedVisualY = snapResult.y * canvasHeight;
       xLogical = snappedVisualX - vBox.offsetX;
       yLogical = snappedVisualY - vBox.offsetY;
+    } else {
+      pendingGuidesRef.current = [];
     }
 
     const margin = 0.25;
@@ -203,7 +210,9 @@ export function useKonvaDrag({
       e.target.getLayer?.()?.batchDraw?.();
     }
 
-    // 2. معالجة الخطوط الإرشادية والمحاذاة المغناطيسية
+    // 2. معالجة الخطوط الإرشادية — تُستهلك أدلة تمريرة dragBoundFunc
+    // مباشرة (تعمل قبل onDragMove لكل حدث سحب) بدل إعادة حساب السناب
+    // كاملاً مرة ثانية (توفير ~50% من حسابات كل إطار).
     const snapEnabled = snapToGrid !== false && !altPressedRef.current;
     if (!snapEnabled) {
       if (prevGuidesRef.current.length > 0) {
@@ -213,44 +222,9 @@ export function useKonvaDrag({
       return;
     }
 
-    const stage = e.target.getStage();
-    const stageScale = stage?.scaleX() || 1;
-    const elW = element.width * canvasWidth;
-    const elH = element.height * canvasHeight;
-    const vBox = getElementPixelVisualBox(e.target.x(), e.target.y(), elW, elH, element.rotation || 0);
+    const guides = pendingGuidesRef.current ?? [];
+    pendingGuidesRef.current = null;
 
-    const normVisualX = vBox.minX / canvasWidth;
-    const normVisualY = vBox.minY / canvasHeight;
-    const normVisualW = vBox.width / canvasWidth;
-    const normVisualH = vBox.height / canvasHeight;
-
-    const thresholdX = 8 / (canvasWidth * stageScale);
-    const thresholdY = 8 / (canvasHeight * stageScale);
-    const targets = snapTargetsRef.current || {
-      vTargets: [
-        { value: 0, origin: "canvas" },
-        { value: 0.5, origin: "canvas" },
-        { value: 1, origin: "canvas" },
-      ],
-      hTargets: [
-        { value: 0, origin: "canvas" },
-        { value: 0.5, origin: "canvas" },
-        { value: 1, origin: "canvas" },
-      ],
-    };
-    const snapResult = getSnapPositionsWithTargets(
-      normVisualX,
-      normVisualY,
-      normVisualW,
-      normVisualH,
-      targets.vTargets,
-      targets.hTargets,
-      thresholdX,
-      thresholdY,
-      null,
-      targets.gridSnap
-    );
-    
     const isGuidesEqual = (g1: SnapGuide[], g2: SnapGuide[]) => {
       if (g1.length !== g2.length) return false;
       for (let i = 0; i < g1.length; i++) {
@@ -259,9 +233,9 @@ export function useKonvaDrag({
       return true;
     };
 
-    if (!isGuidesEqual(snapResult.guides, prevGuidesRef.current)) {
-      setActiveGuides(snapResult.guides);
-      prevGuidesRef.current = snapResult.guides;
+    if (!isGuidesEqual(guides, prevGuidesRef.current)) {
+      setActiveGuides(guides);
+      prevGuidesRef.current = guides;
     }
   };
 
