@@ -79,17 +79,9 @@ test.describe('Transformer survives deselect/reselect cycle', () => {
     expect(geo).not.toBeNull();
     if (!geo) return;
 
-    // 2. إلغاء التحديد: نقرة على ركن فارغ خارج الصورة
-    const corners = [
-      { x: geo.boxLeft + 8, y: geo.boxTop + 8 },
-      { x: geo.boxRight - 8, y: geo.boxTop + 8 },
-      { x: geo.boxLeft + 8, y: geo.boxBottom - 8 },
-      { x: geo.boxRight - 8, y: geo.boxBottom - 8 },
-    ];
-    const empty = corners.find(
-      (c) => c.x < geo.imgLeft - 4 || c.x > geo.imgRight + 4 || c.y < geo.imgTop - 4 || c.y > geo.imgBottom + 4,
-    ) ?? corners[0];
-    await page.mouse.click(empty.x, empty.y);
+    // 2. إلغاء التحديد بلوحة المفاتيح (مسار حتمي: Escape → selectElement(null) —
+    // نفس مسار النقر على الخلفية في الـ store، دون هشاشة إحداثيات الزوايا).
+    await page.keyboard.press('Escape');
     await expect.poll(() => transformerState(page), { timeout: 10000 }).toMatchObject({
       found: true, attached: true, nodes: 0,
     });
