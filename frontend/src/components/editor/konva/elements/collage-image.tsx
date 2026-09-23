@@ -6,6 +6,7 @@ import { getKonvaFilters } from "@/lib/filters/konva-filters";
 import { useRenderQuality } from "@/lib/canvas/render-quality";
 import { useFilterCache } from "@/hooks/use-filter-cache";
 import { getDisplayImage } from "@/lib/canvas/display-image";
+import { liftToDragLayer, dropFromDragLayer, findLiftRoot } from "../drag-layer";
 import { MagicAiScanner } from "./magic-ai-scanner";
 
 export const KonvaCollageImage = React.memo(function KonvaCollageImage({
@@ -156,6 +157,12 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
           } else {
             dragXfRef.current = null;
           }
+          // 🚀 رفع مجموعة الخانة (مع قصّها) إلى طبقة السحب الرسمية.
+          try {
+            liftToDragLayer([findLiftRoot(node)]);
+          } catch {
+            // تجاهل آمن — السحب يعمل بلا طبقة
+          }
           dragStartRef.current = {
             dragX: accumulatedDrag.current.dragX,
             dragY: accumulatedDrag.current.dragY,
@@ -213,6 +220,12 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
           node.getLayer()?.batchDraw();
         }}
         onDragEnd={() => {
+          // 🚀 الاستعادة أولاً — قبل كتابة الإزاحات للستور.
+          try {
+            dropFromDragLayer();
+          } catch {
+            // تجاهل آمن
+          }
           dragXfRef.current = null;
           if (draggable && accumulatedDrag.current) {
             // إعادة بناء الكاش بعد استقرار الإزاحة — الفلاتر تعود للعمل

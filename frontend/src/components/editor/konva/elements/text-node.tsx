@@ -239,6 +239,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
             width={w}
             text={renderText}
             perfectDrawEnabled={false}
+            shadowForStrokeEnabled={false}
             globalCompositeOperation={(element.globalCompositeOperation as GlobalCompositeOperation | undefined) || "source-over"}
             shadowColor={element.shadowColor}
             shadowBlur={element.shadowBlur || 0}

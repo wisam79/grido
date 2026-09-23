@@ -1,11 +1,12 @@
 import React, { useRef, useEffect } from "react";
-import { Stage } from "react-konva";
+import { Stage, Layer } from "react-konva";
 import Konva from "konva";
 import type { KonvaEventObject } from "konva/lib/Node";
 import { useEditorStore, CanvasElement } from "@/lib/editor-store";
 import { useStageRef } from "@/lib/canvas/stage-context";
 import { SnapGuide } from "@/lib/canvas/snap-utils";
 import { useShallow } from "zustand/react/shallow";
+import { registerDragLayer, registerDragExtrasProvider } from "./drag-layer";
 import "@/lib/filters/custom-filters";
 
 import { KonvaBackgroundLayer } from "./layers/konva-background-layer";
@@ -128,10 +129,32 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const { slots, collageGap, collageMargin, collageTemplate, collageRadius, collageShowCutLines, collageShowEndCutLine, collageStrokeWidth, collageStrokeColor } = collage;
 
   const trRef = useRef<Konva.Transformer | null>(null);
+  const dragLayerRef = useRef<Konva.Layer | null>(null);
   const elementsRefs = useRef<Record<string, Konva.Node>>({});
   // 🚀 آخر عقد مربوطة بالمحول — تخطي nodes()+forceUpdate()+batchDraw()
   // عندما لا يتغير شيء فعلياً (sortedElements تتبدل هويتها مع كل tick ستور).
   const attachedTrNodesRef = useRef<Konva.Node[]>([]);
+  // 🚀 تسجيل طبقة السحب الرسمية + مزود إضافاتها (المحوّل وشارة الأبعاد
+  // يرافقان العقدة المسحوبة لطبقة السحب حتى لا يختفيا تحتها).
+  useEffect(() => {
+    registerDragExtrasProvider(() => {
+      const tr = trRef.current;
+      if (!tr) return [];
+      const nodes: Konva.Node[] = [tr];
+      try {
+        const badge = tr.getParent()?.findOne(".transformer-badge");
+        if (badge) nodes.push(badge as unknown as Konva.Node);
+      } catch {
+        // بلا شارة — المحوّل وحده كافٍ
+      }
+      return nodes;
+    });
+    return () => {
+      registerDragExtrasProvider(null);
+      registerDragLayer(null);
+    };
+  }, []);
+
   const altPressedRef = useRef(false);
   const shiftPressedRef = useRef(false);
   const stageContextRef = useStageRef();
@@ -313,6 +336,16 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
           createElementRef={createElementRef}
         />
       )}
+
+      {/* 🚀 طبقة السحب الرسمية (Konva drag-layer pattern): تستقبل العقدة
+          المسحوبة أثناء السحب فقط، فتُرسم عقدة واحدة لا الطبقة كاملة. */}
+      <Layer
+        ref={(l) => {
+          dragLayerRef.current = l;
+          registerDragLayer(l);
+        }}
+        listening={false}
+      />
     </Stage>
   );
 });

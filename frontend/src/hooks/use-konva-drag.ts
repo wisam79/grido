@@ -1,6 +1,7 @@
 import React from "react";
 import { CanvasElement, useEditorStore } from "@/lib/editor-store";
 import { getSnapPositionsWithTargets, SnapTarget, SnapGuide } from "@/lib/canvas/snap-utils";
+import { liftToDragLayer, dropFromDragLayer } from "@/components/editor/konva/drag-layer";
 import { getElementPixelVisualBox, getElementVisualBox } from "@/lib/canvas/element-geometry";
 import { KonvaEventObject } from "konva/lib/Node";
 import type Konva from "konva";
@@ -95,6 +96,23 @@ export function useKonvaDrag({
       }
     });
     dragStartPositionsRef.current = startPositions;
+
+    // 🚀 رفع العقد المحددة (+ المحوّل والشارة) إلى طبقة السحب الرسمية —
+    // تُرسم عقدة واحدة لكل إطار بدل الطبقة كاملة (Konva drag-layer pattern).
+    try {
+      const liveIds = useEditorStore.getState().selectedIds;
+      liftToDragLayer(
+        liveIds
+          .map((id) => {
+            const el = currentElements.find((e) => e.id === id);
+            if (el?.locked) return null;
+            return getKonvaNode(id);
+          })
+          .filter((n): n is Konva.Node => !!n)
+      );
+    } catch {
+      // تجاهل آمن — السحب يعمل بلا طبقة
+    }
   };
 
   const dragBoundFunc = (pos: { x: number; y: number }) => {
@@ -240,6 +258,13 @@ export function useKonvaDrag({
   };
 
   const onDragEnd = (e: KonvaEventObject<DragEvent>) => {
+    // 🚀 الاستعادة أولاً — قبل أي كتابة للستور، حتى لا ترى React
+    // العقد خارج موضعها المعلن ولو لإطار واحد.
+    try {
+      dropFromDragLayer();
+    } catch {
+      // تجاهل آمن
+    }
     const { selectedIds, updateElements, pushHistory } = useEditorStore.getState();
     const draggedNode = e.target;
     const draggedId = element.id;

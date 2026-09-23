@@ -77,6 +77,9 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
 
   const commonVisualProps = {
     perfectDrawEnabled: false,
+    // 🚀 توصية Konva الرسمية (Optimize Strokes): لا ظل للحدود — الرسم
+    // الداخلي المضاعف (stroke + shadow) يُلغى ويبقى ظل التعبئة فقط.
+    shadowForStrokeEnabled: false,
     globalCompositeOperation: (element.globalCompositeOperation as GlobalCompositeOperation | undefined) || "source-over",
     shadowColor: element.shadowColor,
     shadowBlur: element.shadowBlur || 0,

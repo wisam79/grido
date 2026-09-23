@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Performance (Official Konva Drag-Layer — 2026-09-24)
+
+- **طبقة السحب الرسمية:** تطبيق حرفي لتوصية المحرك (*move to a dedicated layer while dragging*) عبر `konva/drag-layer.ts` — العقدة المسحوبة (+ المحوّل والشارة) تُرفع لطبقة خفيفة أثناء السحب وتُستعاد بدقة `{parent, zIndex}` أولاً في النهاية؛ رسمة عقدة واحدة لكل إطار بدل الطبقة كاملة.
+- **ظل الحدود مطفأ (`shadowForStrokeEnabled={false}`):** إلغاء الرسم الداخلي المضاعف على الأشكال والنصوص (توصية Optimize Strokes الرسمية).
+- **تلقين الوكلاء:** مراجعة توثيق Konva الكاملة مُثبتة في `.agents/skills/konva-rendering-invariants/SKILL.md` القسم 10 مع المرفوضات الموثقة، وملخصها في `AGENTS.md`.
+
 ### Performance (Canvas Rocket Batch — 2026-09-23)
 
 - **نسخة عرض مخفّضة (سقف 2048px):** عقد الصور والكولاج ترسم نسخة Canvas مخفّضة أثناء التحرير (`lib/canvas/display-image.ts` + LRU بسقف 24) — المصدر الكامل يبقى للتصدير والذكاء الاصطناعي دون مساس.

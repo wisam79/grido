@@ -243,6 +243,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       {/* شريط الأبعاد والزاوية الحية الفاخر بنظام Fluent Acrylic */}
       <Group 
         ref={badgeRef}
+        name="transformer-badge"
         visible={false}
         scaleX={1 / stageScale}
         scaleY={1 / stageScale}
