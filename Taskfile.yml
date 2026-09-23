@@ -77,11 +77,33 @@ tasks:
     cmds:
       - go test -v ./internal/...
 
+  test:backend:cover:
+    summary: Runs Go tests with coverage report
+    cmds:
+      - go test -v -coverprofile=coverage.out ./internal/...
+
+  test:backend:race:
+    summary: Runs Go tests with race condition detector
+    cmds:
+      - go test -race ./internal/...
+
   test:frontend:
     summary: Runs frontend unit and component tests via Vitest
     dir: frontend
     cmds:
       - npm run test
+
+  test:frontend:quick:
+    summary: Runs quick frontend unit tests without coverage
+    dir: frontend
+    cmds:
+      - npm run test:unit
+
+  test:print:
+    summary: Runs unified print engine tests across backend and frontend
+    cmds:
+      - go test -v ./internal/service -run "TestPrint.*"
+      - npm --prefix frontend run test:print
 
   test:e2e:
     summary: Runs frontend end-to-end tests via Playwright (Chromium)
@@ -95,3 +117,4 @@ tasks:
       - task: test:backend
       - task: test:frontend
       - task: test:e2e
+

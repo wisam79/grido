@@ -107,6 +107,44 @@ describe("calculatePrintCutLines", () => {
     expect(noEnd).toHaveLength(8);
   });
 
+  it("single mode: 2 copies on a 5-column grid -> only cut lines for the 2 active columns (no ghost cut lines)", () => {
+    const imageWidthMM = 35;
+    const imageHeightMM = 45;
+    const gapMM = 2;
+    const actualCopies = 2;
+    const cols = 5;
+    const grid = computeSheetGrid({
+      cols,
+      actualCopies,
+      imageWidthMM,
+      imageHeightMM,
+      gapMM,
+      effectiveMarginMM: 0,
+      availableWidthMM: 210,
+      availableHeightMM: 297,
+    });
+
+    const lines = calculatePrintCutLines({
+      mode: "single",
+      actualCopies,
+      imageWidthMM,
+      imageHeightMM,
+      gapMM,
+      paperWidth: A4.paperWidth,
+      paperHeight: A4.paperHeight,
+      grid,
+    });
+
+    const vertical = lines.filter((l) => Math.abs(l.x1 - l.x2) < 0.001);
+    // Left edge (0), separator between copy 0 and copy 1 (36mm), right edge of copy 1 (72mm) -> Exactly 3 vertical lines, not 6!
+    expect(vertical).toHaveLength(3);
+    expect(vertical.map((l) => l.x1)).toEqual([
+      expect.closeTo(0, 1e-6),
+      expect.closeTo(36, 1e-6),
+      expect.closeTo(72, 1e-6),
+    ]);
+  });
+
   it("single mode: full-page A4 canvas -> cut lines at the 4 paper edges", () => {
     const lines = calculatePrintCutLines({
       mode: "single",

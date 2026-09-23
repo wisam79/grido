@@ -14,6 +14,11 @@ describe('PrintSlice Unit Tests', () => {
     expect(settings.showCutLines).toBe(false);
   });
 
+  it('has fitToPage disabled by default to preserve 1:1 true physical dimensions', () => {
+    const settings = useEditorStore.getState().printSettings;
+    expect(settings.fitToPage).toBe(false);
+  });
+
   it('sets print image source', () => {
     useEditorStore.getState().setPrintImageSrc('sheet.png');
     expect(useEditorStore.getState().printImageSrc).toBe('sheet.png');

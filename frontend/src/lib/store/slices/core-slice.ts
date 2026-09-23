@@ -255,17 +255,19 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       canvasHeight: h,
       elements: adjustedElements,
       slots: adjustedSlots,
-      printSettings: {
-        ...get().printSettings,
-        paperId: matchedPaper ? matchedPaper.id : "custom",
-        // الأبعاد الأصلية (غير المقلوبة) دائماً: العرض ≤ الارتفاع، والاتجاه
-        // علم مستقل — تخزين أبعاد مقلوبة هنا مع علم الاتجاه كان يقلبهما
-        // usePrintLayout مرة ثانية (انعكاس مزدوج) فتظهر المعاينة بعكس حالة
-        // الكانفاس عند اختيار الاتجاه لأول مرة
-        paperWidthMM: Math.min(wMM, hMM),
-        paperHeightMM: Math.max(wMM, hMM),
-        orientation: isLandscape ? "landscape" : "portrait",
-      },
+      printSettings: matchedPaper
+        ? {
+            ...get().printSettings,
+            paperId: matchedPaper.id,
+            // الأبعاد الأصلية (غير المقلوبة) دائماً: العرض ≤ الارتفاع، والاتجاه
+            // علم مستقل — تخزين أبعاد مقلوبة هنا مع علم الاتجاه كان يقلبهما
+            // usePrintLayout مرة ثانية (انعكاس مزدوج) فتظهر المعاينة بعكس حالة
+            // الكانفاس عند اختيار الاتجاه لأول مرة
+            paperWidthMM: Math.min(wMM, hMM),
+            paperHeightMM: Math.max(wMM, hMM),
+            orientation: isLandscape ? "landscape" : "portrait",
+          }
+        : get().printSettings,
     });
     get().pushHistory();
   },

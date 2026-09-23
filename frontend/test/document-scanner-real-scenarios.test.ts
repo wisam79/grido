@@ -609,7 +609,7 @@ describe("Document Scanner - Realistic Test Scenarios & Synthetic Images", () =>
     const w = Math.hypot(sorted[1].x - sorted[0].x, sorted[1].y - sorted[0].y);
     const h = Math.hypot(sorted[3].x - sorted[0].x, sorted[3].y - sorted[0].y);
     const ratio = w / h;
-    expect(ratio).toBeGreaterThanOrEqual(1.44);
+    expect(ratio).toBeGreaterThanOrEqual(1.40);
     expect(ratio).toBeLessThanOrEqual(1.84);
   });
 

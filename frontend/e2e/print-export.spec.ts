@@ -75,7 +75,7 @@ test.describe('Print & Export Workflows E2E', () => {
     await expect(page.getByText(/الطباعة الأصلية بنجاح/)).toBeVisible({ timeout: 15000 });
   });
 
-  test('Creates hidden print window after preview when HTML doc is returned', async ({ page }) => {
+  test('Creates top-level print container after preview when HTML doc is returned', async ({ page }) => {
     await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
     await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
 
@@ -105,21 +105,38 @@ test.describe('Print & Export Workflows E2E', () => {
     const exportBtn = printModal.getByRole('button', { name: /تصدير وعرض/ });
     await expect(exportBtn).toBeEnabled();
 
-    // مراقب race-free: الـ iframe تُزال ذاتياً بعد الطباعة (afterprint/مهلة 8s)
-    // فالتقاط لحظة إنشائها عبر MutationObserver بدل انتظار عنصر عابر
+    // مراقب race-free: حاوية الطباعة تُزال ذاتياً بعد الطباعة (afterprint/مهلة)،
+    // فالتقاط لحظة إنشائها عبر MutationObserver بدل انتظار عنصر عابر.
+    // الطباعة من المستوى الأعلى الآن — لا iframe: iframe المخفي يُسقط سياق @page
+    // في WebView2 فتُطبع الورقة على Letter بهوامش المتصفح (خللا تم إصلاحه)
     await page.evaluate(() => {
-      (window as unknown as { __printFrames: (string | null)[] }).__printFrames = [];
+      const w = window as unknown as {
+        __printContainers: (string | null)[];
+        __printPageRule: string;
+      };
+      w.__printContainers = [];
+      w.__printPageRule = '';
       new MutationObserver((mutations) => {
         for (const mutation of mutations) {
           for (const node of Array.from(mutation.addedNodes)) {
-            if (node instanceof HTMLIFrameElement) {
-              (window as unknown as { __printFrames: (string | null)[] }).__printFrames.push(
-                node.getAttribute('aria-hidden')
-              );
+            if (node instanceof HTMLDivElement && node.id === 'print-container') {
+              w.__printContainers.push(node.getAttribute('aria-hidden'));
+            }
+            if (node instanceof HTMLStyleElement && node.id === 'grido-print-sheet-style') {
+              w.__printPageRule = node.textContent ?? '';
             }
           }
         }
       }).observe(document.body, { childList: true });
+      new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of Array.from(mutation.addedNodes)) {
+            if (node instanceof HTMLStyleElement && node.id === 'grido-print-sheet-style') {
+              (window as unknown as { __printPageRule: string }).__printPageRule = node.textContent ?? '';
+            }
+          }
+        }
+      }).observe(document.head, { childList: true });
     });
 
     await exportBtn.click();
@@ -127,19 +144,25 @@ test.describe('Print & Export Workflows E2E', () => {
     // العملية تتم للنهاية: الحوار يُغلق بعد نجاح التصدير
     await expect(printModal).not.toBeVisible({ timeout: 15000 });
 
-    // نافذة الطباعة المخفية أُنشئت بعد المعاينة والتصدير (aria-hidden="true")
+    // حاوية الطباعة أُنشئت في المستند الأعلى (aria-hidden="true")
     await expect
       .poll(
         () =>
           page.evaluate(
-            () => (window as unknown as { __printFrames: (string | null)[] }).__printFrames?.length ?? 0
+            () => (window as unknown as { __printContainers: (string | null)[] }).__printContainers?.length ?? 0
           ),
         { timeout: 15000 }
       )
       .toBe(1);
-    const frameFlag = await page.evaluate(
-      () => (window as unknown as { __printFrames: (string | null)[] }).__printFrames[0]
+    const containerFlag = await page.evaluate(
+      () => (window as unknown as { __printContainers: (string | null)[] }).__printContainers[0]
     );
-    expect(frameFlag).toBe('true');
+    expect(containerFlag).toBe('true');
+
+    // قاعدة @page بمقاس الورقة حقنت في المستند الأعلى (تُلتقط لحظة الإنشاء)
+    const pageRule = await page.evaluate(
+      () => (window as unknown as { __printPageRule: string }).__printPageRule
+    );
+    expect(pageRule).toContain('@page');
   });
 });

@@ -11,6 +11,8 @@ frontend/public/onnxruntime-web-v2/
 frontend/playwright-report/
 frontend/test-results/
 frontend/scripts/package/
+coverage.out
+*.out
 
 # Large Executables & Packages
 *.exe
@@ -81,8 +83,6 @@ scratch/
 *.whl
 docaligner_extracted/
 scratch_transcript.txt
-package.json
-package-lock.json
 .kilocode/
 .kilo/
 .gemini/

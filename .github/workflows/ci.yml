@@ -352,7 +352,7 @@ jobs:
         shell: powershell
         env:
           CGO_ENABLED: '1'
-        run: go test -v ./internal/service -run "TestMediaService_CrossPlatformAndWindowsPaths|TestPrintService_HiRes300DPI_A4_FullScaleVerification"
+        run: go test -v ./internal/service -run "TestMediaService_CrossPlatformAndWindowsPaths|TestPrintService_HiRes300DPI_A4_FullScaleVerification|TestPrintNative_.*"
 
       - name: Generate Windows Build Summary
         if: always()

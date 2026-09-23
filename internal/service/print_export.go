@@ -249,7 +249,7 @@ func buildNativePrintHTML(paperWMM, paperHMM float64, imageSrc string) string {
 <meta charset="UTF-8">
 <title></title>
 <style>
-  @page { margin: 0 !important; size: %.2fmm %.2fmm; }
+  @page { margin: 0; size: %.2fmm %.2fmm; }
   * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
   html, body {
     width: %.2fmm !important;
@@ -276,7 +276,7 @@ func buildNativePrintHTML(paperWMM, paperHMM float64, imageSrc string) string {
     background: white;
   }
   @media print {
-    @page { margin: 0 !important; size: %.2fmm %.2fmm; }
+    @page { margin: 0; size: %.2fmm %.2fmm; }
     html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: %.2fmm !important; height: %.2fmm !important; }
     img { position: absolute !important; top: 0 !important; left: 0 !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: %.2fmm !important; height: %.2fmm !important; object-fit: contain !important; }
   }
@@ -297,7 +297,7 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
 <meta charset="UTF-8">
 <title></title>
 <style>
-  @page { margin: 0 !important; size: %.2fmm %.2fmm; }
+  @page { margin: 0; size: %.2fmm %.2fmm; }
   * { margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; }
   html, body {
     width: %.2fmm !important;
@@ -326,7 +326,7 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
     break-inside: avoid !important;
   }
   @media print {
-    @page { margin: 0 !important; size: %.2fmm %.2fmm; }
+    @page { margin: 0; size: %.2fmm %.2fmm; }
     html, body { width: %.2fmm !important; height: %.2fmm !important; margin: 0 !important; padding: 0 !important; }
     img { position: absolute !important; top: 0 !important; left: 0 !important; width: %.2fmm !important; height: %.2fmm !important; object-fit: contain !important; }
   }

@@ -160,9 +160,10 @@ export function calculatePrintCutLines(params: CalculateCutLinesParams): CutLine
   }
 
   // 🖼️ الوضع الافتراضي (الوضع الحر single أو كولاج بدون خلايا)
+  const effectiveCols = actualRows === 1 ? Math.max(1, Math.min(safeCols, actualCopies)) : safeCols;
   const xCutLines: number[] = [];
   xCutLines.push(Math.max(0, offsetX));
-  for (let c = 1; c < safeCols; c++) {
+  for (let c = 1; c < effectiveCols; c++) {
     const cx = offsetX + c * (imageWidthMM + gapMM) - gapMM / 2;
     if (cx > 0 && cx < paperWidth) {
       xCutLines.push(cx);

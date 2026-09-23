@@ -62,11 +62,39 @@ gh run view <run-id> --log-failed
 3. **`e2e-tests` (Playwright E2E Sharding, 4 Shards):** مصفوفة تشظية رباعية تشغل 21 ملف اختبار E2E في أقل من دقيقتين بالتوازي.
 4. **`windows-build` (Windows Build Verification):** تجميع التطبيق الأصلي بـ CGO وتشغيل اختبارات النواة الأصلية على نظام Windows حقيقي (`windows-latest`).
 
+### أوامر الاختبار الموجهة وسريعة التنفيذ (Targeted Test Commands)
+
+لتسريع دورة التطوير ومنع استنزاف الوقت بتشغيل كامل الحزمة عند كل تعديل طفيف، يجب استخدام الأوامر الموجهة بحسب المجال:
+
+| الأمر | النطاق والمجال | الملفات المستهدفة |
+| :--- | :--- | :--- |
+| `npm run test:unit` | اختبارات الوحدة العامة السريعة | تشغيل بدون تقرير التغطية الثقيل |
+| `npm run test:print` | محرك ومنظومة الطباعة والقص | `print-layout-math`, `use-print-layout`, `cut-lines`, `single-print`, `print-physical-parity` |
+| `npm run test:canvas` | هندسة الكانفاس والتحويلات | `element-geometry`, `units`, `canvas-rendering-core`, `canvas-fit` |
+| `npm run test:store` | إدارة الحالة لـ Zustand | كافة شرائح `store/slices/*` و `editor-store` |
+| `npm run test:scanner` | خوارزميات الماسح الضوئي | `document-scanner`, `perspective-transform`, `benchmark` |
+| `npm run test:ipc` | حارس انحراف الربطات و IPC | `ipc-contract-drift.test.ts` |
+| `npm run test:components` | مكونات واجهة المستخدم | كافة ملفات `test/*.test.tsx` |
+| `task test:print` | اختبار تكاملي موحد للطباعة | يشمل اختبارات Go للطباعة + اختبارات Frontend معاً |
+| `task test:backend:cover` | تغطية كود Go الكاملة | توليد `coverage.out` لخدمات ومعالجات الخلفية |
+| `task test:backend:race` | كشف تعارضات التزامن في Go | `go test -race ./internal/...` |
+
+### إطار مصانع الاختبارات المشتركة (Test Factories & Clean Store Reset)
+
+عند كتابة أي اختبار جديد للواجهة أو عناصر الكانفاس، استخدم المصانع المركزية في `frontend/test/helpers/test-factories.ts`:
+- `createMockImageElement(overrides)`: توليد عنصر صورة بخصائص سليمة ومطابقة للمخطط.
+- `createMockTextElement(overrides)`: توليد عنصر نص بمحاذاة وخطوط قياسية.
+- `createMockShapeElement(overrides)`: توليد أشكال هندسية سليمة.
+- `createMockPrintSettings(overrides)`: توليد إعدادات طباعة قياسية.
+- `createMockCanvasContext(w, h)`: محاكاة 2D Context في الذاكرة لفحص بكسلات الرسم.
+- `resetEditorStore()`: تفريغ وإعادة ضبط مخزن Zustand لحالته النقية في `beforeEach` لمنع تسرب البيانات بين الاختبارات.
+
 ### التحقق البكسلي والثنائي لمخرجات الطباعة فائقة الدقة (300 DPI & Pixel Verification)
 
 عند تعديل هندسة الطباعة أو خطوط القص أو عناصر الشبكة، لا تكتفِ بفحص بصري يدوي:
 1. اكتب اختبار Go (`GeneratePrintSheet`) يتحقق برمجياً من وجود بكسلات الخط المتوقع عند الإحداثيات المحسوبة (`mm × DPI / 25.4`)، مع فحص الخلفية لضمان عدم رسم أي خط خارج حدود الورقة.
 2. **التحقق الثنائي لترويسة JFIF APP0:** تأكد برمجياً من سلامة ترويسة الـ JPEG بالتحقق من وجود قطعة APP0 وبايتات الكثافة (`Xdensity` و `Ydensity` عند الإزاحات 14 و 16 في مصفوفة البايتات) وأن وحدات القياس مضبوطة على `1` (Dots Per Inch) لضمان احترام الطابعات الفيزيائية لأبعاد الورقة.
+3. **مطابقة الأبعاد الفيزيائية 1:1:** الحفاظ على اختبار `frontend/test/print-physical-parity.test.ts` واختبار `frontend/test/use-print-layout.test.ts` للتحقق من عدم تكبير صور الهوية وجوازات السفر (35x45mm) إلى كامل الورقة عند `fitToPage: false`.
 
 ### حارس انحراف عقود Wails v3 IPC (IPC Contract Drift Guard)
 
@@ -88,7 +116,7 @@ gh run view <run-id> --log-failed
 لضمان سلامة مسارات الملفات ذات الخطوط المائلة العكسية (`C:\...`) وسلوك نظام التشغيل الحقيقي:
 - يجب تشغيل اختبارات Go الحساسة للمسارات والطباعة على خادم Windows حقيقي (`windows-latest`) داخل الـ CI:
   ```powershell
-  go test -v -run "TestMediaService_CrossPlatformAndWindowsPaths|TestPrintService_HiRes300DPI_A4_FullScaleVerification" ./internal/service/...
+  go test -v -run "TestMediaService_CrossPlatformAndWindowsPaths|TestPrintService_HiRes300DPI_A4_FullScaleVerification|TestPrintNative_.*" ./internal/service/...
   ```
 - هذا يضمن خلو التطبيق من أي انزلاق بين بيئات التطوير والتشغيل الفعلي.
 

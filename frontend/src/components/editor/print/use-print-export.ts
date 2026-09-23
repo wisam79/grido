@@ -374,7 +374,13 @@ export function usePrintExport(ctx: PrintExportContext) {
     backgroundColor,
   ]);
 
-  /** عرض حوار الطباعة عبر iframe مخفي — ينتظر فك ترميز الصورة قبل الطباعة */
+  /**
+   * عرض حوار الطباعة من المستوى الأعلى — iframe المخفي يفقد سياق @page
+   * في Chromium/WebView2 فتُطبَع الورقة على Letter مع هوامش المتصفح (المشكلتان
+   * في لقطات المستخدم). نحقن الورقة في المستند الحالي داخل #print-container
+   * (مخفيّة على الشاشة، والوحيدة الظاهرة في @media print) فتُطبَع بلا هوامش،
+   * والاستعادة = إزالة العقدتين المحقونتين دون لمس شجرة React.
+   */
   const showPrintResult = useCallback((result: domain.PrintResult) => {
     setIsExporting(false);
     if (!result.success) {
@@ -383,126 +389,181 @@ export function usePrintExport(ctx: PrintExportContext) {
     }
 
     if (result.htmlDoc) {
-      const iframe = document.createElement("iframe");
-      iframe.setAttribute("aria-hidden", "true");
-      iframe.setAttribute("tabindex", "-1");
-      iframe.style.position = "fixed";
-      iframe.style.left = "-10000px";
-      iframe.style.top = "0";
-      iframe.style.width = "794px";
-      iframe.style.height = "1123px";
-      iframe.style.border = "none";
-      iframe.style.opacity = "0";
-      iframe.style.pointerEvents = "none";
-      document.body.appendChild(iframe);
+      const win = window as Window & {
+        __gridoPrintCleanup?: (() => void) | null;
+      };
+      // حماية من استدعاءين متتاليين: نظّف أي طباعة سابقة أولاً
+      win.__gridoPrintCleanup?.();
 
-      const doc = iframe.contentWindow?.document || iframe.contentDocument;
-      if (doc) {
-        doc.open();
-        doc.write(result.htmlDoc);
-        doc.close();
-        if (doc.title) {
-          doc.title = "";
-        }
-
-        let removeTimer: ReturnType<typeof setTimeout> | undefined;
-        let removed = false;
-        const removeIframe = () => {
-          if (removed) return;
-          removed = true;
-          if (removeTimer) {
-            clearTimeout(removeTimer);
-            removeTimer = undefined;
-          }
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-          }
-          if (typeof document !== "undefined" && document.body) {
-            document.body.style.pointerEvents = "";
-          }
-          if (typeof window !== "undefined") {
-            window.focus();
-          }
-        };
-
-        let hasPrinted = false;
-        const triggerPrint = () => {
-          if (hasPrinted) return;
-          hasPrinted = true;
-          try {
-            iframe.contentWindow?.addEventListener("afterprint", removeIframe, { once: true });
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-            toast.success("تم إرسال الورقة إلى الطباعة بنجاح");
-          } catch (e) {
-            console.error("Browser print error:", e);
-            removeIframe();
-            if (result.filePath && typeof PrintNative === "function") {
-              PrintNative(result.filePath)
-                .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
-                .catch(console.error);
-            }
-          } finally {
-            removeTimer = setTimeout(removeIframe, 8000);
-          }
-        };
-
-        // 🖼️ المسار المحلي (/local-image/) يُحمَّل من سيرفر Wails وقد لا يكون
-        // الصورة قد اكتمل تحميلها لحظة الكتابة — دالة الصورة أدناه (img.decode
-        // + onload/onerror + fallbackTimer 10s) تغطي كلا الحالتين كما كانت
-        // تفعل مع Base64، لذا لا حاجة لأي معالجة خاصة هنا.
-        const img = doc.querySelector("img");
-        if (img) {
-          let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
-          const runPrint = () => {
-            if (fallbackTimer) {
-              clearTimeout(fallbackTimer);
-              fallbackTimer = undefined;
-            }
-            if (img.decode) {
-              img.decode().then(triggerPrint).catch(triggerPrint);
-            } else {
-              triggerPrint();
-            }
-          };
-          if (img.complete && img.naturalWidth > 0) {
-            runPrint();
-          } else {
-            img.onload = runPrint;
-            img.onerror = () => {
-              if (fallbackTimer) {
-                clearTimeout(fallbackTimer);
-                fallbackTimer = undefined;
-              }
-              removeIframe();
-              toast.error("تعذر تحميل صورة الطباعة في المتصفح، جاري التحويل للطباعة الأصلية ...");
-              if (result.filePath && typeof PrintNative === "function") {
-                PrintNative(result.filePath)
-                  .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
-                  .catch(console.error);
-              }
-            };
-            fallbackTimer = setTimeout(runPrint, 10000);
-          }
-        } else {
-          triggerPrint();
-        }
-      } else {
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-        }
+      // فك وثيقة الطباعة لاستخراج مسار الصورة فقط — لا نحقن <style> الوثيقة
+      // كما هو لأن قواعدها العامة (html/body/*) ستدمّر تنسيق التطبيق الحي،
+      // بل نبني قاعدة @page بأبعاد الورقة المعروفة محلياً + الصورة بمقاس inline
+      const parsed = new DOMParser().parseFromString(result.htmlDoc, "text/html");
+      const imageSrc = parsed.querySelector("img")?.getAttribute("src") ?? "";
+      if (!imageSrc) {
         if (result.filePath && typeof PrintNative === "function") {
           PrintNative(result.filePath)
             .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
             .catch(console.error);
         }
+        return;
+      }
+
+      // قاعدة @page في المستند الأعلى هي ما يفرض مقاس الورقة وهوامش الصفر
+      // (مؤكد تجريبياً: iframe المخفي يُسقطها فتُطبع على Letter بهوامش المتصفح)
+      const styleEl = document.createElement("style");
+      styleEl.id = "grido-print-sheet-style";
+      styleEl.textContent =
+        `@page { margin: 0; size: ${paperWidth}mm ${paperHeight}mm; }\n` +
+        `@media print {\n` +
+        `  * { box-sizing: border-box !important; }\n` +
+        `  html, body {\n` +
+        `    margin: 0 !important;\n` +
+        `    padding: 0 !important;\n` +
+        `    width: ${paperWidth}mm !important;\n` +
+        `    height: ${paperHeight}mm !important;\n` +
+        `    overflow: hidden !important;\n` +
+        `    background: white !important;\n` +
+        `    -webkit-print-color-adjust: exact !important;\n` +
+        `    print-color-adjust: exact !important;\n` +
+        `  }\n` +
+        `  body > *:not(#print-container) { display: none !important; }\n` +
+        `  #print-container {\n` +
+        `    display: block !important;\n` +
+        `    position: absolute !important;\n` +
+        `    top: 0 !important;\n` +
+        `    left: 0 !important;\n` +
+        `    width: ${paperWidth}mm !important;\n` +
+        `    height: ${paperHeight}mm !important;\n` +
+        `    margin: 0 !important;\n` +
+        `    padding: 0 !important;\n` +
+        `    overflow: hidden !important;\n` +
+        `    background: white !important;\n` +
+        `  }\n` +
+        `  #print-container img {\n` +
+        `    position: absolute !important;\n` +
+        `    top: 0 !important;\n` +
+        `    left: 0 !important;\n` +
+        `    width: ${paperWidth}mm !important;\n` +
+        `    height: ${paperHeight}mm !important;\n` +
+        `    max-width: none !important;\n` +
+        `    max-height: none !important;\n` +
+        `    object-fit: contain !important;\n` +
+        `    display: block !important;\n` +
+        `    margin: 0 !important;\n` +
+        `    padding: 0 !important;\n` +
+        `    page-break-inside: avoid !important;\n` +
+        `    break-inside: avoid !important;\n` +
+        `  }\n` +
+        `}`;
+
+      const container = document.createElement("div");
+      container.id = "print-container";
+      container.setAttribute("aria-hidden", "true");
+
+      const img = document.createElement("img");
+      img.alt = "";
+      img.src = imageSrc;
+      // الصورة مولّدة أصلاً بأبعاد الورقة الفيزيائية (بكسل ÷ DPI) — مقاس mm
+      // هنا يحفظ النسبة 1:1، ولو اختار المستخدم حوارياً هوامش/ورقاً أكبر
+      // فتظهر كهبعخة بيضاء حول الورقة دون تمدد أو اقتصاص
+      img.style.width = `${paperWidth}mm`;
+      img.style.height = `${paperHeight}mm`;
+      img.style.maxWidth = "none";
+      img.style.display = "block";
+      container.appendChild(img);
+
+      let done = false;
+      let safetyTimer: ReturnType<typeof setTimeout> | undefined;
+      const cleanup = () => {
+        if (done) return;
+        done = true;
+        win.__gridoPrintCleanup = null;
+        window.removeEventListener("afterprint", cleanup);
+        if (safetyTimer) {
+          clearTimeout(safetyTimer);
+          safetyTimer = undefined;
+        }
+        styleEl.remove();
+        container.remove();
+        window.focus();
+      };
+      win.__gridoPrintCleanup = cleanup;
+
+      try {
+        document.head.appendChild(styleEl);
+        document.body.appendChild(container);
+        // afterprint يُطلق عند إغلاق حوار الطباعة (طباعة أو إلغاء)؛
+        // والمؤقت ضمانة استعادة إن لم يُطلق الحدث في WebView2
+        window.addEventListener("afterprint", cleanup, { once: true });
+        safetyTimer = setTimeout(cleanup, 120_000);
+      } catch (e) {
+        console.error("Print container injection failed:", e);
+        cleanup();
+        if (result.filePath && typeof PrintNative === "function") {
+          PrintNative(result.filePath)
+            .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
+            .catch(console.error);
+        }
+        return;
+      }
+
+      const triggerPrint = () => {
+        try {
+          window.print();
+          toast.success("تم إرسال الورقة إلى الطباعة بنجاح");
+        } catch (e) {
+          console.error("Browser print error:", e);
+          cleanup();
+          if (result.filePath && typeof PrintNative === "function") {
+            PrintNative(result.filePath)
+              .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
+              .catch(console.error);
+          }
+        }
+      };
+
+      // 🖼️ الصورة تُخدم من سيرفر Wails المحلي — ننتظر اكتمال فك ترميزها
+      // (img.decode + onload/onerror + مهلة 10ث) قبل فتح حوار الطباعة.
+      // الصورة داخل #print-container (display:none على الشاشة) والتحميل
+      // وفك الترميز يعملان لأي صورة داخل الـ DOM مهما كانت حالتها العرضية.
+      let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
+      const runPrint = () => {
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer);
+          fallbackTimer = undefined;
+        }
+        if (img.decode) {
+          img.decode().then(triggerPrint).catch(triggerPrint);
+        } else {
+          triggerPrint();
+        }
+      };
+      if (img.complete && img.naturalWidth > 0) {
+        runPrint();
+      } else {
+        img.onload = runPrint;
+        img.onerror = () => {
+          if (fallbackTimer) {
+            clearTimeout(fallbackTimer);
+            fallbackTimer = undefined;
+          }
+          cleanup();
+          toast.error("تعذر تحميل صورة الطباعة في المتصفح، جاري التحويل للطباعة الأصلية ...");
+          if (result.filePath && typeof PrintNative === "function") {
+            PrintNative(result.filePath)
+              .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
+              .catch(console.error);
+          }
+        };
+        fallbackTimer = setTimeout(runPrint, 10000);
       }
     } else if (result.filePath && typeof PrintNative === "function") {
       PrintNative(result.filePath)
         .then(() => toast.success("تم إرسال الورقة إلى الطباعة الأصلية بنجاح"))
         .catch(console.error);
     }
-  }, []);
+  }, [paperWidth, paperHeight]);
 
   const handlePrint = useCallback(async (
     colorSpace: "sRGB" | "CMYK",

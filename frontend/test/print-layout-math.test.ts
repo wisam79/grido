@@ -419,6 +419,42 @@ describe("print layout hardening", () => {
     expect(computeSlotAspect({ w: 0.5, h: 0.5 }, 1240, 0)).toBe(0);
     expect(computeSlotAspect({ w: 0.5, h: 0.5 }, 1240, -3)).toBe(0);
   });
+
+  it("calculates grid width based on effective copies when actualCopies is less than cols in a single row", () => {
+    // 2 copies on a sheet where 5 columns can fit (e.g. passport photos 35mm wide on A4 210mm)
+    const grid = computeSheetGrid({
+      cols: 5,
+      actualCopies: 2,
+      imageWidthMM: 35,
+      imageHeightMM: 45,
+      gapMM: 2,
+      effectiveMarginMM: 0,
+      availableWidthMM: 210,
+      availableHeightMM: 297,
+      align: "center",
+    });
+
+    // 2 copies with 1 gap: 2 * 35 + 2 = 72mm (NOT 5 * 35 + 4 * 2 = 183mm)
+    expect(grid.gridWidth).toBe(72);
+    expect(grid.gridHeight).toBe(45);
+    // Centered: (210 - 72) / 2 = 69mm offset
+    expect(grid.offsetX).toBe(69);
+    expect(grid.offsetY).toBe(126);
+  });
+
+  it("guarantees optimal imposition does not attempt unsupported item rotation", () => {
+    const result = calculateOptimalSheetImposition({
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      itemWidthMM: 100,
+      itemHeightMM: 40,
+      marginMM: 5,
+      gapMM: 2,
+    });
+
+    expect(result.rotateItem).toBe(false);
+    expect(["portrait", "landscape"]).toContain(result.orientation);
+  });
 });
 
 

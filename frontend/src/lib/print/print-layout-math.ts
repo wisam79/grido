@@ -43,7 +43,8 @@ export interface SheetGrid {
 export function computeSheetGrid(input: SheetGridInput): SheetGrid {
   const safeCols = Math.max(1, Math.floor(input.cols));
   const actualRows = Math.max(1, Math.ceil(input.actualCopies / safeCols));
-  const gridWidth = safeCols * input.imageWidthMM + Math.max(0, safeCols - 1) * input.gapMM;
+  const effectiveCols = actualRows === 1 ? Math.max(1, Math.min(safeCols, input.actualCopies)) : safeCols;
+  const gridWidth = effectiveCols * input.imageWidthMM + Math.max(0, effectiveCols - 1) * input.gapMM;
   const gridHeight = actualRows * input.imageHeightMM + Math.max(0, actualRows - 1) * input.gapMM;
 
   const align = input.align || "top-left";
@@ -232,15 +233,12 @@ export function calculateOptimalSheetImposition(
 
   const candidates: Candidate[] = [
     evalLayout("portrait", false, minPaper, maxPaper),
-    evalLayout("portrait", true, minPaper, maxPaper),
     evalLayout("landscape", false, maxPaper, minPaper),
-    evalLayout("landscape", true, maxPaper, minPaper),
   ];
 
-  // ترتيب المرشحين: الأفضل هو الأعلى في عدد النسخ، وفي حال التساوي نفضل الوضع الرأسي الطبيعي دون تدوير
+  // ترتيب المرشحين: الأفضل هو الأعلى في عدد النسخ، وفي حال التساوي نفضل الوضع الرأسي الطبيعي
   candidates.sort((a, b) => {
     if (b.maxCopies !== a.maxCopies) return b.maxCopies - a.maxCopies;
-    if (a.rotateItem !== b.rotateItem) return a.rotateItem ? 1 : -1;
     if (a.orientation !== b.orientation) return a.orientation === "portrait" ? -1 : 1;
     return 0;
   });

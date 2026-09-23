@@ -51,7 +51,7 @@ export function usePrintLayout({
 
     const repeatMode = printSettings.repeatMode || "all";
 
-    const fitToPage = printSettings.fitToPage !== false;
+    const fitToPage = printSettings.fitToPage === true;
     const shouldFit = fitToPage && mode === "single" && printSettings.copiesPerSheet === 1 && repeatMode === "all";
     // عند تجاوز التصميم (صورة فردية أو كانفاس الكولاج) مساحة الطباعة للورقة
     // المختارة — نطابق للأسفل إجبارياً حفاظاً على النسبة. بدونها تُقصّ الخلايا
@@ -95,8 +95,8 @@ export function usePrintLayout({
       cols = 1;
       actualCopies = fitRows;
     } else {
-      cols = fitCols;
       actualCopies = Math.min(printSettings.copiesPerSheet ?? 1, autoCount);
+      cols = actualCopies <= fitCols ? Math.max(1, actualCopies) : fitCols;
     }
 
     const collageAlign = collageTemplate?.physicalLayout?.align;
