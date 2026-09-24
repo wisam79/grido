@@ -1,4 +1,4 @@
-import { Point, DocumentAspectType, QuadOverlapStats } from "./types";
+import { Point, DocumentAspectType, QuadOverlapStats, ID_HALF_MIN_RATIO, ID_HALF_MAX_RATIO } from "./types";
 import { computePolygonArea } from "./contour-tracer";
 
 /**
@@ -118,6 +118,14 @@ export function extractFourCornersFromHull(hull: Point[]): Point[] | null {
 }
 
 /**
+ * فحص نسبة بطاقة الهوية القياسية (ID-1 ISO 7810 ~1.586) من النسبة مباشرة —
+ * مصدر واحد للحقيقة بدل النسخ المكررة في document-detector وopencv-detector.
+ */
+export function isIdCardAspectRatio(ratio: number): boolean {
+  return ratio >= ID_HALF_MIN_RATIO && ratio <= ID_HALF_MAX_RATIO;
+}
+
+/**
  * إيجاد مستطيل الدوران الأدنى (Minimum Area Bounding Box عبر Rotating Calipers)
  */
 export function findRotatedQuadCorners(hull: Point[]): Point[] | null {
@@ -168,12 +176,16 @@ export function findRotatedQuadCorners(hull: Point[]): Point[] | null {
     }
   }
 
-  // حل احتياطي عند استقامة النقاط على خط واحد
+  // حل احتياطي عند استقامة النقاط على خط واحد — حلقة صريحة بدل spread
+  // (Math.min(...arr) ينفجر stack للـ hulls الكبيرة)
   if (!bestCorners && n >= 2) {
-    const minX = Math.min(...hull.map((p) => p.x));
-    const maxX = Math.max(...hull.map((p) => p.x));
-    const minY = Math.min(...hull.map((p) => p.y));
-    const maxY = Math.max(...hull.map((p) => p.y));
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const p of hull) {
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
     bestCorners = [
       { x: minX, y: minY },
       { x: maxX, y: minY },
@@ -298,21 +310,47 @@ export function inferSmartDocumentAspect(quad: Point[]): DocumentAspectType {
 }
 
 /**
+ * اسم نوع المستند بالعربية ("بطاقة هوية"، "ورقة A4"...) — اللبنة المشتركة.
+ */
+export function getAspectKindLabel(aspect: DocumentAspectType | undefined): string {
+  if (aspect === "id_card") return "بطاقة هوية";
+  if (aspect === "a4_p" || aspect === "a4_l") return "ورقة A4";
+  if (aspect === "square") return "مستند مربع";
+  return "مستند";
+}
+
+/**
+ * التسمية العربية الموحدة لنوع المستند — مصدر واحد بدل 4 نسخ مكررة
+ * (document-detector ×2، opencv-detector، use-scanner-detection).
+ */
+export function getDocumentAspectLabel(aspect: DocumentAspectType | undefined, index: number): string {
+  return `مستند ${index} (${getAspectKindLabel(aspect)})`;
+}
+
+/**
  * حساب إحصائيات التداخل ونسبة التقاطع بين مضلعين مع كبح أمان المساحة
  */
 export function computeQuadOverlapStats(q1: Point[], q2: Point[]): QuadOverlapStats {
+  const empty = { iou: 0, overlapRatio1: 0, overlapRatio2: 0, maxOverlapRatio: 0 };
+  if (!q1 || !q2 || q1.length !== 4 || q2.length !== 4) return empty;
   const a1 = Math.max(0, computePolygonArea(q1));
   const a2 = Math.max(0, computePolygonArea(q2));
 
-  const minX1 = Math.min(q1[0].x, q1[1].x, q1[2].x, q1[3].x);
-  const maxX1 = Math.max(q1[0].x, q1[1].x, q1[2].x, q1[3].x);
-  const minY1 = Math.min(q1[0].y, q1[1].y, q1[2].y, q1[3].y);
-  const maxY1 = Math.max(q1[0].y, q1[1].y, q1[2].y, q1[3].y);
+  let minX1 = Infinity, maxX1 = -Infinity, minY1 = Infinity, maxY1 = -Infinity;
+  for (const p of q1) {
+    if (p.x < minX1) minX1 = p.x;
+    if (p.x > maxX1) maxX1 = p.x;
+    if (p.y < minY1) minY1 = p.y;
+    if (p.y > maxY1) maxY1 = p.y;
+  }
 
-  const minX2 = Math.min(q2[0].x, q2[1].x, q2[2].x, q2[3].x);
-  const maxX2 = Math.max(q2[0].x, q2[1].x, q2[2].x, q2[3].x);
-  const minY2 = Math.min(q2[0].y, q2[1].y, q2[2].y, q2[3].y);
-  const maxY2 = Math.max(q2[0].y, q2[1].y, q2[2].y, q2[3].y);
+  let minX2 = Infinity, maxX2 = -Infinity, minY2 = Infinity, maxY2 = -Infinity;
+  for (const p of q2) {
+    if (p.x < minX2) minX2 = p.x;
+    if (p.x > maxX2) maxX2 = p.x;
+    if (p.y < minY2) minY2 = p.y;
+    if (p.y > maxY2) maxY2 = p.y;
+  }
 
   const interW = Math.max(0, Math.min(maxX1, maxX2) - Math.max(minX1, minX2));
   const interH = Math.max(0, Math.min(maxY1, maxY2) - Math.max(minY1, minY2));
@@ -359,7 +397,8 @@ export function computeLineIntersection(
 export function fitRobustLineRANSAC(
   pts: Point[],
   maxIter: number = 30,
-  inlierThresh: number = 2.5
+  inlierThresh: number = 2.5,
+  rng: () => number = Math.random
 ): LineEquation | null {
   if (pts.length < 2) return null;
   if (pts.length === 2) {
@@ -378,8 +417,8 @@ export function fitRobustLineRANSAC(
   const n = pts.length;
 
   for (let iter = 0; iter < maxIter; iter++) {
-    const i1 = Math.floor(Math.random() * n);
-    let i2 = Math.floor(Math.random() * n);
+    const i1 = Math.floor(rng() * n);
+    let i2 = Math.floor(rng() * n);
     if (i2 === i1) i2 = (i1 + 1) % n;
 
     const p1 = pts[i1];
@@ -443,7 +482,8 @@ export function fitRobustLineRANSAC(
  */
 export function fitRobustQuadLinesRANSAC(
   contourPts: Point[],
-  initialQuad: Point[]
+  initialQuad: Point[],
+  rng: () => number = Math.random
 ): Point[] | null {
   if (contourPts.length < 8 || initialQuad.length !== 4) return null;
 
@@ -477,7 +517,7 @@ export function fitRobustQuadLinesRANSAC(
   const lines: (LineEquation | null)[] = [];
   for (let s = 0; s < 4; s++) {
     if (segments[s].length >= 3) {
-      lines.push(fitRobustLineRANSAC(segments[s], 25, 2.5));
+      lines.push(fitRobustLineRANSAC(segments[s], 25, 2.5, rng));
     } else {
       // استخدام خط الضلع المبدئي كبديل
       const p1 = sorted[s];

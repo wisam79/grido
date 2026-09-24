@@ -6,11 +6,14 @@ import {
   DetectionMode,
   DocumentAspectType,
   detectDocumentAuto,
+  defaultInsetCorners,
+  getDocumentAspectLabel,
   inferSmartDocumentAspect,
   addManualDocumentQuad,
   splitQuadIntoIdCards,
   warmupMlDetector,
 } from "../core";
+import { formatSolvableError } from "@/lib/ui/ui-compliance";
 
 export interface ScannerDetectionApi {
   detectedDocs: DetectedDocument[];
@@ -133,7 +136,13 @@ export function useScannerDetection(
         }
       } catch {
         if (reqId === activeReqIdRef.current && notify) {
-          toast.error("حدث خطأ أثناء الكشف — جرب مرة أخرى");
+          toast.error(
+            formatSolvableError({
+              reason: "تعذر إتمام الكشف التلقائي",
+              fix: "تأكد من وضوح الصورة ثم اضغط كشف تلقائي مجدداً أو اضبط الأركان يدوياً",
+              code: "SCN-DETECT-01",
+            })
+          );
         }
       } finally {
         if (reqId === activeReqIdRef.current) {
@@ -214,31 +223,19 @@ export function useScannerDetection(
       const deletedIdx = detectedDocs.findIndex((d) => d.id === id);
       if (deletedIdx === -1) return;
 
-      const prevSelectedSet = new Set(selectedDocIds);
+      // المعرفات مستقرة (UUID) — لا إعادة ترقيم بعد الحذف: التسمية للعرض فقط
+      // تُشتق من الترتيب الحالي دون المساس بالـ id (كان `doc-${idx+1}` يُعاد
+      // توليده فيكسر key وselectedIds بمنطق O(n²) هش).
       const survivingDocs = detectedDocs.filter((d) => d.id !== id);
+      const nextDocs: DetectedDocument[] = survivingDocs.map((doc, idx) => ({
+        ...doc,
+        label: getDocumentAspectLabel(doc.aspectType, idx + 1),
+      }));
 
-      // إعادة التسمية مع الحفاظ على كائنات جديدة نقية (Immutability)
-      const nextDocs: DetectedDocument[] = survivingDocs.map((doc, idx) => {
-        let aspectLabel = "مستند";
-        if (doc.aspectType === "id_card") aspectLabel = "بطاقة هوية";
-        else if (doc.aspectType === "a4_p" || doc.aspectType === "a4_l") aspectLabel = "ورقة A4";
-        else if (doc.aspectType === "square") aspectLabel = "مستند مربع";
-
-        return {
-          ...doc,
-          id: `doc-${idx + 1}`,
-          label: `مستند ${idx + 1} (${aspectLabel})`,
-        };
-      });
-
-      // مزامنة دقيقة للمستندات المحددة استناداً للمستندات المتبقية التي كانت محددة بالفعل
-      const nextSelected: string[] = [];
-      survivingDocs.forEach((oldDoc, idx) => {
-        if (prevSelectedSet.has(oldDoc.id)) {
-          nextSelected.push(nextDocs[idx].id);
-        }
-      });
-      const finalSelected = nextSelected.length > 0 ? nextSelected : [nextDocs[0].id];
+      // المحددات الباقية تنتقل كما هي (ids مستقرة) — لا مطابقة أسماء.
+      const prevSelectedSet = new Set(selectedDocIds);
+      const keptSelected = nextDocs.filter((d) => prevSelectedSet.has(d.id)).map((d) => d.id);
+      const finalSelected = keptSelected.length > 0 ? keptSelected : [nextDocs[0].id];
 
       setDetectedDocs(nextDocs);
       setSelectedDocIds(finalSelected);
@@ -270,25 +267,32 @@ export function useScannerDetection(
       aspectSetter: (a: DocumentAspectType) => void,
       previewResetter: () => void
     ) => {
-      if (corners.length !== 4) return;
+      if (corners.length !== 4) {
+        toast.warning(
+          formatSolvableError({
+            reason: "تعذر التقسيم — الأركان غير مكتملة",
+            fix: "اضبط النقاط الأربع على المستند أولاً ثم أعد التقسيم",
+            code: "SCN-SPLIT-01",
+          })
+        );
+        return;
+      }
       setDetectionMode("multi");
       const cards = splitQuadIntoIdCards(corners, "vertical");
       if (cards.length === 2) {
-        // #3 — دمج البطاقتين في القائمة الموجودة بدل استبدال المستندات كلها
-        setDetectedDocs((prev) => {
-          // إزالة أي مستند يشترك في ID مع البطاقات الجديدة (تحديث في الحالة الغريبة)
-          const others = prev.filter((d) => !cards.some((c) => c.id === d.id));
-          return [...others, ...cards];
-        });
+        // دمج البطاقتين في القائمة الموجودة بدل استبدال المستندات كلها،
+        // والنشط ينتقل لأول بطاقة جديدة (index = طول البقية).
+        const others = detectedDocs.filter((d) => !cards.some((c) => c.id === d.id));
+        setDetectedDocs([...others, ...cards]);
         setSelectedDocIds(cards.map((c) => c.id));
-        setActiveDocIndex((prev) => prev); // يبقى index الحالي صالحاً بعد الإضافة للآخر
+        setActiveDocIndex(others.length);
         cornersSetter(cards[0].corners);
         aspectSetter("id_card");
         previewResetter();
         toast.success("تم تقسيم المستند إلى بطاقتي هوية (وجه أمامي وخلفي)");
       }
     },
-    []
+    [detectedDocs]
   );
 
   const handleAutoDetect = useCallback(
@@ -320,8 +324,10 @@ export function useScannerDetection(
   useEffect(() => {
     if (!open || !imageSrc) return;
 
-    // تسخين نموذج الذكاء الاصطناعي مسبقاً في الخلفية
-    warmupMlDetector();
+    // تسخين نموذج الذكاء الاصطناعي في الخلفية عند الخمول — لا ينافس الكشف
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+    if (typeof ric === "function") ric.call(window, () => void warmupMlDetector());
+    else setTimeout(() => void warmupMlDetector(), 500);
 
     let isCancelled = false;
     const img = new Image();
@@ -332,21 +338,20 @@ export function useScannerDetection(
       imgRef.current = img;
       setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
 
-      const padX = Math.round(img.naturalWidth * 0.05);
-      const padY = Math.round(img.naturalHeight * 0.05);
-      cbsRef.current.onCorners([
-        { x: padX, y: padY },
-        { x: img.naturalWidth - padX, y: padY },
-        { x: img.naturalWidth - padX, y: img.naturalHeight - padY },
-        { x: padX, y: img.naturalHeight - padY },
-      ]);
+      cbsRef.current.onCorners(defaultInsetCorners(img.naturalWidth, img.naturalHeight));
       setDetectionMode("single");
       runDetection(false, "single");
     };
 
     img.onerror = () => {
       if (!isCancelled) {
-        toast.error("فشل تحميل صورة المستند للمسح");
+        toast.error(
+          formatSolvableError({
+            reason: "فشل تحميل صورة المستند للمسح",
+            fix: "أعد إدراج الصورة بصيغة مدعومة (PNG/JPG) ثم أعد فتح الماسح",
+            code: "SCN-LOAD-01",
+          })
+        );
       }
     };
 
@@ -358,6 +363,14 @@ export function useScannerDetection(
       activeReqIdRef.current = reqIdAtMount + 1;
       img.onload = null;
       img.onerror = null;
+      // تحرير الصورة المفكوكة من الذاكرة دون revoke (الـ blob URL ملك المنادي
+      // وقد يُعاد استخدامه — التفريغ عبر src="" يكفي لتحرير البتماب).
+      try {
+        img.src = "";
+      } catch {
+        // ignore
+      }
+      if (imgRef.current === img) imgRef.current = null;
     };
   }, [open, imageSrc, runDetection]);
 

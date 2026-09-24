@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Point,
@@ -7,6 +7,42 @@ import {
   warpPerspective,
   rotateCanvas,
 } from "../core";
+
+/**
+ * جدول الأبعاد الحقيقية لكل نوع مستند (معاينة/تصدير) — مصدر واحد بدل
+ * سلسلة if/else المبعثرة داخل generateWarpedForDoc.
+ */
+function resolveTargetDims(
+  docAspect: DocumentAspectType,
+  isPreview: boolean,
+  maxEdgeW: number,
+  maxEdgeH: number
+): { targetW: number; targetH: number } {
+  if (docAspect === "a4_p") {
+    if (isPreview) return { targetW: 620, targetH: 877 };
+    const baseW = Math.max(1400, maxEdgeW);
+    return { targetW: baseW, targetH: Math.round(baseW * Math.SQRT2) };
+  }
+  if (docAspect === "a4_l") {
+    if (isPreview) return { targetW: 877, targetH: 620 };
+    const baseW = Math.max(1980, maxEdgeW);
+    return { targetW: baseW, targetH: Math.round(baseW / Math.SQRT2) };
+  }
+  if (docAspect === "id_card") {
+    if (isPreview) return { targetW: 500, targetH: 315 };
+    const baseW = Math.max(1200, maxEdgeW);
+    return { targetW: baseW, targetH: Math.round(baseW / (85.60 / 53.98)) };
+  }
+  if (docAspect === "square") {
+    const avg = isPreview ? 600 : Math.max(1200, Math.round((maxEdgeW + maxEdgeH) / 2));
+    return { targetW: avg, targetH: avg };
+  }
+  if (isPreview) {
+    const s = Math.min(1, 800 / Math.max(maxEdgeW, maxEdgeH, 1));
+    return { targetW: Math.round(maxEdgeW * s), targetH: Math.round(maxEdgeH * s) };
+  }
+  return { targetW: maxEdgeW, targetH: maxEdgeH };
+}
 
 /**
  * 🧭 معالجة الماسح النهائية: استعدال المنظور بأبعاد حقيقية ديناميكية لكل
@@ -22,6 +58,19 @@ export function useScannerProcessor(
   const [isExporting, setIsExporting] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+  const [exportProgress, setExportProgress] = useState<{ done: number; total: number } | null>(null);
+
+  // حارس الإغلاق أثناء التصدير: onSave/onDone بعد الإغلاق تُتجاهل.
+  const openRef = useRef(open);
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  // إلغاء التصدير متعدد المستندات (R39: عملية >3s قابلة للإلغاء).
+  const exportCancelRef = useRef(false);
+  const cancelExport = useCallback(() => {
+    exportCancelRef.current = true;
+  }, []);
 
   // 🔒 تنظيف وتصفير حالات التصدير والمعاينة عند إغلاق النافذة
   useEffect(() => {
@@ -60,62 +109,26 @@ export function useScannerProcessor(
       const maxEdgeW = Math.round(Math.max(topW, botW));
       const maxEdgeH = Math.round(Math.max(leftH, rightH));
 
-      let targetW: number | undefined;
-      let targetH: number | undefined;
-
-      if (isPreview) {
-        const maxDim = 800;
-        const s = Math.min(1, maxDim / Math.max(maxEdgeW, maxEdgeH, 1));
-        targetW = Math.round(maxEdgeW * s);
-        targetH = Math.round(maxEdgeH * s);
-      } else {
-        targetW = maxEdgeW;
-        targetH = maxEdgeH;
-      }
-
-      if (docAspect === "a4_p") {
-        if (isPreview) {
-          targetW = 620;
-          targetH = 877;
-        } else {
-          const baseW = Math.max(1400, maxEdgeW);
-          targetW = baseW;
-          targetH = Math.round(baseW * Math.SQRT2);
-        }
-      } else if (docAspect === "a4_l") {
-        if (isPreview) {
-          targetW = 877;
-          targetH = 620;
-        } else {
-          const baseW = Math.max(1980, maxEdgeW);
-          targetW = baseW;
-          targetH = Math.round(baseW / Math.SQRT2);
-        }
-      } else if (docAspect === "id_card") {
-        if (isPreview) {
-          targetW = 500;
-          targetH = 315;
-        } else {
-          const baseW = Math.max(1200, maxEdgeW);
-          targetW = baseW;
-          targetH = Math.round(baseW / (85.60 / 53.98));
-        }
-      } else if (docAspect === "square") {
-        const avg = isPreview ? 600 : Math.max(1200, Math.round((maxEdgeW + maxEdgeH) / 2));
-        targetW = avg;
-        targetH = avg;
-      }
+      const { targetW, targetH } = resolveTargetDims(docAspect, isPreview, maxEdgeW, maxEdgeH);
 
       const effectiveFilter = docFilter || fallbackFilter;
-      const resCanvas = warpPerspective(
-        srcCtx,
-        img.naturalWidth,
-        img.naturalHeight,
-        docCorners,
-        targetW,
-        targetH,
-        effectiveFilter
-      );
+      let resCanvas: HTMLCanvasElement | null = null;
+      try {
+        resCanvas = warpPerspective(
+          srcCtx,
+          img.naturalWidth,
+          img.naturalHeight,
+          docCorners,
+          targetW,
+          targetH,
+          effectiveFilter
+        );
+      } catch {
+        srcCanvas.width = 0;
+        srcCanvas.height = 0;
+        toast.error("تعذر استعدال المنظور — الحل: باعد بين الأركان الأربع ولا تجمعها في نقطة واحدة");
+        return null;
+      }
 
       srcCanvas.width = 0;
       srcCanvas.height = 0;
@@ -156,10 +169,12 @@ export function useScannerProcessor(
       onSave: (base64: string | string[]) => void,
       onDone: () => void
     ) => {
+      exportCancelRef.current = false;
       setIsExporting(true);
       try {
         await new Promise((resolve) => setTimeout(resolve, 0));
         const warped = generateWarpedForDoc(corners, aspect, false);
+        if (exportCancelRef.current || !openRef.current) return;
         if (warped) {
           onSave(warped.toDataURL("image/png"));
           warped.width = 0;
@@ -186,11 +201,15 @@ export function useScannerProcessor(
         return;
       }
 
+      exportCancelRef.current = false;
       setIsExporting(true);
+      setExportProgress({ done: 0, total: docsToExport.length });
       try {
         const results: string[] = [];
-        for (const doc of docsToExport) {
+        for (let i = 0; i < docsToExport.length; i++) {
+          if (exportCancelRef.current || !openRef.current) break;
           await new Promise((resolve) => setTimeout(resolve, 30)); // Yield to UI
+          const doc = docsToExport[i];
           const warped = generateWarpedForDoc(
             doc.corners,
             doc.aspectType,
@@ -203,8 +222,10 @@ export function useScannerProcessor(
             warped.width = 0;
             warped.height = 0;
           }
+          setExportProgress({ done: i + 1, total: docsToExport.length });
         }
 
+        if (exportCancelRef.current || !openRef.current) return;
         if (results.length > 0) {
           onSave(results.length === 1 ? results[0] : results);
           onDone();
@@ -213,6 +234,7 @@ export function useScannerProcessor(
         }
       } finally {
         setIsExporting(false);
+        setExportProgress(null);
       }
     },
     [generateWarpedForDoc]
@@ -224,15 +246,19 @@ export function useScannerProcessor(
   }, []);
 
   const resetProcessorState = useCallback(() => {
+    exportCancelRef.current = true;
     setIsExporting(false);
     setIsPreviewMode(false);
     setPreviewSrc(null);
+    setExportProgress(null);
   }, []);
 
   return {
     isExporting,
     isPreviewMode,
     previewSrc,
+    exportProgress,
+    cancelExport,
     setIsPreviewMode,
     generateWarpedForDoc,
     handleTogglePreview,

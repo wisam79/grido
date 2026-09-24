@@ -122,11 +122,14 @@ export function computeAdaptiveIntegralMasks(
   w: number,
   h: number,
   winRadius: number = 14,
-  cOffset: number = 4
+  cOffset: number = 4,
+  prebuiltIntegral?: Uint32Array | Float64Array
 ): { darkMask: Uint8Array; brightMask: Uint8Array } {
   const total = w * h;
   const stride = w + 1;
-  const integral = buildIntegralImage(gray, w, h);
+  // إعادة استخدام الصورة التكاملية عند تمريرها (نافذتان على نفس الصورة
+  // تبني جدولاً واحداً بدل جدولين) — تُبنى داخلياً عند غيابها للتوافق الخلفي.
+  const integral = prebuiltIntegral ?? buildIntegralImage(gray, w, h);
   const darkMask = new Uint8Array(total);
   const brightMask = new Uint8Array(total);
 

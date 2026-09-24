@@ -3,9 +3,10 @@
  *
  * - Loads the OpenCV WASM runtime on first use only.
  * - Applies a hard timeout to avoid hanging on slow networks / corrupt cache.
- * - Returns `null` permanently on any load or init failure so callers fall back
+ * - Returns `null` on any load or init failure so callers fall back
  *   to the pure-JS detection path.
- * - Retries are allowed on the next call; failure is not cached.
+ * - Failures are NOT cached: the next call retries (inFlight is cleared on
+ *   both success and failure; the resolved runtime is kept in `cached`).
  */
 import type cv from "@techstark/opencv-js";
 import type { CvRuntimeLike } from "./core/cv-types";
@@ -18,7 +19,9 @@ const logger = createLogger("OpenCV");
 let cached: CvRuntime | null = null;
 let inFlight: Promise<CvRuntime | null> | null = null;
 
-const LOAD_TIMEOUT_MS = 3_000;
+// مهلة التحميل البارد: WASM + Compile + onRuntimeInitialized على شبكة بطيئة
+// أو قرص Wails يتجاوز 3s بسهولة — 10s تمنع السقوط الظالم لمسار JS.
+const LOAD_TIMEOUT_MS = 10_000;
 
 /** Minimal structural probe used to confirm a candidate is the cv runtime. */
 function hasMatConstructor(value: unknown): value is CvRuntimeLike {
@@ -110,6 +113,7 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
 
       if (hasMatConstructor(resolvedCv)) {
         cached = resolvedCv as unknown as CvRuntime;
+        inFlight = null;
         logger.info("Runtime successfully initialized");
         return cached;
       }
@@ -158,6 +162,7 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
         const finalCv = (hasMatConstructor(cvRuntime) ? cvRuntime : getGlobal().cv) as unknown as CvRuntime | undefined;
         if (finalCv && hasMatConstructor(finalCv)) {
           cached = finalCv;
+          inFlight = null;
           logger.info("Runtime ready after onRuntimeInitialized");
           return finalCv;
         }
@@ -177,7 +182,9 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
 }
 
 /**
- * ⚡ استدعاء وتحميل مسبق لـ OpenCV WASM في الخلفية أثناء خمول التطبيق
+ * ⚡ استدعاء وتحميل مسبق لـ OpenCV WASM في الخلفية أثناء خمول التطبيق —
+ * مجدول على requestIdleCallback (أو مهلة قصيرة) حتى لا ينافس الإقلاع،
+ * ويُتخطى دون اتصال (ملفات WASM محلية غالباً، لكن الفشل رخيص وصامت).
  */
 export function warmupOpenCV(): void {
   if (typeof window === "undefined") return;
@@ -185,7 +192,16 @@ export function warmupOpenCV(): void {
   const gProc = getGlobal().process;
   if (gProc && (gProc.env?.VITEST || gProc.env?.NODE_ENV === "test")) return;
   if (typeof WebAssembly === "undefined") return;
-  void loadOpenCV().catch((err) => {
-    logger.debug("Warmup deferred:", err);
-  });
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+  const start = () => {
+    void loadOpenCV().catch((err) => {
+      logger.debug("Warmup deferred:", err);
+    });
+  };
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+  if (typeof ric === "function") {
+    ric.call(window, start, { timeout: 4000 });
+  } else {
+    setTimeout(start, 800);
+  }
 }

@@ -239,7 +239,10 @@ export function evaluateCandidateQuad(
   const contrastNorm = Math.min(1, Math.abs(avgInt - 128) / 64 + 0.35);
 
   const textDensity = computeInternalTextDensity(sorted, gray, mag, sw, sh);
-  const textBonus = 1.0 + textDensity * 2.5;
+  // مكافأة النص إشارة ضعيفة لموقع الحد: داخل المستند الحقيقي وداخل كتلة
+  // المحتوى الداخلية كلاهما يحوي نصاً، لذا وزن 2.5 كان يطغى على إشارة
+  // الحافة (0.40) ويرجح مربعات المحتوى الداخلية على حد الورقة الحقيقي.
+  const textBonus = 1.0 + textDensity * 1.0;
 
   const sizeFactor = 0.85 + 0.15 * Math.min(1, areaRatio * 3.5);
   return (
@@ -251,6 +254,20 @@ export function evaluateCandidateQuad(
 }
 
 /**
+ * معرف فريد مستقر للمستند — crypto.randomUUID عند توفره (متصفحات حديثة وNode 19+)،
+ * وإلا بديل Math.random. (كان Math.random وحده: غير حتمي ويُعقد الاختبارات).
+ */
+export function newDocumentId(prefix = "doc"): string {
+  try {
+    const uuid = globalThis.crypto?.randomUUID?.();
+    if (uuid) return `${prefix}-${uuid.slice(0, 8)}`;
+  } catch {
+    // ignore — fallback أدناه
+  }
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/**
  * تقسيم مضلع يحوي بطاقتي هوية مكدستين إلى بطاقتين مستقلتين مع مسافة أمان (2% Gap)
  */
 export function splitQuadIntoIdCards(
@@ -258,7 +275,7 @@ export function splitQuadIntoIdCards(
   direction: "vertical" | "horizontal" = "vertical"
 ): DetectedDocument[] {
   const sorted = sortCornerPoints(quad);
-  const uid = Math.random().toString(36).slice(2, 7);
+  const uid = newDocumentId("doc");
 
   if (direction === "vertical") {
     const midLeft1: Point = {
@@ -281,14 +298,14 @@ export function splitQuadIntoIdCards(
 
     return [
       {
-        id: `doc-${uid}-1`,
+        id: `${uid}-1`,
         corners: [sorted[0], sorted[1], midRight1, midLeft1],
         confidence: 0.95,
         label: "بطاقة 1 (الوجه الأمامي)",
         aspectType: "id_card",
       },
       {
-        id: `doc-${uid}-2`,
+        id: `${uid}-2`,
         corners: [midLeft2, midRight2, sorted[2], sorted[3]],
         confidence: 0.95,
         label: "بطاقة 2 (الوجه الخلفي)",
@@ -316,14 +333,14 @@ export function splitQuadIntoIdCards(
 
     return [
       {
-        id: `doc-${uid}-1`,
+        id: `${uid}-1`,
         corners: [sorted[0], midTop1, midBottom1, sorted[3]],
         confidence: 0.95,
         label: "بطاقة 1 (الجانب الأول)",
         aspectType: "id_card",
       },
       {
-        id: `doc-${uid}-2`,
+        id: `${uid}-2`,
         corners: [midTop2, sorted[1], sorted[2], midBottom2],
         confidence: 0.95,
         label: "بطاقة 2 (الجانب الثاني)",
@@ -415,7 +432,7 @@ export function addManualDocumentQuad(
   ];
 
   return {
-    id: `doc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    id: newDocumentId("doc"),
     corners,
     confidence: 0.85,
     label: `مستند ${nextIdx}`,

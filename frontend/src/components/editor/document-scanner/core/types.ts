@@ -36,9 +36,13 @@ export interface QuadOverlapStats {
 export interface ScoredCandidate {
   quad: Point[];
   score: number;
-  effectiveScore?: number;
-  area?: number;
-  aspectRatio?: number;
+}
+
+/** مضلع رباعي صالح — 4 نقاط بالضبط بترتيب عقارب الساعة */
+export type Quad = [Point, Point, Point, Point];
+
+export function isQuad(pts: Point[] | null | undefined): pts is Quad {
+  return !!pts && pts.length === 4;
 }
 
 // 🌟 ثوابت هندسية موحدة لتقسيم البطاقات المكدسة والنسب المرجعية

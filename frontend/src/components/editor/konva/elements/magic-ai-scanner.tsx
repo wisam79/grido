@@ -22,6 +22,8 @@ interface MagicAiScannerProps {
   height: number;
   rotation?: number;
   cornerRadius?: number;
+  /** إيقاف حلقة الـ Animation (تعدد التحديد = تعدد حلقات batchDraw). */
+  enabled?: boolean;
 }
 
 export const MagicAiScanner = React.memo(function MagicAiScanner({
@@ -31,6 +33,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
   height,
   rotation = 0,
   cornerRadius = 0,
+  enabled = true,
 }: MagicAiScannerProps) {
   const groupRef = useRef<Konva.Group>(null);
   const borderRef = useRef<Konva.Rect>(null);
@@ -42,7 +45,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
 
   useEffect(() => {
     const group = groupRef.current;
-    if (!group) return;
+    if (!group || !enabled) return;
 
     if (borderRef.current) {
       borderRef.current.width(width);
@@ -70,6 +73,11 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
         circle2Ref.current.x(width * 0.75);
         circle2Ref.current.y((currentScanPos - 20 + height) % height);
       }
+      // الجسيم الثالث كان مرسوماً دون تحريك (ميت بصرياً) — مدار معاكس.
+      if (circle3Ref.current) {
+        circle3Ref.current.x(width * 0.5 + Math.sin(elapsed * 2.2) * width * 0.2);
+        circle3Ref.current.y(height - currentScanPos);
+      }
       // سحب الطبقة التي تستضيف السكنر الآن: Konva.Animation بلا وسيط `layers`
       // لا يرسم أياً من الطبقات (المصدر: _runFrames يرسم الطبقات الممرَّرة فقط)،
       // فبدون هذا السطر لا يظهر أي إطار من الأنيميشن. و`getLayer()` تتبع العقدة
@@ -82,7 +90,7 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
     return () => {
       anim.stop();
     };
-  }, [height, width, x, y, rotation, cornerRadius]);
+  }, [height, width, x, y, rotation, cornerRadius, enabled]);
 
   return (
     <Group ref={groupRef} x={x} y={y} rotation={rotation} listening={false}>

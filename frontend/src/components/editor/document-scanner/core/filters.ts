@@ -100,26 +100,10 @@ export function applyOtsuFilter(canvas: HTMLCanvasElement): HTMLCanvasElement {
     gray[i] = Math.round(0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]);
   }
 
-  // 1. الصورة التكاملية في زمن O(N)
-  // 🚀 Uint32Array (نصف ذاكرة Float64) مع 🛡️ حارس overflow: المجموع الكلي
-  // = 255×عدد البكسلات يتجاوز حد Uint32 عند ~16.8MP (A3 300DPI) — فوقه Float64
+  // 1. الصورة التكاملية — الدالة المشتركة من fast-vision (كانت نسخة يدوية
+  // مكررة هنا؛ أي إصلاح overflow هناك ينعكس هنا تلقائياً).
   const intW = w + 1;
-  const integral =
-    255 * totalPixels <= 4294967295
-      ? new Uint32Array((w + 1) * (h + 1))
-      : new Float64Array((w + 1) * (h + 1));
-
-  for (let y = 0; y < h; y++) {
-    let rowSum = 0;
-    const rowOffset = y * w;
-    const intRowOffset = (y + 1) * intW;
-    const prevIntRowOffset = y * intW;
-
-    for (let x = 0; x < w; x++) {
-      rowSum += gray[rowOffset + x];
-      integral[intRowOffset + (x + 1)] = integral[prevIntRowOffset + (x + 1)] + rowSum;
-    }
-  }
+  const integral = buildIntegralImage(gray, w, h);
 
   // 2. تطبيق العتبة التكيفية (Adaptive Sauvola/Bradley Threshold)
   const windowRadius = Math.max(8, Math.min(32, Math.floor(Math.min(w, h) / 18)));

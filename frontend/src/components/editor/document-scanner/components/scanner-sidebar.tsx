@@ -49,7 +49,7 @@ export interface ScannerSidebarProps {
   onRotateCounterClockwise?: () => void;
 }
 
-export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
+export const ScannerSidebar = React.memo(function ScannerSidebar({
   detectionMode = "single",
   onModeChange,
   detectedDocs,
@@ -71,7 +71,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
   rotation = 0,
   onRotateClockwise,
   onRotateCounterClockwise,
-}) => {
+}: ScannerSidebarProps) {
   const isAllSelected = detectedDocs.length > 0 && selectedDocIds.length === detectedDocs.length;
   const isMultiActive = detectionMode === "multi" || detectedDocs.length > 1;
 
@@ -159,7 +159,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                   disabled={isDetecting}
                 >
                   <Copy size={13} weight="bold" className="shrink-0" />
-                  <span>تقسيم هوية</span>
+                  <span>تقسيم وجه/خلف</span>
                 </Button>
               )}
             </div>
@@ -243,6 +243,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
                 )}
+                disabled={isDetecting}
                 onClick={() => onFilterChange("original")}
               >
                 <FileText size={14} weight={filterMode === "original" ? "fill" : "regular"} className="shrink-0" />
@@ -263,6 +264,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                     ? "bg-primary text-primary-foreground shadow-2xs"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
                 )}
+                disabled={isDetecting}
                 onClick={() => onFilterChange("magic")}
               >
                 <Sparkle size={14} weight={filterMode === "magic" ? "fill" : "duotone"} className="shrink-0 text-amber-400" />
@@ -283,6 +285,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
                 )}
+                disabled={isDetecting}
                 onClick={() => onFilterChange("grayscale")}
               >
                 <Circle size={14} weight={filterMode === "grayscale" ? "fill" : "regular"} className="shrink-0 text-muted-foreground" />
@@ -303,6 +306,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
                 )}
+                disabled={isDetecting}
                 onClick={() => onFilterChange("bw")}
               >
                 <CheckSquareOffset size={14} weight={filterMode === "bw" ? "fill" : "regular"} className="shrink-0" />
@@ -323,6 +327,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
                 )}
+                disabled={isDetecting}
                 onClick={() => onFilterChange("sharpen")}
               >
                 <Lightning size={14} weight={filterMode === "sharpen" ? "fill" : "duotone"} className="shrink-0 text-cyan-500" />
@@ -343,6 +348,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "hover:bg-accent/60 text-foreground/80 bg-background/60"
                 )}
+                disabled={isDetecting}
                 onClick={() => onFilterChange("deyellow")}
               >
                 <Drop size={14} weight={filterMode === "deyellow" ? "fill" : "duotone"} className="shrink-0 text-orange-500" />
@@ -370,7 +376,8 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "hover:bg-accent/60 text-foreground/80 bg-background/60"
             )}
-            onClick={() => onAspectChange("free")}
+                disabled={isDetecting}
+                onClick={() => onAspectChange("free")}
           >
             حر
           </Button>
@@ -384,7 +391,8 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "hover:bg-accent/60 text-foreground/80 bg-background/60"
             )}
-            onClick={() => onAspectChange("a4_p")}
+                disabled={isDetecting}
+                onClick={() => onAspectChange("a4_p")}
           >
             A4 طولي
           </Button>
@@ -398,7 +406,8 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "hover:bg-accent/60 text-foreground/80 bg-background/60"
             )}
-            onClick={() => onAspectChange("a4_l")}
+                disabled={isDetecting}
+                onClick={() => onAspectChange("a4_l")}
           >
             A4 عرضي
           </Button>
@@ -412,7 +421,8 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
                 ? "bg-primary text-primary-foreground shadow-2xs"
                 : "hover:bg-accent/60 text-foreground/80 bg-background/60"
             )}
-            onClick={() => onAspectChange("id_card")}
+                disabled={isDetecting}
+                onClick={() => onAspectChange("id_card")}
           >
             <IdentificationCard size={14} weight={aspectType === "id_card" ? "fill" : "regular"} className="shrink-0" />
             <span>هوية</span>
@@ -428,7 +438,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
             <span>التدوير والضبط</span>
           </Label>
           {(((rotation % 360) + 360) % 360) !== 0 && (
-            <span className="text-micro font-mono text-primary font-bold px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
+            <span dir="ltr" className="text-micro font-mono text-primary font-bold px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
               {((rotation % 360) + 360) % 360}°
             </span>
           )}
@@ -440,6 +450,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
               <Button
                 variant="outline"
                 size="sm"
+                disabled={isDetecting}
                 onClick={onRotateCounterClockwise}
                 className="h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-border/50 bg-background/60 hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
@@ -455,6 +466,7 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
               <Button
                 variant="outline"
                 size="sm"
+                disabled={isDetecting}
                 onClick={onRotateClockwise}
                 className="h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-border/50 bg-background/60 hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
@@ -479,4 +491,4 @@ export const ScannerSidebar: React.FC<ScannerSidebarProps> = ({
       </div>
     </div>
   );
-};
+});

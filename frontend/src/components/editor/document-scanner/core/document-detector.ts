@@ -6,12 +6,11 @@ import {
   DetectionMode,
   STACKED_SPLIT_MIN_RATIO,
   STACKED_SPLIT_MAX_RATIO,
-  ID_HALF_MIN_RATIO,
-  ID_HALF_MAX_RATIO,
 } from "./types";
 import {
   rgbaToGrayscale,
   fastBoxBlur,
+  buildIntegralImage,
   computeAdaptiveIntegralMasks,
   computeSobelGradients,
   computeOtsuThreshold,
@@ -27,6 +26,9 @@ import {
   findRotatedQuadCorners,
   extractFourCornersFromHull,
   inferSmartDocumentAspect,
+  isIdCardAspectRatio,
+  getAspectKindLabel,
+  getDocumentAspectLabel,
   computeQuadOverlapStats,
   fitRobustQuadLinesRANSAC,
   evaluateVanishingPointPhysics,
@@ -42,9 +44,25 @@ import {
 import { refineCornersSubPixel } from "./perspective-warper";
 import { detectDocumentsWithOpenCV } from "./opencv-detector";
 import { detectDocumentWithMl } from "./ml-detector";
-import { getLoadedOpenCV } from "../opencv-loader";
+import { fuseDetections, ML_GRACE_MS } from "./detect-fusion";
+import { getLoadedOpenCV, loadOpenCV } from "../opencv-loader";
 
 export { splitQuadIntoIdCards, addManualDocumentQuad };
+
+/**
+ * الأركان الافتراضية بإزاحة 5% — مصدر واحد بدل 5 نسخ مكررة
+ * (الكاشف ×3، الهوك، الحوار). أي تغيير هنا ينعكس في كل المسارات.
+ */
+export function defaultInsetCorners(w: number, h: number, insetRatio = 0.05): Point[] {
+  const padX = Math.floor(w * insetRatio);
+  const padY = Math.floor(h * insetRatio);
+  return [
+    { x: padX, y: padY },
+    { x: w - padX, y: padY },
+    { x: w - padX, y: h - padY },
+    { x: padX, y: h - padY },
+  ];
+}
 
 const FRAME_HULL_MIN = 0.88;
 const FRAME_HULL_MAX = 0.999;
@@ -60,8 +78,7 @@ function isIdCardAspect(quad: Point[]): boolean {
   const w = Math.hypot(sorted[1].x - sorted[0].x, sorted[1].y - sorted[0].y);
   const h = Math.hypot(sorted[3].x - sorted[0].x, sorted[3].y - sorted[0].y);
   if (w <= 0 || h <= 0) return false;
-  const ratio = Math.max(w / h, h / w);
-  return ratio >= ID_HALF_MIN_RATIO && ratio <= ID_HALF_MAX_RATIO;
+  return isIdCardAspectRatio(Math.max(w / h, h / w));
 }
 
 /**
@@ -141,17 +158,10 @@ export function autoDetectAllDocumentCorners(
 
   // إذا كانت الصورة فارغة أو بدون تباين كافٍ، إعادة المستطيل الافتراضي 5%
   if (effMaxMag < 8) {
-    const padX = Math.floor(originalWidth * 0.05);
-    const padY = Math.floor(originalHeight * 0.05);
     return [
       {
         id: "doc-1",
-        corners: [
-          { x: padX, y: padY },
-          { x: originalWidth - padX, y: padY },
-          { x: originalWidth - padX, y: originalHeight - padY },
-          { x: padX, y: originalHeight - padY },
-        ],
+        corners: defaultInsetCorners(originalWidth, originalHeight),
         confidence: 0.5,
         label: "مستند 1",
         aspectType: "free",
@@ -171,8 +181,10 @@ export function autoDetectAllDocumentCorners(
   salienceMask = mSalient;
 
   // ب) قناع العتبة التكيفية (Adaptive Integral Thresholds - قياسي وواسع لمقاومة وهج الفلاش)
-  const { darkMask, brightMask } = computeAdaptiveIntegralMasks(blurred, sw, sh, 16, 4);
-  const { darkMask: darkWide, brightMask: brightWide } = computeAdaptiveIntegralMasks(blurred, sw, sh, 24, 2);
+  // جدول تكاملي واحد مشترك للنافذتين بدل بنائه مرتين من الصفر
+  const sharedIntegral = buildIntegralImage(blurred, sw, sh);
+  const { darkMask, brightMask } = computeAdaptiveIntegralMasks(blurred, sw, sh, 16, 4, sharedIntegral);
+  const { darkMask: darkWide, brightMask: brightWide } = computeAdaptiveIntegralMasks(blurred, sw, sh, 24, 2, sharedIntegral);
   masks.push(darkMask);
   masks.push(brightMask);
   masks.push(darkWide);
@@ -262,6 +274,24 @@ export function autoDetectAllDocumentCorners(
             quads.push(polyPts);
           }
 
+          // 3ب. محاولة أضيق (0.012) لالتقاط الأركان الحادة دون قصها —
+          // عتبة 0.022 تقص الركن بمقدار يصل لـ 22px على محيط 1000px.
+          // تُقبل فقط إن اختلفت فعلاً عن المحاولة القياسية لتفادي التكرار.
+          const tightPoly = approxPolyDP(closedHull, 0.012 * perim);
+          const tightPts = tightPoly.length === 5 ? tightPoly.slice(0, 4) : tightPoly;
+          if (tightPts.length === 4 && polyPts.length === 4) {
+            let differs = false;
+            for (let k = 0; k < 4; k++) {
+              if (Math.hypot(tightPts[k].x - polyPts[k].x, tightPts[k].y - polyPts[k].y) > 1) {
+                differs = true;
+                break;
+              }
+            }
+            if (differs) quads.push(tightPts);
+          } else if (tightPts.length === 4) {
+            quads.push(tightPts);
+          }
+
           // 4. 🌟 إعادة بناء أركان الخطوط المتقاطعة بـ RANSAC من نقاط الحواف الفعلية
           const seedQuad = trueHullQuad || rotQuad || (polyPts.length === 4 ? polyPts : null);
           if (seedQuad) {
@@ -299,15 +329,11 @@ export function autoDetectAllDocumentCorners(
       { x: inset, y: h - inset },
     ];
     const aspect = inferSmartDocumentAspect(corners);
-    let aspectLabel = "مستند";
-    if (aspect === "id_card") aspectLabel = "بطاقة هوية";
-    else if (aspect === "a4_p" || aspect === "a4_l") aspectLabel = "ورقة A4";
-    else if (aspect === "square") aspectLabel = "مستند مربع";
     return {
       id: "doc-1",
       corners,
       confidence: 0.62,
-      label: `مستند 1 (إطار كامل — ${aspectLabel})`,
+      label: `مستند 1 (إطار كامل — ${getAspectKindLabel(aspect)})`,
       aspectType: aspect,
     };
   };
@@ -316,17 +342,10 @@ export function autoDetectAllDocumentCorners(
     if (hasFrameHull && ringUniform) {
       return [buildFrameDocument()];
     }
-    const padX = Math.floor(originalWidth * 0.05);
-    const padY = Math.floor(originalHeight * 0.05);
     return [
       {
         id: "doc-1",
-        corners: [
-          { x: padX, y: padY },
-          { x: originalWidth - padX, y: padY },
-          { x: originalWidth - padX, y: originalHeight - padY },
-          { x: padX, y: originalHeight - padY },
-        ],
+        corners: defaultInsetCorners(originalWidth, originalHeight),
         confidence: 0.5,
         label: "مستند 1",
         aspectType: "free",
@@ -496,18 +515,13 @@ export function autoDetectAllDocumentCorners(
     const sorted = sortCornerPoints(scaledCorners);
     const aspect = inferSmartDocumentAspect(sorted);
 
-    let aspectLabel = "مستند";
-    if (aspect === "id_card") aspectLabel = "بطاقة هوية";
-    else if (aspect === "a4_p" || aspect === "a4_l") aspectLabel = "ورقة A4";
-    else if (aspect === "square") aspectLabel = "مستند مربع";
-
     const confidence = Math.min(0.99, Math.max(0.40, Math.round((cand.score / 1.5) * 100) / 100));
 
     return {
       id: `doc-${idx + 1}`,
       corners: sorted,
       confidence,
-      label: `مستند ${idx + 1} (${aspectLabel})`,
+      label: getDocumentAspectLabel(aspect, idx + 1),
       aspectType: aspect,
     };
   });
@@ -526,12 +540,7 @@ export function autoDetectDocumentCorners(
   originalHeight: number
 ): Point[] {
   const allDocs = autoDetectAllDocumentCorners(smallImgData, sw, sh, originalWidth, originalHeight);
-  return allDocs[0]?.corners ?? [
-    { x: Math.floor(originalWidth * 0.05), y: Math.floor(originalHeight * 0.05) },
-    { x: originalWidth - Math.floor(originalWidth * 0.05), y: Math.floor(originalHeight * 0.05) },
-    { x: originalWidth - Math.floor(originalWidth * 0.05), y: originalHeight - Math.floor(originalHeight * 0.05) },
-    { x: Math.floor(originalWidth * 0.05), y: originalHeight - Math.floor(originalHeight * 0.05) },
-  ];
+  return allDocs[0]?.corners ?? defaultInsetCorners(originalWidth, originalHeight);
 }
 
 /**
@@ -609,11 +618,24 @@ export async function runJsDetectionAsync(
   if (worker) {
     try {
       const requestId = nextWorkerReqId++;
-      const buffer = smallImgData.data.buffer;
+      // نسخة مخصصة للنقل: postMessage بمخزن منقول يُفرغه (detach)، ومسار
+      // الـ fallback أدناه يعيد استخدام smallImgData الأصلية — نقل الأصلية
+      // مباشرة كان يترك الـ fallback أمام مخزن مفصول (قيم صفرية/استثناء).
+      const transferCopy = smallImgData.data.slice().buffer;
 
+      // مهلة أمان: Worker ميت/معلق يُرفض ليتدخل الـ fallback المتزامن
+      // بدل تعليق الوعد للأبد (طلبان متزامنان يتسابقان على Worker وحيد).
+      const WORKER_TIMEOUT_MS = 15000;
       return await new Promise<DetectedDocument[]>((resolve, reject) => {
+        const timer = setTimeout(() => {
+          worker.removeEventListener("message", handleMessage);
+          worker.removeEventListener("error", handleError);
+          reject(new Error("Document detector worker timed out"));
+        }, WORKER_TIMEOUT_MS);
+
         const handleMessage = (e: MessageEvent) => {
           if (e.data && e.data.requestId === requestId) {
+            clearTimeout(timer);
             worker.removeEventListener("message", handleMessage);
             worker.removeEventListener("error", handleError);
             if (e.data.type === "success") {
@@ -625,6 +647,7 @@ export async function runJsDetectionAsync(
         };
 
         const handleError = (e: ErrorEvent) => {
+          clearTimeout(timer);
           worker.removeEventListener("message", handleMessage);
           worker.removeEventListener("error", handleError);
           reject(e.error || new Error("Worker execution error"));
@@ -637,13 +660,13 @@ export async function runJsDetectionAsync(
           {
             type: "detect",
             requestId,
-            buffer,
+            buffer: transferCopy,
             sw,
             sh,
             originalWidth,
             originalHeight,
           },
-          [buffer]
+          [transferCopy]
         );
       });
     } catch (workerErr) {
@@ -656,28 +679,26 @@ export async function runJsDetectionAsync(
 }
 
 /**
- * نقطة الدخول الشاملة للكشف التلقائي الفوري مع الصقل البكسلي المحمي
+ * المسار الكلاسيكي للكشف التلقائي (OpenCV WASM ثم هرم JS) — بلا النموذج
+ * العصبي. يُستدعى من detectDocumentAuto الذي يشغّل ML بالتوازي ويدمج
+ * النتائج عبر fuseDetections.
  */
-export async function detectDocumentAuto(
+async function runClassicalDetection(
   src: HTMLCanvasElement | HTMLImageElement,
   originalWidth: number,
   originalHeight: number,
   mode: DetectionMode = "single"
 ): Promise<DetectionResult> {
-  // 1. 🌟 في نمط المسح المفرد (أو التلقائي): الأولوية لنموذج الذكاء الاصطناعي المدرب (DocCornerNet)
-  if (mode !== "multi") {
-    try {
-      const mlResult = await detectDocumentWithMl(src, originalWidth, originalHeight);
-      if (mlResult && mlResult.documents && mlResult.documents.length > 0 && mlResult.confidence >= 0.55) {
-        return mlResult;
-      }
-    } catch {
-      // Fall through to classical OpenCV / JS detection
-    }
-  }
-
-  // 2. 🌟 محرك OpenCV WASM (يُستدعى مرة واحدة بحسب النمط المطلوب دون تكرار)
-  if (getLoadedOpenCV()) {
+  // 🌟 محرك OpenCV WASM — انتظار قصير مشترك (1200ms) إن كان التحميل
+  // جارياً (الحالة الشائعة عند فتح الماسح بعد الإقلاع مباشرة)، بدل تخطيه
+  // كلياً والسقوط لـ JS. الـ loadOpenCV م_cached/in-flight فالانتظار رخيص.
+  const cvReady =
+    getLoadedOpenCV() ??
+    (await Promise.race([
+      loadOpenCV(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+    ]));
+  if (cvReady) {
     try {
       const cvResult = await detectDocumentsWithOpenCV(src, originalWidth, originalHeight, mode);
       if (cvResult && cvResult.documents && cvResult.documents.length > 0) {
@@ -690,7 +711,7 @@ export async function detectDocumentAuto(
     }
   }
 
-  // 3. 🌟 هرم المقاييس المتعددة للرؤية النقية (Pure JS Multi-Scale Vision Pyramid عبر Web Worker)
+  // 🌟 هرم المقاييس المتعددة للرؤية النقية (Pure JS Multi-Scale Vision Pyramid عبر Web Worker)
   const maxDim1 = 480;
   const procScale1 = Math.min(1, maxDim1 / originalWidth, maxDim1 / originalHeight);
   const sw1 = Math.max(1, Math.round(originalWidth * procScale1));
@@ -788,26 +809,7 @@ export async function detectDocumentAuto(
     }
   }
 
-  // 4. شبكة أمان: إذا كنا في نمط multi ولم يجد OpenCV أو JS أي شيء، نجرب ML كمحاولة أخيرة
-  if (mode === "multi") {
-    try {
-      const mlFallback = await detectDocumentWithMl(src, originalWidth, originalHeight);
-      if (mlFallback && mlFallback.documents && mlFallback.documents.length > 0 && mlFallback.confidence >= 0.55) {
-        return mlFallback;
-      }
-    } catch {
-      // Fall through to default inset
-    }
-  }
-
-  const padX = Math.floor(originalWidth * 0.05);
-  const padY = Math.floor(originalHeight * 0.05);
-  const fallbackCorners: Point[] = [
-    { x: padX, y: padY },
-    { x: originalWidth - padX, y: padY },
-    { x: originalWidth - padX, y: originalHeight - padY },
-    { x: padX, y: originalHeight - padY },
-  ];
+  const fallbackCorners: Point[] = defaultInsetCorners(originalWidth, originalHeight);
 
   return {
     corners: jsDocs[0]?.corners ?? fallbackCorners,
@@ -826,4 +828,46 @@ export async function detectDocumentAuto(
             },
           ],
   };
+}
+
+/**
+ * نقطة الدخول الشاملة للكشف التلقائي — النموذج العصبي (DocCornerNet) يبدأ
+ * بالتوازي في كل الأنماط كمُدقّق، والمسار الكلاسيكي (OpenCV ثم JS) يعمل
+ * بالتوازي، ثم تُدمج النتائج نقية عبر fuseDetections:
+ *
+ * - لا ننتظر ML أكثر من ML_GRACE_MS بعد انتهاء الكلاسيكي (نتيجة متأخرة
+ *   لا تُؤخّر الواجهة).
+ * - ML لم يعد مساراً منفصلاً يقصر النتيجة على مستند واحد في نمط single،
+ *   ولا بديلاً أخيراً في multi — بل يؤكد/يسترد/يستبدل مرشحات الكلاسيكي.
+ */
+export async function detectDocumentAuto(
+  src: HTMLCanvasElement | HTMLImageElement,
+  originalWidth: number,
+  originalHeight: number,
+  mode: DetectionMode = "single"
+): Promise<DetectionResult> {
+  const mlPromise = detectDocumentWithMl(src, originalWidth, originalHeight).catch(
+    () => null
+  );
+
+  const classical = await runClassicalDetection(src, originalWidth, originalHeight, mode);
+
+  const ml = await new Promise<DetectionResult | null>((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        resolve(null);
+      }
+    }, ML_GRACE_MS);
+    mlPromise.then((value) => {
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      }
+    });
+  });
+
+  return fuseDetections(ml, classical, mode);
 }

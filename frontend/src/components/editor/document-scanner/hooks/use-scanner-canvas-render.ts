@@ -24,19 +24,11 @@ function isPointInQuad(p: Point, quad: Point[]): boolean {
 }
 
 export interface ScannerCanvasApi {
-  containerRef: React.RefObject<HTMLDivElement>;
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  loupeCanvasRef: React.RefObject<HTMLCanvasElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  loupeCanvasRef: React.RefObject<HTMLCanvasElement | null>;
   activeCorner: number | null;
-  setActiveCorner: React.Dispatch<React.SetStateAction<number | null>>;
-  isHoveringCorner: number | null;
-  setIsHoveringCorner: React.Dispatch<React.SetStateAction<number | null>>;
   loupePos: { x: number; y: number } | null;
-  setLoupePos: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
-  displayScaleRef: React.RefObject<number>;
-  drawRafRef: React.RefObject<number | null>;
-  loupeRafRef: React.RefObject<number | null>;
-  drawCanvas: () => void;
   handlePointerDown: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   handlePointerMove: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   handlePointerUp: (e: React.PointerEvent<HTMLCanvasElement>) => void;
@@ -64,8 +56,11 @@ export function useScannerCanvasRender(
   const loupeCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const [activeCorner, setActiveCorner] = useState<number | null>(null);
-  const [isHoveringCorner, setIsHoveringCorner] = useState<number | null>(null);
   const [loupePos, setLoupePos] = useState<{ x: number; y: number } | null>(null);
+
+  // حالة الـ hover في ref لا state: كل pointermove كان يُعيد render الحوار
+  // كله (سايدبار + قائمة) ويُعيد إنشاء drawCanvas — الآن رسم أمر imperatively.
+  const isHoveringCornerRef = useRef<number | null>(null);
 
   const displayScaleRef = useRef<number>(1);
   const drawRafRef = useRef<number | null>(null);
@@ -180,7 +175,7 @@ export function useScannerCanvasRender(
       const py = pt.y * scale;
 
       const isActive = activeCorner === idx;
-      const isHover = isHoveringCorner === idx;
+      const isHover = isHoveringCornerRef.current === idx;
 
       ctx.beginPath();
       ctx.arc(px, py, isActive ? 11 : isHover ? 9 : 7, 0, Math.PI * 2);
@@ -197,9 +192,10 @@ export function useScannerCanvasRender(
     });
 
     ctx.restore();
-  }, [corners, activeCorner, isHoveringCorner, isPreviewMode, detectedDocs, activeDocIndex, imgRef]);
+  }, [corners, activeCorner, isPreviewMode, detectedDocs, activeDocIndex, imgRef]);
 
-  useEffect(() => {
+  // رسم أمر imperatively (للـ hover) دون انتظار دورة render
+  const requestDraw = useCallback(() => {
     if (drawRafRef.current !== null) {
       cancelAnimationFrame(drawRafRef.current);
     }
@@ -207,24 +203,28 @@ export function useScannerCanvasRender(
       drawRafRef.current = null;
       drawCanvas();
     });
+  }, [drawCanvas]);
+
+  useEffect(() => {
+    requestDraw();
     return () => {
       if (drawRafRef.current !== null) {
         cancelAnimationFrame(drawRafRef.current);
         drawRafRef.current = null;
       }
     };
-  }, [drawCanvas]);
+  }, [requestDraw]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const ro = new ResizeObserver(() => {
-      drawCanvas();
+      requestDraw();
     });
     ro.observe(container);
     return () => ro.disconnect();
-  }, [drawCanvas]);
+  }, [requestDraw]);
 
   const updateLoupe = useCallback(
     (cornerIndex: number, clientX: number, clientY: number) => {
@@ -376,10 +376,14 @@ export function useScannerCanvasRender(
             hoverIdx = idx;
           }
         });
-        setIsHoveringCorner(hoverIdx);
+        // إعادة الرسم فقط عند تغير الـ hover فعلاً — لا setState هنا.
+        if (isHoveringCornerRef.current !== hoverIdx) {
+          isHoveringCornerRef.current = hoverIdx;
+          requestDraw();
+        }
       }
     },
-    [isPreviewMode, imgSize, activeCorner, corners, onCornersChange, onAspectChange, scheduleLoupeUpdate]
+    [isPreviewMode, imgSize, activeCorner, corners, onCornersChange, onAspectChange, scheduleLoupeUpdate, requestDraw]
   );
 
   const handlePointerUp = useCallback(
@@ -409,7 +413,7 @@ export function useScannerCanvasRender(
     if (!open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reset canvas drag/hover state on close
       setActiveCorner(null);
-      setIsHoveringCorner(null);
+      isHoveringCornerRef.current = null;
       setLoupePos(null);
       if (drawRafRef.current !== null) {
         cancelAnimationFrame(drawRafRef.current);
@@ -427,15 +431,7 @@ export function useScannerCanvasRender(
     canvasRef,
     loupeCanvasRef,
     activeCorner,
-    setActiveCorner,
-    isHoveringCorner,
-    setIsHoveringCorner,
     loupePos,
-    setLoupePos,
-    displayScaleRef,
-    drawRafRef,
-    loupeRafRef,
-    drawCanvas,
     handlePointerDown,
     handlePointerMove,
     handlePointerUp,

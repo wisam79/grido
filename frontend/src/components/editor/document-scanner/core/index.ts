@@ -7,4 +7,5 @@ export * from "./perspective-warper";
 export * from "./filters";
 export * from "./ml-detector";
 export * from "./opencv-detector";
+export * from "./detect-fusion";
 export * from "./document-detector";

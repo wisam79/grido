@@ -506,16 +506,26 @@ describe("Document Scanner - Core Geometry & Vision", () => {
     it("reconstructs sharp 4-line intersection quad via fitRobustQuadLinesRANSAC from noisy contour points", async () => {
       const { fitRobustQuadLinesRANSAC } = await import("../core/quad-geometry");
 
+      // مولد حتمي (mulberry32) — كان Math.random() يجعل الاختبار flaky.
+      let seed = 0x2f6e2b1;
+      const rng = () => {
+        seed |= 0;
+        seed = (seed + 0x6d2b79f5) | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+
       // Generate noisy edge points for a rectangle [20, 20] to [100, 100] with clipped corners
       const contourPts: Point[] = [];
       // Top edge
-      for (let x = 30; x <= 90; x += 2) contourPts.push({ x, y: 20 + (Math.random() - 0.5) });
+      for (let x = 30; x <= 90; x += 2) contourPts.push({ x, y: 20 + (rng() - 0.5) });
       // Right edge
-      for (let y = 30; y <= 90; y += 2) contourPts.push({ x: 100 + (Math.random() - 0.5), y });
+      for (let y = 30; y <= 90; y += 2) contourPts.push({ x: 100 + (rng() - 0.5), y });
       // Bottom edge
-      for (let x = 30; x <= 90; x += 2) contourPts.push({ x, y: 100 + (Math.random() - 0.5) });
+      for (let x = 30; x <= 90; x += 2) contourPts.push({ x, y: 100 + (rng() - 0.5) });
       // Left edge
-      for (let y = 30; y <= 90; y += 2) contourPts.push({ x: 20 + (Math.random() - 0.5), y });
+      for (let y = 30; y <= 90; y += 2) contourPts.push({ x: 20 + (rng() - 0.5), y });
 
       const seedQuad: Point[] = [
         { x: 25, y: 25 },
@@ -524,7 +534,7 @@ describe("Document Scanner - Core Geometry & Vision", () => {
         { x: 25, y: 95 },
       ];
 
-      const reconstructed = fitRobustQuadLinesRANSAC(contourPts, seedQuad);
+      const reconstructed = fitRobustQuadLinesRANSAC(contourPts, seedQuad, rng);
       expect(reconstructed).not.toBeNull();
       if (reconstructed) {
         expect(reconstructed.length).toBe(4);

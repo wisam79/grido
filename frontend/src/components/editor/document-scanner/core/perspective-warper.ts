@@ -1,12 +1,17 @@
 import { Point, ScannerFilterMode } from "./types";
 import { sortCornerPoints } from "./quad-geometry";
-import { computeSobelGradients } from "./fast-vision";
 import { applyFilterMode } from "./filters";
 
 /**
  * حساب مصفوفة التحويل المنظوري 3x3 (Perspective Transformation Homography Matrix)
+ *
+ * يُرمي Error صريحاً عند المدخلات الشاذة (طول ≠ 4 أو مصفوفة مفردة) بدل
+ * إعادة أصفار صامتة كانت تُنتج صورة شفافة/سوداء دون أي تشخيص.
  */
 export function computePerspectiveTransform(src: Point[], dst: Point[]): number[] {
+  if (!src || !dst || src.length !== 4 || dst.length !== 4) {
+    throw new Error("computePerspectiveTransform requires exactly 4 source and 4 destination points");
+  }
   const a: number[][] = [];
   const b: number[] = [];
 
@@ -66,13 +71,22 @@ export function computePerspectiveTransform(src: Point[], dst: Point[]): number[
   const h = new Array(9).fill(0);
   h[8] = 1;
 
+  let singular = false;
   for (let i = n - 1; i >= 0; i--) {
     let sum = 0;
     for (let j = i + 1; j < n; j++) {
       sum += a[i][j] * h[j];
     }
     const denom = a[i][i];
-    h[i] = Math.abs(denom) > 1e-12 ? (b[i] - sum) / denom : 0;
+    if (Math.abs(denom) <= 1e-12) {
+      singular = true;
+      break;
+    }
+    h[i] = (b[i] - sum) / denom;
+  }
+
+  if (singular) {
+    throw new Error("computePerspectiveTransform failed: degenerate (collinear/self-intersecting) quad");
   }
 
   return h;
@@ -94,15 +108,21 @@ export function warpPerspective(
   let corners: Point[];
   let outWidth: number;
   let outHeight: number;
-  let filterMode: string = "original";
+  let filterMode: ScannerFilterMode = "original";
   let isTempSrcCanvas = false;
+
+  const coerceFilterMode = (value: unknown): ScannerFilterMode => {
+    return value === "magic" || value === "bw" || value === "grayscale" || value === "sharpen" || value === "deyellow"
+      ? value
+      : "original";
+  };
 
   if (Array.isArray(arg2)) {
     // Standard signature: (srcImg, corners, outWidth, outHeight, filterMode)
     corners = arg2;
     outWidth = typeof arg3 === "number" && arg3 > 0 ? arg3 : 300;
     outHeight = typeof arg4 === "number" && arg4 > 0 ? arg4 : 400;
-    if (typeof arg5 === "string") filterMode = arg5;
+    if (typeof arg5 === "string") filterMode = coerceFilterMode(arg5);
 
     if ((src as { canvas?: HTMLCanvasElement }).canvas) {
       srcCanvas = (src as { canvas: HTMLCanvasElement }).canvas;
@@ -131,7 +151,7 @@ export function warpPerspective(
     ];
     outWidth = typeof arg5 === "number" && arg5 > 0 ? arg5 : srcW;
     outHeight = typeof arg6 === "number" && arg6 > 0 ? arg6 : srcH;
-    if (typeof arg7 === "string") filterMode = arg7;
+    if (typeof arg7 === "string") filterMode = coerceFilterMode(arg7);
 
     if ((src as { canvas?: HTMLCanvasElement }).canvas) {
       srcCanvas = (src as { canvas: HTMLCanvasElement }).canvas;
@@ -268,11 +288,15 @@ export function warpPerspective(
     srcCanvas.height = 0;
   }
 
-  return applyFilterMode(canvas, filterMode as ScannerFilterMode);
+  return applyFilterMode(canvas, filterMode);
 }
 
 /**
  * صقل دقيق لمواقع الدبابيس الأربعة عبر فحص تدرجات الحواف الموضعية (Sub-pixel Edge Snapping)
+ *
+ * شرط مسبق: إحداثيات corners ببكسلات srcImg الأصلية (originalWidth/Height هما
+ * أبعاد srcImg نفسها). تمرير كانفاس مصغر هنا يسحب البقع من مواقع خاطئة —
+ * المنادون (detectDocumentAuto/ml-detector) يمررون الصورة الأصلية دائماً.
  */
 export function refineCornersSubPixel(
   corners: Point[],
@@ -319,7 +343,7 @@ export function refineCornersSubPixel(
       patchGray[i] = Math.round(0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]);
     }
 
-    const { mag } = computeSobelGradients(patchGray, patchDim, patchDim);
+    // (مشتقات Ix/Iy تُحسب أدناه مباشرة — لا حاجة لمصفوفة mag منفصلة هنا)
 
     // حساب مشتقات Ix و Iy لموتر الهيكل (Structure Tensor)
     const ix = new Float32Array(patchPixels);
@@ -400,7 +424,11 @@ export function refineCornersSubPixel(
     }
 
     const finalDist = Math.hypot(bestX - cx, bestY - cy);
-    if (finalDist > Math.min(searchRadius, 4.5)) {
+    // نصف قطر البحث نفسه هو حد الحركة: حلقة البحث تقتصر أصلاً على قرص
+    // نصف قطره searchRadius، فأي نتيجة خارجه مستحيلة هندسياً. السقف السابق
+    // (4.5px) كان يبطل الصقل تماماً عند الحاجة إليه أكثر — خطأ التكميم من
+    // مقياس 480px يتضخم ×(الأصلي/480) عند إعادة التحجيم ويتجاوز 4.5px غالباً.
+    if (finalDist > searchRadius) {
       return corner;
     }
 

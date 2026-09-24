@@ -2,11 +2,12 @@ import { Point, DetectedDocument, DetectionResult, ScoredCandidate, DetectionMod
 import { computePolygonArea as calculatePolygonArea } from "./contour-tracer";
 import {
   sortCornerPoints,
+  isIdCardAspectRatio,
   computeQuadOrthogonality,
-  computeQuadOverlapStats,
+  getDocumentAspectLabel,
   inferSmartDocumentAspect,
 } from "./quad-geometry";
-import { splitQuadIntoIdCards } from "./multi-doc-segmenter";
+import { applyNMS, splitQuadIntoIdCards } from "./multi-doc-segmenter";
 import { loadOpenCV, getLoadedOpenCV, CvRuntime } from "../opencv-loader";
 import type { CvMat, CvMatVector, CvRuntimeLike } from "./cv-types";
 import type { CvPoint } from "./cv-types";
@@ -148,7 +149,8 @@ export async function detectDocumentsWithOpenCV(
     const blurMat = track(new cv.Mat());
 
     cv.cvtColor(srcMat, grayMat, cv.COLOR_RGBA2GRAY);
-    cv.GaussianBlur(grayMat, blurMat, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+    // cv.Size كائن JS خفيف بلا delete — يُمرر عبر track كحارس موحد لا أكثر.
+    cv.GaussianBlur(grayMat, blurMat, track(new cv.Size(5, 5)), 0, 0, cv.BORDER_DEFAULT);
 
     const grayData = new Uint8Array(grayMat.data);
 
@@ -158,7 +160,7 @@ export async function detectDocumentsWithOpenCV(
     // 1. قناع Canny مع تمديد الحواف
     const cannyMat = track(new cv.Mat());
     cv.Canny(blurMat, cannyMat, 35, 120);
-    const kernel = track(cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3)));
+    const kernel = track(cv.getStructuringElement(cv.MORPH_RECT, track(new cv.Size(3, 3))));
     const dilatedCanny = track(new cv.Mat());
     cv.dilate(cannyMat, dilatedCanny, kernel);
     binaryMats.push(dilatedCanny);
@@ -200,9 +202,11 @@ export async function detectDocumentsWithOpenCV(
           }
 
           const peri = cv.arcLength(cnt, true);
-          const approx = track(new cv.Mat());
-          const hull = track(new cv.Mat());
-          const hullApprox = track(new cv.Mat());
+          // هذه الثلاث تُحذف يدوياً في finally أدناه (لكل كونتور)، لذا لا
+          // تُتبعت في matsToFree — التتبع المزدوج السابق كان يحذفها مرتين.
+          const approx = new cv.Mat();
+          const hull = new cv.Mat();
+          const hullApprox = new cv.Mat();
 
           try {
             cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
@@ -216,6 +220,22 @@ export async function detectDocumentsWithOpenCV(
                 pts.push({
                   x: approx.data32S[r * 2],
                   y: approx.data32S[r * 2 + 1],
+                });
+              }
+              quads.push(pts);
+            }
+
+            // أ2) تقريب أضيق (0.012) لالتقاط الأركان الحادة دون قصها —
+            // يُتتبع فقط (track) ويُنظف في حلقة التنظيف النهائية، دون حذف
+            // يدوي هنا لتفادي الحذف المزدوج.
+            const approxTight = track(new cv.Mat());
+            cv.approxPolyDP(cnt, approxTight, 0.012 * peri, true);
+            if (approxTight.rows === 4 && cv.isContourConvex(approxTight)) {
+              const pts: Point[] = [];
+              for (let r = 0; r < 4; r++) {
+                pts.push({
+                  x: approxTight.data32S[r * 2],
+                  y: approxTight.data32S[r * 2 + 1],
                 });
               }
               quads.push(pts);
@@ -261,13 +281,12 @@ export async function detectDocumentsWithOpenCV(
               const qH = Math.hypot(qSorted[3].x - qSorted[0].x, qSorted[3].y - qSorted[0].y);
               const qRatio = qW / Math.max(1, qH);
 
-              const isIdCardAspect = (q: Point[]): boolean => {
+              const isStackedPairAspect = (q: Point[]): boolean => {
                 const s = sortCornerPoints(q);
                 const ww = Math.hypot(s[1].x - s[0].x, s[1].y - s[0].y);
                 const hh = Math.hypot(s[3].x - s[0].x, s[3].y - s[0].y);
                 if (ww <= 0 || hh <= 0) return false;
-                const r = Math.max(ww / hh, hh / ww);
-                return r >= 1.44 && r <= 1.84;
+                return isIdCardAspectRatio(Math.max(ww / hh, hh / ww));
               };
 
               if (qRatio >= 0.68 && qRatio <= 0.88) {
@@ -287,8 +306,8 @@ export async function detectDocumentsWithOpenCV(
                     if (
                       s1 > 0.15 &&
                       s2 > 0.15 &&
-                      isIdCardAspect(split[0].corners) &&
-                      isIdCardAspect(split[1].corners)
+                      isStackedPairAspect(split[0].corners) &&
+                      isStackedPairAspect(split[1].corners)
                     ) {
                       allCandidates.push({ quad: split[0].corners, score: s1 });
                       allCandidates.push({ quad: split[1].corners, score: s2 });
@@ -312,8 +331,8 @@ export async function detectDocumentsWithOpenCV(
                     if (
                       s1 > 0.15 &&
                       s2 > 0.15 &&
-                      isIdCardAspect(split[0].corners) &&
-                      isIdCardAspect(split[1].corners)
+                      isStackedPairAspect(split[0].corners) &&
+                      isStackedPairAspect(split[1].corners)
                     ) {
                       allCandidates.push({ quad: split[0].corners, score: s1 });
                       allCandidates.push({ quad: split[1].corners, score: s2 });
@@ -342,23 +361,9 @@ export async function detectDocumentsWithOpenCV(
 
     if (allCandidates.length === 0) return null;
 
-    // فرز وتطبيق NMS
-    allCandidates.sort((a, b) => b.score - a.score);
-
-    const selectedQuads: ScoredCandidate[] = [];
-    for (const cand of allCandidates) {
-      let overlaps = false;
-      for (const sel of selectedQuads) {
-        const stats = computeQuadOverlapStats(cand.quad, sel.quad);
-        if (stats.overlapRatio1 > 0.40 || stats.maxOverlapRatio > 0.45 || stats.iou > 0.30) {
-          overlaps = true;
-          break;
-        }
-      }
-      if (!overlaps) {
-        selectedQuads.push(cand);
-      }
-    }
+    // NMS موحد عبر applyNMS المشترك بدل النسخة اليدوية السابقة
+    // (عتبات 0.40/0.45/0.30) — سلوك واحد لكل المسارات.
+    const selectedQuads = applyNMS(allCandidates, 0.30);
 
     if (selectedQuads.length === 0) return null;
 
@@ -396,18 +401,13 @@ export async function detectDocumentsWithOpenCV(
       const sorted = sortCornerPoints(scaledCorners);
       const aspect = inferSmartDocumentAspect(sorted);
 
-      let aspectLabel = "مستند";
-      if (aspect === "id_card") aspectLabel = "بطاقة هوية";
-      else if (aspect === "a4_p" || aspect === "a4_l") aspectLabel = "ورقة A4";
-      else if (aspect === "square") aspectLabel = "مستند مربع";
-
       const confidence = Math.min(0.99, Math.max(0.60, Math.round((cand.score / 1.6) * 100) / 100));
 
       return {
         id: `doc-${idx + 1}`,
         corners: sorted,
         confidence,
-        label: `مستند ${idx + 1} (${aspectLabel})`,
+        label: getDocumentAspectLabel(aspect, idx + 1),
         aspectType: aspect,
       };
     });

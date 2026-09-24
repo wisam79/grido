@@ -535,4 +535,124 @@ describe("Document Scanner - Synthetic Image Benchmark & Edge-Case Robustness", 
 
     expect(elapsed).toBeLessThan(1000);
   });
+
+  // ===== دمج ML مع المسار الكلاسيكي (ML كمُدقّق) عبر detectDocumentAuto =====
+  describe("ML Fusion integration (mocked DocCornerNet)", () => {
+    function mockScanic(result: unknown) {
+      return {
+        scanDocument: (async () => result) as unknown as typeof import("scanic")["scanDocument"],
+      } as unknown as typeof import("scanic");
+    }
+
+    async function loadMlMock() {
+      const mod = await import("../src/components/editor/document-scanner/core/ml-detector");
+      return mod.setScanicModuleForTesting;
+    }
+
+    it("confirm: fused confidence is never below the classical-only baseline", async () => {
+      const setScanicModuleForTesting = await loadMlMock();
+      const width = 240;
+      const height = 180;
+      const { canvas } = createSyntheticImage(width, height, (x, y) => {
+        if (x >= 40 && x <= 200 && y >= 30 && y <= 150) return [245, 245, 245, 255];
+        return [40, 40, 40, 255];
+      });
+
+      try {
+        setScanicModuleForTesting(mockScanic({ success: false }));
+        const baseline = await detectDocumentAuto(canvas, width, height, "single");
+
+        setScanicModuleForTesting(
+          mockScanic({
+            success: true,
+            score: 0.99,
+            corners: {
+              topLeft: { x: 42, y: 32 },
+              topRight: { x: 198, y: 30 },
+              bottomRight: { x: 200, y: 152 },
+              bottomLeft: { x: 40, y: 148 },
+            },
+          })
+        );
+        const fused = await detectDocumentAuto(canvas, width, height, "single");
+
+        expect(fused.confidence).toBeGreaterThanOrEqual(baseline.confidence);
+        expect(fused.confidence).toBeGreaterThanOrEqual(0.55);
+        expect(fused.documents!.length).toBeGreaterThanOrEqual(1);
+      } finally {
+        setScanicModuleForTesting(null);
+      }
+    });
+
+    it("rescue: an ML document missed by the classical path is added in multi mode", async () => {
+      const setScanicModuleForTesting = await loadMlMock();
+      const width = 260;
+      const height = 180;
+      // مستند حقيقي على اليمين فقط — ML المُحاكى يرى آخر على اليسار (خلفية فارغة)
+      const { canvas } = createSyntheticImage(width, height, (x, y) => {
+        if (x >= 150 && x <= 240 && y >= 25 && y <= 155) return [245, 245, 245, 255];
+        return [40, 40, 40, 255];
+      });
+
+      try {
+        setScanicModuleForTesting(mockScanic({ success: false }));
+        const baseline = await detectDocumentAuto(canvas, width, height, "multi");
+        // الشروط المفترضة: الكلاسيكي وجد المستند الحقيقي (ليس الافتراضي)
+        expect(baseline.method).not.toBe("default");
+        expect(baseline.documents!.length).toBe(1);
+
+        setScanicModuleForTesting(
+          mockScanic({
+            success: true,
+            score: 0.78,
+            corners: {
+              topLeft: { x: 22, y: 27 },
+              topRight: { x: 112, y: 25 },
+              bottomRight: { x: 110, y: 157 },
+              bottomLeft: { x: 20, y: 155 },
+            },
+          })
+        );
+        const fused = await detectDocumentAuto(canvas, width, height, "multi");
+
+        expect(fused.documents!.length).toBeGreaterThanOrEqual(2);
+        const hasLeftDoc = fused.documents!.some((d) => {
+          const cx = d.corners.reduce((s, p) => s + p.x, 0) / 4;
+          return cx < width / 2;
+        });
+        expect(hasLeftDoc).toBe(true);
+      } finally {
+        setScanicModuleForTesting(null);
+      }
+    });
+
+    it("confirm: matching ML does not duplicate the classical document", async () => {
+      const setScanicModuleForTesting = await loadMlMock();
+      const width = 240;
+      const height = 180;
+      const { canvas } = createSyntheticImage(width, height, (x, y) => {
+        if (x >= 40 && x <= 200 && y >= 30 && y <= 150) return [245, 245, 245, 255];
+        return [40, 40, 40, 255];
+      });
+
+      try {
+        setScanicModuleForTesting(
+          mockScanic({
+            success: true,
+            score: 0.9,
+            corners: {
+              topLeft: { x: 42, y: 32 },
+              topRight: { x: 198, y: 30 },
+              bottomRight: { x: 200, y: 152 },
+              bottomLeft: { x: 40, y: 148 },
+            },
+          })
+        );
+        const fused = await detectDocumentAuto(canvas, width, height, "multi");
+        expect(fused.documents!.length).toBe(1);
+      } finally {
+        setScanicModuleForTesting(null);
+      }
+    });
+  });
 });

@@ -36,7 +36,14 @@ async function getScanic(): Promise<typeof import("scanic")> {
   if (scanicModulePromise) {
     return scanicModulePromise;
   }
-  scanicModulePromise = import("scanic");
+  // الفشل يُصفّر الكاش ليُعاد التحميل في المحاولة التالية — الوعد المرفوض
+  // المخزن للأبد سابقاً كان يقتل مسار ML نهائياً بعد أول فشل عابر.
+  scanicModulePromise = import("scanic").catch((err: unknown) => {
+    if (scanicModulePromise) {
+      scanicModulePromise = null;
+    }
+    throw err;
+  });
   return scanicModulePromise;
 }
 
