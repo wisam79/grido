@@ -9,8 +9,13 @@ import {
   scannerParticleC,
 } from "@/lib/canvas/canvas-colors";
 
+/**
+ * يُركَّب دائماً كابن داخل مجموعة العنصر نفسه عند إحداثياته المحلية (0, 0).
+ * السبب: ثابت «عزل إحداثيات الأنيميشن داخل مجموعات Konva» في .agents/AGENTS.md —
+ * قراءة إحداثيات الأب وإعادة تطبيقها هنا تُنتج إزاحة مزدوجة وتُخرج الأنيميشن
+ * عن حدود العنصر. لا تُقبل خاصية لإعادة مزامنة الموضع من عقدة شقيقة.
+ */
 interface MagicAiScannerProps {
-  targetNodeRef?: React.RefObject<Konva.Node | null>;
   x?: number;
   y?: number;
   width: number;
@@ -20,7 +25,6 @@ interface MagicAiScannerProps {
 }
 
 export const MagicAiScanner = React.memo(function MagicAiScanner({
-  targetNodeRef,
   x = 0,
   y = 0,
   width,
@@ -40,7 +44,11 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
     const group = groupRef.current;
     if (!group) return;
 
-    const layer = group.getLayer() || group.getStage()?.getLayers()[0];
+    if (borderRef.current) {
+      borderRef.current.width(width);
+      borderRef.current.height(height);
+      borderRef.current.cornerRadius(cornerRadius);
+    }
 
     const anim = new Konva.Animation((frame) => {
       if (!frame) return;
@@ -54,25 +62,27 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
       if (lineRef.current) lineRef.current.points([0, currentScanPos, width, currentScanPos]);
       if (lineGlowRef.current) lineGlowRef.current.points([0, currentScanPos, width, currentScanPos]);
       
-      if (circle1Ref.current) circle1Ref.current.y((currentScanPos + 25) % height);
-      if (circle2Ref.current) circle2Ref.current.y((currentScanPos - 20 + height) % height);
-      if (circle3Ref.current) circle3Ref.current.y((currentScanPos * 1.3) % height);
-
-      // Sync position instantly if target node is moving (dragging) and is a sibling, not the parent
-      if (targetNodeRef?.current && group.getParent() !== targetNodeRef.current) {
-        group.x(targetNodeRef.current.x());
-        group.y(targetNodeRef.current.y());
-        group.rotation(targetNodeRef.current.rotation());
+      if (circle1Ref.current) {
+        circle1Ref.current.x(width * 0.25);
+        circle1Ref.current.y((currentScanPos + 25) % height);
       }
-
-    }, layer || undefined);
+      if (circle2Ref.current) {
+        circle2Ref.current.x(width * 0.75);
+        circle2Ref.current.y((currentScanPos - 20 + height) % height);
+      }
+      // سحب الطبقة التي تستضيف السكنر الآن: Konva.Animation بلا وسيط `layers`
+      // لا يرسم أياً من الطبقات (المصدر: _runFrames يرسم الطبقات الممرَّرة فقط)،
+      // فبدون هذا السطر لا يظهر أي إطار من الأنيميشن. و`getLayer()` تتبع العقدة
+      // عند رفعها إلى طبقة السحب، فيبقى الرسم على الطبقة الصحيحة أثناء الإيماءة.
+      group.getLayer()?.batchDraw();
+    });
 
     anim.start();
 
     return () => {
       anim.stop();
     };
-  }, [height, width, targetNodeRef]);
+  }, [height, width, x, y, rotation, cornerRadius]);
 
   return (
     <Group ref={groupRef} x={x} y={y} rotation={rotation} listening={false}>

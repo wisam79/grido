@@ -203,6 +203,19 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, [checkLicenseStatus, setAccountModalOpen]);
 
+  // أوامر لوحة الأدوات التي مصدرها هذا المكوّن وحده: الثيم (مصدره useTheme هنا)
+  // ونافذة الحساب — فلا تملك اللوحة نسخة ثانية من حالة الثيم أو المودال.
+  useEffect(() => {
+    const handleToggleTheme = () => toggleTheme();
+    const handleOpenAccount = () => setAccountModalOpen(true);
+    window.addEventListener("grido:toggle-theme", handleToggleTheme);
+    window.addEventListener("grido:open-account", handleOpenAccount);
+    return () => {
+      window.removeEventListener("grido:toggle-theme", handleToggleTheme);
+      window.removeEventListener("grido:open-account", handleOpenAccount);
+    };
+  }, [toggleTheme, setAccountModalOpen]);
+
   // اختصارات Ctrl+E / Ctrl+P تفتح حوارات التصدير والطباعة عبر أحداث عامة (إصلاح Bug#7)
   useEffect(() => {
     const openExport = () => setExportOpen(true);

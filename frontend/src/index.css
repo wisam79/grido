@@ -195,6 +195,11 @@
   --ruler-tick-label: #525252;
   --ruler-tick-label-active: #404040;
 
+  /* Workspace Backdrop (Light) — سطح مساحة العمل تحت الورقة وشبكة نقاطها */
+  --workspace-bg: #f8fafc;
+  --workspace-grid-dot: #cbd5e1;
+  --workspace-glow: rgba(37, 99, 235, 0.035);
+
   /* Print Dialog Machine Surface (داكن دائماً في الوضعين — واجهة «آلة المعاينة») */
   --print-surface: #0f172a;
   --print-header: #0f172ae6;
@@ -308,6 +313,12 @@
   --ruler-tick-major: #525252;
   --ruler-tick-label: #d4d4d4;
   --ruler-tick-label-active: #e5e5e5;
+
+  /* Workspace Backdrop (Dark) — الخلفية الفحمية المطابقة لهوية الثيم
+     (البند 1 في تعريف الهوية أعلاه: مساحة العمل #141414 مخفّفة للميكا) */
+  --workspace-bg: #141414;
+  --workspace-grid-dot: rgba(255, 255, 255, 0.06);
+  --workspace-glow: rgba(59, 130, 246, 0.05);
 
   /* Print Dialog Machine Surface (نفس قيم الوضع الفاتح — داكنة دائماً عن قصد) */
 
@@ -876,17 +887,14 @@
   background-image: linear-gradient(to left, rgba(99, 102, 241, 0.08), transparent 80%) !important;
 }
 
+/* سطح مساحة العمل — كل قيمه من رموز الثيم في :root و .dark (لا قيم صلبة هنا)،
+   فتبديل المظهر يمرّ من مصدر واحد بلا قاعدة .dark موازية. */
 .workspace-grid {
-  --workspace-bg: #f8fafc;
-  --grid-dot: #e2e8f0;
   background-color: var(--workspace-bg);
-  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-.dark .workspace-grid {
-  --workspace-bg: var(--background);
-  --grid-dot: #1e1e1e;
+  background-image: 
+    radial-gradient(circle at 50% 50%, var(--workspace-glow) 0%, transparent 68%),
+    radial-gradient(var(--workspace-grid-dot) 1.2px, transparent 1.2px);
+  background-size: 100% 100%, 24px 24px;
 }
 
 /* تخصيص مظهر منتقي الألوان ليتلاءم مع هوية استوديو الهوية */

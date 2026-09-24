@@ -75,10 +75,15 @@ const waitFrames = async (n = 3) => {
   for (let i = 0; i < n; i++) await waitFrame();
 };
 
+/**
+ * ثابت «عزل إحداثيات الأنيميشن داخل مجموعات Konva» (.agents/AGENTS.md):
+ * السكنر يُركَّب كابن داخل مجموعة العنصر عند (0, 0) دائماً، ويتبع أباه في
+ * المساحة المطلقة بلا إعادة كتابة إحداثياته المحلية. هذه الاختبارات تقفل
+ * هذا العقد صراحةً بعد إزالة واجهة المزامنة مع عقدة شقيقة (ازدواجية ميتة).
+ */
 describe("MagicAiScanner via react-konva", () => {
   let root: Root;
   let container: HTMLDivElement;
-  let imageNodeRef: any;
 
   beforeEach(() => {
     installCanvasMock();
@@ -86,70 +91,13 @@ describe("MagicAiScanner via react-konva", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    imageNodeRef = { current: null };
   });
 
-  it("scanner group follows the image node after it moves", async () => {
-    let stageRef: any = null;
-    const Comp = () => {
-      const imgRef = useRef<any>(null);
-      imageNodeRef = imgRef;
-      return (
-        <Stage ref={(s: any) => { stageRef = s; }} width={800} height={600}>
-          <Layer>
-            <Group>
-              <KonvaImage
-                ref={imgRef}
-                id="img-1"
-                image={({ width: 200, height: 200 } as any)}
-                x={100}
-                y={50}
-                width={200}
-                height={200}
-              />
-              <MagicAiScanner
-                targetNodeRef={imgRef}
-                x={100}
-                y={50}
-                width={200}
-                height={200}
-                rotation={0}
-              />
-            </Group>
-          </Layer>
-        </Stage>
-      );
-    };
-
-    root.render(<Comp />);
-    await waitFrames(4);
-
-    const imgNode = imageNodeRef.current;
-    expect(imgNode).toBeTruthy();
-    expect(imgNode.x()).toBe(100);
-
-    // locate the scanner group: it is a Group inside the layer that is not the root Group
-    const layer = stageRef!.getLayers()[0];
-    const groups = layer.find("Group");
-
-    imgNode.x(400);
-    imgNode.y(300);
-    imgNode.getLayer()?.batchDraw();
-
-    await waitFrames(4);
-
-    const scannerGroup = groups.find((g: any) => g !== groups[0]);
-    expect(scannerGroup.x()).toBe(400);
-    expect(scannerGroup.y()).toBe(300);
-
-    root.unmount();
-  });
-
-  it("keeps scanner group at local coordinates (0, 0) and applies cornerRadius when encapsulated as direct child", async () => {
+  it("يبقى عند الإحداثيات المحلية (0,0) ويتبع الأب في المساحة المطلقة", async () => {
     let stageRef: any = null;
     let parentGroupRef: any = null;
 
-    const ChildComp = () => {
+    const Comp = () => {
       const parentRef = useRef<any>(null);
       parentGroupRef = parentRef;
 
@@ -165,36 +113,128 @@ describe("MagicAiScanner via react-konva", () => {
                 width={200}
                 height={200}
               />
-              <MagicAiScanner
-                targetNodeRef={parentRef}
-                x={0}
-                y={0}
-                width={200}
-                height={200}
-                cornerRadius={16}
-                rotation={0}
-              />
+              <MagicAiScanner x={0} y={0} width={200} height={200} cornerRadius={16} />
             </Group>
           </Layer>
         </Stage>
       );
     };
 
-    root.render(<ChildComp />);
+    root.render(<Comp />);
     await waitFrames(4);
 
     const layer = stageRef!.getLayers()[0];
-    const groups = layer.find("Group");
     const parentGroup = parentGroupRef.current;
     expect(parentGroup).toBeTruthy();
     expect(parentGroup.x()).toBe(250);
-    expect(parentGroup.y()).toBe(180);
 
-    // The child scanner group inside parentGroup must remain at local (0, 0)
-    const childScanner = groups.find((g: any) => g !== parentGroup);
-    expect(childScanner).toBeTruthy();
-    expect(childScanner.x()).toBe(0);
-    expect(childScanner.y()).toBe(0);
+    const scannerGroup = layer.find("Group").find((g: any) => g !== parentGroup);
+    expect(scannerGroup).toBeTruthy();
+    // إحداثيات محلية ثابتة — لا إزاحة مزدوجة
+    expect(scannerGroup.x()).toBe(0);
+    expect(scannerGroup.y()).toBe(0);
+    expect(scannerGroup.getAbsolutePosition()).toEqual({ x: 250, y: 180 });
+
+    // تحريك الأب: يبقى الابن محلياً ويسافر معه مطلقاً
+    parentGroup.x(420);
+    parentGroup.y(310);
+    parentGroup.getLayer()?.batchDraw();
+    await waitFrames(4);
+
+    expect(scannerGroup.x()).toBe(0);
+    expect(scannerGroup.y()).toBe(0);
+    expect(scannerGroup.getAbsolutePosition()).toEqual({ x: 420, y: 310 });
+
+    root.unmount();
+  });
+
+  it("يحدّث أبعاد الحدود والاستدارة مع تغيّر مقاس الأب (بلا إعادة تركيب)", async () => {
+    let stageRef: any = null;
+    let setPropsFn: any = null;
+
+    const Comp = () => {
+      const [dims, setDims] = React.useState({ w: 200, h: 250 });
+      setPropsFn = setDims;
+
+      return (
+        <Stage ref={(s: any) => { stageRef = s; }} width={800} height={600}>
+          <Layer>
+            <Group x={100} y={150} width={dims.w} height={dims.h}>
+              <Group
+                x={dims.w / 2}
+                y={dims.h / 2}
+                offsetX={dims.w / 2}
+                offsetY={dims.h / 2}
+                width={dims.w}
+                height={dims.h}
+              >
+                <KonvaImage
+                  id="img-nested"
+                  image={({ width: dims.w, height: dims.h } as any)}
+                  x={0}
+                  y={0}
+                  width={dims.w}
+                  height={dims.h}
+                />
+                <MagicAiScanner x={0} y={0} width={dims.w} height={dims.h} cornerRadius={8} />
+              </Group>
+            </Group>
+          </Layer>
+        </Stage>
+      );
+    };
+
+    root.render(<Comp />);
+    await waitFrames(4);
+
+    const layer = stageRef!.getLayers()[0];
+    const scannerGroup = layer.find("Group").at(-1) as any;
+    expect(scannerGroup.x()).toBe(0);
+    expect(scannerGroup.y()).toBe(0);
+
+    const borderRect = scannerGroup.findOne("Rect");
+    expect(borderRect.width()).toBe(200);
+    expect(borderRect.height()).toBe(250);
+    expect(borderRect.cornerRadius()).toBe(8);
+
+    setPropsFn({ w: 320, h: 420 });
+    await waitFrames(4);
+
+    expect(scannerGroup.x()).toBe(0);
+    expect(scannerGroup.y()).toBe(0);
+    expect(borderRect.width()).toBe(320);
+    expect(borderRect.height()).toBe(420);
+
+    root.unmount();
+  });
+
+  it("يرسم طبقة السكنر كل إطار عبر batchDraw (بلا وسيط layers للأنيميشن)", async () => {
+    let stageRef: any = null;
+
+    const Comp = () => (
+      <Stage ref={(s: any) => { stageRef = s; }} width={800} height={600}>
+        <Layer>
+          <Group x={0} y={0} width={200} height={200}>
+            <MagicAiScanner x={0} y={0} width={200} height={200} />
+          </Group>
+        </Layer>
+      </Stage>
+    );
+
+    root.render(<Comp />);
+    await waitFrames(3);
+
+    const layer = stageRef!.getLayers()[0];
+    let draws = 0;
+    const originalBatchDraw = layer.batchDraw.bind(layer);
+    layer.batchDraw = () => {
+      draws += 1;
+      return originalBatchDraw();
+    };
+
+    await waitFrames(4);
+    // بلا رسم صريح داخل الكولباك لا يرسم Konva.Animation أي طبقة إطلاقاً
+    expect(draws).toBeGreaterThan(1);
 
     root.unmount();
   });

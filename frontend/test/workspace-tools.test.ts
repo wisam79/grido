@@ -213,13 +213,19 @@ describe("أوامر الحالة الحية (WORKSPACE_STATE_COMMANDS)", () => 
       canvasFitMode: state.canvasFitMode,
       showRuler: true,
       showGrid: true,
+      mode: state.mode,
     });
   });
 
   it("يبني مجموعات أوامر الحالة بلقطاتها الحالية بلا فقدان أي أمر", () => {
     useEditorStore.setState({ canvasZoom: 1.5 });
     const groups = getStateCommandGroups();
-    expect(groups.map((group) => group.name)).toEqual(["تحرير", "عرض الكانفاس"]);
+    expect(groups.map((group) => group.name)).toEqual([
+      "تحرير",
+      "عرض الكانفاس",
+      "إدراج",
+      "وضع الكانفاس",
+    ]);
 
     const items = groups.flatMap((group) => group.items);
     expect(items).toHaveLength(WORKSPACE_STATE_COMMANDS.length);
@@ -238,6 +244,7 @@ describe("أوامر الحالة الحية (WORKSPACE_STATE_COMMANDS)", () => 
       canvasFitMode: "auto" as const,
       showRuler: true,
       showGrid: true,
+      mode: "single" as const,
     };
 
     expect(rulers.getSnapshot(input).subtitle).toBe("ظاهرة الآن — للإخفاء");
@@ -296,10 +303,52 @@ describe("تجميع أوامر لوحة الأوامر", () => {
     expect(groupCommands(WORKSPACE_STATE_COMMANDS).map((group) => group.name)).toEqual([
       "تحرير",
       "عرض الكانفاس",
+      "إدراج",
+      "وضع الكانفاس",
     ]);
   });
 
   it("يجمع الأوامر العالمية بلا فقدان أي أمر", () => {
     expectGroupingKeepsEveryItem(WORKSPACE_COMMANDS);
+  });
+});
+
+describe("أوامر اللوحة الجديدة — لا أمر ميت ولا تنفيذ موازٍ", () => {
+  const stateCommand = (id: string) => {
+    const command = WORKSPACE_STATE_COMMANDS.find((c) => c.id === id);
+    expect(command, `الأمر ${id} غير مسجّل في سجل أوامر الحالة`).toBeDefined();
+    return command!;
+  };
+
+  it("أوامر الإدراج والوضع مسجّلة هنا بمعرّفات صحيحة", () => {
+    // السلوك الفعلي (كتابة المتجر) مُختبر في workspace-commands.test.ts بعزل
+    // كامل للمتجر؛ وهنا يُقفل العقد السطحي فقط: المعرّف موجود وله لقطة صالحة.
+    for (const id of ["insert-text", "insert-rect", "insert-ellipse", "mode-collage", "mode-single"]) {
+      const snapshot = stateCommand(id).getSnapshot();
+      expect(snapshot.subtitle.trim().length).toBeGreaterThan(0);
+      expect(typeof snapshot.run).toBe("function");
+    }
+  });
+
+  it("أوامر النظام تُنفَّذ بأحداث grido الحقيقية بلا اختصارات مُدّعاة", () => {
+    const theme = WORKSPACE_COMMANDS.find((c) => c.id === "toggle-theme");
+    expect(theme?.event).toBe("grido:toggle-theme");
+    expect(theme?.shortcut).toBeUndefined();
+
+    const account = WORKSPACE_COMMANDS.find((c) => c.id === "account");
+    expect(account?.event).toBe("grido:open-account");
+    expect(account?.shortcut).toBeUndefined();
+
+    const library = WORKSPACE_COMMANDS.find((c) => c.id === "projects-library");
+    expect(library?.event).toBe("grido:open-projects-dialog");
+    expect(library?.detail).toEqual({ tab: "list" });
+  });
+
+  it("معرّفات الأوامر فريدة عبر السجلين", () => {
+    const ids = [
+      ...WORKSPACE_COMMANDS.map((c) => c.id),
+      ...WORKSPACE_STATE_COMMANDS.map((c) => c.id),
+    ];
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

@@ -67,26 +67,33 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
   if (!hasSelection) return null;
 
   return (
-    <div className="fluent-command-group shadow-2xs animate-in fade-in zoom-in-95 duration-150">
-      <TooltipBtn content="تكرار العناصر">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => actOnSelection(duplicateElement, duplicateElements)}
-          aria-label="تكرار"
-          className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
-        >
-          <Copy className="w-5 h-5" />
-        </Button>
-      </TooltipBtn>
-
+    <>
       {isImageSelected && (
         <>
-          <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
           <AiToolsToolbarGroup />
-          <ImageFiltersPopover />
+          <Separator orientation="vertical" className="h-4 bg-border/60 mx-0.5" />
         </>
       )}
+
+      <div className="fluent-command-group shadow-2xs animate-in fade-in zoom-in-95 duration-150">
+        <TooltipBtn content="تكرار العناصر">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => actOnSelection(duplicateElement, duplicateElements)}
+            aria-label="تكرار"
+            className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+          >
+            <Copy className="w-5 h-5" />
+          </Button>
+        </TooltipBtn>
+
+        {isImageSelected && (
+          <>
+            <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
+            <ImageFiltersPopover />
+          </>
+        )}
 
       {canGroup && (
         <TooltipBtn content="تجميع العناصر">
@@ -162,5 +169,6 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
         </Button>
       </TooltipBtn>
     </div>
+    </>
   );
 });

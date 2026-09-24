@@ -267,7 +267,6 @@ export const KonvaCollageImage = React.memo(function KonvaCollageImage({
       />
       {isEnhancing && (
         <MagicAiScanner
-          targetNodeRef={imageRef}
           x={0}
           y={0}
           width={width}

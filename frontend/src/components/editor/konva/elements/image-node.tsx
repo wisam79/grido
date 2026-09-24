@@ -212,7 +212,6 @@ export const URLImage = React.memo(function URLImage({
         />
         {isEnhancing && (
           <MagicAiScanner
-            targetNodeRef={elementRef}
             x={0}
             y={0}
             width={nodeW}

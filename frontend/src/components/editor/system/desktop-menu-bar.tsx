@@ -33,6 +33,7 @@ import {
   Copy,
   Trash,
   SelectionAll,
+  MagnifyingGlass,
   MagnifyingGlassPlus,
   MagnifyingGlassMinus,
   Ruler,
@@ -353,6 +354,18 @@ export function DesktopMenuBar() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16">
+          {/* مدخل لوحة الأدوات — نفس الحدث والاختصار والمصدر الوحيد (Ctrl+K) */}
+          <DropdownMenuItem
+            onClick={() => window.dispatchEvent(new CustomEvent("grido:open-tool-launcher"))}
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"
+          >
+            <MagnifyingGlass className="w-4 h-4 text-muted-foreground" weight="duotone" />
+            <span className="font-medium">لوحة الأدوات</span>
+            <span className="ms-auto text-micro font-mono text-muted-foreground/70">Ctrl+K</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
           <DropdownMenuItem
             onClick={zoomInStore}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5"

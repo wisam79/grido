@@ -208,8 +208,20 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       const prev = attachedTrNodesRef.current;
       const sameNodes =
         nodes.length === prev.length && nodes.every((n, i) => n === prev[i]);
-      // التخطي فقط عند ثبات العقد وثبات نسخة المحوّل معاً.
-      if (sameNodes && attachedTrInstanceRef.current === tr) return;
+      // إذا كانت العقد متطابقة (لا إعادة ربط)، حدّث الصندوق المحيط للمحوّل فقط.
+      // 🔒 نحترم حاجز الإيماءة نفسه الذي يفرضه Konva داخلياً
+      // (`if (!this._transforming && !this.isDragging()) this.update()`) لأن
+      // forceUpdate() تتخطاه: إعادة حساب الصندوق في منتصف سحب مقبض تُزحزح
+      // المقابض تحت المؤشر. المسار الشائع (تغيّر أبعاد العقدة/موضعها) يلتقطه
+      // Konva ذاتياً عبر width/heightChange وabsoluteTransformChange؛
+      // والاستدعاء هنا شبكة أمان للهندسة التي تتغيّر من الأبناء بلا حدث على العقدة.
+      if (sameNodes && attachedTrInstanceRef.current === tr) {
+        if (!tr.isTransforming() && !tr.isDragging()) {
+          tr.forceUpdate();
+          tr.getLayer()?.batchDraw();
+        }
+        return;
+      }
       attachedTrNodesRef.current = nodes;
       attachedTrInstanceRef.current = tr;
       tr.nodes(nodes);

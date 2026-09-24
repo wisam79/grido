@@ -1,13 +1,13 @@
 ---
 name: wails-v3-runtime-mastery
-description: دليل وخريطة مهارة Wails v3 الشاملة لتطبيقات سطح المكتب (Architecture, Runtime APIs, Security Hardening, Windows Fluent Integration, Drag & Drop, Multi-Monitor & IPC) — المشروع يعمل حالياً على v3.0.0-beta.23
+description: دليل وخريطة مهارة Wails v3 الشاملة لتطبيقات سطح المكتب (Architecture, Runtime APIs, Security Hardening, Windows Fluent Integration, Drag & Drop, Multi-Monitor & IPC) — المشروع يعمل حالياً على v3.0.0-beta.25
 ---
 
 # 🚀 دليل احتراف محرك Wails v3 الشامل (Wails Runtime Mastery)
 
 يقدم هذا الدليل المرجعي كافة التقنيات والمعايير الهندسية المعتمدة لاستغلال أقصى قدرات محرك **Wails v3** ودمجه بسلاسة مع الواجهة الرسومية (React + Konva) والأنظمة الأساسية (خاصة Windows 10/11).
 
-> **الإصدار الفعلي:** `github.com/wailsapp/wails/v3 v3.0.0-beta.23`
+> **الإصدار الفعلي:** `github.com/wailsapp/wails/v3 v3.0.0-beta.25`
 > **أداة البناء:** `wails3` CLI مع `Taskfile.yml`
 > **الحزمة الرئيسية:** `github.com/wailsapp/wails/v3/pkg/application`
 

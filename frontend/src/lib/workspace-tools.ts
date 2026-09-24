@@ -328,10 +328,16 @@ export function groupCommands<T extends { group: string }>(
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   سجل أوامر لوحة الأوامر (Ctrl+K) — الأوامر العالمية خارج أدوات
+   سجل أوامر لوحة الأدوات (Ctrl+K) — الأوامر العالمية خارج أدوات
    الألواح (ملف، تصدير، طباعة، إدراج دفعي، تحديثات، اختصارات...).
    التنفيذ يمر عبر ناقل أحداث grido:* الحالي، فلا تكرار منطق،
    واختصارات كل أمر هي نفسها المسجلة في use-keyboard-shortcuts.ts.
+
+   ⛔ قاعدة حاكمة: أي أمر جديد للوحة يُضاف هنا أو إلى
+   WORKSPACE_STATE_COMMANDS فقط. يُمنع إنشاء لوحة أوامر ثانية
+   بقائمة أوامر مكتوبة يدوياً (ثابت «حظر ازدواجية الميزات» في
+   .agents/AGENTS.md)، ويُمنع إعلان اختصار في حقل shortcut بلا
+   تسجيل مقابل له في use-keyboard-shortcuts.ts.
    ═══════════════════════════════════════════════════════════════ */
 
 export interface WorkspaceCommand {
@@ -371,6 +377,14 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     shortcut: "Ctrl+S",
     event: "grido:open-projects-dialog",
     detail: { tab: "save" },
+  },
+  {
+    id: "projects-library",
+    title: "مكتبة المشاريع",
+    subtitle: "تصفّح المشاريع المحفوظة",
+    group: "الملف",
+    event: "grido:open-projects-dialog",
+    detail: { tab: "list" },
   },
   // — الإخراج —
   {
@@ -443,6 +457,22 @@ export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
     group: "النظام",
     event: "grido:check-updates",
   },
+  {
+    id: "toggle-theme",
+    title: "تبديل المظهر",
+    subtitle: "بين الوضع الداكن والمضيء",
+    group: "النظام",
+    // مصدر الثيم الوحيد هو useTheme داخل App.tsx (صنف .dark + التفضيل المحفوظ)،
+    // فاللوحة تُطلق الحدث ولا تملك نسخة ثانية من حالة الثيم.
+    event: "grido:toggle-theme",
+  },
+  {
+    id: "account",
+    title: "الحساب والتراخيص",
+    subtitle: "المفتاح والاشتراك والاستخدام",
+    group: "النظام",
+    event: "grido:open-account",
+  },
 ];
 
 /** تنفيذ أمر من السجل عبر ناقل الأحداث الموحد */
@@ -469,6 +499,8 @@ export interface StateCommandInput {
   canvasFitMode: CanvasFitMode;
   showRuler: boolean;
   showGrid: boolean;
+  /** وضع الكانفاس الحالي — تُعطَّل أوامر التحويل إلى الوضع المفعّل أصلاً */
+  mode: EditorMode;
 }
 
 /** مُحدِّد (selector) لقيم الحالة — يُستخدم مع useShallow في الشريط */
@@ -482,6 +514,7 @@ export function selectStateCommandInput(
     canvasFitMode: state.canvasFitMode,
     showRuler: state.showRuler,
     showGrid: state.showGrid,
+    mode: state.mode,
   };
 }
 
@@ -644,6 +677,74 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
       disabled: input.canvasFitMode === "auto",
       run: autoFitZoomStore,
     }),
+  },
+  {
+    id: "insert-text",
+    title: "إضافة نص",
+    group: "إدراج",
+    // بلا اختصار: لا يوجد مفتاح مسجّل لإدراج النص في use-keyboard-shortcuts.ts،
+    // وإعلان اختصار غير مسجّل يجعل اللوحة توعد بما لا يحدث.
+    getSnapshot: () => {
+      const { addTextElement } = useEditorStore.getState();
+      return {
+        subtitle: "نص جديد قابل للتحرير",
+        run: () => addTextElement(),
+      };
+    },
+  },
+  {
+    id: "insert-rect",
+    title: "إضافة مستطيل",
+    group: "إدراج",
+    getSnapshot: () => {
+      const { addShapeElement } = useEditorStore.getState();
+      return {
+        subtitle: "شكل هندسي قابل للتحجيم",
+        run: () => addShapeElement("rect"),
+      };
+    },
+  },
+  {
+    id: "insert-ellipse",
+    title: "إضافة دائرة",
+    group: "إدراج",
+    getSnapshot: () => {
+      const { addShapeElement } = useEditorStore.getState();
+      return {
+        subtitle: "شكل بيضاوي قابل للتحجيم",
+        run: () => addShapeElement("ellipse"),
+      };
+    },
+  },
+  {
+    id: "mode-collage",
+    title: "وضع الكولاج",
+    group: "وضع الكانفاس",
+    shortcut: "Ctrl+Alt+1",
+    getSnapshot: (input = readStateCommandInput()) => {
+      const { setMode } = useEditorStore.getState();
+      const isActive = input.mode === "collage";
+      return {
+        subtitle: isActive ? "هو الوضع الحالي" : "تحويل الكانفاس إلى شبكة كولاج",
+        disabled: isActive,
+        run: () => setMode("collage"),
+      };
+    },
+  },
+  {
+    id: "mode-single",
+    title: "وضع التعديل الحر",
+    group: "وضع الكانفاس",
+    shortcut: "Ctrl+Alt+2",
+    getSnapshot: (input = readStateCommandInput()) => {
+      const { setMode } = useEditorStore.getState();
+      const isActive = input.mode === "single";
+      return {
+        subtitle: isActive ? "هو الوضع الحالي" : "تحرير حر بلا شبكة كولاج",
+        disabled: isActive,
+        run: () => setMode("single"),
+      };
+    },
   },
 ];
 

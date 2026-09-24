@@ -5,7 +5,7 @@ description: سجل ومرجع الفروقات المعمارية لانتقا�
 
 # 📚 سجل ومرجع التحول إلى Wails v3 (Wails v3 Migration Reference)
 
-> **الحالة:** تم اعتماد وانتقال المشروع بالكامل إلى **Wails v3 (`v3.0.0-beta.23`)**.  
+> **الحالة:** تم اعتماد وانتقال المشروع بالكامل إلى **Wails v3 (`v3.0.0-beta.25`)**.  
 > يُستخدم هذا الملف كمرجع توثيقي لفهم الفروقات المعمارية، نظام المهام، خط أنابيب الربطات، وكيفية عمل النظام المعتمد حالياً.
 
 ---
@@ -34,7 +34,7 @@ description: سجل ومرجع الفروقات المعمارية لانتقا�
 
 ```powershell
 # 1. تثبيت أداة Wails3 CLI الرسمية المعتمدة
-go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.23
+go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25
 
 # 2. تشغيل وضع التطوير المحلي مع Hot Reload
 wails3 task dev

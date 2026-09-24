@@ -153,9 +153,16 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
                 const newW = Math.max(10, baseW * absScaleX);
                 const newH = Math.max(10, baseH * absScaleY);
 
-                // إعادة مقياس العقدة القياسي إلى 1 لتكون الأبعاد الفعلية هي المرجع
+                // إعادة مقياس العقدة القياسي إلى 1 لتكون الأبعاد الفعلية هي المرجع،
+                // ثم تثبيت الأبعاد على العقدة نفسها: مجموعات Konva لا تستنتج
+                // عرضها/ارتفاعها للمحوّل (ثابت «Group Resizing Fallback» في
+                // .agents/AGENTS.md)، وشارة الأبعاد تقرأ node.width() * scaleX().
+                // والنص يُستثنى من الارتفاع فيبقى ارتفاعه محسوباً من الالتفاف
+                // (ثابت «التفاف نص Konva الافتراضي»).
                 node.scaleX(1);
                 node.scaleY(1);
+                if (typeof node.width === "function") node.width(newW);
+                if (el.type !== "text" && typeof node.height === "function") node.height(newH);
 
                 const newWidth = newW / canvasWidth;
                 const newHeight = newH / canvasHeight;

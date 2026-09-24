@@ -113,4 +113,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 3. **سلامة القوائم المنسدلة في المودالات (Portal-Backed Selects):**
    - أي قائمة منسدلة داخل لوحة الخصائص (مثل اختيار الخط، الحجم، نوع الإطار) يجب أن تستخدم React Portal أو تمنع تداخل الـ z-index وتجاوز حدود الحاوية.
 
+---
+
+## ⌨️ 6. مصدر واحد للاختصارات ولوحة الأدوات (Single Shortcut & Palette Source)
+
+> [!CRITICAL]
+> **لوحة الأدوات واحدة فقط:** `WorkspacePanelRail` (Popover + cmdk) تُفتح بـ`Ctrl+K` ومن قائمة «عرض ← لوحة الأدوات». يُمنع إضافة لوحة أوامر ثانية (حوار أو Popover آخر) لأنها تختطف الاختصار نفسه وتكسر ثابت «حظر ازدواجية الميزات» في `.agents/AGENTS.md`.
+
+1. **مصدر الاختصارات:** كل اختصار عام يُسجّل حصراً في `frontend/src/hooks/use-keyboard-shortcuts.ts` (عبر `useHotkeys` مع حُرّاس `ignoreEventWhen`). يُمنع إضافة مستمع `keydown` خام على `window` لاختصار جديد — يسبق الاختصار المسجّل ويتجاوز حُرّاس الحقول النصية.
+2. **مصدر الأوامر:** كل أمر جديد يُضاف إلى `WORKSPACE_COMMANDS` (أوامر تُنفَّذ بحدث `grido:*`) أو `WORKSPACE_STATE_COMMANDS` (أوامر تقرأ/تكتب المتجر) في `frontend/src/lib/workspace-tools.ts`. يُمنع توصيف الأوامر بعلامات JSX يدوية داخل مكوّن اللوحة.
+3. **حدث بلا مستمع = أمر ميت:** يُمنع إطلاق حدث `grido:*` من اللوحة بلا مستمع حقيقي في الموضع المالك للقدرة (نمط `App.tsx` للأحداث العامة، أو المكوّن المالك عند خصوصيته). معرّف الحدث الحقيقي يُنسخ من مصدره (`grido:open-shortcuts` لا `grido:open-shortcuts-dialog`) ويُثبت باختبار (‏`e2e/command-palette-commands.spec.ts`).
+4. **حقل `shortcut` أمانة عرض:** لا يُكتب في الأمر اختصار إلا وهو مسجّل فعلاً في `use-keyboard-shortcuts.ts` بنفس الصيغة (مثال: «ملاءمة الكل» = `Ctrl+0`، وإعادة الملاءمة إلى 100% = `Ctrl+1`)؛ وما لا اختصار له يُترك بلا حقل بدل اختراع اختصار.
+5. **نافذة حوارية تحتاج هوية منطوقة:** كل `DialogContent` في التطبيق يجب أن يحمل `DialogTitle` (ولو `sr-only`) لأن Radix يربط `aria-labelledby` بمعرّف العنوان — وبدونه تصبح النافذة بلا اسم لقارئ الشاشة.
+
 

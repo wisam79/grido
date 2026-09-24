@@ -119,7 +119,7 @@ To run the application locally with hot-reloading enabled for both frontend and 
 ```bash
 wails3 task dev
 ```
-> Requires Wails v3 CLI: `go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.23`
+> Requires Wails v3 CLI: `go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25`
 > The Vite dev server runs on `127.0.0.1:9245` (see `frontend/vite.config.ts` — keep `playwright.config.ts` in sync).
 
 > 🧱 Frontend bindings are generated into `frontend/bindings/` (git-ignored) and are required for

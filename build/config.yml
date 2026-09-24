@@ -11,7 +11,7 @@ info:
   description: "Professional Photo & Collage Studio" # The application description
   copyright: "(c) 2026, Grido" # Copyright text
   comments: "Grido Studio Photo & Collage Editor" # Comments
-  version: "1.6.0" # The application version
+  version: "1.8.0" # The application version
   # cfBundleIconName: "appicon" # The macOS icon name in Assets.car icon bundles (optional)
   #                               # Should match the name of your .icon file without the extension
   #                               # If not set and Assets.car exists, defaults to "appicon"
