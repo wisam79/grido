@@ -3,6 +3,13 @@ import { useEditorStore } from "@/lib/editor-store";
 import { clampZoomRaw } from "@/lib/canvas/zoom";
 
 /**
+ * عتبة التزام الزوم: تغييرات العجلة الدقيقة (ضجيج لوحة اللمس) التي تقل عن
+ * ~بكسل عرض واحد (Δz ≈ 1/boxW ≈ 0.001) ودون عتبة تسمية النسبة (0.5%) تُراكم
+ * بلا التزام — فكل التزام يعيد حساب الملاءمة ويعيد تخصيص Stage كاملاً.
+ */
+const ZOOM_COMMIT_EPSILON = 0.001;
+
+/**
  * 🧭 منطق إطار عرض المحرر: زوم العجلة المحوري (Ctrl+Wheel) بمحور مؤشر ثابت،
  * والتحريك بزر السحب الأوسط أو مفتاح المسافة (Space-Pan).
  * 🛡️ معدل بالراف: عجلات متتالية تُدمج في إطار رسم واحد — كانت هذه الكتلة
@@ -59,9 +66,17 @@ export function useCanvasViewport(
         lastWheelClientX = e.clientX;
         lastWheelClientY = e.clientY;
 
-        const baseZoom = pendingZoom !== null ? pendingZoom : useEditorStore.getState().canvasZoom;
+        const committedZoom = useEditorStore.getState().canvasZoom;
+        const baseZoom = pendingZoom !== null ? pendingZoom : committedZoom;
         const factor = Math.exp(-e.deltaY * 0.003);
         const newZoom = clampZoomRaw(baseZoom * factor);
+
+        // دون العتبة: راكم المرشّح بلا جدولة إطار — يحفظ سلاسة التراكم
+        // للقرص البطيء ويُسقط ضجيجاً لا يغيّر بكسلاً واحداً ولا التسمية
+        if (Math.abs(newZoom - committedZoom) < ZOOM_COMMIT_EPSILON) {
+          pendingZoom = newZoom;
+          return;
+        }
 
         pendingZoom = newZoom;
         if (rafId === null) {

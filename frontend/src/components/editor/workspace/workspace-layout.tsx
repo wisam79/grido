@@ -109,14 +109,13 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
       </section>
 
       {/* 4. لوحة المفتش / اللوح النشط الأيمن (Right Inspector - 296px) */}
+      {/* اللوحان مركّبان دائماً في Standard ويُبدَّل بينهما بـ CSS فقط —
+          التبديل الشرطي السابق كان يفكّ شجرة اللوحة كاملة ويعيد بناءها
+          (220–285ms مقاسة مع LayoutCount=100)، فصار الفكّ إخفاءً لا إزالة. */}
       {!isCompact && (
         <aside
           aria-label={isStandard && activePanel === 'templates' ? 'لوحة القوالب' : 'لوحة خصائص العنصر'}
-          data-testid={
-            isStandard && activePanel === 'templates'
-              ? 'workspace-panel-templates'
-              : 'workspace-panel-properties'
-          }
+          data-testid={isStandard ? 'workspace-panel-inspector' : 'workspace-panel-properties'}
           data-collapsed={!isRightPanelOpen}
           className={cn(
             'h-full border-l border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion transition-all duration-200',
@@ -127,7 +126,30 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
         >
           <div dir="rtl" className="h-full w-[296px] flex flex-col overflow-hidden">
             {isStandard ? (
-              activePanel === 'templates' ? templatesContent : propertiesContent
+              <>
+                <div
+                  data-testid="workspace-panel-templates"
+                  data-collapsed={activePanel !== 'templates'}
+                  aria-hidden={activePanel !== 'templates'}
+                  className={cn(
+                    'h-full flex-col overflow-hidden',
+                    activePanel === 'templates' ? 'flex' : 'hidden'
+                  )}
+                >
+                  {templatesContent}
+                </div>
+                <div
+                  data-testid="workspace-panel-properties"
+                  data-collapsed={activePanel !== 'properties'}
+                  aria-hidden={activePanel !== 'properties'}
+                  className={cn(
+                    'h-full flex-col overflow-hidden',
+                    activePanel === 'properties' ? 'flex' : 'hidden'
+                  )}
+                >
+                  {propertiesContent}
+                </div>
+              </>
             ) : (
               propertiesContent
             )}

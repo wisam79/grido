@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { ArrowsOutSimple, ArrowsInSimple, SquaresFour } from '@/components/ui/icons';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
   CommandShortcut,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import type { CollageTab, FreeformTab, WorkspaceTool } from '@/lib/workspace-tools';
+import type { CollageTab, FreeformTab, WorkspaceCommand, WorkspaceTool } from '@/lib/workspace-tools';
 import {
   WORKSPACE_COMMANDS,
   dispatchWorkspaceCommand,
@@ -52,15 +52,17 @@ interface WorkspacePanelRailProps {
    في اختصارات Alt+الرقم ولوحة القوالب، فلا تختلف القائمة عن الاختصار.
    ═══════════════════════════════════════════════════════════════ */
 
-/** زر أداة في الشريط — يُبنى من سجل الأدوات بدل تكرار العلامات لكل أداة */
-function RailToolButton({
+/** زر أداة في الشريط — يُبنى من سجل الأدوات بدل تكرار العلامات لكل أداة.
+    مذكّرة (memo): خاصيات الأب مستقرّة (سجل ثابت + useCallback) فلا يعيد
+    التصيير مع كل تغيّر زوم/سجل ما لم تتبدّل حالته هو. */
+const RailToolButton = React.memo(function RailToolButton({
   tool,
   index,
   isActive,
   badgeCount,
   isInUse,
   pillLayoutId,
-  onSelect,
+  onSelectTool,
 }: {
   tool: WorkspaceTool<string>;
   index: number;
@@ -71,7 +73,7 @@ function RailToolButton({
   isInUse?: boolean;
   /** معرّف مشترك بين أزرار الشريط نفسه لتحريك الإطار بينها بلا تسرّب لشريط آخر */
   pillLayoutId: string;
-  onSelect: () => void;
+  onSelectTool: (tool: WorkspaceTool<string>) => void;
 }) {
   const shortcut = toolShortcut(index);
   const showBadge = badgeCount !== undefined && badgeCount > 0;
@@ -82,7 +84,7 @@ function RailToolButton({
         <Button
           variant="ghost"
           size="icon"
-          onClick={onSelect}
+          onClick={() => onSelectTool(tool)}
           data-testid={tool.testId}
           aria-label={tool.label}
           aria-pressed={isActive}
@@ -147,7 +149,52 @@ function RailToolButton({
       </TooltipContent>
     </Tooltip>
   );
-}
+});
+
+/**
+ * صف أمر حالة واحد — مذكّر حتى لا يعيد التصيير مع كل تصيير للأب
+ * (اللقطة تُبنى من جديد فقط عند تغيّر stateInput فعلياً عبر useShallow).
+ */
+const PaletteStateItem = React.memo(function PaletteStateItem({
+  commandId,
+  title,
+  subtitle,
+  shortcut,
+  disabled,
+  value,
+  onRun,
+  onAfterRun,
+}: {
+  commandId: string;
+  title: string;
+  subtitle: string;
+  shortcut?: string;
+  disabled?: boolean;
+  value: string;
+  onRun: () => void;
+  onAfterRun: () => void;
+}) {
+  const handleSelect = useCallback(() => {
+    onRun();
+    onAfterRun();
+  }, [onRun, onAfterRun]);
+  return (
+    <CommandItem
+      value={value}
+      disabled={disabled}
+      onSelect={handleSelect}
+      data-testid={`command-${commandId}`}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block font-bold truncate">{title}</span>
+        <span className="block text-mini text-muted-foreground truncate">
+          {subtitle}
+        </span>
+      </span>
+      {shortcut && <CommandShortcut>{shortcut}</CommandShortcut>}
+    </CommandItem>
+  );
+});
 
 /**
  * أوامر الحالة الحية — مكوّن منفصل يشترك في قيم الحالة التي تظهر في
@@ -155,7 +202,7 @@ function RailToolButton({
  * تغيّر حقيقي، وبلا إعادة تصيير للشريط مع كل تغيير زوم واللوحة مغلقة
  * (المكوّن لا يُركَّب إلا واللوحة مفتوحة).
  */
-function PaletteStateCommands({ onAfterRun }: { onAfterRun: () => void }) {
+const PaletteStateCommands = React.memo(function PaletteStateCommands({ onAfterRun }: { onAfterRun: () => void }) {
   const stateInput = useEditorStore(useShallow(selectStateCommandInput));
   const groups = useMemo(() => getStateCommandGroups(stateInput), [stateInput]);
 
@@ -166,31 +213,91 @@ function PaletteStateCommands({ onAfterRun }: { onAfterRun: () => void }) {
           <CommandSeparator />
           <CommandGroup heading={group.name}>
             {group.items.map(({ command, snapshot }) => (
-              <CommandItem
+              <PaletteStateItem
                 key={command.id}
-                value={`${command.title} ${snapshot.subtitle} ${command.shortcut ?? ''}`}
+                commandId={command.id}
+                title={command.title}
+                subtitle={snapshot.subtitle}
+                shortcut={command.shortcut}
                 disabled={snapshot.disabled}
-                onSelect={() => {
-                  snapshot.run();
-                  onAfterRun();
-                }}
-                data-testid={`command-${command.id}`}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block font-bold truncate">{command.title}</span>
-                  <span className="block text-mini text-muted-foreground truncate">
-                    {snapshot.subtitle}
-                  </span>
-                </span>
-                {command.shortcut && <CommandShortcut>{command.shortcut}</CommandShortcut>}
-              </CommandItem>
+                value={`${command.title} ${snapshot.subtitle} ${command.shortcut ?? ''}`}
+                onRun={snapshot.run}
+                onAfterRun={onAfterRun}
+              />
             ))}
           </CommandGroup>
         </React.Fragment>
       ))}
     </>
   );
-}
+});
+
+/** صف أداة في اللوحة — مذكّر؛ التحديد عبر useCallback مستقر من الأب. */
+const PaletteToolItem = React.memo(function PaletteToolItem({
+  tool,
+  shortcut,
+  isActive,
+  onSelectTool,
+}: {
+  tool: WorkspaceTool<string>;
+  shortcut: string;
+  isActive: boolean;
+  onSelectTool: (tool: WorkspaceTool<string>) => void;
+}) {
+  const handleSelect = useCallback(() => onSelectTool(tool), [onSelectTool, tool]);
+  const ToolIcon = tool.icon;
+  return (
+    <CommandItem
+      value={`${tool.title} ${tool.subtitle} ${tool.label} ${shortcut}`}
+      onSelect={handleSelect}
+      data-testid={`launcher-${tool.id}`}
+    >
+      <span
+        className={cn(
+          'w-7 h-7 shrink-0 rounded-lg flex items-center justify-center',
+          isActive
+            ? 'bg-primary/20 text-primary'
+            : 'bg-muted/70 text-muted-foreground'
+        )}
+      >
+        <ToolIcon className="w-4 h-4" weight="duotone" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-bold truncate">{tool.title}</span>
+        <span className="block text-mini text-muted-foreground truncate">
+          {tool.subtitle}
+        </span>
+      </span>
+      {shortcut && <CommandShortcut>{shortcut}</CommandShortcut>}
+    </CommandItem>
+  );
+});
+
+/** صف أمر عام في اللوحة — مذكّر؛ التنفيذ عبر useCallback مستقر من الأب. */
+const PaletteGlobalCommandItem = React.memo(function PaletteGlobalCommandItem({
+  command,
+  onRunCommand,
+}: {
+  command: WorkspaceCommand;
+  onRunCommand: (command: WorkspaceCommand) => void;
+}) {
+  const handleSelect = useCallback(() => onRunCommand(command), [onRunCommand, command]);
+  return (
+    <CommandItem
+      value={`${command.title} ${command.subtitle} ${command.shortcut ?? ''}`}
+      onSelect={handleSelect}
+      data-testid={`command-${command.id}`}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block font-bold truncate">{command.title}</span>
+        <span className="block text-mini text-muted-foreground truncate">
+          {command.subtitle}
+        </span>
+      </span>
+      {command.shortcut && <CommandShortcut>{command.shortcut}</CommandShortcut>}
+    </CommandItem>
+  );
+});
 
 export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   activeStudioTab = 'layers',
@@ -243,14 +350,21 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   const isToolInUse = (tool: WorkspaceTool<string>) =>
     tool.badge === 'collage-grid' ? isCustomGridInUse : tool.badge === 'collage-freeform' ? isFreeformInUse : undefined;
 
-  const selectTool = (tool: WorkspaceTool<string>) => {
+  // مذكّرات مستقرّة — تُمرَّر لصفوف memo فلا يعاد بناؤها مع كل تصيير للأب
+  const closeLauncher = useCallback(() => setIsLauncherOpen(false), []);
+  const runGlobalCommand = useCallback((command: WorkspaceCommand) => {
+    dispatchWorkspaceCommand(command);
+    setIsLauncherOpen(false);
+  }, []);
+
+  const selectTool = useCallback((tool: WorkspaceTool<string>) => {
     if (isCollage) {
       if (isCollageTab(tool.id)) onSelectCollageTab?.(tool.id);
     } else if (isStudioTab(tool.id)) {
       onSelectStudioTab?.(tool.id);
     }
     setIsLauncherOpen(false);
-  };
+  }, [isCollage, onSelectCollageTab, onSelectStudioTab]);
 
   return (
     <aside
@@ -291,7 +405,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                 isInUse={isToolInUse(tool)}
                 badgeCount={tool.badge === 'elements' ? elementsCount : undefined}
                 pillLayoutId={pillLayoutId}
-                onSelect={() => selectTool(tool)}
+                onSelectTool={selectTool}
               />
             ))}
           </React.Fragment>
@@ -358,39 +472,19 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
 
                 {/* الأدوات — نفس قائمة الشريط (وتتقلّص في مسار الإنتاج السريع) */}
                 <CommandGroup heading={toolsHeading}>
-                  {tools.map((tool, index) => {
-                    const shortcut = toolShortcut(index);
-                    return (
-                      <CommandItem
-                        key={tool.id}
-                        value={`${tool.title} ${tool.subtitle} ${tool.label} ${shortcut}`}
-                        onSelect={() => selectTool(tool)}
-                        data-testid={`launcher-${tool.id}`}
-                      >
-                        <span
-                          className={cn(
-                            'w-7 h-7 shrink-0 rounded-lg flex items-center justify-center',
-                            activeTab === tool.id
-                              ? 'bg-primary/20 text-primary'
-                              : 'bg-muted/70 text-muted-foreground'
-                          )}
-                        >
-                          <tool.icon className="w-4 h-4" weight="duotone" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block font-bold truncate">{tool.title}</span>
-                          <span className="block text-mini text-muted-foreground truncate">
-                            {tool.subtitle}
-                          </span>
-                        </span>
-                        {shortcut && <CommandShortcut>{shortcut}</CommandShortcut>}
-                      </CommandItem>
-                    );
-                  })}
+                  {tools.map((tool, index) => (
+                    <PaletteToolItem
+                      key={tool.id}
+                      tool={tool}
+                      shortcut={toolShortcut(index)}
+                      isActive={activeTab === tool.id}
+                      onSelectTool={selectTool}
+                    />
+                  ))}
                 </CommandGroup>
 
                 {/* أوامر الحالة الحية — تراجع/إعادة تتعطل تلقائياً، والعرض يظهر الحالة الحالية */}
-                <PaletteStateCommands onAfterRun={() => setIsLauncherOpen(false)} />
+                <PaletteStateCommands onAfterRun={closeLauncher} />
 
                 {/* الأوامر العالمية — نفس أحداث grido:* ونفس اختصارات use-keyboard-shortcuts،
                     ومجمّعة بعناوين مجموعاتها المخزّنة في السجل */}
@@ -399,23 +493,11 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                     <CommandSeparator />
                     <CommandGroup heading={group.name}>
                       {group.items.map((command) => (
-                        <CommandItem
+                        <PaletteGlobalCommandItem
                           key={command.id}
-                          value={`${command.title} ${command.subtitle} ${command.shortcut ?? ''}`}
-                          onSelect={() => {
-                            dispatchWorkspaceCommand(command);
-                            setIsLauncherOpen(false);
-                          }}
-                          data-testid={`command-${command.id}`}
-                        >
-                          <span className="min-w-0 flex-1">
-                            <span className="block font-bold truncate">{command.title}</span>
-                            <span className="block text-mini text-muted-foreground truncate">
-                              {command.subtitle}
-                            </span>
-                          </span>
-                          {command.shortcut && <CommandShortcut>{command.shortcut}</CommandShortcut>}
-                        </CommandItem>
+                          command={command}
+                          onRunCommand={runGlobalCommand}
+                        />
                       ))}
                     </CommandGroup>
                   </React.Fragment>

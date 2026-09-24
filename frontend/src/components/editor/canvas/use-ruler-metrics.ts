@@ -23,6 +23,12 @@ export function useRulerMetricsPreview(
   });
   const [containerSize, setContainerSize] = useState({ w: 600, h: 800 });
   const mouseMoveRafId = useRef<number | null>(null);
+  // تثبيت مقاس الحاوية: طي اللوحة يحرك العرض تدريجياً 200ms فيطلق
+  // ResizeObserver عشرات المرات — وكل التزام يعيد تخصيص Stage كاملاً.
+  // نلتزم فوراً عند الاستقرار، ونؤجل الالتزام أثناء الحركة المستمرة.
+  const committedSizeRef = useRef({ w: 600, h: 800 });
+  const lastCommitAtRef = useRef(0);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateRulerPositions = useCallback(() => {
     if (!showRuler || printMode) return;
@@ -54,13 +60,40 @@ export function useRulerMetricsPreview(
     if (!container) return;
 
     let rafId: number | null = null;
+    const commitSize = (w: number, h: number) => {
+      const prev = committedSizeRef.current;
+      if (Math.abs(prev.w - w) < 0.5 && Math.abs(prev.h - h) < 0.5) return;
+      committedSizeRef.current = { w, h };
+      lastCommitAtRef.current = Date.now();
+      setContainerSize({ w, h });
+    };
     const handleLayout = () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
         rafId = null;
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
-        setContainerSize({ w: rect.width, h: rect.height });
+        const prev = committedSizeRef.current;
+        // التمرير لا يغيّر المقاس — لا التزام جديد ولا إعادة تصيير لسلسلة الكانفس
+        if (Math.abs(prev.w - rect.width) < 0.5 && Math.abs(prev.h - rect.height) < 0.5) {
+          updateRulerPositions();
+          return;
+        }
+        // حركة مستمرة (أنيميشن طي اللوحة 200ms): أجل الالتزام حتى الاستقرار
+        // فيلتزم الكانفس مرة واحدة بدل إعادة تخصيص Stage مع كل إطار وسيط
+        if (Date.now() - lastCommitAtRef.current < 150) {
+          if (settleTimerRef.current !== null) clearTimeout(settleTimerRef.current);
+          settleTimerRef.current = setTimeout(() => {
+            settleTimerRef.current = null;
+            if (!containerRef.current) return;
+            const settled = containerRef.current.getBoundingClientRect();
+            commitSize(settled.width, settled.height);
+            updateRulerPositions();
+          }, 120);
+          updateRulerPositions();
+          return;
+        }
+        commitSize(rect.width, rect.height);
         updateRulerPositions();
       });
     };
@@ -81,6 +114,7 @@ export function useRulerMetricsPreview(
       window.removeEventListener("resize", handleLayout);
       container.removeEventListener("scroll", handleLayout);
       if (rafId !== null) cancelAnimationFrame(rafId);
+      if (settleTimerRef.current !== null) clearTimeout(settleTimerRef.current);
     };
   }, [updateRulerPositions, containerRef, innerRef]);
 
