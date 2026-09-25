@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.9.2] - 2026-09-25
+
 ### Changed (إزالة زحمة الشريط الجانبي — 2026-09-25)
 
 - **دمج تبويبات الاستوديو 9→7:** `stickers/shapes/text` صارت تبويب `العناصر` الموحد (`rail-studio-elements`) — نفس المكون `FreeformElementsTab` بمبدّله الداخلي، مع ترحيل القيم المخزنة القديمة (`migrateLegacyStudioTab`).
