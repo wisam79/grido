@@ -110,7 +110,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   const [canvasBox, setCanvasBox] = useState<AnchorBox | null>(null);
   // 📏 مقاس الشريط الفعلي بعد الرسم (يتغير بين الأقسام: خلية/عنصر/تحديد متعدد)
   const barObserverRef = useRef<ResizeObserver | null>(null);
-  const [barSize, setBarSize] = useState({ w: 240, h: 38 });
+  const [barSize, setBarSize] = useState({ w: 190, h: 30 });
 
   // قياس موضع الورقة — يُعاد عبر ResizeObserver (يلتقط الزوم وتغيّر الحجم
   // وتفريع/طي الألواح الجانبية) فلا حاجة للاشتراك بالزوم يدوياً هنا.
@@ -215,7 +215,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
 
   // جسم الشريط مشترك بين المسارين (الديناميكي والاحتياطي)
   const barBody = (
-    <div className="bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 shadow-fluent-8 rounded-xl px-2.5 py-1 flex items-center gap-1.5 text-foreground fluent-specular max-w-full overflow-x-auto">
+    <div className="bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 shadow-fluent-8 rounded-lg px-1.5 py-0.5 flex items-center gap-1 text-foreground fluent-specular max-w-full overflow-x-auto">
 
       {/* وضع الكولاج - الخلية المحددة */}
       {hasSlotSection && selectedSlot && (
@@ -234,10 +234,10 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
             variant="ghost"
             size="sm"
             onClick={() => selectElement(null)}
-            className="h-7 w-7 p-0 rounded-md hover:bg-muted text-muted-foreground ms-1"
+            className="h-6 w-6 p-0 rounded-md hover:bg-muted text-muted-foreground ms-0.5"
             aria-label="إغلاق الشريط"
           >
-            <X className="w-3.5 h-3.5" weight="regular" />
+            <X className="w-3 h-3" weight="regular" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">إغلاق الشريط</TooltipContent>

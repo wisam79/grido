@@ -7,7 +7,9 @@ export type DocumentAspectType = "free" | "a4_p" | "a4_l" | "id_card" | "square"
 
 export type ScannerFilterMode = "original" | "magic" | "bw" | "grayscale" | "sharpen" | "deyellow";
 
-export type DetectionMode = "auto" | "multi" | "single";
+// "auto" أُزيل: كان وضعاً معلَناً بلا أي واجهة أو مُستدعٍ (فرع ميت)،
+// ونتيجته في الدمج مطابقة تماماً لـ multi. الأنماط الفعلية نمطان فقط.
+export type DetectionMode = "multi" | "single";
 
 export interface DetectedDocument {
   id: string;

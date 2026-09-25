@@ -238,6 +238,61 @@ describe('lib/canvas/fit — الملاءمة التلقائية', () => {
   });
 });
 
+describe('lib/canvas/fit — الحجم الفعلي 1:1', () => {
+  it('يعرض الورقة بمقاسها البكسلي الحقيقي بلا تقييد بالصندوق', () => {
+    const result = computeCanvasDisplay({
+      containerW: DESKTOP.w,
+      containerH: DESKTOP.h,
+      aspect: A4_ASPECT,
+      zoom: 1,
+      fitMode: 'actual',
+      canvasW: 2480,
+      canvasH: 3508,
+    });
+
+    expect(result.resolved).toBe('actual');
+    expect(result.displayW).toBe(2480);
+    expect(result.displayH).toBe(3508);
+    // أعرض وأطول من منطقة العمل — وهذا هو المقصود: العصوان تظهران هنا
+    // (باقي الأوضاع تُصغّر الورقة لتناسب العرض فلا تمرير أفقي فيها).
+    expect(result.displayW).toBeGreaterThan(DESKTOP.w);
+    expect(result.displayH).toBeGreaterThan(DESKTOP.h);
+  });
+
+  it('يطبّق مضاعف الزوم فوق المقاس الحقيقي', () => {
+    const half = computeCanvasDisplay({
+      containerW: DESKTOP.w,
+      containerH: DESKTOP.h,
+      aspect: 1,
+      zoom: 0.5,
+      fitMode: 'actual',
+      canvasW: 1000,
+      canvasH: 1000,
+    });
+    expect(half.resolved).toBe('actual');
+    expect(half.displayW).toBe(500);
+    expect(half.displayH).toBe(500);
+  });
+
+  it('يعود إلى ملاءمة الكل إذا غاب مقاس الورقة بدل ادّعاء 1:1 كاذب', () => {
+    const result = computeCanvasDisplay({
+      containerW: DESKTOP.w,
+      containerH: DESKTOP.h,
+      aspect: ID_ASPECT,
+      zoom: 1,
+      fitMode: 'actual',
+    });
+    expect(result.resolved).toBe('height');
+    expect(result.displayW).toBeLessThan(DESKTOP.w);
+  });
+
+  it('يُقبل الوضع كمُفضَّل صالح ويُحفظ', () => {
+    expect(isCanvasFitMode('actual')).toBe(true);
+    writeStoredFitMode('actual');
+    expect(readStoredFitMode()).toBe('actual');
+  });
+});
+
 describe('lib/canvas/fit — حمايات القيم الشاذة', () => {
   it('يعالج aspect صفرياً أو NaN بلا قسمة على صفر', () => {
     expect(safeAspect(0)).toBe(1);
@@ -294,7 +349,7 @@ describe('lib/canvas/fit — تفضيل الملاءمة المحفوظ', () => 
   });
 
   it('لكل وضع عنوان عربي معروض في الواجهة', () => {
-    expect(Object.keys(CANVAS_FIT_LABELS).sort()).toEqual(['auto', 'height', 'width']);
+    expect(Object.keys(CANVAS_FIT_LABELS).sort()).toEqual(['actual', 'auto', 'height', 'width']);
     for (const label of Object.values(CANVAS_FIT_LABELS)) {
       expect(label.trim().length).toBeGreaterThan(0);
     }

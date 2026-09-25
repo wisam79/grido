@@ -82,13 +82,18 @@ export function getUnitSpan(mm: number, px: number | undefined, unit: RulerUnit)
 export function formatRulerNumber(val: number, unit: RulerUnit): string {
   if (Math.abs(val) < 0.00001) return "0";
   if (unit === "in") {
-    if (Math.abs(val - 0.25) < 0.001) return "¼";
-    if (Math.abs(val - 0.5) < 0.001) return "½";
-    if (Math.abs(val - 0.75) < 0.001) return "¾";
-    if (Math.abs(val - 0.125) < 0.001) return "⅛";
-    if (Math.abs(val - 0.375) < 0.001) return "⅜";
-    if (Math.abs(val - 0.625) < 0.001) return "⅝";
-    if (Math.abs(val - 0.875) < 0.001) return "⅞";
+    // الإشارة تُحفظ: القيم السالبة (يسار/أعلى نقطة الصفر) تظهر على المسطرة
+    // لأنها تستمر عبر مساحة العمل كلها. `Math.abs(val-0.25)` وحده كان
+    // يعرض ‎-0.25‎ كـ«¼» فيضيع الاتجاه.
+    const sign = val < 0 ? "-" : "";
+    const abs = Math.abs(val);
+    if (Math.abs(abs - 0.25) < 0.001) return `${sign}¼`;
+    if (Math.abs(abs - 0.5) < 0.001) return `${sign}½`;
+    if (Math.abs(abs - 0.75) < 0.001) return `${sign}¾`;
+    if (Math.abs(abs - 0.125) < 0.001) return `${sign}⅛`;
+    if (Math.abs(abs - 0.375) < 0.001) return `${sign}⅜`;
+    if (Math.abs(abs - 0.625) < 0.001) return `${sign}⅝`;
+    if (Math.abs(abs - 0.875) < 0.001) return `${sign}⅞`;
     return Number(val.toFixed(2)).toString();
   }
   if (unit === "cm") {

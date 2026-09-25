@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import {
   ArrowsDownUp,
   ArrowsClockwise,
+  ArrowCounterClockwise,
   Shuffle,
   Rows,
   Columns,
@@ -13,7 +14,8 @@ import {
 import { useEditorStore } from "@/lib/editor-store";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
-import { FluentSection, FluentSettingRow } from "@/components/ui/blocks";
+import { FluentSection } from "@/components/ui/blocks";
+import { cn } from "@/lib/utils";
 import {
   buildPhysicalGridCells,
   buildStretchGridCells,
@@ -21,11 +23,35 @@ import {
   resolveEffectiveDpi,
 } from "./collage-grid-math";
 import type { GridAlignment, PhotoGridType } from "./collage-grid-math";
+import {
+  collectFilled,
+  isSrc,
+  reverseColumnsWithinFilled,
+  reverseRowsWithinFilled,
+  shuffleWithinFilled,
+  srcMatricesEqual,
+  transposeIndexMap,
+  type SrcMatrix,
+} from "./collage-arrange-ops";
 
 /* ═══════════════════════════════════════════════════════════════
    فرز وترتيب الخانات — إعادة ترتيب الصور داخل الشبكة القائمة
-   دون المساس بالتخطيط، مع أدوات تحويل جماعية (لف/قلب/تصفير).
-   كل عملية تُطبَّق بنداء واحد فتسجّل في سجل التراجع مرة واحدة.
+   دون المساس بالتخطيط، مع تحويلات جماعية (لفّ/تصفير).
+
+   العمليات الحسابية كلها في collage-arrange-ops (دوال نقية مختبَرة)،
+   وهذا الملف للعرض وربط المتجر فقط.
+
+   إصلاحات الجولة:
+   1. «لفّ كل الصور» كان يفرض 90 مطلقاً عبر updateSlotsBatch — فالضغط
+      مرتين لا يفعل شيئاً، وكان يمحو أي تدوير سابق. صار تزايدياً
+      (rotateSlotsBatch) مع نقلة تراجع واحدة، وأُضيف لفّ عكسي.
+   2. «عكس» و«خلط» كانا يوزّعان الصور على كل الخانات، فعند شبكة غير
+      ممتلئة تُتخطّى الخانات الفارغة وتبقى صورها القديمة = تكرار صورة.
+      الآن التبادل بين الخانات الممتلئة فقط.
+   3. «تبديل الصفوف بالأعمدة» كان يربط الصور بالفهرس، وهو ليس تبديلاً
+      هندسياً — صار (row,col) → (col,row).
+   4. rotate/reset لم يكونا يُسجّلان في سجل التراجع أصلاً (toast يوهم
+      بالعكس) — صارا نقلة واحدة قابلة للتراجع.
    ═══════════════════════════════════════════════════════════════ */
 
 interface GridMatrix {
@@ -43,21 +69,25 @@ export function CollageArrangeTab() {
     slots,
     setSlotImagesBatch,
     updateSlotsBatch,
+    rotateSlotsBatch,
     canvasWidth,
     canvasHeight,
     printSettings,
     collageTemplate,
     setCollageTemplate,
+    pushHistory,
   } = useEditorStore(
     useShallow((state) => ({
       slots: state.slots,
       setSlotImagesBatch: state.setSlotImagesBatch,
       updateSlotsBatch: state.updateSlotsBatch,
+      rotateSlotsBatch: state.rotateSlotsBatch,
       canvasWidth: state.canvasWidth,
       canvasHeight: state.canvasHeight,
       printSettings: state.printSettings,
       collageTemplate: state.collageTemplate,
       setCollageTemplate: state.setCollageTemplate,
+      pushHistory: state.pushHistory,
     }))
   );
 
@@ -94,9 +124,22 @@ export function CollageArrangeTab() {
   }, [slots]);
 
   const effectiveDpi = resolveEffectiveDpi(canvasWidth, canvasHeight, printSettings?.dpi || 300);
+  const imageCount = slots.filter((slot) => slot.imageSrc).length;
 
-  /** يطبّق ترتيباً جديداً للصور عبر مصفوفة الخانات */
-  const applyMatrix = (nextSrc: (string | undefined)[][], label: string) => {
+  const currentSrcMatrix = (): SrcMatrix =>
+    grid.matrix.map((row) => row.map((slotId) => (slotId ? grid.srcBySlot.get(slotId) : undefined)));
+
+  /**
+   * يطبّق ترتيباً جديداً للصور عبر مصفوفة الخانات.
+   * تتخطّى الخطوات التي لا تغيّر شيئاً فلا يمتلئ سجل التراجع بنقلات فارغة.
+   */
+  const applyMatrix = (nextSrc: SrcMatrix, label: string) => {
+    const current = currentSrcMatrix();
+    if (srcMatricesEqual(current, nextSrc)) {
+      toast.info("لا تغيير في الترتيب");
+      return;
+    }
+
     const assignments: { slotId: string; src: string }[] = [];
     for (let row = 0; row < grid.matrix.length; row++) {
       for (let col = 0; col < grid.matrix[row].length; col++) {
@@ -113,35 +156,19 @@ export function CollageArrangeTab() {
     toast.success(label);
   };
 
-  const currentSrcMatrix = () =>
-    grid.matrix.map((row) => row.map((slotId) => (slotId ? grid.srcBySlot.get(slotId) : undefined)));
-
   const reverseRows = () =>
-    applyMatrix(
-      currentSrcMatrix().map((row) => [...row].reverse()),
-      "تم عكس ترتيب الصور في كل صف"
-    );
+    applyMatrix(reverseRowsWithinFilled(currentSrcMatrix()), "تم عكس ترتيب الصور في كل صف");
 
-  const reverseColumns = () => {
-    const matrix = currentSrcMatrix();
-    const reversed = [...matrix].reverse();
-    applyMatrix(reversed, "تم عكس ترتيب الصور في كل عمود");
-  };
+  const reverseColumns = () =>
+    applyMatrix(reverseColumnsWithinFilled(currentSrcMatrix()), "تم عكس ترتيب الصور في كل عمود");
 
   const shuffleImages = () => {
     const matrix = currentSrcMatrix();
-    const images = matrix
-      .flat()
-      .filter((src): src is string => typeof src === "string" && src.length > 0);
-    for (let i = images.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [images[i], images[j]] = [images[j], images[i]];
+    if (collectFilled(matrix).sources.length < 2) {
+      toast.info("تحتاج صورتين على الأقل للخلط");
+      return;
     }
-    let cursor = 0;
-    applyMatrix(
-      matrix.map((row) => row.map(() => images[cursor++])),
-      "تم خلط الصور عشوائياً"
-    );
+    applyMatrix(shuffleWithinFilled(matrix), "تم خلط الصور عشوائياً");
   };
 
   /** تكرار الصور الحالية على كل الخانات بالتساوي (دورياً) */
@@ -157,21 +184,25 @@ export function CollageArrangeTab() {
       toast.info("لا توجد صور لتكرارها");
       return;
     }
-    const assignments = slots
-      .slice()
-      .sort((a, b) => a.cellIndex - b.cellIndex)
-      .map((slot, index) => ({ slotId: slot.id, src: unique[index % unique.length] }));
-    setSlotImagesBatch(assignments, unique[0]);
-    toast.success(`تم تكرار ${unique.length} صورة على ${assignments.length} خانة`);
+    const nextSrc: SrcMatrix = grid.matrix.map((row, r) =>
+      row.map((_, c) => unique[(r * grid.cols + c) % unique.length])
+    );
+    applyMatrix(nextSrc, `تم تكرار ${unique.length} صورة على ${slots.length} خانة`);
   };
 
-  /** تبديل الصفوف بالأعمدة — يعيد بناء الخلايا بمقاسات ملموسة صحيحة */
+  /**
+   * تبديل الصفوف بالأعمدة — يعيد بناء الخلايا ثم يعيد توزيع الصور بالخريطة
+   * الهندسية (row,col) → (col,row)، لا بالفهرس.
+   */
   const transposeGrid = () => {
     const template = collageTemplate;
     if (!template) return;
     const rows = template.physicalLayout?.rows ?? grid.rows;
     const cols = template.physicalLayout?.cols ?? grid.cols;
     if (!rows || !cols) return;
+
+    // خريطة الصور المطلوبة تُحسب **قبل** إعادة البناء (المعرّفات تتغير بعده)
+    const imageMap = transposeIndexMap(rows, currentSrcMatrix());
 
     const nextRows = cols;
     const nextCols = rows;
@@ -205,30 +236,43 @@ export function CollageArrangeTab() {
         cells,
       });
     }
+
+    // الخلايا الجديدة تُرتَّب صفاً صفاً بعرض nextCols ⇒ المفهرس = c*nextCols + r
+    if (imageMap.size > 0) {
+      const freshSlots = useEditorStore.getState().slots;
+      const assignments = [...imageMap.entries()]
+        .map(([index, src]) => ({ slotId: freshSlots[index]?.id, src }))
+        .filter((a): a is { slotId: string; src: string } => Boolean(a.slotId));
+      if (assignments.length > 0) setSlotImagesBatch(assignments, assignments[0].src);
+    }
+
     toast.success(`تم تبديل الصفوف بالأعمدة (${nextRows}×${nextCols})`);
   };
 
-  const rotateAll = () =>
-    updateSlotsBatch(
+  const rotateAll = (angle: 90 | -90) => {
+    if (imageCount === 0) return;
+    rotateSlotsBatch(
       slots.map((slot) => slot.id),
-      { rotation: 90 }
+      angle
     );
+    toast.success(angle > 0 ? "تم لفّ كل الصور 90° يميناً" : "تم لفّ كل الصور 90° يساراً");
+  };
 
   const resetAllAdjustments = () => {
     updateSlotsBatch(
       slots.map((slot) => slot.id),
       { zoom: 1, dragX: 0, dragY: 0, flipX: false, flipY: false, rotation: 0 }
     );
+    // updateSlotsBatch لا يسجّل تراجعاً (يُستدعى من مسارات معاينة كثيرة)
+    pushHistory();
     toast.success("تم تصفير تعديلات كل الصور");
   };
 
-  const imageCount = slots.filter((slot) => slot.imageSrc).length;
-
-  const actions = [
+  const arrangeActions = [
     {
       id: "reverse-rows",
       label: "عكس الصفوف",
-      hint: "يعكس ترتيب الصور داخل كل صف",
+      hint: "يعكس ترتيب الصور داخل كل صف (الخانات الفارغة لا تتحرك)",
       icon: <Rows className="w-4 h-4" weight="bold" />,
       onClick: reverseRows,
       disabled: imageCount < 2,
@@ -236,7 +280,7 @@ export function CollageArrangeTab() {
     {
       id: "reverse-columns",
       label: "عكس الأعمدة",
-      hint: "يعكس ترتيب الصور داخل كل عمود",
+      hint: "يعكس ترتيب الصور داخل كل عمود (الخانات الفارغة لا تتحرك)",
       icon: <Columns className="w-4 h-4" weight="bold" />,
       onClick: reverseColumns,
       disabled: imageCount < 2,
@@ -244,7 +288,7 @@ export function CollageArrangeTab() {
     {
       id: "transpose",
       label: "تبديل الصفوف بالأعمدة",
-      hint: "يقلب الشبكة رأسياً — قد يعيد توزيع الصور حسب المقاسات",
+      hint: "ينقل كل صورة من (صف، عمود) إلى (عمود، صف)",
       icon: <ArrowsDownUp className="w-4 h-4" weight="bold" />,
       onClick: transposeGrid,
       disabled: !collageTemplate,
@@ -252,7 +296,7 @@ export function CollageArrangeTab() {
     {
       id: "shuffle",
       label: "خلط عشوائي",
-      hint: "ترتيب عشوائي لكل الصور الحالية",
+      hint: "تبديل عشوائي لمواضع الصور الحالية بلا تكرار",
       icon: <Shuffle className="w-4 h-4" weight="bold" />,
       onClick: shuffleImages,
       disabled: imageCount < 2,
@@ -265,66 +309,122 @@ export function CollageArrangeTab() {
       onClick: repeatEverywhere,
       disabled: imageCount === 0,
     },
+  ];
+
+  const transformActions = [
     {
-      id: "rotate",
-      label: "لفّ كل الصور 90°",
-      hint: "يضيف 90 درجة لكل صورة",
+      id: "rotate-cw",
+      label: "لفّ 90° يميناً",
+      hint: "يضيف 90 درجة لكل صورة (قابل للتراجع)",
       icon: <ArrowsClockwise className="w-4 h-4" weight="bold" />,
-      onClick: rotateAll,
+      onClick: () => rotateAll(90),
+      disabled: imageCount === 0,
+    },
+    {
+      id: "rotate-ccw",
+      label: "لفّ 90° يساراً",
+      hint: "يخصم 90 درجة من كل صورة (قابل للتراجع)",
+      icon: <ArrowCounterClockwise className="w-4 h-4" weight="bold" />,
+      onClick: () => rotateAll(-90),
       disabled: imageCount === 0,
     },
     {
       id: "reset",
       label: "تصفير التعديلات",
-      hint: "إرجاع التقريب والتكبير والقلب لكل الصور",
+      hint: "إرجاع اللفّ والقلب والتكبير والإزاحات لكل الصور",
       icon: <ArrowsOutCardinal className="w-4 h-4" weight="bold" />,
       onClick: resetAllAdjustments,
       disabled: imageCount === 0,
     },
   ];
 
+  const renderActions = (items: typeof arrangeActions) => (
+    <div className="grid grid-cols-2 gap-1.5">
+      {items.map((action) => (
+        <Button
+          key={action.id}
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={action.disabled}
+          title={action.hint}
+          onClick={action.onClick}
+          className="justify-start text-right"
+        >
+          <span className="text-primary shrink-0">{action.icon}</span>
+          <span className="truncate">{action.label}</span>
+        </Button>
+      ))}
+    </div>
+  );
+
+  const emptyCount = slots.length - imageCount;
+
   return (
     <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
       <FluentSection
-        icon={<ArrowsDownUp className="w-3.5 h-3.5" weight="duotone" />}
-        title="فرز وترتيب الخانات"
-        subtitle={`${grid.rows}×${grid.cols} · ${imageCount} من ${slots.length} صورة`}
+        icon={<FrameCorners className="w-3.5 h-3.5" weight="duotone" />}
+        title="مخطط الشبكة"
+        subtitle={`${grid.rows}×${grid.cols} · ${imageCount} صورة · ${emptyCount} فارغة`}
         collapsible
       >
-        {!grid.isComplete && (
-          <p className="text-micro text-muted-foreground leading-relaxed">
-            التخطيط الحالي غير شبكي منتظم — عمليات الصفوف والأعمدة قد تكون محدودة، والتبديل يعيد
-            بناء الشبكة.
-          </p>
-        )}
-
-        <div className="grid grid-cols-2 gap-1.5">
-          {actions.map((action) => (
-            <Button
-              key={action.id}
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={action.disabled}
-              title={action.hint}
-              onClick={action.onClick}
-              className="justify-start text-right"
-            >
-              <span className="text-primary shrink-0">{action.icon}</span>
-              <span className="truncate">{action.label}</span>
-            </Button>
-          ))}
+        <div
+          className="grid gap-1"
+          style={{ gridTemplateColumns: `repeat(${Math.max(1, grid.cols)}, minmax(0, 1fr))` }}
+          data-testid="collage-grid-preview"
+        >
+          {grid.matrix.flatMap((row, r) =>
+            row.map((slotId, c) => {
+              const src = slotId ? grid.srcBySlot.get(slotId) : undefined;
+              const index = r * grid.cols + c + 1;
+              return (
+                <div
+                  key={`cell-${r}-${c}`}
+                  title={isSrc(src) ? `خانة ${index}` : `خانة ${index} — فارغة`}
+                  className={cn(
+                    "relative aspect-[4/3] rounded-md border overflow-hidden",
+                    isSrc(src)
+                      ? "border-border/60 bg-muted"
+                      : "border-dashed border-border/50 bg-muted/20"
+                  )}
+                  style={
+                    isSrc(src)
+                      ? {
+                          backgroundImage: `url(${src})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : undefined
+                  }
+                >
+                  <span className="absolute top-0.5 start-0.5 min-w-[16px] h-4 px-1 rounded bg-background/85 text-3xs font-mono font-bold flex items-center justify-center border border-border/50">
+                    {index}
+                  </span>
+                </div>
+              );
+            })
+          )}
         </div>
       </FluentSection>
 
       <FluentSection
-        icon={<FrameCorners className="w-3.5 h-3.5" weight="duotone" />}
-        title="ملخص الشبكة"
-        subtitle="قراءة سريعة للحالة"
+        icon={<ArrowsDownUp className="w-3.5 h-3.5" weight="duotone" />}
+        title="فرز وترتيب الخانات"
+        subtitle="إعادة ترتيب الصور دون تغيير التخطيط"
+        collapsible
       >
-        <FluentSettingRow label="عدد الخانات" description="حسب التخطيط الحالي" control={<span className="text-xs font-mono font-bold text-foreground" dir="ltr">{slots.length}</span>} />
-        <FluentSettingRow label="الصور الموضوعة" description="خانات ممتلئة" control={<span className="text-xs font-mono font-bold text-foreground" dir="ltr">{imageCount}</span>} />
-        <FluentSettingRow label="الصفوف × الأعمدة" description="مقروء من إحداثيات الخانات" control={<span className="text-xs font-mono font-bold text-foreground" dir="ltr">{`${grid.rows}×${grid.cols}`}</span>} />
+        {!grid.isComplete && (
+          <p className="text-micro text-muted-foreground leading-relaxed">
+            التخطيط الحالي غير شبكي منتظم — عمليات الصفوف والأعمدة تعمل على الخانات الممتلئة فقط،
+            والتبديل يعيد بناء الشبكة.
+          </p>
+        )}
+
+        <p className="text-micro font-bold text-muted-foreground/90">ترتيب الصور</p>
+        {renderActions(arrangeActions)}
+
+        <p className="text-micro font-bold text-muted-foreground/90 mt-1">تحويلات جماعية</p>
+        {renderActions(transformActions)}
       </FluentSection>
     </div>
   );

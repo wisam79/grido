@@ -61,7 +61,7 @@ jobs:
             frontend/public/fonts
             frontend/public/wasm
             frontend/public/onnxruntime-web
-          key: ${{ runner.os }}-models-fonts-v2
+          key: ${{ runner.os }}-models-fonts-v3
 
       - name: Add Go Bin & NSIS to PATH
         shell: pwsh
@@ -74,13 +74,16 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
+      # يعمل دائماً (لا يُتخطّى عند إصابة الكاش): السكربتات idempotent (تتخطّى
+      # الموجود)، وضمان تشغيله يمنع إصداراً بنماذج ناقصة من كاش قديم/جزئي.
+      # `npm ci` أعلى هذه الخطوة يشغّل postinstall الذي ينسخ نموذج scanic.
       - name: Download Offline Assets (Fonts & Models)
-        if: steps.cache-models-fonts.outputs.cache-hit != 'true'
         working-directory: ./frontend
         shell: powershell
         run: |
           node scripts/download-fonts.js
           .\scripts\download-models.ps1
+          node scripts/copy-models.mjs
 
       - name: Install NSIS Compiler
         if: steps.cache-nsis.outputs.cache-hit != 'true'

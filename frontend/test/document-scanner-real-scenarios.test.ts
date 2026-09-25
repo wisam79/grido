@@ -557,7 +557,7 @@ describe("Document Scanner - Realistic Test Scenarios & Synthetic Images", () =>
       return [240, 235, 230, 255];
     });
 
-    const result = await detectDocumentAuto(canvas, width, height, "auto");
+    const result = await detectDocumentAuto(canvas, width, height, "single");
     expect(result.documents).toBeDefined();
     expect(result.documents!.length).toBeGreaterThanOrEqual(1);
 

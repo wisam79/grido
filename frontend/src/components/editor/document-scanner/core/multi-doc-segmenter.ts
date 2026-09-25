@@ -44,6 +44,78 @@ export function computeEdgeGradientAlongLine(
 }
 
 /**
+ * نطاق البحث عن الفاصل الحقيقي حول منتصف المضلع (نسبة من طول خط البحث)،
+ * محصور بعيداً عن 0 و1 لاستبعاد حواف المضلع الخارجية نفسها.
+ */
+export const SPLIT_SEAM_BAND_MIN = 0.30;
+export const SPLIT_SEAM_BAND_MAX = 0.70;
+/** أدنى تباين نسبي (مقيَّس بـ maxMag*0.22 كما في بقية الكاشف) لاعتماد الفاصل */
+export const SPLIT_SEAM_MIN_NORM = 0.45;
+/** نسبة الفاصل الافتراضية = المنتصف الهندسي (سلوك ما قبل التحسين) */
+export const SPLIT_SEAM_RATIO_DEFAULT = 0.5;
+/** فاصل الأمان حول موضع القص — 0.5 يعطي 0.49/0.51 تماماً كالسابق */
+export const SPLIT_SAFETY_GAP_RATIO = 0.01;
+
+/**
+ * تحديد موضع الفاصل الحقيقي بين بطاقتين متلاصقتين بالبحث عن أقوى استجابة
+ * تدرّج على طول خط يقطع المضلع، بدل قصّه في منتصفه الهندسي دائماً.
+ *
+ * كان القص ثابتاً عند 0.49/0.51، فبطاقتان غير متساويتين في الارتفاع (الشائع
+ * عندما تكون إحداهما مُروَّحة جزئياً فوق الأخرى) تُقصّان في المكان الخطأ:
+ * شريط من إحداهما يُلحق بالأخرى فيفسد الوجهين المستخرجين معاً.
+ *
+ * @param p1 بداية خط البحث (أعلى المضلع للقص الرأسي، أو يساره للأفقي)
+ * @param p2 نهاية خط البحث (المقابل لـ p1)
+ * @returns النسبة على الخط (0 عند p1) أو null إذا لا توجد حافة واضحة
+ */
+export function locateSplitSeamRatio(
+  p1: Point,
+  p2: Point,
+  mag: Float32Array,
+  sw: number,
+  sh: number,
+  maxMag: number,
+  bandMin: number = SPLIT_SEAM_BAND_MIN,
+  bandMax: number = SPLIT_SEAM_BAND_MAX
+): number | null {
+  const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+  if (!(dist > 4) || !(maxMag > 0) || bandMax <= bandMin) return null;
+
+  const steps = Math.max(16, Math.round(dist));
+  const samples = new Array<number>(steps + 1);
+  for (let s = 0; s <= steps; s++) {
+    const t = s / steps;
+    const x = Math.max(0, Math.min(sw - 1, Math.round(p1.x + t * (p2.x - p1.x))));
+    const y = Math.max(0, Math.min(sh - 1, Math.round(p1.y + t * (p2.y - p1.y))));
+    samples[s] = mag[y * sw + x] || 0;
+  }
+
+  // نافذة تجميع صغيرة (±2% من طول الخط) تُلطّف ضجيج البكسل الواحد وحواف JPEG
+  const win = Math.max(1, Math.round(steps * 0.02));
+  const startS = Math.max(win, Math.floor(steps * bandMin));
+  const endS = Math.min(steps - win, Math.ceil(steps * bandMax));
+  if (endS <= startS) return null;
+
+  let bestS = -1;
+  let bestMean = -1;
+  for (let s = startS; s <= endS; s++) {
+    let sum = 0;
+    for (let k = s - win; k <= s + win; k++) sum += samples[k];
+    const mean = sum / (2 * win + 1);
+    if (mean > bestMean) {
+      bestMean = mean;
+      bestS = s;
+    }
+  }
+
+  if (bestS < 0) return null;
+  // نفس مقياس بقية الكاشف: حافة "عادية" ≈ 0.22 من أقوى تدرّج في الصورة
+  const norm = bestMean / (maxMag * 0.22);
+  if (norm < SPLIT_SEAM_MIN_NORM) return null;
+  return bestS / steps;
+}
+
+/**
  * قياس تدرجات الحواف على طول الأضلاع الأربعة للمضلع
  */
 export function computeQuadEdgeGradient(
@@ -269,31 +341,39 @@ export function newDocumentId(prefix = "doc"): string {
 
 /**
  * تقسيم مضلع يحوي بطاقتي هوية مكدستين إلى بطاقتين مستقلتين مع مسافة أمان (2% Gap)
+ * (يبقى 2% افتراضاً، ويقبل موضع فاصل مخصّصاً من locateSplitSeamRatio)
  */
 export function splitQuadIntoIdCards(
   quad: Point[],
-  direction: "vertical" | "horizontal" = "vertical"
+  direction: "vertical" | "horizontal" = "vertical",
+  seamRatio: number = SPLIT_SEAM_RATIO_DEFAULT
 ): DetectedDocument[] {
   const sorted = sortCornerPoints(quad);
   const uid = newDocumentId("doc");
 
+  // موضع القص: المنتصف افتراضاً (توافق تام مع السلوك السابق)، أو موضع الفاصل
+  // الحقيقي الذي يمرّره الكاشف بعد locateSplitSeamRatio.
+  const seam = Math.min(0.9, Math.max(0.1, seamRatio));
+  const lo = seam - SPLIT_SAFETY_GAP_RATIO;
+  const hi = seam + SPLIT_SAFETY_GAP_RATIO;
+
   if (direction === "vertical") {
     const midLeft1: Point = {
-      x: Math.round(sorted[0].x + (sorted[3].x - sorted[0].x) * 0.49),
-      y: Math.round(sorted[0].y + (sorted[3].y - sorted[0].y) * 0.49),
+      x: Math.round(sorted[0].x + (sorted[3].x - sorted[0].x) * lo),
+      y: Math.round(sorted[0].y + (sorted[3].y - sorted[0].y) * lo),
     };
     const midRight1: Point = {
-      x: Math.round(sorted[1].x + (sorted[2].x - sorted[1].x) * 0.49),
-      y: Math.round(sorted[1].y + (sorted[2].y - sorted[1].y) * 0.49),
+      x: Math.round(sorted[1].x + (sorted[2].x - sorted[1].x) * lo),
+      y: Math.round(sorted[1].y + (sorted[2].y - sorted[1].y) * lo),
     };
 
     const midLeft2: Point = {
-      x: Math.round(sorted[0].x + (sorted[3].x - sorted[0].x) * 0.51),
-      y: Math.round(sorted[0].y + (sorted[3].y - sorted[0].y) * 0.51),
+      x: Math.round(sorted[0].x + (sorted[3].x - sorted[0].x) * hi),
+      y: Math.round(sorted[0].y + (sorted[3].y - sorted[0].y) * hi),
     };
     const midRight2: Point = {
-      x: Math.round(sorted[1].x + (sorted[2].x - sorted[1].x) * 0.51),
-      y: Math.round(sorted[1].y + (sorted[2].y - sorted[1].y) * 0.51),
+      x: Math.round(sorted[1].x + (sorted[2].x - sorted[1].x) * hi),
+      y: Math.round(sorted[1].y + (sorted[2].y - sorted[1].y) * hi),
     };
 
     return [
@@ -314,21 +394,21 @@ export function splitQuadIntoIdCards(
     ];
   } else {
     const midTop1: Point = {
-      x: Math.round(sorted[0].x + (sorted[1].x - sorted[0].x) * 0.49),
-      y: Math.round(sorted[0].y + (sorted[1].y - sorted[0].y) * 0.49),
+      x: Math.round(sorted[0].x + (sorted[1].x - sorted[0].x) * lo),
+      y: Math.round(sorted[0].y + (sorted[1].y - sorted[0].y) * lo),
     };
     const midBottom1: Point = {
-      x: Math.round(sorted[3].x + (sorted[2].x - sorted[3].x) * 0.49),
-      y: Math.round(sorted[3].y + (sorted[2].y - sorted[3].y) * 0.49),
+      x: Math.round(sorted[3].x + (sorted[2].x - sorted[3].x) * lo),
+      y: Math.round(sorted[3].y + (sorted[2].y - sorted[3].y) * lo),
     };
 
     const midTop2: Point = {
-      x: Math.round(sorted[0].x + (sorted[1].x - sorted[0].x) * 0.51),
-      y: Math.round(sorted[0].y + (sorted[1].y - sorted[0].y) * 0.51),
+      x: Math.round(sorted[0].x + (sorted[1].x - sorted[0].x) * hi),
+      y: Math.round(sorted[0].y + (sorted[1].y - sorted[0].y) * hi),
     };
     const midBottom2: Point = {
-      x: Math.round(sorted[3].x + (sorted[2].x - sorted[3].x) * 0.51),
-      y: Math.round(sorted[3].y + (sorted[2].y - sorted[3].y) * 0.51),
+      x: Math.round(sorted[3].x + (sorted[2].x - sorted[3].x) * hi),
+      y: Math.round(sorted[3].y + (sorted[2].y - sorted[3].y) * hi),
     };
 
     return [
@@ -348,6 +428,24 @@ export function splitQuadIntoIdCards(
       },
     ];
   }
+}
+
+/**
+ * قصّ بطاقتين مع تجربة الفاصل المكتشف أولاً، وإن رفضته بوابة القبول نرجع إلى
+ * المنتصف. يحمي من حافة منافسة قوية بعيدة عن المنتصف تُفسد قصّاً كان ناجحاً.
+ * isAccepted تُمرَّر من المحرّك (نسبة البطاقة في JS، و isStackedPairAspect في OpenCV).
+ */
+export function splitQuadIntoIdCardsWithSeam(
+  quad: Point[],
+  direction: "vertical" | "horizontal",
+  seamRatio: number,
+  isAccepted: (cards: DetectedDocument[]) => boolean
+): DetectedDocument[] {
+  const seamCards = splitQuadIntoIdCards(quad, direction, seamRatio);
+  if (isAccepted(seamCards)) return seamCards;
+  // الفاصل الافتراضي نفسه، أو فاصل مرفوض ⇒ السلوك القديم (لا نُعيد الحساب بلا داعٍ)
+  if (seamRatio === SPLIT_SEAM_RATIO_DEFAULT) return seamCards;
+  return splitQuadIntoIdCards(quad, direction);
 }
 
 /**

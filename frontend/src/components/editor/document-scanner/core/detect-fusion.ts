@@ -30,8 +30,40 @@ export const ML_ADD_MIN_SCORE = 0.6;
 export const ML_STANDALONE_MIN = 0.55;
 /** تداخل ML داخل مرشح أكبر ≥ هذه النسبة ⇒ نفس المستند بحدود أضيق (لا يُضاف) */
 export const ML_CONTAINMENT_BLOCK = 0.75;
-/** أقصى انتظار لـ ML بعد انتهاء المسار الكلاسيكي (ms) */
+/**
+ * ميزانية انتظار ML بعد انتهاء المسار الكلاسيكي (ms) — متدرّجة لا ثابتة:
+ *
+ * القيمة الثابتة القديمة (1500ms) كانت تُسقط نتيجة النموذج في أهم لحظة
+ * (أول كشف بعد فتح النافذة: تحميل ORT + أول استدلال يتجاوزان المهلة غالباً),
+ * تماماً عندما يكون الكلاسيكي أضعف ما يكون. فالميزانية الآن تتبع جودة
+ * النتيجة الكلاسيكية: كلما ضعف الكلاسيكي، كان ML الأمل الوحيد فتُسع المهلة.
+ */
 export const ML_GRACE_MS = 1500;
+/** ميزانية متوسطة: الكلاسيكي موجود لكن ثقته منخفضة */
+export const ML_GRACE_LOW_CONFIDENCE_MS = 2500;
+/** أقصى ميزانية: الكلاسيكي فشل (نتيجة افتراضية) ⇒ ML هو الأمل الوحيد */
+export const ML_GRACE_WEAK_MS = 4000;
+/** ثقة كلاسيكية ≥ هذه ⇒ النتيجة موثوقة ويكفي انتظار قصير للنموذج */
+export const ML_STRONG_CLASSICAL_MIN = 0.75;
+/** ثقة كلاسيكية < هذه ⇒ النتيجة غير موثوقة ⇒ ميزانية كاملة للنموذج */
+export const ML_WEAK_CLASSICAL_MAX = 0.6;
+
+/**
+ * حساب ميزانية انتظار ML من جودة النتيجة الكلاسيكية المتاحة.
+ * دالة نقية لاختبارها مباشرة.
+ */
+export function mlGraceBudgetMs(classical: DetectionResult | null): number {
+  if (!classical) return ML_GRACE_WEAK_MS;
+  const topConfidence = Math.max(
+    classical.confidence,
+    ...(classical.documents ?? []).map((d) => d.confidence)
+  );
+  if (classical.method === "default" || topConfidence < ML_WEAK_CLASSICAL_MAX) {
+    return ML_GRACE_WEAK_MS;
+  }
+  if (topConfidence >= ML_STRONG_CLASSICAL_MIN) return ML_GRACE_MS;
+  return ML_GRACE_LOW_CONFIDENCE_MS;
+}
 
 export function fuseDetections(
   ml: DetectionResult | null,

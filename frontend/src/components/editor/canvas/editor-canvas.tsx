@@ -251,6 +251,9 @@ export const EditorCanvas = React.memo(React.forwardRef<
     aspect,
     zoom: canvasZoom,
     fitMode: canvasFitMode,
+    // مقاس الورقة الحقيقي بالبكسل — لازم لوضع «الحجم الفعلي 1:1»
+    canvasW: canvasWidth,
+    canvasH: canvasHeight,
   });
 
   // يُنشر الوضع الفعّل ونسبة الفراغ لشريط العرض في التذييل (خارج شجرة الكانفاس)

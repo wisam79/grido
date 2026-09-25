@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/ensure-bindings.mjs",
-    "prebuild:dev": "node scripts/ensure-bindings.mjs",
+    "prebuild": "node scripts/ensure-bindings.mjs && node scripts/copy-models.mjs",
+    "prebuild:dev": "node scripts/ensure-bindings.mjs && node scripts/copy-models.mjs",
     "pretypecheck": "node scripts/ensure-bindings.mjs",
+    "postinstall": "node scripts/copy-models.mjs",
+    "models:sync": "node scripts/copy-models.mjs",
     "pretest": "node scripts/ensure-bindings.mjs",
     "pretest:coverage": "node scripts/ensure-bindings.mjs",
     "build": "tsc && vite build",

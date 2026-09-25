@@ -17,9 +17,9 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /** وضع الملاءمة المطلوب (تفضيل المستخدم) */
-export type CanvasFitMode = "auto" | "height" | "width";
+export type CanvasFitMode = "auto" | "height" | "width" | "actual";
 /** الوضع الفعلي بعد حلّ `auto` — يُعرض في شريط العرض */
-export type ResolvedFitMode = "height" | "width";
+export type ResolvedFitMode = "height" | "width" | "actual";
 
 /** الحشو المطلوب حول الورقة داخل منطقة العمل (p-4 من كل جهة) */
 export const CANVAS_FIT_PADDING = 32;
@@ -48,13 +48,14 @@ export const AUTO_FIT_MAX_VERTICAL_OVERFLOW = 3;
 
 export const CANVAS_FIT_STORAGE_KEY = "grido_canvas_fit_mode_v1";
 
-const FIT_MODES: readonly CanvasFitMode[] = ["auto", "height", "width"];
+const FIT_MODES: readonly CanvasFitMode[] = ["auto", "height", "width", "actual"];
 
 /** عنوان الوضع للعرض في الواجهة */
 export const CANVAS_FIT_LABELS: Record<CanvasFitMode, string> = {
   auto: "ملاءمة تلقائية",
   height: "ملاءمة الكل",
   width: "ملاءمة العرض",
+  actual: "الحجم الفعلي 1:1",
 };
 
 export interface CanvasDisplayInput {
@@ -68,6 +69,10 @@ export interface CanvasDisplayInput {
   zoom: number;
   /** الوضع المطلوب — الافتراضي auto */
   fitMode?: CanvasFitMode;
+  /** عرض الورقة بالبكسل الحقيقي — مطلوب لوضع «الحجم الفعلي» */
+  canvasW?: number;
+  /** ارتفاع الورقة بالبكسل الحقيقي — مطلوب لوضع «الحجم الفعلي» */
+  canvasH?: number;
 }
 
 export interface CanvasDisplay {
@@ -111,7 +116,7 @@ export function resolveFitMode(input: {
   fitMode?: CanvasFitMode;
 }): ResolvedFitMode {
   const { fitMode = "auto" } = input;
-  if (fitMode === "height" || fitMode === "width") return fitMode;
+  if (fitMode === "height" || fitMode === "width" || fitMode === "actual") return fitMode;
 
   const a = safeAspect(input.aspect);
   // ورقة أفقية أو مربعة: ملاءمة الارتفاع تملأ العرض أصلاً فلا فراغ يُستعاد
@@ -142,21 +147,43 @@ export function computeCanvasDisplay({
   aspect,
   zoom,
   fitMode = "auto",
+  canvasW,
+  canvasH,
 }: CanvasDisplayInput): CanvasDisplay {
   const a = safeAspect(aspect);
-  const resolved = resolveFitMode({ containerW, containerH, aspect: a, fitMode });
+  let resolved = resolveFitMode({ containerW, containerH, aspect: a, fitMode });
   const z = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
 
   const { boxW, boxH } = fitBox(containerW, containerH);
   const maxW = boxW * z;
   const maxH = boxH * z;
 
-  let displayW = maxW;
-  let displayH = displayW / a;
-  // في وضع العرض لا نُقيّد بالارتفاع: تجاوزه هو المقصود (تمرير رأسي)
-  if (resolved === "height" && displayH > maxH) {
-    displayH = maxH;
-    displayW = displayH * a;
+  // «الحجم الفعلي» يحتاج مقاس الورقة الحقيقي؛ بلا قياس صالح نرجع إلى ملاءمة
+  // الكل بدل عرض مزيّف يدّعي 1:1 — فالوعد بلا بيانات أسوأ من البديل الآمن.
+  const hasRealSize =
+    Number.isFinite(canvasW) && (canvasW as number) > 0 &&
+    Number.isFinite(canvasH) && (canvasH as number) > 0;
+  if (resolved === "actual" && !hasRealSize) {
+    resolved = "height";
+  }
+
+  let displayW: number;
+  let displayH: number;
+
+  if (resolved === "actual") {
+    // 1:1 حقيقي: بكسل الورقة = بكسل CSS (مضروباً بمضاعف الزوم). لا تقييد
+    // بالصندوق عن قصد: تجاوز العرض والارتفاع هو ما يُظهر عصا التمرير الأفقية
+    // التي لا وجود لها في باقي الأوضاع لأنها كلها تُصغّر الورقة لتناسب العرض.
+    displayW = (canvasW as number) * z;
+    displayH = (canvasH as number) * z;
+  } else {
+    displayW = maxW;
+    displayH = displayW / a;
+    // في وضع العرض لا نُقيّد بالارتفاع: تجاوزه هو المقصود (تمرير رأسي)
+    if (resolved === "height" && displayH > maxH) {
+      displayH = maxH;
+      displayW = displayH * a;
+    }
   }
 
   const minDim = CANVAS_MIN_DISPLAY * z;

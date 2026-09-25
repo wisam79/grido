@@ -248,6 +248,15 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(cards[0].aspectType).toBe("id_card");
       expect(cards[1].aspectType).toBe("id_card");
     });
+
+    it("honors an explicit seam ratio instead of always cutting at the midpoint", () => {
+      const cards = splitQuadIntoIdCards(parentQuad, "vertical", 0.4);
+      expect(cards.length).toBe(2);
+      // الحد انتقل إلى 40% (بفاصل أمان ±1%) بدل المنتصف 50%
+      expect(cards[0].corners[2].y).toBe(Math.round(260 * 0.39));
+      expect(cards[1].corners[0].y).toBe(Math.round(260 * 0.41));
+      expect(cards[0].corners[2].y).toBeLessThan(Math.round(260 * 0.49));
+    });
   });
 
   describe("addManualDocumentQuad", () => {

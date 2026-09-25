@@ -21,6 +21,7 @@ import {
 import { useEditorStore } from "@/lib/editor-store";
 import { canZoomIn, canZoomOut, isDefaultZoom } from "@/lib/canvas/zoom";
 import {
+  actualSizeZoomStore,
   autoFitZoomStore,
   fitWidthZoomStore,
   fitZoomStore,
@@ -676,6 +677,18 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
       subtitle: "يختار الوضع الأنسب لهندسة النافذة",
       disabled: input.canvasFitMode === "auto",
       run: autoFitZoomStore,
+    }),
+  },
+  {
+    id: "zoom-actual-size",
+    title: CANVAS_FIT_LABELS.actual,
+    group: "عرض الكانفاس",
+    // بلا اختصار: لا مفتاح مسجّل لهذا الوضع في use-keyboard-shortcuts.ts،
+    // وإعلان اختصار غير مسجّل يجعل اللوحة توعد بما لا يحدث.
+    getSnapshot: (input = readStateCommandInput()) => ({
+      subtitle: "بكسل حقيقي 1:1 مع تمرير أفقي ورأسي",
+      disabled: input.canvasFitMode === "actual",
+      run: actualSizeZoomStore,
     }),
   },
   {

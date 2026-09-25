@@ -83,8 +83,10 @@ describe('Ruler & User Guides Integration Tests', () => {
     expect(container.querySelector('#v-ruler-cursor')).toBeInTheDocument();
   });
 
-  it('confines ruler labels strictly to canvas boundaries without negative numbers', () => {
-    // Canvas occupies x: 200..700 in an 800px wide viewport (width = 100mm)
+  it('extends ruler labels across the whole workspace, including values outside the canvas', () => {
+    // الورقة تشغل x: 200..700 داخل منطقة عرض 800px (عرض 100mm). المسطرة
+    // تستمر يميناً ويساراً في مساحة العمل (سلوك Figma/Photoshop) بدل أن
+    // تتوقف عند حدود الورقة وتترك نصف الشريط بلا تدريج.
     const { container: hContainer } = render(
       <HorizontalRuler
         viewportWidth={800}
@@ -97,16 +99,11 @@ describe('Ruler & User Guides Integration Tests', () => {
 
     const hTexts = Array.from(hContainer.querySelectorAll('text')).map((t) => t.textContent?.trim());
     expect(hTexts.length).toBeGreaterThan(0);
-    // Ensure no negative numbers
-    expect(hTexts.some((txt) => txt && txt.startsWith('-'))).toBe(false);
-    // Ensure all numeric values are within 0..100
-    for (const txt of hTexts) {
-      if (txt && !isNaN(Number(txt))) {
-        const num = Number(txt);
-        expect(num).toBeGreaterThanOrEqual(0);
-        expect(num).toBeLessThanOrEqual(100);
-      }
-    }
+    // قيم سالبة على يسار الورقة، وقيم تتجاوز عرضها على يمينها
+    expect(hTexts.some((txt) => txt && txt.startsWith('-'))).toBe(true);
+    const hNums = hTexts.filter((t) => t && !isNaN(Number(t))).map(Number);
+    expect(Math.min(...hNums)).toBeLessThan(0);
+    expect(Math.max(...hNums)).toBeGreaterThan(100);
 
     // Vertical ruler: y: 150..550 in a 600px tall viewport (height = 80mm)
     const { container: vContainer } = render(
@@ -121,14 +118,10 @@ describe('Ruler & User Guides Integration Tests', () => {
 
     const vTexts = Array.from(vContainer.querySelectorAll('text')).map((t) => t.textContent?.trim());
     expect(vTexts.length).toBeGreaterThan(0);
-    expect(vTexts.some((txt) => txt && txt.startsWith('-'))).toBe(false);
-    for (const txt of vTexts) {
-      if (txt && !isNaN(Number(txt))) {
-        const num = Number(txt);
-        expect(num).toBeGreaterThanOrEqual(0);
-        expect(num).toBeLessThanOrEqual(80);
-      }
-    }
+    expect(vTexts.some((txt) => txt && txt.startsWith('-'))).toBe(true);
+    const vNums = vTexts.filter((t) => t && !isNaN(Number(t))).map(Number);
+    expect(Math.min(...vNums)).toBeLessThan(0);
+    expect(Math.max(...vNums)).toBeGreaterThan(80);
   });
 
   it('calculates adaptive ruler steps accurately for all units', () => {
@@ -157,6 +150,10 @@ describe('Ruler & User Guides Integration Tests', () => {
     expect(formatRulerNumber(0.5, 'in')).toBe('½');
     expect(formatRulerNumber(0.25, 'in')).toBe('¼');
     expect(formatRulerNumber(100, 'px')).toBe('100');
+    // القيم السالبة (يسار/أعلى نقطة الصفر) تحفظ إشارتها على المسطرة
+    expect(formatRulerNumber(-0.25, 'in')).toBe('-¼');
+    expect(formatRulerNumber(-10, 'mm')).toBe('-10');
+    expect(formatRulerNumber(-150, 'px')).toBe('-150');
 
     expect(formatRulerCoordinate(0, 'mm')).toBe('0 mm');
     expect(formatRulerCoordinate(35.0, 'mm')).toBe('35 mm');

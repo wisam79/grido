@@ -46,12 +46,10 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
 
   return (
     <div className="fluent-command-group font-cairo bg-primary/5 dark:bg-primary/10 border-primary/25 dark:border-primary/30 shadow-2xs animate-in fade-in zoom-in-95 duration-150">
-      <div className="flex items-center gap-1 text-mini font-bold text-primary px-2 border-e border-primary/20 select-none hidden xl:flex h-8">
-        <Sparkle className="w-3.5 h-3.5 text-primary" weight="fill" />
-        <span>ذكاء اصطناعي</span>
-      </div>
+      {/* العنوان «ذكاء اصطناعي» أُزيل: الأدوات تُشرح بنفسها، والوسم كان
+          يضيف كلمة تسويقية بلا معلومة للاستخدام اليومي. */}
 
-      {/* عزل الخلفية بالذكاء الاصطناعي - Fluent Wait UX */}
+      {/* عزل الخلفية - Fluent Wait UX */}
       <TooltipBtn content={isRemovingBg ? bgProgressText || "إلغاء عزل الخلفية" : "عزل الخلفية"}>
         <Button
           variant={isRemovingBg ? "destructive" : "outline"}

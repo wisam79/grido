@@ -43,11 +43,18 @@ describe('CanvasQuickBar Component Tests', () => {
       </TooltipProvider>
     );
 
-    expect(screen.getByText('خلية كولاج')).toBeInTheDocument();
-    expect(screen.getByText('تغيير')).toBeInTheDocument();
-    expect(screen.getByText('كل الورقة')).toBeInTheDocument();
-    expect(screen.getByText('الصف')).toBeInTheDocument();
-    expect(screen.getByText('العمود')).toBeInTheDocument();
+    // الشريط أيقونات فقط — لا نص ظاهر فيه
+    expect(screen.queryByText('خلية كولاج')).not.toBeInTheDocument();
+    expect(screen.queryByText('تغيير')).not.toBeInTheDocument();
+    expect(screen.queryByText('كل الورقة')).not.toBeInTheDocument();
+    expect(screen.queryByText('الصف')).not.toBeInTheDocument();
+    expect(screen.queryByText('العمود')).not.toBeInTheDocument();
+
+    // لكن كل أيقونة لها اسم مُتاح (aria-label) لأن النص المرئي أُزيل
+    expect(screen.getByLabelText('تغيير الصورة')).toBeInTheDocument();
+    expect(screen.getByLabelText('تكرار الصورة بكل الخلايا')).toBeInTheDocument();
+    expect(screen.getByLabelText('تعبئة الصف')).toBeInTheDocument();
+    expect(screen.getByLabelText('تعبئة العمود')).toBeInTheDocument();
 
     // أدوات AI وأزرار الخصائص انتقلت للشريط العلوي
     expect(screen.queryByText('عزل الخلفية')).not.toBeInTheDocument();
@@ -90,6 +97,28 @@ describe('CanvasQuickBar Component Tests', () => {
 
     // أربع إجراءات موضع + زر إغلاق الشريط
     expect(screen.getAllByRole('button')).toHaveLength(5);
+  });
+
+  /**
+   * 🧷 حارس «أيقونات فقط»: أُزيلت النصوص من الشريط (خلية كولاج/تغيير/الصف/
+   * العمود) وصغر حجمه — فلا يعود نص عربي مرئي إليه وحجم الأزرار موحّد.
+   */
+  it('contains no visible text and uses compact 24px icon buttons', () => {
+    selectSingleImage();
+
+    render(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>
+    );
+
+    const bar = screen.getByTestId('canvas-quick-bar');
+    // لا حروف عربية مرئية داخل الشريط (الأسماء في aria-label والتلميحات)
+    expect(bar.textContent ?? '').not.toMatch(/[\u0621-\u064A]/);
+    for (const btn of screen.getAllByRole('button')) {
+      expect(btn.className).toContain('h-6');
+      expect(btn.className).toContain('w-6');
+    }
   });
 
   it('does not repeat the toolbar actions (duplicate, delete, AI)', () => {

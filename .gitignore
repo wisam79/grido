@@ -2,7 +2,9 @@ build/bin
 node_modules
 frontend/dist
 
-# AI Models (Downloaded via postinstall)
+# AI Models — مُستثناة من Git وتُهيّأ محلياً آلياً (لا تُنسخ يدوياً):
+#   • نماذج MediaPipe (selfie_multiclass / face_landmarker): frontend/scripts/download-models.ps1
+#   • نموذج ماسح المستندات scanic: frontend/scripts/copy-models.mjs (postinstall + prebuild)
 frontend/public/models/
 frontend/public/onnxruntime-web/
 frontend/public/onnxruntime-web-v2/

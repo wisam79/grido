@@ -79,32 +79,28 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
     const pixelsPerUnit = displayW / span;
     const { labelStep, subStep } = getRulerSteps(pixelsPerUnit, unit);
 
-    const canvasMinUnit = 0;
-    const canvasMaxUnit = span;
-
+    // المسطرة تستمر عبر مساحة العمل كلها ولا تتوقف عند حدود الورقة: القيم
+    // السالبة يسار نقطة الصفر جزء حقيقي من مساحة العمل (سلوك Figma/Photoshop)،
+    // والقص عند [0, span] كان يجعل النصف الفارغ من الشريط بلا تدريج إطلاقاً.
+    // الورقة تبقى مميَّزة بخلفيتها وخطَّي بدايتها/نهايتها.
     const visibleMinUnit = (0 - originX) / pixelsPerUnit;
     const visibleMaxUnit = (viewportWidth - originX) / pixelsPerUnit;
 
-    const minUnit = Math.max(canvasMinUnit, visibleMinUnit);
-    const maxUnit = Math.min(canvasMaxUnit, visibleMaxUnit);
-
-    if (minUnit > maxUnit) {
+    if (visibleMinUnit > visibleMaxUnit) {
       return { subPath: "", midPath: "", labelElements: [] };
     }
 
-    const startStepIndex = Math.max(0, Math.floor(minUnit / subStep));
-    const endStepIndex = Math.min(Math.round(span / subStep), Math.ceil(maxUnit / subStep));
+    const startStepIndex = Math.floor(visibleMinUnit / subStep);
+    const endStepIndex = Math.ceil(visibleMaxUnit / subStep);
 
     let subD = "";
     let midD = "";
     const labels: React.ReactNode[] = [];
 
     const labelRatio = Math.max(1, Math.round(labelStep / subStep));
-    const endX = originX + displayW;
 
     for (let idx = startStepIndex; idx <= endStepIndex; idx++) {
       const u = idx * subStep;
-      if (u < -1e-7 || u > span + 1e-7) continue;
 
       const x = originX + u * pixelsPerUnit;
 
@@ -115,7 +111,9 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
       const isZero = Math.abs(u) < 0.00001;
 
       if (isLabel) {
-        const isNearEnd = x + 16 > endX;
+        // الإرساء عند حدّ منطقة العرض لا عند حدّ الورقة، وإلّا انقلبت محاذاة
+        // كل الأرقام الواقعة يمين الورقة وتظهر ملتصقة يسار موضعها.
+        const isNearEnd = x + 16 > viewportWidth;
         labels.push(
           <g key={`h-lbl-${idx}`}>
             <line
@@ -263,32 +261,26 @@ export const VerticalRuler = React.memo(function VerticalRuler({
     const pixelsPerUnit = displayH / span;
     const { labelStep, subStep } = getRulerSteps(pixelsPerUnit, unit);
 
-    const canvasMinUnit = 0;
-    const canvasMaxUnit = span;
-
+    // نفس مبدأ المسطرة الأفقية: التدريج يستمر فوق نقطة الصفر وتحتها عبر
+    // كامل مساحة العمل، لا داخل حدود الورقة فقط.
     const visibleMinUnit = (0 - originY) / pixelsPerUnit;
     const visibleMaxUnit = (viewportHeight - originY) / pixelsPerUnit;
 
-    const minUnit = Math.max(canvasMinUnit, visibleMinUnit);
-    const maxUnit = Math.min(canvasMaxUnit, visibleMaxUnit);
-
-    if (minUnit > maxUnit) {
+    if (visibleMinUnit > visibleMaxUnit) {
       return { subPath: "", midPath: "", labelElements: [] };
     }
 
-    const startStepIndex = Math.max(0, Math.floor(minUnit / subStep));
-    const endStepIndex = Math.min(Math.round(span / subStep), Math.ceil(maxUnit / subStep));
+    const startStepIndex = Math.floor(visibleMinUnit / subStep);
+    const endStepIndex = Math.ceil(visibleMaxUnit / subStep);
 
     let subD = "";
     let midD = "";
     const labels: React.ReactNode[] = [];
 
     const labelRatio = Math.max(1, Math.round(labelStep / subStep));
-    const endY = originY + displayH;
 
     for (let idx = startStepIndex; idx <= endStepIndex; idx++) {
       const u = idx * subStep;
-      if (u < -1e-7 || u > span + 1e-7) continue;
 
       const y = originY + u * pixelsPerUnit;
 
@@ -297,7 +289,8 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       const isLabel = idx % labelRatio === 0;
       const isMid = !isLabel && Math.abs(u % labelStep - labelStep / 2) < (subStep / 2) + 1e-9;
       const isZero = Math.abs(u) < 0.00001;
-      const isNearEnd = y + 8 > endY;
+      // نفس منطق المسطرة الأفقية: الإرساء عند حدّ منطقة العرض لا حدّ الورقة
+      const isNearEnd = y + 8 > viewportHeight;
       if (isLabel) {
         labels.push(
           <g key={`v-lbl-${idx}`}>

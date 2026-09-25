@@ -38,13 +38,16 @@ import {
   computeEdgeGradientAlongLine,
   evaluateCandidateQuad,
   splitQuadIntoIdCards,
+  splitQuadIntoIdCardsWithSeam,
+  locateSplitSeamRatio,
+  SPLIT_SEAM_RATIO_DEFAULT,
   applyNMS,
   addManualDocumentQuad,
 } from "./multi-doc-segmenter";
 import { refineCornersSubPixel } from "./perspective-warper";
 import { detectDocumentsWithOpenCV } from "./opencv-detector";
 import { detectDocumentWithMl } from "./ml-detector";
-import { fuseDetections, ML_GRACE_MS } from "./detect-fusion";
+import { fuseDetections, mlGraceBudgetMs } from "./detect-fusion";
 import { getLoadedOpenCV, loadOpenCV } from "../opencv-loader";
 
 export { splitQuadIntoIdCards, addManualDocumentQuad };
@@ -427,7 +430,25 @@ export function autoDetectAllDocumentCorners(
       const midNorm = maxMag > 0 ? midGrad / (maxMag * 0.22) : 0;
 
       if (midNorm >= 0.45) {
-        const splits = splitQuadIntoIdCards(cand.quad, "vertical");
+        // موضع القص يتبع الفاصل الحقيقي (أقوى حافة داخل نطاق البحث)، لا منتصف المضلع دائماً
+        const seamRatio =
+          locateSplitSeamRatio(
+            { x: (sorted[0].x + sorted[1].x) / 2, y: (sorted[0].y + sorted[1].y) / 2 },
+            { x: (sorted[3].x + sorted[2].x) / 2, y: (sorted[3].y + sorted[2].y) / 2 },
+            mag,
+            sw,
+            sh,
+            maxMag
+          ) ?? SPLIT_SEAM_RATIO_DEFAULT;
+        const splits = splitQuadIntoIdCardsWithSeam(
+          cand.quad,
+          "vertical",
+          seamRatio,
+          (cards) =>
+            cards.length === 2 &&
+            isIdCardAspect(cards[0].corners) &&
+            isIdCardAspect(cards[1].corners)
+        );
         if (
           splits.length === 2 &&
           isIdCardAspect(splits[0].corners) &&
@@ -468,7 +489,25 @@ export function autoDetectAllDocumentCorners(
       const midNorm = maxMag > 0 ? midGrad / (maxMag * 0.22) : 0;
 
       if (midNorm >= 0.45) {
-        const splits = splitQuadIntoIdCards(cand.quad, "horizontal");
+        // موضع القص يتبع الفاصل الحقيقي (أقوى حافة داخل نطاق البحث)، لا منتصف المضلع دائماً
+        const seamRatio =
+          locateSplitSeamRatio(
+            { x: (sorted[0].x + sorted[3].x) / 2, y: (sorted[0].y + sorted[3].y) / 2 },
+            { x: (sorted[1].x + sorted[2].x) / 2, y: (sorted[1].y + sorted[2].y) / 2 },
+            mag,
+            sw,
+            sh,
+            maxMag
+          ) ?? SPLIT_SEAM_RATIO_DEFAULT;
+        const splits = splitQuadIntoIdCardsWithSeam(
+          cand.quad,
+          "horizontal",
+          seamRatio,
+          (cards) =>
+            cards.length === 2 &&
+            isIdCardAspect(cards[0].corners) &&
+            isIdCardAspect(cards[1].corners)
+        );
         if (
           splits.length === 2 &&
           isIdCardAspect(splits[0].corners) &&
@@ -776,10 +815,8 @@ async function runClassicalDetection(
 
       if (mode === "single") {
         filteredDocs = filteredDocs.filter((doc) => doc.confidence >= 0.40).slice(0, 1);
-      } else if (mode === "multi") {
-        filteredDocs = filteredDocs.filter((doc) => doc.confidence >= 0.35);
       } else {
-        filteredDocs = filteredDocs.filter((doc) => doc.confidence >= 0.40);
+        filteredDocs = filteredDocs.filter((doc) => doc.confidence >= 0.35);
       }
 
       const refinedDocs = filteredDocs.map((doc) => {
@@ -835,8 +872,9 @@ async function runClassicalDetection(
  * بالتوازي في كل الأنماط كمُدقّق، والمسار الكلاسيكي (OpenCV ثم JS) يعمل
  * بالتوازي، ثم تُدمج النتائج نقية عبر fuseDetections:
  *
- * - لا ننتظر ML أكثر من ML_GRACE_MS بعد انتهاء الكلاسيكي (نتيجة متأخرة
- *   لا تُؤخّر الواجهة).
+ * - لا ننتظر ML أكثر من ميزانية متدرّجة تُحسب من جودة النتيجة الكلاسيكية
+ *   (mlGraceBudgetMs): قصيرة عندما يكون الكلاسيكي واثقاً، وكاملة عندما يفشل
+ *   أو تكون ثقته منخفضة — فأول كشف بارد لم يعد يُهدر أذكى إشارة عندنا.
  * - ML لم يعد مساراً منفصلاً يقصر النتيجة على مستند واحد في نمط single،
  *   ولا بديلاً أخيراً في multi — بل يؤكد/يسترد/يستبدل مرشحات الكلاسيكي.
  */
@@ -859,7 +897,7 @@ export async function detectDocumentAuto(
         settled = true;
         resolve(null);
       }
-    }, ML_GRACE_MS);
+    }, mlGraceBudgetMs(classical));
     mlPromise.then((value) => {
       if (!settled) {
         settled = true;

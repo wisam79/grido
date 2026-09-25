@@ -14,6 +14,10 @@ import {
   computeQuadOverlapStats,
   applyNMS,
   newDocumentId,
+  locateSplitSeamRatio,
+  splitQuadIntoIdCards,
+  splitQuadIntoIdCardsWithSeam,
+  sortCornerPoints,
 } from "../core";
 
 /**
@@ -198,5 +202,123 @@ describe("Document Scanner - Hardening", () => {
       expect(p.y).toBeGreaterThanOrEqual(0);
       expect(p.y).toBeLessThanOrEqual(h);
     }
+  });
+});
+
+/**
+ * موضع الفاصل الحقيقي بين بطاقتين — كان القص ثابتاً عند 0.5 فيقطع
+ * البطاقات غير المتساوية الارتفاع في المكان الخطأ.
+ */
+describe("locateSplitSeamRatio — موضع فاصل البطاقات من التدرّج", () => {
+  function magField(sw: number, sh: number, rows: Record<number, number>): Float32Array {
+    const mag = new Float32Array(sw * sh);
+    for (const [row, value] of Object.entries(rows)) {
+      const y = Number(row);
+      for (let x = 0; x < sw; x++) mag[y * sw + x] = value;
+    }
+    return mag;
+  }
+
+  it("finds an off-center seam instead of assuming the midpoint", () => {
+    // حافة قوية عند الصف ~40 من خط طوله 100 (≈40%) — وليست عند المنتصف
+    const mag = magField(10, 100, { 39: 100, 40: 100, 41: 100 });
+    const ratio = locateSplitSeamRatio({ x: 5, y: 0 }, { x: 5, y: 99 }, mag, 10, 100, 100);
+    expect(ratio).not.toBeNull();
+    expect(ratio!).toBeGreaterThan(0.36);
+    expect(ratio!).toBeLessThan(0.44);
+  });
+
+  it("returns null when the only strong edge is the quad's own outer border", () => {
+    // حافة قوية عند الصف 5 (خارج نطاق البحث) وأخرى واهنة داخل النطاق
+    const mag = magField(10, 100, { 5: 100, 50: 5 });
+    expect(
+      locateSplitSeamRatio({ x: 5, y: 0 }, { x: 5, y: 99 }, mag, 10, 100, 100)
+    ).toBeNull();
+  });
+
+  it("returns null for degenerate lines, empty gradients, and band inversion", () => {
+    const mag = magField(10, 100, { 40: 100 });
+    // خط بطول صفر (نقطتان متطابقتان)
+    expect(locateSplitSeamRatio({ x: 5, y: 50 }, { x: 5, y: 50 }, mag, 10, 100, 100)).toBeNull();
+    // لا تدرّج في الصورة إطلاقاً
+    expect(locateSplitSeamRatio({ x: 5, y: 0 }, { x: 5, y: 99 }, mag, 10, 100, 0)).toBeNull();
+    const flat = new Float32Array(10 * 100);
+    expect(locateSplitSeamRatio({ x: 5, y: 0 }, { x: 5, y: 99 }, flat, 10, 100, 100)).toBeNull();
+    // نطاق مقلوب
+    expect(locateSplitSeamRatio({ x: 5, y: 0 }, { x: 5, y: 99 }, mag, 10, 100, 100, 0.7, 0.3)).toBeNull();
+  });
+
+  it("composes with splitQuadIntoIdCards so the cut follows the located seam", () => {
+    const quad: Point[] = [
+      { x: 0, y: 0 },
+      { x: 200, y: 0 },
+      { x: 200, y: 200 },
+      { x: 0, y: 200 },
+    ];
+    // فاصل حقيقي عند ≈40% من ارتفاع المضلع
+    const mag = magField(20, 200, { 79: 100, 80: 100, 81: 100 });
+    const seam = locateSplitSeamRatio({ x: 100, y: 0 }, { x: 100, y: 199 }, mag, 20, 200, 100);
+    expect(seam).not.toBeNull();
+
+    const legacy = splitQuadIntoIdCards(quad, "vertical");
+    const tuned = splitQuadIntoIdCards(quad, "vertical", seam!);
+
+    // الافتراضي يقطع عند المنتصف تماماً كما قبل التحسين
+    expect(legacy[0].corners[2].y).toBe(Math.round(200 * 0.49));
+    // والمخصّص يتبع الفاصل المكتشف بدل المنتصف
+    expect(tuned[0].corners[2].y).toBeLessThan(legacy[0].corners[2].y);
+    expect(tuned[0].corners[2].y).toBeCloseTo(200 * (seam! - 0.01), 0);
+    expect(tuned[1].corners[0].y).toBeCloseTo(200 * (seam! + 0.01), 0);
+  });
+});
+
+/**
+ * حارس انحدار: القصّ يجب ألّا يتحوّل من ناجح إلى فاشل بسبب حافة منافسة بعيدة
+ * عن المنتصف. نجرّب الفاصل المكتشف، وإن رفضته بوابة القبول نرجع إلى المنتصف.
+ */
+describe("splitQuadIntoIdCardsWithSeam — الفاصل المكتشف مع حارس الانحدار", () => {
+  const parentQuad: Point[] = [
+    { x: 0, y: 0 },
+    { x: 210, y: 0 },
+    { x: 210, y: 280 },
+    { x: 0, y: 280 },
+  ];
+
+  function aspectOf(corners: Point[]): number {
+    const s = sortCornerPoints(corners);
+    const w = Math.hypot(s[1].x - s[0].x, s[1].y - s[0].y);
+    const h = Math.hypot(s[3].x - s[0].x, s[3].y - s[0].y);
+    return Math.max(w / Math.max(1, h), h / Math.max(1, w));
+  }
+
+  /** نفس بوابة المحرّك: كلتا البطاقتين بنسبة هوية قياسية */
+  const acceptIfBothIdCards = (cards: { corners: Point[] }[]) =>
+    cards.length === 2 && cards.every((c) => isIdCardAspectRatio(aspectOf(c.corners)));
+
+  it("uses the located seam when the acceptance gate passes", () => {
+    const cards = splitQuadIntoIdCardsWithSeam(parentQuad, "vertical", 0.52, acceptIfBothIdCards);
+    // الحدّ عند 0.51 لا عند منتصف 0.49 — أي أن الفاصل المكتشف فعّال
+    expect(cards[0].corners[2].y).toBe(Math.round(280 * 0.51));
+  });
+
+  it("falls back to the midpoint split when the gate rejects the located seam", () => {
+    // فاصل عند 0.40 يجعل النصف العلوي بنسبة 1.92 (خارج نطاق الهوية) ⇒ مرفوض
+    const cards = splitQuadIntoIdCardsWithSeam(parentQuad, "vertical", 0.40, acceptIfBothIdCards);
+    expect(cards[0].corners[2].y).toBe(Math.round(280 * 0.49));
+    expect(cards[1].corners[0].y).toBe(Math.round(280 * 0.51));
+  });
+
+  it("documents that the strict dual ID gate pins the seam within ±3% of center", () => {
+    // لماذا لا يُحرّك الفاصل المكتشف القصّ كثيراً مع بطاقات متساوية العرض:
+    // بوابة نسبة الهوية على كل نصف لا تقبل إلا فاصلاً قريباً جداً من المنتصف.
+    const accepted: number[] = [];
+    for (let s = 0.4; s <= 0.6001; s += 0.01) {
+      if (acceptIfBothIdCards(splitQuadIntoIdCards(parentQuad, "vertical", s))) {
+        accepted.push(Number(s.toFixed(2)));
+      }
+    }
+    expect(accepted).toContain(0.5);
+    expect(accepted[0]).toBeGreaterThanOrEqual(0.47);
+    expect(accepted[accepted.length - 1]).toBeLessThanOrEqual(0.53);
   });
 });

@@ -130,17 +130,16 @@ function crc32(buf: Buffer): number {
 describe("Document Scanner - Real Image Evaluation", () => {
   // عينة حقيقية اختيارية داخل الريبو — ضع صورة PNG باسم sample-photo.png
   // في test/fixtures/document-scanner/ لتفعيل هذا الاختبار محلياً وفي CI.
-  // الغياب = تخطٍّ صريح (test.skip) لا نجاح صامت كما كان سابقاً (return).
+  // الغياب = تخطٍّ صريح يُعلنه المشغّل (ctx.skip) لا "نجاح" يُحتسب في العدّاد.
+  // كان `return` يجعل Vitest يعدّه ناجحاً ويمنح ثقة كاذبة بالكشف الحقيقي.
   const realImagePath = path.resolve(
     __dirname,
     "fixtures/document-scanner/sample-photo.png"
   );
 
-  it("analyzes the uploaded photo and detects the two Iraqi ID cards with precision", () => {
+  it("analyzes the uploaded photo and detects the two Iraqi ID cards with precision", (ctx) => {
     if (!fs.existsSync(realImagePath)) {
-      console.warn(
-        `[document-scanner] no fixture at ${realImagePath} — skipping real-image evaluation (add test/fixtures/document-scanner/sample-photo.png to enable)`
-      );
+      ctx.skip();
       return;
     }
 

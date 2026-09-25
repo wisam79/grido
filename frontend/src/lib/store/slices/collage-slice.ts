@@ -43,6 +43,12 @@ export interface CollageSlice {
   rotateSlot: (slotId: string, angleDelta?: number) => void;
   flipSlotX: (slotId: string) => void;
   flipSlotY: (slotId: string) => void;
+  /**
+   * لفّ جماعي **تزايدي** — يضيف angleDelta لتدوير كل خانة محددة.
+   * `updateSlotsBatch` لا يصلح لهذا: يفرض قيمة مطلقة فيجعل الضغط مرتين
+   * بلا أثر (90 ثم 90 = 90)، وبلا تسجيل في سجل التراجع أصلاً.
+   */
+  rotateSlotsBatch: (slotIds: string[], angleDelta?: number) => void;
   resetSlotAdjustments: (slotId: string) => void;
 }
 
@@ -634,6 +640,26 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         return {
           ...sl,
           rotation: newRot,
+          dragX: 0,
+          dragY: 0,
+          zoom: 1,
+        };
+      }),
+    }));
+    get().pushHistory();
+  },
+
+  rotateSlotsBatch: (slotIds, angleDelta = 90) => {
+    if (slotIds.length === 0) return;
+    const idSet = new Set(slotIds);
+    set((state) => ({
+      slots: state.slots.map((sl) => {
+        if (!idSet.has(sl.id)) return sl;
+        const currentRot = sl.rotation || 0;
+        // مطابقة rotateSlot: التدوير يبدّل المحاور فيُصفَّر التكبير والإزاحات
+        return {
+          ...sl,
+          rotation: (((currentRot + angleDelta) % 360) + 360) % 360,
           dragX: 0,
           dragY: 0,
           zoom: 1,

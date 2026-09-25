@@ -28,12 +28,20 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
 
   return (
     <>
-      <div className="flex items-center gap-1 text-xs font-bold px-1.5 text-primary">
-        <Stack className="w-4 h-4" weight="regular" />
-        <span>{selectedIds.length} عناصر</span>
-      </div>
+      {/* عدد التحديد انتقل إلى التلميح والاسم المُتاح بدل نص ظاهر — الشريط أيقونات فقط */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            aria-label={`${selectedIds.length} عناصر محددة`}
+            className="flex h-6 w-6 items-center justify-center text-primary cursor-default"
+          >
+            <Stack className="w-3.5 h-3.5" weight="regular" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{selectedIds.length} عناصر محددة</TooltipContent>
+      </Tooltip>
 
-      <Separator orientation="vertical" className="h-4 bg-border/40" />
+      <Separator orientation="vertical" className="h-3 bg-border/40" />
 
       {/* التوزيع المتساوي (عند تحديد 3 عناصر أو أكثر) */}
       {selectedIds.length >= 3 && (
@@ -44,9 +52,10 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
                 variant="ghost"
                 size="sm"
                 onClick={() => distributeSelectedElements("horizontal")}
-                className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                aria-label="توزيع أفقي"
+                className="h-6 w-6 p-0 rounded-md hover:bg-accent"
               >
-                <ArrowsHorizontal className="w-4 h-4" weight="bold" />
+                <ArrowsHorizontal className="w-3.5 h-3.5" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">توزيع أفقي</TooltipContent>
@@ -58,9 +67,10 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
                 variant="ghost"
                 size="sm"
                 onClick={() => distributeSelectedElements("vertical")}
-                className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+                aria-label="توزيع عمودي"
+                className="h-6 w-6 p-0 rounded-md hover:bg-accent"
               >
-                <ArrowsVertical className="w-4 h-4" weight="bold" />
+                <ArrowsVertical className="w-3.5 h-3.5" weight="bold" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">توزيع عمودي</TooltipContent>

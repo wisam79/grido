@@ -57,6 +57,11 @@ go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25
 > 🧱 **مطلوب قبل أي بناء/فحص نوعي:** ربطات الواجهة تُولَّد إلى `frontend/bindings/` (مُستثناة من Git):
 > `wails3 generate bindings -ts -clean=true` — ملفات `frontend/wailsjs/**` هي **جسور يدوية مُتتبَّعة** تعيد التصدير منها ولا تُولَّد بالأمر السابق.
 > (خطافات `prebuild`/`pretypecheck`/`pretest` في `frontend/package.json` تُعطي رسالة صريحة إذا غابت الربطات.)
+>
+> 🧠 **أصول الذكاء الاصطناعي (`frontend/public/models/`) مُستثناة من Git وتُهيّأ آلياً:**
+> نموذج ماسح المستندات (scanic) يُنسخ عبر `frontend/scripts/copy-models.mjs` في `postinstall` و`prebuild`،
+> ونماذج MediaPipe (عزل الخلفية/تأطير الوجه) عبر `frontend/scripts/download-models.ps1`.
+> أي غياب يُفشل البناء برسالة صريحة بدل التراجع الصامت لميزة معطّلة.
 
 ---
 

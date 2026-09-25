@@ -1,13 +1,16 @@
 import { describe, it, expect } from "vitest";
 import {
   fuseDetections,
+  mlGraceBudgetMs,
   ML_CONFIRM_IOU,
   ML_MISS_IOU,
   ML_ADD_MIN_SCORE,
   ML_STANDALONE_MIN,
   ML_GRACE_MS,
+  ML_GRACE_LOW_CONFIDENCE_MS,
+  ML_GRACE_WEAK_MS,
 } from "../core/detect-fusion";
-import { Point, DetectionResult, DetectedDocument, DetectionMode } from "../core/types";
+import { Point, DetectionResult, DetectedDocument } from "../core/types";
 
 function rect(x: number, y: number, w: number, h: number): Point[] {
   return [
@@ -166,9 +169,35 @@ describe("detect-fusion — ML verifier fusion", () => {
     expect(fused.method).toBe("js");
   });
 
-  it("mode 'auto' keeps all rescued documents (no single-mode slice)", () => {
+  it("mode 'multi' keeps all rescued documents (no single-mode slice)", () => {
     const classical = classicalResult([doc(rect(140, 25, 80, 130), 0.6)]);
-    const fused = fuseDetections(mlResult(rect(20, 25, 80, 130), 0.75), classical, "auto" as DetectionMode);
+    const fused = fuseDetections(mlResult(rect(20, 25, 80, 130), 0.75), classical, "multi");
     expect(fused.documents).toHaveLength(2);
+  });
+
+  describe("mlGraceBudgetMs — ميزانية انتظار متدرّجة", () => {
+    it("يعطي الميزانية الكاملة عندما يفشل الكلاسيكي (نتيجة افتراضية)", () => {
+      const fallback = classicalResult([doc(rect(0, 0, 100, 100), 0.5)], "default");
+      expect(mlGraceBudgetMs(fallback)).toBe(ML_GRACE_WEAK_MS);
+      expect(mlGraceBudgetMs(null)).toBe(ML_GRACE_WEAK_MS);
+    });
+
+    it("يعطي ميزانية متوسطة عند ثقة كلاسيكية دون عتبة الثقة العالية", () => {
+      const medium = classicalResult([doc(rect(10, 10, 80, 80), 0.65)]);
+      expect(mlGraceBudgetMs(medium)).toBe(ML_GRACE_LOW_CONFIDENCE_MS);
+    });
+
+    it("يعطي أقصر ميزانية عند ثقة كلاسيكية عالية", () => {
+      const strong = classicalResult([doc(rect(10, 10, 80, 80), 0.82)]);
+      expect(mlGraceBudgetMs(strong)).toBe(ML_GRACE_MS);
+    });
+
+    it("الميزانية لا تتناقص مع ضعف النتيجة الكلاسيكية", () => {
+      const strong = classicalResult([doc(rect(10, 10, 80, 80), 0.9)]);
+      const weak = classicalResult([doc(rect(10, 10, 80, 80), 0.45)]);
+      const fallback = classicalResult([doc(rect(10, 10, 80, 80), 0.3)], "default");
+      expect(mlGraceBudgetMs(fallback)).toBeGreaterThanOrEqual(mlGraceBudgetMs(weak));
+      expect(mlGraceBudgetMs(weak)).toBeGreaterThan(mlGraceBudgetMs(strong));
+    });
   });
 });

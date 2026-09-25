@@ -55,6 +55,16 @@ export function autoFitZoomStore(): void {
   setCanvasZoom(ZOOM_DEFAULT);
 }
 
+/**
+ * الحجم الفعلي 1:1 — بكسل الورقة = بكسل CSS، فالورقة الأعرض من النافذة
+ * تُمرَّر أفقياً ورأسياً (الوحيد الذي يُنتج عصا تمرير أفقية عند 100%).
+ */
+export function actualSizeZoomStore(): void {
+  const { setCanvasFitMode, setCanvasZoom } = useEditorStore.getState();
+  setCanvasFitMode("actual");
+  setCanvasZoom(ZOOM_DEFAULT);
+}
+
 export function useCanvasZoom() {
   const zoom = useEditorStore((s) => s.canvasZoom);
   return {
@@ -66,6 +76,7 @@ export function useCanvasZoom() {
     fitZoom: fitZoomStore,
     fitWidthZoom: fitWidthZoomStore,
     autoFitZoom: autoFitZoomStore,
+    actualSizeZoom: actualSizeZoomStore,
     canZoomIn: canZoomIn(zoom),
     canZoomOut: canZoomOut(zoom),
     isDefaultZoom: isDefaultZoom(zoom),

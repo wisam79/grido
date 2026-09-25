@@ -44,9 +44,10 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
               variant="ghost"
               size="sm"
               onClick={() => bringToFront(element.id)}
-              className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+              aria-label="إحضار للأمام"
+              className="h-6 w-6 p-0 rounded-md hover:bg-accent"
             >
-              <ArrowUp className="w-4 h-4" weight="bold" />
+              <ArrowUp className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">إحضار للأمام</TooltipContent>
@@ -58,9 +59,10 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
               variant="ghost"
               size="sm"
               onClick={() => sendToBack(element.id)}
-              className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+              aria-label="إرسال للخلف"
+              className="h-6 w-6 p-0 rounded-md hover:bg-accent"
             >
-              <ArrowDown className="w-4 h-4" weight="bold" />
+              <ArrowDown className="w-3.5 h-3.5" weight="bold" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">إرسال للخلف</TooltipContent>
@@ -84,9 +86,10 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
               });
               useEditorStore.getState().pushHistory();
             }}
-            className="h-7 w-7 p-0 rounded-md hover:bg-accent"
+            aria-label="تدوير 90 درجة"
+            className="h-6 w-6 p-0 rounded-md hover:bg-accent"
           >
-            <ArrowClockwise className="w-4 h-4" weight="bold" />
+            <ArrowClockwise className="w-3.5 h-3.5" weight="bold" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">تدوير 90 درجة</TooltipContent>
@@ -101,9 +104,10 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
               updateElement(element.id, { flipX: !element.flipX });
               useEditorStore.getState().pushHistory();
             }}
-            className={cn("h-7 w-7 p-0 rounded-md hover:bg-accent", element.flipX && "bg-primary/10 text-primary")}
+            aria-label="قلب أفقي"
+            className={cn("h-6 w-6 p-0 rounded-md hover:bg-accent", element.flipX && "bg-primary/10 text-primary")}
           >
-            <FlipHorizontal className="w-4 h-4" weight={element.flipX ? "fill" : "bold"} />
+            <FlipHorizontal className="w-3.5 h-3.5" weight={element.flipX ? "fill" : "bold"} />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">قلب أفقي</TooltipContent>
@@ -111,7 +115,7 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
 
       {element.type === "image" && element.imageSrc && element.originalImageSrc && (
         <>
-          <Separator orientation="vertical" className="h-4 bg-border/40" />
+          <Separator orientation="vertical" className="h-3 bg-border/40" />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -126,9 +130,10 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                       useEditorStore.getState().pushHistory();
                       toast.success("تمت الاستعادة");
                     }}
-                    className="h-7 w-7 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                    aria-label="استعادة الصورة الأصلية"
+                    className="h-6 w-6 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                   >
-                    <ArrowCounterClockwise className="w-4 h-4" weight="regular" />
+                    <ArrowCounterClockwise className="w-3.5 h-3.5" weight="regular" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">استعادة الصورة الأصلية</TooltipContent>
@@ -148,9 +153,10 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
                       };
                       window.addEventListener("mouseup", restore);
                     }}
-                    className="h-7 w-7 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
+                    aria-label="معاينة الصورة الأصلية"
+                    className="h-6 w-6 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
                   >
-                    <Eye className="w-4 h-4" weight="regular" />
+                    <Eye className="w-3.5 h-3.5" weight="regular" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">اضغط مطولاً للمعاينة</TooltipContent>

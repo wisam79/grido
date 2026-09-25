@@ -77,6 +77,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
     fitZoom,
     fitWidthZoom,
     autoFitZoom,
+    actualSizeZoom,
   } = useCanvasZoom();
 
   // أوضاع الملاءمة في قائمة واحدة — الفعل يعيّن الوضع ويرجع الزوم لـ 100%
@@ -84,9 +85,11 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
     { mode: "auto", run: autoFitZoom, hint: "يختار الأنسب لهندسة النافذة" },
     { mode: "height", run: fitZoom, hint: "الورقة كاملة على الشاشة" },
     { mode: "width", run: fitWidthZoom, hint: "تملأ العرض ويُمرَّر الباقي" },
+    { mode: "actual", run: actualSizeZoom, hint: "بكسل حقيقي 1:1 مع تمرير أفقي ورأسي" },
   ];
   const leftoverPercent = Math.round(fitLeftoverRatio * 100);
-  const fitStatusLabel = resolvedFit === "width" ? "عرض" : "الكل";
+  const fitStatusLabel =
+    resolvedFit === "width" ? "عرض" : resolvedFit === "actual" ? "1:1" : "الكل";
 
   const isLandscape = canvasWidth > canvasHeight;
 
@@ -334,11 +337,13 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                   className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8"
                 >
                   <span>
-                    {resolvedFit === "width"
-                      ? `ملاءمة العرض — تُمرَّر الورقة رأسياً (الفراغ الجانبي ${leftoverPercent}% في وضع الكل)`
-                      : leftoverPercent > 20
-                        ? `ملاءمة الكل — الفراغ الجانبي ${leftoverPercent}% من العرض، جرّب ملاءمة العرض`
-                        : "ملاءمة الكل — الورقة تملأ منطقة العمل"}
+                    {resolvedFit === "actual"
+                      ? "الحجم الفعلي 1:1 — بكسل الورقة = بكسل الشاشة، وتُمرَّر أفقياً ورأسياً"
+                      : resolvedFit === "width"
+                        ? `ملاءمة العرض — تُمرَّر الورقة رأسياً (الفراغ الجانبي ${leftoverPercent}% في وضع الكل)`
+                        : leftoverPercent > 20
+                          ? `ملاءمة الكل — الفراغ الجانبي ${leftoverPercent}% من العرض، جرّب ملاءمة العرض`
+                          : "ملاءمة الكل — الورقة تملأ منطقة العمل"}
                   </span>
                 </TooltipContent>
               </Tooltip>

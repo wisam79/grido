@@ -7,7 +7,13 @@ import {
   getDocumentAspectLabel,
   inferSmartDocumentAspect,
 } from "./quad-geometry";
-import { applyNMS, splitQuadIntoIdCards } from "./multi-doc-segmenter";
+import {
+  applyNMS,
+  locateSplitSeamRatio,
+  splitQuadIntoIdCardsWithSeam,
+  SPLIT_SEAM_RATIO_DEFAULT,
+} from "./multi-doc-segmenter";
+import { computeSobelGradients } from "./fast-vision";
 import { loadOpenCV, getLoadedOpenCV, CvRuntime } from "../opencv-loader";
 import type { CvMat, CvMatVector, CvRuntimeLike } from "./cv-types";
 import type { CvPoint } from "./cv-types";
@@ -101,7 +107,7 @@ export async function detectDocumentsWithOpenCV(
   src: HTMLCanvasElement | HTMLImageElement,
   originalWidth: number,
   originalHeight: number,
-  mode: DetectionMode = "auto"
+  mode: DetectionMode = "multi"
 ): Promise<DetectionResult | null> {
   let cvFull: CvRuntime | null = getLoadedOpenCV();
   if (!cvFull) {
@@ -153,6 +159,14 @@ export async function detectDocumentsWithOpenCV(
     cv.GaussianBlur(grayMat, blurMat, track(new cv.Size(5, 5)), 0, 0, cv.BORDER_DEFAULT);
 
     const grayData = new Uint8Array(grayMat.data);
+
+    // مصفوفة التدرّج تُبنى عند أول حاجة فقط (مسار القص المزدوج) — لا كلفة على
+    // الحالات العادية. تُغذّي locateSplitSeamRatio لموضع الفاصل الحقيقي.
+    let seamGrad: { mag: Float32Array; maxMag: number } | null = null;
+    const getSeamGrad = () => {
+      if (!seamGrad) seamGrad = computeSobelGradients(grayData, sw, sh);
+      return seamGrad;
+    };
 
   // توليد الأقنعة الثنائية المختلفة
   const binaryMats: CvMat[] = [];
@@ -299,7 +313,32 @@ export async function detectDocumentsWithOpenCV(
                 }
                 const avgMidEdge = midEdgeDiff / Math.max(1, Math.round((qSorted[1].x - qSorted[0].x) / 2));
                 if (avgMidEdge >= 12) {
-                  const split = splitQuadIntoIdCards(quad, "vertical");
+                  // موضع القص يتبع الفاصل الحقيقي (أقوى حافة داخل نطاق البحث)، لا المنتصف دائماً
+                  const g = getSeamGrad();
+                  const seamRatio =
+                    locateSplitSeamRatio(
+                      {
+                        x: (qSorted[0].x + qSorted[1].x) / 2,
+                        y: (qSorted[0].y + qSorted[1].y) / 2,
+                      },
+                      {
+                        x: (qSorted[3].x + qSorted[2].x) / 2,
+                        y: (qSorted[3].y + qSorted[2].y) / 2,
+                      },
+                      g.mag,
+                      sw,
+                      sh,
+                      g.maxMag
+                    ) ?? SPLIT_SEAM_RATIO_DEFAULT;
+                  const split = splitQuadIntoIdCardsWithSeam(
+                    quad,
+                    "vertical",
+                    seamRatio,
+                    (cards) =>
+                      cards.length === 2 &&
+                      isStackedPairAspect(cards[0].corners) &&
+                      isStackedPairAspect(cards[1].corners)
+                  );
                   if (split.length === 2) {
                     const s1 = evaluateOpenCvQuadScore(split[0].corners, sw, sh, grayData, totalPixels);
                     const s2 = evaluateOpenCvQuadScore(split[1].corners, sw, sh, grayData, totalPixels);
@@ -324,7 +363,32 @@ export async function detectDocumentsWithOpenCV(
                 }
                 const avgMidEdge = midEdgeDiff / Math.max(1, Math.round((qSorted[2].y - qSorted[0].y) / 2));
                 if (avgMidEdge >= 12) {
-                  const split = splitQuadIntoIdCards(quad, "horizontal");
+                  // موضع القص يتبع الفاصل الحقيقي (أقوى حافة داخل نطاق البحث)، لا المنتصف دائماً
+                  const g = getSeamGrad();
+                  const seamRatio =
+                    locateSplitSeamRatio(
+                      {
+                        x: (qSorted[0].x + qSorted[3].x) / 2,
+                        y: (qSorted[0].y + qSorted[3].y) / 2,
+                      },
+                      {
+                        x: (qSorted[1].x + qSorted[2].x) / 2,
+                        y: (qSorted[1].y + qSorted[2].y) / 2,
+                      },
+                      g.mag,
+                      sw,
+                      sh,
+                      g.maxMag
+                    ) ?? SPLIT_SEAM_RATIO_DEFAULT;
+                  const split = splitQuadIntoIdCardsWithSeam(
+                    quad,
+                    "horizontal",
+                    seamRatio,
+                    (cards) =>
+                      cards.length === 2 &&
+                      isStackedPairAspect(cards[0].corners) &&
+                      isStackedPairAspect(cards[1].corners)
+                  );
                   if (split.length === 2) {
                     const s1 = evaluateOpenCvQuadScore(split[0].corners, sw, sh, grayData, totalPixels);
                     const s2 = evaluateOpenCvQuadScore(split[1].corners, sw, sh, grayData, totalPixels);
@@ -415,10 +479,8 @@ export async function detectDocumentsWithOpenCV(
     let filteredDocs = documents;
     if (mode === "single") {
       filteredDocs = documents.slice(0, 1);
-    } else if (mode === "multi") {
-      filteredDocs = documents.filter((doc) => doc.confidence >= 0.50);
     } else {
-      filteredDocs = documents.filter((doc) => doc.confidence >= 0.60);
+      filteredDocs = documents.filter((doc) => doc.confidence >= 0.50);
     }
 
     if (filteredDocs.length === 0) return null;
