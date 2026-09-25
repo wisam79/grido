@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useEditorStore, TextElement } from '../src/lib/editor-store';
+import {
+  getToolsForWorkflow,
+  isStudioTab,
+  isCollageTab,
+  migrateLegacyStudioTab,
+  STUDIO_TOOLS,
+  COLLAGE_TOOLS,
+} from '../src/lib/workspace-tools';
 
 describe('useEditorStore - Canvas Store Tests', () => {
   beforeEach(() => {
@@ -26,7 +34,7 @@ describe('useEditorStore - Canvas Store Tests', () => {
   it('should add text element and select it', () => {
     const store = useEditorStore.getState();
     store.addTextElement('نص للتجربة');
-    
+
     const state = useEditorStore.getState();
     expect(state.elements.length).toBe(1);
     expect(state.elements[0].type).toBe('text');
@@ -36,12 +44,12 @@ describe('useEditorStore - Canvas Store Tests', () => {
   it('should update element properties', () => {
     const store = useEditorStore.getState();
     store.addTextElement('تعديل');
-    
+
     let state = useEditorStore.getState();
     const elemId = state.elements[0].id;
-    
+
     store.updateElement(elemId, { color: '#FF0000', fontSize: 24 });
-    
+
     state = useEditorStore.getState();
     expect((state.elements[0] as TextElement).color).toBe('#FF0000');
     expect((state.elements[0] as TextElement).fontSize).toBe(24);
@@ -50,34 +58,34 @@ describe('useEditorStore - Canvas Store Tests', () => {
   it('should remove elements', () => {
     const store = useEditorStore.getState();
     store.addTextElement('للحذف');
-    
+
     let state = useEditorStore.getState();
     const elemId = state.elements[0].id;
-    
+
     store.removeElement(elemId);
-    
+
     state = useEditorStore.getState();
     expect(state.elements.length).toBe(0);
   });
 
   it('should handle undo and redo properly', () => {
     const store = useEditorStore.getState();
-    
+
     // إضافة عنصر نصي
     store.addTextElement('العنصر 1');
-    
+
     // إضافة عنصر آخر
     store.addTextElement('العنصر 2');
-    
+
     let state = useEditorStore.getState();
     expect(state.elements.length).toBe(2);
-    
+
     // التراجع
     store.undo();
     state = useEditorStore.getState();
     expect(state.elements.length).toBe(1);
     expect((state.elements[0] as TextElement).text).toBe('العنصر 1');
-    
+
     // الإعادة
     store.redo();
     state = useEditorStore.getState();
@@ -103,5 +111,51 @@ describe('useEditorStore - Canvas Store Tests', () => {
     store.removeElement(elemId);
     expect(useEditorStore.getState().history.length).toBe(4);
     expect(useEditorStore.getState().historyIndex).toBe(3);
+  });
+});
+
+describe('Workflow slice & rail registry (sidebar de-clutter)', () => {
+  beforeEach(() => {
+    useEditorStore.getState().setWorkflow('studio');
+  });
+
+  it('defaults to studio workflow and persists quick mode', () => {
+    expect(useEditorStore.getState().workflow).toBe('studio');
+    useEditorStore.getState().setWorkflow('quick');
+    expect(useEditorStore.getState().workflow).toBe('quick');
+    expect(localStorage.getItem('grido_workflow_mode')).toBe('quick');
+    useEditorStore.getState().setWorkflow('studio');
+  });
+
+  it('quick mode hides the merged elements hub from studio tools only', () => {
+    const studioAll = getToolsForWorkflow('single', 'studio');
+    const studioQuick = getToolsForWorkflow('single', 'quick');
+    expect(studioAll.map((t) => t.id)).toContain('elements');
+    expect(studioQuick.map((t) => t.id)).not.toContain('elements');
+    expect(studioQuick.length).toBe(studioAll.length - 1);
+    // Collage tools unaffected by workflow
+    expect(getToolsForWorkflow('collage', 'quick')).toHaveLength(
+      getToolsForWorkflow('collage', 'studio').length,
+    );
+  });
+
+  it('registry has no filler duplicates: single elements hub, no separate backdrop', () => {
+    expect(STUDIO_TOOLS.filter((t) => ['stickers', 'shapes', 'text'].includes(t.id))).toHaveLength(
+      0,
+    );
+    expect(STUDIO_TOOLS.map((t) => t.id)).toContain('elements');
+    expect(COLLAGE_TOOLS.map((t) => t.id)).not.toContain('backdrop');
+    expect(COLLAGE_TOOLS.map((t) => t.id)).toContain('custom');
+  });
+
+  it('migrates legacy stored tabs and validates current ones', () => {
+    expect(migrateLegacyStudioTab('stickers')).toBe('elements');
+    expect(migrateLegacyStudioTab('shapes')).toBe('elements');
+    expect(migrateLegacyStudioTab('text')).toBe('elements');
+    expect(migrateLegacyStudioTab('layers')).toBeNull();
+    expect(isStudioTab('elements')).toBe(true);
+    expect(isStudioTab('stickers')).toBe(false);
+    expect(isCollageTab('backdrop')).toBe(false);
+    expect(isCollageTab('custom')).toBe(true);
   });
 });

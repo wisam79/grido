@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { cn } from "@/lib/utils";
+import React, { useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
 import {
   Check,
   FolderSimple,
@@ -12,23 +12,18 @@ import {
   List,
   MagnifyingGlass,
   X,
-} from "@/components/ui/icons";
-import { CollageTemplate, COLLAGE_TEMPLATES } from "@/lib/templates";
+} from '@/components/ui/icons';
+import { CollageTemplate, COLLAGE_TEMPLATES } from '@/lib/templates';
 import {
   CollagePresetCategory,
   ALL_STUDIO_PRESETS,
   STUDIO_COMBO_PRESETS,
   STUDIO_KEEPSAKE_PRESETS,
   StudioPreset,
-} from "./collage-preset-data";
-import { FluentEmptyState, FluentSegmentedControl } from "@/components/ui/blocks";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+} from './collage-preset-data';
+import { FluentEmptyState, FluentSegmentedControl } from '@/components/ui/blocks';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 
 /** نمط المقاطع الرقمية داخل جملة عربية (35×45) */
 const SPEC_NUMBER_PATTERN = /(\d+(?:[.,]\d+)?(?:\s*×\s*\d+(?:[.,]\d+)?)?)/g;
@@ -48,7 +43,7 @@ function SpecText({ spec, className }: { spec: string; className?: string }) {
           </bdi>
         ) : (
           <React.Fragment key={index}>{part}</React.Fragment>
-        )
+        ),
       )}
     </span>
   );
@@ -57,7 +52,7 @@ function SpecText({ spec, className }: { spec: string; className?: string }) {
 /** استخلاص المقاسات الملموسة فقط — للعرض الشبكي الضيق حيث لا تتسع الجملة كاملة */
 function specSizes(spec: string): string {
   const sizes = spec.match(/\d+(?:[.,]\d+)?\s*×\s*\d+(?:[.,]\d+)?/g);
-  return sizes ? sizes.map((size) => size.replace(/\s+/g, "")).join(" · ") : spec;
+  return sizes ? sizes.map((size) => size.replace(/\s+/g, '')).join(' · ') : spec;
 }
 
 /**
@@ -85,10 +80,10 @@ function StudioPaperThumbnail({
     <div className="flex items-center justify-center select-none shrink-0" aria-hidden="true">
       <div
         className={cn(
-          "rounded-md relative transition-all duration-200 p-0.5 flex items-center justify-center overflow-hidden",
+          'rounded-md relative transition-all duration-200 p-0.5 flex items-center justify-center overflow-hidden',
           active
-            ? "bg-white dark:bg-card border-2 border-primary shadow-fluent-8 ring-1 ring-primary/40"
-            : "bg-white dark:bg-card border border-border/80 shadow-2xs group-hover:border-primary/50 group-hover:shadow-xs"
+            ? 'bg-white dark:bg-card border-2 border-primary shadow-fluent-8 ring-1 ring-primary/40'
+            : 'bg-white dark:bg-card border border-border/80 shadow-2xs group-hover:border-primary/50 group-hover:shadow-xs',
         )}
         style={{ width: paperW, height: paperH }}
         dir="ltr"
@@ -138,10 +133,10 @@ function StudioPaperThumbnail({
                   rx="1.5"
                   ry="1.5"
                   className={cn(
-                    "transition-colors duration-150",
+                    'transition-colors duration-150',
                     active
-                      ? "fill-primary/[0.14] stroke-primary/80 stroke-[1.2]"
-                      : "fill-muted stroke-border stroke-[0.8]"
+                      ? 'fill-primary/[0.14] stroke-primary/80 stroke-[1.2]'
+                      : 'fill-muted stroke-border stroke-[0.8]',
                   )}
                 />
 
@@ -149,10 +144,8 @@ function StudioPaperThumbnail({
                 {showPortrait && !isFamilyLandscape && (
                   <g
                     className={cn(
-                      "transition-opacity duration-150",
-                      active
-                        ? "fill-primary/70"
-                        : "fill-muted-foreground/60"
+                      'transition-opacity duration-150',
+                      active ? 'fill-primary/70' : 'fill-muted-foreground/60',
                     )}
                   >
                     <circle cx={cx} cy={cy - headRadius * 0.65} r={headRadius} />
@@ -164,13 +157,7 @@ function StudioPaperThumbnail({
 
                 {/* خيال البورتريه المزدوج للصور العائلية الكبرى */}
                 {isFamilyLandscape && (
-                  <g
-                    className={cn(
-                      active
-                        ? "fill-primary/70"
-                        : "fill-muted-foreground/60"
-                    )}
-                  >
+                  <g className={cn(active ? 'fill-primary/70' : 'fill-muted-foreground/60')}>
                     <circle cx={cx - 10} cy={cy - 6} r={headRadius * 0.8} />
                     <path
                       d={`M ${cx - 20} ${cy + 14} C ${cx - 19} ${cy + 1}, ${cx - 1} ${cy + 1}, ${cx} ${cy + 14} Z`}
@@ -211,9 +198,9 @@ export function CollagePresetsTab({
   onImportClick,
   onExportAllClick,
 }: CollagePresetsTabProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   // نمط العرض: قائمة عريضة واضحة ومفصلة (الافتراضي)، أو شبكة مصغرة
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   const categories: {
     id: CollagePresetCategory;
@@ -222,10 +209,34 @@ export function CollagePresetsTab({
     icon: React.ElementType;
     badgeCount?: number;
   }[] = [
-    { id: "all", label: "كافة الأطقم والقوالب", shortLabel: "الكل", icon: SquaresFour, badgeCount: ALL_STUDIO_PRESETS.length },
-    { id: "combo", label: "أطقم رسمية مركبة", shortLabel: "أطقم", icon: Stack, badgeCount: STUDIO_COMBO_PRESETS.length },
-    { id: "keepsake", label: "تذكار وكروت", shortLabel: "تذكار", icon: Star, badgeCount: STUDIO_KEEPSAKE_PRESETS.length },
-    { id: "saved", label: "قوالب محفوظة", shortLabel: "محفوظ", icon: FolderSimple, badgeCount: savedTemplates.length > 0 ? savedTemplates.length : undefined },
+    {
+      id: 'all',
+      label: 'كل القوالب',
+      shortLabel: 'الكل',
+      icon: SquaresFour,
+      badgeCount: ALL_STUDIO_PRESETS.length,
+    },
+    {
+      id: 'combo',
+      label: 'أطقم رسمية',
+      shortLabel: 'أطقم',
+      icon: Stack,
+      badgeCount: STUDIO_COMBO_PRESETS.length,
+    },
+    {
+      id: 'keepsake',
+      label: 'تذكار وكروت',
+      shortLabel: 'تذكار',
+      icon: Star,
+      badgeCount: STUDIO_KEEPSAKE_PRESETS.length,
+    },
+    {
+      id: 'saved',
+      label: 'قوالب محفوظة',
+      shortLabel: 'محفوظ',
+      icon: FolderSimple,
+      badgeCount: savedTemplates.length > 0 ? savedTemplates.length : undefined,
+    },
   ];
 
   const currentCat = categories.find((c) => c.id === presetCategory) || categories[0];
@@ -240,11 +251,11 @@ export function CollagePresetsTab({
         p.title.toLowerCase().includes(q) ||
         p.spec.toLowerCase().includes(q) ||
         (p.tag && p.tag.toLowerCase().includes(q)) ||
-        (p.badge && p.badge.toLowerCase().includes(q))
+        (p.badge && p.badge.toLowerCase().includes(q)),
     );
 
     const matchedSaved = savedTemplates.filter(
-      (s) => s.name.toLowerCase().includes(q) || `${s.slots}`.includes(q)
+      (s) => s.name.toLowerCase().includes(q) || `${s.slots}`.includes(q),
     );
 
     return { official: matchedOfficial, saved: matchedSaved };
@@ -252,11 +263,11 @@ export function CollagePresetsTab({
 
   const activePresetsList: StudioPreset[] = useMemo(() => {
     switch (presetCategory) {
-      case "all":
+      case 'all':
         return ALL_STUDIO_PRESETS;
-      case "combo":
+      case 'combo':
         return STUDIO_COMBO_PRESETS;
-      case "keepsake":
+      case 'keepsake':
         return STUDIO_KEEPSAKE_PRESETS;
       default:
         return [];
@@ -264,10 +275,14 @@ export function CollagePresetsTab({
   }, [presetCategory]);
 
   // أقسام القوالب عند اختيار "الكل" لتنظيم بصري مريح
-  const groupedSections: { title: string; icon: React.ElementType; presets: StudioPreset[] }[] = useMemo(() => [
-    { title: "أطقم رسمية (مقاسات متعددة)", icon: Stack, presets: STUDIO_COMBO_PRESETS },
-    { title: "تذكار وكروت", icon: Star, presets: STUDIO_KEEPSAKE_PRESETS },
-  ], []);
+  const groupedSections: { title: string; icon: React.ElementType; presets: StudioPreset[] }[] =
+    useMemo(
+      () => [
+        { title: 'أطقم رسمية', icon: Stack, presets: STUDIO_COMBO_PRESETS },
+        { title: 'تذكار وكروت', icon: Star, presets: STUDIO_KEEPSAKE_PRESETS },
+      ],
+      [],
+    );
 
   // دالة مشتركة لتطبيق القالب
   const handleApplyPreset = (presetId: string) => {
@@ -286,16 +301,14 @@ export function CollagePresetsTab({
         aria-label={`${preset.title} - ${preset.spec}`}
         onClick={() => handleApplyPreset(preset.id)}
         className={cn(
-          "w-full p-2 rounded-xl border text-right transition-colors duration-150 cursor-pointer flex items-center gap-2.5 select-none relative group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none min-h-[58px] fluent-specular",
+          'w-full p-2 rounded-xl border text-right transition-colors duration-150 cursor-pointer flex items-center gap-2.5 select-none relative group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none min-h-[58px] fluent-specular',
           isActive
-            ? "border-primary bg-primary/[0.09] dark:bg-primary/20 text-primary shadow-xs ring-1 ring-primary/40"
-            : "bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-primary/40 hover:shadow-xs"
+            ? 'border-primary bg-primary/[0.09] dark:bg-primary/20 text-primary shadow-xs ring-1 ring-primary/40'
+            : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-primary/40 hover:shadow-xs',
         )}
       >
         {/* شارة النشاط الزرقاء على الحافة اليمنى */}
-        {isActive && (
-          <span className="absolute inset-y-1 right-0 w-1 bg-primary rounded-l-full" />
-        )}
+        {isActive && <span className="absolute inset-y-1 right-0 w-1 bg-primary rounded-l-full" />}
 
         {/* المعاينة المصغرة للورقة الحقيقية */}
         <div className="shrink-0 w-9 h-12 flex items-center justify-center">
@@ -316,7 +329,7 @@ export function CollagePresetsTab({
               )}
               <span
                 className="text-micro font-mono font-bold text-muted-foreground bg-muted/70 px-2 py-0.5 rounded-full border border-border/40 leading-none"
-                title={`${preset.slots} صور في هذا القالب`}
+                title={`${preset.slots} صور`}
               >
                 {preset.slots}×
               </span>
@@ -350,10 +363,10 @@ export function CollagePresetsTab({
         aria-label={`${preset.title} - ${preset.spec}`}
         onClick={() => handleApplyPreset(preset.id)}
         className={cn(
-          "p-2 rounded-xl border text-center transition-colors duration-150 cursor-pointer flex flex-col items-center justify-between select-none relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group min-h-[120px] fluent-specular",
+          'p-2 rounded-xl border text-center transition-colors duration-150 cursor-pointer flex flex-col items-center justify-between select-none relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group min-h-[120px] fluent-specular',
           isActive
-            ? "border-primary bg-primary/[0.09] dark:bg-primary/20 text-primary shadow-xs ring-1 ring-primary/40"
-            : "bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-primary/40 hover:shadow-xs hover:-translate-y-0.5"
+            ? 'border-primary bg-primary/[0.09] dark:bg-primary/20 text-primary shadow-xs ring-1 ring-primary/40'
+            : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-primary/40 hover:shadow-xs hover:-translate-y-0.5',
         )}
       >
         {/* شارة التحديد النشطة */}
@@ -412,7 +425,7 @@ export function CollagePresetsTab({
         {searchQuery && (
           <button
             type="button"
-            onClick={() => setSearchQuery("")}
+            onClick={() => setSearchQuery('')}
             className="absolute left-1.5 top-1/2 -translate-y-1/2 size-7 rounded-full bg-muted hover:bg-muted-foreground/20 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             title="مسح البحث"
           >
@@ -441,11 +454,18 @@ export function CollagePresetsTab({
                   )}
                 </div>
               </SelectTrigger>
-              <SelectContent align="start" className="font-cairo min-w-[210px] rounded-xl border border-border bg-popover shadow-fluent-16">
+              <SelectContent
+                align="start"
+                className="font-cairo min-w-[210px] rounded-xl border border-border bg-popover shadow-fluent-16"
+              >
                 {categories.map((cat) => {
                   const Icon = cat.icon;
                   return (
-                    <SelectItem key={cat.id} value={cat.id} className="text-xs font-bold cursor-pointer py-2">
+                    <SelectItem
+                      key={cat.id}
+                      value={cat.id}
+                      className="text-xs font-bold cursor-pointer py-2"
+                    >
                       <div className="flex items-center justify-between w-full gap-2 min-w-[170px]">
                         <div className="flex items-center gap-2 min-w-0">
                           <Icon className="w-4 h-4 text-primary shrink-0" weight="duotone" />
@@ -465,7 +485,7 @@ export function CollagePresetsTab({
           </div>
 
           {/* زر التبديل بين نمط القائمة العريضة ونمط الشبكة */}
-          <FluentSegmentedControl<"list" | "grid">
+          <FluentSegmentedControl<'list' | 'grid'>
             layoutId="presets-view-mode-pill"
             value={viewMode}
             onChange={setViewMode}
@@ -474,14 +494,21 @@ export function CollagePresetsTab({
             className="shrink-0 shadow-2xs p-0.5 border-0 h-8"
             options={[
               {
-                id: "list",
-                icon: <List className="w-4 h-4" weight={viewMode === "list" ? "bold" : "regular"} />,
-                tooltip: "قائمة مفصلة",
+                id: 'list',
+                icon: (
+                  <List className="w-4 h-4" weight={viewMode === 'list' ? 'bold' : 'regular'} />
+                ),
+                tooltip: 'قائمة مفصلة',
               },
               {
-                id: "grid",
-                icon: <SquaresFour className="w-4 h-4" weight={viewMode === "grid" ? "bold" : "regular"} />,
-                tooltip: "عرض شبكي",
+                id: 'grid',
+                icon: (
+                  <SquaresFour
+                    className="w-4 h-4"
+                    weight={viewMode === 'grid' ? 'bold' : 'regular'}
+                  />
+                ),
+                tooltip: 'عرض شبكي',
               },
             ]}
           />
@@ -493,11 +520,14 @@ export function CollagePresetsTab({
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-muted-foreground select-none px-0.5">
             <span>
-              نتائج البحث: <strong className="text-foreground">{searchResults.official.length + searchResults.saved.length}</strong>
+              نتائج البحث:{' '}
+              <strong className="text-foreground">
+                {searchResults.official.length + searchResults.saved.length}
+              </strong>
             </span>
             <button
               type="button"
-              onClick={() => setSearchQuery("")}
+              onClick={() => setSearchQuery('')}
               className="text-mini text-primary hover:underline font-bold cursor-pointer"
             >
               إلغاء البحث
@@ -506,29 +536,30 @@ export function CollagePresetsTab({
 
           {searchResults.official.length === 0 && searchResults.saved.length === 0 ? (
             <FluentEmptyState
-              icon={<MagnifyingGlass className="w-8 h-8 text-muted-foreground/60" weight="duotone" />}
+              icon={
+                <MagnifyingGlass className="w-8 h-8 text-muted-foreground/60" weight="duotone" />
+              }
               title="لا توجد نتائج"
-              description="جرّب كلمات مثل 'جواز' أو 'وطنية'."
+              description="جرّب جواز أو وطنية"
             />
           ) : (
             <div className="space-y-2">
               {/* نتائج القوالب الرسمية */}
-              {searchResults.official.length > 0 && (
-                viewMode === "list" ? (
-                  <div className="space-y-1.5">
-                    {searchResults.official.map(renderListCard)}
-                  </div>
+              {searchResults.official.length > 0 &&
+                (viewMode === 'list' ? (
+                  <div className="space-y-1.5">{searchResults.official.map(renderListCard)}</div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     {searchResults.official.map(renderGridCard)}
                   </div>
-                )
-              )}
+                ))}
 
               {/* نتائج القوالب المحفوظة */}
               {searchResults.saved.length > 0 && (
                 <div className="space-y-1.5 pt-1.5 border-t border-border/40">
-                  <span className="text-mini font-bold text-muted-foreground block text-right">نتائج محفوظة</span>
+                  <span className="text-mini font-bold text-muted-foreground block text-right">
+                    نتائج محفوظة
+                  </span>
                   {searchResults.saved.map((t) => {
                     const isActive = activeTemplateId === t.id;
                     return (
@@ -537,18 +568,18 @@ export function CollagePresetsTab({
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
+                          if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             onSelect(t);
                           }
                         }}
                         onClick={() => onSelect(t)}
                         className={cn(
-                          "p-2 rounded-xl border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden",
-                          "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                          'p-2 rounded-xl border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden',
+                          'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                           isActive
-                            ? "border-primary bg-primary/[0.09] text-primary font-bold shadow-xs ring-1 ring-primary/30"
-                            : "bg-card border-border/70 hover:bg-muted/40 hover:border-primary/40 hover:shadow-2xs text-foreground"
+                            ? 'border-primary bg-primary/[0.09] text-primary font-bold shadow-xs ring-1 ring-primary/30'
+                            : 'bg-card border-border/70 hover:bg-muted/40 hover:border-primary/40 hover:shadow-2xs text-foreground',
                         )}
                       >
                         <div className="flex items-center gap-2.5 min-w-0 pr-1">
@@ -557,7 +588,9 @@ export function CollagePresetsTab({
                           </div>
                           <div className="flex flex-col items-start min-w-0 gap-0.5">
                             <span className="text-xs font-bold truncate text-right">{t.name}</span>
-                            <span className="text-micro font-mono text-muted-foreground">{t.slots}× صور</span>
+                            <span className="text-micro font-mono text-muted-foreground">
+                              {t.slots}× صور
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -568,7 +601,7 @@ export function CollagePresetsTab({
             </div>
           )}
         </div>
-      ) : presetCategory === "saved" ? (
+      ) : presetCategory === 'saved' ? (
         /* 🎴 قسم القوالب المحفوظة */
         savedTemplates.length === 0 ? (
           <div className="py-7 px-4 rounded-xl border border-dashed border-border/70 bg-card/40 flex flex-col items-center text-center gap-2">
@@ -576,13 +609,19 @@ export function CollagePresetsTab({
               <FolderSimple className="w-5 h-5" weight="duotone" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-xs font-bold text-foreground">لا توجد قوالب مخصصة محفوظة</p>
+              <p className="text-xs font-bold text-foreground">لا قوالب محفوظة</p>
               <p className="text-micro text-muted-foreground max-w-[220px] leading-relaxed">
-                خصص شبكتك ثم اضغط "حفظ كقالب" للوصول إليها.
+                خصص شبكتك ثم احفظها.
               </p>
             </div>
             {onImportClick && (
-              <Button type="button" variant="outline" size="default" onClick={onImportClick} className="mt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="default"
+                onClick={onImportClick}
+                className="mt-1"
+              >
                 <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
                 <span>استيراد قالب JSON</span>
               </Button>
@@ -593,17 +632,30 @@ export function CollagePresetsTab({
             {/* شريط الإجراءات للقوالب المحفوظة */}
             <div className="flex items-center justify-between pb-0.5 select-none">
               <span className="text-xs font-bold text-foreground/80">
-                {savedTemplates.length} {savedTemplates.length === 1 ? "قالب محفوظ" : "قوالب محفوظة"}
+                {savedTemplates.length}{' '}
+                {savedTemplates.length === 1 ? 'قالب محفوظ' : 'قوالب محفوظة'}
               </span>
               <div className="flex items-center gap-1.5">
                 {onImportClick && (
-                  <Button type="button" variant="outline" size="sm" onClick={onImportClick} title="استيراد قوالب">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onImportClick}
+                    title="استيراد قوالب"
+                  >
                     <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
                     <span>استيراد</span>
                   </Button>
                 )}
                 {onExportAllClick && (
-                  <Button type="button" variant="outline" size="sm" onClick={onExportAllClick} title="تصدير القوالب">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onExportAllClick}
+                    title="تصدير القوالب"
+                  >
                     <DownloadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
                     <span>تصدير الكل</span>
                   </Button>
@@ -620,18 +672,18 @@ export function CollagePresetsTab({
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
+                      if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         onSelect(t);
                       }
                     }}
                     onClick={() => onSelect(t)}
                     className={cn(
-                      "p-2 rounded-xl border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden",
-                      "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                      'p-2 rounded-xl border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden',
+                      'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                       isActive
-                        ? "border-primary bg-primary/[0.09] text-primary font-bold shadow-xs ring-1 ring-primary/30"
-                        : "bg-card border-border/70 hover:bg-muted/40 hover:border-primary/40 hover:shadow-2xs text-foreground"
+                        ? 'border-primary bg-primary/[0.09] text-primary font-bold shadow-xs ring-1 ring-primary/30'
+                        : 'bg-card border-border/70 hover:bg-muted/40 hover:border-primary/40 hover:shadow-2xs text-foreground',
                     )}
                   >
                     {isActive && (
@@ -642,11 +694,13 @@ export function CollagePresetsTab({
                         <StudioPaperThumbnail cells={t.cells} active={isActive} scale={0.55} />
                       </div>
                       <div className="flex flex-col items-start min-w-0 gap-0.5">
-                        <span className="text-xs font-bold truncate w-full text-right">{t.name}</span>
+                        <span className="text-xs font-bold truncate w-full text-right">
+                          {t.name}
+                        </span>
                         <span
                           className={cn(
-                            "text-micro font-mono",
-                            isActive ? "text-primary font-bold" : "text-muted-foreground"
+                            'text-micro font-mono',
+                            isActive ? 'text-primary font-bold' : 'text-muted-foreground',
                           )}
                         >
                           {t.slots}× صور
@@ -672,7 +726,7 @@ export function CollagePresetsTab({
             </div>
           </div>
         )
-      ) : presetCategory === "all" ? (
+      ) : presetCategory === 'all' ? (
         /* 🌐 عرض كافة القوالب مقسمة حسب الفئات في نمط القائمة أو الشبكة */
         <div className="space-y-3.5">
           {groupedSections.map((section) => {
@@ -685,16 +739,17 @@ export function CollagePresetsTab({
                     <SectionIcon className="w-3.5 h-3.5 text-primary" weight="duotone" />
                     <span>{section.title}</span>
                   </div>
-                  <span className="text-micro font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full font-bold" dir="ltr">
+                  <span
+                    className="text-micro font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full font-bold"
+                    dir="ltr"
+                  >
                     {section.presets.length}
                   </span>
                 </div>
 
                 {/* بطاقات القسم */}
-                {viewMode === "list" ? (
-                  <div className="space-y-1.5">
-                    {section.presets.map(renderListCard)}
-                  </div>
+                {viewMode === 'list' ? (
+                  <div className="space-y-1.5">{section.presets.map(renderListCard)}</div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     {section.presets.map(renderGridCard)}
@@ -706,8 +761,8 @@ export function CollagePresetsTab({
         </div>
       ) : (
         /* 🎴 عرض فئة محددة */
-        <div className={viewMode === "list" ? "space-y-1.5" : "grid grid-cols-2 gap-2"}>
-          {activePresetsList.map(viewMode === "list" ? renderListCard : renderGridCard)}
+        <div className={viewMode === 'list' ? 'space-y-1.5' : 'grid grid-cols-2 gap-2'}>
+          {activePresetsList.map(viewMode === 'list' ? renderListCard : renderGridCard)}
         </div>
       )}
     </div>

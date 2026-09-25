@@ -1,29 +1,19 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { toast } from "sonner";
-import {
-  Star,
-  ClockCounterClockwise,
-  TextAa,
-  Palette,
-  Shapes,
-} from "@/components/ui/icons";
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { toast } from 'sonner';
+import { Star, ClockCounterClockwise, TextAa, Palette, Shapes } from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   FluentEmptyState,
   FluentFilterChips,
   FluentSection,
   FluentSegmentedControl,
-} from "@/components/ui/blocks";
-import {
-  ARABIC_FONTS,
-  loadGoogleFont,
-  type FontOption,
-} from "@/lib/io/fonts";
-import { colorPatchFor } from "@/lib/canvas/apply-color";
-import { QUICK_SHAPES, QUICK_TEXT_PRESETS } from "./freeform-panel-constants";
+} from '@/components/ui/blocks';
+import { ARABIC_FONTS, loadGoogleFont, type FontOption } from '@/lib/io/fonts';
+import { colorPatchFor } from '@/lib/canvas/apply-color';
+import { QUICK_SHAPES, QUICK_TEXT_PRESETS } from './freeform-panel-constants';
 import {
   elementPrefKey,
   parseElementPrefKey,
@@ -32,7 +22,7 @@ import {
   readStoredList,
   toggleStoredValue,
   writeStoredList,
-} from "@/lib/local-prefs";
+} from '@/lib/local-prefs';
 
 /* ═══════════════════════════════════════════════════════════════
    المفضلة وآخر استخدام — وصول سريع لما يستخدمه المستخدم فعلاً.
@@ -40,12 +30,12 @@ import {
    واحدة، فلا يحتاج التنقل بين أربع أدوات لإعادة استخدام نفس العنصر.
    ═══════════════════════════════════════════════════════════════ */
 
-type ColorTarget = "element" | "canvas";
-type ItemFilter = "all" | "shape" | "text";
+type ColorTarget = 'element' | 'canvas';
+type ItemFilter = 'all' | 'shape' | 'text';
 
 interface LibraryItem {
   key: string;
-  kind: "shape" | "text";
+  kind: 'shape' | 'text';
   id: string;
   label: string;
   detail: string;
@@ -74,58 +64,58 @@ export function FreeformLibraryTab() {
       addTextPreset: state.addTextPreset,
       setBackgroundColor: state.setBackgroundColor,
       backgroundColor: state.backgroundColor,
-    }))
+    })),
   );
 
-  const [colorTarget, setColorTarget] = useState<ColorTarget>("element");
-  const [itemFilter, setItemFilter] = useState<ItemFilter>("all");
+  const [colorTarget, setColorTarget] = useState<ColorTarget>('element');
+  const [itemFilter, setItemFilter] = useState<ItemFilter>('all');
 
   const [favoriteFonts, setFavoriteFonts] = useState<string[]>(() =>
-    readStoredList(PREF_KEYS.favoriteFonts)
+    readStoredList(PREF_KEYS.favoriteFonts),
   );
   const [favoriteColors, setFavoriteColors] = useState<string[]>(() =>
-    readStoredList(PREF_KEYS.favoriteColors)
+    readStoredList(PREF_KEYS.favoriteColors),
   );
   const [favoriteShapes, setFavoriteShapes] = useState<string[]>(() =>
-    readStoredList(PREF_KEYS.favoriteShapes)
+    readStoredList(PREF_KEYS.favoriteShapes),
   );
   const [favoriteTextPresets, setFavoriteTextPresets] = useState<string[]>(() =>
-    readStoredList(PREF_KEYS.favoriteTextPresets)
+    readStoredList(PREF_KEYS.favoriteTextPresets),
   );
   const [recentItems, setRecentItems] = useState<string[]>(() =>
-    readStoredList(PREF_KEYS.recentItems)
+    readStoredList(PREF_KEYS.recentItems),
   );
 
   const selectedElements = useMemo(
     () => elements.filter((element) => selectedIds.includes(element.id)),
-    [elements, selectedIds]
+    [elements, selectedIds],
   );
   const selectedTexts = useMemo(
-    () => selectedElements.filter((element) => element.type === "text"),
-    [selectedElements]
+    () => selectedElements.filter((element) => element.type === 'text'),
+    [selectedElements],
   );
 
   const allItems = useMemo<LibraryItem[]>(
     () => [
       ...QUICK_SHAPES.map((shape) => ({
-        key: elementPrefKey("shape", shape.id),
-        kind: "shape" as const,
+        key: elementPrefKey('shape', shape.id),
+        kind: 'shape' as const,
         id: shape.id,
         label: shape.label,
-        detail: "شكل هندسي",
+        detail: 'شكل هندسي',
         preview: (
           <span
             className={cn(
-              "block w-4 h-4 border border-black/10 dark:border-white/20",
-              shape.shape === "ellipse" ? "rounded-full" : "rounded-sm"
+              'block w-4 h-4 border border-black/10 dark:border-white/20',
+              shape.shape === 'ellipse' ? 'rounded-full' : 'rounded-sm',
             )}
-            style={{ backgroundColor: shape.color ?? "#2563eb" }}
+            style={{ backgroundColor: shape.color ?? '#2563eb' }}
           />
         ),
       })),
       ...QUICK_TEXT_PRESETS.map((preset) => ({
-        key: elementPrefKey("text", preset.id),
-        kind: "text" as const,
+        key: elementPrefKey('text', preset.id),
+        kind: 'text' as const,
         id: preset.id,
         label: preset.label,
         detail: preset.description,
@@ -136,32 +126,34 @@ export function FreeformLibraryTab() {
         ),
       })),
     ],
-    []
+    [],
   );
 
-  const itemByKey = useMemo(
-    () => new Map(allItems.map((item) => [item.key, item])),
-    [allItems]
-  );
+  const itemByKey = useMemo(() => new Map(allItems.map((item) => [item.key, item])), [allItems]);
 
   const isFavoriteItem = useCallback(
     (item: LibraryItem) =>
-      item.kind === "shape"
+      item.kind === 'shape'
         ? favoriteShapes.includes(item.id)
         : favoriteTextPresets.includes(item.id),
-    [favoriteShapes, favoriteTextPresets]
+    [favoriteShapes, favoriteTextPresets],
   );
 
   const favorites = useMemo(() => allItems.filter(isFavoriteItem), [allItems, isFavoriteItem]);
 
   const recentEntries = useMemo(
-    () => recentItems.map(parseElementPrefKey).filter(Boolean) as { kind: "shape" | "text"; id: string }[],
-    [recentItems]
+    () =>
+      recentItems.map(parseElementPrefKey).filter(Boolean) as {
+        kind: 'shape' | 'text';
+        id: string;
+      }[],
+    [recentItems],
   );
 
   // المفضلة أولاً دائماً، ثم بقية العناصر بترتيبها الأصلي
   const visibleItems = useMemo(() => {
-    const pool = itemFilter === "all" ? allItems : allItems.filter((item) => item.kind === itemFilter);
+    const pool =
+      itemFilter === 'all' ? allItems : allItems.filter((item) => item.kind === itemFilter);
     return [...pool.filter(isFavoriteItem), ...pool.filter((item) => !isFavoriteItem(item))];
   }, [allItems, itemFilter, isFavoriteItem]);
 
@@ -170,7 +162,7 @@ export function FreeformLibraryTab() {
       favoriteFonts
         .map((id) => ARABIC_FONTS.find((font) => font.id === id))
         .filter(Boolean) as FontOption[],
-    [favoriteFonts]
+    [favoriteFonts],
   );
 
   /* ── الإجراءات ───────────────────────────────────────────── */
@@ -184,19 +176,19 @@ export function FreeformLibraryTab() {
   };
 
   const addItem = (item: LibraryItem) => {
-    if (item.kind === "shape") {
+    if (item.kind === 'shape') {
       const shape = QUICK_SHAPES.find((entry) => entry.id === item.id);
       if (!shape) return;
       addShapeElement(shape.shape, shape.svgPath);
     } else {
-      addTextPreset(item.id as (typeof QUICK_TEXT_PRESETS)[number]["id"]);
+      addTextPreset(item.id as (typeof QUICK_TEXT_PRESETS)[number]['id']);
     }
     rememberItem(item.key);
-    toast.success(`تمت إضافة ${item.label}`);
+    toast.success(`إضافة ${item.label}`);
   };
 
   const toggleItemFavorite = (item: LibraryItem) => {
-    if (item.kind === "shape") {
+    if (item.kind === 'shape') {
       setFavoriteShapes((previous) => {
         const next = toggleStoredValue(previous, item.id);
         writeStoredList(PREF_KEYS.favoriteShapes, next);
@@ -215,45 +207,45 @@ export function FreeformLibraryTab() {
     loadGoogleFont(font.family);
     writeStoredList(
       PREF_KEYS.recentFonts,
-      pushStoredRecent(readStoredList(PREF_KEYS.recentFonts), font.id)
+      pushStoredRecent(readStoredList(PREF_KEYS.recentFonts), font.id),
     );
 
     if (selectedTexts.length > 0) {
       updateElements(
-        selectedTexts.map((element) => ({ id: element.id, patch: { fontFamily: font.family } }))
+        selectedTexts.map((element) => ({ id: element.id, patch: { fontFamily: font.family } })),
       );
-      toast.success(`تم تطبيق خط «${font.arabicName}»`);
+      toast.success(`خط «${font.arabicName}»`);
       return;
     }
 
     addTextElement();
     const newId = useEditorStore.getState().selectedId;
     if (newId) updateElement(newId, { fontFamily: font.family });
-    toast.success(`أُضيف نص جديد بخط «${font.arabicName}»`);
+    toast.success(`نص جديد بخط «${font.arabicName}»`);
   };
 
   const applyColor = (color: string) => {
     writeStoredList(
       PREF_KEYS.recentColors,
-      pushStoredRecent(readStoredList(PREF_KEYS.recentColors), color.toLowerCase())
+      pushStoredRecent(readStoredList(PREF_KEYS.recentColors), color.toLowerCase()),
     );
 
-    if (colorTarget === "canvas") {
+    if (colorTarget === 'canvas') {
       setBackgroundColor(color);
-      toast.success("تم تحديث خلفية الورقة");
+      toast.success('خلفية الورقة');
       return;
     }
 
     if (selectedElements.length === 0) {
-      toast.info("لا عنصر محدد — اختر «خلفية الورقة» أو حدّد عنصراً على الكانفاس");
+      toast.info('حدّد عنصراً أو الخلفية');
       return;
     }
 
-    updateElements(selectedElements.map((element) => ({ id: element.id, patch: colorPatchFor(element, color) })));
+    updateElements(
+      selectedElements.map((element) => ({ id: element.id, patch: colorPatchFor(element, color) })),
+    );
     toast.success(
-      selectedElements.length === 1
-        ? "تم تطبيق اللون على العنصر المحدد"
-        : `تم تطبيق اللون على ${selectedElements.length} عناصر`
+      selectedElements.length === 1 ? 'لون المحدد' : `لون ${selectedElements.length} عناصر`,
     );
   };
 
@@ -264,11 +256,14 @@ export function FreeformLibraryTab() {
     setFavoriteTextPresets([]);
     setRecentItems([]);
     for (const key of Object.values(PREF_KEYS)) writeStoredList(key, []);
-    toast.success("تم تفريغ المفضلة وآخر استخدام");
+    toast.success('تفريغ المفضلة وآخر استخدام');
   };
 
   const totalFavorites =
-    favoriteFonts.length + favoriteColors.length + favoriteShapes.length + favoriteTextPresets.length;
+    favoriteFonts.length +
+    favoriteColors.length +
+    favoriteShapes.length +
+    favoriteTextPresets.length;
 
   return (
     <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
@@ -276,14 +271,14 @@ export function FreeformLibraryTab() {
       <FluentSection
         icon={<ClockCounterClockwise className="w-3.5 h-3.5" weight="duotone" />}
         title="آخر استخدام"
-        subtitle="أحدث ما أضفته أو طبّقته"
+        subtitle="الأحدث استخداماً"
         badge={recentEntries.length}
       >
         {recentEntries.length === 0 ? (
           <FluentEmptyState
             icon={<ClockCounterClockwise className="w-5 h-5" weight="duotone" />}
-            title="لا سجل استخدام بعد"
-            description="كل عنصر تضيفه من هذه اللوحة أو من أدوات الخطوط والألوان يظهر هنا"
+            title="لا سجل بعد"
+            description="يظهر هنا ما تضيفه"
           />
         ) : (
           <div className="flex flex-wrap gap-1.5">
@@ -312,7 +307,7 @@ export function FreeformLibraryTab() {
       <FluentSection
         icon={<Shapes className="w-3.5 h-3.5" weight="duotone" />}
         title="عناصر سريعة"
-        subtitle={favorites.length > 0 ? `${favorites.length} مفضلة مثبّتة في الأعلى` : "انقر للنجمة لتثبيت الأكثر استخداماً"}
+        subtitle={favorites.length > 0 ? `${favorites.length} مفضلة مثبّتة` : 'نجّم للتثبيت'}
         badge={allItems.length}
       >
         <FluentFilterChips<ItemFilter>
@@ -320,9 +315,9 @@ export function FreeformLibraryTab() {
           onChange={setItemFilter}
           layoutId="library-item-filter"
           options={[
-            { id: "all", label: "الكل", count: allItems.length },
-            { id: "shape", label: "أشكال", count: QUICK_SHAPES.length },
-            { id: "text", label: "نصوص", count: QUICK_TEXT_PRESETS.length },
+            { id: 'all', label: 'الكل', count: allItems.length },
+            { id: 'shape', label: 'أشكال', count: QUICK_SHAPES.length },
+            { id: 'text', label: 'نصوص', count: QUICK_TEXT_PRESETS.length },
           ]}
         />
 
@@ -349,16 +344,18 @@ export function FreeformLibraryTab() {
                   type="button"
                   onClick={() => toggleItemFavorite(item)}
                   aria-pressed={isFavorite}
-                  aria-label={isFavorite ? `إزالة ${item.label} من المفضلة` : `إضافة ${item.label} للمفضلة`}
+                  aria-label={
+                    isFavorite ? `إزالة ${item.label} من المفضلة` : `إضافة ${item.label} للمفضلة`
+                  }
                   className={cn(
-                    "absolute top-1.5 end-1.5 w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer",
-                    "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                    'absolute top-1.5 end-1.5 w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer',
+                    'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isFavorite
-                      ? "text-primary hover:bg-primary/10"
-                      : "text-muted-foreground/60 hover:text-foreground hover:bg-muted/70"
+                      ? 'text-primary hover:bg-primary/10'
+                      : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/70',
                   )}
                 >
-                  <Star className="w-3.5 h-3.5" weight={isFavorite ? "fill" : "regular"} />
+                  <Star className="w-3.5 h-3.5" weight={isFavorite ? 'fill' : 'regular'} />
                 </button>
               </div>
             );
@@ -370,18 +367,14 @@ export function FreeformLibraryTab() {
       <FluentSection
         icon={<TextAa className="w-3.5 h-3.5" weight="duotone" />}
         title="الخطوط المفضلة"
-        subtitle={
-          selectedTexts.length > 0
-            ? `سيُطبَّق على ${selectedTexts.length} نص محدد`
-            : "لا نص محدد — سيُضاف نص جديد"
-        }
+        subtitle={selectedTexts.length > 0 ? `${selectedTexts.length} نص محدد` : 'سيُضاف نص جديد'}
         badge={favoriteFontOptions.length}
       >
         {favoriteFontOptions.length === 0 ? (
           <FluentEmptyState
             icon={<TextAa className="w-5 h-5" weight="duotone" />}
             title="لا خطوط مفضلة"
-            description="نجّم أياً من الخطوط في «مكتبة الخطوط» ليظهر هنا"
+            description="نجّم خطاً ليظهر هنا"
           />
         ) : (
           <div className="flex flex-wrap gap-1.5">
@@ -405,7 +398,7 @@ export function FreeformLibraryTab() {
       <FluentSection
         icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
         title="الألوان المحفوظة"
-        subtitle={colorTarget === "canvas" ? "تُطبَّق على خلفية الورقة" : "تُطبَّق على العناصر المحددة"}
+        subtitle={colorTarget === 'canvas' ? 'خلفية الورقة' : 'العناصر المحددة'}
         badge={favoriteColors.length}
         action={
           totalFavorites > 0 || recentItems.length > 0 ? (
@@ -426,8 +419,8 @@ export function FreeformLibraryTab() {
           onChange={setColorTarget}
           layoutId="library-color-target"
           options={[
-            { id: "element", label: "العنصر المحدد" },
-            { id: "canvas", label: "خلفية الورقة" },
+            { id: 'element', label: 'العنصر المحدد' },
+            { id: 'canvas', label: 'خلفية الورقة' },
           ]}
         />
 
@@ -436,7 +429,7 @@ export function FreeformLibraryTab() {
             <FluentEmptyState
               icon={<Palette className="w-5 h-5" weight="duotone" />}
               title="لا ألوان محفوظة"
-              description="نجّم أي لون في «الألوان والهوية» ليصل هنا"
+              description="نجّم لوناً ليظهر هنا"
             />
           </div>
         ) : (
@@ -471,7 +464,7 @@ export function FreeformLibraryTab() {
         )}
 
         <p className="text-mini text-muted-foreground mt-2">
-          لون الورقة الحالي:{" "}
+          لون الورقة الحالي:{' '}
           <span className="font-mono" dir="ltr">
             {backgroundColor}
           </span>

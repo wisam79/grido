@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (إزالة زحمة الشريط الجانبي — 2026-09-25)
+
+- **دمج تبويبات الاستوديو 9→7:** `stickers/shapes/text` صارت تبويب `العناصر` الموحد (`rail-studio-elements`) — نفس المكون `FreeformElementsTab` بمبدّله الداخلي، مع ترحيل القيم المخزنة القديمة (`migrateLegacyStudioTab`).
+- **حذف تبويب `خلفية وحدود` من الكولاج (7→6):** كل أدواته مكررة 1:1 في العمود الأيمن (مسافات/إطار/قص في `CollageSettings`، خلفية الورقة في `GeneralSettings`، خلفية الخانة في `SlotProperties`) — حُذف الملف نهائيا بلا بديل مكرر.
+- **تفعيل مسارات العمل:** شريحة `workflow-slice` (`quick`/`studio` محفوظة في `grido_workflow_mode`) + فلترة حقيقية في `getToolsForWorkflow` (السريع يخفي تبويب العناصر) + أمران في لوحة الأوامر (Ctrl+K → مسار العمل) — بلا تحويل تلقائي لوضع الكانفاس (حماية من مسح عناصر الحر P1-19).
+- **تحسين تصميم تبويب الورق والقص:** حذف صفوف خطوط القص وسماكتها ولونها المكررة مع `CollageSettings` (قاعدة عدم التكرار) مع زر تنقل للوحة الخصائص، وتحويل الإرشادات لشبكة مفاتيح 2×2 بعداد مفعّلة، وترقيم جدولي لعدد النسخ.
+- **اختزال نصوص الشريط الجانبي (الوضعين):** تقصير كل العناوين والتلميحات والأزرار والتنبيهات في تبويبات الكولاج والاستوديو (descriptions ≤4 كلمات، tooltips ≤3، صيغ سلبية قصيرة بلا تم/تمت) — بلا مساس بـ aria-labels والمنطق. ضُبطت 7 توقعات اختبارية على النصوص الجديدة، وأُصلح عنوانا `إضافة/إعادة إضافة` المتبادلان في المفضلة، وحُذف ملف يتيم مكسور (`collage-layers-tab` غير مربوط ويستورد حزمة محذوفة). الأرقام الحاكمة: Vitest **84 ملف/691 حالة (690 ناجحة + 1 متخطّاة)**.
+
+### Added (قرارات محمية لجلسة الصقل — 2026-09-25)
+
+- **قسم `D-1..D-5` في `docs/features-tracker.md`:** غير موقع عمدا + Wails v3 فوق v2 + E2E محاكي v3 + BUGS_REPORT أرشيف + صقل أولا (PSD/VDP/ICC خارج النطاق). أي تدقيق قادم ممنوع من نقضها بلا موافقة المالك.
+
+### Changed (صقل الاعتماديات والألوان — 2026-09-25)
+
+- **توحيد `@types/react/dom` على 19** مع `react 19.2.8` (`frontend/package.json`) — `typecheck` أخضر بصفر أخطاء.
+- **حذف `onnxruntime-web`** (صفر استخدام في `src` — توفير ~7-20MB معلنة) **وإضافة `culori ^4.0.2` + `@types/culori`** لتناغمات الألوان.
+- **مولّد تناغمات `buildColorHarmony` في `palette-extract.ts`** (Complementary/Analogous/Triadic عبر OKLCH — يغلق الفجوة M-3) + 3 اختبارات في `canvas-rendering-core.test.ts` (9/9 ✅).
+- **تفكيك `export-image.ts` (1094 سطرا → Barrel + 8 وحدات <350 سطرا)** بلا تغيير سلوكي: `primitives/color/watermark/canvas-collage/canvas-fitted/canvas/slot/bleed` — `typecheck` ✅ `lint` ✅ كامل Vitest 84 ملف/687 حالة ✅.
+
+### Fixed (توضيح تاريخية BUGS_REPORT — 2026-09-25)
+
+- **بانر أرشيف أعلى `BUGS_REPORT.md`:** التقرير تاريخي ومعظم بنوده مُصلحة (`ai_service.go:331`، `db.go:408`) — المرجع الحالي `docs/features-tracker.md` + `docs/reviews/08-code-quality-audit-2026-09-25.md`. بلا تغيير تاريخي (Append-only per `docs/DOCUMENTATION_MAP.md:112`).
+
 ## [v1.9.1] - 2026-09-25
 
 ### Added (تصدير PDF المتجهي لورقة الطباعة — 2026-09-25)

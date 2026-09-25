@@ -10,7 +10,11 @@ test.describe('Studio Panels & Workspace Tool Rail E2E', () => {
 
   test('Switch studio rail tools and toggle Zen mode', async ({ page }) => {
     // Ensure in Single / Freeform mode
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
     // 1. Layers tool
@@ -19,6 +23,16 @@ test.describe('Studio Panels & Workspace Tool Rail E2E', () => {
       await layersBtn.click();
       await expect(page.locator('#canvas-area')).toBeVisible();
     }
+
+    // 1b. Elements hub (merged stickers/shapes/text) with internal switcher
+    const elementsBtn = page.getByTestId('rail-studio-elements');
+    if (await elementsBtn.isVisible()) {
+      await elementsBtn.click();
+      await expect(page.locator('#canvas-area')).toBeVisible();
+    }
+    await expect(page.getByTestId('rail-studio-stickers')).toHaveCount(0);
+    await expect(page.getByTestId('rail-studio-shapes')).toHaveCount(0);
+    await expect(page.getByTestId('rail-studio-text')).toHaveCount(0);
 
     // 2. Fonts tool
     const fontsBtn = page.getByTestId('rail-studio-fonts');
@@ -55,7 +69,10 @@ test.describe('Studio Panels & Workspace Tool Rail E2E', () => {
     const launcherBtn = page.getByTestId('rail-tool-launcher');
     if (await launcherBtn.isVisible()) {
       await launcherBtn.click();
-      const popover = page.getByRole('dialog').or(page.locator('[data-radix-popper-content-wrapper]')).first();
+      const popover = page
+        .getByRole('dialog')
+        .or(page.locator('[data-radix-popper-content-wrapper]'))
+        .first();
       await expect(popover).toBeVisible();
 
       // Dismiss by pressing Escape

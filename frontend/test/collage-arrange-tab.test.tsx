@@ -88,7 +88,7 @@ describe('CollageArrangeTab — اللفّ الجماعي', () => {
     setupGrid();
     renderTab();
 
-    const rotateCw = screen.getByText('لفّ 90° يميناً');
+    const rotateCw = screen.getByText('لفّ يميناً');
     fireEvent.click(rotateCw);
     expect(store().slots.every((s) => (s.rotation ?? 0) === 90)).toBe(true);
 
@@ -100,7 +100,7 @@ describe('CollageArrangeTab — اللفّ الجماعي', () => {
     setupGrid();
     renderTab();
 
-    fireEvent.click(screen.getByText('لفّ 90° يساراً'));
+    fireEvent.click(screen.getByText('لفّ يساراً'));
     expect(store().slots.every((s) => (s.rotation ?? 0) === 270)).toBe(true);
   });
 
@@ -109,7 +109,7 @@ describe('CollageArrangeTab — اللفّ الجماعي', () => {
     renderTab();
 
     const before = store().history.length;
-    fireEvent.click(screen.getByText('لفّ 90° يميناً'));
+    fireEvent.click(screen.getByText('لفّ يميناً'));
     expect(store().history.length).toBe(before + 1);
   });
 
@@ -129,7 +129,7 @@ describe('CollageArrangeTab — إعادة الترتيب', () => {
     setupGrid();
     renderTab();
 
-    fireEvent.click(screen.getByText('تبديل الصفوف بالأعمدة'));
+    fireEvent.click(screen.getByText('تبديل المحاور'));
 
     // A B     A C
     // C D  ⇒  B D

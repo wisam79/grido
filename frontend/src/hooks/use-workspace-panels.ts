@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { CollageTab, FreeformTab } from '@/lib/workspace-tools';
-import { isCollageTab, isStudioTab } from '@/lib/workspace-tools';
+import { isCollageTab, isStudioTab, migrateLegacyStudioTab } from '@/lib/workspace-tools';
 
 export type WorkspacePanel = 'templates' | 'properties' | null;
 export type WorkspaceBreakpoint = 'compact' | 'standard' | 'wide';
@@ -43,7 +43,7 @@ function getBreakpoint(width: number): WorkspaceBreakpoint {
 
 export function useWorkspacePanels() {
   const [windowWidth, setWindowWidth] = useState<number>(() =>
-    typeof window !== 'undefined' ? window.innerWidth : 1280
+    typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
 
   const breakpoint = useMemo(() => getBreakpoint(windowWidth), [windowWidth]);
@@ -63,9 +63,10 @@ export function useWorkspacePanels() {
   // Active studio tab (layers, elements, presets)
   const [activeStudioTab, setActiveStudioTabState] = useState<FreeformTab>(() => {
     const saved = getStoredPreferences().lastActiveStudioTab;
-    // التخزين المحلي قد يحمل تبويباً حُذف من السجل — نسقط على الافتراضي بدل
-    // تبويب غير موجود لا يمكن الوصول إليه من الشريط
-    return isStudioTab(saved) ? saved : 'layers';
+    // ترحيل التبويبات المدمجة (stickers/shapes/text → elements) ثم السقوط
+    // على الافتراضي إن كان المخزن يحمل تبويباً غير موجود
+    const migrated = migrateLegacyStudioTab(saved) ?? saved;
+    return isStudioTab(migrated) ? migrated : 'layers';
   });
 
   // Active collage tab (custom grid, presets, freeform)
@@ -143,7 +144,7 @@ export function useWorkspacePanels() {
         saveStoredPreferences({ lastActivePanel: 'templates' });
       }
     },
-    [breakpoint, isTemplatesDrawerOpen, activeStudioTab, activePanel]
+    [breakpoint, isTemplatesDrawerOpen, activeStudioTab, activePanel],
   );
 
   const setActiveCollageTab = useCallback((tab: CollageTab) => {
@@ -181,7 +182,7 @@ export function useWorkspacePanels() {
         saveStoredPreferences({ lastActivePanel: 'templates' });
       }
     },
-    [breakpoint, isTemplatesDrawerOpen, activeCollageTab, activePanel]
+    [breakpoint, isTemplatesDrawerOpen, activeCollageTab, activePanel],
   );
 
   // Toggle or switch panel
@@ -210,7 +211,7 @@ export function useWorkspacePanels() {
         return next;
       });
     },
-    [breakpoint]
+    [breakpoint],
   );
 
   const openPanel = useCallback(
@@ -232,7 +233,7 @@ export function useWorkspacePanels() {
 
       setActivePanel(panel);
     },
-    [breakpoint, setActivePanel]
+    [breakpoint, setActivePanel],
   );
 
   const closeActivePanel = useCallback(() => {

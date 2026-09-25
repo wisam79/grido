@@ -15,12 +15,17 @@ import {
   CommandShortcut,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import type { CollageTab, FreeformTab, WorkspaceCommand, WorkspaceTool } from '@/lib/workspace-tools';
+import type {
+  CollageTab,
+  FreeformTab,
+  WorkspaceCommand,
+  WorkspaceTool,
+} from '@/lib/workspace-tools';
 import {
   WORKSPACE_COMMANDS,
   dispatchWorkspaceCommand,
   getStateCommandGroups,
-  getToolsForMode,
+  getToolsForWorkflow,
   groupCommands,
   groupTools,
   isCollageTab,
@@ -93,11 +98,11 @@ const RailToolButton = React.memo(function RailToolButton({
             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
             isActive
               ? 'text-primary'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
           )}
         >
           {/* حبة النشط — Fluent 2 مسطحة: تعبئة زرقاء هادئة وحدود رقيقة بلا تدرج */}
-          {            isActive && (
+          {isActive && (
             <motion.span
               layoutId={pillLayoutId}
               className="absolute inset-0 bg-primary/10 dark:bg-primary/15 rounded-lg border border-primary/25"
@@ -106,7 +111,10 @@ const RailToolButton = React.memo(function RailToolButton({
           )}
 
           {/* الأيقونة فوق الإطار بلا z-index سالب — يرتفع فوق الشرائح بقيمته الصريحة */}
-          <tool.icon className="size-[18px] relative z-10" weight={isActive ? 'duotone' : 'regular'} />
+          <tool.icon
+            className="size-[18px] relative z-10"
+            weight={isActive ? 'duotone' : 'regular'}
+          />
 
           {showBadge && (
             <span
@@ -187,9 +195,7 @@ const PaletteStateItem = React.memo(function PaletteStateItem({
     >
       <span className="min-w-0 flex-1">
         <span className="block font-bold truncate">{title}</span>
-        <span className="block text-mini text-muted-foreground truncate">
-          {subtitle}
-        </span>
+        <span className="block text-mini text-muted-foreground truncate">{subtitle}</span>
       </span>
       {shortcut && <CommandShortcut>{shortcut}</CommandShortcut>}
     </CommandItem>
@@ -202,7 +208,11 @@ const PaletteStateItem = React.memo(function PaletteStateItem({
  * تغيّر حقيقي، وبلا إعادة تصيير للشريط مع كل تغيير زوم واللوحة مغلقة
  * (المكوّن لا يُركَّب إلا واللوحة مفتوحة).
  */
-const PaletteStateCommands = React.memo(function PaletteStateCommands({ onAfterRun }: { onAfterRun: () => void }) {
+const PaletteStateCommands = React.memo(function PaletteStateCommands({
+  onAfterRun,
+}: {
+  onAfterRun: () => void;
+}) {
   const stateInput = useEditorStore(useShallow(selectStateCommandInput));
   const groups = useMemo(() => getStateCommandGroups(stateInput), [stateInput]);
 
@@ -255,18 +265,14 @@ const PaletteToolItem = React.memo(function PaletteToolItem({
       <span
         className={cn(
           'w-7 h-7 shrink-0 rounded-lg flex items-center justify-center',
-          isActive
-            ? 'bg-primary/20 text-primary'
-            : 'bg-muted/70 text-muted-foreground'
+          isActive ? 'bg-primary/20 text-primary' : 'bg-muted/70 text-muted-foreground',
         )}
       >
         <ToolIcon className="w-4 h-4" weight="duotone" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-bold truncate">{tool.title}</span>
-        <span className="block text-mini text-muted-foreground truncate">
-          {tool.subtitle}
-        </span>
+        <span className="block text-mini text-muted-foreground truncate">{tool.subtitle}</span>
       </span>
       {shortcut && <CommandShortcut>{shortcut}</CommandShortcut>}
     </CommandItem>
@@ -290,9 +296,7 @@ const PaletteGlobalCommandItem = React.memo(function PaletteGlobalCommandItem({
     >
       <span className="min-w-0 flex-1">
         <span className="block font-bold truncate">{command.title}</span>
-        <span className="block text-mini text-muted-foreground truncate">
-          {command.subtitle}
-        </span>
+        <span className="block text-mini text-muted-foreground truncate">{command.subtitle}</span>
       </span>
       {command.shortcut && <CommandShortcut>{command.shortcut}</CommandShortcut>}
     </CommandItem>
@@ -308,12 +312,13 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   onToggleZenMode,
   className,
 }: WorkspacePanelRailProps) {
-  const { mode, elementsCount, collageTemplate } = useEditorStore(
+  const { mode, workflow, elementsCount, collageTemplate } = useEditorStore(
     useShallow((state) => ({
       mode: state.mode,
+      workflow: state.workflow,
       elementsCount: state.elements.length,
       collageTemplate: state.collageTemplate,
-    }))
+    })),
   );
 
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
@@ -327,10 +332,10 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
     return () => window.removeEventListener('grido:open-tool-launcher', openLauncher);
   }, []);
 
-  // قائمة الأدوات تتبع وضع الكانفاس (`mode`) مباشرة
+  // قائمة الأدوات تتبع وضع الكانفاس (`mode`) ومسار العمل (`workflow`) معاً —
+  // مسار الإنتاج السريع يخفي تبويب العناصر (شريحة workflow-slice)
   const isCollage = mode === 'collage';
-  const tools = useMemo(() => getToolsForMode(mode), [mode]);
-
+  const tools = useMemo(() => getToolsForWorkflow(mode, workflow), [mode, workflow]);
 
   const isCustomGridInUse = collageTemplate?.id === 'collage-custom';
   const isFreeformInUse =
@@ -343,12 +348,16 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   // ترتيب الأداة في قائمتها الظاهرة — هو نفسه المستخدم في Alt+الرقم في الشريط واللوحة معاً
   const toolIndexById = useMemo(
     () => new Map<string, number>(tools.map((tool, index): [string, number] => [tool.id, index])),
-    [tools]
+    [tools],
   );
   const toolIndex = (tool: WorkspaceTool<string>) => toolIndexById.get(tool.id) ?? 0;
 
   const isToolInUse = (tool: WorkspaceTool<string>) =>
-    tool.badge === 'collage-grid' ? isCustomGridInUse : tool.badge === 'collage-freeform' ? isFreeformInUse : undefined;
+    tool.badge === 'collage-grid'
+      ? isCustomGridInUse
+      : tool.badge === 'collage-freeform'
+        ? isFreeformInUse
+        : undefined;
 
   // مذكّرات مستقرّة — تُمرَّر لصفوف memo فلا يعاد بناؤها مع كل تصيير للأب
   const closeLauncher = useCallback(() => setIsLauncherOpen(false), []);
@@ -357,14 +366,17 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
     setIsLauncherOpen(false);
   }, []);
 
-  const selectTool = useCallback((tool: WorkspaceTool<string>) => {
-    if (isCollage) {
-      if (isCollageTab(tool.id)) onSelectCollageTab?.(tool.id);
-    } else if (isStudioTab(tool.id)) {
-      onSelectStudioTab?.(tool.id);
-    }
-    setIsLauncherOpen(false);
-  }, [isCollage, onSelectCollageTab, onSelectStudioTab]);
+  const selectTool = useCallback(
+    (tool: WorkspaceTool<string>) => {
+      if (isCollage) {
+        if (isCollageTab(tool.id)) onSelectCollageTab?.(tool.id);
+      } else if (isStudioTab(tool.id)) {
+        onSelectStudioTab?.(tool.id);
+      }
+      setIsLauncherOpen(false);
+    },
+    [isCollage, onSelectCollageTab, onSelectStudioTab],
+  );
 
   return (
     <aside
@@ -372,7 +384,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
       aria-label="شريط الأدوات والألواح"
       className={cn(
         'w-12 shrink-0 h-full flex flex-col items-center justify-between py-2 border-r border-border/80 bg-sidebar/95 backdrop-blur-xl z-20 select-none font-cairo shadow-2xs fluent-specular overflow-hidden relative',
-        className
+        className,
       )}
     >
       {/* خط ضوئي رقيق على الحافة اليمنى — لمسة Fluent عميقة */}
@@ -434,7 +446,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isLauncherOpen
                       ? 'text-primary bg-primary/10 border border-primary/25'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
                   )}
                 >
                   <SquaresFour
@@ -462,11 +474,11 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             dir="rtl"
             className="w-[380px] p-0 rounded-2xl border fluent-specular font-cairo overflow-hidden"
           >
-            <Command
-              data-testid="command-palette"
-              loop
-            >
-              <CommandInput placeholder="ابحث عن أداة أو أمر ..." aria-label="البحث في لوحة الأوامر" />
+            <Command data-testid="command-palette" loop>
+              <CommandInput
+                placeholder="ابحث عن أداة أو أمر ..."
+                aria-label="البحث في لوحة الأوامر"
+              />
               <CommandList className="max-h-[60vh]">
                 <CommandEmpty>لا توجد نتائج مطابقة</CommandEmpty>
 
@@ -476,7 +488,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                     <PaletteToolItem
                       key={tool.id}
                       tool={tool}
-                      shortcut={toolShortcut(index)}
+                      shortcut={toolShortcut(toolIndex(tool))}
                       isActive={activeTab === tool.id}
                       onSelectTool={selectTool}
                     />
@@ -520,7 +532,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                 isZenMode
                   ? 'text-primary bg-primary/10 border border-primary/25'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/60'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
               )}
             >
               {isZenMode ? (

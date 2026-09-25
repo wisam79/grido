@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useCallback } from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
-import { toast } from "sonner";
+import React, { useState, useMemo, useCallback } from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+import { toast } from 'sonner';
 import {
   IdentificationCard,
   Printer,
@@ -9,37 +9,31 @@ import {
   Check,
   FrameCorners,
   ArrowsClockwise,
-} from "@/components/ui/icons";
-import { CANVAS_SIZE_PRESETS, CanvasSizePreset } from "./freeform-panel-constants";
-import { cn } from "@/lib/utils";
-import { FluentFilterChips } from "@/components/ui/blocks";
-import { canvasMm } from "@/lib/canvas/units";
+} from '@/components/ui/icons';
+import { CANVAS_SIZE_PRESETS, CanvasSizePreset } from './freeform-panel-constants';
+import { cn } from '@/lib/utils';
+import { FluentFilterChips } from '@/components/ui/blocks';
+import { canvasMm } from '@/lib/canvas/units';
 
 export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
-  const {
-    canvasWidth,
-    canvasHeight,
-    setCanvasSize,
-    printSettings,
-    template,
-  } = useEditorStore(
+  const { canvasWidth, canvasHeight, setCanvasSize, printSettings, template } = useEditorStore(
     useShallow((state) => ({
       canvasWidth: state.canvasWidth,
       canvasHeight: state.canvasHeight,
       setCanvasSize: state.setCanvasSize,
       printSettings: state.printSettings,
       template: state.template,
-    }))
+    })),
   );
 
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   const currentDpi = template?.dpi || printSettings?.dpi || 300;
   const { wMM: currentW_MM, hMM: currentH_MM } = canvasMm(canvasWidth, canvasHeight, currentDpi);
 
   // تصفية المقاسات حسب الفئة المختارة
   const filteredPresets = useMemo(() => {
-    if (selectedCategory === "all") return CANVAS_SIZE_PRESETS;
+    if (selectedCategory === 'all') return CANVAS_SIZE_PRESETS;
     return CANVAS_SIZE_PRESETS.filter((p) => p.category === selectedCategory);
   }, [selectedCategory]);
 
@@ -57,21 +51,21 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
         (canvasWidth === preset.heightPx && canvasHeight === preset.widthPx)
       );
     },
-    [currentW_MM, currentH_MM, canvasWidth, canvasHeight]
+    [currentW_MM, currentH_MM, canvasWidth, canvasHeight],
   );
 
   const handleSelectPreset = useCallback(
     (preset: CanvasSizePreset) => {
       setCanvasSize(preset.widthPx, preset.heightPx);
-      toast.success(`تم ضبط الكانفاس: ${preset.name} (${preset.tag})`);
+      toast.success(`كانفاس: ${preset.name} (${preset.tag})`);
     },
-    [setCanvasSize]
+    [setCanvasSize],
   );
 
   // تبديل اتجاه الورقة (أفقي / رأسي)
   const handleToggleOrientation = () => {
     setCanvasSize(canvasHeight, canvasWidth);
-    toast.success("تم تبديل الاتجاه");
+    toast.success(canvasHeight >= canvasWidth ? 'أفقي' : 'رأسي');
   };
 
   return (
@@ -97,7 +91,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
           title="تبديل الاتجاه"
         >
           <ArrowsClockwise className="w-3 h-3" />
-          <span>{canvasWidth >= canvasHeight ? "أفقي" : "رأسي"}</span>
+          <span>{canvasWidth >= canvasHeight ? 'أفقي' : 'رأسي'}</span>
         </button>
       </div>
 
@@ -109,10 +103,10 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
         size="sm"
         className="w-full justify-between"
         options={[
-          { id: "all", label: "الكل" },
-          { id: "id", label: "وثائق", icon: <IdentificationCard /> },
-          { id: "print", label: "مطبوعات", icon: <Printer /> },
-          { id: "social", label: "وسائط", icon: <DeviceMobile /> },
+          { id: 'all', label: 'الكل' },
+          { id: 'id', label: 'وثائق', icon: <IdentificationCard /> },
+          { id: 'print', label: 'مطبوعات', icon: <Printer /> },
+          { id: 'social', label: 'وسائط', icon: <DeviceMobile /> },
         ]}
       />
 
@@ -128,29 +122,37 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
               onClick={() => handleSelectPreset(preset)}
               title={`${preset.name} - ${preset.tag}`}
               className={cn(
-                "group w-full h-9 px-2.5 rounded-md border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2 select-none active:scale-[0.99] text-right",
+                'group w-full h-9 px-2.5 rounded-md border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2 select-none active:scale-[0.99] text-right',
                 active
-                  ? "bg-card border-border/90 text-foreground shadow-xs ring-1 ring-primary/40 font-bold"
-                  : "bg-card/40 hover:bg-accent/60 border-border/50 hover:border-primary/40 text-foreground/90"
+                  ? 'bg-card border-border/90 text-foreground shadow-xs ring-1 ring-primary/40 font-bold'
+                  : 'bg-card/40 hover:bg-accent/60 border-border/50 hover:border-primary/40 text-foreground/90',
               )}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 {/* مصغر أيقونة الفئة الدلالية */}
                 <div className="w-5 h-5 rounded-md bg-muted/70 flex items-center justify-center shrink-0 border border-border/40">
-                  {preset.category === "id" ? (
-                    <IdentificationCard className={cn("w-3 h-3", active ? "text-primary" : "text-muted-foreground")} />
-                  ) : preset.category === "social" ? (
-                    <DeviceMobile className={cn("w-3 h-3", active ? "text-primary" : "text-muted-foreground")} />
+                  {preset.category === 'id' ? (
+                    <IdentificationCard
+                      className={cn('w-3 h-3', active ? 'text-primary' : 'text-muted-foreground')}
+                    />
+                  ) : preset.category === 'social' ? (
+                    <DeviceMobile
+                      className={cn('w-3 h-3', active ? 'text-primary' : 'text-muted-foreground')}
+                    />
                   ) : (
-                    <Printer className={cn("w-3 h-3", active ? "text-primary" : "text-muted-foreground")} />
+                    <Printer
+                      className={cn('w-3 h-3', active ? 'text-primary' : 'text-muted-foreground')}
+                    />
                   )}
                 </div>
 
                 {/* اسم المقاس كاملاً بدون أي اقتطاع */}
                 <span
                   className={cn(
-                    "text-xs truncate transition-colors",
-                    active ? "text-primary font-bold" : "text-foreground font-medium group-hover:text-primary"
+                    'text-xs truncate transition-colors',
+                    active
+                      ? 'text-primary font-bold'
+                      : 'text-foreground font-medium group-hover:text-primary',
                   )}
                 >
                   {preset.name}

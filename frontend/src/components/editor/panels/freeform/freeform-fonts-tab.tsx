@@ -1,22 +1,18 @@
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { MagnifyingGlass, Star, TextAa, X } from "@/components/ui/icons";
+import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { MagnifyingGlass, Star, TextAa, X } from '@/components/ui/icons';
 import {
   ARABIC_FONTS,
   FONT_CATEGORIES,
   loadGoogleFont,
   type FontCategory,
   type FontOption,
-} from "@/lib/io/fonts";
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import {
-  FluentEmptyState,
-  FluentFilterChips,
-  FluentSection,
-} from "@/components/ui/blocks";
+} from '@/lib/io/fonts';
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { FluentEmptyState, FluentFilterChips, FluentSection } from '@/components/ui/blocks';
 import {
   DEFAULT_FAVORITE_FONTS,
   PREF_KEYS,
@@ -24,7 +20,7 @@ import {
   readStoredList,
   toggleStoredValue,
   writeStoredList,
-} from "@/lib/local-prefs";
+} from '@/lib/local-prefs';
 
 /* ═══════════════════════════════════════════════════════════════
    مكتبة الخطوط العربية — تصفّح ومعاينة حيّة وتطبيق مباشر.
@@ -32,7 +28,7 @@ import {
    مُحدد يُضاف نص جديد بالخط المختار فلا ينتهي النقر بلا أثر.
    ═══════════════════════════════════════════════════════════════ */
 
-const PREVIEW_FALLBACK = "أبجد هوز حطي كلمن سعفص ١٢٣";
+const PREVIEW_FALLBACK = 'أبجد هوز حطي كلمن سعفص ١٢٣';
 
 export function FreeformFontsTab() {
   const { elements, selectedIds, updateElements, updateElement, addTextElement } = useEditorStore(
@@ -42,21 +38,21 @@ export function FreeformFontsTab() {
       updateElements: state.updateElements,
       updateElement: state.updateElement,
       addTextElement: state.addTextElement,
-    }))
+    })),
   );
 
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<FontCategory>("all");
-  const [previewText, setPreviewText] = useState("");
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState<FontCategory>('all');
+  const [previewText, setPreviewText] = useState('');
   const [favorites, setFavorites] = useState<string[]>(() =>
-    readStoredList(PREF_KEYS.favoriteFonts, DEFAULT_FAVORITE_FONTS)
+    readStoredList(PREF_KEYS.favoriteFonts, DEFAULT_FAVORITE_FONTS),
   );
 
   const previewSample = previewText.trim() || PREVIEW_FALLBACK;
 
   const selectedTexts = useMemo(
-    () => elements.filter((element) => element.type === "text" && selectedIds.includes(element.id)),
-    [elements, selectedIds]
+    () => elements.filter((element) => element.type === 'text' && selectedIds.includes(element.id)),
+    [elements, selectedIds],
   );
 
   const categoryCounts = useMemo(() => {
@@ -70,7 +66,7 @@ export function FreeformFontsTab() {
   const visibleFonts = useMemo(() => {
     const query = search.trim().toLowerCase();
     return ARABIC_FONTS.filter((font) => {
-      if (category !== "all" && font.category !== category) return false;
+      if (category !== 'all' && font.category !== category) return false;
       if (!query) return true;
       return (
         font.arabicName.includes(query) ||
@@ -81,14 +77,17 @@ export function FreeformFontsTab() {
   }, [search, category]);
 
   const favoriteFonts = useMemo(
-    () => favorites.map((id) => ARABIC_FONTS.find((font) => font.id === id)).filter(Boolean) as FontOption[],
-    [favorites]
+    () =>
+      favorites
+        .map((id) => ARABIC_FONTS.find((font) => font.id === id))
+        .filter(Boolean) as FontOption[],
+    [favorites],
   );
 
   const rememberRecent = (fontId: string) => {
     writeStoredList(
       PREF_KEYS.recentFonts,
-      pushStoredRecent(readStoredList(PREF_KEYS.recentFonts), fontId)
+      pushStoredRecent(readStoredList(PREF_KEYS.recentFonts), fontId),
     );
   };
 
@@ -98,12 +97,12 @@ export function FreeformFontsTab() {
 
     if (selectedTexts.length > 0) {
       updateElements(
-        selectedTexts.map((element) => ({ id: element.id, patch: { fontFamily: font.family } }))
+        selectedTexts.map((element) => ({ id: element.id, patch: { fontFamily: font.family } })),
       );
       toast.success(
         selectedTexts.length === 1
-          ? `تم تطبيق خط «${font.arabicName}»`
-          : `تم تطبيق خط «${font.arabicName}» على ${selectedTexts.length} نصوص`
+          ? `خط «${font.arabicName}»`
+          : `خط «${font.arabicName}» على ${selectedTexts.length}`,
       );
       return;
     }
@@ -111,7 +110,7 @@ export function FreeformFontsTab() {
     addTextElement();
     const newId = useEditorStore.getState().selectedId;
     if (newId) updateElement(newId, { fontFamily: font.family });
-    toast.success(`أُضيف نص جديد بخط «${font.arabicName}»`);
+    toast.success(`نص جديد بخط «${font.arabicName}»`);
   };
 
   const toggleFavorite = (fontId: string) => {
@@ -127,7 +126,7 @@ export function FreeformFontsTab() {
       <FluentSection
         icon={<MagnifyingGlass className="w-3.5 h-3.5" weight="duotone" />}
         title="البحث والتصنيف"
-        subtitle={`${ARABIC_FONTS.length} خط عربي متاح`}
+        subtitle={`${ARABIC_FONTS.length} خطاً عربياً`}
       >
         <div className="relative">
           <MagnifyingGlass
@@ -144,7 +143,7 @@ export function FreeformFontsTab() {
           {search.length > 0 && (
             <button
               type="button"
-              onClick={() => setSearch("")}
+              onClick={() => setSearch('')}
               aria-label="مسح البحث"
               className="absolute end-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
@@ -161,7 +160,7 @@ export function FreeformFontsTab() {
           options={FONT_CATEGORIES.map((item) => ({
             id: item.id,
             label: item.name,
-            count: item.id === "all" ? ARABIC_FONTS.length : (categoryCounts.get(item.id) ?? 0),
+            count: item.id === 'all' ? ARABIC_FONTS.length : (categoryCounts.get(item.id) ?? 0),
           }))}
         />
 
@@ -187,7 +186,7 @@ export function FreeformFontsTab() {
         <FluentSection
           icon={<Star className="w-3.5 h-3.5" weight="fill" />}
           title="المفضلة"
-          subtitle="انقر للنسخ على المحدد"
+          subtitle="انسخ على المحدد"
           badge={favoriteFonts.length}
         >
           <div className="flex flex-wrap gap-1.5">
@@ -210,22 +209,18 @@ export function FreeformFontsTab() {
       <FluentSection
         icon={<TextAa className="w-3.5 h-3.5" weight="duotone" />}
         title="كل الخطوط"
-        subtitle={
-          selectedTexts.length > 0
-            ? `سيُطبَّق على ${selectedTexts.length} نص محدد`
-            : "لا يوجد نص محدد — سيُضاف نص جديد"
-        }
+        subtitle={selectedTexts.length > 0 ? `${selectedTexts.length} نص محدد` : 'سيُضاف نص جديد'}
         badge={visibleFonts.length}
       >
         {visibleFonts.length === 0 ? (
           <FluentEmptyState
             icon={<MagnifyingGlass className="w-5 h-5" weight="duotone" />}
             title="لا خطوط مطابقة"
-            description="جرّب كلمة أخرى أو اختر تصنيفاً مختلفاً"
+            description="غيّر الكلمة أو التصنيف"
             actionLabel="مسح الفلاتر"
             onAction={() => {
-              setSearch("");
-              setCategory("all");
+              setSearch('');
+              setCategory('all');
             }}
           />
         ) : (
@@ -254,23 +249,27 @@ export function FreeformFontsTab() {
                       {previewSample}
                     </span>
                     <span className="block text-mini text-muted-foreground/70 truncate mt-0.5">
-                      {font.isOffline ? "مضمّن أوفلاين" : "يُحمَّل عند الاستخدام"}
+                      {font.isOffline ? 'مضمّن أوفلاين' : 'يُحمَّل عند الاستخدام'}
                     </span>
                   </button>
                   <button
                     type="button"
                     onClick={() => toggleFavorite(font.id)}
                     aria-pressed={isFavorite}
-                    aria-label={isFavorite ? `إزالة ${font.arabicName} من المفضلة` : `إضافة ${font.arabicName} للمفضلة`}
-                    className={cn(
-                      "absolute top-1.5 end-1.5 w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer",
-                      "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                    aria-label={
                       isFavorite
-                        ? "text-primary hover:bg-primary/10"
-                        : "text-muted-foreground/60 hover:text-foreground hover:bg-muted/70"
+                        ? `إزالة ${font.arabicName} من المفضلة`
+                        : `إضافة ${font.arabicName} للمفضلة`
+                    }
+                    className={cn(
+                      'absolute top-1.5 end-1.5 w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer',
+                      'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                      isFavorite
+                        ? 'text-primary hover:bg-primary/10'
+                        : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/70',
                     )}
                   >
-                    <Star className="w-3.5 h-3.5" weight={isFavorite ? "fill" : "regular"} />
+                    <Star className="w-3.5 h-3.5" weight={isFavorite ? 'fill' : 'regular'} />
                   </button>
                 </div>
               );

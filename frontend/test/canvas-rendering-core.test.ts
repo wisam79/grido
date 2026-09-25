@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { quantizePixels } from '../src/lib/canvas/palette-extract';
-import { ensureTextStrokeFilter, getTextStrokeFilterId } from '../src/lib/canvas/text-stroke-filter';
+import { quantizePixels, buildColorHarmony } from '../src/lib/canvas/palette-extract';
+import {
+  ensureTextStrokeFilter,
+  getTextStrokeFilterId,
+} from '../src/lib/canvas/text-stroke-filter';
 import { withHiddenOverlays } from '../src/lib/canvas/konva-export-utils';
 
 describe('Canvas Core Rendering & Image Algorithms', () => {
@@ -8,10 +11,22 @@ describe('Canvas Core Rendering & Image Algorithms', () => {
     it('Extracts dominant saturated colors and ignores transparent pixels', () => {
       // 4 pixels: 2 pure red, 1 green, 1 fully transparent blue
       const pixels = new Uint8ClampedArray([
-        255, 0, 0, 255,     // Red
-        255, 0, 0, 255,     // Red
-        0, 255, 0, 255,     // Green
-        0, 0, 255, 0,       // Transparent Blue (alpha < 125 should be skipped)
+        255,
+        0,
+        0,
+        255, // Red
+        255,
+        0,
+        0,
+        255, // Red
+        0,
+        255,
+        0,
+        255, // Green
+        0,
+        0,
+        255,
+        0, // Transparent Blue (alpha < 125 should be skipped)
       ]);
 
       const palette = quantizePixels(pixels, 2);
@@ -23,12 +38,34 @@ describe('Canvas Core Rendering & Image Algorithms', () => {
     });
 
     it('Handles empty or all-transparent arrays gracefully', () => {
-      const transparentPixels = new Uint8ClampedArray([
-        255, 255, 255, 50,
-        0, 0, 0, 0,
-      ]);
+      const transparentPixels = new Uint8ClampedArray([255, 255, 255, 50, 0, 0, 0, 0]);
       const palette = quantizePixels(transparentPixels, 4);
       expect(palette).toEqual([]);
+    });
+  });
+
+  describe('Color Harmonies (buildColorHarmony)', () => {
+    it('Generates complementary pair with valid hex output', () => {
+      const pair = buildColorHarmony('#c0392b', 'complementary');
+      expect(pair).toHaveLength(2);
+      pair.forEach((c) => expect(c).toMatch(/^#[0-9a-f]{6}$/i));
+      expect(pair[0].toLowerCase()).toBe('#c0392b');
+      expect(pair[1].toLowerCase()).not.toBe('#c0392b');
+    });
+
+    it('Generates analogous and triadic sets with base included', () => {
+      const analogous = buildColorHarmony('#2980b9', 'analogous');
+      expect(analogous).toHaveLength(3);
+      expect(analogous[1].toLowerCase()).toBe('#2980b9');
+
+      const triadic = buildColorHarmony('#2980b9', 'triadic');
+      expect(triadic).toHaveLength(3);
+      expect(triadic[0].toLowerCase()).toBe('#2980b9');
+      expect(new Set(triadic.map((c) => c.toLowerCase())).size).toBe(3);
+    });
+
+    it('Falls back to base color for invalid input', () => {
+      expect(buildColorHarmony('not-a-color', 'complementary')).toEqual(['not-a-color']);
     });
   });
 
@@ -102,7 +139,7 @@ describe('Canvas Core Rendering & Image Algorithms', () => {
       await expect(
         withHiddenOverlays(mockStage, 2, () => {
           throw new Error('Export canvas failed');
-        })
+        }),
       ).rejects.toThrow('Export canvas failed');
 
       expect(mockTransformer.hide).toHaveBeenCalledTimes(1);

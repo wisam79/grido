@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import React, { useState } from 'react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import {
   GridFour,
   Plus,
@@ -14,11 +14,16 @@ import {
   Scissors,
   Check,
   CheckCircle,
-} from "@/components/ui/icons";
-import { PhotoGridType, GridAlignment, getGridLimits, getPhotoDimensions } from "./collage-grid-math";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { FluentSection } from "@/components/ui/blocks";
+} from '@/components/ui/icons';
+import {
+  PhotoGridType,
+  GridAlignment,
+  getGridLimits,
+  getPhotoDimensions,
+} from './collage-grid-math';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { FluentSection } from '@/components/ui/blocks';
 
 /* ═══════════════════════════════════════════════════════════════
    تبويب الشبكة — تصميم Fluent 2 مريح ومتخصص حصراً في
@@ -27,25 +32,30 @@ import { FluentSection } from "@/components/ui/blocks";
 
 /** حلقة التركيز المزدوجة الموحّدة (Dual Focus Ring) — المعيار الإلزامي */
 const FOCUS_RING =
-  "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none";
+  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 
 /** زر عداد مدمج (h-7 = مقياس Compact Controls) */
 const COUNTER_BTN = cn(
-  "w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center shadow-2xs cursor-pointer transition-colors",
-  "hover:bg-primary/10 hover:text-primary hover:border-primary/40 active:bg-primary/20",
-  "disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted/60 disabled:hover:text-muted-foreground disabled:hover:border-border/60",
-  FOCUS_RING
+  'w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center shadow-2xs cursor-pointer transition-colors',
+  'hover:bg-primary/10 hover:text-primary hover:border-primary/40 active:bg-primary/20',
+  'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-muted/60 disabled:hover:text-muted-foreground disabled:hover:border-border/60',
+  FOCUS_RING,
 );
 
 /** مقاس الوثيقة كرسم مصغر متناسق الأبعاد بصرياً */
 function DocumentPresetGraphic({ type, active }: { type: string; active: boolean }) {
   const activeBorder = active
-    ? "border-primary bg-primary/15 text-primary"
-    : "border-border/80 bg-muted/50 text-muted-foreground/70";
+    ? 'border-primary bg-primary/15 text-primary'
+    : 'border-border/80 bg-muted/50 text-muted-foreground/70';
 
-  if (type === "stretch") {
+  if (type === 'stretch') {
     return (
-      <div className={cn("w-7 h-7 rounded-md border border-dashed flex items-center justify-center transition-colors", activeBorder)}>
+      <div
+        className={cn(
+          'w-7 h-7 rounded-md border border-dashed flex items-center justify-center transition-colors',
+          activeBorder,
+        )}
+      >
         <CornersOut className="w-3.5 h-3.5" weight="bold" />
       </div>
     );
@@ -53,18 +63,22 @@ function DocumentPresetGraphic({ type, active }: { type: string; active: boolean
 
   // تمثيل نسبي دقيق لشكل وأبعاد كل وثيقة رسمية
   const ratioStyles: Record<string, string> = {
-    visa: "w-5 h-5 rounded-md", // مربع 1:1
-    "iq-national-id": "w-4 h-6 rounded-md", // 35:45 عمودي
-    "iq-civil-id": "w-4 h-6 rounded-md", // 32:40 عمودي
-    "iq-general-id": "w-4 h-6 rounded-md", // 40:60 عمودي مستطيل
-    "iq-transactions": "w-4 h-5 rounded-md", // 30:40 مدمج
+    visa: 'w-5 h-5 rounded-md', // مربع 1:1
+    'iq-national-id': 'w-4 h-6 rounded-md', // 35:45 عمودي
+    'iq-civil-id': 'w-4 h-6 rounded-md', // 32:40 عمودي
+    'iq-general-id': 'w-4 h-6 rounded-md', // 40:60 عمودي مستطيل
+    'iq-transactions': 'w-4 h-5 rounded-md', // 30:40 مدمج
   };
-  const styleClass = ratioStyles[type] || "w-4 h-6 rounded-md";
+  const styleClass = ratioStyles[type] || 'w-4 h-6 rounded-md';
 
   return (
     <div
       aria-hidden="true"
-      className={cn(styleClass, "border flex flex-col items-center justify-center p-0.5 transition-colors relative overflow-hidden", activeBorder)}
+      className={cn(
+        styleClass,
+        'border flex flex-col items-center justify-center p-0.5 transition-colors relative overflow-hidden',
+        activeBorder,
+      )}
     >
       <div className="w-2 h-2 rounded-full border border-current opacity-85 mt-0.5 shrink-0" />
       <div className="w-3 h-1.5 rounded-t-full bg-current opacity-60 -mb-0.5 shrink-0" />
@@ -73,33 +87,33 @@ function DocumentPresetGraphic({ type, active }: { type: string; active: boolean
 }
 
 const ALIGNMENT_MATRIX: GridAlignment[][] = [
-  ["top-left", "top-center", "top-right"],
-  ["center-left", "center", "center-right"],
-  ["bottom-left", "bottom-center", "bottom-right"],
+  ['top-left', 'top-center', 'top-right'],
+  ['center-left', 'center', 'center-right'],
+  ['bottom-left', 'bottom-center', 'bottom-right'],
 ];
 
 const ALIGNMENT_LABELS: Record<GridAlignment, string> = {
-  "top-left": "أعلى اليسار",
-  "top-center": "أعلى الوسط",
-  "top-right": "أعلى اليمين",
-  "center-left": "منتصف اليسار",
-  "center": "توسيط",
-  "center-right": "منتصف اليمين",
-  "bottom-left": "أسفل اليسار",
-  "bottom-center": "أسفل الوسط",
-  "bottom-right": "أسفل اليمين",
+  'top-left': 'أعلى اليسار',
+  'top-center': 'أعلى الوسط',
+  'top-right': 'أعلى اليمين',
+  'center-left': 'منتصف اليسار',
+  center: 'توسيط',
+  'center-right': 'منتصف اليمين',
+  'bottom-left': 'أسفل اليسار',
+  'bottom-center': 'أسفل الوسط',
+  'bottom-right': 'أسفل اليمين',
 };
 
 /** ترتيب المسح الشبكي لتسهيل تنقل لوحة المفاتيح في مصفوفة 3×3 */
 const ALIGNMENT_ORDER: GridAlignment[] = ALIGNMENT_MATRIX.flat();
 
 const PHOTO_TYPE_OPTIONS = [
-  { value: "iq-national-id", label: "وطنية", dim: "35×45", sub: "مم" },
-  { value: "iq-civil-id", label: "أحوال", dim: "32×40", sub: "مم" },
-  { value: "visa", label: "فيزا", dim: "50×50", sub: "مم" },
-  { value: "iq-general-id", label: "عامة", dim: "40×60", sub: "مم" },
-  { value: "iq-transactions", label: "معاملات", dim: "30×40", sub: "مم" },
-  { value: "stretch", label: "تمدد حر", dim: "ملء الحيز", sub: "" },
+  { value: 'iq-national-id', label: 'وطنية', dim: '35×45', sub: 'مم' },
+  { value: 'iq-civil-id', label: 'أحوال', dim: '32×40', sub: 'مم' },
+  { value: 'visa', label: 'فيزا', dim: '50×50', sub: 'مم' },
+  { value: 'iq-general-id', label: 'عامة', dim: '40×60', sub: 'مم' },
+  { value: 'iq-transactions', label: 'معاملات', dim: '30×40', sub: 'مم' },
+  { value: 'stretch', label: 'تمدد حر', dim: 'ملء الحيز', sub: '' },
 ] as const;
 
 export interface CollageCustomGridTabProps {
@@ -139,18 +153,18 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   onSaveCurrentAsTemplate,
 }: CollageCustomGridTabProps) {
   const [showSaveForm, setShowSaveForm] = useState(false);
-  const [saveName, setSaveName] = useState("");
+  const [saveName, setSaveName] = useState('');
 
   const { maxRows, maxCols } = getGridLimits(photoType, canvasWidth, canvasHeight, storedDpi);
   const maxPhotos = maxRows * maxCols;
   const totalPhotos = rows * cols;
   const isMaxFill = rows === maxRows && cols === maxCols;
-  const isCornerStrip = rows === 1 && cols === Math.min(4, maxCols) && gridAlign === "top-left";
+  const isCornerStrip = rows === 1 && cols === Math.min(4, maxCols) && gridAlign === 'top-left';
 
   // نسبة تغطية الورقة: التمدد الحر يملأ الورقة دائماً 100%،
   // والمقاسات الفيزيائية تُحسب من مجموع مساحات الصور مقابل مساحة الورقة.
   const coverage = (() => {
-    if (photoType === "stretch") return 100;
+    if (photoType === 'stretch') return 100;
     const { wMM, hMM } = getPhotoDimensions(photoType);
     const paperWmm = (canvasWidth / storedDpi) * 25.4;
     const paperHmm = (canvasHeight / storedDpi) * 25.4;
@@ -165,17 +179,17 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   };
 
   const handleCornerStrip = () => {
-    onApply(1, Math.min(4, maxCols), photoType, "top-left");
+    onApply(1, Math.min(4, maxCols), photoType, 'top-left');
   };
 
   const handleSave = () => {
     if (!saveName.trim()) {
-      toast.error("يرجى إدخال اسم للقالب");
+      toast.error('أدخل اسم القالب');
       return;
     }
     onSaveCurrentAsTemplate(saveName);
     setShowSaveForm(false);
-    setSaveName("");
+    setSaveName('');
   };
 
   /** تنقل لوحة المفاتيح داخل مصفوفة المحاذاة (Roving Tabindex) */
@@ -194,8 +208,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   };
 
   const sizeBadge =
-    photoType === "stretch"
-      ? "تلقائي"
+    photoType === 'stretch'
+      ? 'تلقائي'
       : `${getPhotoDimensions(photoType).wMM}×${getPhotoDimensions(photoType).hMM} مم`;
 
   return (
@@ -206,7 +220,11 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         title="أبعاد الشبكة"
         subtitle={
           <>
-            الحد الأقصى <span className="font-mono font-bold text-foreground/80" dir="ltr">{maxRows}×{maxCols}</span> صور ({maxPhotos})
+            الحد الأقصى{' '}
+            <span className="font-mono font-bold text-foreground/80" dir="ltr">
+              {maxRows}×{maxCols}
+            </span>{' '}
+            صور ({maxPhotos})
           </>
         }
         collapsible
@@ -214,9 +232,11 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           <div className="flex items-center gap-1.5 select-none">
             <span
               className="h-5 text-2xs font-bold px-2 rounded-full bg-primary/10 text-primary border border-primary/25 flex items-center gap-1"
-              title="إجمالي الصور في الشبكة الحالية"
+              title="إجمالي صور الشبكة"
             >
-              <span className="font-mono" dir="ltr">{totalPhotos}</span>
+              <span className="font-mono" dir="ltr">
+                {totalPhotos}
+              </span>
               <span>صور</span>
             </span>
             <span
@@ -234,9 +254,15 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/60">
             <div className="flex items-center justify-between gap-1 text-mini font-bold text-muted-foreground select-none">
               <span>الصفوف</span>
-              <span className="text-2xs font-mono font-normal" title="الحد الأقصى للصفوف">أقصى {maxRows}</span>
+              <span className="text-2xs font-mono font-normal" title="الحد الأقصى للصفوف">
+                أقصى {maxRows}
+              </span>
             </div>
-            <div className="flex items-center justify-between gap-1" role="group" aria-label="عدد الصفوف">
+            <div
+              className="flex items-center justify-between gap-1"
+              role="group"
+              aria-label="عدد الصفوف"
+            >
               <button
                 type="button"
                 disabled={rows <= 1}
@@ -257,7 +283,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 type="button"
                 disabled={rows >= maxRows}
                 onClick={() => onRowsChange(Math.min(maxRows, rows + 1))}
-                title={`إضافة صف (الحد الأقصى ${maxRows})`}
+                title="إضافة صف"
                 aria-label="زيادة عدد الصفوف"
                 className={COUNTER_BTN}
               >
@@ -270,9 +296,15 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/60">
             <div className="flex items-center justify-between gap-1 text-mini font-bold text-muted-foreground select-none">
               <span>الأعمدة</span>
-              <span className="text-2xs font-mono font-normal" title="الحد الأقصى للأعمدة">أقصى {maxCols}</span>
+              <span className="text-2xs font-mono font-normal" title="الحد الأقصى للأعمدة">
+                أقصى {maxCols}
+              </span>
             </div>
-            <div className="flex items-center justify-between gap-1" role="group" aria-label="عدد الأعمدة">
+            <div
+              className="flex items-center justify-between gap-1"
+              role="group"
+              aria-label="عدد الأعمدة"
+            >
               <button
                 type="button"
                 disabled={cols <= 1}
@@ -293,7 +325,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 type="button"
                 disabled={cols >= maxCols}
                 onClick={() => onColsChange(Math.min(maxCols, cols + 1))}
-                title={`إضافة عمود (الحد الأقصى ${maxCols})`}
+                title="إضافة عمود"
                 aria-label="زيادة عدد الأعمدة"
                 className={COUNTER_BTN}
               >
@@ -308,25 +340,31 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           <button
             type="button"
             onClick={handleFillSheet}
-            title={`ملء الورقة (${maxPhotos} صورة) — يُطبَّق فوراً`}
+            title="ملء الورقة فوراً"
             className={cn(
-              "h-7 px-2.5 rounded-md text-mini font-sans font-medium transition-colors cursor-pointer select-none flex items-center justify-between gap-1.5 border",
+              'h-7 px-2.5 rounded-md text-mini font-sans font-medium transition-colors cursor-pointer select-none flex items-center justify-between gap-1.5 border',
               isMaxFill
-                ? "bg-card text-foreground border-border/80 shadow-2xs font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-card/60 border-transparent",
-              FOCUS_RING
+                ? 'bg-card text-foreground border-border/80 shadow-2xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-card/60 border-transparent',
+              FOCUS_RING,
             )}
           >
             <span className="flex items-center gap-1.5 min-w-0 font-sans whitespace-nowrap">
-              <CornersOut className={cn("w-3.5 h-3.5 shrink-0", isMaxFill ? "text-primary" : "text-muted-foreground")} weight="bold" />
+              <CornersOut
+                className={cn(
+                  'w-3.5 h-3.5 shrink-0',
+                  isMaxFill ? 'text-primary' : 'text-muted-foreground',
+                )}
+                weight="bold"
+              />
               <span>ملء الورقة</span>
             </span>
             <span
               className={cn(
-                "text-2xs font-mono px-1.5 py-0.5 rounded-sm border shrink-0",
+                'text-2xs font-mono px-1.5 py-0.5 rounded-sm border shrink-0',
                 isMaxFill
-                  ? "bg-muted text-foreground border-border/70 font-bold"
-                  : "bg-muted/50 text-muted-foreground border-border/40"
+                  ? 'bg-muted text-foreground border-border/70 font-bold'
+                  : 'bg-muted/50 text-muted-foreground border-border/40',
               )}
             >
               {maxPhotos}
@@ -336,25 +374,31 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           <button
             type="button"
             onClick={handleCornerStrip}
-            title={`صف واحد بأربع صور في أعلى اليسار (${Math.min(4, maxCols)} صور) — يُطبَّق فوراً`}
+            title="صف بأربع صور"
             className={cn(
-              "h-7 px-2.5 rounded-md text-mini font-sans font-medium transition-colors cursor-pointer select-none flex items-center justify-between gap-1.5 border",
+              'h-7 px-2.5 rounded-md text-mini font-sans font-medium transition-colors cursor-pointer select-none flex items-center justify-between gap-1.5 border',
               isCornerStrip
-                ? "bg-card text-foreground border-border/80 shadow-2xs font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-card/60 border-transparent",
-              FOCUS_RING
+                ? 'bg-card text-foreground border-border/80 shadow-2xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-card/60 border-transparent',
+              FOCUS_RING,
             )}
           >
             <span className="flex items-center gap-1.5 min-w-0 font-sans whitespace-nowrap">
-              <Rows className={cn("w-3.5 h-3.5 shrink-0", isCornerStrip ? "text-primary" : "text-muted-foreground")} weight="bold" />
+              <Rows
+                className={cn(
+                  'w-3.5 h-3.5 shrink-0',
+                  isCornerStrip ? 'text-primary' : 'text-muted-foreground',
+                )}
+                weight="bold"
+              />
               <span>شريط علوي</span>
             </span>
             <span
               className={cn(
-                "text-2xs font-mono px-1.5 py-0.5 rounded-sm border shrink-0",
+                'text-2xs font-mono px-1.5 py-0.5 rounded-sm border shrink-0',
                 isCornerStrip
-                  ? "bg-muted text-foreground border-border/70 font-bold"
-                  : "bg-muted/50 text-muted-foreground border-border/40"
+                  ? 'bg-muted text-foreground border-border/70 font-bold'
+                  : 'bg-muted/50 text-muted-foreground border-border/40',
               )}
             >
               {Math.min(4, maxCols)}
@@ -370,7 +414,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         collapsible
         action={
           <span className="h-5 text-2xs font-bold font-mono px-2 rounded-full bg-primary/10 text-primary border border-primary/25 flex items-center select-none">
-            {photoType === "stretch" ? "تلقائي" : sizeBadge}
+            {photoType === 'stretch' ? 'تلقائي' : sizeBadge}
           </span>
         }
       >
@@ -385,22 +429,29 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 title={`${opt.label} — ${opt.dim}`}
                 onClick={() => onPhotoTypeChange(opt.value as PhotoGridType)}
                 className={cn(
-                  "h-8 px-2 rounded-md border font-sans transition-colors cursor-pointer select-none flex items-center gap-2 text-right",
+                  'h-8 px-2 rounded-md border font-sans transition-colors cursor-pointer select-none flex items-center gap-2 text-right',
                   isActive
-                    ? "border-primary bg-primary/10 shadow-2xs"
-                    : "bg-background/80 border-border/60 hover:bg-muted/50 hover:border-primary/40",
-                  FOCUS_RING
+                    ? 'border-primary bg-primary/10 shadow-2xs'
+                    : 'bg-background/80 border-border/60 hover:bg-muted/50 hover:border-primary/40',
+                  FOCUS_RING,
                 )}
               >
                 <span className="w-7 h-7 rounded-md bg-muted/50 border border-border/50 flex items-center justify-center shrink-0">
                   <DocumentPresetGraphic type={opt.value} active={isActive} />
                 </span>
                 <span className="min-w-0 flex-1 leading-tight text-right font-sans">
-                  <span className={cn("block text-xs truncate", isActive ? "text-primary font-semibold" : "text-foreground font-medium")}>
+                  <span
+                    className={cn(
+                      'block text-xs truncate',
+                      isActive ? 'text-primary font-semibold' : 'text-foreground font-medium',
+                    )}
+                  >
                     {opt.label}
                   </span>
                   <span className="flex items-center gap-1 text-micro text-muted-foreground font-mono mt-0.5">
-                    <span dir="ltr" className="text-foreground/75">{opt.dim}</span>
+                    <span dir="ltr" className="text-foreground/75">
+                      {opt.dim}
+                    </span>
                     {opt.sub && <span>{opt.sub}</span>}
                   </span>
                 </span>
@@ -413,7 +464,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
       </FluentSection>
 
       {/* ═══ بطاقة 3: المحاذاة على الورقة (تظهر فقط عند تثبيت المقاس) ═══ */}
-      {photoType !== "stretch" && (
+      {photoType !== 'stretch' && (
         <FluentSection
           icon={<Crosshair className="w-3.5 h-3.5" weight="duotone" />}
           title="المحاذاة على الورقة"
@@ -443,22 +494,22 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                       onKeyDown={(e) => handleAlignKeyDown(e, alignId)}
                       title={ALIGNMENT_LABELS[alignId]}
                       className={cn(
-                        "relative flex items-center justify-center rounded-md transition-colors cursor-pointer hover:bg-primary/10",
-                        FOCUS_RING
+                        'relative flex items-center justify-center rounded-md transition-colors cursor-pointer hover:bg-primary/10',
+                        FOCUS_RING,
                       )}
                     >
                       <span
                         aria-hidden="true"
                         className={cn(
-                          "rounded-full transition-colors duration-150",
+                          'rounded-full transition-colors duration-150',
                           isActive
-                            ? "w-3 h-3 bg-primary shadow-xs ring-3 ring-primary/30"
-                            : "w-2 h-2 bg-muted-foreground/50 border border-border/40 group-hover:bg-primary"
+                            ? 'w-3 h-3 bg-primary shadow-xs ring-3 ring-primary/30'
+                            : 'w-2 h-2 bg-muted-foreground/50 border border-border/40 group-hover:bg-primary',
                         )}
                       />
                     </button>
                   );
-                })
+                }),
               )}
             </div>
 
@@ -466,14 +517,14 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
             <div className="flex flex-col gap-2 flex-1 min-w-0">
               <button
                 type="button"
-                aria-pressed={gridAlign === "top-left"}
-                onClick={() => onGridAlignChange("top-left")}
+                aria-pressed={gridAlign === 'top-left'}
+                onClick={() => onGridAlignChange('top-left')}
                 className={cn(
-                  "h-8 px-2.5 rounded-md text-xs font-semibold flex items-center justify-between gap-2 border cursor-pointer select-none transition-colors",
-                  gridAlign === "top-left"
-                    ? "bg-primary/10 border-primary/60 text-primary"
-                    : "bg-card/60 border-border/60 text-foreground/80 hover:bg-muted hover:border-border",
-                  FOCUS_RING
+                  'h-8 px-2.5 rounded-md text-xs font-semibold flex items-center justify-between gap-2 border cursor-pointer select-none transition-colors',
+                  gridAlign === 'top-left'
+                    ? 'bg-primary/10 border-primary/60 text-primary'
+                    : 'bg-card/60 border-border/60 text-foreground/80 hover:bg-muted hover:border-border',
+                  FOCUS_RING,
                 )}
               >
                 <span className="flex items-center gap-2 min-w-0">
@@ -485,14 +536,14 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
 
               <button
                 type="button"
-                aria-pressed={gridAlign === "center"}
-                onClick={() => onGridAlignChange("center")}
+                aria-pressed={gridAlign === 'center'}
+                onClick={() => onGridAlignChange('center')}
                 className={cn(
-                  "h-8 px-2.5 rounded-md text-xs font-semibold flex items-center justify-between gap-2 border cursor-pointer select-none transition-colors",
-                  gridAlign === "center"
-                    ? "bg-primary/10 border-primary/60 text-primary"
-                    : "bg-card/60 border-border/60 text-foreground/80 hover:bg-muted hover:border-border",
-                  FOCUS_RING
+                  'h-8 px-2.5 rounded-md text-xs font-semibold flex items-center justify-between gap-2 border cursor-pointer select-none transition-colors',
+                  gridAlign === 'center'
+                    ? 'bg-primary/10 border-primary/60 text-primary'
+                    : 'bg-card/60 border-border/60 text-foreground/80 hover:bg-muted hover:border-border',
+                  FOCUS_RING,
                 )}
               >
                 <span className="flex items-center gap-2 min-w-0">
@@ -512,24 +563,26 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           <div className="flex items-center gap-2">
             <Button
               type="button"
-              variant={isCustomActive ? "outline" : "default"}
+              variant={isCustomActive ? 'outline' : 'default'}
               className="flex-1"
               onClick={() => onApply(rows, cols, photoType, gridAlign)}
-              title={isCustomActive ? "الشبكة مطبقة على الكانفس — إعادة التطبيق" : "تطبيق الشبكة على الكانفس"}
+              title={isCustomActive ? 'إعادة تطبيق الشبكة' : 'تطبيق الشبكة'}
             >
               {isCustomActive ? (
                 <CheckCircle className="w-4 h-4 text-primary" weight="bold" />
               ) : (
                 <GridFour className="w-4 h-4" weight="bold" />
               )}
-              <span>{isCustomActive ? "الشبكة مطبقة" : "تطبيق الشبكة"}</span>
+              <span>{isCustomActive ? 'الشبكة مطبقة' : 'تطبيق الشبكة'}</span>
             </Button>
 
             <Button
               type="button"
               variant="outline"
               onClick={() => {
-                setSaveName(`شبكة ${rows}×${cols} — ${getPhotoDimensions(photoType).label.split(" ")[0]}`);
+                setSaveName(
+                  `شبكة ${rows}×${cols} — ${getPhotoDimensions(photoType).label.split(' ')[0]}`,
+                );
                 setShowSaveForm(true);
               }}
               title="حفظ في المكتبة"
@@ -544,7 +597,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
               type="text"
               value={saveName}
               onChange={(e) => setSaveName(e.target.value)}
-              placeholder="اسم القالب، مثال: شيت البطاقة الوطنية"
+              placeholder="اسم القالب"
               aria-label="اسم القالب"
               className="flex-1 text-right font-cairo"
             />

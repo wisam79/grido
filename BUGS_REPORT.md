@@ -1,6 +1,11 @@
 # 📋 تقرير تدقيق العيوب الشامل لمشروع Grido Studio
 ## Full Project Comprehensive Bugs & Architecture Audit Report
 
+> **تنبيه تاريخي (2026-09-25): هذا التقرير أرشيف تاريخي — لا يُستخدم للتقييم الحالي.**
+> معظم بنوده الحرجة مُصلحة ومثبتة بالكود (`ai_service.go:331` بـ `check_only=true` فقط، `db.go:408` يرجع خطأً عند فساد autosave).
+> المرجع الحالي للحالة: `docs/features-tracker.md` + `docs/reviews/08-code-quality-audit-2026-09-25.md` + `docs/DOCUMENTATION_MAP.md`.
+> القاعدة الحاكمة (`DOCUMENTATION_MAP.md:112`): إلحاق وتصحيح مؤرَّخ فقط — يُمنع حذف التاريخ أو إعادة كتابته.
+
 **تاريخ التدقيق:** سبتمبر 2026  
 **نطاق التدقيق:** المشروع بالكامل من A إلى Z (Go Backend, Konva Canvas, Zustand State, Microsoft Fluent 2 UI/UX, Build & Cloud AI)  
 **المنهجية:** تدقيق متعدد الوكلاء (Multi-Agent Swarm Audit) شمل 5 وكلاء متخصصين بموجب قواعد `AGENTS.md` ومهارات المشروع الثمانية.

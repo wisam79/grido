@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
+import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import {
   Images,
   FolderOpen,
@@ -9,26 +9,26 @@ import {
   Rows,
   Columns,
   ArrowsClockwise,
-} from "@/components/ui/icons";
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+import { Button } from '@/components/ui/button';
 import {
   FluentSection,
   FluentSettingRow,
   FluentSegmentedControl,
   FluentEmptyState,
-} from "@/components/ui/blocks";
-import { Switch } from "@/components/ui/switch";
-import { openImageFileDialog, openDirectoryImageDialog } from "@/lib/io/file-dialog-utils";
+} from '@/components/ui/blocks';
+import { Switch } from '@/components/ui/switch';
+import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
 
 /* ═══════════════════════════════════════════════════════════════
    معالج التعبئة التلقائية — يوزّع صوراً مختارة (أو مجلداً كاملاً)
    على خانات الشبكة بترتيب مضبوط، بنداء واحد يُسجّل في التراجع مرة واحدة.
    ═══════════════════════════════════════════════════════════════ */
 
-type FillMode = "empty" | "all";
-type FillOrder = "row" | "column";
+type FillMode = 'empty' | 'all';
+type FillOrder = 'row' | 'column';
 
 export function CollageAutofillTab() {
   const { slots, setSlotImagesBatch, clearSlots, canvasWidth, canvasHeight } = useEditorStore(
@@ -38,12 +38,12 @@ export function CollageAutofillTab() {
       clearSlots: state.clearSlots,
       canvasWidth: state.canvasWidth,
       canvasHeight: state.canvasHeight,
-    }))
+    })),
   );
 
   const [images, setImages] = useState<string[]>([]);
-  const [mode, setMode] = useState<FillMode>("empty");
-  const [order, setOrder] = useState<FillOrder>("row");
+  const [mode, setMode] = useState<FillMode>('empty');
+  const [order, setOrder] = useState<FillOrder>('row');
   const [repeat, setRepeat] = useState(true);
   const [shuffle, setShuffle] = useState(false);
   const [isPicking, setIsPicking] = useState(false);
@@ -54,7 +54,7 @@ export function CollageAutofillTab() {
   /** ترتيب الخانات: صف بصف (يمين→يسار) أو عمود بعمود (أعلى→أسفل) */
   const orderedSlots = useMemo(() => {
     const byCell = [...slots].sort((a, b) => a.cellIndex - b.cellIndex);
-    if (order === "row") return byCell;
+    if (order === 'row') return byCell;
     return [...byCell].sort((a, b) => {
       const columnDelta = a.x - b.x;
       return Math.abs(columnDelta) > 0.001 ? columnDelta : a.y - b.y;
@@ -62,20 +62,22 @@ export function CollageAutofillTab() {
   }, [slots, order]);
 
   const targets = useMemo(
-    () => (mode === "empty" ? orderedSlots.filter((slot) => !slot.imageSrc) : orderedSlots),
-    [orderedSlots, mode]
+    () => (mode === 'empty' ? orderedSlots.filter((slot) => !slot.imageSrc) : orderedSlots),
+    [orderedSlots, mode],
   );
 
   const pickImages = async (fromFolder: boolean) => {
     setIsPicking(true);
     try {
-      const picked = fromFolder ? await openDirectoryImageDialog() : await openImageFileDialog(true);
+      const picked = fromFolder
+        ? await openDirectoryImageDialog()
+        : await openImageFileDialog(true);
       if (picked.length === 0) return;
       setImages((prev) => [...prev, ...picked]);
-      toast.success(`تم إضافة ${picked.length} صورة`);
+      toast.success(`أُضيف ${picked.length} صورة`);
     } catch (error) {
       console.error(error);
-      toast.error("فشل اختيار الصور");
+      toast.error('فشل اختيار الصور');
     } finally {
       setIsPicking(false);
     }
@@ -83,11 +85,11 @@ export function CollageAutofillTab() {
 
   const distribute = () => {
     if (images.length === 0) {
-      toast.error("اختر صوراً أولاً");
+      toast.error('اختر صوراً أولاً');
       return;
     }
     if (targets.length === 0) {
-      toast.info("لا توجد خانات فارغة — بدّل الوضع إلى «كل الخانات»");
+      toast.info('لا فارغة — بدّل لكل الخانات');
       return;
     }
 
@@ -106,7 +108,7 @@ export function CollageAutofillTab() {
 
     setSlotImagesBatch(assignments, assignments[assignments.length - 1].src);
     toast.success(
-      `تم توزيع ${assignments.length} صورة${repeat && images.length < targets.length ? " (مع تكرار)" : ""}`
+      `وُزعت ${assignments.length} صورة${repeat && images.length < targets.length ? ' (مع تكرار)' : ''}`,
     );
   };
 
@@ -116,7 +118,7 @@ export function CollageAutofillTab() {
       <FluentSection
         icon={<Images className="w-3.5 h-3.5" weight="duotone" />}
         title="مصدر الصور"
-        subtitle={images.length > 0 ? `${images.length} صورة جاهزة` : "لم تُختَر صور بعد"}
+        subtitle={images.length > 0 ? `${images.length} صورة جاهزة` : 'لم تُختَر صور بعد'}
         collapsible
       >
         <div className="grid grid-cols-2 gap-1.5">
@@ -135,7 +137,7 @@ export function CollageAutofillTab() {
             variant="outline"
             onClick={() => pickImages(true)}
             disabled={isPicking}
-            title="استيراد كل صور مجلد"
+            title="استيراد مجلد صور"
           >
             <FolderOpen className="w-4 h-4 text-primary" weight="bold" />
             <span>مجلد كامل</span>
@@ -192,8 +194,8 @@ export function CollageAutofillTab() {
               size="sm"
               className="p-0.5 border-0 h-8"
               options={[
-                { id: "empty", label: "الفارغة فقط" },
-                { id: "all", label: "كل الخانات" },
+                { id: 'empty', label: 'الفارغة فقط' },
+                { id: 'all', label: 'كل الخانات' },
               ]}
             />
           }
@@ -211,16 +213,16 @@ export function CollageAutofillTab() {
               className="p-0.5 border-0 h-8"
               options={[
                 {
-                  id: "row",
-                  label: "صفوف",
+                  id: 'row',
+                  label: 'صفوف',
                   icon: <Rows className="w-4 h-4" weight="duotone" />,
-                  tooltip: "صف بصف من الأعلى",
+                  tooltip: 'صف بصف',
                 },
                 {
-                  id: "column",
-                  label: "أعمدة",
+                  id: 'column',
+                  label: 'أعمدة',
                   icon: <Columns className="w-4 h-4" weight="duotone" />,
-                  tooltip: "عمود بعمود من اليمين",
+                  tooltip: 'عمود بعمود',
                 },
               ]}
             />
@@ -229,28 +231,31 @@ export function CollageAutofillTab() {
 
         <FluentSettingRow
           label="تكرار الصور"
-          description="إن قلت الصور عن الخانات"
-          control={
-            <Switch checked={repeat} onCheckedChange={setRepeat} aria-label="تكرار الصور" />
-          }
+          description="عند نقص الصور"
+          control={<Switch checked={repeat} onCheckedChange={setRepeat} aria-label="تكرار الصور" />}
         />
 
         <FluentSettingRow
           label="خلط عشوائي"
-          description="ترتيب مختلف في كل مرة"
+          description="ترتيب مختلف كل مرة"
           control={
             <Switch checked={shuffle} onCheckedChange={setShuffle} aria-label="خلط عشوائي" />
           }
         />
 
         <div className="flex items-center gap-2 pt-0.5">
-          <Button type="button" className="flex-1" onClick={distribute} disabled={images.length === 0}>
+          <Button
+            type="button"
+            className="flex-1"
+            onClick={distribute}
+            disabled={images.length === 0}
+          >
             {shuffle ? (
               <Shuffle className="w-4 h-4" weight="bold" />
             ) : (
               <GridFour className="w-4 h-4" weight="bold" />
             )}
-            <span>توزيع على {targets.length} خانة</span>
+            <span>وزّع على {targets.length}</span>
           </Button>
           {filledCount > 0 && (
             <Button
@@ -259,9 +264,9 @@ export function CollageAutofillTab() {
               size="icon"
               onClick={() => {
                 clearSlots();
-                toast.success("تم إفراغ الخانات");
+                toast.success('أُفرغت الخانات');
               }}
-              title="إفراغ كل الخانات"
+              title="إفراغ الخانات"
               aria-label="إفراغ كل الخانات"
             >
               <ArrowsClockwise className="w-4 h-4" />
@@ -274,7 +279,7 @@ export function CollageAutofillTab() {
         <FluentEmptyState
           icon={<GridFour className="w-8 h-8 text-muted-foreground/60" weight="duotone" />}
           title="لا توجد شبكة"
-          description="حدّد تخطيط الشبكة أولاً من أداة «شبكة الكولاج»."
+          description="حدّد تخطيط الشبكة أولاً"
         />
       )}
     </div>

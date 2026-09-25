@@ -19,7 +19,7 @@ describe('CollagePresetsTab Component Suite', () => {
     render(<CollagePresetsTab {...defaultProps} />);
 
     expect(screen.getByPlaceholderText(/بحث في القوالب/)).toBeInTheDocument();
-    expect(screen.getByText(/كافة الأطقم والقوالب/)).toBeInTheDocument();
+    expect(screen.getByText(/كل القوالب/)).toBeInTheDocument();
   });
 
   it('filters templates when searching', () => {
@@ -36,13 +36,13 @@ describe('CollagePresetsTab Component Suite', () => {
   it('displays the selected category in select trigger', () => {
     render(<CollagePresetsTab {...defaultProps} presetCategory="combo" />);
 
-    expect(screen.getByText(/أطقم رسمية مركبة/)).toBeInTheDocument();
+    expect(screen.getByText(/أطقم رسمية/)).toBeInTheDocument();
   });
 
   it('renders empty state for saved templates when list is empty', () => {
     render(<CollagePresetsTab {...defaultProps} presetCategory="saved" savedTemplates={[]} />);
 
-    expect(screen.getByText('لا توجد قوالب مخصصة محفوظة')).toBeInTheDocument();
+    expect(screen.getByText('لا قوالب محفوظة')).toBeInTheDocument();
     expect(screen.getByText('استيراد قالب JSON')).toBeInTheDocument();
   });
 
@@ -63,7 +63,7 @@ describe('CollagePresetsTab Component Suite', () => {
         presetCategory="saved"
         savedTemplates={savedTemplates}
         onExportAllClick={onExportAllClick}
-      />
+      />,
     );
 
     expect(screen.getByText('قالب الجواز الخاص بي')).toBeInTheDocument();

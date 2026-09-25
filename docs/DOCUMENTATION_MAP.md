@@ -97,7 +97,7 @@ docs_files=6
 
 | الرقم | القيمة (تحقق: 2026-09-25) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | 684 حالة (683 ناجحة + 1 متخطّاة) في 84 ملفاً — تحقق: 2026-09-25 | `cd frontend && npm run test` |
+| حالات Vitest | 691 حالة (690 ناجحة + 1 متخطّاة) في 84 ملفاً — تحقق: 2026-09-25 | `cd frontend && npm run test` |
 | حالات E2E | 165 حالة في 25 ملف مواصفة (كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
 | دوال اختبار Go | 154 دالة في 30 ملفاً — تحقق: 2026-09-25 | `go test ./internal/... -list "^Test"` |

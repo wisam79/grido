@@ -1,7 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════
    استخراج بالِتة ألوان من الصور — يعمل محلياً بلا أي إرسال للخارج.
    يُستخدم في لوحة «الألوان والهوية» لاستخراج هوية بصرية من صور العميل.
-   ═══════════════════════════════════════════════════════════════ */
+    ═══════════════════════════════════════════════════════════════ */
+
+import { converter, formatHex } from 'culori';
 
 /** حجم عيّنة التصغير قبل التحليل — 64×64 تكفي لتمثيل التوزيع اللوني بسرعة */
 const SAMPLE_SIZE = 64;
@@ -11,7 +13,10 @@ const BUCKET_BITS = 4;
 const BUCKET_LEVELS = 1 << BUCKET_BITS;
 
 function toHex(r: number, g: number, b: number): string {
-  const part = (value: number) => Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, "0");
+  const part = (value: number) =>
+    Math.max(0, Math.min(255, Math.round(value)))
+      .toString(16)
+      .padStart(2, '0');
   return `#${part(r)}${part(g)}${part(b)}`.toLowerCase();
 }
 
@@ -37,7 +42,9 @@ export function quantizePixels(data: Uint8ClampedArray | number[], count = 8): s
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
-    const key = ((r >> (8 - BUCKET_BITS)) * step + (g >> (8 - BUCKET_BITS))) * step + (b >> (8 - BUCKET_BITS));
+    const key =
+      ((r >> (8 - BUCKET_BITS)) * step + (g >> (8 - BUCKET_BITS))) * step +
+      (b >> (8 - BUCKET_BITS));
 
     const bucket = buckets.get(key);
     if (bucket) {
@@ -90,7 +97,7 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const image = new Image();
     // الصور المحلية (data:/نفس الأصل) لا تحتاج CORS، والبعيدة تُطلب بوضع مجهول
-    if (/^https?:/i.test(src)) image.crossOrigin = "anonymous";
+    if (/^https?:/i.test(src)) image.crossOrigin = 'anonymous';
     image.onload = () => resolve(image);
     image.onerror = () => resolve(null);
     image.src = src;
@@ -99,15 +106,15 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
 
 /** استخراج الألوان من صورة واحدة (يرجع [] عند فشل التحميل أو تعذّر الرسم) */
 export async function extractPaletteFromSource(src: string, count = 8): Promise<string[]> {
-  if (typeof document === "undefined" || !src) return [];
+  if (typeof document === 'undefined' || !src) return [];
   const image = await loadImage(src);
   if (!image) return [];
 
   try {
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = SAMPLE_SIZE;
     canvas.height = SAMPLE_SIZE;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return [];
     ctx.drawImage(image, 0, 0, SAMPLE_SIZE, SAMPLE_SIZE);
     const { data } = ctx.getImageData(0, 0, SAMPLE_SIZE, SAMPLE_SIZE);
@@ -131,4 +138,32 @@ export async function extractPaletteFromSources(srcs: string[], count = 8): Prom
     }
   }
   return merged;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   تناغمات الألوان — مولّد Complementary/Analogous/Triadic عبر OKLCH
+   (يغلق الفجوة M-3: الاستخراج كان قائما والتناغم ناقصا).
+   culori نقية بلا DOM — آمنة للاختبار المباشر.
+   ═══════════════════════════════════════════════════════════════ */
+
+export type ColorHarmonyKind = 'complementary' | 'analogous' | 'triadic';
+
+const toOklch = converter('oklch');
+
+/** توليد تناغم لوني من لون أساس بتدوير الصبغة في فضاء OKLCH (أدق طباعيا من HSL) */
+export function buildColorHarmony(baseHex: string, kind: ColorHarmonyKind): string[] {
+  const base = toOklch(baseHex);
+  if (!base) return [baseHex];
+  const { l, c, h } = base;
+  const baseOut = formatHex(base);
+  const rotate = (deg: number) =>
+    formatHex({ mode: 'oklch', l, c, h: ((((h ?? 0) + deg) % 360) + 360) % 360 });
+  switch (kind) {
+    case 'complementary':
+      return [baseOut, rotate(180)];
+    case 'analogous':
+      return [rotate(-30), baseOut, rotate(30)];
+    case 'triadic':
+      return [baseOut, rotate(120), rotate(240)];
+  }
 }

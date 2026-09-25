@@ -1,35 +1,42 @@
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { Star, Palette, Eyedropper, Warning, Sparkle, ArrowsOutCardinal } from "@/components/ui/icons";
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import {
+  Star,
+  Palette,
+  Eyedropper,
+  Warning,
+  Sparkle,
+  ArrowsOutCardinal,
+} from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   FluentEmptyState,
   FluentSection,
   FluentSegmentedControl,
   FluentSettingRow,
-} from "@/components/ui/blocks";
-import { PopoverColorPicker } from "@/components/editor/properties/shared-controls";
-import { STUDIO_PALETTE } from "@/lib/canvas/canvas-colors";
-import { colorPatchFor } from "@/lib/canvas/apply-color";
-import { extractPaletteFromSources } from "@/lib/canvas/palette-extract";
+} from '@/components/ui/blocks';
+import { PopoverColorPicker } from '@/components/editor/properties/shared-controls';
+import { STUDIO_PALETTE } from '@/lib/canvas/canvas-colors';
+import { colorPatchFor } from '@/lib/canvas/apply-color';
+import { extractPaletteFromSources } from '@/lib/canvas/palette-extract';
 import {
   PREF_KEYS,
   pushStoredRecent,
   readStoredList,
   toggleStoredValue,
   writeStoredList,
-} from "@/lib/local-prefs";
+} from '@/lib/local-prefs';
 
 /* ═══════════════════════════════════════════════════════════════
    الألوان والهوية — تطبيق لون واحد أو توزيع هوية كاملة على المحدد،
    مع استخراج بالِتة من صور التصميم محلياً (بلا أي إرسال للخارج).
    ═══════════════════════════════════════════════════════════════ */
 
-type ColorTarget = "element" | "canvas";
+type ColorTarget = 'element' | 'canvas';
 
 interface IdentityPalette {
   id: string;
@@ -38,49 +45,70 @@ interface IdentityPalette {
 }
 
 const IDENTITY_PALETTES: IdentityPalette[] = [
-  { id: "official", name: "وثائق رسمية", colors: ["#0f172a", "#1e3a8a", "#475569", "#cbd5e1", "#f8fafc"] },
-  { id: "studio-gold", name: "استوديو ذهبي", colors: ["#78350f", "#b45309", "#d97706", "#fbbf24", "#fffbeb"] },
-  { id: "royal-blue", name: "أزرق ملكي", colors: ["#0c1a3a", "#1e40af", "#3b82f6", "#93c5fd", "#eff6ff"] },
-  { id: "emerald", name: "زمردي هادئ", colors: ["#064e3b", "#047857", "#10b981", "#a7f3d0", "#ecfdf5"] },
-  { id: "warm-earth", name: "ترابي دافئ", colors: ["#7c2d12", "#c2410c", "#f59e0b", "#f5d0a9", "#fffbeb"] },
-  { id: "mono", name: "رمادي أحادي", colors: ["#09090b", "#3f3f46", "#71717a", "#d4d4d8", "#fafafa"] },
+  {
+    id: 'official',
+    name: 'وثائق رسمية',
+    colors: ['#0f172a', '#1e3a8a', '#475569', '#cbd5e1', '#f8fafc'],
+  },
+  {
+    id: 'studio-gold',
+    name: 'استوديو ذهبي',
+    colors: ['#78350f', '#b45309', '#d97706', '#fbbf24', '#fffbeb'],
+  },
+  {
+    id: 'royal-blue',
+    name: 'أزرق ملكي',
+    colors: ['#0c1a3a', '#1e40af', '#3b82f6', '#93c5fd', '#eff6ff'],
+  },
+  {
+    id: 'emerald',
+    name: 'زمردي هادئ',
+    colors: ['#064e3b', '#047857', '#10b981', '#a7f3d0', '#ecfdf5'],
+  },
+  {
+    id: 'warm-earth',
+    name: 'ترابي دافئ',
+    colors: ['#7c2d12', '#c2410c', '#f59e0b', '#f5d0a9', '#fffbeb'],
+  },
+  {
+    id: 'mono',
+    name: 'رمادي أحادي',
+    colors: ['#09090b', '#3f3f46', '#71717a', '#d4d4d8', '#fafafa'],
+  },
 ];
 
 export function FreeformPaletteTab() {
-  const {
-    elements,
-    selectedIds,
-    updateElements,
-    setBackgroundColor,
-    backgroundColor,
-  } = useEditorStore(
-    useShallow((state) => ({
-      elements: state.elements,
-      selectedIds: state.selectedIds,
-      updateElements: state.updateElements,
-      setBackgroundColor: state.setBackgroundColor,
-      backgroundColor: state.backgroundColor,
-    }))
-  );
+  const { elements, selectedIds, updateElements, setBackgroundColor, backgroundColor } =
+    useEditorStore(
+      useShallow((state) => ({
+        elements: state.elements,
+        selectedIds: state.selectedIds,
+        updateElements: state.updateElements,
+        setBackgroundColor: state.setBackgroundColor,
+        backgroundColor: state.backgroundColor,
+      })),
+    );
 
-  const [target, setTarget] = useState<ColorTarget>("element");
-  const [customColor, setCustomColor] = useState<string>("#2563eb");
-  const [favorites, setFavorites] = useState<string[]>(() => readStoredList(PREF_KEYS.favoriteColors));
+  const [target, setTarget] = useState<ColorTarget>('element');
+  const [customColor, setCustomColor] = useState<string>('#2563eb');
+  const [favorites, setFavorites] = useState<string[]>(() =>
+    readStoredList(PREF_KEYS.favoriteColors),
+  );
   const [recents, setRecents] = useState<string[]>(() => readStoredList(PREF_KEYS.recentColors));
   const [extracted, setExtracted] = useState<string[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
 
   const selectedElements = useMemo(
     () => elements.filter((element) => selectedIds.includes(element.id)),
-    [elements, selectedIds]
+    [elements, selectedIds],
   );
 
   const imageSources = useMemo(() => {
-    const images = elements.filter((element) => element.type === "image");
+    const images = elements.filter((element) => element.type === 'image');
     const selectedImages = images.filter((element) => selectedIds.includes(element.id));
     const pool = selectedImages.length > 0 ? selectedImages : images;
     return pool
-      .map((element) => (element.type === "image" ? element.imageSrc : ""))
+      .map((element) => (element.type === 'image' ? element.imageSrc : ''))
       .filter((src): src is string => Boolean(src))
       .slice(0, 4);
   }, [elements, selectedIds]);
@@ -96,41 +124,39 @@ export function FreeformPaletteTab() {
   const applyColor = (color: string) => {
     rememberRecent(color);
 
-    if (target === "canvas") {
+    if (target === 'canvas') {
       setBackgroundColor(color);
-      toast.success("تم تحديث خلفية الورقة");
+      toast.success('خلفية الورقة');
       return;
     }
 
     if (selectedElements.length === 0) {
-      toast.info("اختر عنصراً على الكانفاس أولاً، أو اختر «خلفية الورقة»");
+      toast.info('حدّد عنصراً أو الخلفية');
       return;
     }
 
     updateElements(
-      selectedElements.map((element) => ({ id: element.id, patch: colorPatchFor(element, color) }))
+      selectedElements.map((element) => ({ id: element.id, patch: colorPatchFor(element, color) })),
     );
     toast.success(
-      selectedElements.length === 1
-        ? "تم تطبيق اللون على العنصر المحدد"
-        : `تم تطبيق اللون على ${selectedElements.length} عناصر`
+      selectedElements.length === 1 ? 'لون المحدد' : `لون ${selectedElements.length} عناصر`,
     );
   };
 
   /** توزيع ألوان الهوية دورياً على العناصر المحددة (شارات/بطاقات دفعة واحدة) */
   const distributePalette = (palette: IdentityPalette) => {
     if (selectedElements.length < 2) {
-      toast.info("حدّد عنصرين أو أكثر لتوزيع الهوية");
+      toast.info('حدّد عنصرين للتوزيع');
       return;
     }
     updateElements(
       selectedElements.map((element, index) => ({
         id: element.id,
         patch: colorPatchFor(element, palette.colors[index % palette.colors.length]),
-      }))
+      })),
     );
     rememberRecent(palette.colors[0]);
-    toast.success(`تم توزيع هوية «${palette.name}» على ${selectedElements.length} عناصر`);
+    toast.success(`توزيع «${palette.name}» على ${selectedElements.length}`);
   };
 
   const toggleFavorite = (color: string) => {
@@ -143,7 +169,7 @@ export function FreeformPaletteTab() {
 
   const runExtraction = async () => {
     if (imageSources.length === 0) {
-      toast.info("لا توجد صور في التصميم لاستخراج الألوان منها");
+      toast.info('لا صور للاستخراج');
       return;
     }
     setIsExtracting(true);
@@ -151,31 +177,31 @@ export function FreeformPaletteTab() {
       const palette = await extractPaletteFromSources(imageSources, 8);
       setExtracted(palette);
       if (palette.length === 0) {
-        toast.info("تعذّر استخراج الألوان من هذه الصور");
+        toast.info('تعذّر الاستخراج');
       } else {
-        toast.success(`تم استخراج ${palette.length} لون من ${imageSources.length} صورة`);
+        toast.success(`استخراج ${palette.length} لون`);
       }
     } finally {
       setIsExtracting(false);
     }
   };
 
-  const targetLabel = target === "canvas" ? "خلفية الورقة" : "العنصر المحدد";
+  const targetLabel = target === 'canvas' ? 'خلفية الورقة' : 'العنصر المحدد';
 
   return (
     <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
       <FluentSection
         icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
         title="وجهة اللون"
-        subtitle={`سيُطبَّق على: ${targetLabel}`}
+        subtitle={targetLabel}
       >
         <FluentSegmentedControl<ColorTarget>
           value={target}
           onChange={setTarget}
           layoutId="palette-target"
           options={[
-            { id: "element", label: "العنصر المحدد" },
-            { id: "canvas", label: "خلفية الورقة" },
+            { id: 'element', label: 'العنصر المحدد' },
+            { id: 'canvas', label: 'خلفية الورقة' },
           ]}
         />
 
@@ -183,11 +209,11 @@ export function FreeformPaletteTab() {
           <FluentSettingRow
             label="لون مخصص"
             description={
-              target === "canvas"
-                ? "خلفية الورقة الحالية"
+              target === 'canvas'
+                ? 'خلفية الورقة الحالية'
                 : selectedElements.length > 0
                   ? `${selectedElements.length} عنصر محدد`
-                  : "لا عنصر محدد"
+                  : 'لا عنصر محدد'
             }
             control={
               <div className="flex items-center gap-1.5">
@@ -197,16 +223,16 @@ export function FreeformPaletteTab() {
                   aria-pressed={favorites.includes(customColor.toLowerCase())}
                   aria-label="إضافة اللون المخصص للمفضلة"
                   className={cn(
-                    "w-8 h-8 rounded-md border border-border/80 flex items-center justify-center transition-colors cursor-pointer",
-                    "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                    'w-8 h-8 rounded-md border border-border/80 flex items-center justify-center transition-colors cursor-pointer',
+                    'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     favorites.includes(customColor.toLowerCase())
-                      ? "text-primary bg-primary/10 border-primary/40"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      ? 'text-primary bg-primary/10 border-primary/40'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
                   )}
                 >
                   <Star
                     className="w-3.5 h-3.5"
-                    weight={favorites.includes(customColor.toLowerCase()) ? "fill" : "regular"}
+                    weight={favorites.includes(customColor.toLowerCase()) ? 'fill' : 'regular'}
                   />
                 </button>
                 <PopoverColorPicker
@@ -237,9 +263,9 @@ export function FreeformPaletteTab() {
                   onClick={() => applyColor(item.color)}
                   aria-label={item.label}
                   className={cn(
-                    "aspect-square rounded-md border border-black/10 dark:border-white/15 transition-colors cursor-pointer shadow-2xs",
-                    "before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none relative overflow-hidden",
-                    "hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                    'aspect-square rounded-md border border-black/10 dark:border-white/15 transition-colors cursor-pointer shadow-2xs',
+                    'before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none relative overflow-hidden',
+                    'hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   )}
                   style={{ backgroundColor: item.color }}
                 />
@@ -255,7 +281,7 @@ export function FreeformPaletteTab() {
       <FluentSection
         icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
         title="هويات جاهزة"
-        subtitle="انقر لوناً، أو وزّع الهوية على المحدد"
+        subtitle="انقر أو وزّع"
       >
         <div className="flex flex-col gap-2">
           {IDENTITY_PALETTES.map((palette) => (
@@ -298,8 +324,8 @@ export function FreeformPaletteTab() {
         title="ألوان من صور التصميم"
         subtitle={
           imageSources.length > 0
-            ? `المصدر: ${imageSources.length} صورة${selectedElements.some((el) => el.type === "image") ? " محددة" : ""}`
-            : "لا صور في التصميم"
+            ? `${imageSources.length} صورة${selectedElements.some((el) => el.type === 'image') ? ' محددة' : ''}`
+            : 'لا صور'
         }
       >
         <Button
@@ -311,7 +337,7 @@ export function FreeformPaletteTab() {
           className="w-full justify-center"
         >
           <Eyedropper className="w-3.5 h-3.5" weight="bold" />
-          {isExtracting ? "جاري الاستخراج ..." : "استخراج البالِتة"}
+          {isExtracting ? 'جاري الاستخراج ...' : 'استخراج البالِتة'}
         </Button>
 
         {extracted.length > 0 ? (
@@ -339,8 +365,11 @@ export function FreeformPaletteTab() {
           </div>
         ) : (
           <p className="text-micro text-muted-foreground leading-relaxed mt-2 flex items-start gap-1.5">
-            <Warning className="w-3.5 h-3.5 shrink-0 mt-0.5 text-muted-foreground" weight="duotone" />
-            الاستخراج يتم على جهازك من الصور الموجودة في التصميم — لا يُرسل أي شيء للخارج.
+            <Warning
+              className="w-3.5 h-3.5 shrink-0 mt-0.5 text-muted-foreground"
+              weight="duotone"
+            />
+            استخراج محلي بلا إرسال.
           </p>
         )}
       </FluentSection>
@@ -370,9 +399,9 @@ export function FreeformPaletteTab() {
         {favorites.length === 0 && recents.length === 0 ? (
           <FluentEmptyState
             icon={<Star className="w-5 h-5" weight="duotone" />}
-            title="لا ألوان محفوظة بعد"
-            description="النجمة على أي لون تحفظه هنا للوصول السريع"
-            actionLabel="احفظ اللون المخصص"
+            title="لا ألوان محفوظة"
+            description="نجّم لوناً للوصول السريع"
+            actionLabel="احفظ المخصص"
             actionIcon={<Star className="w-3.5 h-3.5" weight="fill" />}
             onAction={() => toggleFavorite(customColor)}
           />
@@ -427,7 +456,10 @@ export function FreeformPaletteTab() {
         )}
 
         <p className="text-mini text-muted-foreground mt-2">
-          لون الورقة الحالي: <span className="font-mono" dir="ltr">{backgroundColor}</span>
+          لون الورقة الحالي:{' '}
+          <span className="font-mono" dir="ltr">
+            {backgroundColor}
+          </span>
         </p>
       </FluentSection>
     </div>

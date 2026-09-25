@@ -1,25 +1,23 @@
-import type { Icon } from "@/components/ui/icons";
-import type { EditorMode } from "@/lib/store/types";
+import type { Icon } from '@/components/ui/icons';
+import type { EditorMode } from '@/lib/store/types';
+import type { WorkflowMode } from '@/lib/store/slices/workflow-slice';
 import {
   Stack,
-  Sticker,
   Shapes,
-  TextT,
   FrameCorners,
   GridFour,
   SquaresFour,
   MagicWand,
   Ruler,
   Images,
-  PaintRoller,
   Shuffle,
   TextAa,
   Swatches,
   GridNine,
   BookmarkSimple,
-} from "@/components/ui/icons";
-import { useEditorStore } from "@/lib/editor-store";
-import { canZoomIn, canZoomOut, isDefaultZoom } from "@/lib/canvas/zoom";
+} from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { canZoomIn, canZoomOut, isDefaultZoom } from '@/lib/canvas/zoom';
 import {
   actualSizeZoomStore,
   autoFitZoomStore,
@@ -28,8 +26,8 @@ import {
   resetZoomStore,
   zoomInStore,
   zoomOutStore,
-} from "@/hooks/use-canvas-zoom";
-import { CANVAS_FIT_LABELS, type CanvasFitMode } from "@/lib/canvas/fit";
+} from '@/hooks/use-canvas-zoom';
+import { CANVAS_FIT_LABELS, type CanvasFitMode } from '@/lib/canvas/fit';
 
 /* ═══════════════════════════════════════════════════════════════
    سجل أدوات الشريط الجانبي — مصدر حقيقة واحد للأوضاع الثلاثة:
@@ -37,28 +35,19 @@ import { CANVAS_FIT_LABELS, type CanvasFitMode } from "@/lib/canvas/fit";
    كانت هذه البيانات مكرّرة يدوياً في 3 ملفات (شريط + ترويسة + أنواع).
    ═══════════════════════════════════════════════════════════════ */
 
-export type CollageTab =
-  | "custom"
-  | "presets"
-  | "freeform"
-  | "paper"
-  | "autofill"
-  | "backdrop"
-  | "arrange";
+export type CollageTab = 'custom' | 'presets' | 'freeform' | 'paper' | 'autofill' | 'arrange';
 
 export type FreeformTab =
-  | "layers"
-  | "stickers"
-  | "shapes"
-  | "text"
-  | "presets"
-  | "fonts"
-  | "palette"
-  | "backdrops"
-  | "library";
+  'layers' | 'elements' | 'presets' | 'fonts' | 'palette' | 'backdrops' | 'library';
+
+/** ترحيل التبويبات المحذوفة من التخزين المحلي — stickers/shapes/text صارت elements */
+export function migrateLegacyStudioTab(value: unknown): FreeformTab | null {
+  if (value === 'stickers' || value === 'shapes' || value === 'text') return 'elements';
+  return null;
+}
 
 /** شارات الحالة الديناميكية على زر الأداة */
-export type ToolBadge = "elements" | "collage-grid" | "collage-freeform";
+export type ToolBadge = 'elements' | 'collage-grid' | 'collage-freeform';
 
 export interface WorkspaceTool<T extends string> {
   id: T;
@@ -77,154 +66,127 @@ export interface WorkspaceTool<T extends string> {
 
 export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
   {
-    id: "custom",
-    label: "شبكة الكولاج",
-    title: "شبكة الكولاج",
-    subtitle: "الصفوف والأعمدة والمقاسات",
-    group: "بناء الشبكة",
+    id: 'custom',
+    label: 'شبكة الكولاج',
+    title: 'شبكة الكولاج',
+    subtitle: 'الصفوف والأعمدة والمقاسات',
+    group: 'بناء الشبكة',
     icon: GridFour,
-    testId: "rail-collage-grid",
-    badge: "collage-grid",
+    testId: 'rail-collage-grid',
+    badge: 'collage-grid',
   },
   {
-    id: "presets",
-    label: "قوالب الكولاج",
-    title: "قوالب الكولاج",
-    subtitle: "نماذج وتشكيلات جاهزة",
-    group: "بناء الشبكة",
+    id: 'presets',
+    label: 'قوالب الكولاج',
+    title: 'قوالب الكولاج',
+    subtitle: 'تشكيلات جاهزة',
+    group: 'بناء الشبكة',
     icon: SquaresFour,
-    testId: "rail-collage-presets",
+    testId: 'rail-collage-presets',
   },
   {
-    id: "freeform",
-    label: "كولاج حر بالملم",
-    title: "كولاج حر بالملم",
-    subtitle: "شبكات مخصصة بالملم",
-    group: "بناء الشبكة",
+    id: 'freeform',
+    label: 'كولاج حر بالملم',
+    title: 'كولاج حر بالملم',
+    subtitle: 'شبكات مخصصة بالملم',
+    group: 'بناء الشبكة',
     icon: MagicWand,
-    testId: "rail-collage-freeform",
-    badge: "collage-freeform",
+    testId: 'rail-collage-freeform',
+    badge: 'collage-freeform',
   },
   {
-    id: "paper",
-    label: "الورق والقص",
-    title: "الورق والقص",
-    subtitle: "النزيف وعلامات القص والنسخ",
-    group: "جاهزية الطباعة",
+    id: 'paper',
+    label: 'الورق والقص',
+    title: 'الورق والقص',
+    subtitle: 'نزيف وقص ونسخ',
+    group: 'جاهزية الطباعة',
     icon: Ruler,
-    testId: "rail-collage-paper",
+    testId: 'rail-collage-paper',
   },
   {
-    id: "autofill",
-    label: "تعبئة تلقائية",
-    title: "تعبئة تلقائية",
-    subtitle: "توزيع الصور على الخانات",
-    group: "جاهزية الطباعة",
+    id: 'autofill',
+    label: 'تعبئة تلقائية',
+    title: 'تعبئة تلقائية',
+    subtitle: 'توزيع الصور',
+    group: 'جاهزية الطباعة',
     icon: Images,
-    testId: "rail-collage-autofill",
+    testId: 'rail-collage-autofill',
   },
   {
-    id: "backdrop",
-    label: "خلفية وحدود",
-    title: "خلفية وحدود الشبكة",
-    subtitle: "اللون والمسافات والإطار",
-    group: "تنسيق الخانات",
-    icon: PaintRoller,
-    testId: "rail-collage-backdrop",
-  },
-  {
-    id: "arrange",
-    label: "فرز وترتيب",
-    title: "فرز وترتيب الخانات",
-    subtitle: "قلب وخلط وتوزيع الصور",
-    group: "تنسيق الخانات",
+    id: 'arrange',
+    label: 'فرز وترتيب',
+    title: 'فرز وترتيب الخانات',
+    subtitle: 'قلب وخلط وتوزيع',
+    group: 'تنسيق الخانات',
     icon: Shuffle,
-    testId: "rail-collage-arrange",
+    testId: 'rail-collage-arrange',
   },
 ];
 
 export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
   {
-    id: "layers",
-    label: "الطبقات",
-    title: "الطبقات",
-    subtitle: "ترتيب عناصر الكانفاس",
-    group: "بناء التصميم",
+    id: 'layers',
+    label: 'الطبقات',
+    title: 'الطبقات',
+    subtitle: 'ترتيب عناصر الكانفاس',
+    group: 'بناء التصميم',
     icon: Stack,
-    testId: "rail-studio-layers",
-    badge: "elements",
+    testId: 'rail-studio-layers',
+    badge: 'elements',
   },
   {
-    id: "stickers",
-    label: "الملصقات والشارات",
-    title: "الملصقات والشارات",
-    subtitle: "أختام وشارات جاهزة",
-    group: "بناء التصميم",
-    icon: Sticker,
-    testId: "rail-studio-stickers",
-  },
-  {
-    id: "shapes",
-    label: "الأشكال والتصاميم",
-    title: "الأشكال والتصاميم",
-    subtitle: "أشكال هندسية متنوعة",
-    group: "بناء التصميم",
+    id: 'elements',
+    label: 'العناصر',
+    title: 'العناصر',
+    subtitle: 'ملصقات وأشكال ونصوص',
+    group: 'بناء التصميم',
     icon: Shapes,
-    testId: "rail-studio-shapes",
+    testId: 'rail-studio-elements',
   },
   {
-    id: "text",
-    label: "النصوص الجاهزة",
-    title: "النصوص الجاهزة",
-    subtitle: "عناوين وتأثيرات جاهزة",
-    group: "بناء التصميم",
-    icon: TextT,
-    testId: "rail-studio-text",
-  },
-  {
-    id: "presets",
-    label: "المقاسات والورق",
-    title: "المقاسات والورق",
-    subtitle: "نماذج ومقاسات مخصصة",
-    group: "المقاسات والهوية",
+    id: 'presets',
+    label: 'المقاسات والورق',
+    title: 'المقاسات والورق',
+    subtitle: 'نماذج ومقاسات مخصصة',
+    group: 'المقاسات والهوية',
     icon: FrameCorners,
-    testId: "rail-studio-presets",
+    testId: 'rail-studio-presets',
   },
   {
-    id: "fonts",
-    label: "مكتبة الخطوط",
-    title: "مكتبة الخطوط",
-    subtitle: "عائلات عربية ومعاينة حية",
-    group: "المقاسات والهوية",
+    id: 'fonts',
+    label: 'مكتبة الخطوط',
+    title: 'مكتبة الخطوط',
+    subtitle: 'عربية ومعاينة حية',
+    group: 'المقاسات والهوية',
     icon: TextAa,
-    testId: "rail-studio-fonts",
+    testId: 'rail-studio-fonts',
   },
   {
-    id: "palette",
-    label: "الألوان والهوية",
-    title: "الألوان والهوية",
-    subtitle: "بالِتة وألوان مستخرجة",
-    group: "المقاسات والهوية",
+    id: 'palette',
+    label: 'الألوان والهوية',
+    title: 'الألوان والهوية',
+    subtitle: 'ألوان مستخرجة',
+    group: 'المقاسات والهوية',
     icon: Swatches,
-    testId: "rail-studio-palette",
+    testId: 'rail-studio-palette',
   },
   {
-    id: "backdrops",
-    label: "الخلفيات والأنماط",
-    title: "الخلفيات والأنماط",
-    subtitle: "لون الورقة والتدرجات الجاهزة",
-    group: "المقاسات والهوية",
+    id: 'backdrops',
+    label: 'الخلفيات والأنماط',
+    title: 'الخلفيات والأنماط',
+    subtitle: 'ورقة وتدرجات جاهزة',
+    group: 'المقاسات والهوية',
     icon: GridNine,
-    testId: "rail-studio-backdrops",
+    testId: 'rail-studio-backdrops',
   },
   {
-    id: "library",
-    label: "المفضلة",
-    title: "المفضلة وآخر استخدام",
-    subtitle: "وصول سريع لما تستخدمه",
-    group: "الوصول السريع",
+    id: 'library',
+    label: 'المفضلة',
+    title: 'المفضلة وآخر استخدام',
+    subtitle: 'الأكثر استخداما',
+    group: 'الوصول السريع',
     icon: BookmarkSimple,
-    testId: "rail-studio-library",
+    testId: 'rail-studio-library',
   },
 ];
 
@@ -244,35 +206,41 @@ export const getCollageToolsForWorkflow = getCollageTools;
 
 /** ترجع مصفوفة الأدوات المناسبة لوضع الكانفاس الحالي */
 export function getToolsForMode(mode: EditorMode): WorkspaceTool<string>[] {
-  return mode === "collage" ? COLLAGE_TOOLS : STUDIO_TOOLS;
+  return mode === 'collage' ? COLLAGE_TOOLS : STUDIO_TOOLS;
 }
 
 /** اسم بديل للتوافقية مع أي استيرادات سابقة */
+export type { WorkflowMode } from '@/lib/store/slices/workflow-slice';
+
+/** تبويبات الاستوديو المخفية في مسار الإنتاج السريع — مصورو الهوية يعملون على الكولاج أولاً */
+const QUICK_HIDDEN_STUDIO_TABS: FreeformTab[] = ['elements'];
+
 export function getToolsForWorkflow(
   mode: EditorMode,
-  _workflowMode?: unknown
+  workflow: WorkflowMode = 'studio',
 ): WorkspaceTool<string>[] {
-  return getToolsForMode(mode);
+  const tools = getToolsForMode(mode);
+  if (workflow !== 'quick') return tools;
+  return tools.filter((tool) => !QUICK_HIDDEN_STUDIO_TABS.includes(tool.id as FreeformTab));
 }
 
 /** الحد الأقصى لاختصارات Alt+1..Alt+9 — لا يوجد اختصار Alt+10 */
 export const MAX_TOOL_SHORTCUTS = 9;
 
-
 /** اختصار Alt+الرقم يتكوّن من ترتيب الأداة في شريطها (بحد أقصى 9 أدوات) */
 export function toolShortcut(index: number): string {
-  if (index < 0 || index >= MAX_TOOL_SHORTCUTS) return "";
+  if (index < 0 || index >= MAX_TOOL_SHORTCUTS) return '';
   return `Alt+${index + 1}`;
 }
 
 /** هل القيمة تبويب كولاج صالح؟ — تحمي التخزين المحلي من تبويبات قديمة محذوفة */
 export function isCollageTab(value: unknown): value is CollageTab {
-  return typeof value === "string" && COLLAGE_TOOLS.some((tool) => tool.id === value);
+  return typeof value === 'string' && COLLAGE_TOOLS.some((tool) => tool.id === value);
 }
 
 /** هل القيمة تبويب تعديل حر صالح؟ */
 export function isStudioTab(value: unknown): value is FreeformTab {
-  return typeof value === "string" && STUDIO_TOOLS.some((tool) => tool.id === value);
+  return typeof value === 'string' && STUDIO_TOOLS.some((tool) => tool.id === value);
 }
 
 /** استخراج عنوان/وصف الترويسة من السجل بدل سلاسل الشروط الثلاثية */
@@ -316,9 +284,7 @@ export interface CommandGroupView<T> {
   items: T[];
 }
 
-export function groupCommands<T extends { group: string }>(
-  commands: T[]
-): CommandGroupView<T>[] {
+export function groupCommands<T extends { group: string }>(commands: T[]): CommandGroupView<T>[] {
   const groups: CommandGroupView<T>[] = [];
   for (const command of commands) {
     const last = groups[groups.length - 1];
@@ -355,124 +321,124 @@ export interface WorkspaceCommand {
 export const WORKSPACE_COMMANDS: WorkspaceCommand[] = [
   // — الملف والمشاريع —
   {
-    id: "open-file",
-    title: "فتح صورة",
-    subtitle: "اختيار صورة من الجهاز",
-    group: "الملف",
-    shortcut: "Ctrl+O",
-    event: "grido:open-file-dialog",
+    id: 'open-file',
+    title: 'فتح صورة',
+    subtitle: 'اختيار صورة من الجهاز',
+    group: 'الملف',
+    shortcut: 'Ctrl+O',
+    event: 'grido:open-file-dialog',
   },
   {
-    id: "batch-insert",
-    title: "إدراج دفعي",
-    subtitle: "اختيار عدة صور معاً",
-    group: "الملف",
-    shortcut: "Ctrl+Shift+O",
-    event: "grido:open-batch-insert-dialog",
+    id: 'batch-insert',
+    title: 'إدراج دفعي',
+    subtitle: 'اختيار عدة صور معاً',
+    group: 'الملف',
+    shortcut: 'Ctrl+Shift+O',
+    event: 'grido:open-batch-insert-dialog',
   },
   {
-    id: "projects",
-    title: "المشاريع",
-    subtitle: "الحفظ والتحميل والمكتبة",
-    group: "الملف",
-    shortcut: "Ctrl+S",
-    event: "grido:open-projects-dialog",
-    detail: { tab: "save" },
+    id: 'projects',
+    title: 'المشاريع',
+    subtitle: 'الحفظ والتحميل والمكتبة',
+    group: 'الملف',
+    shortcut: 'Ctrl+S',
+    event: 'grido:open-projects-dialog',
+    detail: { tab: 'save' },
   },
   {
-    id: "projects-library",
-    title: "مكتبة المشاريع",
-    subtitle: "تصفّح المشاريع المحفوظة",
-    group: "الملف",
-    event: "grido:open-projects-dialog",
-    detail: { tab: "list" },
+    id: 'projects-library',
+    title: 'مكتبة المشاريع',
+    subtitle: 'تصفّح المشاريع المحفوظة',
+    group: 'الملف',
+    event: 'grido:open-projects-dialog',
+    detail: { tab: 'list' },
   },
   // — الإخراج —
   {
-    id: "export",
-    title: "تصدير",
-    subtitle: "حفظ النتيجة بجودة عالية",
-    group: "الإخراج",
-    shortcut: "Ctrl+E",
-    event: "grido:open-export-dialog",
+    id: 'export',
+    title: 'تصدير',
+    subtitle: 'حفظ النتيجة بجودة عالية',
+    group: 'الإخراج',
+    shortcut: 'Ctrl+E',
+    event: 'grido:open-export-dialog',
   },
   {
-    id: "print",
-    title: "طباعة",
-    subtitle: "إعداد الورقة وخطوط القص",
-    group: "الإخراج",
-    shortcut: "Ctrl+P",
-    event: "grido:open-print-dialog",
+    id: 'print',
+    title: 'طباعة',
+    subtitle: 'إعداد الورقة وخطوط القص',
+    group: 'الإخراج',
+    shortcut: 'Ctrl+P',
+    event: 'grido:open-print-dialog',
   },
   // — العرض —
   {
-    id: "toggle-right-sidebar",
-    title: "الألواح الجانبية",
-    subtitle: "إظهار أو إخفاء قوالب/طبقات",
-    group: "العرض",
-    shortcut: "Ctrl+B",
-    event: "grido:toggle-right-sidebar",
+    id: 'toggle-right-sidebar',
+    title: 'الألواح الجانبية',
+    subtitle: 'إظهار أو إخفاء قوالب/طبقات',
+    group: 'العرض',
+    shortcut: 'Ctrl+B',
+    event: 'grido:toggle-right-sidebar',
   },
   {
-    id: "toggle-left-sidebar",
-    title: "خصائص العنصر",
-    subtitle: "إظهار أو إخفاء لوحة الخصائص",
-    group: "العرض",
-    shortcut: "Ctrl+Shift+B",
-    event: "grido:toggle-left-sidebar",
+    id: 'toggle-left-sidebar',
+    title: 'خصائص العنصر',
+    subtitle: 'إظهار أو إخفاء لوحة الخصائص',
+    group: 'العرض',
+    shortcut: 'Ctrl+Shift+B',
+    event: 'grido:toggle-left-sidebar',
   },
   {
-    id: "zen-mode",
-    title: "وضع التركيز",
-    subtitle: "إخفاء كل الألواح مؤقتاً",
-    group: "العرض",
-    shortcut: "Ctrl+.",
-    event: "grido:toggle-zen-mode",
+    id: 'zen-mode',
+    title: 'وضع التركيز',
+    subtitle: 'إخفاء كل الألواح مؤقتاً',
+    group: 'العرض',
+    shortcut: 'Ctrl+.',
+    event: 'grido:toggle-zen-mode',
   },
   // — النظام —
   {
-    id: "shortcuts",
-    title: "الاختصارات",
-    subtitle: "قائمة كاملة بلوحة المفاتيح",
-    group: "النظام",
-    event: "grido:open-shortcuts",
+    id: 'shortcuts',
+    title: 'الاختصارات',
+    subtitle: 'قائمة كاملة بلوحة المفاتيح',
+    group: 'النظام',
+    event: 'grido:open-shortcuts',
   },
   {
-    id: "stickers",
-    title: "استوديو الملصقات",
-    subtitle: "أختام وشارات قابلة للتخصيص",
-    group: "النظام",
-    event: "grido:open-stickers-dialog",
+    id: 'stickers',
+    title: 'استوديو الملصقات',
+    subtitle: 'أختام وشارات قابلة للتخصيص',
+    group: 'النظام',
+    event: 'grido:open-stickers-dialog',
   },
   {
-    id: "phone-bridge",
-    title: "جسر الهاتف",
-    subtitle: "استقبال صور مباشرة من الجوال",
-    group: "النظام",
-    event: "grido:open-phone-bridge",
+    id: 'phone-bridge',
+    title: 'جسر الهاتف',
+    subtitle: 'استقبال صور مباشرة من الجوال',
+    group: 'النظام',
+    event: 'grido:open-phone-bridge',
   },
   {
-    id: "check-updates",
-    title: "فحص التحديثات",
-    subtitle: "البحث عن إصدار أحدث",
-    group: "النظام",
-    event: "grido:check-updates",
+    id: 'check-updates',
+    title: 'فحص التحديثات',
+    subtitle: 'البحث عن إصدار أحدث',
+    group: 'النظام',
+    event: 'grido:check-updates',
   },
   {
-    id: "toggle-theme",
-    title: "تبديل المظهر",
-    subtitle: "بين الوضع الداكن والمضيء",
-    group: "النظام",
+    id: 'toggle-theme',
+    title: 'تبديل المظهر',
+    subtitle: 'بين الوضع الداكن والمضيء',
+    group: 'النظام',
     // مصدر الثيم الوحيد هو useTheme داخل App.tsx (صنف .dark + التفضيل المحفوظ)،
     // فاللوحة تُطلق الحدث ولا تملك نسخة ثانية من حالة الثيم.
-    event: "grido:toggle-theme",
+    event: 'grido:toggle-theme',
   },
   {
-    id: "account",
-    title: "الحساب والتراخيص",
-    subtitle: "المفتاح والاشتراك والاستخدام",
-    group: "النظام",
-    event: "grido:open-account",
+    id: 'account',
+    title: 'الحساب والتراخيص',
+    subtitle: 'المفتاح والاشتراك والاستخدام',
+    group: 'النظام',
+    event: 'grido:open-account',
   },
 ];
 
@@ -502,11 +468,13 @@ export interface StateCommandInput {
   showGrid: boolean;
   /** وضع الكانفاس الحالي — تُعطَّل أوامر التحويل إلى الوضع المفعّل أصلاً */
   mode: EditorMode;
+  /** مسار العمل الحالي — يحدّد ظهور تبويب العناصر في الشريط */
+  workflow: WorkflowMode;
 }
 
 /** مُحدِّد (selector) لقيم الحالة — يُستخدم مع useShallow في الشريط */
 export function selectStateCommandInput(
-  state: ReturnType<typeof useEditorStore.getState>
+  state: ReturnType<typeof useEditorStore.getState>,
 ): StateCommandInput {
   return {
     historyIndex: state.historyIndex,
@@ -516,6 +484,7 @@ export function selectStateCommandInput(
     showRuler: state.showRuler,
     showGrid: state.showGrid,
     mode: state.mode,
+    workflow: state.workflow,
   };
 }
 
@@ -541,10 +510,10 @@ const percent = (zoom: number): string => `${Math.round(zoom * 100)}%`;
 
 export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
   {
-    id: "undo",
-    title: "تراجع",
-    group: "تحرير",
-    shortcut: "Ctrl+Z",
+    id: 'undo',
+    title: 'تراجع',
+    group: 'تحرير',
+    shortcut: 'Ctrl+Z',
     getSnapshot: (input = readStateCommandInput()) => {
       const { undo } = useEditorStore.getState();
       const stepsBack = Math.max(0, input.historyIndex);
@@ -552,19 +521,19 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
         subtitle:
           stepsBack > 0
             ? stepsBack === 1
-              ? "خطوة واحدة محفوظة"
+              ? 'خطوة واحدة محفوظة'
               : `${stepsBack} خطوات محفوظة`
-            : "لا شيء للتراجع عنه",
+            : 'لا شيء للتراجع عنه',
         disabled: stepsBack <= 0,
         run: undo,
       };
     },
   },
   {
-    id: "redo",
-    title: "إعادة",
-    group: "تحرير",
-    shortcut: "Ctrl+Shift+Z",
+    id: 'redo',
+    title: 'إعادة',
+    group: 'تحرير',
+    shortcut: 'Ctrl+Shift+Z',
     getSnapshot: (input = readStateCommandInput()) => {
       const { redo } = useEditorStore.getState();
       const stepsForward = Math.max(0, input.historyLength - 1 - input.historyIndex);
@@ -572,45 +541,45 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
         subtitle:
           stepsForward > 0
             ? stepsForward === 1
-              ? "تستعيد خطوة واحدة"
+              ? 'تستعيد خطوة واحدة'
               : `تستعيد ${stepsForward} خطوات`
-            : "لا شيء لإعادته",
+            : 'لا شيء لإعادته',
         disabled: stepsForward <= 0,
         run: redo,
       };
     },
   },
   {
-    id: "toggle-rulers",
-    title: "المساطر",
-    group: "عرض الكانفاس",
-    shortcut: "Ctrl+R",
+    id: 'toggle-rulers',
+    title: 'المساطر',
+    group: 'عرض الكانفاس',
+    shortcut: 'Ctrl+R',
     getSnapshot: (input = readStateCommandInput()) => {
       const { setShowRuler } = useEditorStore.getState();
       return {
-        subtitle: input.showRuler ? "ظاهرة الآن — للإخفاء" : "مخفية الآن — للإظهار",
+        subtitle: input.showRuler ? 'ظاهرة الآن — للإخفاء' : 'مخفية الآن — للإظهار',
         run: () => setShowRuler(!input.showRuler),
       };
     },
   },
   {
-    id: "toggle-grid",
-    title: "الشبكة",
-    group: "عرض الكانفاس",
+    id: 'toggle-grid',
+    title: 'الشبكة',
+    group: 'عرض الكانفاس',
     shortcut: "Ctrl+'",
     getSnapshot: (input = readStateCommandInput()) => {
       const { setShowGrid } = useEditorStore.getState();
       return {
-        subtitle: input.showGrid ? "ظاهرة الآن — للإخفاء" : "مخفية الآن — للإظهار",
+        subtitle: input.showGrid ? 'ظاهرة الآن — للإخفاء' : 'مخفية الآن — للإظهار',
         run: () => setShowGrid(!input.showGrid),
       };
     },
   },
   {
-    id: "zoom-in",
-    title: "تكبير",
-    group: "عرض الكانفاس",
-    shortcut: "Ctrl++",
+    id: 'zoom-in',
+    title: 'تكبير',
+    group: 'عرض الكانفاس',
+    shortcut: 'Ctrl++',
     getSnapshot: (input = readStateCommandInput()) => {
       return {
         subtitle: `الحالي ${percent(input.canvasZoom)}`,
@@ -620,10 +589,10 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
     },
   },
   {
-    id: "zoom-out",
-    title: "تصغير",
-    group: "عرض الكانفاس",
-    shortcut: "Ctrl+-",
+    id: 'zoom-out',
+    title: 'تصغير',
+    group: 'عرض الكانفاس',
+    shortcut: 'Ctrl+-',
     getSnapshot: (input = readStateCommandInput()) => {
       return {
         subtitle: `الحالي ${percent(input.canvasZoom)}`,
@@ -633,129 +602,158 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
     },
   },
   {
-    id: "zoom-reset",
-    title: "إعادة الضبط إلى 100%",
-    group: "عرض الكانفاس",
-    shortcut: "Ctrl+1",
+    id: 'zoom-reset',
+    title: 'إعادة الضبط إلى 100%',
+    group: 'عرض الكانفاس',
+    shortcut: 'Ctrl+1',
     getSnapshot: (input = readStateCommandInput()) => {
       const isAt100 = isDefaultZoom(input.canvasZoom);
       return {
-        subtitle: isAt100 ? "أنت عند 100%" : `الحالي ${percent(input.canvasZoom)}`,
+        subtitle: isAt100 ? 'أنت عند 100%' : `الحالي ${percent(input.canvasZoom)}`,
         disabled: isAt100,
         run: resetZoomStore,
       };
     },
   },
   {
-    id: "zoom-fit",
-    title: "ملاءمة الكل",
-    group: "عرض الكانفاس",
-    shortcut: "Ctrl+0",
+    id: 'zoom-fit',
+    title: 'ملاءمة الكل',
+    group: 'عرض الكانفاس',
+    shortcut: 'Ctrl+0',
     getSnapshot: (input = readStateCommandInput()) => ({
-      subtitle: input.canvasFitMode === "height" ? "الورقة كاملة على الشاشة" : "الورقة كاملة بلا تمرير",
+      subtitle:
+        input.canvasFitMode === 'height' ? 'الورقة كاملة على الشاشة' : 'الورقة كاملة بلا تمرير',
       disabled: false,
       run: fitZoomStore,
     }),
   },
   {
-    id: "zoom-fit-width",
-    title: "ملاءمة العرض",
-    group: "عرض الكانفاس",
-    shortcut: "Ctrl+Shift+0",
+    id: 'zoom-fit-width',
+    title: 'ملاءمة العرض',
+    group: 'عرض الكانفاس',
+    shortcut: 'Ctrl+Shift+0',
     getSnapshot: (input = readStateCommandInput()) => ({
-      subtitle: "تملأ عرض منطقة العمل ويُمرَّر الباقي",
-      disabled: input.canvasFitMode === "width",
+      subtitle: 'تملأ عرض منطقة العمل ويُمرَّر الباقي',
+      disabled: input.canvasFitMode === 'width',
       run: fitWidthZoomStore,
     }),
   },
   {
-    id: "zoom-fit-auto",
+    id: 'zoom-fit-auto',
     title: CANVAS_FIT_LABELS.auto,
-    group: "عرض الكانفاس",
-    shortcut: "Ctrl+Alt+0",
+    group: 'عرض الكانفاس',
+    shortcut: 'Ctrl+Alt+0',
     getSnapshot: (input = readStateCommandInput()) => ({
-      subtitle: "يختار الوضع الأنسب لهندسة النافذة",
-      disabled: input.canvasFitMode === "auto",
+      subtitle: 'يختار الوضع الأنسب لهندسة النافذة',
+      disabled: input.canvasFitMode === 'auto',
       run: autoFitZoomStore,
     }),
   },
   {
-    id: "zoom-actual-size",
+    id: 'zoom-actual-size',
     title: CANVAS_FIT_LABELS.actual,
-    group: "عرض الكانفاس",
+    group: 'عرض الكانفاس',
     // بلا اختصار: لا مفتاح مسجّل لهذا الوضع في use-keyboard-shortcuts.ts،
     // وإعلان اختصار غير مسجّل يجعل اللوحة توعد بما لا يحدث.
     getSnapshot: (input = readStateCommandInput()) => ({
-      subtitle: "بكسل حقيقي 1:1 مع تمرير أفقي ورأسي",
-      disabled: input.canvasFitMode === "actual",
+      subtitle: 'بكسل حقيقي 1:1 مع تمرير أفقي ورأسي',
+      disabled: input.canvasFitMode === 'actual',
       run: actualSizeZoomStore,
     }),
   },
   {
-    id: "insert-text",
-    title: "إضافة نص",
-    group: "إدراج",
+    id: 'insert-text',
+    title: 'إضافة نص',
+    group: 'إدراج',
     // بلا اختصار: لا يوجد مفتاح مسجّل لإدراج النص في use-keyboard-shortcuts.ts،
     // وإعلان اختصار غير مسجّل يجعل اللوحة توعد بما لا يحدث.
     getSnapshot: () => {
       const { addTextElement } = useEditorStore.getState();
       return {
-        subtitle: "نص جديد قابل للتحرير",
+        subtitle: 'نص جديد قابل للتحرير',
         run: () => addTextElement(),
       };
     },
   },
   {
-    id: "insert-rect",
-    title: "إضافة مستطيل",
-    group: "إدراج",
+    id: 'insert-rect',
+    title: 'إضافة مستطيل',
+    group: 'إدراج',
     getSnapshot: () => {
       const { addShapeElement } = useEditorStore.getState();
       return {
-        subtitle: "شكل هندسي قابل للتحجيم",
-        run: () => addShapeElement("rect"),
+        subtitle: 'شكل هندسي قابل للتحجيم',
+        run: () => addShapeElement('rect'),
       };
     },
   },
   {
-    id: "insert-ellipse",
-    title: "إضافة دائرة",
-    group: "إدراج",
+    id: 'insert-ellipse',
+    title: 'إضافة دائرة',
+    group: 'إدراج',
     getSnapshot: () => {
       const { addShapeElement } = useEditorStore.getState();
       return {
-        subtitle: "شكل بيضاوي قابل للتحجيم",
-        run: () => addShapeElement("ellipse"),
+        subtitle: 'شكل بيضاوي قابل للتحجيم',
+        run: () => addShapeElement('ellipse'),
       };
     },
   },
   {
-    id: "mode-collage",
-    title: "وضع الكولاج",
-    group: "وضع الكانفاس",
-    shortcut: "Ctrl+Alt+1",
+    id: 'mode-collage',
+    title: 'وضع الكولاج',
+    group: 'وضع الكانفاس',
+    shortcut: 'Ctrl+Alt+1',
     getSnapshot: (input = readStateCommandInput()) => {
       const { setMode } = useEditorStore.getState();
-      const isActive = input.mode === "collage";
+      const isActive = input.mode === 'collage';
       return {
-        subtitle: isActive ? "هو الوضع الحالي" : "تحويل الكانفاس إلى شبكة كولاج",
+        subtitle: isActive ? 'هو الوضع الحالي' : 'تحويل الكانفاس إلى شبكة كولاج',
         disabled: isActive,
-        run: () => setMode("collage"),
+        run: () => setMode('collage'),
       };
     },
   },
   {
-    id: "mode-single",
-    title: "وضع التعديل الحر",
-    group: "وضع الكانفاس",
-    shortcut: "Ctrl+Alt+2",
+    id: 'mode-single',
+    title: 'وضع التعديل الحر',
+    group: 'وضع الكانفاس',
+    shortcut: 'Ctrl+Alt+2',
     getSnapshot: (input = readStateCommandInput()) => {
       const { setMode } = useEditorStore.getState();
-      const isActive = input.mode === "single";
+      const isActive = input.mode === 'single';
       return {
-        subtitle: isActive ? "هو الوضع الحالي" : "تحرير حر بلا شبكة كولاج",
+        subtitle: isActive ? 'هو الوضع الحالي' : 'تحرير حر بلا شبكة كولاج',
         disabled: isActive,
-        run: () => setMode("single"),
+        run: () => setMode('single'),
+      };
+    },
+  },
+  {
+    id: 'workflow-quick',
+    title: 'مسار الإنتاج السريع',
+    group: 'مسار العمل',
+    getSnapshot: (input = readStateCommandInput()) => {
+      const { setWorkflow } = useEditorStore.getState();
+      const isActive = input.workflow === 'quick';
+      return {
+        subtitle: isActive ? 'هو المسار الحالي' : 'كولاج أولاً بلا تبويب العناصر',
+        disabled: isActive,
+        run: () => setWorkflow('quick'),
+      };
+    },
+  },
+  {
+    id: 'workflow-studio',
+    title: 'مسار الاستوديو',
+    group: 'مسار العمل',
+    getSnapshot: (input = readStateCommandInput()) => {
+      const { setWorkflow } = useEditorStore.getState();
+      const isActive = input.workflow === 'studio';
+      return {
+        subtitle: isActive ? 'هو المسار الحالي' : 'كل تبويبات التصميم ظاهرة',
+        disabled: isActive,
+        run: () => setWorkflow('studio'),
       };
     },
   },
@@ -772,6 +770,6 @@ export function getStateCommandGroups(input?: StateCommandInput) {
       command,
       snapshot: command.getSnapshot(input),
       group: command.group,
-    }))
+    })),
   );
 }

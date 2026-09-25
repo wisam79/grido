@@ -1,9 +1,9 @@
-import { useState, useEffect, lazy, Suspense } from "react";
-import { motion } from "framer-motion";
-import { 
-  Toolbar, 
-  TemplatePanel, 
-  PropertiesPanel, 
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Toolbar,
+  TemplatePanel,
+  PropertiesPanel,
   EditorCanvas,
   AccountLicenseModal,
   UpdateNotifier,
@@ -12,21 +12,33 @@ import {
   CanvasViewportDeck,
   DesktopMenuBar,
   WorkspaceLayout,
-} from "@/components/editor";
-import { useWorkspacePanels, type CollageTab, type FreeformTab } from "@/hooks/use-workspace-panels";
-import { ErrorBoundary } from "@/components/error-boundary";
-import { GetStartupFile, ProcessLocalImageFile } from "../wailsjs/go/main/App";
-import { EventsOn, EventsOff } from "../wailsjs/runtime/runtime";
+} from '@/components/editor';
+import {
+  useWorkspacePanels,
+  type CollageTab,
+  type FreeformTab,
+} from '@/hooks/use-workspace-panels';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { GetStartupFile, ProcessLocalImageFile } from '../wailsjs/go/main/App';
+import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime';
 
-const ExportDialog = lazy(() => import("@/components/editor/dialogs/export-dialog").then(module => ({ default: module.ExportDialog })));
-const PrintDialog = lazy(() => import("@/components/editor/dialogs/print-dialog").then(module => ({ default: module.PrintDialog })));
+const ExportDialog = lazy(() =>
+  import('@/components/editor/dialogs/export-dialog').then((module) => ({
+    default: module.ExportDialog,
+  })),
+);
+const PrintDialog = lazy(() =>
+  import('@/components/editor/dialogs/print-dialog').then((module) => ({
+    default: module.PrintDialog,
+  })),
+);
 
-import { Button } from "@/components/ui/button";
-import { useOperationStatusStore } from "@/lib/ui/operation-status";
-import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-import { Spinner } from "@/components/ui/huge-icon";
-import { Skeleton } from "@/components/ui/skeleton";
-import { FluentIconProvider } from "@/components/ui/fluent-icon-provider";
+import { Button } from '@/components/ui/button';
+import { useOperationStatusStore } from '@/lib/ui/operation-status';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+import { Spinner } from '@/components/ui/huge-icon';
+import { Skeleton } from '@/components/ui/skeleton';
+import { FluentIconProvider } from '@/components/ui/fluent-icon-provider';
 import {
   SquaresFour,
   Image,
@@ -36,24 +48,24 @@ import {
   Desktop,
   SidebarSimple,
   User,
-} from "@/components/ui/icons";
+} from '@/components/ui/icons';
 
-import { useTheme } from "@/hooks/use-theme";
-import { useWindowControls } from "@/hooks/use-window-controls";
-import { WindowControls } from "@/components/editor/system/window-controls";
-import { LicenseLockScreen } from "@/components/editor/system/license-lock-screen";
-import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { useAutoSave } from "@/hooks/use-autosave";
-import { useEditorStore } from "@/lib/editor-store";
-import { addImageFromSrc } from "@/lib/canvas/load-image";
-import { useRenderQuality } from "@/lib/canvas/render-quality";
-import { warmupOpenCV } from "@/components/editor/document-scanner/opencv-loader";
-import { useShallow } from "zustand/react/shallow";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { usePhoneBridgeListener } from "@/components/editor/system/use-phone-bridge";
-import { PAPER_BACKGROUND_EVENTS } from "@/lib/ui/paper-background";
+import { useTheme } from '@/hooks/use-theme';
+import { useWindowControls } from '@/hooks/use-window-controls';
+import { WindowControls } from '@/components/editor/system/window-controls';
+import { LicenseLockScreen } from '@/components/editor/system/license-lock-screen';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { useAutoSave } from '@/hooks/use-autosave';
+import { useEditorStore } from '@/lib/editor-store';
+import { addImageFromSrc } from '@/lib/canvas/load-image';
+import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { warmupOpenCV } from '@/components/editor/document-scanner/opencv-loader';
+import { useShallow } from 'zustand/react/shallow';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { usePhoneBridgeListener } from '@/components/editor/system/use-phone-bridge';
+import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 
 /** هيكل تحميل بسيط يُعرض أثناء تفكيك الحوارات الكسولة (تصدير/طباعة) */
 function DialogLazyFallback() {
@@ -82,7 +94,10 @@ export default function App() {
   const [isInitializing, setIsInitializing] = useState(true);
 
   const panelsHook = useWorkspacePanels();
-  const isTemplatesOpen = panelsHook.breakpoint === "wide" ? panelsHook.isTemplatesDrawerOpen : panelsHook.activePanel === "templates";
+  const isTemplatesOpen =
+    panelsHook.breakpoint === 'wide'
+      ? panelsHook.isTemplatesDrawerOpen
+      : panelsHook.activePanel === 'templates';
   const { theme, themeMode, toggleTheme } = useTheme();
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
@@ -90,8 +105,8 @@ export default function App() {
   const { togglePanel, openPanel, toggleZenMode, selectCollageTab, selectStudioTab } = panelsHook;
 
   useEffect(() => {
-    const handleToggleRight = () => togglePanel("templates");
-    const handleToggleLeft = () => togglePanel("properties");
+    const handleToggleRight = () => togglePanel('templates');
+    const handleToggleLeft = () => togglePanel('properties');
     const handleToggleZen = () => toggleZenMode();
     const handleSelectCollageTab = (e: Event) => {
       const detail = (e as CustomEvent<{ tab: CollageTab }>).detail;
@@ -106,33 +121,27 @@ export default function App() {
       }
     };
     // 🎯 انتقال موحّد إلى أداة خلفية الورقة الوحيدة (لوحة الخصائص)
-    const handleOpenPropertiesPanel = () => openPanel("properties");
+    const handleOpenPropertiesPanel = () => openPanel('properties');
 
-    window.addEventListener("grido:toggle-right-sidebar", handleToggleRight);
-    window.addEventListener("grido:toggle-left-sidebar", handleToggleLeft);
-    window.addEventListener("grido:toggle-zen-mode", handleToggleZen);
-    window.addEventListener("grido:select-collage-tab", handleSelectCollageTab);
-    window.addEventListener("grido:select-studio-tab", handleSelectStudioTab);
+    window.addEventListener('grido:toggle-right-sidebar', handleToggleRight);
+    window.addEventListener('grido:toggle-left-sidebar', handleToggleLeft);
+    window.addEventListener('grido:toggle-zen-mode', handleToggleZen);
+    window.addEventListener('grido:select-collage-tab', handleSelectCollageTab);
+    window.addEventListener('grido:select-studio-tab', handleSelectStudioTab);
     window.addEventListener(PAPER_BACKGROUND_EVENTS.openPanel, handleOpenPropertiesPanel);
 
     return () => {
-      window.removeEventListener("grido:toggle-right-sidebar", handleToggleRight);
-      window.removeEventListener("grido:toggle-left-sidebar", handleToggleLeft);
-      window.removeEventListener("grido:toggle-zen-mode", handleToggleZen);
-      window.removeEventListener("grido:select-collage-tab", handleSelectCollageTab);
-      window.removeEventListener("grido:select-studio-tab", handleSelectStudioTab);
+      window.removeEventListener('grido:toggle-right-sidebar', handleToggleRight);
+      window.removeEventListener('grido:toggle-left-sidebar', handleToggleLeft);
+      window.removeEventListener('grido:toggle-zen-mode', handleToggleZen);
+      window.removeEventListener('grido:select-collage-tab', handleSelectCollageTab);
+      window.removeEventListener('grido:select-studio-tab', handleSelectStudioTab);
       window.removeEventListener(PAPER_BACKGROUND_EVENTS.openPanel, handleOpenPropertiesPanel);
     };
   }, [togglePanel, openPanel, toggleZenMode, selectCollageTab, selectStudioTab]);
 
-
-  const {
-    isMaximized,
-    isFocused,
-    handleMinimize,
-    handleMaximize,
-    handleClose,
-  } = useWindowControls();
+  const { isMaximized, isFocused, handleMinimize, handleMaximize, handleClose } =
+    useWindowControls();
 
   useKeyboardShortcuts();
   useAutoSave();
@@ -140,6 +149,15 @@ export default function App() {
 
   const mode = useEditorStore((state) => state.mode);
   const setMode = useEditorStore((state) => state.setMode);
+  const workflow = useEditorStore((state) => state.workflow);
+
+  // مسار الإنتاج السريع يخفي تبويب العناصر — إن كان مفتوحاً نعيده للطبقات
+  // بدل زر بلا إبراز ولوحة بلا مدخل في الشريط
+  useEffect(() => {
+    if (workflow === 'quick' && panelsHook.activeStudioTab === 'elements') {
+      panelsHook.setActiveStudioTab('layers');
+    }
+  }, [workflow, panelsHook]);
 
   const checkLicenseStatus = useEditorStore((state) => state.checkLicenseStatus);
 
@@ -151,13 +169,15 @@ export default function App() {
     setCanvasZoom,
     canvasWidth,
     canvasHeight,
-  } = useEditorStore(useShallow((state) => ({
-    isLicenseActive: state.isLicenseActive,
-    canvasZoom: state.canvasZoom,
-    setCanvasZoom: state.setCanvasZoom,
-    canvasWidth: state.canvasWidth,
-    canvasHeight: state.canvasHeight,
-  })));
+  } = useEditorStore(
+    useShallow((state) => ({
+      isLicenseActive: state.isLicenseActive,
+      canvasZoom: state.canvasZoom,
+      setCanvasZoom: state.setCanvasZoom,
+      canvasWidth: state.canvasWidth,
+      canvasHeight: state.canvasHeight,
+    })),
+  );
   const isLicenseActive = isLicenseActiveFn();
   const setAccountModalOpen = useEditorStore((state) => state.setAccountModalOpen);
   const activateLicenseKey = useEditorStore((state) => state.activateLicenseKey);
@@ -178,7 +198,7 @@ export default function App() {
         void useEditorStore.getState().hydrateAiUsageLogs();
         // فحص وجود صورة ممررة عند الإقلاع (مثل النقر بالزر الأيمن "فتح بواسطة" في ويندوز)
         try {
-          if (typeof GetStartupFile === "function") {
+          if (typeof GetStartupFile === 'function') {
             const startupUrl = await GetStartupFile();
             if (startupUrl) void addImageFromSrc(startupUrl, { setSingleMode: true });
           }
@@ -186,7 +206,7 @@ export default function App() {
           // تجاهل الخطأ في بيئة الاختبارات عند عدم توفر واجهة Wails
         }
       } catch (err) {
-        console.error("Failed to check license status during init:", err);
+        console.error('Failed to check license status during init:', err);
       } finally {
         setIsInitializing(false);
       }
@@ -196,9 +216,12 @@ export default function App() {
     warmupOpenCV();
 
     // Check periodically every 5 minutes to ensure dynamic state updates
-    const intervalId = setInterval(() => {
-      checkLicenseStatus();
-    }, 5 * 60 * 1000);
+    const intervalId = setInterval(
+      () => {
+        checkLicenseStatus();
+      },
+      5 * 60 * 1000,
+    );
 
     return () => clearInterval(intervalId);
   }, [checkLicenseStatus, setAccountModalOpen]);
@@ -208,11 +231,11 @@ export default function App() {
   useEffect(() => {
     const handleToggleTheme = () => toggleTheme();
     const handleOpenAccount = () => setAccountModalOpen(true);
-    window.addEventListener("grido:toggle-theme", handleToggleTheme);
-    window.addEventListener("grido:open-account", handleOpenAccount);
+    window.addEventListener('grido:toggle-theme', handleToggleTheme);
+    window.addEventListener('grido:open-account', handleOpenAccount);
     return () => {
-      window.removeEventListener("grido:toggle-theme", handleToggleTheme);
-      window.removeEventListener("grido:open-account", handleOpenAccount);
+      window.removeEventListener('grido:toggle-theme', handleToggleTheme);
+      window.removeEventListener('grido:open-account', handleOpenAccount);
     };
   }, [toggleTheme, setAccountModalOpen]);
 
@@ -220,11 +243,11 @@ export default function App() {
   useEffect(() => {
     const openExport = () => setExportOpen(true);
     const openPrint = () => setPrintOpen(true);
-    window.addEventListener("grido:open-export-dialog", openExport);
-    window.addEventListener("grido:open-print-dialog", openPrint);
+    window.addEventListener('grido:open-export-dialog', openExport);
+    window.addEventListener('grido:open-print-dialog', openPrint);
     return () => {
-      window.removeEventListener("grido:open-export-dialog", openExport);
-      window.removeEventListener("grido:open-print-dialog", openPrint);
+      window.removeEventListener('grido:open-export-dialog', openExport);
+      window.removeEventListener('grido:open-print-dialog', openPrint);
     };
   }, []);
 
@@ -237,32 +260,36 @@ export default function App() {
     let unbindFileDrop: (() => void) | undefined;
     let unbindResume: (() => void) | undefined;
 
-    if (typeof EventsOn === "function") {
+    if (typeof EventsOn === 'function') {
       try {
-        unbindFileOpened = EventsOn("file-opened", async (filePath: string) => {
+        unbindFileOpened = EventsOn('file-opened', async (filePath: string) => {
           if (!filePath) return;
           try {
-            const src = typeof ProcessLocalImageFile === "function"
-              ? await ProcessLocalImageFile(filePath)
-              : filePath;
+            const src =
+              typeof ProcessLocalImageFile === 'function'
+                ? await ProcessLocalImageFile(filePath)
+                : filePath;
             if (src) void addImageFromSrc(src, { setSingleMode: true });
           } catch (err) {
-            console.error("Failed to open file from Wails event:", err);
+            console.error('Failed to open file from Wails event:', err);
           }
         });
 
-        unbindFileDrop = EventsOn("native-file-drop", (data: { x: number; y: number; images: string[] }) => {
-          if (!data || !data.images || data.images.length === 0) return;
-          data.images.forEach((src) => {
-            void addImageFromSrc(src);
-          });
-        });
+        unbindFileDrop = EventsOn(
+          'native-file-drop',
+          (data: { x: number; y: number; images: string[] }) => {
+            if (!data || !data.images || data.images.length === 0) return;
+            data.images.forEach((src) => {
+              void addImageFromSrc(src);
+            });
+          },
+        );
 
-        unbindResume = EventsOn("app:resume", () => {
+        unbindResume = EventsOn('app:resume', () => {
           void checkLicenseStatus();
         });
       } catch (err) {
-        console.warn("Wails runtime EventsOn not available in this environment:", err);
+        console.warn('Wails runtime EventsOn not available in this environment:', err);
       }
     }
 
@@ -270,11 +297,11 @@ export default function App() {
       unbindFileOpened?.();
       unbindFileDrop?.();
       unbindResume?.();
-      if (typeof EventsOff === "function") {
+      if (typeof EventsOff === 'function') {
         try {
-          EventsOff("file-opened");
-          EventsOff("native-file-drop");
-          EventsOff("app:resume");
+          EventsOff('file-opened');
+          EventsOff('native-file-drop');
+          EventsOff('app:resume');
         } catch {
           // ignore
         }
@@ -283,11 +310,13 @@ export default function App() {
   }, [checkLicenseStatus]);
 
   if (isInitializing) {
-
     return (
-      <div className="fixed inset-0 z-(--z-ruler) flex flex-col items-center justify-center bg-background text-foreground font-cairo select-none" dir="rtl">
+      <div
+        className="fixed inset-0 z-(--z-ruler) flex flex-col items-center justify-center bg-background text-foreground font-cairo select-none"
+        dir="rtl"
+      >
         <div className="relative flex flex-col items-center max-w-xs text-center px-4">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.35, ease: [0.1, 0.9, 0.2, 1] }}
@@ -295,15 +324,15 @@ export default function App() {
           >
             <Spinner className="w-8 h-8 text-primary" size={32} />
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.35, ease: "easeOut" }}
+            transition={{ delay: 0.15, duration: 0.35, ease: 'easeOut' }}
             className="text-xl font-extrabold tracking-tight"
           >
             Grido Studio
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.35 }}
@@ -343,317 +372,360 @@ export default function App() {
   return (
     <FluentIconProvider weight="regular" size={18}>
       <TooltipProvider delayDuration={650} skipDelayDuration={150}>
-        <div 
-          className={cn(
-            "h-screen flex flex-col overflow-hidden font-cairo bg-background/90",
-          )}
+        <div
+          className={cn('h-screen flex flex-col overflow-hidden font-cairo bg-background/90')}
           dir="rtl"
         >
-      {!isMaximized && <WindowResizeHandles />}
-      {/* الرأس الموحد للنافذة بتصميم Fluent 2 Acrylic */}
-      <ErrorBoundary>
-      <header
-        className={cn(
-          "border-b border-border bg-sidebar/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-(--z-panel) fluent-specular shadow-2xs",
-          !isFocused && "opacity-75"
-        )}
-        dir="ltr"
-        onDoubleClick={handleMaximize}
-      >
-        <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
-              <h1 className="text-xs font-black text-foreground tracking-wider font-mono flex items-center gap-1.5">
-                <span>GRIDO</span>
-                <span className="sr-only">Grido Studio | استوديو الهوية</span>
-              </h1>
-            </div>
-            <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />
-            <div className="hidden sm:flex items-center title-bar-controls" dir="rtl">
-              <DesktopMenuBar />
-            </div>
-
-          </div>
-
-          {/* وضع العمل — مبدّل الأوضاع القياسي وفق Fluent 2 */}
-          <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 title-bar-controls hidden md:block"
-            dir="rtl"
-          >
-            <div
-              role="tablist"
-              aria-label="وضع العمل"
-              className="relative inline-flex items-center p-0.5 rounded-lg bg-muted/40 dark:bg-black/20 border border-border/50 shadow-inner select-none"
-            >
-              {/* خيار 1: كولاج */}
-              <button
-                type="button"
-                role="tab"
-                id="mode-tab-collage"
-                aria-selected={mode === "collage"}
-                data-testid="mode-tab-collage"
-                title="وضع الكولاج (Ctrl+Alt+1)"
-                onClick={() => setMode("collage")}
-                className={cn(
-                  "relative z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  mode === "collage"
-                    ? "text-foreground font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {mode === "collage" && (
-                  <motion.span
-                    layoutId="titlebar-mode-indicator"
-                    className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
-                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                  />
-                )}
-                <SquaresFour
-                  className={cn("w-3.5 h-3.5 shrink-0 transition-colors", mode === "collage" ? "text-primary" : "text-muted-foreground")}
-                  weight={mode === "collage" ? "fill" : "regular"}
-                />
-                <span>كولاج</span>
-              </button>
-
-              {/* خيار 2: تعديل حر */}
-              <button
-                type="button"
-                role="tab"
-                id="mode-tab-single"
-                aria-selected={mode === "single"}
-                data-testid="mode-tab-single"
-                title="وضع التعديل الحر (Ctrl+Alt+2)"
-                onClick={() => setMode("single")}
-                className={cn(
-                  "relative z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  mode === "single"
-                    ? "text-foreground font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {mode === "single" && (
-                  <motion.span
-                    layoutId="titlebar-mode-indicator"
-                    className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
-                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                  />
-                )}
-                <Image
-                  className={cn("w-3.5 h-3.5 shrink-0 transition-colors", mode === "single" ? "text-primary" : "text-muted-foreground")}
-                  weight={mode === "single" ? "fill" : "regular"}
-                />
-                <span>تعديل حر</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 h-full title-bar-controls">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setAccountModalOpen(true)}
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 relative rounded-md"
-                  aria-label="الحساب والتراخيص"
-                >
-                  {isLicenseActive ? (
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" weight="duotone" />
-                  ) : (
-                    <User className="w-4 h-4 text-muted-foreground" />
-                  )}
-                  {user?.plan === "trial" && (
-                    <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">الحساب والتراخيص</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleTheme}
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
-                  aria-label={
-                    themeMode === "system"
-                      ? "مظهر النظام تلقائي"
-                      : themeMode === "dark"
-                      ? "الوضع الداكن"
-                      : "الوضع المضيء"
-                  }
-                >
-                  {themeMode === "system" ? (
-                    <Desktop className="w-4 h-4 text-primary" weight="duotone" />
-                  ) : themeMode === "dark" ? (
-                    <Moon className="w-4 h-4" />
-                  ) : (
-                    <Sun className="w-4 h-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
-                {themeMode === "system"
-                  ? `مظهر النظام تلقائي (${theme === "dark" ? "داكن" : "مضيء"})`
-                  : themeMode === "dark"
-                  ? "الوضع الداكن (يدوي)"
-                  : "الوضع المضيء (يدوي)"}
-              </TooltipContent>
-            </Tooltip>
-
-            {/* أزرار طي وتوسيع الألواح الجانبية لسطح المكتب */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => panelsHook.togglePanel("templates")}
-                  className={cn(
-                    "hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all",
-                    isTemplatesOpen
-                      ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
-                      : "text-muted-foreground hover:bg-muted/80"
-                  )}
-                  aria-label={isTemplatesOpen ? (mode === "collage" ? "إخفاء لوحة القوالب" : "إخفاء استوديو التصميم") : (mode === "collage" ? "إظهار لوحة القوالب" : "إظهار استوديو التصميم")}
-                >
-                  <SidebarSimple className="w-4 h-4" weight={isTemplatesOpen ? "fill" : "regular"} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="font-cairo text-xs font-semibold py-1 px-2.5">
-                <div className="flex items-center gap-1.5">
-                  <span>{isTemplatesOpen ? (mode === "collage" ? "إخفاء لوحة القوالب" : "إخفاء استوديو التصميم") : (mode === "collage" ? "إظهار لوحة القوالب" : "إظهار استوديو التصميم")}</span>
-                  <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">Ctrl+B</kbd>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
-              onClick={() => panelsHook.openPanel("templates")}
-            >
-              <SidebarSimple className="w-4 h-4" />
-              <span className="text-xs font-semibold">{mode === "collage" ? "القوالب" : "التصميم"}</span>
-            </Button>
-
-            {/* Separator */}
-            <div className="w-px h-5 bg-border/60 mx-1" />
-
-            {/* Window Buttons */}
-            <WindowControls
-              isMaximized={isMaximized}
-              onMinimize={handleMinimize}
-              onMaximize={handleMaximize}
-              onClose={handleClose}
-            />
-          </div>
-        </div>
-      </header>
-      </ErrorBoundary>
-
-      {/* شريط الأدوات */}
-      <Toolbar
-        onPrint={() => {
-          if (!isLicenseActive) {
-            toast.error("الطباعة في الخطة الاحترافية (Pro) فقط.", {
-              action: {
-                label: "تفعيل الآن",
-                onClick: () => setAccountModalOpen(true)
-              }
-            });
-            return;
-          }
-          setPrintOpen(true);
-        }}
-        onExport={() => setExportOpen(true)}
-        onSave={() => window.dispatchEvent(new CustomEvent("grido:open-projects-dialog", { detail: { tab: "save" } }))}
-      />
-
-      {/* المحتوى الرئيسي للمساحة بتصميم Fluent 2 المستقر */}
-      <WorkspaceLayout
-        panelsHook={panelsHook}
-        templatesContent={
+          {!isMaximized && <WindowResizeHandles />}
+          {/* الرأس الموحد للنافذة بتصميم Fluent 2 Acrylic */}
           <ErrorBoundary>
-            <TemplatePanel
-              onCollapse={panelsHook.closeActivePanel}
-              activeStudioTab={panelsHook.activeStudioTab}
-              onActiveStudioTabChange={panelsHook.setActiveStudioTab}
-              activeCollageTab={panelsHook.activeCollageTab}
-              onActiveCollageTabChange={panelsHook.setActiveCollageTab}
-              showInternalCollageTabs={panelsHook.breakpoint === 'compact'}
-            />
-          </ErrorBoundary>
-        }
-        propertiesContent={
-          <ErrorBoundary>
-            <PropertiesPanel onCollapse={panelsHook.closeActivePanel} />
-          </ErrorBoundary>
-        }
-        canvasContent={
-          <ErrorBoundary>
-            <EditorCanvas
-              onOpenFile={() => window.dispatchEvent(new CustomEvent("grido:open-file-dialog"))}
-              onOpenTemplates={() => panelsHook.openPanel("templates")}
-            />
-          </ErrorBoundary>
-        }
-        floatingFeedback={
-          activeOperation ? (
-            <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-auto">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
-              <span className="text-xs font-bold text-foreground truncate max-w-xs">{activeOperation.title}</span>
-              {activeOperation.canCancel && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={cancelActiveOperation}
-                  className="h-6 px-2 text-mini font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer transition-all"
-                >
-                  إلغاء
-                </Button>
+            <header
+              className={cn(
+                'border-b border-border bg-sidebar/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-(--z-panel) fluent-specular shadow-2xs',
+                !isFocused && 'opacity-75',
               )}
-            </div>
-          ) : isBusy ? (
-            <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 px-3 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-none">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
-              <span className="text-xs font-bold text-primary">جاري الترميم ...</span>
-            </div>
-          ) : null
-        }
-        footerContent={
-          <CanvasViewportDeck
-            isZenMode={panelsHook.isZenMode}
-            onToggleZenMode={panelsHook.toggleZenMode}
+              dir="ltr"
+              onDoubleClick={handleMaximize}
+            >
+              <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-primary shadow-xs shadow-primary/40 ring-2 ring-primary/20 shrink-0" />
+                    <h1 className="text-xs font-black text-foreground tracking-wider font-mono flex items-center gap-1.5">
+                      <span>GRIDO</span>
+                      <span className="sr-only">Grido Studio | استوديو الهوية</span>
+                    </h1>
+                  </div>
+                  <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />
+                  <div className="hidden sm:flex items-center title-bar-controls" dir="rtl">
+                    <DesktopMenuBar />
+                  </div>
+                </div>
+
+                {/* وضع العمل — مبدّل الأوضاع القياسي وفق Fluent 2 */}
+                <div
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 title-bar-controls hidden md:block"
+                  dir="rtl"
+                >
+                  <div
+                    role="tablist"
+                    aria-label="وضع العمل"
+                    className="relative inline-flex items-center p-0.5 rounded-lg bg-muted/40 dark:bg-black/20 border border-border/50 shadow-inner select-none"
+                  >
+                    {/* خيار 1: كولاج */}
+                    <button
+                      type="button"
+                      role="tab"
+                      id="mode-tab-collage"
+                      aria-selected={mode === 'collage'}
+                      data-testid="mode-tab-collage"
+                      title="وضع الكولاج (Ctrl+Alt+1)"
+                      onClick={() => setMode('collage')}
+                      className={cn(
+                        'relative z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                        mode === 'collage'
+                          ? 'text-foreground font-bold'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      {mode === 'collage' && (
+                        <motion.span
+                          layoutId="titlebar-mode-indicator"
+                          className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
+                          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                        />
+                      )}
+                      <SquaresFour
+                        className={cn(
+                          'w-3.5 h-3.5 shrink-0 transition-colors',
+                          mode === 'collage' ? 'text-primary' : 'text-muted-foreground',
+                        )}
+                        weight={mode === 'collage' ? 'fill' : 'regular'}
+                      />
+                      <span>كولاج</span>
+                    </button>
+
+                    {/* خيار 2: تعديل حر */}
+                    <button
+                      type="button"
+                      role="tab"
+                      id="mode-tab-single"
+                      aria-selected={mode === 'single'}
+                      data-testid="mode-tab-single"
+                      title="وضع التعديل الحر (Ctrl+Alt+2)"
+                      onClick={() => setMode('single')}
+                      className={cn(
+                        'relative z-10 flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-semibold transition-colors duration-150 cursor-pointer select-none',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                        mode === 'single'
+                          ? 'text-foreground font-bold'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      {mode === 'single' && (
+                        <motion.span
+                          layoutId="titlebar-mode-indicator"
+                          className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
+                          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                        />
+                      )}
+                      <Image
+                        className={cn(
+                          'w-3.5 h-3.5 shrink-0 transition-colors',
+                          mode === 'single' ? 'text-primary' : 'text-muted-foreground',
+                        )}
+                        weight={mode === 'single' ? 'fill' : 'regular'}
+                      />
+                      <span>تعديل حر</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 h-full title-bar-controls">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setAccountModalOpen(true)}
+                        className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 relative rounded-md"
+                        aria-label="الحساب والتراخيص"
+                      >
+                        {isLicenseActive ? (
+                          <ShieldCheck className="w-4 h-4 text-emerald-500" weight="duotone" />
+                        ) : (
+                          <User className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        {user?.plan === 'trial' && (
+                          <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="font-cairo text-xs font-semibold py-1 px-2.5"
+                    >
+                      الحساب والتراخيص
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleTheme}
+                        className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
+                        aria-label={
+                          themeMode === 'system'
+                            ? 'مظهر النظام تلقائي'
+                            : themeMode === 'dark'
+                              ? 'الوضع الداكن'
+                              : 'الوضع المضيء'
+                        }
+                      >
+                        {themeMode === 'system' ? (
+                          <Desktop className="w-4 h-4 text-primary" weight="duotone" />
+                        ) : themeMode === 'dark' ? (
+                          <Moon className="w-4 h-4" />
+                        ) : (
+                          <Sun className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="font-cairo text-xs font-semibold py-1 px-2.5"
+                    >
+                      {themeMode === 'system'
+                        ? `مظهر النظام تلقائي (${theme === 'dark' ? 'داكن' : 'مضيء'})`
+                        : themeMode === 'dark'
+                          ? 'الوضع الداكن (يدوي)'
+                          : 'الوضع المضيء (يدوي)'}
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* أزرار طي وتوسيع الألواح الجانبية لسطح المكتب */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => panelsHook.togglePanel('templates')}
+                        className={cn(
+                          'hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all',
+                          isTemplatesOpen
+                            ? 'text-primary bg-primary/10 hover:bg-primary/20 font-bold'
+                            : 'text-muted-foreground hover:bg-muted/80',
+                        )}
+                        aria-label={
+                          isTemplatesOpen
+                            ? mode === 'collage'
+                              ? 'إخفاء لوحة القوالب'
+                              : 'إخفاء استوديو التصميم'
+                            : mode === 'collage'
+                              ? 'إظهار لوحة القوالب'
+                              : 'إظهار استوديو التصميم'
+                        }
+                      >
+                        <SidebarSimple
+                          className="w-4 h-4"
+                          weight={isTemplatesOpen ? 'fill' : 'regular'}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="font-cairo text-xs font-semibold py-1 px-2.5"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>
+                          {isTemplatesOpen
+                            ? mode === 'collage'
+                              ? 'إخفاء لوحة القوالب'
+                              : 'إخفاء استوديو التصميم'
+                            : mode === 'collage'
+                              ? 'إظهار لوحة القوالب'
+                              : 'إظهار استوديو التصميم'}
+                        </span>
+                        <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
+                          Ctrl+B
+                        </kbd>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
+                    onClick={() => panelsHook.openPanel('templates')}
+                  >
+                    <SidebarSimple className="w-4 h-4" />
+                    <span className="text-xs font-semibold">
+                      {mode === 'collage' ? 'القوالب' : 'التصميم'}
+                    </span>
+                  </Button>
+
+                  {/* Separator */}
+                  <div className="w-px h-5 bg-border/60 mx-1" />
+
+                  {/* Window Buttons */}
+                  <WindowControls
+                    isMaximized={isMaximized}
+                    onMinimize={handleMinimize}
+                    onMaximize={handleMaximize}
+                    onClose={handleClose}
+                  />
+                </div>
+              </div>
+            </header>
+          </ErrorBoundary>
+
+          {/* شريط الأدوات */}
+          <Toolbar
+            onPrint={() => {
+              if (!isLicenseActive) {
+                toast.error('الطباعة في الخطة الاحترافية (Pro) فقط.', {
+                  action: {
+                    label: 'تفعيل الآن',
+                    onClick: () => setAccountModalOpen(true),
+                  },
+                });
+                return;
+              }
+              setPrintOpen(true);
+            }}
+            onExport={() => setExportOpen(true)}
+            onSave={() =>
+              window.dispatchEvent(
+                new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
+              )
+            }
           />
-        }
-      />
 
-      {/* نافذة التصدير */}
-      <ErrorBoundary>
-        <Suspense fallback={exportOpen ? <DialogLazyFallback /> : null}>
-          <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
-        </Suspense>
-      </ErrorBoundary>
+          {/* المحتوى الرئيسي للمساحة بتصميم Fluent 2 المستقر */}
+          <WorkspaceLayout
+            panelsHook={panelsHook}
+            templatesContent={
+              <ErrorBoundary>
+                <TemplatePanel
+                  onCollapse={panelsHook.closeActivePanel}
+                  activeStudioTab={panelsHook.activeStudioTab}
+                  onActiveStudioTabChange={panelsHook.setActiveStudioTab}
+                  activeCollageTab={panelsHook.activeCollageTab}
+                  onActiveCollageTabChange={panelsHook.setActiveCollageTab}
+                  showInternalCollageTabs={panelsHook.breakpoint === 'compact'}
+                />
+              </ErrorBoundary>
+            }
+            propertiesContent={
+              <ErrorBoundary>
+                <PropertiesPanel onCollapse={panelsHook.closeActivePanel} />
+              </ErrorBoundary>
+            }
+            canvasContent={
+              <ErrorBoundary>
+                <EditorCanvas
+                  onOpenFile={() => window.dispatchEvent(new CustomEvent('grido:open-file-dialog'))}
+                  onOpenTemplates={() => panelsHook.openPanel('templates')}
+                />
+              </ErrorBoundary>
+            }
+            floatingFeedback={
+              activeOperation ? (
+                <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-auto">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+                  <span className="text-xs font-bold text-foreground truncate max-w-xs">
+                    {activeOperation.title}
+                  </span>
+                  {activeOperation.canCancel && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={cancelActiveOperation}
+                      className="h-6 px-2 text-mini font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer transition-all"
+                    >
+                      إلغاء
+                    </Button>
+                  )}
+                </div>
+              ) : isBusy ? (
+                <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 px-3 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-none">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+                  <span className="text-xs font-bold text-primary">جاري الترميم ...</span>
+                </div>
+              ) : null
+            }
+            footerContent={
+              <CanvasViewportDeck
+                isZenMode={panelsHook.isZenMode}
+                onToggleZenMode={panelsHook.toggleZenMode}
+              />
+            }
+          />
 
-      {/* نافذة إعدادات الطباعة */}
-      <ErrorBoundary>
-        <Suspense fallback={printOpen ? <DialogLazyFallback /> : null}>
-          <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
-        </Suspense>
-      </ErrorBoundary>
+          {/* نافذة التصدير */}
+          <ErrorBoundary>
+            <Suspense fallback={exportOpen ? <DialogLazyFallback /> : null}>
+              <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
+            </Suspense>
+          </ErrorBoundary>
 
-      <AccountLicenseModal />
-      <UpdateNotifier />
+          {/* نافذة إعدادات الطباعة */}
+          <ErrorBoundary>
+            <Suspense fallback={printOpen ? <DialogLazyFallback /> : null}>
+              <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
+            </Suspense>
+          </ErrorBoundary>
 
-      <SonnerToaster position="top-center" duration={1500} offset={56} closeButton />
-      <KeyboardShortcutsDialog />
-    </div>
-    </TooltipProvider>
+          <AccountLicenseModal />
+          <UpdateNotifier />
+
+          <SonnerToaster position="top-center" duration={1500} offset={56} closeButton />
+          <KeyboardShortcutsDialog />
+        </div>
+      </TooltipProvider>
     </FluentIconProvider>
   );
 }

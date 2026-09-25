@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useCallback } from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { Button } from "@/components/ui/button";
-import { FluentSegmentedControl, FluentFilterChips } from "@/components/ui/blocks";
-import { toast } from "sonner";
+import React, { useState, useMemo, useCallback } from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import { Button } from '@/components/ui/button';
+import { FluentSegmentedControl, FluentFilterChips } from '@/components/ui/blocks';
+import { toast } from 'sonner';
 import {
   Sparkle,
   Plus,
@@ -18,24 +18,24 @@ import {
   ArrowRight,
   Calendar,
   Camera,
-} from "@/components/ui/icons";
+} from '@/components/ui/icons';
 import {
   QUICK_SHAPES,
   QUICK_TEXT_PRESETS,
   TEXT_FILTER_OPTIONS,
   QuickShapeItem,
   QuickTextItem,
-} from "./freeform-panel-constants";
+} from './freeform-panel-constants';
 import {
   BADGE_TEMPLATES,
   FRAME_TEMPLATES,
   RETAIL_TEMPLATES,
   GREETING_TEMPLATES,
   SEASONAL_TEMPLATES,
-} from "@/features/stickers/templates";
-import { StickerTemplate } from "@/features/stickers/types";
-import { renderSvgToPngDataUrl } from "@/features/stickers/lib/svg-rasterizer";
-import { sanitizeSvgMarkupCached } from "@/lib/utils";
+} from '@/features/stickers/templates';
+import { StickerTemplate } from '@/features/stickers/types';
+import { renderSvgToPngDataUrl } from '@/features/stickers/lib/svg-rasterizer';
+import { sanitizeSvgMarkupCached } from '@/lib/utils';
 
 // كاش محلي للـ SVG لتسريع العرض الفوري
 const SVG_PREVIEW_CACHE = new Map<string, string>();
@@ -45,69 +45,69 @@ function getStickerSvgPreview(t: StickerTemplate): string {
   if (cached) return cached;
   try {
     const fields = Object.fromEntries(t.fields.map((f) => [f.id, f.defaultValue]));
-    const isFrame = t.category === "frames";
+    const isFrame = t.category === 'frames';
     const svg = t.generateSvg({
       fields,
       primaryColor: t.defaultColors.primary,
       secondaryColor: t.defaultColors.secondary,
       backgroundColor: t.defaultColors.background,
       isTransparent: isFrame,
-      fontFamily: "Cairo",
+      fontFamily: 'Cairo',
     });
     SVG_PREVIEW_CACHE.set(t.id, svg);
     return svg;
   } catch {
-    return "";
+    return '';
   }
 }
 
 function getCategoryBadgeLabel(category: string): string {
   switch (category) {
-    case "badges":
-      return "ختم رسمي";
-    case "frames":
-      return "إطار تزييني";
-    case "retail":
-      return "عروض وتخفيض";
-    case "greeting":
-      return "بطاقة تهنئة";
-    case "seasonal":
-      return "موسمي احتفالي";
-    case "cafe":
-      return "طعام ومشروبات";
+    case 'badges':
+      return 'ختم رسمي';
+    case 'frames':
+      return 'إطار تزييني';
+    case 'retail':
+      return 'عروض وتخفيض';
+    case 'greeting':
+      return 'بطاقة تهنئة';
+    case 'seasonal':
+      return 'موسمي احتفالي';
+    case 'cafe':
+      return 'طعام ومشروبات';
     default:
-      return "ملصق فكتور";
+      return 'ملصق فكتور';
   }
 }
 
 function getTextCategoryBadgeLabel(category: string): string {
   switch (category) {
-    case "effects":
-      return "تأثير فني";
-    case "badges":
-      return "شارة توثيق";
-    case "phrases":
-      return "عبارة جاهزة";
-    case "titles":
-      return "عنوان";
+    case 'effects':
+      return 'تأثير فني';
+    case 'badges':
+      return 'شارة توثيق';
+    case 'phrases':
+      return 'عبارة جاهزة';
+    case 'titles':
+      return 'عنوان';
     default:
-      return "نمط مسبق";
+      return 'نمط مسبق';
   }
 }
 
 function renderTextPresetPreview(preset: QuickTextItem) {
   switch (preset.id) {
-    case "gold-luxury":
+    case 'gold-luxury':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-gradient-to-br from-amber-950/40 via-slate-900 to-amber-950/30 border border-amber-500/30 flex items-center justify-center text-center overflow-hidden">
           {/* token-exception: خلفية معاينة "ذهبي فاخر" — ألوان محتوى التصميم تُعرض كما ستُطبع وليست ألوان واجهة */}
           <span
             className="text-xs font-black font-cairo tracking-wide truncate"
             style={{
-              background: "linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #b45309 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              filter: "drop-shadow(0 2px 4px rgba(180, 83, 9, 0.4))",
+              background: 'linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #b45309 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 2px 4px rgba(180, 83, 9, 0.4))',
             }}
           >
             {preset.sampleText || preset.label}
@@ -115,15 +115,15 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "neon-glow":
+    case 'neon-glow':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-slate-950 border border-sky-500/40 flex items-center justify-center text-center overflow-hidden">
           {/* token-exception: خلفية معاينة "توهج نيون" — ألوان محتوى التصميم تُعرض كما ستُطبع وليست ألوان واجهة */}
           <span
             className="text-xs font-black tracking-wider truncate text-sky-400 font-sans"
             style={{
-              fontFamily: "Alexandria, sans-serif",
-              textShadow: "0 0 6px rgba(56, 189, 248, 0.8), 0 0 12px rgba(2, 132, 199, 0.6)",
+              fontFamily: 'Alexandria, sans-serif',
+              textShadow: '0 0 6px rgba(56, 189, 248, 0.8), 0 0 12px rgba(2, 132, 199, 0.6)',
             }}
           >
             {preset.sampleText || preset.label}
@@ -131,14 +131,14 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "3d-title":
+    case '3d-title':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-indigo-950/20 border border-indigo-500/30 flex items-center justify-center text-center overflow-hidden">
           <span
             className="text-xs font-black truncate text-indigo-500"
             style={{
-              fontFamily: "Changa, sans-serif",
-              textShadow: "1.5px 1.5px 0px #312e81, 2.5px 2.5px 0px #1e1b4b",
+              fontFamily: 'Changa, sans-serif',
+              textShadow: '1.5px 1.5px 0px #312e81, 2.5px 2.5px 0px #1e1b4b',
             }}
           >
             {preset.sampleText || preset.label}
@@ -146,15 +146,15 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "outline-modern":
+    case 'outline-modern':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/40 border border-border/60 flex items-center justify-center text-center overflow-hidden">
           <span
             className="text-xs font-black truncate tracking-widest text-transparent"
             style={{
-              fontFamily: "Montserrat, sans-serif",
-              WebkitTextStroke: "1.2px currentColor",
-              color: "transparent",
+              fontFamily: 'Montserrat, sans-serif',
+              WebkitTextStroke: '1.2px currentColor',
+              color: 'transparent',
             }}
           >
             {preset.sampleText || preset.label}
@@ -162,7 +162,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "stamp-circle":
+    case 'stamp-circle':
       return (
         <div className="w-full h-full px-1.5 rounded-lg bg-rose-500/5 border border-rose-500/20 flex items-center justify-center text-center overflow-hidden">
           <div className="inline-flex items-center px-2 py-0.5 rounded-full border border-dashed border-rose-600/70 text-rose-600 dark:text-rose-400 font-bold text-micro truncate -rotate-1">
@@ -171,7 +171,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "badge":
+    case 'badge':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-micro shadow-2xs truncate font-tajawal">
@@ -180,7 +180,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "studio-date":
+    case 'studio-date':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card text-foreground border border-border/60 text-micro font-semibold truncate shadow-2xs font-cairo">
@@ -190,7 +190,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "photographer-tag":
+    case 'photographer-tag':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card text-muted-foreground border border-border/50 text-micro font-medium truncate shadow-2xs">
@@ -200,20 +200,20 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "watermark":
+    case 'watermark':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/40 border border-border/40 flex items-center justify-center text-center overflow-hidden relative">
           <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:6px_6px] dark:bg-[radial-gradient(#fff_1px,transparent_1px)]" />
           <span
             className="text-micro font-black text-foreground/35 -rotate-12 tracking-widest truncate z-10"
-            style={{ fontFamily: "Alexandria, sans-serif" }}
+            style={{ fontFamily: 'Alexandria, sans-serif' }}
           >
             GRIDO مسودة
           </span>
         </div>
       );
 
-    case "caption-card":
+    case 'caption-card':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
           <div className="px-2 py-0.5 rounded border border-border/80 bg-background/90 text-foreground text-micro font-medium shadow-2xs truncate font-tajawal">
@@ -222,7 +222,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "congrats":
+    case 'congrats':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-center overflow-hidden">
           <span className="text-xs font-extrabold font-cairo text-emerald-700 dark:text-emerald-300 truncate drop-shadow-2xs">
@@ -231,19 +231,19 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "sale-offer":
+    case 'sale-offer':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-red-500/10 border border-red-500/25 flex items-center justify-center text-center overflow-hidden">
           <span
             className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-600 text-white font-black text-micro tracking-wide shadow-2xs truncate"
-            style={{ fontFamily: "Changa, sans-serif" }}
+            style={{ fontFamily: 'Changa, sans-serif' }}
           >
             🔥 {preset.sampleText || preset.label}
           </span>
         </div>
       );
 
-    case "certificate":
+    case 'certificate':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-blue-950/10 dark:bg-blue-950/30 border border-blue-500/30 flex items-center justify-center text-center overflow-hidden">
           <span
@@ -255,7 +255,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         </div>
       );
 
-    case "special-price":
+    case 'special-price':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-card border border-border/60 flex items-center justify-center text-center overflow-hidden">
           <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-sky-600 text-white font-bold text-micro shadow-2xs truncate font-tajawal">
@@ -276,13 +276,13 @@ function renderTextPresetPreview(preset: QuickTextItem) {
 }
 
 export interface FreeformElementsTabProps {
-  category?: "badges" | "shapes" | "text";
+  category?: 'badges' | 'shapes' | 'text';
 }
 
 export const FreeformElementsTab = React.memo(function FreeformElementsTab({
   category: controlledCategory,
 }: FreeformElementsTabProps = {}) {
-  const [internalCategory, setInternalCategory] = useState<"badges" | "shapes" | "text">("badges");
+  const [internalCategory, setInternalCategory] = useState<'badges' | 'shapes' | 'text'>('badges');
   const activeCategory = controlledCategory ?? internalCategory;
   const [isInserting, setIsInserting] = useState<string | null>(null);
 
@@ -291,16 +291,16 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
   const addImageElement = useEditorStore((state) => state.addImageElement);
 
   // تصفية الملصقات سريعة العرض
-  const [selectedStickerFilter, setSelectedStickerFilter] = useState<string>("all");
+  const [selectedStickerFilter, setSelectedStickerFilter] = useState<string>('all');
 
   const displayedStickers = useMemo(() => {
-    if (selectedStickerFilter === "badges") {
+    if (selectedStickerFilter === 'badges') {
       return BADGE_TEMPLATES;
     }
-    if (selectedStickerFilter === "frames") {
+    if (selectedStickerFilter === 'frames') {
       return FRAME_TEMPLATES;
     }
-    if (selectedStickerFilter === "retail") {
+    if (selectedStickerFilter === 'retail') {
       return [...RETAIL_TEMPLATES, ...GREETING_TEMPLATES, ...SEASONAL_TEMPLATES];
     }
     // "all": تشكيلة منوعة ومتوازنة وجذابة بصرياً تبدأ بالأختام الملونة ثم العروض ثم الإطارات
@@ -313,11 +313,11 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
   }, [selectedStickerFilter]);
 
   // تصفية النصوص الجاهزة سريعة العرض
-  const [selectedTextFilter, setSelectedTextFilter] = useState<string>("all");
+  const [selectedTextFilter, setSelectedTextFilter] = useState<string>('all');
 
   const displayedTextPresets = useMemo(() => {
-    if (selectedTextFilter === "all") {
-      return QUICK_TEXT_PRESETS.filter((p) => p.category !== "titles");
+    if (selectedTextFilter === 'all') {
+      return QUICK_TEXT_PRESETS.filter((p) => p.category !== 'titles');
     }
     return QUICK_TEXT_PRESETS.filter((p) => p.category === selectedTextFilter);
   }, [selectedTextFilter]);
@@ -326,18 +326,18 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
   const handleAddShape = useCallback(
     (item: QuickShapeItem) => {
       addShapeElement(item.shape, item.svgPath);
-      toast.success(`تمت إضافة ${item.label}`);
+      toast.success(`أُضيف ${item.label}`);
     },
-    [addShapeElement]
+    [addShapeElement],
   );
 
   // إضافة نص جاهز بنقرة واحدة
   const handleAddText = useCallback(
     (item: QuickTextItem) => {
       addTextPreset(item.id);
-      toast.success(`تمت إضافة ${item.label}`);
+      toast.success(`أُضيف ${item.label}`);
     },
-    [addTextPreset]
+    [addTextPreset],
   );
 
   // إدراج ملصق / ختم بنقرة واحدة
@@ -347,68 +347,80 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
         setIsInserting(template.id);
         const svg = getStickerSvgPreview(template);
         if (!svg) {
-          toast.error("تعذر تجهيز المعاينة");
+          toast.error('تعذرت المعاينة');
           return;
         }
 
-        const pngUrl = await renderSvgToPngDataUrl(
-          svg,
-          1000,
-          1000 / (template.aspectRatio || 1),
-          ["Cairo"]
-        );
+        const pngUrl = await renderSvgToPngDataUrl(svg, 1000, 1000 / (template.aspectRatio || 1), [
+          'Cairo',
+        ]);
 
         addImageElement(pngUrl, template.aspectRatio || 1);
-        toast.success(`تمت إضافة ${template.name}`);
+        toast.success(`أُضيف ${template.name}`);
       } catch (err) {
-        console.error("Failed to insert quick sticker", err);
-        toast.error("فشل إدراج الملصق");
+        console.error('Failed to insert quick sticker', err);
+        toast.error('فشل الإدراج');
       } finally {
         setIsInserting(null);
       }
     },
-    [addImageElement]
+    [addImageElement],
   );
 
   // فتح استوديو الملصقات المتقدم
   const handleOpenFullStickerStudio = () => {
-    window.dispatchEvent(new CustomEvent("grido:open-stickers-dialog"));
+    window.dispatchEvent(new CustomEvent('grido:open-stickers-dialog'));
   };
 
   return (
     <div className="space-y-3 font-cairo animate-in fade-in duration-150" dir="rtl">
       {/* 🏷️ شريط تصنيفات العناصر (يظهر فقط كـ fallback إذا لم يتم تحديد التصنيف مباشرة من الشريط) */}
       {!controlledCategory && (
-        <FluentSegmentedControl<"badges" | "shapes" | "text">
+        <FluentSegmentedControl<'badges' | 'shapes' | 'text'>
           layoutId="freeform-element-categories-pill"
           value={activeCategory}
           onChange={setInternalCategory}
           size="sm"
           options={[
             {
-              id: "badges",
-              label: "شارات",
-              icon: <Stamp className="w-3.5 h-3.5 shrink-0" weight={activeCategory === "badges" ? "fill" : "regular"} />,
-              tooltip: "شارات وأختام",
+              id: 'badges',
+              label: 'شارات',
+              icon: (
+                <Stamp
+                  className="w-3.5 h-3.5 shrink-0"
+                  weight={activeCategory === 'badges' ? 'fill' : 'regular'}
+                />
+              ),
+              tooltip: 'شارات وأختام',
             },
             {
-              id: "shapes",
-              label: "أشكال",
-              icon: <Shapes className="w-3.5 h-3.5 shrink-0" weight={activeCategory === "shapes" ? "fill" : "regular"} />,
-              tooltip: "أشكال وتصاميم",
+              id: 'shapes',
+              label: 'أشكال',
+              icon: (
+                <Shapes
+                  className="w-3.5 h-3.5 shrink-0"
+                  weight={activeCategory === 'shapes' ? 'fill' : 'regular'}
+                />
+              ),
+              tooltip: 'أشكال وتصاميم',
             },
             {
-              id: "text",
-              label: "نصوص",
-              icon: <TextT className="w-3.5 h-3.5 shrink-0" weight={activeCategory === "text" ? "fill" : "regular"} />,
-              tooltip: "نصوص جاهزة",
+              id: 'text',
+              label: 'نصوص',
+              icon: (
+                <TextT
+                  className="w-3.5 h-3.5 shrink-0"
+                  weight={activeCategory === 'text' ? 'fill' : 'regular'}
+                />
+              ),
+              tooltip: 'نصوص جاهزة',
             },
           ]}
         />
       )}
 
       {/* 🌟 1. استعراض الشارات والأختام الرسمية بتصميم Fluent 2 المتطور */}
-      {activeCategory === "badges" && (
+      {activeCategory === 'badges' && (
         <div className="space-y-3">
           {/* زر الاستوديو الكامل المدمج (32px) وفق معايير Fluent 2 النظيفة */}
           <Button
@@ -433,10 +445,10 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
             size="sm"
             className="w-full justify-between"
             options={[
-              { id: "all", label: "الكل" },
-              { id: "badges", label: "أختام" },
-              { id: "retail", label: "عروض" },
-              { id: "frames", label: "إطارات" },
+              { id: 'all', label: 'الكل' },
+              { id: 'badges', label: 'أختام' },
+              { id: 'retail', label: 'عروض' },
+              { id: 'frames', label: 'إطارات' },
             ]}
           />
 
@@ -452,7 +464,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   type="button"
                   disabled={isBusy}
                   onClick={() => handleInsertSticker(tmpl)}
-                  title={`${tmpl.name} (انقر للإدراج)`}
+                  title={tmpl.name}
                   className="group relative bg-card/70 hover:bg-card border border-border/60 hover:border-primary/50 rounded-xl p-2 transition-all duration-150 flex flex-col items-center cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50 overflow-hidden"
                 >
                   {/* حاوية المعاينة مع خلفية أكريليك ناعمة تُظهر تفاصيل التصميم بوضوح */}
@@ -474,13 +486,18 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                     {/* حالة التحميل والمعالجة */}
                     {isBusy && (
                       <div className="absolute inset-0 bg-background/85 backdrop-blur-xs flex items-center justify-center rounded-lg">
-                        <span className="text-micro font-bold text-primary animate-pulse">جاري الإدراج ...</span>
+                        <span className="text-micro font-bold text-primary animate-pulse">
+                          جاري الإدراج...
+                        </span>
                       </div>
                     )}
                   </div>
 
                   {/* اسم القالب بسطر واحد مقتضب لمنع الانكسار المشوه */}
-                  <span className="text-xs font-semibold text-foreground/90 mt-1.5 truncate w-full text-center group-hover:text-primary transition-colors" title={tmpl.name}>
+                  <span
+                    className="text-xs font-semibold text-foreground/90 mt-1.5 truncate w-full text-center group-hover:text-primary transition-colors"
+                    title={tmpl.name}
+                  >
                     {tmpl.name}
                   </span>
 
@@ -496,7 +513,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
       )}
 
       {/* 🔷 2. استعراض الأشكال الهندسية والتزيينية */}
-      {activeCategory === "shapes" && (
+      {activeCategory === 'shapes' && (
         <div className="space-y-3">
           <div className="px-1">
             <span className="text-xs font-bold text-foreground/80">أشكال هندسية وتصاميم</span>
@@ -514,23 +531,23 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
                   style={{ backgroundColor: `${shape.color}15`, color: shape.color }}
                 >
-                  {shape.shape === "rect" && <Square className="w-4 h-4" weight="bold" />}
-                  {shape.shape === "ellipse" && <Circle className="w-4 h-4" weight="bold" />}
-                  {shape.shape === "star" && <Star className="w-4 h-4" weight="fill" />}
-                  {shape.id === "triangle" && <span className="font-bold text-xs">▲</span>}
-                  {shape.id === "heart" && <Heart className="w-4 h-4" weight="fill" />}
-                  {shape.id === "shield" && <Shield className="w-4 h-4" weight="fill" />}
-                  {shape.id === "diamond" && <Diamond className="w-4 h-4" weight="fill" />}
-                  {shape.id === "line" && <div className="w-4 h-0.5 bg-current rounded-full" />}
-                  {shape.id === "hexagon" && <span className="font-bold text-xs">⬡</span>}
-                  {shape.id === "arrow" && <ArrowRight className="w-4 h-4" weight="bold" />}
+                  {shape.shape === 'rect' && <Square className="w-4 h-4" weight="bold" />}
+                  {shape.shape === 'ellipse' && <Circle className="w-4 h-4" weight="bold" />}
+                  {shape.shape === 'star' && <Star className="w-4 h-4" weight="fill" />}
+                  {shape.id === 'triangle' && <span className="font-bold text-xs">▲</span>}
+                  {shape.id === 'heart' && <Heart className="w-4 h-4" weight="fill" />}
+                  {shape.id === 'shield' && <Shield className="w-4 h-4" weight="fill" />}
+                  {shape.id === 'diamond' && <Diamond className="w-4 h-4" weight="fill" />}
+                  {shape.id === 'line' && <div className="w-4 h-0.5 bg-current rounded-full" />}
+                  {shape.id === 'hexagon' && <span className="font-bold text-xs">⬡</span>}
+                  {shape.id === 'arrow' && <ArrowRight className="w-4 h-4" weight="bold" />}
                 </div>
 
                 <div className="flex flex-col text-right min-w-0">
                   <span className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
                     {shape.label}
                   </span>
-                  <span className="text-micro text-muted-foreground/80 truncate">إدراج فوري</span>
+                  <span className="text-micro text-muted-foreground/80 truncate">فوري</span>
                 </div>
               </button>
             ))}
@@ -539,17 +556,17 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
       )}
 
       {/* ✍️ 3. استعراض النصوص والتنسيقات الجاهزة بتصميم متطور */}
-      {activeCategory === "text" && (
+      {activeCategory === 'text' && (
         <div className="space-y-3">
           {/* 🌟 هرمية العناوين الأساسية السريعة (Hero Typographic 3-Pack) بتصميم مدمج Fluent 2 */}
           <div className="space-y-1.5 rounded-xl border border-border/60 bg-card/60 p-2 shadow-2xs fluent-specular">
             <div className="flex items-center justify-between px-0.5 mb-0.5">
               <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider">
-                الهرمية الطباعية
+                العناوين
               </span>
               <span className="text-micro text-primary font-semibold flex items-center gap-1">
                 <Sparkle className="w-3 h-3" weight="bold" />
-                <span>إدراج فوري</span>
+                <span>فوري</span>
               </span>
             </div>
 
@@ -558,10 +575,10 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
               <button
                 type="button"
                 onClick={() => {
-                  addTextPreset("heading");
-                  toast.success("تمت إضافة عنوان رئيسي");
+                  addTextPreset('heading');
+                  toast.success('أُضيف عنوان رئيسي');
                 }}
-                title="عنوان رئيسي عريض (48px)"
+                title="عنوان رئيسي عريض"
                 className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
               >
                 <span className="w-5 h-5 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-micro border border-primary/20 font-mono">
@@ -576,8 +593,8 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
               <button
                 type="button"
                 onClick={() => {
-                  addTextPreset("subheading");
-                  toast.success("تمت إضافة عنوان فرعي");
+                  addTextPreset('subheading');
+                  toast.success('أُضيف عنوان فرعي');
                 }}
                 title="عنوان فرعي (28px)"
                 className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
@@ -594,8 +611,8 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
               <button
                 type="button"
                 onClick={() => {
-                  addTextPreset("body");
-                  toast.success("تمت إضافة نص فقرة");
+                  addTextPreset('body');
+                  toast.success('أُضيف نص فقرة');
                 }}
                 title="نص فقرة (18px)"
                 className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
@@ -627,7 +644,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 key={preset.id}
                 type="button"
                 onClick={() => handleAddText(preset)}
-                title={`${preset.label} - ${preset.description} (انقر للإدراج)`}
+                title={preset.label}
                 className="group relative w-full bg-card/70 hover:bg-card border border-border/60 hover:border-primary/50 rounded-xl p-2 transition-all duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden text-right"
               >
                 {/* صندوق المعاينة الحية الواقعية */}
