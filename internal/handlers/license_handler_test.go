@@ -190,4 +190,3 @@ func TestLicenseHandler_FullLifecycle(t *testing.T) {
 		t.Errorf("expected plan 'free' after logout, got %q", statusAfterLogout.Plan)
 	}
 }
-

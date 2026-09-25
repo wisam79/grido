@@ -128,7 +128,6 @@ jobs:
           APP_VERSION: ${{ github.ref_name }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          MODAL_AI_KEY: ${{ secrets.MODAL_AI_KEY }}
         run: wails3 task package
 
       - name: Prepare Executable Assets

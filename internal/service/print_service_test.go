@@ -460,7 +460,7 @@ func TestSetJpegDPI_ReplaceExistingAPP0(t *testing.T) {
 		0x00, 0x10, // length = 16
 		'J', 'F', 'I', 'F', 0x00,
 		0x01, 0x01,
-		0x01, // units = DPI
+		0x01,       // units = DPI
 		0x00, 0x48, // X density = 72
 		0x00, 0x48, // Y density = 72
 		0x00, 0x00, // thumbnail
@@ -663,4 +663,3 @@ func TestPrintService_HiRes300DPI_A4_FullScaleVerification(t *testing.T) {
 		t.Errorf("Expected valid JFIF APP0 segment in JPEG output")
 	}
 }
-

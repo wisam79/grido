@@ -1,1 +1,9 @@
+#!/bin/sh
+# ─────────────────────────────────────────────────────────────────────────────
+# بوابة التوثيق الإلزامية (Documentation Sync Gate)
+# المرجع: docs/DOCUMENTATION_MAP.md · القاعدة: .agents/AGENTS.md
+# للتخطّي الطارئ المبرَّر فقط: GRIDO_DOCS_GATE=off
+# ─────────────────────────────────────────────────────────────────────────────
+node scripts/docs-gate.mjs || exit 1
+
 cd frontend && npx lint-staged

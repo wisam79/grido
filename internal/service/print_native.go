@@ -103,4 +103,3 @@ func (s *PrintService) PrintNative(filePath string) error {
 
 	return launchOSPrint(cleanPath, ext)
 }
-

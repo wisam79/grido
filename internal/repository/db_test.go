@@ -521,6 +521,3 @@ func TestStopCleanupUnusedMedia(t *testing.T) {
 	// Should not panic even if no cleanup is running
 	StopCleanupUnusedMedia()
 }
-
-
-

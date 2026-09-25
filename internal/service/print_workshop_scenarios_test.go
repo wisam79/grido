@@ -318,8 +318,8 @@ func TestPrintWorkshop_Stamps_600DPI_10x15(t *testing.T) {
 	req := domain.PrintRequest{
 		PaperWidthMM: 100.0, PaperHeightMM: 150.0, DPI: 600,
 		BackgroundColor: "#FFFFFF", ExportFormat: "png",
-		ShowCutLines:    true,
-		Items:           items,
+		ShowCutLines: true,
+		Items:        items,
 	}
 
 	outPath, htmlDoc, err := svc.GeneratePrintSheet(req)

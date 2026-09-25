@@ -37,11 +37,11 @@ func writeCompositionDummyImage(t *testing.T, dir, name string, w, h int) string
 // ورقة الطباعة من العناصر المباشرة، بدل فشل الطلب كاملاً.
 func TestPrintService_InvalidCompositionFallsBack(t *testing.T) {
 	cases := []struct {
-		name    string
-		pxW     int
-		pxH     int
-		mmW     float64
-		mmH     float64
+		name string
+		pxW  int
+		pxH  int
+		mmW  float64
+		mmH  float64
 	}{
 		{"zero px dims", 0, 0, 100, 100},
 		{"zero px width", 0, 1000, 100, 100},

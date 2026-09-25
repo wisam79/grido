@@ -1,12 +1,23 @@
-import React from "react";
-import { ImageSquare, GridFour, Rows, Columns, ArrowClockwise, FlipHorizontal, ArrowCounterClockwise, Eye, Broom } from "@/components/ui/icons";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
-import { useShallow } from "zustand/react/shallow";
-import { useEditorStore } from "@/lib/editor-store";
-import type { CanvasSlot } from "@/lib/store/types";
+import React from 'react';
+import {
+  ImageSquare,
+  GridFour,
+  Rows,
+  Columns,
+  ArrowClockwise,
+  FlipHorizontal,
+  ArrowCounterClockwise,
+  Eye,
+  Broom,
+} from '@/components/ui/icons';
+import { Spinner } from '@/components/ui/huge-icon';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+import { useEditorStore } from '@/lib/editor-store';
+import type { CanvasSlot } from '@/lib/store/types';
 
 /**
  * QuickBarSlotSection — قسم الخلية المحددة في وضع الكولاج.
@@ -18,22 +29,25 @@ import type { CanvasSlot } from "@/lib/store/types";
 interface QuickBarSlotSectionProps {
   slot: CanvasSlot;
   onOpenFileForSlot: () => void;
+  isBusy?: boolean;
 }
 
 export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
   slot,
   onOpenFileForSlot,
+  isBusy = false,
 }: QuickBarSlotSectionProps) {
-  const { fillAllSlots, fillRowSlots, fillColumnSlots, updateSlot, rotateSlot, flipSlotX } = useEditorStore(
-    useShallow((s) => ({
-      fillAllSlots: s.fillAllSlots,
-      fillRowSlots: s.fillRowSlots,
-      fillColumnSlots: s.fillColumnSlots,
-      updateSlot: s.updateSlot,
-      rotateSlot: s.rotateSlot,
-      flipSlotX: s.flipSlotX,
-    }))
-  );
+  const { fillAllSlots, fillRowSlots, fillColumnSlots, updateSlot, rotateSlot, flipSlotX } =
+    useEditorStore(
+      useShallow((s) => ({
+        fillAllSlots: s.fillAllSlots,
+        fillRowSlots: s.fillRowSlots,
+        fillColumnSlots: s.fillColumnSlots,
+        updateSlot: s.updateSlot,
+        rotateSlot: s.rotateSlot,
+        flipSlotX: s.flipSlotX,
+      })),
+    );
 
   return (
     <>
@@ -43,13 +57,20 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
             variant="ghost"
             size="sm"
             onClick={onOpenFileForSlot}
+            disabled={isBusy}
             aria-label="تغيير الصورة"
-            className="h-6 w-6 p-0 rounded-md hover:bg-primary/10 hover:text-primary"
+            className="h-6 w-6 p-0 rounded-md hover:bg-primary/10 hover:text-primary disabled:opacity-60 disabled:pointer-events-none"
           >
-            <ImageSquare className="w-3.5 h-3.5" weight="regular" />
+            {isBusy ? (
+              <Spinner className="w-3.5 h-3.5" size={14} />
+            ) : (
+              <ImageSquare className="w-3.5 h-3.5" weight="regular" />
+            )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">رفع صورة للخلية</TooltipContent>
+        <TooltipContent side="bottom">
+          {isBusy ? 'جاري تجهيز الصورة ...' : 'رفع صورة للخلية'}
+        </TooltipContent>
       </Tooltip>
 
       {slot.imageSrc && (
@@ -140,10 +161,10 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                       updateSlot(slot.id, {
                         imageSrc: slot.originalImageSrc,
                         originalImageSrc: undefined,
-                        bgColor: undefined
+                        bgColor: undefined,
                       });
                       useEditorStore.getState().pushHistory();
-                      toast.success("تمت الاستعادة");
+                      toast.success('تمت الاستعادة');
                     }}
                     className="h-6 w-6 p-0 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
                   >
@@ -163,9 +184,9 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                       updateSlot(slot.id, { imageSrc: slot.originalImageSrc });
                       const restore = () => {
                         updateSlot(slot.id, { imageSrc: curr });
-                        window.removeEventListener("mouseup", restore);
+                        window.removeEventListener('mouseup', restore);
                       };
-                      window.addEventListener("mouseup", restore);
+                      window.addEventListener('mouseup', restore);
                     }}
                     className="h-6 w-6 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
                   >

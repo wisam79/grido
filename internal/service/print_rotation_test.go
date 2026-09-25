@@ -77,13 +77,13 @@ func TestComputeCropFromSlotQuarterSwap(t *testing.T) {
 
 func neutralItem() domain.PrintItem {
 	return domain.PrintItem{
-		Brightness:  100,
-		Contrast:    100,
-		Saturation:  100,
-		Zoom:        1,
-		FlipX:       false,
-		FlipY:       false,
-		Filter:      "none",
+		Brightness: 100,
+		Contrast:   100,
+		Saturation: 100,
+		Zoom:       1,
+		FlipX:      false,
+		FlipY:      false,
+		Filter:     "none",
 	}
 }
 

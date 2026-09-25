@@ -57,11 +57,11 @@ tasks:
       - cmd: rm -f *.syso
         platforms: [linux, darwin]
     vars:
-      APP_VERSION: '{{.APP_VERSION | default "v1.6.0"}}'
+      APP_VERSION: '{{.APP_VERSION | default "v1.9.1"}}'
       SUPABASE_URL: '{{.SUPABASE_URL | default ""}}'
       SUPABASE_ANON_KEY: '{{.SUPABASE_ANON_KEY | default ""}}'
-      MODAL_AI_KEY: '{{.MODAL_AI_KEY | default .GRIDO_AI_SECRET_KEY | default ""}}'
-      LDFLAGS_INJECT: '{{if .APP_VERSION}} -X grido/internal/service.AppVersion={{.APP_VERSION}}{{end}}{{if .SUPABASE_URL}} -X grido/internal/service.SupabaseURL={{.SUPABASE_URL}}{{end}}{{if .SUPABASE_ANON_KEY}} -X grido/internal/service.SupabaseAnonKey={{.SUPABASE_ANON_KEY}}{{end}}{{if .MODAL_AI_KEY}} -X grido/internal/service.ModalAIKey={{.MODAL_AI_KEY}}{{end}}'
+      # 🔒 لا يوجد حقن لسرّ Modal: التوثيق عبر JWT المستخدم فقط (تدقيق C-02).
+      LDFLAGS_INJECT: '{{if .APP_VERSION}} -X grido/internal/service.AppVersion={{.APP_VERSION}}{{end}}{{if .SUPABASE_URL}} -X grido/internal/service.SupabaseURL={{.SUPABASE_URL}}{{end}}{{if .SUPABASE_ANON_KEY}} -X grido/internal/service.SupabaseAnonKey={{.SUPABASE_ANON_KEY}}{{end}}'
       BUILD_FLAGS: '{{if eq .DEV "true"}}-tags dev{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -buildvcs=false -gcflags=all="-l" -ldflags="{{.LDFLAGS_INJECT}}"{{else}}-tags production{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui{{.LDFLAGS_INJECT}}"{{end}}'
     env:
       GOOS: windows

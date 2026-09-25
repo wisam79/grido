@@ -118,3 +118,12 @@ tasks:
       - task: test:frontend
       - task: test:e2e
 
+  docs:check:
+    summary: Runs the mandatory documentation sync gate (metrics, inventory, doc coverage)
+    desc: |
+      بوابة التوثيق الإلزامية — تفشل عند انحراف الأرقام المرجعية أو وجود مستند
+      غير مُسجَّل في الجرد أو تغيير كود بلا توثيق مرافق.
+      المرجع: docs/DOCUMENTATION_MAP.md · المهارة: .agents/skills/grido-docs-sync-guard/SKILL.md
+    cmds:
+      - node scripts/docs-gate.mjs --strict-refs
+

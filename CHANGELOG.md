@@ -5,9 +5,61 @@ All notable changes to Grido Studio are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **تصحيح توثيقي (سبتمبر 2026 — مثبت من الكود):** إدخال `v1.2.11` ادعى أن `build.ps1` يفشل عند غياب `MODAL_AI_KEY`، لكن `build.ps1:22-26,49` يبني بمفتاح فارغ دون فشل. يُترك الإدخال الأصلي لسجل التاريخ، والصحيح هو السلوك الحالي في `build.ps1`.
+> **تصحيح توثيقي (سبتمبر 2026 — مثبت من الكود):** إدخال `v1.2.11` ادعى أن `build.ps1` يفشل عند غياب `MODAL_AI_KEY`، لكن `build.ps1` يبني بمفتاح فارغ دون فشل. يُترك الإدخال الأصلي لسجل التاريخ. **تحديث 2026-09-25:** أُزيلت آلية `MODAL_AI_KEY` من البناء والكود بالكامل (تدقيق `C-02`) — لم يعد للموضوع وجود.
 
 ## [Unreleased]
+
+## [v1.9.1] - 2026-09-25
+
+### Added (تصدير PDF المتجهي لورقة الطباعة — 2026-09-25)
+
+- **مولّد PDF في الخادم (`internal/service/print_pdf_export.go`):** صفحة مخصصة بالمقاس الفيزيائي الدقيق (لا تقريب A4/Letter)، تضمين JPEG بجودة 95 بلا إعادة ترميز، وخطوط قص **متجهة** (Line + Dash Pattern بنفس إيقاع `drawCutLines`: عرض 0.20مم، شرطات 1.5مم، منقط 0.6/2.4مم، رمادي 120) تبقى حادة عند أي تكبير. سقف 50MP + رفض صريح لـ CMYK→PDF برسالة توجيهية (gofpdf لا يضمّن CMYK) + كتابة ذرية + معاينة HTML تحفظ عقد الطباعة.
+- **مبدّل الصيغة في الواجهة (`print-dialog.tsx` + `print-settings-toolbar.tsx` + `use-print-export.ts`):** زرّا «صورة / PDF» بجانب sRGB/CMYK؛ اختيار PDF مع CMYK يبدّل تلقائياً إلى sRGB مع تلميح صريح. يُرسل `exportFormat: "pdf"` عبر عقد `domain.PrintRequest` نفسه — PDF يُطبع عبر مسار المستندات القائم (`launchWindowsDocumentPrint` عبر Edge) لأن `.pdf` كان مسموحاً في `print_native.go:71`.
+- **اعتمادية جديدة `github.com/jung-kurt/gofpdf v1.16.2` (pure-Go، بلا cgo — آمنة للبناء المتقاطع):** تغلق الفجوة M-5 من سجل 0.11 (لا مولّد PDF).
+- **اختبارات Go جديدة (3 دوال في `print_pdf_export_test.go`):** توقيع `%PDF-` + أبعاد MediaBox لـ A4 + صورة XObject مضمّنة + مشغّلات قص متجهة + معاينة HTML، رفض CMYK صراحةً، وتجاوز NaN/Inf.
+
+### Added (تدقيق فجوات السوق والمكتبات البديلة — 2026-09-25)
+
+- **سجل تدقيق الفجوات 0.11 في `docs/features-tracker.md`:** بحث آلي في 679 ملفاً لإثبات أن اقتراحات سابقة (عزل خلفية أوفلاين، قص ICAO للوجه، استخراج الألوان، القص، QR/باركود، الإدراج الدفعي) **مكرَّرة** — البديل مُنفَّذ بالفعل (`bg-removal.worker.ts` بـ `selfie_multiclass.tflite`، `face-frame.worker.ts` + `face-frame-utils.ts` بمعايير ICAO، `palette-extract.ts`، `crop-dialog.tsx`، `jsbarcode`/`qrcode.react`).
+- **الفجوات الحقيقية المؤكَّدة بالأدلة (3):** (1) **لا مولِّد PDF** رغم أن `print_native.go:71` يسمح بـ `.pdf` للطباعة — `print_export.go` ينتج PNG/JPEG/TIFF/HTML فقط؛ (2) **لا PSD** (`ag-psd` غير موجود) — لا تبادل طبقات مع فوتوشوب؛ (3) **لا طباعة بيانات متغيرة (VDP)** (`papaparse`/`xlsx` غير موجود) — لا مسار من جدول بيانات إلى قالب.
+- **أثر التوثيق:** حصر التوصيات المستقبلية في ثلاث فجوات مُثبَتة بدل قوائم مقترحات مُكرَّرة، مع إلغاء البنود المكرَّرة صراحةً لتفادي تكرار العمل.
+
+### Added (مهارات التوثيق والمعايير الرسمية — 2026-09-25)
+
+- **مهارة إدارة الحالة بـ Zustand v5 (`.agents/skills/zustand-state-patterns/SKILL.md`):** توثيق الممارسات المعتمدة لمنع Stale Closures عبر `getState()` المباشر داخل معالجات الأحداث، وفرض `useShallow` للمحددات المجمعة لمنع التحديثات اللانهائية وهدر موارد الرندر.
+- **مهارة إمكانية الوصول والتفاعل بـ Radix UI (`.agents/skills/radix-ui-accessibility-ux/SKILL.md`):** تثبيت متطلبات ARIA الصارمة للنوافذ والقوائم، حصر التركيز التلقائي، إدارة الـ Escape، ومعالجة `Dialog.Description` الإلزامية.
+- **مهارة محرك التنسيق بـ Tailwind v4 (`.agents/skills/tailwind-v4-theme-engine/SKILL.md`):** توثيق استخدام توجيه `@theme` في CSS مباشرة، وإلزام استدعاء متغيرات الطبقات `z-(--z-...)` لحماية ثوابت الطبقات، واستخراج الألوان برمجياً لعناصر Konva.
+
+### Added (تدقيق جودة الكود وتغطية الاختبارات — 2026-09-25)
+
+- **تقرير تدقيق الجودة الشامل `docs/reviews/08-code-quality-audit-2026-09-25.md`:** توثيق مقاييس التغطية الحية للكود (Go statements 59.0%، الواجهة lines 51.5%)، وتحليل ملفات المنطق الساخنة (28 ملفاً في الواجهة > 500 سطر)، وفحص `golangci-lint` (17 ملاحظة غير حرجة)، وحصر انزياح `gofmt` في 12 ملفاً، مع تقييم عام للمشروع بمعدل 8.6/10.
+- **أداة قياس الجودة `scripts/quality-metrics.mjs`:** مسح إحصائي للملفات، الأسطر، نسب الاختبار إلى المصدر، مكافحة الأنماط السيئة (`any`, `console.log`, `interface{}`), وحصر النقاط الساخنة.
+
+
+### Removed (حذف سرّ Modal الميت وتحصين سلسلة البناء — 2026-09-25)
+
+- **حذف `ModalAIKey`/`GetModalAIKey` نهائياً من الخلفية (Go):** كان سرّاً مشتركاً يُقرأ من ldflags/`.env`/متغيرات البيئة ويُحقن في كل بناء، لكنه بلا أي مستهلك إنتاجي (كان يُستدعى من `license_service_test.go` فقط). التوثيق الفعلي لخادم Modal هو **JWT المستخدم** (`Authorization: Bearer`) الذي يتحقق منه `modal_ai/upscaler.py` مع Supabase. الدليل: فحص فعلي للثنائي أثبت وجود المفتاح نصاً داخل `bin/GridoStudio.exe` (قابل للاستخراج بـ`strings`).
+- **إزالة الحقن من سلسلة البناء:** حُذف `MODAL_AI_KEY` من `build/windows/Taskfile.yml` (ومن `LDFLAGS_INJECT`)، ومن `build.ps1` (قراءة `.env` + `$env:MODAL_AI_KEY`)، ومن `.github/workflows/release.yml` (لم يعد يقرأ السر `secrets.MODAL_AI_KEY`). الحقن المتبقي محصور في متغيرات Supabase و`AppVersion` فقط.
+- **حذف الاختبار التابع:** `TestGetModalAIKey` من `internal/service/license_service_test.go` (لم يعد للدالة وجود).
+- **تنظيف التوثيق وقواعد الوكلاء:** استُبدلت قاعدة `حقن مفاتيح الذكاء الاصطناعي بـ ldflags` في `.agents/AGENTS.md` بقاعدة **حظر أسرار الذكاء الاصطناعي المشتركة** (No Shared AI Secret Invariant)، وصُححت الإشارة في قاعدة `حقن متغيرات البيئة بـ ldflags`، و`wails-cross-compiler/SKILL.md`، و`.env.example` (لا مفتاح مطلوب)، و`README.md`، و`SECURITY_NOTICE.md`، و`docs/AI_ARCHITECTURE.md`.
+
+> ⚠️ **إجراء مطلوب على المالك:** إبطال (Revoke) أي مفتاح Modal قديم `grido_sec_ai_live_*` من لوحة Modal، لأنه يبقى قابلاً للاستخراج من الإصدارات المنشورة سابقاً. كما عُطّل السطر المقابل في ملف `.env` المحلي.
+
+### Added (نظام توثيق مُلزِم — بوابة Docs Sync Guard — 2026-09-25)
+
+- **خريطة التوثيق الإلزامية `docs/DOCUMENTATION_MAP.md`:** جرد كل مستند ودوره ومُشغّله، مصفوفة «ما تغيّر ← ما يجب توثيقه»، الأرقام المرجعية بأوامر التحقق، البوابات الثلاث (قبل العمل / قبل الكومت / قبل الدفع)، وقواعد «لا ادعاء بلا دليل» و«التاريخ لا يُعاد كتابته».
+- **أداة الفرض `scripts/docs-gate.mjs`:** تفحص انحراف الأرقام المرجعية (اختبارات Vitest / مواصفات E2E / اختبارات Go / عدد المستندات)، وتغطية الجرد، ووجود توثيق مرافق لأي تغيير كود، وسلامة مراجع المسارات في `.agents/` (تحذيري افتراضياً · صارم بـ`--strict-refs`)، مع مفتاح طوارئ موثّق `GRIDO_DOCS_GATE=off`.
+- **مهارة `grido-docs-sync-guard`** في `.agents/skills/` + قاعدة حاكمة جديدة في `.agents/AGENTS.md` («بوابة التوثيق الإلزامية — Documentation Sync Gate») تُلزم الوكلاء بإعلان المستندات المتغيّرة قبل العمل، وبعدم إغلاق أي مهمة بعبارة «سيُوثَّق لاحقاً»، وبعدم كتابة رقم/مسار من الذاكرة.
+- **الفرض الآلي:** `.husky/pre-commit` (البوابة + lint-staged) و`.husky/pre-push` (البوابة على مدى الدفعة)، وخطوة `Documentation Gate` جديدة في `.github/workflows/ci.yml`، ومهمة `wails3 task docs:check` في `Taskfile.yml`.
+- **قسم «📚 التوثيق» في `README.md`** يجمع كل المستندات الحاكمة في جدول واحد مع تأكيد إلزام البوابة.
+
+### Fixed (إصلاح خطافات Git وتصحيح انحرافات التوثيق — 2026-09-25)
+
+- **خطافات Git كانت معطّلة بالكامل:** كان `core.hooksPath` يُضبط على `frontend/.husky/_` وهو مجلد لا يُنشئه هذا المشروع إطلاقاً ⇒ لم يكن أي خطاف يعمل. صُحّح إلى `.husky` (مُتتبَّع في Git، و`pre-commit` بوضع 100755) في `scripts/setup-husky.mjs`، وأُضيف `.husky/pre-push` مع قاعدة `eol=lf` في `.gitattributes`.
+- **تصحيح أرقام مرجعية منحرفة:** `README.md` (62→**84** ملف اختبار · 30→**29** عائلة خطوط في المُنتقي مع تفصيل 16 مُعدّة أوفلاين و12 تُنزَّل آلياً)، و`docs/testing_guide.md` (67 ملف/469 حالة و15 مواصفة/31 حالة و21 مواصفة → **84 ملف/684 حالة** و**25 ملف/165 حالة**) مع إضافة أوامر التحقق إلى `§5`.
+- **تصحيح ادعاء تقني:** `docs/developer_guide.md` كان يصف التنسيق بـ«Vanilla CSS» — والصحيح **Tailwind CSS v4 + رموز Fluent 2**.
+- **توثيق قيد أدوات حقيقي:** `go vet ./...` و`go build ./...` يفشلان بسبب مجلد قالب Wails `build/ios/scripts/deps` — وُثّق استخدام `go vet ./internal/...` و`go build .` في الخريطة و`docs/developer_guide.md` و`docs/next-session-prompt.md`.
+- **حذف مستند ميت:** `docs/HOW_TO_REGENERATE_MODAL_KEY.md` (دليل تجديد سرّ لم يعد له وجود بعد إزالة `ModalAIKey`).
 
 ## [v1.9.0] - 2026-09-24
 

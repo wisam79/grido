@@ -5,6 +5,11 @@
 **نطاق التدقيق:** المشروع بالكامل من A إلى Z (Go Backend, Konva Canvas, Zustand State, Microsoft Fluent 2 UI/UX, Build & Cloud AI)  
 **المنهجية:** تدقيق متعدد الوكلاء (Multi-Agent Swarm Audit) شمل 5 وكلاء متخصصين بموجب قواعد `AGENTS.md` ومهارات المشروع الثمانية.
 
+> **تصحيح رابع (2026-09-25 — تحصين الأسرار وبوابة التوثيق):**
+> - `[C-02]` من التدقيق الأحدث (`docs/reviews/07-full-security-completeness-audit-2026-09-25.md`) **مُصلح**: حُذف سرّ Modal الميت (`ModalAIKey`/`GetModalAIKey` + حقنه من `build.ps1` و`build/windows/Taskfile.yml` و`release.yml`) لأنه كان قابلاً للاستخراج من الثنائي بـ`strings` بلا أي مستهلك إنتاجي.
+> - **نظام التوثيق صار مُلزماً:** `docs/DOCUMENTATION_MAP.md` + `scripts/docs-gate.mjs` + `.husky/pre-commit` و`.husky/pre-push` + خطوة `Documentation Gate` في CI. أي رقم أو مسار في هذا التقرير يجب التحقق منه مقابل الخريطة قبل الاعتماد عليه.
+> - **خطافات Git كانت معطّلة** (`core.hooksPath` → `frontend/.husky/_` غير الموجود) وصُحّحت إلى `.husky`.
+
 > **تصحيح تحقق الكود (سبتمبر 2026 — مثبت من الملفات التنفيذية):**
 > - `[BUG-CRIT-01]` الخصم المزدوج **مُصلح**: `internal/service/ai_service.go:340` يستدعي RPC بـ `check_only=true` فقط، والتسجيل الفعلي في `modal_ai/upscaler.py:311-344`.
 > - `[BUG-HIGH-04]` ابتلاع فساد `autosave.json` **مُصلح**: `internal/repository/db.go:398-411` يرجع خطأً ويوقف التنظيف.

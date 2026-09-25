@@ -117,6 +117,7 @@ func httpDoWithRetry(ctx context.Context, client *http.Client, req *http.Request
 	// غير قابل للوصول عملياً (الحلقة تعيد دائماً أو تنهيها)
 	return nil, fmt.Errorf("http retry: exhausted %d attempts", policy.MaxAttempts)
 }
+
 // isReplayable يحدد إن كان الطلب قابلاً للإعادة الآمنة: طرق القراءة، أو
 // طلب يملك GetBody لإعادة بناء جسمه.
 func isReplayable(req *http.Request) bool {

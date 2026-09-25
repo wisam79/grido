@@ -1,15 +1,15 @@
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+﻿import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+} from '@/components/ui/select';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   Plus,
   Minus,
@@ -20,28 +20,30 @@ import {
   Columns,
   Rows,
   Sparkle,
-} from "@/components/ui/icons";
-import { PageOrientationIcon } from "@/components/ui/image-icons";
-import { PAPER_SIZES } from "@/lib/templates/constants";
-import type { PrintSettings } from "@/lib/store/types";
-import { calculateOptimalSheetImposition } from "@/lib/print/print-layout-math";
-import { useEditorStore } from "@/lib/editor-store";
-import { toast } from "sonner";
+} from '@/components/ui/icons';
+import { PageOrientationIcon } from '@/components/ui/image-icons';
+import { PAPER_SIZES } from '@/lib/templates/constants';
+import type { PrintSettings } from '@/lib/store/types';
+import { calculateOptimalSheetImposition } from '@/lib/print/print-layout-math';
+import { useEditorStore } from '@/lib/editor-store';
+import { toast } from 'sonner';
 
 const toggleButtonClassName = (active: boolean) =>
   cn(
-    "rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
+    'rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
     active
-      ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-      : "text-muted-foreground hover:text-foreground hover:bg-background/70"
+      ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
+      : 'text-muted-foreground hover:text-foreground hover:bg-background/70',
   );
 
 export interface PrintSettingsToolbarProps {
-  mode: "single" | "collage";
+  mode: 'single' | 'collage';
   printSettings: PrintSettings;
   setPrintSettings: (patch: Partial<PrintSettings>) => void;
-  colorSpace: "sRGB" | "CMYK";
-  onColorSpaceChange: (cs: "sRGB" | "CMYK") => void;
+  colorSpace: 'sRGB' | 'CMYK';
+  onColorSpaceChange: (cs: 'sRGB' | 'CMYK') => void;
+  exportFormat: 'image' | 'pdf';
+  onExportFormatChange: (f: 'image' | 'pdf') => void;
   collageShowCutLines: boolean;
   onCutLinesChange: (checked: boolean) => void;
   actualCopies: number;
@@ -62,6 +64,8 @@ export function PrintSettingsToolbar({
   setPrintSettings,
   colorSpace,
   onColorSpaceChange,
+  exportFormat,
+  onExportFormatChange,
   collageShowCutLines,
   onCutLinesChange,
   actualCopies,
@@ -70,21 +74,25 @@ export function PrintSettingsToolbar({
   imageWidthMM,
   imageHeightMM,
 }: PrintSettingsToolbarProps) {
-  const cutLinesActive = mode === "collage" ? collageShowCutLines : printSettings.showCutLines;
+  const cutLinesActive = mode === 'collage' ? collageShowCutLines : printSettings.showCutLines;
 
   const maxCopiesPerSheet = Math.max(1, (grid.safeCols ?? 1) * (grid.actualRows ?? 10));
 
   const handleAutoImpose = () => {
     if (!imageWidthMM || !imageHeightMM) {
-      toast.error("تعذر قراءة مقاس التصميم");
+      toast.error('تعذر قراءة مقاس التصميم');
       return;
     }
     const { showBleedGuides, bleedMarginMM } = useEditorStore.getState();
     const bleed = showBleedGuides && bleedMarginMM > 0 ? bleedMarginMM : 0;
 
-    const targetPaper = printSettings.paperId === "canvas"
-      ? (PAPER_SIZES.find((p) => p.id === "a4") || { widthMM: 210, heightMM: 297 })
-      : { widthMM: printSettings.paperWidthMM || 210, heightMM: printSettings.paperHeightMM || 297 };
+    const targetPaper =
+      printSettings.paperId === 'canvas'
+        ? PAPER_SIZES.find((p) => p.id === 'a4') || { widthMM: 210, heightMM: 297 }
+        : {
+            widthMM: printSettings.paperWidthMM || 210,
+            heightMM: printSettings.paperHeightMM || 297,
+          };
 
     const result = calculateOptimalSheetImposition({
       paperWidthMM: targetPaper.widthMM,
@@ -100,23 +108,23 @@ export function PrintSettingsToolbar({
     // (لا من التسمية وحدها) — فورق مخزّن بترتيب عرضي كان يُصنَّف «portrait»
     // فتبقى الورقة بعرضها الأصلي وتخالف الشبكة المحسوبة.
     const storedWidth = targetPaper.widthMM;
-    const orientation: "portrait" | "landscape" =
-      Math.abs(result.paperWidthMM - storedWidth) < 0.01 ? "portrait" : "landscape";
+    const orientation: 'portrait' | 'landscape' =
+      Math.abs(result.paperWidthMM - storedWidth) < 0.01 ? 'portrait' : 'landscape';
 
     setPrintSettings({
-      paperId: printSettings.paperId === "canvas" ? "a4" : printSettings.paperId,
+      paperId: printSettings.paperId === 'canvas' ? 'a4' : printSettings.paperId,
       paperWidthMM: targetPaper.widthMM,
       paperHeightMM: targetPaper.heightMM,
       orientation,
       copiesPerSheet: result.maxCopies,
-      repeatMode: "all",
+      repeatMode: 'all',
       showCutLines: true,
     });
     // لا نُعلن «تدوير التصميم» هنا: المونتاج يعادل تدوير العنصر بتدوير الورقة
     // (نسخة القالب المدوّرة تُفوَّض لمرشّح الورقة المقابلة) — والوعد بتدوير لا
     // يُنفِّذه أي مسار في خط الأنابيب.
     toast.success(
-      `تم المونتاج: ${result.maxCopies} نسخة (${result.cols} أعمدة × ${result.rows} صفوف) - الهدر ${result.wastePercentage}%`
+      `تم المونتاج: ${result.maxCopies} نسخة (${result.cols} أعمدة × ${result.rows} صفوف) - الهدر ${result.wastePercentage}%`,
     );
   };
 
@@ -126,11 +134,11 @@ export function PrintSettingsToolbar({
       <div className="flex items-center gap-2.5 flex-wrap select-none shrink-0">
         {/* قائمة اختيارات قياس الورقة */}
         <Select
-          value={printSettings.paperId || "canvas"}
+          value={printSettings.paperId || 'canvas'}
           onValueChange={(val) => {
-            if (val === "canvas") {
+            if (val === 'canvas') {
               setPrintSettings({
-                paperId: "canvas",
+                paperId: 'canvas',
                 paperWidthMM: imageWidthMM || 210,
                 paperHeightMM: imageHeightMM || 297,
                 marginMM: 0,
@@ -155,7 +163,11 @@ export function PrintSettingsToolbar({
               {`مقاس الكانفاس (${Math.round(imageWidthMM || 0)}×${Math.round(imageHeightMM || 0)} مم)`}
             </SelectItem>
             {PAPER_SIZES.map((size) => (
-              <SelectItem key={size.id} value={size.id} className="text-xs font-semibold cursor-pointer">
+              <SelectItem
+                key={size.id}
+                value={size.id}
+                className="text-xs font-semibold cursor-pointer"
+              >
                 {size.name}
               </SelectItem>
             ))}
@@ -171,64 +183,122 @@ export function PrintSettingsToolbar({
                 onClick={() =>
                   setPrintSettings({
                     orientation:
-                      printSettings.orientation === "landscape" ? "portrait" : "landscape",
+                      printSettings.orientation === 'landscape' ? 'portrait' : 'landscape',
                   })
                 }
                 className={cn(
-                  "px-2 py-1 flex items-center gap-1.5",
-                  "rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none bg-primary text-primary-foreground shadow-2xs font-bold"
+                  'px-2 py-1 flex items-center gap-1.5',
+                  'rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none bg-primary text-primary-foreground shadow-2xs font-bold',
                 )}
                 aria-label="تبديل اتجاه الورقة"
               >
                 <PageOrientationIcon
-                  isLandscape={printSettings.orientation === "landscape"}
+                  isLandscape={printSettings.orientation === 'landscape'}
                   className="w-3.5 h-3.5 text-primary"
                 />
-                <span>{printSettings.orientation === "landscape" ? "أفقي" : "رأسي"}</span>
+                <span>{printSettings.orientation === 'landscape' ? 'أفقي' : 'رأسي'}</span>
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="font-cairo text-xs font-semibold">
               <span>
-                {printSettings.orientation === "landscape"
-                  ? "أفقي (انقر للتحويل إلى رأسي)"
-                  : "رأسي (انقر للتحويل إلى أفقي)"}
+                {printSettings.orientation === 'landscape'
+                  ? 'أفقي (انقر للتحويل إلى رأسي)'
+                  : 'رأسي (انقر للتحويل إلى أفقي)'}
               </span>
             </TooltipContent>
           </Tooltip>
         </div>
 
         {/* وضع الألوان */}
-        <div role="group" aria-label="وضع الألوان" className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
+        <div
+          role="group"
+          aria-label="وضع الألوان"
+          className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs"
+        >
           <button
             type="button"
-            onClick={() => onColorSpaceChange("sRGB")}
-            aria-pressed={colorSpace === "sRGB"}
-            className={cn("px-2.5 py-1", toggleButtonClassName(colorSpace === "sRGB"))}
+            onClick={() => onColorSpaceChange('sRGB')}
+            aria-pressed={colorSpace === 'sRGB'}
+            className={cn('px-2.5 py-1', toggleButtonClassName(colorSpace === 'sRGB'))}
           >
             sRGB
           </button>
           <button
             type="button"
-            onClick={() => onColorSpaceChange("CMYK")}
-            aria-pressed={colorSpace === "CMYK"}
-            className={cn("px-2.5 py-1", toggleButtonClassName(colorSpace === "CMYK"))}
+            onClick={() => onColorSpaceChange('CMYK')}
+            aria-pressed={colorSpace === 'CMYK'}
+            className={cn('px-2.5 py-1', toggleButtonClassName(colorSpace === 'CMYK'))}
           >
             CMYK
           </button>
+          {/* صيغة الإخراج: نقطية أو PDF متجهي (sRGB فقط — CMYK يجبر النقطية) */}
+          <div
+            role="group"
+            aria-label="صيغة الإخراج"
+            className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs"
+          >
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => onExportFormatChange('image')}
+                  aria-pressed={exportFormat === 'image'}
+                  aria-label="صورة نقطية"
+                  title="صورة نقطية (JPEG/TIFF)"
+                  className={cn('px-2.5 py-1', toggleButtonClassName(exportFormat === 'image'))}
+                >
+                  صورة
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs font-semibold">
+                صورة نقطية (JPEG/TIFF)
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (colorSpace === 'CMYK') onColorSpaceChange('sRGB');
+                    onExportFormatChange('pdf');
+                  }}
+                  aria-pressed={exportFormat === 'pdf'}
+                  aria-label="ملف PDF"
+                  title={
+                    colorSpace === 'CMYK'
+                      ? 'PDF يتطلب sRGB — سيُبدَّل تلقائياً'
+                      : 'PDF متجهي بخطوط قص حادة'
+                  }
+                  className={cn('px-2.5 py-1', toggleButtonClassName(exportFormat === 'pdf'))}
+                >
+                  PDF
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs font-semibold">
+                {colorSpace === 'CMYK'
+                  ? 'PDF يتطلب sRGB — سيُبدَّل تلقائياً'
+                  : 'PDF متجهي بخطوط قص حادة'}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
         {/* محاذاة الشبكة (أعلى اليسار للقص / توسيط) */}
-        <div role="group" aria-label="محاذاة الشبكة" className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs">
+        <div
+          role="group"
+          aria-label="محاذاة الشبكة"
+          className="flex items-center gap-0.5 bg-muted/60 p-1 rounded-lg border border-border/40 text-xs"
+        >
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 type="button"
-                onClick={() => setPrintSettings({ gridAlign: "top-left" })}
-                aria-pressed={(printSettings.gridAlign || "top-left") === "top-left"}
+                onClick={() => setPrintSettings({ gridAlign: 'top-left' })}
+                aria-pressed={(printSettings.gridAlign || 'top-left') === 'top-left'}
                 aria-label="محاذاة الزاوية"
                 className={cn(
-                  "px-2 py-1 flex items-center gap-1",
-                  toggleButtonClassName((printSettings.gridAlign || "top-left") === "top-left")
+                  'px-2 py-1 flex items-center gap-1',
+                  toggleButtonClassName((printSettings.gridAlign || 'top-left') === 'top-left'),
                 )}
               >
                 <ArrowUpLeft className="w-3.5 h-3.5 shrink-0" weight="bold" />
@@ -243,10 +313,13 @@ export function PrintSettingsToolbar({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                onClick={() => setPrintSettings({ gridAlign: "center" })}
-                aria-pressed={printSettings.gridAlign === "center"}
+                onClick={() => setPrintSettings({ gridAlign: 'center' })}
+                aria-pressed={printSettings.gridAlign === 'center'}
                 aria-label="توسيط الشبكة"
-                className={cn("px-2 py-1 flex items-center gap-1", toggleButtonClassName(printSettings.gridAlign === "center"))}
+                className={cn(
+                  'px-2 py-1 flex items-center gap-1',
+                  toggleButtonClassName(printSettings.gridAlign === 'center'),
+                )}
               >
                 <Crosshair className="w-3.5 h-3.5 shrink-0" weight="bold" />
                 <span>توسيط</span>
@@ -265,7 +338,10 @@ export function PrintSettingsToolbar({
             checked={printSettings.marginMM === 0}
             onCheckedChange={onMarginlessToggle}
           />
-          <Label htmlFor="borderless-mode" className="text-xs font-semibold cursor-pointer select-none">
+          <Label
+            htmlFor="borderless-mode"
+            className="text-xs font-semibold cursor-pointer select-none"
+          >
             بدون هوامش
           </Label>
         </div>
@@ -277,14 +353,19 @@ export function PrintSettingsToolbar({
             checked={cutLinesActive}
             onCheckedChange={onCutLinesChange}
           />
-          <Label htmlFor="print-cut-lines" className="text-xs font-semibold cursor-pointer select-none flex items-center gap-1">
+          <Label
+            htmlFor="print-cut-lines"
+            className="text-xs font-semibold cursor-pointer select-none flex items-center gap-1"
+          >
             <Scissors className="text-primary/80 w-3.5 h-3.5 shrink-0" weight="duotone" />
             <span>خطوط القص</span>
           </Label>
           {cutLinesActive && (
             <Select
-              value={printSettings.cutLineStyle || "dashed"}
-              onValueChange={(val) => setPrintSettings({ cutLineStyle: val as PrintSettings["cutLineStyle"] })}
+              value={printSettings.cutLineStyle || 'dashed'}
+              onValueChange={(val) =>
+                setPrintSettings({ cutLineStyle: val as PrintSettings['cutLineStyle'] })
+              }
             >
               <SelectTrigger
                 aria-label="نمط خطوط القص"
@@ -293,9 +374,15 @@ export function PrintSettingsToolbar({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent dir="rtl" className="z-(--z-print-toolbar)">
-                <SelectItem value="dashed" className="text-xs font-semibold cursor-pointer">متقطع</SelectItem>
-                <SelectItem value="dotted" className="text-xs font-semibold cursor-pointer">منقط</SelectItem>
-                <SelectItem value="solid" className="text-xs font-semibold cursor-pointer">متصل</SelectItem>
+                <SelectItem value="dashed" className="text-xs font-semibold cursor-pointer">
+                  متقطع
+                </SelectItem>
+                <SelectItem value="dotted" className="text-xs font-semibold cursor-pointer">
+                  منقط
+                </SelectItem>
+                <SelectItem value="solid" className="text-xs font-semibold cursor-pointer">
+                  متصل
+                </SelectItem>
               </SelectContent>
             </Select>
           )}
@@ -303,17 +390,25 @@ export function PrintSettingsToolbar({
       </div>
 
       {/* شريط الأدوات يتم إظهاره فقط في وضع الطباعة الفردية Single Mode */}
-      {mode !== "collage" && (
+      {mode !== 'collage' && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 select-none shrink-0">
           {/* عدد النسخ في الورقة */}
           <div className="flex items-center justify-between bg-card rounded-lg border border-border/50 px-2.5 py-1.5 shadow-2xs">
             <span className="text-xs font-semibold text-muted-foreground">نسخ/ورقة</span>
             <div className="flex items-center gap-1">
               <Button
-                variant="ghost" size="sm"
+                variant="ghost"
+                size="sm"
                 className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
-                disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) <= 1}
-                onClick={() => setPrintSettings({ copiesPerSheet: Math.max(1, (printSettings.copiesPerSheet ?? 1) - 1) })}
+                disabled={
+                  (printSettings.repeatMode ?? 'all') !== 'all' ||
+                  (printSettings.copiesPerSheet ?? 1) <= 1
+                }
+                onClick={() =>
+                  setPrintSettings({
+                    copiesPerSheet: Math.max(1, (printSettings.copiesPerSheet ?? 1) - 1),
+                  })
+                }
               >
                 <Minus className="w-3 h-3 shrink-0" weight="bold" />
               </Button>
@@ -324,10 +419,16 @@ export function PrintSettingsToolbar({
                 {printSettings.copiesPerSheet ?? 1}
               </span>
               <Button
-                variant="ghost" size="sm"
+                variant="ghost"
+                size="sm"
                 className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
-                disabled={(printSettings.repeatMode ?? "all") !== "all" || (printSettings.copiesPerSheet ?? 1) >= maxCopiesPerSheet}
-                onClick={() => setPrintSettings({ copiesPerSheet: (printSettings.copiesPerSheet ?? 1) + 1 })}
+                disabled={
+                  (printSettings.repeatMode ?? 'all') !== 'all' ||
+                  (printSettings.copiesPerSheet ?? 1) >= maxCopiesPerSheet
+                }
+                onClick={() =>
+                  setPrintSettings({ copiesPerSheet: (printSettings.copiesPerSheet ?? 1) + 1 })
+                }
               >
                 <Plus className="w-3 h-3 shrink-0" weight="bold" />
               </Button>
@@ -337,28 +438,36 @@ export function PrintSettingsToolbar({
           {/* نمط التكرار */}
           <div className="flex items-center justify-between bg-card rounded-lg border border-border/50 px-2.5 py-1.5 shadow-2xs">
             <span className="text-xs font-semibold text-muted-foreground">التكرار</span>
-            <div role="group" aria-label="نمط التكرار" className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md border border-border/30">
-              {([
-                { id: "all", icon: SquaresFour, label: "تعبئة تلقائية" },
-                { id: "row", icon: Rows, label: "صف واحد" },
-                { id: "column", icon: Columns, label: "عمود واحد" },
-              ] as const).map(({ id, icon: Icon, label }) => (
+            <div
+              role="group"
+              aria-label="نمط التكرار"
+              className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md border border-border/30"
+            >
+              {(
+                [
+                  { id: 'all', icon: SquaresFour, label: 'تعبئة تلقائية' },
+                  { id: 'row', icon: Rows, label: 'صف واحد' },
+                  { id: 'column', icon: Columns, label: 'عمود واحد' },
+                ] as const
+              ).map(({ id, icon: Icon, label }) => (
                 <Tooltip key={id}>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
                       onClick={() => setPrintSettings({ repeatMode: id })}
-                      aria-pressed={(printSettings.repeatMode ?? "all") === id}
+                      aria-pressed={(printSettings.repeatMode ?? 'all') === id}
                       className={cn(
-                        "h-7 w-7 rounded-md flex items-center justify-center",
-                        toggleButtonClassName((printSettings.repeatMode ?? "all") === id)
+                        'h-7 w-7 rounded-md flex items-center justify-center',
+                        toggleButtonClassName((printSettings.repeatMode ?? 'all') === id),
                       )}
                       aria-label={label}
                     >
                       <Icon className="w-3.5 h-3.5 shrink-0" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs font-semibold">{label}</TooltipContent>
+                  <TooltipContent side="bottom" className="text-xs font-semibold">
+                    {label}
+                  </TooltipContent>
                 </Tooltip>
               ))}
             </div>
@@ -369,10 +478,13 @@ export function PrintSettingsToolbar({
             <span className="text-xs font-semibold text-muted-foreground">المسافة (مم)</span>
             <div className="flex items-center gap-1">
               <Button
-                variant="ghost" size="sm"
+                variant="ghost"
+                size="sm"
                 className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
                 disabled={(printSettings.gapMM ?? 2) <= 0}
-                onClick={() => setPrintSettings({ gapMM: Math.max(0, (printSettings.gapMM ?? 2) - 1) })}
+                onClick={() =>
+                  setPrintSettings({ gapMM: Math.max(0, (printSettings.gapMM ?? 2) - 1) })
+                }
               >
                 <Minus className="w-3 h-3 shrink-0" weight="bold" />
               </Button>
@@ -380,10 +492,13 @@ export function PrintSettingsToolbar({
                 {printSettings.gapMM ?? 2}
               </span>
               <Button
-                variant="ghost" size="sm"
+                variant="ghost"
+                size="sm"
                 className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
                 disabled={(printSettings.gapMM ?? 2) >= 20}
-                onClick={() => setPrintSettings({ gapMM: Math.min(20, (printSettings.gapMM ?? 2) + 1) })}
+                onClick={() =>
+                  setPrintSettings({ gapMM: Math.min(20, (printSettings.gapMM ?? 2) + 1) })
+                }
               >
                 <Plus className="w-3 h-3 shrink-0" weight="bold" />
               </Button>

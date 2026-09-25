@@ -19,7 +19,6 @@ $env:CGO_ENABLED = "1"
 $env:APP_VERSION = $appVersion
 $env:SUPABASE_URL = $supabaseUrl
 $env:SUPABASE_ANON_KEY = $supabaseAnonKey
-$env:MODAL_AI_KEY = $modalAiKey
 
 # 2. بناء الملف التنفيذي للإنتاج (المخرجات في bin/GridoStudio.exe):
 wails3 task build
@@ -28,7 +27,8 @@ wails3 task build
 wails3 task package
 ```
 
-> 🔒 يتم التعامل مع خيارات `-ldflags` تلقائياً عبر `build/windows/Taskfile.yml` لدمج `AppVersion` و `SupabaseURL` و `ModalAIKey` مع معلمات `-w -s -H windowsgui`.
+> 🔒 يتم التعامل مع خيارات `-ldflags` تلقائياً عبر `build/windows/Taskfile.yml` لدمج `AppVersion` و `SupabaseURL` و `SupabaseAnonKey` مع معلمات `-w -s -H windowsgui`.
+> 🔒 **لا يوجد سرّ Modal في البناء:** توثيق خادم الذكاء الاصطناعي يتم عبر JWT المستخدم فقط (تدقيق `C-02`) — يُمنع إعادة إضافة `MODAL_AI_KEY`/`GRIDO_AI_SECRET_KEY` إلى البناء أو الأسرار.
 
 ---
 

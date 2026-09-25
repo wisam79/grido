@@ -566,4 +566,3 @@ func CleanUnusedMediaNow() (cleanedCount int, freedBytes int64, err error) {
 
 	return cleanedCount, freedBytes, nil
 }
-

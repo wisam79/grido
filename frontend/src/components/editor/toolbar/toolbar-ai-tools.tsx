@@ -1,70 +1,82 @@
-import React from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/huge-icon";
-import {
-  Sparkle,
-  PaintBrush,
-  UserSquare,
-  MagicWand,
-} from "@/components/ui/icons";
-import { useShallow } from "zustand/react/shallow";
-import { FluentTooltip as TooltipBtn } from "@/components/ui/blocks";
-import { cn } from "@/lib/utils";
-import { useBgRemoval } from "@/hooks/use-bg-removal";
-import { useAiEnhance } from "@/hooks/use-ai-enhance";
-import { useFaceFrame } from "@/hooks/use-face-frame";
+import React from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/huge-icon';
+import { Sparkle, PaintBrush, UserSquare, MagicWand } from '@/components/ui/icons';
+import { useShallow } from 'zustand/react/shallow';
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
+import { cn } from '@/lib/utils';
+import { useBgRemoval } from '@/hooks/use-bg-removal';
+import { useAiEnhance } from '@/hooks/use-ai-enhance';
+import { useFaceFrame } from '@/hooks/use-face-frame';
 
-const RefineBgDialog = React.lazy(() => import("../dialogs/refine-bg-dialog").then((m) => ({ default: m.RefineBgDialog })));
+const RefineBgDialog = React.lazy(() =>
+  import('../dialogs/refine-bg-dialog').then((m) => ({ default: m.RefineBgDialog })),
+);
 
 /** شريط أدوات الذكاء الاصطناعي للصورة المحددة — يُستخدم داخل أدوات التحديد. */
 export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
-  const { selectedItem } = useEditorStore(useShallow((state) => {
-    const el = state.elements.find((e) => e.id === state.selectedId);
-    const slot = state.slots?.find((s) => s.id === state.selectedId);
-    const target = state.mode === "collage" ? slot : (el?.type === "image" ? el : null);
-    return { selectedItem: target };
-  }));
+  const { selectedItem } = useEditorStore(
+    useShallow((state) => {
+      const el = state.elements.find((e) => e.id === state.selectedId);
+      const slot = state.slots?.find((s) => s.id === state.selectedId);
+      const target = state.mode === 'collage' ? slot : el?.type === 'image' ? el : null;
+      return { selectedItem: target };
+    }),
+  );
 
   const onUpdate = React.useCallback((id: string, patch: Partial<Record<string, unknown>>) => {
     const store = useEditorStore.getState();
-    if (store.mode === "collage") {
+    if (store.mode === 'collage') {
       store.updateSlot(id, patch);
     } else {
       store.updateElement(id, patch);
     }
   }, []);
 
-  const { isRemovingBg, bgProgress, bgProgressText, handleCancelBgRemoval, handleRemoveBg } = useBgRemoval(onUpdate);
-  const { isEnhancing, enhanceProgress, enhanceProgressText, remainingQuota, dailyLimit, handleEnhance } =
-    useAiEnhance(onUpdate);
-  const { isFraming, frameProgress, frameProgressText, handleCancelFrame, handleFrameFace } = useFaceFrame(onUpdate);
+  const { isRemovingBg, bgProgress, bgProgressText, handleCancelBgRemoval, handleRemoveBg } =
+    useBgRemoval(onUpdate);
+  const {
+    isEnhancing,
+    enhanceProgress,
+    enhanceProgressText,
+    remainingQuota,
+    dailyLimit,
+    handleEnhance,
+  } = useAiEnhance(onUpdate);
+  const { isFraming, frameProgress, frameProgressText, handleCancelFrame, handleFrameFace } =
+    useFaceFrame(onUpdate);
 
   const [refineOpen, setRefineOpen] = React.useState(false);
 
   if (!selectedItem || !selectedItem.imageSrc) return null;
 
   return (
-    <div className="fluent-command-group font-cairo bg-primary/5 dark:bg-primary/10 border-primary/25 dark:border-primary/30 shadow-2xs animate-in fade-in zoom-in-95 duration-150">
+    <div className="fluent-command-group font-cairo bg-primary/5 dark:bg-primary/10 border-primary/25 dark:border-primary/30 shadow-2xs">
       {/* العنوان «ذكاء اصطناعي» أُزيل: الأدوات تُشرح بنفسها، والوسم كان
           يضيف كلمة تسويقية بلا معلومة للاستخدام اليومي. */}
+      {/* ملاحظة: حركة الدخول على الغلاف الأب (ToolbarSelectionTools) فقط —
+          حركة داخلية هنا كانت تسبب ازدواج الأنيميشن. */}
 
       {/* عزل الخلفية - Fluent Wait UX */}
-      <TooltipBtn content={isRemovingBg ? bgProgressText || "إلغاء عزل الخلفية" : "عزل الخلفية"}>
+      <TooltipBtn content={isRemovingBg ? bgProgressText || 'إلغاء عزل الخلفية' : 'عزل الخلفية'}>
         <Button
-          variant={isRemovingBg ? "destructive" : "outline"}
+          variant={isRemovingBg ? 'destructive' : 'outline'}
           size="sm"
           aria-label="عزل الخلفية"
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/25 dark:border-primary/35 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
-            isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+            'h-8 px-2.5 gap-1.5 border border-primary/25 dark:border-primary/35 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs',
+            isRemovingBg &&
+              'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent',
           )}
           onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(selectedItem)}
         >
           {isRemovingBg ? (
             <>
               <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
-              <span className="hidden xl:inline">{bgProgress > 0 ? `جاري العزل ... (${bgProgress}%)` : "جاري العزل ..."}</span>
+              <span className="hidden xl:inline">
+                {bgProgress > 0 ? `جاري العزل ... (${bgProgress}%)` : 'جاري العزل ...'}
+              </span>
             </>
           ) : (
             <>
@@ -92,23 +104,26 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
       )}
 
       {/* ضبط وتأطير الوجه تلقائياً */}
-      <TooltipBtn content={isFraming ? frameProgressText || "إلغاء التأطير" : "تأطير الوجه"}>
+      <TooltipBtn content={isFraming ? frameProgressText || 'إلغاء التأطير' : 'تأطير الوجه'}>
         <Button
-          variant={isFraming ? "destructive" : "outline"}
+          variant={isFraming ? 'destructive' : 'outline'}
           size="sm"
           aria-label="تأطير الوجه"
           disabled={isEnhancing || isRemovingBg}
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/25 dark:border-primary/35 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
-            (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed",
-            isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+            'h-8 px-2.5 gap-1.5 border border-primary/25 dark:border-primary/35 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs',
+            (isEnhancing || isRemovingBg) && 'opacity-50 cursor-not-allowed',
+            isFraming &&
+              'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent',
           )}
           onClick={isFraming ? handleCancelFrame : () => handleFrameFace(selectedItem)}
         >
           {isFraming ? (
             <>
               <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
-              <span className="hidden xl:inline">{frameProgress > 0 ? `جاري التأطير ... (${frameProgress}%)` : "جاري التأطير ..."}</span>
+              <span className="hidden xl:inline">
+                {frameProgress > 0 ? `جاري التأطير ... (${frameProgress}%)` : 'جاري التأطير ...'}
+              </span>
             </>
           ) : (
             <>
@@ -124,7 +139,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
       <TooltipBtn
         content={
           isEnhancing
-            ? "إلغاء الترميم"
+            ? 'إلغاء الترميم'
             : `ترميم الوجه — المتبقي ${remainingQuota} من ${dailyLimit} اليوم`
         }
       >
@@ -134,13 +149,23 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup() {
           aria-label="ترميم الوجه"
           disabled={isEnhancing || isRemovingBg || isFraming}
           className={cn(
-            "h-8 px-2.5 gap-1.5 border border-primary/25 dark:border-primary/35 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs",
-            (isEnhancing || isRemovingBg || isFraming) && "opacity-50 cursor-not-allowed"
+            'h-8 px-2.5 gap-1.5 border border-primary/25 dark:border-primary/35 bg-background/60 dark:bg-card/60 hover:bg-primary/10 hover:border-primary text-foreground font-semibold text-xs rounded-md transition-colors cursor-pointer shadow-2xs',
+            (isEnhancing || isRemovingBg || isFraming) && 'opacity-50 cursor-not-allowed',
           )}
           onClick={() => handleEnhance(selectedItem)}
         >
-          {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-4 h-4 text-primary shrink-0" weight="duotone" />}
-          <span className="hidden xl:inline">{isEnhancing ? (enhanceProgress > 0 ? `جاري الترميم ... (${enhanceProgress}%)` : "جاري الترميم ...") : "ترميم الوجه"}</span>
+          {isEnhancing ? (
+            <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} />
+          ) : (
+            <MagicWand className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+          )}
+          <span className="hidden xl:inline">
+            {isEnhancing
+              ? enhanceProgress > 0
+                ? `جاري الترميم ... (${enhanceProgress}%)`
+                : 'جاري الترميم ...'
+              : 'ترميم الوجه'}
+          </span>
         </Button>
       </TooltipBtn>
 

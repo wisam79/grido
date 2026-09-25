@@ -76,6 +76,12 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	baseName := fmt.Sprintf("print_%d", time.Now().UnixNano())
 	isCMYK := strings.EqualFold(req.ColorSpace, "cmyk")
 
+	// مسار PDF المتجهي: تُعاد الصورة المركبة نفسها (نقطية + خطوط قص)
+	// إلى غلاف PDF بمقاس فيزيائي دقيق وخطوط قص متجهة. لا تغيير لبقية المسارات.
+	if strings.EqualFold(req.ExportFormat, "pdf") {
+		return s.saveOutputPDF(dc.Image(), req)
+	}
+
 	var imageName string
 	var imagePath string
 	var htmlImageName string
@@ -337,7 +343,6 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
 </body>
 </html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, escapedSrc)
 }
-
 
 // buildPhysChunk يبني قطعة pHYs (21 بايت) بالـ DPI المطلوب.
 func buildPhysChunk(dpi int) []byte {

@@ -12,6 +12,28 @@ concurrency:
 
 jobs:
   # ───────────────────────────────────────────────
+  # Job 0: Documentation Gate (mandatory)
+  #   → يفشل عند انحراف الأرقام المرجعية أو وجود مستند غير مُسجَّل في الجرد.
+  #   المرجع: docs/DOCUMENTATION_MAP.md · المهارة: .agents/skills/grido-docs-sync-guard
+  # ───────────────────────────────────────────────
+  docs-gate:
+    name: Documentation Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run Documentation Sync Gate
+        run: node scripts/docs-gate.mjs --push --ci
+
+  # ───────────────────────────────────────────────
   # Job 1: Frontend Quality & Unit Tests (Linux)
   #   → Fast, pure Node & Go bindings check
   # ───────────────────────────────────────────────

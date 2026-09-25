@@ -68,11 +68,15 @@ func (s *LicenseService) openBrowserURL(target string) error {
 //
 // For local development, set SUPABASE_URL and SUPABASE_ANON_KEY in a .env file
 // and load it before running (see .env.example).
+//
+// 🔒 لا يوجد سرّ مشترك لخادم الذكاء الاصطناعي (Modal): التوثيق حصراً عبر JWT
+// المستخدم (Authorization: Bearer) الذي يتحقق منه modal_ai/upscaler.py مع Supabase.
+// حُذف ModalAIKey/GetModalAIKey (2026-09-25 — تدقيق C-02) لأنه كان سرّاً ميتاً
+// يُحقن في كل بناء بلا أي مستهلك إنتاجي، ويُستخرج من الثنائي بـ strings.
 var (
 	SupabaseURL     = "" // injected via ldflags at build time
 	SupabaseAnonKey = "" // injected via ldflags at build time
-	ModalAIURL      = "" // injected via ldflags at build time
-	ModalAIKey      = "" // injected via ldflags at build time
+	ModalAIURL      = "" // عنوان النقطة النهائية (اختياري) عبر .env/MODAL_AI_URL — لا حقن ldflags
 )
 
 func init() {
@@ -106,12 +110,6 @@ func init() {
 		if v, ok := envVars["MODAL_AI_URL"]; ok && ModalAIURL == "" {
 			ModalAIURL = v
 		}
-		if v, ok := envVars["MODAL_AI_KEY"]; ok && ModalAIKey == "" {
-			ModalAIKey = v
-		}
-		if v, ok := envVars["GRIDO_AI_SECRET_KEY"]; ok && ModalAIKey == "" {
-			ModalAIKey = v
-		}
 	}
 
 	// Fallback to environment variables if ldflags not set (local dev)
@@ -127,30 +125,6 @@ func init() {
 	if ModalAIURL == "" {
 		ModalAIURL = os.Getenv("MODAL_AI_URL")
 	}
-	if ModalAIKey == "" {
-		ModalAIKey = os.Getenv("MODAL_AI_KEY")
-	}
-	if ModalAIKey == "" {
-		ModalAIKey = os.Getenv("GRIDO_AI_SECRET_KEY")
-	}
-	// 🔒 إزالة المفتاح الافتراضي المكشوف - يجب تعيينه في .env أو عبر ldflags
-	if ModalAIKey == "" {
-		slog.Warn("MODAL_AI_KEY not configured - AI features will be disabled")
-	}
-}
-
-// GetModalAIKey returns the active Modal AI API key or error if not configured
-func GetModalAIKey() (string, error) {
-	if ModalAIKey != "" {
-		return ModalAIKey, nil
-	}
-	if key := os.Getenv("MODAL_AI_KEY"); key != "" {
-		return key, nil
-	}
-	if key := os.Getenv("GRIDO_AI_SECRET_KEY"); key != "" {
-		return key, nil
-	}
-	return "", errors.New("MODAL_AI_KEY is required but not configured. Please set it in .env or via ldflags")
 }
 
 func (s *LicenseService) ActivateKey(key string) (*domain.UserProfile, error) {

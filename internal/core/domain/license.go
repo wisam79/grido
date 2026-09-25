@@ -5,10 +5,10 @@ import (
 )
 
 type UserProfile struct {
-	ID         string    `json:"id" gorm:"primaryKey"`
-	Name       string    `json:"name"`
-	Email      string    `json:"email" gorm:"uniqueIndex"`
-	Plan       string    `json:"plan"` // "free", "trial", "pro", "enterprise"
+	ID           string    `json:"id" gorm:"primaryKey"`
+	Name         string    `json:"name"`
+	Email        string    `json:"email" gorm:"uniqueIndex"`
+	Plan         string    `json:"plan"` // "free", "trial", "pro", "enterprise"
 	Token        string    `json:"token" gorm:"-"`
 	RefreshToken string    `json:"refreshToken" gorm:"-"`
 	CreatedAt    time.Time `json:"createdAt"`

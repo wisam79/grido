@@ -27,7 +27,7 @@ func setupTestService(t *testing.T) (*LicenseService, *httptest.Server) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		
+
 		if strings.Contains(r.URL.Path, "/auth/v1/signup") {
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(SupabaseAuthResponse{
@@ -78,7 +78,7 @@ func setupTestService(t *testing.T) (*LicenseService, *httptest.Server) {
 			})
 			return
 		}
-		
+
 		w.WriteHeader(http.StatusNotFound)
 	}))
 
@@ -150,7 +150,13 @@ func TestStartOAuthLocalServer_CallbackServesPageWithState(t *testing.T) {
 		t.Fatalf("startOAuthLocalServer failed: %v", err)
 	}
 	defer shutdown()
-	defer func() { select { case e := <-errChan: t.Errorf("server error: %v", e); default: } }()
+	defer func() {
+		select {
+		case e := <-errChan:
+			t.Errorf("server error: %v", e)
+		default:
+		}
+	}()
 
 	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Get(callbackURL)
@@ -183,7 +189,13 @@ func TestStartOAuthLocalServer_ExchangeFlow(t *testing.T) {
 		t.Fatalf("startOAuthLocalServer failed: %v", err)
 	}
 	defer shutdown()
-	defer func() { select { case e := <-errChan: t.Errorf("server error: %v", e); default: } }()
+	defer func() {
+		select {
+		case e := <-errChan:
+			t.Errorf("server error: %v", e)
+		default:
+		}
+	}()
 
 	origin := strings.Replace(callbackURL, "/callback", "", 1)
 	client := &http.Client{Timeout: 5 * time.Second}

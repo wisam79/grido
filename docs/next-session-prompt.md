@@ -8,7 +8,9 @@
 
 أنت تكمل عملاً في مشروع `C:\projects\grido` (Grido Studio — تطبيق سطح مكتب Wails v3: Go backend + React/TypeScript/Konva frontend + صفحة هبوط admin-web بـ React+Vite+Tailwind v4 على Netlify).
 
-اقرأ أولاً هذه الملفات قبل أي كود: `.agents/AGENTS.md` (قواعد إلزامية)، `docs/features-tracker.md` (حالة الميزات والإصلاحات المنفذة والمتبقية)، وملف المهمة الحالية عند الحاجة.
+اقرأ أولاً هذه الملفات قبل أي كود: `.agents/AGENTS.md` (قواعد إلزامية)، `docs/DOCUMENTATION_MAP.md` (**خريطة التوثيق الإلزامية — الجرد + مصفوفة المزامنة + الأرقام المرجعية + البوابات**)، `docs/features-tracker.md` (حالة الميزات والإصلاحات المنفذة والمتبقية)، وملف المهمة الحالية عند الحاجة.
+
+> 🔒 **إلزام:** قبل بدء العمل أعلن المستندات التي سيتغيّرها العمل، وقبل أي كومت/دفع شغّل `node scripts/docs-gate.mjs --strict-refs` (مفروض آلياً عبر `.husky/pre-commit` و`.husky/pre-push` وخطوة `Documentation Gate` في CI). **لا رقم من الذاكرة** — الأرقام المرجعية في الخريطة القسم 4 بأوامرها.
 
 ## ما أُنجز في الجلسة السابقة (موجود في شجرة العمل — غير مُدمج بـ commit)
 
@@ -64,10 +66,11 @@ README: `selfie_multiclass.tflite` بدل RMBG-1.4 (مع Web Worker — صار �
 
 ### 6. التحقق الشامل النهائي
 ```bash
-cd C:\projects\grido && go test -race ./internal/... && go vet ./...
+cd C:\projects\grido && go test -race ./internal/... && go vet ./internal/... && go build .
 cd frontend && npm run test && npm run typecheck && npm run lint
 cd ../admin-web && npm ci && npm run build && npm run lint
 ```
+> ⚠️ لا تستخدم `go vet ./...` أو `go build ./...` — يفشلان بسبب مجلد قالب Wails `build/ios/scripts/deps` (خارج نطاق التطبيق).
 ثم حدّث `docs/features-tracker.md` بنتائجك.
 
 ### 7. ملاحظات نشر (لا تنفذها بلا إذن المستخدم)

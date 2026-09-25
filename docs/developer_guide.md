@@ -28,7 +28,7 @@ graph TD
 
 ### Frontend (TypeScript + React)
 - **Framework:** Vite-powered React with TypeScript.
-- **Styling:** Vanilla CSS tailored with utility-first tailwindcss-like styling variables.
+- **Styling:** Tailwind CSS v4 + رموز تصميم Fluent 2 (`--canvas-*`, `--z-*`, `--ruler-*`, `--print-*`) في `src/index.css` — صفر قيم hex/slate خارجة عن النظام.
 - **Canvas Engine:** `react-konva` wraps the standard Konva HTML5 2D Canvas library.
 - **State Management:** Zustand managing canvas nodes, editor modes, printing configurations, and history.
 
@@ -158,8 +158,37 @@ wails3 task build
 ```
 The compiled executable will be placed in the `bin/` folder (`BIN_DIR` in `Taskfile.yml`).
 
+### Print Export Pipeline (PNG/JPEG/TIFF + Vector PDF)
+`internal/service/print_service.go` (تحقق + تنسيق) → `print_compose.go` (رسم gg)
+→ `print_cmyk.go` (CMYK) → `print_export.go` (حفظ نقطي) / `print_pdf_export.go` (PDF).
+
+- **النقطي:** PNG/JPEG (sRGB) وTIFF/JPEG (CMYK) + حقن DPI (pHYs/JFIF) + كتابة ذرية.
+- **PDF المتجهي (`exportFormat: "pdf"` — sRGB فقط):** صفحة مخصصة بالمقاس الفيزيائي
+  الدقيق عبر `gofpdf.NewCustom` (مكتبة pure-Go بلا cgo — آمنة للبناء المتقاطع)،
+  تضمين JPEG بجودة 95 بلا إعادة ترميز، وخطوط قص متجهة (`Line` + `SetDashPattern`
+  بنفس إيقاع `drawCutLines`). يُرفض CMYK→PDF صراحةً برسالة توجيهية.
+- **العقد:** `domain.PrintRequest.ExportFormat` (`"png"`, `"jpeg"`, `"tiff"`, `"pdf"`) —
+  أي قيمة جديدة تُضاف هنا وفي `print_export.go` مع اختبار مسار في `print_*_test.go`.
+
 For the NSIS installer (requires `makensis` on PATH):
 ```bash
 wails3 task package
 ```
 The installer is produced at `build/windows/nsis/GridoStudio-installer.exe`.
+
+> ⚠️ **تحذير أدوات:** `go vet ./...` و`go build ./...` يفشلان بسبب مجلد قالب Wails `build/ios/scripts/deps` (خارج نطاق التطبيق). استخدم `go vet ./internal/...` و`go build .`.
+
+---
+
+## 6. Documentation System (إلزامي)
+
+نظام التوثيق في هذا المستودع **مُلزِم** وليس اختيارياً:
+
+- **الوثيقة الحاكمة:** [`docs/DOCUMENTATION_MAP.md`](DOCUMENTATION_MAP.md) — جرد كل مستند ودوره، مصفوفة «ما تغيّر ← ما يجب توثيقه»، الأرقام المرجعية بأوامرها، والبوابات الثلاث.
+- **الأداة المنفِّذة:** `scripts/docs-gate.mjs` — تفحص انحراف الأرقام، وتغطية الجرد، ووجود توثيق مرافق لأي تغيير كود، وسلامة مراجع المسارات في `.agents/`.
+- **الفرض:** `.husky/pre-commit` (بوابة قبل الكومت) + `.husky/pre-push` (بوابة قبل الدفع) + خطوة `Documentation Gate` في `.github/workflows/ci.yml`.
+- **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md` — البوابات وقوائم الفحص وضوابط الأرقام وقواعد «التاريخ لا يُعاد كتابته».
+- **القاعدة الحاكمة:** `.agents/AGENTS.md` → «بوابة التوثيق الإلزامية (Documentation Sync Gate — Mandatory)».
+
+لماذا؟ لأن كل انحراف توثيقي سابق (أرقام اختبارات، عائلات خطوط، أسرار ميتة، مسارات وهمية) كلّف جلسات كاملة للاكتشاف والتصحيح. البوابة تحوّل هذا الاكتشاف إلى **فشل آلي فوري**.
+

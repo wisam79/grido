@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import type Konva from "konva";
+﻿import { useState, useEffect } from 'react';
+import type Konva from 'konva';
 import {
   Dialog,
   DialogContent,
@@ -8,23 +8,19 @@ import {
   DialogDescription,
   DialogFooter,
   DialogCloseButton,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useEditorStore } from "@/lib/editor-store";
-import { DEFAULT_PRINT_SETTINGS } from "@/lib/store/slices/print-slice";
-import { useStageRef } from "@/lib/canvas/stage-context";
-import { usePrintLayout } from "@/hooks/use-print-layout";
-import { cn } from "@/lib/utils";
-import { Spinner } from "@/components/ui/huge-icon";
-import {
-  Printer,
-  MagnifyingGlassPlus,
-  MagnifyingGlassMinus,
-} from "@/components/ui/icons";
-import { SheetPreview } from "../print/print-preview";
-import { useShallow } from "zustand/react/shallow";
-import { PrintSettingsToolbar } from "../print/print-settings-toolbar";
-import { usePrintExport } from "../print/use-print-export";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { useEditorStore } from '@/lib/editor-store';
+import { DEFAULT_PRINT_SETTINGS } from '@/lib/store/slices/print-slice';
+import { useStageRef } from '@/lib/canvas/stage-context';
+import { usePrintLayout } from '@/hooks/use-print-layout';
+import { cn } from '@/lib/utils';
+import { Spinner } from '@/components/ui/huge-icon';
+import { Printer, MagnifyingGlassPlus, MagnifyingGlassMinus } from '@/components/ui/icons';
+import { SheetPreview } from '../print/print-preview';
+import { useShallow } from 'zustand/react/shallow';
+import { PrintSettingsToolbar } from '../print/print-settings-toolbar';
+import { usePrintExport } from '../print/use-print-export';
 
 interface PrintDialogProps {
   open: boolean;
@@ -53,33 +49,37 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     collageStrokeColor,
     collageShowCutLines,
     collageShowEndCutLine,
-  } = useEditorStore(useShallow((state) => ({
-    template: state.template,
-    canvasWidth: state.canvasWidth,
-    canvasHeight: state.canvasHeight,
-    printSettings: state.printSettings,
-    setPrintSettings: state.setPrintSettings,
-    elements: state.elements,
-    slots: state.slots,
-    mode: state.mode,
-    backgroundColor: state.backgroundColor,
-    backgroundGradientColor2: state.backgroundGradientColor2,
-    backgroundGradientAngle: state.backgroundGradientAngle,
-    collageTemplate: state.collageTemplate,
-    collageMargin: state.collageMargin,
-    collageGap: state.collageGap,
-    collageRadius: state.collageRadius,
-    collageStrokeWidth: state.collageStrokeWidth,
-    collageStrokeColor: state.collageStrokeColor,
-    collageShowCutLines: state.collageShowCutLines,
-    collageShowEndCutLine: state.collageShowEndCutLine,
-  })));
+  } = useEditorStore(
+    useShallow((state) => ({
+      template: state.template,
+      canvasWidth: state.canvasWidth,
+      canvasHeight: state.canvasHeight,
+      printSettings: state.printSettings,
+      setPrintSettings: state.setPrintSettings,
+      elements: state.elements,
+      slots: state.slots,
+      mode: state.mode,
+      backgroundColor: state.backgroundColor,
+      backgroundGradientColor2: state.backgroundGradientColor2,
+      backgroundGradientAngle: state.backgroundGradientAngle,
+      collageTemplate: state.collageTemplate,
+      collageMargin: state.collageMargin,
+      collageGap: state.collageGap,
+      collageRadius: state.collageRadius,
+      collageStrokeWidth: state.collageStrokeWidth,
+      collageStrokeColor: state.collageStrokeColor,
+      collageShowCutLines: state.collageShowCutLines,
+      collageShowEndCutLine: state.collageShowEndCutLine,
+    })),
+  );
   const [zoom, setZoom] = useState(1);
-  const [colorSpace, setColorSpace] = useState<"sRGB" | "CMYK">("sRGB");
-  const [previewImageSrc, setPreviewImageSrc] = useState<string>("");
+  const [colorSpace, setColorSpace] = useState<'sRGB' | 'CMYK'>('sRGB');
+  // صيغة الإخراج: نقطية تقليدية أو PDF متجهي (sRGB فقط — CMYK يبقى TIFF/JPEG)
+  const [exportFormat, setExportFormat] = useState<'image' | 'pdf'>('image');
+  const [previewImageSrc, setPreviewImageSrc] = useState<string>('');
   // آخر هامش غير صفري — لاستعادته عند إطفاء «بدون هوامش» بدل الـ 5mm الثابتة
   const [lastNonZeroMargin, setLastNonZeroMargin] = useState<number>(() =>
-    printSettings.marginMM > 0 ? printSettings.marginMM : (DEFAULT_PRINT_SETTINGS.marginMM || 5)
+    printSettings.marginMM > 0 ? printSettings.marginMM : DEFAULT_PRINT_SETTINGS.marginMM || 5,
   );
 
   const layout = usePrintLayout({
@@ -123,8 +123,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     printDpi: printSettings.dpi,
     printShowCutLines: printSettings.showCutLines,
     printShowEndCutLine: printSettings.showEndCutLine,
-    printCutLineStyle: printSettings.cutLineStyle || "dashed",
+    printCutLineStyle: printSettings.cutLineStyle || 'dashed',
     printOrientation: printSettings.orientation,
+    exportFormat: exportFormat,
   });
   const { isExporting } = exporter;
 
@@ -137,24 +138,25 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       useEditorStore.getState().selectElement(null);
     } else {
       // ضمان تحرير أي قفل لـ pointer-events عند إغلاق النافذة
-      if (typeof document !== "undefined" && document.body) {
-        document.body.style.pointerEvents = "";
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.pointerEvents = '';
       }
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hasContent = mode === "collage" ? slots.some((s) => Boolean(s.imageSrc)) : elements.length > 0;
+  const hasContent =
+    mode === 'collage' ? slots.some((s) => Boolean(s.imageSrc)) : elements.length > 0;
 
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         exporter.setIsExporting(false);
-        if (typeof document !== "undefined" && document.body) {
-          document.body.style.pointerEvents = "";
+        if (typeof document !== 'undefined' && document.body) {
+          document.body.style.pointerEvents = '';
         }
         onOpenChange(false);
-      } else if (e.key === "Enter" && !isExporting && hasContent) {
+      } else if (e.key === 'Enter' && !isExporting && hasContent) {
         // لا نطلق الطباعة إذا كان التركيز داخل عنصر إدخال — Enter له معناه الخاص هناك
         const t = e.target as HTMLElement | null;
         if (t?.closest?.('input, select, textarea, button, [role="combobox"]')) return;
@@ -162,8 +164,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         exporter.handlePrintRef.current();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, isExporting, hasContent, onOpenChange, exporter]);
 
   // مزامنة مؤشر الطباعة Enter مع أحدث حالة (المزامنة الداخلية داخل الـ hook)
@@ -177,12 +179,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   useEffect(() => {
     if (!open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPreviewImageSrc("");
+      setPreviewImageSrc('');
       return;
     }
 
-    if (mode === "collage") {
-      setPreviewImageSrc("collage-active");
+    if (mode === 'collage') {
+      setPreviewImageSrc('collage-active');
       return;
     }
 
@@ -202,7 +204,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         } else {
           // قراءة طازجة لحظة التوليد (قاعدة Stale Closures) بدل تبعية elements.
           const freshElements = useEditorStore.getState().elements;
-          const firstImg = freshElements.find((el): el is import("@/lib/store/types").ImageElement => el.type === "image" && Boolean(el.imageSrc));
+          const firstImg = freshElements.find(
+            (el): el is import('@/lib/store/types').ImageElement =>
+              el.type === 'image' && Boolean(el.imageSrc),
+          );
           if (firstImg?.imageSrc) {
             setPreviewImageSrc(firstImg.imageSrc);
           }
@@ -226,7 +231,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
         const previewUrl = stage.toDataURL({
           pixelRatio: pRatio,
-          mimeType: "image/jpeg",
+          mimeType: 'image/jpeg',
           quality: 0.8,
         });
 
@@ -235,9 +240,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           setPreviewImageSrc(previewUrl);
         }
       } catch (err) {
-        console.error("Failed to generate print preview image:", err);
+        console.error('Failed to generate print preview image:', err);
         const freshElements = useEditorStore.getState().elements;
-        const firstImg = freshElements.find((el): el is import("@/lib/store/types").ImageElement => el.type === "image" && Boolean(el.imageSrc));
+        const firstImg = freshElements.find(
+          (el): el is import('@/lib/store/types').ImageElement =>
+            el.type === 'image' && Boolean(el.imageSrc),
+        );
         if (firstImg?.imageSrc) {
           setPreviewImageSrc(firstImg.imageSrc);
         }
@@ -262,10 +270,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   }, [open, stageRef, mode]);
 
   const spaceUsedPercent = Math.round(
-    ((actualCopies * imageWidthMM * imageHeightMM) /
-      (availableWidthMM * availableHeightMM)) * 100
+    ((actualCopies * imageWidthMM * imageHeightMM) / (availableWidthMM * availableHeightMM)) * 100,
   );
-  const isOverflowing = spaceUsedPercent > 101 || imageWidthMM > availableWidthMM + 0.5 || imageHeightMM > availableHeightMM + 0.5;
+  const isOverflowing =
+    spaceUsedPercent > 101 ||
+    imageWidthMM > availableWidthMM + 0.5 ||
+    imageHeightMM > availableHeightMM + 0.5;
 
   const scaleFactor = Math.min(1.4, 420 / Math.max(paperHeight, 1));
 
@@ -275,14 +285,18 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       onOpenChange={(next) => {
         if (!next) {
           exporter.setIsExporting(false);
-          if (typeof document !== "undefined" && document.body) {
-            document.body.style.pointerEvents = "";
+          if (typeof document !== 'undefined' && document.body) {
+            document.body.style.pointerEvents = '';
           }
         }
         onOpenChange(next);
       }}
     >
-      <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border dark:border-white/10 bg-card rounded-2xl shadow-fluent-28 p-0 gap-0 fluent-specular fluent-acrylic" dir="rtl">
+      <DialogContent
+        showCloseButton={false}
+        className="w-[95vw] sm:max-w-[880px] h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col border border-border dark:border-white/10 bg-card rounded-2xl shadow-fluent-28 p-0 gap-0 fluent-specular fluent-acrylic"
+        dir="rtl"
+      >
         {/* رأس النافذة */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
           <div className="flex items-center justify-between gap-3">
@@ -308,6 +322,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             setPrintSettings={setPrintSettings}
             colorSpace={colorSpace}
             onColorSpaceChange={setColorSpace}
+            exportFormat={exportFormat}
+            onExportFormatChange={setExportFormat}
             collageShowCutLines={collageShowCutLines}
             onCutLinesChange={(checked) => {
               setPrintSettings({ showCutLines: checked });
@@ -330,7 +346,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* شريط عنوان وتكبير المعاينة */}
             <div className="flex items-center justify-between px-3.5 py-2 border-b border-print-header-border bg-print-header backdrop-blur-md select-none z-10">
               <span className="text-xs font-bold text-print-header-title flex items-center gap-2">
-                <span className={cn("w-2 h-2 rounded-full", isOverflowing ? "bg-destructive animate-ping" : "bg-primary")} />
+                <span
+                  className={cn(
+                    'w-2 h-2 rounded-full',
+                    isOverflowing ? 'bg-destructive animate-ping' : 'bg-primary',
+                  )}
+                />
                 معاينة الورقة المطبوعة
               </span>
 
@@ -345,13 +366,23 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   إعادة ضبط
                 </Button>
                 <div className="flex items-center gap-1 bg-print-zoom-capsule p-0.5 rounded-md border border-print-zoom-capsule-border">
-                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))} className="h-7 w-7 p-0 text-print-zoom-text hover:text-white hover:bg-print-zoom-hover cursor-pointer">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))}
+                    className="h-7 w-7 p-0 text-print-zoom-text hover:text-white hover:bg-print-zoom-hover cursor-pointer"
+                  >
                     <MagnifyingGlassMinus className="w-3 h-3 shrink-0" />
                   </Button>
                   <span className="text-micro w-10 text-center font-mono font-semibold text-print-zoom-text">
                     {Math.round(zoom * 100)}%
                   </span>
-                  <Button variant="ghost" size="sm" onClick={() => setZoom((z) => Math.min(3, z + 0.1))} className="h-7 w-7 p-0 text-print-zoom-text hover:text-white hover:bg-print-zoom-hover cursor-pointer">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setZoom((z) => Math.min(3, z + 0.1))}
+                    className="h-7 w-7 p-0 text-print-zoom-text hover:text-white hover:bg-print-zoom-hover cursor-pointer"
+                  >
                     <MagnifyingGlassPlus className="w-3 h-3 shrink-0" />
                   </Button>
                 </div>
@@ -369,7 +400,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               >
                 {/* حدود الهامش الداخلي */}
                 <div
-                  className={cn("absolute border border-dashed pointer-events-none transition-colors", isOverflowing ? "border-destructive" : "border-print-margin-line")}
+                  className={cn(
+                    'absolute border border-dashed pointer-events-none transition-colors',
+                    isOverflowing ? 'border-destructive' : 'border-print-margin-line',
+                  )}
                   style={{
                     left: effectiveMarginMM * scaleFactor * zoom,
                     top: effectiveMarginMM * scaleFactor * zoom,
@@ -385,9 +419,15 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     imageHeightMM={imageHeightMM}
                     gapMM={gapMM}
                     zoom={zoom}
-                    showCutLines={mode === "collage" ? collageShowCutLines : printSettings.showCutLines}
-                    showEndCutLine={mode === "collage" ? collageShowEndCutLine !== false : printSettings.showEndCutLine !== false}
-                    cutLineStyle={printSettings.cutLineStyle || "dashed"}
+                    showCutLines={
+                      mode === 'collage' ? collageShowCutLines : printSettings.showCutLines
+                    }
+                    showEndCutLine={
+                      mode === 'collage'
+                        ? collageShowEndCutLine !== false
+                        : printSettings.showEndCutLine !== false
+                    }
+                    cutLineStyle={printSettings.cutLineStyle || 'dashed'}
                     mode={mode}
                     backgroundColor={backgroundColor}
                     backgroundGradientColor2={backgroundGradientColor2}
@@ -418,8 +458,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             variant="outline"
             onClick={() => {
               exporter.setIsExporting(false);
-              if (typeof document !== "undefined" && document.body) {
-                document.body.style.pointerEvents = "";
+              if (typeof document !== 'undefined' && document.body) {
+                document.body.style.pointerEvents = '';
               }
               onOpenChange(false);
             }}
@@ -428,14 +468,22 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             إلغاء
           </Button>
           <Button
-            onClick={() => exporter.handlePrint(colorSpace, previewImageSrc, effectiveMarginMM, () => onOpenChange(false))}
+            onClick={() =>
+              exporter.handlePrint(colorSpace, previewImageSrc, effectiveMarginMM, () =>
+                onOpenChange(false),
+              )
+            }
             className="h-8 px-5 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-all duration-150 cursor-pointer rounded-md shadow-xs"
             disabled={isExporting || !hasContent}
           >
             {isExporting ? (
-              <><Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التجهيز ...</span></>
+              <>
+                <Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التجهيز ...</span>
+              </>
             ) : (
-              <><Printer className="w-3.5 h-3.5 shrink-0" weight="bold" /> <span>طباعة</span></>
+              <>
+                <Printer className="w-3.5 h-3.5 shrink-0" weight="bold" /> <span>طباعة</span>
+              </>
             )}
           </Button>
         </DialogFooter>

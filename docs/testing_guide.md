@@ -11,13 +11,13 @@
 ```mermaid
 flowchart TD
     subgraph E2E ["End-to-End (E2E Layer)"]
-        PW["Playwright (15 Suites / 31 Tests)"]
+        PW["Playwright (25 ملف مواصفة / 165 حالة عبر كل المشاريع · chromium في الوضع السريع)"]
         Bridge["Wails v3 Mock Bridge (/wails/runtime Route Interceptor)"]
         PW --> Bridge
     end
 
     subgraph FE ["Frontend Component & Unit (Vitest)"]
-        VTests["Vitest + React Testing Library (67 Suites / 469 Tests)"]
+        VTests["Vitest + React Testing Library (84 ملف اختبار / 684 حالة: 683 ناجحة + 1 متخطّاة)"]
         Zustand["Zustand Slices + Math + Canvas & Collage Hooks"]
         Comps["React 19 Components (Freeform, Stickers, Panels)"]
         VTests --> Zustand
@@ -85,7 +85,7 @@ case 1234567890: // اسم الدالة الجديدة
 | :--- | :--- | :--- |
 | `task test:all` | تشغيل كافة اختبارات الباكيند والفرونت إند و E2E كاملة | المشروع بالكامل |
 | `task test:backend` | تشغيل كافة اختبارات الـ Go backend مع تفاصيل الحزم | Backend (`internal/...`) |
-| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (67 ملف اختبار) | Frontend Unit/Component |
+| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (84 ملف اختبار) | Frontend Unit/Component |
 | `task test:e2e` | تشغيل اختبارات Playwright E2E السريعة على Chromium | E2E Browser |
 
 ### 3.2 عبر npm في مجلد `frontend`
@@ -118,6 +118,18 @@ go test -count=1 -v ./internal/...
 
 ---
 
+### 3.4 بوابة التوثيق (قبل أي كومت)
+
+| الأمر | الوصف |
+| :--- | :--- |
+| `node scripts/docs-gate.mjs` | تفحص الأرقام المرجعية والجرد وتشترط توثيقاً مرافقاً لأي تغيير كود (تُشغَّل آلياً عبر `.husky/pre-commit`) |
+| `node scripts/docs-gate.mjs --push` | نفس الفحوص على مدى الكومتات غير المدفوعة (تُشغَّل آلياً عبر `.husky/pre-push`) |
+| `wails3 task docs:check` | تشغيل صارم لمراجع المسارات في `.agents/` |
+
+> 📚 المرجع الكامل: `docs/DOCUMENTATION_MAP.md` · المهارة: `.agents/skills/grido-docs-sync-guard/SKILL.md`.
+
+---
+
 ## 4. إرشادات كتابة الاختبارات (Best Practices)
 
 ### 4.1 اختبارات مكونات React (Vitest + RTL)
@@ -145,7 +157,11 @@ go test -count=1 -v ./internal/...
 
 ## 5. حالة التغطية الحالية (Baseline Metrics)
 
-- **Go Backend:** كافة الحزم في `internal/handlers` و `internal/service` و `internal/repository` و `internal/utils` تجتاز الاختبارات بنسبة 100% (صفر أخطاء).
-- **Vitest Frontend:** **67 ملف اختبار** يضم **469 حالة اختبار** تجتاز بنجاح تام 100%.
-- **Playwright E2E:** **21 ملف مواصفة** يضم تغطية شاملة لكافة النوافذ والألواح والوضعيات وتدفقات المستخدم المتكاملة (تغطية 100% لجميع الشاشات والأدوات)، وتجتاز بنجاح تام على بيئة Wails v3 Mock Bridge في GitHub Actions، متضمنةً اختبارات كفاءة الكانفاس وسرعة السحب بمعدل **59.9 إطار في الثانية**.
-- **GitHub Step Summaries:** يقوم خط الأنابيب بتوليد لوحات إحصائية وتلخيصات بصرية تلقائية لجميع مهام البناء والاختبار في واجهة GitHub Actions لكل عملية دمج أو دفع جديدة.
+> 📌 الأرقام أدناه **تحقق: 2026-09-25**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة.
+
+- **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/utils` تجتاز الاختبارات بنسبة 100% (29 ملف اختبار / 151 دالة اختبار) — `go test ./internal/...`.
+- **Vitest Frontend:** **84 ملف اختبار** يضم **684 حالة** (683 ناجحة + 1 متخطّاة) — `cd frontend && npm run test`.
+- **Playwright E2E:** **25 ملف مواصفة** يضم **165 حالة** عبر كل المشاريع (chromium + firefox + webkit)؛ `npm run test:e2e:fast` يقتصر على chromium — التحقق: `npx playwright test --list`.
+- **التغطية (Coverage):** الحدود الدنيا في `frontend/vitest.config.ts` (statements 36 / branches 30 / functions 32 / lines 36) وتُقرأ الأرقام الفعلية من `coverage/coverage-summary.json` في CI.
+- **GitHub Step Summaries:** يقوم خط الأنابيب بتوليد لوحات إحصائية وتلخيصات بصرية تلقائية لجميع مهام البناء والاختبار لكل عملية دمج أو دفع.
+- **بوابة التوثيق:** خطوة `Documentation Gate` (`node scripts/docs-gate.mjs`) تفشل البناء عند انحراف أي رقم مرجعي أو وجود مستند غير مُسجَّل — راجع `docs/DOCUMENTATION_MAP.md`.

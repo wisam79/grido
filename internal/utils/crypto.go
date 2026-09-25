@@ -353,4 +353,3 @@ func ClearEncryptedToken() error {
 	path := filepath.Join(GetAppDir(), ".license_token")
 	return os.Remove(path)
 }
-

@@ -558,5 +558,3 @@ func (s *MediaService) GetStorageStats() (MediaStorageStats, error) {
 	}
 	return stats, nil
 }
-
-

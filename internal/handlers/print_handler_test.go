@@ -170,4 +170,3 @@ func TestPrintHandler_InvalidCompositionFallsBack(t *testing.T) {
 		t.Fatalf("generated print file does not exist: %s", res.FilePath)
 	}
 }
-

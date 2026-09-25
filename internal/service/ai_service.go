@@ -30,7 +30,6 @@ var (
 	aiEnhanceClient = &http.Client{Timeout: 3 * time.Minute}
 )
 
-
 type AIRateEntry struct {
 	Count    int    `json:"count"`
 	ResetDay string `json:"resetDay"`
@@ -123,6 +122,7 @@ func (l *AIRateLimiter) Rollback(key string) {
 		l.saveLocked()
 	}
 }
+
 type AIService struct{}
 
 func NewAIService() *AIService {
@@ -158,8 +158,8 @@ type planCacheEntry struct {
 }
 
 var (
-	planCacheMu sync.Mutex
-	planCache   = make(map[string]planCacheEntry)
+	planCacheMu  sync.Mutex
+	planCache    = make(map[string]planCacheEntry)
 	planCacheTTL = 5 * time.Minute
 )
 
@@ -247,9 +247,9 @@ func fetchSupabaseUserInfo(token string) (userID string, plan string, err error)
 // الوحيدة للحد اليومي. تعمل بوضع الفحص المسبق (check_only) أو التسجيل (record).
 func callAIUsageRPC(token string, userID string, imageBytes int64, checkOnly bool) error {
 	payload, err := json.Marshal(map[string]interface{}{
-		"p_user_id":     userID,
-		"p_daily_limit": 0, // مهمل خادمياً — يُشتق من خطة المستخدم
-		"p_image_bytes": imageBytes,
+		"p_user_id":      userID,
+		"p_daily_limit":  0, // مهمل خادمياً — يُشتق من خطة المستخدم
+		"p_image_bytes":  imageBytes,
 		"p_exec_seconds": 0,
 		"p_cost_usd":     0,
 		"p_check_only":   checkOnly,

@@ -49,6 +49,8 @@
 
 ### 🟠 [C-02] سرّ مُدمج في كل بناء بلا أي مستهلك (`ModalAIKey` / `GRIDO_AI_SECRET_KEY`)
 
+> ✅ **مُصلح (2026-09-25):** حُذف المتغير `ModalAIKey` ودالة `GetModalAIKey` من `internal/service/license_service.go`، وحُذف اختبار `TestGetModalAIKey`، وأُزيل الحقن من `build/windows/Taskfile.yml` و`build.ps1` و`.github/workflows/release.yml`، وعُطّل السطر في `.env` المحلي، وصُححت قواعد `.agents/AGENTS.md` والتوثيق. **متبقٍ مطلوب من المالك:** إبطال المفتاح القديم من لوحة Modal (لأنه ما زال قابلاً للاستخراج من الإصدارات المبنية سابقاً).
+
 **الدليل:**
 - `internal/service/license_service.go:75,109-113,130-134,142-155` — يُقرأ المتغير ويُعرض عبر `GetModalAIKey()`.
 - بحث كامل: `GetModalAIKey` مُستدعى **فقط** من `license_service_test.go`. لا مسار إنتاجي.
@@ -163,7 +165,7 @@ except Exception as e:
 ## 4. خطة العمل بالأولوية
 
 **فوري (أقل من ساعة):**
-1. حسم `ModalAIKey` — حذف أو تفعيل فعلي (C-02).
+1. ~~حسم `ModalAIKey` — حذف أو تفعيل فعلي (C-02).~~ ✅ **تم الحذف بالكامل (2026-09-25)** — راجع الملاحظة أعلى البند C-02.
 2. تصحيح ادعاء «الحية» في تبويب إعدادات الإدارة، أو ربطه (C-01).
 
 **قصير (1–3 أيام):**

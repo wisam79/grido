@@ -33,11 +33,11 @@
 | **محرر مزدوج** | وضع كولاج بخانات ثابتة + وضع تعديل حر (صور، نصوص، أشكال) مع تحكم كامل بالطبقات |
 | **عزل خلفية أوفلاين** | نموذج `selfie_multiclass` عبر MediaPipe داخل Web Worker — يعمل بدون إنترنت بعد أول تحميل، مع إلغاء فوري |
 | **ترميم وتحسين AI** | خط أنابيب مزدوج: CodeFormer للوجوه + Real-ESRGAN x2 للخلفية (GPU L4 عبر Modal AI) |
-| **طباعة دقة عالية** | أوراق DPI مخصصة مع خطوط قص، حدود مستديرة، وأبعاد ملمية دقيقة (حتى 144 ميغابكسل) |
+| **طباعة دقة عالية** | أوراق DPI مخصصة مع خطوط قص، حدود مستديرة، وأبعاد ملمية دقيقة (حتى 144 ميغابكسل) + **تصدير PDF بخطوط قص متجهة** |
 | **قوالب جاهزة** | هويات، جوازات سفر، تأشيرات، وكولاجات قابلة للتخصيص |
 | **ملصقات وبطاقات تجارية** | مقاسات كروت وبادجات وهوامش نزيف وقص (Bleed Guides)، وتوليد رموز QR وباركود متجهة، ومونتاج ورقي ذكي |
 | **تراخيص سحابية** | مصادقة Supabase (بريد/OTP/Google) مع خطط مجانية واحترافية |
-| **خطوط عربية** | 30 عائلة خطوط عربية (16 منها تعمل أوفلاين) |
+| **خطوط عربية** | 29 عائلة في مُنتقي الخطوط (16 منها معدّة للعمل أوفلاين؛ 12 تُنزَّل آلياً عبر `scripts/download-fonts.js`) |
 
 ---
 
@@ -82,9 +82,10 @@ wails3 task dev
 |---|---|
 | `SUPABASE_URL` | رابط مشروع Supabase |
 | `SUPABASE_ANON_KEY` | مفتاح Supabase العام |
-| `MODAL_AI_KEY` | مفتاح مصادقة Modal AI |
+| `MODAL_AI_URL` | *(اختياري)* تجاوز عنوان نقطة نهاية خادم الذكاء الاصطناعي — لا مفتاح مطلوب |
 
-> 🔒 المفاتيح لا تُدمج في الكود — تُحقن عبر ldflags عند البناء أو تُقرأ من ملف `.env` المحلي (مستثنى من Git).
+> 🔒 مفاتيح Supabase لا تُدمج في الكود — تُحقن عبر ldflags عند البناء أو تُقرأ من ملف `.env` المحلي (مستثنى من Git).
+> 🔒 **لا يوجد مفتاح لخادم Modal:** التوثيق يتم عبر JWT المستخدم (`Authorization: Bearer`) الذي يتحقق منه الخادم مع Supabase.
 
 </details>
 
@@ -110,9 +111,10 @@ wails3 task build
 |---|---|
 | `SUPABASE_URL` | رابط مشروع Supabase |
 | `SUPABASE_ANON_KEY` | مفتاح Supabase العام |
-| `MODAL_AI_KEY` | مفتاح مصادقة Modal AI |
 | `SIGNPATH_API_TOKEN` | توقيع برمجي (اختياري) |
 | `SIGNPATH_ORGANIZATION_ID` | معرف منظمة التوقيع (اختياري) |
+
+> 🔒 لا يقرأ البناء أي مفتاح لخادم الذكاء الاصطناعي (Modal) — التوثيق عبر JWT المستخدم فقط.
 
 </details>
 
@@ -136,15 +138,17 @@ Grido Studio
 │   │   ├── hooks/             # Custom hooks (autosave, bg-removal, AI enhance)
 │   │   ├── lib/store/         # Zustand store — 7 slices
 │   │   └── lib/templates/     # قوالب الصور والكولاج
-│   ├── test/                  # اختبارات Vitest (62 ملف اختبار — يُتحقق من العدد عبر npm run test)
-│   └── e2e/                   # اختبارات Playwright
+│   ├── test/                  # اختبارات Vitest (84 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md)
+│   └── e2e/                   # اختبارات Playwright (25 ملف مواصفة / 165 حالة)
 ├── supabase/                  # Edge functions + SQL migrations
 ├── modal_ai/                  # خادم Modal AI (CodeFormer + Real-ESRGAN)
 ├── admin-web/                 # صفحة هبوط + لوحة تحكم (React + Netlify)
-└── build/                     # إعدادات NSIS و manifest ويندوز
+├── build/                     # إعدادات NSIS و manifest ويندوز
+├── scripts/                   # سكربتات المستودع (بوابة التوثيق، إعداد خطافات Git)
+└── .agents/                   # القواعد الحاكمة للوكلاء + المهارات (SKILL.md)
 ```
 
-لتفاصيل أعمق: [docs/developer_guide.md](docs/developer_guide.md)
+لتفاصيل أعمق: [docs/developer_guide.md](docs/developer_guide.md) · خريطة التوثيق الإلزامية: [docs/DOCUMENTATION_MAP.md](docs/DOCUMENTATION_MAP.md)
 
 ---
 
@@ -180,6 +184,21 @@ npm run lint            # ESLint (صفر تحذيرات)
 ```
 
 > 🤖 كل الوظائف أعلاه تعمل في CI على كل push وPR.
+
+---
+
+## 📚 التوثيق
+
+| المستند | المحتوى |
+|---|---|
+| [docs/DOCUMENTATION_MAP.md](docs/DOCUMENTATION_MAP.md) | **خريطة التوثيق الإلزامية:** الجرد، مصفوفة المزامنة، الأرقام المرجعية، وبوابات ما قبل العمل/الكومت/الدفع |
+| [docs/developer_guide.md](docs/developer_guide.md) | المعمارية التفصيلية ودورة الحالة ومحرك الكانفس والبناء |
+| [docs/testing_guide.md](docs/testing_guide.md) | هرم الاختبارات وجسر Wails v3 والأوامر والأرقام المرجعية |
+| [docs/AI_ARCHITECTURE.md](docs/AI_ARCHITECTURE.md) | مسار الذكاء الاصطناعي (Modal + Supabase) والحصص والتوثيق |
+| [docs/features-tracker.md](docs/features-tracker.md) | حالة الميزات والفجوات المتبقية وسجل الجلسات |
+| [docs/reviews/](docs/reviews/) | تقارير التدقيق المؤرَّخة ومتابعة إصلاح بنودها |
+
+> 🔒 **بوابة التوثيق مُلزمة:** أي تعديل كود بلا تحديث توثيق مرافق يُوقف الكومت والدفع — `node scripts/docs-gate.mjs` (التفاصيل: `.agents/skills/grido-docs-sync-guard/SKILL.md`).
 
 ---
 

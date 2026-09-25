@@ -1,19 +1,19 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { X } from "@/components/ui/icons";
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
-import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
-import { QuickBarSlotSection } from "./quick-bar/quick-bar-slot-section";
-import { QuickBarMultiSelectionSection } from "./quick-bar/quick-bar-multi-selection-section";
-import { QuickBarElementSection } from "./quick-bar/quick-bar-element-section";
-import { useCanvasOverlayHost } from "./canvas-overlay-host";
-import { getElementVisualBox } from "@/lib/canvas/element-geometry";
-import { getCollageGeometry, getSlotRect } from "@/lib/canvas/collage-geometry";
-import type { CanvasElement } from "@/lib/store/types";
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X } from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { QuickBarSlotSection } from './quick-bar/quick-bar-slot-section';
+import { QuickBarMultiSelectionSection } from './quick-bar/quick-bar-multi-selection-section';
+import { QuickBarElementSection } from './quick-bar/quick-bar-element-section';
+import { useCanvasOverlayHost } from './canvas-overlay-host';
+import { getElementVisualBox } from '@/lib/canvas/element-geometry';
+import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
+import type { CanvasElement } from '@/lib/store/types';
 
 /**
  * CanvasQuickBar — الشريط السريع العائم **فوق العنصر المحدد** داخل ورقة الكانفاس.
@@ -45,11 +45,11 @@ interface AnchorBox {
 
 /** صندوق عنصر حر (مع الدوران) بإحداثيات بكسلية داخل الورقة */
 function pixelBoxOfElement(
-  el: Pick<CanvasElement, "x" | "y" | "width" | "height"> & { rotation?: number },
+  el: Pick<CanvasElement, 'x' | 'y' | 'width' | 'height'> & { rotation?: number },
   canvasWidth: number,
   canvasHeight: number,
   displayW: number,
-  displayH: number
+  displayH: number,
 ): AnchorBox {
   const vb = getElementVisualBox(el, canvasWidth, canvasHeight);
   return {
@@ -99,7 +99,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       setSlotImage: state.setSlotImage,
       fillAllSlots: state.fillAllSlots,
       selectElement: state.selectElement,
-    }))
+    })),
   );
 
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
@@ -115,14 +115,14 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   // قياس موضع الورقة — يُعاد عبر ResizeObserver (يلتقط الزوم وتغيّر الحجم
   // وتفريع/طي الألواح الجانبية) فلا حاجة للاشتراك بالزوم يدوياً هنا.
   useEffect(() => {
-    const canvasEl = document.getElementById("canvas-area");
+    const canvasEl = document.getElementById('canvas-area');
     if (!overlayHost || !canvasEl) {
       setCanvasBox(null);
       return;
     }
     // التمرير داخل مساحة العمل يحرّك الورقة دون تغيير مقاسها — لا يلتقطه
     // ResizeObserver، فنستمع له مباشرة على الحاوية القابلة للتمرير.
-    const scroller = canvasEl.closest(".workspace-grid");
+    const scroller = canvasEl.closest('.workspace-grid');
     const measure = () => {
       const hostRect = overlayHost.getBoundingClientRect();
       const rect = canvasEl.getBoundingClientRect();
@@ -133,7 +133,13 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
           width: rect.width,
           height: rect.height,
         };
-        if (prev && Math.abs(prev.left - next.left) < 0.5 && Math.abs(prev.top - next.top) < 0.5 && Math.abs(prev.width - next.width) < 0.5 && Math.abs(prev.height - next.height) < 0.5) {
+        if (
+          prev &&
+          Math.abs(prev.left - next.left) < 0.5 &&
+          Math.abs(prev.top - next.top) < 0.5 &&
+          Math.abs(prev.width - next.width) < 0.5 &&
+          Math.abs(prev.height - next.height) < 0.5
+        ) {
           return prev;
         }
         return next;
@@ -143,12 +149,12 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     const ro = new ResizeObserver(measure);
     ro.observe(canvasEl);
     ro.observe(overlayHost);
-    window.addEventListener("resize", measure);
-    scroller?.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener('resize', measure);
+    scroller?.addEventListener('scroll', measure, { passive: true });
     return () => {
       ro.disconnect();
-      window.removeEventListener("resize", measure);
-      scroller?.removeEventListener("scroll", measure);
+      window.removeEventListener('resize', measure);
+      scroller?.removeEventListener('scroll', measure);
     };
   }, [overlayHost]);
 
@@ -171,17 +177,21 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       ro.observe(node);
       barObserverRef.current = ro;
     },
-    [measureBar]
+    [measureBar],
   );
 
-  const selectedSlot = mode === "collage" ? slots?.find((s) => s.id === selectedId) : undefined;
-  const selectedElement = mode === "single" ? elements.find((e) => e.id === selectedId) : undefined;
+  const selectedSlot = mode === 'collage' ? slots?.find((s) => s.id === selectedId) : undefined;
+  const selectedElement = mode === 'single' ? elements.find((e) => e.id === selectedId) : undefined;
 
   const hasSlotSection = Boolean(selectedSlot);
   const hasElementSection = Boolean(selectedElement) && selectedIds.length <= 1;
   const hasMultiSection = selectedIds.length >= 3;
 
-  if (printMode || isContextMenuOpen || (!hasSlotSection && !hasElementSection && !hasMultiSection)) {
+  if (
+    printMode ||
+    isContextMenuOpen ||
+    (!hasSlotSection && !hasElementSection && !hasMultiSection)
+  ) {
     return null;
   }
 
@@ -192,16 +202,16 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       const [b64] = await openImageFileDialog(false);
       if (b64) {
         let srcToUse = b64;
-        if (b64.startsWith("data:image/")) {
+        if (b64.startsWith('data:image/')) {
           try {
             const localPath = await SaveImageFromBase64(b64);
             if (localPath) srcToUse = localPath;
           } catch (e) {
-            console.error("Failed to save image locally:", e);
+            console.error('Failed to save image locally:', e);
           }
         }
         setSlotImage(selectedSlot.id, srcToUse);
-        const autoFill = localStorage.getItem("grido_auto_fill_grid") !== "false";
+        const autoFill = localStorage.getItem('grido_auto_fill_grid') !== 'false';
         if (autoFill) {
           fillAllSlots(srcToUse, selectedSlot.id);
         }
@@ -216,10 +226,13 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   // جسم الشريط مشترك بين المسارين (الديناميكي والاحتياطي)
   const barBody = (
     <div className="bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 shadow-fluent-8 rounded-lg px-1.5 py-0.5 flex items-center gap-1 text-foreground fluent-specular max-w-full overflow-x-auto">
-
       {/* وضع الكولاج - الخلية المحددة */}
       {hasSlotSection && selectedSlot && (
-        <QuickBarSlotSection slot={selectedSlot} onOpenFileForSlot={handleOpenFileForSlot} />
+        <QuickBarSlotSection
+          slot={selectedSlot}
+          onOpenFileForSlot={handleOpenFileForSlot}
+          isBusy={isFileDialogOpen}
+        />
       )}
 
       {/* وضع التحديد المتعدد (Multi-Selection Mode) */}
@@ -242,7 +255,6 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
         </TooltipTrigger>
         <TooltipContent side="bottom">إغلاق الشريط</TooltipContent>
       </Tooltip>
-
     </div>
   );
 
@@ -266,7 +278,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   // 📐 صندوق المرساة (بكسل داخل الورقة): الخلية المحددة، أو الاتحاد المحيط
   // للعناصر المحددة (يشمل AABB بعد الدوران لكل عنصر)
   let anchor: AnchorBox | null = null;
-  if (mode === "collage" && selectedSlot) {
+  if (mode === 'collage' && selectedSlot) {
     // 📐 نفس هندسة المرسم بالضبط (collage-geometry) لكن بالبكسل الكانفسي،
     // ثم تُقاس إلى بكسل العرض — فلا ينحرف الشريط عن الخلية المرسومة فعلاً.
     const geo = getCollageGeometry(
@@ -274,7 +286,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       canvasHeight,
       collageMargin,
       collageGap,
-      Boolean(collageTemplate?.physicalLayout)
+      Boolean(collageTemplate?.physicalLayout),
     );
     const rect = getSlotRect(selectedSlot, geo);
     const sx = canvasWidth > 0 ? canvasBox.width / canvasWidth : 1;
@@ -285,7 +297,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       width: Math.max(1, rect.width * sx),
       height: Math.max(1, rect.height * sy),
     };
-  } else if (mode === "single") {
+  } else if (mode === 'single') {
     const ids = selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : [];
     const chosen = elements.filter((e) => ids.includes(e.id));
     if (chosen.length > 0 && canvasWidth > 0 && canvasHeight > 0) {
@@ -320,12 +332,12 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   barLeft = Math.max(EDGE_PX, Math.min(barLeft, cw - barW - EDGE_PX));
 
   let barTop = anchor.top - barH - GAP_PX;
-  let originY: "bottom" | "top" = "bottom";
+  let originY: 'bottom' | 'top' = 'bottom';
   if (barTop < EDGE_PX) {
     const below = anchor.top + anchor.height + GAP_PX;
     if (below + barH <= ch - EDGE_PX) {
       barTop = below;
-      originY = "top";
+      originY = 'top';
     } else {
       barTop = EDGE_PX;
     }

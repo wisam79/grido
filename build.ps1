@@ -10,7 +10,6 @@ Write-Host "==========================================================" -Foregro
 $envPath = ".env"
 $supabaseUrl = ""
 $supabaseAnonKey = ""
-$modalAiKey = ""
 if (Test-Path $envPath) {
     foreach ($line in Get-Content $envPath) {
         if ($line -match '^SUPABASE_URL=(.*)$') {
@@ -18,11 +17,6 @@ if (Test-Path $envPath) {
         }
         if ($line -match '^SUPABASE_ANON_KEY=(.*)$') {
             $supabaseAnonKey = $matches[1].Trim()
-        }
-        if ($line -match '^(?:MODAL_AI_KEY|GRIDO_AI_SECRET_KEY)=(.*)$') {
-            if (-not $modalAiKey) {
-                $modalAiKey = $matches[1].Trim()
-            }
         }
     }
 }
@@ -42,14 +36,13 @@ if (-not $appVersion) {
     $appVersion = (git describe --tags --always 2>$null)
 }
 if (-not $appVersion) {
-    $appVersion = "v1.9.0"
+    $appVersion = "v1.9.1"
 }
 
 Write-Host " [2/3] Building Wails v3 Desktop App ($appVersion)..." -ForegroundColor Green
 $env:APP_VERSION = $appVersion
 $env:SUPABASE_URL = $supabaseUrl
 $env:SUPABASE_ANON_KEY = $supabaseAnonKey
-$env:MODAL_AI_KEY = $modalAiKey
 $env:CGO_ENABLED = "1"
 
 wails3 task build

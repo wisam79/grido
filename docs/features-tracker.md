@@ -1,11 +1,96 @@
-# تتبع الميزات الأساسية — Grido Studio
+﻿# تتبع الميزات الأساسية — Grido Studio
 
 **تاريخ المراجعة الأولى:** 30 يوليو 2026 (الإصدار ~v1.2.10)
-**آخر تحديث:** 9 سبتمبر 2026 — بعد **جلسة برنامج التميز للواجهة (UI Excellence Program)**
+**آخر تحديث:** 25 سبتمبر 2026 — بعد **جلسة تحصين الأسرار وبناء بوابة التوثيق (Docs Sync Guard)**
 **المنهجية:** فحص الكود الفعلي (Go + React/Konva) ميزةً ميزة، ومطابقتها مع README وخطة التطوير.
 **الغرض:** مستند حي يُحدَّث مع كل نظرة على الميزات؛ يكمل (ولا يستبدل) `docs/development-plan/TASKS.md`.
 
 أسطورة الحالة: ✅ مكتمل | ⚠️ مكتمل مع فجوات | 🔶 جزئي | ❌ غير منفذ | 🆕 أُصلح في جلسة الإصلاحات
+
+---
+
+
+## 0.12 سجل جلسة تنفيذ تصدير PDF المتجهي (25 سبتمبر 2026)
+
+**المرجع:** الفجوة M-5 من سجل 0.11 (لا مولّد PDF) — أُغلقت بهذه الجلسة.
+
+**المنفَّذ والمختبر (go test ✅ كل الحزم / vitest طباعة ✅ 88/88 / typecheck ✅ / eslint ✅ / prettier ✅):**
+
+| البند | التحديث | الحالة |
+| --- | --- | --- |
+| P-1 | **مولّد PDF في الخادم `internal/service/print_pdf_export.go`:** صفحة `gofpdf.NewCustom` بالمقاس الفيزيائي الدقيق، تضمين JPEG q95 بلا إعادة ترميز، خطوط قص متجهة بنفس إيقاع `drawCutLines`، سقف 50MP، رفض صريح لـ CMYK→PDF، كتابة ذرية، ومعاينة HTML تحفظ عقد الطباعة. | ✅ |
+| P-2 | **مبدّل الصيغة في الواجهة:** زرّا «صورة / PDF» في `print-settings-toolbar.tsx` + حالة `exportFormat` في `print-dialog.tsx` + تمرير `exportFormat: "pdf"` في `use-print-export.ts` عبر عقد `domain.PrintRequest` نفسه (تفكيك `ctx` إلى مُعاملات مسمّاة لإرضاء `exhaustive-deps`). PDF مع CMYK يبدّل تلقائياً إلى sRGB مع تلميح. | ✅ |
+| P-3 | **اعتمادية `github.com/jung-kurt/gofpdf v1.16.2` (pure-Go، بلا cgo):** آمنة للبناء المتقاطع في Wails. | ✅ |
+| P-4 | **اختبارات Go (3 دوال في `print_pdf_export_test.go`):** توقيع `%PDF-` + MediaBox لـ A4 + XObject + مشغّلات قص + معاينة HTML، رفض CMYK، تجاوز NaN/Inf. | ✅ |
+| P-5 | **توثيق العقد في `docs/developer_guide.md` (§5 قسم Print Export Pipeline):** أي `exportFormat` جديد يُضاف في `domain/print.go` + `print_export.go` + اختبار مسار. | ✅ |
+
+> **المتبقي من توصيات 0.11:** PSD ثم VDP (M-6 وM-7 ما زالتا فجوات).
+
+---
+
+## 0.11 سجل جلسة تدقيق فجوات السوق والمكتبات البديلة (25 سبتمبر 2026)
+
+**المرجع:** بحث آلي في 679 ملفاً بالمستودع (بحث نصي عن `pdf-lib`/`maroto`/`pdfcpu`/`ag-psd`/`papaparse`/`xlsx`/`harfbuzz`/`opentype`/`face-api`/`imgly`) + قراءة `print_export.go` و`print_native.go` و`bg-removal.worker.ts` و`face-frame.worker.ts` و`palette-extract.ts` و`batch-insert-dialog.tsx`.
+
+**الغرض:** تصحيح التوصيات السابقة المكرَّرة بعد التحقق من البدائل القائمة فعلاً في الكود، وحصر الفجوات الحقيقية فقط.
+
+| البند | النتيجة الموثَّقة بالأدلة | الحالة |
+| --- | --- | --- |
+| M-1 | **اقتراح «عزل خلفية أوفلاين» مُكرَّر — يُحذف من التوصيات:** البديل مُنفَّذ بالفعل في `frontend/src/workers/bg-removal.worker.ts` عبر `ImageSegmenter` + `selfie_multiclass.tflite` داخل Web Worker حقيقي مع إلغاء `terminate()` فوري (1024px، بلا خادم، بلا تكلفة). | ❌ الملغى |
+| M-2 | **اقتراح «قص ICAO آلي للوجه» مُكرَّر — يُحذف من التوصيات:** البديل أقوى من `face-api` في `face-frame.worker.ts` + `lib/filters/face-frame-utils.ts` (`computeIdCropRect`، مرساة مستوى العينين 38%، زاوية تحديق ثلاثية الأبعاد، تمييز `$Y_skull_top` عن `$Y_hair_top`، ومطابقة نسبة أبعاد المصدر). | ❌ الملغى |
+| M-3 | **اقتراح «استخراج ألوان» مُنفَّذ جزئياً:** الاستخراج قائم في `lib/canvas/palette-extract.ts` (تكميم 4-bit، وزن تشبع، دمج من 4 صور) ومستخدَم في `freeform-palette-tab.tsx`؛ **الناقص** هو مولّد تناغمات الألوان (Complementary/Triadic) لا الاستخراج. | 🔶 جزئي |
+| M-4 | **اقتراح «إدراج دفعي» مُنفَّذ جزئياً:** `batch-insert-dialog.tsx` يغطي الصور (grid/cascade/collage + نسخ متعددة)؛ **الناقص** هو ربط جدول بيانات (VDP). | 🔶 جزئي |
+| M-5 | **فجوة «تصدير PDF» مؤكَّدة (الأعلى قيمة):** `internal/service/print_export.go` ينتج PNG/JPEG/TIFF/HTML فقط؛ `print_native.go:71` يسمح بـ `.pdf` داخل `validExts` **للطباعة** لكن لا مولِّد PDF في المشروع (صفر نتيجة لـ `pdf-lib`/`maroto`/`pdfcpu`/`%PDF`). القناة الخلفية جاهزة والمخرج ناقص. | ❌ فجوة |
+| M-6 | **فجوة «PSD» مؤكَّدة:** صفر مرجع لـ `ag-psd`/`psd` في `frontend/package.json` — لا استيراد ولا تصدير لطبقات فوتوشوب. | ❌ فجوة |
+| M-7 | **فجوة «طباعة بيانات متغيرة (VDP)» مؤكَّدة:** صفر مرجع لـ `papaparse`/`xlsx` — لا مسار من جدول بيانات إلى قالب طباعي. | ❌ فجوة |
+| M-8 | **فجوتان متوسطتان موثّقتان سلفاً (لا جديد):** تحويل CMYK بلا ملفات ICC (§2 «تحويل CMYK بلا ملفات ICC»)، وغياب ترحيلات إصدارية للمشاريع (`VERSION=1` ثابت). | ❌ فجوة |
+
+> **الخلاصة:** التوصيات الباقية بعد التدقيق = **تصدير PDF** ثم **PSD** ثم **VDP**. أي توصية سابقة بخلاف ذلك ملغاة ولا تُنفَّذ.
+
+---
+
+## 0.10 سجل جلسة استخراج وتأسيس مهارات المعايير الرسمية (25 سبتمبر 2026)
+
+**المرجع:** مراجعة التوثيقات الرسمية للمكتبات الأساسية (Zustand v5, Radix UI, Tailwind CSS v4) وإنشاء المهارات التوجيهية في `.agents/skills/`.
+
+| البند | التحديث | الحالة |
+| --- | --- | --- |
+| K-1 | **مهارة إدارة الحالة `zustand-state-patterns`:** تثبيت نمط الشرائح السبع (Slices)، ومنع الـ Stale Closures باستخدام `getState()` المباشر داخل دوال الـ Callbacks والأحداث، وفرض `useShallow` للمحددات المجمعة لتفادي أخطاء حلقة التحديث اللانهائية ومشاكل الأداء في Zustand v5. | ✅ |
+| K-2 | **مهارة إمكانية الوصول وتجربة المستخدم `radix-ui-accessibility-ux`:** تثبيت معايير WAI-ARIA للنوافذ الحوارية والقوائم (`Dialog`, `DropdownMenu`)، حصر التركيز التلقائي، الإغلاق بمفتاح `Escape`، وفرض وجود `Title` و`Description` مع توثيق تقنية `<VisuallyHidden>` لتفادي تحذيرات قارئات الشاشة. | ✅ |
+| K-3 | **مهارة محرك التنسيق `tailwind-v4-theme-engine`:** توثيق المعمارية الجديدة القائمة على توجيه `@theme` المباشر في `index.css` دون الحاجة لملف إعداد JS، فرض استخدام متغيرات الطبقات المعتمدة `z-(--z-...)` بدلاً من القيم السحرية العشوائية، والتناغم البرمجي بين توكنز Tailwind ومحرك Konva. | ✅ |
+
+---
+
+## 0.9 سجل جلسة تدقيق جودة الكود وتغطية الاختبارات (25 سبتمبر 2026)
+
+**المرجع:** تقرير التدقيق `docs/reviews/08-code-quality-audit-2026-09-25.md` وسكربت القياس `scripts/quality-metrics.mjs`.
+
+| البند | التحديث | الحالة |
+| --- | --- | --- |
+| Q-1 | **قياس التغطية الحية للجهتين:** تغطية Go statements = 59.0% (Handlers 84.5%, Repo 76.7%, Utils 71.5%, Service 51.9%) · تغطية الواجهة lines = 51.5% (Print 99.5%, Canvas 65.8%, Store 67.8%, Document Scanner 75.5%). | ✅ |
+| Q-2 | **تحليل الملفات الساخنة (Hotspots):** تحديد 28 ملف منطق في الواجهة > 500 سطر (5 منها > 800 سطر، أعلاها `freeform-math.ts` 1056 سطر و`export-image.ts` 1014 سطر)، و4 ملفات بالباكند (أعلاها `print_image_pipeline.go` 642 سطر). | ✅ |
+| Q-3 | **فحص انزياح التنسيق (`gofmt`):** كشف 12 ملفاً في `internal/` بانزياح حقيقي في المحاذاة والمسافات البادئة، ورصد غياب فحص `gofmt` في خط سير CI. | ✅ |
+| Q-4 | **فحص `golangci-lint`:** رصد 17 ملاحظة تراكمية غير حرجة (11 `errcheck`، 5 `ineffassign`، 1 `SA1012`) وإدراجها في خطة التحسينات. | ✅ |
+| Q-5 | **نظافة الممارسات البرمجية:** تأكيد سلامة الأنواع مع انخفاض `: any` إلى 1 و`as any` إلى 1، وصفر `console.log`، وصفر `panic`/`log.Fatal`. | ✅ |
+
+---
+
+
+## 0.8 سجل جلسة تحصين الأسرار وإلزام بوابة التوثيق (25 سبتمبر 2026)
+
+**المرجع:** تنفيذ توصية التدقيق `C-02` (`docs/reviews/07-full-security-completeness-audit-2026-09-25.md`) + إنشاء نظام توثيق مُلزِم.
+
+| البند | التحديث | الحالة |
+| --- | --- | --- |
+| S-1 | **حذف السرّ الميت `ModalAIKey`:** أُزيل المتغير ودالة `GetModalAIKey` من `internal/service/license_service.go`، والاختبار `TestGetModalAIKey`، والحقن من `build/windows/Taskfile.yml` و`build.ps1` و`.github/workflows/release.yml`. الدليل: إثبات فعلي بأن المفتاح (37 حرفاً) موجود نصاً داخل `bin/GridoStudio.exe` وقابل للاستخراج بـ`strings`، مع عدم وجود أي مستهلك إنتاجي (التوثيق عبر JWT فقط). | ✅ |
+| S-2 | **تعطيل السرّ في `.env` المحلي** مع تسجيل ضرورة إبطاله من لوحة Modal (يبقى قابلاً للاستخراج من الإصدارات المنشورة سابقاً). | ✅ |
+| S-3 | **بوابة التوثيق الإلزامية:** `docs/DOCUMENTATION_MAP.md` (جرد + مصفوفة مزامنة + أرقام + بوابات) + `scripts/docs-gate.mjs` + مهارة `grido-docs-sync-guard` + قاعدة حاكمة في `.agents/AGENTS.md` + `.husky/pre-commit` و`.husky/pre-push` + خطوة `Documentation Gate` في CI. | ✅ |
+| S-4 | **إصلاح خطافات Git المعطّلة:** كان `core.hooksPath` يشير إلى `frontend/.husky/_` غير الموجود ⇒ **لا خطافات تعمل إطلاقاً**؛ صُحّح إلى `.husky` (مُتتبَّع في Git) عبر `scripts/setup-husky.mjs`. | ✅ |
+| S-5 | **تصحيح انحرافات التوثيق:** `README.md` (62→84 ملف اختبار · 30→29 عائلة خطوط بتفصيل أوفلاين دقيق · شجرة المعمارية · قسم التوثيق)، `docs/testing_guide.md` (67/469 و15/31 و21 → الأرقام الفعلية 84/684 و25/165)، `docs/developer_guide.md` (Tailwind v4 بدل «Vanilla CSS»)، حذف `docs/HOW_TO_REGENERATE_MODAL_KEY.md` (دليل ميت)، و`docs/AI_ARCHITECTURE.md` + `SECURITY_NOTICE.md`. | ✅ |
+| S-6 | **الأرقام المرجعية الحاكمة (مُثبتة بالأوامر):** Vitest 84 ملف/684 حالة (683 ناجحة + 1 متخطّاة) · E2E 25 ملف/165 حالة · Go 29 ملف/151 دالة — في `docs/DOCUMENTATION_MAP.md` القسم 4. | ✅ |
+| S-7 | **تحقق الأدوات:** `go vet ./internal/...` ✅ · `go build .` ✅ · `go test` (service/repository/utils/handlers) ✅ · `vitest run ipc-contract-drift` 4/4 ✅ · `docs-gate` ✅ | ✅ |
+
+**ملاحظة أدوات:** `go vet ./...` و`go build ./...` يفشلان بسبب مجلد قالب Wails `build/ios/scripts/deps` (خارج التطبيق) — استخدم `go vet ./internal/...` و`go build .`.
 
 ---
 
@@ -239,6 +324,7 @@
 - `updateElement` في `element-slice.ts` (س 188): أضيف فحص shallow-change قبل `.map()` لمنع إعادة بناء مصفوفة العناصر عبر كل تفاعل drag/transform محكوم بـ rAF. لا يغيّر الواجهة — يزيل «إعادة الرسم المتتالية بلا داعٍ» عند التعديلات الحركية المجمعة. (اختبارات 117/117 خضراء).
 
 **أعمال نشر خارجية مطلوبة (خارج الكود):**
+0. **إبطال (Revoke) أي مفتاح Modal قديم** يبدأ بـ `grido_sec_ai_live_` من لوحة Modal — يبقى قابلاً للاستخراج من الإصدارات المنشورة سابقاً (تدقيق `C-02`).
 1. تطبيق `supabase/migrations/20260730000000_server_side_ai_quota.sql` على قاعدة Supabase.
 2. إعادة نشر `modal_ai/upscaler.py` على Modal.
 3. إصدار Tag جديد لاختبار `grido-checksums.txt` + التحديث التلقائي end-to-end.
@@ -252,6 +338,8 @@
 | «RMBG-1.4 عبر MediaPipe في Web Worker» | ✅ وُثّق `selfie_multiclass.tflite` عبر `@mediapipe/tasks-vision` في Worker (README + developer_guide + CHANGELOG) |
 | «تصغير الصور لـ 2048px قبل الاستدلال» | ✅ وُثّق الحد الفعلي **1024px** |
 | «26 عائلة خطوط عربية» | ✅ وُثّقت **12 عائلة** (89 ملف woff2) |
+| «30 عائلة خطوط عربية (16 منها أوفلاين)» في README | ✅ صُحّحت إلى **29 عائلة في المُنتقي** (16 مُعدّة للعمل أوفلاين · 12 تُنزَّل آلياً) — مطابقة `frontend/src/lib/io/fonts.ts` (29 مُدخلاً / 16 `isOffline`) |
+| «62 ملف اختبار» في README و«67 ملف/469 حالة» في testing_guide | ✅ صُحّحت إلى **84 ملف / 684 حالة** (683 ناجحة + 1 متخطّاة) + E2E **25 ملف / 165 حالة** |
 | «حصص AI: free 3 / pro 25 / enterprise 100» | ✅ وُثّقت **free 5 / pro 15 / enterprise 50** (اشتقاق خادمي) |
 | CHANGELOG: «Undo/redo capped at 20 entries» | ✅ السقف الفعلي **30 مدخلاً** |
 

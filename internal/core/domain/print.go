@@ -50,7 +50,7 @@ type PrintRequest struct {
 	ShowCutLines    bool               `json:"showCutLines"`
 	CutLineStyle    string             `json:"cutLineStyle,omitempty"` // "dashed", "dotted", "solid", "cropmarks"
 	ColorSpace      string             `json:"colorSpace,omitempty"`   // "sRGB" or "CMYK"
-	ExportFormat    string             `json:"exportFormat,omitempty"` // "png", "jpeg", "tiff"
+	ExportFormat    string             `json:"exportFormat,omitempty"` // "png", "jpeg", "tiff", "pdf"
 	Orientation     string             `json:"orientation,omitempty"`  // "portrait" or "landscape"
 	CutLines        []CutLine          `json:"cutLines"`
 	Items           []PrintItem        `json:"items"`

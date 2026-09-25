@@ -103,7 +103,6 @@ func TestPhoneBridgeService_Endpoints(t *testing.T) {
 		t.Errorf("GET /manifest.json missing expected name")
 	}
 
-
 	// 3. Test POST /upload with invalid token -> 401
 	reqUnauth := httptest.NewRequest(http.MethodPost, "/upload?token=wrong-token", nil)
 	recUnauth := httptest.NewRecorder()
@@ -185,4 +184,3 @@ func TestPhoneBridgeService_DiscoverLocalIP(t *testing.T) {
 		t.Errorf("expected IPv4 address, got %q", ip)
 	}
 }
-
