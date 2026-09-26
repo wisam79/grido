@@ -33,6 +33,11 @@ jobs:
       - name: Run Documentation Sync Gate
         run: node scripts/docs-gate.mjs --push --ci
 
+      # 2026-09-26: ثلاث هجرات كانت غير قابلة للتطبيق بصمت (OLD داخل RLS + GRANT لتوقيع غير موجود)
+      # فبقيت ثغرات مفتوحة؛ هذه البوابة تمنع تكرار الصنف نفسه.
+      - name: Lint Database Migrations
+        run: node scripts/migration-lint.mjs --self-test && node scripts/migration-lint.mjs
+
   # ───────────────────────────────────────────────
   # Job 1: Frontend Quality & Unit Tests (Linux)
   #   → Fast, pure Node & Go bindings check
@@ -189,7 +194,61 @@ jobs:
             --row "Go Unit & Integration Tests=${{ steps.go_tests.outcome }}"
 
   # ───────────────────────────────────────────────
-  # Job 3: Playwright E2E Tests (Linux - 4 Shards Parallel Matrix)
+  # Job 3: Admin Web Quality (لوحة الإدارة + صفحة الهبوط)
+  #   → كان `admin-web` بلا أي بوابة CI (فجوة موثّقة في docs/reviews/09)،
+  #     وهذه الوظيفة تشغّل نفس البوابات المحلية: أنواع + lint + بناء إنتاجي.
+  # ───────────────────────────────────────────────
+  admin-web-quality:
+    name: Admin Web Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: admin-web/package-lock.json
+
+      - name: Install Admin Web Dependencies
+        working-directory: ./admin-web
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Typecheck Admin Web
+        id: typecheck
+        working-directory: ./admin-web
+        run: npx tsc -b
+
+      - name: Lint Admin Web
+        id: lint
+        working-directory: ./admin-web
+        run: npm run lint
+
+      - name: Test Admin Web (Vitest)
+        id: test
+        working-directory: ./admin-web
+        run: npm test
+
+      - name: Build Admin Web (production)
+        id: build
+        working-directory: ./admin-web
+        run: npm run build
+
+      - name: Generate Admin Web Step Summary
+        if: always()
+        working-directory: ./frontend
+        run: |
+          node scripts/ci-step-summary.mjs \
+            --title "🖥️ Admin Web Quality Summary" \
+            --row "TypeScript Typecheck=${{ steps.typecheck.outcome }}" \
+            --row "Oxlint (0 warnings)=${{ steps.lint.outcome }}" \
+            --row "Vitest Unit Tests=${{ steps.test.outcome }}" \
+            --row "Production Build=${{ steps.build.outcome }}"
+
+  # ───────────────────────────────────────────────
+  # Job 4: Playwright E2E Tests (Linux - 4 Shards Parallel Matrix)
   #   → 4 parallel shards executing 41 tests simultaneously
   # ───────────────────────────────────────────────
   e2e-tests:
@@ -289,7 +348,7 @@ jobs:
             --row "Wails v3 Bridge Mock=${{ steps.generate_bindings.outcome }}"
 
   # ───────────────────────────────────────────────
-  # Job 4: Windows Build Verification (Windows)
+  # Job 5: Windows Build Verification (Windows)
   #   → Real Wails v3 production binary build with Go Build Caching
   # ───────────────────────────────────────────────
   windows-build:
@@ -389,7 +448,7 @@ jobs:
             --row "Windows Native Integration Tests=${{ steps.native_tests.outcome }}"
 
   # ───────────────────────────────────────────────
-  # Job 5: WebKit Smoke (محرك الإصدار الحقيقي)
+  # Job 6: WebKit Smoke (محرك الإصدار الحقيقي)
   #   WebKitGTK (لينكس) و WebView2 (ويندوز) هي محركات الإصدار الفعلية،
   #   وWebKit أقرب محرك إليها في Playwright — بينما بقية الحزمة تعمل على
   #   chromium فقط. تُشغَّل مواصفات @smoke فقط (engine-smoke.spec.ts) وهي ضحلة

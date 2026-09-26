@@ -64,7 +64,7 @@ export function AudienceSection() {
                     <Icon className="w-5 h-5" />
                   </div>
 
-                  <span className="text-[10px] font-mono font-bold text-[#666666] uppercase tracking-wider block mb-1">
+                  <span className="text-[10px] font-mono font-bold text-[#8A8A8A] uppercase tracking-wider block mb-1">
                     {aud.role}
                   </span>
                   <h3 className="text-base font-bold text-white mb-1">

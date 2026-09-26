@@ -20,7 +20,7 @@ export function Footer() {
                 Grido Studio
               </span>
             </div>
-            <p className="text-xs text-[#666666] leading-relaxed max-w-sm mb-4">
+            <p className="text-xs text-[#8A8A8A] leading-relaxed max-w-sm mb-4">
               البرنامج الرائد لمعالجة وطباعة صور الهوية والفيزا والكولاج بالذكاء الاصطناعي لاستوديوهات التصوير ومراكز الطباعة.
             </p>
             <div className="flex items-center gap-2 text-[11px] text-[#10b981] bg-[#1E1E1E] px-3 py-1 rounded-full border border-[#2C2C2C]">
@@ -56,7 +56,7 @@ export function Footer() {
           <div>
             جميع الحقوق محفوظة © {new Date().getFullYear()} Grido Studio.
           </div>
-          <div className="text-[11px] text-[#666666]">
+          <div className="text-[11px] text-[#8A8A8A]">
             برنامج سطح مكتب مخصص لنظام تشغيل Windows
           </div>
         </div>

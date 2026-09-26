@@ -66,7 +66,7 @@ export function TestimonialsSection() {
                       <Building2 className="w-3 h-3 text-[#60a5fa] shrink-0" />
                       {item.studioName}
                     </span>
-                    <span className="text-[10px] text-[#666666]">
+                    <span className="text-[10px] text-[#8A8A8A]">
                       {item.location}
                     </span>
                   </div>
@@ -88,7 +88,10 @@ export function TestimonialsSection() {
         {/* Bottom Social Proof Bar */}
         <div className="mt-8 sm:mt-10 p-4 rounded-xl bg-[#171717] border border-[#2C2C2C] flex flex-wrap items-center justify-between gap-3 text-xs text-[#9E9E9E]">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#10b981] animate-ping" />
+            <span className="relative flex w-2 h-2 shrink-0">
+              <span className="absolute inline-flex w-full h-full rounded-full bg-[#10b981] opacity-60 animate-ping" />
+              <span className="relative inline-flex w-2 h-2 rounded-full bg-[#10b981]" />
+            </span>
             <span className="text-white font-bold text-xs sm:text-sm">
               أكثر من 140 استوديو تصوير ومركز طباعة
             </span>

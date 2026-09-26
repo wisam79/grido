@@ -26,10 +26,15 @@ end;
 $$ language plpgsql security definer;
 
 -- سياسات الأمان لجداول الملفات الشخصية
-create policy "الجميع يقرأ حسابه فقط أو المشرف يقرأ الجميع" on public.profiles
+-- ⚠️ تصحيح 2026-09-26: كان الاسم العربي هنا «الجميع يقرأ حسابه فقط أو المشرف
+-- يقرأ الجميع» (79 بايتاً) والثاني «تحديث المستخدم لحسابه الخاص أو المشرف يعدل
+-- الجميع» (91 بايتاً)، وPostgreSQL يقصّ أي معرف عند 63 بايتاً **بصمت** ⇒ انحراف
+-- أسماء لا يظهر في أي سجل. الاسم المعياري صار ASCII، وتنظيف الأسماء القديمة
+-- المقصوصة يتم في الهجرة اللاحقة 20260713000000.
+create policy "profiles_select_own_or_admin" on public.profiles
   for select using (auth.uid() = id or public.is_admin());
 
-create policy "تحديث المستخدم لحسابه الخاص أو المشرف يعدل الجميع" on public.profiles
+create policy "profiles_update_own_or_admin" on public.profiles
   for update using (auth.uid() = id or public.is_admin());
 
 

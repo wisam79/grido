@@ -87,7 +87,7 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
 
                 {/* Price Row (Dynamic Currency) */}
                 <div className="flex items-baseline justify-center gap-2.5 mb-2.5">
-                  <span className="text-sm text-[#666666] line-through font-mono">
+                  <span className="text-sm text-[#8A8A8A] line-through font-mono">
                     {currentCurr.originalPriceFormatted}
                   </span>
                   <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tight">

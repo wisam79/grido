@@ -3,18 +3,21 @@
 -- =================================================================================
 
 -- 1. Fix RLS for profiles: Prevent users from escalating their own plan
+-- الاسم العربي القديم مُبقى للتنظيف، والاسم المعياري ASCII يُسقط أيضاً
 DROP POLICY IF EXISTS "تحديث المستخدم لحسابه الخاص أو المشرف يعدل الجميع" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own_or_admin" ON public.profiles;
 DROP POLICY IF EXISTS "update_own_profile" ON public.profiles;
 DROP POLICY IF EXISTS "admin_update_any_profile" ON public.profiles;
 
 CREATE POLICY "update_own_profile" ON public.profiles
   FOR UPDATE
   USING ((select auth.uid()) = id)
-  WITH CHECK (
-    (select auth.uid()) = id
-    AND plan = OLD.plan      -- Prevent self-escalation
-    AND status = OLD.status  -- Prevent status tampering
-  );
+  WITH CHECK ((select auth.uid()) = id);
+-- ⚠️ تصحيح 2026-09-26: كان هنا `plan = OLD.plan AND status = OLD.status` داخل WITH CHECK،
+-- وهو **غير صالح** في سياسات RLS (خطأ 42P01: missing FROM-clause entry for table "old")،
+-- فكانت الهجرة تفشل كاملة ولا تُثبَّت أي حماية (تحقق فعلي على الإنتاج عبر Supabase MCP).
+-- حماية حقول الاشتراك تُنفَّذ الآن بمشغّل `guard_profile_privilege_columns`
+-- (انظر 20260926125510_production_drift_repair_admin_seed_profiles_rls_and_profile_rpc.sql).
 
 CREATE POLICY "admin_update_any_profile" ON public.profiles
   FOR UPDATE

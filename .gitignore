@@ -82,6 +82,8 @@ frontend/package.json.md5
 
 # Scratch / workspace
 scratch/
+validate*-tmp.cmd
+validate-tmp.log
 *.whl
 docaligner_extracted/
 scratch_transcript.txt

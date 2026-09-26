@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Menu, X, Sparkles, Layers, ShieldCheck, HelpCircle, DollarSign, Award } from 'lucide-react';
+import { Download, Menu, X, Sparkles, Layers, ShieldCheck, HelpCircle, Award, Calculator, Tag } from 'lucide-react';
 import { useAppVersion } from '../../lib/version';
 
 const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
@@ -8,9 +8,9 @@ const NAV_LINKS = [
   { href: '#capabilities', label: 'المميزات', icon: Layers },
   { href: '#ai-engine', label: 'الذكاء الاصطناعي', icon: Sparkles },
   { href: '#windows-experience', label: 'ويندوز 11', icon: ShieldCheck },
-  { href: '#roi', label: 'الحاسبة', icon: DollarSign },
+  { href: '#roi', label: 'الحاسبة', icon: Calculator },
   { href: '#testimonials', label: 'الآراء', icon: Award },
-  { href: '#pricing', label: 'الأسعار', icon: DollarSign },
+  { href: '#pricing', label: 'الأسعار', icon: Tag },
   { href: '#faq', label: 'الأسئلة', icon: HelpCircle },
 ];
 
@@ -89,7 +89,7 @@ export function Header() {
                   {displayVersion}
                 </span>
               </div>
-              <span className="text-[10px] text-[#999] -mt-0.5 hidden sm:block">استوديو الهوية والطباعة</span>
+              <span className="text-[10px] text-[#8A8A8A] -mt-0.5 hidden sm:block">استوديو الهوية والطباعة</span>
             </div>
           </a>
 

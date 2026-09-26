@@ -66,9 +66,13 @@ func main() {
 
 	// استعادة أبعاد وموقع النافذة من الجلسة السابقة.
 	// الافتراضي 1280×800: كان 960×640 — وهو أصغر من نقطة انكسار الواجهة
-	// (1024) فيفتح التطبيق في الوضع المدمج بلا ألواح جانبية إطلاقاً.
+	// (1024) فيفتح التطبيق في الوضع المدمج بلا ألواح جانبية إطلاقاً، ويتقلص
+	// تلقائياً على الشاشات الأصغر من المفضل (انظر window_sizing.go).
 	initialWidth := defaultWindowWidth
 	initialHeight := defaultWindowHeight
+	if area, ok := workAreaForPointOrPrimary(0, 0); ok {
+		initialWidth, initialHeight = resolveDefaultWindowSize(area.W, area.H)
+	}
 	initialX := 0
 	initialY := 0
 	hasSavedPos := false
@@ -78,13 +82,9 @@ func main() {
 		if state.Width > 0 && state.Height > 0 {
 			// المقاسات الافتراضية القديمة (960×640 و 1024×720) تُرقّى مرة واحدة
 			// للافتراضي الجديد — وإلا بقي المستخدمون الحاليون على مقاس يخفي الألواح.
-			// أي مقاس اختاره المستخدم بنفسه يبقى كما هو.
-			if isLegacyDefaultWindowSize(state.Width, state.Height) {
-				initialWidth = defaultWindowWidth
-				initialHeight = defaultWindowHeight
-			} else {
-				initialWidth = state.Width
-				initialHeight = state.Height
+			// أي مقاس اختاره المستخدم بنفسه يبقى كما هو (بعد تنظيف التالف منه).
+			if !isLegacyDefaultWindowSize(state.Width, state.Height) {
+				initialWidth, initialHeight = sanitizeRestoredSize(state.Width, state.Height)
 			}
 		}
 		const maxScreenSize = 50000
@@ -92,8 +92,10 @@ func main() {
 			state.Y > -maxScreenSize && state.Y < maxScreenSize &&
 			(state.X != 0 || state.Y != 0) &&
 			isPointOnAnyMonitor(state.X+50, state.Y+50) {
-			initialX = state.X
-			initialY = state.Y
+			// احصر النافذة المستعادة داخل مساحة عمل الشاشة نفسها (ناقص شريط
+			// المهام) فلا يُفتح جزء منها خارج الشاشة أو خلف شريط المهام
+			initialWidth, initialHeight, initialX, initialY = clampWindowToWorkArea(
+				initialWidth, initialHeight, state.X, state.Y, workAreasAround(state.X+50, state.Y+50))
 			hasSavedPos = true
 		}
 		startMax = state.Max
@@ -224,6 +226,11 @@ func main() {
 
 	mainWindow = wailsApp.Window.NewWithOptions(winOptions)
 	appInstance.desktopSvc.SetMainWindow(mainWindow)
+
+	// 🗂️ أيقونة صينية النظام: نقطة استعادة دائمة للنافذة (إظهار/تركيز) ومسار
+	// خروج سريع، فتبقى واجهة التطبيق قابلة للوصول أثناء عمليات الخلفية.
+	// الاستدعاء قبل Run صحيح ومقصود: Wails يؤجّل إنشاء الصينية حتى الإقلاع.
+	SetupSystemTray(wailsApp, mainWindow)
 
 	// 📂 معالجة سحب وإفلات الملفات من نظام التشغيل مباشرة
 	mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {

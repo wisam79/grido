@@ -83,7 +83,7 @@ export function ComparisonSection() {
                   </div>
                   <div>
                     <h3 className="text-sm sm:text-base font-bold text-white">البرامج والطرق التقليدية</h3>
-                    <span className="text-[10px] text-[#666666]">بطيئة وتستهلك الوقت</span>
+                    <span className="text-[10px] text-[#8A8A8A]">بطيئة وتستهلك الوقت</span>
                   </div>
                 </div>
                 <span className="text-[10px] font-bold text-[#ef4444] bg-[#141414] px-2 py-0.5 rounded border border-[#2C2C2C]">
@@ -113,7 +113,7 @@ export function ComparisonSection() {
               </div>
             </div>
 
-            <div className="mt-5 pt-3.5 border-t border-[#242424] text-center text-xs text-[#666666]">
+            <div className="mt-5 pt-3.5 border-t border-[#242424] text-center text-xs text-[#8A8A8A]">
               استنزاف يومي للوقت والمجهود
             </div>
           </div>

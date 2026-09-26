@@ -102,8 +102,13 @@ export default function LandingPage() {
   return (
     <div
       dir="rtl"
-      className="relative min-h-screen overflow-x-hidden bg-[#121212] font-sans text-[#F5F5F5] selection:bg-[#3b82f6]/30 selection:text-white"
+      className="landing-shell relative min-h-screen overflow-x-hidden bg-[#121212] font-sans text-[#F5F5F5] selection:bg-[#3b82f6]/30 selection:text-white"
     >
+      {/* رابط التخطي — يظهر لمستخدمي لوحة المفاتيح قبل التنقل */}
+      <a href="#main-content" className="skip-to-content">
+        تخطَّ إلى المحتوى الرئيسي
+      </a>
+
       {/* Top Scroll Progress Bar — متدرج بلا توهج */}
       <div className="fixed top-0 inset-x-0 h-[3px] bg-[#1A1A1A] z-[60] pointer-events-none">
         <div

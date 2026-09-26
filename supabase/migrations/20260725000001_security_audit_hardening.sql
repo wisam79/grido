@@ -121,10 +121,9 @@ DROP POLICY IF EXISTS "update_own_profile" ON public.profiles;
 CREATE POLICY "update_own_profile" ON public.profiles
   FOR UPDATE
   USING ((select auth.uid()) = id)
-  WITH CHECK (
-    (select auth.uid()) = id
-    AND plan = OLD.plan                                                -- Prevent self-escalation
-    AND status = OLD.status                                            -- Prevent status tampering
-    AND expires_at IS NOT DISTINCT FROM OLD.expires_at                 -- Prevent expiration extension tampering
-    AND license_key IS NOT DISTINCT FROM OLD.license_key               -- Prevent direct license_key insertion
-  );
+  WITH CHECK ((select auth.uid()) = id);
+-- ⚠️ تصحيح 2026-09-26: كان هنا `plan/status/expires_at/license_key = OLD.*` داخل WITH CHECK،
+-- وهو **غير صالح** في سياسات RLS (خطأ 42P01: missing FROM-clause entry for table "old")،
+-- فكانت الهجرة تفشل كاملة (وقد أسقطت معها تقوية الحصة داخل الملف — أُعيد بناؤها لاحقاً في 20260730000001).
+-- حماية حقول الاشتراك تُنفَّذ الآن بمشغّل `guard_profile_privilege_columns`
+-- (انظر 20260926125510_production_drift_repair_admin_seed_profiles_rls_and_profile_rpc.sql).

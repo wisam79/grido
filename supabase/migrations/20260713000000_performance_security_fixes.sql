@@ -19,8 +19,12 @@ CREATE INDEX IF NOT EXISTS idx_license_keys_user_id ON public.license_keys(user_
 
 -- 3. Performance: Fix Auth RLS Initialization Plan
 -- First, drop the old policies that use auth.uid() directly
+-- (الأسماء العربية القديمة مُبقاة في DROP IF EXISTS لتنظيف أي قاعدة أُنشئت قبل
+--  تصحيح القصّ عند 63 بايتاً، والأسماء المعيارية ASCII تُسقط أيضاً)
 DROP POLICY IF EXISTS "الجميع يقرأ حسابه فقط أو المشرف يقرأ الجميع" ON public.profiles;
 DROP POLICY IF EXISTS "تحديث المستخدم لحسابه الخاص أو المشرف يعدل الجميع" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_select_own_or_admin" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own_or_admin" ON public.profiles;
 
 -- Remove duplicate overlapping policy on license_keys to resolve 'multiple_permissive_policies'
 DROP POLICY IF EXISTS "قراءة التراخيص مقيدة للمشرفين" ON public.license_keys;
@@ -38,10 +42,10 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Recreate policies using (select auth.uid())
-CREATE POLICY "الجميع يقرأ حسابه فقط أو المشرف يقرأ الجميع" ON public.profiles
+CREATE POLICY "profiles_select_own_or_admin" ON public.profiles
   FOR SELECT USING ((select auth.uid()) = id OR public.is_admin());
 
-CREATE POLICY "تحديث المستخدم لحسابه الخاص أو المشرف يعدل الجميع" ON public.profiles
+CREATE POLICY "profiles_update_own_or_admin" ON public.profiles
   FOR UPDATE USING ((select auth.uid()) = id OR public.is_admin());
 
 CREATE POLICY "قراءة التراخيص للمشرفين" ON public.license_keys

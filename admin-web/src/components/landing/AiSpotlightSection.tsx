@@ -199,7 +199,7 @@ export function AiSpotlightSection() {
                       <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shadow-xs">
                         <Icon className="w-4 h-4" />
                       </div>
-                      <span className="text-xl font-mono font-black text-[#666666]">
+                      <span className="text-xl font-mono font-black text-[#8A8A8A]">
                         {item.step}
                       </span>
                     </div>

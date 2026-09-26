@@ -34,7 +34,7 @@ export function CtaBanner() {
             </a>
           </div>
 
-          <div className="flex items-center justify-center gap-3 text-[11px] text-[#666666]">
+          <div className="flex items-center justify-center gap-3 text-[11px] text-[#8A8A8A]">
             <div className="flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-[#10b981]" />
               <span>آمن ومفحوص 100%</span>
