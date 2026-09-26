@@ -57,7 +57,7 @@ tasks:
       - cmd: rm -f *.syso
         platforms: [linux, darwin]
     vars:
-      APP_VERSION: '{{.APP_VERSION | default "v1.9.2"}}'
+      APP_VERSION: '{{.APP_VERSION | default "v1.9.3"}}'
       SUPABASE_URL: '{{.SUPABASE_URL | default ""}}'
       SUPABASE_ANON_KEY: '{{.SUPABASE_ANON_KEY | default ""}}'
       # 🔒 لا يوجد حقن لسرّ Modal: التوثيق عبر JWT المستخدم فقط (تدقيق C-02).
