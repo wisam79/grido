@@ -38,6 +38,11 @@ jobs:
       - name: Lint Database Migrations
         run: node scripts/migration-lint.mjs --self-test && node scripts/migration-lint.mjs
 
+      # 2026-09-26: الإصدار مبعثر في 6 ملفات + الوسم؛ هذه البوابة تمنع تخلّف أي ملف
+      # عن build/config.yml (مصدر الحقيقة) — أرخص حماية ضد إصدار "نصف مرفوع".
+      - name: Check Release Version Consistency
+        run: node scripts/release.mjs --check
+
   # ───────────────────────────────────────────────
   # Job 1: Frontend Quality & Unit Tests (Linux)
   #   → Fast, pure Node & Go bindings check

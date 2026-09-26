@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (أتمتة الإصدار — 2026-09-26)
+
+- **`scripts/release.mjs` (مصدر واحد للإصدار):** يرفع النسخة في الملفات الستة (`build/config.yml` · `build/windows/info.json` · `build/windows/installer/project.nsi` · `build/windows/Taskfile.yml` · `frontend/package.json` + قفله) ويرقّي `[Unreleased]` إلى قسم مؤرّخ وينشئ التزاماً ووسماً تلقائياً — فلا يتخلّف أي ملف عن الوسم. أوضاع: `patch|minor|major|x.y.z` · `--dry-run` · `--no-git` · `--push` · و`--check` الذي يمنع الانحراف (مضمَّن في CI و`task release:check`). مهمة Taskfile: `task release -- patch`.
+
+### Added (لقن الوكلاء دروس اليوم — 2026-09-26)
+
+- **مهارة جديدة `.agents/skills/supabase-security-and-migrations/SKILL.md`:** تُلقّن الوكلاء دروس الأمن/قاعدة البيانات المستخلصة اليوم — فخ المنطق ثلاثي القيم (`IF NOT is_admin()` حين تُعيد `NULL`)، أنماط RLS الصحيحة، ثبات الهجرات وفشلها الصامت، ومنهجية التحقق الحيّ عبر Supabase MCP مع مصفوفة التخويل T1–T7. عُزّزت القاعدة الحاكمة `.agents/AGENTS.md` بقسم «قاعدة البيانات والتفويض»، وصُحّحت قاعدة ترفيع الإصدار لتحيل إلى `scripts/release.mjs` بدل المواضع اليدوية القديمة، وحُدّثت مصفوفة المزامنة في `docs/DOCUMENTATION_MAP.md`، ومهارة مراجع الأمان `grido-qa-security-auditor` (قسم الإصدار + مؤشّر المهارة).
+
 ## [v1.9.3] - 2026-09-26
 
 ### Security (تجاوز تخويل حرج — أُغلق 2026-09-26)

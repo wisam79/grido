@@ -35,6 +35,10 @@ description: دليل الجودة والأمان والاختبار وتولي�
 4. **إدارة الأسرار والمفاتيح (Secrets Management):**
    - يُمنع تشفير مفاتيح API داخل الكود. يتم قراءتها كمتغيرات بيئة وحقنها بـ `-ldflags` أثناء البناء.
 
+5. **تأمين RLS ودوال التفويض والهجرات (Supabase Authz):**
+   - عند أي عمل على `supabase/migrations/` أو سياسات RLS أو دوال `SECURITY DEFINER`، طبّق إجبارياً المهارة المتخصصة `.agents/skills/supabase-security-and-migrations/SKILL.md`.
+   - أبرز قواعدها: `IS NOT TRUE` لا `IF NOT fn()` في فحوص التخويل (فخ المنطق ثلاثي القيم)، ومنع `OLD.`/`NEW.` في سياسات RLS، وعدم تعديل هجرة مطبَّقة، والتحقق الحيّ عبر Supabase MCP لا بالقراءة.
+
 ---
 
 ## 🧪 2. خطة الاختبار التلقائي السحابي المستمر (Continuous Cloud CI/CD Pipeline)
@@ -126,10 +130,8 @@ gh run view <run-id> --log-failed
 
 عند التوجيه لرفع إصدار جديد للتطبيق (`vX.Y.Z`):
 
-1. **الفحص المسبق الصارم (Pre-flight Quality Check):** تشغيل `npm run lint` و `npm run typecheck` في مجلد `frontend`، والتأكد من عدم وجود أي خطأ أو تحذير (`0 errors, 0 warnings`) قبل الشروع في الترفيع.
-2. **تحديث السكريبت المحلي:** تحديث القيمة الاحتياطية لـ `$appVersion` في `build.ps1` إلى `vX.Y.Z`.
-3. **الحفظ والإيداع:** تنفيذ `git add .` ثم `git commit -m "release: vX.Y.Z - ..."`.
-4. **إنشاء الوسم:** تشغيل `git tag -a vX.Y.Z -m "Release vX.Y.Z: ..."`.
-5. **الدفع لبدء البناء السحابي:** تشغيل `git push origin main --tags`.
-6. **النتيجة:** يقوم سيرفر GitHub Actions تلقائياً ببدء بناء النسخة وتوليد `GridoStudio-installer.exe` ونشرها في صفحة Releases على GitHub.
+1. **الفحص المسبق (Pre-flight):** `npm run lint` و `npm run typecheck` في `frontend` (0 أخطاء/تحذيرات)، و`node scripts/release.mjs --check` للتأكد أن كل ملفات الإصدار متوافقة قبل الرفع.
+2. **رفع الإصدار تلقائياً (مصدر واحد):** `node scripts/release.mjs patch|minor|major|x.y.z --summary "..."` أو `task release -- patch`. الأداة ترفع النسخة في كل المصادر (`build/config.yml` · `build/windows/info.json` · `build/windows/installer/project.nsi` · `build/windows/Taskfile.yml` · `frontend/package.json` وقفله) وترقّي `[Unreleased]` في `CHANGELOG.md` وتنشئ Commit + Tag `vX.Y.Z` تلقائياً. (ملاحظة: `build.ps1` يشتقّ `$appVersion` من `git describe --tags`، فالمصدر الحقيقي هو الوسم؛ وقيمته الاحتياطية (`vX.Y.Z`) تُزامَن آلياً بالأداة.)
+3. **الدفع وبدء البناء السحابي:** `git push origin main && git push origin vX.Y.Z` (أو أضف `--push` للأداة). مهمة `release:check` في CI تمنع انحراف الإصدار.
+4. **النتيجة:** يشغّل `release.yml` البناء السحابي وينشر `GridoStudio.exe`/`GridoStudio-installer.exe` و`grido-checksums.txt` في صفحة Releases. خطوة توقيع SignPath قد تفشل بـ`Could not authorize` (وبـ`continue-on-error: true`) فينتج `GridoStudio-unsigned` — تحقق من أسرار SignPath للتوقيع الفعلي.
 

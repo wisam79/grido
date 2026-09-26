@@ -3,7 +3,7 @@
 > **هذا الملف هو مصدر الحقيقة الوحيد لنظام التوثيق:** ماذا نوثّق، وأين، ومتى نُحدّثه، وما الذي **يوقف** الكومت أو الدفع عند الانحراف.
 > أي وكيل أو مطوّر يقرأ هذا الملف **قبل** بدء العمل، ويطبّق البوابات الثلاث في القسم 3.
 
-**آخر تحديث:** 2026-09-25 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md`
+**آخر تحديث:** 2026-09-26 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md`
 
 ---
 
@@ -44,6 +44,8 @@
 | تغيير قاعدة حاكمة | `.agents/AGENTS.md` (المصدر) + المهارة المعنية + حذف أي نسخة مكررة + تحديث الإشارات |
 | إضافة/حذف/نقل ملف مؤثر | `CHANGELOG.md` + هذا الملف + كل مرجع للملف في AGENTS.md والمهارات (بحث `git grep`) |
 | إصلاح عيب من تقرير تدقيق | تعليم البند ✅ في التقرير + `CHANGELOG.md` + `docs/features-tracker.md` |
+| تغيير في RLS أو دوال `SECURITY DEFINER` أو الهجرات | `CHANGELOG.md` + `.agents/skills/supabase-security-and-migrations/SKILL.md` + `SECURITY_NOTICE.md` عند ثغرة حيّة |
+| تغيير الإصدار أو الوسم أو آلية الإصدار | `CHANGELOG.md` + `.agents/skills/grido-qa-security-auditor/SKILL.md` (قسم الإصدار) + `.agents/AGENTS.md` عند تغيير القاعدة |
 | تغيير نظام تصميم أو مكتبة UI | `CHANGELOG.md` + `.agents/skills/fluent2-design-system/SKILL.md` + `docs/features-tracker.md` |
 | تغيير متطلبات أو إصدار أداة | `README.md` (المتطلبات) + `CHANGELOG.md` + `.agents/skills/wails-cross-compiler/SKILL.md` |
 

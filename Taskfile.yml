@@ -118,6 +118,21 @@ tasks:
       - task: test:frontend
       - task: test:e2e
 
+  release:
+    summary: Bumps all version files, promotes CHANGELOG and tags — see scripts/release.mjs
+    desc: |
+      مصدر واحد لرفع الإصدار — يحدّث الملفات الستة + يرقّي [Unreleased] في CHANGELOG
+      + ينشئ التزام ووسم. استخدم `-- --push` للدفع، و`-- --dry-run` للمعاينة.
+      المرجع: scripts/release.mjs
+    cmds:
+      - node scripts/release.mjs {{.CLI_ARGS}}
+
+  release:check:
+    summary: Verifies every version file matches build/config.yml (CI gate)
+    desc: بوابة انحراف الإصدار — تفشل إن تخلّف أي ملف عن build/config.yml أو غاب قسم CHANGELOG.
+    cmds:
+      - node scripts/release.mjs --check
+
   docs:check:
     summary: Runs the mandatory documentation sync gate (metrics, inventory, doc coverage)
     desc: |
