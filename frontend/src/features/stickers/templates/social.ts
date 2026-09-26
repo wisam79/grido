@@ -1,33 +1,46 @@
-import { StickerTemplate } from "../types";
-import { escapeXml } from "../lib/svg-rasterizer";
+import { StickerTemplate } from '../types';
+import { escapeXml } from '../lib/svg-rasterizer';
 
 export const SOCIAL_TEMPLATES: StickerTemplate[] = [
   {
-    id: "social_pay_accepted",
-    name: "ملصق الدفع الإلكتروني المعتمد",
-    nameEn: "Contactless Pay Accepted",
-    category: "social",
-    shape: "rect",
-    description: "ملصق لطاولات الكاشير ونقاط البيع يوضح قبول زين كاش وكي كارد والبطاقات المصرفية",
+    id: 'social_pay_accepted',
+    name: 'ملصق الدفع الإلكتروني المعتمد',
+    nameEn: 'Contactless Pay Accepted',
+    category: 'social',
+    shape: 'rect',
+    description: 'ملصق لطاولات الكاشير ونقاط البيع يوضح قبول زين كاش وكي كارد والبطاقات المصرفية',
     defaultWidth: 500,
     defaultHeight: 320,
     aspectRatio: 500 / 320,
     defaultMm: { width: 70, height: 45 },
     defaultColors: {
-      primary: "#0F172A",
-      secondary: "#0284C7",
-      background: "#FFFFFF",
+      primary: '#0F172A',
+      secondary: '#0284C7',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "payTitle", label: "عنوان الدفع", type: "text", defaultValue: "طرق الدفع الإلكتروني" },
-      { id: "payMethods", label: "الشبكات المقبولة", type: "text", defaultValue: "زين كاش • كي كارد • FIB • Visa" },
-      { id: "note", label: "ملاحظة سريعة", type: "text", defaultValue: "دفع آمن وفوري بدون تلامس" },
+      { id: 'payTitle', label: 'عنوان الدفع', type: 'text', defaultValue: 'طرق الدفع الإلكتروني' },
+      {
+        id: 'payMethods',
+        label: 'الشبكات المقبولة',
+        type: 'text',
+        defaultValue: 'زين كاش • كي كارد • FIB • Visa',
+      },
+      { id: 'note', label: 'ملاحظة سريعة', type: 'text', defaultValue: 'دفع آمن وفوري بدون تلامس' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.payTitle || "طرق الدفع الإلكتروني");
-      const methods = escapeXml(fields.payMethods || "زين كاش • كي كارد • FIB • Visa");
-      const note = escapeXml(fields.note || "دفع آمن وفوري بدون تلامس");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.payTitle || 'طرق الدفع الإلكتروني');
+      const methods = escapeXml(fields.payMethods || 'زين كاش • كي كارد • FIB • Visa');
+      const note = escapeXml(fields.note || 'دفع آمن وفوري بدون تلامس');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 320" width="500" height="320">
@@ -53,31 +66,54 @@ export const SOCIAL_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "social_follow_us",
-    name: "تابعنا على منصات التواصل",
-    nameEn: "Follow Us Social Tag",
-    category: "social",
-    shape: "square",
-    description: "ملصق لحسابات انستغرام وتيك توك وسناب شات مع رمز المنشن",
+    id: 'social_follow_us',
+    name: 'تابعنا على منصات التواصل',
+    nameEn: 'Follow Us Social Tag',
+    category: 'social',
+    shape: 'square',
+    description: 'ملصق لحسابات انستغرام وتيك توك وسناب شات مع رمز المنشن',
     defaultWidth: 460,
     defaultHeight: 460,
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
     defaultColors: {
-      primary: "#BE185D",
-      secondary: "#1E293B",
-      background: "#FFF1F2",
+      primary: '#BE185D',
+      secondary: '#1E293B',
+      background: '#FFF1F2',
     },
     fields: [
-      { id: "callToAction", label: "الدعوة للمتابعة", type: "text", defaultValue: "يسعدنا انضمامك إلينا!" },
-      { id: "handle", label: "اسم الحساب (@Handle)", type: "text", defaultValue: "@GridoStudio.iq" },
-      { id: "platforms", label: "المنصات المتواجدين عليها", type: "text", defaultValue: "TikTok • Instagram • X" },
+      {
+        id: 'callToAction',
+        label: 'الدعوة للمتابعة',
+        type: 'text',
+        defaultValue: 'يسعدنا انضمامك إلينا!',
+      },
+      {
+        id: 'handle',
+        label: 'اسم الحساب (@Handle)',
+        type: 'text',
+        defaultValue: '@GridoStudio.iq',
+      },
+      {
+        id: 'platforms',
+        label: 'المنصات المتواجدين عليها',
+        type: 'text',
+        defaultValue: 'TikTok • Instagram • X',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const cta = escapeXml(fields.callToAction || "يسعدنا انضمامك إلينا!");
-      const handle = escapeXml(fields.handle || "@GridoStudio.iq");
-      const platforms = escapeXml(fields.platforms || "TikTok • Instagram • X");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const cta = escapeXml(fields.callToAction || 'يسعدنا انضمامك إلينا!');
+      const handle = escapeXml(fields.handle || '@GridoStudio.iq');
+      const platforms = escapeXml(fields.platforms || 'TikTok • Instagram • X');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460" width="460" height="460">
@@ -100,31 +136,39 @@ export const SOCIAL_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "social_wifi_access",
-    name: "بطاقة الاتصال بالواي فاي",
-    nameEn: "Free Guest WiFi Card",
-    category: "social",
-    shape: "rect",
-    description: "ملصق لطاولات الكافيهات والمكاتب لاسم شبكة الإنترنت وكلمة المرور",
+    id: 'social_wifi_access',
+    name: 'بطاقة الاتصال بالواي فاي',
+    nameEn: 'Free Guest WiFi Card',
+    category: 'social',
+    shape: 'rect',
+    description: 'ملصق لطاولات الكافيهات والمكاتب لاسم شبكة الإنترنت وكلمة المرور',
     defaultWidth: 500,
     defaultHeight: 340,
     aspectRatio: 500 / 340,
     defaultMm: { width: 70, height: 48 },
     defaultColors: {
-      primary: "#2563EB",
-      secondary: "#0F172A",
-      background: "#EFF6FF",
+      primary: '#2563EB',
+      secondary: '#0F172A',
+      background: '#EFF6FF',
     },
     fields: [
-      { id: "wifiTitle", label: "عنوان الشبكة", type: "text", defaultValue: "إنترنت مجاني للضيوف" },
-      { id: "ssid", label: "اسم الشبكة (SSID)", type: "text", defaultValue: "Dijlah_Guest_5G" },
-      { id: "password", label: "كلمة السر (Password)", type: "text", defaultValue: "Welcome#2026" },
+      { id: 'wifiTitle', label: 'عنوان الشبكة', type: 'text', defaultValue: 'إنترنت مجاني للضيوف' },
+      { id: 'ssid', label: 'اسم الشبكة (SSID)', type: 'text', defaultValue: 'Dijlah_Guest_5G' },
+      { id: 'password', label: 'كلمة السر (Password)', type: 'text', defaultValue: 'Welcome#2026' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.wifiTitle || "إنترنت مجاني للضيوف");
-      const ssid = escapeXml(fields.ssid || "Dijlah_Guest_5G");
-      const pass = escapeXml(fields.password || "Welcome#2026");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.wifiTitle || 'إنترنت مجاني للضيوف');
+      const ssid = escapeXml(fields.ssid || 'Dijlah_Guest_5G');
+      const pass = escapeXml(fields.password || 'Welcome#2026');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 340" width="500" height="340">
@@ -140,18 +184,18 @@ export const SOCIAL_TEMPLATES: StickerTemplate[] = [
   </text>
   <!-- SSID Box -->
   <rect x="60" y="145" width="380" height="52" rx="10" fill="#DBEAFE"/>
-  <text x="80" y="178" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="800" fill="${secondaryColor}">
+  <text x="150" y="178" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
     الشبكة (SSID):
   </text>
-  <text data-field-id="ssid" x="420" y="178" font-family="monospace, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="end">
+  <text data-field-id="ssid" x="350" y="178" font-family="monospace, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
     ${ssid}
   </text>
   <!-- Password Box -->
   <rect x="60" y="215" width="380" height="52" rx="10" fill="#DBEAFE"/>
-  <text x="80" y="248" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="800" fill="${secondaryColor}">
+  <text x="150" y="248" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
     كلمة المرور:
   </text>
-  <text data-field-id="password" x="420" y="248" font-family="monospace, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="900" fill="#DC2626" text-anchor="end">
+  <text data-field-id="password" x="350" y="248" font-family="monospace, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="900" fill="#DC2626" text-anchor="middle">
     ${pass}
   </text>
   <text x="250" y="300" font-family="${fontFamily}, sans-serif" font-size="${Math.round(15 * fs)}" font-weight="700" fill="#64748B" text-anchor="middle">

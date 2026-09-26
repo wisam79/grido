@@ -1,33 +1,41 @@
-import { StickerTemplate } from "../types";
-import { escapeXml } from "../lib/svg-rasterizer";
+import { StickerTemplate } from '../types';
+import { escapeXml } from '../lib/svg-rasterizer';
 
 export const PACKAGING_TEMPLATES: StickerTemplate[] = [
   {
-    id: "packaging_expiry_dates",
-    name: "جدول الإنتاج والانتهاء والتشغيلة",
-    nameEn: "Production & Expiry Matrix",
-    category: "packaging",
-    description: "ملصق تنظيمي لبيانات الصلاحية، تاريخ التعبئة، والباتش للمنتجات والمصانع",
+    id: 'packaging_expiry_dates',
+    name: 'جدول الإنتاج والانتهاء والتشغيلة',
+    nameEn: 'Production & Expiry Matrix',
+    category: 'packaging',
+    description: 'ملصق تنظيمي لبيانات الصلاحية، تاريخ التعبئة، والباتش للمنتجات والمصانع',
     defaultWidth: 600,
     defaultHeight: 340,
     aspectRatio: 600 / 340,
     defaultColors: {
-      primary: "#1E293B",
-      secondary: "#0284C7",
-      background: "#FFFFFF",
+      primary: '#1E293B',
+      secondary: '#0284C7',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "productName", label: "اسم المنتج", type: "text", defaultValue: "عسل سدر طبيعي فاخر" },
-      { id: "mfgDate", label: "تاريخ الإنتاج (PROD)", type: "text", defaultValue: "2026/09/12" },
-      { id: "expDate", label: "تاريخ الانتهاء (EXP)", type: "text", defaultValue: "2028/09/11" },
-      { id: "batchNo", label: "رقم التشغيلة (BATCH)", type: "text", defaultValue: "LOT #B402-99" },
+      { id: 'productName', label: 'اسم المنتج', type: 'text', defaultValue: 'عسل سدر طبيعي فاخر' },
+      { id: 'mfgDate', label: 'تاريخ الإنتاج (PROD)', type: 'text', defaultValue: '2026/09/12' },
+      { id: 'expDate', label: 'تاريخ الانتهاء (EXP)', type: 'text', defaultValue: '2028/09/11' },
+      { id: 'batchNo', label: 'رقم التشغيلة (BATCH)', type: 'text', defaultValue: 'LOT #B402-99' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const name = escapeXml(fields.productName || "عسل سدر طبيعي فاخر");
-      const mfg = escapeXml(fields.mfgDate || "2026/09/12");
-      const exp = escapeXml(fields.expDate || "2028/09/11");
-      const batch = escapeXml(fields.batchNo || "LOT #B402-99");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const name = escapeXml(fields.productName || 'عسل سدر طبيعي فاخر');
+      const mfg = escapeXml(fields.mfgDate || '2026/09/12');
+      const exp = escapeXml(fields.expDate || '2028/09/11');
+      const batch = escapeXml(fields.batchNo || 'LOT #B402-99');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="600" height="340">
@@ -42,21 +50,21 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
   <line x1="10" y1="230" x2="590" y2="230" stroke="${primaryColor}" stroke-width="2" stroke-dasharray="4,4"/>
   <line x1="320" y1="70" x2="320" y2="330" stroke="${primaryColor}" stroke-width="2"/>
   <!-- Row 1: Production -->
-  <text x="560" y="118" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="end">
+  <text x="455" y="118" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
     تاريخ الإنتاج (MFG):
   </text>
   <text data-field-id="mfgDate" x="160" y="118" font-family="monospace" font-size="${Math.round(24 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
     ${mfg}
   </text>
   <!-- Row 2: Expiry -->
-  <text x="560" y="198" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="end">
+  <text x="455" y="198" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
     تاريخ الانتهاء (EXP):
   </text>
   <text data-field-id="expDate" x="160" y="198" font-family="monospace" font-size="${Math.round(24 * fs)}" font-weight="800" fill="#DC2626" text-anchor="middle">
     ${exp}
   </text>
   <!-- Row 3: Batch Number -->
-  <text x="560" y="280" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="end">
+  <text x="455" y="280" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
     رقم التشغيلة (BATCH):
   </text>
   <text data-field-id="batchNo" x="160" y="280" font-family="monospace" font-size="${Math.round(22 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
@@ -66,29 +74,47 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "packaging_thank_you",
-    name: "بطاقة شكر للطلب",
-    nameEn: "Thank You Sticker",
-    category: "packaging",
-    description: "ملصق أنيق وعصري لإغلاق كراتين الشحن وطرود المتاجر الإلكترونية",
+    id: 'packaging_thank_you',
+    name: 'بطاقة شكر للطلب',
+    nameEn: 'Thank You Sticker',
+    category: 'packaging',
+    description: 'ملصق أنيق وعصري لإغلاق كراتين الشحن وطرود المتاجر الإلكترونية',
     defaultWidth: 500,
     defaultHeight: 380,
     aspectRatio: 500 / 380,
     defaultColors: {
-      primary: "#BE185D",
-      secondary: "#1F2937",
-      background: "#FFF1F2",
+      primary: '#BE185D',
+      secondary: '#1F2937',
+      background: '#FFF1F2',
     },
     fields: [
-      { id: "thankTitle", label: "عبارة الشكر", type: "text", defaultValue: "شكراً لطلبك الجميل!" },
-      { id: "sentiment", label: "رسالة المحبة", type: "text", defaultValue: "تم تجهيز وتغليف طلبك بكل حب وعناية" },
-      { id: "socialHandle", label: "حساب التواصل أو المتجر", type: "text", defaultValue: "@YourStore.iq" },
+      { id: 'thankTitle', label: 'عبارة الشكر', type: 'text', defaultValue: 'شكراً لطلبك الجميل!' },
+      {
+        id: 'sentiment',
+        label: 'رسالة المحبة',
+        type: 'text',
+        defaultValue: 'تم تجهيز وتغليف طلبك بكل حب وعناية',
+      },
+      {
+        id: 'socialHandle',
+        label: 'حساب التواصل أو المتجر',
+        type: 'text',
+        defaultValue: '@YourStore.iq',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const thank = escapeXml(fields.thankTitle || "شكراً لطلبك الجميل!");
-      const sentiment = escapeXml(fields.sentiment || "تم تجهيز وتغليف طلبك بكل حب وعناية");
-      const social = escapeXml(fields.socialHandle || "@YourStore.iq");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const thank = escapeXml(fields.thankTitle || 'شكراً لطلبك الجميل!');
+      const sentiment = escapeXml(fields.sentiment || 'تم تجهيز وتغليف طلبك بكل حب وعناية');
+      const social = escapeXml(fields.socialHandle || '@YourStore.iq');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 380" width="500" height="380">
@@ -111,27 +137,35 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "packaging_open_here",
-    name: "افتح هنا (مقص وقص)",
-    nameEn: "Open Here Strip",
-    category: "packaging",
-    description: "شريط ملصق طولي لتحديد موضع الفتح الآمن للعبوات والعلب",
+    id: 'packaging_open_here',
+    name: 'افتح هنا (مقص وقص)',
+    nameEn: 'Open Here Strip',
+    category: 'packaging',
+    description: 'شريط ملصق طولي لتحديد موضع الفتح الآمن للعبوات والعلب',
     defaultWidth: 600,
     defaultHeight: 240,
     aspectRatio: 600 / 240,
     defaultColors: {
-      primary: "#0F172A",
-      secondary: "#D97706",
-      background: "#FEF3C7",
+      primary: '#0F172A',
+      secondary: '#D97706',
+      background: '#FEF3C7',
     },
     fields: [
-      { id: "openText", label: "نص الفتح", type: "text", defaultValue: "افتح من هنا بعناية" },
-      { id: "enText", label: "النص الإنجليزي", type: "text", defaultValue: "OPEN HERE ✂" },
+      { id: 'openText', label: 'نص الفتح', type: 'text', defaultValue: 'افتح من هنا بعناية' },
+      { id: 'enText', label: 'النص الإنجليزي', type: 'text', defaultValue: 'OPEN HERE ✂' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const open = escapeXml(fields.openText || "افتح من هنا بعناية");
-      const en = escapeXml(fields.enText || "OPEN HERE ✂");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const open = escapeXml(fields.openText || 'افتح من هنا بعناية');
+      const en = escapeXml(fields.enText || 'OPEN HERE ✂');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 240" width="600" height="240">
@@ -155,29 +189,42 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "packaging_eco_recycle",
-    name: "صديق للبيئة وقابل للتدوير",
-    nameEn: "Eco-Friendly Recyclable",
-    category: "packaging",
-    description: "شعار الاستدامة البيئية وإعادة التدوير للمنتجات الصديقة للأرض",
+    id: 'packaging_eco_recycle',
+    name: 'صديق للبيئة وقابل للتدوير',
+    nameEn: 'Eco-Friendly Recyclable',
+    category: 'packaging',
+    description: 'شعار الاستدامة البيئية وإعادة التدوير للمنتجات الصديقة للأرض',
     defaultWidth: 460,
     defaultHeight: 460,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#16A34A",
-      secondary: "#15803D",
-      background: "#F0FDF4",
+      primary: '#16A34A',
+      secondary: '#15803D',
+      background: '#F0FDF4',
     },
     fields: [
-      { id: "ecoTitle", label: "عنوان الاستدامة", type: "text", defaultValue: "100% قابل لإعادة التدوير" },
-      { id: "ecoSub", label: "النص الفرعي", type: "text", defaultValue: "تغليف صديق للبيئة" },
-      { id: "pledge", label: "شعار الكوكب", type: "text", defaultValue: "معاً لحماية كوكبنا" },
+      {
+        id: 'ecoTitle',
+        label: 'عنوان الاستدامة',
+        type: 'text',
+        defaultValue: '100% قابل لإعادة التدوير',
+      },
+      { id: 'ecoSub', label: 'النص الفرعي', type: 'text', defaultValue: 'تغليف صديق للبيئة' },
+      { id: 'pledge', label: 'شعار الكوكب', type: 'text', defaultValue: 'معاً لحماية كوكبنا' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.ecoTitle || "100% قابل لإعادة التدوير");
-      const sub = escapeXml(fields.ecoSub || "تغليف صديق للبيئة");
-      const pledge = escapeXml(fields.pledge || "معاً لحماية كوكبنا");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.ecoTitle || '100% قابل لإعادة التدوير');
+      const sub = escapeXml(fields.ecoSub || 'تغليف صديق للبيئة');
+      const pledge = escapeXml(fields.pledge || 'معاً لحماية كوكبنا');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460" width="460" height="460">

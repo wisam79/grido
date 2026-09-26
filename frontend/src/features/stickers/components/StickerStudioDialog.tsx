@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   SealCheck,
   Plus,
@@ -11,7 +11,7 @@ import {
   ArrowRight,
   Sparkle,
   Code,
-} from "@/components/ui/icons";
+} from '@/components/ui/icons';
 import {
   Dialog,
   DialogContent,
@@ -20,34 +20,43 @@ import {
   DialogDescription,
   DialogFooter,
   DialogCloseButton,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/huge-icon";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useEditorStore } from "@/lib/editor-store";
-import { wailsIsDesktop } from "@/lib/wails-env";
-import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
-import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
-import { toast } from "sonner";
-import { StickerCategory, StickerCategoryGroupId, StickerShape, StickerTemplate, StickerParams, SheetGridConfig } from "../types";
-import { ALL_STICKER_TEMPLATES } from "../templates";
-import { findHiddenFieldIds } from "../templates/svg-elements";
-import { renderSvgToPngDataUrl, downloadFile } from "../lib/svg-rasterizer";
-import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from "../lib/clipboard-utils";
-import { generateStickerSheet } from "../lib/sheet-generator";
-import { StickerCatalog } from "./StickerCatalog";
-import { StickerProperties } from "./StickerProperties";
-import { StickerPreview } from "./StickerPreview";
+} from '@/components/ui/dropdown-menu';
+import { useEditorStore } from '@/lib/editor-store';
+import { wailsIsDesktop } from '@/lib/wails-env';
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import { toast } from 'sonner';
+import {
+  StickerCategory,
+  StickerCategoryGroupId,
+  StickerShape,
+  StickerTemplate,
+  StickerParams,
+  SheetGridConfig,
+} from '../types';
+import { ALL_STICKER_TEMPLATES } from '../templates';
+import { findHiddenFieldIds } from '../templates/svg-elements';
+import { renderSvgToPngDataUrl, downloadFile } from '../lib/svg-rasterizer';
+import { sanitizeStickerColor, sanitizeStickerFontFamily } from '../lib/svg-safety';
+import { sanitizeSvgMarkup } from '@/lib/utils';
+import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from '../lib/clipboard-utils';
+import { generateStickerSheet } from '../lib/sheet-generator';
+import { StickerCatalog } from './StickerCatalog';
+import { StickerProperties } from './StickerProperties';
+import { StickerPreview } from './StickerPreview';
 
 export interface StickerStudioDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialCategory?: StickerCategoryGroupId | StickerCategory | "all";
+  initialCategory?: StickerCategoryGroupId | StickerCategory | 'all';
 }
 
 function buildDefaultParams(template: StickerTemplate): StickerParams {
@@ -57,9 +66,9 @@ function buildDefaultParams(template: StickerTemplate): StickerParams {
     secondaryColor: template.defaultColors.secondary,
     backgroundColor: template.defaultColors.background,
     isTransparent: false,
-    fontFamily: "Cairo",
+    fontFamily: 'Cairo',
     fontScale: 1,
-    finish: "standard",
+    finish: 'standard',
     dieCutBorder: true,
   };
 }
@@ -67,21 +76,23 @@ function buildDefaultParams(template: StickerTemplate): StickerParams {
 export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   open,
   onOpenChange,
-  initialCategory = "all",
+  initialCategory = 'all',
 }: StickerStudioDialogProps) {
   // Stage state: "gallery" for picking templates, "customize" for fine-tuning & inserting
-  const [view, setView] = useState<"gallery" | "customize">("gallery");
+  const [view, setView] = useState<'gallery' | 'customize'>('gallery');
 
-  const [selectedCategory, setSelectedCategory] = useState<StickerCategoryGroupId | StickerCategory | "all">(initialCategory);
-  const [selectedShape, setSelectedShape] = useState<StickerShape | "all">("all");
+  const [selectedCategory, setSelectedCategory] = useState<
+    StickerCategoryGroupId | StickerCategory | 'all'
+  >(initialCategory);
+  const [selectedShape, setSelectedShape] = useState<StickerShape | 'all'>('all');
   const [selectedTemplate, setSelectedTemplate] = useState<StickerTemplate>(() => {
-    if (initialCategory !== "all") {
+    if (initialCategory !== 'all') {
       const match = ALL_STICKER_TEMPLATES.find((t) => t.category === initialCategory);
       if (match) return match;
     }
     return ALL_STICKER_TEMPLATES[0];
   });
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [isInserting, setIsInserting] = useState(false);
   const [isGeneratingSheet, setIsGeneratingSheet] = useState(false);
   const [busyExport, setBusyExport] = useState(false);
@@ -100,7 +111,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       setIsInserting(false);
       setIsGeneratingSheet(false);
       setBusyExport(false);
-      setView("gallery");
+      setView('gallery');
     }
   }, [open]);
 
@@ -108,51 +119,78 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   const handleSelectTemplate = useCallback((template: StickerTemplate) => {
     setSelectedTemplate(template);
     setParams(buildDefaultParams(template));
-    setView("customize");
+    setView('customize');
   }, []);
 
   const handleBackToGallery = useCallback(() => {
-    setView("gallery");
+    setView('gallery');
   }, []);
 
-  const handleChangeCategory = useCallback((cat: StickerCategoryGroupId | StickerCategory | "all") => {
-    setSelectedCategory(cat);
-  }, []);
+  const handleChangeCategory = useCallback(
+    (cat: StickerCategoryGroupId | StickerCategory | 'all') => {
+      setSelectedCategory(cat);
+    },
+    [],
+  );
 
   const handleResetDefaults = useCallback(() => {
     setParams(buildDefaultParams(selectedTemplate));
   }, [selectedTemplate]);
 
   const svgString = useMemo(() => {
-    if (view === "gallery") return "";
+    if (view === 'gallery') return '';
     try {
-      const rawFamily = params.fontFamily || "Cairo";
-      const cleanFamily = rawFamily.replace(/['"]/g, "").trim();
-      const safeFamily = cleanFamily.includes(" ") ? `'${cleanFamily}'` : cleanFamily;
+      // كل قيم التصميم تُعقّم هنا قبل حقنها في سمات SVG (الألوان والخط)
+      const cleanFamily = sanitizeStickerFontFamily(params.fontFamily || 'Cairo');
+      const safeFamily = cleanFamily.includes(' ') ? `'${cleanFamily}'` : cleanFamily;
       return selectedTemplate.generateSvg({
         ...params,
+        primaryColor: sanitizeStickerColor(
+          params.primaryColor,
+          selectedTemplate.defaultColors.primary,
+        ),
+        secondaryColor: sanitizeStickerColor(
+          params.secondaryColor,
+          selectedTemplate.defaultColors.secondary,
+        ),
+        backgroundColor: sanitizeStickerColor(
+          params.backgroundColor,
+          selectedTemplate.defaultColors.background,
+        ),
         fontFamily: safeFamily,
       });
     } catch (err) {
-      console.error("Failed to generate SVG:", err);
+      console.error('Failed to generate SVG:', err);
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><text x="200" y="200" text-anchor="middle">Error</text></svg>`;
     }
   }, [view, selectedTemplate, params]);
 
+  /** نسخة مُطهَّرة للتصدير/النسخ — تُكتب على القرص أو الحافظة فتُفتح خارج التطبيق */
+  const exportableSvg = useMemo(
+    () => (view === 'customize' ? sanitizeSvgMarkup(svgString) || svgString : ''),
+    [view, svgString],
+  );
+
   const hiddenFieldIds = useMemo(
-    () => (view === "customize" ? findHiddenFieldIds(svgString, selectedTemplate.fields.map((f) => f.id)) : []),
-    [view, svgString, selectedTemplate.fields]
+    () =>
+      view === 'customize'
+        ? findHiddenFieldIds(
+            svgString,
+            selectedTemplate.fields.map((f) => f.id),
+          )
+        : [],
+    [view, svgString, selectedTemplate.fields],
   );
 
   const handleInsertToCanvas = useCallback(async (pngDataUrl: string) => {
     let finalSrc = pngDataUrl;
 
-    if (wailsIsDesktop() && pngDataUrl.startsWith("data:image/")) {
+    if (wailsIsDesktop() && pngDataUrl.startsWith('data:image/')) {
       try {
         const localPath = await SaveImageFromBase64(pngDataUrl);
         if (localPath) finalSrc = localPath;
       } catch (e) {
-        console.error("Failed to save sticker locally on desktop:", e);
+        console.error('Failed to save sticker locally on desktop:', e);
       }
     }
 
@@ -167,18 +205,24 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         svgString,
         1200,
         1200 / selectedTemplate.aspectRatio,
-        [params.fontFamily || "Cairo"]
+        [params.fontFamily || 'Cairo'],
       );
       await handleInsertToCanvas(pngUrl);
-      toast.success("أُدرج الملصق");
+      toast.success('أُدرج الملصق');
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("فشل الإدراج");
+      toast.error('فشل الإدراج');
     } finally {
       setIsInserting(false);
     }
-  }, [svgString, selectedTemplate.aspectRatio, params.fontFamily, handleInsertToCanvas, onOpenChange]);
+  }, [
+    svgString,
+    selectedTemplate.aspectRatio,
+    params.fontFamily,
+    handleInsertToCanvas,
+    onOpenChange,
+  ]);
 
   const handleInsertSheet = useCallback(async () => {
     try {
@@ -187,7 +231,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         svgString,
         1000,
         1000 / selectedTemplate.aspectRatio,
-        [params.fontFamily || "Cairo"]
+        [params.fontFamily || 'Cairo'],
       );
       // #9 — تحويل spacingMm → gapPx بناءً على DPI الشيت المستهدف (2400px / 200mm = 12 px/mm)
       const SHEET_WIDTH_PX = 2400;
@@ -202,17 +246,22 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         sheetHeight: 2400,
       });
       await handleInsertToCanvas(sheetPng);
-      toast.success(
-        `أُدرج شيت (${gridConfig.rows * gridConfig.cols} ملصقات)`
-      );
+      toast.success(`أُدرج شيت (${gridConfig.rows * gridConfig.cols} ملصقات)`);
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("فشل توليد الشيت");
+      toast.error('فشل توليد الشيت');
     } finally {
       setIsGeneratingSheet(false);
     }
-  }, [svgString, selectedTemplate.aspectRatio, params.fontFamily, gridConfig, handleInsertToCanvas, onOpenChange]);
+  }, [
+    svgString,
+    selectedTemplate.aspectRatio,
+    params.fontFamily,
+    gridConfig,
+    handleInsertToCanvas,
+    onOpenChange,
+  ]);
 
   const handleChangeField = useCallback((fieldId: string, value: string) => {
     setParams((prev) => ({
@@ -225,44 +274,47 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   }, []);
 
   const handleChangeColor = useCallback(
-    (role: "primary" | "secondary" | "background", color: string) => {
+    (role: 'primary' | 'secondary' | 'background', color: string) => {
       setParams((prev) => {
         switch (role) {
-          case "primary":
+          case 'primary':
             return { ...prev, primaryColor: color };
-          case "secondary":
+          case 'secondary':
             return { ...prev, secondaryColor: color };
-          case "background":
+          case 'background':
             return { ...prev, backgroundColor: color };
         }
       });
     },
-    []
+    [],
   );
 
-  const handleResetField = useCallback((fieldId: string) => {
-    const field = selectedTemplate.fields.find((f) => f.id === fieldId);
-    if (!field) return;
-    setParams((prev) => ({
-      ...prev,
-      fields: {
-        ...prev.fields,
-        [fieldId]: field.defaultValue,
-      },
-    }));
-  }, [selectedTemplate.fields]);
+  const handleResetField = useCallback(
+    (fieldId: string) => {
+      const field = selectedTemplate.fields.find((f) => f.id === fieldId);
+      if (!field) return;
+      setParams((prev) => ({
+        ...prev,
+        fields: {
+          ...prev.fields,
+          [fieldId]: field.defaultValue,
+        },
+      }));
+    },
+    [selectedTemplate.fields],
+  );
 
   const handleDownloadSvg = useCallback(() => {
     try {
-      const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+      const blob = new Blob([exportableSvg], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       downloadFile(url, `${selectedTemplate.id}.svg`);
       URL.revokeObjectURL(url);
-      toast.success("نُزّل ملف SVG");
+      toast.success('نُزّل ملف SVG');
     } catch {
-      toast.error("فشل تنزيل SVG");
+      toast.error('فشل تنزيل SVG');
     }
-  }, [svgString, selectedTemplate.id]);
+  }, [exportableSvg, selectedTemplate.id]);
 
   const handleDownloadPng = useCallback(async () => {
     try {
@@ -271,12 +323,12 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         svgString,
         1200,
         1200 / selectedTemplate.aspectRatio,
-        [params.fontFamily || "Cairo"]
+        [params.fontFamily || 'Cairo'],
       );
       downloadFile(pngUrl, `${selectedTemplate.id}.png`);
-      toast.success("صُدّر PNG عالي الدقة (300 DPI)");
+      toast.success('صُدّر PNG عالي الدقة (300 DPI)');
     } catch {
-      toast.error("فشل التصدير");
+      toast.error('فشل التصدير');
     } finally {
       setBusyExport(false);
     }
@@ -289,35 +341,34 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         svgString,
         1200,
         1200 / selectedTemplate.aspectRatio,
-        [params.fontFamily || "Cairo"]
+        [params.fontFamily || 'Cairo'],
       );
       const ok = await copyPngDataUrlToClipboard(pngUrl);
       if (ok) {
-        toast.success("نُسخت الصورة للحافظة");
+        toast.success('نُسخت الصورة للحافظة');
       } else {
-        await copySvgCodeToClipboard(svgString);
-        toast.success("نُسخ كود SVG");
+        await copySvgCodeToClipboard(exportableSvg);
+        toast.success('نُسخ كود SVG');
       }
     } catch {
-      toast.error("فشل النسخ");
+      toast.error('فشل النسخ');
     } finally {
       setBusyExport(false);
     }
-  }, [svgString, selectedTemplate.aspectRatio, params.fontFamily]);
+  }, [svgString, selectedTemplate.aspectRatio, params.fontFamily, exportableSvg]);
 
   const handleCopySvgCode = useCallback(async () => {
     try {
-      const ok = await copySvgCodeToClipboard(svgString);
+      const ok = await copySvgCodeToClipboard(exportableSvg);
       if (ok) {
-        toast.success("نُسخ كود SVG المتجه");
+        toast.success('نُسخ كود SVG المتجه');
       } else {
-        toast.error("تعذر نسخ SVG");
+        toast.error('تعذر نسخ SVG');
       }
     } catch {
-      toast.error("فشل نسخ SVG");
+      toast.error('فشل نسخ SVG');
     }
-  }, [svgString]);
-
+  }, [exportableSvg]);
 
   const templateMm = selectedTemplate.defaultMm || {
     width: 50,
@@ -334,7 +385,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         {/* ── Title Bar Header (Adapts to Active Stage) ── */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-3">
-            {view === "gallery" ? (
+            {view === 'gallery' ? (
               /* Gallery Header */
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
@@ -390,7 +441,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         </DialogHeader>
 
         {/* ── Dialog Body: Gallery vs Customize ── */}
-        {view === "gallery" ? (
+        {view === 'gallery' ? (
           /* View 1: Spacious Gallery */
           <div className="flex-1 min-h-0 overflow-hidden">
             <StickerCatalog
@@ -436,14 +487,19 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
 
         {/* ── Footer: Action Bar (Adapts to Active Stage) ── */}
         <DialogFooter className="px-5 py-2.5 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
-          {view === "gallery" ? (
+          {view === 'gallery' ? (
             /* Gallery Footer */
             <>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
                 <SealCheck className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 <span className="text-foreground font-bold truncate">{selectedTemplate.name}</span>
                 <span className="text-border/60">•</span>
-                <span className="text-mini"><span className="font-mono">{templateMm.width}×{templateMm.height}</span> مم</span>
+                <span className="text-mini">
+                  <span className="font-mono">
+                    {templateMm.width}×{templateMm.height}
+                  </span>{' '}
+                  مم
+                </span>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
@@ -460,7 +516,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                 <Button
                   type="button"
                   size="sm"
-                  onClick={() => setView("customize")}
+                  onClick={() => setView('customize')}
                   className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all"
                 >
                   <span>تخصيص</span>
@@ -488,7 +544,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                       ) : (
                         <DownloadSimple className="w-3.5 h-3.5" />
                       )}
-                      <span>{busyExport ? "يصدّر ..." : "تصدير"}</span>
+                      <span>{busyExport ? 'يصدّر ...' : 'تصدير'}</span>
                       {!busyExport && <CaretDown className="w-3 h-3 text-muted-foreground" />}
                     </Button>
                   </DropdownMenuTrigger>
@@ -577,4 +633,4 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   );
 });
 
-StickerStudioDialog.displayName = "StickerStudioDialog";
+StickerStudioDialog.displayName = 'StickerStudioDialog';

@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import { TextAa, X, Check, ArrowCounterClockwise, CaretUp, CaretDown } from "@/components/ui/icons";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { StickerTemplate, StickerField } from "../types";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { TextAa, X, Check, ArrowCounterClockwise, CaretUp, CaretDown } from '@/components/ui/icons';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { isSafeCssColor } from '../lib/svg-safety';
+import { StickerTemplate, StickerField } from '../types';
 
 /** هدف التحرير النشط — القيم تُقرأ لحظياً من params في المكوّن الأم */
 export interface ActiveFieldState {
@@ -13,7 +14,7 @@ export interface ActiveFieldState {
 }
 
 export interface ActiveColorState {
-  role: "primary" | "secondary" | "background";
+  role: 'primary' | 'secondary' | 'background';
   label: string;
   currentColor: string;
   x: number;
@@ -28,26 +29,26 @@ interface StickerInlineEditorProps {
   activeFieldValue?: string;
   onClose: () => void;
   onChangeFieldValue: (fieldId: string, value: string) => void;
-  onChangeColor: (role: "primary" | "secondary" | "background", color: string) => void;
+  onChangeColor: (role: 'primary' | 'secondary' | 'background', color: string) => void;
   onResetField?: (fieldId: string) => void;
 }
 
 const QUICK_COLORS = [
-  "#3B82F6", // Fluent Blue
-  "#10B981", // Emerald
-  "#F59E0B", // Amber
-  "#EF4444", // Crimson
-  "#8B5CF6", // Purple
-  "#EC4899", // Pink
-  "#0F172A", // Dark Slate
-  "#FFFFFF", // Pure White
+  '#3B82F6', // Fluent Blue
+  '#10B981', // Emerald
+  '#F59E0B', // Amber
+  '#EF4444', // Crimson
+  '#8B5CF6', // Purple
+  '#EC4899', // Pink
+  '#0F172A', // Dark Slate
+  '#FFFFFF', // Pure White
 ];
 
 export const StickerInlineEditor = React.memo(function StickerInlineEditor({
   activeField,
   activeColor,
   template,
-  activeFieldValue = "",
+  activeFieldValue = '',
   onClose,
   onChangeFieldValue,
   onChangeColor,
@@ -56,10 +57,32 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // مسودة الحقل اللوني: لا تُدفع إلى الحالة إلا عندما تكون لوناً صالحاً،
+  // فلا تومض المعاينة بلون أسود/غير صالح أثناء كتابة الـ hex حرفاً حرفاً.
+  const [hexDraft, setHexDraft] = useState('');
+  const lastCommittedColorRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const current = activeColor?.currentColor ?? '';
+    if (current !== lastCommittedColorRef.current) {
+      lastCommittedColorRef.current = current;
+      setHexDraft(current);
+    }
+  }, [activeColor?.currentColor]);
+
+  const handleHexDraftChange = (value: string) => {
+    setHexDraft(value);
+    if (activeColor && isSafeCssColor(value)) {
+      const clean = value.trim();
+      lastCommittedColorRef.current = clean;
+      onChangeColor(activeColor.role, clean);
+    }
+  };
+
   const fieldId = activeField?.fieldId;
   const activeFieldDef: StickerField | undefined = useMemo(
     () => template.fields.find((f) => f.id === fieldId),
-    [template.fields, fieldId]
+    [template.fields, fieldId],
   );
 
   // Auto-focus input when field opens
@@ -77,8 +100,8 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
         onClose();
       }
     };
-    window.addEventListener("pointerdown", handlePointerDown);
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
+    window.addEventListener('pointerdown', handlePointerDown);
+    return () => window.removeEventListener('pointerdown', handlePointerDown);
   }, [onClose]);
 
   /** تنقل بين حقول القالب بالترتيب (Tab / Enter + أسهم لوحة المفاتيح) */
@@ -91,7 +114,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
     const nextId = ids[nextIdx];
     if (nextId === activeField.fieldId) return;
     // نفتح الحقل التالي عبر محاكاة النقر على عنصره في الـ SVG
-    const host = containerRef.current?.parentElement?.querySelector(".sticker-svg-interactive");
+    const host = containerRef.current?.parentElement?.querySelector('.sticker-svg-interactive');
     const nextEl = host?.querySelector(`[data-field-id="${nextId}"]`) as SVGElement | null;
     if (nextEl) {
       (nextEl as unknown as HTMLElement).click?.();
@@ -99,14 +122,14 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       onClose();
       return;
     }
-    if (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey)) {
+    if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
       e.preventDefault();
       stepField(1);
-    } else if (e.key === "Tab" && e.shiftKey) {
+    } else if (e.key === 'Tab' && e.shiftKey) {
       e.preventDefault();
       stepField(-1);
     }
@@ -131,7 +154,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
     : Math.max(12, active.y - estimateH);
 
   const shellClass =
-    "absolute z-40 bg-card/95 dark:bg-card/90 backdrop-blur-2xl border border-primary/40 rounded-xl shadow-fluent-16 p-3 animate-in fade-in zoom-in-95 duration-150 select-none text-start font-cairo";
+    'absolute z-40 bg-card/95 dark:bg-card/90 backdrop-blur-2xl border border-primary/40 rounded-xl shadow-fluent-16 p-3 animate-in fade-in zoom-in-95 duration-150 select-none text-start font-cairo';
 
   // ── Text Field Editor Popover ──
   if (activeField) {
@@ -181,7 +204,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
             value={activeFieldValue}
             onChange={(e) => onChangeFieldValue(activeField.fieldId, e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={activeFieldDef?.placeholder || activeFieldDef?.label || ""}
+            placeholder={activeFieldDef?.placeholder || activeFieldDef?.label || ''}
             className="h-8 text-xs font-semibold bg-muted/40 border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none rounded-md"
           />
         </div>
@@ -208,7 +231,8 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
               </button>
             </span>
             <span className="ms-1 font-mono">
-              {template.fields.findIndex((f) => f.id === activeField.fieldId) + 1} / {template.fields.length}
+              {template.fields.findIndex((f) => f.id === activeField.fieldId) + 1} /{' '}
+              {template.fields.length}
             </span>
           </div>
           <Button
@@ -259,16 +283,19 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
             type="button"
             onClick={() => onChangeColor(activeColor!.role, c)}
             className={cn(
-              "h-7 rounded-md border flex items-center justify-center transition-transform hover:scale-105 cursor-pointer shadow-xs",
+              'h-7 rounded-md border flex items-center justify-center transition-transform hover:scale-105 cursor-pointer shadow-xs',
               activeColor!.currentColor.toLowerCase() === c.toLowerCase()
-                ? "border-primary ring-2 ring-primary/40"
-                : "border-border/60"
+                ? 'border-primary ring-2 ring-primary/40'
+                : 'border-border/60',
             )}
             style={{ backgroundColor: c }}
           >
             {activeColor!.currentColor.toLowerCase() === c.toLowerCase() && (
               <Check
-                className={cn("w-3.5 h-3.5 font-bold", c === "#FFFFFF" ? "text-black" : "text-white")}
+                className={cn(
+                  'w-3.5 h-3.5 font-bold',
+                  c === '#FFFFFF' ? 'text-black' : 'text-white',
+                )}
                 weight="bold"
               />
             )}
@@ -280,15 +307,24 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
       <div className="mt-2.5 pt-2 border-t border-border/30 flex items-center gap-1.5">
         <input
           type="color"
-          value={activeColor!.currentColor}
-          onChange={(e) => onChangeColor(activeColor!.role, e.target.value)}
+          value={
+            /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(activeColor!.currentColor)
+              ? activeColor!.currentColor
+              : '#000000'
+          }
+          onChange={(e) => {
+            lastCommittedColorRef.current = e.target.value;
+            setHexDraft(e.target.value);
+            onChangeColor(activeColor!.role, e.target.value);
+          }}
           className="w-8 h-8 rounded-md border border-border/60 cursor-pointer bg-transparent shrink-0"
         />
         <Input
-          value={activeColor!.currentColor}
-          onChange={(e) => onChangeColor(activeColor!.role, e.target.value)}
+          value={hexDraft}
+          onChange={(e) => handleHexDraftChange(e.target.value)}
           dir="ltr"
-          className="h-8 text-xs font-mono font-bold uppercase bg-muted/40 border-border/50 rounded-md flex-1"
+          aria-invalid={!isSafeCssColor(hexDraft)}
+          className="h-8 text-xs font-mono font-bold uppercase bg-muted/40 border-border/50 rounded-md flex-1 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/40"
         />
         <Button
           type="button"
@@ -303,4 +339,4 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
   );
 });
 
-StickerInlineEditor.displayName = "StickerInlineEditor";
+StickerInlineEditor.displayName = 'StickerInlineEditor';
