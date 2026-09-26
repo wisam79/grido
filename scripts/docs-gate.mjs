@@ -10,6 +10,8 @@
  *   2) تغطية الجرد: كل ملف في docs/*.md وكل مجلد فرعي تحت docs/ مُدرَج في الخريطة.
  *   3) كومت/دفعة تغيّر كوداً بلا أي تحديث توثيق مرافق.
  *   4) (تحذيري) سلامة مراجع المسارات في .agents/AGENTS.md والمهارات — صارم مع --strict-refs.
+ *   5) تأكيدات التحقق على مستوى الكود (code-assertions) — بنود BUGS_REPORT.md التي
+ *      وُسمت ✅ يجب أن تبقى مُثبتة بالأسطر، وإلا فشلت البوابة.
  *
  * الاستخدام:
  *   node scripts/docs-gate.mjs                 # قبل الكومت (يفحص الملفات المُجهَّزة)
@@ -267,6 +269,136 @@ function checkSkillReferences(mapText) {
   }
 }
 
+/**
+ * تأكيدات التحقق على مستوى الكود (code-assertions).
+ *
+ * كل بند وُسم ✅ في BUGS_REPORT.md أو ثوابت معمارية في AGENTS.md يجب أن يبقى
+ * مُثبتاً بالأسطر الفعلية. هنا نُثبّت الأدلة الحاسمة كي لا يعود الانحراف صامتاً:
+ * إرجاع عيب «مُصلح» إلى التسريب يجب أن يُفشل البناء، لا أن يمر كادعاء قديم.
+ *
+ * form: { file, mustContain: string[], mustNotContain: string[] }
+ */
+const CODE_ASSERTIONS = [
+  {
+    label: 'BUG-CRIT-01 — لا خصم مزدوج لحصة AI (تسجيل واحد في Modal فقط)',
+    file: 'internal/service/ai_service.go',
+    mustContain: ['callAIUsageRPC(token, userID, inputImageBytes, true)'],
+    mustNotContain: ['callAIUsageRPC(token, userID, inputImageBytes, false)'],
+  },
+  {
+    label: 'BUG-HIGH-04 — فساد autosave.json يُرجَع خطأً فيوقف التنظيف',
+    file: 'internal/repository/db.go',
+    mustContain: ['corrupt autosave.json encountered'],
+  },
+  {
+    label: 'BUG-CRIT-02 — SignPath: تعريف SIGNPATH_* في env على مستوى الـ job مرة واحدة فقط',
+    file: '.github/workflows/release.yml',
+    mustContain: ['SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}'],
+    // لا يجوز أن يُعاد تعريف التوكن داخل خطوة — عندئود يفشل `env.` في `if:`
+    // أو يفشل التوقيع بصمت. مرة واحدة فقط = مستوى الـ job (`:16-18`).
+    count: [{ needle: 'SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}', equals: 1 }],
+  },
+  {
+    label: 'BUG-MED-07 — تجريد الرموز -w -s في مسار الإنتاج',
+    file: 'build/windows/Taskfile.yml',
+    mustContain: ['-ldflags="-w -s -H windowsgui'],
+  },
+  {
+    label: 'BUG-MED-01 — كتابة ذرية في تصدير الطباعة وحفظ حالة النافذة',
+    file: 'internal/service/print_export.go',
+    mustContain: ['exportsCleanup.CompareAndSwap(false, true)', 'utils.CreateAtomic('],
+  },
+  {
+    label: 'BUG-LOW-08 / BUG-MED-01 — كتابة ذرية لحفظ window.json',
+    file: 'window_state.go',
+    mustContain: ['utils.AtomicWriteFile('],
+  },
+  {
+    label: 'BUG-MED-02 — معاينات print_* تُوجَّه إلى Exports/ في GetImageDimensions',
+    file: 'internal/service/media_service.go',
+    mustContain: ['strings.HasPrefix(filename, "print_")', 'utils.CreateAtomic('],
+  },
+  {
+    label: 'BUG-CRIT-03 — فحص data:image/ قبل SaveImageFromBase64',
+    file: 'frontend/src/components/editor/properties/panels/image-properties.tsx',
+    mustContain: ['b64.startsWith("data:image/")'],
+  },
+  {
+    label: 'BUG-MED-03 — تجميع أوامر Canvas 2D لخطوط القص بدل stroke لكل خط',
+    file: 'frontend/src/lib/export/export-canvas-collage.ts',
+    mustContain: ['const strokeBatch = (lines: typeof cutLines', 'strokeBatch(regularLines'],
+  },
+  {
+    label: 'BUG-LOW-01/02/03 — مكونات وصولية موحّدة في نافذة عزل الخلفية',
+    file: 'frontend/src/components/editor/dialogs/refine-bg-dialog.tsx',
+    mustContain: ['DialogCloseButton', 'FluentSliderField'],
+    mustNotContain: ['<input type="range"'],
+  },
+  {
+    label: 'BUG-LOW-06 — وسم NSIS الصريح بدل القفز الصفري',
+    file: 'build/windows/installer/project.nsi',
+    mustContain: ['IfSilent is_silent done'],
+  },
+  {
+    label: 'BUG-MED-10 — حد أدنى لأهداف اللمس h-7 w-7',
+    file: 'frontend/src/components/editor/dialogs/print-dialog.tsx',
+    mustContain: ['h-7 w-7'],
+    mustNotContain: ['h-5 w-5', 'h-6 w-6'],
+  },
+];
+
+function checkCodeAssertions() {
+  const missingFiles = [];
+  for (const assertion of CODE_ASSERTIONS) {
+    const full = join(ROOT, ...assertion.file.split('/'));
+    if (!existsSync(full)) {
+      missingFiles.push(`${assertion.file}  ←  ${assertion.label}`);
+      continue;
+    }
+    const text = readFileSync(full, 'utf8');
+    const lines = text.split(/\r?\n/);
+    const hits = (needle) => lines.findIndex((line) => line.includes(needle)) + 1;
+
+    for (const needle of assertion.mustContain ?? []) {
+      if (hits(needle) === 0) {
+        errors.push(
+          `انحراف تأكيد كود (${assertion.label}):\n` +
+            `    العبارة المفترضة غير موجودة: ${needle}\n` +
+            `    في الملف: ${assertion.file}`,
+        );
+      }
+    }
+    for (const needle of assertion.mustNotContain ?? []) {
+      const line = hits(needle);
+      if (line > 0) {
+        errors.push(
+          `انحراف تأكيد كود (${assertion.label}):\n` +
+            `    عبارة ممنوعة عادت للملف ${assertion.file}:${line} ⇒ ${needle}\n` +
+            '    إن كان العيب قد عاد فعلاً فحدّث BUGS_REPORT.md بتصحيح مؤرَّخ؛ لا تُسقط التأكيد.',
+        );
+      }
+    }
+    for (const rule of assertion.count ?? []) {
+      const found = lines.filter((line) => line.includes(rule.needle)).length;
+      if (found !== rule.equals) {
+        errors.push(
+          `انحراف تأكيد كود (${assertion.label}):\n` +
+            `    تكرار غير متوقع لعبارة في ${assertion.file}: المتوقع ${rule.equals} والواقع ${found}\n` +
+            `    ⇒ ${rule.needle}`,
+        );
+      }
+    }
+  }
+
+  if (missingFiles.length) {
+    errors.push(
+      `ملفات مفترضة لتأكيدات التحقق غير موجودة (${missingFiles.length}):\n    - ${missingFiles.join('\n    - ')}`,
+    );
+  } else {
+    notes.push(`تأكيدات التحقق على الكود سليمة (${CODE_ASSERTIONS.length} تأكيداً).`);
+  }
+}
+
 function main() {
   console.log(colors.cyan(`\n📚 بوابة التوثيق (docs-gate) — الوضع: ${MODE_PUSH ? 'قبل الدفع' : 'قبل الكومت'}`));
 
@@ -285,6 +417,7 @@ function main() {
   checkInventory(mapText);
   checkDocumentedCommit();
   checkSkillReferences(mapText);
+  checkCodeAssertions();
 
   for (const note of notes) console.log(colors.dim(`  · ${note}`));
   for (const warning of warnings) console.log(colors.yellow(`  ⚠️  ${warning}`));

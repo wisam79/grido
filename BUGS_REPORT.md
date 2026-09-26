@@ -48,6 +48,37 @@
 > - **[BUG-LOW-05]** مُصلح: الأزرار مختصرة (`تصدير`، `إدراج`، `إعادة ضبط`، `حفظ`).
 > - **[تكرار المقاسات]** وُحِّد في 2026-09-23 على القياسات العراقية الرسمية (`photo-templates.ts` مصدراً): الجواز 50×50 ← 35×45 في `freeform-math.ts:45` و`packUniform:721` و`combo:733` والتسميات، والفيزا 50×50 ← شنغن 35×45 في `collage-grid-math.ts:39` و`grid-utils.ts:339` وصف المسافر العلوي، والهوية `iq-civil-id` ← 32×40، والنوع العام `id` ← 35×45 — مع تحديث توقعات `test/freeform-collage.test.ts`.
 
+> **تصحيح خامس (2026-09-27 — تدقيق أسطر حيّ لكل بند في التقرير، فحص بقراءة الملفات التنفيذية):**
+> **النتيجة: 26/26 بنداً مُغلقاً ومثبتاً بالأسطر — لا بند مفتوح واحد في هذا التقرير.** أي عمل على أي بند هنا يُعدّ عملاً مكرراً على كود سليم؛ المرجع الحيّ للحالة هو `docs/features-tracker.md` + `docs/DOCUMENTATION_MAP.md`.
+
+**مصفوفة التحقق (2026-09-27) — الحالة والدليل المباشر لكل بند:**
+
+| البند | الحالة المثبتة | الدليل المباشر في الكود الحالي |
+|---|---|---|
+| BUG-CRIT-01 | ✅ مُصلح | `internal/service/ai_service.go:331` يستدعي `callAIUsageRPC(token, userID, inputImageBytes, true)` فقط — لا `defer` تسجيل؛ الفحص المسبق في `modal_ai/upscaler.py:195-211` والتسجيل الفعلي في `:311-334` |
+| BUG-CRIT-02 | ✅ مُصلح — **بآلية مختلفة عمّا وصفه التصحيح الرابع** | `SIGNPATH_*` منقولة إلى `env` على مستوى الـ **job** في `release.yml:16-18` ⇒ صارت `env.SIGNPATH_*` متاحة عند تقييم `if:` للخطوتين `:165` و`:181` (العلة الأصلية: `env` على مستوى الخطوة فقط) |
+| BUG-CRIT-03 | ✅ مُصلح | `image-properties.tsx:315` — `b64.startsWith("data:image/") ? await SaveImageFromBase64(b64) : b64` |
+| BUG-HIGH-04 | ✅ مُصلح | `internal/repository/db.go:403-409` يرجع `fmt.Errorf("corrupt autosave.json encountered: %w")` و`db.go:512-516` يوقف `runCleanupMedia` قبل أي نقل |
+| BUG-HIGH-05..11 | ✅ مُصلحة (سجل التصحيح الثالث صحيح في المضمون) | أرقام الأسطر فيه متقادمة بعد تقسيم اللاحق للملفات؛ المعنى صحيح |
+| BUG-MED-01 | ✅ مُصلح | `media_service.go:294,386` (`CreateAtomic`) و`:484` (`AtomicWriteFile`) · `print_export.go:96` · `print_pdf_export.go:92` · `window_state.go:65` — عكس صف «الكتابة الذرية» في §1 |
+| BUG-MED-02 | ✅ مُصلح | `media_service.go:151-154` يوجّه `print_*` إلى `Exports/` |
+| BUG-MED-03..06 | ✅ مُصلحة | `export-canvas-collage.ts:162-176` `strokeBatch` (بعد تفكيك `export-image.ts`، فالمسار الفعلي للملف) · `ruler-utils.ts:65` + `ruler.tsx:114` · `20260907000000_grant_rpc_permissions.sql` (منح + `NOTIFY pgrst`) · محددات E2E مرنة (مثل `app.spec.ts:24-30`) |
+| BUG-MED-07 | ✅ مُصلح | `build/windows/Taskfile.yml:65` — `-ldflags="-w -s -H windowsgui{{.LDFLAGS_INJECT}}"` في مسار الإنتاج، وهو ما يستدعيه `release.yml:131` عبر `wails3 task package` |
+| BUG-MED-08..09 | ✅ مُصلحان | صفر `h-8.5` في `frontend/src` · أزرار AI على `h-9` في `toolbar-ai-tools.tsx` |
+| BUG-MED-10 | ✅ مُصلح | `print-dialog.tsx:373,384` و`batch-insert-dialog.tsx:454` كلّها `h-7 w-7`؛ صفر `h-5 w-5` في المشروع |
+| BUG-LOW-01..08 | ✅ مُصلحة | `DialogCloseButton` في `refine-bg-dialog.tsx:5,531` · `FluentSliderField` في `:6,614,627` (صفر `input type="range"`) · `project.nsi:93-96` بوسوم `is_silent/done` · `print_export.go:57-59` حارس `exportsCleanup.CompareAndSwap` · تصفير التحميل في `update-notifier.tsx` · نصوص الأزرار مختصرة |
+
+**تصحيحات دقيقة على التصحيحات السابقة (لا تُحذف، بل تُصحَّح):**
+
+1. التصحيح الرابع (سطر 19) يقول `ai_service.go:340` ⇒ **الصحيح `:331`**.
+2. التصحيح الرابع (سطر 20) يقول `db.go:398-411` ⇒ **الصحيح `:403-409` + `:512-516`**.
+3. التصحيح الرابع (سطر 21) يقول إن `-s -w` في `build.ps1:49` و`release.yml:122` ⇒ **غير دقيق**: `build.ps1:48-49` ينفّذ `wails3 task build` بلا رايات، و`release.yml:122` هو `npm run test`. الموضع الحقيقي الوحيد هو `build/windows/Taskfile.yml:65`.
+4. التصحيح الرابع (سطر 22) يقول إن شرط SignPath «صار يستخدم `secrets.` مباشرة» ⇒ **غير دقيق**: الشرط ما زال `env.` (`release.yml:165,181`). الإصلاح الفعلي هو نقل تعريف المتغيرات من `env` على مستوى الخطوة إلى `env` على مستوى الـ job (`:16-18`) وهو ما يجعل `env` متاحاً في تقييم `if:`.
+5. **صفوف §1 المتقادمة** (مصفوفة الثوابت): `الكتابة الذرية` و`إغلاق الملفات` و`حماية Symlinks/Exports` و`تجميع أوامر Canvas` و`كاش Konva أثناء السحب` و`استبقاء نصوص أخطاء Wails` و`Composite Grouping` و`سلم الارتفاعات` و`ثوابت الانتظار` و`زر الإغلاق في DialogHeader` و`-s -w` و`SignPath` و`الخصم المزدوج` — كلها كُتبت قبل الإصلاحات وتُقرأ الآن كأنها مفتوحة. الحالة الحقيقية: 13 صفاً منها ✅ وثلاثة فقط ما تزال جزئية (`إغلاق الملفات` بسبب `defer srcFile.Close()` في `media_service.go:267`، `ثوابت الانتظار` في نصوص ثانوية، و`SignPath` ✅ وظيفياً بلا شهادة).
+6. **أرقام §5 (50 ملف / 323 اختبار)** تاريخية؛ الأرقام الحاكمة في `docs/DOCUMENTATION_MAP.md` بلوك `docs-metrics`: Vitest 86 ملف · E2E 25 ملف · Go 30 ملف اختبار · 6 مستندات.
+
+> **حماية من الانحراف المستقبلي:** أضيفت اليوم تأكيدات تحقّق على مستوى الكود إلى `scripts/docs-gate.mjs` (فحص 5) تُفشل البوابة — وCI — إن عاد أي انحراف في (أ) `check_only=true` الوحيد، (ب) `corrupt autosave.json` المُرجَع، (ج) `env` الـ job في `release.yml`، (د) `-w -s` في `Taskfile.yml`، (هـ) راية `exportsCleanup` وحارس atomic في `print_export.go` و`window_state.go`.
+
 ---
 
 ## 📑 الفهرس (Table of Contents)

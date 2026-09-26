@@ -122,9 +122,12 @@ go test -count=1 -v ./internal/...
 
 | الأمر | الوصف |
 | :--- | :--- |
-| `node scripts/docs-gate.mjs` | تفحص الأرقام المرجعية والجرد وتشترط توثيقاً مرافقاً لأي تغيير كود (تُشغَّل آلياً عبر `.husky/pre-commit`) |
+| `node scripts/docs-gate.mjs` | تفحص الأرقام المرجعية والجرد و**تأكيدات التحقق على الكود** وتشترط توثيقاً مرافقاً لأي تغيير كود (تُشغَّل آلياً عبر `.husky/pre-commit`) |
 | `node scripts/docs-gate.mjs --push` | نفس الفحوص على مدى الكومتات غير المدفوعة (تُشغَّل آلياً عبر `.husky/pre-push`) |
-| `wails3 task docs:check` | تشغيل صارم لمراجع المسارات في `.agents/` |
+| `node scripts/docs-gate.mjs --strict-refs` | يجعل مراجع المسارات في `.agents/` مُعِقة (نفس مهمة `wails3 task docs:check`) |
+| `GRIDO_DOCS_GATE=off` | تخطّي طارئ مبرَّر — يجب ذكر السبب في رسالة الكومت |
+
+> 🔒 **تأكيدات التحقق على الكود (فحص 5):** كل بند وُسم ✅ في `BUGS_REPORT.md` له دليل نصّي مُثبَّت في صفيف `CODE_ASSERTIONS` داخل `scripts/docs-gate.mjs`. إن عاد العيب إلى الكود (أو حُذف دليل الإصلاح) **تفشل البوابة ويفشل CI** — ومُثبَت باختبار انحراف سالب على `window_state.go` (`utils.AtomicWriteFile`). **لا تُحذف التأكيدات لتفادي الفشل** — أصلح الكود أو أضف تصحيحاً مؤرَّخاً.
 
 > 📚 المرجع الكامل: `docs/DOCUMENTATION_MAP.md` · المهارة: `.agents/skills/grido-docs-sync-guard/SKILL.md`.
 
