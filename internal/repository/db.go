@@ -452,12 +452,20 @@ func moveUnreferencedToTrash(mediaDir, trashDir string, referenced map[string]bo
 			trashPath := filepath.Join(trashDir, filename)
 			if err := os.Rename(filePath, trashPath); err != nil {
 				slog.Error("Failed to move file to trash", "src", filePath, "dst", trashPath, "error", err)
+				continue
+			}
+			// ⏱️ os.Rename يحافظ على mtime الأصلي للملف المنقول —
+			// بلا هذا السطر، سيحذف purgeOldTrash أي ملف غير مرجعي عمره > 30 يوماً
+			// في نفس الدورة (0 ثانية مهلة استرداد). لذلك نُحدّث mtime إلى الآن لبدء مهلة الـ 30 يوماً.
+			now := time.Now()
+			if err := os.Chtimes(trashPath, now, now); err != nil {
+				slog.Error("Failed to update mtime for trashed file", "path", trashPath, "error", err)
 			}
 		}
 	}
 }
 
-// purgeOldTrash يحذف الملفات القديمة التي مضى عليها أكثر من 24 ساعة من الحجر الصحي
+// purgeOldTrash يحذف الملفات القديمة التي مضى عليها أكثر من 30 يوماً من الحجر الصحي
 func purgeOldTrash(trashDir string) {
 	trashFiles, err := os.ReadDir(trashDir)
 	if err != nil {
@@ -553,12 +561,19 @@ func CleanUnusedMediaNow() (cleanedCount int, freedBytes int64, err error) {
 
 		if !referenced[filename] {
 			info, err := os.Stat(filePath)
+			fileSize := int64(0)
 			if err == nil {
-				freedBytes += info.Size()
-				cleanedCount++
+				fileSize = info.Size()
 			}
 			trashPath := filepath.Join(trashDir, filename)
-			_ = os.Rename(filePath, trashPath)
+			if err := os.Rename(filePath, trashPath); err != nil {
+				slog.Error("Failed to move file to trash during manual clean", "src", filePath, "dst", trashPath, "error", err)
+				continue
+			}
+			now := time.Now()
+			_ = os.Chtimes(trashPath, now, now)
+			freedBytes += fileSize
+			cleanedCount++
 		}
 	}
 

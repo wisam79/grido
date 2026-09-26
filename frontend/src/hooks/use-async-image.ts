@@ -1,12 +1,45 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 const imageCache = new Map<string, HTMLImageElement>();
 const pendingLoads = new Map<string, Promise<HTMLImageElement>>();
 
+const MAX_IMAGE_CACHE = 100;
+
+function touchCacheKey(key: string) {
+  // إعادة الإدراج عند الإصابة لتحريك المفتاح إلى نهاية ترتيب Map (الأحدث استخداماً) —
+  // بلا هذا، يبقى ترتيب الطرد بتاريخ الإدراج الأول (FIFO) لا بالاستخدام الفعلي (LRU).
+  const img = imageCache.get(key);
+  if (img) {
+    imageCache.delete(key);
+    imageCache.set(key, img);
+  }
+}
+
+function setWithLRU(key: string, img: HTMLImageElement) {
+  // If already present, re-insert to mark as recently used
+  if (imageCache.has(key)) {
+    imageCache.delete(key);
+  } else if (imageCache.size >= MAX_IMAGE_CACHE) {
+    const oldestKey = imageCache.keys().next().value;
+    if (oldestKey) {
+      // ⚠️ حذف الإدخال فقط دون لمس oldImg.src: الكائن المطرود قد تكون
+      // عقدة Konva تعرضه حالياً (نفس المرجع مُمرَّر عبر setImage)، وتصفير
+      // src كان سيُفرغ الصورة من الكانفس. جامع القمامة يحرر الذاكرة
+      // عندما لا يبقى أي مرجع حي — وهذا يكفي لمنع التسريب.
+      imageCache.delete(oldestKey);
+    }
+  }
+  imageCache.set(key, img);
+}
+
 export function invalidateImageCache(src?: string) {
   if (src) {
-    for (const key of imageCache.keys()) {
+    for (const key of Array.from(imageCache.keys())) {
       if (key.startsWith(src)) {
+        // حذف الإدخال فقط دون تصفير img.src — الكائن المحذوف قد تكون
+        // عقدة Konva تعرضه حالياً، والتصفير كان سيُفرغه من الكانفس.
+        // إسقاط مرجع الكاش يكفي: جامع القمامة يحرر الذاكرة عند زوال
+        // آخر مرجع حي، وإعادة الطلب لاحقاً تعيد التحميل من الشبكة/القرص.
         imageCache.delete(key);
       }
     }
@@ -22,8 +55,11 @@ export function invalidateImageCache(src?: string) {
  */
 export function preloadImageIntoCache(src: string, crossOrigin?: string): Promise<void> {
   if (!src) return Promise.resolve();
-  const cacheKey = `${src}__${crossOrigin || ""}`;
-  if (imageCache.has(cacheKey)) return Promise.resolve();
+  const cacheKey = `${src}__${crossOrigin || ''}`;
+  if (imageCache.has(cacheKey)) {
+    touchCacheKey(cacheKey);
+    return Promise.resolve();
+  }
 
   return new Promise<void>((resolve) => {
     const img = new Image();
@@ -31,14 +67,10 @@ export function preloadImageIntoCache(src: string, crossOrigin?: string): Promis
 
     img.onload = () => {
       const finish = () => {
-        if (imageCache.size >= 200) {
-          const firstKey = imageCache.keys().next().value;
-          if (firstKey) imageCache.delete(firstKey);
-        }
-        imageCache.set(cacheKey, img);
+        setWithLRU(cacheKey, img);
         resolve();
       };
-      if (typeof img.decode === "function") {
+      if (typeof img.decode === 'function') {
         img.decode().then(finish).catch(finish);
       } else {
         finish();
@@ -54,13 +86,16 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
   // فيطلق queueMicrotask + re-render إضافي حتى للصور المتواجدة مسبقاً في الكاش
   const [image, setImage] = useState<HTMLImageElement | undefined>(() => {
     if (!src) return undefined;
-    const cached = imageCache.get(`${src}__${crossOrigin || ""}`);
+    const cacheKey = `${src}__${crossOrigin || ''}`;
+    const cached = imageCache.get(cacheKey);
+    // لمس LRU عند الإصابة من المهيئ الكسول — القراءة وحدها لا تحرّك ترتيب Map.
+    if (cached) touchCacheKey(cacheKey);
     return cached && cached.complete ? cached : undefined;
   });
-  const [status, setStatus] = useState<"loading" | "loaded" | "failed">(() => {
-    if (!src) return "failed";
-    const cached = imageCache.get(`${src}__${crossOrigin || ""}`);
-    return cached && cached.complete ? "loaded" : "loading";
+  const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>(() => {
+    if (!src) return 'failed';
+    const cached = imageCache.get(`${src}__${crossOrigin || ''}`);
+    return cached && cached.complete ? 'loaded' : 'loading';
   });
 
   useEffect(() => {
@@ -70,16 +105,18 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
       queueMicrotask(() => {
         if (!isCurrent) return;
         setImage(undefined);
-        setStatus("failed");
+        setStatus('failed');
       });
       return () => {
         isCurrent = false;
       };
     }
 
-    const cacheKey = `${src}__${crossOrigin || ""}`;
+    const cacheKey = `${src}__${crossOrigin || ''}`;
     const cached = imageCache.get(cacheKey);
     if (cached && cached.complete) {
+      // لمس LRU: إصابة الكاش عند تغيّر src تُحدّث الحداثة أيضاً.
+      touchCacheKey(cacheKey);
       // الحالة الأولية أصيبت تزامنياً من lazy initializer — هذا المسار يخدم
       // فقط تغييرات src اللاحقة على مثيل مركّب. microtask يبقي التحديث خارج
       // جسم الـ effect المتزامن (react-hooks/set-state-in-effect) مع بقاء
@@ -87,7 +124,7 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
       queueMicrotask(() => {
         if (!isCurrent) return;
         setImage((prev) => (prev === cached ? prev : cached));
-        setStatus((prev) => (prev === "loaded" ? prev : "loaded"));
+        setStatus((prev) => (prev === 'loaded' ? prev : 'loaded'));
       });
       return () => {
         isCurrent = false;
@@ -95,7 +132,7 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
     }
 
     queueMicrotask(() => {
-      if (isCurrent) setStatus("loading");
+      if (isCurrent) setStatus('loading');
     });
 
     const pending = pendingLoads.get(cacheKey);
@@ -104,12 +141,12 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
         .then((loadedImg) => {
           if (!isCurrent) return;
           setImage(loadedImg);
-          setStatus("loaded");
+          setStatus('loaded');
         })
         .catch(() => {
           if (!isCurrent) return;
           setImage(undefined);
-          setStatus("failed");
+          setStatus('failed');
         });
       return () => {
         isCurrent = false;
@@ -124,22 +161,16 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
     const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
       img.onload = () => {
         const finish = () => {
-          // Implement LRU-like limit to prevent unbounded memory growth
-          if (imageCache.size >= 200) {
-            const firstKey = imageCache.keys().next().value;
-            if (firstKey) imageCache.delete(firstKey);
-          }
-          
-          imageCache.set(cacheKey, img);
+          setWithLRU(cacheKey, img);
           pendingLoads.delete(cacheKey);
           if (isCurrent) {
             setImage(img);
-            setStatus("loaded");
+            setStatus('loaded');
           }
           resolve(img);
         };
 
-        if (typeof img.decode === "function") {
+        if (typeof img.decode === 'function') {
           img.decode().then(finish).catch(finish);
         } else {
           finish();
@@ -149,9 +180,9 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
       img.onerror = () => {
         pendingLoads.delete(cacheKey);
         if (isCurrent) {
-          console.error("[useAsyncImage] Failed to load image:", src);
+          console.error('[useAsyncImage] Failed to load image:', src);
           setImage(undefined);
-          setStatus("failed");
+          setStatus('failed');
         }
         reject(new Error(`Failed to load image: ${src}`));
       };

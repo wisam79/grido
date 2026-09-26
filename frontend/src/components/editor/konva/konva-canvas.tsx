@@ -1,17 +1,17 @@
-import React, { useRef, useEffect } from "react";
-import { Stage, Layer } from "react-konva";
-import Konva from "konva";
-import type { KonvaEventObject } from "konva/lib/Node";
-import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import { useStageRef } from "@/lib/canvas/stage-context";
-import { SnapGuide } from "@/lib/canvas/snap-utils";
-import { useShallow } from "zustand/react/shallow";
-import { registerDragLayer, registerDragExtrasProvider } from "./drag-layer";
-import "@/lib/filters/custom-filters";
+import React, { useRef, useEffect } from 'react';
+import { Stage, Layer } from 'react-konva';
+import Konva from 'konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
+import { useEditorStore, CanvasElement } from '@/lib/editor-store';
+import { useStageRef } from '@/lib/canvas/stage-context';
+import { SnapGuide } from '@/lib/canvas/snap-utils';
+import { useShallow } from 'zustand/react/shallow';
+import { registerDragLayer, registerDragExtrasProvider } from './drag-layer';
+import '@/lib/filters/custom-filters';
 
-import { KonvaBackgroundLayer } from "./layers/konva-background-layer";
-import { KonvaCollageLayer } from "./layers/konva-collage-layer";
-import { KonvaSingleLayer } from "./layers/konva-single-layer";
+import { KonvaBackgroundLayer } from './layers/konva-background-layer';
+import { KonvaCollageLayer } from './layers/konva-collage-layer';
+import { KonvaSingleLayer } from './layers/konva-single-layer';
 
 interface KonvaCanvasProps {
   displayW: number;
@@ -32,7 +32,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   setActiveGuides,
   handleSlotClick,
   handleSlotDblClick,
-  onContextMenu
+  onContextMenu,
 }: KonvaCanvasProps) {
   const wheelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const slotZoomFrameRef = useRef<number | null>(null);
@@ -68,68 +68,96 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const updateSlot = useEditorStore((s) => s.updateSlot);
   const pushHistory = useEditorStore((s) => s.pushHistory);
 
-  const handleSlotWheel = React.useCallback((slot: { id: string; imageSrc?: string; zoom?: number }, e: KonvaEventObject<WheelEvent>) => {
-    // إيماءة Ctrl+عجلة مخصصة لتكبير الكانفس — لا نكبّر الصورة والكانفس معاً
-    if (e.evt.ctrlKey || e.evt.metaKey) return;
-    if (!slot.imageSrc || useEditorStore.getState().selectedId !== slot.id) return;
+  const handleSlotWheel = React.useCallback(
+    (slot: { id: string; imageSrc?: string; zoom?: number }, e: KonvaEventObject<WheelEvent>) => {
+      // إيماءة Ctrl+عجلة مخصصة لتكبير الكانفس — لا نكبّر الصورة والكانفس معاً
+      if (e.evt.ctrlKey || e.evt.metaKey) return;
+      if (!slot.imageSrc || useEditorStore.getState().selectedId !== slot.id) return;
 
-    e.evt.preventDefault();
-    const pendingZoom = pendingSlotZoomsRef.current.get(slot.id);
-    const currentZoom = pendingZoom ?? slot.zoom ?? 1;
-    const step = e.evt.deltaY < 0 ? 0.05 : -0.05;
-    pendingSlotZoomsRef.current.set(slot.id, Math.min(3, Math.max(1, currentZoom + step)));
+      e.evt.preventDefault();
+      const pendingZoom = pendingSlotZoomsRef.current.get(slot.id);
+      const currentZoom = pendingZoom ?? slot.zoom ?? 1;
+      const step = e.evt.deltaY < 0 ? 0.05 : -0.05;
+      pendingSlotZoomsRef.current.set(slot.id, Math.min(3, Math.max(1, currentZoom + step)));
 
-    if (slotZoomFrameRef.current === null) {
-      slotZoomFrameRef.current = requestAnimationFrame(() => {
-        slotZoomFrameRef.current = null;
-        for (const [slotId, zoom] of pendingSlotZoomsRef.current) {
-          updateSlot(slotId, { zoom });
-        }
-        pendingSlotZoomsRef.current.clear();
-      });
-    }
+      if (slotZoomFrameRef.current === null) {
+        slotZoomFrameRef.current = requestAnimationFrame(() => {
+          slotZoomFrameRef.current = null;
+          for (const [slotId, zoom] of pendingSlotZoomsRef.current) {
+            updateSlot(slotId, { zoom });
+          }
+          pendingSlotZoomsRef.current.clear();
+        });
+      }
 
-    if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
-    wheelTimeoutRef.current = setTimeout(() => {
-      pushHistory();
-      wheelTimeoutRef.current = null;
-    }, 500);
-  }, [pushHistory, updateSlot]);
+      if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
+      wheelTimeoutRef.current = setTimeout(() => {
+        pushHistory();
+        wheelTimeoutRef.current = null;
+      }, 500);
+    },
+    [pushHistory, updateSlot],
+  );
 
-  const grid = useEditorStore(useShallow((s) => ({
-    showGrid: s.showGrid,
-    gridSize: s.gridSize,
-    gridColor: s.gridColor,
-    gridOpacity: s.gridOpacity,
-    gridSubdivisions: s.gridSubdivisions,
-    gridType: s.gridType,
-  })));
+  const grid = useEditorStore(
+    useShallow((s) => ({
+      showGrid: s.showGrid,
+      gridSize: s.gridSize,
+      gridColor: s.gridColor,
+      gridOpacity: s.gridOpacity,
+      gridSubdivisions: s.gridSubdivisions,
+      gridType: s.gridType,
+    })),
+  );
   const { showGrid, gridSize, gridColor, gridOpacity, gridSubdivisions, gridType } = grid;
 
-  const columns = useEditorStore(useShallow((s) => ({
-    showColumns: s.showColumns,
-    columnsCount: s.columnsCount,
-    columnsColor: s.columnsColor,
-    columnsMargin: s.columnsMargin,
-    columnsGutter: s.columnsGutter,
-  })));
+  const columns = useEditorStore(
+    useShallow((s) => ({
+      showColumns: s.showColumns,
+      columnsCount: s.columnsCount,
+      columnsColor: s.columnsColor,
+      columnsMargin: s.columnsMargin,
+      columnsGutter: s.columnsGutter,
+    })),
+  );
   const { showColumns, columnsCount, columnsColor, columnsMargin, columnsGutter } = columns;
 
-  const collage = useEditorStore(useShallow((s) => ({
-    slots: s.slots,
-    collageGap: s.collageGap,
-    collageMargin: s.collageMargin,
-    collageTemplate: s.collageTemplate,
-    collageRadius: s.collageRadius,
-    collageShowCutLines: s.collageShowCutLines,
-    collageShowEndCutLine: s.collageShowEndCutLine,
-    collageStrokeWidth: s.collageStrokeWidth,
-    collageStrokeColor: s.collageStrokeColor,
-  })));
-  const { slots, collageGap, collageMargin, collageTemplate, collageRadius, collageShowCutLines, collageShowEndCutLine, collageStrokeWidth, collageStrokeColor } = collage;
+  const collage = useEditorStore(
+    useShallow((s) => ({
+      slots: s.slots,
+      collageGap: s.collageGap,
+      collageMargin: s.collageMargin,
+      collageTemplate: s.collageTemplate,
+      collageRadius: s.collageRadius,
+      collageShowCutLines: s.collageShowCutLines,
+      collageShowEndCutLine: s.collageShowEndCutLine,
+      collageStrokeWidth: s.collageStrokeWidth,
+      collageStrokeColor: s.collageStrokeColor,
+    })),
+  );
+  const {
+    slots,
+    collageGap,
+    collageMargin,
+    collageTemplate,
+    collageRadius,
+    collageShowCutLines,
+    collageShowEndCutLine,
+    collageStrokeWidth,
+    collageStrokeColor,
+  } = collage;
 
   const trRef = useRef<Konva.Transformer | null>(null);
   const dragLayerRef = useRef<Konva.Layer | null>(null);
+  // 🛡️ ref مستقر الهوية لطبقة السحب: دالة ref مضمّنة تُخلق من جديد مع كل
+  // رندر، فيستدعيها React بالقيمة null ثم بالطبقة عند كل إعادة رندر — وكان
+  // null يُسقط التسجيل ويمسح home/touchedLayers أثناء السحب النشط. بالهوية
+  // المستقرة لا يصل null إلا عند unmount الحقيقي، فيُنظَّف التسجيل قصداً
+  // (registerDragLayer(null) يصفّر الحالة كما صُمم في drag-layer.ts).
+  const handleDragLayerRef = React.useCallback((l: Konva.Layer | null) => {
+    dragLayerRef.current = l;
+    registerDragLayer(l);
+  }, []);
   const elementsRefs = useRef<Record<string, Konva.Node>>({});
   // 🚀 آخر عقد مربوطة بالمحول — تخطي nodes()+forceUpdate()+batchDraw()
   // عندما لا يتغير شيء فعلياً (sortedElements تتبدل هويتها مع كل tick ستور).
@@ -146,7 +174,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       if (!tr) return [];
       const nodes: Konva.Node[] = [tr];
       try {
-        const badge = tr.getParent()?.findOne(".transformer-badge");
+        const badge = tr.getParent()?.findOne('.transformer-badge');
         if (badge) nodes.push(badge as unknown as Konva.Node);
       } catch {
         // بلا شارة — المحوّل وحده كافٍ
@@ -165,12 +193,12 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Alt") altPressedRef.current = true;
-      if (e.key === "Shift") shiftPressedRef.current = true;
+      if (e.key === 'Alt') altPressedRef.current = true;
+      if (e.key === 'Shift') shiftPressedRef.current = true;
     };
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "Alt") altPressedRef.current = false;
-      if (e.key === "Shift") shiftPressedRef.current = false;
+      if (e.key === 'Alt') altPressedRef.current = false;
+      if (e.key === 'Shift') shiftPressedRef.current = false;
     };
     // مع Alt+Tab يُسرق حدث keyup فيبقى Alt/Shift «عالقاً» —
     // نصفّر المراجع عند فقدان النافذة للتركيز أو إخفائها.
@@ -181,15 +209,15 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     const handleVisibility = () => {
       if (document.hidden) resetKeys();
     };
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    window.addEventListener("blur", resetKeys);
-    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', resetKeys);
+    document.addEventListener('visibilitychange', handleVisibility);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      window.removeEventListener("blur", resetKeys);
-      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', resetKeys);
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, []);
 
@@ -201,13 +229,10 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       attachedTrInstanceRef.current = null;
       return;
     }
-    if (mode === "single" && selectedIds.length > 0) {
-      const nodes = selectedIds
-        .map((id) => elementsRefs.current[id])
-        .filter(Boolean);
+    if (mode === 'single' && selectedIds.length > 0) {
+      const nodes = selectedIds.map((id) => elementsRefs.current[id]).filter(Boolean);
       const prev = attachedTrNodesRef.current;
-      const sameNodes =
-        nodes.length === prev.length && nodes.every((n, i) => n === prev[i]);
+      const sameNodes = nodes.length === prev.length && nodes.every((n, i) => n === prev[i]);
       // إذا كانت العقد متطابقة (لا إعادة ربط)، حدّث الصندوق المحيط للمحوّل فقط.
       // 🔒 نحترم حاجز الإيماءة نفسه الذي يفرضه Konva داخلياً
       // (`if (!this._transforming && !this.isDragging()) this.update()`) لأن
@@ -237,50 +262,62 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   }, [selectedIds, mode, sortedElements]);
 
   const handleStageMouseDown = (e: KonvaEventObject<MouseEvent>) => {
-    const isBackgroundOrEmpty = e.target === e.target.getStage() || e.target.hasName("bg-rect");
+    const isBackgroundOrEmpty = e.target === e.target.getStage() || e.target.hasName('bg-rect');
     if (isBackgroundOrEmpty) {
       selectElement(null);
     }
   };
 
-  const handleElementChange = React.useCallback((id: string, patch: Partial<CanvasElement>) => {
-    updateElement(id, patch);
-  }, [updateElement]);
-
-  const createElementMouseDown = React.useCallback((elId: string) => (e: KonvaEventObject<MouseEvent>) => {
-    const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
-    if (!isMulti) {
-      const { selectedIds } = useEditorStore.getState();
-      if (!selectedIds.includes(elId)) {
-        selectElement(elId);
-      }
-    } else {
-      toggleElementSelection(elId);
-    }
-  }, [selectElement, toggleElementSelection]);
-
-  const createElementClick = React.useCallback((elId: string) => (e: KonvaEventObject<MouseEvent>) => {
-    const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
-    if (!isMulti) {
-      const { selectedIds } = useEditorStore.getState();
-      if (selectedIds.includes(elId)) {
-        selectElement(elId);
-      }
-    }
-  }, [selectElement]);
-
-  const createElementRef = React.useCallback((elId: string) => ({
-    get current() {
-      return elementsRefs.current[elId];
+  const handleElementChange = React.useCallback(
+    (id: string, patch: Partial<CanvasElement>) => {
+      updateElement(id, patch);
     },
-    set current(val: Konva.Node | null) {
-      if (val) {
-        elementsRefs.current[elId] = val;
+    [updateElement],
+  );
+
+  const createElementMouseDown = React.useCallback(
+    (elId: string) => (e: KonvaEventObject<MouseEvent>) => {
+      const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
+      if (!isMulti) {
+        const { selectedIds } = useEditorStore.getState();
+        if (!selectedIds.includes(elId)) {
+          selectElement(elId);
+        }
       } else {
-        delete elementsRefs.current[elId];
+        toggleElementSelection(elId);
       }
-    }
-  }), []);
+    },
+    [selectElement, toggleElementSelection],
+  );
+
+  const createElementClick = React.useCallback(
+    (elId: string) => (e: KonvaEventObject<MouseEvent>) => {
+      const isMulti = e?.evt?.shiftKey || e?.evt?.ctrlKey || e?.evt?.metaKey;
+      if (!isMulti) {
+        const { selectedIds } = useEditorStore.getState();
+        if (selectedIds.includes(elId)) {
+          selectElement(elId);
+        }
+      }
+    },
+    [selectElement],
+  );
+
+  const createElementRef = React.useCallback(
+    (elId: string) => ({
+      get current() {
+        return elementsRefs.current[elId];
+      },
+      set current(val: Konva.Node | null) {
+        if (val) {
+          elementsRefs.current[elId] = val;
+        } else {
+          delete elementsRefs.current[elId];
+        }
+      },
+    }),
+    [],
+  );
 
   return (
     <Stage
@@ -298,7 +335,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       ref={(stage) => {
         stageContextRef.current = stage;
         // 🧪 DEV-only: مقبض اختبار E2E لفحص المحوّل (يُزال من الإنتاج بالتقسيم الميت)
-        if (import.meta.env.DEV && typeof window !== "undefined") {
+        if (import.meta.env.DEV && typeof window !== 'undefined') {
           (window as unknown as { __gridoStage?: Konva.Stage | null }).__gridoStage = stage;
         }
       }}
@@ -323,7 +360,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
         columnsColor={columnsColor}
       />
 
-      {mode === "collage" && (
+      {mode === 'collage' && (
         <KonvaCollageLayer
           slots={slots}
           canvasWidth={canvasWidth}
@@ -345,7 +382,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
         />
       )}
 
-      {mode === "single" && (
+      {mode === 'single' && (
         <KonvaSingleLayer
           sortedElements={sortedElements}
           selectedIds={selectedIds}
@@ -369,13 +406,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
 
       {/* 🚀 طبقة السحب الرسمية (Konva drag-layer pattern): تستقبل العقدة
           المسحوبة أثناء السحب فقط، فتُرسم عقدة واحدة لا الطبقة كاملة. */}
-      <Layer
-        ref={(l) => {
-          dragLayerRef.current = l;
-          registerDragLayer(l);
-        }}
-        listening={false}
-      />
+      <Layer ref={handleDragLayerRef} listening={false} />
     </Stage>
   );
 });

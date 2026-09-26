@@ -89,7 +89,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=85
+vitest_test_files=86
 e2e_spec_files=25
 go_test_files=30
 docs_files=6
@@ -97,12 +97,12 @@ docs_files=6
 
 الأرقام التي تحتاج تشغيل اختبارات لا تُوضع في البلوك الآلي، بل في الجدول التالي وتُحدَّث عند تغيّر الاختبارات:
 
-| الرقم | القيمة (تحقق: 2026-09-25) | أمر التحقق |
+| الرقم | القيمة (تحقق: 2026-09-26) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | 700 حالة (699 ناجحة + 1 متخطّاة) في 85 ملفاً — تحقق: 2026-09-26 | `cd frontend && npm run test` |
+| حالات Vitest | 703 حالة (702 ناجحة + 1 متخطّاة) في 86 ملفاً — تحقق: 2026-09-26 | `cd frontend && npm run test` |
 | حالات E2E | 165 حالة في 25 ملف مواصفة (كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
-| دوال اختبار Go | 154 دالة في 30 ملفاً — تحقق: 2026-09-25 | `go test ./internal/... -list "^Test"` |
+| دوال اختبار Go | 155 دالة في 30 ملفاً — تحقق: 2026-09-26 | `go test ./internal/... -list "^Test"` |
 | عدد صفائح الحصص اليومية | free 5 / pro 15 / enterprise 50 | `internal/service/ai_service.go` + migration `20260730000000` + `use-ai-enhance.ts` (ثلاثة مواضع متزامنة — قرار محمي) |
 
 > ⚠️ **تحذير أدوات:** `go vet ./...` و `go build ./...` يفشلان بسبب مجلد قالب Wails `build/ios/scripts/deps` (خارج نطاق التطبيق). استخدم دائماً `go vet ./internal/...` و `go build .`.

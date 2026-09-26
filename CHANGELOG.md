@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (الأمان وسلامة البيانات — 2026-09-26)
+
+- **🔴 دورة حياة الحجر الصحي وحماية أصول الوسائط من المحو الصامت (`[C-04]`):**
+  - **المشكلة:** دالة `moveUnreferencedToTrash` كانت تستخدم `os.Rename` الذي يحتفظ بـ `ModTime` الأصلي. بالتالي فإن الملفات غير المرجعية التي مضى عليها أكثر من 30 يوماً كانت تُنقل إلى `MediaTrash` ثم تُحذف نهائياً وفوراً في نفس الدورة بواسطة `purgeOldTrash` (نافذة استرداد = 0 ثانية).
+  - **الإصلاح:** إضافة `os.Chtimes(trashPath, now, now)` عند نقل الملفات إلى `MediaTrash` في كل من التنظيف الدوري التلقائي (`moveUnreferencedToTrash`) والتنظيف اليدوي الفوري (`CleanUnusedMediaNow`) لتبدأ مهلة الـ 30 يوماً من تاريخ النقل للحجر. وتصحيح احتساب مساحة وحجم الملفات المنظفة في التنظيف اليدوي بعد نجاح النقل الفعلي.
+  - **حماية الذاكرة ومنع التسريب في صور الواجهة (`useAsyncImage`):** تطبيق آلية LRU حقيقية (حد أقصى 100 عنصر مع تحديث الحداثة عند كل إصابة) وإسقاط مراجع الكاش عند الطرد/الإبطال **دون تصفير `src` الكائن الحي** الذي قد تكون عقدة Konva تعرضه — جامع القمامة يحرر الذاكرة عند زوال آخر مرجع.
+  - **حماية طبقة السحب الرسمية (`KonvaCanvas`):** دالة `ref` مستقرة الهوية (`useCallback`) — لا يصل `null` المُسقط للتسجيل إلا عند الـ unmount الحقيقي، فيُنظَّف `dragLayer` قصداً بدل مسح `home` أثناء السحب النشط عند كل إعادة رندر.
+
+
 ### Added (أتمتة الإصدار — 2026-09-26)
 
 - **`scripts/release.mjs` (مصدر واحد للإصدار):** يرفع النسخة في الملفات الستة (`build/config.yml` · `build/windows/info.json` · `build/windows/installer/project.nsi` · `build/windows/Taskfile.yml` · `frontend/package.json` + قفله) ويرقّي `[Unreleased]` إلى قسم مؤرّخ وينشئ التزاماً ووسماً تلقائياً — فلا يتخلّف أي ملف عن الوسم. أوضاع: `patch|minor|major|x.y.z` · `--dry-run` · `--no-git` · `--push` · و`--check` الذي يمنع الانحراف (مضمَّن في CI و`task release:check`). مهمة Taskfile: `task release -- patch`.

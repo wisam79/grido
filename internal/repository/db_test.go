@@ -209,6 +209,81 @@ func TestCleanupUnusedMedia(t *testing.T) {
 	}
 }
 
+func TestCleanupUnusedMedia_OldUnreferencedFileSurvivesOneCycle(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "grido-test-trash-grace-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	origAppData := os.Getenv("APPDATA")
+	origHome := os.Getenv("HOME")
+	origXdg := os.Getenv("XDG_CONFIG_HOME")
+	origAppDir := os.Getenv("GRIDO_APP_DIR")
+	defer func() {
+		os.Setenv("APPDATA", origAppData)
+		os.Setenv("HOME", origHome)
+		os.Setenv("XDG_CONFIG_HOME", origXdg)
+		os.Setenv("GRIDO_APP_DIR", origAppDir)
+	}()
+
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	os.Setenv("APPDATA", tempDir)
+	os.Setenv("HOME", tempDir)
+	os.Setenv("XDG_CONFIG_HOME", tempDir)
+	os.Setenv("GRIDO_APP_DIR", appDir)
+
+	mediaDir := filepath.Join(appDir, "Media")
+	trashDir := filepath.Join(appDir, "MediaTrash")
+	_ = os.MkdirAll(mediaDir, 0755)
+
+	// Create an unreferenced file older than 35 days (greater than the 30-day purge threshold)
+	oldImg := filepath.Join(mediaDir, "ancient-unreferenced.jpg")
+	_ = os.WriteFile(oldImg, []byte("ancient-data"), 0644)
+	ancientTime := time.Now().Add(-35 * 24 * time.Hour)
+	_ = os.Chtimes(oldImg, ancientTime, ancientTime)
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open test db: %v", err)
+	}
+	_ = db.AutoMigrate(&domain.Project{}, &domain.CustomTemplate{})
+
+	dbMu.Lock()
+	dbInstance = db
+	dbMu.Unlock()
+	defer func() {
+		dbMu.Lock()
+		dbInstance = nil
+		dbMu.Unlock()
+	}()
+
+	// Execute cleanup cycle.
+	// Without os.Chtimes in moveUnreferencedToTrash, ancient-unreferenced.jpg would be moved to trash
+	// and immediately purged in the very same runCleanupMedia() call (0s grace period).
+	runCleanupMedia()
+
+	// 1. Must be moved out of Media/
+	if _, err := os.Stat(oldImg); !os.IsNotExist(err) {
+		t.Error("expected ancient-unreferenced.jpg to be removed from Media/")
+	}
+
+	// 2. Must still exist in MediaTrash/ because its mtime was refreshed on move
+	trashImg := filepath.Join(trashDir, "ancient-unreferenced.jpg")
+	info, err := os.Stat(trashImg)
+	if os.IsNotExist(err) {
+		t.Fatal("CRITICAL DATA LOSS (C-04): ancient-unreferenced.jpg was purged in the same cycle as trash move!")
+	} else if err != nil {
+		t.Fatalf("unexpected stat error: %v", err)
+	}
+
+	// 3. mtime must be recent (fresh grace window of 30 days)
+	if time.Since(info.ModTime()) > 5*time.Minute {
+		t.Errorf("expected fresh mtime on trashed file, got %v", info.ModTime())
+	}
+}
+
+
 func TestCleanupUnusedMedia_CorruptAutosave(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "grido-test-corrupt-*")
 	if err != nil {
