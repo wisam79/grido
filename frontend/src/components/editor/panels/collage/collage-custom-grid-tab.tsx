@@ -52,22 +52,22 @@ function DocumentPresetGraphic({ type, active }: { type: string; active: boolean
     return (
       <div
         className={cn(
-          'w-7 h-7 rounded-md border border-dashed flex items-center justify-center transition-colors',
+          'w-9 h-9 rounded-md border border-dashed flex items-center justify-center transition-colors',
           activeBorder,
         )}
       >
-        <CornersOut className="w-3.5 h-3.5" weight="bold" />
+        <CornersOut className="w-4 h-4" weight="bold" />
       </div>
     );
   }
 
   // تمثيل نسبي دقيق لشكل وأبعاد كل وثيقة رسمية
   const ratioStyles: Record<string, string> = {
-    visa: 'w-5 h-5 rounded-md', // مربع 1:1
-    'iq-national-id': 'w-4 h-6 rounded-md', // 35:45 عمودي
-    'iq-civil-id': 'w-4 h-6 rounded-md', // 32:40 عمودي
-    'iq-general-id': 'w-4 h-6 rounded-md', // 40:60 عمودي مستطيل
-    'iq-transactions': 'w-4 h-5 rounded-md', // 30:40 مدمج
+    visa: 'w-6 h-6 rounded-md', // مربع 1:1
+    'iq-national-id': 'w-5 h-7 rounded-md', // 35:45 عمودي
+    'iq-civil-id': 'w-5 h-7 rounded-md', // 32:40 عمودي
+    'iq-general-id': 'w-5 h-8 rounded-md', // 40:60 عمودي مستطيل
+    'iq-transactions': 'w-5 h-6 rounded-md', // 30:40 مدمج
   };
   const styleClass = ratioStyles[type] || 'w-4 h-6 rounded-md';
 
@@ -80,8 +80,8 @@ function DocumentPresetGraphic({ type, active }: { type: string; active: boolean
         activeBorder,
       )}
     >
-      <div className="w-2 h-2 rounded-full border border-current opacity-85 mt-0.5 shrink-0" />
-      <div className="w-3 h-1.5 rounded-t-full bg-current opacity-60 -mb-0.5 shrink-0" />
+      <div className="w-2.5 h-2.5 rounded-full border border-current opacity-85 mt-0.5 shrink-0" />
+      <div className="w-3.5 h-2 rounded-t-full bg-current opacity-60 -mb-0.5 shrink-0" />
     </div>
   );
 }
@@ -418,7 +418,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           </span>
         }
       >
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-2 gap-2">
           {PHOTO_TYPE_OPTIONS.map((opt) => {
             const isActive = photoType === opt.value;
             return (
@@ -429,26 +429,26 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 title={`${opt.label} — ${opt.dim}`}
                 onClick={() => onPhotoTypeChange(opt.value as PhotoGridType)}
                 className={cn(
-                  'h-8 px-2 rounded-md border font-sans transition-colors cursor-pointer select-none flex items-center gap-2 text-right',
+                  'min-h-[52px] py-1.5 px-2 rounded-lg border font-sans transition-colors cursor-pointer select-none flex items-center gap-2.5 text-right',
                   isActive
                     ? 'border-primary bg-primary/10 shadow-2xs'
                     : 'bg-background/80 border-border/60 hover:bg-muted/50 hover:border-primary/40',
                   FOCUS_RING,
                 )}
               >
-                <span className="w-7 h-7 rounded-md bg-muted/50 border border-border/50 flex items-center justify-center shrink-0">
+                <span className="w-9 h-9 rounded-md bg-muted/50 border border-border/50 flex items-center justify-center shrink-0">
                   <DocumentPresetGraphic type={opt.value} active={isActive} />
                 </span>
-                <span className="min-w-0 flex-1 leading-tight text-right font-sans">
+                <span className="min-w-0 flex-1 leading-snug text-right font-sans">
                   <span
                     className={cn(
-                      'block text-xs truncate',
+                      'block text-xs',
                       isActive ? 'text-primary font-semibold' : 'text-foreground font-medium',
                     )}
                   >
                     {opt.label}
                   </span>
-                  <span className="flex items-center gap-1 text-micro text-muted-foreground font-mono mt-0.5">
+                  <span className="flex items-center gap-1 text-mini text-muted-foreground font-mono mt-1">
                     <span dir="ltr" className="text-foreground/75">
                       {opt.dim}
                     </span>
@@ -456,7 +456,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   </span>
                 </span>
                 {/* تأكيد بصري غير لوني للخيار المحدد */}
-                {isActive && <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />}
+                {isActive && <Check className="w-4 h-4 text-primary shrink-0" weight="bold" />}
               </button>
             );
           })}
