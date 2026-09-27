@@ -39,6 +39,8 @@ import {
   ArrowExpandRegular as _ArrowExpandR,
   ArrowExportLtrFilled as _ArrowExportLtrF,
   ArrowExportLtrRegular as _ArrowExportLtrR,
+  ArrowExportUpFilled as _ArrowExportUpF,
+  ArrowExportUpRegular as _ArrowExportUpR,
   ArrowFitInFilled as _ArrowFitInF,
   ArrowFitInRegular as _ArrowFitInR,
   ArrowLeftFilled as _ArrowLeftF,
@@ -519,7 +521,11 @@ export const DownloadSimple: Icon = createIcon({ R: _ArrowDownloadR, F: _ArrowDo
 export const Drop: Icon = createIcon({ R: _DropR, F: _DropF });
 export const EnvelopeSimple: Icon = createIcon({ R: _MailR, F: _MailF });
 export const Eraser: Icon = createIcon({ R: _EraserR, F: _EraserF });
-export const Export: Icon = createIcon({ R: _ArrowExportLtrR, F: _ArrowExportLtrF });
+// أيقونة التصدير: سهم يصعد من صينية مفتوحة (ArrowExportUp) — الرمز الكلاسيكي
+// للتصدير ومحايد الاتجاه، بدل ArrowExportLtr الذي كان يوحي باتجاه LTR معكوس
+// في واجهة RTL. النسخة القديمة متاحة باسم ExportLtr للتوافق.
+export const Export: Icon = createIcon({ R: _ArrowExportUpR, F: _ArrowExportUpF });
+export const ExportLtr: Icon = createIcon({ R: _ArrowExportLtrR, F: _ArrowExportLtrF });
 export const Eye: Icon = createIcon({ R: _EyeR, F: _EyeF });
 export const EyeSlash: Icon = createIcon({ R: _EyeOffR, F: _EyeOffF });
 export const Eyedropper: Icon = createIcon({ R: _EyedropperR, F: _EyedropperF });
