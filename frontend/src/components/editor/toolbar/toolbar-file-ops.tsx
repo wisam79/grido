@@ -1,23 +1,17 @@
-import { useState, useEffect, useRef, Suspense } from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { Button } from "@/components/ui/button";
-import { useShallow } from "zustand/react/shallow";
-import { FluentTooltip as TooltipBtn } from "@/components/ui/blocks";
-import { toast } from "sonner";
-import {
-  Stack,
-  Folders,
-  Broom,
-  DeviceMobileCamera,
-  CaretDown,
-} from "@/components/ui/icons";
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import { Button } from '@/components/ui/button';
+import { useShallow } from 'zustand/react/shallow';
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
+import { toast } from 'sonner';
+import { Stack, Folders, DeviceMobileCamera, CaretDown } from '@/components/ui/icons';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { AddPhotoIcon } from "@/components/ui/image-icons";
+} from '@/components/ui/dropdown-menu';
+import { AddPhotoIcon } from '@/components/ui/image-icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,21 +21,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { ProjectsDialog } from "../dialogs/projects-dialog";
-import { BatchInsertDialog } from "../dialogs/batch-insert-dialog";
-import { PhoneBridgeDialog } from "../dialogs/phone-bridge-dialog";
-import { ClearAutoSave, SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
-import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
-import { wailsIsDesktop } from "@/lib/wails-env";
-import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
+} from '@/components/ui/alert-dialog';
+import { ProjectsDialog } from '../dialogs/projects-dialog';
+import { BatchInsertDialog } from '../dialogs/batch-insert-dialog';
+import { PhoneBridgeDialog } from '../dialogs/phone-bridge-dialog';
+import { ClearAutoSave, SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { wailsIsDesktop } from '@/lib/wails-env';
+import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 
 // معالجة متوازية مقيدة التزامن — تمنع تجميد الزر أثناء حفظ/قياس دفعات الصور
 // (التسلسل الكامل كان يفك ترميز كل صورة واحدة تلو الأخرى)
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
-  fn: (item: T, index: number) => Promise<R>
+  fn: (item: T, index: number) => Promise<R>,
 ): Promise<R[]> {
   const results = new Array<R>(items.length);
   let next = 0;
@@ -58,46 +52,44 @@ async function mapWithConcurrency<T, R>(
 export function ToolbarFileOps() {
   const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
-  const [projectsTab, setProjectsTab] = useState<"save" | "list">("save");
+  const [projectsTab, setProjectsTab] = useState<'save' | 'list'>('save');
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [isBatchInsertOpen, setIsBatchInsertOpen] = useState(false);
   const [isPhoneBridgeOpen, setIsPhoneBridgeOpen] = useState(false);
 
-  const {
-    mode,
-    slots,
-    setSlotImage,
-    addImageElement,
-    addImageElementsBatch,
-    selectedId,
-  } = useEditorStore(
-    useShallow((state) => ({
-      mode: state.mode,
-      slots: state.slots,
-      setSlotImage: state.setSlotImage,
-      addImageElement: state.addImageElement,
-      addImageElementsBatch: state.addImageElementsBatch,
-      template: state.template,
-      selectedId: state.selectedId,
-    }))
-  );
+  const { mode, slots, setSlotImage, addImageElement, addImageElementsBatch, selectedId } =
+    useEditorStore(
+      useShallow((state) => ({
+        mode: state.mode,
+        slots: state.slots,
+        setSlotImage: state.setSlotImage,
+        addImageElement: state.addImageElement,
+        addImageElementsBatch: state.addImageElementsBatch,
+        template: state.template,
+        selectedId: state.selectedId,
+      })),
+    );
 
   useEffect(() => {
     const openProjects = (e?: Event) => {
-      const customEvent = e as CustomEvent<{ tab?: "save" | "list" }> | undefined;
-      const targetTab = customEvent?.detail?.tab || "save";
+      const customEvent = e as CustomEvent<{ tab?: 'save' | 'list' }> | undefined;
+      const targetTab = customEvent?.detail?.tab || 'save';
       setProjectsTab(targetTab);
       setIsProjectsOpen(true);
     };
     const openBatch = () => setIsBatchInsertOpen(true);
     const openPhoneBridge = () => setIsPhoneBridgeOpen(true);
-    window.addEventListener("grido:open-projects-dialog", openProjects);
-    window.addEventListener("grido:open-batch-insert-dialog", openBatch);
-    window.addEventListener("grido:open-phone-bridge", openPhoneBridge);
+    // طلب المسح من قائمة «المزيد» في الشريط — نافذة التأكيد تبقى ملكاً لهذا المكوّن
+    const clearCanvasRequest = () => setIsClearAlertOpen(true);
+    window.addEventListener('grido:open-projects-dialog', openProjects);
+    window.addEventListener('grido:open-batch-insert-dialog', openBatch);
+    window.addEventListener('grido:open-phone-bridge', openPhoneBridge);
+    window.addEventListener('grido:clear-canvas-request', clearCanvasRequest);
     return () => {
-      window.removeEventListener("grido:open-projects-dialog", openProjects);
-      window.removeEventListener("grido:open-batch-insert-dialog", openBatch);
-      window.removeEventListener("grido:open-phone-bridge", openPhoneBridge);
+      window.removeEventListener('grido:open-projects-dialog', openProjects);
+      window.removeEventListener('grido:open-batch-insert-dialog', openBatch);
+      window.removeEventListener('grido:open-phone-bridge', openPhoneBridge);
+      window.removeEventListener('grido:clear-canvas-request', clearCanvasRequest);
     };
   }, []);
 
@@ -115,16 +107,16 @@ export function ToolbarFileOps() {
 
         const isWailsDesktop = wailsIsDesktop();
 
-        if (freshMode === "collage") {
+        if (freshMode === 'collage') {
           let localPaths: string[] = [];
           if (isWailsDesktop) {
             localPaths = await mapWithConcurrency(b64s, 4, async (b64) => {
-              if (b64.startsWith("data:image/")) {
+              if (b64.startsWith('data:image/')) {
                 try {
                   const localPath = await SaveImageFromBase64(b64);
                   if (localPath) return localPath;
                 } catch (e) {
-                  console.error("Failed to save image locally:", e);
+                  console.error('Failed to save image locally:', e);
                 }
               }
               return b64;
@@ -137,7 +129,7 @@ export function ToolbarFileOps() {
             const targetSlotId = freshSelectedId || freshSlots[0]?.id;
             if (targetSlotId) {
               freshState.setSlotImage(targetSlotId, localPaths[0]);
-              toast.success("تم الإدراج في الخلية");
+              toast.success('تم الإدراج في الخلية');
             }
           } else {
             // إدراج مجمّع بلقطة تراجع واحدة — الاستدعاء الفردي داخل الحلقة
@@ -152,27 +144,27 @@ export function ToolbarFileOps() {
           // الوضع الحر: عند اختيار صورة واحدة تُدرج كالمعتاد، وعند اختيار أكثر من صورة تُدرج بتوزيع شبكي ذكي وخطوة تراجع واحدة
           if (b64s.length === 1) {
             let finalSrc = b64s[0];
-            if (isWailsDesktop && finalSrc.startsWith("data:image/")) {
+            if (isWailsDesktop && finalSrc.startsWith('data:image/')) {
               try {
                 const localPath = await SaveImageFromBase64(finalSrc);
                 if (localPath) finalSrc = localPath;
               } catch (e) {
-                console.error("Failed to save image locally in single mode:", e);
+                console.error('Failed to save image locally in single mode:', e);
               }
             }
             const aspect = await resolveImageAspectRatio(finalSrc);
             freshState.addImageElement(finalSrc, aspect);
-            toast.success("تم إدراج الصورة");
+            toast.success('تم إدراج الصورة');
           } else {
             // حفظ وقياس متوازي (4 خيوط) بدل التسلسل الذي يجمد الزر مع الدفعات الكبيرة
             const items = await mapWithConcurrency(b64s, 4, async (b64) => {
               let finalSrc = b64;
-              if (isWailsDesktop && b64.startsWith("data:image/")) {
+              if (isWailsDesktop && b64.startsWith('data:image/')) {
                 try {
                   const localPath = await SaveImageFromBase64(b64);
                   if (localPath) finalSrc = localPath;
                 } catch (e) {
-                  console.error("Failed to save image locally in batch mode:", e);
+                  console.error('Failed to save image locally in batch mode:', e);
                 }
               }
               const aspect = await resolveImageAspectRatio(finalSrc);
@@ -185,7 +177,7 @@ export function ToolbarFileOps() {
       }
     } catch (e) {
       console.error(e);
-      toast.error("فشل فتح الصورة");
+      toast.error('فشل فتح الصورة');
     } finally {
       setIsFileDialogOpen(false);
     }
@@ -198,17 +190,13 @@ export function ToolbarFileOps() {
   });
   useEffect(() => {
     const openFile = () => openFileRef.current();
-    window.addEventListener("grido:open-file-dialog", openFile);
-    return () => window.removeEventListener("grido:open-file-dialog", openFile);
+    window.addEventListener('grido:open-file-dialog', openFile);
+    return () => window.removeEventListener('grido:open-file-dialog', openFile);
   }, []);
-
-  const handleClearCanvas = () => {
-    setIsClearAlertOpen(true);
-  };
 
   const confirmClearCanvas = () => {
     useEditorStore.getState().reset();
-    ClearAutoSave().catch((err) => console.error("Failed to clear autosave:", err));
+    ClearAutoSave().catch((err) => console.error('Failed to clear autosave:', err));
   };
 
   return (
@@ -244,7 +232,10 @@ export function ToolbarFileOps() {
                 </Button>
               </DropdownMenuTrigger>
             </TooltipBtn>
-            <DropdownMenuContent align="start" className="w-56 font-cairo [direction:rtl] rounded-xl backdrop-blur-2xl bg-popover/95 border border-border shadow-fluent-16 p-1.5 space-y-1">
+            <DropdownMenuContent
+              align="start"
+              className="w-56 font-cairo [direction:rtl] rounded-xl backdrop-blur-2xl bg-popover/95 border border-border shadow-fluent-16 p-1.5 space-y-1"
+            >
               <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 select-none">
                 خيارات الإدراج
               </div>
@@ -285,17 +276,24 @@ export function ToolbarFileOps() {
               variant="ghost"
               size="icon"
               onClick={() => {
-                setProjectsTab("list");
+                setProjectsTab('list');
                 setIsProjectsOpen(true);
               }}
               data-testid="toolbar-projects"
               aria-label="مكتبة المشاريع"
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer group"
             >
-              <Folders className="w-4 h-4 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all" weight="duotone" />
+              <Folders
+                className="w-4 h-4 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all"
+                weight="duotone"
+              />
             </Button>
           </TooltipBtn>
-          <ProjectsDialog open={isProjectsOpen} onOpenChange={setIsProjectsOpen} defaultTab={projectsTab} />
+          <ProjectsDialog
+            open={isProjectsOpen}
+            onOpenChange={setIsProjectsOpen}
+            defaultTab={projectsTab}
+          />
         </Suspense>
 
         {/* نافذة الإدراج المتعدد الذكي */}
@@ -305,21 +303,13 @@ export function ToolbarFileOps() {
         <PhoneBridgeDialog open={isPhoneBridgeOpen} onOpenChange={setIsPhoneBridgeOpen} />
       </div>
 
-      {/* مسح مساحة العمل */}
-      <TooltipBtn content="مسح مساحة العمل">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleClearCanvas}
-          aria-label="مسح مساحة العمل"
-          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all cursor-pointer group"
-        >
-          <Broom className="w-4 h-4 text-muted-foreground/90 group-hover:text-destructive group-hover:scale-105 transition-all" weight="duotone" />
-        </Button>
-      </TooltipBtn>
-
+      {/* مسح مساحة العمل — انتقل زره إلى قائمة «المزيد» (grido:clear-canvas-request)،
+          وتبقى نافذة التأكيد هنا لأن هذا المكوّن مالك حالة المسح */}
       <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
-        <AlertDialogContent dir="rtl" className="rounded-2xl border border-border/80 dark:border-white/10 fluent-specular shadow-fluent-28 bg-card/95 backdrop-blur-2xl">
+        <AlertDialogContent
+          dir="rtl"
+          className="rounded-2xl border border-border/80 dark:border-white/10 fluent-specular shadow-fluent-28 bg-card/95 backdrop-blur-2xl"
+        >
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-start">مسح مساحة العمل</AlertDialogTitle>
             <AlertDialogDescription className="font-cairo text-start">

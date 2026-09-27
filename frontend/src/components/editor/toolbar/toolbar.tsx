@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { FloppyDisk, Export, DotsThreeVertical, Folders } from '@/components/ui/icons';
+import { Broom, FloppyDisk, Export, DotsThreeVertical, Folders } from '@/components/ui/icons';
 import { PrintIcon } from '@/components/ui/print-icon';
 import { ToolbarFileOps } from './toolbar-file-ops';
 import {
@@ -25,6 +25,18 @@ interface ToolbarProps {
   onSave: () => void;
 }
 
+/**
+ * شريط الأدوات العلوي — توزيع احترافي بمنطق «ثابت → سياقي → أوامر»:
+ *
+ *   [ملف] | [تراجع/إعادة] | [إضافة عناصر] | [نقل للكولاج]  ← يسار (RTL)
+ *   [أدوات التحديد السياقية — تظهر عند التحديد]
+ *                                        [حفظ | طباعة | تصدير] [⋯] ← يمين
+ *
+ * - الترتيب من اليسار يتبع تدفق عمل المستخدم: إدخال → تعديل (تراجع/إضافة) →
+ *   إخراج (نقل/تحديد)، والأوامر النهائية مثبتة يميناً بلا إزاحة مهما تغيّر الوسط.
+ * - زر «مسح مساحة العمل» الأحمر انتقل إلى قائمة «المزيد» (⋯) — الإجراءات
+ *   المدمِّرة لا تُثبَّت في الشريط الرئيسي (مبدأ Fluent: تقليل الخطورة الدائمة).
+ */
 export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   return (
     <div
@@ -37,12 +49,12 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
             ⚠️ عند ضيق النافذة تُمرَّر هذه المجموعة أفقياً بلا شريط ظهور
             بدل أن يُقطع الطرف الآخر (الحفظ/الطباعة/التصدير). */}
         <div className="flex items-center gap-2 min-w-0 flex-1 overflow-x-auto scrollbar-none">
-          {/* المجموعة 1: إدارة الملفات والمستندات */}
+          {/* المجموعة 1: إدخال المحتوى — إدراج صور/مشاريع */}
           <ToolbarFileOps />
 
           <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
 
-          {/* المجموعة 2: التراجع والإعادة (مثبتة بشكل دائم لمنع أي إزاحة تخطيطية Layout Shift) */}
+          {/* المجموعة 2: التحرير — تراجع/إعادة (مثبتة بشكل دائم لمنع أي إزاحة تخطيطية Layout Shift) */}
           <ToolbarHistoryTools />
 
           <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
@@ -50,10 +62,10 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
           {/* المجموعة 3: إضافة عناصر (نص / أشكال / ملصقات) متاحة دائماً */}
           <ToolbarAddTools />
 
-          {/* بوابة المونتاج الطباعي: نقل وتكرار التصميم في شبكة الكولاج (تظهر في وضع التصميم الحر) */}
+          {/* المجموعة 4: إخراج التصميم — نقل وتكراره في شبكة الكولاج (وضع التصميم الحر) */}
           <ToolbarTransferToCollage />
 
-          {/* المجموعة 4: أدوات التحديد والسياق — تظهر بسلاسة عند تحديد عنصر */}
+          {/* المجموعة 5: أدوات التحديد والسياق — تظهر بسلاسة عند تحديد عنصر */}
           <ToolbarSelectionTools />
         </div>
 
@@ -112,7 +124,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
             </TooltipBtn>
           </div>
 
-          {/* قائمة المزيد للإجراءات السريعة */}
+          {/* قائمة المزيد: الإجراءات الأقل تكراراً والمدمِّرة بعيداً عن الشريط الرئيسي */}
           <DropdownMenu>
             <TooltipBtn content="المزيد من الخيارات">
               <DropdownMenuTrigger asChild>
@@ -169,6 +181,18 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
                 <div className="flex items-center gap-2">
                   <Folders className="w-4 h-4 text-muted-foreground" weight="duotone" />
                   <span>مكتبة المشاريع</span>
+                </div>
+              </DropdownMenuItem>
+
+              {/* مسح مساحة العمل — إجراء مدمِّر: قائمة تأكيد مستقلة (grido:clear-canvas) */}
+              <DropdownMenuSeparator className="my-1 border-border/50" />
+              <DropdownMenuItem
+                onClick={() => window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))}
+                className="flex items-center justify-between p-2 text-xs rounded-lg cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Broom className="w-4 h-4" weight="duotone" />
+                  <span className="font-semibold">مسح مساحة العمل…</span>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>

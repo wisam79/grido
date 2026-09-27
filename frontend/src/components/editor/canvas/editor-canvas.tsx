@@ -17,7 +17,7 @@ import { checkerColor, guideCenter, guideEdge } from '@/lib/canvas/canvas-colors
 import { computeCanvasDisplay } from '@/lib/canvas/fit';
 import { publishCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
 import { useCanvasViewport } from './use-canvas-viewport';
-import { useUserGuides } from './use-user-guides';
+import { useUserGuides, snapGuidePosToPixel } from './use-user-guides';
 import { useImageDrop } from './use-image-drop';
 import { useRulerMetricsPreview } from './use-ruler-metrics';
 import { CanvasBleedGuides } from './canvas-bleed-guides';
@@ -419,7 +419,10 @@ export const EditorCanvas = React.memo(
                         : 'top-0 bottom-0 w-4 -ml-2 cursor-ew-resize flex justify-center'
                   }`}
                   style={{
-                    [isH ? 'top' : 'left']: `${guide.pos * 100}%`,
+                    // التثبيت البصري على حافة بكسل مادية عند الرسم فقط — القيمة
+                    // المخزنة تبقى دقيقة، والخط يُرسم 1px حاد دائماً بلا تموّج
+                    [isH ? 'top' : 'left']:
+                      `${snapGuidePosToPixel(guide.pos, isH ? displayH : displayW) * 100}%`,
                     ...(lockUserGuides &&
                       (isH
                         ? {
@@ -518,7 +521,8 @@ export const EditorCanvas = React.memo(
                 : 'top-0 bottom-0 w-[1px] bg-primary flex justify-center'
             }`}
             style={{
-              [dragGuideState.type === 'h' ? 'top' : 'left']: `${dragGuideState.pos * 100}%`,
+              [dragGuideState.type === 'h' ? 'top' : 'left']:
+                `${snapGuidePosToPixel(dragGuideState.pos, dragGuideState.type === 'h' ? displayH : displayW) * 100}%`,
             }}
           >
             <div

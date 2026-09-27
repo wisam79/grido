@@ -130,7 +130,6 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
             </Button>
           </TooltipBtn>
         )}
-
         <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
         {/* محاذاة */}
