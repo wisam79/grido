@@ -1,5 +1,5 @@
 /* GENERATED FILE — central icon layer replacing @phosphor-icons/react with @fluentui/react-icons. Do not edit by hand. */
-import * as React from "react";
+import * as React from 'react';
 import {
   AddFilled as _AddF,
   AddRegular as _AddR,
@@ -285,6 +285,8 @@ import {
   SubtractRegular as _SubtractR,
   TagFilled as _TagF,
   TagRegular as _TagR,
+  TableArrowRepeatAllFilled as _TableArrowRepeatAllF,
+  TableArrowRepeatAllRegular as _TableArrowRepeatAllR,
   TargetFilled as _TargetF,
   TargetRegular as _TargetR,
   TextAlignCenterFilled as _TextAlignCenterF,
@@ -327,9 +329,9 @@ import {
   ZoomInRegular as _ZoomInR,
   ZoomOutFilled as _ZoomOutF,
   ZoomOutRegular as _ZoomOutR,
-} from "@fluentui/react-icons";
+} from '@fluentui/react-icons';
 
-export type IconWeight = "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
+export type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
 
 export interface IconProps extends React.SVGProps<SVGSVGElement> {
   size?: number | string;
@@ -340,7 +342,7 @@ export interface IconProps extends React.SVGProps<SVGSVGElement> {
 
 export type Icon = React.ComponentType<IconProps>;
 
-const DEFAULT_CONTEXT: IconProps = { size: "1em", weight: "regular", color: "currentColor" };
+const DEFAULT_CONTEXT: IconProps = { size: '1em', weight: 'regular', color: 'currentColor' };
 export const IconContext = React.createContext<IconProps>(DEFAULT_CONTEXT);
 
 interface Def {
@@ -349,11 +351,14 @@ interface Def {
 }
 
 function isFilled(weight?: IconWeight): boolean {
-  return weight === "fill" || weight === "bold" || weight === "duotone";
+  return weight === 'fill' || weight === 'bold' || weight === 'duotone';
 }
 
 function createIcon(def: Def): Icon {
-  const Comp: Icon = React.forwardRef<SVGSVGElement, IconProps>(function Icon({ size, weight, color, mirrored, style, className, ...rest }, ref) {
+  const Comp: Icon = React.forwardRef<SVGSVGElement, IconProps>(function Icon(
+    { size, weight, color, mirrored, style, className, ...rest },
+    ref,
+  ) {
     const ctx = React.useContext(IconContext);
     const resolvedSize = size ?? ctx.size ?? DEFAULT_CONTEXT.size;
     const resolvedWeight = weight ?? ctx.weight ?? DEFAULT_CONTEXT.weight;
@@ -365,54 +370,106 @@ function createIcon(def: Def): Icon {
       fontSize: resolvedSize,
       className,
       primaryFill: resolvedColor,
-      style: mirrored ? { ...style, transform: `scaleX(-1) ${style?.transform ?? ""}`.trim() } : style,
+      style: mirrored
+        ? { ...style, transform: `scaleX(-1) ${style?.transform ?? ''}`.trim() }
+        : style,
     });
   });
   return Comp;
 }
 
-export const CircleNotch: Icon = React.forwardRef<SVGSVGElement, IconProps>(function CircleNotch({ size, weight, className, style, mirrored, ...rest }, ref) {
+export const CircleNotch: Icon = React.forwardRef<SVGSVGElement, IconProps>(function CircleNotch(
+  { size, weight, className, style, mirrored, ...rest },
+  ref,
+) {
   const strokeWidth =
-    weight === "thin" ? 8 :
-    weight === "light" ? 12 :
-    weight === "bold" ? 24 :
-    weight === "fill" ? 24 :
-    weight === "duotone" ? 20 : 16;
-  return React.createElement("svg", {
-    ...rest, ref,
-    viewBox: "0 0 256 256", width: size ?? "1em", height: size ?? "1em",
-    className, style: mirrored ? { ...style, transform: `scaleX(-1) ${style?.transform ?? ""}`.trim() } : style,
-    fill: "none", stroke: "currentColor", strokeWidth, strokeLinecap: "round", strokeLinejoin: "round",
-  }, React.createElement("path", { d: "M224 128a96 96 0 1 1-96-96" }));
+    weight === 'thin'
+      ? 8
+      : weight === 'light'
+        ? 12
+        : weight === 'bold'
+          ? 24
+          : weight === 'fill'
+            ? 24
+            : weight === 'duotone'
+              ? 20
+              : 16;
+  return React.createElement(
+    'svg',
+    {
+      ...rest,
+      ref,
+      viewBox: '0 0 256 256',
+      width: size ?? '1em',
+      height: size ?? '1em',
+      className,
+      style: mirrored
+        ? { ...style, transform: `scaleX(-1) ${style?.transform ?? ''}`.trim() }
+        : style,
+      fill: 'none',
+      stroke: 'currentColor',
+      strokeWidth,
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
+    },
+    React.createElement('path', { d: 'M224 128a96 96 0 1 1-96-96' }),
+  );
 });
 
 export const AirplaneTilt: Icon = createIcon({ R: _AirplaneR, F: _AirplaneF });
 export const AlignBottom: Icon = createIcon({ R: _AlignBottomR, F: _AlignBottomF });
-export const AlignCenterHorizontal: Icon = createIcon({ R: _AlignCenterHorizontalR, F: _AlignCenterHorizontalF });
-export const AlignCenterVertical: Icon = createIcon({ R: _AlignCenterVerticalR, F: _AlignCenterVerticalF });
+export const AlignCenterHorizontal: Icon = createIcon({
+  R: _AlignCenterHorizontalR,
+  F: _AlignCenterHorizontalF,
+});
+export const AlignCenterVertical: Icon = createIcon({
+  R: _AlignCenterVerticalR,
+  F: _AlignCenterVerticalF,
+});
 export const AlignLeft: Icon = createIcon({ R: _AlignLeftR, F: _AlignLeftF });
 export const AlignRight: Icon = createIcon({ R: _AlignRightR, F: _AlignRightF });
 export const AlignTop: Icon = createIcon({ R: _AlignTopR, F: _AlignTopF });
 export const ArrowClockwise: Icon = createIcon({ R: _ArrowClockwiseR, F: _ArrowClockwiseF });
-export const ArrowCounterClockwise: Icon = createIcon({ R: _ArrowCounterclockwiseR, F: _ArrowCounterclockwiseF });
+export const ArrowCounterClockwise: Icon = createIcon({
+  R: _ArrowCounterclockwiseR,
+  F: _ArrowCounterclockwiseF,
+});
 export const ArrowDown: Icon = createIcon({ R: _ArrowDownR, F: _ArrowDownF });
 export const ArrowLeft: Icon = createIcon({ R: _ArrowLeftR, F: _ArrowLeftF });
 export const ArrowLineDown: Icon = createIcon({ R: _ArrowDownR, F: _ArrowDownF });
 export const ArrowRight: Icon = createIcon({ R: _ArrowRightR, F: _ArrowRightF });
-export const ArrowSquareOut: Icon = createIcon({ R: _ArrowSquareUpRightR, F: _ArrowSquareUpRightF });
+export const ArrowSquareOut: Icon = createIcon({
+  R: _ArrowSquareUpRightR,
+  F: _ArrowSquareUpRightF,
+});
 export const ArrowUUpLeft: Icon = createIcon({ R: _ArrowUndoR, F: _ArrowUndoF });
 export const ArrowUUpRight: Icon = createIcon({ R: _ArrowRedoR, F: _ArrowRedoF });
 export const ArrowUp: Icon = createIcon({ R: _ArrowUpR, F: _ArrowUpF });
 export const ArrowUpLeft: Icon = createIcon({ R: _ArrowUpLeftR, F: _ArrowUpLeftF });
 export const ArrowsClockwise: Icon = createIcon({ R: _ArrowSyncR, F: _ArrowSyncF });
-export const ArrowsCounterClockwise: Icon = createIcon({ R: _ArrowCounterclockwiseR, F: _ArrowCounterclockwiseF });
-export const ArrowsDownUp: Icon = createIcon({ R: _ArrowBidirectionalUpDownR, F: _ArrowBidirectionalUpDownF });
-export const ArrowsHorizontal: Icon = createIcon({ R: _ArrowBidirectionalLeftRightR, F: _ArrowBidirectionalLeftRightF });
+export const ArrowsCounterClockwise: Icon = createIcon({
+  R: _ArrowCounterclockwiseR,
+  F: _ArrowCounterclockwiseF,
+});
+export const ArrowsDownUp: Icon = createIcon({
+  R: _ArrowBidirectionalUpDownR,
+  F: _ArrowBidirectionalUpDownF,
+});
+export const ArrowsHorizontal: Icon = createIcon({
+  R: _ArrowBidirectionalLeftRightR,
+  F: _ArrowBidirectionalLeftRightF,
+});
 export const ArrowsIn: Icon = createIcon({ R: _ArrowMinimizeR, F: _ArrowMinimizeF });
 export const ArrowsInLineHorizontal: Icon = createIcon({ R: _ArrowFitInR, F: _ArrowFitInF });
-export const ArrowsInLineVertical: Icon = createIcon({ R: _ArrowMinimizeVerticalR, F: _ArrowMinimizeVerticalF });
+export const ArrowsInLineVertical: Icon = createIcon({
+  R: _ArrowMinimizeVerticalR,
+  F: _ArrowMinimizeVerticalF,
+});
 export const ArrowsInSimple: Icon = createIcon({ R: _ArrowCollapseAllR, F: _ArrowCollapseAllF });
-export const ArrowsLeftRight: Icon = createIcon({ R: _ArrowBidirectionalLeftRightR, F: _ArrowBidirectionalLeftRightF });
+export const ArrowsLeftRight: Icon = createIcon({
+  R: _ArrowBidirectionalLeftRightR,
+  F: _ArrowBidirectionalLeftRightF,
+});
 export const ArrowsOut: Icon = createIcon({ R: _ArrowExpandR, F: _ArrowExpandF });
 export const ArrowsOutCardinal: Icon = createIcon({ R: _ArrowExpandAllR, F: _ArrowExpandAllF });
 export const ArrowsOutSimple: Icon = createIcon({ R: _ExpandUpRightR, F: _ExpandUpRightF });
@@ -550,6 +607,10 @@ export const Star: Icon = createIcon({ R: _StarR, F: _StarF });
 export const Sticker: Icon = createIcon({ R: _StickerR, F: _StickerF });
 export const Sun: Icon = createIcon({ R: _WeatherSunnyR, F: _WeatherSunnyF });
 export const Swatches: Icon = createIcon({ R: _ColorR, F: _ColorF });
+export const TableArrowRepeatAll: Icon = createIcon({
+  R: _TableArrowRepeatAllR,
+  F: _TableArrowRepeatAllF,
+});
 export const Tag: Icon = createIcon({ R: _TagR, F: _TagF });
 export const TextAa: Icon = createIcon({ R: _TextFontR, F: _TextFontF });
 export const TextAlignCenter: Icon = createIcon({ R: _TextAlignCenterR, F: _TextAlignCenterF });
@@ -559,7 +620,10 @@ export const TextB: Icon = createIcon({ R: _TextBoldR, F: _TextBoldF });
 export const TextHOne: Icon = createIcon({ R: _TextHeader1R, F: _TextHeader1F });
 export const TextHTwo: Icon = createIcon({ R: _TextHeader2R, F: _TextHeader2F });
 export const TextItalic: Icon = createIcon({ R: _TextItalicR, F: _TextItalicF });
-export const TextStrikethrough: Icon = createIcon({ R: _TextStrikethroughR, F: _TextStrikethroughF });
+export const TextStrikethrough: Icon = createIcon({
+  R: _TextStrikethroughR,
+  F: _TextStrikethroughF,
+});
 export const TextT: Icon = createIcon({ R: _TextTR, F: _TextTF });
 export const TextUnderline: Icon = createIcon({ R: _TextUnderlineR, F: _TextUnderlineF });
 export const Trash: Icon = createIcon({ R: _DeleteR, F: _DeleteF });

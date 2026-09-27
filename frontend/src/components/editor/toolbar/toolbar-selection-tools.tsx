@@ -108,7 +108,9 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               size="sm"
               onClick={groupSelectedElements}
               aria-label="تجميع"
-              className="h-8 px-3 text-primary hover:text-primary hover:bg-primary/5 rounded-md transition-all cursor-pointer"
+              // 🎨 رمادي في الراحة → داكن عند التمرير (اتساق أيقونات الشريط):
+              // الأزرق الدائم كان يوحي بأن الزر مُفعَّل أصلاً
+              className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
             >
               <Link className="w-5 h-5" />
             </Button>

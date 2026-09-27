@@ -51,8 +51,13 @@ export function useWorkspacePanels() {
   // Load initial preferences
   const [activePanel, setActivePanelState] = useState<WorkspacePanel>(() => {
     const saved = getStoredPreferences().lastActivePanel;
-    // Default to properties inspector on desktop
-    return saved !== undefined ? saved : 'properties';
+    // 🪟 الافتراضي عند الإقلاع: لوحة التبويب الأول مفتوحة — «الطبقات» في الوضع
+    // الحر و«شبكة الكولاج» في الكولاج (أول أدوات كل وضع في سجل workspace-tools).
+    // لا نبدأ بلا لوحة نشطة: قيمة `null` المحفوظة (إغلاق/وضع التركيز في جلسة
+    // سابقة) لا تُعطّل الافتراضي، بينما الاختيار الصريح للوح محدد يُحترم.
+    // ملاحظة: هذا يُعدّل معيار الخطة `workspace-layout-repair-plan.md:114,124`
+    // («لا يفتح Drawer القوالب تلقائياً في Wide») بطلب المالك — انظر سجل 0.19.
+    return saved === 'templates' || saved === 'properties' ? saved : 'templates';
   });
 
   const [isInspectorPinned, setIsInspectorPinnedState] = useState<boolean>(() => {
@@ -79,8 +84,10 @@ export function useWorkspacePanels() {
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState<'templates' | 'properties'>('templates');
 
-  // Wide drawer for templates
-  const [isTemplatesDrawerOpen, setIsTemplatesDrawerOpen] = useState(false);
+  // Wide drawer for templates (لوحة التبويب الأول في الشاشات الواسعة) —
+  // مفتوحة افتراضياً عند الإقلاع بطلب المالك: التبويب الأول ظاهر بمحتواه بدل
+  // أن يبدأ الشريط بلا لوحة (كانت مغلقة دائماً لأن حالتها غير محفوظة أصلاً).
+  const [isTemplatesDrawerOpen, setIsTemplatesDrawerOpen] = useState(true);
 
   // Resize listener using window resize
   useEffect(() => {

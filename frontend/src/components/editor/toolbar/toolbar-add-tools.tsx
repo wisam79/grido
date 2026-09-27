@@ -87,7 +87,10 @@ export const ToolbarAddTools = React.memo(function ToolbarAddTools() {
           aria-label="الملصقات"
           className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer flex items-center justify-center"
         >
-          <Sticker className="w-5 h-5 text-primary" weight="bold" />
+          {/* 🎨 الأيقونة ترث حالة الزر (رمادي في الراحة → داكن عند التمرير) —
+              الأزرق محجوز لحالة التفعيل الفعلية، فراجع نمط «مفعّل» في
+              toolbar-image-filters بدل تلوين أيقونة في حالة الراحة */}
+          <Sticker className="w-5 h-5" weight="bold" />
         </Button>
       </TooltipBtn>
 

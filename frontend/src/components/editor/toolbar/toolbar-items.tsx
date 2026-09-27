@@ -7,7 +7,8 @@
 //   toolbar-selection-tools.tsx أدوات التحديد
 //   toolbar-history-tools.tsx   التراجع/الإعادة
 // هذا الملف برميل توافقية — كل المستوردين الحاليين يعملون دون تغيير.
-export { FluentTooltip as TooltipBtn } from "@/components/ui/blocks";
-export { ToolbarAddTools } from "./toolbar-add-tools";
-export { ToolbarSelectionTools } from "./toolbar-selection-tools";
-export { ToolbarHistoryTools } from "./toolbar-history-tools";
+export { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
+export { ToolbarAddTools } from './toolbar-add-tools';
+export { ToolbarSelectionTools } from './toolbar-selection-tools';
+export { ToolbarHistoryTools } from './toolbar-history-tools';
+export { ToolbarTransferToCollage } from './toolbar-transfer-to-collage';

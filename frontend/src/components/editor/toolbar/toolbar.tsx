@@ -9,6 +9,7 @@ import {
   ToolbarAddTools,
   ToolbarHistoryTools,
   ToolbarSelectionTools,
+  ToolbarTransferToCollage,
 } from './toolbar-items';
 import {
   DropdownMenu,
@@ -48,6 +49,9 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
 
           {/* المجموعة 3: إضافة عناصر (نص / أشكال / ملصقات) متاحة دائماً */}
           <ToolbarAddTools />
+
+          {/* بوابة المونتاج الطباعي: نقل وتكرار التصميم في شبكة الكولاج (تظهر في وضع التصميم الحر) */}
+          <ToolbarTransferToCollage />
 
           {/* المجموعة 4: أدوات التحديد والسياق — تظهر بسلاسة عند تحديد عنصر */}
           <ToolbarSelectionTools />
