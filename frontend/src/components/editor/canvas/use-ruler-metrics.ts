@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 /**
  * useRulerMetrics — قياسات المساطر الثابتة وحركة مؤشر الفأرة عليها
@@ -10,7 +10,7 @@ export function useRulerMetricsPreview(
   containerRef: React.RefObject<HTMLDivElement | null>,
   innerRef: React.RefObject<HTMLDivElement | null>,
   opts: { showRuler: boolean; printMode: boolean },
-  deps: { canvasZoom: number; mode: string; aspect: number }
+  deps: { canvasZoom: number; mode: string; aspect: number },
 ) {
   const { showRuler, printMode } = opts;
   const { mode } = deps;
@@ -104,15 +104,15 @@ export function useRulerMetricsPreview(
       ro.observe(innerRef.current);
     }
 
-    window.addEventListener("resize", handleLayout);
-    container.addEventListener("scroll", handleLayout, { passive: true });
+    window.addEventListener('resize', handleLayout);
+    container.addEventListener('scroll', handleLayout, { passive: true });
 
     handleLayout();
 
     return () => {
       ro.disconnect();
-      window.removeEventListener("resize", handleLayout);
-      container.removeEventListener("scroll", handleLayout);
+      window.removeEventListener('resize', handleLayout);
+      container.removeEventListener('scroll', handleLayout);
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (settleTimerRef.current !== null) clearTimeout(settleTimerRef.current);
     };
@@ -134,43 +134,51 @@ export function useRulerMetricsPreview(
   // ملاحظة: مستمع scroll مسجل مرة واحدة مع rAF throttle في الأثر أعلاه (handleLayout)،
   // فلا نسجل مستمعاً ثانياً هنا لتفادي getBoundingClientRect مكرراً لكل scroll.
 
-  const handleWorkspaceMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!showRuler || printMode) return;
-    if (mouseMoveRafId.current !== null) return;
-    if (!containerRef.current) return;
+  const handleWorkspaceMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!showRuler || printMode) return;
+      if (mouseMoveRafId.current !== null) return;
+      if (!containerRef.current) return;
 
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - containerRect.left;
-    const y = e.clientY - containerRect.top;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      // تثبيت الإحداثي على حافة بكسل مادية (device pixel) — بدون التثبيت تقع
+      // خطوط المؤشر على كسور بكسل فتُوزَّع على بكسلين وتظهر ضبابية بسمك متغير
+      // (نفس جذر مشكلة سمك الخطوط الإرشادية العشوائي).
+      const dpr = window.devicePixelRatio || 1;
+      const snapToPixelEdge = (v: number) => Math.round(v * dpr) / dpr;
+      const x = snapToPixelEdge(e.clientX - containerRect.left);
+      const y = snapToPixelEdge(e.clientY - containerRect.top);
 
-    mouseMoveRafId.current = requestAnimationFrame(() => {
-      mouseMoveRafId.current = null;
+      mouseMoveRafId.current = requestAnimationFrame(() => {
+        mouseMoveRafId.current = null;
 
-      const hCursor = document.getElementById("h-ruler-cursor") as SVGLineElement | null;
-      const vCursor = document.getElementById("v-ruler-cursor") as SVGLineElement | null;
+        const hCursor = document.getElementById('h-ruler-cursor') as SVGLineElement | null;
+        const vCursor = document.getElementById('v-ruler-cursor') as SVGLineElement | null;
 
-      if (hCursor) {
-        hCursor.setAttribute("x1", x.toString());
-        hCursor.setAttribute("x2", x.toString());
-        hCursor.style.display = "block";
-      }
-      if (vCursor) {
-        vCursor.setAttribute("y1", y.toString());
-        vCursor.setAttribute("y2", y.toString());
-        vCursor.style.display = "block";
-      }
-    });
-  }, [showRuler, printMode, containerRef]);
+        if (hCursor) {
+          hCursor.setAttribute('x1', x.toString());
+          hCursor.setAttribute('x2', x.toString());
+          hCursor.style.display = 'block';
+        }
+        if (vCursor) {
+          vCursor.setAttribute('y1', y.toString());
+          vCursor.setAttribute('y2', y.toString());
+          vCursor.style.display = 'block';
+        }
+      });
+    },
+    [showRuler, printMode, containerRef],
+  );
 
   const handleWorkspaceMouseLeave = useCallback(() => {
     if (mouseMoveRafId.current !== null) {
       cancelAnimationFrame(mouseMoveRafId.current);
       mouseMoveRafId.current = null;
     }
-    const hCursor = document.getElementById("h-ruler-cursor");
-    const vCursor = document.getElementById("v-ruler-cursor");
-    if (hCursor) hCursor.style.display = "none";
-    if (vCursor) vCursor.style.display = "none";
+    const hCursor = document.getElementById('h-ruler-cursor');
+    const vCursor = document.getElementById('v-ruler-cursor');
+    if (hCursor) hCursor.style.display = 'none';
+    if (vCursor) vCursor.style.display = 'none';
   }, []);
 
   return {
