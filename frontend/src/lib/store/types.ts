@@ -1,5 +1,5 @@
-import { PhotoTemplate, CollageTemplate } from "../templates";
-import { ProjectFileV1 } from "../io/project-serializer";
+import { PhotoTemplate, CollageTemplate } from '../templates';
+import { ProjectFileV1 } from '../io/project-serializer';
 
 export interface ProjectStateData {
   mode: EditorMode;
@@ -17,7 +17,7 @@ export interface ProjectStateData {
   printSettings?: PrintSettings;
 }
 
-export type ElementType = "image" | "text" | "shape";
+export type ElementType = 'image' | 'text' | 'shape';
 
 export interface BaseCanvasElement {
   id: string;
@@ -31,7 +31,7 @@ export interface BaseCanvasElement {
   locked?: boolean;
   visible?: boolean;
 
-  fillType?: "solid" | "linear" | "radial";
+  fillType?: 'solid' | 'linear' | 'radial';
   fillLinearGradientStartPoint?: { x: number; y: number };
   fillLinearGradientEndPoint?: { x: number; y: number };
   fillLinearGradientColorStops?: Array<number | string>;
@@ -54,8 +54,14 @@ export interface BaseCanvasElement {
   groupId?: string;
 }
 
+/** مصدر الملصق على العنصر — يسمح بإعادة فتح استوديو الملصقات للتعديل على نفس العنصر */
+export interface StickerElementSource {
+  templateId: string;
+  params: import('@/features/stickers').StickerParams;
+}
+
 export interface ImageElement extends BaseCanvasElement {
-  type: "image";
+  type: 'image';
   imageSrc: string;
   originalImageSrc?: string;
   filter?: string;
@@ -64,16 +70,18 @@ export interface ImageElement extends BaseCanvasElement {
   saturation?: number;
   blur?: number;
   bgColor?: string;
+  /** مصدر قالب الملصق إن كان العنصر أُدرج من استوديو الملصقات */
+  stickerSource?: StickerElementSource;
 }
 
 export interface TextElement extends BaseCanvasElement {
-  type: "text";
+  type: 'text';
   text: string;
   fontSize: number;
   fontWeight?: number;
   color?: string;
   fontFamily?: string;
-  textAlign?: "right" | "center" | "left";
+  textAlign?: 'right' | 'center' | 'left';
   textBgColor?: string;
   textBgRadius?: number;
   textBgPadding?: number;
@@ -86,10 +94,10 @@ export interface TextElement extends BaseCanvasElement {
   wordSpacing?: number;
   stroke?: string;
   strokeWidth?: number;
-  fontStyle?: "normal" | "italic";
-  textDecoration?: "none" | "underline" | "line-through";
-  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
-  wrap?: "word" | "char" | "none";
+  fontStyle?: 'normal' | 'italic';
+  textDecoration?: 'none' | 'underline' | 'line-through';
+  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  wrap?: 'word' | 'char' | 'none';
   shadowColor?: string;
   shadowBlur?: number;
   shadowOffsetX?: number;
@@ -98,13 +106,13 @@ export interface TextElement extends BaseCanvasElement {
   shadowGlow?: boolean;
   curve?: number; // -100 to 100 percentage of curvature
   curveRadius?: number;
-  curveDirection?: "up" | "down";
+  curveDirection?: 'up' | 'down';
   arabicNumerals?: boolean; // true to convert digits to Arabic-Indic ٠-٩
 }
 
 export interface ShapeElement extends BaseCanvasElement {
-  type: "shape";
-  shape: "rect" | "ellipse" | "line" | "star" | "path";
+  type: 'shape';
+  shape: 'rect' | 'ellipse' | 'line' | 'star' | 'path';
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
@@ -138,7 +146,7 @@ export interface CanvasSlot {
   bgColor?: string;
 }
 
-export type EditorMode = "single" | "collage";
+export type EditorMode = 'single' | 'collage';
 
 export interface HistoryEntry {
   elements: CanvasElement[];
@@ -176,11 +184,20 @@ export interface PrintSettings {
   copiesPerSheet: number;
   showCutLines: boolean;
   showEndCutLine?: boolean;
-  cutLineStyle?: "dashed" | "dotted" | "solid" | "cropmarks";
-  orientation: "portrait" | "landscape";
+  cutLineStyle?: 'dashed' | 'dotted' | 'solid' | 'cropmarks';
+  orientation: 'portrait' | 'landscape';
   fitToPage?: boolean;
-  repeatMode?: "all" | "row" | "column";
-  gridAlign?: "top-left" | "top-center" | "top-right" | "center" | "center-left" | "center-right" | "bottom-left" | "bottom-center" | "bottom-right";
+  repeatMode?: 'all' | 'row' | 'column';
+  gridAlign?:
+    | 'top-left'
+    | 'top-center'
+    | 'top-right'
+    | 'center'
+    | 'center-left'
+    | 'center-right'
+    | 'bottom-left'
+    | 'bottom-center'
+    | 'bottom-right';
 }
 
 export type { PhotoTemplate, CollageTemplate, ProjectFileV1 };

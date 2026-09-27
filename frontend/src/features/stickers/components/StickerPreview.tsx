@@ -1,34 +1,40 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   MagnifyingGlassPlus,
   MagnifyingGlassMinus,
   CursorClick,
-} from "@/components/ui/icons";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { cn, sanitizeSvgMarkupCached } from "@/lib/utils";
-import { StickerTemplate, StickerParams, MockupBackground } from "../types";
-import { StickerInlineEditor, ActiveFieldState, ActiveColorState } from "./StickerInlineEditor";
+  ArrowUUpLeft,
+  ArrowUUpRight,
+} from '@/components/ui/icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { cn, sanitizeSvgMarkupCached } from '@/lib/utils';
+import { StickerTemplate, StickerParams, MockupBackground } from '../types';
+import { StickerInlineEditor, ActiveFieldState, ActiveColorState } from './StickerInlineEditor';
 
 export interface StickerPreviewProps {
   template: StickerTemplate;
   params: StickerParams;
   svgString: string;
   onChangeField?: (fieldId: string, value: string) => void;
-  onChangeColor?: (role: "primary" | "secondary" | "background", color: string) => void;
+  onChangeColor?: (role: 'primary' | 'secondary' | 'background', color: string) => void;
   onResetField?: (fieldId: string) => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 const MOCKUP_OPTIONS: { id: MockupBackground; label: string; dotClass: string }[] = [
-  { id: "dark", label: "داكن", dotClass: "bg-[#0f172a]" },
-  { id: "white", label: "استوديو", dotClass: "bg-white border border-border/80" },
-  { id: "cardboard", label: "كرتون", dotClass: "bg-[#B88E58]" },
-  { id: "checker", label: "شفاف", dotClass: "bg-muted-foreground/50 border border-border/40" },
+  { id: 'dark', label: 'داكن', dotClass: 'bg-[#0f172a]' },
+  { id: 'white', label: 'استوديو', dotClass: 'bg-white border border-border/80' },
+  { id: 'cardboard', label: 'كرتون', dotClass: 'bg-[#B88E58]' },
+  { id: 'checker', label: 'شفاف', dotClass: 'bg-muted-foreground/50 border border-border/40' },
 ];
 
-const COLOR_ROLE_LABELS: Record<"primary" | "secondary" | "background", string> = {
-  primary: "اللون الرئيسي",
-  secondary: "اللون الثانوي",
-  background: "لون الخلفية",
+const COLOR_ROLE_LABELS: Record<'primary' | 'secondary' | 'background', string> = {
+  primary: 'اللون الرئيسي',
+  secondary: 'اللون الثانوي',
+  background: 'لون الخلفية',
 };
 
 export const StickerPreview = React.memo(function StickerPreview({
@@ -38,11 +44,15 @@ export const StickerPreview = React.memo(function StickerPreview({
   onChangeField,
   onChangeColor,
   onResetField,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
 }: StickerPreviewProps) {
-  const [mockupBg, setMockupBg] = useState<MockupBackground>("dark");
+  const [mockupBg, setMockupBg] = useState<MockupBackground>('dark');
   const [zoomLevel, setZoomLevel] = useState(1);
 
-  const finish = params.finish || "standard";
+  const finish = params.finish || 'standard';
   const showDieCut = params.dieCutBorder ?? true;
 
   // Active in-place element editor state
@@ -59,23 +69,23 @@ export const StickerPreview = React.memo(function StickerPreview({
 
   // ضمان تحديث تموضع ونصوص الـ SVG فور اكتمال تنزيل أي خط ويب
   useEffect(() => {
-    if (typeof document === "undefined" || !document.fonts) return;
+    if (typeof document === 'undefined' || !document.fonts) return;
     const handleFontsDone = () => {
       const host = svgHostRef.current;
       if (host) {
-        host.style.transform = "translateZ(0)";
+        host.style.transform = 'translateZ(0)';
       }
     };
-    document.fonts.addEventListener("loadingdone", handleFontsDone);
-    return () => document.fonts.removeEventListener("loadingdone", handleFontsDone);
+    document.fonts.addEventListener('loadingdone', handleFontsDone);
+    return () => document.fonts.removeEventListener('loadingdone', handleFontsDone);
   }, []);
 
   /** تمييز عنصر SVG واحد كنشط (نص أو شكل) وإزالة التمييز عن السابق */
   const markActiveElement = useCallback((el: SVGElement | null) => {
     const host = svgHostRef.current;
     if (!host) return;
-    host.querySelectorAll(".is-active-edit").forEach((n) => n.classList.remove("is-active-edit"));
-    if (el) el.classList.add("is-active-edit");
+    host.querySelectorAll('.is-active-edit').forEach((n) => n.classList.remove('is-active-edit'));
+    if (el) el.classList.add('is-active-edit');
   }, []);
 
   const closeEditors = useCallback(() => {
@@ -100,12 +110,12 @@ export const StickerPreview = React.memo(function StickerPreview({
         y,
       });
     },
-    [markActiveElement]
+    [markActiveElement],
   );
 
   /** فتح محرر لون دور — اللون الحالي يُقرأ من params مباشرة */
   const openColorEditor = useCallback(
-    (role: "primary" | "secondary" | "background", target: SVGElement) => {
+    (role: 'primary' | 'secondary' | 'background', target: SVGElement) => {
       const stageRect = stageContainerRef.current?.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
       const x = stageRect ? targetRect.left - stageRect.left + targetRect.width / 2 : 0;
@@ -127,55 +137,50 @@ export const StickerPreview = React.memo(function StickerPreview({
         y,
       });
     },
-    [params.primaryColor, params.secondaryColor, params.backgroundColor, markActiveElement]
+    [params.primaryColor, params.secondaryColor, params.backgroundColor, markActiveElement],
   );
 
   /** استنتاج حقل النص من العنصر: data-field-id الصريح ثم مطابقة المحتوى */
   const resolveTextField = useCallback(
     (textEl: SVGTextElement): { id: string; target: SVGElement } | null => {
-      const explicit = textEl.getAttribute("data-field-id");
-      const content = textEl.textContent?.trim() || "";
-      const byId = explicit
-        ? template.fields.find((f) => f.id === explicit)
-        : undefined;
+      const explicit = textEl.getAttribute('data-field-id');
+      const content = textEl.textContent?.trim() || '';
+      const byId = explicit ? template.fields.find((f) => f.id === explicit) : undefined;
       const byContent = byId
         ? undefined
         : template.fields.find(
             (f) =>
               (params.fields[f.id] && params.fields[f.id].trim() === content) ||
-              f.defaultValue.trim() === content
+              f.defaultValue.trim() === content,
           );
       const field = byId ?? byContent;
       if (!field) return null;
       // textPath داخل <text data-field-id>: نبرز الحاوية <text> نفسها
       const anchor =
-        (textEl.tagName.toLowerCase() === "textpath"
-          ? (textEl.closest("text") as SVGElement | null)
+        (textEl.tagName.toLowerCase() === 'textpath'
+          ? (textEl.closest('text') as SVGElement | null)
           : textEl) ?? textEl;
       return { id: field.id, target: anchor };
     },
-    [template.fields, params.fields]
+    [template.fields, params.fields],
   );
 
   /** استنتاج دور اللون من عنصر شكلي */
   const resolveColorRole = useCallback(
-    (shapeEl: SVGGraphicsElement): "primary" | "secondary" | "background" | null => {
-      const explicit = shapeEl.getAttribute("data-color-role") as
-        | "primary"
-        | "secondary"
-        | "background"
-        | null;
+    (shapeEl: SVGGraphicsElement): 'primary' | 'secondary' | 'background' | null => {
+      const explicit = shapeEl.getAttribute('data-color-role') as
+        'primary' | 'secondary' | 'background' | null;
       if (explicit) return explicit;
-      const fill = shapeEl.getAttribute("fill");
-      if (fill === params.backgroundColor) return "background";
-      if (fill === params.secondaryColor) return "secondary";
-      if (fill === params.primaryColor) return "primary";
-      if (shapeEl.tagName.toLowerCase() === "rect" && !shapeEl.getAttribute("stroke")) {
-        return "background";
+      const fill = shapeEl.getAttribute('fill');
+      if (fill === params.backgroundColor) return 'background';
+      if (fill === params.secondaryColor) return 'secondary';
+      if (fill === params.primaryColor) return 'primary';
+      if (shapeEl.tagName.toLowerCase() === 'rect' && !shapeEl.getAttribute('stroke')) {
+        return 'background';
       }
       return null;
     },
-    [params.primaryColor, params.secondaryColor, params.backgroundColor]
+    [params.primaryColor, params.secondaryColor, params.backgroundColor],
   );
 
   // Handle direct click on SVG elements
@@ -184,7 +189,7 @@ export const StickerPreview = React.memo(function StickerPreview({
     if (!target || !stageContainerRef.current) return;
 
     // 1. Text element clicked -> Open Text Inline Editor
-    const textEl = target.closest("text, textPath") as SVGTextElement | null;
+    const textEl = target.closest('text, textPath') as SVGTextElement | null;
     if (textEl) {
       e.stopPropagation();
       const resolved = resolveTextField(textEl);
@@ -195,7 +200,9 @@ export const StickerPreview = React.memo(function StickerPreview({
     }
 
     // 2. Shape or Background clicked -> Open Color Role Quick Swatches
-    const shapeEl = target.closest("polygon, circle, rect, path, ellipse") as SVGGraphicsElement | null;
+    const shapeEl = target.closest(
+      'polygon, circle, rect, path, ellipse',
+    ) as SVGGraphicsElement | null;
     if (shapeEl) {
       e.stopPropagation();
       const role = resolveColorRole(shapeEl);
@@ -235,9 +242,9 @@ export const StickerPreview = React.memo(function StickerPreview({
       }
     };
 
-    el.addEventListener("wheel", handleWheel, { passive: false });
+    el.addEventListener('wheel', handleWheel, { passive: false });
     return () => {
-      el.removeEventListener("wheel", handleWheel);
+      el.removeEventListener('wheel', handleWheel);
       if (animFrame) cancelAnimationFrame(animFrame);
     };
   }, [zoomLevel]);
@@ -245,30 +252,30 @@ export const StickerPreview = React.memo(function StickerPreview({
   // Surface texture styling
   const stageBackgroundStyle = useMemo(() => {
     switch (mockupBg) {
-      case "checker":
+      case 'checker':
         return {
           backgroundImage:
-            "linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%), linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%), linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%)",
-          backgroundColor: "#090d16",
-          backgroundSize: "16px 16px",
-          backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+            'linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%), linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%), linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%)',
+          backgroundColor: '#090d16',
+          backgroundSize: '16px 16px',
+          backgroundPosition: '0 0, 0 8px, 8px -8px, -8px 0px',
         };
-      case "white":
+      case 'white':
         return {
-          background: "radial-gradient(ellipse at 50% 30%, #ffffff 0%, #f1f5f9 65%, #e2e8f0 100%)",
+          background: 'radial-gradient(ellipse at 50% 30%, #ffffff 0%, #f1f5f9 65%, #e2e8f0 100%)',
         };
-      case "cardboard":
+      case 'cardboard':
         return {
-          backgroundColor: "#B88E58",
+          backgroundColor: '#B88E58',
           backgroundImage:
-            "radial-gradient(#9b7444 0.75px, transparent 0.75px), radial-gradient(#9b7444 0.75px, #B88E58 0.75px)",
-          backgroundSize: "18px 18px",
-          backgroundPosition: "0 0, 9px 9px",
+            'radial-gradient(#9b7444 0.75px, transparent 0.75px), radial-gradient(#9b7444 0.75px, #B88E58 0.75px)',
+          backgroundSize: '18px 18px',
+          backgroundPosition: '0 0, 9px 9px',
         };
-      case "dark":
+      case 'dark':
       default:
         return {
-          background: "radial-gradient(ellipse at center, #172033 0%, #0a0f1d 80%)",
+          background: 'radial-gradient(ellipse at center, #172033 0%, #0a0f1d 80%)',
         };
     }
   }, [mockupBg]);
@@ -278,28 +285,28 @@ export const StickerPreview = React.memo(function StickerPreview({
     const filters: string[] = [];
 
     if (showDieCut) {
-      filters.push("drop-shadow(0 0 1px rgba(255, 255, 255, 0.98))");
-      filters.push("drop-shadow(0 0 2.5px rgba(255, 255, 255, 0.85))");
+      filters.push('drop-shadow(0 0 1px rgba(255, 255, 255, 0.98))');
+      filters.push('drop-shadow(0 0 2.5px rgba(255, 255, 255, 0.85))');
     }
 
-    if (finish === "glossy") {
-      filters.push("drop-shadow(0 20px 35px rgba(0, 0, 0, 0.4))");
-      filters.push("drop-shadow(0 4px 10px rgba(0, 0, 0, 0.22))");
-    } else if (finish === "matte") {
-      filters.push("drop-shadow(0 12px 22px rgba(0, 0, 0, 0.25))");
-      filters.push("drop-shadow(0 2px 5px rgba(0, 0, 0, 0.15))");
-    } else if (finish === "holographic") {
-      filters.push("drop-shadow(0 18px 36px rgba(99, 102, 241, 0.35))");
-      filters.push("drop-shadow(0 4px 14px rgba(236, 72, 153, 0.25))");
+    if (finish === 'glossy') {
+      filters.push('drop-shadow(0 20px 35px rgba(0, 0, 0, 0.4))');
+      filters.push('drop-shadow(0 4px 10px rgba(0, 0, 0, 0.22))');
+    } else if (finish === 'matte') {
+      filters.push('drop-shadow(0 12px 22px rgba(0, 0, 0, 0.25))');
+      filters.push('drop-shadow(0 2px 5px rgba(0, 0, 0, 0.15))');
+    } else if (finish === 'holographic') {
+      filters.push('drop-shadow(0 18px 36px rgba(99, 102, 241, 0.35))');
+      filters.push('drop-shadow(0 4px 14px rgba(236, 72, 153, 0.25))');
     } else {
-      filters.push("drop-shadow(0 16px 30px rgba(0, 0, 0, 0.3))");
-      filters.push("drop-shadow(0 3px 8px rgba(0, 0, 0, 0.18))");
+      filters.push('drop-shadow(0 16px 30px rgba(0, 0, 0, 0.3))');
+      filters.push('drop-shadow(0 3px 8px rgba(0, 0, 0, 0.18))');
     }
 
     return {
-      filter: filters.join(" "),
+      filter: filters.join(' '),
       transform: `scale(${zoomLevel})`,
-      transition: "transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease",
+      transition: 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease',
     };
   }, [showDieCut, finish, zoomLevel]);
 
@@ -331,7 +338,9 @@ export const StickerPreview = React.memo(function StickerPreview({
 
         {/* Real Dimensions & DPI Spec */}
         <div className="absolute top-3 end-3 z-10 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-card/75 backdrop-blur-md border border-border/30 text-micro font-mono text-muted-foreground/90 select-none pointer-events-none">
-          <span>{currentMm.width}×{currentMm.height} مم</span>
+          <span>
+            {currentMm.width}×{currentMm.height} مم
+          </span>
           <span className="text-border/60">•</span>
           <span className="text-primary font-bold">300 DPI</span>
         </div>
@@ -348,12 +357,12 @@ export const StickerPreview = React.memo(function StickerPreview({
           />
 
           {/* Glossy Sheen Overlay */}
-          {finish === "glossy" && (
+          {finish === 'glossy' && (
             <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-tr from-transparent via-white/10 to-white/25 opacity-70 group-hover:opacity-90 transition-opacity" />
           )}
 
           {/* Holographic Iridescent Shimmer */}
-          {finish === "holographic" && (
+          {finish === 'holographic' && (
             <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-pink-500/20 via-cyan-400/25 to-yellow-400/20 mix-blend-overlay opacity-80 group-hover:opacity-100 transition-opacity" />
           )}
         </div>
@@ -365,9 +374,9 @@ export const StickerPreview = React.memo(function StickerPreview({
           template={template}
           activeFieldValue={
             activeField
-              ? params.fields[activeField.fieldId] ??
+              ? (params.fields[activeField.fieldId] ??
                 template.fields.find((f) => f.id === activeField.fieldId)?.defaultValue ??
-                ""
+                '')
               : undefined
           }
           onClose={closeEditors}
@@ -396,13 +405,13 @@ export const StickerPreview = React.memo(function StickerPreview({
                     aria-pressed={isActive}
                     aria-label={`خلفية: ${opt.label}`}
                     className={cn(
-                      "w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer",
+                      'w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer',
                       isActive
-                        ? "bg-background shadow-2xs border border-border/50 ring-1 ring-primary/40"
-                        : "hover:bg-muted/50"
+                        ? 'bg-background shadow-2xs border border-border/50 ring-1 ring-primary/40'
+                        : 'hover:bg-muted/50',
                     )}
                   >
-                    <span className={cn("w-3.5 h-3.5 rounded-full shrink-0", opt.dotClass)} />
+                    <span className={cn('w-3.5 h-3.5 rounded-full shrink-0', opt.dotClass)} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs font-cairo font-medium">
@@ -411,6 +420,36 @@ export const StickerPreview = React.memo(function StickerPreview({
               </Tooltip>
             );
           })}
+
+          <div className="w-[1px] h-4 bg-border/40 mx-0.5" />
+
+          {/* Undo / Redo — التراجع عن تعديل خاطئ في الألوان أو النصوص دون مغادرة المسرح */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onUndo?.();
+            }}
+            disabled={!canUndo}
+            aria-label="تراجع (Ctrl+Z)"
+            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 cursor-pointer"
+            title="تراجع (Ctrl+Z)"
+          >
+            <ArrowUUpLeft className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRedo?.();
+            }}
+            disabled={!canRedo}
+            aria-label="إعادة (Ctrl+Y)"
+            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 cursor-pointer"
+            title="إعادة (Ctrl+Y)"
+          >
+            <ArrowUUpRight className="w-3.5 h-3.5" />
+          </button>
 
           <div className="w-[1px] h-4 bg-border/40 mx-0.5" />
 
@@ -453,10 +492,10 @@ export const StickerPreview = React.memo(function StickerPreview({
               handleZoomReset();
             }}
             className={cn(
-              "h-7 px-1.5 text-micro font-semibold rounded-md cursor-pointer flex items-center justify-center transition-colors",
+              'h-7 px-1.5 text-micro font-semibold rounded-md cursor-pointer flex items-center justify-center transition-colors',
               zoomLevel !== 1
-                ? "text-primary font-bold hover:bg-primary/10"
-                : "text-muted-foreground/60"
+                ? 'text-primary font-bold hover:bg-primary/10'
+                : 'text-muted-foreground/60',
             )}
             title="إعادة ضبط"
           >
@@ -468,4 +507,4 @@ export const StickerPreview = React.memo(function StickerPreview({
   );
 });
 
-StickerPreview.displayName = "StickerPreview";
+StickerPreview.displayName = 'StickerPreview';

@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const CanvasElementSchema = z.object({
   id: z.string(),
-  type: z.enum(["image", "text", "shape"]),
+  type: z.enum(['image', 'text', 'shape']),
   x: z.number(),
   y: z.number(),
   width: z.number(),
@@ -12,7 +12,7 @@ export const CanvasElementSchema = z.object({
   zIndex: z.number(),
   locked: z.boolean().optional(),
   visible: z.boolean().optional(),
-  
+
   imageSrc: z.string().optional(),
   originalImageSrc: z.string().optional(),
   filter: z.string().optional(),
@@ -22,13 +22,21 @@ export const CanvasElementSchema = z.object({
   blur: z.number().optional(),
   // خلفية عنصر الصورة (تُستخدم خلف الصور الشفافة) — كانت تُسقط سابقاً عند الحفظ (إصلاح Bug#3)
   bgColor: z.string().optional(),
-  
+  // مصدر الملصق (قالب + تخصيصات) لإتاحة إعادة التحرير من استوديو الملصقات — اختياري للتوافق مع الملفات القديمة
+  // (params غير مقيدة هنا لأن StickerParams واجهة بلا فهرس سلاسل، والتحقق الفعلي يحدث عند الاستهلاك)
+  stickerSource: z
+    .object({
+      templateId: z.string(),
+      params: z.any(),
+    })
+    .optional(),
+
   text: z.string().optional(),
   fontSize: z.number().optional(),
   fontWeight: z.number().optional(),
   color: z.string().optional(),
   fontFamily: z.string().optional(),
-  textAlign: z.enum(["right", "center", "left"]).optional(),
+  textAlign: z.enum(['right', 'center', 'left']).optional(),
   textBgColor: z.string().optional(),
   textBgRadius: z.number().optional(),
   textBgPadding: z.number().optional(),
@@ -39,24 +47,24 @@ export const CanvasElementSchema = z.object({
   lineHeight: z.number().optional(),
   letterSpacing: z.number().optional(),
   wordSpacing: z.number().optional(),
-  fontStyle: z.enum(["normal", "italic"]).optional(),
-  textDecoration: z.enum(["none", "underline", "line-through"]).optional(),
-  textTransform: z.enum(["none", "uppercase", "lowercase", "capitalize"]).optional(),
-  wrap: z.enum(["word", "char", "none"]).optional(),
+  fontStyle: z.enum(['normal', 'italic']).optional(),
+  textDecoration: z.enum(['none', 'underline', 'line-through']).optional(),
+  textTransform: z.enum(['none', 'uppercase', 'lowercase', 'capitalize']).optional(),
+  wrap: z.enum(['word', 'char', 'none']).optional(),
   shadowGlow: z.boolean().optional(),
   curve: z.number().optional(),
   curveRadius: z.number().optional(),
-  curveDirection: z.enum(["up", "down"]).optional(),
+  curveDirection: z.enum(['up', 'down']).optional(),
   arabicNumerals: z.boolean().optional(),
-  
-  shape: z.enum(["rect", "ellipse", "line", "star", "path"]).optional(),
+
+  shape: z.enum(['rect', 'ellipse', 'line', 'star', 'path']).optional(),
   fill: z.string().optional(),
   stroke: z.string().optional(),
   strokeWidth: z.number().optional(),
   radius: z.number().optional(),
 
   // gradient properties
-  fillType: z.enum(["solid", "linear", "radial"]).optional(),
+  fillType: z.enum(['solid', 'linear', 'radial']).optional(),
   fillLinearGradientStartPoint: z.object({ x: z.number(), y: z.number() }).optional(),
   fillLinearGradientEndPoint: z.object({ x: z.number(), y: z.number() }).optional(),
   fillLinearGradientColorStops: z.array(z.union([z.number(), z.string()])).optional(),
@@ -65,7 +73,7 @@ export const CanvasElementSchema = z.object({
   fillRadialGradientEndPoint: z.object({ x: z.number(), y: z.number() }).optional(),
   fillRadialGradientEndRadius: z.number().optional(),
   fillRadialGradientColorStops: z.array(z.union([z.number(), z.string()])).optional(),
-  
+
   // خصائص متقدمة
   shadowColor: z.string().optional(),
   shadowBlur: z.number().optional(),
@@ -115,23 +123,23 @@ export const PrintSettingsSchema = z.object({
   copiesPerSheet: z.number(),
   showCutLines: z.boolean(),
   showEndCutLine: z.boolean().optional(),
-  orientation: z.enum(["portrait", "landscape"]),
+  orientation: z.enum(['portrait', 'landscape']),
   fitToPage: z.boolean().optional(),
-  repeatMode: z.enum(["all", "row", "column"]).optional(),
+  repeatMode: z.enum(['all', 'row', 'column']).optional(),
   // كانتا تُسقطان عند الحفظ/الفتح (zod يحذف المفاتيح غير المعلنة) فيضيع
   // نمط خط القص ومحاذاة الشبكة المختاران ويعودان للافتراضي — إصلاح فقدان إعداد.
-  cutLineStyle: z.enum(["dashed", "dotted", "solid", "cropmarks"]).optional(),
+  cutLineStyle: z.enum(['dashed', 'dotted', 'solid', 'cropmarks']).optional(),
   gridAlign: z
     .enum([
-      "top-left",
-      "top-center",
-      "top-right",
-      "center",
-      "center-left",
-      "center-right",
-      "bottom-left",
-      "bottom-center",
-      "bottom-right",
+      'top-left',
+      'top-center',
+      'top-right',
+      'center',
+      'center-left',
+      'center-right',
+      'bottom-left',
+      'bottom-center',
+      'bottom-right',
     ])
     .optional(),
 });
@@ -139,7 +147,7 @@ export const PrintSettingsSchema = z.object({
 export const PhotoTemplateSchema = z.object({
   id: z.string(),
   name: z.string(),
-  category: z.enum(["id", "passport", "visa", "personal", "collage"]),
+  category: z.enum(['id', 'passport', 'visa', 'personal', 'collage']),
   width: z.number(),
   height: z.number(),
   widthMM: z.number(),
@@ -156,42 +164,46 @@ export const CollageTemplateSchema = z.object({
   id: z.string(),
   name: z.string(),
   slots: z.number(),
-  cells: z.array(z.object({
-    x: z.number(),
-    y: z.number(),
-    w: z.number(),
-    h: z.number(),
-    presetType: z.string().optional(),
-    label: z.string().optional(),
-    rotation: z.number().optional(),
-  })),
-  physicalLayout: z.object({
-    type: z.string(),
-    rows: z.number(),
-    cols: z.number(),
-    align: z
-      .enum([
-        "center",
-        "top-left",
-        "top-center",
-        "top-right",
-        "center-left",
-        "center-right",
-        "bottom-left",
-        "bottom-center",
-        "bottom-right",
-      ])
-      .optional(),
-  }).optional(),
+  cells: z.array(
+    z.object({
+      x: z.number(),
+      y: z.number(),
+      w: z.number(),
+      h: z.number(),
+      presetType: z.string().optional(),
+      label: z.string().optional(),
+      rotation: z.number().optional(),
+    }),
+  ),
+  physicalLayout: z
+    .object({
+      type: z.string(),
+      rows: z.number(),
+      cols: z.number(),
+      align: z
+        .enum([
+          'center',
+          'top-left',
+          'top-center',
+          'top-right',
+          'center-left',
+          'center-right',
+          'bottom-left',
+          'bottom-center',
+          'bottom-right',
+        ])
+        .optional(),
+    })
+    .optional(),
 });
 
 export const ProjectSchema = z.object({
-  mode: z.enum(["single", "collage"]).default("single"),
+  mode: z.enum(['single', 'collage']).default('single'),
   // الافتراضي يطابق DEFAULT_CORE_STATE (2480×3508 ≈ A4@300DPI) — كان 413×531
   // (مقاس جواز) فيُحمَّل ملف قديم بلا أبعاد على كانفاس غير مقصود
   canvasWidth: z.number().default(2480),
   canvasHeight: z.number().default(3508),
-  backgroundColor: z.string().default("#FFFFFF"),
+  backgroundColor: z.string().default('#FFFFFF'),
   // تدرج خلفية الورقة — اختياريان للتوافق مع الملفات القديمة (المصمت = غياب color2)
   backgroundGradientColor2: z.string().nullable().optional(),
   backgroundGradientAngle: z.number().min(0).max(360).optional(),
@@ -200,25 +212,25 @@ export const ProjectSchema = z.object({
   template: PhotoTemplateSchema.nullable().default(null),
   collageTemplate: CollageTemplateSchema.nullable().default(null),
   printSettings: PrintSettingsSchema.optional(),
-  
+
   // إعدادات شبكة الإرشاد
   showGrid: z.boolean().optional().default(false),
   gridSize: z.number().optional().default(48),
-  gridColor: z.string().optional().default("#000000"),
+  gridColor: z.string().optional().default('#000000'),
   gridOpacity: z.number().optional().default(0.15),
   gridSubdivisions: z.number().optional().default(5),
-  gridType: z.enum(["lines", "dots"]).optional().default("lines"),
+  gridType: z.enum(['lines', 'dots']).optional().default('lines'),
   // يطابق DEFAULT_GRID_STATE.snapToGrid (true) — كان false فينطفئ المغناطيس
   // صامتاً بعد فتح أي مشروع محفوظ
   snapToGrid: z.boolean().optional().default(true),
-  
+
   // إعدادات أعمدة التخطيط
   showColumns: z.boolean().optional().default(false),
   columnsCount: z.number().optional().default(12),
-  columnsColor: z.string().optional().default("rgba(239, 68, 68, 0.08)"),
+  columnsColor: z.string().optional().default('rgba(239, 68, 68, 0.08)'),
   columnsMargin: z.number().optional().default(20),
   columnsGutter: z.number().optional().default(12),
-  
+
   // تخصيصات الكولاج
   collageGap: z.number().optional().default(0),
   collageMargin: z.number().optional().default(0),
@@ -227,7 +239,7 @@ export const ProjectSchema = z.object({
   // يطابق DEFAULT_COLLAGE_STATE.collageShowEndCutLine (true)
   collageShowEndCutLine: z.boolean().optional().default(true),
   collageStrokeWidth: z.number().optional().default(0),
-  collageStrokeColor: z.string().optional().default("#000000"),
+  collageStrokeColor: z.string().optional().default('#000000'),
   embeddedAssets: z.record(z.string(), z.string()).optional(),
 });
 

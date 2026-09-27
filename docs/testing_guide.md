@@ -17,7 +17,7 @@ flowchart TD
     end
 
     subgraph FE ["Frontend Component & Unit (Vitest)"]
-        VTests["Vitest + React Testing Library (84 ملف اختبار / 684 حالة: 683 ناجحة + 1 متخطّاة)"]
+        VTests["Vitest + React Testing Library (88 ملف اختبار / 721 حالة: 720 ناجحة + 1 متخطّاة)"]
         Zustand["Zustand Slices + Math + Canvas & Collage Hooks"]
         Comps["React 19 Components (Freeform, Stickers, Panels)"]
         VTests --> Zustand

@@ -33,6 +33,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import { wailsIsDesktop } from '@/lib/wails-env';
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import type { StickerElementSource, CanvasElement } from '@/lib/store/types';
 import { toast } from 'sonner';
 import {
   StickerCategory,
@@ -49,6 +50,9 @@ import { sanitizeStickerColor, sanitizeStickerFontFamily } from '../lib/svg-safe
 import { sanitizeSvgMarkup } from '@/lib/utils';
 import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from '../lib/clipboard-utils';
 import { generateStickerSheet } from '../lib/sheet-generator';
+import { useStickerParamsHistory } from '../lib/params-history';
+import { VdpImportDialog } from './VdpImportDialog';
+import { GridFour as TableIcon } from '@/components/ui/icons';
 import { StickerCatalog } from './StickerCatalog';
 import { StickerProperties } from './StickerProperties';
 import { StickerPreview } from './StickerPreview';
@@ -57,6 +61,11 @@ export interface StickerStudioDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialCategory?: StickerCategoryGroupId | StickerCategory | 'all';
+  /**
+   * وضع إعادة التحرير: عنصر ملصق موجود على الكانفس. عند توفيره يُفتح الاستوديو
+   * على قالب العنصر بتخصيصاته المحفوظة، والإدراج يُحدّث نفس العنصر بدل إضافة جديد.
+   */
+  editingElement?: { id: string; source: StickerElementSource } | null;
 }
 
 function buildDefaultParams(template: StickerTemplate): StickerParams {
@@ -77,7 +86,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   open,
   onOpenChange,
   initialCategory = 'all',
+  editingElement = null,
 }: StickerStudioDialogProps) {
+  const isEditMode = Boolean(editingElement);
+
   // Stage state: "gallery" for picking templates, "customize" for fine-tuning & inserting
   const [view, setView] = useState<'gallery' | 'customize'>('gallery');
 
@@ -93,6 +105,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     return ALL_STICKER_TEMPLATES[0];
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [isVdpOpen, setIsVdpOpen] = useState(false);
   const [isInserting, setIsInserting] = useState(false);
   const [isGeneratingSheet, setIsGeneratingSheet] = useState(false);
   const [busyExport, setBusyExport] = useState(false);
@@ -103,7 +116,29 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     spacingMm: 4,
   });
 
-  const [params, setParams] = useState<StickerParams>(() => buildDefaultParams(selectedTemplate));
+  // سجل التراجع/الإعادة — كل تعديل يلتزم كسجل قابل للرجوع مثل أدوات التصميم الاحترافية
+  const { params, canUndo, canRedo, setParams, commitParams, resetParams, undo, redo } =
+    useStickerParamsHistory(() => {
+      // وضع إعادة التحرير: نبدأ بتخصيصات العنصر المحفوظة لا بافتراضيات القالب
+      if (editingElement) {
+        const template = ALL_STICKER_TEMPLATES.find(
+          (t) => t.id === editingElement.source.templateId,
+        );
+        if (template) {
+          setSelectedTemplate(template);
+          return {
+            ...buildDefaultParams(template),
+            ...editingElement.source.params,
+          } as StickerParams;
+        }
+      }
+      return buildDefaultParams(ALL_STICKER_TEMPLATES[0]);
+    });
+
+  // وضع إعادة التحرير: نبدأ مباشرة في وضع التخصيص (لا معنى للمعرض)
+  useEffect(() => {
+    if (open && editingElement) setView('customize');
+  }, [open, editingElement]);
 
   // Reset loading state and restore gallery on dialog close (rule: Modal loading state cleanup)
   useEffect(() => {
@@ -116,11 +151,45 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   }, [open]);
 
   // اختيار قالب: يحدّث الحقول من افتراضيات القالب الجديد وينتقل مباشرة لوضع التخصيص
-  const handleSelectTemplate = useCallback((template: StickerTemplate) => {
-    setSelectedTemplate(template);
-    setParams(buildDefaultParams(template));
-    setView('customize');
-  }, []);
+  const handleSelectTemplate = useCallback(
+    (template: StickerTemplate) => {
+      setSelectedTemplate(template);
+      resetParams(buildDefaultParams(template));
+      setView('customize');
+    },
+    [resetParams],
+  );
+
+  // اختصار لوحة المفاتيح: Ctrl+Z تراجع / Ctrl+Y أو Ctrl+Shift+Z إعادة (وضع التخصيص فقط)
+  useEffect(() => {
+    if (!open || view !== 'customize') return;
+    const handleUndoKeys = (e: KeyboardEvent) => {
+      if (!((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z')) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
+      ) {
+        // داخل حقل نص: التراجع الأصلي للحقل له الأولوية
+        return;
+      }
+      e.preventDefault();
+      if (e.shiftKey) redo();
+      else undo();
+    };
+    const handleRedoKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', handleUndoKeys);
+    window.addEventListener('keydown', handleRedoKey);
+    return () => {
+      window.removeEventListener('keydown', handleUndoKeys);
+      window.removeEventListener('keydown', handleRedoKey);
+    };
+  }, [open, view, undo, redo]);
 
   const handleBackToGallery = useCallback(() => {
     setView('gallery');
@@ -133,9 +202,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     [],
   );
 
+  // إعادة الضبط تلتزم كخطوة في السجل — تُتراجع بـ Ctrl+Z بدل أن تمحو العمل نهائياً
   const handleResetDefaults = useCallback(() => {
-    setParams(buildDefaultParams(selectedTemplate));
-  }, [selectedTemplate]);
+    commitParams(buildDefaultParams(selectedTemplate));
+  }, [selectedTemplate, commitParams]);
 
   const svgString = useMemo(() => {
     if (view === 'gallery') return '';
@@ -182,21 +252,43 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     [view, svgString, selectedTemplate.fields],
   );
 
-  const handleInsertToCanvas = useCallback(async (pngDataUrl: string) => {
-    let finalSrc = pngDataUrl;
+  const handleInsertToCanvas = useCallback(
+    async (pngDataUrl: string) => {
+      let finalSrc = pngDataUrl;
 
-    if (wailsIsDesktop() && pngDataUrl.startsWith('data:image/')) {
-      try {
-        const localPath = await SaveImageFromBase64(pngDataUrl);
-        if (localPath) finalSrc = localPath;
-      } catch (e) {
-        console.error('Failed to save sticker locally on desktop:', e);
+      if (wailsIsDesktop() && pngDataUrl.startsWith('data:image/')) {
+        try {
+          const localPath = await SaveImageFromBase64(pngDataUrl);
+          if (localPath) finalSrc = localPath;
+        } catch (e) {
+          console.error('Failed to save sticker locally on desktop:', e);
+        }
       }
-    }
 
-    const aspect = await resolveImageAspectRatio(finalSrc);
-    useEditorStore.getState().addImageElement(finalSrc, aspect);
-  }, []);
+      const aspect = await resolveImageAspectRatio(finalSrc);
+      const store = useEditorStore.getState();
+
+      // وضع إعادة التحرير: نُحدّث صورة العنصر نفسه مع تحديث مصدر الملصق المُعاد ربطه
+      if (editingElement) {
+        const el = store.elements.find((e) => e.id === editingElement.id);
+        if (el && el.type === 'image') {
+          store.updateElement(el.id, {
+            imageSrc: finalSrc,
+            stickerSource: { templateId: selectedTemplate.id, params: { ...params } },
+          } as Partial<CanvasElement>);
+          store.pushHistory();
+          return;
+        }
+        // العنصر حُذف أثناء التعديل: نسقط إلى الإدراج كعنصر جديد
+      }
+
+      store.addImageElement(finalSrc, aspect, {
+        templateId: selectedTemplate.id,
+        params: { ...params },
+      });
+    },
+    [editingElement, selectedTemplate.id, params],
+  );
 
   const handleInsertSingle = useCallback(async () => {
     try {
@@ -263,15 +355,18 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     onOpenChange,
   ]);
 
-  const handleChangeField = useCallback((fieldId: string, value: string) => {
-    setParams((prev) => ({
-      ...prev,
-      fields: {
-        ...prev.fields,
-        [fieldId]: value,
-      },
-    }));
-  }, []);
+  const handleChangeField = useCallback(
+    (fieldId: string, value: string) => {
+      setParams((prev) => ({
+        ...prev,
+        fields: {
+          ...prev.fields,
+          [fieldId]: value,
+        },
+      }));
+    },
+    [setParams],
+  );
 
   const handleChangeColor = useCallback(
     (role: 'primary' | 'secondary' | 'background', color: string) => {
@@ -286,7 +381,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         }
       });
     },
-    [],
+    [setParams],
   );
 
   const handleResetField = useCallback(
@@ -301,7 +396,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         },
       }));
     },
-    [selectedTemplate.fields],
+    [selectedTemplate.fields, setParams],
   );
 
   const handleDownloadSvg = useCallback(() => {
@@ -467,6 +562,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                 onChangeField={handleChangeField}
                 onChangeColor={handleChangeColor}
                 onResetField={handleResetField}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                onUndo={undo}
+                onRedo={redo}
               />
             </div>
 
@@ -476,6 +575,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                 template={selectedTemplate}
                 params={params}
                 onChangeParams={setParams}
+                onCommitParams={commitParams}
                 onResetDefaults={handleResetDefaults}
                 gridConfig={gridConfig}
                 onChangeGridConfig={setGridConfig}
@@ -568,6 +668,20 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   </DropdownMenuContent>
                 </DropdownMenu>
 
+                {/* VDP: طباعة بالبيانات المتغيرة — Excel/CSV ← بطاقات دفعية */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsVdpOpen(true)}
+                  disabled={isInserting || isGeneratingSheet || busyExport}
+                  className="h-8 px-2.5 rounded-md text-xs font-semibold gap-1.5 border-border/60 hover:bg-muted cursor-pointer shrink-0"
+                  title="توليد بطاقات من ملف Excel/CSV"
+                >
+                  <TableIcon className="w-3.5 h-3.5 text-primary" weight="duotone" />
+                  <span>من جدول</span>
+                </Button>
+
                 {/* Sheet Insert Button */}
                 <Button
                   type="button"
@@ -628,6 +742,14 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
             </>
           )}
         </DialogFooter>
+
+        {/* حوار الطباعة بالبيانات المتغيرة */}
+        <VdpImportDialog
+          open={isVdpOpen}
+          onOpenChange={setIsVdpOpen}
+          template={selectedTemplate}
+          baseParams={params}
+        />
       </DialogContent>
     </Dialog>
   );

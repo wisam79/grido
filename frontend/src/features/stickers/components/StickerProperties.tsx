@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from 'react';
 import {
   Palette,
   Printer,
@@ -12,41 +12,51 @@ import {
   Trash,
   Check,
   Plus,
-} from "@/components/ui/icons";
-import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { FluentSection, FluentSliderField, FluentSegmentedControl } from "@/components/ui/blocks";
-import { cn } from "@/lib/utils";
-import { StickerTemplate, StickerParams, SheetGridConfig, StickerFinish, StickerUserPreset } from "../types";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { CURATED_PALETTES } from "../constants";
-import { StickerFontSelector } from "./StickerFontSelector";
+} from '@/components/ui/icons';
+import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import { FluentSection, FluentSliderField, FluentSegmentedControl } from '@/components/ui/blocks';
+import { cn } from '@/lib/utils';
+import {
+  StickerTemplate,
+  StickerParams,
+  SheetGridConfig,
+  StickerFinish,
+  StickerUserPreset,
+} from '../types';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { CURATED_PALETTES } from '../constants';
+import { StickerFontSelector } from './StickerFontSelector';
 import {
   loadStickerPresets,
   saveStickerPreset,
   deleteStickerPreset,
   getPresetsForTemplate,
-} from "../lib/preset-utils";
+} from '../lib/preset-utils';
 
 export interface StickerPropertiesProps {
   template: StickerTemplate;
   params: StickerParams;
   onChangeParams: (updater: (prev: StickerParams) => StickerParams) => void;
+  /** التزام صريح كخطوة تراجع مستقلة (لوحات جاهزة، قوالب محفوظة، تبديل الخط) */
+  onCommitParams?: (updater: (prev: StickerParams) => StickerParams) => void;
   onResetDefaults: () => void;
   gridConfig: SheetGridConfig;
-  onChangeGridConfig: (config: SheetGridConfig | ((prev: SheetGridConfig) => SheetGridConfig)) => void;
+  onChangeGridConfig: (
+    config: SheetGridConfig | ((prev: SheetGridConfig) => SheetGridConfig),
+  ) => void;
   /** حقول بلا عنصر مرئي في المعاينة (اختياري للتوافق) */
   hiddenFieldIds?: string[];
 }
 
 const FINISH_OPTIONS: { id: StickerFinish; label: string }[] = [
-  { id: "standard", label: "عادي" },
-  { id: "glossy", label: "لامع" },
-  { id: "matte", label: "مطفي" },
-  { id: "holographic", label: "هولوغرام" },
+  { id: 'standard', label: 'عادي' },
+  { id: 'glossy', label: 'لامع' },
+  { id: 'matte', label: 'مطفي' },
+  { id: 'holographic', label: 'هولوغرام' },
 ];
 
 interface ColorRoleButtonProps {
@@ -60,10 +70,10 @@ function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonPr
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md bg-card/60 border transition-all",
+        'relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md bg-card/60 border transition-all',
         disabled
-          ? "opacity-35 pointer-events-none border-border/40"
-          : "border-border/40 hover:border-primary/60 cursor-pointer group"
+          ? 'opacity-35 pointer-events-none border-border/40'
+          : 'border-border/40 hover:border-primary/60 cursor-pointer group',
       )}
       title={`${label}: ${color}`}
     >
@@ -71,7 +81,7 @@ function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonPr
         <span className="w-full h-full block" style={{ backgroundColor: color }} />
         <input
           type="color"
-          value={color.startsWith("#") && color.length === 7 ? color : "#000000"}
+          value={color.startsWith('#') && color.length === 7 ? color : '#000000'}
           onChange={(e) => onChange(e.target.value)}
           className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           title={label}
@@ -89,28 +99,31 @@ export const StickerProperties = React.memo(function StickerProperties({
   template,
   params,
   onChangeParams,
+  onCommitParams,
   onResetDefaults,
   gridConfig,
   onChangeGridConfig,
 }: StickerPropertiesProps) {
-  const [activeTab, setActiveTab] = useState<"design" | "sheet" | "presets">("design");
+  /** التزام إذا توفر المعالج، وإلا تعديل حي (توافق مع الاستدعاءات الاختيارية) */
+  const commit = onCommitParams ?? onChangeParams;
+  const [activeTab, setActiveTab] = useState<'design' | 'sheet' | 'presets'>('design');
   const [presets, setPresets] = useState<StickerUserPreset[]>(() => loadStickerPresets());
-  const [newPresetName, setNewPresetName] = useState("");
+  const [newPresetName, setNewPresetName] = useState('');
 
   const templatePresets = useMemo(
     () => getPresetsForTemplate(presets, template.id),
-    [presets, template.id]
+    [presets, template.id],
   );
 
   const handleSavePreset = () => {
     const trimmed = newPresetName.trim();
     if (!trimmed) {
-      toast.error("اكتب اسم القالب");
+      toast.error('اكتب اسم القالب');
       return;
     }
     const saved = saveStickerPreset(trimmed, template.id, params);
     setPresets((prev) => [saved, ...prev.filter((p) => p.id !== saved.id)]);
-    setNewPresetName("");
+    setNewPresetName('');
     toast.success(`حُفظ القالب "${saved.name}"`);
   };
 
@@ -121,9 +134,9 @@ export const StickerProperties = React.memo(function StickerProperties({
   };
 
   const handleApplyPreset = (preset: StickerUserPreset) => {
-    onChangeParams(() => ({ ...preset.params }));
+    commit(() => ({ ...preset.params }));
     toast.success(`طُبّق القالب "${preset.name}"`);
-    setActiveTab("design");
+    setActiveTab('design');
   };
 
   const handleFieldChange = (fieldId: string, value: string) => {
@@ -136,7 +149,10 @@ export const StickerProperties = React.memo(function StickerProperties({
     }));
   };
 
-  const handleColorChange = (key: "primaryColor" | "secondaryColor" | "backgroundColor", color: string) => {
+  const handleColorChange = (
+    key: 'primaryColor' | 'secondaryColor' | 'backgroundColor',
+    color: string,
+  ) => {
     onChangeParams((prev) => ({
       ...prev,
       [key]: color,
@@ -181,21 +197,31 @@ export const StickerProperties = React.memo(function StickerProperties({
         </div>
 
         {/* Fluent Segmented Tabs: Design vs Sheet vs Presets */}
-        <FluentSegmentedControl<"design" | "sheet" | "presets">
+        <FluentSegmentedControl<'design' | 'sheet' | 'presets'>
           layoutId="sticker-properties-tabs"
           value={activeTab}
           onChange={setActiveTab}
           size="sm"
           options={[
             {
-              id: "design",
-              label: "التصميم",
-              icon: <SlidersHorizontal className="w-3.5 h-3.5" weight={activeTab === "design" ? "bold" : "regular"} />,
+              id: 'design',
+              label: 'التصميم',
+              icon: (
+                <SlidersHorizontal
+                  className="w-3.5 h-3.5"
+                  weight={activeTab === 'design' ? 'bold' : 'regular'}
+                />
+              ),
             },
             {
-              id: "sheet",
-              label: "الشيت",
-              icon: <Printer className="w-3.5 h-3.5" weight={activeTab === "sheet" ? "bold" : "regular"} />,
+              id: 'sheet',
+              label: 'الشيت',
+              icon: (
+                <Printer
+                  className="w-3.5 h-3.5"
+                  weight={activeTab === 'sheet' ? 'bold' : 'regular'}
+                />
+              ),
               badge: (
                 <span className="text-2xs font-mono px-1 py-0.2 rounded-full bg-primary/10 text-primary font-bold">
                   {gridConfig.rows * gridConfig.cols}
@@ -203,14 +229,20 @@ export const StickerProperties = React.memo(function StickerProperties({
               ),
             },
             {
-              id: "presets",
-              label: "قوالبي",
-              icon: <BookmarkSimple className="w-3.5 h-3.5" weight={activeTab === "presets" ? "bold" : "regular"} />,
-              badge: templatePresets.length > 0 ? (
-                <span className="text-2xs font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
-                  {templatePresets.length}
-                </span>
-              ) : undefined,
+              id: 'presets',
+              label: 'قوالبي',
+              icon: (
+                <BookmarkSimple
+                  className="w-3.5 h-3.5"
+                  weight={activeTab === 'presets' ? 'bold' : 'regular'}
+                />
+              ),
+              badge:
+                templatePresets.length > 0 ? (
+                  <span className="text-2xs font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
+                    {templatePresets.length}
+                  </span>
+                ) : undefined,
             },
           ]}
         />
@@ -218,7 +250,7 @@ export const StickerProperties = React.memo(function StickerProperties({
 
       {/* ── Tab Content ── */}
       <div className="flex-1 overflow-y-auto scrollbar-none p-3 space-y-3">
-        {activeTab === "design" ? (
+        {activeTab === 'design' ? (
           <>
             {/* 1. النصوص */}
             {template.fields.length > 0 && (
@@ -235,7 +267,9 @@ export const StickerProperties = React.memo(function StickerProperties({
                     return (
                       <div key={field.id} className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <Label className="text-mini font-semibold text-foreground/85">{field.label}</Label>
+                          <Label className="text-mini font-semibold text-foreground/85">
+                            {field.label}
+                          </Label>
                           {isModified && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -277,42 +311,44 @@ export const StickerProperties = React.memo(function StickerProperties({
                 <ColorRoleButton
                   label="الأساسي"
                   color={params.primaryColor}
-                  onChange={(c) => handleColorChange("primaryColor", c)}
+                  onChange={(c) => handleColorChange('primaryColor', c)}
                 />
                 <ColorRoleButton
                   label="الثانوي"
                   color={params.secondaryColor}
-                  onChange={(c) => handleColorChange("secondaryColor", c)}
+                  onChange={(c) => handleColorChange('secondaryColor', c)}
                 />
                 <ColorRoleButton
                   label="الخلفية"
                   color={params.backgroundColor}
                   disabled={params.isTransparent}
-                  onChange={(c) => handleColorChange("backgroundColor", c)}
+                  onChange={(c) => handleColorChange('backgroundColor', c)}
                 />
                 <button
                   type="button"
-                  onClick={() => onChangeParams((prev) => ({ ...prev, isTransparent: !prev.isTransparent }))}
+                  onClick={() =>
+                    onChangeParams((prev) => ({ ...prev, isTransparent: !prev.isTransparent }))
+                  }
                   className={cn(
-                    "relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md border transition-all cursor-pointer text-center",
+                    'relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md border transition-all cursor-pointer text-center',
                     params.isTransparent
-                      ? "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
-                      : "bg-card/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-card"
+                      ? 'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40'
+                      : 'bg-card/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-card',
                   )}
-                  title={params.isTransparent ? "مفرغة (انقر للإلغاء)" : "تفريغ"}
+                  title={params.isTransparent ? 'مفرغة (انقر للإلغاء)' : 'تفريغ'}
                 >
                   <div
                     className={cn(
-                      "w-6 h-6 rounded-md border flex items-center justify-center shrink-0 text-xs font-bold",
+                      'w-6 h-6 rounded-md border flex items-center justify-center shrink-0 text-xs font-bold',
                       params.isTransparent
-                        ? "border-primary bg-primary/20 text-primary"
-                        : "border-border/50 bg-muted/40 text-muted-foreground"
+                        ? 'border-primary bg-primary/20 text-primary'
+                        : 'border-border/50 bg-muted/40 text-muted-foreground',
                     )}
                   >
                     ∅
                   </div>
                   <span className="text-micro font-semibold">
-                    {params.isTransparent ? "مفرغة" : "شفافة"}
+                    {params.isTransparent ? 'مفرغة' : 'شفافة'}
                   </span>
                 </button>
               </div>
@@ -332,7 +368,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                         <button
                           type="button"
                           onClick={() =>
-                            onChangeParams((prev) => ({
+                            commit((prev) => ({
                               ...prev,
                               primaryColor: palette.primary,
                               secondaryColor: palette.secondary,
@@ -341,10 +377,10 @@ export const StickerProperties = React.memo(function StickerProperties({
                             }))
                           }
                           className={cn(
-                            "h-7 px-2 rounded-md border flex items-center gap-1 shrink-0 transition-all cursor-pointer",
+                            'h-7 px-2 rounded-md border flex items-center gap-1 shrink-0 transition-all cursor-pointer',
                             isActive
-                              ? "bg-primary/15 border-primary shadow-2xs ring-1 ring-primary/40"
-                              : "bg-background/60 hover:bg-background border-border/40 hover:border-border/70"
+                              ? 'bg-primary/15 border-primary shadow-2xs ring-1 ring-primary/40'
+                              : 'bg-background/60 hover:bg-background border-border/40 hover:border-border/70',
                           )}
                           aria-label={palette.name}
                         >
@@ -380,9 +416,9 @@ export const StickerProperties = React.memo(function StickerProperties({
             >
               {/* Font Selector */}
               <StickerFontSelector
-                value={params.fontFamily || "Cairo"}
+                value={params.fontFamily || 'Cairo'}
                 onChange={(family) => {
-                  onChangeParams((prev) => ({ ...prev, fontFamily: family }));
+                  commit((prev) => ({ ...prev, fontFamily: family }));
                 }}
               />
 
@@ -404,8 +440,10 @@ export const StickerProperties = React.memo(function StickerProperties({
               <div className="pt-1 border-t border-border/30">
                 <FluentSegmentedControl
                   layoutId="sticker-finish-tabs"
-                  value={params.finish || "standard"}
-                  onChange={(finish) => onChangeParams((prev) => ({ ...prev, finish: finish as StickerFinish }))}
+                  value={params.finish || 'standard'}
+                  onChange={(finish) =>
+                    onChangeParams((prev) => ({ ...prev, finish: finish as StickerFinish }))
+                  }
                   options={FINISH_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
                   className="w-full"
                 />
@@ -420,19 +458,21 @@ export const StickerProperties = React.memo(function StickerProperties({
                 <Switch
                   id="diecut-toggle"
                   checked={params.dieCutBorder ?? true}
-                  onCheckedChange={(checked) => onChangeParams((prev) => ({ ...prev, dieCutBorder: checked }))}
+                  onCheckedChange={(checked) =>
+                    onChangeParams((prev) => ({ ...prev, dieCutBorder: checked }))
+                  }
                 />
               </div>
             </FluentSection>
           </>
-        ) : activeTab === "sheet" ? (
+        ) : activeTab === 'sheet' ? (
           /* ── شيت الطباعة Tab ── */
           <div className="space-y-3">
             {/* Miniature Sheet Grid Preview */}
             <div className="relative w-full h-28 rounded-xl bg-muted/25 border border-border/40 p-2 flex items-center justify-center overflow-hidden">
               <div
                 className="relative bg-card/95 rounded-lg border border-border/60 shadow-xs flex items-center justify-center p-1.5 transition-all duration-200"
-                style={{ width: "130px", height: "80px" }}
+                style={{ width: '130px', height: '80px' }}
               >
                 <div
                   className="grid w-full h-full gap-1 items-center justify-center"
@@ -441,19 +481,25 @@ export const StickerProperties = React.memo(function StickerProperties({
                     gridTemplateRows: `repeat(${gridConfig.rows}, minmax(0, 1fr))`,
                   }}
                 >
-                  {Array.from({ length: Math.min(32, gridConfig.rows * gridConfig.cols) }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={cn(
-                        "w-full h-full max-w-[14px] max-h-[14px] mx-auto border transition-all duration-150 shadow-2xs",
-                        template.shape === "circle" ? "rounded-full" : template.shape === "rect" ? "rounded-sm" : "rounded-md"
-                      )}
-                      style={{
-                        backgroundColor: params.primaryColor,
-                        borderColor: params.secondaryColor || "rgba(0,0,0,0.2)",
-                      }}
-                    />
-                  ))}
+                  {Array.from({ length: Math.min(32, gridConfig.rows * gridConfig.cols) }).map(
+                    (_, idx) => (
+                      <div
+                        key={idx}
+                        className={cn(
+                          'w-full h-full max-w-[14px] max-h-[14px] mx-auto border transition-all duration-150 shadow-2xs',
+                          template.shape === 'circle'
+                            ? 'rounded-full'
+                            : template.shape === 'rect'
+                              ? 'rounded-sm'
+                              : 'rounded-md',
+                        )}
+                        style={{
+                          backgroundColor: params.primaryColor,
+                          borderColor: params.secondaryColor || 'rgba(0,0,0,0.2)',
+                        }}
+                      />
+                    ),
+                  )}
                 </div>
               </div>
             </div>
@@ -461,22 +507,24 @@ export const StickerProperties = React.memo(function StickerProperties({
             {/* Grid Presets */}
             <div className="grid grid-cols-4 gap-1 bg-muted/60 dark:bg-black/35 p-1 rounded-xl border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
               {[
-                { r: 2, c: 2, label: "2×2" },
-                { r: 3, c: 3, label: "3×3" },
-                { r: 4, c: 2, label: "4×2" },
-                { r: 5, c: 3, label: "5×3" },
+                { r: 2, c: 2, label: '2×2' },
+                { r: 3, c: 3, label: '3×3' },
+                { r: 4, c: 2, label: '4×2' },
+                { r: 5, c: 3, label: '5×3' },
               ].map((p) => {
                 const isActive = gridConfig.rows === p.r && gridConfig.cols === p.c;
                 return (
                   <button
                     key={p.label}
                     type="button"
-                    onClick={() => onChangeGridConfig((prev) => ({ ...prev, rows: p.r, cols: p.c }))}
+                    onClick={() =>
+                      onChangeGridConfig((prev) => ({ ...prev, rows: p.r, cols: p.c }))
+                    }
                     className={cn(
-                      "h-7 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center select-none active:scale-[0.98]",
+                      'h-7 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center select-none active:scale-[0.98]',
                       isActive
-                        ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
-                        : "text-muted-foreground hover:text-foreground hover:bg-card/40 dark:hover:bg-white/5 border-transparent font-medium"
+                        ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-card/40 dark:hover:bg-white/5 border-transparent font-medium',
                     )}
                   >
                     {p.label}
@@ -538,7 +586,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                   value={newPresetName}
                   onChange={(e) => setNewPresetName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSavePreset();
+                    if (e.key === 'Enter') handleSavePreset();
                   }}
                   placeholder="اسم القالب"
                   className="h-8 text-xs font-medium rounded-md flex-1 bg-background/80"
@@ -576,7 +624,10 @@ export const StickerProperties = React.memo(function StickerProperties({
                       className="p-2.5 rounded-xl bg-card/60 hover:bg-card border border-border/40 hover:border-primary/40 transition-all space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-foreground truncate" title={preset.name}>
+                        <span
+                          className="text-xs font-bold text-foreground truncate"
+                          title={preset.name}
+                        >
                           {preset.name}
                         </span>
 
@@ -602,9 +653,9 @@ export const StickerProperties = React.memo(function StickerProperties({
 
                       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/20">
                         <span className="text-micro text-muted-foreground font-mono">
-                          {new Date(preset.createdAt).toLocaleDateString("ar-EG", {
-                            month: "short",
-                            day: "numeric",
+                          {new Date(preset.createdAt).toLocaleDateString('ar-EG', {
+                            month: 'short',
+                            day: 'numeric',
                           })}
                         </span>
 
@@ -636,7 +687,10 @@ export const StickerProperties = React.memo(function StickerProperties({
                 </div>
               ) : (
                 <div className="p-4 rounded-xl bg-card/30 border border-dashed border-border/50 text-center space-y-1.5">
-                  <BookmarkSimple className="w-7 h-7 mx-auto text-muted-foreground/60" weight="duotone" />
+                  <BookmarkSimple
+                    className="w-7 h-7 mx-auto text-muted-foreground/60"
+                    weight="duotone"
+                  />
                   <p className="text-xs font-semibold text-foreground/80">لا قوالب محفوظة</p>
                   <p className="text-mini text-muted-foreground leading-relaxed">
                     اكتب اسماً بالأعلى واضغط "حفظ" لاستخدامه لاحقاً.
@@ -651,4 +705,4 @@ export const StickerProperties = React.memo(function StickerProperties({
   );
 });
 
-StickerProperties.displayName = "StickerProperties";
+StickerProperties.displayName = 'StickerProperties';

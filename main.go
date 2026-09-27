@@ -198,7 +198,7 @@ func main() {
 		MinWidth:           840,
 		MinHeight:          560,
 		Frameless:          true,
-		Hidden:             false,
+		Hidden:             true, // تبدأ مخفية لمنع وميض الحجم — تُظهر بعد WindowRuntimeReady
 		ZoomControlEnabled: false,
 		EnableFileDrop:     true,
 		BackgroundType:     application.BackgroundTypeTranslucent,
@@ -226,6 +226,14 @@ func main() {
 
 	mainWindow = wailsApp.Window.NewWithOptions(winOptions)
 	appInstance.desktopSvc.SetMainWindow(mainWindow)
+
+	// 🪟 إظهار النافذة بعد جاهزية الـ WebView لمنع وميض الحجم الأولي:
+	// النافذة تبدأ مخفية (Hidden:true) فلا يرى المستخدم إطاراً فارغاً أو
+	// قفزة حجم من الافتراضي إلى المُكبّر — تظهر بعد اكتمال تحميل الواجهة.
+	mainWindow.OnWindowEvent(events.Common.WindowRuntimeReady, func(_ *application.WindowEvent) {
+		mainWindow.Show()
+		mainWindow.Focus()
+	})
 
 	// 🗂️ أيقونة صينية النظام: نقطة استعادة دائمة للنافذة (إظهار/تركيز) ومسار
 	// خروج سريع، فتبقى واجهة التطبيق قابلة للوصول أثناء عمليات الخلفية.
@@ -261,21 +269,54 @@ func main() {
 		}
 	})
 
+	// ── تتبع أبعاد النافذة قبل التكبير (Restored Geometry) ─────────────
+	// عند الإغلاق أثناء التكبير، mainWindow.Size() تُرجع أبعاد الشاشة
+	// الكاملة — وإذا فُتح التطبيق لاحقاً على شاشة أصغر بحالة max=false
+	// (شاشة فُصلت مثلاً)، تظهر النافذة بحجم مبالغ فيه.
+	// الحل: نتذكر آخر أبعاد وموضع "طبيعي" ونحفظها بدل أبعاد التكبير.
+	restoredW, restoredH := initialWidth, initialHeight
+	restoredX, restoredY := initialX, initialY
+
+	// تحديث الأبعاد الطبيعية عند كل تغيير حجم/موضع بشرط عدم التكبير
+	mainWindow.OnWindowEvent(events.Common.WindowDidResize, func(_ *application.WindowEvent) {
+		if !mainWindow.IsMaximised() && !mainWindow.IsFullscreen() {
+			restoredW, restoredH = mainWindow.Size()
+		}
+	})
+	mainWindow.OnWindowEvent(events.Common.WindowDidMove, func(_ *application.WindowEvent) {
+		if !mainWindow.IsMaximised() && !mainWindow.IsFullscreen() {
+			restoredX, restoredY = mainWindow.Position()
+		}
+	})
+
+	// ── دالة مساعدة لبناء حالة النافذة الحالية ─────────────────────────
+	buildWindowState := func() windowState {
+		isMax := mainWindow.IsMaximised()
+		var w, h, x, y int
+		if isMax {
+			w, h = restoredW, restoredH
+			x, y = restoredX, restoredY
+		} else {
+			w, h = mainWindow.Size()
+			x, y = mainWindow.Position()
+		}
+		return windowState{Width: w, Height: h, X: x, Y: y, Max: isMax}
+	}
+
 	// حفظ مقاسات وموضع النافذة عند إغلاقها
 	mainWindow.OnWindowEvent(events.Common.WindowClosing, func(_ *application.WindowEvent) {
-		w, h := mainWindow.Size()
-		x, y := mainWindow.Position()
-		isMax := mainWindow.IsMaximised()
-
-		state := windowState{
-			Width:  w,
-			Height: h,
-			X:      x,
-			Y:      y,
-			Max:    isMax,
-		}
-		_ = saveWindowState(state)
+		_ = saveWindowState(buildWindowState())
 	})
+
+	// ⏱️ حفظ دوري كل 30 ثانية — يحمي من فقدان الحالة عند الإغلاق القسري
+	// (kill, crash, انقطاع كهربائي). الحفظ ذري (AtomicWriteFile) فلا فساد.
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			_ = saveWindowState(buildWindowState())
+		}
+	}()
 
 	// إيقاف الخدمات وتنظيف الموارد عند إغلاق التطبيق
 	wailsApp.OnShutdown(func() {

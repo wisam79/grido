@@ -1,9 +1,15 @@
-import { StateCreator } from "zustand";
-import { CanvasElement, ShapeElement, ImageElement, TextElement } from "../types";
-import { uid } from "../../utils";
-import { computeSmartGridLayout } from "../../canvas/grid-layout-math";
-import { getElementVisualBox } from "../../canvas/element-geometry";
-import { TextPresetType, TEXT_PRESETS } from "../../templates";
+import { StateCreator } from 'zustand';
+import {
+  CanvasElement,
+  ShapeElement,
+  ImageElement,
+  TextElement,
+  StickerElementSource,
+} from '../types';
+import { uid } from '../../utils';
+import { computeSmartGridLayout } from '../../canvas/grid-layout-math';
+import { getElementVisualBox } from '../../canvas/element-geometry';
+import { TextPresetType, TEXT_PRESETS } from '../../templates';
 
 export type { TextPresetType };
 
@@ -23,20 +29,25 @@ export interface ElementSlice {
   editingTextId: string | null;
   clipboardElements: CanvasElement[];
 
-  addImageElement: (src: string, imageAspectRatio?: number) => void;
+  addImageElement: (
+    src: string,
+    imageAspectRatio?: number,
+    /** مصدر ملصق اختياري — يربط العنصر بقالب الاستوديو لإتاحة إعادة التحرير */
+    stickerSource?: StickerElementSource,
+  ) => void;
   addImageElementsBatch: (
     items: BatchImageItem[],
     options?: {
-      layoutMode?: "grid" | "cascade" | "stack";
+      layoutMode?: 'grid' | 'cascade' | 'stack';
       columns?: number;
       gapPx?: number;
       marginPx?: number;
       centerLastRow?: boolean;
-    }
+    },
   ) => void;
   addTextElement: (text?: string) => void;
   addTextPreset: (preset: TextPresetType) => void;
-  addShapeElement: (shape: ShapeElement["shape"], svgPath?: string) => void;
+  addShapeElement: (shape: ShapeElement['shape'], svgPath?: string) => void;
   /**
    * مستطيل خلفية كامل يغطي الورقة ويُوضع خلف كل العناصر — بإنشاء واحد
    * وإدخال واحد في السجل. (addShapeElement ثم updateElement كانا يتركان
@@ -64,8 +75,10 @@ export interface ElementSlice {
   autoFitTextWidth: (id: string, textWidthPx?: number) => void;
   centerElementHorizontally: (id: string) => void;
   centerElementVertically: (id: string) => void;
-  alignSelectedElements: (alignment: "left" | "center" | "right" | "top" | "middle" | "bottom") => void;
-  distributeSelectedElements: (axis: "horizontal" | "vertical") => void;
+  alignSelectedElements: (
+    alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom',
+  ) => void;
+  distributeSelectedElements: (axis: 'horizontal' | 'vertical') => void;
 }
 
 export const DEFAULT_ELEMENT_STATE = {
@@ -99,7 +112,7 @@ type ElementCross = ElementSlice & {
 export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice> = (set, get) => ({
   ...DEFAULT_ELEMENT_STATE,
 
-  addImageElement: (src, imageAspectRatio = 1) => {
+  addImageElement: (src, imageAspectRatio = 1, stickerSource) => {
     const id = uid();
     const state = get();
 
@@ -113,7 +126,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     const newEl: CanvasElement = {
       id,
-      type: "image",
+      type: 'image',
       x: 0.5 - wPercent / 2,
       y: 0.5 - hPercent / 2,
       width: wPercent,
@@ -122,11 +135,12 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       opacity: 1,
       zIndex: nextZIndex(state.elements),
       imageSrc: src,
-      filter: "none",
+      filter: 'none',
       brightness: 100,
       contrast: 100,
       saturation: 100,
       blur: 0,
+      ...(stickerSource ? { stickerSource } : {}),
     };
     set((s) => ({
       elements: [...s.elements, newEl],
@@ -146,7 +160,11 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     // Check if items already have fully specified layout coordinates
     const hasPredefinedCoords = items.every(
-      (it) => it.x !== undefined && it.y !== undefined && it.width !== undefined && it.height !== undefined
+      (it) =>
+        it.x !== undefined &&
+        it.y !== undefined &&
+        it.width !== undefined &&
+        it.height !== undefined,
     );
 
     const placedItems = hasPredefinedCoords
@@ -165,7 +183,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
           gapPx: options?.gapPx,
           marginPx: options?.marginPx,
           centerLastRow: options?.centerLastRow ?? true,
-          layoutMode: options?.layoutMode ?? "grid",
+          layoutMode: options?.layoutMode ?? 'grid',
         });
 
     let currentZ = nextZIndex(state.elements);
@@ -173,7 +191,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       const elId = uid();
       const el: CanvasElement = {
         id: elId,
-        type: "image",
+        type: 'image',
         x: placed.x,
         y: placed.y,
         width: placed.width,
@@ -182,7 +200,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
         opacity: 1,
         zIndex: currentZ,
         imageSrc: placed.src,
-        filter: "none",
+        filter: 'none',
         brightness: 100,
         contrast: 100,
         saturation: 100,
@@ -205,7 +223,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     get().pushHistory();
   },
 
-  addTextElement: (text = "نص جديد") => {
+  addTextElement: (text = 'نص جديد') => {
     const id = uid();
     const state = get();
     const canvasW = state.canvasWidth || 2480;
@@ -218,7 +236,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     const newEl: CanvasElement = {
       id,
-      type: "text",
+      type: 'text',
       x: 0.5 - initialW / 2,
       y: 0.45,
       width: initialW,
@@ -229,10 +247,10 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       text,
       fontSize: 32,
       fontWeight: 700,
-      color: "#1a1a2e",
-      fontFamily: "\"IBM Plex Sans Arabic\", Cairo, Tajawal, sans-serif",
-      textAlign: "center",
-      textBgColor: "transparent",
+      color: '#1a1a2e',
+      fontFamily: '"IBM Plex Sans Arabic", Cairo, Tajawal, sans-serif',
+      textAlign: 'center',
+      textBgColor: 'transparent',
       lineHeight: 1.2,
       letterSpacing: 0,
     };
@@ -255,7 +273,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     const newEl: CanvasElement = {
       id,
-      type: "text",
+      type: 'text',
       x: 0.5 - initialW / 2,
       y: 0.45,
       width: initialW,
@@ -268,8 +286,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       fontWeight: config.fontWeight,
       color: config.color,
       fontFamily: config.fontFamily,
-      textAlign: "center",
-      textBgColor: config.textBgColor ?? "transparent",
+      textAlign: 'center',
+      textBgColor: config.textBgColor ?? 'transparent',
       textBgRadius: config.textBgRadius ?? 0,
       textBgPadding: config.textBgPadding ?? 0,
       textBgBorderColor: config.textBgBorderColor,
@@ -285,7 +303,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       shadowOpacity: config.shadowOpacity,
       shadowGlow: config.shadowGlow,
       curve: config.curve,
-      fillType: config.fillType ?? "solid",
+      fillType: config.fillType ?? 'solid',
       fillLinearGradientStartPoint: config.fillLinearGradientStartPoint,
       fillLinearGradientEndPoint: config.fillLinearGradientEndPoint,
       fillLinearGradientColorStops: config.fillLinearGradientColorStops,
@@ -297,23 +315,23 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
   autoFitTextWidth: (id: string, textWidthPx?: number) => {
     const el = get().elements.find((x) => x.id === id);
-    if (!el || el.type !== "text") return;
+    if (!el || el.type !== 'text') return;
 
     const canvasW = get().canvasWidth || 2480;
     let newWidth = el.width;
 
     if (textWidthPx && textWidthPx > 0) {
       newWidth = Math.min(0.85, Math.max(0.04, (textWidthPx + 40) / canvasW));
-    } else if (typeof document !== "undefined") {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
+    } else if (typeof document !== 'undefined') {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       if (ctx) {
-        let textToMeasure = el.text || "";
+        let textToMeasure = el.text || '';
         if (el.arabicNumerals) {
-          textToMeasure = textToMeasure.replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d, 10)]);
+          textToMeasure = textToMeasure.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
         }
-        const fontStylePrefix = el.fontStyle === "italic" ? "italic " : "";
-        ctx.font = `${fontStylePrefix}${el.fontWeight || 400} ${el.fontSize || 32}px ${el.fontFamily || "Cairo, Tajawal, sans-serif"}`;
+        const fontStylePrefix = el.fontStyle === 'italic' ? 'italic ' : '';
+        ctx.font = `${fontStylePrefix}${el.fontWeight || 400} ${el.fontSize || 32}px ${el.fontFamily || 'Cairo, Tajawal, sans-serif'}`;
         const metrics = ctx.measureText(textToMeasure);
         const letterSpacingExtra = (el.letterSpacing || 0) * textToMeasure.length;
         const totalW = metrics.width + Math.max(0, letterSpacingExtra);
@@ -322,7 +340,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     }
 
     set((s) => ({
-      elements: s.elements.map((item: CanvasElement) => (item.id === id ? { ...item, width: newWidth } : item)),
+      elements: s.elements.map((item: CanvasElement) =>
+        item.id === id ? { ...item, width: newWidth } : item,
+      ),
     }));
     get().pushHistory();
   },
@@ -332,7 +352,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     if (!el) return;
     const newX = Math.max(0, 0.5 - el.width / 2);
     set((s) => ({
-      elements: s.elements.map((item: CanvasElement) => (item.id === id ? { ...item, x: newX } : item)),
+      elements: s.elements.map((item: CanvasElement) =>
+        item.id === id ? { ...item, x: newX } : item,
+      ),
     }));
     get().pushHistory();
   },
@@ -342,7 +364,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     if (!el) return;
     const newY = Math.max(0, 0.5 - el.height / 2);
     set((s) => ({
-      elements: s.elements.map((item: CanvasElement) => (item.id === id ? { ...item, y: newY } : item)),
+      elements: s.elements.map((item: CanvasElement) =>
+        item.id === id ? { ...item, y: newY } : item,
+      ),
     }));
     get().pushHistory();
   },
@@ -351,7 +375,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const id = uid();
     const state = get();
 
-    const isLine = shape === "line";
+    const isLine = shape === 'line';
     const basePx = Math.min(state.canvasWidth, state.canvasHeight) * 0.25;
     const wPx = isLine ? basePx * 1.5 : basePx;
     const hPx = isLine ? Math.max(16, basePx * 0.05) : basePx;
@@ -361,7 +385,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     const newEl: CanvasElement = {
       id,
-      type: "shape",
+      type: 'shape',
       x: 0.5 - wPercent / 2,
       y: 0.5 - hPercent / 2,
       width: wPercent,
@@ -370,8 +394,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       opacity: 1,
       zIndex: nextZIndex(state.elements),
       shape,
-      fill: "#3b82f6",
-      stroke: "#3b82f6",
+      fill: '#3b82f6',
+      stroke: '#3b82f6',
       strokeWidth: isLine ? 4 : 0,
       radius: 8,
       svgPath,
@@ -388,8 +412,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     const backdrop: CanvasElement = {
       id,
-      type: "shape",
-      shape: "rect",
+      type: 'shape',
+      shape: 'rect',
       x: 0,
       y: 0,
       width: 1,
@@ -398,8 +422,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       opacity: 1,
       zIndex: minZ - 10,
       radius: 0,
-      fill: "#3b82f6",
-      stroke: "transparent",
+      fill: '#3b82f6',
+      stroke: 'transparent',
       strokeWidth: 0,
       ...patch,
     } as ShapeElement;
@@ -430,9 +454,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       if (!hasChanged) return {};
 
       const nextElements = s.elements.map((el: CanvasElement) =>
-        el.id === id ? { ...el, ...patch } as CanvasElement : el,
+        el.id === id ? ({ ...el, ...patch } as CanvasElement) : el,
       );
-      const isImg = currentEl.type === "image";
+      const isImg = currentEl.type === 'image';
       const imgPatch = patch as Partial<ImageElement>;
       return {
         elements: nextElements,
@@ -446,9 +470,11 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       const patchMap = new Map(patches.map((p) => [p.id, p.patch]));
       const nextElements = s.elements.map((el: CanvasElement) => {
         const patch = patchMap.get(el.id);
-        return patch ? { ...el, ...patch } as CanvasElement : el;
+        return patch ? ({ ...el, ...patch } as CanvasElement) : el;
       });
-      const imageIds = new Set(s.elements.filter((e: CanvasElement) => e.type === "image").map((e) => e.id));
+      const imageIds = new Set(
+        s.elements.filter((e: CanvasElement) => e.type === 'image').map((e) => e.id),
+      );
       const imageSrcPatch = patches.find(
         (p) => imageIds.has(p.id) && (p.patch as Partial<ImageElement>).imageSrc,
       ) as { id: string; patch: Partial<ImageElement> } | undefined;
@@ -472,7 +498,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   removeElements: (ids) => {
     set((s) => ({
       elements: s.elements.filter((el: CanvasElement) => !ids.includes(el.id)),
-      selectedId: ids.includes(s.selectedId || "") ? null : s.selectedId,
+      selectedId: ids.includes(s.selectedId || '') ? null : s.selectedId,
       selectedIds: s.selectedIds.filter((id: string) => !ids.includes(id)),
     }));
     get().pushHistory();
@@ -513,7 +539,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       let newGroupId = el.groupId;
       if (el.groupId) {
         if (!groupMappings[el.groupId]) {
-          groupMappings[el.groupId] = `group-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+          groupMappings[el.groupId] =
+            `group-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
         }
         newGroupId = groupMappings[el.groupId];
       }
@@ -553,11 +580,11 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       set({ clipboardElements: cloned });
 
       try {
-        if (cloned.length === 1 && cloned[0].type === "text") {
-          const textVal = (cloned[0] as TextElement).text || "";
+        if (cloned.length === 1 && cloned[0].type === 'text') {
+          const textVal = (cloned[0] as TextElement).text || '';
           navigator.clipboard.writeText(textVal);
         } else {
-          navigator.clipboard.writeText("GRIDO_ELEMENTS:" + JSON.stringify(cloned));
+          navigator.clipboard.writeText('GRIDO_ELEMENTS:' + JSON.stringify(cloned));
         }
       } catch (e) {
         // Safe fallback if clipboard write API fails or is restricted
@@ -568,7 +595,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   cutSelectedElements: (targetIds) => {
     const state = get();
     const idsToCut = targetIds && targetIds.length > 0 ? targetIds : [...state.selectedIds];
-    const finalIds = idsToCut.length > 0 ? idsToCut : (state.selectedId ? [state.selectedId] : []);
+    const finalIds = idsToCut.length > 0 ? idsToCut : state.selectedId ? [state.selectedId] : [];
     if (finalIds.length === 0) return;
 
     const removableIds = finalIds.filter((id) => {
@@ -583,11 +610,11 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     set({ clipboardElements: cloned });
 
     try {
-      if (cloned.length === 1 && cloned[0].type === "text") {
-        const textVal = (cloned[0] as TextElement).text || "";
+      if (cloned.length === 1 && cloned[0].type === 'text') {
+        const textVal = (cloned[0] as TextElement).text || '';
         navigator.clipboard.writeText(textVal);
       } else {
-        navigator.clipboard.writeText("GRIDO_ELEMENTS:" + JSON.stringify(cloned));
+        navigator.clipboard.writeText('GRIDO_ELEMENTS:' + JSON.stringify(cloned));
       }
     } catch (e) {
       // Safe fallback if clipboard write API fails
@@ -598,7 +625,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
   pasteCopiedElements: (customElements) => {
     const state = get();
-    const clipboard = customElements && customElements.length > 0 ? customElements : state.clipboardElements;
+    const clipboard =
+      customElements && customElements.length > 0 ? customElements : state.clipboardElements;
     if (!clipboard || clipboard.length === 0) return;
 
     const nextElements = [...state.elements];
@@ -613,7 +641,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       let newGroupId = el.groupId;
       if (el.groupId) {
         if (!groupMappings[el.groupId]) {
-          groupMappings[el.groupId] = `group-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+          groupMappings[el.groupId] =
+            `group-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
         }
         newGroupId = groupMappings[el.groupId];
       }
@@ -658,8 +687,8 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     }
     const el = get().elements.find((e: CanvasElement) => e.id === id);
     if (el && el.groupId) {
-      const groupElIds = get().elements
-        .filter((e: CanvasElement) => e.groupId === el.groupId)
+      const groupElIds = get()
+        .elements.filter((e: CanvasElement) => e.groupId === el.groupId)
         .map((e: CanvasElement) => e.id);
       set({ selectedId: id, selectedIds: groupElIds });
     } else {
@@ -668,7 +697,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   },
 
   selectAllElements: () => {
-    const visibleIds = get().elements.filter((el) => el.visible !== false).map((el) => el.id);
+    const visibleIds = get()
+      .elements.filter((el) => el.visible !== false)
+      .map((el) => el.id);
     set({
       selectedId: visibleIds.length === 1 ? visibleIds[0] : null,
       selectedIds: visibleIds,
@@ -741,9 +772,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     set((s) => ({
       elements: s.elements.map((el: CanvasElement) =>
-        el.groupId && groupIdsToUngroup.includes(el.groupId)
-          ? { ...el, groupId: undefined }
-          : el,
+        el.groupId && groupIdsToUngroup.includes(el.groupId) ? { ...el, groupId: undefined } : el,
       ),
     }));
     get().pushHistory();
@@ -753,8 +782,11 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
   alignSelectedElements: (alignment) => {
     const state = get();
-    const targetIds = state.selectedIds.length > 0 ? state.selectedIds : (state.selectedId ? [state.selectedId] : []);
-    const elementsToAlign = state.elements.filter((e: CanvasElement) => targetIds.includes(e.id) && !e.locked);
+    const targetIds =
+      state.selectedIds.length > 0 ? state.selectedIds : state.selectedId ? [state.selectedId] : [];
+    const elementsToAlign = state.elements.filter(
+      (e: CanvasElement) => targetIds.includes(e.id) && !e.locked,
+    );
     if (elementsToAlign.length === 0) return;
 
     // تقسيم العناصر إلى وحدات منطقية (مجموعات متماسكة أو عناصر مفردة)
@@ -775,10 +807,20 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const { canvasWidth, canvasHeight } = state;
     const getBox = (e: CanvasElement) => getElementVisualBox(e, canvasWidth, canvasHeight);
 
-    let overallMinX = Math.min(...elementsToAlign.map(e => getBox(e).x));
-    let overallMaxX = Math.max(...elementsToAlign.map(e => { const b = getBox(e); return b.x + b.width; }));
-    let overallMinY = Math.min(...elementsToAlign.map(e => getBox(e).y));
-    let overallMaxY = Math.max(...elementsToAlign.map(e => { const b = getBox(e); return b.y + b.height; }));
+    let overallMinX = Math.min(...elementsToAlign.map((e) => getBox(e).x));
+    let overallMaxX = Math.max(
+      ...elementsToAlign.map((e) => {
+        const b = getBox(e);
+        return b.x + b.width;
+      }),
+    );
+    let overallMinY = Math.min(...elementsToAlign.map((e) => getBox(e).y));
+    let overallMaxY = Math.max(
+      ...elementsToAlign.map((e) => {
+        const b = getBox(e);
+        return b.y + b.height;
+      }),
+    );
 
     if (isSingleUnit) {
       // محاذاة الوحدة الواحدة بالنسبة لحدود الكانفس الكاملة (0..1)
@@ -794,10 +836,20 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
 
     units.forEach((unitElements) => {
-      const uMinX = Math.min(...unitElements.map(e => getBox(e).x));
-      const uMaxX = Math.max(...unitElements.map(e => { const b = getBox(e); return b.x + b.width; }));
-      const uMinY = Math.min(...unitElements.map(e => getBox(e).y));
-      const uMaxY = Math.max(...unitElements.map(e => { const b = getBox(e); return b.y + b.height; }));
+      const uMinX = Math.min(...unitElements.map((e) => getBox(e).x));
+      const uMaxX = Math.max(
+        ...unitElements.map((e) => {
+          const b = getBox(e);
+          return b.x + b.width;
+        }),
+      );
+      const uMinY = Math.min(...unitElements.map((e) => getBox(e).y));
+      const uMaxY = Math.max(
+        ...unitElements.map((e) => {
+          const b = getBox(e);
+          return b.y + b.height;
+        }),
+      );
       const uWidth = uMaxX - uMinX;
       const uHeight = uMaxY - uMinY;
 
@@ -805,23 +857,23 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       let dy = 0;
 
       switch (alignment) {
-        case "left":
+        case 'left':
           dx = overallMinX - uMinX;
           break;
-        case "center":
-          dx = (overallCenterX - uWidth / 2) - uMinX;
+        case 'center':
+          dx = overallCenterX - uWidth / 2 - uMinX;
           break;
-        case "right":
-          dx = (overallMaxX - uWidth) - uMinX;
+        case 'right':
+          dx = overallMaxX - uWidth - uMinX;
           break;
-        case "top":
+        case 'top':
           dy = overallMinY - uMinY;
           break;
-        case "middle":
-          dy = (overallCenterY - uHeight / 2) - uMinY;
+        case 'middle':
+          dy = overallCenterY - uHeight / 2 - uMinY;
           break;
-        case "bottom":
-          dy = (overallMaxY - uHeight) - uMinY;
+        case 'bottom':
+          dy = overallMaxY - uHeight - uMinY;
           break;
       }
 
@@ -843,7 +895,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   distributeSelectedElements: (axis) => {
     const state = get();
     const targetIds = state.selectedIds.length >= 3 ? state.selectedIds : [];
-    const elementsToDistribute = state.elements.filter((e: CanvasElement) => targetIds.includes(e.id) && !e.locked);
+    const elementsToDistribute = state.elements.filter(
+      (e: CanvasElement) => targetIds.includes(e.id) && !e.locked,
+    );
     if (elementsToDistribute.length < 3) return;
 
     const { canvasWidth, canvasHeight } = state;
@@ -869,13 +923,13 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     }
 
     const units: Unit[] = Array.from(unitMap.values()).map((unitElements) => {
-      const boxes = unitElements.map(e => getBox(e));
+      const boxes = unitElements.map((e) => getBox(e));
       return {
         ids: unitElements.map((e) => e.id),
-        minX: Math.min(...boxes.map(b => b.x)),
-        minY: Math.min(...boxes.map(b => b.y)),
-        maxX: Math.max(...boxes.map(b => b.x + b.width)),
-        maxY: Math.max(...boxes.map(b => b.y + b.height)),
+        minX: Math.min(...boxes.map((b) => b.x)),
+        minY: Math.min(...boxes.map((b) => b.y)),
+        maxX: Math.max(...boxes.map((b) => b.x + b.width)),
+        maxY: Math.max(...boxes.map((b) => b.y + b.height)),
       };
     });
 
@@ -883,7 +937,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
 
-    if (axis === "horizontal") {
+    if (axis === 'horizontal') {
       const sorted = [...units].sort((a, b) => a.minX - b.minX);
       const first = sorted[0];
       const last = sorted[sorted.length - 1];
@@ -900,7 +954,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
             patches.push({ id: el.id, patch: { x: el.x + dx } });
           });
         }
-        currentX += (u.maxX - u.minX) + gap;
+        currentX += u.maxX - u.minX + gap;
       });
       if (patches.length > 0) {
         get().updateElements(patches);
@@ -926,7 +980,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
           vPatches.push({ id: el.id, patch: { y: el.y + dy } });
         });
       }
-      currentY += (u.maxY - u.minY) + gap;
+      currentY += u.maxY - u.minY + gap;
     });
 
     if (vPatches.length > 0) {

@@ -1,6 +1,6 @@
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
-import { Spinner } from "@/components/ui/huge-icon";
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   Copy,
   Scissors,
@@ -11,18 +11,20 @@ import {
   MagicWand,
   Crop,
   ClipboardText,
-} from "@/components/ui/icons";
-import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
-import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
-import { wailsIsDesktop } from "@/lib/wails-env";
-import type { ImageElement, CanvasElement } from "@/lib/store/types";
+  Sticker,
+} from '@/components/ui/icons';
+import { requestStickerReedit } from '@/components/editor/toolbar/sticker-reedit-bus';
+import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
+import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
+import { wailsIsDesktop } from '@/lib/wails-env';
+import type { ImageElement, CanvasElement } from '@/lib/store/types';
 import {
   menuItemClassName,
   menuItemDangerClassName,
   menuItemSpinnerClassName,
   menuSectionLabelClassName,
   menuSeparatorClassName,
-} from "./menu-item-styles";
+} from './menu-item-styles';
 
 export interface ElementMenuShared {
   targetId: string;
@@ -44,7 +46,16 @@ export interface ElementMenuShared {
  * الخلفية/ترميم الوجه) والتحكم والترتيب (نسخ/قص/لصق/تكرار/طبقة/حذف) —
  * كان JSX هذا مضمّناً في ContextMenu.
  */
-export function ElementMenuSection({ targetId, onClose, handleAction, setCropTarget, isRemovingBg, isEnhancing, handleRemoveBg, handleEnhance }: ElementMenuShared) {
+export function ElementMenuSection({
+  targetId,
+  onClose,
+  handleAction,
+  setCropTarget,
+  isRemovingBg,
+  isEnhancing,
+  handleRemoveBg,
+  handleEnhance,
+}: ElementMenuShared) {
   const {
     copySelectedElements,
     cutSelectedElements,
@@ -56,30 +67,54 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
     updateElement,
     pushHistory,
     elements,
-  } = useEditorStore(useShallow((state) => ({
-    copySelectedElements: state.copySelectedElements,
-    cutSelectedElements: state.cutSelectedElements,
-    duplicateElement: state.duplicateElement,
-    duplicateElements: state.duplicateElements,
-    removeElement: state.removeElement,
-    bringToFront: state.bringToFront,
-    sendToBack: state.sendToBack,
-    updateElement: state.updateElement,
-    pushHistory: state.pushHistory,
-    elements: state.elements,
-  })));
+  } = useEditorStore(
+    useShallow((state) => ({
+      copySelectedElements: state.copySelectedElements,
+      cutSelectedElements: state.cutSelectedElements,
+      duplicateElement: state.duplicateElement,
+      duplicateElements: state.duplicateElements,
+      removeElement: state.removeElement,
+      bringToFront: state.bringToFront,
+      sendToBack: state.sendToBack,
+      updateElement: state.updateElement,
+      pushHistory: state.pushHistory,
+      elements: state.elements,
+    })),
+  );
 
   const el = elements.find((e) => e.id === targetId);
-  const imgEl = el?.type === "image" ? (el as ImageElement) : null;
+  const imgEl = el?.type === 'image' ? (el as ImageElement) : null;
 
   return (
     <div className="space-y-1">
+      {/* قسم إعادة تحرير الملصق — للعناصر المدرجة من استوديو الملصقات فقط */}
+      {imgEl?.stickerSource && (
+        <>
+          <div className={menuSectionLabelClassName}>استوديو الملصقات</div>
+          <div className="space-y-0.5">
+            <button
+              role="menuitem"
+              tabIndex={-1}
+              className={menuItemClassName}
+              onClick={() => {
+                handleAction(() => requestStickerReedit(imgEl.id));
+              }}
+            >
+              <Sticker
+                className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                weight="duotone"
+              />
+              <span className="truncate">تعديل الملصق</span>
+            </button>
+          </div>
+          <div className={menuSeparatorClassName} role="separator" />
+        </>
+      )}
+
       {/* قسم الذكاء الاصطناعي إن كان عنصراً صورياً */}
       {imgEl?.imageSrc && (
         <>
-          <div className={menuSectionLabelClassName}>
-            معالجة الصور
-          </div>
+          <div className={menuSectionLabelClassName}>معالجة الصور</div>
           <div className="space-y-0.5">
             <button
               role="menuitem"
@@ -93,12 +128,12 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
                     try {
                       const isWailsDesktop = wailsIsDesktop();
                       let finalPath = croppedB64;
-                      if (isWailsDesktop && croppedB64.startsWith("data:image/")) {
+                      if (isWailsDesktop && croppedB64.startsWith('data:image/')) {
                         try {
                           const localPath = await SaveImageFromBase64(croppedB64);
                           if (localPath) finalPath = localPath;
                         } catch (e) {
-                          console.error("Failed to save cropped image locally:", e);
+                          console.error('Failed to save cropped image locally:', e);
                         }
                       }
 
@@ -130,13 +165,16 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
                       };
                       img.src = croppedB64;
                     } catch (err) {
-                      console.error("Failed to crop image in context menu:", err);
+                      console.error('Failed to crop image in context menu:', err);
                     }
-                  }
+                  },
                 });
               }}
             >
-              <Crop className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <Crop
+                className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                weight="regular"
+              />
               <span className="truncate">قص وتدوير</span>
             </button>
 
@@ -150,8 +188,15 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
                 onClose();
               }}
             >
-              {isRemovingBg ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <Sparkle className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
-              <span className="truncate">{isRemovingBg ? "جاري العزل ..." : "عزل الخلفية"}</span>
+              {isRemovingBg ? (
+                <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} />
+              ) : (
+                <Sparkle
+                  className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                  weight="duotone"
+                />
+              )}
+              <span className="truncate">{isRemovingBg ? 'جاري العزل ...' : 'عزل الخلفية'}</span>
             </button>
 
             <button
@@ -164,28 +209,38 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
                 onClose();
               }}
             >
-              {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
-              <span className="truncate">{isEnhancing ? "جاري الترميم ..." : "ترميم الوجه"}</span>
+              {isEnhancing ? (
+                <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} />
+              ) : (
+                <MagicWand
+                  className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                  weight="duotone"
+                />
+              )}
+              <span className="truncate">{isEnhancing ? 'جاري الترميم ...' : 'ترميم الوجه'}</span>
             </button>
-            </div>
+          </div>
           <div className={menuSeparatorClassName} role="separator" />
         </>
       )}
 
       {/* قسم التحكم والترتيب */}
-      <div className={menuSectionLabelClassName}>
-        التحكم والترتيب
-      </div>
+      <div className={menuSectionLabelClassName}>التحكم والترتيب</div>
       <div className="space-y-0.5">
         <button
           role="menuitem"
           tabIndex={-1}
           className={menuItemClassName}
-          onClick={() => handleAction(() => {
-            copySelectedElements([targetId]);
-          })}
+          onClick={() =>
+            handleAction(() => {
+              copySelectedElements([targetId]);
+            })
+          }
         >
-          <Copy className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <Copy
+            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+            weight="regular"
+          />
           <span className="truncate">نسخ</span>
         </button>
 
@@ -193,11 +248,16 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
           role="menuitem"
           tabIndex={-1}
           className={menuItemClassName}
-          onClick={() => handleAction(() => {
-            cutSelectedElements([targetId]);
-          })}
+          onClick={() =>
+            handleAction(() => {
+              cutSelectedElements([targetId]);
+            })
+          }
         >
-          <Scissors className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <Scissors
+            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+            weight="regular"
+          />
           <span className="truncate">قص</span>
         </button>
 
@@ -205,11 +265,16 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
           role="menuitem"
           tabIndex={-1}
           className={menuItemClassName}
-          onClick={() => handleAction(() => {
-            pasteFromClipboardOrStore();
-          })}
+          onClick={() =>
+            handleAction(() => {
+              pasteFromClipboardOrStore();
+            })
+          }
         >
-          <ClipboardText className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <ClipboardText
+            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+            weight="regular"
+          />
           <span className="truncate">لصق</span>
         </button>
 
@@ -217,16 +282,21 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
           role="menuitem"
           tabIndex={-1}
           className={menuItemClassName}
-          onClick={() => handleAction(() => {
-            const { selectedIds } = useEditorStore.getState();
-            if (selectedIds.length > 1) {
-              duplicateElements(selectedIds);
-            } else {
-              duplicateElement(targetId);
-            }
-          })}
+          onClick={() =>
+            handleAction(() => {
+              const { selectedIds } = useEditorStore.getState();
+              if (selectedIds.length > 1) {
+                duplicateElements(selectedIds);
+              } else {
+                duplicateElement(targetId);
+              }
+            })
+          }
         >
-          <Copy className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <Copy
+            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+            weight="regular"
+          />
           <span className="truncate">تكرار</span>
         </button>
 
@@ -236,7 +306,10 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
           className={menuItemClassName}
           onClick={() => handleAction(() => bringToFront(targetId))}
         >
-          <ArrowUp className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+          <ArrowUp
+            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+            weight="bold"
+          />
           <span className="truncate">تقديم للأمام</span>
         </button>
 
@@ -246,7 +319,10 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
           className={menuItemClassName}
           onClick={() => handleAction(() => sendToBack(targetId))}
         >
-          <ArrowDown className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+          <ArrowDown
+            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+            weight="bold"
+          />
           <span className="truncate">تأخير للخلف</span>
         </button>
 
@@ -256,20 +332,22 @@ export function ElementMenuSection({ targetId, onClose, handleAction, setCropTar
           role="menuitem"
           tabIndex={-1}
           className={menuItemDangerClassName}
-          onClick={() => handleAction(() => {
-            const { selectedIds, removeElements } = useEditorStore.getState();
-            const removableIds = selectedIds.filter((id) => {
-              const found = elements.find((e) => e.id === id);
-              return found && !found.locked;
-            });
-            if (removableIds.length > 1) {
-              removeElements(removableIds);
-            } else if (removableIds.length === 1) {
-              removeElement(removableIds[0]);
-            } else if (!el?.locked) {
-              removeElement(targetId);
-            }
-          })}
+          onClick={() =>
+            handleAction(() => {
+              const { selectedIds, removeElements } = useEditorStore.getState();
+              const removableIds = selectedIds.filter((id) => {
+                const found = elements.find((e) => e.id === id);
+                return found && !found.locked;
+              });
+              if (removableIds.length > 1) {
+                removeElements(removableIds);
+              } else if (removableIds.length === 1) {
+                removeElement(removableIds[0]);
+              } else if (!el?.locked) {
+                removeElement(targetId);
+              }
+            })
+          }
         >
           <Trash className="w-3.5 h-3.5 text-destructive shrink-0" weight="regular" />
           <span className="truncate font-bold">حذف</span>
