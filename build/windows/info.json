@@ -1,12 +1,12 @@
 {
 	"fixed": {
-		"file_version": "1.9.4",
-		"product_version": "1.9.4"
+		"file_version": "1.9.5",
+		"product_version": "1.9.5"
 	},
 	"info": {
 		"0409": {
-			"FileVersion": "1.9.4",
-			"ProductVersion": "1.9.4",
+			"FileVersion": "1.9.5",
+			"ProductVersion": "1.9.5",
 			"OriginalFilename": "GridoStudio.exe",
 			"InternalName": "GridoStudio",
 			"CompanyName": "Grido",
