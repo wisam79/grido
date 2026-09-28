@@ -36,7 +36,7 @@ if (-not $appVersion) {
     $appVersion = (git describe --tags --always 2>$null)
 }
 if (-not $appVersion) {
-    $appVersion = "v1.9.5"
+    $appVersion = "v1.9.6"
 }
 
 Write-Host " [2/3] Building Wails v3 Desktop App ($appVersion)..." -ForegroundColor Green

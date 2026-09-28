@@ -21,9 +21,22 @@
 | RV-2 (F-02) | `frontend/src/features/stickers/lib/vdp-parser.ts`: `sheetRows`/`preview` بسقف `VDP_PARSE_ROW_LIMIT` + `VDP_MAX_FILE_BYTES` (10MB) + تعطيل الصيغ/الأنماط/HTML/VBA + `dense` + منع أسماء أعمدة خطرة (`__proto__`/`prototype`/`constructor`) | 5 حالات في `test/vdp-parser.test.ts` (تثبيت معاملات `XLSX.read` عبر Mock · رفض ملف ضخم · تلوّث النموذج الأولي) · تأكيد في `docs-gate` · قرار المصدر موثَّق في `SECURITY_NOTICE.md` |
 | RV-3 (F-04) | `internal/service/license_service.go`: `loadEnvConfigFile(appDir, allowCwdFallback)` · `internal/service/devmode_{dev,prod}.go` (وسم `dev`) · `internal/utils/devmode.go` · `main.go` (تفويض `isDevMode`) | `TestLoadEnvConfigFile_DevOnlyCwdFallback` (يُثبت تجاهل `.env` المهاجم من مجلد العمل) · تأكيد في `docs-gate` |
 
-**البوابات بعد الإغلاق:** `go vet ./internal/...` + `go test ./internal/...` ✅ (160 دالة في 31 ملفاً) · Vitest **95 ملفاً / 764 ناجحاً + 1 متخطّى (765)** ✅ · `tsc --noEmit` ✅ · ESLint `--max-warnings 0` ✅ · `docs-gate --strict-refs` **16 تأكيداً** ✅ (كانت 12).
+**البوابات بعد الإغلاق:** `go vet ./internal/...` + `go test ./internal/...` ✅ (160 دالة في 31 ملفاً) · Vitest **95 ملفاً / 766 ناجحاً + 1 متخطّى (767)** ✅ · `tsc --noEmit` ✅ · ESLint `--max-warnings 0` ✅ · `docs-gate --strict-refs` **16 تأكيداً** ✅ (كانت 12).
 
 **ملاحظة على RV-2:** البند أُغلق بـ«تخفيف موثَّق» لا بإزالة الثغرة — إزالة `No fix available` تتطلب تغيير مصدر المكتبة (SheetJS المصونة من `cdn.sheetjs.com`) أو إسقاط مسار `xlsx`، وهو قرار المالك في `SECURITY_NOTICE.md`.
+
+---
+
+## 0.26 إطلاق v1.9.6: إغلاق بنود P0 وتحصين الحصص والنوافذ (28 سبتمبر 2026)
+
+**المرجع:** إطلاق الإصدار 1.9.6 بعد إغلاق كافة بنود التدقيق P0 واجتياز دورة الـ CI السحابية الكاملة 10/10 بنجاح.
+
+**المنفَّذ والمثبَّت:**
+1. **حصة الذكاء الاصطناعي (F-01):** توحيد مفتاح اليوم على UTC، تصفير لقطة الخادم فوراً عند الخروج وعزلها حسب البريد والباقة لمنع حجب الرصيد بلقطات قديمة.
+2. **تحصين تفكيك Excel (F-02):** تقييد القراءة بـ `sheetRows` و `VDP_MAX_ROWS` ومنع تلوث النموذج الأولي وتفرد أسماء الأعمدة.
+3. **تحصين بيئة التطوير (F-04):** قصر ارتداد `.env` على البناء الموسوم بـ `-tags dev` وفحص لاحقة اسم التنفيذي فقط دون المسار.
+4. **تحسين تجربة زر التكبير ونوافذ التقسيم (Snap Assist):** رفع مهلة التحويم إلى 800ms وإلغاء المؤقت فورياً عند النقر لمنع التداخل مع نية المستخدم.
+5. **البوابات:** تشغيل كل البوابات بنجاح (`vitest` 95 ملفاً / 767 اختباراً، `docs-gate` 16 تأكيداً، ودورة CI السحابية 10/10 كاملة).
 
 ---
 
