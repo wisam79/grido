@@ -44,7 +44,7 @@ description: دليل الجودة والأمان والاختبار وتولي�
 ## 🧪 2. خطة الاختبار التلقائي السحابي المستمر (Continuous Cloud CI/CD Pipeline)
 
 تطبيقاً لمعيار **الصفر إجهاد للجهاز المحلي والاعتماد الكلي على GitHub Actions** (`Pure GitHub Actions CI Invariant` — الاستثناء الوحيد: `lint` و `typecheck` مسموحان ومطلوبان محلياً قبل رفع الإصدارات):
-يُمنع إجبارياً تشغيل اختبارات E2E (Playwright) أو حزم الاختبارات الثقيلة على جهاز المستخدم المحلي. بدلاً من ذلك، يُعتمد سير العمل السحابي الحصري التالي عبر GitHub CLI:
+يُمنع إجبارياً تشغيل اختبارات E2E (Playwright) أو حزم الاختبارات الثقيلة على جهاز المستخدم المحلي. بدلاً من ذلك، يُعتمد سير العمل السحابي الحصري التالي عبر GitHub CLI مع **إلزامية التحقق الفوري وعدم إنهاء الجلسة حتى اكتمال الـ CI بنجاح**:
 
 ```bash
 # 1. إيداع التعديلات ودفعها للفرع الرئيسي
@@ -52,16 +52,16 @@ git add -A
 git commit -m "feat/fix: ..."
 git push origin main
 
-# 2. استعراض ومراقبة دورة الاختبارات السحابية الجارية فورياً
+# 2. استعراض ومراقبة دورة الاختبارات السحابية الجارية فورياً (إلزامي بعد كل دفع)
 gh run list --limit 3
 gh run watch <run-id> --interval 10
 
-# 3. في حال حدوث أي فشل، استخراج سجلات الفشل الدقيقة دون تحميل كامل السجل
+# 3. في حال حدوث أي فشل، استخراج سجلات الفشل الدقيقة والتشخيص الفوري
 gh run view <run-id> --log-failed
 ```
 
 تشمل دورة الـ CI السحابية المتكاملة 4 وظائف متوازية (Parallel Jobs) في `.github/workflows/ci.yml`:
-1. **`validate-frontend` (Frontend Quality & Tests):** فحص الأنواع الصارم (`tsc`) + ESLint (`--max-warnings 0`) + 70 ملف اختبار وحدة بـ Vitest مع حساب التغطية وحارس انحراف عقود الـ IPC (`frontend/src/lib/wails/ipc-contract-drift.test.ts`).
+1. **`validate-frontend` (Frontend Quality & Tests):** فحص الأنواع الصارم (`tsc`) + ESLint (`--max-warnings 0`) + 94 ملف اختبار وحدة بـ Vitest مع حساب التغطية وحارس انحراف عقود الـ IPC (`frontend/src/lib/wails/ipc-contract-drift.test.ts`).
 2. **`validate-backend` (Backend Quality & Tests):** فحص `go vet` و `staticcheck` وحزمة اختبارات Go الكاملة.
 3. **`e2e-tests` (Playwright E2E Sharding, 4 Shards):** مصفوفة تشظية رباعية تشغل 21 ملف اختبار E2E في أقل من دقيقتين بالتوازي.
 4. **`windows-build` (Windows Build Verification):** تجميع التطبيق الأصلي بـ CGO وتشغيل اختبارات النواة الأصلية على نظام Windows حقيقي (`windows-latest`).
@@ -130,7 +130,9 @@ gh run view <run-id> --log-failed
 
 عند التوجيه لرفع إصدار جديد للتطبيق (`vX.Y.Z`):
 
-1. **الفحص المسبق (Pre-flight):** `npm run lint` و `npm run typecheck` في `frontend` (0 أخطاء/تحذيرات)، و`node scripts/release.mjs --check` للتأكد أن كل ملفات الإصدار متوافقة قبل الرفع.
+1. **الفحص المسبق (Pre-flight):**
+   - **فحص سلامة الـ CI السحابي (Pre-Release CI Health Gate):** تشغيل `gh run list --branch main --limit 1` والتأكد من نجاح آخر دورة كاملة بنسبة 100% (`completed success`). يُمنع إطلاق أي وسم إصدار جديد إذا كان هناك أي فشل معلّق على `main`.
+   - **فحص الجودة المحلي الخفيف:** `npm run lint` و `npm run typecheck` في `frontend` (0 أخطاء/تحذيرات)، و`node scripts/release.mjs --check` للتأكد أن كل ملفات الإصدار متوافقة قبل الرفع.
 2. **رفع الإصدار تلقائياً (مصدر واحد):** `node scripts/release.mjs patch|minor|major|x.y.z --summary "..."` أو `task release -- patch`. الأداة ترفع النسخة في كل المصادر (`build/config.yml` · `build/windows/info.json` · `build/windows/installer/project.nsi` · `build/windows/Taskfile.yml` · `frontend/package.json` وقفله) وترقّي `[Unreleased]` في `CHANGELOG.md` وتنشئ Commit + Tag `vX.Y.Z` تلقائياً. (ملاحظة: `build.ps1` يشتقّ `$appVersion` من `git describe --tags`، فالمصدر الحقيقي هو الوسم؛ وقيمته الاحتياطية (`vX.Y.Z`) تُزامَن آلياً بالأداة.)
 3. **الدفع وبدء البناء السحابي:** `git push origin main && git push origin vX.Y.Z` (أو أضف `--push` للأداة). مهمة `release:check` في CI تمنع انحراف الإصدار.
 4. **النتيجة:** يشغّل `release.yml` البناء السحابي وينشر `GridoStudio.exe`/`GridoStudio-installer.exe` و`grido-checksums.txt` في صفحة Releases. خطوة توقيع SignPath قد تفشل بـ`Could not authorize` (وبـ`continue-on-error: true`) فينتج `GridoStudio-unsigned` — تحقق من أسرار SignPath للتوقيع الفعلي.
