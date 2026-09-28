@@ -1,8 +1,9 @@
-import { StateCreator } from "zustand";
-import * as LicenseHandler from "../../../../wailsjs/go/handlers/LicenseHandler";
-import * as App from "../../../../wailsjs/go/main/App";
-import { domain } from "../../../../wailsjs/go/models";
-import { toErrorMessage } from "@/lib/wails-error";
+import { StateCreator } from 'zustand';
+import * as LicenseHandler from '../../../../wailsjs/go/handlers/LicenseHandler';
+import * as App from '../../../../wailsjs/go/main/App';
+import { domain } from '../../../../wailsjs/go/models';
+import { toErrorMessage } from '@/lib/wails-error';
+import { aiUtcDayKey } from '@/lib/ai/quota';
 
 export type UserProfile = domain.UserProfile;
 
@@ -13,8 +14,14 @@ export interface AiUsageRecord {
   source: string; // "Grido Studio Desktop (Windows)"
   durationSec: number;
   costUsd: number;
-  status: "success" | "failed";
+  status: 'success' | 'failed';
   timestamp: string;
+  /**
+   * مفتاح يوم الاستخدام (UTC) — يُحسب عند التسجيل ليطابق عدّاد الخادم
+   * (`date_trunc('day', timezone('utc', now()))`) بدل تاريخ محلي ينزاح
+   * بتوقيت UTC+3. السجلات القديمة لا تحمله فتُقدّر من `timestamp`.
+   */
+  utcDay?: string;
 }
 
 export interface LicenseSlice {
@@ -39,11 +46,11 @@ export interface LicenseSlice {
   /** ملء سجلات AI من AppData عند الإقلاع (يُستدعى مرة من تأثير التطبيق) */
   hydrateAiUsageLogs: () => Promise<AiUsageRecord[]>;
 
-  logAiUsage: (record: Omit<AiUsageRecord, "id" | "timestamp">) => void;
+  logAiUsage: (record: Omit<AiUsageRecord, 'id' | 'timestamp' | 'utcDay'>) => void;
 }
 
 const DEFAULT_AI_LOGS: AiUsageRecord[] = [];
-const AI_LOGS_STORAGE_KEY = "grido_ai_usage_logs";
+const AI_LOGS_STORAGE_KEY = 'grido_ai_usage_logs';
 const AI_LOGS_MAX_ENTRIES = 200;
 
 /**
@@ -60,7 +67,7 @@ async function persistAiLogs(logs: AiUsageRecord[]): Promise<void> {
     try {
       localStorage.setItem(AI_LOGS_STORAGE_KEY, payload);
     } catch (lsErr) {
-      console.error("Failed to persist AI log:", wailsErr, lsErr);
+      console.error('Failed to persist AI log:', wailsErr, lsErr);
     }
   }
 }
@@ -71,7 +78,7 @@ async function persistAiLogs(logs: AiUsageRecord[]): Promise<void> {
  * ثم يُمسح localStorage لتفادي التكرار مستقبلاً.
  */
 async function loadAiLogs(): Promise<AiUsageRecord[]> {
-  let saved: string = "";
+  let saved: string = '';
   try {
     saved = await App.LoadAiUsageLogs();
   } catch {
@@ -142,11 +149,16 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
   },
 
   logAiUsage: (record) => {
-    const cryptoId = typeof window !== "undefined" && window.crypto?.randomUUID ? window.crypto.randomUUID() : Date.now().toString(36);
+    const cryptoId =
+      typeof window !== 'undefined' && window.crypto?.randomUUID
+        ? window.crypto.randomUUID()
+        : Date.now().toString(36);
     const newLog: AiUsageRecord = {
       ...record,
       id: `log_${Date.now()}_${cryptoId.slice(0, 8)}`,
-      timestamp: new Date().toLocaleString("sv-SE").replace("T", " "),
+      timestamp: new Date().toLocaleString('sv-SE').replace('T', ' '),
+      // 🕒 مفتاح يوم UTC يُثبَّت وقت التسجيل ولا يُعاد اشتقاقه لاحقاً من الطابع المحلي
+      utcDay: aiUtcDayKey(),
     };
     const updated = [newLog, ...get().aiUsageLogs];
     set({ aiUsageLogs: updated });
@@ -171,7 +183,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
         // فشل شبكة/عطل مؤقت → نبقي الجلسة الحالية (سماح عدم الاتصال) بدل قفل
         // المستخدم خارجاً فجأة. تصفير الجلسة يحدث فقط بردّ خادم صريح بأن
         // الترخيص غير صالح (يصل عبر profile بنجاح النداء أعلاه).
-        console.error("Failed to check license status (network error, keeping session):", err);
+        console.error('Failed to check license status (network error, keeping session):', err);
         if (epoch === licenseCheckEpoch) set({ licenseLoading: false });
         return get().user;
       } finally {
@@ -186,12 +198,12 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     set({ licenseLoading: true });
     try {
       const profile = await LicenseHandler.RegisterAccount(name, email, password);
-      if (!profile) throw new Error("فشل إنشاء الحساب");
+      if (!profile) throw new Error('فشل إنشاء الحساب');
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = toErrorMessage(err, "فشل إنشاء الحساب");
+      const msg = toErrorMessage(err, 'فشل إنشاء الحساب');
       throw new Error(msg);
     }
   },
@@ -200,12 +212,12 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     set({ licenseLoading: true });
     try {
       const profile = await LicenseHandler.VerifyOTP(email, otp);
-      if (!profile) throw new Error("رمز التحقق غير صحيح");
+      if (!profile) throw new Error('رمز التحقق غير صحيح');
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = toErrorMessage(err, "رمز التحقق غير صحيح");
+      const msg = toErrorMessage(err, 'رمز التحقق غير صحيح');
       throw new Error(msg);
     }
   },
@@ -214,12 +226,12 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     set({ licenseLoading: true });
     try {
       const profile = await LicenseHandler.ResendOTP(email);
-      if (!profile) throw new Error("فشل إعادة إرسال رمز التحقق");
+      if (!profile) throw new Error('فشل إعادة إرسال رمز التحقق');
       set({ licenseLoading: false });
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = toErrorMessage(err, "فشل إعادة إرسال رمز التحقق");
+      const msg = toErrorMessage(err, 'فشل إعادة إرسال رمز التحقق');
       throw new Error(msg);
     }
   },
@@ -228,12 +240,12 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     set({ licenseLoading: true });
     try {
       const profile = await LicenseHandler.LoginAccount(email, password);
-      if (!profile) throw new Error("بريد إلكتروني أو كلمة مرور غير صحيحة");
+      if (!profile) throw new Error('بريد إلكتروني أو كلمة مرور غير صحيحة');
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = toErrorMessage(err, "بريد إلكتروني أو كلمة مرور غير صحيحة");
+      const msg = toErrorMessage(err, 'بريد إلكتروني أو كلمة مرور غير صحيحة');
       throw new Error(msg);
     }
   },
@@ -242,12 +254,12 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     set({ licenseLoading: true });
     try {
       const profile = await LicenseHandler.LoginWithGoogle();
-      if (!profile) throw new Error("فشل تسجيل الدخول بواسطة Google");
+      if (!profile) throw new Error('فشل تسجيل الدخول بواسطة Google');
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = toErrorMessage(err, "فشل تسجيل الدخول بواسطة Google");
+      const msg = toErrorMessage(err, 'فشل تسجيل الدخول بواسطة Google');
       throw new Error(msg);
     }
   },
@@ -256,12 +268,12 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     set({ licenseLoading: true });
     try {
       const profile = await LicenseHandler.ActivateLicenseKey(key);
-      if (!profile) throw new Error("مفتاح تفعيل غير صالحة أو مستخدم سابقاً");
+      if (!profile) throw new Error('مفتاح تفعيل غير صالحة أو مستخدم سابقاً');
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = toErrorMessage(err, "مفتاح تفعيل غير صالحة أو مستخدم سابقاً");
+      const msg = toErrorMessage(err, 'مفتاح تفعيل غير صالحة أو مستخدم سابقاً');
       throw new Error(msg);
     }
   },
@@ -271,7 +283,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     try {
       await LicenseHandler.ResetPassword(email);
     } catch (err: unknown) {
-      const msg = toErrorMessage(err, "فشل إرسال رابط إعادة تعيين كلمة المرور");
+      const msg = toErrorMessage(err, 'فشل إرسال رابط إعادة تعيين كلمة المرور');
       throw new Error(msg);
     } finally {
       set({ licenseLoading: false });
@@ -282,28 +294,30 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     set({ licenseLoading: true });
     try {
       const profile = await LicenseHandler.VerifyRecoveryOTP(email, token, newPassword);
-      if (!profile) throw new Error("فشل تعيين كلمة المرور الجديدة");
+      if (!profile) throw new Error('فشل تعيين كلمة المرور الجديدة');
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
       set({ licenseLoading: false });
-      const msg = toErrorMessage(err, "فشل تعيين كلمة المرور الجديدة");
+      const msg = toErrorMessage(err, 'فشل تعيين كلمة المرور الجديدة');
       throw new Error(msg);
     }
   },
-
 
   logoutAccount: async () => {
     // إبطال أي فحص ترخيص in-flight حتى لا يعيد الجلسة بعد الخروج (إصلاح Bug#4)
     licenseCheckEpoch++;
     try {
-      if (typeof LicenseHandler.Logout === "function") {
+      if (typeof LicenseHandler.Logout === 'function') {
         await LicenseHandler.Logout();
       }
     } catch (err) {
-      console.error("Failed to execute backend Logout:", err);
+      console.error('Failed to execute backend Logout:', err);
     } finally {
-      // #18 — مسح سجلات AI من الذاكرة عند الخروج لمنع تسريبها للجلسة التالية
+      // #18 — مسح سجلات AI ولقطة الحصة الخادمية من الذاكرة عند الخروج لمنع تسريبها للجلسة التالية
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('grido:auth-logout'));
+      }
       set({ user: null, licenseLoading: false, aiUsageLogs: [] });
     }
   },
@@ -311,12 +325,12 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
   isLicenseActive: () => {
     const user = get().user;
     if (!user) return false;
-    if (user.plan === "pro" || user.plan === "enterprise") {
-      if (user.status === "active" && new Date(user.expiresAt).getTime() > Date.now()) {
+    if (user.plan === 'pro' || user.plan === 'enterprise') {
+      if (user.status === 'active' && new Date(user.expiresAt).getTime() > Date.now()) {
         return true;
       }
-    } else if (user.plan === "trial") {
-      if (user.status === "active" && new Date(user.expiresAt).getTime() > Date.now()) {
+    } else if (user.plan === 'trial') {
+      if (user.status === 'active' && new Date(user.expiresAt).getTime() > Date.now()) {
         return true;
       }
     }

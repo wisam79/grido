@@ -33,6 +33,20 @@ var (
 type AIRateEntry struct {
 	Count    int    `json:"count"`
 	ResetDay string `json:"resetDay"`
+	// Baseline: آخر عدّاد خادمي موثوق (من Sync) — يمنع Rollback من النزول تحت
+	// قيمة الخادم بعد فشل عملية، فيبقى المُقيِّد المحلي صورة صادقة عن الخادم.
+	Baseline int `json:"baseline,omitempty"`
+}
+
+// aiLimiterClock قابل للاستبدال في الاختبارات لاختبار حدود اليوم (UTC).
+var aiLimiterClock = time.Now
+
+// aiUsageDayKey مفتاح اليوم الموحّد — **UTC** ليطابق تمامًا عدّاد المرجع الخادمي
+// (`date_trunc('day', timezone('utc', now()))` في RPC الحصة). كان محلياً، فكان
+// اليوم ينقلب محلياً في منتصف الليل وينقلب خادمياً في 03:00 بتوقيت UTC+3 ⇒ تعرض
+// الواجهة رصيدًا متبقيًا والخدمة ترفض الطلب.
+func aiUsageDayKey(t time.Time) string {
+	return t.UTC().Format("2006-01-02")
 }
 
 type AIRateLimiter struct {
@@ -93,7 +107,7 @@ func (l *AIRateLimiter) Reserve(key string, limit int) error {
 
 	l.loadLocked()
 
-	today := time.Now().Format("2006-01-02")
+	today := aiUsageDayKey(aiLimiterClock())
 	entry, exists := l.usage[key]
 	if !exists || entry.ResetDay != today {
 		entry = &AIRateEntry{Count: 0, ResetDay: today}
@@ -115,12 +129,36 @@ func (l *AIRateLimiter) Rollback(key string) {
 
 	l.loadLocked()
 
-	today := time.Now().Format("2006-01-02")
+	today := aiUsageDayKey(aiLimiterClock())
 	entry, exists := l.usage[key]
-	if exists && entry.ResetDay == today && entry.Count > 0 {
+	if exists && entry.ResetDay == today && entry.Count > entry.Baseline {
 		entry.Count--
 		l.saveLocked()
 	}
+}
+
+// Sync يضبط المُقيِّد المحلي على العدّاد الخادمي الموثوق (يُستدعى بعد كل فحص
+// ناجح من RPC الحصة) — فيصبح الخادم مصدر الحقيقة الوحيد، ولا ينحرف العرض المحلي
+// عن العدّ الفعلي (ولا يبقى Rollback قادراً على النزول تحت قيمة الخادم).
+func (l *AIRateLimiter) Sync(key string, usedToday int) {
+	if usedToday < 0 {
+		return
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.loadLocked()
+
+	today := aiUsageDayKey(aiLimiterClock())
+	entry, exists := l.usage[key]
+	if !exists || entry.ResetDay != today {
+		entry = &AIRateEntry{ResetDay: today}
+		l.usage[key] = entry
+	}
+
+	entry.Count = usedToday
+	entry.Baseline = usedToday
+	l.saveLocked()
 }
 
 type AIService struct{}
@@ -243,9 +281,17 @@ func fetchSupabaseUserInfo(token string) (userID string, plan string, err error)
 	return userData.ID, plan, nil
 }
 
+// aiUsageSnapshot القيم التي يعيدها RPC الحصة خادميًا — مصدر الحقيقة الوحيد
+// للحد اليومي والعدّاد المستهلك اليوم (يُعرضان كما هما في الواجهة بدل اشتقاق موازٍ).
+type aiUsageSnapshot struct {
+	UsedToday  int `json:"used_today"`
+	DailyLimit int `json:"daily_limit"`
+}
+
 // callAIUsageRPC يستدعي RPC check_and_record_ai_usage في Supabase — الحجة الرسمية
-// الوحيدة للحد اليومي. تعمل بوضع الفحص المسبق (check_only) أو التسجيل (record).
-func callAIUsageRPC(token string, userID string, imageBytes int64, checkOnly bool) error {
+// الوحيدة للحد اليومي. تعمل بوضع الفحص المسبق (check_only) أو التسجيل (record)
+// وتعيد لقطة القيم الخادمية عند توفرها (nil عند تعذّر قراءة الحمولة).
+func callAIUsageRPC(token string, userID string, imageBytes int64, checkOnly bool) (*aiUsageSnapshot, error) {
 	payload, err := json.Marshal(map[string]interface{}{
 		"p_user_id":      userID,
 		"p_daily_limit":  0, // مهمل خادمياً — يُشتق من خطة المستخدم
@@ -255,12 +301,12 @@ func callAIUsageRPC(token string, userID string, imageBytes int64, checkOnly boo
 		"p_check_only":   checkOnly,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req, err := http.NewRequest("POST", SupabaseURL+"/rest/v1/rpc/check_and_record_ai_usage", bytes.NewBuffer(payload))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("apikey", SupabaseAnonKey)
@@ -269,7 +315,7 @@ func callAIUsageRPC(token string, userID string, imageBytes int64, checkOnly boo
 	client := aiUsageClient
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -280,13 +326,46 @@ func callAIUsageRPC(token string, userID string, imageBytes int64, checkOnly boo
 		}
 		if jsonErr := json.NewDecoder(io.LimitReader(resp.Body, 64*1024)).Decode(&errRes); jsonErr == nil && errRes.Message != "" {
 			if errRes.Details != "" {
-				return fmt.Errorf("%s (%s)", errRes.Message, errRes.Details)
+				return nil, fmt.Errorf("%s (%s)", errRes.Message, errRes.Details)
 			}
-			return errors.New(errRes.Message)
+			return nil, errors.New(errRes.Message)
 		}
-		return fmt.Errorf("AI usage check failed: %s", resp.Status)
+		return nil, fmt.Errorf("AI usage check failed: %s", resp.Status)
 	}
-	return nil
+
+	// عقد غير متوقع (حمولة غير قابلة للقراءة) لا يُفشل عملية المستخدم —
+	// نكتفي بعدم تحديث المرآة المحلية ونُسجّل تحذيرًا.
+	var snapshot aiUsageSnapshot
+	if decodeErr := json.NewDecoder(io.LimitReader(resp.Body, 64*1024)).Decode(&snapshot); decodeErr != nil {
+		slog.Warn("Unexpected AI usage RPC payload", "error", decodeErr)
+		return nil, nil
+	}
+	return &snapshot, nil
+}
+
+// injectServerQuota يضيف العدّاد والحدّ الخادميين إلى ردّ JSON القادم من Modal،
+// فتقرأ الواجهة القيم نفسها التي يفرضها الخادم بدل اشتقاق محلي موازٍ قد يخالفه
+// (اختلاف حدّ اليوم: محلي مقابل UTC). القيمة +1 هي العملية الحالية نفسها، وهي
+// مسجَّلة مرة واحدة فقط في Modal (لا خصم مزدوج — تأكيد البوابة على check_only).
+func injectServerQuota(body []byte, usedToday int, dailyLimit int) []byte {
+	if usedToday < 0 || dailyLimit <= 0 {
+		return body
+	}
+	var payload map[string]interface{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return body
+	}
+	if _, ok := payload["used_today"]; !ok {
+		payload["used_today"] = usedToday + 1
+	}
+	if _, ok := payload["daily_limit"]; !ok {
+		payload["daily_limit"] = dailyLimit
+	}
+	augmented, err := json.Marshal(payload)
+	if err != nil {
+		return body
+	}
+	return augmented
 }
 
 func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit int) (string, error) {
@@ -308,6 +387,9 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	// (المعامل limit المُستقبَل يُتجاهل عمداً — يبقى في التوقيع حفاظاً على توافقية الـ bindings).
 	serverLimit := resolveDailyLimitForToken(tokenHash, token)
 
+	// العدّاد الخادمي الفعلي لليوم (يشمله رد الفحص المسبق) — يُحقن في الرد النهائي.
+	serverUsedToday := -1
+
 	// فحص سريع محلي (تخفيف مؤقت) — الحجة النهائية خادمية عبر RPC
 	if err := GlobalAIRateLimiter.Reserve(tokenHash, serverLimit); err != nil {
 		return "", err
@@ -328,8 +410,17 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	if SupabaseURL != "" && SupabaseAnonKey != "" {
 		userID, _, userErr := fetchSupabaseUserInfo(token)
 		if userErr == nil && userID != "" {
-			if rpcErr := callAIUsageRPC(token, userID, inputImageBytes, true); rpcErr != nil {
+			snapshot, rpcErr := callAIUsageRPC(token, userID, inputImageBytes, true)
+			if rpcErr != nil {
 				return "", fmt.Errorf("تجاوزت الحد اليومي أو تعذر التحقق من الحصة: %w", rpcErr)
+			}
+			if snapshot != nil {
+				// الحد والعدّاد خادميان — هما المصدر الوحيد للحقيقة (لا اشتقاق محلي موازٍ)
+				if snapshot.DailyLimit > 0 {
+					serverLimit = snapshot.DailyLimit
+				}
+				serverUsedToday = snapshot.UsedToday
+				GlobalAIRateLimiter.Sync(tokenHash, snapshot.UsedToday)
 			}
 		}
 	}
@@ -388,5 +479,5 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	}
 
 	success = true
-	return string(body), nil
+	return string(injectServerQuota(body, serverUsedToday, serverLimit)), nil
 }

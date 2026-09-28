@@ -1,5 +1,5 @@
-import { useRef, useCallback } from "react";
-import { WindowSnapAssist } from "../../../../wailsjs/runtime/runtime";
+import { useRef, useCallback } from 'react';
+import { WindowSnapAssist } from '../../../../wailsjs/runtime/runtime';
 
 /**
  * WindowControls — أزرار التحكم القياسية ثلاثية الأبعاد لنظام Windows 11 Fluent
@@ -13,26 +13,42 @@ interface WindowControlsProps {
   onClose: () => void;
 }
 
-export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }: WindowControlsProps) {
+export function WindowControls({
+  isMaximized,
+  onMinimize,
+  onMaximize,
+  onClose,
+}: WindowControlsProps) {
   const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const clearSnapTimer = useCallback(() => {
+    if (snapTimerRef.current) {
+      clearTimeout(snapTimerRef.current);
+      snapTimerRef.current = null;
+    }
+  }, []);
+
   const handleMaximizeMouseEnter = useCallback(() => {
-    // تفعيل Snap Assist بعد تحويم مستمر 400ms كما في ويندوز 11 الأصلي
+    clearSnapTimer();
+    // تفعيل Snap Assist بعد تحويم متأنٍ متعمد 800ms لمنع مضايقة المستخدم الراغب بالنقر السريع
     snapTimerRef.current = setTimeout(() => {
       try {
         WindowSnapAssist();
       } catch {
         // Safe fallback in non-desktop environments
       }
-    }, 400);
-  }, []);
+    }, 800);
+  }, [clearSnapTimer]);
 
   const handleMaximizeMouseLeave = useCallback(() => {
-    if (snapTimerRef.current) {
-      clearTimeout(snapTimerRef.current);
-      snapTimerRef.current = null;
-    }
-  }, []);
+    clearSnapTimer();
+  }, [clearSnapTimer]);
+
+  const handleMaximizeClick = useCallback(() => {
+    // إلغاء مؤقت التقسيم فوراً لأن نية المستخدم صريحة: تكبير أو استعادة
+    clearSnapTimer();
+    onMaximize();
+  }, [clearSnapTimer, onMaximize]);
 
   return (
     <div className="inline-flex items-stretch h-full select-none title-bar-controls z-50" dir="ltr">
@@ -44,7 +60,13 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
         title="تصغير"
         aria-label="تصغير"
       >
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 10 10"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <path d="M0 5H10" stroke="currentColor" strokeWidth="1" />
         </svg>
       </button>
@@ -52,7 +74,8 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
       {/* زر التكبير / الاستعادة مع دعم Snap Assist */}
       <button
         type="button"
-        onClick={onMaximize}
+        onClick={handleMaximizeClick}
+        onMouseDown={clearSnapTimer}
         onMouseEnter={handleMaximizeMouseEnter}
         onMouseLeave={handleMaximizeMouseLeave}
         onContextMenu={(e) => {
@@ -64,18 +87,42 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
           }
         }}
         className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus:outline-none"
-        title={isMaximized ? "استعادة (انقر باليمين لتقسيم الشاشة)" : "تكبير (انقر باليمين لتقسيم الشاشة)"}
-        aria-label={isMaximized ? "استعادة" : "تكبير"}
+        title={
+          isMaximized
+            ? 'استعادة (انقر باليمين لتقسيم الشاشة)'
+            : 'تكبير (انقر باليمين لتقسيم الشاشة)'
+        }
+        aria-label={isMaximized ? 'استعادة' : 'تكبير'}
       >
         {isMaximized ? (
           // أيقونة الاستعادة (Restore - مربعان متراكبان)
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <path d="M2.5 0.5H9.5V7.5" stroke="currentColor" strokeWidth="1" />
-            <rect x="0.5" y="2.5" width="7" height="7" stroke="currentColor" strokeWidth="1" fill="none" />
+            <rect
+              x="0.5"
+              y="2.5"
+              width="7"
+              height="7"
+              stroke="currentColor"
+              strokeWidth="1"
+              fill="none"
+            />
           </svg>
         ) : (
           // أيقونة التكبير (Maximize - مربع واحد)
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <rect x="0.5" y="0.5" width="9" height="9" stroke="currentColor" strokeWidth="1" />
           </svg>
         )}
@@ -89,7 +136,13 @@ export function WindowControls({ isMaximized, onMinimize, onMaximize, onClose }:
         title="إغلاق"
         aria-label="إغلاق"
       >
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 10 10"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <path d="M0.5 0.5L9.5 9.5M9.5 0.5L0.5 9.5" stroke="currentColor" strokeWidth="1" />
         </svg>
       </button>

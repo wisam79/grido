@@ -32,7 +32,7 @@
 |---|---|
 | **محرر مزدوج** | وضع كولاج بخانات ثابتة + وضع تعديل حر (صور، نصوص، أشكال) مع تحكم كامل بالطبقات |
 | **عزل خلفية أوفلاين** | نموذج `selfie_multiclass` عبر MediaPipe داخل Web Worker — يعمل بدون إنترنت بعد أول تحميل، مع إلغاء فوري |
-| **ترميم وتحسين AI** | خط أنابيب مزدوج: CodeFormer للوجوه + Real-ESRGAN x2 للخلفية (GPU L4 عبر Modal AI) |
+| **ترميم وتحسين AI** | خط أنابيب مزدوج: CodeFormer للوجوه + Real-ESRGAN x2 للخلفية (GPU L4 عبر Modal AI) — مع حصة يومية **مصدرها الخادم وحده** (يوم UTC مطابق لعدّاد Supabase) |
 | **طباعة دقة عالية** | أوراق DPI مخصصة مع خطوط قص، حدود مستديرة، وأبعاد ملمية دقيقة (حتى 144 ميغابكسل) + **تصدير PDF بخطوط قص متجهة** |
 | **قوالب جاهزة** | هويات، جوازات سفر، تأشيرات، وكولاجات قابلة للتخصيص |
 | **ملصقات وبطاقات تجارية** | مقاسات كروت وبادجات وهوامش نزيف وقص (Bleed Guides)، وتوليد رموز QR وباركود متجهة، ومونتاج ورقي ذكي |
@@ -138,7 +138,7 @@ Grido Studio
 │   │   ├── hooks/             # Custom hooks (autosave, bg-removal, AI enhance)
 │   │   ├── lib/store/         # Zustand store — 7 slices
 │   │   └── lib/templates/     # قوالب الصور والكولاج
-│   ├── test/                  # اختبارات Vitest (84 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md)
+│   ├── test/                  # اختبارات Vitest (95 ملف اختبار و765 حالة — العدد المرجعي في docs/DOCUMENTATION_MAP.md)
 │   └── e2e/                   # اختبارات Playwright (25 ملف مواصفة / 165 حالة)
 ├── supabase/                  # Edge functions + SQL migrations
 ├── modal_ai/                  # خادم Modal AI (CodeFormer + Real-ESRGAN)

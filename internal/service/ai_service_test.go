@@ -1,13 +1,16 @@
 package service
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 // TestEnhanceImageWithAI_Success verifies end-to-end connection, payload structure,
@@ -188,6 +191,198 @@ func TestAIRateLimiter_ConcurrentReserves(t *testing.T) {
 	limiter.Rollback(key)
 	if err := limiter.Reserve(key, limit); err != nil {
 		t.Errorf("Expected successful reserve after rollback, got error: %v", err)
+	}
+}
+
+// isolateGlobalRateLimiter يعزل المُقيِّد المحلي على ملف مؤقت ويعيد حالته بعد الاختبار
+func isolateGlobalRateLimiter(t *testing.T) {
+	t.Helper()
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+
+	GlobalAIRateLimiter.mu.Lock()
+	oldFilePath := GlobalAIRateLimiter.filePath
+	oldLoaded := GlobalAIRateLimiter.loaded
+	GlobalAIRateLimiter.usage = make(map[string]*AIRateEntry)
+	GlobalAIRateLimiter.filePath = filepath.Join(t.TempDir(), "ai_rate_limits.json")
+	GlobalAIRateLimiter.loaded = true
+	GlobalAIRateLimiter.mu.Unlock()
+
+	t.Cleanup(func() {
+		GlobalAIRateLimiter.mu.Lock()
+		GlobalAIRateLimiter.filePath = oldFilePath
+		GlobalAIRateLimiter.loaded = oldLoaded
+		GlobalAIRateLimiter.usage = make(map[string]*AIRateEntry)
+		GlobalAIRateLimiter.mu.Unlock()
+	})
+}
+
+// fixClock يثبّت ساعة المُقيِّد للاختبار ويعيدها بعده.
+func fixClock(t *testing.T, instant time.Time) {
+	t.Helper()
+	original := aiLimiterClock
+	aiLimiterClock = func() time.Time { return instant }
+	t.Cleanup(func() { aiLimiterClock = original })
+}
+
+// TestAIRateLimiter_UsesUTCForDayKey يُثبت أن مفتاح اليوم UTC لا محلي — وهو شرط
+// تطابق المُقيِّد المحلي مع عدّاد الخادم (`date_trunc('day', timezone('utc', now()))`).
+// الفحص مُعِدّ بمنطقة زمنية محلية UTC+3 حتى يكون مميّزًا فعلًا (لو عاد الكود إلى
+// الوقت المحلي لصار المفتاح 2026-01-02 وفشل الاختبار).
+func TestAIRateLimiter_UsesUTCForDayKey(t *testing.T) {
+	isolateGlobalRateLimiter(t)
+
+	originalLocal := time.Local
+	time.Local = time.FixedZone("TEST+3", 3*60*60)
+	t.Cleanup(func() { time.Local = originalLocal })
+
+	limiter := &AIRateLimiter{usage: make(map[string]*AIRateEntry)}
+	key := "utc-day-key"
+
+	// 23:30 UTC = 02:30 من اليوم التالي محليًا (UTC+3)
+	fixClock(t, time.Date(2026, 1, 1, 23, 30, 0, 0, time.UTC))
+	if err := limiter.Reserve(key, 2); err != nil {
+		t.Fatalf("unexpected reserve error: %v", err)
+	}
+
+	limiter.mu.Lock()
+	storedDay := limiter.usage[key].ResetDay
+	limiter.mu.Unlock()
+	if storedDay != "2026-01-01" {
+		t.Errorf("expected UTC day key 2026-01-01, got %q (local day would be 2026-01-02)", storedDay)
+	}
+
+	// تجاوز منتصف الليل UTC بثانيتين يصفر العدّاد فورًا
+	fixClock(t, time.Date(2026, 1, 2, 0, 0, 2, 0, time.UTC))
+	if err := limiter.Reserve(key, 2); err != nil {
+		t.Fatalf("expected the counter to reset on a new UTC day, got: %v", err)
+	}
+}
+
+// TestAIRateLimiter_SyncFromServerIsAuthoritative يُثبت أن القيمة الخادمية (Sync)
+// هي الحاكمة، وأن Rollback لا ينزل تحت خط الأساس الخادمي.
+func TestAIRateLimiter_SyncFromServerIsAuthoritative(t *testing.T) {
+	isolateGlobalRateLimiter(t)
+	fixClock(t, time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC))
+
+	limiter := &AIRateLimiter{usage: make(map[string]*AIRateEntry)}
+	key := "server-authoritative"
+
+	// الخادم يقول: 5 من 5 مستهلكة اليوم
+	limiter.Sync(key, 5)
+	if err := limiter.Reserve(key, 5); err == nil {
+		t.Error("expected Reserve to fail after syncing a full server-side count")
+	}
+
+	// Rollback بعد المزامنة لا يجوز أن يهبط تحت قيمة الخادم
+	limiter.Rollback(key)
+	limiter.mu.Lock()
+	count := limiter.usage[key].Count
+	baseline := limiter.usage[key].Baseline
+	limiter.mu.Unlock()
+	if count != 5 || baseline != 5 {
+		t.Errorf("expected rollback to stop at the server baseline (5/5), got count=%d baseline=%d", count, baseline)
+	}
+
+	// والعدّاد الخادمي الأقل يفتح مجالًا جديدًا
+	limiter.Sync(key, 1)
+	if err := limiter.Reserve(key, 5); err != nil {
+		t.Errorf("expected Reserve to succeed after syncing a lower server count: %v", err)
+	}
+}
+
+// TestCallAIUsageRPC_ParsesServerQuota يُثبت أن لقطة الحصة الخادمية تُقرأ من الرد.
+func TestCallAIUsageRPC_ParsesServerQuota(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasSuffix(r.URL.Path, "/rpc/check_and_record_ai_usage") {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
+		if auth := r.Header.Get("Authorization"); auth != "Bearer quota-token" {
+			t.Errorf("expected user bearer token, got %q", auth)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"success": true, "used_today": 3, "daily_limit": 15, "check_only": true}`))
+	}))
+	defer ts.Close()
+
+	oldURL, oldKey := SupabaseURL, SupabaseAnonKey
+	SupabaseURL, SupabaseAnonKey = ts.URL, "test-anon-key"
+	defer func() { SupabaseURL, SupabaseAnonKey = oldURL, oldKey }()
+
+	snapshot, err := callAIUsageRPC("quota-token", "user-1", 1024, true)
+	if err != nil {
+		t.Fatalf("callAIUsageRPC failed: %v", err)
+	}
+	if snapshot == nil {
+		t.Fatal("expected a parsed quota snapshot, got nil")
+	}
+	if snapshot.UsedToday != 3 || snapshot.DailyLimit != 15 {
+		t.Errorf("unexpected snapshot: %+v", *snapshot)
+	}
+}
+
+// TestEnhanceImageWithAI_InjectsServerQuotaSnapshot يتحقق أن الواجهة تستقبل قيم
+// الحصة الخادمية (used_today/daily_limit) في نفس رد التحسين، وأن المُقيِّد المحلي
+// يُزامن عليها — فلا تحسب الواجهة حصتها بنفسها.
+func TestEnhanceImageWithAI_InjectsServerQuotaSnapshot(t *testing.T) {
+	isolateGlobalRateLimiter(t)
+
+	supabase := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/auth/v1/user"):
+			_, _ = w.Write([]byte(`{"id":"user-quota"}`))
+		case strings.HasSuffix(r.URL.Path, "/rest/v1/profiles"):
+			_, _ = w.Write([]byte(`[{"plan":"pro"}]`))
+		case strings.HasSuffix(r.URL.Path, "/rpc/check_and_record_ai_usage"):
+			_, _ = w.Write([]byte(`{"success": true, "used_today": 2, "daily_limit": 15}`))
+		default:
+			t.Errorf("unexpected Supabase path: %s", r.URL.Path)
+		}
+	}))
+	defer supabase.Close()
+
+	modal := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"image": "data:image/jpeg;base64,enhanced", "execution_seconds": 2.4, "total_cost_usd": 0.0012}`))
+	}))
+	defer modal.Close()
+
+	oldURL, oldKey, oldModal := SupabaseURL, SupabaseAnonKey, ModalAIURL
+	SupabaseURL, SupabaseAnonKey, ModalAIURL = supabase.URL, "test-anon-key", modal.URL
+	defer func() { SupabaseURL, SupabaseAnonKey, ModalAIURL = oldURL, oldKey, oldModal }()
+
+	token := "test-jwt-quota-inject"
+	aiSvc := NewAIService()
+	respStr, err := aiSvc.EnhanceImageWithAI("data:image/jpeg;base64,sample", token, 5)
+	if err != nil {
+		t.Fatalf("EnhanceImageWithAI failed: %v", err)
+	}
+
+	var resp struct {
+		Image      string `json:"image"`
+		UsedToday  int    `json:"used_today"`
+		DailyLimit int    `json:"daily_limit"`
+	}
+	if err := json.Unmarshal([]byte(respStr), &resp); err != nil {
+		t.Fatalf("failed to parse response: %v", err)
+	}
+	if resp.Image != "data:image/jpeg;base64,enhanced" {
+		t.Errorf("expected the Modal image to be preserved, got %q", resp.Image)
+	}
+	// العدّاد الخادمي قبل الطلب = 2، وهذه العملية مسجَّلة مرة واحدة ⇒ 3
+	if resp.UsedToday != 3 || resp.DailyLimit != 15 {
+		t.Errorf("expected server quota (used 3 / limit 15) in the response, got used=%d limit=%d", resp.UsedToday, resp.DailyLimit)
+	}
+
+	tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))[:16]
+	GlobalAIRateLimiter.mu.Lock()
+	entry := GlobalAIRateLimiter.usage[tokenHash]
+	GlobalAIRateLimiter.mu.Unlock()
+	if entry == nil {
+		t.Fatal("expected the local limiter to mirror the server count, got no entry")
+	}
+	if entry.Count != 2 || entry.Baseline != 2 {
+		t.Errorf("expected the local mirror to sync to 2/2, got count=%d baseline=%d", entry.Count, entry.Baseline)
 	}
 }
 

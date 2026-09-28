@@ -645,17 +645,7 @@ func createCSPMiddleware() application.Middleware {
 }
 
 func isDevMode() bool {
-	if isDevBuild {
-		return true
-	}
-	if os.Getenv("devserver") != "" || os.Getenv("frontenddevserverurl") != "" || os.Getenv("FRONTEND_DEVSERVER_URL") != "" || os.Getenv("WAILS_DEV") == "true" {
-		return true
-	}
-	if exe, err := os.Executable(); err == nil && strings.Contains(strings.ToLower(exe), "-dev") {
-		return true
-	}
-	if len(os.Args) > 0 && strings.Contains(strings.ToLower(os.Args[0]), "-dev") {
-		return true
-	}
-	return false
+	// كشف بيئة التطوير موحّد في utils (يُستخدَم أيضًا لتقييد قراءة .env من مجلد
+	// العمل في internal/service) — وسم البناء هو الحاكم، والكشف بالبيئة يكمّله.
+	return isDevBuild || utils.IsDevEnvironment()
 }

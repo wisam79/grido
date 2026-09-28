@@ -79,37 +79,62 @@ var (
 	ModalAIURL      = "" // عنوان النقطة النهائية (اختياري) عبر .env/MODAL_AI_URL — لا حقن ldflags
 )
 
-func init() {
-	// 🌟 Load .env from the app config directory or current directory (for development)
-	envPath := filepath.Join(utils.GetAppDir(), ".env")
+// loadEnvConfigFile يقرأ ملف `.env` من مجلد بيانات التطبيق (مجلد يملكه المستخدم
+// ويُوثَّق كبيئة تشغيل محلية).
+//
+// 🔒 الارتداد إلى `.env` في **مجلد العمل الحالي** مسموح فقط في وضع التطوير
+// (`allowCwdFallback`): تشغيل الإنتاج من مجلد يحوي `.env` ملقَّمًا يعيد توجيه
+// `SUPABASE_URL`/`SUPABASE_ANON_KEY`/`MODAL_AI_URL` إلى خادم مهاجم — فيُرسَل إليه
+// بريد المستخدم وكلمة مروره ورمز التحقق و JWT وكل صور الترميم. الإنتاج يُحقن بـ
+// ldflags، وليس بملف يُقرأ من مجلد العمل (قاعدة AGENTS.md: الفحص الاحتياطي
+// مشروط ببيئة التطوير المحلي).
+func loadEnvConfigFile(appDir string, allowCwdFallback bool) map[string]string {
+	envVars := make(map[string]string)
+
+	envPath := filepath.Join(appDir, ".env")
 	if _, err := os.Stat(envPath); err != nil {
+		if !allowCwdFallback {
+			slog.Warn("No .env in app data directory and current-directory fallback is disabled (production) — relying on ldflags/env vars")
+			return envVars
+		}
 		envPath = ".env"
 	}
-	if envBytes, err := os.ReadFile(envPath); err == nil {
-		envVars := make(map[string]string)
-		for _, line := range strings.Split(string(envBytes), "\n") {
-			line = strings.TrimSpace(line)
-			if line == "" || strings.HasPrefix(line, "#") {
-				continue
-			}
-			parts := strings.SplitN(line, "=", 2)
-			if len(parts) == 2 {
-				key := strings.TrimSpace(parts[0])
-				val := strings.TrimSpace(parts[1])
-				val = strings.Trim(val, `"'`)
-				envVars[key] = val
-			}
+
+	envBytes, err := os.ReadFile(envPath)
+	if err != nil {
+		return envVars
+	}
+
+	for _, line := range strings.Split(string(envBytes), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
 		}
-		// Apply env vars to package variables directly (no os.Setenv)
-		if v, ok := envVars["SUPABASE_URL"]; ok && SupabaseURL == "" {
-			SupabaseURL = v
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			val := strings.TrimSpace(parts[1])
+			val = strings.Trim(val, `"'`)
+			envVars[key] = val
 		}
-		if v, ok := envVars["SUPABASE_ANON_KEY"]; ok && SupabaseAnonKey == "" {
-			SupabaseAnonKey = v
-		}
-		if v, ok := envVars["MODAL_AI_URL"]; ok && ModalAIURL == "" {
-			ModalAIURL = v
-		}
+	}
+	return envVars
+}
+
+func init() {
+	// 🌟 ملف .env: مجلد بيانات التطبيق دائماً، ومجلد العمل في وضع التطوير فقط
+	// (wails3 task dev) — انظر loadEnvConfigFile أعلاه.
+	envVars := loadEnvConfigFile(utils.GetAppDir(), serviceDevBuild || utils.IsDevEnvironment())
+
+	// Apply env vars to package variables directly (no os.Setenv)
+	if v, ok := envVars["SUPABASE_URL"]; ok && SupabaseURL == "" {
+		SupabaseURL = v
+	}
+	if v, ok := envVars["SUPABASE_ANON_KEY"]; ok && SupabaseAnonKey == "" {
+		SupabaseAnonKey = v
+	}
+	if v, ok := envVars["MODAL_AI_URL"]; ok && ModalAIURL == "" {
+		ModalAIURL = v
 	}
 
 	// Fallback to environment variables if ldflags not set (local dev)

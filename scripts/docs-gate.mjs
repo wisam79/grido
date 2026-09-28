@@ -340,6 +340,49 @@ const CODE_ASSERTIONS = [
     mustContain: ['IfSilent is_silent done'],
   },
   {
+    label: 'F-01 — حدّ الحصة اليومية موحّد على المصدر الخادمي (يوم UTC + مزامنة المرآة + حقن القيم)',
+    file: 'internal/service/ai_service.go',
+    mustContain: [
+      'func aiUsageDayKey(t time.Time) string',
+      'return t.UTC().Format("2006-01-02")',
+      'GlobalAIRateLimiter.Sync(tokenHash, snapshot.UsedToday)',
+      'injectServerQuota(body, serverUsedToday, serverLimit)',
+      'entry.Count > entry.Baseline',
+    ],
+    // اليوم المحلي في المُقيِّد كان سبب التناقض المرئي (03:00 vs 00:00 بتوقيت UTC+3)
+    mustNotContain: ['time.Now().Format("2006-01-02")'],
+  },
+  {
+    label: 'F-01 (واجهة) — يوم الحصة UTC ومنطق حسم واحد بلا اشتقاق محلي موازٍ',
+    file: 'frontend/src/lib/ai/quota.ts',
+    mustContain: [
+      'export function aiUtcDayKey',
+      'return now.toISOString().slice(0, 10)',
+      'export function resolveAiQuota',
+      'export function parseQuotaSnapshotFromResponse',
+    ],
+  },
+  {
+    label: 'F-02 — تحصين تفكيك VDP: سقف صفوف للتفكيك نفسه + سقف حجم + منع أسماء أعمدة خطرة',
+    file: 'frontend/src/features/stickers/lib/vdp-parser.ts',
+    mustContain: [
+      'export const VDP_MAX_FILE_BYTES',
+      'export const VDP_PARSE_ROW_LIMIT = VDP_MAX_ROWS + 1',
+      'sheetRows: VDP_PARSE_ROW_LIMIT',
+      'preview: VDP_PARSE_ROW_LIMIT',
+      "const DANGEROUS_COLUMN_KEYS = new Set(['__proto__', 'prototype', 'constructor'])",
+    ],
+  },
+  {
+    label: 'F-04 — قراءة .env من مجلد العمل مقصورة على وضع التطوير (لا اعتماد على CWD في الإنتاج)',
+    file: 'internal/service/license_service.go',
+    mustContain: [
+      'func loadEnvConfigFile(appDir string, allowCwdFallback bool) map[string]string',
+      'if !allowCwdFallback {',
+      'loadEnvConfigFile(utils.GetAppDir(), serviceDevBuild || utils.IsDevEnvironment())',
+    ],
+  },
+  {
     label: 'BUG-MED-10 — حد أدنى لأهداف اللمس h-7 w-7',
     file: 'frontend/src/components/editor/dialogs/print-dialog.tsx',
     mustContain: ['h-7 w-7'],

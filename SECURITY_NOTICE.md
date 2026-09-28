@@ -1,5 +1,15 @@
 # 🔒 تنبيه أمني مهم
 
+> ⚠️ **إدخال جديد (2026-09-28 — تقرير التدقيق 12، بندا F-02 و F-04):**
+>
+> **1) ثغرة معروفة بلا إصلاح في `xlsx` (SheetJS) ضمن مسار الطباعة بالبيانات المتغيرة.**
+> `npm audit --omit=dev` في `frontend/` يعيد ثغرة **عالية**: تلوّث النموذج الأولي `GHSA-4r6h-8v6p-xvw6` و`ReDoS` في `GHSA-5pgg-2g8v-p4x9`، والحالة **No fix available** لأن npm يحتوي نسخة مهجورة (0.18.5) بينما التصحيح يُوزَّع من `cdn.sheetjs.com` (≥0.20.2) فقط.
+> *مسار الاستغلال:* ملف Excel يجيبه المستخدم من الخارج يُفكَّك في نافذة الويب (`frontend/src/features/stickers/lib/vdp-parser.ts`).
+> *التخفيف المُطبَّق الآن:* تقييد التفكيك نفسه بـ`sheetRows`/`preview` بسقف `VDP_PARSE_ROW_LIMIT = 501` (كان السقف على **النتيجة** فقط) + تعطيل الصيغ/الأنماط/HTML/VBA + سقف حجم `VDP_MAX_FILE_BYTES = 10MB` قبل أي قراءة + منع أسماء الأعمدة الخطرة (`__proto__`/`prototype`/`constructor`) كمفاتيح في كائنات الصفوف + سجل لا ينتج ملفًا تنفيذيًا.
+> *القرار (يحتاج إغلاقًا):* إما الاستبدال بنسخة SheetJS المصونة من الـCDN (يغيّر المصدر في `package.json`/lockfile)، أو إسقاط مسار `xlsx` لصالح تحويل خادمي (Go) مع `papaparse` للـCSV فقط. المُبثَّب اليوم تخفيف لا إزالة، مؤقتًًا حتى قرار المالك.
+>
+> **2) تعزيز قراءة `.env` (F-04).** كان Go backend يقرأ `.env` من **مجلد العمل الحالي** كاحتياطي بلا قيد، فيمكن لمجلد ملقَّم (اختصار بـ«Start in» معدَّل أو أرشيف مستخرج) إعادة توجيه `SUPABASE_URL`/`SUPABASE_ANON_KEY`/`MODAL_AI_URL` ⇒ تسريب بريد المستخدم وكلمة مروره و OTP و JWT وكل صور الترميم إلى خادم مهاجم. صار الارتداد مشروطً ببوابة وضع التطوير وحدها (`internal/service/devmode_*.go` + `utils.IsDevEnvironment()`)، وملف `.env` في مجلد بيانات التطبيق يبقى مقبولًا. أُضيف تأكيد كود في `docs-gate.mjs` يمنع عودة البوابة المفتوحة.
+
 > ✅ **تحديث (2026-09-25 — تدقيق `C-02`): لم يعد التطبيق يستخدم أي مفتاح لخادم الذكاء الاصطناعي إطلاقاً.**
 > حُذف `ModalAIKey`/`GetModalAIKey` (Go) وعلم `-X grido/internal/service.ModalAIKey` من `build.ps1` و`build/windows/Taskfile.yml` و`.github/workflows/release.yml`،
 > والمسار الوحيد للتوثيق الآن هو **JWT المستخدم** (`Authorization: Bearer`) الذي يتحقق منه `modal_ai/upscaler.py` مع Supabase.

@@ -20,8 +20,32 @@ export interface VdpDataset {
 /** سقف الصفوف — حماية من ملفات ضخمة تتجمد عليها الواجهة (بطاقات تُصيَّر بدفعات) */
 export const VDP_MAX_ROWS = 500;
 
+/**
+ * سقف حجم الملف قبل القراءة إطلاقاً (حماية ذاكرة/معالج). البيانات المتغيرة
+ * جداول نصوص — ملف أكبر من هذا ليس ملف بيانات مشروع واقعي.
+ */
+export const VDP_MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+/**
+ * سقف صفوف **التفكيك نفسه** (صف العناوين + صفوف البيانات) — يُمرَّر لمحرك
+ * القراءة ليتوقف مبكراً بدل تفكيك ملف ضخم كاملاً في الذاكرة ثم قصّ النتيجة.
+ */
+export const VDP_PARSE_ROW_LIMIT = VDP_MAX_ROWS + 1;
+
+/**
+ * أسماء أعمدة ممنوعة: تُستخدم كمفاتيح كائنات الصفوف، فاسم مثل `__proto__`
+ * يجعل الإسناد يلوّث النموذج الأولي (`Object.prototype`) — وهو نفس صنف ثغرة
+ * SheetJS المعروفة بلا إصلاح متاح من npm (GHSA-4r6h-8v6p-xvw6).
+ */
+const DANGEROUS_COLUMN_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
 export async function parseVdpFile(file: File): Promise<VdpDataset> {
   const name = file.name.toLowerCase();
+
+  if (file.size > VDP_MAX_FILE_BYTES) {
+    const maxMB = Math.round(VDP_MAX_FILE_BYTES / (1024 * 1024));
+    throw new Error(`الملف كبير جداً — الحد ${maxMB} ميجابايت`);
+  }
 
   if (name.endsWith('.csv') || name.endsWith('.txt')) {
     return parseCsvFile(file);
@@ -34,9 +58,11 @@ export async function parseVdpFile(file: File): Promise<VdpDataset> {
 
 async function parseCsvFile(file: File): Promise<VdpDataset> {
   const text = await file.text();
-  // رأس الصفحة لا يهمنا — papaparse يستنتج الفاصل تلقائياً
+  // رأس الصفحة لا يهمنا — papaparse يستنتج الفاصل تلقائياً.
+  // `preview` يوقف التفكيك عند سقف الصفوف بدل تحليل ملف ضخم كاملاً ثم قصّه.
   const result = Papa.parse<string[]>(text, {
     skipEmptyLines: 'greedy',
+    preview: VDP_PARSE_ROW_LIMIT,
   });
 
   if (result.errors.length > 0 && result.data.length === 0) {
@@ -48,7 +74,23 @@ async function parseCsvFile(file: File): Promise<VdpDataset> {
 
 async function parseExcelFile(file: File): Promise<VdpDataset> {
   const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: 'array' });
+  // 🛡️ تقوية مسار التفكيك (لا نثق بشكل الملف):
+  // - `sheetRows`: حد أقصى لصفوف التفكيك نفسه (بدل تفكيك كل الصفوف ثم قصّها).
+  // - تعطيل الصيغ والأنماط و HTML و VBA: سطح هجوم أقل بلا أي فقدان للبيانات النصية.
+  // - `dense`: تمثيل مُدمج أقل استهلاكاً للذاكرة في الأوراق الكبيرة.
+  // ملاحظة: مكتبة `xlsx` من npm تحمل ثغرة تلوّث نموذج أولي بلا إصلاح متاح
+  // (GHSA-4r6h-8v6p-xvw6، وReDoS في GHSA-5pgg-2g8v-p4x9)؛ هذا تخفيف للتأثير،
+  // والإزالة الكاملة تتطلب نسخة SheetJS المصونة من cdn.sheetjs.com — انظر SECURITY_NOTICE.md.
+  const workbook = XLSX.read(buffer, {
+    type: 'array',
+    sheetRows: VDP_PARSE_ROW_LIMIT,
+    cellFormula: false,
+    cellHTML: false,
+    cellStyles: false,
+    cellNF: false,
+    bookVBA: false,
+    dense: true,
+  });
   const sheetName = workbook.SheetNames[0];
   if (!sheetName) throw new Error('ملف Excel فارغ');
 
@@ -75,15 +117,25 @@ export function buildDatasetForTest(rawRows: string[][]): VdpDataset {
 function buildDataset(rawRows: string[][], fileName: string): VdpDataset {
   if (rawRows.length === 0) throw new Error('الملف لا يحتوي بيانات');
 
-  // عناوين الأعمدة: نص غير فارغ، وإلا "عمود N"
+  // عناوين الأعمدة: نص غير فارغ، وإلا "عمود N".
+  // 🛡️ أي عنوان يطابق مفتاحاً خطيراً (`__proto__` …) يُعامل كعنوان بلا اسم —
+  // لأنه يصير مفتاح إسناد في كائن الصف (`row[col] = value`).
+  const seenHeaders = new Map<string, number>();
   const headerRow = rawRows[0].map((cell, i) => {
     const trimmed = String(cell ?? '').trim();
-    return trimmed || `عمود ${i + 1}`;
+    let name = !trimmed || DANGEROUS_COLUMN_KEYS.has(trimmed) ? `عمود ${i + 1}` : trimmed;
+    const count = seenHeaders.get(name) || 0;
+    seenHeaders.set(name, count + 1);
+    if (count > 0) {
+      name = `${name} (${count + 1})`;
+    }
+    return name;
   });
 
   const columns = headerRow.filter(
     (h, i) =>
-      h !== `عمود ${i + 1}` || rawRows.slice(1).some((r) => String(r[i] ?? '').trim() !== ''),
+      !h.startsWith(`عمود ${i + 1}`) ||
+      rawRows.slice(1).some((r) => String(r[i] ?? '').trim() !== ''),
   );
 
   const rows: Record<string, string>[] = [];

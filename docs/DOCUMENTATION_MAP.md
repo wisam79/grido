@@ -68,7 +68,7 @@
 | 2 | تغطية كل مستند في الجرد (لا مستند غير مُسجَّل) | نفس الأمر | ⛔ **يُوقف الكومت** |
 | 3 | كومت كود بلا أي تحديث توثيق مرافق | نفس الأمر | ⛔ **يُوقف الكومت** |
 | 4 | سلامة مراجع المسارات في AGENTS.md والمهارات | `--strict-refs` | ⚠️ تحذير افتراضياً · ⛔ صارم بالعلم |
-| 5 | **تأكيدات التحقق على الكود** (ادعاءات «مُصلح» لا تنهار صامتة: 12 تأكيداً في `scripts/docs-gate.mjs`) | `node scripts/docs-gate.mjs` | ⛔ **يُوقف الكومت** |
+| 5 | **تأكيدات التحقق على الكود** (ادعاءات «مُصلح» لا تنهار صامتة: 16 تأكيداً في `scripts/docs-gate.mjs` — آخرها 4 تأكيدات لبنود P0 الثلاثة من التقرير 12) | `node scripts/docs-gate.mjs` | ⛔ **يُوقف الكومت** |
 | 6 | `CHANGELOG.md` محدَّث تحت `[Unreleased]` | يدوي (قاعدة) | ⛔ يُوقف المراجعة |
 | 7 | Formatting والأنواع والاختبارات | `.husky/pre-commit` → `lint-staged` · `npm run test:all` للأعمال الكبيرة | ⛔ **يُوقف الكومت** |
 
@@ -94,9 +94,9 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=94
+vitest_test_files=95
 e2e_spec_files=25
-go_test_files=30
+go_test_files=31
 docs_files=6
 ```
 
@@ -104,11 +104,12 @@ docs_files=6
 
 | الرقم | القيمة (تحقق: 2026-09-28) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | 750 حالة (749 ناجحة + 1 متخطّاة) في 94 ملفاً — تحقق: 2026-09-28 | `cd frontend && npm run test` |
+| حالات Vitest | 765 حالة (764 ناجحة + 1 متخطّاة) في 95 ملفاً — تحقق: 2026-09-28 | `cd frontend && npm run test` |
 | حالات E2E | 165 حالة في 25 ملف مواصفة (كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
-| دوال اختبار Go | 155 دالة في 30 ملفاً — تحقق: 2026-09-26 | `go test ./internal/... -list "^Test"` |
-| عدد صفائح الحصص اليومية | free 5 / pro 15 / enterprise 50 | `internal/service/ai_service.go` + migration `20260730000000` + `use-ai-enhance.ts` (ثلاثة مواضع متزامنة — قرار محمي) |
+| دوال اختبار Go | 160 دالة في 31 ملفاً — تحقق: 2026-09-28 | `go test ./internal/... -list "^Test"` |
+| عدد صفائح الحصص اليومية | free 5 / pro 15 / enterprise 50 | `internal/service/ai_service.go` + migration `20260730000001` + `frontend/src/lib/ai/quota.ts` (ثلاثة مواضع متزامنة — قرار محمي؛ وحدة الحسم الواحدة هي `lib/ai/quota.ts` والخادم هو مصدر الحقيقة، ويُثبَّت ذلك بتأكيدين في `docs-gate`) |
+| منطقة يوم الحصة (محلي/UTC) | **UTC** في الخادم والمُقيِّد المحلي والواجهة | `internal/service/ai_service.go` (`aiUsageDayKey`) + `frontend/src/lib/ai/quota.ts` (`aiUtcDayKey`) مقابل `date_trunc('day', timezone('utc', now()))` |
 
 > ⚠️ **تحذير أدوات:** `go vet ./...` و `go build ./...` يفشلان بسبب مجلد قالب Wails `build/ios/scripts/deps` (خارج نطاق التطبيق). استخدم دائماً `go vet ./internal/...` و `go build .`.
 
