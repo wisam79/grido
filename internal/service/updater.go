@@ -276,7 +276,7 @@ func (pw *progressWriter) Write(p []byte) (int, error) {
 }
 
 func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL string, expectedSHA256 string) error {
-	// 🛡️ إغلاق حازم: بدون بصمة SHA-256 معلنة لا نثبّت أي ملف بصلاحيات مسؤول
+	// 🛡️ إغلاق حازم: بدون بصمة SHA-256 معلنة لا نثبّت أي ملف تحديث
 	expected := strings.ToLower(strings.TrimSpace(expectedSHA256))
 	if expected == "" {
 		return fmt.Errorf("refusing to install update: no SHA-256 checksum published for this release")
@@ -395,9 +395,9 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 		application.Get().Event.Emit("update-progress", 100)
 	}
 
-	// Execute NSIS installer with Administrator elevation and silent mode (/S)
-	if err := runAsAdmin(installerPath, "/S"); err != nil {
-		return fmt.Errorf("فشل تشغيل مثبت التحديث كمسؤول: %w", err)
+	// Execute user-scope NSIS installer in silent mode (/S)
+	if err := runInstaller(installerPath, "/S"); err != nil {
+		return fmt.Errorf("فشل تشغيل مثبت التحديث: %w", err)
 	}
 
 	// ⏱️ بدل نوم أعمى 200ms: ننتظر رصد عملية المثبت نفسها (بحد أقصى 3s) ثم نُغلق.

@@ -13,12 +13,12 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// runAsAdmin يشغّل الملف التنفيذي بصلاحيات مسؤول عبر ShellExecuteW بنمط runas
-func runAsAdmin(exePath string, args string) error {
+// runInstaller يشغّل مثبت التحديث بنطاق المستخدم الحالي عبر ShellExecuteW بنمط open
+func runInstaller(exePath string, args string) error {
 	shell32 := syscall.NewLazyDLL("shell32.dll")
 	shellExecute := shell32.NewProc("ShellExecuteW")
 
-	verb, _ := syscall.UTF16PtrFromString("runas")
+	verb, _ := syscall.UTF16PtrFromString("open")
 	exe, _ := syscall.UTF16PtrFromString(exePath)
 	params, _ := syscall.UTF16PtrFromString(args)
 	dir, _ := syscall.UTF16PtrFromString(filepath.Dir(exePath))
@@ -42,7 +42,7 @@ func runAsAdmin(exePath string, args string) error {
 // waitForInstallerStart ينتظر ظهور عملية المثبت فعلياً (بحد أقصى timeout) ويعيد
 // هل رصدناها. بديل عن النوم الأعمى 200ms قبل Quit(): إغلاق التطبيق قبل أن يبدأ
 // المثبت — على جهاز بطيء أو مع نسخ الشبكة/الحماية — يترك ملفاتنا مقفلة أمامه.
-// ShellExecuteW لا يعود إلا بعد إنشاء العملية المرفوعة، فإن لم نرصدها فالحالة
+// ShellExecuteW لا يعود إلا بعد إنشاء العملية، فإن لم نرصدها فالحالة
 // غير متوقعة ونُغلق التطبيق على أي حال بعد انتهاء المهلة (لا نعلّق المستخدم).
 func waitForInstallerStart(exePath string, timeout time.Duration) bool {
 	target := strings.ToLower(filepath.Base(exePath))

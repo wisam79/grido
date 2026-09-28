@@ -1,4 +1,4 @@
-Unicode true
+﻿Unicode true
 
 ####
 ## Wails NSIS Installer Script for Grido Studio
@@ -12,6 +12,10 @@ Unicode true
 !define INFO_PROJECTNAME "GridoStudio"
 !define INFO_PRODUCTVERSION "1.9.3"
 !define INFO_COPYRIGHT "© 2026 Grido Studio"
+
+!ifndef WAILS_INSTALL_SCOPE
+    !define WAILS_INSTALL_SCOPE "user"
+!endif
 
 !include "wails_tools.nsh"
 
@@ -74,8 +78,8 @@ LangString DESC_CreateDesktopShortcut ${LANG_ENGLISH} "Create Desktop Shortcut"
 # Product Details
 Name "${INFO_PRODUCTNAME}"
 OutFile "..\nsis\GridoStudio-installer.exe" # Resolves to build/windows/nsis/GridoStudio-installer.exe (consumed by sign task & release.yml)
-InstallDir "$PROGRAMFILES64\${INFO_PRODUCTNAME}"
-InstallDirRegKey HKLM "Software\${INFO_PRODUCTNAME}" "Install_Dir"
+InstallDir "$LOCALAPPDATA\Programs\${INFO_PRODUCTNAME}"
+InstallDirRegKey HKCU "Software\${INFO_PRODUCTNAME}" "Install_Dir"
 ShowInstDetails show
 
 Function .onInit
@@ -111,6 +115,21 @@ Section
     nsExec::ExecToStack 'taskkill /F /IM "grido.exe" /T'
     Sleep 1000
 
+    # Non-blocking legacy migration: clean up old machine-scope shortcuts & trigger silent uninstaller if present
+    SetShellVarContext all
+    Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
+    Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
+    !insertmacro wails.setShellContext
+
+    ReadRegStr $R0 HKLM "${UNINST_KEY}" "QuietUninstallString"
+    StrCmp $R0 "" +3
+        nsExec::ExecToStack '$R0'
+        Goto legacy_migration_done
+    ReadRegStr $R0 HKLM "${UNINST_KEY}" "UninstallString"
+    StrCmp $R0 "" legacy_migration_done
+        nsExec::ExecToStack '$R0 /S'
+    legacy_migration_done:
+
     # Clean up legacy binaries if present to avoid dual-binary confusion
     Delete "$INSTDIR\Grido Studio.exe"
     Delete "$INSTDIR\grido.exe"
@@ -135,9 +154,6 @@ Section "uninstall"
     SetShellVarContext current
     RMDir /r "$APPDATA\GridoStudio"
     RMDir /r "$LOCALAPPDATA\GridoStudio"
-    SetShellVarContext all
-
-    RMDir /r "$AppData\GridoStudio"
 
     RMDir /r $INSTDIR
 
