@@ -94,7 +94,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=93
+vitest_test_files=94
 e2e_spec_files=25
 go_test_files=30
 docs_files=6
@@ -102,9 +102,9 @@ docs_files=6
 
 الأرقام التي تحتاج تشغيل اختبارات لا تُوضع في البلوك الآلي، بل في الجدول التالي وتُحدَّث عند تغيّر الاختبارات:
 
-| الرقم | القيمة (تحقق: 2026-09-27) | أمر التحقق |
+| الرقم | القيمة (تحقق: 2026-09-28) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | 738 حالة (737 ناجحة + 1 متخطّاة) في 92 ملفاً — تحقق: 2026-09-27 | `cd frontend && npm run test` |
+| حالات Vitest | 750 حالة (749 ناجحة + 1 متخطّاة) في 94 ملفاً — تحقق: 2026-09-28 | `cd frontend && npm run test` |
 | حالات E2E | 165 حالة في 25 ملف مواصفة (كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
 | دوال اختبار Go | 155 دالة في 30 ملفاً — تحقق: 2026-09-26 | `go test ./internal/... -list "^Test"` |

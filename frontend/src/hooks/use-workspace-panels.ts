@@ -14,6 +14,7 @@ interface StoredPreferences {
   lastActiveStudioTab?: FreeformTab;
   lastActiveCollageTab?: CollageTab;
   isInspectorPinned?: boolean;
+  isTemplatesDrawerOpen?: boolean;
 }
 
 function getStoredPreferences(): StoredPreferences {
@@ -87,7 +88,23 @@ export function useWorkspacePanels() {
   // Wide drawer for templates (لوحة التبويب الأول في الشاشات الواسعة) —
   // مفتوحة افتراضياً عند الإقلاع بطلب المالك: التبويب الأول ظاهر بمحتواه بدل
   // أن يبدأ الشريط بلا لوحة (كانت مغلقة دائماً لأن حالتها غير محفوظة أصلاً).
-  const [isTemplatesDrawerOpen, setIsTemplatesDrawerOpen] = useState(true);
+  // تُحفظ الآن في localStorage مثل باقي التفضيلات حتى لا تُفقد عند الإقلاع.
+  // ملاحظة React: الحفظ أثر جانبي — الكتابة المباشرة داخل مُحدِّث setState
+  // تُنفَّذ مرتين في StrictMode (يُستدعى المُحدِّث مرتين للتحقق من النقاء) لكن
+  // saveStoredPreferences مدمجة (setItem بنفس القيمة) فلا ضرر فعلي.
+  const [isTemplatesDrawerOpen, setIsTemplatesDrawerOpenState] = useState(() => {
+    const saved = getStoredPreferences().isTemplatesDrawerOpen;
+    return saved !== undefined ? saved : true;
+  });
+
+  // مغلّف موحّد: يقبل قيمة أو دالة تحديث، ويحفظ الناتج دائماً.
+  const setIsTemplatesDrawerOpen = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+    setIsTemplatesDrawerOpenState((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      saveStoredPreferences({ isTemplatesDrawerOpen: next });
+      return next;
+    });
+  }, []);
 
   // Resize listener using window resize
   useEffect(() => {
@@ -105,6 +122,35 @@ export function useWorkspacePanels() {
       if (rAFId !== null) cancelAnimationFrame(rAFId);
     };
   }, []);
+
+  // مزامنة القوالب عند عبور عتبة الـ breakpoint: الدرج الأيسر (wide) واللوحة
+  // اليمنى (standard) حالتان مستقلتان، فعبور 1440px كان يُفكّ الدرج ويترك
+  // activePanel على 'properties' — فيبدو أن القوالب اختفت. هنا يتبع المحتوى
+  // المستخدم: درج مفتوح → templates يميناً عند التضييق، وtemplates يميناً →
+  // درج مفتوح عند التوسيع. التفاعل الصريح (إغلاق مقصود) يُحترم: لا نفتح ما
+  // أغلقه المستخدم، فقط ننقل الحالة الظاهرة.
+  // نمط adjust-state-during-render: عند تغيّر الـ breakpoint نحسب الهدف لمرة
+  // واحدة أثناء التصيير (موثّق في React docs كبديل آمن للمزامنة في effect).
+  const [prevBreakpoint, setPrevBreakpoint] = useState<WorkspaceBreakpoint>(breakpoint);
+  if (prevBreakpoint !== breakpoint) {
+    setPrevBreakpoint(breakpoint);
+    if (prevBreakpoint === 'wide' && breakpoint === 'standard') {
+      // كان الدرج الأيسر مفتوحاً (نلتقط القيمة الظاهرة قبل العبور من أول
+      // تصيير بالـ breakpoint الجديد — ما زالت الحالة القديمة حاضرة لأن
+      // setState لم يُطبَّق بعد على isTemplatesDrawerOpen/activePanel).
+      // القراءة هنا للـ state الحالي هي القيمة السابقة للعبور بحكم الترتيب.
+      if (isTemplatesDrawerOpen) {
+        setActivePanelState('templates');
+        saveStoredPreferences({ lastActivePanel: 'templates' });
+      }
+    } else if (prevBreakpoint === 'standard' && breakpoint === 'wide') {
+      if (activePanel === 'templates') {
+        setIsTemplatesDrawerOpenState(true);
+        saveStoredPreferences({ isTemplatesDrawerOpen: true });
+      }
+    }
+    // compact: الورقة تُفتح صراحةً فقط — لا تغيير تلقائي هنا.
+  }
 
   const setActivePanel = useCallback((panel: WorkspacePanel) => {
     setActivePanelState(panel);
@@ -151,6 +197,9 @@ export function useWorkspacePanels() {
         saveStoredPreferences({ lastActivePanel: 'templates' });
       }
     },
+    // isTemplatesDrawerOpen تُقرأ هنا للتبديل المشروط — تبعية حقيقية تُبقي
+    // الـ callback متزامناً مع الدرج وتمنع إغلاق/فتح معكوساً بعد عبور breakpoint.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [breakpoint, isTemplatesDrawerOpen, activeStudioTab, activePanel],
   );
 
@@ -189,6 +238,8 @@ export function useWorkspacePanels() {
         saveStoredPreferences({ lastActivePanel: 'templates' });
       }
     },
+    // نفس مبرر selectStudioTab: القراءة المشروطة للدرج تبعية حقيقية.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [breakpoint, isTemplatesDrawerOpen, activeCollageTab, activePanel],
   );
 
@@ -218,6 +269,10 @@ export function useWorkspacePanels() {
         return next;
       });
     },
+    // setIsTemplatesDrawerOpen مستقرة (useCallback بـ []) — تُستدعى هنا لكن
+    // إضافتها للتبعيات تعيد إنشاء togglePanel بلا داعٍ؛ القراءة الوحيدة
+    // المتغيرة هي breakpoint.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [breakpoint],
   );
 
@@ -240,6 +295,8 @@ export function useWorkspacePanels() {
 
       setActivePanel(panel);
     },
+    // setIsTemplatesDrawerOpen/setActivePanel مستقرتان — التبعية المتغيرة breakpoint فقط.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [breakpoint, setActivePanel],
   );
 
@@ -250,6 +307,8 @@ export function useWorkspacePanels() {
     } else {
       setActivePanel(null);
     }
+    // نفس المبرر: دوال مستقرة، والمتغيرة breakpoint فقط.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [breakpoint, setActivePanel]);
 
   // Zen Mode toggle: collapse all panels or restore default

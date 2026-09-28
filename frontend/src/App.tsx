@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import {
   Toolbar,
@@ -146,6 +146,18 @@ export default function App() {
   useKeyboardShortcuts();
   useAutoSave();
   usePhoneBridgeListener();
+
+  const selectedId = useEditorStore((state) => state.selectedId);
+  const prevSelectedIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (selectedId && selectedId !== prevSelectedIdRef.current) {
+      if (panelsHook.breakpoint === 'standard' && panelsHook.activePanel !== 'properties') {
+        panelsHook.openPanel('properties');
+      }
+    }
+    prevSelectedIdRef.current = selectedId;
+  }, [selectedId, panelsHook]);
 
   const mode = useEditorStore((state) => state.mode);
   const setMode = useEditorStore((state) => state.setMode);

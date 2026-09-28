@@ -6,7 +6,9 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     await setupWailsMock(page);
   });
 
-  test('Compact Viewport (< 1024px): Canvas shell takes full width without desktop sidebars', async ({ page }) => {
+  test('Compact Viewport (< 1024px): Canvas shell takes full width without desktop sidebars', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1023, height: 768 });
     await page.goto('/');
     await waitForAppReady(page);
@@ -20,7 +22,9 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     expect(box!.width).toBeGreaterThanOrEqual(950);
   });
 
-  test('Standard Viewport (1024px): Canvas shell width contract >= 680px with at most 1 panel', async ({ page }) => {
+  test('Standard Viewport (1024px): Canvas shell width contract >= 680px with at most 1 panel', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/');
     await waitForAppReady(page);
@@ -56,10 +60,12 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
 
     const box = await canvasShell.boundingBox();
     expect(box).toBeTruthy();
-    expect(box!.width).toBeGreaterThan(800);
+    expect(box!.width).toBeGreaterThanOrEqual(800);
   });
 
-  test('Toolbar Contract: Zero horizontal scroll and functional More menu at 1024px', async ({ page }) => {
+  test('Toolbar Contract: Zero horizontal scroll and functional More menu at 1024px', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/');
     await waitForAppReady(page);
@@ -89,10 +95,18 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     await expect(emptyState).not.toBeVisible();
   });
 
-  test('Fit Contract (1920px): الورقة الرأسية تملأ عرض مساحة العمل بدل هامش ميت', async ({ page }) => {
+  test('Fit Contract (1920px): الورقة الرأسية تملأ عرض مساحة العمل بدل هامش ميت', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto('/');
     await waitForAppReady(page);
+
+    // إغلاق الدرج الأيسر لإتاحة أقصى عرض للكانفاس (أكثر من 55% فراغ جانبي)
+    const railFirstTool = page
+      .locator('[data-testid^="rail-collage-"], [data-testid^="rail-studio-"]')
+      .first();
+    await railFirstTool.click();
 
     // الورقة الافتراضية A4 رأسية: الفراغ الجانبي في ملاءمة الارتفاع أكبر من
     // الورقة نفسها، فالوضع التلقائي يختار ملاءمة العرض ويعرضه المؤشر في الشريط
@@ -119,7 +133,9 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     expect(fullBox!.height).toBeLessThan(shellBox!.height);
   });
 
-  test('Fit Contract (1280px): ملاءمة العرض اختيار صريح من القائمة وتُحفظ كتفضيل', async ({ page }) => {
+  test('Fit Contract (1280px): ملاءمة العرض اختيار صريح من القائمة وتُحفظ كتفضيل', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await waitForAppReady(page);

@@ -62,7 +62,7 @@ test.describe('@smoke إقلاع المحرك والمسارات الحرجة', 
     const userAgent = await page.evaluate(() => navigator.userAgent);
     expect(
       userAgent,
-      'مشروع webkit يجب أن يقدّم نفسه كمنصة PC (WebKitGTK/لينكس) — User-Agent يشبه macOS يقلب معنى mod إلى Cmd ويفسد فحوص الاختصارات'
+      'مشروع webkit يجب أن يقدّم نفسه كمنصة PC (WebKitGTK/لينكس) — User-Agent يشبه macOS يقلب معنى mod إلى Cmd ويفسد فحوص الاختصارات',
     ).not.toMatch(/mac/i);
 
     await page.keyboard.press('Control+k');
@@ -75,16 +75,22 @@ test.describe('@smoke إقلاع المحرك والمسارات الحرجة', 
   });
 
   test('اختيار أداة من الشريط يفتح لوحتها ويعلّمها نشطة', async ({ page }) => {
+    // التبويب الأول مفتوح افتراضياً عند الإقلاع — نتحقق من حالته النشطة
     const firstTool = page.locator(railToolButtons).first();
-
-    await firstTool.click();
-
-    // الزرّ النشط يُعلَم لبرامج القراءة (كان aria-current غير المناسب لزر أداة)
     await expect(firstTool).toHaveAttribute('aria-pressed', 'true');
-    // لوحة القوالب تُفتح في هذا المقاس (1280px = standard)
     await expect(page.getByTestId('workspace-panel-templates')).toHaveAttribute(
       'data-collapsed',
-      'false'
+      'false',
+    );
+
+    // اختيار أداة أخرى من الشريط يفعّلها ويبقي اللوحة مفتوحة
+    const secondTool = page.locator(railToolButtons).nth(1);
+    await secondTool.click();
+    await expect(secondTool).toHaveAttribute('aria-pressed', 'true');
+    await expect(firstTool).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByTestId('workspace-panel-templates')).toHaveAttribute(
+      'data-collapsed',
+      'false',
     );
   });
 });
