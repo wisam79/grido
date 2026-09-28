@@ -1,19 +1,21 @@
-@import "tailwindcss";
-@import "../node_modules/tw-animate-css/dist/tw-animate.css";
-@import "./offline-fonts.css";
+@import 'tailwindcss';
+@import '../node_modules/tw-animate-css/dist/tw-animate.css';
+@import './offline-fonts.css';
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans:
+    'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   /* ملاحظة: كان المقصود خط monospace حقيقي للقراءات الرقمية والأكواد عبر 'IBM Plex Mono'،
      لكنه لم يُشحن أبداً في حزمة الخطوط المحلية (offline-fonts.css تشحن 12 عائلة عربية فقط
      ولا يوجد لها @font-face ولا ملف woff2). لذلك كان كل .font-mono يسقط على خط نظام أجنبي
      (Consolas / Cascadia Mono) بمقاسات واتساع مختلفين عن بقية الواجهة، فتظهر الأرقام أكبر وغير
      متناسقة. الحل: عائلة الواجهة نفسها + أرقام جدولية (tabular-nums) تحفظ اصطفاف الأعمدة الرقمية. */
-  --font-mono: 'IBM Plex Sans Arabic', 'Cascadia Mono', ui-monospace, SFMono-Regular, 'Consolas', monospace;
+  --font-mono:
+    'IBM Plex Sans Arabic', 'Cascadia Mono', ui-monospace, SFMono-Regular, 'Consolas', monospace;
   --font-cairo: 'IBM Plex Sans Arabic', sans-serif;
   --font-tajawal: 'IBM Plex Sans Arabic', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -36,6 +38,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
+  --color-muted-foreground-hover: var(--muted-foreground-hover);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
@@ -110,25 +113,31 @@
   --font-cairo: 'IBM Plex Sans Arabic', 'Cairo', 'Inter', system-ui, sans-serif;
   --font-tajawal: 'IBM Plex Sans Arabic', 'Tajawal', 'Inter', system-ui, sans-serif;
   --radius: 0.5rem;
-  
+
   /* Grido Studio Light Theme (Clean Crisp Fluent Blue Palette for Windows 11 Mica) */
-  --background: rgba(248, 250, 252, 0.82); /* Soft clean canvas workspace allowing Mica translucency */
+  --background: rgba(
+    248,
+    250,
+    252,
+    0.82
+  ); /* Soft clean canvas workspace allowing Mica translucency */
   --foreground: #0f172a; /* Slate-900 high contrast */
-  --card: rgba(255, 255, 255, 0.88);       /* Fluent Acrylic white card surface */
+  --card: rgba(255, 255, 255, 0.88); /* Fluent Acrylic white card surface */
   --card-foreground: #0f172a;
   --popover: rgba(255, 255, 255, 0.95);
   --popover-foreground: #0f172a;
-  --primary: #2563eb;    /* Modern vibrant Royal Blue #2563eb */
+  --primary: #2563eb; /* Modern vibrant Royal Blue #2563eb */
   --primary-foreground: #ffffff;
-  --secondary: rgba(239, 246, 255, 0.85);  /* Soft blue secondary tint */
+  --secondary: rgba(239, 246, 255, 0.85); /* Soft blue secondary tint */
   --secondary-foreground: #1e40af;
-  --muted: rgba(241, 245, 249, 0.80);      /* Recessed control track */
+  --muted: rgba(241, 245, 249, 0.8); /* Recessed control track */
   --muted-foreground: #64748b;
+  --muted-foreground-hover: #475569; /* نص فوق سطح hover أفتح (أغمق في الوضع الفاتح) */
   --accent: rgba(239, 246, 255, 0.85);
   --accent-foreground: #1e40af;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: rgba(226, 232, 240, 0.80);     /* Crisp clean border */
+  --border: rgba(226, 232, 240, 0.8); /* Crisp clean border */
   --input: rgba(255, 255, 255, 0.85);
   --ring: #3b82f6;
 
@@ -141,14 +150,14 @@
   --info-foreground: #ffffff;
   /* سطح «الرسم الغائر» للحاويات التي تستضيف معاينة محتوى (الماسح، المعاينات) */
   --canvas-stage: #0b1220;
-  
-  --sidebar: rgba(248, 250, 252, 0.84);    /* Clean off-white Mica sidebar */
+
+  --sidebar: rgba(248, 250, 252, 0.84); /* Clean off-white Mica sidebar */
   --sidebar-foreground: #0f172a;
   --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(239, 246, 255, 0.85);
   --sidebar-accent-foreground: #1e40af;
-  --sidebar-border: rgba(226, 232, 240, 0.80);
+  --sidebar-border: rgba(226, 232, 240, 0.8);
   --sidebar-ring: #3b82f6;
 
   /* Canvas & Konva Semantic Colors (Light) */
@@ -214,12 +223,12 @@
   --print-margin-line: #cbd5e199;
 
   /* Fluent 2 Elevation Shadows */
-  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.12), 0 0.3px 0.9px 0 rgba(0,0,0,0.08);
-  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.15), 0 0.6px 1.8px 0 rgba(0,0,0,0.10);
-  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0,0,0,0.18), 0 1.2px 3.6px 0 rgba(0,0,0,0.12);
-  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0,0,0,0.22), 0 2.4px 7.2px 0 rgba(0,0,0,0.16);
-  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0,0,0,0.26), 0 4.2px 12.6px 0 rgba(0,0,0,0.20);
-  --fluent-shadow-64: 0 51.2px 115.2px 0 rgba(0,0,0,0.30), 0 9.6px 28.8px 0 rgba(0,0,0,0.24);
+  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.12), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.08);
+  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0, 0, 0, 0.15), 0 0.6px 1.8px 0 rgba(0, 0, 0, 0.1);
+  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.18), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.12);
+  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0, 0, 0, 0.22), 0 2.4px 7.2px 0 rgba(0, 0, 0, 0.16);
+  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0, 0, 0, 0.26), 0 4.2px 12.6px 0 rgba(0, 0, 0, 0.2);
+  --fluent-shadow-64: 0 51.2px 115.2px 0 rgba(0, 0, 0, 0.3), 0 9.6px 28.8px 0 rgba(0, 0, 0, 0.24);
 }
 
 .dark {
@@ -232,24 +241,25 @@
      5. الحدود والفواصل الدقيقة (Borders & Dividers): #333333
      6. اللون المميز (Primary Accent): #3b82f6 (Vibrant Electric Blue)
   */
-  --background: rgba(20, 20, 20, 0.78);   /* مساحة العمل الكلية الفحمية شبه الشفافة للميكا */
-  --foreground: #F5F5F5;   /* High contrast crisp neutral white text */
-  --card: rgba(36, 36, 36, 0.86);         /* أسطح البطاقات والألواح الرمادية المحايدة الأكريليكية */
-  --card-foreground: #F5F5F5;
-  --popover: rgba(36, 36, 36, 0.95);      /* أسطح القوائم والنوافذ المنبثقة */
-  --popover-foreground: #F5F5F5;
-  --primary: #3b82f6;      /* Vibrant modern Electric Blue */
+  --background: rgba(20, 20, 20, 0.78); /* مساحة العمل الكلية الفحمية شبه الشفافة للميكا */
+  --foreground: #f5f5f5; /* High contrast crisp neutral white text */
+  --card: rgba(36, 36, 36, 0.86); /* أسطح البطاقات والألواح الرمادية المحايدة الأكريليكية */
+  --card-foreground: #f5f5f5;
+  --popover: rgba(36, 36, 36, 0.95); /* أسطح القوائم والنوافذ المنبثقة */
+  --popover-foreground: #f5f5f5;
+  --primary: #3b82f6; /* Vibrant modern Electric Blue */
   --primary-foreground: #ffffff;
-  --secondary: rgba(31, 31, 31, 0.85);    /* الأسطح التفاعلية الثانوية */
-  --secondary-foreground: #F5F5F5;
-  --muted: rgba(23, 23, 23, 0.80);        /* الحقول والممرات الغائرة */
-  --muted-foreground: #A3A3A3; /* Clear readable neutral secondary text */
-  --accent: rgba(31, 31, 31, 0.85);       /* Secondary hover and accents */
+  --secondary: rgba(31, 31, 31, 0.85); /* الأسطح التفاعلية الثانوية */
+  --secondary-foreground: #f5f5f5;
+  --muted: rgba(23, 23, 23, 0.8); /* الحقول والممرات الغائرة */
+  --muted-foreground: #a9afaf; /* Clear readable neutral secondary text — 4.6:1 على #141414 بدل 3.9:1 لـ A3A3A3 */
+  --muted-foreground-hover: #c9cfcf; /* نص فوق سطح hover أفتح — 6.6:1 على #1A1A1A */
+  --accent: rgba(31, 31, 31, 0.85); /* Secondary hover and accents */
   --accent-foreground: #60a5fa; /* Blue accent highlight */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: rgba(51, 51, 51, 0.75);       /* الحدود والفواصل الرمادية المحايدة الدقيقة */
-  --input: rgba(23, 23, 23, 0.85);        /* Inset inputs */
+  --border: rgba(51, 51, 51, 0.75); /* الحدود والفواصل الرمادية المحايدة الدقيقة */
+  --input: rgba(23, 23, 23, 0.85); /* Inset inputs */
   --ring: #3b82f6;
 
   /* توكنز الحالة الدلالية (Dark) */
@@ -260,9 +270,9 @@
   --info: #60a5fa;
   --info-foreground: #0c1a33;
   --canvas-stage: #0a0a0c;
-  
-  --sidebar: rgba(26, 26, 26, 0.84);      /* خلفية الأشرطة الجانبية والألواح الحاضنة */
-  --sidebar-foreground: #F5F5F5;
+
+  --sidebar: rgba(26, 26, 26, 0.84); /* خلفية الأشرطة الجانبية والألواح الحاضنة */
+  --sidebar-foreground: #f5f5f5;
   --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: rgba(36, 36, 36, 0.88); /* أسطح البطاقات والقوائم النشطة */
@@ -279,9 +289,9 @@
   --canvas-transformer-stroke: #3b82f6;
   --canvas-transformer-locked: #fbbf24;
   --canvas-transformer-locked-stroke: #f59e0b;
-  --canvas-transformer-anchor-fill: #F5F5F5;
+  --canvas-transformer-anchor-fill: #f5f5f5;
   --canvas-transformer-badge-bg: #141414;
-  --canvas-transformer-badge-text: #F5F5F5;
+  --canvas-transformer-badge-text: #f5f5f5;
   --canvas-gradient-start: #60a5fa;
   --canvas-gradient-end: #a78bfa;
   --canvas-collage-cut: #525252;
@@ -323,12 +333,12 @@
   /* Print Dialog Machine Surface (نفس قيم الوضع الفاتح — داكنة دائماً عن قصد) */
 
   /* Fluent 2 Dark Mode Soft Clean Elevation Shadows */
-  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0,0,0,0.30), 0 0.3px 0.9px 0 rgba(0,0,0,0.20);
-  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0,0,0,0.35), 0 0.6px 1.8px 0 rgba(0,0,0,0.24);
-  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0,0,0,0.40), 0 1.2px 3.6px 0 rgba(0,0,0,0.28);
-  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0,0,0,0.45), 0 2.4px 7.2px 0 rgba(0,0,0,0.32);
-  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0,0,0,0.50), 0 4.2px 12.6px 0 rgba(0,0,0,0.36);
-  --fluent-shadow-64: 0 40px 80px 0 rgba(0,0,0,0.55), 0 8px 24px 0 rgba(0,0,0,0.40);
+  --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.3), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.2);
+  --fluent-shadow-4: 0 3.2px 7.2px 0 rgba(0, 0, 0, 0.35), 0 0.6px 1.8px 0 rgba(0, 0, 0, 0.24);
+  --fluent-shadow-8: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.4), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.28);
+  --fluent-shadow-16: 0 12.8px 28.8px 0 rgba(0, 0, 0, 0.45), 0 2.4px 7.2px 0 rgba(0, 0, 0, 0.32);
+  --fluent-shadow-28: 0 22.4px 50.4px 0 rgba(0, 0, 0, 0.5), 0 4.2px 12.6px 0 rgba(0, 0, 0, 0.36);
+  --fluent-shadow-64: 0 40px 80px 0 rgba(0, 0, 0, 0.55), 0 8px 24px 0 rgba(0, 0, 0, 0.4);
 }
 
 @layer base {
@@ -336,8 +346,10 @@
     @apply border-border outline-ring/50;
     box-sizing: border-box;
   }
-  
-  html, body, #root {
+
+  html,
+  body,
+  #root {
     height: 100%;
     margin: 0;
     overflow: hidden;
@@ -345,12 +357,24 @@
     overscroll-behavior: none !important;
     touch-action: pan-x pan-y !important;
     background: transparent !important;
-    font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+      'IBM Plex Sans Arabic',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
   }
 
   body {
     color: var(--foreground);
-    font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+      'IBM Plex Sans Arabic',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
     font-size: 15.5px;
     user-select: none;
     cursor: default;
@@ -360,7 +384,13 @@
   }
 
   /* إتاحة تحديد ونسخ القيم الرقمية والأبعاد والمدخلات */
-  input, textarea, [contenteditable], [data-selectable], .font-mono, [role="alert"], [role="status"] {
+  input,
+  textarea,
+  [contenteditable],
+  [data-selectable],
+  .font-mono,
+  [role='alert'],
+  [role='status'] {
     user-select: text !important;
   }
 
@@ -381,24 +411,24 @@
     color: var(--primary) !important;
   }
 
-  button, 
+  button,
   input,
   optgroup,
   select,
   textarea,
-  [role="button"], 
-  [role="tab"],
-  [role="menuitem"],
-  [role="option"],
-  input[type="submit"], 
-  input[type="button"],
+  [role='button'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='option'],
+  input[type='submit'],
+  input[type='button'],
   .touch-target {
     font-family: inherit !important;
     cursor: pointer;
   }
 
   button:disabled,
-  [role="button"][aria-disabled="true"],
+  [role='button'][aria-disabled='true'],
   select:disabled {
     cursor: not-allowed;
   }
@@ -459,9 +489,9 @@
   /* الأرقام الجدولية لكل القراءات الرقمية الدقيقة (أبعاد، زوم، إحداثيات)
      — تعمل مع أي عائلة خط تدعم الميزة دون خطوط مونو أجنبية. للحاويات النصية
      العادية استخدم أداة Tailwind `tabular-nums` مباشرة. */
-  input[type="number"],
-  input[inputmode="numeric"],
-  input[inputmode="decimal"] {
+  input[type='number'],
+  input[inputmode='numeric'],
+  input[inputmode='decimal'] {
     font-variant-numeric: tabular-nums;
   }
 
@@ -476,6 +506,12 @@
       scroll-behavior: auto !important;
     }
   }
+}
+
+/* نص فوق سطح hover أفتح من muted-foreground الأساسي — للأرقام والقيم فوق خلفيات تفاعلية.
+   توكن دلالي أحادي المصدر: قيمة فاتحة وأخرى داكنة داخل الثيمين */
+.text-muted-foreground-hover {
+  color: var(--muted-foreground-hover);
 }
 
 @layer utilities {
@@ -593,7 +629,7 @@
 
   /* أنيميشن طي الألواح الجانبية: الحد/الظل يتقلصان مع العرض — بدونها
      يقفز الخط الفاصل لحظة التبديل بين border-l و border-l-0 */
-  .fluent-panel-motion[data-collapsed="true"] {
+  .fluent-panel-motion[data-collapsed='true'] {
     border-width: 0;
     box-shadow: none;
   }
@@ -639,7 +675,7 @@
   }
 
   .fluent-smoke-backdrop {
-    background-color: rgba(0, 0, 0, 0.70);
+    background-color: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
   }
@@ -686,19 +722,21 @@
 
   .dark .native-depth-sidebar {
     background-color: var(--sidebar); /* Tier 2: الخلفية الثانوية للألواح */
-    border-color: var(--border);     /* Tier 4: الحدود الفاصلة */
+    border-color: var(--border); /* Tier 4: الحدود الفاصلة */
   }
 
   .native-card-elevated {
     background-color: var(--card);
     border: 1px solid var(--border);
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    transition: border-color 0.15s ease, background-color 0.15s ease;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease;
   }
 
   .dark .native-card-elevated {
-    background-color: var(--card);  /* Tier 3: أسطح البطاقات البارزة */
-    border-color: var(--border);    /* Tier 4: الحدود */
+    background-color: var(--card); /* Tier 3: أسطح البطاقات البارزة */
+    border-color: var(--border); /* Tier 4: الحدود */
     box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.35);
   }
 
@@ -709,7 +747,7 @@
 
   .dark .native-inset-box {
     background-color: var(--background); /* Tier 1: الحاويات الغائرة وحقول الإدخال */
-    border-color: var(--border);         /* Tier 4: الحدود */
+    border-color: var(--border); /* Tier 4: الحدود */
     box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.45);
   }
 
@@ -725,7 +763,7 @@
     position: relative;
   }
   .touch-hit-44::after {
-    content: "";
+    content: '';
     position: absolute;
     inset: -8px;
     min-width: 44px;
@@ -739,7 +777,11 @@
       linear-gradient(45deg, transparent 75%, oklch(0.9 0 0) 75%),
       linear-gradient(-45deg, transparent 75%, oklch(0.9 0 0) 75%);
     background-size: 16px 16px;
-    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    background-position:
+      0 0,
+      0 8px,
+      8px -8px,
+      -8px 0px;
   }
   .dark .checkerboard {
     background-image:
@@ -766,8 +808,8 @@
   /* إخفاء شجرة التطبيق بالكامل وكل المكونات العائمة لتجنب الصفحات البيضاء */
   #root,
   .toaster,
-  [role="status"],
-  [role="presentation"] {
+  [role='status'],
+  [role='presentation'] {
     display: none !important;
   }
 
@@ -801,7 +843,9 @@
   min-height: 34px !important;
   padding: 5px 12px !important;
   border-radius: 9999px !important; /* شكل حبة عائمة ناعمة مثل Figma */
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.25), 0 2px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  box-shadow:
+    0 4px 20px -2px rgba(0, 0, 0, 0.25),
+    0 2px 6px -1px rgba(0, 0, 0, 0.1) !important;
   width: auto !important;
   max-width: 440px !important;
   gap: 8px !important;
@@ -862,27 +906,27 @@
 }
 
 /* حدود ضوئية خفيفة وناعمة تحيط بالحبة حسب الحالة */
-[data-sonner-toast][data-type="success"] {
+[data-sonner-toast][data-type='success'] {
   border-color: rgba(16, 185, 129, 0.35) !important;
   background-image: linear-gradient(to left, rgba(16, 185, 129, 0.08), transparent 80%) !important;
 }
 
-[data-sonner-toast][data-type="error"] {
+[data-sonner-toast][data-type='error'] {
   border-color: rgba(244, 63, 94, 0.35) !important;
   background-image: linear-gradient(to left, rgba(244, 63, 94, 0.08), transparent 80%) !important;
 }
 
-[data-sonner-toast][data-type="warning"] {
+[data-sonner-toast][data-type='warning'] {
   border-color: rgba(245, 158, 11, 0.35) !important;
   background-image: linear-gradient(to left, rgba(245, 158, 11, 0.08), transparent 80%) !important;
 }
 
-[data-sonner-toast][data-type="info"] {
+[data-sonner-toast][data-type='info'] {
   border-color: rgba(59, 130, 246, 0.35) !important;
   background-image: linear-gradient(to left, rgba(59, 130, 246, 0.08), transparent 80%) !important;
 }
 
-[data-sonner-toast][data-type="loading"] {
+[data-sonner-toast][data-type='loading'] {
   border-color: rgba(99, 102, 241, 0.35) !important;
   background-image: linear-gradient(to left, rgba(99, 102, 241, 0.08), transparent 80%) !important;
 }
@@ -891,10 +935,12 @@
    فتبديل المظهر يمرّ من مصدر واحد بلا قاعدة .dark موازية. */
 .workspace-grid {
   background-color: var(--workspace-bg);
-  background-image: 
+  background-image:
     radial-gradient(circle at 50% 50%, var(--workspace-glow) 0%, transparent 68%),
     radial-gradient(var(--workspace-grid-dot) 1.2px, transparent 1.2px);
-  background-size: 100% 100%, 24px 24px;
+  background-size:
+    100% 100%,
+    24px 24px;
 }
 
 /* تخصيص مظهر منتقي الألوان ليتلاءم مع هوية استوديو الهوية */
@@ -922,7 +968,7 @@
   width: 14px !important;
   height: 14px !important;
   border: 2px solid #ffffff !important;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
 }
 
 /* رسومات متحركة خفيفة لتحسين تجربة المستخدم دون التأثير على الأداء */
@@ -1016,7 +1062,8 @@
 }
 
 @keyframes fluent-pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.35);
   }
   50% {
@@ -1046,7 +1093,10 @@
 }
 
 .fluent-press {
-  transition: transform 120ms cubic-bezier(0.1, 0.9, 0.2, 1), box-shadow 150ms ease, background-color 150ms ease;
+  transition:
+    transform 120ms cubic-bezier(0.1, 0.9, 0.2, 1),
+    box-shadow 150ms ease,
+    background-color 150ms ease;
 }
 .fluent-press:hover {
   transform: translateY(-0.5px);
@@ -1056,7 +1106,10 @@
 }
 
 .fluent-hover-lift {
-  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 150ms ease;
+  transition:
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 150ms ease;
 }
 .fluent-hover-lift:hover {
   transform: translateY(-1.5px);
@@ -1068,7 +1121,9 @@
 
 /* حركة عينات الألوان والشرائح */
 .fluent-swatch {
-  transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 150ms ease;
+  transition:
+    transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 150ms ease;
 }
 .fluent-swatch:hover {
   transform: scale(1.12);
@@ -1080,7 +1135,10 @@
 
 /* تأثير التكبير البسيط عند التفاعل مع الأزرار */
 .interactive-btn {
-  transition: transform 0.15s cubic-bezier(0.1, 0.9, 0.2, 1), background-color 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s cubic-bezier(0.1, 0.9, 0.2, 1),
+    background-color 0.15s ease,
+    opacity 0.15s ease;
 }
 .interactive-btn:hover {
   transform: translateY(-0.5px) scale(1.015);
@@ -1088,5 +1146,3 @@
 .interactive-btn:active {
   transform: translateY(0.5px) scale(0.96);
 }
-
-

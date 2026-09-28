@@ -392,7 +392,7 @@ export function CollagePresetsTab({
             <span className="text-xs font-bold text-foreground leading-tight truncate group-hover:text-primary transition-colors">
               {preset.title}
             </span>
-            <span className="text-micro font-mono font-bold text-muted-foreground/80 bg-muted/60 px-2 py-0.5 rounded-full shrink-0">
+            <span className="text-micro font-mono font-bold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full shrink-0">
               {preset.slots}×
             </span>
           </div>

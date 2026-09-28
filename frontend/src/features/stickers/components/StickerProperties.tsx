@@ -88,7 +88,7 @@ function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonPr
         />
       </div>
       <span className="text-micro font-semibold text-foreground/80">{label}</span>
-      <span className="text-2xs font-mono text-muted-foreground/75 truncate max-w-full uppercase">
+      <span className="text-2xs font-mono text-muted-foreground truncate max-w-full uppercase">
         {color}
       </span>
     </div>

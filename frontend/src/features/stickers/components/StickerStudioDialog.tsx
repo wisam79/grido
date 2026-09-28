@@ -272,6 +272,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       if (editingElement) {
         const el = store.elements.find((e) => e.id === editingElement.id);
         if (el && el.type === 'image') {
+          // العنصر القيد إعادة تحريره قد يكون اختفى عن العرض لأن المستخدم دخل وضع
+          // الكولاج بعد إدراجه (طبقة العناصر الحرة ترسم في single فقط). نعيده
+          // للوضع الحر ليرا نتيجة تعديله فوراً بدل تحديث صامت غير مرئي.
+          if (store.mode !== 'single') store.setMode('single');
           store.updateElement(el.id, {
             imageSrc: finalSrc,
             stickerSource: { templateId: selectedTemplate.id, params: { ...params } },
@@ -282,6 +286,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         // العنصر حُذف أثناء التعديل: نسقط إلى الإدراج كعنصر جديد
       }
 
+      // الإدراج في وضع الكولاج كان يضيف عنصراً غير مرئي (طبقة العناصر ترسم في
+      // single فقط) ثم يُمسح صامتاً عند أي تبديل وضع (مسح عناصر الحر P1-19).
+      // نفس علاج addImageFromSrc: ننتقل للوضع الحر قبل الإدراج ليبقى عمل المستخدم.
+      if (store.mode !== 'single') {
+        store.setMode('single');
+        toast.info('انتقلت إلى وضع التعديل الحر لإدراج الملصق');
+      }
       store.addImageElement(finalSrc, aspect, {
         templateId: selectedTemplate.id,
         params: { ...params },

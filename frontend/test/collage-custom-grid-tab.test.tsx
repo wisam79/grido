@@ -94,7 +94,7 @@ describe('CollageCustomGridTab Component Suite', () => {
         onRowsChange={onRowsChange}
         onColsChange={onColsChange}
         onApply={onApply}
-      />
+      />,
     );
 
     // A4 300dpi بمقاس 35×45 = أقصى 6 صفوف × 5 أعمدة
@@ -111,12 +111,24 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(onApply).toHaveBeenCalledWith(1, 4, 'iq-national-id', 'top-left');
   });
 
-  it('reflects the applied state on the apply action', () => {
+  it('reflects the applied state on the status badge (not a dead button)', () => {
     const { rerender } = render(<CollageCustomGridTab {...defaultProps} />);
+    // قبل التطبيق: زر التطبيق الرئيسي، وبلا شارة الحالة
     expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
+    expect(screen.queryByText('الشبكة مطبقة')).not.toBeInTheDocument();
 
     rerender(<CollageCustomGridTab {...defaultProps} isCustomActive />);
+    // بعد التطبيق: شارة حالة حية (role=status) + أفعال ثانوية
     expect(screen.getByText('الشبكة مطبقة')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('الشبكة مطبقة');
+    expect(screen.getByText('إعادة البناء')).toBeInTheDocument();
+    expect(screen.getByText('حفظ كقالب')).toBeInTheDocument();
+    // في الحالة الحية يُستبدل زر التطبيق بإعادة البناء — بلا زر ميت بحالة «تم»
+    expect(screen.queryByText('تطبيق الشبكة')).not.toBeInTheDocument();
+
+    // «إعادة البناء» فعل حقيقي: يعيد تطبيق نفس التركيب عبر onApply
+    fireEvent.click(screen.getByText('إعادة البناء'));
+    expect(defaultProps.onApply).toHaveBeenCalledWith(2, 3, 'iq-national-id', 'top-left');
   });
 
   it('toggles template save form on clicking save button', () => {

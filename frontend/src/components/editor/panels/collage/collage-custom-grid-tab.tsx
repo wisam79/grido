@@ -14,6 +14,7 @@ import {
   Scissors,
   Check,
   CheckCircle,
+  ArrowClockwise,
 } from '@/components/ui/icons';
 import {
   PhotoGridType,
@@ -34,6 +35,23 @@ import { FluentSection } from '@/components/ui/blocks';
 const FOCUS_RING =
   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 
+/**
+ * مفاتيح بطاقات تبويب الشبكة القابلة للطي — تُحفظ حالة الطي محلياً لكل مستخدم
+ * (نفس نمط سجل workspace-tools) فتبقى اللوحة مرتبة كما تركها المستخدم.
+ */
+type CollapseKey = 'dims' | 'photoSize' | 'align';
+const COLLAPSE_PREF_KEY = 'grido-collage-grid-collapse';
+
+const loadCollapsePrefs = (): Partial<Record<CollapseKey, boolean>> => {
+  try {
+    const raw = localStorage.getItem(COLLAPSE_PREF_KEY);
+    return raw ? (JSON.parse(raw) as Partial<Record<CollapseKey, boolean>>) : {};
+  } catch {
+    // خصوصية التصفح أو تخزين تالف — الطي الافتراضي (مفتوح) خيار آمن دائماً
+    return {};
+  }
+};
+
 /** زر عداد مدمج (h-7 = مقياس Compact Controls) */
 const COUNTER_BTN = cn(
   'w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center shadow-2xs cursor-pointer transition-colors',
@@ -46,7 +64,8 @@ const COUNTER_BTN = cn(
 function DocumentPresetGraphic({ type, active }: { type: string; active: boolean }) {
   const activeBorder = active
     ? 'border-primary bg-primary/15 text-primary'
-    : 'border-border/80 bg-muted/50 text-muted-foreground/70';
+    : // نص كامل بدل /70: الرمادي المخفف كان يهبط تحت حد WCAG AA على السطح الداكن
+      'border-border/80 bg-muted/50 text-muted-foreground';
 
   if (type === 'stretch') {
     return (
@@ -155,11 +174,34 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [saveName, setSaveName] = useState('');
 
+  /** حالة طي البطاقات محفوظة محلياً — اللوحة تعيد ترتيب نفسها حسب تفضيل المستخدم */
+  const [collapsePrefs, setCollapsePrefs] =
+    useState<Partial<Record<CollapseKey, boolean>>>(loadCollapsePrefs);
+  const setCardOpen = (key: CollapseKey) => (open: boolean) => {
+    setCollapsePrefs((prev) => {
+      const next = { ...prev, [key]: open };
+      try {
+        localStorage.setItem(COLLAPSE_PREF_KEY, JSON.stringify(next));
+      } catch {
+        // التخزين غير متاح — الحالة تبقى في الذاكرة لهذه الجلسة فقط
+      }
+      return next;
+    });
+  };
+
   const { maxRows, maxCols } = getGridLimits(photoType, canvasWidth, canvasHeight, storedDpi);
   const maxPhotos = maxRows * maxCols;
   const totalPhotos = rows * cols;
   const isMaxFill = rows === maxRows && cols === maxCols;
   const isCornerStrip = rows === 1 && cols === Math.min(4, maxCols) && gridAlign === 'top-left';
+
+  /**
+   * حالة «مطبّق الآن»: القالب النشط على الكانفس هو هذا التركيب بالضبط.
+   * تُستخدم في شارة الحالة فقط (لا زر) — الشارة ستُخفى بأمان إذا تغيّر
+   * القالب من مكان آخر لأنها تُشتق من الخاصية isCustomActive المتزامنة
+   * مع القالب النشط، فلا تبقى معلومة قديمة معروضة.
+   */
+  const isLiveCombo = isCustomActive && !showSaveForm;
 
   // نسبة تغطية الورقة: التمدد الحر يملأ الورقة دائماً 100%،
   // والمقاسات الفيزيائية تُحسب من مجموع مساحات الصور مقابل مساحة الورقة.
@@ -218,21 +260,24 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
       <FluentSection
         icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
         title="أبعاد الشبكة"
+        collapsible
+        open={collapsePrefs.dims ?? true}
+        onOpenChange={setCardOpen('dims')}
         subtitle={
           <>
             الحد الأقصى{' '}
-            <span className="font-mono font-bold text-foreground/80" dir="ltr">
+            <span className="font-mono font-bold text-foreground" dir="ltr">
               {maxRows}×{maxCols}
             </span>{' '}
             صور ({maxPhotos})
           </>
         }
-        collapsible
         action={
           <div className="flex items-center gap-1.5 select-none">
+            {/* شارات محايدة: معلومة دائمة لا إجراء — الأزرق يُحفظ للحالة الحية في بطاقة الإجراءات */}
             <span
-              className="h-5 text-2xs font-bold px-2 rounded-full bg-primary/10 text-primary border border-primary/25 flex items-center gap-1"
-              title="إجمالي صور الشبكة"
+              className="h-5 text-2xs font-bold font-mono px-2 rounded-full bg-muted text-muted-foreground border border-border/60 flex items-center select-none"
+              title="عدد صور الشبكة الحالية"
             >
               <span className="font-mono" dir="ltr">
                 {totalPhotos}
@@ -240,7 +285,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
               <span>صور</span>
             </span>
             <span
-              className="h-5 text-2xs font-mono font-bold px-2 rounded-full bg-muted text-muted-foreground border border-border/60 flex items-center"
+              className="h-5 text-2xs font-mono font-bold px-2 rounded-full bg-muted text-muted-foreground border border-border/60 flex items-center select-none"
               title="نسبة تغطية الورقة"
             >
               {coverage}%
@@ -254,7 +299,10 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/60">
             <div className="flex items-center justify-between gap-1 text-mini font-bold text-muted-foreground select-none">
               <span>الصفوف</span>
-              <span className="text-2xs font-mono font-normal" title="الحد الأقصى للصفوف">
+              <span
+                className="text-2xs font-mono font-normal text-muted-foreground-hover"
+                title="الحد الأقصى للصفوف"
+              >
                 أقصى {maxRows}
               </span>
             </div>
@@ -296,7 +344,10 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/60">
             <div className="flex items-center justify-between gap-1 text-mini font-bold text-muted-foreground select-none">
               <span>الأعمدة</span>
-              <span className="text-2xs font-mono font-normal" title="الحد الأقصى للأعمدة">
+              <span
+                className="text-2xs font-mono font-normal text-muted-foreground-hover"
+                title="الحد الأقصى للأعمدة"
+              >
                 أقصى {maxCols}
               </span>
             </div>
@@ -412,7 +463,10 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         icon={<Ruler className="w-3.5 h-3.5" weight="duotone" />}
         title="مقاس الصورة"
         collapsible
+        open={collapsePrefs.photoSize ?? true}
+        onOpenChange={setCardOpen('photoSize')}
         action={
+          /* زرقاء لأنها تنعكس فوراً على الكانفس — الوحيدة المبررة في الرؤوس */
           <span className="h-5 text-2xs font-bold font-mono px-2 rounded-full bg-primary/10 text-primary border border-primary/25 flex items-center select-none">
             {photoType === 'stretch' ? 'تلقائي' : sizeBadge}
           </span>
@@ -449,7 +503,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                     {opt.label}
                   </span>
                   <span className="flex items-center gap-1 text-mini text-muted-foreground font-mono mt-1">
-                    <span dir="ltr" className="text-foreground/75">
+                    <span dir="ltr" className="text-muted-foreground-hover">
                       {opt.dim}
                     </span>
                     {opt.sub && <span>{opt.sub}</span>}
@@ -469,6 +523,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           icon={<Crosshair className="w-3.5 h-3.5" weight="duotone" />}
           title="المحاذاة على الورقة"
           collapsible
+          open={collapsePrefs.align ?? true}
+          onOpenChange={setCardOpen('align')}
         >
           <div className="flex items-center gap-2">
             {/* مصفوفة الارتكاز — dir="ltr" مقصودة: خريطة مكانية للورقة لا نص متدفق */}
@@ -504,7 +560,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                           'rounded-full transition-colors duration-150',
                           isActive
                             ? 'w-3 h-3 bg-primary shadow-xs ring-3 ring-primary/30'
-                            : 'w-2 h-2 bg-muted-foreground/50 border border-border/40 group-hover:bg-primary',
+                            : // نقاط كاملة بدل /50: نقاط الارتكاز كائنات رسومية تتطلب 3:1 على الأقل
+                              'w-2 h-2 bg-muted-foreground/80 border border-border/40 group-hover:bg-primary',
                         )}
                       />
                     </button>
@@ -531,7 +588,9 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   <Scissors className="w-3.5 h-3.5 shrink-0" weight="bold" />
                   <span className="truncate">ركن القص</span>
                 </span>
-                <span className="text-2xs font-mono text-muted-foreground shrink-0">0،0</span>
+                <span className="text-2xs font-mono text-muted-foreground-hover shrink-0" dir="ltr">
+                  0،0
+                </span>
               </button>
 
               <button
@@ -550,48 +609,87 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   <Crosshair className="w-3.5 h-3.5 shrink-0" weight="bold" />
                   <span className="truncate">توسيط</span>
                 </span>
-                <span className="text-2xs font-mono text-muted-foreground shrink-0">50%</span>
+                <span className="text-2xs font-mono text-muted-foreground-hover shrink-0">50%</span>
               </button>
             </div>
           </div>
         </FluentSection>
       )}
 
-      {/* ═══ بطاقة 4: إجراءات التطبيق والحفظ ═══ */}
-      <div className="p-3 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular space-y-2">
-        {!showSaveForm ? (
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant={isCustomActive ? 'outline' : 'default'}
-              className="flex-1"
-              onClick={() => onApply(rows, cols, photoType, gridAlign)}
-              title={isCustomActive ? 'إعادة تطبيق الشبكة' : 'تطبيق الشبكة'}
-            >
-              {isCustomActive ? (
-                <CheckCircle className="w-4 h-4 text-primary" weight="bold" />
-              ) : (
-                <GridFour className="w-4 h-4" weight="bold" />
-              )}
-              <span>{isCustomActive ? 'الشبكة مطبقة' : 'تطبيق الشبكة'}</span>
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setSaveName(
-                  `شبكة ${rows}×${cols} — ${getPhotoDimensions(photoType).label.split(' ')[0]}`,
-                );
-                setShowSaveForm(true);
-              }}
-              title="حفظ في المكتبة"
-            >
-              <FloppyDisk className="w-4 h-4" weight="duotone" />
-              <span>حفظ كقالب</span>
-            </Button>
+      {/* ═══ بطاقة 4: إجراءات التطبيق والحفظ — مثبتة أسفل اللوحة أثناء التمرير
+          حتى تبقى الأفعال الرئيسية في متناول اليد مهما طالت البطاقات فوقها */}
+      <div className="sticky bottom-0 z-10 p-3 rounded-xl bg-card/95 backdrop-blur-md border border-border/80 shadow-2xs fluent-specular space-y-2">
+        {/* شارة الحالة الحية: تعكس حالة الكانفس لا زر لا يفعل شيئاً */}
+        {isLiveCombo && (
+          <div
+            role="status"
+            className="flex items-center gap-2 h-7 px-2.5 rounded-md bg-card/70 border border-border/60 shadow-2xs select-none"
+          >
+            <CheckCircle className="w-4 h-4 text-success shrink-0" weight="duotone" />
+            <span className="text-micro font-bold text-foreground">الشبكة مطبقة</span>
+            <span className="text-2xs font-mono text-muted-foreground shrink-0" dir="ltr">
+              {rows}×{cols}
+            </span>
           </div>
-        ) : (
+        )}
+        <div className="flex items-center gap-2">
+          {isLiveCombo ? (
+            /* الحالة الحية: كلا الفعلين ثانويان — الإبراز للشارة لا للأزرار */
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => onApply(rows, cols, photoType, gridAlign)}
+                title="إعادة بناء الشبكة وإعادة توزيع الصور من جديد"
+              >
+                <ArrowClockwise className="w-4 h-4 text-primary" weight="bold" />
+                <span>إعادة البناء</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setSaveName(
+                    `شبكة ${rows}×${cols} — ${getPhotoDimensions(photoType).label.split(' ')[0]}`,
+                  );
+                  setShowSaveForm(true);
+                }}
+                title="حفظ في المكتبة"
+              >
+                <FloppyDisk className="w-4 h-4" weight="duotone" />
+                <span>حفظ كقالب</span>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={() => onApply(rows, cols, photoType, gridAlign)}
+                title="تطبيق الشبكة على الكانفس"
+              >
+                <GridFour className="w-4 h-4" weight="bold" />
+                <span>تطبيق الشبكة</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setSaveName(
+                    `شبكة ${rows}×${cols} — ${getPhotoDimensions(photoType).label.split(' ')[0]}`,
+                  );
+                  setShowSaveForm(true);
+                }}
+                title="حفظ في المكتبة"
+              >
+                <FloppyDisk className="w-4 h-4" weight="duotone" />
+                <span>حفظ كقالب</span>
+              </Button>
+            </>
+          )}
+        </div>
+        {!showSaveForm ? null : (
           <div className="flex items-center gap-1.5 bg-muted/50 p-1.5 rounded-lg border border-border/80 shadow-2xs animate-in slide-in-from-top-2 duration-200">
             <Input
               type="text"
