@@ -11,7 +11,7 @@
 let _computed: CSSStyleDeclaration | null = null;
 
 function css(varName: string, fallback: string): string {
-  if (typeof document === "undefined") return fallback;
+  if (typeof document === 'undefined') return fallback;
   if (!_computed) {
     _computed = getComputedStyle(document.documentElement);
   }
@@ -30,9 +30,15 @@ export function invalidateCanvasColors() {
  */
 function withAlpha(color: string, alpha: number): string {
   const c = color.trim();
-  if (c.startsWith("#")) {
+  if (c.startsWith('#')) {
     const hex = c.slice(1);
-    const full = hex.length === 3 ? hex.split("").map(ch => ch + ch).join("") : hex;
+    const full =
+      hex.length === 3
+        ? hex
+            .split('')
+            .map((ch) => ch + ch)
+            .join('')
+        : hex;
     // 8 خانات (مع شفافية أصلية) نأخذ منها RGB فقط ونطبّق الشفافية المطلوبة
     if (full.length === 6 || full.length === 8) {
       const r = parseInt(full.slice(0, 2), 16);
@@ -45,74 +51,84 @@ function withAlpha(color: string, alpha: number): string {
   const rgb = c.match(/^rgba?\(([^)]+)\)$/i);
   if (rgb) {
     const channels = rgb[1].split(/[\s,/]+/).filter(Boolean);
-    if (channels.length >= 3) return `rgba(${channels[0]}, ${channels[1]}, ${channels[2]}, ${alpha})`;
+    if (channels.length >= 3)
+      return `rgba(${channels[0]}, ${channels[1]}, ${channels[2]}, ${alpha})`;
   }
   return c;
 }
 
 // ── Checker Pattern ─────────────────────────────────────────────────────────
-export const checkerColor = () => css("--canvas-checker-a", "#e2e8f0");
+export const checkerColor = () => css('--canvas-checker-a', '#e2e8f0');
 
 // ── Snap Guides ──────────────────────────────────────────────────────────────
-export const guideCenter = () => css("--canvas-guide-center", "#0284c7");
-export const guideEdge   = () => css("--canvas-guide-edge",   "#f43f5e");
+export const guideCenter = () => css('--canvas-guide-center', '#0284c7');
+export const guideEdge = () => css('--canvas-guide-edge', '#f43f5e');
 
 // ── Ruler ────────────────────────────────────────────────────────────────────
-export const rulerCursor = () => css("--canvas-ruler-cursor", "#2563eb");
+export const rulerCursor = () => css('--canvas-ruler-cursor', '#2563eb');
 
 // ── Transformer ──────────────────────────────────────────────────────────────
-export const transformerPrimary     = () => css("--canvas-transformer-primary",      "#2563eb");
-export const transformerStroke      = () => css("--canvas-transformer-stroke",       "#1d4ed8");
-export const transformerLocked      = () => css("--canvas-transformer-locked",       "#f59e0b");
-export const transformerLockedStroke= () => css("--canvas-transformer-locked-stroke","#d97706");
-export const transformerAnchorFill  = () => css("--canvas-transformer-anchor-fill",  "#ffffff");
-export const transformerBadgeBg     = () => css("--canvas-transformer-badge-bg",     "#1e293b");
-export const transformerBadgeText   = () => css("--canvas-transformer-badge-text",   "#ffffff");
+export const transformerPrimary = () => css('--canvas-transformer-primary', '#2563eb');
+export const transformerStroke = () => css('--canvas-transformer-stroke', '#1d4ed8');
+export const transformerLocked = () => css('--canvas-transformer-locked', '#f59e0b');
+export const transformerLockedStroke = () => css('--canvas-transformer-locked-stroke', '#d97706');
+export const transformerAnchorFill = () => css('--canvas-transformer-anchor-fill', '#ffffff');
+export const transformerBadgeBg = () => css('--canvas-transformer-badge-bg', '#1e293b');
+export const transformerBadgeText = () => css('--canvas-transformer-badge-text', '#ffffff');
 
 // ── Shape Fill Gradient Defaults ─────────────────────────────────────────────
-export const gradientStart = () => css("--canvas-gradient-start", "#3b82f6");
-export const gradientEnd   = () => css("--canvas-gradient-end",   "#8b5cf6");
+export const gradientStart = () => css('--canvas-gradient-start', '#3b82f6');
+export const gradientEnd = () => css('--canvas-gradient-end', '#8b5cf6');
 
 // ── Collage Layer ────────────────────────────────────────────────────────────
-export const collageCut    = () => css("--canvas-collage-cut",     "#94a3b8");
-export const collageEndCut = () => css("--canvas-collage-end-cut", "#3b82f6");
-// شبه شفاف افتراضياً (alpha اختياري): الخلية الفارغة إشارة فوق خلفية الورقة
-// لا غطاء معتماً — كان التعتيق الكامل يخفي تدرج/لون الورقة خلفها
-export const slotPlaceholderBg   = (alpha = 0.55) => withAlpha(css("--canvas-slot-placeholder-bg", "#f1f5f9"), alpha);
-export const slotPlaceholderText = () => css("--canvas-slot-placeholder-text", "#94a3b8");
+export const collageCut = () => css('--canvas-collage-cut', '#94a3b8');
+export const collageEndCut = () => css('--canvas-collage-end-cut', '#3b82f6');
+// حاوية الإفلات القياسية للخلية الفارغة (Fluent 2 Dropzone Container)
+export const slotPlaceholderBg = () =>
+  css('--canvas-slot-placeholder-bg', 'rgba(241, 245, 249, 0.88)');
+export const slotPlaceholderBorder = () => css('--canvas-slot-placeholder-border', '#94a3b8');
+export const slotPlaceholderBorderHover = () =>
+  css('--canvas-slot-placeholder-border-hover', '#0078d4');
+export const slotPlaceholderBadge = () => css('--canvas-slot-placeholder-badge', '#ffffff');
+export const slotPlaceholderBadgeBorder = () =>
+  css('--canvas-slot-placeholder-badge-border', '#cbd5e1');
+export const slotPlaceholderIcon = () => css('--canvas-slot-placeholder-icon', '#475569');
+export const slotPlaceholderIconHover = () =>
+  css('--canvas-slot-placeholder-icon-hover', '#0078d4');
+export const slotPlaceholderText = slotPlaceholderIcon;
 
 // ── Magic AI Scanner ─────────────────────────────────────────────────────────
-export const scannerBeam      = () => css("--canvas-scanner-beam",       "#0ea5e9");
-export const scannerGlow      = () => css("--canvas-scanner-glow",       "#38bdf8");
-export const scannerParticleA = () => css("--canvas-scanner-particle-a", "#e0e7ff");
-export const scannerParticleB = () => css("--canvas-scanner-particle-b", "#38bdf8");
-export const scannerParticleC = () => css("--canvas-scanner-particle-c", "#c084fc");
+export const scannerBeam = () => css('--canvas-scanner-beam', '#0ea5e9');
+export const scannerGlow = () => css('--canvas-scanner-glow', '#38bdf8');
+export const scannerParticleA = () => css('--canvas-scanner-particle-a', '#e0e7ff');
+export const scannerParticleB = () => css('--canvas-scanner-particle-b', '#38bdf8');
+export const scannerParticleC = () => css('--canvas-scanner-particle-c', '#c084fc');
 
 // ── Document Scanner ─────────────────────────────────────────────────────────
-export const docScannerPrimary = () => css("--canvas-doc-scanner-primary", "#6366f1");
-export const docScannerHover   = () => css("--canvas-doc-scanner-hover",   "#818cf8");
-export const docScannerDark    = () => css("--canvas-doc-scanner-dark",    "#312e81");
-export const docScannerInner   = () => css("--canvas-doc-scanner-inner",   "#4f46e5");
-export const docScannerLoupe   = () => css("--canvas-doc-scanner-loupe",   "#ef4444");
+export const docScannerPrimary = () => css('--canvas-doc-scanner-primary', '#6366f1');
+export const docScannerHover = () => css('--canvas-doc-scanner-hover', '#818cf8');
+export const docScannerDark = () => css('--canvas-doc-scanner-dark', '#312e81');
+export const docScannerInner = () => css('--canvas-doc-scanner-inner', '#4f46e5');
+export const docScannerLoupe = () => css('--canvas-doc-scanner-loupe', '#ef4444');
 
 // ── Preview Backgrounds (refine-bg-dialog) ───────────────────────────────────
-export const previewWhite   = () => css("--canvas-preview-white",   "#ffffff");
-export const previewBlack   = () => css("--canvas-preview-black",   "#09090b");
-export const previewBlue    = () => css("--canvas-preview-blue",    "#1d4ed8");
-export const previewChecker = () => css("--canvas-preview-checker", "#80808033");
+export const previewWhite = () => css('--canvas-preview-white', '#ffffff');
+export const previewBlack = () => css('--canvas-preview-black', '#09090b');
+export const previewBlue = () => css('--canvas-preview-blue', '#1d4ed8');
+export const previewChecker = () => css('--canvas-preview-checker', '#80808033');
 
 // ── Text Element Fallbacks ───────────────────────────────────────────────────
 /** اللون الافتراضي لعنصر النص (محتوى المستخدم – ليس UI) */
-export const TEXT_COLOR_DEFAULT = "#000000";
+export const TEXT_COLOR_DEFAULT = '#000000';
 
 // ── Preset Studio Palette (Used in Color Studios & Property Panels) ─────────
 export const STUDIO_PALETTE = [
-  { label: "أبيض", color: "#ffffff" },
-  { label: "أسود", color: "#000000" },
-  { label: "أزرق", color: "#2563eb" },
-  { label: "ذهبي", color: "#d97706" },
-  { label: "زمردي", color: "#059669" },
-  { label: "أحمر", color: "#dc2626" },
-  { label: "بنفسجي", color: "#7c3aed" },
-  { label: "رمادي", color: "#4b5563" },
+  { label: 'أبيض', color: '#ffffff' },
+  { label: 'أسود', color: '#000000' },
+  { label: 'أزرق', color: '#2563eb' },
+  { label: 'ذهبي', color: '#d97706' },
+  { label: 'زمردي', color: '#059669' },
+  { label: 'أحمر', color: '#dc2626' },
+  { label: 'بنفسجي', color: '#7c3aed' },
+  { label: 'رمادي', color: '#4b5563' },
 ];

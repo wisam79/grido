@@ -4,17 +4,17 @@ import type { WorkflowMode } from '@/lib/store/slices/workflow-slice';
 import {
   Stack,
   Shapes,
-  FrameCorners,
+  Ruler,
   GridFour,
   SquaresFour,
-  MagicWand,
-  Ruler,
+  DotsSixVertical,
+  Scissors,
   Images,
-  Shuffle,
+  Columns,
   TextAa,
   Swatches,
-  GridNine,
-  BookmarkSimple,
+  PaintBucket,
+  Star,
 } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { canZoomIn, canZoomOut, isDefaultZoom } from '@/lib/canvas/zoom';
@@ -90,7 +90,9 @@ export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
     title: 'كولاج حر بالملم',
     subtitle: 'شبكات مخصصة بالملم',
     group: 'بناء الشبكة',
-    icon: MagicWand,
+    // شبكة نُقَط حرّة = خانات مخصّصة بالملم بلا شبكة صُلبة مفروضة،
+    // وهي تتعاكس بصريًا مع مربعات «شبكة الكولاج» الثابتة
+    icon: DotsSixVertical,
     testId: 'rail-collage-freeform',
     badge: 'collage-freeform',
   },
@@ -100,7 +102,7 @@ export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
     title: 'الورق والقص',
     subtitle: 'نزيف وقص ونسخ',
     group: 'جاهزية الطباعة',
-    icon: Ruler,
+    icon: Scissors,
     testId: 'rail-collage-paper',
   },
   {
@@ -118,7 +120,8 @@ export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
     title: 'فرز وترتيب الخانات',
     subtitle: 'قلب وخلط وتوزيع',
     group: 'تنسيق الخانات',
-    icon: Shuffle,
+    // أعمدة مرتبة = فرز وترتيب الخانات بدل سهمي التقاطع المشوّشين
+    icon: Columns,
     testId: 'rail-collage-arrange',
   },
 ];
@@ -149,7 +152,8 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
     title: 'المقاسات والورق',
     subtitle: 'نماذج ومقاسات مخصصة',
     group: 'المقاسات والهوية',
-    icon: FrameCorners,
+    // مسطرة = قياس/مقاسات، بدل مستطيل بلا دلالة
+    icon: Ruler,
     testId: 'rail-studio-presets',
   },
   {
@@ -176,7 +180,7 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
     title: 'الخلفيات والأنماط',
     subtitle: 'ورقة وتدرجات جاهزة',
     group: 'المقاسات والهوية',
-    icon: GridNine,
+    icon: PaintBucket,
     testId: 'rail-studio-backdrops',
   },
   {
@@ -185,7 +189,7 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
     title: 'المفضلة وآخر استخدام',
     subtitle: 'الأكثر استخداما',
     group: 'الوصول السريع',
-    icon: BookmarkSimple,
+    icon: Star,
     testId: 'rail-studio-library',
   },
 ];

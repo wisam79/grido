@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { CaretDown, Check, Crop, FrameCorners, Link, LinkBreak } from "@/components/ui/icons";
-import { useEditorStore } from "@/lib/editor-store";
-import { PAPER_SIZES, CARD_AND_LABEL_SIZES } from "@/lib/templates";
-import { cn } from "@/lib/utils";
+import React, { useState, useEffect } from 'react';
+import { CaretDown, Check, Crop, FrameCorners, Link, LinkBreak } from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { PAPER_SIZES, ADVANCED_PAPER_SIZES, CARD_AND_LABEL_SIZES } from '@/lib/templates';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -10,10 +10,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
-import { useShallow } from "zustand/react/shallow";
-import { FluentSection, FluentSettingRow } from "@/components/ui/blocks";
-import { mmToPx, pxToMm } from "@/lib/canvas/units";
+} from '@/components/ui/dropdown-menu';
+import { useShallow } from 'zustand/react/shallow';
+import { FluentSection, FluentSettingRow } from '@/components/ui/blocks';
+import { mmToPx, pxToMm } from '@/lib/canvas/units';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // canvas-dimensions-panel.tsx — لوحة "مساحة العمل" (المقاس + الأبعاد + الاتجاه)
@@ -32,10 +32,14 @@ import { mmToPx, pxToMm } from "@/lib/canvas/units";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const FOCUS_RING =
-  "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none";
+  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 
 const FIELD_SHELL =
-  "flex items-center gap-1.5 bg-input/60 hover:bg-input border border-border/80 hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background rounded-md px-2 h-8 shadow-2xs transition-colors";
+  'flex items-center gap-1.5 bg-input/60 hover:bg-input border border-border/80 hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background rounded-md px-2 h-8 shadow-2xs transition-colors';
+
+// البحث والعرض في كل المقاسات: كان الاقتصار على PAPER_SIZES يجعل مقاس «Letter»
+// (المتاح أيضاً في كبسولة شريط العرض السفلي) يظهر هنا «مقاس مخصص» بلا تعرّف.
+const ALL_PAPER_SIZES = [...PAPER_SIZES, ...ADVANCED_PAPER_SIZES];
 
 export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel() {
   const {
@@ -50,21 +54,23 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     setCutShapeType,
     rulerUnit,
     setRulerUnit,
-  } = useEditorStore(useShallow((state) => ({
-    canvasWidth: state.canvasWidth,
-    canvasHeight: state.canvasHeight,
-    setCanvasSize: state.setCanvasSize,
-    template: state.template,
-    setTemplate: state.setTemplate,
-    printSettings: state.printSettings,
-    setShowBleedGuides: state.setShowBleedGuides,
-    setBleedMarginMM: state.setBleedMarginMM,
-    setCutShapeType: state.setCutShapeType,
-    rulerUnit: state.rulerUnit,
-    setRulerUnit: state.setRulerUnit,
-  })));
+  } = useEditorStore(
+    useShallow((state) => ({
+      canvasWidth: state.canvasWidth,
+      canvasHeight: state.canvasHeight,
+      setCanvasSize: state.setCanvasSize,
+      template: state.template,
+      setTemplate: state.setTemplate,
+      printSettings: state.printSettings,
+      setShowBleedGuides: state.setShowBleedGuides,
+      setBleedMarginMM: state.setBleedMarginMM,
+      setCutShapeType: state.setCutShapeType,
+      rulerUnit: state.rulerUnit,
+      setRulerUnit: state.setRulerUnit,
+    })),
+  );
 
-  const activeUnit = rulerUnit === "px" ? "px" : "mm";
+  const activeUnit = rulerUnit === 'px' ? 'px' : 'mm';
   const [widthVal, setWidthVal] = useState(canvasWidth.toString());
   const [heightVal, setHeightVal] = useState(canvasHeight.toString());
   const [lockAspect, setLockAspect] = useState(false);
@@ -80,10 +86,8 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   // عرض قيمة بالوحدة النشطة (بكسل كما هو، أو ملم بمنزلة عشرية واحدة)
   const toDisplay = React.useCallback(
     (px: number) =>
-      activeUnit === "px"
-        ? px.toString()
-        : Number(pxToMm(px, currentDpi).toFixed(1)).toString(),
-    [activeUnit, currentDpi]
+      activeUnit === 'px' ? px.toString() : Number(pxToMm(px, currentDpi).toFixed(1)).toString(),
+    [activeUnit, currentDpi],
   );
 
   useEffect(() => {
@@ -102,17 +106,17 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   // نسبة مبسّطة للعرض فقط (1 : 1.41 لعمل عمودي)
   const ratioLabel = React.useMemo(() => {
-    if (!isFinite(aspectRatio) || aspectRatio <= 0) return "—";
+    if (!isFinite(aspectRatio) || aspectRatio <= 0) return '—';
     const long = Math.max(canvasWidth, canvasHeight);
     const short = Math.min(canvasWidth, canvasHeight);
-    if (short <= 0) return "—";
+    if (short <= 0) return '—';
     const r = (long / short).toFixed(2);
     return canvasWidth <= canvasHeight ? `1 : ${r}` : `${r} : 1`;
   }, [aspectRatio, canvasWidth, canvasHeight]);
 
   const clampPx = React.useCallback(
     (px: number) => Math.max(MIN_PX, Math.min(MAX_PX, Math.round(px))),
-    []
+    [],
   );
 
   // يطبّق العرض الجديد ويشتق الارتفاع منه عند قفل النسبة
@@ -140,7 +144,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   };
 
   const handleWidthChange = (val: string) => {
-    if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
+    if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
       setWidthVal(val);
     }
   };
@@ -151,7 +155,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       setWidthVal(toDisplay(canvasWidth));
       return;
     }
-    if (activeUnit === "px") {
+    if (activeUnit === 'px') {
       commitWidthPx(num);
       setWidthVal(clampPx(num).toString());
     } else {
@@ -162,7 +166,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   };
 
   const handleHeightChange = (val: string) => {
-    if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
+    if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
       setHeightVal(val);
     }
   };
@@ -173,7 +177,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       setHeightVal(toDisplay(canvasHeight));
       return;
     }
-    if (activeUnit === "px") {
+    if (activeUnit === 'px') {
       commitHeightPx(num);
       setHeightVal(clampPx(num).toString());
     } else {
@@ -184,18 +188,15 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   };
 
   // Escape يعيد القيمة المخزّنة بدل ترك قيمة نصف مُدخلة معلّقة في الحقل
-  const revertOnEscape = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    revert: () => void
-  ) => {
-    if (e.key !== "Escape") return;
+  const revertOnEscape = (e: React.KeyboardEvent<HTMLInputElement>, revert: () => void) => {
+    if (e.key !== 'Escape') return;
     e.preventDefault();
     revert();
     e.currentTarget.blur();
   };
 
   const handlePresetChange = (presetId: string) => {
-    if (presetId === "custom") {
+    if (presetId === 'custom') {
       if (template) setTemplate(null);
       return;
     }
@@ -216,12 +217,12 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       setCanvasSize(Math.round(targetW), Math.round(targetH));
       setShowBleedGuides(true);
       setBleedMarginMM(cardOrLabel.defaultBleedMM || 2);
-      setCutShapeType(cardOrLabel.shape || "rectangle");
+      setCutShapeType(cardOrLabel.shape || 'rectangle');
       if (template) setTemplate(null);
       return;
     }
 
-    const paper = PAPER_SIZES.find((p) => p.id === presetId);
+    const paper = ALL_PAPER_SIZES.find((p) => p.id === presetId);
     if (!paper) return;
 
     const dpi = currentDpi;
@@ -262,7 +263,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     }
   };
 
-  const activePaperPreset = PAPER_SIZES.find((p) => {
+  const activePaperPreset = ALL_PAPER_SIZES.find((p) => {
     const dpi = currentDpi;
     const currentWMM = pxToMm(canvasWidth, dpi);
     const currentHMM = pxToMm(canvasHeight, dpi);
@@ -283,22 +284,22 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   });
 
   const activePreset = activeCardPreset || activePaperPreset;
-  const activePresetId = activePreset ? activePreset.id : "custom";
+  const activePresetId = activePreset ? activePreset.id : 'custom';
   const isPortrait = canvasWidth <= canvasHeight;
 
   const presetSizeLabel = (widthMM: number, heightMM: number) =>
-    activeUnit === "px"
+    activeUnit === 'px'
       ? `${Math.round(mmToPx(widthMM, currentDpi))}×${Math.round(mmToPx(heightMM, currentDpi))} بكسل`
       : `${widthMM}×${heightMM} مم`;
 
-  const unitOptions: { id: "mm" | "px"; label: string; title: string }[] = [
-    { id: "mm", label: "mm", title: "مليمتر" },
-    { id: "px", label: "px", title: "بكسل" },
+  const unitOptions: { id: 'mm' | 'px'; label: string; title: string }[] = [
+    { id: 'mm', label: 'mm', title: 'مليمتر' },
+    { id: 'px', label: 'px', title: 'بكسل' },
   ];
 
   const orientationOptions = [
-    { id: "portrait" as const, label: "عمودي", title: "عمودي", glyph: "w-3 h-4" },
-    { id: "landscape" as const, label: "أفقي", title: "أفقي", glyph: "w-4 h-3" },
+    { id: 'portrait' as const, label: 'عمودي', title: 'عمودي', glyph: 'w-3 h-4' },
+    { id: 'landscape' as const, label: 'أفقي', title: 'أفقي', glyph: 'w-4 h-3' },
   ];
 
   return (
@@ -313,7 +314,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           className="text-micro font-mono font-bold text-foreground/80 bg-muted/60 dark:bg-muted/40 border border-border/50 px-2 py-0.5 rounded-md shrink-0 select-none shadow-2xs"
           dir="ltr"
         >
-          {activeUnit === "px"
+          {activeUnit === 'px'
             ? `${canvasWidth} × ${canvasHeight} px`
             : `${Number(pxToMm(canvasWidth, currentDpi).toFixed(1))} × ${Number(pxToMm(canvasHeight, currentDpi).toFixed(1))} mm`}
         </span>
@@ -326,30 +327,38 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label={`المقاس: ${activePreset ? activePreset.name.split(" (")[0] : "مقاس مخصص"}`}
+                aria-label={`المقاس: ${activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}`}
                 className={cn(
-                  "flex-1 min-w-0 flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-input/60 hover:bg-input border border-border hover:border-primary/50 text-foreground text-xs font-semibold transition-colors cursor-pointer shadow-2xs overflow-hidden",
-                  FOCUS_RING
+                  'flex-1 min-w-0 flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-input/60 hover:bg-input border border-border hover:border-primary/50 text-foreground text-xs font-semibold transition-colors cursor-pointer shadow-2xs overflow-hidden',
+                  FOCUS_RING,
                 )}
               >
                 <span className="flex items-center gap-1.5 min-w-0">
                   <FrameCorners className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
                   <span className="truncate text-xs font-semibold">
-                    {activePreset ? activePreset.name.split(" (")[0] : "مقاس مخصص"}
+                    {activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}
                   </span>
                 </span>
                 <CaretDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8 max-h-[380px] overflow-y-auto" align="start">
+            <DropdownMenuContent
+              className="w-64 font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8 max-h-[380px] overflow-y-auto"
+              align="start"
+            >
               <DropdownMenuItem
                 onClick={() => {
                   if (template) setTemplate(null);
                 }}
-                className={cn("text-xs text-right justify-between font-bold cursor-pointer rounded-md", FOCUS_RING)}
+                className={cn(
+                  'text-xs text-right justify-between font-bold cursor-pointer rounded-md',
+                  FOCUS_RING,
+                )}
               >
                 <span>مقاس مخصص</span>
-                {activePresetId === "custom" && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                {activePresetId === 'custom' && (
+                  <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
+                )}
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
@@ -358,36 +367,66 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 <DropdownMenuItem
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
-                  className={cn("text-xs text-right justify-between cursor-pointer rounded-md flex items-center", FOCUS_RING)}
+                  className={cn(
+                    'text-xs text-right justify-between cursor-pointer rounded-md flex items-center',
+                    FOCUS_RING,
+                  )}
                 >
-                  <span>{`${p.name.split(" (")[0].replace(" بوصة", "″")} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
-                  {activePresetId === p.id && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                  <span>{`${p.name.split(' (')[0].replace(' بوصة', '″')} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
+                  {activePresetId === p.id && (
+                    <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+              {ADVANCED_PAPER_SIZES.map((p) => (
+                <DropdownMenuItem
+                  key={p.id}
+                  onClick={() => handlePresetChange(p.id)}
+                  className={cn(
+                    'text-xs text-right justify-between cursor-pointer rounded-md flex items-center',
+                    FOCUS_RING,
+                  )}
+                >
+                  <span>{`${p.name.split(' (')[0].replace(' بوصة', '″')} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
+                  {activePresetId === p.id && (
+                    <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
+                  )}
                 </DropdownMenuItem>
               ))}
 
               <DropdownMenuSeparator />
               <DropdownMenuLabel>كروت وبطاقات</DropdownMenuLabel>
-              {CARD_AND_LABEL_SIZES.filter((p) => p.category === "card").map((p) => (
+              {CARD_AND_LABEL_SIZES.filter((p) => p.category === 'card').map((p) => (
                 <DropdownMenuItem
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
-                  className={cn("text-xs text-right justify-between cursor-pointer rounded-md flex items-center", FOCUS_RING)}
+                  className={cn(
+                    'text-xs text-right justify-between cursor-pointer rounded-md flex items-center',
+                    FOCUS_RING,
+                  )}
                 >
                   <span>{`${p.name} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
-                  {activePresetId === p.id && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                  {activePresetId === p.id && (
+                    <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
+                  )}
                 </DropdownMenuItem>
               ))}
 
               <DropdownMenuSeparator />
               <DropdownMenuLabel>ملصقات الشحن والباركود</DropdownMenuLabel>
-              {CARD_AND_LABEL_SIZES.filter((p) => p.category !== "card").map((p) => (
+              {CARD_AND_LABEL_SIZES.filter((p) => p.category !== 'card').map((p) => (
                 <DropdownMenuItem
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
-                  className={cn("text-xs text-right justify-between cursor-pointer rounded-md flex items-center", FOCUS_RING)}
+                  className={cn(
+                    'text-xs text-right justify-between cursor-pointer rounded-md flex items-center',
+                    FOCUS_RING,
+                  )}
                 >
                   <span>{`${p.name} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
-                  {activePresetId === p.id && <Check className="w-3.5 h-3.5 text-primary" weight="bold" />}
+                  {activePresetId === p.id && (
+                    <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
+                  )}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -409,11 +448,11 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   title={unit.title}
                   onClick={() => setRulerUnit(unit.id)}
                   className={cn(
-                    "px-2.5 h-full rounded-md text-mini font-mono transition-colors cursor-pointer flex items-center justify-center select-none",
+                    'px-2.5 h-full rounded-md text-mini font-mono transition-colors cursor-pointer flex items-center justify-center select-none',
                     isActive
-                      ? "bg-card text-primary font-bold shadow-2xs border border-border/60"
-                      : "text-muted-foreground hover:text-foreground font-normal border border-transparent",
-                    FOCUS_RING
+                      ? 'bg-card text-primary font-bold shadow-2xs border border-border/60'
+                      : 'text-muted-foreground hover:text-foreground font-normal border border-transparent',
+                    FOCUS_RING,
                   )}
                 >
                   {unit.label}
@@ -443,7 +482,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   onChange={(e) => handleWidthChange(e.target.value)}
                   onBlur={handleWidthCommit}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleWidthCommit();
+                    if (e.key === 'Enter') handleWidthCommit();
                     revertOnEscape(e, () => setWidthVal(toDisplay(canvasWidth)));
                   }}
                   className="w-full min-w-0 bg-transparent border-0 p-0 text-left font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
@@ -459,14 +498,14 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 type="button"
                 onClick={() => setLockAspect((prev) => !prev)}
                 aria-pressed={lockAspect}
-                aria-label={lockAspect ? "إلغاء قفل نسبة الأبعاد" : "قفل نسبة الأبعاد"}
-                title={lockAspect ? "نسبة الأبعاد مقفلة" : "قفل نسبة الأبعاد"}
+                aria-label={lockAspect ? 'إلغاء قفل نسبة الأبعاد' : 'قفل نسبة الأبعاد'}
+                title={lockAspect ? 'نسبة الأبعاد مقفلة' : 'قفل نسبة الأبعاد'}
                 className={cn(
-                  "w-8 h-8 rounded-md border flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0",
+                  'w-8 h-8 rounded-md border flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0',
                   lockAspect
-                    ? "bg-primary/10 text-primary border-primary/40 font-bold"
-                    : "bg-input/40 border-border/80 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/40",
-                  FOCUS_RING
+                    ? 'bg-primary/10 text-primary border-primary/40 font-bold'
+                    : 'bg-input/40 border-border/80 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/40',
+                  FOCUS_RING,
                 )}
               >
                 {lockAspect ? (
@@ -489,7 +528,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   onChange={(e) => handleHeightChange(e.target.value)}
                   onBlur={handleHeightCommit}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleHeightCommit();
+                    if (e.key === 'Enter') handleHeightCommit();
                     revertOnEscape(e, () => setHeightVal(toDisplay(canvasHeight)));
                   }}
                   className="w-full min-w-0 bg-transparent border-0 p-0 text-left font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
@@ -513,7 +552,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-md border border-border/40"
             >
               {orientationOptions.map((option) => {
-                const isActive = option.id === "portrait" ? isPortrait : !isPortrait;
+                const isActive = option.id === 'portrait' ? isPortrait : !isPortrait;
                 return (
                   <button
                     key={option.id}
@@ -521,23 +560,23 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                     aria-pressed={isActive}
                     title={option.title}
                     onClick={() => {
-                      if (option.id === "portrait" && !isPortrait) handleSwapDimensions();
-                      if (option.id === "landscape" && isPortrait) handleSwapDimensions();
+                      if (option.id === 'portrait' && !isPortrait) handleSwapDimensions();
+                      if (option.id === 'landscape' && isPortrait) handleSwapDimensions();
                     }}
                     className={cn(
-                      "flex items-center gap-1.5 px-2 h-7 text-mini font-sans rounded-md transition-colors cursor-pointer select-none",
+                      'flex items-center gap-1.5 px-2 h-7 text-mini font-sans rounded-md transition-colors cursor-pointer select-none',
                       isActive
-                        ? "bg-card text-foreground font-bold shadow-2xs border border-border/60"
-                        : "text-muted-foreground hover:text-foreground font-normal border border-transparent",
-                      FOCUS_RING
+                        ? 'bg-card text-foreground font-bold shadow-2xs border border-border/60'
+                        : 'text-muted-foreground hover:text-foreground font-normal border border-transparent',
+                      FOCUS_RING,
                     )}
                   >
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "rounded-sm border-[1.5px] transition-colors shrink-0",
+                        'rounded-sm border-[1.5px] transition-colors shrink-0',
                         option.glyph,
-                        isActive ? "border-primary bg-primary/25" : "border-muted-foreground/60"
+                        isActive ? 'border-primary bg-primary/25' : 'border-muted-foreground/60',
                       )}
                     />
                     <span className="font-sans">{option.label}</span>

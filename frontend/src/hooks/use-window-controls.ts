@@ -1,31 +1,26 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   WindowMinimise,
   WindowToggleMaximise,
   Quit as WindowClose,
   WindowIsMaximised,
+  EventsOn,
 } from '../../wailsjs/runtime/runtime';
 
 /**
- * useWindowControls — يدير حالة نافذة التطبيق (تكبير/تصغير/إغلاق/تركيز)
- * مع تتبع دقيق وفوري لحالة التكبير عبر أحداث Wails v3 الأصلية.
- *
- * ### لماذا أحداث أصلية بدل `resize` + polling؟
- * 1. `resize` لا يُطلَق دائماً عند التكبير عبر Win+Up أو Snap Assist
- * 2. مقارنة `outerWidth >= screen.availWidth` تعطي نتائج خاطئة مع DPI > 100%
- * 3. `setTimeout(100ms)` يتسبب في تأخير بصري لتبديل أيقونة التكبير/الاستعادة
- *
- * ### الأحداث المُشترك فيها:
- * - `windows:WindowMaximise`   → isMaximized = true
- * - `windows:WindowUnMaximise` → isMaximized = false
- * - `windows:WindowRestore`    → isMaximized = false (Snap restore أو Win+Down)
+ * useWindowControls — يدير حالة نافذة التطبيق (تكبير/استعادة/تصغير/إغلاق/تركيز)
+ * مع تتبع فوري ومزدوج لحالة التكبير عبر:
+ * 1. التحديث التفاؤلي الفوري عند النقر (0ms latency).
+ * 2. أحداث Wails v3 الأصلية عبر EventsOn ('windows:WindowMaximise', 'windows:WindowUnMaximise', 'window-maximized-changed').
+ * 3. حدث resize على النافذة (مؤخَّر 120ms) كمزامنة احتياطية لما لا يلتقطه حدث Wails.
  */
 export function useWindowControls() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [isFocused, setIsFocused] = useState(true);
+  // مؤقّت التحقق التأكيدي بعد النقر — يُنظَّف عند كل نقرة وعند إلغاء التركيب
+  const verifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // قراءة الحالة الابتدائية مرة واحدة عند التحميل — ضرورية لأن النافذة قد تكون
-  // مفتوحة بالفعل في وضع التكبير (StartState = Maximised) قبل اشتراك الأحداث
+  // قراءة الحالة الابتدائية مرة واحدة عند التحميل
   const syncInitialState = useCallback(async () => {
     try {
       const max = await WindowIsMaximised();
@@ -41,39 +36,85 @@ export function useWindowControls() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     syncInitialState();
 
-    // ── أحداث Wails v3 الأصلية لتتبع حالة التكبير فورياً ──────────────
-    // هذه الأحداث تُطلَق من محرك Wails في كل حالة:
-    // نقر زر التكبير، Win+Up/Down، سحب شريط العنوان، Snap Assist، API مباشر.
+    // ── 1. مزامنة احتياطية مؤخَّرة عند تغيير حجم النافذة (Double click, Snap, Win+Up/Down) ──
+    // كانت كل دورة resize تستدعي IPC فورياً (عشرات الاستدعاءات أثناء سحبٍ واحد)،
+    // والتأخير يجعلها استدعاءً واحداً بعد استقرار الحجم — ومسار Wails الأصلي
+    // (window-maximized-changed) يظل المصدر الفوري من main.go.
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const handleResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        WindowIsMaximised()
+          .then((max) => setIsMaximized(Boolean(max)))
+          .catch(() => {
+            // بيئة بلا جسر Wails — لا حالة تكبير لتتبّعها
+          });
+      }, 120);
+    };
+    window.addEventListener('resize', handleResize);
+
+    // ── 2. أحداث Wails v3 الأصلية لتتبع حالة التكبير والاستعادة ─────────
     const handleMaximise = () => setIsMaximized(true);
     const handleUnMaximise = () => setIsMaximized(false);
     const handleRestore = () => setIsMaximized(false);
 
-    // Wails v3 يبث أحداث النافذة كـ CustomEvent على window بالاسم الكامل
-    window.addEventListener('windows:WindowMaximise', handleMaximise);
-    window.addEventListener('windows:WindowUnMaximise', handleUnMaximise);
-    window.addEventListener('windows:WindowRestore', handleRestore);
+    // الاشتراك عبر نظام أحداث Wails v3 الرسمي
+    const unsubs: (() => void)[] = [];
+    try {
+      unsubs.push(EventsOn('windows:WindowMaximise', handleMaximise));
+      unsubs.push(EventsOn('windows:WindowUnMaximise', handleUnMaximise));
+      unsubs.push(EventsOn('windows:WindowRestore', handleRestore));
+      unsubs.push(
+        EventsOn('window-maximized-changed', (data: unknown) => {
+          setIsMaximized(Boolean(data));
+        }),
+      );
+    } catch {
+      // بيئة المتصفح بدون Wails
+    }
 
-    // ── أحداث التركيز (Focus/Blur) ─────────────────────────────────────
-    // تُستخدم لتبهيت شريط العنوان عند فقدان التركيز (سلوك Windows 11 الأصلي)
+    // ── 3. أحداث التركيز (Focus/Blur) ──────────────────────────────────
     const handleFocus = () => setIsFocused(true);
     const handleBlur = () => setIsFocused(false);
     window.addEventListener('focus', handleFocus);
     window.addEventListener('blur', handleBlur);
 
     return () => {
-      window.removeEventListener('windows:WindowMaximise', handleMaximise);
-      window.removeEventListener('windows:WindowUnMaximise', handleUnMaximise);
-      window.removeEventListener('windows:WindowRestore', handleRestore);
+      if (resizeTimer) clearTimeout(resizeTimer);
+      if (verifyTimerRef.current) clearTimeout(verifyTimerRef.current);
+      window.removeEventListener('resize', handleResize);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('blur', handleBlur);
+      unsubs.forEach((unsub) => {
+        try {
+          unsub();
+        } catch {
+          // مستمع Wails مُفرَّغ مسبقاً — التفريغ لا يفشل
+        }
+      });
     };
   }, [syncInitialState]);
 
   const handleMinimize = useCallback(() => WindowMinimise(), []);
 
   const handleMaximize = useCallback(() => {
-    WindowToggleMaximise();
-    // لا حاجة لـ setTimeout — الحدث الأصلي سيصل فورياً ويحدّث isMaximized
+    try {
+      WindowToggleMaximise();
+    } catch {
+      // Safe fallback
+    }
+    // تبديل تفاؤلي فوري في الـ React state (0ms) حتى تتغير الأيقونة في لحظة النقر
+    setIsMaximized((prev) => !prev);
+    // التحقق التأكيدي من محرك Wails بعد 60ms لضمان مطابقة الـ OS الفعلي بدقة 100%
+    if (verifyTimerRef.current) clearTimeout(verifyTimerRef.current);
+    verifyTimerRef.current = setTimeout(async () => {
+      try {
+        const actual = await WindowIsMaximised();
+        setIsMaximized(Boolean(actual));
+      } catch {
+        // بيئة بلا جسر Wails — التحديث التفاؤلي يكفي
+      }
+    }, 60);
   }, []);
 
   const handleClose = useCallback(() => WindowClose(), []);

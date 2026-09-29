@@ -118,3 +118,78 @@ describe('useWorkspacePanels — مزامنة القوالب عند عبور ا�
     expect(result.current.isTemplatesDrawerOpen).toBe(false);
   });
 });
+
+describe('useWorkspacePanels — وضع التركيز (حفظ واستعادة الحالة السابقة)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    setWindowWidth(1280);
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    setWindowWidth(1280);
+  });
+
+  it('wide: يحفظ الدرج واللوحة النشطة عند الدخول ويستعيدهما بدقة عند الخروج', () => {
+    setWindowWidth(1600);
+    const { result } = renderHook(() => useWorkspacePanels());
+    expect(result.current.breakpoint).toBe('wide');
+
+    act(() => {
+      result.current.setIsTemplatesDrawerOpen(true);
+      result.current.setActivePanel('properties');
+    });
+    expect(result.current.isZenMode).toBe(false);
+
+    act(() => {
+      result.current.toggleZenMode();
+    });
+    expect(result.current.isZenMode).toBe(true);
+    expect(result.current.isTemplatesDrawerOpen).toBe(false);
+    expect(result.current.activePanel).toBeNull();
+
+    act(() => {
+      result.current.toggleZenMode();
+    });
+    expect(result.current.isZenMode).toBe(false);
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+    expect(result.current.activePanel).toBe('properties');
+  });
+
+  it('standard: يستعيد اللوحة النشطة السابقة بدل فرض «القوالب» عند الخروج', () => {
+    const { result } = renderHook(() => useWorkspacePanels());
+    expect(result.current.breakpoint).toBe('standard');
+
+    act(() => {
+      result.current.setActivePanel('properties');
+    });
+    expect(result.current.isZenMode).toBe(false);
+
+    act(() => {
+      result.current.toggleZenMode();
+    });
+    expect(result.current.isZenMode).toBe(true);
+    expect(result.current.activePanel).toBeNull();
+
+    act(() => {
+      result.current.toggleZenMode();
+    });
+    expect(result.current.isZenMode).toBe(false);
+    expect(result.current.activePanel).toBe('properties');
+  });
+
+  it('standard بلا لوحة سابقة: يعود الافتراضي «القوالب» عند الخروج من وضع التركيز', () => {
+    const { result } = renderHook(() => useWorkspacePanels());
+
+    act(() => {
+      result.current.setActivePanel(null);
+    });
+    expect(result.current.isZenMode).toBe(true);
+
+    act(() => {
+      result.current.toggleZenMode();
+    });
+    expect(result.current.isZenMode).toBe(false);
+    expect(result.current.activePanel).toBe('templates');
+  });
+});

@@ -10,6 +10,8 @@
     "pretypecheck": "node scripts/ensure-bindings.mjs",
     "postinstall": "node scripts/copy-models.mjs",
     "models:sync": "node scripts/copy-models.mjs",
+    "icons:generate": "node scripts/generate-icons.mjs",
+    "icons:report": "node scripts/generate-icons.mjs --dry --report",
     "pretest": "node scripts/ensure-bindings.mjs",
     "pretest:coverage": "node scripts/ensure-bindings.mjs",
     "build": "tsc && vite build",

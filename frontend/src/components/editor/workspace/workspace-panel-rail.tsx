@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
-import { ArrowsOutSimple, ArrowsInSimple, SquaresFour } from '@/components/ui/icons';
+import { Eye, EyeSlash, Faders } from '@/components/ui/icons';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -110,11 +110,9 @@ const RailToolButton = React.memo(function RailToolButton({
             />
           )}
 
-          {/* الأيقونة فوق الإطار بلا z-index سالب — يرتفع فوق الشرائح بقيمته الصريحة */}
-          <tool.icon
-            className="size-[18px] relative z-10"
-            weight={isActive ? 'duotone' : 'regular'}
-          />
+          {/* الأيقونة فوق الإطار بلا z-index سالب — يرتفع فوق الشرائح بقيمته الصريحة.
+              المقاس 20px (size-5) شبكة Fluent الأصلية، فلا تُصغَّر الأيقونة بلا داعٍ. */}
+          <tool.icon className="size-5 relative z-10" weight={isActive ? 'duotone' : 'regular'} />
 
           {showBadge && (
             <span
@@ -449,10 +447,9 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
                   )}
                 >
-                  <SquaresFour
-                    className="size-[18px]"
-                    weight={isLauncherOpen ? 'duotone' : 'regular'}
-                  />
+                  {/* لوحة التحكم الكاملة (أدوات + أوامر) — شرائح تحكم بدل مربعات منقّشة
+                      كي لا تتكرر أيقونة «قوالب الكولاج» في نفس الشريط */}
+                  <Faders className="size-5" weight={isLauncherOpen ? 'duotone' : 'regular'} />
                 </Button>
               </PopoverTrigger>
             </TooltipTrigger>
@@ -535,10 +532,11 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
               )}
             >
+              {/* نفس أيقونة «وضع التركيز» في كبسولة الكانفاس: عين مفتوحة/مغلقة */}
               {isZenMode ? (
-                <ArrowsInSimple className="size-[18px] text-primary" weight="duotone" />
+                <EyeSlash className="size-5 text-primary" weight="fill" />
               ) : (
-                <ArrowsOutSimple className="size-[18px]" />
+                <Eye className="size-5" weight="regular" />
               )}
             </Button>
           </TooltipTrigger>

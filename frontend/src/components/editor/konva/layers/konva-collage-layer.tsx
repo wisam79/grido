@@ -1,14 +1,21 @@
-import React from "react";
-import { Layer, Group, Rect, Line } from "react-konva";
-import type Konva from "konva";
-import type { KonvaEventObject } from "konva/lib/Node";
-import { KonvaCollageImage } from "../elements/collage-image";
-import type { CanvasSlot as Slot, CollageTemplate } from "@/lib/store/types";
-import { getCollageGeometry, getSlotRect } from "@/lib/canvas/collage-geometry";
+import React from 'react';
+import { Layer, Group, Rect, Line, Circle } from 'react-konva';
+import type Konva from 'konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
+import { KonvaCollageImage } from '../elements/collage-image';
+import type { CanvasSlot as Slot, CollageTemplate } from '@/lib/store/types';
+import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
 import {
-  collageCut, collageEndCut,
-  slotPlaceholderBg, slotPlaceholderText,
-} from "@/lib/canvas/canvas-colors";
+  collageCut,
+  collageEndCut,
+  slotPlaceholderBg,
+  slotPlaceholderBorder,
+  slotPlaceholderBorderHover,
+  slotPlaceholderBadge,
+  slotPlaceholderBadgeBorder,
+  slotPlaceholderIcon,
+  slotPlaceholderIconHover,
+} from '@/lib/canvas/canvas-colors';
 
 interface KonvaCollageLayerProps {
   slots: Slot[];
@@ -25,7 +32,10 @@ interface KonvaCollageLayerProps {
   selectedId: string | null;
   handleSlotClick?: (slotId: string) => void;
   handleSlotDblClick?: (slotId: string) => void;
-  handleSlotWheel: (slot: { id: string; imageSrc?: string; zoom?: number }, e: KonvaEventObject<WheelEvent>) => void;
+  handleSlotWheel: (
+    slot: { id: string; imageSrc?: string; zoom?: number },
+    e: KonvaEventObject<WheelEvent>,
+  ) => void;
   updateSlot: (id: string, patch: Partial<Slot>) => void;
   pushHistory: () => void;
 }
@@ -49,13 +59,15 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   updateSlot,
   pushHistory,
 }: KonvaCollageLayerProps) {
+  const [hoveredSlotId, setHoveredSlotId] = React.useState<string | null>(null);
+
   // 📐 هندسة الشبكة من مصدر واحد يشاركه الشريط السريع العائم (collage-geometry)
   const geo = getCollageGeometry(
     canvasWidth,
     canvasHeight,
     collageMargin,
     collageGap,
-    Boolean(collageTemplate?.physicalLayout)
+    Boolean(collageTemplate?.physicalLayout),
   );
   const { margin, gap, availW, availH } = geo;
 
@@ -164,12 +176,15 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
         const { left, top, width, height } = getSlotRect(slot, geo);
 
         const isSelected = selectedId === slot.id;
+        const isHovered = hoveredSlotId === slot.id;
 
         return (
           <Group key={slot.id} id={`slot-${slot.id}`}>
-
             {/* مجموعة قص الخلية: قص بالحدود الفعلية (مع الانحناءة) حتى لا يتجاوز
-                المحتوى المدوّر/المقلوب إلى الخلايا المجاورة — مطابق لنافذة CSS */}
+                المحتوى المدوّر/المقلوب إلى الخلايا المجاورة — مطابق لنافذة CSS.
+                وهي المستوى الوحيد الحامل لمعالجات النقر/اللمس: أحداث Konva تصعد
+                من الأبناء (الصورة وحاوية الإفلات) إليها، فتكرار المعالج في الابن
+                كان ينفّذ التحديد مرتين لكل نقرة بلا أي فائدة. */}
             <Group
               id={slot.id}
               x={left}
@@ -195,7 +210,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
               onDblClick={() => handleSlotDblClick?.(slot.id)}
               onWheel={(e) => handleSlotWheel(slot, e)}
             >
-              {slot.bgColor && slot.bgColor !== "transparent" && (
+              {slot.bgColor && slot.bgColor !== 'transparent' && (
                 <Rect
                   x={0}
                   y={0}
@@ -230,43 +245,140 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   onDragEnd={() => {
                     pushHistory();
                   }}
-                  onClick={() => handleSlotClick?.(slot.id)}
                 />
               ) : (
-                // Placeholder background & centered clean geometric plus
-                // الاسم يجعل عنصراً واجهة نقية: يُخفى عند التصدير والتقاط الطباعة
-                // (withHiddenOverlays) فلا تُطبع مربعات رمادية مكان خلايا فارغة
-                <Group name="slot-placeholder" onClick={() => handleSlotClick?.(slot.id)}>
+                // حاوية إفلات قياسية (Fluent 2 Dropzone Container):
+                // الاسم slot-placeholder يضمن الإخفاء التلقائي عند التصدير والطباعة (withHiddenOverlays)
+                <Group
+                  name="slot-placeholder"
+                  onMouseEnter={(e) => {
+                    setHoveredSlotId(slot.id);
+                    const stage = e.target.getStage();
+                    const cursor = stage?.container().style.cursor;
+                    // لا ندهس مؤشر السحب النشط (مسافة/عجلة) بحالة المرور
+                    if (stage && cursor !== 'grab' && cursor !== 'grabbing') {
+                      stage.container().style.cursor = 'pointer';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    setHoveredSlotId((cur) => (cur === slot.id ? null : cur));
+                    const stage = e.target.getStage();
+                    // تفريغ بدل "default": إدارة المؤشر في use-canvas-viewport
+                    // تستخدم "" لتترك الأنماط الأصلية — "default" كان يمسح
+                    // مؤشر أداة اليد (grab) أثناء مسك المسافة.
+                    if (stage) stage.container().style.cursor = '';
+                  }}
+                >
+                  {/* 1. خلفية الخلية المتباينة بنعومة لتفصلها عن بياض الورقة،
+                      وهي المنطقة المسؤولة عن استقبال النقر: بقية عناصر الخلية
+                      الفارغة listening={false}، فلو صمتت هذه أيضاً لم يبقَ هدف
+                      للفأرة وتتعطل ثلاث وظائف معاً: تحديد الخلية بالنقر، حفظ
+                      المؤشر عند المرور، وفتح منتقي الصور بالنقر المزدوج. */}
                   <Rect
                     x={0}
                     y={0}
                     width={width}
                     height={height}
-                    // شبه شفاف (55%) — كان معتماً فيطغى على لون/تدرج خلفية
-                    // الورقة فتظهر الورقة كلون مصمت (الخلية الفارغة تغطي معظم
-                    // المساحة). الشفافية الجزئية تُبقي إشارة الخلية الفارغة
-                    // وتُظهر التدرج خلفها في آن واحد.
-                    fill={slotPlaceholderBg(0.55)}
-                    stroke="#e2e8f0"
-                    strokeWidth={1}
+                    fill={
+                      slot.bgColor && slot.bgColor !== 'transparent'
+                        ? 'transparent'
+                        : slotPlaceholderBg()
+                    }
                     cornerRadius={radius}
+                    listening
                   />
+
+                  {/* 2. إطار متقطع واضح المعالم (Dashed Dropzone Border) */}
+                  <Rect
+                    x={0.75}
+                    y={0.75}
+                    width={Math.max(0, width - 1.5)}
+                    height={Math.max(0, height - 1.5)}
+                    stroke={
+                      isHovered || isSelected
+                        ? slotPlaceholderBorderHover()
+                        : slotPlaceholderBorder()
+                    }
+                    strokeWidth={1.5}
+                    dash={[6, 4]}
+                    cornerRadius={Math.max(0, radius - 0.75)}
+                    listening={false}
+                  />
+
+                  {/* 3. شارة مركزية عائمة بأيقونة الزائد عالية التباين */}
                   {(() => {
-                    const plusSize = Math.max(8, Math.min(20, Math.min(width, height) * 0.22));
+                    const minDim = Math.min(width, height);
+                    if (minDim < 16) return null;
+
                     const cx = width / 2;
                     const cy = height / 2;
+                    const isHoveredOrSelected = isHovered || isSelected;
+
+                    // في الخلايا متناهية الصغر نكتفي بالزائد فقط
+                    if (minDim < 36) {
+                      const arm = Math.max(4, minDim * 0.2);
+                      return (
+                        <Group listening={false}>
+                          <Line
+                            points={[cx - arm, cy, cx + arm, cy]}
+                            stroke={
+                              isHoveredOrSelected
+                                ? slotPlaceholderIconHover()
+                                : slotPlaceholderIcon()
+                            }
+                            strokeWidth={1.5}
+                            lineCap="round"
+                          />
+                          <Line
+                            points={[cx, cy - arm, cx, cy + arm]}
+                            stroke={
+                              isHoveredOrSelected
+                                ? slotPlaceholderIconHover()
+                                : slotPlaceholderIcon()
+                            }
+                            strokeWidth={1.5}
+                            lineCap="round"
+                          />
+                        </Group>
+                      );
+                    }
+
+                    // في الخلايا القياسية: شارة دائرية خفيفة مع أيقونة الزائد
+                    const badgeRadius = Math.max(14, Math.min(20, minDim * 0.16));
+                    const arm = badgeRadius * 0.44;
+
                     return (
-                      <Group listening={false} opacity={0.7}>
+                      <Group listening={false}>
+                        <Circle
+                          x={cx}
+                          y={cy}
+                          radius={badgeRadius}
+                          fill={slotPlaceholderBadge()}
+                          stroke={
+                            isHoveredOrSelected
+                              ? slotPlaceholderBorderHover()
+                              : slotPlaceholderBadgeBorder()
+                          }
+                          strokeWidth={1}
+                          shadowColor="rgba(0, 0, 0, 0.12)"
+                          shadowBlur={4}
+                          shadowOffset={{ x: 0, y: 1 }}
+                          shadowForStrokeEnabled={false}
+                        />
                         <Line
-                          points={[cx - plusSize / 2, cy, cx + plusSize / 2, cy]}
-                          stroke={slotPlaceholderText()}
-                          strokeWidth={1.5}
+                          points={[cx - arm, cy, cx + arm, cy]}
+                          stroke={
+                            isHoveredOrSelected ? slotPlaceholderIconHover() : slotPlaceholderIcon()
+                          }
+                          strokeWidth={2}
                           lineCap="round"
                         />
                         <Line
-                          points={[cx, cy - plusSize / 2, cx, cy + plusSize / 2]}
-                          stroke={slotPlaceholderText()}
-                          strokeWidth={1.5}
+                          points={[cx, cy - arm, cx, cy + arm]}
+                          stroke={
+                            isHoveredOrSelected ? slotPlaceholderIconHover() : slotPlaceholderIcon()
+                          }
+                          strokeWidth={2}
                           lineCap="round"
                         />
                       </Group>

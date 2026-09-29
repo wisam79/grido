@@ -1,5 +1,5 @@
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * lib/store/selectors — محددات Zustand المشتركة (كان `useShallow((state)=>...`
@@ -16,7 +16,7 @@ export function useCanvasContext() {
       canvasHeight: s.canvasHeight,
       mode: s.mode,
       printSettings: s.printSettings,
-    }))
+    })),
   );
 }
 
@@ -26,7 +26,7 @@ export function useZoomControls() {
     useShallow((s) => ({
       canvasZoom: s.canvasZoom,
       setCanvasZoom: s.setCanvasZoom,
-    }))
+    })),
   );
 }
 
@@ -36,7 +36,7 @@ export function useCollageViewFlags() {
     useShallow((s) => ({
       collageShowCutLines: s.collageShowCutLines,
       setCollageShowCutLines: s.setCollageShowCutLines,
-    }))
+    })),
   );
 }
 
@@ -52,8 +52,10 @@ export function useGridControls() {
       setShowRuler: s.setShowRuler,
       showUserGuides: s.showUserGuides,
       setShowUserGuides: s.setShowUserGuides,
+      userGuides: s.userGuides,
+      addUserGuide: s.addUserGuide,
       rulerUnit: s.rulerUnit,
       setRulerUnit: s.setRulerUnit,
-    }))
+    })),
   );
 }

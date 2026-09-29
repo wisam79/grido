@@ -277,10 +277,18 @@ func main() {
 	restoredW, restoredH := initialWidth, initialHeight
 	restoredX, restoredY := initialX, initialY
 
-	// تحديث الأبعاد الطبيعية عند كل تغيير حجم/موضع بشرط عدم التكبير
+	// تحديث الأبعاد الطبيعية عند كل تغيير حجم/موضع بشرط عدم التكبير، وبثّ حالة التكبير
+	// بثّ حالة التكبير عند تغيّرها فقط — كان يُبثّ في كل دورة WindowDidResize
+	// حتى مع ثبات القيمة فيُغرق الواجهة برسائل بلا معلومة أثناء سحب حدّ النافذة.
+	lastMaximised := mainWindow.IsMaximised()
 	mainWindow.OnWindowEvent(events.Common.WindowDidResize, func(_ *application.WindowEvent) {
-		if !mainWindow.IsMaximised() && !mainWindow.IsFullscreen() {
+		isMax := mainWindow.IsMaximised()
+		if !isMax && !mainWindow.IsFullscreen() {
 			restoredW, restoredH = mainWindow.Size()
+		}
+		if isMax != lastMaximised {
+			lastMaximised = isMax
+			wailsApp.Event.Emit("window-maximized-changed", isMax)
 		}
 	})
 	mainWindow.OnWindowEvent(events.Common.WindowDidMove, func(_ *application.WindowEvent) {

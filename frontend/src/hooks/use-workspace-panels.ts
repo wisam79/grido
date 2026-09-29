@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { CollageTab, FreeformTab } from '@/lib/workspace-tools';
 import { isCollageTab, isStudioTab, migrateLegacyStudioTab } from '@/lib/workspace-tools';
 
@@ -320,15 +320,41 @@ export function useWorkspacePanels() {
     return activePanel === null;
   }, [breakpoint, isTemplatesDrawerOpen, activePanel]);
 
+  const savedZenStateRef = useRef<{ wasDrawerOpen: boolean; lastActivePanel: WorkspacePanel }>({
+    wasDrawerOpen: true,
+    lastActivePanel: null,
+  });
+
   const toggleZenMode = useCallback(() => {
     if (isZenMode) {
-      // Restore
-      setActivePanel('properties');
+      // استعادة الحالة السابقة للألواح بدقة
+      if (breakpoint === 'wide') {
+        const restoreDrawer =
+          savedZenStateRef.current.wasDrawerOpen || !savedZenStateRef.current.lastActivePanel;
+        setIsTemplatesDrawerOpen(restoreDrawer);
+        if (savedZenStateRef.current.lastActivePanel) {
+          setActivePanel(savedZenStateRef.current.lastActivePanel);
+        }
+      } else {
+        setActivePanel(savedZenStateRef.current.lastActivePanel || 'templates');
+      }
     } else {
-      // Collapse all
+      // حفظ الحالة الحالية قبل طي جميع الألواح
+      savedZenStateRef.current = {
+        wasDrawerOpen: isTemplatesDrawerOpen,
+        lastActivePanel: activePanel,
+      };
       closeActivePanel();
     }
-  }, [isZenMode, setActivePanel, closeActivePanel]);
+  }, [
+    isZenMode,
+    breakpoint,
+    isTemplatesDrawerOpen,
+    activePanel,
+    setIsTemplatesDrawerOpen,
+    setActivePanel,
+    closeActivePanel,
+  ]);
 
   return {
     breakpoint,

@@ -21,10 +21,11 @@ const renderTab = () =>
   render(
     <TooltipProvider>
       <FreeformBackdropsTab />
-    </TooltipProvider>
+    </TooltipProvider>,
   );
 
 beforeEach(() => {
+  localStorage.clear();
   store().reset();
 });
 
@@ -123,6 +124,73 @@ describe('FreeformBackdropsTab — هدف «العنصر المحدد»', () => 
     fireEvent.click(screen.getByText('تحديد الكل'));
 
     expect(store().selectedIds).toEqual([created]);
+  });
+});
+
+describe('FreeformBackdropsTab — المفضلة وآخر استخدام', () => {
+  it('نجمة المكتبة تحفظ التدرج في المفضلة وتظهر بطاقته أعلى التبويب', () => {
+    const gold = GRADIENT_PRESETS.find((preset) => preset.id === 'gold')!;
+    renderTab();
+
+    fireEvent.click(screen.getByLabelText(`إضافة ${gold.name} إلى المفضلة`));
+    expect(screen.getByLabelText(`تطبيق ${gold.name} من المفضلة`)).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('grido_favorite_gradients')!)).toEqual(['preset:gold']);
+
+    // النجمة في بطاقة المفضلة تُبطل المفضلة وتزيل البطاقتين
+    const removeStars = screen.getAllByLabelText(`إزالة ${gold.name} من المفضلة`);
+    fireEvent.click(removeStars[removeStars.length - 1]);
+    expect(screen.queryByLabelText(`تطبيق ${gold.name} من المفضلة`)).toBeNull();
+    expect(screen.getByLabelText(`إضافة ${gold.name} إلى المفضلة`)).toBeInTheDocument();
+  });
+
+  it('تطبيق أي تدرج يسجّله في «آخر استخدام» وتظهر معاينته المربعة', () => {
+    const navy = GRADIENT_PRESETS.find((preset) => preset.id === 'navy')!;
+    renderTab();
+
+    fireEvent.click(screen.getByLabelText(`خلفية كاملة بتدرج ${navy.name}`));
+    expect(screen.getByLabelText(`تطبيق ${navy.name} — آخر استخدام`)).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('grido_recent_gradients')!)).toEqual(['preset:navy']);
+
+    // تطبيق التدرج المحفوظ نفسه يعمل من قسم الأخير أيضاً
+    const backdropsBefore = store().elements.filter((el) => el.width === 1 && el.height === 1);
+    fireEvent.click(screen.getByLabelText(`تطبيق ${navy.name} — آخر استخدام`));
+    const backdropsAfter = store().elements.filter((el) => el.width === 1 && el.height === 1);
+    expect(backdropsAfter).toHaveLength(1);
+    expect(backdropsAfter[0].fillLinearGradientColorStops).toEqual(
+      backdropsBefore[0].fillLinearGradientColorStops,
+    );
+  });
+
+  it('التدرج المخصص يُحفظ بمفتاحه الخاص ويعود بلونه وزاويته', () => {
+    renderTab();
+
+    // قسم التدرج المخصص مطوي افتراضياً — نفتحه بالضغط على رأسه
+    fireEvent.click(screen.getByText('تدرج مخصص'));
+    fireEvent.click(screen.getByLabelText('حفظ التدرج المخصص في المفضلة أو إزالته منها'));
+    // «من» يبدأ من لون الورقة الحالي (أبيض بعد reset) — هذا هو التصميم المقصود
+    expect(JSON.parse(localStorage.getItem('grido_favorite_gradients')!)).toEqual([
+      'custom:#FFFFFF|#1E40AF|135',
+    ]);
+
+    const saved = screen.getByLabelText('تطبيق تدرج مخصص من المفضلة');
+    expect(saved).toBeInTheDocument();
+    expect(store().elements).toHaveLength(0); // الحفظ لا يطبّق
+
+    fireEvent.click(saved);
+    const backdrops = store().elements.filter((el) => el.width === 1 && el.height === 1);
+    expect(backdrops).toHaveLength(1);
+    expect(backdrops[0].fillLinearGradientColorStops).toEqual([0, '#FFFFFF', 1, '#1E40AF']);
+  });
+
+  it('يتخطى بصمت مفاتيح قوالب لم تعد موجودة في المكتبة', () => {
+    localStorage.setItem(
+      'grido_favorite_gradients',
+      JSON.stringify(['preset:deleted-preset', 'custom:#111111|#222222|90']),
+    );
+    renderTab();
+
+    expect(screen.getByLabelText('تطبيق تدرج مخصص من المفضلة')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/من المفضلة.*deleted/)).toBeNull();
   });
 });
 
