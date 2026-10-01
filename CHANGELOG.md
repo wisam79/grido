@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `docs_release_gatekeeper`: حراسة بوابات التوثيق وفحص المراجع الصارم وإدارة خط سير الإصدارات.
 - **مسارات العمل التشغيلية القياسية (`.agents/workflows/`):** توفير 4 أدلة تشغيل معيارية (SOPs): `release-deployment.md`، `database-migration.md`، `security-audit.md`، و `canvas-export-qa.md`.
 - **قالب خادم MCP (`.agents/mcp_config.json`):** تجهيز ملف تكوين قياسي جاهز لربط خادم Supabase MCP.
+- **تطبيع نهايات الأسطر في فحص بصمات الهجرات (`scripts/migration-lint.mjs`):** تحويل `\r\n` إلى `\n` في دالة `hashFile` لضمان تطابق بصمات SHA-256 عبر كافة أنظمة التشغيل (Windows و Linux و macOS) وتفادي فشل فحص الثبات في بيئة CI، مع تحديث بصمة هجرة الجلسة الواحدة في `supabase/migrations.manifest.json`.
 - **بوابة التوثيق الآلية (`scripts/docs-gate.mjs`):** توسيع فحص المراجع الصارم `--strict-refs` ليشمل كافة ملفات `.agents/rules/` و `.agents/agents/` و `.agents/workflows/` مع إدراجها جميعاً في جرد `docs/DOCUMENTATION_MAP.md`.
 
 ### Added (الجلسة الواحدة النشطة — Last-Wins — 2026-10-01)

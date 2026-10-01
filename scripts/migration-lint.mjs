@@ -139,7 +139,8 @@ function listMigrationFiles() {
 }
 
 function hashFile(filePath) {
-  return createHash('sha256').update(readFileSync(filePath)).digest('hex');
+  const content = readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
+  return createHash('sha256').update(content, 'utf8').digest('hex');
 }
 
 /**
