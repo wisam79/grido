@@ -247,6 +247,20 @@ func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
 		local.Status = prof.Status
 		local.LicenseKey = prof.LicenseKey
 		local.UpdatedAt = time.Now()
+		// 🛡️ الجلسة الواحدة النشطة (Last-Wins): بعد تحقق شبكي ناجح فقط —
+		// 1) احجز جلسة محلية لم تُحجز بعد (حسابات ما قبل الميزة/دخول أوفلاين).
+		// 2) تحقق أن جلستنا هي النشطة؛ المطرودة تُمسح برسالة صريحة.
+		// فشل الشبكة هنا مستحيل (fetchProfile نجح) — أي خطأ تحقق لاحق هو شبكي
+		// ويعني سماح عدم اتصال، لا طرداً.
+		_ = s.ensureSessionClaimed(local.Token)
+		if ok, sessErr := s.verifyActiveSession(local.Token); !ok && sessErr != nil {
+			if errors.Is(sessErr, ErrSessionSuperseded) {
+				slog.Warn("Session superseded by a newer login — evicting local session")
+				_ = s.repo.Clear()
+				return nil, ErrSessionSuperseded
+			}
+			slog.Warn("Session verify failed (network?) — keeping session", "error", sessErr)
+		}
 		if saveErr := s.repo.Save(local); saveErr != nil {
 			slog.Error("Failed to save updated license profile", "error", saveErr)
 		}
@@ -331,5 +345,8 @@ func (s *LicenseService) Logout() error {
 			}
 		}
 	}
+	// 🛡️ الجلسة الواحدة: امسح الجلسة المحلية فقط (لا تحذف صف الخادم —
+	// قد يكون ملك جلسة أحدث من جهاز آخر، وحذفه سيفقدنا أثر الطرد).
+	_ = utils.ClearSessionID()
 	return s.repo.Clear()
 }

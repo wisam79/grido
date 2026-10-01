@@ -306,5 +306,7 @@ func (s *LicenseService) LoginWithGoogle() (*domain.UserProfile, error) {
 	if err := s.repo.Save(userProfile); err != nil {
 		return nil, fmt.Errorf("failed to save session: %w", err)
 	}
+	// 🛡️ الجلسة الواحدة النشطة: آخر دخول يفوز — احجز جلسة هذا الجهاز فوراً.
+	s.claimSession(userProfile.Token)
 	return userProfile, nil
 }

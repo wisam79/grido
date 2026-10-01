@@ -123,6 +123,8 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 		if err := s.repo.Save(user); err != nil {
 			return nil, fmt.Errorf("failed to save local session: %w", err)
 		}
+		// 🛡️ الجلسة الواحدة النشطة: آخر دخول يفوز — احجز جلسة هذا الجهاز فوراً.
+		s.claimSession(user.Token)
 		return user, nil
 	}
 
@@ -278,6 +280,8 @@ func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, er
 	if err := s.repo.Save(user); err != nil {
 		return nil, fmt.Errorf("failed to save local session: %w", err)
 	}
+	// 🛡️ الجلسة الواحدة النشطة: آخر دخول يفوز — احجز جلسة هذا الجهاز فوراً.
+	s.claimSession(user.Token)
 	return user, nil
 }
 
@@ -367,6 +371,8 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 	if err := s.repo.Save(user); err != nil {
 		return nil, fmt.Errorf("failed to save session: %w", err)
 	}
+	// 🛡️ الجلسة الواحدة النشطة: آخر دخول يفوز — احجز جلسة هذا الجهاز فوراً.
+	s.claimSession(user.Token)
 	return user, nil
 }
 
@@ -529,6 +535,9 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 	if err := s.repo.Save(profile); err != nil {
 		slog.Error("Failed to persist user profile after password reset", "error", err)
 	}
+
+	// 🛡️ الجلسة الواحدة النشطة: آخر دخول يفوز — احجز جلسة هذا الجهاز فوراً.
+	s.claimSession(profile.Token)
 
 	return profile, nil
 }

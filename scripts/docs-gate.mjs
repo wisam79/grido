@@ -388,6 +388,61 @@ const CODE_ASSERTIONS = [
     mustContain: ['h-7 w-7'],
     mustNotContain: ['h-5 w-5', 'h-6 w-6'],
   },
+  {
+    label: 'RV-5 — عزل SVG المخزّن عند الخدمة (sandbox + inline)',
+    file: 'main.go',
+    mustContain: [
+      'Content-Security-Policy", "sandbox;',
+      'Content-Disposition", `inline;',
+    ],
+  },
+  {
+    label: 'RV-7 — مهلة AI في الواجهة موائمة للخلفية 3 دقائق + تحذير الحصة',
+    file: 'frontend/src/hooks/use-ai-enhance.ts',
+    mustContain: [
+      'const AI_ENHANCE_TIMEOUT_MS = 200000',
+      'قد تكون المحاولة احتُسبت على حصتك اليومية',
+    ],
+    mustNotContain: ['120000, // مهلة 120 ثانية'],
+  },
+  {
+    label: 'SESSION — الجلسة الواحدة النشطة: حجز Last-Wins + طرد برسالة صريحة وسماح أوفلاين',
+    file: 'internal/service/session_manager.go',
+    mustContain: [
+      'var ErrSessionSuperseded',
+      'func (s *LicenseService) claimSession(token string) string',
+      'func (s *LicenseService) verifyActiveSession(token string) (bool, error)',
+      'بلا أي ربط بالعتاد',
+    ],
+  },
+  {
+    label: 'SESSION (هجرة) — جدول user_sessions + دالتي claim/check بلا وصول مباشر',
+    file: 'supabase/migrations/20261001000000_single_active_session.sql',
+    mustContain: [
+      'CREATE TABLE IF NOT EXISTS public.user_sessions',
+      'public.claim_session',
+      'public.check_session',
+      'FOR ALL USING (false)',
+    ],
+  },
+  {
+    label: 'SESSION (واجهة) — الطرد يصفّر الجلسة ويفتح نافذة الحساب برسالة جهاز آخر',
+    file: 'frontend/src/lib/store/slices/license-slice.ts',
+    mustContain: [
+      'isSessionSupersededError',
+      'accountModalOpen: true',
+    ],
+  },
+  {
+    label: 'P2 — صيغ AVIF/HEIC/JXL بامتدادات صريحة لا .jpg افتراضي',
+    file: 'internal/service/media_service.go',
+    mustContain: ['case "image/avif":', 'case "image/heic", "image/heif":', 'case "image/jxl":'],
+  },
+  {
+    label: 'P2 — حمولة تسجيل Modal تمرر p_check_only صراحة',
+    file: 'modal_ai/upscaler.py',
+    mustContain: ['"p_check_only": False'],
+  },
 ];
 
 function checkCodeAssertions() {

@@ -177,6 +177,41 @@ func TestSaveAndLoadEncryptedToken(t *testing.T) {
 	}
 }
 
+func TestSessionID_RoundTripAndPreservation(t *testing.T) {
+	_ = ClearEncryptedToken()
+	defer ClearEncryptedToken()
+
+	// 1) حفظ جلسة بلا توكنات سابقة — تُكتب وتُقرأ كما هي
+	if err := SaveSessionID("sess_aaa111"); err != nil {
+		t.Fatalf("SaveSessionID failed: %v", err)
+	}
+	if got := LoadSessionID(); got != "sess_aaa111" {
+		t.Errorf("Expected session sess_aaa111, got %q", got)
+	}
+
+	// 2) حفظ توكنات لاحقاً يحافظ على الجلسة (التوافقية مع Save القديم)
+	if err := SaveEncryptedToken("tok", "ref"); err != nil {
+		t.Fatalf("SaveEncryptedToken failed: %v", err)
+	}
+	if got := LoadSessionID(); got != "sess_aaa111" {
+		t.Errorf("SaveEncryptedToken dropped session id: got %q", got)
+	}
+	if tok, _, err := LoadEncryptedToken(); err != nil || tok != "tok" {
+		t.Errorf("LoadEncryptedToken broke: tok=%q err=%v", tok, err)
+	}
+
+	// 3) مسح الجلسة يبقي التوكنات (مسار الطرد + دخول جديد)
+	if err := ClearSessionID(); err != nil {
+		t.Fatalf("ClearSessionID failed: %v", err)
+	}
+	if got := LoadSessionID(); got != "" {
+		t.Errorf("Expected empty session after clear, got %q", got)
+	}
+	if tok, _, err := LoadEncryptedToken(); err != nil || tok != "tok" {
+		t.Errorf("ClearSessionID must keep tokens: tok=%q err=%v", tok, err)
+	}
+}
+
 func TestWriteSecureFile_PowerLoss(t *testing.T) {
 	tmpDir := t.TempDir()
 	targetPath := filepath.Join(tmpDir, "secure_data.bin")

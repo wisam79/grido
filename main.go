@@ -609,10 +609,27 @@ func createAssetHandler(app *App) http.Handler {
 
 			ext := strings.ToLower(filepath.Ext(filename))
 			contentType := mime.TypeByExtension(ext)
+			// 🛡️ خريطة صريحة للصيغ الحديثة: mime.TypeByExtension قد يجهلها على Windows
+			// فيُخدَم AVIF/HEIC خطأً كـ octet-stream أو jpeg — نثبتها هنا.
+			switch ext {
+			case ".avif":
+				contentType = "image/avif"
+			case ".heic", ".heif":
+				contentType = "image/heic"
+			case ".jxl":
+				contentType = "image/jxl"
+			}
 			if contentType == "" {
 				contentType = "application/octet-stream"
 			}
 			w.Header().Set("Content-Type", contentType)
+			if ext == ".svg" {
+				// 🛡️ RV-5: SVG مخزّن يُخدَم في نفس أصل التطبيق — نعزله:
+				// sandbox تمنع <script> عند فتحه كوثيقة عليا، وinline تحافظ
+				// على العرض داخل <img>/Konva (attachment كان سيكسر المعاينة).
+				w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'")
+				w.Header().Set("Content-Disposition", `inline; filename="`+filename+`"`)
+			}
 
 			http.ServeFile(w, r, absPath)
 			return

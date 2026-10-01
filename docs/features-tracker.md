@@ -1,11 +1,31 @@
 # تتبع الميزات الأساسية — Grido Studio
 
 **تاريخ المراجعة الأولى:** 30 يوليو 2026 (الإصدار ~v1.2.10)
-**آخر تحديث:** 29 سبتمبر 2026 — بعد **جلسة موثوقية نصوص الملصقات وقابلية التصدير** (اتجاه عربي تلقائي · دقة 300DPI حقيقية · SVG بخط مضمّن · شيت بنسبة ورق الطباعة) — انظر سجل الجلسة أدناه (0.27)
+**آخر تحديث:** 1 أكتوبر 2026 — بعد **جلسة الجلسة الواحدة النشطة (Last-Wins)** وإغلاق بنود P1/P2 الممكنة محلياً (عزل SVG المخزّن · مواءمة مهلة AI · صيغ AVIF/HEIC/JXL · `p_check_only` الصريح) — انظر سجل 0.28 · وقبله **جلسة موثوقية نصوص الملصقات وقابلية التصدير** (اتجاه عربي تلقائي · دقة 300DPI حقيقية · SVG بخط مضمّن · شيت بنسبة ورق الطباعة) — سجل 0.27
 **المنهجية:** فحص الكود الفعلي (Go + React/Konva) ميزةً ميزة، ومطابقتها مع README وخطة التطوير.
 **الغرض:** مستند حي يُحدَّث مع كل نظرة على الميزات؛ يكمل (ولا يستبدل) `docs/development-plan/TASKS.md`.
 
 أسطورة الحالة: ✅ مكتمل | ⚠️ مكتمل مع فجوات | 🔶 جزئي | ❌ غير منفذ | 🆕 أُصلح في جلسة الإصلاحات
+
+---
+
+## 0.28 سجل تكميلي: الجلسة الواحدة النشطة (Last-Wins) — 1 أكتوبر 2026
+
+**المرجع:** طلب المالك — «لا نهتم بالعتاد بل بالجلسة: عند فتح جلسة جديدة نمنع أي جلسة سابقة على جهاز آخر، مع رسالة صريحة».
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| جدول الجلسة النشطة | `supabase/migrations/20261001000000_single_active_session.sql`: `public.user_sessions` (سطر واحد لكل مستخدم، `user_id` مفتاح أساسي) + RLS بسياسة `no_direct_session_access` (`FOR ALL USING (false)`) فلا وصول مباشر من العميل | `migration-lint` (23 ملفاً، 0 تحذير) + تأكيد في `docs-gate` |
+| دالتا الحجز والفحص | `claim_session(p_session_id, p_app_version)` — UPSERT غير مشروط (آخر دخول يفوز) · `check_session(p_session_id)` — ترجع `active/superseded` وتحدّث `last_seen_at`؛ `SECURITY DEFINER` + `GRANT EXECUTE TO authenticated` فقط | `TestClaimAndCheckSession_LastWins` (دخول ثانٍ يطرد الأول فعلياً عبر HTTP وهمي) |
+| إدارة الجلسة في Go | `internal/service/session_manager.go`: `newSessionID` (128-bit من `crypto/rand`)، `claimSession` (لا يحفظ المعرّف إلا بعد تأكيد خادمي — يمنع «الطرد الكاذب»)، `ensureSessionClaimed`، `verifyActiveSession` (فشل الشبكة ⇒ لا طرد)، و`ErrSessionSuperseded` بنص الطرد الصريح | `TestClaimSession_FailedClaimLeavesNoLocalID` + `TestVerifyActiveSession_OfflineGrace` (منفذ مغلق ⇒ الجلسة باقية) + تأكيدان في `docs-gate` |
+| تخزين معرّف الجلسة | `internal/utils/crypto.go`: `encryptedTokenPair.SessionID` + `SaveSessionID`/`LoadSessionID`/`ClearSessionID` — نفس الملف AES-GCM بصلاحيات 0600؛ الملفات القديمة (بلا `session_id`) تُقرأ بلا خطأ وتُحجز عند أول تحقق | `TestSessionID_RoundTripAndPreservation` (حفظ/حفاظ Save على الجلسة/مسحها مع إبقاء التوكنات) |
+| الحجز عند كل دخول | `auth_flows.go` (تسجيل · OTP · دخول · استعادة كلمة المرور) + `oauth_server.go` (Google) يستدعون `claimSession` بعد حفظ الجلسة؛ `CheckStatus` يحجز إن لم تُحجز ويتحقق من النشاط | `go test ./internal/service/` ✅ |
+| الطرد برسالة صريحة | `CheckStatus` يمسح الجلسة ويرجع `ErrSessionSuperseded`؛ `license-slice.ts` (`isSessionSupersededError`/`sessionSupersededMessage`) يصفّر المستخدم ويفتح نافذة الحساب؛ `App.tsx` يعرض `toast` عند الإقلاع والفحص الدوري (كل 5 دقائق) | `test/license-slice.test.ts` (حالة طرد: تصفير + فتح النافذة) |
+| `Logout` لا يحذف جلسة الجهاز الآخر | `Logout` يمسح الجلسة المحلية فقط (`utils.ClearSessionID`) + `logout` في Supabase — حذف صف الخادم كان سيفقد أثر الطرد على الجهاز الأقدم | قراءة كود + اختبارات الخدمة |
+
+**البوابات بعد الجلسة:** `go vet ./internal/...` ✅ · `go test ./internal/utils/ ./internal/service/` ✅ · `tsc --noEmit` ✅ · ESLint على الملفات المتغيرة ✅ · Vitest (`license-slice` 16 · `App` 4 · `account-license-modal` 6) ✅ · `docs-gate --strict-refs` (23 تأكيداً) ✅ · `migration-lint` (23 هجرة، 0 تحذير + التحقق الذاتي) ✅.
+
+**ما لا تفعله الميزة (حدود مقصودة):** لا تمنع المشاركة **التتابعية** (تسليم الحساب ساعة ثم استعادته) — الهدف جعلها غير عملية لا منعاً رياضياً؛ ولا تعتمد على بصمة عتاد إطلاقاً (معرّف الجلسة عشوائي لكل دخول)؛ والأوفلاين لا يطرد أبداً (الطرد فقط عند إثبات شبكي).
 
 ---
 

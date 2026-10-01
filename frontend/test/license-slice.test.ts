@@ -20,7 +20,6 @@ vi.mock('../wailsjs/go/main/App', () => ({
   LoadAiUsageLogs: vi.fn(() => Promise.resolve('[]')),
 }));
 
-
 describe('LicenseSlice Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -77,10 +76,40 @@ describe('LicenseSlice Tests', () => {
 
   it('checkLicenseStatus clears user only on explicit server response of no-session', async () => {
     // ردّ خادم صريح بحالة «لا جلسة» (ليس خطأ شبكة) يصفّر المستخدم
-    const noSession = { id: '', name: '', email: '', plan: 'free', status: 'none', expiresAt: '' } as any;
+    const noSession = {
+      id: '',
+      name: '',
+      email: '',
+      plan: 'free',
+      status: 'none',
+      expiresAt: '',
+    } as any;
     vi.mocked(LicenseHandler.GetLicenseStatus).mockResolvedValueOnce(noSession);
     await useEditorStore.getState().checkLicenseStatus();
     expect(useEditorStore.getState().user).toEqual(noSession);
+  });
+
+  it('checkLicenseStatus evicts session with explicit message when superseded on another device', async () => {
+    // جلسة صالحة موجودة ثم الخادم يثبت طردها (دخول أحدث من جهاز آخر)
+    const mockUser = {
+      id: 'usr_1',
+      name: 'Ali Hassan',
+      email: 'ali@example.com',
+      plan: 'pro',
+      status: 'active',
+      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+    } as any;
+    vi.mocked(LicenseHandler.GetLicenseStatus).mockResolvedValueOnce(mockUser);
+    await useEditorStore.getState().checkLicenseStatus();
+
+    vi.mocked(LicenseHandler.GetLicenseStatus).mockRejectedValueOnce(
+      new Error('تم تسجيل الدخول إلى حسابك من جهاز آخر — هذه الجلسة لم تعد نشطة'),
+    );
+    await expect(useEditorStore.getState().checkLicenseStatus()).rejects.toThrow('جهاز آخر');
+    // الطرد: تصفير الجلسة + فتح نافذة الحساب (رسالة الطرد تُعرض من App.tsx)
+    expect(useEditorStore.getState().user).toBeNull();
+    expect(useEditorStore.getState().accountModalOpen).toBe(true);
+    expect(useEditorStore.getState().licenseLoading).toBe(false);
   });
 
   it('registerAccount succeeds and sets user', async () => {
@@ -95,8 +124,14 @@ describe('LicenseSlice Tests', () => {
 
     vi.mocked(LicenseHandler.RegisterAccount).mockResolvedValueOnce(mockUser);
 
-    const profile = await useEditorStore.getState().registerAccount('New User', 'new@example.com', 'pass123');
-    expect(LicenseHandler.RegisterAccount).toHaveBeenCalledWith('New User', 'new@example.com', 'pass123');
+    const profile = await useEditorStore
+      .getState()
+      .registerAccount('New User', 'new@example.com', 'pass123');
+    expect(LicenseHandler.RegisterAccount).toHaveBeenCalledWith(
+      'New User',
+      'new@example.com',
+      'pass123',
+    );
     expect(profile).toEqual(mockUser);
     expect(useEditorStore.getState().user).toEqual(mockUser);
   });
@@ -202,19 +237,31 @@ describe('LicenseSlice Tests', () => {
   });
 
   it('verifyRecoveryOTP calls LicenseHandler.VerifyRecoveryOTP and updates user', async () => {
-    const mockUser = { id: 'usr_rec', email: 'rec@example.com', plan: 'pro', status: 'active', expiresAt: '2027-01-01T00:00:00Z', token: 'token123' } as any;
+    const mockUser = {
+      id: 'usr_rec',
+      email: 'rec@example.com',
+      plan: 'pro',
+      status: 'active',
+      expiresAt: '2027-01-01T00:00:00Z',
+      token: 'token123',
+    } as any;
     vi.mocked(LicenseHandler.VerifyRecoveryOTP).mockResolvedValueOnce(mockUser);
 
-    const profile = await useEditorStore.getState().verifyRecoveryOTP('rec@example.com', '123456', 'newpass123');
-    expect(LicenseHandler.VerifyRecoveryOTP).toHaveBeenCalledWith('rec@example.com', '123456', 'newpass123');
+    const profile = await useEditorStore
+      .getState()
+      .verifyRecoveryOTP('rec@example.com', '123456', 'newpass123');
+    expect(LicenseHandler.VerifyRecoveryOTP).toHaveBeenCalledWith(
+      'rec@example.com',
+      '123456',
+      'newpass123',
+    );
     expect(profile).toEqual(mockUser);
     expect(useEditorStore.getState().user).toEqual(mockUser);
   });
 
-
   it('logoutAccount calls LicenseHandler.Logout and clears user', async () => {
     useEditorStore.setState({
-      user: { id: 'usr_1', email: 'test@example.com' } as any
+      user: { id: 'usr_1', email: 'test@example.com' } as any,
     });
 
     vi.mocked(LicenseHandler.Logout).mockResolvedValueOnce('Logged out');
@@ -237,7 +284,7 @@ describe('LicenseSlice Tests', () => {
         plan: 'pro',
         status: 'active',
         expiresAt: new Date(Date.now() + 100000).toISOString(),
-      } as any
+      } as any,
     });
     expect(store.isLicenseActive()).toBe(true);
 
@@ -247,7 +294,7 @@ describe('LicenseSlice Tests', () => {
         plan: 'pro',
         status: 'active',
         expiresAt: new Date(Date.now() - 100000).toISOString(),
-      } as any
+      } as any,
     });
     expect(store.isLicenseActive()).toBe(false);
 
@@ -257,7 +304,7 @@ describe('LicenseSlice Tests', () => {
         plan: 'pro',
         status: 'inactive',
         expiresAt: new Date(Date.now() + 100000).toISOString(),
-      } as any
+      } as any,
     });
     expect(store.isLicenseActive()).toBe(false);
 
@@ -267,7 +314,7 @@ describe('LicenseSlice Tests', () => {
         plan: 'trial',
         status: 'active',
         expiresAt: new Date(Date.now() + 100000).toISOString(),
-      } as any
+      } as any,
     });
     expect(store.isLicenseActive()).toBe(true);
 
@@ -277,7 +324,7 @@ describe('LicenseSlice Tests', () => {
         plan: 'free',
         status: 'active',
         expiresAt: new Date(Date.now() + 100000).toISOString(),
-      } as any
+      } as any,
     });
     expect(store.isLicenseActive()).toBe(false);
   });

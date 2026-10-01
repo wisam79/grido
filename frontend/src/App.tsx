@@ -64,6 +64,10 @@ import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+  isSessionSupersededError,
+  sessionSupersededMessage,
+} from '@/lib/store/slices/license-slice';
 import { usePhoneBridgeListener } from '@/components/editor/system/use-phone-bridge';
 import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 
@@ -206,8 +210,8 @@ export default function App() {
         if (!profile || !profile.token) {
           setAccountModalOpen(true);
         }
-        // ملء سجلات استخدام AI من AppData (مع ترحيل localStorage القديم)
         void useEditorStore.getState().hydrateAiUsageLogs();
+        // ملء سجلات استخدام AI من AppData (مع ترحيل localStorage القديم)
         // فحص وجود صورة ممررة عند الإقلاع (مثل النقر بالزر الأيمن "فتح بواسطة" في ويندوز)
         try {
           if (typeof GetStartupFile === 'function') {
@@ -218,7 +222,13 @@ export default function App() {
           // تجاهل الخطأ في بيئة الاختبارات عند عدم توفر واجهة Wails
         }
       } catch (err) {
-        console.error('Failed to check license status during init:', err);
+        // 🛡️ الجلسة الواحدة: الإقلاع قد يكشف طرداً — اعرض رسالة الطرد الصريحة
+        // (نافذة الحساب تُفتح أصلاً من license-slice عند الطرد).
+        if (isSessionSupersededError(err)) {
+          toast.error(sessionSupersededMessage(err), { duration: 8000 });
+        } else {
+          console.error('Failed to check license status during init:', err);
+        }
       } finally {
         setIsInitializing(false);
       }
@@ -230,7 +240,13 @@ export default function App() {
     // Check periodically every 5 minutes to ensure dynamic state updates
     const intervalId = setInterval(
       () => {
-        checkLicenseStatus();
+        // 🛡️ الجلسة الواحدة: الفحص الدوري قد يطرد الجلسة — اعرض رسالة الطرد
+        // الصريحة بدل ابتلاع الخطأ بصمت.
+        checkLicenseStatus().catch((sessErr: unknown) => {
+          if (isSessionSupersededError(sessErr)) {
+            toast.error(sessionSupersededMessage(sessErr), { duration: 8000 });
+          }
+        });
       },
       5 * 60 * 1000,
     );

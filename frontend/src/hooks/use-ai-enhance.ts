@@ -4,6 +4,7 @@ import { SaveImageFromBase64, EnhanceImageWithAI } from '../../wailsjs/go/main/A
 import { useEditorStore } from '@/lib/editor-store';
 import { toErrorMessage } from '@/lib/wails-error';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
+import { createLogger } from '@/lib/logger';
 import { create } from 'zustand';
 import {
   aiPlanDailyLimit,
@@ -212,10 +213,20 @@ export function useAiEnhance(
       }, 800);
 
       const token = user?.token || '';
+      // RV-7: مهلة الواجهة كانت 120s بينما الخلفية 3 دقائق (aiEnhanceClient) وحاوية
+      // Modal حتى 600s والتسجيل بعد المعالجة — فطلب بارد 130s كان يُظهر فشلاً بلا
+      // صورة بينما يكتمل الخادم ويخصم الحصة. نمهل 200s (>180s خلفية + هامش) ليرى
+      // المستخدم النتيجة متى نجحت، مع رسالة صريحة أن الحصة قد تكون احتُسبت.
+      const AI_ENHANCE_TIMEOUT_MS = 200000;
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(
-          () => reject(new Error('استغرق الطلب وقتاً طويلاً. أعد المحاولة مرة أخرى.')),
-          120000, // مهلة 120 ثانية للبارد على الخادم السحابي
+          () =>
+            reject(
+              new Error(
+                'استغرق الطلب وقتاً طويلاً. إن تكرر، تحقق من الرصيد المتبقي — قد تكون المحاولة احتُسبت على حصتك اليومية.',
+              ),
+            ),
+          AI_ENHANCE_TIMEOUT_MS, // مواءمة مع مهلة الخلفية 3 دقائق + هامش
         );
       });
       const resultStr = await Promise.race([
@@ -276,7 +287,8 @@ export function useAiEnhance(
     } catch (err) {
       if (progressTimer) clearInterval(progressTimer);
       if (timeoutId) clearTimeout(timeoutId);
-      console.error('AI Enhance failed:', err);
+      // RV-4: توجيه مسار الفشل للوجر الموحّد (سجل Go) بدل console المعزول
+      createLogger('ai-enhance').error('AI Enhance failed:', err);
       if (err instanceof Error && /طويلاً/.test(err.message)) {
         toast.error(err.message);
       } else {

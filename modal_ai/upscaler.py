@@ -332,7 +332,8 @@ class ImageEnhancer:
                     "p_daily_limit": daily_limit,
                     "p_image_bytes": raw_bytes_estimate,
                     "p_exec_seconds": exec_seconds,
-                    "p_cost_usd": total_cost_usd
+                    "p_cost_usd": total_cost_usd,
+                    "p_check_only": False
                 }).encode('utf-8')
                 
                 rpc_req = urllib.request.Request(

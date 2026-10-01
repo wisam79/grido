@@ -20,5 +20,6 @@
   "20260926125510_production_drift_repair_admin_seed_profiles_rls_and_profile_rpc.sql": "2b327d105439ffd4edffefd6c547b022b43c9f9ca7d7805c2a4763cf99743ce7",
   "20260926125727_fix_profile_guard_execution_context.sql": "832ed6c8337cd509f72b17845edb2b6c12b6eea49f0f5e8ba22ebe20a99a986c",
   "20260926154229_fix_rls_initplan_ai_usage_admin_users.sql": "a00c840f4937701df7f5be8fe5ce7ba2677b2614ae5c26714840d3a96fc29912",
-  "20260926160117_fix_is_admin_null_authz_bypass.sql": "7ef29989490e4665ee18e60356944a84459b4ef6637cf69ba2a39b42a784af9e"
+  "20260926160117_fix_is_admin_null_authz_bypass.sql": "7ef29989490e4665ee18e60356944a84459b4ef6637cf69ba2a39b42a784af9e",
+  "20261001000000_single_active_session.sql": "96ad5394ffb9cef416b41cc1a1a59f783125b6d1bfd3371f36774f0cdf4a610a"
 }

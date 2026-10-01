@@ -261,17 +261,56 @@ func VerifyTime(t time.Time) bool {
 type encryptedTokenPair struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	// SessionID: معرّف الجلسة الواحدة النشطة (Last-Wins) — يُحجز خادمياً عبر
+	// claim_session ويُتحقق منه عبر check_session. لا علاقة له بالعتاد.
+	SessionID string `json:"session_id,omitempty"`
+}
+
+// SaveSessionID يحفظ معرّف الجلسة بجانب التوكنات في نفس المخزن المشفّر
+// (AES-GCM بصلاحيات 0600) دون المساس بالتوكنات نفسها.
+func SaveSessionID(sessionID string) error {
+	access, refresh, err := LoadEncryptedToken()
+	if err != nil {
+		access, refresh = "", ""
+	}
+	return SaveEncryptedTokenWithSession(access, refresh, sessionID)
+}
+
+// LoadSessionID يسترجع معرّف الجلسة المحلية ("" إن لم توجد بعد — حسابات ما قبل الميزة).
+func LoadSessionID() string {
+	_, _, sessionID, err := LoadEncryptedTokenWithSession()
+	if err != nil {
+		return ""
+	}
+	return sessionID
+}
+
+// ClearSessionID يمسح معرّف الجلسة المحلية مع إبقاء التوكنات (يُستخدم عند الطرد).
+func ClearSessionID() error {
+	access, refresh, err := LoadEncryptedToken()
+	if err != nil {
+		return nil
+	}
+	return SaveEncryptedTokenWithSession(access, refresh, "")
 }
 
 // SaveEncryptedToken encrypts the access and refresh tokens using AES-GCM and saves it to .license_token
+// (يحافظ على SessionID المخزن سابقاً — التوافقية مع كل الاستدعاءات القائمة).
 func SaveEncryptedToken(accessToken, refreshToken string) error {
-	if accessToken == "" && refreshToken == "" {
+	_, _, sid, _ := LoadEncryptedTokenWithSession()
+	return SaveEncryptedTokenWithSession(accessToken, refreshToken, sid)
+}
+
+// SaveEncryptedTokenWithSession يكتب التوكنات مع معرّف الجلسة ذرياً في ملف واحد.
+func SaveEncryptedTokenWithSession(accessToken, refreshToken, sessionID string) error {
+	if accessToken == "" && refreshToken == "" && sessionID == "" {
 		return ClearEncryptedToken()
 	}
 
 	pair := encryptedTokenPair{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		SessionID:    sessionID,
 	}
 
 	payload, err := json.Marshal(pair)
@@ -306,11 +345,19 @@ func SaveEncryptedToken(accessToken, refreshToken string) error {
 }
 
 // LoadEncryptedToken reads and decrypts the tokens from .license_token
+// (يتجاهل SessionID — للإبقاء على كل الاستدعاءات القائمة ثنائية القيم).
 func LoadEncryptedToken() (string, string, error) {
+	access, refresh, _, err := LoadEncryptedTokenWithSession()
+	return access, refresh, err
+}
+
+// LoadEncryptedTokenWithSession يقرأ التوكنات مع معرّف الجلسة.
+// ملفات ما قبل الميزة (بلا session_id) ترجع "" بلا خطأ — تُحجز عند أول دخول.
+func LoadEncryptedTokenWithSession() (string, string, string, error) {
 	path := filepath.Join(GetAppDir(), ".license_token")
 	ciphertext, err := os.ReadFile(path)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	deviceID := GetDeviceID()
@@ -321,31 +368,31 @@ func LoadEncryptedToken() (string, string, error) {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	if len(ciphertext) < gcm.NonceSize() {
-		return "", "", errors.New("malformed ciphertext")
+		return "", "", "", errors.New("malformed ciphertext")
 	}
 
 	nonce, ciphertext := ciphertext[:gcm.NonceSize()], ciphertext[gcm.NonceSize():]
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	var pair encryptedTokenPair
 	if err := json.Unmarshal(plaintext, &pair); err != nil {
 		// Fallback for backward compatibility if the stored token is raw token string
-		return string(plaintext), "", nil
+		return string(plaintext), "", "", nil
 	}
 
-	return pair.AccessToken, pair.RefreshToken, nil
+	return pair.AccessToken, pair.RefreshToken, pair.SessionID, nil
 }
 
 // ClearEncryptedToken removes the saved token

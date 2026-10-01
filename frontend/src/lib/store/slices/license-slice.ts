@@ -107,6 +107,17 @@ async function loadAiLogs(): Promise<AiUsageRecord[]> {
   return DEFAULT_AI_LOGS;
 }
 
+// 🛡️ الجلسة الواحدة النشطة (Last-Wins): كشف خطأ الطرد القادم من Go
+// (ErrSessionSuperseded) — نصه العربي ثابت في session_manager.go.
+const SESSION_SUPERSEDED_MARK = 'جهاز آخر';
+export function isSessionSupersededError(err: unknown): boolean {
+  return toErrorMessage(err, '').includes(SESSION_SUPERSEDED_MARK);
+}
+export function sessionSupersededMessage(err: unknown): string {
+  const msg = toErrorMessage(err, '');
+  return msg || 'تم تسجيل الدخول إلى حسابك من جهاز آخر — هذه الجلسة لم تعد نشطة';
+}
+
 // جيل الطلبات: يمنع نداء checkLicenseStatus قديماً (in-flight) من استعادة
 // جلسة بعد تسجيل الخروج (إصلاح Bug#4 — race guard)
 let licenseCheckEpoch = 0;
@@ -180,6 +191,17 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
         set({ user: profile, licenseLoading: false });
         return profile;
       } catch (err) {
+        // 🛡️ الجلسة الواحدة النشطة: الخادم أثبت شبكياً أن جلسة أحدث حُجزت من
+        // جهاز آخر — طرد صريح: صفّر الجلسة وافتح نافذة الحساب مع رسالة الطرد.
+        if (isSessionSupersededError(err)) {
+          if (epoch === licenseCheckEpoch) {
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('grido:auth-logout'));
+            }
+            set({ user: null, licenseLoading: false, aiUsageLogs: [], accountModalOpen: true });
+          }
+          throw new Error(sessionSupersededMessage(err));
+        }
         // فشل شبكة/عطل مؤقت → نبقي الجلسة الحالية (سماح عدم الاتصال) بدل قفل
         // المستخدم خارجاً فجأة. تصفير الجلسة يحدث فقط بردّ خادم صريح بأن
         // الترخيص غير صالح (يصل عبر profile بنجاح النداء أعلاه).

@@ -246,6 +246,12 @@ func (s *MediaService) GetExtensionFromMime(mimeType string) string {
 		return ".tiff"
 	case "image/svg+xml":
 		return ".svg"
+	case "image/avif":
+		return ".avif"
+	case "image/heic", "image/heif":
+		return ".heic"
+	case "image/jxl":
+		return ".jxl"
 	default:
 		return ".jpg"
 	}
