@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 
 	"grido/internal/core/domain"
 )
@@ -21,17 +22,37 @@ import (
 // وإعادة تعيين كلمة المرور مع رمز الاستعادة.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// validatePasswordStrength يتحقق من سياسة كلمات المرور المتطابقة مع Supabase:
+// 8 أحرف على الأقل، بحد أقصى 128 حرفاً، وتتضمن حروفاً وأرقاماً معاً (letters_digits).
+func validatePasswordStrength(password string) error {
+	if len(password) < 8 {
+		return errors.New("كلمة المرور يجب أن تكون 8 أحرف على الأقل")
+	}
+	if len(password) > 128 {
+		return errors.New("كلمة المرور يجب أن لا تتجاوز 128 حرفاً")
+	}
+	var hasLetter, hasDigit bool
+	for _, ch := range password {
+		if unicode.IsLetter(ch) {
+			hasLetter = true
+		} else if unicode.IsDigit(ch) {
+			hasDigit = true
+		}
+	}
+	if !hasLetter || !hasDigit {
+		return errors.New("كلمة المرور يجب أن تتضمن حروفاً وأرقاماً معاً")
+	}
+	return nil
+}
+
 func (s *LicenseService) Register(name, email, password string) (*domain.UserProfile, error) {
 	email = strings.TrimSpace(strings.ToLower(email))
 	name = strings.TrimSpace(name)
 	if email == "" || password == "" {
 		return nil, errors.New("البريد الإلكتروني وكلمة المرور مطلوبة")
 	}
-	if len(password) < 6 {
-		return nil, errors.New("كلمة المرور يجب أن تكون 6 أحرف على الأقل")
-	}
-	if len(password) > 128 {
-		return nil, errors.New("كلمة المرور يجب أن لا تتجاوز 128 حرفاً")
+	if err := validatePasswordStrength(password); err != nil {
+		return nil, err
 	}
 
 	payload, err := json.Marshal(SupabaseAuthRequest{
@@ -420,8 +441,8 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 	if email == "" || token == "" || newPassword == "" {
 		return nil, errors.New("جميع الحقول مطلوبة")
 	}
-	if len(newPassword) < 6 {
-		return nil, errors.New("كلمة المرور يجب أن تكون 6 أحرف على الأقل")
+	if err := validatePasswordStrength(newPassword); err != nil {
+		return nil, err
 	}
 
 	verifyTypes := []string{"recovery", "magiclink", "signup", "email"}
@@ -461,7 +482,7 @@ func (s *LicenseService) VerifyRecoveryOTP(email, token, newPassword string) (*d
 				lastErr = nil
 				break
 			} else {
-				slog.Error("Failed to decode auth response or missing access token", "error", err, "body", string(body))
+				slog.Error("Failed to decode auth response or missing access token", "error", err, "bytes", len(body))
 			}
 		}
 

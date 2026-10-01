@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
-import { useEditorStore } from "@/lib/editor-store";
-import { toErrorMessage } from "@/lib/wails-error";
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { useEditorStore } from '@/lib/editor-store';
+import { toErrorMessage } from '@/lib/wails-error';
 
 /**
  * 🧭 منطق مصادقة الحساب: دخول/تسجيل/OTP/استعادة كلمة المرور/Google OAuth،
@@ -19,20 +19,20 @@ export function useAuthForms(onAuthenticated: () => void) {
     verifyRecoveryOTP,
   } = useEditorStore.getState();
 
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showOtp, setShowOtp] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
+  const [otpCode, setOtpCode] = useState('');
   const [showRecoveryOtp, setShowRecoveryOtp] = useState(false);
-  const [recoveryOtp, setRecoveryOtp] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [recoveryOtp, setRecoveryOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   // Countdown timer for OTP resend button
   useEffect(() => {
@@ -54,10 +54,10 @@ export function useAuthForms(onAuthenticated: () => void) {
     setError(null);
     try {
       await loginWithGoogle();
-      toast.success("تم تسجيل الدخول بنجاح!");
+      toast.success('تم تسجيل الدخول بنجاح!');
       onAuthenticated();
     } catch (err) {
-      const errMsg = toErrorMessage(err, "فشلت عملية تسجيل الدخول عبر Google.");
+      const errMsg = toErrorMessage(err, 'فشلت عملية تسجيل الدخول عبر Google.');
       setError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -72,10 +72,10 @@ export function useAuthForms(onAuthenticated: () => void) {
     setError(null);
     try {
       await resendOTP(cleanEmail);
-      toast.success("تم إعادة إرسال كود التحقق بنجاح إلى بريدك الإلكتروني.");
+      toast.success('تم إعادة إرسال كود التحقق بنجاح إلى بريدك الإلكتروني.');
       setResendCooldown(60);
     } catch (err) {
-      const errMsg = toErrorMessage(err, "فشل إعادة إرسال رمز التحقق.");
+      const errMsg = toErrorMessage(err, 'فشل إعادة إرسال رمز التحقق.');
       setError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -83,64 +83,90 @@ export function useAuthForms(onAuthenticated: () => void) {
     }
   }, [email, resendCooldown, resendOTP]);
 
-  const handleAuth = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanName = name.trim();
-    const cleanOtp = otpCode.trim();
+  const handleAuth = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+      setError(null);
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanName = name.trim();
+      const cleanOtp = otpCode.trim();
 
-    try {
-      if (showOtp) {
-        await verifyOTP(cleanEmail, cleanOtp);
-        toast.success("تم تأكيد الحساب وتسجيل الدخول بنجاح!");
-        setShowOtp(false);
-        onAuthenticated();
-      } else {
-        let profile;
-        if (authMode === "login") {
-          profile = await loginAccount(cleanEmail, password);
-        } else {
-          profile = await registerAccount(cleanName, cleanEmail, password);
-        }
-
-        if (profile && profile.status === "pending_otp") {
-          setShowOtp(true);
-          toast.info("تم إرسال كود التحقق المكون من 6 أرقام إلى بريدك الإلكتروني.");
-        } else {
-          toast.success("تم تسجيل الدخول بنجاح!");
+      try {
+        if (showOtp) {
+          await verifyOTP(cleanEmail, cleanOtp);
+          toast.success('تم تأكيد الحساب وتسجيل الدخول بنجاح!');
+          setShowOtp(false);
           onAuthenticated();
-        }
-      }
-    } catch (err) {
-      const errMsg = toErrorMessage(err, "فشلت العملية، تحقق من البيانات المدخلة.");
+        } else {
+          let profile;
+          if (authMode === 'login') {
+            profile = await loginAccount(cleanEmail, password);
+          } else {
+            if (password.length < 8) {
+              throw new Error('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+            }
+            const hasLetter = /[a-zA-Z\u0600-\u06FF]/.test(password);
+            const hasDigit = /[0-9]/.test(password);
+            if (!hasLetter || !hasDigit) {
+              throw new Error('كلمة المرور يجب أن تتضمن حروفاً وأرقاماً معاً');
+            }
+            profile = await registerAccount(cleanName, cleanEmail, password);
+          }
 
-      if (errMsg.includes("تأكيد") || errMsg.includes("Email not confirmed") || errMsg.includes("pending_otp")) {
-        setShowOtp(true);
-        setError(null);
-        toast.info("البريد الإلكتروني بحاجة لتأكيد. يرجى إدخال كود التحقق (OTP) الخاص بك.");
-      } else if (errMsg.includes("مسجل بالفعل") || errMsg.includes("already registered")) {
-        setAuthMode("login");
-        setError("هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.");
-        toast.info("هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.");
-      } else if (errMsg.includes("تم إنشاء الحساب بنجاح")) {
-        toast.success(errMsg);
-        setAuthMode("login");
-        setError(null);
-      } else {
-        setError(errMsg);
-        toast.error(errMsg);
+          if (profile && profile.status === 'pending_otp') {
+            setShowOtp(true);
+            toast.info('تم إرسال كود التحقق المكون من 6 أرقام إلى بريدك الإلكتروني.');
+          } else {
+            toast.success('تم تسجيل الدخول بنجاح!');
+            onAuthenticated();
+          }
+        }
+      } catch (err) {
+        const errMsg = toErrorMessage(err, 'فشلت العملية، تحقق من البيانات المدخلة.');
+
+        if (
+          errMsg.includes('تأكيد') ||
+          errMsg.includes('Email not confirmed') ||
+          errMsg.includes('pending_otp')
+        ) {
+          setShowOtp(true);
+          setError(null);
+          toast.info('البريد الإلكتروني بحاجة لتأكيد. يرجى إدخال كود التحقق (OTP) الخاص بك.');
+        } else if (errMsg.includes('مسجل بالفعل') || errMsg.includes('already registered')) {
+          setAuthMode('login');
+          setError('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.');
+          toast.info('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول.');
+        } else if (errMsg.includes('تم إنشاء الحساب بنجاح')) {
+          toast.success(errMsg);
+          setAuthMode('login');
+          setError(null);
+        } else {
+          setError(errMsg);
+          toast.error(errMsg);
+        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [email, name, otpCode, password, showOtp, authMode, loginAccount, registerAccount, verifyOTP, onAuthenticated]);
+    },
+    [
+      email,
+      name,
+      otpCode,
+      password,
+      showOtp,
+      authMode,
+      loginAccount,
+      registerAccount,
+      verifyOTP,
+      onAuthenticated,
+    ],
+  );
 
   const handleResetPassword = useCallback(async () => {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail) {
-      toast.error("يرجى إدخال البريد الإلكتروني أولاً لإرسال كود الاستعادة.");
+      toast.error('يرجى إدخال البريد الإلكتروني أولاً لإرسال كود الاستعادة.');
       return;
     }
     setLoading(true);
@@ -148,9 +174,9 @@ export function useAuthForms(onAuthenticated: () => void) {
     try {
       await resetPassword(cleanEmail);
       setShowRecoveryOtp(true);
-      toast.success("تم إرسال كود استعادة كلمة المرور (OTP) إلى بريدك الإلكتروني.");
+      toast.success('تم إرسال كود استعادة كلمة المرور (OTP) إلى بريدك الإلكتروني.');
     } catch (err) {
-      const errMsg = toErrorMessage(err, "فشل إرسال كود استعادة كلمة المرور.");
+      const errMsg = toErrorMessage(err, 'فشل إرسال كود استعادة كلمة المرور.');
       setError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -158,35 +184,41 @@ export function useAuthForms(onAuthenticated: () => void) {
     }
   }, [email, resetPassword]);
 
-  const handleVerifyRecovery = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanOtp = recoveryOtp.trim();
-    const cleanNewPassword = newPassword.trim();
+  const handleVerifyRecovery = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+      setError(null);
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanOtp = recoveryOtp.trim();
+      const cleanNewPassword = newPassword.trim();
 
-    if (!cleanEmail || !cleanOtp || !cleanNewPassword) {
-      toast.error("جميع الحقول مطلوبة.");
-      setLoading(false);
-      return;
-    }
+      if (!cleanEmail || !cleanOtp || !cleanNewPassword) {
+        toast.error('جميع الحقول مطلوبة.');
+        setLoading(false);
+        return;
+      }
 
-    try {
-      await verifyRecoveryOTP(cleanEmail, cleanOtp, cleanNewPassword);
-      toast.success("تم تعيين كلمة المرور الجديدة وتسجيل الدخول بنجاح!");
-      setShowRecoveryOtp(false);
-      setRecoveryOtp("");
-      setNewPassword("");
-      onAuthenticated();
-    } catch (err) {
-      const errMsg = toErrorMessage(err, "فشل تعيين كلمة المرور الجديدة. تحقق من كود الاستعادة والبيانات.");
-      setError(errMsg);
-      toast.error(errMsg);
-    } finally {
-      setLoading(false);
-    }
-  }, [email, recoveryOtp, newPassword, verifyRecoveryOTP, onAuthenticated]);
+      try {
+        await verifyRecoveryOTP(cleanEmail, cleanOtp, cleanNewPassword);
+        toast.success('تم تعيين كلمة المرور الجديدة وتسجيل الدخول بنجاح!');
+        setShowRecoveryOtp(false);
+        setRecoveryOtp('');
+        setNewPassword('');
+        onAuthenticated();
+      } catch (err) {
+        const errMsg = toErrorMessage(
+          err,
+          'فشل تعيين كلمة المرور الجديدة. تحقق من كود الاستعادة والبيانات.',
+        );
+        setError(errMsg);
+        toast.error(errMsg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [email, recoveryOtp, newPassword, verifyRecoveryOTP, onAuthenticated],
+  );
 
   const resetForms = useCallback(() => {
     setLoading(false);
@@ -195,9 +227,9 @@ export function useAuthForms(onAuthenticated: () => void) {
     setError(null);
     setShowOtp(false);
     setShowRecoveryOtp(false);
-    setOtpCode("");
-    setRecoveryOtp("");
-    setNewPassword("");
+    setOtpCode('');
+    setRecoveryOtp('');
+    setNewPassword('');
   }, []);
 
   return {

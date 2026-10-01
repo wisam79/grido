@@ -1,16 +1,10 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/huge-icon";
-import {
-  Warning,
-  EnvelopeSimple,
-  Key,
-  Lock,
-  User,
-} from "@/components/ui/icons";
-import { GoogleIcon } from "@/components/ui/image-icons";
-import type { useAuthForms } from "./use-auth-forms";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/huge-icon';
+import { Warning, EnvelopeSimple, Key, Lock, User } from '@/components/ui/icons';
+import { GoogleIcon } from '@/components/ui/image-icons';
+import type { useAuthForms } from './use-auth-forms';
 
 export type AuthFormsApi = ReturnType<typeof useAuthForms>;
 
@@ -118,7 +112,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
             <span>جاري الحفظ ...</span>
           </>
         ) : (
-          "حفظ وتسجيل الدخول"
+          'حفظ وتسجيل الدخول'
         )}
       </Button>
       <div className="text-center pt-1">
@@ -161,7 +155,9 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
 
       <div className="relative flex py-0.5 items-center">
         <div className="flex-grow border-t border-border/40"></div>
-        <span className="flex-shrink mx-3 text-micro text-muted-foreground font-medium">أو بالبريد الإلكتروني</span>
+        <span className="flex-shrink mx-3 text-micro text-muted-foreground font-medium">
+          أو بالبريد الإلكتروني
+        </span>
         <div className="flex-grow border-t border-border/40"></div>
       </div>
 
@@ -188,9 +184,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                 dir="ltr"
               />
             </div>
-            <p className="text-xs text-muted-foreground text-center">
-              تم إرسال الكود إلى {email}
-            </p>
+            <p className="text-xs text-muted-foreground text-center">تم إرسال الكود إلى {email}</p>
 
             <Button
               type="submit"
@@ -203,7 +197,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                   <span>جاري تأكيد الكود ...</span>
                 </>
               ) : (
-                "تأكيد الكود والدخول"
+                'تأكيد الكود والدخول'
               )}
             </Button>
 
@@ -221,7 +215,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                 ) : resendCooldown > 0 ? (
                   `إعادة الإرسال بعد (${resendCooldown} ث)`
                 ) : (
-                  "إعادة إرسال الكود"
+                  'إعادة إرسال الكود'
                 )}
               </button>
 
@@ -239,7 +233,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
           </div>
         ) : (
           <>
-            {authMode === "register" && (
+            {authMode === 'register' && (
               <div className="space-y-1">
                 <Label className="text-xs font-bold text-foreground/90">الاسم الكامل</Label>
                 <div className="relative">
@@ -273,7 +267,12 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-bold text-foreground/90">كلمة المرور</Label>
-                {authMode === "login" && (
+                {authMode === 'register' && (
+                  <span className="text-[10px] text-muted-foreground font-sans">
+                    8 أحرف على الأقل (حروف وأرقام)
+                  </span>
+                )}
+                {authMode === 'login' && (
                   <button
                     type="button"
                     onClick={handleResetPassword}
@@ -305,12 +304,14 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
               {loading ? (
                 <>
                   <Spinner className="w-4 h-4" size={16} />
-                  <span>{authMode === "login" ? "جاري تسجيل الدخول ..." : "جاري إنشاء الحساب ..."}</span>
+                  <span>
+                    {authMode === 'login' ? 'جاري تسجيل الدخول ...' : 'جاري إنشاء الحساب ...'}
+                  </span>
                 </>
-              ) : authMode === "login" ? (
-                "تسجيل الدخول"
+              ) : authMode === 'login' ? (
+                'تسجيل الدخول'
               ) : (
-                "إنشاء حساب"
+                'إنشاء حساب'
               )}
             </Button>
           </>
@@ -320,10 +321,10 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
       <div className="text-center pt-2 border-t border-border/30">
         <button
           type="button"
-          onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
+          onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
           className="text-xs text-primary hover:underline font-bold cursor-pointer"
         >
-          {authMode === "login" ? "إنشاء حساب" : "لديك حساب؟ تسجيل الدخول"}
+          {authMode === 'login' ? 'إنشاء حساب' : 'لديك حساب؟ تسجيل الدخول'}
         </button>
       </div>
     </>

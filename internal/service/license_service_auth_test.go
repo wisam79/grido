@@ -102,6 +102,31 @@ func TestLicenseService_Register(t *testing.T) {
 	}
 }
 
+func TestLicenseService_PasswordPolicyValidation(t *testing.T) {
+	svc, ts := setupTestService(t)
+	defer ts.Close()
+
+	// 1. كلمة مرور قصيرة (< 8 أحرف)
+	if _, err := svc.Register("Test", "test@example.com", "pass1"); err == nil || !strings.Contains(err.Error(), "8 أحرف") {
+		t.Errorf("Expected error for short password, got %v", err)
+	}
+
+	// 2. حروف فقط دون أرقام
+	if _, err := svc.Register("Test", "test@example.com", "passwordonly"); err == nil || !strings.Contains(err.Error(), "حروفاً وأرقاماً") {
+		t.Errorf("Expected error for letters-only password, got %v", err)
+	}
+
+	// 3. أرقام فقط دون حروف
+	if _, err := svc.Register("Test", "test@example.com", "12345678"); err == nil || !strings.Contains(err.Error(), "حروفاً وأرقاماً") {
+		t.Errorf("Expected error for digits-only password, got %v", err)
+	}
+
+	// 4. استعادة الحساب بكلمة مرور لا تلبي المعايير
+	if _, err := svc.VerifyRecoveryOTP("test@example.com", "123456", "short"); err == nil || !strings.Contains(err.Error(), "8 أحرف") {
+		t.Errorf("Expected error for weak recovery password, got %v", err)
+	}
+}
+
 func TestLicenseService_Login(t *testing.T) {
 	svc, ts := setupTestService(t)
 	defer ts.Close()

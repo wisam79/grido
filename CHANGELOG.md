@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > **تصحيح توثيقي (سبتمبر 2026 — مثبت من الكود):** إدخال `v1.2.11` ادعى أن `build.ps1` يفشل عند غياب `MODAL_AI_KEY`، لكن `build.ps1` يبني بمفتاح فارغ دون فشل. يُترك الإدخال الأصلي لسجل التاريخ. **تحديث 2026-09-25:** أُزيلت آلية `MODAL_AI_KEY` من البناء والكود بالكامل (تدقيق `C-02`) — لم يعد للموضوع وجود.
 
 ## [Unreleased]
+### Changed (هيكلة منظومة الوكلاء القياسية ودستور المشروع — 2026-10-01)
+
+- **هيكلة قواعد الوكلاء المعيارية وفق أصول Antigravity:** حل مشكلة اقتطاع التعليمات (Truncation Bug) حيث كان `AGENTS.md` يبلغ 74KB ويقتطع مفسر الذكاء الاصطناعي 51KB منه؛ تم تجزئة القواعد قطاعياً إلى 6 ملفات تحت `.agents/rules/` بترويسات YAML Frontmatter (`trigger: glob` و `trigger: always_on`) وكل ملف بحجم أقل من 19KB:
+  - `.agents/rules/architecture-governance.md` (`trigger: always_on`): الاستراتيجية المعمارية، حظر إعادة البناء، وبوابة التوثيق.
+  - `.agents/rules/ui-ux-fluent.md`: معايير Fluent 2، الأيقونات، المساطر، هرمية الألوان، والحد الأدنى لأهداف النقر (`h-7 w-7`).
+  - `.agents/rules/konva-canvas-engine.md`: طبقة السحب الرسمية، كاش الفلاتر، وتصدير الطباعة 300+ DPI.
+  - `.agents/rules/backend-wails-runtime.md`: رنتايم Wails v3، تكامل Go، عزل الـ SVG بـ CSP sandbox، امتدادات الميديا الصريحة، ومهلة AI 200s.
+  - `.agents/rules/database-security-authz.md`: سياسات RLS، أمان `SECURITY DEFINER`، فحص `IS NOT TRUE`، ونموذج الجلسة الواحدة النشطة (Last-Wins).
+  - `.agents/rules/quality-cicd-release.md`: مثبت NSIS، ترفيع الإصدارات، التوقيع الرقمي، ومراقبة الـ CI الإلزامية.
+- **دستور المشروع الأعلى (`.agents/AGENTS.md`):** إعادة صياغة الدستور بحجم مركز (<11KB) مع استيفاء كافة المهارات المعمارية الـ 20 وثوابت الأمان المطلقة.
+- **تخصيص الوكلاء الفرعيين (`.agents/agents/`):** إنشاء 4 وكلاء فرعيين تخصصيين قابلين للاستدعاء المستقل:
+  - `canvas_qa_auditor`: تدقيق محرك الرسم Konva والرياضيات الطباعية 300+ DPI.
+  - `backend_wails_architect`: معمارية Wails v3 وخدمات Go والكتابة الذرية والأمان.
+  - `supabase_security_officer`: أمان قاعدة البيانات و RLS والجلسات وهجرات MCP.
+  - `docs_release_gatekeeper`: حراسة بوابات التوثيق وفحص المراجع الصارم وإدارة خط سير الإصدارات.
+- **مسارات العمل التشغيلية القياسية (`.agents/workflows/`):** توفير 4 أدلة تشغيل معيارية (SOPs): `release-deployment.md`، `database-migration.md`، `security-audit.md`، و `canvas-export-qa.md`.
+- **قالب خادم MCP (`.agents/mcp_config.json`):** تجهيز ملف تكوين قياسي جاهز لربط خادم Supabase MCP.
+- **بوابة التوثيق الآلية (`scripts/docs-gate.mjs`):** توسيع فحص المراجع الصارم `--strict-refs` ليشمل كافة ملفات `.agents/rules/` و `.agents/agents/` و `.agents/workflows/` مع إدراجها جميعاً في جرد `docs/DOCUMENTATION_MAP.md`.
+
 ### Added (الجلسة الواحدة النشطة — Last-Wins — 2026-10-01)
 
 - **إدارة جلسة واحدة لكل حساب بلا أي ربط بالعتاد:** `supabase/migrations/20261001000000_single_active_session.sql` ينشئ `public.user_sessions` (سطر واحد لكل مستخدم، `user_id` مفتاح أساسي) بسياسة RLS deny-all (`FOR ALL USING (false)`) ودالتَي `SECURITY DEFINER`: `claim_session` (UPSERT غير مشروط — **آخر دخول يفوز**) و`check_session` (تُرجع `active/superseded` وتحدّث `last_seen_at`)، مع `GRANT EXECUTE` لـ`authenticated` فقط.
@@ -22,8 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **RV-5 (P1) عزل SVG المخزّن عند الخدمة:** `main.go` يخدم `.svg` الآن بترويسة `Content-Security-Policy: sandbox` مع `Content-Disposition: inline` للحفاظ على المعاينة، وخريطة `Content-Type` صريحة لـ`.avif/.heic/.jxl`.
 - **RV-7 (P1) مواءمة مهلة AI:** مهلة `use-ai-enhance.ts` من `120s` إلى `200s` مع رسالة تحذير الحصة، ومسار الفشل وُجّه للوجر الموحّد بدل `console.error`.
 - **P2 صيغ حديثة وعقد RPC:** امتدادات `AVIF/HEIC/JXL` صريحة في `media_service.go`، و`"p_check_only": False` صراحة في `modal_ai/upscaler.py`.
-- **تقوية كلمات المرور محلياً:** `supabase/config.toml` صار `8` مع `letters_digits` (المحلي فقط؛ الإنتاج من لوحة Auth).
-- **بوابات منع عودة:** 4 تأكيدات كود جديدة في `scripts/docs-gate.mjs` (صار 20 تأكيداً).
+- **مواءمة سياسة كلمات المرور (8 أحرف + حروف وأرقام):** تطبيق `validatePasswordStrength` في `auth_flows.go` (في التسجيل واستعادة الحساب)، والتحقق المسبق في `use-auth-forms.ts`، مع تلميح إرشادي في `auth-tab-content.tsx` ومواءمة ترجمة الخطأ في `supabase_client.go`، واختبارات `TestLicenseService_PasswordPolicyValidation`، وتأكيد كودي رقم 24 في `docs-gate.mjs`.
+- **ترقية حزمة `react-router` في `admin-web`:** إغلاق الثغرة الأمنية العالية `GHSA-qwww-vcr4-c8h2` عبر `npm audit fix` وتصفير ثغرات الاعتماديات في لوحة الإدارة بنسبة 100%.
+- **تطهير سجلات أخطاء الاستعادة:** استبدال طباعة نص الاستجابة الخام في `auth_flows.go` بتسجيل حجم البيانات لمنع تسريب التوكنات إلى ملفات السجل عند أخطاء فك التشفير.
+- **مواءمة إعدادات لوحة الإدارة:** تحديث قيم الحصص اليومية وتنبيه المسودة في `AdminDashboard.tsx` إلى القيم الخادمية الحقيقية (5/15/50).
+- **بوابات منع عودة:** 5 تأكيدات كود جديدة في `scripts/docs-gate.mjs` (صار 24 تأكيداً).
 
 ### Deferred (يحتاج قرار مالك — لم يُلمس)
 

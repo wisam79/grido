@@ -155,7 +155,10 @@ function checkInventory(mapText) {
     'SECURITY_NOTICE.md',
     'BUGS_REPORT.md',
     '.agents/AGENTS.md',
+    '.agents/rules/',
     '.agents/skills/',
+    '.agents/agents/',
+    '.agents/workflows/',
   ];
   for (const entry of readdirSync(docsDir, { withFileTypes: true })) {
     if (entry.isDirectory()) required.push(`docs/${entry.name}/`);
@@ -234,12 +237,34 @@ function checkSkillReferences(mapText) {
     .filter(Boolean);
 
   const targets = [join(ROOT, '.agents', 'AGENTS.md')];
+  const rulesDir = join(ROOT, '.agents', 'rules');
+  if (existsSync(rulesDir)) {
+    for (const entry of readdirSync(rulesDir, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+      targets.push(join(rulesDir, entry.name));
+    }
+  }
   const skillsDir = join(ROOT, '.agents', 'skills');
   if (existsSync(skillsDir)) {
     for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       const skillFile = join(skillsDir, entry.name, 'SKILL.md');
       if (existsSync(skillFile)) targets.push(skillFile);
+    }
+  }
+  const agentsDir = join(ROOT, '.agents', 'agents');
+  if (existsSync(agentsDir)) {
+    for (const entry of readdirSync(agentsDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const agentFile = join(agentsDir, entry.name, 'agent.md');
+      if (existsSync(agentFile)) targets.push(agentFile);
+    }
+  }
+  const workflowsDir = join(ROOT, '.agents', 'workflows');
+  if (existsSync(workflowsDir)) {
+    for (const entry of readdirSync(workflowsDir, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+      targets.push(join(workflowsDir, entry.name));
     }
   }
 
@@ -442,6 +467,15 @@ const CODE_ASSERTIONS = [
     label: 'P2 — حمولة تسجيل Modal تمرر p_check_only صراحة',
     file: 'modal_ai/upscaler.py',
     mustContain: ['"p_check_only": False'],
+  },
+  {
+    label: 'P2 — سياسة كلمات المرور: 8 أحرف + حروف وأرقام معاً (محلية وخادمة)',
+    file: 'internal/service/auth_flows.go',
+    mustContain: [
+      'func validatePasswordStrength(password string) error',
+      'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
+      'كلمة المرور يجب أن تتضمن حروفاً وأرقاماً معاً',
+    ],
   },
 ];
 

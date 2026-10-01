@@ -123,8 +123,8 @@ export default function AdminDashboard() {
 
   // System Settings States
   const [freeAiLimit, setFreeAiLimit] = useState(5);
-  const [proAiLimit, setProAiLimit] = useState(50);
-  const [enterpriseAiLimit, setEnterpriseAiLimit] = useState(500);
+  const [proAiLimit, setProAiLimit] = useState(15);
+  const [enterpriseAiLimit, setEnterpriseAiLimit] = useState(50);
   const [systemNotice, setSystemNotice] = useState('أهلاً بك في استوديو Grido — يتم استعادة الجلسة والخدمات السحابية تلقائياً.');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -187,8 +187,8 @@ export default function AdminDashboard() {
     const savedMaint = localStorage.getItem('grido_sys_maint');
     if (savedMaint) setMaintenanceMode(savedMaint === 'true');
     setFreeAiLimit(parseStoredLimit(localStorage.getItem('grido_free_ai_limit'), 5));
-    setProAiLimit(parseStoredLimit(localStorage.getItem('grido_pro_ai_limit'), 50));
-    setEnterpriseAiLimit(parseStoredLimit(localStorage.getItem('grido_ent_ai_limit'), 500));
+    setProAiLimit(parseStoredLimit(localStorage.getItem('grido_pro_ai_limit'), 15));
+    setEnterpriseAiLimit(parseStoredLimit(localStorage.getItem('grido_ent_ai_limit'), 50));
   }, []);
 
   const clearSession = () => {
@@ -1500,7 +1500,7 @@ export default function AdminDashboard() {
 
             <div className="flex items-start gap-2 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-200 leading-relaxed font-sans">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-300" />
-              <span>هذه الإعدادات تُحفظ في متصفحك فقط ولا تصل إلى Supabase أو التطبيق — الحدود الفعلية للذكاء الاصطناعي خادمية (free ≤ 20، pro ≤ 200، enterprise ≤ 1000 طلب/يوم).</span>
+              <span>هذه الإعدادات تُحفظ في متصفحك فقط ولا تصل إلى Supabase أو التطبيق — الحدود الفعلية للذكاء الاصطناعي خادمية (free ≤ 5، pro ≤ 15، enterprise ≤ 50 طلب/يوم).</span>
             </div>
 
             <form onSubmit={handleSaveSettings} className="space-y-6 max-w-2xl">

@@ -219,7 +219,7 @@ func parseSupabaseError(body []byte) string {
 	case strings.Contains(lower, "over_email_send_rate_limit") || strings.Contains(lower, "rate limit exceeded") || strings.Contains(lower, "too many requests"):
 		return "تم تجاوز حد إرسال الطلبات المسموح به. يرجى الانتظار بضع دقائق ثم المحاولة مجدداً"
 	case strings.Contains(lower, "password should be at least") || strings.Contains(lower, "weak_password"):
-		return "كلمة المرور يجب أن تكون 6 أحرف على الأقل"
+		return "كلمة المرور يجب أن تكون 8 أحرف على الأقل وتتضمن حروفاً وأرقاماً"
 	case strings.Contains(lower, "token has expired") || strings.Contains(lower, "token is invalid") || strings.Contains(lower, "invalid_grant") || strings.Contains(lower, "otp_expired"):
 		return "رمز التحقق غير صحيح أو منتهي الصلاحية"
 	case strings.Contains(lower, "signup_disabled"):
