@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from 'vitest';
 import {
   fuseDetections,
   mlGraceBudgetMs,
@@ -9,8 +9,8 @@ import {
   ML_GRACE_MS,
   ML_GRACE_LOW_CONFIDENCE_MS,
   ML_GRACE_WEAK_MS,
-} from "../core/detect-fusion";
-import { Point, DetectionResult, DetectedDocument } from "../core/types";
+} from '../core/detect-fusion';
+import { Point, DetectionResult, DetectedDocument } from '../core/types';
 
 function rect(x: number, y: number, w: number, h: number): Point[] {
   return [
@@ -21,19 +21,19 @@ function rect(x: number, y: number, w: number, h: number): Point[] {
   ];
 }
 
-function doc(corners: Point[], confidence: number, id = "doc-1"): DetectedDocument {
+function doc(corners: Point[], confidence: number, id = 'doc-1'): DetectedDocument {
   return {
     id,
     corners,
     confidence,
-    label: "مستند 1",
-    aspectType: "free",
+    label: 'مستند 1',
+    aspectType: 'free',
   };
 }
 
 function classicalResult(
   docs: DetectedDocument[],
-  method: DetectionResult["method"] = "js"
+  method: DetectionResult['method'] = 'js',
 ): DetectionResult {
   const primary = docs[0];
   return {
@@ -48,154 +48,176 @@ function mlResult(corners: Point[], score: number): DetectionResult {
   return {
     corners,
     confidence: score,
-    method: "scanic",
+    method: 'scanic',
     documents: [doc(corners, score)],
   };
 }
 
-describe("detect-fusion — ML verifier fusion", () => {
-  it("uses the configured thresholds", () => {
+describe('detect-fusion — ML verifier fusion', () => {
+  it('uses the configured thresholds', () => {
     expect(ML_CONFIRM_IOU).toBeGreaterThan(ML_MISS_IOU);
     expect(ML_ADD_MIN_SCORE).toBeGreaterThan(ML_STANDALONE_MIN);
     expect(ML_GRACE_MS).toBeGreaterThan(0);
   });
 
-  it("returns classical untouched when ML is null or invalid", () => {
+  it('returns classical untouched when ML is null or invalid', () => {
     const classical = classicalResult([doc(rect(10, 10, 100, 100), 0.6)]);
-    expect(fuseDetections(null, classical, "single")).toBe(classical);
+    expect(fuseDetections(null, classical, 'single')).toBe(classical);
     expect(
-      fuseDetections({ corners: [], confidence: 0.9, method: "scanic", documents: [] }, classical, "single")
+      fuseDetections(
+        { corners: [], confidence: 0.9, method: 'scanic', documents: [] },
+        classical,
+        'single',
+      ),
     ).toBe(classical);
   });
 
-  it("replaces default inset with confident ML (classical found nothing real)", () => {
+  it('replaces default inset with confident ML (classical found nothing real)', () => {
     const inset = rect(10, 10, 180, 180);
-    const classical = classicalResult([doc(inset, 0.5)], "default");
+    const classical = classicalResult([doc(inset, 0.5)], 'default');
     const mlQuad = rect(40, 30, 120, 140);
-    const fused = fuseDetections(mlResult(mlQuad, 0.8), classical, "single");
+    const fused = fuseDetections(mlResult(mlQuad, 0.8), classical, 'single');
 
-    expect(fused.method).toBe("scanic");
+    expect(fused.method).toBe('scanic');
     expect(fused.confidence).toBeCloseTo(0.8, 5);
     expect(fused.corners).toEqual(mlQuad);
   });
 
-  it("keeps default inset when ML is weaker than the standalone gate", () => {
-    const classical = classicalResult([doc(rect(10, 10, 180, 180), 0.5)], "default");
-    const fused = fuseDetections(mlResult(rect(40, 30, 120, 140), ML_STANDALONE_MIN - 0.01), classical, "single");
-    expect(fused).toBe(classical);
-  });
-
-  it("keeps a strong default-inset detection when ML scores lower", () => {
-    const classical = classicalResult([doc(rect(5, 5, 190, 190), 0.7)], "default");
-    const fused = fuseDetections(mlResult(rect(40, 30, 120, 140), 0.6), classical, "single");
-    expect(fused).toBe(classical);
-  });
-
-  it("confirm: boosts matching classical candidate without touching its geometry", () => {
-    const quad = rect(40, 30, 160, 120);
-    const classical = classicalResult([doc(quad, 0.5)]);
-    const fused = fuseDetections(mlResult(rect(42, 32, 156, 116), 0.9), classical, "multi");
-
-    // blended = 0.5*0.4 + 0.9*0.6 = 0.74
-    expect(fused.confidence).toBeCloseTo(0.74, 5);
-    expect(fused.corners).toBe(quad);
-    expect(fused.method).toBe("js");
-    expect(fused.documents).toHaveLength(1);
-  });
-
-  it("confirm: does not lower confidence when ML is weaker", () => {
-    const quad = rect(40, 30, 160, 120);
-    const classical = classicalResult([doc(quad, 0.9)]);
-    const fused = fuseDetections(mlResult(quad, 0.5), classical, "single");
-    expect(fused).toBe(classical);
-  });
-
-  it("rescue: adds an ML document the classical path missed (multi keeps both)", () => {
-    const classicalQuad = rect(140, 25, 80, 130);
-    const classical = classicalResult([doc(classicalQuad, 0.6)]);
-    const mlQuad = rect(20, 25, 80, 130);
-    const fused = fuseDetections(mlResult(mlQuad, 0.75), classical, "multi");
-
-    expect(fused.documents).toHaveLength(2);
-    expect(fused.documents![0].corners).toEqual(mlQuad); // 0.75 > 0.6 → ML أولاً
-    expect(fused.documents![1].corners).toEqual(classicalQuad);
-    expect(fused.method).toBe("scanic");
-    expect(fused.documents!.map((d) => d.id)).toEqual(["doc-1", "doc-2"]);
-    expect(fused.documents![1].label).toContain("مستند 2");
-  });
-
-  it("rescue: single mode slices to the top-confidence document", () => {
-    const classical = classicalResult([doc(rect(140, 25, 80, 130), 0.6)]);
-    const fused = fuseDetections(mlResult(rect(20, 25, 80, 130), 0.75), classical, "single");
-    expect(fused.documents).toHaveLength(1);
-    expect(fused.confidence).toBeCloseTo(0.75, 5);
-  });
-
-  it("rescue: blocked below ML_ADD_MIN_SCORE", () => {
-    const classical = classicalResult([doc(rect(140, 25, 80, 130), 0.5)]);
+  it('keeps default inset when ML is weaker than the standalone gate', () => {
+    const classical = classicalResult([doc(rect(10, 10, 180, 180), 0.5)], 'default');
     const fused = fuseDetections(
-      mlResult(rect(20, 25, 80, 130), ML_ADD_MIN_SCORE - 0.01),
+      mlResult(rect(40, 30, 120, 140), ML_STANDALONE_MIN - 0.01),
       classical,
-      "multi"
+      'single',
     );
     expect(fused).toBe(classical);
   });
 
-  it("rescue: blocked when ML quad is contained in an existing candidate (same doc, tighter bounds)", () => {
+  it('keeps a strong default-inset detection when ML scores lower', () => {
+    const classical = classicalResult([doc(rect(5, 5, 190, 190), 0.7)], 'default');
+    const fused = fuseDetections(mlResult(rect(40, 30, 120, 140), 0.6), classical, 'single');
+    expect(fused).toBe(classical);
+  });
+
+  it('confirm: adopts ML geometry when ML is significantly more confident', () => {
+    const classicalQuad = rect(40, 30, 160, 120);
+    const mlQuad = rect(42, 32, 156, 116);
+    const classical = classicalResult([doc(classicalQuad, 0.5)]);
+    const fused = fuseDetections(mlResult(mlQuad, 0.9), classical, 'multi');
+
+    // ML أقوى (0.9 > 0.5+0.05) ⇒ أركان ML تُعتمد هندسياً
+    expect(fused.confidence).toBeCloseTo(0.9, 5);
+    expect(fused.corners).toEqual(mlQuad);
+    expect(fused.method).toBe('scanic');
+    expect(fused.documents).toHaveLength(1);
+  });
+
+  it('confirm: keeps classical geometry when ML is only slightly better', () => {
+    const classicalQuad = rect(40, 30, 160, 120);
+    const classical = classicalResult([doc(classicalQuad, 0.7)]);
+    // ML 0.72 > 0.7 but NOT > 0.7+0.05 ⇒ لا يُعتمد هندسياً، رفع ثقة فقط
+    const fused = fuseDetections(mlResult(rect(42, 32, 156, 116), 0.72), classical, 'multi');
+
+    // blended = 0.7*0.4 + 0.72*0.6 = 0.712
+    expect(fused.confidence).toBeCloseTo(0.712, 5);
+    expect(fused.corners).toBe(classicalQuad);
+    expect(fused.method).toBe('js');
+    expect(fused.documents).toHaveLength(1);
+  });
+
+  it('confirm: does not lower confidence when ML is weaker', () => {
+    const quad = rect(40, 30, 160, 120);
+    const classical = classicalResult([doc(quad, 0.9)]);
+    const fused = fuseDetections(mlResult(quad, 0.5), classical, 'single');
+    expect(fused).toBe(classical);
+  });
+
+  it('rescue: adds an ML document the classical path missed (multi keeps both)', () => {
+    const classicalQuad = rect(140, 25, 80, 130);
+    const classical = classicalResult([doc(classicalQuad, 0.6)]);
+    const mlQuad = rect(20, 25, 80, 130);
+    const fused = fuseDetections(mlResult(mlQuad, 0.75), classical, 'multi');
+
+    expect(fused.documents).toHaveLength(2);
+    expect(fused.documents![0].corners).toEqual(mlQuad); // 0.75 > 0.6 → ML أولاً
+    expect(fused.documents![1].corners).toEqual(classicalQuad);
+    expect(fused.method).toBe('scanic');
+    expect(fused.documents!.map((d) => d.id)).toEqual(['doc-1', 'doc-2']);
+    expect(fused.documents![1].label).toContain('مستند 2');
+  });
+
+  it('rescue: single mode slices to the top-confidence document', () => {
+    const classical = classicalResult([doc(rect(140, 25, 80, 130), 0.6)]);
+    const fused = fuseDetections(mlResult(rect(20, 25, 80, 130), 0.75), classical, 'single');
+    expect(fused.documents).toHaveLength(1);
+    expect(fused.confidence).toBeCloseTo(0.75, 5);
+  });
+
+  it('rescue: blocked below ML_ADD_MIN_SCORE', () => {
+    const classical = classicalResult([doc(rect(140, 25, 80, 130), 0.5)]);
+    const fused = fuseDetections(
+      mlResult(rect(20, 25, 80, 130), ML_ADD_MIN_SCORE - 0.01),
+      classical,
+      'multi',
+    );
+    expect(fused).toBe(classical);
+  });
+
+  it('rescue: blocked when ML quad is contained in an existing candidate (same doc, tighter bounds)', () => {
     const classicalQuad = rect(10, 10, 200, 200);
     const classical = classicalResult([doc(classicalQuad, 0.55)]);
-    const fused = fuseDetections(mlResult(rect(50, 50, 60, 60), 0.8), classical, "multi");
+    const fused = fuseDetections(mlResult(rect(50, 50, 60, 60), 0.8), classical, 'multi');
     expect(fused).toBe(classical);
   });
 
-  it("ambiguous overlap (between MISS and CONFIRM) leaves everything unchanged", () => {
+  it('ambiguous overlap (between MISS and CONFIRM) leaves everything unchanged', () => {
     // IoU = 70*100 / 130*100 ≈ 0.538 — داخل النطاق المشوش
     const classical = classicalResult([doc(rect(0, 0, 100, 100), 0.6)]);
-    const fused = fuseDetections(mlResult(rect(30, 0, 100, 100), 0.9), classical, "multi");
+    const fused = fuseDetections(mlResult(rect(30, 0, 100, 100), 0.9), classical, 'multi');
     expect(fused).toBe(classical);
   });
 
-  it("multi-mode confirm keeps all candidates and re-sorts by boosted confidence", () => {
+  it('multi-mode confirm: adopts ML geometry and re-sorts by confidence', () => {
     const docA = rect(10, 10, 60, 80);
     const docB = rect(100, 10, 60, 80);
-    const classical = classicalResult([doc(docA, 0.5, "doc-1"), doc(docB, 0.6, "doc-2")]);
-    // ML يؤكد A — ثقة A تصبح 0.74 فتتقدم على B (0.6)
-    const fused = fuseDetections(mlResult(docA, 0.9), classical, "multi");
+    const classical = classicalResult([doc(docA, 0.5, 'doc-1'), doc(docB, 0.6, 'doc-2')]);
+    // ML يؤكد A بثقة 0.9 > 0.5+0.05 ⇒ أركان ML تُعتمد وثقتها 0.9 فتتقدم على B (0.6)
+    const fused = fuseDetections(mlResult(docA, 0.9), classical, 'multi');
 
     expect(fused.documents).toHaveLength(2);
     expect(fused.documents![0].corners).toEqual(docA);
-    expect(fused.documents![0].confidence).toBeCloseTo(0.74, 5);
-    expect(fused.documents!.map((d) => d.id)).toEqual(["doc-1", "doc-2"]);
-    expect(fused.method).toBe("js");
+    expect(fused.documents![0].confidence).toBeCloseTo(0.9, 5);
+    expect(fused.documents!.map((d) => d.id)).toEqual(['doc-1', 'doc-2']);
+    expect(fused.method).toBe('scanic');
   });
 
   it("mode 'multi' keeps all rescued documents (no single-mode slice)", () => {
     const classical = classicalResult([doc(rect(140, 25, 80, 130), 0.6)]);
-    const fused = fuseDetections(mlResult(rect(20, 25, 80, 130), 0.75), classical, "multi");
+    const fused = fuseDetections(mlResult(rect(20, 25, 80, 130), 0.75), classical, 'multi');
     expect(fused.documents).toHaveLength(2);
   });
 
-  describe("mlGraceBudgetMs — ميزانية انتظار متدرّجة", () => {
-    it("يعطي الميزانية الكاملة عندما يفشل الكلاسيكي (نتيجة افتراضية)", () => {
-      const fallback = classicalResult([doc(rect(0, 0, 100, 100), 0.5)], "default");
+  describe('mlGraceBudgetMs — ميزانية انتظار متدرّجة', () => {
+    it('يعطي الميزانية الكاملة عندما يفشل الكلاسيكي (نتيجة افتراضية)', () => {
+      const fallback = classicalResult([doc(rect(0, 0, 100, 100), 0.5)], 'default');
       expect(mlGraceBudgetMs(fallback)).toBe(ML_GRACE_WEAK_MS);
       expect(mlGraceBudgetMs(null)).toBe(ML_GRACE_WEAK_MS);
     });
 
-    it("يعطي ميزانية متوسطة عند ثقة كلاسيكية دون عتبة الثقة العالية", () => {
+    it('يعطي ميزانية متوسطة عند ثقة كلاسيكية دون عتبة الثقة العالية', () => {
       const medium = classicalResult([doc(rect(10, 10, 80, 80), 0.65)]);
       expect(mlGraceBudgetMs(medium)).toBe(ML_GRACE_LOW_CONFIDENCE_MS);
     });
 
-    it("يعطي أقصر ميزانية عند ثقة كلاسيكية عالية", () => {
+    it('يعطي أقصر ميزانية عند ثقة كلاسيكية عالية', () => {
       const strong = classicalResult([doc(rect(10, 10, 80, 80), 0.82)]);
       expect(mlGraceBudgetMs(strong)).toBe(ML_GRACE_MS);
     });
 
-    it("الميزانية لا تتناقص مع ضعف النتيجة الكلاسيكية", () => {
+    it('الميزانية لا تتناقص مع ضعف النتيجة الكلاسيكية', () => {
       const strong = classicalResult([doc(rect(10, 10, 80, 80), 0.9)]);
       const weak = classicalResult([doc(rect(10, 10, 80, 80), 0.45)]);
-      const fallback = classicalResult([doc(rect(10, 10, 80, 80), 0.3)], "default");
+      const fallback = classicalResult([doc(rect(10, 10, 80, 80), 0.3)], 'default');
       expect(mlGraceBudgetMs(fallback)).toBeGreaterThanOrEqual(mlGraceBudgetMs(weak));
       expect(mlGraceBudgetMs(weak)).toBeGreaterThan(mlGraceBudgetMs(strong));
     });

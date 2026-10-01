@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { CanvasDimensionsPanel } from "./general/canvas-dimensions-panel";
-import { GridColumnsPanel } from "./general/grid-columns-panel";
-import { StudioCanvasColorDeck } from "./shared-controls";
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
-import { FluentSection } from "@/components/ui/blocks";
-import { PaintBrush } from "@/components/ui/icons";
-import { PAPER_BACKGROUND_EVENTS } from "@/lib/ui/paper-background";
+import { useEffect, useRef, useState } from 'react';
+import { CanvasDimensionsPanel } from './general/canvas-dimensions-panel';
+import { GridColumnsPanel } from './general/grid-columns-panel';
+import { StudioCanvasColorDeck } from './shared-controls';
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+import { FluentSection } from '@/components/ui/blocks';
+import { PaintBrush } from '@/components/ui/icons';
+import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 
 export function GeneralSettings() {
   const {
@@ -24,7 +24,7 @@ export function GeneralSettings() {
       setBackgroundGradientColor2: state.setBackgroundGradientColor2,
       backgroundGradientAngle: state.backgroundGradientAngle,
       setBackgroundGradientAngle: state.setBackgroundGradientAngle,
-    }))
+    })),
   );
 
   // أداة خلفية الورقة الوحيدة في التطبيق: تُفتح وتُمرَّر إليها عند طلبها من
@@ -36,7 +36,7 @@ export function GeneralSettings() {
     const focusPaperBackground = () => {
       setPaperOpen(true);
       requestAnimationFrame(() => {
-        paperSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        paperSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     };
     window.addEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
@@ -49,7 +49,7 @@ export function GeneralSettings() {
 
       <FluentSection
         ref={paperSectionRef}
-        icon={<PaintBrush className="w-3.5 h-3.5 text-primary" weight="duotone" />}
+        icon={<PaintBrush className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
         title="خلفية الورقة"
         subtitle="لون الورقة وتدرجها — تُطبَّق على الكانفاس ومعاينة الطباعة"
         collapsible

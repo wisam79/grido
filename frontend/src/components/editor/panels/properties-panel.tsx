@@ -1,79 +1,90 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import type { CanvasElement } from "@/lib/store/types";
-import { GeneralSettings } from "../properties/general-settings";
-import { ElementProperties } from "../properties/element-properties";
-import { SlotProperties } from "../properties/slot-properties";
-import { CollageSettings } from "../properties/collage-settings";
-import { PanelShell } from "./panel-shell";
-import { SlidersHorizontal, FileText, CaretRight, Image as ImageIcon, TextAa, Shapes, SquaresFour } from "@/components/ui/icons";
-import { useShallow } from "zustand/react/shallow";
-import { FluentSegmentedControl } from "@/components/ui/blocks";
-import { PAPER_BACKGROUND_EVENTS } from "@/lib/ui/paper-background";
+import React, { useCallback, useEffect, useState } from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import type { CanvasElement } from '@/lib/store/types';
+import { GeneralSettings } from '../properties/general-settings';
+import { ElementProperties } from '../properties/element-properties';
+import { SlotProperties } from '../properties/slot-properties';
+import { CollageSettings } from '../properties/collage-settings';
+import { PanelShell } from './panel-shell';
+import {
+  SlidersHorizontal,
+  FileText,
+  CaretRight,
+  Image as ImageIcon,
+  TextAa,
+  Shapes,
+  SquaresFour,
+} from '@/components/ui/icons';
+import { useShallow } from 'zustand/react/shallow';
+import { FluentSegmentedControl } from '@/components/ui/blocks';
+import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 
 export interface PropertiesPanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
   onCollapse?: () => void;
 }
 
-export const PropertiesPanel = React.memo(function PropertiesPanel({ onCollapse }: PropertiesPanelProps) {
-  const {
-    mode,
-    elements,
-    slots,
-    selectedId,
-    selectedIds,
-    updateSlot,
-  } = useEditorStore(useShallow((state) => ({
-    mode: state.mode,
-    elements: state.elements,
-    slots: state.slots,
-    selectedId: state.selectedId,
-    selectedIds: state.selectedIds,
-    updateSlot: state.updateSlot,
-  })));
+export const PropertiesPanel = React.memo(function PropertiesPanel({
+  onCollapse,
+}: PropertiesPanelProps) {
+  const { mode, elements, slots, selectedId, selectedIds, updateSlot } = useEditorStore(
+    useShallow((state) => ({
+      mode: state.mode,
+      elements: state.elements,
+      slots: state.slots,
+      selectedId: state.selectedId,
+      selectedIds: state.selectedIds,
+      updateSlot: state.updateSlot,
+    })),
+  );
 
-  const [generalTab, setGeneralTab] = useState<"collage" | "canvas">("collage");
+  const [generalTab, setGeneralTab] = useState<'collage' | 'canvas'>('collage');
 
   // 🎯 انتقال موحّد إلى أداة خلفية الورقة: إلغاء التحديد (لأن الإعدادات العامة
   // ومنها الورقة تظهر فقط بلا تحديد) ثم تحويل تبويب الإعدادات إلى «الورقة»
   useEffect(() => {
     const focusPaperBackground = () => {
       useEditorStore.getState().selectElement(null);
-      setGeneralTab("canvas");
+      setGeneralTab('canvas');
     };
     window.addEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
     return () => window.removeEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
   }, []);
 
   const activeElementId = selectedId || (selectedIds.length > 0 ? selectedIds[0] : null);
-  const selectedElement = mode === "single" ? elements.find((e) => e.id === activeElementId) : undefined;
-  const selectedSlot = mode === "collage" ? slots.find((s) => s.id === selectedId) : undefined;
+  const selectedElement =
+    mode === 'single' ? elements.find((e) => e.id === activeElementId) : undefined;
+  const selectedSlot = mode === 'collage' ? slots.find((s) => s.id === selectedId) : undefined;
 
   // استنباط هوية اللوح ديناميكياً وفق العنصر النشط
-  let panelIcon = <SlidersHorizontal className="w-4 h-4 text-primary" weight="duotone" />;
-  let panelTitle = "الخصائص";
+  let panelIcon = <SlidersHorizontal className="w-4 h-4 text-muted-foreground" weight="duotone" />;
+  let panelTitle = 'الخصائص';
 
   if (selectedElement) {
-    if (selectedElement.type === "image") {
-      panelIcon = <ImageIcon className="w-4 h-4 text-primary" weight="duotone" />;
-      panelTitle = "خصائص الصورة";
-    } else if (selectedElement.type === "text") {
-      panelIcon = <TextAa className="w-4 h-4 text-primary" weight="duotone" />;
-      panelTitle = "خصائص النص";
+    if (selectedElement.type === 'image') {
+      panelIcon = <ImageIcon className="w-4 h-4 text-muted-foreground" weight="duotone" />;
+      panelTitle = 'خصائص الصورة';
+    } else if (selectedElement.type === 'text') {
+      panelIcon = <TextAa className="w-4 h-4 text-muted-foreground" weight="duotone" />;
+      panelTitle = 'خصائص النص';
     } else {
-      panelIcon = <Shapes className="w-4 h-4 text-primary" weight="duotone" />;
-      panelTitle = "خصائص الشكل";
+      panelIcon = <Shapes className="w-4 h-4 text-muted-foreground" weight="duotone" />;
+      panelTitle = 'خصائص الشكل';
     }
   } else if (selectedSlot) {
-    panelIcon = <SquaresFour className="w-4 h-4 text-primary" weight="duotone" />;
-    panelTitle = "خصائص الخلية";
-  } else if (mode === "collage") {
-    panelIcon = generalTab === "collage" ? <SquaresFour className="w-4 h-4 text-primary" weight="duotone" /> : <FileText className="w-4 h-4 text-primary" weight="duotone" />;
-    panelTitle = generalTab === "collage" ? "إعدادات الكولاج" : "إعدادات الورقة";
+    panelIcon = <SquaresFour className="w-4 h-4 text-muted-foreground" weight="duotone" />;
+    panelTitle = 'خصائص الخلية';
+  } else if (mode === 'collage') {
+    panelIcon =
+      generalTab === 'collage' ? (
+        <SquaresFour className="w-4 h-4 text-muted-foreground" weight="duotone" />
+      ) : (
+        <FileText className="w-4 h-4 text-muted-foreground" weight="duotone" />
+      );
+    panelTitle = generalTab === 'collage' ? 'إعدادات الكولاج' : 'إعدادات الورقة';
   } else {
-    panelIcon = <FileText className="w-4 h-4 text-primary" weight="duotone" />;
-    panelTitle = "إعدادات الورقة";
+    panelIcon = <FileText className="w-4 h-4 text-muted-foreground" weight="duotone" />;
+    panelTitle = 'إعدادات الورقة';
   }
 
   const handleUpdateElement = useCallback((id: string, patch: Partial<Record<string, unknown>>) => {
@@ -86,7 +97,7 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({ onCollapse 
 
     // التحديد المتعدد: الخيارات الأسلوبية تُبثّ لجميع المحددين (لون، خط، مرشحات، استدارة...)،
     // أما الإحداثيات والقفل فتُطبَّق على العنصر المعروض وحده — وإلا تتداخل العناصر بعضها فوق بعض
-    const styleExcluded = new Set(["x", "y", "locked"]);
+    const styleExcluded = new Set(['x', 'y', 'locked']);
     const stylePatch: Record<string, unknown> = {};
     const positionalPatch: Record<string, unknown> = {};
     for (const key of Object.keys(patch)) {
@@ -97,10 +108,12 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({ onCollapse 
       // في كل أدوات التعديل (إصلاح Bug#19)
       const { elements: freshElements } = useEditorStore.getState();
       const broadcastIds = selectedIds.filter(
-        (sid) => !freshElements.find((e) => e.id === sid)?.locked
+        (sid) => !freshElements.find((e) => e.id === sid)?.locked,
       );
       if (broadcastIds.length > 0) {
-        updateElements(broadcastIds.map((sid) => ({ id: sid, patch: stylePatch as Partial<CanvasElement> })));
+        updateElements(
+          broadcastIds.map((sid) => ({ id: sid, patch: stylePatch as Partial<CanvasElement> })),
+        );
       }
     }
     if (Object.keys(positionalPatch).length > 0) {
@@ -114,16 +127,18 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({ onCollapse 
       title={panelTitle}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
-      collapseIcon={<CaretRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" weight="bold" />}
+      collapseIcon={
+        <CaretRight
+          className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all"
+          weight="bold"
+        />
+      }
       className="bg-transparent select-none"
     >
       <div className="space-y-3">
         {/* خصائص العنصر المحدد */}
         {selectedElement && (
-          <ElementProperties 
-            element={selectedElement} 
-            onUpdate={handleUpdateElement} 
-          />
+          <ElementProperties element={selectedElement} onUpdate={handleUpdateElement} />
         )}
 
         {/* خصائص الخلية المحددة (كولاج) */}
@@ -134,23 +149,27 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({ onCollapse 
         {/* إعدادات عامة */}
         {!selectedElement && !selectedSlot && (
           <div className="space-y-3">
-            {mode === "collage" ? (
+            {mode === 'collage' ? (
               <>
-                <FluentSegmentedControl<"collage" | "canvas">
+                <FluentSegmentedControl<'collage' | 'canvas'>
                   layoutId="properties-general-tabs"
                   value={generalTab}
                   onChange={setGeneralTab}
                   size="sm"
                   options={[
-                    { id: "collage", label: "الكولاج", icon: <SlidersHorizontal className="w-4 h-4" weight="regular" /> },
-                    { id: "canvas", label: "الورقة", icon: <FileText className="w-4 h-4" weight="regular" /> },
+                    {
+                      id: 'collage',
+                      label: 'الكولاج',
+                      icon: <SlidersHorizontal className="w-4 h-4" weight="regular" />,
+                    },
+                    {
+                      id: 'canvas',
+                      label: 'الورقة',
+                      icon: <FileText className="w-4 h-4" weight="regular" />,
+                    },
                   ]}
                 />
-                {generalTab === "collage" ? (
-                  <CollageSettings />
-                ) : (
-                  <GeneralSettings />
-                )}
+                {generalTab === 'collage' ? <CollageSettings /> : <GeneralSettings />}
               </>
             ) : (
               <GeneralSettings />
@@ -161,4 +180,3 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({ onCollapse 
     </PanelShell>
   );
 });
-

@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { Slider } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
 
 export interface FluentSliderFieldProps {
   label: React.ReactNode;
@@ -17,7 +17,7 @@ export interface FluentSliderFieldProps {
   disabled?: boolean;
   className?: string;
   valueFormatter?: (val: number) => string;
-  layout?: "stacked" | "inline";
+  layout?: 'stacked' | 'inline';
   labelWidth?: string;
 }
 
@@ -28,7 +28,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   min,
   max,
   step = 1,
-  unit = "",
+  unit = '',
   onChange,
   onCommit,
   onDragStart,
@@ -36,7 +36,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   disabled = false,
   className,
   valueFormatter,
-  layout = "stacked",
+  layout = 'stacked',
   labelWidth,
 }: FluentSliderFieldProps) {
   const [localValue, setLocalValue] = useState(value);
@@ -107,12 +107,12 @@ export const FluentSliderField = React.memo(function FluentSliderField({
     // 🛡️ صمام أمان عالمي: رصد pointerup على مستوى window بالكامل
     // لضمان إنهاء حالة السحب حتى لو حرر المستخدم الفأرة خارج إطار السلايدر
     const handleGlobalPointerUp = () => {
-      window.removeEventListener("pointerup", handleGlobalPointerUp);
-      window.removeEventListener("pointercancel", handleGlobalPointerUp);
+      window.removeEventListener('pointerup', handleGlobalPointerUp);
+      window.removeEventListener('pointercancel', handleGlobalPointerUp);
       handleDragEnd();
     };
-    window.addEventListener("pointerup", handleGlobalPointerUp);
-    window.addEventListener("pointercancel", handleGlobalPointerUp);
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    window.addEventListener('pointercancel', handleGlobalPointerUp);
   }, [handleDragEnd]);
 
   const handleChange = useCallback(
@@ -135,7 +135,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
         }, 400);
       }
     },
-    [flushPending]
+    [flushPending],
   );
 
   const handleValueCommit = useCallback(
@@ -144,7 +144,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       latestValRef.current = commitVal;
       handleDragEnd();
     },
-    [handleDragEnd]
+    [handleDragEnd],
   );
 
   useEffect(() => {
@@ -160,26 +160,26 @@ export const FluentSliderField = React.memo(function FluentSliderField({
 
   const displayVal = valueFormatter
     ? valueFormatter(localValue)
-    : `${localValue}${unit ? (unit === "%" || unit === "°" ? unit : ` ${unit}`) : ""}`;
+    : `${localValue}${unit ? (unit === '%' || unit === '°' ? unit : ` ${unit}`) : ''}`;
 
-  if (layout === "inline") {
+  if (layout === 'inline') {
     return (
       <div
         className={cn(
-          "flex items-center gap-2 select-none h-7",
-          disabled && "opacity-50 pointer-events-none",
-          className
+          'flex items-center gap-2 select-none h-7',
+          disabled && 'opacity-50 pointer-events-none',
+          className,
         )}
       >
         <div
           id={labelId}
           className={cn(
-            "flex items-center gap-1.5 text-xs font-semibold text-foreground/85 shrink-0 select-none",
-            labelWidth || "w-16"
+            'flex items-center gap-1.5 text-xs font-semibold text-foreground/85 shrink-0 select-none',
+            labelWidth || 'w-16',
           )}
-          title={typeof label === "string" ? label : undefined}
+          title={typeof label === 'string' ? label : undefined}
         >
-          {icon && <span className="text-primary shrink-0">{icon}</span>}
+          {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
           <span className="truncate">{label}</span>
         </div>
 
@@ -210,14 +210,14 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   return (
     <div
       className={cn(
-        "space-y-1.5 select-none",
-        disabled && "opacity-50 pointer-events-none",
-        className
+        'space-y-1.5 select-none',
+        disabled && 'opacity-50 pointer-events-none',
+        className,
       )}
     >
       <div className="flex justify-between items-center text-xs">
         <div id={labelId} className="flex items-center gap-1.5 font-semibold text-foreground/90">
-          {icon && <span className="text-primary shrink-0">{icon}</span>}
+          {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
           <span>{label}</span>
         </div>
         <span
@@ -245,4 +245,4 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   );
 });
 
-FluentSliderField.displayName = "FluentSliderField";
+FluentSliderField.displayName = 'FluentSliderField';

@@ -1,7 +1,7 @@
-import React from "react";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { FluentKbd } from "./fluent-kbd";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { FluentKbd } from './fluent-kbd';
+import { cn } from '@/lib/utils';
 
 export interface FluentCapsuleButtonProps {
   icon: React.ReactNode;
@@ -38,12 +38,13 @@ export const FluentCapsuleButton = React.memo(function FluentCapsuleButton({
           data-testid={testId}
           aria-label={label}
           className={cn(
-            "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer",
-            "focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent",
+            'w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer',
+            'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent',
+            // تفعيل محايد — الأزرق حصري للأوامر التعبوية
             active
-              ? "text-primary hover:bg-primary/10"
-              : "text-muted-foreground/75 hover:text-foreground hover:bg-muted/60",
-            className
+              ? 'text-foreground bg-accent-active'
+              : 'text-muted-foreground/75 hover:text-foreground hover:bg-muted/60',
+            className,
           )}
         >
           {icon}

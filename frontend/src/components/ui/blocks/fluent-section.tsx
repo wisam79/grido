@@ -1,9 +1,8 @@
-import React, { useState } from "react";
-import { cn } from "@/lib/utils";
-import { CaretDown } from "@/components/ui/icons";
+import React, { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { CaretDown } from '@/components/ui/icons';
 
-export interface FluentSectionProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+export interface FluentSectionProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   icon?: React.ReactNode;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
@@ -36,7 +35,7 @@ export const FluentSection = React.memo(
       onOpenChange,
       ...props
     },
-    ref
+    ref,
   ) {
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
     const isControlled = controlledOpen !== undefined;
@@ -55,8 +54,8 @@ export const FluentSection = React.memo(
       <div
         ref={ref}
         className={cn(
-          "rounded-xl border border-border bg-card p-3 shadow-xs fluent-specular transition-all duration-150",
-          className
+          'rounded-xl border border-border bg-card p-3 shadow-xs fluent-specular transition-all duration-150',
+          className,
         )}
         {...props}
       >
@@ -66,41 +65,38 @@ export const FluentSection = React.memo(
           onKeyDown={
             collapsible
               ? (e) => {
-                  if (e.key === "Enter" || e.key === " ") {
+                  if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     handleToggle();
                   }
                 }
               : undefined
           }
-          role={collapsible ? "button" : undefined}
+          role={collapsible ? 'button' : undefined}
           tabIndex={collapsible ? 0 : undefined}
           aria-expanded={collapsible ? isOpen : undefined}
           className={cn(
-            "flex items-center justify-between gap-2 select-none",
-            isOpen ? "pb-2.5 mb-2.5 border-b border-border/50" : "",
+            'flex items-center justify-between gap-2 select-none',
+            isOpen ? 'pb-2.5 mb-2.5 border-b border-border/50' : '',
             collapsible &&
-              "cursor-pointer group/sec-header hover:opacity-90 transition-opacity rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-            headerClassName
+              'cursor-pointer group/sec-header hover:opacity-90 transition-opacity rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            headerClassName,
           )}
         >
           <div className="flex items-center gap-2 min-w-0">
             {icon && (
-              <div className="p-1 rounded-md bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20 shrink-0 flex items-center justify-center">
+              // شارة الأيقونة محايدة — الأزرق محجوز للإجراءات لا للتزيين
+              <div className="p-1 rounded-md bg-muted/80 dark:bg-white/5 text-muted-foreground border border-border/60 shrink-0 flex items-center justify-center">
                 {icon}
               </div>
             )}
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-foreground truncate">
-                  {title}
-                </span>
+                <span className="text-xs font-bold text-foreground truncate">{title}</span>
                 {badge}
               </div>
               {subtitle && (
-                <p className="text-micro text-muted-foreground truncate mt-0.5">
-                  {subtitle}
-                </p>
+                <p className="text-micro text-muted-foreground truncate mt-0.5">{subtitle}</p>
               )}
             </div>
           </div>
@@ -121,8 +117,8 @@ export const FluentSection = React.memo(
                 <CaretDown
                   weight="bold"
                   className={cn(
-                    "size-3.5 shrink-0 transition-transform duration-200",
-                    !isOpen && "rotate-90 rtl:-rotate-90"
+                    'size-3.5 shrink-0 transition-transform duration-200',
+                    !isOpen && 'rotate-90 rtl:-rotate-90',
                   )}
                 />
               </div>
@@ -132,14 +128,13 @@ export const FluentSection = React.memo(
 
         {/* Section Body Content */}
         {isOpen && (
-          <div className={cn("space-y-2.5 animate-in fade-in duration-150", contentClassName)}>
+          <div className={cn('space-y-2.5 animate-in fade-in duration-150', contentClassName)}>
             {children}
           </div>
         )}
       </div>
     );
-  })
+  }),
 );
 
-FluentSection.displayName = "FluentSection";
-
+FluentSection.displayName = 'FluentSection';

@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,12 +7,12 @@ import {
   DialogDescription,
   DialogFooter,
   DialogCloseButton,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/huge-icon";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/huge-icon';
+import { cn } from '@/lib/utils';
 
-export type FluentModalSize = "sm" | "md" | "lg" | "xl" | "2xl" | "full";
+export type FluentModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
 
 export interface FluentModalProps {
   open: boolean;
@@ -38,18 +38,18 @@ export interface FluentModalProps {
 }
 
 const SIZE_CLASSES: Record<FluentModalSize, string> = {
-  sm: "w-[92vw] sm:max-w-[480px]",
-  md: "w-[92vw] sm:max-w-[620px]",
-  lg: "w-[94vw] sm:max-w-[840px]",
-  xl: "w-[96vw] sm:max-w-[1060px]",
-  "2xl": "w-[96vw] sm:max-w-[1280px]",
-  full: "w-[98vw] sm:max-w-[1440px] h-[92vh]",
+  sm: 'w-[92vw] sm:max-w-[480px]',
+  md: 'w-[92vw] sm:max-w-[620px]',
+  lg: 'w-[94vw] sm:max-w-[840px]',
+  xl: 'w-[96vw] sm:max-w-[1060px]',
+  '2xl': 'w-[96vw] sm:max-w-[1280px]',
+  full: 'w-[98vw] sm:max-w-[1440px] h-[92vh]',
 };
 
 export const FluentModal = React.memo(function FluentModal({
   open,
   onOpenChange,
-  size = "md",
+  size = 'md',
   icon,
   title,
   description,
@@ -57,7 +57,7 @@ export const FluentModal = React.memo(function FluentModal({
   headerAction,
   children,
   footer,
-  cancelText = "إلغاء",
+  cancelText = 'إلغاء',
   confirmText,
   confirmIcon,
   onConfirm,
@@ -77,22 +77,22 @@ export const FluentModal = React.memo(function FluentModal({
         dir="rtl"
         showCloseButton={false}
         className={cn(
-          "max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular transition-all duration-150 gap-0",
+          'max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular transition-all duration-150 gap-0',
           SIZE_CLASSES[size],
-          contentClassName
+          contentClassName,
         )}
       >
         {/* Header with integrated title bar and close button */}
         <DialogHeader
           className={cn(
-            "px-6 py-4 border-b border-border/40 bg-muted/20 shrink-0",
-            headerClassName
+            'px-6 py-4 border-b border-border/40 bg-muted/20 shrink-0',
+            headerClassName,
           )}
         >
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               {icon && (
-                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                <div className="w-9 h-9 rounded-xl bg-muted/80 dark:bg-white/5 text-muted-foreground flex items-center justify-center shrink-0 border border-border/60">
                   {icon}
                 </div>
               )}
@@ -119,9 +119,7 @@ export const FluentModal = React.memo(function FluentModal({
         </DialogHeader>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          {children}
-        </div>
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">{children}</div>
 
         {/* Modal Footer */}
         {hasCustomFooter ? (
@@ -129,8 +127,8 @@ export const FluentModal = React.memo(function FluentModal({
         ) : hasDefaultFooter ? (
           <DialogFooter
             className={cn(
-              "px-6 py-3 border-t border-border/40 bg-muted/20 flex items-center justify-end gap-2.5 sm:justify-end shrink-0",
-              footerClassName
+              'px-6 py-3 border-t border-border/40 bg-muted/20 flex items-center justify-end gap-2.5 sm:justify-end shrink-0',
+              footerClassName,
             )}
           >
             <Button
@@ -154,7 +152,7 @@ export const FluentModal = React.memo(function FluentModal({
               {isConfirmLoading ? (
                 <>
                   <Spinner className="w-3.5 h-3.5 animate-spin" />
-                  <span>{confirmLoadingText || "يُعالج ..."}</span>
+                  <span>{confirmLoadingText || 'يُعالج ...'}</span>
                 </>
               ) : (
                 <>
@@ -170,4 +168,4 @@ export const FluentModal = React.memo(function FluentModal({
   );
 });
 
-FluentModal.displayName = "FluentModal";
+FluentModal.displayName = 'FluentModal';

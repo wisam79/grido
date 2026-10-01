@@ -139,7 +139,7 @@ export function CollageAutofillTab() {
             disabled={isPicking}
             title="استيراد مجلد صور"
           >
-            <FolderOpen className="w-4 h-4 text-primary" weight="bold" />
+            <FolderOpen className="w-4 h-4" weight="bold" />
             <span>مجلد كامل</span>
           </Button>
         </div>

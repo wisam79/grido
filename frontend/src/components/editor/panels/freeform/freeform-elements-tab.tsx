@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { FluentSegmentedControl, FluentFilterChips } from '@/components/ui/blocks';
 import { toast } from 'sonner';
 import {
-  Sparkle,
   Plus,
   Stamp,
   Shapes,
@@ -18,6 +17,7 @@ import {
   ArrowRight,
   Calendar,
   Camera,
+  CaretRight,
 } from '@/components/ui/icons';
 import {
   QUICK_SHAPES,
@@ -184,7 +184,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card text-foreground border border-border/60 text-micro font-semibold truncate shadow-2xs font-cairo">
-            <Calendar className="w-3 h-3 text-primary shrink-0" weight="bold" />
+            <Calendar className="w-3 h-3 text-muted-foreground shrink-0" weight="bold" />
             <span className="truncate">تاريخ اليوم</span>
           </div>
         </div>
@@ -422,21 +422,21 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
       {/* 🌟 1. استعراض الشارات والأختام الرسمية بتصميم Fluent 2 المتطور */}
       {activeCategory === 'badges' && (
         <div className="space-y-3">
-          {/* زر الاستوديو الكامل المدمج (32px) وفق معايير Fluent 2 النظيفة */}
+          {/* زر الاستوديو الكامل المدمج (32px) وفق معايير Fluent 2 النظيفة */}{' '}
           <Button
             type="button"
             onClick={handleOpenFullStickerStudio}
-            className="w-full h-8 px-2.5 rounded-md text-xs font-semibold bg-card hover:bg-accent text-foreground border border-border/80 hover:border-primary/50 transition-all flex items-center justify-between shadow-2xs cursor-pointer select-none active:scale-[0.98]"
+            className="w-full h-8 px-2.5 rounded-md text-xs font-semibold bg-card hover:bg-accent text-foreground border border-border/80 transition-all flex items-center justify-between shadow-2xs cursor-pointer select-none active:scale-[0.98]"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <Stamp className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />
+              <Stamp className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
               <span className="truncate">استوديو الملصقات</span>
             </div>
-            <span className="text-micro font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
-              +80 قالب
-            </span>
+            <CaretRight
+              className="w-3.5 h-3.5 text-muted-foreground shrink-0 rtl:rotate-180"
+              weight="bold"
+            />
           </Button>
-
           {/* شريط الكبسولات الذكية للتنقل السريع بين أنواع الملصقات */}
           <FluentFilterChips
             layoutId="freeform-sticker-filter-chips"
@@ -451,7 +451,6 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
               { id: 'frames', label: 'إطارات' },
             ]}
           />
-
           {/* شبكة بطاقات الملصقات المتجاوبة بنسب أبعاد مضبوطة وتفاصيل واضحة */}
           <div className="grid grid-cols-2 gap-2 max-h-[calc(100vh-270px)] overflow-y-auto px-1 custom-scrollbar">
             {displayedStickers.map((tmpl) => {
@@ -465,10 +464,10 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   disabled={isBusy}
                   onClick={() => handleInsertSticker(tmpl)}
                   title={tmpl.name}
-                  className="group relative bg-card/70 hover:bg-card border border-border/60 hover:border-primary/50 rounded-xl p-2 transition-all duration-150 flex flex-col items-center cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50 overflow-hidden"
+                  className="group relative bg-card/70 hover:bg-card border border-border/60 hover:border-foreground/40 rounded-xl p-2 transition-all duration-150 flex flex-col items-center cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50 overflow-hidden"
                 >
                   {/* حاوية المعاينة مع خلفية أكريليك ناعمة تُظهر تفاصيل التصميم بوضوح */}
-                  <div className="w-full h-24 rounded-lg bg-background/80 dark:bg-muted/30 border border-border/30 group-hover:border-primary/30 flex items-center justify-center p-2 relative overflow-hidden transition-all">
+                  <div className="w-full h-24 rounded-lg bg-background/80 dark:bg-muted/30 border border-border/30 group-hover:border-foreground/30 flex items-center justify-center p-2 relative overflow-hidden transition-all">
                     {svg ? (
                       <div
                         className="w-full h-full flex items-center justify-center [&_svg]:max-w-full [&_svg]:max-h-full [&_svg]:w-auto [&_svg]:h-auto transition-transform group-hover:scale-105 duration-200 pointer-events-none drop-shadow-2xs"
@@ -479,14 +478,14 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                     )}
 
                     {/* زر + صغير يظهر عند التحويم لإعطاء إيحاء فوري بالإدراج السريع */}
-                    <span className="absolute bottom-1.5 end-1.5 w-5 h-5 rounded-md bg-primary text-primary-foreground opacity-0 group-hover:opacity-100 transition-all duration-150 flex items-center justify-center shadow-xs scale-90 group-hover:scale-100">
+                    <span className="absolute bottom-1.5 end-1.5 w-5 h-5 rounded-md bg-foreground text-background opacity-0 group-hover:opacity-100 transition-all duration-150 flex items-center justify-center shadow-xs scale-90 group-hover:scale-100">
                       <Plus className="w-3 h-3" weight="bold" />
                     </span>
 
                     {/* حالة التحميل والمعالجة */}
                     {isBusy && (
                       <div className="absolute inset-0 bg-background/85 backdrop-blur-xs flex items-center justify-center rounded-lg">
-                        <span className="text-micro font-bold text-primary animate-pulse">
+                        <span className="text-micro font-bold text-foreground/80 animate-pulse">
                           جاري الإدراج...
                         </span>
                       </div>
@@ -495,7 +494,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
 
                   {/* اسم القالب بسطر واحد مقتضب لمنع الانكسار المشوه */}
                   <span
-                    className="text-xs font-semibold text-foreground/90 mt-1.5 truncate w-full text-center group-hover:text-primary transition-colors"
+                    className="text-xs font-semibold text-foreground/90 mt-1.5 truncate w-full text-center group-hover:text-foreground transition-colors"
                     title={tmpl.name}
                   >
                     {tmpl.name}
@@ -525,30 +524,39 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 key={shape.id}
                 type="button"
                 onClick={() => handleAddShape(shape)}
-                className="group flex items-center gap-2.5 p-2 bg-card hover:bg-accent/40 border border-border/60 hover:border-primary/50 rounded-xl transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="group flex items-center gap-2 p-2 bg-card hover:bg-accent/40 border border-border/60 hover:border-foreground/40 rounded-lg transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform"
-                  style={{ backgroundColor: `${shape.color}15`, color: shape.color }}
-                >
-                  {shape.shape === 'rect' && <Square className="w-4 h-4" weight="bold" />}
-                  {shape.shape === 'ellipse' && <Circle className="w-4 h-4" weight="bold" />}
-                  {shape.shape === 'star' && <Star className="w-4 h-4" weight="fill" />}
-                  {shape.id === 'triangle' && <span className="font-bold text-xs">▲</span>}
-                  {shape.id === 'heart' && <Heart className="w-4 h-4" weight="fill" />}
-                  {shape.id === 'shield' && <Shield className="w-4 h-4" weight="fill" />}
-                  {shape.id === 'diamond' && <Diamond className="w-4 h-4" weight="fill" />}
-                  {shape.id === 'line' && <div className="w-4 h-0.5 bg-current rounded-full" />}
-                  {shape.id === 'hexagon' && <span className="font-bold text-xs">⬡</span>}
-                  {shape.id === 'arrow' && <ArrowRight className="w-4 h-4" weight="bold" />}
-                </div>
-
-                <div className="flex flex-col text-right min-w-0">
-                  <span className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                    {shape.label}
-                  </span>
-                  <span className="text-micro text-muted-foreground/80 truncate">فوري</span>
-                </div>
+                {shape.shape === 'rect' && (
+                  <Square className="w-4 h-4 shrink-0 text-muted-foreground" weight="bold" />
+                )}
+                {shape.shape === 'ellipse' && (
+                  <Circle className="w-4 h-4 shrink-0 text-muted-foreground" weight="bold" />
+                )}
+                {shape.shape === 'star' && (
+                  <Star className="w-4 h-4 shrink-0 text-muted-foreground" weight="fill" />
+                )}
+                {shape.id === 'triangle' && (
+                  <span className="font-bold text-xs shrink-0 text-muted-foreground">▲</span>
+                )}
+                {shape.id === 'heart' && (
+                  <Heart className="w-4 h-4 shrink-0 text-muted-foreground" weight="fill" />
+                )}
+                {shape.id === 'shield' && (
+                  <Shield className="w-4 h-4 shrink-0 text-muted-foreground" weight="fill" />
+                )}
+                {shape.id === 'diamond' && (
+                  <Diamond className="w-4 h-4 shrink-0 text-muted-foreground" weight="fill" />
+                )}
+                {shape.id === 'line' && (
+                  <div className="w-4 h-0.5 bg-muted-foreground rounded-full shrink-0" />
+                )}
+                {shape.id === 'hexagon' && (
+                  <span className="font-bold text-xs shrink-0 text-muted-foreground">⬡</span>
+                )}
+                {shape.id === 'arrow' && (
+                  <ArrowRight className="w-4 h-4 shrink-0 text-muted-foreground" weight="bold" />
+                )}
+                <span className="text-xs font-medium text-foreground truncate">{shape.label}</span>
               </button>
             ))}
           </div>
@@ -558,73 +566,61 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
       {/* ✍️ 3. استعراض النصوص والتنسيقات الجاهزة بتصميم متطور */}
       {activeCategory === 'text' && (
         <div className="space-y-3">
-          {/* 🌟 هرمية العناوين الأساسية السريعة (Hero Typographic 3-Pack) بتصميم مدمج Fluent 2 */}
-          <div className="space-y-1.5 rounded-xl border border-border/60 bg-card/60 p-2 shadow-2xs fluent-specular">
-            <div className="flex items-center justify-between px-0.5 mb-0.5">
-              <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider">
-                العناوين
+          {/* هرمية العناوين السريعة — بلا ترويسة زائدة: الأزرار تكفي */}
+          <div className="grid grid-cols-3 gap-1.5">
+            {/* 1. عنوان رئيسي H1 */}
+            <button
+              type="button"
+              onClick={() => {
+                addTextPreset('heading');
+                toast.success('أُضيف عنوان رئيسي');
+              }}
+              title="عنوان رئيسي عريض"
+              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
+            >
+              <span className="w-5 h-5 rounded-md bg-muted text-foreground flex items-center justify-center shrink-0 font-bold text-micro border border-border/60 font-mono">
+                H1
               </span>
-              <span className="text-micro text-primary font-semibold flex items-center gap-1">
-                <Sparkle className="w-3 h-3" weight="bold" />
-                <span>فوري</span>
+              <span className="text-xs font-bold text-foreground truncate group-hover:text-foreground transition-colors">
+                رئيسي
               </span>
-            </div>
+            </button>
 
-            <div className="grid grid-cols-3 gap-1.5">
-              {/* 1. عنوان رئيسي H1 */}
-              <button
-                type="button"
-                onClick={() => {
-                  addTextPreset('heading');
-                  toast.success('أُضيف عنوان رئيسي');
-                }}
-                title="عنوان رئيسي عريض"
-                className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
-              >
-                <span className="w-5 h-5 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-micro border border-primary/20 font-mono">
-                  H1
-                </span>
-                <span className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                  رئيسي
-                </span>
-              </button>
+            {/* 2. عنوان فرعي H2 */}
+            <button
+              type="button"
+              onClick={() => {
+                addTextPreset('subheading');
+                toast.success('أُضيف عنوان فرعي');
+              }}
+              title="عنوان فرعي (28px)"
+              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
+            >
+              <span className="w-5 h-5 rounded-md bg-muted text-foreground/80 flex items-center justify-center shrink-0 font-bold text-micro border border-border/60 font-mono">
+                H2
+              </span>
+              <span className="text-xs font-semibold text-foreground truncate group-hover:text-foreground transition-colors">
+                فرعي
+              </span>
+            </button>
 
-              {/* 2. عنوان فرعي H2 */}
-              <button
-                type="button"
-                onClick={() => {
-                  addTextPreset('subheading');
-                  toast.success('أُضيف عنوان فرعي');
-                }}
-                title="عنوان فرعي (28px)"
-                className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
-              >
-                <span className="w-5 h-5 rounded-md bg-muted text-foreground/80 flex items-center justify-center shrink-0 font-bold text-micro border border-border/60 font-mono">
-                  H2
-                </span>
-                <span className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                  فرعي
-                </span>
-              </button>
-
-              {/* 3. نص فقرة P */}
-              <button
-                type="button"
-                onClick={() => {
-                  addTextPreset('body');
-                  toast.success('أُضيف نص فقرة');
-                }}
-                title="نص فقرة (18px)"
-                className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-primary/50 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
-              >
-                <span className="w-5 h-5 rounded-md bg-muted/60 text-muted-foreground flex items-center justify-center shrink-0 font-medium text-micro border border-border/40 font-mono">
-                  P
-                </span>
-                <span className="text-xs font-normal text-muted-foreground truncate group-hover:text-foreground transition-colors">
-                  فقرة
-                </span>
-              </button>
-            </div>
+            {/* 3. نص فقرة P */}
+            <button
+              type="button"
+              onClick={() => {
+                addTextPreset('body');
+                toast.success('أُضيف نص فقرة');
+              }}
+              title="نص فقرة (18px)"
+              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-foreground/40 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
+            >
+              <span className="w-5 h-5 rounded-md bg-muted/60 text-muted-foreground flex items-center justify-center shrink-0 font-medium text-micro border border-border/40 font-mono">
+                P
+              </span>
+              <span className="text-xs font-normal text-muted-foreground truncate group-hover:text-foreground transition-colors">
+                فقرة
+              </span>
+            </button>
           </div>
 
           {/* شريط الكبسولات الذكية لتصفية الأنماط والتأثيرات */}
@@ -645,26 +641,22 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 type="button"
                 onClick={() => handleAddText(preset)}
                 title={preset.label}
-                className="group relative w-full bg-card/70 hover:bg-card border border-border/60 hover:border-primary/50 rounded-xl p-2 transition-all duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden text-right"
+                className="group relative w-full bg-card/70 hover:bg-card border border-border/60 hover:border-foreground/40 rounded-xl p-2 transition-all duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden text-right"
               >
                 {/* صندوق المعاينة الحية الواقعية */}
                 <div className="w-full aspect-[16/9] flex items-center justify-center mb-1.5 overflow-hidden rounded-lg">
                   {renderTextPresetPreview(preset)}
                 </div>
 
-                {/* تذييل البطاقة: الاسم والتصنيف وأيقونة الإدراج */}
-                <div className="w-full flex items-center justify-between gap-1 pt-1 border-t border-border/40">
-                  <div className="flex flex-col min-w-0 text-right">
-                    <span className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                      {preset.label}
-                    </span>
-                    <span className="text-micro text-muted-foreground/80 truncate">
-                      {getTextCategoryBadgeLabel(preset.category)}
-                    </span>
-                  </div>
-                  <div className="w-5 h-5 rounded-full bg-muted/80 group-hover:bg-primary group-hover:text-primary-foreground text-muted-foreground flex items-center justify-center shrink-0 transition-all">
-                    <Plus className="w-3 h-3" weight="bold" />
-                  </div>
+                {/* تذييل البطاقة: الاسم + أيقونة إدراج فقط (بلا تصنيف مكرر) */}
+                <div className="w-full flex items-center justify-between gap-1 pt-1">
+                  <span className="text-xs font-medium text-foreground truncate">
+                    {preset.label}
+                  </span>
+                  <Plus
+                    className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground shrink-0"
+                    weight="bold"
+                  />
                 </div>
               </button>
             ))}

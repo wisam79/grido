@@ -156,9 +156,12 @@ export function CollagePaperToolsTab() {
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('grido:open-properties-panel'))}
           title="فتح لوحة الخصائص"
-          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md border border-dashed border-border/70 text-micro text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md border border-dashed border-border/70 text-micro text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
         >
-          <SlidersHorizontal className="w-3.5 h-3.5 shrink-0 text-primary" weight="duotone" />
+          <SlidersHorizontal
+            className="w-3.5 h-3.5 shrink-0 text-muted-foreground"
+            weight="duotone"
+          />
           <span className="flex-1 text-right leading-relaxed">
             سماكة ولون خطوط القص من <b>لوحة الخصائص</b>
           </span>
@@ -196,7 +199,7 @@ export function CollagePaperToolsTab() {
               disabled={copiesPerSheet <= 1}
               title="تقليل النسخ"
               aria-label="تقليل عدد النسخ"
-              className="w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
               −
             </button>
@@ -212,7 +215,7 @@ export function CollagePaperToolsTab() {
               disabled={copiesPerSheet >= 48}
               title="إضافة نسخة"
               aria-label="زيادة عدد النسخ"
-              className="w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
               +
             </button>
@@ -253,12 +256,12 @@ export function CollagePaperToolsTab() {
                 className={cn(
                   'flex items-center gap-2 px-2 py-2 rounded-md border transition-all cursor-pointer select-none active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
                   checked
-                    ? 'bg-primary/10 border-primary/40 text-foreground shadow-2xs'
+                    ? 'bg-accent-active border-border/80 text-foreground shadow-2xs'
                     : 'bg-card/40 border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent/60',
                 )}
               >
                 <GuideIcon
-                  className={cn('w-4 h-4 shrink-0', checked && 'text-primary')}
+                  className={cn('w-4 h-4 shrink-0', checked && 'text-foreground')}
                   weight={checked ? 'duotone' : 'regular'}
                 />
                 <span className="flex-1 text-right text-xs font-semibold truncate">
@@ -268,7 +271,7 @@ export function CollagePaperToolsTab() {
                   aria-hidden="true"
                   className={cn(
                     'w-1.5 h-1.5 rounded-full shrink-0 transition-colors',
-                    checked ? 'bg-primary' : 'bg-border',
+                    checked ? 'bg-foreground' : 'bg-border',
                   )}
                 />
               </button>

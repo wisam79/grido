@@ -1,4 +1,4 @@
-﻿Unicode true
+Unicode true
 
 ####
 ## Wails NSIS Installer Script for Grido Studio
@@ -10,7 +10,7 @@
 
 # Product metadata (source of truth — must mirror the git tag / build.ps1)
 !define INFO_PROJECTNAME "GridoStudio"
-!define INFO_PRODUCTVERSION "1.10.0"
+!define INFO_PRODUCTVERSION "1.10.1"
 !define INFO_COPYRIGHT "© 2026 Grido Studio"
 
 !ifndef WAILS_INSTALL_SCOPE

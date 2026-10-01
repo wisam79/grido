@@ -151,7 +151,7 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
                 className="flex items-center justify-between p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <FloppyDisk className="w-4 h-4 text-primary" weight="duotone" />
+                  <FloppyDisk className="w-4 h-4 text-muted-foreground" weight="duotone" />
                   <span className="font-semibold">حفظ المشروع</span>
                 </div>
                 <span className="text-micro font-mono text-muted-foreground">Ctrl+S</span>

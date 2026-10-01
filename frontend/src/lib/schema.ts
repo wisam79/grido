@@ -28,6 +28,7 @@ export const CanvasElementSchema = z.object({
     .object({
       templateId: z.string(),
       params: z.any(),
+      svg: z.string().optional(),
     })
     .optional(),
 

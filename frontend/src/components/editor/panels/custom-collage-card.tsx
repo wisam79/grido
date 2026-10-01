@@ -300,10 +300,10 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         return {
           id: tool.id,
           label: tool.label,
-          icon: <tool.icon className="w-4 h-4 text-primary" weight="duotone" />,
+          icon: <tool.icon className="w-4 h-4 text-muted-foreground" weight="duotone" />,
           tooltip: tool.title,
           badge: isInUse ? (
-            <span className="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-success ring-2 ring-success/30 animate-pulse" />
           ) : undefined,
         };
       }),
@@ -374,34 +374,16 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         />
       )}
 
-      {/* 3️⃣ تبويب الكولاج الحر بالملم */}
+      {/* 3️⃣ تبويب الكولاج الحر بالملم — سطر واحد وزر، بلا شارات تسويقية */}
       {effectiveTab === 'freeform' && (
-        <div className="p-3.5 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular flex flex-col items-center text-center gap-2.5 animate-in fade-in duration-200">
-          <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shadow-2xs">
-            <MagicWand className="w-5 h-5" weight="duotone" />
-          </div>
-          <span className="font-bold text-xs text-foreground">كولاج حر</span>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 text-micro text-muted-foreground select-none">
-            <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40 font-mono">
-              mm
-            </span>
-            <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40">
-              تحديد متعدد
-            </span>
-            <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40">
-              تعبئة ذكية
-            </span>
-            <span className="px-1.5 py-0.5 rounded bg-muted/60 border border-border/40">
-              تصدير/استيراد
-            </span>
-          </div>
+        <div className="p-3 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular flex flex-col items-center text-center gap-2.5 animate-in fade-in duration-200">
           <p className="text-micro text-muted-foreground leading-relaxed">
-            ارسم شبكتك بالمليمتر: تقسيم، محاذاة، مغناطيس
+            ارسم شبكتك بالمليمتر مع تقسيم ومحاذاة ومغناطيس
           </p>
           <button
             type="button"
             onClick={() => setShowFreeformModal(true)}
-            className="w-full h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none mt-1"
+            className="w-full h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             <MagicWand className="w-3.5 h-3.5" weight="bold" />
             <span>فتح المحرر</span>

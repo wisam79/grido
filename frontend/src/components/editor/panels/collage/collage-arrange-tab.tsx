@@ -354,7 +354,7 @@ export function CollageArrangeTab() {
           onClick={action.onClick}
           className="justify-start text-right"
         >
-          <span className="text-primary shrink-0">{action.icon}</span>
+          <span className="text-muted-foreground shrink-0">{action.icon}</span>
           <span className="truncate">{action.label}</span>
         </Button>
       ))}

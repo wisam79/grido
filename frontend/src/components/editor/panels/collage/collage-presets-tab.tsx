@@ -82,8 +82,8 @@ function StudioPaperThumbnail({
         className={cn(
           'rounded-md relative transition-all duration-200 p-0.5 flex items-center justify-center overflow-hidden',
           active
-            ? 'bg-white dark:bg-card border-2 border-primary shadow-fluent-8 ring-1 ring-primary/40'
-            : 'bg-white dark:bg-card border border-border/80 shadow-2xs group-hover:border-primary/50 group-hover:shadow-xs',
+            ? 'bg-white dark:bg-card border-2 border-foreground/70 shadow-fluent-8 ring-1 ring-foreground/20'
+            : 'bg-white dark:bg-card border border-border/80 shadow-2xs group-hover:border-foreground/50 group-hover:shadow-xs',
         )}
         style={{ width: paperW, height: paperH }}
         dir="ltr"
@@ -303,12 +303,14 @@ export function CollagePresetsTab({
         className={cn(
           'w-full p-2 rounded-xl border text-right transition-colors duration-150 cursor-pointer flex items-center gap-2.5 select-none relative group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none min-h-[58px] fluent-specular',
           isActive
-            ? 'border-primary bg-primary/[0.09] dark:bg-primary/20 text-primary shadow-xs ring-1 ring-primary/40'
-            : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-primary/40 hover:shadow-xs',
+            ? 'border-foreground/70 bg-accent-active text-foreground shadow-xs ring-1 ring-foreground/20'
+            : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-border hover:shadow-xs',
         )}
       >
-        {/* شارة النشاط الزرقاء على الحافة اليمنى */}
-        {isActive && <span className="absolute inset-y-1 right-0 w-1 bg-primary rounded-l-full" />}
+        {/* شارة النشاط المحايدة على الحافة اليمنى */}
+        {isActive && (
+          <span className="absolute inset-y-1 right-0 w-1 bg-foreground/70 rounded-l-full" />
+        )}
 
         {/* المعاينة المصغرة للورقة الحقيقية */}
         <div className="shrink-0 w-9 h-12 flex items-center justify-center">
@@ -318,12 +320,12 @@ export function CollagePresetsTab({
         {/* البيانات النصية للقالب — مساحة كاملة ومريحة للقراءة */}
         <div className="flex-1 min-w-0 flex flex-col items-start gap-0.5 text-right">
           <div className="w-full flex items-center justify-between gap-1.5 min-w-0">
-            <span className="text-xs font-bold text-foreground leading-tight truncate group-hover:text-primary transition-colors">
+            <span className="text-xs font-bold text-foreground leading-tight truncate group-hover:text-foreground transition-colors">
               {preset.title}
             </span>
             <div className="flex items-center gap-1 shrink-0">
               {preset.tag && (
-                <span className="text-micro font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 leading-none">
+                <span className="text-micro font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60 leading-none">
                   {preset.tag}
                 </span>
               )}
@@ -344,7 +346,7 @@ export function CollagePresetsTab({
 
         {/* أيقونة التحديد النشط */}
         {isActive && (
-          <div className="shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-2xs">
+          <div className="shrink-0 w-5 h-5 rounded-full bg-foreground text-background flex items-center justify-center shadow-2xs">
             <Check className="w-3 h-3" weight="bold" />
           </div>
         )}
@@ -365,13 +367,13 @@ export function CollagePresetsTab({
         className={cn(
           'p-2 rounded-xl border text-center transition-colors duration-150 cursor-pointer flex flex-col items-center justify-between select-none relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group min-h-[120px] fluent-specular',
           isActive
-            ? 'border-primary bg-primary/[0.09] dark:bg-primary/20 text-primary shadow-xs ring-1 ring-primary/40'
-            : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-primary/40 hover:shadow-xs hover:-translate-y-0.5',
+            ? 'border-foreground/70 bg-accent-active text-foreground shadow-xs ring-1 ring-foreground/20'
+            : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-border hover:shadow-xs hover:-translate-y-0.5',
         )}
       >
         {/* شارة التحديد النشطة */}
         {isActive && (
-          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-2xs z-10">
+          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 shadow-2xs z-10">
             <Check className="w-2.5 h-2.5" weight="bold" />
           </div>
         )}
@@ -389,7 +391,7 @@ export function CollagePresetsTab({
         {/* الاسم والمقاس بالملم */}
         <div className="w-full flex flex-col items-center mt-1 pt-1.5 border-t border-border/40 min-w-0">
           <div className="flex items-center justify-center gap-1 w-full min-w-0">
-            <span className="text-xs font-bold text-foreground leading-tight truncate group-hover:text-primary transition-colors">
+            <span className="text-xs font-bold text-foreground leading-tight truncate group-hover:text-foreground transition-colors">
               {preset.title}
             </span>
             <span className="text-micro font-mono font-bold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full shrink-0">
@@ -445,10 +447,13 @@ export function CollagePresetsTab({
             >
               <SelectTrigger className="w-full h-8 px-2.5 text-xs font-bold bg-card border-border/80 rounded-md shadow-2xs hover:bg-muted/40 transition-colors cursor-pointer">
                 <div className="flex items-center gap-2 min-w-0 truncate">
-                  <currentCat.icon className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                  <currentCat.icon
+                    className="w-4 h-4 text-muted-foreground shrink-0"
+                    weight="duotone"
+                  />
                   <span className="truncate">{currentCat.label}</span>
                   {currentCat.badgeCount !== undefined && (
-                    <span className="text-micro font-mono font-bold px-1.5 py-0.2 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
+                    <span className="text-micro font-mono font-bold px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground border border-border/60 shrink-0">
                       {currentCat.badgeCount}
                     </span>
                   )}
@@ -468,7 +473,10 @@ export function CollagePresetsTab({
                     >
                       <div className="flex items-center justify-between w-full gap-2 min-w-[170px]">
                         <div className="flex items-center gap-2 min-w-0">
-                          <Icon className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+                          <Icon
+                            className="w-4 h-4 text-muted-foreground shrink-0"
+                            weight="duotone"
+                          />
                           <span className="truncate">{cat.label}</span>
                         </div>
                         {cat.badgeCount !== undefined && (
@@ -528,7 +536,7 @@ export function CollagePresetsTab({
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="text-mini text-primary hover:underline font-bold cursor-pointer"
+              className="text-mini text-foreground hover:underline font-bold cursor-pointer"
             >
               إلغاء البحث
             </button>
@@ -578,8 +586,8 @@ export function CollagePresetsTab({
                           'p-2 rounded-xl border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden',
                           'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                           isActive
-                            ? 'border-primary bg-primary/[0.09] text-primary font-bold shadow-xs ring-1 ring-primary/30'
-                            : 'bg-card border-border/70 hover:bg-muted/40 hover:border-primary/40 hover:shadow-2xs text-foreground',
+                            ? 'border-foreground/70 bg-accent-active text-foreground font-bold shadow-xs ring-1 ring-foreground/20'
+                            : 'bg-card border-border/70 hover:bg-muted/40 hover:border-border hover:shadow-2xs text-foreground',
                         )}
                       >
                         <div className="flex items-center gap-2.5 min-w-0 pr-1">
@@ -605,7 +613,7 @@ export function CollagePresetsTab({
         /* 🎴 قسم القوالب المحفوظة */
         savedTemplates.length === 0 ? (
           <div className="py-7 px-4 rounded-xl border border-dashed border-border/70 bg-card/40 flex flex-col items-center text-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-muted/80 dark:bg-white/5 text-muted-foreground flex items-center justify-center shadow-2xs">
               <FolderSimple className="w-5 h-5" weight="duotone" />
             </div>
             <div className="space-y-0.5">
@@ -622,7 +630,7 @@ export function CollagePresetsTab({
                 onClick={onImportClick}
                 className="mt-1"
               >
-                <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
+                <UploadSimple className="w-3.5 h-3.5" weight="bold" />
                 <span>استيراد قالب JSON</span>
               </Button>
             )}
@@ -644,7 +652,7 @@ export function CollagePresetsTab({
                     onClick={onImportClick}
                     title="استيراد قوالب"
                   >
-                    <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
+                    <UploadSimple className="w-3.5 h-3.5" weight="bold" />
                     <span>استيراد</span>
                   </Button>
                 )}
@@ -656,7 +664,7 @@ export function CollagePresetsTab({
                     onClick={onExportAllClick}
                     title="تصدير القوالب"
                   >
-                    <DownloadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
+                    <DownloadSimple className="w-3.5 h-3.5" weight="bold" />
                     <span>تصدير الكل</span>
                   </Button>
                 )}
@@ -682,12 +690,12 @@ export function CollagePresetsTab({
                       'p-2 rounded-xl border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden',
                       'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                       isActive
-                        ? 'border-primary bg-primary/[0.09] text-primary font-bold shadow-xs ring-1 ring-primary/30'
-                        : 'bg-card border-border/70 hover:bg-muted/40 hover:border-primary/40 hover:shadow-2xs text-foreground',
+                        ? 'border-foreground/70 bg-accent-active text-foreground font-bold shadow-xs ring-1 ring-foreground/20'
+                        : 'bg-card border-border/70 hover:bg-muted/40 hover:border-border hover:shadow-2xs text-foreground',
                     )}
                   >
                     {isActive && (
-                      <span className="absolute inset-y-0 right-0 w-1 bg-primary rounded-l-full" />
+                      <span className="absolute inset-y-0 right-0 w-1 bg-foreground/70 rounded-l-full" />
                     )}
                     <div className="flex items-center gap-2.5 min-w-0 pr-1">
                       <div className="w-9 h-12 shrink-0 flex items-center justify-center">
@@ -700,7 +708,7 @@ export function CollagePresetsTab({
                         <span
                           className={cn(
                             'text-micro font-mono',
-                            isActive ? 'text-primary font-bold' : 'text-muted-foreground',
+                            isActive ? 'text-foreground font-bold' : 'text-muted-foreground',
                           )}
                         >
                           {t.slots}× صور
@@ -736,7 +744,7 @@ export function CollagePresetsTab({
                 {/* ترويسة القسم الأنيقة */}
                 <div className="flex items-center justify-between text-xs font-bold text-foreground/80 px-1 pt-1 select-none border-b border-border/40 pb-1">
                   <div className="flex items-center gap-1.5">
-                    <SectionIcon className="w-3.5 h-3.5 text-primary" weight="duotone" />
+                    <SectionIcon className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
                     <span>{section.title}</span>
                   </div>
                   <span

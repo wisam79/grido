@@ -1,48 +1,46 @@
-import React from "react"
-import { Toaster as Sonner, ToasterProps } from "sonner"
-import {
-  CheckCircle,
-  XCircle,
-  WarningCircle,
-  Info,
-} from "@/components/ui/icons"
-import { Spinner } from "@/components/ui/huge-icon"
+import React from 'react';
+import { Toaster as Sonner, ToasterProps } from 'sonner';
+import { CheckCircle, XCircle, WarningCircle, Info } from '@/components/ui/icons';
+import { Spinner } from '@/components/ui/huge-icon';
 
 const Toaster = ({ offset = 56, ...props }: ToasterProps) => {
-  const theme = typeof window !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light"
+  const theme =
+    typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+      ? 'dark'
+      : 'light';
 
   return (
     <Sonner
       duration={1500}
-      theme={theme as ToasterProps["theme"]}
+      theme={theme as ToasterProps['theme']}
       dir="rtl"
       className="toaster group"
       offset={offset}
       icons={{
-        success: <CheckCircle className="w-4 h-4 text-primary shrink-0" weight="duotone" />,
+        // حالات النتيجة دلالية بألوانها الخاصة (نجاح/خطأ/تحذير) — لا زرقاء هنا
+        success: <CheckCircle className="w-4 h-4 text-success shrink-0" weight="duotone" />,
         error: <XCircle className="w-4 h-4 text-destructive shrink-0" weight="duotone" />,
-        warning: <WarningCircle className="w-4 h-4 text-amber-500 shrink-0" weight="duotone" />,
-        info: <Info className="w-4 h-4 text-primary shrink-0" weight="duotone" />,
-        loading: <Spinner size={16} className="w-4 h-4 text-primary" />,
+        warning: <WarningCircle className="w-4 h-4 text-warning shrink-0" weight="duotone" />,
+        info: <Info className="w-4 h-4 text-muted-foreground shrink-0" weight="duotone" />,
+        loading: <Spinner size={16} className="w-4 h-4 text-muted-foreground" />,
       }}
       toastOptions={{
         classNames: {
           /* التنسيق البصري الموحد (الحبة العائمة) يعيش في index.css — هنا الأصناف الوظيفية فقط */
-          toast:
-            "group toast font-sans transition-all duration-150",
-          title: "text-xs font-medium text-foreground tracking-normal font-sans whitespace-nowrap",
-          description: "text-xs text-muted-foreground font-sans mt-0.5",
+          toast: 'group toast font-sans transition-all duration-150',
+          title: 'text-xs font-medium text-foreground tracking-normal font-sans whitespace-nowrap',
+          description: 'text-xs text-muted-foreground font-sans mt-0.5',
           actionButton:
-            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground group-[.toast]:hover:bg-primary/90 text-xs font-medium px-2.5 py-1 rounded-full transition-colors",
+            'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground group-[.toast]:hover:bg-primary/90 text-xs font-medium px-2.5 py-1 rounded-full transition-colors',
           cancelButton:
-            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:hover:bg-muted/80 text-xs font-medium px-2.5 py-1 rounded-full transition-colors",
+            'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:hover:bg-muted/80 text-xs font-medium px-2.5 py-1 rounded-full transition-colors',
           closeButton:
-            "group-[.toast]:text-muted-foreground/60 group-[.toast]:hover:text-foreground group-[.toast]:border-none group-[.toast]:rounded-full transition-colors p-0.5",
+            'group-[.toast]:text-muted-foreground/60 group-[.toast]:hover:text-foreground group-[.toast]:border-none group-[.toast]:rounded-full transition-colors p-0.5',
         },
       }}
       {...props}
     />
-  )
-}
+  );
+};
 
-export { Toaster }
+export { Toaster };

@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
-import { SidebarSimple } from "@/components/ui/icons";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import React, { useEffect, useRef, useState } from 'react';
+import { SidebarSimple } from '@/components/ui/icons';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 /**
  * PanelShell - غلاف موحد للألواح الجانبية (عمود القوالب / عمود الخصائص)
@@ -37,7 +37,7 @@ export const PanelShell = React.memo(function PanelShell({
   title,
   subtitle,
   onCollapse,
-  collapseTitle = "إخفاء اللوحة",
+  collapseTitle = 'إخفاء اللوحة',
   collapseIcon,
   children,
   footer,
@@ -59,20 +59,16 @@ export const PanelShell = React.memo(function PanelShell({
   }, []);
 
   return (
-    <div className={cn("flex flex-col h-full min-h-0", className)}>
+    <div className={cn('flex flex-col h-full min-h-0', className)}>
       {/* الرأس */}
       <div className="shrink-0 flex items-center gap-2.5 px-3.5 h-12 select-none">
-        <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0 flex items-center justify-center shadow-2xs fluent-specular">
+        <div className="p-1.5 rounded-lg bg-muted/80 dark:bg-white/5 text-muted-foreground shrink-0 flex items-center justify-center shadow-2xs fluent-specular">
           {icon}
         </div>
         <div className="min-w-0 flex-1 leading-tight">
-          <div className="text-sm font-bold text-foreground truncate">
-            {title}
-          </div>
+          <div className="text-sm font-bold text-foreground truncate">{title}</div>
           {subtitle && (
-            <div className="text-xs text-muted-foreground truncate mt-0.5">
-              {subtitle}
-            </div>
+            <div className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</div>
           )}
         </div>
 
@@ -105,9 +101,7 @@ export const PanelShell = React.memo(function PanelShell({
           <div className="absolute inset-x-0 top-0 h-2 pointer-events-none z-10 bg-gradient-to-b from-background/70 to-transparent panel-scroll-hint" />
         )}
         <ScrollArea className="h-full">
-          <div className={cn("p-3 pb-8 font-cairo", bodyClassName)}>
-            {children}
-          </div>
+          <div className={cn('p-3 pb-8 font-cairo', bodyClassName)}>{children}</div>
         </ScrollArea>
       </div>
 
@@ -121,4 +115,4 @@ export const PanelShell = React.memo(function PanelShell({
   );
 });
 
-PanelShell.displayName = "PanelShell";
+PanelShell.displayName = 'PanelShell';

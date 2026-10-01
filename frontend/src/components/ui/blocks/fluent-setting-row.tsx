@@ -1,7 +1,7 @@
-import React from "react";
-import { cn } from "@/lib/utils";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Question } from "@/components/ui/icons";
+import React from 'react';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Question } from '@/components/ui/icons';
 
 export interface FluentSettingRowProps extends React.HTMLAttributes<HTMLDivElement> {
   label: React.ReactNode;
@@ -10,7 +10,7 @@ export interface FluentSettingRowProps extends React.HTMLAttributes<HTMLDivEleme
   icon?: React.ReactNode;
   control?: React.ReactNode;
   children?: React.ReactNode;
-  layout?: "horizontal" | "vertical";
+  layout?: 'horizontal' | 'vertical';
 }
 
 export const FluentSettingRow = React.memo(
@@ -22,20 +22,20 @@ export const FluentSettingRow = React.memo(
       icon,
       control,
       children,
-      layout = "horizontal",
+      layout = 'horizontal',
       className,
       ...props
     },
-    ref
+    ref,
   ) {
     const actionElement = control || children;
 
-    if (layout === "vertical") {
+    if (layout === 'vertical') {
       return (
-        <div ref={ref} className={cn("space-y-1.5", className)} {...props}>
+        <div ref={ref} className={cn('space-y-1.5', className)} {...props}>
           <div className="flex items-center justify-between gap-2 text-xs">
             <div className="flex items-center gap-1.5 font-semibold text-foreground/90">
-              {icon && <span className="text-primary shrink-0">{icon}</span>}
+              {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
               <span>{label}</span>
               {tooltip && (
                 <Tooltip>
@@ -54,9 +54,7 @@ export const FluentSettingRow = React.memo(
                 </Tooltip>
               )}
             </div>
-            {description && (
-              <span className="text-micro text-muted-foreground">{description}</span>
-            )}
+            {description && <span className="text-micro text-muted-foreground">{description}</span>}
           </div>
           {actionElement}
         </div>
@@ -67,8 +65,8 @@ export const FluentSettingRow = React.memo(
       <div
         ref={ref}
         className={cn(
-          "flex items-center justify-between gap-3 py-1 text-xs select-none",
-          className
+          'flex items-center justify-between gap-3 py-1 text-xs select-none',
+          className,
         )}
         {...props}
       >
@@ -105,7 +103,7 @@ export const FluentSettingRow = React.memo(
         {actionElement && <div className="shrink-0 flex items-center">{actionElement}</div>}
       </div>
     );
-  })
+  }),
 );
 
-FluentSettingRow.displayName = "FluentSettingRow";
+FluentSettingRow.displayName = 'FluentSettingRow';

@@ -97,15 +97,16 @@ const RailToolButton = React.memo(function RailToolButton({
             'group h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer relative',
             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
             isActive
-              ? 'text-primary'
+              ? 'text-foreground'
               : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
           )}
         >
-          {/* حبة النشط — Fluent 2 مسطحة: تعبئة زرقاء هادئة وحدود رقيقة بلا تدرج */}
+          {/* حبة النشط — محايدة مثل ويندوز 11: بطاقة فاتحة بحد رقيق بلا أي لون،
+              فالأزرق محجوز للأوامر التعبوية لا لحالة التبويب */}
           {isActive && (
             <motion.span
               layoutId={pillLayoutId}
-              className="absolute inset-0 bg-primary/10 dark:bg-primary/15 rounded-lg border border-primary/25"
+              className="absolute inset-0 bg-accent-active rounded-lg border border-border/80 shadow-2xs"
               transition={{ type: 'spring', stiffness: 500, damping: 35 }}
             />
           )}
@@ -127,16 +128,6 @@ const RailToolButton = React.memo(function RailToolButton({
           {isInUse && (
             <span
               className="absolute bottom-1 end-1 w-1.5 h-1.5 rounded-full bg-success ring-2 ring-sidebar pointer-events-none z-20"
-              aria-hidden="true"
-            />
-          )}
-
-          {/* المؤشر الجانبي النشط — شريط رقيق ينتقل بسلاسة بين التبويبات */}
-          {isActive && (
-            <motion.span
-              layoutId={`${pillLayoutId}-bar`}
-              className="absolute -start-1.5 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-e-full z-10"
-              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               aria-hidden="true"
             />
           )}
@@ -263,7 +254,7 @@ const PaletteToolItem = React.memo(function PaletteToolItem({
       <span
         className={cn(
           'w-7 h-7 shrink-0 rounded-lg flex items-center justify-center',
-          isActive ? 'bg-primary/20 text-primary' : 'bg-muted/70 text-muted-foreground',
+          isActive ? 'bg-accent-active text-foreground' : 'bg-muted/70 text-muted-foreground',
         )}
       >
         <ToolIcon className="w-4 h-4" weight="duotone" />
@@ -443,7 +434,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                     'h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isLauncherOpen
-                      ? 'text-primary bg-primary/10 border border-primary/25'
+                      ? 'text-foreground bg-accent-active border border-border/80'
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
                   )}
                 >
@@ -528,13 +519,13 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                 'h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                 isZenMode
-                  ? 'text-primary bg-primary/10 border border-primary/25'
+                  ? 'text-foreground bg-accent-active border border-border/80'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
               )}
             >
               {/* نفس أيقونة «وضع التركيز» في كبسولة الكانفاس: عين مفتوحة/مغلقة */}
               {isZenMode ? (
-                <EyeSlash className="size-5 text-primary" weight="fill" />
+                <EyeSlash className="size-5" weight="fill" />
               ) : (
                 <Eye className="size-5" weight="regular" />
               )}

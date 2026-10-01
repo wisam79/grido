@@ -6,7 +6,7 @@ import {
   DetectionMode,
   STACKED_SPLIT_MIN_RATIO,
   STACKED_SPLIT_MAX_RATIO,
-} from "./types";
+} from './types';
 import {
   rgbaToGrayscale,
   fastBoxBlur,
@@ -18,8 +18,8 @@ import {
   computeMultiChannelGradient,
   applyMorphologicalGradient,
   applyCannyNmsHysteresis,
-} from "./fast-vision";
-import { computePolygonArea, findConnectedContours, convexHull } from "./contour-tracer";
+} from './fast-vision';
+import { computePolygonArea, findConnectedContours, convexHull } from './contour-tracer';
 import {
   sortCornerPoints,
   approxPolyDP,
@@ -32,7 +32,7 @@ import {
   computeQuadOverlapStats,
   fitRobustQuadLinesRANSAC,
   evaluateVanishingPointPhysics,
-} from "./quad-geometry";
+} from './quad-geometry';
 import {
   computeQuadEdgeGradient,
   computeEdgeGradientAlongLine,
@@ -43,12 +43,12 @@ import {
   SPLIT_SEAM_RATIO_DEFAULT,
   applyNMS,
   addManualDocumentQuad,
-} from "./multi-doc-segmenter";
-import { refineCornersSubPixel } from "./perspective-warper";
-import { detectDocumentsWithOpenCV } from "./opencv-detector";
-import { detectDocumentWithMl } from "./ml-detector";
-import { fuseDetections, mlGraceBudgetMs } from "./detect-fusion";
-import { getLoadedOpenCV, loadOpenCV } from "../opencv-loader";
+} from './multi-doc-segmenter';
+import { refineCornersSubPixel } from './perspective-warper';
+import { detectDocumentsWithOpenCV } from './opencv-detector';
+import { detectDocumentWithMl } from './ml-detector';
+import { fuseDetections, mlGraceBudgetMs } from './detect-fusion';
+import { getLoadedOpenCV, loadOpenCV } from '../opencv-loader';
 
 export { splitQuadIntoIdCards, addManualDocumentQuad };
 
@@ -91,14 +91,13 @@ function computeBorderRingSalience(
   salience: Uint8Array,
   w: number,
   h: number,
-  ringWidth: number = 2
+  ringWidth: number = 2,
 ): { salient: number; total: number; ratio: number } {
   let salient = 0;
   let total = 0;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const onEdge =
-        x < ringWidth || x >= w - ringWidth || y < ringWidth || y >= h - ringWidth;
+      const onEdge = x < ringWidth || x >= w - ringWidth || y < ringWidth || y >= h - ringWidth;
       if (!onEdge) continue;
       total++;
       if (salience[y * w + x] === 255) salient++;
@@ -110,10 +109,7 @@ function computeBorderRingSalience(
 /**
  * فحص ما إذا كانت هناك ثنوية من المرشحين المتشابهين (مشهد متعدد المستندات) بدلاً من كتلة محتوى واحدة داخل المستند
  */
-function hasDisjointSimilarPair(
-  candidates: ScoredCandidate[],
-  totalPixels: number
-): boolean {
+function hasDisjointSimilarPair(candidates: ScoredCandidate[], totalPixels: number): boolean {
   if (candidates.length < 2) return false;
   const minArea = totalPixels * 0.015;
   for (let i = 0; i < candidates.length; i++) {
@@ -125,7 +121,7 @@ function hasDisjointSimilarPair(
       const bArea = computePolygonArea(b.quad);
       if (bArea < minArea) continue;
       const ratio = Math.max(aArea, bArea) / Math.max(1, Math.min(aArea, bArea));
-      if (ratio > 1.70) continue;
+      if (ratio > 1.7) continue;
       const stats = computeQuadOverlapStats(a.quad, b.quad);
       if (stats.iou < 0.25) return true;
     }
@@ -141,7 +137,7 @@ export function autoDetectAllDocumentCorners(
   sw: number,
   sh: number,
   originalWidth: number,
-  originalHeight: number
+  originalHeight: number,
 ): DetectedDocument[] {
   const totalPixels = sw * sh;
   const srcData = smallImgData.data;
@@ -163,11 +159,11 @@ export function autoDetectAllDocumentCorners(
   if (effMaxMag < 8) {
     return [
       {
-        id: "doc-1",
+        id: 'doc-1',
         corners: defaultInsetCorners(originalWidth, originalHeight),
         confidence: 0.5,
-        label: "مستند 1",
-        aspectType: "free",
+        label: 'مستند 1',
+        aspectType: 'free',
       },
     ];
   }
@@ -186,8 +182,22 @@ export function autoDetectAllDocumentCorners(
   // ب) قناع العتبة التكيفية (Adaptive Integral Thresholds - قياسي وواسع لمقاومة وهج الفلاش)
   // جدول تكاملي واحد مشترك للنافذتين بدل بنائه مرتين من الصفر
   const sharedIntegral = buildIntegralImage(blurred, sw, sh);
-  const { darkMask, brightMask } = computeAdaptiveIntegralMasks(blurred, sw, sh, 16, 4, sharedIntegral);
-  const { darkMask: darkWide, brightMask: brightWide } = computeAdaptiveIntegralMasks(blurred, sw, sh, 24, 2, sharedIntegral);
+  const { darkMask, brightMask } = computeAdaptiveIntegralMasks(
+    blurred,
+    sw,
+    sh,
+    16,
+    4,
+    sharedIntegral,
+  );
+  const { darkMask: darkWide, brightMask: brightWide } = computeAdaptiveIntegralMasks(
+    blurred,
+    sw,
+    sh,
+    24,
+    2,
+    sharedIntegral,
+  );
   masks.push(darkMask);
   masks.push(brightMask);
   masks.push(darkWide);
@@ -206,7 +216,7 @@ export function autoDetectAllDocumentCorners(
     sw,
     sh,
     Math.max(10, effMaxMag * 0.08),
-    Math.max(25, effMaxMag * 0.22)
+    Math.max(25, effMaxMag * 0.22),
   );
   masks.push(cannyMask);
 
@@ -333,7 +343,7 @@ export function autoDetectAllDocumentCorners(
     ];
     const aspect = inferSmartDocumentAspect(corners);
     return {
-      id: "doc-1",
+      id: 'doc-1',
       corners,
       confidence: 0.62,
       label: `مستند 1 (إطار كامل — ${getAspectKindLabel(aspect)})`,
@@ -347,11 +357,11 @@ export function autoDetectAllDocumentCorners(
     }
     return [
       {
-        id: "doc-1",
+        id: 'doc-1',
         corners: defaultInsetCorners(originalWidth, originalHeight),
         confidence: 0.5,
-        label: "مستند 1",
-        aspectType: "free",
+        label: 'مستند 1',
+        aspectType: 'free',
       },
     ];
   }
@@ -371,8 +381,8 @@ export function autoDetectAllDocumentCorners(
   if (bestCandSorted) {
     const q = bestCandSorted;
     const samples: number[] = [];
-    for (const v of [0.25, 0.50, 0.75]) {
-      for (const u of [0.25, 0.50, 0.75]) {
+    for (const v of [0.25, 0.5, 0.75]) {
+      for (const u of [0.25, 0.5, 0.75]) {
         const topX = q[0].x + (q[1].x - q[0].x) * u;
         const topY = q[0].y + (q[1].y - q[0].y) * u;
         const botX = q[3].x + (q[2].x - q[3].x) * u;
@@ -392,8 +402,7 @@ export function autoDetectAllDocumentCorners(
   }
 
   const isWeakTextCandidate =
-    (candContrast < 15 && bestAreaRatio < 0.85) ||
-    (bestAreaRatio < 0.65 && bestCandEdgeNorm < 0.20);
+    (candContrast < 15 && bestAreaRatio < 0.85) || (bestAreaRatio < 0.65 && bestCandEdgeNorm < 0.2);
 
   // شروط تفعيل الإطار الكامل: إطار يملأ الصورة أو حلقة موحدة مع مرشح نصي بدون تباين لوني مع الخلفية
   const shouldUseFrame =
@@ -425,7 +434,7 @@ export function autoDetectAllDocumentCorners(
         { x: sorted[1].x, y: midY },
         mag,
         sw,
-        sh
+        sh,
       );
       const midNorm = maxMag > 0 ? midGrad / (maxMag * 0.22) : 0;
 
@@ -438,38 +447,24 @@ export function autoDetectAllDocumentCorners(
             mag,
             sw,
             sh,
-            maxMag
+            maxMag,
           ) ?? SPLIT_SEAM_RATIO_DEFAULT;
         const splits = splitQuadIntoIdCardsWithSeam(
           cand.quad,
-          "vertical",
+          'vertical',
           seamRatio,
           (cards) =>
             cards.length === 2 &&
             isIdCardAspect(cards[0].corners) &&
-            isIdCardAspect(cards[1].corners)
+            isIdCardAspect(cards[1].corners),
         );
         if (
           splits.length === 2 &&
           isIdCardAspect(splits[0].corners) &&
           isIdCardAspect(splits[1].corners)
         ) {
-          const s1Score = evaluateCandidateQuad(
-            splits[0].corners,
-            sw,
-            sh,
-            mag,
-            gray,
-            maxMag
-          );
-          const s2Score = evaluateCandidateQuad(
-            splits[1].corners,
-            sw,
-            sh,
-            mag,
-            gray,
-            maxMag
-          );
+          const s1Score = evaluateCandidateQuad(splits[0].corners, sw, sh, mag, gray, maxMag);
+          const s2Score = evaluateCandidateQuad(splits[1].corners, sw, sh, mag, gray, maxMag);
           if (s1Score > 0.12 && s2Score > 0.12 && s1Score + s2Score > cand.score * 1.25) {
             finalCandidates.push({ quad: splits[0].corners, score: s1Score });
             finalCandidates.push({ quad: splits[1].corners, score: s2Score });
@@ -484,7 +479,7 @@ export function autoDetectAllDocumentCorners(
         { x: midX, y: sorted[2].y },
         mag,
         sw,
-        sh
+        sh,
       );
       const midNorm = maxMag > 0 ? midGrad / (maxMag * 0.22) : 0;
 
@@ -497,38 +492,24 @@ export function autoDetectAllDocumentCorners(
             mag,
             sw,
             sh,
-            maxMag
+            maxMag,
           ) ?? SPLIT_SEAM_RATIO_DEFAULT;
         const splits = splitQuadIntoIdCardsWithSeam(
           cand.quad,
-          "horizontal",
+          'horizontal',
           seamRatio,
           (cards) =>
             cards.length === 2 &&
             isIdCardAspect(cards[0].corners) &&
-            isIdCardAspect(cards[1].corners)
+            isIdCardAspect(cards[1].corners),
         );
         if (
           splits.length === 2 &&
           isIdCardAspect(splits[0].corners) &&
           isIdCardAspect(splits[1].corners)
         ) {
-          const s1Score = evaluateCandidateQuad(
-            splits[0].corners,
-            sw,
-            sh,
-            mag,
-            gray,
-            maxMag
-          );
-          const s2Score = evaluateCandidateQuad(
-            splits[1].corners,
-            sw,
-            sh,
-            mag,
-            gray,
-            maxMag
-          );
+          const s1Score = evaluateCandidateQuad(splits[0].corners, sw, sh, mag, gray, maxMag);
+          const s2Score = evaluateCandidateQuad(splits[1].corners, sw, sh, mag, gray, maxMag);
           if (s1Score > 0.12 && s2Score > 0.12 && s1Score + s2Score > cand.score * 1.25) {
             finalCandidates.push({ quad: splits[0].corners, score: s1Score });
             finalCandidates.push({ quad: splits[1].corners, score: s2Score });
@@ -554,7 +535,7 @@ export function autoDetectAllDocumentCorners(
     const sorted = sortCornerPoints(scaledCorners);
     const aspect = inferSmartDocumentAspect(sorted);
 
-    const confidence = Math.min(0.99, Math.max(0.40, Math.round((cand.score / 1.5) * 100) / 100));
+    const confidence = Math.min(0.99, Math.max(0.4, Math.round((cand.score / 1.5) * 100) / 100));
 
     return {
       id: `doc-${idx + 1}`,
@@ -576,7 +557,7 @@ export function autoDetectDocumentCorners(
   sw: number,
   sh: number,
   originalWidth: number,
-  originalHeight: number
+  originalHeight: number,
 ): Point[] {
   const allDocs = autoDetectAllDocumentCorners(smallImgData, sw, sh, originalWidth, originalHeight);
   return allDocs[0]?.corners ?? defaultInsetCorners(originalWidth, originalHeight);
@@ -590,12 +571,12 @@ export function runJsDetection(
   sw: number,
   sh: number,
   originalWidth: number,
-  originalHeight: number
+  originalHeight: number,
 ): DetectedDocument[] {
-  const offCanvas = document.createElement("canvas");
+  const offCanvas = document.createElement('canvas');
   offCanvas.width = sw;
   offCanvas.height = sh;
-  const offCtx = offCanvas.getContext("2d", { willReadFrequently: true });
+  const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
   if (!offCtx) return [];
 
   offCtx.drawImage(src, 0, 0, sw, sh);
@@ -614,17 +595,17 @@ let detectorWorkerInstance: Worker | null = null;
 let nextWorkerReqId = 1;
 
 function getDetectorWorker(): Worker | null {
-  if (typeof window === "undefined" || typeof Worker === "undefined") {
+  if (typeof window === 'undefined' || typeof Worker === 'undefined') {
     return null;
   }
   if (!detectorWorkerInstance) {
     try {
       detectorWorkerInstance = new Worker(
-        new URL("../../../../workers/document-detector.worker.ts", import.meta.url),
-        { type: "module" }
+        new URL('../../../../workers/document-detector.worker.ts', import.meta.url),
+        { type: 'module' },
       );
     } catch (e) {
-      console.warn("Failed to initialize document detector worker, falling back to sync:", e);
+      console.warn('Failed to initialize document detector worker, falling back to sync:', e);
       detectorWorkerInstance = null;
     }
   }
@@ -639,12 +620,12 @@ export async function runJsDetectionAsync(
   sw: number,
   sh: number,
   originalWidth: number,
-  originalHeight: number
+  originalHeight: number,
 ): Promise<DetectedDocument[]> {
-  const offCanvas = document.createElement("canvas");
+  const offCanvas = document.createElement('canvas');
   offCanvas.width = sw;
   offCanvas.height = sh;
-  const offCtx = offCanvas.getContext("2d", { willReadFrequently: true });
+  const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
   if (!offCtx) return [];
 
   offCtx.drawImage(src, 0, 0, sw, sh);
@@ -667,37 +648,37 @@ export async function runJsDetectionAsync(
       const WORKER_TIMEOUT_MS = 15000;
       return await new Promise<DetectedDocument[]>((resolve, reject) => {
         const timer = setTimeout(() => {
-          worker.removeEventListener("message", handleMessage);
-          worker.removeEventListener("error", handleError);
-          reject(new Error("Document detector worker timed out"));
+          worker.removeEventListener('message', handleMessage);
+          worker.removeEventListener('error', handleError);
+          reject(new Error('Document detector worker timed out'));
         }, WORKER_TIMEOUT_MS);
 
         const handleMessage = (e: MessageEvent) => {
           if (e.data && e.data.requestId === requestId) {
             clearTimeout(timer);
-            worker.removeEventListener("message", handleMessage);
-            worker.removeEventListener("error", handleError);
-            if (e.data.type === "success") {
+            worker.removeEventListener('message', handleMessage);
+            worker.removeEventListener('error', handleError);
+            if (e.data.type === 'success') {
               resolve(e.data.docs || []);
             } else {
-              reject(new Error(e.data.error || "Detection failed"));
+              reject(new Error(e.data.error || 'Detection failed'));
             }
           }
         };
 
         const handleError = (e: ErrorEvent) => {
           clearTimeout(timer);
-          worker.removeEventListener("message", handleMessage);
-          worker.removeEventListener("error", handleError);
-          reject(e.error || new Error("Worker execution error"));
+          worker.removeEventListener('message', handleMessage);
+          worker.removeEventListener('error', handleError);
+          reject(e.error || new Error('Worker execution error'));
         };
 
-        worker.addEventListener("message", handleMessage);
-        worker.addEventListener("error", handleError);
+        worker.addEventListener('message', handleMessage);
+        worker.addEventListener('error', handleError);
 
         worker.postMessage(
           {
-            type: "detect",
+            type: 'detect',
             requestId,
             buffer: transferCopy,
             sw,
@@ -705,11 +686,11 @@ export async function runJsDetectionAsync(
             originalWidth,
             originalHeight,
           },
-          [transferCopy]
+          [transferCopy],
         );
       });
     } catch (workerErr) {
-      console.warn("Worker detection failed, falling back to sync JS:", workerErr);
+      console.warn('Worker detection failed, falling back to sync JS:', workerErr);
     }
   }
 
@@ -726,7 +707,7 @@ async function runClassicalDetection(
   src: HTMLCanvasElement | HTMLImageElement,
   originalWidth: number,
   originalHeight: number,
-  mode: DetectionMode = "single"
+  mode: DetectionMode = 'single',
 ): Promise<DetectionResult> {
   // 🌟 محرك OpenCV WASM — انتظار قصير مشترك (1200ms) إن كان التحميل
   // جارياً (الحالة الشائعة عند فتح الماسح بعد الإقلاع مباشرة)، بدل تخطيه
@@ -737,12 +718,22 @@ async function runClassicalDetection(
       loadOpenCV(),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
     ]));
+  let cvResult: DetectionResult | null = null;
   if (cvReady) {
     try {
-      const cvResult = await detectDocumentsWithOpenCV(src, originalWidth, originalHeight, mode);
+      cvResult = await detectDocumentsWithOpenCV(src, originalWidth, originalHeight, mode);
       if (cvResult && cvResult.documents && cvResult.documents.length > 0) {
-        if (mode !== "multi" || cvResult.documents.length >= 2) {
-          return cvResult;
+        if (mode !== 'multi' || cvResult.documents.length >= 2) {
+          // فحص أمان: إذا كان المستند المكتشف في وضع المفرد يغطي مساحة صغيرة فقط (< 40% من مساحة الصورة)
+          // ولا يمثل بطاقة هوية، فقد يكون مجرد كتلة نصوص داخلية (مثل حقل نصوص بطاقة الهوية).
+          // في هذه الحالة نمرر المعالجة لهرم الرؤية النقية JS للتأكد من عدم وجود المستند الكامل الأكبر.
+          const topDoc = cvResult.documents[0];
+          const areaRatio = quadAreaRatio(topDoc.corners, originalWidth, originalHeight);
+          const isSuspectSubBlock =
+            mode === 'single' && areaRatio < 0.4 && topDoc.aspectType !== 'id_card';
+          if (!isSuspectSubBlock) {
+            return cvResult;
+          }
         }
       }
     } catch {
@@ -761,7 +752,7 @@ async function runClassicalDetection(
   // إذا كانت الصورة بدقة عالية والنتائج بحاجة لتدعيم، نشغل مقياساً أدق (720px)
   const needsFinePyramid =
     Math.max(originalWidth, originalHeight) >= 720 &&
-    (!jsDocs || jsDocs.length === 0 || jsDocs[0]?.confidence < 0.70 || mode === "multi");
+    (!jsDocs || jsDocs.length === 0 || jsDocs[0]?.confidence < 0.7 || mode === 'multi');
 
   if (needsFinePyramid) {
     const maxDim2 = 720;
@@ -779,7 +770,7 @@ async function runClassicalDetection(
           ...jsDocs.map((d) => ({ quad: d.corners, score: d.confidence })),
           ...fineDocs.map((d) => ({ quad: d.corners, score: d.confidence })),
         ];
-        const nmsCands = applyNMS(combinedCands, 0.40);
+        const nmsCands = applyNMS(combinedCands, 0.4);
         jsDocs = nmsCands.map((c, i) => ({
           id: `doc-${i + 1}`,
           corners: c.quad,
@@ -794,7 +785,7 @@ async function runClassicalDetection(
   // 🌟 نصف قطر الصقل البكسلي بموتر الهيكل يتناسب مع حجم الصورة
   const refineRadius = Math.max(
     6,
-    Math.min(22, Math.round(Math.max(originalWidth, originalHeight) / 280))
+    Math.min(22, Math.round(Math.max(originalWidth, originalHeight) / 280)),
   );
 
   if (jsDocs && jsDocs.length > 0 && jsDocs[0]?.corners) {
@@ -813,8 +804,8 @@ async function runClassicalDetection(
     if (!isDefault) {
       let filteredDocs = jsDocs.filter((doc) => doc.corners && doc.corners.length === 4);
 
-      if (mode === "single") {
-        filteredDocs = filteredDocs.filter((doc) => doc.confidence >= 0.40).slice(0, 1);
+      if (mode === 'single') {
+        filteredDocs = filteredDocs.filter((doc) => doc.confidence >= 0.4).slice(0, 1);
       } else {
         filteredDocs = filteredDocs.filter((doc) => doc.confidence >= 0.35);
       }
@@ -830,20 +821,39 @@ async function runClassicalDetection(
             src,
             originalWidth,
             originalHeight,
-            refineRadius
+            refineRadius,
           ),
         };
       });
 
       if (refinedDocs.length > 0) {
+        if (cvResult && cvResult.documents && cvResult.documents.length > 0) {
+          const cvDoc = cvResult.documents[0];
+          const cvArea = quadAreaRatio(cvDoc.corners, originalWidth, originalHeight);
+          const jsDoc = refinedDocs[0];
+          const jsArea = quadAreaRatio(jsDoc.corners, originalWidth, originalHeight);
+          // إذا كان OpenCV كشف بطاقة هوية بينما JS لم يكشفها، OpenCV أولى
+          if (cvDoc.aspectType === 'id_card' && jsDoc.aspectType !== 'id_card') {
+            return cvResult;
+          }
+          // إذا كان مضلع JS أصغر بكثير من OpenCV وثقة OpenCV أعلى، OpenCV أولى
+          if (jsArea < cvArea * 0.7 && cvDoc.confidence > jsDoc.confidence) {
+            return cvResult;
+          }
+        }
         return {
           corners: refinedDocs[0].corners,
           confidence: refinedDocs[0].confidence,
-          method: "js",
+          method: 'js',
           documents: refinedDocs,
         };
       }
     }
+  }
+
+  // إذا لم يجد JS مستنداً حقيقياً وكان لدينا كشف مسبق من OpenCV، نعتمد نتيجة OpenCV بدلاً من الإطار الافتراضي
+  if (cvResult && cvResult.documents && cvResult.documents.length > 0) {
+    return cvResult;
   }
 
   const fallbackCorners: Point[] = defaultInsetCorners(originalWidth, originalHeight);
@@ -851,17 +861,17 @@ async function runClassicalDetection(
   return {
     corners: jsDocs[0]?.corners ?? fallbackCorners,
     confidence: jsDocs[0]?.confidence ?? 0.5,
-    method: "default",
+    method: 'default',
     documents:
       jsDocs && jsDocs.length > 0
         ? jsDocs
         : [
             {
-              id: "doc-1",
+              id: 'doc-1',
               corners: fallbackCorners,
               confidence: 0.5,
-              label: "مستند 1",
-              aspectType: "free",
+              label: 'مستند 1',
+              aspectType: 'free',
             },
           ],
   };
@@ -882,11 +892,9 @@ export async function detectDocumentAuto(
   src: HTMLCanvasElement | HTMLImageElement,
   originalWidth: number,
   originalHeight: number,
-  mode: DetectionMode = "single"
+  mode: DetectionMode = 'single',
 ): Promise<DetectionResult> {
-  const mlPromise = detectDocumentWithMl(src, originalWidth, originalHeight).catch(
-    () => null
-  );
+  const mlPromise = detectDocumentWithMl(src, originalWidth, originalHeight).catch(() => null);
 
   const classical = await runClassicalDetection(src, originalWidth, originalHeight, mode);
 

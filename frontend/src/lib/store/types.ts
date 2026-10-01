@@ -58,6 +58,8 @@ export interface BaseCanvasElement {
 export interface StickerElementSource {
   templateId: string;
   params: import('@/features/stickers').StickerParams;
+  /** نسخة SVG المتجهة لحظة الإدراج — تصدير متجه لاحقاً بلا إعادة توليد */
+  svg?: string;
 }
 
 export interface ImageElement extends BaseCanvasElement {

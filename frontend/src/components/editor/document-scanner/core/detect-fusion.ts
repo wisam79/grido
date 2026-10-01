@@ -1,9 +1,10 @@
+import { DetectionMode, DetectionResult, DetectedDocument } from './types';
 import {
-  DetectionMode,
-  DetectionResult,
-  DetectedDocument,
-} from "./types";
-import { computeQuadOverlapStats, getDocumentAspectLabel } from "./quad-geometry";
+  computeQuadOverlapStats,
+  getDocumentAspectLabel,
+  inferSmartDocumentAspect,
+} from './quad-geometry';
+import { computePolygonArea } from './contour-tracer';
 
 /**
  * دمج النموذج العصبي (DocCornerNet) مع المسار الكلاسيكي (OpenCV / JS) —
@@ -38,9 +39,9 @@ export const ML_CONTAINMENT_BLOCK = 0.75;
  * تماماً عندما يكون الكلاسيكي أضعف ما يكون. فالميزانية الآن تتبع جودة
  * النتيجة الكلاسيكية: كلما ضعف الكلاسيكي، كان ML الأمل الوحيد فتُسع المهلة.
  */
-export const ML_GRACE_MS = 1500;
+export const ML_GRACE_MS = 2500;
 /** ميزانية متوسطة: الكلاسيكي موجود لكن ثقته منخفضة */
-export const ML_GRACE_LOW_CONFIDENCE_MS = 2500;
+export const ML_GRACE_LOW_CONFIDENCE_MS = 3500;
 /** أقصى ميزانية: الكلاسيكي فشل (نتيجة افتراضية) ⇒ ML هو الأمل الوحيد */
 export const ML_GRACE_WEAK_MS = 4000;
 /** ثقة كلاسيكية ≥ هذه ⇒ النتيجة موثوقة ويكفي انتظار قصير للنموذج */
@@ -56,9 +57,9 @@ export function mlGraceBudgetMs(classical: DetectionResult | null): number {
   if (!classical) return ML_GRACE_WEAK_MS;
   const topConfidence = Math.max(
     classical.confidence,
-    ...(classical.documents ?? []).map((d) => d.confidence)
+    ...(classical.documents ?? []).map((d) => d.confidence),
   );
-  if (classical.method === "default" || topConfidence < ML_WEAK_CLASSICAL_MAX) {
+  if (classical.method === 'default' || topConfidence < ML_WEAK_CLASSICAL_MAX) {
     return ML_GRACE_WEAK_MS;
   }
   if (topConfidence >= ML_STRONG_CLASSICAL_MIN) return ML_GRACE_MS;
@@ -68,12 +69,12 @@ export function mlGraceBudgetMs(classical: DetectionResult | null): number {
 export function fuseDetections(
   ml: DetectionResult | null,
   classical: DetectionResult,
-  mode: DetectionMode
+  mode: DetectionMode,
 ): DetectionResult {
   const mlDocs = ml?.documents ?? [];
   const mlQuad = ml?.corners;
   const mlScore =
-    ml && typeof ml.confidence === "number" && Number.isFinite(ml.confidence)
+    ml && typeof ml.confidence === 'number' && Number.isFinite(ml.confidence)
       ? Math.min(1, Math.max(0, ml.confidence))
       : 0;
 
@@ -90,11 +91,7 @@ export function fuseDetections(
 
   // (3) استبدال: الكلاسيكي افتراضي (default inset) و ML واثق وأفضل منه
   const classicalBest = classicalDocs.reduce((best, d) => Math.max(best, d.confidence), 0);
-  if (
-    classical.method === "default" &&
-    mlScore >= ML_STANDALONE_MIN &&
-    mlScore > classicalBest
-  ) {
+  if (classical.method === 'default' && mlScore >= ML_STANDALONE_MIN && mlScore > classicalBest) {
     return {
       corners: mlQuad,
       confidence: mlScore,
@@ -119,17 +116,38 @@ export function fuseDetections(
   let docs: DetectedDocument[] = classicalDocs.map((d) => ({ ...d }));
 
   if (bestIou >= ML_CONFIRM_IOU && bestIdx >= 0) {
-    // (1) تأكيد — رفع الثقة دون المساس بالهندسة الكلاسيكية المصقولة
+    // (1) تأكيد — الدمج يعتمد على قوة ML مقارنة بالكلاسيكي:
+    //   • ML واثق وأعلى ⇒ اعتماد أركان ML (الكلاسيكي غالباً التقط حافة ظل/طاولة)
+    //   • ML أضعف ⇒ رفع الثقة فقط مع الحفاظ على الهندسة الكلاسيكية
     const target = docs[bestIdx];
     const blended = target.confidence * 0.4 + mlScore * 0.6;
-    if (blended > target.confidence) {
+    if (mlScore >= 0.6 && mlScore > target.confidence + 0.05) {
+      // ML أدق — نعتمد أركانه هندسياً
+      target.corners = mlQuad;
+      target.confidence = Math.min(0.99, Math.max(blended, mlScore));
+      changed = true;
+    } else if (blended > target.confidence) {
       target.confidence = Math.min(0.99, blended);
+      changed = true;
+    }
+  } else if (bestIdx >= 0 && mlScore >= 0.6) {
+    const { overlapRatio1 } = computeQuadOverlapStats(classicalDocs[bestIdx].corners, mlQuad);
+    const classicalArea = computePolygonArea(classicalDocs[bestIdx].corners);
+    const mlArea = computePolygonArea(mlQuad);
+    if (overlapRatio1 >= 0.8 && mlArea >= classicalArea * 1.35) {
+      // (4) استبدال الاحتواء الداخلي: المرشح الكلاسيكي كتلة داخلية (نصوص أو صورة) محصورة داخل مضلع ML الأكبر بكثير
+      // (مثال واقعي: الكلاسيكي التقط كتلة النصوص أو الصورة فقط، بينما ML رأى بطاقة الهوية كاملة)
+      const target = docs[bestIdx];
+      target.corners = mlQuad;
+      target.confidence = Math.min(0.99, Math.max(target.confidence, mlScore));
+      target.aspectType = mlDocs[0]?.aspectType || inferSmartDocumentAspect(mlQuad);
+      target.label = getDocumentAspectLabel(target.aspectType, bestIdx + 1);
       changed = true;
     }
   } else if (bestIou < ML_MISS_IOU && mlScore >= ML_ADD_MIN_SCORE) {
     // (2) استرداد — منع الإضافة إذا كان ML quad محصوراً داخل مرشح موجود
     const contained = classicalDocs.some(
-      (d) => computeQuadOverlapStats(mlQuad, d.corners).overlapRatio1 >= ML_CONTAINMENT_BLOCK
+      (d) => computeQuadOverlapStats(mlQuad, d.corners).overlapRatio1 >= ML_CONTAINMENT_BLOCK,
     );
     if (!contained) {
       pushedFromMl = { ...mlDocs[0], corners: mlQuad, confidence: mlScore };
@@ -143,7 +161,7 @@ export function fuseDetections(
   }
 
   docs.sort((a, b) => b.confidence - a.confidence);
-  if (mode === "single" && docs.length > 1) {
+  if (mode === 'single' && docs.length > 1) {
     docs = docs.slice(0, 1);
   }
 
@@ -156,7 +174,10 @@ export function fuseDetections(
   return {
     corners: docs[0].corners,
     confidence: docs[0].confidence,
-    method: pushedFromMl !== null && docs[0] === pushedFromMl ? ml.method : classical.method,
+    method:
+      (pushedFromMl !== null && docs[0] === pushedFromMl) || docs[0].corners === mlQuad
+        ? ml.method
+        : classical.method,
     documents: docs,
   };
 }

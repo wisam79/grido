@@ -12,8 +12,11 @@ import {
   Crop,
   ClipboardText,
   Sticker,
+  Code,
 } from '@/components/ui/icons';
+import { toast } from 'sonner';
 import { requestStickerReedit } from '@/components/editor/toolbar/sticker-reedit-bus';
+import { copySvgCodeToClipboard } from '@/features/stickers/lib/clipboard-utils';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
 import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
 import { wailsIsDesktop } from '@/lib/wails-env';
@@ -106,6 +109,28 @@ export function ElementMenuSection({
               />
               <span className="truncate">تعديل الملصق</span>
             </button>
+
+            {imgEl.stickerSource.svg && (
+              <button
+                role="menuitem"
+                tabIndex={-1}
+                className={menuItemClassName}
+                onClick={() => {
+                  handleAction(() => {
+                    void copySvgCodeToClipboard(imgEl.stickerSource!.svg!).then((ok) => {
+                      if (ok) toast.success('نُسخ SVG المتجه');
+                      else toast.error('تعذر نسخ SVG');
+                    });
+                  });
+                }}
+              >
+                <Code
+                  className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                  weight="duotone"
+                />
+                <span className="truncate">نسخ SVG متجه</span>
+              </button>
+            )}
           </div>
           <div className={menuSeparatorClassName} role="separator" />
         </>

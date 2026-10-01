@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -6,9 +6,9 @@ import {
   DialogTitle,
   DialogFooter,
   DialogCloseButton,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/huge-icon";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   Scan,
   Sparkle,
@@ -17,20 +17,15 @@ import {
   Eye,
   ArrowCounterClockwise,
   FileText,
-} from "@/components/ui/icons";
-import { cn } from "@/lib/utils";
-import { WAIT_COPY, Z_CLASS } from "@/lib/ui/ui-compliance";
-import {
-  Point,
-  DocumentAspectType,
-  ScannerFilterMode,
-  defaultInsetCorners,
-} from "./core";
-import { toast } from "sonner";
-import { ScannerSidebar } from "./components/scanner-sidebar";
-import { useScannerDetection } from "./hooks/use-scanner-detection";
-import { useScannerCanvasRender } from "./hooks/use-scanner-canvas-render";
-import { useScannerProcessor } from "./hooks/use-scanner-processor";
+} from '@/components/ui/icons';
+import { cn } from '@/lib/utils';
+import { WAIT_COPY, Z_CLASS } from '@/lib/ui/ui-compliance';
+import { Point, DocumentAspectType, ScannerFilterMode, defaultInsetCorners } from './core';
+import { toast } from 'sonner';
+import { ScannerSidebar } from './components/scanner-sidebar';
+import { useScannerDetection } from './hooks/use-scanner-detection';
+import { useScannerCanvasRender } from './hooks/use-scanner-canvas-render';
+import { useScannerProcessor } from './hooks/use-scanner-processor';
 
 interface DocumentScannerDialogProps {
   open: boolean;
@@ -46,8 +41,8 @@ export function DocumentScannerDialog({
   onSave,
 }: DocumentScannerDialogProps) {
   const [corners, setCorners] = useState<Point[]>([]);
-  const [aspect, setAspect] = useState<DocumentAspectType>("free");
-  const [filter, setFilter] = useState<ScannerFilterMode>("original");
+  const [aspect, setAspect] = useState<DocumentAspectType>('free');
+  const [filter, setFilter] = useState<ScannerFilterMode>('original');
   const [rotation, setRotation] = useState<number>(0);
 
   // 🧭 عقل الكشف والمستندات (كان مضمّناً هنا)
@@ -80,15 +75,9 @@ export function DocumentScannerDialog({
 
   const selectDocument = useCallback(
     (index: number) => {
-      detection.selectDocument(
-        index,
-        setCorners,
-        setAspect,
-        setRotation,
-        resetPreview
-      );
+      detection.selectDocument(index, setCorners, setAspect, setRotation, resetPreview);
     },
-    [detection, resetPreview]
+    [detection, resetPreview],
   );
 
   // هوية مستقرة لـ selectDocument عبر ref — كائن detection يتجدد كل render
@@ -108,25 +97,27 @@ export function DocumentScannerDialog({
       setDetectedDocs((prev) =>
         prev.map((doc, idx) =>
           idx === detection.activeDocIndex
-            ? { ...doc, corners: nextCorners, aspectType: "free" }
-            : doc
-        )
+            ? { ...doc, corners: nextCorners, aspectType: 'free' }
+            : doc,
+        ),
       );
     },
-    [detection.activeDocIndex, setDetectedDocs]
+    [detection.activeDocIndex, setDetectedDocs],
   );
 
   const handleAspectChange = useCallback(
     (newAspect: DocumentAspectType) => {
       setAspect(newAspect);
       setDetectedDocs((prev) =>
-        prev.map((doc, idx) => (idx === detection.activeDocIndex ? { ...doc, aspectType: newAspect } : doc))
+        prev.map((doc, idx) =>
+          idx === detection.activeDocIndex ? { ...doc, aspectType: newAspect } : doc,
+        ),
       );
       resetProcessorPreview();
     },
     // resetProcessorPreview مستقر (useCallback []) — لا يُعيد إنشاء onAspectChange
     // كل render كما كان يفعل الاعتماد على كائن processor كله.
-    [detection.activeDocIndex, setDetectedDocs, resetProcessorPreview]
+    [detection.activeDocIndex, setDetectedDocs, resetProcessorPreview],
   );
 
   // 🧭 الرسم الكانفاسي والتفاعل (كان مضمّناً هنا)
@@ -140,7 +131,7 @@ export function DocumentScannerDialog({
     imgSize,
     handleCornersChange,
     handleAspectChange,
-    stableSelectDocument
+    stableSelectDocument,
   );
   const {
     containerRef,
@@ -197,15 +188,16 @@ export function DocumentScannerDialog({
       if (activeCorner === null || cornersRef.current.length !== 4) return;
       const baseStep = e.shiftKey ? 10 : 2;
       const canvasRect = canvasRef.current?.getBoundingClientRect();
-      const displayScale = canvasRect && canvasRect.width > 0 ? canvasRect.width / Math.max(1, imgSize.w) : 1;
+      const displayScale =
+        canvasRect && canvasRect.width > 0 ? canvasRect.width / Math.max(1, imgSize.w) : 1;
       const step = Math.max(1, Math.round(baseStep / Math.max(0.05, displayScale)));
 
       let dx = 0;
       let dy = 0;
-      if (e.key === "ArrowLeft") dx = -step;
-      else if (e.key === "ArrowRight") dx = step;
-      else if (e.key === "ArrowUp") dy = -step;
-      else if (e.key === "ArrowDown") dy = step;
+      if (e.key === 'ArrowLeft') dx = -step;
+      else if (e.key === 'ArrowRight') dx = step;
+      else if (e.key === 'ArrowUp') dy = -step;
+      else if (e.key === 'ArrowDown') dy = step;
       else return;
 
       e.preventDefault();
@@ -223,33 +215,41 @@ export function DocumentScannerDialog({
           idx === activeDocIndexRef.current
             ? {
                 ...doc,
-                aspectType: "free",
+                aspectType: 'free',
                 corners: doc.corners.map((pt, cIdx) =>
                   cIdx === activeCorner
                     ? {
                         x: Math.max(0, Math.min(imgSize.w, pt.x + dx)),
                         y: Math.max(0, Math.min(imgSize.h, pt.y + dy)),
                       }
-                    : pt
+                    : pt,
                 ),
               }
-            : doc
-        )
+            : doc,
+        ),
       );
-      setAspect("free");
+      setAspect('free');
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, isPreviewMode, activeCorner, imgSize, stableSelectDocument, setDetectedDocs, canvasRef]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    open,
+    isPreviewMode,
+    activeCorner,
+    imgSize,
+    stableSelectDocument,
+    setDetectedDocs,
+    canvasRef,
+  ]);
 
   // 🔒 تنظيف حالة التدوير/الفلتر عند الإغلاق
   useEffect(() => {
     if (!open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reset modal state on close
       setRotation(0);
-      setFilter("original");
-      setAspect("free");
+      setFilter('original');
+      setAspect('free');
       setCorners([]);
       resetProcessorState();
     }
@@ -261,16 +261,18 @@ export function DocumentScannerDialog({
     const activeIdx = activeDocIndexRef.current;
     setCorners(resetPts);
     setDetectedDocs((prev) =>
-      prev.map((doc, idx) => (idx === activeIdx ? { ...doc, corners: resetPts } : doc))
+      prev.map((doc, idx) => (idx === activeIdx ? { ...doc, corners: resetPts } : doc)),
     );
-    toast.info("أُعيد ضبط الأركان");
+    toast.info('أُعيد ضبط الأركان');
   }, [imgSize, setDetectedDocs]);
 
   const handleRotateClockwise = useCallback(() => {
     const nextRot = (rotation + 90) % 360;
     setRotation(nextRot);
     setDetectedDocs((prev) =>
-      prev.map((doc, idx) => (idx === activeDocIndexRef.current ? { ...doc, rotation: nextRot } : doc))
+      prev.map((doc, idx) =>
+        idx === activeDocIndexRef.current ? { ...doc, rotation: nextRot } : doc,
+      ),
     );
     resetProcessorPreview();
   }, [rotation, setDetectedDocs, resetProcessorPreview]);
@@ -279,27 +281,37 @@ export function DocumentScannerDialog({
     const nextRot = (rotation + 270) % 360;
     setRotation(nextRot);
     setDetectedDocs((prev) =>
-      prev.map((doc, idx) => (idx === activeDocIndexRef.current ? { ...doc, rotation: nextRot } : doc))
+      prev.map((doc, idx) =>
+        idx === activeDocIndexRef.current ? { ...doc, rotation: nextRot } : doc,
+      ),
     );
     resetProcessorPreview();
   }, [rotation, setDetectedDocs, resetProcessorPreview]);
 
-  const handleFilterChange = useCallback((newFilter: ScannerFilterMode) => {
-    setFilter(newFilter);
-    setDetectedDocs((prev) =>
-      prev.map((doc, idx) => (idx === activeDocIndexRef.current ? { ...doc, filterMode: newFilter } : doc))
-    );
-    resetProcessorPreview();
-  }, [setDetectedDocs, resetProcessorPreview]);
+  const handleFilterChange = useCallback(
+    (newFilter: ScannerFilterMode) => {
+      setFilter(newFilter);
+      setDetectedDocs((prev) =>
+        prev.map((doc, idx) =>
+          idx === activeDocIndexRef.current ? { ...doc, filterMode: newFilter } : doc,
+        ),
+      );
+      resetProcessorPreview();
+    },
+    [setDetectedDocs, resetProcessorPreview],
+  );
 
   // منع الإغلاق أثناء التصدير — زر الإلغاء معطل أصلاً، وهذا يغطي زر X وEscape.
-  const handleOpenChange = useCallback((next: boolean) => {
-    if (!next && processor.isExporting) {
-      toast.warning("التصدير جارٍ — انتظر اكتماله أو أوقفه أولاً");
-      return;
-    }
-    onOpenChange(next);
-  }, [processor.isExporting, onOpenChange]);
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (!next && processor.isExporting) {
+        toast.warning('التصدير جارٍ — انتظر اكتماله أو أوقفه أولاً');
+        return;
+      }
+      onOpenChange(next);
+    },
+    [processor.isExporting, onOpenChange],
+  );
 
   const cornersReady = corners.length === 4;
 
@@ -313,7 +325,7 @@ export function DocumentScannerDialog({
         {/* 🔹 رأس النافذة الأنيق مع زر الإغلاق وشارة النمط */}
         <DialogHeader className="pb-3 border-b border-border/40 flex flex-row items-center justify-between shrink-0 space-y-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-xs shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-muted/60 border border-border/60 text-foreground/80 flex items-center justify-center shadow-xs shrink-0">
               <Scan size={22} weight="duotone" />
             </div>
             <div className="flex flex-col min-w-0">
@@ -322,11 +334,11 @@ export function DocumentScannerDialog({
                   ماسح المستندات والبطاقات
                 </DialogTitle>
                 {detectedDocs.length > 1 ? (
-                  <span className="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-micro px-2 py-0.5 font-bold rounded-full shadow-2xs">
+                  <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-micro px-2 py-0.5 font-bold rounded-full shadow-2xs">
                     كشف متعدد ({detectedDocs.length})
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 text-micro px-2 py-0.5 font-bold rounded-full shadow-2xs">
+                  <span className="inline-flex items-center gap-1 bg-muted/70 text-muted-foreground border border-border/60 text-micro px-2 py-0.5 font-medium rounded-full shadow-2xs">
                     كشف مفرد
                   </span>
                 )}
@@ -347,7 +359,12 @@ export function DocumentScannerDialog({
             className="flex-1 bg-canvas-stage dark:bg-black/85 rounded-2xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/50 relative shadow-inner p-2 select-none"
           >
             {/* Top Floating Status Badge — aria-live لقارئ الشاشة */}
-            <div className={cn("absolute top-3 inset-x-0 mx-auto w-fit pointer-events-none", Z_CLASS.panel)}>
+            <div
+              className={cn(
+                'absolute top-3 inset-x-0 mx-auto w-fit pointer-events-none',
+                Z_CLASS.panel,
+              )}
+            >
               <div
                 role="status"
                 aria-live="polite"
@@ -355,24 +372,29 @@ export function DocumentScannerDialog({
               >
                 {isDetecting ? (
                   <>
-                    <ArrowClockwise size={13} weight="bold" className="text-primary shrink-0 animate-spin" />
+                    <ArrowClockwise
+                      size={13}
+                      weight="bold"
+                      className="text-muted-foreground shrink-0 animate-spin"
+                    />
                     <span>{WAIT_COPY.scanningDoc}</span>
                   </>
                 ) : isPreviewMode ? (
                   <>
-                    <Eye size={13} weight="duotone" className="text-blue-500 shrink-0" />
+                    <Eye size={13} weight="duotone" className="text-foreground/80 shrink-0" />
                     <span>معاينة المستند بعد الاستعدال</span>
                   </>
                 ) : detectedDocs.length > 1 ? (
                   <>
                     <FileText size={13} weight="duotone" className="text-emerald-500 shrink-0" />
                     <span>
-                      تم تحديد {detectedDocs.length} مستندات — اضغط (1-{detectedDocs.length}) للتبديل
+                      تم تحديد {detectedDocs.length} مستندات — اضغط (1-{detectedDocs.length})
+                      للتبديل
                     </span>
                   </>
                 ) : (
                   <>
-                    <Sparkle size={13} weight="duotone" className="text-primary shrink-0" />
+                    <Sparkle size={13} weight="fill" className="text-amber-500 shrink-0" />
                     <span>اسحب الدبابيس للضبط</span>
                   </>
                 )}
@@ -383,7 +405,7 @@ export function DocumentScannerDialog({
               <img
                 src={processor.previewSrc}
                 alt="المستند المستعدل"
-                onError={() => toast.error("تعذر عرض المعاينة — أعد المحاولة")}
+                onError={() => toast.error('تعذر عرض المعاينة — أعد المحاولة')}
                 className="max-h-full max-w-full object-contain rounded-xl shadow-fluent-8 shadow-black/20 border border-border/30 animate-in fade-in-50 duration-200"
               />
             ) : (
@@ -400,8 +422,8 @@ export function DocumentScannerDialog({
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
                   className={cn(
-                    "touch-none rounded-xl cursor-crosshair transition-opacity duration-150",
-                    activeCorner !== null && "cursor-grabbing"
+                    'touch-none rounded-xl cursor-crosshair transition-opacity duration-150',
+                    activeCorner !== null && 'cursor-grabbing',
                   )}
                 />
               </div>
@@ -410,18 +432,21 @@ export function DocumentScannerDialog({
             {/* Loupe Glass Magnifier */}
             <div
               className={cn(
-                "absolute pointer-events-none transition-all duration-100 rounded-full border-2 border-primary bg-muted shadow-fluent-16 overflow-hidden ring-4 ring-primary/20",
+                'absolute pointer-events-none transition-all duration-100 rounded-full border-2 border-primary bg-muted shadow-fluent-16 overflow-hidden ring-4 ring-primary/20',
                 Z_CLASS.popover,
-                loupePos && activeCorner !== null ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                loupePos && activeCorner !== null ? 'opacity-100 scale-100' : 'opacity-0 scale-90',
               )}
               style={{
-                left: loupePos ? `${loupePos.x}px` : "0px",
-                top: loupePos ? `${loupePos.y}px` : "0px",
-                width: "115px",
-                height: "115px",
+                left: loupePos ? `${loupePos.x}px` : '0px',
+                top: loupePos ? `${loupePos.y}px` : '0px',
+                width: '115px',
+                height: '115px',
               }}
             >
-              <canvas ref={loupeCanvasRef as React.RefObject<HTMLCanvasElement>} className="w-full h-full" />
+              <canvas
+                ref={loupeCanvasRef as React.RefObject<HTMLCanvasElement>}
+                className="w-full h-full"
+              />
             </div>
           </div>
 
@@ -458,17 +483,21 @@ export function DocumentScannerDialog({
               variant="outline"
               onClick={() => processor.handleTogglePreview(corners, aspect)}
               disabled={!cornersReady && !isPreviewMode}
-              title={cornersReady ? undefined : "حدّد أركان المستند أولاً"}
+              title={cornersReady ? undefined : 'حدّد أركان المستند أولاً'}
               className="rounded-md h-8 px-3 text-xs font-semibold cursor-pointer gap-1.5 border border-border/60 shadow-2xs hover:bg-accent flex items-center disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
               {isPreviewMode ? (
                 <>
-                  <ArrowCounterClockwise size={14} weight="bold" className="text-primary shrink-0" />
+                  <ArrowCounterClockwise
+                    size={14}
+                    weight="bold"
+                    className="text-foreground/80 shrink-0"
+                  />
                   <span>تعديل</span>
                 </>
               ) : (
                 <>
-                  <Eye size={14} weight="bold" className="text-primary shrink-0" />
+                  <Eye size={14} weight="bold" className="text-foreground/80 shrink-0" />
                   <span>معاينة</span>
                 </>
               )}
@@ -484,21 +513,23 @@ export function DocumentScannerDialog({
               إلغاء
             </Button>
 
-            {processor.isExporting && processor.exportProgress && processor.exportProgress.total > 1 && (
-              <>
-                <span className="text-micro font-mono text-muted-foreground" dir="ltr">
-                  {processor.exportProgress.done}/{processor.exportProgress.total}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-md h-8 px-3 text-xs font-semibold cursor-pointer border-destructive/50 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                  onClick={processor.cancelExport}
-                >
-                  إيقاف
-                </Button>
-              </>
-            )}
+            {processor.isExporting &&
+              processor.exportProgress &&
+              processor.exportProgress.total > 1 && (
+                <>
+                  <span className="text-micro font-mono text-muted-foreground" dir="ltr">
+                    {processor.exportProgress.done}/{processor.exportProgress.total}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-md h-8 px-3 text-xs font-semibold cursor-pointer border-destructive/50 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                    onClick={processor.cancelExport}
+                  >
+                    إيقاف
+                  </Button>
+                </>
+              )}
 
             {detectedDocs.length > 1 && selectedDocIds.length > 1 && (
               <Button
@@ -509,24 +540,42 @@ export function DocumentScannerDialog({
                   processor.handleApplySelected(
                     detectedDocs.filter((d) => selectedDocIds.includes(d.id)),
                     onSave,
-                    () => onOpenChange(false)
+                    () => onOpenChange(false),
                   )
                 }
                 disabled={processor.isExporting}
               >
-                {processor.isExporting ? <Spinner className="w-3.5 h-3.5 shrink-0" size={14} /> : <Check size={14} weight="bold" className="shrink-0" />}
-                <span>{processor.isExporting ? WAIT_COPY.exporting : `إدراج (${selectedDocIds.length})`}</span>
+                {processor.isExporting ? (
+                  <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
+                ) : (
+                  <Check size={14} weight="bold" className="shrink-0" />
+                )}
+                <span>
+                  {processor.isExporting ? WAIT_COPY.exporting : `إدراج (${selectedDocIds.length})`}
+                </span>
               </Button>
             )}
 
             <Button
-              onClick={() => processor.handleApplyActive(corners, aspect, onSave, () => onOpenChange(false))}
+              onClick={() =>
+                processor.handleApplyActive(corners, aspect, onSave, () => onOpenChange(false))
+              }
               disabled={!cornersReady || processor.isExporting}
-              title={cornersReady ? undefined : "حدّد أركان المستند أولاً"}
+              title={cornersReady ? undefined : 'حدّد أركان المستند أولاً'}
               className="rounded-md h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98] disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
-              {processor.isExporting ? <Spinner className="w-3.5 h-3.5 shrink-0" size={14} /> : <Check size={14} weight="bold" className="shrink-0" />}
-              <span>{processor.isExporting ? WAIT_COPY.exporting : detectedDocs.length > 1 ? "إدراج النشط" : "إدراج"}</span>
+              {processor.isExporting ? (
+                <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
+              ) : (
+                <Check size={14} weight="bold" className="shrink-0" />
+              )}
+              <span>
+                {processor.isExporting
+                  ? WAIT_COPY.exporting
+                  : detectedDocs.length > 1
+                    ? 'إدراج النشط'
+                    : 'إدراج'}
+              </span>
             </Button>
           </div>
         </DialogFooter>

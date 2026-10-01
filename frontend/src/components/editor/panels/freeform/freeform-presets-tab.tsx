@@ -73,7 +73,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
       {/* 📐 شريط المقاس النشط المدمج بتصميم Fluent 2 الأنيق */}
       <div className="flex items-center justify-between p-2 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular">
         <div className="flex items-center gap-2 min-w-0">
-          <FrameCorners className="w-4 h-4 text-primary shrink-0" weight="duotone" />
+          <FrameCorners className="w-4 h-4 text-muted-foreground shrink-0" weight="duotone" />
           <div className="flex items-baseline gap-1.5 min-w-0">
             <span className="font-bold text-foreground font-mono text-xs truncate">
               {currentW_MM} × {currentH_MM} مم
@@ -124,8 +124,8 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
               className={cn(
                 'group w-full h-9 px-2.5 rounded-md border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2 select-none active:scale-[0.99] text-right',
                 active
-                  ? 'bg-card border-border/90 text-foreground shadow-xs ring-1 ring-primary/40 font-bold'
-                  : 'bg-card/40 hover:bg-accent/60 border-border/50 hover:border-primary/40 text-foreground/90',
+                  ? 'bg-card border-border/90 text-foreground shadow-xs ring-1 ring-foreground/25 font-bold'
+                  : 'bg-card/40 hover:bg-accent/60 border-border/50 hover:border-border text-foreground/90',
               )}
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -133,15 +133,24 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
                 <div className="w-5 h-5 rounded-md bg-muted/70 flex items-center justify-center shrink-0 border border-border/40">
                   {preset.category === 'id' ? (
                     <IdentificationCard
-                      className={cn('w-3 h-3', active ? 'text-primary' : 'text-muted-foreground')}
+                      className={cn(
+                        'w-3 h-3',
+                        active ? 'text-foreground' : 'text-muted-foreground',
+                      )}
                     />
                   ) : preset.category === 'social' ? (
                     <DeviceMobile
-                      className={cn('w-3 h-3', active ? 'text-primary' : 'text-muted-foreground')}
+                      className={cn(
+                        'w-3 h-3',
+                        active ? 'text-foreground' : 'text-muted-foreground',
+                      )}
                     />
                   ) : (
                     <Printer
-                      className={cn('w-3 h-3', active ? 'text-primary' : 'text-muted-foreground')}
+                      className={cn(
+                        'w-3 h-3',
+                        active ? 'text-foreground' : 'text-muted-foreground',
+                      )}
                     />
                   )}
                 </div>
@@ -151,8 +160,8 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
                   className={cn(
                     'text-xs truncate transition-colors',
                     active
-                      ? 'text-primary font-bold'
-                      : 'text-foreground font-medium group-hover:text-primary',
+                      ? 'text-foreground font-bold'
+                      : 'text-foreground font-medium group-hover:text-foreground',
                   )}
                 >
                   {preset.name}
@@ -165,7 +174,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
                   {preset.tag}
                 </span>
                 {active && (
-                  <span className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xs shrink-0">
+                  <span className="w-4 h-4 rounded-full bg-foreground text-background flex items-center justify-center shadow-xs shrink-0">
                     <Check className="w-2.5 h-2.5" weight="bold" />
                   </span>
                 )}

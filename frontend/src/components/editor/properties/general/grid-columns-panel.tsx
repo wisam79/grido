@@ -1,18 +1,18 @@
-import React, { useState } from "react";
-import { GridFour, Columns, Crop, Eye } from "@/components/ui/icons";
-import { useEditorStore } from "@/lib/editor-store";
-import { cn } from "@/lib/utils";
+import React, { useState } from 'react';
+import { GridFour, Columns, Crop, Eye } from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { useShallow } from "zustand/react/shallow";
-import { FluentSection, FluentSegmentedControl, FluentSliderField } from "@/components/ui/blocks";
-import { PopoverColorPicker } from "../shared-controls";
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { useShallow } from 'zustand/react/shallow';
+import { FluentSection, FluentSegmentedControl, FluentSliderField } from '@/components/ui/blocks';
+import { PopoverColorPicker } from '../shared-controls';
 
 export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
   const {
@@ -47,109 +47,123 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
     setSafeMarginMM,
     cutShapeType,
     setCutShapeType,
-  } = useEditorStore(useShallow((state) => ({
-    mode: state.mode,
-    showGrid: state.showGrid,
-    setShowGrid: state.setShowGrid,
-    gridSize: state.gridSize,
-    setGridSize: state.setGridSize,
-    gridColor: state.gridColor,
-    setGridColor: state.setGridColor,
-    gridOpacity: state.gridOpacity,
-    setGridOpacity: state.setGridOpacity,
-    gridSubdivisions: state.gridSubdivisions,
-    setGridSubdivisions: state.setGridSubdivisions,
-    gridType: state.gridType,
-    setGridType: state.setGridType,
-    showColumns: state.showColumns,
-    setShowColumns: state.setShowColumns,
-    columnsCount: state.columnsCount,
-    setColumnsCount: state.setColumnsCount,
-    columnsColor: state.columnsColor,
-    setColumnsColor: state.setColumnsColor,
-    columnsMargin: state.columnsMargin,
-    setColumnsMargin: state.setColumnsMargin,
-    columnsGutter: state.columnsGutter,
-    setColumnsGutter: state.setColumnsGutter,
-    showBleedGuides: state.showBleedGuides,
-    setShowBleedGuides: state.setShowBleedGuides,
-    bleedMarginMM: state.bleedMarginMM,
-    setBleedMarginMM: state.setBleedMarginMM,
-    safeMarginMM: state.safeMarginMM,
-    setSafeMarginMM: state.setSafeMarginMM,
-    cutShapeType: state.cutShapeType,
-    setCutShapeType: state.setCutShapeType,
-  })));
+  } = useEditorStore(
+    useShallow((state) => ({
+      mode: state.mode,
+      showGrid: state.showGrid,
+      setShowGrid: state.setShowGrid,
+      gridSize: state.gridSize,
+      setGridSize: state.setGridSize,
+      gridColor: state.gridColor,
+      setGridColor: state.setGridColor,
+      gridOpacity: state.gridOpacity,
+      setGridOpacity: state.setGridOpacity,
+      gridSubdivisions: state.gridSubdivisions,
+      setGridSubdivisions: state.setGridSubdivisions,
+      gridType: state.gridType,
+      setGridType: state.setGridType,
+      showColumns: state.showColumns,
+      setShowColumns: state.setShowColumns,
+      columnsCount: state.columnsCount,
+      setColumnsCount: state.setColumnsCount,
+      columnsColor: state.columnsColor,
+      setColumnsColor: state.setColumnsColor,
+      columnsMargin: state.columnsMargin,
+      setColumnsMargin: state.setColumnsMargin,
+      columnsGutter: state.columnsGutter,
+      setColumnsGutter: state.setColumnsGutter,
+      showBleedGuides: state.showBleedGuides,
+      setShowBleedGuides: state.setShowBleedGuides,
+      bleedMarginMM: state.bleedMarginMM,
+      setBleedMarginMM: state.setBleedMarginMM,
+      safeMarginMM: state.safeMarginMM,
+      setSafeMarginMM: state.setSafeMarginMM,
+      cutShapeType: state.cutShapeType,
+      setCutShapeType: state.setCutShapeType,
+    })),
+  );
 
-  const [activeGridTab, setActiveGridTab] = useState<"grid" | "columns" | "bleed">("grid");
+  const [activeGridTab, setActiveGridTab] = useState<'grid' | 'columns' | 'bleed'>('grid');
 
-  if (mode !== "single") return null;
+  if (mode !== 'single') return null;
 
   return (
     <FluentSection
-      icon={<GridFour className="w-3.5 h-3.5 text-primary" weight="duotone" />}
+      icon={<GridFour className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
       title="الشبكة والقص"
       collapsible
       defaultOpen={Boolean(showGrid || showColumns || showBleedGuides)}
       action={
         <span className="text-micro text-muted-foreground font-sans font-semibold bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md">
-          {showGrid || showColumns || showBleedGuides ? "نشط" : "مخفي"}
+          {showGrid || showColumns || showBleedGuides ? 'نشط' : 'مخفي'}
         </span>
       }
     >
       <div className="space-y-3 animate-in fade-in duration-200">
         {/* التبديل بين الشبكة والأعمدة وهامش النزيف */}
-        <FluentSegmentedControl<"grid" | "columns" | "bleed">
+        <FluentSegmentedControl<'grid' | 'columns' | 'bleed'>
           layoutId="grid-columns-view-tabs"
           value={activeGridTab}
           onChange={setActiveGridTab}
           size="sm"
           options={[
-            { id: "grid", label: "الشبكة", icon: <GridFour className="w-3.5 h-3.5" weight="regular" /> },
-            { id: "columns", label: "الأعمدة", icon: <Columns className="w-3.5 h-3.5" weight="regular" /> },
-            { id: "bleed", label: "القص", icon: <Crop className="w-3.5 h-3.5" weight="regular" /> },
+            {
+              id: 'grid',
+              label: 'الشبكة',
+              icon: <GridFour className="w-3.5 h-3.5" weight="regular" />,
+            },
+            {
+              id: 'columns',
+              label: 'الأعمدة',
+              icon: <Columns className="w-3.5 h-3.5" weight="regular" />,
+            },
+            { id: 'bleed', label: 'القص', icon: <Crop className="w-3.5 h-3.5" weight="regular" /> },
           ]}
         />
 
-        {activeGridTab === "grid" && (
+        {activeGridTab === 'grid' && (
           <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
             {/* مفتاح تفعيل الشبكة الرئيسي */}
             <div className="flex items-center justify-between bg-input/50 hover:bg-input/80 px-2.5 h-8 rounded-md border border-border transition-colors select-none">
               <span className="text-xs font-semibold text-foreground">إظهار الشبكة</span>
-              <Switch
-                checked={showGrid}
-                onCheckedChange={setShowGrid}
-                aria-label="إظهار الشبكة"
-              />
+              <Switch checked={showGrid} onCheckedChange={setShowGrid} aria-label="إظهار الشبكة" />
             </div>
 
             {showGrid ? (
               <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
                 {/* صف حجم المربع والتقسيم */}
                 <div className="grid grid-cols-2 gap-1.5" dir="rtl">
-                  <div 
+                  <div
                     className="flex items-center justify-between bg-input border border-border hover:border-primary/40 rounded-md px-2.5 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 shadow-2xs"
                     title="حجم المربع"
                   >
-                    <span className="text-mini font-bold text-muted-foreground select-none shrink-0">المربع</span>
+                    <span className="text-mini font-bold text-muted-foreground select-none shrink-0">
+                      المربع
+                    </span>
                     <div className="flex items-center gap-1 min-w-0">
                       <input
                         type="number"
                         value={gridSize}
                         min={5}
                         max={200}
-                        onChange={(e) => setGridSize(Math.max(5, Math.min(200, parseInt(e.target.value) || 20)))}
+                        onChange={(e) =>
+                          setGridSize(Math.max(5, Math.min(200, parseInt(e.target.value) || 20)))
+                        }
                         className="w-10 bg-transparent border-0 p-0 text-left text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                       />
-                      <span className="text-micro text-muted-foreground/70 select-none font-mono">px</span>
+                      <span className="text-micro text-muted-foreground/70 select-none font-mono">
+                        px
+                      </span>
                     </div>
                   </div>
 
-                  <div 
+                  <div
                     className="flex items-center justify-between bg-input border border-border hover:border-primary/40 rounded-md px-2.5 h-8 transition-all shadow-2xs"
                     title="التقسيم الفرعي"
                   >
-                    <span className="text-mini font-bold text-muted-foreground select-none shrink-0">التقسيم</span>
+                    <span className="text-mini font-bold text-muted-foreground select-none shrink-0">
+                      التقسيم
+                    </span>
                     <Select
                       value={String(gridSubdivisions)}
                       onValueChange={(val) => setGridSubdivisions(Number(val))}
@@ -168,29 +182,34 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                 </div>
 
                 {/* صف النمط */}
-                <div className="flex items-center justify-between bg-input/40 border border-border rounded-md px-2.5 h-8" dir="rtl">
-                  <span className="text-mini font-bold text-muted-foreground select-none shrink-0">النمط</span>
+                <div
+                  className="flex items-center justify-between bg-input/40 border border-border rounded-md px-2.5 h-8"
+                  dir="rtl"
+                >
+                  <span className="text-mini font-bold text-muted-foreground select-none shrink-0">
+                    النمط
+                  </span>
                   <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded">
                     <button
                       type="button"
-                      onClick={() => setGridType("lines")}
+                      onClick={() => setGridType('lines')}
                       className={cn(
-                        "px-2.5 h-7 text-mini font-bold rounded transition-all cursor-pointer",
-                        gridType === "lines"
-                          ? "bg-card text-primary shadow-2xs"
-                          : "text-muted-foreground hover:text-foreground"
+                        'px-2.5 h-7 text-mini font-bold rounded transition-all cursor-pointer',
+                        gridType === 'lines'
+                          ? 'bg-card text-primary shadow-2xs'
+                          : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
                       خطوط
                     </button>
                     <button
                       type="button"
-                      onClick={() => setGridType("dots")}
+                      onClick={() => setGridType('dots')}
                       className={cn(
-                        "px-2.5 h-7 text-mini font-bold rounded transition-all cursor-pointer",
-                        gridType === "dots"
-                          ? "bg-card text-primary shadow-2xs"
-                          : "text-muted-foreground hover:text-foreground"
+                        'px-2.5 h-7 text-mini font-bold rounded transition-all cursor-pointer',
+                        gridType === 'dots'
+                          ? 'bg-card text-primary shadow-2xs'
+                          : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
                       نقاط
@@ -215,11 +234,11 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   <span className="text-mini font-bold text-muted-foreground">لون الشبكة</span>
                   <div className="flex items-center gap-1.5">
                     {[
-                      { hex: "#cbd5e1", label: "رمادي فاتح" },
-                      { hex: "#94a3b8", label: "رمادي" },
-                      { hex: "#3b82f6", label: "أزرق" },
-                      { hex: "#ef4444", label: "أحمر" },
-                      { hex: "#10b981", label: "أخضر" },
+                      { hex: '#cbd5e1', label: 'رمادي فاتح' },
+                      { hex: '#94a3b8', label: 'رمادي' },
+                      { hex: '#3b82f6', label: 'أزرق' },
+                      { hex: '#ef4444', label: 'أحمر' },
+                      { hex: '#10b981', label: 'أخضر' },
                     ].map((col) => {
                       const isSelected = gridColor.toLowerCase() === col.hex.toLowerCase();
                       return (
@@ -230,10 +249,10 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                           title={col.label}
                           onClick={() => setGridColor(col.hex)}
                           className={cn(
-                            "w-5 h-5 rounded-md border border-border/80 transition-all cursor-pointer relative shadow-2xs",
+                            'w-5 h-5 rounded-md border border-border/80 transition-all cursor-pointer relative shadow-2xs',
                             isSelected
-                              ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
-                              : "hover:scale-105 opacity-80 hover:opacity-100"
+                              ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110'
+                              : 'hover:scale-105 opacity-80 hover:opacity-100',
                           )}
                           style={{ backgroundColor: col.hex }}
                         />
@@ -250,13 +269,18 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
             ) : (
               <div className="p-3 text-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">
-                <p className="text-mini leading-relaxed">الشبكة معطلة. فعّلها أو اضغط <kbd className="font-mono bg-muted px-1 py-0.5 rounded border border-border text-micro">Ctrl+'</kbd></p>
+                <p className="text-mini leading-relaxed">
+                  الشبكة معطلة. فعّلها أو اضغط{' '}
+                  <kbd className="font-mono bg-muted px-1 py-0.5 rounded border border-border text-micro">
+                    Ctrl+'
+                  </kbd>
+                </p>
               </div>
             )}
           </div>
         )}
 
-        {activeGridTab === "columns" && (
+        {activeGridTab === 'columns' && (
           <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
             {/* مفتاح تفعيل الأعمدة الرئيسي */}
             <div className="flex items-center justify-between bg-input/50 hover:bg-input/80 px-2.5 h-8 rounded-md border border-border transition-colors select-none">
@@ -272,26 +296,32 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
                 {/* صف عدد الأعمدة والهامش والتباعد */}
                 <div className="grid grid-cols-3 gap-1.5" dir="rtl">
-                  <div 
+                  <div
                     className="flex flex-col items-center justify-center bg-input border border-border hover:border-primary/40 rounded-md p-1 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 shadow-2xs"
                     title="عدد الأعمدة"
                   >
-                    <span className="text-micro font-bold text-muted-foreground select-none">الأعمدة</span>
+                    <span className="text-micro font-bold text-muted-foreground select-none">
+                      الأعمدة
+                    </span>
                     <input
                       type="number"
                       value={columnsCount}
                       min={1}
                       max={24}
-                      onChange={(e) => setColumnsCount(Math.max(1, Math.min(24, parseInt(e.target.value) || 1)))}
+                      onChange={(e) =>
+                        setColumnsCount(Math.max(1, Math.min(24, parseInt(e.target.value) || 1)))
+                      }
                       className="w-full bg-transparent border-0 p-0 text-center text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                     />
                   </div>
 
-                  <div 
+                  <div
                     className="flex flex-col items-center justify-center bg-input border border-border hover:border-primary/40 rounded-md p-1 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 shadow-2xs"
                     title="الهامش"
                   >
-                    <span className="text-micro font-bold text-muted-foreground select-none">الهامش</span>
+                    <span className="text-micro font-bold text-muted-foreground select-none">
+                      الهامش
+                    </span>
                     <input
                       type="number"
                       value={columnsMargin}
@@ -301,11 +331,13 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     />
                   </div>
 
-                  <div 
+                  <div
                     className="flex flex-col items-center justify-center bg-input border border-border hover:border-primary/40 rounded-md p-1 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 shadow-2xs"
                     title="التباعد"
                   >
-                    <span className="text-micro font-bold text-muted-foreground select-none">التباعد</span>
+                    <span className="text-micro font-bold text-muted-foreground select-none">
+                      التباعد
+                    </span>
                     <input
                       type="number"
                       value={columnsGutter}
@@ -321,11 +353,11 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   <span className="text-mini font-bold text-muted-foreground">لون الأعمدة</span>
                   <div className="flex items-center gap-1.5">
                     {[
-                      { hex: "rgba(239, 68, 68, 0.08)", label: "أحمر" },
-                      { hex: "rgba(59, 130, 246, 0.08)", label: "أزرق" },
-                      { hex: "rgba(16, 185, 129, 0.08)", label: "أخضر" },
-                      { hex: "rgba(139, 92, 246, 0.08)", label: "بنفسجي" },
-                      { hex: "rgba(0, 0, 0, 0.08)", label: "رمادي" },
+                      { hex: 'rgba(239, 68, 68, 0.08)', label: 'أحمر' },
+                      { hex: 'rgba(59, 130, 246, 0.08)', label: 'أزرق' },
+                      { hex: 'rgba(16, 185, 129, 0.08)', label: 'أخضر' },
+                      { hex: 'rgba(139, 92, 246, 0.08)', label: 'بنفسجي' },
+                      { hex: 'rgba(0, 0, 0, 0.08)', label: 'رمادي' },
                     ].map((colorObj) => {
                       const isSelected = columnsColor === colorObj.hex;
                       return (
@@ -336,12 +368,12 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                           title={colorObj.label}
                           onClick={() => setColumnsColor(colorObj.hex)}
                           className={cn(
-                            "w-5 h-5 rounded-md border border-border/80 transition-all cursor-pointer relative shadow-2xs",
+                            'w-5 h-5 rounded-md border border-border/80 transition-all cursor-pointer relative shadow-2xs',
                             isSelected
-                              ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
-                              : "hover:scale-105 opacity-80 hover:opacity-100"
+                              ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110'
+                              : 'hover:scale-105 opacity-80 hover:opacity-100',
                           )}
-                          style={{ backgroundColor: colorObj.hex.replace("0.08", "0.40") }}
+                          style={{ backgroundColor: colorObj.hex.replace('0.08', '0.40') }}
                         />
                       );
                     })}
@@ -350,13 +382,15 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
             ) : (
               <div className="p-3 text-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">
-                <p className="text-mini leading-relaxed">الأعمدة الإرشادية معطلة. فعّلها للتوزيع الدقيق.</p>
+                <p className="text-mini leading-relaxed">
+                  الأعمدة الإرشادية معطلة. فعّلها للتوزيع الدقيق.
+                </p>
               </div>
             )}
           </div>
         )}
 
-        {activeGridTab === "bleed" && (
+        {activeGridTab === 'bleed' && (
           <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
             {/* مفتاح تفعيل خطوط النزيف والقص */}
             <div className="flex items-center justify-between bg-input/50 hover:bg-input/80 px-2.5 h-8 rounded-md border border-border transition-colors select-none">
@@ -371,41 +405,46 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
             {showBleedGuides ? (
               <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
                 {/* شكل القص Die-cut */}
-                <div className="flex items-center justify-between bg-input/40 border border-border rounded-md px-2.5 h-8" dir="rtl">
-                  <span className="text-mini font-bold text-muted-foreground select-none shrink-0">شكل القص</span>
+                <div
+                  className="flex items-center justify-between bg-input/40 border border-border rounded-md px-2.5 h-8"
+                  dir="rtl"
+                >
+                  <span className="text-mini font-bold text-muted-foreground select-none shrink-0">
+                    شكل القص
+                  </span>
                   <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded">
                     <button
                       type="button"
-                      onClick={() => setCutShapeType("rectangle")}
+                      onClick={() => setCutShapeType('rectangle')}
                       className={cn(
-                        "px-2 h-7 text-micro font-bold rounded transition-all cursor-pointer",
-                        cutShapeType === "rectangle"
-                          ? "bg-card text-primary shadow-2xs"
-                          : "text-muted-foreground hover:text-foreground"
+                        'px-2 h-7 text-micro font-bold rounded transition-all cursor-pointer',
+                        cutShapeType === 'rectangle'
+                          ? 'bg-card text-primary shadow-2xs'
+                          : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
                       مستطيل
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCutShapeType("rounded-rect")}
+                      onClick={() => setCutShapeType('rounded-rect')}
                       className={cn(
-                        "px-2 h-7 text-micro font-bold rounded transition-all cursor-pointer",
-                        cutShapeType === "rounded-rect"
-                          ? "bg-card text-primary shadow-2xs"
-                          : "text-muted-foreground hover:text-foreground"
+                        'px-2 h-7 text-micro font-bold rounded transition-all cursor-pointer',
+                        cutShapeType === 'rounded-rect'
+                          ? 'bg-card text-primary shadow-2xs'
+                          : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
                       مستدير
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCutShapeType("circle")}
+                      onClick={() => setCutShapeType('circle')}
                       className={cn(
-                        "px-2 h-7 text-micro font-bold rounded transition-all cursor-pointer",
-                        cutShapeType === "circle"
-                          ? "bg-card text-primary shadow-2xs"
-                          : "text-muted-foreground hover:text-foreground"
+                        'px-2 h-7 text-micro font-bold rounded transition-all cursor-pointer',
+                        cutShapeType === 'circle'
+                          ? 'bg-card text-primary shadow-2xs'
+                          : 'text-muted-foreground hover:text-foreground',
                       )}
                     >
                       دائري
@@ -415,7 +454,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
                 {/* مقاس النزيف ومقاس الأمان */}
                 <div className="grid grid-cols-2 gap-1.5" dir="rtl">
-                  <div 
+                  <div
                     className="flex items-center justify-between bg-input border border-border hover:border-primary/40 rounded-md px-2.5 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 shadow-2xs"
                     title="النزيف الخارجي"
                   >
@@ -430,14 +469,20 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                         min={0}
                         max={20}
                         step={0.5}
-                        onChange={(e) => setBleedMarginMM(Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)))}
+                        onChange={(e) =>
+                          setBleedMarginMM(
+                            Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)),
+                          )
+                        }
                         className="w-10 bg-transparent border-0 p-0 text-left text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                       />
-                      <span className="text-micro text-muted-foreground/70 select-none font-mono">مم</span>
+                      <span className="text-micro text-muted-foreground/70 select-none font-mono">
+                        مم
+                      </span>
                     </div>
                   </div>
 
-                  <div 
+                  <div
                     className="flex items-center justify-between bg-input border border-border hover:border-primary/40 rounded-md px-2.5 h-8 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 shadow-2xs"
                     title="منطقة الأمان"
                   >
@@ -452,33 +497,50 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                         min={0}
                         max={20}
                         step={0.5}
-                        onChange={(e) => setSafeMarginMM(Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)))}
+                        onChange={(e) =>
+                          setSafeMarginMM(
+                            Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)),
+                          )
+                        }
                         className="w-10 bg-transparent border-0 p-0 text-left text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                       />
-                      <span className="text-micro text-muted-foreground/70 select-none font-mono">مم</span>
+                      <span className="text-micro text-muted-foreground/70 select-none font-mono">
+                        مم
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* دليل ألوان الإرشادات */}
-                <div className="p-2 rounded-md border border-border/50 bg-muted/25 space-y-1 text-micro select-none" dir="rtl">
+                <div
+                  className="p-2 rounded-md border border-border/50 bg-muted/25 space-y-1 text-micro select-none"
+                  dir="rtl"
+                >
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-0.5 border-b-2 border-rose-500 border-dashed shrink-0" />
-                    <span className="text-muted-foreground"><strong className="text-foreground">النزيف:</strong> تمديد الخلفية.</span>
+                    <span className="text-muted-foreground">
+                      <strong className="text-foreground">النزيف:</strong> تمديد الخلفية.
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-0.5 bg-blue-500 shrink-0" />
-                    <span className="text-muted-foreground"><strong className="text-foreground">القص:</strong> الحد الفعلي.</span>
+                    <span className="text-muted-foreground">
+                      <strong className="text-foreground">القص:</strong> الحد الفعلي.
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-0.5 border-b-2 border-emerald-500 border-dashed shrink-0" />
-                    <span className="text-muted-foreground"><strong className="text-foreground">الأمان:</strong> إبقاء المحتوى بالداخل.</span>
+                    <span className="text-muted-foreground">
+                      <strong className="text-foreground">الأمان:</strong> إبقاء المحتوى بالداخل.
+                    </span>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="p-3 text-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">
-                <p className="text-mini leading-relaxed">خطوط النزيف والقص لتجهيز المطبوعات التجارية.</p>
+                <p className="text-mini leading-relaxed">
+                  خطوط النزيف والقص لتجهيز المطبوعات التجارية.
+                </p>
               </div>
             )}
           </div>

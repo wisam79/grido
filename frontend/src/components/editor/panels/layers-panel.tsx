@@ -1,9 +1,9 @@
-import React, { useCallback, useRef, useState } from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { CanvasElement, ShapeElement } from "@/lib/store/types";
-import { useShallow } from "zustand/react/shallow";
-import { cn } from "@/lib/utils";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import React, { useCallback, useRef, useState } from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import { CanvasElement, ShapeElement } from '@/lib/store/types';
+import { useShallow } from 'zustand/react/shallow';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   Image,
   TextT,
@@ -16,7 +16,7 @@ import {
   Trash,
   Copy,
   DotsSixVertical,
-} from "@/components/ui/icons";
+} from '@/components/ui/icons';
 
 /* ────────────────────────────────────────────────────────
  * لوحة الطبقات الاحترافية (Layers Panel)
@@ -31,22 +31,22 @@ import {
  * ──────────────────────────────────────────────────────── */
 
 function getElementLabel(el: CanvasElement, layerNumber?: number): string {
-  const suffix = layerNumber !== undefined ? ` ${String(layerNumber).padStart(2, "0")}` : "";
+  const suffix = layerNumber !== undefined ? ` ${String(layerNumber).padStart(2, '0')}` : '';
   switch (el.type) {
-    case "image":
+    case 'image':
       return `صورة${suffix}`;
-    case "text":
+    case 'text':
       return el.text?.slice(0, 18) || `نص${suffix}`;
-    case "shape": {
+    case 'shape': {
       const shapeLabels: Record<string, string> = {
-        rect: "مستطيل",
-        circle: "دائرة",
-        ellipse: "بيضاوي",
-        line: "خط",
-        star: "نجمة",
-        path: "مسار",
+        rect: 'مستطيل',
+        circle: 'دائرة',
+        ellipse: 'بيضاوي',
+        line: 'خط',
+        star: 'نجمة',
+        path: 'مسار',
       };
-      return `${shapeLabels[(el as ShapeElement).shape] || "شكل"}${suffix}`;
+      return `${shapeLabels[(el as ShapeElement).shape] || 'شكل'}${suffix}`;
     }
     default:
       return `عنصر${suffix}`;
@@ -54,13 +54,13 @@ function getElementLabel(el: CanvasElement, layerNumber?: number): string {
 }
 
 function getElementIcon(el: CanvasElement, isSelected = false) {
-  const weight = isSelected ? "fill" : "regular";
+  const weight = isSelected ? 'fill' : 'regular';
   switch (el.type) {
-    case "image":
+    case 'image':
       return <Image size={14} weight={weight} />;
-    case "text":
-      return <TextT size={14} weight={isSelected ? "bold" : "regular"} />;
-    case "shape":
+    case 'text':
+      return <TextT size={14} weight={isSelected ? 'bold' : 'regular'} />;
+    case 'shape':
       return <Shapes size={14} weight={weight} />;
     default:
       return <Stack size={14} weight={weight} />;
@@ -109,7 +109,7 @@ const LayerRow = React.memo(function LayerRow({
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onSelect(e);
         }
@@ -120,17 +120,15 @@ const LayerRow = React.memo(function LayerRow({
       onDragEnd={onDragEnd}
       onClick={onSelect}
       className={cn(
-        "group flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-all cursor-pointer select-none",
-        "border border-transparent",
-        "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
-        isSelected
-          ? "bg-primary/12 border-primary/30 shadow-xs"
-          : "hover:bg-muted/50",
-        isDragOver && "border-primary/50 bg-primary/5",
-        isHidden && "opacity-45",
+        'group flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-all cursor-pointer select-none',
+        'border border-transparent',
+        'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+        isSelected ? 'bg-accent-active border-border/70 shadow-xs' : 'hover:bg-muted/50',
+        isDragOver && 'border-foreground/40 bg-muted/60',
+        isHidden && 'opacity-45',
         // شفافية الصف المسحوب عبر حالة React — الكتابة المباشرة على DOM كانت
         // تبقى عالقة لأن dragend كان يُلتقط على الحاوية لا الصف (إصلاح Bug#8)
-        isDragging && "opacity-40"
+        isDragging && 'opacity-40',
       )}
     >
       {/* مقبض السحب */}
@@ -141,10 +139,8 @@ const LayerRow = React.memo(function LayerRow({
       {/* أيقونة النوع */}
       <div
         className={cn(
-          "w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors",
-          isSelected
-            ? "bg-primary/20 text-primary"
-            : "bg-muted/60 text-muted-foreground"
+          'w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors',
+          isSelected ? 'bg-muted/90 text-foreground' : 'bg-muted/60 text-muted-foreground',
         )}
       >
         {getElementIcon(el, isSelected)}
@@ -153,9 +149,9 @@ const LayerRow = React.memo(function LayerRow({
       {/* اسم العنصر */}
       <span
         className={cn(
-          "flex-1 text-xs font-bold truncate min-w-0",
-          isSelected ? "text-primary" : "text-foreground/80",
-          isHidden && "line-through"
+          'flex-1 text-xs font-bold truncate min-w-0',
+          isSelected ? 'text-foreground' : 'text-foreground/80',
+          isHidden && 'line-through',
         )}
         dir="auto"
       >
@@ -165,38 +161,46 @@ const LayerRow = React.memo(function LayerRow({
       {/* أزرار التحكم — تظهر عند Hover أو التحديد */}
       <div
         className={cn(
-          "flex items-center gap-0.5 shrink-0 transition-opacity",
-          isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          'flex items-center gap-0.5 shrink-0 transition-opacity',
+          isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
         )}
       >
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate();
+              }}
               className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <Copy size={13} weight="regular" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="font-cairo text-micro">نسخ</TooltipContent>
+          <TooltipContent side="top" className="font-cairo text-micro">
+            نسخ
+          </TooltipContent>
         </Tooltip>
 
         <Tooltip>
           <TooltipTrigger asChild>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleVisibility();
+              }}
               className={cn(
-                "p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
-                isHidden ? "text-destructive/60" : "text-muted-foreground hover:text-foreground"
+                'p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                isHidden ? 'text-destructive/60' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {isHidden ? <EyeSlash size={14} weight="bold" /> : <Eye size={14} weight="regular" />}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-micro">
-            {isHidden ? "إظهار" : "إخفاء"}
+            {isHidden ? 'إظهار' : 'إخفاء'}
           </TooltipContent>
         </Tooltip>
 
@@ -204,17 +208,24 @@ const LayerRow = React.memo(function LayerRow({
           <TooltipTrigger asChild>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onToggleLock(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleLock();
+              }}
               className={cn(
-                "p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
-                isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground"
+                'p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                isLocked ? 'text-amber-500' : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              {isLocked ? <LockSimple size={14} weight="fill" /> : <LockSimpleOpen size={14} weight="light" />}
+              {isLocked ? (
+                <LockSimple size={14} weight="fill" />
+              ) : (
+                <LockSimpleOpen size={14} weight="light" />
+              )}
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" className="font-cairo text-micro">
-            {isLocked ? "فك القفل" : "قفل"}
+            {isLocked ? 'فك القفل' : 'قفل'}
           </TooltipContent>
         </Tooltip>
 
@@ -222,13 +233,18 @@ const LayerRow = React.memo(function LayerRow({
           <TooltipTrigger asChild>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
               className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <Trash size={13} weight="regular" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top" className="font-cairo text-micro">حذف</TooltipContent>
+          <TooltipContent side="top" className="font-cairo text-micro">
+            حذف
+          </TooltipContent>
         </Tooltip>
       </div>
     </div>
@@ -257,7 +273,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       removeElement: state.removeElement,
       duplicateElement: state.duplicateElement,
       pushHistory: state.pushHistory,
-    }))
+    })),
   );
 
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -269,48 +285,45 @@ export const LayersPanel = React.memo(function LayersPanel() {
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     draggedIdRef.current = id;
-    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.effectAllowed = 'move';
     // شفافية أثناء السحب عبر حالة React بدل تعديل DOM مباشر (إصلاح Bug#8)
     setDraggingId(id);
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+    e.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent, targetId: string) => {
-      e.preventDefault();
-      setDragOverId(null);
-      const draggedId = draggedIdRef.current;
-      if (!draggedId || draggedId === targetId) return;
+  const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    setDragOverId(null);
+    const draggedId = draggedIdRef.current;
+    if (!draggedId || draggedId === targetId) return;
 
-      const state = useEditorStore.getState();
-      const sorted = [...state.elements].sort((a, b) => b.zIndex - a.zIndex);
+    const state = useEditorStore.getState();
+    const sorted = [...state.elements].sort((a, b) => b.zIndex - a.zIndex);
 
-      const draggedIdx = sorted.findIndex((el) => el.id === draggedId);
-      const targetIdx = sorted.findIndex((el) => el.id === targetId);
-      if (draggedIdx === -1 || targetIdx === -1) return;
+    const draggedIdx = sorted.findIndex((el) => el.id === draggedId);
+    const targetIdx = sorted.findIndex((el) => el.id === targetId);
+    if (draggedIdx === -1 || targetIdx === -1) return;
 
-      // نقل العنصر المسحوب إلى موضع العنصر المستهدف
-      const [moved] = sorted.splice(draggedIdx, 1);
-      sorted.splice(targetIdx, 0, moved);
+    // نقل العنصر المسحوب إلى موضع العنصر المستهدف
+    const [moved] = sorted.splice(draggedIdx, 1);
+    sorted.splice(targetIdx, 0, moved);
 
-      // إعادة ترقيم الـ zIndex لكل العناصر
-      const total = sorted.length;
-      sorted.forEach((el, i) => {
-        const newZ = (total - i) * 10;
-        if (el.zIndex !== newZ) {
-          state.updateElement(el.id, { zIndex: newZ });
-        }
-      });
+    // إعادة ترقيم الـ zIndex لكل العناصر
+    const total = sorted.length;
+    sorted.forEach((el, i) => {
+      const newZ = (total - i) * 10;
+      if (el.zIndex !== newZ) {
+        state.updateElement(el.id, { zIndex: newZ });
+      }
+    });
 
-      state.pushHistory();
-      draggedIdRef.current = null;
-    },
-    []
-  );
+    state.pushHistory();
+    draggedIdRef.current = null;
+  }, []);
 
   const handleDragEnd = useCallback(() => {
     setDraggingId(null);
@@ -323,7 +336,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       updateElement(id, { visible: current === false ? true : false } as Partial<CanvasElement>);
       pushHistory();
     },
-    [updateElement, pushHistory]
+    [updateElement, pushHistory],
   );
 
   const handleToggleLock = useCallback(
@@ -331,7 +344,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       updateElement(id, { locked: !current } as Partial<CanvasElement>);
       pushHistory();
     },
-    [updateElement, pushHistory]
+    [updateElement, pushHistory],
   );
 
   return (
@@ -339,7 +352,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       {/* الهيدر */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/40">
         <div className="flex items-center gap-2 text-xs font-extrabold text-foreground">
-          <div className="p-1 rounded-md bg-primary/10 text-primary">
+          <div className="p-1 rounded-md bg-muted/80 dark:bg-white/5 text-muted-foreground">
             <Stack size={16} weight="duotone" />
           </div>
           <span>الطبقات</span>
@@ -350,18 +363,18 @@ export const LayersPanel = React.memo(function LayersPanel() {
       </div>
 
       {/* قائمة الطبقات */}
-      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5" onDragEnd={handleDragEnd} role="presentation">
+      <div
+        className="flex-1 overflow-y-auto p-1.5 space-y-0.5"
+        onDragEnd={handleDragEnd}
+        role="presentation"
+      >
         {sortedElements.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-16 px-4">
             <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center mb-3">
               <Stack size={28} weight="thin" className="text-muted-foreground/50" />
             </div>
-            <p className="text-xs text-muted-foreground font-bold">
-              لا توجد عناصر
-            </p>
-            <p className="text-micro text-muted-foreground/60 mt-1">
-              أضف عناصر من شريط الأدوات
-            </p>
+            <p className="text-xs text-muted-foreground font-bold">لا توجد عناصر</p>
+            <p className="text-micro text-muted-foreground/60 mt-1">أضف عناصر من شريط الأدوات</p>
           </div>
         ) : (
           sortedElements.map((el, index) => (

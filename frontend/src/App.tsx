@@ -448,10 +448,11 @@ export default function App() {
                           transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                         />
                       )}
+
                       <SquaresFour
                         className={cn(
                           'w-3.5 h-3.5 shrink-0 transition-colors',
-                          mode === 'collage' ? 'text-primary' : 'text-muted-foreground',
+                          mode === 'collage' ? 'text-foreground' : 'text-muted-foreground',
                         )}
                         weight={mode === 'collage' ? 'fill' : 'regular'}
                       />
@@ -485,7 +486,7 @@ export default function App() {
                       <Image
                         className={cn(
                           'w-3.5 h-3.5 shrink-0 transition-colors',
-                          mode === 'single' ? 'text-primary' : 'text-muted-foreground',
+                          mode === 'single' ? 'text-foreground' : 'text-muted-foreground',
                         )}
                         weight={mode === 'single' ? 'fill' : 'regular'}
                       />
@@ -687,7 +688,7 @@ export default function App() {
             floatingFeedback={
               activeOperation ? (
                 <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-auto">
-                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse shrink-0" />
                   <span className="text-xs font-bold text-foreground truncate max-w-xs">
                     {activeOperation.title}
                   </span>
@@ -704,8 +705,8 @@ export default function App() {
                 </div>
               ) : isBusy ? (
                 <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 px-3 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-none">
-                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
-                  <span className="text-xs font-bold text-primary">جاري الترميم ...</span>
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse shrink-0" />
+                  <span className="text-xs font-bold text-foreground">جاري الترميم ...</span>
                 </div>
               ) : null
             }

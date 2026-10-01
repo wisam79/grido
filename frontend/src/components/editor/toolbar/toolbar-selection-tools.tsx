@@ -153,21 +153,21 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               onClick={() => alignElement('left')}
               className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
             >
-              <AlignLeftIcon className="w-4 h-4 text-primary" />
+              <AlignLeftIcon className="w-4 h-4 text-muted-foreground" />
               <span className="font-semibold">محاذاة لليسار</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => alignElement('center')}
               className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
             >
-              <AlignCenterHorizontalIcon className="w-4 h-4 text-primary" />
+              <AlignCenterHorizontalIcon className="w-4 h-4 text-muted-foreground" />
               <span className="font-semibold">توسيط أفقي</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => alignElement('right')}
               className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
             >
-              <AlignRightIcon className="w-4 h-4 text-primary" />
+              <AlignRightIcon className="w-4 h-4 text-muted-foreground" />
               <span className="font-semibold">محاذاة لليمين</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -1,5 +1,11 @@
-import { Point, DocumentAspectType, QuadOverlapStats, ID_HALF_MIN_RATIO, ID_HALF_MAX_RATIO } from "./types";
-import { computePolygonArea } from "./contour-tracer";
+import {
+  Point,
+  DocumentAspectType,
+  QuadOverlapStats,
+  ID_HALF_MIN_RATIO,
+  ID_HALF_MAX_RATIO,
+} from './types';
+import { computePolygonArea } from './contour-tracer';
 
 /**
  * فرز الأركان الأربعة في اتجاه عقارب الساعة:
@@ -32,12 +38,7 @@ export function sortCornerPoints(pts: Point[]): Point[] {
   }
 
   // 4. تدوير المصفوفة لتبدأ بـ Top-Left مع الحفاظ على الترتيب الدائري
-  return [
-    sorted[tlIdx],
-    sorted[(tlIdx + 1) % 4],
-    sorted[(tlIdx + 2) % 4],
-    sorted[(tlIdx + 3) % 4],
-  ];
+  return [sorted[tlIdx], sorted[(tlIdx + 1) % 4], sorted[(tlIdx + 2) % 4], sorted[(tlIdx + 3) % 4]];
 }
 
 /**
@@ -149,8 +150,10 @@ export function findRotatedQuadCorners(hull: Point[]): Point[] | null {
     const vx = -uy;
     const vy = ux;
 
-    let minU = Infinity, maxU = -Infinity;
-    let minV = Infinity, maxV = -Infinity;
+    let minU = Infinity,
+      maxU = -Infinity;
+    let minV = Infinity,
+      maxV = -Infinity;
 
     for (let j = 0; j < n; j++) {
       const p = hull[j];
@@ -179,7 +182,10 @@ export function findRotatedQuadCorners(hull: Point[]): Point[] | null {
   // حل احتياطي عند استقامة النقاط على خط واحد — حلقة صريحة بدل spread
   // (Math.min(...arr) ينفجر stack للـ hulls الكبيرة)
   if (!bestCorners && n >= 2) {
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity;
     for (const p of hull) {
       if (p.x < minX) minX = p.x;
       if (p.x > maxX) maxX = p.x;
@@ -233,7 +239,7 @@ export function isPhysicallyPlausibleDocumentQuad(quad: Point[]): boolean {
 
     const dot = v1x * v2x + v1y * v2y;
     const cosAngle = Math.abs(dot / (mag1 * mag2));
-    if (cosAngle > 0.72) return false; // زوايا منفرجة/حادة جداً
+    if (cosAngle > 0.82) return false; // زوايا منفرجة/حادة جداً (منظور أقصى ~35°)
   }
 
   const topW = Math.hypot(sorted[1].x - sorted[0].x, sorted[1].y - sorted[0].y);
@@ -293,37 +299,40 @@ export function inferSmartDocumentAspect(quad: Point[]): DocumentAspectType {
 
   const avgW = (topW + botW) / 2;
   const avgH = (leftH + rightH) / 2;
-  if (avgW <= 0 || avgH <= 0) return "free";
+  if (avgW <= 0 || avgH <= 0) return 'free';
 
   const ratio = avgW / avgH;
 
   // بطاقة هوية أفقية (ID-1 ISO 7810: 85.6mm / 53.98mm = 1.586)
-  if (ratio >= 1.44 && ratio <= 1.84) return "id_card";
+  if (ratio >= 1.44 && ratio <= 1.84) return 'id_card';
   // A4 عمودي (1:1.414 -> 0.707)
-  if (ratio >= 0.63 && ratio <= 0.79) return "a4_p";
+  if (ratio >= 0.63 && ratio <= 0.79) return 'a4_p';
   // A4 أفقي (1.414)
-  if (ratio >= 1.28 && ratio <= 1.44) return "a4_l";
+  if (ratio >= 1.28 && ratio <= 1.44) return 'a4_l';
   // مستند مربع
-  if (ratio >= 0.88 && ratio <= 1.14) return "square";
+  if (ratio >= 0.88 && ratio <= 1.14) return 'square';
 
-  return "free";
+  return 'free';
 }
 
 /**
  * اسم نوع المستند بالعربية ("بطاقة هوية"، "ورقة A4"...) — اللبنة المشتركة.
  */
 export function getAspectKindLabel(aspect: DocumentAspectType | undefined): string {
-  if (aspect === "id_card") return "بطاقة هوية";
-  if (aspect === "a4_p" || aspect === "a4_l") return "ورقة A4";
-  if (aspect === "square") return "مستند مربع";
-  return "مستند";
+  if (aspect === 'id_card') return 'بطاقة هوية';
+  if (aspect === 'a4_p' || aspect === 'a4_l') return 'ورقة A4';
+  if (aspect === 'square') return 'مستند مربع';
+  return 'مستند';
 }
 
 /**
  * التسمية العربية الموحدة لنوع المستند — مصدر واحد بدل 4 نسخ مكررة
  * (document-detector ×2، opencv-detector، use-scanner-detection).
  */
-export function getDocumentAspectLabel(aspect: DocumentAspectType | undefined, index: number): string {
+export function getDocumentAspectLabel(
+  aspect: DocumentAspectType | undefined,
+  index: number,
+): string {
   return `مستند ${index} (${getAspectKindLabel(aspect)})`;
 }
 
@@ -336,7 +345,10 @@ export function computeQuadOverlapStats(q1: Point[], q2: Point[]): QuadOverlapSt
   const a1 = Math.max(0, computePolygonArea(q1));
   const a2 = Math.max(0, computePolygonArea(q2));
 
-  let minX1 = Infinity, maxX1 = -Infinity, minY1 = Infinity, maxY1 = -Infinity;
+  let minX1 = Infinity,
+    maxX1 = -Infinity,
+    minY1 = Infinity,
+    maxY1 = -Infinity;
   for (const p of q1) {
     if (p.x < minX1) minX1 = p.x;
     if (p.x > maxX1) maxX1 = p.x;
@@ -344,7 +356,10 @@ export function computeQuadOverlapStats(q1: Point[], q2: Point[]): QuadOverlapSt
     if (p.y > maxY1) maxY1 = p.y;
   }
 
-  let minX2 = Infinity, maxX2 = -Infinity, minY2 = Infinity, maxY2 = -Infinity;
+  let minX2 = Infinity,
+    maxX2 = -Infinity,
+    minY2 = Infinity,
+    maxY2 = -Infinity;
   for (const p of q2) {
     if (p.x < minX2) minX2 = p.x;
     if (p.x > maxX2) maxX2 = p.x;
@@ -379,10 +394,7 @@ export interface LineEquation {
 /**
  * تقاطع خطين مستقيمين بدقة رياضية
  */
-export function computeLineIntersection(
-  l1: LineEquation,
-  l2: LineEquation
-): Point | null {
+export function computeLineIntersection(l1: LineEquation, l2: LineEquation): Point | null {
   const d = l1.a * l2.b - l2.a * l1.b;
   if (Math.abs(d) < 1e-7) return null;
   const x = (l1.b * l2.c - l2.b * l1.c) / d;
@@ -398,7 +410,7 @@ export function fitRobustLineRANSAC(
   pts: Point[],
   maxIter: number = 30,
   inlierThresh: number = 2.5,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
 ): LineEquation | null {
   if (pts.length < 2) return null;
   if (pts.length === 2) {
@@ -457,7 +469,9 @@ export function fitRobustLineRANSAC(
     meanX /= bestInliers.length;
     meanY /= bestInliers.length;
 
-    let sxx = 0, sxy = 0, syy = 0;
+    let sxx = 0,
+      sxy = 0,
+      syy = 0;
     for (const p of bestInliers) {
       const x = p.x - meanX;
       const y = p.y - meanY;
@@ -483,7 +497,7 @@ export function fitRobustLineRANSAC(
 export function fitRobustQuadLinesRANSAC(
   contourPts: Point[],
   initialQuad: Point[],
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
 ): Point[] | null {
   if (contourPts.length < 8 || initialQuad.length !== 4) return null;
 
@@ -564,15 +578,19 @@ export function evaluateVanishingPointPhysics(quad: Point[]): number {
   const s = sortCornerPoints(quad);
 
   // الخط العلوي والسفلي
-  const dxTop = s[1].x - s[0].x, dyTop = s[1].y - s[0].y;
-  const dxBot = s[2].x - s[3].x, dyBot = s[2].y - s[3].y;
+  const dxTop = s[1].x - s[0].x,
+    dyTop = s[1].y - s[0].y;
+  const dxBot = s[2].x - s[3].x,
+    dyBot = s[2].y - s[3].y;
   const lenTop = Math.hypot(dxTop, dyTop);
   const lenBot = Math.hypot(dxBot, dyBot);
   if (lenTop === 0 || lenBot === 0) return 0;
 
   // الخط الأيسر والأيمن
-  const dxLeft = s[3].x - s[0].x, dyLeft = s[3].y - s[0].y;
-  const dxRight = s[2].x - s[1].x, dyRight = s[2].y - s[1].y;
+  const dxLeft = s[3].x - s[0].x,
+    dyLeft = s[3].y - s[0].y;
+  const dxRight = s[2].x - s[1].x,
+    dyRight = s[2].y - s[1].y;
   const lenLeft = Math.hypot(dxLeft, dyLeft);
   const lenRight = Math.hypot(dxRight, dyRight);
   if (lenLeft === 0 || lenRight === 0) return 0;
@@ -640,4 +658,3 @@ export function rectifyNearAxisAlignedQuad(quad: Point[]): Point[] {
 
   return s;
 }
-

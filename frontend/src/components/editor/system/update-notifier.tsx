@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -6,9 +6,9 @@ import {
   DialogTitle,
   DialogDescription,
   DialogCloseButton,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/huge-icon";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   Sparkle,
   DownloadSimple,
@@ -17,19 +17,19 @@ import {
   WarningCircle,
   Globe,
   Tag,
-} from "@/components/ui/icons";
-import { toast } from "sonner";
-import { CheckForUpdate, DownloadAndInstallUpdate } from "../../../../wailsjs/go/main/App";
-import { service } from "../../../../wailsjs/go/models";
-import { EventsOn, EventsOff, BrowserOpenURL } from "../../../../wailsjs/runtime/runtime";
-import { toErrorMessage } from "@/lib/wails-error";
+} from '@/components/ui/icons';
+import { toast } from 'sonner';
+import { CheckForUpdate, DownloadAndInstallUpdate } from '../../../../wailsjs/go/main/App';
+import { service } from '../../../../wailsjs/go/models';
+import { EventsOn, EventsOff, BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
+import { toErrorMessage } from '@/lib/wails-error';
 
 /**
  * معالجة وتنسيق ملاحظات التحديث لتحويل أسطر Markdown إلى عناصر واجهة نقية
  */
 function FormattedReleaseNotes({ notes }: { notes: string }) {
   const lines = notes
-    .split("\n")
+    .split('\n')
     .map((l) => l.trim())
     .filter(Boolean);
 
@@ -37,25 +37,25 @@ function FormattedReleaseNotes({ notes }: { notes: string }) {
     <div className="space-y-1.5 text-xs text-muted-foreground leading-relaxed">
       {lines.map((line, idx) => {
         // العناوين
-        if (line.startsWith("#")) {
-          const cleanTitle = line.replace(/^#+\s*/, "").replace(/\*\*/g, "");
+        if (line.startsWith('#')) {
+          const cleanTitle = line.replace(/^#+\s*/, '').replace(/\*\*/g, '');
           return (
             <div
               key={idx}
               className="text-foreground font-bold text-xs pt-1 first:pt-0 flex items-center gap-1.5 border-b border-border/40 pb-1"
             >
-              <Tag className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+              <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="duotone" />
               <span>{cleanTitle}</span>
             </div>
           );
         }
 
         // عناصر القوائم
-        if (line.startsWith("-") || line.startsWith("*")) {
-          const cleanItem = line.replace(/^[-*]\s*/, "").replace(/\*\*/g, "");
+        if (line.startsWith('-') || line.startsWith('*')) {
+          const cleanItem = line.replace(/^[-*]\s*/, '').replace(/\*\*/g, '');
           return (
             <div key={idx} className="flex items-start gap-2 pr-1 text-xs text-foreground/90">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary/80 mt-1.5 shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/80 mt-1.5 shrink-0" />
               <span>{cleanItem}</span>
             </div>
           );
@@ -64,7 +64,7 @@ function FormattedReleaseNotes({ notes }: { notes: string }) {
         // نص عادي
         return (
           <p key={idx} className="text-xs text-muted-foreground">
-            {line.replace(/\*\*/g, "")}
+            {line.replace(/\*\*/g, '')}
           </p>
         );
       })}
@@ -82,19 +82,19 @@ export function UpdateNotifier() {
   const performCheck = useCallback(async (isManual = false) => {
     try {
       if (isManual) {
-        toast.info("جاري التحقق من التحديثات ...");
+        toast.info('جاري التحقق من التحديثات ...');
       }
       const info = await CheckForUpdate();
       if (info && info.has_update) {
         setUpdateInfo(info);
         setIsOpen(true);
       } else if (isManual) {
-        toast.success("أنت على أحدث إصدار");
+        toast.success('أنت على أحدث إصدار');
       }
     } catch (err) {
-      console.warn("Failed to check for updates:", err);
+      console.warn('Failed to check for updates:', err);
       if (isManual) {
-        toast.error("تعذر الاتصال بخادم التحديثات. حاول لاحقاً.");
+        toast.error('تعذر الاتصال بخادم التحديثات. حاول لاحقاً.');
       }
     }
   }, []);
@@ -104,16 +104,16 @@ export function UpdateNotifier() {
     performCheck(false);
 
     const handleManualCheck = () => performCheck(true);
-    window.addEventListener("grido:check-updates", handleManualCheck);
+    window.addEventListener('grido:check-updates', handleManualCheck);
 
-    const unsubscribe = EventsOn("update-progress", (p: number) => {
+    const unsubscribe = EventsOn('update-progress', (p: number) => {
       setProgress(p);
     });
 
     return () => {
-      window.removeEventListener("grido:check-updates", handleManualCheck);
-      if (typeof EventsOff === "function") {
-        EventsOff("update-progress");
+      window.removeEventListener('grido:check-updates', handleManualCheck);
+      if (typeof EventsOff === 'function') {
+        EventsOff('update-progress');
       }
     };
   }, [performCheck]);
@@ -137,18 +137,24 @@ export function UpdateNotifier() {
     setProgress(0);
 
     try {
-      const url = updateInfo.download_url || "https://grido.cloud-ip.cc/api/download";
-      await DownloadAndInstallUpdate(url, updateInfo.sha256 || "");
+      const url = updateInfo.download_url || 'https://grido.cloud-ip.cc/api/download';
+      await DownloadAndInstallUpdate(url, updateInfo.sha256 || '');
     } catch (err: unknown) {
-      console.error("Failed to update:", err);
-      const errMsg = toErrorMessage(err, "فشل تحميل وتثبيت التحديث.");
+      console.error('Failed to update:', err);
+      const errMsg = toErrorMessage(err, 'فشل تحميل وتثبيت التحديث.');
       setError(errMsg);
       setIsDownloading(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (isDownloading) return; handleOpenChange(open); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (isDownloading) return;
+        handleOpenChange(open);
+      }}
+    >
       <DialogContent
         showCloseButton={false}
         className="max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 rounded-2xl p-5 fluent-acrylic fluent-specular font-cairo"
@@ -158,7 +164,7 @@ export function UpdateNotifier() {
         <DialogHeader className="space-y-1 text-start pb-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shadow-xs shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-accent-active border border-border/80 flex items-center justify-center text-foreground shadow-xs shrink-0">
                 <Sparkle className="w-5 h-5" weight="duotone" />
               </div>
               <div className="flex flex-col min-w-0">
@@ -180,16 +186,16 @@ export function UpdateNotifier() {
             <div className="flex flex-col gap-0.5">
               <span className="text-micro text-muted-foreground font-semibold">الإصدار المثبت</span>
               <span className="font-mono text-xs text-foreground/80 font-bold bg-background/90 px-2 py-0.5 rounded-md border border-border/50 inline-block w-fit">
-                {updateInfo.current_version || "dev"}
+                {updateInfo.current_version || 'dev'}
               </span>
             </div>
 
-            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 border border-primary/20 text-primary shrink-0">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-accent-active border border-border/80 text-foreground shrink-0">
               <ArrowLeft className="w-3.5 h-3.5" weight="bold" />
             </div>
 
             <div className="flex flex-col items-end gap-0.5">
-              <span className="text-micro text-primary font-bold">الإصدار الأحدث</span>
+              <span className="text-micro text-muted-foreground font-bold">الإصدار الأحدث</span>
               <span className="font-mono text-xs text-primary-foreground font-bold bg-primary px-2.5 py-0.5 rounded-md shadow-xs shadow-primary/30 flex items-center gap-1">
                 <Sparkle className="w-3 h-3" weight="fill" />
                 {updateInfo.latest_version}
@@ -201,7 +207,7 @@ export function UpdateNotifier() {
           {updateInfo.release_notes && !isDownloading && (
             <div className="space-y-1.5">
               <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <CheckCircle className="w-3.5 h-3.5 text-primary" weight="duotone" />
+                <CheckCircle className="w-3.5 h-3.5 text-success shrink-0" weight="duotone" />
                 <span>مميزات التحديث:</span>
               </span>
               <div className="bg-muted/30 dark:bg-muted/10 rounded-xl p-3 max-h-36 overflow-y-auto border border-border/60 fluent-specular">
@@ -212,23 +218,21 @@ export function UpdateNotifier() {
 
           {/* 3. شريط تقدم التحميل التفاعلي */}
           {isDownloading && (
-            <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/20 space-y-2.5 animate-in fade-in duration-200">
+            <div className="p-3.5 rounded-xl bg-muted/40 dark:bg-white/5 border border-border/70 space-y-2.5 animate-in fade-in duration-200">
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-foreground flex items-center gap-2">
-                  <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} />
+                  <Spinner className="w-3.5 h-3.5 text-muted-foreground shrink-0" size={14} />
                   <span>
-                    {progress >= 100
-                      ? "جاري تطبيق التحديث ..."
-                      : "جاري تحميل التحديث ..."}
+                    {progress >= 100 ? 'جاري تطبيق التحديث ...' : 'جاري تحميل التحديث ...'}
                   </span>
                 </span>
-                <span className="font-mono text-primary font-bold text-xs">
+                <span className="font-mono text-foreground font-bold text-xs">
                   {Math.round(progress)}%
                 </span>
               </div>
-              <div className="w-full bg-primary/15 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-muted/70 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-primary h-full transition-all duration-300 rounded-full"
+                  className="bg-foreground/85 h-full transition-all duration-300 rounded-full"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -262,13 +266,12 @@ export function UpdateNotifier() {
               ) : (
                 <Button
                   onClick={() => {
-                    const url =
-                      updateInfo.download_url || "https://grido.cloud-ip.cc/api/download";
-                    if (typeof BrowserOpenURL === "function") {
+                    const url = updateInfo.download_url || 'https://grido.cloud-ip.cc/api/download';
+                    if (typeof BrowserOpenURL === 'function') {
                       BrowserOpenURL(url);
                     } else {
                       // noopener/noreferrer: لا يُمنح الموقع المفتوح مرجع نافذة التطبيق
-                      window.open(url, "_blank", "noopener,noreferrer");
+                      window.open(url, '_blank', 'noopener,noreferrer');
                     }
                   }}
                   className="flex-1 h-9 text-xs font-bold gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm cursor-pointer"
@@ -288,11 +291,7 @@ export function UpdateNotifier() {
           ) : (
             <div className="flex items-center justify-center w-full py-1 text-xs text-muted-foreground gap-2 font-medium">
               <Spinner className="w-4 h-4 text-primary" size={16} />
-              <span>
-                {progress >= 100
-                  ? "جاري تطبيق التحديث ..."
-                  : "جاري تحميل التحديث ..."}
-              </span>
+              <span>{progress >= 100 ? 'جاري تطبيق التحديث ...' : 'جاري تحميل التحديث ...'}</span>
             </div>
           )}
         </div>

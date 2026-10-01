@@ -214,7 +214,7 @@ export function ToolbarFileOps() {
               aria-label="إدراج صورة جديدة"
               className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-s-md rounded-e-none hover:bg-background/80 active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group border-e border-border/40"
             >
-              <AddPhotoIcon className="w-4 h-4 text-primary group-hover:scale-105 transition-transform" />
+              <AddPhotoIcon className="w-4 h-4 text-foreground group-hover:scale-105 transition-transform" />
               <span>إدراج</span>
             </Button>
           </TooltipBtn>
@@ -243,13 +243,8 @@ export function ToolbarFileOps() {
                 onClick={() => setIsBatchInsertOpen(true)}
                 className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
               >
-                <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Stack className="w-4 h-4" weight="duotone" />
-                </div>
-                <div className="flex flex-col min-w-0 text-start flex-1">
-                  <span className="font-bold text-foreground">دفعة صور</span>
-                  <span className="text-micro text-muted-foreground">إدراج صور متعددة</span>
-                </div>
+                <Stack className="w-4 h-4 shrink-0" />
+                <span className="font-bold text-foreground flex-1">دفعة صور</span>
                 <span className="text-micro font-mono text-muted-foreground/80">Ctrl+Shift+O</span>
               </DropdownMenuItem>
 
@@ -257,13 +252,8 @@ export function ToolbarFileOps() {
                 onClick={() => setIsPhoneBridgeOpen(true)}
                 className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
               >
-                <div className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <DeviceMobileCamera className="w-4 h-4" weight="duotone" />
-                </div>
-                <div className="flex flex-col min-w-0 text-start flex-1">
-                  <span className="font-bold text-foreground">كاميرا الهاتف</span>
-                  <span className="text-micro text-muted-foreground">التقاط عبر QR</span>
-                </div>
+                <DeviceMobileCamera className="w-4 h-4 shrink-0" />
+                <span className="font-bold text-foreground flex-1">كاميرا الهاتف</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -284,7 +274,7 @@ export function ToolbarFileOps() {
               className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer group"
             >
               <Folders
-                className="w-4 h-4 text-muted-foreground/90 group-hover:text-primary group-hover:scale-105 transition-all"
+                className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground group-hover:scale-105 transition-all"
                 weight="duotone"
               />
             </Button>

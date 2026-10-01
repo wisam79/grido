@@ -1,22 +1,23 @@
-import { Point, DetectedDocument, DetectionResult, ScoredCandidate, DetectionMode } from "./types";
-import { computePolygonArea as calculatePolygonArea } from "./contour-tracer";
+import { Point, DetectedDocument, DetectionResult, ScoredCandidate, DetectionMode } from './types';
+import { computePolygonArea as calculatePolygonArea } from './contour-tracer';
 import {
   sortCornerPoints,
   isIdCardAspectRatio,
   computeQuadOrthogonality,
   getDocumentAspectLabel,
   inferSmartDocumentAspect,
-} from "./quad-geometry";
+  extractFourCornersFromHull,
+} from './quad-geometry';
 import {
   applyNMS,
   locateSplitSeamRatio,
   splitQuadIntoIdCardsWithSeam,
   SPLIT_SEAM_RATIO_DEFAULT,
-} from "./multi-doc-segmenter";
-import { computeSobelGradients } from "./fast-vision";
-import { loadOpenCV, getLoadedOpenCV, CvRuntime } from "../opencv-loader";
-import type { CvMat, CvMatVector, CvRuntimeLike } from "./cv-types";
-import type { CvPoint } from "./cv-types";
+} from './multi-doc-segmenter';
+import { computeSobelGradients } from './fast-vision';
+import { loadOpenCV, getLoadedOpenCV, CvRuntime } from '../opencv-loader';
+import type { CvMat, CvMatVector, CvRuntimeLike } from './cv-types';
+import type { CvPoint } from './cv-types';
 
 interface CvDisposableLike {
   delete: () => void;
@@ -31,7 +32,7 @@ function evaluateOpenCvQuadScore(
   sw: number,
   sh: number,
   grayData: Uint8Array,
-  totalPixels: number
+  totalPixels: number,
 ): number {
   const quadArea = calculatePolygonArea(quad);
   const areaRatio = quadArea / totalPixels;
@@ -55,11 +56,11 @@ function evaluateOpenCvQuadScore(
   } else if (ratio >= 1.34 && ratio < 1.46) {
     aspectBonus = 1.65; // ورقة A4 قياسية (~ 1.414)
   } else if (ratio >= 1.16 && ratio < 1.34) {
-    aspectBonus = 0.80; // كتلة مدمجة لبطاقتين مكدستين
+    aspectBonus = 0.8; // كتلة مدمجة لبطاقتين مكدستين
   } else if (ratio >= 0.88 && ratio <= 1.15) {
-    aspectBonus = 1.20; // مربع
+    aspectBonus = 1.2; // مربع
   } else {
-    aspectBonus = 0.50; // شريط نحيف
+    aspectBonus = 0.5; // شريط نحيف
   }
 
   // حساب التباين بين داخل المضلع وخارجه
@@ -91,11 +92,15 @@ function evaluateOpenCvQuadScore(
   let borderPenalty = 1.0;
   if (areaRatio < 0.94) {
     if (borderTouches >= 2) borderPenalty = 0.55;
-    if (borderTouches >= 3) borderPenalty = 0.30;
+    if (borderTouches >= 3) borderPenalty = 0.3;
   }
 
-  const sizeFactor = 0.80 + 0.20 * Math.min(1, areaRatio * 3.5);
-  const baseScore = (0.50 * orthogonality + 0.50 * (Math.abs(avgInterior - 128) / 128 + 0.5)) * aspectBonus * sizeFactor * borderPenalty;
+  const sizeFactor = 0.8 + 0.2 * Math.min(1, areaRatio * 3.5);
+  const baseScore =
+    (0.5 * orthogonality + 0.5 * (Math.abs(avgInterior - 128) / 128 + 0.5)) *
+    aspectBonus *
+    sizeFactor *
+    borderPenalty;
 
   return baseScore;
 }
@@ -107,7 +112,7 @@ export async function detectDocumentsWithOpenCV(
   src: HTMLCanvasElement | HTMLImageElement,
   originalWidth: number,
   originalHeight: number,
-  mode: DetectionMode = "multi"
+  mode: DetectionMode = 'multi',
 ): Promise<DetectionResult | null> {
   let cvFull: CvRuntime | null = getLoadedOpenCV();
   if (!cvFull) {
@@ -118,7 +123,7 @@ export async function detectDocumentsWithOpenCV(
     }
   }
 
-  if (!cvFull || !cvFull.Mat || typeof cvFull.matFromImageData !== "function") {
+  if (!cvFull || !cvFull.Mat || typeof cvFull.matFromImageData !== 'function') {
     return null;
   }
   // واجهة هيكلية مُحصورة بالدوال المستخدمة فعلياً — أنواع @techstark تفرض
@@ -131,10 +136,10 @@ export async function detectDocumentsWithOpenCV(
   const sh = Math.max(1, Math.round(originalHeight * scale));
   const totalPixels = sw * sh;
 
-  const offCanvas = document.createElement("canvas");
+  const offCanvas = document.createElement('canvas');
   offCanvas.width = sw;
   offCanvas.height = sh;
-  const offCtx = offCanvas.getContext("2d", { willReadFrequently: true });
+  const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
   if (!offCtx) return null;
 
   offCtx.drawImage(src, 0, 0, sw, sh);
@@ -143,7 +148,7 @@ export async function detectDocumentsWithOpenCV(
   // مصفوفات OpenCV للتنظيف الإجباري في النهاية
   const matsToFree: CvDisposableLike[] = [];
   const track = <T extends object>(mat: T): T => {
-    if (typeof (mat as { delete?: unknown }).delete === "function") {
+    if (typeof (mat as { delete?: unknown }).delete === 'function') {
       matsToFree.push(mat as unknown as CvDisposableLike);
     }
     return mat;
@@ -168,8 +173,8 @@ export async function detectDocumentsWithOpenCV(
       return seamGrad;
     };
 
-  // توليد الأقنعة الثنائية المختلفة
-  const binaryMats: CvMat[] = [];
+    // توليد الأقنعة الثنائية المختلفة
+    const binaryMats: CvMat[] = [];
 
     // 1. قناع Canny مع تمديد الحواف
     const cannyMat = track(new cv.Mat());
@@ -181,7 +186,15 @@ export async function detectDocumentsWithOpenCV(
 
     // 2. قناع Adaptive Threshold المعكوس
     const adaptInv = track(new cv.Mat());
-    cv.adaptiveThreshold(blurMat, adaptInv, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY_INV, 25, 4);
+    cv.adaptiveThreshold(
+      blurMat,
+      adaptInv,
+      255,
+      cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+      cv.THRESH_BINARY_INV,
+      25,
+      4,
+    );
     binaryMats.push(adaptInv);
 
     // 3. قناع Otsu المعكوس (للبطاقات الداكنة على خلفية بيضاء)
@@ -211,7 +224,11 @@ export async function detectDocumentsWithOpenCV(
 
           // استبعاد الشوائب والمساحات الكلية
           if (area < 0.012 * totalPixels || area > 0.98 * totalPixels) {
-            try { cnt.delete(); } catch { /* ignore */ }
+            try {
+              cnt.delete();
+            } catch {
+              /* ignore */
+            }
             continue;
           }
 
@@ -259,9 +276,9 @@ export async function detectDocumentsWithOpenCV(
             try {
               const rotRect = cv.minAreaRect(cnt);
               let boxPts: CvPoint[] = [];
-              if (typeof cv.rotatedRectPoints === "function") {
+              if (typeof cv.rotatedRectPoints === 'function') {
                 boxPts = cv.rotatedRectPoints(rotRect);
-              } else if (cv.RotatedRect && typeof cv.RotatedRect.points === "function") {
+              } else if (cv.RotatedRect && typeof cv.RotatedRect.points === 'function') {
                 boxPts = cv.RotatedRect.points(rotRect);
               }
               if (boxPts && boxPts.length === 4) {
@@ -271,168 +288,227 @@ export async function detectDocumentsWithOpenCV(
               // ignore
             }
 
-            // ج) غلاف محدب مقرب
+            // ج) غلاف محدب مقرب — يدعم البطاقات ذات الزوايا الدائرية (ISO 7810) حتى 10 رؤوس
             cv.convexHull(cnt, hull, false, true);
             cv.approxPolyDP(hull, hullApprox, 0.025 * peri, true);
-            if (hullApprox.rows === 4 && cv.isContourConvex(hullApprox)) {
+            if (hullApprox.rows >= 4 && hullApprox.rows <= 10 && cv.isContourConvex(hullApprox)) {
               const pts: Point[] = [];
-              for (let r = 0; r < 4; r++) {
+              for (let r = 0; r < hullApprox.rows; r++) {
                 pts.push({
                   x: hullApprox.data32S[r * 2],
                   y: hullApprox.data32S[r * 2 + 1],
                 });
               }
-              quads.push(pts);
+              const four = pts.length === 4 ? pts : extractFourCornersFromHull(pts);
+              if (four && four.length === 4) {
+                quads.push(four);
+              }
             }
 
-          for (const quad of quads) {
-            const score = evaluateOpenCvQuadScore(quad, sw, sh, grayData, totalPixels);
-            if (score > 0.15) {
-              allCandidates.push({ quad, score });
+            for (const quad of quads) {
+              const score = evaluateOpenCvQuadScore(quad, sw, sh, grayData, totalPixels);
+              if (score > 0.15) {
+                allCandidates.push({ quad, score });
 
-              const qSorted = sortCornerPoints(quad);
-              const qW = Math.hypot(qSorted[1].x - qSorted[0].x, qSorted[1].y - qSorted[0].y);
-              const qH = Math.hypot(qSorted[3].x - qSorted[0].x, qSorted[3].y - qSorted[0].y);
-              const qRatio = qW / Math.max(1, qH);
+                const qSorted = sortCornerPoints(quad);
+                const qW = Math.hypot(qSorted[1].x - qSorted[0].x, qSorted[1].y - qSorted[0].y);
+                const qH = Math.hypot(qSorted[3].x - qSorted[0].x, qSorted[3].y - qSorted[0].y);
+                const qRatio = qW / Math.max(1, qH);
 
-              const isStackedPairAspect = (q: Point[]): boolean => {
-                const s = sortCornerPoints(q);
-                const ww = Math.hypot(s[1].x - s[0].x, s[1].y - s[0].y);
-                const hh = Math.hypot(s[3].x - s[0].x, s[3].y - s[0].y);
-                if (ww <= 0 || hh <= 0) return false;
-                return isIdCardAspectRatio(Math.max(ww / hh, hh / ww));
-              };
+                const isStackedPairAspect = (q: Point[]): boolean => {
+                  const s = sortCornerPoints(q);
+                  const ww = Math.hypot(s[1].x - s[0].x, s[1].y - s[0].y);
+                  const hh = Math.hypot(s[3].x - s[0].x, s[3].y - s[0].y);
+                  if (ww <= 0 || hh <= 0) return false;
+                  return isIdCardAspectRatio(Math.max(ww / hh, hh / ww));
+                };
 
-              if (qRatio >= 0.68 && qRatio <= 0.88) {
-                const midY = Math.round((qSorted[0].y + qSorted[3].y) / 2);
-                let midEdgeDiff = 0;
-                for (let x = Math.round(qSorted[0].x); x <= Math.round(qSorted[1].x); x += 2) {
-                  if (midY > 1 && midY < sh - 2 && x >= 0 && x < sw) {
-                    midEdgeDiff += Math.abs(grayData[(midY - 1) * sw + x] - grayData[(midY + 1) * sw + x]);
-                  }
-                }
-                const avgMidEdge = midEdgeDiff / Math.max(1, Math.round((qSorted[1].x - qSorted[0].x) / 2));
-                if (avgMidEdge >= 12) {
-                  // موضع القص يتبع الفاصل الحقيقي (أقوى حافة داخل نطاق البحث)، لا المنتصف دائماً
-                  const g = getSeamGrad();
-                  const seamRatio =
-                    locateSplitSeamRatio(
-                      {
-                        x: (qSorted[0].x + qSorted[1].x) / 2,
-                        y: (qSorted[0].y + qSorted[1].y) / 2,
-                      },
-                      {
-                        x: (qSorted[3].x + qSorted[2].x) / 2,
-                        y: (qSorted[3].y + qSorted[2].y) / 2,
-                      },
-                      g.mag,
-                      sw,
-                      sh,
-                      g.maxMag
-                    ) ?? SPLIT_SEAM_RATIO_DEFAULT;
-                  const split = splitQuadIntoIdCardsWithSeam(
-                    quad,
-                    "vertical",
-                    seamRatio,
-                    (cards) =>
-                      cards.length === 2 &&
-                      isStackedPairAspect(cards[0].corners) &&
-                      isStackedPairAspect(cards[1].corners)
-                  );
-                  if (split.length === 2) {
-                    const s1 = evaluateOpenCvQuadScore(split[0].corners, sw, sh, grayData, totalPixels);
-                    const s2 = evaluateOpenCvQuadScore(split[1].corners, sw, sh, grayData, totalPixels);
-                    if (
-                      s1 > 0.15 &&
-                      s2 > 0.15 &&
-                      isStackedPairAspect(split[0].corners) &&
-                      isStackedPairAspect(split[1].corners)
-                    ) {
-                      allCandidates.push({ quad: split[0].corners, score: s1 });
-                      allCandidates.push({ quad: split[1].corners, score: s2 });
+                if (qRatio >= 0.68 && qRatio <= 0.88) {
+                  const midY = Math.round((qSorted[0].y + qSorted[3].y) / 2);
+                  let midEdgeDiff = 0;
+                  for (let x = Math.round(qSorted[0].x); x <= Math.round(qSorted[1].x); x += 2) {
+                    if (midY > 1 && midY < sh - 2 && x >= 0 && x < sw) {
+                      midEdgeDiff += Math.abs(
+                        grayData[(midY - 1) * sw + x] - grayData[(midY + 1) * sw + x],
+                      );
                     }
                   }
-                }
-              } else if (qRatio >= 1.18 && qRatio <= 1.38) {
-                const midX = Math.round((qSorted[0].x + qSorted[1].x) / 2);
-                let midEdgeDiff = 0;
-                for (let y = Math.round(qSorted[0].y); y <= Math.round(qSorted[2].y); y += 2) {
-                  if (midX > 1 && midX < sw - 2 && y >= 0 && y < sh) {
-                    midEdgeDiff += Math.abs(grayData[y * sw + midX - 1] - grayData[y * sw + midX + 1]);
+                  const avgMidEdge =
+                    midEdgeDiff / Math.max(1, Math.round((qSorted[1].x - qSorted[0].x) / 2));
+                  if (avgMidEdge >= 12) {
+                    // موضع القص يتبع الفاصل الحقيقي (أقوى حافة داخل نطاق البحث)، لا المنتصف دائماً
+                    const g = getSeamGrad();
+                    const seamRatio =
+                      locateSplitSeamRatio(
+                        {
+                          x: (qSorted[0].x + qSorted[1].x) / 2,
+                          y: (qSorted[0].y + qSorted[1].y) / 2,
+                        },
+                        {
+                          x: (qSorted[3].x + qSorted[2].x) / 2,
+                          y: (qSorted[3].y + qSorted[2].y) / 2,
+                        },
+                        g.mag,
+                        sw,
+                        sh,
+                        g.maxMag,
+                      ) ?? SPLIT_SEAM_RATIO_DEFAULT;
+                    const split = splitQuadIntoIdCardsWithSeam(
+                      quad,
+                      'vertical',
+                      seamRatio,
+                      (cards) =>
+                        cards.length === 2 &&
+                        isStackedPairAspect(cards[0].corners) &&
+                        isStackedPairAspect(cards[1].corners),
+                    );
+                    if (split.length === 2) {
+                      const s1 = evaluateOpenCvQuadScore(
+                        split[0].corners,
+                        sw,
+                        sh,
+                        grayData,
+                        totalPixels,
+                      );
+                      const s2 = evaluateOpenCvQuadScore(
+                        split[1].corners,
+                        sw,
+                        sh,
+                        grayData,
+                        totalPixels,
+                      );
+                      if (
+                        s1 > 0.15 &&
+                        s2 > 0.15 &&
+                        isStackedPairAspect(split[0].corners) &&
+                        isStackedPairAspect(split[1].corners)
+                      ) {
+                        allCandidates.push({ quad: split[0].corners, score: s1 });
+                        allCandidates.push({ quad: split[1].corners, score: s2 });
+                      }
+                    }
                   }
-                }
-                const avgMidEdge = midEdgeDiff / Math.max(1, Math.round((qSorted[2].y - qSorted[0].y) / 2));
-                if (avgMidEdge >= 12) {
-                  // موضع القص يتبع الفاصل الحقيقي (أقوى حافة داخل نطاق البحث)، لا المنتصف دائماً
-                  const g = getSeamGrad();
-                  const seamRatio =
-                    locateSplitSeamRatio(
-                      {
-                        x: (qSorted[0].x + qSorted[3].x) / 2,
-                        y: (qSorted[0].y + qSorted[3].y) / 2,
-                      },
-                      {
-                        x: (qSorted[1].x + qSorted[2].x) / 2,
-                        y: (qSorted[1].y + qSorted[2].y) / 2,
-                      },
-                      g.mag,
-                      sw,
-                      sh,
-                      g.maxMag
-                    ) ?? SPLIT_SEAM_RATIO_DEFAULT;
-                  const split = splitQuadIntoIdCardsWithSeam(
-                    quad,
-                    "horizontal",
-                    seamRatio,
-                    (cards) =>
-                      cards.length === 2 &&
-                      isStackedPairAspect(cards[0].corners) &&
-                      isStackedPairAspect(cards[1].corners)
-                  );
-                  if (split.length === 2) {
-                    const s1 = evaluateOpenCvQuadScore(split[0].corners, sw, sh, grayData, totalPixels);
-                    const s2 = evaluateOpenCvQuadScore(split[1].corners, sw, sh, grayData, totalPixels);
-                    if (
-                      s1 > 0.15 &&
-                      s2 > 0.15 &&
-                      isStackedPairAspect(split[0].corners) &&
-                      isStackedPairAspect(split[1].corners)
-                    ) {
-                      allCandidates.push({ quad: split[0].corners, score: s1 });
-                      allCandidates.push({ quad: split[1].corners, score: s2 });
+                } else if (qRatio >= 1.18 && qRatio <= 1.38) {
+                  const midX = Math.round((qSorted[0].x + qSorted[1].x) / 2);
+                  let midEdgeDiff = 0;
+                  for (let y = Math.round(qSorted[0].y); y <= Math.round(qSorted[2].y); y += 2) {
+                    if (midX > 1 && midX < sw - 2 && y >= 0 && y < sh) {
+                      midEdgeDiff += Math.abs(
+                        grayData[y * sw + midX - 1] - grayData[y * sw + midX + 1],
+                      );
+                    }
+                  }
+                  const avgMidEdge =
+                    midEdgeDiff / Math.max(1, Math.round((qSorted[2].y - qSorted[0].y) / 2));
+                  if (avgMidEdge >= 12) {
+                    // موضع القص يتبع الفاصل الحقيقي (أقوى حافة داخل نطاق البحث)، لا المنتصف دائماً
+                    const g = getSeamGrad();
+                    const seamRatio =
+                      locateSplitSeamRatio(
+                        {
+                          x: (qSorted[0].x + qSorted[3].x) / 2,
+                          y: (qSorted[0].y + qSorted[3].y) / 2,
+                        },
+                        {
+                          x: (qSorted[1].x + qSorted[2].x) / 2,
+                          y: (qSorted[1].y + qSorted[2].y) / 2,
+                        },
+                        g.mag,
+                        sw,
+                        sh,
+                        g.maxMag,
+                      ) ?? SPLIT_SEAM_RATIO_DEFAULT;
+                    const split = splitQuadIntoIdCardsWithSeam(
+                      quad,
+                      'horizontal',
+                      seamRatio,
+                      (cards) =>
+                        cards.length === 2 &&
+                        isStackedPairAspect(cards[0].corners) &&
+                        isStackedPairAspect(cards[1].corners),
+                    );
+                    if (split.length === 2) {
+                      const s1 = evaluateOpenCvQuadScore(
+                        split[0].corners,
+                        sw,
+                        sh,
+                        grayData,
+                        totalPixels,
+                      );
+                      const s2 = evaluateOpenCvQuadScore(
+                        split[1].corners,
+                        sw,
+                        sh,
+                        grayData,
+                        totalPixels,
+                      );
+                      if (
+                        s1 > 0.15 &&
+                        s2 > 0.15 &&
+                        isStackedPairAspect(split[0].corners) &&
+                        isStackedPairAspect(split[1].corners)
+                      ) {
+                        allCandidates.push({ quad: split[0].corners, score: s1 });
+                        allCandidates.push({ quad: split[1].corners, score: s2 });
+                      }
                     }
                   }
                 }
               }
             }
+          } finally {
+            try {
+              approx.delete();
+            } catch {
+              /* ignore */
+            }
+            try {
+              hull.delete();
+            } catch {
+              /* ignore */
+            }
+            try {
+              hullApprox.delete();
+            } catch {
+              /* ignore */
+            }
+            try {
+              cnt.delete();
+            } catch {
+              /* ignore */
+            }
           }
-        } finally {
-          try { approx.delete(); } catch { /* ignore */ }
-          try { hull.delete(); } catch { /* ignore */ }
-          try { hullApprox.delete(); } catch { /* ignore */ }
-          try { cnt.delete(); } catch { /* ignore */ }
+        }
+      } finally {
+        if (contours) {
+          try {
+            contours.delete();
+          } catch {
+            /* ignore */
+          }
+        }
+        if (hierarchy) {
+          try {
+            hierarchy.delete();
+          } catch {
+            /* ignore */
+          }
         }
       }
-    } finally {
-      if (contours) {
-        try { contours.delete(); } catch { /* ignore */ }
-      }
-      if (hierarchy) {
-        try { hierarchy.delete(); } catch { /* ignore */ }
-      }
     }
-  }
 
     if (allCandidates.length === 0) return null;
 
     // NMS موحد عبر applyNMS المشترك بدل النسخة اليدوية السابقة
     // (عتبات 0.40/0.45/0.30) — سلوك واحد لكل المسارات.
-    const selectedQuads = applyNMS(allCandidates, 0.30);
+    const selectedQuads = applyNMS(allCandidates, 0.3);
 
     if (selectedQuads.length === 0) return null;
 
     // إذا كانت المرشحات تغطي مساحات صغيرة داخل صفحة مستند موحدة الأطراف (كتل نصوص داخل صفحة كاملة)، إرجاع null للسماح لكاشف الإطار بتحديد الصفحة كاملة
-    const maxAreaRatio = Math.max(...selectedQuads.map((q) => calculatePolygonArea(q.quad) / totalPixels));
+    const maxAreaRatio = Math.max(
+      ...selectedQuads.map((q) => calculatePolygonArea(q.quad) / totalPixels),
+    );
     const firstQuad = selectedQuads[0].quad;
     const qSorted = sortCornerPoints(firstQuad);
     const cx = Math.round((qSorted[0].x + qSorted[1].x + qSorted[2].x + qSorted[3].x) / 4);
@@ -447,7 +523,7 @@ export async function detectDocumentsWithOpenCV(
     borderDelta = Math.max(
       Math.abs(corner0 - corner1),
       Math.abs(corner0 - corner2),
-      Math.abs(corner0 - corner3)
+      Math.abs(corner0 - corner3),
     );
 
     if (maxAreaRatio < 0.65 && intContrast < 25 && borderDelta < 25) {
@@ -465,7 +541,7 @@ export async function detectDocumentsWithOpenCV(
       const sorted = sortCornerPoints(scaledCorners);
       const aspect = inferSmartDocumentAspect(sorted);
 
-      const confidence = Math.min(0.99, Math.max(0.60, Math.round((cand.score / 1.6) * 100) / 100));
+      const confidence = Math.min(0.99, Math.max(0.6, Math.round((cand.score / 1.6) * 100) / 100));
 
       return {
         id: `doc-${idx + 1}`,
@@ -477,10 +553,10 @@ export async function detectDocumentsWithOpenCV(
     });
 
     let filteredDocs = documents;
-    if (mode === "single") {
+    if (mode === 'single') {
       filteredDocs = documents.slice(0, 1);
     } else {
-      filteredDocs = documents.filter((doc) => doc.confidence >= 0.50);
+      filteredDocs = documents.filter((doc) => doc.confidence >= 0.5);
     }
 
     if (filteredDocs.length === 0) return null;
@@ -488,15 +564,15 @@ export async function detectDocumentsWithOpenCV(
     return {
       corners: filteredDocs[0].corners,
       confidence: filteredDocs[0].confidence,
-      method: "opencv",
+      method: 'opencv',
       documents: filteredDocs,
     };
   } finally {
     // تنظيف جميع كائنات OpenCV WASM لمنع أي تسريب في الذاكرة
     for (const mat of matsToFree) {
       try {
-        if (mat && typeof mat.delete === "function") {
-          if (typeof mat.isDeleted === "function" ? !mat.isDeleted() : true) {
+        if (mat && typeof mat.delete === 'function') {
+          if (typeof mat.isDeleted === 'function' ? !mat.isDeleted() : true) {
             mat.delete();
           }
         }

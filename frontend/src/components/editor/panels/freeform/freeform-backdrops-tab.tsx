@@ -385,8 +385,8 @@ export function FreeformBackdropsTab() {
                             'w-full overflow-hidden rounded-xl border text-start transition-all duration-150 cursor-pointer',
                             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                             isActive
-                              ? 'border-primary ring-2 ring-primary/40 shadow-xs'
-                              : 'border-border/80 hover:border-primary/60 hover:shadow-xs active:scale-[0.98]',
+                              ? 'border-foreground ring-2 ring-foreground/25 shadow-xs'
+                              : 'border-border/80 hover:border-foreground/50 hover:shadow-xs active:scale-[0.98]',
                           )}
                         >
                           <span
@@ -465,7 +465,7 @@ export function FreeformBackdropsTab() {
         title="تدرجات جاهزة"
         subtitle={gradientTarget === 'backdrop' ? 'خلفية كاملة للورقة' : 'تُطبَّق على التحديد'}
         badge={
-          <span className="rounded-full border border-primary/20 bg-primary/10 px-1.5 py-0.2 text-micro font-mono font-bold text-primary">
+          <span className="rounded-full border border-border/70 bg-muted px-1.5 py-0.2 text-micro font-mono font-bold text-muted-foreground">
             {gradients.length}
           </span>
         }
@@ -505,7 +505,7 @@ export function FreeformBackdropsTab() {
               title="تحديد الكل"
               className="h-6 shrink-0 px-1.5"
             >
-              <SelectionAll className="w-3 h-3 text-primary" weight="bold" />
+              <SelectionAll className="w-3 h-3" weight="bold" />
               <span className="text-micro">تحديد الكل</span>
             </Button>
           )}
@@ -542,8 +542,8 @@ export function FreeformBackdropsTab() {
                     'group/card relative w-full overflow-hidden rounded-xl border text-start transition-all duration-150 cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isActive
-                      ? 'border-primary ring-2 ring-primary/40 shadow-xs'
-                      : 'border-border/80 hover:border-primary/60 hover:shadow-xs active:scale-[0.98]',
+                      ? 'border-foreground ring-2 ring-foreground/25 shadow-xs'
+                      : 'border-border/80 hover:border-foreground/50 hover:shadow-xs active:scale-[0.98]',
                   )}
                 >
                   <span
@@ -556,7 +556,7 @@ export function FreeformBackdropsTab() {
                     </span>
                     <span className="flex shrink-0 items-center gap-1">
                       {isActive ? (
-                        <span className="flex w-3.5 h-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <span className="flex w-3.5 h-3.5 items-center justify-center rounded-full bg-foreground text-background">
                           <Check className="w-2.5 h-2.5" weight="bold" />
                         </span>
                       ) : gradientTarget === 'backdrop' ? (
@@ -580,8 +580,8 @@ export function FreeformBackdropsTab() {
                   className={cn(
                     'absolute top-1 end-1 w-4.5 h-4.5 rounded-full bg-card/95 border border-border flex items-center justify-center transition-opacity cursor-pointer',
                     isFavorite
-                      ? 'opacity-100 text-primary'
-                      : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-primary',
+                      ? 'opacity-100 text-warning'
+                      : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-warning',
                   )}
                 >
                   <Star className="w-2.5 h-2.5" weight={isFavorite ? 'fill' : 'regular'} />
@@ -670,7 +670,7 @@ export function FreeformBackdropsTab() {
                   'h-6 rounded-md border text-micro font-bold tabular-nums transition-colors cursor-pointer',
                   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   isAngleActive
-                    ? 'border-primary/40 bg-primary/20 text-primary shadow-2xs'
+                    ? 'border-border/80 bg-accent-active text-foreground shadow-2xs'
                     : 'border-border/40 bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground',
                 )}
               >

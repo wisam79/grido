@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Slider } from "@/components/ui/slider";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { HexColorPicker } from "react-colorful";
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HexColorPicker } from 'react-colorful';
 import {
   Palette,
   Eyedropper,
@@ -11,21 +12,23 @@ import {
   Drop,
   SlidersHorizontal,
   XCircle,
-} from "@/components/ui/icons";
-import { cn } from "@/lib/utils";
-import { useEditorStore } from "@/lib/editor-store";
-import { previewWhite, checkerColor, STUDIO_PALETTE } from "@/lib/canvas/canvas-colors";
-import { GradientPicker } from "./gradient-picker";
-import { formatGradientCss } from "./gradient-utils";
-import { openPaperBackgroundTool } from "@/lib/ui/paper-background";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { BACKGROUND_COLORS } from "@/lib/templates";
+} from '@/components/ui/icons';
+import { cn } from '@/lib/utils';
+import { useEditorStore } from '@/lib/editor-store';
+import { previewWhite, checkerColor, STUDIO_PALETTE } from '@/lib/canvas/canvas-colors';
+import { GradientPicker } from './gradient-picker';
+import { formatGradientCss } from './gradient-utils';
+import { openPaperBackgroundTool } from '@/lib/ui/paper-background';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { BACKGROUND_COLORS } from '@/lib/templates';
 
 export function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-center py-2 border-b border-border/10 last:border-b-0 text-xs">
       <span className="text-muted-foreground font-semibold">{label}</span>
-      <span className="font-mono font-bold text-foreground/85 text-left" dir="auto">{value}</span>
+      <span className="font-mono font-bold text-foreground/85 text-left" dir="auto">
+        {value}
+      </span>
     </div>
   );
 }
@@ -72,32 +75,35 @@ export function SliderControl({
     }
   }, [value]);
 
-  const handleChange = useCallback((val: number[]) => {
-    const v = val[0];
-    setLocalValue(v);
-    latestValRef.current = v;
-    pendingRef.current = v;
+  const handleChange = useCallback(
+    (val: number[]) => {
+      const v = val[0];
+      setLocalValue(v);
+      latestValRef.current = v;
+      pendingRef.current = v;
 
-    if (!rafRef.current) {
-      rafRef.current = requestAnimationFrame(() => {
-        if (pendingRef.current !== null) {
-          onChange(pendingRef.current);
-          pendingRef.current = null;
-        }
-        rafRef.current = null;
-      });
-    }
-
-    if (!isDraggingRef.current && onCommitRef.current) {
-      if (keyCommitTimerRef.current !== null) {
-        clearTimeout(keyCommitTimerRef.current);
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(() => {
+          if (pendingRef.current !== null) {
+            onChange(pendingRef.current);
+            pendingRef.current = null;
+          }
+          rafRef.current = null;
+        });
       }
-      keyCommitTimerRef.current = window.setTimeout(() => {
-        onCommitRef.current?.(latestValRef.current);
-        keyCommitTimerRef.current = null;
-      }, 300);
-    }
-  }, [onChange]);
+
+      if (!isDraggingRef.current && onCommitRef.current) {
+        if (keyCommitTimerRef.current !== null) {
+          clearTimeout(keyCommitTimerRef.current);
+        }
+        keyCommitTimerRef.current = window.setTimeout(() => {
+          onCommitRef.current?.(latestValRef.current);
+          keyCommitTimerRef.current = null;
+        }, 300);
+      }
+    },
+    [onChange],
+  );
 
   const handlePointerDown = useCallback(() => {
     isDraggingRef.current = true;
@@ -138,7 +144,8 @@ export function SliderControl({
           className="font-cairo text-xs font-semibold text-foreground/90 bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded-md border border-border/40 select-none tracking-tight tabular-nums"
           dir="ltr"
         >
-          {localValue}{unit === "°" || unit === "%" ? unit : ` ${unit}`}
+          {localValue}
+          {unit === '°' || unit === '%' ? unit : ` ${unit}`}
         </span>
       </div>
       <Slider
@@ -173,58 +180,65 @@ export function PopoverColorPicker({
   const colorOnOpenRef = useRef<string | null>(null);
 
   return (
-    <Popover onOpenChange={(open) => {
-      if (open) {
-        colorOnOpenRef.current = color;
-      } else if (colorOnOpenRef.current !== null && color !== colorOnOpenRef.current) {
-        useEditorStore.getState().pushHistory();
-        colorOnOpenRef.current = null;
-      }
-    }}>
+    <Popover
+      onOpenChange={(open) => {
+        if (open) {
+          colorOnOpenRef.current = color;
+        } else if (colorOnOpenRef.current !== null && color !== colorOnOpenRef.current) {
+          useEditorStore.getState().pushHistory();
+          colorOnOpenRef.current = null;
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           disabled={disabled}
           className={cn(
             swatchOnly
-              ? "w-8 h-8 rounded-md border border-border/80 dark:border-white/10 p-0.5 bg-input/40 hover:bg-input hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-              : "flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border bg-input/50 hover:bg-input hover:border-primary/45 transition-all cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-            className
+              ? 'w-8 h-8 rounded-md border border-border/80 dark:border-white/10 p-0.5 bg-input/40 hover:bg-input hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none'
+              : 'flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border bg-input/50 hover:bg-input hover:border-primary/45 transition-all cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+            className,
           )}
           title="تغيير اللون"
         >
           {swatchOnly ? (
             <div
               className="w-full h-full rounded border border-black/15 dark:border-white/20 shadow-2xs relative overflow-hidden transition-all before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
-              style={{ backgroundColor: color === "transparent" ? previewWhite() : color }}
+              style={{ backgroundColor: color === 'transparent' ? previewWhite() : color }}
             >
-              {color === "transparent" && (
-                <div 
+              {color === 'transparent' && (
+                <div
                   className="w-full h-full"
                   style={{
                     backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
-                    backgroundSize: "4px 4px"
+                    backgroundSize: '4px 4px',
                   }}
                 />
               )}
             </div>
           ) : (
             <>
-              {label && <div className="text-xs font-semibold text-foreground/90 shrink-0">{label}</div>}
-              
+              {label && (
+                <div className="text-xs font-semibold text-foreground/90 shrink-0">{label}</div>
+              )}
+
               <div className="flex items-center gap-1.5 shrink-0">
-                <span className="px-1.5 py-0.5 rounded bg-muted/60 dark:bg-muted/40 border border-border/40 font-mono text-mini font-bold text-foreground/80 tracking-tight select-none" dir="ltr">
-                  {color === "transparent" ? "شفاف" : color.toUpperCase()}
+                <span
+                  className="px-1.5 py-0.5 rounded bg-muted/60 dark:bg-muted/40 border border-border/40 font-mono text-mini font-bold text-foreground/80 tracking-tight select-none"
+                  dir="ltr"
+                >
+                  {color === 'transparent' ? 'شفاف' : color.toUpperCase()}
                 </span>
                 <div
                   className="w-5 h-5 rounded-md border border-black/15 dark:border-white/20 shrink-0 relative overflow-hidden shadow-2xs before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
-                  style={{ backgroundColor: color === "transparent" ? previewWhite() : color }}
+                  style={{ backgroundColor: color === 'transparent' ? previewWhite() : color }}
                 >
-                  {color === "transparent" && (
-                    <div 
+                  {color === 'transparent' && (
+                    <div
                       className="w-full h-full"
                       style={{
                         backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
-                        backgroundSize: "4px 4px"
+                        backgroundSize: '4px 4px',
                       }}
                     />
                   )}
@@ -234,7 +248,11 @@ export function PopoverColorPicker({
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-0 border-0 bg-transparent shadow-none" sideOffset={8} align="end">
+      <PopoverContent
+        className="w-72 p-0 border-0 bg-transparent shadow-none"
+        sideOffset={8}
+        align="end"
+      >
         <ColorWheelPicker color={color} onChange={onChange} />
       </PopoverContent>
     </Popover>
@@ -255,7 +273,7 @@ export const QuickColorPalette = React.memo(function QuickColorPalette({
   className?: string;
 }) {
   return (
-    <div className={cn("grid grid-cols-8 gap-1.5 w-full", className)}>
+    <div className={cn('grid grid-cols-8 gap-1.5 w-full', className)}>
       {STUDIO_PALETTE.map((c) => {
         const isCurrent = currentColor?.toLowerCase() === c.color.toLowerCase();
         return (
@@ -265,13 +283,13 @@ export const QuickColorPalette = React.memo(function QuickColorPalette({
                 type="button"
                 onClick={() => onSelectColor(c.color)}
                 className={cn(
-                  "aspect-square rounded-md border relative transition-all cursor-pointer flex items-center justify-center p-0.5 overflow-hidden",
-                  "hover:scale-105 active:scale-95 shadow-2xs",
-                  "before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
-                  "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                  'aspect-square rounded-md border relative transition-all cursor-pointer flex items-center justify-center p-0.5 overflow-hidden',
+                  'hover:scale-105 active:scale-95 shadow-2xs',
+                  'before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none',
+                  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   isCurrent
-                    ? "ring-2 ring-primary ring-offset-1 ring-offset-background scale-105 z-10 shadow-xs border-primary"
-                    : "border-black/10 dark:border-white/15 hover:border-foreground/40"
+                    ? 'ring-2 ring-primary ring-offset-1 ring-offset-background scale-105 z-10 shadow-xs border-primary'
+                    : 'border-black/10 dark:border-white/15 hover:border-foreground/40',
                 )}
                 style={{ backgroundColor: c.color }}
                 aria-label={c.label}
@@ -279,8 +297,8 @@ export const QuickColorPalette = React.memo(function QuickColorPalette({
                 {isCurrent && (
                   <Check
                     className={cn(
-                      "w-3.5 h-3.5 z-10 drop-shadow-xs",
-                      c.color.toLowerCase() === "#ffffff" ? "text-slate-900" : "text-white"
+                      'w-3.5 h-3.5 z-10 drop-shadow-xs',
+                      c.color.toLowerCase() === '#ffffff' ? 'text-slate-900' : 'text-white',
                     )}
                     weight="bold"
                   />
@@ -304,7 +322,7 @@ export function ColorWheelPicker({
   color: string;
   onChange: (hex: string) => void;
 }) {
-  const isTransparent = color === "transparent";
+  const isTransparent = color === 'transparent';
   const [inputValue, setInputValue] = useState(color);
   const [copied, setCopied] = useState(false);
 
@@ -317,16 +335,16 @@ export function ColorWheelPicker({
 
   const handleHexInput = (val: string) => {
     setInputValue(val);
-    
+
     const cleanVal = val.trim();
-    if (cleanVal === "transparent") {
-      onChange("transparent");
+    if (cleanVal === 'transparent') {
+      onChange('transparent');
       return;
     }
 
     let hexVal = cleanVal;
-    if (!hexVal.startsWith("#")) {
-      hexVal = "#" + hexVal;
+    if (!hexVal.startsWith('#')) {
+      hexVal = '#' + hexVal;
     }
 
     const isValidHex = /^#([0-9A-F]{3}){1,2}$/i.test(hexVal);
@@ -336,9 +354,13 @@ export function ColorWheelPicker({
   };
 
   const handleEyeDropper = async () => {
-    if (typeof window !== "undefined" && "EyeDropper" in window) {
+    if (typeof window !== 'undefined' && 'EyeDropper' in window) {
       try {
-        const eyeDropper = new (window as unknown as { EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> } }).EyeDropper();
+        const eyeDropper = new (
+          window as unknown as {
+            EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> };
+          }
+        ).EyeDropper();
         const result = await eyeDropper.open();
         if (result?.sRGBHex) {
           const upper = result.sRGBHex.toUpperCase();
@@ -359,14 +381,17 @@ export function ColorWheelPicker({
     }
   };
 
-  const hasEyeDropper = typeof window !== "undefined" && "EyeDropper" in window;
-  const displayColor = isTransparent ? "#FFFFFF" : color;
+  const hasEyeDropper = typeof window !== 'undefined' && 'EyeDropper' in window;
+  const displayColor = isTransparent ? '#FFFFFF' : color;
 
   return (
-    <div className="p-3.5 bg-popover/98 backdrop-blur-2xl rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-24 fluent-specular animate-in fade-in duration-150 flex flex-col gap-3 w-72 select-none" dir="rtl">
+    <div
+      className="p-3.5 bg-popover/98 backdrop-blur-2xl rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-24 fluent-specular animate-in fade-in duration-150 flex flex-col gap-3 w-72 select-none"
+      dir="rtl"
+    >
       <div className="custom-color-picker w-full rounded-xl overflow-hidden shadow-inner border border-border/40">
         <HexColorPicker
-          color={isTransparent ? "#ffffff" : color}
+          color={isTransparent ? '#ffffff' : color}
           onChange={(newColor) => {
             const upperColor = newColor.toUpperCase();
             setInputValue(upperColor);
@@ -379,18 +404,21 @@ export function ColorWheelPicker({
         <button
           type="button"
           onClick={() => {
-            setInputValue("transparent");
-            onChange("transparent");
+            setInputValue('transparent');
+            onChange('transparent');
           }}
           className={cn(
-            "w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
+            'w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
             isTransparent
-              ? "bg-card text-foreground border border-border/80 dark:border-white/15 font-bold shadow-xs ring-1 ring-primary/40"
-              : "border-border/60 bg-input/80 text-muted-foreground hover:bg-accent hover:text-foreground"
+              ? 'bg-card text-foreground border border-border/80 dark:border-white/15 font-bold shadow-xs ring-1 ring-primary/40'
+              : 'border-border/60 bg-input/80 text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
           title="خلفية شفافة"
         >
-          <Palette className={cn("w-4 h-4", isTransparent ? "text-primary" : "text-muted-foreground")} weight={isTransparent ? "fill" : "regular"} />
+          <Palette
+            className={cn('w-4 h-4', isTransparent ? 'text-primary' : 'text-muted-foreground')}
+            weight={isTransparent ? 'fill' : 'regular'}
+          />
         </button>
 
         {hasEyeDropper && (
@@ -408,7 +436,7 @@ export function ColorWheelPicker({
           <span className="text-xs font-bold text-muted-foreground/60 select-none">#</span>
           <input
             type="text"
-            value={inputValue.startsWith("#") ? inputValue.slice(1) : inputValue}
+            value={inputValue.startsWith('#') ? inputValue.slice(1) : inputValue}
             onChange={(e) => handleHexInput(e.target.value)}
             className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold uppercase"
             placeholder="FFFFFF"
@@ -419,7 +447,11 @@ export function ColorWheelPicker({
             className="text-muted-foreground/50 hover:text-foreground transition-colors p-0.5"
             title="نسخ اللون"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" weight="bold" /> : <Copy className="w-3.5 h-3.5" weight="regular" />}
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-emerald-500" weight="bold" />
+            ) : (
+              <Copy className="w-3.5 h-3.5" weight="regular" />
+            )}
           </button>
           <div
             className="w-4 h-4 rounded-md border border-black/15 dark:border-white/20 shadow-2xs shrink-0 relative overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
@@ -428,12 +460,12 @@ export function ColorWheelPicker({
             }}
           >
             {isTransparent && (
-              <div 
+              <div
                 className="absolute inset-0"
-                  style={{
-                    backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
-                    backgroundSize: "4px 4px"
-                  }}
+                style={{
+                  backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
+                  backgroundSize: '4px 4px',
+                }}
               />
             )}
           </div>
@@ -441,7 +473,9 @@ export function ColorWheelPicker({
       </div>
 
       <div className="space-y-1.5 pt-2 border-t border-border/30">
-        <span className="text-xs font-extrabold text-muted-foreground block text-right">ألوان الاستوديو</span>
+        <span className="text-xs font-extrabold text-muted-foreground block text-right">
+          ألوان الاستوديو
+        </span>
         <div className="grid grid-cols-8 gap-1.5" dir="rtl">
           {BACKGROUND_COLORS.map((bg) => {
             const isActive = color.toUpperCase() === bg.value.toUpperCase();
@@ -456,10 +490,10 @@ export function ColorWheelPicker({
                   onChange(bg.value);
                 }}
                 className={cn(
-                  "aspect-square w-full rounded-lg border shadow-2xs transition-all cursor-pointer relative flex items-center justify-center active:scale-90 hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
-                  isActive 
-                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10" 
-                    : "border-black/10 dark:border-white/15 hover:border-foreground/40"
+                  'aspect-square w-full rounded-lg border shadow-2xs transition-all cursor-pointer relative flex items-center justify-center active:scale-90 hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none',
+                  isActive
+                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10'
+                    : 'border-black/10 dark:border-white/15 hover:border-foreground/40',
                 )}
                 style={{ backgroundColor: bg.value }}
                 title={bg.name}
@@ -467,10 +501,13 @@ export function ColorWheelPicker({
                 {isActive && (
                   <Check
                     className={cn(
-                      "w-3.5 h-3.5 z-10 drop-shadow-xs",
-                      bg.value === "#FFFFFF" || bg.value === "#F4F4F5" || bg.value === "#E4E4E7" || bg.value === "#F5F5F4"
-                        ? "text-slate-900"
-                        : "text-white"
+                      'w-3.5 h-3.5 z-10 drop-shadow-xs',
+                      bg.value === '#FFFFFF' ||
+                        bg.value === '#F4F4F5' ||
+                        bg.value === '#E4E4E7' ||
+                        bg.value === '#F5F5F4'
+                        ? 'text-slate-900'
+                        : 'text-white',
                     )}
                     weight="bold"
                   />
@@ -510,14 +547,14 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
   gradientAngle?: number;
   onChangeGradientAngle?: (deg: number) => void;
 }) {
-  const isTransparent = color === "transparent";
-  const hasGradientProps = typeof onChangeGradientColor2 === "function";
+  const isTransparent = color === 'transparent';
+  const hasGradientProps = typeof onChangeGradientColor2 === 'function';
   const isGradientActive = Boolean(gradientColor2);
 
   /** stops المكافئة للتدرج الحالي: بداية = اللون الأساسي، نهاية = اللون الثاني */
   const gradientStops: Array<number | string> = isGradientActive
-    ? [0, color === "transparent" ? previewWhite() : color, 1, gradientColor2 as string]
-    : [0, color === "transparent" ? previewWhite() : color, 1, "#2563EB"];
+    ? [0, color === 'transparent' ? previewWhite() : color, 1, gradientColor2 as string]
+    : [0, color === 'transparent' ? previewWhite() : color, 1, '#2563EB'];
 
   /** استقبال stops من GradientPicker: اللون الأول = اللون الأساسي، الأخير = لون النهاية */
   const handleGradientStops = (stops: Array<number | string>) => {
@@ -531,14 +568,18 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
   /** تفعيل/إيقاف التدرج: التفعيل يبدأ التدرج من اللون الأساسي الحالي */
   const toggleGradient = () => {
     if (!hasGradientProps) return;
-    onChangeGradientColor2(isGradientActive ? null : "#2563EB");
+    onChangeGradientColor2(isGradientActive ? null : '#2563EB');
     useEditorStore.getState().pushHistory();
   };
 
   const handleEyeDropper = async () => {
-    if (typeof window !== "undefined" && "EyeDropper" in window) {
+    if (typeof window !== 'undefined' && 'EyeDropper' in window) {
       try {
-        const eyeDropper = new (window as unknown as { EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> } }).EyeDropper();
+        const eyeDropper = new (
+          window as unknown as {
+            EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> };
+          }
+        ).EyeDropper();
         const result = await eyeDropper.open();
         if (result?.sRGBHex) {
           onChange(result.sRGBHex.toUpperCase());
@@ -550,106 +591,40 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
     }
   };
 
-  const hasEyeDropper = typeof window !== "undefined" && "EyeDropper" in window;
+  const hasEyeDropper = typeof window !== 'undefined' && 'EyeDropper' in window;
 
   const studioPresets = [
-    { name: "أبيض استوديو", value: "#FFFFFF" },
-    { name: "رمادي وثائق", value: "#E2E8F0" },
-    { name: "رمادي حيادي", value: "#94A3B8" },
-    { name: "أزرق هوية وطنية", value: "#2563EB" },
-    { name: "كحلي رسمي", value: "#1E40AF" },
-    { name: "أحمر جوازات", value: "#DC2626" },
-    { name: "أسود داكن", value: "#18181B" },
+    { name: 'أبيض استوديو', value: '#FFFFFF' },
+    { name: 'رمادي وثائق', value: '#E2E8F0' },
+    { name: 'رمادي حيادي', value: '#94A3B8' },
+    { name: 'أزرق هوية وطنية', value: '#2563EB' },
+    { name: 'كحلي رسمي', value: '#1E40AF' },
+    { name: 'أحمر جوازات', value: '#DC2626' },
+    { name: 'أسود داكن', value: '#18181B' },
   ];
 
   return (
     <div
-      className={cn(
-        "space-y-2.5 w-full font-cairo",
-        compact && "space-y-1.5",
-        className
-      )}
+      className={cn('space-y-2.5 w-full font-cairo', compact && 'space-y-1.5', className)}
       dir="rtl"
     >
-      {/* شبكة العينات السريعة للألوان (8 أعمدة متناسقة بنسبة 100%) */}
-      <div className="grid grid-cols-8 gap-1.5 w-full">
-        {/* زر الشفاف */}
-        <button
-          type="button"
-          onClick={() => {
-            onChange("transparent");
-            useEditorStore.getState().pushHistory();
-          }}
-          className={cn(
-            "aspect-square w-full rounded-lg border transition-all cursor-pointer relative overflow-hidden shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center",
-            isTransparent
-              ? "ring-2 ring-primary ring-offset-2 ring-offset-card border-primary scale-105 z-10 shadow-xs"
-              : "border-black/15 dark:border-white/15 hover:border-primary/50"
-          )}
-          title="خلفية شفافة"
-        >
-          <div
-            className="w-full h-full bg-white"
-            style={{
-              backgroundImage:
-                "linear-gradient(45deg, #cbd5e1 25%, transparent 25%), linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cbd5e1 75%), linear-gradient(-45deg, transparent 75%, #cbd5e1 75%)",
-              backgroundSize: "6px 6px",
-            }}
-          />
-          {isTransparent && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-              <Check className="w-3.5 h-3.5 text-slate-900 drop-shadow-xs" weight="bold" />
-            </div>
-          )}
-        </button>
-
-        {/* عينات الألوان المعتمدة */}
-        {studioPresets.map((preset) => {
-          const isSelected = color.toUpperCase() === preset.value.toUpperCase();
-          const isLight = preset.value === "#FFFFFF" || preset.value === "#F1F5F9" || preset.value === "#E2E8F0";
-          return (
-            <button
-              key={preset.value}
-              type="button"
-              onClick={() => {
-                onChange(preset.value);
-                useEditorStore.getState().pushHistory();
-              }}
-              className={cn(
-                "aspect-square w-full rounded-lg border transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none relative flex items-center justify-center overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
-                isSelected
-                  ? "ring-2 ring-primary ring-offset-2 ring-offset-card border-primary scale-105 z-10 shadow-xs"
-                  : "border-black/15 dark:border-white/15 hover:border-primary/50"
-              )}
-              style={{ backgroundColor: preset.value }}
-              title={preset.name}
-            >
-              {isSelected && (
-                <Check
-                  className={cn(
-                    "w-3.5 h-3.5 z-10 drop-shadow-xs",
-                    isLight ? "text-slate-900" : "text-white"
-                  )}
-                  weight="bold"
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* صف منتقي اللون المخصص التفاعلي + القطارة */}
-      <div className="flex items-center gap-1.5 w-full pt-0.5">
+      {/* لون مخصص + قطارة — القرار الأكثر تكراراً أولاً (يستهدف السطر الأول) */}
+      <div className="flex items-center gap-1.5 w-full">
         <PopoverColorPicker
           color={color}
           onChange={onChange}
           className={cn(
-            "flex-1 h-8 rounded-md border-border/80 bg-input/50 hover:bg-input hover:border-primary/40 shadow-2xs",
-            compact && "h-7 text-micro"
+            'flex-1 h-8 rounded-md border-border/80 bg-input/50 hover:bg-input hover:border-primary/40 shadow-2xs',
+            compact && 'h-7 text-micro',
           )}
           label={
-            <div className={cn("flex items-center gap-1.5 text-xs font-semibold text-foreground/90", compact && "text-micro gap-1")}>
-              <PaintBrush className="text-primary shrink-0 w-3.5 h-3.5" weight="duotone" />
+            <div
+              className={cn(
+                'flex items-center gap-1.5 text-xs font-semibold text-foreground/90',
+                compact && 'text-micro gap-1',
+              )}
+            >
+              <PaintBrush className="text-muted-foreground shrink-0 w-3.5 h-3.5" weight="duotone" />
               <span>لون مخصص</span>
             </div>
           }
@@ -662,12 +637,12 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
                 type="button"
                 onClick={handleEyeDropper}
                 className={cn(
-                  "w-8 h-8 rounded-md border border-border/80 bg-input/50 hover:bg-primary/10 hover:border-primary/50 text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
-                  compact && "w-7 h-7"
+                  'w-8 h-8 rounded-md border border-border/80 bg-input/50 hover:bg-accent hover:border-border/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                  compact && 'w-7 h-7',
                 )}
                 aria-label="قطارة الألوان"
               >
-                <Eyedropper className={cn(compact ? "w-3.5 h-3.5" : "w-4 h-4")} weight="duotone" />
+                <Eyedropper className={cn(compact ? 'w-3.5 h-3.5' : 'w-4 h-4')} weight="duotone" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top">قطارة الشاشة</TooltipContent>
@@ -675,41 +650,101 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
         )}
       </div>
 
-      {/* 🎨 تدرج خلفية الورقة — محرر اللونين والزاوية من مكوّن GradientPicker
-          الموحّد، بلا مبدّل نوع التعبئة (الورقة خطية دائماً) وبلا معرض التدرجات
-          الجاهزة (المعرض الوحيد يعيش في تبويب الخلفيات) — فلا تتكرر أداة واحدة
-          ولا يظهر عنصر تحكم بلا أثر. */}
+      {/* عينات الاستوديو السريعة (8 أعمدة متناسقة بنسبة 100%) */}
+      <div className="grid grid-cols-8 gap-1.5 w-full">
+        {/* زر الشفاف */}
+        <button
+          type="button"
+          onClick={() => {
+            onChange('transparent');
+            useEditorStore.getState().pushHistory();
+          }}
+          className={cn(
+            'aspect-square w-full rounded-lg border transition-all cursor-pointer relative overflow-hidden shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none flex items-center justify-center',
+            isTransparent
+              ? 'ring-2 ring-primary ring-offset-2 ring-offset-card border-primary scale-105 z-10 shadow-xs'
+              : 'border-black/15 dark:border-white/15 hover:border-primary/50',
+          )}
+          title="خلفية شفافة"
+        >
+          <div
+            className="w-full h-full bg-white"
+            style={{
+              backgroundImage:
+                'linear-gradient(45deg, #cbd5e1 25%, transparent 25%), linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cbd5e1 75%), linear-gradient(-45deg, transparent 75%, #cbd5e1 75%)',
+              backgroundSize: '6px 6px',
+            }}
+          />
+          {isTransparent && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+              <Check className="w-3.5 h-3.5 text-slate-900 drop-shadow-xs" weight="bold" />
+            </div>
+          )}
+        </button>
+
+        {/* عينات الألوان المعتمدة */}
+        {studioPresets.map((preset) => {
+          const isSelected = color.toUpperCase() === preset.value.toUpperCase();
+          const isLight =
+            preset.value === '#FFFFFF' || preset.value === '#F1F5F9' || preset.value === '#E2E8F0';
+          return (
+            <button
+              key={preset.value}
+              type="button"
+              onClick={() => {
+                onChange(preset.value);
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                'aspect-square w-full rounded-lg border transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none relative flex items-center justify-center overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none',
+                isSelected
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-card border-primary scale-105 z-10 shadow-xs'
+                  : 'border-black/15 dark:border-white/15 hover:border-primary/50',
+              )}
+              style={{ backgroundColor: preset.value }}
+              title={preset.name}
+            >
+              {isSelected && (
+                <Check
+                  className={cn(
+                    'w-3.5 h-3.5 z-10 drop-shadow-xs',
+                    isLight ? 'text-slate-900' : 'text-white',
+                  )}
+                  weight="bold"
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* تدرج خلفية الورقة — محرر اللونين والزاوية من GradientPicker الموحّد،
+          بلا مبدّل نوع التعبئة (الورقة خطية دائماً) وبلا معرض التدرجات الجاهزة
+          (المعرض الوحيد يعيش في تبويب الخلفيات) — فلا تتكرر أداة واحدة. */}
       {hasGradientProps && (
-        <div className="pt-1 border-t border-border/30">
-          <div className="flex items-center justify-between gap-2 py-2">
+        <div className="pt-2 border-t border-border/30">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-foreground/90 font-semibold flex items-center gap-1.5">
-              <Drop className={cn("w-4 h-4", isGradientActive ? "text-primary" : "text-muted-foreground")} weight="duotone" />
+              <Drop
+                className={cn(
+                  'w-4 h-4',
+                  isGradientActive ? 'text-foreground' : 'text-muted-foreground',
+                )}
+                weight="duotone"
+              />
               <span>تعبئة متدرجة</span>
             </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isGradientActive}
-              onClick={toggleGradient}
-              className={cn(
-                "relative h-5 w-9 rounded-full transition-colors cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                isGradientActive ? "bg-primary" : "bg-muted-foreground/30"
-              )}
-              title={isGradientActive ? "إيقاف التدرج والعودة للون المصمت" : "تفعيل التدرج بدءاً من اللون الحالي"}
-            >
-              <span
-                className={cn(
-                  "absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-all",
-                  isGradientActive ? "right-0.5" : "right-[calc(100%-1.125rem)]"
-                )}
-              />
-            </button>
+            <Switch
+              checked={isGradientActive}
+              onCheckedChange={toggleGradient}
+              aria-label="تعبئة متدرجة"
+            />
           </div>
 
           {isGradientActive && (
             <GradientPicker
               fillType="linear"
-              color={color === "transparent" ? previewWhite() : color}
+              color={color === 'transparent' ? previewWhite() : color}
               colorStops={gradientStops}
               onChangeType={() => {}}
               onChangeSolidColor={onChange}
@@ -737,7 +772,7 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
 
 /** لوح شفافية خفيف يظهر تحت لون الورقة عند اختيار «شفاف» */
 const PAPER_CHECKER =
-  "linear-gradient(45deg, #cbd5e1 25%, transparent 25%), linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cbd5e1 75%), linear-gradient(-45deg, transparent 75%, #cbd5e1 75%)";
+  'linear-gradient(45deg, #cbd5e1 25%, transparent 25%), linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #cbd5e1 75%), linear-gradient(-45deg, transparent 75%, #cbd5e1 75%)';
 
 export interface PaperBackgroundSummaryProps {
   /** شرائح حالة إضافية خاصة باللوحة المستضيفة (مثل عدد الخلفيات الكاملة) */
@@ -762,11 +797,11 @@ export const PaperBackgroundSummary = React.memo(function PaperBackgroundSummary
   /** خلفية الورقة كما ستُطبع: مصمتة أو متدرجة بنفس زاوية الكانفاس */
   const paperBackground = gradientActive
     ? formatGradientCss(
-        [0, backgroundColor || "#FFFFFF", 1, backgroundGradientColor2 as string],
-        "linear",
-        angle
+        [0, backgroundColor || '#FFFFFF', 1, backgroundGradientColor2 as string],
+        'linear',
+        angle,
       )
-    : backgroundColor || "#FFFFFF";
+    : backgroundColor || '#FFFFFF';
 
   const removePaperGradient = () => {
     useEditorStore.getState().setBackgroundGradientColor2(null);
@@ -776,15 +811,15 @@ export const PaperBackgroundSummary = React.memo(function PaperBackgroundSummary
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 shadow-xs fluent-specular select-none font-cairo",
-        className
+        'flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 shadow-xs fluent-specular select-none font-cairo',
+        className,
       )}
       dir="rtl"
     >
       {/* مصغّرة الورقة الحقيقية: اللون/التدرج + مخيّلة خانات المحتوى */}
       <div
         className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md border border-black/10 dark:border-white/15 shadow-2xs"
-        style={{ backgroundImage: PAPER_CHECKER, backgroundSize: "6px 6px" }}
+        style={{ backgroundImage: PAPER_CHECKER, backgroundSize: '6px 6px' }}
         aria-hidden="true"
       >
         <span className="absolute inset-0" style={{ background: paperBackground }} />
@@ -802,20 +837,20 @@ export const PaperBackgroundSummary = React.memo(function PaperBackgroundSummary
         <p className="text-xs font-bold text-foreground">خلفية الورقة</p>
         <p className="mt-0.5 truncate text-micro font-mono text-muted-foreground" dir="ltr">
           {gradientActive
-            ? `${(backgroundColor || "#FFFFFF").toUpperCase()} → ${backgroundGradientColor2?.toUpperCase()} · ${angle}°`
-            : (backgroundColor || "#FFFFFF").toUpperCase()}
+            ? `${(backgroundColor || '#FFFFFF').toUpperCase()} → ${backgroundGradientColor2?.toUpperCase()} · ${angle}°`
+            : (backgroundColor || '#FFFFFF').toUpperCase()}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-1">
           <span
             className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-micro font-bold leading-none",
+              'inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-micro font-bold leading-none',
               gradientActive
-                ? "border-primary/25 bg-primary/10 text-primary"
-                : "border-border/60 bg-muted/60 text-muted-foreground"
+                ? 'border-primary/25 bg-primary/10 text-primary'
+                : 'border-border/60 bg-muted/60 text-muted-foreground',
             )}
           >
             <Drop className="w-2.5 h-2.5" weight="bold" />
-            {gradientActive ? "تدرج مطبَّق" : "لون مصمت"}
+            {gradientActive ? 'تدرج مطبَّق' : 'لون مصمت'}
           </span>
           {extraStatus}
         </div>

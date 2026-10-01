@@ -1,7 +1,7 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { FluentSegmentedControl } from "@/components/ui/blocks";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { FluentSegmentedControl } from '@/components/ui/blocks';
 import {
   FileText,
   Sparkle,
@@ -19,11 +19,11 @@ import {
   CheckSquareOffset,
   Circle,
   SquaresFour,
-} from "@/components/ui/icons";
-import { cn } from "@/lib/utils";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { DetectedDocument, DocumentAspectType, ScannerFilterMode, DetectionMode } from "../core";
-import { DocumentListItem } from "./document-list-item";
+} from '@/components/ui/icons';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { DetectedDocument, DocumentAspectType, ScannerFilterMode, DetectionMode } from '../core';
+import { DocumentListItem } from './document-list-item';
 
 export interface ScannerSidebarProps {
   detectionMode?: DetectionMode;
@@ -50,7 +50,7 @@ export interface ScannerSidebarProps {
 }
 
 export const ScannerSidebar = React.memo(function ScannerSidebar({
-  detectionMode = "single",
+  detectionMode = 'single',
   onModeChange,
   detectedDocs,
   activeDocIndex,
@@ -73,7 +73,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
   onRotateCounterClockwise,
 }: ScannerSidebarProps) {
   const isAllSelected = detectedDocs.length > 0 && selectedDocIds.length === detectedDocs.length;
-  const isMultiActive = detectionMode === "multi" || detectedDocs.length > 1;
+  const isMultiActive = detectionMode === 'multi' || detectedDocs.length > 1;
 
   return (
     <div className="w-full md:w-72 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-xl border border-border/60 overflow-y-auto h-full min-h-0 fluent-specular select-none custom-scrollbar">
@@ -81,18 +81,18 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-            <Scan size={15} weight="duotone" className="text-primary shrink-0" />
+            <Scan size={15} weight="duotone" className="text-muted-foreground shrink-0" />
             <span>نمط المسح</span>
           </Label>
           <span className="text-micro text-muted-foreground font-semibold">
-            {detectionMode === "single" ? "مستند واحد" : "متعدد البطاقات"}
+            {detectionMode === 'single' ? 'مستند واحد' : 'متعدد البطاقات'}
           </span>
         </div>
 
         {/* التبديل بين المفرد (الافتراضي) والمتعدد (الثانوي) */}
-        <FluentSegmentedControl<"single" | "multi">
+        <FluentSegmentedControl<'single' | 'multi'>
           layoutId="scanner-detection-mode-pill"
-          value={detectionMode === "multi" ? "multi" : "single"}
+          value={detectionMode === 'multi' ? 'multi' : 'single'}
           onChange={(newMode) => {
             onModeChange?.(newMode);
             onAutoDetect(newMode);
@@ -100,17 +100,29 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
           size="sm"
           options={[
             {
-              id: "single",
-              label: "مفرد",
-              icon: <Sparkle size={13} weight={detectionMode === "single" ? "fill" : "bold"} className="shrink-0" />,
-              tooltip: "مسح مستند",
+              id: 'single',
+              label: 'مفرد',
+              icon: (
+                <Sparkle
+                  size={13}
+                  weight={detectionMode === 'single' ? 'fill' : 'bold'}
+                  className="shrink-0"
+                />
+              ),
+              tooltip: 'مسح مستند',
               disabled: isDetecting,
             },
             {
-              id: "multi",
-              label: "متعدد",
-              icon: <SquaresFour size={13} weight={detectionMode === "multi" ? "fill" : "bold"} className="shrink-0" />,
-              tooltip: "مسح متعدد",
+              id: 'multi',
+              label: 'متعدد',
+              icon: (
+                <SquaresFour
+                  size={13}
+                  weight={detectionMode === 'multi' ? 'fill' : 'bold'}
+                  className="shrink-0"
+                />
+              ),
+              tooltip: 'مسح متعدد',
               disabled: isDetecting,
             },
           ]}
@@ -118,28 +130,32 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
 
         {/* أزرار الإجراء السريعة للكشف */}
         <div className="pt-1">
-          {detectionMode === "single" ? (
+          {detectionMode === 'single' ? (
             <Button
-              variant="default"
+              variant="secondary"
               size="sm"
-              className="w-full h-8 rounded-md font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-              onClick={() => onAutoDetect("single")}
+              className="w-full h-8 rounded-md font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs bg-secondary/80 hover:bg-secondary text-secondary-foreground border border-border/70 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              onClick={() => onAutoDetect('single')}
               disabled={isDetecting}
             >
               {isDetecting ? (
-                <ArrowClockwise size={14} weight="bold" className="shrink-0 animate-spin" />
+                <ArrowClockwise
+                  size={14}
+                  weight="bold"
+                  className="shrink-0 animate-spin text-muted-foreground"
+                />
               ) : (
-                <Sparkle size={15} weight="fill" className="shrink-0" />
+                <Sparkle size={15} weight="fill" className="shrink-0 text-amber-500" />
               )}
-              <span>{isDetecting ? "جاري الكشف ..." : "كشف تلقائي"}</span>
+              <span>{isDetecting ? 'جاري الكشف ...' : 'كشف تلقائي'}</span>
             </Button>
           ) : (
             <div className="grid grid-cols-2 gap-1.5">
               <Button
-                variant="default"
+                variant="secondary"
                 size="sm"
-                className="h-8 rounded-md font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                onClick={() => onAutoDetect("multi")}
+                className="h-8 rounded-md font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-secondary/80 hover:bg-secondary text-secondary-foreground border border-border/70 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                onClick={() => onAutoDetect('multi')}
                 disabled={isDetecting}
               >
                 {isDetecting ? (
@@ -183,7 +199,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                   className="h-5 px-1.5 text-micro font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 cursor-pointer"
                   onClick={onSelectAllDocs}
                 >
-                  {isAllSelected ? "إلغاء الكل" : "تحديد الكل"}
+                  {isAllSelected ? 'إلغاء الكل' : 'تحديد الكل'}
                 </Button>
               )}
               {onAddDocument && (
@@ -228,25 +244,29 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
       {/* 🔹 3. معالجة وتصفية الورقة (6 فلاتر نقية) */}
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
         <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-          <MagicWand size={15} weight="duotone" className="text-primary shrink-0" />
+          <MagicWand size={15} weight="duotone" className="text-muted-foreground shrink-0" />
           <span>فلاتر الورقة</span>
         </Label>
         <div className="grid grid-cols-2 gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={filterMode === "original" ? "default" : "outline"}
+                variant={filterMode === 'original' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                  filterMode === "original"
-                    ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-                    : "hover:bg-accent/60 text-foreground/80 bg-background/60"
+                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  filterMode === 'original'
+                    ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
+                    : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
                 )}
                 disabled={isDetecting}
-                onClick={() => onFilterChange("original")}
+                onClick={() => onFilterChange('original')}
               >
-                <FileText size={14} weight={filterMode === "original" ? "fill" : "regular"} className="shrink-0" />
+                <FileText
+                  size={14}
+                  weight={filterMode === 'original' ? 'fill' : 'regular'}
+                  className="shrink-0"
+                />
                 <span>أصلي</span>
               </Button>
             </TooltipTrigger>
@@ -256,18 +276,22 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={filterMode === "magic" ? "default" : "outline"}
+                variant={filterMode === 'magic' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-md text-xs font-bold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                  filterMode === "magic"
-                    ? "bg-primary text-primary-foreground shadow-2xs"
-                    : "hover:bg-accent/60 text-foreground/80 bg-background/60"
+                  'h-8 rounded-md text-xs font-bold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  filterMode === 'magic'
+                    ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
+                    : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
                 )}
                 disabled={isDetecting}
-                onClick={() => onFilterChange("magic")}
+                onClick={() => onFilterChange('magic')}
               >
-                <Sparkle size={14} weight={filterMode === "magic" ? "fill" : "duotone"} className="shrink-0 text-amber-400" />
+                <Sparkle
+                  size={14}
+                  weight={filterMode === 'magic' ? 'fill' : 'duotone'}
+                  className="shrink-0 text-amber-400"
+                />
                 <span>ذكي</span>
               </Button>
             </TooltipTrigger>
@@ -277,18 +301,22 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={filterMode === "grayscale" ? "default" : "outline"}
+                variant={filterMode === 'grayscale' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                  filterMode === "grayscale"
-                    ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-                    : "hover:bg-accent/60 text-foreground/80 bg-background/60"
+                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  filterMode === 'grayscale'
+                    ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
+                    : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
                 )}
                 disabled={isDetecting}
-                onClick={() => onFilterChange("grayscale")}
+                onClick={() => onFilterChange('grayscale')}
               >
-                <Circle size={14} weight={filterMode === "grayscale" ? "fill" : "regular"} className="shrink-0 text-muted-foreground" />
+                <Circle
+                  size={14}
+                  weight={filterMode === 'grayscale' ? 'fill' : 'regular'}
+                  className="shrink-0 text-muted-foreground"
+                />
                 <span>رمادي</span>
               </Button>
             </TooltipTrigger>
@@ -298,18 +326,22 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={filterMode === "bw" ? "default" : "outline"}
+                variant={filterMode === 'bw' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                  filterMode === "bw"
-                    ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-                    : "hover:bg-accent/60 text-foreground/80 bg-background/60"
+                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  filterMode === 'bw'
+                    ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
+                    : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
                 )}
                 disabled={isDetecting}
-                onClick={() => onFilterChange("bw")}
+                onClick={() => onFilterChange('bw')}
               >
-                <CheckSquareOffset size={14} weight={filterMode === "bw" ? "fill" : "regular"} className="shrink-0" />
+                <CheckSquareOffset
+                  size={14}
+                  weight={filterMode === 'bw' ? 'fill' : 'regular'}
+                  className="shrink-0"
+                />
                 <span>أبيض وأسود</span>
               </Button>
             </TooltipTrigger>
@@ -319,18 +351,22 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={filterMode === "sharpen" ? "default" : "outline"}
+                variant={filterMode === 'sharpen' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                  filterMode === "sharpen"
-                    ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-                    : "hover:bg-accent/60 text-foreground/80 bg-background/60"
+                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  filterMode === 'sharpen'
+                    ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
+                    : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
                 )}
                 disabled={isDetecting}
-                onClick={() => onFilterChange("sharpen")}
+                onClick={() => onFilterChange('sharpen')}
               >
-                <Lightning size={14} weight={filterMode === "sharpen" ? "fill" : "duotone"} className="shrink-0 text-cyan-500" />
+                <Lightning
+                  size={14}
+                  weight={filterMode === 'sharpen' ? 'fill' : 'duotone'}
+                  className="shrink-0 text-cyan-500"
+                />
                 <span>شحذ</span>
               </Button>
             </TooltipTrigger>
@@ -340,18 +376,22 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={filterMode === "deyellow" ? "default" : "outline"}
+                variant={filterMode === 'deyellow' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  "h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                  filterMode === "deyellow"
-                    ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-                    : "hover:bg-accent/60 text-foreground/80 bg-background/60"
+                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  filterMode === 'deyellow'
+                    ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
+                    : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
                 )}
                 disabled={isDetecting}
-                onClick={() => onFilterChange("deyellow")}
+                onClick={() => onFilterChange('deyellow')}
               >
-                <Drop size={14} weight={filterMode === "deyellow" ? "fill" : "duotone"} className="shrink-0 text-orange-500" />
+                <Drop
+                  size={14}
+                  weight={filterMode === 'deyellow' ? 'fill' : 'duotone'}
+                  className="shrink-0 text-orange-500"
+                />
                 <span>إزالة الاصفرار</span>
               </Button>
             </TooltipTrigger>
@@ -363,68 +403,72 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
       {/* 🔹 4. قياس ونسبة المستند */}
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
         <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-          <Crop size={15} weight="duotone" className="text-primary shrink-0" />
+          <Crop size={15} weight="duotone" className="text-muted-foreground shrink-0" />
           <span>نسبة المستند</span>
         </Label>
         <div className="grid grid-cols-2 gap-1.5">
           <Button
-            variant={aspectType === "free" ? "default" : "outline"}
+            variant={aspectType === 'free' ? 'default' : 'outline'}
             size="sm"
             className={cn(
-              "h-8 rounded-md text-xs font-bold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              aspectType === "free"
-                ? "bg-primary text-primary-foreground shadow-2xs"
-                : "hover:bg-accent/60 text-foreground/80 bg-background/60"
+              'h-8 rounded-md text-xs font-bold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              aspectType === 'free'
+                ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
+                : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
             )}
-                disabled={isDetecting}
-                onClick={() => onAspectChange("free")}
+            disabled={isDetecting}
+            onClick={() => onAspectChange('free')}
           >
             حر
           </Button>
 
           <Button
-            variant={aspectType === "a4_p" ? "default" : "outline"}
+            variant={aspectType === 'a4_p' ? 'default' : 'outline'}
             size="sm"
             className={cn(
-              "h-8 rounded-md text-xs font-semibold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              aspectType === "a4_p"
-                ? "bg-primary text-primary-foreground shadow-2xs"
-                : "hover:bg-accent/60 text-foreground/80 bg-background/60"
+              'h-8 rounded-md text-xs font-semibold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              aspectType === 'a4_p'
+                ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
+                : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
             )}
-                disabled={isDetecting}
-                onClick={() => onAspectChange("a4_p")}
+            disabled={isDetecting}
+            onClick={() => onAspectChange('a4_p')}
           >
             A4 طولي
           </Button>
 
           <Button
-            variant={aspectType === "a4_l" ? "default" : "outline"}
+            variant={aspectType === 'a4_l' ? 'default' : 'outline'}
             size="sm"
             className={cn(
-              "h-8 rounded-md text-xs font-semibold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              aspectType === "a4_l"
-                ? "bg-primary text-primary-foreground shadow-2xs"
-                : "hover:bg-accent/60 text-foreground/80 bg-background/60"
+              'h-8 rounded-md text-xs font-semibold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              aspectType === 'a4_l'
+                ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
+                : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
             )}
-                disabled={isDetecting}
-                onClick={() => onAspectChange("a4_l")}
+            disabled={isDetecting}
+            onClick={() => onAspectChange('a4_l')}
           >
             A4 عرضي
           </Button>
 
           <Button
-            variant={aspectType === "id_card" ? "default" : "outline"}
+            variant={aspectType === 'id_card' ? 'default' : 'outline'}
             size="sm"
             className={cn(
-              "h-8 rounded-md text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              aspectType === "id_card"
-                ? "bg-primary text-primary-foreground shadow-2xs"
-                : "hover:bg-accent/60 text-foreground/80 bg-background/60"
+              'h-8 rounded-md text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              aspectType === 'id_card'
+                ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
+                : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
             )}
-                disabled={isDetecting}
-                onClick={() => onAspectChange("id_card")}
+            disabled={isDetecting}
+            onClick={() => onAspectChange('id_card')}
           >
-            <IdentificationCard size={14} weight={aspectType === "id_card" ? "fill" : "regular"} className="shrink-0" />
+            <IdentificationCard
+              size={14}
+              weight={aspectType === 'id_card' ? 'fill' : 'regular'}
+              className="shrink-0"
+            />
             <span>هوية</span>
           </Button>
         </div>
@@ -434,11 +478,14 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-            <ArrowClockwise size={15} weight="duotone" className="text-primary shrink-0" />
+            <ArrowClockwise size={15} weight="duotone" className="text-muted-foreground shrink-0" />
             <span>التدوير والضبط</span>
           </Label>
-          {(((rotation % 360) + 360) % 360) !== 0 && (
-            <span dir="ltr" className="text-micro font-mono text-primary font-bold px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20">
+          {((rotation % 360) + 360) % 360 !== 0 && (
+            <span
+              dir="ltr"
+              className="text-micro font-mono text-foreground font-semibold px-1.5 py-0.5 rounded bg-muted border border-border/60"
+            >
               {((rotation % 360) + 360) % 360}°
             </span>
           )}
@@ -454,7 +501,11 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 onClick={onRotateCounterClockwise}
                 className="h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-border/50 bg-background/60 hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
-                <ArrowCounterClockwise size={13} weight="bold" className="shrink-0 text-muted-foreground" />
+                <ArrowCounterClockwise
+                  size={13}
+                  weight="bold"
+                  className="shrink-0 text-muted-foreground"
+                />
                 <span>90° يساراً</span>
               </Button>
             </TooltipTrigger>
@@ -470,7 +521,11 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 onClick={onRotateClockwise}
                 className="h-8 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer border-border/50 bg-background/60 hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               >
-                <ArrowClockwise size={13} weight="bold" className="shrink-0 text-muted-foreground" />
+                <ArrowClockwise
+                  size={13}
+                  weight="bold"
+                  className="shrink-0 text-muted-foreground"
+                />
                 <span>90° يميناً</span>
               </Button>
             </TooltipTrigger>
@@ -485,7 +540,11 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
           onClick={onReset}
           disabled={isDetecting}
         >
-          <ArrowsCounterClockwise size={13} weight="bold" className="text-muted-foreground shrink-0" />
+          <ArrowsCounterClockwise
+            size={13}
+            weight="bold"
+            className="text-muted-foreground shrink-0"
+          />
           <span>إعادة الضبط</span>
         </Button>
       </div>

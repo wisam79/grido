@@ -226,7 +226,7 @@ export function FreeformPaletteTab() {
                     'w-8 h-8 rounded-md border border-border/80 flex items-center justify-center transition-colors cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     favorites.includes(customColor.toLowerCase())
-                      ? 'text-primary bg-primary/10 border-primary/40'
+                      ? 'text-warning bg-warning/10 border-warning/40'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
                   )}
                 >
@@ -265,7 +265,7 @@ export function FreeformPaletteTab() {
                   className={cn(
                     'aspect-square rounded-md border border-black/10 dark:border-white/15 transition-colors cursor-pointer shadow-2xs',
                     'before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none relative overflow-hidden',
-                    'hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                    'hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   )}
                   style={{ backgroundColor: item.color }}
                 />
@@ -297,7 +297,7 @@ export function FreeformPaletteTab() {
                     onClick={() => applyColor(color)}
                     aria-label={`${palette.name} ${color}`}
                     title={color}
-                    className="flex-1 h-6 rounded-sm border border-black/10 dark:border-white/15 transition-colors cursor-pointer hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                    className="flex-1 h-6 rounded-sm border border-black/10 dark:border-white/15 transition-colors cursor-pointer hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                     style={{ backgroundColor: color }}
                   />
                 ))}
@@ -349,7 +349,7 @@ export function FreeformPaletteTab() {
                   onClick={() => applyColor(color)}
                   aria-label={`تطبيق ${color}`}
                   title={color}
-                  className="w-full aspect-square rounded-md border border-black/10 dark:border-white/15 transition-colors cursor-pointer hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="w-full aspect-square rounded-md border border-black/10 dark:border-white/15 transition-colors cursor-pointer hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   style={{ backgroundColor: color }}
                 />
                 <button
@@ -416,7 +416,7 @@ export function FreeformPaletteTab() {
                       onClick={() => applyColor(color)}
                       aria-label={`تطبيق ${color}`}
                       title={color}
-                      className="w-full aspect-square rounded-md border border-border transition-colors cursor-pointer hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                      className="w-full aspect-square rounded-md border border-border transition-colors cursor-pointer hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                       style={{ backgroundColor: color }}
                     />
                     <button
@@ -445,7 +445,7 @@ export function FreeformPaletteTab() {
                       onClick={() => applyColor(color)}
                       aria-label={`تطبيق ${color}`}
                       title={color}
-                      className="aspect-square rounded-md border border-dashed border-border transition-colors cursor-pointer hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                      className="aspect-square rounded-md border border-dashed border-border transition-colors cursor-pointer hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                       style={{ backgroundColor: color }}
                     />
                   ))}

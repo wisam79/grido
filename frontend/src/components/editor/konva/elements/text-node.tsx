@@ -1,46 +1,41 @@
-import React, { useEffect, useRef } from "react";
-import { Text as KonvaText, Rect as KonvaRect, Group, Shape as KonvaShape } from "react-konva";
-import Konva from "konva";
-import { TextElement, useEditorStore } from "@/lib/editor-store";
-import { useKonvaDrag } from "@/hooks/use-konva-drag";
-import { TEXT_COLOR_DEFAULT } from "@/lib/canvas/canvas-colors";
-import { ElementProps, propsAreEqual } from "./types";
-import { getFillProps } from "./fill-utils";
-import { withShadowlessDrag } from "./drag-shadow";
-import { drawCurvedText } from "@/lib/canvas/curved-text-utils";
-import { loadGoogleFont } from "@/lib/io/fonts";
-import { ensureTextStrokeFilter } from "@/lib/canvas/text-stroke-filter";
+import React, { useEffect, useRef } from 'react';
+import { Text as KonvaText, Rect as KonvaRect, Group, Shape as KonvaShape } from 'react-konva';
+import Konva from 'konva';
+import { TextElement, useEditorStore } from '@/lib/editor-store';
+import { useKonvaDrag } from '@/hooks/use-konva-drag';
+import { TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
+import { ElementProps, propsAreEqual } from './types';
+import { getFillProps } from './fill-utils';
+import { withShadowlessDrag } from './drag-shadow';
+import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
+import { loadGoogleFont } from '@/lib/io/fonts';
+import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
 
-export const KonvaTextElement = React.memo(function KonvaTextElement({ 
-  element: _element, 
-  isSelected, 
+export const KonvaTextElement = React.memo(function KonvaTextElement({
+  element: _element,
+  isSelected,
   onMouseDown,
   onTouchStart,
   onClick,
-  onTap, 
-  onChange, 
-  canvasWidth: stageCanvasWidth, 
-  canvasHeight, 
-  setActiveGuides, 
-  elementRef, 
-  snapToGrid, 
-  gridSize, 
-  altPressedRef, 
-  shiftPressedRef, 
-  onDblClick, 
-  getKonvaNode 
+  onTap,
+  onChange,
+  canvasWidth: stageCanvasWidth,
+  canvasHeight,
+  setActiveGuides,
+  elementRef,
+  snapToGrid,
+  gridSize,
+  altPressedRef,
+  shiftPressedRef,
+  onDblClick,
+  getKonvaNode,
 }: ElementProps) {
   const element = _element as TextElement;
   const editingTextId = useEditorStore((state) => state.editingTextId);
   const hasAnimatedRef = React.useRef(false);
   const textRef = useRef<Konva.Text | null>(null);
 
-  const {
-    onDragStart,
-    dragBoundFunc,
-    onDragMove,
-    onDragEnd,
-  } = useKonvaDrag({
+  const { onDragStart, dragBoundFunc, onDragMove, onDragEnd } = useKonvaDrag({
     element,
     canvasWidth: stageCanvasWidth,
     canvasHeight,
@@ -64,18 +59,18 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         scaleX: 1,
         scaleY: 1,
         duration: 0.28,
-        easing: Konva.Easings.BackEaseOut
+        easing: Konva.Easings.BackEaseOut,
       });
     }
   }, [elementRef, element.opacity, editingTextId, element.id]);
-  
+
   // Ensure font and weight variants are loaded dynamically
   useEffect(() => {
     if (element.fontFamily) {
       loadGoogleFont(element.fontFamily);
     }
   }, [element.fontFamily, element.fontWeight]);
-  
+
   // Sync auto height back to store so bounding boxes and overlays stay perfect
   const lastSetHeightRef = useRef<number | null>(null);
   const onChangeRef = useRef(onChange);
@@ -84,13 +79,32 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   useEffect(() => {
     if (!element.curve && textRef.current) {
       const actualHeight = Math.max(0.01, textRef.current.height() / canvasHeight);
-      if (lastSetHeightRef.current === null || Math.abs(lastSetHeightRef.current - actualHeight) > 0.001) {
+      if (
+        lastSetHeightRef.current === null ||
+        Math.abs(lastSetHeightRef.current - actualHeight) > 0.001
+      ) {
         lastSetHeightRef.current = actualHeight;
         onChangeRef.current({ height: actualHeight });
       }
     }
-  }, [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.fontStyle, element.textAlign, element.color, element.width, element.id, element.height, canvasHeight, element.curve,
-      element.lineHeight, element.letterSpacing, element.textTransform, element.arabicNumerals]);
+  }, [
+    element.text,
+    element.fontSize,
+    element.fontFamily,
+    element.fontWeight,
+    element.fontStyle,
+    element.textAlign,
+    element.color,
+    element.width,
+    element.id,
+    element.height,
+    canvasHeight,
+    element.curve,
+    element.lineHeight,
+    element.letterSpacing,
+    element.textTransform,
+    element.arabicNumerals,
+  ]);
 
   const flipped = element.flipX === true;
   const flippedY = element.flipY === true;
@@ -98,14 +112,16 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const h = element.height * canvasHeight;
 
   // فحص هل يحتوي النص على أحرف عربية لمنع تقطيع الأحرف المتصلة (Letter Spacing Exploding)
-  let rawText = element.text || "";
-  
+  let rawText = element.text || '';
+
   // تحويل الأرقام إلى المشرقية (٠-٩) إذا تم تفعيل الخيار
   if (element.arabicNumerals) {
-    rawText = rawText.replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[parseInt(d, 10)]);
+    rawText = rawText.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
   }
 
-  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(rawText);
+  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+    rawText,
+  );
   const spacing = element.letterSpacing || 0;
 
   let renderText = rawText;
@@ -113,19 +129,20 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
 
   if (isArabic && spacing > 0) {
     effectiveLetterSpacing = 0; // إلغاء التباعد بين الأحرف لمنع تفكيك وتفجير أحرف الكلمة الواحدة
-    const extraSpaces = " ".repeat(Math.min(6, Math.max(1, Math.round(spacing / 3.5))));
+    const extraSpaces = ' '.repeat(Math.min(6, Math.max(1, Math.round(spacing / 3.5))));
     renderText = rawText.replace(/ /g, extraSpaces);
   }
 
-  if (element.textTransform === "uppercase") {
+  // تحويلات الحالة لاتينية فقط — تطبيقها على العربي يخرب التشكيل بلا فائدة
+  if (!isArabic && element.textTransform === 'uppercase') {
     renderText = renderText.toUpperCase();
-  } else if (element.textTransform === "lowercase") {
+  } else if (!isArabic && element.textTransform === 'lowercase') {
     renderText = renderText.toLowerCase();
-  } else if (element.textTransform === "capitalize") {
+  } else if (!isArabic && element.textTransform === 'capitalize') {
     renderText = renderText.replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
-  const hasBg = !!element.textBgColor && element.textBgColor !== "transparent";
+  const hasBg = !!element.textBgColor && element.textBgColor !== 'transparent';
   const bgPaddingX = element.textBgPaddingX ?? element.textBgPadding ?? 0;
   const bgPaddingY = element.textBgPaddingY ?? element.textBgPadding ?? 0;
   const bgRadius = element.textBgRadius || 0;
@@ -136,18 +153,17 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const nodeY = element.y * canvasHeight;
   const sharedOpacity = editingTextId === element.id ? 0 : element.opacity;
 
-  const hasCurve = typeof element.curve === "number" && element.curve !== 0;
+  const hasCurve = typeof element.curve === 'number' && element.curve !== 0;
   const strokeW = element.strokeWidth || 0;
   const strokeColor = element.stroke || TEXT_COLOR_DEFAULT;
-  const strokeFilterId = strokeW > 0 ? ensureTextStrokeFilter(strokeW, strokeColor) : "";
+  const strokeFilterId = strokeW > 0 ? ensureTextStrokeFilter(strokeW, strokeColor) : '';
 
   // 🚀 إطفاء الظلال أثناء السحب بلا إعادة رسم React (انظر drag-shadow.ts).
-  const { handleStart: handleShadowlessStart, handleEnd: handleShadowlessEnd } =
-    withShadowlessDrag(
-      () => elementRef.current as unknown as Konva.Group | null,
-      onDragStart,
-      onDragEnd
-    );
+  const { handleStart: handleShadowlessStart, handleEnd: handleShadowlessEnd } = withShadowlessDrag(
+    () => elementRef.current as unknown as Konva.Group | null,
+    onDragStart,
+    onDragEnd,
+  );
 
   return (
     <Group
@@ -191,7 +207,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
           width={w + bgPaddingX * 2}
           height={h + bgPaddingY * 2}
           cornerRadius={bgRadius}
-          fill={hasBg ? element.textBgColor : "rgba(0,0,0,0.0001)"}
+          fill={hasBg ? element.textBgColor : 'rgba(0,0,0,0.0001)'}
           stroke={bgBorderWidth > 0 ? bgBorderColor : undefined}
           strokeWidth={bgBorderWidth > 0 ? bgBorderWidth : undefined}
           perfectDrawEnabled={false}
@@ -213,21 +229,21 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
                 width: w,
                 height: h,
                 fontSize: element.fontSize || 16,
-                fontFamily: element.fontFamily || "Cairo, sans-serif",
+                fontFamily: element.fontFamily || 'Cairo, sans-serif',
                 fontWeight: element.fontWeight || 400,
-                fontStyle: element.fontStyle || "normal",
+                fontStyle: element.fontStyle || 'normal',
                 color: element.color || TEXT_COLOR_DEFAULT,
-                stroke: element.strokeWidth ? (element.stroke || TEXT_COLOR_DEFAULT) : undefined,
+                stroke: element.strokeWidth ? element.stroke || TEXT_COLOR_DEFAULT : undefined,
                 strokeWidth: element.strokeWidth || 0,
-                textAlign: element.textAlign || "center",
+                textAlign: element.textAlign || 'center',
                 curve: element.curve || 0,
                 letterSpacing: effectiveLetterSpacing,
               });
             }}
             shadowColor={element.shadowColor}
             shadowBlur={element.shadowBlur || 0}
-            shadowOffsetX={element.shadowGlow ? 0 : (element.shadowOffsetX || 0)}
-            shadowOffsetY={element.shadowGlow ? 0 : (element.shadowOffsetY || 0)}
+            shadowOffsetX={element.shadowGlow ? 0 : element.shadowOffsetX || 0}
+            shadowOffsetY={element.shadowGlow ? 0 : element.shadowOffsetY || 0}
             shadowOpacity={element.shadowOpacity ?? 0}
             perfectDrawEnabled={false}
           />
@@ -240,30 +256,39 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
             text={renderText}
             perfectDrawEnabled={false}
             shadowForStrokeEnabled={false}
-            globalCompositeOperation={(element.globalCompositeOperation as GlobalCompositeOperation | undefined) || "source-over"}
+            globalCompositeOperation={
+              (element.globalCompositeOperation as GlobalCompositeOperation | undefined) ||
+              'source-over'
+            }
             shadowColor={element.shadowColor}
             shadowBlur={element.shadowBlur || 0}
-            shadowOffsetX={element.shadowGlow ? 0 : (element.shadowOffsetX || 0)}
-            shadowOffsetY={element.shadowGlow ? 0 : (element.shadowOffsetY || 0)}
+            shadowOffsetX={element.shadowGlow ? 0 : element.shadowOffsetX || 0}
+            shadowOffsetY={element.shadowGlow ? 0 : element.shadowOffsetY || 0}
             shadowOpacity={element.shadowOpacity ?? 0}
             fontSize={element.fontSize || 16}
             fontStyle={[
-              element.fontStyle === "italic" ? "italic" : "",
-              element.fontWeight ? String(element.fontWeight) : "400",
-            ].filter(Boolean).join(" ")}
+              element.fontStyle === 'italic' ? 'italic' : '',
+              element.fontWeight ? String(element.fontWeight) : '400',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             {...getFillProps(element, w, h)}
-            fontFamily={element.fontFamily || "sans-serif"}
-            align={element.textAlign || "center"}
+            fontFamily={element.fontFamily || 'sans-serif'}
+            align={element.textAlign || 'center'}
             lineHeight={element.lineHeight ?? 1.2}
             letterSpacing={effectiveLetterSpacing}
-            sceneFunc={strokeFilterId ? (context, shape) => {
-              const ctx = context._context;
-              ctx.save();
-              ctx.filter = `url(#${strokeFilterId})`;
-              Konva.Text.prototype._sceneFunc.call(shape, context);
-              ctx.restore();
-            } : undefined}
-            textDecoration={element.textDecoration || ""}
+            sceneFunc={
+              strokeFilterId
+                ? (context, shape) => {
+                    const ctx = context._context;
+                    ctx.save();
+                    ctx.filter = `url(#${strokeFilterId})`;
+                    Konva.Text.prototype._sceneFunc.call(shape, context);
+                    ctx.restore();
+                  }
+                : undefined
+            }
+            textDecoration={element.textDecoration || ''}
             wrap="word"
             ellipsis={false}
           />

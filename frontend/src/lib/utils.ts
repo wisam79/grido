@@ -98,9 +98,23 @@ function isSafeSvgUrl(value: string): boolean {
   return SVG_SAFE_EMBEDDED_IMAGE.test(trimmed);
 }
 
+function isSafeEmbeddedFontStyle(el: Element): boolean {
+  // <style> مضمّن من المصدّر نفسه: @font-face بـ data: فقط — بلا @import/روابط خارجية
+  if (el.tagName.toLowerCase() !== 'style') return false;
+  const css = el.textContent || '';
+  if (!/@font-face/i.test(css)) return false;
+  if (/javascript:|expression\s*\(|@import/i.test(css)) return false;
+  if (/url\s*\(\s*['"]?(?!data:)/i.test(css)) return false;
+  return true;
+}
+
 function scrubSvgElement(el: Element): void {
   const tag = el.tagName.toLowerCase();
   if (SVG_FORBIDDEN_ELEMENTS.has(tag)) {
+    // استثناء: خطوط مضمّنة data: من تصديرنا — آمنة ومحمولة خارج التطبيق
+    if (tag === 'style' && isSafeEmbeddedFontStyle(el)) {
+      return;
+    }
     el.remove();
     return;
   }

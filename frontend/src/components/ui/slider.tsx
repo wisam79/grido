@@ -1,72 +1,84 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import * as SliderPrimitive from "@radix-ui/react-slider"
-import { cn } from "@/lib/utils"
+import * as React from 'react';
+import * as SliderPrimitive from '@radix-ui/react-slider';
+import { cn } from '@/lib/utils';
 
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, defaultValue, value, min = 0, max = 100, dir, "aria-label": ariaLabel, "aria-labelledby": ariaLabelledBy, ...props }, ref) => {
-  // R37 + RTL: عدم فرض ltr — يرث اتجاه الواجهة (rtl) تلقائياً.
-  // القيم الرقمية نفسها تبقى LTR عبر tabular-nums في CSS، لكن اتجاه
-  // الحركة (يمين=زيادة) يجب أن يتبع RTL مثل بقية الواجهة.
-  const _values = React.useMemo(
-    () =>
-      Array.isArray(value)
-        ? value
-        : Array.isArray(defaultValue)
-          ? defaultValue
-          : [min, max],
-    [value, defaultValue, min, max]
-  )
+>(
+  (
+    {
+      className,
+      defaultValue,
+      value,
+      min = 0,
+      max = 100,
+      dir,
+      'aria-label': ariaLabel,
+      'aria-labelledby': ariaLabelledBy,
+      ...props
+    },
+    ref,
+  ) => {
+    // R37 + RTL: عدم فرض ltr — يرث اتجاه الواجهة (rtl) تلقائياً.
+    // القيم الرقمية نفسها تبقى LTR عبر tabular-nums في CSS، لكن اتجاه
+    // الحركة (يمين=زيادة) يجب أن يتبع RTL مثل بقية الواجهة.
+    const _values = React.useMemo(
+      () =>
+        Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max],
+      [value, defaultValue, min, max],
+    );
 
-  // 🛡️ a11y: Radix يتطلب وضع سمات الاسم على كل Thumb (وليس Root) —
-  // نمرر aria-label / aria-labelledby إلى المقبض ليكون للمنزلق اسم قابل للوصول
-  const thumbAriaProps = {
-    ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
-    ...(ariaLabelledBy ? { "aria-labelledby": ariaLabelledBy } : {}),
-  }
+    // 🛡️ a11y: Radix يتطلب وضع سمات الاسم على كل Thumb (وليس Root) —
+    // نمرر aria-label / aria-labelledby إلى المقبض ليكون للمنزلق اسم قابل للوصول
+    const thumbAriaProps = {
+      ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
+      ...(ariaLabelledBy ? { 'aria-labelledby': ariaLabelledBy } : {}),
+    };
 
-  return (
-    <SliderPrimitive.Root
-      ref={ref}
-      dir={dir}
-      data-slot="slider"
-      defaultValue={defaultValue}
-      value={value}
-      min={min}
-      max={max}
-      className={cn(
-        "relative flex w-full touch-none items-center select-none data-[disabled]:opacity-40 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col cursor-pointer py-2 group",
-        className
-      )}
-      {...props}
-    >
-      <SliderPrimitive.Track
-        data-slot="slider-track"
+    return (
+      <SliderPrimitive.Root
+        ref={ref}
+        dir={dir}
+        data-slot="slider"
+        defaultValue={defaultValue}
+        value={value}
+        min={min}
+        max={max}
         className={cn(
-          "relative grow overflow-hidden rounded-full bg-muted border border-border h-[5px] data-[orientation=vertical]:w-[5px] transition-colors"
+          'relative flex w-full touch-none items-center select-none data-[disabled]:opacity-40 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col cursor-pointer py-2 group',
+          className,
         )}
+        {...props}
       >
-        <SliderPrimitive.Range
-          data-slot="slider-range"
+        <SliderPrimitive.Track
+          data-slot="slider-track"
           className={cn(
-            "bg-primary absolute rounded-full data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
+            'relative grow overflow-hidden rounded-full bg-muted border border-border h-[5px] data-[orientation=vertical]:w-[5px] transition-colors',
           )}
-        />
-      </SliderPrimitive.Track>
-      {Array.from({ length: _values.length }, (_, index) => (
-        <SliderPrimitive.Thumb
-          data-slot="slider-thumb"
-          key={index}
-          {...thumbAriaProps}
-          className="block size-4 shrink-0 rounded-full bg-background border-2 border-primary shadow-sm shadow-black/20 hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing transition-transform duration-75"
-        />
-      ))}
-    </SliderPrimitive.Root>
-  )
-})
-Slider.displayName = SliderPrimitive.Root.displayName
+        >
+          <SliderPrimitive.Range
+            data-slot="slider-range"
+            className={cn(
+              // المسار المعبأ محايد — القيمة ليست أمراً تعبوياً
+              'bg-foreground/85 absolute rounded-full data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full',
+            )}
+          />
+        </SliderPrimitive.Track>
+        {Array.from({ length: _values.length }, (_, index) => (
+          <SliderPrimitive.Thumb
+            data-slot="slider-thumb"
+            key={index}
+            {...thumbAriaProps}
+            className="block size-4 shrink-0 rounded-full bg-background border-2 border-foreground/85 shadow-sm shadow-black/20 hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing transition-transform duration-75"
+          />
+        ))}
+      </SliderPrimitive.Root>
+    );
+  },
+);
+Slider.displayName = SliderPrimitive.Root.displayName;
 
-export { Slider }
+export { Slider };

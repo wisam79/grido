@@ -1,14 +1,14 @@
-import React from "react";
-import { Button, ButtonProps } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Spinner } from "@/components/ui/huge-icon";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Button, ButtonProps } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Spinner } from '@/components/ui/huge-icon';
+import { cn } from '@/lib/utils';
 
-export interface FluentIconButtonProps extends Omit<ButtonProps, "size"> {
+export interface FluentIconButtonProps extends Omit<ButtonProps, 'size'> {
   icon?: React.ReactNode;
   tooltip?: string;
-  tooltipSide?: "top" | "bottom" | "left" | "right";
-  size?: "compact" | "default" | "hero";
+  tooltipSide?: 'top' | 'bottom' | 'left' | 'right';
+  size?: 'compact' | 'default' | 'hero';
   loading?: boolean;
   active?: boolean;
 }
@@ -18,8 +18,8 @@ export const FluentIconButton = React.memo(
     {
       icon,
       tooltip,
-      tooltipSide = "bottom",
-      size = "default",
+      tooltipSide = 'bottom',
+      size = 'default',
       loading = false,
       active = false,
       children,
@@ -27,12 +27,12 @@ export const FluentIconButton = React.memo(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) {
     const sizeClasses = {
-      compact: "h-7 px-2 text-xs gap-1",
-      default: "h-8 px-2.5 text-xs gap-1.5",
-      hero: "h-9 px-3 text-xs font-bold gap-2",
+      compact: 'h-7 px-2 text-xs gap-1',
+      default: 'h-8 px-2.5 text-xs gap-1.5',
+      hero: 'h-9 px-3 text-xs font-bold gap-2',
     }[size];
 
     const button = (
@@ -41,10 +41,11 @@ export const FluentIconButton = React.memo(
         disabled={disabled || loading}
         className={cn(
           sizeClasses,
-          "rounded-md font-cairo cursor-pointer transition-all duration-150 select-none shadow-2xs",
-          "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-          active && "bg-primary text-primary-foreground font-bold shadow-xs",
-          className
+          'rounded-md font-cairo cursor-pointer transition-all duration-150 select-none shadow-2xs',
+          'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+          // التحديد المحايد الموحد — الأزرق حصري للأوامر التعبوية لا لحالة التفعيل
+          active && 'bg-accent-active text-foreground font-bold shadow-xs',
+          className,
         )}
         {...props}
       >
@@ -69,7 +70,7 @@ export const FluentIconButton = React.memo(
         </TooltipContent>
       </Tooltip>
     );
-  })
+  }),
 );
 
-FluentIconButton.displayName = "FluentIconButton";
+FluentIconButton.displayName = 'FluentIconButton';

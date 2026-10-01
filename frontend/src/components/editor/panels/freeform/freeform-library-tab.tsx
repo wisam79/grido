@@ -330,7 +330,7 @@ export function FreeformLibraryTab() {
                   type="button"
                   onClick={() => addItem(item)}
                   title={`إضافة ${item.label}`}
-                  className="w-full text-start p-2 pe-7 rounded-xl border border-border/80 bg-card hover:border-primary/60 hover:bg-muted/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="w-full text-start p-2 pe-7 rounded-xl border border-border/80 bg-card hover:border-foreground/40 hover:bg-muted/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
                   <span className="flex items-center gap-1.5 min-w-0">
                     {item.preview}
@@ -351,7 +351,7 @@ export function FreeformLibraryTab() {
                     'absolute top-1.5 end-1.5 w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isFavorite
-                      ? 'text-primary hover:bg-primary/10'
+                      ? 'text-warning hover:bg-warning/10'
                       : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/70',
                   )}
                 >
@@ -384,7 +384,7 @@ export function FreeformLibraryTab() {
                 type="button"
                 onClick={() => applyFont(font)}
                 title={`تطبيق ${font.arabicName}`}
-                className="px-2 h-7 rounded-md border border-border/80 bg-card hover:border-primary/60 hover:bg-muted/50 transition-colors cursor-pointer text-xs font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="px-2 h-7 rounded-md border border-border/80 bg-card hover:border-foreground/40 hover:bg-muted/50 transition-colors cursor-pointer text-xs font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 style={{ fontFamily: font.family }}
               >
                 {font.arabicName}
@@ -441,7 +441,7 @@ export function FreeformLibraryTab() {
                   onClick={() => applyColor(color)}
                   aria-label={`تطبيق ${color}`}
                   title={color}
-                  className="w-full aspect-square rounded-md border border-black/10 dark:border-white/15 transition-colors cursor-pointer hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="w-full aspect-square rounded-md border border-black/10 dark:border-white/15 transition-colors cursor-pointer hover:border-foreground/40 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   style={{ backgroundColor: color }}
                 />
                 <button

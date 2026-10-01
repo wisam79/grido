@@ -35,7 +35,7 @@ const FOCUS_RING =
   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 
 const FIELD_SHELL =
-  'flex items-center gap-1.5 bg-input/60 hover:bg-input border border-border/80 hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background rounded-md px-2 h-8 shadow-2xs transition-colors';
+  'flex items-center gap-1.5 bg-input/60 hover:bg-input border border-border/80 hover:border-foreground/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background rounded-md px-2 h-8 shadow-2xs transition-colors';
 
 // البحث والعرض في كل المقاسات: كان الاقتصار على PAPER_SIZES يجعل مقاس «Letter»
 // (المتاح أيضاً في كبسولة شريط العرض السفلي) يظهر هنا «مقاس مخصص» بلا تعرّف.
@@ -304,7 +304,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
   return (
     <FluentSection
-      icon={<Crop className="w-3.5 h-3.5 text-primary" weight="duotone" />}
+      icon={<Crop className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
       title="مساحة العمل"
       subtitle={`${currentDpi} DPI`}
       collapsible
@@ -329,12 +329,15 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 type="button"
                 aria-label={`المقاس: ${activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}`}
                 className={cn(
-                  'flex-1 min-w-0 flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-input/60 hover:bg-input border border-border hover:border-primary/50 text-foreground text-xs font-semibold transition-colors cursor-pointer shadow-2xs overflow-hidden',
+                  'flex-1 min-w-0 flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-input/60 hover:bg-input border border-border hover:border-foreground/40 text-foreground text-xs font-semibold transition-colors cursor-pointer shadow-2xs overflow-hidden',
                   FOCUS_RING,
                 )}
               >
                 <span className="flex items-center gap-1.5 min-w-0">
-                  <FrameCorners className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+                  <FrameCorners
+                    className="w-3.5 h-3.5 text-muted-foreground shrink-0"
+                    weight="duotone"
+                  />
                   <span className="truncate text-xs font-semibold">
                     {activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}
                   </span>
@@ -450,7 +453,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   className={cn(
                     'px-2.5 h-full rounded-md text-mini font-mono transition-colors cursor-pointer flex items-center justify-center select-none',
                     isActive
-                      ? 'bg-card text-primary font-bold shadow-2xs border border-border/60'
+                      ? 'bg-card text-foreground font-bold shadow-2xs border border-border/60'
                       : 'text-muted-foreground hover:text-foreground font-normal border border-transparent',
                     FOCUS_RING,
                   )}
@@ -462,7 +465,55 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           </div>
         </div>
 
-        {/* 2. الأبعاد: العرض والارتفاع مع قفل نسبة الأبعاد */}
+        {/* 2. الاتجاه — المصدر الوحيد لتبديل العرض بالارتفاع (قبل الأبعاد:
+            تختار المقاس ثم الاتجاه ثم تضبط الأرقام، فلا يلغي التبديل أرقامك) */}
+        <FluentSettingRow
+          label="الاتجاه"
+          control={
+            <div
+              role="group"
+              aria-label="اتجاه الصفحة"
+              className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-md border border-border/40"
+            >
+              {orientationOptions.map((option) => {
+                const isActive = option.id === 'portrait' ? isPortrait : !isPortrait;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={isActive}
+                    title={option.title}
+                    onClick={() => {
+                      if (option.id === 'portrait' && !isPortrait) handleSwapDimensions();
+                      if (option.id === 'landscape' && isPortrait) handleSwapDimensions();
+                    }}
+                    className={cn(
+                      'flex items-center gap-1.5 px-2 h-7 text-mini font-sans rounded-md transition-colors cursor-pointer select-none',
+                      isActive
+                        ? 'bg-card text-foreground font-bold shadow-2xs border border-border/60'
+                        : 'text-muted-foreground hover:text-foreground font-normal border border-transparent',
+                      FOCUS_RING,
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'rounded-sm border-[1.5px] transition-colors shrink-0',
+                        option.glyph,
+                        isActive
+                          ? 'border-foreground bg-foreground/25'
+                          : 'border-muted-foreground/60',
+                      )}
+                    />
+                    <span className="font-sans">{option.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          }
+        />
+
+        {/* 3. الأبعاد: العرض والارتفاع مع قفل نسبة الأبعاد */}
         <FluentSettingRow
           layout="vertical"
           label="الأبعاد"
@@ -503,8 +554,8 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 className={cn(
                   'w-8 h-8 rounded-md border flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0',
                   lockAspect
-                    ? 'bg-primary/10 text-primary border-primary/40 font-bold'
-                    : 'bg-input/40 border-border/80 text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/40',
+                    ? 'bg-accent-active text-foreground border-border/80 font-bold'
+                    : 'bg-input/40 border-border/80 text-muted-foreground hover:bg-accent hover:text-foreground hover:border-border',
                   FOCUS_RING,
                 )}
               >
@@ -538,51 +589,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   {activeUnit}
                 </span>
               </div>
-            </div>
-          }
-        />
-
-        {/* 3. الاتجاه — المصدر الوحيد لتبديل العرض بالارتفاع */}
-        <FluentSettingRow
-          label="الاتجاه"
-          control={
-            <div
-              role="group"
-              aria-label="اتجاه الصفحة"
-              className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-md border border-border/40"
-            >
-              {orientationOptions.map((option) => {
-                const isActive = option.id === 'portrait' ? isPortrait : !isPortrait;
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    aria-pressed={isActive}
-                    title={option.title}
-                    onClick={() => {
-                      if (option.id === 'portrait' && !isPortrait) handleSwapDimensions();
-                      if (option.id === 'landscape' && isPortrait) handleSwapDimensions();
-                    }}
-                    className={cn(
-                      'flex items-center gap-1.5 px-2 h-7 text-mini font-sans rounded-md transition-colors cursor-pointer select-none',
-                      isActive
-                        ? 'bg-card text-foreground font-bold shadow-2xs border border-border/60'
-                        : 'text-muted-foreground hover:text-foreground font-normal border border-transparent',
-                      FOCUS_RING,
-                    )}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        'rounded-sm border-[1.5px] transition-colors shrink-0',
-                        option.glyph,
-                        isActive ? 'border-primary bg-primary/25' : 'border-muted-foreground/60',
-                      )}
-                    />
-                    <span className="font-sans">{option.label}</span>
-                  </button>
-                );
-              })}
             </div>
           }
         />

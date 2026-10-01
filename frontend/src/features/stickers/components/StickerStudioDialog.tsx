@@ -46,6 +46,8 @@ import {
 import { ALL_STICKER_TEMPLATES } from '../templates';
 import { findHiddenFieldIds } from '../templates/svg-elements';
 import { renderSvgToPngDataUrl, downloadFile } from '../lib/svg-rasterizer';
+import { postProcessStickerSvg, stickerRasterSize } from '../lib/sticker-text';
+import { embedStickerFonts } from '../lib/sticker-font-embed';
 import { sanitizeStickerColor, sanitizeStickerFontFamily } from '../lib/svg-safety';
 import { sanitizeSvgMarkup } from '@/lib/utils';
 import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from '../lib/clipboard-utils';
@@ -80,6 +82,16 @@ function buildDefaultParams(template: StickerTemplate): StickerParams {
     finish: 'standard',
     dieCutBorder: true,
   };
+}
+
+/** ورق الشيت = أبعاد الطباعة الفعالة (A4 الافتراضي) مع احترام الاتجاه — لا مربع ثابت */
+function resolveStickerSheetMm(): { width: number; height: number } {
+  const s = useEditorStore.getState().printSettings;
+  let w = s.paperWidthMM > 0 ? s.paperWidthMM : 210;
+  let h = s.paperHeightMM > 0 ? s.paperHeightMM : 297;
+  if (s.orientation === 'landscape' && h > w) [w, h] = [h, w];
+  else if (s.orientation === 'portrait' && w > h) [w, h] = [h, w];
+  return { width: w, height: h };
 }
 
 export const StickerStudioDialog = React.memo(function StickerStudioDialog({
@@ -213,7 +225,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       // كل قيم التصميم تُعقّم هنا قبل حقنها في سمات SVG (الألوان والخط)
       const cleanFamily = sanitizeStickerFontFamily(params.fontFamily || 'Cairo');
       const safeFamily = cleanFamily.includes(' ') ? `'${cleanFamily}'` : cleanFamily;
-      return selectedTemplate.generateSvg({
+      const raw = selectedTemplate.generateSvg({
         ...params,
         primaryColor: sanitizeStickerColor(
           params.primaryColor,
@@ -229,6 +241,8 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         ),
         fontFamily: safeFamily,
       });
+      // معالجة مركزية: اتجاه تلقائي + ملاءمة مقاس الحقول الطويلة (تغطي كل القوالب)
+      return postProcessStickerSvg(raw);
     } catch (err) {
       console.error('Failed to generate SVG:', err);
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><text x="200" y="200" text-anchor="middle">Error</text></svg>`;
@@ -253,7 +267,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   );
 
   const handleInsertToCanvas = useCallback(
-    async (pngDataUrl: string) => {
+    async (pngDataUrl: string, vectorSvg?: string) => {
       let finalSrc = pngDataUrl;
 
       if (wailsIsDesktop() && pngDataUrl.startsWith('data:image/')) {
@@ -278,7 +292,11 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
           if (store.mode !== 'single') store.setMode('single');
           store.updateElement(el.id, {
             imageSrc: finalSrc,
-            stickerSource: { templateId: selectedTemplate.id, params: { ...params } },
+            stickerSource: {
+              templateId: selectedTemplate.id,
+              params: { ...params },
+              ...(vectorSvg ? { svg: vectorSvg } : {}),
+            },
           } as Partial<CanvasElement>);
           store.pushHistory();
           return;
@@ -296,6 +314,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       store.addImageElement(finalSrc, aspect, {
         templateId: selectedTemplate.id,
         params: { ...params },
+        ...(vectorSvg ? { svg: vectorSvg } : {}),
       });
     },
     [editingElement, selectedTemplate.id, params],
@@ -304,13 +323,14 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   const handleInsertSingle = useCallback(async () => {
     try {
       setIsInserting(true);
-      const pngUrl = await renderSvgToPngDataUrl(
-        svgString,
-        1200,
-        1200 / selectedTemplate.aspectRatio,
-        [params.fontFamily || 'Cairo'],
+      const { width, height } = stickerRasterSize(
+        selectedTemplate.aspectRatio,
+        selectedTemplate.defaultMm,
       );
-      await handleInsertToCanvas(pngUrl);
+      const pngUrl = await renderSvgToPngDataUrl(svgString, width, height, [
+        params.fontFamily || 'Cairo',
+      ]);
+      await handleInsertToCanvas(pngUrl, exportableSvg || svgString);
       toast.success('أُدرج الملصق');
       onOpenChange(false);
     } catch (err) {
@@ -321,7 +341,9 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     }
   }, [
     svgString,
+    exportableSvg,
     selectedTemplate.aspectRatio,
+    selectedTemplate.defaultMm,
     params.fontFamily,
     handleInsertToCanvas,
     onOpenChange,
@@ -330,25 +352,25 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   const handleInsertSheet = useCallback(async () => {
     try {
       setIsGeneratingSheet(true);
-      const singlePng = await renderSvgToPngDataUrl(
-        svgString,
-        1000,
-        1000 / selectedTemplate.aspectRatio,
-        [params.fontFamily || 'Cairo'],
+      const { width, height } = stickerRasterSize(
+        selectedTemplate.aspectRatio,
+        selectedTemplate.defaultMm,
       );
-      // #9 — تحويل spacingMm → gapPx بناءً على DPI الشيت المستهدف (2400px / 200mm = 12 px/mm)
-      const SHEET_WIDTH_PX = 2400;
-      const SHEET_WIDTH_MM = 200; // 20 سم
-      const pxPerMm = SHEET_WIDTH_PX / SHEET_WIDTH_MM;
-      const gapPx = Math.max(0, Math.round(gridConfig.spacingMm * pxPerMm));
+      const singlePng = await renderSvgToPngDataUrl(svgString, width, height, [
+        params.fontFamily || 'Cairo',
+      ]);
+      // شيت يطابق نسبة ورق الطباعة الحالية (A4 الافتراضي 210×297) بدل مربع ثابت —
+      // يُدرج على الكانفس بلا هوامش فارغة، وعلامات القص بالمليمتر النظامي
+      const sheetMm = resolveStickerSheetMm();
       const sheetPng = await generateStickerSheet(singlePng, {
         rows: gridConfig.rows,
         cols: gridConfig.cols,
-        gapPx,
-        sheetWidth: 2400,
-        sheetHeight: 2400,
+        spacingMm: gridConfig.spacingMm,
+        sheetWidthMm: sheetMm.width,
+        sheetHeightMm: sheetMm.height,
+        dpi: 300,
       });
-      await handleInsertToCanvas(sheetPng);
+      await handleInsertToCanvas(sheetPng, exportableSvg || svgString);
       toast.success(`أُدرج شيت (${gridConfig.rows * gridConfig.cols} ملصقات)`);
       onOpenChange(false);
     } catch (err) {
@@ -359,7 +381,9 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     }
   }, [
     svgString,
+    exportableSvg,
     selectedTemplate.aspectRatio,
+    selectedTemplate.defaultMm,
     params.fontFamily,
     gridConfig,
     handleInsertToCanvas,
@@ -410,27 +434,37 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     [selectedTemplate.fields, setParams],
   );
 
-  const handleDownloadSvg = useCallback(() => {
+  const handleDownloadSvg = useCallback(async () => {
     try {
-      const blob = new Blob([exportableSvg], { type: 'image/svg+xml;charset=utf-8' });
+      setBusyExport(true);
+      // تضمين الخط داخل الملف ليعمل خارج التطبيق — يسقط برشاقة للأصل عند الفشل
+      const portable = await embedStickerFonts(exportableSvg || svgString, [
+        params.fontFamily || 'Cairo',
+      ]);
+      const blob = new Blob([portable], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       downloadFile(url, `${selectedTemplate.id}.svg`);
       URL.revokeObjectURL(url);
-      toast.success('نُزّل ملف SVG');
+      toast.success(
+        portable !== (exportableSvg || svgString) ? 'نُزّل SVG بخط مضمّن' : 'نُزّل ملف SVG',
+      );
     } catch {
       toast.error('فشل تنزيل SVG');
+    } finally {
+      setBusyExport(false);
     }
-  }, [exportableSvg, selectedTemplate.id]);
+  }, [exportableSvg, svgString, selectedTemplate.id, params.fontFamily]);
 
   const handleDownloadPng = useCallback(async () => {
     try {
       setBusyExport(true);
-      const pngUrl = await renderSvgToPngDataUrl(
-        svgString,
-        1200,
-        1200 / selectedTemplate.aspectRatio,
-        [params.fontFamily || 'Cairo'],
+      const { width, height } = stickerRasterSize(
+        selectedTemplate.aspectRatio,
+        selectedTemplate.defaultMm,
       );
+      const pngUrl = await renderSvgToPngDataUrl(svgString, width, height, [
+        params.fontFamily || 'Cairo',
+      ]);
       downloadFile(pngUrl, `${selectedTemplate.id}.png`);
       toast.success('صُدّر PNG عالي الدقة (300 DPI)');
     } catch {
@@ -438,17 +472,24 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     } finally {
       setBusyExport(false);
     }
-  }, [svgString, selectedTemplate.aspectRatio, selectedTemplate.id, params.fontFamily]);
+  }, [
+    svgString,
+    selectedTemplate.aspectRatio,
+    selectedTemplate.defaultMm,
+    selectedTemplate.id,
+    params.fontFamily,
+  ]);
 
   const handleCopyImage = useCallback(async () => {
     try {
       setBusyExport(true);
-      const pngUrl = await renderSvgToPngDataUrl(
-        svgString,
-        1200,
-        1200 / selectedTemplate.aspectRatio,
-        [params.fontFamily || 'Cairo'],
+      const { width, height } = stickerRasterSize(
+        selectedTemplate.aspectRatio,
+        selectedTemplate.defaultMm,
       );
+      const pngUrl = await renderSvgToPngDataUrl(svgString, width, height, [
+        params.fontFamily || 'Cairo',
+      ]);
       const ok = await copyPngDataUrlToClipboard(pngUrl);
       if (ok) {
         toast.success('نُسخت الصورة للحافظة');
@@ -461,7 +502,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     } finally {
       setBusyExport(false);
     }
-  }, [svgString, selectedTemplate.aspectRatio, params.fontFamily, exportableSvg]);
+  }, [
+    svgString,
+    selectedTemplate.aspectRatio,
+    selectedTemplate.defaultMm,
+    params.fontFamily,
+    exportableSvg,
+  ]);
 
   const handleCopySvgCode = useCallback(async () => {
     try {
