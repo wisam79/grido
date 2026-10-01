@@ -103,15 +103,45 @@ export function FreeformLibraryTab() {
         id: shape.id,
         label: shape.label,
         detail: 'شكل هندسي',
-        preview: (
-          <span
-            className={cn(
-              'block w-4 h-4 border border-black/10 dark:border-white/20',
-              shape.shape === 'ellipse' ? 'rounded-full' : 'rounded-sm',
-            )}
-            style={{ backgroundColor: shape.color ?? '#2563eb' }}
-          />
-        ),
+        // معاينة الشكل الحقيقي بدل مربّع ملوّن: كانت المثلث/القلب/الدرع…
+        // كلها مربّعات متطابقة لا يفترق بعضها عن بعض إلا باللون
+        preview: (() => {
+          const color = shape.color ?? '#2563eb';
+          if (shape.svgPath) {
+            return (
+              <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" aria-hidden="true">
+                <path d={shape.svgPath} fill={color} />
+              </svg>
+            );
+          }
+          if (shape.shape === 'star') {
+            return (
+              <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" aria-hidden="true">
+                <path
+                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                  fill={color}
+                />
+              </svg>
+            );
+          }
+          if (shape.shape === 'line') {
+            return (
+              <span
+                className="block w-5 h-0.5 rounded-full shrink-0"
+                style={{ backgroundColor: color }}
+              />
+            );
+          }
+          return (
+            <span
+              className={cn(
+                'block w-5 h-5 border border-black/10 dark:border-white/20 shrink-0',
+                shape.shape === 'ellipse' ? 'rounded-full' : 'rounded-md',
+              )}
+              style={{ backgroundColor: color }}
+            />
+          );
+        })(),
       })),
       ...QUICK_TEXT_PRESETS.map((preset) => ({
         key: elementPrefKey('text', preset.id),
@@ -119,9 +149,14 @@ export function FreeformLibraryTab() {
         id: preset.id,
         label: preset.label,
         detail: preset.description,
+        // معاينة النص بصمة لونية ثابتة الحجم بدل تكرار نص العيّنة (كان يظهر
+        // مرتين: كمعاينة وكعنوان) ويُربك عرض البطاقة عند طول النص
         preview: (
-          <span className="text-micro font-bold" style={{ color: preset.previewColor }}>
-            {preset.sampleText ?? preset.label}
+          <span
+            className="grid place-items-center w-5 h-5 rounded-md border border-black/10 dark:border-white/15 shrink-0"
+            style={{ backgroundColor: `${preset.previewColor}22`, color: preset.previewColor }}
+          >
+            <TextAa className="w-3 h-3" weight="bold" />
           </span>
         ),
       })),
@@ -286,17 +321,18 @@ export function FreeformLibraryTab() {
               const item = itemByKey.get(elementPrefKey(kind, id));
               if (!item) return null;
               return (
-                <Button
+                <button
                   key={`recent-${item.key}`}
                   type="button"
-                  variant="outline"
-                  size="sm"
                   onClick={() => addItem(item)}
                   title={`إعادة إضافة ${item.label}`}
+                  className="inline-flex items-center gap-1.5 h-7 ps-1 pe-2 rounded-lg border border-border/70 bg-card hover:border-foreground/30 hover:bg-muted/50 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
                   {item.preview}
-                  <span className="truncate">{item.label}</span>
-                </Button>
+                  <span className="text-xs font-semibold text-foreground truncate max-w-[7.5rem]">
+                    {item.label}
+                  </span>
+                </button>
               );
             })}
           </div>
@@ -325,18 +361,26 @@ export function FreeformLibraryTab() {
           {visibleItems.map((item) => {
             const isFavorite = isFavoriteItem(item);
             return (
-              <div key={item.key} className="relative group">
+              <div
+                key={item.key}
+                className={cn(
+                  'relative group rounded-xl border transition-colors',
+                  isFavorite
+                    ? 'border-warning/40 bg-warning/[0.05]'
+                    : 'border-border/80 bg-card hover:border-foreground/30 hover:bg-muted/30',
+                )}
+              >
                 <button
                   type="button"
                   onClick={() => addItem(item)}
                   title={`إضافة ${item.label}`}
-                  className="w-full text-start p-2 pe-7 rounded-xl border border-border/80 bg-card hover:border-foreground/40 hover:bg-muted/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="w-full text-start p-2 pe-8 rounded-xl cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
-                  <span className="flex items-center gap-1.5 min-w-0">
+                  <span className="flex items-center gap-2 min-w-0">
                     {item.preview}
                     <span className="text-xs font-bold text-foreground truncate">{item.label}</span>
                   </span>
-                  <span className="block text-mini text-muted-foreground truncate mt-0.5">
+                  <span className="block text-mini text-muted-foreground truncate mt-1">
                     {item.detail}
                   </span>
                 </button>
@@ -348,14 +392,14 @@ export function FreeformLibraryTab() {
                     isFavorite ? `إزالة ${item.label} من المفضلة` : `إضافة ${item.label} للمفضلة`
                   }
                   className={cn(
-                    'absolute top-1.5 end-1.5 w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer',
+                    'absolute top-1.5 end-1.5 w-[22px] h-[22px] rounded-md flex items-center justify-center transition-all cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isFavorite
-                      ? 'text-warning hover:bg-warning/10'
-                      : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/70',
+                      ? 'text-warning bg-warning/10 hover:bg-warning/20'
+                      : 'text-muted-foreground/60 opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-foreground hover:bg-muted/70',
                   )}
                 >
-                  <Star className="w-3.5 h-3.5" weight={isFavorite ? 'fill' : 'regular'} />
+                  <Star className="w-3 h-3" weight={isFavorite ? 'fill' : 'regular'} />
                 </button>
               </div>
             );

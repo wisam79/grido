@@ -337,7 +337,92 @@ export function getDocumentAspectLabel(
 }
 
 /**
- * حساب إحصائيات التداخل ونسبة التقاطع بين مضلعين مع كبح أمان المساحة
+ * المساحة الموقّعة لمضلع (Shoelace) — إشارتها تكشف اتجاه الدوران،
+ * وهي موجبة للترتيب الذي تُخرجه `sortCornerPoints` (عقارب الساعة في إحداثيات الشاشة).
+ */
+function signedPolygonArea(poly: Point[]): number {
+  let sum = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const j = (i + 1) % poly.length;
+    sum += poly[i].x * poly[j].y - poly[j].x * poly[i].y;
+  }
+  return sum * 0.5;
+}
+
+/**
+ * هل الرباعية محدّبة وبسيطة (لا تقاطع ذاتي ولا نقاط على استقامة تامة)؟
+ * شرط صلاحية لخوارزمية القصّ أدناه — أي فشل يُحوّل المنادي لتقدير الحدود المحيطة.
+ */
+function isConvexSimpleQuad(quad: Point[]): boolean {
+  if (quad.length !== 4) return false;
+  let sign = 0;
+  for (let i = 0; i < 4; i++) {
+    const prev = quad[(i + 3) % 4];
+    const curr = quad[i];
+    const next = quad[(i + 1) % 4];
+    const cross = (curr.x - prev.x) * (next.y - curr.y) - (curr.y - prev.y) * (next.x - curr.x);
+    if (Math.abs(cross) < 1e-9) return false;
+    const nextSign = cross > 0 ? 1 : -1;
+    if (sign === 0) sign = nextSign;
+    else if (nextSign !== sign) return false;
+  }
+  return true;
+}
+
+/**
+ * مساحة تقاطع مضلعين بدقة هندسية (قصّ Sutherland–Hodgman ثم Shoelace).
+ *
+ * يعيد `null` إذا كان أحد المضلعين غير محدّب أو منهاراً — عندها يستعمل المنادي
+ * تقدير المستطيل المحيط (السلوك التاريخي المتحفّظ) بدل نتيجة مشكوك فيها.
+ */
+function convexPolygonIntersectionArea(subject: Point[], clip: Point[]): number | null {
+  if (!isConvexSimpleQuad(subject) || !isConvexSimpleQuad(clip)) return null;
+
+  // اتجاه دوران القاطع يحدد إشارة «داخل المضلع» — لا نفترض اتجاهاً ثابتاً
+  const clipSign = signedPolygonArea(clip) >= 0 ? 1 : -1;
+
+  let output = subject;
+  for (let i = 0; i < clip.length; i++) {
+    if (output.length === 0) return 0;
+
+    const edgeStart = clip[i];
+    const edgeEnd = clip[(i + 1) % clip.length];
+    const edgeX = edgeEnd.x - edgeStart.x;
+    const edgeY = edgeEnd.y - edgeStart.y;
+    const input = output;
+    output = [];
+
+    for (let j = 0; j < input.length; j++) {
+      const current = input[j];
+      const next = input[(j + 1) % input.length];
+      const currentSide =
+        clipSign * (edgeX * (current.y - edgeStart.y) - edgeY * (current.x - edgeStart.x));
+      const nextSide = clipSign * (edgeX * (next.y - edgeStart.y) - edgeY * (next.x - edgeStart.x));
+
+      if (currentSide >= 0) output.push(current);
+      if (currentSide >= 0 !== nextSide >= 0) {
+        const t = currentSide / (currentSide - nextSide);
+        output.push({
+          x: current.x + t * (next.x - current.x),
+          y: current.y + t * (next.y - current.y),
+        });
+      }
+    }
+  }
+
+  return output.length >= 3 ? Math.abs(signedPolygonArea(output)) : 0;
+}
+
+/**
+ * حساب إحصائيات التداخل ونسبة التقاطع بين مضلعين (تقاطع حقيقي + كبح أمان المساحة).
+ *
+ * ⚠️ كان التنفيذ السابق يحسب التقاطع من المستطيل المحيط (AABB): صحيح تماماً
+ * للمضلعات المحاذية للمحاور (وفي هذا الإطار بالذات كانت العتبات مُعايَرة)،
+ * لكنه **يبالغ** في التداخل عند ميل المستند (قياس مستقل: 0.417 بحدود AABB
+ * مقابل 0.052 تقاطعاً حقيقياً = 8×)، فيتغير قرار إخماد NMS بمجرد تغير الميل.
+ * الآن يُحسب التقاطع هندسياً وتبقى العتبات كما هي لأنها محسوبة في الإطار
+ * المحاذي حيث AABB == الحقيقة — أي أن سلوك المحاذاة لم يتغير إطلاقاً، وإنما
+ * صار الميل يُعامل بنفس المعيار.
  */
 export function computeQuadOverlapStats(q1: Point[], q2: Point[]): QuadOverlapStats {
   const empty = { iou: 0, overlapRatio1: 0, overlapRatio2: 0, maxOverlapRatio: 0 };
@@ -369,7 +454,13 @@ export function computeQuadOverlapStats(q1: Point[], q2: Point[]): QuadOverlapSt
 
   const interW = Math.max(0, Math.min(maxX1, maxX2) - Math.max(minX1, minX2));
   const interH = Math.max(0, Math.min(maxY1, maxY2) - Math.max(minY1, minY2));
-  const rawInterArea = interW * interH;
+
+  // رفض سريع صحيح هندسياً: غياب تقاطع الحدود المحيطة يعني تقاطعاً صفرياً مؤكداً
+  if (interW <= 0 || interH <= 0) return empty;
+
+  // التقاطع الحقيقي (المضلع الأصغر قاطعاً: كلفة أقل)، واحتياط الحدود للمشوّه
+  const [subject, clip] = a1 <= a2 ? [q1, q2] : [q2, q1];
+  const rawInterArea = convexPolygonIntersectionArea(subject, clip) ?? interW * interH;
   const safeInterArea = Math.min(rawInterArea, Math.min(a1, a2));
 
   const unionArea = Math.max(0, a1 + a2 - safeInterArea);

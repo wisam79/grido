@@ -15,6 +15,7 @@ import {
   SPLIT_SEAM_RATIO_DEFAULT,
 } from './multi-doc-segmenter';
 import { computeSobelGradients } from './fast-vision';
+import { OVERLAP_TUNING } from './overlap-tuning';
 import { loadOpenCV, getLoadedOpenCV, CvRuntime } from '../opencv-loader';
 import type { CvMat, CvMatVector, CvRuntimeLike } from './cv-types';
 import type { CvPoint } from './cv-types';
@@ -501,7 +502,7 @@ export async function detectDocumentsWithOpenCV(
 
     // NMS موحد عبر applyNMS المشترك بدل النسخة اليدوية السابقة
     // (عتبات 0.40/0.45/0.30) — سلوك واحد لكل المسارات.
-    const selectedQuads = applyNMS(allCandidates, 0.3);
+    const selectedQuads = applyNMS(allCandidates, OVERLAP_TUNING.nmsIouThreshold);
 
     if (selectedQuads.length === 0) return null;
 

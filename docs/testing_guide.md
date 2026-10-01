@@ -140,6 +140,7 @@ go test -count=1 -v ./internal/...
 - **تسميات Fluent 2 وأدوار الوصولية (ARIA):**
   - الكبسولات وشارات التصفية (`FluentFilterChips`) تمتلك دور `role="tab"`.
   - الأزرار المستقلة تمتلك دور `role="button"`.
+- **مسارات WASM (OpenCV / scanic):** لا يتهيّأ الـWASM في jsdom، فكل اختبار يمرّ عبر ذلك المسار يحتاج **محاكاة هيكلية** لا تشغيلاً حقيقياً. نقطة الحقن القائمة: `getLoadedOpenCV()` في `opencv-loader.ts` يقرأ `globalThis.cv` إن كان فيه `Mat` دالة — فيُحقن كائن محاكاة بلا أي تعديل على كود الإنتاج. النموذج المرجعي الكامل (حساب `Mat`/`MatVector` وحذفها، سياق 2D مصغّر لـ`drawImage`/`getImageData`، وتحقق الطفرات): `src/components/editor/document-scanner/__tests__/opencv-detector.test.ts`. **قاعدة:** أي مسار WASM بلا محاكاة = تغطية صفرية فعلية مهما بدت الاختبارات خضراء.
 - **المدخلات ذات التهدئة المؤقتة (Debounced Inputs):** عند اختبار حقول البحث التي تستخدم `setTimeout` لتقليل الضغط (مثل تأخير 120ms في `StickerCatalog`)، يجب إجبارياً تغليف التوقع بـ `await waitFor(() => expect(...).toHaveBeenCalledWith(...))` أو استخدام مؤقتات Vitest الوهمية (`vi.advanceTimersByTime`).
 
 ### 4.2 اختبارات الـ E2E بـ Playwright
@@ -160,10 +161,10 @@ go test -count=1 -v ./internal/...
 
 ## 5. حالة التغطية الحالية (Baseline Metrics)
 
-> 📌 الأرقام أدناه **تحقق: 2026-09-25**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة.
+> 📌 الأرقام أدناه **تحقق: 2026-10-01**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة.
 
-- **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/utils` تجتاز الاختبارات بنسبة 100% (29 ملف اختبار / 151 دالة اختبار) — `go test ./internal/...`.
-- **Vitest Frontend:** **84 ملف اختبار** يضم **684 حالة** (683 ناجحة + 1 متخطّاة) — `cd frontend && npm run test`.
+- **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/utils` تجتاز الاختبارات بنسبة 100% (31 ملف اختبار / 160 دالة اختبار — `go test ./internal/... -list "^Test"`) — `go test ./internal/...`.
+- **Vitest Frontend:** **101 ملف اختبار** يضم **828 حالة** (827 ناجحة + 1 متخطّاة) — `cd frontend && npm run test`. (التشغيل الجماعي السابق أظهر عطل بنية تشغيل عابراً: عامل واحد فشل في البدء لـ`test/batch-insert-dialog.test.tsx` — الملف ينجح منفرداً 3/3 ولم يتكرر.)
 - **Playwright E2E:** **25 ملف مواصفة** يضم **165 حالة** عبر كل المشاريع (chromium + firefox + webkit)؛ `npm run test:e2e:fast` يقتصر على chromium — التحقق: `npx playwright test --list`.
 - **التغطية (Coverage):** الحدود الدنيا في `frontend/vitest.config.ts` (statements 36 / branches 30 / functions 32 / lines 36) وتُقرأ الأرقام الفعلية من `coverage/coverage-summary.json` في CI.
 - **GitHub Step Summaries:** يقوم خط الأنابيب بتوليد لوحات إحصائية وتلخيصات بصرية تلقائية لجميع مهام البناء والاختبار لكل عملية دمج أو دفع.

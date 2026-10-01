@@ -222,4 +222,55 @@ describe('detect-fusion — ML verifier fusion', () => {
       expect(mlGraceBudgetMs(weak)).toBeGreaterThan(mlGraceBudgetMs(strong));
     });
   });
+
+  /**
+   * فرع «استبدال الاحتواء الداخلي» كان غير مغطّى، وهو الذي يقرأ عتبتين من سطح
+   * المعايرة (`fusionReplaceContainmentOverlap` 0.8 و`fusionReplaceContainmentAreaRatio` 1.35).
+   * الشرط: إدخال كلاسيكي أصغر داخل مضلع ML أكبر بكثير مع ثقة ML ≥ 0.6، وIoU
+   * دون عتبة التأكيد (فلا تُلتقط في فرع confirm).
+   */
+  describe('replace containment — حدود 0.8 / 1.35', () => {
+    const classicalQuad = rect(0, 0, 100, 100); // مساحة 10,000، ثقة 0.7، ليس default
+    /** نتيجة كلاسيكية جديدة — تُحفظ كمرجع للمقارنة بـtoBe عند توقّع «بلا تغيير» */
+    function classical(): DetectionResult {
+      return classicalResult([doc(classicalQuad, 0.7)]);
+    }
+
+    it('يستبدل الهندسة الكلاسيكية عندما يتجاوز التداخل 0.8 ونسبة المساحة 1.35', () => {
+      // ML 19..119 عرضاً ⇒ تقاطع 8100 = 0.81 ≥ 0.8 · والمساحة 40000 = 4× ≥ 1.35
+      const mlQuad = rect(19, 0, 100, 400);
+      const fused = fuseDetections(mlResult(mlQuad, 0.7), classical(), 'single');
+      expect(fused.corners).toEqual(mlQuad);
+      expect(fused.documents![0].corners).toEqual(mlQuad);
+      expect(fused.method).toBe('scanic');
+    });
+
+    it('لا يستبدل عندما يكون التداخل دون 0.8 (تقاطع 0.79) ويعيد النتيجة الكلاسيكية نفسها', () => {
+      // ML 21..121 ⇒ تقاطع 7900 = 0.79 < 0.8
+      const c = classical();
+      const fused = fuseDetections(mlResult(rect(21, 0, 100, 400), 0.7), c, 'single');
+      expect(fused).toBe(c);
+      expect(fused.corners).toEqual(classicalQuad);
+    });
+
+    it('لا يستبدل عندما تكون نسبة المساحة دون 1.35 (1.34) رغم التداخل 0.8', () => {
+      const mlQuad = rect(20, 0, 100, 134); // مساحة 13400 = 1.34×
+      const c = classical();
+      const fused = fuseDetections(mlResult(mlQuad, 0.7), c, 'single');
+      expect(fused).toBe(c);
+      expect(fused.corners).toEqual(classicalQuad);
+    });
+
+    it('يستبدل عند نسبة المساحة 1.36 (فوق الحد بقليل)', () => {
+      const mlQuad = rect(20, 0, 100, 136); // مساحة 13600 = 1.36×
+      const fused = fuseDetections(mlResult(mlQuad, 0.7), classical(), 'single');
+      expect(fused.corners).toEqual(mlQuad);
+    });
+
+    it('لا يستبدل عندما تكون ثقة ML دون بوابة 0.6', () => {
+      const c = classical();
+      const fused = fuseDetections(mlResult(rect(19, 0, 100, 400), 0.59), c, 'single');
+      expect(fused).toBe(c);
+    });
+  });
 });

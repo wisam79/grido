@@ -94,7 +94,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=99
+vitest_test_files=101
 e2e_spec_files=25
 go_test_files=31
 docs_files=6
@@ -104,7 +104,7 @@ docs_files=6
 
 | الرقم | القيمة (تحقق: 2026-09-28) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | أُضيفا في جلسة الملصقات (2026-09-29): `sticker-text.test.ts` (7) + `sticker-phase2.test.ts` (6) — 798 حالة في 99 ملفاً (العد الكامل يُعاد تشغيله مع أول اختبار شامل للإصدار المقبل) | `cd frontend && npm run test` |
+| حالات Vitest | **828 حالة في 101 ملفاً** (827 ناجحة + 1 متخطّاة) — تحقق: 2026-10-01 · أُضيف في هذه الجولة `src/components/editor/document-scanner/__tests__/opencv-detector.test.ts` (8 حالات) و6 حالات إثبات تقاطع مضلع‑مضلع في `__tests__/scanner-hardening.test.ts` +5 حالات تثبيت سطح المعايرة في `__tests__/overlap-tuning.test.ts` و10 حالات توسعة (تفاضلي عشوائي للمقياس مقابل مرجع مستقل + حدود NMS المتبقية + فرع استبدال الاحتواء 0.8/1.35) (تداخل/احتواء · مستندان مائلان متباعدان لا يُدمجان · حفظ عتبة 0.38 · نسخ متقاربة · شكل مشوّه). (التشغيل الجماعي السابق أظهر عطل بنية تشغيل عابراً: عامل واحد فشل في البدء لـ`test/batch-insert-dialog.test.tsx` — الملف ينجح منفرداً 3/3 ولم يتكرر في التشغيل الأخير) | `cd frontend && npm run test` + `npx vitest run test/batch-insert-dialog.test.tsx` |
 | حالات E2E | 165 حالة في 25 ملف مواصفة (كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
 | دوال اختبار Go | 160 دالة في 31 ملفاً — تحقق: 2026-09-28 | `go test ./internal/... -list "^Test"` |

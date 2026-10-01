@@ -1,10 +1,11 @@
-import { Point, DetectedDocument, ScoredCandidate } from "./types";
-import { computePolygonArea } from "./contour-tracer";
+import { Point, DetectedDocument, ScoredCandidate } from './types';
+import { computePolygonArea } from './contour-tracer';
 import {
   sortCornerPoints,
   computeQuadOrthogonality,
   computeQuadOverlapStats,
-} from "./quad-geometry";
+} from './quad-geometry';
+import { OVERLAP_TUNING } from './overlap-tuning';
 
 /**
  * قياس كثافة تدرجات الحواف على طول خط مستقيم بين نقطتين مع مقاومة الحجب الجزئي (Trimmed Mean)
@@ -14,7 +15,7 @@ export function computeEdgeGradientAlongLine(
   p2: Point,
   mag: Float32Array,
   sw: number,
-  sh: number
+  sh: number,
 ): number {
   const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
   const steps = Math.max(8, Math.round(dist));
@@ -32,7 +33,7 @@ export function computeEdgeGradientAlongLine(
   if (samples.length === 0) return 0;
   samples.sort((a, b) => a - b);
   // تجاهل أدنى 20% لمقاومة حجب الأصابع أو الدبابيس
-  const trimStart = Math.floor(samples.length * 0.20);
+  const trimStart = Math.floor(samples.length * 0.2);
   let sum = 0;
   let count = 0;
   for (let i = trimStart; i < samples.length; i++) {
@@ -47,8 +48,8 @@ export function computeEdgeGradientAlongLine(
  * نطاق البحث عن الفاصل الحقيقي حول منتصف المضلع (نسبة من طول خط البحث)،
  * محصور بعيداً عن 0 و1 لاستبعاد حواف المضلع الخارجية نفسها.
  */
-export const SPLIT_SEAM_BAND_MIN = 0.30;
-export const SPLIT_SEAM_BAND_MAX = 0.70;
+export const SPLIT_SEAM_BAND_MIN = 0.3;
+export const SPLIT_SEAM_BAND_MAX = 0.7;
 /** أدنى تباين نسبي (مقيَّس بـ maxMag*0.22 كما في بقية الكاشف) لاعتماد الفاصل */
 export const SPLIT_SEAM_MIN_NORM = 0.45;
 /** نسبة الفاصل الافتراضية = المنتصف الهندسي (سلوك ما قبل التحسين) */
@@ -76,7 +77,7 @@ export function locateSplitSeamRatio(
   sh: number,
   maxMag: number,
   bandMin: number = SPLIT_SEAM_BAND_MIN,
-  bandMax: number = SPLIT_SEAM_BAND_MAX
+  bandMax: number = SPLIT_SEAM_BAND_MAX,
 ): number | null {
   const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
   if (!(dist > 4) || !(maxMag > 0) || bandMax <= bandMin) return null;
@@ -122,7 +123,7 @@ export function computeQuadEdgeGradient(
   quad: Point[],
   mag: Float32Array,
   sw: number,
-  sh: number
+  sh: number,
 ): number {
   const edgeScores: number[] = [];
   for (let i = 0; i < 4; i++) {
@@ -143,7 +144,7 @@ export function computeInternalTextDensity(
   gray: Uint8Array,
   mag: Float32Array,
   sw: number,
-  sh: number
+  sh: number,
 ): number {
   const sorted = sortCornerPoints(quad);
   const minX = Math.max(0, Math.min(sorted[0].x, sorted[1].x, sorted[2].x, sorted[3].x));
@@ -236,7 +237,7 @@ export function evaluateCandidateQuad(
   sh: number,
   mag: Float32Array,
   gray: Uint8Array,
-  maxMag: number
+  maxMag: number,
 ): number {
   const totalPixels = sw * sh;
   const area = computePolygonArea(quad);
@@ -254,7 +255,11 @@ export function evaluateCandidateQuad(
   const minY = Math.min(sorted[0].y, sorted[1].y, sorted[2].y, sorted[3].y);
   const maxY = Math.max(sorted[0].y, sorted[1].y, sorted[2].y, sorted[3].y);
 
-  if (areaRatio > 0.55 && areaRatio < 0.82 && (minX <= 8 || minY <= 8 || maxX >= sw - 9 || maxY >= sh - 9)) {
+  if (
+    areaRatio > 0.55 &&
+    areaRatio < 0.82 &&
+    (minX <= 8 || minY <= 8 || maxX >= sw - 9 || maxY >= sh - 9)
+  ) {
     return -Infinity;
   }
 
@@ -276,7 +281,7 @@ export function evaluateCandidateQuad(
   if (ratio >= 1.44 && ratio <= 1.84) {
     aspectBonus = 1.85; // بطاقة هوية قياسية (~1.58)
   } else if (ratio >= 1.28 && ratio < 1.44) {
-    aspectBonus = 1.60; // ورقة A4 قياسية (~1.41)
+    aspectBonus = 1.6; // ورقة A4 قياسية (~1.41)
   } else if (ratio >= 2.2 && ratio <= 4.2) {
     aspectBonus = 1.45; // إيصال متجر طويل
   } else if (ratio >= 0.88 && ratio <= 1.14) {
@@ -288,7 +293,7 @@ export function evaluateCandidateQuad(
   const edgeNorm = maxMag > 0 ? Math.min(1, edgeGrad / (maxMag * 0.22)) : 0;
 
   const touchesEdge = minX <= 5 || minY <= 5 || maxX >= sw - 5 || maxY >= sh - 5;
-  if (touchesEdge && areaRatio > 0.75 && edgeNorm < 0.20) {
+  if (touchesEdge && areaRatio > 0.75 && edgeNorm < 0.2) {
     return -Infinity;
   }
 
@@ -318,7 +323,7 @@ export function evaluateCandidateQuad(
 
   const sizeFactor = 0.85 + 0.15 * Math.min(1, areaRatio * 3.5);
   return (
-    (0.40 * edgeNorm + 0.30 * contrastNorm + 0.30 * orthogonality) *
+    (0.4 * edgeNorm + 0.3 * contrastNorm + 0.3 * orthogonality) *
     aspectBonus *
     sizeFactor *
     textBonus
@@ -329,7 +334,7 @@ export function evaluateCandidateQuad(
  * معرف فريد مستقر للمستند — crypto.randomUUID عند توفره (متصفحات حديثة وNode 19+)،
  * وإلا بديل Math.random. (كان Math.random وحده: غير حتمي ويُعقد الاختبارات).
  */
-export function newDocumentId(prefix = "doc"): string {
+export function newDocumentId(prefix = 'doc'): string {
   try {
     const uuid = globalThis.crypto?.randomUUID?.();
     if (uuid) return `${prefix}-${uuid.slice(0, 8)}`;
@@ -345,11 +350,11 @@ export function newDocumentId(prefix = "doc"): string {
  */
 export function splitQuadIntoIdCards(
   quad: Point[],
-  direction: "vertical" | "horizontal" = "vertical",
-  seamRatio: number = SPLIT_SEAM_RATIO_DEFAULT
+  direction: 'vertical' | 'horizontal' = 'vertical',
+  seamRatio: number = SPLIT_SEAM_RATIO_DEFAULT,
 ): DetectedDocument[] {
   const sorted = sortCornerPoints(quad);
-  const uid = newDocumentId("doc");
+  const uid = newDocumentId('doc');
 
   // موضع القص: المنتصف افتراضاً (توافق تام مع السلوك السابق)، أو موضع الفاصل
   // الحقيقي الذي يمرّره الكاشف بعد locateSplitSeamRatio.
@@ -357,7 +362,7 @@ export function splitQuadIntoIdCards(
   const lo = seam - SPLIT_SAFETY_GAP_RATIO;
   const hi = seam + SPLIT_SAFETY_GAP_RATIO;
 
-  if (direction === "vertical") {
+  if (direction === 'vertical') {
     const midLeft1: Point = {
       x: Math.round(sorted[0].x + (sorted[3].x - sorted[0].x) * lo),
       y: Math.round(sorted[0].y + (sorted[3].y - sorted[0].y) * lo),
@@ -381,15 +386,15 @@ export function splitQuadIntoIdCards(
         id: `${uid}-1`,
         corners: [sorted[0], sorted[1], midRight1, midLeft1],
         confidence: 0.95,
-        label: "بطاقة 1 (الوجه الأمامي)",
-        aspectType: "id_card",
+        label: 'بطاقة 1 (الوجه الأمامي)',
+        aspectType: 'id_card',
       },
       {
         id: `${uid}-2`,
         corners: [midLeft2, midRight2, sorted[2], sorted[3]],
         confidence: 0.95,
-        label: "بطاقة 2 (الوجه الخلفي)",
-        aspectType: "id_card",
+        label: 'بطاقة 2 (الوجه الخلفي)',
+        aspectType: 'id_card',
       },
     ];
   } else {
@@ -416,15 +421,15 @@ export function splitQuadIntoIdCards(
         id: `${uid}-1`,
         corners: [sorted[0], midTop1, midBottom1, sorted[3]],
         confidence: 0.95,
-        label: "بطاقة 1 (الجانب الأول)",
-        aspectType: "id_card",
+        label: 'بطاقة 1 (الجانب الأول)',
+        aspectType: 'id_card',
       },
       {
         id: `${uid}-2`,
         corners: [midTop2, sorted[1], sorted[2], midBottom2],
         confidence: 0.95,
-        label: "بطاقة 2 (الجانب الثاني)",
-        aspectType: "id_card",
+        label: 'بطاقة 2 (الجانب الثاني)',
+        aspectType: 'id_card',
       },
     ];
   }
@@ -437,9 +442,9 @@ export function splitQuadIntoIdCards(
  */
 export function splitQuadIntoIdCardsWithSeam(
   quad: Point[],
-  direction: "vertical" | "horizontal",
+  direction: 'vertical' | 'horizontal',
   seamRatio: number,
-  isAccepted: (cards: DetectedDocument[]) => boolean
+  isAccepted: (cards: DetectedDocument[]) => boolean,
 ): DetectedDocument[] {
   const seamCards = splitQuadIntoIdCards(quad, direction, seamRatio);
   if (isAccepted(seamCards)) return seamCards;
@@ -449,11 +454,15 @@ export function splitQuadIntoIdCardsWithSeam(
 }
 
 /**
- * تطبيق خوارزمية Non-Maximum Suppression (NMS) لترتيب واستبعاد المستندات المتداخلة
+ * تطبيق خوارزمية Non-Maximum Suppression (NMS) لترتيب واستبعاد المستندات المتداخلة.
+ *
+ * العتبات كلها من `OVERLAP_TUNING` — سطح المعايرة الموحّد — ولا يجوز كتابة أي
+ * رقم منها هنا مباشرة (راجع `core/overlap-tuning.ts` لإطار المعايرة وسبب ثباتها
+ * عند تحويل المقياس إلى تقاطع هندسي حقيقي).
  */
 export function applyNMS(
   candidates: ScoredCandidate[],
-  iouThreshold: number = 0.30
+  iouThreshold: number = OVERLAP_TUNING.nmsIouThreshold,
 ): ScoredCandidate[] {
   if (candidates.length <= 1) return candidates.slice();
 
@@ -468,18 +477,21 @@ export function applyNMS(
       const stats = computeQuadOverlapStats(cand.quad, sel.quad);
       const selArea = computePolygonArea(sel.quad);
 
-      // أ) إذا كان تفصيلاً داخلياً بنسبة تداخل > 38%
-      if (stats.overlapRatio1 > 0.38) {
+      // أ) إذا كان تفصيلاً داخلياً بنسبة تداخل > nmsDetailOverlapMax
+      if (stats.overlapRatio1 > OVERLAP_TUNING.nmsDetailOverlapMax) {
         overlaps = true;
         break;
       }
       // ب) إذا كان كتلة حاوية خارجية تحوي بداخلها مستنداً معتمداً بالفعل
-      if (stats.overlapRatio2 > 0.60 && candArea >= 1.30 * selArea) {
+      if (
+        stats.overlapRatio2 > OVERLAP_TUNING.nmsContainerOverlap &&
+        candArea >= OVERLAP_TUNING.nmsContainerAreaRatio * selArea
+      ) {
         overlaps = true;
         break;
       }
       // ج) تداخل ثنائي عالي
-      if (stats.maxOverlapRatio > 0.45 || stats.iou > iouThreshold) {
+      if (stats.maxOverlapRatio > OVERLAP_TUNING.nmsMutualOverlapMax || stats.iou > iouThreshold) {
         overlaps = true;
         break;
       }
@@ -499,7 +511,7 @@ export function applyNMS(
 export function addManualDocumentQuad(
   existingDocs: DetectedDocument[],
   originalWidth: number,
-  originalHeight: number
+  originalHeight: number,
 ): DetectedDocument {
   const count = existingDocs.length;
   const nextIdx = count + 1;
@@ -530,10 +542,10 @@ export function addManualDocumentQuad(
   ];
 
   return {
-    id: newDocumentId("doc"),
+    id: newDocumentId('doc'),
     corners,
     confidence: 0.85,
     label: `مستند ${nextIdx}`,
-    aspectType: "free",
+    aspectType: 'free',
   };
 }

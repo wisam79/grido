@@ -48,6 +48,7 @@ import { refineCornersSubPixel } from './perspective-warper';
 import { detectDocumentsWithOpenCV } from './opencv-detector';
 import { detectDocumentWithMl } from './ml-detector';
 import { fuseDetections, mlGraceBudgetMs } from './detect-fusion';
+import { OVERLAP_TUNING } from './overlap-tuning';
 import { getLoadedOpenCV, loadOpenCV } from '../opencv-loader';
 
 export { splitQuadIntoIdCards, addManualDocumentQuad };
@@ -121,9 +122,9 @@ function hasDisjointSimilarPair(candidates: ScoredCandidate[], totalPixels: numb
       const bArea = computePolygonArea(b.quad);
       if (bArea < minArea) continue;
       const ratio = Math.max(aArea, bArea) / Math.max(1, Math.min(aArea, bArea));
-      if (ratio > 1.7) continue;
+      if (ratio > OVERLAP_TUNING.disjointPairMaxAreaRatio) continue;
       const stats = computeQuadOverlapStats(a.quad, b.quad);
-      if (stats.iou < 0.25) return true;
+      if (stats.iou < OVERLAP_TUNING.disjointPairMaxIou) return true;
     }
   }
   return false;
@@ -770,7 +771,7 @@ async function runClassicalDetection(
           ...jsDocs.map((d) => ({ quad: d.corners, score: d.confidence })),
           ...fineDocs.map((d) => ({ quad: d.corners, score: d.confidence })),
         ];
-        const nmsCands = applyNMS(combinedCands, 0.4);
+        const nmsCands = applyNMS(combinedCands, OVERLAP_TUNING.nmsIouThresholdFused);
         jsDocs = nmsCands.map((c, i) => ({
           id: `doc-${i + 1}`,
           corners: c.quad,

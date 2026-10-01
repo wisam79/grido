@@ -5,6 +5,7 @@ import {
   inferSmartDocumentAspect,
 } from './quad-geometry';
 import { computePolygonArea } from './contour-tracer';
+import { OVERLAP_TUNING } from './overlap-tuning';
 
 /**
  * دمج النموذج العصبي (DocCornerNet) مع المسار الكلاسيكي (OpenCV / JS) —
@@ -21,16 +22,16 @@ import { computePolygonArea } from './contour-tracer';
  * دالة نقية بالكامل (لا canvas ولا async) لقابلية الاختبار المباشرة.
  */
 
-/** IoU ≥ هذا ⇒ النموذج العصبي يؤكد مرشح الكشف الكلاسيكي */
-export const ML_CONFIRM_IOU = 0.55;
+/** IoU ≥ هذا ⇒ النموذج العصبي يؤكد مرشح الكشف الكلاسيكي (المصدر: OVERLAP_TUNING) */
+export const ML_CONFIRM_IOU = OVERLAP_TUNING.fusionConfirmIou;
 /** IoU < هذا ⇒ حالتان: استرداد (عند ثقة ML عالية) أو لا تغيير (تشويش) */
-export const ML_MISS_IOU = 0.35;
+export const ML_MISS_IOU = OVERLAP_TUNING.fusionMissIou;
 /** أدنى ثقة ML لاسترداد مستند تخطّاه المسار الكلاسيكي */
 export const ML_ADD_MIN_SCORE = 0.6;
 /** أدنى ثقة ML للاعتماد عليه منفرداً فوق الافتراضي (مطابقة لعتبة المسار القديمة) */
 export const ML_STANDALONE_MIN = 0.55;
 /** تداخل ML داخل مرشح أكبر ≥ هذه النسبة ⇒ نفس المستند بحدود أضيق (لا يُضاف) */
-export const ML_CONTAINMENT_BLOCK = 0.75;
+export const ML_CONTAINMENT_BLOCK = OVERLAP_TUNING.fusionRescueContainmentOverlap;
 /**
  * ميزانية انتظار ML بعد انتهاء المسار الكلاسيكي (ms) — متدرّجة لا ثابتة:
  *
@@ -134,7 +135,10 @@ export function fuseDetections(
     const { overlapRatio1 } = computeQuadOverlapStats(classicalDocs[bestIdx].corners, mlQuad);
     const classicalArea = computePolygonArea(classicalDocs[bestIdx].corners);
     const mlArea = computePolygonArea(mlQuad);
-    if (overlapRatio1 >= 0.8 && mlArea >= classicalArea * 1.35) {
+    if (
+      overlapRatio1 >= OVERLAP_TUNING.fusionReplaceContainmentOverlap &&
+      mlArea >= classicalArea * OVERLAP_TUNING.fusionReplaceContainmentAreaRatio
+    ) {
       // (4) استبدال الاحتواء الداخلي: المرشح الكلاسيكي كتلة داخلية (نصوص أو صورة) محصورة داخل مضلع ML الأكبر بكثير
       // (مثال واقعي: الكلاسيكي التقط كتلة النصوص أو الصورة فقط، بينما ML رأى بطاقة الهوية كاملة)
       const target = docs[bestIdx];
