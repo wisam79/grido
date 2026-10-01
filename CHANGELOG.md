@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.10.2] - 2026-10-01
+
 ### Added (اختبارات مسار كشف OpenCV بمحاكاة هيكلية — 2026-10-01)
 
 - **`frontend/src/components/editor/document-scanner/__tests__/opencv-detector.test.ts` (8 حالات):** أول تغطية فعلية لمحرّك `opencv-detector.ts` — كان القياس **0% statements/lines (الأسطر 37–584)** لأن الـWASM لا يتهيأ في jsdom فتُعيد الدالة `null` من أول فحص. الاختبار يحقن محاكاة هيكلية في `globalThis.cv` (نقطة الحقن الموجودة أصلاً في `getLoadedOpenCV()` — بلا أي تعديل على كود الإنتاج) ويغطّي: حساب كل كائنات `Mat`/`MatVector` وحذفها مرة واحدة بالضبط (لا تسريب ولا حذف مزدوج)، حجم الصورة المصغّرة 640px المسلَّم لـ`matFromImageData`، نمط `single` (مستند واحد بأركان حقيقية)، نمط `multi` (المستندان معاً بثقة ≥ 0.5)، **قصّ البطاقات المكدسة** في الفرعين الرأسي والأفقي مع إثبات أن القصّ يتبع الفاصل المكتشف من التدرّج لا المنتصف الهندسي، وبوابتَي رفض (بلا كنتورات · كتلة منخفضة التباين بلا سياق خلفية).**النتيجة المقيسة:** `opencv-detector.ts` صار **91.2% statements · 94.4% lines · 73.8% branches · 91.7% functions**.
