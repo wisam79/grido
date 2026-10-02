@@ -1,22 +1,28 @@
-import { z } from "zod";
-import { ProjectSchema } from "@/lib/schema";
-import { domain } from "../../../wailsjs/go/models";
-import { EditorState } from "@/lib/editor-store";
+import { z } from 'zod';
+import { ProjectSchema } from '@/lib/schema';
+import { domain } from '../../../wailsjs/go/models';
+import { EditorState } from '@/lib/editor-store';
 
 export const CURRENT_PROJECT_VERSION = 1;
+// إطار الترحيل الإصداري (2026-10-02): رفض صريح للإصدارات المستقبلية/التالفة
+// بدل القبول الصامت — يغلق فجوة VERSION=1 الثابت بلا مسار ترحيل.
+export const MIN_SUPPORTED_PROJECT_VERSION = 1;
 
 // Project file layout (representing versioned project JSON export and unified DTO)
 export const ProjectFileSchema = ProjectSchema.extend({
-  version: z.union([z.number(), z.string()]).transform((val) =>
-    typeof val === "string" ? parseFloat(val) : val
-  ),
+  version: z
+    .union([z.number(), z.string()])
+    .transform((val) => (typeof val === 'string' ? parseFloat(val) : val)),
   savedAt: z.string().optional(),
 });
 
 export type ProjectFileV1 = z.infer<typeof ProjectFileSchema>;
 
 // Serialization from Editor Store state
-export function serializeEditorState(state: EditorState, embeddedAssets?: Record<string, string>): ProjectFileV1 {
+export function serializeEditorState(
+  state: EditorState,
+  embeddedAssets?: Record<string, string>,
+): ProjectFileV1 {
   const projectFile: ProjectFileV1 = {
     version: CURRENT_PROJECT_VERSION,
     savedAt: new Date().toISOString(),
@@ -32,7 +38,7 @@ export function serializeEditorState(state: EditorState, embeddedAssets?: Record
     collageTemplate: state.collageTemplate,
     printSettings: state.printSettings,
     embeddedAssets,
-    
+
     // Grid settings
     showGrid: state.showGrid,
     gridSize: state.gridSize,
@@ -48,7 +54,7 @@ export function serializeEditorState(state: EditorState, embeddedAssets?: Record
     columnsColor: state.columnsColor,
     columnsMargin: state.columnsMargin,
     columnsGutter: state.columnsGutter,
-    
+
     // Collage settings
     collageGap: state.collageGap,
     collageMargin: state.collageMargin,
@@ -61,24 +67,42 @@ export function serializeEditorState(state: EditorState, embeddedAssets?: Record
   return projectFile;
 }
 
-// Migration from legacy or unknown structures to current V1
+// Migration from legacy or unknown structures to current version
 export function migrateProject(raw: unknown): ProjectFileV1 {
-  if (typeof raw === "string") {
+  if (typeof raw === 'string') {
     try {
       raw = JSON.parse(raw);
     } catch {
-      throw new Error("Invalid JSON format");
+      throw new Error('Invalid JSON format');
     }
   }
 
-  if (!raw || typeof raw !== "object") {
-    throw new Error("Invalid project data format");
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('Invalid project data format');
   }
 
   const record = raw as Record<string, unknown>;
 
-  // Normalize legacy format (without version) to v1
-  const version = typeof record.version === "number" ? record.version : CURRENT_PROJECT_VERSION;
+  // Normalize legacy format (without version) to v1, accept numeric strings
+  let version = CURRENT_PROJECT_VERSION;
+  if (typeof record.version === 'number') version = record.version;
+  else if (typeof record.version === 'string' && record.version.trim() !== '') {
+    const parsed = Number(record.version);
+    if (!Number.isFinite(parsed))
+      throw new Error(`Unsupported project version: ${String(record.version)}`);
+    version = parsed;
+  }
+  // رفض صريح: مستقبلي أو أقدم من المدعوم — لا قبول صامت يُفسد البيانات
+  if (!Number.isInteger(version) || version < MIN_SUPPORTED_PROJECT_VERSION) {
+    throw new Error(
+      `Unsupported project version: ${String((record as { version?: unknown }).version)} (min ${MIN_SUPPORTED_PROJECT_VERSION})`,
+    );
+  }
+  if (version > CURRENT_PROJECT_VERSION) {
+    throw new Error(
+      `Project created by a newer app version (v${version} > v${CURRENT_PROJECT_VERSION}) — please update Grido Studio`,
+    );
+  }
 
   const normalized = {
     ...record,
@@ -100,45 +124,48 @@ export function deserializeProjectFile(raw: unknown): ProjectFileV1 {
   const migrated = migrateProject(raw);
   const parsed = ProjectFileSchema.safeParse(migrated);
   if (!parsed.success) {
-    throw new Error("Project file validation failed: " + parsed.error.message);
+    throw new Error('Project file validation failed: ' + parsed.error.message);
   }
   return parsed.data;
 }
 
 // Map from Domain (DB) to ProjectFile DTO
 export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV1 {
-	const parseSafely = <T>(data: string | undefined | null, fallback: T): T => {
-		if (!data) return fallback;
-		try {
-			return JSON.parse(data);
-		} catch (e) {
-			console.error("Failed to parse project JSON data", e);
-			return fallback;
-		}
-	};
+  const parseSafely = <T>(data: string | undefined | null, fallback: T): T => {
+    if (!data) return fallback;
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      console.error('Failed to parse project JSON data', e);
+      return fallback;
+    }
+  };
 
-	const elements = parseSafely(dbProj.elements, []);
-	const slots = parseSafely(dbProj.slots, []);
-	const template = parseSafely(dbProj.template, null);
-	const collageTemplate = parseSafely(dbProj.collageTemplate, null);  const printSettings = parseSafely(dbProj.printSettings, undefined);
+  const elements = parseSafely(dbProj.elements, []);
+  const slots = parseSafely(dbProj.slots, []);
+  const template = parseSafely(dbProj.template, null);
+  const collageTemplate = parseSafely(dbProj.collageTemplate, null);
+  const printSettings = parseSafely(dbProj.printSettings, undefined);
 
   // 🎨 التدرج: العمود الجديد في قاعدة البيانات يبدأ بصفر للمشاريع المحفوظة قبل
   // إضافته، والصفر زاوية صالحة (0° أفقية) — فلا يمكن تمييز «لم تُحفظ قط» من
   // «محفوظة كصفر». لذلك لا نُصدّر زاوية إلا مع وجود لون ثانٍ فعلي، فيبقى 135
   // هو الافتراضي عند تفعيل التدرج لاحقاً بدل أن يُقرأ صفر موهوم.
   const gradientColor2 =
-    typeof dbProj.backgroundGradientColor2 === "string" && dbProj.backgroundGradientColor2
+    typeof dbProj.backgroundGradientColor2 === 'string' && dbProj.backgroundGradientColor2
       ? dbProj.backgroundGradientColor2
       : null;
   const gradientAngle =
-    gradientColor2 && typeof dbProj.backgroundGradientAngle === "number" && isFinite(dbProj.backgroundGradientAngle)
+    gradientColor2 &&
+    typeof dbProj.backgroundGradientAngle === 'number' &&
+    isFinite(dbProj.backgroundGradientAngle)
       ? dbProj.backgroundGradientAngle
       : undefined;
 
   const projectFile: ProjectFileV1 = {
     version: CURRENT_PROJECT_VERSION,
     savedAt: dbProj.updatedAt || new Date().toISOString(),
-    mode: dbProj.mode as "single" | "collage",
+    mode: dbProj.mode as 'single' | 'collage',
     canvasWidth: dbProj.canvasWidth,
     canvasHeight: dbProj.canvasHeight,
     backgroundColor: dbProj.backgroundColor,
@@ -149,18 +176,18 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     template,
     collageTemplate,
     printSettings,
-    
+
     // The following properties will be mapped safely
     showGrid: dbProj.showGrid ?? false,
     gridSize: dbProj.gridSize ?? 48,
-    gridColor: dbProj.gridColor ?? "#000000",
+    gridColor: dbProj.gridColor ?? '#000000',
     gridOpacity: dbProj.gridOpacity ?? 0.15,
     gridSubdivisions: dbProj.gridSubdivisions ?? 5,
-    gridType: (dbProj.gridType as "lines" | "dots") ?? "lines",
+    gridType: (dbProj.gridType as 'lines' | 'dots') ?? 'lines',
     snapToGrid: dbProj.snapToGrid ?? false,
     showColumns: dbProj.showColumns ?? false,
     columnsCount: dbProj.columnsCount ?? 12,
-    columnsColor: dbProj.columnsColor ?? "rgba(239, 68, 68, 0.08)",
+    columnsColor: dbProj.columnsColor ?? 'rgba(239, 68, 68, 0.08)',
     columnsMargin: dbProj.columnsMargin ?? 20,
     columnsGutter: dbProj.columnsGutter ?? 12,
     collageGap: dbProj.collageGap ?? 0,
@@ -169,7 +196,7 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     collageShowCutLines: dbProj.collageShowCutLines ?? false,
     collageShowEndCutLine: dbProj.collageShowEndCutLine ?? true,
     collageStrokeWidth: dbProj.collageStrokeWidth ?? 0,
-    collageStrokeColor: dbProj.collageStrokeColor ?? "#000000",
+    collageStrokeColor: dbProj.collageStrokeColor ?? '#000000',
   };
 
   return deserializeProjectFile(projectFile);
@@ -179,7 +206,7 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
 export function projectFileToDomainProject(
   file: ProjectFileV1,
   id: string,
-  name: string
+  name: string,
 ): domain.Project {
   const source: Partial<domain.Project> = {
     id,
@@ -188,23 +215,23 @@ export function projectFileToDomainProject(
     canvasWidth: file.canvasWidth,
     canvasHeight: file.canvasHeight,
     backgroundColor: file.backgroundColor,
-    backgroundGradientColor2: file.backgroundGradientColor2 ?? "",
+    backgroundGradientColor2: file.backgroundGradientColor2 ?? '',
     backgroundGradientAngle: file.backgroundGradientAngle ?? 135,
     elements: JSON.stringify(file.elements),
     slots: JSON.stringify(file.slots),
-    template: file.template ? JSON.stringify(file.template) : "",
-    collageTemplate: file.collageTemplate ? JSON.stringify(file.collageTemplate) : "",
-    printSettings: file.printSettings ? JSON.stringify(file.printSettings) : "",
+    template: file.template ? JSON.stringify(file.template) : '',
+    collageTemplate: file.collageTemplate ? JSON.stringify(file.collageTemplate) : '',
+    printSettings: file.printSettings ? JSON.stringify(file.printSettings) : '',
     showGrid: file.showGrid ?? false,
     gridSize: file.gridSize ?? 48,
-    gridColor: file.gridColor ?? "#000000",
+    gridColor: file.gridColor ?? '#000000',
     gridOpacity: file.gridOpacity ?? 0.15,
     gridSubdivisions: file.gridSubdivisions ?? 5,
-    gridType: file.gridType ?? "lines",
+    gridType: file.gridType ?? 'lines',
     snapToGrid: file.snapToGrid ?? false,
     showColumns: file.showColumns ?? false,
     columnsCount: file.columnsCount ?? 12,
-    columnsColor: file.columnsColor ?? "rgba(239, 68, 68, 0.08)",
+    columnsColor: file.columnsColor ?? 'rgba(239, 68, 68, 0.08)',
     columnsMargin: file.columnsMargin ?? 20,
     columnsGutter: file.columnsGutter ?? 12,
     collageGap: file.collageGap ?? 0,
@@ -213,7 +240,7 @@ export function projectFileToDomainProject(
     collageShowCutLines: file.collageShowCutLines ?? false,
     collageShowEndCutLine: file.collageShowEndCutLine ?? true,
     collageStrokeWidth: file.collageStrokeWidth ?? 0,
-    collageStrokeColor: file.collageStrokeColor ?? "#000000",
+    collageStrokeColor: file.collageStrokeColor ?? '#000000',
   };
 
   return new domain.Project(source);

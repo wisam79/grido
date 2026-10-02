@@ -78,6 +78,9 @@ import {
 } from '@/lib/store/slices/license-slice';
 import { usePhoneBridgeListener } from '@/components/editor/system/use-phone-bridge';
 import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
+import { createLogger } from '@/lib/logger';
+
+const appLog = createLogger('App');
 
 /** هيكل تحميل بسيط يُعرض أثناء تفكيك الحوارات الكسولة (تصدير/طباعة) */
 function DialogLazyFallback() {
@@ -123,7 +126,7 @@ export default function App() {
         await DismissCrashReport();
       }
     } catch (e) {
-      console.error('Failed to dismiss crash report:', e);
+      appLog.error('Failed to dismiss crash report:', e);
     }
     setCrashReport(null);
     toast.success('تم استعادة المسودة بنجاح ومتابعة العمل');
@@ -139,7 +142,7 @@ export default function App() {
       }
       useEditorStore.getState().reset();
     } catch (e) {
-      console.error('Failed to dismiss crash report:', e);
+      appLog.error('Failed to dismiss crash report:', e);
     }
     setCrashReport(null);
     toast.info('تم بدء مشروع جديد');

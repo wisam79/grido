@@ -42,6 +42,8 @@
    السبب: لم يكن له أي مستهلك إنتاجي (كان يُستدعى من الاختبار فقط)، وكان يبقى نصاً داخل الثنائي قابلاً للاستخراج بـ`strings` في كل إصدار منشور.
    **إن عاد هذا النمط بأي شكل فهو تراجع أمني** (راجع `docs/reviews/07-full-security-completeness-audit-2026-09-25.md`).
 4. **تتبع التكاليف:** الإدارة المركزية لحساب تكلفة كل عملية معالجة (GPU Time) عبر تسجيل الثواني المستغرقة بدقة في قاعدة بيانات Supabase.
+   - الفئة الفعلية `gpu="L4"` في `modal_ai/upscaler.py:59` والسعر `GPU_HOURLY_USD=0.60` (أُصلح في 2026-10-02 من سعر `A10G` الخاطئ `1.10` — بند `C-05`).
+   - فشل التسجيل لا يُبتلع: محاولة + إعادة، وعند الفشل يُرجع `usage_recorded=False` صراحةً (بند `C-06`).
 
 ## صلاحيات قواعد البيانات وملفات الـ Migrations
 - تاريخياً: `supabase/migrations/20260729000000_fix_is_admin_permissions.sql` وسّع `GRANT EXECUTE` لـ `is_admin()` و `check_and_record_ai_usage()` إلى (`authenticated`, `anon`, `service_role`).

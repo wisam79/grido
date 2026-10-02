@@ -317,14 +317,20 @@ class ImageEnhancer:
                 
             img_str = base64.b64encode(encoded_img.tobytes()).decode("utf-8")
             
-            # حساب تكلفة المعالجة بالدولار لكرت A10G (سعر الساعة $1.10 = $0.0003055/ثانية)
+            # حساب تكلفة المعالجة بالدولار لكرت L4 (الفئة الفعلية في @app.cls(gpu="L4") — سعر الساعة $0.60)
+            # كان يُحسب بسعر A10G ($1.10) خطأً فيضلل ai_usage.cost_usd — أُصلح في 2026-10-02 (C-05)
+            GPU_HOURLY_USD = 0.60
             exec_seconds = round(time.time() - start_time, 2)
-            cost_usd = round(exec_seconds * (1.10 / 3600), 6)
-            total_cost_usd = round((exec_seconds + 2) * (1.10 / 3600), 6) # شاملة ثانيتي الإغلاق الإضافيتين
+            cost_usd = round(exec_seconds * (GPU_HOURLY_USD / 3600), 6)
+            total_cost_usd = round((exec_seconds + 2) * (GPU_HOURLY_USD / 3600), 6) # شاملة ثانيتي الإغلاق الإضافيتين
             
             print(f"Dual Enhancement (CodeFormer + Real-ESRGAN) completed in {exec_seconds}s. Process Cost: ${cost_usd}, Total Cost: ${total_cost_usd}")
 
             # 📊 Record usage directly into Supabase via RPC (replaces Edge Function proxy)
+            # إصلاح C-06 (2026-10-02): الفشل الشبكي العابر كان يُبتلع بـ print ويُرجع نجاحاً
+            # بتنفيذ مكلف بلا احتساب. الآن: محاولة + إعادة واحدة، وعند الفشل يُرجع
+            # usage_recorded=False صراحةً بدل النجاح الصامت حتى لا يضيع الاحتساب بصمت.
+            usage_recorded = False
             try:
                 raw_bytes_estimate = int((len(image_b64) * 3) / 4)
                 rpc_payload = json.dumps({
@@ -335,37 +341,53 @@ class ImageEnhancer:
                     "p_cost_usd": total_cost_usd,
                     "p_check_only": False
                 }).encode('utf-8')
-                
-                rpc_req = urllib.request.Request(
-                    f"{SUPABASE_URL}/rest/v1/rpc/check_and_record_ai_usage",
-                    data=rpc_payload,
-                    headers={
-                        "Authorization": f"Bearer {jwt_token}",
-                        "apikey": SUPABASE_ANON_KEY,
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal"
-                    },
-                    method="POST"
-                )
-                with urllib.request.urlopen(rpc_req) as rpc_res:
-                    pass # Recorded successfully
+
+                def _post_usage():
+                    rpc_req = urllib.request.Request(
+                        f"{SUPABASE_URL}/rest/v1/rpc/check_and_record_ai_usage",
+                        data=rpc_payload,
+                        headers={
+                            "Authorization": f"Bearer {jwt_token}",
+                            "apikey": SUPABASE_ANON_KEY,
+                            "Content-Type": "application/json",
+                            "Prefer": "return=minimal"
+                        },
+                        method="POST"
+                    )
+                    with urllib.request.urlopen(rpc_req, timeout=15):
+                        pass # Recorded successfully
+
+                try:
+                    _post_usage()
+                    usage_recorded = True
+                except Exception:
+                    import time as _retry_sleep
+                    _retry_sleep.sleep(1.0)
+                    _post_usage()
+                    usage_recorded = True
             except urllib.error.HTTPError as e:
-                err_body = e.read().decode()
-                print(f"RPC Quota error: {err_body}")
+                try:
+                    err_body = e.read().decode()
+                except Exception:
+                    err_body = str(e)
+                print(f"RPC Quota error: {err_body}", flush=True)
                 return Response(
                     content='{"error": "تم الوصول للحد اليومي المسموح به لاستخدام الذكاء الاصطناعي (429 Quota Exceeded)"}',
                     media_type="application/json",
                     status_code=429
                 )
             except Exception as e:
-                print(f"Failed to record usage in Supabase DB: {e}")
+                # لا نبتلع: نسجل بصراحة ونبلغ العميل أن الاحتساب لم يُسجل ليُعاد لاحقاً
+                print(f"CRITICAL: Failed to record usage in Supabase DB after retry: {e}", flush=True)
+                usage_recorded = False
 
             return {
                 "success": True,
                 "image": f"data:image/jpeg;base64,{img_str}",
                 "execution_seconds": exec_seconds,
                 "cost_usd": cost_usd,
-                "total_cost_usd": total_cost_usd
+                "total_cost_usd": total_cost_usd,
+                "usage_recorded": usage_recorded
             }
             
         except Exception as e:

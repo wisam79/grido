@@ -306,6 +306,9 @@ func (s *MediaService) ProcessOpenedFile(filePath string) (string, error) {
 	if _, err := io.Copy(af, srcFile); err != nil {
 		return "", fmt.Errorf("copy file: %w", err)
 	}
+	// إغلاق مبكر للمصدر قبل Commit لتحرير القفل على ويندوز — defer يبقى
+	// كشبكة أمان لمسارات الخطأ فقط (2026-10-02: إغلاق سطر §1 المفتوح)
+	_ = srcFile.Close()
 	if err := af.Commit(); err != nil {
 		return "", fmt.Errorf("finalize media file: %w", err)
 	}
