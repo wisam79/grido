@@ -17,7 +17,7 @@ var printTempJanitorOnce sync.Once
 
 func schedulePrintTempCleanup() {
 	printTempJanitorOnce.Do(func() {
-		go func() {
+		utils.SafeGo("print.temp-janitor", func() {
 			ticker := time.NewTicker(5 * time.Minute)
 			defer ticker.Stop()
 			for range ticker.C {
@@ -35,7 +35,7 @@ func schedulePrintTempCleanup() {
 					}
 				}
 			}
-		}()
+		})
 	})
 }
 

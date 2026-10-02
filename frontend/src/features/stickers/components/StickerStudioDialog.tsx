@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Sparkle,
   Code,
+  Scissors,
 } from '@/components/ui/icons';
 import {
   Dialog,
@@ -52,6 +53,7 @@ import { sanitizeStickerColor, sanitizeStickerFontFamily } from '../lib/svg-safe
 import { sanitizeSvgMarkup } from '@/lib/utils';
 import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from '../lib/clipboard-utils';
 import { generateStickerSheet } from '../lib/sheet-generator';
+import { generateDieCutContour, DEFAULT_BLEED_PERCENT } from '../lib/die-cut-offset';
 import { useStickerParamsHistory } from '../lib/params-history';
 import { VdpImportDialog } from './VdpImportDialog';
 import { GridFour as TableIcon } from '@/components/ui/icons';
@@ -455,6 +457,45 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     }
   }, [exportableSvg, svgString, selectedTemplate.id, params.fontFamily]);
 
+  const handleDownloadCutContour = useCallback(async () => {
+    try {
+      setBusyExport(true);
+      const dieCut = generateDieCutContour(exportableSvg || svgString, {
+        bleedPercent: DEFAULT_BLEED_PERCENT,
+      });
+      const portable = await embedStickerFonts(dieCut.fullSvgWithContour, [
+        params.fontFamily || 'Cairo',
+      ]);
+      const blob = new Blob([portable], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      downloadFile(url, `${selectedTemplate.id}-cutcontour.svg`);
+      URL.revokeObjectURL(url);
+      toast.success('نُزّل SVG مع طبقة خط القص (CutContour) للمطابع');
+    } catch {
+      toast.error('فشل تنزيل ملف خط القص');
+    } finally {
+      setBusyExport(false);
+    }
+  }, [exportableSvg, svgString, selectedTemplate.id, params.fontFamily]);
+
+  const handleDownloadPureCutContour = useCallback(async () => {
+    try {
+      setBusyExport(true);
+      const dieCut = generateDieCutContour(exportableSvg || svgString, {
+        bleedPercent: DEFAULT_BLEED_PERCENT,
+      });
+      const blob = new Blob([dieCut.standaloneContourSvg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      downloadFile(url, `${selectedTemplate.id}-plotter-contour.svg`);
+      URL.revokeObjectURL(url);
+      toast.success('نُزّل مسار خط القص النقي لماكينة القص (Plotter)');
+    } catch {
+      toast.error('فشل تنزيل خط القص');
+    } finally {
+      setBusyExport(false);
+    }
+  }, [exportableSvg, svgString, selectedTemplate.id]);
+
   const handleDownloadPng = useCallback(async () => {
     try {
       setBusyExport(true);
@@ -706,14 +747,28 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                       {!busyExport && <CaretDown className="w-3 h-3 text-muted-foreground" />}
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-44 text-xs font-cairo">
+                  <DropdownMenuContent align="start" className="w-56 text-xs font-cairo">
                     <DropdownMenuItem onClick={handleDownloadPng} className="cursor-pointer gap-2">
                       <FilePng className="w-4 h-4 text-primary" weight="duotone" />
-                      <span>صورة PNG</span>
+                      <span>صورة PNG (300 DPI)</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleDownloadSvg} className="cursor-pointer gap-2">
                       <FileSvg className="w-4 h-4 text-emerald-500" weight="duotone" />
-                      <span>ملف SVG</span>
+                      <span>ملف SVG متجه</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleDownloadCutContour}
+                      className="cursor-pointer gap-2"
+                    >
+                      <Scissors className="w-4 h-4 text-pink-500" weight="duotone" />
+                      <span>SVG مع خط القص (CutContour)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleDownloadPureCutContour}
+                      className="cursor-pointer gap-2"
+                    >
+                      <Scissors className="w-4 h-4 text-fuchsia-500" weight="duotone" />
+                      <span>خط القص فقط للمقصات (Plotter)</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleCopyImage} className="cursor-pointer gap-2">
                       <Copy className="w-4 h-4 text-amber-500" weight="duotone" />

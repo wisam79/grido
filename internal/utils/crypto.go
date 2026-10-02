@@ -268,6 +268,8 @@ type encryptedTokenPair struct {
 
 // SaveSessionID يحفظ معرّف الجلسة بجانب التوكنات في نفس المخزن المشفّر
 // (AES-GCM بصلاحيات 0600) دون المساس بالتوكنات نفسها.
+// ملف تالف/غير قابل للفك ⇒ تُحفظ الجلسة بتوكنات فارغة (الملف التالف بلا قيمة
+// أصلاً)، ويُعاد الدخول عند الحاجة — لا يُسقِط معرّفاً محجوزاً خادمياً.
 func SaveSessionID(sessionID string) error {
 	access, refresh, err := LoadEncryptedToken()
 	if err != nil {

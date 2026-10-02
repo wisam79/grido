@@ -56,10 +56,10 @@ func ResizeGrayLinear(src *image.Gray, w, h int) *image.Gray {
 			continue
 		}
 		wg.Add(1)
-		go func(sy, ey int) {
+		utils.SafeGo("image-processor.resizeGrayLinear", func() {
 			defer wg.Done()
-			resizeGrayLinearRows(src, dst, srcW, srcH, w, h, sy, ey)
-		}(startY, endY)
+			resizeGrayLinearRows(src, dst, srcW, srcH, w, h, startY, endY)
+		})
 	}
 	wg.Wait()
 	return dst
@@ -143,10 +143,10 @@ func compositeMaskParallel(srcNRGBA *image.NRGBA, mask *image.Gray, srcW, srcH i
 			continue
 		}
 		wg.Add(1)
-		go func(sy, ey int) {
+		utils.SafeGo("image-processor.compositeMask", func() {
 			defer wg.Done()
-			compositeMaskRows(srcNRGBA, mask, srcW, sy, ey)
-		}(startY, endY)
+			compositeMaskRows(srcNRGBA, mask, srcW, startY, endY)
+		})
 	}
 	wg.Wait()
 }

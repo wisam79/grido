@@ -103,7 +103,9 @@ describe('LicenseSlice Tests', () => {
     await useEditorStore.getState().checkLicenseStatus();
 
     vi.mocked(LicenseHandler.GetLicenseStatus).mockRejectedValueOnce(
-      new Error('تم تسجيل الدخول إلى حسابك من جهاز آخر — هذه الجلسة لم تعد نشطة'),
+      new Error(
+        'ERR_SESSION_SUPERSEDED: تم تسجيل الدخول إلى حسابك من جهاز آخر — هذه الجلسة لم تعد نشطة',
+      ),
     );
     await expect(useEditorStore.getState().checkLicenseStatus()).rejects.toThrow('جهاز آخر');
     // الطرد: تصفير الجلسة + فتح نافذة الحساب (رسالة الطرد تُعرض من App.tsx)

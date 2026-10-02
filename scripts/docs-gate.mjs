@@ -435,6 +435,7 @@ const CODE_ASSERTIONS = [
     file: 'internal/service/session_manager.go',
     mustContain: [
       'var ErrSessionSuperseded',
+      'ERR_SESSION_SUPERSEDED',
       'func (s *LicenseService) claimSession(token string) string',
       'func (s *LicenseService) verifyActiveSession(token string) (bool, error)',
       'بلا أي ربط بالعتاد',
@@ -456,6 +457,7 @@ const CODE_ASSERTIONS = [
     mustContain: [
       'isSessionSupersededError',
       'accountModalOpen: true',
+      'ERR_SESSION_SUPERSEDED',
     ],
   },
   {
@@ -476,6 +478,132 @@ const CODE_ASSERTIONS = [
       'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
       'كلمة المرور يجب أن تتضمن حروفاً وأرقاماً معاً',
     ],
+  },
+  {
+    label: 'CRASH-GUARD — التقاط الانهيارات الذري برنتايم Wails v3 وحفظ crash-dump.json ثم إنهاء العملية',
+    file: 'main.go',
+    mustContain: [
+      'PanicHandler: func(panicDetails *application.PanicDetails)',
+      'crashGuardSvc.HandleFatalPanic',
+      'os.Exit(1)',
+      'service.IsCrashRelaunch(os.Args[1:])',
+      'service.ClearCrashRestartGuard()',
+      'utils.SetPanicReporter(service.ReportGoroutinePanic)',
+    ],
+    mustNotContain: ['crashGuardSvc.HandlePanic'],
+  },
+  {
+    label: 'CRASH-GUARD-SVC — كتابة تقرير الانهيار الذرية بصلاحيات 0600 ثم إنهاء مضمون عبر defer',
+    file: 'internal/service/crash_guard.go',
+    mustContain: [
+      'utils.AtomicWriteFile(dumpPath, data, 0600)',
+      'func (s *CrashGuardService) HandlePanic',
+      'func (s *CrashGuardService) HandleFatalPanic',
+      'func ReportGoroutinePanic(name string, err error, stack string)',
+      'defaultCrashGuard.HandleFatalPanic',
+      'defer exitProcess(1)',
+    ],
+  },
+  {
+    label: 'SAFE-GO — غلاف goroutines يحوّل أي panic إلى مسار الانهيار ولا يبتلعه',
+    file: 'internal/utils/safe_go.go',
+    mustContain: [
+      'func SafeGo(name string, fn func())',
+      'func SetPanicReporter(reporter PanicReporter) PanicReporter',
+      'reporter(name, err, stack)',
+      'panic(r)',
+    ],
+  },
+  {
+    label: 'SAFE-GO (عمال الصور) — لا goroutines خام في مسار معالجة الصور المتوازي',
+    file: 'internal/service/image_processor.go',
+    mustContain: [
+      'utils.SafeGo("image-processor.resizeGrayLinear"',
+      'utils.SafeGo("image-processor.compositeMask"',
+    ],
+    mustNotContain: ['go func('],
+  },
+  {
+    label: 'SAFE-GO (تحويل CMYK) — عمال تحويل الألوان للطباعة تحت الغلاف',
+    file: 'internal/service/print_cmyk.go',
+    mustContain: ['utils.SafeGo("print.cmyk-convert"'],
+    mustNotContain: ['go func('],
+  },
+  {
+    label: 'SAFE-GO (منظفات الطباعة) — تنظيف المخرجات القديمة تحت الغلاف',
+    file: 'internal/service/print_export.go',
+    mustContain: ['utils.SafeGo("print.exports-cleanup"'],
+    mustNotContain: ['go func('],
+  },
+  {
+    label: 'CRASH-RESTART — إعادة تشغيل ذاتية بعد الانهيار في عملية معزولة بلا انتظار للابن',
+    file: 'internal/service/crash_restart.go',
+    mustContain: [
+      'const CrashRelaunchFlag = "--crash-relaunch"',
+      'func IsCrashRelaunch(args []string) bool',
+      'cmd.SysProcAttr = detachedSysProcAttr()',
+      'args = append(args, CrashRelaunchFlag)',
+    ],
+  },
+  {
+    label: 'CRASH-RESTART (ويندوز) — فصل الطفل عن مجموعة عمليات الأب',
+    file: 'internal/service/crash_restart_windows.go',
+    mustContain: ['windows.DETACHED_PROCESS | windows.CREATE_NEW_PROCESS_GROUP'],
+  },
+  {
+    label: 'CRASH-RESTART-GUARD — سقف إعادات داخل نافذة زمنية + فشل مغلق عند تعذّر الحفظ',
+    file: 'internal/service/crash_guard.go',
+    mustContain: [
+      'crashRestartMaxAttempts = 2',
+      'crashRestartWindow',
+      'func claimCrashRestartAttempt(now time.Time) (int, bool)',
+      'if !allowed {',
+      'func ClearCrashRestartGuard() error',
+      'autoRestartEnabled',
+    ],
+  },
+  {
+    label: 'CRASH-GUARD-UNIFIED — مصدر الانهيار الوحيد يشارك قفلاً واحداً (نسخة ثانية تبطل العقد)',
+    file: 'app.go',
+    mustContain: ['crashGuardSvc:  service.DefaultCrashGuard()'],
+    // NewCrashGuardService هنا كانت تُنتج نسخة بمutex مستقل ⇒ مساران مستقلان من
+    // الانهيار ⇒ نسختان مُعاد تشغيلهما معاً عند انهيار متزامن.
+    mustNotContain: ['service.NewCrashGuardService()'],
+  },
+  {
+    label: 'CRASH-RESTART-GUARD-MUTEX — عدّاد الإعادات محمي من سباق القراءة–التعديل–الكتابة',
+    file: 'internal/service/crash_guard.go',
+    mustContain: [
+      'var crashRestartGuardMu sync.Mutex',
+      'func DefaultCrashGuard() *CrashGuardService',
+    ],
+    count: [
+      { needle: 'crashRestartGuardMu.Lock()', equals: 2 }, // claim + clear
+    ],
+  },
+  {
+    label: 'CRASH-DIALOG — لا إغلاق ضمني: ESC والنقر خارج النافذة لا يمسحان المسودة',
+    file: 'frontend/src/components/crash-recovery-dialog.tsx',
+    mustContain: [
+      'onEscapeKeyDown={blockImplicitDismiss}',
+      'onPointerDownOutside={blockImplicitDismiss}',
+      'onInteractOutside={blockImplicitDismiss}',
+    ],
+    // onOpenChange كان يمرّر الإغلاق الضمني إلى onDismiss ⇒ ClearAutoSave + reset
+    mustNotContain: ['onOpenChange'],
+  },
+  {
+    label: 'STICKER-PHASE-3 — توليد خطوط القص المتجه CutContour للمطابع ومقصات الفينيل',
+    file: 'frontend/src/features/stickers/lib/die-cut-offset.ts',
+    mustContain: [
+      'export function generateDieCutContour',
+      'id="CutContour"',
+      'data-cut-contour="true"',
+      'DEFAULT_BLEED_PERCENT',
+    ],
+    // استدلال الشكل الخارجي من بنية SVG مرفوض عمداً: كان يلتقط أول <polygon>
+    // (زخرفة داخل <g transform>) بدل حدّ الملصق ⇒ مسار قصّ في موضع فارغ.
+    mustNotContain: ['detectStickerOuterShape', 'offsetPolygonPoints', 'generateCirclePath'],
   },
 ];
 

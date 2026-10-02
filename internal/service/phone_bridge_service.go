@@ -139,12 +139,12 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 	// ⚠️ لا نُسجّل s.url أبداً: يحتوي توكن الجلسة في سلسلة الاستعلام، وسجلّ
 	// التطبيق ملف على القرص (تسريب توكن الجسر لكل من يقرأ السجلّات)
 	listenAddress := fmt.Sprintf("%s:%d", s.ip, s.port)
-	go func() {
+	utils.SafeGo("phone-bridge.server", func() {
 		slog.Info("Phone bridge server listening", "address", listenAddress)
 		if serveErr := srv.Serve(listener); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
 			slog.Error("Phone bridge server stopped unexpectedly", "error", serveErr)
 		}
-	}()
+	})
 
 	return &BridgeInfo{
 		IP:        s.ip,

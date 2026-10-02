@@ -24,6 +24,7 @@ type App struct {
 	aiLogsSvc      *service.AiLogsService
 	licenseSvc     *service.LicenseService
 	desktopSvc     *service.DesktopService
+	crashGuardSvc  *service.CrashGuardService
 	startupFile    string
 }
 
@@ -39,6 +40,7 @@ func NewApp(templates domain.CustomTemplateRepository) *App {
 		autosaveSvc:    service.NewAutosaveService(templates),
 		aiLogsSvc:      service.NewAiLogsService(),
 		desktopSvc:     desktopSvc,
+		crashGuardSvc:  service.DefaultCrashGuard(),
 	}
 }
 
@@ -50,7 +52,7 @@ func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) 
 		a.licenseSvc.SetContext(ctx)
 	}
 	service.InitLogger()
-	go service.CleanupTempUpdates()
+	utils.SafeGo("service.CleanupTempUpdates", service.CleanupTempUpdates)
 	return nil
 }
 
@@ -247,6 +249,20 @@ func (a *App) SaveAutoSave(jsonData string) error {
 
 func (a *App) ClearAutoSave() error {
 	return a.autosaveSvc.ClearAutoSave()
+}
+
+func (a *App) CheckPendingCrashReport() (*service.CrashReport, error) {
+	if a.crashGuardSvc == nil {
+		return nil, nil
+	}
+	return a.crashGuardSvc.GetPendingCrashReport()
+}
+
+func (a *App) DismissCrashReport() error {
+	if a.crashGuardSvc == nil {
+		return nil
+	}
+	return a.crashGuardSvc.DismissCrashReport()
 }
 
 func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW int, maskH int) (string, error) {

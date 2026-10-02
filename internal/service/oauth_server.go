@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"grido/internal/core/domain"
+	"grido/internal/utils"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -211,11 +212,11 @@ func startOAuthLocalServer() (string, chan string, chan error, func(), string, e
 		WriteTimeout:      15 * time.Second,
 	}
 
-	go func() {
+	utils.SafeGo("oauth.local-server", func() {
 		if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
 			errChan <- err
 		}
-	}()
+	})
 
 	return callbackURL, tokenChan, errChan, func() {
 		_ = srv.Shutdown(context.Background())

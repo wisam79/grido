@@ -1,32 +1,36 @@
 import { Page } from '@playwright/test';
 
 // 1x1 transparent PNG data URL & base64
-export const MOCK_PNG_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-export const MOCK_RAW_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+export const MOCK_PNG_BASE64 =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+export const MOCK_RAW_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+);
 
 export const MOCK_USER_PROFILE = {
-  id: "e2e-user-id",
-  name: "E2E Tester",
-  email: "e2e-test@grido.app",
-  plan: "pro",
-  token: "e2e-mock-token-12345",
-  refreshToken: "e2e-refresh-token",
-  createdAt: "2026-01-01T00:00:00Z",
-  expiresAt: "2030-01-01T00:00:00Z",
-  licenseKey: "GRIDO-PRO-E2E-TEST-KEY",
-  status: "active",
-  updatedAt: "2026-01-01T00:00:00Z",
+  id: 'e2e-user-id',
+  name: 'E2E Tester',
+  email: 'e2e-test@grido.app',
+  plan: 'pro',
+  token: 'e2e-mock-token-12345',
+  refreshToken: 'e2e-refresh-token',
+  createdAt: '2026-01-01T00:00:00Z',
+  expiresAt: '2030-01-01T00:00:00Z',
+  licenseKey: 'GRIDO-PRO-E2E-TEST-KEY',
+  status: 'active',
+  updatedAt: '2026-01-01T00:00:00Z',
 };
 
 export const MOCK_PROJECTS: any[] = [
   {
-    id: "mock-proj-1",
-    name: "مشروع اختباري أول",
-    data: "{}",
+    id: 'mock-proj-1',
+    name: 'مشروع اختباري أول',
+    data: '{}',
     preview: MOCK_PNG_BASE64,
-    createdAt: "2026-01-01T00:00:00Z",
-    updatedAt: "2026-01-01T00:00:00Z"
-  }
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
 ];
 
 export const MOCK_CUSTOM_TEMPLATES: any[] = [];
@@ -39,14 +43,23 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   // ── App bindings (frontend/bindings/grido/app.ts) ──
   3084559015: async () => MOCK_PNG_BASE64, // ApplyMaskRaw
   2977102455: async () => MOCK_PNG_BASE64, // ApplyMaskToImage
-  2347956003: async () => ({ has_update: false, current_version: 'v1.0.0', latest_version: 'v1.0.0', download_url: '', release_notes: '' }), // CheckForUpdate
+  2347956003: async () => ({
+    has_update: false,
+    current_version: 'v1.0.0',
+    latest_version: 'v1.0.0',
+    download_url: '',
+    release_notes: '',
+  }), // CheckForUpdate
+  2320258599: async () => null, // CheckPendingCrashReport (لا يوجد انهيار سابق في الاختبار)
   3605864796: async () => ({ cleaned: 0 }), // CleanUnusedMediaNow
   485242536: async () => undefined, // ClearAutoSave
   1006108175: async () => undefined, // DeleteCustomTemplate
+  2108673700: async () => undefined, // DismissCrashReport
   2440793480: async () => undefined, // DownloadAndInstallUpdate
   2111291824: async () => MOCK_PNG_BASE64, // EnhanceImageWithAI
   2950359501: async () => 'C:/mock/logs.txt', // ExportSupportLogs
-  4177774687: async (paths: string[]) => { // GetBatchImageDimensions
+  4177774687: async (paths: string[]) => {
+    // GetBatchImageDimensions
     const res: Record<string, { width: number; height: number }> = {};
     for (const p of paths || []) res[p] = { width: 800, height: 600 };
     return res;
@@ -76,7 +89,13 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   966799716: async () => undefined, // SetClipboardText
   1338676276: async () => undefined, // SetProgressBar
   1225131967: async () => undefined, // ShowItemInFolder
-  93234400: async () => ({ ip: '127.0.0.1', port: 8741, token: 'mock-token', url: 'http://127.0.0.1:8741', isRunning: true }), // StartPhoneBridge
+  93234400: async () => ({
+    ip: '127.0.0.1',
+    port: 8741,
+    token: 'mock-token',
+    url: 'http://127.0.0.1:8741',
+    isRunning: true,
+  }), // StartPhoneBridge
   1433752998: async () => undefined, // StopPhoneBridge
   2987688963: async () => undefined, // Startup / fallback
   2154875234: async () => undefined, // Shutdown / fallback
@@ -106,14 +125,21 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   377054365: async () => 'success', // ResetSettings
 
   // ── PrintHandler bindings (frontend/bindings/grido/internal/handlers/printhandler.ts) ──
-  334009393: async () => ({ success: true, imagePath: 'C:/mock/sheet.png', filePath: 'C:/mock/sheet.png' }), // ExportPrintSheet
+  334009393: async () => ({
+    success: true,
+    imagePath: 'C:/mock/sheet.png',
+    filePath: 'C:/mock/sheet.png',
+  }), // ExportPrintSheet
   100771007: async () => ({ success: true, filePath: 'C:/mock/sheet.png' }), // PrintNative
 };
 
 /**
  * يقوم بتهيئة جسر محاكاة Wails v3 المتكامل لصفحة الاختبار في Playwright
  */
-export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<number, (...args: any[]) => any>) {
+export async function setupWailsV3Bridge(
+  page: Page,
+  customHandlers?: Record<number, (...args: any[]) => any>,
+) {
   const handlers = { ...WAILS_V3_METHOD_HANDLERS, ...customHandlers };
 
   // 1. اعتراض مسار استدعاءات Wails v3 Runtime Network Requests
@@ -190,10 +216,18 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
         App: {
           ApplyMaskToImage: async () => mockImage,
           ApplyMaskRaw: async () => mockImage,
-          CheckForUpdate: async () => ({ has_update: false, current_version: 'v1.0.0', latest_version: 'v1.0.0', download_url: '', release_notes: '' }),
+          CheckForUpdate: async () => ({
+            has_update: false,
+            current_version: 'v1.0.0',
+            latest_version: 'v1.0.0',
+            download_url: '',
+            release_notes: '',
+          }),
+          CheckPendingCrashReport: async () => null,
           CleanUnusedMediaNow: async () => ({ cleaned: 0 }),
           ClearAutoSave: async () => {},
           DeleteCustomTemplate: async () => 'success',
+          DismissCrashReport: async () => {},
           DownloadAndInstallUpdate: async () => {},
           EnhanceImageWithAI: async () => mockImage,
           ExportSupportLogs: async () => 'C:/mock/logs.txt',
@@ -203,7 +237,12 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
           GetImageDimensions: async () => ({ width: 800, height: 600 }),
           GetMediaStorageStats: async () => ({ count: 1, size_bytes: 1024 }),
           GetPaperTemplates: async () => [],
-          GetPhoneBridgeStatus: async () => ({ isRunning: false, url: '', receivedCount: 0, lastReceived: '' }),
+          GetPhoneBridgeStatus: async () => ({
+            isRunning: false,
+            url: '',
+            receivedCount: 0,
+            lastReceived: '',
+          }),
           GetStartupFile: async () => '',
           LoadAiUsageLogs: async () => '[]',
           LoadAutoSave: async () => '',
@@ -224,9 +263,15 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
           SetClipboardText: async () => {},
           SetProgressBar: async () => {},
           ShowItemInFolder: async () => {},
-          StartPhoneBridge: async () => ({ ip: '127.0.0.1', port: 8741, token: 'mock', url: 'http://127.0.0.1:8741', isRunning: true }),
+          StartPhoneBridge: async () => ({
+            ip: '127.0.0.1',
+            port: 8741,
+            token: 'mock',
+            url: 'http://127.0.0.1:8741',
+            isRunning: true,
+          }),
           StopPhoneBridge: async () => {},
-        }
+        },
       },
       handlers: {
         ProjectHandler: {
@@ -236,16 +281,64 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
           DeleteProject: async () => 'success',
         },
         LicenseHandler: {
-          ActivateLicenseKey: async () => ({ id: "e2e-user", plan: "pro", status: "active", expiresAt: "2030-01-01T00:00:00Z", token: "mock-tok" }),
-          GetLicenseStatus: async () => ({ id: "e2e-user", plan: "pro", status: "active", expiresAt: "2030-01-01T00:00:00Z", token: "mock-tok" }),
-          LoginAccount: async () => ({ id: "e2e-user", plan: "pro", status: "active", expiresAt: "2030-01-01T00:00:00Z", token: "mock-tok" }),
-          LoginWithGoogle: async () => ({ id: "e2e-user", plan: "pro", status: "active", expiresAt: "2030-01-01T00:00:00Z", token: "mock-tok" }),
+          ActivateLicenseKey: async () => ({
+            id: 'e2e-user',
+            plan: 'pro',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            token: 'mock-tok',
+          }),
+          GetLicenseStatus: async () => ({
+            id: 'e2e-user',
+            plan: 'pro',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            token: 'mock-tok',
+          }),
+          LoginAccount: async () => ({
+            id: 'e2e-user',
+            plan: 'pro',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            token: 'mock-tok',
+          }),
+          LoginWithGoogle: async () => ({
+            id: 'e2e-user',
+            plan: 'pro',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            token: 'mock-tok',
+          }),
           Logout: async () => 'success',
-          RegisterAccount: async () => ({ id: "e2e-user", plan: "pro", status: "active", expiresAt: "2030-01-01T00:00:00Z", token: "mock-tok" }),
-          ResendOTP: async () => ({ id: "e2e-user", plan: "pro", status: "active", expiresAt: "2030-01-01T00:00:00Z", token: "mock-tok" }),
+          RegisterAccount: async () => ({
+            id: 'e2e-user',
+            plan: 'pro',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            token: 'mock-tok',
+          }),
+          ResendOTP: async () => ({
+            id: 'e2e-user',
+            plan: 'pro',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            token: 'mock-tok',
+          }),
           ResetPassword: async () => 'success',
-          VerifyOTP: async () => ({ id: "e2e-user", plan: "pro", status: "active", expiresAt: "2030-01-01T00:00:00Z", token: "mock-tok" }),
-          VerifyRecoveryOTP: async () => ({ id: "e2e-user", plan: "pro", status: "active", expiresAt: "2030-01-01T00:00:00Z", token: "mock-tok" }),
+          VerifyOTP: async () => ({
+            id: 'e2e-user',
+            plan: 'pro',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            token: 'mock-tok',
+          }),
+          VerifyRecoveryOTP: async () => ({
+            id: 'e2e-user',
+            plan: 'pro',
+            status: 'active',
+            expiresAt: '2030-01-01T00:00:00Z',
+            token: 'mock-tok',
+          }),
         },
         BackupHandler: {
           ExportBackup: async () => 'C:/mock/backup.zip',
@@ -254,10 +347,14 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
           ResetSettings: async () => 'success',
         },
         PrintHandler: {
-          ExportPrintSheet: async () => ({ success: true, imagePath: 'mock.png', filePath: 'C:/mock/sheet.png' }),
-          PrintNative: async () => ({ success: true, filePath: 'C:/mock/sheet.png' })
-        }
-      }
+          ExportPrintSheet: async () => ({
+            success: true,
+            imagePath: 'mock.png',
+            filePath: 'C:/mock/sheet.png',
+          }),
+          PrintNative: async () => ({ success: true, filePath: 'C:/mock/sheet.png' }),
+        },
+      },
     };
 
     const legacyMockRuntime = {
@@ -290,8 +387,16 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
       LogFatal: () => {},
     };
 
-    Object.defineProperty(window, 'go', { value: legacyMockGo, writable: true, configurable: true });
-    Object.defineProperty(window, 'runtime', { value: legacyMockRuntime, writable: true, configurable: true });
+    Object.defineProperty(window, 'go', {
+      value: legacyMockGo,
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(window, 'runtime', {
+      value: legacyMockRuntime,
+      writable: true,
+      configurable: true,
+    });
   }, MOCK_PNG_BASE64);
 }
 
@@ -300,8 +405,12 @@ export async function setupWailsV3Bridge(page: Page, customHandlers?: Record<num
  */
 export async function waitForAppReady(page: Page, timeout = 20000) {
   // انتظار الكانفس الرئيسي أو الغلاف العام لمساحة العمل
-  await page.locator('#canvas-area').or(page.getByTestId('workspace-canvas-shell')).first().waitFor({
-    state: 'visible',
-    timeout
-  });
+  await page
+    .locator('#canvas-area')
+    .or(page.getByTestId('workspace-canvas-shell'))
+    .first()
+    .waitFor({
+      state: 'visible',
+      timeout,
+    });
 }

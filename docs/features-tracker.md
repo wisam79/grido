@@ -1,11 +1,66 @@
 # تتبع الميزات الأساسية — Grido Studio
 
 **تاريخ المراجعة الأولى:** 30 يوليو 2026 (الإصدار ~v1.2.10)
-**آخر تحديث:** 1 أكتوبر 2026 — بعد **جلسة الجلسة الواحدة النشطة (Last-Wins)** وإغلاق بنود P1/P2 الممكنة محلياً (عزل SVG المخزّن · مواءمة مهلة AI · صيغ AVIF/HEIC/JXL · `p_check_only` الصريح) — انظر سجل 0.28 · وقبله **جلسة موثوقية نصوص الملصقات وقابلية التصدير** (اتجاه عربي تلقائي · دقة 300DPI حقيقية · SVG بخط مضمّن · شيت بنسبة ورق الطباعة) — سجل 0.27
+**آخر تحديث:** 2 أكتوبر 2026 — بعد **تغطية panics الـ goroutines بغلاف موحّد (SafeGo)** (سجل 0.33) · وقبله **التعافي الذاتي بعد الانهيار: إعادة تشغيل تلقائية بحارس حلقات** (سجل 0.32) · وقبله **المرحلة 3 لملصقات الكانفاس وخوارزمية CutContour للمطابع** (سجل 0.31) · وقبله **نظام حماية الانهيار والتعافي (Crash Guard & Recovery) مع إعادة فرض الإنهاء الفوري بعد panic** (سجل 0.30) · وقبله **جلسة هيكلة منظومة الوكلاء** (سجل 0.29)
 **المنهجية:** فحص الكود الفعلي (Go + React/Konva) ميزةً ميزة، ومطابقتها مع README وخطة التطوير.
 **الغرض:** مستند حي يُحدَّث مع كل نظرة على الميزات؛ يكمل (ولا يستبدل) `docs/development-plan/TASKS.md`.
 
 أسطورة الحالة: ✅ مكتمل | ⚠️ مكتمل مع فجوات | 🔶 جزئي | ❌ غير منفذ | 🆕 أُصلح في جلسة الإصلاحات
+
+---
+
+## 0.33 سجل تكميلي: تغطية panics الـ goroutines (SafeGo) — 2 أكتوبر 2026
+
+**المرجع:** إغلاق فجوة رُصدت في إعادة تقييم سجل 0.32 — `PanicHandler` يغطي مسارات Wails المُدارة فقط، وعشرة مواضع إطلاق في كود التطبيق كانت خارج أي حماية.
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| غلاف موحّد لـ goroutines | `internal/utils/safe_go.go`: `SafeGo(name, fn)` يشغّل الدالة محمية ويُمرّر أي panic عبر `PanicReporter` المسجَّل؛ وبلا مستقبل يُسجَّل الخطأ ثم يُعاد إطلاق الـ panic (لا ابتلاع) | `TestSafeGo_RunsNormallyWithoutCrashPath` · `TestSafeGo_FunnelsPanicIntoCrashPath` |
+| الربط بمسار الانهيار | `main.go`: `utils.SetPanicReporter(service.ReportGoroutinePanic)` قبل أي goroutine محمية؛ و`service.ReportGoroutinePanic` يمرّر إلى `defaultCrashGuard.HandleFatalPanic` (تقرير + إعادة تشغيل + إنهاء) | تأكيد كودي في `scripts/docs-gate.mjs` |
+| تغطية المواضع العشرة | عمال الصور (×2)، تحويل CMYK، تنظيف صادرات الطباعة، منظّف ملفات الطباعة المؤقتة، خادم OAuth، جسر الهاتف، فحص اتصال DB، تنظيف الوسائط، `CleanupTempUpdates`، ومؤقت حالة النافذة | `mustNotContain: ['go func(']` في تأكيدات عمال الصور وCMYK والمنظفات |
+| قرار انهيار واحد لكل عملية | ترتيب مؤجَّلات `HandleFatalPanic`: `Unlock` أولاً و`exitProcess` بعده (LIFO) ⇒ الإنهاء يقع والقفل محتجز. **مصدر الانهيار الوحيد** في الإنتاج هو `defaultCrashGuard` عبر `DefaultCrashGuard()` (App كان ينشئ نسخة ثانية بقفل مستقل ⇒ مساران مستقلان) + **قفل على مستوى العملية** لملف عدّاد الحلقات يمنع سباق القراءة–التعديل–الكتابة | `TestCrashGuardService_RestartLoopGuardTripsAtCap` · تأكيدا `CRASH-GUARD-UNIFIED` و `CRASH-RESTART-GUARD-MUTEX` + `go test -race` ✅ |
+| بوابات الجودة والتوثيق | **37 تأكيد كودي** (بعد إصلاحات المراجعة قبل الرفع)، و`go_test_files=33` بلا تغيير | `node scripts/docs-gate.mjs --strict-refs` ✅ · `go vet` ✅ · `go test ./internal/repository/ ./internal/utils/ ./internal/service/` ✅ |
+
+---
+
+## 0.32 سجل تكميلي: التعافي الذاتي بعد الانهيار (Crash Auto-Restart) — 2 أكتوبر 2026
+
+**المرجع:** استكمال سجل 0.30 — بدل الطرد الصامت بعد الانهيار، يُعاد تشغيل التطبيق تلقائياً بحارس يمنع الحلقات، ويُعرض حوار استعادة المسودة في النسخة الجديدة.
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| إعادة تشغيل تلقائية بعد الانهيار | `internal/service/crash_restart.go` + `crash_guard.go`: حفظ التقرير ثم إطلاق نسخة جديدة في عملية معزولة (`--crash-relaunch` · `DETACHED_PROCESS` على ويندوز و`setsid` غيرها) ثم إنهاء العملية بلا انتظار للابن | `TestCrashGuardService_HandleFatalPanicRelaunchesAndExits` · `TestIsCrashRelaunch` |
+| مهلة إفلات قفل النسخة الواحدة | `main.go`: العملية المُعاد تشغيلها تنتظر `CrashRelaunchSettleDelay` (1.5s) قبل تهيئة Wails حتى تُفلت العملية المنهارة قفل `SingleInstance` فلا تُظنّ نسخة ثانية | تأكيد كودي في `scripts/docs-gate.mjs` |
+| حارس حلقات إعادة التشغيل | عدّاد ذري `crash-restart-guard.json` (0600): **إعادتان** كحد أقصى داخل نافذة **15 دقيقة**، وانهيار بعد هدوء أطول يبدأ سلسلة جديدة، وأي إقلاع يدوي يصفّر العدّاد | `TestCrashGuardService_RestartLoopGuardTripsAtCap` · `TestCrashRestartGuard_WindowExpiryStartsFreshSeries` · `TestCrashRestartGuard_ClearUnlocksFreshSeries` |
+| الفشل المغلق وتحمل الفساد | تعذّر حفظ العدّاد ⇒ لا إعادة تشغيل (منع حلقة محتملة) مع بقاء التقرير وحوار استعادة المسودة؛ والحالة الغائبة/الفاسدة تُعامل كسلسلة جديدة | `TestCrashRestartGuard_FailsClosedWhenStateCannotBePersisted` · `TestCrashRestartGuard_CorruptStateStartsFreshSeries` |
+| بوابات الجودة والتوثيق | 12 اختبار وحدة في `crash_guard_test.go` (بما فيها فشل الإطلاق وقيود التطوير) و**30 تأكيد كودي**؛ والإجمالي `go_test_files=33` بلا تغيير (اختبارات في ملف قائم) | `node scripts/docs-gate.mjs --strict-refs` ✅ · `go vet` ✅ · `go test ./internal/service/` ✅ |
+
+---
+
+## 0.31 سجل تكميلي: المرحلة 3 للملصقات — حدود القص المتجه الحقيقي للمطابع (Die-Cut Offset) — 2 أكتوبر 2026
+
+**المرجع:** إغلاق فجوة المرحلة 3 للملصقات المؤجلة في سجل 0.27 (حدود Die-cut كـ offset-path متجه حقيقي).
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| محرك توليد مسارات القص المتجه | `frontend/src/features/stickers/lib/die-cut-offset.ts`: استخراج الـ viewBox، وتوليد مسار مستطيل بحواف ناعمة موسَّع بنسبة نزف من أصغر بُعد (`bleedPercent` افتراضي 4% ≈ 2 مم على ملصق 50 مم). **بلا استدلال لشكل الملصق** — الحدّ مشتق من `viewBox` وحده لقاعدة السلامة: مستطيل ناعم يضمن احتواء العمل دائماً ولا يمكن أن يقصّ في غيره. ملف المقص يُصدَّر بلا أبعاد فيزيائية (المشغّل يحدّد الحجم) | `test/die-cut-offset.test.ts` (9 اختبارات، منها **اختبار انحدار بالقالب الحقيقي**) + تأكيد `mustNotContain` في `docs-gate` يمنع عودة استدلال الشكل |
+| طبقة CutContour القياسية للمطابع | توليد وسم `<g id="CutContour" inkscape:label="CutContour" data-role="die-cut-contour">` بلون الماجنتا القياسي للمطابع (`#FF00FF` بسماكة 1.5) المعترف به في مقصات Roland و Graphtec و Summa | مطابقة الكود الناتج مع معايير ماكينات ومقصات الفينيل |
+| خيارات التصدير الاحترافية في الاستوديو | `StickerStudioDialog.tsx`: إضافة خياري «SVG مع خط القص (CutContour)» و «خط القص فقط للمقصات (Plotter)» في قائمة التصدير | مراجعة الكود وفحص الواجهة |
+| بوابات الجودة والتوثيق | `vitest_test_files=103` وتأكيد كودي جديد في بوابة التوثيق (الإجمالي **27 تأكيداً**) | `node scripts/docs-gate.mjs --strict-refs` ✅ · `tsc --noEmit` ✅ · `eslint` 0 warnings ✅ |
+
+---
+
+## 0.30 سجل تكميلي: نظام حماية الانهيار والتعافي (Crash Guard & Recovery) — 2 أكتوبر 2026
+
+**المرجع:** إغلاق الفجوة التشغيلية للانهيار الصامت للملف التنفيذي الواحد (رُصدت في `comprehensive-app-review.md`).
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| التقاط الـ Panic في رنتايم Wails v3 | ربط `PanicHandler` في `main.go` لالتقاط أي انهيار مُميت وتمريره لـ `CrashGuardService`، ثم **إعادة فرض الإنهاء الفوري** (`HandleFatalPanic` ⇒ `exitProcess(1)` عبر `defer`) لأن المعالج المخصص يُلغي `defaultPanicHandler` ⇒ `os.Exit(1)` — لا استمرار بحالة فاسدة | تأكيد كودي في `scripts/docs-gate.mjs` + `TestCrashGuardService_HandleFatalPanicWritesThenExits` و`TestCrashGuardService_HandleFatalPanicExitsEvenIfPersistFails` |
+| تقرير الانهيار الذري المحلي (`crash-dump.json`) | `internal/service/crash_guard.go`: كتابة ذرية لتقرير JSON بصلاحيات 0600 (`utils.AtomicWriteFile`) يشمل التوقيت، الإصدار، المنصة والمعمارية، نص الخطأ، الـ Stack Trace، وفحص وجود مسودة `autosave.json` | `TestCrashGuardService_HandleAndRecover` (دورة حفظ وفحص وحذف كاملة) |
+| دوال جسر الـ IPC في Go | `app.go`: إضافة `CheckPendingCrashReport` و `DismissCrashReport` وتوليد ربطات Wails v3 تلقائياً بـ `wails3 generate bindings` | ربطات تايب سكريبت الرسمية في `frontend/bindings/grido/app.ts` |
+| حوار التعافي واسترجاع المشاريع | `frontend/src/components/crash-recovery-dialog.tsx`: نافذة Fluent 2 تظهر عند الإقلاع في `App.tsx` عند وجود تقرير، تتيح استعادة المسودة أو تجاهلها، مع إمكانية نسخ تفاصيل الخطأ لدعم المطورين محلياً (100% Local / Zero Secrets). **الإغلاق الضمني محجوب** (ESC/النقر خارج النافذة) حتى لا يمسح المسودة المستعادة بصمت | `frontend/test/crash-recovery-dialog.test.tsx` (8 حالات، منها اختبارا انحدار للإغلاق الضمني) |
+| بوابات الجودة والتوثيق | `vitest_test_files=102` و `go_test_files=33`؛ و26 تأكيد كودي في بوابة التوثيق الصارمة | `node scripts/docs-gate.mjs --strict-refs` ✅ · `tsc --noEmit` ✅ · `eslint` 0 warnings ✅ |
 
 ---
 
@@ -42,6 +97,8 @@
 
 **ما لا تفعله الميزة (حدود مقصودة):** لا تمنع المشاركة **التتابعية** (تسليم الحساب ساعة ثم استعادته) — الهدف جعلها غير عملية لا منعاً رياضياً؛ ولا تعتمد على بصمة عتاد إطلاقاً (معرّف الجلسة عشوائي لكل دخول)؛ والأوفلاين لا يطرد أبداً (الطرد فقط عند إثبات شبكي).
 
+**مخاطرة مقبولة بقرار تصميمي — UPSERT غير مشروط في `claim_session`:** أي حامل توكن صالح يستطيع حجز الجلسة فوراً، فتوكن مسروق يعني طرد المالك. والمالك يسترد جلسته بإعادة الدخول — أي تبادل طرد متكرر حتى تغيير كلمة المرور. هذا مقصود ضمنياً في خيار «الجلسة» بلا ربط بالعتاد. **تخفيفه المستقبلي المقترح:** تناوب الريفريش + تنبيه بريدي. ⚠️ لا تُسجَّل هذه الملاحظة داخل ملف الهجرة نفسها: `scripts/migration-lint.mjs` يفرض ثبات بصمات الهجرات المُطبَّقة (`supabase/migrations.manifest.json`)، فأي تعليق داخل هجرة سابقة يكسر الـ CI.
+
 ---
 
 ## 0.27 سجل تكميلي: موثوقية نصوص الملصقات العربية وقابلية النقل (29 سبتمبر 2026)
@@ -57,7 +114,7 @@
 | شيت الملصقات بنسبة ورق الطباعة | `sheet-generator.ts` (خيارات مليمترية + علامات قص بمقاسات المطبعة 2مم/5مم أسود) + `resolveStickerSheetMm()` في الاستوديو تستعمل `printSettings` الفعالة (A4 مع احترام landscape) بدل مربع 200×200 | حالة نسبة A4 غير المربعة في نفس الملف |
 
 **البوابات بعد الجلسة:** Vitest (الملفات الأربعة المعنية: sticker-text 7 + sticker-phase2 6 + sticker-templates 13 + svg-safety 9 = 35/35، ثم 26/26 بعد جولة التعديل) ✅ · `tsc --noEmit` ✅ · لم تُلمس ملفات Go ولا عقود IPC.
-**الفجوات المتبقية المقصودة (مرحلة 3 مؤجلة):** حدود Die-cut كـ offset-path متجه حقيقي (الحالية معاينة `drop-shadow` فقط) · استبدال تشكيل `curved-text-utils.ts` اليدوي بـ HarfBuzz الكامل · اتجاه تلقائي لأعمدة VDP.
+**الفجوات المتبقية المقصودة (مرحلة 3):** ✅ أُغلقت حدود Die-cut كـ offset-path متجه حقيقي في سجل 0.31 (`lib/die-cut-offset.ts` وطبقة CutContour) · استبدال تشكيل `curved-text-utils.ts` اليدوي بـ HarfBuzz الكامل · اتجاه تلقائي لأعمدة VDP.
 
 ---
 

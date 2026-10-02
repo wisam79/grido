@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"grido/internal/core/domain"
+	"grido/internal/utils"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,10 +57,10 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 		}
 
 		wg.Add(1)
-		go func(sy, ey int) {
+		utils.SafeGo("print.cmyk-convert", func() {
 			defer wg.Done()
 			if isRGBA {
-				for y := sy; y < ey; y++ {
+				for y := startY; y < endY; y++ {
 					srcOffset := y * rgba.Stride
 					dstOffset := y * cmykImg.Stride
 					for x := 0; x < w; x++ {
@@ -75,7 +76,7 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 					}
 				}
 			} else {
-				for y := sy; y < ey; y++ {
+				for y := startY; y < endY; y++ {
 					dstOffset := y * cmykImg.Stride
 					for x := 0; x < w; x++ {
 						r, g, b, _ := src.At(x, y).RGBA()
@@ -88,7 +89,7 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 					}
 				}
 			}
-		}(startY, endY)
+		})
 	}
 	wg.Wait()
 

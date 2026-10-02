@@ -59,7 +59,8 @@ func TestClaimAndCheckSession_LastWins(t *testing.T) {
 	}
 
 	// المخزن المحلي ما زال يحمل الأول ⇒ مطرود برسالة الطرد الصريحة
-	if ok, err := svc.verifyActiveSession(tok); ok || err == nil || !strings.Contains(err.Error(), "جهاز آخر") {
+	// (رمز ERR_SESSION_SUPERSEDED عقد ثابت يكشفه الواجه — license-slice.ts)
+	if ok, err := svc.verifyActiveSession(tok); ok || err == nil || !strings.Contains(err.Error(), "ERR_SESSION_SUPERSEDED") {
 		t.Fatalf("first session should be superseded: ok=%v err=%v", ok, err)
 	}
 }

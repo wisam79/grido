@@ -76,7 +76,8 @@ func InitDB() (*gorm.DB, error) {
 
 	// إضافة healthcheck دوري للاتصال بقاعدة البيانات مع إمكانية التوقف النظيف
 	dbStopPing = make(chan struct{})
-	go func(stopCh <-chan struct{}) {
+	stopPing := dbStopPing // ربط لحظة الإنشاء: لا يتأثر بإعادة تهيئة القناة
+	utils.SafeGo("repository.db-healthcheck", func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
 		for {
@@ -85,11 +86,11 @@ func InitDB() (*gorm.DB, error) {
 				if sqlDB.Ping() != nil {
 					slog.Error("Database connection lost")
 				}
-			case <-stopCh:
+			case <-stopPing:
 				return
 			}
 		}
-	}(dbStopPing)
+	})
 
 	// الهجرة التلقائية لجداول قاعدة البيانات
 	err = db.AutoMigrate(&domain.Project{}, &domain.UserProfile{}, &domain.CustomTemplate{})

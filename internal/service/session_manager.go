@@ -28,7 +28,9 @@ import (
 
 // ErrSessionSuperseded يُرجع عندما تثبت الشبكة أن جلسة أحدث حُجزت على الحساب
 // من جهاز آخر — الواجهة تعرضه كرسالة طرد صريحة مع زر دخول من جديد.
-var ErrSessionSuperseded = errors.New("تم تسجيل الدخول إلى حسابك من جهاز آخر — هذه الجلسة لم تعد نشطة")
+// ⚠️ البادئة ERR_SESSION_SUPERSEDED عقد ثابت: الواجهة (license-slice.ts) تكشف
+// الطرد بمطابقتها حرفياً — لا تغيّرها دون تحديث الواجهة وdocs-gate.
+var ErrSessionSuperseded = errors.New("ERR_SESSION_SUPERSEDED: تم تسجيل الدخول إلى حسابك من جهاز آخر — هذه الجلسة لم تعد نشطة")
 
 // sessionCheckResult نتيجة فحص check_session.
 type sessionCheckResult struct {

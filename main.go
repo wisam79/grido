@@ -33,6 +33,22 @@ func main() {
 	// 🪵 تهيئة نظام التسجيل الموحد الوحيد (lumberjack + slog) — ملف واحد داخل logs/
 	service.InitLogger()
 
+	// 🧯 ربط panics الـ goroutines بمسار الانهيار الموحّد — قبل إطلاق أي
+	// goroutine محمية أدناه؛ فـ PanicHandler في Wails لا يرى إلا مساراته المُدارة.
+	utils.SetPanicReporter(service.ReportGoroutinePanic)
+
+	// 🧯 التعافي من الانهيار: العملية الجديدة تحمل وسم --crash-relaunch، فتنتظر
+	// قليلاً حتى تُفلت العملية المنهارة قفل النسخة الواحدة قبل تهيئة Wails؛
+	// وإلا ظنّت نفسها نسخة ثانية وهربت صامتة. أي إقلاع بلا الوسم إقلاع يدوي ⇒
+	// انتهت سلسلة الانهيارات السابقة فتُصفّر حارس إعادات التشغيل.
+	if service.IsCrashRelaunch(os.Args[1:]) {
+		slog.Info("Crash relaunch detected — waiting for the previous instance lock to be released",
+			"delay", service.CrashRelaunchSettleDelay.String())
+		time.Sleep(service.CrashRelaunchSettleDelay)
+	} else if err := service.ClearCrashRestartGuard(); err != nil {
+		slog.Warn("Failed to clear crash restart guard", "error", err.Error())
+	}
+
 	// 🗄️ تهيئة قاعدة بيانات SQLite المحلية
 	db, err := repository.InitDB()
 	if err != nil {
@@ -41,7 +57,7 @@ func main() {
 	}
 
 	// تشغيل تنظيف الصور غير المستخدمة في الخلفية لتفادي تراكمها
-	go repository.CleanupUnusedMedia()
+	utils.SafeGo("repository.CleanupUnusedMedia", repository.CleanupUnusedMedia)
 
 	// 🧹 تنظيف كاش الويب في بيئة التطوير لتفادي الكاش القديم للمتصفح
 	if isDevMode() {
@@ -143,6 +159,25 @@ func main() {
 	wailsApp := application.New(application.Options{
 		Name:        "Grido Studio",
 		Description: "Professional Photo & Collage Studio",
+		PanicHandler: func(panicDetails *application.PanicDetails) {
+			slog.Error("Fatal panic intercepted by Wails PanicHandler",
+				"error", panicDetails.Error,
+				"time", panicDetails.Time,
+			)
+			if appInstance != nil && appInstance.crashGuardSvc != nil {
+				stack := panicDetails.FullStackTrace
+				if stack == "" {
+					stack = panicDetails.StackTrace
+				}
+				// حفظ ذري ثم إعادة تشغيل تلقائية (بحدود حارس الحلقات) ثم إنهاء
+				// فوري: تسجيل PanicHandler مخصص يُلغي مسار الانهيار الافتراضي في
+				// Wails، ولا يجوز الاستمرار بحالة فاسدة.
+				appInstance.crashGuardSvc.HandleFatalPanic(panicDetails.Error, stack)
+			}
+			// شبكة أمان أخيرة: أي panic يصل إلى هنا يُنهي العملية بالرمز 1 كما
+			// يفعل Wails افتراضياً — حتى لو تعذّر الحفظ أو غابت خدمة الرصد.
+			os.Exit(1)
+		},
 		Services: []application.Service{
 			application.NewService(appInstance),
 			application.NewService(projectHandler),
@@ -318,13 +353,13 @@ func main() {
 
 	// ⏱️ حفظ دوري كل 30 ثانية — يحمي من فقدان الحالة عند الإغلاق القسري
 	// (kill, crash, انقطاع كهربائي). الحفظ ذري (AtomicWriteFile) فلا فساد.
-	go func() {
+	utils.SafeGo("main.window-state-autosave", func() {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
 			_ = saveWindowState(buildWindowState())
 		}
-	}()
+	})
 
 	// إيقاف الخدمات وتنظيف الموارد عند إغلاق التطبيق
 	wailsApp.OnShutdown(func() {

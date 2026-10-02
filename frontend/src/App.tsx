@@ -19,7 +19,15 @@ import {
   type FreeformTab,
 } from '@/hooks/use-workspace-panels';
 import { ErrorBoundary } from '@/components/error-boundary';
-import { GetStartupFile, ProcessLocalImageFile } from '../wailsjs/go/main/App';
+import {
+  GetStartupFile,
+  ProcessLocalImageFile,
+  CheckPendingCrashReport,
+  DismissCrashReport,
+  ClearAutoSave,
+} from '../wailsjs/go/main/App';
+import type { CrashReport } from '../bindings/grido/internal/service/models';
+import { CrashRecoveryDialog } from '@/components/crash-recovery-dialog';
 import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime';
 
 const ExportDialog = lazy(() =>
@@ -96,6 +104,7 @@ export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [crashReport, setCrashReport] = useState<CrashReport | null>(null);
 
   const panelsHook = useWorkspacePanels();
   const isTemplatesOpen =
@@ -105,6 +114,36 @@ export default function App() {
   const { theme, themeMode, toggleTheme } = useTheme();
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
+
+  // الاستعادة ضمنية: useAutoSave() حمّل المسودة تلقائياً عند الإقلاع،
+  // فهنا نكتفي بإقرار التقرير دون loadProject مزدوج.
+  const handleRecoverCrash = async () => {
+    try {
+      if (typeof DismissCrashReport === 'function') {
+        await DismissCrashReport();
+      }
+    } catch (e) {
+      console.error('Failed to dismiss crash report:', e);
+    }
+    setCrashReport(null);
+    toast.success('تم استعادة المسودة بنجاح ومتابعة العمل');
+  };
+
+  const handleDismissCrash = async () => {
+    try {
+      if (typeof DismissCrashReport === 'function') {
+        await DismissCrashReport();
+      }
+      if (typeof ClearAutoSave === 'function') {
+        await ClearAutoSave();
+      }
+      useEditorStore.getState().reset();
+    } catch (e) {
+      console.error('Failed to dismiss crash report:', e);
+    }
+    setCrashReport(null);
+    toast.info('تم بدء مشروع جديد');
+  };
 
   const { togglePanel, openPanel, toggleZenMode, selectCollageTab, selectStudioTab } = panelsHook;
 
@@ -210,13 +249,24 @@ export default function App() {
         if (!profile || !profile.token) {
           setAccountModalOpen(true);
         }
-        void useEditorStore.getState().hydrateAiUsageLogs();
         // ملء سجلات استخدام AI من AppData (مع ترحيل localStorage القديم)
+        void useEditorStore.getState().hydrateAiUsageLogs();
         // فحص وجود صورة ممررة عند الإقلاع (مثل النقر بالزر الأيمن "فتح بواسطة" في ويندوز)
         try {
           if (typeof GetStartupFile === 'function') {
             const startupUrl = await GetStartupFile();
             if (startupUrl) void addImageFromSrc(startupUrl, { setSingleMode: true });
+          }
+        } catch {
+          // تجاهل الخطأ في بيئة الاختبارات عند عدم توفر واجهة Wails
+        }
+        // فحص وجود تقرير انهيار سابق من الرنتايم
+        try {
+          if (typeof CheckPendingCrashReport === 'function') {
+            const report = await CheckPendingCrashReport();
+            if (report) {
+              setCrashReport(report);
+            }
           }
         } catch {
           // تجاهل الخطأ في بيئة الاختبارات عند عدم توفر واجهة Wails
@@ -750,6 +800,12 @@ export default function App() {
 
           <AccountLicenseModal />
           <UpdateNotifier />
+          <CrashRecoveryDialog
+            open={crashReport !== null}
+            report={crashReport}
+            onRecover={handleRecoverCrash}
+            onDismiss={handleDismissCrash}
+          />
 
           <SonnerToaster position="top-center" duration={1500} offset={56} closeButton />
           <KeyboardShortcutsDialog />

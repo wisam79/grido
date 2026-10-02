@@ -55,7 +55,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	// نحذف ملفات الطباعة print_* فقط — لا نلمس ملفات المستخدم الخاصة.
 	// الحارس الذري يمنع طوفان Goroutines في عمليات الطباعة الدفعية المتتالية.
 	if exportsCleanup.CompareAndSwap(false, true) {
-		go func() {
+		utils.SafeGo("print.exports-cleanup", func() {
 			defer exportsCleanup.Store(false)
 			if files, err := os.ReadDir(outDir); err == nil {
 				for _, f := range files {
@@ -70,7 +70,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 					}
 				}
 			}
-		}()
+		})
 	}
 
 	baseName := fmt.Sprintf("print_%d", time.Now().UnixNano())

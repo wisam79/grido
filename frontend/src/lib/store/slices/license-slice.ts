@@ -108,14 +108,19 @@ async function loadAiLogs(): Promise<AiUsageRecord[]> {
 }
 
 // 🛡️ الجلسة الواحدة النشطة (Last-Wins): كشف خطأ الطرد القادم من Go
-// (ErrSessionSuperseded) — نصه العربي ثابت في session_manager.go.
-const SESSION_SUPERSEDED_MARK = 'جهاز آخر';
+// (ErrSessionSuperseded) عبر رمز ثابت لا نصاً عربياً — الصياغة قابلة للتغيير
+// في session_manager.go دون كسر الكشف، والرمز جزء من عقد الطرد.
+const SESSION_SUPERSEDED_MARK = 'ERR_SESSION_SUPERSEDED';
+const SESSION_SUPERSEDED_FALLBACK =
+  'تم تسجيل الدخول إلى حسابك من جهاز آخر — هذه الجلسة لم تعد نشطة';
 export function isSessionSupersededError(err: unknown): boolean {
   return toErrorMessage(err, '').includes(SESSION_SUPERSEDED_MARK);
 }
 export function sessionSupersededMessage(err: unknown): string {
-  const msg = toErrorMessage(err, '');
-  return msg || 'تم تسجيل الدخول إلى حسابك من جهاز آخر — هذه الجلسة لم تعد نشطة';
+  const msg = toErrorMessage(err, '')
+    .replace(SESSION_SUPERSEDED_MARK + ': ', '')
+    .trim();
+  return msg || SESSION_SUPERSEDED_FALLBACK;
 }
 
 // جيل الطلبات: يمنع نداء checkLicenseStatus قديماً (in-flight) من استعادة
