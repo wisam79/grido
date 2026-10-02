@@ -467,8 +467,16 @@ export function autoDetectAllDocumentCorners(
           const s1Score = evaluateCandidateQuad(splits[0].corners, sw, sh, mag, gray, maxMag);
           const s2Score = evaluateCandidateQuad(splits[1].corners, sw, sh, mag, gray, maxMag);
           if (s1Score > 0.12 && s2Score > 0.12 && s1Score + s2Score > cand.score * 1.25) {
-            finalCandidates.push({ quad: splits[0].corners, score: s1Score });
-            finalCandidates.push({ quad: splits[1].corners, score: s2Score });
+            finalCandidates.push({
+              quad: splits[0].corners,
+              score: s1Score,
+              aspectType: splits[0].aspectType,
+            });
+            finalCandidates.push({
+              quad: splits[1].corners,
+              score: s2Score,
+              aspectType: splits[1].aspectType,
+            });
             continue;
           }
         }
@@ -512,8 +520,16 @@ export function autoDetectAllDocumentCorners(
           const s1Score = evaluateCandidateQuad(splits[0].corners, sw, sh, mag, gray, maxMag);
           const s2Score = evaluateCandidateQuad(splits[1].corners, sw, sh, mag, gray, maxMag);
           if (s1Score > 0.12 && s2Score > 0.12 && s1Score + s2Score > cand.score * 1.25) {
-            finalCandidates.push({ quad: splits[0].corners, score: s1Score });
-            finalCandidates.push({ quad: splits[1].corners, score: s2Score });
+            finalCandidates.push({
+              quad: splits[0].corners,
+              score: s1Score,
+              aspectType: splits[0].aspectType,
+            });
+            finalCandidates.push({
+              quad: splits[1].corners,
+              score: s2Score,
+              aspectType: splits[1].aspectType,
+            });
             continue;
           }
         }
@@ -534,7 +550,7 @@ export function autoDetectAllDocumentCorners(
     }));
 
     const sorted = sortCornerPoints(scaledCorners);
-    const aspect = inferSmartDocumentAspect(sorted);
+    const aspect = cand.aspectType ?? inferSmartDocumentAspect(sorted);
 
     const confidence = Math.min(0.99, Math.max(0.4, Math.round((cand.score / 1.5) * 100) / 100));
 

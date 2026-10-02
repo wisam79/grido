@@ -176,7 +176,7 @@ wails3 task package
 ```
 The installer is produced at `build/windows/nsis/GridoStudio-installer.exe`.
 
-> ⚠️ **تحذير أدوات:** `go vet ./...` و`go build ./...` يفشلان بسبب مجلد قالب Wails `build/ios/scripts/deps` (خارج نطاق التطبيق). استخدم `go vet ./internal/...` و`go build .`.
+> ℹ️ **ملاحظة أدوات:** `go vet ./...` و`go build ./...` يعملان بصورة تامة ومباشرة بعد إزالة سقالات الهواتف غير المستخدمة (`build/ios` و`build/android`).
 
 ---
 

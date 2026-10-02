@@ -1,4 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from 'react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('batch-insert-dialog');
 import {
   Dialog,
   DialogContent,
@@ -7,11 +10,11 @@ import {
   DialogFooter,
   DialogDescription,
   DialogCloseButton,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import {
   SquaresFour,
   FolderOpen,
@@ -22,15 +25,15 @@ import {
   Check,
   Minus,
   Stack,
-} from "@/components/ui/icons";
-import { openImageFileDialog, openDirectoryImageDialog } from "@/lib/io/file-dialog-utils";
-import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
-import { useEditorStore } from "@/lib/editor-store";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { useShallow } from "zustand/react/shallow";
-import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
-import { wailsIsDesktop } from "@/lib/wails-env";
+} from '@/components/ui/icons';
+import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
+import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import { useEditorStore } from '@/lib/editor-store';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { useShallow } from 'zustand/react/shallow';
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { wailsIsDesktop } from '@/lib/wails-env';
 
 export interface BatchInsertDialogProps {
   open: boolean;
@@ -56,29 +59,23 @@ export function BatchInsertDialog({
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Layout settings
-  const [layoutMode, setLayoutMode] = useState<"grid" | "cascade" | "collage">("grid");
+  const [layoutMode, setLayoutMode] = useState<'grid' | 'cascade' | 'collage'>('grid');
   const [columns, setColumns] = useState<number>(0); // 0 = Auto
   const [gapPx, setGapPx] = useState<number>(24);
   const [marginPx, setMarginPx] = useState<number>(40);
   const [centerLastRow, setCenterLastRow] = useState<boolean>(true);
 
-  const {
-    mode,
-    slots,
-    setSlotImagesBatch,
-    addImageElementsBatch,
-    canvasWidth,
-    canvasHeight,
-  } = useEditorStore(
-    useShallow((state) => ({
-      mode: state.mode,
-      slots: state.slots,
-      setSlotImagesBatch: state.setSlotImagesBatch,
-      addImageElementsBatch: state.addImageElementsBatch,
-      canvasWidth: state.canvasWidth,
-      canvasHeight: state.canvasHeight,
-    }))
-  );
+  const { mode, slots, setSlotImagesBatch, addImageElementsBatch, canvasWidth, canvasHeight } =
+    useEditorStore(
+      useShallow((state) => ({
+        mode: state.mode,
+        slots: state.slots,
+        setSlotImagesBatch: state.setSlotImagesBatch,
+        addImageElementsBatch: state.addImageElementsBatch,
+        canvasWidth: state.canvasWidth,
+        canvasHeight: state.canvasHeight,
+      })),
+    );
 
   // Reset states when dialog opens / closes (Wait UX Invariant)
   useEffect(() => {
@@ -139,12 +136,12 @@ export function BatchInsertDialog({
 
       for (let i = 0; i < fileSrcs.length; i++) {
         let src = fileSrcs[i];
-        if (isDesktop && src.startsWith("data:image/")) {
+        if (isDesktop && src.startsWith('data:image/')) {
           try {
             const localPath = await SaveImageFromBase64(src);
             if (localPath) src = localPath;
           } catch (e) {
-            console.error("SaveImageFromBase64 failed:", e);
+            logger.error('SaveImageFromBase64 failed:', e);
           }
         }
         const aspect = await resolveImageAspectRatio(src);
@@ -159,8 +156,8 @@ export function BatchInsertDialog({
       setImages((prev) => [...prev, ...newItems]);
       toast.success(`تمت إضافة ${newItems.length} صورة للقائمة`);
     } catch (err) {
-      console.error("Add files error:", err);
-      toast.error("فشل استيراد الصور");
+      logger.error('Add files error:', err);
+      toast.error('فشل استيراد الصور');
     } finally {
       setLoading(false);
     }
@@ -178,12 +175,12 @@ export function BatchInsertDialog({
 
       for (let i = 0; i < fileSrcs.length; i++) {
         let src = fileSrcs[i];
-        if (isDesktop && src.startsWith("data:image/")) {
+        if (isDesktop && src.startsWith('data:image/')) {
           try {
             const localPath = await SaveImageFromBase64(src);
             if (localPath) src = localPath;
           } catch (e) {
-            console.error("SaveImageFromBase64 directory failed:", e);
+            logger.error('SaveImageFromBase64 directory failed:', e);
           }
         }
         const aspect = await resolveImageAspectRatio(src);
@@ -198,8 +195,8 @@ export function BatchInsertDialog({
       setImages((prev) => [...prev, ...newItems]);
       toast.success(`تم استيراد ${newItems.length} صورة`);
     } catch (err) {
-      console.error("Add directory error:", err);
-      toast.error("فشل استيراد صور المجلد");
+      logger.error('Add directory error:', err);
+      toast.error('فشل استيراد صور المجلد');
     } finally {
       setLoading(false);
     }
@@ -213,7 +210,7 @@ export function BatchInsertDialog({
           return { ...img, copies: nextCopies };
         }
         return img;
-      })
+      }),
     );
   };
 
@@ -232,7 +229,7 @@ export function BatchInsertDialog({
   // Execute Batch Insertion
   const handleExecute = async () => {
     if (images.length === 0) {
-      toast.error("اختر صورة واحدة على الأقل");
+      toast.error('اختر صورة واحدة على الأقل');
       return;
     }
 
@@ -251,7 +248,7 @@ export function BatchInsertDialog({
         }
       }
 
-      if (layoutMode === "collage" || mode === "collage") {
+      if (layoutMode === 'collage' || mode === 'collage') {
         // Collage mode insertion
         const assignments: { slotId: string; src: string }[] = [];
         slots.forEach((slot, index) => {
@@ -267,13 +264,13 @@ export function BatchInsertDialog({
           setSlotImagesBatch(assignments, expandedItems[0]?.src || null);
           toast.success(`تم ملء ${assignments.length} خانة في الكولاج`);
         } else {
-          toast.error("لا توجد خانات كولاج كافية");
+          toast.error('لا توجد خانات كولاج كافية');
           return;
         }
       } else {
         // Canvas freeform / grid insertion
         addImageElementsBatch(expandedItems, {
-          layoutMode: layoutMode === "cascade" ? "cascade" : "grid",
+          layoutMode: layoutMode === 'cascade' ? 'cascade' : 'grid',
           columns: columns > 0 ? columns : undefined,
           gapPx,
           marginPx,
@@ -285,8 +282,8 @@ export function BatchInsertDialog({
       setImages([]);
       onOpenChange(false);
     } catch (err) {
-      console.error("Execute batch insert error:", err);
-      toast.error("فشل تنفيذ الإدراج المتعدد");
+      logger.error('Execute batch insert error:', err);
+      toast.error('فشل تنفيذ الإدراج المتعدد');
     } finally {
       setIsProcessing(false);
     }
@@ -414,10 +411,19 @@ export function BatchInsertDialog({
                   اضغط "إدراج صور" أو "إدراج مجلد"
                 </p>
                 <div className="flex items-center gap-2 mt-4">
-                  <Button size="sm" onClick={handleAddFiles} className="h-8 gap-1.5 text-xs rounded-md">
+                  <Button
+                    size="sm"
+                    onClick={handleAddFiles}
+                    className="h-8 gap-1.5 text-xs rounded-md"
+                  >
                     <Plus className="w-3.5 h-3.5 shrink-0" weight="bold" /> اختيار صور
                   </Button>
-                  <Button size="sm" variant="outline" onClick={handleAddDirectory} className="h-8 gap-1.5 text-xs rounded-md">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAddDirectory}
+                    className="h-8 gap-1.5 text-xs rounded-md"
+                  >
                     <FolderOpen className="w-3.5 h-3.5 shrink-0" weight="bold" /> اختيار مجلد
                   </Button>
                 </div>
@@ -501,12 +507,14 @@ export function BatchInsertDialog({
               <div className="grid grid-cols-2 gap-1.5">
                 <Button
                   type="button"
-                  variant={layoutMode === "grid" ? "default" : "outline"}
+                  variant={layoutMode === 'grid' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setLayoutMode("grid")}
+                  onClick={() => setLayoutMode('grid')}
                   className={cn(
-                    "h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-all border-border/60",
-                    layoutMode === "grid" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-muted/60 text-foreground"
+                    'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-all border-border/60',
+                    layoutMode === 'grid'
+                      ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
+                      : 'hover:bg-muted/60 text-foreground',
                   )}
                 >
                   <SquaresFour className="w-3.5 h-3.5 shrink-0" weight="bold" />
@@ -515,12 +523,14 @@ export function BatchInsertDialog({
 
                 <Button
                   type="button"
-                  variant={layoutMode === "cascade" ? "default" : "outline"}
+                  variant={layoutMode === 'cascade' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setLayoutMode("cascade")}
+                  onClick={() => setLayoutMode('cascade')}
                   className={cn(
-                    "h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-all border-border/60",
-                    layoutMode === "cascade" ? "bg-primary text-primary-foreground shadow-2xs font-bold" : "hover:bg-muted/60 text-foreground"
+                    'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-all border-border/60',
+                    layoutMode === 'cascade'
+                      ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
+                      : 'hover:bg-muted/60 text-foreground',
                   )}
                 >
                   <Stack className="w-3.5 h-3.5 shrink-0" weight="bold" />
@@ -529,14 +539,14 @@ export function BatchInsertDialog({
               </div>
             </div>
 
-            {layoutMode === "grid" && (
+            {layoutMode === 'grid' && (
               <>
                 {/* Columns */}
                 <div className="space-y-2 pt-1 border-t border-border/30">
                   <div className="flex items-center justify-between text-xs">
                     <Label className="text-xs font-semibold text-foreground">عدد الأعمدة</Label>
                     <span className="font-bold text-primary">
-                      {columns === 0 ? "تلقائي ذكي" : `${columns} أعمدة`}
+                      {columns === 0 ? 'تلقائي ذكي' : `${columns} أعمدة`}
                     </span>
                   </div>
                   <Slider
@@ -559,7 +569,9 @@ export function BatchInsertDialog({
                 {/* Spacing / Gap */}
                 <div className="space-y-2 pt-1 border-t border-border/30">
                   <div className="flex items-center justify-between text-xs">
-                    <Label className="text-xs font-semibold text-foreground">المسافة البينية (Gap)</Label>
+                    <Label className="text-xs font-semibold text-foreground">
+                      المسافة البينية (Gap)
+                    </Label>
                     <span className="font-bold text-muted-foreground">{gapPx} px</span>
                   </div>
                   <Slider
@@ -575,7 +587,9 @@ export function BatchInsertDialog({
                 {/* Margin */}
                 <div className="space-y-2 pt-1 border-t border-border/30">
                   <div className="flex items-center justify-between text-xs">
-                    <Label className="text-xs font-semibold text-foreground">الهوامش (Margin)</Label>
+                    <Label className="text-xs font-semibold text-foreground">
+                      الهوامش (Margin)
+                    </Label>
                     <span className="font-bold text-muted-foreground">{marginPx} px</span>
                   </div>
                   <Slider
@@ -594,15 +608,12 @@ export function BatchInsertDialog({
                     <Label className="text-xs font-medium text-foreground">توسيط الصف الأخير</Label>
                     <p className="text-xs text-muted-foreground">توسيط عناصر الصف الناقص</p>
                   </div>
-                  <Switch
-                    checked={centerLastRow}
-                    onCheckedChange={setCenterLastRow}
-                  />
+                  <Switch checked={centerLastRow} onCheckedChange={setCenterLastRow} />
                 </div>
               </>
             )}
 
-            {mode === "collage" && (
+            {mode === 'collage' && (
               <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20 text-xs text-primary/90 mt-2">
                 وضع الكولاج: تُملأ الخانات بترتيب الصور.
               </div>
@@ -640,7 +651,7 @@ export function BatchInsertDialog({
               className="h-8 rounded-md bg-primary text-primary-foreground gap-1.5 text-xs font-semibold px-4 shadow-sm"
             >
               <Check className="w-4 h-4 shrink-0" weight="bold" />
-              {isProcessing ? "جاري الإدراج ..." : "إدراج"}
+              {isProcessing ? 'جاري الإدراج ...' : 'إدراج'}
             </Button>
           </div>
         </DialogFooter>

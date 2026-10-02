@@ -28,6 +28,9 @@ import { PhoneBridgeDialog } from '../dialogs/phone-bridge-dialog';
 import { ClearAutoSave, SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
 import { wailsIsDesktop } from '@/lib/wails-env';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('toolbar-file-ops');
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 
 // معالجة متوازية مقيدة التزامن — تمنع تجميد الزر أثناء حفظ/قياس دفعات الصور
@@ -116,7 +119,7 @@ export function ToolbarFileOps() {
                   const localPath = await SaveImageFromBase64(b64);
                   if (localPath) return localPath;
                 } catch (e) {
-                  console.error('Failed to save image locally:', e);
+                  logger.error('Failed to save image locally:', e);
                 }
               }
               return b64;
@@ -149,7 +152,7 @@ export function ToolbarFileOps() {
                 const localPath = await SaveImageFromBase64(finalSrc);
                 if (localPath) finalSrc = localPath;
               } catch (e) {
-                console.error('Failed to save image locally in single mode:', e);
+                logger.error('Failed to save image locally in single mode:', e);
               }
             }
             const aspect = await resolveImageAspectRatio(finalSrc);
@@ -164,7 +167,7 @@ export function ToolbarFileOps() {
                   const localPath = await SaveImageFromBase64(b64);
                   if (localPath) finalSrc = localPath;
                 } catch (e) {
-                  console.error('Failed to save image locally in batch mode:', e);
+                  logger.error('Failed to save image locally in batch mode:', e);
                 }
               }
               const aspect = await resolveImageAspectRatio(finalSrc);
@@ -176,7 +179,7 @@ export function ToolbarFileOps() {
         }
       }
     } catch (e) {
-      console.error(e);
+      logger.error('Failed to open file in toolbar:', e);
       toast.error('فشل فتح الصورة');
     } finally {
       setIsFileDialogOpen(false);
@@ -196,7 +199,7 @@ export function ToolbarFileOps() {
 
   const confirmClearCanvas = () => {
     useEditorStore.getState().reset();
-    ClearAutoSave().catch((err) => console.error('Failed to clear autosave:', err));
+    ClearAutoSave().catch((err) => logger.error('Failed to clear autosave:', err));
   };
 
   return (

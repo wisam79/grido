@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
-import { toErrorMessage } from "@/lib/wails-error";
+import { useState, useEffect } from 'react';
+import { toErrorMessage } from '@/lib/wails-error';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('projects-dialog');
 import {
   Dialog,
   DialogContent,
@@ -9,21 +12,33 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogCloseButton,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { FluentSegmentedControl } from "@/components/ui/blocks";
-import { useEditorStore } from "@/lib/editor-store";
-import { serializeEditorState, projectFileToDomainProject, domainProjectToProjectFile } from "@/lib/io/project-serializer";
-import { SaveProject, GetAllProjects, DeleteProject } from "../../../../wailsjs/go/handlers/ProjectHandler";
-import { ExportBackup, ImportBackup, ResetLibrary } from "../../../../wailsjs/go/handlers/BackupHandler";
-import { SaveFileDialog } from "../../../../wailsjs/go/main/App";
-import { domain } from "../../../../wailsjs/go/models";
-import { toast } from "sonner";
-import { Spinner } from "@/components/ui/huge-icon";
-import { ProjectsSkeleton } from "@/components/ui/skeleton";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { FluentSegmentedControl } from '@/components/ui/blocks';
+import { useEditorStore } from '@/lib/editor-store';
+import {
+  serializeEditorState,
+  projectFileToDomainProject,
+  domainProjectToProjectFile,
+} from '@/lib/io/project-serializer';
+import {
+  SaveProject,
+  GetAllProjects,
+  DeleteProject,
+} from '../../../../wailsjs/go/handlers/ProjectHandler';
+import {
+  ExportBackup,
+  ImportBackup,
+  ResetLibrary,
+} from '../../../../wailsjs/go/handlers/BackupHandler';
+import { SaveFileDialog } from '../../../../wailsjs/go/main/App';
+import { domain } from '../../../../wailsjs/go/models';
+import { toast } from 'sonner';
+import { Spinner } from '@/components/ui/huge-icon';
+import { ProjectsSkeleton } from '@/components/ui/skeleton';
 import {
   FolderOpen,
   FloppyDisk,
@@ -37,7 +52,7 @@ import {
   ArrowsDownUp,
   PushPin,
   PushPinSlash,
-} from "@/components/ui/icons";
+} from '@/components/ui/icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,25 +62,30 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { uid } from "@/lib/utils";
+} from '@/components/ui/alert-dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { uid } from '@/lib/utils';
 
 interface ProjectsDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
-  defaultTab?: "save" | "list";
+  defaultTab?: 'save' | 'list';
 }
 
-export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save" }: ProjectsDialogProps) {
+export function ProjectsDialog({
+  open,
+  onOpenChange,
+  trigger,
+  defaultTab = 'save',
+}: ProjectsDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = open !== undefined;
   const isOpen = isControlled ? open : internalOpen;
   const setIsOpen = isControlled ? onOpenChange : setInternalOpen;
 
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
-  const [projectName, setProjectName] = useState("");
+  const [projectName, setProjectName] = useState('');
   const [projectsList, setProjectsList] = useState<domain.Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -73,26 +93,28 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
   // Backup & Import states
   const [backupActionLoading, setBackupActionLoading] = useState(false);
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
-  const [importJsonData, setImportJsonData] = useState("");
-  const [importMode, setImportMode] = useState<"merge" | "overwrite">("merge");
+  const [importJsonData, setImportJsonData] = useState('');
+  const [importMode, setImportMode] = useState<'merge' | 'overwrite'>('merge');
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   // Search & Sort & Pin states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"date_desc" | "date_asc" | "name_asc">("date_desc");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'name_asc'>('date_desc');
   const [pinnedProjects, setPinnedProjects] = useState<string[]>(() => {
     try {
-      const savedPinned = localStorage.getItem("grido_pinned_projects");
+      const savedPinned = localStorage.getItem('grido_pinned_projects');
       if (savedPinned) return JSON.parse(savedPinned);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return [];
   });
 
   const togglePin = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setPinnedProjects(prev => {
-      const newPinned = prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id];
-      localStorage.setItem("grido_pinned_projects", JSON.stringify(newPinned));
+    setPinnedProjects((prev) => {
+      const newPinned = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
+      localStorage.setItem('grido_pinned_projects', JSON.stringify(newPinned));
       return newPinned;
     });
   };
@@ -104,8 +126,8 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       const list = await GetAllProjects();
       setProjectsList(list || []);
     } catch (err) {
-      console.error("Failed to load projects:", err);
-      toast.error(toErrorMessage(err, "فشل تحميل المشاريع"));
+      logger.error('Failed to load projects:', err);
+      toast.error(toErrorMessage(err, 'فشل تحميل المشاريع'));
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +152,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
 
   const handleSave = async () => {
     if (!projectName.trim()) {
-      toast.error("أدخل اسم المشروع");
+      toast.error('أدخل اسم المشروع');
       return;
     }
 
@@ -142,15 +164,19 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       const projectData = projectFileToDomainProject(projectFile, currentId, projectName);
 
       await SaveProject(projectData);
-      toast.success(state.projectId ? "تم تحديث المشروع بنجاح" : "تم حفظ المشروع بنجاح في قاعدة البيانات المحلية");
-      setProjectName("");
+      toast.success(
+        state.projectId
+          ? 'تم تحديث المشروع بنجاح'
+          : 'تم حفظ المشروع بنجاح في قاعدة البيانات المحلية',
+      );
+      setProjectName('');
       // تحديث المعرف في الستور ليكون هذا المعرف إذا كان جديداً
       useEditorStore.setState({ projectId: currentId });
       fetchProjects();
-      setActiveTab("list"); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ
+      setActiveTab('list'); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ
     } catch (err) {
-      console.error("Failed to save project:", err);
-      toast.error(toErrorMessage(err, "فشل حفظ المشروع"));
+      logger.error('Failed to save project:', err);
+      toast.error(toErrorMessage(err, 'فشل حفظ المشروع'));
     } finally {
       setIsLoading(false);
     }
@@ -167,8 +193,8 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       setProjectName(project.name);
       setIsOpen?.(false);
     } catch (err) {
-      console.error("Failed to load project details:", err);
-      toast.error(toErrorMessage(err, "فشل تحميل المشروع"));
+      logger.error('Failed to load project details:', err);
+      toast.error(toErrorMessage(err, 'فشل تحميل المشروع'));
     }
   };
 
@@ -181,7 +207,7 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     if (!deleteId) return;
     try {
       await DeleteProject(deleteId);
-      toast.success("تم حذف المشروع");
+      toast.success('تم حذف المشروع');
       // إذا كان هذا هو المشروع المفتوح حالياً، فمسح المعرف
       const state = useEditorStore.getState();
       if (state.projectId === deleteId) {
@@ -189,8 +215,8 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       }
       fetchProjects();
     } catch (err) {
-      console.error("Failed to delete project:", err);
-      toast.error(toErrorMessage(err, "فشل حذف المشروع"));
+      logger.error('Failed to delete project:', err);
+      toast.error(toErrorMessage(err, 'فشل حذف المشروع'));
     } finally {
       setDeleteId(null);
     }
@@ -201,20 +227,25 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     setBackupActionLoading(true);
     try {
       const dataStr = await ExportBackup();
-      if (!dataStr || dataStr === "[]" || dataStr === "null") {
-        toast.warning("لا توجد مشاريع لتصديرها");
+      if (!dataStr || dataStr === '[]' || dataStr === 'null') {
+        toast.warning('لا توجد مشاريع لتصديرها');
         return;
       }
-      
-      const res = await SaveFileDialog(dataStr, "grido_backup.json", "Grido Backup (*.json)", "*.json");
-      if (res === "success") {
-        toast.success("تم تصدير النسخة الاحتياطية");
-      } else if (res === "") {
-        toast.info("تم إلغاء التصدير");
+
+      const res = await SaveFileDialog(
+        dataStr,
+        'grido_backup.json',
+        'Grido Backup (*.json)',
+        '*.json',
+      );
+      if (res === 'success') {
+        toast.success('تم تصدير النسخة الاحتياطية');
+      } else if (res === '') {
+        toast.info('تم إلغاء التصدير');
       }
     } catch (err) {
-      console.error(err);
-      toast.error(toErrorMessage(err, "فشل تصدير النسخة الاحتياطية"));
+      logger.error('Failed to export backup:', err);
+      toast.error(toErrorMessage(err, 'فشل تصدير النسخة الاحتياطية'));
     } finally {
       setBackupActionLoading(false);
     }
@@ -230,17 +261,17 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       try {
         const parsed = JSON.parse(content);
         if (!Array.isArray(parsed)) {
-          toast.error("ملف النسخة الاحتياطية غير صالح");
+          toast.error('ملف النسخة الاحتياطية غير صالح');
           return;
         }
         setImportJsonData(content);
         setImportConfirmOpen(true);
       } catch {
-        toast.error("فشل قراءة الملف");
+        toast.error('فشل قراءة الملف');
       }
     };
     reader.readAsText(file);
-    e.target.value = "";
+    e.target.value = '';
   };
 
   const handleConfirmImport = async () => {
@@ -249,14 +280,14 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     setImportConfirmOpen(false);
     try {
       await ImportBackup(importJsonData, importMode);
-      toast.success("تم استيراد المشاريع");
+      toast.success('تم استيراد المشاريع');
       fetchProjects();
     } catch (err) {
-      console.error(err);
-      toast.error(toErrorMessage(err, "فشل استيراد المشاريع"));
+      logger.error('Failed to import backup:', err);
+      toast.error(toErrorMessage(err, 'فشل استيراد المشاريع'));
     } finally {
       setBackupActionLoading(false);
-      setImportJsonData("");
+      setImportJsonData('');
     }
   };
 
@@ -265,22 +296,22 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     setBackupActionLoading(true);
     try {
       await ResetLibrary();
-      toast.success("تم تفريغ مكتبة المشاريع");
+      toast.success('تم تفريغ مكتبة المشاريع');
       const state = useEditorStore.getState();
       if (state.projectId) {
         useEditorStore.setState({ projectId: null });
       }
       fetchProjects();
     } catch (err) {
-      console.error(err);
-      toast.error(toErrorMessage(err, "فشل تهيئة مكتبة المشاريع"));
+      logger.error('Failed to reset library:', err);
+      toast.error(toErrorMessage(err, 'فشل تهيئة مكتبة المشاريع'));
     } finally {
       setBackupActionLoading(false);
     }
   };
 
   const filteredProjects = projectsList
-    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       // Pinned projects always at the top
       const aPinned = pinnedProjects.includes(a.id);
@@ -289,12 +320,12 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
       if (!aPinned && bPinned) return 1;
 
       // Sort logic
-      if (sortBy === "date_desc") {
+      if (sortBy === 'date_desc') {
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-      } else if (sortBy === "date_asc") {
+      } else if (sortBy === 'date_asc') {
         return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
-      } else if (sortBy === "name_asc") {
-        return a.name.localeCompare(b.name, "ar-SA");
+      } else if (sortBy === 'name_asc') {
+        return a.name.localeCompare(b.name, 'ar-SA');
       }
       return 0;
     });
@@ -303,7 +334,11 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-        <DialogContent showCloseButton={false} className="sm:max-w-[520px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 rounded-2xl p-5 sm:p-6 font-cairo fluent-specular" dir="rtl">
+        <DialogContent
+          showCloseButton={false}
+          className="sm:max-w-[520px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 rounded-2xl p-5 sm:p-6 font-cairo fluent-specular"
+          dir="rtl"
+        >
           <DialogHeader className="border-b border-border/40 pb-3">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -320,12 +355,12 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4 font-cairo">
-            <FluentSegmentedControl<"save" | "list" | "backup">
+            <FluentSegmentedControl<'save' | 'list' | 'backup'>
               layoutId="projects-dialog-tabs"
-              value={activeTab as "save" | "list" | "backup"}
+              value={activeTab as 'save' | 'list' | 'backup'}
               onChange={(nextTab) => {
                 setActiveTab(nextTab);
-                if (nextTab === "list") {
+                if (nextTab === 'list') {
                   fetchProjects();
                 }
               }}
@@ -333,39 +368,45 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
               className="mb-4"
               options={[
                 {
-                  id: "save",
-                  label: "حفظ",
+                  id: 'save',
+                  label: 'حفظ',
                   icon: <FloppyDisk className="w-3.5 h-3.5 shrink-0" />,
-                  tooltip: "حفظ المشروع الحالي",
+                  tooltip: 'حفظ المشروع الحالي',
                 },
                 {
-                  id: "list",
-                  label: "المشاريع",
+                  id: 'list',
+                  label: 'المشاريع',
                   icon: <FolderOpen className="w-3.5 h-3.5 shrink-0" />,
-                  tooltip: "المشاريع المحفوظة",
+                  tooltip: 'المشاريع المحفوظة',
                 },
                 {
-                  id: "backup",
-                  label: "النسخ",
+                  id: 'backup',
+                  label: 'النسخ',
                   icon: <Database className="w-3.5 h-3.5 shrink-0" />,
-                  tooltip: "النسخ الاحتياطي",
+                  tooltip: 'النسخ الاحتياطي',
                 },
               ]}
             />
 
             <TabsContent value="save" className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label htmlFor="proj-name" className="text-xs font-semibold">اسم المشروع</Label>
+                <Label htmlFor="proj-name" className="text-xs font-semibold">
+                  اسم المشروع
+                </Label>
                 <Input
                   id="proj-name"
                   placeholder="اسم المشروع..."
                   className="h-8 text-xs rounded-md"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSave()}
                 />
               </div>
-              <Button className="w-full h-8 gap-2 mt-2 rounded-md font-semibold text-xs shadow-xs" onClick={handleSave} disabled={isLoading}>
+              <Button
+                className="w-full h-8 gap-2 mt-2 rounded-md font-semibold text-xs shadow-xs"
+                onClick={handleSave}
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <>
                     <Spinner className="w-3.5 h-3.5" size={14} />
@@ -393,21 +434,27 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                   />
                 </div>
                 <div className="flex bg-muted/30 rounded-md border border-border/40 p-0.5 h-8 items-center">
-                  <button 
+                  <button
                     type="button"
-                    onClick={() => setSortBy(sortBy === "date_desc" ? "date_asc" : "date_desc")}
-                    className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("date") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setSortBy(sortBy === 'date_desc' ? 'date_asc' : 'date_desc')}
+                    className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith('date') ? 'bg-background shadow-2xs text-primary font-bold' : 'text-muted-foreground hover:text-foreground'}`}
                     title="ترتيب بالتاريخ"
                   >
-                    <Calendar className="w-3.5 h-3.5 shrink-0" weight={sortBy.startsWith("date") ? "bold" : "regular"} />
+                    <Calendar
+                      className="w-3.5 h-3.5 shrink-0"
+                      weight={sortBy.startsWith('date') ? 'bold' : 'regular'}
+                    />
                   </button>
-                  <button 
+                  <button
                     type="button"
-                    onClick={() => setSortBy("name_asc")}
-                    className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith("name") ? "bg-background shadow-2xs text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setSortBy('name_asc')}
+                    className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith('name') ? 'bg-background shadow-2xs text-primary font-bold' : 'text-muted-foreground hover:text-foreground'}`}
                     title="ترتيب أبجدي"
                   >
-                    <ArrowsDownUp className="w-3.5 h-3.5 shrink-0" weight={sortBy.startsWith("name") ? "bold" : "regular"} />
+                    <ArrowsDownUp
+                      className="w-3.5 h-3.5 shrink-0"
+                      weight={sortBy.startsWith('name') ? 'bold' : 'regular'}
+                    />
                   </button>
                 </div>
               </div>
@@ -427,57 +474,68 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                   {filteredProjects.map((project) => {
                     const isPinned = pinnedProjects.includes(project.id);
                     return (
-                    <div
-                      key={project.id}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          handleLoad(project);
-                        }
-                      }}
-                      onClick={() => handleLoad(project)}
-                      className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden fluent-specular"
-                    >
-                      {isPinned && <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />}
-                      <div className="space-y-1 pl-2 pr-1">
-                        <h4 className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                          {isPinned && <PushPin className="text-primary w-3 h-3 shrink-0" weight="fill" />}
-                          {project.name}
-                        </h4>
-                        <div className="flex items-center gap-3 text-micro text-muted-foreground">
-                          <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">
-                            {project.mode === "single" ? "صورة مفردة" : "كولاج مجمع"}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3 shrink-0" />
-                            {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString("ar-EG") : ""}
-                          </span>
+                      <div
+                        key={project.id}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleLoad(project);
+                          }
+                        }}
+                        onClick={() => handleLoad(project)}
+                        className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden fluent-specular"
+                      >
+                        {isPinned && (
+                          <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />
+                        )}
+                        <div className="space-y-1 pl-2 pr-1">
+                          <h4 className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                            {isPinned && (
+                              <PushPin className="text-primary w-3 h-3 shrink-0" weight="fill" />
+                            )}
+                            {project.name}
+                          </h4>
+                          <div className="flex items-center gap-3 text-micro text-muted-foreground">
+                            <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">
+                              {project.mode === 'single' ? 'صورة مفردة' : 'كولاج مجمع'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 shrink-0" />
+                              {project.updatedAt
+                                ? new Date(project.updatedAt).toLocaleDateString('ar-EG')
+                                : ''}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => togglePin(e, project.id)}
+                            className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            title={isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى'}
+                          >
+                            {isPinned ? (
+                              <PushPinSlash className="w-3.5 h-3.5 shrink-0" />
+                            ) : (
+                              <PushPin className="w-3.5 h-3.5 shrink-0" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleDelete(project.id, e)}
+                            className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash className="w-3.5 h-3.5 shrink-0" />
+                          </Button>
                         </div>
                       </div>
-
-                      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => togglePin(e, project.id)}
-                          className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
-                          title={isPinned ? "إلغاء التثبيت" : "تثبيت في الأعلى"}
-                        >
-                          {isPinned ? <PushPinSlash className="w-3.5 h-3.5 shrink-0" /> : <PushPin className="w-3.5 h-3.5 shrink-0" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => handleDelete(project.id, e)}
-                          className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash className="w-3.5 h-3.5 shrink-0" />
-                        </Button>
-                      </div>
-                    </div>
-                  )})}
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
@@ -489,9 +547,9 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                     <h4 className="text-xs font-bold text-foreground/90">تصدير نسخة احتياطية</h4>
                     <p className="text-xs text-muted-foreground">حفظ كل المشاريع في ملف JSON</p>
                   </div>
-                  <Button 
-                    size="sm" 
-                    onClick={handleExportBackup} 
+                  <Button
+                    size="sm"
+                    onClick={handleExportBackup}
                     disabled={backupActionLoading}
                     className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold shadow-xs"
                   >
@@ -534,9 +592,9 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
                     <h4 className="text-xs font-bold text-destructive">تهيئة مكتبة المشاريع</h4>
                     <p className="text-xs text-muted-foreground">حذف جميع المشاريع نهائياً</p>
                   </div>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={() => setResetConfirmOpen(true)}
                     disabled={backupActionLoading}
                     className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold shadow-xs"
@@ -551,7 +609,10 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
         </DialogContent>
 
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-          <AlertDialogContent dir="rtl" className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl">
+          <AlertDialogContent
+            dir="rtl"
+            className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl"
+          >
             <AlertDialogHeader>
               <AlertDialogTitle className="font-cairo text-start">حذف المشروع</AlertDialogTitle>
               <AlertDialogDescription className="font-cairo text-start text-xs">
@@ -559,8 +620,13 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="font-cairo">
-              <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">إلغاء</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs">
+              <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">
+                إلغاء
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
+              >
                 حذف
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -570,7 +636,11 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
 
       {/* تأكيد الاستيراد وخيارات الدمج/الاستبدال */}
       <Dialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
-        <DialogContent showCloseButton={false} className="sm:max-w-[400px] p-5 sm:p-6 rounded-2xl bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28" dir="rtl">
+        <DialogContent
+          showCloseButton={false}
+          className="sm:max-w-[400px] p-5 sm:p-6 rounded-2xl bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28"
+          dir="rtl"
+        >
           <DialogHeader className="border-b border-border/40 pb-2.5">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -586,41 +656,51 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
             </div>
           </DialogHeader>
           <div className="space-y-4 py-2 font-cairo">
-            <p className="text-xs text-muted-foreground">
-              الملف سليم. اختر طريقة الاستيراد:
-            </p>
-            <RadioGroup 
-              value={importMode} 
-              onValueChange={(val: string) => setImportMode(val as "merge" | "overwrite")}
+            <p className="text-xs text-muted-foreground">الملف سليم. اختر طريقة الاستيراد:</p>
+            <RadioGroup
+              value={importMode}
+              onValueChange={(val: string) => setImportMode(val as 'merge' | 'overwrite')}
               className="space-y-2"
             >
               <div className="flex items-center space-x-reverse space-x-2 border border-border/60 rounded-xl p-3 hover:bg-accent/40 cursor-pointer fluent-specular transition-colors">
                 <RadioGroupItem value="merge" id="r-merge" />
                 <Label htmlFor="r-merge" className="cursor-pointer flex-1 space-y-0.5">
                   <div className="font-semibold text-xs text-foreground">دمج المشاريع</div>
-                  <div className="text-micro text-muted-foreground">إضافة الجديد وتحديث المتشابه</div>
+                  <div className="text-micro text-muted-foreground">
+                    إضافة الجديد وتحديث المتشابه
+                  </div>
                 </Label>
               </div>
               <div className="flex items-center space-x-reverse space-x-2 border rounded-xl p-3 hover:bg-accent/40 cursor-pointer border-destructive/20 hover:border-destructive/30 transition-colors">
                 <RadioGroupItem value="overwrite" id="r-overwrite" />
                 <Label htmlFor="r-overwrite" className="cursor-pointer flex-1 space-y-0.5">
                   <div className="font-semibold text-xs text-destructive">استبدال بالكامل</div>
-                  <div className="text-micro text-muted-foreground">مسح الكل واستبداله بمحتويات الملف</div>
+                  <div className="text-micro text-muted-foreground">
+                    مسح الكل واستبداله بمحتويات الملف
+                  </div>
                 </Label>
               </div>
             </RadioGroup>
             <DialogFooter className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={() => setImportConfirmOpen(false)} className="h-8 px-4 text-xs font-semibold rounded-md">
+              <Button
+                variant="ghost"
+                onClick={() => setImportConfirmOpen(false)}
+                className="h-8 px-4 text-xs font-semibold rounded-md"
+              >
                 إلغاء
               </Button>
-              <Button onClick={handleConfirmImport} disabled={backupActionLoading} className="h-8 px-4 text-xs font-semibold rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button
+                onClick={handleConfirmImport}
+                disabled={backupActionLoading}
+                className="h-8 px-4 text-xs font-semibold rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
                 {backupActionLoading ? (
                   <>
                     <Spinner className="w-3.5 h-3.5" size={14} />
                     <span>جاري الاستيراد ...</span>
                   </>
                 ) : (
-                  "استيراد"
+                  'استيراد'
                 )}
               </Button>
             </DialogFooter>
@@ -630,7 +710,10 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
 
       {/* تأكيد التهيئة ومسح قاعدة البيانات */}
       <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
-        <AlertDialogContent dir="rtl" className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl">
+        <AlertDialogContent
+          dir="rtl"
+          className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl"
+        >
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-start flex items-center gap-2 text-destructive text-sm font-bold">
               <Warning className="w-4 h-4 shrink-0" weight="duotone" />
@@ -641,9 +724,11 @@ export function ProjectsDialog({ open, onOpenChange, trigger, defaultTab = "save
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="font-cairo">
-            <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">إلغاء</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmReset} 
+            <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmReset}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
             >
               حذف الكل

@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useEditorStore } from '@/lib/editor-store';
 import { useStageRef } from '@/lib/canvas/stage-context';
@@ -18,6 +18,9 @@ import { buildSingleComposition } from '@/lib/print/single-print-composition';
 import type { usePrintLayout } from '@/hooks/use-print-layout';
 import type { PrintSettings } from '@/lib/store/types';
 import { wailsIsDesktop } from '@/lib/wails-env';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('use-print-export');
 
 /** المدخلات المشتركة لمولّد العناصر والتصدير — من usePrintLayout والدالة الأصل */
 export interface PrintExportContext {
@@ -292,7 +295,7 @@ export function usePrintExport({
         // وحلقة فك ترميز كاملة في Go، ويُرجع مسار /local-image/ المُخدَم محلياً
         singleImageSrc = await uploadPrintImage(capturedBlob);
       } catch (err) {
-        console.error('Single composition capture failed:', err);
+        logger.error('Single composition capture failed:', err);
         toast.error('فشل تجهيز الصورة للطباعة: ' + String(err));
         return null;
       }
@@ -424,7 +427,7 @@ export function usePrintExport({
           if (result.filePath && typeof PrintNative === 'function') {
             PrintNative(result.filePath)
               .then(() => toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح'))
-              .catch(console.error);
+              .catch((err) => logger.error('PrintNative failed:', err));
           }
           return;
         }
@@ -521,12 +524,12 @@ export function usePrintExport({
           window.addEventListener('afterprint', cleanup, { once: true });
           safetyTimer = setTimeout(cleanup, 120_000);
         } catch (e) {
-          console.error('Print container injection failed:', e);
+          logger.error('Print container injection failed:', e);
           cleanup();
           if (result.filePath && typeof PrintNative === 'function') {
             PrintNative(result.filePath)
               .then(() => toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح'))
-              .catch(console.error);
+              .catch((err) => logger.error('PrintNative fallback failed:', err));
           }
           return;
         }
@@ -536,12 +539,12 @@ export function usePrintExport({
             window.print();
             toast.success('تم إرسال الورقة إلى الطباعة بنجاح');
           } catch (e) {
-            console.error('Browser print error:', e);
+            logger.error('Browser print error:', e);
             cleanup();
             if (result.filePath && typeof PrintNative === 'function') {
               PrintNative(result.filePath)
                 .then(() => toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح'))
-                .catch(console.error);
+                .catch((err) => logger.error('PrintNative after browser error failed:', err));
             }
           }
         };
@@ -576,7 +579,7 @@ export function usePrintExport({
             if (result.filePath && typeof PrintNative === 'function') {
               PrintNative(result.filePath)
                 .then(() => toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح'))
-                .catch(console.error);
+                .catch((err) => logger.error('PrintNative after image error failed:', err));
             }
           };
           fallbackTimer = setTimeout(runPrint, 10000);
@@ -584,7 +587,7 @@ export function usePrintExport({
       } else if (result.filePath && typeof PrintNative === 'function') {
         PrintNative(result.filePath)
           .then(() => toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح'))
-          .catch(console.error);
+          .catch((err) => logger.error('PrintNative failed:', err));
       }
     },
     [paperWidth, paperHeight],
@@ -614,7 +617,7 @@ export function usePrintExport({
             }
           })
           .catch((err) => {
-            console.error('PrintNative failed, falling back to browser print:', err);
+            logger.error('PrintNative failed, falling back to browser print:', err);
             fallbackBrowserPrint(result);
           });
         return;

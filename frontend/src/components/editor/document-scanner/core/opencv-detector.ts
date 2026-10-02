@@ -384,8 +384,16 @@ export async function detectDocumentsWithOpenCV(
                         isStackedPairAspect(split[0].corners) &&
                         isStackedPairAspect(split[1].corners)
                       ) {
-                        allCandidates.push({ quad: split[0].corners, score: s1 });
-                        allCandidates.push({ quad: split[1].corners, score: s2 });
+                        allCandidates.push({
+                          quad: split[0].corners,
+                          score: s1,
+                          aspectType: split[0].aspectType,
+                        });
+                        allCandidates.push({
+                          quad: split[1].corners,
+                          score: s2,
+                          aspectType: split[1].aspectType,
+                        });
                       }
                     }
                   }
@@ -449,8 +457,16 @@ export async function detectDocumentsWithOpenCV(
                         isStackedPairAspect(split[0].corners) &&
                         isStackedPairAspect(split[1].corners)
                       ) {
-                        allCandidates.push({ quad: split[0].corners, score: s1 });
-                        allCandidates.push({ quad: split[1].corners, score: s2 });
+                        allCandidates.push({
+                          quad: split[0].corners,
+                          score: s1,
+                          aspectType: split[0].aspectType,
+                        });
+                        allCandidates.push({
+                          quad: split[1].corners,
+                          score: s2,
+                          aspectType: split[1].aspectType,
+                        });
                       }
                     }
                   }
@@ -540,7 +556,7 @@ export async function detectDocumentsWithOpenCV(
         y: Math.min(originalHeight, Math.max(0, Math.round(p.y * scaleY))),
       }));
       const sorted = sortCornerPoints(scaledCorners);
-      const aspect = inferSmartDocumentAspect(sorted);
+      const aspect = cand.aspectType ?? inferSmartDocumentAspect(sorted);
 
       const confidence = Math.min(0.99, Math.max(0.6, Math.round((cand.score / 1.6) * 100) / 100));
 

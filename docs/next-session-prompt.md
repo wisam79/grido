@@ -70,7 +70,7 @@ cd C:\projects\grido && go test -race ./internal/... && go vet ./internal/... &&
 cd frontend && npm run test && npm run typecheck && npm run lint
 cd ../admin-web && npm ci && npm run build && npm run lint
 ```
-> ⚠️ لا تستخدم `go vet ./...` أو `go build ./...` — يفشلان بسبب مجلد قالب Wails `build/ios/scripts/deps` (خارج نطاق التطبيق).
+> ℹ️ `go vet ./...` و`go build ./...` يعملان بصورة تامة بعد تنظيف سقالات الهواتف غير المستخدمة (`build/ios` و`build/android`).
 ثم حدّث `docs/features-tracker.md` بنتائجك.
 
 ### 7. ملاحظات نشر (لا تنفذها بلا إذن المستخدم)

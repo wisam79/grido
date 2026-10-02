@@ -114,7 +114,7 @@ docs_files=6
 | عدد صفائح الحصص اليومية | free 5 / pro 15 / enterprise 50 | `internal/service/ai_service.go` + migration `20260730000001` + `frontend/src/lib/ai/quota.ts` (ثلاثة مواضع متزامنة — قرار محمي؛ وحدة الحسم الواحدة هي `lib/ai/quota.ts` والخادم هو مصدر الحقيقة، ويُثبَّت ذلك بتأكيدين في `docs-gate`) |
 | منطقة يوم الحصة (محلي/UTC) | **UTC** في الخادم والمُقيِّد المحلي والواجهة | `internal/service/ai_service.go` (`aiUsageDayKey`) + `frontend/src/lib/ai/quota.ts` (`aiUtcDayKey`) مقابل `date_trunc('day', timezone('utc', now()))` |
 
-> ⚠️ **تحذير أدوات:** `go vet ./...` و `go build ./...` يفشلان بسبب مجلد قالب Wails `build/ios/scripts/deps` (خارج نطاق التطبيق). استخدم دائماً `go vet ./internal/...` و `go build .`.
+> ℹ️ **ملاحظة أدوات:** `go vet ./...` و `go build ./...` يعملان بصورة تامة ومباشرة بعد حذف سقالات Wails غير المستخدمة (`build/ios` و`build/android`).
 
 ---
 

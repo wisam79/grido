@@ -497,6 +497,16 @@ describe('splitQuadIntoIdCardsWithSeam — الفاصل المكتشف مع حا
     expect(accepted[0]).toBeGreaterThanOrEqual(0.47);
     expect(accepted[accepted.length - 1]).toBeLessThanOrEqual(0.53);
   });
+
+  it('preserves aspectType as id_card for both vertical and horizontal card splits (F-12/SCN-6)', () => {
+    const vCards = splitQuadIntoIdCards(parentQuad, 'vertical');
+    expect(vCards[0].aspectType).toBe('id_card');
+    expect(vCards[1].aspectType).toBe('id_card');
+
+    const hCards = splitQuadIntoIdCards(parentQuad, 'horizontal');
+    expect(hCards[0].aspectType).toBe('id_card');
+    expect(hCards[1].aspectType).toBe('id_card');
+  });
 });
 
 /**

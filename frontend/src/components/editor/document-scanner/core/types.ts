@@ -3,13 +3,13 @@ export interface Point {
   y: number;
 }
 
-export type DocumentAspectType = "free" | "a4_p" | "a4_l" | "id_card" | "square";
+export type DocumentAspectType = 'free' | 'a4_p' | 'a4_l' | 'id_card' | 'square';
 
-export type ScannerFilterMode = "original" | "magic" | "bw" | "grayscale" | "sharpen" | "deyellow";
+export type ScannerFilterMode = 'original' | 'magic' | 'bw' | 'grayscale' | 'sharpen' | 'deyellow';
 
 // "auto" أُزيل: كان وضعاً معلَناً بلا أي واجهة أو مُستدعٍ (فرع ميت)،
 // ونتيجته في الدمج مطابقة تماماً لـ multi. الأنماط الفعلية نمطان فقط.
-export type DetectionMode = "multi" | "single";
+export type DetectionMode = 'multi' | 'single';
 
 export interface DetectedDocument {
   id: string;
@@ -24,7 +24,7 @@ export interface DetectedDocument {
 export interface DetectionResult {
   corners: Point[];
   confidence: number;
-  method: "js" | "opencv" | "scanic" | "default";
+  method: 'js' | 'opencv' | 'scanic' | 'default';
   documents?: DetectedDocument[];
 }
 
@@ -38,6 +38,7 @@ export interface QuadOverlapStats {
 export interface ScoredCandidate {
   quad: Point[];
   score: number;
+  aspectType?: DocumentAspectType;
 }
 
 /** مضلع رباعي صالح — 4 نقاط بالضبط بترتيب عقارب الساعة */
@@ -49,7 +50,6 @@ export function isQuad(pts: Point[] | null | undefined): pts is Quad {
 
 // 🌟 ثوابت هندسية موحدة لتقسيم البطاقات المكدسة والنسب المرجعية
 export const STACKED_SPLIT_MIN_RATIO = 0.66;
-export const STACKED_SPLIT_MAX_RATIO = 0.90;
+export const STACKED_SPLIT_MAX_RATIO = 0.9;
 export const ID_HALF_MIN_RATIO = 1.44;
 export const ID_HALF_MAX_RATIO = 1.84;
-
