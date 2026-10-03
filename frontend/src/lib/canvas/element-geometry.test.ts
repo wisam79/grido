@@ -152,5 +152,38 @@ describe('element-geometry', () => {
         marquee.y + marquee.height >= elBox.y;
       expect(intersects).toBe(true);
     });
+
+    it('accurately filters elements on a high-DPI canvas (2480x3508 A4)', () => {
+      const canvasW = 2480;
+      const canvasH = 3508;
+
+      // Element centered on canvas (similar to user screenshot)
+      const el = {
+        id: 'img-1',
+        x: 0.25,
+        y: 0.25,
+        width: 0.5,
+        height: 0.5,
+        rotation: 0,
+      };
+
+      const vBox = getElementPixelVisualBox(
+        el.x * canvasW,
+        el.y * canvasH,
+        el.width * canvasW,
+        el.height * canvasH,
+        el.rotation,
+      );
+      const elBox = { x: vBox.minX, y: vBox.minY, width: vBox.width, height: vBox.height };
+
+      // Marquee dragged from empty background across the element
+      const marquee = { x: 400, y: 400, width: 600, height: 600 };
+      const intersects =
+        marquee.x <= elBox.x + elBox.width &&
+        marquee.x + marquee.width >= elBox.x &&
+        marquee.y <= elBox.y + elBox.height &&
+        marquee.y + marquee.height >= elBox.y;
+      expect(intersects).toBe(true);
+    });
   });
 });

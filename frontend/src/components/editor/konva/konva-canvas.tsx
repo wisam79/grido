@@ -196,6 +196,90 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const isMarqueeDraggingRef = useRef(false);
   const marqueeStartPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const marqueeInitialSelectedRef = useRef<string[]>([]);
+  const marqueeBoxRef = useRef<{ x: number; y: number; width: number; height: number }>({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
+
+  const getLogicalPointerPos = React.useCallback(
+    (stage: Konva.Stage): { x: number; y: number } | null => {
+      const pos = stage.getPointerPosition();
+      if (!pos) return null;
+      const transform = stage.getAbsoluteTransform().copy().invert();
+      return transform.point(pos);
+    },
+    [],
+  );
+
+  const finishMarquee = React.useCallback(
+    (isMulti?: boolean) => {
+      if (!isMarqueeDraggingRef.current || mode !== 'single') return;
+      isMarqueeDraggingRef.current = false;
+
+      const rectNode = marqueeRectRef.current;
+      if (rectNode) {
+        rectNode.visible(false);
+        rectNode.size({ width: 0, height: 0 });
+        rectNode.getLayer()?.batchDraw();
+      }
+
+      const box = marqueeBoxRef.current;
+      // إذا كانت الحركة مجرد نقرة بسيطة (< 4px)، لا نعتبرها سحب صندوق
+      if (box.width < 4 && box.height < 4) {
+        return;
+      }
+
+      const currentElements = useEditorStore.getState().elements;
+      const newlySelectedIds = currentElements
+        .filter((el) => !el.locked && el.visible !== false)
+        .filter((el) => {
+          const vBox = getElementPixelVisualBox(
+            el.x * canvasWidth,
+            el.y * canvasHeight,
+            el.width * canvasWidth,
+            el.height * canvasHeight,
+            el.rotation || 0,
+          );
+          const elBox = {
+            x: vBox.minX,
+            y: vBox.minY,
+            width: vBox.width,
+            height: vBox.height,
+          };
+          return Konva.Util.haveIntersection(box, elBox);
+        })
+        .map((el) => el.id);
+
+      // إذا كان أي عنصر ينتمي لمجموعة، وسّع التحديد ليشمل كامل أعضاء مجموعته
+      const expandedIds = new Set<string>();
+      for (const id of newlySelectedIds) {
+        const el = currentElements.find((e) => e.id === id);
+        if (el?.groupId) {
+          for (const member of currentElements) {
+            if (member.groupId === el.groupId) {
+              expandedIds.add(member.id);
+            }
+          }
+        } else {
+          expandedIds.add(id);
+        }
+      }
+      const finalNewlySelected = Array.from(expandedIds);
+
+      const multi = isMulti ?? shiftPressedRef.current;
+      if (multi) {
+        const combined = Array.from(
+          new Set([...marqueeInitialSelectedRef.current, ...finalNewlySelected]),
+        );
+        useEditorStore.getState().setSelectedIds(combined);
+      } else {
+        useEditorStore.getState().setSelectedIds(finalNewlySelected);
+      }
+    },
+    [canvasWidth, canvasHeight, mode],
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -211,17 +295,22 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     const resetKeys = () => {
       altPressedRef.current = false;
       shiftPressedRef.current = false;
-    };
-    const handleVisibility = () => {
-      if (document.hidden) resetKeys();
-    };
-    const handlePointerUpGlobal = () => {
       if (isMarqueeDraggingRef.current) {
         isMarqueeDraggingRef.current = false;
         if (marqueeRectRef.current) {
           marqueeRectRef.current.visible(false);
+          marqueeRectRef.current.size({ width: 0, height: 0 });
           marqueeRectRef.current.getLayer()?.batchDraw();
         }
+      }
+    };
+    const handleVisibility = () => {
+      if (document.hidden) resetKeys();
+    };
+    const handlePointerUpGlobal = (e: PointerEvent) => {
+      if (isMarqueeDraggingRef.current) {
+        const isMulti = e.shiftKey || e.ctrlKey || e.metaKey || shiftPressedRef.current;
+        finishMarquee(isMulti);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -238,7 +327,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       window.removeEventListener('pointercancel', handlePointerUpGlobal);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, []);
+  }, [finishMarquee]);
 
   useEffect(() => {
     const tr = trRef.current;
@@ -280,16 +369,6 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     }
   }, [selectedIds, mode, sortedElements]);
 
-  const getLogicalPointerPos = React.useCallback(
-    (stage: Konva.Stage): { x: number; y: number } | null => {
-      const pos = stage.getPointerPosition();
-      if (!pos) return null;
-      const transform = stage.getAbsoluteTransform().copy().invert();
-      return transform.point(pos);
-    },
-    [],
-  );
-
   const handleStageMouseDown = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     if (
       'button' in e.evt &&
@@ -310,7 +389,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     }
 
     if (mode === 'single') {
-      const stage = e.target.getStage();
+      const stage = stageContextRef.current || e.target.getStage();
       if (!stage) return;
       const logicalPos = getLogicalPointerPos(stage);
       if (!logicalPos) return;
@@ -318,6 +397,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       const isMulti = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
       isMarqueeDraggingRef.current = true;
       marqueeStartPosRef.current = logicalPos;
+      marqueeBoxRef.current = { x: logicalPos.x, y: logicalPos.y, width: 0, height: 0 };
       marqueeInitialSelectedRef.current = isMulti ? useEditorStore.getState().selectedIds : [];
 
       if (!isMulti) {
@@ -337,7 +417,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
 
   const handleStageMouseMove = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     if (!isMarqueeDraggingRef.current || mode !== 'single') return;
-    const stage = e.target.getStage();
+    const stage = stageContextRef.current || e.target.getStage();
     if (!stage) return;
     const logicalPos = getLogicalPointerPos(stage);
     if (!logicalPos) return;
@@ -347,6 +427,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     const y = Math.min(start.y, logicalPos.y);
     const width = Math.abs(logicalPos.x - start.x);
     const height = Math.abs(logicalPos.y - start.y);
+
+    marqueeBoxRef.current = { x, y, width, height };
 
     const rectNode = marqueeRectRef.current;
     if (rectNode) {
@@ -361,62 +443,8 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
 
   const handleStageMouseUp = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     if (!isMarqueeDraggingRef.current) return;
-    isMarqueeDraggingRef.current = false;
-
-    const rectNode = marqueeRectRef.current;
-    if (rectNode) {
-      rectNode.visible(false);
-      rectNode.getLayer()?.batchDraw();
-    }
-
-    if (mode !== 'single') return;
-
-    const stage = e.target.getStage();
-    if (!stage) return;
-    const logicalPos = getLogicalPointerPos(stage) || marqueeStartPosRef.current;
-    const start = marqueeStartPosRef.current;
-    const x = Math.min(start.x, logicalPos.x);
-    const y = Math.min(start.y, logicalPos.y);
-    const width = Math.abs(logicalPos.x - start.x);
-    const height = Math.abs(logicalPos.y - start.y);
-
-    // إذا كانت الحركة مجرد نقرة بسيطة (< 4px)، لا نعتبرها سحب صندوق
-    if (width < 4 && height < 4) {
-      return;
-    }
-
-    const marqueeBox = { x, y, width, height };
-    const currentElements = useEditorStore.getState().elements;
-
-    const newlySelectedIds = currentElements
-      .filter((el) => !el.locked && el.visible !== false)
-      .filter((el) => {
-        const vBox = getElementPixelVisualBox(
-          el.x * canvasWidth,
-          el.y * canvasHeight,
-          el.width * canvasWidth,
-          el.height * canvasHeight,
-          el.rotation || 0,
-        );
-        const elBox = {
-          x: vBox.minX,
-          y: vBox.minY,
-          width: vBox.width,
-          height: vBox.height,
-        };
-        return Konva.Util.haveIntersection(marqueeBox, elBox);
-      })
-      .map((el) => el.id);
-
-    const isMulti = e.evt?.shiftKey || e.evt?.ctrlKey || e.evt?.metaKey;
-    if (isMulti) {
-      const combined = Array.from(
-        new Set([...marqueeInitialSelectedRef.current, ...newlySelectedIds]),
-      );
-      useEditorStore.getState().setSelectedIds(combined);
-    } else {
-      useEditorStore.getState().setSelectedIds(newlySelectedIds);
-    }
+    const isMulti = 'evt' in e && (e.evt?.shiftKey || e.evt?.ctrlKey || e.evt?.metaKey);
+    finishMarquee(Boolean(isMulti));
   };
 
   const handleElementChange = React.useCallback(
