@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.12.0] - 2026-10-03
+
 ### Fixed
 - **تنظيف دوال التدفق غير المستخدمة في الباك إند:**
   - حذف دوال التدفق القديمة `streamPNGWithDPI` و `streamJPEGWithDPI` في `internal/service/print_export.go` بعد استبدالها بكتّاب التدفق المباشر `dpiPNGWriter` و `dpiJPEGWriter` لإرضاء فحص `staticcheck` الصارم (U1000).
