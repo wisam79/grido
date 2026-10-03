@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { clampZoomRaw } from "@/lib/canvas/zoom";
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import { clampZoomRaw } from '@/lib/canvas/zoom';
 
 /**
  * عتبة التزام الزوم: تغييرات العجلة الدقيقة (ضجيج لوحة اللمس) التي تقل عن
@@ -10,6 +10,27 @@ import { clampZoomRaw } from "@/lib/canvas/zoom";
 const ZOOM_COMMIT_EPSILON = 0.001;
 
 /**
+ * عناصر تستهلك مفتاح المسافة نيابة عن المستخدم: حقول الكتابة (تكتب مسافة)
+ * والأزرار/الروابط (تُفعَّل بالنقر على المسافة). ابتلاعها بـ preventDefault
+ * كان يمنع المسافة داخل نص أو يُلغي تفعيل زر بعد النقر عليه.
+ */
+const SPACE_CONSUMED_TAGS = new Set([
+  'INPUT',
+  'TEXTAREA',
+  'SELECT',
+  'OPTION',
+  'BUTTON',
+  'A',
+  'SUMMARY',
+]);
+
+export function isSpaceHandledByTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el || typeof el.tagName !== 'string') return false;
+  return SPACE_CONSUMED_TAGS.has(el.tagName) || el.isContentEditable === true;
+}
+
+/**
  * 🧭 منطق إطار عرض المحرر: زوم العجلة المحوري (Ctrl+Wheel) بمحور مؤشر ثابت،
  * والتحريك بزر السحب الأوسط أو مفتاح المسافة (Space-Pan).
  * 🛡️ معدل بالراف: عجلات متتالية تُدمج في إطار رسم واحد — كانت هذه الكتلة
@@ -17,11 +38,16 @@ const ZOOM_COMMIT_EPSILON = 0.001;
  */
 export function useCanvasViewport(
   containerRef: RefObject<HTMLDivElement | null>,
-  innerRef: RefObject<HTMLDivElement | null>
+  innerRef: RefObject<HTMLDivElement | null>,
 ) {
   const prevZoomRef = useRef(useEditorStore.getState().canvasZoom);
   const prevCanvasRectRef = useRef<DOMRect | null>(null);
-  const zoomPivotRef = useRef<{ pctX: number; pctY: number; screenX: number; screenY: number } | null>(null);
+  const zoomPivotRef = useRef<{
+    pctX: number;
+    pctY: number;
+    screenX: number;
+    screenY: number;
+  } | null>(null);
 
   const canvasZoom = useEditorStore((s) => s.canvasZoom);
   const setCanvasZoom = useEditorStore((s) => s.setCanvasZoom);
@@ -50,7 +76,7 @@ export function useCanvasViewport(
             pctX: (lastWheelClientX - canvasRect.left) / canvasRect.width,
             pctY: (lastWheelClientY - canvasRect.top) / canvasRect.height,
             screenX: lastWheelClientX,
-            screenY: lastWheelClientY
+            screenY: lastWheelClientY,
           };
         }
         setCanvasZoom(newZoom);
@@ -86,29 +112,37 @@ export function useCanvasViewport(
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      const activeTag = (e.target as HTMLElement)?.tagName;
-      if (e.code === "Space" && activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
+      if (e.code === 'Space' && !isSpaceHandledByTarget(e.target)) {
+        e.preventDefault();
         if (!spacePressedRef.current) {
           spacePressedRef.current = true;
-          node.style.cursor = "grab";
+          node.style.cursor = 'grab';
         }
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
+      if (e.code === 'Space') {
         spacePressedRef.current = false;
-        node.style.cursor = "";
+        node.style.cursor = '';
       }
+    };
+
+    const handleBlur = () => {
+      spacePressedRef.current = false;
+      isPanningRef.current = false;
+      node.style.cursor = '';
+      window.removeEventListener('pointermove', handlePointerMove);
     };
 
     const handlePointerDown = (e: PointerEvent) => {
       if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
         e.preventDefault();
+        e.stopPropagation();
         isPanningRef.current = true;
-        node.style.cursor = "grabbing";
-        window.addEventListener("pointermove", handlePointerMove);
-        window.addEventListener("pointerup", handlePointerUp, { once: true });
+        node.style.cursor = 'grabbing';
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp, { once: true });
       }
     };
 
@@ -122,26 +156,28 @@ export function useCanvasViewport(
 
     const handlePointerUp = () => {
       isPanningRef.current = false;
-      node.style.cursor = spacePressedRef.current ? "grab" : "";
-      window.removeEventListener("pointermove", handlePointerMove);
+      node.style.cursor = spacePressedRef.current ? 'grab' : '';
+      window.removeEventListener('pointermove', handlePointerMove);
     };
 
-    node.addEventListener("wheel", handleWheel, { passive: false });
-    node.addEventListener("pointerdown", handlePointerDown);
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    node.addEventListener('wheel', handleWheel, { passive: false });
+    node.addEventListener('pointerdown', handlePointerDown, { capture: true });
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
 
     // ملاحظة: حدث `grido:fit-canvas-to-screen` أُزيل — الملاءمة صارت وضعاً
     // في المتجر (fit.ts) يُحدَّد من fitZoomStore/fitWidthZoomStore، فلم يعد
     // هناك قياس DOM موازٍ يعيد اشتقاق حجم لم يتغيّر أصلاً.
 
     return () => {
-      node.removeEventListener("wheel", handleWheel);
-      node.removeEventListener("pointerdown", handlePointerDown);
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
+      node.removeEventListener('wheel', handleWheel);
+      node.removeEventListener('pointerdown', handlePointerDown, { capture: true });
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, [setCanvasZoom, containerRef, innerRef]);
@@ -160,8 +196,8 @@ export function useCanvasViewport(
           const currentScreenX = newCanvasRect.left + pctX * newCanvasRect.width;
           const currentScreenY = newCanvasRect.top + pctY * newCanvasRect.height;
 
-          container.scrollLeft += (currentScreenX - screenX);
-          container.scrollTop += (currentScreenY - screenY);
+          container.scrollLeft += currentScreenX - screenX;
+          container.scrollTop += currentScreenY - screenY;
 
           zoomPivotRef.current = null;
         } else {
@@ -171,8 +207,8 @@ export function useCanvasViewport(
           const containerRect = container.getBoundingClientRect();
           const viewportCenterX = containerRect.left + containerRect.width / 2;
           const viewportCenterY = containerRect.top + containerRect.height / 2;
-          container.scrollLeft += (newCenterX - viewportCenterX);
-          container.scrollTop += (newCenterY - viewportCenterY);
+          container.scrollLeft += newCenterX - viewportCenterX;
+          container.scrollTop += newCenterY - viewportCenterY;
         }
       }
       prevZoomRef.current = canvasZoom;

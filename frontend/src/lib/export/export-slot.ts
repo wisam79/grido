@@ -3,11 +3,18 @@
  * مستخرج من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
 import { useEditorStore } from '@/lib/editor-store';
-import { buildCSSFilter } from '@/lib/utils';
+import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 import { computeSlotRectMM } from '@/lib/print/print-layout-math';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { assertExportablePixels, CanvasTooLargeError } from '@/lib/export/export-limits';
-import { drawSlotImage, loadImage } from './export-primitives';
+import {
+  applySlotTransform,
+  drawSlotImage,
+  drawSlotImageLocal,
+  loadImage,
+} from './export-primitives';
+import { isPixelFilter } from '@/lib/filters/pixel-filters';
+import { renderWithPixelFilter } from './export-pixel-filter';
 import { applyWatermarkIfFree } from './export-watermark';
 
 export async function exportSlotCanvas(
@@ -62,14 +69,30 @@ export async function exportSlotCanvas(
       ctx.fillRect(0, 0, exportWidth, exportHeight);
     }
 
-    ctx.save();
-    const filterStr = buildCSSFilter(slot);
-    if (filterStr && filterStr !== 'none') {
-      ctx.filter = filterStr;
+    // مرشّحات البكسل تُطبَّق في الفضاء المحلي قبل القلب/الدوران (ترتيب Konva)
+    if (isPixelFilter(slot.filter)) {
+      const off = renderWithPixelFilter(exportWidth, exportHeight, slot.filter, (octx) => {
+        // تعديلات اللون قبل مرشّح البكسل (ترتيب Go)
+        octx.filter = buildAdjustmentCSS(slot);
+        drawSlotImageLocal(octx, img, exportWidth, exportHeight, slot);
+      });
+      if (off) {
+        ctx.save();
+        applySlotTransform(ctx, 0, 0, exportWidth, exportHeight, slot);
+        ctx.drawImage(off, 0, 0, exportWidth, exportHeight);
+        ctx.restore();
+      }
+    } else {
+      ctx.save();
+      const filterStr = buildCSSFilter(slot);
+      if (filterStr && filterStr !== 'none') {
+        ctx.filter = filterStr;
+      }
+      // القص (zoom/drag) والقلب والدوران يُحترمون أيضاً في تصدير الخانة المفردة (إصلاح E-7)
+      drawSlotImage(ctx, img, 0, 0, exportWidth, exportHeight, slot);
+      ctx.filter = 'none';
+      ctx.restore();
     }
-    // القص (zoom/drag) والقلب والدوران يُحترمون أيضاً في تصدير الخانة المفردة (إصلاح E-7)
-    drawSlotImage(ctx, img, 0, 0, exportWidth, exportHeight, slot);
-    ctx.restore();
 
     return new Promise((resolve) => {
       canvas.toBlob(

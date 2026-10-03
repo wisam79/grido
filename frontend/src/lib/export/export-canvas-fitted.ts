@@ -3,13 +3,16 @@
  * مستخرج من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
 import { ImageElement, useEditorStore } from '@/lib/editor-store';
-import { buildCSSFilter } from '@/lib/utils';
+import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
 import { gradientStart, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
 import { VECTOR_SHAPES } from '@/lib/io/svg-paths';
 import { drawImageCover, drawRoundRect, drawStar, loadImage } from './export-primitives';
 import { buildGradientFill, colorWithAlpha, getRoundedPool } from './export-color';
+import { isPixelFilter } from '@/lib/filters/pixel-filters';
+import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
+import { renderWithPixelFilter } from './export-pixel-filter';
 
 type StoreState = ReturnType<typeof useEditorStore.getState>;
 
@@ -63,8 +66,46 @@ export async function renderFittedBranch(
 
     if (el.type === 'image' && el.imageSrc && elImageMap[el.id]) {
       const img = elImageMap[el.id];
-      const filterStr = buildCSSFilter(el);
       const radius = el.cornerRadius || 0;
+      const maskShape = el.maskShape && el.maskShape !== 'none' ? el.maskShape : null;
+      // يقصّ الصورة (قناع/زوايا مستديرة) داخل كانفس بعرض العنصر — يُستخدم في مسار
+      // مرشّح البكسل فقط، بينما يبقى الرسم المباشر بالفلاتر CSS كما كان
+      const clipImage = (target: CanvasRenderingContext2D) => {
+        target.beginPath();
+        if (maskShape === 'circle') {
+          target.arc(w / 2, h / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
+        } else if (maskShape === 'star') {
+          drawStar(target, w / 2, h / 2, 5, Math.min(w, h) / 2, Math.min(w, h) / 4);
+        } else if (maskShape === 'heart') {
+          const topCurveHeight = h * 0.3;
+          target.moveTo(w / 2, topCurveHeight);
+          target.bezierCurveTo(w / 2, 0, 0, 0, 0, topCurveHeight);
+          target.bezierCurveTo(
+            0,
+            (h + topCurveHeight) / 2,
+            w / 2,
+            (h + topCurveHeight) / 2,
+            w / 2,
+            h,
+          );
+          target.bezierCurveTo(
+            w / 2,
+            (h + topCurveHeight) / 2,
+            w,
+            (h + topCurveHeight) / 2,
+            w,
+            topCurveHeight,
+          );
+          target.bezierCurveTo(w, 0, w / 2, 0, w / 2, topCurveHeight);
+        } else if (radius > 0) {
+          drawRoundRect(target, 0, 0, w, h, radius);
+        } else {
+          return;
+        }
+        target.closePath();
+        target.clip();
+      };
+
       if (el.bgColor && el.bgColor !== 'transparent') {
         ctx.save();
         ctx.fillStyle = el.bgColor;
@@ -77,22 +118,43 @@ export async function renderFittedBranch(
         }
         ctx.restore();
       }
-      if (radius > 0) {
-        // قص cornerRadius على كانفس وسيط مشترك ليأخذ الظل شكل ألفا الصورة المقصوصة (مطابقة KonvaImage)
-        const pooled = getRoundedPool(w, h);
-        if (pooled) {
-          const { canvas: off, ctx: octx } = pooled;
-          if (filterStr && filterStr !== 'none') octx.filter = filterStr;
-          drawRoundRect(octx, 0, 0, off.width, off.height, radius);
-          octx.clip();
-          drawImageCover(octx, img, 0, 0, off.width, off.height);
-          octx.filter = 'none';
-          ctx.drawImage(off, 0, 0, w, h);
-        }
+
+      if (isPixelFilter(el.filter)) {
+        const off = renderWithPixelFilter(w, h, el.filter, (octx) => {
+          // تعديلات اللون قبل مرشّح البكسل (ترتيب Go)
+          octx.filter = buildAdjustmentCSS(el);
+          octx.save();
+          clipImage(octx);
+          drawImageCover(octx, img, 0, 0, w, h);
+          octx.restore();
+        });
+        if (off) ctx.drawImage(off, 0, 0, w, h);
       } else {
-        ctx.filter = filterStr;
-        drawImageCover(ctx, img, 0, 0, w, h);
-        ctx.filter = 'none';
+        const filterStr = buildCSSFilter(el);
+        if (maskShape) {
+          ctx.save();
+          clipImage(ctx);
+          ctx.filter = filterStr;
+          drawImageCover(ctx, img, 0, 0, w, h);
+          ctx.filter = 'none';
+          ctx.restore();
+        } else if (radius > 0) {
+          // قص cornerRadius على كانفس وسيط مشترك ليأخذ الظل شكل ألفا الصورة المقصوصة (مطابقة KonvaImage)
+          const pooled = getRoundedPool(w, h);
+          if (pooled) {
+            const { canvas: off, ctx: octx } = pooled;
+            if (filterStr && filterStr !== 'none') octx.filter = filterStr;
+            drawRoundRect(octx, 0, 0, off.width, off.height, radius);
+            octx.clip();
+            drawImageCover(octx, img, 0, 0, off.width, off.height);
+            octx.filter = 'none';
+            ctx.drawImage(off, 0, 0, w, h);
+          }
+        } else {
+          ctx.filter = filterStr;
+          drawImageCover(ctx, img, 0, 0, w, h);
+          ctx.filter = 'none';
+        }
       }
     } else if (el.type === 'text') {
       const fontSize = el.fontSize || 32;
@@ -281,6 +343,53 @@ export async function renderFittedBranch(
         drawStar(ctx, w / 2, h / 2, 5, Math.min(w, h) / 2, Math.min(w, h) / 4);
         ctx.fill();
         if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke();
+      } else if (el.shape === 'polygon') {
+        const sides = el.sides || 6;
+        const radius = Math.min(w, h) / 2;
+        const cx = w / 2;
+        const cy = h / 2;
+        ctx.beginPath();
+        for (let i = 0; i < sides; i++) {
+          const angle = (i * 2 * Math.PI) / sides - Math.PI / 2;
+          const px = cx + radius * Math.cos(angle);
+          const py = cy + radius * Math.sin(angle);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke();
+      } else if (el.shape === 'ring') {
+        const outerR = ringOuterRadius(w, h);
+        const innerR = resolveRingInnerRadius(el.innerRadius, w, h);
+        const cx = w / 2;
+        const cy = h / 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, 0, Math.PI * 2, false);
+        ctx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
+        ctx.closePath();
+        ctx.fill();
+        if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke();
+      } else if (el.shape === 'arrow') {
+        const strokeW = Math.max(1, el.strokeWidth || 4);
+        const pLen = el.pointerLength || 14;
+        const pWidth = el.pointerWidth || 14;
+        const arrowH = Math.max(h, strokeW, 16);
+        const arrowY = arrowH / 2;
+        ctx.lineWidth = strokeW;
+        ctx.strokeStyle = el.stroke || el.fill || gradientStart();
+        ctx.fillStyle = el.fill || el.stroke || gradientStart();
+        ctx.beginPath();
+        ctx.moveTo(0, arrowY);
+        ctx.lineTo(Math.max(0, w - pLen), arrowY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(w, arrowY);
+        ctx.lineTo(w - pLen, arrowY - pWidth / 2);
+        ctx.lineTo(w - pLen, arrowY + pWidth / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
       } else if (el.shape === 'path' && el.svgPath) {
         // قياس المسار المتجه ليملأ صندوق العنصر — نفس منطق KonvaPath (viewBox مرجعي)
         const def = VECTOR_SHAPES.find((s) => s.path === el.svgPath);

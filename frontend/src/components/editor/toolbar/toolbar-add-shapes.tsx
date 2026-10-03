@@ -30,12 +30,11 @@ import {
   SHAPE_PATH_DIAMOND,
   SHAPE_PATH_HEXAGON,
   SHAPE_PATH_SHIELD,
-  SHAPE_PATH_ARROW,
 } from '@/lib/io/svg-paths';
 
 interface ShapeDef {
   label: string;
-  kind: 'rect' | 'ellipse' | 'star' | 'line' | 'path';
+  kind: 'rect' | 'ellipse' | 'star' | 'line' | 'arrow' | 'path';
   path?: string;
   Icon: Icon;
   iconWeight?: 'bold' | 'fill' | 'regular';
@@ -64,7 +63,7 @@ const SHAPE_GROUPS: { header: string; items: ShapeDef[] }[] = [
       { label: 'نجمة', kind: 'star', Icon: Star, iconWeight: 'fill' },
       { label: 'قلب', kind: 'path', path: SHAPE_PATH_HEART, Icon: Heart, iconWeight: 'fill' },
       { label: 'درع', kind: 'path', path: SHAPE_PATH_SHIELD, Icon: Shield, iconWeight: 'fill' },
-      { label: 'سهم', kind: 'path', path: SHAPE_PATH_ARROW, Icon: ArrowRight, iconWeight: 'bold' },
+      { label: 'سهم', kind: 'arrow', Icon: ArrowRight, iconWeight: 'bold' },
       { label: 'خط', kind: 'line', Icon: LineSegment },
     ],
   },
@@ -104,9 +103,9 @@ export const AddShapesDropdown = React.memo(function AddShapesDropdown() {
               <DropdownMenuItem
                 key={shape.label}
                 onClick={() =>
-                  shape.kind === 'path'
+                  shape.kind === 'path' && shape.path
                     ? addShapeElement('path', shape.path)
-                    : addShapeElement(shape.kind)
+                    : addShapeElement(shape.kind as Exclude<ShapeDef['kind'], 'path'>)
                 }
                 className="flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md cursor-pointer transition-colors"
               >

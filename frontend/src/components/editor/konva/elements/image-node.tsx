@@ -1,37 +1,37 @@
-import React, { useEffect } from "react";
-import { Image as KonvaImage, Group, Rect } from "react-konva";
-import { useAsyncImage } from "@/hooks/use-async-image";
-import Konva from "konva";
-import { ImageElement } from "@/lib/editor-store";
-import { getKonvaFilters } from "@/lib/filters/konva-filters";
-import { useRenderQuality } from "@/lib/canvas/render-quality";
-import { useFilterCache } from "@/hooks/use-filter-cache";
-import { getDisplayImage } from "@/lib/canvas/display-image";
-import { useKonvaDrag } from "@/hooks/use-konva-drag";
-import { ElementProps, propsAreEqual } from "./types";
-import { MagicAiScanner } from "./magic-ai-scanner";
-import "@/lib/filters/custom-filters";
+import React, { useEffect } from 'react';
+import { Image as KonvaImage, Group, Rect } from 'react-konva';
+import { useAsyncImage } from '@/hooks/use-async-image';
+import Konva from 'konva';
+import { ImageElement } from '@/lib/editor-store';
+import { getKonvaFilters } from '@/lib/filters/konva-filters';
+import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { useFilterCache } from '@/hooks/use-filter-cache';
+import { getDisplayImage } from '@/lib/canvas/display-image';
+import { useKonvaDrag } from '@/hooks/use-konva-drag';
+import { ElementProps, propsAreEqual } from './types';
+import { MagicAiScanner } from './magic-ai-scanner';
+import '@/lib/filters/custom-filters';
 
-export const URLImage = React.memo(function URLImage({ 
-  element: _element, 
-  isSelected, 
+export const URLImage = React.memo(function URLImage({
+  element: _element,
+  isSelected,
   onMouseDown,
   onTouchStart,
   onClick,
-  onTap, 
-  onChange, 
-  canvasWidth, 
-  canvasHeight, 
-  setActiveGuides, 
-  elementRef, 
-  snapToGrid, 
-  gridSize, 
-  altPressedRef, 
-  shiftPressedRef, 
-  getKonvaNode 
+  onTap,
+  onChange,
+  canvasWidth,
+  canvasHeight,
+  setActiveGuides,
+  elementRef,
+  snapToGrid,
+  gridSize,
+  altPressedRef,
+  shiftPressedRef,
+  getKonvaNode,
 }: ElementProps) {
   const element = _element as ImageElement;
-  const [image] = useAsyncImage(element.imageSrc || "");
+  const [image] = useAsyncImage(element.imageSrc || '');
   // 🚀 نسخة عرض مخفّضة (سقف 2048px) للرسم التفاعلي — المصدر الكامل يبقى
   // للتصدير والذكاء الاصطناعي. useMemo متزامن: توليد مرة واحدة لكل صورة.
   const displayImage = React.useMemo(() => getDisplayImage(image), [image]);
@@ -39,12 +39,7 @@ export const URLImage = React.memo(function URLImage({
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = enhancingElementId === element.id;
 
-  const {
-    onDragStart,
-    dragBoundFunc,
-    onDragMove,
-    onDragEnd,
-  } = useKonvaDrag({
+  const { onDragStart, dragBoundFunc, onDragMove, onDragEnd } = useKonvaDrag({
     element,
     canvasWidth,
     canvasHeight,
@@ -68,7 +63,7 @@ export const URLImage = React.memo(function URLImage({
         scaleX: 1,
         scaleY: 1,
         duration: 0.28,
-        easing: Konva.Easings.BackEaseOut
+        easing: Konva.Easings.BackEaseOut,
       });
     }
   }, [elementRef, element.opacity]);
@@ -78,7 +73,7 @@ export const URLImage = React.memo(function URLImage({
       filter: element.filter,
       brightness: element.brightness,
       contrast: element.contrast,
-      saturation: element.saturation
+      saturation: element.saturation,
     });
     if (element.blur && element.blur > 0) {
       res.filters.push(Konva.Filters.Blur);
@@ -86,13 +81,21 @@ export const URLImage = React.memo(function URLImage({
     return { filters: res.filters, filterProps: res };
   }, [element.filter, element.brightness, element.contrast, element.saturation, element.blur]);
 
-  const imageNodeRef = React.useRef<import("@/hooks/use-filter-cache").CacheableKonvaNode | null>(null);
+  const imageNodeRef = React.useRef<import('@/hooks/use-filter-cache').CacheableKonvaNode | null>(
+    null,
+  );
   // الأبعاد خارج المفتاح عمداً: التحجيم يعيد الكاش المكلف في كل إطار،
   // ويُعاد بناؤه صراحةً بعد استقرار التحويل (onTransformEnd) والتصدير يرفع الدقة بنفسه
   const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}`;
   const hasFilters = filters.length > 0;
 
-  const recacheFilters = useFilterCache({ nodeRef: imageNodeRef, image: displayImage as HTMLImageElement, hasFilters, canvasWidth, filterKey });
+  const recacheFilters = useFilterCache({
+    nodeRef: imageNodeRef,
+    image: displayImage as HTMLImageElement,
+    hasFilters,
+    canvasWidth,
+    filterKey,
+  });
 
   // إعادة الكاش بعد استقرار التحجيم فقط (الستور يُكتب عند onTransformEnd لا أثناءه،
   // فيطلق هذا الأثر مرة واحدة بدل كل إطار تحجيم)
@@ -127,15 +130,69 @@ export const URLImage = React.memo(function URLImage({
   React.useEffect(() => {
     if (!isDragLifted) return;
     const clear = () => setIsDragLifted(false);
-    window.addEventListener("pointerup", clear);
-    window.addEventListener("pointercancel", clear);
-    window.addEventListener("blur", clear);
+    window.addEventListener('pointerup', clear);
+    window.addEventListener('pointercancel', clear);
+    window.addEventListener('blur', clear);
     return () => {
-      window.removeEventListener("pointerup", clear);
-      window.removeEventListener("pointercancel", clear);
-      window.removeEventListener("blur", clear);
+      window.removeEventListener('pointerup', clear);
+      window.removeEventListener('pointercancel', clear);
+      window.removeEventListener('blur', clear);
     };
   }, [isDragLifted]);
+
+  const clipFunc = React.useMemo(() => {
+    if (!element.maskShape || element.maskShape === 'none') return undefined;
+
+    return (ctx: Konva.Context) => {
+      const w = nodeW;
+      const h = nodeH;
+      if (element.maskShape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
+        ctx.closePath();
+      } else if (element.maskShape === 'star') {
+        const cx = w / 2;
+        const cy = h / 2;
+        const spikes = 5;
+        const outerRadius = Math.min(w, h) / 2;
+        const innerRadius = outerRadius / 2;
+        let rot = (Math.PI / 2) * 3;
+        const step = Math.PI / spikes;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - outerRadius);
+        for (let i = 0; i < spikes; i++) {
+          let x = cx + Math.cos(rot) * outerRadius;
+          let y = cy + Math.sin(rot) * outerRadius;
+          ctx.lineTo(x, y);
+          rot += step;
+
+          x = cx + Math.cos(rot) * innerRadius;
+          y = cy + Math.sin(rot) * innerRadius;
+          ctx.lineTo(x, y);
+          rot += step;
+        }
+        ctx.lineTo(cx, cy - outerRadius);
+        ctx.closePath();
+      } else if (element.maskShape === 'heart') {
+        const topCurveHeight = h * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(w / 2, topCurveHeight);
+        ctx.bezierCurveTo(w / 2, 0, 0, 0, 0, topCurveHeight);
+        ctx.bezierCurveTo(0, (h + topCurveHeight) / 2, w / 2, (h + topCurveHeight) / 2, w / 2, h);
+        ctx.bezierCurveTo(
+          w / 2,
+          (h + topCurveHeight) / 2,
+          w,
+          (h + topCurveHeight) / 2,
+          w,
+          topCurveHeight,
+        );
+        ctx.bezierCurveTo(w, 0, w / 2, 0, w / 2, topCurveHeight);
+        ctx.closePath();
+      }
+    };
+  }, [element.maskShape, nodeW, nodeH]);
 
   return (
     <Group
@@ -175,8 +232,9 @@ export const URLImage = React.memo(function URLImage({
         scaleY={flippedY ? -1 : 1}
         width={nodeW}
         height={nodeH}
+        clipFunc={clipFunc}
       >
-        {element.bgColor && element.bgColor !== "transparent" && (
+        {element.bgColor && element.bgColor !== 'transparent' && (
           <Rect
             x={0}
             y={0}
@@ -197,8 +255,8 @@ export const URLImage = React.memo(function URLImage({
           perfectDrawEnabled={false}
           // 🚀 أثناء السحب: ظل الرفع مخفّض (blur 8 بدل 16) والظل المخصص
           // مُطفأ تماماً — تمريرة الضبابية خارج الشاشة هي أغلى عملية/إطار.
-          shadowColor={liftActive ? "rgba(15, 23, 42, 0.45)" : element.shadowColor}
-          shadowBlur={isDragLifted ? (liftActive ? 8 : 0) : (element.shadowBlur || 0)}
+          shadowColor={liftActive ? 'rgba(15, 23, 42, 0.45)' : element.shadowColor}
+          shadowBlur={isDragLifted ? (liftActive ? 8 : 0) : element.shadowBlur || 0}
           shadowOffsetX={liftActive ? 0 : element.shadowOffsetX || 0}
           shadowOffsetY={liftActive ? 4 : element.shadowOffsetY || 0}
           shadowOpacity={isDragLifted ? (liftActive ? 0.25 : 0) : (element.shadowOpacity ?? 0)}
@@ -209,6 +267,8 @@ export const URLImage = React.memo(function URLImage({
           blurRadius={element.blur || 0}
           saturation={filterProps.saturation}
           sepiaRatio={filterProps.sepiaRatio}
+          pixelSize={filterProps.pixelSize}
+          threshold={filterProps.threshold}
         />
         {isEnhancing && (
           <MagicAiScanner

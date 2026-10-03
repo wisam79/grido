@@ -310,6 +310,8 @@ export const KonvaCollageImage = React.memo(
           contrast={filterResult.contrast}
           saturation={filterResult.saturation}
           sepiaRatio={filterResult.sepiaRatio}
+          pixelSize={filterResult.pixelSize}
+          threshold={filterResult.threshold}
           onClick={(e) => onClickRef.current?.(e)}
           onTap={(e) => onClickRef.current?.(e)}
           onDblClick={(e) => onDblClickRef.current?.(e)}

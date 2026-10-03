@@ -346,7 +346,7 @@ const CODE_ASSERTIONS = [
   {
     label: 'BUG-CRIT-03 — فحص data:image/ قبل SaveImageFromBase64',
     file: 'frontend/src/components/editor/properties/panels/image-properties.tsx',
-    mustContain: ['b64.startsWith("data:image/")'],
+    mustContain: ["b64.startsWith('data:image/')"],
   },
   {
     label: 'BUG-MED-03 — تجميع أوامر Canvas 2D لخطوط القص بدل stroke لكل خط',
@@ -617,7 +617,9 @@ function checkCodeAssertions() {
     }
     const text = readFileSync(full, 'utf8');
     const lines = text.split(/\r?\n/);
-    const hits = (needle) => lines.findIndex((line) => line.includes(needle)) + 1;
+    const normalizeQuotes = (str) => str.replace(/["']/g, '"');
+    const hits = (needle) =>
+      lines.findIndex((line) => line.includes(needle) || normalizeQuotes(line).includes(normalizeQuotes(needle))) + 1;
 
     for (const needle of assertion.mustContain ?? []) {
       if (hits(needle) === 0) {

@@ -1,12 +1,12 @@
-import React from "react";
-import { Layer } from "react-konva";
-import Konva from "konva";
-import type { KonvaEventObject } from "konva/lib/Node";
-import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { SnapGuide } from "@/lib/canvas/snap-utils";
-import { scaleElementDecorations } from "@/lib/canvas/scale-decorations";
-import { URLImage, KonvaTextElement, KonvaShapeElement } from "../konva-elements";
-import { EditorTransformer } from "../elements/editor-transformer";
+import React from 'react';
+import { Layer, Rect } from 'react-konva';
+import Konva from 'konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
+import { CanvasElement, useEditorStore } from '@/lib/editor-store';
+import { SnapGuide } from '@/lib/canvas/snap-utils';
+import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
+import { URLImage, KonvaTextElement, KonvaShapeElement } from '../konva-elements';
+import { EditorTransformer } from '../elements/editor-transformer';
 
 interface KonvaSingleLayerProps {
   sortedElements: CanvasElement[];
@@ -26,6 +26,7 @@ interface KonvaSingleLayerProps {
   createElementMouseDown: (elId: string) => (e: KonvaEventObject<MouseEvent>) => void;
   createElementClick: (elId: string) => (e: KonvaEventObject<MouseEvent>) => void;
   createElementRef: (elId: string) => { current: Konva.Node | null };
+  marqueeRectRef?: React.RefObject<Konva.Rect | null>;
 }
 
 export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
@@ -46,11 +47,14 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
   createElementMouseDown,
   createElementClick,
   createElementRef,
+  marqueeRectRef,
 }: KonvaSingleLayerProps) {
-  const isText = selectedIds.length > 0 && selectedIds.every((id) => {
-    const el = sortedElements.find((e) => e.id === id);
-    return el?.type === "text";
-  });
+  const isText =
+    selectedIds.length > 0 &&
+    selectedIds.every((id) => {
+      const el = sortedElements.find((e) => e.id === id);
+      return el?.type === 'text';
+    });
 
   return (
     <Layer>
@@ -72,12 +76,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
         const minY = el.y + Math.min(...cornersY);
         const maxY = el.y + Math.max(...cornersY);
 
-        if (
-          minX > 1.1 ||
-          minY > 1.1 ||
-          maxX < -0.1 ||
-          maxY < -0.1
-        ) {
+        if (minX > 1.1 || minY > 1.1 || maxX < -0.1 || maxY < -0.1) {
           return null;
         }
 
@@ -104,10 +103,10 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
           elementRef: createElementRef(el.id),
         };
 
-        if (el.type === "image" && el.imageSrc) {
+        if (el.type === 'image' && el.imageSrc) {
           return <URLImage key={el.id} {...elementProps} />;
         }
-        if (el.type === "text") {
+        if (el.type === 'text') {
           return (
             <KonvaTextElement
               key={el.id}
@@ -116,7 +115,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
             />
           );
         }
-        if (el.type === "shape") {
+        if (el.type === 'shape') {
           return <KonvaShapeElement key={el.id} {...elementProps} />;
         }
         return null;
@@ -161,8 +160,8 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
                 // (ثابت «التفاف نص Konva الافتراضي»).
                 node.scaleX(1);
                 node.scaleY(1);
-                if (typeof node.width === "function") node.width(newW);
-                if (el.type !== "text" && typeof node.height === "function") node.height(newH);
+                if (typeof node.width === 'function') node.width(newW);
+                if (el.type !== 'text' && typeof node.height === 'function') node.height(newH);
 
                 const newWidth = newW / canvasWidth;
                 const newHeight = newH / canvasHeight;
@@ -183,10 +182,10 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
                   flipY: nextFlipY,
                 };
 
-                if (el.type === "text") {
+                if (el.type === 'text') {
                   (patch as Partial<Record<string, unknown>>).fontSize = Math.max(
                     6,
-                    Math.round((el.fontSize || 16) * absScaleY)
+                    Math.round((el.fontSize || 16) * absScaleY),
                   );
                 }
 
@@ -204,6 +203,19 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
             trRef.current?.forceUpdate();
             trRef.current?.getLayer()?.batchDraw();
           }}
+        />
+      )}
+      {marqueeRectRef && (
+        <Rect
+          ref={marqueeRectRef as unknown as React.Ref<Konva.Rect>}
+          visible={false}
+          listening={false}
+          name="marquee-rect"
+          fill="rgba(0, 120, 212, 0.12)"
+          stroke="#0078d4"
+          strokeWidth={1}
+          dash={[4, 2]}
+          perfectDrawEnabled={false}
         />
       )}
     </Layer>

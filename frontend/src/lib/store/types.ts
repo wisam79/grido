@@ -74,6 +74,8 @@ export interface ImageElement extends BaseCanvasElement {
   bgColor?: string;
   /** مصدر قالب الملصق إن كان العنصر أُدرج من استوديو الملصقات */
   stickerSource?: StickerElementSource;
+  /** قناع قص متجهات للصورة */
+  maskShape?: 'none' | 'circle' | 'heart' | 'star';
 }
 
 export interface TextElement extends BaseCanvasElement {
@@ -114,12 +116,16 @@ export interface TextElement extends BaseCanvasElement {
 
 export interface ShapeElement extends BaseCanvasElement {
   type: 'shape';
-  shape: 'rect' | 'ellipse' | 'line' | 'star' | 'path';
+  shape: 'rect' | 'ellipse' | 'line' | 'star' | 'path' | 'polygon' | 'arrow' | 'ring';
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
   radius?: number;
   svgPath?: string;
+  sides?: number;
+  pointerLength?: number;
+  pointerWidth?: number;
+  innerRadius?: number;
 }
 
 export type CanvasElement = ImageElement | TextElement | ShapeElement;

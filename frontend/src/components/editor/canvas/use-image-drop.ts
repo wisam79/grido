@@ -1,17 +1,18 @@
 import { useCallback, useState, type DragEvent, type RefObject } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
+import { useStageRef } from '@/lib/canvas/stage-context';
+import type Konva from 'konva';
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
 
 /**
  * 🧭 منطق إسقاط الصور على مساحة العمل: رفع بدفعات (3 ملفات)، مطابقة الخانة
- * تحت مؤشر السقوط بإحداثيات منطقية، وتوزيع الصور على الخانات الفارغة.
- * 🛡️ يقرأ الحالة الطازجة (freshState) لحظة الاكتمال — إعدادات الكولاج قد
- * تتغير أثناء الرفع (إصلاح Bug#15) — وكانت هذه الكتلة مضمّنة في EditorCanvas.
+ * تحت مؤشر السقوط بالاعتماد أولاً على محرك Konva Hit-Testing الأصلي مع مسار احتياطي.
  */
 export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
   const [isLoading, setIsLoading] = useState(false);
+  const stageRef = useStageRef();
 
   const handleDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
@@ -107,7 +108,26 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
 
         if (freshMode === 'collage') {
           let targetSlotId: string | null = null;
-          if (innerRef.current) {
+
+          // 1. المسار الأساسي: كشف العقدة المصابة تحت المؤشر عبر Konva Hit-Testing الأصلي O(1)
+          const stage = stageRef.current;
+          if (stage) {
+            stage.setPointersPositions(e);
+            const pointer = stage.getPointerPosition();
+            if (pointer) {
+              const shape = stage.getIntersection(pointer);
+              const slotGroup = shape?.findAncestor?.(
+                (n: Konva.Node) => !!n.id() && n.id().startsWith('slot-'),
+                true,
+              );
+              if (slotGroup) {
+                targetSlotId = slotGroup.id().replace('slot-', '');
+              }
+            }
+          }
+
+          // 2. المسار الاحتياطي: إذا لم يتوفر مسرح Konva (بيئة headless / اختبارات)
+          if (!targetSlotId && innerRef.current) {
             const rect = innerRef.current.getBoundingClientRect();
             // إحداثيات منطقية بمساحة الكانفس (مثل konva-collage-layer) بدل نسبة عرض الشاشة —
             // القانون يشمل هوامش الكولاج وفجواته: margin + slot.x * availW + gap/2
@@ -160,7 +180,7 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
         setIsLoading(false);
       }
     },
-    [innerRef],
+    [innerRef, stageRef],
   );
 
   return {

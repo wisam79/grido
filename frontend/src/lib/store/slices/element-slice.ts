@@ -9,6 +9,7 @@ import {
 import { uid } from '../../utils';
 import { computeSmartGridLayout } from '../../canvas/grid-layout-math';
 import { getElementVisualBox } from '../../canvas/element-geometry';
+import { resolveRingInnerRadius } from '../../canvas/ring-geometry';
 import { TextPresetType, TEXT_PRESETS } from '../../templates';
 
 export type { TextPresetType };
@@ -375,10 +376,10 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const id = uid();
     const state = get();
 
-    const isLine = shape === 'line';
+    const isLinear = shape === 'line' || shape === 'arrow';
     const basePx = Math.min(state.canvasWidth, state.canvasHeight) * 0.25;
-    const wPx = isLine ? basePx * 1.5 : basePx;
-    const hPx = isLine ? Math.max(16, basePx * 0.05) : basePx;
+    const wPx = isLinear ? basePx * 1.5 : basePx;
+    const hPx = isLinear ? Math.max(24, basePx * 0.1) : basePx;
 
     const wPercent = wPx / state.canvasWidth;
     const hPercent = hPx / state.canvasHeight;
@@ -396,9 +397,13 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       shape,
       fill: '#3b82f6',
       stroke: '#3b82f6',
-      strokeWidth: isLine ? 4 : 0,
+      strokeWidth: isLinear ? 4 : 0,
       radius: 8,
       svgPath,
+      sides: shape === 'polygon' ? 6 : undefined,
+      pointerLength: shape === 'arrow' ? 14 : undefined,
+      pointerWidth: shape === 'arrow' ? 14 : undefined,
+      innerRadius: shape === 'ring' ? resolveRingInnerRadius(undefined, basePx, basePx) : undefined,
     };
     set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
     get().pushHistory();

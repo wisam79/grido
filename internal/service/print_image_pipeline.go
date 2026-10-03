@@ -139,8 +139,42 @@ func applyFilter(img image.Image, filter string) image.Image {
 		img = imaging.AdjustContrast(img, 25)
 		img = imaging.AdjustBrightness(img, 2)
 		return img
+	case "pixelate":
+		return applyPixelate(img, 10)
+	case "threshold":
+		return applyThreshold(img, 0.5)
 	}
 	return img
+}
+
+func applyPixelate(img image.Image, pixelSize int) image.Image {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	if w <= pixelSize || h <= pixelSize || pixelSize <= 1 {
+		return img
+	}
+	smallW := w / pixelSize
+	smallH := h / pixelSize
+	if smallW < 1 {
+		smallW = 1
+	}
+	if smallH < 1 {
+		smallH = 1
+	}
+	small := imaging.Resize(img, smallW, smallH, imaging.NearestNeighbor)
+	return imaging.Resize(small, w, h, imaging.NearestNeighbor)
+}
+
+func applyThreshold(img image.Image, threshold float64) image.Image {
+	th := threshold * 255.0
+	return imaging.AdjustFunc(img, func(c color.NRGBA) color.NRGBA {
+		gray := 0.299*float64(c.R) + 0.587*float64(c.G) + 0.114*float64(c.B)
+		var val uint8 = 0
+		if gray >= th {
+			val = 255
+		}
+		return color.NRGBA{R: val, G: val, B: val, A: c.A}
+	})
 }
 
 func applySepia(img image.Image) image.Image {

@@ -49,17 +49,23 @@ export function drawImageCover(
   ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }
 
-// رسم صورة الخانة مع القص (zoom/drag) والقلب والدوران —
-// يطابق منطق KonvaCollageImage في كل من التصدير اليدوي وتصدير الخانات المفردة
-export function drawSlotImage(
-  ctx: CanvasRenderingContext2D,
+// مستطيل القص داخل الصورة بعد zoom/drag وبلا قلب/دوران (المحور المحلي للخانة)
+export interface SlotCrop {
+  sx: number;
+  sy: number;
+  sw: number;
+  sh: number;
+}
+
+// حساب مستطيل القص فقط — منفصل عن التحويل حتى يمكن تطبيق مرشّح البكسل
+// في الفضاء المحلي قبل القلب/الدوران (وهو ترتيب Konva: الفلاتر تُطبَّق على
+// صورة العقدة ثم يُطبَّق تحويل العقدة).
+export function computeSlotCrop(
   img: HTMLImageElement,
-  x: number,
-  y: number,
   w: number,
   h: number,
   slot: SlotTransform,
-) {
+): SlotCrop {
   const normRot = (((slot.rotation || 0) % 360) + 360) % 360;
   const isRotated90or270 = normRot === 90 || normRot === 270;
   const imgAspect = img.width / img.height;
@@ -74,19 +80,62 @@ export function drawSlotImage(
   const zoom = slot.zoom && slot.zoom > 0 ? slot.zoom : 1;
   sw /= zoom;
   sh /= zoom;
-  const defaultSx = imgAspect > slotAspect ? (img.width - sw) / 2 : 0;
-  const defaultSy = imgAspect > slotAspect ? 0 : (img.height - sh) / 2;
+  const sx = imgAspect > slotAspect ? (img.width - sw) / 2 : 0;
+  const sy = imgAspect > slotAspect ? 0 : (img.height - sh) / 2;
   const maxDragX = (img.width - sw) / 2;
   const maxDragY = (img.height - sh) / 2;
-  const dragX = Math.max(-maxDragX, Math.min(maxDragX, slot.dragX || 0));
-  const dragY = Math.max(-maxDragY, Math.min(maxDragY, slot.dragY || 0));
+  return {
+    sx: sx + Math.max(-maxDragX, Math.min(maxDragX, slot.dragX || 0)),
+    sy: sy + Math.max(-maxDragY, Math.min(maxDragY, slot.dragY || 0)),
+    sw,
+    sh,
+  };
+}
 
+// قلب/دوران حول مركز المستطيل — يُطبَّق على أي drew content في الفضاء المحلي
+export function applySlotTransform(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  slot: SlotTransform,
+): void {
   ctx.translate(x + w / 2, y + h / 2);
   ctx.rotate(((slot.rotation || 0) * Math.PI) / 180);
   if (slot.flipX) ctx.scale(-1, 1);
   if (slot.flipY) ctx.scale(1, -1);
   ctx.translate(-w / 2, -h / 2);
-  ctx.drawImage(img, defaultSx + dragX, defaultSy + dragY, sw, sh, 0, 0, w, h);
+}
+
+// رسم الصورة المقصوصة في الفضاء المحلي (بلا قلب/دوران) — يُستخدم كطبقة
+// وسيطة قبل مرشّحات البكسل، وبالأساس داخل drawSlotImage
+export function drawSlotImageLocal(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  w: number,
+  h: number,
+  slot: SlotTransform,
+): void {
+  const { sx, sy, sw, sh } = computeSlotCrop(img, w, h, slot);
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+}
+
+// رسم صورة الخانة مع القص (zoom/drag) والقلب والدوران —
+// يطابق منطق KonvaCollageImage في كل من التصدير اليدوي وتصدير الخانات المفردة
+export function drawSlotImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  slot: SlotTransform,
+) {
+  ctx.save();
+  applySlotTransform(ctx, x, y, w, h, slot);
+  drawSlotImageLocal(ctx, img, w, h, slot);
+  ctx.restore();
 }
 
 export function drawRoundRect(

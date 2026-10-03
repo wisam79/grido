@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from "react";
-import { useEditorStore, CanvasElement } from "@/lib/editor-store";
-import type { TextElement, ShapeElement, ImageElement } from "@/lib/store/types";
-import { Button } from "@/components/ui/button";
+import React, { useState, useCallback } from 'react';
+import { useEditorStore, CanvasElement } from '@/lib/editor-store';
+import type { TextElement, ShapeElement, ImageElement } from '@/lib/store/types';
+import { Button } from '@/components/ui/button';
 import {
   Stack,
   Eye,
@@ -15,17 +15,26 @@ import {
   Copy,
   DotsSixVertical,
   CaretDown,
-} from "@/components/ui/icons";
-import { cn } from "@/lib/utils";
-import { useShallow } from "zustand/react/shallow";
+} from '@/components/ui/icons';
+import { cn } from '@/lib/utils';
+import { useShallow } from 'zustand/react/shallow';
 import {
-  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent
-} from "@dnd-kit/core";
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
 import {
-  SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { FluentTooltip as TooltipBtn } from "@/components/ui/blocks";
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 
 interface SortableLayerItemProps {
   el: CanvasElement;
@@ -40,13 +49,25 @@ interface SortableLayerItemProps {
 }
 
 const SortableLayerItem = React.memo(
-  function SortableLayerItem({ el, layerNumber, isSelected, toggleVisibility, toggleLock, deleteLayer, duplicateLayer, selectElement, toggleElementSelection }: SortableLayerItemProps) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: el.id });
+  function SortableLayerItem({
+    el,
+    layerNumber,
+    isSelected,
+    toggleVisibility,
+    toggleLock,
+    deleteLayer,
+    duplicateLayer,
+    selectElement,
+    toggleElementSelection,
+  }: SortableLayerItemProps) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+      id: el.id,
+    });
 
     const style = {
       transform: CSS.Transform.toString(transform),
       transition,
-      zIndex: isDragging ? 100 : "auto",
+      zIndex: isDragging ? 100 : 'auto',
       opacity: isDragging ? 0.9 : 1,
     };
 
@@ -58,7 +79,7 @@ const SortableLayerItem = React.memo(
         ref={setNodeRef}
         style={style}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             if (e.shiftKey || e.ctrlKey || e.metaKey) {
               toggleElementSelection(el.id);
@@ -76,9 +97,9 @@ const SortableLayerItem = React.memo(
         }}
         className={`flex items-center justify-between p-2 rounded-lg border text-start cursor-pointer transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none ${
           isSelected
-            ? "border-primary/50 bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/25"
-            : "border-transparent bg-transparent hover:bg-input text-muted-foreground hover:text-foreground"
-        } ${isDragging ? "shadow-fluent-8 bg-card ring-1 ring-primary/30" : ""}`}
+            ? 'border-primary/50 bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/25'
+            : 'border-transparent bg-transparent hover:bg-input text-muted-foreground hover:text-foreground'
+        } ${isDragging ? 'shadow-fluent-8 bg-card ring-1 ring-primary/30' : ''}`}
       >
         <div className="flex items-center gap-2 min-w-0">
           <div
@@ -94,7 +115,7 @@ const SortableLayerItem = React.memo(
           </div>
 
           {/* معاينة مصغرة للصورة أو أيقونة النوع */}
-          {el.type === "image" && (el as ImageElement).imageSrc ? (
+          {el.type === 'image' && (el as ImageElement).imageSrc ? (
             <div className="w-6 h-6 rounded bg-muted/80 overflow-hidden shrink-0 border border-border/60 shadow-2xs">
               <img
                 src={(el as ImageElement).imageSrc}
@@ -105,55 +126,69 @@ const SortableLayerItem = React.memo(
             </div>
           ) : (
             <span className="shrink-0 text-muted-foreground/80 w-6 h-6 rounded bg-muted/40 flex items-center justify-center border border-border/40">
-              {el.type === "image" && <Image className="w-3.5 h-3.5" weight="regular" />}
-              {el.type === "text" && <TextAa className="w-3.5 h-3.5" weight="bold" />}
-              {el.type === "shape" && <Shapes className="w-3.5 h-3.5" weight="regular" />}
+              {el.type === 'image' && <Image className="w-3.5 h-3.5" weight="regular" />}
+              {el.type === 'text' && <TextAa className="w-3.5 h-3.5" weight="bold" />}
+              {el.type === 'shape' && <Shapes className="w-3.5 h-3.5" weight="regular" />}
             </span>
           )}
 
           <span className="text-xs font-semibold truncate max-w-[120px]">
-            {el.type === "image"
-              ? `صورة ${String(layerNumber).padStart(2, "0")}`
-              : el.type === "text"
-              ? (el as TextElement).text || `نص ${String(layerNumber).padStart(2, "0")}`
-              : el.shape === "rect"
-              ? `مستطيل ${String(layerNumber).padStart(2, "0")}`
-              : el.shape === "ellipse"
-              ? `دائرة ${String(layerNumber).padStart(2, "0")}`
-              : el.shape === "star"
-              ? `نجمة ${String(layerNumber).padStart(2, "0")}`
-              : el.shape === "line"
-              ? `خط ${String(layerNumber).padStart(2, "0")}`
-              : el.shape === "path"
-              ? `مسار ${String(layerNumber).padStart(2, "0")}`
-              : `شكل ${String(layerNumber).padStart(2, "0")}`}
+            {el.type === 'image'
+              ? `صورة ${String(layerNumber).padStart(2, '0')}`
+              : el.type === 'text'
+                ? (el as TextElement).text || `نص ${String(layerNumber).padStart(2, '0')}`
+                : el.shape === 'rect'
+                  ? `مستطيل ${String(layerNumber).padStart(2, '0')}`
+                  : el.shape === 'ellipse'
+                    ? `دائرة ${String(layerNumber).padStart(2, '0')}`
+                    : el.shape === 'ring'
+                      ? `حلقة ${String(layerNumber).padStart(2, '0')}`
+                      : el.shape === 'polygon'
+                        ? `مضلع ${String(layerNumber).padStart(2, '0')}`
+                        : el.shape === 'arrow'
+                          ? `سهم ${String(layerNumber).padStart(2, '0')}`
+                          : el.shape === 'star'
+                            ? `نجمة ${String(layerNumber).padStart(2, '0')}`
+                            : el.shape === 'line'
+                              ? `خط ${String(layerNumber).padStart(2, '0')}`
+                              : el.shape === 'path'
+                                ? `مسار ${String(layerNumber).padStart(2, '0')}`
+                                : `شكل ${String(layerNumber).padStart(2, '0')}`}
           </span>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-            <TooltipBtn content={isLocked ? "فك القفل" : "قفل الطبقة"} side="top">
+          <TooltipBtn content={isLocked ? 'فك القفل' : 'قفل الطبقة'} side="top">
             <Button
               variant="ghost"
               size="icon"
-              aria-label={isLocked ? "فك القفل" : "قفل الطبقة"}
-              className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${isLocked ? "text-primary" : "text-muted-foreground/50 hover:text-foreground"}`}
+              aria-label={isLocked ? 'فك القفل' : 'قفل الطبقة'}
+              className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${isLocked ? 'text-primary' : 'text-muted-foreground/50 hover:text-foreground'}`}
               onClick={(e) => toggleLock(el, e)}
             >
-              {isLocked ? <LockSimple className="w-3.5 h-3.5" weight="fill" /> : <LockSimpleOpen className="w-3.5 h-3.5" weight="regular" />}
+              {isLocked ? (
+                <LockSimple className="w-3.5 h-3.5" weight="fill" />
+              ) : (
+                <LockSimpleOpen className="w-3.5 h-3.5" weight="regular" />
+              )}
             </Button>
           </TooltipBtn>
-          <TooltipBtn content={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"} side="top">
+          <TooltipBtn content={isVisible ? 'إخفاء الطبقة' : 'إظهار الطبقة'} side="top">
             <Button
               variant="ghost"
               size="icon"
-              aria-label={isVisible ? "إخفاء الطبقة" : "إظهار الطبقة"}
-              className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${!isVisible ? "text-muted-foreground/40" : "text-muted-foreground hover:text-foreground"}`}
+              aria-label={isVisible ? 'إخفاء الطبقة' : 'إظهار الطبقة'}
+              className={`w-7 h-7 rounded-md hover:bg-input focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${!isVisible ? 'text-muted-foreground/40' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={(e) => toggleVisibility(el, e)}
             >
-              {isVisible ? <Eye className="w-3.5 h-3.5" weight="regular" /> : <EyeSlash className="w-3.5 h-3.5" weight="regular" />}
+              {isVisible ? (
+                <Eye className="w-3.5 h-3.5" weight="regular" />
+              ) : (
+                <EyeSlash className="w-3.5 h-3.5" weight="regular" />
+              )}
             </Button>
           </TooltipBtn>
-           <TooltipBtn content="تكرار الطبقة" side="top">
+          <TooltipBtn content="تكرار الطبقة" side="top">
             <Button
               variant="ghost"
               size="icon"
@@ -164,7 +199,7 @@ const SortableLayerItem = React.memo(
               <Copy className="w-3.5 h-3.5" weight="regular" />
             </Button>
           </TooltipBtn>
-           <TooltipBtn content="حذف الطبقة" side="top">
+          <TooltipBtn content="حذف الطبقة" side="top">
             <Button
               variant="ghost"
               size="icon"
@@ -192,22 +227,35 @@ const SortableLayerItem = React.memo(
       (prevProps.el as ShapeElement).shape === (nextProps.el as ShapeElement).shape &&
       prevProps.el.zIndex === nextProps.el.zIndex
     );
-  }
+  },
 );
 
 export function LayersList() {
-  const { elements, selectedId, selectedIds, selectElement, updateElement, updateElements, removeElement, duplicateElement, pushHistory, toggleElementSelection } = useEditorStore(useShallow((state) => ({
-    elements: state.elements,
-    selectedId: state.selectedId,
-    selectedIds: state.selectedIds,
-    selectElement: state.selectElement,
-    updateElement: state.updateElement,
-    updateElements: state.updateElements,
-    removeElement: state.removeElement,
-    duplicateElement: state.duplicateElement,
-    pushHistory: state.pushHistory,
-    toggleElementSelection: state.toggleElementSelection,
-  })));
+  const {
+    elements,
+    selectedId,
+    selectedIds,
+    selectElement,
+    updateElement,
+    updateElements,
+    removeElement,
+    duplicateElement,
+    pushHistory,
+    toggleElementSelection,
+  } = useEditorStore(
+    useShallow((state) => ({
+      elements: state.elements,
+      selectedId: state.selectedId,
+      selectedIds: state.selectedIds,
+      selectElement: state.selectElement,
+      updateElement: state.updateElement,
+      updateElements: state.updateElements,
+      removeElement: state.removeElement,
+      duplicateElement: state.duplicateElement,
+      pushHistory: state.pushHistory,
+      toggleElementSelection: state.toggleElementSelection,
+    })),
+  );
 
   const [expanded, setExpanded] = useState(true);
 
@@ -217,38 +265,56 @@ export function LayersList() {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
-  const toggleVisibility = useCallback((el: CanvasElement, e: React.MouseEvent) => {
-    e.stopPropagation();
-    updateElement(el.id, { visible: el.visible === false ? true : false });
-    pushHistory();
-  }, [updateElement, pushHistory]);
+  const toggleVisibility = useCallback(
+    (el: CanvasElement, e: React.MouseEvent) => {
+      e.stopPropagation();
+      updateElement(el.id, { visible: el.visible === false ? true : false });
+      pushHistory();
+    },
+    [updateElement, pushHistory],
+  );
 
-  const toggleLock = useCallback((el: CanvasElement, e: React.MouseEvent) => {
-    e.stopPropagation();
-    updateElement(el.id, { locked: !el.locked });
-    pushHistory();
-  }, [updateElement, pushHistory]);
+  const toggleLock = useCallback(
+    (el: CanvasElement, e: React.MouseEvent) => {
+      e.stopPropagation();
+      updateElement(el.id, { locked: !el.locked });
+      pushHistory();
+    },
+    [updateElement, pushHistory],
+  );
 
-  const deleteLayer = useCallback((id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    removeElement(id);
-  }, [removeElement]);
+  const deleteLayer = useCallback(
+    (id: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      removeElement(id);
+    },
+    [removeElement],
+  );
 
-  const duplicateLayer = useCallback((id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    duplicateElement(id);
-  }, [duplicateElement]);
+  const duplicateLayer = useCallback(
+    (id: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      duplicateElement(id);
+    },
+    [duplicateElement],
+  );
 
-  const handleSelectElement = useCallback((id: string) => {
-    selectElement(id);
-  }, [selectElement]);
+  const handleSelectElement = useCallback(
+    (id: string) => {
+      selectElement(id);
+    },
+    [selectElement],
+  );
 
-  const handleToggleSelection = useCallback((id: string) => {
-    toggleElementSelection(id);
-  }, [toggleElementSelection]);
+  const handleToggleSelection = useCallback(
+    (id: string) => {
+      toggleElementSelection(id);
+    },
+    [toggleElementSelection],
+  );
 
   if (elements.length === 0) {
     return (
@@ -258,7 +324,12 @@ export function LayersList() {
         </div>
         <div className="space-y-1">
           <p className="text-xs font-bold text-foreground/80">لا توجد عناصر</p>
-          <p className="text-micro text-muted-foreground max-w-[170px] leading-normal mx-auto text-center" dir="rtl">أضف عناصر من شريط الأدوات</p>
+          <p
+            className="text-micro text-muted-foreground max-w-[170px] leading-normal mx-auto text-center"
+            dir="rtl"
+          >
+            أضف عناصر من شريط الأدوات
+          </p>
         </div>
       </div>
     );
@@ -282,7 +353,7 @@ export function LayersList() {
     // تحديث Z-Index بناءً على الترتيب الجديد (العنصر الأول يأخذ أعلى رقم)
     const baseZ = 10;
     const len = newSorted.length;
-    
+
     // منع تحديث العناصر التي لم تتغير لتقليل الـ Renders
     const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
     newSorted.forEach((el, index) => {
@@ -307,7 +378,13 @@ export function LayersList() {
         className="flex items-center justify-between w-full text-start cursor-pointer select-none"
       >
         <div className="flex items-center gap-1.5">
-          <CaretDown className={cn("w-4 h-4 transition-transform duration-200 text-muted-foreground", !expanded && "-rotate-90")} weight="bold" />
+          <CaretDown
+            className={cn(
+              'w-4 h-4 transition-transform duration-200 text-muted-foreground',
+              !expanded && '-rotate-90',
+            )}
+            weight="bold"
+          />
           <span className="text-sm font-bold text-foreground/90 cursor-pointer flex items-center gap-1.5">
             <Stack className="w-4 h-4 text-primary shrink-0" weight="duotone" />
             الطبقات ({elements.length})
@@ -317,8 +394,15 @@ export function LayersList() {
 
       {expanded && (
         <div className="space-y-2 pt-2 border-t border-border/10 animate-in fade-in duration-200">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={sorted.map(el => el.id)} strategy={verticalListSortingStrategy}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={sorted.map((el) => el.id)}
+              strategy={verticalListSortingStrategy}
+            >
               <div className="space-y-1 max-h-[300px] overflow-y-auto pe-0.5">
                 {sorted.map((el, index) => (
                   <SortableLayerItem

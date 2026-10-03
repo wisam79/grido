@@ -8,7 +8,7 @@
 // الصور تُمدّد (stretch) داخل مستطيلها، والقلب حول المحور الأوسط، والزوايا
 // المستديرة تُقصّ — أي عنصر خارج هذه المجموعة يعيد التوجيه إلى مسار الالتقاط.
 
-import type { CanvasElement, ImageElement } from "@/lib/store/types";
+import type { CanvasElement, ImageElement } from '@/lib/store/types';
 
 export interface SingleCompositionItem {
   imageSrc: string;
@@ -55,65 +55,78 @@ export interface SingleCompositionResult {
 
 // المرشحات التي تنفذها خوارزمية Go في applyFilter — أي مرشح خارجها يُهمَل هناك
 const GO_SUPPORTED_FILTERS = new Set([
-  "none",
-  "grayscale",
-  "invert",
-  "blur",
-  "sepia",
-  "enhance",
-  "skinGlow",
-  "clarity",
-  "lowlight",
-  "cinematic",
-  "monoPro",
+  'none',
+  'grayscale',
+  'invert',
+  'blur',
+  'sepia',
+  'enhance',
+  'skinGlow',
+  'clarity',
+  'lowlight',
+  'cinematic',
+  'monoPro',
+  'pixelate',
+  'threshold',
 ]);
 
-const LOCAL_IMAGE_PREFIX = "/local-image/";
+const LOCAL_IMAGE_PREFIX = '/local-image/';
 
 export function buildSingleComposition(input: SingleCompositionInput): SingleCompositionResult {
-  const { elements, canvasWidth, canvasHeight, canvasWidthMM, canvasHeightMM, backgroundColor } = input;
+  const { elements, canvasWidth, canvasHeight, canvasWidthMM, canvasHeightMM, backgroundColor } =
+    input;
 
   const fail = (reason: string): SingleCompositionResult => ({ eligible: false, reason });
 
-  if (!Number.isFinite(canvasWidth) || !Number.isFinite(canvasHeight) || canvasWidth <= 0 || canvasHeight <= 0) {
-    return fail("أبعاد الكانفاس غير صالحة");
+  if (
+    !Number.isFinite(canvasWidth) ||
+    !Number.isFinite(canvasHeight) ||
+    canvasWidth <= 0 ||
+    canvasHeight <= 0
+  ) {
+    return fail('أبعاد الكانفاس غير صالحة');
   }
-  if (!Number.isFinite(canvasWidthMM) || !Number.isFinite(canvasHeightMM) || canvasWidthMM <= 0 || canvasHeightMM <= 0) {
-    return fail("أبعاد الكانفاس بالمليمتر غير صالحة");
+  if (
+    !Number.isFinite(canvasWidthMM) ||
+    !Number.isFinite(canvasHeightMM) ||
+    canvasWidthMM <= 0 ||
+    canvasHeightMM <= 0
+  ) {
+    return fail('أبعاد الكانفاس بالمليمتر غير صالحة');
   }
 
-  if (typeof backgroundColor !== "string" || !/^#[0-9a-fA-F]{6}$/.test(backgroundColor)) {
-    return fail("خلفية الكانفاس ليست لوناً صلباً");
+  if (typeof backgroundColor !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(backgroundColor)) {
+    return fail('خلفية الكانفاس ليست لوناً صلباً');
   }
   // تدرج الخلفية يُلتقط بدقة عبر مسار التقاط Konva — المسار السريع في Go
   // يرسم خلفية مصمتة فقط فلا يجوز تمرير التدرج إليه
   if (input.backgroundGradientColor2) {
-    return fail("خلفية الكانفاس متدرجة (المسار السريع يدعم الألوان المصمتة فقط)");
+    return fail('خلفية الكانفاس متدرجة (المسار السريع يدعم الألوان المصمتة فقط)');
   }
 
   const visible = elements.filter((el) => el.visible !== false);
 
   for (const el of visible) {
-    if (el.type !== "image") {
+    if (el.type !== 'image') {
       return fail(`عنصر غير صورة (${el.type})`);
     }
     if (!el.imageSrc || !el.imageSrc.startsWith(LOCAL_IMAGE_PREFIX)) {
-      return fail("مصدر الصورة غير قابل للقراءة في الخدمة");
+      return fail('مصدر الصورة غير قابل للقراءة في الخدمة');
     }
     if (el.rotation && el.rotation !== 0) {
-      return fail("عنصر مدوّر (Konva يدور حول الأصل بينما Go حول المركز)");
+      return fail('عنصر مدوّر (Konva يدور حول الأصل بينما Go حول المركز)');
     }
     if (el.opacity !== undefined && el.opacity < 1) {
-      return fail("عنصر شفاف جزئياً");
+      return fail('عنصر شفاف جزئياً');
     }
     if (el.blur && el.blur > 0) {
-      return fail("عنصر بضبابية");
+      return fail('عنصر بضبابية');
     }
     if (el.shadowColor && (el.shadowOpacity ?? 0) > 0) {
-      return fail("عنصر بظل");
+      return fail('عنصر بظل');
     }
-    if (el.globalCompositeOperation && el.globalCompositeOperation !== "source-over") {
-      return fail("عنصر بنمط دمج مخصص");
+    if (el.globalCompositeOperation && el.globalCompositeOperation !== 'source-over') {
+      return fail('عنصر بنمط دمج مخصص');
     }
     if (el.filter && !GO_SUPPORTED_FILTERS.has(el.filter)) {
       return fail(`مرشح غير مدعوم في الخدمة (${el.filter})`);
@@ -131,7 +144,7 @@ export function buildSingleComposition(input: SingleCompositionInput): SingleCom
       y: el.y * canvasHeight,
       w: el.width * canvasWidth,
       h: el.height * canvasHeight,
-      filter: el.filter || "none",
+      filter: el.filter || 'none',
       brightness: el.brightness ?? 100,
       contrast: el.contrast ?? 100,
       saturation: el.saturation ?? 100,
@@ -139,7 +152,7 @@ export function buildSingleComposition(input: SingleCompositionInput): SingleCom
       flipY: el.flipY === true,
       cornerRadius: el.cornerRadius || 0,
       rotation: 0,
-      bgColor: el.bgColor && el.bgColor !== "transparent" ? el.bgColor : undefined,
+      bgColor: el.bgColor && el.bgColor !== 'transparent' ? el.bgColor : undefined,
     }));
 
   return {

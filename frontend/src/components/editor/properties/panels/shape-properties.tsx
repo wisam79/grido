@@ -1,4 +1,4 @@
-import { ShapeElement, useEditorStore } from "@/lib/editor-store";
+import { ShapeElement, useEditorStore } from '@/lib/editor-store';
 import {
   Palette,
   Square,
@@ -9,14 +9,16 @@ import {
   LineSegment,
   Star,
   Polygon,
-} from "@/components/ui/icons";
-import { PopoverColorPicker, QuickColorPalette } from "../shared-controls";
-import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { GradientPicker } from "../gradient-picker";
-import { gradientAngleFromPoints, gradientPointsFromAngle } from "../gradient-utils";
+  ArrowRight,
+} from '@/components/ui/icons';
+import { PopoverColorPicker, QuickColorPalette } from '../shared-controls';
+import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { GradientPicker } from '../gradient-picker';
+import { gradientAngleFromPoints, gradientPointsFromAngle } from '../gradient-utils';
+import { resolveRingInnerRadius, ringInnerRadiusMax } from '@/lib/canvas/ring-geometry';
 
 export interface ShapePropertiesProps {
   element: ShapeElement;
@@ -25,18 +27,18 @@ export interface ShapePropertiesProps {
 }
 
 const STROKE_WIDTH_PRESETS = [
-  { label: "بدون", val: 0 },
-  { label: "1px", val: 1 },
-  { label: "2px", val: 2 },
-  { label: "4px", val: 4 },
-  { label: "8px", val: 8 },
+  { label: 'بدون', val: 0 },
+  { label: '1px', val: 1 },
+  { label: '2px', val: 2 },
+  { label: '4px', val: 4 },
+  { label: '8px', val: 8 },
 ];
 
 const CORNER_RADIUS_PRESETS = [
-  { label: "حادة", val: 0 },
-  { label: "ناعمة", val: 8 },
-  { label: "مستديرة", val: 16 },
-  { label: "دائرية", val: 32 },
+  { label: 'حادة', val: 0 },
+  { label: 'ناعمة', val: 8 },
+  { label: 'مستديرة', val: 16 },
+  { label: 'دائرية', val: 32 },
 ];
 
 const OPACITY_PRESETS = [25, 50, 75, 100];
@@ -46,40 +48,47 @@ const OPACITY_PRESETS = [25, 50, 75, 100];
  * يركز على استدارة الزوايا، سماكة الحد، وعينة سريعة للون متوافقة مع معايير Fluent 2
  */
 export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: ShapePropertiesProps) {
-  const currentFill = element.fill || "#6366f1";
-  const isLine = element.shape === "line";
+  const currentFill = element.fill || '#6366f1';
+  const isLine = element.shape === 'line';
+  // مقاسات الكانفس مطلوبة لتحويل أبعاد الحلقة النسبية إلى بكسل — محدّثات
+  // عبر محدِّد المتجر (وليس getState) حتى تُعاد حوسبة الحدود عند تغيّرها
+  const canvasWidth = useEditorStore((state) => state.canvasWidth);
+  const canvasHeight = useEditorStore((state) => state.canvasHeight);
+  const ringWidthPx = element.width * canvasWidth;
+  const ringHeightPx = element.height * canvasHeight;
 
   const getShapeIcon = () => {
     switch (element.shape) {
-      case "line":
+      case 'line':
         return <LineSegment className="w-4 h-4 text-primary" weight="duotone" />;
-      case "ellipse":
+      case 'arrow':
+        return <ArrowRight className="w-4 h-4 text-primary" weight="bold" />;
+      case 'ellipse':
+      case 'ring':
         return <Circle className="w-4 h-4 text-primary" weight="duotone" />;
-      case "star":
+      case 'star':
         return <Star className="w-4 h-4 text-primary" weight="duotone" />;
-      case "path":
+      case 'polygon':
+      case 'path':
         return <Polygon className="w-4 h-4 text-primary" weight="duotone" />;
-      case "rect":
+      case 'rect':
       default:
         return <Square className="w-4 h-4 text-primary" weight="duotone" />;
     }
   };
 
   const sectionTitle = isLine
-    ? "تنسيق الخط"
-    : element.shape === "ellipse"
-      ? "الحدود والهندسة"
-      : "الحدود والاستدارة";
+    ? 'تنسيق الخط'
+    : element.shape === 'arrow'
+      ? 'تنسيق السهم'
+      : element.shape === 'ellipse' || element.shape === 'ring' || element.shape === 'polygon'
+        ? 'الحدود والهندسة'
+        : 'الحدود والاستدارة';
 
   return (
     <div className="space-y-3 animate-in fade-in duration-200 font-cairo">
       {/* بطاقة: الحدود والاستدارة الهندسية */}
-      <FluentSection
-        icon={getShapeIcon()}
-        title={sectionTitle}
-        collapsible
-        defaultOpen={true}
-      >
+      <FluentSection icon={getShapeIcon()} title={sectionTitle} collapsible defaultOpen={true}>
         {/* صف لون التعبئة / الخط القياسي في Fluent 2 */}
         <div className="p-2.5 rounded-xl bg-muted/30 dark:bg-muted/20 border border-border/60 flex items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-2 min-w-0">
@@ -88,10 +97,14 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             </div>
             <div className="min-w-0">
               <span className="text-xs font-bold text-foreground block truncate">
-                {isLine ? "لون الخط" : "لون الشكل"}
+                {isLine ? 'لون الخط' : 'لون الشكل'}
               </span>
               <span className="text-micro text-muted-foreground block truncate">
-                {element.fillType === "linear" ? "تدرج خطي" : element.fillType === "radial" ? "تدرج شعاعي" : "لون مصمت"}
+                {element.fillType === 'linear'
+                  ? 'تدرج خطي'
+                  : element.fillType === 'radial'
+                    ? 'تدرج شعاعي'
+                    : 'لون مصمت'}
               </span>
             </div>
           </div>
@@ -102,7 +115,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
               onChange={(col) => {
                 onUpdate(element.id, {
                   fill: col,
-                  stroke: isLine ? col : (element.stroke || col),
+                  stroke: isLine ? col : element.stroke || col,
                 });
                 useEditorStore.getState().pushHistory();
               }}
@@ -114,7 +127,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                     type="button"
                     variant="ghost"
                     size="icon-sm"
-                    onClick={() => onNavigateTab("adjust")}
+                    onClick={() => onNavigateTab('adjust')}
                     className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors cursor-pointer shrink-0"
                   >
                     <Sparkle className="w-4 h-4 text-primary" weight="duotone" />
@@ -129,9 +142,15 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
         {/* سلايدر سماكة الحد مع أزرار سريعة */}
         <div className="space-y-1.5 pt-1">
           <FluentSliderField
-            label={isLine ? "سمك الخط" : "سماكة الحد"}
+            label={isLine ? 'سمك الخط' : 'سماكة الحد'}
             icon={<BoundingBox className="w-4 h-4" weight="regular" />}
-            value={isLine ? (element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4) : (element.strokeWidth ?? 0)}
+            value={
+              isLine
+                ? element.strokeWidth && element.strokeWidth > 0
+                  ? element.strokeWidth
+                  : 4
+                : (element.strokeWidth ?? 0)
+            }
             min={isLine ? 1 : 0}
             max={50}
             step={0.5}
@@ -144,7 +163,9 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
             {STROKE_WIDTH_PRESETS.map((preset) => {
               const currVal = isLine
-                ? (element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4)
+                ? element.strokeWidth && element.strokeWidth > 0
+                  ? element.strokeWidth
+                  : 4
                 : (element.strokeWidth ?? 0);
               const isActive = Math.round(currVal) === preset.val;
               return (
@@ -152,10 +173,10 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                   key={preset.label}
                   type="button"
                   className={cn(
-                    "h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
+                    'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
                     isActive
-                      ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium"
+                      ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
                   )}
                   onClick={() => {
                     onUpdate(element.id, { strokeWidth: preset.val });
@@ -177,7 +198,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
               <span>لون الحد</span>
             </span>
             <PopoverColorPicker
-              color={element.stroke || "#000000"}
+              color={element.stroke || '#000000'}
               onChange={(val) => {
                 onUpdate(element.id, { stroke: val });
                 useEditorStore.getState().pushHistory();
@@ -187,7 +208,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
         )}
 
         {/* سلايدر استدارة الزوايا للمستطيلات مع كبسولات سريعة */}
-        {element.shape === "rect" && (
+        {element.shape === 'rect' && (
           <div className="space-y-1.5 pt-2 border-t border-border/30">
             <FluentSliderField
               label="استدارة الزوايا"
@@ -210,10 +231,10 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                     key={preset.label}
                     type="button"
                     className={cn(
-                      "h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
+                      'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
                       isActive
-                        ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
-                        : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium"
+                        ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
                     )}
                     onClick={() => {
                       onUpdate(element.id, { radius: preset.val });
@@ -227,6 +248,68 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             </div>
           </div>
         )}
+
+        {/* سلايدر عدد أضلاع المضلع */}
+        {element.shape === 'polygon' && (
+          <div className="space-y-1.5 pt-2 border-t border-border/30">
+            <FluentSliderField
+              label="عدد أضلاع المضلع"
+              icon={<Polygon className="w-4 h-4" weight="regular" />}
+              value={element.sides ?? 6}
+              min={3}
+              max={12}
+              step={1}
+              unit=""
+              onChange={(v) => onUpdate(element.id, { sides: v })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
+          </div>
+        )}
+
+        {/* سلايدر نصف القطر الداخلي للحلقة */}
+        {element.shape === 'ring' && (
+          <div className="space-y-1.5 pt-2 border-t border-border/30">
+            <FluentSliderField
+              label="نصف القطر الداخلي"
+              icon={<Circle className="w-4 h-4" weight="regular" />}
+              value={resolveRingInnerRadius(element.innerRadius, ringWidthPx, ringHeightPx)}
+              min={1}
+              max={ringInnerRadiusMax(ringWidthPx, ringHeightPx)}
+              step={1}
+              unit="px"
+              onChange={(v) => onUpdate(element.id, { innerRadius: v })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
+          </div>
+        )}
+
+        {/* سلايدر رأس السهم المتجه */}
+        {element.shape === 'arrow' && (
+          <div className="space-y-2 pt-2 border-t border-border/30">
+            <FluentSliderField
+              label="طول رأس السهم"
+              icon={<ArrowRight className="w-4 h-4" weight="regular" />}
+              value={element.pointerLength ?? 14}
+              min={6}
+              max={40}
+              step={1}
+              unit="px"
+              onChange={(v) => onUpdate(element.id, { pointerLength: v })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
+            <FluentSliderField
+              label="عرض رأس السهم"
+              icon={<ArrowRight className="w-4 h-4" weight="regular" />}
+              value={element.pointerWidth ?? 14}
+              min={6}
+              max={40}
+              step={1}
+              unit="px"
+              onChange={(v) => onUpdate(element.id, { pointerWidth: v })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
+          </div>
+        )}
       </FluentSection>
     </div>
   );
@@ -237,8 +320,8 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
  * استوديو متكامل للتعبئة والتدرجات وألوان الحدود والشفافية
  */
 export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps) {
-  const isLine = element.shape === "line";
-  const currentFill = element.fill || "#6366f1";
+  const isLine = element.shape === 'line';
+  const currentFill = element.fill || '#6366f1';
   const currentStroke = element.stroke || currentFill;
   const currentOpacity = Math.round((element.opacity ?? 1) * 100);
 
@@ -252,17 +335,20 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
         defaultOpen={true}
       >
         <GradientPicker
-          fillType={element.fillType || "solid"}
+          fillType={element.fillType || 'solid'}
           color={currentFill}
-          colorStops={element.fillLinearGradientColorStops || element.fillRadialGradientColorStops || [0, "#3b82f6", 1, "#8b5cf6"]}
+          colorStops={
+            element.fillLinearGradientColorStops ||
+            element.fillRadialGradientColorStops || [0, '#3b82f6', 1, '#8b5cf6']
+          }
           onChangeType={(type) => {
             onUpdate(element.id, { fillType: type });
             useEditorStore.getState().pushHistory();
           }}
           onChangeSolidColor={(col) => {
-            onUpdate(element.id, { 
-              fill: col, 
-              stroke: isLine ? col : (element.stroke || col) 
+            onUpdate(element.id, {
+              fill: col,
+              stroke: isLine ? col : element.stroke || col,
             });
             useEditorStore.getState().pushHistory();
           }}
@@ -275,7 +361,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
           }}
           angle={gradientAngleFromPoints(
             element.fillLinearGradientStartPoint,
-            element.fillLinearGradientEndPoint
+            element.fillLinearGradientEndPoint,
           )}
           onChangeAngle={(deg) => {
             const { start, end } = gradientPointsFromAngle(deg);
@@ -288,16 +374,18 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
         />
 
         {/* باليتة ألوان سريعة في حالة اللون المصمت */}
-        {(element.fillType === "solid" || !element.fillType) && (
+        {(element.fillType === 'solid' || !element.fillType) && (
           <div className="pt-2 border-t border-border/30 space-y-1.5">
-            <span className="text-micro font-semibold text-muted-foreground block">ألوان سريعة</span>
+            <span className="text-micro font-semibold text-muted-foreground block">
+              ألوان سريعة
+            </span>
             <QuickColorPalette
               currentColor={currentFill}
               onSelectColor={(col) => {
                 onUpdate(element.id, {
                   fill: col,
-                  fillType: "solid",
-                  stroke: isLine ? col : (element.stroke || col),
+                  fillType: 'solid',
+                  stroke: isLine ? col : element.stroke || col,
                 });
                 useEditorStore.getState().pushHistory();
               }}
@@ -319,7 +407,8 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
               onChange={(val) => {
                 onUpdate(element.id, {
                   stroke: val,
-                  strokeWidth: (element.strokeWidth && element.strokeWidth > 0) ? element.strokeWidth : 2,
+                  strokeWidth:
+                    element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 2,
                 });
                 useEditorStore.getState().pushHistory();
               }}
@@ -333,7 +422,8 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
               onSelectColor={(col) => {
                 onUpdate(element.id, {
                   stroke: col,
-                  strokeWidth: (element.strokeWidth && element.strokeWidth > 0) ? element.strokeWidth : 2,
+                  strokeWidth:
+                    element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 2,
                 });
                 useEditorStore.getState().pushHistory();
               }}
@@ -366,10 +456,10 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
               key={pct}
               type="button"
               className={cn(
-                "h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95",
+                'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
                 currentOpacity === pct
-                  ? "bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium"
+                  ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
               )}
               onClick={() => {
                 onUpdate(element.id, { opacity: pct / 100 });
@@ -387,5 +477,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
 
 /** للتوافق السابق */
 export function ShapeProperties({ element, onUpdate, onNavigateTab }: ShapePropertiesProps) {
-  return <ShapeStyleProperties element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />;
+  return (
+    <ShapeStyleProperties element={element} onUpdate={onUpdate} onNavigateTab={onNavigateTab} />
+  );
 }

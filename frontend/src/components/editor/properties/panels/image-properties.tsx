@@ -1,8 +1,8 @@
-import { lazy, Suspense, useState, useEffect, useRef } from "react";
-import { ImageElement, useEditorStore } from "@/lib/editor-store";
-import { useRenderQuality } from "@/lib/canvas/render-quality";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/huge-icon";
+import { lazy, Suspense, useState, useEffect, useRef } from 'react';
+import { ImageElement, useEditorStore } from '@/lib/editor-store';
+import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   Sparkle,
   MagicWand,
@@ -23,32 +23,38 @@ import {
   Scan,
   Square,
   FadersHorizontal,
-} from "@/components/ui/icons";
-import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
-import { IMAGE_FILTERS } from "@/lib/templates";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
-import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
-import { useBgRemoval } from "@/hooks/use-bg-removal";
-import { useAiEnhance } from "@/hooks/use-ai-enhance";
-import { useFaceFrame } from "@/hooks/use-face-frame";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { PopoverColorPicker } from "../shared-controls";
+} from '@/components/ui/icons';
+import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
+import { IMAGE_FILTERS } from '@/lib/templates';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
+import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { useBgRemoval } from '@/hooks/use-bg-removal';
+import { useAiEnhance } from '@/hooks/use-ai-enhance';
+import { useFaceFrame } from '@/hooks/use-face-frame';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { PopoverColorPicker } from '../shared-controls';
 
 // أدوات الصور الثقيلة لا تُحمّل إلا عند فتحها، بدلاً من تأخير المحرر عند البدء.
-const CropDialog = lazy(() => import("../../dialogs/crop-dialog").then((module) => ({ default: module.CropDialog })));
-const DocumentScannerDialog = lazy(() => import("../../document-scanner").then((module) => ({ default: module.DocumentScannerDialog })));
-const RefineBgDialog = lazy(() => import("../../dialogs/refine-bg-dialog").then((module) => ({ default: module.RefineBgDialog })));
+const CropDialog = lazy(() =>
+  import('../../dialogs/crop-dialog').then((module) => ({ default: module.CropDialog })),
+);
+const DocumentScannerDialog = lazy(() =>
+  import('../../document-scanner').then((module) => ({ default: module.DocumentScannerDialog })),
+);
+const RefineBgDialog = lazy(() =>
+  import('../../dialogs/refine-bg-dialog').then((module) => ({ default: module.RefineBgDialog })),
+);
 interface ImagePropertiesProps {
   element: ImageElement;
   onUpdate: (id: string, patch: Partial<ImageElement>) => void;
 }
 
-export function ImageAdjustProperties({ 
-  element, 
-  onUpdate, 
-  showReset = true 
+export function ImageAdjustProperties({
+  element,
+  onUpdate,
+  showReset = true,
 }: ImagePropertiesProps & { showReset?: boolean }) {
   const currentOpacity = Math.round((element.opacity ?? 1) * 100);
 
@@ -66,10 +72,10 @@ export function ImageAdjustProperties({
           <span className="text-micro font-bold text-muted-foreground block">قوالب الاستوديو</span>
           <div className="grid grid-cols-2 gap-1.5">
             {[
-              { label: "استوديو دافئ", b: 104, c: 106, s: 108 },
-              { label: "جواز سفر حيوي", b: 108, c: 115, s: 118 },
-              { label: "إشراق ناعم", b: 110, c: 95, s: 102 },
-              { label: "أبيض وأسود", b: 105, c: 120, s: 0 },
+              { label: 'استوديو دافئ', b: 104, c: 106, s: 108 },
+              { label: 'جواز سفر حيوي', b: 108, c: 115, s: 118 },
+              { label: 'إشراق ناعم', b: 110, c: 95, s: 102 },
+              { label: 'أبيض وأسود', b: 105, c: 120, s: 0 },
             ].map((preset) => (
               <Button
                 key={preset.label}
@@ -100,7 +106,10 @@ export function ImageAdjustProperties({
           step={1}
           unit="%"
           onChange={(v) => onUpdate(element.id, { brightness: v })}
-          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+          onCommit={() => {
+            useRenderQuality.getState().setIsDraggingFilter(false);
+            useEditorStore.getState().pushHistory();
+          }}
           onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
@@ -113,7 +122,10 @@ export function ImageAdjustProperties({
           step={1}
           unit="%"
           onChange={(v) => onUpdate(element.id, { contrast: v })}
-          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+          onCommit={() => {
+            useRenderQuality.getState().setIsDraggingFilter(false);
+            useEditorStore.getState().pushHistory();
+          }}
           onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
@@ -126,7 +138,10 @@ export function ImageAdjustProperties({
           step={1}
           unit="%"
           onChange={(v) => onUpdate(element.id, { saturation: v })}
-          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+          onCommit={() => {
+            useRenderQuality.getState().setIsDraggingFilter(false);
+            useEditorStore.getState().pushHistory();
+          }}
           onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
@@ -139,7 +154,10 @@ export function ImageAdjustProperties({
           step={1}
           unit="px"
           onChange={(v) => onUpdate(element.id, { blur: v })}
-          onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+          onCommit={() => {
+            useRenderQuality.getState().setIsDraggingFilter(false);
+            useEditorStore.getState().pushHistory();
+          }}
           onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
@@ -151,7 +169,7 @@ export function ImageAdjustProperties({
             className="w-full h-8 text-xs font-semibold text-muted-foreground hover:text-foreground gap-1.5 rounded-md border border-border/40 hover:bg-muted"
             onClick={() => {
               onUpdate(element.id, {
-                filter: "none",
+                filter: 'none',
                 brightness: 100,
                 contrast: 100,
                 saturation: 100,
@@ -188,11 +206,11 @@ export function ImageAdjustProperties({
 }
 
 export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps) {
-   const [cropOpen, setCropOpen] = useState(false);
-   const [scannerOpen, setScannerOpen] = useState(false);
-   const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
-   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
-   const [refineOpen, setRefineOpen] = useState(false);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
+  const [refineOpen, setRefineOpen] = useState(false);
 
   const handleScannerSave = async (processedResult: string | string[]) => {
     try {
@@ -211,7 +229,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           const height = img.height;
           img.onload = null;
           img.onerror = null;
-          img.src = "";
+          img.src = '';
           if (isMountedRef.current) {
             const docAspect = width / height;
             const newHeight = (element.width * canvasRatio) / docAspect;
@@ -228,7 +246,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         img.onerror = () => {
           img.onload = null;
           img.onerror = null;
-          img.src = "";
+          img.src = '';
           onUpdate(element.id, { imageSrc: firstPath });
           resolve();
         };
@@ -245,14 +263,14 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               const aspect = docImg.width / docImg.height;
               docImg.onload = null;
               docImg.onerror = null;
-              docImg.src = "";
+              docImg.src = '';
               useEditorStore.getState().addImageElement(docPath, aspect);
               resolve();
             };
             docImg.onerror = () => {
               docImg.onload = null;
               docImg.onerror = null;
-              docImg.src = "";
+              docImg.src = '';
               useEditorStore.getState().addImageElement(docPath);
               resolve();
             };
@@ -266,20 +284,15 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       if (base64List.length > 1) {
         toast.success(`تم استبدال وإدراج ${base64List.length} مستندات`);
       } else {
-        toast.success("تم عزل المستند");
+        toast.success('تم عزل المستند');
       }
     } catch (err) {
       console.error(err);
-      toast.error("فشل حفظ المستند المستعدل");
+      toast.error('فشل حفظ المستند المستعدل');
     }
   };
-  const {
-    isRemovingBg,
-    bgProgress,
-    bgProgressText,
-    handleCancelBgRemoval,
-    handleRemoveBg,
-  } = useBgRemoval(onUpdate);
+  const { isRemovingBg, bgProgress, bgProgressText, handleCancelBgRemoval, handleRemoveBg } =
+    useBgRemoval(onUpdate);
   const {
     isEnhancing,
     enhanceProgress,
@@ -288,13 +301,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
     dailyLimit,
     handleEnhance,
   } = useAiEnhance(onUpdate);
-  const {
-    isFraming,
-    frameProgress,
-    frameProgressText,
-    handleCancelFrame,
-    handleFrameFace,
-  } = useFaceFrame(onUpdate);
+  const { isFraming, frameProgress, frameProgressText, handleCancelFrame, handleFrameFace } =
+    useFaceFrame(onUpdate);
 
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -304,25 +312,25 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
     };
   }, []);
 
-   const handleOpenFile = async () => {
-     if (isFileDialogOpen) return;
-     setIsFileDialogOpen(true);
-     try {
-       const [b64] = await openImageFileDialog(false);
-       if (b64) {
-         // OpenFile قد يعيد مساراً محفوظاً مسبقاً (/local-image/...) وليس بيانات
-         // base64 — SaveImageFromBase64 على مسار عادي يفجّر استثناء فك التشفير في Go
-         const finalPath = b64.startsWith("data:image/") ? await SaveImageFromBase64(b64) : b64;
-         onUpdate(element.id, { imageSrc: finalPath });
-         useEditorStore.getState().pushHistory();
-       }
-     } catch (err) {
-       console.error(err);
-       toast.error("فشل تغيير الصورة");
-     } finally {
-       setIsFileDialogOpen(false);
-     }
-   };
+  const handleOpenFile = async () => {
+    if (isFileDialogOpen) return;
+    setIsFileDialogOpen(true);
+    try {
+      const [b64] = await openImageFileDialog(false);
+      if (b64) {
+        // OpenFile قد يعيد مساراً محفوظاً مسبقاً (/local-image/...) وليس بيانات
+        // base64 — SaveImageFromBase64 على مسار عادي يفجّر استثناء فك التشفير في Go
+        const finalPath = b64.startsWith('data:image/') ? await SaveImageFromBase64(b64) : b64;
+        onUpdate(element.id, { imageSrc: finalPath });
+        useEditorStore.getState().pushHistory();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('فشل تغيير الصورة');
+    } finally {
+      setIsFileDialogOpen(false);
+    }
+  };
 
   return (
     <div className="space-y-2.5 font-cairo animate-in fade-in duration-200">
@@ -364,11 +372,11 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 aria-label={filter.name}
                 title={filter.name}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer",
-                  "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                  'flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer',
+                  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   isActive
-                    ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
-                    : "border-border/60 bg-card hover:bg-accent text-muted-foreground"
+                    ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
+                    : 'border-border/60 bg-card hover:bg-accent text-muted-foreground',
                 )}
               >
                 <span className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
@@ -400,11 +408,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={isRemovingBg ? "destructive" : "outline"}
-                title={isRemovingBg ? "إلغاء العزل" : "عزل الخلفية"}
+                variant={isRemovingBg ? 'destructive' : 'outline'}
+                title={isRemovingBg ? 'إلغاء العزل' : 'عزل الخلفية'}
                 className={cn(
-                  "h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
-                  isRemovingBg && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]',
+                  isRemovingBg &&
+                    'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent',
                 )}
                 onClick={isRemovingBg ? handleCancelBgRemoval : () => handleRemoveBg(element)}
               >
@@ -413,11 +422,11 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 ) : (
                   <Sparkle className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 )}
-                <span className="text-xs font-bold">{isRemovingBg ? "إلغاء" : "عزل الخلفية"}</span>
+                <span className="text-xs font-bold">{isRemovingBg ? 'إلغاء' : 'عزل الخلفية'}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              {isRemovingBg ? bgProgressText || "إلغاء عزل الخلفية" : "عزل الخلفية الذكي (AI)"}
+              {isRemovingBg ? bgProgressText || 'إلغاء عزل الخلفية' : 'عزل الخلفية الذكي (AI)'}
             </TooltipContent>
           </Tooltip>
 
@@ -429,8 +438,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 title={`ترميم الوجه (${remainingQuota}/${dailyLimit})`}
                 disabled={isEnhancing || isRemovingBg}
                 className={cn(
-                  "h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
-                  (isEnhancing || isRemovingBg) && "opacity-50 cursor-not-allowed"
+                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]',
+                  (isEnhancing || isRemovingBg) && 'opacity-50 cursor-not-allowed',
                 )}
                 onClick={() => handleEnhance(element)}
               >
@@ -439,7 +448,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 ) : (
                   <MagicWand className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 )}
-                <span className="text-xs font-bold">{isEnhancing ? "جاري الترميم ..." : "ترميم الوجه"}</span>
+                <span className="text-xs font-bold">
+                  {isEnhancing ? 'جاري الترميم ...' : 'ترميم الوجه'}
+                </span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -451,11 +462,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={isFraming ? "destructive" : "outline"}
-                title={isFraming ? "إلغاء ضبط الوجه" : "تأطير الوجه تلقائياً"}
+                variant={isFraming ? 'destructive' : 'outline'}
+                title={isFraming ? 'إلغاء ضبط الوجه' : 'تأطير الوجه تلقائياً'}
                 className={cn(
-                  "h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]",
-                  isFraming && "bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent"
+                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]',
+                  isFraming &&
+                    'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent',
                 )}
                 onClick={isFraming ? handleCancelFrame : () => handleFrameFace(element)}
               >
@@ -464,11 +476,11 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 ) : (
                   <UserFocus className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 )}
-                <span className="text-xs font-bold">{isFraming ? "إلغاء" : "تأطير الوجه"}</span>
+                <span className="text-xs font-bold">{isFraming ? 'إلغاء' : 'تأطير الوجه'}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              {isFraming ? frameProgressText || "إلغاء ضبط الوجه" : "تأطير الوجه وفق معايير الهوية"}
+              {isFraming ? frameProgressText || 'إلغاء ضبط الوجه' : 'تأطير الوجه وفق معايير الهوية'}
             </TooltipContent>
           </Tooltip>
 
@@ -485,9 +497,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 <span className="text-xs font-bold">مسح المستند</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">
-              مسح وتقويم المستند
-            </TooltipContent>
+            <TooltipContent side="top">مسح وتقويم المستند</TooltipContent>
           </Tooltip>
         </div>
 
@@ -499,7 +509,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <span>{Math.round(bgProgress)}%</span>
             </div>
             <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-primary rounded-full transition-all duration-300"
                 style={{ width: `${bgProgress}%` }}
               />
@@ -514,7 +524,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <span>{Math.round(enhanceProgress)}%</span>
             </div>
             <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-primary rounded-full transition-all duration-300"
                 style={{ width: `${enhanceProgress}%` }}
               />
@@ -529,7 +539,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <span>{Math.round(frameProgress)}%</span>
             </div>
             <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-primary rounded-full transition-all duration-300"
                 style={{ width: `${frameProgress}%` }}
               />
@@ -545,13 +555,13 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       >
         <div className="flex items-center gap-1.5 flex-wrap">
           {[
-            { id: "trans", label: "شفاف", val: "transparent" },
-            { id: "white", label: "أبيض", val: "#ffffff" },
-            { id: "blue", label: "أزرق رسمي", val: "#1d4ed8" },
-            { id: "lblue", label: "أزرق فاتح", val: "#3b82f6" },
-            { id: "gray", label: "رمادي", val: "#e5e7eb" },
+            { id: 'trans', label: 'شفاف', val: 'transparent' },
+            { id: 'white', label: 'أبيض', val: '#ffffff' },
+            { id: 'blue', label: 'أزرق رسمي', val: '#1d4ed8' },
+            { id: 'lblue', label: 'أزرق فاتح', val: '#3b82f6' },
+            { id: 'gray', label: 'رمادي', val: '#e5e7eb' },
           ].map((colorItem) => {
-            const currBg = element.bgColor || "transparent";
+            const currBg = element.bgColor || 'transparent';
             const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
             return (
               <Tooltip key={colorItem.id}>
@@ -563,18 +573,32 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                       useEditorStore.getState().pushHistory();
                     }}
                     className={cn(
-                      "w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
-                      isActive && "ring-2 ring-primary ring-offset-1 border-primary"
+                      'w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                      isActive && 'ring-2 ring-primary ring-offset-1 border-primary',
                     )}
                     style={{
-                      backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
-                      backgroundImage: colorItem.val === "transparent" ? "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)" : undefined,
-                      backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
-                      backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
+                      backgroundColor: colorItem.val === 'transparent' ? undefined : colorItem.val,
+                      backgroundImage:
+                        colorItem.val === 'transparent'
+                          ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)'
+                          : undefined,
+                      backgroundSize: colorItem.val === 'transparent' ? '6px 6px' : undefined,
+                      backgroundPosition:
+                        colorItem.val === 'transparent'
+                          ? '0 0, 0 3px, 3px -3px, -3px 0px'
+                          : undefined,
                     }}
                   >
                     {isActive && (
-                      <Check className={cn("w-3.5 h-3.5", colorItem.val === "#ffffff" || colorItem.val === "#e5e7eb" ? "text-slate-900" : "text-white")} weight="bold" />
+                      <Check
+                        className={cn(
+                          'w-3.5 h-3.5',
+                          colorItem.val === '#ffffff' || colorItem.val === '#e5e7eb'
+                            ? 'text-slate-900'
+                            : 'text-white',
+                        )}
+                        weight="bold"
+                      />
                     )}
                   </button>
                 </TooltipTrigger>
@@ -585,7 +609,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
           {/* Custom Color Input */}
           <PopoverColorPicker
-            color={element.bgColor === "transparent" || !element.bgColor ? "#ffffff" : element.bgColor}
+            color={
+              element.bgColor === 'transparent' || !element.bgColor ? '#ffffff' : element.bgColor
+            }
             onChange={(val) => {
               onUpdate(element.id, { bgColor: val });
               useEditorStore.getState().pushHistory();
@@ -610,7 +636,10 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={() => setCropOpen(true)}
               >
-                <Crop className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" weight="regular" />
+                <Crop
+                  className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0"
+                  weight="regular"
+                />
                 <span>قص وتدوير</span>
               </Button>
             </TooltipTrigger>
@@ -625,7 +654,10 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={handleOpenFile}
               >
-                <ImageSquare className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" weight="regular" />
+                <ImageSquare
+                  className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0"
+                  weight="regular"
+                />
                 <span>تبديل الصورة</span>
               </Button>
             </TooltipTrigger>
@@ -644,10 +676,10 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   onUpdate(element.id, {
                     imageSrc: element.originalImageSrc,
                     originalImageSrc: undefined,
-                    bgColor: "transparent"
+                    bgColor: 'transparent',
                   });
                   useEditorStore.getState().pushHistory();
-                  toast.success("تمت استعادة الصورة الأصلية");
+                  toast.success('تمت استعادة الصورة الأصلية');
                 }}
                 title="استعادة الصورة الأصلية"
               >
@@ -664,18 +696,18 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   onUpdate(element.id, { imageSrc: element.originalImageSrc });
                   const restore = () => {
                     onUpdate(element.id, { imageSrc: curr });
-                    window.removeEventListener("mouseup", restore);
+                    window.removeEventListener('mouseup', restore);
                   };
-                  window.addEventListener("mouseup", restore);
+                  window.addEventListener('mouseup', restore);
                 }}
                 onTouchStart={() => {
                   const curr = element.imageSrc;
                   onUpdate(element.id, { imageSrc: element.originalImageSrc });
                   const restore = () => {
                     onUpdate(element.id, { imageSrc: curr });
-                    window.removeEventListener("touchend", restore);
+                    window.removeEventListener('touchend', restore);
                   };
-                  window.addEventListener("touchend", restore);
+                  window.addEventListener('touchend', restore);
                 }}
                 title="اضغط مطولاً للمقارنة"
               >
@@ -697,10 +729,10 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
       </FluentSection>
 
-      {/* 🎴 بطاقة 4: استدارة الحواف */}
+      {/* 🎴 بطاقة 4: استدارة الحواف وقناع القص */}
       <FluentSection
         icon={<Square className="w-4 h-4 text-primary" weight="duotone" />}
-        title="استدارة الحواف"
+        title="استدارة وقناع القص"
       >
         <FluentSliderField
           label="استدارة الزوايا"
@@ -713,57 +745,95 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
           onChange={(v) => onUpdate(element.id, { cornerRadius: v })}
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
+
+        {/* أزرار اختيار قناع القص المتجه */}
+        <div className="pt-2 border-t border-border/30 space-y-1.5">
+          <span className="text-micro font-semibold text-muted-foreground block">
+            قناع الشكل (Vector Mask)
+          </span>
+          <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
+            {[
+              { id: 'none', label: 'طبيعي' },
+              { id: 'circle', label: 'دائري' },
+              { id: 'heart', label: 'قلب' },
+              { id: 'star', label: 'نجمة' },
+            ].map((mask) => {
+              const isActive = (element.maskShape || 'none') === mask.id;
+              return (
+                <button
+                  key={mask.id}
+                  type="button"
+                  className={cn(
+                    'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
+                    isActive
+                      ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
+                  )}
+                  onClick={() => {
+                    onUpdate(element.id, { maskShape: mask.id as ImageElement['maskShape'] });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                >
+                  {mask.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </FluentSection>
 
       {element.imageSrc && cropOpen && (
         <Suspense fallback={null}>
           <CropDialog
-          open={cropOpen}
-          onOpenChange={setCropOpen}
-          imageSrc={element.imageSrc}
-          originalImageSrc={element.originalImageSrc}
-          onCropSave={async (cropped, dims) => {
-            try {
-              // حفظ الصورة المقصوصة محلياً بدلاً من تخزين Base64 في الذاكرة
-              const localPath = await SaveImageFromBase64(cropped);
-              
-               const img = new Image();
-               img.onload = () => {
-                 const width = img.width;
-                 const height = img.height;
-                 img.onload = null;
-                 img.onerror = null;
-                 img.src = "";
-                 if (!isMountedRef.current) return;
-                
-                const croppedAspect = (dims && dims.width > 0 && dims.height > 0) ? (dims.width / dims.height) : (width / height);
-                const state = useEditorStore.getState();
-                const canvasRatio = state.canvasWidth / state.canvasHeight;
-                const newHeight = (element.width * canvasRatio) / croppedAspect;
-                
-                onUpdate(element.id, { 
-                  imageSrc: localPath,
-                  height: newHeight
-                });
-                
-                state.setLastEditedImage(localPath);
-                state.setLastEditedImageAspect(croppedAspect);
-                // حفظ القص يُسجل كخطوة تراجع مستقلة (إصلاح E-5)
-                state.pushHistory();
-              };
-               img.onerror = () => {
-                 img.onload = null;
-                 img.onerror = null;
-                 img.src = "";
-                 // إشعار فشل فك تشفير الصورة المقصوصة — بدون تحديث للعنصر
-                 toast.error("فشل قراءة القص");
-               };
-               img.src = cropped;
-            } catch (err) {
-              console.error("Failed to save cropped image:", err);
-              toast.error("فشل حفظ القص");
-            }
-          }}
+            open={cropOpen}
+            onOpenChange={setCropOpen}
+            imageSrc={element.imageSrc}
+            originalImageSrc={element.originalImageSrc}
+            onCropSave={async (cropped, dims) => {
+              try {
+                // حفظ الصورة المقصوصة محلياً بدلاً من تخزين Base64 في الذاكرة
+                const localPath = await SaveImageFromBase64(cropped);
+
+                const img = new Image();
+                img.onload = () => {
+                  const width = img.width;
+                  const height = img.height;
+                  img.onload = null;
+                  img.onerror = null;
+                  img.src = '';
+                  if (!isMountedRef.current) return;
+
+                  const croppedAspect =
+                    dims && dims.width > 0 && dims.height > 0
+                      ? dims.width / dims.height
+                      : width / height;
+                  const state = useEditorStore.getState();
+                  const canvasRatio = state.canvasWidth / state.canvasHeight;
+                  const newHeight = (element.width * canvasRatio) / croppedAspect;
+
+                  onUpdate(element.id, {
+                    imageSrc: localPath,
+                    height: newHeight,
+                  });
+
+                  state.setLastEditedImage(localPath);
+                  state.setLastEditedImageAspect(croppedAspect);
+                  // حفظ القص يُسجل كخطوة تراجع مستقلة (إصلاح E-5)
+                  state.pushHistory();
+                };
+                img.onerror = () => {
+                  img.onload = null;
+                  img.onerror = null;
+                  img.src = '';
+                  // إشعار فشل فك تشفير الصورة المقصوصة — بدون تحديث للعنصر
+                  toast.error('فشل قراءة القص');
+                };
+                img.src = cropped;
+              } catch (err) {
+                console.error('Failed to save cropped image:', err);
+                toast.error('فشل حفظ القص');
+              }
+            }}
           />
         </Suspense>
       )}
@@ -771,10 +841,10 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       {element.imageSrc && scannerOpen && (
         <Suspense fallback={null}>
           <DocumentScannerDialog
-          open={scannerOpen}
-          onOpenChange={setScannerOpen}
-          imageSrc={element.imageSrc}
-          onSave={handleScannerSave}
+            open={scannerOpen}
+            onOpenChange={setScannerOpen}
+            imageSrc={element.imageSrc}
+            onSave={handleScannerSave}
           />
         </Suspense>
       )}
@@ -782,13 +852,13 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       {element.imageSrc && element.originalImageSrc && refineOpen && (
         <Suspense fallback={null}>
           <RefineBgDialog
-          open={refineOpen}
-          onOpenChange={setRefineOpen}
-          element={element}
-          onSave={async (newImageSrc) => {
-            onUpdate(element.id, { imageSrc: newImageSrc });
-            useEditorStore.getState().pushHistory();
-          }}
+            open={refineOpen}
+            onOpenChange={setRefineOpen}
+            element={element}
+            onSave={async (newImageSrc) => {
+              onUpdate(element.id, { imageSrc: newImageSrc });
+              useEditorStore.getState().pushHistory();
+            }}
           />
         </Suspense>
       )}

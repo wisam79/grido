@@ -30,11 +30,14 @@ export interface FilterableObject {
   blur?: number;
 }
 
-export function buildCSSFilter(el: FilterableObject | undefined): string {
+/**
+ * تعديلات اللون/التمويه فقط (بدون مرشّح الأساس) — يحتاجها مسار التصدير
+ * لمرشّحات البكسل: يُرسم العنصر بهذه التعديلات على كانفس خارجي ثم تُطبَّق
+ * خوارزمية البكسل، فيطابق ترتيب Go (تعديلات اللون ثم المرشّح).
+ */
+export function buildAdjustmentCSS(el: FilterableObject | undefined): string {
   if (!el) return 'none';
   const parts: string[] = [];
-  const filterDef = IMAGE_FILTERS.find((f) => f.id === el.filter);
-  if (filterDef && filterDef.css) parts.push(filterDef.css);
   if (el.brightness !== undefined && el.brightness !== 100)
     parts.push(`brightness(${el.brightness}%)`);
   if (el.contrast !== undefined && el.contrast !== 100) parts.push(`contrast(${el.contrast}%)`);
@@ -42,6 +45,15 @@ export function buildCSSFilter(el: FilterableObject | undefined): string {
     parts.push(`saturate(${el.saturation}%)`);
   if (el.blur && el.blur > 0) parts.push(`blur(${el.blur}px)`);
   return parts.join(' ') || 'none';
+}
+
+export function buildCSSFilter(el: FilterableObject | undefined): string {
+  if (!el) return 'none';
+  const filterDef = IMAGE_FILTERS.find((f) => f.id === el.filter);
+  const base = filterDef?.css ?? '';
+  const adjustments = buildAdjustmentCSS(el);
+  if (adjustments === 'none') return base || 'none';
+  return base ? `${base} ${adjustments}` : adjustments;
 }
 
 export const uid = () => crypto.randomUUID();

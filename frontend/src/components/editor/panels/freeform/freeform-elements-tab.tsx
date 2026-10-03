@@ -530,6 +530,15 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 {shape.shape === 'ellipse' && (
                   <Circle className="w-4 h-4 shrink-0 text-muted-foreground" weight="bold" />
                 )}
+                {shape.shape === 'ring' && (
+                  <span className="font-bold text-xs shrink-0 text-muted-foreground">◎</span>
+                )}
+                {shape.shape === 'polygon' && (
+                  <span className="font-bold text-xs shrink-0 text-muted-foreground">⬢</span>
+                )}
+                {shape.shape === 'arrow' && (
+                  <ArrowRight className="w-4 h-4 shrink-0 text-muted-foreground" weight="bold" />
+                )}
                 {shape.shape === 'star' && (
                   <Star className="w-4 h-4 shrink-0 text-muted-foreground" weight="fill" />
                 )}

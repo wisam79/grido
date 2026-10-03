@@ -3,11 +3,19 @@
  * مستخرج من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
 import { useEditorStore } from '@/lib/editor-store';
-import { buildCSSFilter } from '@/lib/utils';
+import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 import { computeSheetGrid, computeSlotRectMM } from '@/lib/print/print-layout-math';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { collageCut, collageEndCut } from '@/lib/canvas/canvas-colors';
-import { drawRoundRect, drawSlotImage, loadImage } from './export-primitives';
+import {
+  applySlotTransform,
+  drawRoundRect,
+  drawSlotImage,
+  drawSlotImageLocal,
+  loadImage,
+} from './export-primitives';
+import { isPixelFilter } from '@/lib/filters/pixel-filters';
+import { renderWithPixelFilter } from './export-pixel-filter';
 
 type StoreState = ReturnType<typeof useEditorStore.getState>;
 
@@ -82,10 +90,6 @@ export async function renderCollageBranch(
     if (slot.imageSrc && slotImageMap[slot.id]) {
       const img = slotImageMap[slot.id];
       ctx.save();
-      const filterStr = buildCSSFilter(slot);
-      if (filterStr && filterStr !== 'none') {
-        ctx.filter = filterStr;
-      }
       ctx.beginPath();
       if (radius > 0) {
         drawRoundRect(ctx, left, top, width, height, radius);
@@ -97,8 +101,26 @@ export async function renderCollageBranch(
         ctx.fillStyle = slot.bgColor;
         ctx.fillRect(left, top, width, height);
       }
-      // يطبّق zoom/dragX/dragY/flipX/flipY/rotation كما في عقدة Konva (إصلاح E-7)
-      drawSlotImage(ctx, img, left, top, width, height, slot);
+      // مرشّحات البكسل تُطبَّق في الفضاء المحلي قبل القلب/الدوران (ترتيب Konva)
+      if (isPixelFilter(slot.filter)) {
+        const off = renderWithPixelFilter(width, height, slot.filter, (octx) => {
+          // تعديلات اللون قبل مرشّح البكسل (ترتيب Go)
+          octx.filter = buildAdjustmentCSS(slot);
+          drawSlotImageLocal(octx, img, width, height, slot);
+        });
+        if (off) {
+          applySlotTransform(ctx, left, top, width, height, slot);
+          ctx.drawImage(off, 0, 0, width, height);
+        }
+      } else {
+        // يطبّق zoom/dragX/dragY/flipX/flipY/rotation كما في عقدة Konva (إصلاح E-7)
+        const filterStr = buildCSSFilter(slot);
+        if (filterStr && filterStr !== 'none') {
+          ctx.filter = filterStr;
+        }
+        drawSlotImage(ctx, img, left, top, width, height, slot);
+        ctx.filter = 'none';
+      }
       ctx.restore();
     }
 

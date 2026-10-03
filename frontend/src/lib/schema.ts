@@ -58,11 +58,16 @@ export const CanvasElementSchema = z.object({
   curveDirection: z.enum(['up', 'down']).optional(),
   arabicNumerals: z.boolean().optional(),
 
-  shape: z.enum(['rect', 'ellipse', 'line', 'star', 'path']).optional(),
+  shape: z.enum(['rect', 'ellipse', 'line', 'star', 'path', 'polygon', 'arrow', 'ring']).optional(),
   fill: z.string().optional(),
   stroke: z.string().optional(),
   strokeWidth: z.number().optional(),
   radius: z.number().optional(),
+  sides: z.number().optional(),
+  pointerLength: z.number().optional(),
+  pointerWidth: z.number().optional(),
+  innerRadius: z.number().optional(),
+  maskShape: z.enum(['none', 'circle', 'heart', 'star']).optional(),
 
   // gradient properties
   fillType: z.enum(['solid', 'linear', 'radial']).optional(),

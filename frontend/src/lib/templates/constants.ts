@@ -139,6 +139,18 @@ export const IMAGE_FILTERS: ImageFilter[] = [
     css: 'grayscale(100%) contrast(1.25) brightness(1.02)',
     preview: 'grayscale(100%) contrast(1.25) brightness(1.02)',
   },
+  {
+    id: 'pixelate',
+    name: 'تعتيم بكسلي — للخصوصية',
+    css: 'blur(3px)',
+    preview: 'blur(3px)',
+  },
+  {
+    id: 'threshold',
+    name: 'أبيض وأسود — ختم مطبعة',
+    css: 'grayscale(100%) contrast(200%)',
+    preview: 'grayscale(100%) contrast(200%)',
+  },
 ];
 
 // ألوان خلفية الاستوديو المعتمدة
