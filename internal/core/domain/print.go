@@ -25,6 +25,15 @@ type PrintItem struct {
 	Zoom           float64 `json:"zoom,omitempty"`
 	DragX          float64 `json:"dragX,omitempty"`
 	DragY          float64 `json:"dragY,omitempty"`
+
+	// تكرار شبكي على جانب Go: عنصر واحد يمثل قالب خانة يُستنسخ Copies مرة
+	// بمسافة CopyStepX/CopyStepY بالمليمتر (عمودياً بعد CopyCols عموداً).
+	// يقطع تكرار العناصر عبر جسر Wails JSON — شبكة 48×24 كانت ترسل حتى 2,304
+	// عنصراً مكرراً وتصطدم بحد التحقق 1000. القيمة صفر = عنصر عادي.
+	Copies    int     `json:"copies,omitempty"`
+	CopyCols  int     `json:"copyCols,omitempty"`
+	CopyStepX float64 `json:"copyStepX,omitempty"`
+	CopyStepY float64 `json:"copyStepY,omitempty"`
 }
 
 // CanvasComposition يصف محتوى كانفاس الوضع الحر (free/single) كصورة مركبة:

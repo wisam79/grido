@@ -28,7 +28,7 @@ import {
 } from '../wailsjs/go/main/App';
 import type { CrashReport } from '../bindings/grido/internal/service/models';
 import { CrashRecoveryDialog } from '@/components/crash-recovery-dialog';
-import { EventsOn, EventsOff } from '../wailsjs/runtime/runtime';
+import { EventsOn } from '../wailsjs/runtime/runtime';
 
 const ExportDialog = lazy(() =>
   import('@/components/editor/dialogs/export-dialog').then((module) => ({
@@ -196,14 +196,21 @@ export default function App() {
   const selectedId = useEditorStore((state) => state.selectedId);
   const prevSelectedIdRef = useRef<string | null>(null);
 
+  // 🛡️ الأداء: تبعيات محددة لا الكائن الكامل — panelsHook كائن جديد بكل رندر،
+  // وكان اعتماده كاملاً يعيد تسجيل التأثير (تنظيف + إعادة تشغيل) في كل تحديث
+  // لأي حالة داخل App. حارس prevSelectedIdRef يضمن التشغيل مرة واحدة لكل تحديد،
+  // فقراءة breakpoint/activePanel عند الإطلاق فقط سلوك مطابق للأصل.
+  const { openPanel: panelsOpenPanel, setActiveStudioTab: panelsSetActiveStudioTab } = panelsHook;
+
   useEffect(() => {
     if (selectedId && selectedId !== prevSelectedIdRef.current) {
       if (panelsHook.breakpoint === 'standard' && panelsHook.activePanel !== 'properties') {
-        panelsHook.openPanel('properties');
+        panelsOpenPanel('properties');
       }
     }
     prevSelectedIdRef.current = selectedId;
-  }, [selectedId, panelsHook]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, panelsOpenPanel]);
 
   const mode = useEditorStore((state) => state.mode);
   const setMode = useEditorStore((state) => state.setMode);
@@ -213,27 +220,19 @@ export default function App() {
   // بدل زر بلا إبراز ولوحة بلا مدخل في الشريط
   useEffect(() => {
     if (workflow === 'quick' && panelsHook.activeStudioTab === 'elements') {
-      panelsHook.setActiveStudioTab('layers');
+      panelsSetActiveStudioTab('layers');
     }
-  }, [workflow, panelsHook]);
+    // 🛡️ activeStudioTab قراءة عند إطلاق التأثير فقط — التبعية الحقيقية workflow.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workflow, panelsSetActiveStudioTab]);
 
   const checkLicenseStatus = useEditorStore((state) => state.checkLicenseStatus);
 
   // [FIX #7] قراءة user مباشرة لضمان إعادة render عند تغيير أي من حقوله
   const user = useEditorStore((state) => state.user);
-  const {
-    isLicenseActive: isLicenseActiveFn,
-    canvasZoom,
-    setCanvasZoom,
-    canvasWidth,
-    canvasHeight,
-  } = useEditorStore(
+  const { isLicenseActive: isLicenseActiveFn } = useEditorStore(
     useShallow((state) => ({
       isLicenseActive: state.isLicenseActive,
-      canvasZoom: state.canvasZoom,
-      setCanvasZoom: state.setCanvasZoom,
-      canvasWidth: state.canvasWidth,
-      canvasHeight: state.canvasHeight,
     })),
   );
   const isLicenseActive = isLicenseActiveFn();
@@ -378,15 +377,6 @@ export default function App() {
       unbindFileOpened?.();
       unbindFileDrop?.();
       unbindResume?.();
-      if (typeof EventsOff === 'function') {
-        try {
-          EventsOff('file-opened');
-          EventsOff('native-file-drop');
-          EventsOff('app:resume');
-        } catch {
-          // ignore
-        }
-      }
     };
   }, [checkLicenseStatus]);
 

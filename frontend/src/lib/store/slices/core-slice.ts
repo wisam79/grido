@@ -1,13 +1,28 @@
-import { StateCreator } from "zustand";
-import { EditorMode, ProjectFileV1, CanvasElement, CanvasSlot, PrintSettings, HistoryEntry } from "../types";
-import { PhotoTemplate, CollageTemplate, COLLAGE_TEMPLATES, PHOTO_TEMPLATES, PAPER_SIZES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
-import { generateInitialSlots } from "./collage-slice";
-import { DEFAULT_PRINT_SETTINGS } from "./print-slice";
-import { DEFAULT_HISTORY_ENTRY_EXTRAS } from "./history-slice";
-import { invalidateImageCache } from "@/hooks/use-async-image";
-import { uid } from "../../utils";
-import { canvasMm, findPaperByMm } from "../../canvas/units";
-import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from "../../canvas/fit";
+import { StateCreator } from 'zustand';
+import {
+  EditorMode,
+  ProjectFileV1,
+  CanvasElement,
+  CanvasSlot,
+  PrintSettings,
+  HistoryEntry,
+} from '../types';
+import {
+  PhotoTemplate,
+  CollageTemplate,
+  COLLAGE_TEMPLATES,
+  PHOTO_TEMPLATES,
+  PAPER_SIZES,
+  computeDynamicCollageCells,
+  getEffectiveDpi,
+} from '../../templates';
+import { generateInitialSlots, remapSlotsToCells } from './collage-slice';
+import { DEFAULT_PRINT_SETTINGS } from './print-slice';
+import { DEFAULT_HISTORY_ENTRY_EXTRAS } from './history-slice';
+import { invalidateImageCache } from '@/hooks/use-async-image';
+import { uid } from '../../utils';
+import { canvasMm, findPaperByMm } from '../../canvas/units';
+import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from '../../canvas/fit';
 
 export interface CoreSlice {
   projectId: string | null;
@@ -42,16 +57,16 @@ export interface CoreSlice {
 
 export const DEFAULT_CORE_STATE = {
   projectId: null as string | null,
-  mode: "collage" as EditorMode,
+  mode: 'collage' as EditorMode,
   canvasWidth: 2480,
   canvasHeight: 3508,
-  backgroundColor: "#FFFFFF",
+  backgroundColor: '#FFFFFF',
   backgroundGradientColor2: null as string | null,
   backgroundGradientAngle: 135,
   lastEditedImage: null as string | null,
   lastEditedImageAspect: null as number | null,
   canvasZoom: 1,
-  canvasFitMode: "auto" as CanvasFitMode,
+  canvasFitMode: 'auto' as CanvasFitMode,
 };
 
 type CoreSliceCross = CoreSlice & {
@@ -69,7 +84,7 @@ type CoreSliceCross = CoreSlice & {
   gridColor: string;
   gridOpacity: number;
   gridSubdivisions: number;
-  gridType: "lines" | "dots";
+  gridType: 'lines' | 'dots';
   snapToGrid: boolean;
   showColumns: boolean;
   columnsCount: number;
@@ -115,7 +130,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
             currentHeight,
             dpi,
             s.collageGap || 0,
-            s.collageMargin || 0
+            s.collageMargin || 0,
           );
           if (dynamicCells) {
             cells = dynamicCells;
@@ -129,7 +144,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
           y: c.y,
           w: c.w,
           h: c.h,
-          filter: "none",
+          filter: 'none',
           brightness: 100,
           contrast: 100,
           saturation: 100,
@@ -139,10 +154,10 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
         }));
       };
 
-      if (mode === "collage" && (!s.slots || s.slots.length === 0)) {
+      if (mode === 'collage' && (!s.slots || s.slots.length === 0)) {
         nextState.slots = buildSlots();
         nextState.elements = []; // مسح عناصر التعديل الحر عند العودة للكولاج
-      } else if (mode === "collage") {
+      } else if (mode === 'collage') {
         // القوالب الفيزيائية (physicalLayout) تُحسب خلاياها من أبعاد الكانفس
         // الحالية — خانات مبنية لمقاس قديم تبقى مشوهة عند العودة من الوضع الحر
         // بعد تغيير المقاس، لذا نعيد موازنتها مع الحفاظ على الصور والتحويلات
@@ -158,13 +173,17 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
             currentHeight,
             dpi,
             s.collageGap || 0,
-            s.collageMargin || 0
+            s.collageMargin || 0,
           );
           if (dynamicCells && dynamicCells.length === s.slots.length) {
             const stale = dynamicCells.some((c, i) => {
               const sl = s.slots[i];
-              return Math.abs(sl.x - c.x) > 1e-6 || Math.abs(sl.y - c.y) > 1e-6 ||
-                Math.abs(sl.w - c.w) > 1e-6 || Math.abs(sl.h - c.h) > 1e-6;
+              return (
+                Math.abs(sl.x - c.x) > 1e-6 ||
+                Math.abs(sl.y - c.y) > 1e-6 ||
+                Math.abs(sl.w - c.w) > 1e-6 ||
+                Math.abs(sl.h - c.h) > 1e-6
+              );
             });
             if (stale) {
               nextState.slots = dynamicCells.map((c, i) => ({
@@ -216,7 +235,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     const mode = get().mode;
     let adjustedSlots = get().slots || [];
 
-    if (mode === "collage" && collageTemplate) {
+    if (mode === 'collage' && collageTemplate) {
       if (collageTemplate.physicalLayout) {
         const storedDpi = get().printSettings?.dpi || 300;
         const dpi = getEffectiveDpi(w, h, storedDpi);
@@ -226,21 +245,10 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
           h,
           dpi,
           get().collageGap,
-          get().collageMargin
+          get().collageMargin,
         );
         if (dynamicCells) {
-          adjustedSlots = dynamicCells.map((c, i) => {
-            const existingSlot = (get().slots || [])[i] || {};
-            return {
-              ...existingSlot,
-              id: existingSlot.id || uid(),
-              cellIndex: i,
-              x: c.x,
-              y: c.y,
-              w: c.w,
-              h: c.h,
-            };
-          });
+          adjustedSlots = remapSlotsToCells(get().slots || [], dynamicCells);
         }
       }
     }
@@ -265,7 +273,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
             // الكانفاس عند اختيار الاتجاه لأول مرة
             paperWidthMM: Math.min(wMM, hMM),
             paperHeightMM: Math.max(wMM, hMM),
-            orientation: isLandscape ? "landscape" : "portrait",
+            orientation: isLandscape ? 'landscape' : 'portrait',
           }
         : get().printSettings,
     });
@@ -274,10 +282,14 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
 
   // لا pushHistory هنا — يُستدعى باستمرار أثناء اختيار اللون؛
   // الدفع يتم عند الإغلاق (PopoverColorPicker) أو بتأجيل من ColorWheelPicker المباشر (إصلاح Bug#2)
-  setBackgroundColor: (c) => { set({ backgroundColor: c }); },
+  setBackgroundColor: (c) => {
+    set({ backgroundColor: c });
+  },
 
   // نفس سياسة اللون الأساسي: بلا pushHistory أثناء السحب الحي، والدفع عند الإغلاق/التغيير من الم_picker
-  setBackgroundGradientColor2: (c) => { set({ backgroundGradientColor2: c }); },
+  setBackgroundGradientColor2: (c) => {
+    set({ backgroundGradientColor2: c });
+  },
   setBackgroundGradientAngle: (deg) => {
     const angle = ((Math.round(deg) % 360) + 360) % 360;
     set({ backgroundGradientAngle: angle });
@@ -288,9 +300,10 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     set({ lastEditedImage: src });
   },
   setLastEditedImageAspect: (aspect) => set({ lastEditedImageAspect: aspect }),
-  setCanvasZoom: (zoom) => set((state) => ({
-    canvasZoom: typeof zoom === "function" ? zoom(state.canvasZoom) : zoom
-  })),
+  setCanvasZoom: (zoom) =>
+    set((state) => ({
+      canvasZoom: typeof zoom === 'function' ? zoom(state.canvasZoom) : zoom,
+    })),
 
   setCanvasFitMode: (mode) => {
     writeStoredFitMode(mode);
@@ -301,10 +314,10 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     const freshSlots = generateInitialSlots();
     set({
       projectId: null,
-      mode: "collage" as EditorMode,
+      mode: 'collage' as EditorMode,
       canvasWidth: 2480,
       canvasHeight: 3508,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: '#FFFFFF',
       backgroundGradientColor2: null,
       backgroundGradientAngle: 135,
       lastEditedImage: null,
@@ -322,17 +335,17 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       collageRadius: 0,
       collageShowCutLines: false,
       collageStrokeWidth: 0,
-      collageStrokeColor: "#000000",
+      collageStrokeColor: '#000000',
       showGrid: false,
       gridSize: 48,
-      gridColor: "#000000",
+      gridColor: '#000000',
       gridOpacity: 0.15,
       gridSubdivisions: 5,
-      gridType: "lines" as const,
+      gridType: 'lines' as const,
       snapToGrid: true,
       showColumns: false,
       columnsCount: 12,
-      columnsColor: "rgba(239, 68, 68, 0.08)",
+      columnsColor: 'rgba(239, 68, 68, 0.08)',
       columnsMargin: 20,
       columnsGutter: 12,
       showRuler: true,
@@ -344,31 +357,40 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
   },
 
   loadProject: (project: ProjectFileV1, projectId: string | null = null) => {
-    if (!project || typeof project !== "object") {
-      console.error("[loadProject] Invalid project payload provided");
+    if (!project || typeof project !== 'object') {
+      console.error('[loadProject] Invalid project payload provided');
       return;
     }
-    const validWidth = typeof project.canvasWidth === "number" && project.canvasWidth > 0 && project.canvasWidth <= 20000
-      ? project.canvasWidth
-      : 2480;
-    const validHeight = typeof project.canvasHeight === "number" && project.canvasHeight > 0 && project.canvasHeight <= 20000
-      ? project.canvasHeight
-      : 3508;
+    const validWidth =
+      typeof project.canvasWidth === 'number' &&
+      project.canvasWidth > 0 &&
+      project.canvasWidth <= 20000
+        ? project.canvasWidth
+        : 2480;
+    const validHeight =
+      typeof project.canvasHeight === 'number' &&
+      project.canvasHeight > 0 &&
+      project.canvasHeight <= 20000
+        ? project.canvasHeight
+        : 3508;
 
     // قالب غير موجود في الكتالوج (إصدار أحدث/إضافة مخصصة) يُحتفظ به كما هو —
     // بياناته كاملة بعد التحقق، وإسقاطه كان يترك الكانفس بلا قالب
     const restoredTemplate = project.template
-      ? (PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) as PhotoTemplate | undefined) || (project.template as PhotoTemplate)
+      ? (PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) as PhotoTemplate | undefined) ||
+        (project.template as PhotoTemplate)
       : null;
     const restoredCollageTemplate = project.collageTemplate
-      ? (COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate?.id) as CollageTemplate | undefined) || (project.collageTemplate as CollageTemplate)
+      ? (COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate?.id) as
+          CollageTemplate | undefined) || (project.collageTemplate as CollageTemplate)
       : null;
 
     const rawElements = (project.elements || []) as CanvasElement[];
-    const validElements = rawElements.filter(el => {
-      if (!el || typeof el !== "object") return false;
-      if (!["image", "text", "shape"].includes(el.type)) return false;
-      if (!isFinite(el.x) || !isFinite(el.y) || !isFinite(el.width) || !isFinite(el.height)) return false;
+    const validElements = rawElements.filter((el) => {
+      if (!el || typeof el !== 'object') return false;
+      if (!['image', 'text', 'shape'].includes(el.type)) return false;
+      if (!isFinite(el.x) || !isFinite(el.y) || !isFinite(el.width) || !isFinite(el.height))
+        return false;
       if (el.width <= 0 || el.height <= 0) return false;
       return true;
     });
@@ -376,14 +398,17 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     // وضع موحّد مع الافتراضي: ملفات جديدة/فارغة تبدأ كولاج (مطابقة reset)،
     // بينما الملفات القديمة التي تحتوي عناصر تعديل حر تُحمل كوضع مفرد
     const resolvedMode: EditorMode =
-      project.mode || (validElements.length > 0 ? "single" : "collage");
+      project.mode || (validElements.length > 0 ? 'single' : 'collage');
 
-    const fallbackSlots = (): CanvasSlot[] => (resolvedMode === "collage" ? generateInitialSlots() : []);
+    const fallbackSlots = (): CanvasSlot[] =>
+      resolvedMode === 'collage' ? generateInitialSlots() : [];
 
-    const rawSlots = ((project.slots && project.slots.length > 0 ? project.slots : fallbackSlots()) || []) as CanvasSlot[];
+    const rawSlots = ((project.slots && project.slots.length > 0
+      ? project.slots
+      : fallbackSlots()) || []) as CanvasSlot[];
     // التحقق من سلامة الخانات مثلما تُفلتر العناصر — يمنع خانات تالفة من الوصول للكانفس
     const validSlots = rawSlots.filter((sl) => {
-      if (!sl || typeof sl !== "object") return false;
+      if (!sl || typeof sl !== 'object') return false;
       if (!isFinite(sl.x) || !isFinite(sl.y) || !isFinite(sl.w) || !isFinite(sl.h)) return false;
       if (sl.w <= 0 || sl.h <= 0) return false;
       return true;
@@ -392,7 +417,11 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     // مطابقة عدد الخانات مع خلايا قالب الكولاج: اختلاف العدد يعني ملفاً تالفاً
     // أو هجرة قديمة — نعيد بناء الخانات من القالب مع الإبقاء على الصور حسب الموضع
     let reconciledSlots = validSlots;
-    if (resolvedMode === "collage" && restoredCollageTemplate && validSlots.length !== restoredCollageTemplate.cells.length) {
+    if (
+      resolvedMode === 'collage' &&
+      restoredCollageTemplate &&
+      validSlots.length !== restoredCollageTemplate.cells.length
+    ) {
       const storedDpi = project.printSettings?.dpi || 300;
       const dpi = getEffectiveDpi(validWidth, validHeight, storedDpi);
       let cells = restoredCollageTemplate.cells;
@@ -403,7 +432,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
           validHeight,
           dpi,
           project.collageGap ?? 0,
-          project.collageMargin ?? 0
+          project.collageMargin ?? 0,
         );
         if (dynamicCells) cells = dynamicCells;
       }
@@ -423,7 +452,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
           imageSrc: existingSlot?.imageSrc || undefined,
           originalImageSrc: existingSlot?.originalImageSrc,
           bgColor: existingSlot?.bgColor,
-          filter: existingSlot?.filter || "none",
+          filter: existingSlot?.filter || 'none',
           brightness: existingSlot?.brightness || 100,
           contrast: existingSlot?.contrast || 100,
           saturation: existingSlot?.saturation || 100,
@@ -441,19 +470,22 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       mode: resolvedMode,
       canvasWidth: validWidth,
       canvasHeight: validHeight,
-      backgroundColor: project.backgroundColor || "#FFFFFF",
+      backgroundColor: project.backgroundColor || '#FFFFFF',
       backgroundGradientColor2:
-        typeof project.backgroundGradientColor2 === "string" && project.backgroundGradientColor2.length > 0
+        typeof project.backgroundGradientColor2 === 'string' &&
+        project.backgroundGradientColor2.length > 0
           ? project.backgroundGradientColor2
           : null,
       // 🎨 الزاوية تُقرأ فقط مع وجود لون ثانٍ: المشاريع القديمة/غير المتدرجة تحمل
       // 0 في هذا الحقل (وهو زاوية صالحة، فلا يمكن تمييزها عن «محفوظة 0°) —
       // فنُبقي 135 الافتراضي حتى لا يبدأ التدرج بزاوية أفقية غير مقصودة.
       backgroundGradientAngle:
-        typeof project.backgroundGradientColor2 === "string" && project.backgroundGradientColor2.length > 0
-          ? (typeof project.backgroundGradientAngle === "number" && isFinite(project.backgroundGradientAngle)
-              ? ((Math.round(project.backgroundGradientAngle) % 360) + 360) % 360
-              : 135)
+        typeof project.backgroundGradientColor2 === 'string' &&
+        project.backgroundGradientColor2.length > 0
+          ? typeof project.backgroundGradientAngle === 'number' &&
+            isFinite(project.backgroundGradientAngle)
+            ? ((Math.round(project.backgroundGradientAngle) % 360) + 360) % 360
+            : 135
           : 135,
       lastEditedImage: null,
       lastEditedImageAspect: null,
@@ -464,48 +496,58 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       collageTemplate: restoredCollageTemplate,
       printSettings: project.printSettings
         ? (() => {
-          const saved = { ...DEFAULT_PRINT_SETTINGS, ...project.printSettings };
-          // ترحيل المشاريع المحفوظة بصيغة قديمة: أبعاد مقلوبة في paperWidthMM
-          // (مع orientation=landscape) — تُطبع عمودية خطأً — نعيد الأبعاد الأصلية
-          if (saved.paperWidthMM && saved.paperHeightMM && saved.paperWidthMM > saved.paperHeightMM) {
-            const w = saved.paperWidthMM;
-            saved.paperWidthMM = saved.paperHeightMM;
-            saved.paperHeightMM = w;
-          }
-          return saved;
-        })()
+            const saved = { ...DEFAULT_PRINT_SETTINGS, ...project.printSettings };
+            // ترحيل المشاريع المحفوظة بصيغة قديمة: أبعاد مقلوبة في paperWidthMM
+            // (مع orientation=landscape) — تُطبع عمودية خطأً — نعيد الأبعاد الأصلية
+            if (
+              saved.paperWidthMM &&
+              saved.paperHeightMM &&
+              saved.paperWidthMM > saved.paperHeightMM
+            ) {
+              const w = saved.paperWidthMM;
+              saved.paperWidthMM = saved.paperHeightMM;
+              saved.paperHeightMM = w;
+            }
+            return saved;
+          })()
         : DEFAULT_PRINT_SETTINGS,
       selectedId: null,
       selectedIds: [],
       editingTextId: null,
-      history: [{
-        // تُبذر بداية التاريخ بالعناصر المفلترة نفسها المعروضة — إعادة الخام
-        // تعني أن أول تراجع يعيد العنصر التالف (NaN/أبعاد صفرية) للكانفس.
-        mode: resolvedMode,
-        elements: validElements,
-        slots: reconciledSlots,
-        canvasWidth: validWidth,
-        canvasHeight: validHeight,
-        backgroundColor: project.backgroundColor || "#FFFFFF",
-        collageGap: project.collageGap ?? 0,
-        collageMargin: project.collageMargin ?? 0,
-        collageRadius: project.collageRadius ?? 0,
-        collageShowCutLines: project.collageShowCutLines ?? false,
-        collageShowEndCutLine: project.collageShowEndCutLine ?? true,
-        collageStrokeWidth: project.collageStrokeWidth ?? 0,
-        collageStrokeColor: project.collageStrokeColor ?? "#000000",
-      }],
+      history: [
+        {
+          // تُبذر بداية التاريخ بالعناصر المفلترة نفسها المعروضة — إعادة الخام
+          // تعني أن أول تراجع يعيد العنصر التالف (NaN/أبعاد صفرية) للكانفس.
+          mode: resolvedMode,
+          elements: validElements,
+          slots: reconciledSlots,
+          canvasWidth: validWidth,
+          canvasHeight: validHeight,
+          template: restoredTemplate,
+          collageTemplate: restoredCollageTemplate,
+          backgroundColor: project.backgroundColor || '#FFFFFF',
+          backgroundGradientColor2: project.backgroundGradientColor2 || null,
+          backgroundGradientAngle: project.backgroundGradientAngle ?? 135,
+          collageGap: project.collageGap ?? 0,
+          collageMargin: project.collageMargin ?? 0,
+          collageRadius: project.collageRadius ?? 0,
+          collageShowCutLines: project.collageShowCutLines ?? false,
+          collageShowEndCutLine: project.collageShowEndCutLine ?? true,
+          collageStrokeWidth: project.collageStrokeWidth ?? 0,
+          collageStrokeColor: project.collageStrokeColor ?? '#000000',
+        },
+      ],
       historyIndex: 0,
       showGrid: project.showGrid ?? false,
       gridSize: project.gridSize ?? 48,
-      gridColor: project.gridColor ?? "#000000",
+      gridColor: project.gridColor ?? '#000000',
       gridOpacity: project.gridOpacity ?? 0.15,
       gridSubdivisions: project.gridSubdivisions ?? 5,
-      gridType: project.gridType ?? "lines",
+      gridType: project.gridType ?? 'lines',
       snapToGrid: project.snapToGrid ?? true,
       showColumns: project.showColumns ?? false,
       columnsCount: project.columnsCount ?? 12,
-      columnsColor: project.columnsColor ?? "rgba(239, 68, 68, 0.08)",
+      columnsColor: project.columnsColor ?? 'rgba(239, 68, 68, 0.08)',
       columnsMargin: project.columnsMargin ?? 20,
       columnsGutter: project.columnsGutter ?? 12,
       collageGap: project.collageGap ?? 0,
@@ -514,7 +556,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       collageShowCutLines: project.collageShowCutLines ?? false,
       collageShowEndCutLine: project.collageShowEndCutLine ?? true,
       collageStrokeWidth: project.collageStrokeWidth ?? 0,
-      collageStrokeColor: project.collageStrokeColor ?? "#000000",
+      collageStrokeColor: project.collageStrokeColor ?? '#000000',
     });
   },
 });

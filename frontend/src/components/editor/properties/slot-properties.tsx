@@ -1,6 +1,6 @@
-import React, { lazy, Suspense, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { wailsIsDesktop } from "@/lib/wails-env";
+import React, { lazy, Suspense, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { wailsIsDesktop } from '@/lib/wails-env';
 import {
   ImageSquare,
   Crop,
@@ -20,27 +20,29 @@ import {
   Columns,
   Sun,
   MagnifyingGlassPlus,
-} from "@/components/ui/icons";
-import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
-import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
-import { toast } from "sonner";
-import { useEditorStore, CanvasSlot } from "@/lib/editor-store";
-import { useRenderQuality } from "@/lib/canvas/render-quality";
-import { PopoverColorPicker } from "./shared-controls";
-import { FluentSection, FluentSliderField, FluentTooltip } from "@/components/ui/blocks";
-import { pxToMm } from "@/lib/canvas/units";
-import { cn } from "@/lib/utils";
-import { useShallow } from "zustand/react/shallow";
-import { Switch } from "@/components/ui/switch";
-import { checkerColor } from "@/lib/canvas/canvas-colors";
+} from '@/components/ui/icons';
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { toast } from 'sonner';
+import { useEditorStore, CanvasSlot } from '@/lib/editor-store';
+import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { PopoverColorPicker } from './shared-controls';
+import { FluentSection, FluentSliderField, FluentTooltip } from '@/components/ui/blocks';
+import { pxToMm } from '@/lib/canvas/units';
+import { cn } from '@/lib/utils';
+import { useShallow } from 'zustand/react/shallow';
+import { Switch } from '@/components/ui/switch';
+import { checkerColor } from '@/lib/canvas/canvas-colors';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
-const CropDialog = lazy(() => import("../dialogs/crop-dialog").then((module) => ({ default: module.CropDialog })));
+const CropDialog = lazy(() =>
+  import('../dialogs/crop-dialog').then((module) => ({ default: module.CropDialog })),
+);
 
 export const SlotProperties = React.memo(function SlotProperties({
   slot,
@@ -57,59 +59,68 @@ export const SlotProperties = React.memo(function SlotProperties({
     fillRowSlots,
     fillColumnSlots,
     setSlotImage,
+    setSlotImagesBatch,
     lastEditedImage,
     canvasWidth,
     canvasHeight,
-    printSettings
-  } = useEditorStore(useShallow((state) => ({
-    slots: state.slots,
-    swapSlots: state.swapSlots,
-    fillAllSlots: state.fillAllSlots,
-    fillEmptySlots: state.fillEmptySlots,
-    fillRowSlots: state.fillRowSlots,
-    fillColumnSlots: state.fillColumnSlots,
-    setSlotImage: state.setSlotImage,
-    lastEditedImage: state.lastEditedImage,
-    canvasWidth: state.canvasWidth,
-    canvasHeight: state.canvasHeight,
-    printSettings: state.printSettings,
-  })));
-   const [cropOpen, setCropOpen] = useState(false);
-   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
-   const [autoFill, setAutoFill] = useState(() => {
-    return localStorage.getItem("grido_auto_fill_grid") !== "false";
+    printSettings,
+  } = useEditorStore(
+    useShallow((state) => ({
+      slots: state.slots,
+      swapSlots: state.swapSlots,
+      fillAllSlots: state.fillAllSlots,
+      fillEmptySlots: state.fillEmptySlots,
+      fillRowSlots: state.fillRowSlots,
+      fillColumnSlots: state.fillColumnSlots,
+      setSlotImage: state.setSlotImage,
+      setSlotImagesBatch: state.setSlotImagesBatch,
+      lastEditedImage: state.lastEditedImage,
+      canvasWidth: state.canvasWidth,
+      canvasHeight: state.canvasHeight,
+      printSettings: state.printSettings,
+    })),
+  );
+  const [cropOpen, setCropOpen] = useState(false);
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
+  const [autoFill, setAutoFill] = useState(() => {
+    return localStorage.getItem('grido_auto_fill_grid') !== 'false';
   });
-  
-   const handleOpenFile = async () => {
-     if (isFileDialogOpen) return;
-     setIsFileDialogOpen(true);
-     try {
-       const [b64] = await openImageFileDialog(false);
-       if (b64) {
-         const isWailsDesktop = wailsIsDesktop();
-         let srcToUse = b64;
-         if (isWailsDesktop && b64.startsWith("data:image/")) {
-           try {
-             const localPath = await SaveImageFromBase64(b64);
-             if (localPath) srcToUse = localPath;
-           } catch (e) {
-             console.error("Failed to save image locally:", e);
-           }
-         }
-         const freshStore = useEditorStore.getState();
-         freshStore.setSlotImage(slot.id, srcToUse);
-         if (autoFill) {
-           freshStore.fillAllSlots(srcToUse, slot.id);
-         }
-       }
-      } catch (err) {
-        console.error(err);
-        // إشعار فشل تغيير الصورة بدل السكوت
-        toast.error("فشل تغيير الصورة");
-      } finally {
-        setIsFileDialogOpen(false);
+
+  const handleOpenFile = async () => {
+    if (isFileDialogOpen) return;
+    setIsFileDialogOpen(true);
+    try {
+      const [b64] = await openImageFileDialog(false);
+      if (b64) {
+        const isWailsDesktop = wailsIsDesktop();
+        let srcToUse = b64;
+        if (isWailsDesktop && b64.startsWith('data:image/')) {
+          try {
+            const localPath = await SaveImageFromBase64(b64);
+            if (localPath) srcToUse = localPath;
+          } catch (e) {
+            console.error('Failed to save image locally:', e);
+          }
+        }
+        const freshStore = useEditorStore.getState();
+        if (autoFill) {
+          // 🚀 إجراء واحد = لقطة تراجع واحدة — كان setSlotImage + fillAllSlots
+          // يولّدان لقطتين (الثانية بكل الخلايا تحمل الصورة) فتستنزف سقف الـ 30
+          // لقطة وتحرم المستخدم من التراجع عن خطوات سابقة (BUG-HIGH-10)
+          const assignments = freshStore.slots.map((sl) => ({ slotId: sl.id, src: srcToUse }));
+          setSlotImagesBatch(assignments, srcToUse);
+        } else {
+          freshStore.setSlotImage(slot.id, srcToUse);
+        }
       }
-   };
+    } catch (err) {
+      console.error(err);
+      // إشعار فشل تغيير الصورة بدل السكوت
+      toast.error('فشل تغيير الصورة');
+    } finally {
+      setIsFileDialogOpen(false);
+    }
+  };
 
   const handleFillAll = () => {
     if (slot.imageSrc) {
@@ -143,16 +154,19 @@ export const SlotProperties = React.memo(function SlotProperties({
   const heightMM = Math.round(pxToMm(slot.h * canvasHeight, dpi));
 
   const renderAutoFillToggle = () => (
-    <div className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none" dir="rtl">
+    <div
+      className="flex items-center justify-between pt-2 border-t border-border/20 mt-2 font-cairo select-none"
+      dir="rtl"
+    >
       <div className="flex items-center gap-1.5 text-start">
         <Copy className="w-4 h-4 text-primary shrink-0" weight="regular" />
         <span className="text-xs font-semibold text-foreground/90">تعبئة تلقائية</span>
       </div>
-      <Switch 
+      <Switch
         checked={autoFill}
         onCheckedChange={(checked) => {
           setAutoFill(checked);
-          localStorage.setItem("grido_auto_fill_grid", String(checked));
+          localStorage.setItem('grido_auto_fill_grid', String(checked));
         }}
       />
     </div>
@@ -165,7 +179,10 @@ export const SlotProperties = React.memo(function SlotProperties({
           icon={<ImageSquare className="w-3.5 h-3.5" weight="duotone" />}
           title="أبعاد الخلية"
           action={
-            <span className="text-micro font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 font-mono" dir="ltr">
+            <span
+              className="text-micro font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 font-mono"
+              dir="ltr"
+            >
               {widthMM} × {heightMM} mm · {dpi} DPI
             </span>
           }
@@ -214,7 +231,10 @@ export const SlotProperties = React.memo(function SlotProperties({
         icon={<ImageSquare className="w-3.5 h-3.5" weight="duotone" />}
         title="أبعاد الطباعة"
         action={
-          <span className="text-micro font-semibold text-muted-foreground/80 bg-muted px-2 py-0.5 rounded-md border border-border/40 font-mono" dir="ltr">
+          <span
+            className="text-micro font-semibold text-muted-foreground/80 bg-muted px-2 py-0.5 rounded-md border border-border/40 font-mono"
+            dir="ltr"
+          >
             {widthMM} × {heightMM} mm · {dpi} DPI
           </span>
         }
@@ -252,15 +272,19 @@ export const SlotProperties = React.memo(function SlotProperties({
               variant="outline"
               size="sm"
               className={cn(
-                "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80",
-                slot.flipX && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
+                'h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80',
+                slot.flipX &&
+                  'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40',
               )}
               onClick={() => {
                 onUpdate(slot.id, { flipX: !slot.flipX });
                 useEditorStore.getState().pushHistory();
               }}
             >
-              <FlipHorizontal className={cn("w-4 h-4", slot.flipX ? "text-primary" : "text-muted-foreground")} weight={slot.flipX ? "fill" : "regular"} />
+              <FlipHorizontal
+                className={cn('w-4 h-4', slot.flipX ? 'text-primary' : 'text-muted-foreground')}
+                weight={slot.flipX ? 'fill' : 'regular'}
+              />
             </Button>
           </FluentTooltip>
 
@@ -269,15 +293,19 @@ export const SlotProperties = React.memo(function SlotProperties({
               variant="outline"
               size="sm"
               className={cn(
-                "h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80",
-                slot.flipY && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
+                'h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80',
+                slot.flipY &&
+                  'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40',
               )}
               onClick={() => {
                 onUpdate(slot.id, { flipY: !slot.flipY });
                 useEditorStore.getState().pushHistory();
               }}
             >
-              <FlipVertical className={cn("w-4 h-4", slot.flipY ? "text-primary" : "text-muted-foreground")} weight={slot.flipY ? "fill" : "regular"} />
+              <FlipVertical
+                className={cn('w-4 h-4', slot.flipY ? 'text-primary' : 'text-muted-foreground')}
+                weight={slot.flipY ? 'fill' : 'regular'}
+              />
             </Button>
           </FluentTooltip>
 
@@ -343,9 +371,11 @@ export const SlotProperties = React.memo(function SlotProperties({
                       onClick={() => swapSlots(slot.id, otherSlot.id)}
                       className="cursor-pointer flex items-center justify-between text-xs py-1.5"
                     >
-                      <span className="font-semibold">الخلية #{otherSlot.cellIndex + 1 || idx + 1}</span>
+                      <span className="font-semibold">
+                        الخلية #{otherSlot.cellIndex + 1 || idx + 1}
+                      </span>
                       <span className="text-micro text-muted-foreground font-mono">
-                        {otherSlot.imageSrc ? "ممتلئة" : "فارغة"}
+                        {otherSlot.imageSrc ? 'ممتلئة' : 'فارغة'}
                       </span>
                     </DropdownMenuItem>
                   ))}
@@ -447,13 +477,13 @@ export const SlotProperties = React.memo(function SlotProperties({
       >
         <div className="flex items-center gap-1.5 flex-wrap">
           {[
-            { id: "trans", label: "شفاف", val: "transparent" },
-            { id: "white", label: "أبيض للجوازات", val: "#FFFFFF" },
-            { id: "blue", label: "أزرق رسمي", val: "#2563EB" },
-            { id: "lblue", label: "أزرق فاتح", val: "#38BDF8" },
-            { id: "gray", label: "رمادي استوديو", val: "#F4F4F5" },
+            { id: 'trans', label: 'شفاف', val: 'transparent' },
+            { id: 'white', label: 'أبيض للجوازات', val: '#FFFFFF' },
+            { id: 'blue', label: 'أزرق رسمي', val: '#2563EB' },
+            { id: 'lblue', label: 'أزرق فاتح', val: '#38BDF8' },
+            { id: 'gray', label: 'رمادي استوديو', val: '#F4F4F5' },
           ].map((colorItem) => {
-            const currBg = slot.bgColor || "transparent";
+            const currBg = slot.bgColor || 'transparent';
             const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
             return (
               <button
@@ -465,7 +495,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                   if (autoFill) {
                     freshStore.updateSlotsBatch(
                       freshStore.slots.map((s) => s.id),
-                      { bgColor: colorItem.val }
+                      { bgColor: colorItem.val },
                     );
                   } else {
                     onUpdate(slot.id, { bgColor: colorItem.val });
@@ -473,33 +503,45 @@ export const SlotProperties = React.memo(function SlotProperties({
                   freshStore.pushHistory();
                 }}
                 className={cn(
-                  "w-8 h-8 rounded-lg border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none",
+                  'w-8 h-8 rounded-lg border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none',
                   isActive
-                    ? "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10"
-                    : "border-black/10 dark:border-white/15 hover:border-foreground/40"
+                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10'
+                    : 'border-black/10 dark:border-white/15 hover:border-foreground/40',
                 )}
                 style={{
-                  backgroundColor: colorItem.val === "transparent" ? undefined : colorItem.val,
-                  backgroundImage: colorItem.val === "transparent" ? `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)` : undefined,
-                  backgroundSize: colorItem.val === "transparent" ? "6px 6px" : undefined,
-                  backgroundPosition: colorItem.val === "transparent" ? "0 0, 0 3px, 3px -3px, -3px 0px" : undefined,
+                  backgroundColor: colorItem.val === 'transparent' ? undefined : colorItem.val,
+                  backgroundImage:
+                    colorItem.val === 'transparent'
+                      ? `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`
+                      : undefined,
+                  backgroundSize: colorItem.val === 'transparent' ? '6px 6px' : undefined,
+                  backgroundPosition:
+                    colorItem.val === 'transparent' ? '0 0, 0 3px, 3px -3px, -3px 0px' : undefined,
                 }}
               >
                 {isActive && (
-                  <Check className={cn("w-3.5 h-3.5 z-10 drop-shadow-xs", colorItem.val === "#FFFFFF" || colorItem.val === "#F4F4F5" ? "text-slate-900" : "text-white")} weight="bold" />
+                  <Check
+                    className={cn(
+                      'w-3.5 h-3.5 z-10 drop-shadow-xs',
+                      colorItem.val === '#FFFFFF' || colorItem.val === '#F4F4F5'
+                        ? 'text-slate-900'
+                        : 'text-white',
+                    )}
+                    weight="bold"
+                  />
                 )}
               </button>
             );
           })}
 
           <PopoverColorPicker
-            color={slot.bgColor === "transparent" || !slot.bgColor ? "#ffffff" : slot.bgColor}
+            color={slot.bgColor === 'transparent' || !slot.bgColor ? '#ffffff' : slot.bgColor}
             onChange={(val: string) => {
               const freshStore = useEditorStore.getState();
               if (autoFill) {
                 freshStore.updateSlotsBatch(
                   freshStore.slots.map((s) => s.id),
-                  { bgColor: val }
+                  { bgColor: val },
                 );
               } else {
                 onUpdate(slot.id, { bgColor: val });
@@ -528,7 +570,10 @@ export const SlotProperties = React.memo(function SlotProperties({
             step={1}
             unit="%"
             onChange={(v) => onUpdate(slot.id, { brightness: v })}
-            onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+            onCommit={() => {
+              useRenderQuality.getState().setIsDraggingFilter(false);
+              useEditorStore.getState().pushHistory();
+            }}
             onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
             onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
           />
@@ -540,7 +585,10 @@ export const SlotProperties = React.memo(function SlotProperties({
             step={1}
             unit="%"
             onChange={(v) => onUpdate(slot.id, { contrast: v })}
-            onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+            onCommit={() => {
+              useRenderQuality.getState().setIsDraggingFilter(false);
+              useEditorStore.getState().pushHistory();
+            }}
             onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
             onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
           />
@@ -552,7 +600,10 @@ export const SlotProperties = React.memo(function SlotProperties({
             step={1}
             unit="%"
             onChange={(v) => onUpdate(slot.id, { saturation: v })}
-            onCommit={() => { useRenderQuality.getState().setIsDraggingFilter(false); useEditorStore.getState().pushHistory(); }}
+            onCommit={() => {
+              useRenderQuality.getState().setIsDraggingFilter(false);
+              useEditorStore.getState().pushHistory();
+            }}
             onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
             onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
           />
@@ -563,7 +614,7 @@ export const SlotProperties = React.memo(function SlotProperties({
             className="w-full rounded-md font-semibold text-xs h-8 border border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors mt-1"
             onClick={() =>
               onUpdate(slot.id, {
-                filter: "none",
+                filter: 'none',
                 brightness: 100,
                 contrast: 100,
                 saturation: 100,
@@ -612,8 +663,8 @@ export const SlotProperties = React.memo(function SlotProperties({
                   onUpdate(slot.id, { imageSrc: cropped });
                 }
               } catch (err) {
-                console.error("Failed to save cropped slot image:", err);
-                toast.error("فشل حفظ القص");
+                console.error('Failed to save cropped slot image:', err);
+                toast.error('فشل حفظ القص');
               }
             }}
           />

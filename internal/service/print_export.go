@@ -18,6 +18,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"golang.org/x/image/tiff"
 
 	"github.com/fogleman/gg"
@@ -44,6 +45,88 @@ const maxTIFFPixels = 50_000_000
 
 // maxFallbackEmbedBytes سقف تضمين Base64 الاحتياطي في HTML (M6).
 const maxFallbackEmbedBytes = 60 * 1024 * 1024
+
+// previewMaxWidth أقصى عرض لمعاينة CMYK PNG — المعاينة تُعرض في iframe للطباعة
+// ولا تحتاج أكثر؛ الترميز كامل الحجم كان ~58% من زمن توليد الورقة (قياس 218ms).
+const previewMaxWidth = 1200
+
+// dpiJPEGWriter كاتب متدفق يحقن قطعة JFIF APP0 بعد SOI عند أول كتابة —
+// يلغي الترميز-إلى-ذاكرة-ثم-النسخ (كان يضاعف ذاكرة الملف الناتج مؤقتاً).
+type dpiJPEGWriter struct {
+	w    io.Writer
+	dpi  int
+	done bool
+	pend []byte
+}
+
+func (w *dpiJPEGWriter) Write(p []byte) (int, error) {
+	if w.done {
+		return w.w.Write(p)
+	}
+	w.pend = append(w.pend, p...)
+	if len(w.pend) < 2 {
+		// كتابة مجزأة نادرة — ننتظر حتى نرى SOI كاملاً
+		return len(p), nil
+	}
+	if w.pend[0] != 0xFF || w.pend[1] != 0xD8 {
+		return 0, fmt.Errorf("dpiJPEGWriter: unexpected stream start (not SOI)")
+	}
+	if _, err := w.w.Write(w.pend[:2]); err != nil {
+		return 0, err
+	}
+	if _, err := w.w.Write(buildJFIFSegment(w.dpi)); err != nil {
+		return 0, err
+	}
+	w.done = true
+	written := len(p)
+	n, err := w.w.Write(w.pend[2:])
+	w.pend = nil
+	if err != nil {
+		return n, err
+	}
+	return written, nil
+}
+
+// dpiPNGHeaderLen الحد الأدنى لرأس PNG: التوقيع (8) + قطعة IHDR كاملة (25) —
+// ننتظر 41 بايت لرؤية بداية القطعة التالية وفحص pHYs موجودة.
+const dpiPNGHeaderLen = 41
+
+// dpiPNGWriter كاتب متدفق يحقن قطعة pHYs بعد IHDR عند أول كتابة —
+// بلا bytes.Buffer وسيط لصورة كاملة.
+type dpiPNGWriter struct {
+	w    io.Writer
+	dpi  int
+	done bool
+	pend []byte
+}
+
+func (w *dpiPNGWriter) Write(p []byte) (int, error) {
+	if w.done {
+		return w.w.Write(p)
+	}
+	w.pend = append(w.pend, p...)
+	if len(w.pend) < dpiPNGHeaderLen {
+		return len(p), nil // ننتظر رأس PNG كاملاً
+	}
+	insertPos, skipEnd, err := pngDPIInsertPos(w.pend)
+	if err != nil {
+		return 0, err
+	}
+	if _, err := w.w.Write(w.pend[:insertPos]); err != nil {
+		return 0, err
+	}
+	if _, err := w.w.Write(buildPhysChunk(w.dpi)); err != nil {
+		return 0, err
+	}
+	w.done = true
+	written := len(p)
+	n, err := w.w.Write(w.pend[skipEnd:])
+	w.pend = nil
+	if err != nil {
+		return n, err
+	}
+	return written, nil
+}
 
 func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (string, string, error) {
 	appDir := utils.GetAppDir()
@@ -91,20 +174,21 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		ApplyPureBlackCutLines(cmykImg, req)
 
 		if strings.EqualFold(req.ExportFormat, "jpeg") || strings.EqualFold(req.ExportFormat, "jpg") {
-			imageName = baseName + ".jpg"
-			imagePath = filepath.Join(outDir, imageName)
-			af, err := utils.CreateAtomic(imagePath, 0o644)
-			if err != nil {
-				return "", "", fmt.Errorf("create cmyk jpeg: %w", err)
-			}
-			defer af.Abort()
-			if err := jpeg.Encode(af, cmykImg, &jpeg.Options{Quality: 95}); err != nil {
-				return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
-			}
-			if err := af.Commit(); err != nil {
-				return "", "", fmt.Errorf("commit cmyk jpeg: %w", err)
-			}
-		} else {
+				imageName = baseName + ".jpg"
+				imagePath = filepath.Join(outDir, imageName)
+				af, err := utils.CreateAtomic(imagePath, 0o644)
+				if err != nil {
+					return "", "", fmt.Errorf("create cmyk jpeg: %w", err)
+				}
+				defer af.Abort()
+				// ترميز متدفق مباشر مع حقن JFIF أثناء الكتابة (كان بلا حقن DPI أصلاً)
+				if err := jpeg.Encode(&dpiJPEGWriter{w: af, dpi: req.DPI}, cmykImg, &jpeg.Options{Quality: 95}); err != nil {
+					return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
+				}
+				if err := af.Commit(); err != nil {
+					return "", "", fmt.Errorf("commit cmyk jpeg: %w", err)
+				}
+			} else {
 			// Default format for CMYK is TIFF — مضغوط Deflate (غير المضغوط كان
 			// يضاعف الذاكرة والقرص) مع سقف 50MP بدل OOM على اللوحات الكبيرة
 			if pixels := int64(cmykImg.Bounds().Dx()) * int64(cmykImg.Bounds().Dy()); pixels > maxTIFFPixels {
@@ -125,21 +209,24 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			}
 		}
 
-		// 🌟 Save a browser-compatible PNG for HTML print window preview (browsers cannot decode TIFF in <img> tags)
+		// 🌟 معاينة PNG متصفح-متوافقة لنافذة الطباعة HTML (المتصفحات لا تفك TIFF في <img>)
+		// مصغّرة إلى حد 1200px ومرمّزة متدفقاً: الترميز كامل الحجم كان يستهلك ~218ms
+		// (58% من زمن توليد الورقة) والمعاينة لا تحتاج أكثر.
 		htmlImageName = baseName + "_preview.png"
 		htmlImagePath := filepath.Join(outDir, htmlImageName)
-		var buf bytes.Buffer
+		previewImg := dc.Image()
+		if b := previewImg.Bounds(); b.Dx() > previewMaxWidth {
+			previewImg = imaging.Fit(previewImg, previewMaxWidth, previewMaxWidth, imaging.Linear)
+		}
 		enc := &png.Encoder{CompressionLevel: png.BestSpeed}
-		if err := enc.Encode(&buf, dc.Image()); err == nil {
-			// DPI يُحقن أثناء التدفق للقرص — بلا نسخة بايت ثانية لصورة كاملة
-			if af, err := utils.CreateAtomic(htmlImagePath, 0o644); err == nil {
-				if werr := streamPNGWithDPI(af, buf.Bytes(), req.DPI); werr != nil {
-					af.Abort()
-					htmlImageName = imageName
-				} else if cerr := af.Commit(); cerr != nil {
+		if paf, err := utils.CreateAtomic(htmlImagePath, 0o644); err == nil {
+			perr := enc.Encode(&dpiPNGWriter{w: paf, dpi: req.DPI}, previewImg)
+			if perr == nil {
+				if cerr := paf.Commit(); cerr != nil {
 					htmlImageName = imageName
 				}
 			} else {
+				paf.Abort()
 				htmlImageName = imageName
 			}
 		} else {
@@ -152,19 +239,14 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			imageName = baseName + ".jpg"
 			htmlImageName = imageName
 			imagePath = filepath.Join(outDir, imageName)
-			var buf bytes.Buffer
-			if err := jpeg.Encode(&buf, dc.Image(), &jpeg.Options{Quality: 95}); err != nil {
-				return "", "", err
-			}
-			// JFIF يُحقن أثناء التدفق للقرص ذرياً — بلا نسخة بايت ثانية
 			af, err := utils.CreateAtomic(imagePath, 0o644)
 			if err != nil {
 				return "", "", fmt.Errorf("create jpeg: %w", err)
 			}
 			defer af.Abort()
-			// streamJPEGWithDPI تكتب الخام عند تعذر الحقن — الخطأ هنا يعني عطل قرص فقط
-			if werr := streamJPEGWithDPI(af, buf.Bytes(), req.DPI); werr != nil {
-				return "", "", werr
+			// ترميز متدفق مباشر للقرص مع حقن JFIF أثناء الكتابة — بلا نسخة بايت وسيطة
+			if err := jpeg.Encode(&dpiJPEGWriter{w: af, dpi: req.DPI}, dc.Image(), &jpeg.Options{Quality: 95}); err != nil {
+				return "", "", err
 			}
 			if err := af.Commit(); err != nil {
 				return "", "", err
@@ -174,21 +256,15 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			imageName = baseName + ".png"
 			htmlImageName = imageName
 			imagePath = filepath.Join(outDir, imageName)
-			var buf bytes.Buffer
-			enc := &png.Encoder{CompressionLevel: png.BestSpeed}
-			if err := enc.Encode(&buf, dc.Image()); err != nil {
-				return "", "", err
-			}
-
-			// pHYs تُحقن أثناء التدفق للقرص ذرياً — بلا نسخة بايت ثانية
 			af, err := utils.CreateAtomic(imagePath, 0o644)
 			if err != nil {
 				return "", "", fmt.Errorf("create png: %w", err)
 			}
 			defer af.Abort()
-			// streamPNGWithDPI تكتب الخام عند تعذر الحقن — الخطأ هنا يعني عطل قرص فقط
-			if werr := streamPNGWithDPI(af, buf.Bytes(), req.DPI); werr != nil {
-				return "", "", werr
+			// ترميز متدفق مباشر للقرص مع حقن pHYs أثناء الكتابة — بلا نسخة بايت وسيطة
+			enc := &png.Encoder{CompressionLevel: png.BestSpeed}
+			if err := enc.Encode(&dpiPNGWriter{w: af, dpi: req.DPI}, dc.Image()); err != nil {
+				return "", "", err
 			}
 			if err := af.Commit(); err != nil {
 				return "", "", err

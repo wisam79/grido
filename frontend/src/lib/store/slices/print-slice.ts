@@ -1,8 +1,8 @@
-import { StateCreator } from "zustand";
-import { EditorState } from "../index";
-import { PrintSettings } from "../types";
-import { computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
-import { uid } from "../../utils";
+import { StateCreator } from 'zustand';
+import { EditorState } from '../index';
+import { PrintSettings } from '../types';
+import { computeDynamicCollageCells, getEffectiveDpi } from '../../templates';
+import { remapSlotsToCells } from './collage-slice';
 
 export interface PrintSlice {
   printSettings: PrintSettings;
@@ -12,7 +12,7 @@ export interface PrintSlice {
 }
 
 export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
-  paperId: "canvas",
+  paperId: 'canvas',
   paperWidthMM: 210,
   paperHeightMM: 297,
   marginMM: 0,
@@ -21,11 +21,11 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   copiesPerSheet: 1,
   showCutLines: false,
   showEndCutLine: true,
-  cutLineStyle: "dashed",
-  orientation: "portrait",
+  cutLineStyle: 'dashed',
+  orientation: 'portrait',
   fitToPage: false,
-  repeatMode: "all",
-  gridAlign: "top-left",
+  repeatMode: 'all',
+  gridAlign: 'top-left',
 };
 
 export const createPrintSlice: StateCreator<EditorState, [], [], PrintSlice> = (set) => ({
@@ -39,7 +39,13 @@ export const createPrintSlice: StateCreator<EditorState, [], [], PrintSlice> = (
       const mode = s.mode;
       const collageTemplate = s.collageTemplate;
 
-      if (mode === "collage" && collageTemplate && collageTemplate.physicalLayout) {
+      if (
+        mode === 'collage' &&
+        collageTemplate &&
+        collageTemplate.physicalLayout &&
+        patch.dpi !== undefined &&
+        patch.dpi !== s.printSettings.dpi
+      ) {
         const storedDpi = newSettings.dpi || 300;
         const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
         const dynamicCells = computeDynamicCollageCells(
@@ -48,21 +54,10 @@ export const createPrintSlice: StateCreator<EditorState, [], [], PrintSlice> = (
           s.canvasHeight,
           dpi,
           s.collageGap,
-          s.collageMargin
+          s.collageMargin,
         );
         if (dynamicCells) {
-          adjustedSlots = dynamicCells.map((c, i) => {
-            const existingSlot = (s.slots || [])[i] || {};
-            return {
-              ...existingSlot,
-              id: existingSlot.id || uid(),
-              cellIndex: i,
-              x: c.x,
-              y: c.y,
-              w: c.w,
-              h: c.h,
-            };
-          });
+          adjustedSlots = remapSlotsToCells(s.slots || [], dynamicCells);
         }
       }
 

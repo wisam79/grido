@@ -182,11 +182,21 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                     onMouseDown={() => {
                       const curr = slot.imageSrc;
                       updateSlot(slot.id, { imageSrc: slot.originalImageSrc });
+                      // 🛡️ تنظيف شامل: pointercancel/blur يغطيان رفع المؤشر خارج
+                      // النافذة أو فقدان التركيز أثناء اللمس — كان mouseup وحده
+                      // يترك الصورة الأصلية معروضة ومستمعاً معلقاً
                       const restore = () => {
                         updateSlot(slot.id, { imageSrc: curr });
-                        window.removeEventListener('mouseup', restore);
+                        cleanup();
                       };
-                      window.addEventListener('mouseup', restore);
+                      const cleanup = () => {
+                        window.removeEventListener('pointerup', restore);
+                        window.removeEventListener('pointercancel', restore);
+                        window.removeEventListener('blur', restore);
+                      };
+                      window.addEventListener('pointerup', restore);
+                      window.addEventListener('pointercancel', restore);
+                      window.addEventListener('blur', restore);
                     }}
                     className="h-6 w-6 p-0 rounded-md text-primary hover:bg-primary/10 select-none active:bg-primary active:text-primary-foreground"
                   >

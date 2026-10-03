@@ -1,5 +1,7 @@
-import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
+// 🚀 تحميل كسول (dynamic import) — كانت papaparse وxlsx تُسحبان إلى الحزمة
+// الرئيسية عبر السلسلة الثابتة features/stickers ← index ← vdp-parser، فيحمّل
+// المستخدم SheetJS (421KB) عند الإقلاع وإن لم يفتح الطباعة بالبيانات المتغيرة
+// قط. الاستيراد هنا يجعل مكتبتي التفكيك chunk منفصلاً يُجلب عند أول ملف VDP.
 import type { StickerParams } from '@/features/stickers';
 
 /**
@@ -58,6 +60,7 @@ export async function parseVdpFile(file: File): Promise<VdpDataset> {
 
 async function parseCsvFile(file: File): Promise<VdpDataset> {
   const text = await file.text();
+  const { default: Papa } = await import('papaparse');
   // رأس الصفحة لا يهمنا — papaparse يستنتج الفاصل تلقائياً.
   // `preview` يوقف التفكيك عند سقف الصفوف بدل تحليل ملف ضخم كاملاً ثم قصّه.
   const result = Papa.parse<string[]>(text, {
@@ -74,6 +77,8 @@ async function parseCsvFile(file: File): Promise<VdpDataset> {
 
 async function parseExcelFile(file: File): Promise<VdpDataset> {
   const buffer = await file.arrayBuffer();
+  // xlsx يصدّر `read`/`utils` كنائج مسماة — لا default export
+  const { read, utils } = await import('xlsx');
   // 🛡️ تقوية مسار التفكيك (لا نثق بشكل الملف):
   // - `sheetRows`: حد أقصى لصفوف التفكيك نفسه (بدل تفكيك كل الصفوف ثم قصّها).
   // - تعطيل الصيغ والأنماط و HTML و VBA: سطح هجوم أقل بلا أي فقدان للبيانات النصية.
@@ -81,7 +86,7 @@ async function parseExcelFile(file: File): Promise<VdpDataset> {
   // ملاحظة: مكتبة `xlsx` من npm تحمل ثغرة تلوّث نموذج أولي بلا إصلاح متاح
   // (GHSA-4r6h-8v6p-xvw6، وReDoS في GHSA-5pgg-2g8v-p4x9)؛ هذا تخفيف للتأثير،
   // والإزالة الكاملة تتطلب نسخة SheetJS المصونة من cdn.sheetjs.com — انظر SECURITY_NOTICE.md.
-  const workbook = XLSX.read(buffer, {
+  const workbook = read(buffer, {
     type: 'array',
     sheetRows: VDP_PARSE_ROW_LIMIT,
     cellFormula: false,
@@ -95,7 +100,7 @@ async function parseExcelFile(file: File): Promise<VdpDataset> {
   if (!sheetName) throw new Error('ملف Excel فارغ');
 
   const sheet = workbook.Sheets[sheetName];
-  const rows = XLSX.utils.sheet_to_json<string[]>(sheet, {
+  const rows = utils.sheet_to_json<string[]>(sheet, {
     header: 1,
     raw: false, // كل القيم نصوص — التواريخ والأرقام كما تُعرض في Excel
     defval: '',

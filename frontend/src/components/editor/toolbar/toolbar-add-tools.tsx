@@ -14,6 +14,8 @@ const BarcodeDialog = React.lazy(() =>
 
 const preloadBarcodeDialog = () => {
   import('../dialogs/barcode-dialog');
+  // 🚀 تسخين مولدات الباركود/QR الكسولة مع الحوار — أول توليد يصبح فورياً
+  import('@/features/stickers/lib/barcode-svg').then((m) => m.warmupBarcodeLibs());
 };
 
 /**

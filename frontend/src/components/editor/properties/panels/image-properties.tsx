@@ -694,20 +694,37 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 onMouseDown={() => {
                   const curr = element.imageSrc;
                   onUpdate(element.id, { imageSrc: element.originalImageSrc });
+                  // 🛡️ تنظيف شامل: pointercancel/blur يغطيان رفع المؤشر خارج
+                  // النافذة أو فقدان التركيز — كان mouseup وحده يترك الصورة
+                  // الأصلية معروضة ومستمعاً معلقاً حتى نقرة تالٍ
                   const restore = () => {
                     onUpdate(element.id, { imageSrc: curr });
-                    window.removeEventListener('mouseup', restore);
+                    cleanup();
                   };
-                  window.addEventListener('mouseup', restore);
+                  const cleanup = () => {
+                    window.removeEventListener('pointerup', restore);
+                    window.removeEventListener('pointercancel', restore);
+                    window.removeEventListener('blur', restore);
+                  };
+                  window.addEventListener('pointerup', restore);
+                  window.addEventListener('pointercancel', restore);
+                  window.addEventListener('blur', restore);
                 }}
                 onTouchStart={() => {
                   const curr = element.imageSrc;
                   onUpdate(element.id, { imageSrc: element.originalImageSrc });
                   const restore = () => {
                     onUpdate(element.id, { imageSrc: curr });
-                    window.removeEventListener('touchend', restore);
+                    cleanup();
                   };
-                  window.addEventListener('touchend', restore);
+                  const cleanup = () => {
+                    window.removeEventListener('pointerup', restore);
+                    window.removeEventListener('pointercancel', restore);
+                    window.removeEventListener('blur', restore);
+                  };
+                  window.addEventListener('pointerup', restore);
+                  window.addEventListener('pointercancel', restore);
+                  window.addEventListener('blur', restore);
                 }}
                 title="اضغط مطولاً للمقارنة"
               >

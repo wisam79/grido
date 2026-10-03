@@ -65,7 +65,23 @@ export default defineConfig({
     }
   },
   build: {
-    target: 'esnext'
+    target: 'esnext',
+    rollupOptions: {
+      output: {
+        // 🚀 فصل المكتبات الثقيلة عن حزمة التطبيق الرئيسية — كان konva و
+        // framer-motion وcropper وreact-dom/server وjsbarcode كلها في chunk
+        // واحد 2.6MB يُحمَّل كاملاً عند الإقلاع. الفصل يحسّن التخزين المؤقت
+        // أيضاً: تحديث كود التطبيق لا يبطل كاش مكتبات المستخدم.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('konva') || id.includes('react-konva')) return 'konva';
+          if (id.includes('framer-motion')) return 'framer-motion';
+          if (id.includes('react-cropper') || id.includes('cropperjs')) return 'cropper';
+          if (id.includes('@fluentui/react-icons')) return 'fluent-icons';
+          return undefined;
+        },
+      },
+    },
   },
   optimizeDeps: {
     exclude: ['@techstark/opencv-js'],

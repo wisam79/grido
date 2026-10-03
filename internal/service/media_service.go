@@ -193,13 +193,31 @@ func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, er
 
 // GetBatchImageDimensions يسترجع أبعاد وتوجيه مجموعة صور دفعة واحدة وبسرعة فائقة
 func (s *MediaService) GetBatchImageDimensions(localPaths []string) map[string]ImageDimensions {
-	res := make(map[string]ImageDimensions)
-	for _, p := range localPaths {
-		dims, err := s.GetImageDimensions(p)
-		if err == nil {
-			res[p] = dims
-		}
+	res := make(map[string]ImageDimensions, len(localPaths))
+	if len(localPaths) == 0 {
+		return res
 	}
+
+	// 🚀 معالجة متوازية بعدد أنوية المعالج — كانت حلقة تسلسلية تقرأ ترويسة كل
+	// ملف على حدة (فتح/قراءة/إغلاق + Seek لكل صورة)، فتستغرق دفعة 50 صورة
+	// زمن مجموعها بدل زمن أبطأ ملف. نفس نمط ProcessMultipleOpenedFiles.
+	var mu sync.Mutex
+	g, _ := errgroup.WithContext(context.Background())
+	g.SetLimit(runtime.NumCPU())
+
+	for _, p := range localPaths {
+		p := p
+		g.Go(func() error {
+			dims, err := s.GetImageDimensions(p)
+			if err == nil {
+				mu.Lock()
+				res[p] = dims
+				mu.Unlock()
+			}
+			return nil // فشل ملف واحد لا يُسقط الدفعة — نفس سلوك النسخة التسلسلية
+		})
+	}
+	_ = g.Wait()
 	return res
 }
 

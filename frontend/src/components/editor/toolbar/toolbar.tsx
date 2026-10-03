@@ -37,7 +37,9 @@ interface ToolbarProps {
  * - زر «مسح مساحة العمل» الأحمر انتقل إلى قائمة «المزيد» (⋯) — الإجراءات
  *   المدمِّرة لا تُثبَّت في الشريط الرئيسي (مبدأ Fluent: تقليل الخطورة الدائمة).
  */
-export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
+// 🚀 memo: الترويسة تستقبل دوال معالجات ثابتة من App — بلا memo كانت أي إعادة
+// رسم في App (فتح حوار، toast، حالة تشغيل) تجرف الشريط كاملاً وأدواته الفرعية.
+export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
   return (
     <div
       data-testid="workspace-toolbar"
@@ -201,4 +203,4 @@ export function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
       </div>
     </div>
   );
-}
+});

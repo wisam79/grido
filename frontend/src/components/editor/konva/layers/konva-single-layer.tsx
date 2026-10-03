@@ -49,12 +49,15 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
   createElementRef,
   marqueeRectRef,
 }: KonvaSingleLayerProps) {
+  // 🚀 Map بالمعرفات بدل find لكل محدد — O(n) مرة واحدة بدل O(Selected×Elements)
+  // في كل رندر (كان يتكرر لكل تغيير ستور مع كثافة عناصر عالية)
+  const elementsById = React.useMemo(
+    () => new Map(sortedElements.map((el) => [el.id, el])),
+    [sortedElements],
+  );
+
   const isText =
-    selectedIds.length > 0 &&
-    selectedIds.every((id) => {
-      const el = sortedElements.find((e) => e.id === id);
-      return el?.type === 'text';
-    });
+    selectedIds.length > 0 && selectedIds.every((id) => elementsById.get(id)?.type === 'text');
 
   return (
     <Layer>
@@ -138,7 +141,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
             const patches = nodes
               .map((node: Konva.Node) => {
                 const id = node.id();
-                const el = sortedElements.find((x) => x.id === id);
+                const el = elementsById.get(id);
                 if (!el) return null;
 
                 const sx = node.scaleX();

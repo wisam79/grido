@@ -83,16 +83,65 @@ func resolveLocalPath(src string) string {
 }
 
 func applyColorAdjustments(img image.Image, brightness, contrast, saturation float64) image.Image {
-	if brightness != 100 {
-		img = imaging.AdjustBrightness(img, brightness-100)
+	if brightness == 100 && contrast == 100 && saturation == 100 {
+		return img
 	}
-	if contrast != 100 {
-		img = imaging.AdjustContrast(img, contrast-100)
+	// ⚡ دمج مرشحي السطوع والتباين في LUT واحد (مسح بكسل واحد بدل اثنين مع
+	// نسختي NRGBA كاملتين)، مطابق بكسل-بكسل لتسلسل imaging.AdjustBrightness ←
+	// AdjustContrast لأن التركيب LUT(LUT(x)) = LUT_مركّب(x) ضمن نفس التدوير clamp.
+	// التشبع يبقى مسحاً منفصلاً (HSL لا يُمثَّل بجدول بحث).
+	bPct := clampAdjPct(brightness - 100)
+	cPct := clampAdjPct(contrast - 100)
+
+	brightLUT := make([]uint8, 256)
+	shift := 255.0 * bPct / 100.0
+	for i := 0; i < 256; i++ {
+		brightLUT[i] = imagingClamp(float64(i) + shift)
 	}
+
+	lut := make([]uint8, 256)
+	v := (100.0 + cPct) / 100.0
+	for i := 0; i < 256; i++ {
+		afterBright := brightLUT[i]
+		switch {
+		case 0 <= v && v <= 1:
+			lut[i] = imagingClamp((0.5 + (float64(afterBright)/255.0-0.5)*v) * 255.0)
+		case 1 < v && v < 2:
+			lut[i] = imagingClamp((0.5 + (float64(afterBright)/255.0-0.5)*(1/(2.0-v))) * 255.0)
+		default:
+			lut[i] = uint8(float64(afterBright)/255.0+0.5) * 255
+		}
+	}
+
+	img = imaging.AdjustFunc(img, func(c color.NRGBA) color.NRGBA {
+		c.R = lut[c.R]
+		c.G = lut[c.G]
+		c.B = lut[c.B]
+		return c
+	})
+
 	if saturation != 100 {
-		img = imaging.AdjustSaturation(img, saturation-100)
+		img = imaging.AdjustSaturation(img, clampAdjPct(saturation - 100))
 	}
 	return img
+}
+
+// clampAdjPct يقيد نسبة التعديل لنطاق (-100, 100) كما تفعل دوال imaging داخلياً.
+func clampAdjPct(p float64) float64 {
+	return math.Min(math.Max(p, -100), 100)
+}
+
+// imagingClamp نسخة من دالة clamp الداخلية لمكتبة imaging v1.6.2 —
+// ضرورية لتطابق البكسل مع AdjustBrightness/AdjustContrast الأصليتين.
+func imagingClamp(x float64) uint8 {
+	v := int64(x + 0.5)
+	if v > 255 {
+		return 255
+	}
+	if v > 0 {
+		return uint8(v)
+	}
+	return 0
 }
 
 func applyFilter(img image.Image, filter string) image.Image {

@@ -184,46 +184,54 @@ export function usePrintExport({
       y2: l.y2,
     }));
 
-    for (let i = 0; i < actualCopies; i++) {
-      const block = computeBlockPosition(i, grid);
+    // 🚀 تكرار شبكي على جانب Go: كل خانة تُرسل مرة واحدة كقالب مع معاملات
+    // الاستنساخ (عدد النسخ + خطوة الشبكة بالمليمتر) — كان الكولاج يكرر عناصر
+    // كل خانة لكل نسخة عبر IPC (حتى 2,304 عنصراً وتجاوز حد التحقق 1000).
+    // firstBlock يحدد موضع القالب في الشبكة المُحاذية top-left: العنصر 0 في
+    // الصف الأول من أول خانة ذات صورة، وخانات بلا صورة لا تُحسب نسخاً لها.
+    const slotTemplates = slots.filter((slot) => slot.imageSrc);
+    const firstBlock = computeBlockPosition(0, grid);
+    const stepXMM = actualCopies > 1 ? grid.cellWidth : 0;
+    const stepYMM = actualCopies > 1 ? grid.cellHeight : 0;
 
-      for (const slot of slots) {
-        const activeSrc = slot.imageSrc;
-        if (!activeSrc) continue;
-        const rect = computeSlotRectMM(
-          block,
-          { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
-          { widthMM: imageWidthMM, heightMM: imageHeightMM },
-          { marginXMM, marginYMM },
-          { gapXMM, gapYMM },
-        );
-        const slotAspect = computeSlotAspect({ w: slot.w, h: slot.h }, canvasWidth, canvasHeight);
+    for (const slot of slotTemplates) {
+      const rect = computeSlotRectMM(
+        firstBlock,
+        { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
+        { widthMM: imageWidthMM, heightMM: imageHeightMM },
+        { marginXMM, marginYMM },
+        { gapXMM, gapYMM },
+      );
+      const slotAspect = computeSlotAspect({ w: slot.w, h: slot.h }, canvasWidth, canvasHeight);
 
-        items.push(
-          domain.PrintItem.createFrom({
-            imageSrc: activeSrc,
-            x: rect.xMM,
-            y: rect.yMM,
-            w: rect.wMM,
-            h: rect.hMM,
-            filter: slot.filter || 'none',
-            brightness: slot.brightness ?? 100,
-            contrast: slot.contrast ?? 100,
-            saturation: slot.saturation ?? 100,
-            slotAspect,
-            zoom: slot.zoom || 1,
-            dragX: slot.dragX || 0,
-            dragY: slot.dragY || 0,
-            cornerRadiusMM: collageRadius * scaleXPxToMM,
-            borderWidthMM: collageStrokeWidth * scaleXPxToMM,
-            borderColor: collageStrokeColor,
-            bgColor: slot.bgColor || '',
-            flipX: slot.flipX,
-            flipY: slot.flipY,
-            rotation: slot.rotation,
-          }),
-        );
-      }
+      items.push(
+        domain.PrintItem.createFrom({
+          imageSrc: slot.imageSrc,
+          x: rect.xMM,
+          y: rect.yMM,
+          w: rect.wMM,
+          h: rect.hMM,
+          filter: slot.filter || 'none',
+          brightness: slot.brightness ?? 100,
+          contrast: slot.contrast ?? 100,
+          saturation: slot.saturation ?? 100,
+          slotAspect,
+          zoom: slot.zoom || 1,
+          dragX: slot.dragX || 0,
+          dragY: slot.dragY || 0,
+          cornerRadiusMM: collageRadius * scaleXPxToMM,
+          borderWidthMM: collageStrokeWidth * scaleXPxToMM,
+          borderColor: collageStrokeColor,
+          bgColor: slot.bgColor || '',
+          flipX: slot.flipX,
+          flipY: slot.flipY,
+          rotation: slot.rotation,
+          copies: actualCopies,
+          copyCols: grid.safeCols,
+          copyStepX: stepXMM,
+          copyStepY: stepYMM,
+        }),
+      );
     }
     return { items, cutLines, composition: undefined };
   }, [
@@ -639,6 +647,10 @@ export function usePrintExport({
       isExportingRef.current = true;
       setIsExporting(true);
       try {
+        // نُسلّم إطار رسم واحد بعد إظهار حالة التحميل — وإلا ظلّت الواجهة
+        // مجمدة أثناء التقاط كانفس 50MP المتزامن على خيط UI قبل أن يُرسم المؤشر
+        await new Promise((r) => requestAnimationFrame(() => r(null)));
+
         const buildResult = mode === 'collage' ? await buildItems() : await buildSingleItems();
         if (!buildResult) {
           setIsExporting(false);

@@ -108,6 +108,53 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 	return widthPx, heightPx, nil
 }
 
+// expandGridItems يوسّع العناصر الشبكية (Copies > 1) إلى عناصر فردية محلياً —
+// بديل تكرارها في الواجهة عبر IPC: عنصر القالب واحد والاستنساخ هنا داخل Go
+// (صفر JSON مكرر، وprocCache يصير فعالاً لكل خانة فريدة بدل كل نسخة).
+// تعيد nil إذا لا توجد عناصر شبكية (المسار العادي بلا نسخ/تخصيص).
+func expandGridItems(items []domain.PrintItem) []domain.PrintItem {
+	totalCopies := 0
+	for i := range items {
+		if items[i].Copies > 1 {
+			totalCopies += items[i].Copies
+		}
+	}
+	if totalCopies == 0 {
+		return nil
+	}
+
+	out := make([]domain.PrintItem, 0, len(items)-countGridTemplates(items)+totalCopies)
+	for _, item := range items {
+		if item.Copies <= 1 {
+			out = append(out, item)
+			continue
+		}
+		cols := item.CopyCols
+		if cols < 1 {
+			cols = 1
+		}
+		for c := 0; c < item.Copies; c++ {
+			copyItem := item
+			copyItem.Copies, copyItem.CopyCols = 0, 0
+			copyItem.CopyStepX, copyItem.CopyStepY = 0, 0
+			copyItem.X = item.X + float64(c%cols)*item.CopyStepX
+			copyItem.Y = item.Y + float64(c/cols)*item.CopyStepY
+			out = append(out, copyItem)
+		}
+	}
+	return out
+}
+
+func countGridTemplates(items []domain.PrintItem) int {
+	n := 0
+	for i := range items {
+		if items[i].Copies > 1 {
+			n++
+		}
+	}
+	return n
+}
+
 // GeneratePrintSheet يولّد ورقة الطباعة كاملة: تحقق ← تركيب ← معالجة متوازية للصور
 // ← رسم تسلسلي (gg ليس آمناً للتزامن) ← خطوط قص ← حفظ المخرجات.
 func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, string, error) {
@@ -117,9 +164,18 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 	} else if (req.Orientation == "" || strings.EqualFold(req.Orientation, "portrait")) && req.PaperWidthMM > req.PaperHeightMM {
 		req.PaperWidthMM, req.PaperHeightMM = req.PaperHeightMM, req.PaperWidthMM
 	}
+	// التحقق قبل التوسيع: حد 1000 وقواعد الهندسة تُطبق على القوالب (خانات فريدة
+	// حتى ~48) — النسخ تشترك في W/H والصورة فتكفي قواعد القالب، والتوسيع بعدها
+	// يُبقي الحد حاجياً لحجم IPC لا لعدد الخلايا المرسومة (شبكة 48×24 = 1,152 خلية
+	// كانت تُرفض لأن العناصر كانت تُكرر عبر IPC؛ الآن العناصر المستلمة 24 فقط).
 	widthPx, heightPx, err := s.validatePrintRequest(req)
 	if err != nil {
 		return "", "", err
+	}
+
+	// توسيع العناصر الشبكية بعد التحقق — كائن الطلب قيمة محلية هنا فالتعديل آمن
+	if expanded := expandGridItems(req.Items); expanded != nil {
+		req.Items = expanded
 	}
 
 	dc := gg.NewContext(widthPx, heightPx)

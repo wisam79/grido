@@ -1,7 +1,13 @@
-import { useEditorStore } from "@/lib/editor-store";
-import { CanvasElement } from "@/lib/store/types";
-import { SaveImageFromBase64, GetClipboardText, SetClipboardText } from "../../../wailsjs/go/main/App";
-import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
+import { useEditorStore } from '@/lib/editor-store';
+import { CanvasElement } from '@/lib/store/types';
+import {
+  SaveImageFromBase64,
+  GetClipboardText,
+  SetClipboardText,
+} from '../../../wailsjs/go/main/App';
+import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import { z } from 'zod';
+import { CanvasElementSchema } from '@/lib/schema';
 
 /**
  * دالة عامة موحدة للصق المحتوى (من حافظة النظام أو حافظة الـ Store الداخلية)
@@ -13,15 +19,15 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
   // 1. محاولة القراءة من حافظة الويندوز/النظام أولاً (System Clipboard)
   let text: string | null = null;
   try {
-    if (navigator.clipboard && typeof navigator.clipboard.readText === "function") {
+    if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
       text = await navigator.clipboard.readText();
     }
   } catch (err) {
-    console.warn("System clipboard text read not permitted, falling back to Wails:", err);
+    console.warn('System clipboard text read not permitted, falling back to Wails:', err);
   }
 
   // استخدام بديل Wails الأصلي إذا تعذرت القراءة عبر المتصفح
-  if ((!text || !text.trim()) && typeof GetClipboardText === "function") {
+  if ((!text || !text.trim()) && typeof GetClipboardText === 'function') {
     try {
       text = await GetClipboardText();
     } catch {
@@ -30,18 +36,19 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
   }
 
   if (text && text.trim()) {
-    if (text.startsWith("GRIDO_ELEMENTS:")) {
+    if (text.startsWith('GRIDO_ELEMENTS:')) {
       try {
-        const rawJson = text.replace("GRIDO_ELEMENTS:", "");
-        const parsedElements: CanvasElement[] = JSON.parse(rawJson);
-        if (Array.isArray(parsedElements) && parsedElements.length > 0) {
-          state.pasteCopiedElements(parsedElements);
+        const rawJson = text.replace('GRIDO_ELEMENTS:', '');
+        const rawParsed: unknown = JSON.parse(rawJson);
+        const parseResult = z.array(CanvasElementSchema).safeParse(rawParsed);
+        if (parseResult.success && parseResult.data.length > 0) {
+          state.pasteCopiedElements(parseResult.data as unknown as CanvasElement[]);
           return true;
         }
       } catch (err) {
-        console.error("Failed to parse GRIDO_ELEMENTS from clipboard:", err);
+        console.error('Failed to parse GRIDO_ELEMENTS from clipboard:', err);
       }
-    } else if (state.mode !== "collage") {
+    } else if (state.mode !== 'collage') {
       // نص خارجي من متصفح/ورد/مفكرة
       state.addTextElement(text);
       return true;
@@ -50,10 +57,10 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
 
   // 2. فحص الصور المنسوخة في حافظة النظام
   try {
-    if (navigator.clipboard && typeof navigator.clipboard.read === "function") {
+    if (navigator.clipboard && typeof navigator.clipboard.read === 'function') {
       const items = await navigator.clipboard.read();
       for (const item of items) {
-        const imageType = item.types.find((t) => t.startsWith("image/"));
+        const imageType = item.types.find((t) => t.startsWith('image/'));
         if (imageType) {
           const blob = await item.getType(imageType);
           const reader = new FileReader();
@@ -64,7 +71,7 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
                 try {
                   const localPath = await SaveImageFromBase64(b64);
                   if (localPath) {
-                    if (state.mode === "collage") {
+                    if (state.mode === 'collage') {
                       let targetSlotId = state.selectedId;
                       if (!targetSlotId) {
                         const emptySlot = state.slots.find((s) => !s.imageSrc);
@@ -80,7 +87,7 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
                     return;
                   }
                 } catch (e) {
-                  console.error("Failed to save image from clipboard read:", e);
+                  console.error('Failed to save image from clipboard read:', e);
                 }
               }
               resolve(false);
@@ -91,7 +98,7 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
       }
     }
   } catch (err) {
-    console.warn("System clipboard image read not permitted or failed:", err);
+    console.warn('System clipboard image read not permitted or failed:', err);
   }
 
   // 3. الفحص الاحتياطي لحافظة الـ Store الداخلية
@@ -108,7 +115,7 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
  */
 export async function copyPngDataUrlToClipboard(pngDataUrl: string): Promise<boolean> {
   try {
-    if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+    if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
       return false;
     }
     const res = await fetch(pngDataUrl);
@@ -120,7 +127,7 @@ export async function copyPngDataUrlToClipboard(pngDataUrl: string): Promise<boo
     ]);
     return true;
   } catch (err) {
-    console.error("Failed to copy image blob to clipboard:", err);
+    console.error('Failed to copy image blob to clipboard:', err);
     return false;
   }
 }
@@ -135,19 +142,18 @@ export async function copySvgCodeToClipboard(svgString: string): Promise<boolean
       return true;
     }
   } catch (err) {
-    console.warn("navigator.clipboard.writeText failed, falling back to Wails:", err);
+    console.warn('navigator.clipboard.writeText failed, falling back to Wails:', err);
   }
 
   // استخدام بديل Wails الأصلي
-  if (typeof SetClipboardText === "function") {
+  if (typeof SetClipboardText === 'function') {
     try {
       await SetClipboardText(svgString);
       return true;
     } catch (wErr) {
-      console.error("Wails SetClipboardText failed:", wErr);
+      console.error('Wails SetClipboardText failed:', wErr);
     }
   }
 
   return false;
 }
-

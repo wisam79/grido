@@ -1,8 +1,15 @@
-import { StateCreator } from "zustand";
-import { CanvasElement, CanvasSlot, PhotoTemplate, CollageTemplate, PrintSettings, HistoryEntry } from "../types";
-import { uid } from "../../utils";
-import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from "../../templates";
-import { measureImageAspect } from "../../canvas/measure-image";
+import { StateCreator } from 'zustand';
+import {
+  CanvasElement,
+  CanvasSlot,
+  PhotoTemplate,
+  CollageTemplate,
+  PrintSettings,
+  HistoryEntry,
+} from '../types';
+import { uid } from '../../utils';
+import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from '../../templates';
+import { measureImageAspect } from '../../canvas/measure-image';
 
 export interface CollageSlice {
   template: PhotoTemplate | null;
@@ -25,7 +32,10 @@ export interface CollageSlice {
   fillAllSlots: (src: string, sourceSlotId?: string) => void;
   fillRowSlots: (slotId: string, src: string) => void;
   fillColumnSlots: (slotId: string, src: string) => void;
-  setSlotImagesBatch: (assignments: { slotId: string; src: string }[], lastEditedSrc?: string | null) => void;
+  setSlotImagesBatch: (
+    assignments: { slotId: string; src: string }[],
+    lastEditedSrc?: string | null,
+  ) => void;
 
   setCollageGap: (gap: number) => void;
   setCollageMargin: (margin: number) => void;
@@ -61,9 +71,9 @@ const initialCollage = COLLAGE_TEMPLATES[0];
  * المطابقة الجشعة تُبقي كل صورة في أقرب خلية لموضعها السابق وتحفظ معرّفها
  * (فلا ينقطع التحديد ولا يتضخم سجل التراجع بمعرّفات جديدة).
  */
-function remapSlotsToCells(
+export function remapSlotsToCells(
   existing: CanvasSlot[],
-  cells: Array<{ x: number; y: number; w: number; h: number }>
+  cells: Array<{ x: number; y: number; w: number; h: number }>,
 ): CanvasSlot[] {
   const pool = existing.map((slot) => ({
     slot,
@@ -93,7 +103,7 @@ function remapSlotsToCells(
       y: cell.y,
       w: cell.w,
       h: cell.h,
-      filter: matched?.filter ?? "none",
+      filter: matched?.filter ?? 'none',
       brightness: matched?.brightness ?? 100,
       contrast: matched?.contrast ?? 100,
       saturation: matched?.saturation ?? 100,
@@ -113,7 +123,7 @@ export function generateInitialSlots(): CanvasSlot[] {
     y: c.y,
     w: c.w,
     h: c.h,
-    filter: "none",
+    filter: 'none',
     brightness: 100,
     contrast: 100,
     saturation: 100,
@@ -133,7 +143,7 @@ export const DEFAULT_COLLAGE_STATE = {
   collageShowCutLines: false,
   collageShowEndCutLine: true,
   collageStrokeWidth: 0,
-  collageStrokeColor: "#000000",
+  collageStrokeColor: '#000000',
 };
 
 type CollageCross = CollageSlice & {
@@ -171,7 +181,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
 
         elements.push({
           id,
-          type: "image",
+          type: 'image',
           x: 0.5 - wPercent / 2,
           y: 0.5 - hPercent / 2,
           width: wPercent,
@@ -180,7 +190,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           opacity: 1,
           zIndex: 10,
           imageSrc: lastImg,
-          filter: "none",
+          filter: 'none',
           brightness: 100,
           contrast: 100,
           saturation: 100,
@@ -189,7 +199,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       }
       set({
         template,
-        mode: "single",
+        mode: 'single',
         canvasWidth: template.width,
         canvasHeight: template.height,
         backgroundColor: template.background,
@@ -219,7 +229,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           currentHeight,
           dpi,
           get().collageGap,
-          get().collageMargin
+          get().collageMargin,
         );
         if (dynamicCells) {
           cells = dynamicCells;
@@ -254,7 +264,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           bgColor: existingSlot?.bgColor,
           flipX: existingSlot?.flipX,
           flipY: existingSlot?.flipY,
-          filter: existingSlot?.filter || "none",
+          filter: existingSlot?.filter || 'none',
           brightness: existingSlot?.brightness || 100,
           contrast: existingSlot?.contrast || 100,
           saturation: existingSlot?.saturation || 100,
@@ -265,7 +275,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       });
       set({
         collageTemplate: template,
-        mode: "collage",
+        mode: 'collage',
         slots,
         elements: [],
         selectedId: null,
@@ -288,7 +298,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           ? {
               ...sl,
               imageSrc: src,
-              filter: "none",
+              filter: 'none',
               brightness: 100,
               contrast: 100,
               saturation: 100,
@@ -323,7 +333,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     // التقاط القيم السابقة قبل التحديث — مقارنة ما بعد التحديث كانت
     // تبطل الكشف عن الاستبدالات دائماً (imageSrc أصبح يساوي الجديد)
     const prevBySlot = new Map(
-      assignments.map((a) => [a.slotId, get().slots.find((sl) => sl.id === a.slotId)?.imageSrc])
+      assignments.map((a) => [a.slotId, get().slots.find((sl) => sl.id === a.slotId)?.imageSrc]),
     );
     set((state) => ({
       slots: state.slots.map((sl: CanvasSlot) => {
@@ -332,7 +342,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           ? {
               ...sl,
               imageSrc: a.src,
-              filter: "none",
+              filter: 'none',
               brightness: 100,
               contrast: 100,
               saturation: 100,
@@ -354,13 +364,13 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       const results = await Promise.all(
         replaced.map(async (a) => {
           const [prevAspect, nextAspect] = await Promise.all([
-            measureImageAspect(prevBySlot.get(a.slotId) || ""),
+            measureImageAspect(prevBySlot.get(a.slotId) || ''),
             measureImageAspect(a.src),
           ]);
           if (!Number.isFinite(prevAspect) || !Number.isFinite(nextAspect)) return null;
           if (Math.abs(prevAspect - nextAspect) <= 0.001) return null;
           return a.slotId;
-        })
+        }),
       );
       const candidates = results.filter((id): id is string => !!id);
       if (candidates.length === 0) return;
@@ -372,7 +382,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       if (toReset.length === 0) return;
       set((state) => ({
         slots: state.slots.map((sl: CanvasSlot) =>
-          toReset.includes(sl.id) ? { ...sl, dragX: 0, dragY: 0, zoom: 1 } : sl
+          toReset.includes(sl.id) ? { ...sl, dragX: 0, dragY: 0, zoom: 1 } : sl,
         ),
       }));
       // التصحيح اللاحق يُسجل كخطوة تراجع مستقلة بدل تغيير صامت غير قابل للتراجع (إصلاح E-1)
@@ -412,7 +422,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         imageSrc: src,
         // 🔁 نسخ كامل تعديلات الخلية المصدر (كان ينقل المرشّح/الألوان فقط
         // فيبقى اقتصاص zoom/drag والقلب من الصورة السابقة على بقية الخلايا)
-        filter: targetSlot?.filter || "none",
+        filter: targetSlot?.filter || 'none',
         brightness: targetSlot?.brightness ?? 100,
         contrast: targetSlot?.contrast ?? 100,
         saturation: targetSlot?.saturation ?? 100,
@@ -437,13 +447,13 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           ? {
               ...sl,
               imageSrc: src,
-              filter: targetSlot.filter || "none",
+              filter: targetSlot.filter || 'none',
               brightness: targetSlot.brightness ?? 100,
               contrast: targetSlot.contrast ?? 100,
               saturation: targetSlot.saturation ?? 100,
               bgColor: targetSlot.bgColor ?? sl.bgColor,
             }
-          : sl
+          : sl,
       ),
     }));
     get().pushHistory();
@@ -458,13 +468,13 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           ? {
               ...sl,
               imageSrc: src,
-              filter: targetSlot.filter || "none",
+              filter: targetSlot.filter || 'none',
               brightness: targetSlot.brightness ?? 100,
               contrast: targetSlot.contrast ?? 100,
               saturation: targetSlot.saturation ?? 100,
               bgColor: targetSlot.bgColor ?? sl.bgColor,
             }
-          : sl
+          : sl,
       ),
     }));
     get().pushHistory();
@@ -476,7 +486,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       const collageTemplate = s.collageTemplate;
       const mode = s.mode;
 
-      if (mode === "collage" && collageTemplate && collageTemplate.physicalLayout) {
+      if (mode === 'collage' && collageTemplate && collageTemplate.physicalLayout) {
         const storedDpi = s.printSettings?.dpi || 300;
         const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
         const dynamicCells = computeDynamicCollageCells(
@@ -485,7 +495,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           s.canvasHeight,
           dpi,
           gap,
-          s.collageMargin
+          s.collageMargin,
         );
         if (dynamicCells) {
           adjustedSlots = remapSlotsToCells(s.slots || [], dynamicCells);
@@ -502,11 +512,15 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   // 🚀 معاينة عابرة أثناء سحب السلايدر: تُحدَّث القيمة فقط بلا إعادة حساب
   // الخلايا (O(خلايا×خانات) + مصفوفة slots جديدة كل إطار تسقط طبقة الكولاج).
   // التثبيت الحسابي يتم مرة واحدة في commitCollageSpacing عند الإفلات.
-  previewCollageGap: (gap) => { set({ collageGap: gap }); },
-  previewCollageMargin: (margin) => { set({ collageMargin: margin }); },
+  previewCollageGap: (gap) => {
+    set({ collageGap: gap });
+  },
+  previewCollageMargin: (margin) => {
+    set({ collageMargin: margin });
+  },
   commitCollageSpacing: () => {
     const s = get();
-    if (s.mode !== "collage" || !s.collageTemplate?.physicalLayout) return;
+    if (s.mode !== 'collage' || !s.collageTemplate?.physicalLayout) return;
     const storedDpi = s.printSettings?.dpi || 300;
     const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
     const dynamicCells = computeDynamicCollageCells(
@@ -515,7 +529,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       s.canvasHeight,
       dpi,
       s.collageGap,
-      s.collageMargin
+      s.collageMargin,
     );
     if (dynamicCells) {
       set({ slots: remapSlotsToCells(s.slots || [], dynamicCells) });
@@ -528,7 +542,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       const collageTemplate = s.collageTemplate;
       const mode = s.mode;
 
-      if (mode === "collage" && collageTemplate && collageTemplate.physicalLayout) {
+      if (mode === 'collage' && collageTemplate && collageTemplate.physicalLayout) {
         const storedDpi = s.printSettings?.dpi || 300;
         const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
         const dynamicCells = computeDynamicCollageCells(
@@ -537,7 +551,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           s.canvasHeight,
           dpi,
           s.collageGap,
-          margin
+          margin,
         );
         if (dynamicCells) {
           adjustedSlots = remapSlotsToCells(s.slots || [], dynamicCells);
@@ -552,11 +566,23 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   },
   // ملاحظة: هذه المحددات تُستدعى بشكل مستمر أثناء السحب — لا تدفع سجل التراجع هنا.
   // الدفع يتم عبر onCommit من الواجهة (إصلاح Bug#2: فيضان سجل التراجع)
-  setCollageRadius: (radius) => { set({ collageRadius: radius }); },
-  setCollageShowCutLines: (show) => { set({ collageShowCutLines: show }); get().pushHistory(); },
-  setCollageShowEndCutLine: (show) => { set({ collageShowEndCutLine: show }); get().pushHistory(); },
-  setCollageStrokeWidth: (width) => { set({ collageStrokeWidth: width }); },
-  setCollageStrokeColor: (color) => { set({ collageStrokeColor: color }); },
+  setCollageRadius: (radius) => {
+    set({ collageRadius: radius });
+  },
+  setCollageShowCutLines: (show) => {
+    set({ collageShowCutLines: show });
+    get().pushHistory();
+  },
+  setCollageShowEndCutLine: (show) => {
+    set({ collageShowEndCutLine: show });
+    get().pushHistory();
+  },
+  setCollageStrokeWidth: (width) => {
+    set({ collageStrokeWidth: width });
+  },
+  setCollageStrokeColor: (color) => {
+    set({ collageStrokeColor: color });
+  },
 
   swapSlots: (slotIdA: string, slotIdB: string) => {
     if (!slotIdA || !slotIdB || slotIdA === slotIdB) return;
@@ -571,7 +597,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           return {
             ...sl,
             imageSrc: slotB.imageSrc,
-            filter: slotB.filter || "none",
+            filter: slotB.filter || 'none',
             brightness: slotB.brightness ?? 100,
             contrast: slotB.contrast ?? 100,
             saturation: slotB.saturation ?? 100,
@@ -589,7 +615,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           return {
             ...sl,
             imageSrc: slotA.imageSrc,
-            filter: slotA.filter || "none",
+            filter: slotA.filter || 'none',
             brightness: slotA.brightness ?? 100,
             contrast: slotA.contrast ?? 100,
             saturation: slotA.saturation ?? 100,
@@ -618,7 +644,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         return {
           ...sl,
           imageSrc: src,
-          filter: sourceSlot?.filter || "none",
+          filter: sourceSlot?.filter || 'none',
           brightness: sourceSlot?.brightness ?? 100,
           contrast: sourceSlot?.contrast ?? 100,
           saturation: sourceSlot?.saturation ?? 100,
@@ -634,7 +660,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       slots: state.slots.map((sl) => {
         if (sl.id !== slotId) return sl;
         const currentRot = sl.rotation || 0;
-        const newRot = ((currentRot + angleDelta) % 360 + 360) % 360;
+        const newRot = (((currentRot + angleDelta) % 360) + 360) % 360;
         // التدوير يبدّل المحاور: نُصفّر أيضاً zoom كما نُصفّر الإزاحات
         // (وإلا بقي اقتصاص الصورة السابق داخل إطار مقلوب)
         return {
@@ -671,18 +697,14 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
 
   flipSlotX: (slotId: string) => {
     set((state) => ({
-      slots: state.slots.map((sl) =>
-        sl.id === slotId ? { ...sl, flipX: !sl.flipX } : sl
-      ),
+      slots: state.slots.map((sl) => (sl.id === slotId ? { ...sl, flipX: !sl.flipX } : sl)),
     }));
     get().pushHistory();
   },
 
   flipSlotY: (slotId: string) => {
     set((state) => ({
-      slots: state.slots.map((sl) =>
-        sl.id === slotId ? { ...sl, flipY: !sl.flipY } : sl
-      ),
+      slots: state.slots.map((sl) => (sl.id === slotId ? { ...sl, flipY: !sl.flipY } : sl)),
     }));
     get().pushHistory();
   },
@@ -693,7 +715,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         sl.id === slotId
           ? {
               ...sl,
-              filter: "none",
+              filter: 'none',
               brightness: 100,
               contrast: 100,
               saturation: 100,
@@ -704,7 +726,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
               flipY: false,
               rotation: 0,
             }
-          : sl
+          : sl,
       ),
     }));
     get().pushHistory();
