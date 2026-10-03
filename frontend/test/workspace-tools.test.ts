@@ -79,7 +79,7 @@ describe('سجل أدوات الشريط الجانبي', () => {
 
   it('يرجع الأداة المطابقة، ويسقط على الأولى عند معرّف غير معروف', () => {
     expect(getCollageTool('paper').id).toBe('paper');
-    expect(getStudioTool('library').id).toBe('library');
+    expect(getStudioTool('backdrops').id).toBe('backdrops');
     // @ts-expect-error معرّف غير موجود فعلاً — يتأكد السلوك الاحتياطي
     expect(getCollageTool('nope').id).toBe(COLLAGE_TOOLS[0].id);
   });

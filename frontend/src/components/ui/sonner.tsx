@@ -3,7 +3,7 @@ import { Toaster as Sonner, ToasterProps } from 'sonner';
 import { CheckCircle, XCircle, WarningCircle, Info } from '@/components/ui/icons';
 import { Spinner } from '@/components/ui/huge-icon';
 
-const Toaster = ({ offset = 56, ...props }: ToasterProps) => {
+const Toaster = ({ offset = 20, ...props }: ToasterProps) => {
   const theme =
     typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
       ? 'dark'
@@ -11,18 +11,18 @@ const Toaster = ({ offset = 56, ...props }: ToasterProps) => {
 
   return (
     <Sonner
-      duration={1500}
+      duration={2200}
+      visibleToasts={1}
       theme={theme as ToasterProps['theme']}
       dir="rtl"
       className="toaster group"
       offset={offset}
       icons={{
-        // حالات النتيجة دلالية بألوانها الخاصة (نجاح/خطأ/تحذير) — لا زرقاء هنا
-        success: <CheckCircle className="w-4 h-4 text-success shrink-0" weight="duotone" />,
-        error: <XCircle className="w-4 h-4 text-destructive shrink-0" weight="duotone" />,
-        warning: <WarningCircle className="w-4 h-4 text-warning shrink-0" weight="duotone" />,
-        info: <Info className="w-4 h-4 text-muted-foreground shrink-0" weight="duotone" />,
-        loading: <Spinner size={16} className="w-4 h-4 text-muted-foreground" />,
+        success: <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" weight="fill" />,
+        error: <XCircle className="w-4 h-4 text-rose-500 shrink-0" weight="fill" />,
+        warning: <WarningCircle className="w-4 h-4 text-amber-500 shrink-0" weight="fill" />,
+        info: <Info className="w-4 h-4 text-primary shrink-0" weight="fill" />,
+        loading: <Spinner size={15} className="w-4 h-4 text-primary" />,
       }}
       toastOptions={{
         classNames: {

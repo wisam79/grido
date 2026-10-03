@@ -326,7 +326,6 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
   const handleAddShape = useCallback(
     (item: QuickShapeItem) => {
       addShapeElement(item.shape, item.svgPath);
-      toast.success(`أُضيف ${item.label}`);
     },
     [addShapeElement],
   );
@@ -335,7 +334,6 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
   const handleAddText = useCallback(
     (item: QuickTextItem) => {
       addTextPreset(item.id);
-      toast.success(`أُضيف ${item.label}`);
     },
     [addTextPreset],
   );
@@ -573,7 +571,6 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
               type="button"
               onClick={() => {
                 addTextPreset('heading');
-                toast.success('أُضيف عنوان رئيسي');
               }}
               title="عنوان رئيسي عريض"
               className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
@@ -591,7 +588,6 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
               type="button"
               onClick={() => {
                 addTextPreset('subheading');
-                toast.success('أُضيف عنوان فرعي');
               }}
               title="عنوان فرعي (28px)"
               className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
@@ -609,7 +605,6 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
               type="button"
               onClick={() => {
                 addTextPreset('body');
-                toast.success('أُضيف نص فقرة');
               }}
               title="نص فقرة (18px)"
               className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-foreground/40 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"

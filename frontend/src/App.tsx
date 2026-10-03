@@ -810,7 +810,7 @@ export default function App() {
             onDismiss={handleDismissCrash}
           />
 
-          <SonnerToaster position="top-center" duration={1500} offset={56} closeButton />
+          <SonnerToaster position="bottom-center" duration={2000} offset={20} />
           <KeyboardShortcutsDialog />
         </div>
       </TooltipProvider>

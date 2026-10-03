@@ -5,7 +5,6 @@ import { FreeformPresetsTab } from './freeform-presets-tab';
 import { FreeformFontsTab } from './freeform-fonts-tab';
 import { FreeformPaletteTab } from './freeform-palette-tab';
 import { FreeformBackdropsTab } from './freeform-backdrops-tab';
-import { FreeformLibraryTab } from './freeform-library-tab';
 import type { FreeformTab } from './freeform-panel-constants';
 
 /* ═══════════════════════════════════════════════════════════════
@@ -31,7 +30,6 @@ export const FreeformStudioPanel = React.memo(function FreeformStudioPanel({
       {activeTab === 'fonts' && <FreeformFontsTab />}
       {activeTab === 'palette' && <FreeformPaletteTab />}
       {activeTab === 'backdrops' && <FreeformBackdropsTab />}
-      {activeTab === 'library' && <FreeformLibraryTab />}
     </div>
   );
 });

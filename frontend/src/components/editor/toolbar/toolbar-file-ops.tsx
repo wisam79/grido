@@ -132,7 +132,6 @@ export function ToolbarFileOps() {
             const targetSlotId = freshSelectedId || freshSlots[0]?.id;
             if (targetSlotId) {
               freshState.setSlotImage(targetSlotId, localPaths[0]);
-              toast.success('تم الإدراج في الخلية');
             }
           } else {
             // إدراج مجمّع بلقطة تراجع واحدة — الاستدعاء الفردي داخل الحلقة
@@ -141,7 +140,6 @@ export function ToolbarFileOps() {
               .slice(0, localPaths.length)
               .map((slot, index) => ({ slotId: slot.id, src: localPaths[index] }));
             freshState.setSlotImagesBatch(assignments, localPaths[localPaths.length - 1]);
-            toast.success(`تم إدراج ${assignments.length} صورة في الكولاج`);
           }
         } else {
           // الوضع الحر: عند اختيار صورة واحدة تُدرج كالمعتاد، وعند اختيار أكثر من صورة تُدرج بتوزيع شبكي ذكي وخطوة تراجع واحدة
@@ -157,7 +155,6 @@ export function ToolbarFileOps() {
             }
             const aspect = await resolveImageAspectRatio(finalSrc);
             freshState.addImageElement(finalSrc, aspect);
-            toast.success('تم إدراج الصورة');
           } else {
             // حفظ وقياس متوازي (4 خيوط) بدل التسلسل الذي يجمد الزر مع الدفعات الكبيرة
             const items = await mapWithConcurrency(b64s, 4, async (b64) => {
@@ -174,7 +171,6 @@ export function ToolbarFileOps() {
               return { src: finalSrc, aspectRatio: aspect };
             });
             freshState.addImageElementsBatch(items);
-            toast.success(`تم إدراج ${items.length} صورة بنجاح`);
           }
         }
       }

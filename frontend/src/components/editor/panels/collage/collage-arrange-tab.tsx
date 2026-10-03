@@ -139,7 +139,6 @@ export function CollageArrangeTab() {
   const applyMatrix = (nextSrc: SrcMatrix, label: string) => {
     const current = currentSrcMatrix();
     if (srcMatricesEqual(current, nextSrc)) {
-      toast.info('لا تغيير');
       return;
     }
 
@@ -152,11 +151,9 @@ export function CollageArrangeTab() {
       }
     }
     if (assignments.length === 0) {
-      toast.info('لا صور');
       return;
     }
     setSlotImagesBatch(assignments, assignments[0].src);
-    toast.success(label);
   };
 
   const reverseRows = () =>
@@ -248,8 +245,6 @@ export function CollageArrangeTab() {
         .filter((a): a is { slotId: string; src: string } => Boolean(a.slotId));
       if (assignments.length > 0) setSlotImagesBatch(assignments, assignments[0].src);
     }
-
-    toast.success(`بُدلت الصفوف بالأعمدة (${nextRows}×${nextCols})`);
   };
 
   const rotateAll = (angle: 90 | -90) => {
@@ -258,7 +253,6 @@ export function CollageArrangeTab() {
       slots.map((slot) => slot.id),
       angle,
     );
-    toast.success(angle > 0 ? 'لُفّت الصور يميناً' : 'لُفّت الصور يساراً');
   };
 
   const resetAllAdjustments = () => {
@@ -268,7 +262,6 @@ export function CollageArrangeTab() {
     );
     // updateSlotsBatch لا يسجّل تراجعاً (يُستدعى من مسارات معاينة كثيرة)
     pushHistory();
-    toast.success('صُفّرت التعديلات');
   };
 
   const arrangeActions = [

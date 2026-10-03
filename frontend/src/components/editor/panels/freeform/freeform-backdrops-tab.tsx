@@ -248,10 +248,8 @@ export function FreeformBackdropsTab() {
       if (topBackdrop) {
         updateElement(topBackdrop.id, patch);
         pushHistory();
-        toast.success(`حُدِّثت الخلفية الكاملة إلى «${name}»`);
       } else {
         addBackdropRect(patch);
-        toast.success(`أُضيفت خلفية «${name}» خلف كل العناصر`);
       }
       return;
     }
@@ -265,11 +263,6 @@ export function FreeformBackdropsTab() {
       selectedElements.map((element) => ({ id: element.id, patch: gradientPatch(stops, angle) })),
     );
     pushHistory();
-    toast.success(
-      selectedElements.length === 1
-        ? `تدرج «${name}»`
-        : `تدرج «${name}» على ${selectedElements.length}`,
-    );
   };
 
   /** إزالة التدرج عن العناصر المحددة (رجوع إلى اللون الأول كمصمت) */

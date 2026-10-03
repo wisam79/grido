@@ -1,18 +1,10 @@
 import { useMemo, useState } from 'react';
-import { toast } from 'sonner';
-import { MagnifyingGlass, Star, TextAa, X } from '@/components/ui/icons';
-import {
-  ARABIC_FONTS,
-  FONT_CATEGORIES,
-  loadGoogleFont,
-  type FontCategory,
-  type FontOption,
-} from '@/lib/io/fonts';
+import { MagnifyingGlass, Star, X } from '@/components/ui/icons';
+import { ARABIC_FONTS, loadGoogleFont, type FontOption } from '@/lib/io/fonts';
 import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { FluentEmptyState, FluentFilterChips, FluentSection } from '@/components/ui/blocks';
 import {
   DEFAULT_FAVORITE_FONTS,
   PREF_KEYS,
@@ -23,12 +15,11 @@ import {
 } from '@/lib/local-prefs';
 
 /* ═══════════════════════════════════════════════════════════════
-   مكتبة الخطوط العربية — تصفّح ومعاينة حيّة وتطبيق مباشر.
-   التطبيق يتبع التحديد: نص/نصوص محددة تُحدَّث، وإن لم يوجد نص
-   مُحدد يُضاف نص جديد بالخط المختار فلا ينتهي النقر بلا أثر.
+   مكتبة الخطوط — تصميم رشيق، بسيط، ومباشر بنمط استوديو احترافي:
+   - بدون تصنيفات أو عناوين متداخلة أو حقول زائدة.
+   - بطاقات رشيقة ومرتبة تعرض اسم الخط وعينة رسمه الحقيقية بوضوح.
+   - بحث فوري مع خيار فلترة المفضلة بنقرة واحدة.
    ═══════════════════════════════════════════════════════════════ */
-
-const PREVIEW_FALLBACK = 'أبجد هوز حطي كلمن سعفص ١٢٣';
 
 export function FreeformFontsTab() {
   const { elements, selectedIds, updateElements, updateElement, addTextElement } = useEditorStore(
@@ -42,47 +33,49 @@ export function FreeformFontsTab() {
   );
 
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<FontCategory>('all');
-  const [previewText, setPreviewText] = useState('');
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() =>
     readStoredList(PREF_KEYS.favoriteFonts, DEFAULT_FAVORITE_FONTS),
   );
-
-  const previewSample = previewText.trim() || PREVIEW_FALLBACK;
 
   const selectedTexts = useMemo(
     () => elements.filter((element) => element.type === 'text' && selectedIds.includes(element.id)),
     [elements, selectedIds],
   );
 
-  const categoryCounts = useMemo(() => {
-    const counts = new Map<FontCategory, number>();
-    for (const font of ARABIC_FONTS) {
-      counts.set(font.category, (counts.get(font.category) ?? 0) + 1);
-    }
-    return counts;
-  }, []);
+  const currentAppliedFontFamily = useMemo(() => {
+    if (selectedTexts.length === 0) return null;
+    const textElem = selectedTexts[0] as { fontFamily?: string };
+    return textElem.fontFamily ?? null;
+  }, [selectedTexts]);
 
   const visibleFonts = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return ARABIC_FONTS.filter((font) => {
-      if (category !== 'all' && font.category !== category) return false;
-      if (!query) return true;
-      return (
-        font.arabicName.includes(query) ||
-        font.englishName.toLowerCase().includes(query) ||
-        font.name.toLowerCase().includes(query)
-      );
-    });
-  }, [search, category]);
+    let list = ARABIC_FONTS;
 
-  const favoriteFonts = useMemo(
-    () =>
-      favorites
-        .map((id) => ARABIC_FONTS.find((font) => font.id === id))
-        .filter(Boolean) as FontOption[],
-    [favorites],
-  );
+    if (onlyFavorites) {
+      list = list.filter((font) => favorites.includes(font.id));
+    }
+
+    if (query) {
+      list = list.filter(
+        (font) =>
+          font.arabicName.toLowerCase().includes(query) ||
+          font.englishName.toLowerCase().includes(query) ||
+          font.name.toLowerCase().includes(query),
+      );
+    }
+
+    // وضع المفضلة في المقدمة دائماً لتسهيل الوصول السريع
+    if (!onlyFavorites && !query) {
+      return [
+        ...list.filter((f) => favorites.includes(f.id)),
+        ...list.filter((f) => !favorites.includes(f.id)),
+      ];
+    }
+
+    return list;
+  }, [search, onlyFavorites, favorites]);
 
   const rememberRecent = (fontId: string) => {
     writeStoredList(
@@ -99,21 +92,16 @@ export function FreeformFontsTab() {
       updateElements(
         selectedTexts.map((element) => ({ id: element.id, patch: { fontFamily: font.family } })),
       );
-      toast.success(
-        selectedTexts.length === 1
-          ? `خط «${font.arabicName}»`
-          : `خط «${font.arabicName}» على ${selectedTexts.length}`,
-      );
       return;
     }
 
     addTextElement();
     const newId = useEditorStore.getState().selectedId;
     if (newId) updateElement(newId, { fontFamily: font.family });
-    toast.success(`نص جديد بخط «${font.arabicName}»`);
   };
 
-  const toggleFavorite = (fontId: string) => {
+  const toggleFavorite = (fontId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
     setFavorites((previous) => {
       const next = toggleStoredValue(previous, fontId);
       writeStoredList(PREF_KEYS.favoriteFonts, next);
@@ -121,162 +109,135 @@ export function FreeformFontsTab() {
     });
   };
 
+  const isCurrentFont = (font: FontOption) => {
+    if (!currentAppliedFontFamily) return false;
+    return (
+      currentAppliedFontFamily === font.family ||
+      currentAppliedFontFamily.toLowerCase().startsWith(font.englishName.toLowerCase()) ||
+      font.family.toLowerCase().includes(currentAppliedFontFamily.toLowerCase())
+    );
+  };
+
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
-      <FluentSection
-        icon={<MagnifyingGlass className="w-3.5 h-3.5" weight="duotone" />}
-        title="البحث والتصنيف"
-        subtitle={`${ARABIC_FONTS.length} خطاً عربياً`}
-      >
-        <div className="relative">
+    <div className="flex flex-col gap-2 font-cairo select-none" dir="rtl">
+      {/* ── شريط البحث المبسط مع زر المفضلة ──────────────────────── */}
+      <div className="flex items-center gap-1.5 pt-0.5">
+        <div className="relative flex-1">
           <MagnifyingGlass
-            className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none"
+            className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60 pointer-events-none"
             weight="bold"
           />
           <Input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="ابحث باسم الخط…"
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث في الخطوط…"
             aria-label="بحث في الخطوط"
-            className="h-8 ps-8 pe-8 text-xs rounded-md bg-input/50 border-border"
+            className="h-8 ps-8 pe-7 text-xs rounded-lg bg-card border-border/80 hover:border-foreground/30 focus-visible:ring-1 focus-visible:ring-primary shadow-2xs transition-colors"
           />
-          {search.length > 0 && (
+          {search && (
             <button
               type="button"
               onClick={() => setSearch('')}
-              aria-label="مسح البحث"
-              className="absolute end-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="absolute end-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
             >
-              <X className="w-3 h-3" weight="bold" />
+              <X className="w-3 h-3" />
             </button>
           )}
         </div>
 
-        <FluentFilterChips<FontCategory>
-          value={category}
-          onChange={setCategory}
-          layoutId="fonts-category-chips"
-          className="mt-1.5"
-          options={FONT_CATEGORIES.map((item) => ({
-            id: item.id,
-            label: item.name,
-            count: item.id === 'all' ? ARABIC_FONTS.length : (categoryCounts.get(item.id) ?? 0),
-          }))}
-        />
-
-        <div className="mt-2">
-          <label
-            htmlFor="fonts-preview-text"
-            className="block text-micro font-semibold text-muted-foreground mb-1"
-          >
-            نص المعاينة
-          </label>
-          <Input
-            id="fonts-preview-text"
-            value={previewText}
-            onChange={(event) => setPreviewText(event.target.value)}
-            placeholder={PREVIEW_FALLBACK}
-            className="h-8 text-xs rounded-md bg-input/50 border-border"
-            dir="rtl"
-          />
-        </div>
-      </FluentSection>
-
-      {favoriteFonts.length > 0 && (
-        <FluentSection
-          icon={<Star className="w-3.5 h-3.5" weight="fill" />}
-          title="المفضلة"
-          subtitle="انسخ على المحدد"
-          badge={favoriteFonts.length}
+        {/* فلترة المفضلة بنقرة واحدة */}
+        <button
+          type="button"
+          onClick={() => setOnlyFavorites((prev) => !prev)}
+          title={onlyFavorites ? 'عرض جميع الخطوط' : 'عرض الخطوط المفضلة'}
+          aria-pressed={onlyFavorites}
+          className={cn(
+            'h-8 px-2.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shrink-0',
+            onlyFavorites
+              ? 'bg-warning/15 text-warning border-warning/40 shadow-xs'
+              : 'bg-card border-border/80 text-muted-foreground hover:border-foreground/30 hover:text-foreground',
+          )}
         >
-          <div className="flex flex-wrap gap-1.5">
-            {favoriteFonts.map((font) => (
-              <button
-                key={font.id}
-                type="button"
-                onClick={() => applyFont(font)}
-                title={`تطبيق ${font.arabicName}`}
-                className="px-2 h-7 rounded-md border border-border/80 bg-card hover:border-foreground/40 hover:bg-muted/50 transition-colors cursor-pointer text-xs font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                style={{ fontFamily: font.family }}
-              >
-                {font.arabicName}
-              </button>
-            ))}
-          </div>
-        </FluentSection>
-      )}
+          <Star className="w-3.5 h-3.5" weight={onlyFavorites ? 'fill' : 'regular'} />
+          {favorites.length > 0 && (
+            <span className="text-[10px] font-mono font-semibold">{favorites.length}</span>
+          )}
+        </button>
+      </div>
 
-      <FluentSection
-        icon={<TextAa className="w-3.5 h-3.5" weight="duotone" />}
-        title="كل الخطوط"
-        subtitle={selectedTexts.length > 0 ? `${selectedTexts.length} نص محدد` : 'سيُضاف نص جديد'}
-        badge={visibleFonts.length}
-      >
+      {/* ── بطاقات الخطوط الرشيقة ──────────────────────────────────── */}
+      <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[calc(100vh-170px)] pe-0.5">
         {visibleFonts.length === 0 ? (
-          <FluentEmptyState
-            icon={<MagnifyingGlass className="w-5 h-5" weight="duotone" />}
-            title="لا خطوط مطابقة"
-            description="غيّر الكلمة أو التصنيف"
-            actionLabel="مسح الفلاتر"
-            onAction={() => {
-              setSearch('');
-              setCategory('all');
-            }}
-          />
+          <div className="py-12 text-center text-muted-foreground text-xs">
+            {onlyFavorites ? 'لا توجد خطوط مفضلة حالياً' : 'لم يتم العثور على أي خط مطابق'}
+          </div>
         ) : (
-          <div className="grid grid-cols-2 gap-1.5">
-            {visibleFonts.map((font) => {
-              const isFavorite = favorites.includes(font.id);
-              return (
-                <div key={font.id} className="relative group">
-                  <button
-                    type="button"
-                    onClick={() => applyFont(font)}
-                    title={`تطبيق ${font.name}`}
-                    className="w-full text-start p-2 pe-6 rounded-xl border border-border/80 bg-card hover:border-foreground/40 hover:bg-muted/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                  >
-                    <span
-                      className="block text-xs font-bold text-foreground truncate"
-                      style={{ fontFamily: font.family }}
-                    >
+          visibleFonts.map((font) => {
+            const isFavorite = favorites.includes(font.id);
+            const isActive = isCurrentFont(font);
+            const sample = font.sampleText || 'أبجد هوز حطي كلمن سعفص';
+
+            return (
+              <div
+                key={font.id}
+                onClick={() => applyFont(font)}
+                className={cn(
+                  'group relative flex flex-col justify-between px-3 py-2 rounded-xl border transition-all cursor-pointer',
+                  'bg-card hover:bg-muted/40 hover:border-foreground/30 shadow-2xs',
+                  isActive
+                    ? 'border-primary bg-primary/[0.05] ring-1 ring-primary/30'
+                    : 'border-border/70',
+                )}
+              >
+                {/* سطر معلومات الخط: الاسم العربي واللاتيني + النجمة */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs font-bold text-foreground truncate">
                       {font.arabicName}
                     </span>
                     <span
-                      className="block text-micro text-muted-foreground truncate mt-0.5"
-                      style={{ fontFamily: font.family }}
-                      dir="auto"
+                      className="text-[10px] text-muted-foreground/60 font-sans truncate"
+                      dir="ltr"
                     >
-                      {previewSample}
+                      {font.englishName}
                     </span>
-                    <span className="block text-mini text-muted-foreground/70 truncate mt-0.5">
-                      {font.isOffline ? 'مضمّن أوفلاين' : 'يُحمَّل عند الاستخدام'}
-                    </span>
-                  </button>
+                    {isActive && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-primary text-primary-foreground">
+                        مطبّق
+                      </span>
+                    )}
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => toggleFavorite(font.id)}
-                    aria-pressed={isFavorite}
-                    aria-label={
-                      isFavorite
-                        ? `إزالة ${font.arabicName} من المفضلة`
-                        : `إضافة ${font.arabicName} للمفضلة`
-                    }
+                    onClick={(e) => toggleFavorite(font.id, e)}
+                    aria-label={isFavorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
                     className={cn(
-                      'absolute top-1.5 end-1.5 w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer',
-                      'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                      'p-1 -m-1 rounded-md transition-colors cursor-pointer',
                       isFavorite
-                        ? 'text-warning hover:bg-warning/10'
-                        : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/70',
+                        ? 'text-warning'
+                        : 'text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-foreground',
                     )}
                   >
                     <Star className="w-3.5 h-3.5" weight={isFavorite ? 'fill' : 'regular'} />
                   </button>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* سطر المعاينة الحية بخط الخط الفعلي: واسع ومقروء */}
+                <div className="pt-1 overflow-hidden">
+                  <span
+                    className="block text-sm text-foreground/90 truncate leading-relaxed select-none"
+                    style={{ fontFamily: font.family }}
+                    dir="auto"
+                  >
+                    {sample}
+                  </span>
+                </div>
+              </div>
+            );
+          })
         )}
-      </FluentSection>
+      </div>
     </div>
   );
 }

@@ -126,7 +126,6 @@ export function FreeformPaletteTab() {
 
     if (target === 'canvas') {
       setBackgroundColor(color);
-      toast.success('خلفية الورقة');
       return;
     }
 
@@ -137,9 +136,6 @@ export function FreeformPaletteTab() {
 
     updateElements(
       selectedElements.map((element) => ({ id: element.id, patch: colorPatchFor(element, color) })),
-    );
-    toast.success(
-      selectedElements.length === 1 ? 'لون المحدد' : `لون ${selectedElements.length} عناصر`,
     );
   };
 

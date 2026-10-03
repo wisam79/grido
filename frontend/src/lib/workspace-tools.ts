@@ -14,7 +14,6 @@ import {
   TextAa,
   Swatches,
   PaintBucket,
-  Star,
 } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { canZoomIn, canZoomOut, isDefaultZoom } from '@/lib/canvas/zoom';
@@ -37,8 +36,7 @@ import { CANVAS_FIT_LABELS, type CanvasFitMode } from '@/lib/canvas/fit';
 
 export type CollageTab = 'custom' | 'presets' | 'freeform' | 'paper' | 'autofill' | 'arrange';
 
-export type FreeformTab =
-  'layers' | 'elements' | 'presets' | 'fonts' | 'palette' | 'backdrops' | 'library';
+export type FreeformTab = 'layers' | 'elements' | 'presets' | 'fonts' | 'palette' | 'backdrops';
 
 /** ترحيل التبويبات المحذوفة من التخزين المحلي — stickers/shapes/text صارت elements */
 export function migrateLegacyStudioTab(value: unknown): FreeformTab | null {
@@ -182,15 +180,6 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
     group: 'المقاسات والهوية',
     icon: PaintBucket,
     testId: 'rail-studio-backdrops',
-  },
-  {
-    id: 'library',
-    label: 'المفضلة',
-    title: 'المفضلة وآخر استخدام',
-    subtitle: 'الأكثر استخداما',
-    group: 'الوصول السريع',
-    icon: Star,
-    testId: 'rail-studio-library',
   },
 ];
 

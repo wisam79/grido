@@ -74,7 +74,6 @@ export function CollageAutofillTab() {
         : await openImageFileDialog(true);
       if (picked.length === 0) return;
       setImages((prev) => [...prev, ...picked]);
-      toast.success(`أُضيف ${picked.length} صورة`);
     } catch (error) {
       console.error(error);
       toast.error('فشل اختيار الصور');
@@ -264,7 +263,6 @@ export function CollageAutofillTab() {
               size="icon"
               onClick={() => {
                 clearSlots();
-                toast.success('أُفرغت الخانات');
               }}
               title="إفراغ الخانات"
               aria-label="إفراغ كل الخانات"

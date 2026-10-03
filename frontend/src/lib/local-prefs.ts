@@ -9,12 +9,8 @@ export const PREF_KEYS = {
   recentFonts: 'grido_recent_fonts',
   favoriteColors: 'grido_favorite_colors',
   recentColors: 'grido_recent_colors',
-  favoriteShapes: 'grido_favorite_shapes',
-  favoriteTextPresets: 'grido_favorite_text_presets',
   /** تدرجات مُنجّمة (معرّفات جاهزة أو صيغة `custom:<من>|<إلى>|<زاوية>`) */
   favoriteGradients: 'grido_favorite_gradients',
-  /** عناصر أُضيفت حديثاً بصيغة `shape:<id>` أو `text:<id>` */
-  recentItems: 'grido_recent_items',
   /** تدرجات طُبّقت حديثاً — نفس صيغة مفاتيح المفضلة */
   recentGradients: 'grido_recent_gradients',
 } as const;
@@ -61,11 +57,6 @@ export function pushStoredRecent(list: string[], value: string): string[] {
   return [value, ...list.filter((item) => item !== value)].slice(0, MAX_RECENTS);
 }
 
-/** مفتاح عنصر في «آخر استخدام» — يوحّد صيغة `shape:<id>` / `text:<id>` في موضع واحد */
-export function elementPrefKey(kind: 'shape' | 'text', id: string): string {
-  return `${kind}:${id}`;
-}
-
 /** صيغة مفتاح تدرج مخصص في المفضلة/الأخيرة: `custom:<من>|<إلى>|<زاوية>` */
 export function customGradientPrefKey(from: string, to: string, angle: number): string {
   return `custom:${from}|${to}|${angle}`;
@@ -74,14 +65,4 @@ export function customGradientPrefKey(from: string, to: string, angle: number): 
 /** مفتاح التخزين لتدرج جاهز — معرّفه نفسه */
 export function presetGradientPrefKey(presetId: string): string {
   return `preset:${presetId}`;
-}
-
-/** تحليل مفتاح عنصر إلى نوعه ومعرّفه (يرجع null لأي صيغة غير معروفة) */
-export function parseElementPrefKey(key: string): { kind: 'shape' | 'text'; id: string } | null {
-  const separator = key.indexOf(':');
-  if (separator < 1) return null;
-  const kind = key.slice(0, separator);
-  const id = key.slice(separator + 1);
-  if ((kind !== 'shape' && kind !== 'text') || !id) return null;
-  return { kind, id };
 }

@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
-import { toast } from 'sonner';
 import {
   IdentificationCard,
   Printer,
@@ -57,7 +56,6 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
   const handleSelectPreset = useCallback(
     (preset: CanvasSizePreset) => {
       setCanvasSize(preset.widthPx, preset.heightPx);
-      toast.success(`كانفاس: ${preset.name} (${preset.tag})`);
     },
     [setCanvasSize],
   );
@@ -65,7 +63,6 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
   // تبديل اتجاه الورقة (أفقي / رأسي)
   const handleToggleOrientation = () => {
     setCanvasSize(canvasHeight, canvasWidth);
-    toast.success(canvasHeight >= canvasWidth ? 'أفقي' : 'رأسي');
   };
 
   return (

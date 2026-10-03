@@ -848,7 +848,7 @@
 }
 
 /* ==========================================================================
-   تنسيقات إشعارات استوديو Grido المخصصة (Soft Compact Floating Pill Toasts)
+   تنسيقات إشعارات استوديو Grido المخصصة (Microsoft Fluent 2 Acrylic Studio Toasts)
    ========================================================================== */
 [data-sonner-toaster] {
   font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif !important;
@@ -859,17 +859,22 @@
   font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif !important;
   position: relative !important;
   overflow: hidden !important;
-  min-height: 34px !important;
-  padding: 5px 12px !important;
-  border-radius: 9999px !important; /* شكل حبة عائمة ناعمة مثل Figma */
+  min-height: 38px !important;
+  padding: 8px 14px !important;
+  border-radius: 12px !important; /* شكل بطاقة Fluent 2 الأنيقة */
+  background: var(--card) !important;
+  color: var(--foreground) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   box-shadow:
-    0 4px 20px -2px rgba(0, 0, 0, 0.25),
-    0 2px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    0 10px 30px -4px rgba(0, 0, 0, 0.25),
+    0 4px 10px -2px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
   width: auto !important;
   max-width: 440px !important;
-  gap: 8px !important;
-  border-width: 1px !important;
-  border-style: solid !important;
+  gap: 10px !important;
+  border: 1px solid var(--border) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* تخطيط المحتوى العربي والأيقونة داخل الإشعار المضغوط */
@@ -878,26 +883,29 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  flex-shrink: 0 !important;
 }
 
 [data-sonner-toast] [data-content] {
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 8px !important;
 }
 
 [data-sonner-toast] [data-title] {
   font-size: 12px !important;
-  font-weight: 500 !important;
-  line-height: 1.3 !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  color: var(--foreground) !important;
 }
 
 [data-sonner-toast] [data-description] {
   font-size: 11px !important;
-  opacity: 0.85 !important;
+  color: var(--muted-foreground) !important;
+  opacity: 0.9 !important;
 }
 
-/* محاذاة زر الإغلاق بطريقة ناعمة وغير مزعجة في نهاية الحبة */
+/* زر الإغلاق بنمط Fluent 2 */
 [data-sonner-toast] [data-close-button] {
   position: relative !important;
   left: auto !important;
@@ -906,48 +914,50 @@
   transform: none !important;
   margin-right: auto !important;
   margin-left: 0 !important;
-  width: 16px !important;
-  height: 16px !important;
+  width: 18px !important;
+  height: 18px !important;
   padding: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   border: none !important;
+  border-radius: 6px !important;
   background: transparent !important;
-  color: currentColor !important;
-  opacity: 0.4 !important;
-  transition: opacity 0.15s ease !important;
+  color: var(--muted-foreground) !important;
+  opacity: 0.5 !important;
+  transition: all 0.15s ease !important;
 }
 
 [data-sonner-toast] [data-close-button]:hover {
   opacity: 1 !important;
-  background: transparent !important;
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
 }
 
-/* حدود ضوئية خفيفة وناعمة تحيط بالحبة حسب الحالة */
+/* إضاءة ولمسات الحالة الدلالية لـ Fluent 2 */
 [data-sonner-toast][data-type='success'] {
   border-color: rgba(16, 185, 129, 0.35) !important;
-  background-image: linear-gradient(to left, rgba(16, 185, 129, 0.08), transparent 80%) !important;
+  background: color-mix(in srgb, var(--card) 94%, #10b981 6%) !important;
 }
 
 [data-sonner-toast][data-type='error'] {
-  border-color: rgba(244, 63, 94, 0.35) !important;
-  background-image: linear-gradient(to left, rgba(244, 63, 94, 0.08), transparent 80%) !important;
+  border-color: rgba(244, 63, 94, 0.4) !important;
+  background: color-mix(in srgb, var(--card) 92%, #f43f5e 8%) !important;
 }
 
 [data-sonner-toast][data-type='warning'] {
   border-color: rgba(245, 158, 11, 0.35) !important;
-  background-image: linear-gradient(to left, rgba(245, 158, 11, 0.08), transparent 80%) !important;
+  background: color-mix(in srgb, var(--card) 94%, #f59e0b 6%) !important;
 }
 
 [data-sonner-toast][data-type='info'] {
   border-color: rgba(59, 130, 246, 0.35) !important;
-  background-image: linear-gradient(to left, rgba(59, 130, 246, 0.08), transparent 80%) !important;
+  background: color-mix(in srgb, var(--card) 94%, #3b82f6 6%) !important;
 }
 
 [data-sonner-toast][data-type='loading'] {
   border-color: rgba(99, 102, 241, 0.35) !important;
-  background-image: linear-gradient(to left, rgba(99, 102, 241, 0.08), transparent 80%) !important;
+  background: color-mix(in srgb, var(--card) 94%, #6366f1 6%) !important;
 }
 
 /* سطح مساحة العمل — كل قيمه من رموز الثيم في :root و .dark (لا قيم صلبة هنا)،
