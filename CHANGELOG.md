@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **تنظيف دوال التدفق غير المستخدمة في الباك إند:**
+  - حذف دوال التدفق القديمة `streamPNGWithDPI` و `streamJPEGWithDPI` في `internal/service/print_export.go` بعد استبدالها بكتّاب التدفق المباشر `dpiPNGWriter` و `dpiJPEGWriter` لإرضاء فحص `staticcheck` الصارم (U1000).
 - **معالجة تعطل التراجع (Undo No-Op) بعد فتح المشاريع المحفوظة:**
   - تم تضمين حقول القوالب والتدرج الخطي (`template`, `collageTemplate`, `backgroundGradientColor2`, `backgroundGradientAngle`) في لقطة البذر الأولى للتاريخ (`history[0]`) داخل `core-slice.ts:loadProject`. بدونها كانت استعادة التاريخ تتجاهل هذه الحقول وتبقي القيم الجديدة، مما يعطل التراجع كلياً بعد تحميل المشروع.
 - **منع انزياح صور الخانات عند تعديل أبعاد الكانفاس أو إعدادات الطباعة:**

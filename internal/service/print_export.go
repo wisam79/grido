@@ -440,20 +440,6 @@ func buildPhysChunk(dpi int) []byte {
 	return physChunk
 }
 
-// streamPNGWithDPI يكتب PNG مع pHYs مباشرة للكاتب — 3 كتابات جزئية بلا نسخة بايت ثانية.
-func streamPNGWithDPI(w io.Writer, pngData []byte, dpi int) error {
-	insertPos, skipEnd, err := pngDPIInsertPos(pngData)
-	if err != nil {
-		return err
-	}
-	physChunk := buildPhysChunk(dpi)
-	for _, part := range [][]byte{pngData[:insertPos], physChunk, pngData[skipEnd:]} {
-		if _, err := w.Write(part); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 // pngDPIInsertPos يعيد موضع الإدراج بعد IHDR ونهاية التخطي (يتجاوز pHYs موجودة).
 func pngDPIInsertPos(pngData []byte) (insertPos, skipEnd int, err error) {
@@ -534,17 +520,4 @@ func jpegDPIRestStart(jpegData []byte) (int, error) {
 	return 2, nil
 }
 
-// streamJPEGWithDPI يكتب JPEG مع JFIF مباشرة للكاتب — 3 كتابات جزئية بلا نسخة بايت ثانية.
-func streamJPEGWithDPI(w io.Writer, jpegData []byte, dpi int) error {
-	restStart, err := jpegDPIRestStart(jpegData)
-	if err != nil {
-		return err
-	}
-	seg := buildJFIFSegment(dpi)
-	for _, part := range [][]byte{jpegData[:2], seg, jpegData[restStart:]} {
-		if _, err := w.Write(part); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+
