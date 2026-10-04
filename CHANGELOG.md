@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.13.0] - 2026-10-04
+
 ### Changed
 - **إعادة تصميم وصقل تبويب «الألوان والهوية» في الشريط الجانبي (Identity & Colors Tab Overhaul):**
   - إعادة هندسة تبويب الألوان والهوية `frontend/src/components/editor/panels/freeform/freeform-palette-tab.tsx` وفق أسلوب وهوية استوديو Grido المدمجة ومعايير Microsoft Fluent 2 الرشيقة، مع القضاء على هدر المساحات والأقسام المتضخمة.
