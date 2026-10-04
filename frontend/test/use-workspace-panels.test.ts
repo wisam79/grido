@@ -104,6 +104,26 @@ describe('useWorkspacePanels — مزامنة القوالب عند عبور ا�
     expect(result.current.isTemplatesDrawerOpen).toBe(true);
   });
 
+  it('standard → wide واليمنى على الخصائص والدبس مخزّن false: يُزامَن الدبس فلا تختفي اللوحة', async () => {
+    // جلقة سابقة خلّفت الدبس false، ثم فُتحت الخصائص في Standard —
+    // العبور إلى Wide يجب أن يُبقي اللوحة المفتوحة ظاهرة (مزامنة الدبس).
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ isInspectorPinned: false }));
+    const { result } = renderHook(() => useWorkspacePanels());
+    expect(result.current.breakpoint).toBe('standard');
+    expect(result.current.isInspectorPinned).toBe(false);
+
+    act(() => {
+      result.current.setActivePanel('properties');
+    });
+
+    await resizeTo(1600);
+
+    expect(result.current.breakpoint).toBe('wide');
+    expect(result.current.activePanel).toBe('properties');
+    expect(result.current.isInspectorPinned).toBe(true);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).isInspectorPinned).toBe(true);
+  });
+
   it('standard → wide واليمنى على الخصائص: الدرج يبقى مغلقاً', async () => {
     const { result } = renderHook(() => useWorkspacePanels());
 

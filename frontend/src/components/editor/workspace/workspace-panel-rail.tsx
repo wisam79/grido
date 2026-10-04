@@ -117,7 +117,7 @@ const RailToolButton = React.memo(function RailToolButton({
 
           {showBadge && (
             <span
-              className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-2xs font-bold tabular-nums flex items-center justify-center leading-none pointer-events-none ring-2 ring-sidebar z-20"
+              className="absolute -top-0.5 -end-0.5 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-2xs font-bold tabular-nums flex items-center justify-center leading-none pointer-events-none ring-2 ring-sidebar z-20"
               aria-hidden="true"
             >
               {badgeCount > 99 ? '99+' : badgeCount}

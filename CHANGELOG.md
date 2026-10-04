@@ -9,6 +9,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **إعادة تصميم وصقل تبويب «الألوان والهوية» في الشريط الجانبي (Identity & Colors Tab Overhaul):**
+  - إعادة هندسة تبويب الألوان والهوية `frontend/src/components/editor/panels/freeform/freeform-palette-tab.tsx` وفق أسلوب وهوية استوديو Grido المدمجة ومعايير Microsoft Fluent 2 الرشيقة، مع القضاء على هدر المساحات والأقسام المتضخمة.
+  - دمج أدوات التحكم في شريط علوي موحد ومدمج يجمع مبدل الوجهة (عنصر / ورقة)، منتقي اللون السريع، قراءة الـ HEX الفورية، أزرار النسخ والتفضيل بنجمة، وألوان الاستوديو القياسية في صف واحد.
+  - إثراء مكتبة الهويات البصرية لتشمل 16 هوية متناسقة مصنفة إلى 4 فئات دلالية (وثائق وهوية رسمية، استوديو وتصوير، أعمال وفخامة، عصري وإبداعي) مع كبسولات تصفية سريعة `FluentFilterChips`، وبطاقات عالية الكثافة تعرض شريط عينات الهوية المتصل بارتفاع مدمج مع أدوار الألوان وأزرار التوزيع وتطبيق الخلفية بنقرة واحدة.
+  - إضافة ميزة التناغم اللوني الذكي (OKLCH Harmonies: متماثل، مكمل، ثلاثي) واستخراج ألوان الهوية من صور التصميم محلياً، مع شريط مدمج للمفضلة وآخر استخدام.
+  - نقل بيانات وهياكل الهويات البصرية إلى `frontend/src/components/editor/panels/freeform/freeform-panel-constants.ts` لضمان فصل البيانات ودعم React Fast Refresh.
+- **صقل ورشاقة بطاقات الخطوط في تبويب مكتبة الخطوط إلى سطر واحد فائق الكثافة (Ultra-Sleek Single-Line Font Cards):**
+  - إعادة هندسة بطاقات الخطوط في `frontend/src/components/editor/panels/freeform/freeform-fonts-tab.tsx` لتصبح في سطر واحد مدمج (`h-10`، `min-h-[40px]`) مع تطبيق عائلة الخط مباشرة على اسمه، وتوفير هامش رأسي مريح (`leading-normal`) يمنع تداخل الحروف والنزول الكوفي والنسخي مع حدود الإطار، مع مضاعفة عدد الخطوط المرئية فورياً دون تمرير، وتحميل خطوط Google تلقائياً عند تمرير المؤشر (`onMouseEnter`).
+- **القضاء على هدر المساحات وترشيد التبويبات الأخرى في الشريط الجانبي (Sidebar Space Optimization):**
+  - **تبويب الطبقات (`freeform-layers-tab.tsx` و `layers-list.tsx`):** دمج شريط أدوات الطبقات المتضخم (الذي كان يستهلك 135px) في شريط علوي موحد فائق الرشاقة بارتفاع 34px (`h-8.5`) يجمع القفل والرؤية والعمليات الجماعية، مع إظهار شريط المحاذاة المشروط حصراً عند التحديد، وإلغاء ازدواجية الصناديق والترويسات والحد الأقصى المصطنع (300px) عبر نمط `standalone` ليملأ جدول الطبقات كامل ارتفاع اللوحة.
+  - **تبويب الخلفيات والأنماط (`freeform-backdrops-tab.tsx` و `shared-controls.tsx`):** إلغاء حاوية الحالة الفارغة للمفضلة التي كانت تهدر 120px أعلى التبويب قبل استخدام أي تدرج، وإزالة مربع الشرح التوضيحي المكرر، وتقليص بطاقات التدرجات إلى 52px مع مصغر ورقة مضغوط في `PaperBackgroundSummary` بارتفاع 48px بدلاً من 72px.
+  - **تبويب العناصر (`freeform-elements-tab.tsx`):** إعادة تنظيم شبكة الأشكال الهندسية الـ 12 لتتوزع على 3 أعمدة مدمجة بدلاً من عمودين، مما قلص عدد الصفوف من 6 إلى 4، وخفض ارتفاع معاينات بطاقات الملصقات من 96px إلى 72px لتتسع اللوحة لضعف عدد البطاقات في نفس شاشة العرض.
+- **إعادة تصميم وتبسيط تبويب «فرز وترتيب الخانات» في الكولاج (Collage Arrange Tab Redesign):**
+  - استئصال عرض مصغرات صور الوجوه المتكررة من بطاقة مخطط الشبكة في `frontend/src/components/editor/panels/collage/collage-arrange-tab.tsx` استجابةً لملاحظة المستخدم الدقيقة بعدم الحاجة لها لظهورها الحيّ على الكانفاس، واستبدالها بمخطط هيكلي تجريدي نظيف يعرض أرقام وحالة الخانات بارتفاع مضغوط (`h-7.5`).
+  - معالجة التوزيع الفردي غير المتوازن للأزرار: جعل زر «تكرار الكل» يمتد على كامل العرض (`col-span-2`) في قسم ترتيب الصور، وزر «تصفير التعديلات» يمتد على كامل العرض في قسم التحويلات الجماعية، مع إلغاء الصناديق المتداخلة الضخمة وضبط ارتفاع الأزرار على `h-8` المدمج.
+
+### Fixed
+- **إصلاح طي وتوسيع لوحة الخصائص في الشاشات العريضة (Wide Breakpoint Layout Fix):**
+  - ربط حالة فتح لوحة الخصائص في نمط Wide برمز الحالة الفعلي `isInspectorPinned` في `frontend/src/components/editor/workspace/workspace-layout.tsx` وتحديث دالة `setIsInspectorPinned` لتقبل مُحدِّث دالي، مما أصلح تعطل زر طي اللوحة ومنع الإغلاق الخاطئ لدرج القوالب الأيسر عند طي اللوحة اليمنى.
+  - مزامنة `isInspectorPinned` تلقائياً عند عبور نقطة التوقف من Standard إلى Wide أثناء فتح لوحة الخصائص لمنع اختفائها المفاجئ عند تغيير حجم النافذة، مع تعزيز التغطية باختبار وحدة انحداري جديد في `frontend/test/use-workspace-panels.test.ts`.
+  - تمرير دالات إغلاق نوعية (`panelsHook.togglePanel('templates')` و `panelsHook.togglePanel('properties')`) لكل لوحة بشكل مستقل في `frontend/src/App.tsx`.
+- **إضافة زر طي/إظهار لوحة الخصائص إلى شريط العنوان الرئيسي:**
+  - إضافة زر تحكم لسطح المكتب في شريط العنوان `frontend/src/App.tsx` بجانب زر القوالب مع أيقونة `<SlidersHorizontal />` وحالة النشاط واختصار لوحة المفاتيح `Ctrl+Shift+B`.
+- **منع تجاوز قائمة مقاسات الورق لحدود الشاشة (Paper Size Dropdown Overflow):**
+  - إضافة `max-h-[60vh] overflow-y-auto` لقائمة مقاسات الورق القياسية والمتقدمة في `frontend/src/components/editor/canvas/canvas-viewport-deck.tsx` لضمان إمكانية التمرير وسهولة الوصول لكافة المقاسات في الشاشات المحمولة.
+- **تفعيل مؤشر تلاشي التمرير العلوي في اللوحات الجانبية (`PanelShell` Scroll Hint):**
+  - توجيه مراقبة التمرير ومراقب الحجم `ResizeObserver` في `frontend/src/components/editor/panels/panel-shell.tsx` نحو عنصر `[data-radix-scroll-area-viewport]` وغلاف المحتوى التابع له بدلاً من الحاوية الخارجية الثابتة، مما يضمن ظهور تأثير التلاشي العلوي الجمالي (`panel-scroll-hint`) حتى عند نمو المحتوى ديناميكياً قبل التمرير.
+- **تصحيح محاذاة شارات العدادات في الوضع العربي RTL:**
+  - استبدال الفئة الفيزيائية `-right-0.5` بالفئة المنطقية `-end-0.5` في `frontend/src/components/editor/workspace/workspace-panel-rail.tsx` لضمان محاذاة الشارات الرقمية بشكل صحيح ومتسق مع مؤشرات النشاط في الاتجاه العربي.
+  - استبدال `text-right` بالفئة المنطقية `text-start` في خيارات تنسيق تصدير الصور بـ `frontend/src/components/editor/dialogs/export-dialog.tsx`.
+- **توجيه كافة أخطاء التهيئة إلى مسجل التشخيص الموحد:**
+  - استبدال استدعاءات `console.error` المباشرة بـ `appLog.error` في `frontend/src/App.tsx` لضمان التقاط أخطاء فحص الترخيص وأحداث فتح الملفات داخل حزمة الدعم والتشخيص `grido_support_logs.zip`.
+- **منع تداخل وتطبيق نصوص خاطئة في طبقة تحرير النصوص (Text Editing Overlay Remount Guard):**
+  - إضافة المفتاح الفريد `key={editingTextId || 'none'}` لمكون `TextEditingOverlay` في `frontend/src/components/editor/canvas/editor-canvas.tsx` و `key={textEl.id}` لعنصر `textarea` في `text-editing-overlay.tsx` لضمان تفريغ وإعادة تركيب حالة مربع التحرير فور تبديل العنصر المستهدف ومنع كتابة نصوص قديمة فوق عناصر جديدة.
+- **تحديث مراجع دوال الكولاج مباشرة أثناء الرندر (Collage Image Memo Latest-Refs):**
+  - استبدال مزامنة المراجع بعد الرندر (`useEffect`) بالتحديث المباشر المتزامن أثناء الرندر لـ `onUpdateOffsetsRef` و `onDragEndRef` في `frontend/src/components/editor/konva/elements/collage-image.tsx`، لمنع الـ Stale Closures عند استدعاء المعالجات قبل اكتمال الطلاء.
+- **تثبيت معالجات أحداث العناصر وتفادي كسر ميموزيشن Konva (Single Layer Memoization Stabilization):**
+  - تثبيت مراجع معالجات `onDblClick` و `onChange` في `frontend/src/components/editor/konva/layers/konva-single-layer.tsx` عبر خرائط مراجع مستقرة لكل عنصر، وكاش لكائنات `elementRef` في `frontend/src/components/editor/konva/konva-canvas.tsx`، مما مكّن المقارن `propsAreEqual` من العمل بكفاءة ومنع إعادة رسم عقد Konva عند كل تحديث في الستور.
+- **سلاسة تقريب عجلة الفأرة واللمس في معاينة الملصقات (Sticker Preview Wheel Zoom Stutter Fix):**
+  - فك ارتباط مراقب حدث التكبير بالعجلة عن حالة `zoomLevel` في `frontend/src/features/stickers/components/StickerPreview.tsx` واستخدام مرجع `zoomLevelRef` لمنع إعادة تسجيل المستمع مع كل إطار حركة وتفادي تقطع الإيماءات.
+- **حماية نافذة جسر الهاتف من تعديل الحالة بعد فك التركيب (Phone Bridge Dialog Lifecycle Guard):**
+  - إضافة فحص `isMountedRef` لكافة العمليات غير المتزامنة (`initBridge` ومؤقت نسخ الرابط والاستطلاع الدوري) في `frontend/src/components/editor/dialogs/phone-bridge-dialog.tsx` مع تنظيف المؤقتات وتحويل الأخطاء للمسجل الموحد `phoneLog`.
+- **تنظيف مستمعات تغيير حجم النافذة عند فك التركيب (Window Resize Handles Unmount Cleanup):**
+  - إضافة `useEffect` لتنظيف معالجات `mousemove` و `mouseup` و `blur` المرتبطة بـ `window` عند فك تركيب `WindowResizeHandles` أثناء السحب، وتوجيه الأخطاء إلى `windowLog.error`.
+- **حصر تطهير كاش الصور بالمسار المطابق (Strict Image Cache Invalidation):**
+  - تدقيق شرط الحذف في `invalidateImageCache` داخل `frontend/src/hooks/use-async-image.ts` لمطابقة المفتاح الدقيق `key === src || key.startsWith(`${src}__`)` لمنع طرد صور أخرى تشترك في بادئة الاسم بالخطأ.
+- **تفاعلية مؤشر أبعاد كولاج المساحة الحرة (Freeform Collage Reactive Drag State):**
+  - تحويل حالة السحب من القراءة غير التفاعلية للمرجع `dragState.current !== null` إلى حالة تفاعلية `isDragging` في `frontend/src/features/freeform-collage/components/FreeformCanvasEditor.tsx` لضمان ظهور وتحديث الشارة الحية بدقة فور بدء السحب وانتهائه.
+- **مفتاح تركيبي لخطوط الإرشاد الذكية (Active Guides Composite Key):**
+  - تخصيص مفتاح فريد مبني على النوع والإحداثي والفهرس لخطوط المحاذاة في `frontend/src/components/editor/canvas/editor-canvas.tsx`.
+- **حماية اختصارات الكانفاس العالمية داخل النوافذ المنبثقة (Global Shortcuts Modal Guard):**
+  - منع اختصارات لوحة المفاتيح المخصصة للكانفاس (التراجع/الإعادة، الحذف، الأسهم، التحديد) من التنفيذ عندما تكون أي نافذة حوار أو تنبيه نشطة في التطبيق عبر فحص `isModalActive` في `frontend/src/hooks/use-keyboard-shortcuts.ts`، مع إضافة `e.stopPropagation` في نافذة `frontend/src/features/stickers/components/StickerStudioDialog.tsx` لمنع التراجع المزدوج على الكانفاس الخلفي.
+- **منع اختطاف مفتاح Tab للتنقل السهل (Tab Navigation A11y Guard):**
+  - حماية السلوك الافتراضي لمفتاح `Tab` عند التركيز على أزرار الواجهة أو الروابط أو عناصر الإدخال في `frontend/src/hooks/use-keyboard-shortcuts.ts`، وقصر تفعيل نمط Zen على الكانفاس فقط لضمان سهولة الوصول والتنقل عبر لوحة المفاتيح.
+- **إظهار شريط الأدوات السريع عند تحديد عنصرين (Quick Bar Multi-Selection Threshold):**
+  - تصحيح شرط ظهور قسم التحديد المتعدد في `frontend/src/components/editor/canvas/canvas-quick-bar.tsx` ليصبح `selectedIds.length >= 2` بدلاً من `selectedIds.length >= 3`، مما أصلح اختفاء الشريط السريع بالكامل عند تحديد عنصرين.
+- **تثبيت مستمعات سحب خطوط الإرشاد ومنع إعادة التسجيل (Guide Drag Pointer Listener Stabilization):**
+  - ربط مستمعات مؤشر الفأرة `pointermove` و `pointerup` لحركة الخطوط الإرشادية بحالة السحب النشطة `isDragging` وتحديث المراجع داخل `useEffect` في `frontend/src/components/editor/canvas/use-user-guides.ts` لمنع إعادة تسجيل المستمعات مع كل بكسل حركة.
+- **رفع ترتيب طبقة تحرير النصوص فوق الخطوط الإرشادية (Text Editing Overlay Z-Index Elevation):**
+  - تعريف متغير CSS موحد جديد `--z-canvas-text-overlay: 70;` في `frontend/src/index.css` وتوثيقه في `frontend/src/lib/ui/ui-compliance.ts` وتطبيقه على `frontend/src/components/editor/canvas/text-editing-overlay.tsx` لحل تداخل الترتيب مع الخطوط الإرشادية وضمان تحرير نصوص مرئي نقي ومريح.
+- **تطهير كاش كائنات ومراجع عقد Konva عند حذف العناصر (Prune Konva Ref & Handler Caches):**
+  - تطهير دوري للمفاتيح المحذوفة من كاش مراجع العقد `elementRefCache` في `frontend/src/components/editor/konva/konva-canvas.tsx` وخرائط معالجات الأحداث في `frontend/src/components/editor/konva/layers/konva-single-layer.tsx` عند تغير قائمة العناصر لتفادي استهلاك الذاكرة.
+- **حماية تراكم إزاحات سحب الكولاج أثناء الإيماءة الحية (Collage Drag Gesture Guard):**
+  - حماية المرجع `accumulatedDrag.current` من إعادة التعيين أثناء السحب النشط عبر علم `isDraggingRef` في `frontend/src/components/editor/konva/elements/collage-image.tsx` لمنع ارتداد الصورة أثناء فك التشفير غير المتزامن أو إعادة الرندر.
+- **ثبات بؤرة التقريب لغير عجلة الفأرة (Non-Wheel Zoom Center Preservation):**
+  - الحفاظ على نقطة ارتكاز مركز العرض عند التقريب عبر القوائم أو الأزرار أو اختصارات لوحة المفاتيح في `frontend/src/components/editor/canvas/use-canvas-viewport.ts` لتفادي إعادة التمركز المفاجئة والمزعجة.
+- **حماية مقياس وموضع شارة التحويل من القيم الشاذة (Safe Transformer Badge Scale & Layout):**
+  - تأمين حسابات مقياس وإزاحة شارة التحويل `safeBadgeScale` في `frontend/src/components/editor/konva/elements/editor-transformer.tsx` ضد القسمة على الصفر أو القيم غير المنتهية (`Infinity` / `NaN`) عند المقياس المنعدم أو المتدهور.
+
 ## [v1.12.0] - 2026-10-03
 
 ### Fixed

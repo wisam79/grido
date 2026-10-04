@@ -190,7 +190,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             </Tooltip>
             <DropdownMenuContent
               align="start"
-              className="w-56 font-cairo text-xs z-(--z-menu) rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16"
+              className="w-56 font-cairo text-xs z-(--z-menu) rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16 max-h-[60vh] overflow-y-auto"
             >
               <div dir="rtl">
                 <DropdownMenuLabel className="text-micro text-muted-foreground font-bold flex items-center gap-1.5">

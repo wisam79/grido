@@ -185,7 +185,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
 
   const hasSlotSection = Boolean(selectedSlot);
   const hasElementSection = Boolean(selectedElement) && selectedIds.length <= 1;
-  const hasMultiSection = selectedIds.length >= 3;
+  const hasMultiSection = selectedIds.length >= 2;
 
   if (
     printMode ||

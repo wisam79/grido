@@ -95,11 +95,13 @@ const SortableLayerItem = React.memo(
             selectElement(el.id);
           }
         }}
-        className={`flex items-center justify-between p-2 rounded-lg border text-start cursor-pointer transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none ${
+        className={cn(
+          'flex items-center justify-between h-8.5 px-2 rounded-lg border text-start cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none',
           isSelected
-            ? 'border-primary/50 bg-primary/10 text-primary shadow-xs font-bold ring-1 ring-primary/25'
-            : 'border-transparent bg-transparent hover:bg-input text-muted-foreground hover:text-foreground'
-        } ${isDragging ? 'shadow-fluent-8 bg-card ring-1 ring-primary/30' : ''}`}
+            ? 'border-primary/60 bg-primary/[0.08] text-primary shadow-xs font-bold ring-1 ring-primary/30'
+            : 'border-border/40 bg-card/40 hover:bg-card hover:border-foreground/30 text-muted-foreground hover:text-foreground',
+          isDragging && 'shadow-fluent-8 bg-card ring-1 ring-primary/40',
+        )}
       >
         <div className="flex items-center gap-2 min-w-0">
           <div
@@ -230,7 +232,11 @@ const SortableLayerItem = React.memo(
   },
 );
 
-export function LayersList() {
+export interface LayersListProps {
+  standalone?: boolean;
+}
+
+export function LayersList({ standalone = false }: LayersListProps = {}) {
   const {
     elements,
     selectedId,
@@ -368,6 +374,31 @@ export function LayersList() {
       pushHistory();
     }
   };
+
+  if (standalone) {
+    return (
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={sorted.map((el) => el.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-1 max-h-[calc(100vh-170px)] overflow-y-auto pe-0.5 custom-scrollbar">
+            {sorted.map((el, index) => (
+              <SortableLayerItem
+                key={el.id}
+                el={el}
+                layerNumber={sorted.length - index}
+                isSelected={selectedIds.includes(el.id)}
+                toggleVisibility={toggleVisibility}
+                toggleLock={toggleLock}
+                deleteLayer={deleteLayer}
+                duplicateLayer={duplicateLayer}
+                selectElement={handleSelectElement}
+                toggleElementSelection={handleToggleSelection}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    );
+  }
 
   return (
     <div className="bg-card border border-border p-3 rounded-xl shadow-xs fluent-specular space-y-2 select-none">

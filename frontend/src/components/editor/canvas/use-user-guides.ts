@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
   type RefObject,
@@ -110,41 +111,58 @@ export function useUserGuides(
     [printMode, displayW, lockUserGuides, snapGuidePos, innerRef],
   );
 
-  // متابعة سحب الخط الإرشادي عالمياً
+  const dragGuideStateRef = useRef(dragGuideState);
+  const addUserGuideRef = useRef(addUserGuide);
+  const updateUserGuideRef = useRef(updateUserGuide);
+  const removeUserGuideRef = useRef(removeUserGuide);
+  const snapGuidePosRef = useRef(snapGuidePos);
+
   useEffect(() => {
-    if (!dragGuideState) return;
+    dragGuideStateRef.current = dragGuideState;
+    addUserGuideRef.current = addUserGuide;
+    updateUserGuideRef.current = updateUserGuide;
+    removeUserGuideRef.current = removeUserGuide;
+    snapGuidePosRef.current = snapGuidePos;
+  });
+
+  // متابعة سحب الخط الإرشادي عالمياً — يُربط المستمع مرة واحدة عند بدء السحب ويُزال عند انتهائه
+  const isDragging = Boolean(dragGuideState);
+  useEffect(() => {
+    if (!isDragging) return;
 
     const handlePointerMove = (e: DomPointerEvent) => {
-      if (!innerRef.current) return;
+      const current = dragGuideStateRef.current;
+      if (!current || !innerRef.current) return;
       const paperRect = innerRef.current.getBoundingClientRect();
-      if (dragGuideState.type === 'h') {
+      if (current.type === 'h') {
         const h = paperRect.height || 1;
         const rawPos = (e.clientY - paperRect.top) / h;
         // تثبيت على بكسل مادي ثم مغناطيسية — بهذا الترتيب يبقى الخط 1px حاداً
         // حتى عند عدم التقاط أي هدف مغناطيسي
-        const pos = snapGuidePos(snapGuidePosToPixel(rawPos, h), 'h', h);
+        const pos = snapGuidePosRef.current(snapGuidePosToPixel(rawPos, h), 'h', h);
         setDragGuideState((prev) => (prev ? { ...prev, pos } : null));
       } else {
         const w = paperRect.width || 1;
         const rawPos = (e.clientX - paperRect.left) / w;
-        const pos = snapGuidePos(snapGuidePosToPixel(rawPos, w), 'v', w);
+        const pos = snapGuidePosRef.current(snapGuidePosToPixel(rawPos, w), 'v', w);
         setDragGuideState((prev) => (prev ? { ...prev, pos } : null));
       }
     };
 
     const handlePointerUp = () => {
-      if (dragGuideState) {
-        const { type, pos, guideId } = dragGuideState;
+      const current = dragGuideStateRef.current;
+      if (current) {
+        const { type, pos, guideId } = current;
         if (pos >= -0.04 && pos <= 1.04) {
           const clamped = Math.min(1, Math.max(0, pos));
           if (guideId) {
-            updateUserGuide(guideId, clamped);
+            updateUserGuideRef.current(guideId, clamped);
           } else {
-            addUserGuide({ type, pos: clamped });
+            addUserGuideRef.current({ type, pos: clamped });
           }
         } else if (guideId) {
           // سحبه خارج الكانفس يؤدي إلى حذفه
-          removeUserGuide(guideId);
+          removeUserGuideRef.current(guideId);
         }
         setDragGuideState(null);
       }
@@ -156,7 +174,7 @@ export function useUserGuides(
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [dragGuideState, addUserGuide, updateUserGuide, removeUserGuide, snapGuidePos, innerRef]);
+  }, [isDragging, innerRef]);
 
   return {
     dragGuideState,

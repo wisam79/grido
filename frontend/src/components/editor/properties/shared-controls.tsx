@@ -811,39 +811,41 @@ export const PaperBackgroundSummary = React.memo(function PaperBackgroundSummary
   return (
     <div
       className={cn(
-        'flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 shadow-xs fluent-specular select-none font-cairo',
+        'flex items-center gap-2 rounded-lg border border-border bg-card p-2 shadow-2xs fluent-specular select-none font-cairo',
         className,
       )}
       dir="rtl"
     >
-      {/* مصغّرة الورقة الحقيقية: اللون/التدرج + مخيّلة خانات المحتوى */}
+      {/* مصغّرة الورقة الحقيقية المدمجة */}
       <div
-        className="relative h-14 w-11 shrink-0 overflow-hidden rounded-md border border-black/10 dark:border-white/15 shadow-2xs"
+        className="relative h-10 w-8 shrink-0 overflow-hidden rounded-md border border-black/10 dark:border-white/15 shadow-2xs"
         style={{ backgroundImage: PAPER_CHECKER, backgroundSize: '6px 6px' }}
         aria-hidden="true"
       >
         <span className="absolute inset-0" style={{ background: paperBackground }} />
-        <span className="absolute inset-1 grid grid-cols-2 grid-rows-2 gap-0.5 opacity-70">
+        <span className="absolute inset-0.5 grid grid-cols-2 grid-rows-2 gap-0.5 opacity-70">
           {[0, 1, 2, 3].map((cell) => (
             <span
               key={cell}
-              className="rounded-[2px] border border-black/10 bg-black/[0.07] dark:border-white/10 dark:bg-white/10"
+              className="rounded-[1.5px] border border-black/10 bg-black/[0.07] dark:border-white/10 dark:bg-white/10"
             />
           ))}
         </span>
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold text-foreground">خلفية الورقة</p>
-        <p className="mt-0.5 truncate text-micro font-mono text-muted-foreground" dir="ltr">
-          {gradientActive
-            ? `${(backgroundColor || '#FFFFFF').toUpperCase()} → ${backgroundGradientColor2?.toUpperCase()} · ${angle}°`
-            : (backgroundColor || '#FFFFFF').toUpperCase()}
-        </p>
+        <div className="flex items-center justify-between gap-1">
+          <p className="text-xs font-bold text-foreground leading-tight">خلفية الورقة</p>
+          <span className="truncate text-3xs font-mono text-muted-foreground" dir="ltr">
+            {gradientActive
+              ? `${(backgroundColor || '#FFFFFF').toUpperCase()} → ${backgroundGradientColor2?.toUpperCase()}`
+              : (backgroundColor || '#FFFFFF').toUpperCase()}
+          </span>
+        </div>
         <div className="mt-1 flex flex-wrap items-center gap-1">
           <span
             className={cn(
-              'inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-micro font-bold leading-none',
+              'inline-flex items-center gap-1 rounded-full border px-1.5 py-0.2 text-3xs font-semibold leading-none',
               gradientActive
                 ? 'border-primary/25 bg-primary/10 text-primary'
                 : 'border-border/60 bg-muted/60 text-muted-foreground',

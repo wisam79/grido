@@ -56,6 +56,53 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
     [sortedElements],
   );
 
+  const elementsByIdRef = React.useRef(elementsById);
+  elementsByIdRef.current = elementsById;
+  const handleDoubleClickRef = React.useRef(handleDoubleClick);
+  handleDoubleClickRef.current = handleDoubleClick;
+  const handleElementChangeRef = React.useRef(handleElementChange);
+  handleElementChangeRef.current = handleElementChange;
+
+  const dblClickHandlersRef = React.useRef<Map<string, () => void>>(new Map());
+  const getDblClickHandler = React.useCallback((id: string) => {
+    let handler = dblClickHandlersRef.current.get(id);
+    if (!handler) {
+      handler = () => {
+        const targetEl = elementsByIdRef.current.get(id);
+        if (targetEl) {
+          handleDoubleClickRef.current(targetEl);
+        }
+      };
+      dblClickHandlersRef.current.set(id, handler);
+    }
+    return handler;
+  }, []);
+
+  const changeHandlersRef = React.useRef<Map<string, (patch: Partial<CanvasElement>) => void>>(
+    new Map(),
+  );
+  const getChangeHandler = React.useCallback((id: string) => {
+    let handler = changeHandlersRef.current.get(id);
+    if (!handler) {
+      handler = (patch: Partial<CanvasElement>) => {
+        handleElementChangeRef.current(id, patch);
+      };
+      changeHandlersRef.current.set(id, handler);
+    }
+    return handler;
+  }, []);
+
+  // تنظيف المعرفات المحذوفة من كاش المعالجات لمنع تراكم الذاكرة
+  React.useEffect(() => {
+    const liveIds = new Set(sortedElements.map((e) => e.id));
+    for (const id of dblClickHandlersRef.current.keys()) {
+      if (!liveIds.has(id)) dblClickHandlersRef.current.delete(id);
+    }
+    for (const id of changeHandlersRef.current.keys()) {
+      if (!liveIds.has(id)) changeHandlersRef.current.delete(id);
+    }
+  }, [sortedElements]);
+
   const isText =
     selectedIds.length > 0 && selectedIds.every((id) => elementsById.get(id)?.type === 'text');
 
@@ -93,7 +140,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
           onTouchStart: handleMouseDown as unknown as (e: KonvaEventObject<TouchEvent>) => void,
           onClick: handleClick,
           onTap: handleClick as unknown as (e: KonvaEventObject<TouchEvent>) => void,
-          onChange: (patch: Partial<CanvasElement>) => handleElementChange(el.id, patch),
+          onChange: getChangeHandler(el.id),
           canvasWidth,
           canvasHeight,
           allElements: sortedElements,
@@ -114,7 +161,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
             <KonvaTextElement
               key={el.id}
               {...elementProps}
-              onDblClick={() => handleDoubleClick(el)}
+              onDblClick={getDblClickHandler(el.id)}
             />
           );
         }

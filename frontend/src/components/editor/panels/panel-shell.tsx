@@ -49,13 +49,30 @@ export const PanelShell = React.memo(function PanelShell({
   const [canScroll, setCanScroll] = useState(false);
 
   useEffect(() => {
-    const el = bodyRef.current;
-    if (!el) return;
-    const update = () => setCanScroll(el.scrollHeight > el.clientHeight + 4);
+    const hostEl = bodyRef.current;
+    if (!hostEl) return;
+    const viewportEl = hostEl.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
+    const targetEl = viewportEl || hostEl;
+    // غلاف المحتوى الداخلي لـ Radix (الابن الأول للـ viewport) يتبع ارتفاع
+    // المحتوى الفعلي — مراقبته ضرورية لأن ارتفاع الـ viewport نفسه ثابت بالتخطيط،
+    // فنمو المحتوى (مثل اختيار طبقة بخصائص أكثر) لا يُطلق ResizeObserver عليه
+    // ولا حدث scroll، وسيبقى التلاشي العلوى عالقاً بحالة التركيب الأولى.
+    const contentEl = viewportEl?.firstElementChild as HTMLElement | null;
+
+    const update = () => setCanScroll(targetEl.scrollHeight > targetEl.clientHeight + 4);
     update();
     const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
+    ro.observe(targetEl);
+    if (contentEl) ro.observe(contentEl);
+    if (viewportEl && viewportEl !== hostEl) {
+      viewportEl.addEventListener('scroll', update, { passive: true });
+    }
+    return () => {
+      ro.disconnect();
+      if (viewportEl && viewportEl !== hostEl) {
+        viewportEl.removeEventListener('scroll', update);
+      }
+    };
   }, []);
 
   return (

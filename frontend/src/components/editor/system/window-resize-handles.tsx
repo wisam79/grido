@@ -1,5 +1,13 @@
-import React, { useRef } from "react";
-import { WindowGetSize, WindowSetSize, WindowGetPosition, WindowSetPosition } from "../../../../wailsjs/runtime/runtime";
+import React, { useRef, useEffect } from 'react';
+import {
+  WindowGetSize,
+  WindowSetSize,
+  WindowGetPosition,
+  WindowSetPosition,
+} from '../../../../wailsjs/runtime/runtime';
+import { createLogger } from '@/lib/logger';
+
+const windowLog = createLogger('WindowResizeHandles');
 
 interface StartState {
   startWidth: number;
@@ -14,12 +22,19 @@ export function WindowResizeHandles() {
   // تنظيف السحب النشط — يمنع تسجيل معالجات متزامنة تتقاتل على نفس النافذة (إصلاح Bug#22)
   const activeDragCleanupRef = useRef<(() => void) | null>(null);
 
+  // إزالة معالجات سحب النافذة من window عند فك تركيب المكوّن أثناء السحب
+  useEffect(() => {
+    return () => {
+      activeDragCleanupRef.current?.();
+    };
+  }, []);
+
   const minWidth = 900;
   const minHeight = 600;
 
   const handleMouseDown = (
     e: React.MouseEvent<HTMLDivElement>,
-    direction: "n" | "s" | "e" | "w" | "nw" | "ne" | "sw" | "se"
+    direction: 'n' | 's' | 'e' | 'w' | 'nw' | 'ne' | 'sw' | 'se',
   ) => {
     e.preventDefault();
     e.stopPropagation();
@@ -50,7 +65,7 @@ export function WindowResizeHandles() {
       let posChanged = false;
 
       // Vertical resizing
-      if (direction.includes("n")) {
+      if (direction.includes('n')) {
         const calculatedHeight = startHeight - deltaY;
         if (calculatedHeight >= minHeight) {
           newHeight = calculatedHeight;
@@ -58,7 +73,7 @@ export function WindowResizeHandles() {
           sizeChanged = true;
           posChanged = true;
         }
-      } else if (direction.includes("s")) {
+      } else if (direction.includes('s')) {
         const calculatedHeight = startHeight + deltaY;
         if (calculatedHeight >= minHeight) {
           newHeight = calculatedHeight;
@@ -67,7 +82,7 @@ export function WindowResizeHandles() {
       }
 
       // Horizontal resizing
-      if (direction.includes("w")) {
+      if (direction.includes('w')) {
         const calculatedWidth = startWidth - deltaX;
         if (calculatedWidth >= minWidth) {
           newWidth = calculatedWidth;
@@ -75,7 +90,7 @@ export function WindowResizeHandles() {
           sizeChanged = true;
           posChanged = true;
         }
-      } else if (direction.includes("e")) {
+      } else if (direction.includes('e')) {
         const calculatedWidth = startWidth + deltaX;
         if (calculatedWidth >= minWidth) {
           newWidth = calculatedWidth;
@@ -94,17 +109,17 @@ export function WindowResizeHandles() {
     };
 
     const cleanup = () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-      window.removeEventListener("blur", cleanup);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('blur', cleanup);
       activeDragCleanupRef.current = null;
     };
     const handleMouseUp = () => cleanup();
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
     // فقدان تركيز النافذة أثناء السحب ينهيه بأمان بدل سحب يتيم
-    window.addEventListener("blur", cleanup);
+    window.addEventListener('blur', cleanup);
     activeDragCleanupRef.current = cleanup;
 
     Promise.all([WindowGetSize(), WindowGetPosition()])
@@ -119,7 +134,7 @@ export function WindowResizeHandles() {
         };
       })
       .catch((err) => {
-        console.error("Failed to get window state for resizing:", err);
+        windowLog.error('Failed to get window state for resizing:', err);
         cleanup();
       });
   };
@@ -132,51 +147,71 @@ export function WindowResizeHandles() {
       {/* Top Border */}
       <div
         className="fixed left-2 right-2 top-0 bg-transparent select-none"
-        style={{ height: borderSize, cursor: "n-resize", zIndex: 9999 }}
-        onMouseDown={(e) => handleMouseDown(e, "n")}
+        style={{ height: borderSize, cursor: 'n-resize', zIndex: 9999 }}
+        onMouseDown={(e) => handleMouseDown(e, 'n')}
       />
       {/* Bottom Border */}
       <div
         className="fixed left-2 right-2 bottom-0 bg-transparent select-none"
-        style={{ height: borderSize, cursor: "s-resize", zIndex: 9999 }}
-        onMouseDown={(e) => handleMouseDown(e, "s")}
+        style={{ height: borderSize, cursor: 's-resize', zIndex: 9999 }}
+        onMouseDown={(e) => handleMouseDown(e, 's')}
       />
       {/* Left Border */}
       <div
         className="fixed top-2 bottom-2 left-0 bg-transparent select-none"
-        style={{ width: borderSize, cursor: "w-resize", zIndex: 9999 }}
-        onMouseDown={(e) => handleMouseDown(e, "w")}
+        style={{ width: borderSize, cursor: 'w-resize', zIndex: 9999 }}
+        onMouseDown={(e) => handleMouseDown(e, 'w')}
       />
       {/* Right Border */}
       <div
         className="fixed top-2 bottom-2 right-0 bg-transparent select-none"
-        style={{ width: borderSize, cursor: "e-resize", zIndex: 9999 }}
-        onMouseDown={(e) => handleMouseDown(e, "e")}
+        style={{ width: borderSize, cursor: 'e-resize', zIndex: 9999 }}
+        onMouseDown={(e) => handleMouseDown(e, 'e')}
       />
 
       {/* Top Left Corner */}
       <div
         className="fixed top-0 left-0 bg-transparent select-none"
-        style={{ width: borderSize * 2, height: borderSize * 2, cursor: "nwse-resize", zIndex: 9999 }}
-        onMouseDown={(e) => handleMouseDown(e, "nw")}
+        style={{
+          width: borderSize * 2,
+          height: borderSize * 2,
+          cursor: 'nwse-resize',
+          zIndex: 9999,
+        }}
+        onMouseDown={(e) => handleMouseDown(e, 'nw')}
       />
       {/* Top Right Corner */}
       <div
         className="fixed top-0 right-0 bg-transparent select-none"
-        style={{ width: borderSize * 2, height: borderSize * 2, cursor: "nesw-resize", zIndex: 9999 }}
-        onMouseDown={(e) => handleMouseDown(e, "ne")}
+        style={{
+          width: borderSize * 2,
+          height: borderSize * 2,
+          cursor: 'nesw-resize',
+          zIndex: 9999,
+        }}
+        onMouseDown={(e) => handleMouseDown(e, 'ne')}
       />
       {/* Bottom Left Corner */}
       <div
         className="fixed bottom-0 left-0 bg-transparent select-none"
-        style={{ width: borderSize * 2, height: borderSize * 2, cursor: "nesw-resize", zIndex: 9999 }}
-        onMouseDown={(e) => handleMouseDown(e, "sw")}
+        style={{
+          width: borderSize * 2,
+          height: borderSize * 2,
+          cursor: 'nesw-resize',
+          zIndex: 9999,
+        }}
+        onMouseDown={(e) => handleMouseDown(e, 'sw')}
       />
       {/* Bottom Right Corner */}
       <div
         className="fixed bottom-0 right-0 bg-transparent select-none"
-        style={{ width: borderSize * 2, height: borderSize * 2, cursor: "nwse-resize", zIndex: 9999 }}
-        onMouseDown={(e) => handleMouseDown(e, "se")}
+        style={{
+          width: borderSize * 2,
+          height: borderSize * 2,
+          cursor: 'nwse-resize',
+          zIndex: 9999,
+        }}
+        onMouseDown={(e) => handleMouseDown(e, 'se')}
       />
     </>
   );

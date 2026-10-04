@@ -482,7 +482,7 @@ export const EditorCanvas = React.memo(
               const color = isCenter ? guideCenter() : guideEdge();
               return (
                 <div
-                  key={idx}
+                  key={`${guide.type}-${guide.coord}-${idx}`}
                   className="absolute pointer-events-none z-(--z-canvas-guides) transition-opacity duration-75"
                   style={{
                     left: guide.type === 'v' ? `${guide.coord * 100}%` : 0,
@@ -496,6 +496,7 @@ export const EditorCanvas = React.memo(
             })}
 
           <TextEditingOverlay
+            key={editingTextId || 'none'}
             printMode={printMode}
             editingTextId={editingTextId}
             elements={elements}

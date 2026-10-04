@@ -15,7 +15,7 @@ describe('CanvasQuickBar Component Tests', () => {
     const { container } = render(
       <TooltipProvider>
         <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
     expect(container.firstChild).toBeNull();
   });
@@ -40,7 +40,7 @@ describe('CanvasQuickBar Component Tests', () => {
     render(
       <TooltipProvider>
         <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     // الشريط أيقونات فقط — لا نص ظاهر فيه
@@ -92,7 +92,7 @@ describe('CanvasQuickBar Component Tests', () => {
     render(
       <TooltipProvider>
         <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     // أربع إجراءات موضع + زر إغلاق الشريط
@@ -109,7 +109,7 @@ describe('CanvasQuickBar Component Tests', () => {
     render(
       <TooltipProvider>
         <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     const bar = screen.getByTestId('canvas-quick-bar');
@@ -127,7 +127,7 @@ describe('CanvasQuickBar Component Tests', () => {
     render(
       <TooltipProvider>
         <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     expect(screen.queryByText('عزل الخلفية')).not.toBeInTheDocument();
@@ -150,7 +150,7 @@ describe('CanvasQuickBar Component Tests', () => {
         <CanvasOverlayHost>
           <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
         </CanvasOverlayHost>
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     const host = screen.getByTestId('canvas-overlay-host');
@@ -197,9 +197,9 @@ describe('CanvasQuickBar Component Tests', () => {
     const { container } = render(
       <TooltipProvider>
         <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
-    expect(container.firstChild).toBeNull();
+    expect(container.firstChild).not.toBeNull();
   });
 });

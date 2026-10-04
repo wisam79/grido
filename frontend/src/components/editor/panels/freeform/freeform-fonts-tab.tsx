@@ -165,8 +165,8 @@ export function FreeformFontsTab() {
         </button>
       </div>
 
-      {/* ── بطاقات الخطوط الرشيقة ──────────────────────────────────── */}
-      <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[calc(100vh-170px)] pe-0.5">
+      {/* ── بطاقات الخطوط الرشيقة: سطر واحد مدمج مع تطبيق الخط على الاسم نفسه ── */}
+      <div className="flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-170px)] pr-1 pl-0.5 custom-scrollbar">
         {visibleFonts.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground text-xs">
             {onlyFavorites ? 'لا توجد خطوط مفضلة حالياً' : 'لم يتم العثور على أي خط مطابق'}
@@ -175,64 +175,66 @@ export function FreeformFontsTab() {
           visibleFonts.map((font) => {
             const isFavorite = favorites.includes(font.id);
             const isActive = isCurrentFont(font);
-            const sample = font.sampleText || 'أبجد هوز حطي كلمن سعفص';
 
             return (
               <div
                 key={font.id}
                 onClick={() => applyFont(font)}
+                onMouseEnter={() => loadGoogleFont(font.family)}
+                title={`${font.arabicName} (${font.englishName})`}
                 className={cn(
-                  'group relative flex flex-col justify-between px-3 py-2 rounded-xl border transition-all cursor-pointer',
-                  'bg-card hover:bg-muted/40 hover:border-foreground/30 shadow-2xs',
+                  'group relative flex items-center justify-between min-h-[40px] h-10 px-3 rounded-lg border transition-all cursor-pointer select-none active:scale-[0.99]',
+                  'bg-card/50 hover:bg-card hover:border-foreground/30 shadow-2xs',
                   isActive
-                    ? 'border-primary bg-primary/[0.05] ring-1 ring-primary/30'
-                    : 'border-border/70',
+                    ? 'border-primary/80 bg-primary/[0.08] ring-1 ring-primary/40 shadow-xs'
+                    : 'border-border/60',
                 )}
               >
-                {/* سطر معلومات الخط: الاسم العربي واللاتيني + النجمة */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs font-bold text-foreground truncate">
-                      {font.arabicName}
-                    </span>
-                    <span
-                      className="text-[10px] text-muted-foreground/60 font-sans truncate"
-                      dir="ltr"
-                    >
-                      {font.englishName}
-                    </span>
-                    {isActive && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-primary text-primary-foreground">
-                        مطبّق
+                {/* اسم الخط مطبقاً عليه نوع وعائلة الخط نفسها مباشرة مع مساحة كافية لتفادي تداخل الحروف مع الإطار */}
+                <div className="flex items-center gap-2 min-w-0 flex-1 py-0.5">
+                  <span
+                    className={cn(
+                      'text-[13px] truncate transition-colors leading-normal',
+                      isActive
+                        ? 'font-bold text-primary'
+                        : 'font-medium text-foreground group-hover:text-foreground',
+                    )}
+                    style={{ fontFamily: font.family }}
+                  >
+                    {font.arabicName}
+                  </span>
+
+                  {font.englishName &&
+                    font.englishName.toLowerCase() !== font.arabicName.toLowerCase() && (
+                      <span
+                        className="text-[10px] text-muted-foreground/60 truncate shrink-0"
+                        dir="ltr"
+                        style={{ fontFamily: font.family }}
+                      >
+                        {font.englishName}
                       </span>
                     )}
-                  </div>
 
-                  <button
-                    type="button"
-                    onClick={(e) => toggleFavorite(font.id, e)}
-                    aria-label={isFavorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
-                    className={cn(
-                      'p-1 -m-1 rounded-md transition-colors cursor-pointer',
-                      isFavorite
-                        ? 'text-warning'
-                        : 'text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-foreground',
-                    )}
-                  >
-                    <Star className="w-3.5 h-3.5" weight={isFavorite ? 'fill' : 'regular'} />
-                  </button>
+                  {isActive && (
+                    <span className="text-3xs px-1.5 py-0.5 rounded-full font-bold bg-primary text-primary-foreground shrink-0 shadow-2xs leading-none">
+                      مطبّق
+                    </span>
+                  )}
                 </div>
 
-                {/* سطر المعاينة الحية بخط الخط الفعلي: واسع ومقروء */}
-                <div className="pt-1 overflow-hidden">
-                  <span
-                    className="block text-sm text-foreground/90 truncate leading-relaxed select-none"
-                    style={{ fontFamily: font.family }}
-                    dir="auto"
-                  >
-                    {sample}
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  onClick={(e) => toggleFavorite(font.id, e)}
+                  aria-label={isFavorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
+                  className={cn(
+                    'w-5 h-5 rounded flex items-center justify-center transition-colors cursor-pointer shrink-0',
+                    isFavorite
+                      ? 'text-warning'
+                      : 'text-muted-foreground/30 opacity-0 group-hover:opacity-100 hover:text-foreground hover:bg-muted/40',
+                  )}
+                >
+                  <Star className="w-3.5 h-3.5" weight={isFavorite ? 'fill' : 'regular'} />
+                </button>
               </div>
             );
           })

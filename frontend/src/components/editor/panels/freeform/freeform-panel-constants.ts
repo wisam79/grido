@@ -370,3 +370,153 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     tag: '1920 × 1080 px',
   },
 ];
+
+// 🎨 هويات بصرية جاهزة ومصنفة لاستوديوهات التصوير والمصممين
+export type PaletteCategory = 'all' | 'official' | 'studio' | 'business' | 'creative';
+
+export interface IdentityPalette {
+  id: string;
+  name: string;
+  category: 'official' | 'studio' | 'business' | 'creative';
+  categoryLabel: string;
+  colors: string[];
+  roles: string[];
+}
+
+export const IDENTITY_PALETTES: IdentityPalette[] = [
+  // ── وثائق وهوية رسمية ──────────────────────────────────────────
+  {
+    id: 'official-passport',
+    name: 'جوازات دولية',
+    category: 'official',
+    categoryLabel: 'وثائق',
+    colors: ['#0f2942', '#781d22', '#1b4332', '#c59b27', '#f8f6f0'],
+    roles: ['كحلي رسمي', 'عنابي دولي', 'أخضر دبلوماسي', 'ذهبي ملكي', 'عاجي ناصع'],
+  },
+  {
+    id: 'official-id',
+    name: 'هوية وبطاقات وطنية',
+    category: 'official',
+    categoryLabel: 'وثائق',
+    colors: ['#0c1e38', '#1e3a8a', '#0284c7', '#cbd5e1', '#ffffff'],
+    roles: ['كحلي أمني', 'أزرق وطني', 'سماوي بارز', 'رمادي وثائق', 'أبيض ناصع'],
+  },
+  {
+    id: 'official-visa',
+    name: 'تأشيرات وإقامات',
+    category: 'official',
+    categoryLabel: 'وثائق',
+    colors: ['#172554', '#2563eb', '#38bdf8', '#e0f2fe', '#ffffff'],
+    roles: ['كحلي إداري', 'أزرق تأشيرة', 'سماوي ختم', 'ثلجي خلفية', 'أبيض ناصع'],
+  },
+  {
+    id: 'official-stamp',
+    name: 'أختام وتوثيق رسمي',
+    category: 'official',
+    categoryLabel: 'وثائق',
+    colors: ['#831843', '#b45309', '#1e293b', '#fef3c7', '#fefce8'],
+    roles: ['ختم شمعي', 'توثيق ذهبي', 'حبر أسود', 'أرشيف كلاسيكي', 'ورق رسمي'],
+  },
+
+  // ── استوديو وتصوير فوتوغرافي ─────────────────────────────────
+  {
+    id: 'studio-portrait',
+    name: 'بورتريه كلاسيكي',
+    category: 'studio',
+    categoryLabel: 'استوديو',
+    colors: ['#7c2d12', '#b45309', '#fed7aa', '#78716c', '#fffbeb'],
+    roles: ['ترابي عميق', 'كراميل دافئ', 'درجة بشرة', 'رمادي استوديو', 'عاجي ناعم'],
+  },
+  {
+    id: 'studio-noir',
+    name: 'سينمائي ونوار',
+    category: 'studio',
+    categoryLabel: 'استوديو',
+    colors: ['#09090b', '#27272a', '#71717a', '#e4e4e7', '#fafafa'],
+    roles: ['أسود سينمائي', 'فحمي عميق', 'رمادي متوسط', 'فضي ناعم', 'أبيض بلاتيني'],
+  },
+  {
+    id: 'studio-neon',
+    name: 'إضاءة نيون استوديو',
+    category: 'studio',
+    categoryLabel: 'استوديو',
+    colors: ['#581c87', '#06b6d4', '#d946ef', '#0f172a', '#f0fdf4'],
+    roles: ['بنفسجي كهربائي', 'سيان متوهج', 'فوشيا نيون', 'أسود خلفية', 'أبيض مشع'],
+  },
+  {
+    id: 'studio-nature',
+    name: 'طبيعة وتصوير خارجي',
+    category: 'studio',
+    categoryLabel: 'استوديو',
+    colors: ['#14532d', '#3f6212', '#a16207', '#fde047', '#f0fdf4'],
+    roles: ['أخضر غابات', 'زيتوني طبيعي', 'رملي دافئ', 'إشراقة شمس', 'نسيم ناصع'],
+  },
+
+  // ── أعمال وفخامة ─────────────────────────────────────────────
+  {
+    id: 'business-gold',
+    name: 'ذهب ملكي وأسود',
+    category: 'business',
+    categoryLabel: 'أعمال',
+    colors: ['#09090b', '#92400e', '#d97706', '#fde68a', '#fffbeb'],
+    roles: ['أسود ملكي', 'ذهب معتق', 'ذهب مشرق', 'شمبانيا راقية', 'بيج فاخر'],
+  },
+  {
+    id: 'business-executive',
+    name: 'أزرق تنفيذي ومؤسسي',
+    category: 'business',
+    categoryLabel: 'أعمال',
+    colors: ['#0f172a', '#1d4ed8', '#3b82f6', '#e2e8f0', '#ffffff'],
+    roles: ['كحلي تنفيذي', 'أزرق ملكي', 'أزرق حيوي', 'رمادي هادئ', 'أبيض ناصع'],
+  },
+  {
+    id: 'business-emerald',
+    name: 'زمردي فاخر',
+    category: 'business',
+    categoryLabel: 'أعمال',
+    colors: ['#064e3b', '#047857', '#10b981', '#a7f3d0', '#ecfdf5'],
+    roles: ['زمرد داكن', 'ياقوت أخضر', 'نعناع مشرق', 'زمرد فاتح', 'عاجي زمردي'],
+  },
+  {
+    id: 'business-platinum',
+    name: 'بلاتيني وتيتانيوم',
+    category: 'business',
+    categoryLabel: 'أعمال',
+    colors: ['#18181b', '#3f3f46', '#a1a1aa', '#e4e4e7', '#fafafa'],
+    roles: ['تيتانيوم أسود', 'جرافيت ناعم', 'بلاتيني معدني', 'فولاذي بارد', 'أبيض رخامي'],
+  },
+
+  // ── عصري وإبداعي ─────────────────────────────────────────────
+  {
+    id: 'creative-cyber',
+    name: 'تقنية عصرية',
+    category: 'creative',
+    categoryLabel: 'إبداعي',
+    colors: ['#0b0f19', '#2563eb', '#06b6d4', '#8b5cf6', '#f8fafc'],
+    roles: ['كحلي تقني', 'أزرق كهربائي', 'سايبر سيان', 'بنفسجي ليزري', 'أبيض جليدي'],
+  },
+  {
+    id: 'creative-pastel',
+    name: 'باستيل حديث',
+    category: 'creative',
+    categoryLabel: 'إبداعي',
+    colors: ['#fb7185', '#c084fc', '#38bdf8', '#fef08a', '#fafaf9'],
+    roles: ['وردي دراقي', 'لافندر ناعم', 'سماوي مائي', 'أصفر هادئ', 'أبيض قطني'],
+  },
+  {
+    id: 'creative-sunset',
+    name: 'شمس الغروب',
+    category: 'creative',
+    categoryLabel: 'إبداعي',
+    colors: ['#881337', '#ea580c', '#f59e0b', '#fed7aa', '#fef3c7'],
+    roles: ['قرمزي غارب', 'برتقالي مشرق', 'كهرماني ذهبي', 'خوخي ناعم', 'أصفر عسلي'],
+  },
+  {
+    id: 'creative-mono-accent',
+    name: 'أحادي مع توكيد',
+    category: 'creative',
+    categoryLabel: 'إبداعي',
+    colors: ['#000000', '#dc2626', '#525252', '#d4d4d4', '#ffffff'],
+    roles: ['أسود حالك', 'أحمر توكيد', 'رمادي عميق', 'رمادي فاتح', 'أبيض ناصع'],
+  },
+];

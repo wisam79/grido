@@ -35,7 +35,7 @@ function setWithLRU(key: string, img: HTMLImageElement) {
 export function invalidateImageCache(src?: string) {
   if (src) {
     for (const key of Array.from(imageCache.keys())) {
-      if (key.startsWith(src)) {
+      if (key === src || key.startsWith(`${src}__`)) {
         // حذف الإدخال فقط دون تصفير img.src — الكائن المحذوف قد تكون
         // عقدة Konva تعرضه حالياً، والتصفير كان سيُفرغه من الكانفس.
         // إسقاط مرجع الكاش يكفي: جامع القمامة يحرر الذاكرة عند زوال

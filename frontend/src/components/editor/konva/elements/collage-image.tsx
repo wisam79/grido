@@ -69,6 +69,7 @@ export const KonvaCollageImage = React.memo(
     // فضاء نسخة العرض حصراً — تُزامَن من props (فضاء الأصل) عبر effect أدناه.
     const accumulatedDrag = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
     const dragStartRef = useRef<{ dragX: number; dragY: number }>({ dragX, dragY });
+    const isDraggingRef = useRef(false);
     // 🚀 معكوس مصفوفة التحويل يُحسب مرة واحدة عند بدء السحب — التحويل لا يتغير
     // أثناء السحب (القص فقط يتغير) فيُعاد استخدامه لكل حدث بدل invert() مكلف.
     const dragXfRef = useRef<{
@@ -80,24 +81,23 @@ export const KonvaCollageImage = React.memo(
     const isEnhancing = Boolean(id && enhancingElementId === id);
 
     // 🛡️ نمط latest-ref: المقارن المخصص أدناه يتجاهل هوية الدوال لتفادي إعادة
-    // الرسم عند كل render للأب، لكن هذا قد يترك closures قديمة إن التقطت الدوال
-    // حالة متغيرة. المراجع أدناه تضمن استدعاء آخر نسخة مُمرّرة دائماً.
+    // الرسم عند كل render للأب، وتعيين المراجع مباشرة أثناء الرندر يضمن استدعاء
+    // آخر نسخة مُمرّرة متزامناً مع أي حدث للمستخدم دون انتظار اكتمال الـ paint.
     const onUpdateOffsetsRef = useRef<((x: number, y: number) => void) | undefined>(
       onUpdateOffsets,
     );
+    onUpdateOffsetsRef.current = onUpdateOffsets;
     const onDragEndRef = useRef<(() => void) | undefined>(onDragEnd);
+    onDragEndRef.current = onDragEnd;
     const onClickRef = useRef<((e: unknown) => void) | undefined>(onClick);
+    onClickRef.current = onClick;
     const onDblClickRef = useRef<((e: unknown) => void) | undefined>(onDblClick);
-    useEffect(() => {
-      onUpdateOffsetsRef.current = onUpdateOffsets;
-      onDragEndRef.current = onDragEnd;
-      onClickRef.current = onClick;
-      onDblClickRef.current = onDblClick;
-    });
+    onDblClickRef.current = onDblClick;
 
     useEffect(() => {
       // 🔄 Props بفضاء الأصل → حالة السحب بفضاء العرض. يُعاد التحويل عند تغيّر
-      // الصورة (اكتمال التحميل يبدّل النسبة) حتى لا تبقى قيم محسوبة بنسبة قديمة.
+      // الصورة مع حماية حالة السحب النشطة من المسح في منتصف الحركة.
+      if (isDraggingRef.current) return;
       accumulatedDrag.current = { dragX: dragX * srcToShown, dragY: dragY * srcToShown };
     }, [dragX, dragY, srcToShown]);
 
@@ -182,6 +182,7 @@ export const KonvaCollageImage = React.memo(
         <KonvaImage
           draggable={draggable}
           onDragStart={() => {
+            isDraggingRef.current = true;
             // 🖼️ تفريغ كاش Konva قبل السحب — العقدة المخبأة تتجاهل تحديثات
             // cropX/cropY أثناء onDragMove فتظل الصورة جامدة (Konva يرسم من الكاش)
             const node = imageRef.current;
@@ -264,6 +265,7 @@ export const KonvaCollageImage = React.memo(
             node.getLayer()?.batchDraw();
           }}
           onDragEnd={() => {
+            isDraggingRef.current = false;
             // 🚀 الاستعادة أولاً — قبل كتابة الإزاحات للستور.
             try {
               dropFromDragLayer();

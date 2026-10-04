@@ -188,12 +188,14 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         return;
       }
       e.preventDefault();
+      e.stopPropagation();
       if (e.shiftKey) redo();
       else undo();
     };
     const handleRedoKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
         e.preventDefault();
+        e.stopPropagation();
         redo();
       }
     };

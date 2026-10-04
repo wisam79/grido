@@ -449,8 +449,8 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
               { id: 'frames', label: 'إطارات' },
             ]}
           />
-          {/* شبكة بطاقات الملصقات المتجاوبة بنسب أبعاد مضبوطة وتفاصيل واضحة */}
-          <div className="grid grid-cols-2 gap-2 max-h-[calc(100vh-270px)] overflow-y-auto px-1 custom-scrollbar">
+          {/* شبكة بطاقات الملصقات المتجاوبة بنسب أبعاد مضبوطة وتفاصيل واضحة ورشيقة */}
+          <div className="grid grid-cols-2 gap-1.5 max-h-[calc(100vh-250px)] overflow-y-auto px-0.5 custom-scrollbar">
             {displayedStickers.map((tmpl) => {
               const svg = getStickerSvgPreview(tmpl);
               const isBusy = isInserting === tmpl.id;
@@ -462,28 +462,28 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   disabled={isBusy}
                   onClick={() => handleInsertSticker(tmpl)}
                   title={tmpl.name}
-                  className="group relative bg-card/70 hover:bg-card border border-border/60 hover:border-foreground/40 rounded-xl p-2 transition-all duration-150 flex flex-col items-center cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-50 overflow-hidden"
+                  className="group relative bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg p-1.5 transition-all duration-150 flex flex-col items-center cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50 overflow-hidden"
                 >
                   {/* حاوية المعاينة مع خلفية أكريليك ناعمة تُظهر تفاصيل التصميم بوضوح */}
-                  <div className="w-full h-24 rounded-lg bg-background/80 dark:bg-muted/30 border border-border/30 group-hover:border-foreground/30 flex items-center justify-center p-2 relative overflow-hidden transition-all">
+                  <div className="w-full h-18 rounded-md bg-background/80 dark:bg-muted/30 border border-border/30 group-hover:border-foreground/30 flex items-center justify-center p-1.5 relative overflow-hidden transition-all">
                     {svg ? (
                       <div
                         className="w-full h-full flex items-center justify-center [&_svg]:max-w-full [&_svg]:max-h-full [&_svg]:w-auto [&_svg]:h-auto transition-transform group-hover:scale-105 duration-200 pointer-events-none drop-shadow-2xs"
                         dangerouslySetInnerHTML={{ __html: sanitizeSvgMarkupCached(svg) }}
                       />
                     ) : (
-                      <Stamp className="w-8 h-8 text-muted-foreground/40" />
+                      <Stamp className="w-7 h-7 text-muted-foreground/40" />
                     )}
 
                     {/* زر + صغير يظهر عند التحويم لإعطاء إيحاء فوري بالإدراج السريع */}
-                    <span className="absolute bottom-1.5 end-1.5 w-5 h-5 rounded-md bg-foreground text-background opacity-0 group-hover:opacity-100 transition-all duration-150 flex items-center justify-center shadow-xs scale-90 group-hover:scale-100">
-                      <Plus className="w-3 h-3" weight="bold" />
+                    <span className="absolute bottom-1 end-1 w-4.5 h-4.5 rounded-md bg-foreground text-background opacity-0 group-hover:opacity-100 transition-all duration-150 flex items-center justify-center shadow-xs scale-90 group-hover:scale-100">
+                      <Plus className="w-2.5 h-2.5" weight="bold" />
                     </span>
 
                     {/* حالة التحميل والمعالجة */}
                     {isBusy && (
-                      <div className="absolute inset-0 bg-background/85 backdrop-blur-xs flex items-center justify-center rounded-lg">
-                        <span className="text-micro font-bold text-foreground/80 animate-pulse">
+                      <div className="absolute inset-0 bg-background/85 backdrop-blur-xs flex items-center justify-center rounded-md">
+                        <span className="text-3xs font-bold text-foreground/80 animate-pulse">
                           جاري الإدراج...
                         </span>
                       </div>
@@ -492,14 +492,14 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
 
                   {/* اسم القالب بسطر واحد مقتضب لمنع الانكسار المشوه */}
                   <span
-                    className="text-xs font-semibold text-foreground/90 mt-1.5 truncate w-full text-center group-hover:text-foreground transition-colors"
+                    className="text-xs font-semibold text-foreground/90 mt-1 truncate w-full text-center group-hover:text-foreground transition-colors leading-tight"
                     title={tmpl.name}
                   >
                     {tmpl.name}
                   </span>
 
                   {/* شارة التصنيف الدلالية المجهرية */}
-                  <span className="text-micro text-muted-foreground/75 mt-0.5 truncate w-full text-center">
+                  <span className="text-3xs text-muted-foreground/75 mt-0.5 truncate w-full text-center leading-none">
                     {getCategoryBadgeLabel(tmpl.category)}
                   </span>
                 </button>
@@ -509,59 +509,87 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
         </div>
       )}
 
-      {/* 🔷 2. استعراض الأشكال الهندسية والتزيينية */}
+      {/* 🔷 2. استعراض الأشكال الهندسية والتزيينية بشبكة ثلاثية رشيقة */}
       {activeCategory === 'shapes' && (
-        <div className="space-y-3">
-          <div className="px-1">
+        <div className="space-y-2">
+          <div className="px-1 flex items-center justify-between">
             <span className="text-xs font-bold text-foreground/80">أشكال هندسية وتصاميم</span>
+            <span className="text-3xs font-mono text-muted-foreground font-semibold">12 شكلاً</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-1.5">
             {QUICK_SHAPES.map((shape) => (
               <button
                 key={shape.id}
                 type="button"
                 onClick={() => handleAddShape(shape)}
-                className="group flex items-center gap-2 p-2 bg-card hover:bg-accent/40 border border-border/60 hover:border-foreground/40 rounded-lg transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                title={shape.label}
+                className="group flex items-center justify-center gap-1.5 h-8 px-2 bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg transition-all duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none select-none active:scale-[0.98] shadow-2xs"
               >
                 {shape.shape === 'rect' && (
-                  <Square className="w-4 h-4 shrink-0 text-muted-foreground" weight="bold" />
+                  <Square
+                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
+                    weight="bold"
+                  />
                 )}
                 {shape.shape === 'ellipse' && (
-                  <Circle className="w-4 h-4 shrink-0 text-muted-foreground" weight="bold" />
+                  <Circle
+                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
+                    weight="bold"
+                  />
                 )}
                 {shape.shape === 'ring' && (
-                  <span className="font-bold text-xs shrink-0 text-muted-foreground">◎</span>
+                  <span className="font-bold text-xs shrink-0 text-muted-foreground group-hover:text-foreground">
+                    ◎
+                  </span>
                 )}
                 {shape.shape === 'polygon' && (
-                  <span className="font-bold text-xs shrink-0 text-muted-foreground">⬢</span>
+                  <span className="font-bold text-xs shrink-0 text-muted-foreground group-hover:text-foreground">
+                    ⬢
+                  </span>
                 )}
                 {shape.shape === 'arrow' && (
-                  <ArrowRight className="w-4 h-4 shrink-0 text-muted-foreground" weight="bold" />
+                  <ArrowRight
+                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
+                    weight="bold"
+                  />
                 )}
                 {shape.shape === 'star' && (
-                  <Star className="w-4 h-4 shrink-0 text-muted-foreground" weight="fill" />
+                  <Star
+                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
+                    weight="fill"
+                  />
                 )}
                 {shape.id === 'triangle' && (
-                  <span className="font-bold text-xs shrink-0 text-muted-foreground">▲</span>
+                  <span className="font-bold text-xs shrink-0 text-muted-foreground group-hover:text-foreground">
+                    ▲
+                  </span>
                 )}
                 {shape.id === 'heart' && (
-                  <Heart className="w-4 h-4 shrink-0 text-muted-foreground" weight="fill" />
+                  <Heart
+                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
+                    weight="fill"
+                  />
                 )}
                 {shape.id === 'shield' && (
-                  <Shield className="w-4 h-4 shrink-0 text-muted-foreground" weight="fill" />
+                  <Shield
+                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
+                    weight="fill"
+                  />
                 )}
                 {shape.id === 'diamond' && (
-                  <Diamond className="w-4 h-4 shrink-0 text-muted-foreground" weight="fill" />
+                  <Diamond
+                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
+                    weight="fill"
+                  />
                 )}
                 {shape.id === 'line' && (
-                  <div className="w-4 h-0.5 bg-muted-foreground rounded-full shrink-0" />
+                  <div className="w-3.5 h-0.5 bg-muted-foreground group-hover:bg-foreground rounded-full shrink-0" />
                 )}
                 {shape.id === 'hexagon' && (
-                  <span className="font-bold text-xs shrink-0 text-muted-foreground">⬡</span>
-                )}
-                {shape.id === 'arrow' && (
-                  <ArrowRight className="w-4 h-4 shrink-0 text-muted-foreground" weight="bold" />
+                  <span className="font-bold text-xs shrink-0 text-muted-foreground group-hover:text-foreground">
+                    ⬡
+                  </span>
                 )}
                 <span className="text-xs font-medium text-foreground truncate">{shape.label}</span>
               </button>

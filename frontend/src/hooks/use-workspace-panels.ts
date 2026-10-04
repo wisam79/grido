@@ -148,6 +148,15 @@ export function useWorkspacePanels() {
         setIsTemplatesDrawerOpenState(true);
         saveStoredPreferences({ isTemplatesDrawerOpen: true });
       }
+      // في الوضع العريض أصبح `isInspectorPinned` هو مصدر الحقيقة الوحيد لظهور
+      // لوحة الخصائص (workspace-layout). لو عبّر المستخدم من Standard واللوحة
+      // مفتوحة (activePanel === 'properties') بينما الدبس مخزّن كـ false من
+      // جلسة سابقة، لاختفت اللوحة المفتوحة أمام المستخدم عند التوسيع. نُزامن
+      // الدبس مع الحالة الظاهرة لحفظ ثابت: «في Wide: properties ظاهرة ⇔ pinned».
+      if (activePanel === 'properties' && !isInspectorPinned) {
+        setIsInspectorPinnedState(true);
+        saveStoredPreferences({ isInspectorPinned: true });
+      }
     }
     // compact: الورقة تُفتح صراحةً فقط — لا تغيير تلقائي هنا.
   }
@@ -157,9 +166,12 @@ export function useWorkspacePanels() {
     saveStoredPreferences({ lastActivePanel: panel });
   }, []);
 
-  const setIsInspectorPinned = useCallback((pinned: boolean) => {
-    setIsInspectorPinnedState(pinned);
-    saveStoredPreferences({ isInspectorPinned: pinned });
+  const setIsInspectorPinned = useCallback((value: boolean | ((prev: boolean) => boolean)) => {
+    setIsInspectorPinnedState((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      saveStoredPreferences({ isInspectorPinned: next });
+      return next;
+    });
   }, []);
 
   const setActiveStudioTab = useCallback((tab: FreeformTab) => {
@@ -257,6 +269,7 @@ export function useWorkspacePanels() {
           setIsTemplatesDrawerOpen((prev) => !prev);
         } else {
           // Properties in wide
+          setIsInspectorPinned((prev) => !prev);
           setActivePanelState((prev) => (prev === 'properties' ? null : 'properties'));
         }
         return;
@@ -273,7 +286,7 @@ export function useWorkspacePanels() {
     // إضافتها للتبعيات تعيد إنشاء togglePanel بلا داعٍ؛ القراءة الوحيدة
     // المتغيرة هي breakpoint.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [breakpoint],
+    [breakpoint, setIsInspectorPinned],
   );
 
   const openPanel = useCallback(
@@ -288,6 +301,7 @@ export function useWorkspacePanels() {
         if (panel === 'templates') {
           setIsTemplatesDrawerOpen(true);
         } else {
+          setIsInspectorPinned(true);
           setActivePanel('properties');
         }
         return;
@@ -297,31 +311,37 @@ export function useWorkspacePanels() {
     },
     // setIsTemplatesDrawerOpen/setActivePanel مستقرتان — التبعية المتغيرة breakpoint فقط.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [breakpoint, setActivePanel],
+    [breakpoint, setActivePanel, setIsInspectorPinned],
   );
 
   const closeActivePanel = useCallback(() => {
     if (breakpoint === 'wide') {
       setIsTemplatesDrawerOpen(false);
+      setIsInspectorPinned(false);
       setActivePanel(null);
     } else {
       setActivePanel(null);
     }
     // نفس المبرر: دوال مستقرة، والمتغيرة breakpoint فقط.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [breakpoint, setActivePanel]);
+  }, [breakpoint, setActivePanel, setIsInspectorPinned]);
 
   // Zen Mode toggle: collapse all panels or restore default
   const isZenMode = useMemo(() => {
     if (breakpoint === 'compact') return true;
     if (breakpoint === 'wide') {
-      return !isTemplatesDrawerOpen && activePanel !== 'properties';
+      return !isTemplatesDrawerOpen && !isInspectorPinned;
     }
     return activePanel === null;
-  }, [breakpoint, isTemplatesDrawerOpen, activePanel]);
+  }, [breakpoint, isTemplatesDrawerOpen, isInspectorPinned, activePanel]);
 
-  const savedZenStateRef = useRef<{ wasDrawerOpen: boolean; lastActivePanel: WorkspacePanel }>({
+  const savedZenStateRef = useRef<{
+    wasDrawerOpen: boolean;
+    wasInspectorPinned: boolean;
+    lastActivePanel: WorkspacePanel;
+  }>({
     wasDrawerOpen: true,
+    wasInspectorPinned: true,
     lastActivePanel: null,
   });
 
@@ -329,9 +349,8 @@ export function useWorkspacePanels() {
     if (isZenMode) {
       // استعادة الحالة السابقة للألواح بدقة
       if (breakpoint === 'wide') {
-        const restoreDrawer =
-          savedZenStateRef.current.wasDrawerOpen || !savedZenStateRef.current.lastActivePanel;
-        setIsTemplatesDrawerOpen(restoreDrawer);
+        setIsTemplatesDrawerOpen(savedZenStateRef.current.wasDrawerOpen);
+        setIsInspectorPinned(savedZenStateRef.current.wasInspectorPinned);
         if (savedZenStateRef.current.lastActivePanel) {
           setActivePanel(savedZenStateRef.current.lastActivePanel);
         }
@@ -342,6 +361,7 @@ export function useWorkspacePanels() {
       // حفظ الحالة الحالية قبل طي جميع الألواح
       savedZenStateRef.current = {
         wasDrawerOpen: isTemplatesDrawerOpen,
+        wasInspectorPinned: isInspectorPinned,
         lastActivePanel: activePanel,
       };
       closeActivePanel();
@@ -350,8 +370,10 @@ export function useWorkspacePanels() {
     isZenMode,
     breakpoint,
     isTemplatesDrawerOpen,
+    isInspectorPinned,
     activePanel,
     setIsTemplatesDrawerOpen,
+    setIsInspectorPinned,
     setActivePanel,
     closeActivePanel,
   ]);

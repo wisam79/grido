@@ -167,7 +167,7 @@ export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
     id: 'palette',
     label: 'الألوان والهوية',
     title: 'الألوان والهوية',
-    subtitle: 'ألوان مستخرجة',
+    subtitle: 'هويات جاهزة وتناغم لوني',
     group: 'المقاسات والهوية',
     icon: Swatches,
     testId: 'rail-studio-palette',

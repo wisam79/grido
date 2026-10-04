@@ -55,6 +55,7 @@ import {
   Sun,
   Desktop,
   SidebarSimple,
+  SlidersHorizontal,
   User,
 } from '@/components/ui/icons';
 
@@ -114,6 +115,10 @@ export default function App() {
     panelsHook.breakpoint === 'wide'
       ? panelsHook.isTemplatesDrawerOpen
       : panelsHook.activePanel === 'templates';
+  const isPropertiesOpen =
+    panelsHook.breakpoint === 'wide'
+      ? panelsHook.isInspectorPinned
+      : panelsHook.activePanel === 'properties';
   const { theme, themeMode, toggleTheme } = useTheme();
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
@@ -279,7 +284,7 @@ export default function App() {
         if (isSessionSupersededError(err)) {
           toast.error(sessionSupersededMessage(err), { duration: 8000 });
         } else {
-          console.error('Failed to check license status during init:', err);
+          appLog.error('Failed to check license status during init:', err);
         }
       } finally {
         setIsInitializing(false);
@@ -351,7 +356,7 @@ export default function App() {
                 : filePath;
             if (src) void addImageFromSrc(src, { setSingleMode: true });
           } catch (err) {
-            console.error('Failed to open file from Wails event:', err);
+            appLog.error('Failed to open file from Wails event:', err);
           }
         });
 
@@ -667,6 +672,41 @@ export default function App() {
                     </TooltipContent>
                   </Tooltip>
 
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => panelsHook.togglePanel('properties')}
+                        className={cn(
+                          'hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all',
+                          isPropertiesOpen
+                            ? 'text-primary bg-primary/10 hover:bg-primary/20 font-bold'
+                            : 'text-muted-foreground hover:bg-muted/80',
+                        )}
+                        aria-label={isPropertiesOpen ? 'إخفاء لوحة الخصائص' : 'إظهار لوحة الخصائص'}
+                      >
+                        <SlidersHorizontal
+                          className="w-4 h-4"
+                          weight={isPropertiesOpen ? 'fill' : 'regular'}
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="font-cairo text-xs font-semibold py-1 px-2.5"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>
+                          {isPropertiesOpen ? 'إخفاء لوحة الخصائص' : 'إظهار لوحة الخصائص'}
+                        </span>
+                        <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
+                          Ctrl+Shift+B
+                        </kbd>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+
                   <Button
                     variant="ghost"
                     size="sm"
@@ -722,7 +762,7 @@ export default function App() {
             templatesContent={
               <ErrorBoundary>
                 <TemplatePanel
-                  onCollapse={panelsHook.closeActivePanel}
+                  onCollapse={() => panelsHook.togglePanel('templates')}
                   activeStudioTab={panelsHook.activeStudioTab}
                   onActiveStudioTabChange={panelsHook.setActiveStudioTab}
                   activeCollageTab={panelsHook.activeCollageTab}
@@ -733,7 +773,7 @@ export default function App() {
             }
             propertiesContent={
               <ErrorBoundary>
-                <PropertiesPanel onCollapse={panelsHook.closeActivePanel} />
+                <PropertiesPanel onCollapse={() => panelsHook.togglePanel('properties')} />
               </ErrorBoundary>
             }
             canvasContent={

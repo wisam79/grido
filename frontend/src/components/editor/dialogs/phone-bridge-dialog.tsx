@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,8 +7,8 @@ import {
   DialogDescription,
   DialogCloseButton,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import {
   DeviceMobileCamera,
   Copy,
@@ -17,16 +17,19 @@ import {
   WifiHigh,
   Image as ImageIcon,
   WarningCircle,
-} from "@/components/ui/icons";
-import { QRCodeSVG } from "qrcode.react";
-import { toast } from "sonner";
-import { toErrorMessage } from "@/lib/wails-error";
+} from '@/components/ui/icons';
+import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
+import { toErrorMessage } from '@/lib/wails-error';
+import { createLogger } from '@/lib/logger';
 import {
   StartPhoneBridge,
   StopPhoneBridge,
   GetPhoneBridgeStatus,
-} from "../../../../wailsjs/go/main/App";
-import { service } from "../../../../wailsjs/go/models";
+} from '../../../../wailsjs/go/main/App';
+import { service } from '../../../../wailsjs/go/models';
+
+const phoneLog = createLogger('PhoneBridgeDialog');
 
 export interface PhoneBridgeDialogProps {
   open: boolean;
@@ -39,6 +42,16 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [receivedCount, setReceivedCount] = useState<number>(0);
+  const isMountedRef = useRef(true);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
 
   // Invariant: Modal Loading State Cleanup
   useEffect(() => {
@@ -50,21 +63,27 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
   // Start or fetch bridge status when modal opens
   const initBridge = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setIsLoading(true);
     setError(null);
     try {
       const info = await StartPhoneBridge();
+      if (!isMountedRef.current) return;
       setBridgeInfo(info);
       const status = await GetPhoneBridgeStatus();
+      if (!isMountedRef.current) return;
       if (status) {
         setReceivedCount(status.receivedCount);
       }
     } catch (err) {
-      console.error("[PhoneBridgeDialog] Failed to start phone bridge:", err);
-      const msg = toErrorMessage(err, "تعذر تشغيل جسر الهاتف");
+      phoneLog.error('[PhoneBridgeDialog] Failed to start phone bridge:', err);
+      if (!isMountedRef.current) return;
+      const msg = toErrorMessage(err, 'تعذر تشغيل جسر الهاتف');
       setError(msg);
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -75,7 +94,6 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     }
   }, [open, initBridge]);
 
-
   // Poll status occasionally while dialog is open to refresh photo count
   useEffect(() => {
     if (!open || !bridgeInfo?.isRunning) return;
@@ -83,7 +101,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     const interval = setInterval(async () => {
       try {
         const status = await GetPhoneBridgeStatus();
-        if (status) {
+        if (isMountedRef.current && status) {
           setReceivedCount(status.receivedCount);
         }
       } catch {
@@ -98,11 +116,15 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     if (!bridgeInfo?.url) return;
     try {
       await navigator.clipboard.writeText(bridgeInfo.url);
+      if (!isMountedRef.current) return;
       setCopied(true);
-      toast.success("تم نسخ الرابط");
-      setTimeout(() => setCopied(false), 2000);
+      toast.success('تم نسخ الرابط');
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) setCopied(false);
+      }, 2000);
     } catch {
-      toast.error("فشل نسخ الرابط");
+      toast.error('فشل نسخ الرابط');
     }
   };
 
@@ -110,10 +132,10 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     try {
       await StopPhoneBridge();
       await initBridge();
-      toast.success("تمت إعادة تشغيل الجسر");
+      if (isMountedRef.current) toast.success('تمت إعادة تشغيل الجسر');
     } catch (err) {
-      console.error("Restart error:", err);
-      toast.error("تعذر إعادة التشغيل");
+      phoneLog.error('Restart error:', err);
+      if (isMountedRef.current) toast.error('تعذر إعادة التشغيل');
     }
   };
 
@@ -197,7 +219,9 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <WifiHigh className="w-3.5 h-3.5 text-primary" weight="bold" />
-                    <span className="font-mono text-xs">{bridgeInfo.ip}:{bridgeInfo.port}</span>
+                    <span className="font-mono text-xs">
+                      {bridgeInfo.ip}:{bridgeInfo.port}
+                    </span>
                   </div>
                 </div>
 
@@ -215,9 +239,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
               {/* Instructions Banner */}
               <div className="w-full text-center space-y-1 bg-muted/20 p-3 rounded-xl border border-border/40">
-                <p className="text-xs font-semibold text-foreground">
-                  امسح الرمز بكاميرا هاتفك
-                </p>
+                <p className="text-xs font-semibold text-foreground">امسح الرمز بكاميرا هاتفك</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   الهاتف والكمبيوتر على نفس شبكة Wi-Fi. الصور تظهر فوراً.
                 </p>

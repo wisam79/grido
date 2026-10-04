@@ -1,11 +1,11 @@
-import { useEffect } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
-import { toast } from "sonner";
-import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { getToolsForMode } from "@/lib/workspace-tools";
-import { SaveImageFromBase64 } from "../../wailsjs/go/main/App";
-import { pasteFromClipboardOrStore } from "@/lib/io/clipboard-utils";
-import { resolveImageAspectRatio } from "@/lib/canvas/image-dimensions";
+import { useEffect } from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { toast } from 'sonner';
+import { CanvasElement, useEditorStore } from '@/lib/editor-store';
+import { getToolsForMode } from '@/lib/workspace-tools';
+import { SaveImageFromBase64 } from '../../wailsjs/go/main/App';
+import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
+import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import {
   autoFitZoomStore,
   fitWidthZoomStore,
@@ -13,26 +13,55 @@ import {
   resetZoomStore,
   zoomInStore,
   zoomOutStore,
-} from "@/hooks/use-canvas-zoom";
+} from '@/hooks/use-canvas-zoom';
+
+export function isModalActive(): boolean {
+  if (typeof document === 'undefined') return false;
+  return Boolean(
+    document.querySelector('[role="dialog"], [role="alertdialog"], [aria-modal="true"]'),
+  );
+}
+
+function shouldIgnoreCanvasAction(e: KeyboardEvent): boolean {
+  if (isModalActive()) return true;
+  const target = e.target as HTMLElement | null;
+  if (!target) return false;
+  return Boolean(
+    target.tagName === 'INPUT' ||
+    target.tagName === 'TEXTAREA' ||
+    target.isContentEditable ||
+    target.closest?.(
+      'input, textarea, [contenteditable="true"], select, [role="dialog"], [role="alertdialog"]',
+    ),
+  );
+}
 
 export function useKeyboardShortcuts() {
   // --- Shortcuts via react-hotkeys-hook ---
-  
+
   // Undo: Ctrl+Z or Cmd+Z
-  useHotkeys("mod+z", (e) => {
-    e.preventDefault();
-    useEditorStore.getState().undo();
-  });
+  useHotkeys(
+    'mod+z',
+    (e) => {
+      e.preventDefault();
+      useEditorStore.getState().undo();
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Redo: Ctrl+Shift+Z or Ctrl+Y or Cmd+Shift+Z or Cmd+Y
-  useHotkeys("mod+shift+z, mod+y", (e) => {
-    e.preventDefault();
-    useEditorStore.getState().redo();
-  });
+  useHotkeys(
+    'mod+shift+z, mod+y',
+    (e) => {
+      e.preventDefault();
+      useEditorStore.getState().redo();
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Delete / Backspace — العناصر المقفلة لا تُحذف بصمت، ونُعلم المستخدم إن تبقى شيء محذوف.
   useHotkeys(
-    "delete, backspace",
+    'delete, backspace',
     (e) => {
       e.preventDefault();
       const { selectedIds, elements, removeElements, removeElement } = useEditorStore.getState();
@@ -41,11 +70,11 @@ export function useKeyboardShortcuts() {
         return el && !el.locked;
       });
       if (removableIds.length === 0) {
-        toast.info("العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف");
+        toast.info('العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف');
         return;
       }
       if (removableIds.length < selectedIds.length) {
-        toast.info("تجاهلنا العناصر المقفلة وحذفنا غير المقفلة فقط");
+        toast.info('تجاهلنا العناصر المقفلة وحذفنا غير المقفلة فقط');
       }
       if (removableIds.length === 1) {
         removeElement(removableIds[0]);
@@ -55,38 +84,41 @@ export function useKeyboardShortcuts() {
     },
     {
       ignoreEventWhen: (e) => {
+        if (shouldIgnoreCanvasAction(e)) return true;
         const t = e.target as HTMLElement | null;
         return !!t?.closest?.('button, [role="menu"], [role="menuitem"]');
       },
-    }
+    },
   );
 
   // Duplicate: Ctrl+D or Cmd+D
-  useHotkeys("mod+d", (e) => {
-    e.preventDefault();
-    const { selectedIds, duplicateElements, duplicateElement } = useEditorStore.getState();
-    if (selectedIds.length === 1) {
-      duplicateElement(selectedIds[0]);
-    } else if (selectedIds.length > 1) {
-      duplicateElements(selectedIds);
-    }
-  });
+  useHotkeys(
+    'mod+d',
+    (e) => {
+      e.preventDefault();
+      const { selectedIds, duplicateElements, duplicateElement } = useEditorStore.getState();
+      if (selectedIds.length === 1) {
+        duplicateElement(selectedIds[0]);
+      } else if (selectedIds.length > 1) {
+        duplicateElements(selectedIds);
+      }
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
-  // Select All: Ctrl+A or Cmd+A (Canvas elements only when outside text inputs)
-  useHotkeys("mod+a", (e) => {
-    const target = e.target as HTMLElement;
-    if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+  // Select All: Ctrl+A or Cmd+A (Canvas elements only when outside text inputs and modals)
+  useHotkeys('mod+a', (e) => {
+    if (shouldIgnoreCanvasAction(e)) return;
     const { mode, elements, selectAllElements } = useEditorStore.getState();
-    if (mode === "single" && elements.length > 0) {
+    if (mode === 'single' && elements.length > 0) {
       e.preventDefault();
       selectAllElements();
     }
   });
 
   // Copy: Ctrl+C or Cmd+C
-  useHotkeys("mod+c", (e) => {
-    const target = e.target as HTMLElement;
-    if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+  useHotkeys('mod+c', (e) => {
+    if (shouldIgnoreCanvasAction(e)) return;
     const { selectedIds, copySelectedElements } = useEditorStore.getState();
     if (selectedIds.length > 0) {
       e.preventDefault();
@@ -95,9 +127,8 @@ export function useKeyboardShortcuts() {
   });
 
   // Cut: Ctrl+X or Cmd+X
-  useHotkeys("mod+x", (e) => {
-    const target = e.target as HTMLElement;
-    if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+  useHotkeys('mod+x', (e) => {
+    if (shouldIgnoreCanvasAction(e)) return;
     const { selectedIds, cutSelectedElements } = useEditorStore.getState();
     if (selectedIds.length > 0) {
       e.preventDefault();
@@ -106,67 +137,76 @@ export function useKeyboardShortcuts() {
   });
 
   // Paste: Ctrl+V or Cmd+V
-  useHotkeys("mod+v", async (e) => {
-    const target = e.target as HTMLElement;
-    if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+  useHotkeys('mod+v', async (e) => {
+    if (shouldIgnoreCanvasAction(e)) return;
     e.preventDefault();
     await pasteFromClipboardOrStore();
   });
 
   // Group: Ctrl+G or Cmd+G
-  useHotkeys("mod+g", (e) => {
-    e.preventDefault();
-    const { selectedIds, groupSelectedElements } = useEditorStore.getState();
-    if (selectedIds.length > 0) groupSelectedElements();
-  });
+  useHotkeys(
+    'mod+g',
+    (e) => {
+      e.preventDefault();
+      const { selectedIds, groupSelectedElements } = useEditorStore.getState();
+      if (selectedIds.length > 0) groupSelectedElements();
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Ungroup: Ctrl+Shift+G or Cmd+Shift+G
-  useHotkeys("shift+mod+g", (e) => {
-    e.preventDefault();
-    const { selectedIds, ungroupSelectedElements } = useEditorStore.getState();
-    if (selectedIds.length > 0) ungroupSelectedElements();
-  });
+  useHotkeys(
+    'shift+mod+g',
+    (e) => {
+      e.preventDefault();
+      const { selectedIds, ungroupSelectedElements } = useEditorStore.getState();
+      if (selectedIds.length > 0) ungroupSelectedElements();
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Save: Ctrl+S or Cmd+S — فتح مكتبة المشاريع للحفظ
-  useHotkeys("mod+s", (e) => {
+  useHotkeys('mod+s', (e) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent("grido:open-projects-dialog", { detail: { tab: "save" } }));
+    window.dispatchEvent(
+      new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
+    );
   });
 
   // Export: Ctrl+E or Cmd+E — كانت معلنة في الحوار وشريط الأدوات بلا مستمع (إصلاح Bug#7)
-  useHotkeys("mod+e", (e) => {
+  useHotkeys('mod+e', (e) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent("grido:open-export-dialog"));
+    window.dispatchEvent(new CustomEvent('grido:open-export-dialog'));
   });
 
   // Print: Ctrl+P or Cmd+P — تمنع أيضاً طباعة المتصفح الافتراضية (إصلاح Bug#7)
-  useHotkeys("mod+p", (e) => {
+  useHotkeys('mod+p', (e) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent("grido:open-print-dialog"));
+    window.dispatchEvent(new CustomEvent('grido:open-print-dialog'));
   });
 
   // Insert Image: Ctrl+O or Cmd+O — تمنع فتح ملف المتصفح الافتراضي (إصلاح Bug#7)
-  useHotkeys("mod+o", (e) => {
+  useHotkeys('mod+o', (e) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent("grido:open-file-dialog"));
+    window.dispatchEvent(new CustomEvent('grido:open-file-dialog'));
   });
 
   // Batch / Multi Insert: Ctrl+Shift+O or Cmd+Shift+O
-  useHotkeys("mod+shift+o", (e) => {
+  useHotkeys('mod+shift+o', (e) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent("grido:open-batch-insert-dialog"));
+    window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'));
   });
 
   // Toggle Right Sidebar (Templates / Layers): Ctrl+B or Cmd+B
-  useHotkeys("mod+b", (e) => {
+  useHotkeys('mod+b', (e) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent("grido:toggle-right-sidebar"));
+    window.dispatchEvent(new CustomEvent('grido:toggle-right-sidebar'));
   });
 
   // Toggle Left Sidebar (Properties / Workspace): Ctrl+Shift+B or Cmd+Shift+B
-  useHotkeys("mod+shift+b", (e) => {
+  useHotkeys('mod+shift+b', (e) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent("grido:toggle-left-sidebar"));
+    window.dispatchEvent(new CustomEvent('grido:toggle-left-sidebar'));
   });
 
   // Switch Studio / Collage Tabs: Alt+1 … Alt+9 — مفهرسة من سجل الأدوات الموحّد
@@ -174,64 +214,78 @@ export function useKeyboardShortcuts() {
   const selectTabByIndex = (e: KeyboardEvent, index: number) => {
     e.preventDefault();
     const { mode } = useEditorStore.getState();
-    const isCollage = mode === "collage";
+    const isCollage = mode === 'collage';
     const tool = getToolsForMode(mode)[index];
     if (!tool) return;
     window.dispatchEvent(
-      new CustomEvent(isCollage ? "grido:select-collage-tab" : "grido:select-studio-tab", {
+      new CustomEvent(isCollage ? 'grido:select-collage-tab' : 'grido:select-studio-tab', {
         detail: { tab: tool.id },
-      })
+      }),
     );
   };
 
-
-  useHotkeys("alt+1", (e) => selectTabByIndex(e, 0));
-  useHotkeys("alt+2", (e) => selectTabByIndex(e, 1));
-  useHotkeys("alt+3", (e) => selectTabByIndex(e, 2));
-  useHotkeys("alt+4", (e) => selectTabByIndex(e, 3));
-  useHotkeys("alt+5", (e) => selectTabByIndex(e, 4));
-  useHotkeys("alt+6", (e) => selectTabByIndex(e, 5));
-  useHotkeys("alt+7", (e) => selectTabByIndex(e, 6));
-  useHotkeys("alt+8", (e) => selectTabByIndex(e, 7));
-  useHotkeys("alt+9", (e) => selectTabByIndex(e, 8));
+  useHotkeys('alt+1', (e) => selectTabByIndex(e, 0));
+  useHotkeys('alt+2', (e) => selectTabByIndex(e, 1));
+  useHotkeys('alt+3', (e) => selectTabByIndex(e, 2));
+  useHotkeys('alt+4', (e) => selectTabByIndex(e, 3));
+  useHotkeys('alt+5', (e) => selectTabByIndex(e, 4));
+  useHotkeys('alt+6', (e) => selectTabByIndex(e, 5));
+  useHotkeys('alt+7', (e) => selectTabByIndex(e, 6));
+  useHotkeys('alt+8', (e) => selectTabByIndex(e, 7));
+  useHotkeys('alt+9', (e) => selectTabByIndex(e, 8));
 
   // Switch Editor Mode: Ctrl+Alt+1 (كولاج) / Ctrl+Alt+2 (تعديل حر)
   // كانت عناوين مبدّل الوضع في الواجهة تعد بهذين الاختصارين بلا تسجيل فعلي لهما
-  useHotkeys("mod+alt+1", (e) => {
+  useHotkeys('mod+alt+1', (e) => {
     e.preventDefault();
-    useEditorStore.getState().setMode("collage");
+    useEditorStore.getState().setMode('collage');
   });
 
-  useHotkeys("mod+alt+2", (e) => {
+  useHotkeys('mod+alt+2', (e) => {
     e.preventDefault();
-    useEditorStore.getState().setMode("single");
+    useEditorStore.getState().setMode('single');
   });
 
   // Ctrl+K — لوحة كل الأدوات (وصول بالاسم بلا تمرير في الشريط)
-  useHotkeys("mod+k", (e) => {
+  useHotkeys('mod+k', (e) => {
     e.preventDefault();
-    window.dispatchEvent(new CustomEvent("grido:open-tool-launcher"));
+    window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'));
   });
 
   // Toggle Zen Mode (Canvas focus): Tab key or Ctrl+. / Cmd+.
   useHotkeys(
-    "tab, mod+.",
+    'tab, mod+.',
     (e) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+      if (shouldIgnoreCanvasAction(e)) return;
+      if (e.key === 'Tab') {
+        const target = (e.target || document.activeElement) as HTMLElement | null;
+        if (
+          target?.closest?.(
+            'button, [role="button"], a, input, textarea, select, [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="tab"], [tabindex]:not([tabindex="-1"])',
+          )
+        ) {
+          return;
+        }
+      }
       e.preventDefault();
-      window.dispatchEvent(new CustomEvent("grido:toggle-zen-mode"));
+      window.dispatchEvent(new CustomEvent('grido:toggle-zen-mode'));
     },
     {
       ignoreEventWhen: (e) => {
-        const t = e.target as HTMLElement | null;
-        return !!t?.closest?.('input, textarea, [contenteditable="true"], [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="tab"], select');
+        if (isModalActive()) return true;
+        if (e.key === 'Tab') {
+          const t = (e.target || document.activeElement) as HTMLElement | null;
+          return !!t?.closest?.(
+            'button, [role="button"], a, input, textarea, [contenteditable="true"], [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="tab"], select, [tabindex]:not([tabindex="-1"])',
+          );
+        }
+        return false;
       },
-    }
+    },
   );
 
   // Toggle Rulers: Ctrl+R or Cmd+R
-  useHotkeys("mod+r", (e) => {
+  useHotkeys('mod+r', (e) => {
     e.preventDefault();
     const { showRuler, setShowRuler } = useEditorStore.getState();
     setShowRuler(!showRuler);
@@ -245,44 +299,44 @@ export function useKeyboardShortcuts() {
   });
 
   // Toggle User Guides: Ctrl+; or Cmd+; — كان معلناً في شريط العرض بلا تسجيل فعلي
-  useHotkeys("mod+;", (e) => {
+  useHotkeys('mod+;', (e) => {
     e.preventDefault();
     const { showUserGuides, setShowUserGuides } = useEditorStore.getState();
     setShowUserGuides(!showUserGuides);
   });
 
   // Zoom In: Ctrl+= or Ctrl++ or Cmd+= / Cmd++
-  useHotkeys("mod+=, mod+plus, mod+numpad_add, mod+shift+=", (e) => {
+  useHotkeys('mod+=, mod+plus, mod+numpad_add, mod+shift+=', (e) => {
     e.preventDefault();
     zoomInStore();
   });
 
   // Zoom Out: Ctrl+- or Ctrl+_ or Cmd+- / Cmd+_
-  useHotkeys("mod+-, mod+underscore, mod+numpad_subtract", (e) => {
+  useHotkeys('mod+-, mod+underscore, mod+numpad_subtract', (e) => {
     e.preventDefault();
     zoomOutStore();
   });
 
   // Fit all: Ctrl+0 — الورقة كاملة على الشاشة (منفصل عن 100% الحقيقي)
-  useHotkeys("mod+0, mod+numpad_0", (e) => {
+  useHotkeys('mod+0, mod+numpad_0', (e) => {
     e.preventDefault();
     fitZoomStore();
   });
 
   // Fit width: Ctrl+Shift+0 — تملأ عرض منطقة العمل ويُمرَّر الباقي رأسياً
-  useHotkeys("shift+mod+0, shift+mod+numpad_0", (e) => {
+  useHotkeys('shift+mod+0, shift+mod+numpad_0', (e) => {
     e.preventDefault();
     fitWidthZoomStore();
   });
 
   // Fit auto: Ctrl+Alt+0 — يختار الوضع الأنسب لهندسة النافذة
-  useHotkeys("alt+mod+0, alt+mod+numpad_0", (e) => {
+  useHotkeys('alt+mod+0, alt+mod+numpad_0', (e) => {
     e.preventDefault();
     autoFitZoomStore();
   });
 
   // True 100%: Ctrl+1 or Cmd+1
-  useHotkeys("mod+1, mod+numpad_1", (e) => {
+  useHotkeys('mod+1, mod+numpad_1', (e) => {
     e.preventDefault();
     resetZoomStore();
   });
@@ -294,18 +348,20 @@ export function useKeyboardShortcuts() {
     // عناصر تحكم تفاعلية: تركيز إبهام السلايدر (span[role="slider"]) أو مفتاح
     // تبديل لا يجب أن يُحرّك العناصر بالأسهم أو يمسح التحديد بـ Escape (إصلاح Bug#5)
     const isInteractiveTarget = (t: HTMLElement | null) =>
-      !!t && !!t.closest(
-        'input, textarea, [contenteditable="true"], [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="tab"], select'
+      !!t &&
+      !!t.closest(
+        'input, textarea, [contenteditable="true"], [role="slider"], [role="switch"], [role="combobox"], [role="listbox"], [role="tab"], select',
       );
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isModalActive()) return;
       const target = e.target as HTMLElement;
       if (isInteractiveTarget(target)) return;
 
       const { selectedIds } = useEditorStore.getState();
-      
+
       // Escape = Clear selection and stop editing
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         const { setEditingTextId, selectElement } = useEditorStore.getState();
         setEditingTextId(null);
         selectElement(null);
@@ -313,11 +369,11 @@ export function useKeyboardShortcuts() {
       }
 
       // Alt + ArrowUp / ArrowDown = Smooth scaling of selected element (توسيع / تقليص ناعم للعنصر)
-      if (selectedIds.length > 0 && e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      if (selectedIds.length > 0 && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
         e.preventDefault();
         const { elements, updateElements, updateElement } = useEditorStore.getState();
-        const isGrow = e.key === "ArrowUp";
-        const factor = e.shiftKey ? (isGrow ? 1.05 : 0.95) : (isGrow ? 1.015 : 0.985);
+        const isGrow = e.key === 'ArrowUp';
+        const factor = e.shiftKey ? (isGrow ? 1.05 : 0.95) : isGrow ? 1.015 : 0.985;
 
         const patches = selectedIds
           .map((id) => {
@@ -337,8 +393,11 @@ export function useKeyboardShortcuts() {
               y: el.y - dh / 2,
             };
 
-            if (el.type === "text" && typeof (el as { fontSize?: number }).fontSize === "number") {
-              (patch as Record<string, unknown>).fontSize = Math.max(6, Math.round((el as { fontSize: number }).fontSize * factor));
+            if (el.type === 'text' && typeof (el as { fontSize?: number }).fontSize === 'number') {
+              (patch as Record<string, unknown>).fontSize = Math.max(
+                6,
+                Math.round((el as { fontSize: number }).fontSize * factor),
+              );
             }
 
             return { id, patch };
@@ -362,30 +421,35 @@ export function useKeyboardShortcuts() {
       }
 
       // Arrow Keys = Nudging selected elements
-      if (selectedIds.length > 0 && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      if (
+        selectedIds.length > 0 &&
+        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+      ) {
         e.preventDefault();
         const { elements, updateElements, updateElement } = useEditorStore.getState();
         const step = e.shiftKey ? 0.015 : 0.002;
         let dx = 0;
         let dy = 0;
-        if (e.key === "ArrowUp") dy = -step;
-        if (e.key === "ArrowDown") dy = step;
-        if (e.key === "ArrowLeft") dx = -step;
-        if (e.key === "ArrowRight") dx = step;
+        if (e.key === 'ArrowUp') dy = -step;
+        if (e.key === 'ArrowDown') dy = step;
+        if (e.key === 'ArrowLeft') dx = -step;
+        if (e.key === 'ArrowRight') dx = step;
 
-        const patches = selectedIds.map((id) => {
-          const el = elements.find((x) => x.id === id);
-          if (el && !el.locked) {
-            return {
-              id,
-              patch: {
-                x: Math.max(-0.5, Math.min(1, el.x + dx)),
-                y: Math.max(-0.5, Math.min(1, el.y + dy)),
-              },
-            };
-          }
-          return null;
-        }).filter(Boolean) as { id: string; patch: Partial<CanvasElement> }[];
+        const patches = selectedIds
+          .map((id) => {
+            const el = elements.find((x) => x.id === id);
+            if (el && !el.locked) {
+              return {
+                id,
+                patch: {
+                  x: Math.max(-0.5, Math.min(1, el.x + dx)),
+                  y: Math.max(-0.5, Math.min(1, el.y + dy)),
+                },
+              };
+            }
+            return null;
+          })
+          .filter(Boolean) as { id: string; patch: Partial<CanvasElement> }[];
 
         if (patches.length > 0) {
           if (patches.length === 1) {
@@ -409,7 +473,10 @@ export function useKeyboardShortcuts() {
       if (isInteractiveTarget(target)) return;
 
       const { selectedIds, pushHistory } = useEditorStore.getState();
-      if (selectedIds.length > 0 && ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      if (
+        selectedIds.length > 0 &&
+        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+      ) {
         if (nudgeTimeout) {
           clearTimeout(nudgeTimeout);
           nudgeTimeout = null;
@@ -420,7 +487,8 @@ export function useKeyboardShortcuts() {
 
     const handlePaste = async (e: ClipboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+        return;
 
       const items = e.clipboardData?.items;
       let hasPastedImage = false;
@@ -428,7 +496,7 @@ export function useKeyboardShortcuts() {
       if (items) {
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          if (item.type.indexOf("image") !== -1) {
+          if (item.type.indexOf('image') !== -1) {
             const file = item.getAsFile();
             if (file) {
               e.preventDefault();
@@ -442,7 +510,7 @@ export function useKeyboardShortcuts() {
                     if (!localPath) return;
 
                     const state = useEditorStore.getState();
-                    if (state.mode === "collage") {
+                    if (state.mode === 'collage') {
                       let targetSlotId = state.selectedId;
                       if (!targetSlotId) {
                         const emptySlot = state.slots.find((s) => !s.imageSrc);
@@ -451,11 +519,11 @@ export function useKeyboardShortcuts() {
                       }
                       if (targetSlotId) state.setSlotImage(targetSlotId, localPath);
                     } else {
-                        const aspect = await resolveImageAspectRatio(localPath);
-                        state.addImageElement(localPath, aspect);
+                      const aspect = await resolveImageAspectRatio(localPath);
+                      state.addImageElement(localPath, aspect);
                     }
                   } catch (err) {
-                    console.error("Failed to save pasted image:", err);
+                    console.error('Failed to save pasted image:', err);
                   }
                 }
               };
@@ -472,13 +540,13 @@ export function useKeyboardShortcuts() {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    window.addEventListener("paste", handlePaste);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('paste', handlePaste);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      window.removeEventListener("paste", handlePaste);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('paste', handlePaste);
       if (nudgeTimeout) clearTimeout(nudgeTimeout);
     };
   }, []);

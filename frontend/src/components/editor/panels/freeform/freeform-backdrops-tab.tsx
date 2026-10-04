@@ -22,7 +22,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
-  FluentEmptyState,
   FluentIconButton,
   FluentSection,
   FluentSegmentedControl,
@@ -335,124 +334,116 @@ export function FreeformBackdropsTab() {
         }
       />
 
-      {/* ═══ 2) المفضلة وآخر استخدام — ذاكرة المستخدم فوق المكتبة ═══ */}
-      <FluentSection
-        icon={
-          <Star className="w-3.5 h-3.5" weight={favoriteKeys.length > 0 ? 'fill' : 'regular'} />
-        }
-        title="المفضلة وآخر استخدام"
-        subtitle={gradientTarget === 'backdrop' ? 'خلفية كاملة للورقة' : 'تُطبّق على التحديد'}
-        badge={favoriteKeys.length > 0 ? favoriteKeys.length : undefined}
-      >
-        {favoriteKeys.length === 0 && recentKeys.length === 0 ? (
-          <FluentEmptyState
-            icon={<Star className="w-5 h-5" weight="duotone" />}
-            title="لا تدرجات محفوظة"
-            description="نجّم تدرجاً من المكتبة أو طبّقه ليظهر هنا"
-          />
-        ) : (
-          <>
-            {favoriteKeys.length > 0 && (
-              <div className="grid grid-cols-2 gap-1.5">
-                {favoriteKeys
-                  .map((key) => parseSavedGradient(key))
-                  .filter((entry): entry is SavedGradientEntry => entry !== null)
-                  .map((entry) => {
-                    // النشط مشتق من الكانفاس فقط: تطابق بصمة ألوان التدرج مع الهدف الحالي
-                    const isActive =
-                      activeSignature !== null && activeSignature === colorSignature(entry.stops);
-                    return (
-                      <div key={entry.key} className="relative group">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            applyGradient(
-                              entry.stops,
-                              entry.angle,
-                              entry.preset ? entry.name : 'المفضلة',
-                            )
-                          }
-                          aria-pressed={isActive}
-                          aria-label={`تطبيق ${entry.name} من المفضلة`}
-                          className={cn(
-                            'w-full overflow-hidden rounded-xl border text-start transition-all duration-150 cursor-pointer',
-                            'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                            isActive
-                              ? 'border-foreground ring-2 ring-foreground/25 shadow-xs'
-                              : 'border-border/80 hover:border-foreground/50 hover:shadow-xs active:scale-[0.98]',
-                          )}
-                        >
-                          <span
-                            className="block h-8 w-full"
-                            style={{
-                              background: formatGradientCss(entry.stops, 'linear', entry.angle),
-                            }}
-                          />
-                          <span className="flex h-5 items-center justify-between gap-1 bg-card px-2">
-                            <span className="min-w-0 truncate text-micro font-bold text-foreground">
-                              {entry.name}
-                            </span>
-                            {entry.angle !== PRESET_ANGLE && (
-                              <span
-                                className="shrink-0 text-micro font-mono text-muted-foreground"
-                                dir="ltr"
-                              >
-                                {entry.angle}°
-                              </span>
-                            )}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => toggleFavoriteGradient(entry.key)}
-                          aria-label={`إزالة ${entry.name} من المفضلة`}
-                          className="absolute top-1 end-1 w-4 h-4 rounded-full bg-card border border-border text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                        >
-                          <Star className="w-2.5 h-2.5" weight="fill" />
-                        </button>
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-
-            {recentKeys.length > 0 && (
-              <div className={cn(favoriteKeys.length > 0 && 'mt-2')}>
-                <span className="mb-1 flex items-center gap-1 text-micro font-semibold text-muted-foreground">
-                  <Clock className="w-2.5 h-2.5" weight="regular" />
-                  آخر استخدام
-                </span>
-                <div className="grid grid-cols-6 gap-1.5">
-                  {recentKeys
-                    .map((key) => parseSavedGradient(key))
-                    .filter((entry): entry is SavedGradientEntry => entry !== null)
-                    .map((entry) => (
+      {/* ═══ 2) المفضلة وآخر استخدام — تظهر فقط عند وجود تدرجات محفوظة بدلاً من هدر المساحة بحاوية فارغة ═══ */}
+      {(favoriteKeys.length > 0 || recentKeys.length > 0) && (
+        <FluentSection
+          icon={
+            <Star className="w-3.5 h-3.5" weight={favoriteKeys.length > 0 ? 'fill' : 'regular'} />
+          }
+          title="المفضلة وآخر استخدام"
+          badge={favoriteKeys.length > 0 ? favoriteKeys.length : undefined}
+          collapsible
+          defaultOpen
+        >
+          {favoriteKeys.length > 0 && (
+            <div className="grid grid-cols-2 gap-1.5">
+              {favoriteKeys
+                .map((key) => parseSavedGradient(key))
+                .filter((entry): entry is SavedGradientEntry => entry !== null)
+                .map((entry) => {
+                  const isActive =
+                    activeSignature !== null && activeSignature === colorSignature(entry.stops);
+                  return (
+                    <div key={entry.key} className="relative group">
                       <button
-                        key={`recent-${entry.key}`}
                         type="button"
                         onClick={() =>
                           applyGradient(
                             entry.stops,
                             entry.angle,
-                            entry.preset ? entry.name : 'المخصصة',
+                            entry.preset ? entry.name : 'المفضلة',
                           )
                         }
-                        aria-label={`تطبيق ${entry.name} — آخر استخدام`}
-                        title={entry.name}
-                        className="aspect-square rounded-md border border-dashed border-border transition-colors cursor-pointer hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                        style={{
-                          background: formatGradientCss(entry.stops, 'linear', entry.angle),
-                        }}
-                      />
-                    ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </FluentSection>
+                        aria-pressed={isActive}
+                        aria-label={`تطبيق ${entry.name} من المفضلة`}
+                        className={cn(
+                          'w-full overflow-hidden rounded-lg border text-start transition-all duration-150 cursor-pointer',
+                          'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                          isActive
+                            ? 'border-primary ring-1 ring-primary/40 shadow-xs'
+                            : 'border-border/70 hover:border-foreground/40 hover:shadow-xs active:scale-[0.98]',
+                        )}
+                      >
+                        <span
+                          className="block h-7 w-full"
+                          style={{
+                            background: formatGradientCss(entry.stops, 'linear', entry.angle),
+                          }}
+                        />
+                        <span className="flex h-5 items-center justify-between gap-1 bg-card px-2">
+                          <span className="min-w-0 truncate text-micro font-bold text-foreground">
+                            {entry.name}
+                          </span>
+                          {entry.angle !== PRESET_ANGLE && (
+                            <span
+                              className="shrink-0 text-micro font-mono text-muted-foreground"
+                              dir="ltr"
+                            >
+                              {entry.angle}°
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleFavoriteGradient(entry.key)}
+                        aria-label={`إزالة ${entry.name} من المفضلة`}
+                        className="absolute top-1 end-1 w-4 h-4 rounded-full bg-card border border-border text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                      >
+                        <Star className="w-2.5 h-2.5" weight="fill" />
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
 
-      {/* ═══ 3) مكتبة التدرجات — ببطاقات مسماة ومعاينة كاملة ═══ */}
+          {recentKeys.length > 0 && (
+            <div className={cn(favoriteKeys.length > 0 && 'mt-1.5')}>
+              <span className="mb-1 flex items-center gap-1 text-micro font-semibold text-muted-foreground">
+                <Clock className="w-2.5 h-2.5" weight="regular" />
+                آخر استخدام
+              </span>
+              <div className="grid grid-cols-6 gap-1.5">
+                {recentKeys
+                  .map((key) => parseSavedGradient(key))
+                  .filter((entry): entry is SavedGradientEntry => entry !== null)
+                  .map((entry) => (
+                    <button
+                      key={`recent-${entry.key}`}
+                      type="button"
+                      onClick={() =>
+                        applyGradient(
+                          entry.stops,
+                          entry.angle,
+                          entry.preset ? entry.name : 'المخصصة',
+                        )
+                      }
+                      aria-label={`تطبيق ${entry.name} — آخر استخدام`}
+                      title={entry.name}
+                      className="aspect-square rounded-md border border-dashed border-border transition-colors cursor-pointer hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                      style={{
+                        background: formatGradientCss(entry.stops, 'linear', entry.angle),
+                      }}
+                    />
+                  ))}
+              </div>
+            </div>
+          )}
+        </FluentSection>
+      )}
+
+      {/* ═══ 3) مكتبة التدرجات — ببطاقات مسماة ومعاينة كاملة ورشيقة ═══ */}
       <FluentSection
         icon={<GridNine className="w-3.5 h-3.5" weight="duotone" />}
         title="تدرجات جاهزة"
@@ -463,32 +454,29 @@ export function FreeformBackdropsTab() {
           </span>
         }
       >
-        <FluentSegmentedControl<GradientTarget>
-          layoutId="freeform-backdrop-gradient-target"
-          value={gradientTarget}
-          onChange={setGradientTarget}
-          size="sm"
-          options={[
-            {
-              id: 'backdrop',
-              label: 'خلفية كاملة',
-              icon: <Square className="w-3.5 h-3.5" weight="duotone" />,
-              tooltip: 'يغطي الورقة',
-            },
-            {
-              id: 'element',
-              label: 'العنصر المحدد',
-              icon: <Selection className="w-3.5 h-3.5" weight="duotone" />,
-              tooltip: 'تعبئة التحديد',
-            },
-          ]}
-        />
-
-        {/* سياق الهدف: ماذا سيحدث بالضبط عند الضغط */}
-        <div className="flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-muted/40 px-2 py-1.5">
-          <span className="min-w-0 truncate text-micro font-semibold text-muted-foreground">
-            {gradientTarget === 'backdrop' ? backdropContext : elementContext}
-          </span>
+        <div className="flex items-center gap-1.5">
+          <div className="flex-1 min-w-0">
+            <FluentSegmentedControl<GradientTarget>
+              layoutId="freeform-backdrop-gradient-target"
+              value={gradientTarget}
+              onChange={setGradientTarget}
+              size="sm"
+              options={[
+                {
+                  id: 'backdrop',
+                  label: 'خلفية كاملة',
+                  icon: <Square className="w-3.5 h-3.5" weight="duotone" />,
+                  tooltip: 'يغطي الورقة',
+                },
+                {
+                  id: 'element',
+                  label: 'العنصر المحدد',
+                  icon: <Selection className="w-3.5 h-3.5" weight="duotone" />,
+                  tooltip: 'تعبئة التحديد',
+                },
+              ]}
+            />
+          </div>
           {gradientTarget === 'element' && elements.length > 0 && (
             <Button
               type="button"
@@ -496,10 +484,10 @@ export function FreeformBackdropsTab() {
               size="sm"
               onClick={() => selectAllElements()}
               title="تحديد الكل"
-              className="h-6 shrink-0 px-1.5"
+              className="h-8 shrink-0 px-2 text-micro font-semibold"
             >
               <SelectionAll className="w-3 h-3" weight="bold" />
-              <span className="text-micro">تحديد الكل</span>
+              <span>تحديد الكل</span>
             </Button>
           )}
         </div>
@@ -531,25 +519,24 @@ export function FreeformBackdropsTab() {
                   }
                   title={preset.name}
                   className={cn(
-                    // w-full: الزر داخل غلاف النجمة — بدونه يتقلص لعرض اسمه فتتكسر متناظرة العمودين
-                    'group/card relative w-full overflow-hidden rounded-xl border text-start transition-all duration-150 cursor-pointer',
+                    'group/card relative w-full overflow-hidden rounded-lg border text-start transition-all duration-150 cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isActive
-                      ? 'border-foreground ring-2 ring-foreground/25 shadow-xs'
-                      : 'border-border/80 hover:border-foreground/50 hover:shadow-xs active:scale-[0.98]',
+                      ? 'border-primary ring-1 ring-primary/40 shadow-xs'
+                      : 'border-border/70 hover:border-foreground/40 hover:shadow-xs active:scale-[0.98]',
                   )}
                 >
                   <span
-                    className="block h-10 w-full"
+                    className="block h-8 w-full"
                     style={{ background: formatGradientCss(preset.stops, 'linear', PRESET_ANGLE) }}
                   />
-                  <span className="flex h-6 items-center justify-between gap-1 bg-card px-2">
+                  <span className="flex h-5.5 items-center justify-between gap-1 bg-card px-2">
                     <span className="min-w-0 truncate text-micro font-bold text-foreground">
                       {preset.name}
                     </span>
                     <span className="flex shrink-0 items-center gap-1">
                       {isActive ? (
-                        <span className="flex w-3.5 h-3.5 items-center justify-center rounded-full bg-foreground text-background">
+                        <span className="flex w-3.5 h-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground">
                           <Check className="w-2.5 h-2.5" weight="bold" />
                         </span>
                       ) : gradientTarget === 'backdrop' ? (

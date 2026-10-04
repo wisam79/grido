@@ -40,10 +40,9 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
   const isStandard = breakpoint === 'standard';
   const isWide = breakpoint === 'wide';
 
-  // In Standard mode: right container hosts either templates or properties
-  const isRightPanelOpen = !isCompact && (
-    isStandard ? activePanel !== null : (activePanel === 'properties' || panelsHook.isInspectorPinned)
-  );
+  // In Standard mode: right container hosts either templates or properties; in Wide mode: right container is inspector
+  const isRightPanelOpen =
+    !isCompact && (isStandard ? activePanel !== null : panelsHook.isInspectorPinned);
 
   // In Wide mode: templates acts as a left-side drawer
   const isLeftDrawerOpen = isWide && isTemplatesDrawerOpen;
@@ -76,7 +75,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
             'h-full border-r border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion transition-all duration-200',
             isLeftDrawerOpen
               ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
-              : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0 shadow-none'
+              : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0 shadow-none',
           )}
         >
           <div dir="rtl" className="h-full w-[296px] flex flex-col overflow-hidden">
@@ -114,14 +113,16 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           (220–285ms مقاسة مع LayoutCount=100)، فصار الفكّ إخفاءً لا إزالة. */}
       {!isCompact && (
         <aside
-          aria-label={isStandard && activePanel === 'templates' ? 'لوحة القوالب' : 'لوحة خصائص العنصر'}
+          aria-label={
+            isStandard && activePanel === 'templates' ? 'لوحة القوالب' : 'لوحة خصائص العنصر'
+          }
           data-testid={isStandard ? 'workspace-panel-inspector' : 'workspace-panel-properties'}
           data-collapsed={!isRightPanelOpen}
           className={cn(
             'h-full border-l border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion transition-all duration-200',
             isRightPanelOpen
               ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
-              : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none'
+              : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none',
           )}
         >
           <div dir="rtl" className="h-full w-[296px] flex flex-col overflow-hidden">
@@ -133,7 +134,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
                   aria-hidden={activePanel !== 'templates'}
                   className={cn(
                     'h-full flex-col overflow-hidden',
-                    activePanel === 'templates' ? 'flex' : 'hidden'
+                    activePanel === 'templates' ? 'flex' : 'hidden',
                   )}
                 >
                   {templatesContent}
@@ -144,7 +145,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
                   aria-hidden={activePanel !== 'properties'}
                   className={cn(
                     'h-full flex-col overflow-hidden',
-                    activePanel === 'properties' ? 'flex' : 'hidden'
+                    activePanel === 'properties' ? 'flex' : 'hidden',
                   )}
                 >
                   {propertiesContent}

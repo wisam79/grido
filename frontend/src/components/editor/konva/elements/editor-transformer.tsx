@@ -1,15 +1,19 @@
-import React, { useEffect } from "react";
-import { Transformer as KonvaTransformer, Group, Rect, Text } from "react-konva";
-import Konva from "konva";
-import type { KonvaEventObject } from "konva/lib/Node";
-import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import type { SnapGuide } from "@/lib/canvas/snap-utils";
-import { getElementPixelVisualBox } from "@/lib/canvas/element-geometry";
+import React, { useEffect } from 'react';
+import { Transformer as KonvaTransformer, Group, Rect, Text } from 'react-konva';
+import Konva from 'konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
+import { CanvasElement, useEditorStore } from '@/lib/editor-store';
+import type { SnapGuide } from '@/lib/canvas/snap-utils';
+import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
 import {
-  transformerPrimary, transformerStroke,
-  transformerLocked, transformerLockedStroke,
-  transformerAnchorFill, transformerBadgeBg, transformerBadgeText,
-} from "@/lib/canvas/canvas-colors";
+  transformerPrimary,
+  transformerStroke,
+  transformerLocked,
+  transformerLockedStroke,
+  transformerAnchorFill,
+  transformerBadgeBg,
+  transformerBadgeText,
+} from '@/lib/canvas/canvas-colors';
 
 interface EditorTransformerProps {
   trRef: React.RefObject<Konva.Transformer | null>;
@@ -40,11 +44,14 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   const badgeBgRef = React.useRef<Konva.Rect | null>(null);
   const textRef = React.useRef<Konva.Text | null>(null);
 
+  const safeBadgeScale = Number.isFinite(stageScale) && stageScale > 0.0001 ? 1 / stageScale : 1;
+
   const printSettings = useEditorStore((state) => state.printSettings);
   const dpi = printSettings?.dpi || 300;
 
   // فحص هل العنصر المحدد مقفل (Locked)
-  const isLocked = selectedIds.length === 1 && sortedElements.find((e) => e.id === selectedIds[0])?.locked;
+  const isLocked =
+    selectedIds.length === 1 && sortedElements.find((e) => e.id === selectedIds[0])?.locked;
 
   useEffect(() => {
     const transformer = trRef.current;
@@ -70,7 +77,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       const wMM = Math.round((nodeW / canvasWidth) * (canvasWidth / dpi) * 25.4);
       const hMM = Math.round((nodeH / canvasHeight) * (canvasHeight / dpi) * 25.4);
 
-      const rotStr = normalizedRot > 0 ? ` • ${normalizedRot}°` : "";
+      const rotStr = normalizedRot > 0 ? ` • ${normalizedRot}°` : '';
       const textContent = `${wMM} × ${hMM} mm${rotStr}`;
 
       if (badgeRef.current && textRef.current && badgeBgRef.current) {
@@ -86,10 +93,9 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         }
 
         // تموضع ذكي متكيف: إذا كان العنصر في قمة الكانفس، تنقلب الشارة لأسفله
-        const badgeOffset = 32 / stageScale;
-        const targetY = vBox.minY - badgeOffset >= 0
-          ? vBox.minY - badgeOffset
-          : vBox.maxY + (12 / stageScale);
+        const badgeOffset = 32 * safeBadgeScale;
+        const targetY =
+          vBox.minY - badgeOffset >= 0 ? vBox.minY - badgeOffset : vBox.maxY + 12 * safeBadgeScale;
 
         badgeRef.current.position({
           x: vBox.centerX,
@@ -137,21 +143,21 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       }
     };
 
-    transformer.on("transformstart dragstart", handleTransformStart);
-    transformer.on("transform dragmove", handleTransform);
-    transformer.on("transformend dragend", handleTransformEndInternal);
+    transformer.on('transformstart dragstart', handleTransformStart);
+    transformer.on('transform dragmove', handleTransform);
+    transformer.on('transformend dragend', handleTransformEndInternal);
 
     return () => {
       if (badgeRafId !== 0) cancelAnimationFrame(badgeRafId);
-      transformer.off("transformstart dragstart", handleTransformStart);
-      transformer.off("transform dragmove", handleTransform);
-      transformer.off("transformend dragend", handleTransformEndInternal);
+      transformer.off('transformstart dragstart', handleTransformStart);
+      transformer.off('transform dragmove', handleTransform);
+      transformer.off('transformend dragend', handleTransformEndInternal);
     };
-  }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, altPressedRef]);
+  }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, safeBadgeScale, altPressedRef]);
 
   // تخصيص مظهر المحابث (Anchors) بنمط Fluent 2 المحترف مع ظلال ناعمة
   const primaryColor = isLocked ? transformerLocked() : transformerPrimary();
-  const strokeColor  = isLocked ? transformerLockedStroke() : transformerStroke();
+  const strokeColor = isLocked ? transformerLockedStroke() : transformerStroke();
 
   return (
     <React.Fragment>
@@ -177,17 +183,33 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           isLocked
             ? []
             : isText && selectedIds.length === 1
-            ? ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right"]
-            : ["top-left", "top-right", "bottom-left", "bottom-right", "middle-left", "middle-right", "top-center", "bottom-center"]
+              ? [
+                  'top-left',
+                  'top-right',
+                  'bottom-left',
+                  'bottom-right',
+                  'middle-left',
+                  'middle-right',
+                ]
+              : [
+                  'top-left',
+                  'top-right',
+                  'bottom-left',
+                  'bottom-right',
+                  'middle-left',
+                  'middle-right',
+                  'top-center',
+                  'bottom-center',
+                ]
         }
         anchorStyleFunc={(anchor: Konva.Rect) => {
           // 🚀 بلا ظلال على المقابض — كل مقبض مظلل يعني تمريرة ضبابية
           // إضافية في كل إطار تحويل ×8 مقابض. العمق يبقى عبر التعبئة والحدود.
           if (
-            anchor.hasName("top-left") ||
-            anchor.hasName("top-right") ||
-            anchor.hasName("bottom-left") ||
-            anchor.hasName("bottom-right")
+            anchor.hasName('top-left') ||
+            anchor.hasName('top-right') ||
+            anchor.hasName('bottom-left') ||
+            anchor.hasName('bottom-right')
           ) {
             // مقابض الزوايا الفاخرة: Squircle أنيق بمقاس 10px واستدارة 3.5px
             anchor.width(10);
@@ -198,7 +220,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             anchor.fill(transformerAnchorFill());
             anchor.stroke(primaryColor);
             anchor.strokeWidth(1.5);
-          } else if (anchor.hasName("middle-left") || anchor.hasName("middle-right")) {
+          } else if (anchor.hasName('middle-left') || anchor.hasName('middle-right')) {
             // مقابض الحواف العمودية: كبسولات نحيفة وأنيقة
             anchor.cornerRadius(2.5);
             anchor.width(5);
@@ -208,7 +230,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             anchor.fill(transformerAnchorFill());
             anchor.stroke(primaryColor);
             anchor.strokeWidth(1.5);
-          } else if (anchor.hasName("top-center") || anchor.hasName("bottom-center")) {
+          } else if (anchor.hasName('top-center') || anchor.hasName('bottom-center')) {
             // مقابض الحواف الأفقية: كبسولات نحيفة وأنيقة
             anchor.cornerRadius(2.5);
             anchor.width(16);
@@ -218,7 +240,10 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             anchor.fill(transformerAnchorFill());
             anchor.stroke(primaryColor);
             anchor.strokeWidth(1.5);
-          } else if (anchor.hasName("rotater") || (anchor.name && anchor.name().includes("rotater"))) {
+          } else if (
+            anchor.hasName('rotater') ||
+            (anchor.name && anchor.name().includes('rotater'))
+          ) {
             // مقبض التدوير الدائري الاحترافي
             anchor.width(14);
             anchor.height(14);
@@ -241,12 +266,12 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       />
 
       {/* شريط الأبعاد والزاوية الحية الفاخر بنظام Fluent Acrylic */}
-      <Group 
+      <Group
         ref={badgeRef}
         name="transformer-badge"
         visible={false}
-        scaleX={1 / stageScale}
-        scaleY={1 / stageScale}
+        scaleX={safeBadgeScale}
+        scaleY={safeBadgeScale}
         listening={false}
       >
         <Rect

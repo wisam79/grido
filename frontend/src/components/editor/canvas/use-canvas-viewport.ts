@@ -189,9 +189,10 @@ export function useCanvasViewport(
         const container = containerRef.current;
         const canvas = innerRef.current;
 
+        const newCanvasRect = canvas.getBoundingClientRect();
+
         if (zoomPivotRef.current) {
           const { pctX, pctY, screenX, screenY } = zoomPivotRef.current;
-          const newCanvasRect = canvas.getBoundingClientRect();
 
           const currentScreenX = newCanvasRect.left + pctX * newCanvasRect.width;
           const currentScreenY = newCanvasRect.top + pctY * newCanvasRect.height;
@@ -201,17 +202,34 @@ export function useCanvasViewport(
 
           zoomPivotRef.current = null;
         } else {
-          const canvasRect = canvas.getBoundingClientRect();
-          const newCenterX = canvasRect.left + canvasRect.width / 2;
-          const newCenterY = canvasRect.top + canvasRect.height / 2;
+          // التكبير بدون عجلة (أزرار الشريط واختصارات لوحة المفاتيح والقوائم):
+          // يحفظ النقطة البؤرية المعروضة حالياً في مركز مساحة الرؤية بدل إعادة التوسيط القسري للكانفس
           const containerRect = container.getBoundingClientRect();
-          const viewportCenterX = containerRect.left + containerRect.width / 2;
-          const viewportCenterY = containerRect.top + containerRect.height / 2;
-          container.scrollLeft += newCenterX - viewportCenterX;
-          container.scrollTop += newCenterY - viewportCenterY;
+          const screenX = containerRect.left + containerRect.width / 2;
+          const screenY = containerRect.top + containerRect.height / 2;
+          const oldCanvasRect = prevCanvasRectRef.current;
+
+          if (oldCanvasRect && oldCanvasRect.width > 0 && oldCanvasRect.height > 0) {
+            const pctX = (screenX - oldCanvasRect.left) / oldCanvasRect.width;
+            const pctY = (screenY - oldCanvasRect.top) / oldCanvasRect.height;
+
+            const currentScreenX = newCanvasRect.left + pctX * newCanvasRect.width;
+            const currentScreenY = newCanvasRect.top + pctY * newCanvasRect.height;
+
+            container.scrollLeft += currentScreenX - screenX;
+            container.scrollTop += currentScreenY - screenY;
+          } else {
+            const newCenterX = newCanvasRect.left + newCanvasRect.width / 2;
+            const newCenterY = newCanvasRect.top + newCanvasRect.height / 2;
+            container.scrollLeft += newCenterX - screenX;
+            container.scrollTop += newCenterY - screenY;
+          }
         }
+        prevCanvasRectRef.current = newCanvasRect;
       }
       prevZoomRef.current = canvasZoom;
+    } else if (innerRef.current && !prevCanvasRectRef.current) {
+      prevCanvasRectRef.current = innerRef.current.getBoundingClientRect();
     }
   }, [canvasZoom, containerRef, innerRef]);
 }

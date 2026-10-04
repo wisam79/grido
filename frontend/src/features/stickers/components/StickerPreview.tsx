@@ -220,17 +220,23 @@ export const StickerPreview = React.memo(function StickerPreview({
   const handleZoomOut = () => setZoomLevel((z) => Math.max(0.5, +(z - 0.25).toFixed(2)));
   const handleZoomReset = () => setZoomLevel(1);
 
+  const zoomLevelRef = useRef(zoomLevel);
+  zoomLevelRef.current = zoomLevel;
+
   // Smooth wheel zooming support (Ctrl+Wheel or Trackpad pinch)
   useEffect(() => {
     const el = stageContainerRef.current;
     if (!el) return;
 
     let animFrame: number | null = null;
-    let targetZoom = zoomLevel;
+    let targetZoom = zoomLevelRef.current;
 
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
+        if (!animFrame) {
+          targetZoom = zoomLevelRef.current;
+        }
         const factor = 0.003;
         targetZoom = Math.min(2.5, Math.max(0.5, targetZoom * Math.exp(-e.deltaY * factor)));
         if (!animFrame) {
@@ -247,7 +253,7 @@ export const StickerPreview = React.memo(function StickerPreview({
       el.removeEventListener('wheel', handleWheel);
       if (animFrame) cancelAnimationFrame(animFrame);
     };
-  }, [zoomLevel]);
+  }, []);
 
   // Surface texture styling
   const stageBackgroundStyle = useMemo(() => {

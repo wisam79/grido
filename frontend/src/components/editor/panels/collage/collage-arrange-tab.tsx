@@ -14,7 +14,6 @@ import {
 import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
 import { Button } from '@/components/ui/button';
-import { FluentSection } from '@/components/ui/blocks';
 import { cn } from '@/lib/utils';
 import {
   buildPhysicalGridCells,
@@ -269,41 +268,46 @@ export function CollageArrangeTab() {
       id: 'reverse-rows',
       label: 'عكس الصفوف',
       hint: 'داخل كل صف',
-      icon: <Rows className="w-4 h-4" weight="bold" />,
+      icon: <Rows className="w-3.5 h-3.5" weight="bold" />,
       onClick: reverseRows,
       disabled: imageCount < 2,
+      fullWidth: false,
     },
     {
       id: 'reverse-columns',
       label: 'عكس الأعمدة',
       hint: 'داخل كل عمود',
-      icon: <Columns className="w-4 h-4" weight="bold" />,
+      icon: <Columns className="w-3.5 h-3.5" weight="bold" />,
       onClick: reverseColumns,
       disabled: imageCount < 2,
+      fullWidth: false,
     },
     {
       id: 'transpose',
       label: 'تبديل المحاور',
       hint: 'قلب الصفوف والأعمدة',
-      icon: <ArrowsDownUp className="w-4 h-4" weight="bold" />,
+      icon: <ArrowsDownUp className="w-3.5 h-3.5" weight="bold" />,
       onClick: transposeGrid,
       disabled: !collageTemplate,
+      fullWidth: false,
     },
     {
       id: 'shuffle',
       label: 'خلط عشوائي',
       hint: 'خلط مواضع الصور',
-      icon: <Shuffle className="w-4 h-4" weight="bold" />,
+      icon: <Shuffle className="w-3.5 h-3.5" weight="bold" />,
       onClick: shuffleImages,
       disabled: imageCount < 2,
+      fullWidth: false,
     },
     {
       id: 'repeat',
       label: 'تكرار الكل',
       hint: 'ملء الخانات دورياً',
-      icon: <Repeat className="w-4 h-4" weight="bold" />,
+      icon: <Repeat className="w-3.5 h-3.5" weight="bold" />,
       onClick: repeatEverywhere,
       disabled: imageCount === 0,
+      fullWidth: true,
     },
   ];
 
@@ -312,60 +316,53 @@ export function CollageArrangeTab() {
       id: 'rotate-cw',
       label: 'لفّ يميناً',
       hint: 'تدوير 90° يميناً',
-      icon: <ArrowsClockwise className="w-4 h-4" weight="bold" />,
+      icon: <ArrowsClockwise className="w-3.5 h-3.5" weight="bold" />,
       onClick: () => rotateAll(90),
       disabled: imageCount === 0,
+      fullWidth: false,
     },
     {
       id: 'rotate-ccw',
       label: 'لفّ يساراً',
       hint: 'تدوير 90° يساراً',
-      icon: <ArrowCounterClockwise className="w-4 h-4" weight="bold" />,
+      icon: <ArrowCounterClockwise className="w-3.5 h-3.5" weight="bold" />,
       onClick: () => rotateAll(-90),
       disabled: imageCount === 0,
+      fullWidth: false,
     },
     {
       id: 'reset',
       label: 'تصفير التعديلات',
       hint: 'إرجاع كل التعديلات',
-      icon: <ArrowsOutCardinal className="w-4 h-4" weight="bold" />,
+      icon: <ArrowsOutCardinal className="w-3.5 h-3.5" weight="bold" />,
       onClick: resetAllAdjustments,
       disabled: imageCount === 0,
+      fullWidth: true,
     },
   ];
-
-  const renderActions = (items: typeof arrangeActions) => (
-    <div className="grid grid-cols-2 gap-1.5">
-      {items.map((action) => (
-        <Button
-          key={action.id}
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={action.disabled}
-          title={action.hint}
-          onClick={action.onClick}
-          className="justify-start text-right"
-        >
-          <span className="text-muted-foreground shrink-0">{action.icon}</span>
-          <span className="truncate">{action.label}</span>
-        </Button>
-      ))}
-    </div>
-  );
 
   const emptyCount = slots.length - imageCount;
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
-      <FluentSection
-        icon={<FrameCorners className="w-3.5 h-3.5" weight="duotone" />}
-        title="مخطط الشبكة"
-        subtitle={`${grid.rows}×${grid.cols} · ${imageCount} صورة · ${emptyCount} فارغة`}
-        collapsible
-      >
+    <div
+      className="flex flex-col gap-2.5 font-cairo select-none animate-in fade-in duration-150"
+      dir="rtl"
+    >
+      {/* 📐 المخطط الهيكلي التجريدي للشبكة — مخطط هندسي نظيف برقم الخانة بدون تكرار الصور المعروضة على الكانفاس */}
+      <div className="bg-card/60 border border-border/80 rounded-xl p-2.5 shadow-2xs space-y-2 select-none">
+        <div className="flex items-center justify-between px-0.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <FrameCorners className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+            <span className="text-xs font-bold text-foreground">مخطط الشبكة</span>
+          </div>
+          <span className="text-micro font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/40 shrink-0">
+            {grid.rows}×{grid.cols} · {imageCount} صورة · {emptyCount} فارغة
+          </span>
+        </div>
+
+        {/* خلايا مجردة أنيقة برقم الخانة فقط بدون تكرار الصور */}
         <div
-          className="grid gap-1"
+          className="grid gap-1.5 p-1 rounded-lg bg-background/50 border border-border/40"
           style={{ gridTemplateColumns: `repeat(${Math.max(1, grid.cols)}, minmax(0, 1fr))` }}
           data-testid="collage-grid-preview"
         >
@@ -373,54 +370,89 @@ export function CollageArrangeTab() {
             row.map((slotId, c) => {
               const src = slotId ? grid.srcBySlot.get(slotId) : undefined;
               const index = r * grid.cols + c + 1;
+              const isFilled = isSrc(src);
               return (
                 <div
                   key={`cell-${r}-${c}`}
-                  title={isSrc(src) ? `خانة ${index}` : `خانة ${index} فارغة`}
+                  title={isFilled ? `خانة ${index} (ممتلئة)` : `خانة ${index} (فارغة)`}
                   className={cn(
-                    'relative aspect-[4/3] rounded-md border overflow-hidden',
-                    isSrc(src)
-                      ? 'border-border/60 bg-muted'
-                      : 'border-dashed border-border/50 bg-muted/20',
+                    'h-7.5 rounded-md border text-xs font-mono font-bold flex items-center justify-center transition-colors select-none',
+                    isFilled
+                      ? 'border-border/80 bg-card text-foreground shadow-2xs'
+                      : 'border-dashed border-border/40 bg-muted/20 text-muted-foreground/40',
                   )}
-                  style={
-                    isSrc(src)
-                      ? {
-                          backgroundImage: `url(${src})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                        }
-                      : undefined
-                  }
                 >
-                  <span className="absolute top-0.5 start-0.5 min-w-[16px] h-4 px-1 rounded bg-background/85 text-3xs font-mono font-bold flex items-center justify-center border border-border/50">
-                    {index}
-                  </span>
+                  <span>{index}</span>
                 </div>
               );
             }),
           )}
         </div>
-      </FluentSection>
+      </div>
 
-      <FluentSection
-        icon={<ArrowsDownUp className="w-3.5 h-3.5" weight="duotone" />}
-        title="فرز وترتيب الخانات"
-        subtitle="ترتيب بلا تغيير التخطيط"
-        collapsible
-      >
-        {!grid.isComplete && (
-          <p className="text-micro text-muted-foreground leading-relaxed">
-            عمليات على الممتلئة فقط.
-          </p>
-        )}
+      {/* 🧭 عمليات فرز وترتيب الصور والتحويلات الجماعية */}
+      <div className="bg-card/60 border border-border/80 rounded-xl p-2.5 shadow-2xs space-y-3 select-none">
+        {/* قسم ترتيب الصور */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between px-0.5">
+            <span className="text-micro font-bold text-muted-foreground">ترتيب الصور</span>
+            {!grid.isComplete && (
+              <span className="text-3xs text-muted-foreground/70">العمليات على الممتلئة فقط</span>
+            )}
+          </div>
 
-        <p className="text-micro font-bold text-muted-foreground/90">ترتيب الصور</p>
-        {renderActions(arrangeActions)}
+          <div className="grid grid-cols-2 gap-1.5">
+            {arrangeActions.map((action) => (
+              <Button
+                key={action.id}
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={action.disabled}
+                title={action.hint}
+                onClick={action.onClick}
+                className={cn(
+                  'h-8 px-2.5 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-2 cursor-pointer shadow-2xs transition-all active:scale-[0.98]',
+                  action.fullWidth ? 'col-span-2 justify-center' : 'justify-start text-right',
+                )}
+              >
+                <span className="text-muted-foreground shrink-0">{action.icon}</span>
+                <span className="truncate">{action.label}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
 
-        <p className="text-micro font-bold text-muted-foreground/90 mt-1">تحويلات جماعية</p>
-        {renderActions(transformActions)}
-      </FluentSection>
+        {/* قسم التحويلات الجماعية */}
+        <div className="space-y-1.5 pt-2 border-t border-border/40">
+          <div className="px-0.5">
+            <span className="text-micro font-bold text-muted-foreground">تحويلات جماعية</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1.5">
+            {transformActions.map((action) => (
+              <Button
+                key={action.id}
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={action.disabled}
+                title={action.hint}
+                onClick={action.onClick}
+                className={cn(
+                  'h-8 px-2.5 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-2 cursor-pointer shadow-2xs transition-all active:scale-[0.98]',
+                  action.fullWidth
+                    ? 'col-span-2 justify-center text-muted-foreground hover:text-foreground'
+                    : 'justify-start text-right',
+                )}
+              >
+                <span className="text-muted-foreground shrink-0">{action.icon}</span>
+                <span className="truncate">{action.label}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

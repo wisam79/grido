@@ -1,8 +1,8 @@
-import React, { useMemo } from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import React, { useMemo } from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   Eye,
   EyeSlash,
@@ -20,8 +20,8 @@ import {
   AlignBottom,
   ArrowsHorizontal,
   ArrowsVertical,
-} from "@/components/ui/icons";
-import { LayersList } from "../../properties/layers-list";
+} from '@/components/ui/icons';
+import { LayersList } from '../../properties/layers-list';
 
 interface QuickActionBtnProps {
   content: string;
@@ -76,7 +76,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
       alignSelectedElements: state.alignSelectedElements,
       distributeSelectedElements: state.distributeSelectedElements,
       pushHistory: state.pushHistory,
-    }))
+    })),
   );
 
   const hasElements = elements.length > 0;
@@ -84,8 +84,14 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
   const hasSelection = selectedIds.length > 0;
 
   // فحص حالة القفل والرؤية لجميع العناصر
-  const allLocked = useMemo(() => hasElements && elements.every((e) => e.locked), [hasElements, elements]);
-  const allHidden = useMemo(() => hasElements && elements.every((e) => e.visible === false), [hasElements, elements]);
+  const allLocked = useMemo(
+    () => hasElements && elements.every((e) => e.locked),
+    [hasElements, elements],
+  );
+  const allHidden = useMemo(
+    () => hasElements && elements.every((e) => e.visible === false),
+    [hasElements, elements],
+  );
 
   // إخفاء / إظهار الكل
   const handleToggleAllVisibility = () => {
@@ -104,115 +110,135 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
   };
 
   return (
-    <div className="space-y-3 font-cairo animate-in fade-in duration-150" dir="rtl">
-      {/* 🎛️ شريط أدوات الطبقات السريع المجمع */}
-      <div className="bg-card border border-border p-2 rounded-xl shadow-xs fluent-specular space-y-2">
-        <div className="flex items-center justify-between border-b border-border/40 pb-1.5 px-1">
-          <span className="text-xs font-bold text-foreground/80">أدوات الطبقات</span>
-          <span className="text-micro text-muted-foreground font-mono bg-muted/60 px-1.5 py-0.5 rounded">
-            {selectedIds.length > 0 ? `${selectedIds.length} محدد` : `${elements.length} طبقة`}
+    <div
+      className="flex flex-col gap-2 font-cairo select-none animate-in fade-in duration-150"
+      dir="rtl"
+    >
+      {/* 🎛️ شريط أدوات الطبقات الموحد الرشيق */}
+      <div className="flex items-center justify-between h-8.5 px-2.5 rounded-lg border border-border/70 bg-card/60 shadow-2xs">
+        {/* عنوان اللوحة مع عداد الطبقات والمحدد */}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="text-xs font-bold text-foreground truncate">الطبقات</span>
+          <span className="text-3xs font-mono font-semibold px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0">
+            {selectedIds.length > 0 ? `${selectedIds.length}/${elements.length}` : elements.length}
           </span>
         </div>
 
-        <div className="flex items-center justify-between gap-1 flex-wrap">
-          {/* التحكم الجماعي */}
-          <div className="flex items-center gap-0.5 bg-muted/40 p-0.5 rounded-lg border border-border/30">
-            <QuickActionBtn
-              content={allHidden ? "إظهار الكل" : "إخفاء الكل"}
-              onClick={handleToggleAllVisibility}
-              disabled={!hasElements}
-            >
-              {allHidden ? <EyeSlash className="w-3.5 h-3.5 text-amber-500" /> : <Eye className="w-3.5 h-3.5" />}
-            </QuickActionBtn>
+        {/* أزرار الإجراءات السريعة في صف واحد مدمج */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <QuickActionBtn
+            content={allHidden ? 'إظهار الكل' : 'إخفاء الكل'}
+            onClick={handleToggleAllVisibility}
+            disabled={!hasElements}
+          >
+            {allHidden ? (
+              <EyeSlash className="w-3.5 h-3.5 text-warning" />
+            ) : (
+              <Eye className="w-3.5 h-3.5" />
+            )}
+          </QuickActionBtn>
 
-            <QuickActionBtn
-              content={allLocked ? "فك قفل الكل" : "قفل الكل"}
-              onClick={handleToggleAllLock}
-              disabled={!hasElements}
-            >
-              {allLocked ? <LockSimple className="w-3.5 h-3.5 text-amber-500" /> : <LockSimpleOpen className="w-3.5 h-3.5" />}
-            </QuickActionBtn>
-          </div>
+          <QuickActionBtn
+            content={allLocked ? 'فك قفل الكل' : 'قفل الكل'}
+            onClick={handleToggleAllLock}
+            disabled={!hasElements}
+          >
+            {allLocked ? (
+              <LockSimple className="w-3.5 h-3.5 text-warning" />
+            ) : (
+              <LockSimpleOpen className="w-3.5 h-3.5" />
+            )}
+          </QuickActionBtn>
 
-          {/* التجميع والعمليات */}
-          <div className="flex items-center gap-0.5 bg-muted/40 p-0.5 rounded-lg border border-border/30">
-            <QuickActionBtn
-              content="تجميع المحدد (Ctrl+G)"
-              onClick={groupSelectedElements}
-              disabled={!hasMultipleSelected}
-            >
-              <FolderSimplePlus className="w-3.5 h-3.5" />
-            </QuickActionBtn>
+          <div className="w-px h-3.5 bg-border/60 mx-0.5" />
 
-            <QuickActionBtn
-              content="فك التجميع (Ctrl+Shift+G)"
-              onClick={ungroupSelectedElements}
-              disabled={!hasSelection}
-            >
-              <FolderSimpleDashed className="w-3.5 h-3.5" />
-            </QuickActionBtn>
+          <QuickActionBtn
+            content="تجميع المحدد (Ctrl+G)"
+            onClick={groupSelectedElements}
+            disabled={!hasMultipleSelected}
+          >
+            <FolderSimplePlus className="w-3.5 h-3.5" />
+          </QuickActionBtn>
 
-            <QuickActionBtn
-              content="تكرار المحدد"
-              onClick={() => duplicateElements(selectedIds)}
-              disabled={!hasSelection}
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </QuickActionBtn>
+          <QuickActionBtn
+            content="فك التجميع (Ctrl+Shift+G)"
+            onClick={ungroupSelectedElements}
+            disabled={!hasSelection}
+          >
+            <FolderSimpleDashed className="w-3.5 h-3.5" />
+          </QuickActionBtn>
 
-            <QuickActionBtn
-              content="حذف المحدد"
-              onClick={() => removeElements(selectedIds)}
-              disabled={!hasSelection}
-            >
-              <Trash className="w-3.5 h-3.5 text-destructive" />
-            </QuickActionBtn>
-          </div>
-        </div>
+          <QuickActionBtn
+            content="تكرار المحدد"
+            onClick={() => duplicateElements(selectedIds)}
+            disabled={!hasSelection}
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </QuickActionBtn>
 
-        {/* أدوات المحاذاة السريعة للتحديد المتعدد أو الفردي */}
-        <div className="pt-1.5 border-t border-border/40 flex items-center justify-between gap-1">
-          <div className="flex items-center gap-0.5">
-            <QuickActionBtn content="محاذاة لليمين" onClick={() => alignSelectedElements("right")} disabled={!hasSelection}>
-              <AlignRight className="w-3.5 h-3.5" />
-            </QuickActionBtn>
-            <QuickActionBtn content="توسيط أفقي" onClick={() => alignSelectedElements("center")} disabled={!hasSelection}>
-              <AlignCenterHorizontal className="w-3.5 h-3.5" />
-            </QuickActionBtn>
-            <QuickActionBtn content="محاذاة لليسار" onClick={() => alignSelectedElements("left")} disabled={!hasSelection}>
-              <AlignLeft className="w-3.5 h-3.5" />
-            </QuickActionBtn>
-          </div>
-
-          <div className="w-px h-4 bg-border/50" />
-
-          <div className="flex items-center gap-0.5">
-            <QuickActionBtn content="محاذاة للأعلى" onClick={() => alignSelectedElements("top")} disabled={!hasSelection}>
-              <AlignTop className="w-3.5 h-3.5" />
-            </QuickActionBtn>
-            <QuickActionBtn content="توسيط عمودي" onClick={() => alignSelectedElements("middle")} disabled={!hasSelection}>
-              <AlignCenterVertical className="w-3.5 h-3.5" />
-            </QuickActionBtn>
-            <QuickActionBtn content="محاذاة للأسفل" onClick={() => alignSelectedElements("bottom")} disabled={!hasSelection}>
-              <AlignBottom className="w-3.5 h-3.5" />
-            </QuickActionBtn>
-          </div>
-
-          <div className="w-px h-4 bg-border/50" />
-
-          <div className="flex items-center gap-0.5">
-            <QuickActionBtn content="توزيع أفقي" onClick={() => distributeSelectedElements("horizontal")} disabled={!hasMultipleSelected}>
-              <ArrowsHorizontal className="w-3.5 h-3.5" />
-            </QuickActionBtn>
-            <QuickActionBtn content="توزيع عمودي" onClick={() => distributeSelectedElements("vertical")} disabled={!hasMultipleSelected}>
-              <ArrowsVertical className="w-3.5 h-3.5" />
-            </QuickActionBtn>
-          </div>
+          <QuickActionBtn
+            content="حذف المحدد"
+            onClick={() => removeElements(selectedIds)}
+            disabled={!hasSelection}
+          >
+            <Trash className="w-3.5 h-3.5 text-destructive" />
+          </QuickActionBtn>
         </div>
       </div>
 
-      {/* 📜 قائمة الطبقات التفاعلية بالسحب والإفلات */}
-      <LayersList />
+      {/* 🧭 شريط المحاذاة المشروط: يظهر فقط عند وجود عناصر محددة بتصميم رشيق مدمج */}
+      {hasSelection && (
+        <div className="flex items-center justify-between h-7 px-1.5 rounded-lg border border-border/50 bg-muted/30 shadow-2xs animate-in fade-in duration-150">
+          <div className="flex items-center gap-0.5">
+            <QuickActionBtn content="محاذاة لليمين" onClick={() => alignSelectedElements('right')}>
+              <AlignRight className="w-3 h-3" />
+            </QuickActionBtn>
+            <QuickActionBtn content="توسيط أفقي" onClick={() => alignSelectedElements('center')}>
+              <AlignCenterHorizontal className="w-3 h-3" />
+            </QuickActionBtn>
+            <QuickActionBtn content="محاذاة لليسار" onClick={() => alignSelectedElements('left')}>
+              <AlignLeft className="w-3 h-3" />
+            </QuickActionBtn>
+          </div>
+
+          <div className="w-px h-3.5 bg-border/50" />
+
+          <div className="flex items-center gap-0.5">
+            <QuickActionBtn content="محاذاة للأعلى" onClick={() => alignSelectedElements('top')}>
+              <AlignTop className="w-3 h-3" />
+            </QuickActionBtn>
+            <QuickActionBtn content="توسيط عمودي" onClick={() => alignSelectedElements('middle')}>
+              <AlignCenterVertical className="w-3 h-3" />
+            </QuickActionBtn>
+            <QuickActionBtn content="محاذاة للأسفل" onClick={() => alignSelectedElements('bottom')}>
+              <AlignBottom className="w-3 h-3" />
+            </QuickActionBtn>
+          </div>
+
+          {hasMultipleSelected && (
+            <>
+              <div className="w-px h-3.5 bg-border/50" />
+              <div className="flex items-center gap-0.5">
+                <QuickActionBtn
+                  content="توزيع أفقي"
+                  onClick={() => distributeSelectedElements('horizontal')}
+                >
+                  <ArrowsHorizontal className="w-3 h-3" />
+                </QuickActionBtn>
+                <QuickActionBtn
+                  content="توزيع عمودي"
+                  onClick={() => distributeSelectedElements('vertical')}
+                >
+                  <ArrowsVertical className="w-3 h-3" />
+                </QuickActionBtn>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 📜 قائمة الطبقات الكاملة بنمط مستقل يملأ الارتفاع المتاح */}
+      <LayersList standalone />
     </div>
   );
 });

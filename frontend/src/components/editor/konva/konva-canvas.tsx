@@ -482,21 +482,37 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     [selectElement],
   );
 
-  const createElementRef = React.useCallback(
-    (elId: string) => ({
-      get current() {
-        return elementsRefs.current[elId];
-      },
-      set current(val: Konva.Node | null) {
-        if (val) {
-          elementsRefs.current[elId] = val;
-        } else {
-          delete elementsRefs.current[elId];
-        }
-      },
-    }),
-    [],
-  );
+  const elementRefCache = React.useRef<Map<string, { current: Konva.Node | null }>>(new Map());
+
+  // تنظيف مراجع العناصر المحذوفة من كاش elementRefCache لمنع تراكم الذاكرة
+  useEffect(() => {
+    const liveIds = new Set(sortedElements.map((e) => e.id));
+    for (const id of elementRefCache.current.keys()) {
+      if (!liveIds.has(id)) {
+        elementRefCache.current.delete(id);
+      }
+    }
+  }, [sortedElements]);
+
+  const createElementRef = React.useCallback((elId: string) => {
+    let cached = elementRefCache.current.get(elId);
+    if (!cached) {
+      cached = {
+        get current() {
+          return elementsRefs.current[elId];
+        },
+        set current(val: Konva.Node | null) {
+          if (val) {
+            elementsRefs.current[elId] = val;
+          } else {
+            delete elementsRefs.current[elId];
+          }
+        },
+      };
+      elementRefCache.current.set(elId, cached);
+    }
+    return cached;
+  }, []);
 
   return (
     <Stage
