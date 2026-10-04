@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - معالجة التوزيع الفردي غير المتوازن للأزرار: جعل زر «تكرار الكل» يمتد على كامل العرض (`col-span-2`) في قسم ترتيب الصور، وزر «تصفير التعديلات» يمتد على كامل العرض في قسم التحويلات الجماعية، مع إلغاء الصناديق المتداخلة الضخمة وضبط ارتفاع الأزرار على `h-8` المدمج.
 
 ### Fixed
+- **مطابقة عقود اختبارات الواجهة لمصغر خلفية الورقة وشريط أدوات العناصر:**
+  - تضمين زاوية التدرج اللوني (`· 90°`) ضمن نص معاينة `PaperBackgroundSummary` في `frontend/src/components/editor/properties/shared-controls.tsx` لضمان توافق الفحص مع اختبارات البطاقة.
+  - استبدال تسمية الشريط العلوي بقائمة «العناصر» في `frontend/src/components/editor/panels/freeform/freeform-layers-tab.tsx` لمنع تعارض المطابقة النصية التامة مع محدد تبويب «الطبقات» في شريط أدوات مساحة العمل.
 - **إصلاح طي وتوسيع لوحة الخصائص في الشاشات العريضة (Wide Breakpoint Layout Fix):**
   - ربط حالة فتح لوحة الخصائص في نمط Wide برمز الحالة الفعلي `isInspectorPinned` في `frontend/src/components/editor/workspace/workspace-layout.tsx` وتحديث دالة `setIsInspectorPinned` لتقبل مُحدِّث دالي، مما أصلح تعطل زر طي اللوحة ومنع الإغلاق الخاطئ لدرج القوالب الأيسر عند طي اللوحة اليمنى.
   - مزامنة `isInspectorPinned` تلقائياً عند عبور نقطة التوقف من Standard إلى Wide أثناء فتح لوحة الخصائص لمنع اختفائها المفاجئ عند تغيير حجم النافذة، مع تعزيز التغطية باختبار وحدة انحداري جديد في `frontend/test/use-workspace-panels.test.ts`.

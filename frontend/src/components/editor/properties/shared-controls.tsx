@@ -838,7 +838,7 @@ export const PaperBackgroundSummary = React.memo(function PaperBackgroundSummary
           <p className="text-xs font-bold text-foreground leading-tight">خلفية الورقة</p>
           <span className="truncate text-3xs font-mono text-muted-foreground" dir="ltr">
             {gradientActive
-              ? `${(backgroundColor || '#FFFFFF').toUpperCase()} → ${backgroundGradientColor2?.toUpperCase()}`
+              ? `${(backgroundColor || '#FFFFFF').toUpperCase()} → ${backgroundGradientColor2?.toUpperCase()} · ${backgroundGradientAngle ?? 90}°`
               : (backgroundColor || '#FFFFFF').toUpperCase()}
           </span>
         </div>
