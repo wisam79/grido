@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - تطبيق قفل صفي حصري `SELECT plan FROM public.profiles WHERE id = p_user_id FOR UPDATE;` داخل دالة `check_and_record_ai_usage` لمنع تلاعب الطلبات المتزامنة وتجاوز سقف الحصة (Race Conditions).
   - دعم المعالجة الخاملة المتطابقة (Idempotency) في الـ RPC، بحيث تُعيد النجاح الفوري دون تكرار الإدراج عند إعادة إرسال نفس `request_id`.
   - توليد `request_id` وتمريره في حمولة الـ RPC من `modal_ai/upscaler.py`.
+- **تسريع وتجاوز مهلة التوقيع الرقمي السحابي (Skip SignPath Waiting Timeout):**
+  - تقييد خطوة رفع الملفات للتوقيع في `.github/workflows/release.yml` بوجود اعتمادات SignPath، وتخطي محاولة التوقيع تلقائياً لتفادي مهلة الانتظار الطويلة (30 دقيقة) لحين اعتماد الشهادة رسمياً، ونشر حزم التثبيت مباشرة مع مطابقة بصمات SHA-256.
 
 ## [v1.13.0] - 2026-10-04
 

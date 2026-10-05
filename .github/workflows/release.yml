@@ -153,6 +153,7 @@ jobs:
           }
 
       - name: Upload Executables for Signing
+        if: env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != ''
         id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
