@@ -44,7 +44,9 @@ describe('CoreSlice Unit Tests', () => {
     useEditorStore.getState().setBackgroundColor('#000000');
     useEditorStore.getState().setLastEditedImage('temp.jpg');
     useEditorStore.getState().setLastEditedImageAspect(1.2);
-    useEditorStore.setState({ clipboardElements: [{ id: '1', type: 'image', x: 0, y: 0, width: 100, height: 100 }] as any });
+    useEditorStore.setState({
+      clipboardElements: [{ id: '1', type: 'image', x: 0, y: 0, width: 100, height: 100 }] as any,
+    });
 
     useEditorStore.getState().reset();
 
@@ -59,14 +61,17 @@ describe('CoreSlice Unit Tests', () => {
     useEditorStore.getState().setLastEditedImage('projectA.jpg');
     useEditorStore.setState({ clipboardElements: [{ id: 'el-a' }] as any });
 
-    useEditorStore.getState().loadProject({
-      version: 1,
-      canvasWidth: 1920,
-      canvasHeight: 1080,
-      backgroundColor: '#FAFAFA',
-      elements: [],
-      slots: [],
-    } as any, 'proj-b');
+    useEditorStore.getState().loadProject(
+      {
+        version: 1,
+        canvasWidth: 1920,
+        canvasHeight: 1080,
+        backgroundColor: '#FAFAFA',
+        elements: [],
+        slots: [],
+      } as any,
+      'proj-b',
+    );
 
     expect(useEditorStore.getState().projectId).toBe('proj-b');
     expect(useEditorStore.getState().lastEditedImage).toBeNull();
@@ -94,5 +99,25 @@ describe('CoreSlice Unit Tests', () => {
 
     useEditorStore.getState().setCanvasFitMode('auto');
     expect(useEditorStore.getState().canvasFitMode).toBe('auto');
+  });
+
+  it('preserves elements without data loss when switching to collage mode even with empty slots', () => {
+    useEditorStore.getState().setMode('single');
+    useEditorStore.getState().addTextElement('Freeform Text Item');
+    expect(useEditorStore.getState().elements.length).toBeGreaterThan(0);
+
+    // محاكاة مشروع بخانات فارغة
+    useEditorStore.setState({ slots: [] });
+
+    // التبديل لوضع الكولاج
+    useEditorStore.getState().setMode('collage');
+    expect(useEditorStore.getState().mode).toBe('collage');
+    // العناصر لا تُمسح بل تبقى سليمة في الذاكرة
+    expect(useEditorStore.getState().elements.length).toBeGreaterThan(0);
+    expect(useEditorStore.getState().elements[0].type).toBe('text');
+
+    // العودة للوضع الفردي
+    useEditorStore.getState().setMode('single');
+    expect(useEditorStore.getState().elements.length).toBeGreaterThan(0);
   });
 });

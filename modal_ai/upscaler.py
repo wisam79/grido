@@ -182,10 +182,12 @@ class ImageEnhancer:
 
             import cv2
             import numpy as np
+            import uuid
 
             data = await request.json()
             image_b64 = data.get("image", "")
             daily_limit = data.get("dailyLimit", 2)
+            request_id = data.get("requestId") or str(uuid.uuid4())
 
             # 🛡️ فحص مسبق للرصيد اليومي قبل حرق أي ثانية GPU مكلفة.
             # الحد يُشتق خادمياً من خطة المستخدم (p_daily_limit مهمل في RPC الجديد).
@@ -218,8 +220,13 @@ class ImageEnhancer:
                     status_code=429
                 )
             except Exception as e:
-                # فشل الفحص المسبق لأسباب شبكية لا يمنع الخدمة — التسجيل اللاحق يبقى الحاجز الفعلي
-                print(f"Pre-flight quota check failed (continuing): {e}")
+                # فشل الفحص المسبق لأسباب شبكية أو تعطل الخادم — نفشل مغلقاً لمنع الاستهلاك غير المحسوب
+                print(f"Pre-flight quota check failed (failing closed): {e}", flush=True)
+                return Response(
+                    content='{"error": "تعذر التحقق من الحصة اليومية لاستخدام الذكاء الاصطناعي (خدمة التحقق غير متاحة مؤقتاً)"}',
+                    media_type="application/json",
+                    status_code=503
+                )
             
             if not image_b64:
                 return Response(content='{"error": "الصورة غير موجودة"}', media_type="application/json", status_code=400)
@@ -339,7 +346,8 @@ class ImageEnhancer:
                     "p_image_bytes": raw_bytes_estimate,
                     "p_exec_seconds": exec_seconds,
                     "p_cost_usd": total_cost_usd,
-                    "p_check_only": False
+                    "p_check_only": False,
+                    "p_request_id": request_id
                 }).encode('utf-8')
 
                 def _post_usage():
@@ -387,7 +395,8 @@ class ImageEnhancer:
                 "execution_seconds": exec_seconds,
                 "cost_usd": cost_usd,
                 "total_cost_usd": total_cost_usd,
-                "usage_recorded": usage_recorded
+                "usage_recorded": usage_recorded,
+                "request_id": request_id
             }
             
         except Exception as e:

@@ -329,8 +329,28 @@ export function DesktopMenuBar() {
           <DropdownMenuItem
             disabled={!hasSelection}
             onClick={() => {
-              if (selectedIds.length > 0) removeElements(selectedIds);
-              else if (selectedId) removeElement(selectedId);
+              const { elements } = useEditorStore.getState();
+              const targetIds =
+                selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : [];
+              const lockedCount = targetIds.filter(
+                (id) => elements.find((el) => el.id === id)?.locked,
+              ).length;
+              const removableIds = targetIds.filter(
+                (id) => !elements.find((el) => el.id === id)?.locked,
+              );
+
+              if (removableIds.length === 0 && lockedCount > 0) {
+                toast.info('العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف');
+                return;
+              }
+              if (lockedCount > 0) {
+                toast.info('تجاهلنا العناصر المقفلة وحذفنا غير المقفلة فقط');
+              }
+              if (removableIds.length === 1) {
+                removeElement(removableIds[0]);
+              } else if (removableIds.length > 1) {
+                removeElements(removableIds);
+              }
             }}
             className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
           >

@@ -22,6 +22,7 @@ import {
   ArrowsVertical,
 } from '@/components/ui/icons';
 import { LayersList } from '../../properties/layers-list';
+import { toast } from 'sonner';
 
 interface QuickActionBtnProps {
   content: string;
@@ -178,7 +179,25 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
 
           <QuickActionBtn
             content="حذف المحدد"
-            onClick={() => removeElements(selectedIds)}
+            onClick={() => {
+              const { elements } = useEditorStore.getState();
+              const lockedCount = selectedIds.filter(
+                (id) => elements.find((el) => el.id === id)?.locked,
+              ).length;
+              const removableIds = selectedIds.filter(
+                (id) => !elements.find((el) => el.id === id)?.locked,
+              );
+              if (removableIds.length === 0 && lockedCount > 0) {
+                toast.info('العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف');
+                return;
+              }
+              if (lockedCount > 0) {
+                toast.info('تجاهلنا العناصر المقفلة وحذفنا غير المقفلة فقط');
+              }
+              if (removableIds.length > 0) {
+                removeElements(removableIds);
+              }
+            }}
             disabled={!hasSelection}
           >
             <Trash className="w-3.5 h-3.5 text-destructive" />

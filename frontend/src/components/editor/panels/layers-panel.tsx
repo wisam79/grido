@@ -4,6 +4,7 @@ import { CanvasElement, ShapeElement } from '@/lib/store/types';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 import {
   Image,
   TextT,
@@ -392,7 +393,13 @@ export const LayersPanel = React.memo(function LayersPanel() {
               }}
               onToggleVisibility={() => handleToggleVisibility(el.id, el.visible)}
               onToggleLock={() => handleToggleLock(el.id, el.locked)}
-              onDelete={() => removeElement(el.id)}
+              onDelete={() => {
+                if (el.locked) {
+                  toast.info('العنصر مقفل — ألغِ قفله أولاً للحذف');
+                  return;
+                }
+                removeElement(el.id);
+              }}
               onDuplicate={() => duplicateElement(el.id)}
               onDragStart={handleDragStart}
               onDragOver={(e) => {

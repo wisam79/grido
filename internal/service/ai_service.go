@@ -478,6 +478,18 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 		return "", fmt.Errorf("فشل خادم الذكاء الاصطناعي (%d)", resp.StatusCode)
 	}
 
+	// 🛡️ التحقق من أن الاستهلاك سُجّل فعلياً ولم يتسرب مجاناً عند عطل خادمي (تقرير 14)
+	var modalResp struct {
+		Success       bool  `json:"success"`
+		UsageRecorded *bool `json:"usage_recorded"`
+	}
+	if err := json.Unmarshal(body, &modalResp); err == nil {
+		if modalResp.UsageRecorded != nil && !*modalResp.UsageRecorded {
+			slog.Error("Modal AI returned image with unrecorded usage", "body", string(body))
+			return "", fmt.Errorf("تعذر تسجيل استهلاك حصة الذكاء الاصطناعي في قاعدة البيانات. يرجى إعادة المحاولة")
+		}
+	}
+
 	success = true
 	return string(injectServerQuota(body, serverUsedToday, serverLimit)), nil
 }

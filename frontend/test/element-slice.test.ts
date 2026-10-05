@@ -58,7 +58,8 @@ describe('ElementSlice Unit Tests', () => {
 
     useEditorStore.getState().updateElement(elId, { text: 'نص معدل', fontSize: 32 });
 
-    const updated = useEditorStore.getState().elements.find((e) => e.id === elId) as TextElement | undefined;
+    const updated = useEditorStore.getState().elements.find((e) => e.id === elId) as
+      TextElement | undefined;
     expect(updated?.text).toBe('نص معدل');
     expect(updated?.fontSize).toBe(32);
   });
@@ -71,6 +72,37 @@ describe('ElementSlice Unit Tests', () => {
 
     expect(useEditorStore.getState().elements.length).toBe(0);
     expect(useEditorStore.getState().selectedId).toBeNull();
+  });
+
+  it('does not remove locked element by default unless force is true', () => {
+    useEditorStore.getState().addTextElement('عنصر مقفل');
+    const elId = useEditorStore.getState().elements[0].id;
+    useEditorStore.getState().updateElement(elId, { locked: true });
+
+    // محاولة الحذف العادي
+    useEditorStore.getState().removeElement(elId);
+    expect(useEditorStore.getState().elements.length).toBe(1);
+
+    // الحذف بالقوة
+    useEditorStore.getState().removeElement(elId, true);
+    expect(useEditorStore.getState().elements.length).toBe(0);
+  });
+
+  it('filters out locked elements during removeElements batch unless force is true', () => {
+    useEditorStore.getState().addTextElement('عنصر عادي');
+    useEditorStore.getState().addTextElement('عنصر مقفل');
+    const idNormal = useEditorStore.getState().elements[0].id;
+    const idLocked = useEditorStore.getState().elements[1].id;
+    useEditorStore.getState().updateElement(idLocked, { locked: true });
+
+    // محاولة حذف الاثنين معاً
+    useEditorStore.getState().removeElements([idNormal, idLocked]);
+    expect(useEditorStore.getState().elements.length).toBe(1);
+    expect(useEditorStore.getState().elements[0].id).toBe(idLocked);
+
+    // الحذف الإجباري للمقفل
+    useEditorStore.getState().removeElements([idLocked], true);
+    expect(useEditorStore.getState().elements.length).toBe(0);
   });
 
   it('duplicates an element', () => {

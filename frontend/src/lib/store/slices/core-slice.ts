@@ -156,7 +156,6 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
 
       if (mode === 'collage' && (!s.slots || s.slots.length === 0)) {
         nextState.slots = buildSlots();
-        nextState.elements = []; // مسح عناصر التعديل الحر عند العودة للكولاج
       } else if (mode === 'collage') {
         // القوالب الفيزيائية (physicalLayout) تُحسب خلاياها من أبعاد الكانفس
         // الحالية — خانات مبنية لمقاس قديم تبقى مشوهة عند العودة من الوضع الحر
@@ -197,7 +196,6 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
             }
           } else if (dynamicCells) {
             nextState.slots = buildSlots();
-            nextState.elements = [];
           }
         }
       }

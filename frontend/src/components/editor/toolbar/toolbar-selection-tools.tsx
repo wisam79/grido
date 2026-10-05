@@ -16,12 +16,33 @@ import {
 } from '@/components/ui/alignment-icons';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
+import { toast } from 'sonner';
 import { AiToolsToolbarGroup } from './toolbar-ai-tools';
 import { ImageFiltersPopover } from './toolbar-image-filters';
 
 /** تنفيذ فعل على التحديد: عنصر واحد أو دفعة — كان الفرع مكرراً في تكرار/حذف. */
-function actOnSelection(single: (id: string) => void, multi: (ids: string[]) => void): void {
-  const { selectedIds } = useEditorStore.getState();
+function actOnSelection(
+  single: (id: string) => void,
+  multi: (ids: string[]) => void,
+  isDelete = false,
+): void {
+  const { selectedIds, elements } = useEditorStore.getState();
+  if (isDelete) {
+    const lockedCount = selectedIds.filter(
+      (id) => elements.find((el) => el.id === id)?.locked,
+    ).length;
+    const removableIds = selectedIds.filter((id) => !elements.find((el) => el.id === id)?.locked);
+    if (removableIds.length === 0 && lockedCount > 0) {
+      toast.info('العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف');
+      return;
+    }
+    if (lockedCount > 0) {
+      toast.info('تجاهلنا العناصر المقفلة وحذفنا غير المقفلة فقط');
+    }
+    if (removableIds.length === 1) single(removableIds[0]);
+    else if (removableIds.length > 1) multi(removableIds);
+    return;
+  }
   if (selectedIds.length === 1) single(selectedIds[0]);
   else if (selectedIds.length > 1) multi(selectedIds);
 }
@@ -180,7 +201,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => actOnSelection(removeElement, removeElements)}
+            onClick={() => actOnSelection(removeElement, removeElements, true)}
             aria-label="حذف"
             className="h-8 px-3 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
           >

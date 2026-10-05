@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **حماية العناصر المقفلة من الحذف غير المقصود (Locked Elements Deletion Guard):**
+  - تصحيح دالتي `removeElement` و `removeElements` في `frontend/src/lib/store/slices/element-slice.ts` بحيث تتجاهلان تلقائياً أي عنصر يحمل خاصية `locked: true` ما لم يُطلب الحذف الإجباري الصريح (`force: true`).
+  - تحديث معالج الحذف في قائمة سطح المكتب `frontend/src/components/editor/system/desktop-menu-bar.tsx`، شريط التحديد السريع `toolbar-selection-tools.tsx`، تبويب الطبقات `freeform-layers-tab.tsx`، ولوحات الطبقات `layers-list.tsx` و `layers-panel.tsx` لاستبعاد العناصر المقفلة وإشعار المستخدم عبر تنبيه لطيف (`toast.info`).
+  - تعزيز اختبارات الوحدة باختبارين جديدين في `frontend/test/element-slice.test.ts` لتأكيد امتناع الحذف الفردي والجماعي للعناصر المقفلة.
+- **منع فقدان ومسح عناصر التصميم الحر عند التبديل لوضع الكولاج (Preserve Freeform Elements on Mode Switch):**
+  - استئصال السطور التدميرية `nextState.elements = []` من دالة `setMode` في `frontend/src/lib/store/slices/core-slice.ts`، لضمان بقاء نصوص وأشكال وملصقات وصور التصميم الحر في الذاكرة دون مسح عند التبديل بين وضعي الكولاج والتصميم الحر أو عند فتح مشاريع بخانات فارغة.
+  - إضافة اختبار انحداري في `frontend/test/core-slice.test.ts` يثبت سلامة بقاء العناصر وعدم تصفيرها.
+- **سد ثغرة تسريب حصص الذكاء الاصطناعي عند تعطل الـ RPC وتحويله لفشل مغلق (Fail-Closed AI Quota Precheck):**
+  - تعديل نقطة خادم Modal AI في `modal_ai/upscaler.py` للعمل بنمط الفشل المغلق (Fail-Closed) بإرجاع كود 503 فوري ورفض حرق بطاقة الـ GPU عند أي تعطل أو خطأ شبكي يعيق التحقق المسبق من الحصة اليومية.
+  - إضافة فحص صريح في عميل Go بلغة الباك إند `internal/service/ai_service.go` لحقل `usage_recorded`، ورفض العملية عند إرجاع `false` لمنع تسريب أي صور معالجة دون احتساب.
+- **ذرية فحص الحصص ومنع سباق التجاوز والخصم المزدوج (Atomic Serialization & Idempotency):**
+  - إنشاء هجرة Supabase جديدة `supabase/migrations/20261005160000_atomic_ai_quota_reservation.sql` تُضيف عمود `request_id uuid` وفهرس فريد `idx_ai_usage_request_id` على جدول `public.ai_usage`.
+  - تطبيق قفل صفي حصري `SELECT plan FROM public.profiles WHERE id = p_user_id FOR UPDATE;` داخل دالة `check_and_record_ai_usage` لمنع تلاعب الطلبات المتزامنة وتجاوز سقف الحصة (Race Conditions).
+  - دعم المعالجة الخاملة المتطابقة (Idempotency) في الـ RPC، بحيث تُعيد النجاح الفوري دون تكرار الإدراج عند إعادة إرسال نفس `request_id`.
+  - توليد `request_id` وتمريره في حمولة الـ RPC من `modal_ai/upscaler.py`.
+
 ## [v1.13.0] - 2026-10-04
 
 ### Changed

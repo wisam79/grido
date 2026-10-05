@@ -57,8 +57,8 @@ export interface ElementSlice {
   addBackdropRect: (patch?: Partial<CanvasElement>) => string;
   updateElement: (id: string, patch: Partial<CanvasElement>) => void;
   updateElements: (patches: { id: string; patch: Partial<CanvasElement> }[]) => void;
-  removeElement: (id: string) => void;
-  removeElements: (ids: string[]) => void;
+  removeElement: (id: string, force?: boolean) => void;
+  removeElements: (ids: string[], force?: boolean) => void;
   duplicateElement: (id: string) => void;
   duplicateElements: (ids: string[]) => void;
   copySelectedElements: (targetIds?: string[]) => void;
@@ -490,9 +490,11 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     });
   },
 
-  removeElement: (id) => {
+  removeElement: (id, force = false) => {
+    const el = get().elements.find((e: CanvasElement) => e.id === id);
+    if (el?.locked && !force) return;
     set((s) => ({
-      elements: s.elements.filter((el: CanvasElement) => el.id !== id),
+      elements: s.elements.filter((item: CanvasElement) => item.id !== id),
       selectedId: s.selectedId === id ? null : s.selectedId,
       // [FIX #4] تنظيف selectedIds أيضاً لمنع الإشارة لعنصر محذوف
       selectedIds: s.selectedIds.filter((sid: string) => sid !== id),
@@ -500,11 +502,19 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     get().pushHistory();
   },
 
-  removeElements: (ids) => {
+  removeElements: (ids, force = false) => {
+    const targetSet = new Set(ids);
     set((s) => ({
-      elements: s.elements.filter((el: CanvasElement) => !ids.includes(el.id)),
-      selectedId: ids.includes(s.selectedId || '') ? null : s.selectedId,
-      selectedIds: s.selectedIds.filter((id: string) => !ids.includes(id)),
+      elements: s.elements.filter((el: CanvasElement) => {
+        if (!targetSet.has(el.id)) return true;
+        return Boolean(el.locked && !force);
+      }),
+      selectedId: targetSet.has(s.selectedId || '') ? null : s.selectedId,
+      selectedIds: s.selectedIds.filter((id: string) => {
+        if (!targetSet.has(id)) return true;
+        const el = s.elements.find((e: CanvasElement) => e.id === id);
+        return Boolean(el?.locked && !force);
+      }),
     }));
     get().pushHistory();
   },

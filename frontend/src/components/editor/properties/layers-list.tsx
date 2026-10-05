@@ -35,6 +35,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
+import { toast } from 'sonner';
 
 interface SortableLayerItemProps {
   el: CanvasElement;
@@ -295,9 +296,14 @@ export function LayersList({ standalone = false }: LayersListProps = {}) {
   const deleteLayer = useCallback(
     (id: string, e: React.MouseEvent) => {
       e.stopPropagation();
+      const el = elements.find((item) => item.id === id);
+      if (el?.locked) {
+        toast.info('العنصر مقفل — ألغِ قفله أولاً للحذف');
+        return;
+      }
       removeElement(id);
     },
-    [removeElement],
+    [elements, removeElement],
   );
 
   const duplicateLayer = useCallback(
