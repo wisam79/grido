@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.13.1] - 2026-10-05
+
 ### Fixed
 - **حماية العناصر المقفلة من الحذف غير المقصود (Locked Elements Deletion Guard):**
   - تصحيح دالتي `removeElement` و `removeElements` في `frontend/src/lib/store/slices/element-slice.ts` بحيث تتجاهلان تلقائياً أي عنصر يحمل خاصية `locked: true` ما لم يُطلب الحذف الإجباري الصريح (`force: true`).
