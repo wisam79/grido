@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **استوديو الطباعة الاحترافي وحوار النظام الأصلي (Grido Print Studio & Backstage View):**
+  - **الواجهة الأمامية (Backstage View):** تحويل شاشة الطباعة من مجرد نافذة منبثقة مقيدة إلى شاشة استوديو كاملة متسعة بنمط Backstage View (على غرار ONLYOFFICE و Microsoft Word) في `frontend/src/components/editor/dialogs/print-dialog.tsx`.
+  - **كشف طابعات النظام الفيزيائية:** كشف واستعراض الطابعات الحقيقية المتصلة بجهاز المستخدم (مثل Canon, Epson, Brother) واختيار الطابعة الافتراضية تلقائياً عبر جسور Wails v3.
+  - **تفضيلات الطابعة ودرايفر المُصنِّع:** إضافة زر «خصائص الطابعة» لاستدعاء نافذة تفضيلات الطابعة الرسمية للشركة المصنعة (`OpenPrinterPreferences`) لضبط نوع الورق الفاخر وجودة الطباعة.
+  - **مسار حوار النظام المزدوج:** إضافة رابط مخصص لاستدعاء حوار ويندوز الرسمي للطباعة (`Print using system dialog`) جنباً إلى جنب مع مسار الطباعة الفورية.
+  - **الباك إند (Go):** اعتماد مكتبة `github.com/alexbrainman/printer` (Pure Go، صفر CGO) لكشف الطابعات في `internal/service/printer_discovery_windows.go` مع stub آمن للمنصات الأخرى في `printer_discovery_other.go`.
+  - **الاختبارات:** إضافة اختبارات وحدة في Go (`internal/service/printer_discovery_test.go`) واختبارات مكونات Vitest (`frontend/test/print-dialog-backstage.test.tsx`) وجسر E2E في `frontend/e2e/helpers/wails-v3-bridge.ts`.
+
 ### Fixed
 - **تقسية نظام الطباعة من الألف إلى الياء (Print System Hardening RV-Print-01…26 — تقرير `docs/reviews/15-print-hardening-audit-2026-10-06.md`)
   - **الخلفية (Go):** سقف `Copies` (5000 مفرد / 25000 موسّع بجمع int64 آمن) في `internal/service/print_service.go`؛ دعم الخطوط المائلة في `ApplyPureBlackCutLines` مع تسطيح ألفا على الأبيض في `internal/service/print_cmyk.go`؛ حقن وسوم `XResolution/YResolution/ResolutionUnit` في TIFF (`internal/service/print_tiff_tags.go` جديد) مع نقل فحص 50MP قبل التحويل؛ تقييد `ImageSrc` على `data:` و`/local-image/` وداخل مجلد التطبيق في `internal/service/print_image_pipeline.go`؛ سقف البكسلات المفكوكة 100MP عبر `DecodeConfig` أولاً (قنبلة 65 بايت مرفوضة)؛ كشف اقتطاع الرفع (413) في `main.go` للمسارات الثلاثة؛ PowerShell الاحتياطي عبر متغيرات البيئة بلا استيفاء نصي في `internal/service/print_native_windows.go`؛ اتجاه PDF مشتق من الأبعاد؛ تقسية منظف `grido_print_*` (24 ساعة + سقف حجم)؛ URI من `net/url`؛ احتياطي معاينة JPEG بدل TIFF مكسور.

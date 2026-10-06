@@ -131,6 +131,16 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
     filePath: 'C:/mock/sheet.png',
   }), // ExportPrintSheet
   100771007: async () => ({ success: true, filePath: 'C:/mock/sheet.png' }), // PrintNative
+  1916660602: async () => ({
+    success: true,
+    printers: [
+      { name: 'Brother DCP-T520W', isDefault: true },
+      { name: 'EPSON L805 Series', isDefault: false },
+      { name: 'Microsoft Print to PDF', isDefault: false },
+    ],
+  }), // GetPrinters
+  657414139: async () => 'Brother DCP-T520W', // GetDefaultPrinterName
+  2929786627: async () => ({ success: true }), // OpenPrinterPreferences
 };
 
 /**

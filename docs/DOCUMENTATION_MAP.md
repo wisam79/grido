@@ -97,20 +97,20 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=103
+vitest_test_files=104
 e2e_spec_files=25
-go_test_files=36
+go_test_files=37
 docs_files=6
 ```
 
 الأرقام التي تحتاج تشغيل اختبارات لا تُوضع في البلوك الآلي، بل في الجدول التالي وتُحدَّث عند تغيّر الاختبارات:
 
-| الرقم | القيمة (تحقق: 2026-09-28) | أمر التحقق |
+| الرقم | القيمة (تحقق: 2026-10-07) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | **876 ناجحة + 1 متخطاة في 103 ملفاً** — تحقق: 2026-10-06 (+14 حالة في `test/print-export-helpers.test.ts`) | `cd frontend && npm run test` |
+| حالات Vitest | **877 ناجحة + 1 متخطاة في 104 ملفاً** — تحقق: 2026-10-07 (+1 حالة في `test/print-dialog-backstage.test.tsx`) | `cd frontend && npm run test` |
 | حالات E2E | 165 حالة في 25 ملف مواصفة (كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
-| دوال اختبار Go | **204 دالة في 36 ملفاً** — تحقق: 2026-10-06 (+21 دالة للتقسية RV-Print) | `go test ./internal/... -list "^Test"` |
+| دوال اختبار Go | **206 دالة في 37 ملفاً** — تحقق: 2026-10-07 (+2 دالة في `internal/service/printer_discovery_test.go`) | `go test ./internal/... -list "^Test"` |
 | عدد صفائح الحصص اليومية | free 5 / pro 15 / enterprise 50 | `internal/service/ai_service.go` + migration `20260730000001` + `frontend/src/lib/ai/quota.ts` (ثلاثة مواضع متزامنة — قرار محمي؛ وحدة الحسم الواحدة هي `lib/ai/quota.ts` والخادم هو مصدر الحقيقة، ويُثبَّت ذلك بتأكيدين في `docs-gate`) |
 | منطقة يوم الحصة (محلي/UTC) | **UTC** في الخادم والمُقيِّد المحلي والواجهة | `internal/service/ai_service.go` (`aiUsageDayKey`) + `frontend/src/lib/ai/quota.ts` (`aiUtcDayKey`) مقابل `date_trunc('day', timezone('utc', now()))` |
 

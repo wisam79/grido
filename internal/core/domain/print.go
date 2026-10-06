@@ -79,3 +79,17 @@ type PrintResult struct {
 	HtmlDoc  string `json:"htmlDoc,omitempty"`
 	Error    string `json:"error,omitempty"`
 }
+
+// PrinterInfo يصف طابعة مثبتة في نظام التشغيل — يُستخدم لعرض قائمة
+// الطابعات الحقيقية في شاشة الطباعة (Backstage View) بدل خيارات مجردة.
+type PrinterInfo struct {
+	Name      string `json:"name"`
+	IsDefault bool   `json:"isDefault"`
+}
+
+// PrintersResult نتيجة استعلام الطابعات المثبتة للواجهة الأمامية.
+type PrintersResult struct {
+	Success  bool          `json:"success"`
+	Printers []PrinterInfo `json:"printers"`
+	Error    string        `json:"error,omitempty"`
+}
