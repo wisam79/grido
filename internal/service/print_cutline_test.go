@@ -1,11 +1,9 @@
 package service
 
 import (
-	"image"
 	"image/color"
 	"math"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"grido/internal/core/domain"
@@ -17,22 +15,9 @@ import (
 // A4 portrait, image fills the whole page (margin auto-zeroed), end-of-print line at
 // offsetY + rows*(h+gap) - gap/2 = 298mm on a 297mm paper.
 func TestPrintService_CutLineEdgeVisibility(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "print_cutline_edge_test")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	dummyImgPath := filepath.Join(tempDir, "dummy.png")
-	dummyImg := image.NewRGBA(image.Rect(0, 0, 100, 100))
-	for x := 0; x < 100; x++ {
-		for y := 0; y < 100; y++ {
-			dummyImg.Set(x, y, color.RGBA{255, 255, 255, 255})
-		}
-	}
-	if err := imaging.Save(dummyImg, dummyImgPath); err != nil {
-		t.Fatalf("failed to save dummy image: %v", err)
-	}
+	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07).
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	dummyImgSrc := stagePrintTestImage(t, "dummy", 100, 100, color.RGBA{255, 255, 255, 255})
 
 	svc := NewPrintService()
 
@@ -51,7 +36,7 @@ func TestPrintService_CutLineEdgeVisibility(t *testing.T) {
 					{X1: 0, Y1: cyMM, X2: 210, Y2: cyMM},
 				},
 				Items: []domain.PrintItem{
-					{ImageSrc: dummyImgPath, X: 0, Y: 0, W: 210, H: 297, Brightness: 100, Contrast: 100, Saturation: 100},
+					{ImageSrc: dummyImgSrc, X: 0, Y: 0, W: 210, H: 297, Brightness: 100, Contrast: 100, Saturation: 100},
 				},
 			}
 

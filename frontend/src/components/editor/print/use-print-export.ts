@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useEditorStore } from '@/lib/editor-store';
 import { useStageRef } from '@/lib/canvas/stage-context';
@@ -21,6 +21,43 @@ import { wailsIsDesktop } from '@/lib/wails-env';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('use-print-export');
+
+/** مهلة رفع صورة الطباعة — بلا AbortController سابقاً كان التعليق أبدياً. */
+const UPLOAD_TIMEOUT_MS = 120_000;
+/** مهلة توليد الورقة عبر Go — ورقة 50MP TIFF قد تستغرق دقائق؛ فوقها فشل صريح. */
+const EXPORT_TIMEOUT_MS = 10 * 60_000;
+
+/** وصف خطأ آمن للعرض: أخطاء Go/Wails كائنات تُنتج "[object Object]" بـ String(). */
+export function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message || 'خطأ غير معروف';
+  if (typeof err === 'string') return err;
+  if (err && typeof err === 'object') {
+    const rec = err as Record<string, unknown>;
+    if (typeof rec.message === 'string' && rec.message) return rec.message;
+    if (typeof rec.error === 'string' && rec.error) return rec.error;
+    try {
+      const s = JSON.stringify(rec);
+      if (s && s !== '{}') return s;
+    } catch {
+      /* ignore */
+    }
+  }
+  return 'خطأ غير معروف';
+}
+
+/** يلف وعداً بمهلة — Wails IPC لا يدعم الإلغاء، فالنتيجة المتأخرة تُتجاهل بالرمز. */
+export function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${label}: انتهت المهلة (${Math.round(ms / 1000)} ث)`)),
+      ms,
+    );
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
 
 /** المدخلات المشتركة لمولّد العناصر والتصدير — من usePrintLayout والدالة الأصل */
 export interface PrintExportContext {
@@ -63,22 +100,36 @@ async function uploadPrintImage(blob: Blob): Promise<string> {
   if (typeof window === 'undefined' || !window.location?.origin) {
     throw new Error('upload unavailable: no window origin');
   }
-  const resp = await fetch(`${window.location.origin}/api/upload-print-image`, {
-    method: 'POST',
-    headers: { 'Content-Type': blob.type || 'image/png' },
-    body: blob,
-  });
-  if (!resp.ok) {
-    throw new Error(`upload failed: HTTP ${resp.status}`);
+  // 🖨️ إلغاء ومهلة (RV-Print-20): التعليق السابق كان يُبقي isExporting=true
+  // حتى يغلق المستخدم الحوار يدوياً.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), UPLOAD_TIMEOUT_MS);
+  try {
+    const resp = await fetch(`${window.location.origin}/api/upload-print-image`, {
+      method: 'POST',
+      headers: { 'Content-Type': blob.type || 'image/png' },
+      body: blob,
+      signal: ctrl.signal,
+    });
+    if (!resp.ok) {
+      throw new Error(`upload failed: HTTP ${resp.status}`);
+    }
+    const resJson = (await resp.json().catch(() => null)) as {
+      status?: string;
+      imageSrc?: string;
+    } | null;
+    if (resJson?.status !== 'success' || !resJson.imageSrc) {
+      throw new Error('upload failed: invalid server response');
+    }
+    return resJson.imageSrc;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error(`upload timed out after ${UPLOAD_TIMEOUT_MS / 1000}s`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-  const resJson = (await resp.json().catch(() => null)) as {
-    status?: string;
-    imageSrc?: string;
-  } | null;
-  if (resJson?.status !== 'success' || !resJson.imageSrc) {
-    throw new Error('upload failed: invalid server response');
-  }
-  return resJson.imageSrc;
 }
 
 /**
@@ -110,15 +161,40 @@ export function usePrintExport({
   exportFormat,
 }: PrintExportContext) {
   const stageRef = useStageRef();
-  const [isExporting, setIsExporting] = useState(false);
+  const [isExporting, setIsExportingState] = useState(false);
   const isExportingRef = useRef(false);
+  // 🖨️ رموز الجيل والمهلات (RV-Print-20/21): تجاهل النتائج المتأخرة بعد
+  // تصدير أحدث، وتنظيف كل المؤقتات عند التفكيك بدل التسرب.
+  const attemptRef = useRef(0);
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const mountedRef = useRef(true);
 
-  // Sync ref when state is updated externally (e.g., when dialog closes)
   useEffect(() => {
-    if (!isExporting) {
-      isExportingRef.current = false;
-    }
-  }, [isExporting]);
+    mountedRef.current = true;
+    const timers = timersRef.current;
+    return () => {
+      mountedRef.current = false;
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
+    };
+  }, []);
+
+  const later = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timersRef.current.delete(id);
+      if (mountedRef.current) fn();
+    }, ms);
+    timersRef.current.add(id);
+    return id;
+  }, []);
+
+  // 🖨️ ضبط ذري متزامن (RV-Print-19): المزامنة السابقة عبر useEffect خلقت
+  // نافذة سباق — الحارس يعتمد ref قد لا يُصفَّر. الآن المصدر الوحيد للضبط،
+  // ويُصدَّر باسم setIsExporting نفسه فكل المستدعين (الحوار/الاختصارات) متزامنون.
+  const setExporting = useCallback((v: boolean) => {
+    isExportingRef.current = v;
+    setIsExportingState(v);
+  }, []);
 
   // مؤشر الطباعة Enter — آخر معاملات نداء الطباعة من المكوّن
   const printInvocationRef = useRef<{
@@ -609,7 +685,7 @@ export function usePrintExport({
    */
   const showPrintResult = useCallback(
     (result: domain.PrintResult) => {
-      setIsExporting(false);
+      setExporting(false);
       if (!result.success) {
         toast.error('فشل التصدير: ' + (result.error || 'خطأ غير معروف'));
         return;
@@ -633,7 +709,7 @@ export function usePrintExport({
 
       fallbackBrowserPrint(result);
     },
-    [fallbackBrowserPrint],
+    [fallbackBrowserPrint, setExporting],
   );
 
   const handlePrint = useCallback(
@@ -643,9 +719,11 @@ export function usePrintExport({
       effectiveMarginMM: number,
       onDone: () => void,
     ) => {
-      if (isExportingRef.current || isExporting) return;
-      isExportingRef.current = true;
-      setIsExporting(true);
+      // 🖨️ الحارس على ref فقط (RV-Print-19): حالة state للعرض، والقرار الذري هنا.
+      if (isExportingRef.current) return;
+      setExporting(true);
+      // رمز الجيل: أي نتيجة تصل بعد بدء تصدير أحدث تُتجاهل بصمت.
+      const attempt = ++attemptRef.current;
       try {
         // نُسلّم إطار رسم واحد بعد إظهار حالة التحميل — وإلا ظلّت الواجهة
         // مجمدة أثناء التقاط كانفس 50MP المتزامن على خيط UI قبل أن يُرسم المؤشر
@@ -653,7 +731,7 @@ export function usePrintExport({
 
         const buildResult = mode === 'collage' ? await buildItems() : await buildSingleItems();
         if (!buildResult) {
-          setIsExporting(false);
+          setExporting(false);
           return;
         }
 
@@ -666,32 +744,41 @@ export function usePrintExport({
               ? `لا يمكن التصدير: بعض خلايا الكولاج تتجاوز حدود الورقة (${paperWidth}×${paperHeight} مم). اختر ورقة أكبر أو صغّر الخلايا في المحرر الحر.`
               : `لا يمكن التصدير: الصورة أكبر من مساحة الطباعة (${paperWidth}×${paperHeight} مم). اختر ورقة أكبر أو عدّل الإعدادات.`;
           toast.error(msg);
-          setIsExporting(false);
+          setExporting(false);
           return;
         }
 
         SetTaskbarProgress(50, 'indeterminate').catch(() => {});
-        const result = await ExportPrintSheet(
-          domain.PrintRequest.createFrom({
-            paperWidthMM: paperWidth,
-            paperHeightMM: paperHeight,
-            marginMM: effectiveMarginMM,
-            gapMM: gapMM,
-            dpi: printDpi || 300,
-            backgroundColor: backgroundColor || previewWhite(),
-            showCutLines: mode === 'collage' ? collageShowCutLines : printShowCutLines,
-            cutLineStyle: printCutLineStyle ?? 'dashed',
-            exportFormat: exportFormat === 'pdf' ? 'pdf' : colorSpace === 'CMYK' ? 'tiff' : 'jpeg',
-            orientation: printOrientation || 'portrait',
-            cutLines: buildResult.cutLines,
-            items: buildResult.items,
-            composition: buildResult.composition,
-          }),
+        // 🖨️ مهلة صريحة (RV-Print-20): IPC لا يُلغى — withTimeout يرفض
+        // والرمز أعلاه يتجاهل أي وصول متأخر.
+        const result = await withTimeout(
+          ExportPrintSheet(
+            domain.PrintRequest.createFrom({
+              paperWidthMM: paperWidth,
+              paperHeightMM: paperHeight,
+              marginMM: effectiveMarginMM,
+              gapMM: gapMM,
+              dpi: printDpi || 300,
+              backgroundColor: backgroundColor || previewWhite(),
+              showCutLines: mode === 'collage' ? collageShowCutLines : printShowCutLines,
+              cutLineStyle: printCutLineStyle ?? 'dashed',
+              exportFormat:
+                exportFormat === 'pdf' ? 'pdf' : colorSpace === 'CMYK' ? 'tiff' : 'jpeg',
+              orientation: printOrientation || 'portrait',
+              cutLines: buildResult.cutLines,
+              items: buildResult.items,
+              composition: buildResult.composition,
+            }),
+          ),
+          EXPORT_TIMEOUT_MS,
+          'ExportPrintSheet',
         );
+        if (attempt !== attemptRef.current) return;
 
         if (!result.success) {
           SetTaskbarProgress(100, 'error').catch(() => {});
-          setTimeout(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
+          // 🖨️ مؤقت مُتتبَّع (RV-Print-21): الخام كان يمسح تقدّم تصدير لاحق ناجح.
+          later(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
           toast.error('فشل التصدير: ' + (result.error || 'خطأ غير معروف'));
           return;
         }
@@ -699,8 +786,7 @@ export function usePrintExport({
         SetTaskbarProgress(0, 'none').catch(() => {});
 
         // 1. إغلاق نافذة إعدادات الطباعة أولاً لضمان عدم بقائها عالقة خلف حوار الطباعة
-        isExportingRef.current = false;
-        setIsExporting(false);
+        setExporting(false);
         onDone();
 
         // ضمان استعادة تفاعل الصفحة فوراً بإزالة أي قيد inline بدل فرض "auto"
@@ -710,21 +796,22 @@ export function usePrintExport({
 
         // 2. إطلاق حوار الطباعة بعد اكتمال أنيميشن إغلاق Radix (200ms) حتى لا يتجمد
         // الـ overlay شبه المُغلق عند حجب خيط الـ UI بواسطة window.print()
-        setTimeout(() => {
+        later(() => {
           showPrintResult(result);
         }, 450);
       } catch (err) {
+        if (attempt !== attemptRef.current) return;
         SetTaskbarProgress(100, 'error').catch(() => {});
-        setTimeout(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
-        toast.error('حدث خطأ أثناء توليد ورقة الطباعة: ' + String(err));
+        later(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
+        toast.error('حدث خطأ أثناء توليد ورقة الطباعة: ' + describeError(err));
       } finally {
-        SetTaskbarProgress(0, 'none').catch(() => {});
-        isExportingRef.current = false;
-        setIsExporting(false);
+        if (attempt === attemptRef.current) {
+          SetTaskbarProgress(0, 'none').catch(() => {});
+          setExporting(false);
+        }
       }
     },
     [
-      isExporting,
       mode,
       buildItems,
       buildSingleItems,
@@ -739,10 +826,13 @@ export function usePrintExport({
       printOrientation,
       exportFormat,
       showPrintResult,
+      setExporting,
+      later,
     ],
   );
 
   // مزامنة مؤشر Enter مع أحدث المعاملات — داخل الـ hook نفسه
+  // 🖨️ تبعيات صريحة (RV-Print-19): النسخة بلا مصفوفة كانت تُعيد الضبط كل render.
   useEffect(() => {
     handlePrintRef.current = () => {
       const inv = printInvocationRef.current;
@@ -750,13 +840,18 @@ export function usePrintExport({
         void handlePrint(inv.colorSpace, inv.previewImageSrc, inv.effectiveMarginMM, inv.onDone);
       }
     };
-  });
+  }, [handlePrint]);
 
-  return {
-    isExporting,
-    setIsExporting,
-    handlePrintRef,
-    handlePrint,
-    setPrintInvocation,
-  };
+  // 🖨️ كائن مُثبَّت (RV-Print-19): النسخة الحرفية الجديدة كل render كانت
+  // تُعيد اشتراك keydown في الحوار مع كل رسمة.
+  return useMemo(
+    () => ({
+      isExporting,
+      setIsExporting: setExporting,
+      handlePrintRef,
+      handlePrint,
+      setPrintInvocation,
+    }),
+    [isExporting, setExporting, handlePrint, setPrintInvocation],
+  );
 }

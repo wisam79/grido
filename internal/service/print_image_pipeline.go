@@ -30,6 +30,27 @@ import (
 // حل المسارات الآمن، الاقتصاص والتدوير والفلاتر المطابقة للمحرر (WYSIWYG).
 // ─────────────────────────────────────────────────────────────────────────────
 
+// maxDecodedInputPixels سقف البكسلات المفكوكة لصورة إدخال واحدة (100MP ≈
+// 400MB RGBA كحد أقصى نظري). السقوف السابقة كانت على الحجم المضغوط فقط
+// (60MB ملف / 50MB base64) بينما المفكوك width×height×4 من ترويسة الصورة بلا
+// حد — قنبلة فك ضغط كلاسيكية (CVE-2026-55497 في Cloudreve: نفس النمط).
+// الحل المعتمد صناعياً: image.DecodeConfig يقرأ الترويسة فقط (صفر تخصيص
+// بكسلات) ويُرفض المعلن قبل أي فك — التخصيص لا يحدث أبداً.
+const maxDecodedInputPixels = 100_000_000
+
+// checkDecodedPixelCap يفرض سقف البكسلات من إعدادات الترويسة قبل الفك.
+// int64 صريح: حاصل w*h بصيغة int قد يفيض على 32بت لأبعاد خبيثة.
+func checkDecodedPixelCap(cfg image.Config, source string) error {
+	w, h := int64(cfg.Width), int64(cfg.Height)
+	if w <= 0 || h <= 0 {
+		return fmt.Errorf("invalid image dimensions for %s: %dx%d", source, w, h)
+	}
+	if w*h > maxDecodedInputPixels {
+		return fmt.Errorf("image dimensions too large for %s: %dx%d (%d MP > %d MP max)", source, w, h, w*h/1_000_000, maxDecodedInputPixels/1_000_000)
+	}
+	return nil
+}
+
 func resolveLocalPath(src string) string {
 	normalized := strings.ReplaceAll(src, "\\", "/")
 	if strings.HasPrefix(normalized, "/local-image/") {
@@ -79,7 +100,34 @@ func resolveLocalPath(src string) string {
 		}
 		return resolved
 	}
-	return src
+	// 🖨️ تقييد صارم (RV-Print-07): أي ImageSrc خارج /local-image/ كان يُمرَّر
+	// كما هو إلى imaging.Open — أي مسار نظامي مطلق يُضمَّن في المخرجات.
+	// المسموح الآن: data: URLs، ومسارات (مطلقة أو نسبية) تنحلّ داخل شجرة
+	// مجلد التطبيق (Media/Exports) بعد EvalSymlinks. غير ذلك يُرفض بسجل.
+	if strings.HasPrefix(normalized, "data:image/") {
+		return src
+	}
+	abs, absErr := filepath.Abs(src)
+	if absErr != nil {
+		slog.Warn("Blocked unresolvable image path in resolveLocalPath", "path", src)
+		return ""
+	}
+	candidate := abs
+	if resolved, err := filepath.EvalSymlinks(abs); err == nil {
+		candidate = resolved
+	}
+	appDir := utils.GetAppDir()
+	appBase, err := filepath.EvalSymlinks(appDir)
+	if err != nil {
+		appBase = appDir
+	}
+	cleanCand := filepath.Clean(candidate)
+	cleanBase := filepath.Clean(appBase)
+	if cleanCand != cleanBase && !strings.HasPrefix(cleanCand, cleanBase+string(filepath.Separator)) {
+		slog.Warn("Blocked out-of-scope image path in resolveLocalPath", "path", src)
+		return ""
+	}
+	return candidate
 }
 
 func applyColorAdjustments(img image.Image, brightness, contrast, saturation float64) image.Image {
@@ -121,7 +169,7 @@ func applyColorAdjustments(img image.Image, brightness, contrast, saturation flo
 	})
 
 	if saturation != 100 {
-		img = imaging.AdjustSaturation(img, clampAdjPct(saturation - 100))
+		img = imaging.AdjustSaturation(img, clampAdjPct(saturation-100))
 	}
 	return img
 }
@@ -415,6 +463,11 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 		return shared, nil
 	}
 
+	// 🖨️ مسار فارغ = مرفوض من سياسة النطاق — خطأ صريح بدل رسالة open مضللة.
+	if filePath == "" {
+		return nil, fmt.Errorf("empty image path (rejected by resolveLocalPath scope policy)")
+	}
+
 	res, err, _ := imgCache.group.Do(cacheKey, func() (interface{}, error) {
 		imgCache.mu.RLock()
 		if cachedRaw, ok := imgCache.images[cacheKey]; ok {
@@ -439,14 +492,44 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode base64 image: %w", err)
 			}
+			// 🖨️ فحص الترويسة قبل الفك (RV-Print-08): القنبلة تُكتشف هنا بلا تخصيص.
+			if cfg, _, cfgErr := image.DecodeConfig(bytes.NewReader(data)); cfgErr != nil {
+				return nil, fmt.Errorf("unsupported image format in base64 data: %w", cfgErr)
+			} else if capErr := checkDecodedPixelCap(cfg, "base64 image"); capErr != nil {
+				return nil, capErr
+			}
 			img, err = imaging.Decode(io.LimitReader(bytes.NewReader(data), 100*1024*1024))
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode image from base64 data: %w", err)
 			}
 		} else {
-			img, err = imaging.Open(filePath)
+			// 🖨️ فحص الترويسة من القرص قبل الفك (RV-Print-08) — نفس السقف.
+			f, openErr := os.Open(filePath)
+			if openErr != nil {
+				return nil, fmt.Errorf("failed to open image %s: %w", filepath.Base(filePath), openErr)
+			}
+			cfg, _, cfgErr := image.DecodeConfig(f)
+			if cfgErr != nil {
+				_ = f.Close()
+				return nil, fmt.Errorf("unsupported image format %s: %w", filepath.Base(filePath), cfgErr)
+			}
+			if capErr := checkDecodedPixelCap(cfg, filepath.Base(filePath)); capErr != nil {
+				_ = f.Close()
+				return nil, capErr
+			}
+			if _, seekErr := f.Seek(0, io.SeekStart); seekErr != nil {
+				_ = f.Close()
+				return nil, fmt.Errorf("failed to rewind image %s: %w", filepath.Base(filePath), seekErr)
+			}
+			// imaging.Decode على المقبض المفتوح = سلوك imaging.Open نفسه
+			// (نفس المسار والتسجيلات) مع إعادة الاستخدام بدل فتح ثانٍ.
+			img, err = imaging.Decode(f)
+			closeErr := f.Close()
 			if err != nil {
 				return nil, fmt.Errorf("failed to open image %s: %w", filepath.Base(filePath), err)
+			}
+			if closeErr != nil {
+				return nil, fmt.Errorf("failed to close image %s: %w", filepath.Base(filePath), closeErr)
 			}
 		}
 

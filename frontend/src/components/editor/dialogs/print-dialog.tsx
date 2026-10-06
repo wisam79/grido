@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import type Konva from 'konva';
 import {
   Dialog,
@@ -77,6 +77,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   // صيغة الإخراج: نقطية تقليدية أو PDF متجهي (sRGB فقط — CMYK يبقى TIFF/JPEG)
   const [exportFormat, setExportFormat] = useState<'image' | 'pdf'>('image');
   const [previewImageSrc, setPreviewImageSrc] = useState<string>('');
+  // 🖨️ التحديد المحفوظ قبل فتح الحوار لاستعادته عند الإغلاق (RV-Print-22).
+  const savedSelectionRef = useRef<string[] | null>(null);
   // آخر هامش غير صفري — لاستعادته عند إطفاء «بدون هوامش» بدل الـ 5mm الثابتة
   const [lastNonZeroMargin, setLastNonZeroMargin] = useState<number>(() =>
     printSettings.marginMM > 0 ? printSettings.marginMM : DEFAULT_PRINT_SETTINGS.marginMM || 5,
@@ -135,14 +137,34 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setZoom(1);
       // إلغاء تحديد أي عنصر نشط لتجنب ظهور مقابض التحكم (Transformer) في المعاينة أو الطباعة.
-      useEditorStore.getState().selectElement(null);
+      // 🖨️ حفظ التحديد واستعادته (RV-Print-22): المسح السابق كان دائماً بلا رجعة.
+      const st = useEditorStore.getState();
+      savedSelectionRef.current = [...(st.selectedIds ?? [])];
+      st.selectElement(null);
     } else {
       // ضمان تحرير أي قفل لـ pointer-events عند إغلاق النافذة
       if (typeof document !== 'undefined' && document.body) {
         document.body.style.pointerEvents = '';
       }
+      const saved = savedSelectionRef.current;
+      savedSelectionRef.current = null;
+      if (saved && saved.length > 0) {
+        const st = useEditorStore.getState();
+        // استعادة ما زال موجوداً فقط (قد يُحذف عنصر أثناء فتح الحوار).
+        const alive = saved.filter((id) => st.elements.some((el) => el.id === id));
+        if (alive.length > 0) st.setSelectedIds(alive);
+      }
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, exporter]);
+
+  // 🖨️ تتبع آخر هامش غير صفري من أي مسار تغيير (RV-Print-22): القيمة القديمة
+  // كانت تُحدَّث فقط عند تفعيل "بدون هوامش" فتُعيد قيمة عتيقة عند الإطفاء.
+  useEffect(() => {
+    if (printSettings.marginMM > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLastNonZeroMargin(printSettings.marginMM);
+    }
+  }, [printSettings.marginMM]);
 
   const hasContent =
     mode === 'collage' ? slots.some((s) => Boolean(s.imageSrc)) : elements.length > 0;
@@ -168,13 +190,16 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, isExporting, hasContent, onOpenChange, exporter]);
 
-  // مزامنة مؤشر الطباعة Enter مع أحدث حالة (المزامنة الداخلية داخل الـ hook)
-  exporter.setPrintInvocation({
-    colorSpace,
-    previewImageSrc,
-    effectiveMarginMM,
-    onDone: () => onOpenChange(false),
-  });
+  // 🖨️ مزامنة مؤشر الطباعة في effect (RV-Print-19): الاستدعاء في body
+  // المكوّن أثناء الرندر يعيد التنفيذ في StrictMode/Concurrent بلا ضمان.
+  useEffect(() => {
+    exporter.setPrintInvocation({
+      colorSpace,
+      previewImageSrc,
+      effectiveMarginMM,
+      onDone: () => onOpenChange(false),
+    });
+  }, [exporter, colorSpace, previewImageSrc, effectiveMarginMM, onOpenChange]);
 
   useEffect(() => {
     if (!open) {
@@ -184,7 +209,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     }
 
     if (mode === 'collage') {
-      setPreviewImageSrc('collage-active');
+      // 🖨️ لا صورة مفردة في وضع الكولاج — المعاينة ترسم الخانات مباشرة.
+      // القيمة الحارسة 'collage-active' السابقة كانت تُمرَّر كـ src صورة مكسورة.
+      setPreviewImageSrc('');
       return;
     }
 
@@ -326,8 +353,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             onExportFormatChange={setExportFormat}
             collageShowCutLines={collageShowCutLines}
             onCutLinesChange={(checked) => {
+              // 🖨️ نطاق الوضع (RV-Print-22): في الوضع المفرد لا نلمس حالة
+              // الكولاج — الكتابة المزدوجة السابقة خلطت المودَين بصمت.
               setPrintSettings({ showCutLines: checked });
-              useEditorStore.getState().setCollageShowCutLines(checked);
+              if (mode === 'collage') {
+                useEditorStore.getState().setCollageShowCutLines(checked);
+              }
             }}
             actualCopies={actualCopies}
             grid={grid}
@@ -351,6 +382,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     'w-2 h-2 rounded-full',
                     isOverflowing ? 'bg-destructive animate-ping' : 'bg-primary',
                   )}
+                  // 🖨️ تنبيه التجاوز نصي منطوق (RV-Print-23): اللون وحده لا يكفي.
+                  role={isOverflowing ? 'alert' : undefined}
+                  aria-label={
+                    isOverflowing ? 'تحذير: المحتوى يتجاوز حدود الورقة' : 'المعاينة مطابقة للورقة'
+                  }
                 />
                 معاينة الورقة المطبوعة
               </span>
@@ -370,6 +406,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))}
+                    aria-label="تصغير المعاينة"
                     className="h-7 w-7 p-0 text-print-zoom-text hover:text-white hover:bg-print-zoom-hover cursor-pointer"
                   >
                     <MagnifyingGlassMinus className="w-3 h-3 shrink-0" />
@@ -381,6 +418,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setZoom((z) => Math.min(3, z + 0.1))}
+                    aria-label="تكبير المعاينة"
                     className="h-7 w-7 p-0 text-print-zoom-text hover:text-white hover:bg-print-zoom-hover cursor-pointer"
                   >
                     <MagnifyingGlassPlus className="w-3 h-3 shrink-0" />
@@ -473,6 +511,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 onOpenChange(false),
               )
             }
+            // 🖨️ اختصار Enter معلن (RV-Print-23): كان يعمل بصمت بلا أي تلميح.
+            title="طباعة (Enter)"
+            aria-keyshortcuts="Enter"
             className="h-8 px-5 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-all duration-150 cursor-pointer rounded-md shadow-xs"
             disabled={isExporting || !hasContent}
           >

@@ -64,10 +64,17 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 					srcOffset := y * rgba.Stride
 					dstOffset := y * cmykImg.Stride
 					for x := 0; x < w; x++ {
-						r := rgba.Pix[srcOffset+x*4]
-						g := rgba.Pix[srcOffset+x*4+1]
-						b := rgba.Pix[srcOffset+x*4+2]
-						c, m, yVal, k := rgbToRichCMYK(r, g, b)
+						// 🖨️ تسطيح ألفا على الورق الأبيض: RGBA مخزّن premultiplied
+						// (rp = R*a/255) فالشفاف raw يُقرأ أسوداً؛ التركيب فوق
+						// أبيض 255 يتبسّط إلى: F = rp + (255-a) (مضمون ≤ 255).
+						rp := uint32(rgba.Pix[srcOffset+x*4])
+						gp := uint32(rgba.Pix[srcOffset+x*4+1])
+						bp := uint32(rgba.Pix[srcOffset+x*4+2])
+						a := uint32(rgba.Pix[srcOffset+x*4+3])
+						fr := uint8(min(255, rp+255-a))
+						fg := uint8(min(255, gp+255-a))
+						fb := uint8(min(255, bp+255-a))
+						c, m, yVal, k := rgbToRichCMYK(fr, fg, fb)
 						cmykOffset := dstOffset + x*4
 						cmykImg.Pix[cmykOffset] = c
 						cmykImg.Pix[cmykOffset+1] = m
@@ -79,8 +86,15 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 				for y := startY; y < endY; y++ {
 					dstOffset := y * cmykImg.Stride
 					for x := 0; x < w; x++ {
-						r, g, b, _ := src.At(x, y).RGBA()
-						c, m, yVal, k := rgbToRichCMYK(uint8(r>>8), uint8(g>>8), uint8(b>>8))
+						// 🖨️ تسطيح ألفا على الأبيض للصور غير RGBA: واجهة
+						// color.Color تُعيد قيماً premultiplied بدقة 16بت —
+						// التركيب فوق أبيض (65535): F = rp + (65535-a).
+						r, g, b, a := src.At(x, y).RGBA()
+						ia := 65535 - a
+						fr := uint8(min(65535, r+ia) >> 8)
+						fg := uint8(min(65535, g+ia) >> 8)
+						fb := uint8(min(65535, b+ia) >> 8)
+						c, m, yVal, k := rgbToRichCMYK(fr, fg, fb)
 						cmykOffset := dstOffset + x*4
 						cmykImg.Pix[cmykOffset] = c
 						cmykImg.Pix[cmykOffset+1] = m
@@ -130,16 +144,31 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 		return mod >= 0 && mod < dashSize
 	}
 
+	// setThick يرسم قرصاً نصف قطره halfW حول (cx,cy) مقصوصاً بالكانفس.
+	// halfW ثابت لكل الاستدعاء (يعتمد على lineWidth فقط) فيُحسب مرة واحدة.
+	halfW := int(math.Round(lineWidth / 2.0))
+	if halfW < 1 {
+		halfW = 1
+	}
+	setThick := func(cx, cy int) {
+		for dy := -halfW; dy <= halfW; dy++ {
+			for dx := -halfW; dx <= halfW; dx++ {
+				if dx*dx+dy*dy > halfW*halfW {
+					continue
+				}
+				px, py := cx+dx, cy+dy
+				if px >= 0 && px < maxW && py >= 0 && py < maxH {
+					cmykImg.SetCMYK(px, py, pureBlack)
+				}
+			}
+		}
+	}
+
 	for _, line := range req.CutLines {
 		x1 := math.Round(mmToPx(line.X1, req.DPI))
 		y1 := math.Round(mmToPx(line.Y1, req.DPI))
 		x2 := math.Round(mmToPx(line.X2, req.DPI))
 		y2 := math.Round(mmToPx(line.Y2, req.DPI))
-
-		halfW := int(math.Round(lineWidth / 2.0))
-		if halfW < 1 {
-			halfW = 1
-		}
 
 		if x1 == x2 { // Vertical cut line
 			startY := int(math.Max(0, float64(y1)))
@@ -170,6 +199,29 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 						cmykImg.SetCMYK(x, cy, pureBlack)
 					}
 				}
+			}
+		} else {
+			// 🖨️ خط مائل/حر (RV-Print-02): كان يُسقط بصمت في CMYK بينما
+			// يظهر في المعاينة وPDF — الآن Bresenham مُعامَل بالطول t مع
+			// نفس إيقاع الشرطات inDash(t)، وسماكة قرصية نصف قطرها halfW.
+			dx := x2 - x1
+			dy := y2 - y1
+			length := math.Hypot(dx, dy)
+			if length <= 0 {
+				continue
+			}
+			steps := int(math.Ceil(length))
+			for s := 0; s <= steps; s++ {
+				t := float64(s)
+				if t > length {
+					t = length
+				}
+				if !inDash(t) {
+					continue
+				}
+				fx := x1 + dx*t/length
+				fy := y1 + dy*t/length
+				setThick(int(math.Round(fx)), int(math.Round(fy)))
 			}
 		}
 	}

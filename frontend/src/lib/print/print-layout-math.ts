@@ -5,15 +5,15 @@
 // بين المعاينة وورقة الطباعة الفعلية. الآن مستهلك واحد للصيغ.
 
 export type GridAlignment =
-  | "top-left"
-  | "top-center"
-  | "top-right"
-  | "center"
-  | "center-left"
-  | "center-right"
-  | "bottom-left"
-  | "bottom-center"
-  | "bottom-right";
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'center'
+  | 'center-left'
+  | 'center-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right';
 
 export interface SheetGridInput {
   cols: number;
@@ -43,29 +43,31 @@ export interface SheetGrid {
 export function computeSheetGrid(input: SheetGridInput): SheetGrid {
   const safeCols = Math.max(1, Math.floor(input.cols));
   const actualRows = Math.max(1, Math.ceil(input.actualCopies / safeCols));
-  const effectiveCols = actualRows === 1 ? Math.max(1, Math.min(safeCols, input.actualCopies)) : safeCols;
-  const gridWidth = effectiveCols * input.imageWidthMM + Math.max(0, effectiveCols - 1) * input.gapMM;
+  const effectiveCols =
+    actualRows === 1 ? Math.max(1, Math.min(safeCols, input.actualCopies)) : safeCols;
+  const gridWidth =
+    effectiveCols * input.imageWidthMM + Math.max(0, effectiveCols - 1) * input.gapMM;
   const gridHeight = actualRows * input.imageHeightMM + Math.max(0, actualRows - 1) * input.gapMM;
 
-  const align = input.align || "top-left";
+  const align = input.align || 'top-left';
   const remainingW = Math.max(0, input.availableWidthMM - gridWidth);
   const remainingH = Math.max(0, input.availableHeightMM - gridHeight);
 
   let extraX = 0;
   let extraY = 0;
 
-  if (align === "top-left" || align === "center-left" || align === "bottom-left") {
+  if (align === 'top-left' || align === 'center-left' || align === 'bottom-left') {
     extraX = 0;
-  } else if (align === "top-right" || align === "center-right" || align === "bottom-right") {
+  } else if (align === 'top-right' || align === 'center-right' || align === 'bottom-right') {
     extraX = remainingW;
   } else {
     // center / top-center / bottom-center
     extraX = remainingW / 2;
   }
 
-  if (align === "top-left" || align === "top-center" || align === "top-right") {
+  if (align === 'top-left' || align === 'top-center' || align === 'top-right') {
     extraY = 0;
-  } else if (align === "bottom-left" || align === "bottom-center" || align === "bottom-right") {
+  } else if (align === 'bottom-left' || align === 'bottom-center' || align === 'bottom-right') {
     extraY = remainingH;
   } else {
     // center / center-left / center-right
@@ -123,14 +125,17 @@ export interface SlotRectMM {
 // مستطيل الخانة داخل كتلة النسخة بالمليمتر.
 // margins/gaps هما قيمتا الهامش والفجوة محوّلتين إلى المليمتر لكل محور
 // (0 في القوالب الفيزيائية physicalLayout حيث تُخبز داخل إحداثيات الخلايا).
-// ملاحظة: المحوران مستقلان عمداً — معاينة الكولاج تحسب Y بـ canvasHeight،
-// بينما مسار الطباعة الفعلي يستخدم مقياساً موحداً بـ canvasWidth.
+// ثابت التكافؤ (parity invariant — RV-Print-26): المحوران مستقلان في كل
+// المسارات (المعاينة buildItems/cut-lines هنا، ومسار Go يرسم قيم المليمتر
+// حرفياً عبر mmToPx بلا إعادة حساب — print_compose.go). التعليق القديم عن
+// «مقياس موحّد في Go» كان عتيقاً وخاطئاً وحُذف — أي توحيد مستقبلي للمقياس
+// يجب أن يطال المصادر الثلاثة معاً مع اختبار تكافؤ.
 export function computeSlotRectMM(
   block: { xMM: number; yMM: number },
   slot: SlotFractions,
   image: { widthMM: number; heightMM: number },
   margins: { marginXMM: number; marginYMM: number },
-  gaps: { gapXMM: number; gapYMM: number }
+  gaps: { gapXMM: number; gapYMM: number },
 ): SlotRectMM {
   const availWMM = image.widthMM - 2 * margins.marginXMM;
   const availHMM = image.heightMM - 2 * margins.marginYMM;
@@ -144,9 +149,9 @@ export function computeSlotRectMM(
 
 // نسبة أبعاد الخانة على الكانفاس (لحساب الاقتصاص cover في Go)
 export function computeSlotAspect(
-  slot: Pick<SlotFractions, "w" | "h">,
+  slot: Pick<SlotFractions, 'w' | 'h'>,
   canvasWidth: number,
-  canvasHeight: number
+  canvasHeight: number,
 ): number {
   if (slot.h <= 0 || canvasHeight <= 0) return 0;
   return (slot.w * canvasWidth) / (slot.h * canvasHeight);
@@ -163,7 +168,7 @@ export interface OptimalImpositionInput {
 }
 
 export interface OptimalImpositionResult {
-  orientation: "portrait" | "landscape";
+  orientation: 'portrait' | 'landscape';
   rotateItem: boolean;
   paperWidthMM: number;
   paperHeightMM: number;
@@ -182,7 +187,7 @@ export interface OptimalImpositionResult {
  * مع فحص إمكانية تدوير العنصر بـ 90 درجة واحتساب هامش النزيف لتقليل الهدر الورقي في المطابع.
  */
 export function calculateOptimalSheetImposition(
-  input: OptimalImpositionInput
+  input: OptimalImpositionInput,
 ): OptimalImpositionResult {
   const margin = Math.max(0, input.marginMM ?? 5);
   const gap = Math.max(0, input.gapMM ?? 2);
@@ -198,7 +203,7 @@ export function calculateOptimalSheetImposition(
   const maxPaper = Math.max(input.paperWidthMM, input.paperHeightMM);
 
   interface Candidate {
-    orientation: "portrait" | "landscape";
+    orientation: 'portrait' | 'landscape';
     rotateItem: boolean;
     paperWidthMM: number;
     paperHeightMM: number;
@@ -208,10 +213,10 @@ export function calculateOptimalSheetImposition(
   }
 
   const evalLayout = (
-    orientation: "portrait" | "landscape",
+    orientation: 'portrait' | 'landscape',
     rotateItem: boolean,
     sheetW: number,
-    sheetH: number
+    sheetH: number,
   ): Candidate => {
     const effW = rotateItem ? itemH : itemW;
     const effH = rotateItem ? itemW : itemH;
@@ -232,14 +237,14 @@ export function calculateOptimalSheetImposition(
   };
 
   const candidates: Candidate[] = [
-    evalLayout("portrait", false, minPaper, maxPaper),
-    evalLayout("landscape", false, maxPaper, minPaper),
+    evalLayout('portrait', false, minPaper, maxPaper),
+    evalLayout('landscape', false, maxPaper, minPaper),
   ];
 
   // ترتيب المرشحين: الأفضل هو الأعلى في عدد النسخ، وفي حال التساوي نفضل الوضع الرأسي الطبيعي
   candidates.sort((a, b) => {
     if (b.maxCopies !== a.maxCopies) return b.maxCopies - a.maxCopies;
-    if (a.orientation !== b.orientation) return a.orientation === "portrait" ? -1 : 1;
+    if (a.orientation !== b.orientation) return a.orientation === 'portrait' ? -1 : 1;
     return 0;
   });
 

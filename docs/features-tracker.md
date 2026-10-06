@@ -1,11 +1,42 @@
 # تتبع الميزات الأساسية — Grido Studio
 
 **تاريخ المراجعة الأولى:** 30 يوليو 2026 (الإصدار ~v1.2.10)
-**آخر تحديث:** 5 أكتوبر 2026 — بعد **إطلاق الإصدار الرسمي v1.13.1 وتحصين حصص الذكاء الاصطناعي وحماية العناصر المقفلة واستقرار تبديل أوضاع الكانفاس** (سجل 0.42) · وقبله **إطلاق الإصدار الرسمي v1.13.0 وصقل هوية وتصميم الألوان وتبويبات الشريط الجانبي وفق Fluent 2 المدمجة** (سجل 0.41) · وقبله **إصلاح عيوب واجهة المستخدم واستقرار لوحة الخصائص وقوائم المقاسات وتأثيرات التمرير** (سجل 0.40) · وقبله **إطلاق الإصدار الرسمي v1.12.0 ومزامنة مصادر الحقيقة السبعة** (سجل 0.39)
+**آخر تحديث:** 6 أكتوبر 2026 — بعد **تقسية نظام الطباعة من الألف إلى الياء (الجلسة 0.43: سقوف النسخ، الخطوط المائلة في CMYK، وسوم TIFF، نطاق المسارات، كشف الاقتطاع، PowerShell آمن، WCAG)** · وقبله **إطلاق الإصدار الرسمي v1.13.1 وتحصين حصص الذكاء الاصطناعي وحماية العناصر المقفلة واستقرار تبديل أوضاع الكانفاس** (سجل 0.42) · وقبله **إطلاق الإصدار الرسمي v1.13.0 وصقل هوية وتصميم الألوان وتبويبات الشريط الجانبي وفق Fluent 2 المدمجة** (سجل 0.41) · وقبله **إصلاح عيوب واجهة المستخدم واستقرار لوحة الخصائص وقوائم المقاسات وتأثيرات التمرير** (سجل 0.40) · وقبله **إطلاق الإصدار الرسمي v1.12.0 ومزامنة مصادر الحقيقة السبعة** (سجل 0.39)
 **المنهجية:** فحص الكود الفعلي (Go + React/Konva) ميزةً ميزة، ومطابقتها مع README وخطة التطوير.
 **الغرض:** مستند حي يُحدَّث مع كل نظرة على الميزات؛ يكمل (ولا يستبدل) `docs/development-plan/TASKS.md`.
 
 أسطورة الحالة: ✅ مكتمل | ⚠️ مكتمل مع فجوات | 🔶 جزئي | ❌ غير منفذ | 🆕 أُصلح في جلسة الإصلاحات
+
+---
+
+## 0.43 سجل جلسة تقسية نظام الطباعة (Print Hardening RV-Print-01…26) — 6 أكتوبر 2026
+
+**المرجع:** طلب المالك الصريح — «عمل مراجعة وتقييم صارم لنظام الطباعة» ثم «أصلح كل شيء وقم ببناء نظام طباعة عالمي ورصين». المخرج: `docs/reviews/15-print-hardening-audit-2026-10-06.md`.
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| RV-Print-01 (سقف Copies) | `maxCopiesPerItem=5000` و`maxExpandedPrintCells=25000` بجمع int64 آمن من الفيض | `print_service.go` + 4 اختبارات ✅ |
+| RV-Print-02 (خطوط مائلة CMYK) | Bresenham مُعامَل بالطول مع إيقاع شرطات موحّد في `solid/dotted/dashed` | `print_cmyk.go` + اختبارا المائل ✅ |
+| RV-Print-02b (تسطيح ألفا) | premultiplied RGBA/NRGBA يُركَّب فوق أبيض الورقة `F = rp + 255 - a` | `print_cmyk.go` + اختبار ✅ |
+| RV-Print-03 (فحص قبل التحويل) | رفض ورقة CMYK > 50MP قبل أي `ConvertRGBAtoCMYK` | `print_export.go` ✅ |
+| RV-Print-04 (وسوم دقة TIFF) | `injectTIFFResolution` يعيد كتابة IFD0 بـ `X/YResolution=DPI/1` و`ResolutionUnit=2` (BE/LE، إزاحات مُزاحة) | `print_tiff_tags.go` + 5 اختبارات ✅ |
+| RV-Print-05 (احتياطي معاينة) | فشل ترميز PNG ⇒ احتياطي JPEG ⇒ وسقوط قاتل مع سجل | `print_export.go` ✅ |
+| RV-Print-06 (URI سليم) | `url.URL{Scheme:"file"}` بترميز كامل بدل استبدال المسافات | `print_export.go` ✅ |
+| RV-Print-07 (نطاق المسارات) | `resolveLocalPath` يقيّد في: `data:` و`/local-image/` وشجرة `GRIDO_APP_DIR` بعد `EvalSymlinks` | `print_image_pipeline.go` + اختبارا النطاق ✅ |
+| RV-Print-08 (سقف الفك) | `DecodeConfig` قبل `imaging.Decode` — سقف 100MP؛ قنبلة 65 بايت معلنة 10GP تُرفض | `print_image_pipeline.go` + اختبار القنبلة ✅ |
+| RV-Print-09 (اقتطاع الرفع) | نسخ بحد+1 (maxFileSize+1) وإرجاع 413 في `/api/upload-print-image` و`/api/upload-media` و`/api/save-file` | `main.go` ✅ |
+| RV-Print-10 (PowerShell آمن) | المسار عبر متغيرات البيئة `GRIDO_PRINT_DIR/FILE` بلا استيفاء نصي nor Base64، سجل عند فشل `Wait` | `print_native_windows.go` ✅ |
+| RV-Print-11 (PDF ديناميكي) | `OrientationStr` يُشتق من `PaperWidthMM > PaperHeightMM` | `print_pdf_export.go` ✅ |
+| RV-Print-12 (منظف TEMP) | حذف `grido_print_*.html` بعد 24 ساعة وسقف 20MB/ملف بدل 5 دقائق | `print_native.go` ✅ |
+| RV-Print-19 (سباق الواجهة) | `attemptRef` رمز جيل يتجاهل النتائج المتأخرة؛ `setExporting` ذري؛ `setPrintInvocation` داخل effect؛ كائن hook مُثبَّت | `use-print-export.ts` + `print-dialog.tsx` + 14 حالة ✅ |
+| RV-Print-20/21 (مهلات وإلغاء) | `AbortController` 120ث للرفع، `withTimeout` 10د لـIPC، timers مُتتبَّعة تُنظَّف عند التفكيك | `use-print-export.ts` + اختبارات ✅ |
+| RV-Print-22 (حالة الحوار) | `onCutLinesChange` بوصف واحد حسب الوضع؛ حفظ/استعادة `selectedIds`؛ تتبع آخر هامش غير صفري | `print-dialog.tsx` ✅ |
+| RV-Print-23 (وصولية) | `aria-label` لأزرار الأيقونات، `role=alert/status`، `aria-live`، `aria-keyshortcuts`، عنوان Enter | `print-dialog.tsx` + `print-settings-toolbar.tsx` ✅ |
+| RV-Print-24 (المعاينة) | حارس `collage-active`، حد أدنى 1px، حفظ `rawCutLines` و`copyBlocks` | `print-preview.tsx` ✅ |
+| RV-Print-25 (نمط القص الموحّد) | `resolveCutLineDash` + زوايا cropmarks في التصدير اليدوي — ثلاثة مخرجات توحّدت | `export-canvas-collage.ts` + `export-canvas.ts` ✅ |
+| RV-Print-26 (ثبات المقياس) | وثيقة تعليق `print-layout-math.ts` تُعلن أن المليمتر المحوري هو الحقيقة في كل المسارات | `print-layout-math.ts:123-133` ✅ |
+| تقوية الاختبارات | 21 دالة Go جديدة + 14 حالة Vitest؛ 21 اختباراً قائماً حُدِّث لعقد الإدخال الإنتاجي (`/local-image/` داخل GRIDO_APP_DIR معزول) | `print_*_test.go` + `print-export-helpers.test.ts` ✅ |
+| بوابات الجودة | `go test ./internal/...` ✅ · `go vet` ✅ · `-race` نظيف ✅ · Vitest 876 ناجحة + 1 متخطاة (103 ملفات) ✅ · `tsc` ✅ · `eslint --max-warnings 0` ✅ | 2026-10-06 |
 
 ---
 

@@ -20,25 +20,9 @@ import (
 )
 
 func TestPrintService_GeneratePrintSheet(t *testing.T) {
-	// 1. إنشاء صورة اختبارية مؤقتة
-	tempDir, err := os.MkdirTemp("", "print_service_test")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	dummyImgPath := filepath.Join(tempDir, "dummy.png")
-	dummyImg := image.NewRGBA(image.Rect(0, 0, 100, 100))
-	// تعبئة الصورة باللون الأزرق
-	for x := 0; x < 100; x++ {
-		for y := 0; y < 100; y++ {
-			dummyImg.Set(x, y, color.RGBA{0, 0, 255, 255})
-		}
-	}
-	err = imaging.Save(dummyImg, dummyImgPath)
-	if err != nil {
-		t.Fatalf("failed to save dummy image: %v", err)
-	}
+	// 1. إنشاء صورة اختبارية عبر عقد الإدخال الإنتاجي (RV-Print-07).
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	dummyImgSrc := stagePrintTestImage(t, "dummy", 100, 100, color.RGBA{0, 0, 255, 255})
 
 	// 2. إعداد طلب الطباعة
 	svc := NewPrintService()
@@ -53,7 +37,7 @@ func TestPrintService_GeneratePrintSheet(t *testing.T) {
 		},
 		Items: []domain.PrintItem{
 			{
-				ImageSrc:   dummyImgPath,
+				ImageSrc:   dummyImgSrc,
 				X:          20,
 				Y:          20,
 				W:          50,
@@ -222,17 +206,9 @@ func mathAbs(n int) int {
 // الملف الناتج بامتداد .jpg، يُفك ترميزه بنجاح، ويحمل كثافة JFIF صحيحة
 // (مطابقة لـ DPI المطلوب) لتطبيق مقاس الورقة الفيزيائي
 func TestPrintService_JPEGExport(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "print_service_jpeg")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	dummyImgPath := filepath.Join(tempDir, "dummy.jpg")
-	dummyImg := imaging.New(800, 600, color.RGBA{0, 128, 255, 255})
-	if err := imaging.Save(dummyImg, dummyImgPath); err != nil {
-		t.Fatalf("failed to save dummy image: %v", err)
-	}
+	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07).
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	dummyImgSrc := stagePrintTestImage(t, "dummy", 800, 600, color.RGBA{0, 128, 255, 255})
 
 	svc := NewPrintService()
 	req := domain.PrintRequest{
@@ -242,7 +218,7 @@ func TestPrintService_JPEGExport(t *testing.T) {
 		BackgroundColor: "#FFFFFF",
 		ExportFormat:    "jpeg",
 		Items: []domain.PrintItem{
-			{ImageSrc: dummyImgPath, X: 0, Y: 0, W: 210, H: 297, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgSrc, X: 0, Y: 0, W: 210, H: 297, Brightness: 100, Contrast: 100, Saturation: 100},
 		},
 	}
 
@@ -293,21 +269,30 @@ func TestPrintService_JPEGExport(t *testing.T) {
 }
 
 func BenchmarkPrintService_GeneratePrintSheet(b *testing.B) {
-	tempDir, err := os.MkdirTemp("", "print_service_bench")
-	if err != nil {
-		b.Fatalf("failed to create temp dir: %v", err)
+	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07) — تهيئة يدوية لبيئة القياس
+	// (stagePrintTestImage مخصص لـ *testing.T).
+	tmp := b.TempDir()
+	oldAppDir, hadAppDir := os.LookupEnv("GRIDO_APP_DIR")
+	_ = os.Setenv("GRIDO_APP_DIR", tmp)
+	b.Cleanup(func() {
+		if hadAppDir {
+			_ = os.Setenv("GRIDO_APP_DIR", oldAppDir)
+		} else {
+			_ = os.Unsetenv("GRIDO_APP_DIR")
+		}
+	})
+	mediaDir := filepath.Join(tmp, "Media")
+	if err := os.MkdirAll(mediaDir, 0o755); err != nil {
+		b.Fatalf("mkdir Media: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
-
-	dummyImgPath := filepath.Join(tempDir, "dummy_bench.png")
+	dummyImgSrc := "/local-image/dummy_bench.png"
 	dummyImg := image.NewRGBA(image.Rect(0, 0, 800, 800))
 	for x := 0; x < 800; x++ {
 		for y := 0; y < 800; y++ {
 			dummyImg.Set(x, y, color.RGBA{0, 255, 0, 255})
 		}
 	}
-	err = imaging.Save(dummyImg, dummyImgPath)
-	if err != nil {
+	if err := imaging.Save(dummyImg, filepath.Join(mediaDir, "dummy_bench.png")); err != nil {
 		b.Fatalf("failed to save dummy image: %v", err)
 	}
 
@@ -322,12 +307,12 @@ func BenchmarkPrintService_GeneratePrintSheet(b *testing.B) {
 			{X1: 10, Y1: 10, X2: 200, Y2: 10},
 		},
 		Items: []domain.PrintItem{
-			{ImageSrc: dummyImgPath, X: 15, Y: 15, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
-			{ImageSrc: dummyImgPath, X: 65, Y: 15, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
-			{ImageSrc: dummyImgPath, X: 115, Y: 15, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
-			{ImageSrc: dummyImgPath, X: 15, Y: 65, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
-			{ImageSrc: dummyImgPath, X: 65, Y: 65, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
-			{ImageSrc: dummyImgPath, X: 115, Y: 65, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgSrc, X: 15, Y: 15, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgSrc, X: 65, Y: 15, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgSrc, X: 115, Y: 15, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgSrc, X: 15, Y: 65, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgSrc, X: 65, Y: 65, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: dummyImgSrc, X: 115, Y: 65, W: 45, H: 45, Brightness: 100, Contrast: 100, Saturation: 100},
 		},
 	}
 
@@ -344,23 +329,10 @@ func BenchmarkPrintService_GeneratePrintSheet(b *testing.B) {
 }
 
 func TestPrintService_CanvasComposition(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "print_service_composition")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
+	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07).
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
 	// صورة زرقاء 100×100 — تُوضع في النصف العلوي الأيسر من الكانفاس (0..500px)
-	dummyImgPath := filepath.Join(tempDir, "dummy.png")
-	dummyImg := image.NewRGBA(image.Rect(0, 0, 100, 100))
-	for x := 0; x < 100; x++ {
-		for y := 0; y < 100; y++ {
-			dummyImg.Set(x, y, color.RGBA{0, 0, 255, 255})
-		}
-	}
-	if err := imaging.Save(dummyImg, dummyImgPath); err != nil {
-		t.Fatalf("failed to save dummy image: %v", err)
-	}
+	dummyImgSrc := stagePrintTestImage(t, "dummy", 100, 100, color.RGBA{0, 0, 255, 255})
 
 	svc := NewPrintService()
 	req := domain.PrintRequest{
@@ -381,7 +353,7 @@ func TestPrintService_CanvasComposition(t *testing.T) {
 			BackgroundColor: "#00FF00",
 			Items: []domain.PrintItem{
 				{
-					ImageSrc: dummyImgPath,
+					ImageSrc: dummyImgSrc,
 					X:        0, Y: 0, W: 500, H: 500,
 					Filter: "none", Brightness: 100, Contrast: 100, Saturation: 100,
 				},
@@ -568,23 +540,11 @@ func TestPrintService_UploadImageInExportsResolved(t *testing.T) {
 }
 
 func TestPrintService_HiRes300DPI_A4_FullScaleVerification(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "hires_print_test")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07).
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
 
 	// Create test photo
-	testImgPath := filepath.Join(tempDir, "photo.png")
-	testImg := image.NewRGBA(image.Rect(0, 0, 400, 600))
-	for x := 0; x < 400; x++ {
-		for y := 0; y < 600; y++ {
-			testImg.Set(x, y, color.RGBA{R: 240, G: 180, B: 100, A: 255})
-		}
-	}
-	if err := imaging.Save(testImg, testImgPath); err != nil {
-		t.Fatalf("failed to save test photo: %v", err)
-	}
+	testImgSrc := stagePrintTestImage(t, "photo", 400, 600, color.RGBA{R: 240, G: 180, B: 100, A: 255})
 
 	svc := NewPrintService()
 
@@ -601,8 +561,8 @@ func TestPrintService_HiRes300DPI_A4_FullScaleVerification(t *testing.T) {
 			{X1: 15, Y1: 280, X2: 195, Y2: 280},
 		},
 		Items: []domain.PrintItem{
-			{ImageSrc: testImgPath, X: 20, Y: 20, W: 80, H: 120},
-			{ImageSrc: testImgPath, X: 110, Y: 20, W: 80, H: 120},
+			{ImageSrc: testImgSrc, X: 20, Y: 20, W: 80, H: 120},
+			{ImageSrc: testImgSrc, X: 110, Y: 20, W: 80, H: 120},
 		},
 	}
 

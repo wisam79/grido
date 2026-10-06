@@ -33,13 +33,15 @@ func TestPrintHandler_GeneratePrintSheet_Invalid(t *testing.T) {
 }
 
 func TestPrintHandler_GeneratePrintSheet_Success(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "print_handler_test_*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
+	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07): مجلد الاختبار هو مجلد التطبيق.
+	appDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", appDir)
+	mediaDir := filepath.Join(appDir, "Media")
+	if err := os.MkdirAll(mediaDir, 0o755); err != nil {
+		t.Fatalf("mkdir Media: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
 
-	dummyImgPath := filepath.Join(tempDir, "photo.png")
+	dummyImgPath := filepath.Join(mediaDir, "photo.png")
 	dummyImg := image.NewRGBA(image.Rect(0, 0, 80, 80))
 	for x := 0; x < 80; x++ {
 		for y := 0; y < 80; y++ {
@@ -49,6 +51,7 @@ func TestPrintHandler_GeneratePrintSheet_Success(t *testing.T) {
 	if err := imaging.Save(dummyImg, dummyImgPath); err != nil {
 		t.Fatalf("failed to save dummy image: %v", err)
 	}
+	dummyImgSrc := "/local-image/photo.png"
 
 	svc := service.NewPrintService()
 	handler := NewPrintHandler(svc)
@@ -64,7 +67,7 @@ func TestPrintHandler_GeneratePrintSheet_Success(t *testing.T) {
 		},
 		Items: []domain.PrintItem{
 			{
-				ImageSrc:   dummyImgPath,
+				ImageSrc:   dummyImgSrc,
 				X:          15,
 				Y:          15,
 				W:          40,
@@ -107,13 +110,15 @@ func TestPrintHandler_PrintNative_Invalid(t *testing.T) {
 // (المعالج ← الخدمة ← التصدير): تركيب بأبعاد صفرية يُتجاوز وتنجح الورقة
 // من العناصر المباشرة بدل إرجاع Success=false.
 func TestPrintHandler_InvalidCompositionFallsBack(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "print_handler_comp_fallback_*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
+	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07).
+	appDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", appDir)
+	mediaDir := filepath.Join(appDir, "Media")
+	if err := os.MkdirAll(mediaDir, 0o755); err != nil {
+		t.Fatalf("mkdir Media: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
 
-	dummyImgPath := filepath.Join(tempDir, "photo.png")
+	dummyImgPath := filepath.Join(mediaDir, "photo.png")
 	dummyImg := image.NewRGBA(image.Rect(0, 0, 80, 80))
 	for x := 0; x < 80; x++ {
 		for y := 0; y < 80; y++ {
@@ -123,6 +128,7 @@ func TestPrintHandler_InvalidCompositionFallsBack(t *testing.T) {
 	if err := imaging.Save(dummyImg, dummyImgPath); err != nil {
 		t.Fatalf("failed to save dummy image: %v", err)
 	}
+	dummyImgSrc := "/local-image/photo.png"
 
 	svc := service.NewPrintService()
 	handler := NewPrintHandler(svc)
@@ -135,7 +141,7 @@ func TestPrintHandler_InvalidCompositionFallsBack(t *testing.T) {
 		ExportFormat:    "png",
 		Items: []domain.PrintItem{
 			{
-				ImageSrc:   dummyImgPath,
+				ImageSrc:   dummyImgSrc,
 				X:          15,
 				Y:          15,
 				W:          40,
@@ -152,7 +158,7 @@ func TestPrintHandler_InvalidCompositionFallsBack(t *testing.T) {
 			CanvasHeightMM:  0,
 			BackgroundColor: "#00FF00",
 			Items: []domain.PrintItem{
-				{ImageSrc: dummyImgPath, X: 0, Y: 0, W: 10, H: 10},
+				{ImageSrc: dummyImgSrc, X: 0, Y: 0, W: 10, H: 10},
 			},
 		},
 	}

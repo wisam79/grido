@@ -1,11 +1,9 @@
 package service
 
 import (
-	"image"
 	"image/color"
 	"math"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -14,20 +12,13 @@ import (
 	"grido/internal/core/domain"
 )
 
-// writeCompositionDummyImage ينشئ صورة اختبارية صلبة في مجلد مؤقت
+// writeCompositionDummyImage ينشئ صورة اختبارية صلبة عبر عقد الإدخال
+// الإنتاجي (RV-Print-07): dir هو مجلد التطبيق المعزول (GRIDO_APP_DIR مضبوط
+// من المستدعي)، وتُعاد كـ /local-image/… — يتجاهل المسار الخام القديم.
 func writeCompositionDummyImage(t *testing.T, dir, name string, w, h int) string {
 	t.Helper()
-	imgPath := filepath.Join(dir, name)
-	img := image.NewRGBA(image.Rect(0, 0, w, h))
-	for x := 0; x < w; x++ {
-		for y := 0; y < h; y++ {
-			img.Set(x, y, color.RGBA{R: 30, G: 120, B: 200, A: 255})
-		}
-	}
-	if err := imaging.Save(img, imgPath); err != nil {
-		t.Fatalf("failed to save dummy image: %v", err)
-	}
-	return imgPath
+	_ = dir
+	return stagePrintTestImage(t, strings.TrimSuffix(name, ".png"), w, h, color.RGBA{R: 30, G: 120, B: 200, A: 255})
 }
 
 // TestPrintService_InvalidCompositionFallsBack — اختبار انحدار لحادثة إنتاجية
@@ -61,6 +52,8 @@ func TestPrintService_InvalidCompositionFallsBack(t *testing.T) {
 				t.Fatalf("failed to create temp dir: %v", err)
 			}
 			defer os.RemoveAll(tempDir)
+			// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07): مجلد الاختبار هو مجلد التطبيق.
+			t.Setenv("GRIDO_APP_DIR", tempDir)
 			dummyImgPath := writeCompositionDummyImage(t, tempDir, "photo.png", 120, 90)
 
 			svc := NewPrintService()

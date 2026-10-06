@@ -191,10 +191,13 @@ export function PrintSettingsToolbar({
                   'rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none bg-primary text-primary-foreground shadow-2xs font-bold',
                 )}
                 aria-label="تبديل اتجاه الورقة"
+                aria-pressed={printSettings.orientation === 'landscape'}
               >
                 <PageOrientationIcon
                   isLandscape={printSettings.orientation === 'landscape'}
-                  className="w-3.5 h-3.5 text-primary"
+                  // 🖨️ تباين الأيقونة (RV-Print-23): text-primary فوق bg-primary
+                  // كان يجعلها شبحية — لون المقدمة الصريح للزر النشط.
+                  className="w-3.5 h-3.5 text-primary-foreground"
                 />
                 <span>{printSettings.orientation === 'landscape' ? 'أفقي' : 'رأسي'}</span>
               </button>
@@ -394,12 +397,19 @@ export function PrintSettingsToolbar({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 select-none shrink-0">
           {/* عدد النسخ في الورقة */}
           <div className="flex items-center justify-between bg-card rounded-lg border border-border/50 px-2.5 py-1.5 shadow-2xs">
-            <span className="text-xs font-semibold text-muted-foreground">نسخ/ورقة</span>
-            <div className="flex items-center gap-1">
+            <span className="text-xs font-semibold text-muted-foreground" id="print-copies-label">
+              نسخ/ورقة
+            </span>
+            <div
+              className="flex items-center gap-1"
+              role="group"
+              aria-labelledby="print-copies-label"
+            >
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
+                aria-label="إنقاص عدد النسخ"
                 disabled={
                   (printSettings.repeatMode ?? 'all') !== 'all' ||
                   (printSettings.copiesPerSheet ?? 1) <= 1
@@ -415,6 +425,7 @@ export function PrintSettingsToolbar({
               <span
                 className="text-xs font-mono font-bold w-6 text-center text-foreground"
                 title={`المطبوع على الورقة: ${actualCopies}`}
+                aria-live="polite"
               >
                 {printSettings.copiesPerSheet ?? 1}
               </span>
@@ -422,6 +433,7 @@ export function PrintSettingsToolbar({
                 variant="ghost"
                 size="sm"
                 className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
+                aria-label="زيادة عدد النسخ"
                 disabled={
                   (printSettings.repeatMode ?? 'all') !== 'all' ||
                   (printSettings.copiesPerSheet ?? 1) >= maxCopiesPerSheet
@@ -475,12 +487,15 @@ export function PrintSettingsToolbar({
 
           {/* المسافة الفاصلة بين النسخ */}
           <div className="flex items-center justify-between bg-card rounded-lg border border-border/50 px-2.5 py-1.5 shadow-2xs">
-            <span className="text-xs font-semibold text-muted-foreground">المسافة (مم)</span>
-            <div className="flex items-center gap-1">
+            <span className="text-xs font-semibold text-muted-foreground" id="print-gap-label">
+              المسافة (مم)
+            </span>
+            <div className="flex items-center gap-1" role="group" aria-labelledby="print-gap-label">
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
+                aria-label="إنقاص المسافة بين النسخ"
                 disabled={(printSettings.gapMM ?? 2) <= 0}
                 onClick={() =>
                   setPrintSettings({ gapMM: Math.max(0, (printSettings.gapMM ?? 2) - 1) })
@@ -488,13 +503,17 @@ export function PrintSettingsToolbar({
               >
                 <Minus className="w-3 h-3 shrink-0" weight="bold" />
               </Button>
-              <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
+              <span
+                className="text-xs font-mono font-bold w-6 text-center text-foreground"
+                aria-live="polite"
+              >
                 {printSettings.gapMM ?? 2}
               </span>
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
+                aria-label="زيادة المسافة بين النسخ"
                 disabled={(printSettings.gapMM ?? 2) >= 20}
                 onClick={() =>
                   setPrintSettings({ gapMM: Math.min(20, (printSettings.gapMM ?? 2) + 1) })

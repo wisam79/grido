@@ -1,6 +1,10 @@
 package service
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/binary"
+	"hash/crc32"
 	"image"
 	"image/color"
 	"math"
@@ -8,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
@@ -83,29 +88,16 @@ func TestValidatePrintRequest_RejectsInvalidInput(t *testing.T) {
 
 // 7. مسار CMYK/JPEG غير المغطى: ملف صالح + وثيقة HTML
 func TestSaveOutput_CMYK_JPEG_Branch(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "print_hardening_cmykjpg_*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	imgPath := filepath.Join(tempDir, "photo.png")
-	img := image.NewRGBA(image.Rect(0, 0, 200, 200))
-	for x := 0; x < 200; x++ {
-		for y := 0; y < 200; y++ {
-			img.Set(x, y, color.RGBA{R: 160, G: 40, B: 40, A: 255})
-		}
-	}
-	if err := imaging.Save(img, imgPath); err != nil {
-		t.Fatalf("failed to save dummy image: %v", err)
-	}
+	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07).
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	imgSrc := stagePrintTestImage(t, "photo", 200, 200, color.RGBA{R: 160, G: 40, B: 40, A: 255})
 
 	svc := NewPrintService()
 	req := domain.PrintRequest{
 		PaperWidthMM: 148.0, PaperHeightMM: 210.0, DPI: 150,
 		BackgroundColor: "#FFFFFF", ExportFormat: "jpeg", ColorSpace: "cmyk",
 		Items: []domain.PrintItem{
-			{ImageSrc: imgPath, X: 10, Y: 10, W: 60, H: 90, Brightness: 100, Contrast: 100, Saturation: 100},
+			{ImageSrc: imgSrc, X: 10, Y: 10, W: 60, H: 90, Brightness: 100, Contrast: 100, Saturation: 100},
 		},
 	}
 
@@ -204,4 +196,147 @@ func TestDrawCutLines_AllStylesNoPanic(t *testing.T) {
 	if off.R != 255 || off.G != 255 || off.B != 255 {
 		t.Errorf("expected untouched white pixel when cut lines disabled, got %+v", off)
 	}
+}
+
+// ─── RV-Print-01: سقوف التوسيع الشبكي ───
+
+// rvPrintRequest طلب صالح أدنى للتحقق (100×100مم @300dpi ≈ 1.4MP).
+func rvPrintRequest() domain.PrintRequest {
+	return domain.PrintRequest{
+		PaperWidthMM:  100,
+		PaperHeightMM: 100,
+		DPI:           300,
+	}
+}
+
+func TestValidatePrintRequest_RejectsNegativeCopies(t *testing.T) {
+	s := NewPrintService()
+	req := rvPrintRequest()
+	req.Items = []domain.PrintItem{{ImageSrc: "", X: 0, Y: 0, W: 10, H: 10, Copies: -3}}
+	if _, _, err := s.validatePrintRequest(req); err == nil {
+		t.Error("expected error for negative Copies, got nil")
+	}
+}
+
+func TestValidatePrintRequest_RejectsHugeSingleCopies(t *testing.T) {
+	s := NewPrintService()
+	req := rvPrintRequest()
+	req.Items = []domain.PrintItem{{ImageSrc: "", X: 0, Y: 0, W: 10, H: 10, Copies: 1 << 30}}
+	if _, _, err := s.validatePrintRequest(req); err == nil {
+		t.Error("expected error for Copies=2^30, got nil")
+	}
+}
+
+func TestValidatePrintRequest_RejectsExplodedTotal(t *testing.T) {
+	s := NewPrintService()
+	req := rvPrintRequest()
+	// 6 قوالب × 5000 نسخة = 30000 خلية > سقف 25000 (كل قيمة مفردة تحت سقفها).
+	items := make([]domain.PrintItem, 0, 6)
+	for i := 0; i < 6; i++ {
+		items = append(items, domain.PrintItem{X: 0, Y: 0, W: 10, H: 10, Copies: 5000})
+	}
+	req.Items = items
+	if _, _, err := s.validatePrintRequest(req); err == nil {
+		t.Error("expected error for 30000 expanded cells, got nil")
+	}
+}
+
+func TestValidatePrintRequest_AcceptsSaneGridExpansion(t *testing.T) {
+	s := NewPrintService()
+	req := rvPrintRequest()
+	// شبكة واقعية: قالبان × 48 نسخة = 96 خلية < 25000.
+	req.Items = []domain.PrintItem{
+		{X: 0, Y: 0, W: 10, H: 10, Copies: 48, CopyCols: 8, CopyStepX: 5, CopyStepY: 5},
+		{X: 0, Y: 0, W: 10, H: 10, Copies: 48, CopyCols: 8, CopyStepX: 5, CopyStepY: 5},
+	}
+	if _, _, err := s.validatePrintRequest(req); err != nil {
+		t.Errorf("sane grid must pass validation, got %v", err)
+	}
+}
+
+func TestExpandGridItems_BoundedAfterValidation(t *testing.T) {
+	items := []domain.PrintItem{{X: 1, Y: 2, W: 10, H: 10, Copies: 48, CopyCols: 8, CopyStepX: 5, CopyStepY: 5}}
+	out := expandGridItems(items)
+	if len(out) != 48 {
+		t.Fatalf("expandGridItems = %d items, want 48", len(out))
+	}
+	if out[9].X != 1+float64(9%8)*5 || out[9].Y != 2+float64(9/8)*5 {
+		t.Errorf("grid offsets wrong: %+v", out[9])
+	}
+}
+
+// ─── RV-Print-07: نطاق مسارات الصور ───
+
+func TestResolveLocalPath_BlocksAbsoluteOutsideAppDir(t *testing.T) {
+	// مسار نظامي حقيقي خارج التطبيق يجب أن يُرفض (لا يُمرَّر لـ imaging.Open).
+	outside := filepath.Join(os.TempDir(), "grido_scope_probe.png")
+	if got := resolveLocalPath(outside); got != "" {
+		t.Errorf("resolveLocalPath(%q) = %q, want empty (blocked)", outside, got)
+	}
+}
+
+func TestResolveLocalPath_AllowsDataURLs(t *testing.T) {
+	src := "data:image/png;base64,iVBORw0KGgo="
+	if got := resolveLocalPath(src); got != src {
+		t.Errorf("data URL must pass through, got %q", got)
+	}
+}
+
+// ─── RV-Print-08: سقف البكسلات المفكوكة ───
+
+func TestCheckDecodedPixelCap_Boundaries(t *testing.T) {
+	ok := image.Config{Width: 10000, Height: 9999} // 99.99MP
+	if err := checkDecodedPixelCap(ok, "probe"); err != nil {
+		t.Errorf("99.99MP must pass, got %v", err)
+	}
+	tooBig := image.Config{Width: 20000, Height: 20000} // 400MP
+	if err := checkDecodedPixelCap(tooBig, "probe"); err == nil {
+		t.Error("400MP must be rejected, got nil")
+	}
+	// أبعاد خبيثة تفيض int32 لكن int64 يكشفها (وليس التفافاً لرقم صغير).
+	overflow := image.Config{Width: 100000, Height: 100000} // 10^10 بكسل
+	if err := checkDecodedPixelCap(overflow, "probe"); err == nil {
+		t.Error("10GP must be rejected, got nil")
+	}
+	zero := image.Config{Width: 0, Height: 100}
+	if err := checkDecodedPixelCap(zero, "probe"); err == nil {
+		t.Error("zero width must be rejected, got nil")
+	}
+}
+
+// TestLoadRawImage_RejectsDimensionBomb: قنبلة حقيقية مصغّرة — ترويسة PNG
+// تعلن 100000×100000 (10GP) بحجم ملف < 100 بايت؛ يجب أن تُرفض من الترويسة
+// قبل أي تخصيص بكسلات (يكشف انزلاق check-then-decode).
+func TestLoadRawImage_RejectsDimensionBomb(t *testing.T) {
+	pngBomb := buildTinyPNGWithHugeIHDR(100000, 100000)
+	b64 := "data:image/png;base64," + base64.StdEncoding.EncodeToString(pngBomb)
+	t.Logf("bomb file size: %d bytes (declares 10GP)", len(pngBomb))
+	cache := &imageCache{images: make(map[string]image.Image), access: make(map[string]time.Time)}
+	if _, err := loadRawImage(b64, "bomb-test", cache); err == nil {
+		t.Fatal("dimension bomb must be rejected, got nil error")
+	}
+}
+
+// buildTinyPNGWithHugeIHDR يبني PNG صالح الترويسة بأبعاد معلنة ضخمة وIDAT فارغ.
+func buildTinyPNGWithHugeIHDR(w, h uint32) []byte {
+	buf := &bytes.Buffer{}
+	buf.Write([]byte{137, 80, 78, 71, 13, 10, 26, 10}) // signature
+	writeChunk := func(typ string, data []byte) {
+		var lb [4]byte
+		binary.BigEndian.PutUint32(lb[:], uint32(len(data)))
+		buf.Write(lb[:])
+		buf.WriteString(typ)
+		buf.Write(data)
+		crc := crc32.ChecksumIEEE(append([]byte(typ), data...))
+		binary.BigEndian.PutUint32(lb[:], crc)
+		buf.Write(lb[:])
+	}
+	ihdr := make([]byte, 13)
+	binary.BigEndian.PutUint32(ihdr[0:4], w)
+	binary.BigEndian.PutUint32(ihdr[4:8], h)
+	ihdr[8], ihdr[9], ihdr[10], ihdr[11], ihdr[12] = 8, 6, 0, 0, 0 // 8bit RGBA
+	writeChunk("IHDR", ihdr)
+	writeChunk("IDAT", []byte{0x78, 0x9c, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01})
+	writeChunk("IEND", nil)
+	return buf.Bytes()
 }

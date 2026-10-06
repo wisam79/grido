@@ -19,6 +19,26 @@ import { renderWithPixelFilter } from './export-pixel-filter';
 
 type StoreState = ReturnType<typeof useEditorStore.getState>;
 
+export type CollageCutLineStyle = 'dashed' | 'solid' | 'dotted' | 'cropmarks';
+
+/**
+ * 🖨️ إيقاع الشرطات الموحّد (RV-Print-25): المعاينة ومسار Go يحترمان
+ * cutLineStyle بينما التصدير اليدوي كان يرسم شرطات ثابتة دائماً —
+ * ثلاثة مخرجات مختلفة لنفس الإعداد. الآن مصدر واحد للحقيقة.
+ */
+export function resolveCutLineDash(style: CollageCutLineStyle | string | undefined): number[] {
+  switch (style) {
+    case 'solid':
+    case 'cropmarks': // الزوايا تُرسم منفصلة — بلا شرطات على الخطوط (لا توجد خطوط أصلاً)
+      return [];
+    case 'dotted':
+      return [2, 5];
+    case 'dashed':
+    default:
+      return [8, 8];
+  }
+}
+
 export interface CollageRenderOptions {
   canvasWidth: number;
   canvasHeight: number;
@@ -28,6 +48,7 @@ export interface CollageRenderOptions {
   collageRadius?: number;
   collageShowCutLines?: boolean;
   collageShowEndCutLine?: boolean;
+  collageCutLineStyle?: CollageCutLineStyle;
   collageStrokeWidth?: number;
   collageStrokeColor?: string;
   collageTemplate?: StoreState['collageTemplate'];
@@ -46,6 +67,7 @@ export async function renderCollageBranch(
     collageRadius = 0,
     collageShowCutLines = false,
     collageShowEndCutLine = true,
+    collageCutLineStyle = 'dashed',
     collageStrokeWidth = 0,
     collageStrokeColor = '#000000',
     collageTemplate,
@@ -175,17 +197,56 @@ export async function renderCollageBranch(
     });
 
     const lineW = Math.max(1, Math.round(canvasWidth / 1200));
+    const dash = resolveCutLineDash(collageCutLineStyle);
+
+    // 🖨️ cropmarks: علامات زوايا فقط على الصندوق المحيط (مطابق للمعاينة
+    // print-preview التي تبني زواياها من نفس bbox) — لا خطوط كاملة.
+    if (collageCutLineStyle === 'cropmarks') {
+      const xs = cutLines.flatMap((l) => [l.x1, l.x2]);
+      const ys = cutLines.flatMap((l) => [l.y1, l.y2]);
+      if (xs.length > 0 && ys.length > 0) {
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        const len = Math.max(4, Math.min(canvasWidth, canvasHeight) * 0.04);
+        ctx.strokeStyle = collageCut();
+        ctx.lineWidth = lineW;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        const corners: Array<[number, number, number, number]> = [
+          [minX, minY, 1, 1],
+          [maxX, minY, -1, 1],
+          [minX, maxY, 1, -1],
+          [maxX, maxY, -1, -1],
+        ];
+        for (const [cx, cy, hx, hy] of corners) {
+          ctx.moveTo(hx > 0 ? cx : cx - len, cy);
+          ctx.lineTo(hx > 0 ? cx + len : cx, cy);
+          ctx.moveTo(cx, hy > 0 ? cy : cy - len);
+          ctx.lineTo(cx, hy > 0 ? cy + len : cy);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
 
     // تجميع أوامر الرسم: مساران (عادي/ختامي) بدل beginPath+stroke لكل خط —
     // تغيير strokeStyle/dash فقط عند الانتقال بين الفئتين
     const regularLines = cutLines.filter((l) => !l.isBottomEnd);
     const endLines = cutLines.filter((l) => l.isBottomEnd);
 
-    const strokeBatch = (lines: typeof cutLines, style: string, width: number, dash: number[]) => {
+    const strokeBatch = (
+      lines: typeof cutLines,
+      style: string,
+      width: number,
+      lineDash: number[],
+    ) => {
       if (lines.length === 0) return;
       ctx.strokeStyle = style;
       ctx.lineWidth = width;
-      ctx.setLineDash(dash);
+      ctx.setLineDash(lineDash);
       ctx.beginPath();
       for (const line of lines) {
         ctx.moveTo(Math.round(line.x1), Math.round(line.y1));
@@ -194,8 +255,9 @@ export async function renderCollageBranch(
       ctx.stroke();
     };
 
-    strokeBatch(regularLines, collageCut(), lineW, [8, 8]);
-    strokeBatch(endLines, collageEndCut(), lineW * 1.5, [12, 6]);
+    strokeBatch(regularLines, collageCut(), lineW, dash);
+    // الخط الختامي يبقى مميزاً (أسمك) لكن بإيقاع النمط المختار.
+    strokeBatch(endLines, collageEndCut(), lineW * 1.5, dash);
     ctx.restore();
   }
 }

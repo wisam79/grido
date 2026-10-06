@@ -28,6 +28,17 @@ import (
 //   - print_export.go         : حفظ المخرجات + DPI metadata + الطباعة الأصلية
 // ─────────────────────────────────────────────────────────────────────────────
 
+// سقوف التوسيع الشبكي (RV-Print-01): التحقق يقيّد القوالب (1000) لكن التوسيع
+// كان يحدث بعده بلا سقف — Copies=2^31 يفجّر make() فوراً. السقوف هنا تُفحص
+// بجمع int64 آمن من الفيض قبل أي تخصيص، والتوسيع بعده مأمون رياضياً.
+const (
+	// maxCopiesPerItem أعلى عدد نسخ لعنصر شبكي واحد (يكفي ملصقات A4 حتى 100×150).
+	maxCopiesPerItem = 5000
+	// maxExpandedPrintCells أعلى عدد خلايا مرسومة بعد التوسيع (قالب 48×24 الشائع
+	// = 1,152 خلية؛ السقف يترك هامش ×20 مع بقاء زمن الرسم محدوداً).
+	maxExpandedPrintCells = 25000
+)
+
 type PrintService struct{}
 
 func NewPrintService() *PrintService {
@@ -54,6 +65,27 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 
 	if int64(widthPx)*int64(heightPx) > 144000000 { // حد أقصى 144 ميغابكسل
 		return 0, 0, fmt.Errorf("requested print size is too large (total pixels exceed 144 megapixels)")
+	}
+
+	// 🛡️ سقف التوسيع الشبكي قبل أي تخصيص: Copies سالبة مرفوضة، والقيمة
+	// المفردة محدودة، والمجموع الكلي (قوالب + نسخ موسّعة) محدود بجمع int64
+	// آمن من فيض int (Copies قيمة JSON غير موقعة عملياً قد تبلغ 1e15).
+	var totalExpanded int64
+	for _, item := range req.Items {
+		if item.Copies < 0 {
+			return 0, 0, fmt.Errorf("invalid negative copies: %d", item.Copies)
+		}
+		if item.Copies > maxCopiesPerItem {
+			return 0, 0, fmt.Errorf("too many copies for one item: %d (max %d)", item.Copies, maxCopiesPerItem)
+		}
+		if item.Copies > 1 {
+			totalExpanded += int64(item.Copies)
+		} else {
+			totalExpanded++
+		}
+		if totalExpanded > maxExpandedPrintCells {
+			return 0, 0, fmt.Errorf("too many expanded print cells (max %d): lower copies", maxExpandedPrintCells)
+		}
 	}
 
 	for _, item := range req.Items {
@@ -83,6 +115,11 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 			continue
 		}
 		filePath := resolveLocalPath(item.ImageSrc)
+		// 🖨️ مسار مرفوض من resolveLocalPath (خارج نطاق التطبيق) — خطأ صريح
+		// بدل السقوط إلى imaging.Open برسالة مضللة (RV-Print-07).
+		if filePath == "" {
+			return 0, 0, fmt.Errorf("image source outside allowed app directories")
+		}
 		if strings.HasPrefix(filePath, "data:image/") {
 			commaIdx := strings.Index(filePath, ",")
 			if commaIdx != -1 {

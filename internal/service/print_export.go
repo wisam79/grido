@@ -12,6 +12,7 @@ import (
 	"io"
 	"log/slog"
 	"math"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -170,29 +171,42 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	var htmlImageName string
 
 	if isCMYK {
+		// 🖨️ فحص سقف TIFF على أبعاد الكانفس BEFORE التحويل: التحويل الكامل
+		// (144MP) قبل الرفض كان هدراً حتمياً (RV-Print-03).
+		if pixels := int64(dc.Image().Bounds().Dx()) * int64(dc.Image().Bounds().Dy()); pixels > maxTIFFPixels && !strings.EqualFold(req.ExportFormat, "jpeg") && !strings.EqualFold(req.ExportFormat, "jpg") {
+			return "", "", fmt.Errorf("cmyk tiff too large (%d MP): use JPEG or lower DPI (max %d MP)", pixels/1000000, maxTIFFPixels/1000000)
+		}
 		cmykImg := ConvertRGBAtoCMYK(dc.Image())
 		ApplyPureBlackCutLines(cmykImg, req)
 
 		if strings.EqualFold(req.ExportFormat, "jpeg") || strings.EqualFold(req.ExportFormat, "jpg") {
-				imageName = baseName + ".jpg"
-				imagePath = filepath.Join(outDir, imageName)
-				af, err := utils.CreateAtomic(imagePath, 0o644)
-				if err != nil {
-					return "", "", fmt.Errorf("create cmyk jpeg: %w", err)
-				}
-				defer af.Abort()
-				// ترميز متدفق مباشر مع حقن JFIF أثناء الكتابة (كان بلا حقن DPI أصلاً)
-				if err := jpeg.Encode(&dpiJPEGWriter{w: af, dpi: req.DPI}, cmykImg, &jpeg.Options{Quality: 95}); err != nil {
-					return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
-				}
-				if err := af.Commit(); err != nil {
-					return "", "", fmt.Errorf("commit cmyk jpeg: %w", err)
-				}
-			} else {
+			imageName = baseName + ".jpg"
+			imagePath = filepath.Join(outDir, imageName)
+			af, err := utils.CreateAtomic(imagePath, 0o644)
+			if err != nil {
+				return "", "", fmt.Errorf("create cmyk jpeg: %w", err)
+			}
+			defer af.Abort()
+			// ترميز متدفق مباشر مع حقن JFIF أثناء الكتابة (كان بلا حقن DPI أصلاً)
+			if err := jpeg.Encode(&dpiJPEGWriter{w: af, dpi: req.DPI}, cmykImg, &jpeg.Options{Quality: 95}); err != nil {
+				return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
+			}
+			if err := af.Commit(); err != nil {
+				return "", "", fmt.Errorf("commit cmyk jpeg: %w", err)
+			}
+		} else {
 			// Default format for CMYK is TIFF — مضغوط Deflate (غير المضغوط كان
-			// يضاعف الذاكرة والقرص) مع سقف 50MP بدل OOM على اللوحات الكبيرة
-			if pixels := int64(cmykImg.Bounds().Dx()) * int64(cmykImg.Bounds().Dy()); pixels > maxTIFFPixels {
-				return "", "", fmt.Errorf("cmyk tiff too large (%d MP): use JPEG or lower DPI (max %d MP)", pixels/1000000, maxTIFFPixels/1000000)
+			// يضاعف الذاكرة والقرص) مع سقف 50MP بدل OOM على اللوحات الكبيرة.
+			// 🖨️ وسوم الدقة X/YResolution + ResolutionUnit تُحقن بعد الترميز
+			// (RV-Print-04): مكتبات Go لا تكتبها، وبدونها تفترض المطابع 72dpi.
+			// الترميز لذاكرة أولاً هنا ضروري للحقن (TIFF يتطلب إزاحات خلفية).
+			var tifBuf bytes.Buffer
+			if err := tiff.Encode(&tifBuf, cmykImg, &tiff.Options{Compression: tiff.Deflate, Predictor: true}); err != nil {
+				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
+			}
+			tagged, err := injectTIFFResolution(tifBuf.Bytes(), req.DPI)
+			if err != nil {
+				return "", "", fmt.Errorf("inject tiff resolution: %w", err)
 			}
 			imageName = baseName + ".tif"
 			imagePath = filepath.Join(outDir, imageName)
@@ -201,8 +215,8 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 				return "", "", fmt.Errorf("create cmyk tiff: %w", err)
 			}
 			defer af.Abort()
-			if err := tiff.Encode(af, cmykImg, &tiff.Options{Compression: tiff.Deflate, Predictor: true}); err != nil {
-				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
+			if _, err := af.Write(tagged); err != nil {
+				return "", "", fmt.Errorf("write cmyk tiff: %w", err)
 			}
 			if err := af.Commit(); err != nil {
 				return "", "", fmt.Errorf("commit cmyk tiff: %w", err)
@@ -212,6 +226,8 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		// 🌟 معاينة PNG متصفح-متوافقة لنافذة الطباعة HTML (المتصفحات لا تفك TIFF في <img>)
 		// مصغّرة إلى حد 1200px ومرمّزة متدفقاً: الترميز كامل الحجم كان يستهلك ~218ms
 		// (58% من زمن توليد الورقة) والمعاينة لا تحتاج أكثر.
+		// 🖨️ احتياطي JPEG من الصورة sRGB (RV-Print-05): الفشل القديم كان يسلّم
+		// ملف .tif للمتصفح = صفحة طباعة بصورة مكسورة بلا خطأ.
 		htmlImageName = baseName + "_preview.png"
 		htmlImagePath := filepath.Join(outDir, htmlImageName)
 		previewImg := dc.Image()
@@ -219,17 +235,36 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			previewImg = imaging.Fit(previewImg, previewMaxWidth, previewMaxWidth, imaging.Linear)
 		}
 		enc := &png.Encoder{CompressionLevel: png.BestSpeed}
+		previewOK := false
 		if paf, err := utils.CreateAtomic(htmlImagePath, 0o644); err == nil {
-			perr := enc.Encode(&dpiPNGWriter{w: paf, dpi: req.DPI}, previewImg)
-			if perr == nil {
-				if cerr := paf.Commit(); cerr != nil {
-					htmlImageName = imageName
+			if perr := enc.Encode(&dpiPNGWriter{w: paf, dpi: req.DPI}, previewImg); perr == nil {
+				if cerr := paf.Commit(); cerr == nil {
+					previewOK = true
+				} else {
+					paf.Abort()
 				}
 			} else {
 				paf.Abort()
-				htmlImageName = imageName
 			}
-		} else {
+		}
+		if !previewOK {
+			slog.Warn("print png preview failed; trying jpeg fallback", "path", htmlImagePath)
+			htmlImageName = baseName + "_preview.jpg"
+			htmlImagePath = filepath.Join(outDir, htmlImageName)
+			if jaf, err := utils.CreateAtomic(htmlImagePath, 0o644); err == nil {
+				if jerr := jpeg.Encode(&dpiJPEGWriter{w: jaf, dpi: req.DPI}, previewImg, &jpeg.Options{Quality: 85}); jerr == nil {
+					if cerr := jaf.Commit(); cerr == nil {
+						previewOK = true
+					} else {
+						jaf.Abort()
+					}
+				} else {
+					jaf.Abort()
+				}
+			}
+		}
+		if !previewOK {
+			slog.Error("print preview generation failed; browser print page will reference the raw output file")
 			htmlImageName = imageName
 		}
 	} else {
@@ -276,8 +311,10 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 
 	// إنتاج ملف HTML لضمان طباعة دقيقة للمليمترات عبر متصفح الويب (يتجاهل عارض الصور الافتراضي للويندوز)
 	// HTML file for native OS printing (uses file:// absolute path so external apps like mshtml.dll can load the image)
+	// 🖨️ ترميز URI سليم (RV-Print-06): الاستبدال اليدوي للمسافات فقط كان يكسر
+	// المسارات ذات # أو % أو الحروف غير اللاتينية (مجلد مستخدم عربي).
 	absImagePath := filepath.Join(outDir, htmlImageName)
-	fileURI := "file:///" + strings.ReplaceAll(filepath.ToSlash(absImagePath), " ", "%20")
+	fileURI := (&url.URL{Scheme: "file", Path: filepath.ToSlash(absImagePath)}).String()
 
 	// 🚀 مسار الصورة لـ WebView2 iframe: يُخدم من سيرفر Wails عبر /local-image/ (main.go)
 	// يتوافق مع 'self' في CSP ويمنع حجب file:// وظهور الصورة المكسورة
@@ -440,7 +477,6 @@ func buildPhysChunk(dpi int) []byte {
 	return physChunk
 }
 
-
 // pngDPIInsertPos يعيد موضع الإدراج بعد IHDR ونهاية التخطي (يتجاوز pHYs موجودة).
 func pngDPIInsertPos(pngData []byte) (insertPos, skipEnd int, err error) {
 	if len(pngData) < 33 {
@@ -519,5 +555,3 @@ func jpegDPIRestStart(jpegData []byte) (int, error) {
 	}
 	return 2, nil
 }
-
-

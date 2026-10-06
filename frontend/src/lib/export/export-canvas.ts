@@ -130,6 +130,8 @@ export async function exportCanvas(
       collageRadius: state.collageRadius,
       collageShowCutLines: state.collageShowCutLines,
       collageShowEndCutLine: state.collageShowEndCutLine,
+      // 🖨️ نمط خطوط القص الموحّد (RV-Print-25) — كان التصدير اليدوي يتجاهله.
+      collageCutLineStyle: state.printSettings?.cutLineStyle ?? 'dashed',
       collageStrokeWidth: state.collageStrokeWidth,
       collageStrokeColor: state.collageStrokeColor,
       collageTemplate: state.collageTemplate,

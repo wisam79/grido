@@ -1,10 +1,10 @@
-import { memo, useCallback, useState, type ReactElement } from "react";
-import { buildCSSFilter, cn } from "@/lib/utils";
-import { calculatePrintCutLines } from "@/lib/print/cut-lines-utils";
-import { computeBlockPosition, computeSlotRectMM } from "@/lib/print/print-layout-math";
-import { formatGradientCss } from "@/components/editor/properties/gradient-utils";
-import type { CanvasSlot } from "@/lib/store/types";
-import type { SheetGrid } from "@/lib/print/print-layout-math";
+import { memo, useCallback, useMemo, useState, type ReactElement } from 'react';
+import { buildCSSFilter, cn } from '@/lib/utils';
+import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
+import { computeBlockPosition, computeSlotRectMM } from '@/lib/print/print-layout-math';
+import { formatGradientCss } from '@/components/editor/properties/gradient-utils';
+import type { CanvasSlot } from '@/lib/store/types';
+import type { SheetGrid } from '@/lib/print/print-layout-math';
 
 interface SheetPreviewProps {
   grid: SheetGrid;
@@ -15,8 +15,8 @@ interface SheetPreviewProps {
   zoom: number;
   showCutLines: boolean;
   showEndCutLine?: boolean;
-  cutLineStyle?: "dashed" | "dotted" | "solid" | "cropmarks";
-  mode: "single" | "collage";
+  cutLineStyle?: 'dashed' | 'dotted' | 'solid' | 'cropmarks';
+  mode: 'single' | 'collage';
   backgroundColor: string;
   /** 🎨 لون نهاية تدرج خلفية الورقة — غيابه يعني تعبئة مصمتة */
   backgroundGradientColor2?: string | null;
@@ -79,17 +79,17 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
   const activeSrc = slot.imageSrc;
   if (!activeSrc) return null;
 
-  const marginX_pct = hasPhysical ? 0 : (collageMargin / canvasWidth);
-  const marginY_pct = hasPhysical ? 0 : (collageMargin / canvasHeight);
-  const gapX_pct = hasPhysical ? 0 : (collageGap / canvasWidth);
-  const gapY_pct = hasPhysical ? 0 : (collageGap / canvasHeight);
+  const marginX_pct = hasPhysical ? 0 : collageMargin / canvasWidth;
+  const marginY_pct = hasPhysical ? 0 : collageMargin / canvasHeight;
+  const gapX_pct = hasPhysical ? 0 : collageGap / canvasWidth;
+  const gapY_pct = hasPhysical ? 0 : collageGap / canvasHeight;
 
   const rect = computeSlotRectMM(
     block,
     { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
     { widthMM: imageWidthMM, heightMM: imageHeightMM },
     { marginXMM: marginX_pct * imageWidthMM, marginYMM: marginY_pct * imageHeightMM },
-    { gapXMM: gapX_pct * imageWidthMM, gapYMM: gapY_pct * imageHeightMM }
+    { gapXMM: gapX_pct * imageWidthMM, gapYMM: gapY_pct * imageHeightMM },
   );
 
   const left_pct = (rect.xMM / Math.max(1, paperWidthMM)) * 100;
@@ -99,7 +99,10 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
 
   const pxPerCanvasPx = imageWidthMM / Math.max(1, canvasWidth);
   const radiusPx = collageRadius * pxPerCanvasPx * sf;
-  const borderPx = collageStrokeWidth * pxPerCanvasPx * sf;
+  // 🖨️ حد أدنى 1px (RV-Print-24): القيمة الكسرية < 1 كانت تُترجم لحد غير
+  // مرئي حسب المتصفح — اختلاف غير ثابت بين المعاينة والمطبوع.
+  const borderPx =
+    collageStrokeWidth > 0 ? Math.max(1, collageStrokeWidth * pxPerCanvasPx * sf) : 0;
 
   const zoomVal = slot.zoom && slot.zoom > 0 ? slot.zoom : 1;
   const normRot = (((slot.rotation || 0) % 360) + 360) % 360;
@@ -107,7 +110,7 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
 
   let imgWidth: string | undefined;
   let imgHeight: string | undefined;
-  let imgPos: { position: "absolute"; left: string | number; top: string | number };
+  let imgPos: { position: 'absolute'; left: string | number; top: string | number };
   let imgTransform: string;
 
   if (isQuarter) {
@@ -116,7 +119,7 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
     imgWidth = `${boxWpct}%`;
     imgHeight = `${boxHpct}%`;
     imgPos = {
-      position: "absolute",
+      position: 'absolute',
       left: `${(100 - boxWpct) / 2}%`,
       top: `${(100 - boxHpct) / 2}%`,
     };
@@ -138,7 +141,7 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
       panX = (100 * zoomVal * dx) / coverW;
       panY = (100 * zoomVal * dy) / coverH;
     }
-    imgPos = { position: "absolute" as const, left: 0, top: 0 };
+    imgPos = { position: 'absolute' as const, left: 0, top: 0 };
     imgTransform = `translate(${panX}%, ${panY}%) scale(${zoomVal}) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1}) rotate(${slot.rotation || 0}deg)`;
   }
 
@@ -152,13 +155,13 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
         height: `${height_pct}%`,
         borderRadius: radiusPx > 0 ? `${radiusPx}px` : undefined,
         border: borderPx > 0 ? `${borderPx}px solid ${collageStrokeColor}` : undefined,
-        backgroundColor: slot.bgColor && slot.bgColor !== "transparent" ? slot.bgColor : undefined,
+        backgroundColor: slot.bgColor && slot.bgColor !== 'transparent' ? slot.bgColor : undefined,
       }}
     >
       <img
         src={activeSrc}
         alt=""
-        className={cn("w-full h-full object-cover", imgPos.position === "absolute" && "absolute")}
+        className={cn('w-full h-full object-cover', imgPos.position === 'absolute' && 'absolute')}
         style={{
           ...imgPos,
           width: imgWidth,
@@ -186,7 +189,7 @@ export function SheetPreview({
   zoom,
   showCutLines,
   showEndCutLine = true,
-  cutLineStyle = "dashed",
+  cutLineStyle = 'dashed',
   mode,
   backgroundColor,
   backgroundGradientColor2,
@@ -199,7 +202,7 @@ export function SheetPreview({
   collageMargin = 0,
   collageRadius = 0,
   collageStrokeWidth = 0,
-  collageStrokeColor = "#000000",
+  collageStrokeColor = '#000000',
   canvasWidth = 2480,
   canvasHeight = 3508,
   hasPhysical = false,
@@ -212,13 +215,17 @@ export function SheetPreview({
   // في المعاينة بلون مصمت بينما المطبوع متدرج (أو باتجاه عمودي على الصحيح).
   const hasPaperGradient = Boolean(
     backgroundGradientColor2 &&
-      backgroundColor &&
-      backgroundColor !== "transparent" &&
-      backgroundGradientColor2 !== "transparent"
+    backgroundColor &&
+    backgroundColor !== 'transparent' &&
+    backgroundGradientColor2 !== 'transparent',
   );
   const paperBackground = hasPaperGradient
-    ? formatGradientCss([0, backgroundColor, 1, backgroundGradientColor2 as string], "linear", backgroundGradientAngle)
-    : backgroundColor || "#FFFFFF";
+    ? formatGradientCss(
+        [0, backgroundColor, 1, backgroundGradientColor2 as string],
+        'linear',
+        backgroundGradientAngle,
+      )
+    : backgroundColor || '#FFFFFF';
   // الأبعاد الطبيعية للصور بعد تحميلها (naturalWidth/Height) — تُستخدم لتحويل
   // سحب dragX/dragY شبكة البكسل إلى إزاحة نقل (%) مطابقة لمنطق Konva/التصدير
   const [naturalSizes, setNaturalSizes] = useState<Record<string, { w: number; h: number }>>({});
@@ -233,35 +240,71 @@ export function SheetPreview({
     });
   }, []);
 
-  const rawCutLines = showCutLines
-    ? calculatePrintCutLines({
-        mode,
-        actualCopies: count,
-        imageWidthMM,
-        imageHeightMM,
-        gapMM,
-        paperWidth: paperWidthMM,
-        paperHeight: paperHeightMM,
-        showEndCutLine,
-        cutLineStyle: cutLineStyle || "dashed",
-        slots,
-        collageMargin,
-        collageGap,
-        canvasWidth,
-        canvasHeight,
-        hasPhysical,
-        grid,
-      })
-    : [];
+  // 🖨️ حارس القيمة الحارسة القديمة (RV-Print-24): أي 'collage-active' متسربة
+  // من إصدار سابق تُعامل كغياب صورة — لا <img> مكسورة أبداً.
+  const safePreviewSrc =
+    previewImageSrc && previewImageSrc !== 'collage-active' ? previewImageSrc : '';
+
+  // 🖨️ حفظ حساب القص (RV-Print-24): كان يُعاد على كل render (zoom/حالة) فوق
+  // كل النسخ × الخلايا — الآن يعتمد على المدخلات الهندسية فقط.
+  const rawCutLines = useMemo(
+    () =>
+      showCutLines
+        ? calculatePrintCutLines({
+            mode,
+            actualCopies: count,
+            imageWidthMM,
+            imageHeightMM,
+            gapMM,
+            paperWidth: paperWidthMM,
+            paperHeight: paperHeightMM,
+            showEndCutLine,
+            cutLineStyle: cutLineStyle || 'dashed',
+            slots,
+            collageMargin,
+            collageGap,
+            canvasWidth,
+            canvasHeight,
+            hasPhysical,
+            grid,
+          })
+        : [],
+    [
+      showCutLines,
+      mode,
+      count,
+      imageWidthMM,
+      imageHeightMM,
+      gapMM,
+      paperWidthMM,
+      paperHeightMM,
+      showEndCutLine,
+      cutLineStyle,
+      slots,
+      collageMargin,
+      collageGap,
+      canvasWidth,
+      canvasHeight,
+      hasPhysical,
+      grid,
+    ],
+  );
+
+  // 🖨️ كتل النسخ محسوبة مرة واحدة (RV-Print-24): الكائن الجديد كل render
+  // كان يكسر memo الخلايا فيعيد رسمها كلها مع أي تغيّر.
+  const copyBlocks = useMemo(
+    () => Array.from({ length: Math.max(0, count) }, (_, i) => computeBlockPosition(i, grid)),
+    [count, grid],
+  );
 
   const borderStyleClass =
-    cutLineStyle === "dotted"
-      ? "border-dotted"
-      : cutLineStyle === "solid"
-      ? "border-solid"
-      : "border-dashed";
+    cutLineStyle === 'dotted'
+      ? 'border-dotted'
+      : cutLineStyle === 'solid'
+        ? 'border-solid'
+        : 'border-dashed';
 
-  const isCropMarks = cutLineStyle === "cropmarks";
+  const isCropMarks = cutLineStyle === 'cropmarks';
 
   const cropMarkElements = isCropMarks
     ? (() => {
@@ -310,64 +353,64 @@ export function SheetPreview({
       })()
     : [];
 
-  const cutLineElements = isCropMarks ? [] : rawCutLines.map((line, idx) => {
-    const isVertical = Math.abs(line.x1 - line.x2) < 0.01;
-    const leftPct = (line.x1 / Math.max(1, paperWidthMM)) * 100;
-    const topPct = (line.y1 / Math.max(1, paperHeightMM)) * 100;
+  const cutLineElements = isCropMarks
+    ? []
+    : rawCutLines.map((line, idx) => {
+        const isVertical = Math.abs(line.x1 - line.x2) < 0.01;
+        const leftPct = (line.x1 / Math.max(1, paperWidthMM)) * 100;
+        const topPct = (line.y1 / Math.max(1, paperHeightMM)) * 100;
 
-    if (isVertical) {
-      const heightPct = ((line.y2 - line.y1) / Math.max(1, paperHeightMM)) * 100;
-      return (
-        <div
-          key={`v-cut-${idx}`}
-          className={cn(
-            "absolute border-l border-canvas-collage-cut pointer-events-none z-20",
-            borderStyleClass
-          )}
-          style={{
-            left: `${leftPct}%`,
-            top: `${topPct}%`,
-            height: `${heightPct}%`,
-            transform: "translateX(-50%)",
-          }}
-        />
-      );
-    }
+        if (isVertical) {
+          const heightPct = ((line.y2 - line.y1) / Math.max(1, paperHeightMM)) * 100;
+          return (
+            <div
+              key={`v-cut-${idx}`}
+              className={cn(
+                'absolute border-l border-canvas-collage-cut pointer-events-none z-20',
+                borderStyleClass,
+              )}
+              style={{
+                left: `${leftPct}%`,
+                top: `${topPct}%`,
+                height: `${heightPct}%`,
+                transform: 'translateX(-50%)',
+              }}
+            />
+          );
+        }
 
-    const widthPct = ((line.x2 - line.x1) / Math.max(1, paperWidthMM)) * 100;
-    const isBottomEnd = line.isBottomEnd;
+        const widthPct = ((line.x2 - line.x1) / Math.max(1, paperWidthMM)) * 100;
+        const isBottomEnd = line.isBottomEnd;
+        return (
+          <div
+            key={`h-cut-${idx}`}
+            className={cn(
+              'absolute pointer-events-none z-20',
+              isBottomEnd
+                ? 'border-t-2 border-canvas-collage-cut border-dashed'
+                : cn('border-t border-canvas-collage-cut', borderStyleClass),
+            )}
+            style={{
+              top: `${topPct}%`,
+              left: `${leftPct}%`,
+              width: `${widthPct}%`,
+              transform: 'translateY(-50%)',
+            }}
+          />
+        );
+      });
+
+  if (mode === 'collage') {
     return (
       <div
-        key={`h-cut-${idx}`}
-        className={cn(
-          "absolute pointer-events-none z-20",
-          isBottomEnd
-            ? "border-t-2 border-canvas-collage-cut border-dashed"
-            : cn("border-t border-canvas-collage-cut", borderStyleClass)
-        )}
-        style={{
-          top: `${topPct}%`,
-          left: `${leftPct}%`,
-          width: `${widthPct}%`,
-          transform: "translateY(-50%)",
-        }}
-      />
-    );
-  });
-
-  if (mode === "collage") {
-    return (
-      <div 
         className="w-full h-full relative overflow-hidden"
         style={{
           background: paperBackground,
-          boxSizing: "border-box",
+          boxSizing: 'border-box',
         }}
       >
         {slots && slots.length > 0 ? (
-          Array.from({ length: count }).map((_, i) => {
-            const block = computeBlockPosition(i, grid);
-
+          copyBlocks.map((block, i) => {
             return slots.map((slot, index) => (
               <CollageSlotPreview
                 key={`copy-${i}-slot-${index}`}
@@ -391,14 +434,14 @@ export function SheetPreview({
               />
             ));
           })
-        ) : previewImageSrc ? (
-          <img
-            src={previewImageSrc}
-            alt=""
-            className="w-full h-full object-cover"
-          />
+        ) : safePreviewSrc ? (
+          <img src={safePreviewSrc} alt="" className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-xs text-muted-foreground font-cairo">
+          <div
+            role="status"
+            aria-busy="true"
+            className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-xs text-muted-foreground font-cairo"
+          >
             جاري تحميل المعاينة ...
           </div>
         )}
@@ -426,30 +469,30 @@ export function SheetPreview({
           width: `${width_pct}%`,
           height: `${height_pct}%`,
           background: paperBackground,
-          boxSizing: "border-box",
+          boxSizing: 'border-box',
         }}
       >
         {previewImageSrc ? (
-          <img
-            src={previewImageSrc}
-            alt=""
-            className="w-full h-full object-contain"
-          />
+          <img src={previewImageSrc} alt="" className="w-full h-full object-contain" />
         ) : (
-          <div className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-micro text-muted-foreground font-cairo">
+          <div
+            role="status"
+            aria-busy="true"
+            className="w-full h-full bg-muted animate-pulse flex items-center justify-center text-micro text-muted-foreground font-cairo"
+          >
             جاري تجهيز المعاينة ...
           </div>
         )}
-      </div>
+      </div>,
     );
   }
 
   return (
-    <div 
+    <div
       className="relative w-full h-full overflow-hidden"
       style={{
         background: paperBackground,
-        boxSizing: "border-box",
+        boxSizing: 'border-box',
       }}
     >
       {items}
@@ -458,4 +501,3 @@ export function SheetPreview({
     </div>
   );
 }
-

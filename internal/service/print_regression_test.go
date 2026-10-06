@@ -4,7 +4,6 @@ import (
 	"image/color"
 	"math"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"grido/internal/core/domain"
@@ -17,11 +16,9 @@ import (
 //     so every later cell was clipped to the intersection of all previous clips → empty).
 //  2. Cut lines outside the last item's clip region were invisible for the same reason.
 func TestPrintService_MultiCellAndCutLines(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "print_multicell")
-	if err != nil {
-		t.Fatalf("temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
+	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07): الصور تُدرَّج في Media وتُمرَّر
+	// كـ /local-image/… — المسارات المطلقة الخارجية مرفوضة في الإنتاج والاختبار.
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
 
 	// One solid-colored dummy image per slot (cell-sized 105x148.5mm @ 300 DPI)
 	colors := map[string]color.RGBA{
@@ -32,12 +29,7 @@ func TestPrintService_MultiCellAndCutLines(t *testing.T) {
 	}
 	paths := map[string]string{}
 	for name, c := range colors {
-		p := filepath.Join(tempDir, name+".png")
-		img := imaging.New(1240, 1755, c)
-		if err := imaging.Save(img, p); err != nil {
-			t.Fatalf("save %s: %v", name, err)
-		}
-		paths[name] = p
+		paths[name] = stagePrintTestImage(t, name, 1240, 1755, c)
 	}
 
 	svc := NewPrintService()

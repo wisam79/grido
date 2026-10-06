@@ -490,9 +490,16 @@ func createAssetHandler(app *App) http.Handler {
 			}
 			defer af.Abort()
 
-			limitReader := io.LimitReader(r.Body, service.MaxFileSize)
-			if _, err := io.Copy(af, limitReader); err != nil {
+			// 🖨️ كشف الاقتطاع (RV-Print-09): نسخ بحد+1 — أي تجاوز يعني body
+			// ناقصاً يُجهض بـ 413 بدل ملف مبتور ناجح ظاهرياً.
+			limitReader := io.LimitReader(r.Body, service.MaxFileSize+1)
+			written, err := io.Copy(af, limitReader)
+			if err != nil {
 				http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if written > service.MaxFileSize {
+				http.Error(w, "File exceeds size limit", http.StatusRequestEntityTooLarge)
 				return
 			}
 			if err := af.Commit(); err != nil {
@@ -512,7 +519,8 @@ func createAssetHandler(app *App) http.Handler {
 				return
 			}
 
-			limitReader := io.LimitReader(r.Body, 60*1024*1024)
+			// +1 بايت: القارئ الأول كان يقصّ عند الحد تماماً فيخفي التجاوز عن العدّ اللاحق.
+			limitReader := io.LimitReader(r.Body, 60*1024*1024+1)
 			sniffBuf := make([]byte, 512)
 			n, sniffErr := io.ReadFull(limitReader, sniffBuf)
 			if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
@@ -541,8 +549,17 @@ func createAssetHandler(app *App) http.Handler {
 			defer af.Abort()
 
 			combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
-			if _, err := io.Copy(af, combined); err != nil {
+			// 🖨️ كشف الاقتطاع (RV-Print-09): LimitReader وحده يصمت عن القص —
+			// ننسخ بحد+1 فأي زيادة بايت واحد تعني ملفاً ناقصاً يُجهض بـ 413
+			// بدل حفظ تالف وإرجاع success (كان يسمّم خط الطباعة لاحقاً).
+			const printUploadLimit = int64(60 * 1024 * 1024)
+			written, err := io.Copy(af, io.LimitReader(combined, printUploadLimit+1))
+			if err != nil {
 				http.Error(w, "Failed to write file", http.StatusInternalServerError)
+				return
+			}
+			if written > printUploadLimit {
+				http.Error(w, "Uploaded image exceeds 60MB limit", http.StatusRequestEntityTooLarge)
 				return
 			}
 			if err := af.Commit(); err != nil {
@@ -565,7 +582,7 @@ func createAssetHandler(app *App) http.Handler {
 				return
 			}
 
-			limitReader := io.LimitReader(r.Body, service.MaxFileSize)
+			limitReader := io.LimitReader(r.Body, service.MaxFileSize+1)
 			sniffBuf := make([]byte, 512)
 			n, sniffErr := io.ReadFull(limitReader, sniffBuf)
 			if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
@@ -591,8 +608,14 @@ func createAssetHandler(app *App) http.Handler {
 			defer af.Abort()
 
 			combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
-			if _, err := io.Copy(af, combined); err != nil {
+			// 🖨️ كشف الاقتطاع (RV-Print-09) — نفس عقدة upload-print-image.
+			written, err := io.Copy(af, io.LimitReader(combined, service.MaxFileSize+1))
+			if err != nil {
 				http.Error(w, "Failed to write file", http.StatusInternalServerError)
+				return
+			}
+			if written > service.MaxFileSize {
+				http.Error(w, "Uploaded media exceeds size limit", http.StatusRequestEntityTooLarge)
 				return
 			}
 			if err := af.Commit(); err != nil {

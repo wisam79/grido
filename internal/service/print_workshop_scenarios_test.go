@@ -24,10 +24,16 @@ import (
 // خط GeneratePrintSheet الكامل ويتحقق من الملف والأبعاد والبيانات الوصفية.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// writeWorkshopPhoto ينشئ صورة اختبارية بلون صلب بأبعاد واقعية
+// writeWorkshopPhoto ينشئ صورة اختبارية بلون صلب بأبعاد واقعية عبر عقد
+// الإدخال الإنتاجي (RV-Print-07): dir هو مجلد التطبيق المعزول للسيناريو،
+// والصورة تُدرَّج في Media وتُعاد كـ /local-image/… كما في الاستيراد الحقيقي.
 func writeWorkshopPhoto(t *testing.T, dir, name string, w, h int, c color.RGBA) string {
 	t.Helper()
-	imgPath := filepath.Join(dir, name)
+	mediaDir := filepath.Join(dir, "Media")
+	if err := os.MkdirAll(mediaDir, 0o755); err != nil {
+		t.Fatalf("mkdir Media: %v", err)
+	}
+	imgPath := filepath.Join(mediaDir, name)
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	for x := 0; x < w; x++ {
 		for y := 0; y < h; y++ {
@@ -37,10 +43,11 @@ func writeWorkshopPhoto(t *testing.T, dir, name string, w, h int, c color.RGBA) 
 	if err := imaging.Save(img, imgPath); err != nil {
 		t.Fatalf("failed to save workshop photo: %v", err)
 	}
-	return imgPath
+	return "/local-image/" + name
 }
 
-// workshopTempDir ينشئ مجلد عمل مؤقت لسيناريو واحد
+// workshopTempDir ينشئ مجلد تطبيق معزول لسيناريو واحد (GRIDO_APP_DIR) —
+// المخرجات (Exports) والمدخلات (Media) تعيش تحته ويُمسح بالكامل بعد الاختبار.
 func workshopTempDir(t *testing.T) string {
 	t.Helper()
 	tempDir, err := os.MkdirTemp("", "print_workshop_*")
@@ -48,6 +55,7 @@ func workshopTempDir(t *testing.T) string {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
 	t.Cleanup(func() { os.RemoveAll(tempDir) })
+	t.Setenv("GRIDO_APP_DIR", tempDir)
 	return tempDir
 }
 

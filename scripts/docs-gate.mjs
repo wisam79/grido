@@ -351,7 +351,7 @@ const CODE_ASSERTIONS = [
   {
     label: 'BUG-MED-03 — تجميع أوامر Canvas 2D لخطوط القص بدل stroke لكل خط',
     file: 'frontend/src/lib/export/export-canvas-collage.ts',
-    mustContain: ['const strokeBatch = (lines: typeof cutLines', 'strokeBatch(regularLines'],
+    mustContain: ['const strokeBatch', 'lines: typeof cutLines', 'strokeBatch(regularLines'],
   },
   {
     label: 'BUG-LOW-01/02/03 — مكونات وصولية موحّدة في نافذة عزل الخلفية',
@@ -604,6 +604,47 @@ const CODE_ASSERTIONS = [
     // استدلال الشكل الخارجي من بنية SVG مرفوض عمداً: كان يلتقط أول <polygon>
     // (زخرفة داخل <g transform>) بدل حدّ الملصق ⇒ مسار قصّ في موضع فارغ.
     mustNotContain: ['detectStickerOuterShape', 'offsetPolygonPoints', 'generateCirclePath'],
+  },
+  {
+    label: 'RV-Print-01 — سقف Copies الموسّع في التحقق',
+    file: 'internal/service/print_service.go',
+    mustContain: ['maxCopiesPerItem', 'maxExpandedPrintCells', 'totalExpanded'],
+  },
+  {
+    label: 'RV-Print-02/02b — خطوط مائلة CMYK + تسطيح ألفا',
+    file: 'internal/service/print_cmyk.go',
+    mustContain: ['length := math.Hypot(dx, dy)', 'ia := 65535 - a'],
+  },
+  {
+    label: 'RV-Print-04 — وسوم دقة TIFF',
+    file: 'internal/service/print_tiff_tags.go',
+    mustContain: ['tiffTagXResolution', 'injectTIFFResolution'],
+  },
+  {
+    label: 'RV-Print-07/08 — نطاق مسارات الصور وسقف البكسلات المفكوكة',
+    file: 'internal/service/print_image_pipeline.go',
+    mustContain: ['maxDecodedInputPixels', 'checkDecodedPixelCap', 'Blocked out-of-scope image path'],
+  },
+  {
+    label: 'RV-Print-09 — كشف اقتطاع الرفع 413 (المساران الأساسيان)',
+    file: 'main.go',
+    mustContain: ['StatusRequestEntityTooLarge', 'printUploadLimit'],
+  },
+  {
+    label: 'RV-Print-10 — PowerShell بلا استيفاء نصي للمسار',
+    file: 'internal/service/print_native_windows.go',
+    mustContain: ['GRIDO_PRINT_DIR', 'GRIDO_PRINT_FILE'],
+    mustNotContain: ["filepath.Dir(filePath), \"'\", \"''\""],
+  },
+  {
+    label: 'RV-Print-19/20 — ضبط ذري للتصدير ومهلة الرفع',
+    file: 'frontend/src/components/editor/print/use-print-export.ts',
+    mustContain: ['attemptRef', 'withTimeout', 'UPLOAD_TIMEOUT_MS', 'describeError'],
+  },
+  {
+    label: 'RV-Print-25 — نمط خطوط القص الموحّد في التصدير اليدوي',
+    file: 'frontend/src/lib/export/export-canvas-collage.ts',
+    mustContain: ['resolveCutLineDash', 'collageCutLineStyle'],
   },
 ];
 

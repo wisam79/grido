@@ -12,8 +12,18 @@ import (
 )
 
 // منظف مركزي لملفات HTML المؤقتة — كان كل طباعة تطلق goroutine نائمة 3 دقائق
-// (100 طبعة دفعية = 100 نائمة) وتتراكم الملفات لو قُتل التطبيق قبل الاستيقاظ
+// (100 طبعة دفعية = 100 نائمة) وتتراكم الملفات لو قُتل التطبيق قبل الاستيقاظ.
+// 🖨️ تقسية (RV-Print-12): عتبة الحذف 5 دقائق كانت تحذف ملفاً قد يكون حوار
+// طباعته ما زال مفتوحاً (قنبلة زمنية) — الآن 24 ساعة (لا شيء حي يبقى يوماً)
+// مع حارس الحجم: ملفات HTML الطباعة كيلوبايتات؛ أي شذوذ يُترك ولا يُحذف.
 var printTempJanitorOnce sync.Once
+
+// printTempMaxAge أقصى عمر لملف grido_print_*.html قبل تنظيفه.
+// printTempMaxBytes أي ملف يتجاوزها لا يُلمس (شذوذ يستحق الفحص لا الحذف الصامت).
+const (
+	printTempMaxAge   = 24 * time.Hour
+	printTempMaxBytes = 20 * 1024 * 1024
+)
 
 func schedulePrintTempCleanup() {
 	printTempJanitorOnce.Do(func() {
@@ -25,12 +35,12 @@ func schedulePrintTempCleanup() {
 				if err != nil {
 					continue
 				}
-				cutoff := time.Now().Add(-5 * time.Minute)
+				cutoff := time.Now().Add(-printTempMaxAge)
 				for _, e := range entries {
 					if e.IsDir() || !strings.HasPrefix(e.Name(), "grido_print_") || !strings.HasSuffix(e.Name(), ".html") {
 						continue
 					}
-					if info, err := e.Info(); err == nil && info.ModTime().Before(cutoff) {
+					if info, err := e.Info(); err == nil && info.ModTime().Before(cutoff) && info.Size() <= printTempMaxBytes {
 						_ = os.Remove(filepath.Join(os.TempDir(), e.Name()))
 					}
 				}

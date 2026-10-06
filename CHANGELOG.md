@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **تقسية نظام الطباعة من الألف إلى الياء (Print System Hardening RV-Print-01…26 — تقرير `docs/reviews/15-print-hardening-audit-2026-10-06.md`)
+  - **الخلفية (Go):** سقف `Copies` (5000 مفرد / 25000 موسّع بجمع int64 آمن) في `internal/service/print_service.go`؛ دعم الخطوط المائلة في `ApplyPureBlackCutLines` مع تسطيح ألفا على الأبيض في `internal/service/print_cmyk.go`؛ حقن وسوم `XResolution/YResolution/ResolutionUnit` في TIFF (`internal/service/print_tiff_tags.go` جديد) مع نقل فحص 50MP قبل التحويل؛ تقييد `ImageSrc` على `data:` و`/local-image/` وداخل مجلد التطبيق في `internal/service/print_image_pipeline.go`؛ سقف البكسلات المفكوكة 100MP عبر `DecodeConfig` أولاً (قنبلة 65 بايت مرفوضة)؛ كشف اقتطاع الرفع (413) في `main.go` للمسارات الثلاثة؛ PowerShell الاحتياطي عبر متغيرات البيئة بلا استيفاء نصي في `internal/service/print_native_windows.go`؛ اتجاه PDF مشتق من الأبعاد؛ تقسية منظف `grido_print_*` (24 ساعة + سقف حجم)؛ URI من `net/url`؛ احتياطي معاينة JPEG بدل TIFF مكسور.
+  - **الواجهة:** ضبط ذري `isExporting`، مهلات (`upload 120s` + `ExportPrintSheet 10min`) مع `AbortController` ورموز جيل وتimers مُتتبَّعة، `describeError` بلا `[object Object]`، كائن hook مُثبَّت، `setPrintInvocation` داخل effect، نطاق `onCutLinesChange` حسب الوضع، استعادة التحديد بعد الإغلاق، تتبع آخر هامش غير صفري، إصلاح حارس `collage-active`، `cutLineStyle` موحّد في التصدير اليدوي (`resolveCutLineDash` + زوايا cropmarks)، حفظ `rawCutLines` وكتل النسخ، حد أدنى 1px للحدود، `aria-label` لأزرار الأيقونات و`role=alert/status` و`aria-live` و`aria-keyshortcuts`، وتصحيح تعليق المقياس الموحّد الخاطئ (المحوران مستقلان في كل المسارات).
+  - **الاختبارات:** 21 دالة Go جديدة (سقوف النسخ، القنبلة البعدية، المائل والألفا وTAC، وسوم TIFF وحدة ونهاية-لنهاية، نطاق المسارات) + 14 حالة Vitest (`frontend/test/print-export-helpers.test.ts`)؛ تحديث 21 اختباراً قائماً لعقد الإدخال الإنتاجي (`/local-image/` داخل `GRIDO_APP_DIR` معزول). التحقق: `go test ./internal/...` أخضر، `-race` نظيف، `vitest` (103 ملفات / 876 ناجحة + 1 متخطاة)، `tsc` و`eslint --max-warnings 0` نظيفان.
+
 ## [v1.13.1] - 2026-10-05
 
 ### Fixed

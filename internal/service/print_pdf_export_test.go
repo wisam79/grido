@@ -1,7 +1,6 @@
 package service
 
 import (
-	"image"
 	"image/color"
 	"math"
 	"os"
@@ -9,31 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/disintegration/imaging"
-
 	"grido/internal/core/domain"
 )
 
-// writePDFTestImage ينشئ صورة PNG اختبارية مؤقتة لمسار PDF.
+// writePDFTestImage ينشئ صورة PNG اختبارية عبر عقد الإدخال الإنتاجي
+// (RV-Print-07): تُدرَّج في Media لمجلد التطبيق المعزول (GRIDO_APP_DIR مضبوط
+// من الاختبار المستدعي) وتُعاد كـ /local-image/… كما في الاستيراد الحقيقي.
 func writePDFTestImage(t *testing.T) string {
 	t.Helper()
-	tempDir, err := os.MkdirTemp("", "print_pdf_export_*")
-	if err != nil {
-		t.Fatalf("failed to create temp dir: %v", err)
-	}
-	t.Cleanup(func() { os.RemoveAll(tempDir) })
-
-	imgPath := filepath.Join(tempDir, "photo.png")
-	img := image.NewRGBA(image.Rect(0, 0, 200, 200))
-	for x := 0; x < 200; x++ {
-		for y := 0; y < 200; y++ {
-			img.Set(x, y, color.RGBA{R: 40, G: 120, B: 160, A: 255})
-		}
-	}
-	if err := imaging.Save(img, imgPath); err != nil {
-		t.Fatalf("failed to save dummy image: %v", err)
-	}
-	return imgPath
+	return stagePrintTestImage(t, "photo", 200, 200, color.RGBA{R: 40, G: 120, B: 160, A: 255})
 }
 
 // TestSaveOutputPDF_ProducesValidPDF يتحقق من العقد الكامل لمسار PDF:

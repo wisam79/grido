@@ -66,8 +66,14 @@ func (s *PrintService) saveOutputPDF(img image.Image, req domain.PrintRequest) (
 
 	// صفحة مخصصة بالمقاس الفيزيائي الدقيق — gofpdf يدعم SizeType بأي أبعاد
 	// بالمليمتر، فلا حاجة للتقريب إلى A4/Letter.
+	// 🖨️ الاتجاه مشتق من الأبعاد الفعلية (RV-Print-11): تثبيت "P" مع ورقة
+	// عريضة كان يترك التدوير لمزاج القارئ بدل العقد الصريح.
+	orientation := "P"
+	if req.PaperWidthMM > req.PaperHeightMM {
+		orientation = "L"
+	}
 	pdf := gofpdf.NewCustom(&gofpdf.InitType{
-		OrientationStr: "P",
+		OrientationStr: orientation,
 		UnitStr:        "mm",
 		Size: gofpdf.SizeType{
 			Wd: req.PaperWidthMM,

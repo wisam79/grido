@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -45,18 +44,28 @@ func launchWindowsPhotoPrint(filePath string) error {
 		return nil
 	}
 
-	// 2. مسار احتياطي موثوق عبر كائن Shell.Application في PowerShell
-	psScript := fmt.Sprintf(
-		`$s = New-Object -ComObject Shell.Application; $f = $s.Namespace('%s'); if ($f) { $it = $f.ParseName('%s'); if ($it) { $it.InvokeVerb('Print') } }`,
-		strings.ReplaceAll(filepath.Dir(filePath), "'", "''"),
-		strings.ReplaceAll(filepath.Base(filePath), "'", "''"),
+	// 2. مسار احتياطي موثوق عبر كائن Shell.Application في PowerShell.
+	// 🖨️ تمرير المسار عبر متغيرات البيئة (RV-Print-10) بدل استيفائه في نص
+	// السكربت: قيم env لا يُعاد تحليلها نحوياً إطلاقاً، فلا حقن ممكناً مهما
+	// احتوى المسار (backtick أو $() أو علامات اقتباس) — وبلا Base64 الذي
+	// تُعلّمه مضادات الفيروسات سلوكاً مشبوهاً (Sigma: encoded command).
+	// الانتظار غير متزامن مع سجل: Start() وحده كان يدّعي النجاح دائماً.
+	psScript := `$s = New-Object -ComObject Shell.Application; $f = $s.Namespace($env:GRIDO_PRINT_DIR); if ($f) { $it = $f.ParseName($env:GRIDO_PRINT_FILE); if ($it) { $it.InvokeVerb('Print') } }`
+	cmd := exec.Command("powershell.exe", "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", psScript)
+	cmd.Env = append(os.Environ(),
+		"GRIDO_PRINT_DIR="+filepath.Dir(filePath),
+		"GRIDO_PRINT_FILE="+filepath.Base(filePath),
 	)
-	cmd := exec.Command("powershell.exe", "-NoProfile", "-WindowStyle", "Hidden", "-Command", psScript)
-	if err := cmd.Start(); err == nil {
-		return nil
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("تعذر إطلاق معالج طباعة الصور في ويندوز (كود الخطأ %d): %w", ret, err)
 	}
-
-	return fmt.Errorf("تعذر إطلاق معالج طباعة الصور في ويندوز (كود الخطأ %d)", ret)
+	// best-effort: لا نحجب IPC، لكن نلتقط الفشل الفعلي في السجل بدل الصمت.
+	go func() {
+		if waitErr := cmd.Wait(); waitErr != nil {
+			fmt.Fprintf(os.Stderr, "grido print fallback failed for %s: %v\n", filepath.Base(filePath), waitErr)
+		}
+	}()
+	return nil
 }
 
 // launchWindowsDocumentPrint يطلق طباعة المستندات (HTML / PDF) عبر Edge أو العارض الافتراضي
