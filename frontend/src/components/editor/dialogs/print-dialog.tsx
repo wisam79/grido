@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type Konva from 'konva';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogCloseButton,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -18,27 +24,10 @@ import { useStageRef } from '@/lib/canvas/stage-context';
 import { usePrintLayout } from '@/hooks/use-print-layout';
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/huge-icon';
-import {
-  Printer,
-  MagnifyingGlassPlus,
-  MagnifyingGlassMinus,
-  ArrowRight,
-  Gear,
-  Sparkle,
-  Scissors,
-  Crosshair,
-  ArrowUpLeft,
-  SquaresFour,
-  Rows,
-  Columns,
-  Plus,
-  Minus,
-} from '@/components/ui/icons';
-import { PageOrientationIcon } from '@/components/ui/image-icons';
-import { PAPER_SIZES } from '@/lib/templates/constants';
-import { calculateOptimalSheetImposition } from '@/lib/print/print-layout-math';
+import { Printer, MagnifyingGlassPlus, MagnifyingGlassMinus, Gear } from '@/components/ui/icons';
 import { SheetPreview } from '../print/print-preview';
 import { useShallow } from 'zustand/react/shallow';
+import { PrintSettingsToolbar } from '../print/print-settings-toolbar';
 import { usePrintExport } from '../print/use-print-export';
 import { GetPrinters, OpenPrinterPreferences } from '../../../../wailsjs/go/handlers/PrintHandler';
 import type { domain } from '../../../../wailsjs/go/models';
@@ -49,14 +38,6 @@ interface PrintDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const toggleButtonClassName = (active: boolean) =>
-  cn(
-    'rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-    active
-      ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
-      : 'text-muted-foreground hover:text-foreground hover:bg-background/70',
-  );
 
 export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const stageRef = useStageRef();
@@ -207,7 +188,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     };
   }, [open]);
 
-  // فتح تفضيلات الطابعة الرسمية للشركة المصنعة (Canon/Epson/Brother)
+  // فتح تفضيلات درايفر الشركة المصنعة (Canon/Epson/Brother)
   const handleOpenPreferences = useCallback(async () => {
     if (!selectedPrinter) {
       toast.error('يرجى تحديد طابعة أولاً');
@@ -227,52 +208,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       toast.error('تعذر فتح خصائص الطابعة: ' + String(err));
     }
   }, [selectedPrinter]);
-
-  // مونتاج تلقائي للشيت
-  const handleAutoImpose = useCallback(() => {
-    if (!imageWidthMM || !imageHeightMM) {
-      toast.error('تعذر قراءة مقاس التصميم');
-      return;
-    }
-    const { showBleedGuides, bleedMarginMM } = useEditorStore.getState();
-    const bleed = showBleedGuides && bleedMarginMM > 0 ? bleedMarginMM : 0;
-
-    const targetPaper =
-      printSettings.paperId === 'canvas'
-        ? PAPER_SIZES.find((p) => p.id === 'a4') || { widthMM: 210, heightMM: 297 }
-        : {
-            widthMM: printSettings.paperWidthMM || 210,
-            heightMM: printSettings.paperHeightMM || 297,
-          };
-
-    const result = calculateOptimalSheetImposition({
-      paperWidthMM: targetPaper.widthMM,
-      paperHeightMM: targetPaper.heightMM,
-      itemWidthMM: imageWidthMM,
-      itemHeightMM: imageHeightMM,
-      marginMM: printSettings.marginMM ?? 5,
-      gapMM: printSettings.gapMM ?? 2,
-      bleedMM: bleed,
-    });
-
-    const storedWidth = targetPaper.widthMM;
-    const orientation: 'portrait' | 'landscape' =
-      Math.abs(result.paperWidthMM - storedWidth) < 0.01 ? 'portrait' : 'landscape';
-
-    setPrintSettings({
-      paperId: printSettings.paperId === 'canvas' ? 'a4' : printSettings.paperId,
-      paperWidthMM: targetPaper.widthMM,
-      paperHeightMM: targetPaper.heightMM,
-      orientation,
-      copiesPerSheet: result.maxCopies,
-      repeatMode: 'all',
-      showCutLines: true,
-    });
-
-    toast.success(
-      `تم المونتاج: ${result.maxCopies} نسخة (${result.cols} أعمدة × ${result.rows} صفوف) - الهدر ${result.wastePercentage}%`,
-    );
-  }, [imageWidthMM, imageHeightMM, printSettings, setPrintSettings]);
 
   useEffect(() => {
     exporter.setIsExporting(false);
@@ -431,17 +366,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     imageHeightMM > availableHeightMM + 0.5;
 
   const scaleFactor = Math.min(1.4, 420 / Math.max(paperHeight, 1));
-  const cutLinesActive = mode === 'collage' ? collageShowCutLines : printSettings.showCutLines;
-  const maxCopiesPerSheet = Math.max(1, (grid.safeCols ?? 1) * (grid.actualRows ?? 10));
-
-  const currentPaperObj =
-    printSettings.paperId === 'canvas'
-      ? { name: 'مقاس الكانفاس', widthMM: imageWidthMM, heightMM: imageHeightMM }
-      : PAPER_SIZES.find((p) => p.id === printSettings.paperId) || {
-          name: 'A4',
-          widthMM: 210,
-          heightMM: 297,
-        };
 
   return (
     <Dialog
@@ -458,144 +382,30 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     >
       <DialogContent
         showCloseButton={false}
-        className="fixed inset-0 top-0 left-0 w-screen h-screen max-w-none max-h-none translate-x-0 translate-y-0 rounded-none border-0 p-0 m-0 z-50 flex flex-col bg-background/98 backdrop-blur-3xl overflow-hidden gap-0 duration-150 fluent-specular"
-        style={{
-          transform: 'none',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          maxWidth: '100vw',
-          maxHeight: '100vh',
-          borderRadius: 0,
-          padding: 0,
-          margin: 0,
-        }}
+        className="w-[95vw] sm:max-w-[940px] h-[90vh] sm:max-h-[88vh] overflow-hidden flex flex-col border border-border dark:border-white/10 bg-card rounded-2xl shadow-fluent-28 p-0 gap-0 fluent-specular fluent-acrylic"
         dir="rtl"
       >
-        <DialogDescription className="sr-only">
-          استوديو الطباعة الاحترافي — معاينة وضبط الورقة والطابعات والمونتاج
-        </DialogDescription>
-
-        {/* ── الشريط العلوي لاستوديو الطباعة (Backstage Top Bar) ── */}
-        <header className="h-14 shrink-0 px-5 border-b border-border/40 bg-card/70 backdrop-blur-xl flex items-center justify-between select-none z-20">
-          <div className="flex items-center gap-3 min-w-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="h-8 px-3 gap-2 font-semibold text-xs cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg"
-              title="العودة للمحرر (Esc)"
-            >
-              <ArrowRight className="w-4 h-4 shrink-0" />
-              <span>العودة للمحرر</span>
-              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-micro font-mono bg-muted text-muted-foreground rounded border border-border/40">
-                Esc
-              </kbd>
-            </Button>
-
-            <div className="h-5 w-px bg-border/40 mx-1 hidden sm:block" />
-
-            <div className="flex items-center gap-2 min-w-0">
+        {/* 1. رأس النافذة القياسي المتكامل (Standard Dialog Header) */}
+        <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex items-center gap-2.5">
               <Printer className="text-primary w-5 h-5 shrink-0" weight="duotone" />
-              <DialogTitle className="text-sm font-bold tracking-tight text-foreground truncate">
-                استوديو الطباعة
-              </DialogTitle>
-              <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-micro font-bold bg-primary/10 text-primary border border-primary/20">
-                300+ DPI
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden lg:flex items-center gap-2 text-xs font-medium text-muted-foreground bg-muted/40 px-3 py-1 rounded-md border border-border/30">
-              <span className="font-semibold text-foreground">{currentPaperObj.name}</span>
-              <span>•</span>
-              <span className="font-mono">
-                {Math.round(paperWidth)}×{Math.round(paperHeight)} مم
-              </span>
-              <span>•</span>
-              <span>{printSettings.orientation === 'landscape' ? 'أفقي' : 'رأسي'}</span>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="h-8 px-3.5 text-xs font-semibold cursor-pointer rounded-lg"
-            >
-              إلغاء
-            </Button>
-            <Button
-              onClick={() =>
-                exporter.handlePrint(colorSpace, previewImageSrc, effectiveMarginMM, () =>
-                  onOpenChange(false),
-                )
-              }
-              disabled={isExporting || !hasContent}
-              title="طباعة (Enter)"
-              aria-keyshortcuts="Enter"
-              className="h-8 px-4 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs cursor-pointer rounded-lg shadow-xs"
-            >
-              {isExporting ? (
-                <>
-                  <Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التجهيز...</span>
-                </>
-              ) : (
-                <>
-                  <Printer className="w-3.5 h-3.5 shrink-0" weight="bold" /> <span>طباعة</span>
-                </>
-              )}
-            </Button>
-          </div>
-        </header>
-
-        {/* ── جسم الشاشة المقسم (Backstage Split View) ── */}
-        <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
-          {/* العمود الأيمن: لوحة التحكم الرأسية الشاملة */}
-          <aside className="w-full md:w-[380px] lg:w-[400px] shrink-0 border-l border-border/40 bg-card/40 backdrop-blur-md flex flex-col min-h-0 select-none">
-            <div className="overflow-y-auto p-4 flex flex-col gap-4 text-xs flex-1">
-              {/* بطاقة زر الطباعة الرئيسي */}
-              <div className="flex flex-col gap-2 p-3 rounded-xl bg-card border border-border/50 shadow-2xs">
-                <Button
-                  onClick={() =>
-                    exporter.handlePrint(colorSpace, previewImageSrc, effectiveMarginMM, () =>
-                      onOpenChange(false),
-                    )
-                  }
-                  disabled={isExporting || !hasContent}
-                  className="w-full h-11 text-xs font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-sm cursor-pointer"
-                  title="طباعة (Enter)"
-                >
-                  {isExporting ? (
-                    <>
-                      <Spinner className="w-4 h-4" size={16} />
-                      <span>جاري إرسال الورقة للطابعة...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Printer className="w-4 h-4 shrink-0" weight="bold" />
-                      <span>طباعة فورية</span>
-                      <span className="font-mono text-micro opacity-80">(Enter)</span>
-                    </>
-                  )}
-                </Button>
+              <div>
+                <DialogTitle className="text-base font-bold tracking-tight text-foreground truncate">
+                  إعدادات ومعاينة الطباعة
+                </DialogTitle>
+                <DialogDescription className="text-xs font-medium text-muted-foreground mt-0.5 truncate">
+                  معاينة دقيقة للورقة، ضبط الطابعة، الألوان، وهوامش القص
+                </DialogDescription>
               </div>
+            </div>
 
-              {/* قسم اختيار الطابعة الحقيقية */}
-              <div className="flex flex-col gap-2.5 p-3.5 rounded-xl bg-muted/30 border border-border/40">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <Printer className="w-3.5 h-3.5 text-primary" weight="duotone" />
-                    <span>الطابعة</span>
-                  </Label>
-                  <span className="text-micro font-medium text-muted-foreground">
-                    {printers.length > 0 ? `${printers.length} متوفرة` : 'جاري الكشف...'}
-                  </span>
-                </div>
-
+            {/* سطر الطابعة المدمج داخل الرأس + زر الإغلاق */}
+            <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-lg border border-border/40">
+                <Printer className="w-3.5 h-3.5 text-primary shrink-0" />
                 <Select value={selectedPrinter} onValueChange={setSelectedPrinter}>
-                  <SelectTrigger className="h-9 text-xs font-semibold bg-background border-border/60 shadow-2xs">
+                  <SelectTrigger className="h-7 text-xs font-semibold border-0 bg-transparent shadow-none px-1 py-0 w-[160px] focus:ring-0">
                     <SelectValue placeholder="اختر الطابعة..." />
                   </SelectTrigger>
                   <SelectContent dir="rtl" className="z-(--z-print-toolbar)">
@@ -608,7 +418,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                         <div className="flex items-center justify-between w-full gap-2">
                           <span className="truncate">{p.name}</span>
                           {p.isDefault && (
-                            <span className="text-micro px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold shrink-0">
+                            <span className="text-micro px-1 py-0.2 rounded bg-primary/10 text-primary font-bold shrink-0">
                               افتراضية
                             </span>
                           )}
@@ -618,460 +428,98 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   </SelectContent>
                 </Select>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleOpenPreferences}
-                  className="h-7 px-2 text-micro font-semibold text-primary hover:text-primary hover:bg-primary/10 gap-1.5 cursor-pointer self-start"
-                  title="فتح نافذة درايفر الشركة المصنعة"
-                >
-                  <Gear className="w-3.5 h-3.5 shrink-0" />
-                  <span>خصائص الطابعة (Driver Settings)</span>
-                </Button>
-              </div>
-
-              {/* قسم الورقة والاتجاه */}
-              <div className="flex flex-col gap-3 p-3.5 rounded-xl bg-card border border-border/50 shadow-2xs">
-                <div className="text-xs font-bold text-foreground">إعدادات الورقة</div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-micro font-semibold text-muted-foreground">
-                      مقاس الورقة
-                    </Label>
-                    <Select
-                      value={printSettings.paperId || 'canvas'}
-                      onValueChange={(val) => {
-                        if (val === 'canvas') {
-                          setPrintSettings({
-                            paperId: 'canvas',
-                            paperWidthMM: imageWidthMM || 210,
-                            paperHeightMM: imageHeightMM || 297,
-                            marginMM: 0,
-                          });
-                          return;
-                        }
-                        const selected = PAPER_SIZES.find((p) => p.id === val);
-                        if (selected) {
-                          setPrintSettings({
-                            paperId: selected.id,
-                            paperWidthMM: selected.widthMM,
-                            paperHeightMM: selected.heightMM,
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="h-8 text-xs font-semibold bg-background border-border/50 shadow-2xs">
-                        <SelectValue placeholder="مقاس الورقة" />
-                      </SelectTrigger>
-                      <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
-                        <SelectItem
-                          value="canvas"
-                          className="text-xs font-bold text-primary cursor-pointer"
-                        >
-                          {`مقاس الكانفاس (${Math.round(imageWidthMM || 0)}×${Math.round(imageHeightMM || 0)} مم)`}
-                        </SelectItem>
-                        {PAPER_SIZES.map((size) => (
-                          <SelectItem
-                            key={size.id}
-                            value={size.id}
-                            className="text-xs font-semibold cursor-pointer"
-                          >
-                            {size.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-micro font-semibold text-muted-foreground">
-                      الاتجاه
-                    </Label>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setPrintSettings({
-                          orientation:
-                            printSettings.orientation === 'landscape' ? 'portrait' : 'landscape',
-                        })
-                      }
-                      className={cn(
-                        'w-full h-8 px-2 flex items-center justify-center gap-1.5',
-                        'rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 bg-primary text-primary-foreground shadow-2xs font-bold',
-                      )}
-                    >
-                      <PageOrientationIcon
-                        isLandscape={printSettings.orientation === 'landscape'}
-                        className="w-3.5 h-3.5 text-primary-foreground"
-                      />
-                      <span>{printSettings.orientation === 'landscape' ? 'أفقي' : 'رأسي'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* خيارات المونتاج للوضع المفرد */}
-                {mode !== 'collage' && (
-                  <div className="space-y-2 pt-2 border-t border-border/40">
-                    <div className="flex items-center justify-between">
-                      <span className="text-micro font-semibold text-muted-foreground">
-                        عدد النسخ في الورقة
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
-                          aria-label="إنقاص عدد النسخ"
-                          disabled={
-                            (printSettings.repeatMode ?? 'all') !== 'all' ||
-                            (printSettings.copiesPerSheet ?? 1) <= 1
-                          }
-                          onClick={() =>
-                            setPrintSettings({
-                              copiesPerSheet: Math.max(1, (printSettings.copiesPerSheet ?? 1) - 1),
-                            })
-                          }
-                        >
-                          <Minus className="w-3 h-3 shrink-0" weight="bold" />
-                        </Button>
-                        <span
-                          className="text-xs font-mono font-bold w-6 text-center text-foreground"
-                          title={`المطبوع على الورقة: ${actualCopies}`}
-                        >
-                          {printSettings.copiesPerSheet ?? 1}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
-                          aria-label="زيادة عدد النسخ"
-                          disabled={
-                            (printSettings.repeatMode ?? 'all') !== 'all' ||
-                            (printSettings.copiesPerSheet ?? 1) >= maxCopiesPerSheet
-                          }
-                          onClick={() =>
-                            setPrintSettings({
-                              copiesPerSheet: (printSettings.copiesPerSheet ?? 1) + 1,
-                            })
-                          }
-                        >
-                          <Plus className="w-3 h-3 shrink-0" weight="bold" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-micro font-semibold text-muted-foreground">
-                        المسافة بين النسخ (مم)
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
-                          aria-label="إنقاص المسافة بين النسخ"
-                          disabled={(printSettings.gapMM ?? 2) <= 0}
-                          onClick={() =>
-                            setPrintSettings({
-                              gapMM: Math.max(0, (printSettings.gapMM ?? 2) - 1),
-                            })
-                          }
-                        >
-                          <Minus className="w-3 h-3 shrink-0" weight="bold" />
-                        </Button>
-                        <span className="text-xs font-mono font-bold w-6 text-center text-foreground">
-                          {printSettings.gapMM ?? 2}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 rounded-md cursor-pointer hover:bg-muted"
-                          aria-label="زيادة المسافة بين النسخ"
-                          disabled={(printSettings.gapMM ?? 2) >= 20}
-                          onClick={() =>
-                            setPrintSettings({
-                              gapMM: Math.min(20, (printSettings.gapMM ?? 2) + 1),
-                            })
-                          }
-                        >
-                          <Plus className="w-3 h-3 shrink-0" weight="bold" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-micro font-semibold text-muted-foreground">
-                        نمط التوزيع
-                      </span>
-                      <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md border border-border/30">
-                        {(
-                          [
-                            { id: 'all', icon: SquaresFour, label: 'تعبئة' },
-                            { id: 'row', icon: Rows, label: 'صف' },
-                            { id: 'column', icon: Columns, label: 'عمود' },
-                          ] as const
-                        ).map(({ id, icon: Icon, label }) => (
-                          <Tooltip key={id}>
-                            <TooltipTrigger asChild>
-                              <button
-                                type="button"
-                                onClick={() => setPrintSettings({ repeatMode: id })}
-                                aria-pressed={(printSettings.repeatMode ?? 'all') === id}
-                                className={cn(
-                                  'h-7 w-7 rounded-md flex items-center justify-center',
-                                  toggleButtonClassName((printSettings.repeatMode ?? 'all') === id),
-                                )}
-                                aria-label={label}
-                              >
-                                <Icon className="w-3.5 h-3.5 shrink-0" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="text-xs font-semibold">
-                              {label}
-                            </TooltipContent>
-                          </Tooltip>
-                        ))}
-                      </div>
-                    </div>
-
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Button
-                      type="button"
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      onClick={handleAutoImpose}
-                      className="w-full mt-1 h-8 rounded-md border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold gap-1.5 cursor-pointer flex items-center justify-center transition-all"
+                      onClick={handleOpenPreferences}
+                      aria-label="خصائص درايفر الطابعة"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-md"
                     >
-                      <Sparkle className="w-3.5 h-3.5 shrink-0" weight="fill" />
-                      <span>مونتاج تلقائي للشيت (تعبئة ذكية)</span>
+                      <Gear className="w-3.5 h-3.5" />
                     </Button>
-                  </div>
-                )}
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-semibold">
+                    خصائص وتفضيلات درايفر الطابعة
+                  </TooltipContent>
+                </Tooltip>
               </div>
 
-              {/* قسم القص والهوامش والألوان */}
-              <div className="flex flex-col gap-3 p-3.5 rounded-xl bg-card border border-border/50 shadow-2xs">
-                <div className="text-xs font-bold text-foreground">خيارات الإنهاء والألوان</div>
-
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="backstage-borderless"
-                    className="text-xs font-medium cursor-pointer"
-                  >
-                    طباعة بدون هوامش
-                  </Label>
-                  <Switch
-                    id="backstage-borderless"
-                    checked={printSettings.marginMM === 0}
-                    onCheckedChange={(checked) => {
-                      if (checked && printSettings.marginMM > 0) {
-                        setLastNonZeroMargin(printSettings.marginMM);
-                      }
-                      setPrintSettings({ marginMM: checked ? 0 : lastNonZeroMargin });
-                    }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="backstage-cutlines"
-                    className="text-xs font-medium cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Scissors className="text-primary/80 w-3.5 h-3.5 shrink-0" weight="duotone" />
-                    <span>خطوط القص</span>
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    {cutLinesActive && (
-                      <Select
-                        value={printSettings.cutLineStyle || 'dashed'}
-                        onValueChange={(val) =>
-                          setPrintSettings({
-                            cutLineStyle: val as typeof printSettings.cutLineStyle,
-                          })
-                        }
-                      >
-                        <SelectTrigger className="h-7 w-[82px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-none">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent dir="rtl" className="z-(--z-print-toolbar)">
-                          <SelectItem
-                            value="dashed"
-                            className="text-xs font-semibold cursor-pointer"
-                          >
-                            متقطع
-                          </SelectItem>
-                          <SelectItem
-                            value="dotted"
-                            className="text-xs font-semibold cursor-pointer"
-                          >
-                            منقط
-                          </SelectItem>
-                          <SelectItem
-                            value="solid"
-                            className="text-xs font-semibold cursor-pointer"
-                          >
-                            متصل
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                    <Switch
-                      id="backstage-cutlines"
-                      checked={cutLinesActive}
-                      onCheckedChange={(checked) => {
-                        setPrintSettings({ showCutLines: checked });
-                        if (mode === 'collage') {
-                          useEditorStore.getState().setCollageShowCutLines(checked);
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-1 border-t border-border/30">
-                  <span className="text-micro font-semibold text-muted-foreground">
-                    وضع الألوان
-                  </span>
-                  <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/40">
-                    <button
-                      type="button"
-                      onClick={() => setColorSpace('sRGB')}
-                      className={cn('px-2.5 py-1', toggleButtonClassName(colorSpace === 'sRGB'))}
-                    >
-                      sRGB
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setColorSpace('CMYK')}
-                      className={cn('px-2.5 py-1', toggleButtonClassName(colorSpace === 'CMYK'))}
-                    >
-                      CMYK
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-micro font-semibold text-muted-foreground">
-                    صيغة الإخراج
-                  </span>
-                  <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/40">
-                    <button
-                      type="button"
-                      onClick={() => setExportFormat('image')}
-                      className={cn('px-2.5 py-1', toggleButtonClassName(exportFormat === 'image'))}
-                    >
-                      صورة
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (colorSpace === 'CMYK') setColorSpace('sRGB');
-                        setExportFormat('pdf');
-                      }}
-                      className={cn('px-2.5 py-1', toggleButtonClassName(exportFormat === 'pdf'))}
-                    >
-                      PDF
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-micro font-semibold text-muted-foreground">
-                    محاذاة الشبكة
-                  </span>
-                  <div className="flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/40">
-                    <button
-                      type="button"
-                      onClick={() => setPrintSettings({ gridAlign: 'top-left' })}
-                      className={cn(
-                        'px-2 py-1 flex items-center gap-1',
-                        toggleButtonClassName(
-                          (printSettings.gridAlign || 'top-left') === 'top-left',
-                        ),
-                      )}
-                    >
-                      <ArrowUpLeft className="w-3.5 h-3.5 shrink-0" />
-                      <span>زاوية</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPrintSettings({ gridAlign: 'center' })}
-                      className={cn(
-                        'px-2 py-1 flex items-center gap-1',
-                        toggleButtonClassName(printSettings.gridAlign === 'center'),
-                      )}
-                    >
-                      <Crosshair className="w-3.5 h-3.5 shrink-0" />
-                      <span>توسيط</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* ── مسار حوار النظام الأصلي (System Print Dialog Link) ── */}
-              <div className="mt-auto pt-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    exporter.handlePrint(colorSpace, previewImageSrc, effectiveMarginMM, () =>
-                      onOpenChange(false),
-                    )
-                  }
-                  disabled={isExporting || !hasContent}
-                  className="w-full text-right p-3 rounded-xl border border-dashed border-border/80 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group flex items-start gap-2.5 select-none"
-                >
-                  <Printer className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                      الطباعة باستخدام حوار النظام (System Dialog)
-                    </div>
-                    <div className="text-micro text-muted-foreground mt-0.5 leading-relaxed">
-                      استدعاء نافذة ويندوز الرسمية للتحكم المتقدم في جودة ونوع الورق الفاخر
-                    </div>
-                  </div>
-                </button>
-              </div>
+              <DialogCloseButton onClick={() => onOpenChange(false)} />
             </div>
-          </aside>
+          </div>
+        </DialogHeader>
 
-          {/* العمود الأيسر: مساحة المعاينة الفسيحة (Spacious Lightbox Canvas) */}
-          <main className="flex-1 flex flex-col bg-[#141416] dark:bg-[#0c0c0e] min-w-0 min-h-0 relative overflow-hidden shadow-inner select-none">
-            {/* شريط أدوات المعاينة العلوي */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-black/40 backdrop-blur-md select-none z-10 shrink-0">
-              <div className="flex items-center gap-2">
+        {/* 2. جسم النافذة الرئيسي (Body): شريط الإعدادات المدمج + مساحة المعاينة */}
+        <div className="flex-1 overflow-hidden p-3.5 flex flex-col gap-3 min-h-0">
+          {/* شريط الإعدادات الأنيق والمضغوط */}
+          <PrintSettingsToolbar
+            mode={mode}
+            printSettings={printSettings}
+            setPrintSettings={setPrintSettings}
+            colorSpace={colorSpace}
+            onColorSpaceChange={setColorSpace}
+            exportFormat={exportFormat}
+            onExportFormatChange={setExportFormat}
+            collageShowCutLines={collageShowCutLines}
+            onCutLinesChange={(checked) => {
+              setPrintSettings({ showCutLines: checked });
+              if (mode === 'collage') {
+                useEditorStore.getState().setCollageShowCutLines(checked);
+              }
+            }}
+            actualCopies={actualCopies}
+            grid={grid}
+            onMarginlessToggle={(checked) => {
+              if (checked && printSettings.marginMM > 0) {
+                setLastNonZeroMargin(printSettings.marginMM);
+              }
+              setPrintSettings({ marginMM: checked ? 0 : lastNonZeroMargin });
+            }}
+            imageWidthMM={imageWidthMM}
+            imageHeightMM={imageHeightMM}
+          />
+
+          {/* مساحة المعاينة التفاعلية المباشرة */}
+          <div className="border border-border/50 rounded-xl overflow-hidden bg-print-surface flex flex-col flex-1 shadow-inner relative">
+            {/* شريط عنوان وتكبير المعاينة */}
+            <div className="flex items-center justify-between px-3.5 py-2 border-b border-print-header-border bg-print-header backdrop-blur-md select-none z-10">
+              <span className="text-xs font-bold text-print-header-title flex items-center gap-2">
                 <span
                   className={cn(
                     'w-2 h-2 rounded-full',
                     isOverflowing ? 'bg-destructive animate-ping' : 'bg-primary',
                   )}
                   role={isOverflowing ? 'alert' : undefined}
+                  aria-label={
+                    isOverflowing ? 'تحذير: المحتوى يتجاوز حدود الورقة' : 'المعاينة مطابقة للورقة'
+                  }
                 />
-                <span className="text-xs font-bold text-neutral-200">معاينة الورقة المطبوعة</span>
-                <span className="text-micro text-neutral-400 font-mono hidden sm:inline">
-                  ({Math.round(paperWidth)}×{Math.round(paperHeight)} مم)
-                </span>
-              </div>
+                معاينة الورقة المطبوعة
+              </span>
 
-              <div className="flex items-center gap-2">
+              {/* أدوات التحكم بالـ Zoom */}
+              <div className="flex items-center gap-1.5">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setZoom(1)}
-                  className="h-7 px-2 text-xs text-neutral-400 hover:text-white hover:bg-white/10 cursor-pointer font-medium"
+                  className="h-7 px-2 text-xs text-print-header-muted hover:text-white hover:bg-print-zoom-capsule cursor-pointer font-medium"
                 >
                   إعادة ضبط
                 </Button>
-                <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-md border border-white/10">
+                <div className="flex items-center gap-1 bg-print-zoom-capsule p-0.5 rounded-md border border-print-zoom-capsule-border">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))}
                     aria-label="تصغير المعاينة"
-                    className="h-7 w-7 p-0 text-neutral-300 hover:text-white hover:bg-white/10 cursor-pointer"
+                    className="h-7 w-7 p-0 text-print-zoom-text hover:text-white hover:bg-print-zoom-hover cursor-pointer"
                   >
-                    <MagnifyingGlassMinus className="w-3.5 h-3.5 shrink-0" />
+                    <MagnifyingGlassMinus className="w-3 h-3 shrink-0" />
                   </Button>
-                  <span className="text-micro w-10 text-center font-mono font-semibold text-neutral-200">
+                  <span className="text-micro w-10 text-center font-mono font-semibold text-print-zoom-text">
                     {Math.round(zoom * 100)}%
                   </span>
                   <Button
@@ -1079,27 +527,27 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     size="sm"
                     onClick={() => setZoom((z) => Math.min(3, z + 0.1))}
                     aria-label="تكبير المعاينة"
-                    className="h-7 w-7 p-0 text-neutral-300 hover:text-white hover:bg-white/10 cursor-pointer"
+                    className="h-7 w-7 p-0 text-print-zoom-text hover:text-white hover:bg-print-zoom-hover cursor-pointer"
                   >
-                    <MagnifyingGlassPlus className="w-3.5 h-3.5 shrink-0" />
+                    <MagnifyingGlassPlus className="w-3 h-3 shrink-0" />
                   </Button>
                 </div>
               </div>
             </div>
 
-            {/* طاولة الكانفاس الحرة للورقة الممركزة */}
-            <div className="flex-1 overflow-auto p-6 md:p-8 flex items-center justify-center select-none workspace-grid relative">
+            {/* لوحة الورقة البيضاء الممركزة داخل مساحة العمل */}
+            <div className="flex-1 overflow-auto p-6 flex items-center justify-center select-none workspace-grid relative">
               <div
-                className="bg-white rounded-md relative border border-print-paper-border shadow-[0_16px_50px_rgba(0,0,0,0.4)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.85)] dark:ring-1 dark:ring-white/10 transition-all duration-200"
+                className="bg-white rounded-md relative border border-print-paper-border shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.6)] dark:ring-1 dark:ring-white/12 transition-all duration-200"
                 style={{
                   width: paperWidth * scaleFactor * zoom,
                   height: paperHeight * scaleFactor * zoom,
                 }}
               >
-                {/* خط الهامش الداخلي الآمن */}
+                {/* حدود الهامش الداخلي */}
                 <div
                   className={cn(
-                    'absolute border border-dashed pointer-events-none transition-colors z-30',
+                    'absolute border border-dashed pointer-events-none transition-colors',
                     isOverflowing ? 'border-destructive' : 'border-print-margin-line',
                   )}
                   style={{
@@ -1109,7 +557,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     bottom: effectiveMarginMM * scaleFactor * zoom,
                   }}
                 />
-
                 <div className="absolute inset-0 overflow-hidden rounded-md">
                   <SheetPreview
                     grid={grid}
@@ -1118,7 +565,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     imageHeightMM={imageHeightMM}
                     gapMM={gapMM}
                     zoom={zoom}
-                    showCutLines={cutLinesActive}
+                    showCutLines={
+                      mode === 'collage' ? collageShowCutLines : printSettings.showCutLines
+                    }
                     showEndCutLine={
                       mode === 'collage'
                         ? collageShowEndCutLine !== false
@@ -1146,26 +595,67 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 </div>
               </div>
             </div>
-
-            {/* الشريط السفلي للمواصفات الفيزيائية */}
-            <footer className="h-8 px-4 border-t border-white/5 bg-black/40 backdrop-blur-md flex items-center justify-between text-micro text-neutral-400 select-none shrink-0 font-medium">
-              <div className="flex items-center gap-2">
-                <span>أبعاد الإخراج:</span>
-                <span className="font-mono text-neutral-300">
-                  {Math.round((paperWidth / 25.4) * (printSettings.dpi || 300))} ×{' '}
-                  {Math.round((paperHeight / 25.4) * (printSettings.dpi || 300))} بكسل
-                </span>
-                <span>({printSettings.dpi || 300} DPI)</span>
-              </div>
-
-              <div className="flex items-center gap-3 font-mono">
-                <span>صفحة 1 من 1</span>
-                <span>•</span>
-                <span className="text-primary font-bold">{colorSpace}</span>
-              </div>
-            </footer>
-          </main>
+          </div>
         </div>
+
+        {/* 3. ذيل النافذة القياسي: زر الإلغاء، حوار النظام، وزر الطباعة المباشر */}
+        <DialogFooter className="px-5 py-3 border-t border-border/40 bg-card flex items-center justify-between gap-2 shrink-0">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                exporter.setIsExporting(false);
+                if (typeof document !== 'undefined' && document.body) {
+                  document.body.style.pointerEvents = '';
+                }
+                onOpenChange(false);
+              }}
+              className="h-8 px-4 text-xs font-semibold cursor-pointer"
+            >
+              إلغاء
+            </Button>
+
+            {/* مسار حوار النظام المزدوج */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                exporter.handlePrint(colorSpace, previewImageSrc, effectiveMarginMM, () =>
+                  onOpenChange(false),
+                )
+              }
+              disabled={isExporting || !hasContent}
+              className="h-8 px-3 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer gap-1.5"
+              title="استدعاء معالج طباعة ويندوز الرسمي للتحكم بدرايفر الطابعة"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>حوار النظام</span>
+            </Button>
+          </div>
+
+          <Button
+            onClick={() =>
+              exporter.handlePrint(colorSpace, previewImageSrc, effectiveMarginMM, () =>
+                onOpenChange(false),
+              )
+            }
+            title="طباعة (Enter)"
+            aria-keyshortcuts="Enter"
+            className="h-8 px-5 gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs transition-all duration-150 cursor-pointer rounded-md shadow-xs"
+            disabled={isExporting || !hasContent}
+          >
+            {isExporting ? (
+              <>
+                <Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التجهيز...</span>
+              </>
+            ) : (
+              <>
+                <Printer className="w-3.5 h-3.5 shrink-0" weight="bold" /> <span>طباعة</span>
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

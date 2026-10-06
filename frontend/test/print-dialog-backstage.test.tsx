@@ -35,13 +35,12 @@ describe('PrintDialog Backstage View Tests', () => {
     return render(<TooltipProvider>{ui}</TooltipProvider>);
   };
 
-  it('renders backstage view header, printer selector, and controls when open', async () => {
+  it('renders refined print dialog with printer selector and controls when open', async () => {
     renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
 
-    expect(screen.getByText('استوديو الطباعة')).toBeInTheDocument();
-    expect(screen.getByText('العودة للمحرر')).toBeInTheDocument();
+    expect(screen.getByText('إعدادات ومعاينة الطباعة')).toBeInTheDocument();
     expect(screen.getByText('معاينة الورقة المطبوعة')).toBeInTheDocument();
-    expect(screen.getByText(/الطباعة باستخدام حوار النظام/)).toBeInTheDocument();
+    expect(screen.getByText('حوار النظام')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('Brother DCP-T520W')).toBeInTheDocument();
