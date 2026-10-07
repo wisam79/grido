@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CollageCustomGridTab } from '../src/components/editor/panels/collage/collage-custom-grid-tab';
 import { GeneralSettings } from '../src/components/editor/properties/general-settings';
 
@@ -22,26 +22,38 @@ describe('CollageCustomGridTab Component Suite', () => {
     onSaveCurrentAsTemplate: vi.fn(),
   };
 
-  it('renders all photo grid section cards cleanly according to Fluent 2 layout', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it('renders all photo grid section cards and enforces single accordion solo mode', () => {
     render(<CollageCustomGridTab {...defaultProps} />);
 
-    // Section 1: Dimensions
+    // Section 1: Dimensions (مفتوح افتراضياً)
     expect(screen.getByText('أبعاد الشبكة')).toBeInTheDocument();
     expect(screen.getByText('الصفوف')).toBeInTheDocument();
     expect(screen.getByText('الأعمدة')).toBeInTheDocument();
     expect(screen.getByText('ملء الورقة')).toBeInTheDocument();
     expect(screen.getByText('شريط علوي')).toBeInTheDocument();
 
-    // Section 2: Photo Size
+    // Section 2: Photo Size (عنوانه وشاراته ظاهرة ولكن محتواه مطوي)
     expect(screen.getByText('مقاس الصورة')).toBeInTheDocument();
+    expect(screen.queryByText('وطنية')).not.toBeInTheDocument();
+
+    // النقر على مقاس الصورة: يفتح قسم المقاس ويطوي أبعاد الشبكة تلقائياً
+    fireEvent.click(screen.getByText('مقاس الصورة'));
     expect(screen.getByText('وطنية')).toBeInTheDocument();
     expect(screen.getByText('أحوال')).toBeInTheDocument();
     expect(screen.getByText('فيزا')).toBeInTheDocument();
     expect(screen.getByText('تمدد حر')).toBeInTheDocument();
+    expect(screen.queryByText('الصفوف')).not.toBeInTheDocument();
 
-    // Section 3: Alignment
+    // Section 3: Alignment (النقر يفتح المحاذاة ويطوي مقاس الصورة)
     expect(screen.getByText('المحاذاة على الورقة')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('المحاذاة على الورقة'));
     expect(screen.getByText('توسيط')).toBeInTheDocument();
+    expect(screen.queryByText('وطنية')).not.toBeInTheDocument();
 
     // Section 4: Actions
     expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
@@ -77,6 +89,9 @@ describe('CollageCustomGridTab Component Suite', () => {
   it('switches photo type when preset is clicked', () => {
     const onPhotoTypeChange = vi.fn();
     render(<CollageCustomGridTab {...defaultProps} onPhotoTypeChange={onPhotoTypeChange} />);
+
+    // فتح قسم مقاس الصورة بنمط الأكورديون
+    fireEvent.click(screen.getByText('مقاس الصورة'));
 
     const civilButton = screen.getByText('أحوال');
     fireEvent.click(civilButton);
