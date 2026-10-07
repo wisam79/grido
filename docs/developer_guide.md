@@ -171,11 +171,10 @@ The compiled executable will be placed in the `bin/` folder (`BIN_DIR` in `Taskf
 - **العقد:** `domain.PrintRequest.ExportFormat` (`"png"`, `"jpeg"`, `"tiff"`, `"pdf"`) —
   أي قيمة جديدة تُضاف هنا وفي `print_export.go` مع اختبار مسار في `print_*_test.go`.
 
-### Print Studio & System Printer Discovery (Backstage View)
-- **واجهة الاستوديو:** شاشة كاملة متسعة بنمط Backstage View في `frontend/src/components/editor/dialogs/print-dialog.tsx` توفر عمود تحكم جانبي بنظام Fluent 2 مع طاولة معاينة مركزية فسيحة بنمط Lightbox.
-- **كشف الطابعات (Go Backend):** تعتمد على مكتبة `github.com/alexbrainman/printer` (Pure Go، صفر CGO) في `internal/service/printer_discovery_windows.go` لجلب الطابعات الحقيقية المتصلة وتحديد الطابعة الافتراضية، مع stub آمن في `printer_discovery_other.go`.
-- **تفضيلات درايفر الطابعة:** استدعاء دالة `DocumentPropertiesW` من مكتبة `winspool.drv` لفتح واجهة المستخدم التفاعلية الرسمية للشركة المصنّعة (Epson / Canon / Brother) بطلب المستخدم.
-- **مسار حوار النظام المزدوج:** توفير خيار صريح للطباعة الفورية وخيار لاستدعاء معالج طباعة الصور والمستندات الأصلي في نظام ويندوز.
+### Print Studio & System Printing Engine (Backstage View)
+- **واجهة الاستوديو:** شاشة كاملة متسعة بنمط Backstage View في `frontend/src/components/editor/dialogs/print-dialog.tsx` مخصصة لتجهيز الورقة والاتجاه والهوامش وخطوط القص مع طاولة معاينة مركزية فسيحة بنمط Lightbox بنسبة 1:1.
+- **محرك الطباعة المباشر (WebView2):** يعتمد على حقن حاوية طباعة دقيقة مع `@page` وهوامش صفرية واستدعاء `window.print()` مباشرة، متفادياً معالج صور ويندوز العتيق (`photowiz.dll`).
+- **تفضيلات درايفر الطابعة (Windows):** استدعاء نافذة إعدادات الشركة المصنّعة الرسمية عبر `rundll32.exe printui.dll,PrintUIEntry /e /n` بطلب المستخدم.
 
 For the NSIS installer (requires `makensis` on PATH):
 ```bash

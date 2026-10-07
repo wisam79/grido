@@ -1,11 +1,56 @@
 # تتبع الميزات الأساسية — Grido Studio
 
 **تاريخ المراجعة الأولى:** 30 يوليو 2026 (الإصدار ~v1.2.10)
-**آخر تحديث:** 7 أكتوبر 2026 — بعد **استوديو الطباعة الاحترافي بنمط Backstage View واكتشاف طابعات النظام وتفضيلات الدرايفر (الجلسة 0.44)** · وقبله **تقسية نظام الطباعة من الألف إلى الياء (الجلسة 0.43: سقوف النسخ، الخطوط المائلة في CMYK، وسوم TIFF، نطاق المسارات، كشف الاقتطاع، PowerShell آمن، WCAG)** · وقبله **إطلاق الإصدار الرسمي v1.13.1 وتحصين حصص الذكاء الاصطناعي وحماية العناصر المقفلة واستقرار تبديل أوضاع الكانفاس** (سجل 0.42)
+**آخر تحديث:** 7 أكتوبر 2026 — بعد **تنقية استوديو الطباعة واستئصال مغالطات صيغ الإخراج وازدواجية المونتاج (الجلسة 0.46)** · وقبله **تعزيز نظام اختبارات الطباعة واستئصال خطأ photowiz وضبط الثيم الفاتح (الجلسة 0.45)** · وقبله **استوديو الطباعة الاحترافي بنمط Backstage View واكتشاف طابعات النظام وتفضيلات الدرايفر (الجلسة 0.44)**
 **المنهجية:** فحص الكود الفعلي (Go + React/Konva) ميزةً ميزة، ومطابقتها مع README وخطة التطوير.
 **الغرض:** مستند حي يُحدَّث مع كل نظرة على الميزات؛ يكمل (ولا يستبدل) `docs/development-plan/TASKS.md`.
 
 أسطورة الحالة: ✅ مكتمل | ⚠️ مكتمل مع فجوات | 🔶 جزئي | ❌ غير منفذ | 🆕 أُصلح في جلسة الإصلاحات
+
+---
+
+## 0.47 سجل جلسة معالجة الصفحة الفارغة الزائدة في الطباعة (Blank Page Elimination) — 7 أكتوبر 2026
+
+**المرجع:** طلب المالك الصريح — «يتم طباعة صفحة فارغة اضافية في الطباعة».
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| استئصال الصفحة الفارغة الثانية في محرك Blink | استبدال الارتفاعات والعروض الثابتة بالمليمتر على عناصر الطباعة بحصر كامل بنسبة `100% !important` و `max-width/max-height: 100%` و `object-fit: fill`؛ حيث كان التحويل الحسابي للأبعاد (مثل 297mm = 1122.52px) يتسبب في تجاوز الصفحة الأولى بجزء من البكسل وتوليد صفحة ثانية فارغة | `use-print-export.ts:generatePrintPageStyle` و `index.css` ✅ |
+| منع فواصل الصفحات الصريحة | إضافة قواعد `page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid !important; break-inside: avoid !important;` على مستوى الجسم والحاوية والصورة | `use-print-export.ts` و `index.css` ✅ |
+| تصحيح overflow لحاوية الطباعة | تغيير `overflow: visible` في `frontend/src/index.css` إلى `overflow: hidden !important` لضمان عدم تسرب أي بكسل فائض إلى محرك التقسيم الطباعي | `frontend/src/index.css` ✅ |
+| مزامنة قوالب الطباعة بـ Go | تطبيق نفس القواعد الصارمة (`100%` وحجب الفواصل) في `buildNativePrintHTML` و `buildSelfContainedHTML` | `internal/service/print_export.go` ✅ |
+| بوابات الجودة والتحقق | تحديث اختبارات `print-export-helpers.test.ts` (23/23 ناجحة) واختبارات Go (ناجحة) | `frontend/test/print-export-helpers.test.ts` ✅ |
+
+---
+
+## 0.46 سجل جلسة تنقية استوديو الطباعة واستئصال المغالطات والازدواجية (Print Studio Pure Focus & Fallacy Purge) — 7 أكتوبر 2026
+
+**المرجع:** طلب المالك الصريح وحسمه المعماري — «لم افهم المغزى من وجود صيغة الاخراج في حوار الطباعة وهل الطباعة تحتاج الى صيغة اخراج هل نصدر ملفا ام نطبع ورقة ما هذه المغالطات الغريبة» و«لماذا قد يحتاج المستخدم الى المونتاج والتوزيع في حوار الطباعة !! قرار الطباعة هو قرار نهائي بعد ان كانت كل الادوات متاحة من غير المعقول ان يعود الى المونتاج من جديد في حوار الطباعة».
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| استئصال مغالطة «صيغة الإخراج» (صورة / PDF) | إزالة مبدّل صيغة الإخراج من حوار الطباعة؛ فالطباعة تعني إرسال ورقة مطبوعة لمُخرِج مادي عبر مسار WebView2 المباشر، بينما تصدير الملفات (PNG/JPG/PDF) اختصاص حصري لـ `ExportDialog`. كما أن تمرير PDF كان يفشل داخل وسم `<img>` بحاوية الطباعة | `print-dialog.tsx` و `use-print-export.ts` ✅ |
+| استئصال خيار «فضاء الألوان» (sRGB / CMYK) | إزالة خيار فضاء الألوان من حوار الطباعة وتوحيده على sRGB؛ محرك طباعة WebView2 ودرايفرات ويندوز للطباعة المكتبية تستقبل sRGB حصراً، بينما فصل ألوان CMYK يخص مطابع الأوفست الخارجية في التصدير | `print-dialog.tsx` و `use-print-export.ts` ✅ |
+| استئصال أدوات المونتاج والتكرار المكررة | إزالة بلوك «المونتاج والتوزيع» (تكرار النسخ، المسافات، الأنماط) التزاماً بمبدأ `No Unjustified Duplication Invariant`؛ فالمستخدم يضبط توزيع صوره وخاناته في الكانفاس وقوالب الكولاج مسبقاً والطباعة مرحلة تأكيد ومعاينة نهائية | `print-dialog.tsx` و `test/print-dialog-backstage.test.tsx` ✅ |
+| استئصال ازدواجية اختيار الطابعة | إزالة قائمة اختيار الطابعة من الحوار لكون المستخدم يختار طابعته النهائية في حوار ويندوز اللاحق، وتسريع فتح الحوار فورياً بدون أي تأخير | `print-dialog.tsx` ✅ |
+| تركيز الحوار كمنصة إعداد ومعاينة فيزيائية | تركيز شاشة Backstage حصراً على: الورقة والاتجاه، هوامش الورقة والطباعة بدون هوامش، خطوط القص للمطابع، معاينة مضيئة 1:1، وزر إرسال للطباعة | `print-dialog.tsx` (واجهة نظيفة ورشيقة) ✅ |
+| بوابات الجودة والتحقق | 6 اختبارات Vitest لـ Backstage View ناجحة · `npm run lint` نظيف 0 أخطاء · `npm run typecheck` نظيف 0 أخطاء | 2026-10-07 ✅ |
+
+---
+
+## 0.45 سجل جلسة تعزيز اختبارات الطباعة واستئصال خطأ معالج ويندوز (Print Testing & WebView2 Engine) — 7 أكتوبر 2026
+
+**المرجع:** طلب المالك الصريح — «تعزيز نظام الاختبارات الخاص بالطباعة» بعد فحص واستئصال خطأ `An internal error occurred` ومعالجة الشريطين الداكنين في الوضع الفاتح.
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| استئصال خطأ photowiz | توجيه الطباعة مباشرة إلى محرك WebView2/Chromium المدمج بهوامش صفرية (`@page { margin: 0; }`) بدلاً من قذف الصورة لـ `photowiz.dll`، وتدعيم فتح ملفات الـ HTML المرافقة عبر Edge في الباك إند | `use-print-export.ts` و `internal/service/print_native_windows.go` ✅ |
+| توافق المعاينة مع الوضع الفاتح | تكييف متغيرات `--print-*` في CSS ديناميكياً لتظهر بخلفية شفافة بيضاء نقية ونصوص داكنة في الوضع الفاتح بدل الشريطين الداكنين | `frontend/src/index.css` و `print-dialog.tsx` ✅ |
+| تعزيز أمان تفضيلات الطابعة | تنظيف اسم الطابعة من محارف التحكم (`\x00`, `\r`, `\n`, `\t`, `"`) لمنع حقن معاملات الأوامر في `rundll32 printui.dll` | `printer_discovery_windows.go` و `TestOpenPrinterPreferences_Validation` ✅ |
+| توسيع اختبارات واجهة الطباعة (Vitest) | توسيع `print-dialog-backstage.test.tsx` إلى 6 سيناريوهات شاملة (كشف الطابعات، بلوك المونتاج، مزامنة الاتجاه، خصائص الدرايفر، خيارات الإنهاء) وتطهير تحذيرات `act(...)` بنسبة 100% | `frontend/test/print-dialog-backstage.test.tsx` (6/6 ناجح) ✅ |
+| اختبارات هندسة الطباعة والـ DOM | استخراج واختبار `extractPrintImageSrc` و `generatePrintPageStyle` بـ 8 حالات جديدة للتأكد من هوامش الصفر وقواعد `@page` | `frontend/test/print-export-helpers.test.ts` (23/23 ناجح) ✅ |
+| منظومة اختبارات الطباعة الشاملة | 7 ملفات اختبارات في الواجهة (104 اختبارات ناجحة) + اختبارات الباك إند Go للطباعة فائقة الدقة وCMYK وTIFF والحماية الأمنية | `vitest` (104 اختبار طباعة) و `go test ./internal/service` ✅ |
+| بوابات الجودة | `go test ./internal/service` (أخضر) · `npm run lint` (0 تحذيرات) · `npm run typecheck` (0 أخطاء) · `docs-gate.mjs` ✅ | 2026-10-07 |
 
 ---
 
@@ -17,8 +62,8 @@
 | --- | --- | --- |
 | Backstage View Studio | تحويل شاشة الطباعة إلى استوديو كامل ممتد على الشاشة بنمط Backstage View مع شريط علوي للعودة للمحرر ولوحة تحكم جانبية ومساحة معاينة فسيحة بنمط Lightbox | `frontend/src/components/editor/dialogs/print-dialog.tsx` + اختبارات Vitest ✅ |
 | كشف الطابعات الفيزيائية | استعلام طابعات النظام الحقيقية (Canon, Epson, Brother) وتحديد الطابعة الافتراضية عبر `alexbrainman/printer` (Pure Go، صفر CGO) | `internal/service/printer_discovery_windows.go` + `printer_discovery_test.go` ✅ |
-| تفضيلات الطابعة والدرايفر | زر «خصائص الطابعة» لاستدعاء واجهة تفضيلات الطابعة الرسمية للشركة المصنعة عبر `DocumentPropertiesW` في `winspool.drv` | `internal/handlers/print_handler.go:OpenPrinterPreferences` ✅ |
-| حوار النظام المزدوج | توفير مسار صريح لاستدعاء معالج وحوار ويندوز الرسمي للطباعة (`Print using system dialog`) بجانب الطباعة الفورية | `print-dialog.tsx` + `print_native_windows.go` ✅ |
+| تفضيلات الطابعة والدرايفر | زر «خصائص الدرايفر» لاستدعاء واجهة تفضيلات الطابعة الرسمية للشركة المصنعة عبر `rundll32.exe printui.dll,PrintUIEntry /e /n` | `internal/handlers/print_handler.go:OpenPrinterPreferences` و `printer_discovery_windows.go` ✅ |
+| توحيد مسار الطباعة وتطهير الكود الميت | توحيد زر الطباعة الصريح `طباعة (Enter)`، إزالة الازدواجيات («معالج ويندوز» و«حوار النظام»)، وحذف الملف المهجور `print-settings-toolbar.tsx` | `print-dialog.tsx` + اختبارات Vitest ✅ |
 | مطابقة Fluent 2 وWCAG | التزام صارم بأبعاد أزرار اللمس `h-7 w-7` والألوان الداكنة المريحة للعين ومعايير الوصولية | `docs-gate.mjs` (BUG-MED-10) ✅ |
 | بوابات الجودة | `go test ./internal/...` ✅ · Vitest 102 اختبار طباعة ناجح ✅ · `npm run lint` (0 تحذيرات) ✅ · `npm run typecheck` ✅ | 2026-10-07 |
 
@@ -46,7 +91,7 @@
 | RV-Print-19 (سباق الواجهة) | `attemptRef` رمز جيل يتجاهل النتائج المتأخرة؛ `setExporting` ذري؛ `setPrintInvocation` داخل effect؛ كائن hook مُثبَّت | `use-print-export.ts` + `print-dialog.tsx` + 14 حالة ✅ |
 | RV-Print-20/21 (مهلات وإلغاء) | `AbortController` 120ث للرفع، `withTimeout` 10د لـIPC، timers مُتتبَّعة تُنظَّف عند التفكيك | `use-print-export.ts` + اختبارات ✅ |
 | RV-Print-22 (حالة الحوار) | `onCutLinesChange` بوصف واحد حسب الوضع؛ حفظ/استعادة `selectedIds`؛ تتبع آخر هامش غير صفري | `print-dialog.tsx` ✅ |
-| RV-Print-23 (وصولية) | `aria-label` لأزرار الأيقونات، `role=alert/status`، `aria-live`، `aria-keyshortcuts`، عنوان Enter | `print-dialog.tsx` + `print-settings-toolbar.tsx` ✅ |
+| RV-Print-23 (وصولية) | `aria-label` لأزرار الأيقونات، `role=alert/status`، `aria-live`، `aria-keyshortcuts`، عنوان Enter | `print-dialog.tsx` ✅ |
 | RV-Print-24 (المعاينة) | حارس `collage-active`، حد أدنى 1px، حفظ `rawCutLines` و`copyBlocks` | `print-preview.tsx` ✅ |
 | RV-Print-25 (نمط القص الموحّد) | `resolveCutLineDash` + زوايا cropmarks في التصدير اليدوي — ثلاثة مخرجات توحّدت | `export-canvas-collage.ts` + `export-canvas.ts` ✅ |
 | RV-Print-26 (ثبات المقياس) | وثيقة تعليق `print-layout-math.ts` تُعلن أن المليمتر المحوري هو الحقيقة في كل المسارات | `print-layout-math.ts:123-133` ✅ |

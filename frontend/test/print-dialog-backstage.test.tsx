@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { PrintDialog } from '../src/components/editor/dialogs/print-dialog';
@@ -6,16 +6,6 @@ import { useEditorStore } from '../src/lib/editor-store';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 
 vi.mock('../wailsjs/go/handlers/PrintHandler', () => ({
-  GetPrinters: vi.fn(() =>
-    Promise.resolve({
-      success: true,
-      printers: [
-        { name: 'Brother DCP-T520W', isDefault: true },
-        { name: 'EPSON L805 Series', isDefault: false },
-      ],
-    }),
-  ),
-  OpenPrinterPreferences: vi.fn(() => Promise.resolve({ success: true })),
   ExportPrintSheet: vi.fn(() => Promise.resolve({ success: true, filePath: 'mock.png' })),
   PrintNative: vi.fn(() => Promise.resolve({ success: true })),
 }));
@@ -27,23 +17,92 @@ vi.mock('../wailsjs/go/main/App', () => ({
 describe('PrintDialog Backstage View Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useEditorStore.getState().reset();
-    useEditorStore.getState().setMode('single');
+    act(() => {
+      useEditorStore.getState().reset();
+      useEditorStore.getState().setMode('single');
+    });
   });
 
   const renderWithProviders = (ui: React.ReactElement) => {
     return render(<TooltipProvider>{ui}</TooltipProvider>);
   };
 
-  it('renders refined print dialog with printer selector and controls when open', async () => {
+  it('renders print preparation dialog and layout controls when open', () => {
     renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
 
-    expect(screen.getByText('إعدادات ومعاينة الطباعة')).toBeInTheDocument();
+    expect(screen.getByText('إعداد ومعاينة الطباعة')).toBeInTheDocument();
     expect(screen.getByText('معاينة الورقة المطبوعة')).toBeInTheDocument();
-    expect(screen.getByText('حوار النظام')).toBeInTheDocument();
+    expect(screen.getByText('الورقة والاتجاه')).toBeInTheDocument();
+  });
+
+  it('does not render redundant imposition controls in collage mode, keeping print backstage focused', () => {
+    act(() => {
+      useEditorStore.getState().setMode('collage');
+      useEditorStore.getState().setCanvasSize(2970, 2100);
+    });
+
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+
+    // حوار الطباعة نظيف وخالٍ من أدوات المونتاج والتكرار المكررة (المونتاج مكانه الكانفاس والكولاج)
+    expect(screen.queryByText('المونتاج والتوزيع')).not.toBeInTheDocument();
+    expect(screen.queryByText('نسخ/ورقة')).not.toBeInTheDocument();
+    expect(screen.queryByText('المسافة (مم)')).not.toBeInTheDocument();
+    expect(screen.queryByText('نمط التكرار')).not.toBeInTheDocument();
+    expect(screen.queryByText('مونتاج تلقائي')).not.toBeInTheDocument();
+
+    // عناصر التجهيز والإنهاء حاضرة بدقة
+    expect(screen.getByText('الورقة والاتجاه')).toBeInTheDocument();
+    expect(screen.getByText('الإنهاء والطباعة')).toBeInTheDocument();
+  });
+
+  it('automatically synchronizes paper orientation to landscape when canvas is landscape', async () => {
+    act(() => {
+      useEditorStore.getState().setCanvasSize(2970, 2100);
+      useEditorStore.getState().setPrintSettings({ paperId: 'canvas', orientation: 'portrait' });
+    });
+
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Brother DCP-T520W')).toBeInTheDocument();
+      expect(useEditorStore.getState().printSettings.orientation).toBe('landscape');
     });
+  });
+
+  it('allows toggling orientation between portrait and landscape', () => {
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+
+    const portraitBtn = screen.getByTitle('اتجاه رأسي (عمودي)');
+    const landscapeBtn = screen.getByTitle('اتجاه أفقي (عرضي)');
+
+    expect(portraitBtn).toBeInTheDocument();
+    expect(landscapeBtn).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(portraitBtn);
+    });
+    expect(useEditorStore.getState().printSettings.orientation).toBe('portrait');
+
+    act(() => {
+      fireEvent.click(landscapeBtn);
+    });
+    expect(useEditorStore.getState().printSettings.orientation).toBe('landscape');
+  });
+
+  it('renders print action button in footer with Enter key hint', () => {
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+
+    const printBtn = screen.getByText('طباعة الورقة');
+    expect(printBtn).toBeInTheDocument();
+    expect(printBtn.closest('button')).toHaveAttribute('aria-keyshortcuts', 'Enter');
+  });
+
+  it('renders finish and cut line controls cleanly without export format fallacies', () => {
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+
+    expect(screen.getByText('الإنهاء والطباعة')).toBeInTheDocument();
+    expect(screen.getByText('طباعة بدون هوامش')).toBeInTheDocument();
+    expect(screen.getByText('خطوط وعلامات القص')).toBeInTheDocument();
+    expect(screen.queryByText('فضاء الألوان')).not.toBeInTheDocument();
+    expect(screen.queryByText('صيغة الإخراج')).not.toBeInTheDocument();
   });
 });

@@ -396,15 +396,15 @@ func buildNativePrintHTML(paperWMM, paperHMM float64, imageSrc string) string {
   }
   @media print {
     @page { margin: 0; size: %.2fmm %.2fmm; }
-    html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: %.2fmm !important; height: %.2fmm !important; }
-    img { position: absolute !important; top: 0 !important; left: 0 !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: %.2fmm !important; height: %.2fmm !important; object-fit: contain !important; }
+    html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; max-width: 100%% !important; max-height: 100%% !important; overflow: hidden !important; page-break-after: avoid !important; break-after: avoid !important; }
+    img { position: absolute !important; top: 0 !important; left: 0 !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; max-width: 100%% !important; max-height: 100%% !important; object-fit: fill !important; page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid !important; break-inside: avoid !important; }
   }
 </style>
 </head>
 <body onload="setTimeout(function(){ window.print(); window.close(); }, 500)">
   <img src="%s" />
 </body>
-</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, escapedSrc)
+</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, escapedSrc)
 }
 
 // buildSelfContainedHTML يبني صفحة معاينة/طباعة ذاتية الاحتواء لـ WebView2 (iframe)
@@ -446,15 +446,15 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
   }
   @media print {
     @page { margin: 0; size: %.2fmm %.2fmm; }
-    html, body { width: %.2fmm !important; height: %.2fmm !important; margin: 0 !important; padding: 0 !important; }
-    img { position: absolute !important; top: 0 !important; left: 0 !important; width: %.2fmm !important; height: %.2fmm !important; object-fit: contain !important; }
+    html, body { width: 100%% !important; height: 100%% !important; max-width: 100%% !important; max-height: 100%% !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; page-break-after: avoid !important; break-after: avoid !important; }
+    img { position: absolute !important; top: 0 !important; left: 0 !important; width: 100%% !important; height: 100%% !important; max-width: 100%% !important; max-height: 100%% !important; object-fit: fill !important; page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid !important; break-inside: avoid !important; }
   }
 </style>
 </head>
 <body>
   <img src="%s" />
 </body>
-</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, escapedSrc)
+</html>`, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, paperWMM, paperHMM, escapedSrc)
 }
 
 // buildPhysChunk يبني قطعة pHYs (21 بايت) بالـ DPI المطلوب.

@@ -220,18 +220,18 @@
   --workspace-grid-dot: #cbd5e1;
   --workspace-glow: rgba(37, 99, 235, 0.035);
 
-  /* Print Dialog Machine Surface (داكن دائماً في الوضعين — واجهة «آلة المعاينة») */
-  --print-surface: #0f172a;
-  --print-header: #0f172ae6;
-  --print-header-border: #ffffff1a;
-  --print-header-title: #e2e8f0;
-  --print-header-muted: #94a3b8;
-  --print-zoom-capsule: #1e293bcc;
-  --print-zoom-capsule-border: #334155cc;
-  --print-zoom-text: #cbd5e1;
-  --print-zoom-hover: #33415580;
-  --print-paper-border: #cbd5e199;
-  --print-margin-line: #cbd5e199;
+  /* Print Dialog Surface (Light) — سطح وأشرطة نافذة المعاينة متناسقة مع الوضع الفاتح */
+  --print-surface: #f8fafc;
+  --print-header: rgba(255, 255, 255, 0.88);
+  --print-header-border: rgba(226, 232, 240, 0.9);
+  --print-header-title: #0f172a;
+  --print-header-muted: #64748b;
+  --print-zoom-capsule: rgba(241, 245, 249, 0.95);
+  --print-zoom-capsule-border: rgba(203, 213, 225, 0.85);
+  --print-zoom-text: #1e293b;
+  --print-zoom-hover: rgba(226, 232, 240, 0.9);
+  --print-paper-border: rgba(203, 213, 225, 0.8);
+  --print-margin-line: rgba(148, 163, 184, 0.8);
 
   /* Fluent 2 Elevation Shadows */
   --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.12), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.08);
@@ -350,7 +350,18 @@
   --workspace-grid-dot: rgba(255, 255, 255, 0.06);
   --workspace-glow: rgba(59, 130, 246, 0.05);
 
-  /* Print Dialog Machine Surface (نفس قيم الوضع الفاتح — داكنة دائماً عن قصد) */
+  /* Print Dialog Surface (Dark) — سطح وأشرطة نافذة المعاينة في الوضع الداكن */
+  --print-surface: #0a0e1a;
+  --print-header: rgba(15, 23, 42, 0.88);
+  --print-header-border: rgba(255, 255, 255, 0.1);
+  --print-header-title: #f1f5f9;
+  --print-header-muted: #94a3b8;
+  --print-zoom-capsule: rgba(30, 41, 59, 0.85);
+  --print-zoom-capsule-border: rgba(51, 65, 85, 0.85);
+  --print-zoom-text: #cbd5e1;
+  --print-zoom-hover: rgba(51, 65, 85, 0.6);
+  --print-paper-border: rgba(255, 255, 255, 0.15);
+  --print-margin-line: rgba(203, 213, 225, 0.6);
 
   /* Fluent 2 Dark Mode Soft Clean Elevation Shadows */
   --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.3), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.2);
@@ -833,7 +844,7 @@
     display: none !important;
   }
 
-  /* تهيئة حاوية الطباعة لتكون العنصر الوحيد المعروض بملء الصفحة */
+  /* تهيئة حاوية الطباعة لتكون العنصر الوحيد المعروض بملء الصفحة دون فيضان أو صفحات فارغة */
   #print-container {
     display: block !important;
     position: absolute !important;
@@ -841,10 +852,34 @@
     top: 0 !important;
     width: 100% !important;
     height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
-    overflow: visible !important;
+    overflow: hidden !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  #print-container img {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: fill !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 

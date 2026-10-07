@@ -2,6 +2,7 @@ package service
 
 import (
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -40,4 +41,34 @@ func TestGetDefaultPrinter(t *testing.T) {
 		return
 	}
 	t.Logf("Default printer name: %s", name)
+}
+
+func TestOpenPrinterPreferences_Validation(t *testing.T) {
+	// تحقق الإدخال مطبَّق في تنفيذ ويندوز حصراً؛ على الأنظمة الأخرى يُعيد
+	// الـstub نجاحاً صامتاً (لا توجد واجهة تفضيلات أصلية)، لذا نُقيّد
+	// الفحوص بنفس نمط بقية الملف بدل إسقاط CI على لينكس.
+	if runtime.GOOS == "windows" {
+		if err := OpenPrinterPreferences(""); err == nil {
+			t.Fatal("expected error for empty printer name")
+		}
+		if err := OpenPrinterPreferences("   "); err == nil {
+			t.Fatal("expected error for whitespace printer name")
+		}
+	}
+
+	dangerousInputs := []string{
+		"Printer\x00Name",
+		"Printer\nName",
+		"Printer\rName",
+		"Printer\tName",
+		"Printer\"Name",
+	}
+	for _, badName := range dangerousInputs {
+		err := OpenPrinterPreferences(badName)
+		if runtime.GOOS == "windows" {
+			if err == nil || !strings.Contains(err.Error(), "محارف غير صالحة") {
+				t.Errorf("expected rejection for malicious printer name %q, got: %v", badName, err)
+			}
+		}
+	}
 }

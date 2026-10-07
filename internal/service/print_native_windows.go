@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -15,6 +16,13 @@ import (
 func launchOSPrint(cleanPath string, ext string) error {
 	isImage := ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tiff" || ext == ".tif"
 	if isImage {
+		// 🖨️ فحص وجود وثيقة HTML مرافقة للملف — تضمن طباعة بدقة مليمترية 1:1
+		// وتتجنب عارض صور ويندوز العتيق (photowiz.dll) الذي يشوه القياسات
+		// ويفشل مع طابعات Brother وEpson بـ "An internal error occurred".
+		companionHTML := strings.TrimSuffix(cleanPath, ext) + ".html"
+		if info, err := os.Stat(companionHTML); err == nil && !info.IsDir() {
+			return launchWindowsDocumentPrint(companionHTML)
+		}
 		return launchWindowsPhotoPrint(cleanPath)
 	}
 	return launchWindowsDocumentPrint(cleanPath)

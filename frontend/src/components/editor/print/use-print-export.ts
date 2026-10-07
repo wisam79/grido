@@ -17,7 +17,6 @@ import {
 import { buildSingleComposition } from '@/lib/print/single-print-composition';
 import type { usePrintLayout } from '@/hooks/use-print-layout';
 import type { PrintSettings } from '@/lib/store/types';
-import { wailsIsDesktop } from '@/lib/wails-env';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('use-print-export');
@@ -59,6 +58,87 @@ export function withTimeout<T>(promise: Promise<T>, ms: number, label: string): 
   });
 }
 
+/**
+ * يستخرج رابط صورة ورقة الطباعة من وثيقة HTML المرافقة.
+ */
+export function extractPrintImageSrc(htmlDoc: string): string {
+  if (!htmlDoc || typeof DOMParser === 'undefined') return '';
+  try {
+    const parsed = new DOMParser().parseFromString(htmlDoc, 'text/html');
+    return parsed.querySelector('img')?.getAttribute('src') ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * يولّد نمط CSS الصارم لـ @page و WebView2 للطباعة بهوامش صفرية وحفظ النسبة 1:1.
+ * يمنع الصفحات البيضاء الزائدة عبر حصر الحاوية بنسبة 100% ومنع الفواصل بعد العناصر.
+ */
+export function generatePrintPageStyle(paperWidthMM: number, paperHeightMM: number): string {
+  return (
+    `#print-container { display: none !important; }\n` +
+    `@media screen { #print-container { display: none !important; } }\n` +
+    `@page { margin: 0 !important; size: ${paperWidthMM}mm ${paperHeightMM}mm; }\n` +
+    `@page :left { margin: 0 !important; }\n` +
+    `@page :right { margin: 0 !important; }\n` +
+    `@page :first { margin: 0 !important; }\n` +
+    `@media print {\n` +
+    `  * { box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }\n` +
+    `  html, body {\n` +
+    `    margin: 0 !important;\n` +
+    `    padding: 0 !important;\n` +
+    `    width: 100% !important;\n` +
+    `    height: 100% !important;\n` +
+    `    max-width: 100% !important;\n` +
+    `    max-height: 100% !important;\n` +
+    `    overflow: hidden !important;\n` +
+    `    background: white !important;\n` +
+    `    page-break-after: avoid !important;\n` +
+    `    break-after: avoid !important;\n` +
+    `    -webkit-print-color-adjust: exact !important;\n` +
+    `    print-color-adjust: exact !important;\n` +
+    `  }\n` +
+    `  body > *:not(#print-container) { display: none !important; }\n` +
+    `  #print-container {\n` +
+    `    display: block !important;\n` +
+    `    position: absolute !important;\n` +
+    `    top: 0 !important;\n` +
+    `    left: 0 !important;\n` +
+    `    width: 100% !important;\n` +
+    `    height: 100% !important;\n` +
+    `    max-width: 100% !important;\n` +
+    `    max-height: 100% !important;\n` +
+    `    margin: 0 !important;\n` +
+    `    padding: 0 !important;\n` +
+    `    overflow: hidden !important;\n` +
+    `    background: white !important;\n` +
+    `    page-break-after: avoid !important;\n` +
+    `    break-after: avoid !important;\n` +
+    `    page-break-inside: avoid !important;\n` +
+    `    break-inside: avoid !important;\n` +
+    `  }\n` +
+    `  #print-container img {\n` +
+    `    position: absolute !important;\n` +
+    `    top: 0 !important;\n` +
+    `    left: 0 !important;\n` +
+    `    width: 100% !important;\n` +
+    `    height: 100% !important;\n` +
+    `    max-width: 100% !important;\n` +
+    `    max-height: 100% !important;\n` +
+    `    object-fit: fill !important;\n` +
+    `    display: block !important;\n` +
+    `    margin: 0 !important;\n` +
+    `    padding: 0 !important;\n` +
+    `    page-break-after: avoid !important;\n` +
+    `    break-after: avoid !important;\n` +
+    `    page-break-inside: avoid !important;\n` +
+    `    break-inside: avoid !important;\n` +
+    `  }\n` +
+    `}`
+  );
+}
+
 /** المدخلات المشتركة لمولّد العناصر والتصدير — من usePrintLayout والدالة الأصل */
 export interface PrintExportContext {
   layout: ReturnType<typeof usePrintLayout>;
@@ -81,8 +161,6 @@ export interface PrintExportContext {
   printShowEndCutLine: boolean | undefined;
   printCutLineStyle: PrintSettings['cutLineStyle'];
   printOrientation: PrintSettings['orientation'];
-  /** صيغة الإخراج: نقطية تقليدية (jpeg/tiff) أو PDF متجهي */
-  exportFormat: 'image' | 'pdf';
 }
 
 interface BuiltItems {
@@ -158,7 +236,6 @@ export function usePrintExport({
   printShowEndCutLine,
   printCutLineStyle,
   printOrientation,
-  exportFormat,
 }: PrintExportContext) {
   const stageRef = useStageRef();
   const [isExporting, setIsExportingState] = useState(false);
@@ -198,19 +275,12 @@ export function usePrintExport({
 
   // مؤشر الطباعة Enter — آخر معاملات نداء الطباعة من المكوّن
   const printInvocationRef = useRef<{
-    colorSpace: 'sRGB' | 'CMYK';
-    previewImageSrc: string;
     effectiveMarginMM: number;
     onDone: () => void;
   } | null>(null);
 
   const setPrintInvocation = useCallback(
-    (inv: {
-      colorSpace: 'sRGB' | 'CMYK';
-      previewImageSrc: string;
-      effectiveMarginMM: number;
-      onDone: () => void;
-    }) => {
+    (inv: { effectiveMarginMM: number; onDone: () => void }) => {
       printInvocationRef.current = inv;
     },
     [],
@@ -491,7 +561,8 @@ export function usePrintExport({
   ]);
 
   /**
-   * مسار الطباعة الاحتياطي في المتصفح — يُستخدم فقط عند تشغيل التطبيق في بيئة الويب العادية
+   * مسار الطباعة المباشر عبر WebView2 / المتصفح — يجهز حاوية @page المخصصة بهوامش صفرية
+   * وأبعاد الورقة الدقيقة ويستدعي window.print() مباشرة لتفادي معالج صور ويندوز العتيق.
    */
   const fallbackBrowserPrint = useCallback(
     (result: domain.PrintResult) => {
@@ -505,8 +576,7 @@ export function usePrintExport({
         // فك وثيقة الطباعة لاستخراج مسار الصورة فقط — لا نحقن <style> الوثيقة
         // كما هو لأن قواعدها العامة (html/body/*) ستدمّر تنسيق التطبيق الحي،
         // بل نبني قاعدة @page بأبعاد الورقة المعروفة محلياً + الصورة بمقاس inline
-        const parsed = new DOMParser().parseFromString(result.htmlDoc, 'text/html');
-        const imageSrc = parsed.querySelector('img')?.getAttribute('src') ?? '';
+        const imageSrc = extractPrintImageSrc(result.htmlDoc);
         if (!imageSrc) {
           if (result.filePath && typeof PrintNative === 'function') {
             PrintNative(result.filePath)
@@ -520,66 +590,23 @@ export function usePrintExport({
         // (مؤكد تجريبياً: iframe المخفي يُسقطها فتُطبع على Letter بهوامش المتصفح)
         const styleEl = document.createElement('style');
         styleEl.id = 'grido-print-sheet-style';
-        styleEl.textContent =
-          `@page { margin: 0 !important; size: ${paperWidth}mm ${paperHeight}mm; }\n` +
-          `@page :left { margin: 0 !important; }\n` +
-          `@page :right { margin: 0 !important; }\n` +
-          `@page :first { margin: 0 !important; }\n` +
-          `@media print {\n` +
-          `  * { box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }\n` +
-          `  html, body {\n` +
-          `    margin: 0 !important;\n` +
-          `    padding: 0 !important;\n` +
-          `    width: ${paperWidth}mm !important;\n` +
-          `    height: ${paperHeight}mm !important;\n` +
-          `    overflow: hidden !important;\n` +
-          `    background: white !important;\n` +
-          `    -webkit-print-color-adjust: exact !important;\n` +
-          `    print-color-adjust: exact !important;\n` +
-          `  }\n` +
-          `  body > *:not(#print-container) { display: none !important; }\n` +
-          `  #print-container {\n` +
-          `    display: block !important;\n` +
-          `    position: absolute !important;\n` +
-          `    top: 0 !important;\n` +
-          `    left: 0 !important;\n` +
-          `    width: ${paperWidth}mm !important;\n` +
-          `    height: ${paperHeight}mm !important;\n` +
-          `    margin: 0 !important;\n` +
-          `    padding: 0 !important;\n` +
-          `    overflow: hidden !important;\n` +
-          `    background: white !important;\n` +
-          `  }\n` +
-          `  #print-container img {\n` +
-          `    position: absolute !important;\n` +
-          `    top: 0 !important;\n` +
-          `    left: 0 !important;\n` +
-          `    width: ${paperWidth}mm !important;\n` +
-          `    height: ${paperHeight}mm !important;\n` +
-          `    max-width: none !important;\n` +
-          `    max-height: none !important;\n` +
-          `    object-fit: fill !important;\n` +
-          `    display: block !important;\n` +
-          `    margin: 0 !important;\n` +
-          `    padding: 0 !important;\n` +
-          `    page-break-inside: avoid !important;\n` +
-          `    break-inside: avoid !important;\n` +
-          `  }\n` +
-          `}`;
+        styleEl.textContent = generatePrintPageStyle(paperWidth, paperHeight);
 
         const container = document.createElement('div');
         container.id = 'print-container';
         container.setAttribute('aria-hidden', 'true');
+        container.style.display = 'none';
 
         const img = document.createElement('img');
         img.alt = '';
         img.src = imageSrc;
-        // الصورة مولّدة أصلاً بأبعاد الورقة الفيزيائية (بكسل ÷ DPI) — مقاس mm
-        // هنا يحفظ النسبة 1:1، ولو اختار المستخدم حوارياً هوامش/ورقاً أكبر
-        // فتظهر كهبعخة بيضاء حول الورقة دون تمدد أو اقتصاص
-        img.style.width = `${paperWidth}mm`;
-        img.style.height = `${paperHeight}mm`;
-        img.style.maxWidth = 'none';
+        // الصورة مولّدة أصلاً بأبعاد الورقة الفيزيائية بدقة DPI المحددة (بكسل ÷ DPI)
+        // استخدام 100% مع object-fit: fill يضمن ملء الورقة تماماً ومنع أي صفحة ثانية فارغة
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.style.objectFit = 'fill';
         img.style.display = 'block';
         container.appendChild(img);
 
@@ -679,9 +706,10 @@ export function usePrintExport({
 
   /**
    * 🧭 إطلاق حوار الطباعة:
-   * - في بيئة سطح المكتب (Wails Desktop): إطلاق معالج طباعة الصور الأصلي لنظام Windows 11 مباشرة
-   *   عبر PrintNative (خالٍ من أي روابط localhost، تواريخ، أو هوامش متصفح إضافية).
-   * - في المتصفح العادي (Web Dev Mode): استخدام مسار الطباعة الاحتياطي fallbackBrowserPrint.
+   * - استخدام مسار الطباعة المباشر المعتمد على WebView2 مع @page بمقاسات الورقة الميكرومترية
+   *   وهوامش صفرية وبلا أي روابط (fallbackBrowserPrint) بدقة 100% 1:1.
+   * - هذا المسار يتجنّب معالج ويندوز العتيق لطباعة الصور (photowiz.dll) الذي يُشوه قوالب الورق
+   *   ويفشل مع طابعات Brother وEpson بخطأ "An internal error occurred".
    */
   const showPrintResult = useCallback(
     (result: domain.PrintResult) => {
@@ -691,34 +719,13 @@ export function usePrintExport({
         return;
       }
 
-      if (wailsIsDesktop() && result.filePath && typeof PrintNative === 'function') {
-        PrintNative(result.filePath)
-          .then((res) => {
-            if (res && !res.success) {
-              toast.error('فشل فتح نافذة طباعة الصور: ' + (res.error || 'خطأ غير معروف'));
-            } else {
-              toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح');
-            }
-          })
-          .catch((err) => {
-            logger.error('PrintNative failed, falling back to browser print:', err);
-            fallbackBrowserPrint(result);
-          });
-        return;
-      }
-
       fallbackBrowserPrint(result);
     },
     [fallbackBrowserPrint, setExporting],
   );
 
   const handlePrint = useCallback(
-    async (
-      colorSpace: 'sRGB' | 'CMYK',
-      previewImageSrc: string,
-      effectiveMarginMM: number,
-      onDone: () => void,
-    ) => {
+    async (effectiveMarginMM: number, onDone: () => void) => {
       // 🖨️ الحارس على ref فقط (RV-Print-19): حالة state للعرض، والقرار الذري هنا.
       if (isExportingRef.current) return;
       setExporting(true);
@@ -762,8 +769,8 @@ export function usePrintExport({
               backgroundColor: backgroundColor || previewWhite(),
               showCutLines: mode === 'collage' ? collageShowCutLines : printShowCutLines,
               cutLineStyle: printCutLineStyle ?? 'dashed',
-              exportFormat:
-                exportFormat === 'pdf' ? 'pdf' : colorSpace === 'CMYK' ? 'tiff' : 'jpeg',
+              colorSpace: 'sRGB',
+              exportFormat: 'jpeg',
               orientation: printOrientation || 'portrait',
               cutLines: buildResult.cutLines,
               items: buildResult.items,
@@ -824,7 +831,6 @@ export function usePrintExport({
       printShowCutLines,
       printCutLineStyle,
       printOrientation,
-      exportFormat,
       showPrintResult,
       setExporting,
       later,
@@ -837,7 +843,7 @@ export function usePrintExport({
     handlePrintRef.current = () => {
       const inv = printInvocationRef.current;
       if (inv) {
-        void handlePrint(inv.colorSpace, inv.previewImageSrc, inv.effectiveMarginMM, inv.onDone);
+        void handlePrint(inv.effectiveMarginMM, inv.onDone);
       }
     };
   }, [handlePrint]);

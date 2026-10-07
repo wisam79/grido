@@ -5,9 +5,8 @@ package service
 import (
 	"fmt"
 	"log/slog"
+	"os/exec"
 	"strings"
-	"syscall"
-	"unsafe"
 
 	"github.com/alexbrainman/printer"
 
@@ -59,54 +58,26 @@ func GetDefaultPrinter() (string, error) {
 
 // ── فتح تفضيلات الطابعة (نافذة درايفر المُصنِّع) ────────────────────
 
-var (
-	winspool              = syscall.NewLazyDLL("winspool.drv")
-	procOpenPrinterW      = winspool.NewProc("OpenPrinterW")
-	procClosePrinter      = winspool.NewProc("ClosePrinter")
-	procDocumentProperties = winspool.NewProc("DocumentPropertiesW")
-)
-
-// OpenPrinterPreferences يفتح نافذة تفضيلات الطابعة الأصلية (Driver UI)
-// الخاصة بالشركة المصنّعة (Canon/Epson/Brother) لاختيار نوع الورق
-// والجودة يدوياً. لا تحجب IPC — النافذة مستقلة عن حلقة Wails.
+// OpenPrinterPreferences يفتح نافذة تفضيلات الطباعة الرسمية للشركة المصنّعة
+// (Canon/Epson/Brother) عبر أداة نظام ويندوز القياسية printui.dll (/e = printing preferences).
+// لا تحجب IPC — العملية تنطلق بشكل مستقل تماماً.
 func OpenPrinterPreferences(printerName string) error {
 	printerName = strings.TrimSpace(printerName)
 	if printerName == "" {
 		return fmt.Errorf("اسم الطابعة فارغ")
 	}
 
-	namePtr, err := syscall.UTF16PtrFromString(printerName)
-	if err != nil {
-		return fmt.Errorf("اسم طابعة غير صالح: %w", err)
+	// 🔒 فحص السلامة: حظر محارف التحكم وعلامات التنصيص لتفادي حقن الوسائط
+	if strings.ContainsAny(printerName, "\x00\r\n\t\"") {
+		return fmt.Errorf("اسم الطابعة يحتوي على محارف غير صالحة")
 	}
 
-	var hPrinter uintptr
-	ret, _, callErr := procOpenPrinterW.Call(
-		uintptr(unsafe.Pointer(namePtr)),
-		uintptr(unsafe.Pointer(&hPrinter)),
-		0,
-	)
-	if ret == 0 {
-		return fmt.Errorf("تعذر فتح مقبض الطابعة '%s': %w", printerName, callErr)
-	}
-	defer procClosePrinter.Call(hPrinter)
-
-	// DocumentPropertiesW مع fMode=0 ⇒ عرض واجهة المستخدم التفاعلية للطابعة
-	// (يعادل الضغط على "Preferences" في حوار الطباعة).
-	// hwnd=0 يعني أن النافذة ليست مملوكة — تظهر مستقلة.
-	ret2, _, callErr2 := procDocumentProperties.Call(
-		0, // hwnd — لا نافذة أب
-		hPrinter,
-		uintptr(unsafe.Pointer(namePtr)),
-		0, // pDevModeOutput — لا نحتاج الناتج
-		0, // pDevModeInput — لا مدخلات مسبقة
-		0, // fMode = 0 → عرض الواجهة فقط
-	)
-	// IDCANCEL (2) يعني أن المستخدم أغلق النافذة — ليس خطأ
-	if int32(ret2) < 0 {
-		return fmt.Errorf("تعذر فتح تفضيلات الطابعة '%s': %w", printerName, callErr2)
+	cmd := exec.Command("rundll32.exe", "printui.dll,PrintUIEntry", "/e", "/n", printerName)
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("تعذر فتح تفضيلات الطابعة '%s': %w", printerName, err)
 	}
 
 	slog.Info("Opened printer preferences", "printer", printerName)
 	return nil
 }
+
