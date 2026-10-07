@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CollageCustomGridTab } from '../src/components/editor/panels/collage/collage-custom-grid-tab';
 import { GeneralSettings } from '../src/components/editor/properties/general-settings';
@@ -27,7 +27,7 @@ describe('CollageCustomGridTab Component Suite', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all photo grid section cards and enforces single accordion solo mode', () => {
+  it('renders all photo grid section cards and enforces single accordion solo mode', async () => {
     render(<CollageCustomGridTab {...defaultProps} />);
 
     // Section 1: Dimensions (مفتوح افتراضياً)
@@ -47,13 +47,17 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(screen.getByText('أحوال')).toBeInTheDocument();
     expect(screen.getByText('فيزا')).toBeInTheDocument();
     expect(screen.getByText('تمدد حر')).toBeInTheDocument();
-    expect(screen.queryByText('الصفوف')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('الصفوف')).not.toBeInTheDocument();
+    });
 
     // Section 3: Alignment (النقر يفتح المحاذاة ويطوي مقاس الصورة)
     expect(screen.getByText('المحاذاة على الورقة')).toBeInTheDocument();
     fireEvent.click(screen.getByText('المحاذاة على الورقة'));
     expect(screen.getByText('توسيط')).toBeInTheDocument();
-    expect(screen.queryByText('وطنية')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('وطنية')).not.toBeInTheDocument();
+    });
 
     // Section 4: Actions
     expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();

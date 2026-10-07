@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { CaretDown } from '@/components/ui/icons';
 
@@ -54,7 +55,10 @@ export const FluentSection = React.memo(
       <div
         ref={ref}
         className={cn(
-          'rounded-xl border border-border bg-card p-3 shadow-xs fluent-specular transition-all duration-150',
+          'rounded-xl border p-3 fluent-specular transition-all duration-200',
+          isOpen
+            ? 'bg-card border-border dark:border-white/10 shadow-xs'
+            : 'bg-card/75 border-border/70 hover:border-border/90 hover:bg-card/95 shadow-2xs',
           className,
         )}
         {...props}
@@ -76,23 +80,39 @@ export const FluentSection = React.memo(
           tabIndex={collapsible ? 0 : undefined}
           aria-expanded={collapsible ? isOpen : undefined}
           className={cn(
-            'flex items-center justify-between gap-2 select-none',
-            isOpen ? 'pb-2.5 mb-2.5 border-b border-border/50' : '',
+            'flex items-center justify-between gap-2 select-none transition-all duration-200',
+            isOpen ? 'pb-2.5 mb-2.5 border-b border-border/50' : 'pb-0 mb-0',
             collapsible &&
-              'cursor-pointer group/sec-header hover:opacity-90 transition-opacity rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              'cursor-pointer group/sec-header rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             headerClassName,
           )}
         >
           <div className="flex items-center gap-2 min-w-0">
             {icon && (
-              // شارة الأيقونة محايدة — الأزرق محجوز للإجراءات لا للتزيين
-              <div className="p-1 rounded-md bg-muted/80 dark:bg-white/5 text-muted-foreground border border-border/60 shrink-0 flex items-center justify-center">
+              // شارة الأيقونة محايدة — التباين يعكس حالة التوسيع بدون ألوان دخيلة
+              <div
+                className={cn(
+                  'p-1 rounded-md shrink-0 flex items-center justify-center transition-colors duration-200',
+                  isOpen
+                    ? 'bg-muted text-foreground border border-border/80'
+                    : 'bg-muted/60 dark:bg-white/5 text-muted-foreground border border-border/60',
+                )}
+              >
                 {icon}
               </div>
             )}
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-foreground truncate">{title}</span>
+                <span
+                  className={cn(
+                    'text-xs font-bold truncate transition-colors duration-150',
+                    isOpen
+                      ? 'text-foreground'
+                      : 'text-foreground/90 group-hover/sec-header:text-foreground',
+                  )}
+                >
+                  {title}
+                </span>
                 {badge}
               </div>
               {subtitle && (
@@ -113,11 +133,19 @@ export const FluentSection = React.memo(
               </div>
             )}
             {collapsible && (
-              <div className="p-0.5 rounded text-muted-foreground/70 group-hover/sec-header:text-foreground transition-colors">
+              <div
+                title={isOpen ? 'طي القسم' : 'توسيع القسم'}
+                className={cn(
+                  'w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 shrink-0',
+                  isOpen
+                    ? 'bg-muted/70 text-foreground'
+                    : 'bg-muted/40 group-hover/sec-header:bg-muted group-hover/sec-header:text-foreground text-muted-foreground/80',
+                )}
+              >
                 <CaretDown
                   weight="bold"
                   className={cn(
-                    'size-3.5 shrink-0 transition-transform duration-200',
+                    'size-3.5 shrink-0 transition-transform duration-200 ease-out',
                     !isOpen && 'rotate-90 rtl:-rotate-90',
                   )}
                 />
@@ -126,12 +154,33 @@ export const FluentSection = React.memo(
           </div>
         </div>
 
-        {/* Section Body Content */}
-        {isOpen && (
-          <div className={cn('space-y-2.5 animate-in fade-in duration-150', contentClassName)}>
-            {children}
-          </div>
-        )}
+        {/* Section Body Content مع أنميشن انزلاق وتلاشٍ سلس بنمط Fluent 2 */}
+        <AnimatePresence initial={false}>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{
+                height: 'auto',
+                opacity: 1,
+                transition: {
+                  height: { duration: 0.22, ease: [0.1, 0.9, 0.2, 1] },
+                  opacity: { duration: 0.18, ease: 'easeOut' },
+                },
+              }}
+              exit={{
+                height: 0,
+                opacity: 0,
+                transition: {
+                  height: { duration: 0.18, ease: [0.9, 0.1, 1, 1] },
+                  opacity: { duration: 0.12, ease: 'easeIn' },
+                },
+              }}
+              className="overflow-hidden"
+            >
+              <div className={cn('space-y-2.5', contentClassName)}>{children}</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }),
