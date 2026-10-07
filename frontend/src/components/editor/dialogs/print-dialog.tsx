@@ -30,7 +30,10 @@ import {
   MagnifyingGlassPlus,
   MagnifyingGlassMinus,
   Scissors,
+  Gear,
 } from '@/components/ui/icons';
+import { toast } from 'sonner';
+import { GetPrinters, OpenPrinterPreferences } from '../../../../wailsjs/go/handlers/PrintHandler';
 import { PageOrientationIcon } from '@/components/ui/image-icons';
 import { PAPER_SIZES } from '@/lib/templates/constants';
 import { SheetPreview } from '../print/print-preview';
@@ -103,6 +106,57 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [lastNonZeroMargin, setLastNonZeroMargin] = useState<number>(() =>
     printSettings.marginMM > 0 ? printSettings.marginMM : DEFAULT_PRINT_SETTINGS.marginMM || 5,
   );
+
+  const [printers, setPrinters] = useState<Array<{ name: string; isDefault: boolean }>>([]);
+  const [selectedPrinter, setSelectedPrinter] = useState<string>('');
+  const [isLoadingPrinters, setIsLoadingPrinters] = useState(false);
+  const [isOpeningPrefs, setIsOpeningPrefs] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    if (typeof GetPrinters === 'function') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsLoadingPrinters(true);
+      GetPrinters()
+        .then((res) => {
+          if (cancelled) return;
+          if (res?.success && Array.isArray(res.printers) && res.printers.length > 0) {
+            setPrinters(res.printers);
+            setSelectedPrinter((prev) => {
+              if (prev && res.printers.some((p) => p.name === prev)) return prev;
+              const def = res.printers.find((p) => p.isDefault);
+              return def ? def.name : res.printers[0].name;
+            });
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to query system printers:', err);
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoadingPrinters(false);
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  const handleOpenPreferences = async () => {
+    if (typeof OpenPrinterPreferences !== 'function') return;
+    try {
+      setIsOpeningPrefs(true);
+      const res = await OpenPrinterPreferences(selectedPrinter);
+      if (res && !res.success) {
+        toast.error('تعذر فتح تفضيلات الطابعة: ' + (res.error || 'خطأ غير معروف'));
+      }
+    } catch (err) {
+      console.error('Failed to open printer preferences:', err);
+      toast.error('حدث خطأ أثناء محاولة فتح تفضيلات الطابعة');
+    } finally {
+      setIsOpeningPrefs(false);
+    }
+  };
 
   const layout = usePrintLayout({
     template,
@@ -406,6 +460,80 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         <div className="flex-1 overflow-hidden p-3.5 flex flex-col md:flex-row gap-3 min-h-0">
           {/* العمود الأيمن: لوحة البلوكات المنظمة (Bento Sidebar Panel) */}
           <aside className="w-full md:w-[348px] shrink-0 flex flex-col gap-2.5 overflow-y-auto pl-0.5 select-none min-h-0">
+            {/* بلوك الطابعة وتفضيلات الورق (Printer & Media Preferences Block) */}
+            <div className="rounded-xl border border-border/60 bg-card/60 backdrop-blur-xs p-3 flex flex-col gap-2.5 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-micro font-bold text-muted-foreground flex items-center gap-1.5">
+                  <Printer className="w-3.5 h-3.5 text-primary" weight="duotone" />
+                  <span>الطابعة ونوع الورق</span>
+                </span>
+                {selectedPrinter && (
+                  <span className="text-micro font-mono text-muted-foreground font-semibold px-1.5 py-0.5 rounded bg-muted/50 border border-border/30 truncate max-w-[140px]">
+                    {selectedPrinter}
+                  </span>
+                )}
+              </div>
+
+              {/* اختيار الطابعة وزر التفضيلات */}
+              <div className="flex items-center gap-2">
+                <Select
+                  value={selectedPrinter}
+                  onValueChange={setSelectedPrinter}
+                  disabled={isLoadingPrinters || printers.length === 0}
+                >
+                  <SelectTrigger className="h-8.5 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg flex-1 min-w-0">
+                    <SelectValue
+                      placeholder={isLoadingPrinters ? 'جاري كشف الطابعات...' : 'اختر الطابعة'}
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
+                    {printers.map((p) => (
+                      <SelectItem
+                        key={p.name}
+                        value={p.name}
+                        className="text-xs font-semibold cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between w-full gap-2">
+                          <span className="truncate">{p.name}</span>
+                          {p.isDefault && (
+                            <span className="text-micro font-normal px-1 py-0.2 rounded bg-muted text-muted-foreground shrink-0">
+                              افتراضية
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* زر فتح لوحة تفضيلات الطابعة الرسمية */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOpenPreferences}
+                  disabled={isOpeningPrefs || !selectedPrinter}
+                  title="فتح تفضيلات درايفر الطابعة الأصلي (لتغيير نوع الورق عادي/لامع وجودة الحبر)"
+                  className="h-8.5 px-2.5 bg-background hover:bg-muted/80 border-border/60 rounded-lg shrink-0 gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs"
+                >
+                  {isOpeningPrefs ? (
+                    <Spinner className="w-3.5 h-3.5" size={14} />
+                  ) : (
+                    <Gear className="w-3.5 h-3.5 text-primary" weight="duotone" />
+                  )}
+                  <span>تفضيلات الورق</span>
+                </Button>
+              </div>
+
+              <div className="text-micro text-muted-foreground/90 bg-muted/30 rounded-lg p-2 border border-border/30 flex items-start gap-1.5 leading-relaxed">
+                <span className="text-primary font-bold mt-0.5">•</span>
+                <span>
+                  اضغط <strong>تفضيلات الورق ⚙️</strong> لتبديل نوع الورق (لامع Glossy أو عادي) من
+                  لوحة طابعتك الرسمية.
+                </span>
+              </div>
+            </div>
+
             {/* بلوك 1: الورقة والاتجاه (Paper & Orientation Block) */}
             <div className="rounded-xl border border-border/60 bg-card/60 backdrop-blur-xs p-3 flex flex-col gap-2.5 shadow-2xs">
               <div className="flex items-center justify-between">

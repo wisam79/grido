@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strings"
+
 	"grido/internal/core/domain"
 	"grido/internal/service"
 )
@@ -70,6 +72,12 @@ func (h *PrintHandler) GetDefaultPrinterName() string {
 // OpenPrinterPreferences يفتح نافذة تفضيلات الطابعة الأصلية (Driver UI)
 // لتمكين المستخدم من ضبط نوع الورق والجودة عبر واجهة المُصنِّع.
 func (h *PrintHandler) OpenPrinterPreferences(printerName string) domain.PrintResult {
+	printerName = strings.TrimSpace(printerName)
+	if printerName == "" {
+		if def, err := service.GetDefaultPrinter(); err == nil && def != "" {
+			printerName = def
+		}
+	}
 	err := service.OpenPrinterPreferences(printerName)
 	if err != nil {
 		return domain.PrintResult{

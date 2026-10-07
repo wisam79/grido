@@ -8,6 +8,16 @@ import { TooltipProvider } from '../src/components/ui/tooltip';
 vi.mock('../wailsjs/go/handlers/PrintHandler', () => ({
   ExportPrintSheet: vi.fn(() => Promise.resolve({ success: true, filePath: 'mock.png' })),
   PrintNative: vi.fn(() => Promise.resolve({ success: true })),
+  GetPrinters: vi.fn(() =>
+    Promise.resolve({
+      success: true,
+      printers: [
+        { name: 'EPSON L805 Series', isDefault: true },
+        { name: 'Brother DCP-T520W', isDefault: false },
+      ],
+    }),
+  ),
+  OpenPrinterPreferences: vi.fn(() => Promise.resolve({ success: true })),
 }));
 
 vi.mock('../wailsjs/go/main/App', () => ({
@@ -104,5 +114,24 @@ describe('PrintDialog Backstage View Tests', () => {
     expect(screen.getByText('خطوط وعلامات القص')).toBeInTheDocument();
     expect(screen.queryByText('فضاء الألوان')).not.toBeInTheDocument();
     expect(screen.queryByText('صيغة الإخراج')).not.toBeInTheDocument();
+  });
+
+  it('renders printer and paper preferences control and calls OpenPrinterPreferences', async () => {
+    const { OpenPrinterPreferences } = await import('../wailsjs/go/handlers/PrintHandler');
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+
+    expect(screen.getByText('الطابعة ونوع الورق')).toBeInTheDocument();
+    const prefsBtn = screen.getByText('تفضيلات الورق');
+    expect(prefsBtn).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(prefsBtn.closest('button')).not.toBeDisabled();
+    });
+
+    await act(async () => {
+      fireEvent.click(prefsBtn);
+    });
+
+    expect(OpenPrinterPreferences).toHaveBeenCalledWith('EPSON L805 Series');
   });
 });
