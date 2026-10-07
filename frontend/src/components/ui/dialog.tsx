@@ -1,33 +1,25 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { X } from "@/components/ui/icons"
+import * as React from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { X } from '@/components/ui/icons';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
-function Dialog({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
-function DialogTrigger({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+function DialogTrigger({ ...props }: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
 }
 
-function DialogPortal({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Portal>) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
+function DialogPortal({ ...props }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
 
-function DialogClose({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Close>) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
+function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.Close>) {
+  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
 const DialogCloseButton = React.forwardRef<
@@ -38,8 +30,8 @@ const DialogCloseButton = React.forwardRef<
     ref={ref}
     data-slot="dialog-close-button"
     className={cn(
-      "rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none cursor-pointer flex items-center justify-center shrink-0",
-      className
+      'rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none cursor-pointer flex items-center justify-center shrink-0 pointer-events-auto',
+      className,
     )}
     {...props}
   >
@@ -47,7 +39,7 @@ const DialogCloseButton = React.forwardRef<
     <span className="sr-only">إغلاق</span>
   </DialogPrimitive.Close>
 ));
-DialogCloseButton.displayName = "DialogCloseButton";
+DialogCloseButton.displayName = 'DialogCloseButton';
 
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
@@ -57,18 +49,18 @@ const DialogOverlay = React.forwardRef<
     ref={ref}
     data-slot="dialog-overlay"
     className={cn(
-      "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 fluent-smoke-backdrop",
-      className
+      'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 fluent-smoke-backdrop pointer-events-auto',
+      className,
     )}
     {...props}
   />
-))
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
-    showCloseButton?: boolean
+    showCloseButton?: boolean;
   }
 >(({ className, children, showCloseButton = true, ...props }, ref) => (
   <DialogPortal data-slot="dialog-portal">
@@ -77,8 +69,8 @@ const DialogContent = React.forwardRef<
       ref={ref}
       data-slot="dialog-content"
       className={cn(
-        "bg-card/95 backdrop-blur-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100vh-3rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl border border-border p-6 shadow-fluent-28 duration-200 sm:max-w-lg fluent-specular",
-        className
+        'bg-card/95 backdrop-blur-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100vh-3rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl border border-border p-6 shadow-fluent-28 duration-200 sm:max-w-lg fluent-specular pointer-events-auto',
+        className,
       )}
       {...props}
     >
@@ -86,7 +78,7 @@ const DialogContent = React.forwardRef<
       {showCloseButton && (
         <DialogPrimitive.Close
           data-slot="dialog-close"
-          className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer"
+          className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer pointer-events-auto"
         >
           <X className="size-4 shrink-0" weight="bold" />
           <span className="sr-only">إغلاق</span>
@@ -94,43 +86,37 @@ const DialogContent = React.forwardRef<
       )}
     </DialogPrimitive.Content>
   </DialogPortal>
-))
-DialogContent.displayName = DialogPrimitive.Content.displayName
+));
+DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-right", className)}
+      className={cn('flex flex-col gap-2 text-center sm:text-right', className)}
       {...props}
     />
-  )
+  );
 }
 
-function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
+function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-footer"
-      className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        className
-      )}
+      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
       {...props}
     />
-  )
+  );
 }
 
-function DialogTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Title>) {
+function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg leading-none font-semibold", className)}
+      className={cn('text-lg leading-none font-semibold', className)}
       {...props}
     />
-  )
+  );
 }
 
 function DialogDescription({
@@ -140,10 +126,10 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn('text-muted-foreground text-sm', className)}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -158,4 +144,4 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
-}
+};

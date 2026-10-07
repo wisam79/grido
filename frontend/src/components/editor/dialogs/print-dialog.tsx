@@ -148,11 +148,18 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     printCutLineStyle: printSettings.cutLineStyle || 'dashed',
     printOrientation: printSettings.orientation,
   });
-  const { isExporting, setIsExporting, handlePrint } = exporter;
+  const { isExporting, setIsExporting, cancelExport, handlePrint } = exporter;
 
   useEffect(() => {
     if (open) {
-      setIsExporting(false);
+      if (typeof window !== 'undefined') {
+        const win = window as Window & { __gridoPrintCleanup?: (() => void) | null };
+        win.__gridoPrintCleanup?.();
+      }
+      cancelExport();
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.pointerEvents = '';
+      }
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setZoom(1);
       const st = useEditorStore.getState();
@@ -171,7 +178,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         });
       }
     } else {
-      setIsExporting(false);
+      cancelExport();
       if (typeof document !== 'undefined' && document.body) {
         document.body.style.pointerEvents = '';
       }
@@ -183,7 +190,16 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         if (alive.length > 0) st.setSelectedIds(alive);
       }
     }
-  }, [open, setIsExporting]);
+  }, [open, cancelExport]);
+
+  // ضمان تحرير أي قفل pointer-events عند تفكيك المكون
+  useEffect(() => {
+    return () => {
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.pointerEvents = '';
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (printSettings.marginMM > 0) {
@@ -199,12 +215,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        exporter.setIsExporting(false);
+        if (e.defaultPrevented) return;
+        cancelExport();
         if (typeof document !== 'undefined' && document.body) {
           document.body.style.pointerEvents = '';
         }
         onOpenChange(false);
       } else if (e.key === 'Enter' && !isExporting && hasContent) {
+        if (e.defaultPrevented) return;
         const t = e.target as HTMLElement | null;
         if (t?.closest?.('input, select, textarea, button, [role="combobox"]')) return;
         e.preventDefault();
@@ -213,7 +231,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, isExporting, hasContent, onOpenChange, exporter]);
+  }, [open, isExporting, hasContent, onOpenChange, cancelExport, exporter]);
 
   useEffect(() => {
     exporter.setPrintInvocation({
@@ -325,7 +343,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       open={open}
       onOpenChange={(next) => {
         if (!next) {
-          setIsExporting(false);
+          cancelExport();
           if (typeof document !== 'undefined' && document.body) {
             document.body.style.pointerEvents = '';
           }
@@ -335,8 +353,20 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     >
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[1060px] h-[92vh] sm:max-h-[860px] overflow-hidden flex flex-col border border-border dark:border-white/10 bg-card rounded-2xl shadow-fluent-28 p-0 gap-0 fluent-specular fluent-acrylic"
+        className="w-[96vw] sm:max-w-[1060px] h-[92vh] sm:max-h-[860px] overflow-hidden flex flex-col border border-border dark:border-white/10 bg-card rounded-2xl shadow-fluent-28 p-0 gap-0 fluent-specular fluent-acrylic pointer-events-auto"
         dir="rtl"
+        onEscapeKeyDown={(e) => {
+          if (e.defaultPrevented) return;
+          cancelExport();
+          if (typeof document !== 'undefined' && document.body) {
+            document.body.style.pointerEvents = '';
+          }
+        }}
+        onPointerDownOutside={(e) => {
+          if (isExporting) {
+            e.preventDefault();
+          }
+        }}
       >
         {/* 1. رأس النافذة القياسي المتكامل (Standard Dialog Header) */}
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card/70 backdrop-blur-md shrink-0">
@@ -358,7 +388,17 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               </div>
             </div>
 
-            <DialogCloseButton onClick={() => onOpenChange(false)} />
+            <DialogCloseButton
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                cancelExport();
+                if (typeof document !== 'undefined' && document.body) {
+                  document.body.style.pointerEvents = '';
+                }
+                onOpenChange(false);
+              }}
+            />
           </div>
         </DialogHeader>
 
@@ -684,10 +724,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
           <div className="flex items-center gap-2.5">
             <Button
+              type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
-                setIsExporting(false);
+              onClick={(e) => {
+                e.stopPropagation();
+                cancelExport();
                 if (typeof document !== 'undefined' && document.body) {
                   document.body.style.pointerEvents = '';
                 }

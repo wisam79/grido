@@ -273,6 +273,16 @@ export function usePrintExport({
     setIsExportingState(v);
   }, []);
 
+  // 🛡️ إلغاء فوري للتصدير وإبطال أي نتائج متأخرة أو عمليات معلقة
+  const cancelExport = useCallback(() => {
+    attemptRef.current++;
+    setExporting(false);
+    SetTaskbarProgress(0, 'none').catch(() => {});
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.style.pointerEvents = '';
+    }
+  }, [setExporting]);
+
   // مؤشر الطباعة Enter — آخر معاملات نداء الطباعة من المكوّن
   const printInvocationRef = useRef<{
     effectiveMarginMM: number;
@@ -623,6 +633,9 @@ export function usePrintExport({
           }
           styleEl.remove();
           container.remove();
+          if (typeof document !== 'undefined' && document.body) {
+            document.body.style.pointerEvents = '';
+          }
           window.focus();
         };
         win.__gridoPrintCleanup = cleanup;
@@ -633,7 +646,7 @@ export function usePrintExport({
           // afterprint يُطلق عند إغلاق حوار الطباعة (طباعة أو إلغاء)؛
           // والمؤقت ضمانة استعادة إن لم يُطلق الحدث في WebView2
           window.addEventListener('afterprint', cleanup, { once: true });
-          safetyTimer = setTimeout(cleanup, 120_000);
+          safetyTimer = setTimeout(cleanup, 30_000);
         } catch (e) {
           logger.error('Print container injection failed:', e);
           cleanup();
@@ -854,10 +867,11 @@ export function usePrintExport({
     () => ({
       isExporting,
       setIsExporting: setExporting,
+      cancelExport,
       handlePrintRef,
       handlePrint,
       setPrintInvocation,
     }),
-    [isExporting, setExporting, handlePrint, setPrintInvocation],
+    [isExporting, setExporting, cancelExport, handlePrint, setPrintInvocation],
   );
 }
