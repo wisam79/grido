@@ -220,18 +220,18 @@
   --workspace-grid-dot: #cbd5e1;
   --workspace-glow: rgba(37, 99, 235, 0.035);
 
-  /* Print Dialog Surface (Light) — سطح وأشرطة نافذة المعاينة متناسقة مع الوضع الفاتح */
-  --print-surface: #f8fafc;
-  --print-header: rgba(255, 255, 255, 0.88);
-  --print-header-border: rgba(226, 232, 240, 0.9);
-  --print-header-title: #0f172a;
-  --print-header-muted: #64748b;
-  --print-zoom-capsule: rgba(241, 245, 249, 0.95);
-  --print-zoom-capsule-border: rgba(203, 213, 225, 0.85);
-  --print-zoom-text: #1e293b;
-  --print-zoom-hover: rgba(226, 232, 240, 0.9);
-  --print-paper-border: rgba(203, 213, 225, 0.8);
-  --print-margin-line: rgba(148, 163, 184, 0.8);
+  /* Print Dialog Surface (Light) — أسطح وأشرطة نافذة المعاينة متناسقة مع الوضع الفاتح المحايد */
+  --print-surface: #f4f4f5;
+  --print-header: rgba(255, 255, 255, 0.9);
+  --print-header-border: rgba(228, 228, 231, 0.9);
+  --print-header-title: #18181b;
+  --print-header-muted: #71717a;
+  --print-zoom-capsule: rgba(244, 244, 245, 0.95);
+  --print-zoom-capsule-border: rgba(212, 212, 216, 0.9);
+  --print-zoom-text: #18181b;
+  --print-zoom-hover: rgba(0, 0, 0, 0.05);
+  --print-paper-border: rgba(0, 0, 0, 0.12);
+  --print-margin-line: rgba(0, 0, 0, 0.25);
 
   /* Fluent 2 Elevation Shadows */
   --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.12), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.08);
@@ -350,18 +350,18 @@
   --workspace-grid-dot: rgba(255, 255, 255, 0.06);
   --workspace-glow: rgba(59, 130, 246, 0.05);
 
-  /* Print Dialog Surface (Dark) — سطح وأشرطة نافذة المعاينة في الوضع الداكن */
-  --print-surface: #0a0e1a;
-  --print-header: rgba(15, 23, 42, 0.88);
-  --print-header-border: rgba(255, 255, 255, 0.1);
-  --print-header-title: #f1f5f9;
-  --print-header-muted: #94a3b8;
-  --print-zoom-capsule: rgba(30, 41, 59, 0.85);
-  --print-zoom-capsule-border: rgba(51, 65, 85, 0.85);
-  --print-zoom-text: #cbd5e1;
-  --print-zoom-hover: rgba(51, 65, 85, 0.6);
-  --print-paper-border: rgba(255, 255, 255, 0.15);
-  --print-margin-line: rgba(203, 213, 225, 0.6);
+  /* Print Dialog Surface (Dark) — أسطح وأشرطة نافذة المعاينة موحدة مع هوية Grido الفحمية (Fluent 2 Neutral Charcoal) */
+  --print-surface: #141416;
+  --print-header: rgba(26, 26, 29, 0.88);
+  --print-header-border: rgba(255, 255, 255, 0.08);
+  --print-header-title: #f5f5f5;
+  --print-header-muted: #a1a1aa;
+  --print-zoom-capsule: rgba(36, 36, 39, 0.85);
+  --print-zoom-capsule-border: rgba(63, 63, 70, 0.7);
+  --print-zoom-text: #e4e4e7;
+  --print-zoom-hover: rgba(255, 255, 255, 0.08);
+  --print-paper-border: rgba(255, 255, 255, 0.12);
+  --print-margin-line: rgba(255, 255, 255, 0.3);
 
   /* Fluent 2 Dark Mode Soft Clean Elevation Shadows */
   --fluent-shadow-2: 0 1.6px 3.6px 0 rgba(0, 0, 0, 0.3), 0 0.3px 0.9px 0 rgba(0, 0, 0, 0.2);

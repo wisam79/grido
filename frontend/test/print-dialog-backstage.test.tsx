@@ -62,7 +62,7 @@ describe('PrintDialog Backstage View Tests', () => {
 
     // عناصر التجهيز والإنهاء حاضرة بدقة
     expect(screen.getByText('الورقة والاتجاه')).toBeInTheDocument();
-    expect(screen.getByText('الإنهاء والطباعة')).toBeInTheDocument();
+    expect(screen.getByText('خيارات الطباعة')).toBeInTheDocument();
   });
 
   it('automatically synchronizes paper orientation to landscape when canvas is landscape', async () => {
@@ -109,7 +109,7 @@ describe('PrintDialog Backstage View Tests', () => {
   it('renders finish and cut line controls cleanly without export format fallacies', () => {
     renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
 
-    expect(screen.getByText('الإنهاء والطباعة')).toBeInTheDocument();
+    expect(screen.getByText('خيارات الطباعة')).toBeInTheDocument();
     expect(screen.getByText('طباعة بدون هوامش')).toBeInTheDocument();
     expect(screen.getByText('خطوط وعلامات القص')).toBeInTheDocument();
     expect(screen.queryByText('فضاء الألوان')).not.toBeInTheDocument();
@@ -120,8 +120,8 @@ describe('PrintDialog Backstage View Tests', () => {
     const { OpenPrinterPreferences } = await import('../wailsjs/go/handlers/PrintHandler');
     renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
 
-    expect(screen.getByText('الطابعة ونوع الورق')).toBeInTheDocument();
-    const prefsBtn = screen.getByText('تفضيلات الورق');
+    expect(screen.getByText('الطابعة')).toBeInTheDocument();
+    const prefsBtn = screen.getByText('الخصائص');
     expect(prefsBtn).toBeInTheDocument();
 
     await waitFor(() => {

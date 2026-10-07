@@ -31,6 +31,7 @@ import {
   MagnifyingGlassMinus,
   Scissors,
   Gear,
+  FileText,
 } from '@/components/ui/icons';
 import { toast } from 'sonner';
 import { GetPrinters, OpenPrinterPreferences } from '../../../../wailsjs/go/handlers/PrintHandler';
@@ -426,18 +427,18 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card/70 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0 shadow-2xs">
-                <Printer className="w-4 h-4" weight="duotone" />
+              <div className="w-8 h-8 rounded-xl bg-muted/60 border border-border/40 flex items-center justify-center text-foreground shrink-0 shadow-2xs">
+                <Printer className="w-4 h-4 text-foreground/80" weight="duotone" />
               </div>
-              <div>
-                <DialogTitle className="text-sm font-bold tracking-tight text-foreground truncate flex items-center gap-2">
-                  <span>إعداد ومعاينة الطباعة</span>
-                  <span className="text-micro font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                    300+ DPI
-                  </span>
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-sm font-bold tracking-tight text-foreground truncate">
+                  إعداد ومعاينة الطباعة
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  معاينة الورقة بدقة ميكرومترية • محاكاة حقيقية 1:1 • تجهيز الطباعة
+                <span className="text-micro font-mono font-medium px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground border border-border/40">
+                  {printSettings.dpi || 300} DPI
+                </span>
+                <DialogDescription className="sr-only">
+                  إعداد ومعاينة ورقة الطباعة
                 </DialogDescription>
               </div>
             </div>
@@ -459,86 +460,77 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         {/* 2. جسم النافذة الرئيسي المقسم إلى بلوكات ومساحة معاينة (Bento Blocks & Canvas) */}
         <div className="flex-1 overflow-hidden p-3.5 flex flex-col md:flex-row gap-3 min-h-0">
           {/* العمود الأيمن: لوحة البلوكات المنظمة (Bento Sidebar Panel) */}
-          <aside className="w-full md:w-[348px] shrink-0 flex flex-col gap-2.5 overflow-y-auto pl-0.5 select-none min-h-0">
-            {/* بلوك الطابعة وتفضيلات الورق (Printer & Media Preferences Block) */}
-            <div className="rounded-xl border border-border/60 bg-card/60 backdrop-blur-xs p-3 flex flex-col gap-2.5 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-micro font-bold text-muted-foreground flex items-center gap-1.5">
-                  <Printer className="w-3.5 h-3.5 text-primary" weight="duotone" />
-                  <span>الطابعة ونوع الورق</span>
+          <aside className="w-full md:w-[356px] shrink-0 flex flex-col gap-3 overflow-y-auto pl-0.5 select-none min-h-0">
+            {/* بلوك 1: الطابعة (Printer Block) */}
+            <div className="rounded-xl border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
+              <div className="flex items-center justify-between pb-1 border-b border-border/30">
+                <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Printer className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
+                  <span>الطابعة</span>
                 </span>
-                {selectedPrinter && (
-                  <span className="text-micro font-mono text-muted-foreground font-semibold px-1.5 py-0.5 rounded bg-muted/50 border border-border/30 truncate max-w-[140px]">
-                    {selectedPrinter}
-                  </span>
-                )}
               </div>
 
-              {/* اختيار الطابعة وزر التفضيلات */}
+              {/* صف اختيار الطابعة وزر الخصائص جنباً إلى جنب */}
               <div className="flex items-center gap-2">
-                <Select
-                  value={selectedPrinter}
-                  onValueChange={setSelectedPrinter}
-                  disabled={isLoadingPrinters || printers.length === 0}
-                >
-                  <SelectTrigger className="h-8.5 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg flex-1 min-w-0">
-                    <SelectValue
-                      placeholder={isLoadingPrinters ? 'جاري كشف الطابعات...' : 'اختر الطابعة'}
-                    />
-                  </SelectTrigger>
-                  <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
-                    {printers.map((p) => (
-                      <SelectItem
-                        key={p.name}
-                        value={p.name}
-                        className="text-xs font-semibold cursor-pointer"
-                      >
-                        <div className="flex items-center justify-between w-full gap-2">
-                          <span className="truncate">{p.name}</span>
-                          {p.isDefault && (
-                            <span className="text-micro font-normal px-1 py-0.2 rounded bg-muted text-muted-foreground shrink-0">
-                              افتراضية
-                            </span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex-1 min-w-0">
+                  <Select
+                    value={selectedPrinter}
+                    onValueChange={setSelectedPrinter}
+                    disabled={isLoadingPrinters || printers.length === 0}
+                  >
+                    <SelectTrigger className="h-8.5 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg w-full">
+                      <SelectValue
+                        placeholder={isLoadingPrinters ? 'جاري البحث...' : 'اختر الطابعة'}
+                      />
+                    </SelectTrigger>
+                    <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
+                      {printers.map((p) => (
+                        <SelectItem
+                          key={p.name}
+                          value={p.name}
+                          className="text-xs font-semibold cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between w-full gap-2">
+                            <span className="truncate">{p.name}</span>
+                            {p.isDefault && (
+                              <span className="text-micro font-normal px-1 py-0.2 rounded bg-muted text-muted-foreground shrink-0">
+                                افتراضية
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                {/* زر فتح لوحة تفضيلات الطابعة الرسمية */}
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={handleOpenPreferences}
                   disabled={isOpeningPrefs || !selectedPrinter}
-                  title="فتح تفضيلات درايفر الطابعة الأصلي (لتغيير نوع الورق عادي/لامع وجودة الحبر)"
-                  className="h-8.5 px-2.5 bg-background hover:bg-muted/80 border-border/60 rounded-lg shrink-0 gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs"
+                  title="خصائص الطابعة (نوع الورق وجودة الطباعة)"
+                  className="h-8.5 px-3 text-xs font-semibold shrink-0 gap-1.5 bg-background hover:bg-muted border-border/60 rounded-lg shadow-2xs cursor-pointer active:scale-98 transition-all"
                 >
                   {isOpeningPrefs ? (
-                    <Spinner className="w-3.5 h-3.5" size={14} />
+                    <Spinner className="w-3.5 h-3.5 text-muted-foreground" size={14} />
                   ) : (
-                    <Gear className="w-3.5 h-3.5 text-primary" weight="duotone" />
+                    <Gear className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
                   )}
-                  <span>تفضيلات الورق</span>
+                  <span>الخصائص</span>
                 </Button>
-              </div>
-
-              <div className="text-micro text-muted-foreground/90 bg-muted/30 rounded-lg p-2 border border-border/30 flex items-start gap-1.5 leading-relaxed">
-                <span className="text-primary font-bold mt-0.5">•</span>
-                <span>
-                  اضغط <strong>تفضيلات الورق ⚙️</strong> لتبديل نوع الورق (لامع Glossy أو عادي) من
-                  لوحة طابعتك الرسمية.
-                </span>
               </div>
             </div>
 
-            {/* بلوك 1: الورقة والاتجاه (Paper & Orientation Block) */}
-            <div className="rounded-xl border border-border/60 bg-card/60 backdrop-blur-xs p-3 flex flex-col gap-2.5 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-micro font-bold text-muted-foreground">الورقة والاتجاه</span>
-                <span className="text-micro font-mono text-muted-foreground font-semibold px-1.5 py-0.5 rounded bg-muted/50 border border-border/30">
+            {/* بلوك 2: الورقة والاتجاه (Paper & Orientation Block) */}
+            <div className="rounded-xl border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
+              <div className="flex items-center justify-between pb-1 border-b border-border/30">
+                <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
+                  <span>الورقة والاتجاه</span>
+                </span>
+                <span className="text-micro font-mono text-muted-foreground/80 font-medium px-1.5 py-0.2 rounded bg-muted/60 border border-border/30">
                   {Math.round(paperWidth)} × {Math.round(paperHeight)} مم
                 </span>
               </div>
@@ -575,7 +567,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     value="canvas"
                     className="text-xs font-bold text-primary cursor-pointer"
                   >
-                    {`الكانفاس الأصلي (${Math.round(imageWidthMM || 0)} × ${Math.round(imageHeightMM || 0)} مم)`}
+                    {`الكانفاس (${Math.round(imageWidthMM || 0)} × ${Math.round(imageHeightMM || 0)} مم)`}
                   </SelectItem>
                   {PAPER_SIZES.map((size) => (
                     <SelectItem
@@ -595,12 +587,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               </Select>
 
               {/* مبدل الاتجاه المنقسم (Segmented Orientation Control) */}
-              <div className="grid grid-cols-2 p-1 rounded-xl bg-muted/60 border border-border/40 gap-1">
+              <div className="grid grid-cols-2 p-0.5 rounded-lg bg-muted/50 border border-border/40 gap-1">
                 <button
                   type="button"
                   onClick={() => setPrintSettings({ orientation: 'portrait' })}
                   className={cn(
-                    'h-7.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer select-none',
+                    'h-7.5 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none',
                     printSettings.orientation !== 'landscape'
                       ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
                       : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
@@ -608,13 +600,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   title="اتجاه رأسي (عمودي)"
                 >
                   <PageOrientationIcon isLandscape={false} className="w-3.5 h-3.5" />
-                  <span>رأسي (Portrait)</span>
+                  <span>رأسي</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPrintSettings({ orientation: 'landscape' })}
                   className={cn(
-                    'h-7.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer select-none',
+                    'h-7.5 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none',
                     printSettings.orientation === 'landscape'
                       ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
                       : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
@@ -622,27 +614,28 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   title="اتجاه أفقي (عرضي)"
                 >
                   <PageOrientationIcon isLandscape={true} className="w-3.5 h-3.5" />
-                  <span>أفقي (Landscape)</span>
+                  <span>أفقي</span>
                 </button>
               </div>
             </div>
 
-            {/* بلوك 2: الإنهاء والطباعة (Finishing & Printing Block) */}
-            <div className="rounded-xl border border-border/60 bg-card/60 backdrop-blur-xs p-3 flex flex-col gap-2.5 shadow-2xs">
-              <span className="text-micro font-bold text-muted-foreground">الإنهاء والطباعة</span>
+            {/* بلوك 3: خيارات الطباعة (Print Options Block) */}
+            <div className="rounded-xl border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
+              <div className="flex items-center justify-between pb-1 border-b border-border/30">
+                <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Scissors className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
+                  <span>خيارات الطباعة</span>
+                </span>
+              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <Label
-                    htmlFor="block-borderless"
-                    className="text-xs font-semibold cursor-pointer"
-                  >
-                    طباعة بدون هوامش
-                  </Label>
-                  <span className="text-micro text-muted-foreground">
-                    تمديد حتى أطراف الورقة (يتطلب دعماً من الطابعة والدرايفر)
-                  </span>
-                </div>
+              {/* صف طباعة بدون هوامش */}
+              <div className="flex items-center justify-between gap-2 py-0.5">
+                <Label
+                  htmlFor="block-borderless"
+                  className="text-xs font-semibold cursor-pointer text-foreground"
+                >
+                  طباعة بدون هوامش
+                </Label>
                 <Switch
                   id="block-borderless"
                   checked={printSettings.marginMM === 0}
@@ -655,28 +648,37 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-border/30">
-                <div className="flex flex-col">
+              {/* صف خطوط وعلامات القص */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-border/30">
+                <div className="flex items-center justify-between gap-2">
                   <Label
                     htmlFor="block-cutlines"
-                    className="text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                    className="text-xs font-semibold cursor-pointer text-foreground"
                   >
-                    <Scissors className="text-primary w-3.5 h-3.5 shrink-0" weight="duotone" />
-                    <span>خطوط وعلامات القص</span>
+                    خطوط وعلامات القص
                   </Label>
-                  <span className="text-micro text-muted-foreground">
-                    أدلة إرشادية لتقطيع الورقة
-                  </span>
+                  <Switch
+                    id="block-cutlines"
+                    checked={cutLinesActive}
+                    onCheckedChange={(checked) => {
+                      setPrintSettings({ showCutLines: checked });
+                      if (mode === 'collage') {
+                        useEditorStore.getState().setCollageShowCutLines(checked);
+                      }
+                    }}
+                  />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  {cutLinesActive && (
+
+                {cutLinesActive && (
+                  <div className="flex items-center justify-between bg-muted/40 p-1 rounded-md border border-border/30">
+                    <span className="text-micro text-muted-foreground font-medium px-1">النمط</span>
                     <Select
                       value={printSettings.cutLineStyle || 'dashed'}
                       onValueChange={(val) =>
                         setPrintSettings({ cutLineStyle: val as typeof printSettings.cutLineStyle })
                       }
                     >
-                      <SelectTrigger className="h-7 w-[82px] px-2 py-0 text-micro font-semibold bg-background border-border/60 shadow-2xs rounded-lg">
+                      <SelectTrigger className="h-6.5 w-[84px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-2xs rounded">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent dir="rtl" className="z-(--z-print-toolbar)">
@@ -691,18 +693,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                         </SelectItem>
                       </SelectContent>
                     </Select>
-                  )}
-                  <Switch
-                    id="block-cutlines"
-                    checked={cutLinesActive}
-                    onCheckedChange={(checked) => {
-                      setPrintSettings({ showCutLines: checked });
-                      if (mode === 'collage') {
-                        useEditorStore.getState().setCollageShowCutLines(checked);
-                      }
-                    }}
-                  />
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </aside>
@@ -715,7 +707,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <span
                   className={cn(
                     'w-2 h-2 rounded-full',
-                    isOverflowing ? 'bg-destructive animate-ping' : 'bg-primary',
+                    isOverflowing ? 'bg-destructive animate-ping' : 'bg-emerald-500',
                   )}
                   role={isOverflowing ? 'alert' : undefined}
                   aria-label={
@@ -826,14 +818,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* شريط المواصفات السفلي */}
             <div className="px-4 py-2 border-t border-print-header-border bg-print-header backdrop-blur-md flex items-center justify-between text-micro text-print-header-muted select-none shrink-0 font-medium font-mono">
               <span className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <span>
                   {Math.round((paperWidth / 25.4) * (printSettings.dpi || 300))} ×{' '}
                   {Math.round((paperHeight / 25.4) * (printSettings.dpi || 300))} px (
                   {printSettings.dpi || 300} DPI)
                 </span>
               </span>
-              <span>جاهز للطباعة • دقة 1:1</span>
+              <span>1:1</span>
             </div>
           </main>
         </div>
@@ -842,11 +834,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         <DialogFooter className="px-5 py-3 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2 text-micro text-muted-foreground font-mono hidden sm:flex">
             <span className="font-semibold text-foreground">
-              {Math.round(paperWidth)}×{Math.round(paperHeight)} مم
-            </span>
-            <span>•</span>
-            <span className="px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground font-sans font-medium text-micro border border-border/30">
-              طباعة ورقية
+              {Math.round(paperWidth)} × {Math.round(paperHeight)} مم
             </span>
           </div>
 
