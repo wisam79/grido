@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **الحفاظ على العنصر الأول كأساسي في تطبيع تحديد الدفعات واللصق (`element-slice.ts`):** تمرير `newIds[0]` كمعرف أساسي في `addImageElementsBatch` و `pasteCopiedElements` لضمان تطابق `selectedId` مع أول عنصر مُضاف في التخطيط الشبكي والمتتالي، واجتياز اختبار `grid-layout-math.test.ts`.
+
 ### Added
 - **المرحلة الثانية للتقوية المعمارية وفك التبعيات العكسية وتوحيد التحديد (Architectural Hardening, Inversion Decoupling & Selection Normalization):**
   - **استخراج كاش الصور النقي (`frontend/src/lib/canvas/image-cache.ts`):** فصل منطق كاش الصور وإبطاله (`invalidateImageCache`, `preloadImageIntoCache`) من الـ Hook `use-async-image.ts` إلى طبقة المكتبات، مما أنهى اختراق الحدود المعمارية لشريحة `core-slice.ts` (Store Layer لم يعد يستورد من UI Hook Layer).

@@ -246,7 +246,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     set((s) => ({
       elements: [...s.elements, ...newElements],
-      ...normalizeSelection(newIds),
+      ...normalizeSelection(newIds, newIds[0]),
       lastEditedImage: lastItem?.src ?? s.lastEditedImage,
       lastEditedImageAspect: lastItem?.aspectRatio ?? s.lastEditedImageAspect,
     }));
@@ -722,7 +722,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     set({
       elements: nextElements,
-      ...normalizeSelection(newSelectedIds),
+      ...normalizeSelection(newSelectedIds, newSelectedIds[0]),
     });
     get().pushHistory();
   },
