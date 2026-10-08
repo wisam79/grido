@@ -154,6 +154,13 @@ description: دليل ونظام تصميم Microsoft Fluent 2 الشامل لت
 - **Decelerate (التباطؤ عند الوصول):** `cubic-bezier(0, 0, 0.1, 1)` لدخول العناصر على الشاشة.
 - **Accelerate (التسارع عند الخروج):** `cubic-bezier(0.9, 0.1, 1, 1)` لخروج وتلاشي العناصر.
 
+### معيار حركة الألواح الجانبية والأكورديون في سطح المكتب (Desktop Sidebars & Accordions):
+- يُمنع إجبارياً حساب الارتفاع التلقائي عبر JavaScript (JS height interpolation) لما يسببه من إجهاد لمعالج الرسوميات وتأخير في التفاعل.
+- يُعتمد التبديل الشرطي الفوري للمحتوى (Instant Toggle) مقترناً بتلاشٍ مجهري سريع عبر CSS:
+  `animate-in fade-in duration-100`
+- انتقالات الأزرار ورؤوس الأقسام تقتصر حصراً على الألوان وسهم التدوير بحد أقصى `150ms`:
+  `transition-colors duration-150` و `transition-transform duration-150 ease-out`
+
 ---
 
 ## ⏳ 8. إطار عمل تجارب الانتظار والتحميل (Wait UX Framework & Dictionary)
