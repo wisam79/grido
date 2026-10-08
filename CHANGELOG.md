@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.13.3] - 2026-10-08
+
 ### Performance
 - **تسريع مسار الطباعة وخفض زمن الاستجابة (Print Pipeline Acceleration):**
   - استئصال التأخير الاصطناعي القديم (`450ms`) في [`use-print-export.ts`](file:///c:/projects/grido/frontend/src/components/editor/print/use-print-export.ts) واستبداله بـ `later(..., 0)` لضمان إطلاق نافذة طباعة النظام فور إغلاق الحوار مع صيانة تنظيف المؤقتات بين الاختبارات وتفادي تسريب الذاكرة.
