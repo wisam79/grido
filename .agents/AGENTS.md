@@ -10,7 +10,7 @@
 - **المنصة:** تطبيق سطح مكتب احترافي متعدد المنصات لأنظمة Windows و macOS و Linux مخصص لاستوديوهات التصوير والمطابع ومصممي الهوية.
 - **الواجهة الأمامية (Frontend):** React 19 + TypeScript + Vite + Tailwind CSS v4 + Zustand v5 + Microsoft Fluent 2 Design System.
 - **محرك الكانفاس (Canvas Engine):** Konva + React-Konva مع معالجة رياضية فائقة الدقة للطباعة (300+ DPI).
-- **الباك إند وسطح المكتب (Backend & Desktop Runtime):** Go 1.24 + Wails v3 (`v3.0.0-beta.25`) + SQLite (عبر CGO).
+- **الباك إند وسطح المكتب (Backend & Desktop Runtime):** Go 1.24 + Wails v3 (`v3.0.0-beta.28`) + SQLite (عبر CGO).
 - **الذكاء الاصطناعي السحابي (Cloud AI):** Modal AI (CodeFormer + Real-ESRGAN على خوادم A10G) مقترن مع Supabase Auth & DB.
 - **لوحة الإدارة (Admin Web):** React + Netlify Functions.
 

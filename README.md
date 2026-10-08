@@ -47,11 +47,11 @@
 |---|---|
 | [Go](https://go.dev/dl/) | 1.25+ |
 | [Node.js](https://nodejs.org/) | 22+ |
-| [Wails CLI](https://v3.wails.io/) | `wails3` v3.0.0-beta.25 |
+| [Wails CLI](https://v3.wails.io/) | `wails3` v3.0.0-beta.28 |
 | NSIS | للبناء على ويندوز فقط |
 
 ```bash
-go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25
+go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
 ```
 
 > 🧱 **مطلوب قبل أي بناء/فحص نوعي:** ربطات الواجهة تُولَّد إلى `frontend/bindings/` (مُستثناة من Git):

@@ -47,8 +47,8 @@ github.com/ruudk/golang-pdf417 v0.0.0-20181029194003-1af4ab5afa58/go.mod h1:6lfF
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/wailsapp/wails/v3 v3.0.0-beta.25 h1:aEghNNKU0V2Q0kIfZxSJUxKLiLUTQnGNNhRXo3S7zVM=
-github.com/wailsapp/wails/v3 v3.0.0-beta.25/go.mod h1:62UsqQRqanuCbFi6xElIw3/2X+yGF+TKlyiWImA5taU=
+github.com/wailsapp/wails/v3 v3.0.0-beta.28 h1:JcJ5bsCVM44sTtOtJB2EtVV44sJSW18yevpMW+jO5Bs=
+github.com/wailsapp/wails/v3 v3.0.0-beta.28/go.mod h1:5DR/EG5FHU8+BNV7tQYQ/rJMjoFsVlYpM+0gp1+gcTI=
 golang.org/x/crypto v0.54.0 h1:YLIA59K4fiNzHzjnZt2tUJQjQtUWfWbeHBqKtk3eScw=
 golang.org/x/crypto v0.54.0/go.mod h1:KWL8ny2AZdGR2cWmzeHrp2azQPGogOv+HeQaVEXC2dk=
 golang.org/x/image v0.0.0-20190910094157-69e4b8554b2a/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=

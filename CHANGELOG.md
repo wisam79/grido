@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **ترقية محرك Wails v3 إلى `v3.0.0-beta.28` (Wails v3 Engine Upgrade):**
+  - ترقية حزم Go (`github.com/wailsapp/wails/v3`) إلى `v3.0.0-beta.28`.
+  - ترقية عميل زمن التشغيل بالواجهة (`@wailsio/runtime`) إلى `^3.0.0-beta.28` مع إعادة إنشاء ملف القفل وتوليد الربطات الرسمية بالكامل.
+  - ترقية أداة الـ CLI (`wails3`) في بيئات البناء والـ CI السحابي (`ci.yml` و `release.yml`) وتوثيق المطور وقواعد ومهارات الوكلاء إلى `v3.0.0-beta.28`.
+  - الاستفادة من تحسينات استقرار تعافي `WebView2` على Windows ومنع النوافذ البيضاء (Blank Windows) والحفاظ على معالجات أحداث Wails حية في الذاكرة.
+
 ### Fixed
 - **تطبيع ومزامنة التحديد عند تبديل القوالب والكولاج (`collage-slice.ts`):** استخدام `normalizeSelection` في `setTemplate` و `setCollageTemplate` لضمان مزامنة `selectedId` و `selectedIds` وتصفيرهما عند التحويل إلى وضع الكولاج، مع إضافة اختبار وحدة في `test/collage-slice.test.ts`.
 - **الحفاظ على العنصر الأول كأساسي في تطبيع تحديد الدفعات واللصق (`element-slice.ts`):** تمرير `newIds[0]` كمعرف أساسي في `addImageElementsBatch` و `pasteCopiedElements` لضمان تطابق `selectedId` مع أول عنصر مُضاف في التخطيط الشبكي والمتتالي، واجتياز اختبار `grid-layout-math.test.ts`.

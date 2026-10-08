@@ -85,7 +85,7 @@ jobs:
       - name: Install Wails3 CLI
         run: |
           if ! command -v wails3 >/dev/null 2>&1; then
-            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25
+            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
           fi
 
       - name: Generate Wails v3 Bindings
@@ -299,7 +299,7 @@ jobs:
       - name: Install Wails3 CLI
         run: |
           if ! command -v wails3 >/dev/null 2>&1; then
-            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25
+            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
           fi
 
       - name: Generate Wails v3 Bindings
@@ -401,7 +401,7 @@ jobs:
         shell: powershell
         run: |
           if (-not (Get-Command wails3 -ErrorAction SilentlyContinue)) {
-            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25
+            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
           }
 
       - name: Build Wails v3 App Binary (Smoke Test)
@@ -498,7 +498,7 @@ jobs:
       - name: Install Wails3 CLI
         run: |
           if ! command -v wails3 >/dev/null 2>&1; then
-            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25
+            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
           fi
 
       - name: Generate Wails v3 Bindings
