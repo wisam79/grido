@@ -17,8 +17,8 @@
 | --- | --- | --- |
 | تصحيح حدود الطبقات (Layer Boundaries) | استخراج كاش الصور من خطاف `use-async-image.ts` إلى وحدة الكانفاس النقية `frontend/src/lib/canvas/image-cache.ts` لمنع استيراد الـ hook داخل شريحة الستور `core-slice.ts` وحفظ تسلسل الطبقات الواضح (`store → canvas` بدون استيراد `hooks`) | `frontend/src/lib/canvas/image-cache.ts` و `core-slice.ts` ✅ |
 | فك التبعية العكسية في Go (Decouple Crypto Inversion) | نقل توقيع تراخيص المستخدم والتحقق منها من `internal/utils/crypto.go` إلى `internal/repository/license_signature.go`؛ لتصبح حزمة `utils` نظيفة ومجردة بنسبة 100% وبلا أي استيراد لـ `core/domain` | `internal/repository/license_signature.go` و `license_signature_test.go` و `internal/utils/crypto.go` (صفر استيرادات نطاق) ✅ |
-| توحيد ومزامنة التحديد في الستور (Selection Normalization) | استحداث دالة `normalizeSelection` المركزية في `element-slice.ts` وتطبيقها في كافة عمليات الإضافة والحذف والتحديد والتجميع مع الحفاظ على العنصر الأول كأساسي في الدفعات واللصق لضمان المزامنة الصارمة والدائمة بين `selectedId` و `selectedIds` وتفادي حالات عدم الاتساق | `frontend/src/lib/store/slices/element-slice.ts` و `test/element-slice.test.ts` (13/13) و `test/grid-layout-math.test.ts` (4/4) ✅ |
-| بوابات الجودة والتحقق الآلي | Vitest: **906 ناجحة + 1 متخطاة في 106 ملفات** · `go test ./...` **208 دوال ناجحة في 38 ملفاً** · `typecheck` 0 أخطاء · `lint` 0 تحذيرات · `docs-gate.mjs --strict-refs` يمر ✅ | 2026-10-08 |
+| توحيد ومزامنة التحديد في الستور (Selection Normalization) | استحداث دالة `normalizeSelection` المركزية في `element-slice.ts` وتطبيقها في كافة عمليات الإضافة والحذف والتحديد والتجميع وفي `collage-slice.ts` عند تبديل القوالب والكولاج، مع الحفاظ على العنصر الأول كأساسي في الدفعات واللصق لضمان المزامنة الصارمة والدائمة بين `selectedId` و `selectedIds` وتفادي أي اختلال | `frontend/src/lib/store/slices/element-slice.ts` و `collage-slice.ts` و `test/element-slice.test.ts` (13/13) و `test/collage-slice.test.ts` (9/9) ✅ |
+| بوابات الجودة والتحقق الآلي | Vitest: **907 ناجحة + 1 متخطاة في 106 ملفات** · `go test ./...` **208 دوال ناجحة في 38 ملفاً** · `typecheck` 0 أخطاء · `lint` 0 تحذيرات · `docs-gate.mjs --strict-refs` يمر ✅ | 2026-10-08 |
 
 ---
 

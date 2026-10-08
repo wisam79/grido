@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **تطبيع ومزامنة التحديد عند تبديل القوالب والكولاج (`collage-slice.ts`):** استخدام `normalizeSelection` في `setTemplate` و `setCollageTemplate` لضمان مزامنة `selectedId` و `selectedIds` وتصفيرهما عند التحويل إلى وضع الكولاج، مع إضافة اختبار وحدة في `test/collage-slice.test.ts`.
 - **الحفاظ على العنصر الأول كأساسي في تطبيع تحديد الدفعات واللصق (`element-slice.ts`):** تمرير `newIds[0]` كمعرف أساسي في `addImageElementsBatch` و `pasteCopiedElements` لضمان تطابق `selectedId` مع أول عنصر مُضاف في التخطيط الشبكي والمتتالي، واجتياز اختبار `grid-layout-math.test.ts`.
 
 ### Added

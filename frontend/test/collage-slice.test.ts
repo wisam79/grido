@@ -96,10 +96,13 @@ describe('CollageSlice Unit Tests', () => {
     const slots = useEditorStore.getState().slots;
     const before = useEditorStore.getState().historyIndex;
 
-    useEditorStore.getState().setSlotImagesBatch([
-      { slotId: slots[0].id, src: 'a.jpg' },
-      { slotId: slots[1].id, src: 'b.jpg' },
-    ], 'b.jpg');
+    useEditorStore.getState().setSlotImagesBatch(
+      [
+        { slotId: slots[0].id, src: 'a.jpg' },
+        { slotId: slots[1].id, src: 'b.jpg' },
+      ],
+      'b.jpg',
+    );
 
     const after = useEditorStore.getState();
     expect(after.slots[0].imageSrc).toBe('a.jpg');
@@ -118,9 +121,9 @@ describe('CollageSlice Unit Tests', () => {
     useEditorStore.getState().setSlotImage(slots[0].id, 'old-portrait.png');
     useEditorStore.getState().updateSlot(slots[0].id, { zoom: 1.5, dragX: 20, dragY: 10 });
 
-    useEditorStore.getState().setSlotImagesBatch([
-      { slotId: slots[0].id, src: 'new-landscape.png' },
-    ], 'new-landscape.png');
+    useEditorStore
+      .getState()
+      .setSlotImagesBatch([{ slotId: slots[0].id, src: 'new-landscape.png' }], 'new-landscape.png');
 
     // ‏الانتظار حتى اكتمال قياس الأبعاد غير المتزامن
     await new Promise((r) => setTimeout(r, 50));
@@ -133,7 +136,7 @@ describe('CollageSlice Unit Tests', () => {
 
   it('setTemplate preserves history and allows undo', () => {
     const initialHistoryLen = useEditorStore.getState().history.length;
-    
+
     useEditorStore.getState().setTemplate({
       id: 'tmpl-1',
       name: 'Single 4x6',
@@ -149,5 +152,32 @@ describe('CollageSlice Unit Tests', () => {
     // تراجع (Undo)
     useEditorStore.getState().undo();
     expect(useEditorStore.getState().mode).toBe('collage');
+  });
+
+  it('normalizes and synchronizes selection state during template and collage switches', () => {
+    // 1. تطبيق قالب فردي (single template) مع وجود صورة سابقة والتحقق من مزامنة selectedId و selectedIds
+    useEditorStore.setState({ lastEditedImage: 'portrait.jpg', lastEditedImageAspect: 0.75 });
+    useEditorStore.getState().setTemplate({
+      id: 'tmpl-passport',
+      name: 'Passport Photo',
+      width: 1200,
+      height: 1800,
+      background: '#FFFFFF',
+      slots: 1,
+    } as any);
+
+    const singleState = useEditorStore.getState();
+    expect(singleState.elements.length).toBe(1);
+    expect(singleState.selectedId).toBe(singleState.elements[0].id);
+    expect(singleState.selectedIds).toEqual([singleState.elements[0].id]);
+
+    // 2. التحويل إلى كولاج والتأكد من تصفير كل من selectedId و selectedIds بالكامل
+    useEditorStore.getState().setCollageTemplate(COLLAGE_TEMPLATES[0]);
+
+    const collageState = useEditorStore.getState();
+    expect(collageState.mode).toBe('collage');
+    expect(collageState.elements.length).toBe(0);
+    expect(collageState.selectedId).toBeNull();
+    expect(collageState.selectedIds).toEqual([]);
   });
 });

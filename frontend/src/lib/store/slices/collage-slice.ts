@@ -10,6 +10,7 @@ import {
 import { uid } from '../../utils';
 import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from '../../templates';
 import { measureImageAspect } from '../../canvas/measure-image';
+import { normalizeSelection } from './element-slice';
 
 export interface CollageSlice {
   template: PhotoTemplate | null;
@@ -153,6 +154,7 @@ type CollageCross = CollageSlice & {
   backgroundColor: string;
   elements: CanvasElement[];
   selectedId: string | null;
+  selectedIds: string[];
   lastEditedImage: string | null;
   lastEditedImageAspect: number | null;
   history: HistoryEntry[];
@@ -205,7 +207,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         backgroundColor: template.background,
         elements,
         slots: [],
-        selectedId: elements[0]?.id || null,
+        ...normalizeSelection(elements[0]?.id),
       });
       get().pushHistory();
     } else {
@@ -278,7 +280,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         mode: 'collage',
         slots,
         elements: [],
-        selectedId: null,
+        ...normalizeSelection([]),
         canvasWidth: currentWidth,
         canvasHeight: currentHeight,
       });

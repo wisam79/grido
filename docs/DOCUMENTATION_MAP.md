@@ -107,7 +107,7 @@ docs_files=6
 
 | الرقم | القيمة (تحقق: 2026-10-08) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | **906 ناجحة + 1 متخطاة (0 فاشلة) في 106 ملفاً** — تحقق: 2026-10-08 (+1 حالة لاختبار توحيد ومزامنة التحديد في `test/element-slice.test.ts`) | `npm --prefix frontend run test` |
+| حالات Vitest | **907 ناجحة + 1 متخطاة (0 فاشلة) في 106 ملفاً** — تحقق: 2026-10-08 (+1 حالة لاختبار توحيد ومزامنة التحديد في `test/collage-slice.test.ts`) | `npm --prefix frontend run test` |
 | حالات E2E | 165 حالة في 25 ملف مواصفة (كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
 | دوال اختبار Go | **208 دالة في 38 ملفاً** — تحقق: 2026-10-08 (+ملف `internal/repository/license_signature_test.go` والجريان الكامل `go test ./...` أخضر) | `go test ./internal/... -list "^Test"` |
