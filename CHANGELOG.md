@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **المرحلة الثانية للتقوية المعمارية وفك التبعيات العكسية وتوحيد التحديد (Architectural Hardening, Inversion Decoupling & Selection Normalization):**
+  - **استخراج كاش الصور النقي (`frontend/src/lib/canvas/image-cache.ts`):** فصل منطق كاش الصور وإبطاله (`invalidateImageCache`, `preloadImageIntoCache`) من الـ Hook `use-async-image.ts` إلى طبقة المكتبات، مما أنهى اختراق الحدود المعمارية لشريحة `core-slice.ts` (Store Layer لم يعد يستورد من UI Hook Layer).
+  - **فك التبعية العكسية في Go وحزمة الأدوات (`internal/utils`):** نقل منطق توقيع التراخيص وفحص سلامتها (`ComputeProfileSignature`, `SaveLicenseSignature`, `VerifyLicenseSignature`, `ClearLicenseSignature`) من `internal/utils/crypto.go` إلى `internal/repository/license_signature.go`؛ لتصبح حزمة `utils` نظيفة ومجردة بنسبة 100% وخالية من أي استيراد لحزم النطاق الداخلي `internal/core/domain` (208 دوال اختبار Go خضراء).
+  - **توحيد ومزامنة حالة التحديد في الستور (`element-slice.ts`):** استحداث دالة `normalizeSelection` المركزية وتطبيقها عبر كافة إجراءات الإضافة والحذف والتحديد المتعدد والتجميع، مما يضمن استحالة حدوث انحراف أو عدم اتساق بين `selectedId` (المفرد) و `selectedIds` (المتعدد) مع تغطية شاملة باختبارات الوحدة.
 - **ترسيخ قواعد التعلم المعماري المستفادة (`/learn` — Architectural Rules Persistence):**
   - **ثوابت محرك الطباعة وعقد التصدير لـ WebView2 (`konva-canvas-engine.md`):** تثبيت صيغة JPEG حصراً لصور 50MP، إلزامية `requestAnimationFrame` قبل الالتقاط، احترام خلفية الكولاج، وضبط تسلسل الإنهاء الآمن (تحرير `pointerEvents` قبل `window.print()` بـ 450ms).
   - **محاذاة هويات Mock وعقود الحمولات بفحص الطفرة (`quality-cicd-release.md`):** إلزامية تحديث مسارات `vi.mock` عند ترحيل الربطات لمنع الفشل الصامت، حظر إعلان النتائج بناءً على فحوص جزئية، وإلزامية فحص الطفرة (Mutation Testing) لعقود الحمولات الحساسة.

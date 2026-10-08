@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"grido/internal/core/domain"
 )
 
 func init() {
@@ -48,71 +46,35 @@ func TestLoadOrCreateMasterKey(t *testing.T) {
 	}
 }
 
-func TestComputeProfileSignature(t *testing.T) {
-	profile := &domain.UserProfile{
-		ID:        "test-user",
-		Plan:      "pro",
-		Status:    "active",
-		ExpiresAt: time.Now().Add(24 * time.Hour),
+func TestComputeHMACSHA256AndDeriveSigningKey(t *testing.T) {
+	key := DeriveSigningKey("test-device-id")
+	if len(key) != 32 {
+		t.Fatalf("Expected 32-byte signing key, got %d bytes", len(key))
 	}
 
-	sig1, err := ComputeProfileSignature(profile)
-	if err != nil {
-		t.Fatalf("ComputeProfileSignature failed: %v", err)
+	msg := "test-message"
+	sig1 := ComputeHMACSHA256(key, msg)
+	if len(sig1) != 64 {
+		t.Errorf("Expected 64-character hex signature, got %d chars", len(sig1))
 	}
 
-	// Should be deterministic for the same input
-	sig2, _ := ComputeProfileSignature(profile)
+	// Should be deterministic
+	sig2 := ComputeHMACSHA256(key, msg)
 	if sig1 != sig2 {
 		t.Errorf("Expected deterministic signatures, got %s and %s", sig1, sig2)
 	}
 
-	// Modifying fields should yield a different signature
-	profile.Plan = "enterprise"
-	sig3, _ := ComputeProfileSignature(profile)
+	// Different message produces different signature
+	sig3 := ComputeHMACSHA256(key, "different-message")
 	if sig1 == sig3 {
-		t.Errorf("Expected signature to change when profile plan changes")
-	}
-}
-
-func TestSaveAndVerifyLicenseSignature(t *testing.T) {
-	profile := &domain.UserProfile{
-		ID:        "test-user-verify",
-		Plan:      "pro",
-		Status:    "active",
-		ExpiresAt: time.Now().Add(24 * time.Hour),
-	}
-
-	// Clear signature before testing
-	_ = ClearLicenseSignature()
-	defer ClearLicenseSignature()
-
-	// Verify before saving should fail (signature file not exists)
-	if VerifyLicenseSignature(profile) {
-		t.Error("Expected verification to fail when no signature is saved")
-	}
-
-	// Save signature
-	err := SaveLicenseSignature(profile)
-	if err != nil {
-		t.Fatalf("SaveLicenseSignature failed: %v", err)
-	}
-
-	// Verify should succeed now
-	if !VerifyLicenseSignature(profile) {
-		t.Error("Expected verification to succeed")
-	}
-
-	// Tampered profile should fail verification
-	profile.Plan = "trial"
-	if VerifyLicenseSignature(profile) {
-		t.Error("Expected verification to fail for tampered profile plan")
+		t.Errorf("Expected different signatures for different messages")
 	}
 }
 
 func TestTimeVerification(t *testing.T) {
-	_ = ClearLicenseSignature()
-	defer ClearLicenseSignature()
+	timeFile := filepath.Join(GetAppDir(), ".license_time")
+	_ = os.Remove(timeFile)
+	defer os.Remove(timeFile)
 
 	now := time.Now()
 
@@ -242,8 +204,9 @@ func TestWriteSecureFile_PowerLoss(t *testing.T) {
 }
 
 func TestVerifyTime_ClockRollback(t *testing.T) {
-	_ = ClearLicenseSignature()
-	defer ClearLicenseSignature()
+	timeFile := filepath.Join(GetAppDir(), ".license_time")
+	_ = os.Remove(timeFile)
+	defer os.Remove(timeFile)
 
 	now := time.Now()
 	_ = UpdateLastTime(now)
@@ -268,8 +231,9 @@ func TestVerifyTime_ClockRollback(t *testing.T) {
 }
 
 func TestVerifyTime_CorruptedTimeFile(t *testing.T) {
-	_ = ClearLicenseSignature()
-	defer ClearLicenseSignature()
+	timeFile := filepath.Join(GetAppDir(), ".license_time")
+	_ = os.Remove(timeFile)
+	defer os.Remove(timeFile)
 
 	path := filepath.Join(GetAppDir(), ".license_time")
 

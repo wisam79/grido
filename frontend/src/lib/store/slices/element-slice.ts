@@ -105,6 +105,34 @@ export const nextZIndex = (elements: CanvasElement[]): number => {
   return max + 10;
 };
 
+/**
+ * توحيد ومزامنة حالة التحديد (Selection State Normalization):
+ * يضمن بقاء selectedId و selectedIds متسقين تماماً وبلا انحراف:
+ * - إذا كان التحديد فارغاً: كلاهما فارغ (null و []).
+ * - إذا بقي عنصر واحد فقط: selectedId يصبح ذلك العنصر تلقائياً.
+ * - إذا كانت هناك عناصر متعددة: selectedId يحتفظ بالعنصر الأساسي إن كان ضمنها، أو آخر عنصر.
+ */
+export const normalizeSelection = (
+  ids: string[] | string | null | undefined,
+  currentPrimaryId?: string | null,
+): { selectedIds: string[]; selectedId: string | null } => {
+  if (!ids) {
+    return { selectedIds: [], selectedId: null };
+  }
+  const selectedIds = Array.isArray(ids) ? ids : [ids];
+  if (selectedIds.length === 0) {
+    return { selectedIds: [], selectedId: null };
+  }
+  if (selectedIds.length === 1) {
+    return { selectedIds, selectedId: selectedIds[0] };
+  }
+  const selectedId =
+    currentPrimaryId && selectedIds.includes(currentPrimaryId)
+      ? currentPrimaryId
+      : selectedIds[selectedIds.length - 1];
+  return { selectedIds, selectedId };
+};
+
 type ElementCross = ElementSlice & {
   canvasWidth: number;
   canvasHeight: number;
@@ -148,8 +176,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     };
     set((s) => ({
       elements: [...s.elements, newEl],
-      selectedId: id,
-      selectedIds: [id],
+      ...normalizeSelection(id),
       lastEditedImage: src,
       lastEditedImageAspect: imageAspectRatio,
     }));
@@ -219,8 +246,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     set((s) => ({
       elements: [...s.elements, ...newElements],
-      selectedId: newIds[0] ?? null,
-      selectedIds: newIds,
+      ...normalizeSelection(newIds),
       lastEditedImage: lastItem?.src ?? s.lastEditedImage,
       lastEditedImageAspect: lastItem?.aspectRatio ?? s.lastEditedImageAspect,
     }));
@@ -258,7 +284,10 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       lineHeight: 1.2,
       letterSpacing: 0,
     };
-    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
+    set((s) => ({
+      elements: [...s.elements, newEl],
+      ...normalizeSelection(id),
+    }));
     get().pushHistory();
   },
 
@@ -313,7 +342,10 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       fillLinearGradientColorStops: config.fillLinearGradientColorStops,
     };
 
-    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
+    set((s) => ({
+      elements: [...s.elements, newEl],
+      ...normalizeSelection(id),
+    }));
     get().pushHistory();
   },
 
@@ -408,7 +440,10 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       pointerWidth: shape === 'arrow' ? 14 : undefined,
       innerRadius: shape === 'ring' ? resolveRingInnerRadius(undefined, basePx, basePx) : undefined,
     };
-    set((s) => ({ elements: [...s.elements, newEl], selectedId: id, selectedIds: [id] }));
+    set((s) => ({
+      elements: [...s.elements, newEl],
+      ...normalizeSelection(id),
+    }));
     get().pushHistory();
   },
 
@@ -438,8 +473,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     set((s) => ({
       elements: [...s.elements, backdrop],
-      selectedId: id,
-      selectedIds: [id],
+      ...normalizeSelection(id),
     }));
     get().pushHistory();
     return id;
@@ -496,29 +530,35 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   removeElement: (id, force = false) => {
     const el = get().elements.find((e: CanvasElement) => e.id === id);
     if (el?.locked && !force) return;
-    set((s) => ({
-      elements: s.elements.filter((item: CanvasElement) => item.id !== id),
-      selectedId: s.selectedId === id ? null : s.selectedId,
-      // [FIX #4] تنظيف selectedIds أيضاً لمنع الإشارة لعنصر محذوف
-      selectedIds: s.selectedIds.filter((sid: string) => sid !== id),
-    }));
+    set((s) => {
+      const remainingIds = s.selectedIds.filter((sid: string) => sid !== id);
+      return {
+        elements: s.elements.filter((item: CanvasElement) => item.id !== id),
+        ...normalizeSelection(remainingIds, s.selectedId === id ? null : s.selectedId),
+      };
+    });
     get().pushHistory();
   },
 
   removeElements: (ids, force = false) => {
     const targetSet = new Set(ids);
-    set((s) => ({
-      elements: s.elements.filter((el: CanvasElement) => {
-        if (!targetSet.has(el.id)) return true;
-        return Boolean(el.locked && !force);
-      }),
-      selectedId: targetSet.has(s.selectedId || '') ? null : s.selectedId,
-      selectedIds: s.selectedIds.filter((id: string) => {
+    set((s) => {
+      const remainingIds = s.selectedIds.filter((id: string) => {
         if (!targetSet.has(id)) return true;
         const el = s.elements.find((e: CanvasElement) => e.id === id);
         return Boolean(el?.locked && !force);
-      }),
-    }));
+      });
+      return {
+        elements: s.elements.filter((el: CanvasElement) => {
+          if (!targetSet.has(el.id)) return true;
+          return Boolean(el.locked && !force);
+        }),
+        ...normalizeSelection(
+          remainingIds,
+          targetSet.has(s.selectedId || '') ? null : s.selectedId,
+        ),
+      };
+    });
     get().pushHistory();
   },
 
@@ -534,7 +574,10 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       y: Math.min(el.y + 0.05, 0.9),
       zIndex: nextZIndex(get().elements),
     };
-    set((s) => ({ elements: [...s.elements, copy], selectedId: newId, selectedIds: [newId] }));
+    set((s) => ({
+      elements: [...s.elements, copy],
+      ...normalizeSelection(newId),
+    }));
     get().pushHistory();
   },
 
@@ -578,8 +621,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     set({
       elements: nextElements,
-      selectedId: newSelectedIds[newSelectedIds.length - 1] || null,
-      selectedIds: newSelectedIds,
+      ...normalizeSelection(newSelectedIds),
     });
     get().pushHistory();
   },
@@ -680,8 +722,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
     set({
       elements: nextElements,
-      selectedId: newSelectedIds.length > 0 ? newSelectedIds[0] : null,
-      selectedIds: newSelectedIds,
+      ...normalizeSelection(newSelectedIds),
     });
     get().pushHistory();
   },
@@ -700,7 +741,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
 
   selectElement: (id) => {
     if (!id) {
-      set({ selectedId: null, selectedIds: [] });
+      set(normalizeSelection([]));
       return;
     }
     const el = get().elements.find((e: CanvasElement) => e.id === id);
@@ -708,9 +749,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
       const groupElIds = get()
         .elements.filter((e: CanvasElement) => e.groupId === el.groupId)
         .map((e: CanvasElement) => e.id);
-      set({ selectedId: id, selectedIds: groupElIds });
+      set(normalizeSelection(groupElIds, id));
     } else {
-      set({ selectedId: id, selectedIds: [id] });
+      set(normalizeSelection(id));
     }
   },
 
@@ -718,17 +759,11 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const visibleIds = get()
       .elements.filter((el) => el.visible !== false)
       .map((el) => el.id);
-    set({
-      selectedId: visibleIds.length === 1 ? visibleIds[0] : null,
-      selectedIds: visibleIds,
-    });
+    set(normalizeSelection(visibleIds));
   },
 
   setSelectedIds: (ids: string[]) => {
-    set({
-      selectedId: ids.length === 1 ? ids[0] : null,
-      selectedIds: ids,
-    });
+    set(normalizeSelection(ids));
   },
 
   toggleElementSelection: (id) => {
@@ -757,10 +792,7 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
         }
       }
 
-      return {
-        selectedIds: nextSelected,
-        selectedId: nextSelected.length > 0 ? nextSelected[nextSelected.length - 1] : null,
-      };
+      return normalizeSelection(nextSelected, id);
     });
   },
 

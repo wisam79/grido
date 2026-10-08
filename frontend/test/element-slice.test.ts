@@ -196,4 +196,30 @@ describe('ElementSlice Unit Tests', () => {
     // يجب أن تحافظ العناصر على المسافة النسبية بين بعضها تماماً
     expect(Math.abs(newRelativeDistance - initialRelativeDistance)).toBeLessThan(0.0001);
   });
+
+  it('guarantees normalized and synchronized selectedId and selectedIds across all selection operations', () => {
+    useEditorStore.getState().addTextElement('أ');
+    useEditorStore.getState().addTextElement('ب');
+    const [elA, elB] = useEditorStore.getState().elements;
+
+    // Single select
+    useEditorStore.getState().selectElement(elA.id);
+    expect(useEditorStore.getState().selectedId).toBe(elA.id);
+    expect(useEditorStore.getState().selectedIds).toEqual([elA.id]);
+
+    // Multi-select via setSelectedIds
+    useEditorStore.getState().setSelectedIds([elA.id, elB.id]);
+    expect(useEditorStore.getState().selectedIds).toEqual([elA.id, elB.id]);
+    expect(useEditorStore.getState().selectedId).toBe(elB.id);
+
+    // Toggle out B should leave A and keep selectedId as A
+    useEditorStore.getState().toggleElementSelection(elB.id);
+    expect(useEditorStore.getState().selectedIds).toEqual([elA.id]);
+    expect(useEditorStore.getState().selectedId).toBe(elA.id);
+
+    // Deleting element A clears both
+    useEditorStore.getState().removeElement(elA.id);
+    expect(useEditorStore.getState().selectedIds).toEqual([]);
+    expect(useEditorStore.getState().selectedId).toBeNull();
+  });
 });

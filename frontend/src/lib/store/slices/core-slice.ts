@@ -19,7 +19,7 @@ import {
 import { generateInitialSlots, remapSlotsToCells } from './collage-slice';
 import { DEFAULT_PRINT_SETTINGS } from './print-slice';
 import { DEFAULT_HISTORY_ENTRY_EXTRAS } from './history-slice';
-import { invalidateImageCache } from '@/hooks/use-async-image';
+import { invalidateImageCache } from '../../canvas/image-cache';
 import { uid } from '../../utils';
 import { canvasMm, findPaperByMm } from '../../canvas/units';
 import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from '../../canvas/fit';

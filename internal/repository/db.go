@@ -178,7 +178,7 @@ func (r *licenseRepositoryImpl) Save(profile *domain.UserProfile) error {
 		if saveErr := utils.SaveEncryptedToken(profile.Token, profile.RefreshToken); saveErr != nil {
 			slog.Error("Failed to save encrypted token", "error", saveErr)
 		}
-		if signErr := utils.SaveLicenseSignature(profile); signErr != nil {
+		if signErr := SaveLicenseSignature(profile); signErr != nil {
 			slog.Error("Failed to save license signature", "error", signErr)
 		}
 		if timeErr := utils.UpdateLastTime(time.Now()); timeErr != nil {
@@ -203,7 +203,7 @@ func (r *licenseRepositoryImpl) Get() (*domain.UserProfile, error) {
 	}
 
 	// Verify signature to prevent SQLite tampering
-	if !utils.VerifyLicenseSignature(&profile) {
+	if !VerifyLicenseSignature(&profile) {
 		slog.Warn("License signature verification failed: Local profile tampered!")
 		profile.Plan = "free"
 		profile.Status = "expired"
@@ -223,7 +223,7 @@ func (r *licenseRepositoryImpl) Get() (*domain.UserProfile, error) {
 
 func (r *licenseRepositoryImpl) Clear() error {
 	_ = utils.ClearEncryptedToken()
-	_ = utils.ClearLicenseSignature()
+	_ = ClearLicenseSignature()
 	return r.db.Where("1 = 1").Delete(&domain.UserProfile{}).Error
 }
 

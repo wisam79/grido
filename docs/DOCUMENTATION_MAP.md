@@ -99,7 +99,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 ```docs-metrics
 vitest_test_files=106
 e2e_spec_files=25
-go_test_files=37
+go_test_files=38
 docs_files=6
 ```
 
@@ -107,10 +107,10 @@ docs_files=6
 
 | الرقم | القيمة (تحقق: 2026-10-08) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | **905 ناجحة + 1 متخطاة (0 فاشلة) في 106 ملفاً** — تحقق: 2026-10-08 (+9 في `src/lib/canvas/element-alignment.test.ts`، +4 حالات عقد حمولة الطباعة في `test/print-export-payload.test.ts`، و+5 حالات كانت تسقط بعد ترحيل الربطات ثم أُصلحت بمواءمة `vi.mock` في جلسة 0.49) | `npm --prefix frontend run test` |
+| حالات Vitest | **906 ناجحة + 1 متخطاة (0 فاشلة) في 106 ملفاً** — تحقق: 2026-10-08 (+1 حالة لاختبار توحيد ومزامنة التحديد في `test/element-slice.test.ts`) | `npm --prefix frontend run test` |
 | حالات E2E | 165 حالة في 25 ملف مواصفة (كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
-| دوال اختبار Go | **207 دالة في 37 ملفاً** — تحقق: 2026-10-08 (والجريان الكامل `go test ./...` أخضر) | `go test ./internal/... -list "^Test"` |
+| دوال اختبار Go | **208 دالة في 38 ملفاً** — تحقق: 2026-10-08 (+ملف `internal/repository/license_signature_test.go` والجريان الكامل `go test ./...` أخضر) | `go test ./internal/... -list "^Test"` |
 | عدد صفائح الحصص اليومية | free 5 / pro 15 / enterprise 50 | `internal/service/ai_service.go` + migration `20260730000001` + `frontend/src/lib/ai/quota.ts` (ثلاثة مواضع متزامنة — قرار محمي؛ وحدة الحسم الواحدة هي `lib/ai/quota.ts` والخادم هو مصدر الحقيقة، ويُثبَّت ذلك بتأكيدين في `docs-gate`) |
 | منطقة يوم الحصة (محلي/UTC) | **UTC** في الخادم والمُقيِّد المحلي والواجهة | `internal/service/ai_service.go` (`aiUsageDayKey`) + `frontend/src/lib/ai/quota.ts` (`aiUtcDayKey`) مقابل `date_trunc('day', timezone('utc', now()))` |
 

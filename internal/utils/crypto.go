@@ -21,15 +21,17 @@ import (
 
 	"golang.org/x/crypto/hkdf"
 	"golang.org/x/crypto/pbkdf2"
-
-	"grido/internal/core/domain"
 )
 
-// writeSecureFile يكتب الملف بكتابة أذرعية موحّدة (utils.AtomicWriteFile)
+// WriteSecureFile يكتب الملف بكتابة ذرية موحّدة (utils.AtomicWriteFile)
 // بصلاحيات 0600 — الملفات المشفّرة والترخيص لا يجب أن تكون قابلة للقراءة
 // من مستخدمين آخرين على الجهاز.
-func writeSecureFile(path string, data []byte) error {
+func WriteSecureFile(path string, data []byte) error {
 	return AtomicWriteFile(path, data, 0o600)
+}
+
+func writeSecureFile(path string, data []byte) error {
+	return WriteSecureFile(path, data)
 }
 
 // derivedKeyCache يخزن المفاتيح المشتقة لكل عملية لمنع إعادة اشتقاق PBKDF2
@@ -82,72 +84,22 @@ func LoadOrCreateMasterKey() ([]byte, error) {
 	return deriveKey(deviceID, "grido-license-master-key-v2"), nil
 }
 
-// ComputeProfileSignature computes a HMAC-SHA256 signature for the user profile.
-func ComputeProfileSignature(profile *domain.UserProfile) (string, error) {
-	if profile == nil || profile.ID == "" {
-		return "", errors.New("invalid profile for signature computation")
-	}
-
-	deviceID := GetDeviceID()
-	if deviceID == "" {
-		deviceID = getFallbackDeviceID()
-	}
-	key := deriveSigningKey(deviceID)
-
-	// Message is constructed from vital licensing fields.
-	msg := fmt.Sprintf("%s|%s|%s|%d", profile.ID, profile.Plan, profile.Status, profile.ExpiresAt.Unix())
-
+// ComputeHMACSHA256 computes a hex-encoded HMAC-SHA256 signature for the message using key.
+func ComputeHMACSHA256(key []byte, message string) string {
 	mac := hmac.New(sha256.New, key)
-	mac.Write([]byte(msg))
-	return hex.EncodeToString(mac.Sum(nil)), nil
+	mac.Write([]byte(message))
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
-// SaveLicenseSignature saves the profile's signature to a secure local file.
-func SaveLicenseSignature(profile *domain.UserProfile) error {
-	if profile == nil || profile.ID == "" || profile.Plan == "free" {
-		return nil
+// DeriveSigningKey derives a 32-byte signing key. If deviceID is empty, it uses GetDeviceID() with fallback.
+func DeriveSigningKey(deviceID string) []byte {
+	if deviceID == "" {
+		deviceID = GetDeviceID()
+		if deviceID == "" {
+			deviceID = getFallbackDeviceID()
+		}
 	}
-	sig, err := ComputeProfileSignature(profile)
-	if err != nil {
-		return err
-	}
-
-	path := filepath.Join(GetAppDir(), ".license_signature")
-	return writeSecureFile(path, []byte(sig))
-}
-
-// VerifyLicenseSignature checks if the local signature matches the profile.
-func VerifyLicenseSignature(profile *domain.UserProfile) bool {
-	if profile == nil || profile.ID == "" {
-		return false
-	}
-	if profile.Plan == "free" {
-		return true // Free/null profiles don't need verification
-	}
-
-	path := filepath.Join(GetAppDir(), ".license_signature")
-	storedSigBytes, err := os.ReadFile(path)
-	if err != nil {
-		slog.Warn("Stored license signature file not found", "error", err)
-		return false
-	}
-
-	computedSig, err := ComputeProfileSignature(profile)
-	if err != nil {
-		slog.Warn("Failed to compute profile signature", "error", err)
-		return false
-	}
-
-	return hmac.Equal([]byte(computedSig), storedSigBytes)
-}
-
-// ClearLicenseSignature deletes local key and signature files.
-func ClearLicenseSignature() error {
-	appDir := GetAppDir()
-	_ = os.Remove(filepath.Join(appDir, ".license_signature"))
-	_ = os.Remove(filepath.Join(appDir, ".license_time"))
-	_ = os.Remove(filepath.Join(appDir, ".license_masterkey"))
-	return nil
+	return deriveSigningKey(deviceID)
 }
 
 // UpdateLastTime records the last known time signed with HMAC to prevent clock rollback tampering.
