@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.13.2] - 2026-10-08
+
 ### Changed
 - **ترقية محرك Wails v3 إلى `v3.0.0-beta.28` (Wails v3 Engine Upgrade):**
   - ترقية حزم Go (`github.com/wailsapp/wails/v3`) إلى `v3.0.0-beta.28`.
