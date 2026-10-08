@@ -34,9 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - ترحيل 7 خطافات/مكونات (`use-autosave`, `use-ai-enhance`, `use-bg-removal`, `use-face-frame`, `use-keyboard-shortcuts`, `error-boundary`, محرك `use-print-export`) إلى `@bindings/grido/app` و `@bindings/grido/internal/**`.
     - **تبقى 41 إشارة في 33 ملفاً** داخل `frontend/src` على جسور `wailsjs/**` (منها `src/main.tsx` و`license-slice.ts` وملفات الحوارات والمعاينة) — إكمال الترحيل خارج نطاق هذه الجلسة.
 
-- **مايكرو-أنميشن التمدد الانسيابي وصقل الهوية البصرية لمكون `FluentSection` (Smooth Micro-Animations & Fluent Specular Elevation):**
-  - دعم حركة انزلاق الارتفاع التلقائي الانسيابية (`height: auto`) عبر `framer-motion` (`AnimatePresence` و `motion.div`) بمنحنى زنبركي طبيعي مطابق لمعايير Microsoft Fluent 2 (`cubic-bezier(0.1, 0.9, 0.2, 1)`) بزمن 220ms للقضاء التام على القفز المفاجئ في الارتفاع.
-  - صقل التشكيل البصري للقسم الموسّع مقابل المطوي وفق معايير Fluent Specular الفحمية المحايدة دون أي ألوان دخيلة: تمييز خفيف بالظل والحدود المضيئة عند الفتح، شارة أيقونة هادئة تتكيف مع حالة النشاط، وكبسولة تفاعلية مصغرة لسهم الطي (`w-6 h-6 rounded-md`) تدور بسلاسة مع تلميحات توجيهية.
+- **تبسيط وتخفيف مايكرو-أنميشن المكون `FluentSection` واستعادة سرعة سطح المكتب (Snappy Desktop UI & Lightweight CSS Animations):**
+  - استئصال حركة الارتفاع البطيئة بـ `framer-motion` (`AnimatePresence` و `motion.div` و `height: auto`) التي كانت تسبب تأخيراً ملحوظاً (Layout Thrashing) بمدى 220ms عند طي وتوسيع أقسام الألواح الجانبية في استوديو التصميم.
+  - استبدالها بظهور فوري وتلاشٍ رشيق بـ CSS (`animate-in fade-in duration-100`) بدون أي بطء في إعادة حساب أبعاد الصفحة.
+  - ترشيق انتقالات الحاوية ورأس القسم من `transition-all duration-200` إلى انتقالات ألوان خفيفة `transition-colors duration-150`، مع تدوير سريع ورشيق لسهم الطي `duration-150 ease-out`، مما يمنح استجابة فورية وحاسمة بنمط برامج سطح المكتب الاحترافية.
 - **نمط الأكورديون الفردي الحصري لشريط الكولاج الأيسر (Single Accordion / Solo Mode in Collage Custom Grid):**
   - تفعيل نمط الفتح الحصري (Solo Mode) في تبويب شبكة الكولاج `frontend/src/components/editor/panels/collage/collage-custom-grid-tab.tsx`، بحيث يكون قسم واحد فقط مفتوحاً في اللحظة نفسها («أبعاد الشبكة»، «مقاس الصورة»، أو «المحاذاة على الورقة»)، وتُطوى بقية الأقسام تلقائياً عند فتح أي قسم للقضاء التام على شريط التمرير العمودي وملاءمة شاشات الحواسيب المحمولة.
   - إتاحة طي القسم النشط بالكامل لرؤية الرؤوس وشاراتها الملخصة دون أي تمرير.
