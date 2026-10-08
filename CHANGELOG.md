@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **ترسيخ قواعد التعلم المعماري المستفادة (`/learn` — Architectural Rules Persistence):**
+  - **ثوابت محرك الطباعة وعقد التصدير لـ WebView2 (`konva-canvas-engine.md`):** تثبيت صيغة JPEG حصراً لصور 50MP، إلزامية `requestAnimationFrame` قبل الالتقاط، احترام خلفية الكولاج، وضبط تسلسل الإنهاء الآمن (تحرير `pointerEvents` قبل `window.print()` بـ 450ms).
+  - **محاذاة هويات Mock وعقود الحمولات بفحص الطفرة (`quality-cicd-release.md`):** إلزامية تحديث مسارات `vi.mock` عند ترحيل الربطات لمنع الفشل الصامت، حظر إعلان النتائج بناءً على فحوص جزئية، وإلزامية فحص الطفرة (Mutation Testing) لعقود الحمولات الحساسة.
+  - **حظر التجريدات التأملية والكود الميت (`architecture-governance.md`):** حظر إنشاء طبقات تجريد أو منسقات موازية ما لم تكن مستهلكة بالكامل في نفس الجلسة.
 - **تنفيذ المرحلة الشاملة للإصلاح المعماري وترشيق المكونات وتوحيد الربطات (Architectural Refactoring & Modernization):**
   - **المسار المستعار للربطات الرسمية (`@bindings/*`):** تفعيل المسار في `tsconfig.json` و `vite.config.ts` و `vitest.config.ts` لربط خدمات Wails v3 تلقائياً بدلاً من مسارات `wailsjs` اليدوية.
   - **إصلاح مسجل الأخطاء للواجهة الأمامية (`frontend/src/lib/logger.ts`):** ربط أخطاء الواجهة بدالة Go `LogFrontendError` من `@bindings/grido/app` لضمان كتابة السجلات في نظام ويندوز وسطح المكتب.
