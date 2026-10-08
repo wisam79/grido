@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { SaveImageFromBase64, EnhanceImageWithAI } from '../../wailsjs/go/main/App';
+import { SaveImageFromBase64, EnhanceImageWithAI } from '@bindings/grido/app';
 import { useEditorStore } from '@/lib/editor-store';
 import { toErrorMessage } from '@/lib/wails-error';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';

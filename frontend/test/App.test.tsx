@@ -5,7 +5,25 @@ import { TemplatePanel } from '../src/components/editor';
 import React from 'react';
 import { useEditorStore } from '../src/lib/editor-store';
 
-// Mock Wails backend functions
+// Mock Wails v3 generated bindings — هوية الوحدات التي تستوردها App وحقاخها
+// (useAppBootstrap/useAutoSave/useKeyboardShortcuts/logger) مباشرةً عبر @bindings/grido/app.
+// بدون هذا المحاكاة تنفَّذ الربطات الحقيقية ($Call.ByID) وتحاول fetch إلى خادم Wails.
+vi.mock('@bindings/grido/app', () => ({
+  LogFrontendError: vi.fn(() => Promise.resolve()),
+  GetStartupFile: vi.fn(() => Promise.resolve('')),
+  ProcessLocalImageFile: vi.fn((p: string) => Promise.resolve(p)),
+  CheckPendingCrashReport: vi.fn(() => Promise.resolve(null)),
+  DismissCrashReport: vi.fn(() => Promise.resolve()),
+  ClearAutoSave: vi.fn(() => Promise.resolve()),
+  LoadAutoSave: vi.fn(() => Promise.resolve('')),
+  SaveAutoSave: vi.fn(() => Promise.resolve()),
+  SaveImageFromBase64: vi.fn(() => Promise.resolve('success')),
+  EnhanceImageWithAI: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
+  ApplyMaskToImage: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
+  SetTaskbarProgress: vi.fn(() => Promise.resolve()),
+}));
+
+// Mock Wails backend functions (شيم wailsjs/go/main/App — تستورده license-slice وبقية الوحدات غير المُرحَّلة)
 vi.mock('../wailsjs/go/main/App', () => ({
   OpenFile: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
   OpenMultipleFiles: vi.fn(() => Promise.resolve(['data:image/png;base64,mocked'])),
@@ -15,7 +33,15 @@ vi.mock('../wailsjs/go/main/App', () => ({
   LoadAutoSave: vi.fn(() => Promise.resolve('')),
   SaveAutoSave: vi.fn(() => Promise.resolve()),
   ClearAutoSave: vi.fn(() => Promise.resolve()),
-  CheckForUpdate: vi.fn(() => Promise.resolve({ has_update: false, current_version: 'v1.0.0', latest_version: 'v1.0.0', download_url: '', release_notes: '' })),
+  CheckForUpdate: vi.fn(() =>
+    Promise.resolve({
+      has_update: false,
+      current_version: 'v1.0.0',
+      latest_version: 'v1.0.0',
+      download_url: '',
+      release_notes: '',
+    }),
+  ),
   DownloadAndInstallUpdate: vi.fn(() => Promise.resolve()),
   ExportSupportLogs: vi.fn(() => Promise.resolve('')),
   LogFrontendError: vi.fn(() => Promise.resolve()),
@@ -82,87 +108,102 @@ vi.mock('../wailsjs/go/handlers/PrintHandler', () => ({
 
 // Mock LicenseHandler functions
 vi.mock('../wailsjs/go/handlers/LicenseHandler', () => ({
-  ActivateLicenseKey: vi.fn(() => Promise.resolve({
-    id: 'test-id',
-    name: 'Test User',
-    email: 'test@example.com',
-    plan: 'pro',
-    status: 'active',
-    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
-    token: 'test-token'
-  })),
-  GetLicenseStatus: vi.fn(() => Promise.resolve({
-    id: 'test-id',
-    name: 'Test User',
-    email: 'test@example.com',
-    plan: 'pro',
-    status: 'active',
-    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
-    hardwareId: 'test-hw-id',
-    role: 'user'
-  })),
-  LoginAccount: vi.fn(() => Promise.resolve({
-    id: 'test-id',
-    name: 'Test User',
-    email: 'test@example.com',
-    plan: 'pro',
-    status: 'active',
-    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
-    token: 'test-token'
-  })),
-  LoginWithGoogle: vi.fn(() => Promise.resolve({
-    id: 'test-id',
-    name: 'Test User',
-    email: 'test@example.com',
-    plan: 'pro',
-    status: 'active',
-    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
-    token: 'test-token'
-  })),
+  ActivateLicenseKey: vi.fn(() =>
+    Promise.resolve({
+      id: 'test-id',
+      name: 'Test User',
+      email: 'test@example.com',
+      plan: 'pro',
+      status: 'active',
+      expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      token: 'test-token',
+    }),
+  ),
+  GetLicenseStatus: vi.fn(() =>
+    Promise.resolve({
+      id: 'test-id',
+      name: 'Test User',
+      email: 'test@example.com',
+      plan: 'pro',
+      status: 'active',
+      expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      hardwareId: 'test-hw-id',
+      role: 'user',
+    }),
+  ),
+  LoginAccount: vi.fn(() =>
+    Promise.resolve({
+      id: 'test-id',
+      name: 'Test User',
+      email: 'test@example.com',
+      plan: 'pro',
+      status: 'active',
+      expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      token: 'test-token',
+    }),
+  ),
+  LoginWithGoogle: vi.fn(() =>
+    Promise.resolve({
+      id: 'test-id',
+      name: 'Test User',
+      email: 'test@example.com',
+      plan: 'pro',
+      status: 'active',
+      expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      token: 'test-token',
+    }),
+  ),
   Logout: vi.fn(() => Promise.resolve('success')),
-  RegisterAccount: vi.fn((name: string, email: string) => Promise.resolve({
-    id: 'test-id',
-    name: name || 'Test User',
-    email: email || 'test@example.com',
-    plan: 'trial',
-    status: 'pending_otp',
-    expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
-    token: ''
-  })),
-  ResendOTP: vi.fn((email: string) => Promise.resolve({
-    id: 'test-id',
-    name: 'Test User',
-    email: email || 'test@example.com',
-    plan: 'trial',
-    status: 'pending_otp',
-    expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
-    hardwareId: 'test-hw-id',
-    role: 'user'
-  })),
+  RegisterAccount: vi.fn((name: string, email: string) =>
+    Promise.resolve({
+      id: 'test-id',
+      name: name || 'Test User',
+      email: email || 'test@example.com',
+      plan: 'trial',
+      status: 'pending_otp',
+      expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
+      token: '',
+    }),
+  ),
+  ResendOTP: vi.fn((email: string) =>
+    Promise.resolve({
+      id: 'test-id',
+      name: 'Test User',
+      email: email || 'test@example.com',
+      plan: 'trial',
+      status: 'pending_otp',
+      expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
+      hardwareId: 'test-hw-id',
+      role: 'user',
+    }),
+  ),
   ResetPassword: vi.fn(() => Promise.resolve('success')),
-  VerifyRecoveryOTP: vi.fn(() => Promise.resolve({
-    id: 'test-id',
-    name: 'Test User',
-    email: 'test@example.com',
-    plan: 'pro',
-    status: 'active',
-    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
-    hardwareId: 'test-hw-id',
-    role: 'user',
-    token: 'test-jwt-token'
-  })),
-  VerifyOTP: vi.fn(() => Promise.resolve({
-
-    id: 'test-id',
-    name: 'Test User',
-    email: 'test@example.com',
-    plan: 'pro',
-    status: 'active',
-    expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
-    hardwareId: 'test-hw-id',
-    role: 'user',
-    token: 'test-token'
-  })),
+  VerifyRecoveryOTP: vi.fn(() =>
+    Promise.resolve({
+      id: 'test-id',
+      name: 'Test User',
+      email: 'test@example.com',
+      plan: 'pro',
+      status: 'active',
+      expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      hardwareId: 'test-hw-id',
+      role: 'user',
+      token: 'test-jwt-token',
+    }),
+  ),
+  VerifyOTP: vi.fn(() =>
+    Promise.resolve({
+      id: 'test-id',
+      name: 'Test User',
+      email: 'test@example.com',
+      plan: 'pro',
+      status: 'active',
+      expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
+      hardwareId: 'test-hw-id',
+      role: 'user',
+      token: 'test-token',
+    }),
+  ),
 }));
 
 // Mock KonvaCanvas to avoid loading canvas/konva dependencies in test
@@ -192,7 +233,7 @@ describe('Component Testing: UI Rendering', () => {
         plan: 'pro',
         status: 'active',
         expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
-      } as any
+      } as any,
     });
   });
 
@@ -208,13 +249,15 @@ describe('Component Testing: UI Rendering', () => {
   }, 15000);
 
   it('renders the TemplatePanel correctly', async () => {
-    localStorage.setItem('grido_workspace_layout_v1', JSON.stringify({ lastActivePanel: 'templates' }));
+    localStorage.setItem(
+      'grido_workspace_layout_v1',
+      JSON.stringify({ lastActivePanel: 'templates' }),
+    );
     // الطبقات تظهر في وضع single (FreeformStudioPanel)
     useEditorStore.setState({ mode: 'single' });
     render(<App />);
     expect(await screen.findByText('الطبقات')).toBeInTheDocument();
   }, 15000);
-
 
   it('renders initial collage templates correctly', async () => {
     useEditorStore.setState({ mode: 'collage' });

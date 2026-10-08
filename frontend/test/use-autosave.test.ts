@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { useAutoSave } from "../src/hooks/use-autosave";
-import { useEditorStore } from "../src/lib/editor-store";
-import { renderHook, waitFor, act } from "@testing-library/react";
-import { LoadAutoSave, SaveAutoSave } from "../wailsjs/go/main/App";
-import { toast } from "sonner";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { useAutoSave } from '../src/hooks/use-autosave';
+import { useEditorStore } from '../src/lib/editor-store';
+import { renderHook, waitFor, act } from '@testing-library/react';
+import { LoadAutoSave, SaveAutoSave } from '../wailsjs/go/main/App';
+import { toast } from 'sonner';
 
 // Mock sonner toast
-vi.mock("sonner", () => ({
+vi.mock('sonner', () => ({
   toast: {
     info: vi.fn(),
     success: vi.fn(),
@@ -14,19 +14,19 @@ vi.mock("sonner", () => ({
   },
 }));
 
-// جسر Wails v3: الوحدة تحت الاختبار (use-autosave.ts) تستورد من wailsjs/go/main/App
-// وهو جسر يدوي يعيد التصدير من bindings/grido عبر @wailsio/runtime ($Call.ByID)،
-// فلا يقرأ window.go إطلاقاً — لذا نحاكي وحدة الجسر نفسها بنمط المشروع
-// (انظر export-project.test.ts وApp.test.tsx) بدل حقن window.go (نمط v2 القديم).
-// ملاحظة: لا نستخدم importOriginal هنا — تحميل الجسر الحقيقي داخل الـfactory يفشل
+// جسر Wails v3: الوحدة تحت الاختبار (use-autosave.ts) تستورد الربطات المولدة مباشرةً
+// من @bindings/grido/app (نفس الملف الذي يعيد تصديره wailsjs/go/main/App)، فنحاكي
+// هوية الوحدة الفعلية حتى يعترض المحاكاة الاستدعاء الحقيقي عبر @wailsio/runtime ($Call.ByID)
+// ولا يقع أي fetch إلى خادم Wails (ECONNREFUSED في jsdom).
+// ملاحظة: لا نستخدم importOriginal هنا — تحميل الربطات الحقيقي داخل الـfactory يفشل
 // في jsdom («Cannot read properties of undefined (reading 'config')» من @wailsio/runtime).
-vi.mock("../wailsjs/go/main/App", () => ({
+vi.mock('@bindings/grido/app', () => ({
   LoadAutoSave: vi.fn(),
   SaveAutoSave: vi.fn(),
   ClearAutoSave: vi.fn(),
 }));
 
-describe("useAutoSave - Auto Save Hook Tests", () => {
+describe('useAutoSave - Auto Save Hook Tests', () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
     vi.clearAllMocks();
@@ -36,13 +36,13 @@ describe("useAutoSave - Auto Save Hook Tests", () => {
     vi.useRealTimers();
   });
 
-  it("should load auto saved project on initialization", async () => {
+  it('should load auto saved project on initialization', async () => {
     const savedDraft = JSON.stringify({
       version: 1,
-      mode: "single",
+      mode: 'single',
       canvasWidth: 800,
       canvasHeight: 600,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: '#FFFFFF',
       elements: [],
       slots: [],
     });
@@ -55,14 +55,17 @@ describe("useAutoSave - Auto Save Hook Tests", () => {
     await waitFor(() => {
       expect(mockLoadAutoSave).toHaveBeenCalled();
       expect(useEditorStore.getState().canvasWidth).toBe(800);
-      expect(toast.info).toHaveBeenCalledWith("تم استعادة مسودة العمل السابقة تلقائياً", expect.any(Object));
+      expect(toast.info).toHaveBeenCalledWith(
+        'تم استعادة مسودة العمل السابقة تلقائياً',
+        expect.any(Object),
+      );
     });
   });
 
-  it("should trigger SaveAutoSave after editing canvas elements", async () => {
+  it('should trigger SaveAutoSave after editing canvas elements', async () => {
     const mockSaveAutoSave = vi.mocked(SaveAutoSave);
     mockSaveAutoSave.mockResolvedValue(undefined);
-    vi.mocked(LoadAutoSave).mockResolvedValue("");
+    vi.mocked(LoadAutoSave).mockResolvedValue('');
 
     // مؤقتات وهمية بدل انتظار debounce الحقيقي (ثانيتان) — أسرع ودون اعتماد على توقيت حقيقي
     vi.useFakeTimers();
@@ -71,7 +74,7 @@ describe("useAutoSave - Auto Save Hook Tests", () => {
       await act(async () => {});
 
       // Add elements to trigger store change
-      useEditorStore.getState().addTextElement("Initial Element");
+      useEditorStore.getState().addTextElement('Initial Element');
 
       // Fast-forward past the 2000ms debounce
       await act(async () => {

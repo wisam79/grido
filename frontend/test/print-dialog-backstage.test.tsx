@@ -24,6 +24,22 @@ vi.mock('../wailsjs/go/main/App', () => ({
   SetTaskbarProgress: vi.fn(() => Promise.resolve()),
 }));
 
+// هوية الربطات المولدة الفعلية التي يستوردها محرك التصدير (use-print-export):
+// printhandler من bindings مباشرةً، و SetTaskbarProgress/LogFrontendError من app —
+// بلا هذا الاعتراض تنفَّذ الربطات الحقيقية وتحاول fetch إلى خادم Wails (ECONNREFUSED).
+vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
+  ExportPrintSheet: vi.fn(() => Promise.resolve({ success: true, filePath: 'mock.png' })),
+  PrintNative: vi.fn(() => Promise.resolve({ success: true })),
+  GetPrinters: vi.fn(() => Promise.resolve({ success: true, printers: [] })),
+  OpenPrinterPreferences: vi.fn(() => Promise.resolve({ success: true })),
+}));
+
+vi.mock('@bindings/grido/app', () => ({
+  SetTaskbarProgress: vi.fn(() => Promise.resolve()),
+  LogFrontendError: vi.fn(() => Promise.resolve()),
+  SaveImageFromBase64: vi.fn(() => Promise.resolve('success')),
+}));
+
 describe('PrintDialog Backstage View Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();

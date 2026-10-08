@@ -8,7 +8,10 @@ import {
 } from '../types';
 import { uid } from '../../utils';
 import { computeSmartGridLayout } from '../../canvas/grid-layout-math';
-import { getElementVisualBox } from '../../canvas/element-geometry';
+import {
+  calculateAlignmentPatches,
+  calculateDistributionPatches,
+} from '../../canvas/element-alignment';
 import { resolveRingInnerRadius } from '../../canvas/ring-geometry';
 import { TextPresetType, TEXT_PRESETS } from '../../templates';
 
@@ -799,207 +802,37 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const state = get();
     const targetIds =
       state.selectedIds.length > 0 ? state.selectedIds : state.selectedId ? [state.selectedId] : [];
-    const elementsToAlign = state.elements.filter(
-      (e: CanvasElement) => targetIds.includes(e.id) && !e.locked,
-    );
-    if (elementsToAlign.length === 0) return;
+    if (targetIds.length === 0) return;
 
-    // تقسيم العناصر إلى وحدات منطقية (مجموعات متماسكة أو عناصر مفردة)
-    const unitMap = new Map<string, CanvasElement[]>();
-    let ungroupedCounter = 0;
-
-    elementsToAlign.forEach((el) => {
-      const key = el.groupId ? `group_${el.groupId}` : `single_${ungroupedCounter++}`;
-      if (!unitMap.has(key)) {
-        unitMap.set(key, []);
-      }
-      unitMap.get(key)!.push(el);
-    });
-
-    const units = Array.from(unitMap.values());
-    const isSingleUnit = units.length === 1;
-
-    const { canvasWidth, canvasHeight } = state;
-    const getBox = (e: CanvasElement) => getElementVisualBox(e, canvasWidth, canvasHeight);
-
-    let overallMinX = Math.min(...elementsToAlign.map((e) => getBox(e).x));
-    let overallMaxX = Math.max(
-      ...elementsToAlign.map((e) => {
-        const b = getBox(e);
-        return b.x + b.width;
-      }),
-    );
-    let overallMinY = Math.min(...elementsToAlign.map((e) => getBox(e).y));
-    let overallMaxY = Math.max(
-      ...elementsToAlign.map((e) => {
-        const b = getBox(e);
-        return b.y + b.height;
-      }),
+    const patches = calculateAlignmentPatches(
+      state.elements,
+      targetIds,
+      alignment,
+      state.canvasWidth,
+      state.canvasHeight,
     );
 
-    if (isSingleUnit) {
-      // محاذاة الوحدة الواحدة بالنسبة لحدود الكانفس الكاملة (0..1)
-      overallMinX = 0;
-      overallMaxX = 1;
-      overallMinY = 0;
-      overallMaxY = 1;
+    if (patches.length > 0) {
+      get().updateElements(patches);
+      get().pushHistory();
     }
-
-    const overallCenterX = (overallMinX + overallMaxX) / 2;
-    const overallCenterY = (overallMinY + overallMaxY) / 2;
-
-    const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
-
-    units.forEach((unitElements) => {
-      const uMinX = Math.min(...unitElements.map((e) => getBox(e).x));
-      const uMaxX = Math.max(
-        ...unitElements.map((e) => {
-          const b = getBox(e);
-          return b.x + b.width;
-        }),
-      );
-      const uMinY = Math.min(...unitElements.map((e) => getBox(e).y));
-      const uMaxY = Math.max(
-        ...unitElements.map((e) => {
-          const b = getBox(e);
-          return b.y + b.height;
-        }),
-      );
-      const uWidth = uMaxX - uMinX;
-      const uHeight = uMaxY - uMinY;
-
-      let dx = 0;
-      let dy = 0;
-
-      switch (alignment) {
-        case 'left':
-          dx = overallMinX - uMinX;
-          break;
-        case 'center':
-          dx = overallCenterX - uWidth / 2 - uMinX;
-          break;
-        case 'right':
-          dx = overallMaxX - uWidth - uMinX;
-          break;
-        case 'top':
-          dy = overallMinY - uMinY;
-          break;
-        case 'middle':
-          dy = overallCenterY - uHeight / 2 - uMinY;
-          break;
-        case 'bottom':
-          dy = overallMaxY - uHeight - uMinY;
-          break;
-      }
-
-      unitElements.forEach((el) => {
-        patches.push({
-          id: el.id,
-          patch: {
-            x: el.x + dx,
-            y: el.y + dy,
-          },
-        });
-      });
-    });
-
-    get().updateElements(patches);
-    get().pushHistory();
   },
 
   distributeSelectedElements: (axis) => {
     const state = get();
     const targetIds = state.selectedIds.length >= 3 ? state.selectedIds : [];
-    const elementsToDistribute = state.elements.filter(
-      (e: CanvasElement) => targetIds.includes(e.id) && !e.locked,
+    if (targetIds.length < 3) return;
+
+    const patches = calculateDistributionPatches(
+      state.elements,
+      targetIds,
+      axis,
+      state.canvasWidth,
+      state.canvasHeight,
     );
-    if (elementsToDistribute.length < 3) return;
 
-    const { canvasWidth, canvasHeight } = state;
-    const getBox = (e: CanvasElement) => getElementVisualBox(e, canvasWidth, canvasHeight);
-
-    // تقسيم العناصر إلى وحدات ذرية (مجموعة متماسكة واحدة أو عنصر مفرد) —
-    // التوزيع الفردي كان يشتت عناصر المجموعة الواحدة بين بقية العناصر
-    const unitMap = new Map<string, CanvasElement[]>();
-    let ungroupedCounter = 0;
-    elementsToDistribute.forEach((el) => {
-      const key = el.groupId ? `group_${el.groupId}` : `single_${ungroupedCounter++}`;
-      const bucket = unitMap.get(key) ?? [];
-      bucket.push(el);
-      unitMap.set(key, bucket);
-    });
-
-    interface Unit {
-      ids: string[];
-      minX: number;
-      minY: number;
-      maxX: number;
-      maxY: number;
-    }
-
-    const units: Unit[] = Array.from(unitMap.values()).map((unitElements) => {
-      const boxes = unitElements.map((e) => getBox(e));
-      return {
-        ids: unitElements.map((e) => e.id),
-        minX: Math.min(...boxes.map((b) => b.x)),
-        minY: Math.min(...boxes.map((b) => b.y)),
-        maxX: Math.max(...boxes.map((b) => b.x + b.width)),
-        maxY: Math.max(...boxes.map((b) => b.y + b.height)),
-      };
-    });
-
-    if (units.length < 3) return;
-
-    const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
-
-    if (axis === 'horizontal') {
-      const sorted = [...units].sort((a, b) => a.minX - b.minX);
-      const first = sorted[0];
-      const last = sorted[sorted.length - 1];
-      const totalSpan = last.maxX - first.minX;
-      const totalWidths = sorted.reduce((sum, u) => sum + (u.maxX - u.minX), 0);
-      const gap = (totalSpan - totalWidths) / (sorted.length - 1);
-
-      let currentX = first.minX;
-      sorted.forEach((u, index) => {
-        const dx = currentX - u.minX;
-        if (dx !== 0 && index > 0 && index < sorted.length - 1) {
-          const unitElements = elementsToDistribute.filter((e) => u.ids.includes(e.id));
-          unitElements.forEach((el) => {
-            patches.push({ id: el.id, patch: { x: el.x + dx } });
-          });
-        }
-        currentX += u.maxX - u.minX + gap;
-      });
-      if (patches.length > 0) {
-        get().updateElements(patches);
-        get().pushHistory();
-      }
-      return;
-    }
-
-    const sorted = [...units].sort((a, b) => a.minY - b.minY);
-    const first = sorted[0];
-    const last = sorted[sorted.length - 1];
-    const totalSpan = last.maxY - first.minY;
-    const totalHeights = sorted.reduce((sum, u) => sum + (u.maxY - u.minY), 0);
-    const gap = (totalSpan - totalHeights) / (sorted.length - 1);
-
-    let currentY = first.minY;
-    const vPatches: { id: string; patch: Partial<CanvasElement> }[] = [];
-    sorted.forEach((u, index) => {
-      const dy = currentY - u.minY;
-      if (dy !== 0 && index > 0 && index < sorted.length - 1) {
-        const unitElements = elementsToDistribute.filter((e) => u.ids.includes(e.id));
-        unitElements.forEach((el) => {
-          vPatches.push({ id: el.id, patch: { y: el.y + dy } });
-        });
-      }
-      currentY += u.maxY - u.minY + gap;
-    });
-
-    if (vPatches.length > 0) {
-      get().updateElements(vPatches);
+    if (patches.length > 0) {
+      get().updateElements(patches);
       get().pushHistory();
     }
   },

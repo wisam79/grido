@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Toolbar,
@@ -7,11 +7,11 @@ import {
   EditorCanvas,
   AccountLicenseModal,
   UpdateNotifier,
-  KeyboardShortcutsDialog,
   WindowResizeHandles,
   CanvasViewportDeck,
   DesktopMenuBar,
   WorkspaceLayout,
+  AppDialogsHost,
 } from '@/components/editor';
 import {
   useWorkspacePanels,
@@ -19,33 +19,11 @@ import {
   type FreeformTab,
 } from '@/hooks/use-workspace-panels';
 import { ErrorBoundary } from '@/components/error-boundary';
-import {
-  GetStartupFile,
-  ProcessLocalImageFile,
-  CheckPendingCrashReport,
-  DismissCrashReport,
-  ClearAutoSave,
-} from '../wailsjs/go/main/App';
-import type { CrashReport } from '../bindings/grido/internal/service/models';
-import { CrashRecoveryDialog } from '@/components/crash-recovery-dialog';
-import { EventsOn } from '../wailsjs/runtime/runtime';
-
-const ExportDialog = lazy(() =>
-  import('@/components/editor/dialogs/export-dialog').then((module) => ({
-    default: module.ExportDialog,
-  })),
-);
-const PrintDialog = lazy(() =>
-  import('@/components/editor/dialogs/print-dialog').then((module) => ({
-    default: module.PrintDialog,
-  })),
-);
+import { useAppBootstrap } from '@/hooks/use-app-bootstrap';
 
 import { Button } from '@/components/ui/button';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { Spinner } from '@/components/ui/huge-icon';
-import { Skeleton } from '@/components/ui/skeleton';
 import { FluentIconProvider } from '@/components/ui/fluent-icon-provider';
 import {
   SquaresFour,
@@ -66,49 +44,19 @@ import { LicenseLockScreen } from '@/components/editor/system/license-lock-scree
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useAutoSave } from '@/hooks/use-autosave';
 import { useEditorStore } from '@/lib/editor-store';
-import { addImageFromSrc } from '@/lib/canvas/load-image';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
-import { warmupOpenCV } from '@/components/editor/document-scanner/opencv-loader';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import {
-  isSessionSupersededError,
-  sessionSupersededMessage,
-} from '@/lib/store/slices/license-slice';
 import { usePhoneBridgeListener } from '@/components/editor/system/use-phone-bridge';
 import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
-import { createLogger } from '@/lib/logger';
-
-const appLog = createLogger('App');
-
-/** هيكل تحميل بسيط يُعرض أثناء تفكيك الحوارات الكسولة (تصدير/طباعة) */
-function DialogLazyFallback() {
-  return (
-    <div
-      role="status"
-      aria-label="جاري التحميل ..."
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
-    >
-      <div className="w-[min(480px,90vw)] rounded-2xl border border-border/60 bg-background/95 p-5 space-y-3 shadow-2xl fluent-specular">
-        <Skeleton className="h-6 w-1/2" />
-        <Skeleton className="h-3 w-3/4" />
-        <div className="grid grid-cols-2 gap-2 pt-2">
-          <Skeleton className="h-16 rounded-xl" />
-          <Skeleton className="h-16 rounded-xl" />
-        </div>
-        <Skeleton className="h-8 w-full rounded-md" />
-      </div>
-    </div>
-  );
-}
 
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [crashReport, setCrashReport] = useState<CrashReport | null>(null);
+
+  const { isInitializing, crashReport, handleRecoverCrash, handleDismissCrash } = useAppBootstrap();
 
   const panelsHook = useWorkspacePanels();
   const isTemplatesOpen =
@@ -122,36 +70,6 @@ export default function App() {
   const { theme, themeMode, toggleTheme } = useTheme();
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
-
-  // الاستعادة ضمنية: useAutoSave() حمّل المسودة تلقائياً عند الإقلاع،
-  // فهنا نكتفي بإقرار التقرير دون loadProject مزدوج.
-  const handleRecoverCrash = async () => {
-    try {
-      if (typeof DismissCrashReport === 'function') {
-        await DismissCrashReport();
-      }
-    } catch (e) {
-      appLog.error('Failed to dismiss crash report:', e);
-    }
-    setCrashReport(null);
-    toast.success('تم استعادة المسودة بنجاح ومتابعة العمل');
-  };
-
-  const handleDismissCrash = async () => {
-    try {
-      if (typeof DismissCrashReport === 'function') {
-        await DismissCrashReport();
-      }
-      if (typeof ClearAutoSave === 'function') {
-        await ClearAutoSave();
-      }
-      useEditorStore.getState().reset();
-    } catch (e) {
-      appLog.error('Failed to dismiss crash report:', e);
-    }
-    setCrashReport(null);
-    toast.info('تم بدء مشروع جديد');
-  };
 
   const { togglePanel, openPanel, toggleZenMode, selectCollageTab, selectStudioTab } = panelsHook;
 
@@ -231,8 +149,6 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflow, panelsSetActiveStudioTab]);
 
-  const checkLicenseStatus = useEditorStore((state) => state.checkLicenseStatus);
-
   // [FIX #7] قراءة user مباشرة لضمان إعادة render عند تغيير أي من حقوله
   const user = useEditorStore((state) => state.user);
   const { isLicenseActive: isLicenseActiveFn } = useEditorStore(
@@ -249,141 +165,26 @@ export default function App() {
   // على تعيين enhancingElementId أثناء المعالجة
   const isBusy = useRenderQuality((s) => s.enhancingElementId !== null);
 
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const profile = await checkLicenseStatus();
-        if (!profile || !profile.token) {
-          setAccountModalOpen(true);
-        }
-        // ملء سجلات استخدام AI من AppData (مع ترحيل localStorage القديم)
-        void useEditorStore.getState().hydrateAiUsageLogs();
-        // فحص وجود صورة ممررة عند الإقلاع (مثل النقر بالزر الأيمن "فتح بواسطة" في ويندوز)
-        try {
-          if (typeof GetStartupFile === 'function') {
-            const startupUrl = await GetStartupFile();
-            if (startupUrl) void addImageFromSrc(startupUrl, { setSingleMode: true });
-          }
-        } catch {
-          // تجاهل الخطأ في بيئة الاختبارات عند عدم توفر واجهة Wails
-        }
-        // فحص وجود تقرير انهيار سابق من الرنتايم
-        try {
-          if (typeof CheckPendingCrashReport === 'function') {
-            const report = await CheckPendingCrashReport();
-            if (report) {
-              setCrashReport(report);
-            }
-          }
-        } catch {
-          // تجاهل الخطأ في بيئة الاختبارات عند عدم توفر واجهة Wails
-        }
-      } catch (err) {
-        // 🛡️ الجلسة الواحدة: الإقلاع قد يكشف طرداً — اعرض رسالة الطرد الصريحة
-        // (نافذة الحساب تُفتح أصلاً من license-slice عند الطرد).
-        if (isSessionSupersededError(err)) {
-          toast.error(sessionSupersededMessage(err), { duration: 8000 });
-        } else {
-          appLog.error('Failed to check license status during init:', err);
-        }
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-    check();
-
-    warmupOpenCV();
-
-    // Check periodically every 5 minutes to ensure dynamic state updates
-    const intervalId = setInterval(
-      () => {
-        // 🛡️ الجلسة الواحدة: الفحص الدوري قد يطرد الجلسة — اعرض رسالة الطرد
-        // الصريحة بدل ابتلاع الخطأ بصمت.
-        checkLicenseStatus().catch((sessErr: unknown) => {
-          if (isSessionSupersededError(sessErr)) {
-            toast.error(sessionSupersededMessage(sessErr), { duration: 8000 });
-          }
-        });
-      },
-      5 * 60 * 1000,
-    );
-
-    return () => clearInterval(intervalId);
-  }, [checkLicenseStatus, setAccountModalOpen]);
-
   // أوامر لوحة الأدوات التي مصدرها هذا المكوّن وحده: الثيم (مصدره useTheme هنا)
   // ونافذة الحساب — فلا تملك اللوحة نسخة ثانية من حالة الثيم أو المودال.
   useEffect(() => {
     const handleToggleTheme = () => toggleTheme();
     const handleOpenAccount = () => setAccountModalOpen(true);
+    const openExport = () => setExportOpen(true);
+    const openPrint = () => setPrintOpen(true);
+
     window.addEventListener('grido:toggle-theme', handleToggleTheme);
     window.addEventListener('grido:open-account', handleOpenAccount);
+    window.addEventListener('grido:open-export-dialog', openExport);
+    window.addEventListener('grido:open-print-dialog', openPrint);
+
     return () => {
       window.removeEventListener('grido:toggle-theme', handleToggleTheme);
       window.removeEventListener('grido:open-account', handleOpenAccount);
-    };
-  }, [toggleTheme, setAccountModalOpen]);
-
-  // اختصارات Ctrl+E / Ctrl+P تفتح حوارات التصدير والطباعة عبر أحداث عامة (إصلاح Bug#7)
-  useEffect(() => {
-    const openExport = () => setExportOpen(true);
-    const openPrint = () => setPrintOpen(true);
-    window.addEventListener('grido:open-export-dialog', openExport);
-    window.addEventListener('grido:open-print-dialog', openPrint);
-    return () => {
       window.removeEventListener('grido:open-export-dialog', openExport);
       window.removeEventListener('grido:open-print-dialog', openPrint);
     };
-  }, []);
-
-  // ⚡ الاستماع لأحداث محرك Wails وقت التشغيل (Runtime Events):
-  // 1. فتح ملف عبر سطر الأوامر أو مثيل ثانٍ للتطبيق (file-opened)
-  // 2. السحب والإفلات المباشر للملفات من سطح المكتب (native-file-drop)
-  // 3. استئناف النظام من وضع السكون (app:resume)
-  useEffect(() => {
-    let unbindFileOpened: (() => void) | undefined;
-    let unbindFileDrop: (() => void) | undefined;
-    let unbindResume: (() => void) | undefined;
-
-    if (typeof EventsOn === 'function') {
-      try {
-        unbindFileOpened = EventsOn('file-opened', async (filePath: string) => {
-          if (!filePath) return;
-          try {
-            const src =
-              typeof ProcessLocalImageFile === 'function'
-                ? await ProcessLocalImageFile(filePath)
-                : filePath;
-            if (src) void addImageFromSrc(src, { setSingleMode: true });
-          } catch (err) {
-            appLog.error('Failed to open file from Wails event:', err);
-          }
-        });
-
-        unbindFileDrop = EventsOn(
-          'native-file-drop',
-          (data: { x: number; y: number; images: string[] }) => {
-            if (!data || !data.images || data.images.length === 0) return;
-            data.images.forEach((src) => {
-              void addImageFromSrc(src);
-            });
-          },
-        );
-
-        unbindResume = EventsOn('app:resume', () => {
-          void checkLicenseStatus();
-        });
-      } catch (err) {
-        console.warn('Wails runtime EventsOn not available in this environment:', err);
-      }
-    }
-
-    return () => {
-      unbindFileOpened?.();
-      unbindFileDrop?.();
-      unbindResume?.();
-    };
-  }, [checkLicenseStatus]);
+  }, [toggleTheme, setAccountModalOpen]);
 
   if (isInitializing) {
     return (
@@ -817,31 +618,16 @@ export default function App() {
             }
           />
 
-          {/* نافذة التصدير */}
-          <ErrorBoundary>
-            <Suspense fallback={exportOpen ? <DialogLazyFallback /> : null}>
-              <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
-            </Suspense>
-          </ErrorBoundary>
-
-          {/* نافذة إعدادات الطباعة */}
-          <ErrorBoundary>
-            <Suspense fallback={printOpen ? <DialogLazyFallback /> : null}>
-              <PrintDialog open={printOpen} onOpenChange={setPrintOpen} />
-            </Suspense>
-          </ErrorBoundary>
-
-          <AccountLicenseModal />
-          <UpdateNotifier />
-          <CrashRecoveryDialog
-            open={crashReport !== null}
-            report={crashReport}
-            onRecover={handleRecoverCrash}
-            onDismiss={handleDismissCrash}
+          {/* استضافة الحوارات الكسولة والمودال والإشعارات */}
+          <AppDialogsHost
+            exportOpen={exportOpen}
+            onExportOpenChange={setExportOpen}
+            printOpen={printOpen}
+            onPrintOpenChange={setPrintOpen}
+            crashReport={crashReport}
+            onRecoverCrash={handleRecoverCrash}
+            onDismissCrash={handleDismissCrash}
           />
-
-          <SonnerToaster position="bottom-center" duration={2000} offset={20} />
-          <KeyboardShortcutsDialog />
         </div>
       </TooltipProvider>
     </FluentIconProvider>

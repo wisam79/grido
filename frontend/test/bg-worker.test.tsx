@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import React from 'react';
 
-// Mock Go bindings
-vi.mock('../wailsjs/go/main/App', () => ({
+// Mock Go bindings — هوية @bindings/grido/app الفعلية (نفس ملف جسر wailsjs/go/main/App)
+vi.mock('@bindings/grido/app', () => ({
   SaveImageFromBase64: vi.fn().mockResolvedValue('/local-image/saved-bg.png'),
   ApplyMaskToImage: vi.fn().mockResolvedValue('/local-image/saved-bg.png'),
 }));
@@ -86,7 +86,9 @@ describe('ElementProperties - Worker Background Removal', () => {
       complete = false;
       _src = '';
       crossOrigin: string | null = null;
-      decode() { return Promise.resolve(); }
+      decode() {
+        return Promise.resolve();
+      }
       set src(v: string) {
         this._src = v;
         queueMicrotask(() => {
@@ -94,7 +96,9 @@ describe('ElementProperties - Worker Background Removal', () => {
           this.onload?.({ target: this });
         });
       }
-      get src() { return this._src; }
+      get src() {
+        return this._src;
+      }
     };
 
     // Dynamically load the component and set active license state to pick up the mocks
@@ -104,7 +108,7 @@ describe('ElementProperties - Worker Background Removal', () => {
         plan: 'pro',
         status: 'active',
         expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
-      } as any
+      } as any,
     });
 
     const mod = await import('../src/components/editor/properties/element-properties');
@@ -126,7 +130,9 @@ describe('ElementProperties - Worker Background Removal', () => {
 
   it('should run background removal in Worker and update element src on success', async () => {
     const onUpdateMock = vi.fn();
-    render(wrapWithTooltip(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />));
+    render(
+      wrapWithTooltip(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />),
+    );
 
     const removeBgBtn = screen.getByTitle(/عزل الخلفية/);
 
@@ -157,7 +163,9 @@ describe('ElementProperties - Worker Background Removal', () => {
     MockBgWorker.autoRespond = false;
 
     const onUpdateMock = vi.fn();
-    render(wrapWithTooltip(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />));
+    render(
+      wrapWithTooltip(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />),
+    );
 
     const removeBgBtn = screen.getByTitle(/عزل الخلفية/);
 
@@ -192,7 +200,7 @@ describe('ElementProperties - Worker Background Removal', () => {
     // محاكاة تحويل قناع بحجم 2 ميجابكسل (2,000,000 بايت)
     const largeBuffer = new Uint8Array(2 * 1024 * 1024);
     for (let i = 0; i < largeBuffer.length; i++) {
-      largeBuffer[i] = (i % 256);
+      largeBuffer[i] = i % 256;
     }
 
     const CHUNK_SIZE = 0x2000;

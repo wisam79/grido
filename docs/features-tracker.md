@@ -1,11 +1,49 @@
 # تتبع الميزات الأساسية — Grido Studio
 
 **تاريخ المراجعة الأولى:** 30 يوليو 2026 (الإصدار ~v1.2.10)
-**آخر تحديث:** 7 أكتوبر 2026 — بعد **تنقية استوديو الطباعة واستئصال مغالطات صيغ الإخراج وازدواجية المونتاج (الجلسة 0.46)** · وقبله **تعزيز نظام اختبارات الطباعة واستئصال خطأ photowiz وضبط الثيم الفاتح (الجلسة 0.45)** · وقبله **استوديو الطباعة الاحترافي بنمط Backstage View واكتشاف طابعات النظام وتفضيلات الدرايفر (الجلسة 0.44)**
+**آخر تحديث:** 8 أكتوبر 2026 — بعد **إغلاق انحدارات التفكيك وإصلاح محاكاة الربطات واستئصال الكود الميت (الجلسة 0.49)** · وقبله **تنفيذ خطة الإصلاح المعماري الشاملة وترشيق المكونات وتوحيد الربطات (الجلسة 0.48)** · وقبله **معالجة الصفحة الفارغة الزائدة في الطباعة (الجلسة 0.47)** · وقبله **تنقية استوديو الطباعة واستئصال مغالطات صيغ الإخراج وازدواجية المونتاج (الجلسة 0.46)**
 **المنهجية:** فحص الكود الفعلي (Go + React/Konva) ميزةً ميزة، ومطابقتها مع README وخطة التطوير.
 **الغرض:** مستند حي يُحدَّث مع كل نظرة على الميزات؛ يكمل (ولا يستبدل) `docs/development-plan/TASKS.md`.
 
 أسطورة الحالة: ✅ مكتمل | ⚠️ مكتمل مع فجوات | 🔶 جزئي | ❌ غير منفذ | 🆕 أُصلح في جلسة الإصلاحات
+
+---
+
+## 0.49 سجل جلسة إغلاق انحدارات التفكيك وإصلاح محاكاة الربطات (Refactor Regression Closure) — 8 أكتوبر 2026
+
+**المرجع:** مراجعة معمارية مستقلة بعد جلسة 0.48 كشفت 5 حالات Vitest فاشلة، و5 انحدارات سلوكية في محرك الطباعة، وادعاءات توثيق غير مطابقة للواقع، وملفاً ميتاً، وانحرافاً عن قاعدة الرنتايم.
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| استعادة صيغة JPEG للطباعة | `exportFormat: 'jpeg'` بدل `'png'` — رمز PNG على ورقة 50MP أكبر 3-5× وأبطأ داخل WebView2 | `frontend/src/components/editor/print/use-print-export.ts` ✅ |
+| استعادة تنازل إطار الرسم | `requestAnimationFrame` قبل التقاط الكانفاس (منع تجميد خيط الواجهة على 50MP) | `use-print-export.ts` ✅ |
+| استعادة خلفية الورقة الديناميكية | `backgroundColor \|\| previewWhite()` بدل `#FFFFFF` الثابتة — سلامة الكولاج بخلفية غير بيضاء | `use-print-export.ts` ✅ |
+| استعادة حارس حدود الورقة | فحص W/H بنمط Go (+0.1mm) + فحص موضعي لأقصى امتداد (+0.5mm) ورسالة عربية توجيهية قبل الإرسال إلى Go | `use-print-export.ts` ✅ |
+| استعادة تسلسل الإنهاء الآمن | `onDone()` وتحرير `pointerEvents` قبل `window.print()` + تأخير 450ms + إزالة قفل `pointer-events: none` المستحدث + نصوص الأخطاء الأصلية وأرقام البكسل | `use-print-export.ts` ✅ |
+| إصلاح محاكاة الربطات في الاختبارات | `vi.mock('@bindings/grido/app')` و`vi.mock('@bindings/grido/internal/handlers/printhandler')` — كانت محاكاة `wailsjs/**` لا تعترض شيئاً بعد الترحيل (ECONNREFUSED) | `frontend/test/{use-autosave.test.ts,bg-worker.test.tsx,App.test.tsx,print-dialog-backstage.test.tsx}` ✅ |
+| تصحيح اتجاه الرنتايم | إعادة التنفيذ إلى `frontend/wailsjs/runtime/runtime.ts` وحذف الغلاف المعكوس `frontend/src/lib/wails/runtime.ts` | `.agents/rules/backend-wails-runtime.md` ✅ |
+| حذف الكود الميت | حذف `frontend/src/lib/ui/dialog-coordinator.ts` (صفر مستوردين ونموذج حالة حوارات موازٍ غير مستخدم) | `grep -rn dialog-coordinator frontend/src` = 0 ✅ |
+| قفل فجوة تغطية حمولة الطباعة | ملف اختبار مخصص `frontend/test/print-export-payload.test.ts` (4 حالات) ياعترض `ExportPrintSheet` من الربطات المولدة ويؤكد `exportFormat: 'jpeg'` وخلفية الكولاج وأبعاد الورقة والعناصر وعلامات القص وتأخير الإنهاء الآمن وحارس حدود الورقة — وتم التحقق بطفرة (Mutation): تحويل `jpeg` إلى `png` يُسقط حالة، وتثبيت الخلفية `#FFFFFF` يُسقط حالتين | `npx vitest run test/print-export-payload.test.ts` ✅ |
+| إتاحة انتظار دورة الطباعة | `handlePrint` يعيد وعد `executePrint` بدل إهماله (لا يغيّر سلوك زر الطباعة، ويمنح الاختبارات حتمية كاملة) | `frontend/src/components/editor/print/use-print-export.ts` ✅ |
+| بوابات التحقق (نتائج فعلية) | Vitest: **905 ناجحة + 1 متخطاة (0 فاشلة) في 106 ملفاً** · `typecheck` 0 أخطاء · `lint` 0 تحذيرات · `docs-gate --strict-refs` يمر · `go test ./...` أخضر | 2026-10-08 |
+
+---
+
+## 0.48 سجل جلسة خطة الإصلاح المعماري الشاملة وترشيق المكونات وتوحيد الربطات (Comprehensive Architecture Refactor) — 8 أكتوبر 2026
+
+**المرجع:** طلب المالك الصريح — «عمل خطة اصلاح احترافية شاملة» اعتماداً على نتائج المراجعة المعمارية المستقلة لمشروع Grido Studio.
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| تفعيل المسار المستعار الرسمي للربطات `@bindings/*` | إضافة المسار إلى `tsconfig.json` و `vite.config.ts` و `vitest.config.ts` لتمكين الاستيراد المباشر والآمن نوعياً من حزم Wails v3 المولدة تلقائياً | `frontend/tsconfig.json` و `vite.config.ts` و `vitest.config.ts` ✅ |
+| إصلاح مسجل أخطاء الواجهة لسطح المكتب | ربط `frontend/src/lib/logger.ts` بدالة Go الأصلية `LogFrontendError` من `@bindings/grido/app` بدلاً من مناداة `window.runtime` غير المدعوم في Wails v3 | `frontend/src/lib/logger.ts` ✅ |
+| ترصين جسر رنتايم Wails v3 المطبوع | نسخة مطبوعة آمنة لـ `@wailsio/runtime` تغطي أحداث التطبيق والنوافذ والنظام، والتنفيذ داخل الجسر نفسه (لا اعتماد معكوس على `src`) | `frontend/wailsjs/runtime/runtime.ts` ✅ |
+| منسق الحوارات المركزي (مُلغى في 0.49) | أُنشئ `frontend/src/lib/ui/dialog-coordinator.ts` ثم حُذف: صفر مستوردين ونموذج حالة موازٍ غير مستخدم — انظر جلسة 0.49 | ❌ (أُزيل) |
+| تفكيك وتجزئة الملف العملاق `use-print-export.ts` | تقسيم الملف (877 سطر ← 469 سطر) عبر استخراج: (1) `print-page-style.ts` للتنسيقات و `@page`، (2) `print-transport.ts` لتيار الرفع الثنائي والمهلات، (3) `print-payload-builder.ts` لبناء حمولات الطباعة | مجلد `frontend/src/components/editor/print/` ✅ |
+| ترشيق `App.tsx` وتفكيك الإقلاع والحوارات | استخراج `use-app-bootstrap.ts` لنقل فحص التراخيص والتقارير وأحداث الرنتايم، واستخراج `app-dialogs-host.tsx` لتجميع الحوارات الكسولة وتقليص حجم الملف بنسبة تفوق 25% | `frontend/src/App.tsx` و `use-app-bootstrap.ts` و `app-dialogs-host.tsx` ✅ |
+| تفكيك خوارزميات المحاذاة والتوزيع الرياضية | استخراج الحسابات الرياضية للمحاذاة والتوزيع من `element-slice.ts` إلى `element-alignment.ts` كدوال نقية، ودعمها بـ 9 اختبارات وحدة مخصصة | `frontend/src/lib/canvas/element-alignment.ts` و `element-alignment.test.ts` (9/9 ناجح) ✅ |
+| ترحيل جزئي لاستيرادات `wailsjs` في الواجهة | ترحيل 7 خطافات/مكونات إلى `@bindings/grido/app` و `@bindings/grido/internal/**`، مع بقاء **41 إشارة في 33 ملفاً** على جسور `wailsjs/**` (منها `src/main.tsx` و`license-slice.ts`) — موثَّق صراحةً وغير مُستأصل | `grep -rn wailsjs frontend/src` = 41 إشارة / 33 ملفاً |
+| بوابات الجودة والتحقق الآلي | `typecheck` (0 أخطاء) · `lint` (0 تحذيرات) · اختبارات طباعة Vitest (118/118 ناجح) · `docs-gate.mjs --strict-refs` ✅ — ⚠️ المجموعة الكاملة وقتها كانت تُسقط 5 حالات في 3 ملفات (لم يُذكر في هذا الصف) وأُصلحت في جلسة 0.49 | 2026-10-08 |
 
 ---
 

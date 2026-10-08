@@ -1,11 +1,11 @@
-import { useEffect } from "react";
-import { useEditorStore, EditorState } from "@/lib/editor-store";
+import { useEffect } from 'react';
+import { useEditorStore, EditorState } from '@/lib/editor-store';
 
 type EditorStoreSnapshot = EditorState;
-import { debounce } from "@/lib/utils";
-import { deserializeProjectFile, serializeEditorState } from "@/lib/io/project-serializer";
-import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from "../../wailsjs/go/main/App";
-import { toast } from "sonner";
+import { debounce } from '@/lib/utils';
+import { deserializeProjectFile, serializeEditorState } from '@/lib/io/project-serializer';
+import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from '@bindings/grido/app';
+import { toast } from 'sonner';
 
 /**
  * هل مساحة العمل ما زالت كما وُلدت (لا عناصر، لا صور خانات، لا مشروع محمّل،
@@ -31,28 +31,33 @@ export function useAutoSave() {
         if (saved) {
           try {
             const parsed = deserializeProjectFile(JSON.parse(saved));
-            // 
+            //
             // 🛡️ حارس قِدم: التحميل غير متزامن — إن كان المستخدم قد بدأ التحرير
             // أو فتح مشروعاً/أعاد الضبط قبل وصول المسودة، فلا يحق لنا استبدال
             // حالته الحالية (كانت المسودة تطمس العمل الجديد بصمت).
             if (!isPristineWorkspace()) {
-              toast.info("تم تجاهل مسودة سابقة لأن العمل بدأ بالفعل", {
-                action: { label: "حذف المسودة", onClick: () => { ClearAutoSave(); } },
+              toast.info('تم تجاهل مسودة سابقة لأن العمل بدأ بالفعل', {
+                action: {
+                  label: 'حذف المسودة',
+                  onClick: () => {
+                    ClearAutoSave();
+                  },
+                },
               });
               return;
             }
             useEditorStore.getState().loadProject(parsed);
-            toast.info("تم استعادة مسودة العمل السابقة تلقائياً", {
+            toast.info('تم استعادة مسودة العمل السابقة تلقائياً', {
               action: {
-                label: "بدء من جديد",
+                label: 'بدء من جديد',
                 onClick: () => {
                   useEditorStore.getState().reset();
                   ClearAutoSave();
-                }
-              }
+                },
+              },
             });
           } catch (e) {
-            console.error("Failed to parse autosave data, clearing corrupt draft:", e);
+            console.error('Failed to parse autosave data, clearing corrupt draft:', e);
             try {
               await ClearAutoSave();
             } catch {
@@ -61,7 +66,7 @@ export function useAutoSave() {
           }
         }
       } catch (err) {
-        console.error("Failed to load autosave:", err);
+        console.error('Failed to load autosave:', err);
       }
     };
     initAutoSave();
@@ -69,7 +74,7 @@ export function useAutoSave() {
 
   // 2. المراقبة والحفظ التلقائي المنظم في الخلفية (بعد ثانيتين من توقف أي تفاعل)
   useEffect(() => {
-    let lastSavedString = "";
+    let lastSavedString = '';
     let isSaving = false;
     let pendingSaveState: string | null = null;
     let disposed = false;
@@ -86,7 +91,7 @@ export function useAutoSave() {
         await SaveAutoSave(stateString);
         lastSavedString = stateString;
       } catch (err) {
-        console.error("Failed to save draft:", err);
+        console.error('Failed to save draft:', err);
       } finally {
         isSaving = false;
         // السلسلة تفرّغ آخر مسودة معلّقة حتى بعد إلغاء التنشيط (كتابة نهائية
@@ -119,7 +124,7 @@ export function useAutoSave() {
         saveDraft(currentString);
       };
 
-      if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
         window.requestIdleCallback(() => runSave(), { timeout: 1000 });
       } else {
         // debounce سبق أن انتظر توقف التفاعل؛ لا نضيف مهمة صفّية إضافية.
@@ -131,16 +136,38 @@ export function useAutoSave() {
     const debouncedSave = debounce(handleStateChange, 2000);
 
     const getDeps = (state: EditorStoreSnapshot) => [
-      state.elements, state.slots, state.mode, state.canvasWidth, state.canvasHeight, state.backgroundColor,
+      state.elements,
+      state.slots,
+      state.mode,
+      state.canvasWidth,
+      state.canvasHeight,
+      state.backgroundColor,
       // 🎨 التدرج يُسلسل مع المشروع — بدون مراقبته لا تُحفظ تغييرات التدرج وحده
-      state.backgroundGradientColor2, state.backgroundGradientAngle,
-      state.template, state.collageTemplate, state.printSettings,
-      state.showGrid, state.gridSize, state.gridColor, state.gridOpacity, state.gridSubdivisions,
-      state.gridType, state.snapToGrid, // كانتا غير مراقبتين رغم أنهما تُسلسلان مع المشروع
-      state.showColumns, state.columnsCount, state.columnsColor, state.columnsMargin, state.columnsGutter,
-      state.collageGap, state.collageMargin, state.collageRadius, state.collageStrokeWidth, state.collageStrokeColor,
+      state.backgroundGradientColor2,
+      state.backgroundGradientAngle,
+      state.template,
+      state.collageTemplate,
+      state.printSettings,
+      state.showGrid,
+      state.gridSize,
+      state.gridColor,
+      state.gridOpacity,
+      state.gridSubdivisions,
+      state.gridType,
+      state.snapToGrid, // كانتا غير مراقبتين رغم أنهما تُسلسلان مع المشروع
+      state.showColumns,
+      state.columnsCount,
+      state.columnsColor,
+      state.columnsMargin,
+      state.columnsGutter,
+      state.collageGap,
+      state.collageMargin,
+      state.collageRadius,
+      state.collageStrokeWidth,
+      state.collageStrokeColor,
       // كانتا غير مراقبتين رغم أنهما تُسلسلان مع المشروع (نفس صنف إصلاح gridType/snapToGrid)
-      state.collageShowCutLines, state.collageShowEndCutLine
+      state.collageShowCutLines,
+      state.collageShowEndCutLine,
       // ملاحظة: showRuler تفضيل واجهة وليست بيانات مشروع (لا تُسلسل) — لذا استُبعدت من المراقبة
     ];
 
@@ -148,7 +175,7 @@ export function useAutoSave() {
 
     const unsubscribe = useEditorStore.subscribe((state) => {
       const currentDeps = getDeps(state);
-      
+
       let changed = false;
       for (let i = 0; i < currentDeps.length; i++) {
         if (currentDeps[i] !== lastDeps[i]) {

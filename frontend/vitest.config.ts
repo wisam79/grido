@@ -8,6 +8,7 @@ export default defineConfig({
     mainFields: ['module', 'jsnext:main', 'jsnext', 'main'],
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
+      { find: '@bindings', replacement: resolve(__dirname, './bindings') },
       { find: /^konva$/, replacement: resolve(__dirname, './node_modules/konva/lib/index.js') }
     ]
   },

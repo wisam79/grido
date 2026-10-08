@@ -10,6 +10,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **تنفيذ المرحلة الشاملة للإصلاح المعماري وترشيق المكونات وتوحيد الربطات (Architectural Refactoring & Modernization):**
+  - **المسار المستعار للربطات الرسمية (`@bindings/*`):** تفعيل المسار في `tsconfig.json` و `vite.config.ts` و `vitest.config.ts` لربط خدمات Wails v3 تلقائياً بدلاً من مسارات `wailsjs` اليدوية.
+  - **إصلاح مسجل الأخطاء للواجهة الأمامية (`frontend/src/lib/logger.ts`):** ربط أخطاء الواجهة بدالة Go `LogFrontendError` من `@bindings/grido/app` لضمان كتابة السجلات في نظام ويندوز وسطح المكتب.
+  - **ترصين جسر الرنتايم الرسمي (`frontend/wailsjs/runtime/runtime.ts`):** تحويل غلاف `@wailsio/runtime` إلى نسخة مطبوعة آمنة (`EventsOn/EventsOff/EventsEmit`، `WindowMinimise/WindowToggleMaximise/WindowIsMaximised/WindowGetSize/WindowSetPosition/SnapAssist`، `Quit`، `BrowserOpenURL`) مع بقاء التنفيذ داخل الجسر نفسه — بلا اعتماد معكوس على `src`، وبقاء الجسر نقطة الاستيراد الموحدة لمكونات الواجهة وفق `.agents/rules/backend-wails-runtime.md`.
+  - **تفكيك الملف العملاق `use-print-export.ts`:**
+    - استخراج تنسيقات الطباعة إلى `frontend/src/components/editor/print/print-page-style.ts`.
+    - استخراج النقل الشبكي وإدارة المهلات إلى `frontend/src/components/editor/print/print-transport.ts`.
+    - استخراج منشئ حمولات الطباعة إلى `frontend/src/components/editor/print/print-payload-builder.ts`.
+    - ترشيق الخطاف الأساسي بنسبة تفوق 46% (877 ← 469 سطراً) مع صيانة التوافق لاختبارات الوحدة الـ 118.
+  - **ترشيق `App.tsx` وتفكيك مسؤوليات الإقلاع والحوارات:**
+    - استخراج خطاف الإقلاع `frontend/src/hooks/use-app-bootstrap.ts` لنقل فحص التراخيص، جلب ملف البدء، تقارير الانهيار، وأحداث Wails v3 (`file-opened`, `native-file-drop`, `app:resume`).
+    - استخراج مضيف الحوارات `frontend/src/components/editor/workspace/app-dialogs-host.tsx` لتجميع حوارات التصدير والطباعة والترخيص والإشعارات.
+    - تقليص حجم `App.tsx` من 849 سطراً إلى 636 سطراً.
+  - **تفكيك دوال المحاذاة والتوزيع الرياضية من `element-slice.ts`:**
+    - استخراج خوارزميات المحاذاة والتوزيع النقية إلى `frontend/src/lib/canvas/element-alignment.ts`.
+    - إضافة 9 اختبارات وحدة مخصصة في `frontend/src/lib/canvas/element-alignment.test.ts` واجتيازها بنسبة 100%.
+  - **ترحيل جزئي لاستيرادات `wailsjs` في الواجهة (لا استئصال كامل):**
+    - ترحيل 7 خطافات/مكونات (`use-autosave`, `use-ai-enhance`, `use-bg-removal`, `use-face-frame`, `use-keyboard-shortcuts`, `error-boundary`, محرك `use-print-export`) إلى `@bindings/grido/app` و `@bindings/grido/internal/**`.
+    - **تبقى 41 إشارة في 33 ملفاً** داخل `frontend/src` على جسور `wailsjs/**` (منها `src/main.tsx` و`license-slice.ts` وملفات الحوارات والمعاينة) — إكمال الترحيل خارج نطاق هذه الجلسة.
+
 - **مايكرو-أنميشن التمدد الانسيابي وصقل الهوية البصرية لمكون `FluentSection` (Smooth Micro-Animations & Fluent Specular Elevation):**
   - دعم حركة انزلاق الارتفاع التلقائي الانسيابية (`height: auto`) عبر `framer-motion` (`AnimatePresence` و `motion.div`) بمنحنى زنبركي طبيعي مطابق لمعايير Microsoft Fluent 2 (`cubic-bezier(0.1, 0.9, 0.2, 1)`) بزمن 220ms للقضاء التام على القفز المفاجئ في الارتفاع.
   - صقل التشكيل البصري للقسم الموسّع مقابل المطوي وفق معايير Fluent Specular الفحمية المحايدة دون أي ألوان دخيلة: تمييز خفيف بالظل والحدود المضيئة عند الفتح، شارة أيقونة هادئة تتكيف مع حالة النشاط، وكبسولة تفاعلية مصغرة لسهم الطي (`w-6 h-6 rounded-md`) تدور بسلاسة مع تلميحات توجيهية.
@@ -32,6 +52,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - تغطية السيناريو باختبار وحدة في `frontend/test/print-dialog-backstage.test.tsx` (7/7 tests passed).
 
 ### Fixed
+- **استعادة سلوك محرك الطباعة بعد التفكيك وإصلاح محاكاة الاختبارات واستئصال الكود الميت (Restore Print Engine Behavior, Fix Binding Mocks & Remove Dead Code):**
+  - **صيغة الإخراج:** إعادة `exportFormat: 'jpeg'` في `frontend/src/components/editor/print/use-print-export.ts` بدل `'png'` — رمز PNG على ورقة 50MP أكبر 3-5× وأبطأ ترميزاً عدة مرات داخل WebView2 (انظر تعليق المسار في `internal/service/print_export.go`)، وكانت الكومتة `655a92e` قد اعتمدت JPEG لهذا السبب.
+  - **تنازل إطار الرسم:** إعادة `await new Promise((r) => requestAnimationFrame(() => r(null)))` قبل التقاط الكانفاس لمنع تجميد خيط الواجهة أثناء التقاط 50MP المتزامن.
+  - **خلفية الورقة:** إعادة `backgroundColor || previewWhite()` بدل `#FFFFFF` الثابتة لسلامة تصدير الكولاج بخلفية غير بيضاء.
+  - **حارس حدود الورقة:** إعادة فحص حدود الورقة قبل إرسال الطلب (نمط Go: `W/H ≤ ‏الورقة + 0.1mm`) مع فحص موضعي لأقصى امتداد (`farthestX`/`farthestY ≤ الورقة + 0.5mm`) ورسالة توجيهية بالعربية — Go يرفض تجاوز W/H لكنه لا يفحص الموضع، فالعنصر المُزاح خارج الورقة كان يُقصّ بصمت.
+  - **تسلسل الإنهاء الآمن:** استدعاء `onDone()` وتحرير `document.body.style.pointerEvents` **قبل** إطلاق `window.print()`، وتأجيل العرض 450ms بعد أنيميشن إغلاق Radix — مع إزالة قفل `pointer-events: none` المستحدث (لم يكن في السلوك المعتمد)، وإعادة نصوص أخطاء `فشل التصدير`/`حدث خطأ أثناء توليد ورقة الطباعة` وأرقام البكسل والميجابكسل في رسالة `CanvasTooLargeError`.
+  - **محاكاة الاختبارات:** مواءمة `vi.mock` مع هويات الوحدات الجديدة (`@bindings/grido/app` و`@bindings/grido/internal/handlers/printhandler`) في `frontend/test/use-autosave.test.ts` و`bg-worker.test.tsx` و`App.test.tsx` و`print-dialog-backstage.test.tsx` — كانت المحاكاة على مسار `wailsjs/**` لا تعترض شيئاً بعد الترحيل فتسقط 5 حالات بـ `ECONNREFUSED`.
+  - **الرنتايم:** إعادة تنفيذ الجسر إلى `frontend/wailsjs/runtime/runtime.ts` وحذف الغلاف المعكوس `frontend/src/lib/wails/runtime.ts` التزاماً بـ `.agents/rules/backend-wails-runtime.md` (الذي يوجب نقطة استيراد موحدة ومنع الاعتماد المعكوس).
+  - **استئصال الكود الميت:** حذف `frontend/src/lib/ui/dialog-coordinator.ts` (صفر مستوردين + نموذج حالة حوارات موازٍ غير مستخدم) التزاماً بقاعدة `No Unjustified Duplication`.
+  - **قفل عقد حمولة الطباعة (PrintRequest Contract Test):** ملف مخصص `frontend/test/print-export-payload.test.ts` يعترض `ExportPrintSheet` من الربطات المولدة ويثبّت `exportFormat: 'jpeg'` وخلفية الكانفاس (لا أبيض صلب) وأبعاد الورقة والعناصر وعلامات القص والاتجاه والاحتياطيات، ويقفل تسلسل الإنهاء الآمن وحارس حدود الورقة — وتم التحقق بحقن طفرة (Mutation): `jpeg → png` يُسقط حالة، وتثبيت الخلفية `#FFFFFF` يُسقط حالتين، ثم أُعيد الملف مطابقاً تماماً. وأصبح `handlePrint` يعيد وعد `executePrint` (بدل إهماله) ليتيح انتظار انتهاء الدورة دون تغيير سلوك زر الطباعة.
+  - **التحقق الفعلي:** `npm --prefix frontend run test` (106 ملفاً / 905 ناجحة + 1 متخطاة / 0 فاشلة) · `npm run typecheck` (0 أخطاء) · `npm run lint` (0 تحذيرات) · `node scripts/docs-gate.mjs --strict-refs` (يمر) · `go test ./...` (أخضر).
 - **منع تعليق أو تجمد نافذة حوار الطباعة وتحرير قفل مؤشر الفأرة (Prevent Print Dialog Deadlock & Pointer-Events Lock):**
   - إضافة `pointer-events-auto` إلى مكونات `DialogOverlay` و `DialogContent` و `DialogCloseButton` في `frontend/src/components/ui/dialog.tsx` لمنع وراثة خاصية `pointer-events: none` الصادرة من طبقات Radix DismissableLayer عند حدوث تعارض في الطبقات المتداخلة.
   - استحداث دالة `cancelExport` في `frontend/src/components/editor/print/use-print-export.ts` لزيادة `attemptRef.current++` فورياً لإبطال أي عمليات تصدير غير مكتملة، ومنع تشغيل الطباعة المتأخرة الزومبي، وتصفير مؤشر المهام في شريط ويندوز، وتحرير `document.body.style.pointerEvents`.

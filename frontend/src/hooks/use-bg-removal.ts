@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { toast } from "sonner";
-import { ApplyMaskToImage } from "../../wailsjs/go/main/App";
-import { preloadImageIntoCache } from "./use-async-image";
-import { useOperationStatusStore } from "@/lib/ui/operation-status";
-import { create } from "zustand";
+import { useEffect, useRef } from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import { toast } from 'sonner';
+import { ApplyMaskToImage } from '@bindings/grido/app';
+import { preloadImageIntoCache } from './use-async-image';
+import { useOperationStatusStore } from '@/lib/ui/operation-status';
+import { create } from 'zustand';
 
 interface BgRemovalState {
   isRemovingBg: boolean;
@@ -18,7 +18,7 @@ interface BgRemovalState {
 export const useBgRemovalState = create<BgRemovalState>((set) => ({
   isRemovingBg: false,
   bgProgress: 0,
-  bgProgressText: "",
+  bgProgressText: '',
   setIsRemovingBg: (val) => set({ isRemovingBg: val }),
   setBgProgress: (val) => set({ bgProgress: val }),
   setBgProgressText: (val) => set({ bgProgressText: val }),
@@ -70,19 +70,18 @@ const pendingBgRequests = new Map<number, PendingBgRequest>();
 
 function getWorker(): Worker {
   if (!workerInstance) {
-    workerInstance = new Worker(
-      new URL("../workers/bg-removal.worker.ts", import.meta.url),
-      { type: "module" }
-    );
+    workerInstance = new Worker(new URL('../workers/bg-removal.worker.ts', import.meta.url), {
+      type: 'module',
+    });
     // موزّع رسائل واحد ثابت — لا يُعاد تعيينه مع كل طلب جديد
     workerInstance.onmessage = (e: MessageEvent) => {
       const msg = e.data;
-      if (!msg || typeof msg.requestId !== "number") return;
+      if (!msg || typeof msg.requestId !== 'number') return;
       pendingBgRequests.get(msg.requestId)?.onMessage(msg);
     };
     workerInstance.onerror = (e) => {
       for (const pending of pendingBgRequests.values()) {
-        pending.onError(e.message || "فشل تشغيل عامل عزل الخلفية.");
+        pending.onError(e.message || 'فشل تشغيل عامل عزل الخلفية.');
       }
     };
   }
@@ -94,15 +93,19 @@ function terminateWorker() {
   pendingBgRequests.clear();
   busyRequestId = 0;
   if (workerInstance) {
-    try { workerInstance.terminate(); } catch { /* ignore */ }
+    try {
+      workerInstance.terminate();
+    } catch {
+      /* ignore */
+    }
     workerInstance = null;
   }
 }
 
 // تنظيف الـ Worker عند إغلاق التطبيق لتحرير ذاكرة WebGL فوراً
-if (typeof window !== "undefined") {
+if (typeof window !== 'undefined') {
   const handleBeforeUnload = () => terminateWorker();
-  window.addEventListener("beforeunload", handleBeforeUnload);
+  window.addEventListener('beforeunload', handleBeforeUnload);
 }
 
 /**
@@ -110,15 +113,15 @@ if (typeof window !== "undefined") {
  */
 export function warmupBgRemovalWorker() {
   try {
-    if (typeof window === "undefined" || typeof Worker === "undefined") return;
+    if (typeof window === 'undefined' || typeof Worker === 'undefined') return;
     const worker = getWorker();
     worker.postMessage({
-      type: "warmup",
+      type: 'warmup',
       wasmBaseUrl: `${window.location.origin}/wasm`,
       modelUrl: `${window.location.origin}/models/selfie_multiclass.tflite`,
     });
   } catch (err) {
-    console.debug("[useBgRemoval] Warmup skipped:", err);
+    console.debug('[useBgRemoval] Warmup skipped:', err);
   }
 }
 
@@ -151,9 +154,9 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
     terminateWorker();
     setIsRemovingBg(false);
     setBgProgress(0);
-    setBgProgressText("");
+    setBgProgressText('');
     useOperationStatusStore.getState().cancelActiveOperation();
-    toast.info("تم إلغاء العملية.");
+    toast.info('تم إلغاء العملية.');
   };
 
   const handleRemoveBg = async (element: BgRemovalElement) => {
@@ -162,31 +165,31 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
     // التحقق من صلاحية الترخيص
     const isLicenseActive = useEditorStore.getState().isLicenseActive;
     if (!isLicenseActive()) {
-      toast.error("ميزة عزل الخلفية متوفرة فقط في الخطة الاحترافية (Pro).", {
+      toast.error('ميزة عزل الخلفية متوفرة فقط في الخطة الاحترافية (Pro).', {
         action: {
-          label: "تفعيل الآن",
+          label: 'تفعيل الآن',
           onClick: () => {
             useEditorStore.getState().setAccountModalOpen(true);
-          }
-        }
+          },
+        },
       });
       return;
     }
 
     // القفل على مستوى الوحدة — أي مثيل Hook آخر يرى العملية الجارية
     if (busyRequestId !== 0) {
-      toast.warning("جاري العزل ...");
+      toast.warning('جاري العزل ...');
       return;
     }
 
-    if (typeof Worker === "undefined") {
-      toast.error("بيئة التشغيل الحالية لا تدعم Web Workers المطلوبة لعزل الخلفية.");
+    if (typeof Worker === 'undefined') {
+      toast.error('بيئة التشغيل الحالية لا تدعم Web Workers المطلوبة لعزل الخلفية.');
       return;
     }
 
     const opId = useOperationStatusStore.getState().startOperation({
-      type: "bg_removal",
-      title: "جاري عزل الخلفية ...",
+      type: 'bg_removal',
+      title: 'جاري عزل الخلفية ...',
       targetId: element.id,
       canCancel: true,
       onCancel: handleCancelBgRemoval,
@@ -194,7 +197,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
 
     setIsRemovingBg(true);
     setBgProgress(0);
-    setBgProgressText("جاري التهيئة ...");
+    setBgProgressText('جاري التهيئة ...');
 
     const requestId = nextRequestId++;
     busyRequestId = requestId;
@@ -209,7 +212,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
       if (busyRequestId === requestId) busyRequestId = 0;
       if (activeRequestRef.current === requestId) activeRequestRef.current = 0;
       setIsRemovingBg(false);
-      setBgProgressText("");
+      setBgProgressText('');
       setBgProgress(0);
     };
 
@@ -222,19 +225,19 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
       onMessage: async (msg: BgWorkerMessage) => {
         if (activeRequestRef.current !== requestId) return;
 
-        if (msg.type === "progress") {
+        if (msg.type === 'progress') {
           setBgProgress(msg.percent ?? 0);
-          setBgProgressText(msg.text ?? "");
+          setBgProgressText(msg.text ?? '');
           return;
         }
 
-        if (msg.type === "error") {
+        if (msg.type === 'error') {
           settle();
           toast.error(msg.message);
           return;
         }
 
-        if (msg.type === "result") {
+        if (msg.type === 'result') {
           const { maskBuffer, maskBase64, targetW, targetH, inferredMs } = msg.result as {
             maskBuffer?: ArrayBufferLike;
             maskBase64?: string;
@@ -246,28 +249,33 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
           // مؤشر «العزل» يبقى ظاهراً حتى تُطبَّق النتيجة وتُفكّضغط في كاش الصور،
           // وبعدها نُسقط المؤشر في نفس الإطار — فلا تظهر «فجوة» بينه وبين الكانفس.
           try {
-            setBgProgressText("جاري تجهيز الصورة ...");
+            setBgProgressText('جاري تجهيز الصورة ...');
             let localPath: string;
 
             if (maskBuffer) {
               // ⚡ نقل ثنائي مباشر وخام عبر الجسر فائق السرعة دون أي تشفير Base64
-              const url = `/api/apply-mask?src=${encodeURIComponent(element.imageSrc || "")}&w=${targetW}&h=${targetH}`;
+              const url = `/api/apply-mask?src=${encodeURIComponent(element.imageSrc || '')}&w=${targetW}&h=${targetH}`;
               const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/octet-stream" },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/octet-stream' },
                 body: maskBuffer as BodyInit,
               });
               if (!response.ok) {
                 const errText = await response.text();
-                throw new Error(errText || "فشل معالجة القناع الثنائي عبر الجسر");
+                throw new Error(errText || 'فشل معالجة القناع الثنائي عبر الجسر');
               }
               const data = await response.json();
               localPath = data.imageSrc;
             } else if (maskBase64) {
               // مسار احتياطي عبر Wails RPC في حال وصول Base64
-              localPath = await ApplyMaskToImage(element.imageSrc || "", maskBase64, targetW, targetH);
+              localPath = await ApplyMaskToImage(
+                element.imageSrc || '',
+                maskBase64,
+                targetW,
+                targetH,
+              );
             } else {
-              throw new Error("بيانات القناع مفقودة");
+              throw new Error('بيانات القناع مفقودة');
             }
 
             await preloadImageIntoCache(localPath);
@@ -279,18 +287,18 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
             }
             onUpdateRef.current(element.id, patch);
             useEditorStore.getState().pushHistory();
-            toast.success("تم عزل خلفية الصورة بنجاح");
+            toast.success('تم عزل خلفية الصورة بنجاح');
 
             // ⏱️ توثيق القياسات الفعلية بدلاً من القيم الثابتة (الاستدلال محلي — لا تكلفة سحابية)
             const totalSec = Math.round((performance.now() - startedAt) / 100) / 10;
             const user = useEditorStore.getState().user;
             useEditorStore.getState().logAiUsage({
-              email: user?.email || "unknown",
-              serviceName: "عزل الخلفية الذكي (AI Background Removal)",
-              source: "Grido Studio Desktop (Windows)",
+              email: user?.email || 'unknown',
+              serviceName: 'عزل الخلفية الذكي (AI Background Removal)',
+              source: 'Grido Studio Desktop (Windows)',
               durationSec: totalSec,
               costUsd: 0,
-              status: "success",
+              status: 'success',
             });
             modelCachedRef.current = true;
             if (inferredMs > 0) {
@@ -298,8 +306,8 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
               console.debug(`[BG-Removal] inference: ${inferredMs}ms, total: ${totalSec}s`);
             }
           } catch (err) {
-            console.error("Failed to apply background mask:", err);
-            toast.error("فشل تجهيز الصورة النهائية بعد العزل.");
+            console.error('Failed to apply background mask:', err);
+            toast.error('فشل تجهيز الصورة النهائية بعد العزل.');
           } finally {
             // إسقاط المؤشر بعد تطبيق النتيجة (أو فشلها) — يحدث التبديل في نفس الدفعة
             settle();
@@ -309,7 +317,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
     });
 
     worker.postMessage({
-      type: "segment",
+      type: 'segment',
       requestId,
       imageSrc: element.imageSrc,
       wasmBaseUrl: `${window.location.origin}/wasm`,

@@ -1,7 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { WarningOctagon } from '@/components/ui/icons';
-import { LogFrontendError } from '../../wailsjs/go/main/App';
+import { LogFrontendError } from '@bindings/grido/app';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('ErrorBoundary');

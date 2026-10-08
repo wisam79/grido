@@ -3,7 +3,7 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { toast } from 'sonner';
 import { CanvasElement, useEditorStore } from '@/lib/editor-store';
 import { getToolsForMode } from '@/lib/workspace-tools';
-import { SaveImageFromBase64 } from '../../wailsjs/go/main/App';
+import { SaveImageFromBase64 } from '@bindings/grido/app';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import {
