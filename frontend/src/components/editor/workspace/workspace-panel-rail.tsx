@@ -107,7 +107,7 @@ const RailToolButton = React.memo(function RailToolButton({
             <motion.span
               layoutId={pillLayoutId}
               className="absolute inset-0 bg-accent-active rounded-lg border border-border/80 shadow-2xs"
-              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              transition={{ duration: 0.12, ease: 'easeOut' }}
             />
           )}
 

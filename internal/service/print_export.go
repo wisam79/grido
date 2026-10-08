@@ -188,7 +188,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			}
 			defer af.Abort()
 			// ترميز متدفق مباشر مع حقن JFIF أثناء الكتابة (كان بلا حقن DPI أصلاً)
-			if err := jpeg.Encode(&dpiJPEGWriter{w: af, dpi: req.DPI}, cmykImg, &jpeg.Options{Quality: 95}); err != nil {
+			if err := jpeg.Encode(&dpiJPEGWriter{w: af, dpi: req.DPI}, cmykImg, &jpeg.Options{Quality: 90}); err != nil {
 				return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
 			}
 			if err := af.Commit(); err != nil {
@@ -280,7 +280,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			}
 			defer af.Abort()
 			// ترميز متدفق مباشر للقرص مع حقن JFIF أثناء الكتابة — بلا نسخة بايت وسيطة
-			if err := jpeg.Encode(&dpiJPEGWriter{w: af, dpi: req.DPI}, dc.Image(), &jpeg.Options{Quality: 95}); err != nil {
+			if err := jpeg.Encode(&dpiJPEGWriter{w: af, dpi: req.DPI}, dc.Image(), &jpeg.Options{Quality: 90}); err != nil {
 				return "", "", err
 			}
 			if err := af.Commit(); err != nil {

@@ -1,6 +1,6 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export interface FilterChipOption<T extends string = string> {
   id: T;
@@ -15,12 +15,12 @@ export interface FluentFilterChipsProps<T extends string = string> {
   value: T;
   onChange: (value: T) => void;
   options: FilterChipOption<T>[];
-  variant?: "subtle" | "tint" | "brand";
-  shape?: "rounded" | "pill";
-  size?: "sm" | "md";
+  variant?: 'subtle' | 'tint' | 'brand';
+  shape?: 'rounded' | 'pill';
+  size?: 'sm' | 'md';
   className?: string;
   layoutId?: string;
-  dir?: "rtl" | "ltr";
+  dir?: 'rtl' | 'ltr';
 }
 
 /**
@@ -31,12 +31,12 @@ export function FluentFilterChips<T extends string = string>({
   value,
   onChange,
   options,
-  variant = "subtle",
-  shape = "rounded",
-  size = "sm",
+  variant = 'subtle',
+  shape = 'rounded',
+  size = 'sm',
   className,
   layoutId,
-  dir = "rtl",
+  dir = 'rtl',
 }: FluentFilterChipsProps<T>) {
   const autoId = React.useId();
   const effectiveLayoutId = layoutId || `fluent-chips-${autoId}`;
@@ -46,15 +46,15 @@ export function FluentFilterChips<T extends string = string>({
       role="tablist"
       aria-orientation="horizontal"
       className={cn(
-        "flex items-center gap-1 bg-muted/70 dark:bg-black/40 p-1 rounded-xl border border-border/70 dark:border-white/10 fluent-specular shadow-inner overflow-x-auto scrollbar-none select-none min-w-0 max-w-full touch-pan-x",
-        className
+        'flex items-center gap-1 bg-muted/70 dark:bg-black/40 p-1 rounded-xl border border-border/70 dark:border-white/10 fluent-specular shadow-inner overflow-x-auto scrollbar-none select-none min-w-0 max-w-full touch-pan-x',
+        className,
       )}
       dir={dir}
     >
       {options.map((opt) => {
         const isActive = value === opt.id;
-        const radiusClass = shape === "pill" ? "rounded-full" : "rounded-md";
-        const isFullWidth = className?.includes("w-full") || className?.includes("justify-between");
+        const radiusClass = shape === 'pill' ? 'rounded-full' : 'rounded-md';
+        const isFullWidth = className?.includes('w-full') || className?.includes('justify-between');
 
         return (
           <button
@@ -65,30 +65,28 @@ export function FluentFilterChips<T extends string = string>({
             disabled={opt.disabled}
             onClick={() => onChange(opt.id)}
             className={cn(
-              "relative flex items-center justify-center transition-all duration-150 cursor-pointer whitespace-nowrap select-none active:scale-[0.98] z-10",
-              "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
-              isFullWidth ? "flex-1" : "shrink-0",
+              'relative flex items-center justify-center transition-all duration-150 cursor-pointer whitespace-nowrap select-none active:scale-[0.98] z-10',
+              'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+              isFullWidth ? 'flex-1' : 'shrink-0',
               radiusClass,
-              size === "sm"
-                ? "h-7 px-2.5 text-xs gap-1.5"
-                : "h-8 px-3 text-xs gap-2",
+              size === 'sm' ? 'h-7 px-2.5 text-xs gap-1.5' : 'h-8 px-3 text-xs gap-2',
               isActive
-                ? "text-foreground font-bold shadow-2xs"
-                : "text-muted-foreground hover:text-foreground font-medium",
-              opt.disabled && "opacity-40 cursor-not-allowed pointer-events-none"
+                ? 'text-foreground font-bold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground font-medium',
+              opt.disabled && 'opacity-40 cursor-not-allowed pointer-events-none',
             )}
           >
             {isActive && (
               <motion.div
                 layoutId={effectiveLayoutId}
                 className={cn(
-                  "absolute inset-0 -z-10 shadow-xs",
+                  'absolute inset-0 -z-10 shadow-xs',
                   radiusClass,
-                  variant === "brand"
-                    ? "bg-primary text-primary-foreground shadow-primary/25"
-                    : "bg-card border border-border/80 dark:border-white/15"
+                  variant === 'brand'
+                    ? 'bg-primary text-primary-foreground shadow-primary/25'
+                    : 'bg-card border border-border/80 dark:border-white/15',
                 )}
-                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                transition={{ duration: 0.12, ease: 'easeOut' }}
               />
             )}
 
@@ -97,10 +95,10 @@ export function FluentFilterChips<T extends string = string>({
             {opt.count !== undefined && (
               <span
                 className={cn(
-                  "text-micro font-mono px-1.5 py-0.2 rounded-full font-bold shrink-0 transition-colors border",
+                  'text-micro font-mono px-1.5 py-0.2 rounded-full font-bold shrink-0 transition-colors border',
                   isActive
-                    ? "bg-muted text-foreground border-border/70"
-                    : "bg-muted/50 text-muted-foreground border-border/40"
+                    ? 'bg-muted text-foreground border-border/70'
+                    : 'bg-muted/50 text-muted-foreground border-border/40',
                 )}
               >
                 {opt.count}

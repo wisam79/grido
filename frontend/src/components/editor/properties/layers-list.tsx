@@ -330,7 +330,7 @@ export function LayersList({ standalone = false }: LayersListProps = {}) {
 
   if (elements.length === 0) {
     return (
-      <div className="bg-input/40 border border-dashed border-border rounded-xl p-5 text-center select-none flex flex-col items-center justify-center space-y-2 animate-in fade-in duration-300">
+      <div className="bg-input/40 border border-dashed border-border rounded-xl p-5 text-center select-none flex flex-col items-center justify-center space-y-2 animate-in fade-in duration-100">
         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shadow-xs">
           <Stack className="w-4 h-4 opacity-80" weight="duotone" />
         </div>

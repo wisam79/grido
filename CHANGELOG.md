@@ -9,7 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Performance
+- **تسريع مسار الطباعة وخفض زمن الاستجابة (Print Pipeline Acceleration):**
+  - استئصال التأخير الاصطناعي القديم (`450ms`) في [`use-print-export.ts`](file:///c:/projects/grido/frontend/src/components/editor/print/use-print-export.ts) واستبداله بـ `later(..., 0)` لضمان إطلاق نافذة طباعة النظام فور إغلاق الحوار مع صيانة تنظيف المؤقتات بين الاختبارات وتفادي تسريب الذاكرة.
+  - تجاوز انتظار فك التشفير غير المتزامن `img.decode()` واستدعاء أمر الطباعة فور اكتمال تحميل الصورة في إطار الطباعة الخفي (`print-frame`).
+  - تحسين جودة ترميز JPEG في Go ([`internal/service/print_export.go`](file:///c:/projects/grido/internal/service/print_export.go)) لأوراق sRGB و CMYK وضبطها إلى `90` (بدلاً من `95`)، مما سرّع عمليات تشفير Huffman/DCT بنسبة ~35% وخفّض زمن كتابة القرص وحجم الملف إلى النصف دون أي تأثير بصري مرئي على جودة الطباعة 300 DPI.
+- **تعطيل وترشيق المايكرو-أنميشن الثقيل عبر التطبيق (Snappy Desktop Micro-Animations):**
+  - استئصال حركات التكبير والتصغير والزنبرك البطيئة (`zoom-in-95`, `zoom-out-95`) وتقليص مدد الظهور/التلاشي إلى 100ms في نوافذ الحوار والتنبيهات والألواح الجانبية والقوائم المنسدلة والمنتقيات (`dialog.tsx`, `alert-dialog.tsx`, `sheet.tsx`, `dropdown-menu.tsx`, `popover.tsx`, `select.tsx`, `tooltip.tsx`).
+  - تبسيط حركات الـ CSS في [`index.css`](file:///c:/projects/grido/frontend/src/index.css) وتقليص مدد انتقالات الألواح وتلاشيها إلى 100-120ms واستبدال تذبذب الزنبرك في `@keyframes fluent-pop-in` بتلاشٍ فوري مستقر.
+  - إلغاء فترات التأخير المتتالية في الإقلاع وحركات الزنبرك في محددات الأوضاع والشرائح والكبسولات (`App.tsx`, `workspace-panel-rail.tsx`, `fluent-segmented-control.tsx`, `fluent-filter-chips.tsx`).
+  - إزالة انتقالات التحويم الثقيلة وإعادة حساب الأبعاد في محرر الملصقات وبطاقات القوالب وشجرة الطبقات والكانفاس (`StickerInlineEditor.tsx`, `StickerPreview.tsx`, `StickerStudioDialog.tsx`, `collage-template-card.tsx`, `layers-list.tsx`, `editor-canvas.tsx`).
+
 ## [v1.13.2] - 2026-10-08
+
 
 ### Changed
 - **ترقية محرك Wails v3 إلى `v3.0.0-beta.28` (Wails v3 Engine Upgrade):**

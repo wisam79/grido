@@ -307,11 +307,7 @@ export function usePrintExport({
             clearTimeout(fallbackTimer);
             fallbackTimer = undefined;
           }
-          if (img.decode) {
-            img.decode().then(triggerPrint).catch(triggerPrint);
-          } else {
-            triggerPrint();
-          }
+          triggerPrint();
         };
         if (img.complete && img.naturalWidth > 0) {
           runPrint();
@@ -452,11 +448,10 @@ export function usePrintExport({
           document.body.style.pointerEvents = '';
         }
 
-        // 2. إطلاق حوار الطباعة بعد اكتمال أنيميشن إغلاق Radix (450ms) حتى لا يتجمد
-        // الـ overlay شبه المُغلق عند حجب خيط الـ UI بواسطة window.print()
+        // 2. إطلاق حوار الطباعة فور إغلاق النافذة (0ms بدل 450ms)
         later(() => {
           showPrintResult(result);
-        }, 450);
+        }, 0);
       } catch (err) {
         if (attempt !== attemptRef.current) return;
         SetTaskbarProgress(100, 'error').catch(() => {});

@@ -193,30 +193,11 @@ export default function App() {
         dir="rtl"
       >
         <div className="relative flex flex-col items-center max-w-xs text-center px-4">
-          <motion.div
-            initial={{ scale: 0.85, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.35, ease: [0.1, 0.9, 0.2, 1] }}
-            className="w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-2xl flex items-center justify-center mb-5 border border-primary/20 shadow-fluent-16 shadow-primary/10"
-          >
+          <div className="w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-2xl flex items-center justify-center mb-5 border border-primary/20 shadow-fluent-16 shadow-primary/10">
             <Spinner className="w-8 h-8 text-primary" size={32} />
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.35, ease: 'easeOut' }}
-            className="text-xl font-extrabold tracking-tight"
-          >
-            Grido Studio
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.35 }}
-            className="text-xs text-muted-foreground mt-1.5 font-medium"
-          >
-            جاري التهيئة ...
-          </motion.p>
+          </div>
+          <h1 className="text-xl font-extrabold tracking-tight">Grido Studio</h1>
+          <p className="text-xs text-muted-foreground mt-1.5 font-medium">جاري التهيئة ...</p>
         </div>
       </div>
     );
@@ -310,7 +291,7 @@ export default function App() {
                         <motion.span
                           layoutId="titlebar-mode-indicator"
                           className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
-                          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                          transition={{ duration: 0.12, ease: 'easeOut' }}
                         />
                       )}
 
@@ -345,7 +326,7 @@ export default function App() {
                         <motion.span
                           layoutId="titlebar-mode-indicator"
                           className="absolute inset-0 bg-background dark:bg-card border border-border/70 dark:border-white/10 rounded-md shadow-xs -z-10"
-                          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                          transition={{ duration: 0.12, ease: 'easeOut' }}
                         />
                       )}
                       <Image

@@ -326,7 +326,7 @@ export const EditorCanvas = React.memo(
           ref={innerRef}
           id="canvas-area"
           data-fit-mode={resolvedFitMode}
-          className="relative w-full h-full rounded-md overflow-hidden border border-black/10 dark:border-black/50 dark:ring-1 dark:ring-white/12 transition-shadow duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.6)] fluent-specular"
+          className="relative w-full h-full rounded-md overflow-hidden border border-black/10 dark:border-black/50 dark:ring-1 dark:ring-white/12 transition-shadow duration-150 shadow-[0_8px_30px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.6)] fluent-specular"
           style={{
             width: displayW,
             height: displayH,

@@ -105,7 +105,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             <div
               key={i}
               className={cn(
-                'absolute border rounded-md flex items-center justify-center overflow-hidden transition-all duration-300',
+                'absolute border rounded-md flex items-center justify-center overflow-hidden transition-colors duration-150',
                 isActive
                   ? 'bg-accent-active border-foreground/50'
                   : 'bg-card border-border group-hover:bg-accent/40 group-hover:border-border',
@@ -119,7 +119,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             >
               <Image
                 className={cn(
-                  'w-4 h-4 transition-transform duration-300 group-hover:scale-110',
+                  'w-4 h-4 transition-colors duration-150',
                   isActive
                     ? 'text-foreground'
                     : 'text-muted-foreground/45 group-hover:text-foreground/80',

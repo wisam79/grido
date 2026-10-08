@@ -154,7 +154,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
     : Math.max(12, active.y - estimateH);
 
   const shellClass =
-    'absolute z-40 bg-card/95 dark:bg-card/90 backdrop-blur-2xl border border-primary/40 rounded-xl shadow-fluent-16 p-3 animate-in fade-in zoom-in-95 duration-150 select-none text-start font-cairo';
+    'absolute z-40 bg-card/95 dark:bg-card/90 backdrop-blur-2xl border border-primary/40 rounded-xl shadow-fluent-16 p-3 animate-in fade-in duration-100 select-none text-start font-cairo';
 
   // ── Text Field Editor Popover ──
   if (activeField) {

@@ -327,7 +327,7 @@ export const StickerPreview = React.memo(function StickerPreview({
       <div
         ref={stageContainerRef}
         onClick={handleStageClick}
-        className="relative flex-1 min-h-0 w-full flex items-center justify-center p-6 overflow-hidden transition-all duration-300 fluent-specular"
+        className="relative flex-1 min-h-0 w-full flex items-center justify-center p-6 overflow-hidden fluent-specular"
         style={stageBackgroundStyle}
       >
         {/* Interaction Hint (Icon-Driven with Tooltip) */}
