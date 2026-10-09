@@ -265,6 +265,12 @@ export function usePrintExport({
           container.remove();
           if (typeof document !== 'undefined' && document.body) {
             document.body.style.pointerEvents = '';
+            const stuckContent = document.querySelector('[data-slot="dialog-content"]');
+            const stuckOverlay = document.querySelector('[data-slot="dialog-overlay"]');
+            if (stuckContent?.getAttribute('data-state') === 'closed') {
+              stuckContent.remove();
+              stuckOverlay?.remove();
+            }
           }
           window.focus();
         };
@@ -448,10 +454,15 @@ export function usePrintExport({
           document.body.style.pointerEvents = '';
         }
 
-        // 2. إطلاق حوار الطباعة فور إغلاق النافذة (0ms بدل 450ms)
+        // 2. إطلاق حوار الطباعة بعد اكتمال أنيميشن إغلاق Radix بالكامل (300ms).
+        // حرج جداً: window.print() في WebView2/Chromium هو استدعاء تجميدي تزامني (blocking modal)
+        // ويُطبّق @media print التي تفرض display: none على عناصر الصفحة عدا حاوية الطباعة.
+        // إذا انطلق window.print() أثناء حركة إغلاق Radix (duration-100)، يُلغي المتصفح أنيميشن
+        // الـ CSS فوراً دون إطلاق حدث animationend، فيعلق DialogContent في DOM كعنصر زومبي
+        // بعد إغلاق حوار الطباعة الأصلي وتصبح الواجهة مجمدة على "جاري تجهيز المعاينة ...".
         later(() => {
           showPrintResult(result);
-        }, 0);
+        }, 300);
       } catch (err) {
         if (attempt !== attemptRef.current) return;
         SetTaskbarProgress(100, 'error').catch(() => {});

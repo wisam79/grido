@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type Konva from 'konva';
 import {
   Dialog,
@@ -270,16 +270,26 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const hasContent =
     mode === 'collage' ? slots.some((s) => Boolean(s.imageSrc)) : elements.length > 0;
 
+  const handleDismiss = useCallback(() => {
+    cancelExport();
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.style.pointerEvents = '';
+      const stuckContent = document.querySelector('[data-slot="dialog-content"]');
+      const stuckOverlay = document.querySelector('[data-slot="dialog-overlay"]');
+      if (!open || stuckContent?.getAttribute('data-state') === 'closed') {
+        stuckContent?.remove();
+        stuckOverlay?.remove();
+      }
+    }
+    onOpenChange(false);
+  }, [cancelExport, onOpenChange, open]);
+
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (e.defaultPrevented) return;
-        cancelExport();
-        if (typeof document !== 'undefined' && document.body) {
-          document.body.style.pointerEvents = '';
-        }
-        onOpenChange(false);
+        handleDismiss();
       } else if (e.key === 'Enter' && !isExporting && hasContent) {
         if (e.defaultPrevented) return;
         const t = e.target as HTMLElement | null;
@@ -290,7 +300,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, isExporting, hasContent, onOpenChange, cancelExport, exporter]);
+  }, [open, isExporting, hasContent, handleDismiss, exporter]);
 
   useEffect(() => {
     exporter.setPrintInvocation({
@@ -301,12 +311,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
 
   useEffect(() => {
     if (!open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPreviewImageSrc('');
       return;
     }
 
     if (mode === 'collage') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewImageSrc('');
       return;
     }
@@ -433,14 +442,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     >
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[1060px] h-[92vh] sm:max-h-[860px] overflow-hidden flex flex-col border border-border dark:border-white/10 bg-card rounded-2xl shadow-fluent-28 p-0 gap-0 fluent-specular fluent-acrylic pointer-events-auto"
+        className="w-[96vw] sm:max-w-[1060px] h-[92vh] sm:max-h-[860px] overflow-hidden flex flex-col border border-border dark:border-white/10 bg-card rounded-2xl shadow-fluent-28 p-0 gap-0 fluent-specular fluent-acrylic pointer-events-auto data-[state=closed]:duration-75"
         dir="rtl"
         onEscapeKeyDown={(e) => {
           if (e.defaultPrevented) return;
-          cancelExport();
-          if (typeof document !== 'undefined' && document.body) {
-            document.body.style.pointerEvents = '';
-          }
+          handleDismiss();
         }}
         onPointerDownOutside={(e) => {
           if (isExporting) {
@@ -472,11 +478,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                cancelExport();
-                if (typeof document !== 'undefined' && document.body) {
-                  document.body.style.pointerEvents = '';
-                }
-                onOpenChange(false);
+                handleDismiss();
               }}
             />
           </div>
@@ -870,11 +872,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                cancelExport();
-                if (typeof document !== 'undefined' && document.body) {
-                  document.body.style.pointerEvents = '';
-                }
-                onOpenChange(false);
+                handleDismiss();
               }}
               className="h-8 px-4 text-xs font-semibold cursor-pointer rounded-lg hover:bg-muted/80"
             >
