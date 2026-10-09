@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, basename } from 'node:path';
 import {
   FOCUS_RING,
   SPACING_RAMP,
@@ -136,7 +136,7 @@ describe('UI Compliance Guard — طبقات z-index', () => {
     const uiDir = join(SRC, 'components/ui');
     const violations: string[] = [];
     for (const full of walkSource(uiDir)) {
-      const base = full.slice(full.lastIndexOf('\\') + 1);
+      const base = basename(full);
       if (OVERLAY_PRIMITIVES.has(base)) continue;
       const lines = readFileSync(full, 'utf-8').split('\n');
       lines.forEach((line, i) => {
