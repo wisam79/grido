@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAppVersion } from '../../lib/version';
 
 export function Footer() {
@@ -42,11 +43,12 @@ export function Footer() {
 
           {/* Column 3: Support & Legal */}
           <div className="md:col-span-4">
-            <h4 className="font-bold text-white text-xs mb-3">الدعم والأمان</h4>
+            <h4 className="font-bold text-white text-xs mb-3">الدعم والأمان والخصوصية</h4>
             <ul className="space-y-2">
               <li><a href="#faq" className="hover:text-white transition-colors">الأسئلة الشائعة وتفعيل الترخيص</a></li>
-              <li><a href="#pricing" className="hover:text-white transition-colors">شروط الرخصة وضمان الاسترجاع</a></li>
-              <li className="text-[#9E9E9E]">الخصوصية: 100% بدون خوادم سحابية خارجية</li>
+              <li><Link to="/privacy" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">سياسة الخصوصية (Privacy Policy)</Link></li>
+              <li><Link to="/terms" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">شروط الخدمة (Terms of Service)</Link></li>
+              <li className="text-[#9E9E9E]">الخصوصية: 100% معالجة محلية لصور الطباعة</li>
             </ul>
           </div>
         </div>

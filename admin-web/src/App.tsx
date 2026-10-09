@@ -5,6 +5,8 @@ import { FeedbackProvider } from './components/common/FeedbackProvider';
 
 // Lazy load the admin dashboard so it doesn't slow down the landing page
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
+const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
 
 export default function App() {
   return (
@@ -19,6 +21,8 @@ export default function App() {
         >
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
             <Route path="/admin/*" element={<AdminDashboard />} />
           </Routes>
         </Suspense>

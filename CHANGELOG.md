@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **صفحات سياسة الخصوصية وشروط الخدمة المتوافقة مع معايير Google OAuth (`admin-web`):** إنشاء صفحتي `PrivacyPolicy.tsx` و `TermsOfService.tsx` ثنائيتي اللغة (عربي/إنجليزي) لموقع `https://grido.cloud-ip.cc` مع توثيق امتثال كامل لسياسة بيانات مستخدمي خدمات Google API والـ Limited Use وحظر بيع البيانات وحق الحذف، وتوليد ملفات HTML ثابتة في `public/privacy/` و `public/terms/` لضمان قراءة سريعة من روبوتات التحقق التابعة لجوجل.
+
 ## [v1.14.1] - 2026-10-09
 
 ### Fixed
