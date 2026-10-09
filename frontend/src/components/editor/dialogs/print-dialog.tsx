@@ -339,17 +339,32 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       const gridLayers = stage.find('.grid-layer');
       const columnsLayers = stage.find('.columns-layer');
       const guideLayers = stage.find('.guides-layer, .guide-line, .user-guide-line');
+      const paperShadows = stage.find('.paper-shadow-rect');
+
+      const prevPos = { x: stage.x(), y: stage.y() };
+      const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
+      stage.position({ x: 0, y: 0 });
+      stage.scale({ x: 1, y: 1 });
+
       try {
+        const { canvasWidth: cw, canvasHeight: ch } = useEditorStore.getState();
+        const paperW = Math.max(cw || 1, 1);
+        const paperH = Math.max(ch || 1, 1);
         const targetWidth = 400;
-        const pRatio = Math.min(1, targetWidth / Math.max(stage.width(), 1));
+        const pRatio = Math.min(1, targetWidth / paperW);
 
         transformers.forEach((tr: Konva.Node) => tr.hide());
         gridLayers.forEach((gl: Konva.Node) => gl.hide());
         columnsLayers.forEach((cl: Konva.Node) => cl.hide());
         guideLayers.forEach((gl: Konva.Node) => gl.hide());
+        paperShadows.forEach((ps: Konva.Node) => ps.hide());
         stage.batchDraw();
 
         const previewUrl = stage.toDataURL({
+          x: 0,
+          y: 0,
+          width: paperW,
+          height: paperH,
           pixelRatio: pRatio,
           mimeType: 'image/jpeg',
           quality: 0.8,
@@ -374,6 +389,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         gridLayers.forEach((gl: Konva.Node) => gl.show());
         columnsLayers.forEach((cl: Konva.Node) => cl.show());
         guideLayers.forEach((gl: Konva.Node) => gl.show());
+        paperShadows.forEach((ps: Konva.Node) => ps.show());
+        stage.position(prevPos);
+        stage.scale(prevScale);
         stage.batchDraw();
       }
     };

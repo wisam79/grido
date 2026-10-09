@@ -46,12 +46,15 @@ export async function withHiddenOverlays<T>(
   // 🔲 لبنات الخلايا الفارغة إشارة واجهة لا محتوى مطبوع/مصدَّر: إخفاؤها يجعل
   // التقاط الطباعة يطابق مسار التصدير (الذي لا يرسم أي بديل للخلايا الفارغة)
   const slotPlaceholders = stage.find('.slot-placeholder') as unknown as KonvaNodeLike[];
+  // 📄 ظل الورقة المخصص لشاشة التحرير — يُخفى تماماً عند التصدير لتبقى الصورة نقية
+  const paperShadows = stage.find('.paper-shadow-rect') as unknown as KonvaNodeLike[];
 
   try {
     for (const tr of transformers) tr.hide();
     for (const gl of gridLayers) gl.hide();
     for (const cl of columnsLayers) cl.hide();
     for (const ph of slotPlaceholders) ph.hide();
+    for (const ps of paperShadows) ps.hide();
 
     stage.batchDraw();
 
@@ -61,6 +64,7 @@ export async function withHiddenOverlays<T>(
     for (const gl of gridLayers) gl.show();
     for (const cl of columnsLayers) cl.show();
     for (const ph of slotPlaceholders) ph.show();
+    for (const ps of paperShadows) ps.show();
 
     stage.batchDraw();
   }
@@ -137,6 +141,15 @@ export async function captureStageBlob(
 ): Promise<Blob | null> {
   const cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
 
+  // 🧭 في معمارية Viewport Canvas: الـ Stage يحمل إزاحة وزوم مؤقتين.
+  // نحفظ الموضع والمقياس ونعيدهما إلى (0,0) و scale=1 لحظياً أثناء الالتقاط لضمان
+  // التقاط الورقة بأبعادها المنطقية الأصلية بالضبط 1:1 وبلا أي انحراف عن المركز.
+  const prevPos = { x: stage.x(), y: stage.y() };
+  const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
+  stage.position({ x: 0, y: 0 });
+  stage.scale({ x: 1, y: 1 });
+  stage.batchDraw();
+
   try {
     const blob = await withHiddenOverlays(stage, targetPixelRatio, async () => {
       // 🛡️ حاجز الأمان الحقيقي هو حد الميجابكسل الكلي (assertExportablePixels
@@ -146,8 +159,7 @@ export async function captureStageBlob(
       const MAX_EXPORT_RATIO = 8;
       const safePixelRatio = Math.min(MAX_EXPORT_RATIO, Math.max(1, targetPixelRatio));
       // 🛡️ M15: التقاط منطقة الورقة بإحداثياتها المنطقية يجعل دقة التصدير
-      // ثابتة مهما كان مستوى التكبير على الشاشة. لو اعتمدنا على مقاس الـ Stage
-      // لخرج ملف 300DPI أكبر/أصغر بحسب زوم المستخدم لحظة التصدير.
+      // ثابتة مهما كان مستوى التكبير على الشاشة.
       const exportCanvas = captureRect
         ? stage.toCanvas({ ...captureRect, pixelRatio: safePixelRatio })
         : stage.toCanvas({ pixelRatio: safePixelRatio });
@@ -158,6 +170,9 @@ export async function captureStageBlob(
 
     return blob;
   } finally {
+    stage.position(prevPos);
+    stage.scale(prevScale);
+    stage.batchDraw();
     // إعادة كاش العناصر للعرض العادي على الشاشة للحفاظ على سلاسة الأداء وخفة الذاكرة
     restoreScreenCache(cachedNodes);
   }

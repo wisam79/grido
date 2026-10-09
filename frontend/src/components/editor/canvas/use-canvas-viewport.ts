@@ -1,38 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { clampZoomRaw } from '@/lib/canvas/zoom';
-
-/**
- * عتبة التزام الزوم: تغييرات العجلة الدقيقة (ضجيج لوحة اللمس) التي تقل عن
- * ~بكسل عرض واحد (Δz ≈ 1/boxW ≈ 0.001) ودون عتبة تسمية النسبة (0.5%) تُراكم
- * بلا التزام — فكل التزام يعيد حساب الملاءمة.
- */
-const ZOOM_COMMIT_EPSILON = 0.001;
-
-/**
- * مدّة استقرار إيماءة الزوم قبل «الخبز» (M15 من تدقيق 2026-10-08).
- * أثناء حركة العجلة يُطبَّق الزوم بـ CSS transform فقط — بلا أي إعادة تخصيص
- * لطبقات Konva ولا `layer.draw()` متزامن، فالإيماءة سلسة تماماً. وعند توقف
- * المستخدم تُثبَّت النتيجة في الـ Stage (ومقاسه وكثافة البكسل) بمرة واحدة،
- * فيعود الرسم بكامل حدّته دون أن ندفع ثمن re-raster في كل إطار.
- */
-const ZOOM_BAKE_DELAY_MS = 140;
-
-/** الأدوات الافتراضية للنافذة: وضع الخبز أثناء الاختبارات */
-const BAKE_DEBUG_KEY = 'grido-zoom-bake-debug';
-
-interface ZoomBakeMetrics {
-  /** عدد مرات إعادة تخصيص الـ Stage (خبز) لتتبع الانحدار */
-  bakes: number;
-  /** عدد إيماءات الزوم التي اكتفت بالـ CSS */
-  cssOnlyFrames: number;
-}
-
-declare global {
-  interface Window {
-    __gridoZoomBake?: ZoomBakeMetrics;
-  }
-}
+import { computeCanvasDisplay } from '@/lib/canvas/fit';
 
 /**
  * عناصر تستهلك مفتاح المسافة نيابة عن المستخدم: حقول الكتابة (تكتب مسافة)
@@ -56,126 +25,282 @@ export function isSpaceHandledByTarget(target: EventTarget | null): boolean {
 }
 
 /**
- * 🧭 منطق إطار عرض المحرر: زوم العجلة المحوري (Ctrl+Wheel) بمحور مؤشر ثابت،
- * والتحريك بزر السحب الأوسط أو مفتاح المسافة (Space-Pan).
- * 🛡️ معدل بالراف: عجلات متتالية تُدمج في إطار رسم واحد — كانت هذه الكتلة
- * مضمّنة في EditorCanvas.
+ * تقييد موضع الورقة لمنع التمرير اللانهائي وضياع الورقة في الفراغ:
+ * 1. في وضع التمرير بالعجلة (wheel): إن كانت الورقة تلائم الشاشة تُثبَّت في المنتصف،
+ *    وإن كانت أطول من الشاشة (زوم أو ملاءمة العرض) يُسمح بالتمرير بين أعلى وأسفل الورقة فقط.
+ * 2. في وضع التحريك الحر (freePan - مفتاح المسافة أو الزر الأوسط): يُسمح بحرية واسعة
+ *    مع ضمان بقاء جزء مريح (150px) من الورقة ظاهراً داخل الشاشة دائماً.
+ */
+export function clampStagePos(
+  pos: { x: number; y: number },
+  displayW: number,
+  displayH: number,
+  viewportW: number,
+  viewportH: number,
+  mode: 'wheel' | 'freePan' = 'freePan',
+): { x: number; y: number } {
+  if (mode === 'wheel') {
+    let x = pos.x;
+    let y = pos.y;
+
+    // 1. المحور الرأسي Y عند تدوير عجلة الفأرة العادية
+    if (displayH <= viewportH) {
+      // الورقة تلائم النافذة رأسياً: تثبيت في المنتصف تماماً
+      y = Math.round((viewportH - displayH) / 2);
+    } else {
+      // الورقة أطول من النافذة: التمرير بين أعلى وأسفل الورقة بهامش 40px
+      const minY = viewportH - displayH - 40;
+      const maxY = 40;
+      y = Math.max(minY, Math.min(maxY, y));
+    }
+
+    // 2. المحور الأفقي X عند تدوير عجلة الفأرة الأفقية / لوحة اللمس
+    if (displayW <= viewportW) {
+      // الورقة تلائم النافذة أفقياً: تثبيت في المنتصف تماماً
+      x = Math.round((viewportW - displayW) / 2);
+    } else {
+      // الورقة أعرض من النافذة: التمرير بين حافتيها بهامش 40px
+      const minX = viewportW - displayW - 40;
+      const maxX = 40;
+      x = Math.max(minX, Math.min(maxX, x));
+    }
+
+    return { x: Math.round(x), y: Math.round(y) };
+  }
+
+  // التحريك الحر بمفتاح المسافة (Free Pan):
+  // ضمان بقاء جزء كافٍ من الورقة مرئياً على الشاشة حتى لا تضيع في الفضاء الخارجي
+  const minVisible = Math.max(40, Math.min(150, Math.min(displayW, displayH) * 0.4));
+  const minX = minVisible - displayW;
+  const maxX = viewportW - minVisible;
+  const minY = minVisible - displayH;
+  const maxY = viewportH - minVisible;
+
+  return {
+    x: Math.round(Math.max(minX, Math.min(maxX, pos.x))),
+    y: Math.round(Math.max(minY, Math.min(maxY, pos.y))),
+  };
+}
+
+/**
+ * 🧭 useCanvasViewport — محرك Viewport الكانفاس الحقيقي (Figma-grade Canvas Engine)
+ *
+ * يدير إحداثيات وموضع مسرح الكانفاس (Stage Position & Scale) نسبةً لنافذة العرض الكاملة:
+ * 1. الـ Stage يملأ 100% من الحاوية ولا تتغير أبعاده مع الزوم (حماية VRAM من إعادة التخصيص).
+ * 2. التكبير والتصغير نسبي لنقطة المؤشر (Zooming Relative to Pointer) بتراكم أسي لحظي.
+ * 3. التحريك الحر عبر مفتاح المسافة (Space-Pan) مقيّد بحدود ذكية تمنع هروب الورقة نهائياً.
+ * 4. عجلة الفأرة العادية تمرر داخل حدود المستند فقط ولا تُحرّك الورقة إن كانت ملائمة للشاشة.
+ * 5. التوسيط مشتق رياضياً (Centered by Construction): الورقة تتوسط النافذة طبيعياً وبلا شلالات رندر.
  */
 export function useCanvasViewport(
   containerRef: RefObject<HTMLDivElement | null>,
-  innerRef: RefObject<HTMLDivElement | null>,
+  _innerRef?: RefObject<HTMLDivElement | null>,
 ) {
-  const prevZoomRef = useRef(useEditorStore.getState().canvasZoom);
-  const prevCanvasRectRef = useRef<DOMRect | null>(null);
-  const zoomPivotRef = useRef<{
-    pctX: number;
-    pctY: number;
-    screenX: number;
-    screenY: number;
-  } | null>(null);
-
-  // ── زوم الإيماءة اللحظي (CSS transform) + خبز بعد الاستقرار ──────────────
-  // المستودع يحتفظ بآخر قيمة مُثبَّتة فقط؛ القيمة المؤقتة تُعرض مباشرة على
-  // الغلاف وتُكتب في المتجر عند الاستقرار (أو فوراً عند الزوم بالأزرار).
+  const canvasWidth = useEditorStore((s) => s.canvasWidth);
+  const canvasHeight = useEditorStore((s) => s.canvasHeight);
   const canvasZoom = useEditorStore((s) => s.canvasZoom);
   const setCanvasZoom = useEditorStore((s) => s.setCanvasZoom);
-  const [gestureZoom, setGestureZoom] = useState<number | null>(null);
-  // مرآة قابلة للقراءة داخل مستمع العجلة (مُسجَّل مرة واحدة بمصفوفة تبعيات
-  // ثابتة) — بلا هذه يعود المستمع لفارق قديم في كل إطار.
-  const gestureZoomRef = useRef<number | null>(null);
-  // المزامنة في أثر لا أثناء التصيير (قاعدة react-hooks/refs) — المستمع
-  // يقرأها بعد الـ commit وقبل أي حدث لاحق، فلا يحتاج قيمة متزامنة مع الرسم.
-  useEffect(() => {
-    gestureZoomRef.current = gestureZoom;
-  }, [gestureZoom]);
-  const effectiveZoom = gestureZoom ?? canvasZoom;
+  const canvasFitMode = useEditorStore((s) => s.canvasFitMode);
+
+  const [viewportSize, setViewportSize] = useState({ w: 800, h: 600 });
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+
+  const aspect = canvasWidth / (canvasHeight || 1);
+
+  // أبعاد الورقة المعروضة حالياً وفق الوضع والزوم
+  const displayMetrics = computeCanvasDisplay({
+    containerW: viewportSize.w,
+    containerH: viewportSize.h,
+    aspect,
+    zoom: canvasZoom,
+    fitMode: canvasFitMode,
+    canvasW: canvasWidth,
+    canvasH: canvasHeight,
+  });
+
+  const { displayW, displayH, resolved: resolvedFitMode, leftoverRatio } = displayMetrics;
+
+  // إحداثيات الورقة في مساحة العمل مشتقة رياضياً: المركز التلقائي + إزاحة المستخدم (Pan)
+  const defaultCenterX = Math.round((viewportSize.w - displayW) / 2);
+  const defaultCenterY = Math.round((viewportSize.h - displayH) / 2);
+
+  const rawStagePos = {
+    x: defaultCenterX + pan.x,
+    y: defaultCenterY + pan.y,
+  };
+
+  // تقييد إحداثيات الورقة حتى لا تضيع في الفضاء الخارجي أبداً
+  const stagePos = clampStagePos(
+    rawStagePos,
+    displayW,
+    displayH,
+    viewportSize.w,
+    viewportSize.h,
+    'freePan',
+  );
+
+  const viewportSizeRef = useRef(viewportSize);
+  const displayWRef = useRef(displayW);
+  const displayHRef = useRef(displayH);
+  const stagePosRef = useRef(stagePos);
 
   useEffect(() => {
-    const spacePressedRef = { current: false };
-    const isPanningRef = { current: false };
+    viewportSizeRef.current = viewportSize;
+    displayWRef.current = displayW;
+    displayHRef.current = displayH;
+    stagePosRef.current = stagePos;
+  });
+
+  // 1. مراقبة أبعاد نافذة العرض الحقيقية عبر ResizeObserver
+  useEffect(() => {
     const node = containerRef.current;
     if (!node) return;
 
-    let pendingZoom: number | null = null;
-    let rafId: number | null = null;
-    let bakeTimer: ReturnType<typeof setTimeout> | null = null;
-
-    /** كتابة القيمة في المتجر وإعادة تخصيص الـ Stage (الخبز) */
-    const bakeZoom = (target: number) => {
-      bakeTimer = null;
-      const committed = useEditorStore.getState().canvasZoom;
-      if (Math.abs(target - committed) < ZOOM_COMMIT_EPSILON) {
-        setGestureZoom(null);
-        return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setViewportSize((prev) => {
+            if (Math.abs(prev.w - width) < 0.5 && Math.abs(prev.h - height) < 0.5) return prev;
+            return { w: Math.round(width), h: Math.round(height) };
+          });
+        }
       }
-      if (innerRef.current) {
-        const canvasRect = innerRef.current.getBoundingClientRect();
-        prevCanvasRectRef.current = canvasRect;
-        zoomPivotRef.current = {
-          pctX: (lastWheelClientX - canvasRect.left) / (canvasRect.width || 1),
-          pctY: (lastWheelClientY - canvasRect.top) / (canvasRect.height || 1),
-          screenX: lastWheelClientX,
-          screenY: lastWheelClientY,
-        };
-      }
-      setGestureZoom(null);
-      setCanvasZoom(target);
-      if (typeof window !== 'undefined' && BAKE_DEBUG_KEY) {
-        const m = (window.__gridoZoomBake ??= { bakes: 0, cssOnlyFrames: 0 });
-        m.bakes += 1;
-      }
-    };
+    });
 
-    const scheduleBake = (target: number) => {
-      if (bakeTimer !== null) clearTimeout(bakeTimer);
-      bakeTimer = setTimeout(() => bakeZoom(target), ZOOM_BAKE_DELAY_MS);
-    };
+    ro.observe(node);
+    const rect = node.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setViewportSize({ w: Math.round(rect.width), h: Math.round(rect.height) });
+    }
 
-    const applyZoom = () => {
-      rafId = null;
-      if (pendingZoom === null) return;
+    return () => ro.disconnect();
+  }, [containerRef]);
 
-      const newZoom = pendingZoom;
-      pendingZoom = null;
+  // 2. معالجة أحداث الفأرة (Wheel Zoom & Panning)
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
 
-      // 🛡️ M15: أثناء الإيماءة لا نكتب المتجر — نعرض الزوم بـ CSS فقط.
-      // كتابة المتجر كانت تُعيد حساب `computeCanvasDisplay` فتُغيّر مقاس
-      // الـ Stage ⇒ إعادة تخصيص backing store لكل طبقة + layer.draw() متزامن
-      // في كل إطار من العجلة (أثقل تكلفة في دورة التكبير).
-      setGestureZoom(newZoom);
-      if (typeof window !== 'undefined' && BAKE_DEBUG_KEY) {
-        const m = (window.__gridoZoomBake ??= { bakes: 0, cssOnlyFrames: 0 });
-        m.cssOnlyFrames += 1;
-      }
-      scheduleBake(newZoom);
-    };
-
-    let lastWheelClientX = 0;
-    let lastWheelClientY = 0;
+    const spacePressedRef = { current: false };
+    const isPointerPanningRef = { current: false };
 
     const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+
+      const vW = viewportSizeRef.current.w;
+      const vH = viewportSizeRef.current.h;
+
       if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        lastWheelClientX = e.clientX;
-        lastWheelClientY = e.clientY;
+        // زوم تتبع المؤشر (Zooming Relative to Pointer)
+        const rect = node.getBoundingClientRect();
+        const pointerX = e.clientX - rect.left;
+        const pointerY = e.clientY - rect.top;
 
-        const baseZoom =
-          pendingZoom ?? gestureZoomRef.current ?? useEditorStore.getState().canvasZoom;
+        const currentStagePos = stagePosRef.current;
+        const currentDisplayW = displayWRef.current || 1;
+        const currentDisplayH = displayHRef.current || 1;
+
+        const paperFracX = (pointerX - currentStagePos.x) / currentDisplayW;
+        const paperFracY = (pointerY - currentStagePos.y) / currentDisplayH;
+
         const factor = Math.exp(-e.deltaY * 0.003);
-        const newZoom = clampZoomRaw(baseZoom * factor);
+        const state = useEditorStore.getState();
+        const currentZ = state.canvasZoom;
+        const nextZ = clampZoomRaw(currentZ * factor);
 
-        // دون العتبة: راكم المرشّح بلا جدولة إطار — يحفظ سلاسة التراكم
-        // للقرص البطيء ويُسقط ضجيجاً لا يغيّر بكسلاً واحداً ولا التسمية
-        if (Math.abs(newZoom - baseZoom) < ZOOM_COMMIT_EPSILON) {
-          pendingZoom = newZoom;
-          return;
-        }
+        const nextMetrics = computeCanvasDisplay({
+          containerW: vW,
+          containerH: vH,
+          aspect: state.canvasWidth / (state.canvasHeight || 1),
+          zoom: nextZ,
+          fitMode: state.canvasFitMode,
+          canvasW: state.canvasWidth,
+          canvasH: state.canvasHeight,
+        });
 
-        pendingZoom = newZoom;
-        if (rafId === null) {
-          rafId = requestAnimationFrame(applyZoom);
-        }
+        const nextPaperX = pointerX - paperFracX * nextMetrics.displayW;
+        const nextPaperY = pointerY - paperFracY * nextMetrics.displayH;
+
+        const clamped = clampStagePos(
+          { x: nextPaperX, y: nextPaperY },
+          nextMetrics.displayW,
+          nextMetrics.displayH,
+          vW,
+          vH,
+          'freePan',
+        );
+
+        const newCenterX = Math.round((vW - nextMetrics.displayW) / 2);
+        const newCenterY = Math.round((vH - nextMetrics.displayH) / 2);
+
+        setPan({
+          x: clamped.x - newCenterX,
+          y: clamped.y - newCenterY,
+        });
+        setCanvasZoom(nextZ);
+      } else {
+        // تمرير عادي بعجلة الفأرة أو لوحة اللمس (Document Scroll with bounds)
+        const currentStagePos = stagePosRef.current;
+        const curW = displayWRef.current;
+        const curH = displayHRef.current;
+
+        const targetX = currentStagePos.x - e.deltaX;
+        const targetY = currentStagePos.y - e.deltaY;
+
+        const clamped = clampStagePos({ x: targetX, y: targetY }, curW, curH, vW, vH, 'wheel');
+
+        const curCenterX = Math.round((vW - curW) / 2);
+        const curCenterY = Math.round((vH - curH) / 2);
+
+        setPan({
+          x: clamped.x - curCenterX,
+          y: clamped.y - curCenterY,
+        });
       }
+    };
+
+    const handlePointerDown = (e: PointerEvent) => {
+      if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
+        e.preventDefault();
+        isPointerPanningRef.current = true;
+        setIsPanning(true);
+        node.style.cursor = 'grabbing';
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp, { once: true });
+      }
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (isPointerPanningRef.current) {
+        e.preventDefault();
+        const vW = viewportSizeRef.current.w;
+        const vH = viewportSizeRef.current.h;
+        const curW = displayWRef.current;
+        const curH = displayHRef.current;
+        const currentStagePos = stagePosRef.current;
+
+        const targetX = currentStagePos.x + e.movementX;
+        const targetY = currentStagePos.y + e.movementY;
+
+        const clamped = clampStagePos({ x: targetX, y: targetY }, curW, curH, vW, vH, 'freePan');
+
+        const curCenterX = Math.round((vW - curW) / 2);
+        const curCenterY = Math.round((vH - curH) / 2);
+
+        setPan({
+          x: clamped.x - curCenterX,
+          y: clamped.y - curCenterY,
+        });
+      }
+    };
+
+    const handlePointerUp = () => {
+      isPointerPanningRef.current = false;
+      setIsPanning(false);
+      node.style.cursor = spacePressedRef.current ? 'grab' : '';
+      window.removeEventListener('pointermove', handlePointerMove);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -191,125 +316,60 @@ export function useCanvasViewport(
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
         spacePressedRef.current = false;
-        node.style.cursor = '';
+        if (!isPointerPanningRef.current) {
+          node.style.cursor = '';
+        }
       }
     };
 
     const handleBlur = () => {
       spacePressedRef.current = false;
-      isPanningRef.current = false;
+      isPointerPanningRef.current = false;
+      setIsPanning(false);
       node.style.cursor = '';
-      window.removeEventListener('pointermove', handlePointerMove);
-    };
-
-    const handlePointerDown = (e: PointerEvent) => {
-      if (e.button === 1 || (e.button === 0 && spacePressedRef.current)) {
-        e.preventDefault();
-        e.stopPropagation();
-        isPanningRef.current = true;
-        node.style.cursor = 'grabbing';
-        window.addEventListener('pointermove', handlePointerMove);
-        window.addEventListener('pointerup', handlePointerUp, { once: true });
-      }
-    };
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (isPanningRef.current) {
-        e.preventDefault();
-        node.scrollLeft -= e.movementX;
-        node.scrollTop -= e.movementY;
-      }
-    };
-
-    const handlePointerUp = () => {
-      isPanningRef.current = false;
-      node.style.cursor = spacePressedRef.current ? 'grab' : '';
-      window.removeEventListener('pointermove', handlePointerMove);
     };
 
     node.addEventListener('wheel', handleWheel, { passive: false });
-    node.addEventListener('pointerdown', handlePointerDown, { capture: true });
+    node.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     window.addEventListener('blur', handleBlur);
 
-    // ملاحظة: حدث `grido:fit-canvas-to-screen` أُزيل — الملاءمة صارت وضعاً
-    // في المتجر (fit.ts) يُحدَّد من fitZoomStore/fitWidthZoomStore، فلم يعد
-    // هناك قياس DOM موازٍ يعيد اشتقاق حجم لم يتغيّر أصلاً.
-
     return () => {
-      // إيماءة لم تستقر بعد: نُخبزها قبل الخروج بدل أن تضيع بلا أثر
-      if (bakeTimer !== null) {
-        clearTimeout(bakeTimer);
-        if (pendingZoom !== null) {
-          setCanvasZoom(pendingZoom);
-        }
-      }
-      if (rafId !== null) cancelAnimationFrame(rafId);
       node.removeEventListener('wheel', handleWheel);
-      node.removeEventListener('pointerdown', handlePointerDown, { capture: true });
+      node.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      // إسقاط أي زوم إيماءة لم يُخبَز — الشاشة ترجع لقيمة المتجر المثبَّتة
-      setGestureZoom(null);
     };
-  }, [setCanvasZoom, containerRef, innerRef, gestureZoomRef]);
+  }, [containerRef, setCanvasZoom]);
 
-  // محافظة محور الزوم: تعيد المحور (pivot) لموضعه الشاشي بعد تغيّر الزوم
-  useLayoutEffect(() => {
-    if (canvasZoom !== prevZoomRef.current) {
-      if (containerRef.current && innerRef.current) {
-        const container = containerRef.current;
-        const canvas = innerRef.current;
-
-        const newCanvasRect = canvas.getBoundingClientRect();
-
-        if (zoomPivotRef.current) {
-          const { pctX, pctY, screenX, screenY } = zoomPivotRef.current;
-
-          const currentScreenX = newCanvasRect.left + pctX * newCanvasRect.width;
-          const currentScreenY = newCanvasRect.top + pctY * newCanvasRect.height;
-
-          container.scrollLeft += currentScreenX - screenX;
-          container.scrollTop += currentScreenY - screenY;
-
-          zoomPivotRef.current = null;
-        } else {
-          // التكبير بدون عجلة (أزرار الشريط واختصارات لوحة المفاتيح والقوائم):
-          // يحفظ النقطة البؤرية المعروضة حالياً في مركز مساحة الرؤية بدل إعادة التوسيط القسري للكانفس
-          const containerRect = container.getBoundingClientRect();
-          const screenX = containerRect.left + containerRect.width / 2;
-          const screenY = containerRect.top + containerRect.height / 2;
-          const oldCanvasRect = prevCanvasRectRef.current;
-
-          if (oldCanvasRect && oldCanvasRect.width > 0 && oldCanvasRect.height > 0) {
-            const pctX = (screenX - oldCanvasRect.left) / oldCanvasRect.width;
-            const pctY = (screenY - oldCanvasRect.top) / oldCanvasRect.height;
-
-            const currentScreenX = newCanvasRect.left + pctX * newCanvasRect.width;
-            const currentScreenY = newCanvasRect.top + pctY * newCanvasRect.height;
-
-            container.scrollLeft += currentScreenX - screenX;
-            container.scrollTop += currentScreenY - screenY;
-          } else {
-            const newCenterX = newCanvasRect.left + newCanvasRect.width / 2;
-            const newCenterY = newCanvasRect.top + newCanvasRect.height / 2;
-            container.scrollLeft += newCenterX - screenX;
-            container.scrollTop += newCenterY - screenY;
-          }
-        }
-        prevCanvasRectRef.current = newCanvasRect;
-      }
-      prevZoomRef.current = canvasZoom;
-    } else if (innerRef.current && !prevCanvasRectRef.current) {
-      prevCanvasRectRef.current = innerRef.current.getBoundingClientRect();
-    }
-  }, [canvasZoom, containerRef, innerRef]);
-
-  // القيمة الفعلية المعروضة الآن: زوم الإيماءة إن كانت جارية، وإلا المثبَّتة.
-  // يقرؤها المحرر لتحديد مقاس الورقة المرئي (المساطر، الشريط، غلاف CSS).
-  return { effectiveZoom };
+  return {
+    viewportSize,
+    stagePos,
+    displayW,
+    displayH,
+    effectiveZoom: canvasZoom,
+    stageScale: canvasWidth > 0 ? displayW / canvasWidth : 1,
+    resolvedFitMode,
+    leftoverRatio,
+    isPanning,
+    setStagePos: (
+      pos:
+        { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number }),
+    ) => {
+      const vW = viewportSize.w;
+      const vH = viewportSize.h;
+      const target = typeof pos === 'function' ? pos(stagePos) : pos;
+      const clamped = clampStagePos(target, displayW, displayH, vW, vH, 'freePan');
+      const curCenterX = Math.round((vW - displayW) / 2);
+      const curCenterY = Math.round((vH - displayH) / 2);
+      setPan({
+        x: clamped.x - curCenterX,
+        y: clamped.y - curCenterY,
+      });
+    },
+    resetPan: () => setPan({ x: 0, y: 0 }),
+  };
 }

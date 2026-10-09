@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import { Stage, Layer } from 'react-konva';
+import React, { useRef, useEffect, useMemo } from 'react';
+import { Stage, Layer, Rect } from 'react-konva';
 import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useEditorStore, CanvasElement } from '@/lib/editor-store';
@@ -7,23 +7,22 @@ import { useStageRef } from '@/lib/canvas/stage-context';
 import { SnapGuide } from '@/lib/canvas/snap-utils';
 import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
 import { useShallow } from 'zustand/react/shallow';
+import { checkerColor } from '@/lib/canvas/canvas-colors';
 import { registerDragLayer, registerDragExtrasProvider } from './drag-layer';
 import '@/lib/filters/custom-filters';
 
 import { KonvaBackgroundLayer } from './layers/konva-background-layer';
 import { KonvaCollageLayer } from './layers/konva-collage-layer';
 import { KonvaSingleLayer } from './layers/konva-single-layer';
+import { KonvaOverlayLayer } from './layers/konva-overlay-layer';
 
 interface KonvaCanvasProps {
+  viewportW: number;
+  viewportH: number;
+  stagePos: { x: number; y: number };
+  stageScale: number;
   displayW: number;
   displayH: number;
-  /** مقاس عنصر الـ Stage الثابت (zoom=1) — الزوم يُطبَّق بـ CSS transform */
-  stageW: number;
-  stageH: number;
-  /** مضاعف الزوم الحالي — يُستخدم لتحويل إحداثيات المؤشر وكثافة الكاش */
-  canvasZoom: number;
-  /** اتجاه الواجهة — يحدد نقطة الأصل عند التحجيم بالـ CSS */
-  dir?: 'rtl' | 'ltr';
   sortedElements: CanvasElement[];
   handleDoubleClick: (el: CanvasElement) => void;
   setActiveGuides: (guides: SnapGuide[]) => void;
@@ -33,12 +32,12 @@ interface KonvaCanvasProps {
 }
 
 export const KonvaCanvas = React.memo(function KonvaCanvas({
+  viewportW,
+  viewportH,
+  stagePos,
+  stageScale,
   displayW,
   displayH,
-  stageW,
-  stageH,
-  canvasZoom,
-  dir = 'rtl',
   sortedElements,
   handleDoubleClick,
   setActiveGuides,
@@ -55,36 +54,27 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const canvasHeight = useEditorStore((s) => s.canvasHeight);
 
   useEffect(() => {
-    // 🛡️ M15 + M34: كثافة البكسل تُحسب من المقياس الفعلي على الشاشة
-    // (مقاس الورقة المعروضة ÷ مقاسها المنطقي) × كثافة الجهاز × مضاعف الزوم.
-    // كانت ثابتة عند تركيب الوحدة فقط (min(dpr,2)) فلا تتبع تغيّر الزوم
-    // (فتبدو الصور ضبابية بعد التكبير) ولا تغيّر Device Pixel Ratio عند نقل
-    // النافذة إلى شاشة أخرى بمقياس تكبير مختلف.
+    // 🛡️ دستور كونفا وثبات الـ pixelRatio:
+    // تثبيت Konva.pixelRatio = Math.min(window.devicePixelRatio || 1, 2) عند تركيب
+    // المكون فقط ومنع إعادة حسابه ديناميكياً مع حركات الزوم لتجنب التقطيع وإعادة تخصيص أسطح الرسم في VRAM.
     const applyPixelRatio = () => {
       const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-      const baseScale = canvasWidth > 0 ? stageW / canvasWidth : 1;
-      const zoom = canvasZoom > 0 ? canvasZoom : 1;
-      // سقف 4 يمنع انفجار VRAM (طبق أسطح مزدوجة × 5 طبقات) مع بقاء 300DPI
-      // محفوظاً: الورقات الكبيرة على شاشات 2× تبقى داخل الميزانية.
-      const ratio = Math.max(1, Math.min(4, baseScale * dpr * zoom));
-      Konva.pixelRatio = ratio;
+      Konva.pixelRatio = Math.max(1, Math.min(2, dpr));
     };
 
     applyPixelRatio();
 
-    const onDpiChange = () => applyPixelRatio();
     if (typeof window !== 'undefined' && window.matchMedia) {
-      // مستمع دقيق: يتغيّر حين ينتقل المستخدم لشاشة بمقياس مختلف
-      const dpr1 = window.matchMedia(`(resolution: 1dppx)`);
+      const dpr1 = window.matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
       try {
-        dpr1.addEventListener('change', onDpiChange);
-        return () => dpr1.removeEventListener('change', onDpiChange);
+        dpr1.addEventListener('change', applyPixelRatio);
+        return () => dpr1.removeEventListener('change', applyPixelRatio);
       } catch {
-        // متصفحات قديمة — نكتفي بالحساب عند تغيّر الزوم
+        // متصفحات قديمة
       }
     }
     return undefined;
-  }, [stageW, canvasWidth, canvasZoom]);
+  }, []);
 
   // تنظيف مؤقتات تحديثات زوم الخانات (منقول من الأثر القديم أعلاه)
   useEffect(() => {
@@ -248,19 +238,32 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     height: 0,
   });
 
+  const checkerPattern = useMemo(() => {
+    if (typeof document === 'undefined') return undefined;
+    const canvas = document.createElement('canvas');
+    canvas.width = 20;
+    canvas.height = 20;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 20, 20);
+      ctx.fillStyle = checkerColor();
+      ctx.fillRect(0, 0, 10, 10);
+      ctx.fillRect(10, 10, 10, 10);
+    }
+    return canvas;
+  }, []);
+
   const getLogicalPointerPos = React.useCallback(
     (stage: Konva.Stage): { x: number; y: number } | null => {
       const pos = stage.getPointerPosition();
       if (!pos) return null;
-      // 🛡️ M15: الـ Stage أصبح داخل غلاف عليه `transform: scale(canvasZoom)`،
-      // و`getPointerPosition()` يقرأ `getBoundingClientRect()` الذي يُرجع الحدود
-      // البصرية بعد التحجيم. لذلك نقسم على مضاعف الـ CSS قبل عكس تحويل Konva
-      // لتصبح الإحداثيات في فضاء الورقة المنطقي.
-      const zoom = canvasZoom > 0 ? canvasZoom : 1;
+      // 🧭 في معمارية Viewport Canvas: الـ Stage يملأ النافذة ويحمل إزاحته ومقياسه مباشرة.
+      // عكس مصفوفة تحويل المسرح تعيد إحداثيات المؤشر إلى الفضاء المنطقي الدقيق للورقة O(1).
       const transform = stage.getAbsoluteTransform().copy().invert();
-      return transform.point({ x: pos.x / zoom, y: pos.y / zoom });
+      return transform.point(pos);
     },
-    [canvasZoom],
+    [],
   );
 
   const finishMarquee = React.useCallback(
@@ -579,127 +582,137 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     return cached;
   }, []);
 
-  // 🛡️ M15 من تدقيق 2026-10-08: الزوم بـ CSS transform لا بتغيير مقاس الـ Stage.
-  // الغلاف الخارجي يحجز المساحة البصرية الصحيحة (displayW×displayH) حتى تعمل
-  // أصابع التمرير والتوسيط، والغلاف الداخلي يُكبّر الـ Stage بـ transform.
-  // الأصل يبدأ من أعلى اليمين في RTL (نقطة بداية الورقة في الواجهة العربية).
-  const transformOrigin = dir === 'rtl' ? 'top right' : 'top left';
-
   return (
-    <div
-      style={{ width: displayW, height: displayH, position: 'relative' }}
-      data-testid="canvas-visual-box"
+    <Stage
+      width={viewportW}
+      height={viewportH}
+      x={stagePos.x}
+      y={stagePos.y}
+      scaleX={stageScale}
+      scaleY={stageScale}
+      onMouseDown={handleStageMouseDown}
+      onTouchStart={handleStageMouseDown as unknown as (e: KonvaEventObject<TouchEvent>) => void}
+      onMouseMove={handleStageMouseMove}
+      onTouchMove={handleStageMouseMove as unknown as (e: KonvaEventObject<TouchEvent>) => void}
+      onMouseUp={handleStageMouseUp}
+      onTouchEnd={handleStageMouseUp as unknown as (e: KonvaEventObject<TouchEvent>) => void}
+      dragDistance={5}
+      onContextMenu={(e) => {
+        e.evt.preventDefault();
+        onContextMenu?.(e);
+      }}
+      ref={(stage) => {
+        stageContextRef.current = stage;
+        // 🧪 DEV-only: مقبض اختبار E2E لفحص المحوّل (يُزال من الإنتاج بالتقسيم الميت)
+        if (import.meta.env.DEV && typeof window !== 'undefined') {
+          (window as unknown as { __gridoStage?: Konva.Stage | null }).__gridoStage = stage;
+        }
+      }}
     >
-      <div
-        style={{
-          width: stageW,
-          height: stageH,
-          transform: `scale(${canvasZoom > 0 ? canvasZoom : 1})`,
-          transformOrigin,
-          // تفادي فراغات تحت-بكسلية بسبب التقسيم الكسري للمقاس
-          position: 'absolute',
-          top: 0,
-          ...(dir === 'rtl' ? { right: 0 } : { left: 0 }),
-        }}
-        data-testid="canvas-stage-scaler"
-        data-canvas-zoom={canvasZoom}
-      >
-        <Stage
-          width={stageW}
-          height={stageH}
-          scaleX={stageW / canvasWidth}
-          scaleY={stageH / canvasHeight}
-          onMouseDown={handleStageMouseDown}
-          onTouchStart={
-            handleStageMouseDown as unknown as (e: KonvaEventObject<TouchEvent>) => void
+      {/* 📄 طبقة ظل الورقة والخلفية الأساسية */}
+      <Layer listening={false}>
+        <Rect
+          name="paper-shadow-rect"
+          x={0}
+          y={0}
+          width={canvasWidth}
+          height={canvasHeight}
+          fill={backgroundColor === 'transparent' ? undefined : '#ffffff'}
+          fillPatternImage={
+            backgroundColor === 'transparent'
+              ? (checkerPattern as unknown as HTMLImageElement)
+              : undefined
           }
-          onMouseMove={handleStageMouseMove}
-          onTouchMove={handleStageMouseMove as unknown as (e: KonvaEventObject<TouchEvent>) => void}
-          onMouseUp={handleStageMouseUp}
-          onTouchEnd={handleStageMouseUp as unknown as (e: KonvaEventObject<TouchEvent>) => void}
-          dragDistance={5}
-          onContextMenu={(e) => {
-            e.evt.preventDefault();
-            onContextMenu?.(e);
-          }}
-          ref={(stage) => {
-            stageContextRef.current = stage;
-            // 🧪 DEV-only: مقبض اختبار E2E لفحص المحوّل (يُزال من الإنتاج بالتقسيم الميت)
-            if (import.meta.env.DEV && typeof window !== 'undefined') {
-              (window as unknown as { __gridoStage?: Konva.Stage | null }).__gridoStage = stage;
-            }
-          }}
-        >
-          <KonvaBackgroundLayer
-            canvasWidth={canvasWidth}
-            canvasHeight={canvasHeight}
-            backgroundColor={backgroundColor}
-            backgroundGradientColor2={backgroundGradientColor2}
-            backgroundGradientAngle={backgroundGradientAngle}
-            mode={mode}
-            showGrid={showGrid}
-            gridSize={gridSize}
-            gridColor={gridColor}
-            gridOpacity={gridOpacity}
-            gridSubdivisions={gridSubdivisions}
-            gridType={gridType}
-            showColumns={showColumns}
-            columnsMargin={columnsMargin}
-            columnsGutter={columnsGutter}
-            columnsCount={columnsCount}
-            columnsColor={columnsColor}
-          />
+          shadowColor="rgba(0, 0, 0, 0.28)"
+          shadowBlur={24 / stageScale}
+          shadowOffset={{ x: 0, y: 8 / stageScale }}
+          shadowOpacity={0.35}
+          perfectDrawEnabled={false}
+        />
+      </Layer>
 
-          {mode === 'collage' && (
-            <KonvaCollageLayer
-              slots={slots}
-              canvasWidth={canvasWidth}
-              canvasHeight={canvasHeight}
-              collageMargin={collageMargin}
-              collageGap={collageGap}
-              collageRadius={collageRadius}
-              collageStrokeWidth={collageStrokeWidth}
-              collageStrokeColor={collageStrokeColor}
-              collageShowCutLines={collageShowCutLines}
-              collageShowEndCutLine={collageShowEndCutLine}
-              collageTemplate={collageTemplate}
-              selectedId={selectedId}
-              handleSlotClick={handleSlotClick}
-              handleSlotDblClick={handleSlotDblClick}
-              handleSlotWheel={handleSlotWheel}
-              updateSlot={updateSlot}
-              pushHistory={pushHistory}
-            />
-          )}
+      <KonvaBackgroundLayer
+        canvasWidth={canvasWidth}
+        canvasHeight={canvasHeight}
+        backgroundColor={backgroundColor}
+        backgroundGradientColor2={backgroundGradientColor2}
+        backgroundGradientAngle={backgroundGradientAngle}
+        mode={mode}
+        showGrid={showGrid}
+        gridSize={gridSize}
+        gridColor={gridColor}
+        gridOpacity={gridOpacity}
+        gridSubdivisions={gridSubdivisions}
+        gridType={gridType}
+        showColumns={showColumns}
+        columnsMargin={columnsMargin}
+        columnsGutter={columnsGutter}
+        columnsCount={columnsCount}
+        columnsColor={columnsColor}
+      />
 
-          {mode === 'single' && (
-            <KonvaSingleLayer
-              sortedElements={sortedElements}
-              selectedIds={selectedIds}
-              canvasWidth={canvasWidth}
-              canvasHeight={canvasHeight}
-              displayW={displayW}
-              snapToGrid={snapToGrid}
-              gridSize={gridSize}
-              trRef={trRef}
-              elementsRefs={elementsRefs}
-              altPressedRef={altPressedRef}
-              shiftPressedRef={shiftPressedRef}
-              setActiveGuides={setActiveGuides}
-              handleDoubleClick={handleDoubleClick}
-              handleElementChange={handleElementChange}
-              createElementMouseDown={createElementMouseDown}
-              createElementClick={createElementClick}
-              createElementRef={createElementRef}
-              marqueeRectRef={marqueeRectRef}
-            />
-          )}
+      {mode === 'collage' && (
+        <KonvaCollageLayer
+          slots={slots}
+          canvasWidth={canvasWidth}
+          canvasHeight={canvasHeight}
+          collageMargin={collageMargin}
+          collageGap={collageGap}
+          collageRadius={collageRadius}
+          collageStrokeWidth={collageStrokeWidth}
+          collageStrokeColor={collageStrokeColor}
+          collageShowCutLines={collageShowCutLines}
+          collageShowEndCutLine={collageShowEndCutLine}
+          collageTemplate={collageTemplate}
+          selectedId={selectedId}
+          handleSlotClick={handleSlotClick}
+          handleSlotDblClick={handleSlotDblClick}
+          handleSlotWheel={handleSlotWheel}
+          updateSlot={updateSlot}
+          pushHistory={pushHistory}
+        />
+      )}
 
-          {/* 🚀 طبقة السحب الرسمية (Konva drag-layer pattern): تستقبل العقدة
-          المسحوبة أثناء السحب فقط، فتُرسم عقدة واحدة لا الطبقة كاملة. */}
-          <Layer ref={handleDragLayerRef} listening={false} />
-        </Stage>
-      </div>
-    </div>
+      {mode === 'single' && (
+        <KonvaSingleLayer
+          sortedElements={sortedElements}
+          selectedIds={selectedIds}
+          canvasWidth={canvasWidth}
+          canvasHeight={canvasHeight}
+          snapToGrid={snapToGrid}
+          gridSize={gridSize}
+          elementsRefs={elementsRefs}
+          altPressedRef={altPressedRef}
+          shiftPressedRef={shiftPressedRef}
+          setActiveGuides={setActiveGuides}
+          handleDoubleClick={handleDoubleClick}
+          handleElementChange={handleElementChange}
+          createElementMouseDown={createElementMouseDown}
+          createElementClick={createElementClick}
+          createElementRef={createElementRef}
+        />
+      )}
+
+      {/* 🛠️ طبقة الأدوات والتفاعل العلوية: تفصل المحوّل ومستطيل التحديد
+      عن طبقة المحتوى لمنع إعادة رسم الصور والنصوص أثناء التحجيم وسحب التحديد */}
+      {mode === 'single' && (
+        <KonvaOverlayLayer
+          selectedIds={selectedIds}
+          sortedElements={sortedElements}
+          canvasWidth={canvasWidth}
+          canvasHeight={canvasHeight}
+          displayW={displayW}
+          trRef={trRef}
+          elementsRefs={elementsRefs}
+          altPressedRef={altPressedRef}
+          setActiveGuides={setActiveGuides}
+          marqueeRectRef={marqueeRectRef}
+        />
+      )}
+
+      {/* 🚀 طبقة السحب الرسمية (Konva drag-layer pattern): تستقبل العقدة
+      المسحوبة أثناء السحب فقط، فتُرسم عقدة واحدة لا الطبقة كاملة. */}
+      <Layer ref={handleDragLayerRef} listening={false} />
+    </Stage>
   );
 });

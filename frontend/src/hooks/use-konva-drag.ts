@@ -148,13 +148,13 @@ export function useKonvaDrag({
     // المعادة في setAbsolutePosition. المغناطيس والحدود معرّفة بوحدات الكانفس
     // المنطقية — لذا نحوّل للفضاء المنطقي أولاً ثم نعيد الناتج للمطلق.
     const stage = getKonvaNode(element.id)?.getStage();
-    // 🛡️ M15: الـ Stage يُغلَّف بـ `transform: scale(cssZoom)`، فإحداثيات Konva
-    // المطلقة تأتي مضروبةً بالزوم البصري فوق مقياس الـ Stage. القسمة على
-    // الحاصلين معاً يعيد الإحداثية لفضاء الكانفس المنطقي.
-    const stageScale = stage?.scaleX() || 1;
-    const cssZoom = canvasZoom > 0 ? canvasZoom : 1;
-    let xLogical = pos.x / stageScale / cssZoom;
-    let yLogical = pos.y / stageScale / cssZoom;
+    // 🧭 في معمارية Viewport Canvas (الخيار ب): الـ Stage يملأ النافذة ويحمل إزاحة (stageX/stageY)
+    // ومقياس (stageScale). نحول الإحداثي المطلق القادم من Konva إلى الفضاء المنطقي الدقيق للورقة.
+    const stageScale = stage?.scaleX?.() || 1;
+    const stageX = typeof stage?.x === 'function' ? stage.x() : 0;
+    const stageY = typeof stage?.y === 'function' ? stage.y() : 0;
+    let xLogical = (pos.x - stageX) / stageScale;
+    let yLogical = (pos.y - stageY) / stageScale;
 
     // قفل المحاور عند الضغط على Shift (Axis Lock: Horizontal or Vertical)
     if (shiftPressedRef?.current && dragStartPositionsRef.current[element.id]) {
@@ -230,7 +230,10 @@ export function useKonvaDrag({
     xLogical = clampedVisualX - vBox.offsetX;
     yLogical = clampedVisualY - vBox.offsetY;
 
-    return { x: xLogical * stageScale, y: yLogical * stageScale };
+    return {
+      x: stageX + xLogical * stageScale,
+      y: stageY + yLogical * stageScale,
+    };
   };
 
   const onDragMove = (e: KonvaEventObject<DragEvent>) => {

@@ -13,8 +13,7 @@ import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from './canvas-
 import { TextEditingOverlay } from './text-editing-overlay';
 import { CanvasContextMenu } from './canvas-context-menu';
 import { CanvasQuickBar } from './canvas-quick-bar';
-import { checkerColor, guideCenter, guideEdge } from '@/lib/canvas/canvas-colors';
-import { computeCanvasDisplay } from '@/lib/canvas/fit';
+import { guideCenter, guideEdge } from '@/lib/canvas/canvas-colors';
 import { publishCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
 import { useCanvasViewport } from './use-canvas-viewport';
 import { useUserGuides, snapGuidePosToPixel } from './use-user-guides';
@@ -98,46 +97,27 @@ export const EditorCanvas = React.memo(
     const slots = useEditorStore((s) => s.slots);
     const canvasFitMode = useEditorStore((s) => s.canvasFitMode);
 
-    // 🧭 منطق الزوم والتحريك (كان مضمّناً في هذا الملف)
-    // 🛡️ M15: `effectiveZoom` يتبع إيماءة العجلة فوراً (CSS transform) بينما
-    // `canvasZoom` في المتجر هو القيمة المثبَّتة بعد الاستقرار. تمرير الفعّال
-    // يمنع المساطر والشريط السفلي من التأخر عن الحركة، ومقاس الـ Stage يبقى
-    // ثابتاً لأنه لا يعتمد على الزوم أصلاً.
-    const { effectiveZoom: viewportZoom } = useCanvasViewport(containerRef, innerRef);
-    const effectiveZoom = viewportZoom ?? canvasZoom;
-
-    // حجم العرض التقديري لحساب أبعاد الورقة (يُستخدم أيضاً كتبعية لقياسات المساطر)
-    const aspect = canvasWidth / canvasHeight;
-
-    // 🧭 قياسات المساطر وحجم الحاوية ومؤشر الفأرة (كانت مضمّنة في هذا الملف)
-    const { rulerMetrics, containerSize, handleWorkspaceMouseMove, handleWorkspaceMouseLeave } =
-      useRulerMetricsPreview(
-        containerRef,
-        innerRef,
-        { showRuler, printMode },
-        { canvasZoom, mode, aspect },
-      );
-
-    // 🧭 أبعاد الورقة المعروضة — منطق الملاءمة كله في lib/canvas/fit.ts
-    // (كان الحساب مضمّناً هنا ويلائم على الارتفاع دائماً فيُهدر ~60% من عرض
-    //  منطقة العمل على ورقة رأسية؛ وصار الوضع اختيارياً: كامل/عرض/تلقائي)
+    // 🧭 محرك Viewport الكانفاس الحقيقي (Option B: Full-Viewport Konva Stage)
     const {
+      viewportSize,
+      stagePos,
       displayW,
       displayH,
-      stageW,
-      stageH,
-      resolved: resolvedFitMode,
+      stageScale,
+      resolvedFitMode,
       leftoverRatio,
-    } = computeCanvasDisplay({
-      containerW: containerSize.w,
-      containerH: containerSize.h,
-      aspect,
-      zoom: effectiveZoom,
-      fitMode: canvasFitMode,
-      // مقاس الورقة الحقيقي بالبكسل — لازم لوضع «الحجم الفعلي 1:1»
-      canvasW: canvasWidth,
-      canvasH: canvasHeight,
-    });
+    } = useCanvasViewport(containerRef, innerRef);
+
+    // حجم العرض التقديري لحساب أبعاد الورقة (يُستخدم أيضاً كتبعية لقياسات المساطر)
+    const aspect = canvasWidth / (canvasHeight || 1);
+
+    // 🧭 حركة مؤشر الفأرة على المساطر
+    const { handleWorkspaceMouseMove, handleWorkspaceMouseLeave } = useRulerMetricsPreview(
+      containerRef,
+      innerRef,
+      { showRuler, printMode },
+      { canvasZoom, mode, aspect },
+    );
 
     // يُنشر الوضع الفعّل ونسبة الفراغ لشريط العرض في التذييل (خارج شجرة الكانفاس)
     useEffect(() => {
@@ -321,242 +301,6 @@ export const EditorCanvas = React.memo(
       [elements],
     );
 
-    const canvasArea = (
-      <div
-        className="relative shrink-0"
-        style={{
-          width: displayW,
-          height: displayH,
-        }}
-      >
-        <div
-          ref={innerRef}
-          id="canvas-area"
-          data-fit-mode={resolvedFitMode}
-          className="relative w-full h-full rounded-md overflow-hidden border border-black/10 dark:border-black/50 dark:ring-1 dark:ring-white/12 transition-shadow duration-150 shadow-[0_8px_30px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.6)] fluent-specular"
-          style={{
-            width: displayW,
-            height: displayH,
-            backgroundColor,
-            backgroundImage:
-              backgroundColor === 'transparent'
-                ? `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`
-                : undefined,
-            backgroundSize: backgroundColor === 'transparent' ? '20px 20px' : undefined,
-            backgroundPosition:
-              backgroundColor === 'transparent' ? '0 0, 0 10px, 10px -10px, -10px 0px' : undefined,
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) selectElement(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-              e.preventDefault();
-              selectElement(null);
-            }
-          }}
-          role="presentation"
-        >
-          {isLoading && (
-            <div className="absolute inset-0 z-(--z-canvas-overlay) flex flex-col items-center justify-center fluent-smoke-backdrop rounded-md gap-2">
-              <Spinner className="w-8 h-8 text-primary" size={32} />
-              <span className="text-xs font-bold text-white font-cairo">جاري تجهيز الصورة ...</span>
-            </div>
-          )}
-
-          {(mode === 'collage' || mode === 'single') && (
-            <KonvaCanvas
-              displayW={displayW}
-              displayH={displayH}
-              stageW={stageW}
-              stageH={stageH}
-              canvasZoom={effectiveZoom}
-              dir="rtl"
-              sortedElements={sortedElements}
-              handleDoubleClick={handleDoubleClick}
-              setActiveGuides={setActiveGuides}
-              handleSlotClick={handleSlotClick}
-              handleSlotDblClick={handleSlotDblClick}
-              onContextMenu={handleCanvasContextMenu}
-            />
-          )}
-
-          <CanvasContextMenu
-            contextMenu={contextMenu}
-            printMode={printMode}
-            onClose={() => setContextMenu(null)}
-          />
-
-          {/* الشريط السريع الموحد العائم فوق العنصر/الخلية المحددة */}
-          <CanvasQuickBar printMode={printMode} isContextMenuOpen={contextMenu !== null} />
-
-          {/* 🧭 خطوط المستخدم الإرشادية التفاعلية (User Guidelines) */}
-          {!printMode &&
-            showUserGuides &&
-            userGuides.map((guide) => {
-              const isH = guide.type === 'h';
-              const isCurrentlyDragging = dragGuideState?.guideId === guide.id;
-              if (isCurrentlyDragging) return null;
-
-              return (
-                <div
-                  key={guide.id}
-                  title={
-                    lockUserGuides
-                      ? 'خط إرشادي مقفل (انقر لفتح القفل من قائمة المسطرة)'
-                      : 'خط إرشادي: اسحب للتحريك أو انقر مرتين للحذف'
-                  }
-                  role="separator"
-                  aria-orientation={isH ? 'horizontal' : 'vertical'}
-                  onPointerDown={(e) => {
-                    if (lockUserGuides) return;
-                    e.stopPropagation();
-                    setDragGuideState({
-                      type: guide.type,
-                      pos: guide.pos,
-                      guideId: guide.id,
-                    });
-                  }}
-                  onDoubleClick={(e) => {
-                    if (lockUserGuides) return;
-                    e.stopPropagation();
-                    useEditorStore.getState().removeUserGuide(guide.id);
-                  }}
-                  className={`absolute z-(--z-canvas-overlay) group transition-colors select-none ${
-                    lockUserGuides
-                      ? 'cursor-default'
-                      : isH
-                        ? 'left-0 right-0 h-4 -mt-2 cursor-ns-resize flex items-center'
-                        : 'top-0 bottom-0 w-4 -ml-2 cursor-ew-resize flex justify-center'
-                  }`}
-                  style={{
-                    // التثبيت البصري على حافة بكسل مادية عند الرسم فقط — القيمة
-                    // المخزنة تبقى دقيقة، والخط يُرسم 1px حاد دائماً بلا تموّج
-                    [isH ? 'top' : 'left']:
-                      `${snapGuidePosToPixel(guide.pos, isH ? displayH : displayW) * 100}%`,
-                    ...(lockUserGuides &&
-                      (isH
-                        ? {
-                            left: 0,
-                            right: 0,
-                            height: '16px',
-                            marginTop: '-8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                          }
-                        : {
-                            top: 0,
-                            bottom: 0,
-                            width: '16px',
-                            marginLeft: '-8px',
-                            display: 'flex',
-                            justifyContent: 'center',
-                          })),
-                  }}
-                >
-                  <div
-                    className={`transition-all ${
-                      lockUserGuides ? 'bg-amber-500/70' : 'bg-primary'
-                    } ${
-                      isH
-                        ? 'w-full h-[1px] group-hover:h-[2px]'
-                        : 'h-full w-[1px] group-hover:w-[2px]'
-                    }`}
-                  />
-                  {/* شارة القياس عند التحويم */}
-                  <div
-                    className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded-md ${
-                      lockUserGuides ? 'bg-amber-600' : 'bg-primary'
-                    } text-white font-mono text-micro font-bold shadow-fluent-8 z-(--z-canvas-guides) pointer-events-none ${
-                      isH ? 'left-3 -top-5' : 'top-3 left-2'
-                    }`}
-                  >
-                    {formatGuideMeasurement(
-                      guide.pos,
-                      isH,
-                      rulerUnit,
-                      widthMM,
-                      heightMM,
-                      canvasWidth,
-                      canvasHeight,
-                    )}
-                    {lockUserGuides && ' (مقفلة)'}
-                  </div>
-                </div>
-              );
-            })}
-
-          {/* 🧭 خطوط المحاذاة الذكية أثناء التحريك (Smart Snap Alignment Guides) */}
-          {!printMode &&
-            activeGuides.map((guide, idx) => {
-              const isCenter = Math.abs(guide.coord - 0.5) < 0.005;
-              const color = isCenter ? guideCenter() : guideEdge();
-              return (
-                <div
-                  key={`${guide.type}-${guide.coord}-${idx}`}
-                  className="absolute pointer-events-none z-(--z-canvas-guides) transition-opacity duration-75"
-                  style={{
-                    left: guide.type === 'v' ? `${guide.coord * 100}%` : 0,
-                    top: guide.type === 'h' ? `${guide.coord * 100}%` : 0,
-                    width: guide.type === 'v' ? '1px' : '100%',
-                    height: guide.type === 'h' ? '1px' : '100%',
-                    backgroundColor: color,
-                  }}
-                />
-              );
-            })}
-
-          <TextEditingOverlay
-            key={editingTextId || 'none'}
-            printMode={printMode}
-            editingTextId={editingTextId}
-            elements={elements}
-            displayW={displayW}
-            displayH={displayH}
-            canvasWidth={canvasWidth}
-            canvasHeight={canvasHeight}
-            updateElement={updateElement}
-            pushHistory={pushHistory}
-            setEditingTextId={setEditingTextId}
-          />
-        </div>
-
-        {/* خطوط وهوامش النزيف والقص والأمان للمطابع (طافية حول ورقة الكانفس) */}
-        {!printMode && <CanvasBleedGuides displayW={displayW} displayH={displayH} />}
-
-        {/* 🧭 خط السحب الإرشادي المباشر (Live Dragging Guide Line) - طافٍ بحرية خارج حدود القص ليبقى مرئياً عند السحب من المساطر */}
-        {!printMode && dragGuideState && (
-          <div
-            className={`absolute z-(--z-canvas-guides) pointer-events-none select-none ${
-              dragGuideState.type === 'h'
-                ? 'left-0 right-0 h-[1px] bg-primary flex items-center'
-                : 'top-0 bottom-0 w-[1px] bg-primary flex justify-center'
-            }`}
-            style={{
-              [dragGuideState.type === 'h' ? 'top' : 'left']:
-                `${snapGuidePosToPixel(dragGuideState.pos, dragGuideState.type === 'h' ? displayH : displayW) * 100}%`,
-            }}
-          >
-            <div
-              className={`absolute flex items-center px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground font-mono text-micro font-bold shadow-fluent-8 ${
-                dragGuideState.type === 'h' ? 'left-3 -top-5' : 'top-3 left-2'
-              }`}
-            >
-              {formatGuideMeasurement(
-                dragGuideState.pos,
-                dragGuideState.type === 'h',
-                rulerUnit,
-                widthMM,
-                heightMM,
-                canvasWidth,
-                canvasHeight,
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-
     return (
       <div
         className="absolute inset-0 flex flex-col bg-muted/40 overflow-hidden select-none"
@@ -565,8 +309,8 @@ export const EditorCanvas = React.memo(
         <ViewportFixedRulersHeader
           showRuler={showRuler}
           printMode={printMode}
-          viewportWidth={rulerMetrics.viewportWidth}
-          originX={rulerMetrics.originX}
+          viewportWidth={viewportSize.w}
+          originX={stagePos.x}
           displayW={displayW}
           widthMM={widthMM}
           canvasPxW={canvasWidth}
@@ -586,8 +330,8 @@ export const EditorCanvas = React.memo(
           <ViewportFixedRulersSidebar
             showRuler={showRuler}
             printMode={printMode}
-            viewportHeight={rulerMetrics.viewportHeight}
-            originY={rulerMetrics.originY}
+            viewportHeight={viewportSize.h}
+            originY={stagePos.y}
             displayH={displayH}
             heightMM={heightMM}
             canvasPxH={canvasHeight}
@@ -605,20 +349,204 @@ export const EditorCanvas = React.memo(
                 (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
               }
             }}
-            className="flex-1 overflow-auto workspace-grid relative"
+            className="flex-1 overflow-hidden workspace-grid relative select-none"
             onMouseMove={handleWorkspaceMouseMove}
             onMouseLeave={handleWorkspaceMouseLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
           >
+            {/* 1. مسرح Konva يملأ مساحة العرض بنسبة 100% */}
+            {(mode === 'collage' || mode === 'single') && (
+              <KonvaCanvas
+                viewportW={viewportSize.w}
+                viewportH={viewportSize.h}
+                stagePos={stagePos}
+                stageScale={stageScale}
+                displayW={displayW}
+                displayH={displayH}
+                sortedElements={sortedElements}
+                handleDoubleClick={handleDoubleClick}
+                setActiveGuides={setActiveGuides}
+                handleSlotClick={handleSlotClick}
+                handleSlotDblClick={handleSlotDblClick}
+                onContextMenu={handleCanvasContextMenu}
+              />
+            )}
+
+            {/* 2. غلاف عناصر HTML الطافية فوق الورقة (Text Editing, Overlays, User Guides) */}
             <div
-              className="min-w-full min-h-full flex p-4"
-              role="presentation"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) selectElement(null);
+              ref={innerRef}
+              id="canvas-area"
+              data-fit-mode={resolvedFitMode}
+              className="absolute pointer-events-none"
+              style={{
+                left: stagePos.x,
+                top: stagePos.y,
+                width: displayW,
+                height: displayH,
               }}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
             >
-              <div style={{ margin: 'auto' }}>{canvasArea}</div>
+              {isLoading && (
+                <div className="absolute inset-0 z-(--z-canvas-overlay) flex flex-col items-center justify-center fluent-smoke-backdrop rounded-md gap-2 pointer-events-auto">
+                  <Spinner className="w-8 h-8 text-primary" size={32} />
+                  <span className="text-xs font-bold text-white font-cairo">
+                    جاري تجهيز الصورة ...
+                  </span>
+                </div>
+              )}
+
+              <CanvasContextMenu
+                contextMenu={contextMenu}
+                printMode={printMode}
+                onClose={() => setContextMenu(null)}
+              />
+
+              {/* الشريط السريع الموحد العائم فوق العنصر/الخلية المحددة */}
+              <CanvasQuickBar printMode={printMode} isContextMenuOpen={contextMenu !== null} />
+
+              {/* 🧭 خطوط المستخدم الإرشادية التفاعلية (User Guidelines) */}
+              {!printMode &&
+                showUserGuides &&
+                userGuides.map((guide) => {
+                  const isH = guide.type === 'h';
+                  const isCurrentlyDragging = dragGuideState?.guideId === guide.id;
+                  if (isCurrentlyDragging) return null;
+
+                  return (
+                    <div
+                      key={guide.id}
+                      title={
+                        lockUserGuides
+                          ? 'خط إرشادي مقفل (انقر لفتح القفل من قائمة المسطرة)'
+                          : 'خط إرشادي: اسحب للتحريك أو انقر مرتين للحذف'
+                      }
+                      role="separator"
+                      aria-orientation={isH ? 'horizontal' : 'vertical'}
+                      onPointerDown={(e) => {
+                        if (lockUserGuides) return;
+                        e.stopPropagation();
+                        setDragGuideState({
+                          type: guide.type,
+                          pos: guide.pos,
+                          guideId: guide.id,
+                        });
+                      }}
+                      onDoubleClick={(e) => {
+                        if (lockUserGuides) return;
+                        e.stopPropagation();
+                        useEditorStore.getState().removeUserGuide(guide.id);
+                      }}
+                      className={`absolute z-(--z-canvas-overlay) pointer-events-auto group transition-colors select-none ${
+                        lockUserGuides
+                          ? 'cursor-default'
+                          : isH
+                            ? 'left-0 right-0 h-4 -mt-2 cursor-ns-resize flex items-center'
+                            : 'top-0 bottom-0 w-4 -ml-2 cursor-ew-resize flex justify-center'
+                      }`}
+                      style={{
+                        [isH ? 'top' : 'left']:
+                          `${snapGuidePosToPixel(guide.pos, isH ? displayH : displayW) * 100}%`,
+                      }}
+                    >
+                      <div
+                        className={`transition-all ${
+                          lockUserGuides ? 'bg-amber-500/70' : 'bg-primary'
+                        } ${
+                          isH
+                            ? 'w-full h-[1px] group-hover:h-[2px]'
+                            : 'h-full w-[1px] group-hover:w-[2px]'
+                        }`}
+                      />
+                      {/* شارة القياس عند التحويم */}
+                      <div
+                        className={`absolute hidden group-hover:flex items-center px-1.5 py-0.5 rounded-md ${
+                          lockUserGuides ? 'bg-amber-600' : 'bg-primary'
+                        } text-white font-mono text-micro font-bold shadow-fluent-8 z-(--z-canvas-guides) pointer-events-none ${
+                          isH ? 'left-3 -top-5' : 'top-3 left-2'
+                        }`}
+                      >
+                        {formatGuideMeasurement(
+                          guide.pos,
+                          isH,
+                          rulerUnit,
+                          widthMM,
+                          heightMM,
+                          canvasWidth,
+                          canvasHeight,
+                        )}
+                        {lockUserGuides && ' (مقفلة)'}
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {/* 🧭 خطوط المحاذاة الذكية أثناء التحريك (Smart Snap Alignment Guides) */}
+              {!printMode &&
+                activeGuides.map((guide, idx) => {
+                  const isCenter = Math.abs(guide.coord - 0.5) < 0.005;
+                  const color = isCenter ? guideCenter() : guideEdge();
+                  return (
+                    <div
+                      key={`${guide.type}-${guide.coord}-${idx}`}
+                      className="absolute pointer-events-none z-(--z-canvas-guides) transition-opacity duration-75"
+                      style={{
+                        left: guide.type === 'v' ? `${guide.coord * 100}%` : 0,
+                        top: guide.type === 'h' ? `${guide.coord * 100}%` : 0,
+                        width: guide.type === 'v' ? '1px' : '100%',
+                        height: guide.type === 'h' ? '1px' : '100%',
+                        backgroundColor: color,
+                      }}
+                    />
+                  );
+                })}
+
+              <TextEditingOverlay
+                key={editingTextId || 'none'}
+                printMode={printMode}
+                editingTextId={editingTextId}
+                elements={elements}
+                displayW={displayW}
+                displayH={displayH}
+                canvasWidth={canvasWidth}
+                canvasHeight={canvasHeight}
+                updateElement={updateElement}
+                pushHistory={pushHistory}
+                setEditingTextId={setEditingTextId}
+              />
+
+              {/* خطوط وهوامش النزيف والقص والأمان للمطابع (طافية حول ورقة الكانفس) */}
+              {!printMode && <CanvasBleedGuides displayW={displayW} displayH={displayH} />}
+
+              {/* 🧭 خط السحب الإرشادي المباشر */}
+              {!printMode && dragGuideState && (
+                <div
+                  className={`absolute z-(--z-canvas-guides) pointer-events-none select-none ${
+                    dragGuideState.type === 'h'
+                      ? 'left-0 right-0 h-[1px] bg-primary flex items-center'
+                      : 'top-0 bottom-0 w-[1px] bg-primary flex justify-center'
+                  }`}
+                  style={{
+                    [dragGuideState.type === 'h' ? 'top' : 'left']:
+                      `${snapGuidePosToPixel(dragGuideState.pos, dragGuideState.type === 'h' ? displayH : displayW) * 100}%`,
+                  }}
+                >
+                  <div
+                    className={`absolute flex items-center px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground font-mono text-micro font-bold shadow-fluent-8 ${
+                      dragGuideState.type === 'h' ? 'left-3 -top-5' : 'top-3 left-2'
+                    }`}
+                  >
+                    {formatGuideMeasurement(
+                      dragGuideState.pos,
+                      dragGuideState.type === 'h',
+                      rulerUnit,
+                      widthMM,
+                      heightMM,
+                      canvasWidth,
+                      canvasHeight,
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

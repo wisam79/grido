@@ -62,6 +62,14 @@ $$\text{Pixel Position} = \text{Normalized Coordinate} \times \text{Canvas Dimen
 - **Star & Circle Origin Offsets:** Primitives (like Circles and Stars) are rendered using offsets (`offsetX = -width/2` and `offsetY = -height/2`) to align their Konva origin directly with the bounding box corners.
 - **Snap Guides:** Interactive smart-alignment lines are generated dynamically using alignment math (in `lib/canvas/snap-utils.ts`) when objects are dragged close to other elements.
 
+### Full-Viewport Stage & Layer Architecture
+- **Stage Viewport Model:** In accordance with professional canvas architectures (Figma/Illustrator), `<Stage>` covers 100% of the viewport container dimensions (`viewportW`, `viewportH`). Zoom and pan are governed purely by native Stage transformations (`stage.scale({ x, y })` and `stage.position({ x, y })`), eliminating dynamic stage canvas reallocations and VRAM thrashing.
+- **Fixed `pixelRatio`:** `Konva.pixelRatio` is clamped to `Math.min(window.devicePixelRatio || 1, 2)` once upon component mounting, completely preventing element jitter and flashing during wheel zooming ticks.
+- **Bounded Navigation (`clampStagePos`):** Restricts paper position to prevent drifting into empty infinity:
+  - *Wheel scroll mode:* Locks exactly to viewport center when sheet fits on screen; scrolls strictly within sheet edges with a 40px margin when sheet exceeds viewport height.
+  - *Free-Pan mode (Spacebar/Middle-drag):* Preserves at least 150px of the paper visible inside viewport bounds.
+- **Multi-Layer Separation (`KonvaOverlayLayer`):** Separates the `<EditorTransformer>` and marquee selection rectangle (`marquee-rect`) into an isolated top `<Layer name="overlay-tools-layer">`. Content elements (`KonvaSingleLayer`) remain untouched and do not redraw during marquee selections or transformer handle interactions.
+
 ---
 
 ## 3. Zustand Editor Store & History Stack

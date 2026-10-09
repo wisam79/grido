@@ -134,6 +134,11 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       if (transformer && altPressedRef) {
         transformer.centeredScaling(altPressedRef.current);
       }
+      // 🚀 إعادة رسم طبقة العقد المحولة أثناء التحجيم عبر الطبقات المنفصلة
+      const nodes = transformer.nodes();
+      for (const node of nodes) {
+        node.getLayer()?.batchDraw();
+      }
       scheduleBadgeUpdate();
     };
 
@@ -146,6 +151,10 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       if (badgeRef.current) {
         badgeRef.current.visible(false);
         badgeRef.current.getLayer()?.batchDraw();
+      }
+      const nodes = transformer.nodes();
+      for (const node of nodes) {
+        node.getLayer()?.batchDraw();
       }
     };
 
