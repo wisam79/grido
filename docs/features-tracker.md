@@ -9,6 +9,20 @@
 
 ---
 
+## 0.57 سجل جلسة اعتماد وتوثيق تطبيق Grido Studio لدى Google ونشر صفحات الخصوصية والشروط على GitHub Pages — 10 أكتوبر 2026
+
+**المرجع:** طلب المالك لحل مشكلة ظهور رابط Supabase عند تسجيل دخول المستخدمين بحساب Google وتوثيق الهوية الرسمية، وحل توقف استضافة Netlify ونقلها إلى GitHub Pages مع شهادة SSL معتمدة.
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| إثبات ملكية الدومين في Google Search Console | إضافة سجل DNS TXT معتمد لرمز التحقق في مزود ClouDNS لدومين `grido.cloud-ip.cc` وإثبات الملكية بنجاح 100% | Search Console + ClouDNS TXT ✅ |
+| صفحات سياسة الخصوصية والشروط المتوافقة مع معايير Google API | كتابة صفحتي `PrivacyPolicy.tsx` و `TermsOfService.tsx` ثنائيتي اللغة مع بنود سياسة بيانات المستخدمين لـ Google والـ Limited Use وحظر بيع البيانات وحق الحذف، وتوليد ملفات HTML ثابتة في `public/privacy/` و `public/terms/` | `admin-web/src/pages/` + `admin-web/public/` ✅ |
+| نقل الاستضافة إلى GitHub Pages كبديل دائم لـ Netlify | إنشاء سير عمل `.github/workflows/deploy-pages.yml` الآلي لنشر `admin-web` وتوجيه `CNAME` و `.nojekyll` والـ SPA 404 fallback لتفادي توقف باقات وبناء Netlify المحدودة | `.github/workflows/deploy-pages.yml` + `CNAME` ✅ |
+| تهيئة DNS وشهادة الأمان المشفرة (TLS 1.3) | ضبط سجلات A لـ GitHub Pages في ClouDNS وإضافة سجل `www`، وإصدار شهادة SSL معتمدة رسمياً ومفعلة بفرض HTTPS حتى 2027 | GitHub Pages API (`https_certificate.state: approved`) ✅ |
+| اعتماد ونشر العلامة التجارية في Google Cloud Console | اجتياز مراجعة Google Trust & Safety بنجاح واعتماد العلامة التجارية وشعار واسم Grido Studio رسمياً ونشرها للمستخدمين | Google Cloud Console (`Your branding has been verified`) ✅ |
+
+---
+
 ## 0.56 سجل جلسة تدقيق وتحصين نظام الطباعة الشامل (Comprehensive Print System Audit & Hardening RV-16) — 9 أكتوبر 2026
 
 **المرجع:** المراجعة الشاملة لنظام الطباعة من الألف إلى الياء — تقرير `docs/reviews/16-print-system-review-2026-10-09.md` (24 ملف Go + 11 ملف TS/TSX + الاختبارات). 16 بنداً (3 حرجة · 5 متوسطة · 8 ضئيلة) — **16/16 مُصلحة بالكامل**.
