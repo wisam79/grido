@@ -1,14 +1,19 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { CanvasQuickBar } from '../src/components/editor/canvas/canvas-quick-bar';
 import { CanvasOverlayHost } from '../src/components/editor/canvas/canvas-overlay-host';
 import { useEditorStore } from '../src/lib/editor-store';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import {
+  useCanvasInteraction,
+  resetCanvasInteraction,
+} from '../src/lib/canvas/canvas-interaction-store';
 
 describe('CanvasQuickBar Component Tests', () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
+    resetCanvasInteraction();
   });
 
   it('renders nothing when no element or slot is selected', () => {
@@ -200,6 +205,67 @@ describe('CanvasQuickBar Component Tests', () => {
       </TooltipProvider>,
     );
 
+    expect(container.firstChild).not.toBeNull();
+  });
+
+  it('hides quick bar when element is being dragged (Rest State Invariant)', () => {
+    selectSingleImage();
+    useCanvasInteraction.getState().setIsDragging(true);
+
+    const { container } = render(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('hides quick bar when element is being transformed (Rest State Invariant)', () => {
+    selectSingleImage();
+    useCanvasInteraction.getState().setIsTransforming(true);
+
+    const { container } = render(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('hides quick bar when inline text editing is active (Rest State Invariant)', () => {
+    selectSingleImage();
+    useEditorStore.setState({ editingTextId: 'el-1' });
+
+    const { container } = render(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('reappears when interaction completes and state returns to rest', () => {
+    selectSingleImage();
+    useCanvasInteraction.getState().setIsDragging(true);
+
+    const { rerender, container } = render(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+    expect(container.firstChild).toBeNull();
+
+    act(() => {
+      useCanvasInteraction.getState().setIsDragging(false);
+    });
+    rerender(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
     expect(container.firstChild).not.toBeNull();
   });
 });

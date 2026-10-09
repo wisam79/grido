@@ -109,7 +109,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
             size="sm"
             onClick={() => actOnSelection(duplicateElement, duplicateElements)}
             aria-label="تكرار"
-            className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
           >
             <Copy className="w-5 h-5" />
           </Button>
@@ -129,9 +129,8 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               size="sm"
               onClick={groupSelectedElements}
               aria-label="تجميع"
-              // 🎨 رمادي في الراحة → داكن عند التمرير (اتساق أيقونات الشريط):
-              // الأزرق الدائم كان يوحي بأن الزر مُفعَّل أصلاً
-              className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+              // 🎨 رمادي في الراحة → داكن عند التمرير (اتساق أيقونات الشريط)
+              className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
             >
               <Link className="w-5 h-5" />
             </Button>
@@ -145,7 +144,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               size="sm"
               onClick={ungroupSelectedElements}
               aria-label="فك التجميع"
-              className="h-8 px-3 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-md transition-all cursor-pointer"
+              className="h-8 px-2.5 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-md transition-all cursor-pointer"
             >
               <LinkBreak className="w-5 h-5" />
             </Button>
@@ -159,7 +158,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
+              className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
               aria-label="محاذاة"
             >
               <AlignCenterHorizontalIcon className="w-5 h-5" />
@@ -168,7 +167,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
-            className="w-40 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular p-1 space-y-0.5"
+            className="w-40 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1 space-y-0.5"
           >
             <DropdownMenuItem
               onClick={() => alignElement('left')}
@@ -196,14 +195,14 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
 
         <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
-        {/* حذف */}
-        <TooltipBtn content="حذف">
+        {/* حذف — أيقونة محايدة في الراحة وتتحول للأحمر عند التمرير لمنع التشتت البصري */}
+        <TooltipBtn content="حذف (Delete)">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => actOnSelection(removeElement, removeElements, true)}
             aria-label="حذف"
-            className="h-8 px-3 text-destructive hover:text-destructive hover:bg-destructive/5 rounded-md transition-all cursor-pointer"
+            className="h-8 px-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:scale-95 rounded-md transition-all cursor-pointer"
           >
             <Trash className="w-5 h-5" />
           </Button>

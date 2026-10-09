@@ -1,17 +1,16 @@
-import React from "react";
-import { Stack, ArrowsHorizontal, ArrowsVertical } from "@/components/ui/icons";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
-import { useShallow } from "zustand/react/shallow";
-import { useEditorStore } from "@/lib/editor-store";
+import React from 'react';
+import { Stack, ArrowsHorizontal, ArrowsVertical } from '@/components/ui/icons';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
+import { useShallow } from 'zustand/react/shallow';
+import { useEditorStore } from '@/lib/editor-store';
 
 /**
- * QuickBarMultiSelectionSection — قسم التحديد المتعدد.
+ * QuickBarMultiSelectionSection — قسم التحديد المتعدد في الشريط السريع العائم.
  *
- * 🧭 يُبقي فقط ما لا يوجد في الشريط العلوي: **التوزيع المتساوي** وعددان
- * التحديد. المحاذاة والتجميع والتكرار والحذف انتقلت للشريط العلوي، لأن
- * وجودها في السطحين كان تكراراً محضاً (وقد أُزيل بعد قرار المستخدم).
+ * 🧭 خفيف ومحدد: يعرض عدد العناصر والتوزيع المتساوي فقط (عند 3 عناصر فأكثر).
+ * أما المحاذاة والتجميع والحذف فموطنها شريط الأدوات العلوي.
  */
 interface QuickBarMultiSelectionSectionProps {
   selectedIds: string[];
@@ -23,12 +22,12 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
   const { distributeSelectedElements } = useEditorStore(
     useShallow((s) => ({
       distributeSelectedElements: s.distributeSelectedElements,
-    }))
+    })),
   );
 
   return (
     <>
-      {/* عدد التحديد انتقل إلى التلميح والاسم المُتاح بدل نص ظاهر — الشريط أيقونات فقط */}
+      {/* عداد التحديد */}
       <Tooltip>
         <TooltipTrigger asChild>
           <span
@@ -51,9 +50,9 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => distributeSelectedElements("horizontal")}
+                onClick={() => distributeSelectedElements('horizontal')}
                 aria-label="توزيع أفقي"
-                className="h-6 w-6 p-0 rounded-md hover:bg-accent"
+                className="h-6 w-6 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
               >
                 <ArrowsHorizontal className="w-3.5 h-3.5" weight="bold" />
               </Button>
@@ -66,9 +65,9 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => distributeSelectedElements("vertical")}
+                onClick={() => distributeSelectedElements('vertical')}
                 aria-label="توزيع عمودي"
-                className="h-6 w-6 p-0 rounded-md hover:bg-accent"
+                className="h-6 w-6 p-0 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
               >
                 <ArrowsVertical className="w-3.5 h-3.5" weight="bold" />
               </Button>
@@ -77,7 +76,6 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
           </Tooltip>
         </>
       )}
-
     </>
   );
 });

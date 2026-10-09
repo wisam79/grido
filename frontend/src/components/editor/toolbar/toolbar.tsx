@@ -74,7 +74,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
         {/* المجموعة النهائية: الحفظ والطباعة والتصدير في مجموعة أوامر موحدة */}
         <div className="flex items-center gap-1 shrink-0 ms-auto">
           <div className="fluent-command-group shadow-2xs">
-            {/* حفظ (Ctrl+S) */}
+            {/* حفظ (Ctrl+S) — زر أيقوني قياسي */}
             <TooltipBtn content="حفظ المشروع (Ctrl + S)">
               <Button
                 variant="ghost"
@@ -82,17 +82,16 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 onClick={onSave}
                 data-testid="toolbar-save"
                 aria-label="حفظ المشروع"
-                className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
+                className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
               >
                 <FloppyDisk
                   className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all"
                   weight="duotone"
                 />
-                <span className="hidden xl:inline">حفظ</span>
               </Button>
             </TooltipBtn>
 
-            {/* طباعة (Ctrl+P) */}
+            {/* طباعة (Ctrl+P) — زر أيقوني قياسي */}
             <TooltipBtn content="طباعة المستند (Ctrl + P)">
               <Button
                 variant="ghost"
@@ -100,14 +99,13 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 onClick={onPrint}
                 data-testid="toolbar-print"
                 aria-label="طباعة المستند"
-                className="h-8 px-2.5 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 font-semibold text-xs active:scale-[0.98] group"
+                className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
               >
                 <PrintIcon className="w-4 h-4 group-hover:scale-105 transition-transform" />
-                <span className="hidden xl:inline">طباعة</span>
               </Button>
             </TooltipBtn>
 
-            {/* تصدير (Ctrl+E) */}
+            {/* تصدير (Ctrl+E) — زر الإجراء الرئيسي المميز بنص وأيقونة */}
             <TooltipBtn content="تصدير صورة (Ctrl + E)">
               <Button
                 variant="ghost"
@@ -115,7 +113,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 onClick={onExport}
                 data-testid="toolbar-export"
                 aria-label="تصدير صورة"
-                className="h-8 px-2.5 gap-1.5 text-primary hover:text-primary hover:bg-primary/10 rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98] group"
+                className="h-8 px-3 gap-1.5 text-primary hover:text-primary hover:bg-primary/10 rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98] group"
               >
                 <Export
                   className="w-4 h-4 group-hover:scale-105 transition-transform"
@@ -126,7 +124,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
             </TooltipBtn>
           </div>
 
-          {/* قائمة المزيد: الإجراءات الأقل تكراراً والمدمِّرة بعيداً عن الشريط الرئيسي */}
+          {/* قائمة المزيد: الخيارات الإضافية للمستند والمشاريع */}
           <DropdownMenu>
             <TooltipBtn content="المزيد من الخيارات">
               <DropdownMenuTrigger asChild>
@@ -143,34 +141,11 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
             </TooltipBtn>
             <DropdownMenuContent
               align="end"
-              className="w-52 font-cairo [direction:rtl] rounded-xl backdrop-blur-2xl bg-popover/95 border border-border shadow-fluent-16 p-1.5 space-y-1"
+              className="w-52 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5 space-y-1"
             >
               <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 select-none">
                 خيارات المستند
               </div>
-              <DropdownMenuItem
-                onClick={onSave}
-                className="flex items-center justify-between p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <FloppyDisk className="w-4 h-4 text-muted-foreground" weight="duotone" />
-                  <span className="font-semibold">حفظ المشروع</span>
-                </div>
-                <span className="text-micro font-mono text-muted-foreground">Ctrl+S</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={onPrint}
-                className="flex items-center justify-between p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <PrintIcon className="w-4 h-4 text-primary" />
-                  <span className="font-semibold">طباعة المستند</span>
-                </div>
-                <span className="text-micro font-mono text-muted-foreground">Ctrl+P</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator className="my-1 border-border/50" />
 
               <DropdownMenuItem
                 onClick={() => {
@@ -182,11 +157,11 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
               >
                 <div className="flex items-center gap-2">
                   <Folders className="w-4 h-4 text-muted-foreground" weight="duotone" />
-                  <span>مكتبة المشاريع</span>
+                  <span className="font-semibold">مكتبة المشاريع</span>
                 </div>
               </DropdownMenuItem>
 
-              {/* مسح مساحة العمل — إجراء مدمِّر: قائمة تأكيد مستقلة (grido:clear-canvas) */}
+              {/* مسح مساحة العمل — إجراء مدمِّر معزول في قائمة التأكيد */}
               <DropdownMenuSeparator className="my-1 border-border/50" />
               <DropdownMenuItem
                 onClick={() => window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))}

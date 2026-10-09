@@ -7,6 +7,7 @@ import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useFilterCache } from '@/hooks/use-filter-cache';
 import { getDisplayImage } from '@/lib/canvas/display-image';
 import { liftToDragLayer, dropFromDragLayer, findLiftRoot } from '../drag-layer';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { MagicAiScanner } from './magic-ai-scanner';
 
 export const KonvaCollageImage = React.memo(
@@ -93,6 +94,15 @@ export const KonvaCollageImage = React.memo(
     onClickRef.current = onClick;
     const onDblClickRef = useRef<((e: unknown) => void) | undefined>(onDblClick);
     onDblClickRef.current = onDblClick;
+
+    useEffect(() => {
+      return () => {
+        if (isDraggingRef.current) {
+          isDraggingRef.current = false;
+          useCanvasInteraction.getState().setIsDragging(false);
+        }
+      };
+    }, []);
 
     useEffect(() => {
       // 🔄 Props بفضاء الأصل → حالة السحب بفضاء العرض. يُعاد التحويل عند تغيّر
@@ -186,6 +196,7 @@ export const KonvaCollageImage = React.memo(
           draggable={draggable}
           onDragStart={() => {
             isDraggingRef.current = true;
+            useCanvasInteraction.getState().setIsDragging(true);
             // 🖼️ تفريغ كاش Konva قبل السحب — العقدة المخبأة تتجاهل تحديثات
             // cropX/cropY أثناء onDragMove فتظل الصورة جامدة (Konva يرسم من الكاش)
             const node = imageRef.current;
@@ -269,6 +280,7 @@ export const KonvaCollageImage = React.memo(
           }}
           onDragEnd={() => {
             isDraggingRef.current = false;
+            useCanvasInteraction.getState().setIsDragging(false);
             // 🚀 الاستعادة أولاً — قبل كتابة الإزاحات للستور.
             try {
               dropFromDragLayer();

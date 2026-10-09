@@ -11,6 +11,7 @@ import { QuickBarSlotSection } from './quick-bar/quick-bar-slot-section';
 import { QuickBarMultiSelectionSection } from './quick-bar/quick-bar-multi-selection-section';
 import { QuickBarElementSection } from './quick-bar/quick-bar-element-section';
 import { useCanvasOverlayHost } from './canvas-overlay-host';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { getElementVisualBox } from '@/lib/canvas/element-geometry';
 import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
 import type { CanvasElement } from '@/lib/store/types';
@@ -27,8 +28,9 @@ import type { CanvasElement } from '@/lib/store/types';
  * وإن لم تصح الحالتان القِ بحافة الورقة العليا. والقص دائماً **داخل حدود
  * الورقة** — لا يلمس المساطر ولا أزرار الـ viewport في زوايا مساحة العمل.
  *
- * 🧷 أثناء سحب العنصر لا يطارد الشريط المؤشر (المتجر لا يتحدث إلا في
- * dragend) ثم ينزلق بسلاسة إلى الموضع الجديد، وينطبق نفس الانزلاق على الزوم.
+ * 🧷 قاعدة السكون (Rest State Invariant): أثناء سحب أو تحجيم أو تعديل العنصر
+ * يختفي الشريط تماماً مانعاً حجب الرؤية أو إعاقة دلائل المحاذاة الذكية،
+ * ثم ينزلق بسلاسة ويظهر في الموضع الجديد فور استقرار العنصر في حالة السكون.
  *
  * 🎯 نطاق هذا الشريط: **الموضع على الورقة** (ترتيب الطبقة، تدوير، قلب،
  * توزيع، تعبئة الصف/العمود، تفريغ الخلية، مقارنة بالأصل). أما خصائص العنصر
@@ -180,6 +182,10 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     [measureBar],
   );
 
+  const isDragging = useCanvasInteraction((s) => s.isDragging);
+  const isTransforming = useCanvasInteraction((s) => s.isTransforming);
+  const isEditingText = useEditorStore((s) => Boolean(s.editingTextId));
+
   const selectedSlot = mode === 'collage' ? slots?.find((s) => s.id === selectedId) : undefined;
   const selectedElement = mode === 'single' ? elements.find((e) => e.id === selectedId) : undefined;
 
@@ -187,9 +193,16 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   const hasElementSection = Boolean(selectedElement) && selectedIds.length <= 1;
   const hasMultiSection = selectedIds.length >= 2;
 
+  // 🧷 قاعدة السكون (Rest State Invariant): يظهر الشريط فقط في حالة السكون
+  // التام للعناصر. يختفي تماماً أثناء السحب أو التحجيم أو تدوير المقابض
+  // أو تحرير النصوص، ليتيح رؤية كاملة للمرسم ودلائل المحاذاة، ثم يعود
+  // للظهور بسلاسة بعد الاستقرار.
   if (
     printMode ||
     isContextMenuOpen ||
+    isDragging ||
+    isTransforming ||
+    isEditingText ||
     (!hasSlotSection && !hasElementSection && !hasMultiSection)
   ) {
     return null;
@@ -225,7 +238,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
 
   // جسم الشريط مشترك بين المسارين (الديناميكي والاحتياطي)
   const barBody = (
-    <div className="bg-card/95 backdrop-blur-xl border border-border/80 dark:border-white/10 shadow-fluent-8 rounded-lg px-1.5 py-0.5 flex items-center gap-1 text-foreground fluent-specular max-w-full overflow-x-auto">
+    <div className="bg-card border border-border shadow-fluent-16 rounded-xl px-1.5 py-1 flex items-center gap-1 text-foreground fluent-specular max-w-full overflow-x-auto">
       {/* وضع الكولاج - الخلية المحددة */}
       {hasSlotSection && selectedSlot && (
         <QuickBarSlotSection

@@ -5,6 +5,7 @@ import type { KonvaEventObject } from 'konva/lib/Node';
 import { CanvasElement, useEditorStore } from '@/lib/editor-store';
 import type { SnapGuide } from '@/lib/canvas/snap-utils';
 import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import {
   useCanvasColors,
   transformerPrimary,
@@ -116,6 +117,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     };
 
     const handleTransformStart = () => {
+      useCanvasInteraction.getState().setIsTransforming(true);
       updateInfo();
     };
 
@@ -143,6 +145,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     };
 
     const handleTransformEndInternal = () => {
+      useCanvasInteraction.getState().setIsTransforming(false);
       if (badgeRafId !== 0) {
         cancelAnimationFrame(badgeRafId);
         badgeRafId = 0;
@@ -163,6 +166,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     transformer.on('transformend dragend', handleTransformEndInternal);
 
     return () => {
+      useCanvasInteraction.getState().setIsTransforming(false);
       if (badgeRafId !== 0) cancelAnimationFrame(badgeRafId);
       transformer.off('transformstart dragstart', handleTransformStart);
       transformer.off('transform dragmove', handleTransform);

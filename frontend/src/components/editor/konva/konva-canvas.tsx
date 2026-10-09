@@ -9,6 +9,7 @@ import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
 import { useShallow } from 'zustand/react/shallow';
 import { checkerColor } from '@/lib/canvas/canvas-colors';
 import { registerDragLayer, registerDragExtrasProvider } from './drag-layer';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import '@/lib/filters/custom-filters';
 
 import { KonvaBackgroundLayer } from './layers/konva-background-layer';
@@ -596,6 +597,12 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       onTouchMove={handleStageMouseMove as unknown as (e: KonvaEventObject<TouchEvent>) => void}
       onMouseUp={handleStageMouseUp}
       onTouchEnd={handleStageMouseUp as unknown as (e: KonvaEventObject<TouchEvent>) => void}
+      onDragStart={() => {
+        useCanvasInteraction.getState().setIsDragging(true);
+      }}
+      onDragEnd={() => {
+        useCanvasInteraction.getState().setIsDragging(false);
+      }}
       dragDistance={5}
       onContextMenu={(e) => {
         e.evt.preventDefault();

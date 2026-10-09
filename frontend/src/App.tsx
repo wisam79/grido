@@ -255,7 +255,7 @@ export default function App() {
                     </h1>
                   </div>
                   <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />
-                  <div className="hidden sm:flex items-center title-bar-controls" dir="rtl">
+                  <div className="hidden sm:flex items-center title-bar-controls">
                     <DesktopMenuBar />
                   </div>
                 </div>

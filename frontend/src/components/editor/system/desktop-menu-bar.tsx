@@ -171,7 +171,7 @@ export function DesktopMenuBar() {
   };
 
   return (
-    <div className="flex items-center gap-1 select-none font-cairo" dir="rtl">
+    <div className="flex items-center gap-1 select-none font-cairo">
       {/* 1. قائمة ملف (File) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -185,7 +185,7 @@ export function DesktopMenuBar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16"
+          className="w-48 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
         >
           <DropdownMenuItem
             onClick={() => window.dispatchEvent(new CustomEvent('grido:open-file-dialog'))}
@@ -288,7 +288,7 @@ export function DesktopMenuBar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16"
+          className="w-48 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
         >
           <DropdownMenuItem
             disabled={!canUndo}
@@ -390,7 +390,7 @@ export function DesktopMenuBar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16"
+          className="w-48 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
         >
           {/* مدخل لوحة الأدوات — نفس الحدث والاختصار والمصدر الوحيد (Ctrl+K) */}
           <DropdownMenuItem
@@ -521,7 +521,7 @@ export function DesktopMenuBar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16"
+          className="w-48 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
         >
           <DropdownMenuItem
             onClick={() => setMode('collage')}
@@ -574,7 +574,7 @@ export function DesktopMenuBar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16"
+          className="w-48 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
         >
           <DropdownMenuItem
             onClick={() => setAccountModalOpen(true)}
@@ -626,7 +626,7 @@ export function DesktopMenuBar() {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
-          className="w-48 font-cairo [direction:rtl] rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16"
+          className="w-48 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1"
         >
           <DropdownMenuItem
             onClick={() => window.dispatchEvent(new CustomEvent('grido:open-shortcuts'))}

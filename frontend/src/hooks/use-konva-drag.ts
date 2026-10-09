@@ -3,6 +3,10 @@ import { CanvasElement, useEditorStore } from '@/lib/editor-store';
 import { getSnapPositionsWithTargets, SnapTarget, SnapGuide } from '@/lib/canvas/snap-utils';
 import { liftToDragLayer, dropFromDragLayer } from '@/components/editor/konva/drag-layer';
 import { getElementPixelVisualBox, getElementVisualBox } from '@/lib/canvas/element-geometry';
+import {
+  useCanvasInteraction,
+  resetCanvasInteraction,
+} from '@/lib/canvas/canvas-interaction-store';
 import { KonvaEventObject } from 'konva/lib/Node';
 import type Konva from 'konva';
 
@@ -44,6 +48,7 @@ export function useKonvaDrag({
   const pendingGuidesRef = React.useRef<SnapGuide[] | null>(null);
 
   const onDragStart = () => {
+    useCanvasInteraction.getState().setIsDragging(true);
     const currentElements = useEditorStore.getState().elements;
     const {
       selectedIds,
@@ -136,6 +141,7 @@ export function useKonvaDrag({
         } catch {
           // تجاهل آمن
         }
+        resetCanvasInteraction();
       };
       window.addEventListener('pointerup', restoreDragLayer, { once: true });
       window.addEventListener('pointercancel', restoreDragLayer, { once: true });
@@ -314,6 +320,7 @@ export function useKonvaDrag({
   };
 
   const onDragEnd = (e: KonvaEventObject<DragEvent>) => {
+    useCanvasInteraction.getState().setIsDragging(false);
     // 🚀 الاستعادة أولاً — قبل أي كتابة للستور، حتى لا ترى React
     // العقد خارج موضعها المعلن ولو لإطار واحد.
     try {

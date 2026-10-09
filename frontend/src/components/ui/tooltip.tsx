@@ -42,13 +42,13 @@ function TooltipContent({
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
         className={cn(
-          'bg-popover text-popover-foreground border border-border shadow-fluent-8 backdrop-blur-md animate-in fade-in-0 duration-75 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 z-50 w-fit origin-[var(--radix-tooltip-content-transform-origin)] rounded-md px-2.5 py-1 text-xs font-semibold text-balance pointer-events-none select-none font-cairo fluent-specular',
+          'bg-popover text-popover-foreground border border-border shadow-fluent-8 animate-in fade-in-0 duration-75 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 z-50 w-fit origin-[var(--radix-tooltip-content-transform-origin)] rounded-md px-2.5 py-1 text-xs font-semibold text-balance pointer-events-none select-none font-cairo fluent-specular',
           className,
         )}
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="fill-popover/95 z-50 size-2 translate-y-[calc(-50%_-_1px)] rotate-45 rounded-md" />
+        <TooltipPrimitive.Arrow className="fill-popover z-50 size-2 translate-y-[calc(-50%_-_1px)] rotate-45 rounded-md" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );
