@@ -108,7 +108,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
       />
 
       {/* 📄 قائمة المقاسات الكاملة بدون أي اقتطاع مع شريط تمرير Fluent ناعم */}
-      <div className="space-y-1 max-h-[calc(100vh-210px)] overflow-y-auto pr-1 pl-0.5 custom-scrollbar">
+      <div className="space-y-1 max-h-[calc(100vh-210px)] overflow-y-auto pe-1 ps-0.5 custom-scrollbar">
         {filteredPresets.map((preset) => {
           const active = isPresetActive(preset);
 

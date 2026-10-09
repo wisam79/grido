@@ -21,8 +21,11 @@ function Progress({
     >
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
-        className="bg-foreground/85 h-full w-full flex-1 transition-all duration-300 ease-out"
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+        // 🛡️ C4 من تدقيق 2026-10-08: كان التعبئة تُرسم بـ translateX فيتجاه
+        // الملء من اليسار داخل كل الحوارات العربية (RTL). المقياس الأفقي يتبع
+        // اتجاه المستند: origin يبدأ من البداية المنطقية للنص.
+        className="bg-foreground/85 h-full w-full flex-1 origin-left rtl:origin-right transition-transform duration-300 ease-out"
+        style={{ transform: `scaleX(${Math.max(0, Math.min(100, value || 0)) / 100})` }}
       />
     </ProgressPrimitive.Root>
   );

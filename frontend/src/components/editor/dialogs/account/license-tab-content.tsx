@@ -1,13 +1,13 @@
-import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/huge-icon";
-import { Warning, Key, ShieldCheck, DownloadSimple, ArrowSquareOut } from "@/components/ui/icons";
-import { ExportSupportLogs } from "../../../../../wailsjs/go/main/App";
-import { toast } from "sonner";
-import { toErrorMessage } from "@/lib/wails-error";
-import type { UserProfile } from "@/lib/store/slices/license-slice";
+import { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/huge-icon';
+import { Warning, Key, ShieldCheck, DownloadSimple, ArrowSquareOut } from '@/components/ui/icons';
+import { ExportSupportLogs } from '../../../../../wailsjs/go/main/App';
+import { toast } from 'sonner';
+import { toErrorMessage } from '@/lib/wails-error';
+import type { UserProfile } from '@/lib/store/slices/license-slice';
 
 interface LicenseTabContentProps {
   user: UserProfile | null;
@@ -31,7 +31,7 @@ export function LicenseTabContent({
   error,
   onError,
 }: LicenseTabContentProps) {
-  const [licenseKey, setLicenseKey] = useState("");
+  const [licenseKey, setLicenseKey] = useState('');
   const [loading, setLoading] = useState(false);
   const isMountedRef = useRef(true);
 
@@ -50,7 +50,7 @@ export function LicenseTabContent({
       await onActivate(licenseKey.trim());
     } catch (err) {
       if (!isMountedRef.current) return;
-      const errMsg = toErrorMessage(err, "مفتاح الترخيص غير صالح.");
+      const errMsg = toErrorMessage(err, 'مفتاح الترخيص غير صالح.');
       onError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -62,14 +62,16 @@ export function LicenseTabContent({
 
   return (
     <div className="space-y-3.5">
-      {user && (user.plan === "pro" || user.plan === "enterprise") ? (
+      {user && (user.plan === 'pro' || user.plan === 'enterprise') ? (
         <div className="bg-emerald-500/5 border border-emerald-500/20 dark:border-emerald-500/30 rounded-xl p-4 text-center space-y-2.5 fluent-specular">
           <div className="inline-flex p-2.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-500/30 shadow-2xs">
             <ShieldCheck className="w-6 h-6 shrink-0" weight="duotone" />
           </div>
           <div>
             <h3 className="text-sm font-bold text-foreground">النسخة مفعلة بنجاح</h3>
-            <p className="text-xs text-muted-foreground mt-0.5 font-medium">الباقة: {user.plan === "pro" ? "Pro احترافي" : "Enterprise"}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+              الباقة: {user.plan === 'pro' ? 'Pro احترافي' : 'Enterprise'}
+            </p>
           </div>
 
           {user.licenseKey && (
@@ -81,8 +83,8 @@ export function LicenseTabContent({
               <button
                 type="button"
                 onClick={() => {
-                  navigator.clipboard.writeText(user.licenseKey || "");
-                  toast.success("تم نسخ المفتاح");
+                  navigator.clipboard.writeText(user.licenseKey || '');
+                  toast.success('تم نسخ المفتاح');
                 }}
                 className="text-xs text-primary hover:underline font-bold cursor-pointer"
               >
@@ -101,7 +103,9 @@ export function LicenseTabContent({
           )}
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-              <Label className="text-xs font-bold text-foreground/90">مفتاح الترخيص (License Key)</Label>
+              <Label className="text-xs font-bold text-foreground/90">
+                مفتاح الترخيص (License Key)
+              </Label>
               <button
                 type="button"
                 onClick={async () => {
@@ -109,10 +113,10 @@ export function LicenseTabContent({
                     const text = await navigator.clipboard.readText();
                     if (text) {
                       setLicenseKey(text.trim().toUpperCase());
-                      toast.success("تم لصق المفتاح");
+                      toast.success('تم لصق المفتاح');
                     }
                   } catch {
-                    toast.error("الصق المفتاح يدوياً");
+                    toast.error('الصق المفتاح يدوياً');
                   }
                 }}
                 className="text-xs text-primary hover:underline font-bold cursor-pointer flex items-center gap-1"
@@ -143,7 +147,7 @@ export function LicenseTabContent({
                 <span>جاري تفعيل الترخيص ...</span>
               </>
             ) : (
-              "تفعيل مفتاح الترخيص"
+              'تفعيل مفتاح الترخيص'
             )}
           </Button>
         </form>
@@ -160,7 +164,7 @@ export function LicenseTabContent({
                 toast.success(`تم حفظ السجلات في: ${path}`);
               }
             } catch (e) {
-              toast.error((e as Error)?.message || "فشل تصدير السجلات");
+              toast.error(toErrorMessage(e, 'فشل تصدير السجلات'));
             }
           }}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer font-medium"

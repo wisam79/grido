@@ -8,13 +8,19 @@ import {
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { z } from 'zod';
 import { CanvasElementSchema } from '@/lib/schema';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('clipboard-utils');
 
 /**
  * دالة عامة موحدة للصق المحتوى (من حافظة النظام أو حافظة الـ Store الداخلية)
  * تعمل بسلاسة في اختصارات الكيبورد (Ctrl+V) وتتكامل مع الزر الأيمن (Context Menu)
  */
 export async function pasteFromClipboardOrStore(): Promise<boolean> {
-  const state = useEditorStore.getState();
+  // 🛡️ كل قراءة للحالة تأتي من getState() **لحظة الاستخدام** — التقاط مرجع واحد
+  // قبل await navigator.clipboard كان يُقرأ بعد ثوانٍ فيرى slots/selectedId قديمة
+  // فتذهب الصورة الملصوقة إلى خانة خاطئة أو إلى الوضع الخطأ (E-تزامن).
+  const readState = () => useEditorStore.getState();
 
   // 1. محاولة القراءة من حافظة الويندوز/النظام أولاً (System Clipboard)
   let text: string | null = null;
@@ -23,7 +29,7 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
       text = await navigator.clipboard.readText();
     }
   } catch (err) {
-    console.warn('System clipboard text read not permitted, falling back to Wails:', err);
+    logger.warn('System clipboard text read not permitted, falling back to Wails', err);
   }
 
   // استخدام بديل Wails الأصلي إذا تعذرت القراءة عبر المتصفح
@@ -42,15 +48,15 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
         const rawParsed: unknown = JSON.parse(rawJson);
         const parseResult = z.array(CanvasElementSchema).safeParse(rawParsed);
         if (parseResult.success && parseResult.data.length > 0) {
-          state.pasteCopiedElements(parseResult.data as unknown as CanvasElement[]);
+          readState().pasteCopiedElements(parseResult.data as unknown as CanvasElement[]);
           return true;
         }
       } catch (err) {
-        console.error('Failed to parse GRIDO_ELEMENTS from clipboard:', err);
+        logger.error('Failed to parse GRIDO_ELEMENTS from clipboard', err);
       }
-    } else if (state.mode !== 'collage') {
+    } else if (readState().mode !== 'collage') {
       // نص خارجي من متصفح/ورد/مفكرة
-      state.addTextElement(text);
+      readState().addTextElement(text);
       return true;
     }
   }
@@ -71,23 +77,26 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
                 try {
                   const localPath = await SaveImageFromBase64(b64);
                   if (localPath) {
-                    if (state.mode === 'collage') {
-                      let targetSlotId = state.selectedId;
+                    // قراءة آنية: القالب الملتقط قبل await رأى خانات/تحديداً
+                    // قد يكون تغيّر أثناء قراءة الحافظة والترميز
+                    const { mode, selectedId, slots, setSlotImage, addImageElement } = readState();
+                    if (mode === 'collage') {
+                      let targetSlotId = selectedId;
                       if (!targetSlotId) {
-                        const emptySlot = state.slots.find((s) => !s.imageSrc);
+                        const emptySlot = slots.find((s) => !s.imageSrc);
                         if (emptySlot) targetSlotId = emptySlot.id;
-                        else if (state.slots.length > 0) targetSlotId = state.slots[0].id;
+                        else if (slots.length > 0) targetSlotId = slots[0].id;
                       }
-                      if (targetSlotId) state.setSlotImage(targetSlotId, localPath);
+                      if (targetSlotId) setSlotImage(targetSlotId, localPath);
                     } else {
                       const aspect = await resolveImageAspectRatio(localPath);
-                      state.addImageElement(localPath, aspect);
+                      addImageElement(localPath, aspect);
                     }
                     resolve(true);
                     return;
                   }
                 } catch (e) {
-                  console.error('Failed to save image from clipboard read:', e);
+                  logger.error('Failed to save image from clipboard read', e);
                 }
               }
               resolve(false);
@@ -98,12 +107,13 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
       }
     }
   } catch (err) {
-    console.warn('System clipboard image read not permitted or failed:', err);
+    logger.warn('System clipboard image read not permitted or failed', err);
   }
 
   // 3. الفحص الاحتياطي لحافظة الـ Store الداخلية
-  if (state.clipboardElements && state.clipboardElements.length > 0) {
-    state.pasteCopiedElements();
+  const fallbackState = readState();
+  if (fallbackState.clipboardElements && fallbackState.clipboardElements.length > 0) {
+    fallbackState.pasteCopiedElements();
     return true;
   }
 
@@ -127,7 +137,7 @@ export async function copyPngDataUrlToClipboard(pngDataUrl: string): Promise<boo
     ]);
     return true;
   } catch (err) {
-    console.error('Failed to copy image blob to clipboard:', err);
+    logger.error('Failed to copy image blob to clipboard', err);
     return false;
   }
 }
@@ -142,7 +152,7 @@ export async function copySvgCodeToClipboard(svgString: string): Promise<boolean
       return true;
     }
   } catch (err) {
-    console.warn('navigator.clipboard.writeText failed, falling back to Wails:', err);
+    logger.warn('navigator.clipboard.writeText failed, falling back to Wails', err);
   }
 
   // استخدام بديل Wails الأصلي
@@ -151,7 +161,7 @@ export async function copySvgCodeToClipboard(svgString: string): Promise<boolean
       await SetClipboardText(svgString);
       return true;
     } catch (wErr) {
-      console.error('Wails SetClipboardText failed:', wErr);
+      logger.error('Wails SetClipboardText failed', wErr);
     }
   }
 

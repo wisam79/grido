@@ -6,6 +6,7 @@ import {
   invalidateImageCache,
   preloadImageIntoCache,
 } from '@/lib/canvas/image-cache';
+import { ensureDisplayProxy } from '@/lib/canvas/display-image';
 
 export { invalidateImageCache, preloadImageIntoCache };
 
@@ -92,6 +93,10 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
       img.onload = () => {
         const finish = () => {
           setWithLRU(cacheKey, img);
+          // 🚀 تسخين نسخة العرض المخفّضة خارج طور الرسم مباشرةً بعد فكّ الترميز:
+          //تُبنى النسخة الكبيرة هنا بشكل غير متزامن (M16)، فيصبح أوّل وصول لاحق
+          // لعقدة Konva إصابةً في الكاش بلا حجب ctx.drawImage أثناء الرسم.
+          void ensureDisplayProxy(img);
           pendingLoads.delete(cacheKey);
           if (isCurrent) {
             setImage(img);

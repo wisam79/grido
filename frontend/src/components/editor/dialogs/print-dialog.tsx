@@ -34,12 +34,16 @@ import {
   FileText,
 } from '@/components/ui/icons';
 import { toast } from 'sonner';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
 import { GetPrinters, OpenPrinterPreferences } from '../../../../wailsjs/go/handlers/PrintHandler';
 import { PageOrientationIcon } from '@/components/ui/image-icons';
 import { PAPER_SIZES } from '@/lib/templates/constants';
 import { SheetPreview } from '../print/print-preview';
 import { useShallow } from 'zustand/react/shallow';
 import { usePrintExport } from '../print/use-print-export';
+
+const logger = createLogger('print-dialog');
 
 interface PrintDialogProps {
   open: boolean;
@@ -152,8 +156,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         toast.error('تعذر فتح تفضيلات الطابعة: ' + (res.error || 'خطأ غير معروف'));
       }
     } catch (err) {
-      console.error('Failed to open printer preferences:', err);
-      toast.error('حدث خطأ أثناء محاولة فتح تفضيلات الطابعة');
+      logger.error('Failed to open printer preferences:', err);
+      toast.error(toErrorMessage(err, 'حدث خطأ أثناء محاولة فتح تفضيلات الطابعة'));
     } finally {
       setIsOpeningPrefs(false);
     }
@@ -865,7 +869,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             >
               {isExporting ? (
                 <>
-                  <Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التجهيز...</span>
+                  <Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التجهيز ...</span>
                 </>
               ) : (
                 <>

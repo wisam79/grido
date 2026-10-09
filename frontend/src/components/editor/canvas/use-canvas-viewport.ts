@@ -1,13 +1,38 @@
-import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { clampZoomRaw } from '@/lib/canvas/zoom';
 
 /**
  * عتبة التزام الزوم: تغييرات العجلة الدقيقة (ضجيج لوحة اللمس) التي تقل عن
  * ~بكسل عرض واحد (Δz ≈ 1/boxW ≈ 0.001) ودون عتبة تسمية النسبة (0.5%) تُراكم
- * بلا التزام — فكل التزام يعيد حساب الملاءمة ويعيد تخصيص Stage كاملاً.
+ * بلا التزام — فكل التزام يعيد حساب الملاءمة.
  */
 const ZOOM_COMMIT_EPSILON = 0.001;
+
+/**
+ * مدّة استقرار إيماءة الزوم قبل «الخبز» (M15 من تدقيق 2026-10-08).
+ * أثناء حركة العجلة يُطبَّق الزوم بـ CSS transform فقط — بلا أي إعادة تخصيص
+ * لطبقات Konva ولا `layer.draw()` متزامن، فالإيماءة سلسة تماماً. وعند توقف
+ * المستخدم تُثبَّت النتيجة في الـ Stage (ومقاسه وكثافة البكسل) بمرة واحدة،
+ * فيعود الرسم بكامل حدّته دون أن ندفع ثمن re-raster في كل إطار.
+ */
+const ZOOM_BAKE_DELAY_MS = 140;
+
+/** الأدوات الافتراضية للنافذة: وضع الخبز أثناء الاختبارات */
+const BAKE_DEBUG_KEY = 'grido-zoom-bake-debug';
+
+interface ZoomBakeMetrics {
+  /** عدد مرات إعادة تخصيص الـ Stage (خبز) لتتبع الانحدار */
+  bakes: number;
+  /** عدد إيماءات الزوم التي اكتفت بالـ CSS */
+  cssOnlyFrames: number;
+}
+
+declare global {
+  interface Window {
+    __gridoZoomBake?: ZoomBakeMetrics;
+  }
+}
 
 /**
  * عناصر تستهلك مفتاح المسافة نيابة عن المستخدم: حقول الكتابة (تكتب مسافة)
@@ -49,8 +74,21 @@ export function useCanvasViewport(
     screenY: number;
   } | null>(null);
 
+  // ── زوم الإيماءة اللحظي (CSS transform) + خبز بعد الاستقرار ──────────────
+  // المستودع يحتفظ بآخر قيمة مُثبَّتة فقط؛ القيمة المؤقتة تُعرض مباشرة على
+  // الغلاف وتُكتب في المتجر عند الاستقرار (أو فوراً عند الزوم بالأزرار).
   const canvasZoom = useEditorStore((s) => s.canvasZoom);
   const setCanvasZoom = useEditorStore((s) => s.setCanvasZoom);
+  const [gestureZoom, setGestureZoom] = useState<number | null>(null);
+  // مرآة قابلة للقراءة داخل مستمع العجلة (مُسجَّل مرة واحدة بمصفوفة تبعيات
+  // ثابتة) — بلا هذه يعود المستمع لفارق قديم في كل إطار.
+  const gestureZoomRef = useRef<number | null>(null);
+  // المزامنة في أثر لا أثناء التصيير (قاعدة react-hooks/refs) — المستمع
+  // يقرأها بعد الـ commit وقبل أي حدث لاحق، فلا يحتاج قيمة متزامنة مع الرسم.
+  useEffect(() => {
+    gestureZoomRef.current = gestureZoom;
+  }, [gestureZoom]);
+  const effectiveZoom = gestureZoom ?? canvasZoom;
 
   useEffect(() => {
     const spacePressedRef = { current: false };
@@ -60,6 +98,38 @@ export function useCanvasViewport(
 
     let pendingZoom: number | null = null;
     let rafId: number | null = null;
+    let bakeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /** كتابة القيمة في المتجر وإعادة تخصيص الـ Stage (الخبز) */
+    const bakeZoom = (target: number) => {
+      bakeTimer = null;
+      const committed = useEditorStore.getState().canvasZoom;
+      if (Math.abs(target - committed) < ZOOM_COMMIT_EPSILON) {
+        setGestureZoom(null);
+        return;
+      }
+      if (innerRef.current) {
+        const canvasRect = innerRef.current.getBoundingClientRect();
+        prevCanvasRectRef.current = canvasRect;
+        zoomPivotRef.current = {
+          pctX: (lastWheelClientX - canvasRect.left) / (canvasRect.width || 1),
+          pctY: (lastWheelClientY - canvasRect.top) / (canvasRect.height || 1),
+          screenX: lastWheelClientX,
+          screenY: lastWheelClientY,
+        };
+      }
+      setGestureZoom(null);
+      setCanvasZoom(target);
+      if (typeof window !== 'undefined' && BAKE_DEBUG_KEY) {
+        const m = (window.__gridoZoomBake ??= { bakes: 0, cssOnlyFrames: 0 });
+        m.bakes += 1;
+      }
+    };
+
+    const scheduleBake = (target: number) => {
+      if (bakeTimer !== null) clearTimeout(bakeTimer);
+      bakeTimer = setTimeout(() => bakeZoom(target), ZOOM_BAKE_DELAY_MS);
+    };
 
     const applyZoom = () => {
       rafId = null;
@@ -68,19 +138,16 @@ export function useCanvasViewport(
       const newZoom = pendingZoom;
       pendingZoom = null;
 
-      if (newZoom !== useEditorStore.getState().canvasZoom) {
-        if (innerRef.current) {
-          const canvasRect = innerRef.current.getBoundingClientRect();
-          prevCanvasRectRef.current = canvasRect;
-          zoomPivotRef.current = {
-            pctX: (lastWheelClientX - canvasRect.left) / canvasRect.width,
-            pctY: (lastWheelClientY - canvasRect.top) / canvasRect.height,
-            screenX: lastWheelClientX,
-            screenY: lastWheelClientY,
-          };
-        }
-        setCanvasZoom(newZoom);
+      // 🛡️ M15: أثناء الإيماءة لا نكتب المتجر — نعرض الزوم بـ CSS فقط.
+      // كتابة المتجر كانت تُعيد حساب `computeCanvasDisplay` فتُغيّر مقاس
+      // الـ Stage ⇒ إعادة تخصيص backing store لكل طبقة + layer.draw() متزامن
+      // في كل إطار من العجلة (أثقل تكلفة في دورة التكبير).
+      setGestureZoom(newZoom);
+      if (typeof window !== 'undefined' && BAKE_DEBUG_KEY) {
+        const m = (window.__gridoZoomBake ??= { bakes: 0, cssOnlyFrames: 0 });
+        m.cssOnlyFrames += 1;
       }
+      scheduleBake(newZoom);
     };
 
     let lastWheelClientX = 0;
@@ -92,14 +159,14 @@ export function useCanvasViewport(
         lastWheelClientX = e.clientX;
         lastWheelClientY = e.clientY;
 
-        const committedZoom = useEditorStore.getState().canvasZoom;
-        const baseZoom = pendingZoom !== null ? pendingZoom : committedZoom;
+        const baseZoom =
+          pendingZoom ?? gestureZoomRef.current ?? useEditorStore.getState().canvasZoom;
         const factor = Math.exp(-e.deltaY * 0.003);
         const newZoom = clampZoomRaw(baseZoom * factor);
 
         // دون العتبة: راكم المرشّح بلا جدولة إطار — يحفظ سلاسة التراكم
         // للقرص البطيء ويُسقط ضجيجاً لا يغيّر بكسلاً واحداً ولا التسمية
-        if (Math.abs(newZoom - committedZoom) < ZOOM_COMMIT_EPSILON) {
+        if (Math.abs(newZoom - baseZoom) < ZOOM_COMMIT_EPSILON) {
           pendingZoom = newZoom;
           return;
         }
@@ -171,6 +238,14 @@ export function useCanvasViewport(
     // هناك قياس DOM موازٍ يعيد اشتقاق حجم لم يتغيّر أصلاً.
 
     return () => {
+      // إيماءة لم تستقر بعد: نُخبزها قبل الخروج بدل أن تضيع بلا أثر
+      if (bakeTimer !== null) {
+        clearTimeout(bakeTimer);
+        if (pendingZoom !== null) {
+          setCanvasZoom(pendingZoom);
+        }
+      }
+      if (rafId !== null) cancelAnimationFrame(rafId);
       node.removeEventListener('wheel', handleWheel);
       node.removeEventListener('pointerdown', handlePointerDown, { capture: true });
       window.removeEventListener('keydown', handleKeyDown);
@@ -178,9 +253,10 @@ export function useCanvasViewport(
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
-      if (rafId !== null) cancelAnimationFrame(rafId);
+      // إسقاط أي زوم إيماءة لم يُخبَز — الشاشة ترجع لقيمة المتجر المثبَّتة
+      setGestureZoom(null);
     };
-  }, [setCanvasZoom, containerRef, innerRef]);
+  }, [setCanvasZoom, containerRef, innerRef, gestureZoomRef]);
 
   // محافظة محور الزوم: تعيد المحور (pivot) لموضعه الشاشي بعد تغيّر الزوم
   useLayoutEffect(() => {
@@ -232,4 +308,8 @@ export function useCanvasViewport(
       prevCanvasRectRef.current = innerRef.current.getBoundingClientRect();
     }
   }, [canvasZoom, containerRef, innerRef]);
+
+  // القيمة الفعلية المعروضة الآن: زوم الإيماءة إن كانت جارية، وإلا المثبَّتة.
+  // يقرؤها المحرر لتحديد مقاس الورقة المرئي (المساطر، الشريط، غلاف CSS).
+  return { effectiveZoom };
 }

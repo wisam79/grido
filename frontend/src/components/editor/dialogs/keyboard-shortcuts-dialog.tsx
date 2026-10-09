@@ -1,18 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogCloseButton,
-} from "@/components/ui/dialog";
-import {
-  Keyboard,
-  ArrowUp,
-  ArrowDown,
-  Sparkle,
-} from "@/components/ui/icons";
-import { Separator } from "@/components/ui/separator";
+} from '@/components/ui/dialog';
+import { Keyboard, ArrowUp, ArrowDown, Sparkle } from '@/components/ui/icons';
+import { Separator } from '@/components/ui/separator';
 
 interface ShortcutItem {
   label: string;
@@ -28,83 +24,76 @@ export function KeyboardShortcutsDialog() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
-
-      // Ctrl + / (or Cmd + / on Mac)
-      if ((e.ctrlKey || e.metaKey) && e.key === "/") {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-      }
-    };
-
+    // 🛡️ H15 من تدقيق 2026-10-08: تسجيل Ctrl+/ انتقل إلى المصدر الواحد
+    // `hooks/use-keyboard-shortcuts.ts` (يملك كل المفاتيح العامة ويحرس الحقول
+    // النصية). هنا يبقى مستمع الحدث فقط — بلا مالك ثانٍ للمفاتيح.
     const handleOpenEvent = () => setOpen(true);
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("grido:open-shortcuts", handleOpenEvent);
+    window.addEventListener('grido:open-shortcuts', handleOpenEvent);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("grido:open-shortcuts", handleOpenEvent);
+      window.removeEventListener('grido:open-shortcuts', handleOpenEvent);
     };
   }, []);
 
   const categories: ShortcutCategory[] = [
     {
-      title: "التحرير والتنظيم",
+      title: 'التحرير والتنظيم',
       items: [
-        { label: "تحديد كافة العناصر", keys: ["Ctrl", "A"] },
-        { label: "تراجع", keys: ["Ctrl", "Z"] },
-        { label: "إعادة", keys: ["Ctrl", "Y"] },
-        { label: "تكرار العنصر", keys: ["Ctrl", "D"] },
-        { label: "حذف العنصر المحدد", keys: ["Delete"] },
-        { label: "تجميع العناصر", keys: ["Ctrl", "G"] },
-        { label: "فك التجميع", keys: ["Ctrl", "Shift", "G"] },
-        { label: "نسخ العنصر", keys: ["Ctrl", "C"] },
-        { label: "قص العنصر", keys: ["Ctrl", "X"] },
-        { label: "لصق صورة", keys: ["Ctrl", "V"] },
-        { label: "إلغاء التحديد", keys: ["Esc"] },
+        { label: 'تحديد كافة العناصر', keys: ['Ctrl', 'A'] },
+        { label: 'تراجع', keys: ['Ctrl', 'Z'] },
+        { label: 'إعادة', keys: ['Ctrl', 'Y'] },
+        { label: 'تكرار العنصر', keys: ['Ctrl', 'D'] },
+        { label: 'حذف العنصر المحدد', keys: ['Delete'] },
+        { label: 'تجميع العناصر', keys: ['Ctrl', 'G'] },
+        { label: 'فك التجميع', keys: ['Ctrl', 'Shift', 'G'] },
+        { label: 'نسخ العنصر', keys: ['Ctrl', 'C'] },
+        { label: 'قص العنصر', keys: ['Ctrl', 'X'] },
+        { label: 'لصق صورة', keys: ['Ctrl', 'V'] },
+        { label: 'إلغاء التحديد', keys: ['Esc'] },
       ],
     },
     {
-      title: "الملف والتصدير والطباعة",
+      title: 'الملف والتصدير والطباعة',
       items: [
-        { label: "إدراج صورة جديدة", keys: ["Ctrl", "O"] },
-        { label: "إدراج دفعة", keys: ["Ctrl", "Shift", "O"] },
-        { label: "حفظ المشروع", keys: ["Ctrl", "S"] },
-        { label: "تصدير صورة", keys: ["Ctrl", "E"] },
-        { label: "طباعة المستند", keys: ["Ctrl", "P"] },
+        { label: 'إدراج صورة جديدة', keys: ['Ctrl', 'O'] },
+        { label: 'إدراج دفعة', keys: ['Ctrl', 'Shift', 'O'] },
+        { label: 'حفظ المشروع', keys: ['Ctrl', 'S'] },
+        { label: 'تصدير صورة', keys: ['Ctrl', 'E'] },
+        { label: 'طباعة المستند', keys: ['Ctrl', 'P'] },
       ],
     },
     {
-      title: "التحريك والمحاذاة",
+      title: 'التحريك والمحاذاة',
       items: [
-        { label: "تحريك دقيق", keys: ["الأسهم"] },
-        { label: "تحريك سريع", keys: ["Shift", "الأسهم"] },
-        { label: "تكبير/تصغير العنصر", keys: ["Alt", "↑/↓"] },
-        { label: "تكبير/تصغير بخطوة أكبر", keys: ["Alt", "Shift", "↑/↓"] },
+        { label: 'تحريك دقيق', keys: ['الأسهم'] },
+        { label: 'تحريك سريع', keys: ['Shift', 'الأسهم'] },
+        { label: 'تكبير/تصغير العنصر', keys: ['Alt', '↑/↓'] },
+        { label: 'تكبير/تصغير بخطوة أكبر', keys: ['Alt', 'Shift', '↑/↓'] },
       ],
     },
     {
-      title: "الرؤية واللوحات الجانبية",
+      title: 'الرؤية واللوحات الجانبية',
       items: [
-        { label: "تكبير", keys: ["Ctrl", "+"] },
-        { label: "تصغير", keys: ["Ctrl", "-"] },
-        { label: "إعادة الضبط (100%)", keys: ["Ctrl", "0"] },
-        { label: "المساطر", keys: ["Ctrl", "R"] },
-        { label: "الشبكة", keys: ["Ctrl", "'"] },
-        { label: "الخطوط الإرشادية", keys: ["Ctrl", ";"] },
-        { label: "القوالب", keys: ["Ctrl", "B"] },
-        { label: "الخصائص", keys: ["Ctrl", "Shift", "B"] },
+        { label: 'تكبير', keys: ['Ctrl', '+'] },
+        { label: 'تصغير', keys: ['Ctrl', '-'] },
+        { label: 'الحجم الفعلي (100%)', keys: ['Ctrl', '1'] },
+        { label: 'ملاءمة الورقة كاملة', keys: ['Ctrl', '0'] },
+        { label: 'ملاءمة عرض مساحة العمل', keys: ['Ctrl', 'Shift', '0'] },
+        { label: 'ملاءمة تلقائية', keys: ['Ctrl', 'Alt', '0'] },
+        { label: 'المساطر', keys: ['Ctrl', 'R'] },
+        { label: 'الشبكة', keys: ['Ctrl', "'"] },
+        { label: 'الخطوط الإرشادية', keys: ['Ctrl', ';'] },
+        { label: 'القوالب', keys: ['Ctrl', 'B'] },
+        { label: 'الخصائص', keys: ['Ctrl', 'Shift', 'B'] },
       ],
     },
     {
-      title: "الأدوات ومسارات العمل",
+      title: 'الأدوات ومسارات العمل',
       items: [
-        { label: "لوحة كل الأدوات", keys: ["Ctrl", "K"] },
-        { label: "فتح أداة بالترتيب", keys: ["Alt", "1 … 9"] },
-        { label: "تبديل وضع العمل (كولاج / تعديل حر)", keys: ["Ctrl", "Alt", "1 / 2"] },
-        { label: "وضع التركيز", keys: ["Ctrl", "."] },
-        { label: "لوحة الاختصارات", keys: ["Ctrl", "/"] },
+        { label: 'لوحة كل الأدوات', keys: ['Ctrl', 'K'] },
+        { label: 'فتح أداة بالترتيب', keys: ['Alt', '1 … 9'] },
+        { label: 'تبديل وضع العمل (كولاج / تعديل حر)', keys: ['Ctrl', 'Alt', '1 / 2'] },
+        { label: 'وضع التركيز', keys: ['Ctrl', '.'] },
+        { label: 'لوحة الاختصارات', keys: ['Ctrl', '/'] },
       ],
     },
   ];
@@ -125,6 +114,9 @@ export function KeyboardShortcutsDialog() {
             </DialogTitle>
             <DialogCloseButton />
           </div>
+          <DialogDescription className="sr-only">
+            قائمة اختصارات لوحة المفاتيح الكاملة
+          </DialogDescription>
         </DialogHeader>
 
         {/* جسم النافذة القابل للتمرير بحدود ارتفاع محكومة */}
@@ -140,7 +132,7 @@ export function KeyboardShortcutsDialog() {
                   <React.Fragment key={itemIdx}>
                     <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-muted/50 transition-colors text-xs">
                       <span className="text-foreground/90 font-medium text-xs">
-                         {shortcut.label}
+                        {shortcut.label}
                       </span>
                       <div className="flex items-center gap-1.5" dir="ltr">
                         {shortcut.keys.map((key, i) => (
@@ -148,7 +140,7 @@ export function KeyboardShortcutsDialog() {
                             key={i}
                             className="px-2 py-0.5 bg-background border border-border/70 rounded-md text-xs font-bold font-mono text-foreground shadow-2xs flex items-center justify-center min-w-8 h-6"
                           >
-                            {key === "الأسهم" ? (
+                            {key === 'الأسهم' ? (
                               <div className="flex items-center gap-0.5">
                                 <ArrowUp className="w-3.5 h-3.5 shrink-0" weight="bold" />
                                 <ArrowDown className="w-3.5 h-3.5 shrink-0" weight="bold" />

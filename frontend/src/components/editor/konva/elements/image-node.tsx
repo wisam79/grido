@@ -207,6 +207,16 @@ export const URLImage = React.memo(function URLImage({
       opacity={element.opacity}
       visible={element.visible !== false}
       id={element.id}
+      // 🛡️ الظل على المجموعة خارج الكاش: `KonvaImage` مُخزَّن بـ `node.cache()`
+      // فكان Konva يرسم البيت ماب المجمَّد ويتجاهل أي تغيير في shadow* — تعديل
+      // ظل الصورة من لوحة الخصائص لا يظهر على الشاشة ولا في التصدير. الظل على
+      // المجموعة يُرسم من الأبناء في كل إطار: يتحدّث فوراً مع تحرير المستخدم
+      // ويتبع ظل الرفع أثناء السحب بلا تفريغ الكاش (H1 من تدقيق 2026-10-08).
+      shadowColor={liftActive ? 'rgba(15, 23, 42, 0.45)' : element.shadowColor}
+      shadowBlur={isDragLifted ? (liftActive ? 8 : 0) : element.shadowBlur || 0}
+      shadowOffsetX={liftActive ? 0 : element.shadowOffsetX || 0}
+      shadowOffsetY={liftActive ? 4 : element.shadowOffsetY || 0}
+      shadowOpacity={isDragLifted ? (liftActive ? 0.25 : 0) : (element.shadowOpacity ?? 0)}
       draggable={!element.locked && isSelected}
       onDragStart={() => {
         setIsDragLifted(true);
@@ -253,13 +263,8 @@ export const URLImage = React.memo(function URLImage({
           width={nodeW}
           height={nodeH}
           perfectDrawEnabled={false}
-          // 🚀 أثناء السحب: ظل الرفع مخفّض (blur 8 بدل 16) والظل المخصص
-          // مُطفأ تماماً — تمريرة الضبابية خارج الشاشة هي أغلى عملية/إطار.
-          shadowColor={liftActive ? 'rgba(15, 23, 42, 0.45)' : element.shadowColor}
-          shadowBlur={isDragLifted ? (liftActive ? 8 : 0) : element.shadowBlur || 0}
-          shadowOffsetX={liftActive ? 0 : element.shadowOffsetX || 0}
-          shadowOffsetY={liftActive ? 4 : element.shadowOffsetY || 0}
-          shadowOpacity={isDragLifted ? (liftActive ? 0.25 : 0) : (element.shadowOpacity ?? 0)}
+          // 🛡️ لا ظل هنا — انتقل للمجموعة الأب (خارج الكاش) كي لا يُجمَّد
+          // داخل البيت ماپ. أثناء السحب ظل الرفع مخفّض (blur 8 بدل 16).
           cornerRadius={element.cornerRadius || 0}
           filters={filters}
           brightness={filterProps.brightness}

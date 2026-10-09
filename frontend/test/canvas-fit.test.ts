@@ -147,33 +147,62 @@ describe('lib/canvas/fit — وضع ملاءمة العرض', () => {
 describe('lib/canvas/fit — الملاءمة التلقائية', () => {
   it('يختار ملاءمة العرض للورقة الافتراضية A4 في نافذة عريضة (1600×900)', () => {
     expect(
-      resolveFitMode({ containerW: LARGE.w, containerH: LARGE.h, aspect: A4_ASPECT, fitMode: 'auto' })
+      resolveFitMode({
+        containerW: LARGE.w,
+        containerH: LARGE.h,
+        aspect: A4_ASPECT,
+        fitMode: 'auto',
+      }),
     ).toBe('width');
   });
 
   it('يفعّل ملاءمة العرض لورقة الهوية 35×45 في منطقة عمل بلا ألواح جانبية', () => {
     // الورقة الرأسية الضيقة تحتاج منطقة أعرض (AR > 1.73) ليصبح فراغها مبالَغاً به
     const wide = { w: 1852, h: 936 };
-    expect(lateralLeftoverRatio(wide.w, wide.h, ID_ASPECT)).toBeGreaterThan(AUTO_FIT_LEFTOVER_RATIO);
-    expect(resolveFitMode({ containerW: wide.w, containerH: wide.h, aspect: ID_ASPECT, fitMode: 'auto' })).toBe(
-      'width'
+    expect(lateralLeftoverRatio(wide.w, wide.h, ID_ASPECT)).toBeGreaterThan(
+      AUTO_FIT_LEFTOVER_RATIO,
     );
+    expect(
+      resolveFitMode({
+        containerW: wide.w,
+        containerH: wide.h,
+        aspect: ID_ASPECT,
+        fitMode: 'auto',
+      }),
+    ).toBe('width');
   });
 
   it('يبقى على «ملاءمة الكل» في النافذة الافتراضية 1280×800 (الورقة كاملة)', () => {
     // A4 في 1280×800 مع اللوح مفتوحاً: الفراغ 50% — دون العتبة، فالورقة
     // كاملة على الشاشة في الحجم الافتراضي للتطبيق (لا تمرير مفاجئ أول مرة)
-    expect(lateralLeftoverRatio(DESKTOP.w, DESKTOP.h, A4_ASPECT)).toBeLessThan(AUTO_FIT_LEFTOVER_RATIO);
+    expect(lateralLeftoverRatio(DESKTOP.w, DESKTOP.h, A4_ASPECT)).toBeLessThan(
+      AUTO_FIT_LEFTOVER_RATIO,
+    );
     expect(
-      resolveFitMode({ containerW: DESKTOP.w, containerH: DESKTOP.h, aspect: A4_ASPECT, fitMode: 'auto' })
+      resolveFitMode({
+        containerW: DESKTOP.w,
+        containerH: DESKTOP.h,
+        aspect: A4_ASPECT,
+        fitMode: 'auto',
+      }),
     ).toBe('height');
     // وورقة 35×45 في نفس النافذة: فراغ 45% — دون العتبة أيضاً
     expect(
-      resolveFitMode({ containerW: DESKTOP.w, containerH: DESKTOP.h, aspect: ID_ASPECT, fitMode: 'auto' })
+      resolveFitMode({
+        containerW: DESKTOP.w,
+        containerH: DESKTOP.h,
+        aspect: ID_ASPECT,
+        fitMode: 'auto',
+      }),
     ).toBe('height');
     // ورقة رأسية قريبة من المربع: لا فراغ يستحق التمرير
     expect(
-      resolveFitMode({ containerW: DESKTOP.w, containerH: DESKTOP.h, aspect: 0.9, fitMode: 'auto' })
+      resolveFitMode({
+        containerW: DESKTOP.w,
+        containerH: DESKTOP.h,
+        aspect: 0.9,
+        fitMode: 'auto',
+      }),
     ).toBe('height');
   });
 
@@ -183,7 +212,12 @@ describe('lib/canvas/fit — الملاءمة التلقائية', () => {
     // وورقة شبه مخفية — فيبقى وضع auto على الورقة كاملة
     expect(lateralLeftoverRatio(wideShort.w, wideShort.h, ID_ASPECT)).toBeGreaterThan(0.8);
     expect(
-      resolveFitMode({ containerW: wideShort.w, containerH: wideShort.h, aspect: ID_ASPECT, fitMode: 'auto' })
+      resolveFitMode({
+        containerW: wideShort.w,
+        containerH: wideShort.h,
+        aspect: ID_ASPECT,
+        fitMode: 'auto',
+      }),
     ).toBe('height');
   });
 
@@ -205,9 +239,9 @@ describe('lib/canvas/fit — الملاءمة التلقائية', () => {
     // ورقة مربعة تُلائَم بالارتفاع أيضاً: ملاءمتها بالعرض تخرج عن الإطار
     // بلا فائدة تُذكر (فراغ جانبي 29% فقط)، فالقرار يبقى على «الكل».
     for (const aspect of [1, 1.5, 2.4]) {
-      expect(resolveFitMode({ containerW: DESKTOP.w, containerH: DESKTOP.h, aspect, fitMode: 'auto' })).toBe(
-        'height'
-      );
+      expect(
+        resolveFitMode({ containerW: DESKTOP.w, containerH: DESKTOP.h, aspect, fitMode: 'auto' }),
+      ).toBe('height');
     }
 
     // الأوراق العريضة بما يكفي لملء العرض: لا فراغ أصلاً في وضع «الكل»
@@ -225,7 +259,7 @@ describe('lib/canvas/fit — الملاءمة التلقائية', () => {
           aspect: A4_ASPECT,
           zoom,
           fitMode: 'auto',
-        }).resolved
+        }).resolved,
     );
     expect(new Set(modes)).toEqual(new Set(['width']));
   });
@@ -234,7 +268,9 @@ describe('lib/canvas/fit — الملاءمة التلقائية', () => {
     expect(AUTO_FIT_LEFTOVER_RATIO).toBeCloseTo(0.55, 6);
     expect(AUTO_FIT_MAX_VERTICAL_OVERFLOW).toBe(3);
     // ورقة رأسية في منطقة أفقية واسعة: الفراغ يتجاوز العتبة بكثير
-    expect(lateralLeftoverRatio(SMALL.w, SMALL.h, ID_ASPECT)).toBeGreaterThan(AUTO_FIT_LEFTOVER_RATIO);
+    expect(lateralLeftoverRatio(SMALL.w, SMALL.h, ID_ASPECT)).toBeGreaterThan(
+      AUTO_FIT_LEFTOVER_RATIO,
+    );
   });
 });
 
@@ -307,13 +343,23 @@ describe('lib/canvas/fit — حمايات القيم الشاذة', () => {
   });
 
   it('يعالج حاوية بلا قياس بعد (0×0) بلا عرض سالب', () => {
-    const result = computeCanvasDisplay({ containerW: 0, containerH: 0, aspect: ID_ASPECT, zoom: 1 });
+    const result = computeCanvasDisplay({
+      containerW: 0,
+      containerH: 0,
+      aspect: ID_ASPECT,
+      zoom: 1,
+    });
     expect(result.displayW).toBeGreaterThanOrEqual(100);
     expect(result.displayH).toBeGreaterThanOrEqual(100);
   });
 
   it('يتجاهل الزوم غير الصالح ويعود إلى 1', () => {
-    const base = computeCanvasDisplay({ containerW: SMALL.w, containerH: SMALL.h, aspect: ID_ASPECT, zoom: 1 });
+    const base = computeCanvasDisplay({
+      containerW: SMALL.w,
+      containerH: SMALL.h,
+      aspect: ID_ASPECT,
+      zoom: 1,
+    });
     const invalid = computeCanvasDisplay({
       containerW: SMALL.w,
       containerH: SMALL.h,
@@ -353,5 +399,55 @@ describe('lib/canvas/fit — تفضيل الملاءمة المحفوظ', () => 
     for (const label of Object.values(CANVAS_FIT_LABELS)) {
       expect(label.trim().length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('lib/canvas/fit — زوم CSS transform: مقاس الـ Stage ثابت (M15)', () => {
+  it('stageW/H لا يتغيران مع الزوم بينما displayW/H يتبعانه', () => {
+    const input = { containerW: 1280, containerH: 800, aspect: 35 / 45 };
+    const z1 = computeCanvasDisplay({ ...input, zoom: 1 });
+    const z3 = computeCanvasDisplay({ ...input, zoom: 3 });
+
+    expect(z3.stageW).toBe(z1.stageW);
+    expect(z3.stageH).toBe(z1.stageH);
+    // displayW يُقرّب مرّة واحدة من الأساس × الزوم (لا من الأساس المقرّب × الزوم)
+    // فالسماح ببكسل واحد من فرق التقريب — لا فرق بصري.
+    expect(Math.abs(z3.displayW - z1.displayW * 3)).toBeLessThanOrEqual(1);
+    expect(Math.abs(z3.displayH - z1.displayH * 3)).toBeLessThanOrEqual(1);
+  });
+
+  it('نسبة العرض/الارتفاع محفوظة عبر كل مستويات الزوم', () => {
+    const input = { containerW: 1600, containerH: 900, aspect: 210 / 297 };
+    const z1 = computeCanvasDisplay({ ...input, zoom: 1 });
+    const z5 = computeCanvasDisplay({ ...input, zoom: 5 });
+
+    expect(z1.stageW / z1.stageH).toBeCloseTo(z5.stageW / z5.stageH, 1);
+    expect(z1.displayW / z1.displayH).toBeCloseTo(z5.displayW / z5.displayH, 1);
+  });
+
+  it('مقاس الـ Stage لا يتأثر بضعف القرص على اللوحة اللمسية (زوم ضجيج)', () => {
+    const input = { containerW: 1280, containerH: 800, aspect: 1 };
+    const a = computeCanvasDisplay({ ...input, zoom: 1.0005 });
+    const b = computeCanvasDisplay({ ...input, zoom: 1 });
+
+    expect(a.stageW).toBe(b.stageW);
+    expect(a.stageH).toBe(b.stageH);
+  });
+
+  it('paperCaptureRect يعيد الورقة بإحداثيات منطقية موجبة', async () => {
+    const { paperCaptureRect } = await import('../src/lib/canvas/fit');
+    expect(paperCaptureRect(2480, 3508)).toEqual({ x: 0, y: 0, width: 2480, height: 3508 });
+    // حمايات القيم الشاذة — لا يصدر مستطيل صفرياً أو سالباً
+    expect(paperCaptureRect(0, 3508).width).toBe(1);
+    expect(paperCaptureRect(Number.NaN, 0).width).toBe(1);
+  });
+
+  it('لا يُنتج قيماً غير منتهية عند حاوية فارغة', () => {
+    const d = computeCanvasDisplay({ containerW: 0, containerH: 0, aspect: 1, zoom: 2 });
+    expect(Number.isFinite(d.stageW)).toBe(true);
+    expect(Number.isFinite(d.stageH)).toBe(true);
+    expect(Number.isFinite(d.displayW)).toBe(true);
+    expect(Number.isFinite(d.displayH)).toBe(true);
+    expect(d.stageW).toBeGreaterThan(0);
   });
 });

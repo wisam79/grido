@@ -28,7 +28,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   gridAlign: 'top-left',
 };
 
-export const createPrintSlice: StateCreator<EditorState, [], [], PrintSlice> = (set) => ({
+export const createPrintSlice: StateCreator<EditorState, [], [], PrintSlice> = (set, get) => ({
   printSettings: DEFAULT_PRINT_SETTINGS,
   printImageSrc: null,
   setPrintImageSrc: (src) => set({ printImageSrc: src }),
@@ -38,14 +38,10 @@ export const createPrintSlice: StateCreator<EditorState, [], [], PrintSlice> = (
       let adjustedSlots = s.slots || [];
       const mode = s.mode;
       const collageTemplate = s.collageTemplate;
+      // تغيير الـ DPI يعيد بناء هندسة الخانات فعلياً — يستحق خطوة تراجع
+      const dpiChanged = patch.dpi !== undefined && patch.dpi !== s.printSettings.dpi;
 
-      if (
-        mode === 'collage' &&
-        collageTemplate &&
-        collageTemplate.physicalLayout &&
-        patch.dpi !== undefined &&
-        patch.dpi !== s.printSettings.dpi
-      ) {
+      if (mode === 'collage' && collageTemplate && collageTemplate.physicalLayout && dpiChanged) {
         const storedDpi = newSettings.dpi || 300;
         const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
         const dynamicCells = computeDynamicCollageCells(
@@ -59,6 +55,13 @@ export const createPrintSlice: StateCreator<EditorState, [], [], PrintSlice> = (
         if (dynamicCells) {
           adjustedSlots = remapSlotsToCells(s.slots || [], dynamicCells);
         }
+      }
+
+      // 🛡️ H4 من تدقيق 2026-10-08: إعادة بناء الخانات كانت تجري بلا `pushHistory`
+      // بينما `printSettings` نفسه غائب عن اللقطات — أي تغيير DPI كان يرجّع
+      // الخانات بـ Ctrl+Z ويُبقي الـ DPI الجديد. اللقطة الآن تغطي الحقلين معاً.
+      if (dpiChanged) {
+        setTimeout(() => get().pushHistory(), 0);
       }
 
       return {

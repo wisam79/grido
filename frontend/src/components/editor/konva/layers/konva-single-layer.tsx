@@ -106,6 +106,14 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
   const isText =
     selectedIds.length > 0 && selectedIds.every((id) => elementsById.get(id)?.type === 'text');
 
+  // 🛡️ M19: قارئ ثابت الهوية يقرأ العقدة الحيّة من خريطة المراجع — المحوّل
+  // يعيد الربط إجبارياً عندما تختلف مجموعة المعرفات المربوطة عن المحددة
+  // (عنصر مقصي خارج الكانفا يُفكّك عقدته فتفرغ القائمة أو تبقى عقدة ميتة).
+  const getKonvaNodeById = React.useCallback(
+    (id: string) => elementsRefs.current[id] ?? null,
+    [elementsRefs],
+  );
+
   return (
     <Layer>
       {sortedElements.map((el) => {
@@ -180,6 +188,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
           canvasHeight={canvasHeight}
           stageScale={displayW / canvasWidth}
           isText={isText}
+          getKonvaNode={getKonvaNodeById}
           setActiveGuides={setActiveGuides}
           altPressedRef={altPressedRef}
           onTransformEnd={() => {

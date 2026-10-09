@@ -106,6 +106,27 @@ export const nextZIndex = (elements: CanvasElement[]): number => {
 };
 
 /**
+ * أدنى zIndex في المصفوفة (مع الأرضية 0) — بدلاً عن `Math.min(0, ...arr)`
+ * الذي يفشل عمليات النشر (RangeError) على كانفاسات بعناصر كثيلة جداً.
+ */
+export const minZIndex = (elements: CanvasElement[]): number => {
+  let min = 0;
+  for (const el of elements) {
+    if (el.zIndex < min) min = el.zIndex;
+  }
+  return min;
+};
+
+/** أعلى zIndex في المصفوفة (مع الأرضية 0) — بديل حلقي عن `Math.max(0, ...arr)` */
+export const maxZIndex = (elements: CanvasElement[]): number => {
+  let max = 0;
+  for (const el of elements) {
+    if (el.zIndex > max) max = el.zIndex;
+  }
+  return max;
+};
+
+/**
  * توحيد ومزامنة حالة التحديد (Selection State Normalization):
  * يضمن بقاء selectedId و selectedIds متسقين تماماً وبلا انحراف:
  * - إذا كان التحديد فارغاً: كلاهما فارغ (null و []).
@@ -120,17 +141,19 @@ export const normalizeSelection = (
     return { selectedIds: [], selectedId: null };
   }
   const selectedIds = Array.isArray(ids) ? ids : [ids];
+  // نسخة دائماً: إعادة مرجع المصفوفة المُمرّرة كانت تُخزَّن في الستور فيعدّلها
+  // المتصل لاحقاً من خارج الستور (تلويث حالة التحديد بحالة الـ UI).
   if (selectedIds.length === 0) {
     return { selectedIds: [], selectedId: null };
   }
   if (selectedIds.length === 1) {
-    return { selectedIds, selectedId: selectedIds[0] };
+    return { selectedIds: [...selectedIds], selectedId: selectedIds[0] };
   }
   const selectedId =
     currentPrimaryId && selectedIds.includes(currentPrimaryId)
       ? currentPrimaryId
       : selectedIds[selectedIds.length - 1];
-  return { selectedIds, selectedId };
+  return { selectedIds: [...selectedIds], selectedId };
 };
 
 type ElementCross = ElementSlice & {
@@ -451,7 +474,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const id = uid();
     const state = get();
     // دائماً خلف كل العناصر: أدنى zIndex ناقص خطوة الترتيب المعتادة
-    const minZ = Math.min(0, ...state.elements.map((el: CanvasElement) => el.zIndex));
+    // (حلقة لا نشر مصفوفة — Math.min(0, ...elements) يفشل بـ RangeError
+    // على كانفاسات بكثير من العناصر)
+    const minZ = minZIndex(state.elements);
 
     const backdrop: CanvasElement = {
       id,
@@ -728,13 +753,13 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   },
 
   bringToFront: (id) => {
-    const maxZ = Math.max(0, ...get().elements.map((e: CanvasElement) => e.zIndex));
+    const maxZ = maxZIndex(get().elements);
     get().updateElement(id, { zIndex: maxZ + 10 });
     get().pushHistory();
   },
 
   sendToBack: (id) => {
-    const minZ = Math.min(0, ...get().elements.map((e: CanvasElement) => e.zIndex));
+    const minZ = minZIndex(get().elements);
     get().updateElement(id, { zIndex: minZ - 10 });
     get().pushHistory();
   },
@@ -800,7 +825,9 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
     const { selectedIds } = get();
     if (selectedIds.length < 2) return;
 
-    const newGroupId = `group-${Date.now()}`;
+    // uid() بدل `group-${Date.now()}`: معرّفان تاريخيان يتصادمان في نفس
+    // المللي ثانية فتندمج مجموعتان مستقلتان في مجموعة واحدة (E-8)
+    const newGroupId = uid();
 
     set((s) => ({
       elements: s.elements.map((el: CanvasElement) =>

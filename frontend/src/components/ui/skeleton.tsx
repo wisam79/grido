@@ -1,5 +1,5 @@
-import * as React from "react";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 
 /**
  * 🦴 هيكل تحميل قياسي (Fluent 2 Wait UX — Skeleton with Shimmer)
@@ -12,17 +12,11 @@ import { cn } from "@/lib/utils";
  * وتُعطَّل تلقائياً مع prefers-reduced-motion (القاعدة العامة في index.css).
  */
 
-export function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       aria-hidden="true"
-      className={cn(
-        "rounded-md fluent-shimmer bg-muted/60",
-        className
-      )}
+      className={cn('rounded-md fluent-shimmer bg-muted/60', className)}
       {...props}
     />
   );
@@ -33,8 +27,8 @@ export function SkeletonListItem({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 p-2.5 rounded-xl border border-border/60",
-        className
+        'flex items-center gap-2.5 p-2.5 rounded-xl border border-border/60',
+        className,
       )}
       aria-hidden="true"
     >
@@ -52,10 +46,7 @@ export function SkeletonListItem({ className }: { className?: string }) {
 export function SkeletonGridCard({ className }: { className?: string }) {
   return (
     <div
-      className={cn(
-        "rounded-xl border border-border/60 p-2 space-y-2",
-        className
-      )}
+      className={cn('rounded-xl border border-border/60 p-2 space-y-2', className)}
       aria-hidden="true"
     >
       <Skeleton className="w-full aspect-square rounded-lg" />
@@ -70,7 +61,7 @@ export function SkeletonGridCard({ className }: { className?: string }) {
  */
 export function ProjectsSkeleton({ rows = 4 }: { rows?: number }) {
   return (
-    <div className="space-y-2" role="status" aria-label="جاري تحميل المشاريع ...">
+    <div className="space-y-2 no-print" role="status" aria-label="جاري تحميل المشاريع ...">
       {Array.from({ length: rows }, (_, i) => (
         <SkeletonListItem key={i} />
       ))}

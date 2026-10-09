@@ -205,6 +205,9 @@ export const CollageTemplateSchema = z.object({
 
 export const ProjectSchema = z.object({
   mode: z.enum(['single', 'collage']).default('single'),
+  // معرّف المشروع في المكتبة — اختياري (مسودة قديمة بلا معرّف تبدأ مشروعاً جديداً،
+  // ووجوده يُبقي الحفظ التالي يحدّث نفس المشروع بدل طبع نسخة مكررة)
+  projectId: z.string().nullable().optional(),
   // الافتراضي يطابق DEFAULT_CORE_STATE (2480×3508 ≈ A4@300DPI) — كان 413×531
   // (مقاس جواز) فيُحمَّل ملف قديم بلا أبعاد على كانفاس غير مقصود
   canvasWidth: z.number().default(2480),

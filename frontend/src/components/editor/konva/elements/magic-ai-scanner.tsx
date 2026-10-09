@@ -1,13 +1,14 @@
-import React, { useEffect, useRef } from "react";
-import { Group, Rect, Line, Circle } from "react-konva";
-import Konva from "konva";
+import React, { useEffect, useRef } from 'react';
+import { Group, Rect, Line, Circle } from 'react-konva';
+import Konva from 'konva';
 import {
+  useCanvasColors,
   scannerBeam,
   scannerGlow,
   scannerParticleA,
   scannerParticleB,
   scannerParticleC,
-} from "@/lib/canvas/canvas-colors";
+} from '@/lib/canvas/canvas-colors';
 
 /**
  * يُركَّب دائماً كابن داخل مجموعة العنصر نفسه عند إحداثياته المحلية (0, 0).
@@ -35,6 +36,8 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
   cornerRadius = 0,
   enabled = true,
 }: MagicAiScannerProps) {
+  // 🛡️ إعادة تصيير أشعة الماسح بألوان الثيم الجديد (C5 — تدقيق 2026-10-08)
+  useCanvasColors();
   const groupRef = useRef<Konva.Group>(null);
   const borderRef = useRef<Konva.Rect>(null);
   const lineRef = useRef<Konva.Line>(null);
@@ -56,15 +59,16 @@ export const MagicAiScanner = React.memo(function MagicAiScanner({
     const anim = new Konva.Animation((frame) => {
       if (!frame) return;
       const elapsed = frame.time / 1000;
-      
+
       const progress = (Math.sin(elapsed * 3.5) + 1) / 2;
       const currentScanPos = progress * height;
       const currentPulseOpacity = 0.5 + Math.sin(elapsed * 6) * 0.35;
 
       if (borderRef.current) borderRef.current.opacity(currentPulseOpacity);
       if (lineRef.current) lineRef.current.points([0, currentScanPos, width, currentScanPos]);
-      if (lineGlowRef.current) lineGlowRef.current.points([0, currentScanPos, width, currentScanPos]);
-      
+      if (lineGlowRef.current)
+        lineGlowRef.current.points([0, currentScanPos, width, currentScanPos]);
+
       if (circle1Ref.current) {
         circle1Ref.current.x(width * 0.25);
         circle1Ref.current.y((currentScanPos + 25) % height);

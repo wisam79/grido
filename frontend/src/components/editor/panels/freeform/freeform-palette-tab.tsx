@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import {
   Star,
@@ -87,6 +87,16 @@ export function FreeformPaletteTab() {
   const [extracted, setExtracted] = useState<string[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
+  // 🛡️ مؤقّت شارة «تم النسخ» — يُحفظ في ref ويُلغى عند إلغاء التركيب حتى لا
+  // يُطلق setState على مكوّن مفكوك ويُعلّق الشارة إلى الأبد
+  const copiedTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
+    },
+    [],
+  );
 
   const selectedElements = useMemo(
     () => elements.filter((element) => selectedIds.includes(element.id)),
@@ -130,7 +140,11 @@ export function FreeformPaletteTab() {
     try {
       await navigator.clipboard.writeText(hex.toUpperCase());
       setCopiedColor(hex);
-      setTimeout(() => setCopiedColor(null), 1200);
+      if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = window.setTimeout(() => {
+        copiedTimerRef.current = null;
+        setCopiedColor(null);
+      }, 1200);
       toast.success(`تم نسخ ${hex.toUpperCase()}`);
     } catch {
       toast.info(hex.toUpperCase());
@@ -339,7 +353,7 @@ export function FreeformPaletteTab() {
           </div>
 
           {/* أزرار الإجراءات المدمجة: التناغم واستخراج الألوان */}
-          <div className="flex items-center gap-0.5 shrink-0 border-r border-border/40 pr-1">
+          <div className="flex items-center gap-0.5 shrink-0 border-e border-border/40 pe-1">
             {/* زر فتح التناغم اللوني الذكي */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -485,7 +499,7 @@ export function FreeformPaletteTab() {
       />
 
       {/* 🏛️ 3. قائمة الهويات البصرية المدمجة والرشيقة */}
-      <div className="space-y-1.5 max-h-[calc(100vh-220px)] overflow-y-auto pr-1 pl-0.5 custom-scrollbar">
+      <div className="space-y-1.5 max-h-[calc(100vh-220px)] overflow-y-auto pe-1 ps-0.5 custom-scrollbar">
         {filteredPalettes.map((palette) => (
           <div
             key={palette.id}

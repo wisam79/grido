@@ -170,6 +170,7 @@ const LayerRow = React.memo(function LayerRow({
           <TooltipTrigger asChild>
             <button
               type="button"
+              aria-label="نسخ"
               onClick={(e) => {
                 e.stopPropagation();
                 onDuplicate();
@@ -188,6 +189,7 @@ const LayerRow = React.memo(function LayerRow({
           <TooltipTrigger asChild>
             <button
               type="button"
+              aria-label={isHidden ? 'إظهار' : 'إخفاء'}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleVisibility();
@@ -209,6 +211,7 @@ const LayerRow = React.memo(function LayerRow({
           <TooltipTrigger asChild>
             <button
               type="button"
+              aria-label={isLocked ? 'فك القفل' : 'قفل'}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleLock();
@@ -234,6 +237,7 @@ const LayerRow = React.memo(function LayerRow({
           <TooltipTrigger asChild>
             <button
               type="button"
+              aria-label="حذف"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
@@ -260,6 +264,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
     selectElement,
     toggleElementSelection,
     updateElement,
+    updateElements,
     removeElement,
     duplicateElement,
     pushHistory,
@@ -271,6 +276,7 @@ export const LayersPanel = React.memo(function LayersPanel() {
       selectElement: state.selectElement,
       toggleElementSelection: state.toggleElementSelection,
       updateElement: state.updateElement,
+      updateElements: state.updateElements,
       removeElement: state.removeElement,
       duplicateElement: state.duplicateElement,
       pushHistory: state.pushHistory,
@@ -313,16 +319,22 @@ export const LayersPanel = React.memo(function LayersPanel() {
     const [moved] = sorted.splice(draggedIdx, 1);
     sorted.splice(targetIdx, 0, moved);
 
-    // إعادة ترقيم الـ zIndex لكل العناصر
+    // إعادة ترقيم الـ zIndex دفعةً واحدة (batch) بدل كتابة لكل عنصر على حدة:
+    //N كتابة كانت تُطلق N إشعارات للمشتركين وN إعادة رسم لكل إفلاتة سحب.
+    //المرجع: properties/layers-list.tsx (updateElements + pushHistory مرة واحدة).
     const total = sorted.length;
+    const patches: { id: string; patch: Partial<CanvasElement> }[] = [];
     sorted.forEach((el, i) => {
       const newZ = (total - i) * 10;
       if (el.zIndex !== newZ) {
-        state.updateElement(el.id, { zIndex: newZ });
+        patches.push({ id: el.id, patch: { zIndex: newZ } });
       }
     });
 
-    state.pushHistory();
+    if (patches.length > 0) {
+      state.updateElements(patches);
+      state.pushHistory();
+    }
     draggedIdRef.current = null;
   }, []);
 

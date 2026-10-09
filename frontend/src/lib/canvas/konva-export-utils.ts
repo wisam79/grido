@@ -1,10 +1,10 @@
-import type Konva from "konva";
+import type Konva from 'konva';
 
 interface CachedImageNode {
   clearCache: () => void;
   cache: (opts: { pixelRatio: number }) => void;
   isCached: () => boolean;
-  getStage: () => Pick<Konva.Stage, "scaleX"> | null;
+  getStage: () => Pick<Konva.Stage, 'scaleX'> | null;
 }
 
 interface KonvaNodeLike {
@@ -13,7 +13,7 @@ interface KonvaNodeLike {
 }
 
 function getScreenPixelRatio(node: CachedImageNode): number {
-  const screenRatio = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+  const screenRatio = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   const stageScale = node.getStage()?.scaleX() || 1;
   return Math.max(0.75, Math.min(2.5, stageScale * screenRatio * 1.2));
 }
@@ -21,7 +21,7 @@ function getScreenPixelRatio(node: CachedImageNode): number {
 function restoreScreenCache(previouslyCached: CachedImageNode[]): void {
   for (const img of previouslyCached) {
     try {
-      if (img && typeof img.clearCache === "function") {
+      if (img && typeof img.clearCache === 'function') {
         img.clearCache();
         img.cache({ pixelRatio: getScreenPixelRatio(img) });
       }
@@ -40,12 +40,12 @@ export async function withHiddenOverlays<T>(
   _targetPixelRatio: number,
   callback: () => Promise<T> | T,
 ): Promise<T> {
-  const transformers = stage.find("Transformer") as unknown as KonvaNodeLike[];
-  const gridLayers = stage.find(".grid-layer") as unknown as KonvaNodeLike[];
-  const columnsLayers = stage.find(".columns-layer") as unknown as KonvaNodeLike[];
+  const transformers = stage.find('Transformer') as unknown as KonvaNodeLike[];
+  const gridLayers = stage.find('.grid-layer') as unknown as KonvaNodeLike[];
+  const columnsLayers = stage.find('.columns-layer') as unknown as KonvaNodeLike[];
   // 🔲 لبنات الخلايا الفارغة إشارة واجهة لا محتوى مطبوع/مصدَّر: إخفاؤها يجعل
   // التقاط الطباعة يطابق مسار التصدير (الذي لا يرسم أي بديل للخلايا الفارغة)
-  const slotPlaceholders = stage.find(".slot-placeholder") as unknown as KonvaNodeLike[];
+  const slotPlaceholders = stage.find('.slot-placeholder') as unknown as KonvaNodeLike[];
 
   try {
     for (const tr of transformers) tr.hide();
@@ -77,19 +77,16 @@ const EXPORT_CACHE_BUDGET_BYTES = 256 * 1024 * 1024;
  * يجمع كاش العقد على نسبة التصدير ضمن ميزانية ذاكرة إجمالية، وتنازل تدريجي
  * للنسبة عند تجاوزها (كل العقد تخفض معاً لتفادي خلط جودات داخل لقطة واحدة).
  */
-function upgradeCachesForExport(
-  stage: Konva.Stage,
-  targetPixelRatio: number,
-): CachedImageNode[] {
+function upgradeCachesForExport(stage: Konva.Stage, targetPixelRatio: number): CachedImageNode[] {
   const cachedNodes: CachedImageNode[] = [];
   try {
     stage.find((node: Konva.Node) => {
-      if (node && typeof node.isCached === "function" && node.isCached()) {
+      if (node && typeof node.isCached === 'function' && node.isCached()) {
         cachedNodes.push(node as unknown as CachedImageNode);
       }
     });
   } catch (err) {
-    console.warn("Failed to query cached nodes before export", err);
+    console.warn('Failed to query cached nodes before export', err);
     return cachedNodes;
   }
 
@@ -100,8 +97,8 @@ function upgradeCachesForExport(
     let total = 0;
     for (const node of cachedNodes) {
       const n = node as unknown as { width?: () => number; height?: () => number };
-      const w = typeof n.width === "function" ? n.width() : 0;
-      const h = typeof n.height === "function" ? n.height() : 0;
+      const w = typeof n.width === 'function' ? n.width() : 0;
+      const h = typeof n.height === 'function' ? n.height() : 0;
       total += w * h * 4 * ratio * ratio;
     }
     return total;
@@ -119,7 +116,7 @@ function upgradeCachesForExport(
       node.clearCache();
       node.cache({ pixelRatio: exportRatio });
     } catch (e) {
-      console.warn("Failed to upgrade node cache for export", e);
+      console.warn('Failed to upgrade node cache for export', e);
     }
   }
   return cachedNodes;
@@ -133,8 +130,10 @@ function upgradeCachesForExport(
 export async function captureStageBlob(
   stage: Konva.Stage,
   targetPixelRatio: number,
-  mimeType: string = "image/png",
+  mimeType: string = 'image/png',
   quality?: number,
+  /** أبعاد الورقة بالإحداثيات المنطقية — تصدير مستقل عن الزوم الحالي */
+  captureRect?: { x: number; y: number; width: number; height: number },
 ): Promise<Blob | null> {
   const cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
 
@@ -146,7 +145,12 @@ export async function captureStageBlob(
       // وقسرها على 4× كان يلتقط الكانفاس بدقة مصغرة تُرسم مشوهة عند التسطيح.
       const MAX_EXPORT_RATIO = 8;
       const safePixelRatio = Math.min(MAX_EXPORT_RATIO, Math.max(1, targetPixelRatio));
-      const exportCanvas = stage.toCanvas({ pixelRatio: safePixelRatio });
+      // 🛡️ M15: التقاط منطقة الورقة بإحداثياتها المنطقية يجعل دقة التصدير
+      // ثابتة مهما كان مستوى التكبير على الشاشة. لو اعتمدنا على مقاس الـ Stage
+      // لخرج ملف 300DPI أكبر/أصغر بحسب زوم المستخدم لحظة التصدير.
+      const exportCanvas = captureRect
+        ? stage.toCanvas({ ...captureRect, pixelRatio: safePixelRatio })
+        : stage.toCanvas({ pixelRatio: safePixelRatio });
       return await new Promise<Blob | null>((resolve) => {
         exportCanvas.toBlob(resolve, mimeType, quality);
       });

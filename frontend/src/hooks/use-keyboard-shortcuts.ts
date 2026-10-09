@@ -39,6 +39,25 @@ function shouldIgnoreCanvasAction(e: KeyboardEvent): boolean {
 export function useKeyboardShortcuts() {
   // --- Shortcuts via react-hotkeys-hook ---
 
+  // 🛡️ H15 من تدقيق 2026-10-08: اختصار لوحة الاختصارات (Ctrl+/) كان مسجّلاً
+  // بمستمع keydown خام داخل `keyboard-shortcuts-dialog.tsx` — مالك ثانٍ لمفاتيح
+  // عامة بلا حرّاس الحقول النصية ولا تسجيل وفق قاعدة المصدر الواحد. انتقل هنا.
+  useHotkeys(
+    'mod+/, mod+shift+/',
+    (e) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('grido:open-shortcuts'));
+    },
+    { enableOnFormTags: false },
+  );
+
   // Undo: Ctrl+Z or Cmd+Z
   useHotkeys(
     'mod+z',
@@ -487,7 +506,16 @@ export function useKeyboardShortcuts() {
 
     const handlePaste = async (e: ClipboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      // 🛡️ M1 من تدقيق 2026-10-08: الحرس كان يفحص الحقول النصية فقط، فلصق
+      // صورة وحوار مفتوح (التركيز على محتوى غير قابل للكتابة) كان يُدرجها في
+      // الكانفس خلف المودال. الحقل النصي يُمرّر اللصق لسلوكه الطبيعي، والمودال
+      // يبتلع اللصق أيضاً (الحقول داخله مُستثناة أصلاً).
+      if (
+        isModalActive() ||
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      )
         return;
 
       const items = e.clipboardData?.items;

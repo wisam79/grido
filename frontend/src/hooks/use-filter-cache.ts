@@ -1,6 +1,6 @@
-import { useEffect, useCallback, useRef } from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { useRenderQuality } from "@/lib/canvas/render-quality";
+import { useEffect, useCallback, useRef } from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import { useRenderQuality } from '@/lib/canvas/render-quality';
 
 export interface CacheableKonvaNode {
   getStage?: () => { width: () => number } | null;
@@ -8,7 +8,13 @@ export interface CacheableKonvaNode {
   height?: () => number;
   isCached?: () => boolean;
   clearCache?: () => void;
-  cache?: (opts: { x?: number; y?: number; width?: number; height?: number; pixelRatio: number }) => void;
+  cache?: (opts: {
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    pixelRatio: number;
+  }) => void;
 }
 
 interface UseFilterCacheOptions {
@@ -21,7 +27,13 @@ interface UseFilterCacheOptions {
 
 const ZOOM_DEBOUNCE_MS = 120;
 
-export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth, filterKey }: UseFilterCacheOptions) {
+export function useFilterCache({
+  nodeRef,
+  image,
+  hasFilters,
+  canvasWidth,
+  filterKey,
+}: UseFilterCacheOptions) {
   const isDraggingFilter = useRenderQuality((s) => s.isDraggingFilter);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -35,16 +47,21 @@ export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth, filter
     const node = nodeRef.current;
     if (!node) return;
     const stage = node.getStage?.();
-    const stageW = stage && typeof stage.width === "function" ? stage.width() : 0;
-    const displayScale = stageW > 0 ? Math.max(0.05, stageW / canvasWidth) : 1;
-    const deviceRatio = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    const stageW = stage && typeof stage.width === 'function' ? stage.width() : 0;
+    // 🛡️ M15: الـ Stage أصبح قياساً ثابتاً (zoom=1) والزوم يُطبَّق بـ CSS
+    // transform فوقه. بدون ضرب مضاعف الزوم هنا تكون الكاش مبنية على مقياس
+    // العرض عند 100% فتبدو الصورة المفلترة ضبابية بعد التكبير والخبز.
+    const cssZoom = useEditorStore.getState().canvasZoom;
+    const zoom = cssZoom > 0 ? cssZoom : 1;
+    const displayScale = stageW > 0 ? (stageW * zoom) / Math.max(1, canvasWidth) : 1;
+    const deviceRatio = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
 
     const ratio = isDraggingFilter
       ? Math.max(0.25, Math.min(0.5, displayScale * deviceRatio * 0.3))
       : Math.max(0.75, Math.min(2.5, displayScale * deviceRatio * 1.2));
 
-    const nodeW = typeof node.width === "function" ? node.width() : 0;
-    const nodeH = typeof node.height === "function" ? node.height() : 0;
+    const nodeW = typeof node.width === 'function' ? node.width() : 0;
+    const nodeH = typeof node.height === 'function' ? node.height() : 0;
 
     try {
       node.clearCache?.();
@@ -54,7 +71,7 @@ export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth, filter
         node.cache?.({ pixelRatio: ratio });
       }
     } catch (err) {
-      console.warn("Failed to cache Konva image", err);
+      console.warn('Failed to cache Konva image', err);
     }
   }, [nodeRef, canvasWidth, isDraggingFilter]);
 
@@ -64,7 +81,7 @@ export function useFilterCache({ nodeRef, image, hasFilters, canvasWidth, filter
     if (!node) return;
 
     if (!hasFilters) {
-      if (typeof node.isCached === "function" && node.isCached()) {
+      if (typeof node.isCached === 'function' && node.isCached()) {
         try {
           node.clearCache?.();
         } catch {

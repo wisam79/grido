@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { UploadSimple, GridFour, Link, CaretRight, WarningCircle } from '@/components/ui/icons';
 import {
   Dialog,
@@ -15,9 +15,13 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/lib/editor-store';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
 import { StickerTemplate, StickerParams } from '../types';
 import { parseVdpFile, VdpDataset, VDP_MAX_ROWS } from '../lib/vdp-parser';
 import { renderVdpBatch } from '../lib/vdp-batch';
+
+const logger = createLogger('VdpImportDialog');
 
 export interface VdpImportDialogProps {
   open: boolean;
@@ -44,11 +48,15 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
+  // حارس الإلغاء: لا تُدرج عناصر ولا تُظهر رسالة بعد إغلاق النافذة أثناء التوليد
+  const cancelledRef = useRef(false);
+
   const handleFile = useCallback(
     async (file: File) => {
       setIsLoadingFile(true);
       try {
         const parsed = await parseVdpFile(file);
+        if (cancelledRef.current) return;
         setDataset(parsed);
         // ربط ذكي مبدئي: اسم العمود مطابق لاسم الحقل أو تسميته
         const auto: Record<string, string> = {};
@@ -63,7 +71,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
           toast.info(`سُقف الصفوف ${VDP_MAX_ROWS} — قُصّت البقية`);
         }
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'فشل قراءة الملف');
+        toast.error(toErrorMessage(err, 'فشل قراءة الملف'));
       } finally {
         setIsLoadingFile(false);
       }
@@ -86,6 +94,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
         mapping,
         setProgress,
       );
+      if (cancelledRef.current) return;
       if (pngUrls.length === 0) {
         toast.error('لم تُصيَّر أي بطاقة — تحقق من ربط الأعمدة');
         return;
@@ -98,8 +107,8 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
       toast.success(`أُدرجت ${pngUrls.length} بطاقة${warn}`);
       onOpenChange(false);
     } catch (err) {
-      console.error(err);
-      toast.error('فشل توليد البطاقات');
+      logger.error('VDP batch generation failed:', err);
+      toast.error(toErrorMessage(err, 'فشل توليد البطاقات'));
     } finally {
       setIsGenerating(false);
     }
@@ -108,10 +117,13 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
   // تصفير حالات التحميل عند تغيير حالة فتح النافذة وفق معايير المشروع
   React.useEffect(() => {
     if (!open) {
+      cancelledRef.current = true;
       setIsLoadingFile(false);
       setIsGenerating(false);
       setIsDragging(false);
       setProgress({ done: 0, total: 0 });
+    } else {
+      cancelledRef.current = false;
     }
   }, [open]);
 
@@ -147,7 +159,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
                 </DialogDescription>
               </div>
             </div>
-            <DialogCloseButton />
+            <DialogCloseButton disabled={isGenerating} />
           </div>
         </DialogHeader>
 

@@ -91,12 +91,12 @@ const SelectItem = React.forwardRef<
     ref={ref}
     data-slot="select-item"
     className={cn(
-      "focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 dark:focus:text-primary [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-pointer items-center gap-1.5 rounded-md py-1.5 pr-7 pl-2 text-xs font-medium outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-1.5",
+      "focus:bg-primary/10 focus:text-primary dark:focus:bg-primary/20 dark:focus:text-primary [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-pointer items-center gap-1.5 rounded-md py-1.5 pe-7 ps-2 text-xs font-medium outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-1.5",
       className,
     )}
     {...props}
   >
-    <span className="absolute right-1.5 flex size-3 items-center justify-center">
+    <span className="absolute end-1.5 flex size-3 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
         <Check className="size-3.5 text-primary shrink-0" weight="bold" />
       </SelectPrimitive.ItemIndicator>

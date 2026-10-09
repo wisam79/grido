@@ -51,12 +51,15 @@ export function WindowControls({
   }, [clearSnapTimer, onMaximize]);
 
   return (
-    <div className="inline-flex items-stretch h-full select-none title-bar-controls z-50" dir="ltr">
+    <div
+      className="inline-flex items-stretch h-full select-none title-bar-controls z-(--z-quick-bar)"
+      dir="ltr"
+    >
       {/* زر التصغير Minimize */}
       <button
         type="button"
         onClick={onMinimize}
-        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus:outline-none"
+        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
         title="تصغير"
         aria-label="تصغير"
       >
@@ -86,7 +89,7 @@ export function WindowControls({
             // fallback
           }
         }}
-        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus:outline-none"
+        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-foreground hover:bg-foreground/10 active:bg-foreground/15 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
         title={
           isMaximized
             ? 'استعادة (انقر باليمين لتقسيم الشاشة)'
@@ -132,7 +135,7 @@ export function WindowControls({
       <button
         type="button"
         onClick={onClose}
-        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-white hover:bg-[#c42b1c] active:bg-[#b22517] transition-colors focus:outline-none"
+        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-white hover:bg-[#c42b1c] active:bg-[#b22517] transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
         title="إغلاق"
         aria-label="إغلاق"
       >

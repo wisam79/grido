@@ -325,6 +325,15 @@ export function ColorWheelPicker({
   const isTransparent = color === 'transparent';
   const [inputValue, setInputValue] = useState(color);
   const [copied, setCopied] = useState(false);
+  // 🛡️ مؤقّت «تم النسخ» يُحفظ في ref ويُلغى عند إلغاء التركيب — بدونه يطلق
+  // setState على مكوّن مفكوك (تحذير React) ويُبقي رسالة النسخ معلّقة
+  const copiedTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
@@ -377,7 +386,11 @@ export function ColorWheelPicker({
     if (navigator.clipboard) {
       navigator.clipboard.writeText(color.toUpperCase());
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = window.setTimeout(() => {
+        copiedTimerRef.current = null;
+        setCopied(false);
+      }, 1500);
     }
   };
 

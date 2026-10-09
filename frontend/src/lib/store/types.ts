@@ -1,5 +1,8 @@
 import { PhotoTemplate, CollageTemplate } from '../templates';
 import { ProjectFileV1 } from '../io/project-serializer';
+// import type فقط: النوع يُبعَّد وقت الترجمة فلا تُنشأ حلقة استيراد وقت التشغيل
+// (grid-slice يعتمد بالمثل على أنواع الستور)
+import type { UserGuide } from './slices/grid-slice';
 
 export interface ProjectStateData {
   mode: EditorMode;
@@ -177,9 +180,23 @@ export interface HistoryEntry {
   collageShowEndCutLine?: boolean;
   collageStrokeWidth?: number;
   collageStrokeColor?: string;
+  // حقول شبكة الإرشاد والأدلة — التراجع كان يستعيد الخانات ويُبقي الشبكة
+  // الجديدة (نفس صنف إصلاح E-4/H4: الناتج يتغير بلا إمكانية عكس التغيير)
+  showGrid?: boolean;
+  gridSize?: number;
+  gridColor?: string;
+  gridOpacity?: number;
+  gridSubdivisions?: number;
+  gridType?: 'lines' | 'dots';
+  /** الأدلة اليدوية — تُقارن بالمرجع (الستور immutable) مثل القالبين */
+  userGuides?: UserGuide[];
   // حالة الصورة المحررة الأخيرة — تُستعاد مع التراجع لمنع "شبح" صورة قديمة
   lastEditedImage?: string | null;
   lastEditedImageAspect?: number | null;
+  // 🛡️ إعدادات الطباعة (H4 من تدقيق 2026-10-08): تغيير الـ DPI يعيد بناء
+  // هندسة الخانات، وكان التراجع يستعيد الخانات ويُبقي الـ DPI الجديد —
+  // حالتان تتباعدان بلا إمكانية عكس التغيير نهائياً.
+  printSettings?: PrintSettings;
 }
 
 export interface PrintSettings {

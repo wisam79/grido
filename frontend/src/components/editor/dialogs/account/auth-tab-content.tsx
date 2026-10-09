@@ -54,10 +54,13 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
         </div>
       )}
       <div className="space-y-1">
-        <Label className="text-xs font-bold text-foreground/90">البريد الإلكتروني</Label>
+        <Label htmlFor="recovery-email" className="text-xs font-bold text-foreground/90">
+          البريد الإلكتروني
+        </Label>
         <div className="relative">
           <EnvelopeSimple className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
           <Input
+            id="recovery-email"
             type="email"
             placeholder="name@example.com"
             className="pr-9 h-9 text-xs rounded-md"
@@ -68,10 +71,13 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
         </div>
       </div>
       <div className="space-y-1">
-        <Label className="text-xs font-bold text-foreground/90">كود الاستعادة (OTP)</Label>
+        <Label htmlFor="recovery-otp" className="text-xs font-bold text-foreground/90">
+          كود الاستعادة (OTP)
+        </Label>
         <div className="relative">
           <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
           <Input
+            id="recovery-otp"
             type="text"
             placeholder="123456"
             maxLength={6}
@@ -87,10 +93,13 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
         </p>
       </div>
       <div className="space-y-1">
-        <Label className="text-xs font-bold text-foreground/90">كلمة المرور الجديدة</Label>
+        <Label htmlFor="recovery-new-password" className="text-xs font-bold text-foreground/90">
+          كلمة المرور الجديدة
+        </Label>
         <div className="relative">
           <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
           <Input
+            id="recovery-new-password"
             type="password"
             placeholder="••••••••"
             className="pr-9 h-9 text-xs rounded-md"
@@ -170,10 +179,13 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
         )}
         {showOtp ? (
           <div className="space-y-2.5">
-            <Label className="text-xs font-bold text-foreground/90">كود التحقق (OTP)</Label>
+            <Label htmlFor="verify-otp" className="text-xs font-bold text-foreground/90">
+              كود التحقق (OTP)
+            </Label>
             <div className="relative">
               <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
               <Input
+                id="verify-otp"
                 type="text"
                 placeholder="123456"
                 maxLength={6}
@@ -235,10 +247,13 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
           <>
             {authMode === 'register' && (
               <div className="space-y-1">
-                <Label className="text-xs font-bold text-foreground/90">الاسم الكامل</Label>
+                <Label htmlFor="register-name" className="text-xs font-bold text-foreground/90">
+                  الاسم الكامل
+                </Label>
                 <div className="relative">
                   <User className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                   <Input
+                    id="register-name"
                     placeholder="الاسم"
                     className="pr-9 h-9 text-xs rounded-md"
                     required
@@ -250,10 +265,13 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
             )}
 
             <div className="space-y-1">
-              <Label className="text-xs font-bold text-foreground/90">البريد الإلكتروني</Label>
+              <Label htmlFor="auth-email" className="text-xs font-bold text-foreground/90">
+                البريد الإلكتروني
+              </Label>
               <div className="relative">
                 <EnvelopeSimple className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                 <Input
+                  id="auth-email"
                   type="email"
                   placeholder="name@example.com"
                   className="pr-9 h-9 text-xs rounded-md"
@@ -266,7 +284,9 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
 
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold text-foreground/90">كلمة المرور</Label>
+                <Label htmlFor="auth-password" className="text-xs font-bold text-foreground/90">
+                  كلمة المرور
+                </Label>
                 {authMode === 'register' && (
                   <span className="text-[10px] text-muted-foreground font-sans">
                     8 أحرف على الأقل (حروف وأرقام)
@@ -286,6 +306,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
               <div className="relative">
                 <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
                 <Input
+                  id="auth-password"
                   type="password"
                   placeholder="••••••••"
                   className="pr-9 h-9 text-xs rounded-md"

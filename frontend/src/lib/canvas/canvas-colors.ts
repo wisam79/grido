@@ -5,8 +5,18 @@
  * بدلاً من استخدام قيم hex صلبة مباشرة في كل مكوّن.
  *
  * ملاحظة: Konva لا يدعم `var(--xxx)` مباشرة، لذا نقرأ القيمة المحسوبة
- * من getComputedStyle في اللحظة الأولى فقط (مرة واحدة عند التهيؤ).
+ * من getComputedStyle مرة واحدة، وتُعاد القراءة عند تغيّر الثيم عبر
+ * `invalidateCanvasColors()`.
+ *
+ * 🛡️ إعادة الرسم عند تغيّر الثيم (C5 من تدقيق 2026-10-08):
+ * تفريغ الكاش وحده لا يكفي — مكونات Konva مُغلَّفة بـ `React.memo` بمقارنات
+ * props خاصة، فتغيير الثيم لا يغيّر أي prop فيبقى اللون القديم مرسوماً في
+ * عناصر المحرك (المحوّل، الخطوط الإرشادية، شبكة الخلايا، أشعة الماسح…).
+ * لذلك نُنشئ اشتراكاً خفيفاً: كل مكوّن Konva يقرأ الألوان يستدعي
+ * `useCanvasColors()` فيُعاد تصييره مع تغيّر الثيم فوراً.
  */
+
+import { useSyncExternalStore } from 'react';
 
 let _computed: CSSStyleDeclaration | null = null;
 
@@ -18,9 +28,38 @@ function css(varName: string, fallback: string): string {
   return _computed.getPropertyValue(varName).trim() || fallback;
 }
 
-/** إعادة تحميل المتغيرات (استخدم عند تغيير الثيم) */
+// ── اشتراك تغيّر الألوان ────────────────────────────────────────────────────
+let colorVersion = 0;
+const colorListeners = new Set<() => void>();
+
+/** إعادة تحميل المتغيرات (يُستدعى عند تغيير الثيم) */
 export function invalidateCanvasColors() {
   _computed = null;
+  colorVersion += 1;
+  for (const listener of colorListeners) listener();
+}
+
+function subscribeCanvasColors(listener: () => void): () => void {
+  colorListeners.add(listener);
+  return () => {
+    colorListeners.delete(listener);
+  };
+}
+
+function getCanvasColorsVersion(): number {
+  return colorVersion;
+}
+
+/**
+ * إعادة تصيير المكوّن عند تغيّر ألوان الكانفس. آمن داخل `React.memo`
+ * بمقارنات props: تحديث الاشتراك يُجبر إعادة التصيير مهما تساوت الـ props.
+ */
+export function useCanvasColors(): number {
+  return useSyncExternalStore(
+    subscribeCanvasColors,
+    getCanvasColorsVersion,
+    getCanvasColorsVersion,
+  );
 }
 
 /**

@@ -7,6 +7,7 @@ import type Konva from 'konva';
 import { useEditorStore } from '@/lib/editor-store';
 import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { gradientPixelPoints } from '@/lib/canvas/gradient-geometry';
+import { paperCaptureRect } from '@/lib/canvas/fit';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { renderCollageBranch } from './export-canvas-collage';
@@ -50,7 +51,13 @@ export async function exportCanvas(
   if (stageRef) {
     let stageBlob: Blob | null = null;
     try {
-      const targetPixelRatio = canvasWidth / stageRef.width();
+      // 🛡️ M15: الـ Stage أصبح مقاساً ثابتاً (zoom=1) فوقه CSS transform، فحساب
+      // النسبة من مقاسه صار يعني «دقة تصدير تتغير بزوم المستخدم» بدل دقة الورقة.
+      // نلتقط منطقة الورقة بإحداثياتها المنطقية: المخرج = canvasWidth بكسل
+      // بالضبط مهما كان التكبير على الشاشة. (وزرنا النتيجة نفسها منطقياً: كان
+      // `canvasWidth / stage.width()` يُنتج displayW × ratio = canvasWidth.)
+      const captureRect = paperCaptureRect(canvasWidth, canvasHeight);
+      const targetPixelRatio = 1;
       // JPEG لا يدعم الشفافية — نلتقط PNG ثم نركّبه على خلفية بيضاء
       // (كان يُنتج خلفية سوداء للتصدير الشفاف)
       const needsWhiteFlatten = format === 'jpg' && backgroundColor === 'transparent';
@@ -59,6 +66,7 @@ export async function exportCanvas(
         targetPixelRatio,
         needsWhiteFlatten ? 'image/png' : format === 'png' ? 'image/png' : 'image/jpeg',
         needsWhiteFlatten ? undefined : quality,
+        captureRect,
       );
       if (needsWhiteFlatten && stageBlob) {
         const captured = await createImageBitmap(stageBlob);

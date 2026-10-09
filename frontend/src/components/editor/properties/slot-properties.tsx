@@ -535,7 +535,10 @@ export const SlotProperties = React.memo(function SlotProperties({
           })}
 
           <PopoverColorPicker
-            color={slot.bgColor === 'transparent' || !slot.bgColor ? '#ffffff' : slot.bgColor}
+            // 🛡️ 'transparent' يُمرَّر كما هو: المنتقي يرسم رقعة الشطرنج وتسمية
+            // «شفاف» لهذه القيمة. تحويلها إلى '#ffffff' كان يجعل قيمة التحكم
+            // غير مشتقة من الستور، فأول تعديل hex يدهس نية الشفافية بصمت.
+            color={slot.bgColor ?? 'transparent'}
             onChange={(val: string) => {
               const freshStore = useEditorStore.getState();
               if (autoFill) {

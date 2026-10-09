@@ -6,6 +6,7 @@ import { CanvasElement, useEditorStore } from '@/lib/editor-store';
 import type { SnapGuide } from '@/lib/canvas/snap-utils';
 import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
 import {
+  useCanvasColors,
   transformerPrimary,
   transformerStroke,
   transformerLocked,
@@ -23,6 +24,8 @@ interface EditorTransformerProps {
   canvasHeight: number;
   stageScale: number;
   isText: boolean;
+  /** يقرأ عقدة العنصر الحيّة من خريطة مراجع الطبقة — يُستخدم في ربط المحوّل */
+  getKonvaNode: (id: string) => Konva.Node | null;
   onTransformEnd: (e: KonvaEventObject<Event>) => void;
   setActiveGuides?: (guides: SnapGuide[]) => void;
   altPressedRef?: React.MutableRefObject<boolean>;
@@ -36,10 +39,13 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   canvasHeight,
   stageScale,
   isText,
+  getKonvaNode,
   onTransformEnd,
   setActiveGuides,
   altPressedRef,
 }: EditorTransformerProps) {
+  // 🛡️ إعادة تصيير المحوّل بألوان الثيم الجديد (C5 — تدقيق 2026-10-08)
+  useCanvasColors();
   const badgeRef = React.useRef<Konva.Group | null>(null);
   const badgeBgRef = React.useRef<Konva.Rect | null>(null);
   const textRef = React.useRef<Konva.Text | null>(null);
@@ -154,6 +160,48 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       transformer.off('transformend dragend', handleTransformEndInternal);
     };
   }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, safeBadgeScale, altPressedRef]);
+
+  // 🛡️ M19: ربط المحوّل يتتبّع مجموعة المعرفات المربوطة لا هوية/طول المصفوفة.
+  // العنصر المحدد خارج الكانفا يعيد null من طبقة العرض (يُفكّ تركيب العقدة)،
+  // فتصبح العقد المتاحة أصلاً [] أو — لو بقيت عقدة ميتة في خريطة المراجع —
+  // عقدة بلا مسرح. مقارنة «الطول + الهوية» كانت تعتبر المصفوفتين الفارغتين
+  // متطابقتين (والعقدة الميتة مطابقة لهويتها) فتتخطى الربط ويبقى المحوّل
+  // متعلقاً بمجموعة سابقة: مقابض في موقع قديم وتحويلات تُكتب على عقدة ميتة.
+  // لذا نُجبر tr.nodes() عند أي اختلاف في المعرفات أو عند تغيّر نسخة المحوّل.
+  const attachedIdsRef = React.useRef<Set<string>>(new Set());
+  const attachedTrInstanceRef = React.useRef<Konva.Transformer | null>(null);
+
+  React.useEffect(() => {
+    const tr = trRef.current;
+    if (!tr) {
+      attachedIdsRef.current = new Set();
+      attachedTrInstanceRef.current = null;
+      return;
+    }
+
+    // العقد الحيّة فقط: العنصر المحذوف لا يُربط لو بقيت عقدته في الكاش،
+    // والعقدة غير الموصولة بمسرح (مقصية أو مفكوكة) لا تُربط كذلك —
+    // نفس الحاجز الذي يفرضه Konva داخلياً في Transformer.
+    const liveIds = new Set(sortedElements.map((el) => el.id));
+    const nodes = selectedIds
+      .map((id) => (liveIds.has(id) ? getKonvaNode(id) : null))
+      .filter((n): n is Konva.Node => !!n && !!n.getStage());
+
+    const attached = attachedIdsRef.current;
+    const sameBinding =
+      attachedTrInstanceRef.current === tr &&
+      attached.size === nodes.length &&
+      nodes.every((n) => attached.has(n.id()));
+    // لا تغيير في المجموعة المربوطة — الربط القائم سليم ولا شيء يُلمس
+    // (تحديث الصندوق المحيط على تغيّر الهندسة تلزمه Konva ذاتياً).
+    if (sameBinding) return;
+
+    attachedIdsRef.current = new Set(nodes.map((n) => n.id()));
+    attachedTrInstanceRef.current = tr;
+    tr.nodes(nodes);
+    tr.forceUpdate();
+    tr.getLayer()?.batchDraw();
+  }, [selectedIds, sortedElements, getKonvaNode, trRef]);
 
   // تخصيص مظهر المحابث (Anchors) بنمط Fluent 2 المحترف مع ظلال ناعمة
   const primaryColor = isLocked ? transformerLocked() : transformerPrimary();

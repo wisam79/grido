@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import {
   SquaresFour,
@@ -34,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { useShallow } from 'zustand/react/shallow';
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import { wailsIsDesktop } from '@/lib/wails-env';
+import { FluentSliderField } from '@/components/ui/blocks';
 
 export interface BatchInsertDialogProps {
   open: boolean;
@@ -543,19 +543,14 @@ export function BatchInsertDialog({
               <>
                 {/* Columns */}
                 <div className="space-y-2 pt-1 border-t border-border/30">
-                  <div className="flex items-center justify-between text-xs">
-                    <Label className="text-xs font-semibold text-foreground">عدد الأعمدة</Label>
-                    <span className="font-bold text-primary">
-                      {columns === 0 ? 'تلقائي ذكي' : `${columns} أعمدة`}
-                    </span>
-                  </div>
-                  <Slider
+                  <FluentSliderField
+                    label="عدد الأعمدة"
+                    value={columns}
                     min={0}
                     max={8}
                     step={1}
-                    value={[columns]}
-                    onValueChange={(val) => setColumns(val[0])}
-                    className="py-1"
+                    valueFormatter={(val) => (val === 0 ? 'تلقائي ذكي' : `${val} أعمدة`)}
+                    onChange={(val) => setColumns(val)}
                   />
                   <div className="flex justify-between text-micro text-muted-foreground">
                     <span>تلقائي</span>
@@ -568,37 +563,27 @@ export function BatchInsertDialog({
 
                 {/* Spacing / Gap */}
                 <div className="space-y-2 pt-1 border-t border-border/30">
-                  <div className="flex items-center justify-between text-xs">
-                    <Label className="text-xs font-semibold text-foreground">
-                      المسافة البينية (Gap)
-                    </Label>
-                    <span className="font-bold text-muted-foreground">{gapPx} px</span>
-                  </div>
-                  <Slider
+                  <FluentSliderField
+                    label="المسافة البينية (Gap)"
+                    value={gapPx}
                     min={0}
                     max={80}
                     step={4}
-                    value={[gapPx]}
-                    onValueChange={(val) => setGapPx(val[0])}
-                    className="py-1"
+                    unit="px"
+                    onChange={(val) => setGapPx(val)}
                   />
                 </div>
 
                 {/* Margin */}
                 <div className="space-y-2 pt-1 border-t border-border/30">
-                  <div className="flex items-center justify-between text-xs">
-                    <Label className="text-xs font-semibold text-foreground">
-                      الهوامش (Margin)
-                    </Label>
-                    <span className="font-bold text-muted-foreground">{marginPx} px</span>
-                  </div>
-                  <Slider
+                  <FluentSliderField
+                    label="الهوامش (Margin)"
+                    value={marginPx}
                     min={0}
                     max={120}
                     step={5}
-                    value={[marginPx]}
-                    onValueChange={(val) => setMarginPx(val[0])}
-                    className="py-1"
+                    unit="px"
+                    onChange={(val) => setMarginPx(val)}
                   />
                 </div>
 

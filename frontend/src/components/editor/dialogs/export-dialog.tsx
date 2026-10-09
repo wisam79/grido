@@ -30,8 +30,12 @@ import {
 import { useEditorStore } from '@/lib/editor-store';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import { toast } from 'sonner';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+
+const logger = createLogger('export-dialog');
 
 interface ExportDialogProps {
   open: boolean;
@@ -203,8 +207,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             `الأبعاد كبيرة جداً (${e.width}×${e.height} بكسل ≈ ${(e.pixelCount / 1e6).toFixed(1)} ميجابكسل) — الحد الأقصى 50 ميجابكسل. اخفض المقاس أو DPI.`,
           );
         } else {
-          console.error(e);
-          toast.error('حدث خطأ أثناء التصدير');
+          logger.error('Export failed:', e);
+          toast.error(toErrorMessage(e, 'حدث خطأ أثناء التصدير'));
         }
       } finally {
         setLoading(false);

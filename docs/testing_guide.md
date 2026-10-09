@@ -17,7 +17,7 @@ flowchart TD
     end
 
     subgraph FE ["Frontend Component & Unit (Vitest)"]
-        VTests["Vitest + React Testing Library (88 ملف اختبار / 721 حالة: 720 ناجحة + 1 متخطّاة)"]
+        VTests["Vitest + React Testing Library (107 ملف اختبار / 936 حالة: 935 ناجحة + 1 متخطّاة) — تحقق 2026-10-08"]
         Zustand["Zustand Slices + Math + Canvas & Collage Hooks"]
         Comps["React 19 Components (Freeform, Stickers, Panels)"]
         VTests --> Zustand
@@ -141,7 +141,9 @@ go test -count=1 -v ./internal/...
   - الكبسولات وشارات التصفية (`FluentFilterChips`) تمتلك دور `role="tab"`.
   - الأزرار المستقلة تمتلك دور `role="button"`.
 - **مسارات WASM (OpenCV / scanic):** لا يتهيّأ الـWASM في jsdom، فكل اختبار يمرّ عبر ذلك المسار يحتاج **محاكاة هيكلية** لا تشغيلاً حقيقياً. نقطة الحقن القائمة: `getLoadedOpenCV()` في `opencv-loader.ts` يقرأ `globalThis.cv` إن كان فيه `Mat` دالة — فيُحقن كائن محاكاة بلا أي تعديل على كود الإنتاج. النموذج المرجعي الكامل (حساب `Mat`/`MatVector` وحذفها، سياق 2D مصغّر لـ`drawImage`/`getImageData`، وتحقق الطفرات): `src/components/editor/document-scanner/__tests__/opencv-detector.test.ts`. **قاعدة:** أي مسار WASM بلا محاكاة = تغطية صفرية فعلية مهما بدت الاختبارات خضراء.
-- **المدخلات ذات التهدئة المؤقتة (Debounced Inputs):** عند اختبار حقول البحث التي تستخدم `setTimeout` لتقليل الضغط (مثل تأخير 120ms في `StickerCatalog`)، يجب إجبارياً تغليف التوقع بـ `await waitFor(() => expect(...).toHaveBeenCalledWith(...))` أو استخدام مؤقتات Vitest الوهمية (`vi.advanceTimersByTime`).
+- **المدخلات ذات التهدئة المؤقتة (Debounced Inputs):** عند اختبار حقول البحث التي تستخدم `setTimeout` لتقليل الضغط (مثل تأخير 120ms في `StickerCatalog`)، يجب إجبارياً تغليف التوقع بـ `await waitFor(() => expect(...).toHaveBeenCalledWith(...))` أو استخدام مؤقات Vitest الوهمية (`vi.advanceTimersByTime`).
+- **حارسة الامتثال البصري (`ui-compliance.test.ts`) — أُضيفت في الجلسة 0.53:** ملف يُثبّت أن ثوابت `lib/ui/ui-compliance.ts` مُطبَّقة فعلياً، لا مجرد نصوص معيارية. يفحص قراءة الملفات المصدرية (عبر `fs`) وليس تصييرها: وجود حلقة التركيز المزدوجة على المكوّنات التفاعلية، ومنع `z-index` خام خارج طبقات Radix المشروعة، وتعريف كل رمز `--z-*` مستخدم فعلاً في `index.css`. **قاعدة:** أي ثابت جديد في `ui-compliance.ts` يجب أن يُرفَق بحالة اختبار هنا، وإلا فهو مثل لم يُحرس بعد — وقد استُخدم هذا الملف ليكشف عيباً حقيقياً (رمز `--z-titlebar` غير معرَّف أصدَر طبقة مفقودة في أزرار الإطار).
+- **اختبارات ثابت المقاس (`canvas-fit.test.ts`) — مجموعة M15:** تُثبّت أن `computeCanvasDisplay` تُعيد `stageW/stageH` لا يتأثران بالزوم بينما `displayW/H` يتبعانه، وأن نسبة الأبعاد محفوظة ولا تنحل القيم في الحاويات الفارغة. أي تعديل على محرك الزوم يجب أن يُبقي هذه المجموعة خضراء قبل أي مراجعة بصرية.
 
 ### 4.2 اختبارات الـ E2E بـ Playwright
 - **تجهيز التطبيق الأولي:** استخدم دائماً المساعد القياسي:
@@ -161,7 +163,7 @@ go test -count=1 -v ./internal/...
 
 ## 5. حالة التغطية الحالية (Baseline Metrics)
 
-> 📌 الأرقام أدناه **تحقق: 2026-10-01**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة.
+> 📌 الأرقام أدناه **تحقق: 2026-10-08**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة.
 
 - **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/utils` تجتاز الاختبارات بنسبة 100% (31 ملف اختبار / 160 دالة اختبار — `go test ./internal/... -list "^Test"`) — `go test ./internal/...`.
 - **Vitest Frontend:** **101 ملف اختبار** يضم **828 حالة** (827 ناجحة + 1 متخطّاة) — `cd frontend && npm run test`. (التشغيل الجماعي السابق أظهر عطل بنية تشغيل عابراً: عامل واحد فشل في البدء لـ`test/batch-insert-dialog.test.tsx` — الملف ينجح منفرداً 3/3 ولم يتكرر.)

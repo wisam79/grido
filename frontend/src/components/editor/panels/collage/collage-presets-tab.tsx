@@ -309,7 +309,7 @@ export function CollagePresetsTab({
       >
         {/* شارة النشاط المحايدة على الحافة اليمنى */}
         {isActive && (
-          <span className="absolute inset-y-1 right-0 w-1 bg-foreground/70 rounded-l-full" />
+          <span className="absolute inset-y-1 end-0 w-1 bg-foreground/70 rounded-l-full" />
         )}
 
         {/* المعاينة المصغرة للورقة الحقيقية */}
@@ -373,14 +373,14 @@ export function CollagePresetsTab({
       >
         {/* شارة التحديد النشطة */}
         {isActive && (
-          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 shadow-2xs z-10">
+          <div className="absolute top-1.5 end-1.5 w-4 h-4 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 shadow-2xs z-10">
             <Check className="w-2.5 h-2.5" weight="bold" />
           </div>
         )}
 
         {/* شارة التصنيف */}
         {preset.tag && !isActive && (
-          <span className="absolute top-1.5 right-1.5 text-2xs font-bold px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground border border-border/50 leading-none z-10">
+          <span className="absolute top-1.5 end-1.5 text-2xs font-bold px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground border border-border/50 leading-none z-10">
             {preset.tag}
           </span>
         )}
@@ -415,20 +415,20 @@ export function CollagePresetsTab({
     <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo" dir="rtl">
       {/* 🔍 حقل البحث الفوري المدمج وفق Fluent 2 */}
       <div className="relative w-full">
-        <MagnifyingGlass className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        <MagnifyingGlass className="absolute end-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="بحث في القوالب…"
           aria-label="بحث في القوالب"
-          className="w-full h-8 pr-8 pl-9 text-xs bg-background/80 border border-border/80 rounded-md text-right font-cairo placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
+          className="w-full h-8 pe-8 ps-9 text-xs bg-background/80 border border-border/80 rounded-md text-right font-cairo placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
         {searchQuery && (
           <button
             type="button"
             onClick={() => setSearchQuery('')}
-            className="absolute left-1.5 top-1/2 -translate-y-1/2 size-7 rounded-full bg-muted hover:bg-muted-foreground/20 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="absolute start-1.5 top-1/2 -translate-y-1/2 size-7 rounded-full bg-muted hover:bg-muted-foreground/20 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             title="مسح البحث"
           >
             <X className="w-2.5 h-2.5" weight="bold" />
@@ -590,7 +590,7 @@ export function CollagePresetsTab({
                             : 'bg-card border-border/70 hover:bg-muted/40 hover:border-border hover:shadow-2xs text-foreground',
                         )}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0 pr-1">
+                        <div className="flex items-center gap-2.5 min-w-0 pe-1">
                           <div className="w-8 h-10 shrink-0 flex items-center justify-center">
                             <StudioPaperThumbnail cells={t.cells} active={isActive} scale={0.5} />
                           </div>
@@ -671,7 +671,7 @@ export function CollagePresetsTab({
               </div>
             </div>
 
-            <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-0.5">
+            <div className="space-y-1.5 max-h-[420px] overflow-y-auto pe-0.5">
               {savedTemplates.map((t) => {
                 const isActive = activeTemplateId === t.id;
                 return (
@@ -695,9 +695,9 @@ export function CollagePresetsTab({
                     )}
                   >
                     {isActive && (
-                      <span className="absolute inset-y-0 right-0 w-1 bg-foreground/70 rounded-l-full" />
+                      <span className="absolute inset-y-0 end-0 w-1 bg-foreground/70 rounded-l-full" />
                     )}
-                    <div className="flex items-center gap-2.5 min-w-0 pr-1">
+                    <div className="flex items-center gap-2.5 min-w-0 pe-1">
                       <div className="w-9 h-12 shrink-0 flex items-center justify-center">
                         <StudioPaperThumbnail cells={t.cells} active={isActive} scale={0.55} />
                       </div>

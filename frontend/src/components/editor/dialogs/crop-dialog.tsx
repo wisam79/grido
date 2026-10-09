@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,12 +7,11 @@ import {
   DialogFooter,
   DialogDescription,
   DialogCloseButton,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Cropper, ReactCropperElement } from "react-cropper";
-import "cropperjs/dist/cropper.css";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Cropper, ReactCropperElement } from 'react-cropper';
+import 'cropperjs/dist/cropper.css';
 import {
   Crop,
   ArrowClockwise,
@@ -22,16 +21,13 @@ import {
   Check,
   Sparkle,
   Compass,
-} from "@/components/ui/icons";
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+} from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { FluentSliderField } from '@/components/ui/blocks';
 
 interface CropDialogProps {
   open: boolean;
@@ -41,14 +37,22 @@ interface CropDialogProps {
   onCropSave: (croppedBase64: string, dims?: { width: number; height: number }) => void;
 }
 
-export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onCropSave }: CropDialogProps) {
+export function CropDialog({
+  open,
+  onOpenChange,
+  imageSrc,
+  originalImageSrc,
+  onCropSave,
+}: CropDialogProps) {
   const { template } = useEditorStore(useShallow((state) => ({ template: state.template })));
   const cropperRef = useRef<ReactCropperElement>(null);
-  
+
   // تحديد نسبة العرض إلى الارتفاع الافتراضية
   const templateAspect =
-    template && template.width > 0 && template.height > 0 ? template.width / template.height : undefined;
-  
+    template && template.width > 0 && template.height > 0
+      ? template.width / template.height
+      : undefined;
+
   const [aspect, setAspect] = useState<number | undefined>(templateAspect);
   const [currentSrc, setCurrentSrc] = useState(imageSrc);
   const [straightenAngle, setStraightenAngle] = useState(0);
@@ -101,7 +105,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
     if (cropper) {
       const croppedCanvas = cropper.getCroppedCanvas({
         imageSmoothingEnabled: true,
-        imageSmoothingQuality: "high",
+        imageSmoothingQuality: 'high',
       });
       if (croppedCanvas && croppedCanvas.width > 0 && croppedCanvas.height > 0) {
         onCropSave(croppedCanvas.toDataURL(), {
@@ -110,7 +114,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
         });
         onOpenChange(false);
       } else {
-        toast.error("حدد منطقة قص صالحة");
+        toast.error('حدد منطقة قص صالحة');
       }
     }
   };
@@ -132,17 +136,21 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
   };
 
   const aspectOptions = [
-    { label: "حر", value: undefined },
-    { label: "1:1 مربع", value: 1 },
-    { label: "3:4 طولي", value: 3 / 4 },
-    { label: "4:3 عرضي", value: 4 / 3 },
-    { label: "9:16 طولي", value: 9 / 16 },
-    { label: "16:9 عرضي", value: 16 / 9 },
+    { label: 'حر', value: undefined },
+    { label: '1:1 مربع', value: 1 },
+    { label: '3:4 طولي', value: 3 / 4 },
+    { label: '4:3 عرضي', value: 4 / 3 },
+    { label: '9:16 طولي', value: 9 / 16 },
+    { label: '16:9 عرضي', value: 16 / 9 },
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card/95 backdrop-blur-2xl p-5 sm:p-6 shadow-fluent-28 transition-all duration-150 fluent-specular" dir="rtl">
+      <DialogContent
+        showCloseButton={false}
+        className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card/95 backdrop-blur-2xl p-5 sm:p-6 shadow-fluent-28 transition-all duration-150 fluent-specular"
+        dir="rtl"
+      >
         {/* هيدر النافذة */}
         <DialogHeader className="pb-2.5 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -166,7 +174,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             {open && (
               <Cropper
                 src={currentSrc}
-                style={{ height: "100%", width: "100%", minHeight: "100%" }}
+                style={{ height: '100%', width: '100%', minHeight: '100%' }}
                 className="h-full w-full"
                 aspectRatio={aspect}
                 guides={true}
@@ -188,7 +196,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                 <ArrowClockwise className="text-primary w-3.5 h-3.5 shrink-0" weight="bold" />
                 <span>أدوات التحكم</span>
               </Label>
-              
+
               <div className="grid grid-cols-3 gap-1 p-1 bg-muted/40 dark:bg-muted/20 rounded-xl border border-border/30">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -236,24 +244,18 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
 
             {/* 1.5 ضبط استقامة الزوايا الدقيقة */}
             <div className="space-y-2 bg-muted/20 p-2.5 rounded-xl border border-border/40">
-              <div className="flex justify-between items-center">
-                <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1">
-                  <Compass className="text-primary w-3.5 h-3.5 shrink-0" weight="duotone" />
-                  <span>استقامة الزاوية</span>
-                </Label>
-                <span className="text-micro font-mono font-bold text-primary">{straightenAngle > 0 ? `+${straightenAngle}°` : `${straightenAngle}°`}</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <div className="flex-1 py-1">
-                  <Slider
-                    min={-45}
-                    max={45}
-                    step={0.5}
-                    value={[straightenAngle]}
-                    onValueChange={(val) => handleStraightenChange(val[0])}
-                  />
-                </div>
-                {straightenAngle !== 0 && (
+              <FluentSliderField
+                label="استقامة الزاوية"
+                icon={<Compass className="text-primary w-3.5 h-3.5 shrink-0" weight="duotone" />}
+                value={straightenAngle}
+                min={-45}
+                max={45}
+                step={0.5}
+                valueFormatter={(val) => (val > 0 ? `+${val}°` : `${val}°`)}
+                onChange={handleStraightenChange}
+              />
+              {straightenAngle !== 0 && (
+                <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={() => handleStraightenChange(0)}
@@ -261,14 +263,14 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   >
                     تصفير
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* 2. نسب أبعاد القص */}
             <div className="space-y-2">
               <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
-                <Crop className="text-primary w-3.5 h-3.5 shrink-0" weight="bold" /> 
+                <Crop className="text-primary w-3.5 h-3.5 shrink-0" weight="bold" />
                 <span>نسبة الأبعاد</span>
               </Label>
 
@@ -278,13 +280,13 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
                   return (
                     <Button
                       key={opt.label}
-                      variant={isSelected ? "default" : "outline"}
+                      variant={isSelected ? 'default' : 'outline'}
                       size="sm"
                       className={cn(
-                        "text-xs h-8 rounded-md cursor-pointer font-semibold transition-all border-border/80",
+                        'text-xs h-8 rounded-md cursor-pointer font-semibold transition-all border-border/80',
                         isSelected
-                          ? "bg-primary text-primary-foreground shadow-2xs"
-                          : "hover:bg-accent/60 text-foreground/80"
+                          ? 'bg-primary text-primary-foreground shadow-2xs'
+                          : 'hover:bg-accent/60 text-foreground/80',
                       )}
                       onClick={() => setAspect(opt.value)}
                     >
@@ -295,18 +297,18 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
 
                 {templateAspect && (
                   <Button
-                    variant={aspect === templateAspect ? "default" : "outline"}
+                    variant={aspect === templateAspect ? 'default' : 'outline'}
                     size="sm"
                     className={cn(
-                      "text-xs h-8 col-span-2 font-semibold rounded-md border-primary/40 cursor-pointer flex items-center justify-center gap-1.5 transition-all mt-0.5",
+                      'text-xs h-8 col-span-2 font-semibold rounded-md border-primary/40 cursor-pointer flex items-center justify-center gap-1.5 transition-all mt-0.5',
                       aspect === templateAspect
-                        ? "bg-primary text-primary-foreground shadow-2xs"
-                        : "hover:bg-primary/10 text-primary border-primary/30"
+                        ? 'bg-primary text-primary-foreground shadow-2xs'
+                        : 'hover:bg-primary/10 text-primary border-primary/30',
                     )}
                     onClick={() => setAspect(templateAspect)}
                   >
                     <Sparkle className="w-3.5 h-3.5 shrink-0" weight="fill" />
-                    <span>أبعاد القالب ({template?.name.split(" · ")[1] || "القياسية"})</span>
+                    <span>أبعاد القالب ({template?.name.split(' · ')[1] || 'القياسية'})</span>
                   </Button>
                 )}
               </div>
@@ -315,7 +317,7 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
             {/* 3. إرجاع وضبط */}
             <div className="space-y-2 pt-2 border-t border-border/30">
               <Label className="text-xs font-bold text-foreground/90 block">الضبط والإرجاع</Label>
-              
+
               <div className="grid grid-cols-1 gap-1.5">
                 <Button
                   variant="outline"
@@ -347,7 +349,11 @@ export function CropDialog({ open, onOpenChange, imageSrc, originalImageSrc, onC
 
         {/* فوتر النافذة */}
         <DialogFooter className="gap-2 border-t border-border/40 pt-3 flex items-center justify-end">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-md h-8 px-4 text-xs font-semibold cursor-pointer">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="rounded-md h-8 px-4 text-xs font-semibold cursor-pointer"
+          >
             إلغاء
           </Button>
           <Button

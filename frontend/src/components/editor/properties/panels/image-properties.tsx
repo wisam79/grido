@@ -609,9 +609,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
           {/* Custom Color Input */}
           <PopoverColorPicker
-            color={
-              element.bgColor === 'transparent' || !element.bgColor ? '#ffffff' : element.bgColor
-            }
+            // 🛡️ 'transparent' يُمرَّر كما هو (رقعة الشطرنج + تسمية «شفاف» في
+            // المنتقي) — تحويله إلى '#ffffff' يجعل أول تعديل hex يدهس النية
+            color={element.bgColor ?? 'transparent'}
             onChange={(val) => {
               onUpdate(element.id, { bgColor: val });
               useEditorStore.getState().pushHistory();
@@ -691,28 +691,15 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 variant="outline"
                 size="sm"
                 className="h-8 rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer select-none active:bg-primary active:text-primary-foreground shadow-2xs"
-                onMouseDown={() => {
+                onPointerDown={() => {
                   const curr = element.imageSrc;
                   onUpdate(element.id, { imageSrc: element.originalImageSrc });
                   // 🛡️ تنظيف شامل: pointercancel/blur يغطيان رفع المؤشر خارج
                   // النافذة أو فقدان التركيز — كان mouseup وحده يترك الصورة
-                  // الأصلية معروضة ومستمعاً معلقاً حتى نقرة تالٍ
-                  const restore = () => {
-                    onUpdate(element.id, { imageSrc: curr });
-                    cleanup();
-                  };
-                  const cleanup = () => {
-                    window.removeEventListener('pointerup', restore);
-                    window.removeEventListener('pointercancel', restore);
-                    window.removeEventListener('blur', restore);
-                  };
-                  window.addEventListener('pointerup', restore);
-                  window.addEventListener('pointercancel', restore);
-                  window.addEventListener('blur', restore);
-                }}
-                onTouchStart={() => {
-                  const curr = element.imageSrc;
-                  onUpdate(element.id, { imageSrc: element.originalImageSrc });
+                  // الأصلية معروضة ومستمعاً معلقاً حتى نقرة تالٍ.
+                  // التسجيل في onPointerDown **وحده**: الجمع بين onMouseDown
+                  // و onTouchStart كان يسجّل مجموعتين مستقلتين على اللمس،
+                  // والثانية تتسرب وتُعيد تطبيق قيمة قديمة بعد رفع الإصبع.
                   const restore = () => {
                     onUpdate(element.id, { imageSrc: curr });
                     cleanup();

@@ -143,6 +143,8 @@ export function UpdateNotifier() {
       console.error('Failed to update:', err);
       const errMsg = toErrorMessage(err, 'فشل تحميل وتثبيت التحديث.');
       setError(errMsg);
+    } finally {
+      // 🛡️ M14: إعادة تعيين isDownloading دائماً عند انتهاء الوعد (نجاح/فشل) حتى لا تعلق النافذة غير قابلة للإغلاق
       setIsDownloading(false);
     }
   };

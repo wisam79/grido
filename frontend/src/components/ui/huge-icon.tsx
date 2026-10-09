@@ -1,7 +1,7 @@
-import * as React from "react";
-import { type IconProps } from "@/components/ui/icons";
-import { CircleNotch } from "@/components/ui/icons";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { type IconProps } from '@/components/ui/icons';
+import { CircleNotch } from '@/components/ui/icons';
+import { cn } from '@/lib/utils';
 
 type IconComponentProps = IconProps & React.SVGProps<SVGSVGElement> & Record<string, unknown>;
 
@@ -11,7 +11,7 @@ export interface HugeIconProps {
   size?: number;
   strokeWidth?: number;
   style?: React.CSSProperties;
-  weight?: IconProps["weight"];
+  weight?: IconProps['weight'];
 }
 
 /**
@@ -26,7 +26,7 @@ export const HugeIcon = React.forwardRef<SVGSVGElement, HugeIconProps>(
     if (React.isValidElement(icon)) {
       const elem = icon as React.ReactElement<{ className?: string; style?: React.CSSProperties }>;
       return React.cloneElement(elem, {
-        className: cn("inline-block shrink-0 align-middle", className, elem.props?.className),
+        className: cn('inline-block shrink-0 align-middle', className, elem.props?.className),
         style: { width: size, height: size, fontSize: size, ...style, ...elem.props?.style },
         ...(weight ? { weight } : {}),
         ...props,
@@ -34,13 +34,13 @@ export const HugeIcon = React.forwardRef<SVGSVGElement, HugeIconProps>(
     }
 
     // Treat as a Phosphor component (function or forwardRef object)
-    if (typeof icon === "function" || (typeof icon === "object" && icon !== null)) {
+    if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null)) {
       const IconComponent = icon as React.ComponentType<IconComponentProps>;
       return (
         <IconComponent
           ref={ref}
           size={size}
-          className={cn("inline-block shrink-0 align-middle", className)}
+          className={cn('inline-block shrink-0 align-middle', className)}
           style={style}
           {...(weight ? { weight } : {})}
           {...props}
@@ -49,24 +49,27 @@ export const HugeIcon = React.forwardRef<SVGSVGElement, HugeIconProps>(
     }
 
     return null;
-  }
+  },
 );
 
-HugeIcon.displayName = "HugeIcon";
+HugeIcon.displayName = 'HugeIcon';
 
 /**
  * Standardized animated spinner using Phosphor Icons.
+ *
+ * 🛡️ L6: `spinner-reduced` يخفض الدوران إلى أيقونة ساكنة تحت
+ * `prefers-reduced-motion` بدل تجميده بزاوية عشوائية (انظر index.css).
  */
-export const Spinner: React.FC<{ size?: number; className?: string; style?: React.CSSProperties }> = ({
-  size = 16,
-  className,
-  style,
-}) => {
+export const Spinner: React.FC<{
+  size?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}> = ({ size = 16, className, style }) => {
   return (
     <CircleNotch
       size={size}
       weight="bold"
-      className={cn("animate-spin shrink-0", className)}
+      className={cn('animate-spin spinner-reduced shrink-0', className)}
       style={style}
     />
   );

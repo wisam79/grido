@@ -16,6 +16,7 @@ import {
 import { buildSingleComposition } from '@/lib/print/single-print-composition';
 import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
+import { paperCaptureRect } from '@/lib/canvas/fit';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { uploadPrintImage } from './print-transport';
 import type { usePrintLayout } from '@/hooks/use-print-layout';
@@ -204,8 +205,18 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
   let singleImageSrc = '';
 
   if (!isSimpleRaster) {
-    const targetPixelRatio = stage.width() > 0 ? printPixelW / stage.width() : 1;
-    const capturedBlob = await captureStageBlob(stage, targetPixelRatio, 'image/png');
+    // 🛡️ M15: التقاط منطقة الورقة بإحداثياتها المنطقية يجعل عرض المخرج
+    // `printPixelW` بغضّ النظر عن مستوى التكبير على الشاشة. كان `stage.width()`
+    // هو مقاس العرض المرئي فيتغير حجم الطباعة بمجرد تكبير المستخدم.
+    const captureRect = paperCaptureRect(canvasWidth, canvasHeight);
+    const targetPixelRatio = canvasWidth > 0 ? printPixelW / canvasWidth : 1;
+    const capturedBlob = await captureStageBlob(
+      stage,
+      targetPixelRatio,
+      'image/png',
+      undefined,
+      captureRect,
+    );
     if (!capturedBlob) {
       throw new Error('stage capture returned no blob');
     }

@@ -6,6 +6,7 @@ import { KonvaCollageImage } from '../elements/collage-image';
 import type { CanvasSlot as Slot, CollageTemplate } from '@/lib/store/types';
 import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
 import {
+  useCanvasColors,
   collageCut,
   collageEndCut,
   slotPlaceholderBg,
@@ -59,6 +60,8 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   updateSlot,
   pushHistory,
 }: KonvaCollageLayerProps) {
+  // 🛡️ إعادة تصيير طبقة الكولاج بألوان الثيم الجديد (C5 — تدقيق 2026-10-08)
+  useCanvasColors();
   const [hoveredSlotId, setHoveredSlotId] = React.useState<string | null>(null);
 
   // 📐 هندسة الشبكة من مصدر واحد يشاركه الشريط السريع العائم (collage-geometry)

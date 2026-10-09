@@ -6,6 +6,10 @@ import { debounce } from '@/lib/utils';
 import { deserializeProjectFile, serializeEditorState } from '@/lib/io/project-serializer';
 import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from '@bindings/grido/app';
 import { toast } from 'sonner';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('useAutoSave');
 
 /**
  * هل مساحة العمل ما زالت كما وُلدت (لا عناصر، لا صور خانات، لا مشروع محمّل،
@@ -22,54 +26,141 @@ function isPristineWorkspace(): boolean {
   );
 }
 
+function isEmptyWorkspace(data: { elements: unknown[]; slots?: unknown[] }): boolean {
+  return (
+    data.elements.length === 0 &&
+    (!data.slots || data.slots.every((s) => !(s as { imageSrc?: string }).imageSrc))
+  );
+}
+
+// ─── التفريغ النهائي قبل إغلاق النافذة (H5 من تدقيق 2026-10-08) ────────────
+// كان المسار القديم يعتمد على كتابة عائمة غير منتظرة داخل تنظيف React تسابق
+// `Quit()`: أي تعديل في آخر ثانيتين قبل الإغلاق يُفقد. صار التفريغ دالة
+// قابلة للانتظار يستدعيها مُغلِّق النافذة (ومستمع beforeunload احتياطاً).
+let flushInFlight: Promise<void> | null = null;
+let lastFlushedString = '';
+
+/**
+ * كتابة فورية للحالة الحالية على القرص. تُعيد true إذا لا يوجد ما يُكتب أو
+ * نجحت الكتابة، وfalse عند الفشل — الاستدعاء لا يرمي أبداً.
+ */
+export async function flushAutoSave(): Promise<boolean> {
+  if (flushInFlight) {
+    return flushInFlight.then(() => true).catch(() => false);
+  }
+
+  const state = useEditorStore.getState();
+  const projectData = serializeEditorState(state);
+  if (isEmptyWorkspace(projectData)) return true;
+
+  const currentString = JSON.stringify(projectData);
+  if (currentString === lastFlushedString) return true;
+
+  flushInFlight = (async () => {
+    await SaveAutoSave(currentString);
+    lastFlushedString = currentString;
+  })();
+
+  try {
+    await flushInFlight;
+    return true;
+  } catch (err) {
+    logger.error('Failed to flush autosave draft', err);
+    return false;
+  } finally {
+    flushInFlight = null;
+  }
+}
+
 export function useAutoSave() {
   // 1. استرجاع مسودة المشروع التلقائية عند تشغيل التطبيق
   useEffect(() => {
+    // 🛡️ حارس إعادة التركيب/StrictMode: الجلب الأساسي يغيّر حالة المتجر، فلو
+    // نُفِّذ مرتين يقرأ الحارس الثاني حالة لم يعد فيها «مساحة نقية» ويُظهر
+    // إشعاراً كاذباً بعرض حذف مسودة المستخدم (M42 من تدقيق 2026-10-08).
+    let draftLoaded = false;
+
     const initAutoSave = async () => {
       try {
         const saved = await LoadAutoSave();
         if (saved) {
           try {
             const parsed = deserializeProjectFile(JSON.parse(saved));
+            if (draftLoaded) return;
             //
             // 🛡️ حارس قِدم: التحميل غير متزامن — إن كان المستخدم قد بدأ التحرير
-            // أو فتح مشروعاً/أعاد الضبط قبل وصول المسودة، فلا يحق لنا استبدال
+            // أو فتح مشروعاً/أعد الضبط قبل وصول المسودة، فلا يحق لنا استبدال
             // حالته الحالية (كانت المسودة تطمس العمل الجديد بصمت).
             if (!isPristineWorkspace()) {
+              draftLoaded = true;
               toast.info('تم تجاهل مسودة سابقة لأن العمل بدأ بالفعل', {
                 action: {
                   label: 'حذف المسودة',
                   onClick: () => {
-                    ClearAutoSave();
+                    void ClearAutoSave().catch((err: unknown) => {
+                      logger.error('Failed to clear stale autosave draft', err);
+                    });
                   },
                 },
               });
               return;
             }
-            useEditorStore.getState().loadProject(parsed);
+            draftLoaded = true;
+            // 🛡️ تمرير `projectId` (تدقيق 2026-10-08): `loadProject` كان يهبط به
+            // إلى null فيهبط `state.projectId || uid()` إلى صنع معرّف جديد — أي
+            // حفظ بعد است المسودة يُنشئ مشروعاً مكرراً في المكتبة بدل تحديث الأصلي.
+            useEditorStore.getState().loadProject(parsed, parsed.projectId ?? null);
             toast.info('تم استعادة مسودة العمل السابقة تلقائياً', {
               action: {
                 label: 'بدء من جديد',
                 onClick: () => {
                   useEditorStore.getState().reset();
-                  ClearAutoSave();
+                  void ClearAutoSave().catch((err: unknown) => {
+                    logger.error('Failed to clear autosave draft', err);
+                  });
+                  lastFlushedString = '';
                 },
               },
             });
           } catch (e) {
-            console.error('Failed to parse autosave data, clearing corrupt draft:', e);
-            try {
-              await ClearAutoSave();
-            } catch {
-              // ignore
-            }
+            // 🛡️ C6 من تدقيق 2026-10-08: المسودة التالفة كانت تُحذف صامتاً —
+            // بايت واحد فاسد يُدمّر النسخة الوحيدة من عمل غير محفوظ بلا إشعار.
+            // الآن نُبقي الملف كما هو (أول حفظ ناجح يكتب فوقه) ونُبلغ المستخدم،
+            // والحذف صار قراراً يدوياً.
+            draftLoaded = true;
+            logger.error('Failed to parse autosave draft — preserved on disk', e);
+            toast.error('تعذّر قراءة مسودة العمل السابقة', {
+              description:
+                'أُبقي الملف كما هو دون حذف حتى لا تفقد عملك. أعد الفتح بعد إصلاح المشكلة أو امسحه يدوياً.',
+              action: {
+                label: 'مسح المسودة',
+                onClick: () => {
+                  void ClearAutoSave().catch((err: unknown) => {
+                    logger.error('Failed to clear corrupt autosave draft', err);
+                  });
+                },
+              },
+            });
           }
         }
       } catch (err) {
-        console.error('Failed to load autosave:', err);
+        logger.error('Failed to load autosave', err);
       }
     };
     initAutoSave();
+  }, []);
+
+  // 2. تفريغ نهائي احتياطي عند إعادة التحميل/الخروج (لا يمكن انتظار النتيجة هنا)
+  useEffect(() => {
+    const handler = () => {
+      void flushAutoSave();
+    };
+    window.addEventListener('beforeunload', handler);
+    window.addEventListener('pagehide', handler);
+    return () => {
+      window.removeEventListener('beforeunload', handler);
+      window.removeEventListener('pagehide', handler);
+    };
   }, []);
 
   // 2. المراقبة والحفظ التلقائي المنظم في الخلفية (بعد ثانيتين من توقف أي تفاعل)
@@ -78,6 +169,8 @@ export function useAutoSave() {
     let isSaving = false;
     let pendingSaveState: string | null = null;
     let disposed = false;
+    // عدّاد محاولات متتالية بلا نجاح — يمنع وميض إشعار عند كل تعديل لاحق
+    let consecutiveFailures = 0;
 
     // دالة الحفظ الفعلي للمسودة بشكل متسلسل لحماية الملفات من التلف
     const saveDraft = async (stateString: string) => {
@@ -90,8 +183,19 @@ export function useAutoSave() {
       try {
         await SaveAutoSave(stateString);
         lastSavedString = stateString;
+        lastFlushedString = stateString;
+        consecutiveFailures = 0;
       } catch (err) {
-        console.error('Failed to save draft:', err);
+        // 🛡️ H6 من تدقيق 2026-10-08: فشل الحفظ التلقائي (امتلاء القرص، تجاوز
+        // سقف الحمولة) كان يُطبع في وحدة التحكم فقط فيتوقف الحفظ صامتاً بينما
+        // يظن المستخدم أن عمله محفوظ. الآن يُعلَن صراحةً مع نص الخطأ الحقيقي.
+        consecutiveFailures += 1;
+        logger.error('Failed to save autosave draft', err);
+        if (consecutiveFailures === 1) {
+          toast.error(toErrorMessage(err, 'فشل حفظ مسودة العمل التلقائية'), {
+            description: 'لن تُحفظ تعديلاتك حتى تُحل المشكلة (مساحة القرص مثلاً).',
+          });
+        }
       } finally {
         isSaving = false;
         // السلسلة تفرّغ آخر مسودة معلّقة حتى بعد إلغاء التنشيط (كتابة نهائية

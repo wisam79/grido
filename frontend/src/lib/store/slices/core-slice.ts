@@ -23,7 +23,21 @@ import { invalidateImageCache } from '../../canvas/image-cache';
 import { uid } from '../../utils';
 import { canvasMm, findPaperByMm } from '../../canvas/units';
 import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from '../../canvas/fit';
+import { createLogger } from '../../logger';
 
+const logger = createLogger('core-slice');
+
+/**
+ * معرّف فريد غير مستخدم في `seen` — يبني على المعرّف الأصلي وموقع العنصر
+ * حتى يبقى أثر الملف الأصلي مقروءاً في المشروع المُحمَّل (H8).
+ */
+function makeUniqueId(base: string, index: number, seen: Set<string>): string {
+  let candidate = `${base}-dup-${index}-${Math.random().toString(36).slice(2, 8)}`;
+  while (seen.has(candidate)) {
+    candidate = `${base}-dup-${index}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+  return candidate;
+}
 export interface CoreSlice {
   projectId: string | null;
   mode: EditorMode;
@@ -393,6 +407,24 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       return true;
     });
 
+    // 🛡️ تفرد المعرّفات (H8 من تدقيق 2026-10-08): الملفات المحررة يدوياً أو
+    // الموروثة قد تحوي معرّفات مكرّرة. كل كتابة في الستور مفهرسة بالمعرّف،
+    // فالتكرار يجعل `updateElement`/`removeElement`/`bringToFront` تُطبَّق على
+    // السجلين معاً — تعديل واحد يلمس عنصرين. نُبقي الأول ونُلحق لاحقاً فريداً.
+    const seenIds = new Set<string>();
+    let dedupedElementCount = 0;
+    const uniqueElements = validElements.map((el, idx) => {
+      const rawId = typeof el.id === 'string' ? el.id : '';
+      if (rawId && !seenIds.has(rawId)) {
+        seenIds.add(rawId);
+        return el;
+      }
+      dedupedElementCount += 1;
+      const newId = makeUniqueId(rawId || 'element', idx, seenIds);
+      seenIds.add(newId);
+      return { ...el, id: newId };
+    });
+
     // وضع موحّد مع الافتراضي: ملفات جديدة/فارغة تبدأ كولاج (مطابقة reset)،
     // بينما الملفات القديمة التي تحتوي عناصر تعديل حر تُحمل كوضع مفرد
     const resolvedMode: EditorMode =
@@ -412,13 +444,38 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       return true;
     });
 
+    // نفس تفريد المعرّفات للخانات (H8) — الخانات مفهرسة بالمعرّف في كل مسارات
+    // الملء والسحب، فتكررها يُطبّق عملية واحدة على خانتين.
+    const seenSlotIds = new Set<string>();
+    let dedupedSlotCount = 0;
+    const uniqueSlots = validSlots.map((sl, idx) => {
+      const rawId = typeof sl.id === 'string' ? sl.id : '';
+      if (rawId && !seenSlotIds.has(rawId)) {
+        seenSlotIds.add(rawId);
+        return sl;
+      }
+      dedupedSlotCount += 1;
+      const newId = makeUniqueId(rawId || 'slot', idx, seenSlotIds);
+      seenSlotIds.add(newId);
+      return { ...sl, id: newId };
+    });
+
+    // تكرار المعرّف علة ملف المشروع لا علة تطبيق — يُسجَّل في سجل التشخيص
+    // الموحّد (لا console مباشر — قاعدة RV-4) ليصل إلى Go عند استكشاف الأخطاء.
+    if (dedupedElementCount > 0 || dedupedSlotCount > 0) {
+      logger.warn('duplicate ids normalized while loading project', {
+        elements: dedupedElementCount,
+        slots: dedupedSlotCount,
+      });
+    }
+
     // مطابقة عدد الخانات مع خلايا قالب الكولاج: اختلاف العدد يعني ملفاً تالفاً
     // أو هجرة قديمة — نعيد بناء الخانات من القالب مع الإبقاء على الصور حسب الموضع
-    let reconciledSlots = validSlots;
+    let reconciledSlots = uniqueSlots;
     if (
       resolvedMode === 'collage' &&
       restoredCollageTemplate &&
-      validSlots.length !== restoredCollageTemplate.cells.length
+      uniqueSlots.length !== restoredCollageTemplate.cells.length
     ) {
       const storedDpi = project.printSettings?.dpi || 300;
       const dpi = getEffectiveDpi(validWidth, validHeight, storedDpi);
@@ -435,7 +492,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
         if (dynamicCells) cells = dynamicCells;
       }
       reconciledSlots = cells.map((c, i) => {
-        const existingSlot = validSlots[i];
+        const existingSlot = uniqueSlots[i];
         return {
           id: uid(),
           cellIndex: i,
@@ -488,7 +545,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       lastEditedImage: null,
       lastEditedImageAspect: null,
       clipboardElements: [],
-      elements: validElements,
+      elements: uniqueElements,
       slots: reconciledSlots,
       template: restoredTemplate,
       collageTemplate: restoredCollageTemplate,
@@ -517,7 +574,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
           // تُبذر بداية التاريخ بالعناصر المفلترة نفسها المعروضة — إعادة الخام
           // تعني أن أول تراجع يعيد العنصر التالف (NaN/أبعاد صفرية) للكانفس.
           mode: resolvedMode,
-          elements: validElements,
+          elements: uniqueElements,
           slots: reconciledSlots,
           canvasWidth: validWidth,
           canvasHeight: validHeight,

@@ -17,7 +17,7 @@ import { ElementProps, propsAreEqual } from './types';
 import { getFillProps } from './fill-utils';
 import { withShadowlessDrag } from './drag-shadow';
 import { VECTOR_SHAPES } from '@/lib/io/svg-paths';
-import { gradientStart, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
+import { gradientStart, useCanvasColors, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
 import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
 
 interface SvgPathBounds {
@@ -97,6 +97,8 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   shiftPressedRef,
   getKonvaNode,
 }: ElementProps) {
+  // 🛡️ إعادة تصيير الأشكال بألوان الثيم الجديد (C5 — تدقيق 2026-10-08)
+  useCanvasColors();
   const element = _element as ShapeElement;
   const w = element.width * canvasWidth;
   const h = element.height * canvasHeight;

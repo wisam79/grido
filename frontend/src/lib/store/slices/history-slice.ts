@@ -1,6 +1,17 @@
-import { StateCreator } from "zustand";
-import { CanvasElement, CanvasSlot, HistoryEntry, PhotoTemplate, CollageTemplate } from "../types";
-import { DEFAULT_COLLAGE_STATE } from "./collage-slice";
+import { StateCreator } from 'zustand';
+import {
+  CanvasElement,
+  CanvasSlot,
+  HistoryEntry,
+  PhotoTemplate,
+  CollageTemplate,
+  PrintSettings,
+} from '../types';
+import { DEFAULT_COLLAGE_STATE } from './collage-slice';
+import { DEFAULT_PRINT_SETTINGS } from './print-slice';
+import { DEFAULT_GRID_STATE } from './grid-slice';
+// النوع فقط (import type) — القيمة المطلوبة هنا هي DEFAULT_GRID_STATE أعلاه
+import type { UserGuide } from './grid-slice';
 
 export interface HistorySlice {
   history: HistoryEntry[];
@@ -12,10 +23,10 @@ export interface HistorySlice {
 
 // القيم الافتراضية للحقول الإضافية — يجب أن تطابق DEFAULT_CORE_STATE في core-slice
 export const DEFAULT_HISTORY_ENTRY_EXTRAS = {
-  mode: "collage" as const,
+  mode: 'collage' as const,
   canvasWidth: 2480,
   canvasHeight: 3508,
-  backgroundColor: "#FFFFFF",
+  backgroundColor: '#FFFFFF',
   // يطابق الحالة الابتدائية الفعلية (نفس مرجع قالب الكولاج الافتراضي)
   template: null as PhotoTemplate | null,
   collageTemplate: DEFAULT_COLLAGE_STATE.collageTemplate as CollageTemplate | null,
@@ -27,19 +38,33 @@ export const DEFAULT_HISTORY_ENTRY_EXTRAS = {
   collageShowCutLines: false,
   collageShowEndCutLine: true,
   collageStrokeWidth: 0,
-  collageStrokeColor: "#000000",
+  collageStrokeColor: '#000000',
+  // الشبكة والإرشادات — بدونها كان التراجع يستعيد الخانات ويُبقي الشبكة/الأدلة
+  // الجديدة، فتتباعد الحالتان بلا إمكانية عكس التغيير (نفس صنف إصلاح H4)
+  showGrid: DEFAULT_GRID_STATE.showGrid,
+  gridSize: DEFAULT_GRID_STATE.gridSize,
+  gridColor: DEFAULT_GRID_STATE.gridColor,
+  gridOpacity: DEFAULT_GRID_STATE.gridOpacity,
+  gridSubdivisions: DEFAULT_GRID_STATE.gridSubdivisions,
+  gridType: DEFAULT_GRID_STATE.gridType,
+  // نفس مرجع مصفوفة الحالة الابتدائية (مثل collageTemplate) — مصفوفة جديدة
+  // تجعل مقارنة اللقطتين ترى الإرشادات "مختلفة" فتُدفع لقطة وهمية في كل مرة
+  userGuides: DEFAULT_GRID_STATE.userGuides,
   lastEditedImage: null as string | null,
   lastEditedImageAspect: null as number | null,
+  printSettings: DEFAULT_PRINT_SETTINGS,
 };
 
 export const DEFAULT_HISTORY_STATE = {
-  history: [{
-    elements: [] as CanvasElement[],
-    // نفس مرجع خانات الحالة الابتدائية — بذرة لا تطابق الحالة الفعلية كانت
-    // تجعل أول Ctrl+Z يستعيد خانات فارغة ويمحو شبكة الكولاج (إصلاح Bug#1)
-    slots: DEFAULT_COLLAGE_STATE.slots,
-    ...DEFAULT_HISTORY_ENTRY_EXTRAS,
-  }],
+  history: [
+    {
+      elements: [] as CanvasElement[],
+      // نفس مرجع خانات الحالة الابتدائية — بذرة لا تطابق الحالة الفعلية كانت
+      // تجعل أول Ctrl+Z يستعيد خانات فارغة ويمحو شبكة الكولاج (إصلاح Bug#1)
+      slots: DEFAULT_COLLAGE_STATE.slots,
+      ...DEFAULT_HISTORY_ENTRY_EXTRAS,
+    },
+  ],
   historyIndex: 0,
 };
 
@@ -49,7 +74,7 @@ export type HistoryCross = HistorySlice & {
   selectedId: string | null;
   selectedIds: string[];
   editingTextId: string | null;
-  mode?: "single" | "collage";
+  mode?: 'single' | 'collage';
   canvasWidth?: number;
   canvasHeight?: number;
   backgroundColor?: string;
@@ -64,8 +89,19 @@ export type HistoryCross = HistorySlice & {
   collageShowEndCutLine?: boolean;
   collageStrokeWidth?: number;
   collageStrokeColor?: string;
+  showGrid?: boolean;
+  gridSize?: number;
+  gridColor?: string;
+  gridOpacity?: number;
+  gridSubdivisions?: number;
+  gridType?: 'lines' | 'dots';
+  userGuides?: UserGuide[];
   lastEditedImage?: string | null;
   lastEditedImageAspect?: number | null;
+  // 🛡️ إعدادات الطباعة (H4 من تدقيق 2026-10-08): تغيير الـ DPI يعيد بناء
+  // هندسة الخانات (`remapSlotsToCells`)، وكان التراجع يستعيد الخانات ويُبقي
+  // الـ DPI الجديد — الحالتان تفترقان بلا إمكانية عكس التغيير نهائياً.
+  printSettings?: PrintSettings;
 };
 
 // التقاط لقطة كاملة للحالة القابلة للتراجع (عناصر + خانات + إعدادات بصرية مؤثرة)
@@ -89,9 +125,18 @@ const captureSnapshot = (s: HistoryCross): HistoryEntry => ({
   collageShowEndCutLine: s.collageShowEndCutLine,
   collageStrokeWidth: s.collageStrokeWidth,
   collageStrokeColor: s.collageStrokeColor,
+  showGrid: s.showGrid,
+  gridSize: s.gridSize,
+  gridColor: s.gridColor,
+  gridOpacity: s.gridOpacity,
+  gridSubdivisions: s.gridSubdivisions,
+  gridType: s.gridType,
+  userGuides: s.userGuides,
   // تسوية undefined إلى null — يضمن تطابق JSON مع الإدخال الابتدائي في الـ dedupe
   lastEditedImage: s.lastEditedImage ?? null,
   lastEditedImageAspect: s.lastEditedImageAspect ?? null,
+  // نسخة منفصلة (لا مرجع مشترك) — التراجع يستعيدها دون أن تتلوث بلاحق
+  printSettings: s.printSettings ? { ...s.printSettings } : DEFAULT_PRINT_SETTINGS,
 });
 
 // استعادة حقول اللقطة — الحقول غير المعرفة (undefined) لا تُفرض على الحالة الحالية
@@ -101,12 +146,31 @@ const restoreEntry = (entry: HistoryEntry) => {
     slots: entry.slots.map((sl) => ({ ...sl })),
   };
   const optionalKeys = [
-    "mode", "canvasWidth", "canvasHeight", "backgroundColor",
-    "template", "collageTemplate",
-    "backgroundGradientColor2", "backgroundGradientAngle",
-    "collageGap", "collageMargin", "collageRadius",
-    "collageShowCutLines", "collageShowEndCutLine", "collageStrokeWidth", "collageStrokeColor",
-    "lastEditedImage", "lastEditedImageAspect",
+    'mode',
+    'canvasWidth',
+    'canvasHeight',
+    'backgroundColor',
+    'template',
+    'collageTemplate',
+    'backgroundGradientColor2',
+    'backgroundGradientAngle',
+    'collageGap',
+    'collageMargin',
+    'collageRadius',
+    'collageShowCutLines',
+    'collageShowEndCutLine',
+    'collageStrokeWidth',
+    'collageStrokeColor',
+    'showGrid',
+    'gridSize',
+    'gridColor',
+    'gridOpacity',
+    'gridSubdivisions',
+    'gridType',
+    'userGuides',
+    'lastEditedImage',
+    'lastEditedImageAspect',
+    'printSettings',
   ] as const;
   for (const key of optionalKeys) {
     if (entry[key] !== undefined) {
@@ -128,21 +192,55 @@ const isSameSnapshot = (a: HistoryEntry, b: HistoryEntry): boolean => {
   if (a.slots.length !== b.slots.length) return false;
 
   const scalarKeys = [
-    "mode", "canvasWidth", "canvasHeight", "backgroundColor",
+    'mode',
+    'canvasWidth',
+    'canvasHeight',
+    'backgroundColor',
     // القالبان يُقارنان بالمرجع (الستور immutable) — تغييرهما يُسجّل خطوة فعلاً
-    "template", "collageTemplate",
-    "backgroundGradientColor2", "backgroundGradientAngle",
-    "collageGap", "collageMargin", "collageRadius",
-    "collageShowCutLines", "collageShowEndCutLine",
-    "collageStrokeWidth", "collageStrokeColor",
-    "lastEditedImage", "lastEditedImageAspect",
+    'template',
+    'collageTemplate',
+    'backgroundGradientColor2',
+    'backgroundGradientAngle',
+    'collageGap',
+    'collageMargin',
+    'collageRadius',
+    'collageShowCutLines',
+    'collageShowEndCutLine',
+    'collageStrokeWidth',
+    'collageStrokeColor',
+    'showGrid',
+    'gridSize',
+    'gridColor',
+    'gridOpacity',
+    'gridSubdivisions',
+    'gridType',
+    // الأدلة تُقارَن بالمرجع — grid-slice يستبدل المصفوفة كلها عند أي تغيير
+    'userGuides',
+    'lastEditedImage',
+    'lastEditedImageAspect',
+    // ملاحظة: `printSettings` مقصياً من هذه القائمة عمداً — اللقطة تحمل نسخة
+    // مستقلة (`{ ...s.printSettings }`) فالمقارنة المرجعية تجعل كل لقطتين
+    // مختلفتين وتسجّل خطوة تراجع وهمية عند كل عملية. يُقارن حقوله يدوياً أدناه.
   ] as const;
   for (const key of scalarKeys) {
     if ((a[key] ?? null) !== (b[key] ?? null)) return false;
   }
 
+  // 🛡️ إعدادات الطباعة (H4): المقارنة بالمرجع لا تصلح — اللقطة تحمل نسخة
+  // مستقلة (`{ ...s.printSettings }`)، فالمقارنة المرجعية تجعل كل لقطتين
+  // "مختلفتين" وتسجّل خطوة تراجع وهمية عند كل عملية. نقارن حقولها يدوياً.
+  const psA = a.printSettings;
+  const psB = b.printSettings;
+  if (psA || psB) {
+    if (!psA || !psB) return false;
+    const keys = Object.keys(psA) as (keyof PrintSettings)[];
+    for (const k of keys) {
+      if (psA[k] !== psB[k]) return false;
+    }
+  }
+
   const valuesEqual = (x: unknown, y: unknown): boolean => {
-    if (typeof x === "string" && typeof y === "string") {
+    if (typeof x === 'string' && typeof y === 'string') {
       // رفض سريع بالطول قبل مقارنة القيم — يستثني صور Base64 الضخمة فوراً
       if (x.length !== y.length) return false;
       return x === y;
@@ -176,8 +274,8 @@ const isSameSnapshot = (a: HistoryEntry, b: HistoryEntry): boolean => {
     for (const k of ka) {
       const va = ea[k];
       const vb = eb[k];
-      if (typeof va === "object" && va !== null) {
-        if (typeof vb !== "object" || vb === null) return false;
+      if (typeof va === 'object' && va !== null) {
+        if (typeof vb !== 'object' || vb === null) return false;
         if (!shallowEqualObjects(va, vb)) return false;
       } else if (!valuesEqual(va, vb)) {
         return false;
@@ -195,8 +293,8 @@ const isSameSnapshot = (a: HistoryEntry, b: HistoryEntry): boolean => {
     for (const k of ka) {
       const va = sa[k];
       const vb = sb[k];
-      if (typeof va === "object" && va !== null) {
-        if (typeof vb !== "object" || vb === null) return false;
+      if (typeof va === 'object' && va !== null) {
+        if (typeof vb !== 'object' || vb === null) return false;
         if (!shallowEqualObjects(va, vb)) return false;
       } else if (!valuesEqual(va, vb)) {
         return false;
@@ -218,15 +316,15 @@ const HISTORY_MAX_BYTES = 50 * 1024 * 1024;
 const estimateEntryBytes = (entry: HistoryEntry): number => {
   let total = 2048; // مصروف إداري لكل لقطة (مصفوفات + حقول عددية)
   for (const el of entry.elements) {
-    if (el.type === "image") {
-      if (typeof el.imageSrc === "string") total += el.imageSrc.length;
-      if (typeof el.originalImageSrc === "string") total += el.originalImageSrc.length;
+    if (el.type === 'image') {
+      if (typeof el.imageSrc === 'string') total += el.imageSrc.length;
+      if (typeof el.originalImageSrc === 'string') total += el.originalImageSrc.length;
     }
   }
   for (const sl of entry.slots) {
-    if (typeof sl.imageSrc === "string") total += sl.imageSrc.length;
+    if (typeof sl.imageSrc === 'string') total += sl.imageSrc.length;
     // كانت مُهمَلة فيقدّر السقف نصف الحجم الفعلي عند وجود صورة أصلية محفوظة
-    if (typeof sl.originalImageSrc === "string") total += sl.originalImageSrc.length;
+    if (typeof sl.originalImageSrc === 'string') total += sl.originalImageSrc.length;
   }
   return total;
 };

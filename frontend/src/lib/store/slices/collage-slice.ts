@@ -293,7 +293,11 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   },
 
   setSlotImage: (slotId, src) => {
-    const prev = get().slots.find((sl) => sl.id === slotId);
+    // لقطة الخانات ما قبل العملية غير المتزامنة — المرجع الوحيد لكل قيم «ما قبل
+    // الاستبدال» (المصدر القديم). الحالة الآنية بعد القياس تخلط العمليات
+    // المتداخلة فتُطبّق تصحيحاً لا يخص هذه العملية (H7).
+    const slotsAtBatch = get().slots.map((sl: CanvasSlot) => ({ ...sl }));
+    const prev = slotsAtBatch.find((sl) => sl.id === slotId);
     set((state) => ({
       slots: state.slots.map((sl: CanvasSlot) =>
         sl.id === slotId
@@ -321,11 +325,16 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       ]);
       if (!Number.isFinite(prevAspect) || !Number.isFinite(nextAspect)) return;
       if (Math.abs(prevAspect - nextAspect) > 0.001) {
-        // حارس قِدم: نتجاهل النتيجة إذا استُبدلت الصورة مجدداً أثناء القياس
+        // حارس قِدم: الحالة الآنية فقط هي ما يكشف أن عملية أحدث استبدلت الصورة
+        // أثناء القياس — وكل قيم «قبل» تأتي من لقطة ما قبل العملية أعلاه.
         if (get().slots.find((sl) => sl.id === slotId)?.imageSrc !== src) return;
-        get().updateSlot(slotId, { dragX: 0, dragY: 0, zoom: 1 });
-        // التصحيح اللاحق يُسجل كخطوة تراجع مستقلة بدل تغيير صامت غير قابل للتراجع (إصلاح E-1)
-        get().pushHistory();
+        // تصحيح واحد مدموج في نفس العملية — العملية كلها خطوة تراجع واحدة (H7):
+        // كانت اللقطة المتأخرة تُسجّل إدخالاً ثانٍ يعكس حالة آنية لا حالة الدفعة
+        set((state) => ({
+          slots: state.slots.map((sl: CanvasSlot) =>
+            sl.id === slotId ? { ...sl, dragX: 0, dragY: 0, zoom: 1 } : sl,
+          ),
+        }));
       }
     })();
   },
@@ -334,8 +343,9 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     if (assignments.length === 0) return;
     // التقاط القيم السابقة قبل التحديث — مقارنة ما بعد التحديث كانت
     // تبطل الكشف عن الاستبدالات دائماً (imageSrc أصبح يساوي الجديد)
+    const slotsAtBatch = get().slots.map((sl: CanvasSlot) => ({ ...sl }));
     const prevBySlot = new Map(
-      assignments.map((a) => [a.slotId, get().slots.find((sl) => sl.id === a.slotId)?.imageSrc]),
+      assignments.map((a) => [a.slotId, slotsAtBatch.find((sl) => sl.id === a.slotId)?.imageSrc]),
     );
     set((state) => ({
       slots: state.slots.map((sl: CanvasSlot) => {
@@ -376,19 +386,21 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       );
       const candidates = results.filter((id): id is string => !!id);
       if (candidates.length === 0) return;
-      // حارس قِدم: نتجاهل النتيجة إذا استُبدلت الصورة مجدداً أثناء القياس
+      // حارس قِدم: نتجاهل النتيجة إذا استُبدلت الصورة مجدداً أثناء القياس —
+      // كل قيم «قبل» مقروءة من لقطة ما قبل الدفعة (لتُطبَّق على خاناتها لا على
+      // خانات دفعة أحدث تجاورها في نفس المللي ثانية)
       const toReset = candidates.filter((id) => {
         const a = assignments.find((x) => x.slotId === id);
-        return a && get().slots.find((sl) => sl.id === id)?.imageSrc === a.src;
+        return !!a && get().slots.find((sl) => sl.id === id)?.imageSrc === a.src;
       });
       if (toReset.length === 0) return;
+      // تصحيح واحد مدموج في نفس الدفعة — لا إدخال سجل ثانٍ (H7): الدفعة كلها
+      // خطوة تراجع واحدة، وكانت اللقطة اللاحقة تدفع إدخالاً يعكس حالة آنية
       set((state) => ({
         slots: state.slots.map((sl: CanvasSlot) =>
           toReset.includes(sl.id) ? { ...sl, dragX: 0, dragY: 0, zoom: 1 } : sl,
         ),
       }));
-      // التصحيح اللاحق يُسجل كخطوة تراجع مستقلة بدل تغيير صامت غير قابل للتراجع (إصلاح E-1)
-      get().pushHistory();
     })();
   },
 
@@ -453,6 +465,14 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
               brightness: targetSlot.brightness ?? 100,
               contrast: targetSlot.contrast ?? 100,
               saturation: targetSlot.saturation ?? 100,
+              // 🔁 نفس حقول fillAllSlots تماماً: بدون zoom/drag/flip/rotation
+              // كانت الصورة الجديدة ترث اقتصاص الصورة السابقة داخل الخانة
+              zoom: targetSlot.zoom ?? sl.zoom,
+              dragX: targetSlot.dragX ?? sl.dragX,
+              dragY: targetSlot.dragY ?? sl.dragY,
+              flipX: targetSlot.flipX ?? sl.flipX,
+              flipY: targetSlot.flipY ?? sl.flipY,
+              rotation: targetSlot.rotation ?? sl.rotation,
               bgColor: targetSlot.bgColor ?? sl.bgColor,
             }
           : sl,
@@ -474,6 +494,14 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
               brightness: targetSlot.brightness ?? 100,
               contrast: targetSlot.contrast ?? 100,
               saturation: targetSlot.saturation ?? 100,
+              // 🔁 نفس حقول fillAllSlots تماماً: بدون zoom/drag/flip/rotation
+              // كانت الصورة الجديدة ترث اقتصاص الصورة السابقة داخل الخانة
+              zoom: targetSlot.zoom ?? sl.zoom,
+              dragX: targetSlot.dragX ?? sl.dragX,
+              dragY: targetSlot.dragY ?? sl.dragY,
+              flipX: targetSlot.flipX ?? sl.flipX,
+              flipY: targetSlot.flipY ?? sl.flipY,
+              rotation: targetSlot.rotation ?? sl.rotation,
               bgColor: targetSlot.bgColor ?? sl.bgColor,
             }
           : sl,
@@ -650,6 +678,14 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           brightness: sourceSlot?.brightness ?? 100,
           contrast: sourceSlot?.contrast ?? 100,
           saturation: sourceSlot?.saturation ?? 100,
+          // 🔁 نفس حقول fillAllSlots تماماً: بدون zoom/drag/flip/rotation
+          // كانت الصورة الجديدة ترث اقتصاص الصورة السابقة داخل الخانة
+          zoom: sourceSlot?.zoom ?? sl.zoom,
+          dragX: sourceSlot?.dragX ?? sl.dragX,
+          dragY: sourceSlot?.dragY ?? sl.dragY,
+          flipX: sourceSlot?.flipX ?? sl.flipX,
+          flipY: sourceSlot?.flipY ?? sl.flipY,
+          rotation: sourceSlot?.rotation ?? sl.rotation,
           bgColor: sourceSlot?.bgColor ?? sl.bgColor,
         };
       }),

@@ -126,12 +126,10 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
       onClose();
       return;
     }
-    if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey)) {
+    // 🛡️ M4: لا يُعترض Tab/Shift+Tab بعد الآن — يُسمح بمغادرة المحرر المدمج بحرية (WCAG 2.1.2)
+    if (e.key === 'Enter') {
       e.preventDefault();
       stepField(1);
-    } else if (e.key === 'Tab' && e.shiftKey) {
-      e.preventDefault();
-      stepField(-1);
     }
   };
 

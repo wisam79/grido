@@ -15,7 +15,6 @@ import {
   Shapes,
   SquaresFour,
 } from '@/components/ui/icons';
-import { useShallow } from 'zustand/react/shallow';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
 import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 
@@ -27,15 +26,25 @@ export interface PropertiesPanelProps {
 export const PropertiesPanel = React.memo(function PropertiesPanel({
   onCollapse,
 }: PropertiesPanelProps) {
-  const { mode, elements, slots, selectedId, selectedIds, updateSlot } = useEditorStore(
-    useShallow((state) => ({
-      mode: state.mode,
-      elements: state.elements,
-      slots: state.slots,
-      selectedId: state.selectedId,
-      selectedIds: state.selectedIds,
-      updateSlot: state.updateSlot,
-    })),
+  // scalars فقط: الوضع/التحديد/الإجراء. لا اشتراك على مصفوفتي elements/slots
+  // الكاملتين — element-slice يستبدلهما في كل كتابة، فكان كل نبضة سحب أو شريط
+  // تمرير تُعيد رسم اللوح وكل الأقسام الفرعية. العنصر/الخلية المحددة تُحلّان
+  // بمُحدِّد find ضيّق يُعيد مرجعاً ثابتاً ما لم يتغيّر العنصر المحدد نفسه:
+  //فقط تغيّرات العنصر المحدد تُعيد الرسم (تحديث مباشر للأرقام دون رسم زحلق).
+  const mode = useEditorStore((state) => state.mode);
+  const selectedId = useEditorStore((state) => state.selectedId);
+  const selectedIds = useEditorStore((state) => state.selectedIds);
+  const updateSlot = useEditorStore((state) => state.updateSlot);
+  const activeElementId = selectedId || (selectedIds.length > 0 ? selectedIds[0] : null);
+  const selectedElement = useEditorStore((state) =>
+    state.mode === 'single' && activeElementId
+      ? state.elements.find((e) => e.id === activeElementId)
+      : undefined,
+  );
+  const selectedSlot = useEditorStore((state) =>
+    state.mode === 'collage' && state.selectedId
+      ? state.slots.find((s) => s.id === state.selectedId)
+      : undefined,
   );
 
   const [generalTab, setGeneralTab] = useState<'collage' | 'canvas'>('collage');
@@ -50,11 +59,6 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
     window.addEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
     return () => window.removeEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
   }, []);
-
-  const activeElementId = selectedId || (selectedIds.length > 0 ? selectedIds[0] : null);
-  const selectedElement =
-    mode === 'single' ? elements.find((e) => e.id === activeElementId) : undefined;
-  const selectedSlot = mode === 'collage' ? slots.find((s) => s.id === selectedId) : undefined;
 
   // استنباط هوية اللوح ديناميكياً وفق العنصر النشط
   let panelIcon = <SlidersHorizontal className="w-4 h-4 text-muted-foreground" weight="duotone" />;

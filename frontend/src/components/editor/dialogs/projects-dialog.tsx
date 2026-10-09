@@ -16,7 +16,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
 import { useEditorStore } from '@/lib/editor-store';
 import {
@@ -354,9 +353,14 @@ export function ProjectsDialog({
             </div>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4 font-cairo">
+          {/* 🛡️ H11 من تدقيق 2026-10-08: كان الرأس Radix `Tabs` بينما المبدّل
+              `FluentSegmentedControl` يُخرج role="tab" خاصاً به — فـ `aria-controls`
+              غير موجود على الأزرار و`aria-labelledby` على اللوح يشير لمعرّف غير
+              موجود. صار الرأس tablist حقيقياً وكل لوح `role="tabpanel"` مربوط. */}
+          <div className="w-full mt-4 font-cairo">
             <FluentSegmentedControl<'save' | 'list' | 'backup'>
               layoutId="projects-dialog-tabs"
+              idPrefix="projects-tabs"
               value={activeTab as 'save' | 'list' | 'backup'}
               onChange={(nextTab) => {
                 setActiveTab(nextTab);
@@ -388,224 +392,249 @@ export function ProjectsDialog({
               ]}
             />
 
-            <TabsContent value="save" className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="proj-name" className="text-xs font-semibold">
-                  اسم المشروع
-                </Label>
-                <Input
-                  id="proj-name"
-                  placeholder="اسم المشروع..."
-                  className="h-8 text-xs rounded-md"
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                />
-              </div>
-              <Button
-                className="w-full h-8 gap-2 mt-2 rounded-md font-semibold text-xs shadow-xs"
-                onClick={handleSave}
-                disabled={isLoading}
+            {activeTab === 'save' && (
+              <div
+                role="tabpanel"
+                id="projects-tabs-content-save"
+                aria-labelledby="projects-tabs-trigger-save"
+                className="space-y-4 py-2"
               >
-                {isLoading ? (
-                  <>
-                    <Spinner className="w-3.5 h-3.5" size={14} />
-                    <span>جاري الحفظ ...</span>
-                  </>
-                ) : (
-                  <>
-                    <FloppyDisk className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                    <span>حفظ المشروع</span>
-                  </>
-                )}
-              </Button>
-            </TabsContent>
-
-            <TabsContent value="list" className="space-y-3 py-1">
-              {/* شريط البحث والفرز */}
-              <div className="flex gap-2 items-center">
-                <div className="relative flex-1">
-                  <MagnifyingGlass className="absolute right-2.5 top-2 text-muted-foreground w-4 h-4 shrink-0" />
+                <div className="space-y-2">
+                  <Label htmlFor="proj-name" className="text-xs font-semibold">
+                    اسم المشروع
+                  </Label>
                   <Input
-                    placeholder="بحث في المشاريع..."
-                    className="pr-8 h-8 text-xs rounded-md"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    id="proj-name"
+                    placeholder="اسم المشروع..."
+                    className="h-8 text-xs rounded-md"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSave()}
                   />
                 </div>
-                <div className="flex bg-muted/30 rounded-md border border-border/40 p-0.5 h-8 items-center">
-                  <button
-                    type="button"
-                    onClick={() => setSortBy(sortBy === 'date_desc' ? 'date_asc' : 'date_desc')}
-                    className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith('date') ? 'bg-background shadow-2xs text-primary font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-                    title="ترتيب بالتاريخ"
-                  >
-                    <Calendar
-                      className="w-3.5 h-3.5 shrink-0"
-                      weight={sortBy.startsWith('date') ? 'bold' : 'regular'}
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSortBy('name_asc')}
-                    className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith('name') ? 'bg-background shadow-2xs text-primary font-bold' : 'text-muted-foreground hover:text-foreground'}`}
-                    title="ترتيب أبجدي"
-                  >
-                    <ArrowsDownUp
-                      className="w-3.5 h-3.5 shrink-0"
-                      weight={sortBy.startsWith('name') ? 'bold' : 'regular'}
-                    />
-                  </button>
-                </div>
+                <Button
+                  className="w-full h-8 gap-2 mt-2 rounded-md font-semibold text-xs shadow-xs"
+                  onClick={handleSave}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Spinner className="w-3.5 h-3.5" size={14} />
+                      <span>جاري الحفظ ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FloppyDisk className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                      <span>حفظ المشروع</span>
+                    </>
+                  )}
+                </Button>
               </div>
+            )}
 
-              {isLoading ? (
-                <ProjectsSkeleton rows={4} />
-              ) : projectsList.length === 0 ? (
-                <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground text-xs">
-                  لا توجد مشاريع محفوظة
+            {activeTab === 'list' && (
+              <div
+                role="tabpanel"
+                id="projects-tabs-content-list"
+                aria-labelledby="projects-tabs-trigger-list"
+                className="space-y-3 py-1"
+              >
+                {/* شريط البحث والفرز */}
+                <div className="flex gap-2 items-center">
+                  <div className="relative flex-1">
+                    <MagnifyingGlass className="absolute right-2.5 top-2 text-muted-foreground w-4 h-4 shrink-0" />
+                    <Input
+                      placeholder="بحث في المشاريع..."
+                      className="pr-8 h-8 text-xs rounded-md"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex bg-muted/30 rounded-md border border-border/40 p-0.5 h-8 items-center">
+                    <button
+                      type="button"
+                      onClick={() => setSortBy(sortBy === 'date_desc' ? 'date_asc' : 'date_desc')}
+                      className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith('date') ? 'bg-background shadow-2xs text-primary font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+                      title="ترتيب بالتاريخ"
+                    >
+                      <Calendar
+                        className="w-3.5 h-3.5 shrink-0"
+                        weight={sortBy.startsWith('date') ? 'bold' : 'regular'}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSortBy('name_asc')}
+                      className={`h-7 px-2.5 flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${sortBy.startsWith('name') ? 'bg-background shadow-2xs text-primary font-bold' : 'text-muted-foreground hover:text-foreground'}`}
+                      title="ترتيب أبجدي"
+                    >
+                      <ArrowsDownUp
+                        className="w-3.5 h-3.5 shrink-0"
+                        weight={sortBy.startsWith('name') ? 'bold' : 'regular'}
+                      />
+                    </button>
+                  </div>
                 </div>
-              ) : filteredProjects.length === 0 ? (
-                <div className="text-center py-10 border border-dashed rounded-xl text-muted-foreground text-xs">
-                  لا توجد نتائج
-                </div>
-              ) : (
-                <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                  {filteredProjects.map((project) => {
-                    const isPinned = pinnedProjects.includes(project.id);
-                    return (
-                      <div
-                        key={project.id}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            handleLoad(project);
-                          }
-                        }}
-                        onClick={() => handleLoad(project)}
-                        className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden fluent-specular"
-                      >
-                        {isPinned && (
-                          <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />
-                        )}
-                        <div className="space-y-1 pl-2 pr-1">
-                          <h4 className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
-                            {isPinned && (
-                              <PushPin className="text-primary w-3 h-3 shrink-0" weight="fill" />
-                            )}
-                            {project.name}
-                          </h4>
-                          <div className="flex items-center gap-3 text-micro text-muted-foreground">
-                            <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">
-                              {project.mode === 'single' ? 'صورة مفردة' : 'كولاج مجمع'}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3 shrink-0" />
-                              {project.updatedAt
-                                ? new Date(project.updatedAt).toLocaleDateString('ar-EG')
-                                : ''}
-                            </span>
+
+                {isLoading ? (
+                  <ProjectsSkeleton rows={4} />
+                ) : projectsList.length === 0 ? (
+                  <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground text-xs">
+                    لا توجد مشاريع محفوظة
+                  </div>
+                ) : filteredProjects.length === 0 ? (
+                  <div className="text-center py-10 border border-dashed rounded-xl text-muted-foreground text-xs">
+                    لا توجد نتائج
+                  </div>
+                ) : (
+                  <div className="max-h-[320px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {filteredProjects.map((project) => {
+                      const isPinned = pinnedProjects.includes(project.id);
+                      return (
+                        <div
+                          key={project.id}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              handleLoad(project);
+                            }
+                          }}
+                          onClick={() => handleLoad(project)}
+                          className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden fluent-specular"
+                        >
+                          {isPinned && (
+                            <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />
+                          )}
+                          <div className="space-y-1 pl-2 pr-1">
+                            <h4 className="font-semibold text-xs text-foreground/90 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                              {isPinned && (
+                                <PushPin className="text-primary w-3 h-3 shrink-0" weight="fill" />
+                              )}
+                              {project.name}
+                            </h4>
+                            <div className="flex items-center gap-3 text-micro text-muted-foreground">
+                              <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-semibold">
+                                {project.mode === 'single' ? 'صورة مفردة' : 'كولاج مجمع'}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3 shrink-0" />
+                                {project.updatedAt
+                                  ? new Date(project.updatedAt).toLocaleDateString('ar-EG')
+                                  : ''}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => togglePin(e, project.id)}
+                              className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
+                              title={isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى'}
+                              aria-label={isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى'}
+                            >
+                              {isPinned ? (
+                                <PushPinSlash className="w-3.5 h-3.5 shrink-0" />
+                              ) : (
+                                <PushPin className="w-3.5 h-3.5 shrink-0" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => handleDelete(project.id, e)}
+                              className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              aria-label="حذف"
+                            >
+                              <Trash className="w-3.5 h-3.5 shrink-0" />
+                            </Button>
                           </div>
                         </div>
-
-                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity gap-0.5">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => togglePin(e, project.id)}
-                            className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10"
-                            title={isPinned ? 'إلغاء التثبيت' : 'تثبيت في الأعلى'}
-                          >
-                            {isPinned ? (
-                              <PushPinSlash className="w-3.5 h-3.5 shrink-0" />
-                            ) : (
-                              <PushPin className="w-3.5 h-3.5 shrink-0" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => handleDelete(project.id, e)}
-                            className="h-7 w-7 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash className="w-3.5 h-3.5 shrink-0" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="backup" className="space-y-4 py-2">
-              <div className="space-y-3">
-                <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground/90">تصدير نسخة احتياطية</h4>
-                    <p className="text-xs text-muted-foreground">حفظ كل المشاريع في ملف JSON</p>
+                      );
+                    })}
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={handleExportBackup}
-                    disabled={backupActionLoading}
-                    className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold shadow-xs"
-                  >
-                    {backupActionLoading ? (
-                      <>
-                        <Spinner className="w-3.5 h-3.5" size={14} />
-                        <span>جاري التصدير ...</span>
-                      </>
-                    ) : (
-                      <>
-                        <DownloadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                        <span>تصدير JSON</span>
-                      </>
-                    )}
-                  </Button>
-                </div>
+                )}
+              </div>
+            )}
 
-                <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground/90">استيراد نسخة احتياطية</h4>
-                    <p className="text-xs text-muted-foreground">استعادة المشاريع من JSON</p>
-                  </div>
-                  <label className="cursor-pointer">
-                    <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
-                      <UploadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                      <span>رفع ملف</span>
-                    </span>
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={handleImportFileChange}
-                      className="hidden"
+            {activeTab === 'backup' && (
+              <div
+                role="tabpanel"
+                id="projects-tabs-content-backup"
+                aria-labelledby="projects-tabs-trigger-backup"
+                className="space-y-4 py-2"
+              >
+                <div className="space-y-3">
+                  <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground/90">تصدير نسخة احتياطية</h4>
+                      <p className="text-xs text-muted-foreground">حفظ كل المشاريع في ملف JSON</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={handleExportBackup}
                       disabled={backupActionLoading}
-                    />
-                  </label>
-                </div>
-
-                <div className="p-3 border rounded-xl bg-destructive/5 border-destructive/20 flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-destructive">تهيئة مكتبة المشاريع</h4>
-                    <p className="text-xs text-muted-foreground">حذف جميع المشاريع نهائياً</p>
+                      className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold shadow-xs"
+                    >
+                      {backupActionLoading ? (
+                        <>
+                          <Spinner className="w-3.5 h-3.5" size={14} />
+                          <span>جاري التصدير ...</span>
+                        </>
+                      ) : (
+                        <>
+                          <DownloadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                          <span>تصدير JSON</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setResetConfirmOpen(true)}
-                    disabled={backupActionLoading}
-                    className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold shadow-xs"
-                  >
-                    <Trash className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                    <span>حذف الكل</span>
-                  </Button>
+
+                  <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground/90">
+                        استيراد نسخة احتياطية
+                      </h4>
+                      <p className="text-xs text-muted-foreground">استعادة المشاريع من JSON</p>
+                    </div>
+                    <label className="cursor-pointer">
+                      <span className="inline-flex items-center justify-center rounded-md text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 h-8 px-3 gap-1.5">
+                        <UploadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                        <span>رفع ملف</span>
+                      </span>
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={handleImportFileChange}
+                        className="hidden"
+                        disabled={backupActionLoading}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="p-3 border rounded-xl bg-destructive/5 border-destructive/20 flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-destructive">تهيئة مكتبة المشاريع</h4>
+                      <p className="text-xs text-muted-foreground">حذف جميع المشاريع نهائياً</p>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setResetConfirmOpen(true)}
+                      disabled={backupActionLoading}
+                      className="gap-1.5 h-8 px-3 rounded-md text-xs font-semibold shadow-xs"
+                    >
+                      <Trash className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                      <span>حذف الكل</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         </DialogContent>
 
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

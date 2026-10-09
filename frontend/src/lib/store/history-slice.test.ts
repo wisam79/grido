@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createHistorySlice, HistoryCross } from './slices/history-slice';
 import { DEFAULT_COLLAGE_STATE } from './slices/collage-slice';
+import { DEFAULT_GRID_STATE } from './slices/grid-slice';
 import { create } from 'zustand';
 import type { UseBoundStore, StoreApi } from 'zustand';
 import type { CanvasElement } from './types';
@@ -11,7 +12,7 @@ describe('history-slice', () => {
   beforeEach(() => {
     // Mock the store for testing the slice — البذرة يجب أن تطابق الحالة الابتدائية
     // (نفس مرجع خانات الكولاج) وإلا فشل الـ dedupe في الدفعة الأولى
-      store = create<HistoryCross>((set, get, api) => ({
+    store = create<HistoryCross>((set, get, api) => ({
       ...createHistorySlice(set, get, api),
       elements: [],
       slots: DEFAULT_COLLAGE_STATE.slots,
@@ -29,6 +30,16 @@ describe('history-slice', () => {
       collageShowEndCutLine: true,
       collageStrokeWidth: 0,
       collageStrokeColor: '#000000',
+      // حقول الشبكة/الإرشادات تُضاف إلى اللقطة مثلها مثل collage* — بذرة بلا
+      // قيمها الابتدائية تجعل أول مقارنة "مختلفة" فيُدفع إدخال سجل زائف
+      showGrid: DEFAULT_GRID_STATE.showGrid,
+      gridSize: DEFAULT_GRID_STATE.gridSize,
+      gridColor: DEFAULT_GRID_STATE.gridColor,
+      gridOpacity: DEFAULT_GRID_STATE.gridOpacity,
+      gridSubdivisions: DEFAULT_GRID_STATE.gridSubdivisions,
+      gridType: DEFAULT_GRID_STATE.gridType,
+      // نفس المرجع (وليس نسخة فارغة) — userGuides تُقارَن بالمرجع
+      userGuides: DEFAULT_GRID_STATE.userGuides,
       mode: 'collage',
       selectedId: null,
       selectedIds: [],
@@ -42,7 +53,12 @@ describe('history-slice', () => {
     store.setState({ elements: [{ id: '1', type: 'shape' }] as CanvasElement[] });
     store.getState().pushHistory();
 
-    store.setState({ elements: [{ id: '1', type: 'shape' }, { id: '2', type: 'shape' }] as CanvasElement[] });
+    store.setState({
+      elements: [
+        { id: '1', type: 'shape' },
+        { id: '2', type: 'shape' },
+      ] as CanvasElement[],
+    });
     store.getState().pushHistory();
 
     const stateAfterAdds = store.getState();
@@ -65,7 +81,7 @@ describe('history-slice', () => {
 
   it('should limit history to 30 entries and shift old entries', () => {
     const s = store.getState();
-    
+
     // Push 35 times
     for (let i = 0; i < 35; i++) {
       store.setState({ elements: [{ id: String(i), type: 'shape' }] as CanvasElement[] });

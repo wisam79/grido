@@ -43,7 +43,7 @@ const DropdownMenuItem = React.forwardRef<
     data-inset={inset}
     data-variant={variant}
     className={cn(
-      "focus:bg-accent-active focus:text-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
+      "focus:bg-accent-active focus:text-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 data-[inset]:ps-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
       className,
     )}
     {...props}
@@ -58,13 +58,13 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      "focus:bg-accent-active focus:text-foreground relative flex cursor-pointer items-center gap-1.5 rounded-md py-1.5 pr-2 pl-7 text-xs font-medium outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
+      "focus:bg-accent-active focus:text-foreground relative flex cursor-pointer items-center gap-1.5 rounded-md py-1.5 ps-2 pe-7 text-xs font-medium outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
       className,
     )}
     checked={checked}
     {...props}
   >
-    <span className="pointer-events-none absolute left-1.5 flex size-3.5 items-center justify-center">
+    <span className="pointer-events-none absolute end-1.5 flex size-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
         <Check className="size-3.5 text-foreground shrink-0" weight="bold" />
       </DropdownMenuPrimitive.ItemIndicator>
@@ -81,12 +81,12 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "focus:bg-accent-active focus:text-foreground relative flex cursor-pointer items-center gap-1.5 rounded-md py-1.5 pr-2 pl-7 text-xs font-medium outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
+      "focus:bg-accent-active focus:text-foreground relative flex cursor-pointer items-center gap-1.5 rounded-md py-1.5 ps-2 pe-7 text-xs font-medium outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
       className,
     )}
     {...props}
   >
-    <span className="pointer-events-none absolute left-1.5 flex size-3.5 items-center justify-center">
+    <span className="pointer-events-none absolute end-1.5 flex size-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
         <Circle className="size-2 fill-foreground text-foreground shrink-0" weight="fill" />
       </DropdownMenuPrimitive.ItemIndicator>
@@ -105,7 +105,7 @@ const DropdownMenuLabel = React.forwardRef<
   <DropdownMenuPrimitive.Label
     ref={ref}
     data-inset={inset}
-    className={cn('px-2 py-1 text-xs font-bold text-muted-foreground data-[inset]:pl-8', className)}
+    className={cn('px-2 py-1 text-xs font-bold text-muted-foreground data-[inset]:ps-8', className)}
     {...props}
   />
 ));
@@ -127,7 +127,7 @@ const DropdownMenuShortcut = ({ className, ...props }: React.ComponentProps<'spa
   return (
     <span
       className={cn(
-        'text-muted-foreground ml-auto text-micro tracking-widest font-mono',
+        'text-muted-foreground ms-auto text-micro tracking-widest font-mono',
         className,
       )}
       {...props}
@@ -150,13 +150,13 @@ const DropdownMenuSubTrigger = React.forwardRef<
     ref={ref}
     data-inset={inset}
     className={cn(
-      'focus:bg-accent-active focus:text-foreground data-[state=open]:bg-accent-active data-[state=open]:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium outline-hidden select-none data-[inset]:pl-8 [&_svg]:shrink-0',
+      'focus:bg-accent-active focus:text-foreground data-[state=open]:bg-accent-active data-[state=open]:text-foreground flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium outline-hidden select-none data-[inset]:ps-8 [&_svg]:shrink-0',
       className,
     )}
     {...props}
   >
     {children}
-    <CaretRight className="ml-auto size-3.5 shrink-0 rtl:rotate-180" weight="bold" />
+    <CaretRight className="ms-auto size-3.5 shrink-0 rtl:rotate-180" weight="bold" />
   </DropdownMenuPrimitive.SubTrigger>
 ));
 DropdownMenuSubTrigger.displayName = DropdownMenuPrimitive.SubTrigger.displayName;

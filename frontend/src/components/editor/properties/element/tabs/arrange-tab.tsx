@@ -1,12 +1,12 @@
-import React, { useCallback } from "react";
-import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { Button } from "@/components/ui/button";
+import React, { useCallback, useRef } from 'react';
+import { CanvasElement, useEditorStore } from '@/lib/editor-store';
+import { Button } from '@/components/ui/button';
 import {
   ArrowClockwise,
   FlipHorizontal,
   FlipVertical,
   ArrowsOutCardinal,
-} from "@/components/ui/icons";
+} from '@/components/ui/icons';
 import {
   AlignLeftIcon,
   AlignCenterHorizontalIcon,
@@ -14,20 +14,32 @@ import {
   AlignTopIcon,
   AlignCenterVerticalIcon,
   AlignBottomIcon,
-} from "@/components/ui/alignment-icons";
-import { scaleElementDecorations } from "@/lib/canvas/scale-decorations";
-import { rotateElementAroundCenter } from "@/lib/canvas/element-geometry";
-import { cn } from "@/lib/utils";
-import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+} from '@/components/ui/alignment-icons';
+import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
+import { rotateElementAroundCenter } from '@/lib/canvas/element-geometry';
+import { cn } from '@/lib/utils';
+import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface ElementArrangeTabProps {
   element: CanvasElement;
   onUpdate: (id: string, patch: Partial<CanvasElement>) => void;
 }
 
-export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element, onUpdate }: ElementArrangeTabProps) {
+export const ElementArrangeTab = React.memo(function ElementArrangeTab({
+  element,
+  onUpdate,
+}: ElementArrangeTabProps) {
   const alignSelectedElements = useEditorStore((state) => state.alignSelectedElements);
+  // 🛡️ علم «هل تغيّر شيء فعلاً؟» لحقول X/Y/W/H الرقمية: onBlur كان يدفع سجل
+  // تراجع عند كل فقدان تركيز — حتى نقرة على الحقل بلا تعديل — فيمتلئ سقف
+  // الثلاثين خطوة بإدخالات متطابقة ويصبح التراجع بلا أثر مرئي (فيضان سجل التراجع).
+  const coordDirtyRef = useRef(false);
+  const pushCoordHistory = useCallback(() => {
+    if (!coordDirtyRef.current) return;
+    coordDirtyRef.current = false;
+    useEditorStore.getState().pushHistory();
+  }, []);
 
   const handleRotate90 = useCallback(() => {
     const currentRot = element.rotation || 0;
@@ -68,7 +80,8 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => alignSelectedElements("left")}
+                aria-label="محاذاة لليسار"
+                onClick={() => alignSelectedElements('left')}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
                 <AlignLeftIcon className="w-4 h-4" />
@@ -84,7 +97,8 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => alignSelectedElements("center")}
+                aria-label="توسيط أفقي"
+                onClick={() => alignSelectedElements('center')}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
                 <AlignCenterHorizontalIcon className="w-4 h-4" />
@@ -100,7 +114,8 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => alignSelectedElements("right")}
+                aria-label="محاذاة لليمين"
+                onClick={() => alignSelectedElements('right')}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
                 <AlignRightIcon className="w-4 h-4" />
@@ -118,7 +133,8 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => alignSelectedElements("top")}
+                aria-label="محاذاة للأعلى"
+                onClick={() => alignSelectedElements('top')}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
                 <AlignTopIcon className="w-4 h-4" />
@@ -134,7 +150,8 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => alignSelectedElements("middle")}
+                aria-label="توسيط عمودي"
+                onClick={() => alignSelectedElements('middle')}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
                 <AlignCenterVerticalIcon className="w-4 h-4" />
@@ -150,7 +167,8 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => alignSelectedElements("bottom")}
+                aria-label="محاذاة للأسفل"
+                onClick={() => alignSelectedElements('bottom')}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
                 <AlignBottomIcon className="w-4 h-4" />
@@ -176,11 +194,12 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
               value={Math.round(element.x * 100)}
               onChange={(e) => {
                 const v = Number(e.target.value);
-                if (e.target.value !== "" && Number.isFinite(v)) {
+                if (e.target.value !== '' && Number.isFinite(v)) {
+                  coordDirtyRef.current = true;
                   onUpdate(element.id, { x: Math.max(-1, Math.min(2, v / 100)) });
                 }
               }}
-              onBlur={() => useEditorStore.getState().pushHistory()}
+              onBlur={pushCoordHistory}
               className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
             />
           </div>
@@ -197,11 +216,12 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
               value={Math.round(element.y * 100)}
               onChange={(e) => {
                 const v = Number(e.target.value);
-                if (e.target.value !== "" && Number.isFinite(v)) {
+                if (e.target.value !== '' && Number.isFinite(v)) {
+                  coordDirtyRef.current = true;
                   onUpdate(element.id, { y: Math.max(-1, Math.min(2, v / 100)) });
                 }
               }}
-              onBlur={() => useEditorStore.getState().pushHistory()}
+              onBlur={pushCoordHistory}
               className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
             />
           </div>
@@ -218,15 +238,16 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
               value={Math.round(element.width * 100)}
               onChange={(e) => {
                 const v = Number(e.target.value);
-                if (e.target.value === "" || !Number.isFinite(v)) return;
+                if (e.target.value === '' || !Number.isFinite(v)) return;
                 const newWidth = Math.max(0.05, v / 100);
                 const deco =
-                  element.type === "text"
+                  element.type === 'text'
                     ? {}
                     : scaleElementDecorations(element, newWidth / Math.max(1e-6, element.width), 1);
+                coordDirtyRef.current = true;
                 onUpdate(element.id, { width: newWidth, ...deco });
               }}
-              onBlur={() => useEditorStore.getState().pushHistory()}
+              onBlur={pushCoordHistory}
               className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
             />
           </div>
@@ -243,19 +264,20 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
               value={Math.round(element.height * 100)}
               onChange={(e) => {
                 const v = Number(e.target.value);
-                if (e.target.value === "" || !Number.isFinite(v)) return;
+                if (e.target.value === '' || !Number.isFinite(v)) return;
                 const newHeight = Math.max(0.05, v / 100);
                 const deco =
-                  element.type === "text"
+                  element.type === 'text'
                     ? {}
                     : scaleElementDecorations(
                         element,
                         1,
-                        newHeight / Math.max(1e-6, element.height)
+                        newHeight / Math.max(1e-6, element.height),
                       );
+                coordDirtyRef.current = true;
                 onUpdate(element.id, { height: newHeight, ...deco });
               }}
-              onBlur={() => useEditorStore.getState().pushHistory()}
+              onBlur={pushCoordHistory}
               className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
             />
           </div>
@@ -305,13 +327,17 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
             onClick={handleFlipX}
             title="قلب أفقي"
             className={cn(
-              "h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              element.flipX && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
+              'h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              element.flipX &&
+                'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40',
             )}
           >
             <FlipHorizontal
-              className={cn("w-3.5 h-3.5", element.flipX ? "text-primary" : "text-muted-foreground")}
-              weight={element.flipX ? "fill" : "regular"}
+              className={cn(
+                'w-3.5 h-3.5',
+                element.flipX ? 'text-primary' : 'text-muted-foreground',
+              )}
+              weight={element.flipX ? 'fill' : 'regular'}
             />
           </Button>
           <Button
@@ -320,13 +346,17 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({ element
             onClick={handleFlipY}
             title="قلب عمودي"
             className={cn(
-              "h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-              element.flipY && "bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40"
+              'h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              element.flipY &&
+                'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40',
             )}
           >
             <FlipVertical
-              className={cn("w-3.5 h-3.5", element.flipY ? "text-primary" : "text-muted-foreground")}
-              weight={element.flipY ? "fill" : "regular"}
+              className={cn(
+                'w-3.5 h-3.5',
+                element.flipY ? 'text-primary' : 'text-muted-foreground',
+              )}
+              weight={element.flipY ? 'fill' : 'regular'}
             />
           </Button>
         </div>

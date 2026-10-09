@@ -1,4 +1,4 @@
-import type Konva from "konva";
+import type Konva from 'konva';
 
 /**
  * طبقة السحب الرسمية (Official Drag-Layer Pattern).
@@ -27,11 +27,15 @@ const home = new Map<Konva.Node, { parent: Konva.Container; index: number }>();
 const touchedLayers = new Set<Konva.Layer>();
 
 export function registerDragLayer(layer: Konva.Layer | null): void {
-  dragLayer = layer;
   if (!layer) {
+    // 🛡️ M23: مسح home وحده كان يترك العقد (والمحوّل والشارة معها) مرفوعة
+    // داخل طبقة السحب بلا طريق عودة إن فُكّ التركيب أثناء سحب نشط — أعِدها
+    // إلى أبيها وترتيبها الأصلي أولاً ثم امسح الحالة.
+    dropFromDragLayer();
     home.clear();
     touchedLayers.clear();
   }
+  dragLayer = layer;
 }
 
 export function registerDragExtrasProvider(provider: (() => Konva.Node[]) | null): void {
@@ -57,12 +61,15 @@ export function findLiftRoot(node: Konva.Node | null | undefined): Konva.Node | 
   let last: Konva.Node = node;
   let cur: Konva.Node | null | undefined = node;
   while (cur) {
-    if (typeof cur.id === "function" && cur.id().startsWith("slot-")) {
+    if (typeof cur.id === 'function' && cur.id().startsWith('slot-')) {
       last = cur;
       break;
     }
-    const parent = typeof cur.getParent === "function" ? cur.getParent() : null;
-    if (!parent || (typeof parent.getClassName === "function" && parent.getClassName() === "Layer")) {
+    const parent = typeof cur.getParent === 'function' ? cur.getParent() : null;
+    if (
+      !parent ||
+      (typeof parent.getClassName === 'function' && parent.getClassName() === 'Layer')
+    ) {
       break;
     }
     last = cur;
@@ -74,7 +81,7 @@ export function findLiftRoot(node: Konva.Node | null | undefined): Konva.Node | 
 function liftOne(node: Konva.Node | null | undefined): void {
   if (!node || !dragLayer) return;
   if (home.has(node)) return;
-  const parent = typeof node.getParent === "function" ? node.getParent() : null;
+  const parent = typeof node.getParent === 'function' ? node.getParent() : null;
   if (!parent || parent === (dragLayer as unknown as Konva.Container)) return;
   home.set(node, { parent: parent as unknown as Konva.Container, index: node.zIndex() });
   const homeLayer = node.getLayer();
@@ -104,7 +111,7 @@ export function dropFromDragLayer(): void {
   home.forEach((h, n) => {
     try {
       // عقدة بلا مسرح تعني unmount أثناء السحب — لا تعيد إضافتها أبداً.
-      if (typeof n.getStage !== "function" || !n.getStage()) return;
+      if (typeof n.getStage !== 'function' || !n.getStage()) return;
       n.moveTo(h.parent);
       n.zIndex(h.index);
       const layer = n.getLayer();

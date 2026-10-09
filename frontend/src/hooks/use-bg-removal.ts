@@ -280,10 +280,25 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
 
             await preloadImageIntoCache(localPath);
 
+            // 🛡️ حارس الطزاثة (H3 من تدقيق 2026-10-08): العملية تستغرق ثوانٍ
+            // ودقائق، وقد يستبدل المستخدم الصورة أو يحذف العنصر أو يتراجع
+            // أثناءها. كانت اللقطة الملتقطة عند الإطلاق تُكتب فوق الحالة
+            // الطازجة فتُرجِع تعديلاً أحدث بصمت (وتمحو originalImageSrc الحقيقي).
+            const liveEl = useEditorStore.getState().elements.find((e) => e.id === element.id);
+            const live = liveEl as BgRemovalElement | undefined;
+            if (!live) {
+              toast.info('تم إلغاء عزل الخلفية: العنصر لم يعد موجوداً.');
+              return;
+            }
+            if (live.imageSrc !== element.imageSrc) {
+              toast.info('تم إلغاء عزل الخلفية: تغيّرت الصورة أثناء المعالجة.');
+              return;
+            }
+
             // 🔒 تعيين originalImageSrc في المرّة الأولى فقط لمنع فقدان الصورة الأصلية
             const patch: BgRemovalPatch = { imageSrc: localPath };
-            if (!element.originalImageSrc) {
-              patch.originalImageSrc = element.imageSrc;
+            if (!live.originalImageSrc) {
+              patch.originalImageSrc = live.imageSrc;
             }
             onUpdateRef.current(element.id, patch);
             useEditorStore.getState().pushHistory();

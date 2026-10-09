@@ -1,32 +1,32 @@
-import { describe, it, expect } from "vitest";
-import { renderHook } from "@testing-library/react";
-import { usePrintLayout } from "../src/hooks/use-print-layout";
-import { createMockPrintSettings } from "./helpers/test-factories";
-import type { PhotoTemplate } from "../src/lib/templates";
+import { describe, it, expect } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { usePrintLayout } from '../src/hooks/use-print-layout';
+import { createMockPrintSettings } from './helpers/test-factories';
+import type { PhotoTemplate } from '../src/lib/templates';
 
-describe("usePrintLayout", () => {
+describe('usePrintLayout', () => {
   const passportTemplate: PhotoTemplate = {
-    id: "passport-standard",
-    name: "Standard Passport · 35×45 mm",
+    id: 'passport-standard',
+    name: 'Standard Passport · 35×45 mm',
     width: 413,
     height: 531,
     widthMM: 35,
     heightMM: 45,
     dpi: 300,
-    category: "passport",
-    background: "#FFFFFF",
-    backgroundHint: "White",
+    category: 'passport',
+    background: '#FFFFFF',
+    backgroundHint: 'White',
   };
 
-  it("preserves exact 1:1 physical dimensions for passport photos on A4 when fitToPage is false", () => {
+  it('preserves exact 1:1 physical dimensions for passport photos on A4 when fitToPage is false', () => {
     const printSettings = createMockPrintSettings({
       paperWidthMM: 210,
       paperHeightMM: 297,
-      orientation: "portrait",
+      orientation: 'portrait',
       marginMM: 5,
       gapMM: 2,
       copiesPerSheet: 1,
-      repeatMode: "all",
+      repeatMode: 'all',
       fitToPage: false,
     });
 
@@ -36,8 +36,8 @@ describe("usePrintLayout", () => {
         printSettings,
         canvasWidth: (35 / 25.4) * 300,
         canvasHeight: (45 / 25.4) * 300,
-        mode: "single",
-      })
+        mode: 'single',
+      }),
     );
 
     // Exact 1:1 mm scale — must NOT blow up to page size
@@ -52,14 +52,14 @@ describe("usePrintLayout", () => {
     expect(result.current.rows).toBe(1);
   });
 
-  it("scales up proportionally to fit margins when fitToPage is true for a single copy", () => {
+  it('scales up proportionally to fit margins when fitToPage is true for a single copy', () => {
     const printSettings = createMockPrintSettings({
       paperWidthMM: 210,
       paperHeightMM: 297,
-      orientation: "portrait",
+      orientation: 'portrait',
       marginMM: 5,
       copiesPerSheet: 1,
-      repeatMode: "all",
+      repeatMode: 'all',
       fitToPage: true,
     });
 
@@ -69,8 +69,8 @@ describe("usePrintLayout", () => {
         printSettings,
         canvasWidth: 350,
         canvasHeight: 450,
-        mode: "single",
-      })
+        mode: 'single',
+      }),
     );
 
     // Width available: 200mm, Height available: 287mm
@@ -91,7 +91,7 @@ describe("usePrintLayout", () => {
       paperHeightMM: 297,
       marginMM: 5,
       gapMM: 2,
-      repeatMode: "row",
+      repeatMode: 'row',
     });
 
     const { result } = renderHook(() =>
@@ -100,8 +100,8 @@ describe("usePrintLayout", () => {
         printSettings,
         canvasWidth: 350,
         canvasHeight: 450,
-        mode: "single",
-      })
+        mode: 'single',
+      }),
     );
 
     // (200 + 2) / (35 + 2) = 202 / 37 = 5.45 => fitCols = 5
@@ -117,7 +117,7 @@ describe("usePrintLayout", () => {
       paperHeightMM: 297,
       marginMM: 5,
       gapMM: 2,
-      repeatMode: "column",
+      repeatMode: 'column',
     });
 
     const { result } = renderHook(() =>
@@ -126,8 +126,8 @@ describe("usePrintLayout", () => {
         printSettings,
         canvasWidth: 350,
         canvasHeight: 450,
-        mode: "single",
-      })
+        mode: 'single',
+      }),
     );
 
     // (287 + 2) / (45 + 2) = 289 / 47 = 6.14 => fitRows = 6
@@ -143,7 +143,7 @@ describe("usePrintLayout", () => {
       marginMM: 5,
       gapMM: 2,
       copiesPerSheet: 2,
-      repeatMode: "all",
+      repeatMode: 'all',
     });
 
     const { result } = renderHook(() =>
@@ -152,8 +152,8 @@ describe("usePrintLayout", () => {
         printSettings,
         canvasWidth: 350,
         canvasHeight: 450,
-        mode: "single",
-      })
+        mode: 'single',
+      }),
     );
 
     // Only 2 copies requested on a sheet that can fit 5 cols
@@ -166,11 +166,11 @@ describe("usePrintLayout", () => {
     expect(result.current.grid.gridWidth).toBe(72);
   });
 
-  it("swaps paper width and height when orientation is landscape", () => {
+  it('swaps paper width and height when orientation is landscape', () => {
     const printSettings = createMockPrintSettings({
       paperWidthMM: 210,
       paperHeightMM: 297,
-      orientation: "landscape",
+      orientation: 'landscape',
       marginMM: 5,
     });
 
@@ -180,8 +180,8 @@ describe("usePrintLayout", () => {
         printSettings,
         canvasWidth: 350,
         canvasHeight: 450,
-        mode: "single",
-      })
+        mode: 'single',
+      }),
     );
 
     expect(result.current.paperWidth).toBe(297);
@@ -190,18 +190,18 @@ describe("usePrintLayout", () => {
     expect(result.current.availableHeightMM).toBe(200);
   });
 
-  it("downscales oversized content safely to fit printable area without distortion", () => {
+  it('downscales oversized content safely to fit printable area without distortion', () => {
     const oversizedTemplate: PhotoTemplate = {
-      id: "poster-huge",
-      name: "Huge Poster · 400×600 mm",
+      id: 'poster-huge',
+      name: 'Huge Poster · 400×600 mm',
       width: 4000,
       height: 6000,
       widthMM: 400,
       heightMM: 600,
       dpi: 300,
-      category: "personal",
-      background: "#FFFFFF",
-      backgroundHint: "White",
+      category: 'personal',
+      background: '#FFFFFF',
+      backgroundHint: 'White',
     };
 
     const printSettings = createMockPrintSettings({
@@ -217,8 +217,8 @@ describe("usePrintLayout", () => {
         printSettings,
         canvasWidth: 4000,
         canvasHeight: 6000,
-        mode: "single",
-      })
+        mode: 'single',
+      }),
     );
 
     // Available: 190x277 mm
@@ -231,7 +231,7 @@ describe("usePrintLayout", () => {
     expect(result.current.imageWidthMM / result.current.imageHeightMM).toBeCloseTo(400 / 600, 3);
   });
 
-  it("derives image dimensions from canvas pixels and dpi when no template is provided", () => {
+  it('derives image dimensions from canvas pixels and dpi when no template is provided', () => {
     const printSettings = createMockPrintSettings({
       paperWidthMM: 210,
       paperHeightMM: 297,
@@ -246,13 +246,79 @@ describe("usePrintLayout", () => {
         printSettings,
         canvasWidth: 1200,
         canvasHeight: 1800,
-        mode: "single",
-      })
+        mode: 'single',
+      }),
     );
 
     expect(result.current.originalImageWidthMM).toBeCloseTo(101.6, 1);
     expect(result.current.originalImageHeightMM).toBeCloseTo(152.4, 1);
     expect(result.current.imageWidthMM).toBeCloseTo(101.6, 1);
     expect(result.current.imageHeightMM).toBeCloseTo(152.4, 1);
+  });
+
+  it('clamps a suicidal margin so printable area never collapses to zero (no NaN)', () => {
+    // هامش أكبر من الورقة نفسها: كان availableWidthMM/HeightMM يصيران سالبين
+    // فتنتج كل النِسب NaN وتمتلئ المعاينة بقيم متدمّرة (حارس فيضان الطباعة)
+    const printSettings = createMockPrintSettings({
+      paperWidthMM: 210,
+      paperHeightMM: 297,
+      marginMM: 400,
+      gapMM: 2,
+      copiesPerSheet: 1,
+      repeatMode: 'all',
+      fitToPage: false,
+    });
+
+    const { result } = renderHook(() =>
+      usePrintLayout({
+        template: passportTemplate,
+        printSettings,
+        canvasWidth: 350,
+        canvasHeight: 450,
+        mode: 'single',
+      }),
+    );
+
+    expect(result.current.availableWidthMM).toBeGreaterThan(0);
+    expect(result.current.availableHeightMM).toBeGreaterThan(0);
+    expect(result.current.effectiveMarginMM).toBeLessThan(297 / 2);
+    // المقياس والدالة الكلّية يجب أن يبقيا أرقاماً منتهية (بلا NaN/Infinity)
+    expect(Number.isFinite(result.current.imageWidthMM)).toBe(true);
+    expect(Number.isFinite(result.current.imageHeightMM)).toBe(true);
+    expect(Number.isFinite(result.current.grid.offsetX)).toBe(true);
+    expect(Number.isFinite(result.current.cols)).toBe(true);
+    // نسبة امتلاء الورقة (مقامها availableWidthMM * availableHeightMM) لا تصير NaN
+    const spaceUsedPercent =
+      ((result.current.actualCopies * result.current.imageWidthMM * result.current.imageHeightMM) /
+        (result.current.availableWidthMM * result.current.availableHeightMM)) *
+      100;
+    expect(Number.isNaN(spaceUsedPercent)).toBe(false);
+  });
+
+  it('clamps the margin when the paper dimensions are zero/corrupt', () => {
+    // ورق بأبعاد صفرية (قالب تالف أو إعداد محفوظ يدوياً): لا هامش موجب ولا
+    // مساحة متاحة صفرية — كل المخرجات تبقى أرقاماً منتهية بلا NaN
+    const printSettings = createMockPrintSettings({
+      paperWidthMM: 0,
+      paperHeightMM: 0,
+      marginMM: 5,
+      fitToPage: false,
+    });
+
+    const { result } = renderHook(() =>
+      usePrintLayout({
+        template: null,
+        printSettings,
+        canvasWidth: 350,
+        canvasHeight: 450,
+        mode: 'single',
+      }),
+    );
+
+    expect(result.current.effectiveMarginMM).toBe(0);
+    expect(result.current.availableWidthMM).toBeGreaterThanOrEqual(1);
+    expect(result.current.availableHeightMM).toBeGreaterThanOrEqual(1);
+    expect(Number.isFinite(result.current.autoCount)).toBe(true);
+    expect(result.current.cols).toBeGreaterThanOrEqual(1);
   });
 });

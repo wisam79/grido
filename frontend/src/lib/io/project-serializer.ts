@@ -26,6 +26,9 @@ export function serializeEditorState(
   const projectFile: ProjectFileV1 = {
     version: CURRENT_PROJECT_VERSION,
     savedAt: new Date().toISOString(),
+    // 🛡️ معرّف المشروع في المكتبة: بدونه كانت المسودة المستعادة تُحمَّل بـ
+    // projectId=null فيطبعها الحفظ التالي كمشروع جديد كل مرة (تكرار في المكتبة)
+    projectId: state.projectId ?? null,
     mode: state.mode,
     canvasWidth: state.canvasWidth,
     canvasHeight: state.canvasHeight,

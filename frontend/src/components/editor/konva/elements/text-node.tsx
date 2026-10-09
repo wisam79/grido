@@ -31,7 +31,10 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   getKonvaNode,
 }: ElementProps) {
   const element = _element as TextElement;
-  const editingTextId = useEditorStore((state) => state.editingTextId);
+  // اختيار مُبسَّط: كل عقدة نص تُعيد منطقياً فقط «أنا قيد التحرير؟». بالنسبة
+  // لبقية العقدات يظلّ الناتج false ثابتاً فلا يعلمها Zustand → لا إعادة رسم
+  // جماعية عند بدء/إنهاء تحرير عقدة واحدة (100+ عقدة في المستندات الكثيفة).
+  const isEditing = useEditorStore((state) => state.editingTextId === element.id);
   const hasAnimatedRef = React.useRef(false);
   const textRef = useRef<Konva.Text | null>(null);
 
@@ -51,7 +54,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     const node = elementRef.current;
     if (node && !hasAnimatedRef.current) {
       hasAnimatedRef.current = true;
-      const targetOpacity = editingTextId === element.id ? 0 : element.opacity;
+      const targetOpacity = isEditing ? 0 : element.opacity;
       node.opacity(0);
       node.scale({ x: 0.8, y: 0.8 });
       node.to({
@@ -62,7 +65,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         easing: Konva.Easings.BackEaseOut,
       });
     }
-  }, [elementRef, element.opacity, editingTextId, element.id]);
+  }, [elementRef, element.opacity, isEditing, element.id]);
 
   // Ensure font and weight variants are loaded dynamically
   useEffect(() => {
@@ -151,7 +154,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
 
   const nodeX = element.x * stageCanvasWidth;
   const nodeY = element.y * canvasHeight;
-  const sharedOpacity = editingTextId === element.id ? 0 : element.opacity;
+  const sharedOpacity = isEditing ? 0 : element.opacity;
 
   const hasCurve = typeof element.curve === 'number' && element.curve !== 0;
   const strokeW = element.strokeWidth || 0;

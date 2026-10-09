@@ -2,8 +2,8 @@
  * Utility for drawing curved text along an arc on standard HTML5 Canvas 2D / Konva
  * Supports connected Arabic ligatures (via contextual shaping) and RTL flow.
  */
-import { TEXT_COLOR_DEFAULT } from "./canvas-colors";
-import { ensureTextStrokeFilter } from "./text-stroke-filter";
+import { TEXT_COLOR_DEFAULT } from './canvas-colors';
+import { warmTextStrokeFilter } from './text-stroke-filter';
 
 export interface CurvedTextOptions {
   text: string;
@@ -18,61 +18,61 @@ export interface CurvedTextOptions {
   color?: string;
   stroke?: string;
   strokeWidth?: number;
-  textAlign?: "left" | "center" | "right";
+  textAlign?: 'left' | 'center' | 'right';
   curve: number; // -100 to 100
   letterSpacing?: number;
 }
 
 // Arabic contextual shapes: [isolated, initial, medial, final]
 const ARABIC_FORMS_MAP: Record<string, (string | null)[]> = {
-  "\u0621": ["\uFE80"], // Hamza
-  "\u0622": ["\uFE81", null, null, "\uFE82"], // Alef with madda
-  "\u0623": ["\uFE83", null, null, "\uFE84"], // Alef with hamza above
-  "\u0624": ["\uFE85", null, null, "\uFE86"], // Waw with hamza
-  "\u0625": ["\uFE87", null, null, "\uFE88"], // Alef with hamza below
-  "\u0626": ["\uFE89", "\uFE8B", "\uFE8C", "\uFE8A"], // Yeh with hamza
-  "\u0627": ["\uFE8D", null, null, "\uFE8E"], // Alef
-  "\u0628": ["\uFE8F", "\uFE91", "\uFE92", "\uFE90"], // Beh
-  "\u0629": ["\uFE93", null, null, "\uFE94"], // Teh marbuta
-  "\u062A": ["\uFE95", "\uFE97", "\uFE98", "\uFE96"], // Teh
-  "\u062B": ["\uFE99", "\uFE9B", "\uFE9C", "\uFE9A"], // Theh
-  "\u062C": ["\uFE9D", "\uFE9F", "\uFEA0", "\uFE9E"], // Jeem
-  "\u062D": ["\uFEA1", "\uFEA3", "\uFEA4", "\uFEA2"], // Hah
-  "\u062E": ["\uFEA5", "\uFEA7", "\uFEA8", "\uFEA6"], // Khah
-  "\u062F": ["\uFEA9", null, null, "\uFEAA"], // Dal
-  "\u0630": ["\uFEAB", null, null, "\uFEAC"], // Thal
-  "\u0631": ["\uFEAD", null, null, "\uFEAE"], // Reh
-  "\u0632": ["\uFEAF", null, null, "\uFEB0"], // Zain
-  "\u0633": ["\uFEB1", "\uFEB3", "\uFEB4", "\uFEB2"], // Seen
-  "\u0634": ["\uFEB5", "\uFEB7", "\uFEB8", "\uFEB6"], // Sheen
-  "\u0635": ["\uFEB9", "\uFEBB", "\uFEBC", "\uFEBA"], // Sad
-  "\u0636": ["\uFEBD", "\uFEBF", "\uFEC0", "\uFEBE"], // Dad
-  "\u0637": ["\uFEC1", "\uFEC3", "\uFEC4", "\uFEC2"], // Tah
-  "\u0638": ["\uFEC5", "\uFEC7", "\uFEC8", "\uFEC6"], // Zah
-  "\u0639": ["\uFEC9", "\uFECB", "\uFECC", "\uFECA"], // Ain
-  "\u063A": ["\uFECD", "\uFECF", "\uFED0", "\uFECE"], // Ghain
-  "\u0641": ["\uFED1", "\uFED3", "\uFED4", "\uFED2"], // Feh
-  "\u0642": ["\uFED5", "\uFED7", "\uFED8", "\uFED6"], // Qaf
-  "\u0643": ["\uFED9", "\uFEDB", "\uFEDC", "\uFEDA"], // Kaf
-  "\u0644": ["\uFEDD", "\uFEDF", "\uFEE0", "\uFEDE"], // Lam
-  "\u0645": ["\uFEE1", "\uFEE3", "\uFEE4", "\uFEE2"], // Meem
-  "\u0646": ["\uFEE5", "\uFEE7", "\uFEE8", "\uFEE6"], // Noon
-  "\u0647": ["\uFEE9", "\uFEEB", "\uFEEC", "\uFEEA"], // Heh
-  "\u0648": ["\uFEED", null, null, "\uFEEE"], // Waw
-  "\u0649": ["\uFEEF", null, null, "\uFEF0"], // Alef Maksura
-  "\u064A": ["\uFEF1", "\uFEF3", "\uFEF4", "\uFEF2"], // Yeh
-  "\u067E": ["\uFB56", "\uFB58", "\uFB59", "\uFB57"], // Peh
-  "\u0686": ["\uFB7A", "\uFB7C", "\uFB7D", "\uFB7B"], // Tcheh
-  "\u0698": ["\uFB8A", null, null, "\uFB8B"], // Jeh
-  "\u06AF": ["\uFB92", "\uFB94", "\uFB95", "\uFB93"], // Gaf
+  '\u0621': ['\uFE80'], // Hamza
+  '\u0622': ['\uFE81', null, null, '\uFE82'], // Alef with madda
+  '\u0623': ['\uFE83', null, null, '\uFE84'], // Alef with hamza above
+  '\u0624': ['\uFE85', null, null, '\uFE86'], // Waw with hamza
+  '\u0625': ['\uFE87', null, null, '\uFE88'], // Alef with hamza below
+  '\u0626': ['\uFE89', '\uFE8B', '\uFE8C', '\uFE8A'], // Yeh with hamza
+  '\u0627': ['\uFE8D', null, null, '\uFE8E'], // Alef
+  '\u0628': ['\uFE8F', '\uFE91', '\uFE92', '\uFE90'], // Beh
+  '\u0629': ['\uFE93', null, null, '\uFE94'], // Teh marbuta
+  '\u062A': ['\uFE95', '\uFE97', '\uFE98', '\uFE96'], // Teh
+  '\u062B': ['\uFE99', '\uFE9B', '\uFE9C', '\uFE9A'], // Theh
+  '\u062C': ['\uFE9D', '\uFE9F', '\uFEA0', '\uFE9E'], // Jeem
+  '\u062D': ['\uFEA1', '\uFEA3', '\uFEA4', '\uFEA2'], // Hah
+  '\u062E': ['\uFEA5', '\uFEA7', '\uFEA8', '\uFEA6'], // Khah
+  '\u062F': ['\uFEA9', null, null, '\uFEAA'], // Dal
+  '\u0630': ['\uFEAB', null, null, '\uFEAC'], // Thal
+  '\u0631': ['\uFEAD', null, null, '\uFEAE'], // Reh
+  '\u0632': ['\uFEAF', null, null, '\uFEB0'], // Zain
+  '\u0633': ['\uFEB1', '\uFEB3', '\uFEB4', '\uFEB2'], // Seen
+  '\u0634': ['\uFEB5', '\uFEB7', '\uFEB8', '\uFEB6'], // Sheen
+  '\u0635': ['\uFEB9', '\uFEBB', '\uFEBC', '\uFEBA'], // Sad
+  '\u0636': ['\uFEBD', '\uFEBF', '\uFEC0', '\uFEBE'], // Dad
+  '\u0637': ['\uFEC1', '\uFEC3', '\uFEC4', '\uFEC2'], // Tah
+  '\u0638': ['\uFEC5', '\uFEC7', '\uFEC8', '\uFEC6'], // Zah
+  '\u0639': ['\uFEC9', '\uFECB', '\uFECC', '\uFECA'], // Ain
+  '\u063A': ['\uFECD', '\uFECF', '\uFED0', '\uFECE'], // Ghain
+  '\u0641': ['\uFED1', '\uFED3', '\uFED4', '\uFED2'], // Feh
+  '\u0642': ['\uFED5', '\uFED7', '\uFED8', '\uFED6'], // Qaf
+  '\u0643': ['\uFED9', '\uFEDB', '\uFEDC', '\uFEDA'], // Kaf
+  '\u0644': ['\uFEDD', '\uFEDF', '\uFEE0', '\uFEDE'], // Lam
+  '\u0645': ['\uFEE1', '\uFEE3', '\uFEE4', '\uFEE2'], // Meem
+  '\u0646': ['\uFEE5', '\uFEE7', '\uFEE8', '\uFEE6'], // Noon
+  '\u0647': ['\uFEE9', '\uFEEB', '\uFEEC', '\uFEEA'], // Heh
+  '\u0648': ['\uFEED', null, null, '\uFEEE'], // Waw
+  '\u0649': ['\uFEEF', null, null, '\uFEF0'], // Alef Maksura
+  '\u064A': ['\uFEF1', '\uFEF3', '\uFEF4', '\uFEF2'], // Yeh
+  '\u067E': ['\uFB56', '\uFB58', '\uFB59', '\uFB57'], // Peh
+  '\u0686': ['\uFB7A', '\uFB7C', '\uFB7D', '\uFB7B'], // Tcheh
+  '\u0698': ['\uFB8A', null, null, '\uFB8B'], // Jeh
+  '\u06AF': ['\uFB92', '\uFB94', '\uFB95', '\uFB93'], // Gaf
 };
 
 // Lam-Alef ligatures: [isolated, final]
 const LAM_ALEF_MAP: Record<string, [string, string]> = {
-  "\u0622": ["\uFEF5", "\uFEF6"], // l + madda
-  "\u0623": ["\uFEF7", "\uFEF8"], // l + hamza above
-  "\u0625": ["\uFEF9", "\uFEFA"], // l + hamza below
-  "\u0627": ["\uFEFB", "\uFEFC"], // l + alef
+  '\u0622': ['\uFEF5', '\uFEF6'], // l + madda
+  '\u0623': ['\uFEF7', '\uFEF8'], // l + hamza above
+  '\u0625': ['\uFEF9', '\uFEFA'], // l + hamza below
+  '\u0627': ['\uFEFB', '\uFEFC'], // l + alef
 };
 
 // Strips diacritics for shape matching while preserving them on the glyph
@@ -84,32 +84,38 @@ function shapeArabicGraphemes(text: string): string[] {
 
   for (let i = 0; i < chars.length; i++) {
     const rawCluster = chars[i];
-    const baseChar = rawCluster.replace(TASHKEEL_REGEX, "");
+    const baseChar = rawCluster.replace(TASHKEEL_REGEX, '');
     const diacritics = rawCluster.slice(baseChar.length);
 
     // Look behind & ahead ignoring spaces/diacritics
     let prevChar: string | null = null;
     for (let p = i - 1; p >= 0; p--) {
-      const b = chars[p].replace(TASHKEEL_REGEX, "");
-      if (b !== " ") { prevChar = b; break; }
+      const b = chars[p].replace(TASHKEEL_REGEX, '');
+      if (b !== ' ') {
+        prevChar = b;
+        break;
+      }
       break; // Space breaks connection
     }
 
     let nextChar: string | null = null;
     for (let n = i + 1; n < chars.length; n++) {
-      const b = chars[n].replace(TASHKEEL_REGEX, "");
-      if (b !== " ") { nextChar = b; break; }
+      const b = chars[n].replace(TASHKEEL_REGEX, '');
+      if (b !== ' ') {
+        nextChar = b;
+        break;
+      }
       break; // Space breaks connection
     }
 
     // Check Lam-Alef ligature
-    if (baseChar === "\u0644" && nextChar && LAM_ALEF_MAP[nextChar]) {
+    if (baseChar === '\u0644' && nextChar && LAM_ALEF_MAP[nextChar]) {
       const prevShapes = prevChar && ARABIC_FORMS_MAP[prevChar];
       const prevConnects = prevShapes && (prevShapes[1] || prevShapes[2]);
       const shapedLigature = prevConnects ? LAM_ALEF_MAP[nextChar][1] : LAM_ALEF_MAP[nextChar][0];
       // #13 — إلحاق تشكيل الألف أيضاً (كان يُرمى مع تخطّي حرف الألف)
-      const alefChar = chars[i + 1] || "";
-      const alefBase = alefChar.replace(TASHKEEL_REGEX, "");
+      const alefChar = chars[i + 1] || '';
+      const alefBase = alefChar.replace(TASHKEEL_REGEX, '');
       const alefDiacritics = alefChar.slice(alefBase.length);
       out.push(shapedLigature + diacritics + alefDiacritics);
       i++; // Skip alef
@@ -148,9 +154,9 @@ function shapeArabicGraphemes(text: string): string[] {
 let _cachedSegmenter: Intl.Segmenter | null = null;
 function getGraphemeSegmenter(): Intl.Segmenter | null {
   if (_cachedSegmenter) return _cachedSegmenter;
-  if (typeof Intl !== "undefined" && typeof Intl.Segmenter === "function") {
+  if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
     try {
-      _cachedSegmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+      _cachedSegmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
     } catch {
       // بيئة بدون دعم Segmenter — نرجع null ونستخدم Array.from fallback
     }
@@ -170,10 +176,21 @@ function extractGraphemes(text: string): string[] {
   return Array.from(text);
 }
 
-export function drawCurvedText(
-  ctx: CanvasRenderingContext2D,
-  options: CurvedTextOptions
-) {
+// 🛡️ M18: `drawCurvedText` يُنادى من sceneFunc — أي كل إطار سحب/زوم/تحويل.
+// بناء فلتر الحد الموحّد يحدث مرة واحدة لكل (strokeWidth, stroke) عبر
+// `warmTextStrokeFilter`، ثم يُقرأ المعرّف من الكاش بلا أي DOM query لكل إطار.
+const strokeFilterCache = new Map<string, string>();
+
+function resolveStrokeFilter(strokeWidth: number, stroke: string): string {
+  const key = `${strokeWidth}|${stroke}`;
+  const cached = strokeFilterCache.get(key);
+  if (cached) return cached;
+  const filterId = warmTextStrokeFilter(strokeWidth, stroke);
+  if (filterId) strokeFilterCache.set(key, filterId);
+  return filterId;
+}
+
+export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTextOptions) {
   const {
     text,
     width,
@@ -181,7 +198,7 @@ export function drawCurvedText(
     fontSize,
     fontFamily,
     fontWeight = 400,
-    fontStyle = "normal",
+    fontStyle = 'normal',
     color = TEXT_COLOR_DEFAULT,
     stroke,
     strokeWidth = 0,
@@ -192,10 +209,10 @@ export function drawCurvedText(
   if (!text || curve === 0) return;
 
   ctx.save();
-  const fontStylePrefix = fontStyle === "italic" ? "italic " : "";
+  const fontStylePrefix = fontStyle === 'italic' ? 'italic ' : '';
   ctx.font = `${fontStylePrefix}${fontWeight} ${fontSize}px ${fontFamily}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
 
   const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
 
@@ -236,31 +253,34 @@ export function drawCurvedText(
 
   // Center of curvature
   const centerX = width / 2;
-  const centerY = isUpward ? height / 2 + radius - fontSize / 2 : height / 2 - radius + fontSize / 2;
+  const centerY = isUpward
+    ? height / 2 + radius - fontSize / 2
+    : height / 2 - radius + fontSize / 2;
 
   // Start angle & step direction:
   // For LTR (Latin): starts from Left side, advances towards Right
   // For RTL (Arabic): starts from Right side, advances towards Left so it reads right-to-left naturally!
   // #7 — textAlign: left/right يُزيح نقطة البداية على القوس بنصف العرض الزاوي؛ center = الافتراضي
-  const textAlign = options.textAlign || "center";
-  const alignOffset = textAlign === "left"
-    ? angularSpan / 2         // ابدأ من أقصى اليسار (نص بالكامل في النصف الأيمن)
-    : textAlign === "right"
-    ? -angularSpan / 2        // ابدأ من أقصى اليمين (نص بالكامل في النصف الأيسر)
-    : 0;                      // center: متمركز على القوس (الوضع الافتراضي)
+  const textAlign = options.textAlign || 'center';
+  const alignOffset =
+    textAlign === 'left'
+      ? angularSpan / 2 // ابدأ من أقصى اليسار (نص بالكامل في النصف الأيمن)
+      : textAlign === 'right'
+        ? -angularSpan / 2 // ابدأ من أقصى اليمين (نص بالكامل في النصف الأيسر)
+        : 0; // center: متمركز على القوس (الوضع الافتراضي)
 
   let currentAngle: number;
   if (isArabic) {
     if (isUpward) {
-      currentAngle = -Math.PI / 2 + (angularSpan / 2) + alignOffset; // Start top-right
+      currentAngle = -Math.PI / 2 + angularSpan / 2 + alignOffset; // Start top-right
     } else {
-      currentAngle = Math.PI / 2 - (angularSpan / 2) - alignOffset; // Start bottom-right
+      currentAngle = Math.PI / 2 - angularSpan / 2 - alignOffset; // Start bottom-right
     }
   } else {
     if (isUpward) {
-      currentAngle = -Math.PI / 2 - (angularSpan / 2) + alignOffset; // Start top-left
+      currentAngle = -Math.PI / 2 - angularSpan / 2 + alignOffset; // Start top-left
     } else {
-      currentAngle = Math.PI / 2 + (angularSpan / 2) - alignOffset; // Start bottom-left
+      currentAngle = Math.PI / 2 + angularSpan / 2 - alignOffset; // Start bottom-left
     }
   }
 
@@ -308,7 +328,7 @@ export function drawCurvedText(
   }
 
   // تطبيق الحدود الموحدة عبر فلتر التمدد لمنع تشوه تقاطعات الحروف
-  const filterId = stroke && strokeWidth > 0 ? ensureTextStrokeFilter(strokeWidth, stroke) : "";
+  const filterId = stroke && strokeWidth > 0 ? resolveStrokeFilter(strokeWidth, stroke) : '';
   if (filterId) {
     ctx.filter = `url(#${filterId})`;
   }
@@ -325,7 +345,7 @@ export function drawCurvedText(
   }
 
   if (filterId) {
-    ctx.filter = "none";
+    ctx.filter = 'none';
   }
 
   ctx.restore();

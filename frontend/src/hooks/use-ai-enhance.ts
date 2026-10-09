@@ -252,9 +252,25 @@ export function useAiEnhance(
         setEnhanceProgressText('جاري حفظ الصورة ...');
         const localPath = await SaveImageFromBase64(result.image);
 
+        // 🛡️ حارس الطزاثة (H3 من تدقيق 2026-10-08): دورة الترميم السحابية
+        // تستغرق دقائق. كانت اللقطة الملتقطة عند الإطلاق تُكتب فوق الحالة
+        // الطازجة، فاستبدال الصورة أو التراجع أثناء الانتظار يُلغى بصمت
+        // (وتمسح originalImageSrc الذي عُيّن لاحقاً).
+        const liveEl = useEditorStore.getState().elements.find((e) => e.id === element.id);
+        const live = liveEl as
+          { id: string; imageSrc?: string; originalImageSrc?: string } | undefined;
+        if (!live) {
+          toast.info('تم إلغاء الترميم: العنصر لم يعد موجوداً.');
+          return;
+        }
+        if (live.imageSrc !== element.imageSrc) {
+          toast.info('تم إلغاء الترميم: تغيّرت الصورة أثناء المعالجة.');
+          return;
+        }
+
         const patch: Partial<Record<string, unknown>> = { imageSrc: localPath };
-        if (!element.originalImageSrc) {
-          patch.originalImageSrc = element.imageSrc;
+        if (!live.originalImageSrc) {
+          patch.originalImageSrc = live.imageSrc;
         }
 
         onUpdateRef.current(element.id, patch);

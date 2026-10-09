@@ -1,8 +1,8 @@
-import { useMemo } from "react";
-import { PhotoTemplate, CollageTemplate } from "@/lib/templates";
-import { PrintSettings, EditorMode } from "@/lib/editor-store";
-import { DEFAULT_PRINT_SETTINGS } from "@/lib/store/slices/print-slice";
-import { computeSheetGrid, GridAlignment } from "@/lib/print/print-layout-math";
+import { useMemo } from 'react';
+import { PhotoTemplate, CollageTemplate } from '@/lib/templates';
+import { PrintSettings, EditorMode } from '@/lib/editor-store';
+import { DEFAULT_PRINT_SETTINGS } from '@/lib/store/slices/print-slice';
+import { computeSheetGrid, GridAlignment } from '@/lib/print/print-layout-math';
 
 interface UsePrintLayoutProps {
   template: PhotoTemplate | null;
@@ -26,36 +26,51 @@ export function usePrintLayout({
     const originalImageWidthMM = template ? template.widthMM : (canvasWidth / dpi) * 25.4;
     const originalImageHeightMM = template ? template.heightMM : (canvasHeight / dpi) * 25.4;
 
-    const isCanvasPaper = printSettings.paperId === "canvas";
+    const isCanvasPaper = printSettings.paperId === 'canvas';
     const baseW = isCanvasPaper ? originalImageWidthMM : printSettings.paperWidthMM;
     const baseH = isCanvasPaper ? originalImageHeightMM : printSettings.paperHeightMM;
-    const isLandscape = printSettings.orientation === "landscape";
+    const isLandscape = printSettings.orientation === 'landscape';
     const paperWidth = isLandscape ? Math.max(baseW, baseH) : Math.min(baseW, baseH);
     const paperHeight = isLandscape ? Math.min(baseW, baseH) : Math.max(baseW, baseH);
 
-    // If the image is A4 (or whatever the full paper size is), ignore the print margins 
+    // If the image is A4 (or whatever the full paper size is), ignore the print margins
     // because the user is designing a full page layout.
-    const isFullPage = isCanvasPaper || (originalImageWidthMM >= paperWidth - 1 && originalImageHeightMM >= paperHeight - 1);
+    const isFullPage =
+      isCanvasPaper ||
+      (originalImageWidthMM >= paperWidth - 1 && originalImageHeightMM >= paperHeight - 1);
     // التصفيح الحدودي التلقائي يحدث فقط عندما doc≈paper والهامش لم يُضبط يدوياً
     // (لا يزال على الافتراضي أو «بدون هوامش» صريح). هامش مخصص اختيار يُحترم.
     const marginUntouched =
       printSettings.marginMM === 0 || printSettings.marginMM === DEFAULT_PRINT_SETTINGS.marginMM;
-    const effectiveMarginMM = isCanvasPaper ? 0 : (isFullPage && marginUntouched ? 0 : printSettings.marginMM);
+    // 🛡️ حارس فيضان (نفس صنف H4): هامش أكبر من نصف ضلع الورقة (أو مقاسات ورق
+    // تالفة) كان يجعل المساحة المتاحة صفراً أو سالبة — فينقلب كل مقياس إلى
+    // NaN/Infinity وتخرج نسبة امتلاء الورقة (availableW*availableH كمقامم) NaN.
+    // نحدّ الهامش بنصف الضلع الأقصر ونمنح الورقة حداً أدنى 1mm من المساحة.
+    const rawMarginMM = isCanvasPaper
+      ? 0
+      : isFullPage && marginUntouched
+        ? 0
+        : printSettings.marginMM;
+    const maxMarginMM = Math.max(0, Math.min(paperWidth, paperHeight) / 2 - 0.5);
+    const effectiveMarginMM = Math.min(Math.max(0, rawMarginMM || 0), maxMarginMM);
 
-    const availableWidthMM = paperWidth - 2 * effectiveMarginMM;
-    const availableHeightMM = paperHeight - 2 * effectiveMarginMM;
+    // لا يقلّ المتاح عن 1mm أبداً — الحاجز الثاني الذي يمنع NaN في كل المقامات
+    const availableWidthMM = Math.max(1, paperWidth - 2 * effectiveMarginMM);
+    const availableHeightMM = Math.max(1, paperHeight - 2 * effectiveMarginMM);
 
     const gapMM = printSettings.gapMM ?? 2;
 
-    const repeatMode = printSettings.repeatMode || "all";
+    const repeatMode = printSettings.repeatMode || 'all';
 
     const fitToPage = printSettings.fitToPage === true;
-    const shouldFit = fitToPage && mode === "single" && printSettings.copiesPerSheet === 1 && repeatMode === "all";
+    const shouldFit =
+      fitToPage && mode === 'single' && printSettings.copiesPerSheet === 1 && repeatMode === 'all';
     // عند تجاوز التصميم (صورة فردية أو كانفاس الكولاج) مساحة الطباعة للورقة
     // المختارة — نطابق للأسفل إجبارياً حفاظاً على النسبة. بدونها تُقصّ الخلايا
     // في المعاينة ويرفض الخادم الطلب بـ invalid item geometry.
     const overflowsAvailable =
-      originalImageWidthMM > availableWidthMM + 0.5 || originalImageHeightMM > availableHeightMM + 0.5;
+      originalImageWidthMM > availableWidthMM + 0.5 ||
+      originalImageHeightMM > availableHeightMM + 0.5;
 
     let imageWidthMM = originalImageWidthMM;
     let imageHeightMM = originalImageHeightMM;
@@ -79,17 +94,19 @@ export function usePrintLayout({
     const cellH = imageHeightMM + gapMM;
     // عدد الخلايا الممكنة على الورقة: (المتاح + فجوة) مقسوماً على الخلية لأن
     // آخر خلية لا تحتاج فجوة خلفها — صيغة واحدة يستهلكها كل الفروع أدناه
-    const fitCols = cellW > 0 ? Math.min(48, Math.max(1, Math.floor((availableWidthMM + gapMM) / cellW))) : 1;
-    const fitRows = cellH > 0 ? Math.min(48, Math.max(1, Math.floor((availableHeightMM + gapMM) / cellH))) : 1;
+    const fitCols =
+      cellW > 0 ? Math.min(48, Math.max(1, Math.floor((availableWidthMM + gapMM) / cellW))) : 1;
+    const fitRows =
+      cellH > 0 ? Math.min(48, Math.max(1, Math.floor((availableHeightMM + gapMM) / cellH))) : 1;
     const autoCount = Math.max(1, fitCols * fitRows);
 
     let cols = 1;
     let actualCopies = 1;
 
-    if (repeatMode === "row") {
+    if (repeatMode === 'row') {
       cols = fitCols;
       actualCopies = fitCols;
-    } else if (repeatMode === "column") {
+    } else if (repeatMode === 'column') {
       cols = 1;
       actualCopies = fitRows;
     } else {
@@ -98,7 +115,7 @@ export function usePrintLayout({
     }
 
     const collageAlign = collageTemplate?.physicalLayout?.align;
-    const align = (collageAlign || printSettings.gridAlign || "top-left") as GridAlignment;
+    const align = (collageAlign || printSettings.gridAlign || 'top-left') as GridAlignment;
 
     // المصدر الوحيد للشبكة: كل المستهلكين (print-dialog / print-preview / cut-lines-utils)
     // يعتمدون على هذا الكائن ولا يعيدون حساب صيغ الشبكة بأنفسهم.

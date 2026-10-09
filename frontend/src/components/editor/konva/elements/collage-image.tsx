@@ -112,7 +112,10 @@ export const KonvaCollageImage = React.memo(
       [filter, brightness, contrast, saturation],
     );
 
-    const filterKey = `${filter}_${brightness}_${contrast}_${saturation}`;
+    // 🛡️ cornerRadius داخل المفتاح: الخاصية تُطبَّق على العقدة المُخزَّنة
+    // (`node.cache()`)، فبدونها يظل القص الزاوي القديم مرسوماً في البيت ماپ
+    // حتى يُجبر تغيير الحجم أو الزوم إعادة بناء الكاش (H2 من تدقيق 2026-10-08).
+    const filterKey = `${filter}_${brightness}_${contrast}_${saturation}_${cornerRadius}`;
     const hasFilters = filterResult.filters.length > 0;
     const hasTransform = flipX || flipY || rotation !== 0;
 

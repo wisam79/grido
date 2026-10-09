@@ -22,6 +22,13 @@ export interface FluentSegmentedControlProps<T extends string = string> {
   className?: string;
   layoutId?: string;
   dir?: 'rtl' | 'ltr';
+  /**
+   * بادئة ربط الألواح (H11 من تدقيق 2026-10-08): عند تمريرها يحمل كل تبويب
+   * `id="${idPrefix}-trigger-<id>"` و`aria-controls="${idPrefix}-content-<id>"`
+   * فيرتبط باللوح المقابل بلا مرجع معلّق. بدونها كان `TabsContent` يشير إلى
+   * معرّف trigger غير موجود (زر التبويب بلا id).
+   */
+  idPrefix?: string;
 }
 
 export function FluentSegmentedControl<T extends string = string>({
@@ -34,6 +41,7 @@ export function FluentSegmentedControl<T extends string = string>({
   className,
   layoutId,
   dir = 'rtl',
+  idPrefix,
 }: FluentSegmentedControlProps<T>) {
   const autoId = React.useId();
   const effectiveLayoutId = layoutId || `fluent-segmented-${autoId}`;
@@ -101,6 +109,8 @@ export function FluentSegmentedControl<T extends string = string>({
             type="button"
             role="tab"
             aria-selected={isActive}
+            id={idPrefix ? `${idPrefix}-trigger-${opt.id}` : undefined}
+            aria-controls={idPrefix ? `${idPrefix}-content-${opt.id}` : undefined}
             data-tab={opt.id}
             data-testid={`segmented-${opt.id}`}
             aria-label={accessibleLabel}

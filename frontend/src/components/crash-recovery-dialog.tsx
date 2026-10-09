@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,16 @@ export const CrashRecoveryDialog: React.FC<CrashRecoveryDialogProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  // 🛡️ مؤقّت إخفاء شارة «تم النسخ» يُحفظ في ref ويُلغى عند إلغاء التركيب —
+  // بدونه يطلق setState على مكوّن مفكوك (تحذير React) ولو أُغلق الحوار مبكراً
+  const copiedTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
+    },
+    [],
+  );
 
   if (!report) return null;
 
@@ -50,7 +60,11 @@ ${report.stack_trace}
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = window.setTimeout(() => {
+        copiedTimerRef.current = null;
+        setCopied(false);
+      }, 2000);
     } catch (err) {
       console.error('Failed to copy crash report:', err);
     }

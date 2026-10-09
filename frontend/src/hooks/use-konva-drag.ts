@@ -10,6 +10,8 @@ interface UseKonvaDragProps {
   element: CanvasElement;
   canvasWidth: number;
   canvasHeight: number;
+  /** مضاعف الزوم البصري (CSS transform فوق الـ Stage) — حاسم لتحويل السحب */
+  canvasZoom?: number;
   snapToGrid?: boolean;
   gridSize?: number;
   altPressedRef: React.RefObject<boolean>;
@@ -22,6 +24,7 @@ export function useKonvaDrag({
   element,
   canvasWidth,
   canvasHeight,
+  canvasZoom = 1,
   snapToGrid,
   gridSize,
   altPressedRef,
@@ -120,6 +123,24 @@ export function useKonvaDrag({
     } catch {
       // تجاهل آمن — السحب يعمل بلا طبقة
     }
+
+    // 🛡️ M20: شبكة أمان إن ضاع dragend — Konva يربط mouseup على window فقط
+    // بلا pointercancel/blur، فلو تحرر المؤشر خارج النافذة أو سرق تطبيق آخر
+    // التركيز بقيت العقد (+ المحوّل والشارة) داخل طبقة السحب غير التفاعلية
+    // نهائياً. نفس نمط drag-shadow.ts: مستمعون لمرة واحدة يعيدون العقد ويُلغون
+    // تسجيل أنفسهم.
+    if (typeof window !== 'undefined') {
+      const restoreDragLayer = () => {
+        try {
+          dropFromDragLayer();
+        } catch {
+          // تجاهل آمن
+        }
+      };
+      window.addEventListener('pointerup', restoreDragLayer, { once: true });
+      window.addEventListener('pointercancel', restoreDragLayer, { once: true });
+      window.addEventListener('blur', restoreDragLayer, { once: true });
+    }
   };
 
   const dragBoundFunc = (pos: { x: number; y: number }) => {
@@ -127,9 +148,13 @@ export function useKonvaDrag({
     // المعادة في setAbsolutePosition. المغناطيس والحدود معرّفة بوحدات الكانفس
     // المنطقية — لذا نحوّل للفضاء المنطقي أولاً ثم نعيد الناتج للمطلق.
     const stage = getKonvaNode(element.id)?.getStage();
+    // 🛡️ M15: الـ Stage يُغلَّف بـ `transform: scale(cssZoom)`، فإحداثيات Konva
+    // المطلقة تأتي مضروبةً بالزوم البصري فوق مقياس الـ Stage. القسمة على
+    // الحاصلين معاً يعيد الإحداثية لفضاء الكانفس المنطقي.
     const stageScale = stage?.scaleX() || 1;
-    let xLogical = pos.x / stageScale;
-    let yLogical = pos.y / stageScale;
+    const cssZoom = canvasZoom > 0 ? canvasZoom : 1;
+    let xLogical = pos.x / stageScale / cssZoom;
+    let yLogical = pos.y / stageScale / cssZoom;
 
     // قفل المحاور عند الضغط على Shift (Axis Lock: Horizontal or Vertical)
     if (shiftPressedRef?.current && dragStartPositionsRef.current[element.id]) {

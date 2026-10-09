@@ -267,7 +267,10 @@ export const StickerProperties = React.memo(function StickerProperties({
                     return (
                       <div key={field.id} className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <Label className="text-mini font-semibold text-foreground/85">
+                          <Label
+                            htmlFor={`sticker-field-${field.id}`}
+                            className="text-mini font-semibold text-foreground/85"
+                          >
                             {field.label}
                           </Label>
                           {isModified && (
@@ -288,6 +291,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                           )}
                         </div>
                         <Input
+                          id={`sticker-field-${field.id}`}
                           value={val}
                           onChange={(e) => handleFieldChange(field.id, e.target.value)}
                           placeholder={field.placeholder || field.label}

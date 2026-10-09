@@ -26,11 +26,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -65,7 +60,6 @@
   --color-ruler-border: var(--ruler-border);
   --color-ruler-tick: var(--ruler-tick);
   --color-ruler-tick-major: var(--ruler-tick-major);
-  --color-ruler-tick-label: var(--ruler-tick-label);
   --color-ruler-tick-label-active: var(--ruler-tick-label-active);
   /* ألوان حوار الطباعة الدلالية (واجهة آلة المعاينة الداكنة) */
   --color-print-surface: var(--print-surface);
@@ -212,7 +206,6 @@
   --ruler-border: #d4d4d4;
   --ruler-tick: #d4d4d4;
   --ruler-tick-major: #a3a3a3;
-  --ruler-tick-label: #525252;
   --ruler-tick-label-active: #404040;
 
   /* Workspace Backdrop (Light) — سطح مساحة العمل تحت الورقة وشبكة نقاطها */
@@ -341,7 +334,6 @@
   --ruler-border: #262626;
   --ruler-tick: #404040;
   --ruler-tick-major: #525252;
-  --ruler-tick-label: #d4d4d4;
   --ruler-tick-label-active: #e5e5e5;
 
   /* Workspace Backdrop (Dark) — الخلفية الفحمية المطابقة لهوية الثيم
@@ -464,14 +456,21 @@
     cursor: not-allowed;
   }
 
-  *:focus {
-    outline: none;
-  }
-
-  *:focus-visible,
+  /* ── حلقة التركيز الموحّدة (H12 من تدقيق 2026-10-08) ─────────────────────
+     كان هناك نظامان متعارضان: قاعدة `outline` عامة أدناه، وكلاسات `ring-*`
+     التي تستخدمها ~50 مكوّناً. و`*:focus { outline: none }` كان يقتل الحدّ
+     الافتراضي للمتصفح فيسقط أي عنصر استخدم `focus:outline-none` بلا حلقة
+     (أزرار النافذة الثلاثة). القرار المعتمد: `ring-*` هو النظام الرسمي.
+     - أُزيلت قاعدة القتل `*:focus { outline: none }` — هي سبب الثغرة.
+     - تبقّت القاعدة أدناه كشبكة أمان للعناصر الأصلية النقية (input/select/
+       button خام) التي لا تحمل كلاسات ring، بنفس البصريات (2px + إزاحة 2px)
+       حتى لا يتبيّن فرق بين النظامين. */
   input:focus-visible,
   textarea:focus-visible,
-  select:focus-visible {
+  select:focus-visible,
+  button:focus-visible,
+  a:focus-visible,
+  [tabindex]:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
@@ -536,13 +535,16 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
-  }
-}
 
-/* نص فوق سطح hover أفتح من muted-foreground الأساسي — للأرقام والقيم فوق خلفيات تفاعلية.
-   توكن دلالي أحادي المصدر: قيمة فاتحة وأخرى داكنة داخل الثيمين */
-.text-muted-foreground-hover {
-  color: var(--muted-foreground-hover);
+    /* 🛡️ L6: الكلّ العام أعلاه يجمّد أي `animate-spin` اللانهائي في منتصف
+       الدوران بزاوية عشوائية (مدّة ≈ 0 + تكرار 1) فيبدو الزر معطّلاً لا
+       مؤشر انتظار. البديل: أيقونة ساكنة بشفافية مخفّضة تُقرأ كمؤشر انتظار. */
+    .animate-spin,
+    .spinner-reduced {
+      animation: none !important;
+      opacity: 0.7;
+    }
+  }
 }
 
 @layer utilities {
@@ -836,11 +838,17 @@
 }
 
 @media print {
+  /* أداة الإخفاء الموحّدة للطباعة: تُطبّق على كروم الواجهة (الأشرطة،
+     الألواح، النوافذ المنبثقة عبر البوابات) فتُخفى في الطباعة فقط وتبقى
+     ظاهرة على الشاشة. كانت تُستخدم في 5 ملفات بلا أي تعريف فعلي. */
+  .no-print {
+    display: none !important;
+  }
+
   /* إخفاء شجرة التطبيق بالكامل وكل المكونات العائمة لتجنب الصفحات البيضاء */
   #root,
   .toaster,
-  [role='status'],
-  [role='presentation'] {
+  .no-print {
     display: none !important;
   }
 

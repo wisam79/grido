@@ -99,7 +99,12 @@ export const EditorCanvas = React.memo(
     const canvasFitMode = useEditorStore((s) => s.canvasFitMode);
 
     // 🧭 منطق الزوم والتحريك (كان مضمّناً في هذا الملف)
-    useCanvasViewport(containerRef, innerRef);
+    // 🛡️ M15: `effectiveZoom` يتبع إيماءة العجلة فوراً (CSS transform) بينما
+    // `canvasZoom` في المتجر هو القيمة المثبَّتة بعد الاستقرار. تمرير الفعّال
+    // يمنع المساطر والشريط السفلي من التأخر عن الحركة، ومقاس الـ Stage يبقى
+    // ثابتاً لأنه لا يعتمد على الزوم أصلاً.
+    const { effectiveZoom: viewportZoom } = useCanvasViewport(containerRef, innerRef);
+    const effectiveZoom = viewportZoom ?? canvasZoom;
 
     // حجم العرض التقديري لحساب أبعاد الورقة (يُستخدم أيضاً كتبعية لقياسات المساطر)
     const aspect = canvasWidth / canvasHeight;
@@ -119,13 +124,15 @@ export const EditorCanvas = React.memo(
     const {
       displayW,
       displayH,
+      stageW,
+      stageH,
       resolved: resolvedFitMode,
       leftoverRatio,
     } = computeCanvasDisplay({
       containerW: containerSize.w,
       containerH: containerSize.h,
       aspect,
-      zoom: canvasZoom,
+      zoom: effectiveZoom,
       fitMode: canvasFitMode,
       // مقاس الورقة الحقيقي بالبكسل — لازم لوضع «الحجم الفعلي 1:1»
       canvasW: canvasWidth,
@@ -361,6 +368,10 @@ export const EditorCanvas = React.memo(
             <KonvaCanvas
               displayW={displayW}
               displayH={displayH}
+              stageW={stageW}
+              stageH={stageH}
+              canvasZoom={effectiveZoom}
+              dir="rtl"
               sortedElements={sortedElements}
               handleDoubleClick={handleDoubleClick}
               setActiveGuides={setActiveGuides}

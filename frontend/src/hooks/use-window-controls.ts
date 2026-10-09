@@ -6,6 +6,7 @@ import {
   WindowIsMaximised,
   EventsOn,
 } from '../../wailsjs/runtime/runtime';
+import { flushAutoSave } from './use-autosave';
 
 /**
  * useWindowControls — يدير حالة نافذة التطبيق (تكبير/استعادة/تصغير/إغلاق/تركيز)
@@ -117,7 +118,21 @@ export function useWindowControls() {
     }, 60);
   }, []);
 
-  const handleClose = useCallback(() => WindowClose(), []);
+  const handleClose = useCallback(() => {
+    // 🛡️ H5 من تدقيق 2026-10-08: كان الإغلاق يستدعي Quit() مباشرة بينما المسودة
+    // الأخيرة تُكتب في وعد عائم داخل تنظيف React — أي تعديل في آخر ثانيتين
+    // قبل الإغلاق يُفقد. الآن ننتظر التفريغ النهائي ثم نُغلق، ولا يُمنع الإغلاق
+    // إن فشل الحفظ (الوعد لا يرمي).
+    void (async () => {
+      try {
+        await flushAutoSave();
+      } catch {
+        // فشل الحفظ لا يحبس المستخدم داخل نافذة لا يستطيع إغلاقها
+      } finally {
+        WindowClose();
+      }
+    })();
+  }, []);
 
   return {
     isMaximized,

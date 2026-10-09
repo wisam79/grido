@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   SealCheck,
   Plus,
@@ -32,6 +32,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useEditorStore } from '@/lib/editor-store';
 import { wailsIsDesktop } from '@/lib/wails-env';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import type { StickerElementSource, CanvasElement } from '@/lib/store/types';
@@ -96,6 +98,25 @@ function resolveStickerSheetMm(): { width: number; height: number } {
   return { width: w, height: h };
 }
 
+const logger = createLogger('StickerStudioDialog');
+
+// 🛡️ M35 من تدقيق 2026-10-08: الـ object URL كان يُلغى فوراً بعد
+// `downloadFile(...).click()` — قد يُلغي القفل قبل أن يبدأ المتصفح قراءة
+// البيانات فيخرج ملف صفري. التأجيل بنافذة زمنية آمنة يضمن اكتمال الكتابة،
+// والمؤقّت مُحفوظ ليتعرّف عليه التنظيف عند إغلاق الحوار.
+const OBJECT_URL_REVOKE_DELAY = 60_000;
+let objectUrlRevokeTimer: ReturnType<typeof setTimeout> | null = null;
+
+function revokeObjectUrlLater(url: string): void {
+  if (objectUrlRevokeTimer !== null) {
+    clearTimeout(objectUrlRevokeTimer);
+  }
+  objectUrlRevokeTimer = setTimeout(() => {
+    objectUrlRevokeTimer = null;
+    revokeObjectUrlLater(url);
+  }, OBJECT_URL_REVOKE_DELAY);
+}
+
 export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   open,
   onOpenChange,
@@ -130,6 +151,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     spacingMm: 4,
   });
 
+  // حارس الإلغاء: أي دالة غير متزامنة (إدراج/شيت/تصدير) لا تُنتج عنصراً ولا
+  // تُظهر رسالة نجاح إذا أُغلقت النافذة أثناء انتظارها
+  const cancelledRef = useRef(false);
+
   // سجل التراجع/الإعادة — كل تعديل يلتزم كسجل قابل للرجوع مثل أدوات التصميم الاحترافية
   const { params, canUndo, canRedo, setParams, commitParams, resetParams, undo, redo } =
     useStickerParamsHistory(() => {
@@ -157,10 +182,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   // Reset loading state and restore gallery on dialog close (rule: Modal loading state cleanup)
   useEffect(() => {
     if (!open) {
+      cancelledRef.current = true;
       setIsInserting(false);
       setIsGeneratingSheet(false);
       setBusyExport(false);
       setView('gallery');
+    } else {
+      cancelledRef.current = false;
     }
   }, [open]);
 
@@ -248,7 +276,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       // معالجة مركزية: اتجاه تلقائي + ملاءمة مقاس الحقول الطويلة (تغطي كل القوالب)
       return postProcessStickerSvg(raw);
     } catch (err) {
-      console.error('Failed to generate SVG:', err);
+      logger.error('Failed to generate SVG:', err);
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><text x="200" y="200" text-anchor="middle">Error</text></svg>`;
     }
   }, [view, selectedTemplate, params]);
@@ -277,13 +305,15 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       if (wailsIsDesktop() && pngDataUrl.startsWith('data:image/')) {
         try {
           const localPath = await SaveImageFromBase64(pngDataUrl);
+          if (cancelledRef.current) return;
           if (localPath) finalSrc = localPath;
         } catch (e) {
-          console.error('Failed to save sticker locally on desktop:', e);
+          logger.error('Failed to save sticker locally on desktop:', e);
         }
       }
 
       const aspect = await resolveImageAspectRatio(finalSrc);
+      if (cancelledRef.current) return;
       const store = useEditorStore.getState();
 
       // وضع إعادة التحرير: نُحدّث صورة العنصر نفسه مع تحديث مصدر الملصق المُعاد ربطه
@@ -335,11 +365,12 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         params.fontFamily || 'Cairo',
       ]);
       await handleInsertToCanvas(pngUrl, exportableSvg || svgString);
+      if (cancelledRef.current) return;
       toast.success('أُدرج الملصق');
       onOpenChange(false);
     } catch (err) {
-      console.error(err);
-      toast.error('فشل الإدراج');
+      logger.error('Sticker insert failed:', err);
+      toast.error(toErrorMessage(err, 'فشل الإدراج'));
     } finally {
       setIsInserting(false);
     }
@@ -375,11 +406,12 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         dpi: 300,
       });
       await handleInsertToCanvas(sheetPng, exportableSvg || svgString);
+      if (cancelledRef.current) return;
       toast.success(`أُدرج شيت (${gridConfig.rows * gridConfig.cols} ملصقات)`);
       onOpenChange(false);
     } catch (err) {
-      console.error(err);
-      toast.error('فشل توليد الشيت');
+      logger.error('Sticker sheet generation failed:', err);
+      toast.error(toErrorMessage(err, 'فشل توليد الشيت'));
     } finally {
       setIsGeneratingSheet(false);
     }
@@ -445,15 +477,17 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       const portable = await embedStickerFonts(exportableSvg || svgString, [
         params.fontFamily || 'Cairo',
       ]);
+      if (cancelledRef.current) return;
       const blob = new Blob([portable], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       downloadFile(url, `${selectedTemplate.id}.svg`);
-      URL.revokeObjectURL(url);
+      revokeObjectUrlLater(url);
       toast.success(
         portable !== (exportableSvg || svgString) ? 'نُزّل SVG بخط مضمّن' : 'نُزّل ملف SVG',
       );
-    } catch {
-      toast.error('فشل تنزيل SVG');
+    } catch (err) {
+      logger.error('SVG download failed:', err);
+      toast.error(toErrorMessage(err, 'فشل تنزيل SVG'));
     } finally {
       setBusyExport(false);
     }
@@ -468,13 +502,15 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       const portable = await embedStickerFonts(dieCut.fullSvgWithContour, [
         params.fontFamily || 'Cairo',
       ]);
+      if (cancelledRef.current) return;
       const blob = new Blob([portable], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       downloadFile(url, `${selectedTemplate.id}-cutcontour.svg`);
-      URL.revokeObjectURL(url);
+      revokeObjectUrlLater(url);
       toast.success('نُزّل SVG مع طبقة خط القص (CutContour) للمطابع');
-    } catch {
-      toast.error('فشل تنزيل ملف خط القص');
+    } catch (err) {
+      logger.error('Cut contour download failed:', err);
+      toast.error(toErrorMessage(err, 'فشل تنزيل ملف خط القص'));
     } finally {
       setBusyExport(false);
     }
@@ -489,10 +525,11 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       const blob = new Blob([dieCut.standaloneContourSvg], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       downloadFile(url, `${selectedTemplate.id}-plotter-contour.svg`);
-      URL.revokeObjectURL(url);
+      revokeObjectUrlLater(url);
       toast.success('نُزّل مسار خط القص النقي لماكينة القص (Plotter)');
-    } catch {
-      toast.error('فشل تنزيل خط القص');
+    } catch (err) {
+      logger.error('Plotter contour download failed:', err);
+      toast.error(toErrorMessage(err, 'فشل تنزيل خط القص'));
     } finally {
       setBusyExport(false);
     }
@@ -508,10 +545,12 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       const pngUrl = await renderSvgToPngDataUrl(svgString, width, height, [
         params.fontFamily || 'Cairo',
       ]);
+      if (cancelledRef.current) return;
       downloadFile(pngUrl, `${selectedTemplate.id}.png`);
       toast.success('صُدّر PNG عالي الدقة (300 DPI)');
-    } catch {
-      toast.error('فشل التصدير');
+    } catch (err) {
+      logger.error('PNG export failed:', err);
+      toast.error(toErrorMessage(err, 'فشل التصدير'));
     } finally {
       setBusyExport(false);
     }
@@ -534,14 +573,17 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         params.fontFamily || 'Cairo',
       ]);
       const ok = await copyPngDataUrlToClipboard(pngUrl);
+      if (cancelledRef.current) return;
       if (ok) {
         toast.success('نُسخت الصورة للحافظة');
       } else {
         await copySvgCodeToClipboard(exportableSvg);
+        if (cancelledRef.current) return;
         toast.success('نُسخ كود SVG');
       }
-    } catch {
-      toast.error('فشل النسخ');
+    } catch (err) {
+      logger.error('Image copy failed:', err);
+      toast.error(toErrorMessage(err, 'فشل النسخ'));
     } finally {
       setBusyExport(false);
     }
@@ -556,13 +598,15 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   const handleCopySvgCode = useCallback(async () => {
     try {
       const ok = await copySvgCodeToClipboard(exportableSvg);
+      if (cancelledRef.current) return;
       if (ok) {
         toast.success('نُسخ كود SVG المتجه');
       } else {
         toast.error('تعذر نسخ SVG');
       }
-    } catch {
-      toast.error('فشل نسخ SVG');
+    } catch (err) {
+      logger.error('SVG code copy failed:', err);
+      toast.error(toErrorMessage(err, 'فشل نسخ SVG'));
     }
   }, [exportableSvg]);
 
@@ -631,7 +675,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
             )}
 
             <div className="flex items-center gap-2.5 shrink-0">
-              <DialogCloseButton />
+              <DialogCloseButton disabled={isInserting || isGeneratingSheet || busyExport} />
             </div>
           </div>
         </DialogHeader>
@@ -745,7 +789,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                       ) : (
                         <DownloadSimple className="w-3.5 h-3.5" />
                       )}
-                      <span>{busyExport ? 'يصدّر ...' : 'تصدير'}</span>
+                      <span>{busyExport ? 'جاري التصدير ...' : 'تصدير'}</span>
                       {!busyExport && <CaretDown className="w-3 h-3 text-muted-foreground" />}
                     </Button>
                   </DropdownMenuTrigger>
@@ -810,7 +854,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   {isGeneratingSheet ? (
                     <>
                       <Spinner className="w-3.5 h-3.5 animate-spin" />
-                      <span>يولّد ...</span>
+                      <span>جاري التوليد ...</span>
                     </>
                   ) : (
                     <>
@@ -844,7 +888,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   {isInserting ? (
                     <>
                       <Spinner className="w-3.5 h-3.5 animate-spin" />
-                      <span>يُدرج ...</span>
+                      <span>جاري الإدراج ...</span>
                     </>
                   ) : (
                     <>

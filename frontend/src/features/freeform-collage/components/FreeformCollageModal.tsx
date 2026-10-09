@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,14 +7,20 @@ import {
   DialogDescription,
   DialogFooter,
   DialogCloseButton,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { Spinner } from "@/components/ui/huge-icon";
-import { SquaresFour, Check, FloppyDisk, DownloadSimple, UploadSimple } from "@/components/ui/icons";
-import { useEditorStore } from "@/lib/editor-store";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import { Spinner } from '@/components/ui/huge-icon';
+import {
+  SquaresFour,
+  Check,
+  FloppyDisk,
+  DownloadSimple,
+  UploadSimple,
+} from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type {
   FreeformLayout,
   FreeformSlot,
@@ -22,9 +28,10 @@ import type {
   SlotAlignment,
   DistributionAxis,
   AutoPackStrategy,
-} from "../types";
-import { PHOTO_PRESET_LABELS } from "../lib/mixed-presets";
-import { clamp } from "@/lib/clamp";
+} from '../types';
+import { PHOTO_PRESET_LABELS } from '../lib/mixed-presets';
+import { clamp } from '@/lib/clamp';
+import { toErrorMessage } from '@/lib/wails-error';
 import {
   splitSlot,
   removeSlot,
@@ -44,13 +51,13 @@ import {
   parseLayoutFile,
   slotsFromFile,
   newSlotId,
-} from "../lib/freeform-math";
+} from '../lib/freeform-math';
 
-import { FreeformToolbar } from "./FreeformToolbar";
-import { FreeformCanvasEditor } from "./FreeformCanvasEditor";
-import { FreeformPaperSelector } from "./FreeformPaperSelector";
-import { FreeformSlotInspector } from "./FreeformSlotInspector";
-import { SaveCustomTemplate } from "../../../../wailsjs/go/main/App";
+import { FreeformToolbar } from './FreeformToolbar';
+import { FreeformCanvasEditor } from './FreeformCanvasEditor';
+import { FreeformPaperSelector } from './FreeformPaperSelector';
+import { FreeformSlotInspector } from './FreeformSlotInspector';
+import { SaveCustomTemplate } from '../../../../wailsjs/go/main/App';
 
 interface FreeformCollageModalProps {
   open: boolean;
@@ -72,13 +79,13 @@ function createBlankSheet(paperWidthMM: number, paperHeightMM: number): Freeform
   for (let r = 0; r < 2; r++) {
     for (let c = 0; c < 4; c++) {
       slots.push({
-        id: newSlotId("slot_blank"),
+        id: newSlotId('slot_blank'),
         x: c * w,
         y: r * h,
         w,
         h,
-        presetType: "iq-national-id",
-        label: "خلية",
+        presetType: 'iq-national-id',
+        label: 'خلية',
         rotation: 0,
       });
     }
@@ -88,10 +95,13 @@ function createBlankSheet(paperWidthMM: number, paperHeightMM: number): Freeform
   return slots;
 }
 
-export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open, onOpenChange }) => {
+export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
+  open,
+  onOpenChange,
+}) => {
   const [paperWidthMM, setPaperWidthMM] = useState<number>(100);
   const [paperHeightMM, setPaperHeightMM] = useState<number>(150);
-  const [layoutName, setLayoutName] = useState<string>("كولاج حر مخصص");
+  const [layoutName, setLayoutName] = useState<string>('كولاج حر مخصص');
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState<boolean>(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState<boolean>(false);
@@ -180,13 +190,13 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
         initW = Math.round(((store.canvasWidth || 2480) * 25.4) / dpi);
         initH = Math.round(((store.canvasHeight || 3508) * 25.4) / dpi);
       }
-      const isLandscape = ps?.orientation === "landscape";
+      const isLandscape = ps?.orientation === 'landscape';
       const resolvedW = Math.max(10, isLandscape ? Math.max(initW, initH) : Math.min(initW, initH));
       const resolvedH = Math.max(10, isLandscape ? Math.min(initW, initH) : Math.max(initW, initH));
 
       setPaperWidthMM(resolvedW);
       setPaperHeightMM(resolvedH);
-      setLayoutName("كولاج حر مخصص");
+      setLayoutName('كولاج حر مخصص');
       setMultiSelectedIds([]);
 
       const blank = createBlankSheet(resolvedW, resolvedH);
@@ -212,13 +222,13 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
   const handleSplitHorizontal = useCallback(() => {
     const selectedId = selectedSlotIdRef.current;
     if (!selectedId) return;
-    updateSlotsWithHistory(splitSlot(slotsRef.current, selectedId, "horizontal"));
+    updateSlotsWithHistory(splitSlot(slotsRef.current, selectedId, 'horizontal'));
   }, [updateSlotsWithHistory]);
 
   const handleSplitVertical = useCallback(() => {
     const selectedId = selectedSlotIdRef.current;
     if (!selectedId) return;
-    updateSlotsWithHistory(splitSlot(slotsRef.current, selectedId, "vertical"));
+    updateSlotsWithHistory(splitSlot(slotsRef.current, selectedId, 'vertical'));
   }, [updateSlotsWithHistory]);
 
   const handleAddSlot = useCallback(() => {
@@ -227,20 +237,26 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     setSelectedSlotId(updated[updated.length - 1].id);
   }, [updateSlotsWithHistory]);
 
-  const handleAddPresetSlot = useCallback((presetType: PhotoPresetType) => {
-    const updated = addPresetSlot(slotsRef.current, presetType, paperWidthMM, paperHeightMM);
-    updateSlotsWithHistory(updated);
-    setSelectedSlotId(updated[updated.length - 1].id);
-    toast.success(`أُضيفت ${PHOTO_PRESET_LABELS[presetType]} للورقة`);
-  }, [updateSlotsWithHistory, paperWidthMM, paperHeightMM]);
+  const handleAddPresetSlot = useCallback(
+    (presetType: PhotoPresetType) => {
+      const updated = addPresetSlot(slotsRef.current, presetType, paperWidthMM, paperHeightMM);
+      updateSlotsWithHistory(updated);
+      setSelectedSlotId(updated[updated.length - 1].id);
+      toast.success(`أُضيفت ${PHOTO_PRESET_LABELS[presetType]} للورقة`);
+    },
+    [updateSlotsWithHistory, paperWidthMM, paperHeightMM],
+  );
 
-  const handleAutoPack = useCallback((strategy: AutoPackStrategy) => {
-    const updated = autoPackSlots(strategy, paperWidthMM, paperHeightMM, packGapMM, packMarginMM);
-    updateSlotsWithHistory(updated);
-    setSelectedSlotId(updated[0]?.id || null);
-    setMultiSelectedIds([]);
-    toast.success(`عُبئت الورقة بـ ${updated.length} صورة!`);
-  }, [updateSlotsWithHistory, paperWidthMM, paperHeightMM, packGapMM, packMarginMM]);
+  const handleAutoPack = useCallback(
+    (strategy: AutoPackStrategy) => {
+      const updated = autoPackSlots(strategy, paperWidthMM, paperHeightMM, packGapMM, packMarginMM);
+      updateSlotsWithHistory(updated);
+      setSelectedSlotId(updated[0]?.id || null);
+      setMultiSelectedIds([]);
+      toast.success(`عُبئت الورقة بـ ${updated.length} صورة!`);
+    },
+    [updateSlotsWithHistory, paperWidthMM, paperHeightMM, packGapMM, packMarginMM],
+  );
 
   const handleRemoveSlot = useCallback(() => {
     const selectedId = selectedSlotIdRef.current;
@@ -275,9 +291,10 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     if (!selectedId) return;
 
     // مضاعفة جماعية للتحديد المتعدد
-    const ids = multiSelectedIdsRef.current.length > 0
-      ? [selectedId, ...multiSelectedIdsRef.current]
-      : [selectedId];
+    const ids =
+      multiSelectedIdsRef.current.length > 0
+        ? [selectedId, ...multiSelectedIdsRef.current]
+        : [selectedId];
     const { slots: updated, newIds } = duplicateSlotsByIds(slotsRef.current, ids);
     if (newIds.length === 0) return;
     updateSlotsWithHistory(updated);
@@ -285,29 +302,40 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     setMultiSelectedIds(newIds.slice(1));
   }, [updateSlotsWithHistory]);
 
-  const handleAlignSlot = useCallback((alignment: SlotAlignment) => {
-    const selectedId = selectedSlotIdRef.current;
-    if (!selectedId) return;
-    updateSlotsWithHistory(alignSlot(slotsRef.current, selectedId, alignment));
-  }, [updateSlotsWithHistory]);
+  const handleAlignSlot = useCallback(
+    (alignment: SlotAlignment) => {
+      const selectedId = selectedSlotIdRef.current;
+      if (!selectedId) return;
+      updateSlotsWithHistory(alignSlot(slotsRef.current, selectedId, alignment));
+    },
+    [updateSlotsWithHistory],
+  );
 
-  const handleDistributeSlots = useCallback((axis: DistributionAxis) => {
-    if (slotsRef.current.length <= 2) return;
-    updateSlotsWithHistory(distributeSlots(slotsRef.current, axis));
-    toast.success(axis === "horizontal" ? "وُزعت المسافات أفقياً" : "وُزعت المسافات عمودياً");
-  }, [updateSlotsWithHistory]);
+  const handleDistributeSlots = useCallback(
+    (axis: DistributionAxis) => {
+      if (slotsRef.current.length <= 2) return;
+      updateSlotsWithHistory(distributeSlots(slotsRef.current, axis));
+      toast.success(axis === 'horizontal' ? 'وُزعت المسافات أفقياً' : 'وُزعت المسافات عمودياً');
+    },
+    [updateSlotsWithHistory],
+  );
 
-  const handleUpdateSlot = useCallback((updated: Partial<FreeformSlot>) => {
-    const selectedId = selectedSlotIdRef.current;
-    if (!selectedId) return;
-    const nextSlots = slotsRef.current.map((s) => (s.id === selectedId ? { ...s, ...updated } : s));
-    updateSlotsWithHistory(nextSlots);
-  }, [updateSlotsWithHistory]);
+  const handleUpdateSlot = useCallback(
+    (updated: Partial<FreeformSlot>) => {
+      const selectedId = selectedSlotIdRef.current;
+      if (!selectedId) return;
+      const nextSlots = slotsRef.current.map((s) =>
+        s.id === selectedId ? { ...s, ...updated } : s,
+      );
+      updateSlotsWithHistory(nextSlots);
+    },
+    [updateSlotsWithHistory],
+  );
 
   /* ⚡ التحديد المتعدد: تبديل عضوية الخلية في المجموعة */
   const handleToggleMultiSelect = useCallback((slotId: string) => {
     setMultiSelectedIds((prev) =>
-      prev.includes(slotId) ? prev.filter((id) => id !== slotId) : [...prev, slotId]
+      prev.includes(slotId) ? prev.filter((id) => id !== slotId) : [...prev, slotId],
     );
   }, []);
 
@@ -315,11 +343,14 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
   const handleCopySelection = useCallback(() => {
     const selectedId = selectedSlotIdRef.current;
     if (!selectedId) return;
-    const ids = multiSelectedIdsRef.current.length > 0
-      ? [selectedId, ...multiSelectedIdsRef.current]
-      : [selectedId];
-    clipboardRef.current = slotsRef.current.filter((s) => ids.includes(s.id)).map((s) => ({ ...s }));
-    toast.success(`نُسخت ${ids.length} ${ids.length === 1 ? "خلية" : "خلايا"} للحافظة`);
+    const ids =
+      multiSelectedIdsRef.current.length > 0
+        ? [selectedId, ...multiSelectedIdsRef.current]
+        : [selectedId];
+    clipboardRef.current = slotsRef.current
+      .filter((s) => ids.includes(s.id))
+      .map((s) => ({ ...s }));
+    toast.success(`نُسخت ${ids.length} ${ids.length === 1 ? 'خلية' : 'خلايا'} للحافظة`);
   }, []);
 
   const handlePasteClipboard = useCallback(() => {
@@ -327,13 +358,13 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     if (!clip || clip.length === 0) return;
     const { slots: updated, newIds } = duplicateSlotsByIds(
       slotsRef.current,
-      clip.map((s) => s.id)
+      clip.map((s) => s.id),
     );
     if (newIds.length === 0) {
       // المعرفات قديمة (منسوخة) — نعيد التوليد يدوياً كنسخ جديدة
       const copies = clip.map((s) => ({
         ...s,
-        id: newSlotId("slot_paste"),
+        id: newSlotId('slot_paste'),
         x: clamp(s.x + 0.03, 0, 1 - s.w),
         y: clamp(s.y + 0.03, 0, 1 - s.h),
         label: s.label ? `${s.label} (نسخة)` : undefined,
@@ -351,81 +382,92 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
   }, [updateSlotsWithHistory]);
 
   /* ⚡ تحرير جماعي: تكبير/تصغير وقياس موحد */
-  const handleScaleSelection = useCallback((factor: number) => {
-    const selectedId = selectedSlotIdRef.current;
-    if (!selectedId) return;
-    const ids = multiSelectedIdsRef.current.length > 0
-      ? [selectedId, ...multiSelectedIdsRef.current]
-      : [selectedId];
-    const updated = scaleSlotsByIds(slotsRef.current, ids, factor, paperWidthMM, paperHeightMM);
-    updateSlotsWithHistory(updated);
-  }, [updateSlotsWithHistory, paperWidthMM, paperHeightMM]);
+  const handleScaleSelection = useCallback(
+    (factor: number) => {
+      const selectedId = selectedSlotIdRef.current;
+      if (!selectedId) return;
+      const ids =
+        multiSelectedIdsRef.current.length > 0
+          ? [selectedId, ...multiSelectedIdsRef.current]
+          : [selectedId];
+      const updated = scaleSlotsByIds(slotsRef.current, ids, factor, paperWidthMM, paperHeightMM);
+      updateSlotsWithHistory(updated);
+    },
+    [updateSlotsWithHistory, paperWidthMM, paperHeightMM],
+  );
 
-  const handleAlignSelectionToEachOther = useCallback((alignment: "left" | "right" | "top" | "bottom" | "center-h" | "center-v" | "same-size") => {
-    const selectedId = selectedSlotIdRef.current;
-    if (!selectedId) return;
-    const ids = multiSelectedIdsRef.current.length > 0
-      ? [selectedId, ...multiSelectedIdsRef.current]
-      : [selectedId];
-    if (ids.length < 2) {
-      toast.info("حدد خليتين (Shift+نقرة) للمحاذاة");
-      return;
-    }
-    const updated = alignSlotsToEachOther(slotsRef.current, ids, alignment);
-    updateSlotsWithHistory(updated);
-  }, [updateSlotsWithHistory]);
+  const handleAlignSelectionToEachOther = useCallback(
+    (alignment: 'left' | 'right' | 'top' | 'bottom' | 'center-h' | 'center-v' | 'same-size') => {
+      const selectedId = selectedSlotIdRef.current;
+      if (!selectedId) return;
+      const ids =
+        multiSelectedIdsRef.current.length > 0
+          ? [selectedId, ...multiSelectedIdsRef.current]
+          : [selectedId];
+      if (ids.length < 2) {
+        toast.info('حدد خليتين (Shift+نقرة) للمحاذاة');
+        return;
+      }
+      const updated = alignSlotsToEachOther(slotsRef.current, ids, alignment);
+      updateSlotsWithHistory(updated);
+    },
+    [updateSlotsWithHistory],
+  );
 
   /* ⚡ إزالة كافة التداخلات بضغطة واحدة */
   const handleResolveOverlaps = useCallback(() => {
     const updated = resolveOverlaps(slotsRef.current);
     updateSlotsWithHistory(updated);
-    toast.success("أُزيلت التداخلات");
+    toast.success('أُزيلت التداخلات');
   }, [updateSlotsWithHistory]);
 
   /* ⚡ تصدير التخطيط الحالي كملف JSON للمشاركة */
   const handleExportLayout = useCallback(() => {
     try {
       const file = exportLayoutFile(layoutName, paperWidthMM, paperHeightMM, slotsRef.current);
-      const blob = new Blob([JSON.stringify(file, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = `${(layoutName || "freeform").replace(/[\\/:*?"<>|]/g, "_")}.grido.json`;
+      a.download = `${(layoutName || 'freeform').replace(/[\\/:*?"<>|]/g, '_')}.grido.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast.success("صُدّر التخطيط JSON");
+      toast.success('صُدّر التخطيط JSON');
     } catch {
-      toast.error("فشل التصدير");
+      toast.error('فشل التصدير');
     }
   }, [layoutName, paperWidthMM, paperHeightMM]);
 
   /* ⚡ استيراد تخطيط JSON خارجي */
   const importInputRef = useRef<HTMLInputElement>(null);
-  const handleImportLayout = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const parsed = parseLayoutFile(String(reader.result || ""));
-      if (!parsed) {
-        toast.error("ملف غير صالح — ليس ملف كولاج Grido");
-        return;
-      }
-      const imported = slotsFromFile(parsed);
-      setPaperWidthMM(parsed.paperWidthMM);
-      setPaperHeightMM(parsed.paperHeightMM);
-      setLayoutName(parsed.name);
-      setMultiSelectedIds([]);
-      updateSlotsWithHistory(imported);
-      setSelectedSlotId(imported[0]?.id || null);
-      toast.success(`أُستورد "${parsed.name}" بـ ${imported.length} خلية`);
-    };
-    reader.onerror = () => toast.error("فشل القراءة");
-    reader.readAsText(file);
-  }, [updateSlotsWithHistory]);
+  const handleImportLayout = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const parsed = parseLayoutFile(String(reader.result || ''));
+        if (!parsed) {
+          toast.error('ملف غير صالح — ليس ملف كولاج Grido');
+          return;
+        }
+        const imported = slotsFromFile(parsed);
+        setPaperWidthMM(parsed.paperWidthMM);
+        setPaperHeightMM(parsed.paperHeightMM);
+        setLayoutName(parsed.name);
+        setMultiSelectedIds([]);
+        updateSlotsWithHistory(imported);
+        setSelectedSlotId(imported[0]?.id || null);
+        toast.success(`أُستورد "${parsed.name}" بـ ${imported.length} خلية`);
+      };
+      reader.onerror = () => toast.error('فشل القراءة');
+      reader.readAsText(file);
+    },
+    [updateSlotsWithHistory],
+  );
 
   // إعادة مزامنة التحديد بعد التراجع/الإعادة/الحذف
   useEffect(() => {
@@ -436,6 +478,14 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
 
   const nudgeDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // تنظيف مؤقت الإزاحة عند فك التركيب
+  useEffect(
+    () => () => {
+      if (nudgeDebounceTimer.current) clearTimeout(nudgeDebounceTimer.current);
+    },
+    [],
+  );
+
   // اختصارات لوحة المفاتيح
   useEffect(() => {
     if (!open) return;
@@ -443,9 +493,9 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
       const activeEl = document.activeElement as HTMLElement | null;
       if (
         activeEl &&
-        (activeEl.tagName === "INPUT" ||
-          activeEl.tagName === "TEXTAREA" ||
-          activeEl.tagName === "SELECT" ||
+        (activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          activeEl.tagName === 'SELECT' ||
           activeEl.isContentEditable)
       ) {
         return;
@@ -454,58 +504,61 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
       const keyLower = e.key.toLowerCase();
       const isCmdOrCtrl = e.ctrlKey || e.metaKey;
 
+      // 🛡️ H14 من تدقيق 2026-10-08: Escape كان ضمن المفاتيح المحتجزة بـ
+      // `stopImmediatePropagation` على مستوى capture، فلا يصله مستمع Radix على
+      // document فلا يُغلق الحوار إطلاقاً (X/Escape الطبيعي معطّل). Escape
+      // يُترك لطبقة DismissableLayer، والمسح يحدث في `onEscapeKeyDown` أدناه.
       const isHandledKey =
-        (isCmdOrCtrl && ["z", "y", "d", "c", "v", "a"].includes(keyLower)) ||
-        ["delete", "backspace", "escape"].includes(keyLower) ||
-        ["arrowup", "arrowdown", "arrowleft", "arrowright"].includes(keyLower);
+        (isCmdOrCtrl && ['z', 'y', 'd', 'c', 'v', 'a'].includes(keyLower)) ||
+        ['delete', 'backspace'].includes(keyLower) ||
+        ['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(keyLower);
 
       if (isHandledKey) {
         e.stopPropagation();
         e.stopImmediatePropagation();
       }
 
-      if (isCmdOrCtrl && keyLower === "z") {
+      if (isCmdOrCtrl && keyLower === 'z') {
         e.preventDefault();
         if (e.shiftKey) handleRedo();
         else handleUndo();
-      } else if (isCmdOrCtrl && keyLower === "y") {
+      } else if (isCmdOrCtrl && keyLower === 'y') {
         e.preventDefault();
         handleRedo();
-      } else if (isCmdOrCtrl && keyLower === "d") {
+      } else if (isCmdOrCtrl && keyLower === 'd') {
         e.preventDefault();
         handleDuplicateSlot();
-      } else if (isCmdOrCtrl && keyLower === "c") {
+      } else if (isCmdOrCtrl && keyLower === 'c') {
         e.preventDefault();
         handleCopySelection();
-      } else if (isCmdOrCtrl && keyLower === "v") {
+      } else if (isCmdOrCtrl && keyLower === 'v') {
         e.preventDefault();
         handlePasteClipboard();
-      } else if (isCmdOrCtrl && keyLower === "a") {
+      } else if (isCmdOrCtrl && keyLower === 'a') {
         e.preventDefault();
         const first = slotsRef.current[0]?.id ?? null;
         setSelectedSlotId(first);
         setMultiSelectedIds(slotsRef.current.slice(1).map((s) => s.id));
-      } else if (e.key === "Escape") {
-        setMultiSelectedIds([]);
-      } else if (e.key === "Delete" || e.key === "Backspace") {
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         handleRemoveSlot();
-      } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         const selectedId = selectedSlotIdRef.current;
         if (!selectedId) return;
         e.preventDefault();
         const step = e.shiftKey ? 0.025 : 0.005;
         let dx = 0;
         let dy = 0;
-        if (e.key === "ArrowLeft") dx = -step;
-        if (e.key === "ArrowRight") dx = step;
-        if (e.key === "ArrowUp") dy = -step;
-        if (e.key === "ArrowDown") dy = step;
+        if (e.key === 'ArrowLeft') dx = -step;
+        if (e.key === 'ArrowRight') dx = step;
+        if (e.key === 'ArrowUp') dy = -step;
+        if (e.key === 'ArrowDown') dy = step;
 
         // تحديد المجموعة الكاملة للتحريك الجماعي
-        const moveIds = multiSelectedIdsRef.current.length > 0
-          ? [selectedId, ...multiSelectedIdsRef.current]
-          : [selectedId];
+        const moveIds =
+          multiSelectedIdsRef.current.length > 0
+            ? [selectedId, ...multiSelectedIdsRef.current]
+            : [selectedId];
         const moveSet = new Set(moveIds);
 
         const nextSlots = slotsRef.current.map((s) => {
@@ -524,46 +577,61 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown, { capture: true });
-    return () => window.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, [open, handleUndo, handleRedo, handleDuplicateSlot, handleRemoveSlot, handleCopySelection, handlePasteClipboard, updateSlotsWithHistory]);
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+  }, [
+    open,
+    handleUndo,
+    handleRedo,
+    handleDuplicateSlot,
+    handleRemoveSlot,
+    handleCopySelection,
+    handlePasteClipboard,
+    updateSlotsWithHistory,
+  ]);
 
   const handleSaveAsCustomTemplate = async () => {
     try {
       setIsSavingTemplate(true);
       const currentSlots = slotsRef.current;
       // نضيف أبعاد الورقة للاسم لأن مكتبة القوالب لا تخزنها — ليعرف المستخدم مقاس الورق عند إعادة التطبيق
-      const baseName = layoutName.trim() || "كولاج مخصص";
+      const baseName = layoutName.trim() || 'كولاج مخصص';
       const templateName = `${baseName} (${paperWidthMM}×${paperHeightMM}مم)`;
       const gridoTemplate = convertToGridoTemplate({
-        id: "freeform-" + Date.now(),
+        id: 'freeform-' + Date.now(),
         name: templateName,
         paperWidthMM,
         paperHeightMM,
         slots: currentSlots,
       });
 
-      if (typeof SaveCustomTemplate === "function") {
-        await SaveCustomTemplate(templateName, gridoTemplate.cells.length, JSON.stringify(gridoTemplate.cells));
+      if (typeof SaveCustomTemplate === 'function') {
+        await SaveCustomTemplate(
+          templateName,
+          gridoTemplate.cells.length,
+          JSON.stringify(gridoTemplate.cells),
+        );
         toast.success(`حُفظ القالب "${templateName}" في قوالبك!`);
       } else {
-        const raw = localStorage.getItem("grido_custom_templates");
+        const raw = localStorage.getItem('grido_custom_templates');
         let saved: Array<{ name: string; template: unknown }> = [];
         if (raw) {
           const parsed: unknown = JSON.parse(raw);
           if (Array.isArray(parsed)) {
             saved = parsed.filter(
               (item): item is { name: string; template: unknown } =>
-                !!item && typeof item === "object" && typeof (item as { name?: unknown }).name === "string"
+                !!item &&
+                typeof item === 'object' &&
+                typeof (item as { name?: unknown }).name === 'string',
             );
           }
         }
         saved.push({ name: templateName, template: gridoTemplate });
-        localStorage.setItem("grido_custom_templates", JSON.stringify(saved));
+        localStorage.setItem('grido_custom_templates', JSON.stringify(saved));
         toast.success(`حُفظ الكولاج "${templateName}"`);
       }
     } catch (err: unknown) {
-      toast.error("فشل الحفظ: " + (err instanceof Error ? err.message : String(err)));
+      toast.error(toErrorMessage(err, 'فشل الحفظ'));
     } finally {
       setIsSavingTemplate(false);
     }
@@ -577,27 +645,24 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
     setHistoryState((prev) => ({ ...prev, present: next }));
   }, []);
 
-  const handleDragEnd = useCallback(
-    (finalSlots: FreeformSlot[]) => {
-      const start = dragStartSlotsRef.current;
-      dragStartSlotsRef.current = null;
-      if (!start) return;
-      setHistoryState((prev) => ({
-        past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), start],
-        present: finalSlots,
-        future: [],
-      }));
-    },
-    []
-  );
+  const handleDragEnd = useCallback((finalSlots: FreeformSlot[]) => {
+    const start = dragStartSlotsRef.current;
+    dragStartSlotsRef.current = null;
+    if (!start) return;
+    setHistoryState((prev) => ({
+      past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), start],
+      present: finalSlots,
+      future: [],
+    }));
+  }, []);
 
   const handleApplyToCanvas = () => {
     try {
       setIsApplying(true);
       const currentSlots = slotsRef.current;
       const layout: FreeformLayout = {
-        id: "custom-layout-" + Date.now(),
-        name: layoutName || "كولاج حر مخصص",
+        id: 'custom-layout-' + Date.now(),
+        name: layoutName || 'كولاج حر مخصص',
         paperWidthMM,
         paperHeightMM,
         slots: currentSlots,
@@ -621,10 +686,10 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
             copiesPerSheet: 1,
             showCutLines: false,
           }),
-          paperId: "custom",
+          paperId: 'custom',
           paperWidthMM: Math.min(paperWidthMM, paperHeightMM),
           paperHeightMM: Math.max(paperWidthMM, paperHeightMM),
-          orientation: paperHeightMM >= paperWidthMM ? "portrait" : "landscape",
+          orientation: paperHeightMM >= paperWidthMM ? 'portrait' : 'landscape',
         },
         collageGap: 0,
         collageMargin: 0,
@@ -635,7 +700,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
       toast.success(`طُبّق كولاج "${layout.name}" (${paperWidthMM}×${paperHeightMM} مم)`);
       onOpenChange(false);
     } catch (err: unknown) {
-      toast.error("خطأ أثناء التطبيق: " + (err instanceof Error ? err.message : String(err)));
+      toast.error(toErrorMessage(err, 'خطأ أثناء التطبيق'));
     } finally {
       setIsApplying(false);
     }
@@ -649,6 +714,9 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
         showCloseButton={false}
         className="w-[96vw] sm:max-w-[1200px] h-[92vh] max-h-[860px] min-h-[580px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular transition-all duration-150 gap-0"
         dir="rtl"
+        // 🛡️ H14: Escape يُبقي إغلاق Radix (لم نستدعِ preventDefault) ويكتفي
+        // بمسح التحديد المتعدد — بلا هذا يمرّ Escape مرتين: إغلاق + مسح.
+        onEscapeKeyDown={() => setMultiSelectedIds([])}
       >
         {/* ═══ الرأس: أيقونة + عنوان + وصف | محدد الورقة | إغلاق ═══ */}
         <DialogHeader className="px-6 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
@@ -771,7 +839,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                 {isSavingTemplate ? (
                   <>
                     <Spinner size={14} className="text-emerald-500" />
-                    <span>يحفظ ...</span>
+                    <span>جاري الحفظ ...</span>
                   </>
                 ) : (
                   <>
@@ -793,7 +861,9 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                     <DownloadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="font-cairo text-mini">تصدير JSON</TooltipContent>
+                <TooltipContent side="top" className="font-cairo text-mini">
+                  تصدير JSON
+                </TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -807,7 +877,9 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
                     <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="font-cairo text-mini">استيراد JSON</TooltipContent>
+                <TooltipContent side="top" className="font-cairo text-mini">
+                  استيراد JSON
+                </TooltipContent>
               </Tooltip>
 
               <input
@@ -850,7 +922,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({ open
               {isApplying ? (
                 <>
                   <Spinner size={14} />
-                  <span>يطبّق ...</span>
+                  <span>جاري التطبيق ...</span>
                 </>
               ) : (
                 <>

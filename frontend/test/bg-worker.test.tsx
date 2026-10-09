@@ -109,6 +109,22 @@ describe('ElementProperties - Worker Background Removal', () => {
         status: 'active',
         expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
       } as any,
+      // 🛡️ حارس الطزاثة (H3) يقرأ السجل الحيّ من المتجر قبل الكتابة — بلا عنصر
+      // مطابق يرفض الكتابة بحق (العنصر حُذف أو تغيّرت صوره أثناء المعالجة).
+      elements: [
+        {
+          id: 'el-1',
+          type: 'image',
+          x: 0.1,
+          y: 0.1,
+          width: 0.5,
+          height: 0.5,
+          rotation: 0,
+          opacity: 1,
+          zIndex: 1,
+          imageSrc: '/local-image/dummy.png',
+        },
+      ] as any,
     });
 
     const mod = await import('../src/components/editor/properties/element-properties');

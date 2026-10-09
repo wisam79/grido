@@ -1,11 +1,22 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from 'react';
 import {
-  previewWhite, previewBlack, previewBlue, previewChecker,
-} from "@/lib/canvas/canvas-colors";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogCloseButton } from "@/components/ui/dialog";
-import { FluentSliderField } from "@/components/ui/blocks";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/huge-icon";
+  previewWhite,
+  previewBlack,
+  previewBlue,
+  previewChecker,
+} from '@/lib/canvas/canvas-colors';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogCloseButton,
+} from '@/components/ui/dialog';
+import { FluentSliderField } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   PaintBrush,
   Eraser,
@@ -16,10 +27,14 @@ import {
   ArrowCounterClockwise,
   FloppyDisk,
   PaintBucket,
-} from "@/components/ui/icons";
-import { toast } from "sonner";
-import { SaveImageFromBase64 } from "../../../../wailsjs/go/main/App";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/icons';
+import { toast } from 'sonner';
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { cn } from '@/lib/utils';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('refine-bg-dialog');
 
 // Shared buffers to prevent memory leaks and GC pressure during magic eraser flood fill
 let sharedVisited: Uint8Array | null = null;
@@ -33,30 +48,34 @@ interface RefineBgDialogProps {
   onSave: (newImageSrc: string) => void;
 }
 
-type ToolType = "erase" | "restore" | "defringe" | "pan" | "magic";
+type ToolType = 'erase' | 'restore' | 'defringe' | 'pan' | 'magic';
 
 export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBgDialogProps) {
-  const [tool, setTool] = useState<ToolType>("erase");
+  const [tool, setTool] = useState<ToolType>('erase');
   const [brushSize, setBrushSize] = useState(20);
   const [tolerance, setTolerance] = useState(20);
-  const [previewBg, setPreviewBg] = useState<"checker" | "white" | "black" | "blue">("checker");
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number; visible: boolean }>({ x: 0, y: 0, visible: false });
+  const [previewBg, setPreviewBg] = useState<'checker' | 'white' | 'black' | 'blue'>('checker');
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number; visible: boolean }>({
+    x: 0,
+    y: 0,
+    visible: false,
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isSpacePressed, setIsSpacePressed] = useState(false);
-  
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
   const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const [historyLength, setHistoryLength] = useState(1);
   const originalImageDataRef = useRef<ImageData | null>(null);
   const historyRef = useRef<ImageData[]>([]);
-  
+
   const isDrawing = useRef(false);
-  const lastPos = useRef<{ x: number, y: number } | null>(null);
+  const lastPos = useRef<{ x: number; y: number } | null>(null);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
 
@@ -70,24 +89,24 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
+      if (e.code === 'Space') {
         e.preventDefault();
         setIsSpacePressed(true);
       }
-      
-      if (e.key === "+" || e.key === "=") {
+
+      if (e.key === '+' || e.key === '=') {
         e.preventDefault();
-        setScale(s => Math.min(s + 0.25, 5));
+        setScale((s) => Math.min(s + 0.25, 5));
       }
-      
-      if (e.key === "-") {
+
+      if (e.key === '-') {
         e.preventDefault();
-        setScale(s => Math.max(s - 0.25, 0.25));
+        setScale((s) => Math.max(s - 0.25, 0.25));
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
+      if (e.code === 'Space') {
         e.preventDefault();
         setIsSpacePressed(false);
       }
@@ -97,105 +116,118 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       e.preventDefault();
       const zoomFactor = 0.08;
       const direction = e.deltaY < 0 ? 1 : -1;
-      setScale(s => {
+      setScale((s) => {
         const nextScale = s + direction * zoomFactor;
         return Math.max(0.25, Math.min(5, nextScale));
       });
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
     const container = containerRef.current;
     if (container) {
-      container.addEventListener("wheel", handleWheel, { passive: false });
+      container.addEventListener('wheel', handleWheel, { passive: false });
     }
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
       if (container) {
-        container.removeEventListener("wheel", handleWheel);
+        container.removeEventListener('wheel', handleWheel);
       }
     };
   }, [open]);
 
-   // Load images
-   useEffect(() => {
-     if (!open || !element.imageSrc) return;
-     const effectiveOriginalSrc = element.originalImageSrc || element.imageSrc;
+  // Load images
+  useEffect(() => {
+    if (!open || !element.imageSrc) return;
+    const effectiveOriginalSrc = element.originalImageSrc || element.imageSrc;
 
-     let isCancelled = false;
-     let origImg: HTMLImageElement | null = null;
-     let curImg: HTMLImageElement | null = null;
+    let isCancelled = false;
+    let origImg: HTMLImageElement | null = null;
+    let curImg: HTMLImageElement | null = null;
 
-     const loadImages = async () => {
-       try {
-         origImg = new Image();
-         curImg = new Image();
+    const loadImages = async () => {
+      try {
+        origImg = new Image();
+        curImg = new Image();
 
-         await Promise.all([
-           new Promise((resolve, reject) => {
-             origImg!.onload = resolve;
-             origImg!.onerror = reject;
-             origImg!.src = effectiveOriginalSrc;
-           }),
-           new Promise((resolve, reject) => {
-             curImg!.onload = resolve;
-             curImg!.onerror = reject;
-             curImg!.src = element.imageSrc!;
-           })
-         ]);
+        await Promise.all([
+          new Promise((resolve, reject) => {
+            origImg!.onload = resolve;
+            origImg!.onerror = reject;
+            origImg!.src = effectiveOriginalSrc;
+          }),
+          new Promise((resolve, reject) => {
+            curImg!.onload = resolve;
+            curImg!.onerror = reject;
+            curImg!.src = element.imageSrc!;
+          }),
+        ]);
 
-         if (isCancelled) return;
+        if (isCancelled) return;
 
-         // Cache original image data for the Magic Eraser tool
-         const tempCanvas = document.createElement("canvas");
-         tempCanvas.width = origImg!.width;
-         tempCanvas.height = origImg!.height;
-          const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
-         if (tempCtx) {
-           tempCtx.drawImage(origImg!, 0, 0);
-           originalImageDataRef.current = tempCtx.getImageData(0, 0, origImg!.width, origImg!.height);
-         }
+        // Cache original image data for the Magic Eraser tool
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = origImg!.width;
+        tempCanvas.height = origImg!.height;
+        const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+        if (tempCtx) {
+          tempCtx.drawImage(origImg!, 0, 0);
+          originalImageDataRef.current = tempCtx.getImageData(
+            0,
+            0,
+            origImg!.width,
+            origImg!.height,
+          );
+        }
 
-         setOriginalImage(origImg!);
-         setCurrentImage(curImg!);
+        setOriginalImage(origImg!);
+        setCurrentImage(curImg!);
 
-         // Reset view
-         setScale(1);
-         setPan({ x: 0, y: 0 });
-       } catch (err) {
-         console.error("Failed to load images for refinement:", err);
-         toast.error("فشل تحميل الصور للتعديل");
-       }
-     };
+        // Reset view
+        setScale(1);
+        setPan({ x: 0, y: 0 });
+      } catch (err) {
+        console.error('Failed to load images for refinement:', err);
+        toast.error('فشل تحميل الصور للتعديل');
+      }
+    };
 
-     loadImages();
-     return () => {
-       isCancelled = true;
-       if (origImg) { origImg.onload = null; origImg.onerror = null; origImg.src = ""; }
-       if (curImg) { curImg.onload = null; curImg.onerror = null; curImg.src = ""; }
-       setOriginalImage(null);
-       setCurrentImage(null);
-       originalImageDataRef.current = null;
-       historyRef.current = [];
-       setHistoryLength(0);
-       sharedVisited = null;
-       sharedQueueX = null;
-       sharedQueueY = null;
-     };
+    loadImages();
+    return () => {
+      isCancelled = true;
+      if (origImg) {
+        origImg.onload = null;
+        origImg.onerror = null;
+        origImg.src = '';
+      }
+      if (curImg) {
+        curImg.onload = null;
+        curImg.onerror = null;
+        curImg.src = '';
+      }
+      setOriginalImage(null);
+      setCurrentImage(null);
+      originalImageDataRef.current = null;
+      historyRef.current = [];
+      setHistoryLength(0);
+      sharedVisited = null;
+      sharedQueueX = null;
+      sharedQueueY = null;
+    };
   }, [open, element.originalImageSrc, element.imageSrc]);
 
   // Render currentImage onto canvas once loaded
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !currentImage || !originalImage || !open) return;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
-    
+
     // Save initial state to history
     historyRef.current = [ctx.getImageData(0, 0, canvas.width, canvas.height)];
     setHistoryLength(1);
@@ -205,17 +237,17 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     // حساب حجم ImageData بالبايت لتحديد العدد الأقصى المسموح به في السجل
     // الصور الكبيرة تستهلك ذاكرة هائلة، لذا نحدّ السجل ديناميكياً
     const bytes = imgData.data.length;
-    if (bytes > 50_000_000) return 2;   // >50MB → سجلين فقط
-    if (bytes > 10_000_000) return 4;   // >10MB → 4 سجلات
-    return 10;                           // ≥10 سجلات للصور الصغيرة
+    if (bytes > 50_000_000) return 2; // >50MB → سجلين فقط
+    if (bytes > 10_000_000) return 4; // >10MB → 4 سجلات
+    return 10; // ≥10 سجلات للصور الصغيرة
   };
 
   const saveHistory = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
-    
+
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const maxStates = getHistoryMax(imgData);
 
@@ -230,9 +262,9 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     if (historyRef.current.length <= 1) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
-    
+
     historyRef.current.pop(); // Remove current state
     const previousState = historyRef.current[historyRef.current.length - 1];
     ctx.putImageData(previousState, 0, 0);
@@ -243,10 +275,10 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container || !originalImage) return { x: 0, y: 0 };
-    
+
     const containerRect = container.getBoundingClientRect();
     let clientX, clientY;
-    
+
     if ('touches' in e) {
       const touch = e.touches[0] || e.changedTouches[0];
       if (touch) {
@@ -260,38 +292,38 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       clientX = (e as React.MouseEvent).clientX;
       clientY = (e as React.MouseEvent).clientY;
     }
-    
+
     // Mouse position relative to the center of the container
     const mouseXFromCenter = clientX - (containerRect.left + containerRect.width / 2);
     const mouseYFromCenter = clientY - (containerRect.top + containerRect.height / 2);
-    
+
     // Remove the panning translation and scale
     const unscaledX = (mouseXFromCenter - pan.x) / scale;
     const unscaledY = (mouseYFromCenter - pan.y) / scale;
-    
+
     // Determine the unscaled layout width and height of the canvas inside the container (using fit logic)
     const containerW = containerRect.width;
     const containerH = containerRect.height;
     const imgW = originalImage.width;
     const imgH = originalImage.height;
-    
+
     let unscaledCanvasW = containerW * 0.9;
     let unscaledCanvasH = unscaledCanvasW * (imgH / imgW);
-    
+
     if (unscaledCanvasH > containerH * 0.9) {
       unscaledCanvasH = containerH * 0.9;
       unscaledCanvasW = unscaledCanvasH * (imgW / imgH);
     }
-    
+
     // Map to canvas pixel space
     const x = ((unscaledX + unscaledCanvasW / 2) * imgW) / unscaledCanvasW;
     const y = ((unscaledY + unscaledCanvasH / 2) * imgH) / unscaledCanvasH;
-    
+
     return { x, y };
   };
 
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
-    const isPan = tool === "pan" || isSpacePressed || ('button' in e && e.button === 1);
+    const isPan = tool === 'pan' || isSpacePressed || ('button' in e && e.button === 1);
     if (isPan) {
       isPanning.current = true;
       let clientX, clientY;
@@ -306,7 +338,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       return;
     }
 
-    if (tool === "magic") {
+    if (tool === 'magic') {
       const { x, y } = getCanvasCoords(e);
       runMagicEraser(x, y);
       return;
@@ -315,7 +347,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     isDrawing.current = true;
     const { x, y } = getCanvasCoords(e);
     lastPos.current = { x, y };
-    
+
     draw(x, y, x, y); // Draw single dot
   };
 
@@ -331,13 +363,13 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       }
       setPan({
         x: clientX - panStart.current.x,
-        y: clientY - panStart.current.y
+        y: clientY - panStart.current.y,
       });
       return;
     }
 
     if (!isDrawing.current || !lastPos.current) return;
-    
+
     const { x, y } = getCanvasCoords(e);
     draw(lastPos.current.x, lastPos.current.y, x, y);
     lastPos.current = { x, y };
@@ -348,7 +380,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       isPanning.current = false;
       return;
     }
-    
+
     if (isDrawing.current) {
       isDrawing.current = false;
       lastPos.current = null;
@@ -360,32 +392,32 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     const canvas = canvasRef.current;
     const origImg = originalImage;
     if (!canvas || !origImg) return;
-    
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     ctx.save();
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.lineWidth = brushSize;
 
-    if (tool === "erase") {
-      ctx.globalCompositeOperation = "destination-out";
+    if (tool === 'erase') {
+      ctx.globalCompositeOperation = 'destination-out';
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.lineTo(endX, endY);
       ctx.stroke();
-    } else if (tool === "defringe") {
+    } else if (tool === 'defringe') {
       // فرشاة تشذيب الحواف الخافتة وتنعيم الهالات
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.strokeStyle = "rgba(0, 0, 0, 0.25)";
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.lineTo(endX, endY);
       ctx.stroke();
-    } else if (tool === "restore") {
-      ctx.globalCompositeOperation = "source-over";
-      const pattern = ctx.createPattern(origImg, "no-repeat");
+    } else if (tool === 'restore') {
+      ctx.globalCompositeOperation = 'source-over';
+      const pattern = ctx.createPattern(origImg, 'no-repeat');
       if (pattern) {
         ctx.strokeStyle = pattern;
         ctx.beginPath();
@@ -401,23 +433,23 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     const canvas = canvasRef.current;
     const origData = originalImageDataRef.current;
     if (!canvas || !origData) return;
-    
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     const width = canvas.width;
     const height = canvas.height;
-    
+
     const startXInt = Math.floor(startX);
     const startYInt = Math.floor(startY);
-    
+
     if (startXInt < 0 || startXInt >= width || startYInt < 0 || startYInt >= height) return;
 
     const targetIdx = (startYInt * width + startXInt) * 4;
     const tr = origData.data[targetIdx];
     const tg = origData.data[targetIdx + 1];
     const tb = origData.data[targetIdx + 2];
-    
+
     const canvasImgData = ctx.getImageData(0, 0, width, height);
     const canvasData = canvasImgData.data;
 
@@ -430,7 +462,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       sharedVisited!.fill(0, 0, size);
     }
     const visited = sharedVisited!;
-    
+
     // Flat arrays act as a circular buffer queue for speed and memory efficiency
     const queueX = sharedQueueX!;
     const queueY = sharedQueueY!;
@@ -440,7 +472,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     queueX[tail] = startXInt;
     queueY[tail] = startYInt;
     tail++;
-    
+
     visited[startYInt * width + startXInt] = 1;
 
     // Manhattan distance threshold: tolerance * 3 (since there are 3 channels and each channel is up to 255)
@@ -455,7 +487,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
       head++;
 
       const currentIdx = (cy * width + cx) * 4;
-      
+
       canvasData[currentIdx + 3] = 0; // Set Alpha to 0
 
       for (let i = 0; i < 4; i++) {
@@ -466,12 +498,12 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
           const nIdx = ny * width + nx;
           if (visited[nIdx] === 0) {
             visited[nIdx] = 1;
-            
+
             const pixelOffset = nIdx * 4;
             const pr = origData.data[pixelOffset];
             const pg = origData.data[pixelOffset + 1];
             const pb = origData.data[pixelOffset + 2];
-            
+
             const dist = Math.abs(pr - tr) + Math.abs(pg - tg) + Math.abs(pb - tb);
             if (dist <= maxDist) {
               queueX[tail] = nx;
@@ -485,28 +517,31 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
     ctx.putImageData(canvasImgData, 0, 0);
     saveHistory();
-    toast.success("تم مسح المنطقة اللونية");
+    toast.success('تم مسح المنطقة اللونية');
   };
 
   const handleSave = async () => {
+    // 🛡️ M3 من تدقيق 2026-10-08: `canvasRef.current` موجود دائماً بعد التركيب،
+    // ولو أُغلق/فُتح الحوار بلا صورة محمّلة (أو فشل تحميلها) كان `toDataURL`
+    // ينتج PNG فارغاً يُكتب فوق imageSrc للعنصر — فقدان صامت للصورة الأصلية.
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    
+    if (!canvas || !originalImage) return;
+
     setIsSaving(true);
     try {
-      const dataUrl = canvas.toDataURL("image/png");
+      const dataUrl = canvas.toDataURL('image/png');
       const localPath = await SaveImageFromBase64(dataUrl);
       // التحقق من نتيجة الحفظ — مسار فارغ كان يكتب imageSrc فارغاً على العنصر
       // مع رسالة نجاح كاذبة (إصلاح Bug#20)
-      if (!localPath || !localPath.startsWith("/local-image/")) {
-        throw new Error("Invalid path returned from SaveImageFromBase64");
+      if (!localPath || !localPath.startsWith('/local-image/')) {
+        throw new Error('Invalid path returned from SaveImageFromBase64');
       }
       onSave(localPath);
       onOpenChange(false);
-      toast.success("تم حفظ التعديلات");
+      toast.success('تم حفظ التعديلات');
     } catch (err) {
-      console.error("Save failed:", err);
-      toast.error("فشل حفظ التعديلات");
+      logger.error('Save failed:', err);
+      toast.error(toErrorMessage(err, 'فشل حفظ التعديلات'));
     } finally {
       setIsSaving(false);
     }
@@ -514,8 +549,12 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
   return (
     <Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
-      <DialogContent className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 overflow-hidden fluent-specular" dir="rtl" showCloseButton={false}>
-        <DialogHeader 
+      <DialogContent
+        className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 overflow-hidden fluent-specular"
+        dir="rtl"
+        showCloseButton={false}
+      >
+        <DialogHeader
           className="p-4 border-b border-border/40 shrink-0 flex flex-row items-center justify-between"
           onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: false }))}
         >
@@ -533,50 +572,71 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
         <div className="flex flex-1 overflow-hidden">
           {/* الأدوات - Sidebar */}
-          <div 
+          <div
             className="w-56 border-l rtl:border-l rtl:border-r-0 ltr:border-r border-border/40 bg-muted/10 p-4 flex flex-col gap-5 shrink-0 overflow-y-auto"
             onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: false }))}
           >
             <div className="space-y-2">
               <span className="text-xs font-bold text-muted-foreground block mb-2">نوع الأداة</span>
               <Button
-                variant={tool === "erase" ? "default" : "outline"}
-                className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "erase" && "bg-primary text-primary-foreground")}
-                onClick={() => setTool("erase")}
+                variant={tool === 'erase' ? 'default' : 'outline'}
+                className={cn(
+                  'w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md',
+                  tool === 'erase' && 'bg-primary text-primary-foreground',
+                )}
+                onClick={() => setTool('erase')}
               >
-                <Eraser className="w-4 h-4 shrink-0" weight={tool === "erase" ? "fill" : "bold"} />
+                <Eraser className="w-4 h-4 shrink-0" weight={tool === 'erase' ? 'fill' : 'bold'} />
                 ممحاة
               </Button>
               <Button
-                variant={tool === "defringe" ? "default" : "outline"}
-                className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "defringe" && "bg-primary text-primary-foreground")}
-                onClick={() => setTool("defringe")}
+                variant={tool === 'defringe' ? 'default' : 'outline'}
+                className={cn(
+                  'w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md',
+                  tool === 'defringe' && 'bg-primary text-primary-foreground',
+                )}
+                onClick={() => setTool('defringe')}
               >
-                <PaintBucket className="w-4 h-4 shrink-0" weight={tool === "defringe" ? "fill" : "bold"} />
+                <PaintBucket
+                  className="w-4 h-4 shrink-0"
+                  weight={tool === 'defringe' ? 'fill' : 'bold'}
+                />
                 تشذيب الحواف
               </Button>
               <Button
-                variant={tool === "restore" ? "default" : "outline"}
-                className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "restore" && "bg-primary text-primary-foreground")}
-                onClick={() => setTool("restore")}
+                variant={tool === 'restore' ? 'default' : 'outline'}
+                className={cn(
+                  'w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md',
+                  tool === 'restore' && 'bg-primary text-primary-foreground',
+                )}
+                onClick={() => setTool('restore')}
               >
-                <PaintBrush className="w-4 h-4 shrink-0" weight={tool === "restore" ? "fill" : "bold"} />
+                <PaintBrush
+                  className="w-4 h-4 shrink-0"
+                  weight={tool === 'restore' ? 'fill' : 'bold'}
+                />
                 استرجاع
               </Button>
               <Button
-                variant={tool === "magic" ? "default" : "outline"}
-                className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "magic" && "bg-primary text-primary-foreground")}
-                onClick={() => setTool("magic")}
+                variant={tool === 'magic' ? 'default' : 'outline'}
+                className={cn(
+                  'w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md',
+                  tool === 'magic' && 'bg-primary text-primary-foreground',
+                )}
+                onClick={() => setTool('magic')}
               >
-                <Sparkle className="w-4 h-4 shrink-0" weight={tool === "magic" ? "fill" : "bold"} />
+                <Sparkle className="w-4 h-4 shrink-0" weight={tool === 'magic' ? 'fill' : 'bold'} />
                 تحديد ذكي
               </Button>
               <Button
-                variant={tool === "pan" ? "default" : "outline"}
-                className={cn("w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md", tool === "pan" && "bg-primary text-primary-foreground")}
-                onClick={() => setTool("pan")}
+                variant={tool === 'pan' ? 'default' : 'outline'}
+                className={cn(
+                  'w-full justify-start h-8 text-xs font-semibold gap-2 cursor-pointer rounded-md',
+                  tool === 'pan' && 'bg-primary text-primary-foreground',
+                )}
+                onClick={() => setTool('pan')}
               >
-                <Hand className="w-4 h-4 shrink-0" weight={tool === "pan" ? "fill" : "bold"} />
+                <Hand className="w-4 h-4 shrink-0" weight={tool === 'pan' ? 'fill' : 'bold'} />
                 تحريك
               </Button>
             </div>
@@ -586,30 +646,34 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               <span className="text-xs font-bold text-foreground/80 block">خلفية المعاينة</span>
               <div className="grid grid-cols-4 gap-1.5">
                 {[
-                  { id: "checker", label: "شفاف", bg: `repeating-conic-gradient(${previewChecker()} 0% 25%, transparent 0% 50%)` },
-                  { id: "white", label: "أبيض", bg: previewWhite() },
-                  { id: "black", label: "أسود", bg: previewBlack() },
-                  { id: "blue", label: "أزرق", bg: previewBlue() },
+                  {
+                    id: 'checker',
+                    label: 'شفاف',
+                    bg: `repeating-conic-gradient(${previewChecker()} 0% 25%, transparent 0% 50%)`,
+                  },
+                  { id: 'white', label: 'أبيض', bg: previewWhite() },
+                  { id: 'black', label: 'أسود', bg: previewBlack() },
+                  { id: 'blue', label: 'أزرق', bg: previewBlue() },
                 ].map((item) => (
                   <button
                     key={item.id}
                     type="button"
                     title={item.label}
-                    onClick={() => setPreviewBg(item.id as "checker" | "white" | "black" | "blue")}
+                    onClick={() => setPreviewBg(item.id as 'checker' | 'white' | 'black' | 'blue')}
                     className={cn(
-                      "h-7 rounded-md border border-border/60 transition-all flex items-center justify-center cursor-pointer shadow-2xs",
-                      previewBg === item.id && "ring-2 ring-primary border-primary font-bold"
+                      'h-7 rounded-md border border-border/60 transition-all flex items-center justify-center cursor-pointer shadow-2xs',
+                      previewBg === item.id && 'ring-2 ring-primary border-primary font-bold',
                     )}
                     style={{
                       background: item.bg,
-                      backgroundSize: item.id === "checker" ? "8px 8px" : undefined
+                      backgroundSize: item.id === 'checker' ? '8px 8px' : undefined,
                     }}
                   />
                 ))}
               </div>
             </div>
 
-            {tool !== "pan" && tool !== "magic" && (
+            {tool !== 'pan' && tool !== 'magic' && (
               <div className="bg-background p-3 rounded-xl border border-border/40">
                 <FluentSliderField
                   label="حجم الفرشاة"
@@ -622,7 +686,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
               </div>
             )}
 
-            {tool === "magic" && (
+            {tool === 'magic' && (
               <div className="bg-background p-3 rounded-xl border border-border/40">
                 <FluentSliderField
                   label="الفارق اللوني"
@@ -636,27 +700,27 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
             <div className="space-y-3 pt-4 border-t border-border/40 mt-auto">
               <div className="flex gap-2" dir="ltr">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
+                <Button
+                  variant="outline"
+                  size="icon"
                   className="h-8 w-8 flex-1 border-border/60 hover:bg-muted cursor-pointer"
-                  onClick={() => setScale(s => Math.min(s + 0.25, 5))}
+                  onClick={() => setScale((s) => Math.min(s + 0.25, 5))}
                   title="تكبير"
                 >
                   <MagnifyingGlassPlus className="text-muted-foreground w-4 h-4 shrink-0" />
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
+                <Button
+                  variant="outline"
+                  size="icon"
                   className="h-8 w-8 flex-1 border-border/60 hover:bg-muted cursor-pointer"
-                  onClick={() => setScale(s => Math.max(s - 0.25, 0.25))}
+                  onClick={() => setScale((s) => Math.max(s - 0.25, 0.25))}
                   title="تصغير"
                 >
                   <MagnifyingGlassMinus className="text-muted-foreground w-4 h-4 shrink-0" />
                 </Button>
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full h-8 text-xs font-semibold gap-2 border-border/60 hover:bg-muted cursor-pointer"
                 onClick={handleUndo}
                 disabled={historyLength <= 1}
@@ -672,10 +736,10 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             ref={containerRef}
             role="presentation"
             className="flex-1 bg-black/5 dark:bg-white/5 relative overflow-hidden select-none flex items-center justify-center touch-none"
-            style={{ 
+            style={{
               backgroundImage: `radial-gradient(circle, ${previewChecker()} 1px, transparent 1px)`,
               backgroundSize: '20px 20px',
-              cursor: (tool === "pan" || isSpacePressed) ? "grab" : "crosshair"
+              cursor: tool === 'pan' || isSpacePressed ? 'grab' : 'crosshair',
             }}
             onMouseEnter={(e) => {
               const rect = containerRef.current?.getBoundingClientRect();
@@ -712,7 +776,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             }}
           >
             {/* Dynamic Brush Cursor Circle */}
-            {cursorPos.visible && tool !== "pan" && tool !== "magic" && (
+            {cursorPos.visible && tool !== 'pan' && tool !== 'magic' && (
               <div
                 className="absolute pointer-events-none rounded-full border border-white/90 shadow-[0_0_8px_rgba(0,0,0,0.6)] z-20 -translate-x-1/2 -translate-y-1/2"
                 style={{
@@ -720,29 +784,34 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                   top: cursorPos.y,
                   width: Math.max(6, brushSize * scale),
                   height: Math.max(6, brushSize * scale),
-                  backgroundColor: tool === "erase" ? "rgba(239,68,68,0.2)" : tool === "defringe" ? "rgba(168,85,247,0.2)" : "rgba(34,197,94,0.2)",
+                  backgroundColor:
+                    tool === 'erase'
+                      ? 'rgba(239,68,68,0.2)'
+                      : tool === 'defringe'
+                        ? 'rgba(168,85,247,0.2)'
+                        : 'rgba(34,197,94,0.2)',
                 }}
               />
             )}
 
             {/* Background container for inspection */}
-            <div 
+            <div
               className="relative shadow-fluent-8 shadow-black/20 transition-transform duration-75 ease-out"
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
                 transformOrigin: 'center center',
                 backgroundImage:
-                  previewBg === "checker"
+                  previewBg === 'checker'
                     ? `repeating-conic-gradient(${previewChecker()} 0% 25%, transparent 0% 50%)`
                     : undefined,
                 backgroundColor:
-                  previewBg === "white"
+                  previewBg === 'white'
                     ? previewWhite()
-                    : previewBg === "black"
-                    ? previewBlack()
-                    : previewBg === "blue"
-                    ? previewBlue()
-                    : undefined,
+                    : previewBg === 'black'
+                      ? previewBlack()
+                      : previewBg === 'blue'
+                        ? previewBlue()
+                        : undefined,
                 backgroundSize: '20px 20px',
                 backgroundPosition: '0 0, 10px 10px',
                 pointerEvents: 'none',
@@ -750,7 +819,9 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                 maxHeight: '90%',
                 width: '100%',
                 height: '100%',
-                aspectRatio: originalImage ? `${originalImage.width} / ${originalImage.height}` : 'auto'
+                aspectRatio: originalImage
+                  ? `${originalImage.width} / ${originalImage.height}`
+                  : 'auto',
               }}
             >
               <canvas
@@ -763,14 +834,22 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
           </div>
         </div>
 
-        <DialogFooter 
+        <DialogFooter
           className="p-3 border-t border-border/40 bg-card shrink-0 flex items-center justify-end gap-2"
           onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: false }))}
         >
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="text-xs font-semibold h-8 px-4 rounded-md">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="text-xs font-semibold h-8 px-4 rounded-md"
+          >
             إلغاء
           </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="text-xs font-semibold h-8 px-5 rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5">
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || !originalImage}
+            className="text-xs font-semibold h-8 px-5 rounded-md shadow-xs bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5"
+          >
             {isSaving ? (
               <>
                 <Spinner className="w-3.5 h-3.5" size={14} />

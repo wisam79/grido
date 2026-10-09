@@ -41,6 +41,7 @@ function QuickActionBtn({ content, onClick, disabled, children }: QuickActionBtn
           size="sm"
           disabled={disabled}
           onClick={onClick}
+          aria-label={content}
           className="h-7 w-7 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-all"
         >
           {children}

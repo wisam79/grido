@@ -166,7 +166,7 @@ export function FreeformFontsTab() {
       </div>
 
       {/* ── بطاقات الخطوط الرشيقة: سطر واحد مدمج مع تطبيق الخط على الاسم نفسه ── */}
-      <div className="flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-170px)] pr-1 pl-0.5 custom-scrollbar">
+      <div className="flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-170px)] pe-1 ps-0.5 custom-scrollbar">
         {visibleFonts.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground text-xs">
             {onlyFavorites ? 'لا توجد خطوط مفضلة حالياً' : 'لم يتم العثور على أي خط مطابق'}
@@ -179,11 +179,20 @@ export function FreeformFontsTab() {
             return (
               <div
                 key={font.id}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    applyFont(font);
+                  }
+                }}
                 onClick={() => applyFont(font)}
                 onMouseEnter={() => loadGoogleFont(font.family)}
                 title={`${font.arabicName} (${font.englishName})`}
                 className={cn(
                   'group relative flex items-center justify-between min-h-[40px] h-10 px-3 rounded-lg border transition-all cursor-pointer select-none active:scale-[0.99]',
+                  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   'bg-card/50 hover:bg-card hover:border-foreground/30 shadow-2xs',
                   isActive
                     ? 'border-primary/80 bg-primary/[0.08] ring-1 ring-primary/40 shadow-xs'
