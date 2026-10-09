@@ -111,7 +111,6 @@ func (s *PrintService) saveOutputPDF(img image.Image, req domain.PrintRequest) (
 	// ينكسر عقد الطباعة (showPrintResult يتوقع ملفاً + معاينة).
 	previewB64 := base64.StdEncoding.EncodeToString(jpegBuf.Bytes())
 	imageSrcForWebView := "data:image/jpeg;base64," + previewB64
-	imageSrcForNative := "data:image/jpeg;base64," + previewB64
 	htmlDoc := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head><meta charset="utf-8"><title>Grido Print Sheet</title>
@@ -126,14 +125,14 @@ func (s *PrintService) saveOutputPDF(img image.Image, req domain.PrintRequest) (
 		req.PaperWidthMM, req.PaperHeightMM,
 		req.PaperWidthMM, req.PaperHeightMM,
 		imageSrcForWebView)
-	_ = imageSrcForNative
 
 	return pdfPath, htmlDoc, nil
 }
 
 // drawPDFCutLines يرسم خطوط القص كمتجهات PDF بنفس إيقاع drawCutLines النقطي:
 // عرض 0.20مم، شرطات 1.5مم/1.5مم، منقط 0.6مم/2.4مم (1.5×0.4 / 1.5×1.6)،
-// وصلب بلا شرطات. اللون الرمادي 120 مطابق للمعاينة النقطية.
+// وصلب بلا شرطات. اللون الرمادي 120 مطابق للمعاينة النقطية. نمط cropmarks
+// يرسم أذرع الزوايا فقط (RV-16-M2) — نفس هندسة المعاينة وprint_compose.
 func drawPDFCutLines(pdf *gofpdf.Fpdf, req domain.PrintRequest) {
 	if !req.ShowCutLines || len(req.CutLines) == 0 {
 		return
@@ -152,7 +151,13 @@ func drawPDFCutLines(pdf *gofpdf.Fpdf, req domain.PrintRequest) {
 		pdf.SetDashPattern([]float64{1.5, 1.5}, 0)
 	}
 
-	for _, line := range req.CutLines {
+	// 🖨️ RV-16-M2: علامات زوايا فقط بدل الخطوط الكاملة
+	lines := req.CutLines
+	if style == "cropmarks" {
+		lines = cropMarkSegments(req)
+	}
+
+	for _, line := range lines {
 		// حماية من NaN/Inf — قيمة تالفة واحدة كانت تُفسد مسار الرسم كاملاً
 		// في المسار النقطي؛ هنا نتجاوز الخط التالف وحده.
 		if !isFiniteMM(line.X1) || !isFiniteMM(line.Y1) || !isFiniteMM(line.X2) || !isFiniteMM(line.Y2) {

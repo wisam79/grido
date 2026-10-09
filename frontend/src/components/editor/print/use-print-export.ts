@@ -384,17 +384,32 @@ export function usePrintExport({
         // مطلقة على الورقة (Go يرسم item.X/Y مباشرةً وmarginMM غير مستخدم في التركيب)،
         // لذا يُقاس أقصى امتداد على أبعاد الورقة نفسها بتسامح 0.5mm كي لا يُرفض تصدير
         // صالح يقبله Go — مع رسالة توجيهية بالعربية بدل خطأ Go التقني.
+        // 🖨️ RV-16-M3: العناصر القالبية تحمل توسيعاً شبكياً (copies/copyCols)، فالحد
+        // يُقاس بعد التوسيع (آخر خلية مكررة) لا عند أول نسخة فقط — الحارس القديم كان
+        // يمرر شبكة كاملة خارج الورقة ما دامت أول خلية داخلها.
         const frontierToleranceMM = 0.5;
-        const farthestX = Math.max(...items.map((it) => it.x + it.w));
-        const farthestY = Math.max(...items.map((it) => it.y + it.h));
+        const expandedFarX = (it: domain.PrintItem): number => {
+          const copies = Math.max(1, it.copies || 1);
+          const cols = Math.max(1, it.copyCols || 1);
+          const maxCol = Math.min(copies, cols) - 1;
+          return it.x + maxCol * (it.copyStepX || 0) + it.w;
+        };
+        const expandedFarY = (it: domain.PrintItem): number => {
+          const copies = Math.max(1, it.copies || 1);
+          const cols = Math.max(1, it.copyCols || 1);
+          const maxRow = Math.floor((copies - 1) / cols);
+          return it.y + maxRow * (it.copyStepY || 0) + it.h;
+        };
+        const farthestX = Math.max(...items.map(expandedFarX));
+        const farthestY = Math.max(...items.map(expandedFarY));
         const overflowItem = items.find(
           (it) =>
             it.w <= 0 ||
             it.h <= 0 ||
             it.w > paperWidth + 0.1 ||
             it.h > paperHeight + 0.1 ||
-            it.x + it.w > paperWidth + frontierToleranceMM ||
-            it.y + it.h > paperHeight + frontierToleranceMM,
+            expandedFarX(it) > paperWidth + frontierToleranceMM ||
+            expandedFarY(it) > paperHeight + frontierToleranceMM,
         );
         if (overflowItem) {
           const msg =
@@ -419,7 +434,10 @@ export function usePrintExport({
               dpi: printDpi || 300,
               backgroundColor: backgroundColor || previewWhite(),
               showCutLines: mode === 'collage' ? collageShowCutLines : printShowCutLines,
-              cutLineStyle: mode === 'collage' ? 'dashed' : (printCutLineStyle ?? 'dashed'),
+              // 🖨️ RV-16-H1: نمط خطوط القص المختار يُرسل لكل الأوضاع — كان وضع
+              // الكولاج يجبر 'dashed' بينما المعاينة تعرض اختيار المستخدم
+              // (solid/dotted) فتُطبع الورقة بنمط مختلف عن المعاينة (WYSIWYG مكسور).
+              cutLineStyle: printCutLineStyle ?? 'dashed',
               colorSpace: 'sRGB',
               // 🖨️ JPEG لا PNG: ترميزه أسرع عدة مرات وملفه أصغر 3-5× — ورقة 50MP
               // بصيغة PNG تُثقل ذاكرة WebView2 وتقترب من مهلة التصدير (RV-Print-05).

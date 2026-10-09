@@ -10,7 +10,9 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
@@ -333,3 +335,101 @@ func BenchmarkPrintPipelineExpandGrid(b *testing.B) {
 	}
 }
 
+
+// ─── RV-16-M4: سقف بكسلات CMYK لكل صيغة (دالة نقطة بلا تخصيص كانفس) ───
+
+// TestCMYKPixelCapError: JPEG بحد 100MP (كان بلا سقف — ذروة ~1.2GB على 144MP)
+// وTIFF بحد 50MP كما كان، ورفض قبل أي تخصيص.
+func TestCMYKPixelCapError(t *testing.T) {
+	cases := []struct {
+		name    string
+		pixels  int64
+		format  string
+		wantErr string // فراغ = يقبل
+	}{
+		{"zero pixels accepted", 0, "tiff", ""},
+		{"small tiff accepted", 49_000_000, "tiff", ""},
+		{"big tiff rejected", 51_000_000, "tiff", "cmyk tiff too large"},
+		{"non-jpeg default follows tiff cap", 60_000_000, "png", "cmyk tiff too large"},
+		{"jpeg below cap accepted", 99_000_000, "jpeg", ""},
+		{"jpeg at cap boundary accepted", 100_000_000, "jpeg", ""},
+		{"jpeg above cap rejected", 100_000_001, "jpeg", "cmyk jpeg too large"},
+		{"jpg alias follows jpeg cap", 130_000_000, "JPG", "cmyk jpeg too large"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := cmykPixelCapError(tc.pixels, tc.format)
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("expected accept, got error: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("expected error containing %q, got nil", tc.wantErr)
+			}
+			if !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("error %q does not contain %q", err.Error(), tc.wantErr)
+			}
+		})
+	}
+}
+
+// ─── RV-16-M5: ميزانية البايتات الإجمالية للكاش الخام المشترك ───
+
+// TestSharedRawCache_ByteBudgetEviction: تجاوز الميزانية الإجمالية يُزيل الأقدم
+// وصولاً (كان السقف لكل صورة فقط — 16×100MB ≈ 1.6GB أسوأ حالة)، واستبدال
+// المفتاح نفسه يخصم بايتات القديم قبل إضافة الجديد.
+func TestSharedRawCache_ByteBudgetEviction(t *testing.T) {
+	origBudget := sharedRawCacheMaxBytes
+	defer func() { sharedRawCacheMaxBytes = origBudget }()
+
+	resetCache := func() {
+		sharedRawCache.Lock()
+		sharedRawCache.images = make(map[string]sharedRawEntry)
+		sharedRawCache.totalBytes = 0
+		sharedRawCache.Unlock()
+	}
+	resetCache()
+	defer resetCache()
+
+	// ميزانية 7 بايتات: كل صورة 1x1 = 4 بايتات ⇒ إدخالان معاً (8) يتجاوزانها
+	sharedRawCacheMaxBytes = 7
+
+	imgA := image.NewNRGBA(image.Rect(0, 0, 1, 1))
+	imgB := image.NewNRGBA(image.Rect(0, 0, 1, 1))
+
+	putSharedRaw("b64_a", "data:image/png;base64,a", imgA)
+	time.Sleep(2 * time.Millisecond) // تمايز واضح في وقت الوصول للإزاحة الأقدم
+	putSharedRaw("b64_b", "data:image/png;base64,b", imgB)
+
+	sharedRawCache.RLock()
+	count := len(sharedRawCache.images)
+	total := sharedRawCache.totalBytes
+	_, hasA := sharedRawCache.images["b64_a"]
+	_, hasB := sharedRawCache.images["b64_b"]
+	sharedRawCache.RUnlock()
+
+	if count != 1 {
+		t.Errorf("budget eviction: expected 1 entry after overflow, got %d", count)
+	}
+	if hasA {
+		t.Error("budget eviction: oldest entry (b64_a) must be evicted first")
+	}
+	if !hasB {
+		t.Error("budget eviction: newest entry (b64_b) must survive")
+	}
+	if total != 4 {
+		t.Errorf("totalBytes = %d after eviction, want 4", total)
+	}
+
+	// استبدال المفتاح نفسه: تُخصم بايتات القديم — لا تراكم
+	putSharedRaw("b64_b", "data:image/png;base64,b2", imgB)
+	sharedRawCache.RLock()
+	total = sharedRawCache.totalBytes
+	count = len(sharedRawCache.images)
+	sharedRawCache.RUnlock()
+	if total != 4 || count != 1 {
+		t.Errorf("re-put same key: totalBytes=%d count=%d, want 4 and 1 (old bytes must be deducted)", total, count)
+	}
+}

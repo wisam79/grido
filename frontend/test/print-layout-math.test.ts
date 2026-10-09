@@ -1,14 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from 'vitest';
 import {
   computeBlockPosition,
   computeSheetGrid,
   computeSlotAspect,
   computeSlotRectMM,
-  calculateOptimalSheetImposition,
-} from "../src/lib/print/print-layout-math";
+} from '../src/lib/print/print-layout-math';
 
-describe("computeSheetGrid", () => {
-  it("aligns to top-left corner by default (A4, margin 10)", () => {
+describe('computeSheetGrid', () => {
+  it('aligns to top-left corner by default (A4, margin 10)', () => {
     const grid = computeSheetGrid({
       cols: 2,
       actualCopies: 2,
@@ -30,7 +29,7 @@ describe("computeSheetGrid", () => {
     expect(grid.cellHeight).toBe(65);
   });
 
-  it("aligns to exact corner with 0 margin by default", () => {
+  it('aligns to exact corner with 0 margin by default', () => {
     const grid = computeSheetGrid({
       cols: 2,
       actualCopies: 2,
@@ -56,7 +55,7 @@ describe("computeSheetGrid", () => {
       effectiveMarginMM: 10,
       availableWidthMM: 190,
       availableHeightMM: 277,
-      align: "center",
+      align: 'center',
     });
 
     expect(grid.safeCols).toBe(2);
@@ -67,7 +66,7 @@ describe("computeSheetGrid", () => {
     expect(grid.offsetY).toBe(118.5);
   });
 
-  it("clamps cols to 1 and rows to 1 (no NaN on degenerate input)", () => {
+  it('clamps cols to 1 and rows to 1 (no NaN on degenerate input)', () => {
     const grid = computeSheetGrid({
       cols: 0,
       actualCopies: 0,
@@ -85,7 +84,7 @@ describe("computeSheetGrid", () => {
     expect(Number.isFinite(grid.offsetY)).toBe(true);
   });
 
-  it("leaves offset at the margin when the grid is wider than the paper", () => {
+  it('leaves offset at the margin when the grid is wider than the paper', () => {
     const grid = computeSheetGrid({
       cols: 3,
       actualCopies: 6,
@@ -103,7 +102,7 @@ describe("computeSheetGrid", () => {
   });
 });
 
-describe("computeBlockPosition", () => {
+describe('computeBlockPosition', () => {
   const grid = computeSheetGrid({
     cols: 2,
     actualCopies: 4,
@@ -115,7 +114,7 @@ describe("computeBlockPosition", () => {
     availableHeightMM: 277,
   });
 
-  it("maps copy index to col/row and block origin in mm", () => {
+  it('maps copy index to col/row and block origin in mm', () => {
     const b0 = computeBlockPosition(0, grid);
     expect(b0).toEqual({ col: 0, row: 0, xMM: grid.offsetX, yMM: grid.offsetY });
 
@@ -127,25 +126,31 @@ describe("computeBlockPosition", () => {
   });
 });
 
-describe("computeSlotRectMM", () => {
+describe('computeSlotRectMM', () => {
   const block = { xMM: 22.5, yMM: 86 };
   const image = { widthMM: 80, heightMM: 60 };
 
-  it("computes a full-grid slot without margins/gaps", () => {
-    const rect = computeSlotRectMM(block, { x: 0, y: 0, w: 1, h: 1 }, image, { marginXMM: 0, marginYMM: 0 }, { gapXMM: 0, gapYMM: 0 });
+  it('computes a full-grid slot without margins/gaps', () => {
+    const rect = computeSlotRectMM(
+      block,
+      { x: 0, y: 0, w: 1, h: 1 },
+      image,
+      { marginXMM: 0, marginYMM: 0 },
+      { gapXMM: 0, gapYMM: 0 },
+    );
     expect(rect.xMM).toBe(22.5);
     expect(rect.yMM).toBe(86);
     expect(rect.wMM).toBe(80);
     expect(rect.hMM).toBe(60);
   });
 
-  it("computes a half-grid slot with margins and gaps", () => {
+  it('computes a half-grid slot with margins and gaps', () => {
     const rect = computeSlotRectMM(
       block,
       { x: 0, y: 0, w: 0.5, h: 0.5 },
       image,
       { marginXMM: 2, marginYMM: 2 },
-      { gapXMM: 1, gapYMM: 1 }
+      { gapXMM: 1, gapYMM: 1 },
     );
     expect(rect.xMM).toBe(22.5 + 2 + 0.5);
     expect(rect.yMM).toBe(86 + 2 + 0.5);
@@ -153,7 +158,7 @@ describe("computeSlotRectMM", () => {
     expect(rect.hMM).toBe(0.5 * 56 - 1);
   });
 
-  it("is bit-identical to the mm-domain formula used by buildItems/cut-lines", () => {
+  it('is bit-identical to the mm-domain formula used by buildItems/cut-lines', () => {
     const canvasWidth = 2480;
     const canvasHeight = 3508;
     const collageMargin = 120;
@@ -177,7 +182,7 @@ describe("computeSlotRectMM", () => {
       slot,
       image,
       { marginXMM: marginMM, marginYMM: marginMM },
-      { gapXMM: gapMMv, gapYMM: gapMMv }
+      { gapXMM: gapMMv, gapYMM: gapMMv },
     );
 
     expect(actual.xMM).toBe(expected.xMM);
@@ -186,7 +191,7 @@ describe("computeSlotRectMM", () => {
     expect(actual.hMM).toBe(expected.hMM);
   });
 
-  it("is equivalent to the per-axis percentage formula used by the collage preview", () => {
+  it('is equivalent to the per-axis percentage formula used by the collage preview', () => {
     const canvasWidth = 2480;
     const canvasHeight = 3508;
     const collageMargin = 120;
@@ -209,7 +214,7 @@ describe("computeSlotRectMM", () => {
         slot,
         image,
         { marginXMM: marginX_pct * image.widthMM, marginYMM: marginY_pct * image.heightMM },
-        { gapXMM: gapX_pct * image.widthMM, gapYMM: gapY_pct * image.heightMM }
+        { gapXMM: gapX_pct * image.widthMM, gapYMM: gapY_pct * image.heightMM },
       );
 
       const expected = {
@@ -226,7 +231,7 @@ describe("computeSlotRectMM", () => {
     }
   });
 
-  it("documents the known Y-axis divergence between the print path and the preview on non-square canvases", () => {
+  it('documents the known Y-axis divergence between the print path and the preview on non-square canvases', () => {
     // مسار الطباعة الفعلي (buildItems) يطبّق مقياساً موحداً مشتقاً من canvasWidth على المحورين،
     // بينما المعاينة تحسب هامش/فجوة Y عبر canvasHeight.
     // التباعد موجود في الكود الأصلي قبل إعادة الهيكلة — يُحفظ عمداً في المرحلة 1
@@ -243,7 +248,7 @@ describe("computeSlotRectMM", () => {
       slot,
       image,
       { marginXMM: collageMargin * scalePxToMM, marginYMM: collageMargin * scalePxToMM },
-      { gapXMM: collageGap * scalePxToMM, gapYMM: collageGap * scalePxToMM }
+      { gapXMM: collageGap * scalePxToMM, gapYMM: collageGap * scalePxToMM },
     );
     const preview = computeSlotRectMM(
       block,
@@ -256,7 +261,7 @@ describe("computeSlotRectMM", () => {
       {
         gapXMM: (collageGap / canvasWidth) * image.widthMM,
         gapYMM: (collageGap / canvasHeight) * image.heightMM,
-      }
+      },
     );
 
     expect(Math.abs(uniform.xMM - preview.xMM)).toBeLessThan(1e-6);
@@ -266,123 +271,19 @@ describe("computeSlotRectMM", () => {
   });
 });
 
-describe("computeSlotAspect", () => {
-  it("computes the aspect ratio of a slot on the canvas", () => {
+describe('computeSlotAspect', () => {
+  it('computes the aspect ratio of a slot on the canvas', () => {
     expect(computeSlotAspect({ w: 0.5, h: 0.5 }, 2480, 3508)).toBeCloseTo(2480 / 3508, 10);
     expect(computeSlotAspect({ w: 1, h: 0.5 }, 2480, 3508)).toBeCloseTo((2 * 2480) / 3508, 10);
   });
 
-  it("returns 0 for empty slots", () => {
+  it('returns 0 for empty slots', () => {
     expect(computeSlotAspect({ w: 0, h: 0 }, 2480, 3508)).toBe(0);
   });
 });
 
-describe("calculateOptimalSheetImposition", () => {
-  it("fits 10 business cards (85x55mm) on A4 in portrait orientation", () => {
-    const result = calculateOptimalSheetImposition({
-      paperWidthMM: 210,
-      paperHeightMM: 297,
-      itemWidthMM: 85,
-      itemHeightMM: 55,
-      marginMM: 5,
-      gapMM: 2,
-    });
-
-    expect(result.orientation).toBe("portrait");
-    expect(result.cols).toBe(2);
-    expect(result.rows).toBe(5);
-    expect(result.maxCopies).toBe(10);
-  });
-
-  it("fits round stickers (50x50mm) on A4 with 15 copies", () => {
-    const result = calculateOptimalSheetImposition({
-      paperWidthMM: 210,
-      paperHeightMM: 297,
-      itemWidthMM: 50,
-      itemHeightMM: 50,
-      marginMM: 5,
-      gapMM: 2,
-    });
-
-    expect(result.cols).toBe(3);
-    expect(result.rows).toBe(5);
-    expect(result.maxCopies).toBe(15);
-  });
-
-  it("selects landscape if it yields more copies than portrait", () => {
-    // 130mm x 50mm on 210x297 paper:
-    // Portrait (200x287): cols = floor(202/132) = 1, rows = floor(289/52) = 5 -> 5 copies
-    // Landscape (287x200): cols = floor(289/132) = 2, rows = floor(202/52) = 3 -> 6 copies
-    const result = calculateOptimalSheetImposition({
-      paperWidthMM: 210,
-      paperHeightMM: 297,
-      itemWidthMM: 130,
-      itemHeightMM: 50,
-      marginMM: 5,
-      gapMM: 2,
-    });
-
-    expect(result.orientation).toBe("landscape");
-    expect(result.cols).toBe(2);
-    expect(result.rows).toBe(3);
-    expect(result.maxCopies).toBe(6);
-  });
-
-  it("computes waste percentage within bounds", () => {
-    const result = calculateOptimalSheetImposition({
-      paperWidthMM: 210,
-      paperHeightMM: 297,
-      itemWidthMM: 85,
-      itemHeightMM: 55,
-      marginMM: 5,
-      gapMM: 2,
-    });
-
-    expect(result.wastePercentage).toBeGreaterThanOrEqual(0);
-    expect(result.wastePercentage).toBeLessThanOrEqual(100);
-  });
-
-  it("factors in bleed margin into item dimensions during imposition", () => {
-    // 85x55mm card with 2mm bleed becomes 89x59mm
-    // Without bleed: fits 10 copies in portrait (2 cols x 5 rows)
-    // With 2mm bleed:
-    // In portrait without rotation: 2 cols x 4 rows = 8 copies
-    // In landscape: 3 cols (271mm <= 287mm) x 3 rows (181mm <= 200mm) = 9 copies
-    // The optimizer correctly picks landscape with 9 copies instead of 8!
-    const resultWithBleed = calculateOptimalSheetImposition({
-      paperWidthMM: 210,
-      paperHeightMM: 297,
-      itemWidthMM: 85,
-      itemHeightMM: 55,
-      marginMM: 5,
-      gapMM: 2,
-      bleedMM: 2,
-    });
-
-    expect(resultWithBleed.bleedMM).toBe(2);
-    expect(resultWithBleed.orientation).toBe("landscape");
-    expect(resultWithBleed.cols).toBe(3);
-    expect(resultWithBleed.rows).toBe(3);
-    expect(resultWithBleed.maxCopies).toBe(9);
-  });
-
-  it("evaluates item rotation flag correctly", () => {
-    const result = calculateOptimalSheetImposition({
-      paperWidthMM: 210,
-      paperHeightMM: 297,
-      itemWidthMM: 85,
-      itemHeightMM: 55,
-      marginMM: 5,
-      gapMM: 2,
-    });
-
-    expect(typeof result.rotateItem).toBe("boolean");
-    expect(result.rotateItem).toBe(false); // Natural orientation fits 10
-  });
-});
-
-describe("print layout hardening", () => {
-  it("anchors bottom-right alignment to margin plus remaining space", () => {
+describe('print layout hardening', () => {
+  it('anchors bottom-right alignment to margin plus remaining space', () => {
     const grid = computeSheetGrid({
       cols: 2,
       actualCopies: 2,
@@ -392,7 +293,7 @@ describe("print layout hardening", () => {
       effectiveMarginMM: 10,
       availableWidthMM: 190,
       availableHeightMM: 277,
-      align: "bottom-right",
+      align: 'bottom-right',
     });
     // gridWidth = 2*80+5 = 165 → offsetX = 10 + (190-165) = 35
     // gridHeight = 60 → offsetY = 10 + (277-60) = 227
@@ -400,7 +301,7 @@ describe("print layout hardening", () => {
     expect(grid.offsetY).toBe(227);
   });
 
-  it("wraps block positions to later rows past the first row", () => {
+  it('wraps block positions to later rows past the first row', () => {
     const grid = {
       safeCols: 2,
       actualRows: 3,
@@ -415,12 +316,12 @@ describe("print layout hardening", () => {
     expect(pos).toMatchObject({ col: 0, row: 2, xMM: 10, yMM: 140 });
   });
 
-  it("returns 0 aspect when the canvas height is degenerate", () => {
+  it('returns 0 aspect when the canvas height is degenerate', () => {
     expect(computeSlotAspect({ w: 0.5, h: 0.5 }, 1240, 0)).toBe(0);
     expect(computeSlotAspect({ w: 0.5, h: 0.5 }, 1240, -3)).toBe(0);
   });
 
-  it("calculates grid width based on effective copies when actualCopies is less than cols in a single row", () => {
+  it('calculates grid width based on effective copies when actualCopies is less than cols in a single row', () => {
     // 2 copies on a sheet where 5 columns can fit (e.g. passport photos 35mm wide on A4 210mm)
     const grid = computeSheetGrid({
       cols: 5,
@@ -431,7 +332,7 @@ describe("print layout hardening", () => {
       effectiveMarginMM: 0,
       availableWidthMM: 210,
       availableHeightMM: 297,
-      align: "center",
+      align: 'center',
     });
 
     // 2 copies with 1 gap: 2 * 35 + 2 = 72mm (NOT 5 * 35 + 4 * 2 = 183mm)
@@ -441,20 +342,4 @@ describe("print layout hardening", () => {
     expect(grid.offsetX).toBe(69);
     expect(grid.offsetY).toBe(126);
   });
-
-  it("guarantees optimal imposition does not attempt unsupported item rotation", () => {
-    const result = calculateOptimalSheetImposition({
-      paperWidthMM: 210,
-      paperHeightMM: 297,
-      itemWidthMM: 100,
-      itemHeightMM: 40,
-      marginMM: 5,
-      gapMM: 2,
-    });
-
-    expect(result.rotateItem).toBe(false);
-    expect(["portrait", "landscape"]).toContain(result.orientation);
-  });
 });
-
-

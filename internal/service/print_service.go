@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"image"
+	"log/slog"
 	"math"
 	"os"
 	"path/filepath"
@@ -196,9 +197,16 @@ func countGridTemplates(items []domain.PrintItem) int {
 // ← رسم تسلسلي (gg ليس آمناً للتزامن) ← خطوط قص ← حفظ المخرجات.
 func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, string, error) {
 	// Ensure logical dimensions match orientation (defensive: callers may send raw 210x297 + landscape or raw 297x210 + portrait)
+	// 🖨️ RV-16-L8: التبديل كان يصحح الأبعاد بصمت فتُطمس دعوات غير متسقة — يُسجَّل
+	// تحذيراً الآن كي يُكتشف المرسل المخالف بدل إخفائه (عناصر وخطوط القص لا
+	// تُحوَّل مع الأبعاد، فالترتيب الصحيح من المستدعي شرط صحة المخرج).
 	if strings.EqualFold(req.Orientation, "landscape") && req.PaperWidthMM < req.PaperHeightMM {
+		slog.Warn("print: paper dimensions swapped to match landscape orientation — caller should send normalized dimensions",
+			"paperWidthMM", req.PaperWidthMM, "paperHeightMM", req.PaperHeightMM, "orientation", req.Orientation)
 		req.PaperWidthMM, req.PaperHeightMM = req.PaperHeightMM, req.PaperWidthMM
 	} else if (req.Orientation == "" || strings.EqualFold(req.Orientation, "portrait")) && req.PaperWidthMM > req.PaperHeightMM {
+		slog.Warn("print: paper dimensions swapped to match portrait orientation — caller should send normalized dimensions",
+			"paperWidthMM", req.PaperWidthMM, "paperHeightMM", req.PaperHeightMM, "orientation", req.Orientation)
 		req.PaperWidthMM, req.PaperHeightMM = req.PaperHeightMM, req.PaperWidthMM
 	}
 	// التحقق قبل التوسيع: حد 1000 وقواعد الهندسة تُطبق على القوالب (خانات فريدة
@@ -286,7 +294,13 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 		drawItemImage(dc, processedImages[i], item, req.DPI)
 	}
 
-	s.drawCutLines(dc, req)
+	// 🖨️ RV-16-M1: مسار PDF يرسم خطوط القص متجهة فوق الصورة (drawPDFCutLines)
+	// فلا تُخبز نقطياً في الصورة المضمّنة — كانت تُرسم مرتين (نقطية داخل JPEG +
+	// متجهة فوقه) وتتضاعف عند حافة الورقة لأن النقطية مسحوبة 1.5px للداخل
+	// بينما المتجهة على المليمتر الخام.
+	if !strings.EqualFold(req.ExportFormat, "pdf") {
+		s.drawCutLines(dc, req)
+	}
 
 	imgCache.images = nil
 	procCache.images = nil

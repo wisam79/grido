@@ -302,7 +302,9 @@ func applySepiaRatio(img image.Image, ratio float64) image.Image {
 		outG := g + (tg-g)*ratio
 		outB := b + (tb-b)*ratio
 
-		return color.NRGBA{R: uint8(outR), G: uint8(outG), B: uint8(outB), A: c.A}
+		// 🖨️ RV-16-L4: تقريب نصف أعلى (مثل imagingClamp في مسار السطوع/التباين)
+		// بدل الاقتطاع — كان يسحب القيمة 1/256 هبوطاً مقابل CSS sepia(N%)
+		return color.NRGBA{R: uint8(math.Round(outR)), G: uint8(math.Round(outG)), B: uint8(math.Round(outB)), A: c.A}
 	})
 }
 
@@ -349,16 +351,24 @@ type sharedRawEntry struct {
 	size    int64
 	modTime time.Time
 	access  time.Time
+	// bytes تقدير RGBA (w×h×4) — لدفع ميزانية البايتات الإجمالية (RV-16-M5)
+	bytes int64
 }
 
 var sharedRawCache = struct {
 	sync.RWMutex
-	images map[string]sharedRawEntry
+	images     map[string]sharedRawEntry
+	totalBytes int64
 }{images: make(map[string]sharedRawEntry)}
 
 const sharedRawCacheMax = 16
 const sharedRawCacheTTL = 5 * time.Minute
 const sharedRawCacheMaxPixels = int64(25_000_000) // لا نخزن خاماً فوق ~100MB
+
+// sharedRawCacheMaxBytes ميزانية بايتات إجمالية للكاش المشترك (RV-16-M5):
+// السقوف السابقة كانت لكل صورة فقط (16 × 100MB ≈ 1.6GB أسوأ حالة محتفظاً بها
+// لمدة TTL كاملة). متغير (لا ثابتاً) كي يمكن خفضه في اختبارات الإزاحة.
+var sharedRawCacheMaxBytes = int64(400 * 1024 * 1024)
 
 func getSharedRaw(cacheKey, filePath string) image.Image {
 	if !strings.HasPrefix(filePath, "data:image/") {
@@ -401,12 +411,23 @@ func putSharedRaw(cacheKey, filePath string, img image.Image) {
 		}
 		size, mod = info.Size(), info.ModTime()
 	}
-	if b := img.Bounds(); int64(b.Dx())*int64(b.Dy()) > sharedRawCacheMaxPixels {
+	b := img.Bounds()
+	if int64(b.Dx())*int64(b.Dy()) > sharedRawCacheMaxPixels {
 		return
 	}
+	entryBytes := int64(b.Dx()) * int64(b.Dy()) * 4 // RGBA المفكوكة
+
 	sharedRawCache.Lock()
 	defer sharedRawCache.Unlock()
-	if _, ok := sharedRawCache.images[cacheKey]; !ok && len(sharedRawCache.images) >= sharedRawCacheMax {
+	// استبدال مفتاح قائم: تُخصم بايتات الإدخال القديم قبل التقييم
+	if cur, ok := sharedRawCache.images[cacheKey]; ok {
+		sharedRawCache.totalBytes -= cur.bytes
+		delete(sharedRawCache.images, cacheKey)
+	}
+	// 🖨️ RV-16-M5: الإزاحة بأقدم وصول عند تجاوز أيٍّ من السقفين — عدد
+	// الإدخالات (16) أو ميزانية البايتات الإجمالية (400MB)
+	for len(sharedRawCache.images) >= sharedRawCacheMax ||
+		(sharedRawCache.totalBytes+entryBytes > sharedRawCacheMaxBytes && len(sharedRawCache.images) > 0) {
 		var oldest string
 		var oldestT time.Time
 		first := true
@@ -415,9 +436,14 @@ func putSharedRaw(cacheKey, filePath string, img image.Image) {
 				oldest, oldestT, first = k, e.access, false
 			}
 		}
+		if first {
+			break
+		}
+		sharedRawCache.totalBytes -= sharedRawCache.images[oldest].bytes
 		delete(sharedRawCache.images, oldest)
 	}
-	sharedRawCache.images[cacheKey] = sharedRawEntry{img: img, size: size, modTime: mod, access: time.Now()}
+	sharedRawCache.images[cacheKey] = sharedRawEntry{img: img, size: size, modTime: mod, access: time.Now(), bytes: entryBytes}
+	sharedRawCache.totalBytes += entryBytes
 }
 
 // computeImageCacheKey يحسب مفتاح كاش للصورة (مع تجنب Hash كامل لـ Base64 الضخمة)

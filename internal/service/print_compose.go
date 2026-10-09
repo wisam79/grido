@@ -75,7 +75,10 @@ func mmToPx(mm float64, dpi int) float64 {
 	return (mm * float64(dpi)) / 25.4
 }
 
-// drawCutLines يرسم خطوط القص المتقطعة على الكانفس بالأسود النقي مع إزاحة حافة أمان
+// drawCutLines يرسم خطوط القص على الكانفس بالرمادي 120 (نفس درجة PDF في
+// drawPDFCutLines) مع إزاحة حافة أمان. المسار CMYK يعيد رسمها أسودَ نقياً
+// فوق ذلك في ApplyPureBlackCutLines (print_cmyk.go) — هذا فارق مقصود:
+// خطوط إرشادية رمادية هادئة في المعاينة/sRGB، وأسود نقي وحيد الحبر في المطبعة.
 func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 	if !req.ShowCutLines {
 		return
@@ -92,7 +95,18 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 	dc.SetLineWidth(lineWidth)
 
 	style := strings.ToLower(strings.TrimSpace(req.CutLineStyle))
-	if style == "solid" || style == "cropmarks" {
+	if style == "cropmarks" {
+		// 🖨️ RV-16-M2: علامات زوايا فقط (نفس هندسة معاينة الواجهة في
+		// print-preview.tsx) — كانت تُرسم خطوطاً كاملة صلبة فتنطبق الورقة
+		// بخطوط لم يرها المستخدم في المعاينة. بلا سحب للحافة (clamp): الأذرع
+		// خارج الورقة تُقص عند حدود الكانفس تلقائياً كما تقصها المعاينة.
+		for _, seg := range cropMarkSegments(req) {
+			dc.DrawLine(mmToPx(seg.X1, req.DPI), mmToPx(seg.Y1, req.DPI), mmToPx(seg.X2, req.DPI), mmToPx(seg.Y2, req.DPI))
+		}
+		dc.Stroke()
+		return
+	}
+	if style == "solid" {
 		// no dash
 	} else if style == "dotted" {
 		dc.SetDash(dashSize*0.4, dashSize*1.6)
@@ -200,6 +214,65 @@ func drawItemImage(dc *gg.Context, img image.Image, item domain.PrintItem, dpi i
 		dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
 		dc.Stroke()
 	}
+}
+
+// cropMarkSegments يعيد أذرع علامات القص الزاوية (8 قطع: أفقي + رأسي لكل ركن
+// من أركان صندوق إحاطة خطوط القص) — نفس هندسة معاينة الواجهة في print-preview.tsx:
+// طول الذراع 4% من الضلع الأقصر للورقة (بحد أدنى 2مم) ممتداً خارج الصندوق.
+// الإحداثيات غير المنتهية/NaN تُتجاهل كما في drawCutLines؛ لا خطوط صالحة ⇒ nil.
+// تستهلكها المسارات الثلاثة (نقطي drawCutLines، أسود CMYK نقي، ومتجه PDF)
+// فيبقى نمط cropmarks متطابقاً بين المعاينة والمخرجات.
+func cropMarkSegments(req domain.PrintRequest) []domain.CutLine {
+	if len(req.CutLines) == 0 {
+		return nil
+	}
+	minX, minY := math.Inf(1), math.Inf(1)
+	maxX, maxY := math.Inf(-1), math.Inf(-1)
+	for _, l := range req.CutLines {
+		if math.IsNaN(l.X1) || math.IsNaN(l.Y1) || math.IsNaN(l.X2) || math.IsNaN(l.Y2) ||
+			math.IsInf(l.X1, 0) || math.IsInf(l.Y1, 0) || math.IsInf(l.X2, 0) || math.IsInf(l.Y2, 0) {
+			continue
+		}
+		minX = math.Min(minX, math.Min(l.X1, l.X2))
+		maxX = math.Max(maxX, math.Max(l.X1, l.X2))
+		minY = math.Min(minY, math.Min(l.Y1, l.Y2))
+		maxY = math.Max(maxY, math.Max(l.Y1, l.Y2))
+	}
+	if math.IsInf(minX, 1) || math.IsInf(minY, 1) || math.IsInf(maxX, -1) || math.IsInf(maxY, -1) {
+		return nil
+	}
+
+	arm := math.Max(2, math.Min(req.PaperWidthMM, req.PaperHeightMM)*0.04)
+
+	type corner struct {
+		x, y, hx, hy float64
+	}
+	corners := []corner{
+		{minX, minY, 1, 1},
+		{maxX, minY, -1, 1},
+		{minX, maxY, 1, -1},
+		{maxX, maxY, -1, -1},
+	}
+
+	segs := make([]domain.CutLine, 0, len(corners)*2)
+	for _, c := range corners {
+		hStart, hEnd := c.x, c.x
+		if c.hx > 0 {
+			hEnd = c.x + arm
+		} else {
+			hStart = c.x - arm
+		}
+		segs = append(segs, domain.CutLine{X1: hStart, Y1: c.y, X2: hEnd, Y2: c.y})
+
+		vStart, vEnd := c.y, c.y
+		if c.hy > 0 {
+			vEnd = c.y + arm
+		} else {
+			vStart = c.y - arm
+		}
+		segs = append(segs, domain.CutLine{X1: c.x, Y1: vStart, X2: c.x, Y2: vEnd})
+	}
+	return segs
 }
 
 // composeCanvas يرسم محتوى كانفاس الوضع الحر (خلفية + صور) بدقة الطباعة.

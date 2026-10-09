@@ -228,4 +228,78 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     );
     expect(result.current.isExporting).toBe(false);
   });
+
+  // ─── RV-16-H1: نمط خطوط القص المختار يُرسل في وضع الكولاج أيضاً ───
+  it('يرسل نمط خطوط القص الذي اختاره المستخدم في وضع الكولاج (لا «متقطع» مفروض)', async () => {
+    await runPrint(makeContext({ printCutLineStyle: 'solid' }));
+
+    expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
+    expect(mockExportPrintSheet).toHaveBeenCalledWith(
+      expect.objectContaining({ cutLineStyle: 'solid' }),
+    );
+  });
+
+  it('يسقط إلى «متقطع» فقط عند غياب النمط كلياً', async () => {
+    await runPrint(makeContext({ printCutLineStyle: undefined }));
+
+    expect(mockExportPrintSheet).toHaveBeenCalledWith(
+      expect.objectContaining({ cutLineStyle: 'dashed' }),
+    );
+  });
+
+  // ─── RV-16-M3: الحارس يفحص الحدود بعد توسيع النسخ الشبكية ───
+  it('يقبل شبكة نسخ موسّعة تبقى داخل الورقة (الحارس يحسب آخر خلية لا الأولى)', async () => {
+    // نسختان في عمودين: أقصى امتداد = 14 + 1×92 + 90 = 196مم ≤ 210مم
+    const result = await runPrint(
+      makeContext({
+        layout: makeLayout({
+          actualCopies: 2,
+          grid: {
+            safeCols: 2,
+            actualRows: 1,
+            gridWidth: 182,
+            gridHeight: 120,
+            offsetX: 14,
+            offsetY: 14,
+            cellWidth: 92,
+            cellHeight: 122,
+          },
+        }),
+      }),
+    );
+
+    expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
+    const payload = mockExportPrintSheet.mock.calls[0][0] as {
+      items: Array<{ copies?: number; copyCols?: number }>;
+    };
+    expect(payload.items[0].copies).toBe(2);
+    expect(payload.items[0].copyCols).toBe(2);
+    expect(result.current.isExporting).toBe(false);
+  });
+
+  it('يمنع شبكة نسخ موسّعة تتجاوز حدود الورقة وإن كانت أول خلية داخلها', async () => {
+    // أول خلية تنتهي عند 14+90=104مم (كانت تمر بالحارس القديم) لكن خطوة
+    // النسخ 300مم تدفع الخلية الثانية إلى 14+300+90=404مم خارج الورقة
+    const result = await runPrint(
+      makeContext({
+        layout: makeLayout({
+          actualCopies: 2,
+          grid: {
+            safeCols: 2,
+            actualRows: 1,
+            gridWidth: 690,
+            gridHeight: 120,
+            offsetX: 14,
+            offsetY: 14,
+            cellWidth: 300,
+            cellHeight: 122,
+          },
+        }),
+      }),
+    );
+
+    expect(mockExportPrintSheet).not.toHaveBeenCalled();
+    expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('تتجاوز حدود الورقة'));
+    expect(result.current.isExporting).toBe(false);
+  });
 });

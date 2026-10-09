@@ -164,15 +164,29 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 		}
 	}
 
-	for _, line := range req.CutLines {
+	// 🖨️ RV-16-M2: نمط cropmarks يرسم أذرع الزوايا فقط (نفس هندسة المعاينة
+	// وdrawCutLines) — كان يُعامل كخطوط صلبة كاملة فتظهر في المطبعة خطوط
+	// لم يرها المستخدم في المعاينة.
+	segments := req.CutLines
+	if style == "cropmarks" {
+		segments = cropMarkSegments(req)
+	}
+
+	for _, line := range segments {
 		x1 := math.Round(mmToPx(line.X1, req.DPI))
 		y1 := math.Round(mmToPx(line.Y1, req.DPI))
 		x2 := math.Round(mmToPx(line.X2, req.DPI))
 		y2 := math.Round(mmToPx(line.Y2, req.DPI))
 
 		if x1 == x2 { // Vertical cut line
-			startY := int(math.Max(0, float64(y1)))
-			endY := int(math.Min(float64(maxH-1), float64(y2)))
+			// 🛡️ RV-16-L3: الخط المعكوس (y2 < y1) كان يُسقط بصمت هنا بينما
+			// يرسمه drawCutLines — نرسم المدى بالترتيب ونحفظ أصل إيقاع الشرطات
+			lo, hi := y1, y2
+			if lo > hi {
+				lo, hi = hi, lo
+			}
+			startY := int(math.Max(0, lo))
+			endY := int(math.Min(float64(maxH-1), hi))
 			px := int(x1)
 			for y := startY; y <= endY; y++ {
 				if !inDash(float64(y) - y1) {
@@ -186,8 +200,13 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 				}
 			}
 		} else if y1 == y2 { // Horizontal cut line
-			startX := int(math.Max(0, float64(x1)))
-			endX := int(math.Min(float64(maxW-1), float64(x2)))
+			// 🛡️ RV-16-L3: نفس حارس الترتيب المعكوس أفقياً (x2 < x1)
+			lo, hi := x1, x2
+			if lo > hi {
+				lo, hi = hi, lo
+			}
+			startX := int(math.Max(0, lo))
+			endX := int(math.Min(float64(maxW-1), hi))
 			py := int(y1)
 			for x := startX; x <= endX; x++ {
 				if !inDash(float64(x) - x1) {

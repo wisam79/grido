@@ -44,6 +44,31 @@ var exportsCleanup atomic.Bool
 // بدل OOM (50MP ≈ 200MB RGBA + نسخ الترميز).
 const maxTIFFPixels = 50_000_000
 
+// maxCMYKJPEGPixels سقف بكسلات مسار CMYK-JPEG (RV-16-M4): التحويل يُبقي نسختين
+// كاملتين في الذاكرة (RGBA الأصلية + CMYK الناتجة) فوق ترميز JPEG المؤقت، فورقة
+// 144MP تستهلك ~1.2GB ذروة. TIFF يبقى على السقف الأشد (50MP) لأن ترميزه
+// يتطلب نسخة ذاكرة إضافية كاملة.
+const maxCMYKJPEGPixels = 100_000_000
+
+// cmykPixelCapError يفحص سقف بكسلات الورقة قبل تحويل CMYK (قبل أي تخصيص كبير):
+// JPEG بحد 100MP وTIFF بحد 50MP. دالة نقية قابلة للاختبار بلا كانفاس فعلي.
+func cmykPixelCapError(pixels int64, exportFormat string) error {
+	if pixels <= 0 {
+		return nil
+	}
+	isJPEG := strings.EqualFold(exportFormat, "jpeg") || strings.EqualFold(exportFormat, "jpg")
+	if isJPEG {
+		if pixels > maxCMYKJPEGPixels {
+			return fmt.Errorf("cmyk jpeg too large (%d MP): use lower DPI (max %d MP)", pixels/1_000_000, maxCMYKJPEGPixels/1_000_000)
+		}
+		return nil
+	}
+	if pixels > maxTIFFPixels {
+		return fmt.Errorf("cmyk tiff too large (%d MP): use JPEG or lower DPI (max %d MP)", pixels/1_000_000, maxTIFFPixels/1_000_000)
+	}
+	return nil
+}
+
 // maxFallbackEmbedBytes سقف تضمين Base64 الاحتياطي في HTML (M6).
 const maxFallbackEmbedBytes = 60 * 1024 * 1024
 
@@ -171,10 +196,12 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	var htmlImageName string
 
 	if isCMYK {
-		// 🖨️ فحص سقف TIFF على أبعاد الكانفس BEFORE التحويل: التحويل الكامل
-		// (144MP) قبل الرفض كان هدراً حتمياً (RV-Print-03).
-		if pixels := int64(dc.Image().Bounds().Dx()) * int64(dc.Image().Bounds().Dy()); pixels > maxTIFFPixels && !strings.EqualFold(req.ExportFormat, "jpeg") && !strings.EqualFold(req.ExportFormat, "jpg") {
-			return "", "", fmt.Errorf("cmyk tiff too large (%d MP): use JPEG or lower DPI (max %d MP)", pixels/1000000, maxTIFFPixels/1000000)
+		// 🖨️ فحص سقف البكسلات على أبعاد الكانفس BEFORE التحويل: التحويل الكامل
+		// (144MP) قبل الرفض كان هدراً حتمياً (RV-Print-03) — وJPEG بلا سقف أصلاً
+		// كان يسمح ذروة ~1.2GB على أكبر الأوراق (RV-16-M4).
+		pixels := int64(dc.Image().Bounds().Dx()) * int64(dc.Image().Bounds().Dy())
+		if err := cmykPixelCapError(pixels, req.ExportFormat); err != nil {
+			return "", "", err
 		}
 		cmykImg := ConvertRGBAtoCMYK(dc.Image())
 		ApplyPureBlackCutLines(cmykImg, req)

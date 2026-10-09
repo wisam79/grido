@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { PhotoTemplate, CollageTemplate } from '@/lib/templates';
 import { PrintSettings, EditorMode } from '@/lib/editor-store';
-import { DEFAULT_PRINT_SETTINGS } from '@/lib/store/slices/print-slice';
 import { computeSheetGrid, GridAlignment } from '@/lib/print/print-layout-math';
 
 interface UsePrintLayoutProps {
@@ -38,10 +37,10 @@ export function usePrintLayout({
     const isFullPage =
       isCanvasPaper ||
       (originalImageWidthMM >= paperWidth - 1 && originalImageHeightMM >= paperHeight - 1);
-    // التصفيح الحدودي التلقائي يحدث فقط عندما doc≈paper والهامش لم يُضبط يدوياً
-    // (لا يزال على الافتراضي أو «بدون هوامش» صريح). هامش مخصص اختيار يُحترم.
-    const marginUntouched =
-      printSettings.marginMM === 0 || printSettings.marginMM === DEFAULT_PRINT_SETTINGS.marginMM;
+    // التصفيح الحدودي التلقائي يحدث فقط عندما doc≈paper والهامش ما زال على الصفر
+    // (الافتراضي 0 = «بدون هوامش» — والشرطان القديمان كانا متطابقين حرفياً لأن
+    // الافتراضي نفسه صفر). أي هامش غير صفري اختاره المستخدم يُحترم حتى على التصميم الممتلئ.
+    const marginUntouched = printSettings.marginMM === 0;
     // 🛡️ حارس فيضان (نفس صنف H4): هامش أكبر من نصف ضلع الورقة (أو مقاسات ورق
     // تالفة) كان يجعل المساحة المتاحة صفراً أو سالبة — فينقلب كل مقياس إلى
     // NaN/Infinity وتخرج نسبة امتلاء الورقة (availableW*availableH كمقامم) NaN.

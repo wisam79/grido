@@ -136,3 +136,125 @@ func TestPrintService_UserLoggedCutLines(t *testing.T) {
 		t.Errorf("line at y=86mm not found in exported image")
 	}
 }
+
+// ─── RV-16-M2: هندسة علامات القص الزاوية (cropmarks) ───
+
+// TestCropMarkSegments_Geometry يقفل هندسة الأذرع الزاوية على هندسة معاينة
+// الواجهة (print-preview.tsx): صندوق إحاطة خطوط القص + ذراع 4% من الضلع
+// الأقصر (بحد أدنى 2مم) ممتدة خارج الصندوق.
+func TestCropMarkSegments_Geometry(t *testing.T) {
+	req := domain.PrintRequest{
+		PaperWidthMM:  100,
+		PaperHeightMM: 150,
+		DPI:           300,
+		CutLines: []domain.CutLine{
+			{X1: 10, Y1: 10, X2: 10, Y2: 50},
+			{X1: 10, Y1: 10, X2: 50, Y2: 10},
+			{X1: math.NaN(), Y1: 0, X2: 0, Y2: 0}, // تالفة: تُتجاهل
+		},
+	}
+
+	segs := cropMarkSegments(req)
+	if len(segs) != 8 {
+		t.Fatalf("expected 8 arm segments (2 per corner), got %d", len(segs))
+	}
+
+	// arm = max(2, min(100,150)*0.04) = 4mm
+	expect := []domain.CutLine{
+		{X1: 10, Y1: 10, X2: 14, Y2: 10}, // ركن (10,10): أفقي خارج +
+		{X1: 10, Y1: 10, X2: 10, Y2: 14}, // ركن (10,10): رأسي خارج +
+		{X1: 46, Y1: 10, X2: 50, Y2: 10}, // ركن (50,10): أفقي خارج −
+		{X1: 50, Y1: 10, X2: 50, Y2: 14}, // ركن (50,10): رأسي +
+		{X1: 10, Y1: 50, X2: 14, Y2: 50}, // ركن (10,50)
+		{X1: 10, Y1: 46, X2: 10, Y2: 50}, // ركن (10,50): رأسي −
+		{X1: 46, Y1: 50, X2: 50, Y2: 50}, // ركن (50,50)
+		{X1: 50, Y1: 46, X2: 50, Y2: 50}, // ركن (50,50)
+	}
+	for i, want := range expect {
+		if segs[i] != want {
+			t.Errorf("segment %d = %+v, want %+v", i, segs[i], want)
+		}
+	}
+}
+
+// TestCropMarkSegments_EmptyAndAllCorrupt: لا خطوط ⇒ nil، وكل الخطوط تالفة ⇒ nil
+func TestCropMarkSegments_EmptyAndAllCorrupt(t *testing.T) {
+	if got := cropMarkSegments(domain.PrintRequest{}); got != nil {
+		t.Errorf("empty cut lines must yield nil, got %v", got)
+	}
+	if got := cropMarkSegments(domain.PrintRequest{
+		PaperWidthMM: 100, PaperHeightMM: 150,
+		CutLines: []domain.CutLine{{X1: math.Inf(1), Y1: 0, X2: 0, Y2: 0}},
+	}); got != nil {
+		t.Errorf("all-corrupt cut lines must yield nil, got %v", got)
+	}
+}
+
+// TestPrintService_CropMarks_CornersOnly: نمط cropmarks يرسم أذرع الزوايا فقط —
+// وسط حواف الصندوق يبقى نظيفاً (كان يُرسم خطاً صلباً كاملاً مخالفاً للمعاينة).
+func TestPrintService_CropMarks_CornersOnly(t *testing.T) {
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	svc := NewPrintService()
+
+	// صندوق (25,25)-(75,125) على ورقة 100×150 — arm = max(2, 100*0.04) = 4mm
+	req := domain.PrintRequest{
+		PaperWidthMM:    100.0,
+		PaperHeightMM:   150.0,
+		DPI:             300,
+		BackgroundColor: "#FFFFFF",
+		ShowCutLines:    true,
+		CutLineStyle:    "cropmarks",
+		CutLines: []domain.CutLine{
+			{X1: 25, Y1: 25, X2: 75, Y2: 25},
+			{X1: 25, Y1: 125, X2: 75, Y2: 125},
+			{X1: 25, Y1: 25, X2: 25, Y2: 125},
+			{X1: 75, Y1: 25, X2: 75, Y2: 125},
+		},
+		Items: []domain.PrintItem{},
+	}
+
+	outPath, _, err := svc.GeneratePrintSheet(req)
+	if err != nil {
+		t.Fatalf("GeneratePrintSheet failed: %v", err)
+	}
+	defer os.Remove(outPath)
+
+	outImg, err := imaging.Open(outPath)
+	if err != nil {
+		t.Fatalf("failed to open output image: %v", err)
+	}
+	bounds := outImg.Bounds()
+
+	mmToPx := func(mm float64) int { return int(math.Round(mm * 300 / 25.4)) }
+	isDark := func(xMM, yMM float64) bool {
+		x, y := mmToPx(xMM), mmToPx(yMM)
+		// هامش 2px لامتصاص عرض الخط
+		for dy := -2; dy <= 2; dy++ {
+			for dx := -2; dx <= 2; dx++ {
+				px, py := x+dx, y+dy
+				if px < 0 || py < 0 || px >= bounds.Dx() || py >= bounds.Dy() {
+					continue
+				}
+				r, g, b, _ := outImg.At(px, py).RGBA()
+				if int(r>>8) < 160 && int(g>>8) < 160 && int(b>>8) < 160 {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	// الأذرع قرب الركن (25,25): أفقي عند x=27, y=25 ورأسي عند x=25, y=27
+	if !isDark(27, 25) {
+		t.Errorf("cropmarks: horizontal arm near corner (27,25)mm not drawn")
+	}
+	if !isDark(25, 27) {
+		t.Errorf("cropmarks: vertical arm near corner (25,27)mm not drawn")
+	}
+	// وسط الحواف يجب أن يبقى نظيفاً — كانت تُرسم خطوطاً كاملة
+	for _, pt := range [][2]float64{{50, 25}, {25, 75}, {50, 125}, {75, 75}} {
+		if isDark(pt[0], pt[1]) {
+			t.Errorf("cropmarks: full line drawn at edge middle (%.0f,%.0f)mm — must be corners only", pt[0], pt[1])
+		}
+	}
+}

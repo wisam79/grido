@@ -10,6 +10,8 @@ import (
 	"strings"
 	"syscall"
 	"unsafe"
+
+	"grido/internal/utils"
 )
 
 // launchOSPrint ينفذ الطباعة الأصلية لنظام Windows بحسب نوع الملف
@@ -68,11 +70,13 @@ func launchWindowsPhotoPrint(filePath string) error {
 		return fmt.Errorf("تعذر إطلاق معالج طباعة الصور في ويندوز (كود الخطأ %d): %w", ret, err)
 	}
 	// best-effort: لا نحجب IPC، لكن نلتقط الفشل الفعلي في السجل بدل الصمت.
-	go func() {
+	// 🖨️ RV-16-L1: تحت غلاف SafeGo — goroutine خاماً كان يتجاوز حارس الانهيار
+	// فأي panic فيه يسقط العملية كلها (بقية مسارات الطباعة كلها مغلَّفة).
+	utils.SafeGo("print.photo-print-fallback-wait", func() {
 		if waitErr := cmd.Wait(); waitErr != nil {
 			fmt.Fprintf(os.Stderr, "grido print fallback failed for %s: %v\n", filepath.Base(filePath), waitErr)
 		}
-	}()
+	})
 	return nil
 }
 

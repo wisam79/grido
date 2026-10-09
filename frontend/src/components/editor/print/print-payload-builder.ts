@@ -245,59 +245,75 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
     y2: l.y2,
   }));
 
-  for (let i = 0; i < actualCopies; i++) {
-    const block = computeBlockPosition(i, grid);
+  // 🖨️ RV-16-M3: توسيع النسخ على جانب Go (نفس آلية الكولاج — domain.PrintItem.copies)
+  // بدل تكرار العناصر عبر IPC: 48 نسخة × 21 عنصراً كانت تتجاوز حد التحقق 1000 عنصر
+  // وتُرفض الورقة، والحمولة كانت تتضخم ×48 بلا حاجة.
+  const firstBlock = computeBlockPosition(0, grid);
+  const stepXMM = actualCopies > 1 ? grid.cellWidth : 0;
+  const stepYMM = actualCopies > 1 ? grid.cellHeight : 0;
 
-    if (isSimpleRaster && comp) {
-      const itemWidthMM = imageWidthMM;
-      const itemHeightMM = imageHeightMM;
-      const scaleX = itemWidthMM / comp.canvasWidthPx;
-      const scaleY = itemHeightMM / comp.canvasHeightPx;
+  if (isSimpleRaster && comp) {
+    const itemWidthMM = imageWidthMM;
+    const itemHeightMM = imageHeightMM;
+    const scaleX = itemWidthMM / comp.canvasWidthPx;
+    const scaleY = itemHeightMM / comp.canvasHeightPx;
 
-      for (const compItem of comp.items) {
-        items.push(
-          domain.PrintItem.createFrom({
-            imageSrc: compItem.imageSrc,
-            x: block.xMM + compItem.x * scaleX,
-            y: block.yMM + compItem.y * scaleY,
-            w: compItem.w * scaleX,
-            h: compItem.h * scaleY,
-            filter: compItem.filter,
-            brightness: compItem.brightness,
-            contrast: compItem.contrast,
-            saturation: compItem.saturation,
-            slotAspect: compItem.w / Math.max(1, compItem.h),
-            zoom: 1,
-            dragX: 0,
-            dragY: 0,
-            cornerRadiusMM: (compItem.cornerRadius / comp.canvasWidthPx) * itemWidthMM,
-            borderWidthMM: 0,
-            borderColor: '#000000',
-            bgColor: compItem.bgColor || '',
-            flipX: compItem.flipX,
-            flipY: compItem.flipY,
-            rotation: compItem.rotation,
-          }),
-        );
-      }
-    } else {
+    for (const compItem of comp.items) {
       items.push(
         domain.PrintItem.createFrom({
-          imageSrc: singleImageSrc,
-          x: block.xMM,
-          y: block.yMM,
-          w: imageWidthMM,
-          h: imageHeightMM,
-          filter: 'none',
-          brightness: 100,
-          contrast: 100,
-          saturation: 100,
+          imageSrc: compItem.imageSrc,
+          x: firstBlock.xMM + compItem.x * scaleX,
+          y: firstBlock.yMM + compItem.y * scaleY,
+          w: compItem.w * scaleX,
+          h: compItem.h * scaleY,
+          filter: compItem.filter,
+          brightness: compItem.brightness,
+          contrast: compItem.contrast,
+          saturation: compItem.saturation,
+          // 🖨️ RV-16-H2: عناصر الوضع الحر تُمدَّد (stretch) داخل مستطيلها في Konva
+          // (image-node.tsx يضبط width/height مباشرة). إرسال slotAspect كان يفعّل
+          // قصاً تغاطياً (cover) في computeCropFromSlot فتُطبع منتصف الصورة بدل
+          // تمديدها كاملاً كلما تبدّلت نسبة المستطيل عن نسبة المصدر. الصفر = بلا
+          // قصّ ⇒ تمديد كامل مطابق للمحرر.
+          slotAspect: 0,
           zoom: 1,
           dragX: 0,
           dragY: 0,
+          cornerRadiusMM: (compItem.cornerRadius / comp.canvasWidthPx) * itemWidthMM,
+          borderWidthMM: 0,
+          borderColor: '#000000',
+          bgColor: compItem.bgColor || '',
+          flipX: compItem.flipX,
+          flipY: compItem.flipY,
+          rotation: compItem.rotation,
+          copies: actualCopies,
+          copyCols: grid.safeCols,
+          copyStepX: stepXMM,
+          copyStepY: stepYMM,
         }),
       );
     }
+  } else {
+    items.push(
+      domain.PrintItem.createFrom({
+        imageSrc: singleImageSrc,
+        x: firstBlock.xMM,
+        y: firstBlock.yMM,
+        w: imageWidthMM,
+        h: imageHeightMM,
+        filter: 'none',
+        brightness: 100,
+        contrast: 100,
+        saturation: 100,
+        zoom: 1,
+        dragX: 0,
+        dragY: 0,
+        copies: actualCopies,
+        copyCols: grid.safeCols,
+        copyStepX: stepXMM,
+        copyStepY: stepYMM,
+      }),
+    );
   }
 
   return { items, cutLines, composition: undefined };

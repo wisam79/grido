@@ -1,7 +1,12 @@
-import { memo, useCallback, useMemo, useState, type ReactElement } from 'react';
-import { buildCSSFilter, cn } from '@/lib/utils';
+import { memo, useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
+import { buildAdjustmentCSS, buildCSSFilter, cn } from '@/lib/utils';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { computeBlockPosition, computeSlotRectMM } from '@/lib/print/print-layout-math';
+import {
+  getPixelPreviewNaturalSize,
+  isPrintPixelFilter,
+  renderPixelFilterPreview,
+} from './print-pixel-preview';
 import { formatGradientCss } from '@/components/editor/properties/gradient-utils';
 import type { CanvasSlot } from '@/lib/store/types';
 import type { SheetGrid } from '@/lib/print/print-layout-math';
@@ -77,7 +82,6 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
   onNaturalSize,
 }: CollageSlotPreviewProps) {
   const activeSrc = slot.imageSrc;
-  if (!activeSrc) return null;
 
   const marginX_pct = hasPhysical ? 0 : collageMargin / canvasWidth;
   const marginY_pct = hasPhysical ? 0 : collageMargin / canvasHeight;
@@ -91,6 +95,39 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
     { marginXMM: marginX_pct * imageWidthMM, marginYMM: marginY_pct * imageHeightMM },
     { gapXMM: gapX_pct * imageWidthMM, gapYMM: gapY_pct * imageHeightMM },
   );
+
+  // 🖨️ RV-16-L7: مرشّحات البكسل (pixelate/threshold) تُعاين بالخوارزمية الحقيقية
+  // (مطابقة لـ Go/Konva) بدل تقريب CSS الضبابي. نمط الحالة المشتقة: المفتاح
+  // يُحسب أثناء الرسم فلا setState تزامني داخل التأثير — النتيجة تُقبل فقط
+  // عندما يطابق مفتاحها المفتاح الحالي، وأثناء الانتظار تبقى الخانة على
+  // تقريب CSS (fallback هادئ).
+  const pixelFilter = activeSrc && isPrintPixelFilter(slot.filter) ? (slot.filter as string) : '';
+  const pixelAdjustments = pixelFilter ? buildAdjustmentCSS(slot) : '';
+  const pixelPreviewKey =
+    pixelFilter && activeSrc
+      ? `${activeSrc}|${pixelFilter}|${pixelAdjustments}|${rect.wMM.toFixed(3)}x${rect.hMM.toFixed(3)}`
+      : '';
+  const [pixelPreview, setPixelPreview] = useState<{ key: string; url: string } | null>(null);
+  useEffect(() => {
+    if (!pixelPreviewKey || !activeSrc) return;
+    let alive = true;
+    renderPixelFilterPreview(activeSrc, pixelFilter, slot, {
+      wMM: rect.wMM,
+      hMM: rect.hMM,
+    }).then((res) => {
+      if (alive && res.url) {
+        setPixelPreview({ key: pixelPreviewKey, url: res.url });
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [activeSrc, pixelFilter, pixelAdjustments, pixelPreviewKey, rect.wMM, rect.hMM, slot]);
+
+  const pixelPreviewSrc =
+    pixelPreview && pixelPreview.key === pixelPreviewKey ? pixelPreview.url : '';
+
+  if (!activeSrc) return null;
 
   const left_pct = (rect.xMM / Math.max(1, paperWidthMM)) * 100;
   const top_pct = (rect.yMM / Math.max(1, paperHeightMM)) * 100;
@@ -159,7 +196,7 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
       }}
     >
       <img
-        src={activeSrc}
+        src={pixelPreviewSrc || activeSrc}
         alt=""
         className={cn('w-full h-full object-cover', imgPos.position === 'absolute' && 'absolute')}
         style={{
@@ -167,10 +204,25 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
           width: imgWidth,
           height: imgHeight,
           transform: imgTransform,
-          filter: buildCSSFilter(slot),
+          // 🖨️ RV-16-L7: معاينة البكسل الحقيقية جاهزة؟ التعديلات خُبزت في الـ
+          // canvas فلا CSS filter؛ وإلا fallback تقريب CSS القديم أثناء التحميل
+          filter: pixelFilter
+            ? pixelPreviewSrc
+              ? 'none'
+              : buildCSSFilter(slot)
+            : buildCSSFilter(slot),
         }}
         onLoad={(e) => {
           const el = e.currentTarget;
+          if (pixelFilter) {
+            // أبعاد المصدر الأصلية (لا أبعاد كانفاس المعاينة المصغّر) — منطق
+            // السحب dragX/dragY يحتاج أبعاد المصدر الحقيقية
+            const dims = getPixelPreviewNaturalSize(activeSrc);
+            if (dims && dims.w > 0 && dims.h > 0) {
+              onNaturalSize(slot.id, dims.w, dims.h);
+              return;
+            }
+          }
           if (el.naturalWidth > 0 && el.naturalHeight > 0) {
             onNaturalSize(slot.id, el.naturalWidth, el.naturalHeight);
           }

@@ -3,6 +3,7 @@ package service
 import (
 	"image"
 	"image/color"
+	"math"
 	"testing"
 
 	"grido/internal/core/domain"
@@ -244,5 +245,103 @@ func TestRGBToRichCMYK_TotalAreaCoverageCap(t *testing.T) {
 	t.Logf("worst total ink coverage: %d/1020 units (%.1f%% TAC)", worst, float64(worst)*100/255)
 	if worst > 3*255 {
 		t.Errorf("TAC %d exceeds 300%% (765/1020 units)", worst)
+	}
+}
+
+// ─── RV-16-L3: الخطوط الأفقية/الرأسية المعكوسة لم تكن تُرسم في CMYK ───
+
+// TestApplyPureBlackCutLines_ReversedAxisLines: خط رأسي (y2 < y1) وخط أفقي
+// (x2 < x1) كانا يُسقطان بصمت في CMYK بينما يرسمهما المسار النقطي — يجب أن
+// يُرسما بترتيب مصحح مع الحفاظ على أصل إيقاع الشرطات.
+func TestApplyPureBlackCutLines_ReversedAxisLines(t *testing.T) {
+	w, h := 600, 600
+	cmyk := image.NewCMYK(image.Rect(0, 0, w, h))
+	req := domain.PrintRequest{
+		ShowCutLines: true,
+		CutLineStyle: "solid",
+		DPI:          300,
+		CutLines: []domain.CutLine{
+			{X1: 10, Y1: 50, X2: 10, Y2: 10}, // رأسي معكوس
+			{X1: 50, Y1: 10, X2: 10, Y2: 10}, // أفقي معكوس
+		},
+	}
+	ApplyPureBlackCutLines(cmyk, req)
+
+	countBlack := func(x0, x1, y0, y1 int) int {
+		n := 0
+		for y := y0; y < y1; y++ {
+			for x := x0; x < x1; x++ {
+				if cmyk.CMYKAt(x, y).K == 255 {
+					n++
+				}
+			}
+		}
+		return n
+	}
+	// x=10mm ≈ 118px — العمود بين y=10..50mm (118..591px)
+	if n := countBlack(112, 126, 130, 580); n == 0 {
+		t.Error("reversed vertical line (y2<y1) drew zero pure-black pixels in CMYK")
+	}
+	// y=10mm ≈ 118px — الصف بين x=10..50mm
+	if n := countBlack(130, 580, 112, 126); n == 0 {
+		t.Error("reversed horizontal line (x2<x1) drew zero pure-black pixels in CMYK")
+	}
+}
+
+// ─── RV-16-M2: نمط cropmarks في CMYK — أذرع زوايا نقية فقط ───
+
+// TestApplyPureBlackCutLines_CropMarks_CornersOnly: أذرع الزوايا تُرسم أسودَ
+// نقياً حول صندوق الإحاطة، ووسط الحواف يبقى بلا حبر أسود نقي (كان يُرسم
+// خطوطاً صلبة كاملة مخالفة للمعاينة والمسار النقطي).
+func TestApplyPureBlackCutLines_CropMarks_CornersOnly(t *testing.T) {
+	w, h := 600, 600
+	cmyk := image.NewCMYK(image.Rect(0, 0, w, h))
+	req := domain.PrintRequest{
+		ShowCutLines: true,
+		CutLineStyle: "cropmarks",
+		DPI:          300,
+		// ورقة 50×50مم ⇒ arm = max(2, 50*0.04) = 2مم ≈ 24px
+		PaperWidthMM:  50,
+		PaperHeightMM: 50,
+		CutLines: []domain.CutLine{
+			{X1: 5, Y1: 5, X2: 45, Y2: 5},
+			{X1: 5, Y1: 45, X2: 45, Y2: 45},
+			{X1: 5, Y1: 5, X2: 5, Y2: 45},
+			{X1: 45, Y1: 5, X2: 45, Y2: 45},
+		},
+	}
+	ApplyPureBlackCutLines(cmyk, req)
+
+	mmToPx := func(mm float64) int { return int(math.Round(mm * 300 / 25.4)) }
+	isPureBlack := func(xMM, yMM float64) bool {
+		x, y := mmToPx(xMM), mmToPx(yMM)
+		for dy := -2; dy <= 2; dy++ {
+			for dx := -2; dx <= 2; dx++ {
+				px, py := x+dx, y+dy
+				if px < 0 || py < 0 || px >= w || py >= h {
+					continue
+				}
+				c := cmyk.CMYKAt(px, py)
+				if c.K == 255 && c.C == 0 && c.M == 0 && c.Y == 0 {
+					return true
+				}
+			}
+		}
+		return false
+	}
+
+	// الذراع الأفقية عند الركن (5,5): من (5,5) إلى (7,5) — نقطة المنتصف (6,5)
+	if !isPureBlack(6, 5) {
+		t.Error("cropmarks: horizontal arm at corner (6,5)mm not pure black")
+	}
+	// الذراع الرأسية: من (5,5) إلى (5,7) — (5,6)
+	if !isPureBlack(5, 6) {
+		t.Error("cropmarks: vertical arm at corner (5,6)mm not pure black")
+	}
+	// وسط الحواف نظيف — لا خطوط كاملة
+	for _, pt := range [][2]float64{{25, 5}, {5, 25}, {25, 45}, {45, 25}} {
+		if isPureBlack(pt[0], pt[1]) {
+			t.Errorf("cropmarks: full line drawn at edge middle (%.0f,%.0f)mm — must be corners only", pt[0], pt[1])
+		}
 	}
 }
