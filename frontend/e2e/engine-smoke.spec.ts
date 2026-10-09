@@ -33,7 +33,7 @@ test.describe('@smoke إقلاع المحرك والمسارات الحرجة', 
 
     // الكانفاس الحقيقي (Konva) — أهم ما يختلف بين المحركات: سياق 2d بلا دعم،
     // أو كانفاس بأبعاد صفرية، يظهر هنا قبل أي شيء آخر.
-    const konvaCanvas = page.locator('#canvas-area canvas').first();
+    const konvaCanvas = page.locator('.konvajs-content canvas, #canvas-area canvas').first();
     await expect(konvaCanvas).toBeVisible();
 
     const probe = await konvaCanvas.evaluate((el) => {
