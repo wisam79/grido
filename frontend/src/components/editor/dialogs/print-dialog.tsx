@@ -340,6 +340,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       const columnsLayers = stage.find('.columns-layer');
       const guideLayers = stage.find('.guides-layer, .guide-line, .user-guide-line');
       const paperShadows = stage.find('.paper-shadow-rect');
+      const overlayTools = stage.find('.overlay-tools-layer');
 
       const prevPos = { x: stage.x(), y: stage.y() };
       const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
@@ -358,6 +359,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         columnsLayers.forEach((cl: Konva.Node) => cl.hide());
         guideLayers.forEach((gl: Konva.Node) => gl.hide());
         paperShadows.forEach((ps: Konva.Node) => ps.hide());
+        overlayTools.forEach((ot: Konva.Node) => ot.hide());
         stage.batchDraw();
 
         const previewUrl = stage.toDataURL({
@@ -390,6 +392,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         columnsLayers.forEach((cl: Konva.Node) => cl.show());
         guideLayers.forEach((gl: Konva.Node) => gl.show());
         paperShadows.forEach((ps: Konva.Node) => ps.show());
+        overlayTools.forEach((ot: Konva.Node) => ot.show());
         stage.position(prevPos);
         stage.scale(prevScale);
         stage.batchDraw();

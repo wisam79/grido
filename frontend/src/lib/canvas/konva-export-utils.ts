@@ -48,6 +48,8 @@ export async function withHiddenOverlays<T>(
   const slotPlaceholders = stage.find('.slot-placeholder') as unknown as KonvaNodeLike[];
   // 📄 ظل الورقة المخصص لشاشة التحرير — يُخفى تماماً عند التصدير لتبقى الصورة نقية
   const paperShadows = stage.find('.paper-shadow-rect') as unknown as KonvaNodeLike[];
+  // 🛠️ طبقة الأدوات والمحوّل ومستطيل التحديد — تُخفى كاملة بنقرة واحدة
+  const overlayTools = stage.find('.overlay-tools-layer') as unknown as KonvaNodeLike[];
 
   try {
     for (const tr of transformers) tr.hide();
@@ -55,6 +57,7 @@ export async function withHiddenOverlays<T>(
     for (const cl of columnsLayers) cl.hide();
     for (const ph of slotPlaceholders) ph.hide();
     for (const ps of paperShadows) ps.hide();
+    for (const ot of overlayTools) ot.hide();
 
     stage.batchDraw();
 
@@ -65,6 +68,7 @@ export async function withHiddenOverlays<T>(
     for (const cl of columnsLayers) cl.show();
     for (const ph of slotPlaceholders) ph.show();
     for (const ps of paperShadows) ps.show();
+    for (const ot of overlayTools) ot.show();
 
     stage.batchDraw();
   }
