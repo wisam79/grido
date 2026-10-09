@@ -49,8 +49,10 @@ jobs:
         id: cache-nsis
         uses: actions/cache@v4
         with:
-          path: 'C:\Program Files (x86)\NSIS'
-          key: ${{ runner.os }}-nsis-v1
+          path: |
+            C:\Program Files (x86)\NSIS
+            C:\Program Files\NSIS
+          key: ${{ runner.os }}-nsis-v2
 
       - name: Cache Downloaded Models & Fonts
         id: cache-models-fonts
@@ -68,7 +70,9 @@ jobs:
         run: |
           $gopath = $(go env GOPATH)
           "$gopath\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          @("C:\Program Files (x86)\NSIS", "C:\Program Files\NSIS") | Where-Object { Test-Path "$_\makensis.exe" } | ForEach-Object {
+            $_ | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
 
       - name: Install Frontend Dependencies
         working-directory: ./frontend
@@ -86,10 +90,32 @@ jobs:
           node scripts/copy-models.mjs
 
       - name: Install NSIS Compiler
-        if: steps.cache-nsis.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          choco install nsis -y
+          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe") -and -not (Test-Path "C:\Program Files\NSIS\makensis.exe")) {
+            Write-Host "Attempting winget install NSIS..."
+            try {
+              winget install NSIS.NSIS --accept-source-agreements --accept-package-agreements --silent
+            } catch {
+              Write-Warning "winget failed: $_"
+            }
+          }
+          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe") -and -not (Test-Path "C:\Program Files\NSIS\makensis.exe")) {
+            Write-Host "Attempting choco install nsis..."
+            choco install nsis -y --retry 3
+          }
+          if (-not (Test-Path "C:\Program Files (x86)\NSIS\makensis.exe") -and -not (Test-Path "C:\Program Files\NSIS\makensis.exe")) {
+            Write-Host "Attempting direct download of NSIS..."
+            $nsisInstaller = "$env:TEMP\nsis-setup.exe"
+            Invoke-WebRequest -Uri "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.10/nsis-3.10-setup.exe" -OutFile $nsisInstaller
+            Start-Process -FilePath $nsisInstaller -ArgumentList "/S" -Wait
+          }
+          $nsisDir = @("C:\Program Files (x86)\NSIS", "C:\Program Files\NSIS") | Where-Object { Test-Path "$_\makensis.exe" } | Select-Object -First 1
+          if (-not $nsisDir) {
+            throw "makensis.exe was not found after all installation attempts!"
+          }
+          Write-Host "Found NSIS at: $nsisDir"
+          $nsisDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install Python Dependencies & Generate Installer Assets
         run: |
@@ -128,7 +154,12 @@ jobs:
           APP_VERSION: ${{ github.ref_name }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: wails3 task package
+        run: |
+          $nsisDir = @("C:\Program Files (x86)\NSIS", "C:\Program Files\NSIS") | Where-Object { Test-Path "$_\makensis.exe" } | Select-Object -First 1
+          if ($nsisDir -and ($env:PATH -notlike "*$nsisDir*")) {
+            $env:PATH = "$nsisDir;$env:PATH"
+          }
+          wails3 task package
 
       - name: Prepare Executable Assets
         shell: pwsh
