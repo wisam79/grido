@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **صفحات سياسة الخصوصية وشروط الخدمة المتوافقة مع معايير Google OAuth (`admin-web`):** إنشاء صفحتي `PrivacyPolicy.tsx` و `TermsOfService.tsx` ثنائيتي اللغة (عربي/إنجليزي) لموقع `https://grido.cloud-ip.cc` مع توثيق امتثال كامل لسياسة بيانات مستخدمي خدمات Google API والـ Limited Use وحظر بيع البيانات وحق الحذف، وتوليد ملفات HTML ثابتة في `public/privacy/` و `public/terms/` لضمان قراءة سريعة من روبوتات التحقق التابعة لجوجل.
-- **نشر صفحة الهبوط ولوحة الإدارة على GitHub Pages (`admin-web`):** إضافة سير عمل آلي `.github/workflows/deploy-pages.yml` لنشر الموقع المترجم وتوجيه الدومين المخصص `grido.cloud-ip.cc` عبر ملف `CNAME` و `.nojekyll` ودعم التوجيه أحادي الصفحة (SPA 404 fallback) كبديل دائم ومستقر وغير محدود لاستضافة Netlify الموقوفة بسبب الكريدتس.
+- **نشر صفحة الهبوط ولوحة الإدارة على GitHub Pages (`admin-web`):** إضافة سير عمل آلي `.github/workflows/deploy-pages.yml` (مع `enablement: true`) لنشر الموقع المترجم وتوجيه الدومين المخصص `grido.cloud-ip.cc` عبر ملف `CNAME` و `.nojekyll` ودعم التوجيه أحادي الصفحة (SPA 404 fallback) كبديل دائم ومستقر وغير محدود لاستضافة Netlify الموقوفة بسبب الكريدتس.
 
 ## [v1.14.1] - 2026-10-09
 
