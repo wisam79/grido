@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogDescription,
   DialogCloseButton,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,6 @@ import {
   Trash,
   X,
   Images,
-  Check,
   Minus,
   Stack,
 } from '@/components/ui/icons';
@@ -300,14 +298,10 @@ export function BatchInsertDialog({
         <DialogHeader className="px-6 py-4 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <Images className="text-primary w-6 h-6 shrink-0" weight="duotone" />
               <div className="min-w-0">
                 <DialogTitle className="text-base font-bold text-foreground truncate">
                   إدراج دفعة
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  إدراج وتوزيع صور متعددة
-                </DialogDescription>
               </div>
             </div>
 
@@ -650,7 +644,6 @@ export function BatchInsertDialog({
               disabled={images.length === 0 || isProcessing}
               className="h-8 rounded-md bg-primary text-primary-foreground gap-1.5 text-xs font-semibold px-4 shadow-sm"
             >
-              <Check className="w-4 h-4 shrink-0" weight="bold" />
               {isProcessing ? 'جاري الإدراج ...' : 'إدراج'}
             </Button>
           </div>

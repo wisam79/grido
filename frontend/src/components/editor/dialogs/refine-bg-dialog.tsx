@@ -559,10 +559,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
           onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: false }))}
         >
           <div className="min-w-0">
-            <DialogTitle className="text-sm font-bold flex items-center gap-2">
-              <Sparkle className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-              <span>تعديل القص يدوياً</span>
-            </DialogTitle>
+            <DialogTitle className="text-sm font-bold">تعديل القص يدوياً</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
               امسح أو استعد أجزاء الخلفية
             </DialogDescription>

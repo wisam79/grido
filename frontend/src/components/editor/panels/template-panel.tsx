@@ -148,16 +148,13 @@ export const TemplatePanel = React.memo(function TemplatePanel({
     }
   };
 
-  // العنوان والوصف والأيقونة تُقرأ من سجل الأدوات الموحّد (كانت 4 سلاسل شروط ثلاثية)
+  // العنوان يُقرأ من سجل الأدوات الموحّد (كانت 4 سلاسل شروط ثلاثية)
   const activeTool =
     mode === 'collage' ? getCollageTool(activeCollageTab) : getStudioTool(activeStudioTab);
-  const ActiveToolIcon = activeTool.icon;
 
   return (
     <PanelShell
-      icon={<ActiveToolIcon className="w-4 h-4 text-muted-foreground" weight="duotone" />}
       title={activeTool.title}
-      subtitle={activeTool.subtitle}
       onCollapse={onCollapse}
       collapseTitle={`إخفاء ${activeTool.label} (Ctrl+B)`}
       collapseIcon={

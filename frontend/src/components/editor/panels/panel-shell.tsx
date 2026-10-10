@@ -10,16 +10,13 @@ import { cn } from '@/lib/utils';
  * وفق نظام Fluent 2 وأفضل ممارسات محررات التصميم الحديثة:
  *
  * 1. رأس لاصق بارتفاع h-12 (معيار Command/App Bars) يثبت هوية اللوح
- *    اثناء التمرير ويحافظ على سياق المستخدم.
- * 2. شارة ايقونة داخل حاوية primary/10 (Icon-Driven UI).
- * 3. زر طي داخلي لقابلية الاكتشاف مع Tooltip و aria-label.
- * 4. جسم قابل للتمرير بحشو من سلم 4px.
- * 5. فصل بصري واضح بين الراس والجسم عبر فاصل شبه شفاف.
+ *    اثناء التمرير ويحافظ على سياق المستخدم (عنوان نصي نظيف — صفر حشو).
+ * 2. زر طي داخلي لقابلية الاكتشاف مع Tooltip و aria-label.
+ * 3. جسم قابل للتمرير بحشو من سلم 4px.
+ * 4. فصل بصري واضح بين الراس والجسم عبر فاصل شبه شفاف.
  */
 export interface PanelShellProps {
-  icon: React.ReactNode;
   title: React.ReactNode;
-  subtitle?: React.ReactNode;
   /** يخفي الزر عند غيابه (مثل عرض اللوح داخل Sheet الجوال) */
   onCollapse?: () => void;
   collapseTitle?: string;
@@ -33,9 +30,7 @@ export interface PanelShellProps {
 }
 
 export const PanelShell = React.memo(function PanelShell({
-  icon,
   title,
-  subtitle,
   onCollapse,
   collapseTitle = 'إخفاء اللوحة',
   collapseIcon,
@@ -79,14 +74,8 @@ export const PanelShell = React.memo(function PanelShell({
     <div className={cn('flex flex-col h-full min-h-0', className)}>
       {/* الرأس */}
       <div className="shrink-0 flex items-center gap-2.5 px-3.5 h-12 select-none">
-        <div className="p-1.5 rounded-lg bg-muted/80 dark:bg-white/5 text-muted-foreground shrink-0 flex items-center justify-center shadow-2xs fluent-specular">
-          {icon}
-        </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-bold text-foreground truncate">{title}</div>
-          {subtitle && (
-            <div className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</div>
-          )}
         </div>
 
         {headerExtra && <div className="shrink-0">{headerExtra}</div>}

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { TextAa, X, Check, ArrowCounterClockwise, CaretUp, CaretDown } from '@/components/ui/icons';
+import { X, Check, ArrowCounterClockwise, CaretUp, CaretDown } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -167,9 +167,6 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
         {/* Header */}
         <div className="flex items-center justify-between pb-2 border-b border-border/30 text-xs">
           <div className="flex items-center gap-1.5 font-bold text-foreground">
-            <span className="w-5 h-5 rounded-md bg-primary/10 text-primary flex items-center justify-center">
-              <TextAa className="w-3.5 h-3.5" weight="bold" />
-            </span>
             <span>{activeFieldDef?.label ?? activeField.fieldId}</span>
           </div>
 
@@ -239,7 +236,6 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
             onClick={onClose}
             className="h-7 px-3 text-xs font-bold rounded-md bg-primary text-primary-foreground cursor-pointer gap-1"
           >
-            <Check className="w-3.5 h-3.5" weight="bold" />
             تم
           </Button>
         </div>

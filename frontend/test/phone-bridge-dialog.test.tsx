@@ -38,11 +38,10 @@ describe('PhoneBridgeDialog Component Tests', () => {
     return render(<TooltipProvider>{ui}</TooltipProvider>);
   };
 
-  it('renders dialog title and description when open is true', async () => {
+  it('renders dialog title when open is true', async () => {
     renderWithProviders(<PhoneBridgeDialog open={true} onOpenChange={vi.fn()} />);
 
     expect(screen.getByText('جسر كاميرا الهاتف')).toBeInTheDocument();
-    expect(screen.getByText('الصور من هاتفك إلى مساحة العمل')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(AppWails.StartPhoneBridge).toHaveBeenCalled();

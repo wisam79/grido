@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, Key, User, SignOut } from '@/components/ui/icons';
+import { Key, User, SignOut } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
@@ -105,20 +105,15 @@ export function AccountLicenseModal() {
         {/* 🔹 1. رأس النافذة المتناسق مع زر الإغلاق المدمج */}
         <DialogHeader className="text-start border-b border-border/40 pb-3.5 space-y-0">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-xs shrink-0">
-                <ShieldCheck className="w-5 h-5" weight="duotone" />
-              </div>
-              <div className="min-w-0">
-                <DialogTitle className="text-base font-bold text-foreground tracking-tight truncate">
-                  الحساب والترخيص
-                </DialogTitle>
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-bold text-foreground tracking-tight truncate">
+                الحساب والترخيص
+              </DialogTitle>
+              {!(user && user.token) && (
                 <DialogDescription className="text-xs text-muted-foreground/80 mt-0.5 truncate">
-                  {user && user.token
-                    ? 'إدارة اشتراكك وحسابك السحابي'
-                    : 'سجّل لتفعيل الذكاء الاصطناعي والمزامنة'}
+                  سجّل لتفعيل الذكاء الاصطناعي والمزامنة
                 </DialogDescription>
-              </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0">

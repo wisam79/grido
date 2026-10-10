@@ -94,9 +94,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
         <div className="p-2.5 rounded-xl bg-muted/30 dark:bg-muted/20 border border-border/60 space-y-2 shadow-2xs">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                <Palette className="w-4 h-4" weight="duotone" />
-              </div>
               <div className="min-w-0">
                 <span className="text-xs font-bold text-foreground block truncate">
                   {isLine ? 'لون الخط' : 'لون الشكل'}

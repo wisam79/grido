@@ -147,9 +147,6 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                <GridFour className="w-4 h-4 text-primary" weight="duotone" />
-              </div>
               <div className="min-w-0">
                 <DialogTitle className="text-sm font-bold text-foreground truncate">
                   طباعة بالبيانات المتغيرة

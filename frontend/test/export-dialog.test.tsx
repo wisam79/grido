@@ -31,7 +31,6 @@ describe('ExportDialog Component Tests', () => {
     renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
 
     expect(screen.getByText('تصدير الصورة')).toBeInTheDocument();
-    expect(screen.getByText('حفظ بدقة عالية للطباعة')).toBeInTheDocument();
     expect(screen.getByText('PNG')).toBeInTheDocument();
     expect(screen.getByText('JPG')).toBeInTheDocument();
   });

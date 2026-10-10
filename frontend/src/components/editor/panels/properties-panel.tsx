@@ -6,15 +6,7 @@ import { ElementProperties } from '../properties/element-properties';
 import { SlotProperties } from '../properties/slot-properties';
 import { CollageSettings } from '../properties/collage-settings';
 import { PanelShell } from './panel-shell';
-import {
-  SlidersHorizontal,
-  FileText,
-  CaretRight,
-  Image as ImageIcon,
-  TextAa,
-  Shapes,
-  SquaresFour,
-} from '@/components/ui/icons';
+import { CaretRight, SlidersHorizontal, FileText } from '@/components/ui/icons';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
 import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 
@@ -60,34 +52,22 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
     return () => window.removeEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
   }, []);
 
-  // استنباط هوية اللوح ديناميكياً وفق العنصر النشط
-  let panelIcon = <SlidersHorizontal className="w-4 h-4 text-muted-foreground" weight="duotone" />;
+  // استنباط عنوان اللوح ديناميكياً وفق العنصر النشط
   let panelTitle = 'الخصائص';
 
   if (selectedElement) {
     if (selectedElement.type === 'image') {
-      panelIcon = <ImageIcon className="w-4 h-4 text-muted-foreground" weight="duotone" />;
       panelTitle = 'خصائص الصورة';
     } else if (selectedElement.type === 'text') {
-      panelIcon = <TextAa className="w-4 h-4 text-muted-foreground" weight="duotone" />;
       panelTitle = 'خصائص النص';
     } else {
-      panelIcon = <Shapes className="w-4 h-4 text-muted-foreground" weight="duotone" />;
       panelTitle = 'خصائص الشكل';
     }
   } else if (selectedSlot) {
-    panelIcon = <SquaresFour className="w-4 h-4 text-muted-foreground" weight="duotone" />;
     panelTitle = 'خصائص الخلية';
   } else if (mode === 'collage') {
-    panelIcon =
-      generalTab === 'collage' ? (
-        <SquaresFour className="w-4 h-4 text-muted-foreground" weight="duotone" />
-      ) : (
-        <FileText className="w-4 h-4 text-muted-foreground" weight="duotone" />
-      );
     panelTitle = generalTab === 'collage' ? 'إعدادات الكولاج' : 'إعدادات الورقة';
   } else {
-    panelIcon = <FileText className="w-4 h-4 text-muted-foreground" weight="duotone" />;
     panelTitle = 'إعدادات الورقة';
   }
 
@@ -127,7 +107,6 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
 
   return (
     <PanelShell
-      icon={panelIcon}
       title={panelTitle}
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"

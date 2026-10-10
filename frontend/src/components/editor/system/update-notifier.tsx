@@ -4,7 +4,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogCloseButton,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -165,18 +164,10 @@ export function UpdateNotifier() {
         {/* الهيدر مع شارة التحديث الفاخرة وزر الإغلاق في شريط العنوان */}
         <DialogHeader className="space-y-1 text-start pb-2">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-accent-active border border-border/80 flex items-center justify-center text-foreground shadow-xs shrink-0">
-                <Sparkle className="w-5 h-5" weight="duotone" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <DialogTitle className="text-sm font-bold text-foreground truncate">
-                  تحديث جديد متوفر
-                </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  إصدار جديد جاهز للتثبيت
-                </DialogDescription>
-              </div>
+            <div className="flex flex-col min-w-0">
+              <DialogTitle className="text-sm font-bold text-foreground truncate">
+                تحديث جديد متوفر
+              </DialogTitle>
             </div>
             <DialogCloseButton />
           </div>

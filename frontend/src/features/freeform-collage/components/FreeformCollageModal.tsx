@@ -12,13 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/huge-icon';
-import {
-  SquaresFour,
-  Check,
-  FloppyDisk,
-  DownloadSimple,
-  UploadSimple,
-} from '@/components/ui/icons';
+import { FloppyDisk, DownloadSimple, UploadSimple } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type {
@@ -722,17 +716,11 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
         <DialogHeader className="px-6 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                <SquaresFour className="w-5 h-5" weight="duotone" />
-              </div>
               <div className="min-w-0 text-start">
                 <div className="flex items-center gap-2">
                   <DialogTitle className="text-base font-bold tracking-tight text-foreground truncate">
                     الكولاج الحر
                   </DialogTitle>
-                  <span className="text-mini font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                    Freeform
-                  </span>
                 </div>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
                   ورقة فارغة بالمليمتر — Shift لتحديد متعدد
@@ -925,10 +913,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
                   <span>جاري التطبيق ...</span>
                 </>
               ) : (
-                <>
-                  <Check className="w-3.5 h-3.5" weight="bold" />
-                  <span>تطبيق</span>
-                </>
+                <span>تطبيق</span>
               )}
             </Button>
           </div>

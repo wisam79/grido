@@ -8,7 +8,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogTrigger,
   DialogFooter,
   DialogCloseButton,
@@ -341,13 +340,9 @@ export function ProjectsDialog({
           <DialogHeader className="border-b border-border/40 pb-3">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <DialogTitle className="flex items-center gap-2 text-foreground font-cairo text-base font-bold">
-                  <FolderOpen className="text-primary w-6 h-6 shrink-0" weight="duotone" />
-                  <span>مكتبة المشاريع</span>
+                <DialogTitle className="text-foreground font-cairo text-base font-bold">
+                  مكتبة المشاريع
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  حفظ وإدارة المشاريع
-                </DialogDescription>
               </div>
               <DialogCloseButton />
             </div>
@@ -673,13 +668,9 @@ export function ProjectsDialog({
           <DialogHeader className="border-b border-border/40 pb-2.5">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <DialogTitle className="font-cairo flex items-center gap-2 text-sm font-bold text-foreground">
-                  <UploadSimple className="text-primary w-4 h-4 shrink-0" weight="duotone" />
-                  <span>استيراد المشاريع</span>
+                <DialogTitle className="font-cairo text-sm font-bold text-foreground">
+                  استيراد المشاريع
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  اختر طريقة الاستيراد
-                </DialogDescription>
               </div>
               <DialogCloseButton />
             </div>

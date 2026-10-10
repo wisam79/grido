@@ -5,7 +5,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogDescription,
   DialogCloseButton,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,12 +12,10 @@ import { Label } from '@/components/ui/label';
 import { Cropper, ReactCropperElement } from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
 import {
-  Crop,
   ArrowClockwise,
   MagnifyingGlassPlus,
   MagnifyingGlassMinus,
   ArrowCounterClockwise,
-  Check,
   Sparkle,
   Compass,
 } from '@/components/ui/icons';
@@ -154,14 +151,10 @@ export function CropDialog({
         {/* هيدر النافذة */}
         <DialogHeader className="pb-2.5 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <Crop className="text-primary w-6 h-6 shrink-0" weight="duotone" />
             <div className="min-w-0">
               <DialogTitle className="text-base font-bold text-foreground truncate">
                 قص وتدوير الصورة
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                قص وتدوير وضبط الاستقامة
-              </DialogDescription>
             </div>
           </div>
           <DialogCloseButton />
@@ -280,7 +273,6 @@ export function CropDialog({
                 id="crop-aspect-label"
                 className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
               >
-                <Crop className="text-primary w-3.5 h-3.5 shrink-0" weight="bold" />
                 <span>نسبة الأبعاد</span>
               </Label>
 
@@ -380,7 +372,6 @@ export function CropDialog({
             onClick={handleCrop}
             className="rounded-md h-8 px-5 text-xs font-semibold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98]"
           >
-            <Check className="w-3.5 h-3.5 shrink-0" weight="bold" />
             <span>تطبيق القص</span>
           </Button>
         </DialogFooter>

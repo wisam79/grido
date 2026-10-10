@@ -10,7 +10,6 @@ import {
   BookmarkSimple,
   FloppyDisk,
   Trash,
-  Check,
   Plus,
 } from '@/components/ui/icons';
 import { toast } from 'sonner';
@@ -681,7 +680,6 @@ export const StickerProperties = React.memo(function StickerProperties({
                             onClick={() => handleApplyPreset(preset)}
                             className="h-7 px-3 text-xs font-bold rounded-md cursor-pointer bg-primary/15 text-primary hover:bg-primary hover:text-primary-foreground transition-all gap-1"
                           >
-                            <Check className="w-3.5 h-3.5" weight="bold" />
                             <span>تطبيق</span>
                           </Button>
                         </div>

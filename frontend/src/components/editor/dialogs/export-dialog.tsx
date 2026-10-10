@@ -5,7 +5,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogDescription,
   DialogCloseButton,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/huge-icon';
-import { DownloadSimple, Warning } from '@/components/ui/icons';
+import { Warning } from '@/components/ui/icons';
 import {
   exportCanvas,
   downloadBlob,
@@ -241,12 +240,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         <DialogHeader className="border-b border-border/40 pb-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <DownloadSimple className="text-primary w-6 h-6 shrink-0" weight="duotone" />
               <div className="min-w-0">
                 <DialogTitle className="text-base font-bold truncate">تصدير الصورة</DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  حفظ بدقة عالية للطباعة
-                </DialogDescription>
               </div>
             </div>
             <DialogCloseButton />
@@ -447,10 +442,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 <span>جاري التصدير ...</span>
               </>
             ) : (
-              <>
-                <DownloadSimple className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                <span>تصدير</span>
-              </>
+              <span>تصدير</span>
             )}
           </Button>
         </DialogFooter>

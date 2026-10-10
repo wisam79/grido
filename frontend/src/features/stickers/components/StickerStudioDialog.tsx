@@ -628,9 +628,6 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
             {view === 'gallery' ? (
               /* Gallery Header */
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                  <SealCheck className="w-4 h-4 text-primary" weight="duotone" />
-                </div>
                 <div className="flex items-center gap-2 min-w-0">
                   <DialogTitle className="text-sm font-bold text-foreground truncate">
                     الملصقات

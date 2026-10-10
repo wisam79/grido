@@ -4,13 +4,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogCloseButton,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
-  DeviceMobileCamera,
   Copy,
   Check,
   ArrowClockwise,
@@ -149,18 +147,10 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
         {/* Title Bar with Close Button */}
         <DialogHeader className="px-6 py-4 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <DeviceMobileCamera className="w-5 h-5" weight="duotone" />
-              </div>
-              <div className="min-w-0">
-                <DialogTitle className="text-base font-bold text-foreground truncate">
-                  جسر كاميرا الهاتف
-                </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  الصور من هاتفك إلى مساحة العمل
-                </DialogDescription>
-              </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-bold text-foreground truncate">
+                جسر كاميرا الهاتف
+              </DialogTitle>
             </div>
             <DialogCloseButton />
           </div>
