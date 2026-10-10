@@ -59,7 +59,7 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
       .map((node: Konva.Node) => {
         const id = node.id();
         const el = elementsById.get(id);
-        if (!el) return null;
+        if (!el || el.locked) return null;
 
         const sx = node.scaleX();
         const sy = node.scaleY();
@@ -92,7 +92,7 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
           x: rawX,
           y: rawY,
           width: newWidth,
-          height: newHeight,
+          ...(el.type !== 'text' ? { height: newHeight } : {}),
           rotation: node.rotation(),
           flipX: nextFlipX,
           flipY: nextFlipY,

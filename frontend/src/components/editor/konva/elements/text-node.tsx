@@ -8,7 +8,7 @@ import { ElementProps, propsAreEqual } from './types';
 import { getFillProps } from './fill-utils';
 import { withShadowlessDrag } from './drag-shadow';
 import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
-import { loadGoogleFont } from '@/lib/io/fonts';
+import { loadGoogleFont, onFontReady } from '@/lib/io/fonts';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
 
 export const KonvaTextElement = React.memo(function KonvaTextElement({
@@ -67,11 +67,22 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     }
   }, [elementRef, element.opacity, isEditing, element.id]);
 
-  // Ensure font and weight variants are loaded dynamically
+  // Ensure font and weight variants are loaded dynamically.
+  // Subscribe to font-ready events so Konva re-draws with correct metrics
+  // instead of fallback-font measurements (per Konva official docs).
   useEffect(() => {
     if (element.fontFamily) {
       loadGoogleFont(element.fontFamily);
     }
+    const unsubscribe = onFontReady(() => {
+      const node = textRef.current;
+      if (node) {
+        // Force Konva to re-measure text with the newly loaded font
+        (node as Konva.Text & { _setTextData?: () => void })._setTextData?.();
+        node.getLayer()?.batchDraw();
+      }
+    });
+    return unsubscribe;
   }, [element.fontFamily, element.fontWeight]);
 
   // Sync auto height back to store so bounding boxes and overlays stay perfect
@@ -292,6 +303,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
                 : undefined
             }
             textDecoration={element.textDecoration || ''}
+            direction={isArabic ? 'rtl' : 'inherit'}
             wrap="word"
             ellipsis={false}
           />

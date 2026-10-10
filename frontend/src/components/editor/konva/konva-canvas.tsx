@@ -194,15 +194,6 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
     registerDragLayer(l);
   }, []);
   const elementsRefs = useRef<Record<string, Konva.Node>>({});
-  // 🚀 آخر عقد مربوطة بالمحول — تخطي nodes()+forceUpdate()+batchDraw()
-  // عندما لا يتغير شيء فعلياً (sortedElements تتبدل هويتها مع كل tick ستور).
-  // ⚠️ يجب تتبع هوية المحوّل نفسه أيضاً: إلغاء التحديد يفكّ تركيب المحوّل
-  // (selectedIds.length > 0 شرط العرض) وإعادة التحديد تركّب نسخة جديدة —
-  // فتخطي الربط عند تشابه العقد فقط كان يترك المحوّل الجديد بلا عقد.
-  const attachedTrNodesRef = useRef<Konva.Node[]>([]);
-  const attachedTrInstanceRef = useRef<Konva.Transformer | null>(null);
-  // مجموعة معرّفات التحديد المربوطة حالياً — أساس مقارنة M19 بدل مصفوفة العقد
-  const attachedSelectedIdsRef = useRef<Set<string>>(new Set());
   // 🚀 تسجيل طبقة السحب الرسمية + مزود إضافاتها (المحوّل وشارة الأبعاد
   // يرافقان العقدة المسحوبة لطبقة السحب حتى لا يختفيا تحتها).
   useEffect(() => {
@@ -382,61 +373,6 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [finishMarquee]);
-
-  useEffect(() => {
-    const tr = trRef.current;
-    if (!tr) {
-      // المحوّل مفكوك (لا تحديد) — صفّر المتتبع ولا شيء يُمسح.
-      attachedTrNodesRef.current = [];
-      attachedSelectedIdsRef.current = new Set<string>();
-      attachedTrInstanceRef.current = null;
-      return;
-    }
-    if (mode === 'single' && selectedIds.length > 0) {
-      const nodes = selectedIds.map((id) => elementsRefs.current[id]).filter(Boolean);
-      const prev = attachedTrNodesRef.current;
-      // 🛡️ M19 من تدقيق 2026-10-08: المقارنة كانت بالطول والتطابق فقط. عندما
-      // يخرج عنصر محدد من حدود الرسم يُفكَّك (يرجع null) فتُصبح nodes فارغة
-      // بينما prev فارغة أيضاً ⇒ `sameNodes` صادقة ⇒ نُبقي المجموعة القديمة
-      // المرتبطة بعقدة مفصولة، فتُرسم المقابض في موقع قديم ويُكتب التحويل في
-      // عقدة ميتة. نُقارن مجموعة المعرّفات فعلياً لا مصفوفة العقد.
-      const prevIds = attachedSelectedIdsRef.current;
-      const sameIds =
-        prevIds.size === selectedIds.length && selectedIds.every((id) => prevIds.has(id));
-      // نحتفظ بالعقد الحيّة فقط: مرجع عقدة مفصولة يجب ألا يبقى في القائمة
-      const liveNodes =
-        prev.length === nodes.length ? nodes.filter((n) => n.getStage() === tr.getStage()) : nodes;
-      const sameNodes =
-        sameIds && liveNodes.length === prev.length && liveNodes.every((n, i) => n === prev[i]);
-      // إذا كانت العقد متطابقة (لا إعادة ربط)، حدّث الصندوق المحيط للمحوّل فقط.
-      // 🔒 نحترم حاجز الإيماءة نفسه الذي يفرضه Konva داخلياً
-      // (`if (!this._transforming && !this.isDragging()) this.update()`) لأن
-      // forceUpdate() تتخطاه: إعادة حساب الصندوق في منتصف سحب مقبض تُزحزح
-      // المقابض تحت المؤشر. المسار الشائع (تغيّر أبعاد العقدة/موضعها) يلتقطه
-      // Konva ذاتياً عبر width/heightChange وabsoluteTransformChange؛
-      // والاستدعاء هنا شبكة أمان للهندسة التي تتغيّر من الأبناء بلا حدث على العقدة.
-      if (sameNodes && attachedTrInstanceRef.current === tr) {
-        if (!tr.isTransforming() && !tr.isDragging()) {
-          tr.forceUpdate();
-          tr.getLayer()?.batchDraw();
-        }
-        return;
-      }
-      attachedTrNodesRef.current = nodes;
-      attachedTrInstanceRef.current = tr;
-      attachedSelectedIdsRef.current = new Set(selectedIds);
-      tr.nodes(nodes);
-      tr.forceUpdate();
-      tr.getLayer()?.batchDraw();
-    } else {
-      if (attachedTrNodesRef.current.length === 0 && attachedTrInstanceRef.current === tr) return;
-      attachedTrNodesRef.current = [];
-      attachedTrInstanceRef.current = tr;
-      attachedSelectedIdsRef.current = new Set<string>();
-      tr.nodes([]);
-      tr.getLayer()?.batchDraw();
-    }
-  }, [selectedIds, mode, sortedElements]);
 
   const handleStageMouseDown = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     if (

@@ -58,34 +58,54 @@ export const EditorTransformer = React.memo(function EditorTransformer({
 
   // فحص هل العنصر المحدد مقفل (Locked)
   const isLocked =
-    selectedIds.length === 1 && sortedElements.find((e) => e.id === selectedIds[0])?.locked;
+    selectedIds.length > 0 &&
+    selectedIds.every((id) => sortedElements.find((e) => e.id === id)?.locked);
 
   useEffect(() => {
     const transformer = trRef.current;
     if (!transformer) return;
 
     const updateInfo = () => {
-      const node = transformer.nodes()[0];
-      if (!node) return;
+      const nodes = transformer.nodes();
+      if (nodes.length === 0) return;
 
-      // قراءة مباشرة من الـ node — هو أصلاً في الفضاء المنطقي للكانفس
-      // القيم المطلقة: العناصر المعكوسة تحتفظ بمقياس سالب دائم (إصلاح Bug#13)
-      const nodeW = Math.abs(node.width() * node.scaleX());
-      const nodeH = Math.abs(node.height() * node.scaleY());
-      const nodeX = node.x();
-      const nodeY = node.y();
+      let vBox: { minX: number; minY: number; maxX: number; maxY: number; centerX: number };
+      let textContent: string;
 
-      const rotation = Math.round(node.rotation() % 360);
-      const normalizedRot = rotation < 0 ? rotation + 360 : rotation;
+      if (nodes.length === 1) {
+        const node = nodes[0];
+        // قراءة مباشرة من الـ node — هو أصلاً في الفضاء المنطقي للكانفس
+        // القيم المطلقة: العناصر المعكوسة تحتفظ بمقياس سالب دائم (إصلاح Bug#13)
+        const nodeW = Math.abs(node.width() * node.scaleX());
+        const nodeH = Math.abs(node.height() * node.scaleY());
+        const nodeX = node.x();
+        const nodeY = node.y();
 
-      const vBox = getElementPixelVisualBox(nodeX, nodeY, nodeW, nodeH, rotation);
+        const rotation = Math.round(node.rotation() % 360);
+        const normalizedRot = rotation < 0 ? rotation + 360 : rotation;
 
-      // حساب الأبعاد بالملم (mm) للطباعة الاحترافية
-      const wMM = Math.round((nodeW / canvasWidth) * (canvasWidth / dpi) * 25.4);
-      const hMM = Math.round((nodeH / canvasHeight) * (canvasHeight / dpi) * 25.4);
+        vBox = getElementPixelVisualBox(nodeX, nodeY, nodeW, nodeH, rotation);
 
-      const rotStr = normalizedRot > 0 ? ` • ${normalizedRot}°` : '';
-      const textContent = `${wMM} × ${hMM} mm${rotStr}`;
+        // حساب الأبعاد بالملم (mm) للطباعة الاحترافية
+        const wMM = Math.round((nodeW / dpi) * 25.4);
+        const hMM = Math.round((nodeH / dpi) * 25.4);
+
+        const rotStr = normalizedRot > 0 ? ` • ${normalizedRot}°` : '';
+        textContent = `${wMM} × ${hMM} mm${rotStr}`;
+      } else {
+        // تحديد متعدد: حساب الصندوق الإجمالي للمجموعة المحددة بالكامل
+        const rect = transformer.getClientRect();
+        vBox = {
+          minX: rect.x,
+          minY: rect.y,
+          maxX: rect.x + rect.width,
+          maxY: rect.y + rect.height,
+          centerX: rect.x + rect.width / 2,
+        };
+        const wMM = Math.round((rect.width / dpi) * 25.4);
+        const hMM = Math.round((rect.height / dpi) * 25.4);
+        textContent = `${wMM} × ${hMM} mm (${nodes.length})`;
+      }
 
       if (badgeRef.current && textRef.current && badgeBgRef.current) {
         // حساب العرض الرشيق للنص مع مسافة حشو 16px
@@ -175,13 +195,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     };
   }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, safeBadgeScale, altPressedRef]);
 
-  // 🛡️ M19: ربط المحوّل يتتبّع مجموعة المعرفات المربوطة لا هوية/طول المصفوفة.
-  // العنصر المحدد خارج الكانفا يعيد null من طبقة العرض (يُفكّ تركيب العقدة)،
-  // فتصبح العقد المتاحة أصلاً [] أو — لو بقيت عقدة ميتة في خريطة المراجع —
-  // عقدة بلا مسرح. مقارنة «الطول + الهوية» كانت تعتبر المصفوفتين الفارغتين
-  // متطابقتين (والعقدة الميتة مطابقة لهويتها) فتتخطى الربط ويبقى المحوّل
-  // متعلقاً بمجموعة سابقة: مقابض في موقع قديم وتحويلات تُكتب على عقدة ميتة.
-  // لذا نُجبر tr.nodes() عند أي اختلاف في المعرفات أو عند تغيّر نسخة المحوّل.
+  // 🛡️ المصدر الموحد لإدارة عقد المحوّل في Konva
   const attachedIdsRef = React.useRef<Set<string>>(new Set());
   const attachedTrInstanceRef = React.useRef<Konva.Transformer | null>(null);
 
@@ -194,11 +208,20 @@ export const EditorTransformer = React.memo(function EditorTransformer({
     }
 
     // العقد الحيّة فقط: العنصر المحذوف لا يُربط لو بقيت عقدته في الكاش،
-    // والعقدة غير الموصولة بمسرح (مقصية أو مفكوكة) لا تُربط كذلك —
-    // نفس الحاجز الذي يفرضه Konva داخلياً في Transformer.
-    const liveIds = new Set(sortedElements.map((el) => el.id));
-    const nodes = selectedIds
-      .map((id) => (liveIds.has(id) ? getKonvaNode(id) : null))
+    // والعقدة غير الموصولة بمسرح (مقصية أو مفكوكة) لا تُربط كذلك
+    const liveElementsMap = new Map(sortedElements.map((el) => [el.id, el]));
+
+    // إذا كانت كل العناصر المحددة مقفلة، نربطها لعرض مربع القفل المنقط
+    // أما في التحديد المختلط، تُستبعد العناصر المقفلة من المحوّل لمنع تحويلها
+    const allLocked =
+      selectedIds.length > 0 && selectedIds.every((id) => liveElementsMap.get(id)?.locked);
+
+    const validIds = allLocked
+      ? selectedIds
+      : selectedIds.filter((id) => !liveElementsMap.get(id)?.locked);
+
+    const nodes = validIds
+      .map((id) => getKonvaNode(id))
       .filter((n): n is Konva.Node => !!n && !!n.getStage());
 
     const attached = attachedIdsRef.current;
@@ -206,14 +229,23 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       attachedTrInstanceRef.current === tr &&
       attached.size === nodes.length &&
       nodes.every((n) => attached.has(n.id()));
-    // لا تغيير في المجموعة المربوطة — الربط القائم سليم ولا شيء يُلمس
-    // (تحديث الصندوق المحيط على تغيّر الهندسة تلزمه Konva ذاتياً).
-    if (sameBinding) return;
+
+    // عند ثبات الهوية: إذا تغيّرت هندسة العنصر من المتجر (لوحة الخصائص / الأسهم)،
+    // حدّث الصندوق المحيط تحت حاجز الإيماءة
+    if (sameBinding) {
+      if (!tr.isTransforming() && !tr.isDragging()) {
+        tr.forceUpdate();
+        tr.getLayer()?.batchDraw();
+      }
+      return;
+    }
 
     attachedIdsRef.current = new Set(nodes.map((n) => n.id()));
     attachedTrInstanceRef.current = tr;
     tr.nodes(nodes);
-    tr.forceUpdate();
+    if (!tr.isTransforming() && !tr.isDragging()) {
+      tr.forceUpdate();
+    }
     tr.getLayer()?.batchDraw();
   }, [selectedIds, sortedElements, getKonvaNode, trRef]);
 
