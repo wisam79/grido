@@ -42,7 +42,7 @@ function QuickActionBtn({ content, onClick, disabled, children }: QuickActionBtn
           disabled={disabled}
           onClick={onClick}
           aria-label={content}
-          className="h-7 w-7 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-all"
+          className="h-6.5 w-6.5 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-all"
         >
           {children}
         </Button>
@@ -117,10 +117,10 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
       dir="rtl"
     >
       {/* 🎛️ شريط أدوات الطبقات الموحد الرشيق */}
-      <div className="flex items-center justify-between h-8.5 px-2.5 rounded-lg border border-border/70 bg-card/60 shadow-2xs">
+      <div className="flex items-center justify-between h-8.5 px-2 rounded-lg border border-border/70 bg-card/60 shadow-2xs">
         {/* عنوان اللوحة مع عداد العناصر والمحدد */}
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-xs font-bold text-foreground truncate">العناصر</span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-xs font-bold text-foreground shrink-0">العناصر</span>
           <span className="text-3xs font-mono font-semibold px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0">
             {selectedIds.length > 0 ? `${selectedIds.length}/${elements.length}` : elements.length}
           </span>

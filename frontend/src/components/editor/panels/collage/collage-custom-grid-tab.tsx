@@ -491,14 +491,14 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 title={`${opt.label} — ${opt.dim}`}
                 onClick={() => onPhotoTypeChange(opt.value as PhotoGridType)}
                 className={cn(
-                  'relative min-h-[52px] py-1.5 ps-2 pe-5 rounded-lg border font-sans transition-colors cursor-pointer select-none flex items-center gap-2 text-right',
+                  'relative min-h-[50px] py-1.5 px-2 rounded-lg border font-sans transition-colors cursor-pointer select-none flex items-center gap-1.5 text-right',
                   isActive
                     ? 'border-foreground/70 bg-accent-active shadow-2xs'
                     : 'bg-background/80 border-border/60 hover:bg-muted/50 hover:border-border',
                   FOCUS_RING,
                 )}
               >
-                <span className="w-9 h-9 rounded-md bg-muted/50 border border-border/50 flex items-center justify-center shrink-0">
+                <span className="w-8 h-8 rounded-md bg-muted/50 border border-border/50 flex items-center justify-center shrink-0">
                   <DocumentPresetGraphic type={opt.value} active={isActive} />
                 </span>
                 <span className="min-w-0 flex-1 text-right font-sans">
@@ -510,19 +510,16 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   >
                     {opt.label}
                   </span>
-                  <span className="flex items-center gap-1 text-mini text-muted-foreground font-mono mt-0.5 truncate">
-                    <span dir="ltr" className="text-muted-foreground-hover whitespace-nowrap">
+                  <span className="flex items-center gap-1 text-mini text-muted-foreground font-mono mt-0.5 whitespace-nowrap">
+                    <span dir="ltr" className="text-muted-foreground-hover">
                       {opt.dim}
                     </span>
-                    {opt.sub && <span className="whitespace-nowrap">{opt.sub}</span>}
+                    {opt.sub && <span>{opt.sub}</span>}
                   </span>
                 </span>
                 {/* تأكيد بصري غير لوني للخيار المحدد بموضع مطلق في زاوية البطاقة لمنع تكسر الأسطر وإزاحة التخطيط */}
                 {isActive && (
-                  <Check
-                    className="absolute top-1.5 end-1.5 w-3.5 h-3.5 text-foreground"
-                    weight="bold"
-                  />
+                  <Check className="absolute top-1 end-1 w-3 h-3 text-foreground" weight="bold" />
                 )}
               </button>
             );

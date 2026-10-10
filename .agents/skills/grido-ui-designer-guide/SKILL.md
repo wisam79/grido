@@ -1,6 +1,6 @@
 ---
 name: grido-ui-designer-guide
-description: دليل تصميم الواجهات وتجربة المستخدم في Grido Studio (Icon-Driven UI + Figma-like Aesthetic + React Portals)
+description: دليل تصميم الواجهات وتجربة المستخدم في Grido Studio (Icon-Driven UI + Zero Visual Filler + Figma-like Aesthetic + React Portals)
 ---
 
 # 🎨 دليل واجهات وتجربة المستخدم (UI/UX Designer Guide)
@@ -11,8 +11,8 @@ description: دليل تصميم الواجهات وتجربة المستخدم 
 
 ## 🎨 1. المبادئ التصميمية الأساسية (Design Principles)
 
-1. **الاعتماد على الأيقونات (Icon-Driven UI):**
-   - بدلاً من الجمل الطويلة والعديدة، اعمد دائماً لاستخدام أيقونات بسيطة واضحة وموحدة مع تغليفها بـ `Tooltip` توضيحي عند التمرير.
+1. **الأيقونات الوظيفية (Icon-Driven UI):**
+   - بدلاً من الجمل الطويلة والعديدة، استخدم أيقونات بسيطة واضحة وموحدة **للأفعال والأدوات** (أزرار، أشرطة أدوات، قوائم) مع تغليفها بـ `Tooltip` توضيحي عند التمرير — الأيقونة تحمل معنى وظيفياً (إجراء، حالة، تصنيف) وليست زينة.
    - **حزمة الأيقونات الرسمية:**
      - تطبيق سطح المكتب (`frontend/`): يعتمد حصرياً على حزمة الأيقونات الداخلية `@/components/ui/icons` المبنية فوق **`@fluentui/react-icons`** (طبقة مولدة مركزية بأسلوب Phosphor: `createIcon({ R, F })` + مزود `FluentIconProvider` و `weight="regular"`). **حزمة `@phosphor-icons/react` غير مثبتة في المشروع ويُمنع استيرادها**؛ أسماء الأيقونات تُكتب بأسلوب Phosphor (`Check`, `Sparkle`, `MagicWand`...) وتُستورد من `@/components/ui/icons` حصراً. ملف `icons.tsx` مولّد آلياً (`/* GENERATED FILE */`) — لا يُعدَّل يدوياً.
      - موقع الويب ولوحة الإدارة (`admin-web/`): يعتمد على `lucide-react`.
@@ -24,6 +24,12 @@ description: دليل تصميم الواجهات وتجربة المستخدم 
 
 3. **لوحة الألوان والتباين (Curated HSL Palette):**
    - تجنب الألوان البدائية الفاقعة (الأحمر/الأزرق الصريح). استخدم درجات HSL المتناسقة مع نظام Dark/Light Mode عبر المتغيرات: `bg-primary`, `text-muted-foreground`, `border-border/40`.
+
+4. **صفر حشو بصري (Zero Visual Filler):**
+   - **لا أيقونة زخرفية:** لا تُضاف أيقونة بجوار عنوان أو داخل بطاقة أو داخل زر يحمل نصاً واضحاً إلا إذا كانت تحمل معنى مستقلاً (إجراء، حالة، تصنيف). العنوان المفهوم لا يحتاج أيقونة «للجمالية».
+   - **العنوان الفرعي اختيار مدروس:** لا يُضاف وصف فرعي (`DialogDescription` أو سطر `text-muted-foreground` ثانٍ) تحت العناوين افتراضياً؛ فقط إذا حمل معلومة لا يستنتجها المستخدم من الاسم والسياق — وإلا فالشرح مكانه `Tooltip`.
+   - **العنوان نفسه قابل للحذف:** إذا كان المحتوى معبّراً عن نفسه (صورة، معاينة، اسم واضح) فالعنوان الرئيسي للبطاقة أو القسم زائد ويُحذف بدل تكديس نص فوق المحتوى. (استثناء وصولي: `DialogTitle` داخل النوافذ الحوارية تبقى إلزامية ولو `sr-only` — القسم 6 أدناه.)
+   - **اختبار الحذف:** قبل تسليم أي واجهة اسأل عن كل عنصر: «ماذا لو حذفته؟» — إن لم يفقد المستخدم معلومة أو وظيفة فيُحذف. عند الشك: الحذف أولى من الإضافة.
 
 ---
 
@@ -48,25 +54,22 @@ description: دليل تصميم الواجهات وتجربة المستخدم 
 
 ## 🧩 4. هيكل النوافذ والحوارات القياسي (Standard Dialog Template)
 
-عند بناء أو تعديل أي نافذة حوار (Dialog / Modal) في التطبيق، اتبع الهيكل القياسي التالي (حيث يوضع زر الإغلاق إجبارياً داخل شريط العنوان `DialogHeader`):
+عند بناء أو تعديل أي نافذة حوار (Dialog / Modal) في التطبيق، اتبع الهيكل القياسي التالي (حيث يوضع زر الإغلاق إجبارياً داخل شريط العنوان `DialogHeader`، والرأس **مينيمالي افتراضياً**: بلا كبسولة أيقونة زخرفية وبلا وصف فرعي تلقائي — مبدأ «صفر الحشو» في القسم 1):
 
 ```tsx
-import { Sparkle, Check } from "@/components/ui/icons";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogCloseButton } from "@/components/ui/dialog"; // الأيقونات من @/components/ui/icons
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogCloseButton } from "@/components/ui/dialog";
+// DialogDescription وأي أيقونة تُستورد فقط عند حاجة وظيفية حقيقية (مبدأ «صفر الحشو»)
 
 <Dialog open={open} onOpenChange={onOpenChange}>
   <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-[700px] border border-border/60 bg-background/95 backdrop-blur-2xl rounded-2xl shadow-2xl p-5 sm:p-6" dir="rtl">
-    {/* 1. Header with integrated Close Button in title bar */}
+    {/* 1. Header with integrated Close Button in title bar — Minimal by default (Zero Filler) */}
     <DialogHeader className="border-b border-border/40 pb-3.5">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0">
-            <Sparkle className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <DialogTitle className="text-base font-bold text-foreground truncate">عنوان النافذة</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground/80 mt-0.5 truncate">شرح مختصر ومباشر للوظيفة</DialogDescription>
-          </div>
+        <div className="min-w-0">
+          {/* DialogTitle إلزامية دائماً ولو sr-only لربط aria-labelledby (القسم 6 أدناه) */}
+          <DialogTitle className="text-base font-bold text-foreground truncate">عنوان النافذة</DialogTitle>
+          {/* اختياري بشرط: <DialogDescription> فقط إذا حمّل معلومة جديدة لا يستنتجها المستخدم من العنوان — لا وصفاً تلقائياً لكل نافذة */}
+          {/* اختياري بشرط: كبسولة أيقونة في الرأس فقط لتمييز وظيفي حقيقي للنافذة — ليست زينة افتراضية */}
         </div>
         <DialogCloseButton />
       </div>
@@ -80,9 +83,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
     {/* 3. Footer */}
     <DialogFooter className="border-t border-border/40 pt-4 flex justify-end gap-2">
       <Button variant="outline" onClick={() => onOpenChange(false)}>إلغاء</Button>
-      <Button className="bg-primary text-primary-foreground gap-2">
-        <Check className="w-4 h-4" /> تنفيذ
-      </Button>
+      <Button className="bg-primary text-primary-foreground">تنفيذ</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>
@@ -108,8 +109,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 عند بناء أو تعديل نوافذ الاستوديوهات المدمجة (مثل استوديو الملصقات، الأختام، الباركود، المستندات):
 1. **تكثيف وتجميع الفئات (Category Consolidation):**
    - الحفاظ على عدد تصنيفات مركّز (5 إلى 6 تصنيفات رئيسية كحد أقصى) مع كبسولات مدمجة `flex-wrap` لمنع التمرير الأفقي المرهق وتقليل العبء المعرفي.
-2. **الاعتماد الصارم على الأيقونات (Icon-First Panels):**
-   - تجنب إدراج شروحات نصية طويلة أو تلميحات مكررة داخل بطاقات الخصائص الجانبية، واستبدالها بأيقونات واضحة مع `Tooltip` مقتضب.
+2. **إحلال الأيقونات محل الشروحات الطويلة (Icon-First Panels):**
+   - تجنب إدراج شروحات نصية طويلة أو تلميحات مكررة داخل بطاقات الخصائص الجانبية، واستبدالها عند الحاجة بأيقونات وظيفية واضحة مع `Tooltip` مقتضب.
+   - مع مراعاة مبدأ «صفر الحشو» (القسم 1): الأداة المفهومة من شكلها أو نصها تُترك بلا أيقونة إضافية، ورؤوس البطاقات والأقسام تبقى نصية نظيفة بلا أيقونات زخرفية.
 3. **سلامة القوائم المنسدلة في المودالات (Portal-Backed Selects):**
    - أي قائمة منسدلة داخل لوحة الخصائص (مثل اختيار الخط، الحجم، نوع الإطار) يجب أن تستخدم React Portal أو تمنع تداخل الـ z-index وتجاوز حدود الحاوية.
 
