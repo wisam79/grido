@@ -259,3 +259,12 @@ jobs:
             - يشمل نسخة Portable وملف تثبيت Installer ومطابقة بصمات SHA-256.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger GitHub Pages Deployment
+        shell: pwsh
+        run: |
+          Write-Host "Triggering deploy-pages.yml to update https://grido.cloud-ip.cc/api/version and download endpoint ..."
+          gh workflow run deploy-pages.yml
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+
