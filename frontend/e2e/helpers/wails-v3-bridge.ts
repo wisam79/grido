@@ -52,6 +52,7 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   }), // CheckForUpdate
   2320258599: async () => null, // CheckPendingCrashReport (لا يوجد انهيار سابق في الاختبار)
   3605864796: async () => ({ cleaned: 0 }), // CleanUnusedMediaNow
+  3363530620: async () => ({ deletedCount: 0, freedBytes: 0 }), // EmptyMediaTrash
   485242536: async () => undefined, // ClearAutoSave
   1006108175: async () => undefined, // DeleteCustomTemplate
   2108673700: async () => undefined, // DismissCrashReport
@@ -235,6 +236,7 @@ export async function setupWailsV3Bridge(
           }),
           CheckPendingCrashReport: async () => null,
           CleanUnusedMediaNow: async () => ({ cleaned: 0 }),
+          EmptyMediaTrash: async () => ({ deletedCount: 0, freedBytes: 0 }),
           ClearAutoSave: async () => {},
           DeleteCustomTemplate: async () => 'success',
           DismissCrashReport: async () => {},

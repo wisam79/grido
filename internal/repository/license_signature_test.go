@@ -1,22 +1,12 @@
 package repository
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"grido/internal/core/domain"
 )
 
-func init() {
-	tempDir, _ := os.MkdirTemp("", "grido-test-repo-global-*")
-	appDir := filepath.Join(tempDir, "GridoStudio")
-	_ = os.Setenv("GRIDO_APP_DIR", appDir)
-	_ = os.Setenv("APPDATA", tempDir)
-	_ = os.Setenv("HOME", tempDir)
-	_ = os.Setenv("XDG_CONFIG_HOME", tempDir)
-}
 
 func TestComputeProfileSignature(t *testing.T) {
 	profile := &domain.UserProfile{

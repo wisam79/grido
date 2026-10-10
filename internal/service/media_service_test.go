@@ -553,3 +553,39 @@ func TestMediaService_CrossPlatformAndWindowsPaths(t *testing.T) {
 		t.Errorf("expected 1x1 for windows backslash path, got %dx%d", winDims.Width, winDims.Height)
 	}
 }
+
+func TestMediaService_GetStorageStats_WithTrash(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	svc := NewMediaService()
+	mediaDir := svc.GetMediaDir()
+	trashDir := svc.GetTrashDir()
+	_ = os.MkdirAll(trashDir, 0755)
+
+	_ = os.WriteFile(filepath.Join(mediaDir, "m1.png"), []byte("media1"), 0644)
+	_ = os.WriteFile(filepath.Join(mediaDir, "m2.png"), []byte("media2"), 0644)
+	_ = os.WriteFile(filepath.Join(trashDir, "t1.png"), []byte("trash1-large"), 0644)
+
+	stats, err := svc.GetStorageStats()
+	if err != nil {
+		t.Fatalf("GetStorageStats failed: %v", err)
+	}
+
+	if stats.Count != 2 {
+		t.Errorf("expected media count 2, got %d", stats.Count)
+	}
+	expectedMediaBytes := int64(len("media1") + len("media2"))
+	if stats.TotalBytes != expectedMediaBytes {
+		t.Errorf("expected media bytes %d, got %d", expectedMediaBytes, stats.TotalBytes)
+	}
+
+	if stats.TrashCount != 1 {
+		t.Errorf("expected trash count 1, got %d", stats.TrashCount)
+	}
+	expectedTrashBytes := int64(len("trash1-large"))
+	if stats.TrashTotalBytes != expectedTrashBytes {
+		t.Errorf("expected trash bytes %d, got %d", expectedTrashBytes, stats.TrashTotalBytes)
+	}
+}
+

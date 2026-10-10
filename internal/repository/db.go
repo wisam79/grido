@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sync"
 	"time"
 
@@ -349,6 +350,22 @@ type slotJSONStruct struct {
 	OriginalImageSrc string `json:"originalImageSrc"`
 }
 
+var mediaFilenameRegex = regexp.MustCompile(`(?i)(?:/local-image/|/Media/|\\Media\\)?([a-zA-Z0-9_\-\.]+\.(?:png|jpg|jpeg|webp|bmp|gif|tiff|tif))`)
+
+// extractImagesFromText يستخرج أي أسماء ملفات صور من النصوص الخام كشبكة أمان عامة لمنع فقدان الصور
+func extractImagesFromText(rawText string, referenced map[string]bool) {
+	if rawText == "" {
+		return
+	}
+	matches := mediaFilenameRegex.FindAllStringSubmatch(rawText, -1)
+	for _, m := range matches {
+		if len(m) > 1 && m[1] != "" {
+			filename := filepath.Base(filepath.Clean(m[1]))
+			referenced[filename] = true
+		}
+	}
+}
+
 // collectImageFilenames منطق مساعد مشترك لتجميع أسماء الملفات لتجنب التكرار (DRY)
 func collectImageFilenames(elementsStr, slotsStr string, referenced map[string]bool) {
 	if elementsStr != "" {
@@ -365,6 +382,8 @@ func collectImageFilenames(elementsStr, slotsStr string, referenced map[string]b
 				}
 			}
 		}
+		// شبكة أمان إضافية بالـ Regex على نصوص العناصر بالكامل
+		extractImagesFromText(elementsStr, referenced)
 	}
 	if slotsStr != "" {
 		var slots []slotJSONStruct
@@ -380,6 +399,8 @@ func collectImageFilenames(elementsStr, slotsStr string, referenced map[string]b
 				}
 			}
 		}
+		// شبكة أمان إضافية بالـ Regex على نصوص الخلايا بالكامل
+		extractImagesFromText(slotsStr, referenced)
 	}
 }
 
@@ -387,9 +408,12 @@ func collectImageFilenames(elementsStr, slotsStr string, referenced map[string]b
 func collectReferencedImages(projects []domain.Project, appDir string) (map[string]bool, error) {
 	referencedImages := make(map[string]bool)
 
-	// 1. فحص مسارات الصور في المشاريع المحفوظة بقاعدة البيانات
+	// 1. فحص مسارات الصور في المشاريع المحفوظة بقاعدة البيانات (كافة الحقول)
 	for _, p := range projects {
 		collectImageFilenames(string(p.Elements), string(p.Slots), referencedImages)
+		extractImagesFromText(string(p.Template), referencedImages)
+		extractImagesFromText(string(p.CollageTemplate), referencedImages)
+		extractImagesFromText(string(p.PrintSettings), referencedImages)
 	}
 
 	// 2. فحص مسار الصورة في مسودة التخزين التلقائي autosave.json
@@ -405,6 +429,7 @@ func collectReferencedImages(projects []domain.Project, appDir string) (map[stri
 			elemsBytes, _ := json.Marshal(autosaveData.Elements)
 			slotsBytes, _ := json.Marshal(autosaveData.Slots)
 			collectImageFilenames(string(elemsBytes), string(slotsBytes), referencedImages)
+			extractImagesFromText(string(autosaveBytes), referencedImages)
 		} else {
 			return nil, fmt.Errorf("corrupt autosave.json encountered: %w", err)
 		}
@@ -420,6 +445,7 @@ func collectReferencedImages(projects []domain.Project, appDir string) (map[stri
 		if err := currentDB.Find(&templates).Error; err == nil {
 			for _, t := range templates {
 				collectImageFilenames("", string(t.Cells), referencedImages)
+				extractImagesFromText(string(t.Cells), referencedImages)
 			}
 		}
 	}
@@ -581,4 +607,38 @@ func CleanUnusedMediaNow() (cleanedCount int, freedBytes int64, err error) {
 	purgeOldTrash(trashDir)
 
 	return cleanedCount, freedBytes, nil
+}
+
+// EmptyMediaTrash يقوم بالحذف النهائي لكافة الملفات الموجودة في سلة وسائط التطبيق (MediaTrash)
+// ويحرر المساحة الحقيقية على القرص فورياً مع إعادة عدد الملفات والبايتات المحررة
+func EmptyMediaTrash() (deletedCount int, freedBytes int64, err error) {
+	appDir := utils.GetAppDir()
+	trashDir := filepath.Join(appDir, "MediaTrash")
+
+	files, err := os.ReadDir(trashDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, 0, nil
+		}
+		return 0, 0, err
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+		filePath := filepath.Join(trashDir, f.Name())
+		fileSize := int64(0)
+		if info, err := os.Stat(filePath); err == nil {
+			fileSize = info.Size()
+		}
+		if err := os.Remove(filePath); err == nil {
+			deletedCount++
+			freedBytes += fileSize
+		} else {
+			slog.Warn("Failed to permanently delete media trash file", "path", filePath, "error", err)
+		}
+	}
+
+	return deletedCount, freedBytes, nil
 }

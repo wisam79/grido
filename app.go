@@ -185,6 +185,17 @@ func (a *App) CleanUnusedMediaNow() (map[string]interface{}, error) {
 	}, nil
 }
 
+func (a *App) EmptyMediaTrash() (map[string]interface{}, error) {
+	deletedCount, freedBytes, err := repository.EmptyMediaTrash()
+	if err != nil {
+		return nil, err
+	}
+	return map[string]interface{}{
+		"deletedCount": deletedCount,
+		"freedBytes":   freedBytes,
+	}, nil
+}
+
 func (a *App) SaveFileDialog(base64Data string, defaultFilename string, displayName string, pattern string) (string, error) {
 	if int64(len(base64Data)) > int64(service.MaxFileSize)*4/3+16 {
 		return "", fmt.Errorf("file size too large: payload %d bytes (max %d raw)", len(base64Data), service.MaxFileSize)

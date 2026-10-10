@@ -557,31 +557,51 @@ func (s *MediaService) ProcessDirectoryImages(dirPath string) ([]string, error) 
 	return s.ProcessMultipleOpenedFiles(imagePaths)
 }
 
+func (s *MediaService) GetTrashDir() string {
+	appDir := utils.GetAppDir()
+	trashDir := filepath.Join(appDir, "MediaTrash")
+	return trashDir
+}
+
 type MediaStorageStats struct {
-	Count      int   `json:"count"`
-	TotalBytes int64 `json:"totalBytes"`
+	Count           int   `json:"count"`
+	TotalBytes      int64 `json:"totalBytes"`
+	TrashCount      int   `json:"trashCount"`
+	TrashTotalBytes int64 `json:"trashTotalBytes"`
 }
 
 func (s *MediaService) GetStorageStats() (MediaStorageStats, error) {
 	mediaDir := s.GetMediaDir()
-	entries, err := os.ReadDir(mediaDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return MediaStorageStats{}, nil
+	var stats MediaStorageStats
+
+	if entries, err := os.ReadDir(mediaDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			info, err := entry.Info()
+			if err == nil {
+				stats.Count++
+				stats.TotalBytes += info.Size()
+			}
 		}
-		return MediaStorageStats{}, err
+	} else if !os.IsNotExist(err) {
+		return stats, err
 	}
 
-	var stats MediaStorageStats
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		info, err := entry.Info()
-		if err == nil {
-			stats.Count++
-			stats.TotalBytes += info.Size()
+	trashDir := s.GetTrashDir()
+	if entries, err := os.ReadDir(trashDir); err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			info, err := entry.Info()
+			if err == nil {
+				stats.TrashCount++
+				stats.TrashTotalBytes += info.Size()
+			}
 		}
 	}
+
 	return stats, nil
 }

@@ -11,13 +11,20 @@ import (
 	"gorm.io/gorm"
 )
 
-func init() {
-	tempDir, _ := os.MkdirTemp("", "grido-test-global-*")
-	appDir := filepath.Join(tempDir, "GridoStudio")
-	os.Setenv("GRIDO_APP_DIR", appDir)
-	os.Setenv("APPDATA", tempDir)
-	os.Setenv("HOME", tempDir)
-	os.Setenv("XDG_CONFIG_HOME", tempDir)
+func TestMain(m *testing.M) {
+	tempDir, err := os.MkdirTemp("", "grido-test-global-*")
+	if err == nil {
+		appDir := filepath.Join(tempDir, "GridoStudio")
+		_ = os.Setenv("GRIDO_APP_DIR", appDir)
+		_ = os.Setenv("APPDATA", tempDir)
+		_ = os.Setenv("HOME", tempDir)
+		_ = os.Setenv("XDG_CONFIG_HOME", tempDir)
+	}
+	code := m.Run()
+	if tempDir != "" {
+		_ = os.RemoveAll(tempDir)
+	}
+	os.Exit(code)
 }
 
 func TestProjectRepository_SaveAndGet(t *testing.T) {
@@ -596,3 +603,69 @@ func TestStopCleanupUnusedMedia(t *testing.T) {
 	// Should not panic even if no cleanup is running
 	StopCleanupUnusedMedia()
 }
+
+func TestEmptyMediaTrash(t *testing.T) {
+	tempDir := t.TempDir()
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	t.Setenv("GRIDO_APP_DIR", appDir)
+
+	trashDir := filepath.Join(appDir, "MediaTrash")
+	if err := os.MkdirAll(trashDir, 0755); err != nil {
+		t.Fatalf("failed to create trash dir: %v", err)
+	}
+
+	file1 := filepath.Join(trashDir, "old1.png")
+	file2 := filepath.Join(trashDir, "old2.jpg")
+	_ = os.WriteFile(file1, []byte("data-one"), 0644)
+	_ = os.WriteFile(file2, []byte("data-two-long"), 0644)
+
+	count, bytesFreed, err := EmptyMediaTrash()
+	if err != nil {
+		t.Fatalf("EmptyMediaTrash failed: %v", err)
+	}
+	if count != 2 {
+		t.Errorf("expected 2 deleted files, got %d", count)
+	}
+	expectedBytes := int64(len("data-one") + len("data-two-long"))
+	if bytesFreed != expectedBytes {
+		t.Errorf("expected %d bytes freed, got %d", expectedBytes, bytesFreed)
+	}
+
+	// Verify directory is now empty
+	entries, _ := os.ReadDir(trashDir)
+	if len(entries) != 0 {
+		t.Errorf("expected 0 entries in trashDir, found %d", len(entries))
+	}
+}
+
+func TestCollectReferencedImages_RegexSafetyNet(t *testing.T) {
+	tempDir := t.TempDir()
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	t.Setenv("GRIDO_APP_DIR", appDir)
+
+	projects := []domain.Project{
+		{
+			ID:              "p-regex",
+			Elements:        `[{"customField": "contains /local-image/img_123456.png inside"}]`,
+			Slots:           `[]`,
+			Template:        `{"preview": "img_template_789.webp"}`,
+			CollageTemplate: `{"background": "img_collage_bg.jpg"}`,
+		},
+	}
+
+	refs, err := collectReferencedImages(projects, appDir)
+	if err != nil {
+		t.Fatalf("collectReferencedImages failed: %v", err)
+	}
+
+	if !refs["img_123456.png"] {
+		t.Errorf("expected img_123456.png to be captured by regex safety net")
+	}
+	if !refs["img_template_789.webp"] {
+		t.Errorf("expected img_template_789.webp to be captured from Template")
+	}
+	if !refs["img_collage_bg.jpg"] {
+		t.Errorf("expected img_collage_bg.jpg to be captured from CollageTemplate")
+	}
+}
+

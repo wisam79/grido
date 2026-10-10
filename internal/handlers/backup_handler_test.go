@@ -13,13 +13,20 @@ import (
 	"gorm.io/gorm"
 )
 
-func init() {
-	tempDir, _ := os.MkdirTemp("", "grido-test-handlers-global-*")
-	appDir := filepath.Join(tempDir, "GridoStudio")
-	os.Setenv("GRIDO_APP_DIR", appDir)
-	os.Setenv("APPDATA", tempDir)
-	os.Setenv("HOME", tempDir)
-	os.Setenv("XDG_CONFIG_HOME", tempDir)
+func TestMain(m *testing.M) {
+	tempDir, err := os.MkdirTemp("", "grido-test-handlers-global-*")
+	if err == nil {
+		appDir := filepath.Join(tempDir, "GridoStudio")
+		_ = os.Setenv("GRIDO_APP_DIR", appDir)
+		_ = os.Setenv("APPDATA", tempDir)
+		_ = os.Setenv("HOME", tempDir)
+		_ = os.Setenv("XDG_CONFIG_HOME", tempDir)
+	}
+	code := m.Run()
+	if tempDir != "" {
+		_ = os.RemoveAll(tempDir)
+	}
+	os.Exit(code)
 }
 
 func TestBackupHandler_ExportAndImport(t *testing.T) {

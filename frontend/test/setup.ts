@@ -11,7 +11,7 @@ const mockIntersectionObserver = vi.fn();
 mockIntersectionObserver.mockReturnValue({
   observe: () => null,
   unobserve: () => null,
-  disconnect: () => null
+  disconnect: () => null,
 });
 window.IntersectionObserver = mockIntersectionObserver;
 
@@ -29,8 +29,16 @@ Object.defineProperty(window, 'go', {
     main: {
       App: {
         ApplyMaskToImage: () => Promise.resolve(''),
-        CheckForUpdate: () => Promise.resolve({ has_update: false, current_version: 'v1.0.0', latest_version: 'v1.0.0', download_url: '', release_notes: '' }),
+        CheckForUpdate: () =>
+          Promise.resolve({
+            has_update: false,
+            current_version: 'v1.0.0',
+            latest_version: 'v1.0.0',
+            download_url: '',
+            release_notes: '',
+          }),
         CleanUnusedMediaNow: () => Promise.resolve({ cleanedCount: 0, freedBytes: 0 }),
+        EmptyMediaTrash: () => Promise.resolve({ deletedCount: 0, freedBytes: 0 }),
         ClearAutoSave: () => Promise.resolve(),
         DeleteCustomTemplate: () => Promise.resolve(),
         DownloadAndInstallUpdate: () => Promise.resolve(),
@@ -38,8 +46,10 @@ Object.defineProperty(window, 'go', {
         ExportSupportLogs: () => Promise.resolve(''),
         GetCustomTemplates: () => Promise.resolve([]),
         GetImageDimensions: () => Promise.resolve({ width: 800, height: 600 }),
-        GetMediaStorageStats: () => Promise.resolve({ count: 0, totalBytes: 0 }),
-        GetPhoneBridgeStatus: () => Promise.resolve({ isRunning: false, url: '', receivedCount: 0, lastReceived: '' }),
+        GetMediaStorageStats: () =>
+          Promise.resolve({ count: 0, totalBytes: 0, trashCount: 0, trashTotalBytes: 0 }),
+        GetPhoneBridgeStatus: () =>
+          Promise.resolve({ isRunning: false, url: '', receivedCount: 0, lastReceived: '' }),
         GetStartupFile: () => Promise.resolve(''),
         LoadAiUsageLogs: () => Promise.resolve('[]'),
         LoadAutoSave: () => Promise.resolve(''),
@@ -54,9 +64,16 @@ Object.defineProperty(window, 'go', {
         SaveFileDialog: () => Promise.resolve(''),
         SaveImageFromBase64: () => Promise.resolve(''),
         SelectExportDirectory: () => Promise.resolve(''),
-        StartPhoneBridge: () => Promise.resolve({ ip: '127.0.0.1', port: 8741, token: 'mock-token', url: 'http://127.0.0.1:8741?token=mock-token', isRunning: true }),
+        StartPhoneBridge: () =>
+          Promise.resolve({
+            ip: '127.0.0.1',
+            port: 8741,
+            token: 'mock-token',
+            url: 'http://127.0.0.1:8741?token=mock-token',
+            isRunning: true,
+          }),
         StopPhoneBridge: () => Promise.resolve(),
-      }
+      },
     },
     handlers: {
       ProjectHandler: {
@@ -71,7 +88,8 @@ Object.defineProperty(window, 'go', {
         ResetLibrary: () => Promise.resolve('success'),
       },
       PrintHandler: {
-        ExportPrintSheet: () => Promise.resolve({ success: true, imagePath: '', filePath: '/tmp/sheet.png' }),
+        ExportPrintSheet: () =>
+          Promise.resolve({ success: true, imagePath: '', filePath: '/tmp/sheet.png' }),
         PrintNative: () => Promise.resolve({ success: true, filePath: '/tmp/sheet.png' }),
       },
       LicenseHandler: {
@@ -85,9 +103,8 @@ Object.defineProperty(window, 'go', {
         ResetPassword: () => Promise.resolve('success'),
         VerifyOTP: () => Promise.resolve({}),
         VerifyRecoveryOTP: () => Promise.resolve({}),
-      }
-
-    }
+      },
+    },
   },
   writable: true,
   configurable: true,
@@ -126,4 +143,3 @@ Object.defineProperty(window, 'runtime', {
   writable: true,
   configurable: true,
 });
-

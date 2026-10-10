@@ -52,7 +52,11 @@ import {
 import { openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { toast } from 'sonner';
-import { GetMediaStorageStats, CleanUnusedMediaNow } from '../../../../wailsjs/go/main/App';
+import {
+  GetMediaStorageStats,
+  CleanUnusedMediaNow,
+  EmptyMediaTrash,
+} from '../../../../wailsjs/go/main/App';
 
 export function DesktopMenuBar() {
   const {
@@ -159,14 +163,45 @@ export function DesktopMenuBar() {
   const handleCleanMediaCache = async () => {
     try {
       const stats = await GetMediaStorageStats();
-      const mb = (stats.totalBytes / (1024 * 1024)).toFixed(1);
+      const mb = ((stats?.totalBytes || 0) / (1024 * 1024)).toFixed(1);
       const res = await CleanUnusedMediaNow();
-      const freedMb = ((res?.freedBytes || 0) / (1024 * 1024)).toFixed(1);
+      const movedMb = ((res?.freedBytes || 0) / (1024 * 1024)).toFixed(1);
+      const movedCount = res?.cleanedCount || 0;
+      if (movedCount === 0) {
+        toast.info(`كافة وسائط التطبيق (${mb} ميجابايت) قيد الاستخدام في مشاريعك أو مسوداتك`);
+        return;
+      }
       toast.success(
-        `تم تنظيف ${res?.cleanedCount || 0} ملف غير مستخدم واستعادة ${freedMb} ميجابايت (من أصل ${mb} ميجابايت)`,
+        `تم نقل ${movedCount} ملف غير مستخدم (${movedMb} ميجابايت) إلى سلة وسائط التطبيق`,
       );
     } catch (e) {
       toast.error('حدث خطأ أثناء تنظيف كاش الوسائط: ' + String(e));
+    }
+  };
+
+  const handleEmptyMediaTrash = async () => {
+    try {
+      const stats = await GetMediaStorageStats();
+      const trashMb = ((stats.trashTotalBytes || 0) / (1024 * 1024)).toFixed(1);
+      const trashCount = stats.trashCount || 0;
+
+      if (trashCount === 0) {
+        toast.info('سلة وسائط التطبيق فارغة بالفعل');
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `هل تريد بالتأكيد إفراغ سلة الوسائط نهائياً؟\nسيتم حذف ${trashCount} ملف وتحرير ${trashMb} ميجابايت من القرص بشكل دائم.`,
+      );
+      if (!confirmed) return;
+
+      const res = await EmptyMediaTrash();
+      const freedMb = (((res?.freedBytes as number) || 0) / (1024 * 1024)).toFixed(1);
+      toast.success(
+        `تم إفراغ سلة الوسائط نهائياً وحذف ${(res?.deletedCount as number) || 0} ملف واستعادة ${freedMb} ميجابايت من القرص`,
+      );
+    } catch (e) {
+      toast.error('حدث خطأ أثناء إفراغ سلة الوسائط: ' + String(e));
     }
   };
 
@@ -609,6 +644,14 @@ export function DesktopMenuBar() {
           >
             <Broom className="w-4 h-4" />
             <span className="font-medium flex-1">تنظيف كاش الوسائط</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={handleEmptyMediaTrash}
+            className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 text-rose-500 hover:text-rose-600 dark:text-rose-400"
+          >
+            <Trash className="w-4 h-4" />
+            <span className="font-medium flex-1">إفراغ سلة وسائط التطبيق</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
