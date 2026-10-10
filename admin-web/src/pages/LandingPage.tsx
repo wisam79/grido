@@ -15,8 +15,7 @@ import { CtaBanner } from '../components/landing/CtaBanner';
 import { Footer } from '../components/landing/Footer';
 import { WhatsAppFloatingButton } from '../components/landing/WhatsAppButton';
 import type { CurrencyCode } from '../data/landing-content';
-
-const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
+import { GITHUB_RELEASE_DOWNLOAD_URL } from '../lib/version';
 
 export default function LandingPage() {
   const [scrollProgress, setScrollProgress] = useState(0);

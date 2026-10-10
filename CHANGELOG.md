@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **تحصين مسارات التحديث والتوافقية العكسية بعد الانتقال إلى GitHub Pages (`admin-web` & `desktop`):**
+  1. أتمتة توليد مساري الـ API الثابتين `/api/version` و `/api/download` داخل سير العمل الآلي `.github/workflows/deploy-pages.yml`، وتفعيل تشغيله تلقائياً عند نشر أي Release جديد. يضمن ذلك خدمة ملف المثبت الفعلي `GridoStudio-installer.exe` عبر مسار `https://grido.cloud-ip.cc/api/download`، مما يحقق التوافقية العكسية 100% لكافة الأجهزة التي ثبتت الإصدار السابق (`v1.14.1` وما قبله) ويتيح لها التحديث التلقائي بنجاح بدلاً من الوقوع في خطأ `404 Not Found`.
+  2. استخراج رابط تحميل المثبت ديناميكياً من أصول الإصدار في GitHub Releases (`ghRelease.Assets`) بدلاً من تثبيته نصياً في `internal/service/updater.go`، مع توفير مسار احتياطي مباشر للرابط الدائم لـ GitHub Releases عند حدوث أي خلل في الرابط الأساسي (`defaultInstallerFallbackURL`).
+  3. توحيد مصدر رابط التحميل المباشر `GITHUB_RELEASE_DOWNLOAD_URL` في `admin-web/src/lib/version.ts` كمرجع وحيد للحقيقة واستيراده في كافة مكونات صفحة الهبوط (`Header`, `HeroSection`, `PricingSection`, `CtaBanner`, `LandingPage`) لتنزيل أحدث مثبت مباشرة من GitHub دون وسيط.
+  4. تزويد دالة `fetchAppVersion` في صفحة الهبوط بمسار احتياطي مباشر لـ GitHub Releases API لضمان استمرار ظهور شارة رقم الإصدار بنجاح حتى قبل انتهاء بناء أو تحديث المسار الثابت.
+  5. توجيه زر "تحميل من الموقع" في نافذة التحديث (`update-notifier.tsx`) إلى صفحة الإصدار الرسمية في GitHub عند حدوث أي خطأ في التنزيل التلقائي.
+
 ## [v1.14.2] - 2026-10-10
 
 ### Fixed

@@ -34,3 +34,50 @@ func TestIsVersionGreater(t *testing.T) {
 		}
 	}
 }
+
+func TestExtractInstallerDownloadURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		assets   []ReleaseAsset
+		expected string
+	}{
+		{
+			name: "installer exe asset",
+			assets: []ReleaseAsset{
+				{Name: "grido-checksums.txt", BrowserDownloadURL: "https://example.com/checksums.txt"},
+				{Name: "GridoStudio.exe", BrowserDownloadURL: "https://example.com/portable.exe"},
+				{Name: "GridoStudio-installer.exe", BrowserDownloadURL: "https://example.com/installer.exe"},
+			},
+			expected: "https://example.com/installer.exe",
+		},
+		{
+			name: "setup exe asset",
+			assets: []ReleaseAsset{
+				{Name: "Grido.Studio.Setup.exe", BrowserDownloadURL: "https://example.com/setup.exe"},
+			},
+			expected: "https://example.com/setup.exe",
+		},
+		{
+			name: "generic exe asset fallback",
+			assets: []ReleaseAsset{
+				{Name: "GridoStudio.exe", BrowserDownloadURL: "https://example.com/GridoStudio.exe"},
+			},
+			expected: "https://example.com/GridoStudio.exe",
+		},
+		{
+			name:     "empty assets default fallback",
+			assets:   []ReleaseAsset{},
+			expected: defaultInstallerFallbackURL,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := extractInstallerDownloadURL(tt.assets)
+			if got != tt.expected {
+				t.Errorf("extractInstallerDownloadURL() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+

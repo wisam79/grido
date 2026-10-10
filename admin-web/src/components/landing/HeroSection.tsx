@@ -3,11 +3,9 @@ import { Download, Play, Shield, Zap, Laptop, CheckCircle2 } from 'lucide-react'
 import { AppMockup } from './AppMockup';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { TourModal } from '../common/TourModal';
-import { useAppVersion } from '../../lib/version';
+import { useAppVersion, GITHUB_RELEASE_DOWNLOAD_URL } from '../../lib/version';
 
 const Hero3DScene = lazy(() => import('./Hero3DScene').then((m) => ({ default: m.Hero3DScene })));
-
-const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
 
 /** جولة الخطوات الثلاث — تحل محل مودال الفيديو الوهمي بمحتوى حقيقي ملموس */
 const QUICK_TOUR_STEPS = [

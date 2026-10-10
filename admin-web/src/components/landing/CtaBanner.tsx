@@ -1,6 +1,5 @@
 import { Download, Sparkles, ShieldCheck } from 'lucide-react';
-
-const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
+import { GITHUB_RELEASE_DOWNLOAD_URL } from '../../lib/version';
 
 export function CtaBanner() {
   return (

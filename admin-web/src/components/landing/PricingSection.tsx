@@ -1,7 +1,6 @@
 import { Check, Sparkles, Download, ShieldCheck, Zap, Star, RefreshCw, Headphones, Award } from 'lucide-react';
 import { CURRENCIES, type CurrencyCode } from '../../data/landing-content';
-
-const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
+import { GITHUB_RELEASE_DOWNLOAD_URL } from '../../lib/version';
 
 const FEATURES = [
   'رخصة أصلية لمدى الحياة (Lifetime)',

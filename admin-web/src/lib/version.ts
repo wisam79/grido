@@ -6,6 +6,12 @@ import { useEffect, useState } from 'react';
  * الاستجابة: { tag_name: "v1.2.10", ... } — نعرض الرقم بدون السابقة v.
  */
 
+/**
+ * الرابط الدائم والمباشر لتحميل أحدث مثبت لـ Grido Studio من GitHub Releases
+ */
+export const GITHUB_RELEASE_DOWNLOAD_URL =
+  'https://github.com/wisam79/grido/releases/latest/download/GridoStudio-installer.exe';
+
 let cachedVersion: string | null = null;
 let inflight: Promise<string | null> | null = null;
 
@@ -15,7 +21,13 @@ async function fetchAppVersion(): Promise<string | null> {
 
   inflight = (async () => {
     try {
-      const res = await fetch('/api/version', { headers: { Accept: 'application/json' } });
+      let res = await fetch('/api/version', { headers: { Accept: 'application/json' } });
+      if (!res.ok) {
+        // Fallback to GitHub Releases API directly if static /api/version is not available yet
+        res = await fetch('https://api.github.com/repos/wisam79/grido/releases/latest', {
+          headers: { Accept: 'application/vnd.github.v3+json' },
+        });
+      }
       if (!res.ok) return null;
       const data = (await res.json()) as { tag_name?: string };
       const tag = typeof data.tag_name === 'string' ? data.tag_name.replace(/^v/i, '').trim() : '';

@@ -136,7 +136,9 @@ export function UpdateNotifier() {
     setProgress(0);
 
     try {
-      const url = updateInfo.download_url || 'https://grido.cloud-ip.cc/api/download';
+      const url =
+        updateInfo.download_url ||
+        'https://github.com/wisam79/grido/releases/latest/download/GridoStudio-installer.exe';
       await DownloadAndInstallUpdate(url, updateInfo.sha256 || '');
     } catch (err: unknown) {
       console.error('Failed to update:', err);
@@ -259,7 +261,7 @@ export function UpdateNotifier() {
               ) : (
                 <Button
                   onClick={() => {
-                    const url = updateInfo.download_url || 'https://grido.cloud-ip.cc/api/download';
+                    const url = 'https://github.com/wisam79/grido/releases/latest';
                     if (typeof BrowserOpenURL === 'function') {
                       BrowserOpenURL(url);
                     } else {

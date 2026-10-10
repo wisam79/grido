@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Download, Menu, X, Sparkles, Layers, ShieldCheck, HelpCircle, Award, Calculator, Tag } from 'lucide-react';
-import { useAppVersion } from '../../lib/version';
-
-const GITHUB_RELEASE_DOWNLOAD_URL = '/api/download';
+import { useAppVersion, GITHUB_RELEASE_DOWNLOAD_URL } from '../../lib/version';
 
 const NAV_LINKS = [
   { href: '#capabilities', label: 'المميزات', icon: Layers },

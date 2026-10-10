@@ -39,6 +39,30 @@ type UpdateInfo struct {
 type UpdaterService struct{}
 
 const checksumsAssetName = "grido-checksums.txt"
+const defaultInstallerFallbackURL = "https://github.com/wisam79/grido/releases/latest/download/GridoStudio-installer.exe"
+
+// ReleaseAsset يمثل ملفاً مرفقاً في إصدار GitHub
+type ReleaseAsset struct {
+	Name               string `json:"name"`
+	BrowserDownloadURL string `json:"browser_download_url"`
+}
+
+// extractInstallerDownloadURL يستخرج رابط تحميل ملف التثبيت من أصول الإصدار ديناميكياً
+func extractInstallerDownloadURL(assets []ReleaseAsset) string {
+	for _, asset := range assets {
+		name := strings.ToLower(asset.Name)
+		if strings.HasSuffix(name, ".exe") && (strings.Contains(name, "installer") || strings.Contains(name, "setup")) && asset.BrowserDownloadURL != "" {
+			return asset.BrowserDownloadURL
+		}
+	}
+	for _, asset := range assets {
+		name := strings.ToLower(asset.Name)
+		if strings.HasSuffix(name, ".exe") && asset.BrowserDownloadURL != "" {
+			return asset.BrowserDownloadURL
+		}
+	}
+	return defaultInstallerFallbackURL
+}
 
 // CleanupTempUpdates يقوم بتنظيف كافّة ملفات والمثبتات المؤقتة الخاصة بـ Grido في مجلد Temp
 func CleanupTempUpdates() {
@@ -139,13 +163,10 @@ func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 	}
 
 	var ghRelease struct {
-		TagName string `json:"tag_name"`
-		Body    string `json:"body"`
-		SHA256  string `json:"sha256"`
-		Assets  []struct {
-			Name               string `json:"name"`
-			BrowserDownloadURL string `json:"browser_download_url"`
-		} `json:"assets"`
+		TagName string         `json:"tag_name"`
+		Body    string         `json:"body"`
+		SHA256  string         `json:"sha256"`
+		Assets  []ReleaseAsset `json:"assets"`
 	}
 
 	if err := json.Unmarshal(body, &ghRelease); err != nil {
@@ -172,13 +193,14 @@ func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 	}
 
 	hasUpdate := isVersionGreater(latestTag, currentTag)
+	installerURL := extractInstallerDownloadURL(ghRelease.Assets)
 
 	return &UpdateInfo{
 		HasUpdate:       hasUpdate,
 		CurrentVersion:  AppVersion,
 		LatestVersion:   ghRelease.TagName,
 		ReleaseNotes:    ghRelease.Body,
-		DownloadURL:     "https://grido.cloud-ip.cc/api/download",
+		DownloadURL:     installerURL,
 		InstallerSHA256: expectedSHA,
 	}, nil
 }
@@ -289,7 +311,7 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	}
 
 	if downloadURL == "" {
-		downloadURL = "https://grido.cloud-ip.cc/api/download"
+		downloadURL = defaultInstallerFallbackURL
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
@@ -312,6 +334,18 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 		},
 	}
 	resp, err := client.Do(req)
+	// إذا فشل الاتصال بالرابط المحدد أو أعاد كود خطأ وكان مختلفاً عن رابط GitHub الدائم، نحاول رابط GitHub الاحتياطي
+	if (err != nil || (resp != nil && resp.StatusCode != http.StatusOK)) && downloadURL != defaultInstallerFallbackURL {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		slog.Warn("Primary download URL failed, falling back to direct GitHub releases URL", "failed_url", downloadURL)
+		fallbackReq, fErr := http.NewRequestWithContext(ctx, "GET", defaultInstallerFallbackURL, nil)
+		if fErr == nil {
+			fallbackReq.Header.Set("User-Agent", "GridoStudio-Desktop")
+			resp, err = client.Do(fallbackReq)
+		}
+	}
 	if err != nil {
 		return fmt.Errorf("failed to download update: %w", err)
 	}

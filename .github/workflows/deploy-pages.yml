@@ -6,6 +6,8 @@ on:
     paths:
       - 'admin-web/**'
       - '.github/workflows/deploy-pages.yml'
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -44,6 +46,18 @@ jobs:
 
       - name: Create 404 fallback for SPA client-side routing
         run: cp admin-web/dist/index.html admin-web/dist/404.html
+
+      - name: Host static API endpoints for legacy clients
+        run: |
+          mkdir -p admin-web/dist/api
+          # 1. Provide /api/version statically from GitHub Releases API
+          curl -sSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/wisam79/grido/releases/latest \
+            -o admin-web/dist/api/version || true
+          # 2. Provide /api/download statically for legacy v1.14.1 desktop clients
+          curl -sSL -o admin-web/dist/api/download \
+            https://github.com/wisam79/grido/releases/latest/download/GridoStudio-installer.exe || true
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
