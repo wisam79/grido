@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.14.2] - 2026-10-10
+
 ### Fixed
 - **تبسيط وتوحيد محرك مربع التحديد وتحصين العناصر المقفلة (Transformer Simplification & Locked Hardening):**
   1. إزالة الازدواجية البرمجية واللفائف الزائدة في ربط عقد المحوّل، وإلغاء `useEffect` ومصفوفات المراجع المكررة من `konva-canvas.tsx` وحصر إدارة المحوّل في مكونه المخصص `EditorTransformer` كمصدر وحيد للحقيقة وفق نمط Konva الرسمي.
