@@ -424,7 +424,7 @@ func buildNativePrintHTML(paperWMM, paperHMM float64, imageSrc string) string {
   @media print {
     @page { margin: 0; size: %.2fmm %.2fmm; }
     html, body { background: white !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; max-width: 100%% !important; max-height: 100%% !important; overflow: hidden !important; page-break-after: avoid !important; break-after: avoid !important; }
-    img { position: absolute !important; top: 0 !important; left: 0 !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; max-width: 100%% !important; max-height: 100%% !important; object-fit: fill !important; page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+    img { position: absolute !important; top: 0 !important; left: 0 !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100%% !important; height: 100%% !important; max-width: 100%% !important; max-height: 100%% !important; object-fit: contain !important; page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid !important; break-inside: avoid !important; }
   }
 </style>
 </head>
@@ -474,7 +474,7 @@ func buildSelfContainedHTML(paperWMM, paperHMM float64, imageSrc string) string 
   @media print {
     @page { margin: 0; size: %.2fmm %.2fmm; }
     html, body { width: 100%% !important; height: 100%% !important; max-width: 100%% !important; max-height: 100%% !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; page-break-after: avoid !important; break-after: avoid !important; }
-    img { position: absolute !important; top: 0 !important; left: 0 !important; width: 100%% !important; height: 100%% !important; max-width: 100%% !important; max-height: 100%% !important; object-fit: fill !important; page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+    img { position: absolute !important; top: 0 !important; left: 0 !important; width: 100%% !important; height: 100%% !important; max-width: 100%% !important; max-height: 100%% !important; object-fit: contain !important; page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid !important; break-inside: avoid !important; }
   }
 </style>
 </head>

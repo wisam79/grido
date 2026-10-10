@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **تسريع أول استدعاء لنماذج الذكاء الاصطناعي المحلية عبر التسخين الحقيقي (AI Inference Real Warmup):**
+  1. معالجة تجميد إطار العرض (~4.5s) عند أول نقرة على عزل الخلفية أو تأطير الوجه الناتج عن ترجمة shaders الخاصة بـ TFLite GPU delegate، عن طريق استدعاء استدلال تجريبي كامل على صورة ضئيلة (`OffscreenCanvas(64,64)`) أثناء خمول التطبيق عبر `requestIdleCallback` مع فاصل زمني لتفادي ازدحام الذاكرة ونواة GPU.
+  2. حماية تداخل الاستدلالات في `bg-removal.worker.ts` و `face-frame.worker.ts` بربط طلبات التسخين بوعد memoized ينتظره طلب الاستدلال الحقيقي قبل المتابعة، مع تصفير الوعد بأمان عند أي خطأ للسماح بمحاولة لاحقة.
+- **منع تشوه وسحق مقاسات الطباعة وتوحيد النسبة 1:1 (`object-fit: contain`):**
+  1. استبدال `object-fit: fill` بـ `object-fit: contain` في كافة مولدات أنماط الطباعة (`print-page-style.ts`، `use-print-export.ts`، `index.css`، ومولدي HTML في `internal/service/print_export.go`).
+  2. الحفاظ الصارم على نسبة أبعاد التصميم والتركيب الهندسي ومنع السحق الأفقي أو الرأسي في حال اختلاف مقاس الورق المختار في حوار الطباعة الأصلي عن نسبة أبعاد التصميم، مع إضافة اختبارات التحقق في الطبقتين (`print-export-helpers.test.ts` و `print_hardening_test.go`).
 - **تحصين مسارات التحديث وتوزيع المثبت بعد تحويل المستودع إلى خاص (`Private Repository` & `GitHub Pages`):**
   1. تحويل مستودع المشروع إلى خاص (`Private`) لحماية الشيفرة المصدرية مع الحفاظ على التوزيع العام لموقع `https://grido.cloud-ip.cc` مستفيداً من مزايا GitHub Pro.
   2. أتمتة توليد مسارات التوزيع الثابتة `/GridoStudio-installer.exe` و `/api/download` و `/api/version` داخل سير العمل الآلي `.github/workflows/deploy-pages.yml` باستخدام `gh release download` وتوثيق `GH_TOKEN`، مما يتيح للزوار تنزيل المثبت باسمه الصريح مباشرة من الدومين، ويضمن التوافقية العكسية 100% لكافة الأجهزة للتحديث التلقائي دون أخطاء `404`.

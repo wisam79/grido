@@ -21,6 +21,13 @@ export function extractPrintImageSrc(htmlDoc: string): string {
 /**
  * يولّد نمط CSS الصارم لـ @page و WebView2 للطباعة بهوامش صفرية وحفظ النسبة 1:1.
  * يمنع الصفحات البيضاء الزائدة عبر حصر الحاوية بنسبة 100% ومنع الفواصل بعد العناصر.
+ *
+ * ⚖️ `object-fit: contain` وليس `fill`: `fill` كان يمدّ ورقة الطباعة (صورة
+ * التركيب) لتطابق نسبة أبعاد صندوق الصفحة قسراً — فإن غيّر المستخدم مقاس الورق
+ * في حوار الطباعة الأصلي (أو تجاهل المحرك `@page size` لمقاس غير قياسي) اختلفت
+ * نسبة الأبعاد فسُحق التصميم أفقياً أو رأسياً. `contain` يحجّم تحجيماً موحّداً
+ * داخل الصندوق نفسه: عند تطابق النسبة (الحالة الطبيعية) المخرجات مطابقة حرفياً
+ * لـ `fill`، وعند الاختلاف يتوسّط الورقة بشرائط بيضاء بدل التشويه.
  */
 export function generatePrintPageStyle(paperWidthMM: number, paperHeightMM: number): string {
   return (
@@ -73,7 +80,7 @@ export function generatePrintPageStyle(paperWidthMM: number, paperHeightMM: numb
     `    height: 100% !important;\n` +
     `    max-width: 100% !important;\n` +
     `    max-height: 100% !important;\n` +
-    `    object-fit: fill !important;\n` +
+    `    object-fit: contain !important;\n` +
     `    display: block !important;\n` +
     `    margin: 0 !important;\n` +
     `    padding: 0 !important;\n` +

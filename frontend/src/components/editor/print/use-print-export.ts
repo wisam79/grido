@@ -246,7 +246,9 @@ export function usePrintExport({
         img.style.height = '100%';
         img.style.maxWidth = '100%';
         img.style.maxHeight = '100%';
-        img.style.objectFit = 'fill';
+        // ⚖️ contain لا fill — انظر generatePrintPageStyle: fill يسحق الورقة إن
+        // اختلفت نسبة أبعاد الورق المختار في حوار الطباعة الأصلي عن نسبة التركيب.
+        img.style.objectFit = 'contain';
         img.style.display = 'block';
         container.appendChild(img);
 

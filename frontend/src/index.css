@@ -891,6 +891,9 @@
     break-inside: avoid !important;
   }
 
+  /* ⚖️ contain لا fill: الورقة تُحجَّم تحجيماً موحّداً داخل صندوق الصفحة، فلا
+     تُسحق إن اختلفت نسبة أبعاد الورق المختار عن نسبة صورة التركيب. عند التطابق
+     (الحالة الطبيعية) النتيجة مطابقة تماماً لـ fill. */
   #print-container img {
     display: block !important;
     position: absolute !important;
@@ -900,7 +903,7 @@
     height: 100% !important;
     max-width: 100% !important;
     max-height: 100% !important;
-    object-fit: fill !important;
+    object-fit: contain !important;
     margin: 0 !important;
     padding: 0 !important;
     page-break-after: avoid !important;

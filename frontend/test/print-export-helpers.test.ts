@@ -160,7 +160,10 @@ describe('generatePrintPageStyle', () => {
     expect(css).toContain('break-inside: avoid !important;');
     expect(css).toContain('page-break-after: avoid !important;');
     expect(css).toContain('break-after: avoid !important;');
-    expect(css).toContain('object-fit: fill !important;');
+    // ⚖️ contain: تحجيم موحّد يحفظ النسبة — fill كان يسحق الورقة عند اختلاف
+    // نسبة أبعاد الورق المختار في حوار الطباعة الأصلي عن نسبة صورة التركيب.
+    expect(css).toContain('object-fit: contain !important;');
+    expect(css).not.toContain('object-fit: fill !important;');
   });
 
   it('يخفي حاوية الطباعة بالكامل على الشاشة منعاً للوميض أو إزاحة العناصر', () => {

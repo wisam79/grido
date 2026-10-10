@@ -130,6 +130,14 @@ func TestBuildNativePrintHTML_PaperSizeAndEscapedSrc(t *testing.T) {
 	if strings.Contains(html, "a&b/print") {
 		t.Errorf("unescaped & must not appear raw in HTML src")
 	}
+	// ⚖️ التحجيم يجب أن يحفظ النسبة: `fill` كان يمدّ ورقة التركيب لتطابق نسبة
+	// أبعاد الورق المختار في حوار الطباعة الأصلي قسراً فيسحق التصميم.
+	if strings.Contains(html, "object-fit: fill") {
+		t.Errorf("print img must not use object-fit: fill (distorts on paper size change)")
+	}
+	if got := strings.Count(html, "object-fit: contain !important;"); got != 2 {
+		t.Errorf("expected object-fit: contain on both screen and print rules, got %d", got)
+	}
 }
 
 // 9. وثيقة WebView2 تستخدم مسار /local-image/ المتوافق مع CSP
@@ -140,6 +148,13 @@ func TestBuildSelfContainedHTML_LocalImageSrc(t *testing.T) {
 	}
 	if !strings.Contains(html, "size: 100.00mm 150.00mm") {
 		t.Errorf("expected @page size 100x150mm in HTML")
+	}
+	// ⚖️ نفس عقدة buildNativePrintHTML: لا `object-fit: fill` في أي من الوثيقتين.
+	if strings.Contains(html, "object-fit: fill") {
+		t.Errorf("print img must not use object-fit: fill (distorts on paper size change)")
+	}
+	if got := strings.Count(html, "object-fit: contain !important;"); got != 2 {
+		t.Errorf("expected object-fit: contain on both screen and print rules, got %d", got)
 	}
 }
 
