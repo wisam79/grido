@@ -261,7 +261,7 @@ export function UpdateNotifier() {
               ) : (
                 <Button
                   onClick={() => {
-                    const url = 'https://github.com/wisam79/grido/releases/latest';
+                    const url = 'https://grido.cloud-ip.cc';
                     if (typeof BrowserOpenURL === 'function') {
                       BrowserOpenURL(url);
                     } else {

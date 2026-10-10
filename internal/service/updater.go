@@ -39,7 +39,7 @@ type UpdateInfo struct {
 type UpdaterService struct{}
 
 const checksumsAssetName = "grido-checksums.txt"
-const defaultInstallerFallbackURL = "https://github.com/wisam79/grido/releases/latest/download/GridoStudio-installer.exe"
+const defaultInstallerFallbackURL = "https://grido.cloud-ip.cc/api/download"
 
 // ReleaseAsset يمثل ملفاً مرفقاً في إصدار GitHub
 type ReleaseAsset struct {
@@ -52,12 +52,18 @@ func extractInstallerDownloadURL(assets []ReleaseAsset) string {
 	for _, asset := range assets {
 		name := strings.ToLower(asset.Name)
 		if strings.HasSuffix(name, ".exe") && (strings.Contains(name, "installer") || strings.Contains(name, "setup")) && asset.BrowserDownloadURL != "" {
+			if strings.Contains(asset.BrowserDownloadURL, "github.com/wisam79/grido/releases") {
+				return defaultInstallerFallbackURL
+			}
 			return asset.BrowserDownloadURL
 		}
 	}
 	for _, asset := range assets {
 		name := strings.ToLower(asset.Name)
 		if strings.HasSuffix(name, ".exe") && asset.BrowserDownloadURL != "" {
+			if strings.Contains(asset.BrowserDownloadURL, "github.com/wisam79/grido/releases") {
+				return defaultInstallerFallbackURL
+			}
 			return asset.BrowserDownloadURL
 		}
 	}

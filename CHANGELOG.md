@@ -10,12 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **تحصين مسارات التحديث والتوافقية العكسية بعد الانتقال إلى GitHub Pages (`admin-web` & `desktop`):**
-  1. أتمتة توليد مساري الـ API الثابتين `/api/version` و `/api/download` داخل سير العمل الآلي `.github/workflows/deploy-pages.yml`، وتفعيل تشغيله تلقائياً عند نشر أي Release جديد. يضمن ذلك خدمة ملف المثبت الفعلي `GridoStudio-installer.exe` عبر مسار `https://grido.cloud-ip.cc/api/download`، مما يحقق التوافقية العكسية 100% لكافة الأجهزة التي ثبتت الإصدار السابق (`v1.14.1` وما قبله) ويتيح لها التحديث التلقائي بنجاح بدلاً من الوقوع في خطأ `404 Not Found`.
-  2. استخراج رابط تحميل المثبت ديناميكياً من أصول الإصدار في GitHub Releases (`ghRelease.Assets`) بدلاً من تثبيته نصياً في `internal/service/updater.go`، مع توفير مسار احتياطي مباشر للرابط الدائم لـ GitHub Releases عند حدوث أي خلل في الرابط الأساسي (`defaultInstallerFallbackURL`).
-  3. توحيد مصدر رابط التحميل المباشر `GITHUB_RELEASE_DOWNLOAD_URL` في `admin-web/src/lib/version.ts` كمرجع وحيد للحقيقة واستيراده في كافة مكونات صفحة الهبوط (`Header`, `HeroSection`, `PricingSection`, `CtaBanner`, `LandingPage`) لتنزيل أحدث مثبت مباشرة من GitHub دون وسيط.
-  4. تزويد دالة `fetchAppVersion` في صفحة الهبوط بمسار احتياطي مباشر لـ GitHub Releases API لضمان استمرار ظهور شارة رقم الإصدار بنجاح حتى قبل انتهاء بناء أو تحديث المسار الثابت.
-  5. توجيه زر "تحميل من الموقع" في نافذة التحديث (`update-notifier.tsx`) إلى صفحة الإصدار الرسمية في GitHub عند حدوث أي خطأ في التنزيل التلقائي.
+- **تحصين مسارات التحديث وتوزيع المثبت بعد تحويل المستودع إلى خاص (`Private Repository` & `GitHub Pages`):**
+  1. تحويل مستودع المشروع إلى خاص (`Private`) لحماية الشيفرة المصدرية مع الحفاظ على التوزيع العام لموقع `https://grido.cloud-ip.cc` مستفيداً من مزايا GitHub Pro.
+  2. أتمتة توليد مسارات التوزيع الثابتة `/GridoStudio-installer.exe` و `/api/download` و `/api/version` داخل سير العمل الآلي `.github/workflows/deploy-pages.yml` باستخدام `gh release download` وتوثيق `GH_TOKEN`، مما يتيح للزوار تنزيل المثبت باسمه الصريح مباشرة من الدومين، ويضمن التوافقية العكسية 100% لكافة الأجهزة للتحديث التلقائي دون أخطاء `404`.
+  3. تطبيع روابط التحديث في الباك إند (`internal/service/updater.go`) لتحويل أي رابط أصل على GitHub Releases إلى مسار التوزيع العام `https://grido.cloud-ip.cc/api/download`، وتوجيه زر التحميل اليدوي في نافذة التحديث (`update-notifier.tsx`) إلى الموقع الرسمي.
+  4. توحيد مصدر رابط التحميل المباشر `GITHUB_RELEASE_DOWNLOAD_URL = '/GridoStudio-installer.exe'` في `admin-web/src/lib/version.ts` كمرجع وحيد للحقيقة في صفحة الهبوط.
 
 ## [v1.14.2] - 2026-10-10
 

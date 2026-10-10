@@ -7,10 +7,9 @@ import { useEffect, useState } from 'react';
  */
 
 /**
- * الرابط الدائم والمباشر لتحميل أحدث مثبت لـ Grido Studio من GitHub Releases
+ * الرابط الدائم والمباشر لتحميل أحدث مثبت لـ Grido Studio
  */
-export const GITHUB_RELEASE_DOWNLOAD_URL =
-  'https://github.com/wisam79/grido/releases/latest/download/GridoStudio-installer.exe';
+export const GITHUB_RELEASE_DOWNLOAD_URL = '/GridoStudio-installer.exe';
 
 let cachedVersion: string | null = null;
 let inflight: Promise<string | null> | null = null;

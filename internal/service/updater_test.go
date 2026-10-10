@@ -65,6 +65,13 @@ func TestExtractInstallerDownloadURL(t *testing.T) {
 			expected: "https://example.com/GridoStudio.exe",
 		},
 		{
+			name: "private github release asset normalized to domain",
+			assets: []ReleaseAsset{
+				{Name: "GridoStudio-installer.exe", BrowserDownloadURL: "https://github.com/wisam79/grido/releases/download/v1.14.2/GridoStudio-installer.exe"},
+			},
+			expected: defaultInstallerFallbackURL,
+		},
+		{
 			name:     "empty assets default fallback",
 			assets:   []ReleaseAsset{},
 			expected: defaultInstallerFallbackURL,

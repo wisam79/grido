@@ -9,17 +9,17 @@
 
 ---
 
-## 0.65 سجل جلسة تحصين مسارات التحديث والتوافقية العكسية بعد نقل الاستضافة إلى GitHub Pages — 10 أكتوبر 2026
+## 0.65 سجل جلسة تحصين مسارات التحديث وتوزيع المثبت بعد تحويل المستودع إلى خاص — 10 أكتوبر 2026
 
-**المرجع:** تشخيص وعلاج خطأ `server returned status: 404 Not Found` في نافذة تحديث التطبيق بعد نقل استضافة `admin-web` من Netlify إلى GitHub Pages، وحل مشكلة التوافقية العكسية لكافة المستخدمين الذين ثبتوا الإصدار السابق.
+**المرجع:** حماية وتأمين الشيفرة المصدرية بجعل مستودع `wisam79/grido` خاصاً (`Private`)، مع ضمان استمرار التحديث التلقائي لكافة الإصدارات السابقة والحالية وتنزيل المثبت من موقع `https://grido.cloud-ip.cc` دون أي أخطاء أو طلب تسجيل دخول.
 
 | البند | التنفيذ | الإثبات |
 | --- | --- | --- |
-| خدمة مساري `/api/download` و `/api/version` عبر GitHub Pages | أتمتة جلب ملف المثبت الفعلي `GridoStudio-installer.exe` وجلب بيانات الإصدار وتخزينهما في `admin-web/dist/api/` داخل `.github/workflows/deploy-pages.yml`، وتشغيله تلقائياً عند نشر أي Release؛ لضمان نجاح التحديث التلقائي لكافة مستخدمي `v1.14.1` وما قبلها | `.github/workflows/deploy-pages.yml` ✅ |
-| استخراج رابط تحميل المثبت ديناميكياً في الباك إند | استبدال الرابط الثابت في `updater.go` بدالة `extractInstallerDownloadURL` التي تقرأ `browser_download_url` مباشرة من أصول GitHub Releases (`ghRelease.Assets`)، مع توفير مسار احتياطي للرابط الدائم المباشر عند فشل الرابط الأساسي | `updater.go` + `updater_test.go` (اجتياز 4 حالات فحص أصول) ✅ |
-| توحيد رابط التحميل في موقع الهبوط (`admin-web`) | استخراج الرابط الدائم المباشر `GITHUB_RELEASE_DOWNLOAD_URL` في `admin-web/src/lib/version.ts` وتوجيه أزرار التحميل في كافة مكونات صفحة الهبوط (`Header`, `Hero`, `Pricing`, `Cta`, `LandingPage`) إليه مباشرة | `version.ts` + 5 مكونات في `admin-web` ✅ |
-| تدقيق شامل للمنظومة بعد نقل الاستضافة | فحص مسارات OAuth Callback و Privacy و Terms و Supabase و Modal AI والدومين وشهادة الأمان والتأكد من سلامتها التامة بنسبة 100% | فحص شبكي وبرمجي كامل ✅ |
-| بوابات الجودة والتحقق الآلي | بناء `admin-web` (نجاح تام) · `tsc --noEmit` (0) · `eslint` (0) · `go test ./internal/service` (أخضر) · `docs-gate.mjs --strict-refs` يمر بنجاح 100% | 2026-10-10 ✅ |
+| تحويل المستودع إلى خاص (`Private Repository`) | تحويل رؤية المستودع رسمياً إلى خاص مع الحفاظ على النشر العام لـ GitHub Pages على الدومين المخصص `grido.cloud-ip.cc` بدعم اشتراك GitHub Pro | `gh repo view` (isPrivate: true) ✅ |
+| خدمة مسارات التوزيع الثابتة عبر GitHub Pages | أتمتة جلب ملف المثبت الفعلي عبر `gh release download` وتخزينه كـ `/GridoStudio-installer.exe` و `/api/download` وبيانات الإصدار `/api/version` داخل `.github/workflows/deploy-pages.yml` | `.github/workflows/deploy-pages.yml` ✅ |
+| تطبيع روابط التحميل في الباك إند (`updater.go`) | استخراج الرابط تلقائياً وتطبيع أي رابط خاص بـ GitHub Releases إلى الرابط العام `https://grido.cloud-ip.cc/api/download` لمنع أخطاء `404 Not Found` | `updater.go` + `updater_test.go` (اجتياز 5 اختبارات) ✅ |
+| توحيد رابط التحميل المباشر باسم الملف الصريح في الموقع | توجيه `GITHUB_RELEASE_DOWNLOAD_URL` في `admin-web/src/lib/version.ts` إلى `/GridoStudio-installer.exe` لتنزيل المثبت مباشرة باسمه وامتداده الصحيح | `version.ts` ✅ |
+| بوابات الجودة والتحقق الآلي | بناء `admin-web` (نجاح تام) · `tsc --noEmit` (0) · `go test ./internal/service` (أخضر) · `docs-gate.mjs --strict-refs` يمر بنجاح 100% | 2026-10-10 ✅ |
 
 ---
 
