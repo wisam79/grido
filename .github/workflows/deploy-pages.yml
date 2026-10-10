@@ -54,11 +54,23 @@ jobs:
           mkdir -p admin-web/dist/api
           # 1. Provide /api/version statically from GitHub Releases API
           gh api repos/${{ github.repository }}/releases/latest > admin-web/dist/api/version || true
-          # 2. Provide /api/download statically for legacy v1.14.1 desktop clients
+
+          # 2. Provide /api/download statically for legacy and modern desktop clients
           gh release download --pattern "GridoStudio-installer.exe" --dir admin-web/dist/api --clobber || true
           if [ -f admin-web/dist/api/GridoStudio-installer.exe ]; then
             cp admin-web/dist/api/GridoStudio-installer.exe admin-web/dist/api/download
             cp admin-web/dist/api/GridoStudio-installer.exe admin-web/dist/GridoStudio-installer.exe
+          fi
+
+          # 3. Host checksums and inject sha256 into /api/version for secure verification
+          gh release download --pattern "grido-checksums.txt" --dir admin-web/dist/api --clobber || true
+          if [ -f admin-web/dist/api/grido-checksums.txt ]; then
+            cp admin-web/dist/api/grido-checksums.txt admin-web/dist/api/checksums
+            cp admin-web/dist/api/grido-checksums.txt admin-web/dist/grido-checksums.txt
+            INSTALLER_HASH=$(grep -i "installer" admin-web/dist/api/grido-checksums.txt | head -n 1 | awk '{print $1}')
+            if [ -n "$INSTALLER_HASH" ]; then
+              jq --arg hash "$INSTALLER_HASH" '. + {sha256: $hash}' admin-web/dist/api/version > admin-web/dist/api/version.tmp && mv admin-web/dist/api/version.tmp admin-web/dist/api/version
+            fi
           fi
 
       - name: Setup Pages

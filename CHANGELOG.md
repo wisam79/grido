@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **تأمين جلب بصمات SHA-256 للمثبت عبر موقع التوزيع العام (`api/checksums`):**
+  - استضافة ملف البصمات `grido-checksums.txt` في مسار عام على `https://grido.cloud-ip.cc/api/checksums` وحقن بصمة `sha256` مباشرة في كائن JSON لـ `/api/version` أثناء النشر، مع تطبيع رابط جلب البصمات في `updater.go` ليتجاوز قيود المستودع الخاص ويسمح بالتحديث التلقائي الفوري دون أخطاء غياب البصمة.
+
 ### Changed
 - **أتمتة مزامنة موقع التوزيع وواجهة برمجة الإصدارات (`deploy-pages.yml` Auto-Trigger):**
   - ربط سير عمل `release.yml` بإطلاق سير عمل `deploy-pages.yml` تلقائياً فور إنشاء ونشر أي Release جديد، لتجاوز حظر الأفعال المتكررة التلقائية في GitHub Actions وتحديث نقطة النهاية `/api/version` ومثبت التطبيق فورياً دون الحاجة للتشغيل اليدوي.

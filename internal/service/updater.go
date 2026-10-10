@@ -179,15 +179,25 @@ func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 		return nil, err
 	}
 
-	// إن لم يوفر خادم الإصدارات البصمة مباشرة، نحاول قراءة ملف البصمات من أصول الإصدار (مسار GitHub الاحتياطي)
+	// إن لم يوفر خادم الإصدارات البصمة مباشرة، نحاول قراءة ملف البصمات من أصول الإصدار أو موقع التوزيع العام
 	expectedSHA := strings.ToLower(strings.TrimSpace(ghRelease.SHA256))
 	if expectedSHA == "" {
 		for _, asset := range ghRelease.Assets {
 			if asset.Name == checksumsAssetName && asset.BrowserDownloadURL != "" {
-				if text, fetchErr := fetchTextAsset(client, asset.BrowserDownloadURL); fetchErr == nil {
+				url := asset.BrowserDownloadURL
+				if strings.Contains(url, "github.com/wisam79/grido/releases") {
+					url = "https://grido.cloud-ip.cc/api/checksums"
+				}
+				if text, fetchErr := fetchTextAsset(client, url); fetchErr == nil {
 					expectedSHA = parseChecksumForInstaller(text)
 				}
 				break
+			}
+		}
+		// محاولة احتياطية من مسار التوزيع العام
+		if expectedSHA == "" {
+			if text, fetchErr := fetchTextAsset(client, "https://grido.cloud-ip.cc/api/checksums"); fetchErr == nil {
+				expectedSHA = parseChecksumForInstaller(text)
 			}
 		}
 	}
