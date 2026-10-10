@@ -52,6 +52,8 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
   --color-canvas-stage: var(--canvas-stage);
+  --color-window-close: var(--window-close);
+  --color-window-close-active: var(--window-close-active);
   /* ألوان المساطر الدلالية (Ruler Semantic Colors) */
   --color-ruler-surface: var(--ruler-surface);
   --color-ruler-corner: var(--ruler-corner);
@@ -93,16 +95,27 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* أحجام الخطوط الافتراضية المضغوطة لتصميم محترف شبيه بـ Figma */
+  /* أحجام الخطوط الافتراضية المضغوطة لتصميم محترف شبيه بـ Figma.
+     ⚠️ ارتفاعات الأسطر مقترنة بكل مقاس (line-height tokens): النسبة اللاتينية
+     الافتراضية لـ Tailwind (~1.33) تضغط الحروف العربية وتقصّ نزولها، لذا نضبط
+     ارتفاعاً عربياً مريحاً (~1.55 للنص، ~1.4 للميكرو) بدل الاعتماد على
+     `leading-tight` اليدوي المتناثر (تدقيق 2026-10-10، البند P0-1). */
   --text-xs: 11.5px;
+  --text-xs--line-height: 18px;
   --text-sm: 13.5px;
+  --text-sm--line-height: 21px;
   --text-base: 15px;
+  --text-base--line-height: 24px;
   /* مقياس طباعي دلالي موحّد للميكرو-نصوص (Unified Micro Typography Scale)
      8px / 9px / 10px / 11px — يُمنع استخدام text-[Npx] العشوائي خارجها */
   --text-3xs: 8px;
+  --text-3xs--line-height: 11px;
   --text-2xs: 9px;
+  --text-2xs--line-height: 13px;
   --text-micro: 10px;
+  --text-micro--line-height: 14px;
   --text-mini: 11px;
+  --text-mini--line-height: 16px;
 }
 
 :root {
@@ -149,6 +162,9 @@
   --info-foreground: #ffffff;
   /* سطح «الرسم الغائر» للحاويات التي تستضيف معاينة محتوى (الماسح، المعاينات) */
   --canvas-stage: #0b1220;
+  /* زر إغلاق النافذة (ويندوز 11) — معزول كتوكن بدل hex داخل className */
+  --window-close: #c42b1c;
+  --window-close-active: #b22517;
 
   --sidebar: rgba(248, 250, 252, 0.84); /* Clean off-white Mica sidebar */
   --sidebar-foreground: #0f172a;
@@ -169,8 +185,8 @@
   --canvas-transformer-locked: #f59e0b;
   --canvas-transformer-locked-stroke: #d97706;
   --canvas-transformer-anchor-fill: #ffffff;
-  --canvas-transformer-badge-bg: #1e293b;
-  --canvas-transformer-badge-text: #ffffff;
+  --canvas-transformer-badge-bg: rgba(15, 23, 42, 0.72);
+  --canvas-transformer-badge-text: rgba(255, 255, 255, 0.92);
   --canvas-gradient-start: #3b82f6;
   --canvas-gradient-end: #8b5cf6;
   --canvas-collage-cut: #94a3b8;
@@ -208,9 +224,10 @@
   --ruler-tick-major: #a3a3a3;
   --ruler-tick-label-active: #404040;
 
-  /* Workspace Backdrop (Light) — سطح مساحة العمل تحت الورقة وشبكة نقاطها */
-  --workspace-bg: #f8fafc;
-  --workspace-grid-dot: #cbd5e1;
+  /* Workspace Backdrop (Light) — سطح مساحة العمل تحت الورقة وشبكة نقاطها
+     (خُفِّض سطوعه درجةً ليرتفع فصل الورقة البيضاء عنه — تدقيق 2026-10-10 P2-6) */
+  --workspace-bg: #eef1f6;
+  --workspace-grid-dot: #b6c2d1;
   --workspace-glow: rgba(37, 99, 235, 0.035);
 
   /* Print Dialog Surface (Light) — أسطح وأشرطة نافذة المعاينة متناسقة مع الوضع الفاتح المحايد */
@@ -277,6 +294,8 @@
   --info: #60a5fa;
   --info-foreground: #0c1a33;
   --canvas-stage: #0a0a0c;
+  --window-close: #c42b1c;
+  --window-close-active: #b22517;
 
   --sidebar: rgba(26, 26, 26, 0.84); /* خلفية الأشرطة الجانبية والألواح الحاضنة */
   --sidebar-foreground: #f5f5f5;
@@ -297,8 +316,8 @@
   --canvas-transformer-locked: #fbbf24;
   --canvas-transformer-locked-stroke: #f59e0b;
   --canvas-transformer-anchor-fill: #f5f5f5;
-  --canvas-transformer-badge-bg: #141414;
-  --canvas-transformer-badge-text: #f5f5f5;
+  --canvas-transformer-badge-bg: rgba(24, 24, 27, 0.75);
+  --canvas-transformer-badge-text: rgba(255, 255, 255, 0.92);
   --canvas-gradient-start: #60a5fa;
   --canvas-gradient-end: #a78bfa;
   --canvas-collage-cut: #525252;

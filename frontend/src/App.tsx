@@ -171,7 +171,18 @@ export default function App() {
     const handleToggleTheme = () => toggleTheme();
     const handleOpenAccount = () => setAccountModalOpen(true);
     const openExport = () => setExportOpen(true);
-    const openPrint = () => setPrintOpen(true);
+    // 🎯 قناة أوامر واحدة: كل الأسطح (شريط القوائم، شريط الأدوات، الاختصارات) تبثّ
+    // نفس الأحداث، وGate الترخيص يعيش هنا مرة واحدة — فأي مسار طباعة (بما فيه Ctrl+P
+    // الذي كان يتجاوز البوابة) يمر عبره. (تقييم 2026-10-10، P1-4)
+    const openPrint = () => {
+      if (!useEditorStore.getState().isLicenseActive()) {
+        toast.error('الطباعة في الخطة الاحترافية (Pro) فقط.', {
+          action: { label: 'تفعيل الآن', onClick: () => setAccountModalOpen(true) },
+        });
+        return;
+      }
+      setPrintOpen(true);
+    };
 
     window.addEventListener('grido:toggle-theme', handleToggleTheme);
     window.addEventListener('grido:open-account', handleOpenAccount);
@@ -518,19 +529,8 @@ export default function App() {
 
           {/* شريط الأدوات */}
           <Toolbar
-            onPrint={() => {
-              if (!isLicenseActive) {
-                toast.error('الطباعة في الخطة الاحترافية (Pro) فقط.', {
-                  action: {
-                    label: 'تفعيل الآن',
-                    onClick: () => setAccountModalOpen(true),
-                  },
-                });
-                return;
-              }
-              setPrintOpen(true);
-            }}
-            onExport={() => setExportOpen(true)}
+            onPrint={() => window.dispatchEvent(new CustomEvent('grido:open-print-dialog'))}
+            onExport={() => window.dispatchEvent(new CustomEvent('grido:open-export-dialog'))}
             onSave={() =>
               window.dispatchEvent(
                 new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),

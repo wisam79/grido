@@ -88,8 +88,8 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       const textContent = `${wMM} × ${hMM} mm${rotStr}`;
 
       if (badgeRef.current && textRef.current && badgeBgRef.current) {
-        // حساب العرض الكافي للنص مع مسافة حشو 20px
-        const badgeW = Math.max(124, textContent.length * 7.5 + 22);
+        // حساب العرض الرشيق للنص مع مسافة حشو 16px
+        const badgeW = Math.max(76, textContent.length * 6.2 + 16);
 
         if (textRef.current.text() !== textContent) {
           textRef.current.text(textContent);
@@ -100,9 +100,9 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         }
 
         // تموضع ذكي متكيف: إذا كان العنصر في قمة الكانفس، تنقلب الشارة لأسفله
-        const badgeOffset = 32 * safeBadgeScale;
+        const badgeOffset = 20 * safeBadgeScale;
         const targetY =
-          vBox.minY - badgeOffset >= 0 ? vBox.minY - badgeOffset : vBox.maxY + 12 * safeBadgeScale;
+          vBox.minY - badgeOffset >= 0 ? vBox.minY - badgeOffset : vBox.maxY + 10 * safeBadgeScale;
 
         badgeRef.current.position({
           x: vBox.centerX,
@@ -161,16 +161,17 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       }
     };
 
-    transformer.on('transformstart dragstart', handleTransformStart);
-    transformer.on('transform dragmove', handleTransform);
-    transformer.on('transformend dragend', handleTransformEndInternal);
+    // 🎯 الشارة تظهر حصراً أثناء التحجيم والتدوير (transform) وليس أثناء التحريك/السحب (drag)
+    transformer.on('transformstart', handleTransformStart);
+    transformer.on('transform', handleTransform);
+    transformer.on('transformend', handleTransformEndInternal);
 
     return () => {
       useCanvasInteraction.getState().setIsTransforming(false);
       if (badgeRafId !== 0) cancelAnimationFrame(badgeRafId);
-      transformer.off('transformstart dragstart', handleTransformStart);
-      transformer.off('transform dragmove', handleTransform);
-      transformer.off('transformend dragend', handleTransformEndInternal);
+      transformer.off('transformstart', handleTransformStart);
+      transformer.off('transform', handleTransform);
+      transformer.off('transformend', handleTransformEndInternal);
     };
   }, [trRef, canvasWidth, canvasHeight, dpi, stageScale, safeBadgeScale, altPressedRef]);
 
@@ -326,7 +327,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         onTransformEnd={onTransformEnd}
       />
 
-      {/* شريط الأبعاد والزاوية الحية الفاخر بنظام Fluent Acrylic */}
+      {/* شريط الأبعاد والزاوية الحية الرشيق والخفيف بنمط Fluent Micro Acrylic */}
       <Group
         ref={badgeRef}
         name="transformer-badge"
@@ -337,26 +338,32 @@ export const EditorTransformer = React.memo(function EditorTransformer({
       >
         <Rect
           ref={badgeBgRef}
-          x={-62}
+          x={-42}
           y={0}
-          width={124}
-          height={24}
+          width={84}
+          height={18}
           fill={transformerBadgeBg()}
-          stroke="rgba(255, 255, 255, 0.22)"
-          strokeWidth={1}
-          cornerRadius={7}
+          stroke="rgba(255, 255, 255, 0.14)"
+          strokeWidth={0.75}
+          cornerRadius={5}
+          shadowColor="rgba(0, 0, 0, 0.2)"
+          shadowBlur={4}
+          shadowOffset={{ x: 0, y: 1 }}
+          shadowOpacity={0.35}
+          perfectDrawEnabled={false}
         />
         <Text
           ref={textRef}
-          x={-62}
-          y={6}
-          width={124}
+          x={-42}
+          y={3.5}
+          width={84}
           text=""
-          fontSize={11}
+          fontSize={9.5}
           fontFamily="Inter, Cairo, system-ui, sans-serif"
-          fontStyle="bold"
+          fontStyle="normal"
           fill={transformerBadgeText()}
           align="center"
+          perfectDrawEnabled={false}
         />
       </Group>
     </React.Fragment>

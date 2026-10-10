@@ -153,6 +153,13 @@ export const IMAGE_FILTERS: ImageFilter[] = [
   },
 ];
 
+/**
+ * الاسم المختصر للمرشح — الجزء قبل الشرح بعد الشرطة الطويلة.
+ * شبكة المرشحات بأربعة أعمدة داخل لوح بعرض ~272px لا تتسع للاسم الكامل،
+ * فيُعرض المختصر في الشبكة ويبقى الاسم الكامل في التلميح والاسم البرمجي.
+ */
+export const filterShortName = (name: string) => name.split('—')[0].trim();
+
 // ألوان خلفية الاستوديو المعتمدة
 export const BACKGROUND_COLORS: { name: string; value: string }[] = [
   { name: 'أبيض ناصع', value: '#FFFFFF' },

@@ -503,8 +503,14 @@ export function BatchInsertDialog({
 
             {/* Layout Mode Selector */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-foreground">نمط التوزيع</Label>
-              <div className="grid grid-cols-2 gap-1.5">
+              <Label id="batch-layout-mode" className="text-xs font-semibold text-foreground">
+                نمط التوزيع
+              </Label>
+              <div
+                role="group"
+                aria-labelledby="batch-layout-mode"
+                className="grid grid-cols-2 gap-1.5"
+              >
                 <Button
                   type="button"
                   variant={layoutMode === 'grid' ? 'default' : 'outline'}
@@ -590,10 +596,19 @@ export function BatchInsertDialog({
                 {/* Center Last Row */}
                 <div className="flex items-center justify-between pt-2 border-t border-border/30">
                   <div className="space-y-0.5">
-                    <Label className="text-xs font-medium text-foreground">توسيط الصف الأخير</Label>
+                    <Label
+                      id="batch-center-last-row"
+                      className="text-xs font-medium text-foreground"
+                    >
+                      توسيط الصف الأخير
+                    </Label>
                     <p className="text-xs text-muted-foreground">توسيط عناصر الصف الناقص</p>
                   </div>
-                  <Switch checked={centerLastRow} onCheckedChange={setCenterLastRow} />
+                  <Switch
+                    aria-labelledby="batch-center-last-row"
+                    checked={centerLastRow}
+                    onCheckedChange={setCenterLastRow}
+                  />
                 </div>
               </>
             )}

@@ -25,7 +25,7 @@ import {
   FadersHorizontal,
 } from '@/components/ui/icons';
 import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
-import { IMAGE_FILTERS } from '@/lib/templates';
+import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
@@ -387,8 +387,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     style={{ filter: filter.css }}
                   />
                 </span>
-                <span className="text-micro leading-tight truncate max-w-full text-center">
-                  {filter.name}
+                <span className="text-micro w-full text-center leading-tight">
+                  {filterShortName(filter.name)}
                 </span>
               </button>
             );
@@ -572,6 +572,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                       onUpdate(element.id, { bgColor: colorItem.val });
                       useEditorStore.getState().pushHistory();
                     }}
+                    aria-label={colorItem.label}
+                    aria-pressed={isActive}
+                    title={colorItem.label}
                     className={cn(
                       'w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                       isActive && 'ring-2 ring-primary ring-offset-1 border-primary',
@@ -618,6 +621,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             }}
             swatchOnly
             className="w-7 h-7"
+            ariaLabel="لون خلفية الصورة"
           />
         </div>
       </FluentSection>

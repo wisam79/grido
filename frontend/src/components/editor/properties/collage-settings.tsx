@@ -5,14 +5,14 @@ import {
   Scissors,
   Rows,
   GridFour,
-} from "@/components/ui/icons";
-import { useEditorStore } from "@/lib/editor-store";
-import { Switch } from "@/components/ui/switch";
-import { useShallow } from "zustand/react/shallow";
-import { cn } from "@/lib/utils";
-import { useRef, useCallback, useEffect } from "react";
-import { FluentSection, FluentSettingRow, FluentSliderField } from "@/components/ui/blocks";
-import { PopoverColorPicker } from "./shared-controls";
+} from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { Switch } from '@/components/ui/switch';
+import { useShallow } from 'zustand/react/shallow';
+import { cn } from '@/lib/utils';
+import { useRef, useCallback, useEffect } from 'react';
+import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+import { PopoverColorPicker } from './shared-controls';
 
 export function CollageSettings() {
   const {
@@ -31,23 +31,25 @@ export function CollageSettings() {
     setCollageShowEndCutLine,
     setCollageStrokeWidth,
     setCollageStrokeColor,
-  } = useEditorStore(useShallow((state) => ({
-    collageGap: state.collageGap,
-    collageMargin: state.collageMargin,
-    collageRadius: state.collageRadius,
-    collageShowCutLines: state.collageShowCutLines,
-    collageShowEndCutLine: state.collageShowEndCutLine,
-    collageStrokeWidth: state.collageStrokeWidth,
-    collageStrokeColor: state.collageStrokeColor,
-    previewCollageGap: state.previewCollageGap,
-    previewCollageMargin: state.previewCollageMargin,
-    commitCollageSpacing: state.commitCollageSpacing,
-    setCollageRadius: state.setCollageRadius,
-    setCollageShowCutLines: state.setCollageShowCutLines,
-    setCollageShowEndCutLine: state.setCollageShowEndCutLine,
-    setCollageStrokeWidth: state.setCollageStrokeWidth,
-    setCollageStrokeColor: state.setCollageStrokeColor,
-  })));
+  } = useEditorStore(
+    useShallow((state) => ({
+      collageGap: state.collageGap,
+      collageMargin: state.collageMargin,
+      collageRadius: state.collageRadius,
+      collageShowCutLines: state.collageShowCutLines,
+      collageShowEndCutLine: state.collageShowEndCutLine,
+      collageStrokeWidth: state.collageStrokeWidth,
+      collageStrokeColor: state.collageStrokeColor,
+      previewCollageGap: state.previewCollageGap,
+      previewCollageMargin: state.previewCollageMargin,
+      commitCollageSpacing: state.commitCollageSpacing,
+      setCollageRadius: state.setCollageRadius,
+      setCollageShowCutLines: state.setCollageShowCutLines,
+      setCollageShowEndCutLine: state.setCollageShowEndCutLine,
+      setCollageStrokeWidth: state.setCollageStrokeWidth,
+      setCollageStrokeColor: state.setCollageStrokeColor,
+    })),
+  );
 
   // لون الإطار يُدخل باستمرار (نص/عجلة) — ندفع سطر تراجع واحد بعد توقف الكتابة (إصلاح Bug#2)
   const colorCommitTimerRef = useRef<number | null>(null);
@@ -64,7 +66,6 @@ export function CollageSettings() {
       if (colorCommitTimerRef.current !== null) window.clearTimeout(colorCommitTimerRef.current);
     };
   }, []);
-
 
   return (
     <div className="flex flex-col gap-3 font-cairo" dir="rtl">
@@ -143,11 +144,11 @@ export function CollageSettings() {
             <div className="flex items-center justify-between gap-2 border-t border-border/40 pt-2.5 animate-in slide-in-from-top-2 duration-200">
               <div className="flex items-center gap-1.5">
                 {[
-                  { hex: "#e10e0e", label: "أحمر" },
-                  { hex: "#000000", label: "أسود" },
-                  { hex: "#9ca3af", label: "رمادي" },
-                  { hex: "#2563eb", label: "أزرق" },
-                  { hex: "#ffffff", label: "أبيض" },
+                  { hex: '#e10e0e', label: 'أحمر' },
+                  { hex: '#000000', label: 'أسود' },
+                  { hex: '#9ca3af', label: 'رمادي' },
+                  { hex: '#2563eb', label: 'أزرق' },
+                  { hex: '#ffffff', label: 'أبيض' },
                 ].map(({ hex, label }) => {
                   const isSelected = collageStrokeColor.toLowerCase() === hex.toLowerCase();
                   return (
@@ -156,11 +157,15 @@ export function CollageSettings() {
                       type="button"
                       aria-label={label}
                       aria-pressed={isSelected}
-                      onClick={() => { setCollageStrokeColor(hex); commitColorLater(); }}
+                      onClick={() => {
+                        setCollageStrokeColor(hex);
+                        commitColorLater();
+                      }}
                       title={label}
                       className={cn(
-                        "w-6 h-6 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-110 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-xs"
+                        'w-6 h-6 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-110 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                        isSelected &&
+                          'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-xs',
                       )}
                       style={{ backgroundColor: hex }}
                     />
@@ -175,6 +180,7 @@ export function CollageSettings() {
                   commitColorLater();
                 }}
                 className="w-32 h-8"
+                ariaLabel="لون إطار الكولاج"
               />
             </div>
           )}
@@ -196,6 +202,7 @@ export function CollageSettings() {
               <Switch
                 checked={collageShowCutLines}
                 onCheckedChange={setCollageShowCutLines}
+                aria-label="إظهار خطوط القص"
               />
             }
           />
@@ -214,6 +221,7 @@ export function CollageSettings() {
                   <Switch
                     checked={collageShowEndCutLine}
                     onCheckedChange={setCollageShowEndCutLine}
+                    aria-label="إظهار خط نهاية الطباعة"
                     className="scale-90"
                   />
                 }

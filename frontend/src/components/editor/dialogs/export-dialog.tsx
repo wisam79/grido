@@ -255,8 +255,17 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
         <div className="space-y-4 py-2">
           <div>
-            <Label className="text-xs mb-2 block font-bold text-foreground/90">صيغة الملف</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <Label
+              id="export-format-label"
+              className="text-xs mb-2 block font-bold text-foreground/90"
+            >
+              صيغة الملف
+            </Label>
+            <div
+              role="radiogroup"
+              aria-labelledby="export-format-label"
+              className="grid grid-cols-2 gap-2"
+            >
               <button
                 type="button"
                 onClick={() => setFormat('png')}
@@ -363,7 +372,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             {(template?.dpi || printSettings.dpi || 300) < 150 && (
               <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-xs text-destructive flex items-start gap-2">
                 <Warning className="shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
-                <span className="leading-tight font-medium">
+                <span className="font-medium">
                   الدقة الحالية ({template?.dpi || printSettings.dpi} DPI) منخفضة. يُفضل 300 DPI
                   للطباعة.
                 </span>
@@ -372,9 +381,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
             <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
               <Warning className="text-amber-500 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
-              <span className="leading-tight font-medium">
-                تصدير بنظام الألوان RGB للطباعة الرقمية.
-              </span>
+              <span className="font-medium">تصدير بنظام الألوان RGB للطباعة الرقمية.</span>
             </div>
 
             <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">

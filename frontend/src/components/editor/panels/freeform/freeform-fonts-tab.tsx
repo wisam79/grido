@@ -160,7 +160,7 @@ export function FreeformFontsTab() {
         >
           <Star className="w-3.5 h-3.5" weight={onlyFavorites ? 'fill' : 'regular'} />
           {favorites.length > 0 && (
-            <span className="text-[10px] font-mono font-semibold">{favorites.length}</span>
+            <span className="text-micro font-mono font-semibold">{favorites.length}</span>
           )}
         </button>
       </div>
@@ -203,7 +203,7 @@ export function FreeformFontsTab() {
                 <div className="flex items-center gap-2 min-w-0 flex-1 py-0.5">
                   <span
                     className={cn(
-                      'text-[13px] truncate transition-colors leading-normal',
+                      'text-sm truncate transition-colors',
                       isActive
                         ? 'font-bold text-primary'
                         : 'font-medium text-foreground group-hover:text-foreground',
@@ -216,7 +216,7 @@ export function FreeformFontsTab() {
                   {font.englishName &&
                     font.englishName.toLowerCase() !== font.arabicName.toLowerCase() && (
                       <span
-                        className="text-[10px] text-muted-foreground/60 truncate shrink-0"
+                        className="text-micro text-muted-foreground/60 truncate shrink-0"
                         dir="ltr"
                         style={{ fontFamily: font.family }}
                       >

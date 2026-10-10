@@ -135,7 +135,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
       <div className="flex flex-col gap-1.5 mt-0.5 px-0.5">
         <div
           className={cn(
-            'text-xs font-bold leading-snug truncate transition-colors duration-200',
+            'text-xs font-bold truncate transition-colors duration-200',
             isActive ? 'text-foreground' : 'text-foreground group-hover:text-foreground',
           )}
           title={tpl.name}

@@ -82,7 +82,7 @@ export const PanelShell = React.memo(function PanelShell({
         <div className="p-1.5 rounded-lg bg-muted/80 dark:bg-white/5 text-muted-foreground shrink-0 flex items-center justify-center shadow-2xs fluent-specular">
           {icon}
         </div>
-        <div className="min-w-0 flex-1 leading-tight">
+        <div className="min-w-0 flex-1">
           <div className="text-sm font-bold text-foreground truncate">{title}</div>
           {subtitle && (
             <div className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</div>

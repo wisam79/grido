@@ -170,7 +170,13 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   };
 
   return (
-    <Layer>
+    <Layer
+      name="collage-layer"
+      clipX={0}
+      clipY={0}
+      clipWidth={canvasWidth}
+      clipHeight={canvasHeight}
+    >
       {renderCutLines()}
       {slots.map((slot) => {
         const radius = collageRadius;

@@ -277,6 +277,7 @@ export function FreeformPaletteTab() {
                 applyColor(hex);
               }}
               className="w-6 h-6 rounded-md shadow-none border-0"
+              ariaLabel="لون مخصص"
             />
             <span className="font-mono font-bold text-micro text-foreground px-1 uppercase select-all">
               {customColor}

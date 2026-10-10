@@ -182,15 +182,13 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
 
         {/* شبكة الإحداثيات والأبعاد */}
         <div className="grid grid-cols-2 gap-2 text-mini">
-          <div
-            className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all"
-            title="X"
-          >
+          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all">
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               X:
             </span>
             <input
               type="number"
+              aria-label="X"
               value={Math.round(element.x * 100)}
               onChange={(e) => {
                 const v = Number(e.target.value);
@@ -204,15 +202,13 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             />
           </div>
 
-          <div
-            className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all"
-            title="Y"
-          >
+          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all">
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               Y:
             </span>
             <input
               type="number"
+              aria-label="Y"
               value={Math.round(element.y * 100)}
               onChange={(e) => {
                 const v = Number(e.target.value);
@@ -226,15 +222,13 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             />
           </div>
 
-          <div
-            className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all"
-            title="W"
-          >
+          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all">
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               W:
             </span>
             <input
               type="number"
+              aria-label="W"
               value={Math.round(element.width * 100)}
               onChange={(e) => {
                 const v = Number(e.target.value);
@@ -252,15 +246,13 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             />
           </div>
 
-          <div
-            className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all"
-            title="H"
-          >
+          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all">
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               H:
             </span>
             <input
               type="number"
+              aria-label="H"
               value={Math.round(element.height * 100)}
               onChange={(e) => {
                 const v = Number(e.target.value);
@@ -311,13 +303,14 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
 
-        <div className="flex items-center gap-2 pt-0.5">
+        <div className="grid grid-cols-3 gap-2 pt-0.5">
           <Button
             variant="outline"
             size="icon"
             onClick={handleRotate90}
+            aria-label="تدوير 90°"
             title="تدوير 90°"
-            className="h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="h-8 w-full rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             <ArrowClockwise className="w-3.5 h-3.5 text-muted-foreground" weight="regular" />
           </Button>
@@ -325,9 +318,10 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             variant="outline"
             size="icon"
             onClick={handleFlipX}
+            aria-label="قلب أفقي"
             title="قلب أفقي"
             className={cn(
-              'h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'h-8 w-full rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               element.flipX &&
                 'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40',
             )}
@@ -344,9 +338,10 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             variant="outline"
             size="icon"
             onClick={handleFlipY}
+            aria-label="قلب عمودي"
             title="قلب عمودي"
             className={cn(
-              'h-8 w-8 rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'h-8 w-full rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               element.flipY &&
                 'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40',
             )}

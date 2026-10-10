@@ -288,7 +288,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
                   كلمة المرور
                 </Label>
                 {authMode === 'register' && (
-                  <span className="text-[10px] text-muted-foreground font-sans">
+                  <span className="text-micro text-muted-foreground font-sans">
                     8 أحرف على الأقل (حروف وأرقام)
                   </span>
                 )}

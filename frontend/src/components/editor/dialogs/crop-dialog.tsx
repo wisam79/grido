@@ -192,12 +192,19 @@ export function CropDialog({
           <div className="w-full md:w-52 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-xl border border-border/40 overflow-y-auto h-full min-h-0 fluent-specular">
             {/* 1. أدوات التكبير والتدوير */}
             <div className="space-y-2">
-              <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
+              <Label
+                id="crop-controls-label"
+                className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
+              >
                 <ArrowClockwise className="text-primary w-3.5 h-3.5 shrink-0" weight="bold" />
                 <span>أدوات التحكم</span>
               </Label>
 
-              <div className="grid grid-cols-3 gap-1 p-1 bg-muted/40 dark:bg-muted/20 rounded-xl border border-border/30">
+              <div
+                role="group"
+                aria-labelledby="crop-controls-label"
+                className="grid grid-cols-3 gap-1 p-1 bg-muted/40 dark:bg-muted/20 rounded-xl border border-border/30"
+              >
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -269,12 +276,19 @@ export function CropDialog({
 
             {/* 2. نسب أبعاد القص */}
             <div className="space-y-2">
-              <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
+              <Label
+                id="crop-aspect-label"
+                className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
+              >
                 <Crop className="text-primary w-3.5 h-3.5 shrink-0" weight="bold" />
                 <span>نسبة الأبعاد</span>
               </Label>
 
-              <div className="grid grid-cols-2 gap-1.5">
+              <div
+                role="group"
+                aria-labelledby="crop-aspect-label"
+                className="grid grid-cols-2 gap-1.5"
+              >
                 {aspectOptions.map((opt) => {
                   const isSelected = aspect === opt.value;
                   return (
@@ -316,9 +330,15 @@ export function CropDialog({
 
             {/* 3. إرجاع وضبط */}
             <div className="space-y-2 pt-2 border-t border-border/30">
-              <Label className="text-xs font-bold text-foreground/90 block">الضبط والإرجاع</Label>
+              <Label id="crop-reset-label" className="text-xs font-bold text-foreground/90 block">
+                الضبط والإرجاع
+              </Label>
 
-              <div className="grid grid-cols-1 gap-1.5">
+              <div
+                role="group"
+                aria-labelledby="crop-reset-label"
+                className="grid grid-cols-1 gap-1.5"
+              >
                 <Button
                   variant="outline"
                   size="sm"

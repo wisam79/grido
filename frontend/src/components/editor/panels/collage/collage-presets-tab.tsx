@@ -320,7 +320,7 @@ export function CollagePresetsTab({
         {/* البيانات النصية للقالب — مساحة كاملة ومريحة للقراءة */}
         <div className="flex-1 min-w-0 flex flex-col items-start gap-0.5 text-right">
           <div className="w-full flex items-center justify-between gap-1.5 min-w-0">
-            <span className="text-xs font-bold text-foreground leading-tight truncate group-hover:text-foreground transition-colors">
+            <span className="text-xs font-bold text-foreground truncate group-hover:text-foreground transition-colors">
               {preset.title}
             </span>
             <div className="flex items-center gap-1 shrink-0">
@@ -338,10 +338,7 @@ export function CollagePresetsTab({
             </div>
           </div>
 
-          <SpecText
-            spec={preset.spec}
-            className="text-micro text-muted-foreground font-mono leading-tight"
-          />
+          <SpecText spec={preset.spec} className="text-micro text-muted-foreground font-mono" />
         </div>
 
         {/* أيقونة التحديد النشط */}
@@ -391,7 +388,7 @@ export function CollagePresetsTab({
         {/* الاسم والمقاس بالملم */}
         <div className="w-full flex flex-col items-center mt-1 pt-1.5 border-t border-border/40 min-w-0">
           <div className="flex items-center justify-center gap-1 w-full min-w-0">
-            <span className="text-xs font-bold text-foreground leading-tight truncate group-hover:text-foreground transition-colors">
+            <span className="text-xs font-bold text-foreground truncate group-hover:text-foreground transition-colors">
               {preset.title}
             </span>
             <span className="text-micro font-mono font-bold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full shrink-0">
@@ -400,7 +397,7 @@ export function CollagePresetsTab({
           </div>
           {/* الشبكة الضيقة تعرض المقاسات فقط (أهم معلومة) والمواصفات كاملة في التلميح */}
           <span
-            className="text-micro text-muted-foreground mt-0.5 leading-tight w-full text-center font-mono truncate"
+            className="text-micro text-muted-foreground mt-0.5 w-full text-center font-mono truncate"
             dir="ltr"
             title={preset.spec}
           >

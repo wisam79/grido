@@ -490,9 +490,10 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                     )}
                   </div>
 
-                  {/* اسم القالب بسطر واحد مقتضب لمنع الانكسار المشوه */}
+                  {/* اسم القالب: سطران كحد أقصى — سطر واحد كان يقتطع أسماء
+                      حقيقية مثل «صُنع في العراق (منتج وطني)» في شبكة عمودين */}
                   <span
-                    className="text-xs font-semibold text-foreground/90 mt-1 truncate w-full text-center group-hover:text-foreground transition-colors leading-tight"
+                    className="text-xs font-semibold text-foreground/90 mt-1 w-full text-center leading-tight line-clamp-2 group-hover:text-foreground transition-colors"
                     title={tmpl.name}
                   >
                     {tmpl.name}

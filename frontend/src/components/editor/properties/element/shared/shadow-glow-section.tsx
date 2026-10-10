@@ -1,7 +1,7 @@
-import { CanvasElement, useEditorStore } from "@/lib/editor-store";
-import { Sparkle, Eye, Drop, ArrowsLeftRight, ArrowsDownUp } from "@/components/ui/icons";
-import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
-import { PopoverColorPicker } from "../../shared-controls";
+import { CanvasElement, useEditorStore } from '@/lib/editor-store';
+import { Sparkle, Eye, Drop, ArrowsLeftRight, ArrowsDownUp } from '@/components/ui/icons';
+import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+import { PopoverColorPicker } from '../../shared-controls';
 
 export interface ShadowGlowSectionProps {
   element: CanvasElement;
@@ -16,15 +16,18 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
       collapsible
       defaultOpen={true}
     >
-      <div className="flex items-center justify-between gap-4" title="لون الظل">
-        <span className="text-xs font-semibold text-muted-foreground">لون الظل</span>
-        <PopoverColorPicker
-          color={element.shadowColor || "#000000"}
-          onChange={(val) => onUpdate(element.id, { shadowColor: val })}
-          swatchOnly
-          className="w-8 h-8"
-        />
-      </div>
+      <FluentSettingRow
+        layout="vertical"
+        label="لون الظل"
+        control={
+          <PopoverColorPicker
+            color={element.shadowColor || '#000000'}
+            onChange={(val) => onUpdate(element.id, { shadowColor: val })}
+            ariaLabel="لون الظل"
+            className="w-full"
+          />
+        }
+      />
 
       <FluentSliderField
         label="شدة الظل"

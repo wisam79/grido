@@ -103,7 +103,7 @@ export function LicenseTabContent({
           )}
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-              <Label className="text-xs font-bold text-foreground/90">
+              <Label htmlFor="license-key-input" className="text-xs font-bold text-foreground/90">
                 مفتاح الترخيص (License Key)
               </Label>
               <button
@@ -127,6 +127,7 @@ export function LicenseTabContent({
             <div className="relative">
               <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
               <Input
+                id="license-key-input"
                 placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
                 className="pr-9 h-9 text-xs font-mono uppercase rounded-md tracking-wider"
                 required

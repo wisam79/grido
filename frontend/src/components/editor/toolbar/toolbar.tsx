@@ -1,8 +1,14 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Broom, FloppyDisk, Export, DotsThreeVertical, Folders } from '@/components/ui/icons';
-import { PrintIcon } from '@/components/ui/print-icon';
+import {
+  Broom,
+  FloppyDisk,
+  Printer,
+  Export,
+  DotsThreeVertical,
+  Folders,
+} from '@/components/ui/icons';
 import { ToolbarFileOps } from './toolbar-file-ops';
 import {
   TooltipBtn,
@@ -74,7 +80,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
         {/* المجموعة النهائية: الحفظ والطباعة والتصدير في مجموعة أوامر موحدة */}
         <div className="flex items-center gap-1 shrink-0 ms-auto">
           <div className="fluent-command-group shadow-2xs">
-            {/* حفظ (Ctrl+S) — زر أيقوني قياسي */}
+            {/* حفظ (Ctrl+S) — زر أيقوني قياسي موحّد */}
             <TooltipBtn content="حفظ المشروع (Ctrl + S)">
               <Button
                 variant="ghost"
@@ -84,14 +90,11 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 aria-label="حفظ المشروع"
                 className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
               >
-                <FloppyDisk
-                  className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all"
-                  weight="duotone"
-                />
+                <FloppyDisk className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
               </Button>
             </TooltipBtn>
 
-            {/* طباعة (Ctrl+P) — زر أيقوني قياسي */}
+            {/* طباعة (Ctrl+P) — زر أيقوني قياسي موحّد */}
             <TooltipBtn content="طباعة المستند (Ctrl + P)">
               <Button
                 variant="ghost"
@@ -101,11 +104,11 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 aria-label="طباعة المستند"
                 className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
               >
-                <PrintIcon className="w-4 h-4 group-hover:scale-105 transition-transform" />
+                <Printer className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
               </Button>
             </TooltipBtn>
 
-            {/* تصدير (Ctrl+E) — زر الإجراء الرئيسي المميز بنص وأيقونة */}
+            {/* تصدير (Ctrl+E) — زر أيقوني قياسي موحّد */}
             <TooltipBtn content="تصدير صورة (Ctrl + E)">
               <Button
                 variant="ghost"
@@ -113,13 +116,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 onClick={onExport}
                 data-testid="toolbar-export"
                 aria-label="تصدير صورة"
-                className="h-8 px-3 gap-1.5 text-primary hover:text-primary hover:bg-primary/10 rounded-md cursor-pointer transition-all duration-150 font-bold text-xs active:scale-[0.98] group"
+                className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
               >
-                <Export
-                  className="w-4 h-4 group-hover:scale-105 transition-transform"
-                  weight="bold"
-                />
-                <span>تصدير</span>
+                <Export className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
               </Button>
             </TooltipBtn>
           </div>

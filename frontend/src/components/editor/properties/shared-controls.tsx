@@ -169,6 +169,7 @@ export function PopoverColorPicker({
   disabled,
   label,
   swatchOnly,
+  ariaLabel,
 }: {
   color: string;
   onChange: (hex: string) => void;
@@ -176,6 +177,8 @@ export function PopoverColorPicker({
   disabled?: boolean;
   label?: React.ReactNode;
   swatchOnly?: boolean;
+  /** اسم برمجي للزر — ضروري في وضع swatchOnly حيث لا يوجد نص ظاهر */
+  ariaLabel?: string;
 }) {
   const colorOnOpenRef = useRef<string | null>(null);
 
@@ -195,11 +198,12 @@ export function PopoverColorPicker({
           disabled={disabled}
           className={cn(
             swatchOnly
-              ? 'w-8 h-8 rounded-md border border-border/80 dark:border-white/10 p-0.5 bg-input/40 hover:bg-input hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none'
-              : 'flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border bg-input/50 hover:bg-input hover:border-primary/45 transition-all cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              ? 'w-8 h-8 rounded-md border border-border/80 dark:border-white/10 p-0.5 bg-card hover:bg-muted/60 hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none'
+              : 'flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border/80 bg-card hover:bg-muted/60 hover:border-primary/45 transition-all cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
             className,
           )}
           title="تغيير اللون"
+          aria-label={ariaLabel ?? (typeof label === 'string' ? label : 'تغيير اللون')}
         >
           {swatchOnly ? (
             <div
@@ -424,7 +428,7 @@ export function ColorWheelPicker({
             'w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
             isTransparent
               ? 'bg-card text-foreground border border-border/80 dark:border-white/15 font-bold shadow-xs ring-1 ring-primary/40'
-              : 'border-border/60 bg-input/80 text-muted-foreground hover:bg-accent hover:text-foreground',
+              : 'border-border/80 bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground',
           )}
           title="خلفية شفافة"
         >
@@ -438,7 +442,7 @@ export function ColorWheelPicker({
           <button
             type="button"
             onClick={handleEyeDropper}
-            className="w-8 h-8 rounded-lg border border-border/60 bg-input/80 hover:bg-accent text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="w-8 h-8 rounded-lg border border-border/80 bg-card hover:bg-muted/60 text-muted-foreground hover:text-primary transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             title="قطارة الشاشة"
           >
             <Eyedropper className="w-4 h-4" weight="regular" />
@@ -627,9 +631,10 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
           color={color}
           onChange={onChange}
           className={cn(
-            'flex-1 h-8 rounded-md border-border/80 bg-input/50 hover:bg-input hover:border-primary/40 shadow-2xs',
+            'flex-1 h-8 rounded-md border-border/80 bg-card hover:bg-muted/60 hover:border-primary/40 shadow-2xs',
             compact && 'h-7 text-micro',
           )}
+          ariaLabel="لون مخصص"
           label={
             <div
               className={cn(
@@ -650,7 +655,7 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
                 type="button"
                 onClick={handleEyeDropper}
                 className={cn(
-                  'w-8 h-8 rounded-md border border-border/80 bg-input/50 hover:bg-accent hover:border-border/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                  'w-8 h-8 rounded-md border border-border/80 bg-card hover:bg-muted/60 hover:border-border/60 text-muted-foreground hover:text-foreground transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
                   compact && 'w-7 h-7',
                 )}
                 aria-label="قطارة الألوان"
@@ -848,7 +853,7 @@ export const PaperBackgroundSummary = React.memo(function PaperBackgroundSummary
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-1">
-          <p className="text-xs font-bold text-foreground leading-tight">خلفية الورقة</p>
+          <p className="text-xs font-bold text-foreground">خلفية الورقة</p>
           <span className="truncate text-3xs font-mono text-muted-foreground" dir="ltr">
             {gradientActive
               ? `${(backgroundColor || '#FFFFFF').toUpperCase()} → ${backgroundGradientColor2?.toUpperCase()} · ${backgroundGradientAngle ?? 90}°`

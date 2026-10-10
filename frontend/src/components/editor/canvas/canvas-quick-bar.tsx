@@ -62,7 +62,7 @@ function pixelBoxOfElement(
   };
 }
 
-const GAP_PX = 8; // فجوة الشريط عن الصندوق المحيط
+const GAP_PX = 5; // فجوة الشريط عن الصندوق المحيط
 const EDGE_PX = 4; // هامش أمان من حواف الورقة
 
 export const CanvasQuickBar = React.memo(function CanvasQuickBar({
@@ -238,7 +238,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
 
   // جسم الشريط مشترك بين المسارين (الديناميكي والاحتياطي)
   const barBody = (
-    <div className="bg-card border border-border shadow-fluent-16 rounded-xl px-1.5 py-1 flex items-center gap-1 text-foreground fluent-specular max-w-full overflow-x-auto">
+    <div className="bg-card/92 dark:bg-card/85 backdrop-blur-md border border-border/60 shadow-fluent-8 rounded-lg px-1 py-0.5 flex items-center gap-0.5 text-foreground fluent-specular max-w-full overflow-x-auto">
       {/* وضع الكولاج - الخلية المحددة */}
       {hasSlotSection && selectedSlot && (
         <QuickBarSlotSection
@@ -260,7 +260,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
             variant="ghost"
             size="sm"
             onClick={() => selectElement(null)}
-            className="h-6 w-6 p-0 rounded-md hover:bg-muted text-muted-foreground ms-0.5"
+            className="h-6 w-6 p-0 rounded hover:bg-muted/70 text-muted-foreground ms-0.5 cursor-pointer"
             aria-label="إغلاق الشريط"
           >
             <X className="w-3 h-3" weight="regular" />

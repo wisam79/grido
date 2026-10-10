@@ -719,7 +719,14 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
 
       {/* 🚀 طبقة السحب الرسمية (Konva drag-layer pattern): تستقبل العقدة
       المسحوبة أثناء السحب فقط، فتُرسم عقدة واحدة لا الطبقة كاملة. */}
-      <Layer ref={handleDragLayerRef} listening={false} />
+      <Layer
+        ref={handleDragLayerRef}
+        listening={false}
+        clipX={0}
+        clipY={0}
+        clipWidth={canvasWidth}
+        clipHeight={canvasHeight}
+      />
     </Stage>
   );
 });

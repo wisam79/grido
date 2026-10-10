@@ -138,7 +138,7 @@ ${report.stack_trace}
               dir="ltr"
             >
               <div className="font-bold mb-1 text-foreground">{report.error}</div>
-              <pre className="whitespace-pre-wrap break-all text-muted-foreground text-[10px]">
+              <pre className="whitespace-pre-wrap break-all text-muted-foreground text-micro">
                 {report.stack_trace}
               </pre>
             </div>

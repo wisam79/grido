@@ -155,7 +155,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                   <button
                     type="button"
                     aria-label="تغيير مقاس مساحة العمل"
-                    className="h-7 flex items-center gap-1.5 px-2 rounded-md hover:bg-muted/80 text-foreground transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                    className="h-8 flex items-center gap-1.5 px-2 rounded-md hover:bg-muted/80 text-foreground transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                   >
                     <FileText className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                     <span className="text-foreground font-bold text-xs">
@@ -260,7 +260,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 type="button"
                 onClick={handleToggleOrientation}
                 aria-label={isLandscape ? 'تبديل الاتجاه إلى رأسي' : 'تبديل الاتجاه إلى أفقي'}
-                className="w-7 h-7 rounded-md bg-muted/70 hover:bg-primary/15 text-muted-foreground hover:text-primary border border-border/60 hover:border-primary/30 transition-all cursor-pointer flex items-center justify-center active:scale-95 group shadow-2xs"
+                className="w-8 h-8 rounded-md bg-muted/70 hover:bg-primary/15 text-muted-foreground hover:text-primary border border-border/60 hover:border-primary/30 transition-all cursor-pointer flex items-center justify-center active:scale-95 group shadow-2xs"
               >
                 <PageOrientationIcon
                   isLandscape={isLandscape}
@@ -392,7 +392,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="h-7 min-w-[46px] px-1.5 text-xs font-mono font-bold text-center select-none cursor-pointer hover:bg-muted/60 hover:text-primary rounded-md transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+                className="h-8 min-w-[46px] px-1.5 text-xs font-mono font-bold text-center select-none cursor-pointer hover:bg-muted/60 hover:text-primary rounded-md transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
                 onClick={resetZoom}
                 aria-label="إعادة تعيين المقياس إلى 100%"
               >
@@ -447,7 +447,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                     type="button"
                     data-testid="canvas-fit-menu"
                     aria-label="أوضاع ملاءمة الورقة"
-                    className="h-7 px-2 flex items-center gap-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+                    className="h-8 px-2 flex items-center gap-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
                   >
                     <span
                       data-testid="canvas-fit-status"

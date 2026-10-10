@@ -115,7 +115,9 @@ export const FluentSection = React.memo(
                 {badge}
               </div>
               {subtitle && (
-                <p className="text-micro text-muted-foreground truncate mt-0.5">{subtitle}</p>
+                // بلا `truncate`: وصف القسم نصّي قصير ولا يجوز بتره (كان يقتطع
+                // مثل «الحد الأقصى 6×5 صور (30)» في لوح بعرض ~296px)
+                <p className="text-micro text-muted-foreground mt-0.5 leading-tight">{subtitle}</p>
               )}
             </div>
           </div>

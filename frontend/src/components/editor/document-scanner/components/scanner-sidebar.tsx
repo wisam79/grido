@@ -243,11 +243,18 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
 
       {/* 🔹 3. معالجة وتصفية الورقة (6 فلاتر نقية) */}
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
-        <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
+        <Label
+          id="scanner-filters-label"
+          className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
+        >
           <MagicWand size={15} weight="duotone" className="text-muted-foreground shrink-0" />
           <span>فلاتر الورقة</span>
         </Label>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div
+          role="group"
+          aria-labelledby="scanner-filters-label"
+          className="grid grid-cols-2 gap-1.5"
+        >
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -402,11 +409,18 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
 
       {/* 🔹 4. قياس ونسبة المستند */}
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
-        <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
+        <Label
+          id="scanner-aspect-label"
+          className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
+        >
           <Crop size={15} weight="duotone" className="text-muted-foreground shrink-0" />
           <span>نسبة المستند</span>
         </Label>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div
+          role="group"
+          aria-labelledby="scanner-aspect-label"
+          className="grid grid-cols-2 gap-1.5"
+        >
           <Button
             variant={aspectType === 'free' ? 'default' : 'outline'}
             size="sm"
@@ -477,7 +491,10 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
       {/* 🔹 5. تدوير المستند وإعادة الضبط */}
       <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
         <div className="flex items-center justify-between">
-          <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
+          <Label
+            id="scanner-rotate-label"
+            className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
+          >
             <ArrowClockwise size={15} weight="duotone" className="text-muted-foreground shrink-0" />
             <span>التدوير والضبط</span>
           </Label>

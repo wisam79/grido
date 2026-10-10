@@ -123,7 +123,7 @@ export function FluentSegmentedControl<T extends string = string>({
               'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               fullWidth ? 'flex-1' : 'shrink-0',
               stacked
-                ? 'flex-col gap-0.5 h-10 px-1 text-mini leading-tight'
+                ? 'flex-col gap-0.5 h-10 px-1 text-mini'
                 : cn(
                     'gap-1.5',
                     size === 'sm'

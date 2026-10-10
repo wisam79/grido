@@ -38,7 +38,7 @@ export const FluentCapsuleButton = React.memo(function FluentCapsuleButton({
           data-testid={testId}
           aria-label={label}
           className={cn(
-            'w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer',
+            'w-8 h-8 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer',
             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent',
             // تفعيل محايد — الأزرق حصري للأوامر التعبوية
             active

@@ -135,8 +135,7 @@ export function WindowControls({
       <button
         type="button"
         onClick={onClose}
-        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-white hover:bg-[#c42b1c] active:bg-[#b22517] transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-        title="إغلاق"
+        className="w-[46px] h-full flex items-center justify-center text-foreground/80 hover:text-white hover:bg-window-close active:bg-window-close-active transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
         aria-label="إغلاق"
       >
         <svg

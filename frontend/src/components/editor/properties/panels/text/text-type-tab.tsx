@@ -1,5 +1,5 @@
-import { useEditorStore } from "@/lib/editor-store";
-import { cn } from "@/lib/utils";
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
 import {
   TextHOne,
   TextHTwo,
@@ -20,83 +20,88 @@ import {
   ArrowsHorizontal,
   Palette,
   TextAa,
-} from "@/components/ui/icons";
-import { PopoverColorPicker } from "../../shared-controls";
-import { FluentSection, FluentSliderField } from "@/components/ui/blocks";
-import { TextFontSelector } from "./text-font-selector";
-import { loadGoogleFont } from "@/lib/io/fonts";
-import { TextTabProps, WEIGHT_OPTIONS } from "./text-tab-types";
+} from '@/components/ui/icons';
+import { PopoverColorPicker } from '../../shared-controls';
+import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
+import { TextFontSelector } from './text-font-selector';
+import { loadGoogleFont } from '@/lib/io/fonts';
+import { TextTabProps, WEIGHT_OPTIONS } from './text-tab-types';
 
 const MODULAR_FONT_SIZES = [
-  10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 96, 120, 144, 180, 200
+  10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 96, 120, 144, 180, 200,
 ];
 
 const LINE_HEIGHT_OPTIONS = [
-  { value: 0.9, label: "0.9x" },
-  { value: 1.0, label: "1.0x" },
-  { value: 1.1, label: "1.1x" },
-  { value: 1.2, label: "1.2x — الافتراضي" },
-  { value: 1.3, label: "1.3x" },
-  { value: 1.4, label: "1.4x" },
-  { value: 1.5, label: "1.5x" },
-  { value: 1.8, label: "1.8x" },
-  { value: 2.0, label: "2.0x" },
+  { value: 0.9, label: '0.9x' },
+  { value: 1.0, label: '1.0x' },
+  { value: 1.1, label: '1.1x' },
+  { value: 1.2, label: '1.2x — الافتراضي' },
+  { value: 1.3, label: '1.3x' },
+  { value: 1.4, label: '1.4x' },
+  { value: 1.5, label: '1.5x' },
+  { value: 1.8, label: '1.8x' },
+  { value: 2.0, label: '2.0x' },
 ];
 
 const LETTER_SPACING_OPTIONS = [
-  { value: -2, label: "-2px" },
-  { value: -1, label: "-1px" },
-  { value: 0, label: "0px — الافتراضي" },
-  { value: 1, label: "+1px" },
-  { value: 2, label: "+2px" },
-  { value: 4, label: "+4px" },
-  { value: 6, label: "+6px" },
-  { value: 8, label: "+8px" },
-  { value: 12, label: "+12px" },
-  { value: 16, label: "+16px" },
+  { value: -2, label: '-2px' },
+  { value: -1, label: '-1px' },
+  { value: 0, label: '0px — الافتراضي' },
+  { value: 1, label: '+1px' },
+  { value: 2, label: '+2px' },
+  { value: 4, label: '+4px' },
+  { value: 6, label: '+6px' },
+  { value: 8, label: '+8px' },
+  { value: 12, label: '+12px' },
+  { value: 16, label: '+16px' },
 ];
 
 const selectClassName =
-  "w-full h-8 bg-input hover:bg-background border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-inner";
+  'w-full h-8 bg-input hover:bg-background border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-inner';
 
 export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) {
   const isBold = (element.fontWeight || 400) >= 700;
-  const isItalic = element.fontStyle === "italic";
-  const isUnderline = element.textDecoration === "underline";
-  const isLineThrough = element.textDecoration === "line-through";
-  const textAlign = element.textAlign || "center";
+  const isItalic = element.fontStyle === 'italic';
+  const isUnderline = element.textDecoration === 'underline';
+  const isLineThrough = element.textDecoration === 'line-through';
+  const textAlign = element.textAlign || 'center';
   const isArabicNumerals = element.arabicNumerals === true;
-  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(element.text || "");
+  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+    element.text || '',
+  );
 
   const currentFontSize = element.fontSize ?? 32;
   const currentLineHeight = element.lineHeight ?? 1.2;
   const currentSpacing = element.letterSpacing ?? 0;
 
-  const applyPreset = (type: "heading" | "subheading" | "body" | "badge" | "stamp") => {
-    if (type === "heading") {
+  const applyPreset = (type: 'heading' | 'subheading' | 'body' | 'badge' | 'stamp') => {
+    if (type === 'heading') {
       onUpdate(element.id, { fontSize: 48, fontWeight: 900, lineHeight: 1.1, curve: 0 });
-    } else if (type === "subheading") {
+    } else if (type === 'subheading') {
       onUpdate(element.id, { fontSize: 28, fontWeight: 700, lineHeight: 1.2, curve: 0 });
-    } else if (type === "body") {
+    } else if (type === 'body') {
       onUpdate(element.id, { fontSize: 18, fontWeight: 400, lineHeight: 1.35, curve: 0 });
-    } else if (type === "badge") {
+    } else if (type === 'badge') {
       onUpdate(element.id, {
         fontSize: 22,
         fontWeight: 700,
-        textBgColor: element.textBgColor && element.textBgColor !== "transparent" ? element.textBgColor : "#2563eb",
-        color: "#ffffff",
+        textBgColor:
+          element.textBgColor && element.textBgColor !== 'transparent'
+            ? element.textBgColor
+            : '#2563eb',
+        color: '#ffffff',
         textBgRadius: 8,
         textBgPadding: 8,
         textBgPaddingX: 12,
         textBgPaddingY: 6,
         curve: 0,
       });
-    } else if (type === "stamp") {
+    } else if (type === 'stamp') {
       onUpdate(element.id, {
         fontSize: 24,
         fontWeight: 700,
-        color: element.color || "#dc2626",
-        stroke: element.color || "#dc2626",
+        color: element.color || '#dc2626',
+        stroke: element.color || '#dc2626',
         strokeWidth: 0.8,
         curve: 60,
       });
@@ -106,10 +111,10 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
 
   const toggleButtonClassName = (active: boolean) =>
     cn(
-      "w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none",
+      'w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none',
       active
-        ? "bg-background text-primary shadow-xs font-extrabold"
-        : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
+        ? 'bg-background text-primary shadow-xs font-extrabold'
+        : 'hover:bg-background/60 text-muted-foreground hover:text-foreground',
     );
 
   return (
@@ -125,9 +130,9 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
         <div className="space-y-1">
           <div className="grid grid-cols-3 gap-1 text-micro">
             {[
-              { id: "heading" as const, label: "رئيسي", icon: TextHOne },
-              { id: "subheading" as const, label: "فرعي", icon: TextHTwo },
-              { id: "body" as const, label: "عادي", icon: Article },
+              { id: 'heading' as const, label: 'رئيسي', icon: TextHOne },
+              { id: 'subheading' as const, label: 'فرعي', icon: TextHTwo },
+              { id: 'body' as const, label: 'عادي', icon: Article },
             ].map((preset) => {
               const Icon = preset.icon;
               return (
@@ -135,7 +140,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   key={preset.id}
                   type="button"
                   onClick={() => applyPreset(preset.id)}
-                  className="h-7 px-1.5 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="h-7 px-1.5 bg-card hover:bg-muted/60 hover:text-foreground hover:border-border text-foreground/90 border border-border/80 rounded-md font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                   title={`نمط ${preset.label}`}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
@@ -146,8 +151,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
           </div>
           <div className="grid grid-cols-2 gap-1 text-micro">
             {[
-              { id: "badge" as const, label: "شارة", icon: Tag },
-              { id: "stamp" as const, label: "ختم", icon: Stamp },
+              { id: 'badge' as const, label: 'شارة', icon: Tag },
+              { id: 'stamp' as const, label: 'ختم', icon: Stamp },
             ].map((preset) => {
               const Icon = preset.icon;
               return (
@@ -155,7 +160,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   key={preset.id}
                   type="button"
                   onClick={() => applyPreset(preset.id)}
-                  className="h-7 px-2 bg-input hover:bg-primary/10 hover:text-primary hover:border-primary/40 border border-border rounded-md text-muted-foreground font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="h-7 px-2 bg-card hover:bg-muted/60 hover:text-foreground hover:border-border text-foreground/90 border border-border/80 rounded-md font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                   title={`نمط ${preset.label}`}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
@@ -174,15 +179,13 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
         {/* سماكة وحجم الخط */}
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <span className="text-micro font-bold text-muted-foreground block">
-              السمك
-            </span>
+            <span className="text-micro font-bold text-muted-foreground block">السمك</span>
             <div className="relative">
               <select
                 value={element.fontWeight || 700}
                 onChange={(e) => {
                   const val = Number(e.target.value);
-                  loadGoogleFont(element.fontFamily || "Cairo");
+                  loadGoogleFont(element.fontFamily || 'Cairo');
                   onUpdate(element.id, { fontWeight: val });
                   useEditorStore.getState().pushHistory();
                 }}
@@ -194,16 +197,19 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   </option>
                 ))}
               </select>
-              <CaretDown className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
+              <CaretDown
+                className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                weight="bold"
+              />
             </div>
           </div>
 
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-micro font-bold text-muted-foreground">
-                الحجم
+              <span className="text-micro font-bold text-muted-foreground">الحجم</span>
+              <span className="text-micro font-bold font-mono text-primary">
+                {currentFontSize}px
               </span>
-              <span className="text-micro font-bold font-mono text-primary">{currentFontSize}px</span>
             </div>
             <div className="relative">
               <select
@@ -216,9 +222,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                 className={`${selectClassName} font-mono`}
               >
                 {!MODULAR_FONT_SIZES.includes(currentFontSize) && (
-                  <option value={currentFontSize}>
-                    {currentFontSize}px
-                  </option>
+                  <option value={currentFontSize}>{currentFontSize}px</option>
                 )}
                 {MODULAR_FONT_SIZES.map((sz) => (
                   <option key={sz} value={sz}>
@@ -226,7 +230,10 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   </option>
                 ))}
               </select>
-              <CaretDown className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
+              <CaretDown
+                className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                weight="bold"
+              />
             </div>
           </div>
         </div>
@@ -251,17 +258,18 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
           </span>
           <div className="flex items-center gap-2">
             <PopoverColorPicker
-              color={element.color || "#000000"}
+              color={element.color || '#000000'}
               onChange={(col) => {
                 onUpdate(element.id, { color: col });
                 useEditorStore.getState().pushHistory();
               }}
               swatchOnly
+              ariaLabel="لون النص"
             />
             {onNavigateTab && (
               <button
                 type="button"
-                onClick={() => onNavigateTab("adjust")}
+                onClick={() => onNavigateTab('adjust')}
                 className="text-mini text-primary font-bold hover:underline cursor-pointer transition-colors"
               >
                 تخصيص كامل ←
@@ -283,50 +291,50 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               type="button"
               onClick={() => {
                 const nextWeight = isBold ? 400 : 700;
-                loadGoogleFont(element.fontFamily || "Cairo");
+                loadGoogleFont(element.fontFamily || 'Cairo');
                 onUpdate(element.id, { fontWeight: nextWeight });
                 useEditorStore.getState().pushHistory();
               }}
               className={toggleButtonClassName(isBold)}
               title="عريض (B)"
             >
-              <TextB className="w-4 h-4" weight={isBold ? "bold" : "regular"} />
+              <TextB className="w-4 h-4" weight={isBold ? 'bold' : 'regular'} />
             </button>
 
             <button
               type="button"
               onClick={() => {
-                onUpdate(element.id, { fontStyle: isItalic ? "normal" : "italic" });
+                onUpdate(element.id, { fontStyle: isItalic ? 'normal' : 'italic' });
                 useEditorStore.getState().pushHistory();
               }}
               className={toggleButtonClassName(isItalic)}
               title="مائل (I)"
             >
-              <TextItalic className="w-4 h-4" weight={isItalic ? "bold" : "regular"} />
+              <TextItalic className="w-4 h-4" weight={isItalic ? 'bold' : 'regular'} />
             </button>
 
             <button
               type="button"
               onClick={() => {
-                onUpdate(element.id, { textDecoration: isUnderline ? "none" : "underline" });
+                onUpdate(element.id, { textDecoration: isUnderline ? 'none' : 'underline' });
                 useEditorStore.getState().pushHistory();
               }}
               className={toggleButtonClassName(isUnderline)}
               title="تسطير (U)"
             >
-              <TextUnderline className="w-4 h-4" weight={isUnderline ? "bold" : "regular"} />
+              <TextUnderline className="w-4 h-4" weight={isUnderline ? 'bold' : 'regular'} />
             </button>
 
             <button
               type="button"
               onClick={() => {
-                onUpdate(element.id, { textDecoration: isLineThrough ? "none" : "line-through" });
+                onUpdate(element.id, { textDecoration: isLineThrough ? 'none' : 'line-through' });
                 useEditorStore.getState().pushHistory();
               }}
               className={toggleButtonClassName(isLineThrough)}
               title="شطب (S)"
             >
-              <TextStrikethrough className="w-4 h-4" weight={isLineThrough ? "bold" : "regular"} />
+              <TextStrikethrough className="w-4 h-4" weight={isLineThrough ? 'bold' : 'regular'} />
             </button>
           </div>
 
@@ -336,37 +344,46 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
             <button
               type="button"
               onClick={() => {
-                onUpdate(element.id, { textAlign: "right" });
+                onUpdate(element.id, { textAlign: 'right' });
                 useEditorStore.getState().pushHistory();
               }}
-              className={toggleButtonClassName(textAlign === "right")}
+              className={toggleButtonClassName(textAlign === 'right')}
               title="يمين"
             >
-              <TextAlignRight className="w-4 h-4" weight={textAlign === "right" ? "bold" : "regular"} />
+              <TextAlignRight
+                className="w-4 h-4"
+                weight={textAlign === 'right' ? 'bold' : 'regular'}
+              />
             </button>
 
             <button
               type="button"
               onClick={() => {
-                onUpdate(element.id, { textAlign: "center" });
+                onUpdate(element.id, { textAlign: 'center' });
                 useEditorStore.getState().pushHistory();
               }}
-              className={toggleButtonClassName(textAlign === "center")}
+              className={toggleButtonClassName(textAlign === 'center')}
               title="توسيط"
             >
-              <TextAlignCenter className="w-4 h-4" weight={textAlign === "center" ? "bold" : "regular"} />
+              <TextAlignCenter
+                className="w-4 h-4"
+                weight={textAlign === 'center' ? 'bold' : 'regular'}
+              />
             </button>
 
             <button
               type="button"
               onClick={() => {
-                onUpdate(element.id, { textAlign: "left" });
+                onUpdate(element.id, { textAlign: 'left' });
                 useEditorStore.getState().pushHistory();
               }}
-              className={toggleButtonClassName(textAlign === "left")}
+              className={toggleButtonClassName(textAlign === 'left')}
               title="يسار"
             >
-              <TextAlignLeft className="w-4 h-4" weight={textAlign === "left" ? "bold" : "regular"} />
+              <TextAlignLeft
+                className="w-4 h-4"
+                weight={textAlign === 'left' ? 'bold' : 'regular'}
+              />
             </button>
           </div>
         </div>
@@ -375,23 +392,25 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
         <div className="flex items-center justify-between p-1 bg-muted/25 rounded-lg border border-border/40 text-micro font-semibold">
           <div className="flex items-center gap-0.5">
             {[
-              { id: "none", label: "Aa" },
-              { id: "uppercase", label: "AA" },
-              { id: "lowercase", label: "aa" },
-              { id: "capitalize", label: "Abc" },
+              { id: 'none', label: 'Aa' },
+              { id: 'uppercase', label: 'AA' },
+              { id: 'lowercase', label: 'aa' },
+              { id: 'capitalize', label: 'Abc' },
             ].map((tr) => (
               <button
                 key={tr.id}
                 type="button"
                 onClick={() => {
-                  onUpdate(element.id, { textTransform: tr.id as "none" | "uppercase" | "lowercase" | "capitalize" });
+                  onUpdate(element.id, {
+                    textTransform: tr.id as 'none' | 'uppercase' | 'lowercase' | 'capitalize',
+                  });
                   useEditorStore.getState().pushHistory();
                 }}
                 className={cn(
-                  "px-1.5 py-0.5 rounded-md text-micro font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
+                  'px-1.5 py-0.5 rounded-md text-micro font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                   element.textTransform === tr.id
-                    ? "bg-background text-primary shadow-2xs font-extrabold"
-                    : "hover:text-foreground text-muted-foreground hover:bg-background/40"
+                    ? 'bg-background text-primary shadow-2xs font-extrabold'
+                    : 'hover:text-foreground text-muted-foreground hover:bg-background/40',
                 )}
               >
                 {tr.label}
@@ -407,14 +426,14 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                "h-6 px-1.5 rounded-md flex items-center justify-center gap-0.5 transition-all cursor-pointer text-micro font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none",
+                'h-6 px-1.5 rounded-md flex items-center justify-center gap-0.5 transition-all cursor-pointer text-micro font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none',
                 isArabicNumerals
-                  ? "bg-background text-primary shadow-xs font-extrabold border border-primary/30"
-                  : "hover:bg-background/60 text-muted-foreground hover:text-foreground"
+                  ? 'bg-background text-primary shadow-xs font-extrabold border border-primary/30'
+                  : 'hover:bg-background/60 text-muted-foreground hover:text-foreground',
               )}
               title="أرقام عربية (١٢٣)"
             >
-              <Hash className="w-3 h-3" weight={isArabicNumerals ? "bold" : "regular"} />
+              <Hash className="w-3 h-3" weight={isArabicNumerals ? 'bold' : 'regular'} />
               <span>١٢٣</span>
             </button>
 
@@ -456,9 +475,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                 className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-2xs font-cairo"
               >
                 {!LINE_HEIGHT_OPTIONS.some((o) => o.value === currentLineHeight) && (
-                  <option value={currentLineHeight}>
-                    {currentLineHeight}x
-                  </option>
+                  <option value={currentLineHeight}>{currentLineHeight}x</option>
                 )}
                 {LINE_HEIGHT_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -466,14 +483,17 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   </option>
                 ))}
               </select>
-              <CaretDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
+              <CaretDown
+                className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                weight="bold"
+              />
             </div>
           </div>
 
           <div className="space-y-1">
             <span className="text-micro font-bold text-muted-foreground flex items-center gap-1">
               <ArrowsHorizontal className="w-3 h-3 text-primary/70" weight="regular" />
-              <span>{isArabic ? "تباعد الكلمات" : "تباعد الحروف"}</span>
+              <span>{isArabic ? 'تباعد الكلمات' : 'تباعد الحروف'}</span>
             </span>
             <div className="relative">
               <select
@@ -487,9 +507,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                 className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-2xs font-cairo"
               >
                 {!LETTER_SPACING_OPTIONS.some((o) => o.value === currentSpacing) && (
-                  <option value={currentSpacing}>
-                    {currentSpacing}px
-                  </option>
+                  <option value={currentSpacing}>{currentSpacing}px</option>
                 )}
                 {LETTER_SPACING_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -497,12 +515,14 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   </option>
                 ))}
               </select>
-              <CaretDown className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none" weight="bold" />
+              <CaretDown
+                className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                weight="bold"
+              />
             </div>
           </div>
         </div>
       </FluentSection>
-
     </div>
   );
 }

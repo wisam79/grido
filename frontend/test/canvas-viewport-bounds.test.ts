@@ -1,7 +1,82 @@
-import { describe, it, expect } from 'vitest';
+import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render } from '@testing-library/react';
+import { Stage } from 'react-konva';
+import type Konva from 'konva';
 import { clampStagePos } from '../src/components/editor/canvas/use-canvas-viewport';
 
+const noop = () => {};
+
+class MockContext2D {
+  canvas: HTMLCanvasElement | null = null;
+  globalAlpha = 1;
+  globalCompositeOperation = 'source-over';
+  fillStyle: unknown = '#000';
+  strokeStyle: unknown = '#000';
+  lineWidth = 1;
+  lineCap = 'butt';
+  lineJoin = 'miter';
+  font = '10px sans-serif';
+  textAlign = 'start';
+  textBaseline = 'alphabetic';
+  shadowBlur = 0;
+  shadowColor = 'rgba(0,0,0,0)';
+  shadowOffsetX = 0;
+  shadowOffsetY = 0;
+  scale = noop;
+  rotate = noop;
+  translate = noop;
+  transform = noop;
+  setTransform = noop;
+  resetTransform = noop;
+  save = noop;
+  restore = noop;
+  beginPath = noop;
+  closePath = noop;
+  moveTo = noop;
+  lineTo = noop;
+  bezierCurveTo = noop;
+  quadraticCurveTo = noop;
+  arc = noop;
+  arcTo = noop;
+  ellipse = noop;
+  rect = noop;
+  fill = noop;
+  stroke = noop;
+  clip = noop;
+  clearRect = noop;
+  fillRect = noop;
+  strokeRect = noop;
+  fillText = noop;
+  strokeText = noop;
+  drawImage = noop;
+  setLineDash = noop;
+  createImageData = () => ({ data: new Uint8ClampedArray(4), width: 1, height: 1 });
+  getImageData = () => ({ data: new Uint8ClampedArray(4), width: 1, height: 1 });
+  putImageData = noop;
+  createLinearGradient = () => ({ addColorStop: noop });
+  createRadialGradient = () => ({ addColorStop: noop });
+  createPattern = () => null;
+  measureText = () => ({ width: 0 });
+}
+
+function installCanvasMock() {
+  (HTMLCanvasElement.prototype as unknown as { getContext: () => unknown }).getContext = function (
+    this: HTMLCanvasElement,
+  ) {
+    const self = this as HTMLCanvasElement & { __mockCtx?: MockContext2D };
+    if (!self.__mockCtx) {
+      self.__mockCtx = new MockContext2D();
+      self.__mockCtx.canvas = self;
+    }
+    return self.__mockCtx;
+  };
+}
+
 describe('use-canvas-viewport — clampStagePos boundaries', () => {
+  beforeEach(() => {
+    installCanvasMock();
+  });
   it('wheel mode: يثبّت الورقة في المنتصف تماماً عندما تكون أصغر من النافذة أو تلائمها', () => {
     const viewportW = 1000;
     const viewportH = 800;
@@ -118,5 +193,93 @@ describe('use-canvas-viewport — clampStagePos boundaries', () => {
       await import('../src/components/editor/konva/layers/konva-overlay-layer');
     expect(KonvaOverlayLayer).toBeDefined();
     expect(typeof KonvaOverlayLayer).toBe('object'); // React.memo component
+  });
+
+  it('KonvaSingleLayer: يفرض قص العناصر عند حواف الورقة (clipX, clipY, clipWidth, clipHeight)', async () => {
+    const { KonvaSingleLayer } =
+      await import('../src/components/editor/konva/layers/konva-single-layer');
+    expect(KonvaSingleLayer).toBeDefined();
+    let stage: Konva.Stage | null = null;
+    const { unmount } = render(
+      React.createElement(
+        Stage,
+        {
+          ref: (s: Konva.Stage | null) => {
+            stage = s;
+          },
+          width: 1200,
+          height: 800,
+        },
+        React.createElement(KonvaSingleLayer, {
+          sortedElements: [],
+          selectedIds: [],
+          canvasWidth: 1200,
+          canvasHeight: 800,
+          snapToGrid: false,
+          gridSize: 20,
+          elementsRefs: { current: {} },
+          altPressedRef: { current: false },
+          shiftPressedRef: { current: false },
+          setActiveGuides: vi.fn(),
+          handleDoubleClick: vi.fn(),
+          handleElementChange: vi.fn(),
+          createElementMouseDown: () => () => {},
+          createElementClick: () => () => {},
+          createElementRef: () => ({ current: null }),
+        }),
+      ),
+    );
+
+    const layer = (stage as unknown as Konva.Stage)?.getLayers()[0];
+    expect(layer).toBeDefined();
+    expect(layer?.name()).toBe('elements-content-layer');
+    expect(layer?.clipX()).toBe(0);
+    expect(layer?.clipY()).toBe(0);
+    expect(layer?.clipWidth()).toBe(1200);
+    expect(layer?.clipHeight()).toBe(800);
+    unmount();
+  });
+
+  it('KonvaCollageLayer: يفرض قص الكولاج عند حواف الورقة (clipX, clipY, clipWidth, clipHeight)', async () => {
+    const { KonvaCollageLayer } =
+      await import('../src/components/editor/konva/layers/konva-collage-layer');
+    expect(KonvaCollageLayer).toBeDefined();
+    let stage: Konva.Stage | null = null;
+    const { unmount } = render(
+      React.createElement(
+        Stage,
+        {
+          ref: (s: Konva.Stage | null) => {
+            stage = s;
+          },
+          width: 1000,
+          height: 700,
+        },
+        React.createElement(KonvaCollageLayer, {
+          slots: [],
+          canvasWidth: 1000,
+          canvasHeight: 700,
+          collageMargin: 10,
+          collageGap: 10,
+          collageRadius: 0,
+          collageStrokeWidth: 0,
+          collageStrokeColor: '#000',
+          collageShowCutLines: false,
+          selectedId: null,
+          handleSlotWheel: vi.fn(),
+          updateSlot: vi.fn(),
+          pushHistory: vi.fn(),
+        }),
+      ),
+    );
+
+    const layer = (stage as unknown as Konva.Stage)?.getLayers()[0];
+    expect(layer).toBeDefined();
+    expect(layer?.name()).toBe('collage-layer');
+    expect(layer?.clipX()).toBe(0);
+    expect(layer?.clipY()).toBe(0);
+    expect(layer?.clipWidth()).toBe(1000);
+    expect(layer?.clipHeight()).toBe(700);
+    unmount();
   });
 });

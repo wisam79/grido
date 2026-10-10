@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { useShallow } from 'zustand/react/shallow';
-import { FluentSection, FluentSettingRow } from '@/components/ui/blocks';
+import { FluentSection, FluentSettingRow, FluentSegmentedControl } from '@/components/ui/blocks';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -329,7 +329,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 type="button"
                 aria-label={`المقاس: ${activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}`}
                 className={cn(
-                  'flex-1 min-w-0 flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-input/60 hover:bg-input border border-border hover:border-foreground/40 text-foreground text-xs font-semibold transition-colors cursor-pointer shadow-2xs overflow-hidden',
+                  'flex-1 min-w-0 flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-card hover:bg-muted/60 border border-border/80 hover:border-foreground/40 text-foreground text-xs font-semibold transition-colors cursor-pointer shadow-2xs overflow-hidden',
                   FOCUS_RING,
                 )}
               >
@@ -436,80 +436,55 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           </DropdownMenu>
 
           {/* وحدة القياس — mm أولاً لأنها الوحدة الافتراضية للطباعة */}
-          <div
-            role="group"
-            aria-label="وحدة القياس"
-            className="flex items-center bg-muted/60 border border-border/80 rounded-md p-0.5 h-8 shrink-0 select-none shadow-2xs"
-          >
-            {unitOptions.map((unit) => {
-              const isActive = activeUnit === unit.id;
-              return (
-                <button
-                  key={unit.id}
-                  type="button"
-                  aria-pressed={isActive}
-                  title={unit.title}
-                  onClick={() => setRulerUnit(unit.id)}
-                  className={cn(
-                    'px-2.5 h-full rounded-md text-mini font-mono transition-colors cursor-pointer flex items-center justify-center select-none',
-                    isActive
-                      ? 'bg-card text-foreground font-bold shadow-2xs border border-border/60'
-                      : 'text-muted-foreground hover:text-foreground font-normal border border-transparent',
-                    FOCUS_RING,
-                  )}
-                >
-                  {unit.label}
-                </button>
-              );
-            })}
-          </div>
+          <FluentSegmentedControl<'mm' | 'px'>
+            layoutId="canvas-dimensions-unit-toggle"
+            value={activeUnit}
+            onChange={setRulerUnit}
+            size="sm"
+            fullWidth={false}
+            options={unitOptions.map((unit) => ({
+              id: unit.id,
+              label: unit.label,
+              tooltip: unit.title,
+            }))}
+          />
         </div>
 
         {/* 2. الاتجاه — المصدر الوحيد لتبديل العرض بالارتفاع (قبل الأبعاد:
             تختار المقاس ثم الاتجاه ثم تضبط الأرقام، فلا يلغي التبديل أرقامك) */}
         <FluentSettingRow
+          layout="vertical"
           label="الاتجاه"
           control={
-            <div
-              role="group"
-              aria-label="اتجاه الصفحة"
-              className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-md border border-border/40"
-            >
-              {orientationOptions.map((option) => {
-                const isActive = option.id === 'portrait' ? isPortrait : !isPortrait;
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    aria-pressed={isActive}
-                    title={option.title}
-                    onClick={() => {
-                      if (option.id === 'portrait' && !isPortrait) handleSwapDimensions();
-                      if (option.id === 'landscape' && isPortrait) handleSwapDimensions();
-                    }}
-                    className={cn(
-                      'flex items-center gap-1.5 px-2 h-7 text-mini font-sans rounded-md transition-colors cursor-pointer select-none',
-                      isActive
-                        ? 'bg-card text-foreground font-bold shadow-2xs border border-border/60'
-                        : 'text-muted-foreground hover:text-foreground font-normal border border-transparent',
-                      FOCUS_RING,
-                    )}
-                  >
+            <FluentSegmentedControl<'portrait' | 'landscape'>
+              layoutId="canvas-dimensions-orientation-toggle"
+              value={isPortrait ? 'portrait' : 'landscape'}
+              onChange={(val) => {
+                if (val === 'portrait' && !isPortrait) handleSwapDimensions();
+                if (val === 'landscape' && isPortrait) handleSwapDimensions();
+              }}
+              size="sm"
+              fullWidth={true}
+              options={orientationOptions.map((option) => ({
+                id: option.id,
+                label: (
+                  <span className="flex items-center justify-center gap-1.5 font-sans">
                     <span
                       aria-hidden="true"
                       className={cn(
                         'rounded-sm border-[1.5px] transition-colors shrink-0',
                         option.glyph,
-                        isActive
+                        (option.id === 'portrait' ? isPortrait : !isPortrait)
                           ? 'border-foreground bg-foreground/25'
                           : 'border-muted-foreground/60',
                       )}
                     />
                     <span className="font-sans">{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+                  </span>
+                ),
+                tooltip: option.title,
+              }))}
+            />
           }
         />
 
@@ -521,7 +496,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           control={
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
               {/* العرض */}
-              <div className={FIELD_SHELL} dir="ltr" title="العرض">
+              <div className={FIELD_SHELL} dir="ltr">
                 <span className="text-micro font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
                   W
                 </span>
@@ -555,7 +530,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   'w-8 h-8 rounded-md border flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0',
                   lockAspect
                     ? 'bg-accent-active text-foreground border-border/80 font-bold'
-                    : 'bg-input/40 border-border/80 text-muted-foreground hover:bg-accent hover:text-foreground hover:border-border',
+                    : 'bg-card border-border/80 text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:border-border',
                   FOCUS_RING,
                 )}
               >
@@ -567,7 +542,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               </button>
 
               {/* الارتفاع */}
-              <div className={FIELD_SHELL} dir="ltr" title="الارتفاع">
+              <div className={FIELD_SHELL} dir="ltr">
                 <span className="text-micro font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
                   H
                 </span>

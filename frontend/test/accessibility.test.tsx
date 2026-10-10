@@ -9,6 +9,7 @@ import {
   FluentSegmentedControl,
   FluentEmptyState,
   FluentIconButton,
+  FluentCapsuleButton,
 } from '../src/components/ui/blocks';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { Gear, Sparkle, Folder } from '@/components/ui/icons';
@@ -27,7 +28,7 @@ describe('Accessibility (jest-axe)', () => {
         action={<button>إعادة ضبط</button>}
       >
         <div>محتوى تجريبي</div>
-      </FluentSection>
+      </FluentSection>,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
@@ -42,7 +43,7 @@ describe('Accessibility (jest-axe)', () => {
           tooltip="يساعد في محاذاة الصور بدقة"
           control={<input type="checkbox" aria-label="تفعيل الشبكة" />}
         />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
@@ -57,7 +58,7 @@ describe('Accessibility (jest-axe)', () => {
         ]}
         value="all"
         onChange={() => {}}
-      />
+      />,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
@@ -70,7 +71,7 @@ describe('Accessibility (jest-axe)', () => {
         description="أنشئ مشروعاً جديداً للبدء"
         actionLabel="مشروع جديد"
         onAction={() => {}}
-      />
+      />,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
@@ -78,17 +79,44 @@ describe('Accessibility (jest-axe)', () => {
   it('FluentIconButton has no violations', async () => {
     const { container } = render(
       <TooltipProvider>
-        <FluentIconButton icon={<Sparkle className="size-3.5 shrink-0" />} tooltip="تطبيق التأثير" onClick={() => {}}>
+        <FluentIconButton
+          icon={<Sparkle className="size-3.5 shrink-0" />}
+          tooltip="تطبيق التأثير"
+          onClick={() => {}}
+        >
           تنفيذ
         </FluentIconButton>
-      </TooltipProvider>
+      </TooltipProvider>,
+    );
+    expect(await axe(container)).toHaveNoViolations();
+  });
+
+  it('FluentCapsuleButton exposes an accessible name', async () => {
+    const { container } = render(
+      <TooltipProvider>
+        <FluentCapsuleButton
+          icon={<Sparkle className="size-4 shrink-0" />}
+          label="الخطوط الإرشادية"
+          tooltip="إظهار الخطوط الإرشادية"
+          shortcut="Ctrl+;"
+          active
+          onClick={() => {}}
+        />
+      </TooltipProvider>,
     );
     expect(await axe(container)).toHaveNoViolations();
   });
 
   it('FluentSliderField has no violations', async () => {
     const { container } = render(
-      <FluentSliderField label="الهامش" value={15} min={0} max={50} unit="mm" onChange={() => {}} />
+      <FluentSliderField
+        label="الهامش"
+        value={15}
+        min={0}
+        max={50}
+        unit="mm"
+        onChange={() => {}}
+      />,
     );
     expect(await axe(container)).toHaveNoViolations();
   });

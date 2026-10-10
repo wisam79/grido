@@ -12,7 +12,7 @@ import {
   ArrowRight,
 } from '@/components/ui/icons';
 import { PopoverColorPicker, QuickColorPalette } from '../shared-controls';
-import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
+import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -89,37 +89,28 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
     <div className="space-y-3 animate-in fade-in duration-200 font-cairo">
       {/* بطاقة: الحدود والاستدارة الهندسية */}
       <FluentSection icon={getShapeIcon()} title={sectionTitle} collapsible defaultOpen={true}>
-        {/* صف لون التعبئة / الخط القياسي في Fluent 2 */}
-        <div className="p-2.5 rounded-xl bg-muted/30 dark:bg-muted/20 border border-border/60 flex items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-              <Palette className="w-4 h-4" weight="duotone" />
+        {/* بطاقة لون التعبئة / الخط: العنوان والوصف في صف، والمنتقي بعرض كامل تحته
+            حتى لا يزاحم شارة الـHEX النصَّ ويقتطعه في لوح بعرض ~296px */}
+        <div className="p-2.5 rounded-xl bg-muted/30 dark:bg-muted/20 border border-border/60 space-y-2 shadow-2xs">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                <Palette className="w-4 h-4" weight="duotone" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-foreground block truncate">
+                  {isLine ? 'لون الخط' : 'لون الشكل'}
+                </span>
+                <span className="text-micro text-muted-foreground block truncate">
+                  {element.fillType === 'linear'
+                    ? 'تدرج خطي'
+                    : element.fillType === 'radial'
+                      ? 'تدرج شعاعي'
+                      : 'لون مصمت'}
+                </span>
+              </div>
             </div>
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-foreground block truncate">
-                {isLine ? 'لون الخط' : 'لون الشكل'}
-              </span>
-              <span className="text-micro text-muted-foreground block truncate">
-                {element.fillType === 'linear'
-                  ? 'تدرج خطي'
-                  : element.fillType === 'radial'
-                    ? 'تدرج شعاعي'
-                    : 'لون مصمت'}
-              </span>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <PopoverColorPicker
-              color={currentFill}
-              onChange={(col) => {
-                onUpdate(element.id, {
-                  fill: col,
-                  stroke: isLine ? col : element.stroke || col,
-                });
-                useEditorStore.getState().pushHistory();
-              }}
-            />
             {onNavigateTab && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -128,6 +119,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => onNavigateTab('adjust')}
+                    aria-label="استوديو الألوان والتدرجات"
                     className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-colors cursor-pointer shrink-0"
                   >
                     <Sparkle className="w-4 h-4 text-primary" weight="duotone" />
@@ -137,6 +129,19 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
               </Tooltip>
             )}
           </div>
+
+          <PopoverColorPicker
+            color={currentFill}
+            onChange={(col) => {
+              onUpdate(element.id, {
+                fill: col,
+                stroke: isLine ? col : element.stroke || col,
+              });
+              useEditorStore.getState().pushHistory();
+            }}
+            ariaLabel={isLine ? 'لون الخط' : 'لون الشكل'}
+            className="w-full"
+          />
         </div>
 
         {/* سلايدر سماكة الحد مع أزرار سريعة */}
@@ -192,17 +197,22 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
 
         {/* اختيار لون الحد عند تفعيل سماكة أكبر من الصفر للأشكال المغلقة */}
         {!isLine && (element.strokeWidth ?? 0) > 0 && (
-          <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted/20 border border-border/40 text-xs animate-in fade-in duration-150">
-            <span className="text-foreground/80 font-semibold flex items-center gap-1.5 text-xs">
-              <Palette className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
-              <span>لون الحد</span>
-            </span>
-            <PopoverColorPicker
-              color={element.stroke || '#000000'}
-              onChange={(val) => {
-                onUpdate(element.id, { stroke: val });
-                useEditorStore.getState().pushHistory();
-              }}
+          <div className="animate-in fade-in duration-150">
+            <FluentSettingRow
+              layout="vertical"
+              label="لون الحد"
+              icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
+              control={
+                <PopoverColorPicker
+                  color={element.stroke || '#000000'}
+                  onChange={(val) => {
+                    onUpdate(element.id, { stroke: val });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  ariaLabel="لون الحد"
+                  className="w-full"
+                />
+              }
             />
           </div>
         )}
@@ -400,20 +410,25 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
           icon={<BoundingBox className="w-4 h-4 text-primary" weight="duotone" />}
           title="لون الحد"
         >
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-xs font-semibold text-foreground/90">لون الحد</span>
-            <PopoverColorPicker
-              color={currentStroke}
-              onChange={(val) => {
-                onUpdate(element.id, {
-                  stroke: val,
-                  strokeWidth:
-                    element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 2,
-                });
-                useEditorStore.getState().pushHistory();
-              }}
-            />
-          </div>
+          <FluentSettingRow
+            layout="vertical"
+            label="لون الحد"
+            control={
+              <PopoverColorPicker
+                color={currentStroke}
+                onChange={(val) => {
+                  onUpdate(element.id, {
+                    stroke: val,
+                    strokeWidth:
+                      element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 2,
+                  });
+                  useEditorStore.getState().pushHistory();
+                }}
+                ariaLabel="لون الحد"
+                className="w-full"
+              />
+            }
+          />
 
           <div className="space-y-1 pt-1 border-t border-border/30">
             <span className="text-micro font-semibold text-muted-foreground block">ألوان الحد</span>

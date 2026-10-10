@@ -1,6 +1,6 @@
-import React, { useState, useRef, useMemo, useCallback } from "react";
-import { TextElement, useEditorStore } from "@/lib/editor-store";
-import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, FontOption } from "@/lib/io/fonts";
+import React, { useState, useRef, useMemo, useCallback } from 'react';
+import { TextElement, useEditorStore } from '@/lib/editor-store';
+import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, FontOption } from '@/lib/io/fonts';
 import {
   MagnifyingGlass,
   CaretDown,
@@ -10,53 +10,52 @@ import {
   Sparkle,
   Cloud,
   CheckCircle,
-} from "@/components/ui/icons";
-import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+} from '@/components/ui/icons';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 // #12 — استخدام readStoredList/writeStoredList لضمان قراءة string[] فقط وسقف 60
-import { readStoredList, writeStoredList } from "@/lib/local-prefs";
+import { readStoredList, writeStoredList } from '@/lib/local-prefs';
 
 interface TextFontSelectorProps {
   element: TextElement;
   onUpdate: (id: string, patch: Partial<TextElement>) => void;
 }
 
-const FAVORITES_STORAGE_KEY = "grido_favorite_fonts";
-const RECENTS_STORAGE_KEY = "grido_recent_fonts";
+const FAVORITES_STORAGE_KEY = 'grido_favorite_fonts';
+const RECENTS_STORAGE_KEY = 'grido_recent_fonts';
 
 export const TextFontSelector = React.memo(function TextFontSelector({
   element,
   onUpdate,
 }: TextFontSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [previewText, setPreviewText] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [previewText, setPreviewText] = useState<string>('');
   const [showCustomPreviewInput, setShowCustomPreviewInput] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
 
-  const originalFamilyRef = useRef<string>(element.fontFamily || "");
+  const originalFamilyRef = useRef<string>(element.fontFamily || '');
   const hasCommittedRef = useRef<boolean>(false);
 
   // #12 — Favorites: readStoredList يضمن string[] + يتعامل مع JSON تالف بأمان
   const [favorites, setFavorites] = useState<string[]>(() =>
-    readStoredList(FAVORITES_STORAGE_KEY, ["cairo", "tajawal", "amiri"])
+    readStoredList(FAVORITES_STORAGE_KEY, ['cairo', 'tajawal', 'amiri']),
   );
 
   // #12 — Recents: readStoredList بدلاً من JSON.parse الخام
-  const [recents, setRecents] = useState<string[]>(() =>
-    readStoredList(RECENTS_STORAGE_KEY, [])
-  );
+  const [recents, setRecents] = useState<string[]>(() => readStoredList(RECENTS_STORAGE_KEY, []));
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listContainerRef = useRef<HTMLDivElement>(null);
 
   const currentFamily = element.fontFamily || ARABIC_FONTS[0].family;
-  const currentFontObj = ARABIC_FONTS.find(
-    (f) => f.family === currentFamily || f.family.includes(currentFamily.split(",")[0].trim())
-  ) || ARABIC_FONTS[0];
+  const currentFontObj =
+    ARABIC_FONTS.find(
+      (f) => f.family === currentFamily || f.family.includes(currentFamily.split(',')[0].trim()),
+    ) || ARABIC_FONTS[0];
 
-  const effectivePreviewText = previewText.trim() || (element.text?.trim() || "أبجد هوز 123");
+  const effectivePreviewText = previewText.trim() || element.text?.trim() || 'أبجد هوز 123';
 
   const toggleFavorite = (fontId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -78,17 +77,16 @@ export const TextFontSelector = React.memo(function TextFontSelector({
     });
   }, []);
 
-
   const handleOpenChange = (open: boolean) => {
     if (open) {
-      originalFamilyRef.current = element.fontFamily || "";
+      originalFamilyRef.current = element.fontFamily || '';
       hasCommittedRef.current = false;
       setTimeout(() => searchInputRef.current?.focus(), 60);
     } else {
       if (!hasCommittedRef.current && originalFamilyRef.current) {
         onUpdate(element.id, { fontFamily: originalFamilyRef.current });
       }
-      setSearchQuery("");
+      setSearchQuery('');
       setShowCustomPreviewInput(false);
       setFocusedIndex(-1);
     }
@@ -97,15 +95,24 @@ export const TextFontSelector = React.memo(function TextFontSelector({
 
   const allCategoryPills = useMemo(() => {
     const pills: { id: string; name: string; icon?: React.ReactNode; count?: number }[] = [
-      { id: "all", name: "الكل" },
+      { id: 'all', name: 'الكل' },
     ];
     if (favorites.length > 0) {
-      pills.push({ id: "favorites", name: "المفضلة", icon: <Star className="w-2.5 h-2.5 text-amber-400" weight="fill" />, count: favorites.length });
+      pills.push({
+        id: 'favorites',
+        name: 'المفضلة',
+        icon: <Star className="w-2.5 h-2.5 text-amber-400" weight="fill" />,
+        count: favorites.length,
+      });
     }
     if (recents.length > 0) {
-      pills.push({ id: "recents", name: "الأخيرة", icon: <Clock className="w-2.5 h-2.5" weight="regular" /> });
+      pills.push({
+        id: 'recents',
+        name: 'الأخيرة',
+        icon: <Clock className="w-2.5 h-2.5" weight="regular" />,
+      });
     }
-    FONT_CATEGORIES.filter((c) => c.id !== "all").forEach((cat) => {
+    FONT_CATEGORIES.filter((c) => c.id !== 'all').forEach((cat) => {
       pills.push({ id: cat.id, name: cat.name });
     });
     return pills;
@@ -114,11 +121,11 @@ export const TextFontSelector = React.memo(function TextFontSelector({
   const filteredFonts = useMemo(() => {
     return ARABIC_FONTS.filter((font) => {
       // Category check
-      if (activeCategory === "favorites") {
+      if (activeCategory === 'favorites') {
         if (!favorites.includes(font.id)) return false;
-      } else if (activeCategory === "recents") {
+      } else if (activeCategory === 'recents') {
         if (!recents.includes(font.id)) return false;
-      } else if (activeCategory !== "all") {
+      } else if (activeCategory !== 'all') {
         if (font.category !== activeCategory) return false;
       }
 
@@ -155,24 +162,24 @@ export const TextFontSelector = React.memo(function TextFontSelector({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) return;
 
-    if (e.key === "ArrowDown") {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       const nextIdx = focusedIndex < filteredFonts.length - 1 ? focusedIndex + 1 : 0;
       setFocusedIndex(nextIdx);
       if (filteredFonts[nextIdx]) {
         handlePreviewFont(filteredFonts[nextIdx]);
       }
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       const nextIdx = focusedIndex > 0 ? focusedIndex - 1 : filteredFonts.length - 1;
       setFocusedIndex(nextIdx);
       if (filteredFonts[nextIdx]) {
         handlePreviewFont(filteredFonts[nextIdx]);
       }
-    } else if (e.key === "Enter" && focusedIndex >= 0 && focusedIndex < filteredFonts.length) {
+    } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < filteredFonts.length) {
       e.preventDefault();
       handleSelectFont(filteredFonts[focusedIndex]);
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       handleOpenChange(false);
     }
   };
@@ -184,12 +191,12 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         <button
           type="button"
           className={cn(
-            "w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between shadow-2xs transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-            isOpen && "border-primary ring-2 ring-primary/20 bg-background"
+            'w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between shadow-2xs transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+            isOpen && 'border-primary ring-2 ring-primary/20 bg-background',
           )}
         >
           <div className="flex items-center gap-2 truncate">
-            <span 
+            <span
               className="text-xs truncate text-foreground font-bold"
               style={{ fontFamily: currentFontObj.family }}
             >
@@ -201,16 +208,28 @@ export const TextFontSelector = React.memo(function TextFontSelector({
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {currentFontObj.isOffline ? (
-              <span className="text-3xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1 py-0.5 rounded" title="مدمج أوفلاين">
+              <span
+                className="text-3xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1 py-0.5 rounded"
+                title="مدمج أوفلاين"
+              >
                 أوفلاين
               </span>
             ) : (
-              <span className="text-3xs font-bold text-sky-600 dark:text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1 py-0.5 rounded flex items-center gap-0.5" title="سحابي Google Fonts">
+              <span
+                className="text-3xs font-bold text-sky-600 dark:text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1 py-0.5 rounded flex items-center gap-0.5"
+                title="سحابي Google Fonts"
+              >
                 <Cloud className="w-2.5 h-2.5" weight="regular" />
                 <span>سحابي</span>
               </span>
             )}
-            <CaretDown className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180 text-primary")} weight="bold" />
+            <CaretDown
+              className={cn(
+                'w-3.5 h-3.5 text-muted-foreground transition-transform duration-200',
+                isOpen && 'rotate-180 text-primary',
+              )}
+              weight="bold"
+            />
           </div>
         </button>
       </PopoverTrigger>
@@ -227,7 +246,10 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         {/* Search Box & Custom Preview Toggle */}
         <div className="space-y-1.5">
           <div className="relative flex items-center">
-            <MagnifyingGlass className="w-3.5 h-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" weight="regular" />
+            <MagnifyingGlass
+              className="w-3.5 h-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              weight="regular"
+            />
             <input
               ref={searchInputRef}
               type="text"
@@ -242,7 +264,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
             {searchQuery ? (
               <button
                 type="button"
-                onClick={() => setSearchQuery("")}
+                onClick={() => setSearchQuery('')}
                 className="w-7 h-7 absolute left-1.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               >
                 <X className="w-3 h-3" weight="bold" />
@@ -252,12 +274,13 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 type="button"
                 onClick={() => setShowCustomPreviewInput(!showCustomPreviewInput)}
                 className={cn(
-                  "w-7 h-7 absolute left-1.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center transition-colors cursor-pointer text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
-                  showCustomPreviewInput && "text-primary bg-primary/10"
+                  'w-7 h-7 absolute left-1.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center transition-colors cursor-pointer text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                  showCustomPreviewInput && 'text-primary bg-primary/10',
                 )}
                 title="تخصيص المعاينة"
+                aria-label="تخصيص نص المعاينة"
               >
-                <Sparkle className="w-3 h-3" weight={showCustomPreviewInput ? "fill" : "regular"} />
+                <Sparkle className="w-3 h-3" weight={showCustomPreviewInput ? 'fill' : 'regular'} />
               </button>
             )}
           </div>
@@ -269,15 +292,16 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 type="text"
                 value={previewText}
                 onChange={(e) => setPreviewText(e.target.value)}
-                placeholder={`نص المعاينة (افتراضي: ${element.text || "أبجد هوز"})`}
+                placeholder={`نص المعاينة (افتراضي: ${element.text || 'أبجد هوز'})`}
                 className="w-full h-6 bg-transparent text-xs px-1 text-foreground placeholder:text-muted-foreground/50 outline-hidden"
               />
               {previewText && (
                 <button
                   type="button"
-                  onClick={() => setPreviewText("")}
+                  onClick={() => setPreviewText('')}
                   className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                   title="إعادة ضبط"
+                  aria-label="إعادة ضبط نص المعاينة"
                 >
                   <X className="w-2.5 h-2.5" weight="bold" />
                 </button>
@@ -286,8 +310,8 @@ export const TextFontSelector = React.memo(function TextFontSelector({
           )}
         </div>
 
-        {/* Category Filter Chips */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar text-micro">
+        {/* Category Filter Chips — التفاف كامل بدل شريط تمرير أفقي يُخفي الفئات */}
+        <div className="flex flex-wrap items-center gap-1 pb-1 text-micro">
           {allCategoryPills.map((cat) => (
             <button
               key={cat.id}
@@ -297,10 +321,10 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 setFocusedIndex(-1);
               }}
               className={cn(
-                "px-2 py-1 rounded-md whitespace-nowrap font-bold transition-all cursor-pointer shrink-0 shadow-2xs flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
+                'px-2 py-1 rounded-md whitespace-nowrap font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                 activeCategory === cat.id
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40"
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40',
               )}
             >
               {cat.icon}
@@ -313,7 +337,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         </div>
 
         {/* Fonts List */}
-        <div 
+        <div
           ref={listContainerRef}
           className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar pr-0.5"
         >
@@ -324,7 +348,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
             </div>
           ) : (
             filteredFonts.map((font, idx) => {
-              const isSelected = currentFamily.includes(font.family.split(",")[0].trim());
+              const isSelected = currentFamily.includes(font.family.split(',')[0].trim());
               const isFav = favorites.includes(font.id);
               const isFocused = focusedIndex === idx;
 
@@ -338,34 +362,38 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                     handlePreviewFont(font);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                    if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       handleSelectFont(font);
                     }
                   }}
                   onClick={() => handleSelectFont(font)}
                   className={cn(
-                    "w-full text-right px-2.5 py-2 rounded-md transition-all flex items-center justify-between cursor-pointer group border select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
+                    'w-full text-right px-2.5 py-2 rounded-md transition-all flex items-center justify-between cursor-pointer group border select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                     isSelected
-                      ? "bg-primary/15 border-primary/50 text-primary shadow-2xs"
+                      ? 'bg-primary/15 border-primary/50 text-primary shadow-2xs'
                       : isFocused
-                      ? "bg-muted/80 border-border/60 text-foreground"
-                      : "hover:bg-muted/50 text-foreground border-transparent"
+                        ? 'bg-muted/80 border-border/60 text-foreground'
+                        : 'hover:bg-muted/50 text-foreground border-transparent',
                   )}
                 >
                   <div className="space-y-0.5 truncate flex-1 min-w-0 pr-1">
                     {/* Font Sample Preview Text */}
-                    <span 
-                      className="text-sm font-semibold truncate block leading-tight text-foreground/90 group-hover:text-foreground"
+                    <span
+                      className="text-sm font-semibold truncate block text-foreground/90 group-hover:text-foreground"
                       style={{ fontFamily: font.family }}
                     >
                       {effectivePreviewText}
                     </span>
-                    
+
                     {/* Font Meta Details */}
                     <div className="text-micro text-muted-foreground font-medium flex items-center gap-1.5 truncate">
-                      <span className="font-bold text-foreground/75 truncate">{font.arabicName}</span>
-                      <span className="text-micro opacity-70 truncate font-mono">({font.englishName})</span>
+                      <span className="font-bold text-foreground/75 truncate">
+                        {font.arabicName}
+                      </span>
+                      <span className="text-micro opacity-70 truncate font-mono">
+                        ({font.englishName})
+                      </span>
                       {font.isOffline ? (
                         <span className="text-3xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-1 py-px rounded font-bold">
                           أوفلاين
@@ -384,15 +412,12 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                       type="button"
                       onClick={(e) => toggleFavorite(font.id, e)}
                       className={cn(
-                        "w-6 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
-                        isFav ? "text-amber-400" : "text-muted-foreground/40 hover:text-amber-400"
+                        'w-6 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                        isFav ? 'text-amber-400' : 'text-muted-foreground/40 hover:text-amber-400',
                       )}
-                      title={isFav ? "إزالة من المفضلة" : "إضافة للمفضلة"}
+                      title={isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
                     >
-                      <Star
-                        className="w-3.5 h-3.5"
-                        weight={isFav ? "fill" : "regular"}
-                      />
+                      <Star className="w-3.5 h-3.5" weight={isFav ? 'fill' : 'regular'} />
                     </button>
 
                     {isSelected && (
@@ -408,5 +433,3 @@ export const TextFontSelector = React.memo(function TextFontSelector({
     </Popover>
   );
 });
-
-

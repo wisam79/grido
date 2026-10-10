@@ -1,21 +1,21 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { MagnifyingGlass, X, Check, SquaresFour } from "@/components/ui/icons";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { FluentFilterChips } from "@/components/ui/blocks";
-import { cn, sanitizeSvgMarkupCached } from "@/lib/utils";
-import { StickerCategory, StickerCategoryGroupId, StickerShape, StickerTemplate } from "../types";
-import { ALL_STICKER_TEMPLATES, searchStickerTemplates } from "../templates";
-import { CATEGORY_ITEMS, SHAPE_ITEMS } from "../constants";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { MagnifyingGlass, X, Check, SquaresFour } from '@/components/ui/icons';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { FluentFilterChips } from '@/components/ui/blocks';
+import { cn, sanitizeSvgMarkupCached } from '@/lib/utils';
+import { StickerCategory, StickerCategoryGroupId, StickerShape, StickerTemplate } from '../types';
+import { ALL_STICKER_TEMPLATES, searchStickerTemplates } from '../templates';
+import { CATEGORY_ITEMS, SHAPE_ITEMS } from '../constants';
 
 export interface StickerCatalogProps {
-  selectedCategory: StickerCategoryGroupId | StickerCategory | "all";
-  selectedShape: StickerShape | "all";
+  selectedCategory: StickerCategoryGroupId | StickerCategory | 'all';
+  selectedShape: StickerShape | 'all';
   selectedTemplateId: string;
   onSelectTemplate: (template: StickerTemplate) => void;
-  onSelectCategory: (category: StickerCategoryGroupId | StickerCategory | "all") => void;
-  onSelectShape: (shape: StickerShape | "all") => void;
+  onSelectCategory: (category: StickerCategoryGroupId | StickerCategory | 'all') => void;
+  onSelectShape: (shape: StickerShape | 'all') => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
 }
@@ -23,23 +23,27 @@ export interface StickerCatalogProps {
 const CATEGORY_COUNTS: Record<string, number> = {
   all: ALL_STICKER_TEMPLATES.length,
   ...Object.fromEntries(
-    CATEGORY_ITEMS.filter((c) => c.id !== "all").map((cat) => [
+    CATEGORY_ITEMS.filter((c) => c.id !== 'all').map((cat) => [
       cat.id,
       cat.categories
         ? ALL_STICKER_TEMPLATES.filter((t) => cat.categories!.includes(t.category)).length
         : ALL_STICKER_TEMPLATES.filter((t) => t.category === cat.id).length,
-    ])
+    ]),
   ),
 };
 
 const SHAPE_LABEL: Record<StickerShape, string> = {
-  circle: "دائري",
-  rect: "مستطيل",
-  square: "مربع",
+  circle: 'دائري',
+  rect: 'مستطيل',
+  square: 'مربع',
 };
 
 const shapeLabel = (template: StickerTemplate): string =>
-  template.shape ? SHAPE_LABEL[template.shape] : template.aspectRatio === 1 ? SHAPE_LABEL.square : SHAPE_LABEL.rect;
+  template.shape
+    ? SHAPE_LABEL[template.shape]
+    : template.aspectRatio === 1
+      ? SHAPE_LABEL.square
+      : SHAPE_LABEL.rect;
 
 interface TemplateCardProps {
   template: StickerTemplate;
@@ -68,8 +72,8 @@ function getTemplatePreview(template: StickerTemplate): string {
     PREVIEW_CACHE.set(template.id, svg);
     return svg;
   } catch {
-    PREVIEW_CACHE.set(template.id, "");
-    return "";
+    PREVIEW_CACHE.set(template.id, '');
+    return '';
   }
 }
 
@@ -88,7 +92,7 @@ const GalleryCard = React.memo(function GalleryCard({
   useEffect(() => {
     if (inView) return;
     const el = cardRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") {
+    if (!el || typeof IntersectionObserver === 'undefined') {
       setInView(true);
       return;
     }
@@ -100,7 +104,7 @@ const GalleryCard = React.memo(function GalleryCard({
           observer.disconnect();
         }
       },
-      { rootMargin: "250px" }
+      { rootMargin: '250px' },
     );
 
     observer.observe(el);
@@ -114,7 +118,7 @@ const GalleryCard = React.memo(function GalleryCard({
   }, [isFocused]);
 
   const miniSvg = useMemo(() => {
-    if (!inView) return "";
+    if (!inView) return '';
     return getTemplatePreview(template);
   }, [inView, template]);
 
@@ -134,10 +138,10 @@ const GalleryCard = React.memo(function GalleryCard({
       aria-pressed={isSelected}
       aria-label={`${template.name} — ${mm.width}×${mm.height} مم`}
       className={cn(
-        "group relative flex flex-col p-2.5 rounded-xl transition-all cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_145px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        'group relative flex flex-col p-2.5 rounded-xl transition-all cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_145px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         isSelected
-          ? "bg-primary/10 border-primary shadow-fluent-4 ring-1 ring-primary/50"
-          : "bg-card/60 hover:bg-card border-border/40 hover:border-primary/50 hover:shadow-fluent-2 hover:-translate-y-0.5"
+          ? 'bg-primary/10 border-primary shadow-fluent-4 ring-1 ring-primary/50'
+          : 'bg-card/60 hover:bg-card border-border/40 hover:border-primary/50 hover:shadow-fluent-2 hover:-translate-y-0.5',
       )}
     >
       {/* Selection Check Badge */}
@@ -166,15 +170,17 @@ const GalleryCard = React.memo(function GalleryCard({
       <div className="mt-2 px-0.5 flex flex-col flex-1 justify-between gap-1 w-full">
         <span
           className={cn(
-            "text-xs font-bold truncate leading-snug transition-colors",
-            isSelected ? "text-primary" : "text-foreground group-hover:text-primary"
+            'text-xs font-bold truncate transition-colors',
+            isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary',
           )}
           title={template.name}
         >
           {template.name}
         </span>
         <div className="flex items-center justify-between text-micro text-muted-foreground/80 font-mono pt-1 border-t border-border/20">
-          <span>{mm.width}×{mm.height} مم</span>
+          <span>
+            {mm.width}×{mm.height} مم
+          </span>
           <span className="text-2xs px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground font-sans">
             {shapeLabel(template)}
           </span>
@@ -209,7 +215,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
 
   // إعادة ضبط التمرير والمؤشر لأعلى القائمة عند تغيير التصنيف أو البحث أو الشكل
   useEffect(() => {
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' });
     setFocusedIndex(0);
   }, [selectedCategory, selectedShape, searchQuery]);
 
@@ -229,30 +235,30 @@ export const StickerCatalog = React.memo(function StickerCatalog({
       if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
       debounceRef.current = window.setTimeout(() => onSearchChange(value), 120);
     },
-    [onSearchChange]
+    [onSearchChange],
   );
 
   const handleClearSearch = useCallback(() => {
     if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
-    setSearchInput("");
-    onSearchChange("");
+    setSearchInput('');
+    onSearchChange('');
   }, [onSearchChange]);
 
   // اختصار لوحة المفاتيح: / أو Ctrl+F للتركيز على البحث
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
       if (
-        (e.key === "/" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f")) &&
-        document.activeElement?.tagName !== "INPUT" &&
-        document.activeElement?.tagName !== "TEXTAREA"
+        (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f')) &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
       ) {
         e.preventDefault();
         searchInputRef.current?.focus();
         searchInputRef.current?.select();
       }
     };
-    window.addEventListener("keydown", handleGlobalKey);
-    return () => window.removeEventListener("keydown", handleGlobalKey);
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
   }, []);
 
   const handleCardKeyDown = useCallback(
@@ -261,29 +267,29 @@ export const StickerCatalog = React.memo(function StickerCatalog({
       if (count === 0) return;
 
       // RTL: ArrowLeft يتحرك للأمام، ArrowRight يتحرك للخلف
-      if (e.key === "ArrowLeft") {
+      if (e.key === 'ArrowLeft') {
         e.preventDefault();
         setFocusedIndex(Math.min(count - 1, index + 1));
-      } else if (e.key === "ArrowRight") {
+      } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         setFocusedIndex(Math.max(0, index - 1));
-      } else if (e.key === "ArrowDown") {
+      } else if (e.key === 'ArrowDown') {
         e.preventDefault();
         const cols = window.innerWidth >= 768 ? 4 : window.innerWidth >= 640 ? 3 : 2;
         setFocusedIndex(Math.min(count - 1, index + cols));
-      } else if (e.key === "ArrowUp") {
+      } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         const cols = window.innerWidth >= 768 ? 4 : window.innerWidth >= 640 ? 3 : 2;
         setFocusedIndex(Math.max(0, index - cols));
-      } else if (e.key === "Home") {
+      } else if (e.key === 'Home') {
         e.preventDefault();
         setFocusedIndex(0);
-      } else if (e.key === "End") {
+      } else if (e.key === 'End') {
         e.preventDefault();
         setFocusedIndex(count - 1);
       }
     },
-    [filteredTemplates]
+    [filteredTemplates],
   );
 
   return (
@@ -293,7 +299,9 @@ export const StickerCatalog = React.memo(function StickerCatalog({
         <FluentFilterChips
           layoutId="sticker-catalog-filter-chips"
           value={selectedCategory}
-          onChange={(val) => onSelectCategory(val as StickerCategoryGroupId | StickerCategory | "all")}
+          onChange={(val) =>
+            onSelectCategory(val as StickerCategoryGroupId | StickerCategory | 'all')
+          }
           size="md"
           options={CATEGORY_ITEMS.map((cat) => ({
             id: cat.id,
@@ -314,7 +322,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
               value={searchInput}
               onChange={(e) => handleSearchInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Escape" && searchInput) {
+                if (e.key === 'Escape' && searchInput) {
                   e.stopPropagation();
                   handleClearSearch();
                 }
@@ -354,10 +362,10 @@ export const StickerCatalog = React.memo(function StickerCatalog({
                         aria-checked={isActive}
                         aria-label={shape.label}
                         className={cn(
-                          "w-7 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer",
+                          'w-7 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer',
                           isActive
-                            ? "bg-background text-foreground shadow-2xs font-bold"
-                            : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+                            ? 'bg-background text-foreground shadow-2xs font-bold'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
                         )}
                       >
                         {shape.icon}
@@ -399,8 +407,8 @@ export const StickerCatalog = React.memo(function StickerCatalog({
               size="sm"
               onClick={() => {
                 handleClearSearch();
-                onSelectCategory("all");
-                onSelectShape("all");
+                onSelectCategory('all');
+                onSelectShape('all');
               }}
               className="h-7 text-xs px-3 mt-1 rounded-md"
             >
@@ -427,5 +435,4 @@ export const StickerCatalog = React.memo(function StickerCatalog({
   );
 });
 
-StickerCatalog.displayName = "StickerCatalog";
-
+StickerCatalog.displayName = 'StickerCatalog';

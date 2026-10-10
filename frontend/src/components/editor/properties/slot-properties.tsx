@@ -168,6 +168,7 @@ export const SlotProperties = React.memo(function SlotProperties({
           setAutoFill(checked);
           localStorage.setItem('grido_auto_fill_grid', String(checked));
         }}
+        aria-label="تعبئة تلقائية"
       />
     </div>
   );
@@ -553,6 +554,7 @@ export const SlotProperties = React.memo(function SlotProperties({
             }}
             swatchOnly
             className="w-8 h-8"
+            ariaLabel="لون خلفية الخانة"
           />
         </div>
       </FluentSection>

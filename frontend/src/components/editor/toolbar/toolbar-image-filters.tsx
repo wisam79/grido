@@ -3,7 +3,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import { Button } from '@/components/ui/button';
 import { FadersHorizontal } from '@/components/ui/icons';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { IMAGE_FILTERS } from '@/lib/templates';
+import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { cn } from '@/lib/utils';
@@ -114,8 +114,11 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
                     />
                   )}
                 </div>
-                <span className="text-micro tracking-tight leading-tight truncate max-w-full text-center mt-0.5">
-                  {f.name}
+                <span
+                  className="text-micro tracking-tight w-full text-center leading-tight mt-0.5"
+                  title={f.name}
+                >
+                  {filterShortName(f.name)}
                 </span>
               </button>
             );

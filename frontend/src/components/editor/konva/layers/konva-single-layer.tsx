@@ -104,7 +104,13 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
   }, [sortedElements]);
 
   return (
-    <Layer name="elements-content-layer">
+    <Layer
+      name="elements-content-layer"
+      clipX={0}
+      clipY={0}
+      clipWidth={canvasWidth}
+      clipHeight={canvasHeight}
+    >
       {sortedElements.map((el) => {
         if (el.visible === false) return null;
 
@@ -123,7 +129,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
         const minY = el.y + Math.min(...cornersY);
         const maxY = el.y + Math.max(...cornersY);
 
-        if (minX > 1.1 || minY > 1.1 || maxX < -0.1 || maxY < -0.1) {
+        if (minX > 1.25 || minY > 1.25 || maxX < -0.25 || maxY < -0.25) {
           return null;
         }
 

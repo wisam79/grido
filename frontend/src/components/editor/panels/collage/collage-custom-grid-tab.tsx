@@ -36,32 +36,25 @@ const FOCUS_RING =
   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 
 /**
- * مفاتيح بطاقات تبويب الشبكة القابلة للطي — نمط الأكورديون الفردي الحصري (Solo Mode):
- * قسم واحد فقط يفتح في كل لحظة وتُطوى البقية تلقائياً لتفادي شريط التمرير العمودي،
- * وتُحفظ حالة القسم النشط محلياً في localStorage لكل مستخدم.
+ * مفاتيح بطاقات تبويب الشبكة القابلة للطي — تُحفظ حالة الطي محلياً لكل مستخدم
+ * فتبقى اللوحة مرتبة كما تركها المستخدم، مع إمكانية فتح أكثر من بطاقة في الوقت نفسه بحرية تامة.
  */
 type CollapseKey = 'dims' | 'photoSize' | 'align';
 const COLLAPSE_PREF_KEY = 'grido-collage-grid-collapse';
 const SOLO_SECTION_PREF_KEY = 'grido-collage-grid-solo-section';
 
-const loadActiveSection = (): CollapseKey | null => {
+const loadCollapsePrefs = (): Partial<Record<CollapseKey, boolean>> => {
   try {
-    const solo = localStorage.getItem(SOLO_SECTION_PREF_KEY);
-    if (solo === 'dims' || solo === 'photoSize' || solo === 'align') {
-      return solo;
+    if (typeof localStorage !== 'undefined' && localStorage.getItem(SOLO_SECTION_PREF_KEY)) {
+      localStorage.removeItem(SOLO_SECTION_PREF_KEY);
     }
-    // توافق مع التفضيلات المحفوظة سابقاً
-    const legacyRaw = localStorage.getItem(COLLAPSE_PREF_KEY);
-    if (legacyRaw) {
-      const parsed = JSON.parse(legacyRaw) as Partial<Record<CollapseKey, boolean>>;
-      if (parsed.photoSize) return 'photoSize';
-      if (parsed.align) return 'align';
-      if (parsed.dims) return 'dims';
-    }
+    const raw =
+      typeof localStorage !== 'undefined' ? localStorage.getItem(COLLAPSE_PREF_KEY) : null;
+    return raw ? (JSON.parse(raw) as Partial<Record<CollapseKey, boolean>>) : {};
   } catch {
-    // التخزين غير متاح — الافتراضي الآمن
+    // خصوصية التصفح أو تخزين تالف — الطي الافتراضي (مفتوح) خيار آمن دائماً
+    return {};
   }
-  return 'dims';
 };
 
 /** زر عداد مدمج (h-7 = مقياس Compact Controls) */
@@ -162,8 +155,6 @@ export interface CollageCustomGridTabProps {
   onPhotoTypeChange: (photoType: PhotoGridType) => void;
   onGridAlignChange: (align: GridAlignment) => void;
   onSaveCurrentAsTemplate: (name: string) => void;
-  /** قسم مفتوح افتراضياً (اختياري لاختبارات الوحدة وسيناريوهات التهيئة) */
-  defaultSection?: CollapseKey | null;
   /** اختياري: لون الخلفية يُدار أساسياً في تبويب الورقة */
   backgroundColor?: string;
   onBackgroundColorChange?: (hex: string) => void;
@@ -184,28 +175,20 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   onPhotoTypeChange,
   onGridAlignChange,
   onSaveCurrentAsTemplate,
-  defaultSection,
 }: CollageCustomGridTabProps) {
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [saveName, setSaveName] = useState('');
 
-  /**
-   * نمط الأكورديون الفردي الحصري (Solo Mode):
-   * قسم واحد فقط مفتوح في اللحظة نفسها، وفتح أي قسم يطوي البقية تلقائياً لتفادي شريط التمرير
-   */
-  const [activeSection, setActiveSection] = useState<CollapseKey | null>(() => {
-    return defaultSection !== undefined ? defaultSection : loadActiveSection();
-  });
+  /** حالة طي البطاقات محفوظة محلياً — كل بطاقة تُفتح وتُطوى باستقلالية تامة دون طي البقية */
+  const [collapsePrefs, setCollapsePrefs] =
+    useState<Partial<Record<CollapseKey, boolean>>>(loadCollapsePrefs);
 
-  const handleSectionOpenChange = (key: CollapseKey) => (open: boolean) => {
-    setActiveSection((prev) => {
-      // فتح حصري: لو فُتح هذا القسم يصبح هو النشط وتُطوى البقية، ولو أُغلق لا يبقى أي قسم مفتوح
-      const next = open ? key : prev === key ? null : prev;
+  const setCardOpen = (key: CollapseKey) => (open: boolean) => {
+    setCollapsePrefs((prev) => {
+      const next = { ...prev, [key]: open };
       try {
-        if (next) {
-          localStorage.setItem(SOLO_SECTION_PREF_KEY, next);
-        } else {
-          localStorage.removeItem(SOLO_SECTION_PREF_KEY);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(COLLAPSE_PREF_KEY, JSON.stringify(next));
         }
       } catch {
         // التخزين غير متاح — الحالة تبقى في الذاكرة لهذه الجلسة فقط
@@ -286,8 +269,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
         title="أبعاد الشبكة"
         collapsible
-        open={activeSection === 'dims'}
-        onOpenChange={handleSectionOpenChange('dims')}
+        open={collapsePrefs.dims ?? true}
+        onOpenChange={setCardOpen('dims')}
         subtitle={
           <>
             الحد الأقصى{' '}
@@ -488,8 +471,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         icon={<Ruler className="w-3.5 h-3.5" weight="duotone" />}
         title="مقاس الصورة"
         collapsible
-        open={activeSection === 'photoSize'}
-        onOpenChange={handleSectionOpenChange('photoSize')}
+        open={collapsePrefs.photoSize ?? true}
+        onOpenChange={setCardOpen('photoSize')}
         action={
           /* محايدة: الحالة تعيش في المبدّلات لا في الشارة */
           <span className="h-5 text-2xs font-bold font-mono px-2 rounded-full bg-muted text-muted-foreground border border-border/70 flex items-center select-none">
@@ -518,7 +501,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 <span className="w-9 h-9 rounded-md bg-muted/50 border border-border/50 flex items-center justify-center shrink-0">
                   <DocumentPresetGraphic type={opt.value} active={isActive} />
                 </span>
-                <span className="min-w-0 flex-1 leading-snug text-right font-sans">
+                <span className="min-w-0 flex-1 text-right font-sans">
                   <span
                     className={cn(
                       'block text-xs truncate',
@@ -553,8 +536,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           icon={<Crosshair className="w-3.5 h-3.5" weight="duotone" />}
           title="المحاذاة على الورقة"
           collapsible
-          open={activeSection === 'align'}
-          onOpenChange={handleSectionOpenChange('align')}
+          open={collapsePrefs.align ?? true}
+          onOpenChange={setCardOpen('align')}
         >
           <div className="flex items-center gap-2">
             {/* مصفوفة الارتكاز — dir="ltr" مقصودة: خريطة مكانية للورقة لا نص متدفق */}

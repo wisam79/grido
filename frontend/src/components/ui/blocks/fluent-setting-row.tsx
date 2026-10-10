@@ -93,9 +93,7 @@ export const FluentSettingRow = React.memo(
               )}
             </div>
             {description && (
-              <p className="text-micro text-muted-foreground truncate leading-tight mt-0.5">
-                {description}
-              </p>
+              <p className="text-micro text-muted-foreground truncate mt-0.5">{description}</p>
             )}
           </div>
         </div>

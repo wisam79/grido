@@ -1,19 +1,16 @@
-import { useState, useMemo } from "react";
-import { cn } from "@/lib/utils";
-import { PopoverColorPicker } from "./shared-controls";
-import { FluentSegmentedControl, FluentSliderField } from "@/components/ui/blocks";
-import { Check, ArrowsLeftRight, Sparkle, Palette } from "@/components/ui/icons";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import {
-  formatGradientCss,
-  GRADIENT_PRESETS,
-} from "./gradient-utils";
+import { useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import { PopoverColorPicker } from './shared-controls';
+import { FluentSegmentedControl, FluentSliderField } from '@/components/ui/blocks';
+import { Check, ArrowsLeftRight, Sparkle, Palette } from '@/components/ui/icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { formatGradientCss, GRADIENT_PRESETS } from './gradient-utils';
 
 export interface GradientPickerProps {
-  fillType: "solid" | "linear" | "radial";
+  fillType: 'solid' | 'linear' | 'radial';
   color: string;
   colorStops: Array<number | string>;
-  onChangeType: (type: "solid" | "linear" | "radial") => void;
+  onChangeType: (type: 'solid' | 'linear' | 'radial') => void;
   onChangeSolidColor: (color: string) => void;
   onChangeColorStops: (stops: Array<number | string>) => void;
   /** زاوية التدرج الخطي الحالية (0-360) — تُحسب من نقطتي البداية/النهاية */
@@ -33,19 +30,19 @@ export interface GradientPickerProps {
 }
 
 const PRESET_CATEGORIES = [
-  { id: "luxury", label: "ملكي" },
-  { id: "aurora", label: "طبيعي" },
-  { id: "neon", label: "نيون" },
-  { id: "pastel", label: "باستيل" },
+  { id: 'luxury', label: 'ملكي' },
+  { id: 'aurora', label: 'طبيعي' },
+  { id: 'neon', label: 'نيون' },
+  { id: 'pastel', label: 'باستيل' },
 ] as const;
 
 const QUICK_ANGLES = [
-  { deg: 0, label: "0°", tip: "أفقي (يمين ← يسار)" },
-  { deg: 45, label: "45°", tip: "قطري صاعد" },
-  { deg: 90, label: "90°", tip: "عمودي هابط" },
-  { deg: 135, label: "135°", tip: "قطري قياسي" },
-  { deg: 180, label: "180°", tip: "أفقي معكوس" },
-  { deg: 270, label: "270°", tip: "عمودي صاعد" },
+  { deg: 0, label: '0°', tip: 'أفقي (يمين ← يسار)' },
+  { deg: 45, label: '45°', tip: 'قطري صاعد' },
+  { deg: 90, label: '90°', tip: 'عمودي هابط' },
+  { deg: 135, label: '135°', tip: 'قطري قياسي' },
+  { deg: 180, label: '180°', tip: 'أفقي معكوس' },
+  { deg: 270, label: '270°', tip: 'عمودي صاعد' },
 ];
 
 export const GradientPicker = ({
@@ -61,10 +58,10 @@ export const GradientPicker = ({
   showFillType = true,
   showPresets = true,
 }: GradientPickerProps) => {
-  const [activeCategory, setActiveCategory] = useState<string>("luxury");
+  const [activeCategory, setActiveCategory] = useState<string>('luxury');
 
-  const stop1 = (colorStops[1] as string) || "#3b82f6";
-  const stop2 = (colorStops[colorStops.length - 1] as string) || "#8b5cf6";
+  const stop1 = (colorStops[1] as string) || '#3b82f6';
+  const stop2 = (colorStops[colorStops.length - 1] as string) || '#8b5cf6';
 
   const handleStop1Change = (newColor: string) => {
     const updated = [...colorStops];
@@ -97,7 +94,7 @@ export const GradientPicker = ({
   }, [activeCategory]);
 
   const liveGradientCss = useMemo(() => {
-    return formatGradientCss(colorStops, fillType === "radial" ? "radial" : "linear", angle);
+    return formatGradientCss(colorStops, fillType === 'radial' ? 'radial' : 'linear', angle);
   }, [colorStops, fillType, angle]);
 
   const isPresetSelected = (presetStops: Array<number | string>) => {
@@ -114,26 +111,32 @@ export const GradientPicker = ({
     <div className="space-y-2.5 font-cairo w-full max-w-full overflow-hidden" dir="rtl">
       {/* محول نوع التعبئة القياسي بأسلوب Fluent 2 الموحد */}
       {showFillType && (
-        <FluentSegmentedControl<"solid" | "linear" | "radial">
+        <FluentSegmentedControl<'solid' | 'linear' | 'radial'>
           layoutId="gradient-fill-type"
           value={fillType}
           onChange={onChangeType}
           size="sm"
           options={[
-            { id: "solid", label: "مصمت" },
-            { id: "linear", label: "خطي" },
-            { id: "radial", label: "دائري" },
+            { id: 'solid', label: 'مصمت' },
+            { id: 'linear', label: 'خطي' },
+            { id: 'radial', label: 'دائري' },
           ]}
         />
       )}
 
-      {fillType === "solid" ? (
+      {fillType === 'solid' ? (
         <div className="flex items-center justify-between gap-2 bg-background/50 p-2 rounded-xl border border-border/40 shadow-2xs w-full">
           <span className="text-xs text-foreground/90 font-semibold flex items-center gap-1.5 shrink-0">
             <Palette className="w-4 h-4 text-primary" weight="duotone" />
             <span>لون التعبئة</span>
           </span>
-          <PopoverColorPicker color={color} onChange={onChangeSolidColor} swatchOnly className="w-8 h-8" />
+          <PopoverColorPicker
+            color={color}
+            onChange={onChangeSolidColor}
+            swatchOnly
+            className="w-8 h-8"
+            ariaLabel="لون التعبئة"
+          />
         </div>
       ) : (
         <div className="space-y-2.5 w-full max-w-full overflow-hidden">
@@ -152,7 +155,13 @@ export const GradientPicker = ({
               {/* بداية التدرج */}
               <div className="flex-1 flex items-center justify-between bg-muted/40 hover:bg-muted/70 px-2.5 py-1.5 rounded-lg border border-border/40 transition-colors min-w-0">
                 <span className="text-micro font-bold text-muted-foreground">البداية</span>
-                <PopoverColorPicker color={stop1} onChange={handleStop1Change} swatchOnly className="w-6 h-6 rounded-md shadow-2xs border border-white/10" />
+                <PopoverColorPicker
+                  color={stop1}
+                  onChange={handleStop1Change}
+                  swatchOnly
+                  className="w-6 h-6 rounded-md shadow-2xs border border-white/10"
+                  ariaLabel="لون بداية التدرج"
+                />
               </div>
 
               {/* زر عكس التدرج الأنيق */}
@@ -167,19 +176,27 @@ export const GradientPicker = ({
                     <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs font-cairo">عكس الألوان</TooltipContent>
+                <TooltipContent side="top" className="text-xs font-cairo">
+                  عكس الألوان
+                </TooltipContent>
               </Tooltip>
 
               {/* نهاية التدرج */}
               <div className="flex-1 flex items-center justify-between bg-muted/40 hover:bg-muted/70 px-2.5 py-1.5 rounded-lg border border-border/40 transition-colors min-w-0">
                 <span className="text-micro font-bold text-muted-foreground">النهاية</span>
-                <PopoverColorPicker color={stop2} onChange={handleStop2Change} swatchOnly className="w-6 h-6 rounded-md shadow-2xs border border-white/10" />
+                <PopoverColorPicker
+                  color={stop2}
+                  onChange={handleStop2Change}
+                  swatchOnly
+                  className="w-6 h-6 rounded-md shadow-2xs border border-white/10"
+                  ariaLabel="لون نهاية التدرج"
+                />
               </div>
             </div>
           </div>
 
           {/* التحكم بزاوية التدرج الخطي: سلايدر + أزرار سريعة موحدة */}
-          {fillType === "linear" && onChangeAngle && (
+          {fillType === 'linear' && onChangeAngle && (
             <div className="space-y-2 pt-1 border-t border-border/30 w-full">
               <FluentSliderField
                 label="زاوية التدرج"
@@ -205,16 +222,18 @@ export const GradientPicker = ({
                             onCommitAngle?.(deg);
                           }}
                           className={cn(
-                            "h-6 text-micro font-semibold rounded-md transition-all cursor-pointer border flex items-center justify-center active:scale-95 tabular-nums select-none",
+                            'h-6 text-micro font-semibold rounded-md transition-all cursor-pointer border flex items-center justify-center active:scale-95 tabular-nums select-none',
                             isAngleActive
-                              ? "bg-primary/20 text-primary border-primary/40 font-bold shadow-2xs"
-                              : "bg-muted/40 hover:bg-muted text-muted-foreground border-border/40 hover:text-foreground"
+                              ? 'bg-primary/20 text-primary border-primary/40 font-bold shadow-2xs'
+                              : 'bg-muted/40 hover:bg-muted text-muted-foreground border-border/40 hover:text-foreground',
                           )}
                         >
                           {label}
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="text-mini">{tip}</TooltipContent>
+                      <TooltipContent side="top" className="text-mini">
+                        {tip}
+                      </TooltipContent>
                     </Tooltip>
                   );
                 })}
@@ -224,67 +243,73 @@ export const GradientPicker = ({
 
           {/* 🎨 معرض التدرجات الجاهزة المصنفة */}
           {showPresets && (
-          <div className="space-y-2 pt-1 border-t border-border/40 w-full max-w-full overflow-hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-mini font-bold text-foreground flex items-center gap-1">
-                <Sparkle className="w-3.5 h-3.5 text-amber-500" weight="duotone" />
-                <span>تدرجات جاهزة</span>
-              </span>
-              <span className="text-micro text-muted-foreground font-semibold tabular-nums">({filteredPresets.length})</span>
-            </div>
+            <div className="space-y-2 pt-1 border-t border-border/40 w-full max-w-full overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-mini font-bold text-foreground flex items-center gap-1">
+                  <Sparkle className="w-3.5 h-3.5 text-amber-500" weight="duotone" />
+                  <span>تدرجات جاهزة</span>
+                </span>
+                <span className="text-micro text-muted-foreground font-semibold tabular-nums">
+                  ({filteredPresets.length})
+                </span>
+              </div>
 
-            {/* تصنيفات التدرجات بمكون FluentSegmentedControl القياسي */}
-            <FluentSegmentedControl<string>
-              layoutId="gradient-preset-categories"
-              value={activeCategory}
-              onChange={setActiveCategory}
-              size="sm"
-              options={PRESET_CATEGORIES.map((c) => ({
-                id: c.id,
-                label: c.label,
-              }))}
-            />
+              {/* تصنيفات التدرجات بمكون FluentSegmentedControl القياسي */}
+              <FluentSegmentedControl<string>
+                layoutId="gradient-preset-categories"
+                value={activeCategory}
+                onChange={setActiveCategory}
+                size="sm"
+                options={PRESET_CATEGORIES.map((c) => ({
+                  id: c.id,
+                  label: c.label,
+                }))}
+              />
 
-            {/* شبكة عينات التدرجات بنمط زجاجي مقوس ونظيف */}
-            <div className="grid grid-cols-6 gap-1.5 py-0.5 w-full">
-              {filteredPresets.map((preset) => {
-                const isSelected = isPresetSelected(preset.stops);
-                const bgCss = formatGradientCss(preset.stops, fillType === "radial" ? "radial" : "linear", 135);
+              {/* شبكة عينات التدرجات بنمط زجاجي مقوس ونظيف */}
+              <div className="grid grid-cols-6 gap-1.5 py-0.5 w-full">
+                {filteredPresets.map((preset) => {
+                  const isSelected = isPresetSelected(preset.stops);
+                  const bgCss = formatGradientCss(
+                    preset.stops,
+                    fillType === 'radial' ? 'radial' : 'linear',
+                    135,
+                  );
 
-                return (
-                  <Tooltip key={preset.id}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => onChangeColorStops(preset.stops)}
-                        className={cn(
-                          "group relative w-full aspect-square rounded-lg p-[1.5px] transition-all duration-150 cursor-pointer flex items-center justify-center shadow-2xs hover:scale-108 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                          isSelected
-                            ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 z-10 shadow-xs border border-primary"
-                            : "border border-black/10 dark:border-white/15 hover:border-primary/50"
-                        )}
-                        aria-label={preset.name}
-                      >
-                        <div
-                          className="w-full h-full rounded-md relative overflow-hidden flex items-center justify-center shadow-inner before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
-                          style={{ background: bgCss }}
-                        >
-                          {isSelected && (
-                            <div className="w-3.5 h-3.5 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white border border-white/70 shadow-xs z-10 animate-in zoom-in-75 duration-150">
-                              <Check className="w-2.5 h-2.5" weight="bold" />
-                            </div>
+                  return (
+                    <Tooltip key={preset.id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => onChangeColorStops(preset.stops)}
+                          className={cn(
+                            'group relative w-full aspect-square rounded-lg p-[1.5px] transition-all duration-150 cursor-pointer flex items-center justify-center shadow-2xs hover:scale-108 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                            isSelected
+                              ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 z-10 shadow-xs border border-primary'
+                              : 'border border-black/10 dark:border-white/15 hover:border-primary/50',
                           )}
-                        </div>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-mini font-bold font-cairo">
-                      {preset.name}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
+                          aria-label={preset.name}
+                        >
+                          <div
+                            className="w-full h-full rounded-md relative overflow-hidden flex items-center justify-center shadow-inner before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
+                            style={{ background: bgCss }}
+                          >
+                            {isSelected && (
+                              <div className="w-3.5 h-3.5 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white border border-white/70 shadow-xs z-10 animate-in zoom-in-75 duration-150">
+                                <Check className="w-2.5 h-2.5" weight="bold" />
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-mini font-bold font-cairo">
+                        {preset.name}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
             </div>
-          </div>
           )}
         </div>
       )}

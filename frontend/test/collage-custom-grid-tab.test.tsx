@@ -27,7 +27,7 @@ describe('CollageCustomGridTab Component Suite', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all photo grid section cards and enforces single accordion solo mode', async () => {
+  it('renders all photo grid section cards and allows independent card collapse', async () => {
     render(<CollageCustomGridTab {...defaultProps} />);
 
     // Section 1: Dimensions (مفتوح افتراضياً)
@@ -37,27 +37,33 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(screen.getByText('ملء الورقة')).toBeInTheDocument();
     expect(screen.getByText('شريط علوي')).toBeInTheDocument();
 
-    // Section 2: Photo Size (عنوانه وشاراته ظاهرة ولكن محتواه مطوي)
+    // Section 2: Photo Size (مفتوح افتراضياً أيضاً)
     expect(screen.getByText('مقاس الصورة')).toBeInTheDocument();
-    expect(screen.queryByText('وطنية')).not.toBeInTheDocument();
-
-    // النقر على مقاس الصورة: يفتح قسم المقاس ويطوي أبعاد الشبكة تلقائياً
-    fireEvent.click(screen.getByText('مقاس الصورة'));
     expect(screen.getByText('وطنية')).toBeInTheDocument();
     expect(screen.getByText('أحوال')).toBeInTheDocument();
     expect(screen.getByText('فيزا')).toBeInTheDocument();
     expect(screen.getByText('تمدد حر')).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.queryByText('الصفوف')).not.toBeInTheDocument();
-    });
 
-    // Section 3: Alignment (النقر يفتح المحاذاة ويطوي مقاس الصورة)
+    // Section 3: Alignment (مفتوح افتراضياً أيضاً)
     expect(screen.getByText('المحاذاة على الورقة')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('المحاذاة على الورقة'));
     expect(screen.getByText('توسيط')).toBeInTheDocument();
+
+    // طي بطاقة مقاس الصورة بشكل مستقل
+    fireEvent.click(screen.getByText('مقاس الصورة'));
     await waitFor(() => {
       expect(screen.queryByText('وطنية')).not.toBeInTheDocument();
     });
+    // بقية البطاقات تظل مفتوحة ومستقلة ولا تُطوى تلقائياً
+    expect(screen.getByText('الصفوف')).toBeInTheDocument();
+    expect(screen.getByText('توسيط')).toBeInTheDocument();
+
+    // إعادة فتح مقاس الصورة: تفتح وتبقى بقية البطاقات مفتوحة معاً في الوقت نفسه
+    fireEvent.click(screen.getByText('مقاس الصورة'));
+    await waitFor(() => {
+      expect(screen.getByText('وطنية')).toBeInTheDocument();
+    });
+    expect(screen.getByText('الصفوف')).toBeInTheDocument();
+    expect(screen.getByText('توسيط')).toBeInTheDocument();
 
     // Section 4: Actions
     expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
@@ -94,9 +100,7 @@ describe('CollageCustomGridTab Component Suite', () => {
     const onPhotoTypeChange = vi.fn();
     render(<CollageCustomGridTab {...defaultProps} onPhotoTypeChange={onPhotoTypeChange} />);
 
-    // فتح قسم مقاس الصورة بنمط الأكورديون
-    fireEvent.click(screen.getByText('مقاس الصورة'));
-
+    // قسم مقاس الصورة مفتوح افتراضياً
     const civilButton = screen.getByText('أحوال');
     fireEvent.click(civilButton);
     expect(onPhotoTypeChange).toHaveBeenCalledWith('iq-civil-id');

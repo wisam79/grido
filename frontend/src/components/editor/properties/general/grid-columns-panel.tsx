@@ -124,7 +124,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
         {activeGridTab === 'grid' && (
           <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
             {/* مفتاح تفعيل الشبكة الرئيسي */}
-            <div className="flex items-center justify-between bg-input/50 hover:bg-input/80 px-2.5 h-8 rounded-md border border-border transition-colors select-none">
+            <div className="flex items-center justify-between bg-card/70 hover:bg-card px-2.5 h-8 rounded-lg border border-border/70 transition-colors select-none">
               <span className="text-xs font-semibold text-foreground">إظهار الشبكة</span>
               <Switch checked={showGrid} onCheckedChange={setShowGrid} aria-label="إظهار الشبكة" />
             </div>
@@ -183,38 +183,23 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
                 {/* صف النمط */}
                 <div
-                  className="flex items-center justify-between bg-input/40 border border-border rounded-md px-2.5 h-8"
+                  className="flex items-center justify-between bg-card/60 border border-border/70 rounded-lg px-2.5 py-1 min-h-9"
                   dir="rtl"
                 >
                   <span className="text-mini font-bold text-muted-foreground select-none shrink-0">
                     النمط
                   </span>
-                  <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded">
-                    <button
-                      type="button"
-                      onClick={() => setGridType('lines')}
-                      className={cn(
-                        'px-2.5 h-7 text-mini font-bold rounded transition-all cursor-pointer',
-                        gridType === 'lines'
-                          ? 'bg-card text-primary shadow-2xs'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      خطوط
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setGridType('dots')}
-                      className={cn(
-                        'px-2.5 h-7 text-mini font-bold rounded transition-all cursor-pointer',
-                        gridType === 'dots'
-                          ? 'bg-card text-primary shadow-2xs'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      نقاط
-                    </button>
-                  </div>
+                  <FluentSegmentedControl<'lines' | 'dots'>
+                    layoutId="grid-columns-gridtype-toggle"
+                    value={gridType}
+                    onChange={setGridType}
+                    size="sm"
+                    fullWidth={false}
+                    options={[
+                      { id: 'lines', label: 'خطوط' },
+                      { id: 'dots', label: 'نقاط' },
+                    ]}
+                  />
                 </div>
 
                 {/* شريط الشفافية القياسي */}
@@ -263,6 +248,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                       onChange={setGridColor}
                       swatchOnly
                       className="w-5 h-5 rounded-md"
+                      ariaLabel="لون خطوط الشبكة"
                     />
                   </div>
                 </div>
@@ -283,7 +269,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
         {activeGridTab === 'columns' && (
           <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
             {/* مفتاح تفعيل الأعمدة الرئيسي */}
-            <div className="flex items-center justify-between bg-input/50 hover:bg-input/80 px-2.5 h-8 rounded-md border border-border transition-colors select-none">
+            <div className="flex items-center justify-between bg-card/70 hover:bg-card px-2.5 h-8 rounded-lg border border-border/70 transition-colors select-none">
               <span className="text-xs font-semibold text-foreground">إظهار الأعمدة</span>
               <Switch
                 checked={showColumns}
@@ -393,7 +379,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
         {activeGridTab === 'bleed' && (
           <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
             {/* مفتاح تفعيل خطوط النزيف والقص */}
-            <div className="flex items-center justify-between bg-input/50 hover:bg-input/80 px-2.5 h-8 rounded-md border border-border transition-colors select-none">
+            <div className="flex items-center justify-between bg-card/70 hover:bg-card px-2.5 h-8 rounded-lg border border-border/70 transition-colors select-none">
               <span className="text-xs font-semibold text-foreground">إظهار هوامش القص</span>
               <Switch
                 checked={showBleedGuides}
@@ -406,50 +392,24 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
                 {/* شكل القص Die-cut */}
                 <div
-                  className="flex items-center justify-between bg-input/40 border border-border rounded-md px-2.5 h-8"
+                  className="flex items-center justify-between bg-card/60 border border-border/70 rounded-lg px-2.5 py-1 min-h-9"
                   dir="rtl"
                 >
                   <span className="text-mini font-bold text-muted-foreground select-none shrink-0">
                     شكل القص
                   </span>
-                  <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded">
-                    <button
-                      type="button"
-                      onClick={() => setCutShapeType('rectangle')}
-                      className={cn(
-                        'px-2 h-7 text-micro font-bold rounded transition-all cursor-pointer',
-                        cutShapeType === 'rectangle'
-                          ? 'bg-card text-primary shadow-2xs'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      مستطيل
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCutShapeType('rounded-rect')}
-                      className={cn(
-                        'px-2 h-7 text-micro font-bold rounded transition-all cursor-pointer',
-                        cutShapeType === 'rounded-rect'
-                          ? 'bg-card text-primary shadow-2xs'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      مستدير
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCutShapeType('circle')}
-                      className={cn(
-                        'px-2 h-7 text-micro font-bold rounded transition-all cursor-pointer',
-                        cutShapeType === 'circle'
-                          ? 'bg-card text-primary shadow-2xs'
-                          : 'text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      دائري
-                    </button>
-                  </div>
+                  <FluentSegmentedControl<'rectangle' | 'rounded-rect' | 'circle'>
+                    layoutId="grid-columns-cutshape-toggle"
+                    value={cutShapeType}
+                    onChange={setCutShapeType}
+                    size="sm"
+                    fullWidth={false}
+                    options={[
+                      { id: 'rectangle', label: 'مستطيل' },
+                      { id: 'rounded-rect', label: 'مستدير' },
+                      { id: 'circle', label: 'دائري' },
+                    ]}
+                  />
                 </div>
 
                 {/* مقاس النزيف ومقاس الأمان */}
