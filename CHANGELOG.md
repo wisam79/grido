@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.14.3] - 2026-10-10
+
 ### Added
 - **أمر إفراغ سلة وسائط التطبيق نهائياً وتحرير مساحة القرص (`EmptyMediaTrash`):**
   1. إضافة دالة `EmptyMediaTrash()` في الباك إند (`internal/repository/db.go` و `app.go`) لحذف ملفات `MediaTrash/` نهائياً واستعادة المساحة الحقيقية على القرص فورياً مع إعادة عدد الملفات والبايتات المحررة بدقة.
