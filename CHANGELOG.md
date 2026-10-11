@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.14.5] - 2026-10-11
+
 ### Fixed
 - **تحرير فوري لموارد WebGL/GPU وعمال الذكاء الاصطناعي (Worker Terminate on Settle):**
   1. إنهاء فوري وقسري لعامل عزل الخلفية `use-bg-removal.ts` وعامل ضبط الوجه `use-face-frame.ts` عبر استدعاء `terminateWorker()` داخل دالة `settle()` المشتركة فور اكتمال الاستدلال أو فشله أو إلغائه، بدلاً من إبقاء سياقات WebGL المعلقة في الذاكرة.
