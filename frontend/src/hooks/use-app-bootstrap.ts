@@ -11,9 +11,6 @@ import type { CrashReport } from '@bindings/grido/internal/service/models';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
 import { useEditorStore } from '@/lib/editor-store';
 import { addImageFromSrc } from '@/lib/canvas/load-image';
-import { warmupOpenCV } from '@/components/editor/document-scanner/opencv-loader';
-import { warmupBgRemovalWorker } from './use-bg-removal';
-import { warmupFaceFrameWorker } from './use-face-frame';
 import {
   isSessionSupersededError,
   sessionSupersededMessage,
@@ -107,8 +104,6 @@ export function useAppBootstrap(): AppBootstrapState {
     };
     check();
 
-    warmupOpenCV();
-
     // Check periodically every 5 minutes to ensure dynamic state updates
     const intervalId = setInterval(
       () => {
@@ -127,46 +122,12 @@ export function useAppBootstrap(): AppBootstrapState {
   }, [checkLicenseStatus, setAccountModalOpen]);
 
   /**
-   * ⚡ تسخين نماذج الذكاء المحلية أثناء الخمول.
-   *
-   * السبب (قياس حي، AMD Radeon iGPU/ANGLE-D3D11): ترجمة shaders الخاصة بـ
-   * TFLite GPU delegate تحدث داخل **أول استدعاء استدلال فعلي** وتستغرق ~4.5s
-   * لعزل الخلفية محجبةً إطار العرض ~3.6s (الخيط الرئيسي عاطل: longTask=0)،
-   * بينما الاستدلال التالي يستغرق 11-19ms. أي أن أول نقرة يدفع التكلفة كلها.
-   * التسخين يُنفَّذ الآن استدلالاً حقيقياً على صورة 64×64 أثناء الخمول، فتصبح
-   * أول نقرة فورية. يُؤجَّل عبر requestIdleCallback ويُفصَل بين النموذجين
-   * (لا نُحمّل 27MB ونُشغّل نواتي GPU في اللحظة نفسها).
+  /**
+   * ⚡ تسخين النماذج: تم إلغاء التسخين المسبق الإجباري عند إقلاع التطبيق (Zero Early Allocation)
+   * ليبقى استهلاك التطبيق في أدنى مستوياته (<100MB) ولا يُحمَّل النموذج إلا عند نقر المستخدم الفعلي.
    */
   useEffect(() => {
-    if (typeof window === 'undefined' || typeof Worker === 'undefined') return;
-    const idle: (cb: () => void) => number =
-      typeof window.requestIdleCallback === 'function'
-        ? (cb) => window.requestIdleCallback(cb, { timeout: 8000 })
-        : (cb) => window.setTimeout(cb, 1200);
-    const cancel: (id: number) => void =
-      typeof window.cancelIdleCallback === 'function'
-        ? (id) => window.cancelIdleCallback(id)
-        : (id) => window.clearTimeout(id);
-
-    const ids: number[] = [];
-    // window.setTimeout يُرجع number في المتصفح (لا NodeJS.Timeout)
-    let secondTimer: number | undefined;
-    ids.push(
-      idle(() => {
-        warmupBgRemovalWorker();
-      }),
-    );
-    // فاصل زمني مقصود: التسخين الثاني يبدأ بعد استقرار الأول (والمؤقّت مُتتبَّع
-    // كي لا يُطلَق بعد تفكيك المكوّن)
-    ids.push(
-      idle(() => {
-        secondTimer = window.setTimeout(() => warmupFaceFrameWorker(), 2500);
-      }),
-    );
-    return () => {
-      ids.forEach(cancel);
-      if (secondTimer !== undefined) window.clearTimeout(secondTimer);
-    };
+    // Zero background warmup on startup
   }, []);
 
   // ⚡ الاستماع لأحداث محرك Wails وقت التشغيل (Runtime Events):

@@ -8,13 +8,13 @@
  * - Failures are NOT cached: the next call retries (inFlight is cleared on
  *   both success and failure; the resolved runtime is kept in `cached`).
  */
-import type cv from "@techstark/opencv-js";
-import type { CvRuntimeLike } from "./core/cv-types";
-import { createLogger } from "@/lib/logger";
+import type cv from '@techstark/opencv-js';
+import type { CvRuntimeLike } from './core/cv-types';
+import { createLogger } from '@/lib/logger';
 
 export type CvRuntime = typeof cv;
 
-const logger = createLogger("OpenCV");
+const logger = createLogger('OpenCV');
 
 let cached: CvRuntime | null = null;
 let inFlight: Promise<CvRuntime | null> | null = null;
@@ -25,11 +25,7 @@ const LOAD_TIMEOUT_MS = 10_000;
 
 /** Minimal structural probe used to confirm a candidate is the cv runtime. */
 function hasMatConstructor(value: unknown): value is CvRuntimeLike {
-  return (
-    !!value &&
-    typeof value === "object" &&
-    typeof (value as CvRuntimeLike).Mat === "function"
-  );
+  return !!value && typeof value === 'object' && typeof (value as CvRuntimeLike).Mat === 'function';
 }
 
 interface GlobalWithCv {
@@ -63,9 +59,9 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
     try {
       let rawMod: unknown = null;
       try {
-        const modPromise = import("@techstark/opencv-js");
+        const modPromise = import('@techstark/opencv-js');
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("OpenCV WASM load timeout")), LOAD_TIMEOUT_MS);
+          setTimeout(() => reject(new Error('OpenCV WASM load timeout')), LOAD_TIMEOUT_MS);
         });
         rawMod = await Promise.race([modPromise, timeoutPromise]);
       } catch {
@@ -84,13 +80,13 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
       let cvRuntime: unknown = null;
 
       const thenable = candidate as { then?: unknown } | null;
-      if (candidate && typeof thenable?.then === "function") {
+      if (candidate && typeof thenable?.then === 'function') {
         try {
           cvRuntime = await candidate;
         } catch {
           cvRuntime = candidate;
         }
-      } else if (typeof candidate === "function") {
+      } else if (typeof candidate === 'function') {
         try {
           cvRuntime = await (candidate as () => unknown)();
         } catch {
@@ -103,7 +99,7 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
 
       let resolvedCv: unknown = hasMatConstructor(cvRuntime) ? cvRuntime : getGlobal().cv;
 
-      if (typeof resolvedCv === "function") {
+      if (typeof resolvedCv === 'function') {
         try {
           resolvedCv = await (resolvedCv as () => unknown)();
         } catch {
@@ -114,15 +110,13 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
       if (hasMatConstructor(resolvedCv)) {
         cached = resolvedCv as unknown as CvRuntime;
         inFlight = null;
-        logger.info("Runtime successfully initialized");
+        logger.info('Runtime successfully initialized');
         return cached;
       }
 
       // Fallback wait for onRuntimeInitialized
       const targetObj = (resolvedCv || getGlobal().cv || candidate) as
-        | { onRuntimeInitialized?: () => void }
-        | null
-        | undefined;
+        { onRuntimeInitialized?: () => void } | null | undefined;
       if (targetObj) {
         await new Promise<void>((resolve, reject) => {
           let settled = false;
@@ -136,7 +130,7 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
             if (timeoutHandle !== null) clearTimeout(timeoutHandle); // #8 — إلغاء المؤقت
             resolve();
           };
-          if (typeof targetObj === "object") {
+          if (typeof targetObj === 'object') {
             targetObj.onRuntimeInitialized = finish;
           }
           const gModule = getGlobal().Module;
@@ -155,24 +149,25 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
           };
           probe();
           timeoutHandle = setTimeout(() => {
-            if (!settled) reject(new Error("OpenCV WASM init timeout"));
+            if (!settled) reject(new Error('OpenCV WASM init timeout'));
           }, LOAD_TIMEOUT_MS);
         });
 
-        const finalCv = (hasMatConstructor(cvRuntime) ? cvRuntime : getGlobal().cv) as unknown as CvRuntime | undefined;
+        const finalCv = (hasMatConstructor(cvRuntime) ? cvRuntime : getGlobal().cv) as unknown as
+          CvRuntime | undefined;
         if (finalCv && hasMatConstructor(finalCv)) {
           cached = finalCv;
           inFlight = null;
-          logger.info("Runtime ready after onRuntimeInitialized");
+          logger.info('Runtime ready after onRuntimeInitialized');
           return finalCv;
         }
       }
 
-      logger.warn("Mat constructor not found on loaded runtime");
+      logger.warn('Mat constructor not found on loaded runtime');
       inFlight = null;
       return null;
     } catch (err) {
-      logger.warn("failed to load, falling back to JS detector", err);
+      logger.warn('failed to load, falling back to JS detector', err);
       inFlight = null;
       return null;
     }
@@ -182,26 +177,9 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
 }
 
 /**
- * ⚡ استدعاء وتحميل مسبق لـ OpenCV WASM في الخلفية أثناء خمول التطبيق —
- * مجدول على requestIdleCallback (أو مهلة قصيرة) حتى لا ينافس الإقلاع،
- * ويُتخطى دون اتصال (ملفات WASM محلية غالباً، لكن الفشل رخيص وصامت).
+ * ⚡ تم تعطيل التحميل المسبق التلقائي لـ OpenCV WASM في الخلفية لحفظ الذاكرة (Zero Early Allocation).
+ * يتم تحميل OpenCV حصرياً وبشكل كسول (On-demand) عند فتح نافذة الماسح الضوئي فقط.
  */
 export function warmupOpenCV(): void {
-  if (typeof window === "undefined") return;
-  // Skip warmup in automated test runners to avoid blocking / slow timeouts
-  const gProc = getGlobal().process;
-  if (gProc && (gProc.env?.VITEST || gProc.env?.NODE_ENV === "test")) return;
-  if (typeof WebAssembly === "undefined") return;
-  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
-  const start = () => {
-    void loadOpenCV().catch((err) => {
-      logger.debug("Warmup deferred:", err);
-    });
-  };
-  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
-  if (typeof ric === "function") {
-    ric.call(window, start, { timeout: 4000 });
-  } else {
-    setTimeout(start, 800);
-  }
+  // No-op to preserve memory until scanner is actually invoked
 }

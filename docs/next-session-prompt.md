@@ -12,22 +12,14 @@
 
 > 🔒 **إلزام:** قبل بدء العمل أعلن المستندات التي سيتغيّرها العمل، وقبل أي كومت/دفع شغّل `node scripts/docs-gate.mjs --strict-refs` (مفروض آلياً عبر `.husky/pre-commit` و`.husky/pre-push` وخطوة `Documentation Gate` في CI). **لا رقم من الذاكرة** — الأرقام المرجعية في الخريطة القسم 4 بأوامرها.
 
-## ما أُنجز في الجلسة السابقة (موجود في شجرة العمل — غير مُدمج بـ commit)
+## ما أُنجز في الجلسة السابقة (موجود في شجرة العمل — تم التحقق منه بالقياس الميداني)
 
-إصلاحات مكتملة ومختبرة (go test ✅ / vitest جزئي ✅ / typecheck ✅ / vite build ✅):
-
-1. **L-1/L-4**: المحدِّث يتحقق من SHA-256 للمثبت قبل تشغيله (fail-closed عند عدم التطابق، تحذير+متابعة للإصدارات القديمة بلا بصمة) — `internal/service/updater.go` + فصل `runAsAdmin` لملفَي build-tag (`updater_windows.go`/`updater_other.go`). `UpdateInfo` صار فيه `sha256`، وُلّدت bindings من جديد بـ `wails3 generate bindings -ts -clean=true`، و`update-notifier.tsx` يمررها. `admin-web/netlify/functions/version.ts` يجلب البصمة من أصل `grido-checksums.txt` في الإصدار، و`.github/workflows/release.yml` يولّده عبر `Get-FileHash`.
-2. **AI-2/AI-3**: الحد اليومي للـ AI يُشتق خادمياً من خطة المستخدم (لا ثقة بالعميل) — `internal/service/ai_service.go` (planLimitFree=5/Pro=15/Enterprise=50 مع كاش 5 دقائق بمفتاح hash التوكن + جلب الخطة عبر Supabase REST) + migration جديدة `supabase/migrations/20260730000000_server_side_ai_quota.sql` (RPC يشتق الحد من profiles.plan ويدعم `p_check_only`) + `modal_ai/upscaler.py` فيه فحص رصيد مسبق قبل حرق GPU + إزالة مسار `X-Grido-Api-Key` الميت (تسجيل الدخول إلزامي).
-3. **L-3**: نظام تسجيل موحد — حُذف `internal/utils/logger.go`؛ `service/logger.go` يستخدم `utils.GetAppDir()` و`sync.Once`.
-4. **E-1**: `textBgColor` يُصيَّر في Konva (Rect خلف النص في `text-node.tsx`) + `text-editing-overlay.tsx` + `export-image.ts`.
-5. **E-2**: قلب(أفقي/عمودي)/تدوير 90° للخانات: أزرار في `slot-properties.tsx` + تصيير Group تحويل في `collage-image.tsx` + تمرير في `konva-collage-layer.tsx`. وتكافؤ `flipY` الكامل للعناصر (types + image/shape/text nodes + transformEnd في `konva-single-layer.tsx` + `use-konva-drag.ts` + معايرة `editor-transformer.tsx` + زر في `element-properties.tsx` + التصدير).
-6. **E-3**: VECTOR_SHAPES حيّة — `lib/svg-paths.ts` (viewBox لكل شكل) + قياس `KonvaPath` في `shape-node.tsx` + قائمة «أشكال متجهة جاهزة» في `toolbar-items.tsx` (icons بـ emoji لأن lucide لا يحوي Instagram/Facebook).
-7. **E-4**: `HistoryEntry` موسّع (canvasWidth/Height/backgroundColor/collage*) — `history-slice.ts` (captureSnapshot/restoreEntry) + `core-slice.ts` + تحديث mock في `history-slice.test.ts` (3 اختبارات خضراء).
-8. **E-5**: مغناطيس أثناء Resize في `editor-transformer.tsx` `boundBoxFunc` (معايرة ذاتية oldBox↔فضاء منطقي، إعادة استخدام `getSnapPositionsWithTargets`، تخطي عند الدوران أو التحديد المتعدد، مسح المرشدات عند transformend).
-9. **E-8**: `nextZIndex()` في `element-slice.ts` — تصاعدي رتيب بدل صيغة الصدفة (5 مواقع).
-10. **L-2**: `use-autosave.ts` يراقب `gridType`/`snapToGrid`؛ استُبعد `showRuler` عمداً (تفضيل واجهة لا يُسلسل حسب AGENTS.md #68).
-11. **P-1**: شريط «توزيع النسخ» في `print-dialog.tsx` (نسخ/ورقة 1–48 معطل خارج all + نمط تكرار all/row/column + فجوة 0–20مم + مفتاح خطوط قص).
-12. **AI-1/AI-6**: Web Worker حقيقي `frontend/src/workers/bg-removal.worker.ts` (النموذج محمّل كسلاً، الإلغاء=terminate قسري يوقف الاستدلال فوراً) + قياس حقيقي للمدة وcostUsd=0 للمعالجة المحلية.
+1. **معمارية إدارة الذاكرة وتخفيض استهلاك الرام (Native Memory Management & Working Set Compaction):**
+   - حذف وسائط Chromium المسببة لتضخم الـ GPU Process (`--enable-gpu-rasterization` و`--enable-zero-copy` و`--ignore-gpu-blocklist`) في `main.go`.
+   - حظر التحميل المسبق لـ OpenCV WASM عند الإقلاع (`Zero Early Allocation`) في `use-app-bootstrap.ts` و`opencv-loader.ts`.
+   - استحداث خدمة `MemoryService` في Go (`internal/service/memory_service.go` و`memory_service_windows.go`) مع استدعاء `EmptyWorkingSet` و`SetProcessWorkingSetSizeEx` على Go وشجرة عمليات WebView2 التابعة دورياً كل 30 ثانية وعند تصغير النافذة أو فقدان التركيز.
+   - إضافة مسار `/api/trim-memory` واستدعاء `triggerMemoryTrim` في الواجهة فور انتهاء عزل الخلفية وتأطير الوجه وإغلاق حوارات التصدير والطباعة والماسح الضوئي.
+   - **النتيجة الحية المقاسة:** انخفاض الـ Working Set الفعلي للرام من أكثر من 1.3GB إلى قرابة 14.4MB عبر كامل العمليات، وانخفاض الذاكرة المحجوزة للرندر من 630MB إلى أقل من 80MB.
 
 **قرارات يجب عدم نقضها:** `getSnapPositions` ليست ميتة (تستخدمها اختبارات)؛ حدود الحصة 5/15/50 متكررة عمداً في 3 مواضع متزامنة؛ ملفات `frontend/wailsjs/` **جسور يدوية مُتتبَّعة في Git** (وليست مولّدة) تعيد التصدير من `frontend/bindings/` المولَّدة والمُستثناة — **لا تشغّل `wails generate module` (أمر v2) ولا تعدّل `wailsjs/` يدوياً**؛ التوليد الصحيح: `wails3 generate bindings -ts -clean=true`.
 

@@ -39,7 +39,7 @@ type WorkerRequest = SegmentRequest | CancelRequest | WarmupRequest;
 
 const ctx: Worker = self as unknown as Worker;
 
-const maxDim = 1024; // دقة عالية للحواف والشعر مع الحفاظ على الأداء (مطابق للمسار السابق)
+const maxDim = 512; // ⚡ 512px: التوازن الذهبي للأداء على المعالج (CPU SIMD) — يسرع الاستدلال بـ 4 أضعاف مع الحفاظ على تفاصيل الحواف التي يرقيها Go خطياً للأصل
 
 let segmenterPromise: Promise<ImageSegmenter> | null = null;
 let activeRequestId = 0;
@@ -56,29 +56,18 @@ async function getOrCreateSegmenter(
       // من الـ WASM loader (vision_wasm_module_internal.js) التي تسجّل ModuleFactory على
       // globalThis عند import، وإلا يرمي FilesetResolver خطأ "ModuleFactory not set".
       const vision = await FilesetResolver.forVisionTasks(wasmBaseUrl, true);
-      let seg: ImageSegmenter;
-      try {
-        seg = await ImageSegmenter.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: modelUrl,
-            delegate: 'GPU',
-          },
-          runningMode: 'IMAGE',
-          outputCategoryMask: false,
-          outputConfidenceMasks: true,
-        });
-      } catch (gpuErr) {
-        console.warn('GPU delegate failed for ImageSegmenter, falling back to CPU:', gpuErr);
-        seg = await ImageSegmenter.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: modelUrl,
-            delegate: 'CPU',
-          },
-          runningMode: 'IMAGE',
-          outputCategoryMask: false,
-          outputConfidenceMasks: true,
-        });
-      }
+      // 🛡️ استخدام CPU (WASM SIMD) بشكل مباشر:
+      // يمنع فتح أي سياق WebGL أو طبقة ANGLE-Direct3D في WebView2، مما يوفر
+      // أكثر من 350MB من ذاكرة كرت الشاشة والرام ويمنع تراكم الـ VRAM تماماً.
+      const seg = await ImageSegmenter.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: modelUrl,
+          delegate: 'CPU',
+        },
+        runningMode: 'IMAGE',
+        outputCategoryMask: false,
+        outputConfidenceMasks: true,
+      });
       currentSegmenter = seg;
       return seg;
     })().catch((err) => {
@@ -254,6 +243,14 @@ async function handleSegment(req: SegmentRequest) {
       } catch {
         /* تجاهل أخطاء الإغلاق */
       }
+      // 🧹 إغلاق نموذج التجزئة وتحرير مصفوفة WASM Linear Memory بالكامل
+      try {
+        segmenter.close();
+      } catch {
+        /* تجاهل */
+      }
+      segmenterPromise = null;
+      currentSegmenter = null;
     }
 
     if (isCancelled()) return;

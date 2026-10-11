@@ -240,13 +240,7 @@ func main() {
 				}
 			},
 		},
-		Windows: application.WindowsOptions{
-			AdditionalBrowserArgs: []string{
-				"--enable-gpu-rasterization",
-				"--enable-zero-copy",
-				"--ignore-gpu-blocklist",
-			},
-		},
+		Windows: application.WindowsOptions{},
 	})
 
 	// إعداد خيارات النافذة الرئيسية مع خامة Mica الأصلية وسحب بدون تأخير
@@ -292,6 +286,31 @@ func main() {
 	mainWindow.OnWindowEvent(events.Common.WindowRuntimeReady, func(_ *application.WindowEvent) {
 		mainWindow.Show()
 		mainWindow.Focus()
+		// 🧹 تنظيف ذكي لذاكرة الإقلاع بعد استقرار واجهة المستخدم
+		time.AfterFunc(2*time.Second, func() {
+			if appInstance != nil && appInstance.memorySvc != nil {
+				appInstance.memorySvc.TrimNow()
+			}
+		})
+	})
+
+	// 🧹 تفريغ ذاكرة العمل (Working Set) تلقائياً عند تصغير النافذة أو فقدان التركيز
+	mainWindow.OnWindowEvent(events.Common.WindowMinimise, func(_ *application.WindowEvent) {
+		if appInstance != nil && appInstance.memorySvc != nil {
+			appInstance.memorySvc.TrimNow()
+		}
+	})
+	mainWindow.OnWindowEvent(events.Common.WindowLostFocus, func(_ *application.WindowEvent) {
+		if appInstance != nil && appInstance.memorySvc != nil {
+			appInstance.memorySvc.TrimNow()
+		}
+	})
+
+	// 🧹 الاستماع لأحداث تفريغ الذاكرة القادمة من الواجهة
+	wailsApp.Event.On("app:trim-memory", func(_ *application.CustomEvent) {
+		if appInstance != nil && appInstance.memorySvc != nil {
+			appInstance.memorySvc.TrimNow()
+		}
 	})
 
 	// 🗂️ أيقونة صينية النظام: نقطة استعادة دائمة للنافذة (إظهار/تركيز) ومسار
@@ -405,6 +424,15 @@ func createAssetHandler(app *App) http.Handler {
 	apiGuard := service.NewLocalApiGuard(localApiSessionToken)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/") && !apiGuard.Authorize(w, r) {
+			return
+		}
+
+		if r.Method == http.MethodPost && r.URL.Path == "/api/trim-memory" {
+			if app != nil && app.memorySvc != nil {
+				app.memorySvc.TrimNow()
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 			return
 		}
 

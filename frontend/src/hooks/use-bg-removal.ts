@@ -6,6 +6,7 @@ import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
 import { preloadImageIntoCache } from './use-async-image';
 import { fetchLocalApi } from '@/lib/local-api';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
+import { triggerMemoryTrim } from '@/lib/memory-trim';
 import { create } from 'zustand';
 
 interface BgRemovalState {
@@ -40,6 +41,13 @@ let nextRequestId = 1;
 // واللوحة الجانبية) يبدآن عمليتين على العامل نفسه ويُعاد تعيين onmessage
 // فتضيع نتيجة الأولى. الحل: قفل مشترك + توزيع رسائل العامل على مالك requestId.
 let busyRequestId = 0;
+
+// كاش الذاكرة اللحظي لنتائج العزل لنفس الصورة لمنع تكرار الاستدلال
+const bgResultCache = new Map<string, string>();
+if (typeof window !== 'undefined') {
+  // مسح الكاش عند الخمول التام أو قبل إغلاق التطبيق
+  window.addEventListener('beforeunload', () => bgResultCache.clear());
+}
 
 interface BgRemovalElement {
   id: string;
@@ -187,6 +195,17 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
       return;
     }
 
+    // ⚡ فحص الكاش الفوري: إذا عُزلت هذه الصورة مسبقاً، طبّق النتيجة في 0ms بلا استدلال
+    if (element.imageSrc && bgResultCache.has(element.imageSrc)) {
+      const cachedPath = bgResultCache.get(element.imageSrc)!;
+      await preloadImageIntoCache(cachedPath);
+      const commit = commitAiImageResult(element, cachedPath, onUpdateRef.current);
+      if (commit === 'ok') {
+        toast.success('تم تطبيق عزل الخلفية من الكاش فوراً ⚡');
+        return;
+      }
+    }
+
     // القفل على مستوى الوحدة — أي مثيل Hook آخر يرى العملية الجارية
     if (busyRequestId !== 0) {
       toast.warning('جاري العزل ...');
@@ -227,6 +246,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
       setBgProgressText('');
       setBgProgress(0);
       terminateWorker();
+      triggerMemoryTrim();
     };
 
     pendingBgRequests.set(requestId, {
@@ -308,6 +328,9 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
             if (commit === 'changed') {
               toast.info('تم إلغاء عزل الخلفية: تغيّرت الصورة أثناء المعالجة.');
               return;
+            }
+            if (element.imageSrc) {
+              bgResultCache.set(element.imageSrc, localPath);
             }
             toast.success('تم عزل خلفية الصورة بنجاح');
 

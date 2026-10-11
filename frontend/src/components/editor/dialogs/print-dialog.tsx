@@ -36,6 +36,7 @@ import {
 import { toast } from 'sonner';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
+import { triggerMemoryTrim } from '@/lib/memory-trim';
 import {
   GetPrinters,
   GetDefaultPrinterName,
@@ -494,6 +495,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           if (typeof document !== 'undefined' && document.body) {
             document.body.style.pointerEvents = '';
           }
+          triggerMemoryTrim();
         }
         onOpenChange(next);
       }}

@@ -26,6 +26,7 @@ import { ScannerSidebar } from './components/scanner-sidebar';
 import { useScannerDetection } from './hooks/use-scanner-detection';
 import { useScannerCanvasRender } from './hooks/use-scanner-canvas-render';
 import { useScannerProcessor } from './hooks/use-scanner-processor';
+import { triggerMemoryTrim } from '@/lib/memory-trim';
 
 interface DocumentScannerDialogProps {
   open: boolean;
@@ -44,6 +45,13 @@ export function DocumentScannerDialog({
   const [aspect, setAspect] = useState<DocumentAspectType>('free');
   const [filter, setFilter] = useState<ScannerFilterMode>('original');
   const [rotation, setRotation] = useState<number>(0);
+
+  // 🧹 تفريغ الذاكرة الأصلية عند إغلاق أو تفكيك نافذة الماسح الضوئي
+  useEffect(() => {
+    return () => {
+      triggerMemoryTrim();
+    };
+  }, []);
 
   // 🧭 عقل الكشف والمستندات (كان مضمّناً هنا)
   const detection = useScannerDetection(open, imageSrc);

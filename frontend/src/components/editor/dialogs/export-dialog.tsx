@@ -36,6 +36,7 @@ import { toErrorMessage } from '@/lib/wails-error';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+import { triggerMemoryTrim } from '@/lib/memory-trim';
 
 const logger = createLogger('export-dialog');
 
@@ -315,6 +316,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         if (typeof document !== 'undefined' && document.body) {
           document.body.style.pointerEvents = '';
         }
+        triggerMemoryTrim();
       }
     }, 50);
   };
@@ -328,6 +330,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         if (!next && loading) return;
         if (!next && typeof document !== 'undefined' && document.body) {
           document.body.style.pointerEvents = '';
+        }
+        if (!next) {
+          triggerMemoryTrim();
         }
         onOpenChange(next);
       }}

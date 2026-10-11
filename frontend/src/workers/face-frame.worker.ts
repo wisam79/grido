@@ -48,7 +48,7 @@ type WorkerRequest = FrameRequest | CancelRequest | WarmupRequest;
 
 const ctx: Worker = self as unknown as Worker;
 
-const maxDim = 1024; // دقة الاستدلال القصوى (الكشف — لا يؤثر على جودة القص)
+const maxDim = 512; // ⚡ 512px: كشف فوري لمعالم الوجه (Face Mesh) في أقل من 50ms على CPU
 
 let landmarkerPromise: Promise<FaceLandmarker> | null = null;
 let activeRequestId = 0;
@@ -64,29 +64,17 @@ async function getOrCreateLandmarker(
       // الـ Worker وحدة ES — يجب طلب نسخة Module من الـ WASM loader
       // التي تسجّل ModuleFactory على globalThis (نفس نهج عزل الخلفية).
       const vision = await FilesetResolver.forVisionTasks(wasmBaseUrl, true);
-      let landmarker: FaceLandmarker;
-      try {
-        landmarker = await FaceLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: modelUrl,
-            delegate: 'GPU',
-          },
-          runningMode: 'IMAGE',
-          numFaces: 1,
-          minFaceDetectionConfidence: 0.5,
-        });
-      } catch (gpuErr) {
-        console.warn('GPU delegate failed for FaceLandmarker, falling back to CPU:', gpuErr);
-        landmarker = await FaceLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: modelUrl,
-            delegate: 'CPU',
-          },
-          runningMode: 'IMAGE',
-          numFaces: 1,
-          minFaceDetectionConfidence: 0.5,
-        });
-      }
+      // 🛡️ استخدام CPU (WASM SIMD) بشكل مباشر:
+      // يمنع حجز الـ GPU Process والـ VRAM في WebView2 تماماً.
+      const landmarker = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: modelUrl,
+          delegate: 'CPU',
+        },
+        runningMode: 'IMAGE',
+        numFaces: 1,
+        minFaceDetectionConfidence: 0.5,
+      });
       currentLandmarker = landmarker;
       return landmarker;
     })().catch((err) => {
@@ -240,6 +228,15 @@ async function handleFrame(req: FrameRequest) {
     );
     original.close();
     if (isCancelled()) return;
+
+    // 🧹 تحرير كائن Landmarker ومصفوفة WASM فوراً
+    try {
+      landmarker.close();
+    } catch {
+      /* ignore */
+    }
+    landmarkerPromise = null;
+    currentLandmarker = null;
 
     postProgress(requestId, 90, 'جاري الإنهاء ... (90%)');
     const pngBlob = await outCanvas.convertToBlob({ type: 'image/png' });

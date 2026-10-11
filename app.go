@@ -25,6 +25,7 @@ type App struct {
 	licenseSvc     *service.LicenseService
 	desktopSvc     *service.DesktopService
 	crashGuardSvc  *service.CrashGuardService
+	memorySvc      *service.MemoryService
 	startupFile    string
 }
 
@@ -32,6 +33,7 @@ func NewApp(templates domain.CustomTemplateRepository) *App {
 	mediaSvc := service.NewMediaService()
 	phoneBridgeSvc := service.NewPhoneBridgeService(mediaSvc)
 	desktopSvc := service.NewDesktopService()
+	memorySvc := service.NewMemoryService()
 	return &App{
 		mediaSvc:       mediaSvc,
 		phoneBridgeSvc: phoneBridgeSvc,
@@ -41,6 +43,7 @@ func NewApp(templates domain.CustomTemplateRepository) *App {
 		aiLogsSvc:      service.NewAiLogsService(),
 		desktopSvc:     desktopSvc,
 		crashGuardSvc:  service.DefaultCrashGuard(),
+		memorySvc:      memorySvc,
 	}
 }
 
@@ -51,6 +54,9 @@ func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) 
 	if a.licenseSvc != nil {
 		a.licenseSvc.SetContext(ctx)
 	}
+	if a.memorySvc != nil {
+		a.memorySvc.StartAutoTrim(ctx)
+	}
 	service.InitLogger()
 	utils.SafeGo("service.CleanupTempUpdates", service.CleanupTempUpdates)
 	return nil
@@ -60,6 +66,9 @@ func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) 
 func (a *App) ServiceShutdown() error {
 	if a.phoneBridgeSvc != nil {
 		_ = a.phoneBridgeSvc.Stop()
+	}
+	if a.memorySvc != nil {
+		a.memorySvc.Stop()
 	}
 	return nil
 }

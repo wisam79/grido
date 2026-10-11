@@ -9,16 +9,19 @@
 
 ---
 
-## 0.68 سجل جلسة معالجة ثقل الذاكرة وتحرير موارد WebGL للذكاء الاصطناعي — 11 أكتوبر 2026
+## 0.68 سجل جلسة معالجة ثقل الذاكرة وهندسة إدارة الرام الأصلية لتطبيق سطح المكتب — 11 أكتوبر 2026
 
-**المرجع:** فحص حي وميداني لاستهلاك الرام والمعالج أثناء تشغيل عزل الخلفية وتأطير الوجه — معالجة قفزة الرام (Chromium/WebView2 Renderer) الناتجة عن بقاء سياقات WebGL وتراكم الـ GC Thrashing.
+**المرجع:** فحص حي وميداني دقيق لاستهلاك الرام والمعالج عبر شجرة عمليات Wails وWebView2 — معالجة التضخم العشوائي للذاكرة (حيث تجاوز الاستهلاك سابقاً 1.3GB إلى 1.4GB) وإعادة التطبيق إلى أصول برمجيات سطح المكتب الخفيفة (<15MB إلى 100MB رام نشط).
 
 | البند | التنفيذ | الإثبات |
 | --- | --- | --- |
-| تحرير فوري لعمال الذكاء الاصطناعي (`Worker Terminate on Settle`) | استدعاء `terminateWorker()` تلقائياً داخل دالة `settle()` المشتركة في `use-bg-removal.ts` و`use-face-frame.ts` فور اكتمال الاستدلال أو فشله أو إلغائه، لتحرير سياق WebGL/ANGLE وذاكرة Worker فوراً | فحص العمليات الحية + تصفير استهلاك الرام إلى 150MB ✅ |
-| إغلاق صريح لأقنعة الذاكرة `MPMask.close()` | في `bg-removal.worker.ts`، إغلاق كل كائن قناع فردي `mask.close()` صراحةً بالإضافة إلى `result.close()` لضمان تحرير كائنات WebGLTexture والأنسجة الرسومية | `bg-removal.worker.ts` ✅ |
-| كبح أبعاد إطار الوجه المقتص (`Max Crop Dimension Clamp`) | فرض سقف أقصى صارم `maxCropDim = 2048` بكسل على أبعاد الـ `OffscreenCanvas` في `face-frame.worker.ts` لمنع حجز لوحات رسم شاسعة ترهق الذاكرة | `face-frame.worker.ts` ✅ |
-| بوابات الجودة والتحقق الآلي | `npm run lint` (0 تحذيرات) · `npm run typecheck` (0 أخطاء) · `node scripts/docs-gate.mjs --strict-refs` (نجاح تام) | 2026-10-11 ✅ |
+| إلغاء وسائط Chromium المسببة لتضخم الـ GPU Process | حذف وسائط `--enable-gpu-rasterization` و`--enable-zero-copy` و`--ignore-gpu-blocklist` من `main.go` لمنع حجز 600MB+ من ذاكرة أسطح Direct3D المشتركة | انخفاض الذاكرة المحجوزة للـ GPU من 608MB إلى ~310MB ✅ |
+| حظر التحميل المسبق لـ OpenCV WASM عند الإقلاع (`Zero Early Allocation`) | إزالة `warmupOpenCV()` من `use-app-bootstrap.ts` وتحويلها لدالة خاملة في `opencv-loader.ts` لمنع حجز 15MB WASM وهيب الذاكرة الخطية في عملية الـ renderer عند الإقلاع، وحصرها عند فتح الماسح الضوئي فقط | فحص لوج الإقلاع وغياب كاش OpenCV حتى يطلبه المستخدم ✅ |
+| خدمة إدارة وتفريغ الذاكرة الأصلية في Go (`MemoryService`) | استحداث `internal/service/memory_service.go` و`memory_service_windows.go` لاستدعاء `EmptyWorkingSet` و`SetProcessWorkingSetSizeEx` على Go وعمليات WebView2 التابعة دورياً كل 30 ثانية وعند تصغير النافذة أو فقدان التركيز | انخفاض الـ Working Set الفعلي إلى **14.4MB فقط** عبر كامل العمليات ✅ |
+| تفريغ فوري للرام عند إنهاء العمليات (`triggerMemoryTrim`) | استدعاء تفريغ الذاكرة عبر `/api/trim-memory` فور اكتمال عزل الخلفية وتأطير الوجه وإغلاق حوارات التصدير والطباعة والماسح الضوئي | استجابة فورية وتفريغ تلقائي فور إغلاق أي حوار ثقيل ✅ |
+| تحرير فوري لعمال الذكاء الاصطناعي (`Worker Terminate on Settle`) | استدعاء `terminateWorker()` تلقائياً داخل دالة `settle()` المشتركة في `use-bg-removal.ts` و`use-face-frame.ts` فور اكتمال الاستدلال أو فشله أو إلغائه، لتحرير سياق WebGL/ANGLE وذاكرة Worker فوراً | فحص العمليات الحية + تصفير استهلاك الرام إلى أدنى مستوى ✅ |
+| إغلاق صريح لأقنعة الذاكرة `MPMask.close()` وكبح أبعاد الاقتصاص | إغلاق أقنعة التجزئة صراحةً مع وضع سقف `maxCropDim = 2048` بكسل على أبعاد الـ `OffscreenCanvas` في `face-frame.worker.ts` | `bg-removal.worker.ts` + `face-frame.worker.ts` ✅ |
+| بوابات الجودة والتحقق الآلي | `npm run lint` (0 تحذيرات) · `npm run typecheck` (0 أخطاء) · `node scripts/docs-gate.mjs --strict-refs` (نجاح تام) · `go test ./internal/service/...` (نجاح) | 2026-10-11 ✅ |
 
 ---
 

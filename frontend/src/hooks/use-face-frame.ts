@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { SaveImageFromBase64 } from '@bindings/grido/app';
 import { preloadImageIntoCache } from './use-async-image';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
+import { triggerMemoryTrim } from '@/lib/memory-trim';
 import type { CanvasElement, CanvasSlot } from '@/lib/store/types';
 import { create } from 'zustand';
 
@@ -218,6 +219,7 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
       setFrameProgressText('');
       setFrameProgress(0);
       terminateWorker();
+      triggerMemoryTrim();
     };
 
     pendingFrameRequests.set(requestId, {
