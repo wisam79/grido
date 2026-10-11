@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.14.6] - 2026-10-11
+
 - **معمارية إدارة الذاكرة وتخفيض استهلاك الرام بمحرك Wails وWebView2 (Native Memory Management & Working Set Compaction):**
   1. **إلغاء وسائط Chromium المسببة لتضخم ذاكرة الرسوميات:** حذف وسائط `--enable-gpu-rasterization` و`--enable-zero-copy` و`--ignore-gpu-blocklist` من `main.go` التي كانت تجبر عملية `gpu-process` وعملية الـ renderer على حجز مئات الميجابايتات (أكثر من 600MB) من أسطح Direct3D وذاكرة البلاطات المشتركة دون داعٍ.
   2. **حظر التحميل المسبق لـ OpenCV WASM عند الإقلاع (Zero Early Allocation):** إزالة `warmupOpenCV()` من `use-app-bootstrap.ts` وتحويلها لدالة خاملة في `opencv-loader.ts` لمنع حجز 15MB من بايتات WebAssembly والذاكرة الخطية (Linear Heap) في عملية الـ renderer عند الإقلاع، وحصر تحميلها بالطلب عند فتح نافذة الماسح الضوئي فقط.
