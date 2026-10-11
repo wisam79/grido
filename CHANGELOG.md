@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **تحرير فوري لموارد WebGL/GPU وعمال الذكاء الاصطناعي (Worker Terminate on Settle):**
+  1. إنهاء فوري وقسري لعامل عزل الخلفية `use-bg-removal.ts` وعامل ضبط الوجه `use-face-frame.ts` عبر استدعاء `terminateWorker()` داخل دالة `settle()` المشتركة فور اكتمال الاستدلال أو فشله أو إلغائه، بدلاً من إبقاء سياقات WebGL المعلقة في الذاكرة.
+  2. إغلاق صريح لكل كائن قناع فردي `MPMask.close()` في `bg-removal.worker.ts` بالإضافة إلى `result.close()` لتحرير ذاكرة محرك الرسوميات ANGLE/Direct3D فوراً ومنع تسريب الذاكرة أو تراكم المهملات (GC Thrashing).
+  3. فرض سقف أقصى صارم على أبعاد الصورة المقتصة `maxCropDim = 2048` بكسل داخل `face-frame.worker.ts` لمنع حجز لوحات رسم `OffscreenCanvas` ضخمة تُرهق محرك المتصفح.
+
 ## [v1.14.4] - 2026-10-11
 
 ### Security

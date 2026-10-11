@@ -6,7 +6,7 @@
  * الإلغاء الحقيقي يتحقق بإنهاء الـ Worker (terminate) من الجهة المضيفة.
  */
 
-import type { ImageSegmenter } from '@mediapipe/tasks-vision';
+import type { ImageSegmenter, MPMask } from '@mediapipe/tasks-vision';
 
 export interface BgRemovalResult {
   maskBuffer?: ArrayBufferLike;
@@ -199,17 +199,20 @@ async function handleSegment(req: SegmentRequest) {
     const inferredMs = Math.round(performance.now() - start);
 
     let maskBytes: Uint8Array | null = null;
+    let confidenceMasks: MPMask[] | undefined = undefined;
     try {
-      const confidenceMasks = result.confidenceMasks;
+      confidenceMasks = result.confidenceMasks;
       if (!confidenceMasks || confidenceMasks.length === 0) {
         throw new Error('لم يتمكن النموذج من تحديد الشخص في الصورة');
       }
 
       postProgress(requestId, 90, 'جاري الإنهاء ... (90%)');
-      const bgMaskData = confidenceMasks[0].getAsFloat32Array();
+      const bgMask = confidenceMasks[0];
+      const bgMaskData = bgMask.getAsFloat32Array();
       // ✂️ استخراج قناع الشعر المستقل (الفئة 1 في selfie_multiclass) للحفاظ على خصلات الشعر الرقيقة
       const hasHairMask = confidenceMasks.length > 1;
-      const hairMaskData = hasHairMask ? confidenceMasks[1].getAsFloat32Array() : null;
+      const hairMask = hasHairMask ? confidenceMasks[1] : null;
+      const hairMaskData = hairMask ? hairMask.getAsFloat32Array() : null;
       maskBytes = new Uint8Array(bgMaskData.length);
 
       for (let i = 0; i < bgMaskData.length; i++) {
@@ -237,6 +240,15 @@ async function handleSegment(req: SegmentRequest) {
         }
       }
     } finally {
+      if (confidenceMasks) {
+        for (const mask of confidenceMasks) {
+          try {
+            mask.close();
+          } catch {
+            /* تجاهل أخطاء إغلاق القناع الفردي */
+          }
+        }
+      }
       try {
         result.close();
       } catch {

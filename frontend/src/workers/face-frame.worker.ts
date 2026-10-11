@@ -209,10 +209,18 @@ async function handleFrame(req: FrameRequest) {
     const crop = computeIdCropRect(faceBox, req.aspectRatio, imageAspectRatio);
 
     postProgress(requestId, 75, 'جاري التأطير ... (75%)');
-    const cropW = Math.max(1, Math.round(crop.width * origW));
-    const cropH = Math.max(1, Math.round(crop.height * origH));
+    let cropW = Math.max(1, Math.round(crop.width * origW));
+    let cropH = Math.max(1, Math.round(crop.height * origH));
     const cropX = crop.x * origW;
     const cropY = crop.y * origH;
+
+    // 🛡️ سقف أقصى لأبعاد الإطار المقتص (حماية الذاكرة ومنع تخصيص لوحات عملاقة ترهق المتصفح)
+    const maxCropDim = 2048;
+    if (cropW > maxCropDim || cropH > maxCropDim) {
+      const scale = Math.min(maxCropDim / cropW, maxCropDim / cropH);
+      cropW = Math.max(1, Math.round(cropW * scale));
+      cropH = Math.max(1, Math.round(cropH * scale));
+    }
 
     const outCanvas = new OffscreenCanvas(cropW, cropH);
     const outCtx = outCanvas.getContext('2d');

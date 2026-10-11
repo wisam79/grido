@@ -208,6 +208,7 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
     const worker = getWorker();
     const startedAt = performance.now();
 
+    // 🧹 تحرير فوري لكامل سياقات WebGL والذاكرة بإنهاء الـ Worker فور اكتمال المهمة
     const settle = () => {
       useOperationStatusStore.getState().finishOperation(opId);
       pendingFrameRequests.delete(requestId);
@@ -216,6 +217,7 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
       setIsFraming(false);
       setFrameProgressText('');
       setFrameProgress(0);
+      terminateWorker();
     };
 
     pendingFrameRequests.set(requestId, {

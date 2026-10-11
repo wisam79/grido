@@ -217,6 +217,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
     const startedAt = performance.now();
 
     // إنهاء مشترك بين المسارات الثلاثة (نتيجة/خطأ/إلغاء خارجي)
+    // 🧹 تحرير فوري لكامل سياقات WebGL والذاكرة بإنهاء الـ Worker فور اكتمال المهمة
     const settle = () => {
       useOperationStatusStore.getState().finishOperation(opId);
       pendingBgRequests.delete(requestId);
@@ -225,6 +226,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
       setIsRemovingBg(false);
       setBgProgressText('');
       setBgProgress(0);
+      terminateWorker();
     };
 
     pendingBgRequests.set(requestId, {
