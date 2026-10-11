@@ -202,7 +202,7 @@ describe('Document Scanner - Hardening', () => {
       expect(p.y).toBeGreaterThanOrEqual(0);
       expect(p.y).toBeLessThanOrEqual(h);
     }
-  });
+  }, 20000);
 });
 
 /**

@@ -22,6 +22,7 @@ vi.mock('sonner', () => ({
 // لا نحاكي MediaPipe بعد الآن لأن الاستدلال صار داخل Worker حقيقي bg-removal.worker.ts
 class MockBgWorker {
   static instance: MockBgWorker | null = null;
+  static lastInstance: MockBgWorker | null = null;
   static autoRespond = true;
 
   onmessage: ((e: MessageEvent) => void) | null = null;
@@ -31,7 +32,7 @@ class MockBgWorker {
   postMessage = vi.fn((msg: { type: string; requestId?: number }) => {
     if (msg?.type !== 'segment' || msg.requestId == null) return;
     if (!MockBgWorker.autoRespond) return;
-    // الاستجابة ية (مثل Worker الحقيقي): نتيجة بعد دورتي microtask
+    // الاستجابة الفورية (مثل Worker الحقيقي): نتيجة بعد دورتي microtask
     const requestId = msg.requestId;
     Promise.resolve()
       .then(() => Promise.resolve())
@@ -54,6 +55,7 @@ class MockBgWorker {
 
   constructor() {
     MockBgWorker.instance = this;
+    MockBgWorker.lastInstance = this;
   }
 }
 
@@ -72,6 +74,7 @@ describe('ElementProperties - Worker Background Removal', () => {
     vi.resetModules();
     vi.clearAllMocks();
     MockBgWorker.instance = null;
+    MockBgWorker.lastInstance = null;
     MockBgWorker.autoRespond = true;
 
     // توفير Worker في بيئة JSDOM (غير متوفر أصلاً فيها)
@@ -162,7 +165,7 @@ describe('ElementProperties - Worker Background Removal', () => {
     });
 
     // الـ Worker استُدعي فعلاً بطلب segment
-    expect(MockBgWorker.instance?.postMessage).toHaveBeenCalled();
+    expect(MockBgWorker.lastInstance?.postMessage).toHaveBeenCalled();
 
     // Verify ApplyMaskToImage was called to generate the transparent image
     const { ApplyMaskToImage: mockApplyMask } = await import('../wailsjs/go/main/App');

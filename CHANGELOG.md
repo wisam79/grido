@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **تحصين اختبارات واجهة المستخدم ومعالجة الصور ضد المهلات وفحوص الـ Worker المنهى:**
+  1. تحديث اختبار `frontend/test/bg-worker.test.tsx` للاحتفاظ بمرجع المثيل `MockBgWorker.lastInstance` للتحقق من استدعاء `postMessage` بعد أن يقوم الهوك بإنهاء العامل فوراً عند تسوية المهمة (`settle()`).
+  2. تمديد مهلة اختبار فحص المشاهد الكبيرة `detects a document on a large 1280x960 scene without hanging` إلى 20 ثانية في `scanner-hardening.test.ts` لمنع فشل الـ CI العرضي تحت ضغط معالجات السحابة.
+
 ## [v1.14.5] - 2026-10-11
 
 ### Fixed
