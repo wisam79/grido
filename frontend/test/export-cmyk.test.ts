@@ -143,16 +143,28 @@ describe('runCmykExport', () => {
     vi.unstubAllGlobals();
   });
 
-  const stubFetch = (response: Response) => {
-    const fetchMock = vi.fn(() => Promise.resolve(response));
+  interface MockFetchResponse {
+    ok?: boolean;
+    status?: number;
+    blob?: () => Promise<Blob>;
+  }
+
+  const stubFetch = (response: MockFetchResponse) => {
+    const fullResponse = {
+      ok: response.ok ?? (response.status ? response.status >= 200 && response.status < 300 : true),
+      status: response.status ?? 200,
+      blob: response.blob ?? (() => Promise.resolve(new Blob())),
+    } as unknown as Response;
+    const fetchMock = vi.fn(() => Promise.resolve(fullResponse));
     vi.stubGlobal('fetch', fetchMock);
     return fetchMock;
   };
 
   it('يمر بالسلسلة كاملة: لقطة ← رفع ← تحويل ← قراءة الملف الناتج', async () => {
-    const fetchMock = stubFetch(
-      new Response(new Blob(['tiff'], { type: 'image/tiff' }), { status: 200 }),
-    );
+    const fetchMock = stubFetch({
+      status: 200,
+      blob: () => Promise.resolve(new Blob(['tiff'], { type: 'image/tiff' })),
+    });
 
     const result = await runCmykExport(captureParams);
 
@@ -171,7 +183,10 @@ describe('runCmykExport', () => {
   });
 
   it('يرسل exportFormat=jpeg عندما يختار المستخدم JPEG', async () => {
-    stubFetch(new Response(new Blob(['jpg'], { type: 'image/jpeg' }), { status: 200 }));
+    stubFetch({
+      status: 200,
+      blob: () => Promise.resolve(new Blob(['jpg'], { type: 'image/jpeg' })),
+    });
 
     await runCmykExport({ ...captureParams, format: 'jpeg' });
 
@@ -201,7 +216,7 @@ describe('runCmykExport', () => {
   });
 
   it('يرمي عند تعذر قراءة الملف الناتج من الخادم المحلي', async () => {
-    stubFetch(new Response('missing', { status: 404 }));
+    stubFetch({ status: 404, ok: false });
 
     await expect(runCmykExport(captureParams)).rejects.toThrow('HTTP 404');
   });
