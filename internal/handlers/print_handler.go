@@ -89,4 +89,3 @@ func (h *PrintHandler) OpenPrinterPreferences(printerName string) domain.PrintRe
 		Success: true,
 	}
 }
-

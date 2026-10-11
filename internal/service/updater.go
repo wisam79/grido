@@ -2,10 +2,13 @@ package service
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -25,6 +28,18 @@ var updateMutex sync.Mutex
 // AppVersion يتم حقنها تلقائياً ديناميكياً عند البناء عبر ldflags (مثل -X grido/internal/service.AppVersion=v1.0.2)
 var AppVersion = "dev"
 
+// UpdaterPublicKey مفتاح Ed25519 العام (base64) الذي يُتحقق به من توقيع المثبت،
+// ويُحقن عند البناء بـ ldflags مثل بقية متغيرات البناء (مفتاح عام لا سرّ فيه).
+//
+// لماذا يلزم توقيع أصلاً والبصمة موجودة؟ لأن بصمة SHA-256 تُجلب من **نفس المصدر**
+// الذي يُجلب منه المثبت: سيرفر توزيع مخترق أو اعتراض DNS بشهادة صالحة يخدم ملفاً
+// خبيثاً وبصمته المطابقة معاً، فتنهار فائدة البصمة كاملة. التوقيع بمفتاح خاص لا
+// يوجد إلا عند الناشر يكسر هذا الاقتران.
+//
+// السياسة: مُهيَّأ ⇒ إلزامي (Fail-closed). غير مُهيَّأ ⇒ السلوك القديم (بصمة فقط)
+// مع تسجيل تحذير صريح — كي لا يتعطّل مسار التحديث لبناءات لم تُهيّأ بعد.
+var UpdaterPublicKey = ""
+
 type UpdateInfo struct {
 	HasUpdate      bool   `json:"has_update"`
 	CurrentVersion string `json:"current_version"`
@@ -34,6 +49,9 @@ type UpdateInfo struct {
 	// InstallerSHA256 هو بصمة المثبت المتوقعة (SHA-256 hex) كما أعلنها خادم الإصدارات.
 	// تُفرض المطابقة عند توفرها، ويُسجل تحذير ويُسماح بالتثبيت عند غيابها (توافقية مع الإصدارات القديمة).
 	InstallerSHA256 string `json:"sha256"`
+	// InstallerSignature توقيع Ed25519 (base64) على بصمة المثبت الخام، يُعلنه
+	// خادم الإصدارات في حقل `signature` أو كأصل `.sig` مرفوع مع الإصدار.
+	InstallerSignature string `json:"signature"`
 }
 
 type UpdaterService struct{}
@@ -169,10 +187,11 @@ func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 	}
 
 	var ghRelease struct {
-		TagName string         `json:"tag_name"`
-		Body    string         `json:"body"`
-		SHA256  string         `json:"sha256"`
-		Assets  []ReleaseAsset `json:"assets"`
+		TagName   string         `json:"tag_name"`
+		Body      string         `json:"body"`
+		SHA256    string         `json:"sha256"`
+		Signature string         `json:"signature"`
+		Assets    []ReleaseAsset `json:"assets"`
 	}
 
 	if err := json.Unmarshal(body, &ghRelease); err != nil {
@@ -202,6 +221,18 @@ func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 		}
 	}
 
+	// 🔏 التوقيع: المسار المفضّل حقل `signature` في بيانات الإصدار (يخدمه وسيط
+	// الإصدارات بجانب البصمة)، وإلا أصل `.sig` مرفوع مع الإصدار ويُجلب مباشرة
+	// (نتخطّى روابط GitHub التي تحتاج توثيقاً وليس لها وسيط معرّف).
+	signature := strings.TrimSpace(ghRelease.Signature)
+	if signature == "" {
+		if sigURL := findSignatureAssetURL(ghRelease.Assets); sigURL != "" {
+			if text, fetchErr := fetchTextAsset(client, sigURL); fetchErr == nil {
+				signature = firstSignatureLine(text)
+			}
+		}
+	}
+
 	latestTag := strings.TrimPrefix(ghRelease.TagName, "v")
 	currentTag := strings.TrimPrefix(AppVersion, "v")
 	if currentTag == "dev" || currentTag == "" {
@@ -212,13 +243,119 @@ func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
 	installerURL := extractInstallerDownloadURL(ghRelease.Assets)
 
 	return &UpdateInfo{
-		HasUpdate:       hasUpdate,
-		CurrentVersion:  AppVersion,
-		LatestVersion:   ghRelease.TagName,
-		ReleaseNotes:    ghRelease.Body,
-		DownloadURL:     installerURL,
-		InstallerSHA256: expectedSHA,
+		HasUpdate:          hasUpdate,
+		CurrentVersion:     AppVersion,
+		LatestVersion:      ghRelease.TagName,
+		ReleaseNotes:       ghRelease.Body,
+		DownloadURL:        installerURL,
+		InstallerSHA256:    expectedSHA,
+		InstallerSignature: signature,
 	}, nil
+}
+
+// findSignatureAssetURL يعيد رابط أصل التوقيع (`.sig`) القابل للجلب مباشرةً،
+// أو "" إن لم يوجد. تُتخطّى روابط أصول GitHub لأن المستودع خاص فيلزمها توثيق
+// ولا يوجد وسيط معرّف لها (خلافاً لملف البصمات الذي يخدمه مسار الإصدارات).
+func findSignatureAssetURL(assets []ReleaseAsset) string {
+	for _, asset := range assets {
+		name := strings.ToLower(asset.Name)
+		if !strings.HasSuffix(name, ".sig") || asset.BrowserDownloadURL == "" {
+			continue
+		}
+		if strings.Contains(asset.BrowserDownloadURL, "github.com/wisam79/grido/releases") {
+			continue
+		}
+		return asset.BrowserDownloadURL
+	}
+	return ""
+}
+
+// firstSignatureLine يستخرج أول سطر غير فارغ من ملف توقيع خام (يتحمّل سطراً
+// نهائياً فارغاً أو ملفاً مُلحقاً بتعليق يبدأ بـ #).
+func firstSignatureLine(content string) string {
+	for _, line := range strings.Split(content, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		return trimmed
+	}
+	return ""
+}
+
+// errNoUpdaterPublicKey يعني أن البناء بلا مفتاح عام مثبّت — البصمة وحدها هي
+// كل ما يمكن فرضه، ولا يُعدّ هذا فشل تحقق بل حالة «غير مُهيَّأ».
+var errNoUpdaterPublicKey = errors.New("no updater public key pinned in this build")
+
+// verifyInstallerSignature يتحقق من توقيع Ed25519 على بصمة المثبت.
+//
+// الرسالة الموقّعة هي **بايتات بصمة SHA-256 الخام** (32 بايتاً) لا الملف كاملاً:
+// التوقيع على البصمة يغني عن تحميل ملف بحجم 200MB في الذاكرة للتحقق،
+// ويربط التوقيع بالبصمة التي يفرضها التطبيق فعلاً — فلا يمكن توقيع ملف آخر
+// وإقرانه بهذه البصمة.
+//
+// @param publicKeyBase64 مفتاح Ed25519 العام بترميز base64 (قياسي أو بلا حشو)
+// @param sha256Hex بصمة SHA-256 للمثبت نصاً سادس عشرياً (64 حرفاً)
+// @param signatureBase64 التوقيع بترميز base64 (قياسي أو بلا حشو)
+func verifyInstallerSignature(publicKeyBase64, sha256Hex, signatureBase64 string) error {
+	keyText := strings.TrimSpace(publicKeyBase64)
+	if keyText == "" {
+		return errNoUpdaterPublicKey
+	}
+
+	publicKey, err := decodeBase64Flexible(keyText)
+	if err != nil {
+		return fmt.Errorf("invalid updater public key encoding: %w", err)
+	}
+	if len(publicKey) != ed25519.PublicKeySize {
+		return fmt.Errorf("invalid updater public key length: %d bytes (want %d)", len(publicKey), ed25519.PublicKeySize)
+	}
+
+	sigText := strings.TrimSpace(signatureBase64)
+	if sigText == "" {
+		return errors.New("no signature published for this release")
+	}
+	signature, err := decodeBase64Flexible(sigText)
+	if err != nil {
+		return fmt.Errorf("invalid signature encoding: %w", err)
+	}
+	if len(signature) != ed25519.SignatureSize {
+		return fmt.Errorf("invalid signature length: %d bytes (want %d)", len(signature), ed25519.SignatureSize)
+	}
+
+	digest, err := hex.DecodeString(strings.TrimSpace(sha256Hex))
+	if err != nil {
+		return fmt.Errorf("invalid checksum encoding: %w", err)
+	}
+	if len(digest) != sha256.Size {
+		return fmt.Errorf("invalid checksum length: %d bytes (want %d)", len(digest), sha256.Size)
+	}
+
+	if !ed25519.Verify(ed25519.PublicKey(publicKey), digest, signature) {
+		return errors.New("installer signature does not match the pinned public key")
+	}
+	return nil
+}
+
+// decodeBase64Flexible يقبل الترميز القياسي بحشو أو بدونه (وكذلك ترميز URL) —
+// التوقيعات تُولَّد بأدوات مختلفة تختلف في الحشو، والفشل هنا يظهر للمستخدم
+// كرفض تحديث سليم.
+func decodeBase64Flexible(value string) ([]byte, error) {
+	encodings := []*base64.Encoding{
+		base64.StdEncoding,
+		base64.RawStdEncoding,
+		base64.URLEncoding,
+		base64.RawURLEncoding,
+	}
+	var lastErr error
+	for _, encoding := range encodings {
+		decoded, err := encoding.DecodeString(value)
+		if err == nil {
+			return decoded, nil
+		}
+		lastErr = err
+	}
+	return nil, lastErr
 }
 
 // fetchTextAsset يجلب محتوى أصل نصي صغير (مثل ملف البصمات) مع حد أقصى للحجم
@@ -313,7 +450,12 @@ func (pw *progressWriter) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL string, expectedSHA256 string) error {
+// DownloadAndInstall ينزّل المثبت ويتحقق من سلامته قبل أي تنفيذ.
+//
+// سلسلة الثقة ذات مراحل صريحة: (1) رفض بلا بصمة معلنة، (2) رفض إن لم تطابق
+// البصمة الملفَ المنزّل، (3) إن كان مفتاح عام مثبّتاً في البناء فالتوقيع
+// إلزامي — نقصه أو عدم مطابقته يرفض التثبيت (Fail-closed).
+func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL string, expectedSHA256 string, signatureBase64 string) error {
 	// 🛡️ إغلاق حازم: بدون بصمة SHA-256 معلنة لا نثبّت أي ملف تحديث
 	expected := strings.ToLower(strings.TrimSpace(expectedSHA256))
 	if expected == "" {
@@ -440,6 +582,23 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 		return fmt.Errorf("فشل التحقق من سلامة ملف التحديث (بصمة SHA-256 غير مطابقة). تم حذف الملف وحظر التثبيت")
 	}
 	slog.Info("Update installer checksum verified", "sha256", actual)
+
+	// 🔏 المرحلة الثانية: التوقيع بمفتاح عام مثبّت في الثنائي.
+	// البصمة وحدها ثقة بالمصدر نفسه (من يزوّر الملف يزوّر بصمته)، والتوقيع
+	// يكسر هذا الاقتران لأنه يلزمه مفتاح خاص لا يوجد إلّا عند الناشر.
+	if strings.TrimSpace(UpdaterPublicKey) == "" {
+		// بناء لم يُهيَّأ بمفتاح عام: نُبقي السلوك القديم (بصمة فقط) لكن بتسجيل
+		// صريح حتى لا يبدو الوضع “مُتحقَّقاً منه” وهو ليس كذلك.
+		slog.Warn("Update signature verification disabled: no pinned updater public key in this build",
+			"hint", "inject one at build time (-X grido/internal/service.UpdaterPublicKey=...)")
+	} else if err := verifyInstallerSignature(UpdaterPublicKey, actual, signatureBase64); err != nil {
+		_ = os.Remove(installerPath)
+		slog.Error("Update installer signature verification failed — refusing to run",
+			"error", err.Error(), "sha256", actual)
+		return fmt.Errorf("رفض تثبيت التحديث: التوقيع غير صالح أو مفقود (%v). حُذف الملف ولم يُنفَّذ", err)
+	} else {
+		slog.Info("Update installer signature verified against pinned public key")
+	}
 
 	if application.Get() != nil {
 		application.Get().Event.Emit("update-progress", 100)

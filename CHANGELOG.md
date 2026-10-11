@@ -9,11 +9,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.14.4] - 2026-10-11
+
+### Security
+- **توكن جلسة إلزامي على مسارات `/api` المحلية (Local API Session Token) — إغلاق ثغرة العمليات المحلية:**
+  1. حارس جديد `internal/service/local_api_guard.go` (`service.LocalApiGuard`) يفرض على كل طلب `/api/*` شرطين: أصل مطابق لمضيف الخادم، وترويسة `X-Grido-Session` تحمل توكن العملية بمقارنة زمن ثابت (`utils.SecureTokenEqual`).
+  2. **الثغرة التي أُغلقت:** فحص الأصل وحده يحجب المتصفحات عملياً (لا صفحة تستطيع إرسال Origin مطابق لمضيفنا)، لكنه لا يحجب أي **عملية محلية** ترسل `POST` مباشراً بامتيازات التطبيق إلى `/api/upload-media` أو `/api/save-file` أو `/api/upload-print-image` — أي كتابة ملفات في مجلدات التطبيق وظهور حوارات نظام. التوكن يُسلَّم للواجهة عبر ربط Wails وحده (`App.GetLocalApiToken`) — IPC داخل العملية لا يصل إليه متصفح ولا عملية خارجية — ولا يُسجَّل في أي لوج (توكن في اللوج = توكن مسروق).
+  3. **السياسة فشل مغلق:** تعذّر توليد التوكن عند الإقلاع ⇒ رفض كل طلبات `/api` بدل الانفتاح الصامت.
+  4. عميل واجهة موحّد `frontend/src/lib/local-api.ts` (`fetchLocalApi`) يضيف الترويسة تلقائياً، وطُبِّق على الملفات الأربعة: `use-bg-removal.ts` (`/api/apply-mask`)، `use-image-drop.ts` (`/api/upload-media`)، `print-transport.ts` (`/api/upload-print-image`)، و`export-project.ts` (`/api/save-file`).
+  5. أولية مشتركة `internal/utils/securetoken.go` (`GenerateSecureToken` / `SecureTokenEqual`) مع 13 حالة اختبار، و10 حالات اختبار للحارس في `internal/service/local_api_guard_test.go` (تشمل: بلا توكن، توكن خاطئ، بادئة توكن، أصل مخالف بتوكن صحيح، أصل غير قابل للتحليل، وحارس بلا توكن = رفض دائم)، و4 حالات لعميل الواجهة في `frontend/test/local-api.test.ts`.
+- **التحقق من توقيع المثبت بمفتاح عام مثبّت في الثنائي (Updater Signature Verification) — إغلاق ثقة «المصدر نفسه»:**
+  1. بصمة SHA-256 تُجلب من **نفس المصدر** الذي يُجلب منه المثبت (`/api/version` أو أصول الإصدار)، فسيرفر توزيع مخترق أو اعتراض DNS بشهادة صالحة يخدم ملفاً خبيثاً وبصمته المطابقة معاً — فتنهار فائدة البصمة كاملة. أُضيف تحقق توقيع Ed25519 على **بصمة المثبت الخام** (32 بايتاً) لا على الملف كاملاً، فلا يُحمَّل ملف بحجم 200MB في الذاكرة للتحقق.
+  2. سياسة صريحة: مفتاح مُهيَّأ ⇒ التوقيع **إلزامي** (Fail-closed: غياب التوقيع أو عدم مطابقته أو توقيع مفتاح آخر ⇒ حذف الملف ورفض التثبيت)؛ مفتاح غير مُهيَّأ ⇒ السلوك القديم (بصمة فقط) مع تحذير صريح في اللوج — فلا يتعطّل مسار التحديث لبناءات لم تُهيَّأ بعد.
+  3. ربط البناء: `UPDATER_PUBLIC_KEY` في `build/windows/Taskfile.yml` (حقن ldflags) و`.github/workflows/release.yml` (**متغيّر مستودع لا سرّ** — مفتاح عام يُشحن في الثنائي عن قصد)، ووسيط الإصدارات `admin-web/netlify/functions/version.ts` يقرأ أصل `grido-checksums.txt.sig` ويمرّره في حقل `signature` بجانب `sha256`.
+  4. عقد ربط جديد: `UpdateInfo.signature` (حقل JSON) و`DownloadAndInstallUpdate(url, sha256, signature)`؛ أُعيد توليد الربطات (`wails3 generate bindings -ts -clean=true`) والواجهة `update-notifier.tsx` تمرّر التوقيع ممّا يقرأه الخادم.
+  5. 11 حالة اختبار في `internal/service/updater_test.go` (توقيع صالح، base64 بلا حشو، مفتاح آخر، بصمة معدَّلة، توقيع مفقود، ترميز مشوَّه، توقيع مقتطع، مفتاح مفقود، مفتاح بطول خاطئ، بصمة غير سداسية عشرية، بصمة بطول خاطئ) + 4 حالات لتحديد أصل التوقيع + 3 لاستخراج أول سطر منه.
+- **إغلاق ثغرة `xlsx` (SheetJS) — تغيير المصدر إلى النسخة المصونة:**
+  1. كان الاعتماد على `xlsx@0.18.5` من npm، وهي نسخة مهجورة تحمل تلوّث النموذج الأولي `GHSA-4r6h-8v6p-xvw6` و`ReDoS` في `GHSA-5pgg-2g8v-p4x9` مع حالة **No fix available** من npm — وملف الإدخال يأتي من خارج التطبيق (ملف Excel للمستخدم في مسار الطباعة بالبيانات المتغيرة).
+  2. صار الاعتماد على النسخة المصونة من مصدرها الرسمي: `"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"`، والدليل المُقاس: `npm audit --omit=dev` في `frontend/` يعيد **`found 0 vulnerabilities`** بدل ثغرة عالية واحدة، وانخفضت شجرة التبعيات 8 حزم (`cfb`, `codepage`, `ssf`, `frac`, `crc-32`, `adler-32`, `word`, `wmf`) — و`package-lock.json` يثبّت الحزمة بـ`resolved` + `integrity` (sha512) فلا يمكن استبدالها من الـCDN بصمت.
+  3. حراس التخفيف **مُبقاة** دفاعاً في العمق (ملف الإدخال غير موثوق حتى مع مكتبة مصونة): سقف التفكيك نفسه `VDP_PARSE_ROW_LIMIT = 501`، وسقف حجم `VDP_MAX_FILE_BYTES = 10MB` قبل أي قراءة، وتصفير الصيغ/الأنماط/HTML/VBA، ومنع أسماء الأعمدة الخطرة (`__proto__`/`prototype`/`constructor`). 12 اختباراً في `frontend/test/vdp-parser.test.ts` ناجحة.
+  4. **مقايضة موثَّقة:** البناء يعتمد على `cdn.sheetjs.com` لجلب الحزمة (البديل الوحيد المصون)، والبديل المسجَّل لو تعطّل المصدر هو تفكيك `.xlsx` في Go (`archive/zip` + `encoding/xml` بلا تبعيات جديدة) مع `papaparse` للـCSV — بثمن فقدان دعم `.xls` القديم. مُوثَّق في `SECURITY_NOTICE.md`.
+
+### Added
+- **تصدير CMYK (TIFF/JPEG) من حوار التصدير إلى مسار الطباعة الخلفي الموجود:**
+  1. مدخل «فضاء الألوان» (RGB/CMYK) في `frontend/src/components/editor/dialogs/export-dialog.tsx`، وشبكة الصيغة تتبعه: RGB ⇒ PNG/JPG و CMYK ⇒ TIFF/JPEG؛ وتُخفى مخلفات مسار RGB (النزيف وعلامات القص وتصدير الخلايا المنفصلة) في وضع CMYK بدل تشغيلها بلا أثر.
+  2. المساعد `runCmykExport` في `frontend/src/lib/export/export-cmyk.ts`: يلتقط الكانفاس بنفس دقة مسار RGB (نفس العلامة المائية) ← يرفع إلى `/api/upload-print-image` ← يبني `PrintRequest` (عنصر واحد يملأ الورقة، `marginMM/gapMM=0`، بلا خطوط قص، `colorSpace: "cmyk"`) ← `ExportPrintSheet` بمهلة صريحة `EXPORT_TIMEOUT_MS` ← يقرأ ملف `print_*` من `/local-image/` ويحفظه بامتداد `.tif`/`.jpg`.
+     - **هندسة صفرية الانحراف:** مقاس الورقة يُشتق بحيث يُنتج `mmToPx(mm, dpi)` بالضبط نفس أبعاد اللقطة بالبكسل (`mm ≈ canvasPx × 25.4 / dpi`)، ويُأخذ مقاس القالب الفيزيائي فقط حين يطابق الكانفاس عند هذه الدقة (فرق ≤ 1 بكسل) — وإلا لأعاد محرك الطباعة تشكيل الصورة صامتاً بمقاس مختلف.
+  3. فلتر TIFF في حوار حفظ الملف الخلفي (`main.go`، مسار `/api/save-file`) — كان PNG/JPEG فقط فلا يظهر TIFF في حوار الحفظ.
+
 ### Fixed
+- **تعليق أبدي في عزل الخلفية وضبط الوجه بعد سقوط العامل (Dead Worker Reuse — تعليق مرئي للمستخدم):**
+  1. معالج `workerInstance.onerror` كان يبلّغ الطلبات المعلقة فقط ويُبقي `workerInstance` مرجعاً لعامل انهار — فكل طلب لاحق يُرسل `postMessage` إلى عامل لا يرد أبداً، فيبقى مؤشر «جاري العزل» ظاهراً بلا نهاية حتى يضغط المستخدم «إلغاء» بنفسه (وهو المسار الوحيد الذي يستدعي `terminateWorker`). هذه الحالة تقع فعلياً عند فشل تحميل وحدة داخل العامل أو نفاد ذاكرة WASM أو فقدان سياق GPU.
+  2. الإصلاح في `use-bg-removal.ts` و`use-face-frame.ts`: يلتقط المعالج الطلبات المعلقة أولاً ثم **يُنهي العامل المُتعطّل فوراً** (`terminateWorker()` يمسح سجل الطلبات ويصفّر العامل)، فيُبنى عامل جديد عند الطلب التالي.
+  3. اختبار انحدار في `frontend/test/bg-worker.test.tsx` («rebuilds a fresh worker after a worker-level error instead of hanging forever») — **أُثبت أنه يفشل على الكود القديم** (فشل تأكيد استدعاء `terminate` بحالة `1 failed`) وينجح بعد الإصلاح، فلا يكون اختباراً زائفاً.
+- **مخرجات CMYK كانت تسمية بلا مضمون — TIFF بفصل أحبار حقيقي الآن (اكتُشف أثناء تنفيذ تصدير CMYK):**
+  1. القياس أثبت أن `golang.org/x/image/tiff` يكتب `PhotometricInterpretation=2` (RGB) مع قناة ألفا وبكسلات محوّلة عبر `At().RGBA()` عند تمرير `*image.CMYK`، وأن مُرمِّز `image/jpeg` القياسي يكتب 3 مكوّنات (YCbCr) ولا يدعم CMYK — أي فقدان كامل لفصل الأحبار داخل ملف يُسمّى «CMYK».
+  2. مشفّر مستقل جديد `internal/service/print_cmyk_tiff.go` (`encodeCMYKTIFF`): TIFF 6.0 بـ `PhotometricInterpretation=5` (Separated) و`InkSet=1` و`SamplesPerPixel=4` و`BitsPerSample=[8,8,8,8]` و`PlanarConfig=1` و`Compression=8` (Deflate) بلا `ExtraSamples`، مع إعادة استخدام `injectTIFFResolution` لوسوم 282/283/296، وضغط Deflate متدفق صفاً-صفاً بلا نسخة خام كاملة (لا قفزة ذاكرة عند سقف 50MP). `print_export.go` يستدعيه بدل `tiff.Encode`.
+  3. **قيد متبقٍ (موثّق في الواجهة والتقرير):** مخرج JPEG يبقى بفضاء RGB لأن مُرمِّز Go لا يكتب 4 مكوّنات؛ الحوار يذكر ذلك صريحاً و TIFF هو الحامل الحقيقي لفصل الأحبار.
+  4. تحديث اختبارين كانا يفكّان «CMYK» بمفكّك RGB فيثبّتان المخرج الخاطئ (`print_workshop_scenarios_test.go` و`print_cutline_test.go`)، وتصحيح تعليق TAC المضلّل في `print_cmyk_test.go` (المقيس 748/255 ≈ 293.3% لا ~197%).
+- **تحسين استخراج قناع عزل الخلفية بالذكاء الاصطناعي وحل مشكلة القص المزدوج (`Hair-Aware Segmentation`):**
+  1. استخراج قناع الشعر المستقل (`confidenceMasks[1]`) من نموذج `selfie_multiclass` في `bg-removal.worker.ts` وتطبيق عتبة ديناميكية متكيفة (*Adaptive Thresholding*): نافذة حساسية ناعمة لخصلات الشعر الرقيقة (`0.15..0.52`) تمنع بتر أطراف الشعر، مع عتبة حادة (`0.35..0.65`) للجسم والملابس للحفاظ على خطوط الأكتاف والياقة قاطعة ونظيفة.
+  2. حل مشكلة القص المزدوج (*Double Clamping*) في الباك إند (`internal/service/image_processor.go`): توسيع نطاق جدول التنعيم `lutAlpha` من `[65..215]` إلى `[15..235]`، مما يسمح لشفافية الشعر الحقيقية بالمرور وتفعيل خوارزميات مكافحة الهالات وتطهير الألوان (Chroma Decontamination) عليها بدلاً من محوها صامتاً.
 - **تأمين جلب بصمات SHA-256 للمثبت عبر موقع التوزيع العام (`api/checksums`):**
   - استضافة ملف البصمات `grido-checksums.txt` في مسار عام على `https://grido.cloud-ip.cc/api/checksums` وحقن بصمة `sha256` مباشرة في كائن JSON لـ `/api/version` أثناء النشر، مع تطبيع رابط جلب البصمات في `updater.go` ليتجاوز قيود المستودع الخاص ويسمح بالتحديث التلقائي الفوري دون أخطاء غياب البصمة.
 
 ### Changed
+- **إعادة توليد ربطات Wails v3 بعد تغيير عقود الواجهة:** `GetLocalApiToken()` دالة ربط جديدة (معرّفها الرقمي `1585336687`) وتوقيع `DownloadAndInstallUpdate` صار ثلاثي الوسائط — أُعيد التوليد بـ`wails3 generate bindings -ts -clean=true`، وسُجِّل معالج `GetLocalApiToken` في جسر E2E كما يفرضه حارس انحراف عقود IPC (`frontend/src/lib/wails/ipc-contract-drift.test.ts`، 4 حالات ناجحة).
 - **أتمتة مزامنة موقع التوزيع وواجهة برمجة الإصدارات (`deploy-pages.yml` Auto-Trigger):**
   - ربط سير عمل `release.yml` بإطلاق سير عمل `deploy-pages.yml` تلقائياً فور إنشاء ونشر أي Release جديد، لتجاوز حظر الأفعال المتكررة التلقائية في GitHub Actions وتحديث نقطة النهاية `/api/version` ومثبت التطبيق فورياً دون الحاجة للتشغيل اليدوي.
 

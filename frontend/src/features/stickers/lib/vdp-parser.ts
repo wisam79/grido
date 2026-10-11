@@ -36,8 +36,10 @@ export const VDP_PARSE_ROW_LIMIT = VDP_MAX_ROWS + 1;
 
 /**
  * أسماء أعمدة ممنوعة: تُستخدم كمفاتيح كائنات الصفوف، فاسم مثل `__proto__`
- * يجعل الإسناد يلوّث النموذج الأولي (`Object.prototype`) — وهو نفس صنف ثغرة
- * SheetJS المعروفة بلا إصلاح متاح من npm (GHSA-4r6h-8v6p-xvw6).
+ * يجعل الإسناد يلوّث النموذج الأولي (`Object.prototype`) — نفس صنف ثغرة
+ * SheetJS القديمة (GHSA-4r6h-8v6p-xvw6) التي كانت في نسخة npm المهجورة.
+ * تبقى الحماية طبقةً مستقلة: مصدر المكتبة صار مصوناً، لكن ملف الإدخال يبقى
+ * غير موثوق، فلا يُسقط الحارس ولو اختفت الثغرة من المكتبة.
  */
 const DANGEROUS_COLUMN_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
@@ -83,9 +85,10 @@ async function parseExcelFile(file: File): Promise<VdpDataset> {
   // - `sheetRows`: حد أقصى لصفوف التفكيك نفسه (بدل تفكيك كل الصفوف ثم قصّها).
   // - تعطيل الصيغ والأنماط و HTML و VBA: سطح هجوم أقل بلا أي فقدان للبيانات النصية.
   // - `dense`: تمثيل مُدمج أقل استهلاكاً للذاكرة في الأوراق الكبيرة.
-  // ملاحظة: مكتبة `xlsx` من npm تحمل ثغرة تلوّث نموذج أولي بلا إصلاح متاح
-  // (GHSA-4r6h-8v6p-xvw6، وReDoS في GHSA-5pgg-2g8v-p4x9)؛ هذا تخفيف للتأثير،
-  // والإزالة الكاملة تتطلب نسخة SheetJS المصونة من cdn.sheetjs.com — انظر SECURITY_NOTICE.md.
+  // ملاحظة أمنية: نسخة npm المهجورة (0.18.5) كانت تحمل تلوّث نموذج أولي
+  // (GHSA-4r6h-8v6p-xvw6) وReDoS (GHSA-5pgg-2g8v-p4x9) بلا إصلاح متاح. صار
+  // الاعتماد على نسخة SheetJS المصونة من مصدرها الرسمي (0.20.3)، و`npm audit`
+  // صفر ثغرات. هذا التقييد يبقى لأن ملف الإدخال نفسه غير موثوق — انظر SECURITY_NOTICE.md.
   const workbook = read(buffer, {
     type: 'array',
     sheetRows: VDP_PARSE_ROW_LIMIT,

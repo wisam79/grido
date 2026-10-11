@@ -228,7 +228,9 @@ func TestConvertRGBAtoCMYK_FlattensTransparentToWhite(t *testing.T) {
 }
 
 // TestRGBToRichCMYK_TotalAreaCoverageCap: سقف التغطية الإجمالية TAC يجب
-// ألا يتجاوز 300% (تصحيح ادعاء المراجعة: الحد الفعلي ~197%).
+// ألا يتجاوز 300% — والأسوأ المقيس على شبكة العيّنات 748/255 ≈ 293.3%
+// (يطبعه السطر التالي أدناه)، أي أن الحد سقف حقيقي قريب من السقف لا هامش واسع
+// (كان التعليق يدّعي ~197% وهي قيمة لا تطابق القياس — راجع تقرير المفشلة 18).
 func TestRGBToRichCMYK_TotalAreaCoverageCap(t *testing.T) {
 	worst := 0
 	for r := 0; r < 256; r += 17 {

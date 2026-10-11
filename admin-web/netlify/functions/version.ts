@@ -1,6 +1,20 @@
 import type { Handler } from '@netlify/functions';
 
 const CHECKSUMS_ASSET = 'grido-checksums.txt';
+const SIGNATURE_ASSET = 'grido-checksums.txt.sig';
+
+/**
+ * يستخرج أول سطر غير فارغ من ملف توقيع خام (base64) — يتجاهل التعليقات
+ * والأسطر الفارغة كي يبقى التوقيع قابلاً للقراءة البشرية في ملف الإصدار.
+ */
+function parseSignatureContent(content: string): string {
+  for (const rawLine of content.split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    return line;
+  }
+  return '';
+}
 
 /**
  * يستخرج بصمة SHA-256 الخاصة بملف المثبت من محتوى ملف البصمات
@@ -55,6 +69,7 @@ export const handler: Handler = async () => {
           body: '',
           download_url: 'https://grido.cloud-ip.cc/api/download',
           sha256: '',
+          signature: '',
         }),
       };
     }
@@ -88,6 +103,37 @@ export const handler: Handler = async () => {
       console.error('Failed to fetch checksums asset:', checksumErr);
     }
 
+    // 🔏 توقيع Ed25519 على بصمة المثبت — يُقرأ من أصل منفصل ويُمرَّر في الحقل
+    // `signature`. العميل يفرضه متى كان مفتاح عام مثبّتاً في البناء، وإلا
+    // فتظل البصمة وحدها هي الحاكمة (سلوك الإصدارات القديمة).
+    let installerSignature = '';
+    try {
+      const assets: Array<{ name: string; url: string }> = Array.isArray(releaseData.assets)
+        ? releaseData.assets
+        : [];
+      const signatureAsset = assets.find((a) => a.name === SIGNATURE_ASSET);
+      if (signatureAsset) {
+        const assetHeaders: Record<string, string> = {
+          'User-Agent': 'Grido-Netlify-Proxy',
+          'Accept': 'application/octet-stream',
+        };
+        if (token) {
+          assetHeaders['Authorization'] = `token ${token}`;
+        }
+        const signatureRes = await fetch(signatureAsset.url, {
+          headers: assetHeaders,
+          redirect: 'follow',
+        });
+        if (signatureRes.ok) {
+          installerSignature = parseSignatureContent(await signatureRes.text());
+        }
+      }
+    } catch (signatureErr) {
+      // غياب التوقيع لا يعطّل الكشف عن التحديث: الخلفية ترفض التثبيت بنفسها
+      // برسالة صريحة إن كان مفتاح عام مثبّتاً في البناء (Fail-closed هناك).
+      console.error('Failed to fetch signature asset:', signatureErr);
+    }
+
     return {
       statusCode: 200,
       headers: {
@@ -100,6 +146,7 @@ export const handler: Handler = async () => {
         body: releaseData.body || '',
         download_url: 'https://grido.cloud-ip.cc/api/download',
         sha256: installerSHA256,
+        signature: installerSignature,
       }),
     };
   } catch {

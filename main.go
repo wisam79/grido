@@ -9,7 +9,6 @@ import (
 	"log/slog"
 	"mime"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -29,9 +28,34 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 🔑 توكن جلسة مسارات /api المحلية (Local API Session Token)
+//
+// مسارات /api/* تُنفّذ كتابة ملفات داخل مجلدات التطبيق (Media/Exports) وقد
+// تُظهر حوارات نظام — أي أنها تحمل امتيازات التطبيق لا امتيازات صفحة ويب.
+// فحص الأصل (Origin == Host) يحجب المتصفحات عملياً، لأن لا صفحة تستطيع إرسال
+// Origin مطابق لمضيف الخادم؛ لكنه لا يحجب أي **عملية محلية** تستطيع إرسال طلب
+// HTTP مباشر. التوكن يسدّ هذا الباب: عشوائي لكل تشغيل، ويُسلَّم للواجهة عبر
+// ربط Wails وحده (IPC داخل العملية، غير قابل للوصول من خارجها)، ولا يُسجَّل
+// في أي سجلّ (توكن في اللوج = توكن مسروق).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// localApiSessionToken التوكن الساري لهذه العملية (يُولَّد في main قبل إنشاء
+// خادم الأصول)، ويُقرأ عبر App.GetLocalApiToken. الحارس نفسه في
+// service.LocalApiGuard، وهو المشمول باختبارات CI.
+var localApiSessionToken string
+
 func main() {
 	// 🪵 تهيئة نظام التسجيل الموحد الوحيد (lumberjack + slog) — ملف واحد داخل logs/
 	service.InitLogger()
+
+	// 🔑 توكن جلسة مسارات /api المحلية — قبل إنشاء خادم الأصول (المستهلك له).
+	// لا يُسجَّل أبداً: أي سطر لوج يحمله يُسرّبه لكل من يقرأ السجلّات.
+	if token, err := utils.GenerateSecureToken(32); err != nil {
+		slog.Error("Failed to generate local API session token — /api routes will reject all requests", "error", err.Error())
+	} else {
+		localApiSessionToken = token
+	}
 
 	// 🧯 ربط panics الـ goroutines بمسار الانهيار الموحّد — قبل إطلاق أي
 	// goroutine محمية أدناه؛ فـ PanicHandler في Wails لا يرى إلا مساراته المُدارة.
@@ -376,21 +400,12 @@ func main() {
 
 func createAssetHandler(app *App) http.Handler {
 	fileServer := application.AssetFileServerFS(assets)
+	// 🛡️ حارس مسارات /api المحلية: فحص الأصل + توكن جلسة العملية (فشل مغلق).
+	// التفاصيل والاختبارات في internal/service/local_api_guard.go.
+	apiGuard := service.NewLocalApiGuard(localApiSessionToken)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 🛡️ حماية مسارات /api المحلية من CSRF وإعادة ربط DNS:
-		// هذه المسارات تُنفّذ كتابة ملفات (Media/Exports) وقد تُظهر حوارات نظام،
-		// وكانت تقبل أي طلب بلا فحص أصل — أي صفحة ويب في متصفح المستخدم تستطيع
-		// إرسال POST متجاوز للأصل (بدون preflight) وتستفيد من امتيازات التطبيق.
-		// نسمح فقط بطلب بلا Origin (أدوات محلية/اختبارات) أو بأصل يطابق مضيف الخدمة.
-		if strings.HasPrefix(r.URL.Path, "/api/") {
-			if origin := strings.TrimSpace(r.Header.Get("Origin")); origin != "" {
-				parsedOrigin, parseErr := url.Parse(origin)
-				if parseErr != nil || !strings.EqualFold(parsedOrigin.Host, r.Host) {
-					slog.Warn("Blocked cross-origin API request", "path", r.URL.Path, "origin", origin)
-					http.Error(w, "Forbidden: cross-origin API access", http.StatusForbidden)
-					return
-				}
-			}
+		if strings.HasPrefix(r.URL.Path, "/api/") && !apiGuard.Authorize(w, r) {
+			return
 		}
 
 		if r.Method == http.MethodPost && r.URL.Path == "/api/apply-mask" {
@@ -467,6 +482,10 @@ func createAssetHandler(app *App) http.Handler {
 				d.SetFilename(filename)
 				if ext == ".png" {
 					d.AddFilter("PNG Image (*.png)", "*.png")
+				} else if ext == ".tif" || ext == ".tiff" {
+					// 🖨️ CMYK يُصدَّر TIFF افتراضياً — كانت البوابة تقتصر على PNG/JPEG
+					// فيُحفظ ملف TIFF بفلتر خاطئ (لا يظهر في حوار الحفظ).
+					d.AddFilter("TIFF Image (*.tif;*.tiff)", "*.tif;*.tiff")
 				} else {
 					d.AddFilter("JPEG Image (*.jpg;*.jpeg)", "*.jpg;*.jpeg")
 				}

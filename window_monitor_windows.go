@@ -71,4 +71,3 @@ func monitorWorkArea(hMonitor uintptr) (screenWorkArea, bool) {
 func pointToUintptr(x, y int) uintptr {
 	return uintptr(uint32(x)) | (uintptr(uint32(y)) << 32)
 }
-

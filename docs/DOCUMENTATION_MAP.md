@@ -3,7 +3,7 @@
 > **هذا الملف هو مصدر الحقيقة الوحيد لنظام التوثيق:** ماذا نوثّق، وأين، ومتى نُحدّثه، وما الذي **يوقف** الكومت أو الدفع عند الانحراف.
 > أي وكيل أو مطوّر يقرأ هذا الملف **قبل** بدء العمل، ويطبّق البوابات الثلاث في القسم 3.
 
-**آخر تحديث:** 2026-09-26 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md`
+**آخر تحديث:** 2026-10-11 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md`
 
 ---
 
@@ -97,9 +97,9 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=110
-e2e_spec_files=26
-go_test_files=38
+vitest_test_files=115
+e2e_spec_files=27
+go_test_files=42
 docs_files=6
 ```
 

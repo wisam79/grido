@@ -80,4 +80,3 @@ func OpenPrinterPreferences(printerName string) error {
 	slog.Info("Opened printer preferences", "printer", printerName)
 	return nil
 }
-

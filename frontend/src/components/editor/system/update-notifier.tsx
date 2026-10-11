@@ -139,7 +139,9 @@ export function UpdateNotifier() {
       const url =
         updateInfo.download_url ||
         'https://github.com/wisam79/grido/releases/latest/download/GridoStudio-installer.exe';
-      await DownloadAndInstallUpdate(url, updateInfo.sha256 || '');
+      // signature يُمرّر دائماً (قد يكون فارغاً في إصدارات لم تُوقَّع بعد)؛
+      // الخلفية تفرضه متى كان مفتاح عام مثبّتاً في البناء.
+      await DownloadAndInstallUpdate(url, updateInfo.sha256 || '', updateInfo.signature || '');
     } catch (err: unknown) {
       console.error('Failed to update:', err);
       const errMsg = toErrorMessage(err, 'فشل تحميل وتثبيت التحديث.');

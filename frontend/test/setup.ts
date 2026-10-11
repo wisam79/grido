@@ -45,6 +45,8 @@ Object.defineProperty(window, 'go', {
         EnhanceImageWithAI: () => Promise.resolve(''),
         ExportSupportLogs: () => Promise.resolve(''),
         GetCustomTemplates: () => Promise.resolve([]),
+        // 🔑 توكن جلسة مسارات /api المحلية (تفرضه الخلفية عبر ترويسة X-Grido-Session)
+        GetLocalApiToken: () => Promise.resolve('test-local-api-session-token'),
         GetImageDimensions: () => Promise.resolve({ width: 800, height: 600 }),
         GetMediaStorageStats: () =>
           Promise.resolve({ count: 0, totalBytes: 0, trashCount: 0, trashTotalBytes: 0 }),

@@ -36,7 +36,11 @@ import {
 import { toast } from 'sonner';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
-import { GetPrinters, OpenPrinterPreferences } from '../../../../wailsjs/go/handlers/PrintHandler';
+import {
+  GetPrinters,
+  GetDefaultPrinterName,
+  OpenPrinterPreferences,
+} from '../../../../wailsjs/go/handlers/PrintHandler';
 import { PageOrientationIcon } from '@/components/ui/image-icons';
 import { PAPER_SIZES } from '@/lib/templates/constants';
 import { SheetPreview } from '../print/print-preview';
@@ -44,6 +48,25 @@ import { useShallow } from 'zustand/react/shallow';
 import { usePrintExport } from '../print/use-print-export';
 
 const logger = createLogger('print-dialog');
+
+/** مفتاح حفظ الطابعة المختارة بين الجلسات (يحدد هدف زر «الخصائص»). */
+const PRINT_PRINTER_STORAGE_KEY = 'grido-print-selected-printer';
+
+function readStoredPrinter(): string {
+  try {
+    return localStorage.getItem(PRINT_PRINTER_STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function storePrinter(name: string): void {
+  try {
+    localStorage.setItem(PRINT_PRINTER_STORAGE_KEY, name);
+  } catch {
+    /* التخزين غير متاح — لا نُفشل الاختيار */
+  }
+}
 
 interface PrintDialogProps {
   open: boolean;
@@ -117,6 +140,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [isLoadingPrinters, setIsLoadingPrinters] = useState(false);
   const [isOpeningPrefs, setIsOpeningPrefs] = useState(false);
 
+  // 🖨️ التحديد المبدئي يطابق طابعة النظام الافتراضية — الاختيار هنا يحدد هدف زر
+  // «الخصائص» فقط؛ الطابعة الفعلية تُختار في نافذة الطباعة الأصلية (window.print).
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -124,15 +149,43 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoadingPrinters(true);
       GetPrinters()
-        .then((res) => {
+        .then(async (res) => {
           if (cancelled) return;
           if (res?.success && Array.isArray(res.printers) && res.printers.length > 0) {
             setPrinters(res.printers);
-            setSelectedPrinter((prev) => {
-              if (prev && res.printers.some((p) => p.name === prev)) return prev;
+            const names = new Set(res.printers.map((p) => p.name));
+            let next = '';
+            // أولوية الاحتفاظ: اختيار محفوظ من جلسة سابقة، ثم وسم isDefault
+            const stored = readStoredPrinter();
+            if (stored && names.has(stored)) next = stored;
+            if (!next) {
               const def = res.printers.find((p) => p.isDefault);
-              return def ? def.name : res.printers[0].name;
-            });
+              if (def) next = def.name;
+            }
+            // بعض السائقين لا تحمل وسم isDefault — نطابق طابعة النظام بالاسم
+            if (!next && typeof GetDefaultPrinterName === 'function') {
+              try {
+                const sysDefault = await GetDefaultPrinterName();
+                if (cancelled) return;
+                if (sysDefault && names.has(sysDefault)) next = sysDefault;
+              } catch {
+                /* تجاهل: لا نُفشل الحوار لأجل المزامنة */
+              }
+            }
+            if (!next) next = res.printers[0].name;
+            setSelectedPrinter((prev) => (prev && names.has(prev) ? prev : next));
+          } else if (typeof GetDefaultPrinterName === 'function') {
+            // فشل استعلام القائمة: نعرض الطابعة الافتراضية وحدها بدل قائمة فارغة صامتة
+            try {
+              const sysDefault = await GetDefaultPrinterName();
+              if (cancelled) return;
+              if (sysDefault) {
+                setPrinters([{ name: sysDefault, isDefault: true }]);
+                setSelectedPrinter((prev) => prev || sysDefault);
+              }
+            } catch {
+              /* تجاهل */
+            }
           }
         })
         .catch((err) => {
@@ -146,6 +199,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       cancelled = true;
     };
   }, [open]);
+
+  const handlePrinterChange = (name: string) => {
+    setSelectedPrinter(name);
+    storePrinter(name);
+  };
 
   const handleOpenPreferences = async () => {
     if (typeof OpenPrinterPreferences !== 'function') return;
@@ -502,7 +560,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <div className="flex-1 min-w-0">
                   <Select
                     value={selectedPrinter}
-                    onValueChange={setSelectedPrinter}
+                    onValueChange={handlePrinterChange}
                     disabled={isLoadingPrinters || printers.length === 0}
                   >
                     <SelectTrigger className="h-8.5 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg w-full">
@@ -548,6 +606,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   <span>الخصائص</span>
                 </Button>
               </div>
+
+              {/* توضيح صريح: هذا الاختيار يحدد هدف زر «الخصائص» فقط؛ الطابعة الفعلية
+                  تُختار في نافذة الطباعة الأصلية التي تظهر عند الضغط على «طباعة الورقة». */}
+              <p className="text-micro leading-relaxed text-muted-foreground/80">
+                يُحدَّد هذا الاختيار طابعة زر «الخصائص»، أما الطابعة الفعلية فتُختار في نافذة
+                الطباعة الأصلية عند الضغط على «طباعة الورقة».
+              </p>
             </div>
 
             {/* بلوك 2: الورقة والاتجاه (Paper & Orientation Block) */}

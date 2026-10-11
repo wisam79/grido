@@ -67,6 +67,8 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   },
   345087440: async () => MOCK_CUSTOM_TEMPLATES, // GetCustomTemplates
   1522265743: async () => [], // GetDeviceProfiles
+  // 🔑 توكن جلسة مسارات /api المحلية — قيمة ثابتة في E2E (لا Backend حقيقي يفرضها)
+  1585336687: async () => 'e2e-local-api-session-token', // GetLocalApiToken
   143340993: async () => ({ width: 800, height: 600 }), // GetImageDimensions
   896689433: async () => ({ count: 1, size_bytes: 1024 }), // GetMediaStorageStats
   1794026154: async () => [], // GetPaperTemplates
@@ -246,6 +248,7 @@ export async function setupWailsV3Bridge(
           GetBatchImageDimensions: async () => ({}),
           GetCustomTemplates: async () => [],
           GetDeviceProfiles: async () => [],
+          GetLocalApiToken: async () => 'e2e-local-api-session-token',
           GetImageDimensions: async () => ({ width: 800, height: 600 }),
           GetMediaStorageStats: async () => ({ count: 1, size_bytes: 1024 }),
           GetPaperTemplates: async () => [],

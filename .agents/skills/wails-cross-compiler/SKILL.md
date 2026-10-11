@@ -19,6 +19,9 @@ $env:CGO_ENABLED = "1"
 $env:APP_VERSION = $appVersion
 $env:SUPABASE_URL = $supabaseUrl
 $env:SUPABASE_ANON_KEY = $supabaseAnonKey
+# 🔏 اختياري: مفتاح Ed25519 العام (base64) لفرض التحقق من توقيع المثبت.
+# تركه فارغاً = السلوك القديم (بصمة SHA-256 وحدها) مع تحذير في سجل التطبيق.
+$env:UPDATER_PUBLIC_KEY = ""
 
 # 2. بناء الملف التنفيذي للإنتاج (المخرجات في bin/GridoStudio.exe):
 wails3 task build
@@ -27,7 +30,8 @@ wails3 task build
 wails3 task package
 ```
 
-> 🔒 يتم التعامل مع خيارات `-ldflags` تلقائياً عبر `build/windows/Taskfile.yml` لدمج `AppVersion` و `SupabaseURL` و `SupabaseAnonKey` مع معلمات `-w -s -H windowsgui`.
+> 🔒 يتم التعامل مع خيارات `-ldflags` تلقائياً عبر `build/windows/Taskfile.yml` لدمج `AppVersion` و `SupabaseURL` و `SupabaseAnonKey` و `UPDATER_PUBLIC_KEY` مع معلمات `-w -s -H windowsgui`.
+> 🔏 **مفتاح التوقيع عام لا سرّ:** `UPDATER_PUBLIC_KEY` يُقرأ في سير عمل الإصدار من `vars.UPDATER_PUBLIC_KEY` (متغيّر مستودع) لا من `secrets`، لأنه يُشحن داخل الثنائي عن قصد للتحقق من توقيع المثبت. تهيئته تجعل التوقيع **إلزامياً** (Fail-closed): غياب الملف الموقَّع أو عدم مطابقته يرفض التثبيت ويحذف الملف قبل أي تنفيذ. نشر التوقيع يتم بأصل `grido-checksums.txt.sig` بجانب ملف البصمات (يُقرأ في `admin-web/netlify/functions/version.ts` ويُمرَّر في حقل `signature`)، والتوقيع يكون على بصمة المثبت الخام (32 بايتاً) لا على الملف كاملاً.
 > 🔒 **لا يوجد سرّ Modal في البناء:** توثيق خادم الذكاء الاصطناعي يتم عبر JWT المستخدم فقط (تدقيق `C-02`) — يُمنع إعادة إضافة `MODAL_AI_KEY`/`GRIDO_AI_SECRET_KEY` إلى البناء أو الأسرار.
 
 ---

@@ -5,6 +5,8 @@
  * مستخرج من use-print-export.ts ضمن خطة الإصلاح المعماري.
  */
 
+import { fetchLocalApi } from '@/lib/local-api';
+
 /** مهلة رفع صورة الطباعة — بلا AbortController سابقاً كان التعليق أبدياً. */
 export const UPLOAD_TIMEOUT_MS = 120_000;
 
@@ -55,7 +57,8 @@ export async function uploadPrintImage(blob: Blob): Promise<string> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), UPLOAD_TIMEOUT_MS);
   try {
-    const resp = await fetch(`${window.location.origin}/api/upload-print-image`, {
+    // 🔑 fetchLocalApi يضيف ترويسة توكن الجلسة المفروضة على مسارات /api
+    const resp = await fetchLocalApi(`${window.location.origin}/api/upload-print-image`, {
       method: 'POST',
       headers: { 'Content-Type': blob.type || 'image/png' },
       body: blob,

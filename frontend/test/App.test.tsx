@@ -46,6 +46,7 @@ vi.mock('../wailsjs/go/main/App', () => ({
   ExportSupportLogs: vi.fn(() => Promise.resolve('')),
   LogFrontendError: vi.fn(() => Promise.resolve()),
   GetCustomTemplates: vi.fn(() => Promise.resolve([])),
+  GetLocalApiToken: vi.fn(() => Promise.resolve('test-local-api-session-token')),
   SaveCustomTemplate: vi.fn(() => Promise.resolve()),
   DeleteCustomTemplate: vi.fn(() => Promise.resolve()),
   ApplyMaskToImage: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),

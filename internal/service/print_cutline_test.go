@@ -116,18 +116,18 @@ func TestPrintService_UserLoggedCutLines(t *testing.T) {
 	t.Logf("outPath: %s", outPath)
 	t.Logf("htmlDoc len: %d", len(htmlDoc))
 
-	outImg, err := imaging.Open(outPath)
-	if err != nil {
-		t.Fatalf("failed to open output image: %v", err)
-	}
+	// مخرج CMYK TIFF بفصل أحبار (photometric=5) لا يفكّه x/image/tiff،
+	// فنقرأ شريط القنوات الأربع مباشرة عبر المرجع المستقل.
+	outImg := cmykFromTIFFFile(t, outPath)
 
 	// Verify line at y=86mm (px ~ 1016)
 	bounds := outImg.Bounds()
 	yPx := int(math.Round(86.0 * 300.0 / 25.4))
 	foundDark := false
 	for x := 100; x < bounds.Dx()-100; x++ {
-		r, g, b, _ := outImg.At(x, yPx).RGBA()
-		if (r>>8) < 100 && (g>>8) < 100 && (b>>8) < 100 {
+		px := outImg.CMYKAt(x, yPx)
+		// خطوط القص تُرسم أسود صرفاً (K=255) داخل صورة CMYK.
+		if int(px.K) > 128 {
 			foundDark = true
 			break
 		}

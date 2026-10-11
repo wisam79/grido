@@ -154,6 +154,10 @@ jobs:
           APP_VERSION: ${{ github.ref_name }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # 🔏 مفتاح Ed25519 العام (base64) للتحقق من توقيع المثبت — متغيّر
+          # مستودع لا سرّ: المفتاح العام يُشحن داخل الثنائي عن قصد. غيابه
+          # يُبقي المسار القديم (بصمة SHA-256 وحدها) مع تحذير في سجل التطبيق.
+          UPDATER_PUBLIC_KEY: ${{ vars.UPDATER_PUBLIC_KEY }}
         run: |
           $nsisDir = @("C:\Program Files (x86)\NSIS", "C:\Program Files\NSIS") | Where-Object { Test-Path "$_\makensis.exe" } | Select-Object -First 1
           if ($nsisDir -and ($env:PATH -notlike "*$nsisDir*")) {

@@ -18,8 +18,10 @@ import {
   downloadBlob,
   exportSlotCanvas,
   applyBleedAndCropMarks,
+  runCmykExport,
   CanvasTooLargeError,
 } from '@/lib/export';
+import type { CmykFormat } from '@/lib/export';
 import {
   SelectExportDirectory,
   SetTaskbarProgress,
@@ -31,6 +33,7 @@ import { useStageRef } from '@/lib/canvas/stage-context';
 import { toast } from 'sonner';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
+import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
 
@@ -41,9 +44,46 @@ interface ExportDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/** خيار راديو بصري موحّد (فضاء الألوان/الصيغة) — نفس مظهر خيارات الصيغة الأصلي. */
+function FormatOptionButton({
+  selected,
+  title,
+  subtitle,
+  onClick,
+}: {
+  selected: boolean;
+  title: string;
+  subtitle: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none ${
+        selected
+          ? 'border-2 border-primary bg-primary/10 shadow-xs font-bold text-primary ring-1 ring-primary/20'
+          : 'border-border hover:border-primary/50 bg-input hover:bg-muted/30 text-foreground'
+      }`}
+    >
+      <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center shrink-0">
+        {selected && <div className="w-2 h-2 rounded-full bg-primary" />}
+      </div>
+      <div className="text-start min-w-0">
+        <div className="font-bold text-xs">{title}</div>
+        <div className="text-micro text-muted-foreground">{subtitle}</div>
+      </div>
+    </button>
+  );
+}
+
 export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const isCancelledRef = useRef(false);
   const [format, setFormat] = useState<'png' | 'jpg'>('png');
+  // 🎨 فضاء الألوان: RGB (افتراضي، تصدير عميل) أو CMYK (تحويل في الخلفية إلى TIFF/JPEG)
+  const [colorSpace, setColorSpace] = useState<'rgb' | 'cmyk'>('rgb');
+  const [cmykFormat, setCmykFormat] = useState<CmykFormat>('tiff');
   const [quality, setQuality] = useState(95);
   const [loading, setLoading] = useState(false);
   const [batchExport, setBatchExport] = useState(false);
@@ -60,6 +100,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     slots,
     showBleedGuides,
     bleedMarginMM,
+    backgroundColor,
   } = useEditorStore(
     useShallow((state) => ({
       template: state.template,
@@ -70,6 +111,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       slots: state.slots,
       showBleedGuides: state.showBleedGuides,
       bleedMarginMM: state.bleedMarginMM,
+      backgroundColor: state.backgroundColor,
     })),
   );
 
@@ -96,6 +138,64 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     SetTaskbarProgress(0, 'normal').catch(() => {});
     setTimeout(async () => {
       try {
+        // 🎨 مسار CMYK: يُنفَّذ في الخلفية (Go) عبر ExportPrintSheet — لا يدعم
+        // تصدير الخلايا المنفصلة، لذا يسبق فرع الدفعات ويُخرج التصميم كملف واحد.
+        if (colorSpace === 'cmyk') {
+          const dpi = template?.dpi || printSettings.dpi || 300;
+          // 🖨️ هندسة صفرية الانحراف: مقاس الورقة المُرسل لـGo يجب أن يُنتج نفس أبعاد
+          // اللقطة بالبكسل (mmToPx(mm, dpi) == canvasPx) وإلا أعاد محرك الطباعة تشكيل
+          // الصورة صامتاً. لذا نأخذ مقاس القالب الفيزيائي فقط حين يطابق الكانفاس عند
+          // هذه الدقة (وهو ما يعرضه الحوار في «الحجم الفعلي»)، وإلا نشتق المقاس من
+          // البكسلات نفسها.
+          const pxPerMM = dpi / 25.4;
+          const matchesTemplate =
+            !!template &&
+            template.widthMM > 0 &&
+            template.heightMM > 0 &&
+            Math.abs(template.widthMM * pxPerMM - canvasWidth) <= 1 &&
+            Math.abs(template.heightMM * pxPerMM - canvasHeight) <= 1;
+          const widthMM = matchesTemplate ? template.widthMM : canvasWidth / pxPerMM;
+          const heightMM = matchesTemplate ? template.heightMM : canvasHeight / pxPerMM;
+
+          setProgress(50);
+          SetTaskbarProgress(50, 'normal').catch(() => {});
+
+          const { blob: cmykBlob } = await runCmykExport({
+            stage: stageRef.current,
+            format: cmykFormat,
+            dpi,
+            paperWidthMM: widthMM,
+            paperHeightMM: heightMM,
+            // مسار الطباعة يرسم فوق خلفية صلبة — الشفافية تُسطَّح إلى بياض المعاينة
+            backgroundColor: backgroundColor === 'transparent' ? previewWhite() : backgroundColor,
+          });
+
+          if (isCancelledRef.current) {
+            SetTaskbarProgress(0, 'none').catch(() => {});
+            return;
+          }
+
+          const ext = cmykFormat === 'tiff' ? 'tif' : 'jpg';
+          const dateStr = new Date().toISOString().slice(0, 10);
+          const name = template
+            ? `Grido_${(template.name || 'Template').replace(/\s+/g, '_')}_${template.widthMM}x${template.heightMM}mm_${dateStr}_CMYK.${ext}`
+            : `Grido_${mode === 'collage' ? 'Collage' : 'Design'}_${dateStr}_${Date.now().toString().slice(-4)}_CMYK.${ext}`;
+
+          const res = await downloadBlob(cmykBlob, name);
+          setProgress(100);
+          SetTaskbarProgress(0, 'none').catch(() => {});
+          if (res === 'success') {
+            toast.success(`تم تصدير ${cmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} بنظام CMYK`);
+            SendNotification('Grido Studio', 'تم تصدير ملف CMYK وحفظه', '').catch(() => {});
+            onOpenChange(false);
+          } else if (res === '') {
+            toast.info('تم إلغاء التصدير');
+          } else {
+            toast.error('فشل حفظ ملف CMYK');
+          }
+          return;
+        }
+
         if (batchExport && mode === 'collage') {
           const validSlots = slots.filter((s) => s.imageSrc);
           if (validSlots.length === 0) {
@@ -251,6 +351,33 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         <div className="space-y-4 py-2">
           <div>
             <Label
+              id="export-colorspace-label"
+              className="text-xs mb-2 block font-bold text-foreground/90"
+            >
+              فضاء الألوان
+            </Label>
+            <div
+              role="radiogroup"
+              aria-labelledby="export-colorspace-label"
+              className="grid grid-cols-2 gap-2"
+            >
+              <FormatOptionButton
+                selected={colorSpace === 'rgb'}
+                title="RGB"
+                subtitle="شاشة وطباعة رقمية"
+                onClick={() => setColorSpace('rgb')}
+              />
+              <FormatOptionButton
+                selected={colorSpace === 'cmyk'}
+                title="CMYK"
+                subtitle="مطابع الأوفست"
+                onClick={() => setColorSpace('cmyk')}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label
               id="export-format-label"
               className="text-xs mb-2 block font-bold text-foreground/90"
             >
@@ -261,44 +388,53 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               aria-labelledby="export-format-label"
               className="grid grid-cols-2 gap-2"
             >
-              <button
-                type="button"
-                onClick={() => setFormat('png')}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${
-                  format === 'png'
-                    ? 'border-2 border-primary bg-primary/10 shadow-xs font-bold text-primary ring-1 ring-primary/20'
-                    : 'border-border hover:border-primary/50 bg-input hover:bg-muted/30 text-foreground'
-                }`}
-              >
-                <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center">
-                  {format === 'png' && <div className="w-2 h-2 rounded-full bg-primary" />}
-                </div>
-                <div className="text-start">
-                  <div className="font-bold text-xs">PNG</div>
-                  <div className="text-micro text-muted-foreground">جودة فائقة وشفافية</div>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormat('jpg')}
-                className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${
-                  format === 'jpg'
-                    ? 'border-2 border-primary bg-primary/10 shadow-xs font-bold text-primary ring-1 ring-primary/20'
-                    : 'border-border hover:border-primary/50 bg-input hover:bg-muted/30 text-foreground'
-                }`}
-              >
-                <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center">
-                  {format === 'jpg' && <div className="w-2 h-2 rounded-full bg-primary" />}
-                </div>
-                <div className="text-start">
-                  <div className="font-bold text-xs">JPG</div>
-                  <div className="text-micro text-muted-foreground">حجم أصغر</div>
-                </div>
-              </button>
+              {colorSpace === 'rgb' ? (
+                <>
+                  <FormatOptionButton
+                    selected={format === 'png'}
+                    title="PNG"
+                    subtitle="جودة فائقة وشفافية"
+                    onClick={() => setFormat('png')}
+                  />
+                  <FormatOptionButton
+                    selected={format === 'jpg'}
+                    title="JPG"
+                    subtitle="حجم أصغر"
+                    onClick={() => setFormat('jpg')}
+                  />
+                </>
+              ) : (
+                <>
+                  <FormatOptionButton
+                    selected={cmykFormat === 'tiff'}
+                    title="TIFF"
+                    subtitle="فصل أحبار حقيقي — بلا فقد"
+                    onClick={() => setCmykFormat('tiff')}
+                  />
+                  <FormatOptionButton
+                    selected={cmykFormat === 'jpeg'}
+                    title="JPEG"
+                    subtitle="RGB مضغوط — بلا فصل أحبار"
+                    onClick={() => setCmykFormat('jpeg')}
+                  />
+                </>
+              )}
             </div>
           </div>
 
-          {format === 'jpg' && (
+          {colorSpace === 'cmyk' && (
+            <div className="rounded-xl border border-border/80 bg-primary/5 p-3 text-xs space-y-1.5 fluent-specular">
+              <div className="font-bold text-foreground/90">تحويل CMYK في الخلفية</div>
+              <p className="text-micro text-muted-foreground leading-relaxed">
+                يُلتقط التصميم كاملاً (بنفس دقة التصدير والعلامة المائية) ثم يحوّله محرك الطباعة إلى
+                CMYK ويُنتج ملف {cmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} يغطّي حدود التصميم بالضبط
+                (بلا نزيف أو علامات قص). TIFF هو الحامل الحقيقي لفصل أحبار CMYK، أما JPEG فيُسلَّم
+                بفضاء RGB لأن مُرمِّز النظام لا يدعم CMYK.
+              </p>
+            </div>
+          )}
+
+          {(colorSpace === 'rgb' ? format === 'jpg' : cmykFormat === 'jpeg') && (
             <div className="bg-card p-3 rounded-xl border border-border/80 space-y-2 fluent-specular">
               <FluentSliderField
                 label="جودة الصورة"
@@ -350,13 +486,21 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             <div className="flex justify-between pt-1.5 border-t border-border/50 mt-1">
               <span className="text-muted-foreground font-semibold">الحجم التقريبي:</span>
               <span className="font-mono text-primary font-bold">
-                {format === 'png'
-                  ? (((canvasWidth * canvasHeight * 4) / 1024 / 1024) * 0.6).toFixed(1)
-                  : (
-                      ((canvasWidth * canvasHeight * 3) / 1024 / 1024) *
-                      0.35 *
-                      (quality / 100)
-                    ).toFixed(1)}{' '}
+                {colorSpace === 'cmyk'
+                  ? cmykFormat === 'tiff'
+                    ? (((canvasWidth * canvasHeight * 4) / 1024 / 1024) * 1.0).toFixed(1)
+                    : (
+                        ((canvasWidth * canvasHeight * 3) / 1024 / 1024) *
+                        0.35 *
+                        (quality / 100)
+                      ).toFixed(1)
+                  : format === 'png'
+                    ? (((canvasWidth * canvasHeight * 4) / 1024 / 1024) * 0.6).toFixed(1)
+                    : (
+                        ((canvasWidth * canvasHeight * 3) / 1024 / 1024) *
+                        0.35 *
+                        (quality / 100)
+                      ).toFixed(1)}{' '}
                 MB
                 <span className="text-micro text-muted-foreground font-normal"> (تقريبي)</span>
               </span>
@@ -376,31 +520,39 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
             <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
               <Warning className="text-amber-500 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
-              <span className="font-medium">تصدير بنظام الألوان RGB للطباعة الرقمية.</span>
+              <span className="font-medium">
+                {colorSpace === 'rgb'
+                  ? 'تصدير بنظام الألوان RGB للطباعة الرقمية.'
+                  : 'تصدير بنظام الألوان CMYK لمطابع الأوفست — قد يختلف التباين عن المعاينة.'}
+              </span>
             </div>
 
-            <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">
-              <FluentSettingRow
-                label="علامات القص الإرشادية"
-                description="خطوط حول منطقة النزيف"
-                control={<Switch checked={showCropMarks} onCheckedChange={setShowCropMarks} />}
-              />
-            </div>
+            {colorSpace === 'rgb' && (
+              <>
+                <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">
+                  <FluentSettingRow
+                    label="علامات القص الإرشادية"
+                    description="خطوط حول منطقة النزيف"
+                    control={<Switch checked={showCropMarks} onCheckedChange={setShowCropMarks} />}
+                  />
+                </div>
 
-            <div className="p-3 border border-border/80 rounded-xl bg-card space-y-2.5 fluent-specular">
-              <FluentSliderField
-                label="هامش النزيف والقص"
-                value={bleedMM}
-                min={0}
-                max={10}
-                step={1}
-                unit="mm"
-                onChange={setBleedMM}
-              />
-              <p className="text-micro text-muted-foreground">يمنع ظهور حواف بيضاء بعد القص.</p>
-            </div>
+                <div className="p-3 border border-border/80 rounded-xl bg-card space-y-2.5 fluent-specular">
+                  <FluentSliderField
+                    label="هامش النزيف والقص"
+                    value={bleedMM}
+                    min={0}
+                    max={10}
+                    step={1}
+                    unit="mm"
+                    onChange={setBleedMM}
+                  />
+                  <p className="text-micro text-muted-foreground">يمنع ظهور حواف بيضاء بعد القص.</p>
+                </div>
+              </>
+            )}
 
-            {mode === 'collage' && (
+            {mode === 'collage' && colorSpace === 'rgb' && (
               <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">
                 <FluentSettingRow
                   label="تصدير الصور كملفات منفصلة"

@@ -1,6 +1,12 @@
 package service
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
+	"strings"
 	"testing"
 )
 
@@ -32,6 +38,206 @@ func TestIsVersionGreater(t *testing.T) {
 		if result != tt.expected {
 			t.Errorf("isVersionGreater(%q, %q) = %v; expected %v", tt.v1, tt.v2, result, tt.expected)
 		}
+	}
+}
+
+// ─── التحقق من توقيع المثبت (Ed25519 على بصمة SHA-256) ──────────────
+//
+// العقد المُختبَر: بناء بمفتاح عام مثبّت لا يقبل أي مثبت بلا توقيع صالح، وتوقيع
+// صالح للمفتاح نفسه يُقبل، وتوقيع مفتاح آخر أو بصمة مُعدَّلة يُرفض.
+
+func TestVerifyInstallerSignature(t *testing.T) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("failed to generate ed25519 key: %v", err)
+	}
+	otherPublicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("failed to generate second ed25519 key: %v", err)
+	}
+
+	digest := sha256.Sum256([]byte("installer bytes v1.14.3"))
+	digestHex := hex.EncodeToString(digest[:])
+	signature := ed25519.Sign(privateKey, digest[:])
+
+	publicKeyB64 := base64.StdEncoding.EncodeToString(publicKey)
+	publicKeyRawB64 := base64.RawStdEncoding.EncodeToString(publicKey)
+	otherPublicKeyB64 := base64.StdEncoding.EncodeToString(otherPublicKey)
+	signatureB64 := base64.StdEncoding.EncodeToString(signature)
+	signatureRawB64 := base64.RawStdEncoding.EncodeToString(signature)
+
+	tamperedDigest := sha256.Sum256([]byte("installer bytes v1.14.3 — معدَّل"))
+	tamperedDigestHex := hex.EncodeToString(tamperedDigest[:])
+
+	tests := []struct {
+		name         string
+		publicKey    string
+		sha256Hex    string
+		signatureB64 string
+		wantErr      bool
+		errContains  string
+	}{
+		{
+			name:         "valid signature",
+			publicKey:    publicKeyB64,
+			sha256Hex:    digestHex,
+			signatureB64: signatureB64,
+		},
+		{
+			name:         "valid signature with unpadded base64",
+			publicKey:    publicKeyRawB64,
+			sha256Hex:    digestHex,
+			signatureB64: signatureRawB64,
+		},
+		{
+			name:         "signature from a different key",
+			publicKey:    otherPublicKeyB64,
+			sha256Hex:    digestHex,
+			signatureB64: signatureB64,
+			wantErr:      true,
+			errContains:  "does not match the pinned public key",
+		},
+		{
+			name:         "signature valid for a different digest",
+			publicKey:    publicKeyB64,
+			sha256Hex:    tamperedDigestHex,
+			signatureB64: signatureB64,
+			wantErr:      true,
+			errContains:  "does not match the pinned public key",
+		},
+		{
+			name:         "missing signature",
+			publicKey:    publicKeyB64,
+			sha256Hex:    digestHex,
+			signatureB64: "   ",
+			wantErr:      true,
+			errContains:  "no signature published",
+		},
+		{
+			name:         "malformed signature encoding",
+			publicKey:    publicKeyB64,
+			sha256Hex:    digestHex,
+			signatureB64: "not a base64 signature!!",
+			wantErr:      true,
+			errContains:  "invalid signature encoding",
+		},
+		{
+			name:         "truncated signature",
+			publicKey:    publicKeyB64,
+			sha256Hex:    digestHex,
+			signatureB64: base64.StdEncoding.EncodeToString(signature[:16]),
+			wantErr:      true,
+			errContains:  "invalid signature length",
+		},
+		{
+			name:         "no public key pinned",
+			publicKey:    "",
+			sha256Hex:    digestHex,
+			signatureB64: signatureB64,
+			wantErr:      true,
+			errContains:  "no updater public key pinned",
+		},
+		{
+			name:         "public key with wrong length",
+			publicKey:    base64.StdEncoding.EncodeToString(publicKey[:16]),
+			sha256Hex:    digestHex,
+			signatureB64: signatureB64,
+			wantErr:      true,
+			errContains:  "invalid updater public key length",
+		},
+		{
+			name:         "malformed checksum encoding",
+			publicKey:    publicKeyB64,
+			sha256Hex:    "zzzz-not-hex",
+			signatureB64: signatureB64,
+			wantErr:      true,
+			errContains:  "invalid checksum encoding",
+		},
+		{
+			name:         "checksum with wrong length",
+			publicKey:    publicKeyB64,
+			sha256Hex:    "aabbccdd",
+			signatureB64: signatureB64,
+			wantErr:      true,
+			errContains:  "invalid checksum length",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := verifyInstallerSignature(tt.publicKey, tt.sha256Hex, tt.signatureB64)
+			if tt.wantErr && err == nil {
+				t.Fatalf("expected an error, got nil")
+			}
+			if !tt.wantErr && err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if tt.errContains != "" && (err == nil || !strings.Contains(err.Error(), tt.errContains)) {
+				t.Fatalf("error = %v, want it to contain %q", err, tt.errContains)
+			}
+		})
+	}
+}
+
+func TestFindSignatureAssetURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		assets   []ReleaseAsset
+		expected string
+	}{
+		{
+			name: "direct signature asset",
+			assets: []ReleaseAsset{
+				{Name: "grido-checksums.txt", BrowserDownloadURL: "https://cdn.example.com/checksums.txt"},
+				{Name: "grido-checksums.txt.sig", BrowserDownloadURL: "https://cdn.example.com/checksums.txt.sig"},
+			},
+			expected: "https://cdn.example.com/checksums.txt.sig",
+		},
+		{
+			name: "github signature asset needs auth — skipped",
+			assets: []ReleaseAsset{
+				{Name: "installer.exe.sig", BrowserDownloadURL: "https://github.com/wisam79/grido/releases/download/v1/x.sig"},
+			},
+			expected: "",
+		},
+		{
+			name:     "no signature asset",
+			assets:   []ReleaseAsset{{Name: "installer.exe", BrowserDownloadURL: "https://cdn.example.com/i.exe"}},
+			expected: "",
+		},
+		{
+			name:     "signature asset without url",
+			assets:   []ReleaseAsset{{Name: "installer.exe.sig", BrowserDownloadURL: ""}},
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := findSignatureAssetURL(tt.assets); got != tt.expected {
+				t.Errorf("findSignatureAssetURL() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestFirstSignatureLine(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		expected string
+	}{
+		{name: "plain signature", content: "AbCd==\n", expected: "AbCd=="},
+		{name: "skips comments and blank lines", content: "\n# signed by release key\n\nEfGh==", expected: "EfGh=="},
+		{name: "empty content", content: "\n  \n", expected: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := firstSignatureLine(tt.content); got != tt.expected {
+				t.Errorf("firstSignatureLine() = %q, want %q", got, tt.expected)
+			}
+		})
 	}
 }
 
@@ -87,4 +293,3 @@ func TestExtractInstallerDownloadURL(t *testing.T) {
 		})
 	}
 }
-

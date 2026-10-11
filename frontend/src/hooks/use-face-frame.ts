@@ -85,8 +85,14 @@ function getWorker(): Worker {
       pendingFrameRequests.get(msg.requestId)?.onMessage(msg);
     };
     workerInstance.onerror = (e) => {
-      for (const pending of pendingFrameRequests.values()) {
-        pending.onError(e.message || 'فشل تشغيل عامل ضبط الوجه.');
+      // 🛡️ نفس عقدة عزل الخلفية: لا يجوز إبقاء مرجع عامل انهار — الطلب التالي
+      // سيرسل postMessage إلى عامل لا يرد فيبقى مؤشر التقدم معلّقاً بلا نهاية.
+      // نُنهي العامل المُتعطّل فوراً (بعد التقاط الطلبات المعلقة) فيُبنى غيره.
+      const message = e.message || 'فشل تشغيل عامل ضبط الوجه.';
+      const pendingRequests = Array.from(pendingFrameRequests.values());
+      terminateWorker();
+      for (const pending of pendingRequests) {
+        pending.onError(message);
       }
     };
   }

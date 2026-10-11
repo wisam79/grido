@@ -1,21 +1,54 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { ExportDialog } from '../src/components/editor/dialogs/export-dialog';
 import { useEditorStore } from '../src/lib/editor-store';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { exportCanvas, downloadBlob, runCmykExport } from '../src/lib/export';
+import { toast } from 'sonner';
 
+// مسار CMYK: لقطة الكانفاس تُرفع ثم يحوّلها محرك الطباعة في Go، فنقرأ الملف الناتج.
 vi.mock('../src/lib/export', () => ({
   exportCanvas: vi.fn(() => Promise.resolve(new Blob(['test'], { type: 'image/png' }))),
   downloadBlob: vi.fn(() => Promise.resolve('success')),
   exportSlotCanvas: vi.fn(() => Promise.resolve(new Blob(['slot'], { type: 'image/png' }))),
   applyBleedAndCropMarks: vi.fn((canvas) => Promise.resolve(canvas)),
+  runCmykExport: vi.fn(() =>
+    Promise.resolve({
+      blob: new Blob(['cmyk'], { type: 'image/tiff' }),
+      sourceFilename: 'print_1.tif',
+    }),
+  ),
   CanvasTooLargeError: class CanvasTooLargeError extends Error {},
+}));
+
+vi.mock('../wailsjs/go/main/App', () => ({
+  SelectExportDirectory: vi.fn(() => Promise.resolve('')),
+  SetTaskbarProgress: vi.fn(() => Promise.resolve()),
+  SendNotification: vi.fn(() => Promise.resolve()),
+  OpenFolder: vi.fn(() => Promise.resolve()),
+  SaveFileDialog: vi.fn(() => Promise.resolve('success')),
+}));
+
+vi.mock('sonner', () => ({
+  toast: { info: vi.fn(), success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
 
 vi.mock('../src/lib/canvas/stage-context', () => ({
   useStageRef: () => ({ current: null }),
 }));
+
+const mockRunCmykExport = vi.mocked(runCmykExport);
+const mockDownloadBlob = vi.mocked(downloadBlob);
+const mockExportCanvas = vi.mocked(exportCanvas);
+
+/** ينقر «تصدير» ثم ينتظر setTimeout(50) الذي يؤجل بدء العملية داخل الحوار. */
+const clickExportAndSettle = async () => {
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
+    await new Promise((r) => setTimeout(r, 90));
+  });
+};
 
 describe('ExportDialog Component Tests', () => {
   beforeEach(() => {
@@ -59,5 +92,100 @@ describe('ExportDialog Component Tests', () => {
     fireEvent.click(cancelBtn);
 
     expect(handleOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  describe('مدخل فضاء الألوان CMYK', () => {
+    it('يعرض RGB افتراضياً مع صيغتي PNG/JPG فقط', () => {
+      renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+
+      expect(screen.getByText('فضاء الألوان')).toBeInTheDocument();
+      expect(screen.getByText('CMYK')).toBeInTheDocument();
+      expect(screen.queryByText('TIFF')).not.toBeInTheDocument();
+      expect(screen.getByText('تصدير بنظام الألوان RGB للطباعة الرقمية.')).toBeInTheDocument();
+    });
+
+    it('يبدّل الصيغ إلى TIFF/JPEG ويخفي PNG/JPG عند اختيار CMYK', () => {
+      renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+
+      fireEvent.click(screen.getByText('CMYK'));
+
+      expect(screen.getByText('TIFF')).toBeInTheDocument();
+      expect(screen.getByText('JPEG')).toBeInTheDocument();
+      expect(screen.queryByText('PNG')).not.toBeInTheDocument();
+      expect(screen.queryByText('JPG')).not.toBeInTheDocument();
+      expect(screen.getByText(/تصدير بنظام الألوان CMYK لمطابع الأوفست/)).toBeInTheDocument();
+    });
+
+    it('يخفي النزيف وعلامات القص (مسار RGB فقط) في وضع CMYK', () => {
+      renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+
+      fireEvent.click(screen.getByText('CMYK'));
+
+      expect(screen.queryByText('علامات القص الإرشادية')).not.toBeInTheDocument();
+      expect(screen.queryByText('هامش النزيف والقص')).not.toBeInTheDocument();
+    });
+
+    it('يظهر منزلق الجودة لـ JPEG فقط (TIFF بلا فقد)', () => {
+      renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+
+      fireEvent.click(screen.getByText('CMYK'));
+      expect(screen.queryByText('جودة الصورة')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('JPEG'));
+      expect(screen.getByText('جودة الصورة')).toBeInTheDocument();
+    });
+
+    it('يمرر صيغة CMYK عبر المسار الخلفي ويحفظ بامتداد .tif', async () => {
+      const handleOpenChange = vi.fn();
+      renderWithProviders(<ExportDialog open={true} onOpenChange={handleOpenChange} />);
+
+      fireEvent.click(screen.getByText('CMYK'));
+      await clickExportAndSettle();
+
+      expect(mockRunCmykExport).toHaveBeenCalledTimes(1);
+      const params = mockRunCmykExport.mock.calls[0][0];
+      expect(params.stage).toBeNull();
+      expect(params.format).toBe('tiff');
+      expect(params.dpi).toBe(300);
+      expect(params.backgroundColor).toBe('#FFFFFF');
+      // هندسة صفرية الانحراف: mmToPx(mm, dpi) == canvasPx (الافتراضي 2480×3508 @300DPI)
+      const canvasWidth = useEditorStore.getState().canvasWidth;
+      const canvasHeight = useEditorStore.getState().canvasHeight;
+      expect(params.paperWidthMM).toBeCloseTo((canvasWidth * 25.4) / 300, 6);
+      expect(params.paperHeightMM).toBeCloseTo((canvasHeight * 25.4) / 300, 6);
+      expect(Math.round((params.paperWidthMM * 300) / 25.4)).toBe(canvasWidth);
+      expect(Math.round((params.paperHeightMM * 300) / 25.4)).toBe(canvasHeight);
+      // مسار RGB (التقاط Kanva مباشر) لا يُستدعى في وضع CMYK
+      expect(mockExportCanvas).not.toHaveBeenCalled();
+
+      expect(mockDownloadBlob).toHaveBeenCalledTimes(1);
+      const [blob, filename] = mockDownloadBlob.mock.calls[0];
+      expect(blob).toBeInstanceOf(Blob);
+      expect(String(filename)).toMatch(/_CMYK\.tif$/);
+      expect(toast.success).toHaveBeenCalled();
+      expect(handleOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it('يحفظ بامتداد .jpg عند اختيار JPEG', async () => {
+      renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+
+      fireEvent.click(screen.getByText('CMYK'));
+      fireEvent.click(screen.getByText('JPEG'));
+      await clickExportAndSettle();
+
+      expect(mockRunCmykExport.mock.calls[0][0].format).toBe('jpeg');
+      expect(String(mockDownloadBlob.mock.calls[0][1])).toMatch(/_CMYK\.jpg$/);
+    });
+
+    it('يعرض خطأً صريحاً عند فشل التحويل الخلفي', async () => {
+      mockRunCmykExport.mockRejectedValueOnce(new Error('CMYK encode failed'));
+      renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+
+      fireEvent.click(screen.getByText('CMYK'));
+      await clickExportAndSettle();
+
+      expect(toast.error).toHaveBeenCalledWith('CMYK encode failed');
+      expect(mockDownloadBlob).not.toHaveBeenCalled();
+    });
   });
 });

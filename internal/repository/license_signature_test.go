@@ -7,7 +7,6 @@ import (
 	"grido/internal/core/domain"
 )
 
-
 func TestComputeProfileSignature(t *testing.T) {
 	profile := &domain.UserProfile{
 		ID:        "test-user",

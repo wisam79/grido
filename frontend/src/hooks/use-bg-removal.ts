@@ -2,7 +2,9 @@ import { useEffect, useRef } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { toast } from 'sonner';
 import { ApplyMaskToImage } from '@bindings/grido/app';
+import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
 import { preloadImageIntoCache } from './use-async-image';
+import { fetchLocalApi } from '@/lib/local-api';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { create } from 'zustand';
 
@@ -80,8 +82,17 @@ function getWorker(): Worker {
       pendingBgRequests.get(msg.requestId)?.onMessage(msg);
     };
     workerInstance.onerror = (e) => {
-      for (const pending of pendingBgRequests.values()) {
-        pending.onError(e.message || 'فشل تشغيل عامل عزل الخلفية.');
+      // 🛡️ العامل الميت كان يُعاد استخدامه للأبد: هذا المعالج كان يبلّغ الطلبات
+      // المعلقة فقط، ويبقى `workerInstance` مرجعاً لعامل انهار — فأي طلب لاحق
+      // يُرسل postMessage إلى عامل لا يرد أبداً، فيبقى مؤشر التقدم («جاري
+      // العزل») ظاهراً بلا نهاية حتى يضغط المستخدم «إلغاء» بنفسه.
+      // الإصلاح: نُنهي العامل المُتعطّل فوراً فيُبنى عامل جديد عند الطلب التالي.
+      // (نلتقط الطلبات المعلقة قبل الإنهاء لأن terminateWorker يمسح السجل.)
+      const message = e.message || 'فشل تشغيل عامل عزل الخلفية.';
+      const pendingRequests = Array.from(pendingBgRequests.values());
+      terminateWorker();
+      for (const pending of pendingRequests) {
+        pending.onError(message);
       }
     };
   }
@@ -255,7 +266,9 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
             if (maskBuffer) {
               // ⚡ نقل ثنائي مباشر وخام عبر الجسر فائق السرعة دون أي تشفير Base64
               const url = `/api/apply-mask?src=${encodeURIComponent(element.imageSrc || '')}&w=${targetW}&h=${targetH}`;
-              const response = await fetch(url, {
+              // 🔑 fetchLocalApi يضيف ترويسة توكن الجلسة التي تفرضها الخلفية على
+              // مسارات /api (فحص الأصل وحده لا يحجب عملية محلية تُرسل طلباً مباشراً)
+              const response = await fetchLocalApi(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/octet-stream' },
                 body: maskBuffer as BodyInit,
@@ -280,28 +293,20 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
 
             await preloadImageIntoCache(localPath);
 
-            // 🛡️ حارس الطزاثة (H3 من تدقيق 2026-10-08): العملية تستغرق ثوانٍ
-            // ودقائق، وقد يستبدل المستخدم الصورة أو يحذف العنصر أو يتراجع
-            // أثناءها. كانت اللقطة الملتقطة عند الإطلاق تُكتب فوق الحالة
-            // الطازجة فتُرجِع تعديلاً أحدث بصمت (وتمحو originalImageSrc الحقيقي).
-            const liveEl = useEditorStore.getState().elements.find((e) => e.id === element.id);
-            const live = liveEl as BgRemovalElement | undefined;
-            if (!live) {
+            // 🛡️ حارس الطزاثة الموحّد (`commitAiImageResult`, H3 من تدقيق 2026-10-08):
+            // العملية تستغرق ثوانيَ ودقائق، وقد يستبدل المستخدم الصورة أو يحذف
+            // الهدف أو يتراجع أثناءها. يبحث المساعد في العناصر والخانات معاً،
+            // ويتحقق أن الهدف ما زال موجوداً وصورته لم تتغيّر، ثم يطبّق الرقعة
+            // ويدفع خطوة تراجع واحدة (كان البحث في elements وحده يُسقط نتائج الكولاج).
+            const commit = commitAiImageResult(element, localPath, onUpdateRef.current);
+            if (commit === 'not-found') {
               toast.info('تم إلغاء عزل الخلفية: العنصر لم يعد موجوداً.');
               return;
             }
-            if (live.imageSrc !== element.imageSrc) {
+            if (commit === 'changed') {
               toast.info('تم إلغاء عزل الخلفية: تغيّرت الصورة أثناء المعالجة.');
               return;
             }
-
-            // 🔒 تعيين originalImageSrc في المرّة الأولى فقط لمنع فقدان الصورة الأصلية
-            const patch: BgRemovalPatch = { imageSrc: localPath };
-            if (!live.originalImageSrc) {
-              patch.originalImageSrc = live.imageSrc;
-            }
-            onUpdateRef.current(element.id, patch);
-            useEditorStore.getState().pushHistory();
             toast.success('تم عزل خلفية الصورة بنجاح');
 
             // ⏱️ توثيق القياسات الفعلية بدلاً من القيم الثابتة (الاستدلال محلي — لا تكلفة سحابية)

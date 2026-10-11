@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/disintegration/imaging"
-	"golang.org/x/image/tiff"
 
 	"github.com/fogleman/gg"
 
@@ -224,16 +223,12 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		} else {
 			// Default format for CMYK is TIFF — مضغوط Deflate (غير المضغوط كان
 			// يضاعف الذاكرة والقرص) مع سقف 50MP بدل OOM على اللوحات الكبيرة.
-			// 🖨️ وسوم الدقة X/YResolution + ResolutionUnit تُحقن بعد الترميز
-			// (RV-Print-04): مكتبات Go لا تكتبها، وبدونها تفترض المطابع 72dpi.
-			// الترميز لذاكرة أولاً هنا ضروري للحقن (TIFF يتطلب إزاحات خلفية).
-			var tifBuf bytes.Buffer
-			if err := tiff.Encode(&tifBuf, cmykImg, &tiff.Options{Compression: tiff.Deflate, Predictor: true}); err != nil {
-				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
-			}
-			tagged, err := injectTIFFResolution(tifBuf.Bytes(), req.DPI)
+			// 🖨️ TIFF بفصل أحبار حقيقي (photometric=5) عبر encodeCMYKTIFF:
+			// تمرير *image.CMYK إلى مكتبات Go كان يكتب RGB موسوماً photometric=2
+			// فيضيع فصل CMYK تماماً. وسوم الدقة تُحقن داخل نفس المشفّر (RV-Print-04).
+			tagged, err := encodeCMYKTIFF(cmykImg, req.DPI)
 			if err != nil {
-				return "", "", fmt.Errorf("inject tiff resolution: %w", err)
+				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
 			}
 			imageName = baseName + ".tif"
 			imagePath = filepath.Join(outDir, imageName)

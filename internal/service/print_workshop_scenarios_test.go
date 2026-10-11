@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/disintegration/imaging"
-	"golang.org/x/image/tiff"
 
 	"grido/internal/core/domain"
 )
@@ -228,15 +227,9 @@ func TestPrintWorkshop_CMYK_TIFF_Press_A4(t *testing.T) {
 	if err != nil || info.Size() < 10*1024 {
 		t.Fatalf("expected non-trivial TIFF file, size=%d err=%v", info.Size(), err)
 	}
-	f, err := os.Open(outPath)
-	if err != nil {
-		t.Fatalf("failed to open TIFF output: %v", err)
-	}
-	defer f.Close()
-	decoded, err := tiff.Decode(f)
-	if err != nil {
-		t.Fatalf("failed to decode TIFF output: %v", err)
-	}
+	// x/image/tiff لا يفكّ photometric=5 (فصل أحبار CMYK) — يُقرأ الشريط مباشرة
+	// عبر المرجع المستقل في print_cmyk_tiff_test.go (مخرج CMYK حقيقي).
+	decoded := cmykFromTIFFFile(t, outPath)
 	expectedW := int(math.Round(mmToPx(210.0, 150)))
 	expectedH := int(math.Round(mmToPx(297.0, 150)))
 	bounds := decoded.Bounds()

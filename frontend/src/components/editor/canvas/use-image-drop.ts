@@ -5,6 +5,7 @@ import type Konva from 'konva';
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
+import { fetchLocalApi } from '@/lib/local-api';
 
 /**
  * 🧭 منطق إسقاط الصور على مساحة العمل: رفع بدفعات (3 ملفات)، مطابقة الخانة
@@ -51,7 +52,8 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
                   typeof fetch === 'function'
                 ) {
                   try {
-                    const resp = await fetch(`${window.location.origin}/api/upload-media`, {
+                    // 🔑 fetchLocalApi يضيف ترويسة توكن الجلسة المفروضة على مسارات /api
+                    const resp = await fetchLocalApi(`${window.location.origin}/api/upload-media`, {
                       method: 'POST',
                       body: file,
                     });

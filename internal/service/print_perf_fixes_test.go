@@ -335,7 +335,6 @@ func BenchmarkPrintPipelineExpandGrid(b *testing.B) {
 	}
 }
 
-
 // ─── RV-16-M4: سقف بكسلات CMYK لكل صيغة (دالة نقطة بلا تخصيص كانفس) ───
 
 // TestCMYKPixelCapError: JPEG بحد 100MP (كان بلا سقف — ذروة ~1.2GB على 144MP)

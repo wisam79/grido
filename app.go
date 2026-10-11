@@ -293,9 +293,19 @@ func (a *App) CheckForUpdate() (*service.UpdateInfo, error) {
 	return updater.CheckForUpdate()
 }
 
-func (a *App) DownloadAndInstallUpdate(url string, sha256 string) error {
+// GetLocalApiToken يعيد توكن جلسة مسارات /api المحلية لهذه العملية (يُولَّد في
+// main عند الإقلاع). القناة الوحيدة لتسليمه هي ربط Wails — IPC داخل العملية -
+// فلا تصل إليه صفحة ويب ولا عملية خارجية، وعليه تعتمد مسارات /api في رفض
+// الطلبات التي لا تحمل ترويسة X-Grido-Session المطابقة.
+func (a *App) GetLocalApiToken() string {
+	return localApiSessionToken
+}
+
+// signature يُمرّر من بيانات الإصدار (حقل `signature`)؛ يُفرض التحقق منه في
+// الخلفية متى كان مفتاح عام مثبّتاً في البناء (انظر service.UpdaterPublicKey).
+func (a *App) DownloadAndInstallUpdate(url string, sha256 string, signature string) error {
 	updater := service.NewUpdaterService()
-	return updater.DownloadAndInstall(a.ctx, url, sha256)
+	return updater.DownloadAndInstall(a.ctx, url, sha256, signature)
 }
 
 func (a *App) SelectExportDirectory() (string, error) {
@@ -372,4 +382,3 @@ func (a *App) OpenFolder(folderPath string) error {
 func (a *App) SendNotification(title, body, imagePath string) error {
 	return a.desktopSvc.SendToast(title, body, imagePath)
 }
-

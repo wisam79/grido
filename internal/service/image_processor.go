@@ -106,17 +106,17 @@ var (
 
 func init() {
 	for i := 0; i < 256; i++ {
-		if i < 65 {
+		if i < 15 {
 			lutAlpha[i] = 0
-			lutSpillFactor[i] = 0.65
-		} else if i > 215 {
+			lutSpillFactor[i] = 0.70
+		} else if i > 235 {
 			lutAlpha[i] = 255
 			lutSpillFactor[i] = 0.0
 		} else {
-			v := float64(i-65) / 150.0
+			v := float64(i-15) / 220.0
 			smoothV := v * v * (3.0 - 2.0*v)
 			lutAlpha[i] = uint8(math.Round(smoothV * 255.0))
-			lutSpillFactor[i] = (1.0 - smoothV) * 0.65
+			lutSpillFactor[i] = (1.0 - smoothV) * 0.70
 		}
 	}
 }

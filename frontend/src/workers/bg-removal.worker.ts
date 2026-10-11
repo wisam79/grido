@@ -207,17 +207,31 @@ async function handleSegment(req: SegmentRequest) {
 
       postProgress(requestId, 90, 'جاري الإنهاء ... (90%)');
       const bgMaskData = confidenceMasks[0].getAsFloat32Array();
+      // ✂️ استخراج قناع الشعر المستقل (الفئة 1 في selfie_multiclass) للحفاظ على خصلات الشعر الرقيقة
+      const hasHairMask = confidenceMasks.length > 1;
+      const hairMaskData = hasHairMask ? confidenceMasks[1].getAsFloat32Array() : null;
       maskBytes = new Uint8Array(bgMaskData.length);
 
       for (let i = 0; i < bgMaskData.length; i++) {
-        const fgProb = 1.0 - bgMaskData[i];
-        // توازن دقيق ومحسوب (0.35 إلى 0.68): إزالة حافة البكسلات البيضاء دون اقتطاع الشعر أو الملابس
-        if (fgProb < 0.35) {
+        const bg = bgMaskData[i];
+        const fgProb = Math.max(0, Math.min(1, 1.0 - bg));
+        const hair = hairMaskData ? Math.max(0, Math.min(1, hairMaskData[i])) : 0;
+
+        // حساب نسبة مساهمة الشعر في هذا البكسل لضبط العتبة ديناميكياً
+        const hairWeight = fgProb > 0.01 ? Math.min(1.0, hair / fgProb) : 0;
+
+        // 🧠 عتبة متكيفة ذكية (Adaptive Hair-Aware Thresholding):
+        // - لخصلات الشعر (hairWeight تقترب من 1.0): حساسية ناعمة تبدأ من 0.15 وتتدرج إلى 0.52 لمنع بتر الشعر.
+        // - للجسم والملابس (hairWeight تقترب من 0.0): عتبة قاطعة (0.35 إلى 0.65) لتبقى حدود الأكتاف والياقة حادة.
+        const lowThresh = 0.35 - 0.2 * hairWeight;
+        const highThresh = 0.65 - 0.13 * hairWeight;
+
+        if (fgProb <= lowThresh) {
           maskBytes[i] = 0;
-        } else if (fgProb > 0.68) {
+        } else if (fgProb >= highThresh) {
           maskBytes[i] = 255;
         } else {
-          const normalized = (fgProb - 0.35) / (0.68 - 0.35);
+          const normalized = (fgProb - lowThresh) / (highThresh - lowThresh);
           const smooth = normalized * normalized * (3 - 2 * normalized); // Smoothstep S-curve
           maskBytes[i] = Math.round(smooth * 255);
         }

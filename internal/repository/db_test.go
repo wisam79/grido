@@ -290,7 +290,6 @@ func TestCleanupUnusedMedia_OldUnreferencedFileSurvivesOneCycle(t *testing.T) {
 	}
 }
 
-
 func TestCleanupUnusedMedia_CorruptAutosave(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "grido-test-corrupt-*")
 	if err != nil {
@@ -668,4 +667,3 @@ func TestCollectReferencedImages_RegexSafetyNet(t *testing.T) {
 		t.Errorf("expected img_collage_bg.jpg to be captured from CollageTemplate")
 	}
 }
-

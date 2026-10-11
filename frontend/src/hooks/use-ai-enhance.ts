@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { SaveImageFromBase64, EnhanceImageWithAI } from '@bindings/grido/app';
 import { useEditorStore } from '@/lib/editor-store';
 import { toErrorMessage } from '@/lib/wails-error';
+import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { createLogger } from '@/lib/logger';
 import { create } from 'zustand';
@@ -252,29 +253,20 @@ export function useAiEnhance(
         setEnhanceProgressText('جاري حفظ الصورة ...');
         const localPath = await SaveImageFromBase64(result.image);
 
-        // 🛡️ حارس الطزاثة (H3 من تدقيق 2026-10-08): دورة الترميم السحابية
-        // تستغرق دقائق. كانت اللقطة الملتقطة عند الإطلاق تُكتب فوق الحالة
-        // الطازجة، فاستبدال الصورة أو التراجع أثناء الانتظار يُلغى بصمت
-        // (وتمسح originalImageSrc الذي عُيّن لاحقاً).
-        const liveEl = useEditorStore.getState().elements.find((e) => e.id === element.id);
-        const live = liveEl as
-          { id: string; imageSrc?: string; originalImageSrc?: string } | undefined;
-        if (!live) {
+        // 🛡️ حارس الطزاثة الموحّد (`commitAiImageResult`, H3 من تدقيق 2026-10-08):
+        // دورة الترميم السحابية تستغرق دقائق، فيُلغى التطبيق بصمت إن استُبدلت
+        // الصورة أو تم التراجع أثناء الانتظار. يبحث المساعد في العناصر والخانات
+        // معاً، ويتحقق من بقاء الهدف وطزاجة صورته، ثم يطبّق الرقعة ويدفع خطوة
+        // تراجع واحدة (كان البحث في elements وحده يُسقط نتائج الكولاج).
+        const commit = commitAiImageResult(element, localPath, onUpdateRef.current);
+        if (commit === 'not-found') {
           toast.info('تم إلغاء الترميم: العنصر لم يعد موجوداً.');
           return;
         }
-        if (live.imageSrc !== element.imageSrc) {
+        if (commit === 'changed') {
           toast.info('تم إلغاء الترميم: تغيّرت الصورة أثناء المعالجة.');
           return;
         }
-
-        const patch: Partial<Record<string, unknown>> = { imageSrc: localPath };
-        if (!live.originalImageSrc) {
-          patch.originalImageSrc = live.imageSrc;
-        }
-
-        onUpdateRef.current(element.id, patch);
-        useEditorStore.getState().pushHistory();
         setEnhanceProgress(100);
 
         // 🌟 1. توثيق وتسجيل الطلب في سجلات تدقيق قاعدة البيانات الحية

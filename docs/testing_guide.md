@@ -163,10 +163,11 @@ go test -count=1 -v ./internal/...
 
 ## 5. حالة التغطية الحالية (Baseline Metrics)
 
-> 📌 الأرقام أدناه **تحقق: 2026-10-09**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة.
+> 📌 الأرقام أدناه **تحقق: 2026-10-11**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة. (التحقق الثقيل يُشغَّل في GitHub Actions — القاعدة: لا إجهاد للبيئة المحلية.)
 
-- **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/utils` تجتاز الاختبارات بنسبة 100% (38 ملف اختبار / 215 دالة اختبار — `go test ./internal/... -list "^Test"`) — `go test ./internal/...` (مع `-race` أخضر أيضاً — تحقق 2026-10-09).
-- **Vitest Frontend:** **109 ملفات اختبار** تضم **946 حالة** (945 ناجحة + 1 متخطّاة) — `cd frontend && npm run test`. من بينها ملف عقد حمولة الطباعة `test/print-payload-builder.test.ts` (قفل إصلاحات RV-16: slotAspect صفري للتمديد، وتوسيع النسخ على جانب Go).
+- **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/utils` تجتاز الاختبارات بنسبة 100% (**40 ملف اختبار / 224 دالة اختبار** — `go test ./internal/... -list "^Test"`).
+- **Vitest Frontend:** **114 ملفات اختبار** تضم **988 حالة** (987 ناجحة + 1 متخطّاة). منها عقد حمولة الطباعة `test/print-payload-builder.test.ts` (قفل إصلاحات RV-16)، ومنها **مسار تصدير CMYK الجديد:** `test/export-cmyk.test.ts` (14 اختباراً: بناء `PrintRequest`، تسلسل لقطة←رفع←تحويل←قراءة، حالات الفشل) و`test/export-dialog.test.tsx` (11 اختباراً: تبديل فضاء الألوان، معاملات الطلب الفعلية، الامتداد المحفوظ).
+- **Go — فصل أحبار CMYK:** `print_cmyk_tiff_test.go` (وسوم `photometric=5`/`InkSet`/`SamplesPerPixel`/`ExtraSamples` + دورة قنوات حرفية + Stride لصورة فرعية + رفض مدخلات غير صالحة) و`print_fullpage_cmyk_test.go` (عقد حوار التصدير: كامل الصفحة حدّاً-لحدّ + الامتداد + قيد JPEG).
 - **Playwright E2E:** **25 ملف مواصفة** يضم **165 حالة** عبر كل المشاريع (chromium + firefox + webkit)؛ `npm run test:e2e:fast` يقتصر على chromium — التحقق: `npx playwright test --list`.
 - **التغطية (Coverage):** الحدود الدنيا في `frontend/vitest.config.ts` (statements 36 / branches 30 / functions 32 / lines 36) وتُقرأ الأرقام الفعلية من `coverage/coverage-summary.json` في CI.
 - **GitHub Step Summaries:** يقوم خط الأنابيب بتوليد لوحات إحصائية وتلخيصات بصرية تلقائية لجميع مهام البناء والاختبار لكل عملية دمج أو دفع.

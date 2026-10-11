@@ -174,6 +174,56 @@ describe('ElementProperties - Worker Background Removal', () => {
     });
   });
 
+  it('applies background removal to a collage slot (stored in slots, not elements)', async () => {
+    // 🧩 وضع الكولاج: الهدف خانة في `slots` وليس عنصراً في `elements`.
+    // كان حارس الطزاثة يبحث في elements وحده فيُلغى العزل دائماً بصمت.
+    const { useEditorStore } = await import('../src/lib/editor-store');
+    useEditorStore.setState({
+      elements: [],
+      slots: [
+        {
+          id: 'slot-1',
+          cellIndex: 0,
+          x: 0,
+          y: 0,
+          w: 0.5,
+          h: 0.5,
+          imageSrc: '/local-image/slot.png',
+        },
+      ] as any,
+    });
+
+    const onUpdateMock = vi.fn();
+    const { useBgRemoval } = await import('../src/hooks/use-bg-removal');
+
+    function SlotHarness() {
+      const { handleRemoveBg } = useBgRemoval(onUpdateMock);
+      React.useEffect(() => {
+        void handleRemoveBg({ id: 'slot-1', imageSrc: '/local-image/slot.png' });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+      return null;
+    }
+
+    render(wrapWithTooltip(<SlotHarness />));
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(onUpdateMock).toHaveBeenCalledWith('slot-1', {
+      imageSrc: '/local-image/saved-bg.png',
+      originalImageSrc: '/local-image/slot.png',
+    });
+
+    const { toast } = await import('sonner');
+    expect(toast.info).not.toHaveBeenCalledWith(expect.stringContaining('لم يعد موجوداً'));
+  });
+
   it('should handle cancel button click and reset loading UI (hard terminate)', async () => {
     // وضع التعليق: الـ Worker لا يستجيب ليبقى العزل في حالة تشغيل
     MockBgWorker.autoRespond = false;
@@ -210,6 +260,52 @@ describe('ElementProperties - Worker Background Removal', () => {
     // UI should reset back to normal
     expect(screen.queryByTitle('إلغاء العزل')).toBeNull();
     expect(screen.getByTitle(/عزل الخلفية/)).toBeDefined();
+  });
+
+  it('rebuilds a fresh worker after a worker-level error instead of hanging forever', async () => {
+    // 🛡️ انحدار: معالج onerror كان يبلّغ الطلبات المعلقة فقط دون إنهاء العامل
+    // الميت، فيبقى `workerInstance` مرجعاً لعامل انهار — وأي طلب لاحق يُرسل
+    // postMessage إلى عامل لا يرد أبداً، فيبقى مؤشر «جاري العزل» معلّقاً بلا
+    // نهاية حتى يضغط المستخدم «إلغاء». الإصلاح: إنهاء العامل فوراً.
+    MockBgWorker.autoRespond = false;
+
+    const onUpdateMock = vi.fn();
+    render(
+      wrapWithTooltip(<ElementProperties element={dummyImageElement} onUpdate={onUpdateMock} />),
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTitle(/عزل الخلفية/));
+      await Promise.resolve();
+    });
+
+    const deadWorker = MockBgWorker.instance;
+    expect(deadWorker).not.toBeNull();
+
+    // انهيار على مستوى العامل نفسه (فشل تحميل الوحدة / نفاد ذاكرة WASM)
+    await act(async () => {
+      deadWorker?.onerror?.({ message: 'worker crashed' });
+      await Promise.resolve();
+    });
+
+    // العامل المُتعطّل يُنهى فوراً فلا يبقى مرجع ميت يُعاد استخدامه
+    expect(deadWorker?.terminate).toHaveBeenCalled();
+
+    // المستخدم يرى سبب الفشل، والواجهة تعود لحالتها الطبيعية
+    const { toast } = await import('sonner');
+    expect(toast.error).toHaveBeenCalledWith('worker crashed');
+    expect(screen.queryByTitle('إلغاء العزل')).toBeNull();
+    expect(screen.getByTitle(/عزل الخلفية/)).toBeDefined();
+
+    // الطلب التالي يبني عاملاً جديداً بدل إعادة استخدام الميت
+    await act(async () => {
+      fireEvent.click(screen.getByTitle(/عزل الخلفية/));
+      await Promise.resolve();
+    });
+
+    expect(MockBgWorker.instance).not.toBeNull();
+    expect(MockBgWorker.instance).not.toBe(deadWorker);
+    expect(MockBgWorker.instance?.postMessage).toHaveBeenCalled();
   });
 
   it('safely converts large Uint8Array buffers (2MB+) to Base64 without call stack overflow', () => {

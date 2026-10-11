@@ -588,4 +588,3 @@ func TestMediaService_GetStorageStats_WithTrash(t *testing.T) {
 		t.Errorf("expected trash bytes %d, got %d", expectedTrashBytes, stats.TrashTotalBytes)
 	}
 }
-

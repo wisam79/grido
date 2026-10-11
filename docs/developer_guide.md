@@ -25,6 +25,8 @@ graph TD
 - **Database Repository:** SQLite is handled under `internal/repository/db.go`. It manages project serialization, saving, and loading with `CGO_ENABLED=1`.
 - **Media Directory:** Local files are written to a user-specific AppData directory (accessible via `utils.GetAppDir()`).
 - **Custom Asset Handler:** Configured in `main.go` via `application.AssetOptions{Handler: ...}` to serve local files. Wails maps the route `/local-image/*` directly to local files saved on disk in the application directory with strict `filepath.EvalSymlinks` validation.
+- **Local `/api` Guard (`internal/service/local_api_guard.go`):** كل طلب على `/api/*` (كتابة ملفات في `Media`/`Exports` ورفع صور الطباعة وحفظ الملفات) يجب أن يجتاز شرطين: أصل مطابق لمضيف الخادم، وترويسة `X-Grido-Session` تحمل توكن العملية العشوائي (32 بايت لكل تشغيل) بمقارنة زمن ثابت (`utils.SecureTokenEqual`). التوكن يُسلَّم للواجهة عبر ربط Wails وحده (`App.GetLocalApiToken`) — أي أنه غير قابل للوصول من متصفح أو عملية خارجية — ولا يُسجَّل في أي لوج. السياسة **فشل مغلق**: تعذّر توليد التوكن ⇒ رفض كل الطلبات. عميل الواجهة الموحّد `frontend/src/lib/local-api.ts` (`fetchLocalApi`) يضيف الترويسة تلقائياً، ويُمنع إضافة مستدعٍ جديد لهذه المسارات بدونه.
+- **Update Integrity (`internal/service/updater.go`):** سلسلة الثقة ثلاث مراحل صريحة: (1) رفض بلا بصمة `SHA-256` معلنة، (2) رفض إن لم تطابق البصمة الملفَّ المنزّل، (3) **توقيع Ed25519 بمفتاح عام مثبّت في الثنائي** (`UpdaterPublicKey`، يُحقن بـldflags) — والقيمة فارغة تعني السلوك القديم (بصمة فقط) مع تحذير مسجَّل، ووجودها يجعل التوقيع إلزامياً (Fail-closed). الرسالة الموقَّعة هي **بصمة الملف الخام (32 بايتاً)** لا الملف كاملاً، فلا يُحمَّل ملف بحجم 200MB في الذاكرة للتحقق.
 
 ### Frontend (TypeScript + React)
 - **Framework:** Vite-powered React with TypeScript.
@@ -170,7 +172,9 @@ The compiled executable will be placed in the `bin/` folder (`BIN_DIR` in `Taskf
 `internal/service/print_service.go` (تحقق + تنسيق) → `print_compose.go` (رسم gg)
 → `print_cmyk.go` (CMYK) → `print_export.go` (حفظ نقطي) / `print_pdf_export.go` (PDF).
 
-- **النقطي:** PNG/JPEG (sRGB) وTIFF/JPEG (CMYK) + حقن DPI (pHYs/JFIF) + كتابة ذرية + حقن وسوم `XResolution/YResolution/ResolutionUnit` في TIFF عبر `print_tiff_tags.go` (ما بعد ترميز).
+- **النقطي:** PNG/JPEG (sRGB) وTIFF/JPEG (CMYK) + حقن DPI (pHYs/JFIF) + كتابة ذرية + حقن وسوم `XResolution/YResolution/ResolutionUnit` في TIFF عبر `print_tiff_tags.go`.
+- **فصل أحبار CMYK في TIFF (`print_cmyk_tiff.go`):** مُرمِّز مستقل يكتب TIFF 6.0 بـ `PhotometricInterpretation=5` (Separated) و`InkSet=1` و`SamplesPerPixel=4` و`BitsPerSample=[8,8,8,8]` و`Compression=8` (Deflate) بلا `ExtraSamples`، ثم يُمرّر الخرج إلى `injectTIFFResolution` لإضافة وسوم الدقة (تخطيط الرأس ← الشريط ← `BitsPerSample` ← `IFD0` في الذيل يجعل كل الإزاحات قبل نهاية الـIFD فلا تُشوَّه بالحقن). السبب: `golang.org/x/image/tiff` يكتب `*image.CMYK` كـ RGB موسوم `photometric=2` بقناة ألفا (فصل الأحبار يضيع)، و`image/jpeg` القياسي يكتب 3 مكوّنات ولا يدعم CMYK — أي أن مخرج **JPEG يبقى بفضاء RGB** ويُوثّق ذلك في واجهة التصدير نفسها.
+- **مسارات الوصول إلى CMYK:** حوار **الطباعة** لا يعرض فضاء الألوان (يطبع عبر WebView2 بـ sRGB حصراً)، وفصل الألوان يُطلب من حوار **التصدير** عبر `runCmykExport` في `frontend/src/lib/export/export-cmyk.ts` الذي يبني `PrintRequest` بعنصر واحد يملأ الورقة ويقرأ ملف `print_*` الناتج من `/local-image/`.
 - **سياسة نطاق الإدخال (RV-Print-07/08):** `ImageSrc` مقبول فقط كـ `data:` أو `/local-image/`،     ومسارات الملفات التي تنحلّ داخل `GRIDO_APP_DIR` بعد `EvalSymlinks`؛ وتُفحص ترويسة الصورة بـ`DecodeConfig` (سقف 100MP) قبل أي فكّ.
 - **PDF المتجهي (`exportFormat: "pdf"` — sRGB فقط):** صفحة مخصصة بالمقاس الفيزيائي
   الدقيق عبر `gofpdf.NewCustom` (مكتبة pure-Go بلا cgo — آمنة للبناء المتقاطع)،
