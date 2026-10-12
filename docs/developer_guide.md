@@ -14,13 +14,14 @@ graph TD
     A --> C[Frontend Renderer HTML/JS/CSS]
     C --> D[Zustand State Store]
     C --> E[React-Konva Canvas]
-    C --> F[Web Worker AI Engine]
+    B --> F[Go Native ONNX AI Engine - MODNet]
     B --> G[SQLite Local DB via GORM]
     B --> H[Secure Asset Server - /local-image/]
 ```
 
 ### Backend (Go)
 - **Framework:** [Wails v3](https://v3.wails.io/) binds Go services and methods to TypeScript automatically via `@wailsio/runtime`.
+- **Native AI Background Removal (`internal/service/bg_removal_service_windows.go`):** محرك استدلال محلي فائق السرعة عبر `github.com/yalue/onnxruntime_go` ونموذج `modnet.onnx` المضمنين داخل الثنائي، مع استخراج ذري لمكتبة `onnxruntime.dll` في `%APPDATA%\GridoStudio\bin` ومعالجة متوازية للقناع (`compositeMaskParallel`).
 - **Wails App Lifecycle:** Initialized in `main.go` (`application.New`) with services registered via `application.NewService(...)`. Window lifecycle hooks include `OnWindowEvent` (`events.Common.WindowCreated`, `events.Common.WindowClosing`).
 - **Database Repository:** SQLite is handled under `internal/repository/db.go`. It manages project serialization, saving, and loading with `CGO_ENABLED=1`.
 - **Media Directory:** Local files are written to a user-specific AppData directory (accessible via `utils.GetAppDir()`).

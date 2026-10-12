@@ -99,7 +99,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 ```docs-metrics
 vitest_test_files=119
 e2e_spec_files=27
-go_test_files=44
+go_test_files=45
 docs_files=6
 ```
 

@@ -8,6 +8,7 @@ require (
 	github.com/fogleman/gg v1.3.0
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/wailsapp/wails/v3 v3.0.0-beta.28
+	github.com/yalue/onnxruntime_go v1.16.0
 	golang.org/x/crypto v0.54.0
 	golang.org/x/image v0.44.0
 	golang.org/x/sync v0.22.0
