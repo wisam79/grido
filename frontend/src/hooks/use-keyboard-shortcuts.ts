@@ -14,6 +14,9 @@ import {
   zoomInStore,
   zoomOutStore,
 } from '@/hooks/use-canvas-zoom';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('use-keyboard-shortcuts');
 
 export function isModalActive(): boolean {
   if (typeof document === 'undefined') return false;
@@ -551,7 +554,7 @@ export function useKeyboardShortcuts() {
                       state.addImageElement(localPath, aspect);
                     }
                   } catch (err) {
-                    console.error('Failed to save pasted image:', err);
+                    logger.error('Failed to save pasted image:', err);
                   }
                 }
               };

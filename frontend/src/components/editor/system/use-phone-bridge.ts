@@ -3,6 +3,10 @@ import { toast } from 'sonner';
 import { EventsOn } from '../../../../wailsjs/runtime/runtime';
 import { useEditorStore } from '@/lib/editor-store';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('use-phone-bridge');
 
 /**
  * usePhoneBridgeListener
@@ -47,8 +51,8 @@ export function usePhoneBridgeListener() {
             });
           }
         } catch (err) {
-          console.error('[PhoneBridge] Error inserting received photo:', err);
-          toast.error('حدث خطأ أثناء إدراج الصورة المستلمة من الهاتف');
+          logger.error('[PhoneBridge] Error inserting received photo:', err);
+          toast.error(toErrorMessage(err, 'حدث خطأ أثناء إدراج الصورة المستلمة من الهاتف'));
         }
       },
     );

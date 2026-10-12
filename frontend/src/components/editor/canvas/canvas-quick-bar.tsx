@@ -15,6 +15,9 @@ import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { getElementVisualBox } from '@/lib/canvas/element-geometry';
 import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
 import type { CanvasElement } from '@/lib/store/types';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('canvas-quick-bar');
 
 /**
  * CanvasQuickBar — الشريط السريع العائم **فوق العنصر المحدد** داخل ورقة الكانفاس.
@@ -220,7 +223,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
             const localPath = await SaveImageFromBase64(b64);
             if (localPath) srcToUse = localPath;
           } catch (e) {
-            console.error('Failed to save image locally:', e);
+            logger.error('Failed to save image locally:', e);
           }
         }
         setSlotImage(selectedSlot.id, srcToUse);
@@ -230,7 +233,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
         }
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
     } finally {
       setIsFileDialogOpen(false);
     }

@@ -16,6 +16,9 @@ import {
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { renderWithPixelFilter } from './export-pixel-filter';
 import { applyWatermarkIfFree } from './export-watermark';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('export-slot');
 
 export async function exportSlotCanvas(
   slotId: string,
@@ -111,7 +114,7 @@ export async function exportSlotCanvas(
   } catch (e) {
     // خطأ الحجم ليس فشل خانة عابراً — نمرره للمتصل ليعرض رسالة الأبعاد الصريحة
     if (e instanceof CanvasTooLargeError) throw e;
-    console.error(`Failed to export slot ${slotId}:`, e);
+    logger.error(`Failed to export slot ${slotId}:`, e);
     return null;
   }
 }

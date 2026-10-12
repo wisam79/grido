@@ -4,6 +4,9 @@ import * as App from '../../../../wailsjs/go/main/App';
 import { domain } from '../../../../wailsjs/go/models';
 import { toErrorMessage } from '@/lib/wails-error';
 import { aiUtcDayKey } from '@/lib/ai/quota';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('license-slice');
 
 export type UserProfile = domain.UserProfile;
 
@@ -67,7 +70,7 @@ async function persistAiLogs(logs: AiUsageRecord[]): Promise<void> {
     try {
       localStorage.setItem(AI_LOGS_STORAGE_KEY, payload);
     } catch (lsErr) {
-      console.error('Failed to persist AI log:', wailsErr, lsErr);
+      logger.error('Failed to persist AI log:', wailsErr, lsErr);
     }
   }
 }
@@ -210,7 +213,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
         // فشل شبكة/عطل مؤقت → نبقي الجلسة الحالية (سماح عدم الاتصال) بدل قفل
         // المستخدم خارجاً فجأة. تصفير الجلسة يحدث فقط بردّ خادم صريح بأن
         // الترخيص غير صالح (يصل عبر profile بنجاح النداء أعلاه).
-        console.error('Failed to check license status (network error, keeping session):', err);
+        logger.error('Failed to check license status (network error, keeping session):', err);
         if (epoch === licenseCheckEpoch) set({ licenseLoading: false });
         return get().user;
       } finally {
@@ -339,7 +342,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
         await LicenseHandler.Logout();
       }
     } catch (err) {
-      console.error('Failed to execute backend Logout:', err);
+      logger.error('Failed to execute backend Logout:', err);
     } finally {
       // #18 — مسح سجلات AI ولقطة الحصة الخادمية من الذاكرة عند الخروج لمنع تسريبها للجلسة التالية
       if (typeof window !== 'undefined') {

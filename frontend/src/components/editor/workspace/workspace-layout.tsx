@@ -72,7 +72,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           data-testid="workspace-panel-templates"
           data-collapsed={!isLeftDrawerOpen}
           className={cn(
-            'h-full border-r border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion transition-all duration-200',
+            'h-full border-r border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion',
             isLeftDrawerOpen
               ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
               : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0 shadow-none',
@@ -119,7 +119,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           data-testid={isStandard ? 'workspace-panel-inspector' : 'workspace-panel-properties'}
           data-collapsed={!isRightPanelOpen}
           className={cn(
-            'h-full border-l border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion transition-all duration-200',
+            'h-full border-l border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion',
             isRightPanelOpen
               ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
               : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none',

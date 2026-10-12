@@ -50,6 +50,9 @@ import { detectDocumentWithMl } from './ml-detector';
 import { fuseDetections, mlGraceBudgetMs } from './detect-fusion';
 import { OVERLAP_TUNING } from './overlap-tuning';
 import { getLoadedOpenCV, loadOpenCV } from '../opencv-loader';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('document-detector');
 
 export { splitQuadIntoIdCards, addManualDocumentQuad };
 
@@ -622,7 +625,7 @@ function getDetectorWorker(): Worker | null {
         { type: 'module' },
       );
     } catch (e) {
-      console.warn('Failed to initialize document detector worker, falling back to sync:', e);
+      logger.warn('Failed to initialize document detector worker, falling back to sync:', e);
       detectorWorkerInstance = null;
     }
   }
@@ -707,7 +710,7 @@ export async function runJsDetectionAsync(
         );
       });
     } catch (workerErr) {
-      console.warn('Worker detection failed, falling back to sync JS:', workerErr);
+      logger.warn('Worker detection failed, falling back to sync JS:', workerErr);
     }
   }
 

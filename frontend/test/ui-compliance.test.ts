@@ -186,3 +186,41 @@ describe('UI Compliance Guard — ارتفاعات خارج السلم (R4)', ()
     expect(offenders, `ارتفاعات خارج السلم: ${offenders.join(', ')}`).toEqual([]);
   });
 });
+
+describe('UI Compliance Guard — التسجيل الموحد (H9)', () => {
+  const norm = (p: string) => p.replace(/\\/g, '/');
+  it('لا console خام في كود الإنتاج — فقط createLogger أو asserts التطوير', () => {
+    // الاستثناءات المشروعة: مكتبة السجل نفسها، asserts حارس الامتثال
+    // (dev-only بطبيعتها)، ملفات الاختبارات. الـconsole.debug التشخيصي
+    // مسموح عمداً (يُحجب في الإنتاج داخل lib/logger).
+    const offenders: string[] = [];
+    for (const full of walkSource(SRC)) {
+      const n = norm(full);
+      if (n.endsWith('lib/logger.ts')) continue;
+      if (n.endsWith('lib/ui/ui-compliance.ts')) continue;
+      if (/\.test\.|\.spec\./.test(n)) continue;
+      const lines = readFileSync(full, 'utf-8').split('\n');
+      lines.forEach((line, i) => {
+        if (/\bconsole\.(error|warn)\(/.test(line)) {
+          offenders.push(`${basename(full)}:${i + 1} → ${line.trim()}`);
+        }
+      });
+    }
+    expect(offenders, `console خام خارج المسارات المشروعة:\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('كل ملف إنتاج يسجّل error/warn يستورد createLogger فعلياً', () => {
+    const offenders: string[] = [];
+    for (const full of walkSource(SRC)) {
+      const n = norm(full);
+      // asserts حارس الامتثال dev-only بطبيعتها — مستثناة
+      if (n.endsWith('lib/ui/ui-compliance.ts')) continue;
+      if (/\.test\.|\.spec\./.test(n)) continue;
+      const text = readFileSync(full, 'utf-8');
+      if (/\bconsole\.(error|warn)\(/.test(text) && !/createLogger/.test(text)) {
+        offenders.push(basename(full));
+      }
+    }
+    expect(offenders, `ملفات بلا createLogger:\n${offenders.join('\n')}`).toEqual([]);
+  });
+});

@@ -6,6 +6,9 @@ import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
 import { fetchLocalApi } from '@/lib/local-api';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('use-image-drop');
 
 /**
  * 🧭 منطق إسقاط الصور على مساحة العمل: رفع بدفعات (3 ملفات)، مطابقة الخانة
@@ -38,7 +41,7 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
           const results = await Promise.all(
             chunk.map(async (file) => {
               if (file.size > MAX_FILE_SIZE) {
-                console.warn(
+                logger.warn(
                   `Skipping oversized file: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`,
                 );
                 return null;
@@ -177,7 +180,7 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
           }
         }
       } catch (err) {
-        console.error('Drop file error:', err);
+        logger.error('Drop file error:', err);
       } finally {
         setIsLoading(false);
       }

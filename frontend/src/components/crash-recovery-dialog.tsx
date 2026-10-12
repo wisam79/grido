@@ -10,6 +10,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { WarningOctagon, Copy, Check } from '@/components/ui/icons';
 import type { CrashReport } from '../../bindings/grido/internal/service/models';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('crash-recovery-dialog');
 
 interface CrashRecoveryDialogProps {
   open: boolean;
@@ -66,7 +69,7 @@ ${report.stack_trace}
         setCopied(false);
       }, 2000);
     } catch (err) {
-      console.error('Failed to copy crash report:', err);
+      logger.error('Failed to copy crash report:', err);
     }
   };
 

@@ -1,6 +1,9 @@
-import { StickerParams, StickerUserPreset } from "../types";
+import { StickerParams, StickerUserPreset } from '../types';
+import { createLogger } from '@/lib/logger';
 
-export const STICKER_PRESETS_STORAGE_KEY = "grido_sticker_presets";
+const logger = createLogger('sticker-presets');
+
+export const STICKER_PRESETS_STORAGE_KEY = 'grido_sticker_presets';
 
 /**
  * Loads all saved user presets from localStorage.
@@ -11,11 +14,11 @@ export function loadStickerPresets(): StickerUserPreset[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      return parsed.filter((p) => p && typeof p === "object" && p.id && p.templateId && p.params);
+      return parsed.filter((p) => p && typeof p === 'object' && p.id && p.templateId && p.params);
     }
     return [];
   } catch (e) {
-    console.error("Failed to load sticker presets:", e);
+    logger.error('Failed to load sticker presets:', e);
     return [];
   }
 }
@@ -26,12 +29,12 @@ export function loadStickerPresets(): StickerUserPreset[] {
 export function saveStickerPreset(
   name: string,
   templateId: string,
-  params: StickerParams
+  params: StickerParams,
 ): StickerUserPreset {
   const current = loadStickerPresets();
   const newPreset: StickerUserPreset = {
     id: `preset_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    name: name.trim() || "قالب مخصص",
+    name: name.trim() || 'قالب مخصص',
     templateId,
     params: {
       ...params,
@@ -41,13 +44,14 @@ export function saveStickerPreset(
   };
 
   // #16 — تقييد الحذف بـ templateId أيضاً لمنع محو preset قالب آخر بنفس الاسم الافتراضي
-  const updated = [newPreset, ...current.filter((p) =>
-    !(p.templateId === newPreset.templateId && p.name === newPreset.name)
-  )].slice(0, 50);
+  const updated = [
+    newPreset,
+    ...current.filter((p) => !(p.templateId === newPreset.templateId && p.name === newPreset.name)),
+  ].slice(0, 50);
   try {
     localStorage.setItem(STICKER_PRESETS_STORAGE_KEY, JSON.stringify(updated));
   } catch (e) {
-    console.error("Failed to persist sticker preset:", e);
+    logger.error('Failed to persist sticker preset:', e);
   }
   return newPreset;
 }
@@ -61,7 +65,7 @@ export function deleteStickerPreset(presetId: string): StickerUserPreset[] {
   try {
     localStorage.setItem(STICKER_PRESETS_STORAGE_KEY, JSON.stringify(filtered));
   } catch (e) {
-    console.error("Failed to update sticker presets after deletion:", e);
+    logger.error('Failed to update sticker presets after deletion:', e);
   }
   return filtered;
 }
@@ -71,7 +75,7 @@ export function deleteStickerPreset(presetId: string): StickerUserPreset[] {
  */
 export function getPresetsForTemplate(
   presets: StickerUserPreset[],
-  templateId: string
+  templateId: string,
 ): StickerUserPreset[] {
   return presets.filter((p) => p.templateId === templateId);
 }

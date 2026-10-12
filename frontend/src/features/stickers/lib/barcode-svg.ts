@@ -3,6 +3,9 @@
 // فيحمّل المستخدم المكتبتين عند الإقلاع وإن لم يولّد باركود قط.
 // الاستيراد الديناميكي يجعل مكتبات التوليد chunk منفصلاً يُجلب عند أول استدعاء.
 import React from 'react';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('barcode-svg');
 
 type JsBarcodeFn = (
   element: SVGElement | string,
@@ -103,7 +106,7 @@ export function generateBarcodeInnerSvg(
     return `<svg width="${reqWidth}" height="${reqHeight}" viewBox="0 0 ${svgWidth} ${reqHeight}" preserveAspectRatio="xMidYMid meet">${svg.innerHTML}</svg>`;
   } catch (err) {
     // #4 — باركود تحذيري بصري بدلاً من أعمدة وهمية تبدو حقيقية وغير قابلة للمسح
-    console.warn(`[barcode-svg] Cannot generate ${format} barcode for value "${value}":`, err);
+    logger.warn(`[barcode-svg] Cannot generate ${format} barcode for value "${value}":`, err);
     const warnColor = options?.lineColor || '#cc0000';
     return `<svg width="${reqWidth}" height="${reqHeight}" viewBox="0 0 200 ${reqHeight}" preserveAspectRatio="xMidYMid meet">
       <rect x="0" y="0" width="200" height="${reqHeight}" fill="none" stroke="${warnColor}" stroke-width="2" stroke-dasharray="6,3"/>
@@ -146,7 +149,7 @@ export async function generateQrCodeInnerSvgAsync(
     });
     return renderToStaticMarkup(qrElement);
   } catch (err) {
-    console.error('Failed to generate QR Code SVG:', err);
+    logger.error('Failed to generate QR Code SVG:', err);
     return `<rect width="${size}" height="${size}" fill="${options?.fgColor || '#000000'}" />`;
   }
 }
@@ -180,7 +183,7 @@ export function generateQrCodeInnerSvg(
     });
     return render(qrElement);
   } catch (err) {
-    console.error('Failed to generate QR Code SVG:', err);
+    logger.error('Failed to generate QR Code SVG:', err);
     return `<rect width="${size}" height="${size}" fill="${options?.fgColor || '#000000'}" />`;
   }
 }

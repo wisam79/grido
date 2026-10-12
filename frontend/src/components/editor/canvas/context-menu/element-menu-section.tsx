@@ -28,6 +28,9 @@ import {
   menuSectionLabelClassName,
   menuSeparatorClassName,
 } from './menu-item-styles';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('element-menu-section');
 
 export interface ElementMenuShared {
   targetId: string;
@@ -158,7 +161,7 @@ export function ElementMenuSection({
                           const localPath = await SaveImageFromBase64(croppedB64);
                           if (localPath) finalPath = localPath;
                         } catch (e) {
-                          console.error('Failed to save cropped image locally:', e);
+                          logger.error('Failed to save cropped image locally:', e);
                         }
                       }
 
@@ -190,7 +193,7 @@ export function ElementMenuSection({
                       };
                       img.src = croppedB64;
                     } catch (err) {
-                      console.error('Failed to crop image in context menu:', err);
+                      logger.error('Failed to crop image in context menu:', err);
                     }
                   },
                 });

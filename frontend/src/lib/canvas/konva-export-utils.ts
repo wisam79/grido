@@ -1,4 +1,7 @@
 import type Konva from 'konva';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('konva-export-utils');
 
 interface CachedImageNode {
   clearCache: () => void;
@@ -94,7 +97,7 @@ function upgradeCachesForExport(stage: Konva.Stage, targetPixelRatio: number): C
       }
     });
   } catch (err) {
-    console.warn('Failed to query cached nodes before export', err);
+    logger.warn('Failed to query cached nodes before export', err);
     return cachedNodes;
   }
 
@@ -124,7 +127,7 @@ function upgradeCachesForExport(stage: Konva.Stage, targetPixelRatio: number): C
       node.clearCache();
       node.cache({ pixelRatio: exportRatio });
     } catch (e) {
-      console.warn('Failed to upgrade node cache for export', e);
+      logger.warn('Failed to upgrade node cache for export', e);
     }
   }
   return cachedNodes;

@@ -189,8 +189,8 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
         setScale(1);
         setPan({ x: 0, y: 0 });
       } catch (err) {
-        console.error('Failed to load images for refinement:', err);
-        toast.error('فشل تحميل الصور للتعديل');
+        logger.error('Failed to load images for refinement:', err);
+        toast.error(toErrorMessage(err, 'فشل تحميل الصور للتعديل'));
       }
     };
 

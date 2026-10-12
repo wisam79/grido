@@ -7,6 +7,9 @@ import {
   preloadImageIntoCache,
 } from '@/lib/canvas/image-cache';
 import { ensureDisplayProxy } from '@/lib/canvas/display-image';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('async-image');
 
 export { invalidateImageCache, preloadImageIntoCache };
 
@@ -115,7 +118,7 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
       img.onerror = () => {
         pendingLoads.delete(cacheKey);
         if (isCurrent) {
-          console.error('[useAsyncImage] Failed to load image:', src);
+          logger.error('[useAsyncImage] Failed to load image:', src);
           setImage(undefined);
           setStatus('failed');
         }

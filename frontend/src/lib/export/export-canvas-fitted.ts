@@ -13,6 +13,9 @@ import { buildGradientFill, colorWithAlpha, getRoundedPool } from './export-colo
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
 import { renderWithPixelFilter } from './export-pixel-filter';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('export-canvas-fitted');
 
 type StoreState = ReturnType<typeof useEditorStore.getState>;
 
@@ -34,7 +37,7 @@ export async function renderFittedBranch(
         const img = await loadImage(el.imageSrc);
         elImageMap[el.id] = img;
       } catch (e) {
-        console.error('Failed to pre-load element image:', el.imageSrc, e);
+        logger.error('Failed to pre-load element image:', el.imageSrc, e);
       }
     });
   await Promise.all(elLoadPromises);

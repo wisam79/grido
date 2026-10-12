@@ -19,6 +19,7 @@ import {
 } from '../../../../wailsjs/go/main/App';
 import type { NormalizedCell } from './collage/collage-grid-math';
 import { toErrorMessage } from '@/lib/wails-error';
+import { createLogger } from '@/lib/logger';
 import { CustomCollageCard } from './custom-collage-card';
 import { PanelShell } from './panel-shell';
 import { CaretLeft } from '@/components/ui/icons';
@@ -27,6 +28,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { FreeformStudioPanel } from './freeform';
 import type { FreeformTab } from './freeform/freeform-panel-constants';
 import type { CollageTab } from '@/hooks/use-workspace-panels';
+
+const logger = createLogger('template-panel');
 
 export interface TemplatePanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
@@ -100,7 +103,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
           const raw = typeof t.cells === 'string' ? JSON.parse(t.cells) : t.cells;
           if (Array.isArray(raw)) parsedCells = raw as NormalizedCell[];
         } catch {
-          console.warn(`Template "${t.name}" has corrupt cells JSON — excluded from list`);
+          logger.warn(`Template "${t.name}" has corrupt cells JSON — excluded from list`);
         }
         if (parsedCells === null) return []; // استبعاد القوالب ذات البيانات التالفة
         return [
@@ -114,7 +117,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
       });
       setSavedTemplates(mapped);
     } catch (e) {
-      console.error('Failed to load user templates', e);
+      logger.error('Failed to load user templates', e);
     }
   }, []);
 
@@ -128,7 +131,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
       toast.success('تم حفظ القالب');
       loadTemplates();
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       toast.error(toErrorMessage(e, 'فشل حفظ القالب'));
     }
   };
@@ -143,7 +146,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
         loadTemplates();
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       toast.error(toErrorMessage(err, 'فشل حذف القالب'));
     }
   };

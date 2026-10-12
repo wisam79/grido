@@ -50,6 +50,10 @@ import {
   Check,
 } from '@/components/ui/icons';
 import { openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('desktop-menu-bar');
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { toast } from 'sonner';
 import {
@@ -151,8 +155,8 @@ export function DesktopMenuBar() {
         }
       }
     } catch (e) {
-      console.error(e);
-      toast.error('فشل استيراد المجلد');
+      logger.error(e);
+      toast.error(toErrorMessage(e, 'فشل استيراد المجلد'));
     }
   };
 

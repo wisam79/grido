@@ -3,6 +3,9 @@ import { exportCanvas } from './export-image';
 import { CanvasTooLargeError } from './export-limits';
 import { SaveFileDialog } from '../../../wailsjs/go/main/App';
 import { fetchLocalApi } from '@/lib/local-api';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('export-project');
 
 function blobToDataURL(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -45,7 +48,7 @@ export async function downloadBlob(blob: Blob, filename: string, dir?: string): 
         }
       } catch (streamErr) {
         // Fallback إلى SaveFileDialog عبر JSON-RPC
-        console.warn('Binary stream save failed, falling back to IPC:', streamErr);
+        logger.warn('Binary stream save failed, falling back to IPC:', streamErr);
       }
     }
 
@@ -63,7 +66,7 @@ export async function downloadBlob(blob: Blob, filename: string, dir?: string): 
 
     return await SaveFileDialog(data, filename, displayName, pattern);
   } catch (err) {
-    console.error('Save failed:', err);
+    logger.error('Save failed:', err);
     return 'error';
   }
 }
@@ -79,7 +82,7 @@ export async function quickExportPNG() {
         `الأبعاد كبيرة جداً للتصدير (${err.width}×${err.height} بكسل ≈ ${(err.pixelCount / 1e6).toFixed(1)} ميجابكسل) — الحد الأقصى 50 ميجابكسل. قلّل مقاس الكانفاس أو DPI.`,
       );
     } else {
-      console.error('Export failed:', err);
+      logger.error('Export failed:', err);
       toast.error('تعذر تصدير الصورة');
     }
     return;

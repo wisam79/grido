@@ -5,6 +5,10 @@ import { ApplyMaskToImage } from '@bindings/grido/app';
 import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
 import { preloadImageIntoCache } from './use-async-image';
 import { fetchLocalApi } from '@/lib/local-api';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('bg-removal');
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { triggerMemoryTrim } from '@/lib/memory-trim';
 import { create } from 'zustand';
@@ -351,8 +355,8 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
               console.debug(`[BG-Removal] inference: ${inferredMs}ms, total: ${totalSec}s`);
             }
           } catch (err) {
-            console.error('Failed to apply background mask:', err);
-            toast.error('فشل تجهيز الصورة النهائية بعد العزل.');
+            logger.error('Failed to apply background mask:', err);
+            toast.error(toErrorMessage(err, 'فشل تجهيز الصورة النهائية بعد العزل.'));
           } finally {
             // إسقاط المؤشر بعد تطبيق النتيجة (أو فشلها) — يحدث التبديل في نفس الدفعة
             settle();

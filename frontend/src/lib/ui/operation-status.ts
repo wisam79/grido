@@ -1,6 +1,10 @@
-import { create } from "zustand";
+import { create } from 'zustand';
+import { createLogger } from '@/lib/logger';
 
-export type OperationType = "bg_removal" | "ai_enhance" | "face_frame" | "export" | "save" | "general";
+const logger = createLogger('operation-status');
+
+export type OperationType =
+  'bg_removal' | 'ai_enhance' | 'face_frame' | 'export' | 'save' | 'general';
 
 export interface ActiveOperation {
   id: string;
@@ -14,7 +18,7 @@ export interface ActiveOperation {
 
 interface OperationStatusStore {
   activeOperation: ActiveOperation | null;
-  startOperation: (op: Omit<ActiveOperation, "id">) => string;
+  startOperation: (op: Omit<ActiveOperation, 'id'>) => string;
   updateOperation: (id: string, updates: Partial<ActiveOperation>) => void;
   finishOperation: (id: string) => void;
   cancelActiveOperation: () => void;
@@ -28,7 +32,7 @@ export const useOperationStatusStore = create<OperationStatusStore>((set, get) =
   activeOperation: null,
 
   startOperation: (op) => {
-    const id = "op_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+    const id = 'op_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
     set({
       activeOperation: {
         ...op,
@@ -58,7 +62,7 @@ export const useOperationStatusStore = create<OperationStatusStore>((set, get) =
       try {
         current.onCancel();
       } catch (err) {
-        console.error("Error cancelling operation:", err);
+        logger.error('Error cancelling operation:', err);
       }
       set({ activeOperation: null });
     }

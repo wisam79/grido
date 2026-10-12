@@ -16,6 +16,9 @@ import {
 } from './export-primitives';
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { renderWithPixelFilter } from './export-pixel-filter';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('export-canvas-collage');
 
 type StoreState = ReturnType<typeof useEditorStore.getState>;
 
@@ -89,7 +92,7 @@ export async function renderCollageBranch(
         const img = await loadImage(slot.imageSrc!);
         slotImageMap[slot.id] = img;
       } catch (e) {
-        console.error('Failed to pre-load slot image:', slot.imageSrc, e);
+        logger.error('Failed to pre-load slot image:', slot.imageSrc, e);
       }
     });
   await Promise.all(slotLoadPromises);

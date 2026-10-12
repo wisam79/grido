@@ -1,6 +1,6 @@
-import { useShallow } from "zustand/react/shallow";
-import { useEditorStore } from "@/lib/editor-store";
-import { Spinner } from "@/components/ui/huge-icon";
+import { useShallow } from 'zustand/react/shallow';
+import { useEditorStore } from '@/lib/editor-store';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   Broom,
   Sparkle,
@@ -13,17 +13,20 @@ import {
   GridFour,
   Columns,
   Rows,
-} from "@/components/ui/icons";
-import { openImageFileDialog } from "@/lib/io/file-dialog-utils";
-import { SaveImageFromBase64 } from "../../../../../wailsjs/go/main/App";
-import type { CanvasSlot } from "@/lib/store/types";
+} from '@/components/ui/icons';
+import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
+import type { CanvasSlot } from '@/lib/store/types';
 import {
   menuItemClassName,
   menuItemDangerClassName,
   menuItemSpinnerClassName,
   menuSectionLabelClassName,
   menuSeparatorClassName,
-} from "./menu-item-styles";
+} from './menu-item-styles';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('slot-menu-section');
 
 export interface SlotMenuShared {
   targetId: string;
@@ -59,18 +62,18 @@ export function SlotMenuSection({
 }: SlotMenuShared) {
   // 🛡️ useShallow يمنع إعادة الرندر عند أي تغير في المتجر — كان selector
   // الكائني يعيد كائناً جديداً في كل استدعاء فيكسر Memoization القسم بأكمله
-  const { updateSlot, pushHistory } = useEditorStore(useShallow((state) => ({
-    updateSlot: state.updateSlot,
-    pushHistory: state.pushHistory,
-  })));
+  const { updateSlot, pushHistory } = useEditorStore(
+    useShallow((state) => ({
+      updateSlot: state.updateSlot,
+      pushHistory: state.pushHistory,
+    })),
+  );
   const slot = useEditorStore((state) => state.slots?.find((s) => s.id === targetId));
 
   return (
     <div className="space-y-1">
       {/* قسم إدارة الصورة والذكاء الاصطناعي */}
-      <div className={menuSectionLabelClassName}>
-        الصورة والذكاء الاصطناعي
-      </div>
+      <div className={menuSectionLabelClassName}>الصورة والذكاء الاصطناعي</div>
       <div className="space-y-0.5">
         <button
           role="menuitem"
@@ -80,7 +83,7 @@ export function SlotMenuSection({
             const [b64] = await openImageFileDialog(false);
             if (b64) {
               let srcToUse = b64;
-              if (b64.startsWith("data:image/")) {
+              if (b64.startsWith('data:image/')) {
                 try {
                   const localPath = await SaveImageFromBase64(b64);
                   if (localPath) srcToUse = localPath;
@@ -93,7 +96,10 @@ export function SlotMenuSection({
             }
           }}
         >
-          <ImageSquare className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+          <ImageSquare
+            className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+            weight="regular"
+          />
           <span className="truncate">استبدال الصورة</span>
         </button>
 
@@ -111,12 +117,12 @@ export function SlotMenuSection({
                   onSave: async (croppedB64) => {
                     try {
                       let finalPath = croppedB64;
-                      if (croppedB64.startsWith("data:image/")) {
+                      if (croppedB64.startsWith('data:image/')) {
                         try {
                           const localPath = await SaveImageFromBase64(croppedB64);
                           if (localPath) finalPath = localPath;
                         } catch (e) {
-                          console.error("Failed to save cropped slot image:", e);
+                          logger.error('Failed to save cropped slot image:', e);
                         }
                       }
 
@@ -129,13 +135,16 @@ export function SlotMenuSection({
                       });
                       pushHistory();
                     } catch (err) {
-                      console.error("Failed to save cropped slot image:", err);
+                      logger.error('Failed to save cropped slot image:', err);
                     }
-                  }
+                  },
                 });
               }}
             >
-              <Crop className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <Crop
+                className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                weight="regular"
+              />
               <span className="truncate">قص وتدوير</span>
             </button>
 
@@ -151,8 +160,15 @@ export function SlotMenuSection({
                 }
               }}
             >
-              {isRemovingBg ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <Sparkle className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
-              <span className="truncate">{isRemovingBg ? "جاري العزل ..." : "عزل الخلفية"}</span>
+              {isRemovingBg ? (
+                <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} />
+              ) : (
+                <Sparkle
+                  className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                  weight="duotone"
+                />
+              )}
+              <span className="truncate">{isRemovingBg ? 'جاري العزل ...' : 'عزل الخلفية'}</span>
             </button>
 
             <button
@@ -167,8 +183,15 @@ export function SlotMenuSection({
                 }
               }}
             >
-              {isEnhancing ? <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} /> : <MagicWand className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />}
-              <span className="truncate">{isEnhancing ? "جاري الترميم ..." : "ترميم الوجه"}</span>
+              {isEnhancing ? (
+                <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} />
+              ) : (
+                <MagicWand
+                  className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                  weight="duotone"
+                />
+              )}
+              <span className="truncate">{isEnhancing ? 'جاري الترميم ...' : 'ترميم الوجه'}</span>
             </button>
           </>
         )}
@@ -177,7 +200,11 @@ export function SlotMenuSection({
           role="menuitem"
           tabIndex={-1}
           className={menuItemDangerClassName}
-          onClick={() => handleActionWithHistory(() => updateSlot(targetId, { imageSrc: undefined, originalImageSrc: undefined }))}
+          onClick={() =>
+            handleActionWithHistory(() =>
+              updateSlot(targetId, { imageSrc: undefined, originalImageSrc: undefined }),
+            )
+          }
         >
           <Broom className="w-3.5 h-3.5 text-destructive shrink-0" weight="regular" />
           <span className="truncate">إزالة الصورة</span>
@@ -188,17 +215,20 @@ export function SlotMenuSection({
       {slot?.imageSrc && (
         <>
           <div className={menuSeparatorClassName} />
-          <div className={menuSectionLabelClassName}>
-            التحويل والمحاذاة
-          </div>
+          <div className={menuSectionLabelClassName}>التحويل والمحاذاة</div>
           <div className="space-y-0.5">
             <button
               role="menuitem"
               tabIndex={-1}
               className={menuItemClassName}
-              onClick={() => handleActionWithHistory(() => updateSlot(targetId, { dragX: 0, dragY: 0, zoom: 1 }))}
+              onClick={() =>
+                handleActionWithHistory(() => updateSlot(targetId, { dragX: 0, dragY: 0, zoom: 1 }))
+              }
             >
-              <Crosshair className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <Crosshair
+                className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                weight="regular"
+              />
               <span className="truncate">توسيط</span>
             </button>
 
@@ -206,9 +236,16 @@ export function SlotMenuSection({
               role="menuitem"
               tabIndex={-1}
               className={menuItemClassName}
-              onClick={() => handleActionWithHistory(() => updateSlot(targetId, { rotation: (((slot.rotation ?? 0) + 90) % 360) }))}
+              onClick={() =>
+                handleActionWithHistory(() =>
+                  updateSlot(targetId, { rotation: ((slot.rotation ?? 0) + 90) % 360 }),
+                )
+              }
             >
-              <ArrowClockwise className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+              <ArrowClockwise
+                className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                weight="bold"
+              />
               <span className="truncate">تدوير 90° ({slot.rotation ?? 0}°)</span>
             </button>
 
@@ -216,9 +253,14 @@ export function SlotMenuSection({
               role="menuitem"
               tabIndex={-1}
               className={menuItemClassName}
-              onClick={() => handleActionWithHistory(() => updateSlot(targetId, { flipX: !slot.flipX }))}
+              onClick={() =>
+                handleActionWithHistory(() => updateSlot(targetId, { flipX: !slot.flipX }))
+              }
             >
-              <FlipHorizontal className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="bold" />
+              <FlipHorizontal
+                className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                weight="bold"
+              />
               <span className="truncate">قلب أفقي</span>
             </button>
           </div>
@@ -230,17 +272,22 @@ export function SlotMenuSection({
         <>
           <div className={menuSeparatorClassName} />
 
-          <div className={menuSectionLabelClassName}>
-            التعبئة والتكرار
-          </div>
+          <div className={menuSectionLabelClassName}>التعبئة والتكرار</div>
           <div className="space-y-0.5">
             <button
               role="menuitem"
               tabIndex={-1}
               className={menuItemClassName}
-              onClick={() => handleActionWithHistory(() => useEditorStore.getState().fillAllSlots(slot.imageSrc!, targetId))}
+              onClick={() =>
+                handleActionWithHistory(() =>
+                  useEditorStore.getState().fillAllSlots(slot.imageSrc!, targetId),
+                )
+              }
             >
-              <GridFour className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <GridFour
+                className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                weight="regular"
+              />
               <span className="truncate">تعبئة الكل</span>
             </button>
 
@@ -248,9 +295,16 @@ export function SlotMenuSection({
               role="menuitem"
               tabIndex={-1}
               className={menuItemClassName}
-              onClick={() => handleActionWithHistory(() => useEditorStore.getState().fillEmptySlots(slot.imageSrc!, targetId))}
+              onClick={() =>
+                handleActionWithHistory(() =>
+                  useEditorStore.getState().fillEmptySlots(slot.imageSrc!, targetId),
+                )
+              }
             >
-              <Sparkle className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="duotone" />
+              <Sparkle
+                className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                weight="duotone"
+              />
               <span className="truncate">تعبئة الفارغ</span>
             </button>
 
@@ -258,9 +312,16 @@ export function SlotMenuSection({
               role="menuitem"
               tabIndex={-1}
               className={menuItemClassName}
-              onClick={() => handleActionWithHistory(() => useEditorStore.getState().fillRowSlots(targetId, slot.imageSrc!))}
+              onClick={() =>
+                handleActionWithHistory(() =>
+                  useEditorStore.getState().fillRowSlots(targetId, slot.imageSrc!),
+                )
+              }
             >
-              <Rows className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <Rows
+                className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                weight="regular"
+              />
               <span className="truncate">تعبئة الصف</span>
             </button>
 
@@ -268,9 +329,16 @@ export function SlotMenuSection({
               role="menuitem"
               tabIndex={-1}
               className={menuItemClassName}
-              onClick={() => handleActionWithHistory(() => useEditorStore.getState().fillColumnSlots(targetId, slot.imageSrc!))}
+              onClick={() =>
+                handleActionWithHistory(() =>
+                  useEditorStore.getState().fillColumnSlots(targetId, slot.imageSrc!),
+                )
+              }
             >
-              <Columns className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0" weight="regular" />
+              <Columns
+                className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
+                weight="regular"
+              />
               <span className="truncate">تعبئة العمود</span>
             </button>
           </div>

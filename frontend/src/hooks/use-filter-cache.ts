@@ -1,6 +1,9 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('use-filter-cache');
 
 export interface CacheableKonvaNode {
   getStage?: () => { width: () => number } | null;
@@ -71,7 +74,7 @@ export function useFilterCache({
         node.cache?.({ pixelRatio: ratio });
       }
     } catch (err) {
-      console.warn('Failed to cache Konva image', err);
+      logger.warn('Failed to cache Konva image', err);
     }
   }, [nodeRef, canvasWidth, isDraggingFilter]);
 

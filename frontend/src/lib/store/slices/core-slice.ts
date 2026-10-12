@@ -370,7 +370,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
 
   loadProject: (project: ProjectFileV1, projectId: string | null = null) => {
     if (!project || typeof project !== 'object') {
-      console.error('[loadProject] Invalid project payload provided');
+      logger.error('[loadProject] Invalid project payload provided');
       return;
     }
     const validWidth =

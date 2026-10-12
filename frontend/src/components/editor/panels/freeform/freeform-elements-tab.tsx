@@ -36,6 +36,10 @@ import {
 import { StickerTemplate } from '@/features/stickers/types';
 import { renderSvgToPngDataUrl } from '@/features/stickers/lib/svg-rasterizer';
 import { sanitizeSvgMarkupCached } from '@/lib/utils';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('freeform-elements-tab');
 
 // كاش محلي للـ SVG لتسريع العرض الفوري
 const SVG_PREVIEW_CACHE = new Map<string, string>();
@@ -356,8 +360,8 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
         addImageElement(pngUrl, template.aspectRatio || 1);
         toast.success(`أُضيف ${template.name}`);
       } catch (err) {
-        console.error('Failed to insert quick sticker', err);
-        toast.error('فشل الإدراج');
+        logger.error('Failed to insert quick sticker', err);
+        toast.error(toErrorMessage(err, 'فشل الإدراج'));
       } finally {
         setIsInserting(null);
       }

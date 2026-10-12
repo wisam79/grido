@@ -13,6 +13,9 @@ import { assertExportablePixels } from '@/lib/export/export-limits';
 import { renderCollageBranch } from './export-canvas-collage';
 import { renderFittedBranch } from './export-canvas-fitted';
 import { applyWatermarkIfFree } from './export-watermark';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('export-canvas');
 
 export interface ExportCanvasOptions {
   /**
@@ -88,7 +91,7 @@ export async function exportCanvas(
         captured.close();
       }
     } catch (e) {
-      console.error('Failed to export via Konva Stage, falling back to manual canvas:', e);
+      logger.error('Failed to export via Konva Stage, falling back to manual canvas:', e);
       stageBlob = null;
     }
 

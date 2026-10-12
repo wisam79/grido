@@ -22,6 +22,9 @@ import { CheckForUpdate, DownloadAndInstallUpdate } from '../../../../wailsjs/go
 import { service } from '../../../../wailsjs/go/models';
 import { EventsOn, EventsOff, BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
 import { toErrorMessage } from '@/lib/wails-error';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('update-notifier');
 
 /**
  * معالجة وتنسيق ملاحظات التحديث لتحويل أسطر Markdown إلى عناصر واجهة نقية
@@ -91,7 +94,7 @@ export function UpdateNotifier() {
         toast.success('أنت على أحدث إصدار');
       }
     } catch (err) {
-      console.warn('Failed to check for updates:', err);
+      logger.warn('Failed to check for updates:', err);
       if (isManual) {
         toast.error('تعذر الاتصال بخادم التحديثات. حاول لاحقاً.');
       }
@@ -143,7 +146,7 @@ export function UpdateNotifier() {
       // الخلفية تفرضه متى كان مفتاح عام مثبّتاً في البناء.
       await DownloadAndInstallUpdate(url, updateInfo.sha256 || '', updateInfo.signature || '');
     } catch (err: unknown) {
-      console.error('Failed to update:', err);
+      logger.error('Failed to update:', err);
       const errMsg = toErrorMessage(err, 'فشل تحميل وتثبيت التحديث.');
       setError(errMsg);
     } finally {

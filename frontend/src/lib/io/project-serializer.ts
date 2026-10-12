@@ -1,5 +1,8 @@
 import { z } from 'zod';
 import { ProjectSchema } from '@/lib/schema';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('project-serializer');
 import { domain } from '../../../wailsjs/go/models';
 import { EditorState } from '@/lib/editor-store';
 
@@ -139,7 +142,7 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     try {
       return JSON.parse(data);
     } catch (e) {
-      console.error('Failed to parse project JSON data', e);
+      logger.error('Failed to parse project JSON data', e);
       return fallback;
     }
   };

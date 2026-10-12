@@ -1,5 +1,8 @@
 export type FontCategory =
   'all' | 'kufi' | 'naskh' | 'calligraphy' | 'modern' | 'display' | 'latin';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('fonts');
 
 export interface FontCategoryInfo {
   id: FontCategory;
@@ -405,7 +408,7 @@ export function loadGoogleFont(fontFamily: string) {
       }
     });
   } catch (err) {
-    console.warn('Failed to load Google Font:', cleanName, err);
+    logger.warn('Failed to load Google Font:', cleanName, err);
   }
 }
 

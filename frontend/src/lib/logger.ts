@@ -4,17 +4,19 @@ type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error';
 
 const DEV_CHANNELS = new Set(['trace', 'debug']);
 
+function formatPart(p: unknown): string {
+  if (typeof p === 'string') return p;
+  if (p instanceof Error) return p.message || String(p);
+  try {
+    const s = JSON.stringify(p);
+    return s === undefined ? String(p) : s;
+  } catch {
+    return String(p);
+  }
+}
+
 function formatMessage(level: LogLevel, scope: string, parts: unknown[]): string {
-  const suffix = parts
-    .map((p) => {
-      if (typeof p === 'string') return p;
-      try {
-        return JSON.stringify(p);
-      } catch {
-        return String(p);
-      }
-    })
-    .join(' ');
+  const suffix = parts.map(formatPart).join(' ');
   return `[${scope}] ${suffix || level.toUpperCase()}`;
 }
 
@@ -43,8 +45,20 @@ function emit(level: LogLevel, scope: string, parts: unknown[]): void {
 
   if (DEV_CHANNELS.has(level) && import.meta.env?.PROD) return;
   const consoleFn =
-    level === 'warn' ? console.warn : level === 'error' ? console.error : console.log;
-  consoleFn(message);
+    level === 'warn'
+      ? console.warn.bind(console)
+      : level === 'error'
+        ? console.error.bind(console)
+        : level === 'info'
+          ? console.info.bind(console)
+          : (console.debug ?? console.log).bind(console);
+  // نمرر الأجزاء الأصلية (بدون stringify) للحفاظ على قابلية الفحص في DevTools
+  // (توسيع الكائنات + stack الـError القابل للنقر)، بينما الـbackend يستلم النص المنسق.
+  if (parts.length === 0) {
+    consoleFn(message);
+  } else {
+    consoleFn(`[${scope}]`, ...parts);
+  }
 }
 
 export function createLogger(scope: string) {

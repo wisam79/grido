@@ -4,6 +4,9 @@ import { sanitizeStickerColor, sanitizeStickerFontFamily } from './svg-safety';
 import { applyRowToParams } from './vdp-parser';
 import { wailsIsDesktop } from '@/lib/wails-env';
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('vdp-batch');
 
 /**
  * مولّد البطاقات الدفعية (VDP) — يُصيّر صفوف البيانات على قالب واحد
@@ -61,7 +64,7 @@ export async function renderVdpBatch(
       pngUrls.push(await persistPng(png));
     } catch (err) {
       // صف تالف (بيانات ناقصة مثلاً) لا يُسقط الدفعة كاملة — نُكمل ونُبلغ
-      console.error(`VDP: فشل تصيير الصف ${i + 1}:`, err);
+      logger.error(`VDP: فشل تصيير الصف ${i + 1}:`, err);
       failedRows++;
     }
 
@@ -80,7 +83,7 @@ async function persistPng(dataUrl: string): Promise<string> {
       const localPath = await SaveImageFromBase64(dataUrl);
       if (localPath) return localPath;
     } catch (e) {
-      console.error('VDP: فشل حفظ الصورة محلياً:', e);
+      logger.error('VDP: فشل حفظ الصورة محلياً:', e);
     }
   }
   return dataUrl;

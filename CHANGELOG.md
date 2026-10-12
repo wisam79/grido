@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **استكمال توحيد التسجيل الأمامي عبر `createLogger` (Frontend Unified Logging Completion):**
+  1. استبدال كل نداءات `console.error/warn` الخام في 40 ملفاً من الواجهة بمسجّلات نطاق `createLogger(scope)` من `frontend/src/lib/logger.ts`، مع توجيه `info/warn/error` إلى سجل الـ backend المنظم (lumberjack) عبر `LogFrontendError`.
+  2. إصلاح فقدان قابلية الفحص في DevTools: الـ console تستلم الآن الأجزاء الأصلية (كائنات قابلة للتوسيع و`Error` قابل للنقر) بينما الـ backend يستلم النص المنسق، ومعالجة `Error.message` بدل `{}` الفارغ من `JSON.stringify`، واستخدام `console.info/debug` بمستواها الصحيح.
+  3. حارس امتثال جديد H9 في `frontend/test/ui-compliance.test.ts` يمنع عودة أي `console` خام إلى كود الإنتاج (يُستثنى `lib/logger.ts` نفسه وasserts التطوير والاختبارات).
+
+### Refactored
+- **تفكيك أضخم 3 ملفات إلى مجلدات فرعية مع براميل توافقية (God-Module Splitting, no API change):**
+  1. `freeform-math.ts` (1184 سطراً) → مجلد `frontend/src/features/freeform-collage/lib/slots/` بعشرة ملفات (`constants`, `slot-ids`, `photo-presets`, `slot-move`, `slot-resize`, `slot-align`, `slot-pack`, `slot-batch`, `layout-io`, `index`)، والملف الأصلي صار shim رقيقاً `export * from './slots'`.
+  2. `element-slice.ts` (898 سطراً) → مجلد `frontend/src/lib/store/slices/element/` بتسعة ملفات (`types`, `image/text/shape-elements`, `crud`, `clipboard`, `selection`, `alignment`, `index`) بنفس اسم `createElementSlice` وشكل الحالة.
+  3. `AdminDashboard.tsx` (1684 → 180 سطراً) → مجلد `admin-web/src/pages/admin/` بأربعة هوكات وعشرة مكونات عرضية بنفس التصدير الافتراضي.
+
+### Added
+- **رفع تغطية الاختبارات (+31 حالة، المجموع 1025 ناجحة + 1 متخطاة في 117 ملفاً — تحقق 2026-10-12):**
+  1. `frontend/test/logger.test.ts` (6 حالات): تنسيق `Error` المرسل للـ backend، هوية الكائنات في الـ console، التوجيه الخلفي، ابتلاع فشل IPC، وكتم trace/debug بالإنتاج.
+  2. `frontend/test/freeform-slots-coverage.test.ts` (25 حالة): الدوال غير المغطاة سابقاً (`newSlotId`, `snapToGrid`, `addDefaultSlot`, `slotsFromFile`) وحراس الحالات الحدية والاستيراد المعادي، عبر الـ barrel الجديد مباشرة.
+
 ## [v1.14.7] - 2026-10-12
 
 ### Performance & Architectural Hardening

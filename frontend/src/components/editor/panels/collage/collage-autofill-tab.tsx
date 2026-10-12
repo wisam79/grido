@@ -21,6 +21,10 @@ import {
 } from '@/components/ui/blocks';
 import { Switch } from '@/components/ui/switch';
 import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('collage-autofill-tab');
 
 /* ═══════════════════════════════════════════════════════════════
    معالج التعبئة التلقائية — يوزّع صوراً مختارة (أو مجلداً كاملاً)
@@ -75,8 +79,8 @@ export function CollageAutofillTab() {
       if (picked.length === 0) return;
       setImages((prev) => [...prev, ...picked]);
     } catch (error) {
-      console.error(error);
-      toast.error('فشل اختيار الصور');
+      logger.error(error);
+      toast.error(toErrorMessage(error, 'فشل اختيار الصور'));
     } finally {
       setIsPicking(false);
     }

@@ -190,7 +190,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           }
         })
         .catch((err) => {
-          console.error('Failed to query system printers:', err);
+          logger.error('Failed to query system printers:', err);
         })
         .finally(() => {
           if (!cancelled) setIsLoadingPrinters(false);
@@ -445,7 +445,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           setPreviewImageSrc(previewUrl);
         }
       } catch (err) {
-        console.error('Failed to generate print preview image:', err);
+        logger.error('Failed to generate print preview image:', err);
         const freshElements = useEditorStore.getState().elements;
         const firstImg = freshElements.find(
           (el): el is import('@/lib/store/types').ImageElement =>

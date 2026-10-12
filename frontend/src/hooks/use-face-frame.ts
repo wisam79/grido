@@ -7,6 +7,10 @@ import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { triggerMemoryTrim } from '@/lib/memory-trim';
 import type { CanvasElement, CanvasSlot } from '@/lib/store/types';
 import { create } from 'zustand';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('use-face-frame');
 
 interface FaceFrameState {
   isFraming: boolean;
@@ -273,8 +277,8 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
             );
             toast.success('تم ضبط مقاس الوجه وموضعه وفق معايير الهوية.');
           } catch (err) {
-            console.error('Failed to save framed image:', err);
-            toast.error('فشل حفظ الصورة بعد ضبط الوجه.');
+            logger.error('Failed to save framed image:', err);
+            toast.error(toErrorMessage(err, 'فشل حفظ الصورة بعد ضبط الوجه.'));
           } finally {
             settle();
           }

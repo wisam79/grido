@@ -25,6 +25,10 @@ import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
 import { toast } from 'sonner';
 import { useEditorStore, CanvasSlot } from '@/lib/editor-store';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('slot-properties');
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { PopoverColorPicker } from './shared-controls';
 import { FluentSection, FluentSliderField, FluentTooltip } from '@/components/ui/blocks';
@@ -99,7 +103,7 @@ export const SlotProperties = React.memo(function SlotProperties({
             const localPath = await SaveImageFromBase64(b64);
             if (localPath) srcToUse = localPath;
           } catch (e) {
-            console.error('Failed to save image locally:', e);
+            logger.error('Failed to save image locally:', e);
           }
         }
         const freshStore = useEditorStore.getState();
@@ -114,9 +118,9 @@ export const SlotProperties = React.memo(function SlotProperties({
         }
       }
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       // إشعار فشل تغيير الصورة بدل السكوت
-      toast.error('فشل تغيير الصورة');
+      toast.error(toErrorMessage(err, 'فشل تغيير الصورة'));
     } finally {
       setIsFileDialogOpen(false);
     }
@@ -668,8 +672,8 @@ export const SlotProperties = React.memo(function SlotProperties({
                   onUpdate(slot.id, { imageSrc: cropped });
                 }
               } catch (err) {
-                console.error('Failed to save cropped slot image:', err);
-                toast.error('فشل حفظ القص');
+                logger.error('Failed to save cropped slot image:', err);
+                toast.error(toErrorMessage(err, 'فشل حفظ القص'));
               }
             }}
           />

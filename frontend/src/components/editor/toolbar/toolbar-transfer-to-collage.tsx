@@ -11,6 +11,10 @@ import { TableArrowRepeatAll } from '@/components/ui/icons';
 import { Separator } from '@/components/ui/separator';
 import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { toast } from 'sonner';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('transfer-to-collage');
 
 /**
  * ToolbarTransferToCollage — نقل التصميم من الوضع الحر إلى الكولاج:
@@ -66,7 +70,7 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
           const localPath = await SaveImageFromBase64(dataUrl);
           if (localPath) finalSrc = localPath;
         } catch (e) {
-          console.error('فشل حفظ صورة المونتاج محلياً:', e);
+          logger.error('فشل حفظ صورة المونتاج محلياً:', e);
         }
       }
 
@@ -102,8 +106,8 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
           : `تم إدراج التصميم في ${assignments.length} خانات بالكولاج`,
       );
     } catch (err) {
-      console.error(err);
-      toast.error('حدث خطأ أثناء نقل التصميم للكولاج');
+      logger.error(err);
+      toast.error(toErrorMessage(err, 'حدث خطأ أثناء نقل التصميم للكولاج'));
     } finally {
       setIsTransferring(false);
     }

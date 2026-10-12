@@ -21,6 +21,9 @@ import { useImageDrop } from './use-image-drop';
 import { useRulerMetricsPreview } from './use-ruler-metrics';
 import { CanvasBleedGuides } from './canvas-bleed-guides';
 import { formatGuideMeasurement } from '@/lib/canvas/units';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('editor-canvas');
 
 export interface EditorCanvasProps {
   printMode?: boolean;
@@ -188,14 +191,14 @@ export const EditorCanvas = React.memo(
                   const localPath = await SaveImageFromBase64(b64);
                   if (localPath) srcToUse = localPath;
                 } catch (e) {
-                  console.error('Failed to save image locally:', e);
+                  logger.error('Failed to save image locally:', e);
                 }
               }
               updateElement(el.id, { imageSrc: srcToUse });
               pushHistory();
             }
           } catch (err) {
-            console.error('Open file error:', err);
+            logger.error('Open file error:', err);
           } finally {
             setIsLoading(false);
           }
@@ -231,13 +234,13 @@ export const EditorCanvas = React.memo(
                 const localPath = await SaveImageFromBase64(b64);
                 if (localPath) srcToUse = localPath;
               } catch (e) {
-                console.error('Failed to save image locally:', e);
+                logger.error('Failed to save image locally:', e);
               }
             }
             useEditorStore.getState().setSlotImage(slotId, srcToUse);
           }
         } catch (err) {
-          console.error('Open file error:', err);
+          logger.error('Open file error:', err);
         } finally {
           setIsLoading(false);
         }

@@ -35,6 +35,10 @@ import { useAiEnhance } from '@/hooks/use-ai-enhance';
 import { useFaceFrame } from '@/hooks/use-face-frame';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { PopoverColorPicker } from '../shared-controls';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+const logger = createLogger('image-properties');
 
 // أدوات الصور الثقيلة لا تُحمّل إلا عند فتحها، بدلاً من تأخير المحرر عند البدء.
 const CropDialog = lazy(() =>
@@ -287,8 +291,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         toast.success('تم عزل المستند');
       }
     } catch (err) {
-      console.error(err);
-      toast.error('فشل حفظ المستند المستعدل');
+      logger.error(err);
+      toast.error(toErrorMessage(err, 'فشل حفظ المستند المستعدل'));
     }
   };
   const { isRemovingBg, bgProgress, bgProgressText, handleCancelBgRemoval, handleRemoveBg } =
@@ -325,8 +329,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         useEditorStore.getState().pushHistory();
       }
     } catch (err) {
-      console.error(err);
-      toast.error('فشل تغيير الصورة');
+      logger.error(err);
+      toast.error(toErrorMessage(err, 'فشل تغيير الصورة'));
     } finally {
       setIsFileDialogOpen(false);
     }
@@ -838,8 +842,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 };
                 img.src = cropped;
               } catch (err) {
-                console.error('Failed to save cropped image:', err);
-                toast.error('فشل حفظ القص');
+                logger.error('Failed to save cropped image:', err);
+                toast.error(toErrorMessage(err, 'فشل حفظ القص'));
               }
             }}
           />
