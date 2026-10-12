@@ -5,6 +5,7 @@ name: CI
 # `permissions:` block (see release.yml pattern: contents:write there).
 permissions:
   contents: read
+  pull-requests: read
 
 # Single source of truth for toolchain versions (Dependabot watches the
 # actions; these two pins are bumped together in one place).
@@ -39,6 +40,9 @@ jobs:
   changes:
     name: Detect Changed Areas
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     timeout-minutes: 5
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
@@ -62,6 +66,8 @@ jobs:
               - 'frontend/**'
             backend:
               - 'internal/**'
+              - 'build/**'
+              - 'Taskfile.yml'
               - 'go.mod'
               - 'go.sum'
               - 'main.go'
@@ -72,6 +78,7 @@ jobs:
               - 'admin-web/**'
             workflows:
               - '.github/**'
+              - 'scripts/**'
 
   # ───────────────────────────────────────────────
   # Job 0: Documentation Gate (mandatory)

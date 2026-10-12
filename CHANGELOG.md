@@ -48,6 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   1. تسريب عناوين الكائنات: `revokeObjectUrlLater` في `sticker-studio-dialog.tsx` كانت تستدعي نفسها دورياً كل 60 ثانية بدل `URL.revokeObjectURL` فلا يُلغى أي عنوان أبداً — صار الإلغاء فعلياً بعد 60 ثانية مع دمج الطلبات المتتالية.
   2. رموز QR وهمية: مسار `generateQrCodeInnerSvg` المتزامن (قبل اكتمال الجلب الكسول) ومسار الفشل كانا يُرجعان مربعاً أسود مصمتاً يبدو رمزاً صالحاً وهو غير قابل للمسح — صارا يُرجعان عنصراً تحذيرياً صريحاً (إطار متقطع + ⚠) كمسار الباركود، وكذلك عنصر الانتظار في `generateBarcodeInnerSvg` (بدل الشريط المصمت) قبل جاهزية JsBarcode.
   3. معرفات القوالب المحفوظة: `saveStickerPreset` كان يستخدم `Date.now() + Math.random()` المعرّض للتصادم في العمليات السريعة — صار `crypto.randomUUID()` (مع سقوط آمن)، وتشديد التحقق من بنية `params.fields` عند التحميل من `localStorage`.
+- **إصلاح صلاحيات فحص المسارات في CI لطلبات السحب (CI pull_request Paths Filter Permissions):**
+  1. إضافة إذن `pull-requests: read` في سير العمل `ci.yml` ووظيفة `changes` (`Detect Changed Areas`): كان حصر الصلاحيات على `contents: read` يمنع `dorny/paths-filter@v3` من استدعاء GitHub REST API (`listFiles`) عند أحداث `pull_request`، مما أسفر عن خطأ `Resource not accessible by integration` وفشل كل طلبات السحب (بما فيها تحديثات Dependabot).
+  2. توسيع مرشحات المسارات لتشمل `build/**` و `Taskfile.yml` ضمن مسارات الباك إند، و `scripts/**` ضمن مسارات سير العمل لضمان إعادة التحقق عند تعديل سكربتات البناء أو الإطلاق.
 
 ## [v1.14.7] - 2026-10-12
 
