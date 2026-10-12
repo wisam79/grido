@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.14.8] - 2026-10-12
+
 ### Changed
 - **استكمال توحيد التسجيل الأمامي عبر `createLogger` (Frontend Unified Logging Completion):**
   1. استبدال كل نداءات `console.error/warn` الخام في 40 ملفاً من الواجهة بمسجّلات نطاق `createLogger(scope)` من `frontend/src/lib/logger.ts`، مع توجيه `info/warn/error` إلى سجل الـ backend المنظم (lumberjack) عبر `LogFrontendError`.
