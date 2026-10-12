@@ -1,6 +1,6 @@
 module grido
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/alexbrainman/printer v0.0.0-20200912035444-f40f26f0bdeb
@@ -10,7 +10,7 @@ require (
 	github.com/wailsapp/wails/v3 v3.0.0-beta.28
 	golang.org/x/crypto v0.54.0
 	golang.org/x/image v0.44.0
-	golang.org/x/sync v0.22.0
+	golang.org/x/sync v0.24.0
 	golang.org/x/sys v0.47.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/sqlite v1.6.0
