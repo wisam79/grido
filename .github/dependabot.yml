@@ -1,40 +1,46 @@
-# Dependabot — weekly security & maintenance updates (CI costs nothing:
-# it only opens PRs; each PR still passes the full pipeline incl. docs-gate).
+# Dependabot — monthly low-noise security & patch updates (max 1 PR per ecosystem, no breaking majors)
 version: 2
 updates:
-  # GitHub Actions in .github/workflows (ci/release/deploy-pages) —
-  # keeps setup-node/go/checkout/cache on patched majors.
+  # GitHub Actions in .github/workflows
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "saturday"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 1
     labels: ["dependencies", "ci"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
-  # Frontend app dependencies (incl. Playwright browsers via lockfile).
+  # Frontend app dependencies (patch & minor only)
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
-      interval: "weekly"
-      day: "saturday"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 1
     labels: ["dependencies", "frontend"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
-  # Admin web + landing page dependencies.
+  # Admin web dependencies (patch & minor only)
   - package-ecosystem: "npm"
     directory: "/admin-web"
     schedule:
-      interval: "weekly"
-      day: "saturday"
-    open-pull-requests-limit: 3
+      interval: "monthly"
+    open-pull-requests-limit: 1
     labels: ["dependencies", "admin-web"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
-  # Go modules (incl. Wails v3 beta track).
+  # Go modules (patch & minor only)
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "saturday"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 1
     labels: ["dependencies", "backend"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

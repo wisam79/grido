@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   3. مهلات صريحة لكل وظيفة (`timeout-minutes`: البوابة 10 · الواجهة 30 · Go ‏25 · الإدارة 20 · ‏E2E ‏40 · ويندوز 60 · ‏WebKit ‏30 · الفلترة 5) بدل حد GitHub الافتراضي (6 ساعات) عند التعليق.
   4. تثبيت `staticcheck@2025.1.1` (إصدار مُتحقق من `dominikh/go-tools`) بدل `@latest` المتحرك + مفتاح كاش مطابق، وتوحيد إصداري Go/Node في `env` علوي واحد.
   5. كاش متصفح WebKit في `webkit-smoke` (كان يُنزَّل ~100MB+ كل تشغيل) بنفس نمط Chromium + `--no-fund` في كل `npm ci`.
-  6. تحديثات أمنية دورية: `.github/dependabot.yml` جديد (أسبوعي: إجراءات GitHub + حزم `frontend`/`admin-web` + وحدات Go، بسقوف PR محدودة).
+  6. تحديثات أمنية دورية هادئة: `.github/dependabot.yml` مضبوط بجدولة شهرية (`interval: monthly`) وسقف PR واحد لكل بيئة مع استثناء التحديثات الكبرى (`ignore: semver-major`) لمنع الضوضاء والتحديثات الكاسرة.
 
 ### Refactored
 - **تفكيك أضخم 3 ملفات إلى مجلدات فرعية مع براميل توافقية (God-Module Splitting, no API change):**
