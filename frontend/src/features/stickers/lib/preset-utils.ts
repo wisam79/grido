@@ -14,7 +14,17 @@ export function loadStickerPresets(): StickerUserPreset[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      return parsed.filter((p) => p && typeof p === 'object' && p.id && p.templateId && p.params);
+      return parsed.filter(
+        (p) =>
+          p &&
+          typeof p === 'object' &&
+          typeof p.id === 'string' &&
+          typeof p.templateId === 'string' &&
+          p.params &&
+          typeof p.params === 'object' &&
+          p.params.fields &&
+          typeof p.params.fields === 'object',
+      );
     }
     return [];
   } catch (e) {
@@ -26,6 +36,18 @@ export function loadStickerPresets(): StickerUserPreset[] {
 /**
  * Saves a new preset to localStorage, capping at 50 presets to prevent storage bloat.
  */
+function newPresetId(): string {
+  // معرّف فريد مضمون ضد التصادم في العمليات الدفعية (قاعدة المشروع: crypto.randomUUID حصراً)
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return `preset_${crypto.randomUUID()}`;
+    }
+  } catch {
+    // سقوط آمن لبيئات قديمة بلا WebCrypto
+  }
+  return `preset_${Date.now()}_${Math.random().toString(36).slice(2, 10)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
 export function saveStickerPreset(
   name: string,
   templateId: string,
@@ -33,7 +55,7 @@ export function saveStickerPreset(
 ): StickerUserPreset {
   const current = loadStickerPresets();
   const newPreset: StickerUserPreset = {
-    id: `preset_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    id: newPresetId(),
     name: name.trim() || 'قالب مخصص',
     templateId,
     params: {

@@ -22,6 +22,39 @@ export interface SheetOptions {
   dpi?: number;
 }
 
+export interface SheetAutoFitInput {
+  stickerWidthMm: number;
+  stickerHeightMm: number;
+  sheetWidthMm: number;
+  sheetHeightMm: number;
+  spacingMm: number;
+  /** هامش حافة الورقة بالمم (افتراضي 8مم للأمان من هوامش الطابعة) */
+  marginMm?: number;
+}
+
+export interface SheetAutoFitResult {
+  rows: number;
+  cols: number;
+  count: number;
+}
+
+/**
+ * ملاءمة تلقائية: أكبر شبكة (صفوف×أعمدة) تتسع فيها الملصقات بمقاسها
+ * المليمتري الحقيقي على ورقة الطباعة مع الفواصل والهوامش — بلا تخمين يدوي.
+ * تُرجع 1×1 على الأقل دائماً (الملصق الأكبر من الورقة يُصغَّر لاحقاً عند الرسم).
+ */
+export function autoFitSheetGrid(input: SheetAutoFitInput): SheetAutoFitResult {
+  const margin = Math.max(0, input.marginMm ?? 8);
+  const usableW = Math.max(1, input.sheetWidthMm - margin * 2);
+  const usableH = Math.max(1, input.sheetHeightMm - margin * 2);
+  const sw = Math.max(1, input.stickerWidthMm);
+  const sh = Math.max(1, input.stickerHeightMm);
+  const gap = Math.max(0, input.spacingMm);
+  const cols = Math.max(1, Math.floor((usableW + gap) / (sw + gap)));
+  const rows = Math.max(1, Math.floor((usableH + gap) / (sh + gap)));
+  return { rows: Math.min(rows, 12), cols: Math.min(cols, 12), count: rows * cols };
+}
+
 export async function generateStickerSheet(
   singleStickerPngUrl: string,
   options: SheetOptions = { rows: 3, cols: 3 },
@@ -57,6 +90,12 @@ export async function generateStickerSheet(
         if (!ctx) {
           reject(new Error('Cannot get 2D canvas context'));
           return;
+        }
+        ctx.imageSmoothingEnabled = true;
+        try {
+          ctx.imageSmoothingQuality = 'high';
+        } catch {
+          // متصفحات قديمة — تُتجاهل بصمت
         }
 
         // Available area for grid

@@ -1,16 +1,78 @@
 name: CI
 
+# ── Security baseline (least privilege): every job runs with read-only
+# credentials by default. A job needing more must declare its own
+# `permissions:` block (see release.yml pattern: contents:write there).
+permissions:
+  contents: read
+
+# Single source of truth for toolchain versions (Dependabot watches the
+# actions; these two pins are bumped together in one place).
+env:
+  GO_VERSION: "1.25.0"
+  NODE_VERSION: "22"
+
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # ───────────────────────────────────────────────
+  # Job -1: Path filter — heavy jobs run only when their inputs changed.
+  #   docs-gate has no dependency and ALWAYS runs (mandatory gate).
+  #   Safety rationale for the skips:
+  #   • frontend also runs on backend changes (bindings/IPC drift tests
+  #     live in frontend: ipc-contract-drift).
+  #   • backend never runs on frontend-only changes (Go cannot break
+  #     from TSX edits; bindings are generated+checked in frontend).
+  #   • e2e/webkit run against the mocked Wails bridge, so Go-only
+  #     changes cannot affect them.
+  #   Docs-only PRs finish in ~1 min instead of ~25 min.
+  # ───────────────────────────────────────────────
+  changes:
+    name: Detect Changed Areas
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      admin: ${{ steps.filter.outputs.admin }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Full history: paths-filter diffs push events against `before`,
+          # which a shallow clone does not contain.
+          fetch-depth: 0
+
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'internal/**'
+              - 'go.mod'
+              - 'go.sum'
+              - 'main.go'
+              - 'app.go'
+              - 'system_tray.go'
+              - 'devmode_*.go'
+            admin:
+              - 'admin-web/**'
+            workflows:
+              - '.github/**'
+
   # ───────────────────────────────────────────────
   # Job 0: Documentation Gate (mandatory)
   #   → يفشل عند انحراف الأرقام المرجعية أو وجود مستند غير مُسجَّل في الجرد.
@@ -19,6 +81,8 @@ jobs:
   docs-gate:
     name: Documentation Gate
     runs-on: ubuntu-latest
+    # Hung gate must fail fast instead of burning the 6h runner default.
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,7 +92,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Run Documentation Sync Gate
         run: node scripts/docs-gate.mjs --push --ci
@@ -50,6 +114,10 @@ jobs:
   validate-frontend:
     name: Frontend Quality & Tests
     runs-on: ubuntu-latest
+    needs: [changes]
+    # Bindings are generated from Go sources, so backend changes re-run this.
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflows == 'true'
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,14 +130,14 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.0'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Cache Go Binaries (Wails)
@@ -97,7 +165,7 @@ jobs:
 
       - name: Install Frontend Dependencies
         working-directory: ./frontend
-        run: npm ci --prefer-offline --no-audit
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Typecheck Frontend
         id: typecheck
@@ -134,6 +202,9 @@ jobs:
   validate-backend:
     name: Backend Quality & Tests
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.workflows == 'true'
+    timeout-minutes: 25
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -146,7 +217,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.0'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
 
       # مطلوب لخطوة الملخّص (node scripts/ci-step-summary.mjs) — كانت المشغّلات
@@ -154,14 +225,14 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Cache Go Tools (staticcheck)
         id: cache-staticcheck
         uses: actions/cache@v4
         with:
           path: ~/go/bin/staticcheck
-          key: ${{ runner.os }}-staticcheck-v2025
+          key: ${{ runner.os }}-staticcheck-2025.1.1
 
       - name: Add Go Bin to PATH
         run: echo "$HOME/go/bin" >> $GITHUB_PATH
@@ -175,10 +246,12 @@ jobs:
         id: go_vet
         run: go vet ./internal/...
 
+      # Pinned release (verified: dominikh/go-tools 2025.1.1) — `@latest`
+      # silently moves the toolchain under CI and breaks reproducibility.
       - name: Install staticcheck
         id: install_staticcheck
         if: steps.cache-staticcheck.outputs.cache-hit != 'true'
-        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+        run: go install honnef.co/go/tools/cmd/staticcheck@2025.1.1
 
       - name: Run staticcheck
         id: staticcheck
@@ -206,6 +279,9 @@ jobs:
   admin-web-quality:
     name: Admin Web Quality
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.admin == 'true' || needs.changes.outputs.workflows == 'true'
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -213,13 +289,13 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
           cache-dependency-path: admin-web/package-lock.json
 
       - name: Install Admin Web Dependencies
         working-directory: ./admin-web
-        run: npm ci --prefer-offline --no-audit
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Typecheck Admin Web
         id: typecheck
@@ -259,6 +335,11 @@ jobs:
   e2e-tests:
     name: Playwright E2E (Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
     runs-on: ubuntu-latest
+    needs: [changes]
+    # E2E runs against the mocked Wails bridge, so Go-only changes cannot
+    # affect it — frontend or workflow changes re-run it.
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -276,14 +357,14 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.0'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Cache Go Binaries (Wails)
@@ -320,7 +401,7 @@ jobs:
 
       - name: Install Frontend Dependencies
         working-directory: ./frontend
-        run: npm ci --prefer-offline --no-audit
+        run: npm ci --prefer-offline --no-audit --no-fund
 
       - name: Install Playwright Browsers
         id: install_browsers
@@ -359,6 +440,10 @@ jobs:
   windows-build:
     name: Windows Build Verification
     runs-on: windows-latest
+    needs: [changes]
+    # Compiles Go + frontend together — any code change re-runs it.
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
+    timeout-minutes: 60
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -366,7 +451,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.0'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Cache Go Build Cache (Windows)
@@ -380,8 +465,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Cache Go Binaries (Wails)
@@ -408,8 +493,8 @@ jobs:
         id: build
         shell: powershell
         env:
-          CGO_ENABLED: '1'
-          APP_VERSION: 'v0.0.0-ci'
+          CGO_ENABLED: "1"
+          APP_VERSION: "v0.0.0-ci"
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: wails3 task build
@@ -437,7 +522,7 @@ jobs:
         id: native_tests
         shell: powershell
         env:
-          CGO_ENABLED: '1'
+          CGO_ENABLED: "1"
         run: go test -v ./internal/service -run "TestMediaService_CrossPlatformAndWindowsPaths|TestPrintService_HiRes300DPI_A4_FullScaleVerification|TestPrintNative_.*"
 
       - name: Generate Windows Build Summary
@@ -464,6 +549,9 @@ jobs:
   webkit-smoke:
     name: WebKit Smoke (Shipping Engine)
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -476,14 +564,14 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.0'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Cache Go Binaries (Wails)
@@ -510,10 +598,22 @@ jobs:
 
       - name: Install Frontend Dependencies
         working-directory: ./frontend
-        run: npm ci --prefer-offline --no-audit
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      # كان WebKit يُنزَّل (~100MB+) في كل تشغيل بلا كاش — الآن يُخزَّن
+      # بنفس نمط Chromium (مفتاح مقفل على package-lock).
+      - name: Cache Playwright WebKit Browser
+        id: cache-playwright-webkit
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-webkit-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-webkit-
 
       - name: Install Playwright WebKit Browser
         id: install_browsers
+        if: steps.cache-playwright-webkit.outputs.cache-hit != 'true'
         working-directory: ./frontend
         run: npx playwright install --with-deps webkit
 

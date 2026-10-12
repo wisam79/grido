@@ -85,10 +85,15 @@ export function generateBarcodeInnerSvg(
 
   const JsBarcode = jsBarcodeSyncRef.current;
   if (!JsBarcode) {
-    // لم يكتمل التحميل الكسول بعد — أعِد توليده عند الجاهزية عبر warmupBarcodeLibs
-    // أو استخدم generateBarcodeInnerSvgAsync. نُرجع مستطيلاً بحجم الطلب صامتاً.
+    // لم يكتمل التحميل الكسول بعد — عنصر تحذيري صريح بدل شريط مصمت يبدو
+    // باركوداً حقيقياً، والاستدعاء التالي بعد الجاهزية ينتج رمزاً صالحاً.
     void loadJsBarcode();
-    return `<svg width="${reqWidth}" height="${reqHeight}" viewBox="0 0 200 ${reqHeight}" preserveAspectRatio="xMidYMid meet"><rect x="0" y="0" width="200" height="${reqHeight}" fill="${options?.lineColor || '#000000'}" /></svg>`;
+    const warnColor = options?.lineColor || '#cc0000';
+    return (
+      `<svg width="${reqWidth}" height="${reqHeight}" viewBox="0 0 200 ${reqHeight}" preserveAspectRatio="xMidYMid meet">` +
+      `<rect x="2" y="2" width="196" height="${reqHeight - 4}" fill="none" stroke="${warnColor}" stroke-width="2" stroke-dasharray="6,3"/>` +
+      `<text x="100" y="${reqHeight / 2 + 4}" text-anchor="middle" font-size="11" fill="${warnColor}" font-family="sans-serif">جارٍ تجهيز الباركود…</text></svg>`
+    );
   }
 
   try {
@@ -150,8 +155,21 @@ export async function generateQrCodeInnerSvgAsync(
     return renderToStaticMarkup(qrElement);
   } catch (err) {
     logger.error('Failed to generate QR Code SVG:', err);
-    return `<rect width="${size}" height="${size}" fill="${options?.fgColor || '#000000'}" />`;
+    return qrWarningPlaceholder(value, size, options?.fgColor);
   }
+}
+
+/** عنصر تحذيري صريح بدل المربع الأسود الوهمي الذي يبدو رمزاً صالحاً وهو غير قابل للمسح */
+function qrWarningPlaceholder(value: string, size: number, fg?: string): string {
+  const c = fg || '#cc0000';
+  const label = (value || '').slice(0, 24) || 'QR';
+  return (
+    `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet">` +
+    `<rect x="2" y="2" width="${size - 4}" height="${size - 4}" fill="none" stroke="${c}" stroke-width="3" stroke-dasharray="8,5" rx="8"/>` +
+    `<text x="${size / 2}" y="${size / 2 - 6}" text-anchor="middle" font-size="28" fill="${c}" font-family="sans-serif">⚠</text>` +
+    `<text x="${size / 2}" y="${size / 2 + 18}" text-anchor="middle" font-size="11" fill="${c}" font-family="sans-serif">تعذر توليد ${label}</text>` +
+    `</svg>`
+  );
 }
 
 /**
@@ -169,7 +187,9 @@ export function generateQrCodeInnerSvg(
   if (!render) {
     void loadRenderToStaticMarkup();
     void import('qrcode.react');
-    return `<rect width="${size}" height="${size}" fill="${options?.fgColor || '#000000'}" />`;
+    // المكتبة لم تجهز بعد (أول فتح للاستوديو): عنصر تحذيري صريح لا مربع أسود
+    // وهمي — والاستدعاء التالي بعد اكتمال الجلب الكسول ينتج رمزاً صالحاً.
+    return qrWarningPlaceholder(value, size, options?.fgColor);
   }
   try {
     const QRCodeSVG = qrReactSyncRef.current;
@@ -184,6 +204,6 @@ export function generateQrCodeInnerSvg(
     return render(qrElement);
   } catch (err) {
     logger.error('Failed to generate QR Code SVG:', err);
-    return `<rect width="${size}" height="${size}" fill="${options?.fgColor || '#000000'}" />`;
+    return qrWarningPlaceholder(value, size, options?.fgColor);
   }
 }

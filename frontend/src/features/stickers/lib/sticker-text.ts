@@ -96,52 +96,119 @@ function stripTags(inner: string): string {
 }
 
 /**
+ * تطبيع عربي للبحث: توحيد الهمزات والألفات والتاء المربوطة والياء،
+ * وإسقاط التشكيل والتطويل، مع lower-case للاتينية — فيُطابَق «أحمد» مع «احمد».
+ */
+export function normalizeArabicQuery(raw: string): string {
+  return (raw || '')
+    .toLowerCase()
+    .replace(/[\u064B-\u0652\u0670]/g, '')
+    .replace(/\u0640/g, '')
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * فضّ تضارب معرّفات SVG عند عرض عدة قوالب في DOM واحد (المعرض + المعاينة):
+ * يُبادئ كل `id="X"` و`url(#X)` و`href="#X"` بالبادئة المعطاة، ويُتجاهل
+ * ما سُبق فضّه بنفس البادئة (idempotent) فلا يتضاعف عند إعادة التمرير.
+ */
+export function namespaceStickerSvgIds(svg: string, ns: string): string {
+  if (!svg || !ns) return svg;
+  const safeNs = ns.replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!safeNs) return svg;
+  let out = svg.replace(/\bid="([^"]+)"/g, (m, id: string) =>
+    id.startsWith(`${safeNs}-`) ? m : `id="${safeNs}-${id}"`,
+  );
+  out = out.replace(/url\(#([^)"']+)\)/g, (m, id: string) =>
+    id.startsWith(`${safeNs}-`) ? m : `url(#${safeNs}-${id})`,
+  );
+  out = out.replace(/(href="#)([^"]+)"/g, (m, pre: string, id: string) =>
+    id.startsWith(`${safeNs}-`) ? m : `${pre}${safeNs}-${id}"`,
+  );
+  return out;
+}
+
+export interface StickerSvgPostProcessOptions {
+  /** بادئة فضّ تضارب المعرّفات (مثل معرّف القالب) — تُطبَّق بعد باقي المعالجات */
+  namespace?: string;
+}
+
+function stripArabicLetterSpacing(attrs: string, dir: 'rtl' | 'ltr'): string {
+  // تباعد الحروف يفكّك اتصال الحروف العربية (الوصل إجباري) فيُزال للنص RTL فقط،
+  // ويُبقى للاتينية حيث يُستخدم للترويسات المتباعدة عمداً (PREMIUM ونحوها).
+  if (dir !== 'rtl') return attrs;
+  return attrs.replace(/\s*letter-spacing="[^"]*"/g, '');
+}
+
+/**
  * معالجة لاحقة لسلسلة SVG:
  * 1) حقن `direction/unicode-bidi` المفقودة حسب محتوى كل `<text>`.
  * 2) تقليص `font-size` عند فيض العرض عن ~84% من الـ viewBox (تخطي منحنيات textPath).
+ * 3) إسقاط `letter-spacing` عن النص العربي (يفكّك الوصل) مع إبقائه للاتيني.
+ * 4) فضّ تضارب المعرّفات اختيارياً عبر `options.namespace` لعرض آمن متعدد النسخ.
  */
-export function postProcessStickerSvg(svg: string): string {
-  if (!svg || !svg.includes('<text')) return svg;
+export function postProcessStickerSvg(svg: string, options?: StickerSvgPostProcessOptions): string {
+  if (!svg || !svg.includes('<text')) {
+    return options?.namespace ? namespaceStickerSvgIds(svg, options.namespace) : svg;
+  }
   const vb = svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
   const vbW = vb ? parseFloat(vb[1]) || 500 : 500;
   const maxWidth = vbW * 0.84;
 
-  return svg.replace(/<text([^>]*)>([\s\S]*?)<\/text>/g, (full, attrs: string, inner: string) => {
-    if (inner.includes('<textPath')) {
-      // منحني: اتجاه فقط بلا تغيير مقاس (القوس لا يُقاس خطياً)
-      if (/direction\s*=/.test(attrs)) return full;
-      const dir = detectTextDirection(stripTags(inner));
-      return `<text${attrs} direction="${dir}" unicode-bidi="embed">${inner}</text>`;
-    }
-    const plain = stripTags(inner).trim();
-    let nextAttrs = attrs;
-    if (!/direction\s*=/.test(nextAttrs)) {
-      const dir = detectTextDirection(plain);
-      nextAttrs += ` direction="${dir}" unicode-bidi="embed"`;
-    }
-    const fsMatch = nextAttrs.match(/font-size="([\d.]+)"/);
-    if (fsMatch && plain.length > 4) {
-      const base = parseFloat(fsMatch[1]);
-      if (base > 0 && isFinite(base)) {
-        const famMatch = nextAttrs.match(/font-family="([^"]*)"/);
-        const wMatch = nextAttrs.match(/font-weight="([^"]*)"/);
-        const family = famMatch
-          ? famMatch[1].split(',')[0].replace(/['"]/g, '').trim()
-          : 'sans-serif';
-        const weight = wMatch ? wMatch[1] : '400';
-        const measured = estimateTextWidth(plain, base, family, weight);
-        if (measured > maxWidth) {
-          const fitted = Math.max(
-            Math.floor(base * 0.55),
-            Math.floor((base * maxWidth) / measured),
-          );
-          if (fitted < base) {
-            nextAttrs = nextAttrs.replace(/font-size="[\d.]+"/, `font-size="${fitted}"`);
+  const processed = svg.replace(
+    /<text([^>]*)>([\s\S]*?)<\/text>/g,
+    (full, attrs: string, inner: string) => {
+      if (inner.includes('<textPath')) {
+        // منحني: اتجاه فقط بلا تغيير مقاس (القوس لا يُقاس خطياً)
+        const dir = detectTextDirection(stripTags(inner));
+        const nextAttrs = stripArabicLetterSpacing(attrs, dir);
+        if (/direction\s*=/.test(nextAttrs)) {
+          return nextAttrs === attrs ? full : `<text${nextAttrs}>${inner}</text>`;
+        }
+        return `<text${nextAttrs} direction="${dir}" unicode-bidi="embed">${inner}</text>`;
+      }
+      const plain = stripTags(inner).trim();
+      const dir = /direction\s*=/.test(attrs)
+        ? /direction="rtl"/.test(attrs)
+          ? ('rtl' as const)
+          : ('ltr' as const)
+        : detectTextDirection(plain);
+      let nextAttrs = stripArabicLetterSpacing(attrs, dir);
+      if (!/direction\s*=/.test(nextAttrs)) {
+        nextAttrs += ` direction="${dir}" unicode-bidi="embed"`;
+      }
+      const fsMatch = nextAttrs.match(/font-size="([\d.]+)"/);
+      if (fsMatch && plain.length > 4) {
+        const base = parseFloat(fsMatch[1]);
+        if (base > 0 && isFinite(base)) {
+          const famMatch = nextAttrs.match(/font-family="([^"]*)"/);
+          const wMatch = nextAttrs.match(/font-weight="([^"]*)"/);
+          const family = famMatch
+            ? famMatch[1].split(',')[0].replace(/['"]/g, '').trim()
+            : 'sans-serif';
+          const weight = wMatch ? wMatch[1] : '400';
+          const measured = estimateTextWidth(plain, base, family, weight);
+          if (measured > maxWidth) {
+            const fitted = Math.max(
+              Math.floor(base * 0.55),
+              Math.floor((base * maxWidth) / measured),
+            );
+            if (fitted < base) {
+              nextAttrs = nextAttrs.replace(/font-size="[\d.]+"/, `font-size="${fitted}"`);
+            }
           }
         }
       }
-    }
-    if (nextAttrs === attrs) return full;
-    return `<text${nextAttrs}>${inner}</text>`;
-  });
+      if (nextAttrs === attrs) return full;
+      return `<text${nextAttrs}>${inner}</text>`;
+    },
+  );
+
+  return options?.namespace ? namespaceStickerSvgIds(processed, options.namespace) : processed;
 }

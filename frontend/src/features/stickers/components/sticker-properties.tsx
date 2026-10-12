@@ -29,6 +29,8 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { CURATED_PALETTES } from '../constants';
 import { StickerFontSelector } from './sticker-font-selector';
+import { contrastRatio } from '../lib/sticker-a11y';
+import { autoFitSheetGrid } from '../lib/sheet-generator';
 import {
   loadStickerPresets,
   saveStickerPreset,
@@ -49,6 +51,8 @@ export interface StickerPropertiesProps {
   ) => void;
   /** حقول بلا عنصر مرئي في المعاينة (اختياري للتوافق) */
   hiddenFieldIds?: string[];
+  /** أبعاد ورقة الطباعة بالمم لحساب الملاءمة التلقائية (اختياري — A4 افتراضياً) */
+  sheetMm?: { width: number; height: number };
 }
 
 const FINISH_OPTIONS: { id: StickerFinish; label: string }[] = [
@@ -102,7 +106,36 @@ export const StickerProperties = React.memo(function StickerProperties({
   onResetDefaults,
   gridConfig,
   onChangeGridConfig,
+  sheetMm,
 }: StickerPropertiesProps) {
+  // تحذير التباين المنخفض: نص باهت يُطبع مقروءاً بصعوبة — يُحسب حياً بلا مكتبات
+  const contrastWarning = useMemo(() => {
+    if (params.isTransparent) return null;
+    const pairs: { label: string; ratio: number | null }[] = [
+      { label: 'الأساسي', ratio: contrastRatio(params.primaryColor, params.backgroundColor) },
+      { label: 'الثانوي', ratio: contrastRatio(params.secondaryColor, params.backgroundColor) },
+    ];
+    const low = pairs.filter((p) => p.ratio !== null && (p.ratio as number) < 3.0);
+    if (low.length === 0) return null;
+    return low.map((p) => `${p.label} (${(p.ratio as number).toFixed(1)}:1)`).join('، ');
+  }, [params.primaryColor, params.secondaryColor, params.backgroundColor, params.isTransparent]);
+
+  const handleAutoFitSheet = () => {
+    const stickerMm = template.defaultMm || {
+      width: 50,
+      height: Math.round(50 / template.aspectRatio),
+    };
+    const sheet = sheetMm || { width: 210, height: 297 };
+    const fit = autoFitSheetGrid({
+      stickerWidthMm: stickerMm.width,
+      stickerHeightMm: stickerMm.height,
+      sheetWidthMm: sheet.width,
+      sheetHeightMm: sheet.height,
+      spacingMm: gridConfig.spacingMm,
+    });
+    onChangeGridConfig((prev) => ({ ...prev, rows: fit.rows, cols: fit.cols }));
+    toast.success(`ملاءمة تلقائية: ${fit.rows}×${fit.cols} (${fit.count} ملصقات)`);
+  };
   /** التزام إذا توفر المعالج، وإلا تعديل حي (توافق مع الاستدعاءات الاختيارية) */
   const commit = onCommitParams ?? onChangeParams;
   const [activeTab, setActiveTab] = useState<'design' | 'sheet' | 'presets'>('design');
@@ -356,6 +389,16 @@ export const StickerProperties = React.memo(function StickerProperties({
                 </button>
               </div>
 
+              {/* تحذير التباين المنخفض للطباعة */}
+              {contrastWarning && (
+                <p
+                  role="note"
+                  className="text-micro leading-relaxed px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300"
+                >
+                  تباين منخفض قد يُطبع باهتاً: {contrastWarning} — جرّب لوحة أغمق أو خلفية أفتح.
+                </p>
+              )}
+
               {/* Curated Quick Palettes */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
                 {CURATED_PALETTES.map((palette) => {
@@ -506,6 +549,19 @@ export const StickerProperties = React.memo(function StickerProperties({
                 </div>
               </div>
             </div>
+
+            {/* ملاءمة تلقائية من مقاس الملصق وورقة الطباعة */}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAutoFitSheet}
+              className="w-full h-8 text-xs font-bold rounded-xl gap-1.5 cursor-pointer border-primary/40 text-primary hover:bg-primary/10"
+              title="حساب أكبر شبكة تتسع على ورقة الطباعة"
+            >
+              <Sparkle className="w-3.5 h-3.5" weight="duotone" />
+              <span>ملاءمة تلقائية على الورقة</span>
+            </Button>
 
             {/* Grid Presets */}
             <div className="grid grid-cols-4 gap-1 bg-muted/60 dark:bg-black/35 p-1 rounded-xl border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useDeferredValue } from 'react';
 import {
   SealCheck,
   Plus,
@@ -111,9 +111,11 @@ function revokeObjectUrlLater(url: string): void {
   if (objectUrlRevokeTimer !== null) {
     clearTimeout(objectUrlRevokeTimer);
   }
+  // تأجيل الإلغاء 60 ثانية: إلغاء فوري قد يسبق قراءة المتصفح للبيانات فيخرج
+  // ملف صفري (M35)، مع دمج الطلبات المتتالية في مؤقّت واحد لتفادي التسرّب.
   objectUrlRevokeTimer = setTimeout(() => {
     objectUrlRevokeTimer = null;
-    revokeObjectUrlLater(url);
+    URL.revokeObjectURL(url);
   }, OBJECT_URL_REVOKE_DELAY);
 }
 
@@ -251,35 +253,40 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     commitParams(buildDefaultParams(selectedTemplate));
   }, [selectedTemplate, commitParams]);
 
+  // الكتابة الحية تُؤجَّل عن الرسم: الحقول تستجيب فوراً بينما يُعاد توليد
+  // الـ SVG الثقيل (80+ قالباً بفلاتر) بقيمة مؤجلة فلا يتقطّع الإدخال
+  const deferredParams = useDeferredValue(params);
+
   const svgString = useMemo(() => {
     if (view === 'gallery') return '';
     try {
       // كل قيم التصميم تُعقّم هنا قبل حقنها في سمات SVG (الألوان والخط)
-      const cleanFamily = sanitizeStickerFontFamily(params.fontFamily || 'Cairo');
+      const cleanFamily = sanitizeStickerFontFamily(deferredParams.fontFamily || 'Cairo');
       const safeFamily = cleanFamily.includes(' ') ? `'${cleanFamily}'` : cleanFamily;
       const raw = selectedTemplate.generateSvg({
-        ...params,
+        ...deferredParams,
         primaryColor: sanitizeStickerColor(
-          params.primaryColor,
+          deferredParams.primaryColor,
           selectedTemplate.defaultColors.primary,
         ),
         secondaryColor: sanitizeStickerColor(
-          params.secondaryColor,
+          deferredParams.secondaryColor,
           selectedTemplate.defaultColors.secondary,
         ),
         backgroundColor: sanitizeStickerColor(
-          params.backgroundColor,
+          deferredParams.backgroundColor,
           selectedTemplate.defaultColors.background,
         ),
         fontFamily: safeFamily,
       });
-      // معالجة مركزية: اتجاه تلقائي + ملاءمة مقاس الحقول الطويلة (تغطي كل القوالب)
-      return postProcessStickerSvg(raw);
+      // معالجة مركزية: اتجاه تلقائي + ملاءمة مقاس + إسقاط تباعد العربي،
+      // مع فضّ المعرّفات فلا تتضارب الفلاتر/الأقواس مع بطاقات المعرض المفتوحة
+      return postProcessStickerSvg(raw, { namespace: `live-${selectedTemplate.id}` });
     } catch (err) {
       logger.error('Failed to generate SVG:', err);
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><text x="200" y="200" text-anchor="middle">Error</text></svg>`;
     }
-  }, [view, selectedTemplate, params]);
+  }, [view, selectedTemplate, deferredParams]);
 
   /** نسخة مُطهَّرة للتصدير/النسخ — تُكتب على القرص أو الحافظة فتُفتح خارج التطبيق */
   const exportableSvg = useMemo(
@@ -535,32 +542,38 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     }
   }, [exportableSvg, svgString, selectedTemplate.id]);
 
-  const handleDownloadPng = useCallback(async () => {
-    try {
-      setBusyExport(true);
-      const { width, height } = stickerRasterSize(
-        selectedTemplate.aspectRatio,
-        selectedTemplate.defaultMm,
-      );
-      const pngUrl = await renderSvgToPngDataUrl(svgString, width, height, [
-        params.fontFamily || 'Cairo',
-      ]);
-      if (cancelledRef.current) return;
-      downloadFile(pngUrl, `${selectedTemplate.id}.png`);
-      toast.success('صُدّر PNG عالي الدقة (300 DPI)');
-    } catch (err) {
-      logger.error('PNG export failed:', err);
-      toast.error(toErrorMessage(err, 'فشل التصدير'));
-    } finally {
-      setBusyExport(false);
-    }
-  }, [
-    svgString,
-    selectedTemplate.aspectRatio,
-    selectedTemplate.defaultMm,
-    selectedTemplate.id,
-    params.fontFamily,
-  ]);
+  const handleDownloadPng = useCallback(
+    async (dpi: 300 | 600 = 300) => {
+      try {
+        setBusyExport(true);
+        const { width, height } = stickerRasterSize(
+          selectedTemplate.aspectRatio,
+          selectedTemplate.defaultMm,
+          dpi,
+        );
+        const pngUrl = await renderSvgToPngDataUrl(svgString, width, height, [
+          params.fontFamily || 'Cairo',
+        ]);
+        if (cancelledRef.current) return;
+        downloadFile(pngUrl, `${selectedTemplate.id}-${dpi}dpi.png`);
+        toast.success(
+          dpi === 600 ? 'صُدّر PNG فائق الدقة (600 DPI)' : 'صُدّر PNG عالي الدقة (300 DPI)',
+        );
+      } catch (err) {
+        logger.error('PNG export failed:', err);
+        toast.error(toErrorMessage(err, 'فشل التصدير'));
+      } finally {
+        setBusyExport(false);
+      }
+    },
+    [
+      svgString,
+      selectedTemplate.aspectRatio,
+      selectedTemplate.defaultMm,
+      selectedTemplate.id,
+      params.fontFamily,
+    ],
+  );
 
   const handleCopyImage = useCallback(async () => {
     try {
@@ -614,6 +627,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     width: 50,
     height: Math.round(50 / selectedTemplate.aspectRatio),
   };
+
+  // أبعاد ورقة الطباعة الفعالة لزر «ملاءمة تلقائية» في تبويب الشيت
+  // (قراءة خفيفة من المتجر عند كل render — الورق لا يتغير والحوار مفتوح عادةً)
+  const sheetMm = resolveStickerSheetMm();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -722,6 +739,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                 gridConfig={gridConfig}
                 onChangeGridConfig={setGridConfig}
                 hiddenFieldIds={hiddenFieldIds}
+                sheetMm={sheetMm}
               />
             </div>
           </div>
@@ -791,9 +809,19 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-56 text-xs font-cairo">
-                    <DropdownMenuItem onClick={handleDownloadPng} className="cursor-pointer gap-2">
+                    <DropdownMenuItem
+                      onClick={() => void handleDownloadPng(300)}
+                      className="cursor-pointer gap-2"
+                    >
                       <FilePng className="w-4 h-4 text-primary" weight="duotone" />
                       <span>صورة PNG (300 DPI)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => void handleDownloadPng(600)}
+                      className="cursor-pointer gap-2"
+                    >
+                      <FilePng className="w-4 h-4 text-violet-500" weight="duotone" />
+                      <span>صورة PNG فائقة (600 DPI للمطابع)</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleDownloadSvg} className="cursor-pointer gap-2">
                       <FileSvg className="w-4 h-4 text-emerald-500" weight="duotone" />

@@ -69,6 +69,14 @@ export function renderSvgToPngDataUrl(
               reject(new Error("Cannot create 2D canvas context"));
               return;
             }
+            // أعلى جودة إعادة تحجيم متاحة في المتصفح (تُبرز الفارق في الحواف
+            // المنحنية والنصوص الصغيرة عند 300/600 DPI)
+            ctx.imageSmoothingEnabled = true;
+            try {
+              ctx.imageSmoothingQuality = "high";
+            } catch {
+              // خاصية حديثة — تُتجاهل بصمت في المتصفحات القديمة
+            }
             ctx.drawImage(img, 0, 0, width, height);
             URL.revokeObjectURL(url);
             const dataUrl = canvas.toDataURL("image/png");
