@@ -142,7 +142,7 @@ jobs:
 
       - name: Cache Go Binaries (Wails)
         id: cache-go-bin
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/go/bin
           key: ${{ runner.os }}-go-bin-v1
@@ -229,7 +229,7 @@ jobs:
 
       - name: Cache Go Tools (staticcheck)
         id: cache-staticcheck
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/go/bin/staticcheck
           key: ${{ runner.os }}-staticcheck-2025.1.1
@@ -369,7 +369,7 @@ jobs:
 
       - name: Cache Go Binaries (Wails)
         id: cache-go-bin
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/go/bin
           key: ${{ runner.os }}-go-bin-v1
@@ -392,7 +392,7 @@ jobs:
 
       - name: Cache Playwright Browsers
         id: cache-playwright
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
@@ -455,7 +455,7 @@ jobs:
           cache: true
 
       - name: Cache Go Build Cache (Windows)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~\AppData\Local\go-build
           key: ${{ runner.os }}-go-build-${{ hashFiles('go.sum') }}
@@ -471,7 +471,7 @@ jobs:
 
       - name: Cache Go Binaries (Wails)
         id: cache-go-bin
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~\go\bin
           key: ${{ runner.os }}-go-bin-v2
@@ -575,7 +575,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Cache Go Binaries (Wails)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/go/bin
           key: ${{ runner.os }}-go-bin-v1
@@ -604,7 +604,7 @@ jobs:
       # بنفس نمط Chromium (مفتاح مقفل على package-lock).
       - name: Cache Playwright WebKit Browser
         id: cache-playwright-webkit
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-webkit-${{ hashFiles('frontend/package-lock.json') }}
