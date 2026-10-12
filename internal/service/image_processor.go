@@ -243,44 +243,11 @@ func (s *ImageProcessorService) ApplyMaskRaw(localImagePath string, maskBytes []
 		return "", fmt.Errorf("mask bytes size mismatch: expected %d, got %d", maskW*maskH, len(maskBytes))
 	}
 
-	var srcImg image.Image
-	mediaDir := s.mediaService.GetMediaDir()
-
-	if strings.HasPrefix(localImagePath, "data:image/") {
-		decodedSrc, _, err := s.mediaService.DecodeBase64Image(localImagePath)
-		if err != nil {
-			return "", fmt.Errorf("decode source base64: %w", err)
-		}
-		srcImg, err = imaging.Decode(bytes.NewReader(decodedSrc))
-		if err != nil {
-			return "", fmt.Errorf("decode source image: %w", err)
-		}
-		decodedSrc = nil
-	} else {
-		fileName := filepath.Base(filepath.Clean(localImagePath))
-		actualImagePath := filepath.Join(mediaDir, fileName)
-
-		resolvedPath, err := filepath.EvalSymlinks(actualImagePath)
-		if err != nil {
-			return "", fmt.Errorf("eval symlink: %w", err)
-		}
-		resolvedMediaDir, err := filepath.EvalSymlinks(mediaDir)
-		if err == nil {
-			mediaDir = resolvedMediaDir
-		}
-		if !strings.HasPrefix(filepath.Clean(resolvedPath), filepath.Clean(mediaDir)+string(filepath.Separator)) {
-			return "", fmt.Errorf("invalid image path: outside media directory")
-		}
-
-		if _, err := os.Stat(resolvedPath); err != nil {
-			return "", fmt.Errorf("image file not found: %w", err)
-		}
-
-		srcImg, err = imaging.Open(resolvedPath)
-		if err != nil {
-			return "", fmt.Errorf("open original image: %w", err)
-		}
+	srcImg, err := s.LoadImage(localImagePath)
+	if err != nil {
+		return "", err
 	}
+	mediaDir := s.mediaService.GetMediaDir()
 
 	srcBounds := srcImg.Bounds()
 	srcW, srcH := srcBounds.Dx(), srcBounds.Dy()
@@ -344,4 +311,42 @@ func (s *ImageProcessorService) ApplyMaskToImage(localImagePath string, maskBase
 		return "", fmt.Errorf("decode mask base64: %w", err)
 	}
 	return s.ApplyMaskRaw(localImagePath, maskBytes, maskW, maskH)
+}
+
+// LoadImage يحمّل ويفك تشفير الصورة بأمان وموثوقية سواء كانت مساراً محلياً أو Base64
+func (s *ImageProcessorService) LoadImage(localImagePath string) (image.Image, error) {
+	mediaDir := s.mediaService.GetMediaDir()
+
+	if strings.HasPrefix(localImagePath, "data:image/") {
+		decodedSrc, _, err := s.mediaService.DecodeBase64Image(localImagePath)
+		if err != nil {
+			return nil, fmt.Errorf("decode source base64: %w", err)
+		}
+		img, err := imaging.Decode(bytes.NewReader(decodedSrc))
+		if err != nil {
+			return nil, fmt.Errorf("decode source image: %w", err)
+		}
+		return img, nil
+	}
+
+	fileName := filepath.Base(filepath.Clean(localImagePath))
+	actualImagePath := filepath.Join(mediaDir, fileName)
+
+	resolvedPath, err := filepath.EvalSymlinks(actualImagePath)
+	if err != nil {
+		return nil, fmt.Errorf("eval symlink: %w", err)
+	}
+	resolvedMediaDir, err := filepath.EvalSymlinks(mediaDir)
+	if err == nil {
+		mediaDir = resolvedMediaDir
+	}
+	if !strings.HasPrefix(filepath.Clean(resolvedPath), filepath.Clean(mediaDir)+string(filepath.Separator)) {
+		return nil, fmt.Errorf("invalid image path: outside media directory")
+	}
+
+	if _, err := os.Stat(resolvedPath); err != nil {
+		return nil, fmt.Errorf("image file not found: %w", err)
+	}
+
+	return imaging.Open(resolvedPath)
 }

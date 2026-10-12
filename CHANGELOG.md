@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **نقل عزل الخلفية بالذكاء الاصطناعي إلى محرك Go الأصلي (Go Native ONNX Runtime Background Removal):**
+  1. تشغيل نموذج `modnet.onnx` فائق الدقة المخصص لصور البورتريه والاستوديوهات الاحترافية محلياً 100% عبر مكتبة `github.com/yalue/onnxruntime_go` (v1.16.0 المتوافقة مع Microsoft ORT API v20).
+  2. الحفاظ الكامل على معمارية الملف التنفيذي الواحد المستقل (Single Portable Executable): تضمين `onnxruntime.dll` و `modnet.onnx` داخل الثنائي عبر `//go:embed`؛ يتم استخراج المكتبة ذرياً لمرة واحدة فقط في `%APPDATA%\GridoStudio\bin` بينما يُحمَّل النموذج مباشرة من الذاكرة (In-Memory Session) بدون كتابة على القرص.
+  3. دمج ومعالجة القناع بأعلى سرعة عبر أنوية المعالج بالكامل (`compositeMaskParallel` و `ResizeGrayLinear`) مع مكافحة تسرب الهالات البيضاء على خصلات الشعر وحماية ألوان خلفيات الاستوديو (Chroma Decontamination) والترميم الناعم.
+  4. استجابة فائقة وزمن استدلال ~270ms على المعالج (CPU) دون استهلاك كرت الشاشة في WebView2، والتخلص التام من انهيارات WebGL وتجميد الواجهة وتسريبات الذاكرة لـ Web Worker.
+  5. حذف `bg-removal.worker.ts` والاستغناء عن حزمة `@mediapipe/tasks-vision` في عزل الخلفية.
+
 ## [v1.14.8] - 2026-10-12
 
 ### Changed

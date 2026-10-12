@@ -43,6 +43,8 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   // ── App bindings (frontend/bindings/grido/app.ts) ──
   3084559015: async () => MOCK_PNG_BASE64, // ApplyMaskRaw
   2977102455: async () => MOCK_PNG_BASE64, // ApplyMaskToImage
+  1696913149: async () => '/local-image/mock_bg_removed.png', // RemoveBackground
+  3948031462: async () => undefined, // WarmupBgRemoval
   2347956003: async () => ({
     has_update: false,
     current_version: 'v1.0.0',

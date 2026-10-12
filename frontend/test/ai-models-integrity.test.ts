@@ -29,7 +29,8 @@ describe('AI Models Asset Integrity & Fault Tolerance', () => {
     const bgContent = fs.readFileSync(bgHookPath, 'utf-8');
 
     expect(faceContent).toContain('/models/face_landmarker.task');
-    expect(bgContent).toContain('/models/selfie_multiclass.tflite');
+    // عزل الخلفية انتقل إلى Go Native (MODNet ONNX) عبر استدعاء RemoveBackground
+    expect(bgContent).toContain('RemoveBackground');
   });
 
   it('Network failure during AI model fetch gracefully reports error without crashing', async () => {
@@ -64,14 +65,18 @@ describe('Document Scanner ML Asset Provisioning', () => {
   const copyScriptPath = path.resolve(__dirname, '../scripts/copy-models.mjs');
   const mlDetectorPath = path.resolve(
     __dirname,
-    '../src/components/editor/document-scanner/core/ml-detector.ts'
+    '../src/components/editor/document-scanner/core/ml-detector.ts',
   );
   const destDir = path.resolve(__dirname, '../public/models/scanic');
 
   // الملفات الواجب تسخيصها: النموذج اسمه مذكور صراحةً في المصدر، بينما ملفّا
   // ORT كانا يُحلّان داخلياً عبر `wasmPaths` (لذا لا يُسمّيهما ml-detector).
   const MODEL_ASSET = 'doccornernet_lean.ort';
-  const EXPECTED_ASSETS = [MODEL_ASSET, 'ort-wasm-simd-threaded.wasm', 'ort-wasm-simd-threaded.mjs'];
+  const EXPECTED_ASSETS = [
+    MODEL_ASSET,
+    'ort-wasm-simd-threaded.wasm',
+    'ort-wasm-simd-threaded.mjs',
+  ];
 
   it('Provisioning script copy-models.mjs exists and covers every requested asset', () => {
     expect(fs.existsSync(copyScriptPath)).toBe(true);
@@ -91,13 +96,11 @@ describe('Document Scanner ML Asset Provisioning', () => {
   });
 
   it('Scanner ML assets are provisioned in public/models/scanic (fix: npm run models:sync)', () => {
-    const missing = EXPECTED_ASSETS.filter(
-      (asset) => !fs.existsSync(path.join(destDir, asset))
-    );
+    const missing = EXPECTED_ASSETS.filter((asset) => !fs.existsSync(path.join(destDir, asset)));
 
     expect(
       missing,
-      `أصول ماسح المستندات غير مُسخَّصة: ${missing.join(', ')} — نفّذ "npm run models:sync" (أو npm install) داخل مجلد frontend`
+      `أصول ماسح المستندات غير مُسخَّصة: ${missing.join(', ')} — نفّذ "npm run models:sync" (أو npm install) داخل مجلد frontend`,
     ).toEqual([]);
   });
 });

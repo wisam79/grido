@@ -26,6 +26,7 @@ type App struct {
 	desktopSvc     *service.DesktopService
 	crashGuardSvc  *service.CrashGuardService
 	memorySvc      *service.MemoryService
+	bgRemovalSvc   *service.BgRemovalService
 	startupFile    string
 }
 
@@ -34,11 +35,14 @@ func NewApp(templates domain.CustomTemplateRepository) *App {
 	phoneBridgeSvc := service.NewPhoneBridgeService(mediaSvc)
 	desktopSvc := service.NewDesktopService()
 	memorySvc := service.NewMemoryService()
+	imageProc := service.NewImageProcessorService(mediaSvc)
+	bgRemovalSvc := service.NewBgRemovalService(imageProc, mediaSvc)
 	return &App{
 		mediaSvc:       mediaSvc,
 		phoneBridgeSvc: phoneBridgeSvc,
 		aiSvc:          service.NewAIService(),
-		imageProc:      service.NewImageProcessorService(mediaSvc),
+		imageProc:      imageProc,
+		bgRemovalSvc:   bgRemovalSvc,
 		autosaveSvc:    service.NewAutosaveService(templates),
 		aiLogsSvc:      service.NewAiLogsService(),
 		desktopSvc:     desktopSvc,
@@ -59,6 +63,9 @@ func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) 
 	}
 	service.InitLogger()
 	utils.SafeGo("service.CleanupTempUpdates", service.CleanupTempUpdates)
+	utils.SafeGo("bgRemoval.Warmup", func() {
+		_ = a.bgRemovalSvc.Warmup()
+	})
 	return nil
 }
 
@@ -69,6 +76,9 @@ func (a *App) ServiceShutdown() error {
 	}
 	if a.memorySvc != nil {
 		a.memorySvc.Stop()
+	}
+	if a.bgRemovalSvc != nil {
+		_ = a.bgRemovalSvc.Close()
 	}
 	return nil
 }
@@ -291,6 +301,16 @@ func (a *App) ApplyMaskToImage(localImagePath string, maskBase64 string, maskW i
 
 func (a *App) ApplyMaskRaw(localImagePath string, maskBytes []byte, maskW int, maskH int) (string, error) {
 	return a.imageProc.ApplyMaskRaw(localImagePath, maskBytes, maskW, maskH)
+}
+
+// RemoveBackground يعزل خلفية الصورة محلياً 100% عبر نماذج MODNet و ONNX Runtime في Go
+func (a *App) RemoveBackground(imageSrc string) (string, error) {
+	return a.bgRemovalSvc.RemoveBackground(imageSrc)
+}
+
+// WarmupBgRemoval يجهّز ويسخن محرك عزل الخلفية ونموذج ONNX في الخلفية
+func (a *App) WarmupBgRemoval() error {
+	return a.bgRemovalSvc.Warmup()
 }
 
 func (a *App) EnhanceImageWithAI(base64Image string, token string, limit int) (string, error) {
