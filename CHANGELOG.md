@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.14.7] - 2026-10-12
+
 ### Performance & Architectural Hardening
 - **تحسين زمن استجابة الذكاء الاصطناعي وتوحيد كاش Supabase (Unified AI User & Plan Caching):**
   1. دمج جلب `userID` وخطة الحساب والحد اليومي في كاش ذاكري موحد `userPlanCacheEntry` في `internal/service/ai_service.go` بمهلة 5 دقائق.
