@@ -1,22 +1,18 @@
 package main
 
 import (
-	"bytes"
 	"embed"
-	"encoding/json"
-	"fmt"
-	"io"
 	"log/slog"
-	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
+	"grido/internal/desktop"
 	"grido/internal/handlers"
 	"grido/internal/repository"
+	"grido/internal/server"
 	"grido/internal/service"
 	"grido/internal/utils"
 
@@ -85,7 +81,7 @@ func main() {
 
 	// 🧹 تنظيف كاش الويب في بيئة التطوير لتفادي الكاش القديم للمتصفح
 	if isDevMode() {
-		cacheDir := getWebviewCacheDir()
+		cacheDir := desktop.GetWebviewCacheDir()
 		_ = os.RemoveAll(cacheDir)
 	}
 
@@ -107,35 +103,35 @@ func main() {
 	// استعادة أبعاد وموقع النافذة من الجلسة السابقة.
 	// الافتراضي 1280×800: كان 960×640 — وهو أصغر من نقطة انكسار الواجهة
 	// (1024) فيفتح التطبيق في الوضع المدمج بلا ألواح جانبية إطلاقاً، ويتقلص
-	// تلقائياً على الشاشات الأصغر من المفضل (انظر window_sizing.go).
-	initialWidth := defaultWindowWidth
-	initialHeight := defaultWindowHeight
-	if area, ok := workAreaForPointOrPrimary(0, 0); ok {
-		initialWidth, initialHeight = resolveDefaultWindowSize(area.W, area.H)
+	// تلقائياً على الشاشات الأصغر من المفضل (انظر internal/desktop).
+	initialWidth := desktop.DefaultWindowWidth
+	initialHeight := desktop.DefaultWindowHeight
+	if area, ok := desktop.WorkAreaForPointOrPrimary(0, 0); ok {
+		initialWidth, initialHeight = desktop.ResolveDefaultWindowSize(area.W, area.H)
 	}
 	initialX := 0
 	initialY := 0
 	hasSavedPos := false
 	startMax := false
 
-	if state, err := loadWindowState(); err == nil {
+	if state, err := desktop.LoadWindowState(); err == nil {
 		if state.Width > 0 && state.Height > 0 {
 			// المقاسات الافتراضية القديمة (960×640 و 1024×720) تُرقّى مرة واحدة
 			// للافتراضي الجديد — وإلا بقي المستخدمون الحاليون على مقاس يخفي الألواح.
 			// أي مقاس اختاره المستخدم بنفسه يبقى كما هو (بعد تنظيف التالف منه).
-			if !isLegacyDefaultWindowSize(state.Width, state.Height) {
-				initialWidth, initialHeight = sanitizeRestoredSize(state.Width, state.Height)
+			if !desktop.IsLegacyDefaultWindowSize(state.Width, state.Height) {
+				initialWidth, initialHeight = desktop.SanitizeRestoredSize(state.Width, state.Height)
 			}
 		}
 		const maxScreenSize = 50000
 		if state.X > -maxScreenSize && state.X < maxScreenSize &&
 			state.Y > -maxScreenSize && state.Y < maxScreenSize &&
 			(state.X != 0 || state.Y != 0) &&
-			isPointOnAnyMonitor(state.X+50, state.Y+50) {
+			desktop.IsPointOnAnyMonitor(state.X+50, state.Y+50) {
 			// احصر النافذة المستعادة داخل مساحة عمل الشاشة نفسها (ناقص شريط
 			// المهام) فلا يُفتح جزء منها خارج الشاشة أو خلف شريط المهام
-			initialWidth, initialHeight, initialX, initialY = clampWindowToWorkArea(
-				initialWidth, initialHeight, state.X, state.Y, workAreasAround(state.X+50, state.Y+50))
+			initialWidth, initialHeight, initialX, initialY = desktop.ClampWindowToWorkArea(
+				initialWidth, initialHeight, state.X, state.Y, desktop.WorkAreasAround(state.X+50, state.Y+50))
 			hasSavedPos = true
 		}
 		startMax = state.Max
@@ -376,7 +372,7 @@ func main() {
 	})
 
 	// ── دالة مساعدة لبناء حالة النافذة الحالية ─────────────────────────
-	buildWindowState := func() windowState {
+	buildWindowState := func() desktop.WindowState {
 		isMax := mainWindow.IsMaximised()
 		var w, h, x, y int
 		if isMax {
@@ -386,12 +382,12 @@ func main() {
 			w, h = mainWindow.Size()
 			x, y = mainWindow.Position()
 		}
-		return windowState{Width: w, Height: h, X: x, Y: y, Max: isMax}
+		return desktop.WindowState{Width: w, Height: h, X: x, Y: y, Max: isMax}
 	}
 
 	// حفظ مقاسات وموضع النافذة عند إغلاقها
 	mainWindow.OnWindowEvent(events.Common.WindowClosing, func(_ *application.WindowEvent) {
-		_ = saveWindowState(buildWindowState())
+		_ = desktop.SaveWindowState(buildWindowState())
 	})
 
 	// ⏱️ حفظ دوري كل 30 ثانية — يحمي من فقدان الحالة عند الإغلاق القسري
@@ -400,7 +396,7 @@ func main() {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
-			_ = saveWindowState(buildWindowState())
+			_ = desktop.SaveWindowState(buildWindowState())
 		}
 	})
 
@@ -418,329 +414,21 @@ func main() {
 }
 
 func createAssetHandler(app *App) http.Handler {
-	fileServer := application.AssetFileServerFS(assets)
-	// 🛡️ حارس مسارات /api المحلية: فحص الأصل + توكن جلسة العملية (فشل مغلق).
-	// التفاصيل والاختبارات في internal/service/local_api_guard.go.
-	apiGuard := service.NewLocalApiGuard(localApiSessionToken)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api/") && !apiGuard.Authorize(w, r) {
-			return
-		}
+	var memorySvc *service.MemoryService
+	var imageProc *service.ImageProcessorService
+	var mediaSvc *service.MediaService
+	if app != nil {
+		memorySvc = app.memorySvc
+		imageProc = app.imageProc
+		mediaSvc = app.mediaSvc
+	}
 
-		if r.Method == http.MethodPost && r.URL.Path == "/api/trim-memory" {
-			if app != nil && app.memorySvc != nil {
-				app.memorySvc.TrimNow()
-			}
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-			return
-		}
-
-		if r.Method == http.MethodPost && r.URL.Path == "/api/apply-mask" {
-			src := r.URL.Query().Get("src")
-			wStr := r.URL.Query().Get("w")
-			hStr := r.URL.Query().Get("h")
-			if src == "" || wStr == "" || hStr == "" {
-				http.Error(w, "Missing query params (src, w, h)", http.StatusBadRequest)
-				return
-			}
-			maskW, errW := strconv.Atoi(wStr)
-			maskH, errH := strconv.Atoi(hStr)
-			if errW != nil || errH != nil || maskW <= 0 || maskH <= 0 {
-				http.Error(w, "Invalid dimensions", http.StatusBadRequest)
-				return
-			}
-			expectedLen := int64(maskW) * int64(maskH)
-			const maxMaskPixels = int64(32 * 1024 * 1024)
-			if expectedLen > maxMaskPixels {
-				http.Error(w, "Mask dimensions too large", http.StatusBadRequest)
-				return
-			}
-
-			maskBytes := make([]byte, expectedLen)
-			if _, err := io.ReadFull(r.Body, maskBytes); err != nil {
-				http.Error(w, "Failed to read binary mask: "+err.Error(), http.StatusBadRequest)
-				return
-			}
-
-			localPath, err := app.imageProc.ApplyMaskRaw(src, maskBytes, maskW, maskH)
-			if err != nil {
-				http.Error(w, "Failed to apply mask: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"status":   "success",
-				"imageSrc": localPath,
-			})
-			return
-		}
-
-		if r.Method == http.MethodPost && r.URL.Path == "/api/save-file" {
-			filename := r.URL.Query().Get("filename")
-			if filename == "" {
-				filename = "exported_photo.png"
-			}
-			filename = filepath.Base(filepath.Clean(filename))
-
-			var filePath string
-			dir := r.URL.Query().Get("dir")
-			if dir != "" {
-				exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
-				cleanDir := filepath.Clean(dir)
-				if fi, err := os.Stat(cleanDir); err == nil && fi.IsDir() {
-					if resolvedDir, err := filepath.EvalSymlinks(cleanDir); err == nil {
-						cleanDir = resolvedDir
-					}
-					resolvedExports := exportsDir
-					if resolvedBase, err := filepath.EvalSymlinks(exportsDir); err == nil {
-						resolvedExports = resolvedBase
-					}
-					if strings.HasPrefix(cleanDir, filepath.Clean(resolvedExports)+string(filepath.Separator)) {
-						filePath = filepath.Join(cleanDir, filename)
-					}
-				}
-			}
-
-			if filePath == "" {
-				ext := strings.ToLower(filepath.Ext(filename))
-				d := application.Get().Dialog.SaveFile()
-				d.SetMessage("Save Image")
-				d.SetFilename(filename)
-				if ext == ".png" {
-					d.AddFilter("PNG Image (*.png)", "*.png")
-				} else if ext == ".tif" || ext == ".tiff" {
-					// 🖨️ CMYK يُصدَّر TIFF افتراضياً — كانت البوابة تقتصر على PNG/JPEG
-					// فيُحفظ ملف TIFF بفلتر خاطئ (لا يظهر في حوار الحفظ).
-					d.AddFilter("TIFF Image (*.tif;*.tiff)", "*.tif;*.tiff")
-				} else {
-					d.AddFilter("JPEG Image (*.jpg;*.jpeg)", "*.jpg;*.jpeg")
-				}
-
-				var err error
-				filePath, err = d.PromptForSingleSelection()
-				if err != nil {
-					http.Error(w, "Dialog error: "+err.Error(), http.StatusInternalServerError)
-					return
-				}
-				if filePath == "" {
-					w.WriteHeader(http.StatusNoContent)
-					return
-				}
-			}
-
-			af, err := utils.CreateAtomic(filePath, 0o644)
-			if err != nil {
-				http.Error(w, "Failed to create file: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-			defer af.Abort()
-
-			// 🖨️ كشف الاقتطاع (RV-Print-09): نسخ بحد+1 — أي تجاوز يعني body
-			// ناقصاً يُجهض بـ 413 بدل ملف مبتور ناجح ظاهرياً.
-			limitReader := io.LimitReader(r.Body, service.MaxFileSize+1)
-			written, err := io.Copy(af, limitReader)
-			if err != nil {
-				http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-			if written > service.MaxFileSize {
-				http.Error(w, "File exceeds size limit", http.StatusRequestEntityTooLarge)
-				return
-			}
-			if err := af.Commit(); err != nil {
-				http.Error(w, "Failed to finalize file: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{"status": "success", "path": filePath})
-			return
-		}
-
-		if r.Method == http.MethodPost && r.URL.Path == "/api/upload-print-image" {
-			exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
-			if err := os.MkdirAll(exportsDir, 0755); err != nil {
-				http.Error(w, "Failed to create exports dir", http.StatusInternalServerError)
-				return
-			}
-
-			// +1 بايت: القارئ الأول كان يقصّ عند الحد تماماً فيخفي التجاوز عن العدّ اللاحق.
-			limitReader := io.LimitReader(r.Body, 60*1024*1024+1)
-			sniffBuf := make([]byte, 512)
-			n, sniffErr := io.ReadFull(limitReader, sniffBuf)
-			if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
-				http.Error(w, "Failed to read upload body", http.StatusBadRequest)
-				return
-			}
-			sniffBuf = sniffBuf[:n]
-			detectedMime := http.DetectContentType(sniffBuf)
-			if !strings.HasPrefix(detectedMime, "image/") {
-				http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
-				return
-			}
-
-			ext := ".png"
-			if strings.HasPrefix(detectedMime, "image/jpeg") {
-				ext = ".jpg"
-			}
-			filename := fmt.Sprintf("print_upload_%d%s", time.Now().UnixNano(), ext)
-			absPath := filepath.Join(exportsDir, filename)
-
-			af, afErr := utils.CreateAtomic(absPath, 0o644)
-			if afErr != nil {
-				http.Error(w, "Failed to create file", http.StatusInternalServerError)
-				return
-			}
-			defer af.Abort()
-
-			combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
-			// 🖨️ كشف الاقتطاع (RV-Print-09): LimitReader وحده يصمت عن القص —
-			// ننسخ بحد+1 فأي زيادة بايت واحد تعني ملفاً ناقصاً يُجهض بـ 413
-			// بدل حفظ تالف وإرجاع success (كان يسمّم خط الطباعة لاحقاً).
-			const printUploadLimit = int64(60 * 1024 * 1024)
-			written, err := io.Copy(af, io.LimitReader(combined, printUploadLimit+1))
-			if err != nil {
-				http.Error(w, "Failed to write file", http.StatusInternalServerError)
-				return
-			}
-			if written > printUploadLimit {
-				http.Error(w, "Uploaded image exceeds 60MB limit", http.StatusRequestEntityTooLarge)
-				return
-			}
-			if err := af.Commit(); err != nil {
-				http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"status":   "success",
-				"imageSrc": "/local-image/" + filename,
-			})
-			return
-		}
-
-		if r.Method == http.MethodPost && r.URL.Path == "/api/upload-media" {
-			mediaDir := app.mediaSvc.GetMediaDir()
-			if err := os.MkdirAll(mediaDir, 0o755); err != nil {
-				http.Error(w, "Failed to create media dir", http.StatusInternalServerError)
-				return
-			}
-
-			limitReader := io.LimitReader(r.Body, service.MaxFileSize+1)
-			sniffBuf := make([]byte, 512)
-			n, sniffErr := io.ReadFull(limitReader, sniffBuf)
-			if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
-				http.Error(w, "Failed to read upload body", http.StatusBadRequest)
-				return
-			}
-			sniffBuf = sniffBuf[:n]
-			detectedMime := http.DetectContentType(sniffBuf)
-			if !strings.HasPrefix(detectedMime, "image/") {
-				http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
-				return
-			}
-
-			ext := app.mediaSvc.GetExtensionFromMime(detectedMime)
-			filename := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
-			absPath := filepath.Join(mediaDir, filename)
-
-			af, afErr := utils.CreateAtomic(absPath, 0o644)
-			if afErr != nil {
-				http.Error(w, "Failed to create file", http.StatusInternalServerError)
-				return
-			}
-			defer af.Abort()
-
-			combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
-			// 🖨️ كشف الاقتطاع (RV-Print-09) — نفس عقدة upload-print-image.
-			written, err := io.Copy(af, io.LimitReader(combined, service.MaxFileSize+1))
-			if err != nil {
-				http.Error(w, "Failed to write file", http.StatusInternalServerError)
-				return
-			}
-			if written > service.MaxFileSize {
-				http.Error(w, "Uploaded media exceeds size limit", http.StatusRequestEntityTooLarge)
-				return
-			}
-			if err := af.Commit(); err != nil {
-				http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"status":   "success",
-				"imageSrc": "/local-image/" + filename,
-			})
-			return
-		}
-
-		if strings.HasPrefix(r.URL.Path, "/local-image/") {
-			filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
-			filename := filepath.Base(filepath.Clean(filePath))
-
-			var baseDir string
-			if strings.HasPrefix(filename, "print_") {
-				baseDir = filepath.Join(utils.GetAppDir(), "Exports")
-			} else {
-				baseDir = app.mediaSvc.GetMediaDir()
-			}
-			absPath := filepath.Join(baseDir, filename)
-
-			if _, err := os.Stat(absPath); err != nil {
-				http.Error(w, "Image not found on disk", http.StatusNotFound)
-				return
-			}
-
-			resolvedPath, err := filepath.EvalSymlinks(absPath)
-			if err != nil {
-				http.Error(w, "Forbidden", http.StatusForbidden)
-				return
-			}
-			if resolvedBase, err := filepath.EvalSymlinks(baseDir); err == nil {
-				baseDir = resolvedBase
-			}
-			if !strings.HasPrefix(resolvedPath, filepath.Clean(baseDir)+string(filepath.Separator)) &&
-				resolvedPath != filepath.Clean(baseDir) {
-				http.Error(w, "Forbidden", http.StatusForbidden)
-				return
-			}
-
-			w.Header().Set("X-Content-Type-Options", "nosniff")
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-
-			ext := strings.ToLower(filepath.Ext(filename))
-			contentType := mime.TypeByExtension(ext)
-			// 🛡️ خريطة صريحة للصيغ الحديثة: mime.TypeByExtension قد يجهلها على Windows
-			// فيُخدَم AVIF/HEIC خطأً كـ octet-stream أو jpeg — نثبتها هنا.
-			switch ext {
-			case ".avif":
-				contentType = "image/avif"
-			case ".heic", ".heif":
-				contentType = "image/heic"
-			case ".jxl":
-				contentType = "image/jxl"
-			}
-			if contentType == "" {
-				contentType = "application/octet-stream"
-			}
-			w.Header().Set("Content-Type", contentType)
-			if ext == ".svg" {
-				// 🛡️ RV-5: SVG مخزّن يُخدَم في نفس أصل التطبيق — نعزله:
-				// sandbox تمنع <script> عند فتحه كوثيقة عليا، وinline تحافظ
-				// على العرض داخل <img>/Konva (attachment كان سيكسر المعاينة).
-				w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'")
-				w.Header().Set("Content-Disposition", `inline; filename="`+filename+`"`)
-			}
-
-			http.ServeFile(w, r, absPath)
-			return
-		}
-
-		fileServer.ServeHTTP(w, r)
+	return server.NewAssetHandler(server.AssetServerDeps{
+		FileServer:   application.AssetFileServerFS(assets),
+		SessionToken: localApiSessionToken,
+		MemorySvc:    memorySvc,
+		ImageProc:    imageProc,
+		MediaSvc:     mediaSvc,
 	})
 }
 

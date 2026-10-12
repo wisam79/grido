@@ -3,7 +3,7 @@ import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useEditorStore, CanvasElement } from '@/lib/editor-store';
 import { Spinner } from '@/components/ui/huge-icon';
-import { OpenFile, SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { OpenFile, SaveImageFromBase64 } from '@bindings/grido/app';
 import { wailsIsDesktop } from '@/lib/wails-env';
 import { SnapGuide } from '@/lib/canvas/snap-utils';
 import { KonvaCanvas } from '../konva/konva-canvas';

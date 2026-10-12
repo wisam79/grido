@@ -9,7 +9,7 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn, sanitizeSvgMarkupCached } from '@/lib/utils';
 import { StickerTemplate, StickerParams, MockupBackground } from '../types';
-import { StickerInlineEditor, ActiveFieldState, ActiveColorState } from './StickerInlineEditor';
+import { StickerInlineEditor, ActiveFieldState, ActiveColorState } from './sticker-inline-editor';
 
 export interface StickerPreviewProps {
   template: StickerTemplate;

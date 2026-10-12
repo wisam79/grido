@@ -190,38 +190,56 @@ func planDailyLimit(plan string) int {
 	}
 }
 
-type planCacheEntry struct {
+type userPlanCacheEntry struct {
+	userID  string
+	plan    string
 	limit   int
 	expires time.Time
 }
 
 var (
-	planCacheMu  sync.Mutex
-	planCache    = make(map[string]planCacheEntry)
-	planCacheTTL = 5 * time.Minute
+	userPlanCacheMu  sync.Mutex
+	userPlanCache    = make(map[string]userPlanCacheEntry)
+	userPlanCacheTTL = 5 * time.Minute
 )
 
-// resolveDailyLimitForToken يشتق الحد اليومي من خطة المستخدم في Supabase باستخدام JWT نفسه.
-// لا نثق إطلاقاً بأي حد يرسله العميل — أي فشل في الاشتقاق يعيد حد الخطة المجانية (الأكثر أمناً).
-func resolveDailyLimitForToken(tokenHash string, token string) int {
-	planCacheMu.Lock()
-	if entry, ok := planCache[tokenHash]; ok && time.Now().Before(entry.expires) {
-		limit := entry.limit
-		planCacheMu.Unlock()
-		return limit
+// resolveUserInfoForToken يشتق معرّف المستخدم والحد اليومي من خطة المستخدم في Supabase باستخدام JWT نفسه.
+// يخزن معرّف المستخدم والخطة والحد معاً لمنع تكرار طلبات HTTP المزدوجة إلى Supabase Auth.
+func resolveUserInfoForToken(tokenHash string, token string) (string, int) {
+	userPlanCacheMu.Lock()
+	if entry, ok := userPlanCache[tokenHash]; ok && time.Now().Before(entry.expires) {
+		uid := entry.userID
+		lim := entry.limit
+		userPlanCacheMu.Unlock()
+		return uid, lim
 	}
-	planCacheMu.Unlock()
+	userPlanCacheMu.Unlock()
 
+	userID := ""
+	plan := "free"
 	limit := planLimitFree
 	if SupabaseURL != "" && SupabaseAnonKey != "" && token != "" {
-		if _, plan, err := fetchSupabaseUserInfo(token); err == nil {
+		if fetchedID, fetchedPlan, err := fetchSupabaseUserInfo(token); err == nil {
+			userID = fetchedID
+			plan = fetchedPlan
 			limit = planDailyLimit(plan)
 		}
 	}
 
-	planCacheMu.Lock()
-	planCache[tokenHash] = planCacheEntry{limit: limit, expires: time.Now().Add(planCacheTTL)}
-	planCacheMu.Unlock()
+	userPlanCacheMu.Lock()
+	userPlanCache[tokenHash] = userPlanCacheEntry{
+		userID:  userID,
+		plan:    plan,
+		limit:   limit,
+		expires: time.Now().Add(userPlanCacheTTL),
+	}
+	userPlanCacheMu.Unlock()
+	return userID, limit
+}
+
+// resolveDailyLimitForToken يشتق الحد اليومي (غلاف للتوافقية مع أي استدعاءات أخرى)
+func resolveDailyLimitForToken(tokenHash string, token string) int {
+	_, limit := resolveUserInfoForToken(tokenHash, token)
 	return limit
 }
 
@@ -383,9 +401,9 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 
 	tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))[:16]
 
-	// 🛡️ الحد اليومي يُشتق من خطة المستخدم في قاعدة البيانات، وليس من القيمة المرسلة من العميل.
+	// 🛡️ الحد اليومي ومعرّف المستخدم يُشتقان من خطة المستخدم في قاعدة البيانات عبر كاش موحد.
 	// (المعامل limit المُستقبَل يُتجاهل عمداً — يبقى في التوقيع حفاظاً على توافقية الـ bindings).
-	serverLimit := resolveDailyLimitForToken(tokenHash, token)
+	cachedUserID, serverLimit := resolveUserInfoForToken(tokenHash, token)
 
 	// العدّاد الخادمي الفعلي لليوم (يشمله رد الفحص المسبق) — يُحقن في الرد النهائي.
 	serverUsedToday := -1
@@ -408,8 +426,13 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	// التسجيل الفعلي للاستهلاك يقوم به خادم Modal AI بنفسه بعد نجاح المعالجة
 	// (upscaler.py:311-334) — أي تسجيل إضافي هنا يعني خصماً مزدوجاً للحصة اليومية.
 	if SupabaseURL != "" && SupabaseAnonKey != "" {
-		userID, _, userErr := fetchSupabaseUserInfo(token)
-		if userErr == nil && userID != "" {
+		userID := cachedUserID
+		if userID == "" {
+			if fetchedID, _, userErr := fetchSupabaseUserInfo(token); userErr == nil {
+				userID = fetchedID
+			}
+		}
+		if userID != "" {
 			snapshot, rpcErr := callAIUsageRPC(token, userID, inputImageBytes, true)
 			if rpcErr != nil {
 				return "", fmt.Errorf("تجاوزت الحد اليومي أو تعذر التحقق من الحصة: %w", rpcErr)

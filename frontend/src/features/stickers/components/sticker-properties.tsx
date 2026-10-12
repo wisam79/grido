@@ -28,7 +28,7 @@ import {
 } from '../types';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { CURATED_PALETTES } from '../constants';
-import { StickerFontSelector } from './StickerFontSelector';
+import { StickerFontSelector } from './sticker-font-selector';
 import {
   loadStickerPresets,
   saveStickerPreset,

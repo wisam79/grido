@@ -75,7 +75,7 @@ export default tseslint.config(
     files: [
       'src/components/editor/canvas/ruler.tsx',
       'src/components/editor/properties/gradient-picker.tsx',
-      'src/features/freeform-collage/components/FreeformPaperSelector.tsx',
+      'src/features/freeform-collage/components/freeform-paper-selector.tsx',
     ],
     rules: {
       'react-refresh/only-export-components': 'off',

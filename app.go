@@ -183,25 +183,25 @@ func (a *App) GetMediaStorageStats() (service.MediaStorageStats, error) {
 	return a.mediaSvc.GetStorageStats()
 }
 
-func (a *App) CleanUnusedMediaNow() (map[string]interface{}, error) {
+func (a *App) CleanUnusedMediaNow() (*service.MediaCleanupResult, error) {
 	cleanedCount, freedBytes, err := repository.CleanUnusedMediaNow()
 	if err != nil {
 		return nil, err
 	}
-	return map[string]interface{}{
-		"cleanedCount": cleanedCount,
-		"freedBytes":   freedBytes,
+	return &service.MediaCleanupResult{
+		CleanedCount: cleanedCount,
+		FreedBytes:   freedBytes,
 	}, nil
 }
 
-func (a *App) EmptyMediaTrash() (map[string]interface{}, error) {
+func (a *App) EmptyMediaTrash() (*service.MediaTrashResult, error) {
 	deletedCount, freedBytes, err := repository.EmptyMediaTrash()
 	if err != nil {
 		return nil, err
 	}
-	return map[string]interface{}{
-		"deletedCount": deletedCount,
-		"freedBytes":   freedBytes,
+	return &service.MediaTrashResult{
+		DeletedCount: deletedCount,
+		FreedBytes:   freedBytes,
 	}, nil
 }
 

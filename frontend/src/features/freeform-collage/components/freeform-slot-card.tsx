@@ -1,7 +1,7 @@
-import React, { memo } from "react";
-import { cn } from "@/lib/utils";
-import type { FreeformSlot } from "../types";
-import type { ResizeHandle } from "../lib/freeform-math";
+import React, { memo } from 'react';
+import { cn } from '@/lib/utils';
+import type { FreeformSlot } from '../types';
+import type { ResizeHandle } from '../lib/freeform-math';
 
 export interface FreeformSlotCardProps {
   slot: FreeformSlot;
@@ -19,25 +19,25 @@ export interface FreeformSlotCardProps {
 }
 
 const BORDER_BY_HANDLE: Record<ResizeHandle, React.CSSProperties> = {
-  n: { cursor: "ns-resize" },
-  s: { cursor: "ns-resize" },
-  e: { cursor: "ew-resize" },
-  w: { cursor: "ew-resize" },
-  ne: { cursor: "nesw-resize" },
-  sw: { cursor: "nesw-resize" },
-  nw: { cursor: "nwse-resize" },
-  se: { cursor: "nwse-resize" },
+  n: { cursor: 'ns-resize' },
+  s: { cursor: 'ns-resize' },
+  e: { cursor: 'ew-resize' },
+  w: { cursor: 'ew-resize' },
+  ne: { cursor: 'nesw-resize' },
+  sw: { cursor: 'nesw-resize' },
+  nw: { cursor: 'nwse-resize' },
+  se: { cursor: 'nwse-resize' },
 };
 
 const HANDLES: { dir: ResizeHandle; pos: React.CSSProperties }[] = [
-  { dir: "n", pos: { left: "50%", top: 0, transform: "translate(-50%,-50%)" } },
-  { dir: "s", pos: { left: "50%", bottom: 0, transform: "translate(-50%,50%)" } },
-  { dir: "e", pos: { right: 0, top: "50%", transform: "translate(50%,-50%)" } },
-  { dir: "w", pos: { left: 0, top: "50%", transform: "translate(-50%,-50%)" } },
-  { dir: "ne", pos: { right: 0, top: 0, transform: "translate(50%,-50%)" } },
-  { dir: "nw", pos: { left: 0, top: 0, transform: "translate(-50%,-50%)" } },
-  { dir: "se", pos: { right: 0, bottom: 0, transform: "translate(50%,50%)" } },
-  { dir: "sw", pos: { left: 0, bottom: 0, transform: "translate(-50%,50%)" } },
+  { dir: 'n', pos: { left: '50%', top: 0, transform: 'translate(-50%,-50%)' } },
+  { dir: 's', pos: { left: '50%', bottom: 0, transform: 'translate(-50%,50%)' } },
+  { dir: 'e', pos: { right: 0, top: '50%', transform: 'translate(50%,-50%)' } },
+  { dir: 'w', pos: { left: 0, top: '50%', transform: 'translate(-50%,-50%)' } },
+  { dir: 'ne', pos: { right: 0, top: 0, transform: 'translate(50%,-50%)' } },
+  { dir: 'nw', pos: { left: 0, top: 0, transform: 'translate(-50%,-50%)' } },
+  { dir: 'se', pos: { right: 0, bottom: 0, transform: 'translate(50%,50%)' } },
+  { dir: 'sw', pos: { left: 0, bottom: 0, transform: 'translate(-50%,50%)' } },
 ];
 
 /**
@@ -45,7 +45,12 @@ const HANDLES: { dir: ResizeHandle; pos: React.CSSProperties }[] = [
  */
 function PortraitSilhouette({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 100 100" className={cn("w-full h-full", className)} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <svg
+      viewBox="0 0 100 100"
+      className={cn('w-full h-full', className)}
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
       {/* الرأس */}
       <circle cx="50" cy="36" r="16" />
       {/* الكتفان */}
@@ -87,13 +92,13 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       onPointerCancel={onPointerCancel}
       onKeyDown={(e) => onKeyDown(e, slot.id)}
       className={cn(
-        "absolute rounded-sm cursor-move select-none overflow-hidden touch-none",
-        "transition-[border-color,background-color,box-shadow] duration-150",
+        'absolute rounded-sm cursor-move select-none overflow-hidden touch-none',
+        'transition-[border-color,background-color,box-shadow] duration-150',
         isSelected
-          ? "border-2 border-primary bg-primary/10 ring-2 ring-primary/25 z-20 shadow-md"
+          ? 'border-2 border-primary bg-primary/10 ring-2 ring-primary/25 z-20 shadow-md'
           : isMultiSelected
-          ? "border-2 border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20 z-(--z-canvas-overlay) shadow-xs"
-          : "border border-border/70 bg-muted/80 hover:border-primary/40 hover:bg-background z-10 shadow-2xs fluent-specular group/slot"
+            ? 'border-2 border-primary/60 bg-primary/[0.06] ring-1 ring-primary/20 z-(--z-canvas-overlay) shadow-xs'
+            : 'border border-border/70 bg-muted/80 hover:border-primary/40 hover:bg-background z-10 shadow-2xs fluent-specular group/slot',
       )}
       style={{
         left: `${slot.x * 100}%`,
@@ -105,12 +110,12 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       {/* خيال البورتريه الفوتوغرافي — ملء الخلية */}
       <div
         className={cn(
-          "absolute inset-[10%] flex items-center justify-center pointer-events-none transition-opacity duration-150",
+          'absolute inset-[10%] flex items-center justify-center pointer-events-none transition-opacity duration-150',
           isSelected
-            ? "text-primary/60"
+            ? 'text-primary/60'
             : isMultiSelected
-            ? "text-primary/50"
-            : "text-muted-foreground/50 group-hover/slot:text-primary/40"
+              ? 'text-primary/50'
+              : 'text-muted-foreground/50 group-hover/slot:text-primary/40',
         )}
       >
         <PortraitSilhouette />
@@ -119,12 +124,12 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       {/* شارة الرقم — تظهر عند التحديد أو التحويم فقط */}
       <div
         className={cn(
-          "absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-sm text-2xs font-black flex items-center justify-center pointer-events-none transition-all duration-150 leading-none",
+          'absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-sm text-2xs font-black flex items-center justify-center pointer-events-none transition-all duration-150 leading-none',
           isSelected
-            ? "bg-primary text-primary-foreground opacity-100 shadow-xs"
+            ? 'bg-primary text-primary-foreground opacity-100 shadow-xs'
             : isMultiSelected
-            ? "bg-primary/70 text-primary-foreground opacity-100"
-            : "bg-foreground/70 text-background opacity-0 group-hover/slot:opacity-100"
+              ? 'bg-primary/70 text-primary-foreground opacity-100'
+              : 'bg-foreground/70 text-background opacity-0 group-hover/slot:opacity-100',
         )}
       >
         {index + 1}
@@ -133,16 +138,14 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       {/* شارة الأبعاد بالمليمتر — أسفل الخلية عند التحويم أو التحديد */}
       <div
         className={cn(
-          "absolute bottom-0.5 left-0.5 right-0.5 flex justify-center pointer-events-none transition-opacity duration-150",
-          isSelected || isMultiSelected ? "opacity-100" : "opacity-0 group-hover/slot:opacity-100"
+          'absolute bottom-0.5 left-0.5 right-0.5 flex justify-center pointer-events-none transition-opacity duration-150',
+          isSelected || isMultiSelected ? 'opacity-100' : 'opacity-0 group-hover/slot:opacity-100',
         )}
       >
         <span
           className={cn(
-            "text-3xs font-mono font-bold px-1 py-px rounded-sm leading-none whitespace-nowrap",
-            isSelected
-              ? "bg-primary text-primary-foreground"
-              : "bg-foreground/80 text-background"
+            'text-3xs font-mono font-bold px-1 py-px rounded-sm leading-none whitespace-nowrap',
+            isSelected ? 'bg-primary text-primary-foreground' : 'bg-foreground/80 text-background',
           )}
           dir="ltr"
         >

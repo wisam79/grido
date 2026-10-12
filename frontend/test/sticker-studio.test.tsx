@@ -2,8 +2,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { TooltipProvider } from '../src/components/ui/tooltip';
-import { StickerCatalog } from '../src/features/stickers/components/StickerCatalog';
-import { StickerProperties } from '../src/features/stickers/components/StickerProperties';
+import { StickerCatalog } from '../src/features/stickers/components/sticker-catalog';
+import { StickerProperties } from '../src/features/stickers/components/sticker-properties';
 import { ALL_STICKER_TEMPLATES } from '../src/features/stickers/templates';
 import { StickerTemplate, StickerParams, SheetGridConfig } from '../src/features/stickers/types';
 
@@ -52,7 +52,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
           onSelectShape={vi.fn()}
           searchQuery=""
           onSearchChange={vi.fn()}
-        />
+        />,
       );
 
       expect(screen.getByRole('searchbox')).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
           onSelectShape={vi.fn()}
           searchQuery=""
           onSearchChange={handleSearchChange}
-        />
+        />,
       );
 
       const searchInput = screen.getByRole('searchbox');
@@ -94,7 +94,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
           onSelectShape={vi.fn()}
           searchQuery=""
           onSearchChange={vi.fn()}
-        />
+        />,
       );
 
       const cards = screen.getAllByRole('button');
@@ -112,7 +112,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
           onResetDefaults={vi.fn()}
           gridConfig={sampleGridConfig}
           onChangeGridConfig={vi.fn()}
-        />
+        />,
       );
 
       expect(screen.getByText('التصميم')).toBeInTheDocument();
@@ -129,7 +129,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
           onResetDefaults={vi.fn()}
           gridConfig={sampleGridConfig}
           onChangeGridConfig={vi.fn()}
-        />
+        />,
       );
 
       const textInputs = screen.getAllByRole('textbox');

@@ -4,7 +4,6 @@ globs:
   - "internal/**/*.go"
   - "main.go"
   - "app.go"
-  - "window_state.go"
   - "modal_ai/**/*"
   - "frontend/bindings/**/*"
   - "frontend/wailsjs/**/*"

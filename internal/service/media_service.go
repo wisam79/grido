@@ -570,6 +570,16 @@ type MediaStorageStats struct {
 	TrashTotalBytes int64 `json:"trashTotalBytes"`
 }
 
+type MediaCleanupResult struct {
+	CleanedCount int   `json:"cleanedCount"`
+	FreedBytes   int64 `json:"freedBytes"`
+}
+
+type MediaTrashResult struct {
+	DeletedCount int   `json:"deletedCount"`
+	FreedBytes   int64 `json:"freedBytes"`
+}
+
 func (s *MediaService) GetStorageStats() (MediaStorageStats, error) {
 	mediaDir := s.GetMediaDir()
 	var stats MediaStorageStats

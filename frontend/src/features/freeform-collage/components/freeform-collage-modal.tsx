@@ -47,11 +47,11 @@ import {
   newSlotId,
 } from '../lib/freeform-math';
 
-import { FreeformToolbar } from './FreeformToolbar';
-import { FreeformCanvasEditor } from './FreeformCanvasEditor';
-import { FreeformPaperSelector } from './FreeformPaperSelector';
-import { FreeformSlotInspector } from './FreeformSlotInspector';
-import { SaveCustomTemplate } from '../../../../wailsjs/go/main/App';
+import { FreeformToolbar } from './freeform-toolbar';
+import { FreeformCanvasEditor } from './freeform-canvas-editor';
+import { FreeformPaperSelector } from './freeform-paper-selector';
+import { FreeformSlotInspector } from './freeform-slot-inspector';
+import { SaveCustomTemplate } from '@bindings/grido/app';
 
 interface FreeformCollageModalProps {
   open: boolean;

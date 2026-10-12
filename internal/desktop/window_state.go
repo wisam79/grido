@@ -1,4 +1,4 @@
-package main
+package desktop
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"grido/internal/utils"
 )
 
-type windowState struct {
+type WindowState struct {
 	Width  int  `json:"width"`
 	Height int  `json:"height"`
 	X      int  `json:"x"`
@@ -20,25 +20,25 @@ type windowState struct {
 // المقاسات الافتراضية للنافذة — الافتراضي الحالي 1280×800، وما قبله كان
 // يُفتح في الوضع المدمج (أصغر من نقطة انكسار الواجهة 1024).
 const (
-	defaultWindowWidth  = 1280
-	defaultWindowHeight = 800
+	DefaultWindowWidth  = 1280
+	DefaultWindowHeight = 800
 )
 
-// isLegacyDefaultWindowSize يميّز المقاسات الافتراضية القديمة عن مقاس اختاره
+// IsLegacyDefaultWindowSize يميّز المقاسات الافتراضية القديمة عن مقاس اختاره
 // المستخدم بنفسه: المحفوظات 960×640 (الافتراضي الأقدم) و 1024×720 تُرقّى
 // مرة واحدة إلى الافتراضي الجديد، وأي مقاس آخر يُحترم كما هو.
-func isLegacyDefaultWindowSize(width, height int) bool {
+func IsLegacyDefaultWindowSize(width, height int) bool {
 	return (width == 960 && height == 640) || (width == 1024 && height == 720)
 }
 
-func getWindowStatePath() string {
+func GetWindowStatePath() string {
 	appDir := utils.GetAppDir()
 	return filepath.Join(appDir, "window.json")
 }
 
-func loadWindowState() (windowState, error) {
-	path := getWindowStatePath()
-	var state windowState
+func LoadWindowState() (WindowState, error) {
+	path := GetWindowStatePath()
+	var state WindowState
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return state, err
@@ -47,8 +47,8 @@ func loadWindowState() (windowState, error) {
 	return state, err
 }
 
-func saveWindowState(state windowState) error {
-	path := getWindowStatePath()
+func SaveWindowState(state WindowState) error {
+	path := GetWindowStatePath()
 	if path == "" {
 		return fmt.Errorf("could not get config path")
 	}
@@ -60,12 +60,11 @@ func saveWindowState(state windowState) error {
 	if err != nil {
 		return err
 	}
-	// كتابة ذرية موحّدة (utils.AtomicWriteFile) — انقطاع أثناء الحفظ
-	// لا يترك window.json تالفاً أو صفرياً
-	return utils.AtomicWriteFile(path, data, 0o644)
+	return utils.AtomicWriteFile(path, data, 0644)
 }
 
-func getWebviewCacheDir() string {
+func GetWebviewCacheDir() string {
 	appDir := utils.GetAppDir()
 	return filepath.Join(appDir, "webview_cache")
 }
+

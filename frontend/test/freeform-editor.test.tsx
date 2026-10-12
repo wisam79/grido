@@ -2,8 +2,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { TooltipProvider } from '../src/components/ui/tooltip';
-import { FreeformPaperSelector, PaperDimInput } from '../src/features/freeform-collage/components/FreeformPaperSelector';
-import { FreeformToolbar } from '../src/features/freeform-collage/components/FreeformToolbar';
+import {
+  FreeformPaperSelector,
+  PaperDimInput,
+} from '../src/features/freeform-collage/components/freeform-paper-selector';
+import { FreeformToolbar } from '../src/features/freeform-collage/components/freeform-toolbar';
 
 describe('Freeform Editor Unit & Component Tests', () => {
   const renderWithProviders = (ui: React.ReactElement) => {
@@ -13,11 +16,7 @@ describe('Freeform Editor Unit & Component Tests', () => {
   describe('PaperDimInput', () => {
     it('renders numerical input with initial value', () => {
       renderWithProviders(
-        <PaperDimInput
-          value={150}
-          onCommit={vi.fn()}
-          ariaLabel="العرض بالمليمتر"
-        />
+        <PaperDimInput value={150} onCommit={vi.fn()} ariaLabel="العرض بالمليمتر" />,
       );
 
       const input = screen.getByRole('textbox', { name: 'العرض بالمليمتر' });
@@ -27,11 +26,7 @@ describe('Freeform Editor Unit & Component Tests', () => {
     it('clamps dimensions and calls onCommit on blur', () => {
       const handleCommit = vi.fn();
       renderWithProviders(
-        <PaperDimInput
-          value={100}
-          onCommit={handleCommit}
-          ariaLabel="العرض بالمليمتر"
-        />
+        <PaperDimInput value={100} onCommit={handleCommit} ariaLabel="العرض بالمليمتر" />,
       );
 
       const input = screen.getByRole('textbox', { name: 'العرض بالمليمتر' });
@@ -51,7 +46,7 @@ describe('Freeform Editor Unit & Component Tests', () => {
           paperWidthMM={148}
           paperHeightMM={210}
           onPaperDimensionsChange={handleDimensionsChange}
-        />
+        />,
       );
 
       expect(screen.getByRole('textbox', { name: 'عرض الورقة' })).toBeInTheDocument();
@@ -95,7 +90,7 @@ describe('Freeform Editor Unit & Component Tests', () => {
           onRemoveSlot={vi.fn()}
           onRotateSlot={vi.fn()}
           onDuplicateSlot={vi.fn()}
-        />
+        />,
       );
 
       const buttons = screen.getAllByRole('button');

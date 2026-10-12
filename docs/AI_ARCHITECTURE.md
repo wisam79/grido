@@ -48,3 +48,9 @@
 ## صلاحيات قواعد البيانات وملفات الـ Migrations
 - تاريخياً: `supabase/migrations/20260729000000_fix_is_admin_permissions.sql` وسّع `GRANT EXECUTE` لـ `is_admin()` و `check_and_record_ai_usage()` إلى (`authenticated`, `anon`, `service_role`).
 - الحالي (الحاكم): `supabase/migrations/20260907000000_grant_rpc_permissions.sql:5-20` يمنح `activate_license` و `check_and_record_ai_usage` إلى `authenticated` و `service_role` فقط (بدون `anon`) مع `NOTIFY pgrst, 'reload schema'`.
+
+## إدارة الكاش وتسريع الطلبات في تطبيق سطح المكتب (Desktop Client Caching & Latency)
+لتقليل زمن الاستجابة (Latency) ومنع استدعاء Supabase Auth API مرتين في كل عملية، يعتمد تطبيق Go كاشاً ذاكرياً موحداً (`userPlanCacheEntry` في `internal/service/ai_service.go`):
+1. **جلب موحد (Single-Flight Ingestion):** دالة `resolveUserInfoForToken` تستخلص `userID` وخطة الحساب والحد اليومي في طلب شبكي واحد فقط عند غياب الكاش.
+2. **عمر التخزين (TTL):** يُحفظ السجل في الذاكرة لمدة 5 دقائق (`5 * time.Minute`)، مما يقلل عدد طلبات التحقق إلى الصفر أثناء العمليات المتتابعة لنفس المستخدم.
+3. **حماية التزامن (Thread Safety):** الكاش محمي بقفل `sync.Mutex` مع إمكانية التجاوز والتحديث عند تغير البيانات.

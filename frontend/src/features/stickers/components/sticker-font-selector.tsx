@@ -1,14 +1,8 @@
-import React, { useState, useMemo, useRef, useCallback } from "react";
-import {
-  TextAa,
-  MagnifyingGlass,
-  CaretDown,
-  Check,
-  Cloud,
-} from "@/components/ui/icons";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, FontOption } from "@/lib/io/fonts";
-import { cn } from "@/lib/utils";
+import React, { useState, useMemo, useRef, useCallback } from 'react';
+import { TextAa, MagnifyingGlass, CaretDown, Check, Cloud } from '@/components/ui/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, FontOption } from '@/lib/io/fonts';
+import { cn } from '@/lib/utils';
 
 export interface StickerFontSelectorProps {
   value?: string;
@@ -17,16 +11,16 @@ export interface StickerFontSelectorProps {
 }
 
 export const StickerFontSelector = React.memo(function StickerFontSelector({
-  value = "Cairo",
+  value = 'Cairo',
   onChange,
   className,
 }: StickerFontSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const cleanCurrentName = value.split(",")[0].trim().replace(/['"]/g, "");
+  const cleanCurrentName = value.split(',')[0].trim().replace(/['"]/g, '');
 
   const currentFont: FontOption = useMemo(() => {
     return (
@@ -35,14 +29,14 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
           f.family.includes(cleanCurrentName) ||
           f.englishName.toLowerCase() === cleanCurrentName.toLowerCase() ||
           f.arabicName === cleanCurrentName ||
-          f.id === cleanCurrentName.toLowerCase()
+          f.id === cleanCurrentName.toLowerCase(),
       ) || ARABIC_FONTS[0]
     );
   }, [cleanCurrentName]);
 
   const filteredFonts = useMemo(() => {
     return ARABIC_FONTS.filter((font) => {
-      if (activeCategory !== "all" && font.category !== activeCategory) {
+      if (activeCategory !== 'all' && font.category !== activeCategory) {
         return false;
       }
       if (!searchQuery.trim()) return true;
@@ -61,19 +55,19 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
         loadGoogleFont(font.family);
       }
       // استخراج الاسم النظيف لعائلة الخط لاستخدامه في مولّدات الملصقات
-      const cleanFamily = font.family.split(",")[0].trim().replace(/['"]/g, "");
+      const cleanFamily = font.family.split(',')[0].trim().replace(/['"]/g, '');
       onChange(cleanFamily);
       setIsOpen(false);
     },
-    [onChange]
+    [onChange],
   );
 
   const handleOpenChange = (open: boolean) => {
     if (open) {
       setTimeout(() => searchInputRef.current?.focus(), 60);
     } else {
-      setSearchQuery("");
-      setActiveCategory("all");
+      setSearchQuery('');
+      setActiveCategory('all');
     }
     setIsOpen(open);
   };
@@ -84,9 +78,9 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
         <button
           type="button"
           className={cn(
-            "w-full h-8 bg-card/60 hover:bg-card border border-border/50 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between gap-2 shadow-2xs transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none",
-            isOpen && "border-primary ring-1 ring-primary/30 bg-card",
-            className
+            'w-full h-8 bg-card/60 hover:bg-card border border-border/50 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between gap-2 shadow-2xs transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+            isOpen && 'border-primary ring-1 ring-primary/30 bg-card',
+            className,
           )}
           title="نوع الخط"
         >
@@ -116,8 +110,8 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
             )}
             <CaretDown
               className={cn(
-                "w-3.5 h-3.5 text-muted-foreground transition-transform duration-200",
-                isOpen && "rotate-180 text-primary"
+                'w-3.5 h-3.5 text-muted-foreground transition-transform duration-200',
+                isOpen && 'rotate-180 text-primary',
               )}
               weight="bold"
             />
@@ -157,10 +151,10 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
               type="button"
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                "h-6 px-2 text-micro rounded-md font-semibold whitespace-nowrap cursor-pointer transition-colors shrink-0",
+                'h-6 px-2 text-micro rounded-md font-semibold whitespace-nowrap cursor-pointer transition-colors shrink-0',
                 activeCategory === cat.id
-                  ? "bg-primary text-primary-foreground shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border border-border/40"
+                  ? 'bg-primary text-primary-foreground shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 border border-border/40',
               )}
             >
               {cat.name}
@@ -171,12 +165,10 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
         {/* قائمة الخطوط التفاعلية مع المعاينة الحية */}
         <div className="max-h-[240px] overflow-y-auto space-y-1 pr-0.5">
           {filteredFonts.length === 0 ? (
-            <div className="py-6 text-center text-xs text-muted-foreground">
-              لا توجد خطوط
-            </div>
+            <div className="py-6 text-center text-xs text-muted-foreground">لا توجد خطوط</div>
           ) : (
             filteredFonts.map((font) => {
-              const cleanFontName = font.family.split(",")[0].trim().replace(/['"]/g, "");
+              const cleanFontName = font.family.split(',')[0].trim().replace(/['"]/g, '');
               const isSelected = cleanFontName.toLowerCase() === cleanCurrentName.toLowerCase();
 
               return (
@@ -190,10 +182,10 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
                     }
                   }}
                   className={cn(
-                    "w-full text-start p-2 rounded-lg border transition-all cursor-pointer flex items-center justify-between gap-2 group",
+                    'w-full text-start p-2 rounded-lg border transition-all cursor-pointer flex items-center justify-between gap-2 group',
                     isSelected
-                      ? "border-primary/50 bg-primary/10 text-primary"
-                      : "border-transparent hover:border-border/60 hover:bg-muted/30 text-foreground"
+                      ? 'border-primary/50 bg-primary/10 text-primary'
+                      : 'border-transparent hover:border-border/60 hover:bg-muted/30 text-foreground',
                   )}
                 >
                   <div className="min-w-0 flex-1">
@@ -212,7 +204,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
                       className="text-mini text-muted-foreground/80 mt-0.5 truncate"
                       style={{ fontFamily: font.family }}
                     >
-                      {font.sampleText || "أبجد هوز 123"}
+                      {font.sampleText || 'أبجد هوز 123'}
                     </p>
                   </div>
 
@@ -238,4 +230,4 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
   );
 });
 
-StickerFontSelector.displayName = "StickerFontSelector";
+StickerFontSelector.displayName = 'StickerFontSelector';

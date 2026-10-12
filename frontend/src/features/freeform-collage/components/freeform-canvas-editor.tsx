@@ -2,7 +2,7 @@ import React, { useRef, useCallback, useState, useEffect, memo } from 'react';
 import { cn } from '@/lib/utils';
 import type { FreeformSlot, SnapLine } from '../types';
 import { resizeSlotWithSnap, moveSlot, moveSlots, type ResizeHandle } from '../lib/freeform-math';
-import { FreeformSlotCard } from './FreeformSlotCard';
+import { FreeformSlotCard } from './freeform-slot-card';
 
 interface FreeformCanvasEditorProps {
   paperWidthMM: number;

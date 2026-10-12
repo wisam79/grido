@@ -80,7 +80,7 @@
 | 824 | `frontend/src/lib/store/slices/element-slice.ts` |
 | 821 | `frontend/src/components/editor/document-scanner/core/document-detector.ts` |
 | 811 | `frontend/src/components/editor/properties/shared-controls.tsx` |
-| 792 | `frontend/src/features/freeform-collage/components/FreeformCollageModal.tsx` |
+| 792 | `frontend/src/features/freeform-collage/components/freeform-collage-modal.tsx` |
 | 762 | `frontend/src/components/editor/properties/panels/image-properties.tsx` |
 | 741 | `frontend/src/lib/workspace-tools.ts` |
 | 1609 | `admin-web/src/pages/AdminDashboard.tsx` (لوحة تحكم منفصلة) |

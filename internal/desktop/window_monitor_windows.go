@@ -1,6 +1,6 @@
 //go:build windows && !bindings
 
-package main
+package desktop
 
 import (
 	"unsafe"
@@ -31,17 +31,17 @@ type winMonitorInfo struct {
 	dwFlags   uint32
 }
 
-// isPointOnAnyMonitor يتحقق مما إذا كانت نقطة معينة (x, y) تقع ضمن أي شاشة متصلة حالياً
-func isPointOnAnyMonitor(x, y int) bool {
+// IsPointOnAnyMonitor يتحقق مما إذا كانت نقطة معينة (x, y) تقع ضمن أي شاشة متصلة حالياً
+func IsPointOnAnyMonitor(x, y int) bool {
 	hMonitor, _, _ := procMonitorFromPoint.Call(pointToUintptr(x, y), monitorDefaultToNull)
 	return hMonitor != 0
 }
 
-// workAreaForPointOrPrimary يعيد مساحة عمل الشاشة التي تقع فيها النقطة (x,y)
+// WorkAreaForPointOrPrimary يعيد مساحة عمل الشاشة التي تقع فيها النقطة (x,y)
 // — أي الشاشة ناقص شريط المهام — أو مساحة عمل الشاشة الأساسية إن لم تقع
 // النقطة على أي شاشة قائمة (شاشة فُصلت بعد حفظ الموضع مثلاً).
 // ok=false تعني أن ويندوز لم يجب بأي معلومات ⇒ لا تعديل على المقاس/الموضع.
-func workAreaForPointOrPrimary(x, y int) (screenWorkArea, bool) {
+func WorkAreaForPointOrPrimary(x, y int) (ScreenWorkArea, bool) {
 	hMonitor, _, _ := procMonitorFromPoint.Call(pointToUintptr(x, y), monitorDefaultToNull)
 	if area, ok := monitorWorkArea(hMonitor); ok {
 		return area, true
@@ -51,23 +51,29 @@ func workAreaForPointOrPrimary(x, y int) (screenWorkArea, bool) {
 }
 
 // monitorWorkArea يقرأ rcWork (مساحة العمل) من مقبض شاشة.
-func monitorWorkArea(hMonitor uintptr) (screenWorkArea, bool) {
+func monitorWorkArea(hMonitor uintptr) (ScreenWorkArea, bool) {
 	if hMonitor == 0 {
-		return screenWorkArea{}, false
+		return ScreenWorkArea{}, false
 	}
 	info := winMonitorInfo{cbSize: uint32(unsafe.Sizeof(winMonitorInfo{}))}
 	ret, _, _ := procGetMonitorInfoW.Call(hMonitor, uintptr(unsafe.Pointer(&info)))
 	if ret == 0 {
-		return screenWorkArea{}, false
+		return ScreenWorkArea{}, false
 	}
-	w := int(info.rcWork.right - info.rcWork.left)
-	h := int(info.rcWork.bottom - info.rcWork.top)
+	rw := info.rcWork
+	w := int(rw.right - rw.left)
+	h := int(rw.bottom - rw.top)
 	if w <= 0 || h <= 0 {
-		return screenWorkArea{}, false
+		return ScreenWorkArea{}, false
 	}
-	return screenWorkArea{X: int(info.rcWork.left), Y: int(info.rcWork.top), W: w, H: h}, true
+	return ScreenWorkArea{
+		X: int(rw.left),
+		Y: int(rw.top),
+		W: w,
+		H: h,
+	}, true
 }
 
 func pointToUintptr(x, y int) uintptr {
-	return uintptr(uint32(x)) | (uintptr(uint32(y)) << 32)
+	return uintptr(uint32(int32(x))) | (uintptr(uint32(int32(y))) << 32)
 }

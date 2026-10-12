@@ -57,11 +57,11 @@ import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from '../lib/clipbo
 import { generateStickerSheet } from '../lib/sheet-generator';
 import { generateDieCutContour, DEFAULT_BLEED_PERCENT } from '../lib/die-cut-offset';
 import { useStickerParamsHistory } from '../lib/params-history';
-import { VdpImportDialog } from './VdpImportDialog';
+import { VdpImportDialog } from './vdp-import-dialog';
 import { GridFour as TableIcon } from '@/components/ui/icons';
-import { StickerCatalog } from './StickerCatalog';
-import { StickerProperties } from './StickerProperties';
-import { StickerPreview } from './StickerPreview';
+import { StickerCatalog } from './sticker-catalog';
+import { StickerProperties } from './sticker-properties';
+import { StickerPreview } from './sticker-preview';
 
 export interface StickerStudioDialogProps {
   open: boolean;

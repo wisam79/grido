@@ -187,7 +187,7 @@ const SOURCE_PATTERNS = [
   'app.go',
   'Taskfile.yml',
   'build.ps1',
-  'window_state.go',
+  'internal/desktop/window_state.go',
 ];
 
 const DOC_PATTERNS = ['CHANGELOG.md', 'README.md', 'docs/', '.agents/', 'SECURITY_NOTICE.md', 'BUGS_REPORT.md'];
@@ -312,7 +312,7 @@ const CODE_ASSERTIONS = [
   },
   {
     label: 'BUG-HIGH-04 — فساد autosave.json يُرجَع خطأً فيوقف التنظيف',
-    file: 'internal/repository/db.go',
+    file: 'internal/repository/media_cleanup.go',
     mustContain: ['corrupt autosave.json encountered'],
   },
   {
@@ -335,7 +335,7 @@ const CODE_ASSERTIONS = [
   },
   {
     label: 'BUG-LOW-08 / BUG-MED-01 — كتابة ذرية لحفظ window.json',
-    file: 'window_state.go',
+    file: 'internal/desktop/window_state.go',
     mustContain: ['utils.AtomicWriteFile('],
   },
   {
@@ -415,7 +415,7 @@ const CODE_ASSERTIONS = [
   },
   {
     label: 'RV-5 — عزل SVG المخزّن عند الخدمة (sandbox + inline)',
-    file: 'main.go',
+    file: 'internal/server/asset_server.go',
     mustContain: [
       'Content-Security-Policy", "sandbox;',
       'Content-Disposition", `inline;',
@@ -627,7 +627,7 @@ const CODE_ASSERTIONS = [
   },
   {
     label: 'RV-Print-09 — كشف اقتطاع الرفع 413 (المساران الأساسيان)',
-    file: 'main.go',
+    file: 'internal/server/asset_server.go',
     mustContain: ['StatusRequestEntityTooLarge', 'printUploadLimit'],
   },
   {
