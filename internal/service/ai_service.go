@@ -237,11 +237,6 @@ func resolveUserInfoForToken(tokenHash string, token string) (string, int) {
 	return userID, limit
 }
 
-// resolveDailyLimitForToken يشتق الحد اليومي (غلاف للتوافقية مع أي استدعاءات أخرى)
-func resolveDailyLimitForToken(tokenHash string, token string) int {
-	_, limit := resolveUserInfoForToken(tokenHash, token)
-	return limit
-}
 
 // fetchSupabaseUserInfo يجلب معرّف المستخدم وخطته من Supabase عبر JWT المستخدم
 func fetchSupabaseUserInfo(token string) (userID string, plan string, err error) {

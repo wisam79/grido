@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **تحسين زمن استجابة الذكاء الاصطناعي وتوحيد كاش Supabase (Unified AI User & Plan Caching):**
   1. دمج جلب `userID` وخطة الحساب والحد اليومي في كاش ذاكري موحد `userPlanCacheEntry` في `internal/service/ai_service.go` بمهلة 5 دقائق.
   2. القضاء التام على استدعاء الشبكة المزدوج لـ `fetchSupabaseUserInfo` عند كل عملية تحسين، مما يخفض زمن استجابة طلبات الذكاء الاصطناعي للنصف، ويلغي أي استدعاء خارجي عند توفر الكاش.
+  3. تنظيف الدوال غير المستخدمة واستيفاء فحص `staticcheck` الصارم للباك إند.
 - **تحديث استيرادات الواجهة وعقود IPC (Wails v3 Bindings Modernization & Strict Types):**
   1. تحديث `editor-canvas.tsx` و `freeform-collage-modal.tsx` للاستيراد المباشر من `@bindings/grido/app` لـ `OpenFile`, `SaveImageFromBase64`, و `SaveCustomTemplate` واستئصال الاستيرادات الموروثة القديمة من مسارات Wails v2.
   2. تصنيف مخرجات دوال تنظيف وسائط التخزين في Go (`CleanUnusedMediaNow` و `EmptyMediaTrash`) بهياكل صريحة `MediaCleanupResult` و `MediaTrashResult` في `internal/service/media_service.go` و `app.go` بدلاً من الخرائط المبهمة `map[string]interface{}` لضمان دقة النوع عبر IPC.
