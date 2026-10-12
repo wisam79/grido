@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.15.0] - 2026-10-12
+
 ### Added
 - **نقل عزل الخلفية بالذكاء الاصطناعي إلى محرك Go الأصلي (Go Native ONNX Runtime Background Removal):**
   1. تشغيل نموذج `modnet.onnx` فائق الدقة المخصص لصور البورتريه والاستوديوهات الاحترافية محلياً 100% عبر مكتبة `github.com/yalue/onnxruntime_go` (v1.16.0 المتوافقة مع Microsoft ORT API v20).
