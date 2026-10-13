@@ -265,6 +265,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     printShowEndCutLine: printSettings.showEndCutLine,
     printCutLineStyle: printSettings.cutLineStyle || 'dashed',
     printOrientation: printSettings.orientation,
+    printColorSpace: printSettings.colorSpace || 'sRGB',
   });
   const { isExporting, setIsExporting, cancelExport, handlePrint } = exporter;
 
@@ -785,6 +786,39 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     </Select>
                   </div>
                 )}
+
+                {/* صف فضاء الألوان — يفتح مسار CMYK الاحترافي المخفي */}
+                <div className="flex flex-col gap-1.5 pt-2 border-t border-border/30">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-xs font-semibold text-foreground">فضاء الألوان</Label>
+                    <Select
+                      value={printSettings.colorSpace || 'sRGB'}
+                      onValueChange={(val) =>
+                        setPrintSettings({ colorSpace: val as 'sRGB' | 'CMYK' })
+                      }
+                    >
+                      <SelectTrigger className="h-6.5 w-[98px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-2xs rounded">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent dir="rtl" className="z-(--z-print-toolbar)">
+                        <SelectItem value="sRGB" className="text-xs font-semibold cursor-pointer">
+                          sRGB (رقمي)
+                        </SelectItem>
+                        <SelectItem value="CMYK" className="text-xs font-semibold cursor-pointer">
+                          CMYK (مطابع)
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {(printSettings.colorSpace || 'sRGB') === 'CMYK' && (
+                    <p className="text-micro leading-relaxed text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-2 py-1">
+                      سيُحفظ الملف TIFF بفصل أحبار حقيقي للمطابع — افتحه مباشرة في الطابعة.
+                    </p>
+                  )}
+                  <p className="text-micro text-muted-foreground/80 leading-relaxed">
+                    sRGB للطابعات المنزلية، CMYK لطابعات الأوفست.
+                  </p>
+                </div>
               </div>
             </div>
           </aside>

@@ -23,6 +23,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   showEndCutLine: true,
   cutLineStyle: 'dashed',
   orientation: 'portrait',
+  colorSpace: 'sRGB',
   fitToPage: false,
   repeatMode: 'all',
   gridAlign: 'top-left',

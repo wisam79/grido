@@ -13,22 +13,54 @@ export const UPLOAD_TIMEOUT_MS = 120_000;
 /** مهلة توليد الورقة عبر Go — ورقة 50MP TIFF قد تستغرق دقائق؛ فوقها فشل صريح. */
 export const EXPORT_TIMEOUT_MS = 10 * 60_000;
 
-/** وصف خطأ آمن للعرض: أخطاء Go/Wails كائنات تُنتج "[object Object]" بـ String(). */
+/**
+ * وصف خطأ آمن للعرض: أخطاء Go/Wails كائنات تُنتج "[object Object]" بـ String().
+ * يحوّل رسائل السقوف التقنية (MP/Copies/DPI) لعربية واضحة مع اقتراح حل.
+ */
 export function describeError(err: unknown): string {
-  if (err instanceof Error) return err.message || 'خطأ غير معروف';
-  if (typeof err === 'string') return err;
-  if (err && typeof err === 'object') {
-    const rec = err as Record<string, unknown>;
-    if (typeof rec.message === 'string' && rec.message) return rec.message;
-    if (typeof rec.error === 'string' && rec.error) return rec.error;
-    try {
-      const s = JSON.stringify(rec);
-      if (s && s !== '{}') return s;
-    } catch {
-      /* ignore */
+  const raw = (() => {
+    if (err instanceof Error) return err.message || 'خطأ غير معروف';
+    if (typeof err === 'string') return err;
+    if (err && typeof err === 'object') {
+      const rec = err as Record<string, unknown>;
+      if (typeof rec.message === 'string' && rec.message) return rec.message;
+      if (typeof rec.error === 'string' && rec.error) return rec.error;
+      try {
+        const s = JSON.stringify(rec);
+        if (s && s !== '{}') return s;
+      } catch {
+        /* ignore */
+      }
     }
-  }
-  return 'خطأ غير معروف';
+    return 'خطأ غير معروف';
+  })();
+  return humanizePrintError(raw);
+}
+
+function humanizePrintError(msg: string): string {
+  // السقوف والأخطاء القابلة للترجمة — نكشفها بالنص الإنجليزي الخام
+  if (/total pixels exceed 144 megapixels/i.test(msg))
+    return 'الورقة كبيرة جداً (أكثر من 144 ميجابكسل). قلّل الـ DPI أو اختر مقاساً أصغر.';
+  if (/image dimensions too large/i.test(msg) && /MP > \d+ MP max/i.test(msg))
+    return 'صورة كبيرة جداً للطباعة. قلّل الـ DPI أو استخدم صورة أصغر.';
+  if (/cmyk tiff too large/i.test(msg))
+    return 'ورقة CMYK TIFF كبيرة جداً. اختر sRGB أو قلّل الـ DPI.';
+  if (/cmyk jpeg too large/i.test(msg))
+    return 'ورقة CMYK كبيرة جداً. قلّل الـ DPI.';
+  if (/too many expanded print cells/i.test(msg))
+    return 'عدد النسخ كبير جداً. قلّل عدد النسخ في الورقة.';
+  if (/too many copies for one item/i.test(msg))
+    return 'عدد النسخ للعنصر كبير جداً. قلّل عدد النسخ.';
+  if (/too many items.*1000/i.test(msg))
+    return 'عدد العناصر كبير جداً (الحد 1000). قلّل عدد الصور.';
+  if (/invalid DPI/i.test(msg))
+    return 'قيمة DPI غير صالحة. اختر قيمة بين 50 و 600.';
+  if (/upload failed/i.test(msg) || /upload timed out/i.test(msg))
+    return 'فشل رفع صورة الطباعة. تحقّق من الاتصال وحاول مجدداً.';
+  if (/انتهت المهلة/i.test(msg)) return msg; // مهلة withTimeout عربية أصلاً
+  if (/invalid image dimensions/i.test(msg)) return 'أبعاد صورة غير صالحة.';
+  if (/decode.*image/i.test(msg)) return 'تعذّر قراءة إحدى الصور. تأكد من سلامة الملف.';
+  return msg;
 }
 
 /** يلف وعداً بمهلة — Wails IPC لا يدعم الإلغاء، فالنتيجة المتأخرة تُتجاهل بالرمز. */

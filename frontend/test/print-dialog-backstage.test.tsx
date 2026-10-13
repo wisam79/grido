@@ -128,8 +128,24 @@ describe('PrintDialog Backstage View Tests', () => {
     expect(screen.getByText('خيارات الطباعة')).toBeInTheDocument();
     expect(screen.getByText('طباعة بدون هوامش')).toBeInTheDocument();
     expect(screen.getByText('خطوط وعلامات القص')).toBeInTheDocument();
-    expect(screen.queryByText('فضاء الألوان')).not.toBeInTheDocument();
+    // فضاء الألوان موجود الآن (sRGB/CMYK) — يحدد exportFormat تلقائياً (jpeg/tiff) فلا حاجة لاختيار صيغة منفصل
+    expect(screen.getByText('فضاء الألوان')).toBeInTheDocument();
     expect(screen.queryByText('صيغة الإخراج')).not.toBeInTheDocument();
+  });
+
+  it('shows CMYK amber hint only when CMYK is selected', async () => {
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+
+    // افتراضياً sRGB بلا تحذير
+    expect(screen.queryByText(/سيُحفظ الملف TIFF/)).not.toBeInTheDocument();
+
+    await act(async () => {
+      useEditorStore.getState().setPrintSettings({ colorSpace: 'CMYK' });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/سيُحفظ الملف TIFF بفصل أحبار/)).toBeInTheDocument();
+    });
   });
 
   it('renders printer and paper preferences control and calls OpenPrinterPreferences', async () => {

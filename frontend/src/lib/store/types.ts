@@ -211,6 +211,8 @@ export interface PrintSettings {
   showEndCutLine?: boolean;
   cutLineStyle?: 'dashed' | 'dotted' | 'solid' | 'cropmarks';
   orientation: 'portrait' | 'landscape';
+  /** فضاء الألوان: sRGB للطباعة الرقمية، CMYK للمطابع — يحدد صيغة الملف تلقائياً (jpeg/tiff) */
+  colorSpace?: 'sRGB' | 'CMYK';
   fitToPage?: boolean;
   repeatMode?: 'all' | 'row' | 'column';
   gridAlign?:

@@ -86,16 +86,19 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     }
   }, []);
 
+  const isRunningRef = useRef(false);
+  isRunningRef.current = Boolean(bridgeInfo?.isRunning);
+
   useEffect(() => {
     if (open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       initBridge();
-    } else if (bridgeInfo?.isRunning) {
+    } else if (isRunningRef.current) {
       // 🛡️ إيقاف الخادم عند dismiss — كان يستمر بالعمل (منفذ/بطارية/كاميرا)
       // بعد إغلاق الحوار بلا مسار إيقاف إلا إعادة التشغيل اليدوية.
       StopPhoneBridge().catch((err) => phoneLog.error('Stop on close failed:', err));
     }
-  }, [open, initBridge, bridgeInfo?.isRunning]);
+  }, [open, initBridge]);
 
   // Poll status occasionally while dialog is open to refresh photo count
   useEffect(() => {

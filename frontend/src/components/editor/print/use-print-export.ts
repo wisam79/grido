@@ -55,6 +55,7 @@ export interface PrintExportContext {
   printShowEndCutLine: boolean | undefined;
   printCutLineStyle: PrintSettings['cutLineStyle'];
   printOrientation: PrintSettings['orientation'];
+  printColorSpace?: PrintSettings['colorSpace'];
 }
 
 export function usePrintExport({
@@ -78,6 +79,7 @@ export function usePrintExport({
   printShowEndCutLine,
   printCutLineStyle,
   printOrientation,
+  printColorSpace,
 }: PrintExportContext) {
   const stageRef = useStageRef();
   const [isExporting, setIsExportingState] = useState(false);
@@ -446,10 +448,11 @@ export function usePrintExport({
               // الكولاج يجبر 'dashed' بينما المعاينة تعرض اختيار المستخدم
               // (solid/dotted) فتُطبع الورقة بنمط مختلف عن المعاينة (WYSIWYG مكسور).
               cutLineStyle: printCutLineStyle ?? 'dashed',
-              colorSpace: 'sRGB',
+              colorSpace: printColorSpace === 'CMYK' ? 'CMYK' : 'sRGB',
               // 🖨️ JPEG لا PNG: ترميزه أسرع عدة مرات وملفه أصغر 3-5× — ورقة 50MP
               // بصيغة PNG تُثقل ذاكرة WebView2 وتقترب من مهلة التصدير (RV-Print-05).
-              exportFormat: 'jpeg',
+              // CMYK يفرض TIFF (الحامل الحقيقي لفصل الأحبار؛ JPEG يبقى RGB عند المُرمِّز).
+              exportFormat: printColorSpace === 'CMYK' ? 'tiff' : 'jpeg',
               orientation: printOrientation || 'portrait',
               cutLines,
               items,
@@ -514,6 +517,7 @@ export function usePrintExport({
       printShowCutLines,
       printCutLineStyle,
       printOrientation,
+      printColorSpace,
       showPrintResult,
       setExporting,
       later,
