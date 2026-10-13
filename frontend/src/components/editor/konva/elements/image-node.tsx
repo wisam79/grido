@@ -6,7 +6,7 @@ import { ImageElement } from '@/lib/editor-store';
 import { getKonvaFilters } from '@/lib/filters/konva-filters';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useFilterCache } from '@/hooks/use-filter-cache';
-import { getDisplayImage } from '@/lib/canvas/display-image';
+import { useDisplayImage } from '@/hooks/use-display-image';
 import { useKonvaDrag } from '@/hooks/use-konva-drag';
 import { ElementProps, propsAreEqual } from './types';
 import { MagicAiScanner } from './magic-ai-scanner';
@@ -34,7 +34,7 @@ export const URLImage = React.memo(function URLImage({
   const [image] = useAsyncImage(element.imageSrc || '');
   // 🚀 نسخة عرض مخفّضة (سقف 2048px) للرسم التفاعلي — المصدر الكامل يبقى
   // للتصدير والذكاء الاصطناعي. useMemo متزامن: توليد مرة واحدة لكل صورة.
-  const displayImage = React.useMemo(() => getDisplayImage(image), [image]);
+  const displayImage = useDisplayImage(image);
   const hasAnimatedRef = React.useRef(false);
   const enhancingElementId = useRenderQuality((s) => s.enhancingElementId);
   const isEnhancing = enhancingElementId === element.id;

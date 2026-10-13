@@ -7,6 +7,7 @@ import {
   EventsOn,
 } from '../../wailsjs/runtime/runtime';
 import { flushAutoSave } from './use-autosave';
+import { triggerMemoryTrim } from '@/lib/memory-trim';
 
 /**
  * useWindowControls — يدير حالة نافذة التطبيق (تكبير/استعادة/تصغير/إغلاق/تركيز)
@@ -76,7 +77,12 @@ export function useWindowControls() {
 
     // ── 3. أحداث التركيز (Focus/Blur) ──────────────────────────────────
     const handleFocus = () => setIsFocused(true);
-    const handleBlur = () => setIsFocused(false);
+    const handleBlur = () => {
+      setIsFocused(false);
+      // 🧹 عند فقدان التركيز: نفس عقدة main.go/WindowLostFocus — تفريغ
+      // Working Set فوراً. الـ fetch محميّ داخل triggerMemoryTrim (catch+توكن).
+      triggerMemoryTrim();
+    };
     window.addEventListener('focus', handleFocus);
     window.addEventListener('blur', handleBlur);
 

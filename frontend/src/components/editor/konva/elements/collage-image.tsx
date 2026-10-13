@@ -5,7 +5,7 @@ import { useAsyncImage } from '@/hooks/use-async-image';
 import { getKonvaFilters } from '@/lib/filters/konva-filters';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useFilterCache } from '@/hooks/use-filter-cache';
-import { getDisplayImage } from '@/lib/canvas/display-image';
+import { useDisplayImage } from '@/hooks/use-display-image';
 import { liftToDragLayer, dropFromDragLayer, findLiftRoot } from '../drag-layer';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { MagicAiScanner } from './magic-ai-scanner';
@@ -58,7 +58,7 @@ export const KonvaCollageImage = React.memo(
   }) {
     const [image] = useAsyncImage(imageSrc);
     // 🚀 نسخة عرض مخفّضة للرسم التفاعلي — المصدر الكامل للتصدير فقط.
-    const displayImage = React.useMemo(() => getDisplayImage(image), [image]);
+    const displayImage = useDisplayImage(image);
     // ⚖️ فضاء الإحداثيات الموحّد: نسبة الأصل → العرض. قبل اكتمال التحميل
     // (naturalWidth = 0) تكون النسبة 1 فلا يحدث أي تحويل.
     const naturalW = image?.naturalWidth || 0;

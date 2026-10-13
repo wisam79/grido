@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **إصلاح تسريب أقفال الملفات الذرية وحماية الذاكرة (Atomic File Locks Leak Fix & Memory Protection — تحقق 2026-10-13):**
+  1. القضاء على تسريب `pathLocks` في `internal/utils/atomicfile.go`: استبدال `sync.Map` اللانهائي (الذي كان يحتفظ بكل مسار فريد `img_${nano}.png` حياً للأبد) بنظام قفل مع عداد مراجع (`refCountedMutex`) وقفل عام `pathLocksMu`؛ يُحذف المفتاح تلقائياً فور وصول `refs == 0` بعد فك القفل دون كسر التسلسل التنافسي.
+  2. إضافة دالة `PathLocksCount()` للمراقبة وتثبيت 4 اختبارات تسريب ومنافسة جديدة في `internal/utils/atomicfile_leak_test.go` (50 كاتب متزامن لنفس المسار، 1000 مسار وسائط فريد متتالي، 200 مسار مع `Abort` متتالي، و100 كاتب متزامن لمسارات فريدة) مع ثبوت عودة العداد للصفر تماماً (0 PASS/FAIL leaks).
+  3. استكمال منظومة تفريغ الذاكرة الأمامية المزدوجة في `frontend/src/hooks/use-window-controls.ts`: ربط حدث `window.blur` باستدعاء `triggerMemoryTrim()` لتفريغ الـ Working Set فور فقدان التركيز تزامناً مع عقدة الباك إند `main.go/WindowLostFocus`.
+
+### Performance
+- **إلغاء حجب خيط الرسم في الكانفاس للصور الضخمة (Canvas Unblocked Render M16-final — تحقق 2026-10-13):**
+  1. فك اختناق `getDisplayImage` في `frontend/src/lib/canvas/display-image.ts`: القضاء على حجب طور الرسم التزامني (80–200ms لتنفيذ `drawImage` لصور 5000px) عبر استدعاء غير محجوب يطلق `ensureDisplayProxy` في الخلفية ويعيد الأصل فوراً (<16ms للرسم الأول).
+  2. إنشاء خطاف `useDisplayImage` التفاعلي (`frontend/src/hooks/use-display-image.ts`) كجسر بين الرسم وبناء البروكسي الخلفي عبر `createImageBitmap`، مع إعادة رسم سلسة فور جاهزية النسخة المخففة دون وميض ومع الحفاظ على السلوك التزامني لبيئة الاختبارات (jsdom).
+  3. ترحيل مكونات الكانفاس الرئيسية `image-node.tsx` و `collage-image.tsx` لاستخدام `useDisplayImage`.
+
+### Fixed
 - **إصلاح شامل لعيوب الواجهة (UI Bug Hunt — تحقق 2026-10-13):**
   1. التصدير قابل للإلغاء أخيراً: الإغلاق أثناء التحميل مسموح ويوقف الحلقة بصمت (راية + رمز جولة ضد التزامن)، وزر الفوتر يتحول لـ«إيقاف التصدير»، وبلا رسائل نجاح/فشل كاذبة بعد الإغلاق.
   2. منع تكديس المودالات: اختصارات فتح الحوارات والتبويبات والوضع تتجاهل الحالة أثناء مودال مفتوح أو داخل الحقول (`shouldIgnoreCanvasAction`)، وحذف جراحة DOM من إغلاق الطباعة، وتوحيد Escape على مسار Radix وحده.

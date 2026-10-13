@@ -36,19 +36,51 @@ type AtomicFile struct {
 	release func()
 }
 
-// pathLocks: قفل واحد لكل مسار هدف **داخل العملية**. العقد الموثّق سابقاً
-// (كاتب واحد لكل مسار) لم يكن مفروضاً بشيء، وكثير من المستدعين بلا mutex خاص
-// به (مثل crypto.go)، بينما Wails يستدعي الخدمات في goroutines مستقلة: كاتبان
-// متزامنان كانا يتشاركان <path>.tmp نفسه (بـO_TRUNC) فيتداخل المحتوى ثم يُنفَّذ
-// rename على نتيجة مدموجة — توكن/ترخيص تالف بلا أي خطأ.
-var pathLocks sync.Map // map[string]*sync.Mutex
+// pathLocks: قفل واحد لكل مسار هدف **داخل العملية** مع عدّ مراجع لمنع
+// التسريب البطيء. النسخة السابقة كانت sync.Map تنمو بلا حد (كل مسار
+// وسائط فريد img_${nano}.png يبقى mutex حيّاً للأبد حتى بعد انتهاء
+// الكتابة). الحل الحالي: خريطة محمية بـ mutex عام + عدّ مراجع، يُحذف
+// المفتاح عند زوال آخر مستخدم بعد تحرير القفل — يمنع التسريب دون كسر
+// التسلسل (حذف مباشر بعد Unlock كان يسمح لكاتب ثالث بإنشاء mutex جديد
+// لا يحجب كاتباً ثانياً ينتظر على الكائن القديم).
+type refCountedMutex struct {
+	mu   sync.Mutex
+	refs int
+}
+
+var (
+	pathLocksMu sync.Mutex
+	pathLocks   = make(map[string]*refCountedMutex)
+)
 
 // lockTargetPath يحتجز قفل المسار ويعيد دالة تحريره (idempotent عبر releaseLock).
 func lockTargetPath(path string) func() {
-	value, _ := pathLocks.LoadOrStore(path, &sync.Mutex{})
-	mu := value.(*sync.Mutex)
-	mu.Lock()
-	return mu.Unlock
+	pathLocksMu.Lock()
+	rc, ok := pathLocks[path]
+	if !ok {
+		rc = &refCountedMutex{}
+		pathLocks[path] = rc
+	}
+	rc.refs++
+	pathLocksMu.Unlock()
+
+	rc.mu.Lock()
+	return func() {
+		rc.mu.Unlock()
+		pathLocksMu.Lock()
+		rc.refs--
+		if rc.refs == 0 {
+			delete(pathLocks, path)
+		}
+		pathLocksMu.Unlock()
+	}
+}
+
+// PathLocksCount يعيد عدد المفاتيح الحالية في الخريطة — للاختبارات والمراقبة فقط.
+func PathLocksCount() int {
+	pathLocksMu.Lock()
+	defer pathLocksMu.Unlock()
+	return len(pathLocks)
 }
 
 // CreateAtomic ينشئ الملف المؤقت للهدف المطلوب بالصلاحيات المعطاة.
