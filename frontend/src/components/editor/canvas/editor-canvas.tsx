@@ -439,6 +439,8 @@ export const EditorCanvas = React.memo(
                         e.stopPropagation();
                         useEditorStore.getState().removeUserGuide(guide.id);
                       }}
+                      // ltr-island موثقة (عقد الاتجاه): مقابض الأدلة داخل إحداثيات
+                      // الكانفس LTR فالفيزيائي -ml-2 صحيح ولا يُحوَّل لمنطقي.
                       className={`absolute z-(--z-canvas-overlay) pointer-events-auto group transition-colors select-none ${
                         lockUserGuides
                           ? 'cursor-default'

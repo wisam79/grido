@@ -85,6 +85,16 @@ export function useWorkspacePanels() {
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
   const [mobileActiveTab, setMobileActiveTab] = useState<'templates' | 'properties'>('templates');
 
+  // 🛡️ لوحة الأدوات (Ctrl+K) بحالة مشتركة مرفوعة: مستمع الحدث كان داخل
+  // WorkspacePanelRail فلا يُركَّب في compact ويموت Ctrl+K هناك. الحالة هنا
+  // (الخطاف يعيش في App دائماً) والمشغّلان (الشريط/زر الجوال) يتشاركانها.
+  const [isLauncherOpen, setIsLauncherOpen] = useState(false);
+  useEffect(() => {
+    const openLauncher = () => setIsLauncherOpen(true);
+    window.addEventListener('grido:open-tool-launcher', openLauncher);
+    return () => window.removeEventListener('grido:open-tool-launcher', openLauncher);
+  }, []);
+
   // Wide drawer for templates (لوحة التبويب الأول في الشاشات الواسعة) —
   // مفتوحة افتراضياً عند الإقلاع بطلب المالك: التبويب الأول ظاهر بمحتواه بدل
   // أن يبدأ الشريط بلا لوحة (كانت مغلقة دائماً لأن حالتها غير محفوظة أصلاً).
@@ -268,9 +278,10 @@ export function useWorkspacePanels() {
         if (panel === 'templates') {
           setIsTemplatesDrawerOpen((prev) => !prev);
         } else {
-          // Properties in wide
+          // Properties in wide: الدبس وحده مصدر الحقيقة للظهور
+          // (workspace-layout) — قلب activePanel هنا كان يلوّث اللوحة
+          // الظاهرة عند التضييق إلى standard بلا داعٍ.
           setIsInspectorPinned((prev) => !prev);
-          setActivePanelState((prev) => (prev === 'properties' ? null : 'properties'));
         }
         return;
       }
@@ -385,6 +396,7 @@ export function useWorkspacePanels() {
     isTemplatesDrawerOpen,
     isMobileSheetOpen,
     mobileActiveTab,
+    isLauncherOpen,
     activeStudioTab,
     activeCollageTab,
     isZenMode,
@@ -393,6 +405,7 @@ export function useWorkspacePanels() {
     setIsTemplatesDrawerOpen,
     setIsMobileSheetOpen,
     setMobileActiveTab,
+    setIsLauncherOpen,
     setActiveStudioTab,
     selectStudioTab,
     setActiveCollageTab,

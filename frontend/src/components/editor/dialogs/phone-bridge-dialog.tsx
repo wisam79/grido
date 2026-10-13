@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   Copy,
   Check,
@@ -89,8 +90,12 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     if (open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       initBridge();
+    } else if (bridgeInfo?.isRunning) {
+      // 🛡️ إيقاف الخادم عند dismiss — كان يستمر بالعمل (منفذ/بطارية/كاميرا)
+      // بعد إغلاق الحوار بلا مسار إيقاف إلا إعادة التشغيل اليدوية.
+      StopPhoneBridge().catch((err) => phoneLog.error('Stop on close failed:', err));
     }
-  }, [open, initBridge]);
+  }, [open, initBridge, bridgeInfo?.isRunning]);
 
   // Poll status occasionally while dialog is open to refresh photo count
   useEffect(() => {
@@ -159,8 +164,12 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
         {/* Modal Body */}
         <div className="p-6 flex flex-col items-center gap-5 max-h-[75vh] overflow-y-auto">
           {isLoading && (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+            <div
+              role="status"
+              aria-label="جاري تجهيز الخادم"
+              className="flex flex-col items-center justify-center py-12 gap-3"
+            >
+              <Spinner size={32} className="w-8 h-8 text-primary" />
               <p className="text-xs text-muted-foreground font-medium">جاري تجهيز الخادم ...</p>
             </div>
           )}

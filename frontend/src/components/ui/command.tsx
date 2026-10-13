@@ -11,9 +11,10 @@ import { cn } from '@/lib/utils';
  * - حلقة التركيز المزدوجة على العناصر التفاعلية.
  * - دعم RTL كامل مع الاختصار في الطرف المقابل للاسم.
  *
- * تُستخدم داخل Popover (وليس Dialog) في الشريط الجانبي — لا تُضَف نسخة
- * Dialog هنا: نسختان للوحة الأوامر خرق لثابت «حظر ازدواجية الميزات»
- * (.agents/AGENTS.md)، وموضع اللوحة الوحيد هو WorkspacePanelRail.
+ * تُستخدم داخل Popover (وليس Dialog) عبر ToolLauncherContent الوحيد في
+ * workspace-panel-rail — لا تُضَف نسخة Dialog هنا: نسختان للوحة الأوامر خرق
+ * لثابت «حظر ازدواجية الميزات» (.agents/AGENTS.md). المشغّلان (زر الشريط
+ * وزر الجوال compact) يتشاركان المحتوى والحالة نفسيهما.
  */
 
 const Command = React.forwardRef<

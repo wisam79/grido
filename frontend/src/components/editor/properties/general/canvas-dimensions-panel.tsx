@@ -354,7 +354,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   if (template) setTemplate(null);
                 }}
                 className={cn(
-                  'text-xs text-right justify-between font-bold cursor-pointer rounded-md',
+                  'text-xs text-start justify-between font-bold cursor-pointer rounded-md',
                   FOCUS_RING,
                 )}
               >
@@ -371,7 +371,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
                   className={cn(
-                    'text-xs text-right justify-between cursor-pointer rounded-md flex items-center',
+                    'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
                     FOCUS_RING,
                   )}
                 >
@@ -386,7 +386,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
                   className={cn(
-                    'text-xs text-right justify-between cursor-pointer rounded-md flex items-center',
+                    'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
                     FOCUS_RING,
                   )}
                 >
@@ -404,7 +404,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
                   className={cn(
-                    'text-xs text-right justify-between cursor-pointer rounded-md flex items-center',
+                    'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
                     FOCUS_RING,
                   )}
                 >
@@ -422,7 +422,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   key={p.id}
                   onClick={() => handlePresetChange(p.id)}
                   className={cn(
-                    'text-xs text-right justify-between cursor-pointer rounded-md flex items-center',
+                    'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
                     FOCUS_RING,
                   )}
                 >
@@ -511,7 +511,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                     if (e.key === 'Enter') handleWidthCommit();
                     revertOnEscape(e, () => setWidthVal(toDisplay(canvasWidth)));
                   }}
-                  className="w-full min-w-0 bg-transparent border-0 p-0 text-left font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
+                  className="w-full min-w-0 bg-transparent border-0 p-0 text-start font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
                   dir="ltr"
                 />
                 <span className="text-micro font-mono text-muted-foreground/70 shrink-0 select-none">
@@ -557,7 +557,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                     if (e.key === 'Enter') handleHeightCommit();
                     revertOnEscape(e, () => setHeightVal(toDisplay(canvasHeight)));
                   }}
-                  className="w-full min-w-0 bg-transparent border-0 p-0 text-left font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
+                  className="w-full min-w-0 bg-transparent border-0 p-0 text-start font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
                   dir="ltr"
                 />
                 <span className="text-micro font-mono text-muted-foreground/70 shrink-0 select-none">

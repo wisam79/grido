@@ -161,9 +161,11 @@ export function CropDialog({
         </DialogHeader>
 
         {/* محتوى النافذة الرئيسي - يستغل 100% من المساحة المتاحة */}
-        <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-3 py-1.5 min-h-0 h-full">
+        {/* 🛡️ عمود الجوال: h-full المزدوج كان ≈200% فيحجب الفوتر — ارتفاعات
+            تلقائية + سقف للشريط الجانبي مع تمريره الداخلي */}
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-3 py-1.5 min-h-0 md:h-full">
           {/* منطقة الكانفس الخاصة بالقص - التوسع الديناميكي الكامل */}
-          <div className="flex-1 bg-muted rounded-xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/40 relative shadow-inner p-1.5">
+          <div className="flex-1 bg-muted rounded-xl overflow-hidden flex items-center justify-center h-64 sm:h-72 md:h-full min-h-0 border border-border/40 relative shadow-inner p-1.5">
             {open && (
               <Cropper
                 src={currentSrc}
@@ -182,7 +184,7 @@ export function CropDialog({
           </div>
 
           {/* لوحة التحكم الجانبية المتناسقة مع الأزرار دون تشوه */}
-          <div className="w-full md:w-52 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-xl border border-border/40 overflow-y-auto h-full min-h-0 fluent-specular">
+          <div className="w-full md:w-52 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-xl border border-border/40 overflow-y-auto h-auto md:h-full min-h-0 max-h-[38vh] md:max-h-none fluent-specular">
             {/* 1. أدوات التكبير والتدوير */}
             <div className="space-y-2">
               <Label

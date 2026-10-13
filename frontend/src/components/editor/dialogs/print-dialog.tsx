@@ -329,27 +329,23 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const hasContent =
     mode === 'collage' ? slots.some((s) => Boolean(s.imageSrc)) : elements.length > 0;
 
+  // 🛡️ بلا جراحة DOM: الإزالة اليدوية عبر querySelector كانت تحذف عقدة
+  // أول حوار في المستند — مع تكديس المودالات قد تمحو حواراً آخر وتكسر
+  // مصالحة React (البوابة + unmount الخاص بـ Radix يكفيان).
   const handleDismiss = useCallback(() => {
     cancelExport();
     if (typeof document !== 'undefined' && document.body) {
       document.body.style.pointerEvents = '';
-      const stuckContent = document.querySelector('[data-slot="dialog-content"]');
-      const stuckOverlay = document.querySelector('[data-slot="dialog-overlay"]');
-      if (!open || stuckContent?.getAttribute('data-state') === 'closed') {
-        stuckContent?.remove();
-        stuckOverlay?.remove();
-      }
     }
     onOpenChange(false);
-  }, [cancelExport, onOpenChange, open]);
+  }, [cancelExport, onOpenChange]);
 
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (e.defaultPrevented) return;
-        handleDismiss();
-      } else if (e.key === 'Enter' && !isExporting && hasContent) {
+      // 🛡️ بلا فرع Escape هنا: ضغطة واحدة كانت تُطلق الإغلاق 2-3 مرات
+      // (المستمع + onEscapeKeyDown + onOpenChange) — Escape حصرياً لـ Radix.
+      if (e.key === 'Enter' && !isExporting && hasContent) {
         if (e.defaultPrevented) return;
         const t = e.target as HTMLElement | null;
         if (t?.closest?.('input, select, textarea, button, [role="combobox"]')) return;
@@ -359,7 +355,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, isExporting, hasContent, handleDismiss, exporter]);
+  }, [open, isExporting, hasContent, exporter]);
 
   useEffect(() => {
     exporter.setPrintInvocation({

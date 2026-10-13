@@ -108,7 +108,10 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
       if (x < -60 || x > viewportWidth + 60) continue;
 
       const isLabel = idx % labelRatio === 0;
-      const isMid = !isLabel && Math.abs((u % labelStep) - labelStep / 2) < subStep / 2 + 1e-9;
+      // 🛡️ باقي قسمة موجب: % في JS تحفظ الإشارة فيُساء تصنيف نقاط المنتصف
+      // يسار الصفر (تظهر minor بدل mid) — التماثل حول الصفر مطلوب.
+      const posMod = ((u % labelStep) + labelStep) % labelStep;
+      const isMid = !isLabel && Math.abs(posMod - labelStep / 2) < subStep / 2 + 1e-9;
       const isZero = Math.abs(u) < 0.00001;
 
       if (isLabel) {
@@ -369,7 +372,10 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       if (y < -60 || y > viewportHeight + 60) continue;
 
       const isLabel = idx % labelRatio === 0;
-      const isMid = !isLabel && Math.abs((u % labelStep) - labelStep / 2) < subStep / 2 + 1e-9;
+      // 🛡️ باقي قسمة موجب: % في JS تحفظ الإشارة فيُساء تصنيف نقاط المنتصف
+      // يسار الصفر (تظهر minor بدل mid) — التماثل حول الصفر مطلوب.
+      const posMod = ((u % labelStep) + labelStep) % labelStep;
+      const isMid = !isLabel && Math.abs(posMod - labelStep / 2) < subStep / 2 + 1e-9;
       const isZero = Math.abs(u) < 0.00001;
       // نفس منطق المسطرة الأفقية: الإرساء عند حدّ منطقة العرض لا حدّ الورقة
       const isNearEnd = y + 8 > viewportHeight;

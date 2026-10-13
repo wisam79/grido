@@ -16,6 +16,7 @@ import {
   sessionSupersededMessage,
 } from '@/lib/store/slices/license-slice';
 import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
 
 const logger = createLogger('useAppBootstrap');
 
@@ -42,7 +43,9 @@ export function useAppBootstrap(): AppBootstrapState {
       logger.error('Failed to dismiss crash report:', e);
     }
     setCrashReport(null);
-    toast.success('تم استعادة المسودة بنجاح ومتابعة العمل');
+    // 🛡️ صدق الرسائل: هذا المسار يُسقط التقرير فقط — التحميل الفعلي بيد
+    // useAutoSave عند الإقلاع، فلا ندّعي استعادة تحققنا منها.
+    toast.success('تمت متابعة العمل على المسودة الحالية');
   };
 
   const handleDismissCrash = async () => {
@@ -76,8 +79,13 @@ export function useAppBootstrap(): AppBootstrapState {
             const startupUrl = await GetStartupFile();
             if (startupUrl) void addImageFromSrc(startupUrl, { setSingleMode: true });
           }
-        } catch {
-          // تجاهل الخطأ في بيئة الاختبارات عند عدم توفر واجهة Wails
+        } catch (startupErr) {
+          // تجاهل في بيئة الاختبارات (لا واجهة Wails) — وسجّل في الإنتاج
+          // حتى لا يفشل فتح الملف بالنقر المزدوج بصمت تام.
+          if (typeof GetStartupFile === 'function') {
+            logger.error('Failed to open startup file:', startupErr);
+            toast.error(toErrorMessage(startupErr, 'تعذّر فتح الملف الممرر عند الإقلاع'));
+          }
         }
         // فحص وجود تقرير انهيار سابق من الرنتايم
         try {
@@ -87,8 +95,11 @@ export function useAppBootstrap(): AppBootstrapState {
               setCrashReport(report);
             }
           }
-        } catch {
-          // تجاهل الخطأ في بيئة الاختبارات عند عدم توفر واجهة Wails
+        } catch (crashErr) {
+          // تجاهل في بيئة الاختبارات (لا واجهة Wails) — وسجّل في الإنتاج.
+          if (typeof CheckPendingCrashReport === 'function') {
+            logger.error('Failed to check pending crash report:', crashErr);
+          }
         }
       } catch (err) {
         // 🛡️ الجلسة الواحدة: الإقلاع قد يكشف طرداً — اعرض رسالة الطرد الصريحة

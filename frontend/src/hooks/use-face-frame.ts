@@ -158,6 +158,9 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
   } = useFaceFrameState();
   const modelCachedRef = useRef(false);
   const activeRequestRef = useRef<number>(0);
+  // 🛡️ معرّف العملية العامة النشطة — يُصفَّى عند إلغاء التركيب حتى لا تعلق
+  // خانة العمليات (isFraming + activeOperation) بلا مستوطن.
+  const activeOpRef = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -167,11 +170,23 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
         if (busyFrameRequestId === reqId) busyFrameRequestId = 0;
         activeRequestRef.current = 0;
       }
+      // إتمام التسوية الكاملة عند إلغاء التركيب أثناء التأطير
+      if (activeOpRef.current) {
+        useOperationStatusStore.getState().finishOperation(activeOpRef.current);
+        activeOpRef.current = null;
+      }
+      setIsFraming(false);
+      setFrameProgress(0);
+      setFrameProgressText('');
+      terminateWorker();
     };
+    // المُحدِّثات zustand مستقرة الهوية — التنظيف لمرة واحدة عند الفك فقط.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCancelFrame = () => {
     activeRequestRef.current = 0;
+    activeOpRef.current = null;
     terminateWorker();
     setIsFraming(false);
     setFrameProgress(0);
@@ -186,6 +201,14 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
 
     if (busyFrameRequestId !== 0) {
       toast.warning('جاري التأطير ...');
+      return;
+    }
+
+    // 🛡️ خانة العمليات واحدة: عزل/ترميم جارٍ يمنع بدء تأطير متزامن
+    // (وإلا كتبت النتيجتان فوق بعضهما — last-write-wins صامت).
+    const busyOpFrame = useOperationStatusStore.getState().activeOperation;
+    if (busyOpFrame) {
+      toast.warning(busyOpFrame.title);
       return;
     }
 
@@ -210,12 +233,14 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
     const requestId = nextRequestId++;
     busyFrameRequestId = requestId;
     activeRequestRef.current = requestId;
+    activeOpRef.current = opId;
     const worker = getWorker();
     const startedAt = performance.now();
 
     // 🧹 تحرير فوري لكامل سياقات WebGL والذاكرة بإنهاء الـ Worker فور اكتمال المهمة
     const settle = () => {
       useOperationStatusStore.getState().finishOperation(opId);
+      activeOpRef.current = null;
       pendingFrameRequests.delete(requestId);
       if (busyFrameRequestId === requestId) busyFrameRequestId = 0;
       if (activeRequestRef.current === requestId) activeRequestRef.current = 0;

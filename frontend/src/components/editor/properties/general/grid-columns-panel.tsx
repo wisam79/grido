@@ -143,13 +143,14 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     <div className="flex items-center gap-1 min-w-0">
                       <input
                         type="number"
+                        dir="ltr"
                         value={gridSize}
                         min={5}
                         max={200}
                         onChange={(e) =>
                           setGridSize(Math.max(5, Math.min(200, parseInt(e.target.value) || 20)))
                         }
-                        className="w-10 bg-transparent border-0 p-0 text-left text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
+                        className="w-10 bg-transparent border-0 p-0 text-start text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                       />
                       <span className="text-micro text-muted-foreground/70 select-none font-mono">
                         px
@@ -425,6 +426,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     <div className="flex items-center gap-1 min-w-0">
                       <input
                         type="number"
+                        dir="ltr"
                         value={bleedMarginMM}
                         min={0}
                         max={20}
@@ -434,7 +436,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                             Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)),
                           )
                         }
-                        className="w-10 bg-transparent border-0 p-0 text-left text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
+                        className="w-10 bg-transparent border-0 p-0 text-start text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                       />
                       <span className="text-micro text-muted-foreground/70 select-none font-mono">
                         مم
@@ -453,6 +455,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                     <div className="flex items-center gap-1 min-w-0">
                       <input
                         type="number"
+                        dir="ltr"
                         value={safeMarginMM}
                         min={0}
                         max={20}
@@ -462,7 +465,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                             Math.max(0, Math.min(20, parseFloat(e.target.value) || 0)),
                           )
                         }
-                        className="w-10 bg-transparent border-0 p-0 text-left text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
+                        className="w-10 bg-transparent border-0 p-0 text-start text-xs font-mono font-bold text-foreground focus:ring-0 focus:outline-none"
                       />
                       <span className="text-micro text-muted-foreground/70 select-none font-mono">
                         مم

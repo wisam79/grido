@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { toast } from 'sonner';
 import { CanvasElement, useEditorStore } from '@/lib/editor-store';
-import { getToolsForMode } from '@/lib/workspace-tools';
+import { getToolsForWorkflow } from '@/lib/workspace-tools';
 import { SaveImageFromBase64 } from '@bindings/grido/app';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
@@ -187,92 +187,138 @@ export function useKeyboardShortcuts() {
     { ignoreEventWhen: shouldIgnoreCanvasAction },
   );
 
+  // 🛡️ تكديس المودالات: مفاتيح فتح الحوارات تتجاهل الحالة أثناء مودال مفتوح
+  // أو داخل حقول الإدخال (يمنع Export فوق Print وما شابه).
   // Save: Ctrl+S or Cmd+S — فتح مكتبة المشاريع للحفظ
-  useHotkeys('mod+s', (e) => {
-    e.preventDefault();
-    window.dispatchEvent(
-      new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
-    );
-  });
+  useHotkeys(
+    'mod+s',
+    (e) => {
+      e.preventDefault();
+      window.dispatchEvent(
+        new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'save' } }),
+      );
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Export: Ctrl+E or Cmd+E — كانت معلنة في الحوار وشريط الأدوات بلا مستمع (إصلاح Bug#7)
-  useHotkeys('mod+e', (e) => {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent('grido:open-export-dialog'));
-  });
+  useHotkeys(
+    'mod+e',
+    (e) => {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('grido:open-export-dialog'));
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Print: Ctrl+P or Cmd+P — تمنع أيضاً طباعة المتصفح الافتراضية (إصلاح Bug#7)
-  useHotkeys('mod+p', (e) => {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent('grido:open-print-dialog'));
-  });
+  useHotkeys(
+    'mod+p',
+    (e) => {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('grido:open-print-dialog'));
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Insert Image: Ctrl+O or Cmd+O — تمنع فتح ملف المتصفح الافتراضي (إصلاح Bug#7)
-  useHotkeys('mod+o', (e) => {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent('grido:open-file-dialog'));
-  });
+  useHotkeys(
+    'mod+o',
+    (e) => {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('grido:open-file-dialog'));
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Batch / Multi Insert: Ctrl+Shift+O or Cmd+Shift+O
-  useHotkeys('mod+shift+o', (e) => {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'));
-  });
+  useHotkeys(
+    'mod+shift+o',
+    (e) => {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'));
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Toggle Right Sidebar (Templates / Layers): Ctrl+B or Cmd+B
-  useHotkeys('mod+b', (e) => {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent('grido:toggle-right-sidebar'));
-  });
+  useHotkeys(
+    'mod+b',
+    (e) => {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('grido:toggle-right-sidebar'));
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Toggle Left Sidebar (Properties / Workspace): Ctrl+Shift+B or Cmd+Shift+B
-  useHotkeys('mod+shift+b', (e) => {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent('grido:toggle-left-sidebar'));
-  });
+  useHotkeys(
+    'mod+shift+b',
+    (e) => {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('grido:toggle-left-sidebar'));
+    },
+    { ignoreEventWhen: shouldIgnoreCanvasAction },
+  );
 
   // Switch Studio / Collage Tabs: Alt+1 … Alt+9 — مفهرسة من سجل الأدوات الموحّد
   // (كانت مكتوبة يدوياً لكل تبويب؛ الربط بالفهرس يوسّعها تلقائياً عند إضافة أداة)
-  const selectTabByIndex = (e: KeyboardEvent, index: number) => {
+  // 🛡️ نفس حارس تكديس المودالات أعلاه — تبديل التبويبات/الوضع خلف مودال مفتوح ممنوع.
+  // ملاحظة: الفهرس يُحل من القائمة المفلترة لمسار العمل (وليس الكاملة) —
+  // في مسار quick يُخفى تبويب elements من الشريط فتطابق الأرقام المعروضة.
+  const tabGuard = { ignoreEventWhen: shouldIgnoreCanvasAction };
+  const selectVisibleTabByIndex = (e: KeyboardEvent, index: number) => {
     e.preventDefault();
-    const { mode } = useEditorStore.getState();
-    const isCollage = mode === 'collage';
-    const tool = getToolsForMode(mode)[index];
+    const { mode, workflow } = useEditorStore.getState();
+    const tools = getToolsForWorkflow(mode, workflow);
+    const tool = tools[index];
     if (!tool) return;
+    const isCollage = mode === 'collage';
     window.dispatchEvent(
       new CustomEvent(isCollage ? 'grido:select-collage-tab' : 'grido:select-studio-tab', {
         detail: { tab: tool.id },
       }),
     );
   };
-
-  useHotkeys('alt+1', (e) => selectTabByIndex(e, 0));
-  useHotkeys('alt+2', (e) => selectTabByIndex(e, 1));
-  useHotkeys('alt+3', (e) => selectTabByIndex(e, 2));
-  useHotkeys('alt+4', (e) => selectTabByIndex(e, 3));
-  useHotkeys('alt+5', (e) => selectTabByIndex(e, 4));
-  useHotkeys('alt+6', (e) => selectTabByIndex(e, 5));
-  useHotkeys('alt+7', (e) => selectTabByIndex(e, 6));
-  useHotkeys('alt+8', (e) => selectTabByIndex(e, 7));
-  useHotkeys('alt+9', (e) => selectTabByIndex(e, 8));
+  useHotkeys('alt+1', (e) => selectVisibleTabByIndex(e, 0), tabGuard);
+  useHotkeys('alt+2', (e) => selectVisibleTabByIndex(e, 1), tabGuard);
+  useHotkeys('alt+3', (e) => selectVisibleTabByIndex(e, 2), tabGuard);
+  useHotkeys('alt+4', (e) => selectVisibleTabByIndex(e, 3), tabGuard);
+  useHotkeys('alt+5', (e) => selectVisibleTabByIndex(e, 4), tabGuard);
+  useHotkeys('alt+6', (e) => selectVisibleTabByIndex(e, 5), tabGuard);
+  useHotkeys('alt+7', (e) => selectVisibleTabByIndex(e, 6), tabGuard);
+  useHotkeys('alt+8', (e) => selectVisibleTabByIndex(e, 7), tabGuard);
+  useHotkeys('alt+9', (e) => selectVisibleTabByIndex(e, 8), tabGuard);
 
   // Switch Editor Mode: Ctrl+Alt+1 (كولاج) / Ctrl+Alt+2 (تعديل حر)
   // كانت عناوين مبدّل الوضع في الواجهة تعد بهذين الاختصارين بلا تسجيل فعلي لهما
-  useHotkeys('mod+alt+1', (e) => {
-    e.preventDefault();
-    useEditorStore.getState().setMode('collage');
-  });
+  useHotkeys(
+    'mod+alt+1',
+    (e) => {
+      e.preventDefault();
+      useEditorStore.getState().setMode('collage');
+    },
+    tabGuard,
+  );
 
-  useHotkeys('mod+alt+2', (e) => {
-    e.preventDefault();
-    useEditorStore.getState().setMode('single');
-  });
+  useHotkeys(
+    'mod+alt+2',
+    (e) => {
+      e.preventDefault();
+      useEditorStore.getState().setMode('single');
+    },
+    tabGuard,
+  );
 
   // Ctrl+K — لوحة كل الأدوات (وصول بالاسم بلا تمرير في الشريط)
-  useHotkeys('mod+k', (e) => {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'));
-  });
+  useHotkeys(
+    'mod+k',
+    (e) => {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'));
+    },
+    tabGuard,
+  );
 
   // Toggle Zen Mode (Canvas focus): Tab key or Ctrl+. / Cmd+.
   useHotkeys(

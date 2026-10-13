@@ -251,6 +251,19 @@ export const StickerCatalog = React.memo(function StickerCatalog({
   // اختصار لوحة المفاتيح: / أو Ctrl+F للتركيز على البحث
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
+      // 🛡️ حارس موسّع (محتوى غني/قوائم/حوار أجنبي): كان / أثناء تحرير نص
+      // غني يسحب التركيز، وCtrl+F خلف حوار آخر يسرق البحث — حوار
+      // الاستوديو الأم نفسه مستثنى وإلا ماتت الميزة (الكتالوج يعيش داخله).
+      const ae = document.activeElement as HTMLElement | null;
+      if (ae && (ae.isContentEditable || ae.tagName === 'SELECT')) {
+        return;
+      }
+      const aeDialog = ae?.closest?.('[role="dialog"], [role="alertdialog"]') ?? null;
+      const ownDialog =
+        searchInputRef.current?.closest?.('[role="dialog"], [role="alertdialog"]') ?? null;
+      if (aeDialog && aeDialog !== ownDialog) {
+        return;
+      }
       if (
         (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f')) &&
         document.activeElement?.tagName !== 'INPUT' &&

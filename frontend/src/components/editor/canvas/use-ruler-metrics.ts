@@ -149,11 +149,17 @@ export function useRulerMetricsPreview(
       const x = snapToPixelEdge(e.clientX - containerRect.left);
       const y = snapToPixelEdge(e.clientY - containerRect.top);
 
+      // 🛡️ نطاق النافذة: يُلتقط synchronously قبل rAF — مع كانفاسين مركّبين
+      // (نوافذ Wails v3/اختبارات) كان البحث العام يقود مؤشر النافذة الخطأ.
+      const scope =
+        (e.target as HTMLElement | null)?.closest?.('[data-testid="workspace-canvas-shell"]') ??
+        document;
+
       mouseMoveRafId.current = requestAnimationFrame(() => {
         mouseMoveRafId.current = null;
 
-        const hCursor = document.getElementById('h-ruler-cursor') as SVGLineElement | null;
-        const vCursor = document.getElementById('v-ruler-cursor') as SVGLineElement | null;
+        const hCursor = scope.querySelector('#h-ruler-cursor') as SVGLineElement | null;
+        const vCursor = scope.querySelector('#v-ruler-cursor') as SVGLineElement | null;
 
         if (hCursor) {
           hCursor.setAttribute('x1', x.toString());
@@ -170,15 +176,20 @@ export function useRulerMetricsPreview(
     [showRuler, printMode, containerRef],
   );
 
-  const handleWorkspaceMouseLeave = useCallback(() => {
+  const handleWorkspaceMouseLeave = useCallback((e?: React.MouseEvent<HTMLDivElement>) => {
     if (mouseMoveRafId.current !== null) {
       cancelAnimationFrame(mouseMoveRafId.current);
       mouseMoveRafId.current = null;
     }
-    const hCursor = document.getElementById('h-ruler-cursor');
-    const vCursor = document.getElementById('v-ruler-cursor');
-    if (hCursor) hCursor.style.display = 'none';
-    if (vCursor) vCursor.style.display = 'none';
+    // نفس نطاق النافذة أعلاه — currentTarget داخل الغلاف نفسه.
+    const scope =
+      (e?.currentTarget as HTMLElement | null)?.closest?.(
+        '[data-testid="workspace-canvas-shell"]',
+      ) ?? document;
+    const hCursor = scope.querySelector('#h-ruler-cursor');
+    const vCursor = scope.querySelector('#v-ruler-cursor');
+    if (hCursor) (hCursor as SVGLineElement).style.display = 'none';
+    if (vCursor) (vCursor as SVGLineElement).style.display = 'none';
   }, []);
 
   return {

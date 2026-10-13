@@ -81,6 +81,9 @@ function FormatOptionButton({
 
 export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const isCancelledRef = useRef(false);
+  // 🛡️ رمز الجولة: بدء تصدير جديد يُبطل الجولة القديمة (يمنع تصديرين
+  // متزامنين بعد السماح بالإغلاق أثناء التحميل — Bug#9 سابقاً بالمنع الكلي).
+  const runTokenRef = useRef(0);
   const [format, setFormat] = useState<'png' | 'jpg'>('png');
   // 🎨 فضاء الألوان: RGB (افتراضي، تصدير عميل) أو CMYK (تحويل في الخلفية إلى TIFF/JPEG)
   const [colorSpace, setColorSpace] = useState<'rgb' | 'cmyk'>('rgb');
@@ -136,6 +139,11 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const handleExport = async () => {
     setLoading(true);
     setProgress(0);
+    isCancelledRef.current = false;
+    runTokenRef.current += 1;
+    const myRun = runTokenRef.current;
+    // توقف عند إغلاق المستخدم أو عند بدء جولة أحدث
+    const shouldStop = () => isCancelledRef.current || runTokenRef.current !== myRun;
     SetTaskbarProgress(0, 'normal').catch(() => {});
     setTimeout(async () => {
       try {
@@ -171,7 +179,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             backgroundColor: backgroundColor === 'transparent' ? previewWhite() : backgroundColor,
           });
 
-          if (isCancelledRef.current) {
+          if (shouldStop()) {
             SetTaskbarProgress(0, 'none').catch(() => {});
             return;
           }
@@ -185,6 +193,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           const res = await downloadBlob(cmykBlob, name);
           setProgress(100);
           SetTaskbarProgress(0, 'none').catch(() => {});
+          // المستخدم أغلق أثناء حوار الحفظ — لا رسائل مضللة بعد الإغلاق
+          if (shouldStop()) return;
           if (res === 'success') {
             toast.success(`تم تصدير ${cmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} بنظام CMYK`);
             SendNotification('Grido Studio', 'تم تصدير ملف CMYK وحفظه', '').catch(() => {});
@@ -216,10 +226,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           let successCount = 0;
           for (let i = 0; i < validSlots.length; i++) {
-            if (isCancelledRef.current) break;
+            if (shouldStop()) break;
             const slot = validSlots[i];
             const blob = await exportSlotCanvas(slot.id, format, quality / 100);
-            if (isCancelledRef.current) break;
+            if (shouldStop()) break;
             if (blob) {
               const ext = format === 'png' ? 'png' : 'jpg';
               const name = `collage-photo-${i + 1}-${Date.now()}.${ext}`;
@@ -227,7 +237,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               if (res === 'success') successCount++;
               else if (res === '') break;
             }
-            if (isCancelledRef.current) break;
+            if (shouldStop()) break;
             const pct = Math.round(((i + 1) / validSlots.length) * 100);
             setProgress(pct);
             SetTaskbarProgress(pct, 'normal').catch(() => {});
@@ -235,7 +245,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             await new Promise((r) => setTimeout(r, 60));
           }
 
-          if (isCancelledRef.current) {
+          if (shouldStop()) {
             SetTaskbarProgress(0, 'none').catch(() => {});
             return;
           }
@@ -245,7 +255,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             toast.success(`تم تصدير ${successCount} صورة`, {
               action: {
                 label: 'فتح المجلد',
-                onClick: () => OpenFolder(targetDir).catch(console.error),
+                onClick: () =>
+                  OpenFolder(targetDir).catch((err) => logger.error('فتح مجلد التصدير فشل:', err)),
               },
             });
             SendNotification('Grido Studio', `تم تصدير ${successCount} صورة للمجلد`, '').catch(
@@ -260,7 +271,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           SetTaskbarProgress(50, 'normal').catch(() => {});
           const blob = await exportCanvas(format, quality / 100, stageRef.current);
           // المستخدم أغلق النافذة أثناء التصدير — لا نُظهر حوار الحفظ ولا رسائل (إصلاح Bug#9)
-          if (blob && !isCancelledRef.current) {
+          if (blob && !shouldStop()) {
             const finalBlob = await applyBleedAndCropMarks(
               blob,
               bleedMM,
@@ -269,7 +280,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               quality / 100,
               printSettings.dpi,
             );
-            if (isCancelledRef.current) {
+            if (shouldStop()) {
               SetTaskbarProgress(0, 'none').catch(() => {});
               return;
             }
@@ -283,6 +294,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             const res = await downloadBlob(finalBlob, name);
             setProgress(100);
             SetTaskbarProgress(0, 'none').catch(() => {});
+            // المستخدم أغلق أثناء حوار الحفظ — خروج صامت بدل نجاح/فشل كاذب
+            if (shouldStop()) return;
             if (res === 'success') {
               toast.success('تم تصدير الصورة بنجاح');
               SendNotification('Grido Studio', 'تم تصدير الصورة وحفظها', '').catch(() => {});
@@ -292,23 +305,32 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             } else {
               toast.error('فشل حفظ الصورة');
             }
+          } else if (shouldStop()) {
+            // إلغاء المستخدم — خروج صامت بدل خطأ مضلل
+            SetTaskbarProgress(0, 'none').catch(() => {});
+            return;
           } else {
             SetTaskbarProgress(0, 'none').catch(() => {});
             toast.error('تعذر إنشاء الصورة');
           }
         }
       } catch (e) {
-        SetTaskbarProgress(100, 'error').catch(() => {});
-        setTimeout(() => {
+        if (shouldStop()) {
+          // فشل بعد إغلاق المستخدم — تنظيف صامت بلا رسائل
           SetTaskbarProgress(0, 'none').catch(() => {});
-        }, 2500);
-        if (e instanceof CanvasTooLargeError) {
-          toast.error(
-            `الأبعاد كبيرة جداً (${e.width}×${e.height} بكسل ≈ ${(e.pixelCount / 1e6).toFixed(1)} ميجابكسل) — الحد الأقصى 50 ميجابكسل. اخفض المقاس أو DPI.`,
-          );
         } else {
-          logger.error('Export failed:', e);
-          toast.error(toErrorMessage(e, 'حدث خطأ أثناء التصدير'));
+          SetTaskbarProgress(100, 'error').catch(() => {});
+          setTimeout(() => {
+            SetTaskbarProgress(0, 'none').catch(() => {});
+          }, 2500);
+          if (e instanceof CanvasTooLargeError) {
+            toast.error(
+              `الأبعاد كبيرة جداً (${e.width}×${e.height} بكسل ≈ ${(e.pixelCount / 1e6).toFixed(1)} ميجابكسل) — الحد الأقصى 50 ميجابكسل. اخفض المقاس أو DPI.`,
+            );
+          } else {
+            logger.error('Export failed:', e);
+            toast.error(toErrorMessage(e, 'حدث خطأ أثناء التصدير'));
+          }
         }
       } finally {
         setLoading(false);
@@ -325,9 +347,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        // منع الإغلاق (Escape/خلفية) أثناء التصدير — كان يُصفّر الحالة ويسمح
-        // بتصدير متزامن ثانٍ (إصلاح Bug#9)
-        if (!next && loading) return;
+        // الإغلاق أثناء التصدير مسموح (X/Escape/خلفية/زر الإلغاء): يرفع راية
+        // الإلغاء عبر التأثير أدناه فتتوقف الحلقة عند أقرب فحص بصمت، وأي بدء
+        // جديد يُبطل الجولة القديمة عبر runToken (يمنع تصديرين متزامنين —
+        // خليفة إصلاح Bug#9 الذي كان يمنع الإغلاق كلياً فيحبس المستخدم).
         if (!next && typeof document !== 'undefined' && document.body) {
           document.body.style.pointerEvents = '';
         }
@@ -538,7 +561,13 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                   <FluentSettingRow
                     label="علامات القص الإرشادية"
                     description="خطوط حول منطقة النزيف"
-                    control={<Switch checked={showCropMarks} onCheckedChange={setShowCropMarks} />}
+                    control={
+                      <Switch
+                        checked={showCropMarks}
+                        onCheckedChange={setShowCropMarks}
+                        aria-label="علامات القص الإرشادية"
+                      />
+                    }
                   />
                 </div>
 
@@ -562,7 +591,13 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 <FluentSettingRow
                   label="تصدير الصور كملفات منفصلة"
                   description="حفظ كل صورة كملف مستقل"
-                  control={<Switch checked={batchExport} onCheckedChange={setBatchExport} />}
+                  control={
+                    <Switch
+                      checked={batchExport}
+                      onCheckedChange={setBatchExport}
+                      aria-label="تصدير الصور كملفات منفصلة"
+                    />
+                  }
                 />
               </div>
             )}
@@ -583,10 +618,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={loading}
             className="h-8 px-4 text-xs font-semibold rounded-md cursor-pointer"
           >
-            إلغاء
+            {loading ? 'إيقاف التصدير' : 'إلغاء'}
           </Button>
           <Button
             onClick={handleExport}

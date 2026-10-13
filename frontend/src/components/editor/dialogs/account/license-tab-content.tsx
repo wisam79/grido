@@ -77,8 +77,12 @@ export function LicenseTabContent({
           {user.licenseKey && (
             <div className="bg-background/80 border border-border/80 rounded-lg p-2 text-center text-xs flex items-center justify-between px-3">
               <div>
-                <span className="text-muted-foreground ml-1 font-medium">مفتاح التفعيل:</span>
-                <code className="font-mono text-primary font-bold text-xs">{user.licenseKey}</code>
+                <span className="text-muted-foreground me-1 font-medium">مفتاح التفعيل:</span>
+                {/* 🛡️ عزل ثنائي الاتجاه: الشرطات في المفتاح اللاتيني كانت
+                    تُعاد ترتيبها داخل السياق RTL */}
+                <code dir="ltr" className="font-mono text-primary font-bold text-xs">
+                  {user.licenseKey}
+                </code>
               </div>
               <button
                 type="button"
@@ -128,8 +132,9 @@ export function LicenseTabContent({
               <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 shrink-0" />
               <Input
                 id="license-key-input"
+                dir="ltr"
                 placeholder="GRIDO-PRO-XXXX-XXXX-XXXX"
-                className="pr-9 h-9 text-xs font-mono uppercase rounded-md tracking-wider"
+                className="pr-9 h-9 text-xs font-mono uppercase rounded-md tracking-wider text-start"
                 required
                 value={licenseKey}
                 onChange={(e) => setLicenseKey(e.target.value.toUpperCase())}
@@ -162,7 +167,12 @@ export function LicenseTabContent({
             try {
               const path = await ExportSupportLogs();
               if (path) {
-                toast.success(`تم حفظ السجلات في: ${path}`);
+                // 🛡️ عزل المسار اللاتيني (شرطات/نقطتان) عن السياق RTL
+                toast.success(
+                  <>
+                    تم حفظ السجلات في: <bdi dir="auto">{path}</bdi>
+                  </>,
+                );
               }
             } catch (e) {
               toast.error(toErrorMessage(e, 'فشل تصدير السجلات'));

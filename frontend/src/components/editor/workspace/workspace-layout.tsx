@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { WorkspacePanelRail } from './workspace-panel-rail';
+import { WorkspacePanelRail, CompactToolLauncher } from './workspace-panel-rail';
 import { MobilePanelsSheet } from './mobile-panels-sheet';
 import { CanvasOverlayHost } from '@/components/editor/canvas/canvas-overlay-host';
 import { useWorkspacePanels } from '@/hooks/use-workspace-panels';
@@ -47,6 +47,9 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
   // In Wide mode: templates acts as a left-side drawer
   const isLeftDrawerOpen = isWide && isTemplatesDrawerOpen;
 
+  // ltr-island موثقة (عقد الاتجاه R37): main ثابت LTR فيزيائياً — Rail
+  // يساراً والمفتش يميناً دائماً لاستقرار الكانفس. المحتوى الداخلي لكل
+  // لوحة معزول بـ dir="rtl". الفواصل border-e/border-s منطقية لتتبع الاتجاه.
   return (
     <main
       data-testid="workspace-layout"
@@ -62,6 +65,8 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           onSelectStudioTab={panelsHook.selectStudioTab}
           onSelectCollageTab={panelsHook.selectCollageTab}
           onToggleZenMode={toggleZenMode}
+          isLauncherOpen={panelsHook.isLauncherOpen}
+          onLauncherOpenChange={panelsHook.setIsLauncherOpen}
         />
       )}
 
@@ -72,10 +77,10 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           data-testid="workspace-panel-templates"
           data-collapsed={!isLeftDrawerOpen}
           className={cn(
-            'h-full border-r border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion',
+            'h-full border-e border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion',
             isLeftDrawerOpen
               ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
-              : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-r-0 shadow-none',
+              : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-e-0 shadow-none',
           )}
         >
           <div dir="rtl" className="h-full w-[296px] flex flex-col overflow-hidden">
@@ -97,6 +102,20 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
             {canvasContent}
             {floatingFeedback}
           </CanvasOverlayHost>
+          {/* زر لوحة الأوامر للشاشات المدمجة — نفس اللوحة الوحيدة بنفس الحالة؛
+              مخفي في وضع التركيز (كروم إضافي) */}
+          {isCompact && !isZenMode && (
+            <div className="absolute bottom-4 start-4 z-(--z-quick-bar) no-print">
+              <CompactToolLauncher
+                activeStudioTab={panelsHook.activeStudioTab}
+                activeCollageTab={panelsHook.activeCollageTab}
+                onSelectStudioTab={panelsHook.selectStudioTab}
+                onSelectCollageTab={panelsHook.selectCollageTab}
+                isLauncherOpen={panelsHook.isLauncherOpen}
+                onLauncherOpenChange={panelsHook.setIsLauncherOpen}
+              />
+            </div>
+          )}
         </div>
 
         {/* الشريط السفلي المثبت */}
@@ -119,10 +138,10 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           data-testid={isStandard ? 'workspace-panel-inspector' : 'workspace-panel-properties'}
           data-collapsed={!isRightPanelOpen}
           className={cn(
-            'h-full border-l border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion',
+            'h-full border-s border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion',
             isRightPanelOpen
               ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
-              : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-l-0 shadow-none',
+              : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-s-0 shadow-none',
           )}
         >
           <div dir="rtl" className="h-full w-[296px] flex flex-col overflow-hidden">

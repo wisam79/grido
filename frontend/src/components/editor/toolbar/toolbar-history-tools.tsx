@@ -1,8 +1,8 @@
-import React from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { Button } from "@/components/ui/button";
-import { ArrowUUpLeft, ArrowUUpRight } from "@/components/ui/icons";
-import { FluentTooltip as TooltipBtn } from "@/components/ui/blocks";
+import React from 'react';
+import { useEditorStore } from '@/lib/editor-store';
+import { Button } from '@/components/ui/button';
+import { ArrowUUpLeft, ArrowUUpRight } from '@/components/ui/icons';
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 
 /** التراجع/الإعادة. */
 export const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
@@ -13,7 +13,8 @@ export const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
 
   return (
     <div className="fluent-command-group shadow-2xs">
-      <TooltipBtn content="تراجع">
+      {/* 🛡️ الزر المعطّل لا يُظهر Tooltip مخصصاً — title الأصلي يشرح السبب */}
+      <TooltipBtn content={canUndo ? 'تراجع' : 'لا شيء للتراجع عنه'}>
         <Button
           variant="ghost"
           size="sm"
@@ -21,12 +22,13 @@ export const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           disabled={!canUndo}
           data-testid="toolbar-undo"
           aria-label="تراجع"
+          title={!canUndo ? 'لا شيء للتراجع عنه' : undefined}
           className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
           <ArrowUUpLeft className="w-5 h-5" />
         </Button>
       </TooltipBtn>
-      <TooltipBtn content="إعادة">
+      <TooltipBtn content={canRedo ? 'إعادة' : 'لا شيء لإعادته'}>
         <Button
           variant="ghost"
           size="sm"
@@ -34,6 +36,7 @@ export const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           disabled={!canRedo}
           data-testid="toolbar-redo"
           aria-label="إعادة"
+          title={!canRedo ? 'لا شيء لإعادته' : undefined}
           className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
         >
           <ArrowUUpRight className="w-5 h-5" />

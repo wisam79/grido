@@ -9,6 +9,8 @@ function Switch({ className, ...props }: React.ComponentProps<typeof SwitchPrimi
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
+      // ltr-island مقصودة وموثقة (عقد الاتجاه R37): سلوك Windows 11 ثابت —
+      // التفعيل يميناً دائماً ولا يُعكس في RTL. translate-x-4 أدناه فيزيائي عمداً.
       dir="ltr"
       className={cn(
         // التفعيل محايد (فحمي مثل ويندوز 11) — الأزرق حصري للأوامر التعبوية

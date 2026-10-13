@@ -104,11 +104,16 @@ const LayerRow = React.memo(function LayerRow({
   const isHidden = el.visible === false;
   const isLocked = el.locked === true;
 
+  // 🛡️ دور listitem المحايد بدل button: الصف يحوي أزراراً تفاعلية متداخلة
+  // وذلك غير صالح داخل role=button — التحديد بلوحة المفاتيح يعمل كما هو
+  // عبر Enter/Space. (تجاوز jsx-a11y مقصود وموثق على هذا العنصر فقط.)
+  /* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
   return (
     <div
       draggable
-      role="button"
+      role="listitem"
       tabIndex={0}
+      aria-label={getElementLabel(el, layerNumber)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -159,11 +164,14 @@ const LayerRow = React.memo(function LayerRow({
         {getElementLabel(el, layerNumber)}
       </span>
 
-      {/* أزرار التحكم — تظهر عند Hover أو التحديد */}
+      {/* أزرار التحكم — تظهر عند Hover أو التحديد أو تركيز لوحة المفاتيح
+          (كانت مخفية تماماً عن مستخدمي Tab/اللمس) */}
       <div
         className={cn(
           'flex items-center gap-0.5 shrink-0 transition-opacity',
-          isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+          isSelected
+            ? 'opacity-100'
+            : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100',
         )}
       >
         <Tooltip>
@@ -175,7 +183,7 @@ const LayerRow = React.memo(function LayerRow({
                 e.stopPropagation();
                 onDuplicate();
               }}
-              className="p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="touch-hit-44 relative p-1 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <Copy size={13} weight="regular" />
             </button>
@@ -195,7 +203,7 @@ const LayerRow = React.memo(function LayerRow({
                 onToggleVisibility();
               }}
               className={cn(
-                'p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                'touch-hit-44 relative p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                 isHidden ? 'text-destructive/60' : 'text-muted-foreground hover:text-foreground',
               )}
             >
@@ -217,7 +225,7 @@ const LayerRow = React.memo(function LayerRow({
                 onToggleLock();
               }}
               className={cn(
-                'p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                'touch-hit-44 relative p-1 rounded-md hover:bg-muted/80 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                 isLocked ? 'text-amber-500' : 'text-muted-foreground hover:text-foreground',
               )}
             >
@@ -242,7 +250,7 @@ const LayerRow = React.memo(function LayerRow({
                 e.stopPropagation();
                 onDelete();
               }}
-              className="p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="touch-hit-44 relative p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               <Trash size={13} weight="regular" />
             </button>
@@ -254,6 +262,7 @@ const LayerRow = React.memo(function LayerRow({
       </div>
     </div>
   );
+  /* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
 });
 
 export const LayersPanel = React.memo(function LayersPanel() {
@@ -379,7 +388,8 @@ export const LayersPanel = React.memo(function LayersPanel() {
       <div
         className="flex-1 overflow-y-auto p-1.5 space-y-0.5"
         onDragEnd={handleDragEnd}
-        role="presentation"
+        role="list"
+        aria-label="طبقات العناصر"
       >
         {sortedElements.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-16 px-4">

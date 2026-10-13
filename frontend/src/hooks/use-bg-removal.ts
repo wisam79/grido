@@ -35,6 +35,18 @@ let isOperationBusy = false;
 
 // كاش الذاكرة اللحظي لنتائج العزل لنفس الصورة لمنع تكرار الاستدلال
 const bgResultCache = new Map<string, string>();
+// 🛡️ سقف LRU (20): الخريطة كانت تنمو بلا حد مع كل صورة جديدة —
+// image-cache المقابل مسقوف بـ MAX_IMAGE_CACHE=100 بنفس الأسلوب.
+const BG_RESULT_CACHE_MAX = 20;
+function cacheBgResult(key: string, value: string): void {
+  if (bgResultCache.has(key)) bgResultCache.delete(key);
+  bgResultCache.set(key, value);
+  while (bgResultCache.size > BG_RESULT_CACHE_MAX) {
+    const oldest = bgResultCache.keys().next();
+    if (oldest.done) break;
+    bgResultCache.delete(oldest.value);
+  }
+}
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => bgResultCache.clear());
 }
@@ -112,6 +124,14 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
       return;
     }
 
+    // 🛡️ خانة العمليات واحدة: ترميم/تأطير جارٍ يمنع بدء عزل متزامن
+    // (وإلا كتبت النتيجتان فوق بعضهما — last-write-wins صامت).
+    const busyOpBg = useOperationStatusStore.getState().activeOperation;
+    if (busyOpBg) {
+      toast.warning(busyOpBg.title);
+      return;
+    }
+
     const opId = useOperationStatusStore.getState().startOperation({
       type: 'bg_removal',
       title: 'جاري عزل الخلفية ...',
@@ -150,7 +170,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
       }
 
       if (element.imageSrc) {
-        bgResultCache.set(element.imageSrc, localPath);
+        cacheBgResult(element.imageSrc, localPath);
       }
       toast.success('تم عزل خلفية الصورة بنجاح');
 

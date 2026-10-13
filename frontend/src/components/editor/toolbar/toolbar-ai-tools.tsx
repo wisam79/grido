@@ -74,7 +74,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
             onClick={handleCancelBgRemoval}
           >
             <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
-            <span>{bgProgress > 0 ? `جاري العزل (${bgProgress}%)` : 'جاري العزل…'}</span>
+            <span>{bgProgress > 0 ? `جاري العزل (${bgProgress}%)` : 'جاري العزل ...'}</span>
           </Button>
         </TooltipBtn>
       </div>
@@ -97,7 +97,9 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
             onClick={handleCancelFrame}
           >
             <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
-            <span>{frameProgress > 0 ? `جاري التأطير (${frameProgress}%)` : 'جاري التأطير…'}</span>
+            <span>
+              {frameProgress > 0 ? `جاري التأطير (${frameProgress}%)` : 'جاري التأطير ...'}
+            </span>
           </Button>
         </TooltipBtn>
       </div>
@@ -116,7 +118,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
         >
           <Spinner className="w-3.5 h-3.5 shrink-0 text-primary" size={14} />
           <span>
-            {enhanceProgress > 0 ? `جاري الترميم (${enhanceProgress}%)` : 'جاري الترميم…'}
+            {enhanceProgress > 0 ? `جاري الترميم (${enhanceProgress}%)` : 'جاري الترميم ...'}
           </span>
         </div>
       </div>

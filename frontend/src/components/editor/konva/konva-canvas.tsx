@@ -608,6 +608,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
           collageShowEndCutLine={collageShowEndCutLine}
           collageTemplate={collageTemplate}
           selectedId={selectedId}
+          stageScale={stageScale}
           handleSlotClick={handleSlotClick}
           handleSlotDblClick={handleSlotDblClick}
           handleSlotWheel={handleSlotWheel}

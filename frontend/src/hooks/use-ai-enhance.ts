@@ -157,6 +157,14 @@ export function useAiEnhance(
       return;
     }
 
+    // 🛡️ خانة العمليات واحدة: عزل/تأطير جارٍ على أي عنصر يمنع بدء ترميم
+    // متزامن (وإلا كتبت النتيجتان فوق بعضهما — last-write-wins صامت).
+    const busyOpEnhance = useOperationStatusStore.getState().activeOperation;
+    if (busyOpEnhance) {
+      toast.warning(busyOpEnhance.title);
+      return;
+    }
+
     // 🔒 التحقق الدقيق من حد الاستهلاك اليومي المربوط بالحساب
     if (remainingQuota <= 0) {
       toast.warning(

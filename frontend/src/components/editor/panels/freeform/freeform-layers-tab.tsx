@@ -32,20 +32,25 @@ interface QuickActionBtnProps {
 }
 
 function QuickActionBtn({ content, onClick, disabled, children }: QuickActionBtnProps) {
+  // 🛡️ الزر المعطّل ملفوف لاستقبال التحويم (التلميح يشرح سبب التعطيل)،
+  // وبحجم h-7 الحد الأدنى بدل 6.5 — بلا pointer-events:none القاتل للتلميح.
+  const btn = (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={content}
+      className="h-7 w-7 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+    >
+      {children}
+    </Button>
+  );
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={disabled}
-          onClick={onClick}
-          aria-label={content}
-          className="h-6.5 w-6.5 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-all"
-        >
-          {children}
-        </Button>
+        {disabled ? <span className="inline-flex cursor-not-allowed">{btn}</span> : btn}
       </TooltipTrigger>
       <TooltipContent side="top" className="font-cairo text-xs font-semibold py-1 px-2.5">
         {content}

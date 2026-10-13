@@ -97,7 +97,7 @@ const SortableLayerItem = React.memo(
           }
         }}
         className={cn(
-          'flex items-center justify-between h-8.5 px-2 rounded-lg border text-start cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none',
+          'flex items-center justify-between h-8.5 px-2 rounded-md border text-start cursor-pointer transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none',
           isSelected
             ? 'border-primary/60 bg-primary/[0.08] text-primary shadow-xs font-bold ring-1 ring-primary/30'
             : 'border-border/40 bg-card/40 hover:bg-card hover:border-foreground/30 text-muted-foreground hover:text-foreground',

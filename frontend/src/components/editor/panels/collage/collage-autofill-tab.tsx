@@ -20,6 +20,16 @@ import {
   FluentEmptyState,
 } from '@/components/ui/blocks';
 import { Switch } from '@/components/ui/switch';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
@@ -46,6 +56,7 @@ export function CollageAutofillTab() {
   );
 
   const [images, setImages] = useState<string[]>([]);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [mode, setMode] = useState<FillMode>('empty');
   const [order, setOrder] = useState<FillOrder>('row');
   const [repeat, setRepeat] = useState(true);
@@ -252,6 +263,8 @@ export function CollageAutofillTab() {
             className="flex-1"
             onClick={distribute}
             disabled={images.length === 0}
+            title={images.length === 0 ? 'اختر صوراً أولاً' : undefined}
+            aria-label="توزيع الصور على الخانات"
           >
             {shuffle ? (
               <Shuffle className="w-4 h-4" weight="bold" />
@@ -261,18 +274,39 @@ export function CollageAutofillTab() {
             <span>وزّع على {targets.length}</span>
           </Button>
           {filledCount > 0 && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                clearSlots();
-              }}
-              title="إفراغ الخانات"
-              aria-label="إفراغ كل الخانات"
-            >
-              <ArrowsClockwise className="w-4 h-4" />
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setConfirmClearOpen(true)}
+                title="إفراغ الخانات"
+                aria-label="إفراغ كل الخانات"
+              >
+                <ArrowsClockwise className="w-4 h-4" />
+              </Button>
+              {/* 🛡️ إجراء مدمّر بتأكيد — مطابقة لحوار «مسح مساحة العمل» */}
+              <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+                <AlertDialogContent dir="rtl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>إفراغ كل الخانات؟</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      ستُزال كل الصور من شبكة الكولاج. يمكن التراجع بـ Ctrl+Z.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>تراجع</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        clearSlots();
+                      }}
+                    >
+                      إفراغ
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
           )}
         </div>
       </FluentSection>

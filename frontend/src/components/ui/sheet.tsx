@@ -50,6 +50,9 @@ function SheetContent({
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Content
+        // عقد الاتجاه: تثبيت rtl صريح — side فيزيائي (right/left) والحركة
+        // slide-in-from-right تتبعه، والمحتوى الداخلي عربي دائماً.
+        dir="rtl"
         data-slot="sheet-content"
         className={cn(
           'bg-card/95 backdrop-blur-2xl border-border fluent-specular shadow-fluent-28 data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 transition ease-out data-[state=closed]:duration-150 data-[state=open]:duration-150',

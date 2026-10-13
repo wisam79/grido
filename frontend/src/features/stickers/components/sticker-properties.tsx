@@ -580,7 +580,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                       onChangeGridConfig((prev) => ({ ...prev, rows: p.r, cols: p.c }))
                     }
                     className={cn(
-                      'h-7 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center select-none active:scale-[0.98]',
+                      'h-7 text-xs font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-[0.98]',
                       isActive
                         ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
                         : 'text-muted-foreground hover:text-foreground hover:bg-card/40 dark:hover:bg-white/5 border-transparent font-medium',

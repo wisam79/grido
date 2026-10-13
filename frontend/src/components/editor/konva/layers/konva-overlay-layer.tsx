@@ -52,6 +52,11 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
     [elementsRefs],
   );
 
+  // 🛡️ سمك شاشة ثابت: العرض داخل Stage مُكبَّر فيتفاوت 1px المنطقي
+  // (0.3px شبح عند التصغير، 3px+ عند التكبير) — نفس نمط `/ stageScale`
+  // المتبع في konva-canvas (shadowBlur).
+  const uiScale = canvasWidth > 0 ? displayW / canvasWidth || 1 : 1;
+
   const handleTransformEnd = React.useCallback(() => {
     if (!trRef.current) return;
     const nodes = trRef.current.nodes();
@@ -144,8 +149,8 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
         name="marquee-rect"
         fill="rgba(0, 120, 212, 0.12)"
         stroke="#0078d4"
-        strokeWidth={1}
-        dash={[4, 2]}
+        strokeWidth={1 / uiScale}
+        dash={[4 / uiScale, 2 / uiScale]}
         perfectDrawEnabled={false}
       />
     </Layer>

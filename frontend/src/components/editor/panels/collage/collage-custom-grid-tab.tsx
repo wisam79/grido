@@ -491,7 +491,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 title={`${opt.label} — ${opt.dim}`}
                 onClick={() => onPhotoTypeChange(opt.value as PhotoGridType)}
                 className={cn(
-                  'relative min-h-[50px] py-1.5 px-2 rounded-lg border font-sans transition-colors cursor-pointer select-none flex items-center gap-1.5 text-right',
+                  'relative min-h-[50px] py-1.5 px-2 rounded-lg border font-sans transition-colors cursor-pointer select-none flex items-center gap-1.5 text-start',
                   isActive
                     ? 'border-foreground/70 bg-accent-active shadow-2xs'
                     : 'bg-background/80 border-border/60 hover:bg-muted/50 hover:border-border',
@@ -501,7 +501,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 <span className="w-8 h-8 rounded-md bg-muted/50 border border-border/50 flex items-center justify-center shrink-0">
                   <DocumentPresetGraphic type={opt.value} active={isActive} />
                 </span>
-                <span className="min-w-0 flex-1 text-right font-sans">
+                <span className="min-w-0 flex-1 text-start font-sans">
                   <span
                     className={cn(
                       'block text-xs truncate',
@@ -707,7 +707,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
               onChange={(e) => setSaveName(e.target.value)}
               placeholder="اسم القالب"
               aria-label="اسم القالب"
-              className="flex-1 text-right font-cairo"
+              className="flex-1 text-start font-cairo"
             />
             <Button
               type="button"

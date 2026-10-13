@@ -89,6 +89,18 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 🛡️ لا تسرق ضربات حقول الإدخال والأزرار: الكتابة والمسافة للتفعيل
+      // تبقى لمالكها (يطابق حارس SPACE_CONSUMED_TAGS للكانفس).
+      const t = e.target as HTMLElement | null;
+      if (
+        t?.tagName === 'INPUT' ||
+        t?.tagName === 'TEXTAREA' ||
+        t?.tagName === 'SELECT' ||
+        t?.isContentEditable ||
+        t?.closest?.('button, a, [role="combobox"], [role="slider"], [role="switch"]')
+      ) {
+        return;
+      }
       if (e.code === 'Space') {
         e.preventDefault();
         setIsSpacePressed(true);
@@ -570,7 +582,10 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
         <div className="flex flex-1 overflow-hidden">
           {/* الأدوات - Sidebar */}
           <div
-            className="w-56 border-l rtl:border-l rtl:border-r-0 ltr:border-r border-border/40 bg-muted/10 p-4 flex flex-col gap-5 shrink-0 overflow-y-auto"
+            // عقد الاتجاه: border-e منطقي يحل محل الثلاثية الفيزيائية
+            // (border-l + rtl:border-l + ltr:border-r) — الفاصل على جهة النهاية
+            // في كلا الاتجاهين تلقائياً.
+            className="w-56 border-e border-border/40 bg-muted/10 p-4 flex flex-col gap-5 shrink-0 overflow-y-auto"
             onMouseEnter={() => setCursorPos((p) => ({ ...p, visible: false }))}
           >
             <div className="space-y-2">

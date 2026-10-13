@@ -392,7 +392,9 @@ export function BatchInsertDialog({
         </div>
 
         {/* Content Body */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden flex-1 min-h-[360px] max-h-[56vh]">
+        {/* 🛡️ بلا min-h ثابت: تحت ~643px كان min-h-[360px] يغلب max-h-[56vh]
+            فيدفع الفوتر خارج overflow-hidden — الجسم يتقلص بدلاً من ذلك */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden flex-1 min-h-0 max-h-[56vh]">
           {/* Images Queue List (7 Cols) */}
           <div className="md:col-span-7 border-l border-border/40 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-2.5 bg-background/50">
             {images.length === 0 ? (

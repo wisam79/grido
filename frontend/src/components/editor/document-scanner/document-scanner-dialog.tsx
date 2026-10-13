@@ -521,23 +521,25 @@ export function DocumentScannerDialog({
               إلغاء
             </Button>
 
-            {processor.isExporting &&
-              processor.exportProgress &&
-              processor.exportProgress.total > 1 && (
-                <>
+            {/* 🛡️ زر الإيقاف لأي تصدير — كان يشترط total > 1 فيُحبس
+                تصدير المستند الواحد بلا مخرج رغم رسالة "أوقفه أولاً" */}
+            {processor.isExporting && (
+              <>
+                {processor.exportProgress && processor.exportProgress.total > 1 && (
                   <span className="text-micro font-mono text-muted-foreground" dir="ltr">
                     {processor.exportProgress.done}/{processor.exportProgress.total}
                   </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-md h-8 px-3 text-xs font-semibold cursor-pointer border-destructive/50 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                    onClick={processor.cancelExport}
-                  >
-                    إيقاف
-                  </Button>
-                </>
-              )}
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-md h-8 px-3 text-xs font-semibold cursor-pointer border-destructive/50 text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  onClick={processor.cancelExport}
+                >
+                  إيقاف
+                </Button>
+              </>
+            )}
 
             {detectedDocs.length > 1 && selectedDocIds.length > 1 && (
               <Button

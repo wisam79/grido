@@ -1,8 +1,8 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
+import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
   "font-sans inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-xs font-semibold select-none transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.96] hover:translate-y-[-0.5px] active:translate-y-[0.5px]",
@@ -10,53 +10,53 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-2xs enabled:hover:bg-primary/90 enabled:active:bg-primary/95",
+          'bg-primary text-primary-foreground shadow-2xs enabled:hover:bg-primary/90 enabled:active:bg-primary/95',
         destructive:
-          "bg-destructive text-destructive-foreground shadow-2xs enabled:hover:bg-destructive/90 focus-visible:ring-destructive",
+          'bg-destructive text-destructive-foreground shadow-2xs enabled:hover:bg-destructive/90 focus-visible:ring-destructive',
         outline:
-          "border border-border/80 bg-background/60 enabled:hover:bg-accent enabled:hover:text-foreground dark:bg-card/40 dark:border-border/60 dark:enabled:hover:bg-accent/60 shadow-2xs",
+          'border border-border/80 bg-background/60 enabled:hover:bg-accent enabled:hover:text-foreground dark:bg-card/40 dark:border-border/60 dark:enabled:hover:bg-accent/60 shadow-2xs',
         secondary:
-          "bg-secondary text-secondary-foreground shadow-2xs enabled:hover:bg-secondary/80",
+          'bg-secondary text-secondary-foreground shadow-2xs enabled:hover:bg-secondary/80',
         ghost:
-          "text-muted-foreground enabled:hover:bg-accent/60 enabled:hover:text-foreground enabled:active:bg-accent/80",
+          'text-muted-foreground enabled:hover:bg-accent/60 enabled:hover:text-foreground enabled:active:bg-accent/80',
         transparent:
-          "bg-transparent text-foreground enabled:hover:bg-black/5 dark:enabled:hover:bg-white/5",
-        link: "text-primary underline-offset-4 enabled:hover:underline",
+          'bg-transparent text-foreground enabled:hover:bg-black/5 dark:enabled:hover:bg-white/5',
+        link: 'text-primary underline-offset-4 enabled:hover:underline',
       },
       size: {
-        default: "h-8 px-3 py-1.5 has-[>svg]:px-2.5",
-        sm: "h-7 rounded-md gap-1 px-2.5 text-xs has-[>svg]:px-2",
-        lg: "h-9 rounded-md px-4 text-xs font-semibold has-[>svg]:px-3",
-        xl: "h-10 rounded-md px-5 text-sm font-semibold has-[>svg]:px-3.5",
-        "2xl": "h-12 rounded-xl px-6 text-sm font-bold has-[>svg]:px-4",
-        icon: "size-8 p-0",
-        "icon-sm": "size-7 p-0",
-        "icon-lg": "size-9 p-0",
-        "icon-xs": "size-6 p-0",
+        default: 'h-8 px-3 py-1.5 has-[>svg]:px-2.5',
+        sm: 'h-7 rounded-md gap-1 px-2.5 text-xs has-[>svg]:px-2',
+        lg: 'h-9 rounded-md px-4 text-xs font-semibold has-[>svg]:px-3',
+        xl: 'h-10 rounded-md px-5 text-sm font-semibold has-[>svg]:px-3.5',
+        '2xl': 'h-12 rounded-xl px-6 text-sm font-bold has-[>svg]:px-4',
+        icon: 'size-8 p-0',
+        // الحد الأدنى المطلق للأزرار الأيقونية h-7 w-7 (سلم الارتفاعات) —
+        // حُذف متغير icon-xs (‏size-6) لمنع أهداف 24px مستقبلاً؛ استخدم icon-sm.
+        'icon-sm': 'size-7 p-0',
+        'icon-lg': 'size-9 p-0',
       },
       shape: {
-        rounded: "rounded-md",
-        circular: "rounded-full",
-        square: "rounded-none",
+        rounded: 'rounded-md',
+        circular: 'rounded-full',
+        square: 'rounded-none',
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
-      shape: "rounded",
+      variant: 'default',
+      size: 'default',
+      shape: 'rounded',
     },
-  }
-)
+  },
+);
 
 export interface ButtonProps
-  extends React.ComponentPropsWithRef<"button">,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+  extends React.ComponentPropsWithRef<'button'>, VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, shape, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+    const Comp = asChild ? Slot : 'button';
     return (
       <Comp
         data-slot="button"
@@ -64,9 +64,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         {...props}
       />
-    )
-  }
-)
-Button.displayName = "Button"
+    );
+  },
+);
+Button.displayName = 'Button';
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };

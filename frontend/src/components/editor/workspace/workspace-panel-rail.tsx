@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import React, { useCallback, useId, useMemo } from 'react';
 import { Eye, EyeSlash, Faders } from '@/components/ui/icons';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import type {
   CollageTab,
+  CommandGroupView,
   FreeformTab,
   WorkspaceCommand,
   WorkspaceTool,
@@ -44,6 +45,76 @@ interface WorkspacePanelRailProps {
   onSelectCollageTab?: (tab: CollageTab) => void;
   onToggleZenMode: () => void;
   className?: string;
+  /** حالة اللوحة مرفوعة لـ useWorkspacePanels (مشتركة مع زر الجوال) */
+  isLauncherOpen: boolean;
+  onLauncherOpenChange: (open: boolean) => void;
+}
+
+/**
+ * محتوى لوحة الأوامر الوحيد (Single Palette) — يُعرض داخل Popover الشريط
+ * (سطح المكتب) أو Popover زر الجوال (compact) بنفس الحالة والحدث.
+ * يُمنع إنشاء لوحة ثانية: أي trigger جديد يستخدم هذا المكوّن حصراً.
+ */
+export function ToolLauncherContent({
+  tools,
+  activeTab,
+  toolsHeading,
+  getShortcut,
+  onSelectTool,
+  onAfterRun,
+  onRunCommand,
+  commandGroups,
+}: {
+  tools: WorkspaceTool<string>[];
+  activeTab: string;
+  toolsHeading: string;
+  getShortcut: (tool: WorkspaceTool<string>) => string;
+  onSelectTool: (tool: WorkspaceTool<string>) => void;
+  onAfterRun: () => void;
+  onRunCommand: (command: WorkspaceCommand) => void;
+  commandGroups: CommandGroupView<WorkspaceCommand>[];
+}) {
+  return (
+    <Command data-testid="command-palette" loop>
+      <CommandInput placeholder="ابحث عن أداة أو أمر ..." aria-label="البحث في لوحة الأوامر" />
+      <CommandList className="max-h-[60vh]">
+        <CommandEmpty>لا توجد نتائج مطابقة</CommandEmpty>
+
+        {/* الأدوات — نفس قائمة الشريط (وتتقلّص في مسار الإنتاج السريع) */}
+        <CommandGroup heading={toolsHeading}>
+          {tools.map((tool) => (
+            <PaletteToolItem
+              key={tool.id}
+              tool={tool}
+              shortcut={getShortcut(tool)}
+              isActive={activeTab === tool.id}
+              onSelectTool={onSelectTool}
+            />
+          ))}
+        </CommandGroup>
+
+        {/* أوامر الحالة الحية — تراجع/إعادة تتعطل تلقائياً، والعرض يظهر الحالة الحالية */}
+        <PaletteStateCommands onAfterRun={onAfterRun} />
+
+        {/* الأوامر العالمية — نفس أحداث grido:* ونفس اختصارات use-keyboard-shortcuts،
+            ومجمّعة بعناوين مجموعاتها المخزّنة في السجل */}
+        {commandGroups.map((group) => (
+          <React.Fragment key={group.name}>
+            <CommandSeparator />
+            <CommandGroup heading={group.name}>
+              {group.items.map((command) => (
+                <PaletteGlobalCommandItem
+                  key={command.id}
+                  command={command}
+                  onRunCommand={onRunCommand}
+                />
+              ))}
+            </CommandGroup>
+          </React.Fragment>
+        ))}
+      </CommandList>
+    </Command>
+  );
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -300,6 +371,8 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   onSelectCollageTab,
   onToggleZenMode,
   className,
+  isLauncherOpen,
+  onLauncherOpenChange,
 }: WorkspacePanelRailProps) {
   const { mode, workflow, elementsCount, collageTemplate } = useEditorStore(
     useShallow((state) => ({
@@ -310,16 +383,10 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
     })),
   );
 
-  const [isLauncherOpen, setIsLauncherOpen] = useState(false);
   // معرّف الإطار المتحرك فريد لكل نسخة شريط — فنسختان (إن ظهرتا) لا تتنافسان على نفس layoutId
   const pillLayoutId = `rail-active-pill-${useId()}`;
-
-  // Ctrl+K يفتح لوحة الأدوات — وصول من لوحة المفاتيح بلا لمس الشريط
-  useEffect(() => {
-    const openLauncher = () => setIsLauncherOpen(true);
-    window.addEventListener('grido:open-tool-launcher', openLauncher);
-    return () => window.removeEventListener('grido:open-tool-launcher', openLauncher);
-  }, []);
+  // حالة اللوحة ومستمع Ctrl+K مرفوعان لـ useWorkspacePanels (يعيش في App
+  // دائماً) — بقاؤهما هنا كان يُميت Ctrl+K في compact حيث الشريط غائب.
 
   // قائمة الأدوات تتبع وضع الكانفاس (`mode`) ومسار العمل (`workflow`) معاً —
   // مسار الإنتاج السريع يخفي تبويب العناصر (شريحة workflow-slice)
@@ -349,11 +416,14 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
         : undefined;
 
   // مذكّرات مستقرّة — تُمرَّر لصفوف memo فلا يعاد بناؤها مع كل تصيير للأب
-  const closeLauncher = useCallback(() => setIsLauncherOpen(false), []);
-  const runGlobalCommand = useCallback((command: WorkspaceCommand) => {
-    dispatchWorkspaceCommand(command);
-    setIsLauncherOpen(false);
-  }, []);
+  const closeLauncher = useCallback(() => onLauncherOpenChange(false), [onLauncherOpenChange]);
+  const runGlobalCommand = useCallback(
+    (command: WorkspaceCommand) => {
+      dispatchWorkspaceCommand(command);
+      onLauncherOpenChange(false);
+    },
+    [onLauncherOpenChange],
+  );
 
   const selectTool = useCallback(
     (tool: WorkspaceTool<string>) => {
@@ -362,9 +432,15 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
       } else if (isStudioTab(tool.id)) {
         onSelectStudioTab?.(tool.id);
       }
-      setIsLauncherOpen(false);
+      onLauncherOpenChange(false);
     },
-    [isCollage, onSelectCollageTab, onSelectStudioTab],
+    [isCollage, onSelectCollageTab, onSelectStudioTab, onLauncherOpenChange],
+  );
+  // 🛡️ يقرأ الخريطة مباشرة من التبعية — تمرير toolIndex (غير مذكّرة) كان
+  // سيغلق على خريطة قديمة بعد تغيّر مسار العمل.
+  const getShortcut = useCallback(
+    (tool: WorkspaceTool<string>) => toolShortcut(toolIndexById.get(tool.id) ?? 0),
+    [toolIndexById],
   );
 
   return (
@@ -372,7 +448,11 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
       data-testid="workspace-panel-rail"
       aria-label="شريط الأدوات والألواح"
       className={cn(
-        'w-12 shrink-0 h-full flex flex-col items-center justify-between py-2 border-r border-border/80 bg-sidebar/95 backdrop-blur-xl z-20 select-none font-cairo shadow-2xs fluent-specular overflow-hidden relative',
+        // عقد الاتجاه: Rail ثابت يساراً فيزيائياً (جزيرة ltr في main بـ dir=ltr) —
+        // border-e منطقي = يميناً داخل LTR فيحافظ على الفاصل الحالي ويتبع أي
+        // تغيير مستقبلي للاتجاه. side="right" للـ Tooltip/Popover فيزيائي عمداً
+        // لنفس السبب (يفتح نحو الكانفس).
+        'w-12 shrink-0 h-full flex flex-col items-center justify-between py-2 border-e border-border/80 bg-sidebar/95 backdrop-blur-xl z-20 select-none font-cairo shadow-2xs fluent-specular overflow-hidden relative',
         className,
       )}
     >
@@ -421,7 +501,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
           className="w-7 h-px my-1.5 bg-gradient-to-l from-transparent via-border to-transparent"
         />
 
-        <Popover open={isLauncherOpen} onOpenChange={setIsLauncherOpen}>
+        <Popover open={isLauncherOpen} onOpenChange={onLauncherOpenChange}>
           <Tooltip>
             <TooltipTrigger asChild>
               <PopoverTrigger asChild>
@@ -462,48 +542,16 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             dir="rtl"
             className="w-[380px] p-0 rounded-2xl border fluent-specular font-cairo overflow-hidden"
           >
-            <Command data-testid="command-palette" loop>
-              <CommandInput
-                placeholder="ابحث عن أداة أو أمر ..."
-                aria-label="البحث في لوحة الأوامر"
-              />
-              <CommandList className="max-h-[60vh]">
-                <CommandEmpty>لا توجد نتائج مطابقة</CommandEmpty>
-
-                {/* الأدوات — نفس قائمة الشريط (وتتقلّص في مسار الإنتاج السريع) */}
-                <CommandGroup heading={toolsHeading}>
-                  {tools.map((tool, index) => (
-                    <PaletteToolItem
-                      key={tool.id}
-                      tool={tool}
-                      shortcut={toolShortcut(toolIndex(tool))}
-                      isActive={activeTab === tool.id}
-                      onSelectTool={selectTool}
-                    />
-                  ))}
-                </CommandGroup>
-
-                {/* أوامر الحالة الحية — تراجع/إعادة تتعطل تلقائياً، والعرض يظهر الحالة الحالية */}
-                <PaletteStateCommands onAfterRun={closeLauncher} />
-
-                {/* الأوامر العالمية — نفس أحداث grido:* ونفس اختصارات use-keyboard-shortcuts،
-                    ومجمّعة بعناوين مجموعاتها المخزّنة في السجل */}
-                {commandGroups.map((group) => (
-                  <React.Fragment key={group.name}>
-                    <CommandSeparator />
-                    <CommandGroup heading={group.name}>
-                      {group.items.map((command) => (
-                        <PaletteGlobalCommandItem
-                          key={command.id}
-                          command={command}
-                          onRunCommand={runGlobalCommand}
-                        />
-                      ))}
-                    </CommandGroup>
-                  </React.Fragment>
-                ))}
-              </CommandList>
-            </Command>
+            <ToolLauncherContent
+              tools={tools}
+              activeTab={activeTab}
+              toolsHeading={toolsHeading}
+              getShortcut={getShortcut}
+              onSelectTool={selectTool}
+              onAfterRun={closeLauncher}
+              onRunCommand={runGlobalCommand}
+              commandGroups={commandGroups}
+            />
           </PopoverContent>
         </Popover>
 
@@ -545,3 +593,118 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
     </aside>
   );
 });
+
+/* ═══════════════════════════════════════════════════════════════
+   زر لوحة الأوامر للشاشات المدمجة (compact): نفس اللوحة الوحيدة
+   (ToolLauncherContent) ونفس الحالة المرفوعة — مشغّل ثانٍ، لا لوحة ثانية.
+   ═══════════════════════════════════════════════════════════════ */
+
+interface CompactToolLauncherProps {
+  activeStudioTab?: FreeformTab;
+  activeCollageTab?: CollageTab;
+  onSelectStudioTab?: (tab: FreeformTab) => void;
+  onSelectCollageTab?: (tab: CollageTab) => void;
+  isLauncherOpen: boolean;
+  onLauncherOpenChange: (open: boolean) => void;
+}
+
+export function CompactToolLauncher({
+  activeStudioTab = 'layers',
+  activeCollageTab = 'custom',
+  onSelectStudioTab,
+  onSelectCollageTab,
+  isLauncherOpen,
+  onLauncherOpenChange,
+}: CompactToolLauncherProps) {
+  const { mode, workflow } = useEditorStore(
+    useShallow((state) => ({
+      mode: state.mode,
+      workflow: state.workflow,
+    })),
+  );
+
+  const isCollage = mode === 'collage';
+  const tools = useMemo(() => getToolsForWorkflow(mode, workflow), [mode, workflow]);
+  const activeTab = isCollage ? activeCollageTab : activeStudioTab;
+  const toolsHeading = isCollage ? 'أدوات الكولاج' : 'أدوات التعديل الحر';
+  const commandGroups = useMemo(() => groupCommands(WORKSPACE_COMMANDS), []);
+  const toolIndexById = useMemo(
+    () => new Map<string, number>(tools.map((tool, index): [string, number] => [tool.id, index])),
+    [tools],
+  );
+  const getShortcut = useCallback(
+    (tool: WorkspaceTool<string>) => toolShortcut(toolIndexById.get(tool.id) ?? 0),
+    [toolIndexById],
+  );
+  const closeLauncher = useCallback(() => onLauncherOpenChange(false), [onLauncherOpenChange]);
+  const runGlobalCommand = useCallback(
+    (command: WorkspaceCommand) => {
+      dispatchWorkspaceCommand(command);
+      onLauncherOpenChange(false);
+    },
+    [onLauncherOpenChange],
+  );
+  const selectTool = useCallback(
+    (tool: WorkspaceTool<string>) => {
+      if (isCollage) {
+        if (isCollageTab(tool.id)) onSelectCollageTab?.(tool.id);
+      } else if (isStudioTab(tool.id)) {
+        onSelectStudioTab?.(tool.id);
+      }
+      onLauncherOpenChange(false);
+    },
+    [isCollage, onSelectCollageTab, onSelectStudioTab, onLauncherOpenChange],
+  );
+
+  return (
+    <Popover open={isLauncherOpen} onOpenChange={onLauncherOpenChange}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant="default"
+              size="icon"
+              data-testid="compact-tool-launcher"
+              aria-label="كل الأدوات"
+              className={cn(
+                'h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-fluent-16 cursor-pointer',
+                'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                'active:scale-95 transition-transform duration-100',
+              )}
+            >
+              <Faders className="size-5" weight={isLauncherOpen ? 'duotone' : 'regular'} />
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          className="font-cairo text-xs font-semibold py-1 px-2.5 flex items-center gap-2"
+        >
+          <span>كل الأدوات</span>
+          <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
+            Ctrl+K
+          </kbd>
+        </TooltipContent>
+      </Tooltip>
+
+      <PopoverContent
+        side="top"
+        align="start"
+        sideOffset={10}
+        dir="rtl"
+        className="w-[calc(100vw-2rem)] max-w-[380px] p-0 rounded-2xl border fluent-specular font-cairo overflow-hidden"
+      >
+        <ToolLauncherContent
+          tools={tools}
+          activeTab={activeTab}
+          toolsHeading={toolsHeading}
+          getShortcut={getShortcut}
+          onSelectTool={selectTool}
+          onAfterRun={closeLauncher}
+          onRunCommand={runGlobalCommand}
+          commandGroups={commandGroups}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}

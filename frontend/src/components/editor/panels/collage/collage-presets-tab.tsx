@@ -301,7 +301,7 @@ export function CollagePresetsTab({
         aria-label={`${preset.title} - ${preset.spec}`}
         onClick={() => handleApplyPreset(preset.id)}
         className={cn(
-          'w-full p-2 rounded-xl border text-right transition-colors duration-150 cursor-pointer flex items-center gap-2.5 select-none relative group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none min-h-[58px] fluent-specular',
+          'w-full p-2 rounded-xl border text-start transition-colors duration-150 cursor-pointer flex items-center gap-2.5 select-none relative group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none min-h-[58px] fluent-specular',
           isActive
             ? 'border-foreground/70 bg-accent-active text-foreground shadow-xs ring-1 ring-foreground/20'
             : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-border hover:shadow-xs',
@@ -318,7 +318,7 @@ export function CollagePresetsTab({
         </div>
 
         {/* البيانات النصية للقالب — مساحة كاملة ومريحة للقراءة */}
-        <div className="flex-1 min-w-0 flex flex-col items-start gap-0.5 text-right">
+        <div className="flex-1 min-w-0 flex flex-col items-start gap-0.5 text-start">
           <div className="w-full flex items-center justify-between gap-1.5 min-w-0">
             <span className="text-xs font-bold text-foreground truncate group-hover:text-foreground transition-colors">
               {preset.title}
@@ -419,7 +419,7 @@ export function CollagePresetsTab({
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="بحث في القوالب…"
           aria-label="بحث في القوالب"
-          className="w-full h-8 pe-8 ps-9 text-xs bg-background/80 border border-border/80 rounded-md text-right font-cairo placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
+          className="w-full h-8 pe-8 ps-9 text-xs bg-background/80 border border-border/80 rounded-md text-start font-cairo placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
         />
         {searchQuery && (
           <button
@@ -562,7 +562,7 @@ export function CollagePresetsTab({
               {/* نتائج القوالب المحفوظة */}
               {searchResults.saved.length > 0 && (
                 <div className="space-y-1.5 pt-1.5 border-t border-border/40">
-                  <span className="text-mini font-bold text-muted-foreground block text-right">
+                  <span className="text-mini font-bold text-muted-foreground block text-start">
                     نتائج محفوظة
                   </span>
                   {searchResults.saved.map((t) => {
@@ -592,7 +592,7 @@ export function CollagePresetsTab({
                             <StudioPaperThumbnail cells={t.cells} active={isActive} scale={0.5} />
                           </div>
                           <div className="flex flex-col items-start min-w-0 gap-0.5">
-                            <span className="text-xs font-bold truncate text-right">{t.name}</span>
+                            <span className="text-xs font-bold truncate text-start">{t.name}</span>
                             <span className="text-micro font-mono text-muted-foreground">
                               {t.slots}× صور
                             </span>
@@ -699,7 +699,7 @@ export function CollagePresetsTab({
                         <StudioPaperThumbnail cells={t.cells} active={isActive} scale={0.55} />
                       </div>
                       <div className="flex flex-col items-start min-w-0 gap-0.5">
-                        <span className="text-xs font-bold truncate w-full text-right">
+                        <span className="text-xs font-bold truncate w-full text-start">
                           {t.name}
                         </span>
                         <span

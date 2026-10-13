@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   ImageSquare,
   GridFour,
@@ -49,6 +49,22 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
         flipSlotX: s.flipSlotX,
       })),
     );
+
+  // 🛡️ أمان المعاينة المستمرة: فكّ التركيب أثناء الضغط (تبديل وضع/إغلاق)
+  // كان يُبقي صورة المعاينة دائمة بلا تراجع — الاستعادة عند التنظيف.
+  const holdRef = useRef<{ id: string; src: string | undefined } | null>(null);
+  const updateSlotRef = useRef(updateSlot);
+  updateSlotRef.current = updateSlot;
+  useEffect(
+    () => () => {
+      if (holdRef.current) {
+        const { id, src } = holdRef.current;
+        holdRef.current = null;
+        updateSlotRef.current(id, { imageSrc: src });
+      }
+    },
+    [],
+  );
 
   return (
     <>
@@ -193,8 +209,10 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                     size="sm"
                     onMouseDown={() => {
                       const curr = slot.imageSrc;
+                      holdRef.current = { id: slot.id, src: curr };
                       updateSlot(slot.id, { imageSrc: slot.originalImageSrc });
                       const restore = () => {
+                        holdRef.current = null;
                         updateSlot(slot.id, { imageSrc: curr });
                         cleanup();
                       };

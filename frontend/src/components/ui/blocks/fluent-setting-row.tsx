@@ -72,7 +72,7 @@ export const FluentSettingRow = React.memo(
       >
         <div className="flex items-center gap-2 min-w-0">
           {icon && <span className="text-primary shrink-0">{icon}</span>}
-          <div className="min-w-0 text-right">
+          <div className="min-w-0 text-start">
             <div className="flex items-center gap-1.5 font-semibold text-foreground/90">
               <span className="truncate">{label}</span>
               {tooltip && (

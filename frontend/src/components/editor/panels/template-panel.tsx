@@ -213,7 +213,11 @@ export const TemplatePanel = React.memo(function TemplatePanel({
           />
         </div>
       ) : (
-        <FreeformStudioPanel activeTab={activeStudioTab} />
+        <FreeformStudioPanel
+          activeTab={activeStudioTab}
+          onActiveTabChange={onActiveStudioTabChange}
+          showInternalTabs={showInternalCollageTabs}
+        />
       )}
 
       {/* Confirmation Dialog when switching templates with existing photos */}

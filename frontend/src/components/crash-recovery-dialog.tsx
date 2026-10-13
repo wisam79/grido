@@ -83,7 +83,7 @@ ${report.stack_trace}
         onPointerDownOutside={blockImplicitDismiss}
         onInteractOutside={blockImplicitDismiss}
       >
-        <DialogHeader className="space-y-3 text-center sm:text-right">
+        <DialogHeader className="space-y-3 text-center sm:text-start">
           <div className="mx-auto sm:mx-0 w-12 h-12 bg-amber-500/10 text-amber-500 dark:bg-amber-400/15 dark:text-amber-400 rounded-full flex items-center justify-center shrink-0">
             <WarningOctagon className="w-6 h-6" />
           </div>
@@ -137,7 +137,7 @@ ${report.stack_trace}
 
           {showDetails && (
             <div
-              className="text-micro font-mono bg-muted/80 p-3 rounded-lg text-left overflow-auto max-h-36 text-destructive border border-destructive/15 select-all leading-normal"
+              className="text-micro font-mono bg-muted/80 p-3 rounded-lg text-start overflow-auto max-h-36 text-destructive border border-destructive/15 select-all leading-normal"
               dir="ltr"
             >
               <div className="font-bold mb-1 text-foreground">{report.error}</div>

@@ -26,7 +26,7 @@ export function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-center py-2 border-b border-border/10 last:border-b-0 text-xs">
       <span className="text-muted-foreground font-semibold">{label}</span>
-      <span className="font-mono font-bold text-foreground/85 text-left" dir="auto">
+      <span className="font-mono font-bold text-foreground/85 text-start" dir="auto">
         {value}
       </span>
     </div>
@@ -425,7 +425,7 @@ export function ColorWheelPicker({
             onChange('transparent');
           }}
           className={cn(
-            'w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+            'w-8 h-8 rounded-md border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
             isTransparent
               ? 'bg-card text-foreground border border-border/80 dark:border-white/15 font-bold shadow-xs ring-1 ring-primary/40'
               : 'border-border/80 bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground',
@@ -453,9 +453,10 @@ export function ColorWheelPicker({
           <span className="text-xs font-bold text-muted-foreground/60 select-none">#</span>
           <input
             type="text"
+            dir="ltr"
             value={inputValue.startsWith('#') ? inputValue.slice(1) : inputValue}
             onChange={(e) => handleHexInput(e.target.value)}
-            className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold uppercase"
+            className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold uppercase"
             placeholder="FFFFFF"
           />
           <button
@@ -490,7 +491,7 @@ export function ColorWheelPicker({
       </div>
 
       <div className="space-y-1.5 pt-2 border-t border-border/30">
-        <span className="text-xs font-extrabold text-muted-foreground block text-right">
+        <span className="text-xs font-extrabold text-muted-foreground block text-start">
           ألوان الاستوديو
         </span>
         <div className="grid grid-cols-8 gap-1.5" dir="rtl">

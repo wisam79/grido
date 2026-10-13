@@ -6,7 +6,15 @@ import { Check, CaretRight, Circle } from '@/components/ui/icons';
 
 import { cn } from '@/lib/utils';
 
-const DropdownMenu = DropdownMenuPrimitive.Root;
+function DropdownMenu({
+  dir = 'rtl',
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+  // عقد الاتجاه: Radix Menu يقرأ الاتجاه من Root (سياق Direction) لا من DOM —
+  // التثبيت هنا يصحح انعكاس القوائم الفرعية وأسهم الكيبورد حتى عند الاستدعاء
+  // من جزيرة ltr. الـ CSS (rtl: variant + start/end) يرث html عبر الـ Portal.
+  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" dir={dir} {...props} />;
+}
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
@@ -168,6 +176,8 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.SubContent
       ref={ref}
+      // عقد الاتجاه: الاتجاه يُورَّث من DropdownMenu (Root) عبر سياق Radix —
+      // الـ CSS يرث html عبر الـ Portal، فلا حاجة لـ dir هنا (غير مدعوم نوعياً).
       collisionPadding={collisionPadding}
       className={cn(
         'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 duration-75 z-50 min-w-[8rem] max-h-[var(--radix-dropdown-menu-content-available-height)] origin-[var(--radix-dropdown-menu-content-transform-origin)] overflow-x-hidden overflow-y-auto rounded-xl border border-border p-1 shadow-fluent-16 fluent-specular',

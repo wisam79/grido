@@ -38,7 +38,11 @@ function isEmptyWorkspace(data: { elements: unknown[]; slots?: unknown[] }): boo
 // `Quit()`: أي تعديل في آخر ثانيتين قبل الإغلاق يُفقد. صار التفريغ دالة
 // قابلة للانتظار يستدعيها مُغلِّق النافذة (ومستمع beforeunload احتياطاً).
 let flushInFlight: Promise<void> | null = null;
-let lastFlushedString = '';
+// 🛡️ مسار كتابة واحد: آخر سلسلة مكتوبة على القرص — مشتركة بين التفريغ
+// والحفظ المنظم (كانتا متغيرين منفصلين فيسمح بكتابة قديمة فوق أحدث).
+let lastWrittenString = '';
+// الكتابة الجارية للحفظ المنظم — ينتظرها التفريغ قبل التسلسل من جديد.
+let saveDraftInFlight: Promise<void> | null = null;
 
 /**
  * كتابة فورية للحالة الحالية على القرص. تُعيد true إذا لا يوجد ما يُكتب أو
@@ -53,12 +57,25 @@ export async function flushAutoSave(): Promise<boolean> {
   const projectData = serializeEditorState(state);
   if (isEmptyWorkspace(projectData)) return true;
 
-  const currentString = JSON.stringify(projectData);
-  if (currentString === lastFlushedString) return true;
+  // انتظر كتابة منظمة جارية ثم أعد التسلسل — لئلا تُكتب لقطة أقدم فوق أحدث.
+  if (saveDraftInFlight) {
+    try {
+      await saveDraftInFlight;
+    } catch {
+      /* مسجلة في مسارها */
+    }
+  }
+
+  const freshState = useEditorStore.getState();
+  const freshData = serializeEditorState(freshState);
+  if (isEmptyWorkspace(freshData)) return true;
+
+  const currentString = JSON.stringify(freshData);
+  if (currentString === lastWrittenString) return true;
 
   flushInFlight = (async () => {
     await SaveAutoSave(currentString);
-    lastFlushedString = currentString;
+    lastWrittenString = currentString;
   })();
 
   try {
@@ -118,7 +135,7 @@ export function useAutoSave() {
                   void ClearAutoSave().catch((err: unknown) => {
                     logger.error('Failed to clear autosave draft', err);
                   });
-                  lastFlushedString = '';
+                  lastWrittenString = '';
                 },
               },
             });
@@ -165,7 +182,6 @@ export function useAutoSave() {
 
   // 2. المراقبة والحفظ التلقائي المنظم في الخلفية (بعد ثانيتين من توقف أي تفاعل)
   useEffect(() => {
-    let lastSavedString = '';
     let isSaving = false;
     let pendingSaveState: string | null = null;
     let disposed = false;
@@ -181,9 +197,22 @@ export function useAutoSave() {
 
       isSaving = true;
       try {
-        await SaveAutoSave(stateString);
-        lastSavedString = stateString;
-        lastFlushedString = stateString;
+        // 🛡️ انتظر تفريغاً جارياً ثم أعد التسلسل من المتجر — لئلا تُكتب
+        // اللقطة الممررة (الأقدم) فوق ما كتبه التفريغ للتو.
+        let payload = stateString;
+        if (flushInFlight) {
+          try {
+            await flushInFlight;
+          } catch {
+            /* مسجل في مسار التفريغ */
+          }
+          const fresh = JSON.stringify(serializeEditorState(useEditorStore.getState()));
+          if (fresh === lastWrittenString) return;
+          payload = fresh;
+        }
+        saveDraftInFlight = SaveAutoSave(payload);
+        await saveDraftInFlight;
+        lastWrittenString = payload;
         consecutiveFailures = 0;
       } catch (err) {
         // 🛡️ H6 من تدقيق 2026-10-08: فشل الحفظ التلقائي (امتلاء القرص، تجاوز
@@ -198,6 +227,7 @@ export function useAutoSave() {
         }
       } finally {
         isSaving = false;
+        saveDraftInFlight = null;
         // السلسلة تفرّغ آخر مسودة معلّقة حتى بعد إلغاء التنشيط (كتابة نهائية
         // بأحدث حالة) — الحارس ضد القِدم هو فحص disposed في runSave فقط
         if (pendingSaveState !== null) {
@@ -222,7 +252,7 @@ export function useAutoSave() {
         }
 
         const currentString = JSON.stringify(projectData);
-        if (currentString === lastSavedString) {
+        if (currentString === lastWrittenString) {
           return; // تخطي إذا لم تتغير مساحة العمل فعلياً
         }
         saveDraft(currentString);
@@ -307,7 +337,7 @@ export function useAutoSave() {
 
       if (!isEmptyCanvas) {
         const currentString = JSON.stringify(projectData);
-        if (currentString !== lastSavedString) {
+        if (currentString !== lastWrittenString) {
           if (isSaving) {
             pendingSaveState = currentString;
           } else {

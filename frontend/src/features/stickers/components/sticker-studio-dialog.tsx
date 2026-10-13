@@ -224,6 +224,14 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     };
     const handleRedoKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        // 🛡️ نفس حارس التراجع أعلاه: داخل حقل نص الإعادة الأصلية للحقل أولاً
+        const target = e.target as HTMLElement | null;
+        if (
+          target &&
+          (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
+        ) {
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         redo();
@@ -636,7 +644,9 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[94vw] sm:max-w-[920px] h-[640px] max-h-[88vh] min-h-[520px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular gap-0"
+        // 🛡️ بلا min-h ثابت (كان يحجب الفوتر تحت ~590px) وبلا قص أفقي
+        // صامت للعمودين (670px ثابتة) — تمرير أفقي بدلاً من ذلك
+        className="w-[94vw] sm:max-w-[920px] h-[640px] max-h-[88vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular gap-0"
         dir="rtl"
       >
         {/* ── Title Bar Header (Adapts to Active Stage) ── */}
@@ -711,9 +721,9 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
           </div>
         ) : (
           /* View 2: Focused 2-Column Customizer */
-          <div className="flex flex-row flex-1 min-h-0 overflow-hidden">
+          <div className="flex flex-row flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
             {/* Right Side (RTL Start): Live Vector Preview */}
-            <div className="flex-1 min-w-[340px] h-full flex flex-col overflow-hidden border-e border-border/40">
+            <div className="flex-1 min-w-0 h-full flex flex-col overflow-hidden border-e border-border/40">
               <StickerPreview
                 template={selectedTemplate}
                 params={params}

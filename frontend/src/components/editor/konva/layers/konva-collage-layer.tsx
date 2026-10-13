@@ -31,6 +31,8 @@ interface KonvaCollageLayerProps {
   collageShowEndCutLine?: boolean;
   collageTemplate?: CollageTemplate | null;
   selectedId: string | null;
+  /** مقياس العرض للسمك الثابت على الشاشة (اختياري — 1 افتراضياً بلا تغيير) */
+  stageScale?: number;
   handleSlotClick?: (slotId: string) => void;
   handleSlotDblClick?: (slotId: string) => void;
   handleSlotWheel: (
@@ -54,12 +56,16 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   collageShowEndCutLine = true,
   collageTemplate,
   selectedId,
+  stageScale = 1,
   handleSlotClick,
   handleSlotDblClick,
   handleSlotWheel,
   updateSlot,
   pushHistory,
 }: KonvaCollageLayerProps) {
+  // 🛡️ سمك شاشة ثابت لحلقة التحديد (يطابق marquee طبقة single) — القيمة
+  // الافتراضية 1 تُبقي أي مستدعٍ قديم بلا تغيير سلوكي.
+  const uiScale = stageScale > 0 ? stageScale : 1;
   // 🛡️ إعادة تصيير طبقة الكولاج بألوان الثيم الجديد (C5 — تدقيق 2026-10-08)
   useCanvasColors();
   const [hoveredSlotId, setHoveredSlotId] = React.useState<string | null>(null);
@@ -420,10 +426,10 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   width={width + 3}
                   height={height + 3}
                   stroke="#0078d4"
-                  strokeWidth={2}
+                  strokeWidth={2 / uiScale}
                   cornerRadius={radius + 1.5}
                   shadowColor="#0078d4"
-                  shadowBlur={4}
+                  shadowBlur={4 / uiScale}
                   shadowOpacity={0.4}
                 />
               </Group>

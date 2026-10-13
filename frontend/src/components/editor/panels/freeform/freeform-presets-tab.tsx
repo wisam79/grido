@@ -121,7 +121,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
               className={cn(
                 // min-h بدل h ثابتة: الأسماء الطويلة («غلاف عريض (Landscape 16:9)»)
                 // كانت تُقتطع داخل صف 36px، فيتمدد الصف سطراً ثانياً بدل بتر الاسم
-                'group w-full min-h-9 px-2.5 py-1.5 rounded-md border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2 select-none active:scale-[0.99] text-right',
+                'group w-full min-h-9 px-2.5 py-1.5 rounded-md border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2 select-none active:scale-[0.99] text-start',
                 active
                   ? 'bg-card border-border/90 text-foreground shadow-xs ring-1 ring-foreground/25 font-bold'
                   : 'bg-card/40 hover:bg-accent/60 border-border/50 hover:border-border text-foreground/90',

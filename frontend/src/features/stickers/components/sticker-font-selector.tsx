@@ -182,7 +182,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
                     }
                   }}
                   className={cn(
-                    'w-full text-start p-2 rounded-lg border transition-all cursor-pointer flex items-center justify-between gap-2 group',
+                    'w-full text-start p-2 rounded-md border transition-all cursor-pointer flex items-center justify-between gap-2 group',
                     isSelected
                       ? 'border-primary/50 bg-primary/10 text-primary'
                       : 'border-transparent hover:border-border/60 hover:bg-muted/30 text-foreground',

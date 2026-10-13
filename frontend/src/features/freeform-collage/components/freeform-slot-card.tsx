@@ -94,6 +94,8 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
       className={cn(
         'absolute rounded-sm cursor-move select-none overflow-hidden touch-none',
         'transition-[border-color,background-color,box-shadow] duration-150',
+        // 🛡️ مؤشر تركيز مرئي للوحة المفاتيح (WCAG 2.4.7) — كان الوصول بـ Tab بلا أي دلالة
+        'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
         isSelected
           ? 'border-2 border-primary bg-primary/10 ring-2 ring-primary/25 z-20 shadow-md'
           : isMultiSelected

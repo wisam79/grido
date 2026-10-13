@@ -54,7 +54,12 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
   const spacingVal = textEl.letterSpacing || 0;
   const bgColor =
     textEl.textBgColor && textEl.textBgColor !== 'transparent' ? textEl.textBgColor : 'transparent';
-  const scaleRatio = Math.min(displayW / canvasWidth, displayH / canvasHeight);
+  // 🛡️ حارس الصفر: كانفس 0×0 (تهيئة/حالة فارغة) كان ينتج Infinity/NaN
+  // في font-size والحشوات فيتعطل التحرير — النسبة الاحتياطية 1 آمنة.
+  const scaleRatio =
+    canvasWidth > 0 && canvasHeight > 0
+      ? Math.min(displayW / canvasWidth, displayH / canvasHeight)
+      : 1;
   const radiusPx = (textEl.textBgRadius || 0) * scaleRatio;
   const paddingXPx = (textEl.textBgPaddingX ?? textEl.textBgPadding ?? 0) * scaleRatio;
   const paddingYPx = (textEl.textBgPaddingY ?? textEl.textBgPadding ?? 0) * scaleRatio;
@@ -91,6 +96,9 @@ export const TextEditingOverlay = React.memo(function TextEditingOverlay({
       <textarea
         key={textEl.id}
         ref={textareaRef}
+        // 🛡️ مطابقة WYSIWYG: عقدة Konva تضبط direction=rtl للعربي — المحرر
+        // كان يرث ltr من الكانفس فيختلف ترتيب الكلمات وموضع المؤشر.
+        dir={isArabicText ? 'rtl' : 'ltr'}
         className="w-full bg-transparent resize-none outline-none ring-0 m-0 border-0 transition-shadow duration-150 custom-scrollbar block"
         style={{
           transform: `scale(${flippedX ? -1 : 1}, ${flippedY ? -1 : 1})`,

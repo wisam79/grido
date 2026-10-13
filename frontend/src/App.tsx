@@ -127,7 +127,10 @@ export default function App() {
 
   useEffect(() => {
     if (selectedId && selectedId !== prevSelectedIdRef.current) {
-      if (panelsHook.breakpoint === 'standard' && panelsHook.activePanel !== 'properties') {
+      // 🛡️ مزامنة التحديد ثنائية الاتجاه لجميع العروض: كان القيد standard-only
+      // فيُهمل wide (الدبس غير مثبّت) وcompact (ورقة الجوال) رغم أن openPanel
+      // يدعم الفروع الثلاثة — الآن يُفتح الأنسب لكل breakpoint.
+      if (panelsHook.activePanel !== 'properties') {
         panelsOpenPanel('properties');
       }
     }
@@ -253,6 +256,8 @@ export default function App() {
                 'border-b border-border bg-sidebar/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-(--z-panel) fluent-specular shadow-2xs',
                 !isFocused && 'opacity-75',
               )}
+              // ltr-island موثقة (عقد الاتجاه): شريط النافذة ثابت LTR فيزيائياً
+              // لأزرار الويندوز، والمبدّل الأوسط معزول بـ dir="rtl" الخاص به.
               dir="ltr"
               onDoubleClick={handleMaximize}
             >
@@ -268,6 +273,53 @@ export default function App() {
                   <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />
                   <div className="hidden sm:flex items-center title-bar-controls">
                     <DesktopMenuBar />
+                  </div>
+                  {/* مبدّل الوضع المدمج للشاشات الصغيرة — المبدّل الكامل مخفي
+                      تحت md بلا بديل لمسي، فيبقى التبديل ممكناً بأيقونتين */}
+                  <div
+                    role="tablist"
+                    aria-label="وضع العمل"
+                    dir="rtl"
+                    className="flex md:hidden items-center gap-0.5 p-0.5 rounded-lg bg-muted/40 dark:bg-black/20 border border-border/50 shadow-inner select-none title-bar-controls"
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={mode === 'collage'}
+                      title="وضع الكولاج (Ctrl+Alt+1)"
+                      onClick={() => setMode('collage')}
+                      className={cn(
+                        'h-7 w-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                        mode === 'collage'
+                          ? 'bg-background dark:bg-card border border-border/70 shadow-xs text-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      <SquaresFour
+                        className="w-3.5 h-3.5 shrink-0"
+                        weight={mode === 'collage' ? 'fill' : 'regular'}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={mode === 'single'}
+                      title="وضع التعديل الحر (Ctrl+Alt+2)"
+                      onClick={() => setMode('single')}
+                      className={cn(
+                        'h-7 w-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                        mode === 'single'
+                          ? 'bg-background dark:bg-card border border-border/70 shadow-xs text-foreground'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      <Image
+                        className="w-3.5 h-3.5 shrink-0"
+                        weight={mode === 'single' ? 'fill' : 'regular'}
+                      />
+                    </button>
                   </div>
                 </div>
 

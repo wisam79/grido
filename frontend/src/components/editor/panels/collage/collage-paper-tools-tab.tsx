@@ -162,7 +162,7 @@ export function CollagePaperToolsTab() {
             className="w-3.5 h-3.5 shrink-0 text-muted-foreground"
             weight="duotone"
           />
-          <span className="flex-1 text-right leading-relaxed">
+          <span className="flex-1 text-start leading-relaxed">
             سماكة ولون خطوط القص من <b>لوحة الخصائص</b>
           </span>
         </button>
@@ -264,7 +264,7 @@ export function CollagePaperToolsTab() {
                   className={cn('w-4 h-4 shrink-0', checked && 'text-foreground')}
                   weight={checked ? 'duotone' : 'regular'}
                 />
-                <span className="flex-1 text-right text-xs font-semibold truncate">
+                <span className="flex-1 text-start text-xs font-semibold truncate">
                   {guide.label}
                 </span>
                 <span

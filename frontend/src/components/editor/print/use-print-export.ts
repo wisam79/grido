@@ -297,7 +297,13 @@ export function usePrintExport({
         const triggerPrint = () => {
           try {
             window.print();
-            toast.success('تم إرسال الورقة إلى الطباعة بنجاح');
+            // 🛡️ صدق الرسائل: window.print يفتح حوار النظام فقط (قد يُلغى) —
+            // النجاح يُعلن عند afterprint لا لحظة الفتح.
+            const onAfterPrint = () => {
+              window.removeEventListener('afterprint', onAfterPrint);
+              toast.success('تم إرسال الورقة إلى الطباعة بنجاح');
+            };
+            window.addEventListener('afterprint', onAfterPrint);
           } catch (e) {
             logger.error('Browser print error:', e);
             cleanup();

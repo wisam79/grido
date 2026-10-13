@@ -60,7 +60,11 @@ export class ErrorBoundary extends Component<Props, State> {
               فشل عرض الواجهة. أعد التحميل أو امسح المسودة.
             </p>
             {this.state.error && (
-              <div className="text-micro font-mono bg-muted p-3 rounded-md text-left overflow-auto max-h-24 text-destructive border border-destructive/10">
+              // ltr-island: نص تقني إنجليزي (stack) — dir ثابت ومحاذاة فيزيائية عمداً
+              <div
+                dir="ltr"
+                className="text-micro font-mono bg-muted p-3 rounded-md text-left overflow-auto max-h-24 text-destructive border border-destructive/10"
+              >
                 {this.state.error.toString()}
               </div>
             )}

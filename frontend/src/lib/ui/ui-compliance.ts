@@ -147,6 +147,47 @@ export function ltrSpan(value: string): { dir: 'ltr'; value: string } {
   return { dir: 'ltr', value };
 }
 
+// ─── RTL/LTR Direction Contract (تدقيق RTL 2026-10-13) ───
+// مصدر الحقيقة الوحيد: <html lang="ar" dir="rtl"> (frontend/index.html).
+// كل Portals (Dialog/Sheet/Dropdown/Popover/Select/Tooltip/Sonner) تُزرع في
+// document.body فترث rtl من html — لذلك كل Content يحمل dir="rtl" صريحاً
+// ولا يعتمد على وراثة الشجرة المستدعية (قد تكون داخل جزيرة ltr).
+//
+// الجزر المسموحة بـ dir="ltr" حصراً (موثقة بتعليق /* ltr-island */ في موضعها):
+//  1) header النافذة (App.tsx) — تثبيت فيزيائي لأزرار الويندوز.
+//  2) main التخطيط WorkspaceLayout — يفرض Rail يساراً والمفتش يميناً فيزيائياً.
+//  3) محررات الكانفس (freeform-canvas-editor) — إحداثيات Konva لا تُقلب.
+//  4) الحقول الرقمية/المونو (font-mono + tabular-nums) — dir="ltr" + text-left.
+//  5) Switch — dir="ltr" عمداً (سلوك Windows ثابت: التفعيل يميناً).
+//
+// القاعدة: خارج هذه الجزر استخدم الخصائص المنطقية حصراً
+// (ms-/me-/ps-/pe-/start-/end- + text-start/end + border-s/e).
+// الفيزيائيات (ml-/mr-/pl-/pr-/left-/right-/text-left/right) ممنوعة إلا
+// داخل ltr-island مع تعليق يبررها.
+export const DIRECTION_CONTRACT = {
+  root: 'rtl' as const,
+  portalContentDir: 'rtl' as const,
+  ltrIslands: [
+    'app-header',
+    'workspace-layout-main',
+    'canvas-editors',
+    'numeric-mono-fields',
+    'switch-control',
+  ],
+} as const;
+
+export function assertNoPhysicalDirection(className: string, where: string): void {
+  if (process.env.NODE_ENV !== 'development') return;
+  // يستثني ltr-island الموثقة: المتصل يمرر className بلا التعليق فقط عند المخالفة.
+  const m = className.match(
+    /(?:^|\s)(ml-|mr-|pl-|pr-|text-left|text-right|border-l-|border-r-|rounded-l|rounded-r|left-\d|right-\d)(?=\s|$)/,
+  );
+  if (m)
+    console.warn(
+      `[UI-COMPLIANCE RTL] خاصية فيزيائية ${m[1]} في ${where} — استخدم ms-/me-/ps-/pe-/start-/end- أو وثّق ltr-island`,
+    );
+}
+
 // ─── R39: حارس الخيط الرئيسي — أي عملية >3s يجب أن تكون قابلة للإلغاء ───
 export function mustBeCancellable(expectedMs: number, canCancel: boolean, where: string): void {
   if (process.env.NODE_ENV !== 'development') return;

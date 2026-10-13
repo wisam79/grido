@@ -342,6 +342,10 @@ export function useCanvasViewport(
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('pointermove', handlePointerMove);
+      // 🛡️ فكّ التركيب أثناء السحب كان يُبقي pointerup معلقاً (once) يغلق
+      // على node ميتة مع بقاء راية السحب — التنظيف ينهي الحالة بقوة.
+      window.removeEventListener('pointerup', handlePointerUp);
+      isPointerPanningRef.current = false;
     };
   }, [containerRef, setCanvasZoom]);
 

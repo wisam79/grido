@@ -43,6 +43,8 @@ const SelectContent = React.forwardRef<
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       ref={ref}
+      // عقد الاتجاه: تثبيت rtl — مؤشر الاختيار end-1.5 منطقي ويتبعها.
+      dir="rtl"
       data-slot="select-content"
       collisionPadding={collisionPadding}
       className={cn(

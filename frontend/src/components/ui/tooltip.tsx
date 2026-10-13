@@ -39,6 +39,8 @@ function TooltipContent({
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
+        // عقد الاتجاه: تثبيت rtl — side فيزيائي عند المستدعي، والنص عربي.
+        dir="rtl"
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
         className={cn(

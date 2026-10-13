@@ -188,6 +188,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             </span>
             <input
               type="number"
+              dir="ltr"
               aria-label="X"
               value={Math.round(element.x * 100)}
               onChange={(e) => {
@@ -198,7 +199,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
                 }
               }}
               onBlur={pushCoordHistory}
-              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold"
             />
           </div>
 
@@ -208,6 +209,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             </span>
             <input
               type="number"
+              dir="ltr"
               aria-label="Y"
               value={Math.round(element.y * 100)}
               onChange={(e) => {
@@ -218,7 +220,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
                 }
               }}
               onBlur={pushCoordHistory}
-              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold"
             />
           </div>
 
@@ -228,6 +230,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             </span>
             <input
               type="number"
+              dir="ltr"
               aria-label="W"
               value={Math.round(element.width * 100)}
               onChange={(e) => {
@@ -242,7 +245,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
                 onUpdate(element.id, { width: newWidth, ...deco });
               }}
               onBlur={pushCoordHistory}
-              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold"
             />
           </div>
 
@@ -252,6 +255,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             </span>
             <input
               type="number"
+              dir="ltr"
               aria-label="H"
               value={Math.round(element.height * 100)}
               onChange={(e) => {
@@ -270,7 +274,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
                 onUpdate(element.id, { height: newHeight, ...deco });
               }}
               onBlur={pushCoordHistory}
-              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-left text-foreground font-semibold"
+              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold"
             />
           </div>
         </div>

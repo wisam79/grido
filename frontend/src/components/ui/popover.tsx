@@ -24,6 +24,9 @@ function PopoverContent({
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
         data-slot="popover-content"
+        // عقد الاتجاه: تثبيت rtl — side فيزيائي عند المستدعي (Rail يساراً
+        // فيزيائياً لذا side=right)، والمحتوى عربي دائماً.
+        dir="rtl"
         align={align}
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}

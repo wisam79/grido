@@ -369,7 +369,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                   }}
                   onClick={() => handleSelectFont(font)}
                   className={cn(
-                    'w-full text-right px-2.5 py-2 rounded-md transition-all flex items-center justify-between cursor-pointer group border select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                    'w-full text-start px-2.5 py-2 rounded-md transition-all flex items-center justify-between cursor-pointer group border select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                     isSelected
                       ? 'bg-primary/15 border-primary/50 text-primary shadow-2xs'
                       : isFocused
@@ -407,7 +407,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                   </div>
 
                   {/* Actions: Favorite Star & Checkmark */}
-                  <div className="flex items-center gap-1 shrink-0 mr-1.5">
+                  <div className="flex items-center gap-1 shrink-0 me-1.5">
                     <button
                       type="button"
                       onClick={(e) => toggleFavorite(font.id, e)}

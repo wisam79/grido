@@ -32,6 +32,17 @@ export const useOperationStatusStore = create<OperationStatusStore>((set, get) =
   activeOperation: null,
 
   startOperation: (op) => {
+    // 🛡️ شبكة أمان أحادية الخانة: بدء B أثناء A كان يُيتّم A (إنهاؤها لا يمحو B
+    // وإلغاؤها يضيع). المتصلون (خطافات AI الثلاثة) يفحصون activeOperation مسبقاً
+    // ويرفضون بأدب؛ هذا الحارس يمنع أي يتْم متبقٍ: المعرّف الوهمي لا يطابق أي
+    // عملية في finish/update فيُتجاهل بأمان بدل تخريب العملية الجارية.
+    const current = get().activeOperation;
+    if (current) {
+      logger.warn(
+        `operation '${current.type}' busy — '${op.type}' not registered (orphan prevented)`,
+      );
+      return 'op_busy_' + Date.now().toString(36);
+    }
     const id = 'op_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
     set({
       activeOperation: {

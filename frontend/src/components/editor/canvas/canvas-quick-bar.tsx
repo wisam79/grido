@@ -275,15 +275,16 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   );
 
   // 🧷 السقوط الآمن: تعذّر قياس الورقة (تركيبات اختبارية بلا editor-canvas،
-  // أو الإطار الأول قبل القياس) → نعرض الشريط بالوضع الثابت القديم أعلى
-  // المساحة بدل الاختفاء، فلا تنكسر الاختبارات ولا ي день الشريط إطلاقاً.
+  // أو الإطار الأول قبل القياس) → يُرسم الشريط مخفياً (invisible) في DOM
+  // بدل الاختفاء التام (فلا تنكسر الاختبارات) وبدل الوميض فوق المساطر
+  // قبل أول قياس — متى قِيست الورقة حلّ الشريط المموضع محله.
   if (!canvasBox || canvasBox.width < 2 || canvasBox.height < 2) {
     const legacyBar = (
       <div
         ref={attachBar}
         dir="rtl"
         data-testid="canvas-quick-bar"
-        className="absolute top-3 left-1/2 -translate-x-1/2 z-(--z-quick-bar) pointer-events-auto no-print font-cairo select-none animate-in fade-in-50 slide-in-from-top-3 duration-200 max-w-[calc(100%-1.5rem)]"
+        className="absolute top-3 left-1/2 -translate-x-1/2 z-(--z-quick-bar) pointer-events-auto no-print font-cairo select-none animate-in fade-in-50 slide-in-from-top-3 duration-200 max-w-[calc(100%-1.5rem)] invisible"
       >
         {barBody}
       </div>
@@ -344,8 +345,11 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   const barW = barSize.w;
   const barH = barSize.h;
 
-  let barLeft = anchor.left + anchor.width / 2 - barW / 2;
-  barLeft = Math.max(EDGE_PX, Math.min(barLeft, cw - barW - EDGE_PX));
+  // 🛡️ عرض فعّال: الورقة الضيقة (هوية صغيرة) أضيق من الشريط أحياناً —
+  // القص القديم كان ينهار (الحد الأعلى < الأدنى) فيبرز الشريط يمين الورقة.
+  const effW = Math.min(barW, Math.max(0, cw - 2 * EDGE_PX));
+  let barLeft = anchor.left + anchor.width / 2 - effW / 2;
+  barLeft = Math.max(EDGE_PX, Math.min(barLeft, cw - effW - EDGE_PX));
 
   let barTop = anchor.top - barH - GAP_PX;
   let originY: 'bottom' | 'top' = 'bottom';

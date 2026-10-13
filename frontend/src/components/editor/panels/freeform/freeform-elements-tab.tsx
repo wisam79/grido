@@ -678,7 +678,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 type="button"
                 onClick={() => handleAddText(preset)}
                 title={preset.label}
-                className="group relative w-full bg-card/70 hover:bg-card border border-border/60 hover:border-foreground/40 rounded-xl p-2 transition-all duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden text-right"
+                className="group relative w-full bg-card/70 hover:bg-card border border-border/60 hover:border-foreground/40 rounded-xl p-2 transition-all duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden text-start"
               >
                 {/* صندوق المعاينة الحية الواقعية */}
                 <div className="w-full aspect-[16/9] flex items-center justify-center mb-1.5 overflow-hidden rounded-lg">

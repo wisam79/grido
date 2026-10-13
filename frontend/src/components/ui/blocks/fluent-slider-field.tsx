@@ -183,8 +183,9 @@ export const FluentSliderField = React.memo(function FluentSliderField({
           <span className="truncate">{label}</span>
         </div>
 
+        {/* 🛡️ بلا dir ثابت: يرث RTL كـ Progress (origin يمين) وكمفاتيح
+            الأسهم لبقية عناصر RTL — الشارة الرقمية وحدها تبقى ltr */}
         <Slider
-          dir="ltr"
           aria-labelledby={labelId}
           value={[localValue]}
           min={min}
@@ -228,8 +229,8 @@ export const FluentSliderField = React.memo(function FluentSliderField({
         </span>
       </div>
 
+      {/* 🛡️ نفس إرث RTL أعلاه — الشارة الرقمية وحدها ltr */}
       <Slider
-        dir="ltr"
         aria-labelledby={labelId}
         value={[localValue]}
         min={min}

@@ -706,7 +706,9 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[1200px] h-[92vh] max-h-[860px] min-h-[580px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular transition-all duration-150 gap-0"
+        // 🛡️ بلا min-h ثابت: تحت ~630px كان min-h-[580px] يغلب h-[92vh]
+        // فيحجب الفوتر داخل overflow-hidden — الجسم المرن يتقلص بدلاً من ذلك
+        className="w-[96vw] sm:max-w-[1200px] h-[92vh] max-h-[860px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular transition-all duration-150 gap-0"
         dir="rtl"
         // 🛡️ H14: Escape يُبقي إغلاق Radix (لم نستدعِ preventDefault) ويكتفي
         // بمسح التحديد المتعدد — بلا هذا يمرّ Escape مرتين: إغلاق + مسح.
