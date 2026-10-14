@@ -229,6 +229,15 @@ async function handleFrame(req: FrameRequest) {
     original.close();
     if (isCancelled()) return;
 
+    // 🧹 تحرير كائن Landmarker ومصفوفة WASM فوراً
+    try {
+      landmarker.close();
+    } catch {
+      /* ignore */
+    }
+    landmarkerPromise = null;
+    currentLandmarker = null;
+
     postProgress(requestId, 90, 'جاري الإنهاء ... (90%)');
     const pngBlob = await outCanvas.convertToBlob({ type: 'image/png' });
     const buffer = new Uint8Array(await pngBlob.arrayBuffer());
@@ -259,19 +268,8 @@ async function handleFrame(req: FrameRequest) {
   }
 }
 
-ctx.onmessage = (e: MessageEvent<WorkerRequest | { type: 'dispose' }>) => {
-  const data = e.data as WorkerRequest | { type: 'dispose' };
-  if (data.type === 'dispose') {
-    try {
-      currentLandmarker?.close();
-    } catch {
-      /* ignore */
-    }
-    currentLandmarker = null;
-    landmarkerPromise = null;
-    warmupPromise = null;
-    return;
-  }
+ctx.onmessage = (e: MessageEvent<WorkerRequest>) => {
+  const data = e.data;
   if (data.type === 'frame') {
     void handleFrame(data);
   } else if (data.type === 'warmup') {
@@ -284,3 +282,13 @@ ctx.onmessage = (e: MessageEvent<WorkerRequest | { type: 'dispose' }>) => {
     }
   }
 };
+
+// إتاحة الإغلاق النظيف لموارد WebGL عند إنهاء الـ Worker
+const handleCloseEvent = () => {
+  try {
+    currentLandmarker?.close();
+  } catch {
+    /* ignore */
+  }
+};
+ctx.addEventListener('close', handleCloseEvent);

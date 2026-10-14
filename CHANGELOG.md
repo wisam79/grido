@@ -9,29 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **نظام الطبقات المركزي V2 وميزانية VRAM (Layer System V2 — مصدر الحقيقة الوحيد):**
-  1. وحدة `frontend/src/lib/canvas/layer-system.ts` — سجل `LAYER_DEFS + LAYER_ORDER` بخمس طبقات موثقة (`background 0→ collage 1→ content 2→ overlay 3→ drag 4`)، مع تقدير VRAM بالصيغة الرسمية `scene+hit ≈ 41 MB/layer @1080p/dpr2` وحد Mobile Safari 256 MB (إنذار فوق 5 طبقات ≈205 MB). أي تغيير في z يجب أن يمر من هذا الملف.
-  2. وحدة `frontend/src/lib/canvas/viewport-culling.ts` — إخفاء عناصر خارج العرض عند `>40` عنصر عبر حساب AABB مدوّر (توصية Konva الرسمية «Very Large Scenes»)، تُحسب في `konva-canvas.tsx` وتُطبق في `konva-single-layer.tsx` بلا قص للمحدد.
+### Reverted
+- **تراجع نظيف عن تجربة نظام الطبقات V2 ولوحة الطبقات المكررة (Clean Rollback to v1.15.1):**
+  1. إلغاء التغييرات غير المستقرة في محرك الكانفاس (`layer-system.ts` و `viewport-culling.ts`) وإلغاء فرض تركيب جميع الطبقات في وقت واحد، وإعادة التركيب الشرطي النظيف حسب الوضع في `konva-canvas.tsx`.
+  2. إلغاء إرجاع `null` في `konva-single-layer.tsx` الذي كان يسبب تدمير عقد Konva وفقدان مراجعها وكاش الصور عند التكبير والتحريك.
+  3. استعادة ملفي الشبكة والأعمدة المعزولين (`grid-layer.tsx` و `columns-layer.tsx`) وإلغاء دمجها غير السليم في طبقة الخلفية.
+  4. استئصال الازدواجية في لوحات الطبقات: إزالة حشو `LayersPanel` من لوحة الخصائص `properties-panel.tsx`، والاعتماد الحصري على نظام الطبقات المكتمل والموحد `LayersList` و `freeform-layers-tab.tsx`.
+  5. استعادة الحالة المستقرة لشرائح الستور (`core-slice.ts` و `collage-slice.ts`) وخدمات الباك إند.
 
-### Performance
-- **تحسينات أداء مُستندة لتوثيق Konva الرسمي (All_Performance_Tips / Listening_False / Optimize_Strokes / Shape_Caching):**
-  1. تثبيت `Konva.pixelRatio` عند التركيب فقط (`Math.min(dpr,2)`) وعدم إعادة تخصيصه مع الزوم، مع تسجيل ميزانية VRAM في DEV عند تغير DPR.
-  2. `konva-background-layer.tsx` — إزالة `_context` الخاص واستبداله بسياق Konva العام `ctx` مع التمرير الصحيح لـ `fillStrokeShape(shape)`، وتجميع مسار الشبكة/الأعمدة (`beginPath` واحد + `fill/stroke` واحد).
-  3. `konva-single/collage/overlay-layer.tsx` — إعلان `listening:false` و`hitGraphEnabled/clearBeforeDraw` و`perfectDrawEnabled/shadowForStrokeEnabled=false` على الطبقات/الأشكال الثابتة وفق توصيات «Listening_False» و«Optimize_Strokes».
-  4. `konva-canvas.tsx` — طبقة drag مسماة `drag-layer` بترتيب z موثق وتوثيق معمارية الطبقات V2 في JSX.
-
-### Changed
-- **لوحة الطبقات المرئية بالسحب والقفل/الإظهار (Visible Layers Panel — dnd-kit + PropertiesPanel tabs):**
-  1. `frontend/src/components/editor/panels/layers-panel.tsx` — ترقية من HTML5 draggable إلى `@dnd-kit/core/sortable` (`PointerSensor distance:6` + `KeyboardSensor` + `closestCenter`) مع مقبض سحب منفصل (باقي الصف للتحديد)، وحلّ شفافية السحب العالقة وتعارض `hitGraph`؛ ترتيب `zIndex` بالـ batch نفسه (`updateElements + pushHistory` مرة واحدة) مع توثيق 5 طبقات المنطقية (`layer-system.ts`).
-  2. `frontend/src/components/editor/panels/properties-panel.tsx` — لوحة الطبقات صارت مرئية فعلياً عبر تبويبين مجاورين للخصائص: عند بلا تحديد تبويب `الطبقات` بجانب `الورقة/الكولاج`، وعند التحديد تبويب فرعي `الخصائص/الطبقات` داخل الخصائص نفسها؛ العنوان ديناميكي `الطبقات (N)` ويُعاد إلى `الخصائص` تلقائياً عند تغيير التحديد.
-  3. `frontend/test/layers-panel.test.tsx` — تحديث للاختيار عبر `getByRole('button', {name})` الثابت بدل ترتيب DOM الهش (كان يفشل بعد dnd-kit)، مع نجاح 7/7.
+### Removed
+- **استئصال الكود الميت والفخاخ المعمارية (Dead Code & Trap Removal):**
+  1. حذف المكون المهجور `layers-panel.tsx` وإلغاء تصديره من `panels/index.ts` لمنع تشتيت الوكلاء وضمان بقاء `LayersList` مصدراً وحيداً للحقيقة.
+  2. تحويل ملف الاختبار `test/layers-panel.test.tsx` إلى `test/layers-list.test.tsx` لاختبار مكون `LayersList` الفعلي والمستخدم في الإنتاج مع نجاح 7/7 اختبارات.
+  3. استئصال الملفات الميتة ذات الصفر استيرادات: `preset-miniature.tsx`، و `print-icon.tsx`، و `pointer-lock.ts`.
 
 ### Fixed
-- **إصلاحات الطبقات والـ viewport (Layer & Viewport Fixes):**
-  1. `use-canvas-viewport.ts` — إصلاح تجميد أولي 220 ms كان يترك `viewportSize` عند `800×600` بوميض، وإصلاح `deltaX*=viewportH`→`viewportW` في `deltaMode PAGE`.
-  2. `konva-background-layer.tsx` — حذف خاصية `mode` الميتة، وحماية `colW` بـ `Math.max(0, …)`.
-  3. `core/collage-slice.ts` + `schema/types` — إصلاح اتساق `core-slice`/`collage-slice` (إعادة تموضع الفجوات/الهوامش) ومواصفات Zod الصارمة.
+- **إصلاح خطأ دورة حياة React Ref في جسر كاميرا الهاتف (Phone Bridge Dialog):**
+  1. تحديث `isRunningRef` داخل `useEffect` بدلاً من تعديله أثناء دورة الرسم (Render phase) للامتثال الصارم لقاعدة `react-hooks/refs` في ESLint وضمان نجاح فحص الـ CI السحابي 100%.
 
 ## [v1.15.1] - 2026-10-13
 

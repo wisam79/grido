@@ -5,8 +5,6 @@ import type { KonvaEventObject } from 'konva/lib/Node';
 import { CanvasElement } from '@/lib/editor-store';
 import { SnapGuide } from '@/lib/canvas/snap-utils';
 import { URLImage, KonvaTextElement, KonvaShapeElement } from '../konva-elements';
-import { isBoxOffscreen as _isBoxOffscreen } from '@/lib/canvas/viewport-culling';
-import type { ViewRect } from '@/lib/canvas/viewport-culling';
 
 interface KonvaSingleLayerProps {
   sortedElements: CanvasElement[];
@@ -24,12 +22,6 @@ interface KonvaSingleLayerProps {
   createElementMouseDown: (elId: string) => (e: KonvaEventObject<MouseEvent>) => void;
   createElementClick: (elId: string) => (e: KonvaEventObject<MouseEvent>) => void;
   createElementRef: (elId: string) => { current: Konva.Node | null };
-  /** صندوق العرض المنطقي — يُحسب في konva-canvas ويُمرر لتجنب إعادة حسابه لكل عنصر */
-  viewRect?: ViewRect;
-  /** لا culling في المستندات الصغيرة — Konva الرسمي: visible(false) أرخص من remove لكن حسابات isOffscreen لها كلفة على <40 عنصر */
-  shouldCull?: boolean;
-  visible?: boolean;
-  listening?: boolean;
 }
 
 /**
@@ -56,10 +48,6 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
   createElementMouseDown,
   createElementClick,
   createElementRef,
-  viewRect,
-  shouldCull,
-  visible = true,
-  listening = true,
 }: KonvaSingleLayerProps) {
   // 🚀 Map بالمعرفات بدل find لكل محدد — O(n) مرة واحدة بدل O(Selected×Elements)
   // في كل رندر (كان يتكرر لكل تغيير ستور مع كثافة عناصر عالية)
@@ -122,24 +110,20 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
       clipY={0}
       clipWidth={canvasWidth}
       clipHeight={canvasHeight}
-      visible={visible}
-      listening={listening}
-      // content layer تفاعلية — hit graph مطلوب للتحديد. overlay يفصل المحوّل لمنع إعادة رسمها كاملة.
-      clearBeforeDraw
-      hitGraphEnabled // صراحةً لتجنب التباس مع الطبقات الثابتة
     >
       {sortedElements.map((el) => {
         if (el.visible === false) return null;
 
-        // 🔍 حذف خارج الكانفس + viewport-culling (Konva الرسمي: Very large scenes)
-        // المرحلة 1: خارج حدود الورقة (0..1) مع دعم الدوران — Bug#11
+        // حذف خارج الكانفس مع مراعاة الدوران: Konva يدير حول نقطة الأصل (x,y)
+        // — اختبار الصندوق غير المدار كان يخفي عناصر مدارة نصفها ظاهر (إصلاح Bug#11)
         const rad = ((el.rotation || 0) * Math.PI) / 180;
         const cos = Math.cos(rad);
         const sin = Math.sin(rad);
-        const w01 = el.width;
-        const h01 = el.height;
-        const cornersX = [0, w01 * cos, w01 * cos - h01 * sin, -h01 * sin];
-        const cornersY = [0, w01 * sin, w01 * sin + h01 * cos, h01 * cos];
+        const w = el.width;
+        const h = el.height;
+        // زوايا الصندوق المدارة حول الأصل
+        const cornersX = [0, w * cos, w * cos - h * sin, -h * sin];
+        const cornersY = [0, w * sin, w * sin + h * cos, h * cos];
         const minX = el.x + Math.min(...cornersX);
         const maxX = el.x + Math.max(...cornersX);
         const minY = el.y + Math.min(...cornersY);
@@ -149,31 +133,12 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
           return null;
         }
 
-        // المرحلة 2: viewport-culling — العناصر خارج العرض تُخفى بـ visible=false
-        // (أرخص من remove) وتُظهر عند الرجوع. المحددة لا تُقص أبداً.
-        const isSelected = selectedIds.includes(el.id);
-        if (
-          shouldCull &&
-          !isSelected &&
-          viewRect &&
-          _isBoxOffscreen(
-            el.x * canvasWidth,
-            el.y * canvasHeight,
-            el.width * canvasWidth,
-            el.height * canvasHeight,
-            el.rotation || 0,
-            viewRect,
-          )
-        ) {
-          return null;
-        }
-
         const handleMouseDown = createElementMouseDown(el.id);
         const handleClick = createElementClick(el.id);
 
         const elementProps = {
           element: el,
-          isSelected, // محسوب أعلاه للـ culling — بلا إعادة includes
+          isSelected: selectedIds.includes(el.id),
           onMouseDown: handleMouseDown,
           onTouchStart: handleMouseDown as unknown as (e: KonvaEventObject<TouchEvent>) => void,
           onClick: handleClick,

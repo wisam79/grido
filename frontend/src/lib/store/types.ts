@@ -50,33 +50,7 @@ export interface BaseCanvasElement {
   shadowOffsetY?: number;
   shadowOpacity?: number;
   cornerRadius?: number;
-  globalCompositeOperation?:
-    | 'source-over'
-    | 'source-in'
-    | 'source-out'
-    | 'source-atop'
-    | 'destination-over'
-    | 'destination-in'
-    | 'destination-out'
-    | 'destination-atop'
-    | 'lighter'
-    | 'copy'
-    | 'xor'
-    | 'multiply'
-    | 'screen'
-    | 'overlay'
-    | 'darken'
-    | 'lighten'
-    | 'color-dodge'
-    | 'color-burn'
-    | 'hard-light'
-    | 'soft-light'
-    | 'difference'
-    | 'exclusion'
-    | 'hue'
-    | 'saturation'
-    | 'color'
-    | 'luminosity';
+  globalCompositeOperation?: string;
   flipX?: boolean;
   /** قلب عمودي — تكافؤ مع CanvasElementSchema في schema.ts (إصلاح عدم تطابق flipY) */
   flipY?: boolean;
@@ -181,33 +155,6 @@ export interface CanvasSlot {
   rotation?: number;
   originalImageSrc?: string;
   bgColor?: string;
-  globalCompositeOperation?:
-    | 'source-over'
-    | 'source-in'
-    | 'source-out'
-    | 'source-atop'
-    | 'destination-over'
-    | 'destination-in'
-    | 'destination-out'
-    | 'destination-atop'
-    | 'lighter'
-    | 'copy'
-    | 'xor'
-    | 'multiply'
-    | 'screen'
-    | 'overlay'
-    | 'darken'
-    | 'lighten'
-    | 'color-dodge'
-    | 'color-burn'
-    | 'hard-light'
-    | 'soft-light'
-    | 'difference'
-    | 'exclusion'
-    | 'hue'
-    | 'saturation'
-    | 'color'
-    | 'luminosity';
 }
 
 export type EditorMode = 'single' | 'collage';

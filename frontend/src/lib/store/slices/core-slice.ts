@@ -209,9 +209,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
               }));
             }
           } else if (dynamicCells) {
-            // اختلاف العدد لا يبرر هويات جديدة — الحفاظ على id/imageSrc/zoom
-            // عبر أقرب مركز يمنع تفكك KonvaCollageLayer وإعادة تحميل الصور
-            nextState.slots = remapSlotsToCells(s.slots, dynamicCells);
+            nextState.slots = buildSlots();
           }
         }
       }
@@ -493,28 +491,31 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
         );
         if (dynamicCells) cells = dynamicCells;
       }
-      // هويات مستقرة: لا uid() جديد — remap يحافظ على id/image/تحويلات
-      // بأقرب مركز ويكتب هندسة الخلية من القالب الجديد فقط
-      const thinCells = cells.map((c) => ({ x: c.x, y: c.y, w: c.w, h: c.h }));
-      const remapped = remapSlotsToCells(uniqueSlots, thinCells);
-      reconciledSlots = remapped.map((sl, i) => {
-        const c = cells[i] as unknown as { presetType?: string; label?: string; rotation?: number };
+      reconciledSlots = cells.map((c, i) => {
+        const existingSlot = uniqueSlots[i];
         return {
-          ...sl,
-          presetType: c.presetType ?? (sl as unknown as { presetType?: string }).presetType,
-          label: c.label ?? (sl as unknown as { label?: string }).label,
-          rotation: c.rotation ?? (sl as unknown as { rotation?: number }).rotation ?? 0,
-          originalImageSrc: (sl as unknown as { originalImageSrc?: string }).originalImageSrc,
-          bgColor: (sl as unknown as { bgColor?: string }).bgColor,
-          filter: (sl as unknown as { filter?: string }).filter || 'none',
-          brightness: (sl as unknown as { brightness?: number }).brightness || 100,
-          contrast: (sl as unknown as { contrast?: number }).contrast || 100,
-          saturation: (sl as unknown as { saturation?: number }).saturation || 100,
-          zoom: (sl as unknown as { zoom?: number }).zoom || 1,
-          dragX: (sl as unknown as { dragX?: number }).dragX || 0,
-          dragY: (sl as unknown as { dragY?: number }).dragY || 0,
-          flipX: (sl as unknown as { flipX?: boolean }).flipX,
-          flipY: (sl as unknown as { flipY?: boolean }).flipY,
+          id: uid(),
+          cellIndex: i,
+          x: c.x,
+          y: c.y,
+          w: c.w,
+          h: c.h,
+          // الحفاظ على بيانات الخلية من الملف القديم عند إعادة البناء
+          presetType: c.presetType ?? existingSlot?.presetType,
+          label: c.label ?? existingSlot?.label,
+          rotation: c.rotation ?? existingSlot?.rotation ?? 0,
+          imageSrc: existingSlot?.imageSrc || undefined,
+          originalImageSrc: existingSlot?.originalImageSrc,
+          bgColor: existingSlot?.bgColor,
+          filter: existingSlot?.filter || 'none',
+          brightness: existingSlot?.brightness || 100,
+          contrast: existingSlot?.contrast || 100,
+          saturation: existingSlot?.saturation || 100,
+          zoom: existingSlot?.zoom || 1,
+          dragX: existingSlot?.dragX || 0,
+          dragY: existingSlot?.dragY || 0,
+          flipX: existingSlot?.flipX,
+          flipY: existingSlot?.flipY,
         };
       });
     }

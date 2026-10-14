@@ -1,7 +1,7 @@
 # تتبع الميزات الأساسية — Grido Studio
 
 **تاريخ المراجعة الأولى:** 30 يوليو 2026 (الإصدار ~v1.2.10)
-**آخر تحديث:** 14 أكتوبر 2026 — بعد **نظام الطبقات V2 و Viewport Culling (الجلسة 0.79)** · وقبله **تصدير CMYK TIFF وتأنيس أخطاء الطباعة وإطلاق v1.15.1 (الجلسة 0.78)** · وقبله **استقرار الملفات والذاكرة وأداء الكانفاس (الجلسة 0.77)** · وقبله **الإصلاح الشامل لعيوب الواجهة (الجلسة 0.76)** · وقبله **عقد اتجاه RTL وامتثال Fluent للواجهة (الجلسة 0.75)**
+**آخر تحديث:** 14 أكتوبر 2026 — بعد **التراجع النظيف واستئصال الكود الميت والفخاخ المعمارية (الجلسة 0.79)** · وقبله **تصدير CMYK TIFF وتأنيس أخطاء الطباعة وإطلاق v1.15.1 (الجلسة 0.78)** · وقبله **استقرار الملفات والذاكرة وأداء الكانفاس (الجلسة 0.77)** · وقبله **الإصلاح الشامل لعيوب الواجهة (الجلسة 0.76)** · وقبله **عقد اتجاه RTL وامتثال Fluent للواجهة (الجلسة 0.75)**
 **المنهجية:** فحص الكود الفعلي (Go + React/Konva) ميزةً ميزة، ومطابقتها مع README وخطة التطوير.
 **الغرض:** مستند حي يُحدَّث مع كل نظرة على الميزات؛ يكمل (ولا يستبدل) `docs/development-plan/TASKS.md`.
 
@@ -9,18 +9,17 @@
 
 ---
 
-## 0.79 سجل جلسة نظام الطبقات V2 و Viewport Culling (مستند لتوثيق Konva الرسمي) — 14 أكتوبر 2026
+## 0.79 سجل جلسة التراجع النظيف واستئصال الكود الميت والفخاخ المعمارية — 14 أكتوبر 2026
 
-**المرجع:** تعريف `layer-system.ts` كمصدر حقيقة لـ 5 طبقات مع ميزانية VRAM (41 MB/layer، سقف 256 MB)، وإضافة `viewport-culling.ts` للمستندات الكبيرة، وإصلاحات viewport/touch وتحسينات `Listening_False/Optimize_Strokes`، ثم **جعل لوحة الطبقات مرئية بالسحب والقفل/الإظهار** في نفس الجلسة.
+**المرجع:** طلب المالك — التراجع الكامل النظيف إلى v1.15.1 بعد محاولة سابقة فاشلة لنظام الطبقات V2، مع استئصال الملفات الميتة والتوائم المهجورة لقطع دابر الفخاخ المعمارية.
 
 | البند | التنفيذ | الإثبات |
 | --- | --- | --- |
-| سجل الطبقات وميزانية VRAM | `LAYER_DEFS + LAYER_ORDER` + صيغة `scene+hit` + إنذار 5 طبقات/205 MB + حد 256 MB Mobile Safari | `frontend/src/lib/canvas/layer-system.ts` + توثيق JSX في `konva-canvas.tsx` ✅ |
-| Viewport Culling | إخفاء خارج العرض عند `>40` عنصر عبر AABB مدوّر مع `margin=64px` (توصية Konva «Very Large Scenes») | `frontend/src/lib/canvas/viewport-culling.ts` + تكامل `konva-single-layer.tsx` ✅ |
-| إصلاحات viewport/konva | تجميد أولي 220 ms (لا 800×600 flash)، و`deltaX*=viewportW` في PAGE، وتثبيت `pixelRatio` مع تسجيل VRAM في DEV | `frontend/src/components/editor/canvas/use-canvas-viewport.ts` + `konva-canvas.tsx` ✅ |
-| تحسينات أداء الطبقات | `listening:false / hitGraphEnabled / clearBeforeDraw / perfectDrawEnabled / shadowForStrokeEnabled=false` على الطبقات/الأشكال الثابتة | `konva-*-layer.tsx` ✅ |
-| لوحة الطبقات المرئية | ترقية `layers-panel.tsx` من HTML5 draggable إلى `@dnd-kit` + تبويبا `الطبقات` المرئيان في `properties-panel.tsx` (عام + فرعي عند التحديد) مع `zIndex` بالـ batch | `layers-panel.tsx` + `properties-panel.tsx` + `test/layers-panel.test.tsx` 7/7 ✅ |
-| توثيق | CHANGELOG + هذا السجل + مصفوفة المزامنة | `CHANGELOG.md` + `docs/DOCUMENTATION_MAP.md` ✅ |
+| التراجع النظيف إلى v1.15.1 | إلغاء التغييرات غير المستقرة في الكانفاس والطبقات واستعادة التركيب الشرطي النظيف في `konva-canvas.tsx` واستعادة `grid-layer.tsx` و `columns-layer.tsx` | كود الكانفاس والواجهة مطابق لـ v1.15.1 المستقر ✅ |
+| استئصال فخ `layers-panel.tsx` | حذف المكون المهجور وإلغاء تصديره من `panels/index.ts`، وتحويل اختباره إلى `test/layers-list.test.tsx` لاختبار `LayersList` الرسمية | `test/layers-list.test.tsx` (7/7 PASS) ✅ |
+| تنظيف الملفات الميتة (Zero Importers) | حذف `preset-miniature.tsx` و `print-icon.tsx` و `pointer-lock.ts` وتنظيف المراجع المعمارية في المهارات | فحص `git grep` نظيف وبلا مراجع ميتة ✅ |
+| إصلاح دورة حياة React Ref | نقل تعديل `isRunningRef` في `phone-bridge-dialog.tsx` إلى `useEffect` لمنع خطأ render-phase ref mutation | `npm run lint` (0 أخطاء) ✅ |
+| بوابات الجودة والتوثيق | نجاح `docs-gate.mjs --strict-refs` و `tsc --noEmit` بدون أخطاء | البوابات خضراء 100% ✅ |
 
 ---
 

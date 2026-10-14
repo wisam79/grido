@@ -17,8 +17,6 @@ interface KonvaOverlayLayerProps {
   altPressedRef: React.MutableRefObject<boolean>;
   setActiveGuides: (guides: SnapGuide[]) => void;
   marqueeRectRef: React.RefObject<Konva.Rect | null>;
-  visible?: boolean;
-  listening?: boolean;
 }
 
 /**
@@ -39,8 +37,6 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
   altPressedRef,
   setActiveGuides,
   marqueeRectRef,
-  visible = true,
-  listening = true,
 }: KonvaOverlayLayerProps) {
   const elementsById = React.useMemo(
     () => new Map(sortedElements.map((el) => [el.id, el])),
@@ -130,14 +126,7 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
   }, [canvasHeight, canvasWidth, elementsById, trRef]);
 
   return (
-    <Layer
-      name="overlay-tools-layer"
-      visible={visible}
-      listening={listening}
-      // فصل marquee/Transformer في طبقة منفصلة — All_Performance_Tips: «Keep layers minimal
-      // but split interactive from static to avoid full-stage redraws»
-      clearBeforeDraw
-    >
+    <Layer name="overlay-tools-layer">
       {selectedIds.length > 0 && (
         <EditorTransformer
           trRef={trRef}
@@ -163,7 +152,6 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
         strokeWidth={1 / uiScale}
         dash={[4 / uiScale, 2 / uiScale]}
         perfectDrawEnabled={false}
-        shadowForStrokeEnabled={false}
       />
     </Layer>
   );

@@ -3,8 +3,6 @@
 package service
 
 import (
-	"bytes"
-	"crypto/sha256"
 	_ "embed"
 	"fmt"
 	"os"
@@ -29,12 +27,12 @@ type BgRemovalService struct {
 	mediaService *MediaService
 
 	mu           sync.Mutex
+	initOnce     sync.Once
+	initErr      error
 	session      *ort.AdvancedSession
 	inputTensor  *ort.Tensor[float32]
 	outputTensor *ort.Tensor[float32]
 	isReady      bool
-	initAttempts int
-	initErr      error
 }
 
 func NewBgRemovalService(imageProc *ImageProcessorService, mediaService *MediaService) *BgRemovalService {
@@ -44,22 +42,11 @@ func NewBgRemovalService(imageProc *ImageProcessorService, mediaService *MediaSe
 	}
 }
 
-// ensureInitialized must be called with s.mu held — all callers (Warmup, RemoveBackground) hold the lock.
-// Caps retries at 3 to avoid hammering a corrupt model/DLL; expose last error to UI.
 func (s *BgRemovalService) ensureInitialized() error {
-	if s.isReady {
-		return nil
-	}
-	if s.initErr != nil && s.initAttempts >= 3 {
-		return s.initErr
-	}
-	if err := s.initEngine(); err != nil {
-		s.initAttempts++
-		s.initErr = err
-		return err
-	}
-	s.initErr = nil
-	return nil
+	s.initOnce.Do(func() {
+		s.initErr = s.initEngine()
+	})
+	return s.initErr
 }
 
 func (s *BgRemovalService) initEngine() error {
@@ -76,13 +63,9 @@ func (s *BgRemovalService) initEngine() error {
 	targetDllPath := filepath.Join(binDir, "onnxruntime.dll")
 
 	extractNeeded := true
-	if fi, err := os.Stat(targetDllPath); err == nil && fi.Size() == int64(len(embeddedOnnxRuntimeDLL)) {
-		if existing, err := os.ReadFile(targetDllPath); err == nil {
-			expected := sha256.Sum256(embeddedOnnxRuntimeDLL)
-			actual := sha256.Sum256(existing)
-			if bytes.Equal(expected[:], actual[:]) {
-				extractNeeded = false
-			}
+	if stat, err := os.Stat(targetDllPath); err == nil {
+		if stat.Size() == int64(len(embeddedOnnxRuntimeDLL)) {
+			extractNeeded = false
 		}
 	}
 
@@ -133,8 +116,6 @@ func (s *BgRemovalService) initEngine() error {
 	s.outputTensor = outTensor
 	s.session = session
 	s.isReady = true
-	s.initAttempts = 0
-	s.initErr = nil
 	return nil
 }
 
@@ -227,7 +208,5 @@ func (s *BgRemovalService) Close() error {
 		s.outputTensor = nil
 	}
 	s.isReady = false
-	s.initAttempts = 0
-	s.initErr = nil
 	return nil
 }

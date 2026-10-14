@@ -105,12 +105,9 @@ function getWorker(): Worker {
 }
 
 function terminateWorker() {
+  pendingFrameRequests.clear();
+  busyFrameRequestId = 0;
   if (workerInstance) {
-    try {
-      workerInstance.postMessage({ type: 'dispose' } as unknown as never);
-    } catch {
-      /* ignore */
-    }
     try {
       workerInstance.terminate();
     } catch {
@@ -118,8 +115,6 @@ function terminateWorker() {
     }
     workerInstance = null;
   }
-  pendingFrameRequests.clear();
-  busyFrameRequestId = 0;
 }
 
 // تنظيف الـ Worker عند إغلاق التطبيق لتحرير ذاكرة WebGL فوراً

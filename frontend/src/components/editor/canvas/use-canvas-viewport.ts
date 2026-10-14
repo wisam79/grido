@@ -4,26 +4,6 @@ import { clampZoomRaw } from '@/lib/canvas/zoom';
 import { computeCanvasDisplay } from '@/lib/canvas/fit';
 
 /**
- * تطبيع دلتا العجلة — توثيق Konva الرسمي يفترض deltaY بالبكسل،
- * لكن Firefox وبعض لوحات اللمس ترسل deltaMode خطوط/صفحات.
- */
-function normalizeWheelDelta(e: WheelEvent, viewportW: number, viewportH: number) {
-  let { deltaX, deltaY } = e;
-  const { deltaMode } = e;
-  if (deltaMode === 1) {
-    // خطوط → بكسل (القيمة التقليدية 16px للسطر)
-    deltaX *= 16;
-    deltaY *= 16;
-  } else if (deltaMode === 2) {
-    deltaX *= viewportW;
-    deltaY *= viewportH;
-  }
-  return { deltaX, deltaY };
-}
-
-const WHEEL_ZOOM_SENSITIVITY = 0.003; // مطابق لـ Math.exp(-dy*0.003) السابق — أسّي ناعم
-
-/**
  * عناصر تستهلك مفتاح المسافة نيابة عن المستخدم: حقول الكتابة (تكتب مسافة)
  * والأزرار/الروابط (تُفعَّل بالنقر على المسافة). ابتلاعها بـ preventDefault
  * كان يمنع المسافة داخل نص أو يُلغي تفعيل زر بعد النقر عليه.
@@ -125,7 +105,6 @@ export function useCanvasViewport(
   const [viewportSize, setViewportSize] = useState({ w: 800, h: 600 });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
-  const mode = useEditorStore((s) => s.mode);
 
   const aspect = canvasWidth / (canvasHeight || 1);
 
@@ -173,121 +152,30 @@ export function useCanvasViewport(
     stagePosRef.current = stagePos;
   });
 
-  // تجميد قياس الحاوية أثناء حركة اللوح الجانبي (fluent-panel-motion 100ms)
-  // لمنع تقلب resolveFitMode (height ↔ width) عند العرض الوسيط 472↔1168px
-  const freezeUntilRef = useRef(0);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingSizeRef = useRef<{ w: number; h: number } | null>(null);
-  const isFirstMeasureRef = useRef(true);
-  const didMountRef = useRef(false);
-
-  useEffect(() => {
-    // تخطّي التركيب الأول — التجميد للتبديلات اللاحقة فقط، وإلا يتأخر القياس الأول 220ms ويبقى 800×600
-    if (!didMountRef.current) {
-      didMountRef.current = true;
-      return;
-    }
-    // أي تبديل وضع يعقبه حركة لوح 100ms — جمّد الحساب 220ms
-    freezeUntilRef.current = Date.now() + 220;
-    // إلغاء أي debounce معلق وإعادة جدولته ليطبق المقاس النهائي فقط
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
-    if (pendingSizeRef.current) {
-      const p = pendingSizeRef.current;
-      pendingSizeRef.current = null;
-      const delay = Math.max(0, freezeUntilRef.current - Date.now());
-      debounceTimerRef.current = setTimeout(() => {
-        debounceTimerRef.current = null;
-        setViewportSize((prev) => {
-          if (Math.abs(prev.w - p.w) < 0.5 && Math.abs(prev.h - p.h) < 0.5) return prev;
-          return { w: p.w, h: p.h };
-        });
-      }, delay);
-    }
-    return () => {
-      // تنظيف مشترك عند إلغاء التركيب/التبديل — المالك الوحيد debounceTimerRef أصبح هذا الأثر + الآتي
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-    };
-  }, [mode]);
-
-  // 1. مراقبة أبعاد نافذة العرض الحقيقية عبر ResizeObserver (debounced)
+  // 1. مراقبة أبعاد نافذة العرض الحقيقية عبر ResizeObserver
   useEffect(() => {
     const node = containerRef.current;
     if (!node) return;
 
-    const applySize = (w: number, h: number) => {
-      if (w <= 0 || h <= 0) return;
-      const nw = Math.round(w);
-      const nh = Math.round(h);
-      const now = Date.now();
-      if (now < freezeUntilRef.current) {
-        pendingSizeRef.current = { w: nw, h: nh };
-        return;
-      }
-      setViewportSize((prev) => {
-        if (Math.abs(prev.w - nw) < 0.5 && Math.abs(prev.h - nh) < 0.5) return prev;
-        return { w: nw, h: nh };
-      });
-    };
-
-    // القياس الأول فوري بلا freeze/debounce لتجنب وميض 800×600
-    const applyImmediateIfFirst = (w: number, h: number): boolean => {
-      if (!isFirstMeasureRef.current) return false;
-      isFirstMeasureRef.current = false;
-      const nw = Math.round(w);
-      const nh = Math.round(h);
-      if (nw <= 0 || nh <= 0) return true;
-      setViewportSize((prev) => {
-        if (Math.abs(prev.w - nw) < 0.5 && Math.abs(prev.h - nh) < 0.5) return prev;
-        return { w: nw, h: nh };
-      });
-      return true;
-    };
-
-    const scheduleApply = (w: number, h: number) => {
-      if (applyImmediateIfFirst(w, h)) return;
-      pendingSizeRef.current = { w: Math.round(w), h: Math.round(h) };
-      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-      const delay = Math.max(80, freezeUntilRef.current - Date.now());
-      // خارج فترة التجميد: 80ms كافية لدمج إطارات الحركة 100ms في مقاس واحد
-      // داخل التجميد: الانتظار حتى انتهائه + 80ms
-      debounceTimerRef.current = setTimeout(
-        () => {
-          debounceTimerRef.current = null;
-          const p = pendingSizeRef.current;
-          pendingSizeRef.current = null;
-          if (p) applySize(p.w, p.h);
-        },
-        delay > 80 && delay < 500 ? delay : 80,
-      );
-    };
-
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        scheduleApply(width, height);
+        if (width > 0 && height > 0) {
+          setViewportSize((prev) => {
+            if (Math.abs(prev.w - width) < 0.5 && Math.abs(prev.h - height) < 0.5) return prev;
+            return { w: Math.round(width), h: Math.round(height) };
+          });
+        }
       }
     });
 
     ro.observe(node);
     const rect = node.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
-      // القياس الأول فوري بلا freeze/debounce لتجنب وميض أولي (يتجاوز freezeUntil)
-      applyImmediateIfFirst(rect.width, rect.height);
+      setViewportSize({ w: Math.round(rect.width), h: Math.round(rect.height) });
     }
 
-    return () => {
-      ro.disconnect();
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-    };
+    return () => ro.disconnect();
   }, [containerRef]);
 
   // 2. معالجة أحداث الفأرة (Wheel Zoom & Panning)
@@ -317,8 +205,7 @@ export function useCanvasViewport(
         const paperFracX = (pointerX - currentStagePos.x) / currentDisplayW;
         const paperFracY = (pointerY - currentStagePos.y) / currentDisplayH;
 
-        const { deltaY: normDeltaY } = normalizeWheelDelta(e, vW, vH);
-        const factor = Math.exp(-normDeltaY * WHEEL_ZOOM_SENSITIVITY);
+        const factor = Math.exp(-e.deltaY * 0.003);
         const state = useEditorStore.getState();
         const currentZ = state.canvasZoom;
         const nextZ = clampZoomRaw(currentZ * factor);
@@ -354,14 +241,13 @@ export function useCanvasViewport(
         });
         setCanvasZoom(nextZ);
       } else {
-        // تمرير عادي بعجلة الفأرة أو لوحة اللمس (Document Scroll with bounds) — مع تطبيع deltaMode
+        // تمرير عادي بعجلة الفأرة أو لوحة اللمس (Document Scroll with bounds)
         const currentStagePos = stagePosRef.current;
         const curW = displayWRef.current;
         const curH = displayHRef.current;
-        const { deltaX, deltaY } = normalizeWheelDelta(e, vW, vH);
 
-        const targetX = currentStagePos.x - deltaX;
-        const targetY = currentStagePos.y - deltaY;
+        const targetX = currentStagePos.x - e.deltaX;
+        const targetY = currentStagePos.y - e.deltaY;
 
         const clamped = clampStagePos({ x: targetX, y: targetY }, curW, curH, vW, vH, 'wheel');
 

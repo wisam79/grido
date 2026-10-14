@@ -87,7 +87,9 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
   }, []);
 
   const isRunningRef = useRef(false);
-  isRunningRef.current = Boolean(bridgeInfo?.isRunning);
+  useEffect(() => {
+    isRunningRef.current = Boolean(bridgeInfo?.isRunning);
+  }, [bridgeInfo?.isRunning]);
 
   useEffect(() => {
     if (open) {

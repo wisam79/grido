@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
-import { LayersPanel } from '../src/components/editor/panels/layers-panel';
+import { LayersList } from '../src/components/editor/properties/layers-list';
 import { useEditorStore } from '../src/lib/editor-store';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 
-describe('LayersPanel Component Tests', () => {
+describe('LayersList Component Tests', () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
   });
@@ -16,7 +16,7 @@ describe('LayersPanel Component Tests', () => {
 
   it('renders empty state when canvas has no elements', () => {
     useEditorStore.setState({ elements: [] });
-    renderWithProviders(<LayersPanel />);
+    renderWithProviders(<LayersList />);
 
     expect(screen.getByText('لا توجد عناصر')).toBeInTheDocument();
     expect(screen.getByText('أضف عناصر من شريط الأدوات')).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('LayersPanel Component Tests', () => {
       ],
     });
 
-    renderWithProviders(<LayersPanel />);
+    renderWithProviders(<LayersList />);
 
     expect(screen.getByText('عنوان التصميم')).toBeInTheDocument();
     expect(screen.getByText('مستطيل 03')).toBeInTheDocument();
@@ -99,7 +99,7 @@ describe('LayersPanel Component Tests', () => {
       selectedId: null,
     });
 
-    renderWithProviders(<LayersPanel />);
+    renderWithProviders(<LayersList />);
 
     const item = screen.getByText('صورة 01');
     fireEvent.click(item);
@@ -127,8 +127,8 @@ describe('LayersPanel Component Tests', () => {
       ],
     });
 
-    renderWithProviders(<LayersPanel />);
-    fireEvent.click(screen.getByRole('button', { name: 'إخفاء' }));
+    renderWithProviders(<LayersList />);
+    fireEvent.click(screen.getByRole('button', { name: 'إخفاء الطبقة' }));
     expect(useEditorStore.getState().elements[0].visible).toBe(false);
   });
 
@@ -152,8 +152,8 @@ describe('LayersPanel Component Tests', () => {
       ],
     });
 
-    renderWithProviders(<LayersPanel />);
-    fireEvent.click(screen.getByRole('button', { name: 'قفل' }));
+    renderWithProviders(<LayersList />);
+    fireEvent.click(screen.getByRole('button', { name: 'قفل الطبقة' }));
     expect(useEditorStore.getState().elements[0].locked).toBe(true);
   });
 
@@ -177,8 +177,8 @@ describe('LayersPanel Component Tests', () => {
       ],
     });
 
-    renderWithProviders(<LayersPanel />);
-    fireEvent.click(screen.getByRole('button', { name: 'نسخ' }));
+    renderWithProviders(<LayersList />);
+    fireEvent.click(screen.getByRole('button', { name: 'تكرار الطبقة' }));
     expect(useEditorStore.getState().elements.length).toBe(2);
   });
 
@@ -202,8 +202,8 @@ describe('LayersPanel Component Tests', () => {
       ],
     });
 
-    renderWithProviders(<LayersPanel />);
-    fireEvent.click(screen.getByRole('button', { name: 'حذف' }));
+    renderWithProviders(<LayersList />);
+    fireEvent.click(screen.getByRole('button', { name: 'حذف الطبقة' }));
     expect(useEditorStore.getState().elements.length).toBe(0);
   });
 });

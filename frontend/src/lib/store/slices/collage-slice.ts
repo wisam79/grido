@@ -246,49 +246,35 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         new Set(filledSlots.map((s) => s.imageSrc)).size === 1;
       const singleImgSlot = isSingleImageAllFilled ? filledSlots[0] : null;
 
-      // هويات مستقرة: لا uid() لكل خانة — remap بالأقرب مركزاً يحافظ على
-      // id/imageSrc/zoom/drag/flip، ويُحدَّث label/presetType/rotation من القالب الجديد
-      const thinCells = cells.map((c) => ({ x: c.x, y: c.y, w: c.w, h: c.h }));
-      const remapped = remapSlotsToCells(
-        existingSlots.length > 0 ? existingSlots : singleImgSlot ? [singleImgSlot] : [],
-        thinCells,
-      );
-      const slots: CanvasSlot[] = remapped.map((sl, i) => {
-        const c = cells[i] as unknown as { presetType?: string; label?: string; rotation?: number };
-        const src = (sl as unknown as { imageSrc?: string }).imageSrc;
-        // single-image allFilled المنطق القديم كان يملأ كل الخلايا بنفس الصورة
-        // عند توليد الخانات لأول مرة — يحفظه remap via المجموعة الواحدة أعلاه،
-        // وعند خليط صور نُبقي ما جلبه remap بدون تعبئة وهمية.
-        const fromTemplate = sl as unknown as Record<string, unknown>;
+      const slots: CanvasSlot[] = cells.map((c, i) => {
+        const existingSlot = existingSlots[i] || singleImgSlot;
         return {
-          ...sl,
-          presetType: c.presetType ?? (fromTemplate.presetType as string | undefined),
-          label: c.label ?? (fromTemplate.label as string | undefined),
-          rotation: c.rotation ?? (fromTemplate.rotation as number | undefined) ?? 0,
-          imageSrc: src || undefined,
-        } as CanvasSlot;
+          id: uid(),
+          cellIndex: i,
+          x: c.x,
+          y: c.y,
+          w: c.w,
+          h: c.h,
+          // الحفاظ على بيانات الخلية من القالب الحر (مقاس/تسمية/تدوير الصورة)
+          presetType: c.presetType ?? existingSlot?.presetType,
+          label: c.label ?? existingSlot?.label,
+          rotation: c.rotation ?? existingSlot?.rotation ?? 0,
+          imageSrc: existingSlot?.imageSrc || undefined,
+          // 🔁 كانت هذه الحقول الأربعة تُسقط عند تبديل القالب: يضيع لون الخلية
+          // والقلب الأفقي/الرأسي ومصدر الصورة الأصلي («استعادة الأصل» يتعطل)
+          originalImageSrc: existingSlot?.originalImageSrc,
+          bgColor: existingSlot?.bgColor,
+          flipX: existingSlot?.flipX,
+          flipY: existingSlot?.flipY,
+          filter: existingSlot?.filter || 'none',
+          brightness: existingSlot?.brightness || 100,
+          contrast: existingSlot?.contrast || 100,
+          saturation: existingSlot?.saturation || 100,
+          zoom: existingSlot?.zoom || 1,
+          dragX: existingSlot?.dragX || 0,
+          dragY: existingSlot?.dragY || 0,
+        };
       });
-      // حالة singleImageAllFilled: ملء كل الفراغات بنفس الصورة + نفس التحويلات
-      // (zoom/drag/flip/rotation/filter...) — السلوك السابق كان ينسخ الكائن كاملاً
-      if (isSingleImageAllFilled && singleImgSlot?.imageSrc) {
-        for (const sl of slots) {
-          if (!sl.imageSrc) {
-            sl.imageSrc = singleImgSlot.imageSrc;
-            sl.filter = singleImgSlot.filter ?? sl.filter;
-            sl.brightness = singleImgSlot.brightness ?? sl.brightness;
-            sl.contrast = singleImgSlot.contrast ?? sl.contrast;
-            sl.saturation = singleImgSlot.saturation ?? sl.saturation;
-            sl.zoom = singleImgSlot.zoom ?? sl.zoom;
-            sl.dragX = singleImgSlot.dragX ?? sl.dragX;
-            sl.dragY = singleImgSlot.dragY ?? sl.dragY;
-            sl.flipX = singleImgSlot.flipX ?? sl.flipX;
-            sl.flipY = singleImgSlot.flipY ?? sl.flipY;
-            sl.rotation = singleImgSlot.rotation ?? sl.rotation;
-            sl.bgColor = singleImgSlot.bgColor ?? sl.bgColor;
-            sl.originalImageSrc = singleImgSlot.originalImageSrc ?? sl.originalImageSrc;
-          }
-        }
-      }
       set({
         collageTemplate: template,
         mode: 'collage',

@@ -1,39 +1,18 @@
 # download-models.ps1
 # تنزيل نماذج جوجل MediaPipe وملفات WASM لتشغيل ميزات عزل الخلفية وتأطير الوجه محلياً 100% بدون إنترنت
 
+# تحديد المسار بالنسبة لمكان تشغيل السكريبت
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $PublicDir = Join-Path $ScriptDir "..\public"
 $ModelsDir = Join-Path $PublicDir "models"
 $WasmDir = Join-Path $PublicDir "wasm"
 
+# إنشاء المجلدات إذا لم تكن موجودة
 if (!(Test-Path $ModelsDir)) {
-    New-Item -ItemType Directory -Force -Path $ModelsDir | Out-Null
+    New-Item -ItemType Directory -Force -Path $ModelsDir
 }
 if (!(Test-Path $WasmDir)) {
-    New-Item -ItemType Directory -Force -Path $WasmDir | Out-Null
-}
-
-function Invoke-DownloadWithRetry {
-    param(
-        [string]$Uri,
-        [string]$OutFile,
-        [int]$MaxRetries = 3
-    )
-    for ($attempt = 1; $attempt -le $MaxRetries; $attempt++) {
-        try {
-            Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UserAgent "Mozilla/5.0" -UseBasicParsing
-            # تحقق أساسي: الملف موجود وحجمه > 0
-            $size = (Get-Item $OutFile).Length
-            if ($size -eq 0) { throw "Downloaded file is empty (0 bytes)" }
-            return $true
-        } catch {
-            Write-Warning "Attempt $attempt/$MaxRetries failed for $Uri : $_"
-            if (Test-Path $OutFile) { Remove-Item $OutFile -Force -ErrorAction SilentlyContinue }
-            if ($attempt -eq $MaxRetries) { throw "Failed to download $Uri after $MaxRetries attempts: $_" }
-            Start-Sleep -Seconds (2 * $attempt)
-        }
-    }
-    return $false
+    New-Item -ItemType Directory -Force -Path $WasmDir
 }
 
 # 1. تنزيل نموذج selfie_multiclass.tflite (عزل الخلفية - حوالي 16 ميغابايت)
@@ -42,7 +21,7 @@ $SelfiePath = "$ModelsDir\selfie_multiclass.tflite"
 
 if (!(Test-Path $SelfiePath)) {
     Write-Host "Downloading Google Selfie Multiclass Model (16MB)..."
-    Invoke-DownloadWithRetry -Uri $SelfieUrl -OutFile $SelfiePath
+    Invoke-WebRequest -Uri $SelfieUrl -OutFile $SelfiePath -UserAgent "Mozilla/5.0"
 } else {
     Write-Host "Google Selfie Multiclass Model already exists."
 }
@@ -53,7 +32,7 @@ $FacePath = "$ModelsDir\face_landmarker.task"
 
 if (!(Test-Path $FacePath)) {
     Write-Host "Downloading Google Face Landmarker Model (3.7MB)..."
-    Invoke-DownloadWithRetry -Uri $FaceUrl -OutFile $FacePath
+    Invoke-WebRequest -Uri $FaceUrl -OutFile $FacePath -UserAgent "Mozilla/5.0"
 } else {
     Write-Host "Google Face Landmarker Model already exists."
 }
@@ -70,7 +49,7 @@ foreach ($file in $WasmFiles) {
     if (!(Test-Path $filePath)) {
         $fileUrl = "$WasmBaseUrl/$file"
         Write-Host "Downloading $file..."
-        Invoke-DownloadWithRetry -Uri $fileUrl -OutFile $filePath
+        Invoke-WebRequest -Uri $fileUrl -OutFile $filePath -UserAgent "Mozilla/5.0"
     } else {
         Write-Host "$file already exists."
     }
