@@ -1610,3 +1610,26 @@
 - **تحصين اختبارات واجهة المستخدم ومعالجة الصور ضد المهلات وفحوص الـ Worker المنهى:**
   1. تحديث اختبار `frontend/test/bg-worker.test.tsx` للاحتفاظ بمرجع المثيل `MockBgWorker.lastInstance` للتحقق من استدعاء `postMessage` بعد أن يقوم الهوك بإنهاء العامل فوراً عند تسوية المهمة (`settle()`).
   2. تمديد مهلة اختبار فحص المشاهد الكبيرة `detects a document on a large 1280x960 scene without hanging` إلى 20 ثانية في `scanner-hardening.test.ts` لمنع فشل الـ CI العرضي تحت ضغط معالجات السحابة.
+
+
+## [v1.14.7] - 2026-10-12
+
+### Performance & Architectural Hardening
+- **تحسين زمن استجابة الذكاء الاصطناعي وتوحيد كاش Supabase (Unified AI User & Plan Caching):**
+  1. دمج جلب `userID` وخطة الحساب والحد اليومي في كاش ذاكري موحد `userPlanCacheEntry` في `internal/service/ai_service.go` بمهلة 5 دقائق.
+  2. القضاء التام على استدعاء الشبكة المزدوج لـ `fetchSupabaseUserInfo` عند كل عملية تحسين، مما يخفض زمن استجابة طلبات الذكاء الاصطناعي للنصف، ويلغي أي استدعاء خارجي عند توفر الكاش.
+  3. تنظيف الدوال غير المستخدمة واستيفاء فحص `staticcheck` الصارم للباك إند.
+- **تحديث استيرادات الواجهة وعقود IPC (Wails v3 Bindings Modernization & Strict Types):**
+  1. تحديث `editor-canvas.tsx` و `freeform-collage-modal.tsx` للاستيراد المباشر من `@bindings/grido/app` لـ `OpenFile`, `SaveImageFromBase64`, و `SaveCustomTemplate` واستئصال الاستيرادات الموروثة القديمة من مسارات Wails v2.
+  2. تصنيف مخرجات دوال تنظيف وسائط التخزين في Go (`CleanUnusedMediaNow` و `EmptyMediaTrash`) بهياكل صريحة `MediaCleanupResult` و `MediaTrashResult` في `internal/service/media_service.go` و `app.go` بدلاً من الخرائط المبهمة `map[string]interface{}` لضمان دقة النوع عبر IPC.
+- **تطهير جذر المستودع وعزل حزمة سطح المكتب (Clean Root Architecture & Desktop Package Isolation):**
+  1. استخراج وتجميع كود إدارة النوافذ ومراقبة الشاشات المتعددة واستعادة الأحجام (`window_sizing.go`, `window_state.go`, `window_monitor_*.go`) من جذر المستودع إلى حزمة داخلية نظيفة ومستقلة `internal/desktop/`.
+  2. تنظيف المخلفات المؤقتة والملفات التنفيذية المحلية من الجذر (`grido.exe` بحجم 95MB وسجلات vite-dev) وتحديث استيرادات `main.go` وتأكيدات بوابات التوثيق آلياً.
+- **تفكيك معالج الأصول المحلي وخادم الوسائط (Modular Local Asset Server Extraction):**
+  1. استخراج ما يزيد عن 320 سطراً من معالجات HTTP لمسارات `/api/*` والوسائط المحلية من `main.go` إلى خادم مستقل ونظيف في `internal/server/asset_server.go` مع حقن تبعيات `AssetServerDeps`، مما خفض حجم `main.go` من 783 سطراً إلى 470 سطراً وعزل مسارات الذاكرة ورفع الصور وحفظ الملفات.
+- **فصل منطق تنظيف وسلة الوسائط عن قاعدة البيانات (Media Cleanup & Quarantine Separation):**
+  1. استخراج كافة دوال فحص الصور غير المرجعية والحجر الصحي وتنظيف السلة الدورية (`CleanupUnusedMedia`, `runCleanupMedia`, `CleanUnusedMediaNow`, `EmptyMediaTrash`) من `internal/repository/db.go` إلى `internal/repository/media_cleanup.go`.
+  2. تخفيض حجم `db.go` من 645 سطراً إلى 282 سطراً مكرساً حصراً لعمليات SQLite والترحيلات والـ ORM النقي، مع الحفاظ الكامل على توافق الحزمة ونجاح حزمة الاختبارات 100%.
+- **توحيد تسميات الواجهة لمعيار `kebab-case` القياسي (Frontend Feature Naming Normalization):**
+  1. ترقية وتوحيد 13 مكوّناً في `frontend/src/features/` من PascalCase إلى `kebab-case` قياسي (مثل `freeform-collage-modal.tsx`, `freeform-canvas-editor.tsx`, `sticker-studio-dialog.tsx`, `sticker-catalog.tsx`, `vdp-import-dialog.tsx`).
+  2. تحديث براميل التصدير (`index.ts`) واختبارات المكوّنات وتكوين `eslint.config.js` مع نجاح الفحص النوعي بـ TypeScript وخلوه التام من أي تحذيرات.

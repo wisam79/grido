@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.15.3] - 2026-10-14
+
+### Fixed
+- تضمين خط «ريدكس برو» (Readex Pro) محلياً داخل سكربت تنزيل الخطوط وحزمة offline-fonts.css، وإزالة خط المراعي نهائياً من سلاسل الخطوط في index.css، مع تسريع خط سير بناء وإصدار مثبت الويندوز من 20 دقيقة إلى 5 دقائق عبر تحسين الكاش وتفادي تكرار الاختبارات.
 ## [v1.15.2] - 2026-10-14
 
 ### Reverted
@@ -133,25 +137,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   1. إضافة إذن `pull-requests: read` في سير العمل `ci.yml` ووظيفة `changes` (`Detect Changed Areas`): كان حصر الصلاحيات على `contents: read` يمنع `dorny/paths-filter@v3` من استدعاء GitHub REST API (`listFiles`) عند أحداث `pull_request`، مما أسفر عن خطأ `Resource not accessible by integration` وفشل كل طلبات السحب (بما فيها تحديثات Dependabot).
   2. توسيع مرشحات المسارات لتشمل `build/**` و `Taskfile.yml` ضمن مسارات الباك إند، و `scripts/**` ضمن مسارات سير العمل لضمان إعادة التحقق عند تعديل سكربتات البناء أو الإطلاق.
   3. فصل تثبيت اعتماديات النظام لـ Playwright (`npx playwright install-deps webkit/chromium`) عن تثبيت الثنائيات، مما يضمن وجود حزم النظام (مثل `libwoff2dec1.0.2`) على بيئة التشغيل حتى عند استعادة ثنائيات المتصفح من الكاش.
-
-## [v1.14.7] - 2026-10-12
-
-### Performance & Architectural Hardening
-- **تحسين زمن استجابة الذكاء الاصطناعي وتوحيد كاش Supabase (Unified AI User & Plan Caching):**
-  1. دمج جلب `userID` وخطة الحساب والحد اليومي في كاش ذاكري موحد `userPlanCacheEntry` في `internal/service/ai_service.go` بمهلة 5 دقائق.
-  2. القضاء التام على استدعاء الشبكة المزدوج لـ `fetchSupabaseUserInfo` عند كل عملية تحسين، مما يخفض زمن استجابة طلبات الذكاء الاصطناعي للنصف، ويلغي أي استدعاء خارجي عند توفر الكاش.
-  3. تنظيف الدوال غير المستخدمة واستيفاء فحص `staticcheck` الصارم للباك إند.
-- **تحديث استيرادات الواجهة وعقود IPC (Wails v3 Bindings Modernization & Strict Types):**
-  1. تحديث `editor-canvas.tsx` و `freeform-collage-modal.tsx` للاستيراد المباشر من `@bindings/grido/app` لـ `OpenFile`, `SaveImageFromBase64`, و `SaveCustomTemplate` واستئصال الاستيرادات الموروثة القديمة من مسارات Wails v2.
-  2. تصنيف مخرجات دوال تنظيف وسائط التخزين في Go (`CleanUnusedMediaNow` و `EmptyMediaTrash`) بهياكل صريحة `MediaCleanupResult` و `MediaTrashResult` في `internal/service/media_service.go` و `app.go` بدلاً من الخرائط المبهمة `map[string]interface{}` لضمان دقة النوع عبر IPC.
-- **تطهير جذر المستودع وعزل حزمة سطح المكتب (Clean Root Architecture & Desktop Package Isolation):**
-  1. استخراج وتجميع كود إدارة النوافذ ومراقبة الشاشات المتعددة واستعادة الأحجام (`window_sizing.go`, `window_state.go`, `window_monitor_*.go`) من جذر المستودع إلى حزمة داخلية نظيفة ومستقلة `internal/desktop/`.
-  2. تنظيف المخلفات المؤقتة والملفات التنفيذية المحلية من الجذر (`grido.exe` بحجم 95MB وسجلات vite-dev) وتحديث استيرادات `main.go` وتأكيدات بوابات التوثيق آلياً.
-- **تفكيك معالج الأصول المحلي وخادم الوسائط (Modular Local Asset Server Extraction):**
-  1. استخراج ما يزيد عن 320 سطراً من معالجات HTTP لمسارات `/api/*` والوسائط المحلية من `main.go` إلى خادم مستقل ونظيف في `internal/server/asset_server.go` مع حقن تبعيات `AssetServerDeps`، مما خفض حجم `main.go` من 783 سطراً إلى 470 سطراً وعزل مسارات الذاكرة ورفع الصور وحفظ الملفات.
-- **فصل منطق تنظيف وسلة الوسائط عن قاعدة البيانات (Media Cleanup & Quarantine Separation):**
-  1. استخراج كافة دوال فحص الصور غير المرجعية والحجر الصحي وتنظيف السلة الدورية (`CleanupUnusedMedia`, `runCleanupMedia`, `CleanUnusedMediaNow`, `EmptyMediaTrash`) من `internal/repository/db.go` إلى `internal/repository/media_cleanup.go`.
-  2. تخفيض حجم `db.go` من 645 سطراً إلى 282 سطراً مكرساً حصراً لعمليات SQLite والترحيلات والـ ORM النقي، مع الحفاظ الكامل على توافق الحزمة ونجاح حزمة الاختبارات 100%.
-- **توحيد تسميات الواجهة لمعيار `kebab-case` القياسي (Frontend Feature Naming Normalization):**
-  1. ترقية وتوحيد 13 مكوّناً في `frontend/src/features/` من PascalCase إلى `kebab-case` قياسي (مثل `freeform-collage-modal.tsx`, `freeform-canvas-editor.tsx`, `sticker-studio-dialog.tsx`, `sticker-catalog.tsx`, `vdp-import-dialog.tsx`).
-  2. تحديث براميل التصدير (`index.ts`) واختبارات المكوّنات وتكوين `eslint.config.js` مع نجاح الفحص النوعي بـ TypeScript وخلوه التام من أي تحذيرات.
