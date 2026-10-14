@@ -412,7 +412,7 @@ export function CollageArrangeTab() {
                 title={action.hint}
                 onClick={action.onClick}
                 className={cn(
-                  'h-8 px-2.5 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-2 cursor-pointer shadow-2xs transition-all active:scale-[0.98]',
+                  'h-8 px-2 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-[0.98]',
                   action.fullWidth ? 'col-span-2 justify-center' : 'justify-start text-start',
                 )}
               >
@@ -440,7 +440,7 @@ export function CollageArrangeTab() {
                 title={action.hint}
                 onClick={action.onClick}
                 className={cn(
-                  'h-8 px-2.5 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-2 cursor-pointer shadow-2xs transition-all active:scale-[0.98]',
+                  'h-8 px-2 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-[0.98]',
                   action.fullWidth
                     ? 'col-span-2 justify-center text-muted-foreground hover:text-foreground'
                     : 'justify-start text-start',

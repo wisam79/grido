@@ -1,19 +1,19 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont } from "../src/lib/io/fonts";
+import { describe, it, expect, beforeEach } from 'vitest';
+import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont } from '../src/lib/io/fonts';
 
-describe("Font Engine Tests", () => {
+describe('Font Engine Tests', () => {
   beforeEach(() => {
-    document.head.innerHTML = "";
+    document.head.innerHTML = '';
   });
 
-  it("contains comprehensive curated fonts categorized properly", () => {
+  it('contains comprehensive curated fonts categorized properly', () => {
     expect(ARABIC_FONTS.length).toBeGreaterThanOrEqual(20);
     expect(FONT_CATEGORIES.length).toBeGreaterThanOrEqual(6);
 
-    const kufiFonts = ARABIC_FONTS.filter((f) => f.category === "kufi");
-    const naskhFonts = ARABIC_FONTS.filter((f) => f.category === "naskh");
-    const calligraphyFonts = ARABIC_FONTS.filter((f) => f.category === "calligraphy");
-    const modernFonts = ARABIC_FONTS.filter((f) => f.category === "modern");
+    const kufiFonts = ARABIC_FONTS.filter((f) => f.category === 'kufi');
+    const naskhFonts = ARABIC_FONTS.filter((f) => f.category === 'naskh');
+    const calligraphyFonts = ARABIC_FONTS.filter((f) => f.category === 'calligraphy');
+    const modernFonts = ARABIC_FONTS.filter((f) => f.category === 'modern');
 
     expect(kufiFonts.length).toBeGreaterThan(0);
     expect(naskhFonts.length).toBeGreaterThan(0);
@@ -21,17 +21,17 @@ describe("Font Engine Tests", () => {
     expect(modernFonts.length).toBeGreaterThan(0);
   });
 
-  it("dynamically loads Google Fonts for non-offline fonts", () => {
-    loadGoogleFont("Readex Pro, sans-serif");
+  it('dynamically loads Google Fonts for non-offline fonts', () => {
+    loadGoogleFont('"Scheherazade New", serif');
 
     const link = document.querySelector("link[id^='google-font-']");
     expect(link).not.toBeNull();
-    expect(link?.getAttribute("href")).toContain("Readex+Pro");
+    expect(link?.getAttribute('href')).toContain('Scheherazade+New');
   });
 
-  it("skips loading for preloaded offline fonts", () => {
-    loadGoogleFont("Cairo, sans-serif");
-    const link = document.querySelector("link[id^='google-font-cairo']");
+  it('skips loading for preloaded offline fonts', () => {
+    loadGoogleFont('Readex Pro, sans-serif');
+    const link = document.querySelector("link[id^='google-font-readex-pro']");
     expect(link).toBeNull();
   });
 });
