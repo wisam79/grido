@@ -194,6 +194,18 @@ const SOURCE_PATTERNS = [
 
 const DOC_PATTERNS = ['CHANGELOG.md', 'CHANGELOG_ARCHIVE.md', 'changelog/', 'README.md', 'docs/', '.agents/', 'SECURITY_NOTICE.md', 'BUGS_REPORT.md'];
 
+const RELEASE_ONLY_FILES = new Set([
+  'build/config.yml',
+  'build/windows/info.json',
+  'build/windows/installer/project.nsi',
+  'build/windows/Taskfile.yml',
+  'build.ps1',
+  'frontend/package.json',
+  'frontend/package-lock.json',
+  'CHANGELOG.md',
+  'CHANGELOG_ARCHIVE.md',
+]);
+
 function checkDocumentedCommit() {
   const files = changedFiles();
   if (!files.length) {
@@ -202,6 +214,17 @@ function checkDocumentedCommit() {
         ? 'لا كومتات غير مدفوعة تحتاج فحصاً — اقتُصر الفحص على الأرقام والجرد.'
         : 'لا ملفات مُجهَّزة للكومت — اقتُصر الفحص على الأرقام والجرد.',
     );
+    return;
+  }
+
+  // كومت ترفيع الإصدار عبر release.mjs: يمسّ ملفات الإصدار وCHANGELOG ويحذف الشظايا.
+  const isReleaseOnly =
+    files.length > 0 &&
+    files.every((f) => RELEASE_ONLY_FILES.has(f) || f.startsWith('changelog/fragments/')) &&
+    files.some((f) => f === 'CHANGELOG.md' || f === 'build/config.yml');
+
+  if (isReleaseOnly) {
+    notes.push('كومت ترفيع إصدار (Release commit) — جُمعت الشظايا وحُدثت ملفات الإصدار.');
     return;
   }
   const sourceTouched = files.filter((file) => SOURCE_PATTERNS.some((p) => file === p || file.startsWith(p)));

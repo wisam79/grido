@@ -281,7 +281,11 @@ function pruneChangelog(changelogText) {
 }
 
 function git(...cmd) {
-  return execFileSync('git', cmd, { cwd: ROOT, stdio: 'inherit' });
+  return execFileSync('git', cmd, {
+    cwd: ROOT,
+    stdio: 'inherit',
+    env: { ...process.env, GRIDO_DOCS_GATE: 'off' },
+  });
 }
 
 function main() {
