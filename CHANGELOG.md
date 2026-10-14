@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.15.2] - 2026-10-14
+
 ### Reverted
 - **تراجع نظيف عن تجربة نظام الطبقات V2 ولوحة الطبقات المكررة (Clean Rollback to v1.15.1):**
   1. إلغاء التغييرات غير المستقرة في محرك الكانفاس (`layer-system.ts` و `viewport-culling.ts`) وإلغاء فرض تركيب جميع الطبقات في وقت واحد، وإعادة التركيب الشرطي النظيف حسب الوضع في `konva-canvas.tsx`.
@@ -29,7 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **إصلاح خطأ دورة حياة React Ref في جسر كاميرا الهاتف (Phone Bridge Dialog):**
   1. تحديث `isRunningRef` داخل `useEffect` بدلاً من تعديله أثناء دورة الرسم (Render phase) للامتثال الصارم لقاعدة `react-hooks/refs` في ESLint وضمان نجاح فحص الـ CI السحابي 100%.
+### Added
+- اعتماد خط «المراعي» (Almarai) كخط أساسي لواجهة Grido Studio لإضفاء طابع عصري وناعم ومريح للعين ينسجم مع فلسفة Microsoft Fluent 2 مع إبقاء IBM Plex Sans Arabic كخط بديل احتياطي.
 
+### Fixed
+- معالجة استثناء كومتات ترفيع الإصدار في بوابة التوثيق (docs-gate) وتمرير GRIDO_DOCS_GATE في release.mjs لضمان سلامة جمع الشظايا والوسم محلياً وفي CI.
+- إصلاح مشاكل تبويب الطبقات: إزالة DragOverlay المسبب لانزياح الطبقة خارج موضع المؤشر في RTL، وقفل سحب الطبقات حصرياً على المحور الرأسي Y، وإدماج أدوات التحكم داخل بطاقة السطر دون إطار عائم، وإبقاء أزرار الإظهار والقفل ظاهرة دائماً، وحل مشكلة بتر أسماء الطبقات وتحديث نمط سلة المهملات وفق معايير Fluent 2.
+- تحديث اختبار محرك الخطوط ليتوافق مع شحن خط ريدكس برو محلياً مع التطبيق كخط الواجهة المعتمد، وتعديل حشو أزرار لوحة ترتيب الكولاج لتفادي أي اقتطاع نصي لحروفه العريضة.
+
+### Refactored
+- تحويل سجل التغييرات إلى معمارية Fragments — تقسيم CHANGELOG إلى نشط (آخر 5 إصدارات) + أرشيف، وإنشاء changelog/fragments/ بسكيما صارمة (type/scope/related_files)، وتحويل release.mjs ليجمع الـ fragments تلقائياً عند الترفيع مع تقليم الأقدم إلى الأرشيف.
 ## [v1.15.1] - 2026-10-13
 
 ### Added
@@ -144,16 +155,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **توحيد تسميات الواجهة لمعيار `kebab-case` القياسي (Frontend Feature Naming Normalization):**
   1. ترقية وتوحيد 13 مكوّناً في `frontend/src/features/` من PascalCase إلى `kebab-case` قياسي (مثل `freeform-collage-modal.tsx`, `freeform-canvas-editor.tsx`, `sticker-studio-dialog.tsx`, `sticker-catalog.tsx`, `vdp-import-dialog.tsx`).
   2. تحديث براميل التصدير (`index.ts`) واختبارات المكوّنات وتكوين `eslint.config.js` مع نجاح الفحص النوعي بـ TypeScript وخلوه التام من أي تحذيرات.
-
-
-## [v1.14.6] - 2026-10-11
-
-- **معمارية إدارة الذاكرة وتخفيض استهلاك الرام بمحرك Wails وWebView2 (Native Memory Management & Working Set Compaction):**
-  1. **إلغاء وسائط Chromium المسببة لتضخم ذاكرة الرسوميات:** حذف وسائط `--enable-gpu-rasterization` و`--enable-zero-copy` و`--ignore-gpu-blocklist` من `main.go` التي كانت تجبر عملية `gpu-process` وعملية الـ renderer على حجز مئات الميجابايتات (أكثر من 600MB) من أسطح Direct3D وذاكرة البلاطات المشتركة دون داعٍ.
-  2. **حظر التحميل المسبق لـ OpenCV WASM عند الإقلاع (Zero Early Allocation):** إزالة `warmupOpenCV()` من `use-app-bootstrap.ts` وتحويلها لدالة خاملة في `opencv-loader.ts` لمنع حجز 15MB من بايتات WebAssembly والذاكرة الخطية (Linear Heap) في عملية الـ renderer عند الإقلاع، وحصر تحميلها بالطلب عند فتح نافذة الماسح الضوئي فقط.
-  3. **خدمة إدارة الذاكرة الأصلية في Go (`MemoryService`):** استحداث `internal/service/memory_service.go` مع التنفيذ المخصص لويندوز `memory_service_windows.go` الذي يستدعي `EmptyWorkingSet` و`SetProcessWorkingSetSizeEx` عبر شجرة العمليات التابعة لـ `os.Getpid()` (العملية الرئيسية، وعمليات WebView2: المتصفح، المعالج الرسومي، والرندر، والشبكة) دورياً كل 30 ثانية وعند تصغير النافذة أو فقدان التركيز.
-  4. **ربط تفريغ الذاكرة بأحداث الواجهة (`triggerMemoryTrim`):** إضافة مسار آمن `/api/trim-memory` يُستدعى تلقائياً فور انتهاء عمليات الذكاء الاصطناعي (عزل الخلفية، ضبط الوجه)، وإغلاق نوافذ الحوار الثقيلة (الماسح الضوئي، إعدادات الطباعة، والتصدير).
-  5. **النتيجة الحية المقاسة:** انخفاض استهلاك مساحة العمل الفعلية للرام (Working Set) من أكثر من 1.3GB إلى قرابة 14.4MB عبر كافة العمليات، وانخفاض الذاكرة المحجوزة للرندر من 630MB إلى أقل من 80MB.
-- **تحصين اختبارات واجهة المستخدم ومعالجة الصور ضد المهلات وفحوص الـ Worker المنهى:**
-  1. تحديث اختبار `frontend/test/bg-worker.test.tsx` للاحتفاظ بمرجع المثيل `MockBgWorker.lastInstance` للتحقق من استدعاء `postMessage` بعد أن يقوم الهوك بإنهاء العامل فوراً عند تسوية المهمة (`settle()`).
-  2. تمديد مهلة اختبار فحص المشاهد الكبيرة `detects a document on a large 1280x960 scene without hanging` إلى 20 ثانية في `scanner-hardening.test.ts` لمنع فشل الـ CI العرضي تحت ضغط معالجات السحابة.

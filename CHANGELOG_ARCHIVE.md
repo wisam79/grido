@@ -1597,3 +1597,16 @@
 - Custom collage templates
 - Undo/redo history (capped at 30 entries)
 - Autosave with `requestIdleCallback`
+
+
+## [v1.14.6] - 2026-10-11
+
+- **معمارية إدارة الذاكرة وتخفيض استهلاك الرام بمحرك Wails وWebView2 (Native Memory Management & Working Set Compaction):**
+  1. **إلغاء وسائط Chromium المسببة لتضخم ذاكرة الرسوميات:** حذف وسائط `--enable-gpu-rasterization` و`--enable-zero-copy` و`--ignore-gpu-blocklist` من `main.go` التي كانت تجبر عملية `gpu-process` وعملية الـ renderer على حجز مئات الميجابايتات (أكثر من 600MB) من أسطح Direct3D وذاكرة البلاطات المشتركة دون داعٍ.
+  2. **حظر التحميل المسبق لـ OpenCV WASM عند الإقلاع (Zero Early Allocation):** إزالة `warmupOpenCV()` من `use-app-bootstrap.ts` وتحويلها لدالة خاملة في `opencv-loader.ts` لمنع حجز 15MB من بايتات WebAssembly والذاكرة الخطية (Linear Heap) في عملية الـ renderer عند الإقلاع، وحصر تحميلها بالطلب عند فتح نافذة الماسح الضوئي فقط.
+  3. **خدمة إدارة الذاكرة الأصلية في Go (`MemoryService`):** استحداث `internal/service/memory_service.go` مع التنفيذ المخصص لويندوز `memory_service_windows.go` الذي يستدعي `EmptyWorkingSet` و`SetProcessWorkingSetSizeEx` عبر شجرة العمليات التابعة لـ `os.Getpid()` (العملية الرئيسية، وعمليات WebView2: المتصفح، المعالج الرسومي، والرندر، والشبكة) دورياً كل 30 ثانية وعند تصغير النافذة أو فقدان التركيز.
+  4. **ربط تفريغ الذاكرة بأحداث الواجهة (`triggerMemoryTrim`):** إضافة مسار آمن `/api/trim-memory` يُستدعى تلقائياً فور انتهاء عمليات الذكاء الاصطناعي (عزل الخلفية، ضبط الوجه)، وإغلاق نوافذ الحوار الثقيلة (الماسح الضوئي، إعدادات الطباعة، والتصدير).
+  5. **النتيجة الحية المقاسة:** انخفاض استهلاك مساحة العمل الفعلية للرام (Working Set) من أكثر من 1.3GB إلى قرابة 14.4MB عبر كافة العمليات، وانخفاض الذاكرة المحجوزة للرندر من 630MB إلى أقل من 80MB.
+- **تحصين اختبارات واجهة المستخدم ومعالجة الصور ضد المهلات وفحوص الـ Worker المنهى:**
+  1. تحديث اختبار `frontend/test/bg-worker.test.tsx` للاحتفاظ بمرجع المثيل `MockBgWorker.lastInstance` للتحقق من استدعاء `postMessage` بعد أن يقوم الهوك بإنهاء العامل فوراً عند تسوية المهمة (`settle()`).
+  2. تمديد مهلة اختبار فحص المشاهد الكبيرة `detects a document on a large 1280x960 scene without hanging` إلى 20 ثانية في `scanner-hardening.test.ts` لمنع فشل الـ CI العرضي تحت ضغط معالجات السحابة.
