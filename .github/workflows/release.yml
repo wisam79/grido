@@ -43,8 +43,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~\go\bin
-          key: ${{ runner.os }}-go-bin-v1
+            C:\Users\runneradmin\go\bin
+          key: ${{ runner.os }}-go-bin-v2
 
       - name: Cache NSIS Compiler
         id: cache-nsis
@@ -60,17 +60,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
+            frontend/src/assets/fonts
             frontend/public/models
             frontend/public/fonts
             frontend/public/wasm
             frontend/public/onnxruntime-web
-          key: ${{ runner.os }}-models-fonts-v3
+          key: ${{ runner.os }}-models-fonts-v4
 
       - name: Add Go Bin & NSIS to PATH
         shell: pwsh
         run: |
           $gopath = $(go env GOPATH)
           "$gopath\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "C:\Users\runneradmin\go\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           @("C:\Program Files (x86)\NSIS", "C:\Program Files\NSIS") | Where-Object { Test-Path "$_\makensis.exe" } | ForEach-Object {
             $_ | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           }
@@ -118,10 +120,15 @@ jobs:
           Write-Host "Found NSIS at: $nsisDir"
           $nsisDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Install Python Dependencies & Generate Installer Assets
+      - name: Check & Generate Installer Assets
+        shell: pwsh
         run: |
-          python -m pip install --upgrade pip pillow
-          python build/windows/installer/generate_installer_assets.py
+          if (-not (Test-Path "build\windows\installer\resources\header.bmp") -or -not (Test-Path "build\windows\installer\resources\welcome.bmp")) {
+            python -m pip install --upgrade pip pillow
+            python build/windows/installer/generate_installer_assets.py
+          } else {
+            Write-Host "Installer assets already present in repository; skipping python pillow install and generation."
+          }
 
       - name: Install Wails3 CLI
         shell: pwsh
@@ -137,16 +144,15 @@ jobs:
           Set-Content frontend/dist/index.html "<html></html>"
           wails3 generate bindings -ts -clean=true
 
-      - name: Run Go Vet & Unit Tests
+      # في خط سير تجميع ونشر الإصدار: نتأكد من فحص كود Go وتدقيق الأنواع في الواجهة،
+      # مع تفادي تكرار تشغيل حزمة اختبارات الوحدة الطويلة (التي تُفحص وتُعتمد مسبقاً في ci.yml)
+      # لتسريع وقت البناء من ~20 دقيقة إلى ~5 دقائق.
+      - name: Validate Go Code & Frontend Types
+        shell: pwsh
         run: |
           go vet ./internal/...
-          go test ./internal/...
-
-      - name: Validate Frontend Typecheck & Tests
-        working-directory: ./frontend
-        run: |
+          cd frontend
           npm run typecheck
-          npm run test
 
       - name: Build Wails v3 App & NSIS Installer
         shell: pwsh

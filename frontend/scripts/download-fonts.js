@@ -12,6 +12,7 @@ if (!fs.existsSync(fontDir)) {
 }
 
 const fonts = [
+  { name: "Readex Pro", family: "Readex Pro" },
   { name: "Cairo", family: "Cairo" },
   { name: "Tajawal", family: "Tajawal" },
   { name: "IBM Plex Sans Arabic", family: "IBM Plex Sans Arabic" },
@@ -82,9 +83,11 @@ async function downloadFonts() {
           const cleanFileName = `${font.name.replace(/ /g, "_")}_${weight}_${subsetName}.woff2`;
           const savePath = path.join(fontDir, cleanFileName);
 
-          console.log(`Downloading ${font.name} (${weight} - ${subsetName})...`);
-          const fontData = await fetchUrl(fontUrl);
-          fs.writeFileSync(savePath, fontData);
+          if (!fs.existsSync(savePath)) {
+            console.log(`Downloading ${font.name} (${weight} - ${subsetName})...`);
+            const fontData = await fetchUrl(fontUrl);
+            fs.writeFileSync(savePath, fontData);
+          }
 
           cssRules.push(`
 @font-face {
