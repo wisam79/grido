@@ -8,10 +8,12 @@
  * الفحوص:
  *   1) انحراف الأرقام المرجعية (بلوك docs-metrics في الخريطة) مقابل الواقع الفعلي.
  *   2) تغطية الجرد: كل ملف في docs/*.md وكل مجلد فرعي تحت docs/ مُدرَج في الخريطة.
- *   3) كومت/دفعة تغيّر كوداً بلا أي تحديث توثيق مرافق.
+ *   3) كومت/دفعة تغيّر كوداً بلا أي تحديث توثيق مرافق — يُفحص fragment في changelog/fragments/
+ *      (سكيمة type/scope/related_files + منع التعديل اليدوي لـ CHANGELOG.md).
  *   4) (تحذيري) سلامة مراجع المسارات في .agents/AGENTS.md والمهارات — صارم مع --strict-refs.
  *   5) تأكيدات التحقق على مستوى الكود (code-assertions) — بنود BUGS_REPORT.md التي
  *      وُسمت ✅ يجب أن تبقى مُثبتة بالأسطر، وإلا فشلت البوابة.
+ *   6) سكيمة fragments — يُستدعى ضمن (3) عند لمس الكود.
  *
  * الاستخدام:
  *   node scripts/docs-gate.mjs                 # قبل الكومت (يفحص الملفات المُجهَّزة)
@@ -190,7 +192,7 @@ const SOURCE_PATTERNS = [
   'internal/desktop/window_state.go',
 ];
 
-const DOC_PATTERNS = ['CHANGELOG.md', 'README.md', 'docs/', '.agents/', 'SECURITY_NOTICE.md', 'BUGS_REPORT.md'];
+const DOC_PATTERNS = ['CHANGELOG.md', 'CHANGELOG_ARCHIVE.md', 'changelog/', 'README.md', 'docs/', '.agents/', 'SECURITY_NOTICE.md', 'BUGS_REPORT.md'];
 
 function checkDocumentedCommit() {
   const files = changedFiles();
@@ -208,10 +210,75 @@ function checkDocumentedCommit() {
     errors.push(
       `هذه التغييرات تمسّ الكود بلا أي تحديث توثيق مرافق (${sourceTouched.length} ملفاً):\n` +
         `    - ${sourceTouched.slice(0, 8).join('\n    - ')}${sourceTouched.length > 8 ? '\n    - …' : ''}\n` +
-        '    المطلوب: حدّث CHANGELOG.md تحت [Unreleased] + المستند المعني وفق مصفوفة المزامنة في docs/DOCUMENTATION_MAP.md.',
+        '    المطلوب: أنشئ fragment واحد في changelog/fragments/YYYYMMDD-<scope>-<slug>.md + المستند المعني وفق مصفوفة المزامنة في docs/DOCUMENTATION_MAP.md (انظر changelog/README.md).',
     );
   } else if (sourceTouched.length) {
     notes.push(`كومت موثَّق: ${sourceTouched.length} ملف كود + ${docsTouched.length} ملف توثيق.`);
+  }
+  // ── Fragments schema validation (only when source was touched) ──
+  if (sourceTouched.length) checkFragmentsSchema(files);
+}
+
+const FRAG_ALLOWED_TYPES = new Set(['feat', 'fix', 'perf', 'refactor', 'docs', 'security', 'removed', 'changed']);
+const FRAG_ALLOWED_SCOPES = new Set(['print', 'canvas', 'ai', 'build', 'auth', 'ui', 'docs', 'infra', 'release']);
+
+function checkFragmentsSchema(stagedFiles) {
+  const fragStaged = stagedFiles.filter((f) => f.startsWith('changelog/fragments/') && f.endsWith('.md') && !f.endsWith('_template.md'));
+  const hasChangelogDirectEdit = stagedFiles.some((f) => f === 'CHANGELOG.md' || f === 'CHANGELOG_ARCHIVE.md');
+  if (hasChangelogDirectEdit && !fragStaged.length) {
+    errors.push('يُمنع تعديل CHANGELOG.md / CHANGELOG_ARCHIVE.md يدوياً — استخدم fragments (راجع changelog/README.md). التعديل الوحيد المسموح هو عبر scripts/release.mjs عند الترفيع.');
+    return;
+  }
+  if (!fragStaged.length) {
+    errors.push('لا يوجد fragment في changelog/fragments/ — أنشئ ملفاً واحداً YYYYMMDD-<scope>-<slug>.md بالسكيمة المحددة (type/scope/related_files). راجع changelog/README.md و changelog/fragments/_template.md');
+    return;
+  }
+  for (const rel of fragStaged) {
+    const full = join(ROOT, ...rel.split('/'));
+    if (!existsSync(full)) {
+      errors.push(`fragment مفقود على القرص: ${rel}`);
+      continue;
+    }
+    const raw = readFileSync(full, 'utf8');
+    const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+    if (!m) {
+      errors.push(`fragment ${rel}: تنسيق frontmatter غير صحيح — يجب أن يبدأ بـ --- وينتهي بـ ---`);
+      continue;
+    }
+    const fm = m[1];
+    const body = m[2].trim();
+    const type = (fm.match(/^\s*type:\s*(\S+)/m) || [])[1] || '';
+    const scope = (fm.match(/^\s*scope:\s*(\S+)/m) || [])[1] || '';
+    if (!type || !FRAG_ALLOWED_TYPES.has(type)) {
+      errors.push(`fragment ${rel}: type="${type || '(فارغ)'}" غير مسموح — المسموح: ${[...FRAG_ALLOWED_TYPES].join(', ')}`);
+    }
+    if (!scope || !FRAG_ALLOWED_SCOPES.has(scope)) {
+      errors.push(`fragment ${rel}: scope="${scope || '(فارغ)'}" غير مسموح — المسموح: ${[...FRAG_ALLOWED_SCOPES].join(', ')}`);
+    }
+    if (!body) errors.push(`fragment ${rel}: النص فارغ — اكتب وصفاً عربياً موجزاً للتغيير.`);
+    // related_files
+    const filesBlock = fm.match(/related_files:\s*\r?\n((?:\s*-\s*.+\r?\n?)*)/);
+    const related = filesBlock
+      ? filesBlock[1].split(/\r?\n/).map((l) => l.replace(/^\s*-\s*/, '').trim()).filter(Boolean)
+      : [];
+    if (!related.length) {
+      errors.push(`fragment ${rel}: related_files فارغ — أضف مسار:سطر واحد على الأقل (مثل internal/service/foo.go:42)`);
+    } else {
+      for (const entry of related) {
+        const filePart = entry.split(':')[0].trim().replace(/^["']|["']$/g, '');
+        if (!filePart.includes('/') && !filePart.includes('.')) {
+          errors.push(`fragment ${rel}: related_files entry "${entry}" غير صالح — استخدم مسار:سطر`);
+        } else if (!existsSync(join(ROOT, filePart))) {
+          warnings.push(`fragment ${rel}: المسار المذكور غير موجود: ${filePart}`);
+        }
+      }
+    }
+    if (/_template\.md$/.test(rel)) {
+      errors.push(`fragment ${rel}: لا تُجهّز التمبلت نفسه للكومت — انسخه باسم جديد.`);
+    }
+  }
+  if (!errors.some((e) => e.includes('fragment'))) {
+    notes.push(`fragments سليمة (${fragStaged.length}) — السكيمة والمراجع صحيحة.`);
   }
 }
 

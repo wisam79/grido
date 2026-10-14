@@ -3,7 +3,7 @@
 > **هذا الملف هو مصدر الحقيقة الوحيد لنظام التوثيق:** ماذا نوثّق، وأين، ومتى نُحدّثه، وما الذي **يوقف** الكومت أو الدفع عند الانحراف.
 > أي وكيل أو مطوّر يقرأ هذا الملف **قبل** بدء العمل، ويطبّق البوابات الثلاث في القسم 3.
 
-**آخر تحديث:** 2026-10-11 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md`
+**آخر تحديث:** 2026-10-14 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md` · **السجل:** `changelog/README.md`
 
 ---
 
@@ -12,7 +12,10 @@
 | المستند | الدور | متى يُحدَّث إلزامياً |
 |---|---|---|
 | `README.md` | واجهة المشروع: الميزات، المتطلبات، البناء، المعمارية الشجرية، بيئة التشغيل | عند تغيير أي ميزة ظاهرة، أو متغيرات البيئة، أو أوامر البناء، أو الأرقام المرجعية |
-| `CHANGELOG.md` | سجل التغييرات (Keep a Changelog + SemVer) | **كل** تغيير سلوكي أو إصلاح أو إضافة أو حذف — تحت `[Unreleased]` دائماً |
+| `CHANGELOG.md` | سجل التغييرات النشط — **آخر 5 إصدارات + [Unreleased]** فقط (مُولَّد — لا يُعدَّل يدوياً) | لا يُعدَّل يدوياً — يُبنى تلقائياً من `changelog/fragments/` عند `scripts/release.mjs` |
+| `CHANGELOG_ARCHIVE.md` | أرشيف السجل التاريخي (ما قبل v1.14.6) — مُلحَق فقط | يُلحَق تلقائياً عند تجاوز سقف 5 إصدارات في `CHANGELOG.md` |
+| `changelog/fragments/` | fragments — ذاكرة الوكيل (ملف واحد لكل جلسة، بسكيما `type/scope/related_files`) | **كل** تغيير سلوكي — إنشاء `YYYYMMDD-<scope>-<slug>.md` واحد (انظر `changelog/README.md`) |
+| `changelog/README.md` | دليل معمارية Fragments والأوامر | عند تغيير آلية Fragments أو السكيمة |
 | `docs/DOCUMENTATION_MAP.md` | هذا الملف: الجرد + مصفوفة المزامنة + البوابات + الأرقام | عند إضافة/حذف/إعادة تسمية أي مستند، أو تغيير قواعد التوثيق، أو تغيير الأرقام المرجعية |
 | `docs/developer_guide.md` | المعمارية التفصيلية، دورة الحالة، محرك الكانفس، البناء والاختبار | عند تغيير معمارية أو طبقة أو نظام فرعي |
 | `docs/testing_guide.md` | هرم الاختبارات، جسر Wails v3، الأوامر، الأرقام المرجعية | عند تغيير إعداد الاختبارات أو الأوامر أو الأرقام |
@@ -39,18 +42,18 @@
 
 | نوع التغيير | التوثيق الإلزامي في **نفس الجلسة** |
 |---|---|
-| ميزة أو تحسين في الواجهة/المحرر | `CHANGELOG.md` + `docs/features-tracker.md` + `README.md` (جدول الميزات إن كانت ظاهرة) + تحديث مواصفات E2E إن انكسرت |
-| تغيير Backend (Go) أو عقد IPC أو خدمة Wails | `CHANGELOG.md` + `docs/developer_guide.md` + إعادة توليد الربطات + تشغيل اختبار انحراف العقود |
-| تغيير مسار AI أو حصة أو سرّ | `CHANGELOG.md` + `docs/AI_ARCHITECTURE.md` + `.agents/AGENTS.md` (القاعدة الحاكمة) + `SECURITY_NOTICE.md` عند أي سرّ |
-| تغيير الاختبارات أو إعداداتها أو أوامرها | `CHANGELOG.md` + `docs/testing_guide.md` + بلوك الأرقام في هذا الملف |
-| تغيير البناء أو CI أو التوقيع أو الإصدارات | `CHANGELOG.md` + `README.md` (قسم البناء) + `.agents/skills/wails-cross-compiler/SKILL.md` |
+| ميزة أو تحسين في الواجهة/المحرر | `changelog/fragments/` (fragment واحد) + `docs/features-tracker.md` + `README.md` (جدول الميزات إن كانت ظاهرة) + تحديث مواصفات E2E إن انكسرت |
+| تغيير Backend (Go) أو عقد IPC أو خدمة Wails | `changelog/fragments/` + `docs/developer_guide.md` + إعادة توليد الربطات + تشغيل اختبار انحراف العقود |
+| تغيير مسار AI أو حصة أو سرّ | `changelog/fragments/` + `docs/AI_ARCHITECTURE.md` + `.agents/AGENTS.md` (القاعدة الحاكمة) + `SECURITY_NOTICE.md` عند أي سرّ |
+| تغيير الاختبارات أو إعداداتها أو أوامرها | `changelog/fragments/` + `docs/testing_guide.md` + بلوك الأرقام في هذا الملف |
+| تغيير البناء أو CI أو التوقيع أو الإصدارات | `changelog/fragments/` + `README.md` (قسم البناء) + `.agents/skills/wails-cross-compiler/SKILL.md` |
 | تغيير قاعدة حاكمة | `.agents/AGENTS.md` (المصدر) + المهارة المعنية + حذف أي نسخة مكررة + تحديث الإشارات |
-| إضافة/حذف/نقل ملف مؤثر | `CHANGELOG.md` + هذا الملف + كل مرجع للملف في AGENTS.md والمهارات (بحث `git grep`) |
-| إصلاح عيب من تقرير تدقيق | تعليم البند ✅ في التقرير + `CHANGELOG.md` + `docs/features-tracker.md` |
-| تغيير في RLS أو دوال `SECURITY DEFINER` أو الهجرات | `CHANGELOG.md` + `.agents/skills/supabase-security-and-migrations/SKILL.md` + `SECURITY_NOTICE.md` عند ثغرة حيّة |
-| تغيير الإصدار أو الوسم أو آلية الإصدار | `CHANGELOG.md` + `.agents/skills/grido-qa-security-auditor/SKILL.md` (قسم الإصدار) + `.agents/AGENTS.md` عند تغيير القاعدة |
-| تغيير نظام تصميم أو مكتبة UI | `CHANGELOG.md` + `.agents/skills/fluent2-design-system/SKILL.md` + `docs/features-tracker.md` |
-| تغيير متطلبات أو إصدار أداة | `README.md` (المتطلبات) + `CHANGELOG.md` + `.agents/skills/wails-cross-compiler/SKILL.md` |
+| إضافة/حذف/نقل ملف مؤثر | `changelog/fragments/` + هذا الملف + كل مرجع للملف في AGENTS.md والمهارات (بحث `git grep`) |
+| إصلاح عيب من تقرير تدقيق | تعليم البند ✅ في التقرير + `changelog/fragments/` + `docs/features-tracker.md` |
+| تغيير في RLS أو دوال `SECURITY DEFINER` أو الهجرات | `changelog/fragments/` + `.agents/skills/supabase-security-and-migrations/SKILL.md` + `SECURITY_NOTICE.md` عند ثغرة حيّة |
+| تغيير الإصدار أو الوسم أو آلية الإصدار | (يُجمع تلقائياً من fragments) + `.agents/skills/grido-qa-security-auditor/SKILL.md` (قسم الإصدار) + `.agents/AGENTS.md` عند تغيير القاعدة |
+| تغيير نظام تصميم أو مكتبة UI | `changelog/fragments/` + `.agents/skills/fluent2-design-system/SKILL.md` + `docs/features-tracker.md` |
+| تغيير متطلبات أو إصدار أداة | `README.md` (المتطلبات) + `changelog/fragments/` + `.agents/skills/wails-cross-compiler/SKILL.md` |
 
 ---
 
@@ -69,10 +72,10 @@
 |---|---|---|---|
 | 1 | انحراف الأرقام المرجعية (اختبارات / E2E / Go / مستندات) | `node scripts/docs-gate.mjs` | ⛔ **يُوقف الكومت** |
 | 2 | تغطية كل مستند في الجرد (لا مستند غير مُسجَّل) | نفس الأمر | ⛔ **يُوقف الكومت** |
-| 3 | كومت كود بلا أي تحديث توثيق مرافق | نفس الأمر | ⛔ **يُوقف الكومت** |
+| 3 | كومت كود بلا fragment مرافق أو سكيمة فاسدة (`changelog/fragments/` — `type/scope/related_files`) | نفس الأمر | ⛔ **يُوقف الكومت** |
 | 4 | سلامة مراجع المسارات في AGENTS.md والمهارات | `--strict-refs` | ⚠️ تحذير افتراضياً · ⛔ صارم بالعلم |
-| 5 | **تأكيدات التحقق على الكود** (ادعاءات «مُصلح» لا تنهار صامتة: 16 تأكيداً في `scripts/docs-gate.mjs` — آخرها 4 تأكيدات لبنود P0 الثلاثة من التقرير 12) | `node scripts/docs-gate.mjs` | ⛔ **يُوقف الكومت** |
-| 6 | `CHANGELOG.md` محدَّث تحت `[Unreleased]` | يدوي (قاعدة) | ⛔ يُوقف المراجعة |
+| 5 | **تأكيدات التحقق على الكود** (ادعاءات «مُصلح» لا تنهار صامتة: 45 تأكيداً في `scripts/docs-gate.mjs`) | `node scripts/docs-gate.mjs` | ⛔ **يُوقف الكومت** |
+| 6 | `CHANGELOG.md` لا يُعدَّل يدوياً — يُبنى من fragments عند `scripts/release.mjs` | `docs-gate` يفشل عند تعديل `CHANGELOG.md` مباشرة | ⛔ يُوقف الكومت |
 | 7 | Formatting والأنواع والاختبارات | `.husky/pre-commit` → `lint-staged` · `npm run test:all` للأعمال الكبيرة | ⛔ **يُوقف الكومت** |
 
 > **فحص 5 — ما هو:** لكل بند وُسم ✅ في `BUGS_REPORT.md` (أو ثابت معماري مغلق) **دليل نصّي في الكود** يُثبَّت في صفيف `CODE_ASSERTIONS` داخل `scripts/docs-gate.mjs` بثلاثة أنواع: `mustContain` (الدليل باقٍ) · `mustNotContain` (العبارة الممنوعة لم تعد تعود — مثال: نداء التسجيل `callAIUsageRPC(..., false)` الذي كان سبب الخصم المزدوج) · `count` (عدد مرات محدّد — مثال: تعريف `SIGNPATH_API_TOKEN` مرة واحدة فقط في `release.yml` على مستوى الـ job).
@@ -121,7 +124,7 @@ docs_files=6
 ## 5. قواعد الانحراف (Drift Rules) — إلزامية
 
 1. **لا ادعاء بلا دليل:** كل جملة تقنية تُسنَد إلى `ملف:سطر` أو نتيجة أمر مُشغَّل، لا إلى الذاكرة.
-2. **التوثيق التاريخي مُلحَق فقط:** `CHANGELOG.md` و`BUGS_REPORT.md` و`docs/reviews/*` — تُضاف تصحيحات مؤرَّخة، ويُمنع حذف أو إعادة كتابة التاريخ.
+2. **التوثيق التاريخي مُلحَق فقط:** `CHANGELOG.md` (مُولَّد) و`CHANGELOG_ARCHIVE.md` و`BUGS_REPORT.md` و`docs/reviews/*` — تُضاف تصحيحات مؤرَّخة، ويُمنع حذف أو إعادة كتابة التاريخ. `CHANGELOG.md` لا يُعدَّل يدوياً أبداً — يُبنى من `changelog/fragments/`.
 3. **عند حذف/نقل أي ملف:** ابحث عن كل مرجع له (`git grep`) وحدّثه في نفس الجلسة (قاعدة AGENTS.md: صيانة المراجع).
 4. **الأرقام تُحدَّث بالأمر المذكور** في القسم 4، ثم يُحدَّث هذا الملف.
 5. **أي مستند جديد في `docs/` يجب تسجيله في الجرد** (القسم 1) وإلا فشلت البوابة.
@@ -140,6 +143,10 @@ node scripts/docs-gate.mjs --push
 
 # فحص صارم لكل مرجع مسار في AGENTS.md والمهارات
 node scripts/docs-gate.mjs --strict-refs
+
+# ملخص التغييرات غير المُصدرة (يقرأه الوكيل عند بدء الجلسة)
+node scripts/changelog-collect.mjs
+node scripts/changelog-collect.mjs --json
 
 # عبر Taskfile
 wails3 task docs:check

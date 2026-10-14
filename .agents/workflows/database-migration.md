@@ -40,7 +40,7 @@ supabase db push --yes
 ```bash
 node scripts/migration-lint.mjs --update-manifest
 ```
-أضف تأكيدات الكود في `scripts/docs-gate.mjs` إذا كانت الهجرة تعالج بنداً أمنياً أو ميزة حاكمة، ووثق التغييرات في `CHANGELOG.md`.
+أضف تأكيدات الكود في `scripts/docs-gate.mjs` إذا كانت الهجرة تعالج بنداً أمنياً أو ميزة حاكمة، وأنشئ fragment في `changelog/fragments/` (راجع `changelog/README.md` — لا يُعدَّل `CHANGELOG.md` يدوياً).
 تحقق من نجاح البوابة:
 ```bash
 node scripts/docs-gate.mjs --strict-refs

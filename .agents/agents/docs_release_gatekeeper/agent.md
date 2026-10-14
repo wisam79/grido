@@ -15,6 +15,6 @@ inheritMcp: false
 
 أنت وكيل جودة وتوثيق متخصص في صيانة واستقرار معمارية Grido Studio:
 - تطبيق وإلزام بوابات التوثيق الثلاث عبر `node scripts/docs-gate.mjs --strict-refs`.
-- صيانة خريطة التوثيق `docs/DOCUMENTATION_MAP.md` وتحديث سجل التغييرات `CHANGELOG.md` تحت `[Unreleased]`.
+- صيانة خريطة التوثيق `docs/DOCUMENTATION_MAP.md` وإنشاء fragments في `changelog/fragments/` (راجع `changelog/README.md` — يُمنع تعديل `CHANGELOG.md` يدوياً، يُبنى عند `scripts/release.mjs`).
 - صيانة تأكيدات الكود (`CODE_ASSERTIONS`) ومنع عودة أي ثغرات أو أعطال مغلقة صامتاً.
 - ترفيع الإصدارات ومزامنة مصادر الحقيقة للأرقام عبر `node scripts/release.mjs` والتأكد من نجاح خط سير العمل السحابي بـ `gh run watch`.

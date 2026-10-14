@@ -25,14 +25,14 @@ description: بوابة التوثيق الإلزامية — مصفوفة ال�
 
 | ما تغيّر | المستندات الإلزامية في نفس الجلسة |
 |---|---|
-| واجهة/محرر/مكوّن React | `CHANGELOG.md` + `docs/features-tracker.md` (+ `README.md` إن ظهرت ميزة للمستخدم) |
-| كود Go أو عقد IPC أو خدمة Wails | `CHANGELOG.md` + `docs/developer_guide.md` + إعادة توليد الربطات + اختبار انحراف العقود |
-| مسار AI أو حصة أو سرّ | `CHANGELOG.md` + `docs/AI_ARCHITECTURE.md` + القاعدة الحاكمة في `.agents/AGENTS.md` (+ `SECURITY_NOTICE.md` عند سرّ) |
-| اختبارات أو إعداداتها | `CHANGELOG.md` + `docs/testing_guide.md` + بلوك `docs-metrics` في الخريطة |
-| بناء/CI/توقيع/إصدار | `CHANGELOG.md` + `README.md` + `.agents/skills/wails-cross-compiler/SKILL.md` |
+| واجهة/محرر/مكوّن React | `changelog/fragments/` (fragment واحد) + `docs/features-tracker.md` (+ `README.md` إن ظهرت ميزة للمستخدم) |
+| كود Go أو عقد IPC أو خدمة Wails | `changelog/fragments/` + `docs/developer_guide.md` + إعادة توليد الربطات + اختبار انحراف العقود |
+| مسار AI أو حصة أو سرّ | `changelog/fragments/` + `docs/AI_ARCHITECTURE.md` + القاعدة الحاكمة في `.agents/AGENTS.md` (+ `SECURITY_NOTICE.md` عند سرّ) |
+| اختبارات أو إعداداتها | `changelog/fragments/` + `docs/testing_guide.md` + بلوك `docs-metrics` في الخريطة |
+| بناء/CI/توقيع/إصدار | `changelog/fragments/` + `README.md` + `.agents/skills/wails-cross-compiler/SKILL.md` |
 | قاعدة حاكمة | `.agents/AGENTS.md` (المصدر) + المهارة المعنية + حذف التكرار + تحديث الإشارات |
-| حذف/نقل ملف | `CHANGELOG.md` + الخريطة + كل مرجع للملف (`git grep`) |
-| إصلاح عيب من تقرير تدقيق | تعليم البند ✅ في التقرير + `CHANGELOG.md` + `docs/features-tracker.md` |
+| حذف/نقل ملف | `changelog/fragments/` + الخريطة + كل مرجع للملف (`git grep`) |
+| إصلاح عيب من تقرير تدقيق | تعليم البند ✅ في التقرير + `changelog/fragments/` + `docs/features-tracker.md` |
 
 ## ⛔ 3. البوابة 2 — قبل الكومت (إلزامي)
 
@@ -73,8 +73,8 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 
 ## 🕘 6. التاريخ لا يُعاد كتابته (Append-only History)
 
-- `CHANGELOG.md` و`BUGS_REPORT.md` و`docs/reviews/*` و`SECURITY_NOTICE.md`: **إلحاق وتصحيح مؤرَّخ فقط**، ويُمنع حذف الإدخالات القديمة أو تجميلها.
-- عند الإصلاح: علّم البند ✅ مع التاريخ + أضف سطراً في `CHANGELOG.md` + حدّث `docs/features-tracker.md`.
+- `CHANGELOG.md` (مُولَّد من `changelog/fragments/` عبر `scripts/release.mjs`) و`CHANGELOG_ARCHIVE.md` و`BUGS_REPORT.md` و`docs/reviews/*` و`SECURITY_NOTICE.md`: **إلحاق وتصحيح مؤرَّخ فقط**، ويُمنع حذف الإدخالات القديمة أو تجميلها. `CHANGELOG.md` لا يُعدَّل يدوياً أبداً.
+- عند الإصلاح: علّم البند ✅ مع التاريخ + أنشئ fragment واحداً في `changelog/fragments/` (انظر `changelog/README.md`) + حدّث `docs/features-tracker.md`.
 - عند حذف مستند: ابحث عن كل الإشارات إليه (`git grep`) وحدّثها في نفس الجلسة (قاعدة «صيانة المراجع» في AGENTS.md)، وأبقِ سطره في الجرد بحالة «محذوف + التاريخ + السبب» أو احذفه من الجرد إن حُذفت الإشارة الأخيرة.
 
 ## 🚑 7. مفتاح الطوارئ
@@ -83,8 +83,8 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 
 ## 🧰 8. قائمة الفحص الختامية قبل إنهاء أي مهمة
 
-- [ ] قرأت الخريطة + أعلنت المستندات المتغيّرة.
-- [ ] `CHANGELOG.md` محدَّث تحت `[Unreleased]` بالتصنيف الصحيح (Added/Changed/Fixed/Removed).
+- [ ] قرأت الخريطة + `changelog/README.md` + `node scripts/changelog-collect.mjs` و أعلنت المستندات المتغيّرة.
+- [ ] fragment واحد في `changelog/fragments/YYYYMMDD-<scope>-<slug>.md` بالسكيمة الصحيحة (`type/scope/related_files` + نص عربي موجز) — يُمنع تعديل `CHANGELOG.md` يدوياً.
 - [ ] المستندات المعنية محدَّثة **في نفس الجلسة** (لا «سيُوثَّق لاحقاً»).
 - [ ] أرقام `docs-metrics` محدَّثة بالأوامر المذكورة.
 - [ ] `node scripts/docs-gate.mjs --strict-refs` يخرج بنجاح.

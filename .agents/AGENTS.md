@@ -66,6 +66,6 @@
 ---
 
 ## 5. بروتوكول بوابات التوثيق والتحقق (Mandatory Gate Protocol)
-1. **قبل بدء أي عمل:** راجع `docs/DOCUMENTATION_MAP.md` وحدد المستندات المطلوبة في أول رد.
-2. **قبل الكومت (Pre-Commit):** شغّل الفحص الآلي `node scripts/docs-gate.mjs --strict-refs` ووثق التغييرات في `CHANGELOG.md` تحت `[Unreleased]`.
+1. **قبل بدء أي عمل:** راجع `docs/DOCUMENTATION_MAP.md` و `changelog/README.md` وشغّل `node scripts/changelog-collect.mjs` لملخص التغييرات غير المُصدرة، ثم حدد المستندات المطلوبة في أول رد.
+2. **قبل الكومت (Pre-Commit):** شغّل الفحص الآلي `node scripts/docs-gate.mjs --strict-refs` وأنشئ fragment واحد في `changelog/fragments/YYYYMMDD-<scope>-<slug>.md` (انظر `changelog/README.md` — يُمنع تعديل `CHANGELOG.md` يدوياً، يُبنى تلقائياً عند `scripts/release.mjs`).
 3. **بعد الدفع (Post-Push):** راقب خط سير العمل السحابي بـ `gh run list --limit 3` و `gh run watch` حتى تمام النجاح 100%.

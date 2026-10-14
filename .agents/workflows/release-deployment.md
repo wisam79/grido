@@ -29,7 +29,7 @@ npm --prefix frontend run lint
 ---
 
 ## الخطوة 3: ترفيع الإصدار الآلي ومزامنة الملفات
-استخدم أداة الترفيع الحاكمة `scripts/release.mjs` التي تزامن كافة ملفات التكوين (`build/config.yml`, `info.json`, `project.nsi`, `Taskfile.yml`, `package.json`, و `CHANGELOG.md`):
+استخدم أداة الترفيع الحاكمة `scripts/release.mjs` التي تزامن كافة ملفات التكوين (`build/config.yml`, `info.json`, `project.nsi`, `Taskfile.yml`, `package.json`) وتجمع `changelog/fragments/*.md` وتركب `CHANGELOG.md` (راجع `changelog/README.md`):
 ```bash
 # لرفع إصدار ترقيعي (Bug Fixes)
 node scripts/release.mjs patch
