@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { Stage, Layer, Rect } from 'react-konva';
+import { Stage, Layer } from 'react-konva';
 import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useEditorStore, CanvasElement } from '@/lib/editor-store';
@@ -11,6 +11,8 @@ import { checkerColor } from '@/lib/canvas/canvas-colors';
 import { registerDragLayer, registerDragExtrasProvider } from './drag-layer';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import '@/lib/filters/custom-filters';
+import { logVramBudget } from '@/lib/canvas/layer-system';
+import { getStageViewRect } from '@/lib/canvas/viewport-culling';
 
 import { KonvaBackgroundLayer } from './layers/konva-background-layer';
 import { KonvaCollageLayer } from './layers/konva-collage-layer';
@@ -55,12 +57,14 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
   const canvasHeight = useEditorStore((s) => s.canvasHeight);
 
   useEffect(() => {
-    // 🛡️ دستور كونفا وثبات الـ pixelRatio:
+    // 🛡️ دستور كونفا وثبات الـ pixelRatio (All_Performance_Tips: «Keep pixelRatio stable»)
     // تثبيت Konva.pixelRatio = Math.min(window.devicePixelRatio || 1, 2) عند تركيب
     // المكون فقط ومنع إعادة حسابه ديناميكياً مع حركات الزوم لتجنب التقطيع وإعادة تخصيص أسطح الرسم في VRAM.
     const applyPixelRatio = () => {
       const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
       Konva.pixelRatio = Math.max(1, Math.min(2, dpr));
+      // تسجيل ميزانية VRAM في DEV عند كل تغيّر DPR (layer-system.ts)
+      logVramBudget(viewportW, viewportH, Konva.pixelRatio);
     };
 
     applyPixelRatio();
@@ -75,7 +79,7 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       }
     }
     return undefined;
-  }, []);
+  }, [viewportW, viewportH]);
 
   // تنظيف مؤقتات تحديثات زوم الخانات (منقول من الأثر القديم أعلاه)
   useEffect(() => {
@@ -90,6 +94,14 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
       pendingSlotZooms.clear();
     };
   }, []);
+
+  // 🔍 صندوق العرض المنطقي للـ viewport — يُستخدم لـ viewport-culling في طبقة المحتوى
+  const viewRect = React.useMemo(
+    () => getStageViewRect(stagePos.x, stagePos.y, stageScale, viewportW, viewportH),
+    [stagePos.x, stagePos.y, stageScale, viewportW, viewportH],
+  );
+  // تحديد كثيف للعناصر (>40) يُفعّل culling تلقائياً؛ المستندات الصغيرة بلا داعٍ
+  const shouldCull = sortedElements.length > 40;
   const backgroundColor = useEditorStore((s) => s.backgroundColor);
   const backgroundGradientColor2 = useEditorStore((s) => s.backgroundGradientColor2);
   const backgroundGradientAngle = useEditorStore((s) => s.backgroundGradientAngle);
@@ -552,35 +564,12 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
         }
       }}
     >
-      {/* 📄 طبقة ظل الورقة والخلفية الأساسية */}
-      <Layer listening={false}>
-        <Rect
-          name="paper-shadow-rect"
-          x={0}
-          y={0}
-          width={canvasWidth}
-          height={canvasHeight}
-          fill={backgroundColor === 'transparent' ? undefined : '#ffffff'}
-          fillPatternImage={
-            backgroundColor === 'transparent'
-              ? (checkerPattern as unknown as HTMLImageElement)
-              : undefined
-          }
-          shadowColor="rgba(0, 0, 0, 0.28)"
-          shadowBlur={24 / stageScale}
-          shadowOffset={{ x: 0, y: 8 / stageScale }}
-          shadowOpacity={0.35}
-          perfectDrawEnabled={false}
-        />
-      </Layer>
-
       <KonvaBackgroundLayer
         canvasWidth={canvasWidth}
         canvasHeight={canvasHeight}
         backgroundColor={backgroundColor}
         backgroundGradientColor2={backgroundGradientColor2}
         backgroundGradientAngle={backgroundGradientAngle}
-        mode={mode}
         showGrid={showGrid}
         gridSize={gridSize}
         gridColor={gridColor}
@@ -592,73 +581,83 @@ export const KonvaCanvas = React.memo(function KonvaCanvas({
         columnsGutter={columnsGutter}
         columnsCount={columnsCount}
         columnsColor={columnsColor}
+        checkerPattern={checkerPattern as unknown as HTMLCanvasElement}
+        stageScale={stageScale}
       />
 
-      {mode === 'collage' && (
-        <KonvaCollageLayer
-          slots={slots}
-          canvasWidth={canvasWidth}
-          canvasHeight={canvasHeight}
-          collageMargin={collageMargin}
-          collageGap={collageGap}
-          collageRadius={collageRadius}
-          collageStrokeWidth={collageStrokeWidth}
-          collageStrokeColor={collageStrokeColor}
-          collageShowCutLines={collageShowCutLines}
-          collageShowEndCutLine={collageShowEndCutLine}
-          collageTemplate={collageTemplate}
-          selectedId={selectedId}
-          stageScale={stageScale}
-          handleSlotClick={handleSlotClick}
-          handleSlotDblClick={handleSlotDblClick}
-          handleSlotWheel={handleSlotWheel}
-          updateSlot={updateSlot}
-          pushHistory={pushHistory}
-        />
-      )}
+      {/* 🗂️ معمارية الطبقات V2 — LAYER_ORDER في lib/canvas/layer-system.ts هو مصدر الحقيقة (z-order).
+          كل الطبقات مركّبة دائماً — التبديل بـ visible/listening لا بفك التركيب.
+          فكّ الـ Layer كان يعيد تخصيص VRAM backing store لكونفا ويحمّل الصور من جديد (وميض + تلعثم).
+          الترتيب: background(0) → collage(1) → content(2) → overlay(3) → drag(4) — لا تغيّر JSX بلا تحديث layer-system.ts. */}
+      <KonvaCollageLayer
+        slots={slots}
+        canvasWidth={canvasWidth}
+        canvasHeight={canvasHeight}
+        collageMargin={collageMargin}
+        collageGap={collageGap}
+        collageRadius={collageRadius}
+        collageStrokeWidth={collageStrokeWidth}
+        collageStrokeColor={collageStrokeColor}
+        collageShowCutLines={collageShowCutLines}
+        collageShowEndCutLine={collageShowEndCutLine}
+        collageTemplate={collageTemplate}
+        selectedId={selectedId}
+        stageScale={stageScale}
+        handleSlotClick={handleSlotClick}
+        handleSlotDblClick={handleSlotDblClick}
+        handleSlotWheel={handleSlotWheel}
+        updateSlot={updateSlot}
+        pushHistory={pushHistory}
+        visible={mode === 'collage'}
+        listening={mode === 'collage'}
+      />
 
-      {mode === 'single' && (
-        <KonvaSingleLayer
-          sortedElements={sortedElements}
-          selectedIds={selectedIds}
-          canvasWidth={canvasWidth}
-          canvasHeight={canvasHeight}
-          snapToGrid={snapToGrid}
-          gridSize={gridSize}
-          elementsRefs={elementsRefs}
-          altPressedRef={altPressedRef}
-          shiftPressedRef={shiftPressedRef}
-          setActiveGuides={setActiveGuides}
-          handleDoubleClick={handleDoubleClick}
-          handleElementChange={handleElementChange}
-          createElementMouseDown={createElementMouseDown}
-          createElementClick={createElementClick}
-          createElementRef={createElementRef}
-        />
-      )}
+      <KonvaSingleLayer
+        sortedElements={sortedElements}
+        selectedIds={selectedIds}
+        canvasWidth={canvasWidth}
+        canvasHeight={canvasHeight}
+        snapToGrid={snapToGrid}
+        gridSize={gridSize}
+        elementsRefs={elementsRefs}
+        altPressedRef={altPressedRef}
+        shiftPressedRef={shiftPressedRef}
+        setActiveGuides={setActiveGuides}
+        handleDoubleClick={handleDoubleClick}
+        handleElementChange={handleElementChange}
+        createElementMouseDown={createElementMouseDown}
+        createElementClick={createElementClick}
+        createElementRef={createElementRef}
+        viewRect={viewRect}
+        shouldCull={shouldCull}
+        visible={mode === 'single'}
+        listening={mode === 'single'}
+      />
 
       {/* 🛠️ طبقة الأدوات والتفاعل العلوية: تفصل المحوّل ومستطيل التحديد
       عن طبقة المحتوى لمنع إعادة رسم الصور والنصوص أثناء التحجيم وسحب التحديد */}
-      {mode === 'single' && (
-        <KonvaOverlayLayer
-          selectedIds={selectedIds}
-          sortedElements={sortedElements}
-          canvasWidth={canvasWidth}
-          canvasHeight={canvasHeight}
-          displayW={displayW}
-          trRef={trRef}
-          elementsRefs={elementsRefs}
-          altPressedRef={altPressedRef}
-          setActiveGuides={setActiveGuides}
-          marqueeRectRef={marqueeRectRef}
-        />
-      )}
+      <KonvaOverlayLayer
+        selectedIds={selectedIds}
+        sortedElements={sortedElements}
+        canvasWidth={canvasWidth}
+        canvasHeight={canvasHeight}
+        displayW={displayW}
+        trRef={trRef}
+        elementsRefs={elementsRefs}
+        altPressedRef={altPressedRef}
+        setActiveGuides={setActiveGuides}
+        marqueeRectRef={marqueeRectRef}
+        visible={mode === 'single'}
+        listening={mode === 'single'}
+      />
 
-      {/* 🚀 طبقة السحب الرسمية (Konva drag-layer pattern): تستقبل العقدة
-      المسحوبة أثناء السحب فقط، فتُرسم عقدة واحدة لا الطبقة كاملة. */}
+      {/* 🚀 طبقة السحب الرسمية (All_Performance_Tips: Optimise dragging costs) — z=4 الأعلى.
+      «move the shape to a dedicated layer while dragging, then move it back at drag end» */}
       <Layer
         ref={handleDragLayerRef}
+        name="drag-layer"
         listening={false}
+        clearBeforeDraw
         clipX={0}
         clipY={0}
         clipWidth={canvasWidth}

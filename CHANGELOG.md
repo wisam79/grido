@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **نظام الطبقات المركزي V2 وميزانية VRAM (Layer System V2 — مصدر الحقيقة الوحيد):**
+  1. وحدة `frontend/src/lib/canvas/layer-system.ts` — سجل `LAYER_DEFS + LAYER_ORDER` بخمس طبقات موثقة (`background 0→ collage 1→ content 2→ overlay 3→ drag 4`)، مع تقدير VRAM بالصيغة الرسمية `scene+hit ≈ 41 MB/layer @1080p/dpr2` وحد Mobile Safari 256 MB (إنذار فوق 5 طبقات ≈205 MB). أي تغيير في z يجب أن يمر من هذا الملف.
+  2. وحدة `frontend/src/lib/canvas/viewport-culling.ts` — إخفاء عناصر خارج العرض عند `>40` عنصر عبر حساب AABB مدوّر (توصية Konva الرسمية «Very Large Scenes»)، تُحسب في `konva-canvas.tsx` وتُطبق في `konva-single-layer.tsx` بلا قص للمحدد.
+
+### Performance
+- **تحسينات أداء مُستندة لتوثيق Konva الرسمي (All_Performance_Tips / Listening_False / Optimize_Strokes / Shape_Caching):**
+  1. تثبيت `Konva.pixelRatio` عند التركيب فقط (`Math.min(dpr,2)`) وعدم إعادة تخصيصه مع الزوم، مع تسجيل ميزانية VRAM في DEV عند تغير DPR.
+  2. `konva-background-layer.tsx` — إزالة `_context` الخاص واستبداله بسياق Konva العام `ctx` مع التمرير الصحيح لـ `fillStrokeShape(shape)`، وتجميع مسار الشبكة/الأعمدة (`beginPath` واحد + `fill/stroke` واحد).
+  3. `konva-single/collage/overlay-layer.tsx` — إعلان `listening:false` و`hitGraphEnabled/clearBeforeDraw` و`perfectDrawEnabled/shadowForStrokeEnabled=false` على الطبقات/الأشكال الثابتة وفق توصيات «Listening_False» و«Optimize_Strokes».
+  4. `konva-canvas.tsx` — طبقة drag مسماة `drag-layer` بترتيب z موثق وتوثيق معمارية الطبقات V2 في JSX.
+
+### Fixed
+- **إصلاحات الطبقات والـ viewport (Layer & Viewport Fixes):**
+  1. `use-canvas-viewport.ts` — إصلاح تجميد أولي 220 ms كان يترك `viewportSize` عند `800×600` بوميض، وإصلاح `deltaX*=viewportH`→`viewportW` في `deltaMode PAGE`.
+  2. `konva-background-layer.tsx` — حذف خاصية `mode` الميتة، وحماية `colW` بـ `Math.max(0, …)`.
+  3. `core/collage-slice.ts` + `schema/types` — إصلاح اتساق `core-slice`/`collage-slice` (إعادة تموضع الفجوات/الهوامش) ومواصفات Zod الصارمة.
+
 ## [v1.15.1] - 2026-10-13
 
 ### Added

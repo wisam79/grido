@@ -41,6 +41,9 @@ interface KonvaCollageLayerProps {
   ) => void;
   updateSlot: (id: string, patch: Partial<Slot>) => void;
   pushHistory: () => void;
+  /** طبقة مركّبة دائماً — false يعني إخفاء بلا فك تركيب (يمنع إعادة تخصيص VRAM) */
+  visible?: boolean;
+  listening?: boolean;
 }
 
 export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
@@ -62,6 +65,8 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   handleSlotWheel,
   updateSlot,
   pushHistory,
+  visible = true,
+  listening = true,
 }: KonvaCollageLayerProps) {
   // 🛡️ سمك شاشة ثابت لحلقة التحديد (يطابق marquee طبقة single) — القيمة
   // الافتراضية 1 تُبقي أي مستدعٍ قديم بلا تغيير سلوكي.
@@ -149,6 +154,9 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
             stroke={collageCut()}
             strokeWidth={1}
             dash={[6, 6]}
+            perfectDrawEnabled={false}
+            shadowForStrokeEnabled={false}
+            listening={false}
           />
         ))}
 
@@ -160,13 +168,16 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
           const lineMaxX = isBottomEnd ? canvasWidth : maxX;
 
           return (
-            <Group key={`h-cut-group-${idx}-${y}`}>
+            <Group key={`h-cut-group-${idx}-${y}`} listening={false}>
               <Line
                 key={`h-cut-${idx}-${y}`}
                 points={[lineMinX, y, lineMaxX, y]}
                 stroke={isBottomEnd ? collageEndCut() : collageCut()}
                 strokeWidth={isBottomEnd ? 1.5 : 1}
                 dash={isBottomEnd ? [8, 4] : [6, 6]}
+                perfectDrawEnabled={false}
+                shadowForStrokeEnabled={false}
+                listening={false}
               />
             </Group>
           );
@@ -182,6 +193,10 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
       clipY={0}
       clipWidth={canvasWidth}
       clipHeight={canvasHeight}
+      visible={visible}
+      listening={listening}
+      clearBeforeDraw
+      hitGraphEnabled
     >
       {renderCutLines()}
       {slots.map((slot) => {
@@ -318,6 +333,8 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                     dash={[6, 4]}
                     cornerRadius={Math.max(0, radius - 0.75)}
                     listening={false}
+                    perfectDrawEnabled={false}
+                    shadowForStrokeEnabled={false}
                   />
 
                   {/* 3. شارة مركزية عائمة بأيقونة الزائد عالية التباين */}
@@ -403,7 +420,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
               )}
             </Group>
 
-            {/* Stroke Border */}
+            {/* Stroke Border — لا ظل للحدود (Optimize_Strokes) */}
             {borderW > 0 && (
               <Rect
                 x={left}
@@ -414,6 +431,8 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                 strokeWidth={borderW}
                 cornerRadius={radius}
                 listening={false}
+                perfectDrawEnabled={false}
+                shadowForStrokeEnabled={false}
               />
             )}
 
@@ -431,6 +450,9 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   shadowColor="#0078d4"
                   shadowBlur={4 / uiScale}
                   shadowOpacity={0.4}
+                  shadowForStrokeEnabled={false}
+                  perfectDrawEnabled={false}
+                  listening={false}
                 />
               </Group>
             )}

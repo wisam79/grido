@@ -1,11 +1,25 @@
 # تتبع الميزات الأساسية — Grido Studio
 
 **تاريخ المراجعة الأولى:** 30 يوليو 2026 (الإصدار ~v1.2.10)
-**آخر تحديث:** 13 أكتوبر 2026 — بعد **تصدير CMYK TIFF وتأنيس أخطاء الطباعة وإطلاق v1.15.1 (الجلسة 0.78)** · وقبله **استقرار الملفات والذاكرة وأداء الكانفاس (الجلسة 0.77)** · وقبله **الإصلاح الشامل لعيوب الواجهة (الجلسة 0.76)** · وقبله **عقد اتجاه RTL وامتثال Fluent للواجهة (الجلسة 0.75)** · وقبله **نقل عزل الخلفية بالذكاء الاصطناعي إلى محرك Go الأصلي (الجلسة 0.74)**
+**آخر تحديث:** 14 أكتوبر 2026 — بعد **نظام الطبقات V2 و Viewport Culling (الجلسة 0.79)** · وقبله **تصدير CMYK TIFF وتأنيس أخطاء الطباعة وإطلاق v1.15.1 (الجلسة 0.78)** · وقبله **استقرار الملفات والذاكرة وأداء الكانفاس (الجلسة 0.77)** · وقبله **الإصلاح الشامل لعيوب الواجهة (الجلسة 0.76)** · وقبله **عقد اتجاه RTL وامتثال Fluent للواجهة (الجلسة 0.75)**
 **المنهجية:** فحص الكود الفعلي (Go + React/Konva) ميزةً ميزة، ومطابقتها مع README وخطة التطوير.
 **الغرض:** مستند حي يُحدَّث مع كل نظرة على الميزات؛ يكمل (ولا يستبدل) `docs/development-plan/TASKS.md`.
 
 أسطورة الحالة: ✅ مكتمل | ⚠️ مكتمل مع فجوات | 🔶 جزئي | ❌ غير منفذ | 🆕 أُصلح في جلسة الإصلاحات
+
+---
+
+## 0.79 سجل جلسة نظام الطبقات V2 و Viewport Culling (مستند لتوثيق Konva الرسمي) — 14 أكتوبر 2026
+
+**المرجع:** تعريف `layer-system.ts` كمصدر حقيقة لـ 5 طبقات مع ميزانية VRAM (41 MB/layer، سقف 256 MB)، وإضافة `viewport-culling.ts` للمستندات الكبيرة، وإصلاحات viewport/touch وتحسينات `Listening_False/Optimize_Strokes`.
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| سجل الطبقات وميزانية VRAM | `LAYER_DEFS + LAYER_ORDER` + صيغة `scene+hit` + إنذار 5 طبقات/205 MB + حد 256 MB Mobile Safari | `frontend/src/lib/canvas/layer-system.ts` + توثيق JSX في `konva-canvas.tsx` ✅ |
+| Viewport Culling | إخفاء خارج العرض عند `>40` عنصر عبر AABB مدوّر مع `margin=64px` (توصية Konva «Very Large Scenes») | `frontend/src/lib/canvas/viewport-culling.ts` + تكامل `konva-single-layer.tsx` ✅ |
+| إصلاحات viewport/konva | تجميد أولي 220 ms (لا 800×600 flash)، و`deltaX*=viewportW` في PAGE، وتثبيت `pixelRatio` مع تسجيل VRAM في DEV | `frontend/src/components/editor/canvas/use-canvas-viewport.ts` + `konva-canvas.tsx` ✅ |
+| تحسينات أداء الطبقات | `listening:false / hitGraphEnabled / clearBeforeDraw / perfectDrawEnabled / shadowForStrokeEnabled=false` على الطبقات/الأشكال الثابتة | `konva-*-layer.tsx` ✅ |
+| توثيق | CHANGELOG + هذا السجل + مصفوفة المزامنة | `CHANGELOG.md` + `docs/DOCUMENTATION_MAP.md` ✅ |
 
 ---
 

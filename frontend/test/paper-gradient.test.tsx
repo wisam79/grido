@@ -1,17 +1,17 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import React from "react";
-import { render } from "@testing-library/react";
-import { Stage } from "react-konva";
-import type Konva from "konva";
-import { KonvaBackgroundLayer } from "../src/components/editor/konva/layers/konva-background-layer";
-import { SheetPreview } from "../src/components/editor/print/print-preview";
+import { describe, it, expect, beforeEach } from 'vitest';
+import React from 'react';
+import { render } from '@testing-library/react';
+import { Stage } from 'react-konva';
+import type Konva from 'konva';
+import { KonvaBackgroundLayer } from '../src/components/editor/konva/layers/konva-background-layer';
+import { SheetPreview } from '../src/components/editor/print/print-preview';
 import {
   canvasAngleToCss,
   gradientPixelPoints,
   gradientPointsFromAngle,
-} from "../src/lib/canvas/gradient-geometry";
-import { formatGradientCss } from "../src/components/editor/properties/gradient-utils";
-import { getCollageGeometry, getSlotRect } from "../src/lib/canvas/collage-geometry";
+} from '../src/lib/canvas/gradient-geometry';
+import { formatGradientCss } from '../src/components/editor/properties/gradient-utils';
+import { getCollageGeometry, getSlotRect } from '../src/lib/canvas/collage-geometry';
 
 /* ═══════════════════════════════════════════════════════════════
    خلفية الورقة المتدرجة — اختبارات انحدار على المخاطر الثلاث التي
@@ -27,17 +27,17 @@ const noop = () => {};
 class MockContext2D {
   canvas: HTMLCanvasElement | null = null;
   globalAlpha = 1;
-  globalCompositeOperation = "source-over";
-  fillStyle: unknown = "#000";
-  strokeStyle: unknown = "#000";
+  globalCompositeOperation = 'source-over';
+  fillStyle: unknown = '#000';
+  strokeStyle: unknown = '#000';
   lineWidth = 1;
-  lineCap = "butt";
-  lineJoin = "miter";
-  font = "10px sans-serif";
-  textAlign = "start";
-  textBaseline = "alphabetic";
+  lineCap = 'butt';
+  lineJoin = 'miter';
+  font = '10px sans-serif';
+  textAlign = 'start';
+  textBaseline = 'alphabetic';
   shadowBlur = 0;
-  shadowColor = "rgba(0,0,0,0)";
+  shadowColor = 'rgba(0,0,0,0)';
   shadowOffsetX = 0;
   shadowOffsetY = 0;
   scale = noop;
@@ -78,7 +78,9 @@ class MockContext2D {
 }
 
 function installCanvasMock() {
-  (HTMLCanvasElement.prototype as unknown as { getContext: () => unknown }).getContext = function (this: HTMLCanvasElement) {
+  (HTMLCanvasElement.prototype as unknown as { getContext: () => unknown }).getContext = function (
+    this: HTMLCanvasElement,
+  ) {
     const self = this as HTMLCanvasElement & { __mockCtx?: MockContext2D };
     if (!self.__mockCtx) {
       self.__mockCtx = new MockContext2D();
@@ -100,8 +102,8 @@ function cssDirection(deg: number) {
   return { dx: Math.sin(rad), dy: -Math.cos(rad) };
 }
 
-describe("Paper gradient geometry (single source of truth)", () => {
-  it("converts normalized gradient points to local pixels for Konva/Canvas2D", () => {
+describe('Paper gradient geometry (single source of truth)', () => {
+  it('converts normalized gradient points to local pixels for Konva/Canvas2D', () => {
     const W = 2480;
     const H = 3508;
 
@@ -131,7 +133,7 @@ describe("Paper gradient geometry (single source of truth)", () => {
     }
   });
 
-  it("keeps CSS previews pointing the same way as the canvas (90° offset handled)", () => {
+  it('keeps CSS previews pointing the same way as the canvas (90° offset handled)', () => {
     expect(canvasAngleToCss(0)).toBe(90);
     expect(canvasAngleToCss(90)).toBe(180);
     expect(canvasAngleToCss(135)).toBe(225);
@@ -144,30 +146,35 @@ describe("Paper gradient geometry (single source of truth)", () => {
       expect(css.dy).toBeCloseTo(canvas.dy, 5);
     }
 
-    const cssString = formatGradientCss([0, "#FFFFFF", 1, "#000000"], "linear", 135);
-    expect(cssString).toBe("linear-gradient(225deg, #FFFFFF 0%, #000000 100%)");
+    const cssString = formatGradientCss([0, '#FFFFFF', 1, '#000000'], 'linear', 135);
+    expect(cssString).toBe('linear-gradient(225deg, #FFFFFF 0%, #000000 100%)');
   });
 });
 
-describe("Konva paper background layer", () => {
+describe('Konva paper background layer', () => {
   beforeEach(() => {
     installCanvasMock();
   });
 
-  it("hands Konva pixel-space gradient points, not normalized ones", () => {
+  it('hands Konva pixel-space gradient points, not normalized ones', () => {
     const W = 1240;
     const H = 1754;
     let stage: Konva.Stage | null = null;
 
     render(
-      <Stage ref={(s: Konva.Stage | null) => { stage = s; }} width={W} height={H}>
+      <Stage
+        ref={(s: Konva.Stage | null) => {
+          stage = s;
+        }}
+        width={W}
+        height={H}
+      >
         <KonvaBackgroundLayer
           canvasWidth={W}
           canvasHeight={H}
           backgroundColor="#FFFFFF"
           backgroundGradientColor2="#1E40AF"
           backgroundGradientAngle={0}
-          mode="single"
           showGrid={false}
           gridSize={50}
           gridColor="#000000"
@@ -180,12 +187,12 @@ describe("Konva paper background layer", () => {
           columnsCount={12}
           columnsColor="rgba(239,68,68,0.08)"
         />
-      </Stage>
+      </Stage>,
     );
 
     const currentStage = stage as unknown as Konva.Stage;
     expect(currentStage).toBeTruthy();
-    const rect = currentStage.findOne(".bg-rect") as Konva.Rect | undefined;
+    const rect = currentStage.findOne('.bg-rect') as Konva.Rect | undefined;
     expect(rect).toBeTruthy();
 
     // الزاوية 0° = يسار→يمين: الامتداد يساوي عرض الورقة كاملاً بالبكسل
@@ -196,24 +203,29 @@ describe("Konva paper background layer", () => {
     // الخطأ القديم: تمرير النقاط النسبية كان يعطي امتداداً ≈ 1px فقط
     expect(end.x - start.x).not.toBeCloseTo(1, 0);
 
-    expect(rect!.fillLinearGradientColorStops()).toEqual([0, "#FFFFFF", 1, "#1E40AF"]);
+    expect(rect!.fillLinearGradientColorStops()).toEqual([0, '#FFFFFF', 1, '#1E40AF']);
     // التعبئة المصمتة والتدرج حصريان: لا fill مصمت مع تدرج حاضر
     expect(rect!.fill()).toBeUndefined();
   });
 
-  it("falls back to a solid fill when no second gradient color is set", () => {
+  it('falls back to a solid fill when no second gradient color is set', () => {
     const W = 600;
     const H = 800;
     let stage: Konva.Stage | null = null;
 
     render(
-      <Stage ref={(s: Konva.Stage | null) => { stage = s; }} width={W} height={H}>
+      <Stage
+        ref={(s: Konva.Stage | null) => {
+          stage = s;
+        }}
+        width={W}
+        height={H}
+      >
         <KonvaBackgroundLayer
           canvasWidth={W}
           canvasHeight={H}
           backgroundColor="#F1F5F9"
           backgroundGradientColor2={null}
-          mode="single"
           showGrid={false}
           gridSize={50}
           gridColor="#000000"
@@ -226,16 +238,16 @@ describe("Konva paper background layer", () => {
           columnsCount={12}
           columnsColor="rgba(239,68,68,0.08)"
         />
-      </Stage>
+      </Stage>,
     );
 
-    const rect = (stage as unknown as Konva.Stage).findOne(".bg-rect") as Konva.Rect;
-    expect(rect.fill()).toBe("#F1F5F9");
+    const rect = (stage as unknown as Konva.Stage).findOne('.bg-rect') as Konva.Rect;
+    expect(rect.fill()).toBe('#F1F5F9');
     expect(rect.fillLinearGradientColorStops()).toBeUndefined();
   });
 });
 
-describe("Print preview paper background", () => {
+describe('Print preview paper background', () => {
   const grid = {
     safeCols: 1,
     actualRows: 1,
@@ -255,39 +267,39 @@ describe("Print preview paper background", () => {
     gapMM: 0,
     zoom: 1,
     showCutLines: false,
-    mode: "single" as const,
-    previewImageSrc: "",
+    mode: 'single' as const,
+    previewImageSrc: '',
   };
 
-  it("paints the gradient instead of a flat paper color", () => {
+  it('paints the gradient instead of a flat paper color', () => {
     const { container } = render(
       <SheetPreview
         {...sheetProps}
         backgroundColor="#FFFFFF"
         backgroundGradientColor2="#1E40AF"
         backgroundGradientAngle={0}
-      />
+      />,
     );
 
-    const styled = Array.from(container.querySelectorAll("div")).filter((el) =>
-      String((el as HTMLElement).style.background || "").includes("linear-gradient")
+    const styled = Array.from(container.querySelectorAll('div')).filter((el) =>
+      String((el as HTMLElement).style.background || '').includes('linear-gradient'),
     );
     expect(styled.length).toBeGreaterThan(0);
     // الزاوية 0° في الكانفاس = 90deg في CSS (يسار→يمين)
-    expect(String((styled[0] as HTMLElement).style.background)).toContain("linear-gradient(90deg");
+    expect(String((styled[0] as HTMLElement).style.background)).toContain('linear-gradient(90deg');
   });
 
-  it("keeps a flat color when there is no gradient", () => {
+  it('keeps a flat color when there is no gradient', () => {
     const { container } = render(
-      <SheetPreview {...sheetProps} backgroundColor="#F1F5F9" backgroundGradientColor2={null} />
+      <SheetPreview {...sheetProps} backgroundColor="#F1F5F9" backgroundGradientColor2={null} />,
     );
     const html = container.innerHTML;
-    expect(html).not.toContain("linear-gradient");
+    expect(html).not.toContain('linear-gradient');
   });
 });
 
-describe("Collage geometry (shared by Konva layer and quick bar)", () => {
-  it("zeroes margin and gap for physical templates, keeps them otherwise", () => {
+describe('Collage geometry (shared by Konva layer and quick bar)', () => {
+  it('zeroes margin and gap for physical templates, keeps them otherwise', () => {
     const physical = getCollageGeometry(2480, 3508, 40, 12, true);
     expect(physical).toEqual({ margin: 0, gap: 0, availW: 2480, availH: 3508 });
 
@@ -298,7 +310,7 @@ describe("Collage geometry (shared by Konva layer and quick bar)", () => {
     expect(flexible.availH).toBe(3508 - 80);
   });
 
-  it("derives identical slot rects for rendering and for quick-bar anchoring", () => {
+  it('derives identical slot rects for rendering and for quick-bar anchoring', () => {
     const geo = getCollageGeometry(1000, 1400, 20, 10, false);
     const rect = getSlotRect({ x: 0.5, y: 0.25, w: 0.5, h: 0.25 }, geo);
 
@@ -314,7 +326,7 @@ describe("Collage geometry (shared by Konva layer and quick bar)", () => {
     expect(rect.width * displayScale).toBeCloseTo(117.5);
   });
 
-  it("keeps the normalized helpers the rest of the app already relies on", () => {
+  it('keeps the normalized helpers the rest of the app already relies on', () => {
     const { start, end } = gradientPointsFromAngle(0);
     expect(start).toEqual({ x: 0, y: 0.5 });
     expect(end).toEqual({ x: 1, y: 0.5 });
