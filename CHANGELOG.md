@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   3. `konva-single/collage/overlay-layer.tsx` — إعلان `listening:false` و`hitGraphEnabled/clearBeforeDraw` و`perfectDrawEnabled/shadowForStrokeEnabled=false` على الطبقات/الأشكال الثابتة وفق توصيات «Listening_False» و«Optimize_Strokes».
   4. `konva-canvas.tsx` — طبقة drag مسماة `drag-layer` بترتيب z موثق وتوثيق معمارية الطبقات V2 في JSX.
 
+### Changed
+- **لوحة الطبقات المرئية بالسحب والقفل/الإظهار (Visible Layers Panel — dnd-kit + PropertiesPanel tabs):**
+  1. `frontend/src/components/editor/panels/layers-panel.tsx` — ترقية من HTML5 draggable إلى `@dnd-kit/core/sortable` (`PointerSensor distance:6` + `KeyboardSensor` + `closestCenter`) مع مقبض سحب منفصل (باقي الصف للتحديد)، وحلّ شفافية السحب العالقة وتعارض `hitGraph`؛ ترتيب `zIndex` بالـ batch نفسه (`updateElements + pushHistory` مرة واحدة) مع توثيق 5 طبقات المنطقية (`layer-system.ts`).
+  2. `frontend/src/components/editor/panels/properties-panel.tsx` — لوحة الطبقات صارت مرئية فعلياً عبر تبويبين مجاورين للخصائص: عند بلا تحديد تبويب `الطبقات` بجانب `الورقة/الكولاج`، وعند التحديد تبويب فرعي `الخصائص/الطبقات` داخل الخصائص نفسها؛ العنوان ديناميكي `الطبقات (N)` ويُعاد إلى `الخصائص` تلقائياً عند تغيير التحديد.
+  3. `frontend/test/layers-panel.test.tsx` — تحديث للاختيار عبر `getByRole('button', {name})` الثابت بدل ترتيب DOM الهش (كان يفشل بعد dnd-kit)، مع نجاح 7/7.
+
 ### Fixed
 - **إصلاحات الطبقات والـ viewport (Layer & Viewport Fixes):**
   1. `use-canvas-viewport.ts` — إصلاح تجميد أولي 220 ms كان يترك `viewportSize` عند `800×600` بوميض، وإصلاح `deltaX*=viewportH`→`viewportW` في `deltaMode PAGE`.

@@ -127,13 +127,8 @@ describe('LayersPanel Component Tests', () => {
       ],
     });
 
-    const { container } = renderWithProviders(<LayersPanel />);
-    const buttons = container.querySelectorAll('button');
-    // Button order in row: 0=Copy, 1=Visibility, 2=Lock, 3=Delete
-    expect(buttons.length).toBeGreaterThanOrEqual(4);
-    const visibilityBtn = buttons[1];
-
-    fireEvent.click(visibilityBtn);
+    renderWithProviders(<LayersPanel />);
+    fireEvent.click(screen.getByRole('button', { name: 'إخفاء' }));
     expect(useEditorStore.getState().elements[0].visible).toBe(false);
   });
 
@@ -157,13 +152,8 @@ describe('LayersPanel Component Tests', () => {
       ],
     });
 
-    const { container } = renderWithProviders(<LayersPanel />);
-    const buttons = container.querySelectorAll('button');
-    // Button order in row: 0=Copy, 1=Visibility, 2=Lock, 3=Delete
-    expect(buttons.length).toBeGreaterThanOrEqual(4);
-    const lockBtn = buttons[2];
-
-    fireEvent.click(lockBtn);
+    renderWithProviders(<LayersPanel />);
+    fireEvent.click(screen.getByRole('button', { name: 'قفل' }));
     expect(useEditorStore.getState().elements[0].locked).toBe(true);
   });
 
@@ -187,13 +177,8 @@ describe('LayersPanel Component Tests', () => {
       ],
     });
 
-    const { container } = renderWithProviders(<LayersPanel />);
-    const buttons = container.querySelectorAll('button');
-    // Button order in row: 0=Copy, 1=Visibility, 2=Lock, 3=Delete
-    expect(buttons.length).toBeGreaterThanOrEqual(4);
-    const copyBtn = buttons[0];
-
-    fireEvent.click(copyBtn);
+    renderWithProviders(<LayersPanel />);
+    fireEvent.click(screen.getByRole('button', { name: 'نسخ' }));
     expect(useEditorStore.getState().elements.length).toBe(2);
   });
 
@@ -217,13 +202,8 @@ describe('LayersPanel Component Tests', () => {
       ],
     });
 
-    const { container } = renderWithProviders(<LayersPanel />);
-    const buttons = container.querySelectorAll('button');
-    // Button order in row: 0=Copy, 1=Visibility, 2=Lock, 3=Delete
-    expect(buttons.length).toBeGreaterThanOrEqual(4);
-    const deleteBtn = buttons[3];
-
-    fireEvent.click(deleteBtn);
+    renderWithProviders(<LayersPanel />);
+    fireEvent.click(screen.getByRole('button', { name: 'حذف' }));
     expect(useEditorStore.getState().elements.length).toBe(0);
   });
 });

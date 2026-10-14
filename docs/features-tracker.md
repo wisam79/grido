@@ -11,7 +11,7 @@
 
 ## 0.79 سجل جلسة نظام الطبقات V2 و Viewport Culling (مستند لتوثيق Konva الرسمي) — 14 أكتوبر 2026
 
-**المرجع:** تعريف `layer-system.ts` كمصدر حقيقة لـ 5 طبقات مع ميزانية VRAM (41 MB/layer، سقف 256 MB)، وإضافة `viewport-culling.ts` للمستندات الكبيرة، وإصلاحات viewport/touch وتحسينات `Listening_False/Optimize_Strokes`.
+**المرجع:** تعريف `layer-system.ts` كمصدر حقيقة لـ 5 طبقات مع ميزانية VRAM (41 MB/layer، سقف 256 MB)، وإضافة `viewport-culling.ts` للمستندات الكبيرة، وإصلاحات viewport/touch وتحسينات `Listening_False/Optimize_Strokes`، ثم **جعل لوحة الطبقات مرئية بالسحب والقفل/الإظهار** في نفس الجلسة.
 
 | البند | التنفيذ | الإثبات |
 | --- | --- | --- |
@@ -19,6 +19,7 @@
 | Viewport Culling | إخفاء خارج العرض عند `>40` عنصر عبر AABB مدوّر مع `margin=64px` (توصية Konva «Very Large Scenes») | `frontend/src/lib/canvas/viewport-culling.ts` + تكامل `konva-single-layer.tsx` ✅ |
 | إصلاحات viewport/konva | تجميد أولي 220 ms (لا 800×600 flash)، و`deltaX*=viewportW` في PAGE، وتثبيت `pixelRatio` مع تسجيل VRAM في DEV | `frontend/src/components/editor/canvas/use-canvas-viewport.ts` + `konva-canvas.tsx` ✅ |
 | تحسينات أداء الطبقات | `listening:false / hitGraphEnabled / clearBeforeDraw / perfectDrawEnabled / shadowForStrokeEnabled=false` على الطبقات/الأشكال الثابتة | `konva-*-layer.tsx` ✅ |
+| لوحة الطبقات المرئية | ترقية `layers-panel.tsx` من HTML5 draggable إلى `@dnd-kit` + تبويبا `الطبقات` المرئيان في `properties-panel.tsx` (عام + فرعي عند التحديد) مع `zIndex` بالـ batch | `layers-panel.tsx` + `properties-panel.tsx` + `test/layers-panel.test.tsx` 7/7 ✅ |
 | توثيق | CHANGELOG + هذا السجل + مصفوفة المزامنة | `CHANGELOG.md` + `docs/DOCUMENTATION_MAP.md` ✅ |
 
 ---

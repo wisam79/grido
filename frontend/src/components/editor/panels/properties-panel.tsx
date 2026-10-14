@@ -6,7 +6,8 @@ import { ElementProperties } from '../properties/element-properties';
 import { SlotProperties } from '../properties/slot-properties';
 import { CollageSettings } from '../properties/collage-settings';
 import { PanelShell } from './panel-shell';
-import { CaretRight, SlidersHorizontal, FileText } from '@/components/ui/icons';
+import { LayersPanel } from './layers-panel';
+import { CaretRight, SlidersHorizontal, FileText, Stack } from '@/components/ui/icons';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
 import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 
@@ -39,7 +40,9 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
       : undefined,
   );
 
-  const [generalTab, setGeneralTab] = useState<'collage' | 'canvas'>('collage');
+  const [generalTab, setGeneralTab] = useState<'collage' | 'canvas' | 'layers'>('collage');
+  const [elementSubView, setElementSubView] = useState<'props' | 'layers'>('props');
+  const elementsCount = useEditorStore((state) => state.elements.length);
 
   // 🎯 انتقال موحّد إلى أداة خلفية الورقة: إلغاء التحديد (لأن الإعدادات العامة
   // ومنها الورقة تظهر فقط بلا تحديد) ثم تحويل تبويب الإعدادات إلى «الورقة»
@@ -56,7 +59,9 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
   let panelTitle = 'الخصائص';
 
   if (selectedElement) {
-    if (selectedElement.type === 'image') {
+    if (elementSubView === 'layers') {
+      panelTitle = `الطبقات (${elementsCount})`;
+    } else if (selectedElement.type === 'image') {
       panelTitle = 'خصائص الصورة';
     } else if (selectedElement.type === 'text') {
       panelTitle = 'خصائص النص';
@@ -66,9 +71,10 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
   } else if (selectedSlot) {
     panelTitle = 'خصائص الخلية';
   } else if (mode === 'collage') {
-    panelTitle = generalTab === 'collage' ? 'إعدادات الكولاج' : 'إعدادات الورقة';
+    if (generalTab === 'layers') panelTitle = `الطبقات (${elementsCount})`;
+    else panelTitle = generalTab === 'collage' ? 'إعدادات الكولاج' : 'إعدادات الورقة';
   } else {
-    panelTitle = 'إعدادات الورقة';
+    panelTitle = generalTab === 'layers' ? `الطبقات (${elementsCount})` : 'إعدادات الورقة';
   }
 
   const handleUpdateElement = useCallback((id: string, patch: Partial<Record<string, unknown>>) => {
@@ -105,6 +111,44 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
     }
   }, []);
 
+  // تعيد تعيين تبويب الطبقات عند تغيير التحديد لتبقى الخصائص مرئية بلا قفز غير متعمد
+  useEffect(() => {
+    if (selectedElement) setElementSubView('props');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedElement?.id]);
+
+  const generalTabs =
+    mode === 'collage'
+      ? ([
+          {
+            id: 'collage' as const,
+            label: 'الكولاج',
+            icon: <SlidersHorizontal className="w-4 h-4" weight="regular" />,
+          },
+          {
+            id: 'canvas' as const,
+            label: 'الورقة',
+            icon: <FileText className="w-4 h-4" weight="regular" />,
+          },
+          {
+            id: 'layers' as const,
+            label: 'الطبقات',
+            icon: <Stack className="w-4 h-4" weight="regular" />,
+          },
+        ] as const)
+      : ([
+          {
+            id: 'canvas' as const,
+            label: 'الورقة',
+            icon: <FileText className="w-4 h-4" weight="regular" />,
+          },
+          {
+            id: 'layers' as const,
+            label: 'الطبقات',
+            icon: <Stack className="w-4 h-4" weight="regular" />,
+          },
+        ] as const);
+
   return (
     <PanelShell
       title={panelTitle}
@@ -119,9 +163,29 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
       className="bg-transparent select-none"
     >
       <div className="space-y-3">
-        {/* خصائص العنصر المحدد */}
+        {/* خصائص العنصر المحدد — مع تبويب فرعي للطبقات */}
         {selectedElement && (
-          <ElementProperties element={selectedElement} onUpdate={handleUpdateElement} />
+          <>
+            <FluentSegmentedControl<'props' | 'layers'>
+              layoutId="properties-element-subview"
+              value={elementSubView}
+              onChange={setElementSubView}
+              size="sm"
+              options={[
+                { id: 'props', label: 'الخصائص', icon: <SlidersHorizontal className="w-4 h-4" /> },
+                {
+                  id: 'layers',
+                  label: `الطبقات (${elementsCount})`,
+                  icon: <Stack className="w-4 h-4" />,
+                },
+              ]}
+            />
+            {elementSubView === 'layers' ? (
+              <LayersPanel />
+            ) : (
+              <ElementProperties element={selectedElement} onUpdate={handleUpdateElement} />
+            )}
+          </>
         )}
 
         {/* خصائص الخلية المحددة (كولاج) */}
@@ -129,31 +193,26 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
           <SlotProperties slot={selectedSlot} onUpdate={updateSlot} />
         )}
 
-        {/* إعدادات عامة */}
+        {/* إعدادات عامة — Web+Desktop بلا mobile branching */}
         {!selectedElement && !selectedSlot && (
           <div className="space-y-3">
-            {mode === 'collage' ? (
-              <>
-                <FluentSegmentedControl<'collage' | 'canvas'>
-                  layoutId="properties-general-tabs"
-                  value={generalTab}
-                  onChange={setGeneralTab}
-                  size="sm"
-                  options={[
-                    {
-                      id: 'collage',
-                      label: 'الكولاج',
-                      icon: <SlidersHorizontal className="w-4 h-4" weight="regular" />,
-                    },
-                    {
-                      id: 'canvas',
-                      label: 'الورقة',
-                      icon: <FileText className="w-4 h-4" weight="regular" />,
-                    },
-                  ]}
-                />
-                {generalTab === 'collage' ? <CollageSettings /> : <GeneralSettings />}
-              </>
+            <FluentSegmentedControl
+              layoutId="properties-general-tabs"
+              value={generalTab}
+              onChange={(v) => setGeneralTab(v as typeof generalTab)}
+              size="sm"
+              options={
+                generalTabs as unknown as { id: string; label: string; icon: React.ReactNode }[]
+              }
+            />
+            {generalTab === 'layers' ? (
+              <LayersPanel />
+            ) : mode === 'collage' ? (
+              generalTab === 'collage' ? (
+                <CollageSettings />
+              ) : (
+                <GeneralSettings />
+              )
             ) : (
               <GeneralSettings />
             )}
