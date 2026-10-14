@@ -82,6 +82,7 @@ export const ARABIC_FONTS: FontOption[] = [
     family: '"Readex Pro", sans-serif',
     googleFontName: 'Readex+Pro',
     category: 'kufi',
+    isOffline: true,
     sampleText: 'وضوح فائق ومقروئية',
   },
 

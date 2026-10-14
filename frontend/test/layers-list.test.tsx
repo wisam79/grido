@@ -18,8 +18,8 @@ describe('LayersList Component Tests', () => {
     useEditorStore.setState({ elements: [] });
     renderWithProviders(<LayersList />);
 
-    expect(screen.getByText('لا توجد عناصر')).toBeInTheDocument();
-    expect(screen.getByText('أضف عناصر من شريط الأدوات')).toBeInTheDocument();
+    expect(screen.getByText('لا توجد طبقات بعد')).toBeInTheDocument();
+    expect(screen.getByText(/أضف صوراً أو نصوصاً أو أشكالاً/)).toBeInTheDocument();
   });
 
   it('renders element list with correct labels and icons', () => {

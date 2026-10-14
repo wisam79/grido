@@ -23,15 +23,17 @@ import {
 } from '@/components/ui/icons';
 import { LayersList } from '../../properties/layers-list';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface QuickActionBtnProps {
   content: string;
   onClick: () => void;
   disabled?: boolean;
   children: React.ReactNode;
+  className?: string;
 }
 
-function QuickActionBtn({ content, onClick, disabled, children }: QuickActionBtnProps) {
+function QuickActionBtn({ content, onClick, disabled, children, className }: QuickActionBtnProps) {
   // 🛡️ الزر المعطّل ملفوف لاستقبال التحويم (التلميح يشرح سبب التعطيل)،
   // وبحجم h-7 الحد الأدنى بدل 6.5 — بلا pointer-events:none القاتل للتلميح.
   const btn = (
@@ -42,7 +44,10 @@ function QuickActionBtn({ content, onClick, disabled, children }: QuickActionBtn
       disabled={disabled}
       onClick={onClick}
       aria-label={content}
-      className="h-7 w-7 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+      className={cn(
+        'h-7 w-7 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all',
+        className,
+      )}
     >
       {children}
     </Button>
@@ -125,8 +130,10 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
       <div className="flex items-center justify-between h-8.5 px-2 rounded-lg border border-border/70 bg-card/60 shadow-2xs">
         {/* عنوان اللوحة مع عداد العناصر والمحدد */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-xs font-bold text-foreground shrink-0">العناصر</span>
-          <span className="text-3xs font-mono font-semibold px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0">
+          <span className="text-xs font-bold text-foreground shrink-0">
+            {hasSelection ? 'المحدد' : 'العناصر'}
+          </span>
+          <span className="text-3xs font-mono font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0">
             {selectedIds.length > 0 ? `${selectedIds.length}/${elements.length}` : elements.length}
           </span>
         </div>
@@ -134,7 +141,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
         {/* أزرار الإجراءات السريعة في صف واحد مدمج */}
         <div className="flex items-center gap-0.5 shrink-0">
           <QuickActionBtn
-            content={allHidden ? 'إظهار الكل' : 'إخفاء الكل'}
+            content={allHidden ? 'إظهار كل الطبقات' : 'إخفاء كل الطبقات'}
             onClick={handleToggleAllVisibility}
             disabled={!hasElements}
           >
@@ -146,7 +153,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
           </QuickActionBtn>
 
           <QuickActionBtn
-            content={allLocked ? 'فك قفل الكل' : 'قفل الكل'}
+            content={allLocked ? 'فك قفل كل الطبقات' : 'قفل كل الطبقات'}
             onClick={handleToggleAllLock}
             disabled={!hasElements}
           >
@@ -185,6 +192,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
 
           <QuickActionBtn
             content="حذف المحدد"
+            className="hover:text-destructive hover:bg-destructive/10"
             onClick={() => {
               const { elements } = useEditorStore.getState();
               const lockedCount = selectedIds.filter(
@@ -206,7 +214,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
             }}
             disabled={!hasSelection}
           >
-            <Trash className="w-3.5 h-3.5 text-destructive" />
+            <Trash className="w-3.5 h-3.5" />
           </QuickActionBtn>
         </div>
       </div>
@@ -215,13 +223,26 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
       {hasSelection && (
         <div className="flex items-center justify-between h-7 px-1.5 rounded-lg border border-border/50 bg-muted/30 shadow-2xs animate-in fade-in duration-150">
           <div className="flex items-center gap-0.5">
-            <QuickActionBtn content="محاذاة لليمين" onClick={() => alignSelectedElements('right')}>
+            <QuickActionBtn
+              content={
+                hasMultipleSelected ? 'محاذاة العناصر لليمين' : 'محاذاة لليمين في لوحة العمل'
+              }
+              onClick={() => alignSelectedElements('right')}
+            >
               <AlignRight className="w-3 h-3" />
             </QuickActionBtn>
-            <QuickActionBtn content="توسيط أفقي" onClick={() => alignSelectedElements('center')}>
+            <QuickActionBtn
+              content={hasMultipleSelected ? 'توسيط العناصر أفقياً' : 'توسيط أفقي في لوحة العمل'}
+              onClick={() => alignSelectedElements('center')}
+            >
               <AlignCenterHorizontal className="w-3 h-3" />
             </QuickActionBtn>
-            <QuickActionBtn content="محاذاة لليسار" onClick={() => alignSelectedElements('left')}>
+            <QuickActionBtn
+              content={
+                hasMultipleSelected ? 'محاذاة العناصر لليسار' : 'محاذاة لليسار في لوحة العمل'
+              }
+              onClick={() => alignSelectedElements('left')}
+            >
               <AlignLeft className="w-3 h-3" />
             </QuickActionBtn>
           </div>
@@ -229,13 +250,26 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
           <div className="w-px h-3.5 bg-border/50" />
 
           <div className="flex items-center gap-0.5">
-            <QuickActionBtn content="محاذاة للأعلى" onClick={() => alignSelectedElements('top')}>
+            <QuickActionBtn
+              content={
+                hasMultipleSelected ? 'محاذاة العناصر للأعلى' : 'محاذاة للأعلى في لوحة العمل'
+              }
+              onClick={() => alignSelectedElements('top')}
+            >
               <AlignTop className="w-3 h-3" />
             </QuickActionBtn>
-            <QuickActionBtn content="توسيط عمودي" onClick={() => alignSelectedElements('middle')}>
+            <QuickActionBtn
+              content={hasMultipleSelected ? 'توسيط العناصر عمودياً' : 'توسيط عمودي في لوحة العمل'}
+              onClick={() => alignSelectedElements('middle')}
+            >
               <AlignCenterVertical className="w-3 h-3" />
             </QuickActionBtn>
-            <QuickActionBtn content="محاذاة للأسفل" onClick={() => alignSelectedElements('bottom')}>
+            <QuickActionBtn
+              content={
+                hasMultipleSelected ? 'محاذاة العناصر للأسفل' : 'محاذاة للأسفل في لوحة العمل'
+              }
+              onClick={() => alignSelectedElements('bottom')}
+            >
               <AlignBottom className="w-3 h-3" />
             </QuickActionBtn>
           </div>
