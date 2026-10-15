@@ -150,6 +150,8 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
   let imgPos: { position: 'absolute'; left: string | number; top: string | number };
   let imgTransform: string;
 
+  // 🛡️ WYSIWYG مع Konva (T·R·S): في CSS تُطبَّق الدالة الأقصى يميناً أولاً —
+  // rotate قبل scaleX/scaleY = قلب ثم تدوير. عكسه كان يخالف المحرر عند 90/270.
   if (isQuarter) {
     const boxWpct = (rect.hMM / Math.max(0.01, rect.wMM)) * 100;
     const boxHpct = (rect.wMM / Math.max(0.01, rect.hMM)) * 100;
@@ -160,7 +162,7 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
       left: `${(100 - boxWpct) / 2}%`,
       top: `${(100 - boxHpct) / 2}%`,
     };
-    imgTransform = `scale(${zoomVal}) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1}) rotate(${slot.rotation || 0}deg)`;
+    imgTransform = `scale(${zoomVal}) rotate(${slot.rotation || 0}deg) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1})`;
   } else {
     let panX = 0;
     let panY = 0;
@@ -179,7 +181,7 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
       panY = (100 * zoomVal * dy) / coverH;
     }
     imgPos = { position: 'absolute' as const, left: 0, top: 0 };
-    imgTransform = `translate(${panX}%, ${panY}%) scale(${zoomVal}) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1}) rotate(${slot.rotation || 0}deg)`;
+    imgTransform = `translate(${panX}%, ${panY}%) scale(${zoomVal}) rotate(${slot.rotation || 0}deg) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1})`;
   }
 
   return (

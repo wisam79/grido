@@ -736,6 +736,32 @@ const CODE_ASSERTIONS = [
     file: 'frontend/src/lib/export/export-canvas-collage.ts',
     mustContain: ['resolveCutLineDash', 'collageCutLineStyle'],
   },
+  {
+    label: 'RV-Print-26 — سقوف ذاكرة التركيب وrecover العمال المتوازيين',
+    file: 'internal/service/print_service.go',
+    mustContain: ['maxCanvasPixels = 144_000_000', 'maxCanvasSidePx = 65535', 'validateCanvasComposition', 'recoverPrintWorkerPanic'],
+  },
+  {
+    label: 'RV-Print-26b — حارس هدف التحجيم في composeCanvas',
+    file: 'internal/service/print_compose.go',
+    mustContain: ['defer recoverPrintWorkerPanic', 'maxCanvasSidePx', 'maxCanvasPixels'],
+  },
+  {
+    label: 'RV-Print-27 — القلب قبل التدوير لمطابقة Konva T·R·S',
+    file: 'internal/service/print_image_pipeline.go',
+    mustContain: ['إصلاح WYSIWYG: القلب قبل التدوير', 'img = imaging.FlipH(img)', 'img = imaging.FlipV(img)', 'imaging.Rotate(img, -item.Rotation'],
+    mustNotContain: ['processedImg = imaging.Flip'],
+  },
+  {
+    label: 'UPD-1 — فشل مغلق على رابط التنزيل الأولي (https قبل الطلب)',
+    file: 'internal/service/updater.go',
+    mustContain: ['strings.HasPrefix(strings.ToLower(downloadURL), "https://")'],
+  },
+  {
+    label: 'FF-1 — دورة حياة مشاركة لعامل التأطير',
+    file: 'frontend/src/hooks/use-face-frame.ts',
+    mustContain: ['activeConsumers', 'cancelActiveFrameFlow'],
+  },
 ];
 
 function checkCodeAssertions() {

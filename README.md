@@ -141,8 +141,8 @@ Grido Studio
 │   │   ├── hooks/             # Custom hooks (autosave, bg-removal, AI enhance)
 │   │   ├── lib/store/         # Zustand store — 7 slices
 │   │   └── lib/templates/     # قوالب الصور والكولاج
-│   ├── test/                  # اختبارات Vitest (97 ملف اختبار و785 حالة — العدد المرجعي في docs/DOCUMENTATION_MAP.md)
-│   └── e2e/                   # اختبارات Playwright (25 ملف مواصفة / 165 حالة)
+│   ├── test/                  # اختبارات Vitest (122 ملف اختبار — الأرقام المرجعية في docs/DOCUMENTATION_MAP.md)
+│   └── e2e/                   # اختبارات Playwright (27 ملف مواصفة / 165 حالة)
 ├── supabase/                  # Edge functions + SQL migrations
 ├── modal_ai/                  # خادم Modal AI (CodeFormer + Real-ESRGAN)
 ├── admin-web/                 # صفحة هبوط + لوحة تحكم (React + Netlify)

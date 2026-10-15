@@ -1,0 +1,83 @@
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/react';
+import { SheetPreview } from '../src/components/editor/print/print-preview';
+import type { CanvasSlot } from '../src/lib/store/types';
+
+/* ═══════════════════════════════════════════════════════════════
+   ترتيب تحويل صورة الخانة في معاينة الطباعة — WYSIWYG مع Konva
+   (مصفوفة المجموعة T·R·S: القلب قبل التدوير). في CSS تُطبَّق الدالة
+   الأقصى يميناً أولاً، لذا يجب أن يسبق rotate دوالَّ scaleX/scaleY.
+   كان العكس — فينقلب الاتجاه 180° عن المحرر عند 90/270 مع أي قلب.
+   ═══════════════════════════════════════════════════════════════ */
+
+const baseSlot: CanvasSlot = {
+  id: 'slot-1',
+  cellIndex: 0,
+  x: 0.1,
+  y: 0.1,
+  w: 0.8,
+  h: 0.8,
+  imageSrc: 'data:image/png;base64,AAAA',
+  filter: 'none',
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
+  zoom: 1,
+  dragX: 0,
+  dragY: 0,
+  flipX: true,
+  flipY: false,
+  rotation: 90,
+};
+
+const grid = {
+  safeCols: 1,
+  actualRows: 1,
+  gridWidth: 100,
+  gridHeight: 150,
+  offsetX: 0,
+  offsetY: 0,
+  cellWidth: 100,
+  cellHeight: 150,
+};
+
+function renderPreview(slot: CanvasSlot): HTMLImageElement {
+  const { container } = render(
+    <SheetPreview
+      grid={grid}
+      count={1}
+      imageWidthMM={100}
+      imageHeightMM={150}
+      gapMM={0}
+      zoom={1}
+      showCutLines={false}
+      mode="collage"
+      backgroundColor="#FFFFFF"
+      previewImageSrc=""
+      slots={[slot]}
+    />,
+  );
+  const img = container.querySelector('img');
+  if (!img) throw new Error('slot preview image not rendered');
+  return img as HTMLImageElement;
+}
+
+describe('Print preview slot transform order (flip before rotate)', () => {
+  it('quarter rotation lists rotate before the flip scales', () => {
+    const img = renderPreview({ ...baseSlot, rotation: 90 });
+    expect(img.style.transform).toBe('scale(1) rotate(90deg) scaleX(-1) scaleY(1)');
+    expect(img.style.transform.indexOf('rotate')).toBeLessThan(
+      img.style.transform.indexOf('scaleX'),
+    );
+  });
+
+  it('non-quarter rotation keeps the same order', () => {
+    const img = renderPreview({ ...baseSlot, rotation: 0 });
+    expect(img.style.transform).toBe(
+      'translate(0%, 0%) scale(1) rotate(0deg) scaleX(-1) scaleY(1)',
+    );
+    expect(img.style.transform.indexOf('rotate')).toBeLessThan(
+      img.style.transform.indexOf('scaleX'),
+    );
+  });
+});

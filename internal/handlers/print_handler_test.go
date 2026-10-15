@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"grido/internal/core/domain"
@@ -106,9 +107,10 @@ func TestPrintHandler_PrintNative_Invalid(t *testing.T) {
 	}
 }
 
-// TestPrintHandler_InvalidCompositionFallsBack — تكامل عبر مسار IPC الكامل
-// (المعالج ← الخدمة ← التصدير): تركيب بأبعاد صفرية يُتجاوز وتنجح الورقة
-// من العناصر المباشرة بدل إرجاع Success=false.
+// TestPrintHandler_InvalidCompositionFallsBack — ⚠️ تحديث سياسة (تقوية سقوف
+// الذاكرة عبر مسار IPC الكامل): كان تركيب بأبعاد صفرية يُتجاوز وتنجح الورقة
+// من العناصر المباشرة؛ الآن التحقق المبكر يرفضه برسالة عربية واضحة قبل أي
+// تخصيص ذاكرة (Success=false بدل نتيجة ناقصة صامتة). الاسم التاريخي محفوظ (Rule 6).
 func TestPrintHandler_InvalidCompositionFallsBack(t *testing.T) {
 	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07).
 	appDir := t.TempDir()
@@ -164,15 +166,10 @@ func TestPrintHandler_InvalidCompositionFallsBack(t *testing.T) {
 	}
 
 	res := handler.ExportPrintSheet(req)
-	if !res.Success {
-		t.Fatalf("expected ExportPrintSheet to fall back and succeed, got error: %s", res.Error)
+	if res.Success {
+		t.Fatal("expected ExportPrintSheet to reject invalid composition dims, got success")
 	}
-	if res.FilePath == "" {
-		t.Fatal("expected non-empty FilePath in PrintResult")
-	}
-	defer os.Remove(res.FilePath)
-
-	if _, err := os.Stat(res.FilePath); os.IsNotExist(err) {
-		t.Fatalf("generated print file does not exist: %s", res.FilePath)
+	if !strings.Contains(res.Error, "كانفس التركيب") {
+		t.Fatalf("expected a clear composition rejection error, got: %s", res.Error)
 	}
 }

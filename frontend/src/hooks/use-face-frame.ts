@@ -37,7 +37,7 @@ export const useFaceFrameState = create<FaceFrameState>((set) => ({
  * useFaceFrame — يضبط مقاس وموضع الوجه تلقائياً وفق معايير صور الهوية
  * داخل Web Worker حقيقي (face-frame.worker.ts) ليبقى الخيط الرئيسي حراً.
  * ميزة محلية 100% (بدون خادم/تكلفة) — متاحة لجميع المستخدمين بدون بوابة ترخيص.
- * الإلغاء = terminate قسري فوري للـ Worker.
+ * الإلغاء = تسوية كل الطلبات المعلقة ثم terminate فوري للـ Worker.
  */
 
 export type FramingPatch = Partial<Record<string, unknown>>;
@@ -73,9 +73,14 @@ let nextRequestId = 1;
 // وكل المثيلات (الشريط السريع + لوحة الخصائص) تشارك سجل الطلبات المعلقة.
 let busyFrameRequestId = 0;
 
+// عدّاد المستهلكين الأحياء: يمنع فكّ تركيب نسخة واحدة (مثلاً لوحة الخصائص عند
+// إلغاء التحديد) من قتل عمل نسخة أخرى جارية وإسقاط callbacksها بصمت.
+let activeConsumers = 0;
+
 interface PendingFrameRequest {
   onMessage: (msg: FrameWorkerMessage) => void;
   onError: (message: string) => void;
+  onCancelled: () => void;
 }
 const pendingFrameRequests = new Map<number, PendingFrameRequest>();
 
@@ -115,6 +120,29 @@ function terminateWorker() {
     }
     workerInstance = null;
   }
+}
+
+/**
+ * إلغاء صريح شامل (زر الإلغاء): يُسوّي كل طلب معلّق على مستهلكه أولاً —
+ * لا تُسقط أي callback بصمت خلاف terminateWorker المجرد — ثم يُنهي العامل
+ * ويعيد حالة الواجهة المشتركة ويُغلق خانة العملية (إن كانت عملية تأطير).
+ */
+function cancelActiveFrameFlow() {
+  const pendingRequests = Array.from(pendingFrameRequests.values());
+  terminateWorker();
+  const ui = useFaceFrameState.getState();
+  ui.setIsFraming(false);
+  ui.setFrameProgress(0);
+  ui.setFrameProgressText('');
+  // لا نلمس إلا عملية التأطير — ولو تغيّرت خانة العمليات لنوع آخر لأي سبب
+  const activeOperation = useOperationStatusStore.getState().activeOperation;
+  if (activeOperation?.type === 'face_frame') {
+    useOperationStatusStore.getState().finishOperation(activeOperation.id);
+  }
+  for (const pending of pendingRequests) {
+    pending.onCancelled();
+  }
+  toast.info('تم إلغاء العملية.');
 }
 
 // تنظيف الـ Worker عند إغلاق التطبيق لتحرير ذاكرة WebGL فوراً
@@ -163,37 +191,42 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
   const activeOpRef = useRef<string | null>(null);
 
   useEffect(() => {
+    activeConsumers += 1;
     return () => {
+      activeConsumers -= 1;
+      let releasedOwnWork = false;
+      // 🧹 طلب هذه النسخة وحده يُزال — طلبات النسخ الأخرى تبقى حية في السجل المشترك
       const reqId = activeRequestRef.current;
       if (reqId) {
         pendingFrameRequests.delete(reqId);
         if (busyFrameRequestId === reqId) busyFrameRequestId = 0;
         activeRequestRef.current = 0;
+        releasedOwnWork = true;
       }
-      // إتمام التسوية الكاملة عند إلغاء التركيب أثناء التأطير
+      // 🛡️ (جلسة 0.76) فك النسخة المالكة يُنهي عمليتها النشطة حتى لا تعلق خانة العمليات
       if (activeOpRef.current) {
         useOperationStatusStore.getState().finishOperation(activeOpRef.current);
         activeOpRef.current = null;
+        releasedOwnWork = true;
       }
-      setIsFraming(false);
-      setFrameProgress(0);
-      setFrameProgressText('');
-      terminateWorker();
+      if (releasedOwnWork) {
+        setIsFraming(false);
+        setFrameProgress(0);
+        setFrameProgressText('');
+      }
+      // 🧹 (جلسة 0.68) يُطلق العامل فور خلو السجل من أي عمل معلّق، أو عند مغادرة
+      // آخر مستهلك دون عمل — دون قتل عمل معلّق لنسخة أخرى.
+      if (pendingFrameRequests.size === 0 && (releasedOwnWork || activeConsumers <= 0)) {
+        terminateWorker();
+      }
     };
     // المُحدِّثات zustand مستقرة الهوية — التنظيف لمرة واحدة عند الفك فقط.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCancelFrame = () => {
-    activeRequestRef.current = 0;
-    activeOpRef.current = null;
-    terminateWorker();
-    setIsFraming(false);
-    setFrameProgress(0);
-    setFrameProgressText('');
-    useOperationStatusStore.getState().cancelActiveOperation();
-    toast.info('تم إلغاء العملية.');
-  };
+  // إلغاء المستخدم الصريح — من أي نسخة (شريط سريع أو لوحة خصائص): مجرى مشترك
+  // يُسوّي الطلبات المعلقة ثم يُنهي العامل، بلا حذف صامت ولا تكرار إشعارات.
+  const handleCancelFrame = cancelActiveFrameFlow;
 
   const handleFrameFace = async (target: FramingTarget) => {
     const imageSrc = 'imageSrc' in target ? target.imageSrc : undefined;
@@ -223,7 +256,7 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
       title: 'جاري ضبط وتأطير الوجه ...',
       targetId,
       canCancel: true,
-      onCancel: handleCancelFrame,
+      onCancel: cancelActiveFrameFlow,
     });
 
     setIsFraming(true);
@@ -247,7 +280,8 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
       setIsFraming(false);
       setFrameProgressText('');
       setFrameProgress(0);
-      terminateWorker();
+      // 🧹 (جلسة 0.68) تحرير فوري لسياقات WebGL فور خلو السجل من أي عمل معلّق
+      if (pendingFrameRequests.size === 0) terminateWorker();
       triggerMemoryTrim();
     };
 
@@ -256,6 +290,10 @@ export function useFaceFrame(onUpdate: (id: string, patch: FramingPatch) => void
         if (activeRequestRef.current !== requestId) return;
         settle();
         toast.error(message);
+      },
+      onCancelled: () => {
+        if (activeRequestRef.current !== requestId) return;
+        settle();
       },
       onMessage: async (msg: FrameWorkerMessage) => {
         if (activeRequestRef.current !== requestId) return;

@@ -329,7 +329,10 @@ func (s *PrintService) composeCanvas(
 			continue
 		}
 		i, item := i, item
-		g.Go(func() error {
+		g.Go(func() (err error) {
+			// 🛡️ أي panic داخل العامل (مثل imaging.Resize على هدف ضخم) يتحول
+			// لخطأ يحمل فهرس العنصر بدل إسقاط التطبيق كاملاً
+			defer recoverPrintWorkerPanic(i, &err)
 			filePath := resolveLocalPath(item.ImageSrc)
 			cacheKey := computeImageCacheKey(filePath)
 			img, err := loadRawImage(filePath, cacheKey, imgCache)
@@ -337,13 +340,31 @@ func (s *PrintService) composeCanvas(
 				return err
 			}
 
-			targetW := int(math.Round(item.W * scaleX))
-			targetH := int(math.Round(item.H * scaleY))
+			// 🛡️ سقف هدف التحجيم قبل imaging.Resize: أبعاد العنصر بوحدات
+			// كانفاس-بكسل وقابلة للضخامة (50,000,000×50,000,000) فتُرفض هنا
+			// بالقيمة العائمة أولاً (تحويل NaN/Inf/ضخم إلى int غير معرّف)
+			targetWf := math.Round(item.W * scaleX)
+			targetHf := math.Round(item.H * scaleY)
+			if math.IsNaN(targetWf) || math.IsInf(targetWf, 0) ||
+				math.IsNaN(targetHf) || math.IsInf(targetHf, 0) {
+				return fmt.Errorf("أبعاد العنصر %d في كانفس التركيب غير صالحة بعد التحجيم (العرض=%.2f الارتفاع=%.2f)",
+					i+1, item.W, item.H)
+			}
+			if targetWf > maxCanvasSidePx || targetHf > maxCanvasSidePx {
+				return fmt.Errorf("العنصر %d في كانفس التركيب كبير جداً: %.0f×%.0f بكسل يتجاوز الحد الأقصى للضلع (%d بكسل)",
+					i+1, targetWf, targetHf, maxCanvasSidePx)
+			}
+			targetW := int(targetWf)
+			targetH := int(targetHf)
 			if targetW < 1 {
 				targetW = 1
 			}
 			if targetH < 1 {
 				targetH = 1
+			}
+			if int64(targetW)*int64(targetH) > maxCanvasPixels {
+				return fmt.Errorf("العنصر %d في كانفس التركيب كبير جداً: %d×%d بكسل يتجاوز الحد الأقصى (%d ميغابكسل)",
+					i+1, targetW, targetH, maxCanvasPixels/1_000_000)
 			}
 			prepared[i] = &preparedItem{item: item, processedImg: applyImageProcessing(img, item, targetW, targetH)}
 			return nil

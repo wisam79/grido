@@ -11,13 +11,13 @@
 ```mermaid
 flowchart TD
     subgraph E2E ["End-to-End (E2E Layer)"]
-        PW["Playwright (25 ملف مواصفة / 165 حالة عبر كل المشاريع · chromium في الوضع السريع)"]
+        PW["Playwright (27 ملف مواصفة / 165 حالة عبر كل المشاريع · chromium في الوضع السريع)"]
         Bridge["Wails v3 Mock Bridge (/wails/runtime Route Interceptor)"]
         PW --> Bridge
     end
 
     subgraph FE ["Frontend Component & Unit (Vitest)"]
-        VTests["Vitest + React Testing Library (117 ملف اختبار / 1026 حالة: 1025 ناجحة + 1 متخطّاة) — تحقق 2026-10-12"]
+        VTests["Vitest + React Testing Library (122 ملف اختبار؛ آخر شبكة كاملة 2026-10-12: 1074 ناجحة + 1 متخطّاة، وجلسة 0.81 أضافت 8 حالات مؤكدة 2026-10-15)"]
         Zustand["Zustand Slices + Math + Canvas & Collage Hooks"]
         Comps["React 19 Components (Freeform, Stickers, Panels)"]
         VTests --> Zustand
@@ -85,7 +85,7 @@ case 1234567890: // اسم الدالة الجديدة
 | :--- | :--- | :--- |
 | `task test:all` | تشغيل كافة اختبارات الباكيند والفرونت إند و E2E كاملة | المشروع بالكامل |
 | `task test:backend` | تشغيل كافة اختبارات الـ Go backend مع تفاصيل الحزم | Backend (`internal/...`) |
-| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (84 ملف اختبار) | Frontend Unit/Component |
+| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (122 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md) | Frontend Unit/Component |
 | `task test:e2e` | تشغيل اختبارات Playwright E2E السريعة على Chromium | E2E Browser |
 
 ### 3.2 عبر npm في مجلد `frontend`
@@ -163,12 +163,12 @@ go test -count=1 -v ./internal/...
 
 ## 5. حالة التغطية الحالية (Baseline Metrics)
 
-> 📌 الأرقام أدناه **تحقق: 2026-10-11**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة. (التحقق الثقيل يُشغَّل في GitHub Actions — القاعدة: لا إجهاد للبيئة المحلية.)
+> 📌 الأرقام أدناه **تحقق: 2026-10-15**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة. (التحقق الثقيل يُشغَّل في GitHub Actions — القاعدة: لا إجهاد للبيئة المحلية.)
 
-- **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/utils` تجتاز الاختبارات بنسبة 100% (**40 ملف اختبار / 224 دالة اختبار** — `go test ./internal/... -list "^Test"`).
-- **Vitest Frontend:** **114 ملفات اختبار** تضم **988 حالة** (987 ناجحة + 1 متخطّاة). منها عقد حمولة الطباعة `test/print-payload-builder.test.ts` (قفل إصلاحات RV-16)، ومنها **مسار تصدير CMYK الجديد:** `test/export-cmyk.test.ts` (14 اختباراً: بناء `PrintRequest`، تسلسل لقطة←رفع←تحويل←قراءة، حالات الفشل) و`test/export-dialog.test.tsx` (11 اختباراً: تبديل فضاء الألوان، معاملات الطلب الفعلية، الامتداد المحفوظ).
+- **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/utils` تجتاز الاختبارات بنسبة 100% (**48 ملفاً / 254 دالة اختبار** — `go test ./internal/... -list "^Test"`؛ أضافت جلسة 0.81 إحدى عشرة دالة: ملفان جديدان + دالة في `updater_test.go`).
+- **Vitest Frontend:** **122 ملف اختبار** (عدّ آلي: 2026-10-15)؛ آخر شبكة كاملة (2026-10-12): **1074 ناجحة + 1 متخطّاة**، وجلسة 0.81 أضافت **+8 حالات** مؤكدة بالتشغيل المستهدف. منها عقد حمولة الطباعة `test/print-payload-builder.test.ts` (قفل إصلاحات RV-16)، ومنها **مسار تصدير CMYK الجديد:** `test/export-cmyk.test.ts` (14 اختباراً: بناء `PrintRequest`، تسلسل لقطة←رفع←تحويل←قراءة، حالات الفشل) و`test/export-dialog.test.tsx` (11 اختباراً: تبديل فضاء الألوان، معاملات الطلب الفعلية، الامتداد المحفوظ).
 - **Go — فصل أحبار CMYK:** `print_cmyk_tiff_test.go` (وسوم `photometric=5`/`InkSet`/`SamplesPerPixel`/`ExtraSamples` + دورة قنوات حرفية + Stride لصورة فرعية + رفض مدخلات غير صالحة) و`print_fullpage_cmyk_test.go` (عقد حوار التصدير: كامل الصفحة حدّاً-لحدّ + الامتداد + قيد JPEG).
-- **Playwright E2E:** **25 ملف مواصفة** يضم **165 حالة** عبر كل المشاريع (chromium + firefox + webkit)؛ `npm run test:e2e:fast` يقتصر على chromium — التحقق: `npx playwright test --list`.
+- **Playwright E2E:** **27 ملف مواصفة** يضم **165 حالة** (آخر جرد للحالات: 2026-10-08؛ عدّ الملفات: 2026-10-15) عبر كل المشاريع (chromium + firefox + webkit)؛ `npm run test:e2e:fast` يقتصر على chromium — التحقق: `npx playwright test --list`.
 - **التغطية (Coverage):** الحدود الدنيا في `frontend/vitest.config.ts` (statements 36 / branches 30 / functions 32 / lines 36) وتُقرأ الأرقام الفعلية من `coverage/coverage-summary.json` في CI.
 - **GitHub Step Summaries:** يقوم خط الأنابيب بتوليد لوحات إحصائية وتلخيصات بصرية تلقائية لجميع مهام البناء والاختبار لكل عملية دمج أو دفع.
 - **بوابة التوثيق:** خطوة `Documentation Gate` (`node scripts/docs-gate.mjs`) تفشل البناء عند انحراف أي رقم مرجعي أو وجود مستند غير مُسجَّل — راجع `docs/DOCUMENTATION_MAP.md`.

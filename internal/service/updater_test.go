@@ -1,12 +1,16 @@
 package service
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -291,5 +295,39 @@ func TestExtractInstallerDownloadURL(t *testing.T) {
 				t.Errorf("extractInstallerDownloadURL() = %v, want %v", got, tt.expected)
 			}
 		})
+	}
+}
+
+// ─── رفض الرابط الأولي غير المشفّر ─────────────────────────────────
+//
+// العقد المُختبَر: DownloadAndInstall يرفض رابط http:// قبل أي طلب شبكة —
+// فحص CheckRedirect وحده لا يغطي الطلب الأول. الخادم المحلي هنا يثبت عدم
+// وقوع أي اتصال (عدّاد الطلبات = صفر) وليس مجرد وجود خطأ عائد.
+
+func TestUpdaterRejectsNonHTTPSInitialURL(t *testing.T) {
+	var hits int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&hits, 1)
+		w.Header().Set("Content-Type", "application/octet-stream")
+		_, _ = w.Write([]byte("http installer payload"))
+	}))
+	defer server.Close()
+
+	payload := sha256.Sum256([]byte("http installer payload"))
+	err := NewUpdaterService().DownloadAndInstall(
+		context.Background(),
+		server.URL+"/GridoStudio-installer.exe",
+		hex.EncodeToString(payload[:]),
+		"",
+	)
+
+	if err == nil {
+		t.Fatal("expected DownloadAndInstall to reject a non-HTTPS initial URL, got nil")
+	}
+	if !strings.Contains(err.Error(), "https://") {
+		t.Fatalf("error = %v, want it to state the https:// requirement", err)
+	}
+	if got := atomic.LoadInt32(&hits); got != 0 {
+		t.Fatalf("server was contacted %d time(s) — a network request was attempted before the scheme guard", got)
 	}
 }

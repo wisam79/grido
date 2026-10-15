@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/disintegration/imaging"
-
 	"grido/internal/core/domain"
 )
 
@@ -21,11 +19,13 @@ func writeCompositionDummyImage(t *testing.T, dir, name string, w, h int) string
 	return stagePrintTestImage(t, strings.TrimSuffix(name, ".png"), w, h, color.RGBA{R: 30, G: 120, B: 200, A: 255})
 }
 
-// TestPrintService_InvalidCompositionFallsBack — اختبار انحدار لحادثة إنتاجية
-// (سبتمبر 2026): فشل الطباعة بخطأ "invalid canvas composition dimensions" عند
-// وصول تركيب بأبعاد صفرية من الواجهة — مقدس (Rule 6): لا يُحذف أبداً.
-// تركيب كانفاس بأبعاد غير صالحة (صفر/سالب/NaN/Inf) يجب تجاوزه مع تحذير وإكمال
-// ورقة الطباعة من العناصر المباشرة، بدل فشل الطلب كاملاً.
+// TestPrintService_InvalidCompositionFallsBack — ⚠️ تحديث سياسة (تقوية سقوف
+// الذاكرة): كانت الأبعاد التالفة (صفر/سالب/NaN/Inf) تُتجاوز بصمت وتُكمل الورقة
+// من العناصر المباشرة — الآن يرفضها التحقق المبكر بخطأ صريح قبل أي تخصيص ذاكرة
+// (composeCanvas يبقى حاجزاً ثانياً يتجاوز الأبعاد غير الصالحة في مساره المباشر:
+// انظر TestComposeCanvas_InvalidDimsSecondBarrierFallback). الاسم التاريخي
+// محفوظ (Rule 6) — الرفض يمنع أيضاً الطلبات الضخمة (9000مم @600DPI ≈ 180GB)
+// التي كانت تفجّر التخصيص بصمت، ويمنع التجاهل الصامت لأبعاد تالفة من الواجهة.
 func TestPrintService_InvalidCompositionFallsBack(t *testing.T) {
 	cases := []struct {
 		name string
@@ -47,7 +47,7 @@ func TestPrintService_InvalidCompositionFallsBack(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			tempDir, err := os.MkdirTemp("", "print_comp_fallback_*")
+			tempDir, err := os.MkdirTemp("", "print_comp_reject_*")
 			if err != nil {
 				t.Fatalf("failed to create temp dir: %v", err)
 			}
@@ -84,32 +84,17 @@ func TestPrintService_InvalidCompositionFallsBack(t *testing.T) {
 				},
 			}
 
-			outPath, htmlDoc, err := svc.GeneratePrintSheet(req)
-			if err != nil {
-				t.Fatalf("invalid composition must fall back, not fail: %v", err)
-			}
-			defer os.Remove(outPath)
-
-			if _, err := os.Stat(outPath); os.IsNotExist(err) {
-				t.Fatalf("output file does not exist: %s", outPath)
+			if _, _, err := svc.validatePrintRequest(req); err == nil || !strings.Contains(err.Error(), "كانفس التركيب") {
+				t.Fatalf("validatePrintRequest must reject invalid composition dims with a clear error, got: %v", err)
 			}
 
-			outImg, err := imaging.Open(outPath)
-			if err != nil {
-				t.Fatalf("failed to open output image: %v", err)
+			outPath, _, err := svc.GeneratePrintSheet(req)
+			if err == nil {
+				os.Remove(outPath)
+				t.Fatalf("invalid composition must be rejected before any allocation, not printed")
 			}
-			bounds := outImg.Bounds()
-			// 100mm @ 150 DPI = (100 * 150) / 25.4 ≈ 591px
-			expected := int(math.Round(mmToPx(100.0, 150)))
-			if diff := mathAbs(bounds.Dx() - expected); diff > 2 {
-				t.Errorf("expected width close to %d, got %d", expected, bounds.Dx())
-			}
-			if diff := mathAbs(bounds.Dy() - expected); diff > 2 {
-				t.Errorf("expected height close to %d, got %d", expected, bounds.Dy())
-			}
-
-			if !strings.HasPrefix(htmlDoc, "<!DOCTYPE html>") {
-				t.Errorf("expected HTML document for iframe print")
+			if !strings.Contains(err.Error(), "كانفس التركيب") {
+				t.Fatalf("unexpected rejection error: %v", err)
 			}
 		})
 	}

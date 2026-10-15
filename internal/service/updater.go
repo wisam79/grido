@@ -468,8 +468,16 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 		return fmt.Errorf("refusing to install update: invalid SHA-256 checksum format: %w", err)
 	}
 
+	downloadURL = strings.TrimSpace(downloadURL)
 	if downloadURL == "" {
 		downloadURL = defaultInstallerFallbackURL
+	}
+
+	// 🛡️ fail-closed على الرابط الأولي نفسه لا على إعادات التوجيه فقط: الرابط
+	// يصل من استجابة فحص التحديث أو من واجهة الاستدعاء، وقبوله بـ http:// يفتح
+	// قناة التنزيل كلها للاعتراض قبل أي فحص للبصمة أو التوقيع.
+	if !strings.HasPrefix(strings.ToLower(downloadURL), "https://") {
+		return fmt.Errorf("رفض تثبيت التحديث: رابط التنزيل غير مشفّر (يجب أن يبدأ بـ https://): %s", downloadURL)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)

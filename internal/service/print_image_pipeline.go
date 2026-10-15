@@ -698,6 +698,18 @@ func applyImageProcessing(img image.Image, item domain.PrintItem, targetW, targe
 		img = imaging.Crop(img, rect)
 	}
 
+	// 🛡️ إصلاح WYSIWYG: القلب قبل التدوير — المحرر (Konva) يبني مصفوفة المجموعة
+	// T·R·S (Node.js: translate ← rotate ← scale) فالنقطة تُقلب أولاً ثم تُدوَّر.
+	// كان القلب يُطبّق بعد التدوير (H·R) فينعكس الناتج 180° عند 90/270 مع أي قلب.
+	// الاقتصاص يبقى أولاً: cropX/cropY في فضاء المصدر على عقدة الصورة نفسها،
+	// وتحويل المجموعة (قلب/تدوير) يُطبَّق على المحتوى المقصوص بعده.
+	if item.FlipX {
+		img = imaging.FlipH(img)
+	}
+	if item.FlipY {
+		img = imaging.FlipV(img)
+	}
+
 	// 🛡️ إصلاح: تدوير الصورة قبل التحجيم وتبديل الأبعاد المستهدفة عند 90/270 درجة
 	// كان التدوير يُطبّق بعد التحجيم مما يسبب عدم تطابق الأبعاد للصور المدوّرة 90/270
 	if item.Rotation != 0 {
@@ -723,15 +735,7 @@ func applyImageProcessing(img image.Image, item domain.PrintItem, targetW, targe
 	}
 
 	adjustedImg := applyColorAdjustments(resizedImg, item.Brightness, item.Contrast, item.Saturation)
-	processedImg := applyFilter(adjustedImg, item.Filter)
-	if item.FlipX {
-		processedImg = imaging.FlipH(processedImg)
-	}
-	if item.FlipY {
-		processedImg = imaging.FlipV(processedImg)
-	}
-
-	return processedImg
+	return applyFilter(adjustedImg, item.Filter)
 }
 
 // loadAndProcessImage يقوم بفتح الصورة ومعالجة ألوانها وأبعادها مع إدارة الذاكرة بنظام LRU وتفادي تكرار المعالجة الجارية

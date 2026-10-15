@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -38,6 +39,11 @@ const (
 	// maxExpandedPrintCells أعلى عدد خلايا مرسومة بعد التوسيع (قالب 48×24 الشائع
 	// = 1,152 خلية؛ السقف يترك هامش ×20 مع بقاء زمن الرسم محدوداً).
 	maxExpandedPrintCells = 25000
+	// maxCanvasPixels سقف بكسل المخرج (الورقة أو كانفس التركيب) — مصدر واحد
+	// للسياسة: 144 ميغابكسل (مثال: 12000×12000 بكسل @600DPI).
+	maxCanvasPixels = 144_000_000
+	// maxCanvasSidePx أقصى طول لضلع واحد بالبكسل (سقف آمن لأبعاد gg/imaging).
+	maxCanvasSidePx = 65535
 )
 
 type PrintService struct{}
@@ -64,8 +70,15 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 	widthPx := int(math.Round(mmToPx(req.PaperWidthMM, req.DPI)))
 	heightPx := int(math.Round(mmToPx(req.PaperHeightMM, req.DPI)))
 
-	if int64(widthPx)*int64(heightPx) > 144000000 { // حد أقصى 144 ميغابكسل
+	if int64(widthPx)*int64(heightPx) > maxCanvasPixels { // حد أقصى 144 ميغابكسل
 		return 0, 0, fmt.Errorf("requested print size is too large (total pixels exceed 144 megapixels)")
+	}
+
+	// 🛡️ فحص مبكر لكانفس الوضع الحر: أبعاد ضخمة (9000مم @600DPI ≈ 212,598px
+	// ≈ 180GB) كانت تصل إلى gg.NewContext/imaging.Resize بلا سقف علوي.
+	// composeCanvas يبقى الحاجز الدفاعي الثاني لمن يستدعيه مباشرة.
+	if err := validateCanvasComposition(req.Composition, req.DPI); err != nil {
+		return 0, 0, err
 	}
 
 	// 🛡️ سقف التوسيع الشبكي قبل أي تخصيص: Copies سالبة مرفوضة، والقيمة
@@ -144,6 +157,60 @@ func (s *PrintService) validatePrintRequest(req domain.PrintRequest) (int, int, 
 	}
 
 	return widthPx, heightPx, nil
+}
+
+// validateCanvasComposition يرفض مبكراً أبعاد كانفس الوضع الحر غير الصالحة أو
+// الضخمة قبل أي تخصيص ذاكرة. القيم غير المنتهية/≤0 لأبعاد الكانفس تُرفض صراحةً،
+// والسقفان (144MP للبكسل و65535 للضلع) قبل حساب أهداف العناصر — عنصر بلا صورة
+// أو بأبعاد ≤0 يبقى «يُتخطى» كما كان (composeCanvas سطر 328).
+func validateCanvasComposition(comp *domain.CanvasComposition, dpi int) error {
+	if comp == nil {
+		return nil
+	}
+
+	if math.IsNaN(comp.CanvasWidthMM) || math.IsInf(comp.CanvasWidthMM, 0) ||
+		math.IsNaN(comp.CanvasHeightMM) || math.IsInf(comp.CanvasHeightMM, 0) {
+		return fmt.Errorf("أبعاد كانفس التركيب غير صالحة (قيم غير منتهية): العرض=%v الارتفاع=%v",
+			comp.CanvasWidthMM, comp.CanvasHeightMM)
+	}
+	if comp.CanvasWidthMM <= 0 || comp.CanvasHeightMM <= 0 ||
+		comp.CanvasWidthPx <= 0 || comp.CanvasHeightPx <= 0 {
+		return fmt.Errorf("أبعاد كانفس التركيب يجب أن تكون أكبر من صفر: %.2f×%.2fمم (%d×%d بكسل)",
+			comp.CanvasWidthMM, comp.CanvasHeightMM, comp.CanvasWidthPx, comp.CanvasHeightPx)
+	}
+
+	// السقفان على القيم العائمة قبل أي تحويل إلى int (تحويل float ضخم إلى int
+	// سلوكه غير معرّف في Go؛ الفحص هنا يجعل ما بعده مأموناً رياضياً)
+	outW := math.Round(mmToPx(comp.CanvasWidthMM, dpi))
+	outH := math.Round(mmToPx(comp.CanvasHeightMM, dpi))
+	if outW > maxCanvasSidePx || outH > maxCanvasSidePx || outW*outH > maxCanvasPixels {
+		return fmt.Errorf("كانفس التركيب كبير جداً: %.0f×%.0f بكسل يتجاوز الحد الأقصى (%d ميغابكسل، ضلع أقصى %d بكسل)",
+			outW, outH, maxCanvasPixels/1_000_000, maxCanvasSidePx)
+	}
+
+	// 🛡️ أبعاد العناصر غير المنتهية كانت تتسلل من حارس composeCanvas (W <= 0
+	// لا يلتقط NaN)؛ الأبعاد ≤0 تبقى تُتخطى عمداً كما كان.
+	for i, item := range comp.Items {
+		if math.IsNaN(item.W) || math.IsInf(item.W, 0) || math.IsNaN(item.H) || math.IsInf(item.H, 0) {
+			return fmt.Errorf("أبعاد العنصر %d في كانفس التركيب غير صالحة (قيم غير منتهية): العرض=%v الارتفاع=%v",
+				i+1, item.W, item.H)
+		}
+	}
+	return nil
+}
+
+// recoverPrintWorkerPanic يحوّل أي panic داخل عامل معالجة بالتوازي إلى خطأ
+// مفهوم يحمل فهرس العنصر بدل إسقاط التطبيق كاملاً (panic في goroutine غير
+// مُلتقط يتجاوز PanicHandler في Wails كما يتجاوز SafeGo لأنه ليس مساراً خاماً
+// في errgroup). يُستدعى دائماً كـ defer مع نتيجة مُسمّاة.
+func recoverPrintWorkerPanic(index int, err *error) {
+	r := recover()
+	if r == nil {
+		return
+	}
+	slog.Error("print: recovered panic in parallel worker",
+		"itemIndex", index, "panic", r, "stack", string(debug.Stack()))
+	*err = fmt.Errorf("تعذرت معالجة العنصر %d: خطأ داخلي غير متوقع (%v)", index+1, r)
 }
 
 // expandGridItems يوسّع العناصر الشبكية (Copies > 1) إلى عناصر فردية محلياً —
@@ -263,7 +330,10 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 
 		// Capture loop variables for the goroutine
 		i, item := i, item
-		g.Go(func() error {
+		g.Go(func() (err error) {
+			// 🛡️ أي panic داخل عامل المعالجة يتحول لخطأ يصل للمستخدم بدل
+			// إسقاط العملية كاملاً (errgroup لا يلتقط panics بذاته)
+			defer recoverPrintWorkerPanic(i, &err)
 			img, err := s.loadAndProcessImage(item, req.DPI, imgCache, procCache)
 			if err != nil {
 				return err
