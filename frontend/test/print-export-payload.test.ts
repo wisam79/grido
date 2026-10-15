@@ -169,11 +169,18 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     const payload = mockExportPrintSheet.mock.calls[0][0] as unknown as {
       cutLines: Array<Record<string, unknown>>;
       items: Array<{ imageSrc: string }>;
+      composition?: unknown;
     };
     expect(payload.items).toHaveLength(1);
     expect(payload.cutLines.length).toBeGreaterThan(0);
     expect(typeof payload.cutLines[0].x1).toBe('number');
     expect(typeof payload.cutLines[0].y2).toBe('number');
+
+    // 5) 🖨️ حارس انحدار v1.16.0: تمرير مفتاح `composition: undefined` عبر
+    // createFrom المولّد يبني CanvasComposition أصفاراً (Nullable+default {})
+    // فيرفضه Go («يجب أن تكون أكبر من صفر») ويفشل كل تصدير. المفتاح يجب أن
+    // يُحذف كلياً حين لا يوجد تركيب حقيقي.
+    expect(payload.composition).toBeUndefined();
   });
 
   it('يحرّر pointerEvents ويسلّم onDone بعد نجاح التصدير (تسلسل الإنهاء الآمن)', async () => {

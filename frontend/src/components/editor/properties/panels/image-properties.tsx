@@ -29,6 +29,7 @@ import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
+import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
 import { useBgRemoval } from '@/hooks/use-bg-removal';
 import { useAiEnhance } from '@/hooks/use-ai-enhance';
@@ -224,69 +225,41 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       const state = useEditorStore.getState();
       const canvasRatio = state.canvasWidth / state.canvasHeight;
 
-      // 1. المستند الأول يحل محل العنصر الحالي
-      const firstPath = await SaveImageFromBase64(base64List[0]);
-      await new Promise<void>((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          const width = img.width;
-          const height = img.height;
-          img.onload = null;
-          img.onerror = null;
-          img.src = '';
-          if (isMountedRef.current) {
-            const docAspect = width / height;
-            const newHeight = (element.width * canvasRatio) / docAspect;
+      // 1. حفظ جميع مسارات الصور بتوازي تام O(1) بدلاً من الحلقات التسلسلية
+      const paths = await Promise.all(
+        base64List.map((b64) =>
+          b64.startsWith('data:image/') ? SaveImageFromBase64(b64) : Promise.resolve(b64),
+        ),
+      );
 
-            onUpdate(element.id, {
-              imageSrc: firstPath,
-              height: newHeight,
-            });
+      // 2. حل أبعاد الدفعة الكبيرة بطلب Go واحد متوازي O(1)
+      const aspectMap = await resolveBatchImageAspectRatios(paths);
 
-            state.setLastEditedImageAspect(docAspect);
-          }
-          resolve();
-        };
-        img.onerror = () => {
-          img.onload = null;
-          img.onerror = null;
-          img.src = '';
-          onUpdate(element.id, { imageSrc: firstPath });
-          resolve();
-        };
-        img.src = firstPath;
-      });
-
-      // 2. إدراج بقية المستندات المحددة كعناصر جديدة على الكانفاس بتسلسل مؤكد
-      if (base64List.length > 1) {
-        for (let i = 1; i < base64List.length; i++) {
-          const docPath = await SaveImageFromBase64(base64List[i]);
-          await new Promise<void>((resolve) => {
-            const docImg = new Image();
-            docImg.onload = () => {
-              const aspect = docImg.width / docImg.height;
-              docImg.onload = null;
-              docImg.onerror = null;
-              docImg.src = '';
-              useEditorStore.getState().addImageElement(docPath, aspect);
-              resolve();
-            };
-            docImg.onerror = () => {
-              docImg.onload = null;
-              docImg.onerror = null;
-              docImg.src = '';
-              useEditorStore.getState().addImageElement(docPath);
-              resolve();
-            };
-            docImg.src = docPath;
-          });
-        }
+      // 3. تحديث العنصر الأول بالكانفاس
+      const firstPath = paths[0];
+      const firstAspect = aspectMap.get(firstPath) || 1.0;
+      if (isMountedRef.current) {
+        const newHeight = (element.width * canvasRatio) / firstAspect;
+        onUpdate(element.id, {
+          imageSrc: firstPath,
+          height: newHeight,
+        });
+        state.setLastEditedImageAspect(firstAspect);
       }
 
-      // 🔒 حفظ التاريخ بعد اكتمال إدراج جميع العناصر بالكامل
-      useEditorStore.getState().pushHistory();
-      if (base64List.length > 1) {
-        toast.success(`تم استبدال وإدراج ${base64List.length} مستندات`);
+      // 4. إدراج بقية المستندات المحددة كعناصر جديدة على الكانفاس بدفعة واحدة ولقطة تراجع واحدة
+      if (paths.length > 1) {
+        const extraItems = paths.slice(1).map((src) => ({
+          src,
+          aspectRatio: aspectMap.get(src) || 1.0,
+        }));
+        state.addImageElementsBatch(extraItems);
+      } else {
+        state.pushHistory();
+      }
+
+      if (paths.length > 1) {
+        toast.success(`تم استبدال وإدراج ${paths.length} مستندات`);
       } else {
         toast.success('تم عزل المستند');
       }

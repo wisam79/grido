@@ -29,7 +29,7 @@ import {
   PaintBucket,
 } from '@/components/ui/icons';
 import { toast } from 'sonner';
-import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { uploadCanvasBlob } from '@/lib/io/media-upload';
 import { cn } from '@/lib/utils';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
@@ -541,12 +541,13 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
 
     setIsSaving(true);
     try {
-      const dataUrl = canvas.toDataURL('image/png');
-      const localPath = await SaveImageFromBase64(dataUrl);
+      // 🚀 بث ثنائي مباشر (Binary Streaming) إلى Go عبر uploadCanvasBlob لتفادي Base64 وHeap Bloat
+      const uploadRes = await uploadCanvasBlob(canvas, 'image/png', undefined, 'refined.png');
+      const localPath = uploadRes.imageSrc;
       // التحقق من نتيجة الحفظ — مسار فارغ كان يكتب imageSrc فارغاً على العنصر
       // مع رسالة نجاح كاذبة (إصلاح Bug#20)
       if (!localPath || !localPath.startsWith('/local-image/')) {
-        throw new Error('Invalid path returned from SaveImageFromBase64');
+        throw new Error('Invalid path returned from uploadCanvasBlob');
       }
       onSave(localPath);
       onOpenChange(false);

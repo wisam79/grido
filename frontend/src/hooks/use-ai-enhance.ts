@@ -195,7 +195,14 @@ export function useAiEnhance(
 
     try {
       setEnhanceProgress(20);
-      const base64Image = await prepareImageForAiUpload(element.imageSrc, 2048, 0.92);
+      let base64Image: string;
+      if (element.imageSrc.startsWith('/local-image/')) {
+        // 🚀 مسار Go المباشر: نمرر مسار الصورة المحلي لـ Go ليقرأه ويهيئه ذاتياً
+        // دون الحاجة لفتح DOM Image وتخصيص Canvas وتشفيره بـ toDataURL في المتصفح
+        base64Image = element.imageSrc;
+      } else {
+        base64Image = await prepareImageForAiUpload(element.imageSrc, 2048, 0.92);
+      }
 
       const loadingMessages = [
         'جاري تجهيز النموذج ...',

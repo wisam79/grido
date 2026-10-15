@@ -456,7 +456,11 @@ export function usePrintExport({
               orientation: printOrientation || 'portrait',
               cutLines,
               items,
-              composition,
+              // 🖨️ حارس v1.16.0: تمرير `composition: undefined` كمفتاح عبر
+              // createFrom المولّد ينتج CanvasComposition أصفاراً (Nullable +
+              // default {}) فيرفضه validateCanvasComposition في Go ويفشل كل
+              // تصدير — المفتاح يُحذف كلياً حين لا يوجد تركيب حقيقي.
+              ...(composition ? { composition } : {}),
             }),
           ),
           EXPORT_TIMEOUT_MS,

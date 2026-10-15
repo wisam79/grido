@@ -3,9 +3,11 @@ package service
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image/jpeg"
 	"io"
 	"log/slog"
 	"net/http"
@@ -14,6 +16,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/disintegration/imaging"
 
 	"grido/internal/utils"
 )
@@ -387,9 +391,49 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 		return "", fmt.Errorf("تسجيل الدخول مطلوب لاستخدام ميزة التحسين بالذكاء الاصطناعي")
 	}
 
+	var modalImagePayload string
+	var inputImageBytes int64
+
+	// 🚀 دعم مسار الصور المحلية المباشر (/local-image/...) لتفادي تشفير الـ DOM Canvas في الواجهة
+	if strings.HasPrefix(base64Image, "/local-image/") {
+		mediaSvc := NewMediaService()
+		realPath, err := mediaSvc.ResolveLocalImagePath(base64Image)
+		if err != nil {
+			return "", fmt.Errorf("resolve local image: %w", err)
+		}
+		stat, err := os.Stat(realPath)
+		if err != nil {
+			return "", fmt.Errorf("read local image stat: %w", err)
+		}
+		if stat.Size() > MaxFileSize {
+			return "", fmt.Errorf("حجم الصورة يتجاوز الحد الأقصى المسموح (%d ميجابايت)", MaxFileSize/(1024*1024))
+		}
+
+		img, err := imaging.Open(realPath, imaging.AutoOrientation(true))
+		if err != nil {
+			return "", fmt.Errorf("decode local image: %w", err)
+		}
+
+		// تحجيم ذكي إلى 2048x2048 كحد أقصى للحفاظ على النسبة الباعية وخفة الحمولة
+		bounds := img.Bounds()
+		if bounds.Dx() > 2048 || bounds.Dy() > 2048 {
+			img = imaging.Fit(img, 2048, 2048, imaging.Lanczos)
+		}
+
+		var buf bytes.Buffer
+		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 92}); err != nil {
+			return "", fmt.Errorf("encode jpeg for AI: %w", err)
+		}
+
+		inputImageBytes = int64(buf.Len())
+		modalImagePayload = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+	} else {
+		inputImageBytes = int64(len(base64Image)) * 3 / 4
+		modalImagePayload = base64Image
+	}
+
 	// 🛡️ سقف حجم الصورة المدخلة — يمنع إغراق خادم الذكاء الاصطناعي ببيانات ضخمة
 	const maxInputImageBytes = 50 * 1024 * 1024 // 50MB كصورة مفكوكة
-	inputImageBytes := int64(len(base64Image)) * 3 / 4
 	if inputImageBytes > maxInputImageBytes {
 		return "", fmt.Errorf("حجم الصورة كبير جداً للمعالجة بالذكاء الاصطناعي (الحد الأقصى %d ميجابايت)", maxInputImageBytes/(1024*1024))
 	}
@@ -449,7 +493,7 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	}
 
 	payload, err := json.Marshal(map[string]interface{}{
-		"image":      base64Image,
+		"image":      modalImagePayload,
 		"dailyLimit": serverLimit, // يُرسل للتوافقية فقط — RPC يشتق الحد من الخطة خادمياً أيضاً
 	})
 	if err != nil {

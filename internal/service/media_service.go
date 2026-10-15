@@ -143,7 +143,9 @@ func readExifOrientation(r io.ReadSeeker) int {
 	}
 }
 
-func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, error) {
+// ResolveLocalImagePath يتحقق من أمان مسار الصورة المحلية ويحل الروابط الرمزية (Symlinks)
+// لمنع هجمات Path Traversal والوصول إلى ملفات خارج مجلدي Media و Exports المعتمدين.
+func (s *MediaService) ResolveLocalImagePath(localPath string) (string, error) {
 	normalized := strings.ReplaceAll(localPath, "\\", "/")
 	filename := filepath.Base(filepath.Clean(strings.TrimPrefix(normalized, "/local-image/")))
 	var baseDir string
@@ -166,7 +168,16 @@ func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, er
 		baseDir = resolvedBase
 	}
 	if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(baseDir)+string(filepath.Separator)) {
-		return ImageDimensions{}, fmt.Errorf("invalid path: outside allowed directory")
+		return "", fmt.Errorf("invalid path: outside allowed directory")
+	}
+
+	return resolved, nil
+}
+
+func (s *MediaService) GetImageDimensions(localPath string) (ImageDimensions, error) {
+	resolved, err := s.ResolveLocalImagePath(localPath)
+	if err != nil {
+		return ImageDimensions{}, err
 	}
 
 	f, err := os.Open(resolved)
