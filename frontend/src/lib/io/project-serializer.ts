@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ProjectSchema } from '@/lib/schema';
 import { createLogger } from '@/lib/logger';
+import { sanitizeText } from '@/lib/canvas/text-helpers';
 
 const logger = createLogger('project-serializer');
 import { domain } from '../../../wailsjs/go/models';
@@ -125,9 +126,19 @@ export function migrateProject(raw: unknown): ProjectFileV1 {
   return normalized as ProjectFileV1;
 }
 
-// Validation and parsing
+// Validation and parsing — مع تعقيم النصوص الواردة من ملفات قديمة/خارجية
 export function deserializeProjectFile(raw: unknown): ProjectFileV1 {
   const migrated = migrateProject(raw);
+  // تعقيم نصوص العناصر قبل التحقق لضمان عدم دخول نصوص ضخمة/ملوثة للـ store
+  if (Array.isArray((migrated as Record<string, unknown>).elements)) {
+    const els = (migrated as { elements: unknown[] }).elements;
+    for (const el of els) {
+      if (el && typeof el === 'object' && (el as Record<string, unknown>).type === 'text') {
+        const t = (el as Record<string, unknown>).text;
+        if (typeof t === 'string') (el as Record<string, unknown>).text = sanitizeText(t);
+      }
+    }
+  }
   const parsed = ProjectFileSchema.safeParse(migrated);
   if (!parsed.success) {
     throw new Error('Project file validation failed: ' + parsed.error.message);

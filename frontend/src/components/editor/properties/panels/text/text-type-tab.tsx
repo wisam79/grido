@@ -18,6 +18,9 @@ import {
   ArrowsInLineHorizontal,
   ArrowsInLineVertical,
   ArrowsHorizontal,
+  AlignTop,
+  AlignCenterVertical,
+  AlignBottom,
   Palette,
   TextAa,
 } from '@/components/ui/icons';
@@ -69,6 +72,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
   const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
     element.text || '',
   );
+  const vAlign = element.textVerticalAlign || 'top';
 
   const currentFontSize = element.fontSize ?? 32;
   const currentLineHeight = element.lineHeight ?? 1.2;
@@ -349,6 +353,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               }}
               className={toggleButtonClassName(textAlign === 'right')}
               title="يمين"
+              aria-label="محاذاة يمين"
+              aria-pressed={textAlign === 'right'}
             >
               <TextAlignRight
                 className="w-4 h-4"
@@ -364,6 +370,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               }}
               className={toggleButtonClassName(textAlign === 'center')}
               title="توسيط"
+              aria-label="توسيط أفقي"
+              aria-pressed={textAlign === 'center'}
             >
               <TextAlignCenter
                 className="w-4 h-4"
@@ -379,11 +387,58 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               }}
               className={toggleButtonClassName(textAlign === 'left')}
               title="يسار"
+              aria-label="محاذاة يسار"
+              aria-pressed={textAlign === 'left'}
             >
               <TextAlignLeft
                 className="w-4 h-4"
                 weight={textAlign === 'left' ? 'bold' : 'regular'}
               />
+            </button>
+          </div>
+
+          <div className="w-px h-4 bg-border/60 mx-1" />
+
+          {/* المحاذاة العمودية داخل صندوق النص */}
+          <div className="flex items-center gap-0.5" role="group" aria-label="محاذاة عمودية">
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { textVerticalAlign: 'top' });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={toggleButtonClassName(vAlign === 'top')}
+              title="أعلى"
+              aria-label="محاذاة أعلى"
+              aria-pressed={vAlign === 'top'}
+            >
+              <AlignTop className="w-4 h-4" weight={vAlign === 'top' ? 'bold' : 'regular'} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { textVerticalAlign: 'middle' });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={toggleButtonClassName(vAlign === 'middle')}
+              title="وسط عمودي"
+              aria-label="توسيط عمودي"
+              aria-pressed={vAlign === 'middle'}
+            >
+              <AlignCenterVertical className="w-4 h-4" weight={vAlign === 'middle' ? 'bold' : 'regular'} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { textVerticalAlign: 'bottom' });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={toggleButtonClassName(vAlign === 'bottom')}
+              title="أسفل"
+              aria-label="محاذاة أسفل"
+              aria-pressed={vAlign === 'bottom'}
+            >
+              <AlignBottom className="w-4 h-4" weight={vAlign === 'bottom' ? 'bold' : 'regular'} />
             </button>
           </div>
         </div>

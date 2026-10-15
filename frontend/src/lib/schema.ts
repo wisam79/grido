@@ -38,6 +38,7 @@ export const CanvasElementSchema = z.object({
   color: z.string().optional(),
   fontFamily: z.string().optional(),
   textAlign: z.enum(['right', 'center', 'left']).optional(),
+  textVerticalAlign: z.enum(['top', 'middle', 'bottom']).optional(),
   textBgColor: z.string().optional(),
   textBgRadius: z.number().optional(),
   textBgPadding: z.number().optional(),

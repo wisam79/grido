@@ -10,6 +10,7 @@ import { withShadowlessDrag } from './drag-shadow';
 import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
 import { loadGoogleFont, onFontReady } from '@/lib/io/fonts';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
+import { isArabicText as isArabicTextHelper } from '@/lib/canvas/text-helpers';
 
 export const KonvaTextElement = React.memo(function KonvaTextElement({
   element: _element,
@@ -133,9 +134,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     rawText = rawText.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
   }
 
-  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
-    rawText,
-  );
+  const isArabic = isArabicTextHelper(rawText);
   const spacing = element.letterSpacing || 0;
 
   let renderText = rawText;
@@ -304,8 +303,10 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
             }
             textDecoration={element.textDecoration || ''}
             direction={isArabic ? 'rtl' : 'inherit'}
-            wrap="word"
+            wrap={element.wrap || 'word'}
             ellipsis={false}
+            verticalAlign={element.textVerticalAlign || 'top'}
+            height={h}
           />
         )}
       </Group>

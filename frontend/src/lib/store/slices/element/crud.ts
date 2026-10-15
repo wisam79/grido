@@ -1,8 +1,9 @@
 import type { StateCreator } from 'zustand';
-import type { CanvasElement, ImageElement } from '../../types';
+import type { CanvasElement, ImageElement, TextElement } from '../../types';
 import { uid } from '../../../utils';
 import { nextZIndex, normalizeSelection } from './types';
 import type { ElementCross, ElementSlice } from './types';
+import { sanitizeText } from '@/lib/canvas/text-helpers';
 
 export const createElementCrudSlice: StateCreator<
   ElementCross,
@@ -23,11 +24,23 @@ export const createElementCrudSlice: StateCreator<
       const currentEl = s.elements.find((el: CanvasElement) => el.id === id);
       if (!currentEl) return {};
 
+      // P0: تعقيم النص عند أي تحديث نصي — يمنع دخول محارف تحكم/نص ضخم للـ store
+      let effectivePatch: Partial<CanvasElement> = patch;
+      if (
+        (currentEl.type === 'text' || (patch as Partial<TextElement>).text !== undefined) &&
+        typeof (patch as Partial<TextElement>).text === 'string'
+      ) {
+        const sanitized = sanitizeText((patch as Partial<TextElement>).text as string);
+        if (sanitized !== (patch as Partial<TextElement>).text) {
+          effectivePatch = { ...patch, text: sanitized } as Partial<CanvasElement>;
+        }
+      }
+
       // تخطي إعادة بناء المصفوفة عند عدم تغير أي قيمة (يحدث كثيراً مع تحديثات الـ drag المجمعة)
-      const patchKeys = Object.keys(patch) as (keyof CanvasElement)[];
+      const patchKeys = Object.keys(effectivePatch) as (keyof CanvasElement)[];
       let hasChanged = false;
       for (const key of patchKeys) {
-        if (currentEl[key] !== patch[key]) {
+        if (currentEl[key] !== effectivePatch[key]) {
           hasChanged = true;
           break;
         }
@@ -35,7 +48,7 @@ export const createElementCrudSlice: StateCreator<
       if (!hasChanged) return {};
 
       const nextElements = s.elements.map((el: CanvasElement) =>
-        el.id === id ? ({ ...el, ...patch } as CanvasElement) : el,
+        el.id === id ? ({ ...el, ...effectivePatch } as CanvasElement) : el,
       );
       const isImg = currentEl.type === 'image';
       const imgPatch = patch as Partial<ImageElement>;
@@ -48,7 +61,16 @@ export const createElementCrudSlice: StateCreator<
 
   updateElements: (patches) => {
     set((s) => {
-      const patchMap = new Map(patches.map((p) => [p.id, p.patch]));
+      // P0: تعقيم أي patch نصي جماعي قبل التطبيق
+      const sanitizedPatches = patches.map((p) => {
+        const t = (p.patch as Partial<TextElement>).text;
+        if (typeof t === 'string') {
+          const s2 = sanitizeText(t);
+          if (s2 !== t) return { ...p, patch: { ...p.patch, text: s2 } as Partial<CanvasElement> };
+        }
+        return p;
+      });
+      const patchMap = new Map(sanitizedPatches.map((p) => [p.id, p.patch]));
       const nextElements = s.elements.map((el: CanvasElement) => {
         const patch = patchMap.get(el.id);
         return patch ? ({ ...el, ...patch } as CanvasElement) : el;
