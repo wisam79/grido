@@ -1633,3 +1633,50 @@
 - **توحيد تسميات الواجهة لمعيار `kebab-case` القياسي (Frontend Feature Naming Normalization):**
   1. ترقية وتوحيد 13 مكوّناً في `frontend/src/features/` من PascalCase إلى `kebab-case` قياسي (مثل `freeform-collage-modal.tsx`, `freeform-canvas-editor.tsx`, `sticker-studio-dialog.tsx`, `sticker-catalog.tsx`, `vdp-import-dialog.tsx`).
   2. تحديث براميل التصدير (`index.ts`) واختبارات المكوّنات وتكوين `eslint.config.js` مع نجاح الفحص النوعي بـ TypeScript وخلوه التام من أي تحذيرات.
+
+
+## [v1.14.8] - 2026-10-12
+
+### Changed
+- **استكمال توحيد التسجيل الأمامي عبر `createLogger` (Frontend Unified Logging Completion):**
+  1. استبدال كل نداءات `console.error/warn` الخام في 40 ملفاً من الواجهة بمسجّلات نطاق `createLogger(scope)` من `frontend/src/lib/logger.ts`، مع توجيه `info/warn/error` إلى سجل الـ backend المنظم (lumberjack) عبر `LogFrontendError`.
+  2. إصلاح فقدان قابلية الفحص في DevTools: الـ console تستلم الآن الأجزاء الأصلية (كائنات قابلة للتوسيع و`Error` قابل للنقر) بينما الـ backend يستلم النص المنسق، ومعالجة `Error.message` بدل `{}` الفارغ من `JSON.stringify`، واستخدام `console.info/debug` بمستواها الصحيح.
+  3. حارس امتثال جديد H9 في `frontend/test/ui-compliance.test.ts` يمنع عودة أي `console` خام إلى كود الإنتاج (يُستثنى `lib/logger.ts` نفسه وasserts التطوير والاختبارات).
+- **تصليب وتسريع خط البناء والاختبارات السحابي (CI Hardening & Fast-Path — تحقق 2026-10-12):**
+  1. أمان بالحد الأدنى (`permissions: contents: read` على مستوى سير العمل — كل الوظائف للقراءة فقط افتراضياً، على نمط `release.yml`) + `workflow_dispatch` للتشغيل اليدوي.
+  2. فلترة مسارات (`changes` عبر `dorny/paths-filter@v3`): الوظائف الثقيلة تعمل فقط عند تغيّر مدخلاتها (بوابة التوثيق تعمل **دائماً** بلا استثناء) — طلبات التوثيق فقط تنتهي في ~دقيقة بدل ~25 دقيقة، مع ضمان متقاطع موثّق (الواجهة تعمل أيضاً عند تغيّر Go لانحراف الربطات، وE2E/WebKit على جسر Mock فلا تتأثر بـ Go).
+  3. مهلات صريحة لكل وظيفة (`timeout-minutes`: البوابة 10 · الواجهة 30 · Go ‏25 · الإدارة 20 · ‏E2E ‏40 · ويندوز 60 · ‏WebKit ‏30 · الفلترة 5) بدل حد GitHub الافتراضي (6 ساعات) عند التعليق.
+  4. تثبيت `staticcheck@2025.1.1` (إصدار مُتحقق من `dominikh/go-tools`) بدل `@latest` المتحرك + مفتاح كاش مطابق، وتوحيد إصداري Go/Node في `env` علوي واحد.
+  5. كاش متصفح WebKit في `webkit-smoke` (كان يُنزَّل ~100MB+ كل تشغيل) بنفس نمط Chromium + `--no-fund` في كل `npm ci`.
+  6. تحديثات أمنية دورية هادئة: `.github/dependabot.yml` مضبوط بجدولة شهرية (`interval: monthly`) وسقف PR واحد لكل بيئة مع استثناء التحديثات الكبرى (`ignore: semver-major`) لمنع الضوضاء والتحديثات الكاسرة.
+
+### Refactored
+- **تفكيك أضخم 3 ملفات إلى مجلدات فرعية مع براميل توافقية (God-Module Splitting, no API change):**
+  1. `freeform-math.ts` (1184 سطراً) → مجلد `frontend/src/features/freeform-collage/lib/slots/` بعشرة ملفات (`constants`, `slot-ids`, `photo-presets`, `slot-move`, `slot-resize`, `slot-align`, `slot-pack`, `slot-batch`, `layout-io`, `index`)، والملف الأصلي صار shim رقيقاً `export * from './slots'`.
+  2. `element-slice.ts` (898 سطراً) → مجلد `frontend/src/lib/store/slices/element/` بتسعة ملفات (`types`, `image/text/shape-elements`, `crud`, `clipboard`, `selection`, `alignment`, `index`) بنفس اسم `createElementSlice` وشكل الحالة.
+  3. `AdminDashboard.tsx` (1684 → 180 سطراً) → مجلد `admin-web/src/pages/admin/` بأربعة هوكات وعشرة مكونات عرضية بنفس التصدير الافتراضي.
+
+### Added
+- **رفع تغطية الاختبارات (+31 حالة، المجموع 1025 ناجحة + 1 متخطاة في 117 ملفاً — تحقق 2026-10-12):**
+  1. `frontend/test/logger.test.ts` (6 حالات): تنسيق `Error` المرسل للـ backend، هوية الكائنات في الـ console، التوجيه الخلفي، ابتلاع فشل IPC، وكتم trace/debug بالإنتاج.
+  2. `frontend/test/freeform-slots-coverage.test.ts` (25 حالة): الدوال غير المغطاة سابقاً (`newSlotId`, `snapToGrid`, `addDefaultSlot`, `slotsFromFile`) وحراس الحالات الحدية والاستيراد المعادي، عبر الـ barrel الجديد مباشرة.
+- **حزمة جودة نظام الملصقات (Sticker Quality Pack — تحقق 2026-10-12، +12 حالة في `frontend/test/sticker-quality.test.ts`، المجموع 1037 ناجحة + 1 متخطاة في 118 ملفاً):**
+  1. بحث عربي مُطبَّع (`normalizeArabicQuery` في `lib/sticker-text.ts`): توحيد الهمزات والألفات والتاء المربوطة/الهاء والياء/الألف المقصورة وإسقاط التشكيل والتطويل — «قهوه» تجد «قهوة»، ويُطبَّق في `searchStickerTemplates` على الاستعلام والقوالب معاً.
+  2. فضّ تضارب معرّفات SVG (`namespaceStickerSvgIds`): تبادئ `id` و`url(#…)` و`href="#…"` بمفتاح القالب (idempotent) — تُطبَّق في معاينات المعرض (`sticker-catalog.tsx`) والمعاينة الحية (`sticker-studio-dialog.tsx`) فلا تتلاقط الفلاتر والأقواس المنحنية بين 80+ بطاقة معروضة معاً.
+  3. حماية الوصل العربي: إسقاط `letter-spacing` عن النص RTL مركزياً في `postProcessStickerSvg` (كان يفكّك اتصال الحروف في عشرات القوالب) مع إبقائه للاتينية (ترويسات PREMIUM المتباعدة عمداً).
+  4. تنبيه تباين الطباعة (`lib/sticker-a11y.ts` — WCAG نقي بلا مكتبات): تحذير كهرماني حي في لوحة الألوان عند تباين < 3.0 مع الخلفية.
+  5. ملاءمة الشيت التلقائية (`autoFitSheetGrid` في `lib/sheet-generator.ts` + زر «ملاءمة تلقائية على الورقة» في تبويب الشيت): أكبر شبكة تتسع بمقاس الملصق المليمتري على ورقة الطباعة الفعالة مع الفواصل وهوامش الأمان.
+  6. تصدير PNG فائق 600 DPI للمطابع (خيار جديد في قائمة التصدير) + `imageSmoothingQuality: high` في الترسترة وتوليد الشيت.
+  7. سلاسة الكتابة: `useDeferredValue(params)` في الاستوديو — الحقول تستجيب فوراً ويُعاد توليد SVG الثقيل بقيمة مؤجلة.
+- **رفع تغطية اختبارات الملصقات (+37 حالة، المجموع 1074 ناجحة + 1 متخطاة في 119 ملفاً — تحقق 2026-10-12):**
+  1. `frontend/test/sticker-coverage.test.ts` (37 حالة بلا أي Mock — سلوك حقيقي عبر `localStorage` والمكتبات الفعلية): تصليب تخزين القوالب (6 حمولات فاسدة مرفوضة، إزالة تكرار الاسم، سقف 50، فرادة المعرفات، نسخ عميق للحقول، حذف آمن)، مسارات توليد الباركود/QR الحقيقية مقابل العناصر التحذيرية، مسارات تخطي تضمين الخطوط، تجميع الكتالوج (7 مجموعات × فلتر الشكل × البحث الفارغ)، الحقول المخفية، وتقدير القياس والحالات الحدية للأبعاد — مع مراجعة ذاتية بمهارة `test-guard` (جدولة `it.each` للمتغيرات، وفصل السلوكيات المدمجة).
+
+### Fixed
+- **إصلاحات حرجة في مسار الملصقات (P0 — تحقق 2026-10-12):**
+  1. تسريب عناوين الكائنات: `revokeObjectUrlLater` في `sticker-studio-dialog.tsx` كانت تستدعي نفسها دورياً كل 60 ثانية بدل `URL.revokeObjectURL` فلا يُلغى أي عنوان أبداً — صار الإلغاء فعلياً بعد 60 ثانية مع دمج الطلبات المتتالية.
+  2. رموز QR وهمية: مسار `generateQrCodeInnerSvg` المتزامن (قبل اكتمال الجلب الكسول) ومسار الفشل كانا يُرجعان مربعاً أسود مصمتاً يبدو رمزاً صالحاً وهو غير قابل للمسح — صارا يُرجعان عنصراً تحذيرياً صريحاً (إطار متقطع + ⚠) كمسار الباركود، وكذلك عنصر الانتظار في `generateBarcodeInnerSvg` (بدل الشريط المصمت) قبل جاهزية JsBarcode.
+  3. معرفات القوالب المحفوظة: `saveStickerPreset` كان يستخدم `Date.now() + Math.random()` المعرّض للتصادم في العمليات السريعة — صار `crypto.randomUUID()` (مع سقوط آمن)، وتشديد التحقق من بنية `params.fields` عند التحميل من `localStorage`.
+- **إصلاح صلاحيات فحص المسارات في CI لطلبات السحب (CI pull_request Paths Filter Permissions):**
+  1. إضافة إذن `pull-requests: read` في سير العمل `ci.yml` ووظيفة `changes` (`Detect Changed Areas`): كان حصر الصلاحيات على `contents: read` يمنع `dorny/paths-filter@v3` من استدعاء GitHub REST API (`listFiles`) عند أحداث `pull_request`، مما أسفر عن خطأ `Resource not accessible by integration` وفشل كل طلبات السحب (بما فيها تحديثات Dependabot).
+  2. توسيع مرشحات المسارات لتشمل `build/**` و `Taskfile.yml` ضمن مسارات الباك إند، و `scripts/**` ضمن مسارات سير العمل لضمان إعادة التحقق عند تعديل سكربتات البناء أو الإطلاق.
+  3. فصل تثبيت اعتماديات النظام لـ Playwright (`npx playwright install-deps webkit/chromium`) عن تثبيت الثنائيات، مما يضمن وجود حزم النظام (مثل `libwoff2dec1.0.2`) على بيئة التشغيل حتى عند استعادة ثنائيات المتصفح من الكاش.
