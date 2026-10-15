@@ -4,6 +4,7 @@ import { uid } from '../../../utils';
 import { TEXT_PRESETS } from '../../../templates';
 import { nextZIndex, normalizeSelection } from './types';
 import type { ElementCross, ElementSlice } from './types';
+import { sanitizeText } from '@/lib/canvas/text-helpers';
 
 export const createTextElementsSlice: StateCreator<
   ElementCross,
@@ -12,6 +13,7 @@ export const createTextElementsSlice: StateCreator<
   Pick<ElementSlice, 'addTextElement' | 'addTextPreset' | 'autoFitTextWidth'>
 > = (set, get) => ({
   addTextElement: (text = 'نص جديد') => {
+    const sanitized = sanitizeText(String(text ?? 'نص جديد'));
     const id = uid();
     const state = get();
     const canvasW = state.canvasWidth || 2480;
@@ -19,7 +21,7 @@ export const createTextElementsSlice: StateCreator<
     // قياس وتناسب عرض مربع النص مع طول النص بدقة لمنع المساحات الفارغة الشاسعة
     const fontSize = 32;
     const charWidth = fontSize * 0.9;
-    const estimatedPx = Math.max(160, Math.min(canvasW * 0.6, text.length * charWidth + 60));
+    const estimatedPx = Math.max(160, Math.min(canvasW * 0.6, sanitized.length * charWidth + 60));
     const initialW = estimatedPx / canvasW;
 
     const newEl: CanvasElement = {
@@ -32,7 +34,7 @@ export const createTextElementsSlice: StateCreator<
       rotation: 0,
       opacity: 1,
       zIndex: nextZIndex(get().elements),
-      text,
+      text: sanitized,
       fontSize: 32,
       fontWeight: 700,
       color: '#1a1a2e',

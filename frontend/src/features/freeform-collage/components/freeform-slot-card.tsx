@@ -165,7 +165,7 @@ export const FreeformSlotCard: React.FC<FreeformSlotCardProps> = memo(function F
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
-            className="absolute w-2.5 h-2.5 bg-primary border-2 border-background rounded-xs shadow-sm hover:scale-125 transition-transform touch-none z-40"
+            className="absolute w-2.5 h-2.5 bg-primary border-2 border-background rounded-xs shadow-sm hover:scale-125 transition-transform touch-none z-(--z-canvas-overlay)"
             style={{ ...pos, ...BORDER_BY_HANDLE[dir] }}
           />
         ))}

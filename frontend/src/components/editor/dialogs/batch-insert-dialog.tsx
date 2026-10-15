@@ -435,8 +435,10 @@ export function BatchInsertDialog({
                     <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted shrink-0 border border-border/40 relative flex items-center justify-center">
                       <img
                         src={img.src}
-                        alt={`عنصر ${idx + 1}`}
+                        alt={img.name ? `صورة ${img.name}` : `صورة ${idx + 1}`}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        draggable={false}
                       />
                       <span className="absolute bottom-0.5 end-0.5 text-micro font-bold px-1 rounded-md bg-black/60 text-white">
                         #{idx + 1}

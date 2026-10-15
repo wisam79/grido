@@ -89,6 +89,8 @@ export interface TextElement extends BaseCanvasElement {
   color?: string;
   fontFamily?: string;
   textAlign?: 'right' | 'center' | 'left';
+  /** المحاذاة العمودية داخل صندوق النص (P1) — تُمرَّر لـ Konva verticalAlign */
+  textVerticalAlign?: 'top' | 'middle' | 'bottom';
   textBgColor?: string;
   textBgRadius?: number;
   textBgPadding?: number;

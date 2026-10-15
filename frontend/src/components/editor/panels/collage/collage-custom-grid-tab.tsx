@@ -285,7 +285,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
             {/* شارات محايدة: معلومة دائمة لا إجراء — الأزرق يُحفظ للحالة الحية في بطاقة الإجراءات */}
             <span
               className="h-5 text-2xs font-bold font-mono px-2 rounded-full bg-muted text-muted-foreground border border-border/60 flex items-center select-none"
-              title="عدد صور الشبكة الحالية"
+              aria-label="عدد صور الشبكة الحالية"
             >
               <span className="font-mono" dir="ltr">
                 {totalPhotos}
@@ -294,7 +294,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
             </span>
             <span
               className="h-5 text-2xs font-mono font-bold px-2 rounded-full bg-muted text-muted-foreground border border-border/60 flex items-center select-none"
-              title="نسبة تغطية الورقة"
+              aria-label="نسبة تغطية الورقة"
             >
               {coverage}%
             </span>
@@ -309,7 +309,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
               <span>الصفوف</span>
               <span
                 className="text-2xs font-mono font-normal text-muted-foreground-hover"
-                title="الحد الأقصى للصفوف"
+                aria-label="الحد الأقصى للصفوف"
               >
                 أقصى {maxRows}
               </span>
@@ -323,7 +323,6 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 type="button"
                 disabled={rows <= 1}
                 onClick={() => onRowsChange(Math.max(1, rows - 1))}
-                title="تقليل صف"
                 aria-label="تقليل عدد الصفوف"
                 className={COUNTER_BTN}
               >
@@ -339,7 +338,6 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 type="button"
                 disabled={rows >= maxRows}
                 onClick={() => onRowsChange(Math.min(maxRows, rows + 1))}
-                title="إضافة صف"
                 aria-label="زيادة عدد الصفوف"
                 className={COUNTER_BTN}
               >
@@ -354,7 +352,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
               <span>الأعمدة</span>
               <span
                 className="text-2xs font-mono font-normal text-muted-foreground-hover"
-                title="الحد الأقصى للأعمدة"
+                aria-label="الحد الأقصى للأعمدة"
               >
                 أقصى {maxCols}
               </span>
@@ -368,7 +366,6 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 type="button"
                 disabled={cols <= 1}
                 onClick={() => onColsChange(Math.max(1, cols - 1))}
-                title="تقليل عمود"
                 aria-label="تقليل عدد الأعمدة"
                 className={COUNTER_BTN}
               >
@@ -384,7 +381,6 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 type="button"
                 disabled={cols >= maxCols}
                 onClick={() => onColsChange(Math.min(maxCols, cols + 1))}
-                title="إضافة عمود"
                 aria-label="زيادة عدد الأعمدة"
                 className={COUNTER_BTN}
               >
@@ -399,7 +395,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           <button
             type="button"
             onClick={handleFillSheet}
-            title="ملء الورقة فوراً"
+            aria-label="ملء الورقة فوراً"
             className={cn(
               'h-7 px-2.5 rounded-md text-mini font-sans font-medium transition-colors cursor-pointer select-none flex items-center justify-between gap-1.5 border',
               isMaxFill

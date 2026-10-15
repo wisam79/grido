@@ -45,7 +45,7 @@ function QuickActionBtn({ content, onClick, disabled, children, className }: Qui
       onClick={onClick}
       aria-label={content}
       className={cn(
-        'h-7 w-7 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all',
+        'h-7 w-7 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
         className,
       )}
     >
@@ -127,7 +127,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
       dir="rtl"
     >
       {/* 🎛️ شريط أدوات الطبقات الموحد الرشيق */}
-      <div className="flex items-center justify-between h-8.5 px-2 rounded-lg border border-border/70 bg-card/60 shadow-2xs">
+      <div className="flex items-center justify-between h-8 px-2 rounded-lg border border-border/70 bg-card/60 shadow-2xs">
         {/* عنوان اللوحة مع عداد العناصر والمحدد */}
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-xs font-bold text-foreground shrink-0">

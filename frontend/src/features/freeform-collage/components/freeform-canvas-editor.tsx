@@ -316,7 +316,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
 
           {/* خطوط القص الإرشادية عند التفعيل */}
           {showCutLines && (
-            <div className="absolute inset-0 pointer-events-none z-25 opacity-60">
+            <div className="absolute inset-0 pointer-events-none z-(--z-canvas-overlay) opacity-60">
               {cutLinesHorizontal.map((pos, i) => (
                 <div
                   key={`cut-h-${i}`}
@@ -350,7 +350,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
 
           {/* شارة أبعاد الورقة المليمترية مع عدد الخلايا ونسبة الاستغلال */}
           <div
-            className="absolute bottom-1.5 left-1.5 bg-foreground/85 backdrop-blur-sm text-background text-micro px-2 py-0.5 rounded-md font-mono z-(--z-canvas-overlay) pointer-events-none tracking-wide shadow-xs flex items-center gap-1.5"
+            className="absolute bottom-1.5 start-1.5 bg-foreground/85 backdrop-blur-sm text-background text-micro px-2 py-0.5 rounded-md font-mono z-(--z-canvas-overlay) pointer-events-none tracking-wide shadow-xs flex items-center gap-1.5"
             dir="ltr"
           >
             <span className="font-bold">
@@ -365,7 +365,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
           {/* المؤشر الحي بالمليمتر أثناء السحب أو التحجيم */}
           {liveBadge && (
             <div
-              className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground text-micro px-2 py-0.5 rounded-md font-mono z-40 pointer-events-none shadow-fluent-8 animate-in fade-in duration-75"
+              className="absolute top-1.5 start-1.5 bg-primary text-primary-foreground text-micro px-2 py-0.5 rounded-md font-mono z-(--z-canvas-overlay) pointer-events-none shadow-fluent-8 animate-in fade-in duration-75"
               dir="ltr"
             >
               {liveBadge}

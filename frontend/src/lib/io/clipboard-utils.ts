@@ -9,6 +9,7 @@ import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { z } from 'zod';
 import { CanvasElementSchema } from '@/lib/schema';
 import { createLogger } from '@/lib/logger';
+import { sanitizeText, TEXT_MAX_LENGTH } from '@/lib/canvas/text-helpers';
 
 const logger = createLogger('clipboard-utils');
 
@@ -55,8 +56,13 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
         logger.error('Failed to parse GRIDO_ELEMENTS from clipboard', err);
       }
     } else if (readState().mode !== 'collage') {
-      // نص خارجي من متصفح/ورد/مفكرة
-      readState().addTextElement(text);
+      // نص خارجي من متصفح/ورد/مفكرة — تعقيم + تنبيه عند الاقتطاع
+      const sanitized = sanitizeText(text);
+      if (text.length > TEXT_MAX_LENGTH) {
+        const { toast } = await import('sonner');
+        toast.info(`تم اقتطاع النص الطويل إلى ${TEXT_MAX_LENGTH} حرفاً`);
+      }
+      readState().addTextElement(sanitized);
       return true;
     }
   }

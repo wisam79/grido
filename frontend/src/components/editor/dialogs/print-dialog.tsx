@@ -562,9 +562,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     onValueChange={handlePrinterChange}
                     disabled={isLoadingPrinters || printers.length === 0}
                   >
-                    <SelectTrigger className="h-8.5 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg w-full">
+                    <SelectTrigger className="h-8 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg w-full">
                       <SelectValue
-                        placeholder={isLoadingPrinters ? 'جاري البحث...' : 'اختر الطابعة'}
+                        placeholder={isLoadingPrinters ? 'جاري البحث ...' : 'اختر الطابعة'}
                       />
                     </SelectTrigger>
                     <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
@@ -594,8 +594,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   size="sm"
                   onClick={handleOpenPreferences}
                   disabled={isOpeningPrefs || !selectedPrinter}
+                  aria-label="الخصائص: خصائص الطابعة (نوع الورق وجودة الطباعة)"
                   title="خصائص الطابعة (نوع الورق وجودة الطباعة)"
-                  className="h-8.5 px-3 text-xs font-semibold shrink-0 gap-1.5 bg-background hover:bg-muted border-border/60 rounded-lg shadow-2xs cursor-pointer active:scale-98 transition-all"
+                  className="h-8 px-3 text-xs font-semibold shrink-0 gap-1.5 bg-background hover:bg-muted border-border/60 rounded-lg shadow-2xs cursor-pointer active:scale-[0.98] transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
                   {isOpeningPrefs ? (
                     <Spinner className="w-3.5 h-3.5 text-muted-foreground" size={14} />
@@ -650,7 +651,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   }
                 }}
               >
-                <SelectTrigger className="h-8.5 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg w-full">
+                <SelectTrigger className="h-8 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg w-full">
                   <SelectValue placeholder="مقاس الورقة" />
                 </SelectTrigger>
                 <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
@@ -682,13 +683,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <button
                   type="button"
                   onClick={() => setPrintSettings({ orientation: 'portrait' })}
+                  aria-label="اتجاه رأسي (عمودي)"
+                  aria-pressed={printSettings.orientation !== 'landscape'}
                   className={cn(
-                    'h-7.5 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none',
+                    'h-7 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     printSettings.orientation !== 'landscape'
                       ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
                       : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
                   )}
-                  title="اتجاه رأسي (عمودي)"
                 >
                   <PageOrientationIcon isLandscape={false} className="w-3.5 h-3.5" />
                   <span>رأسي</span>
@@ -696,13 +698,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <button
                   type="button"
                   onClick={() => setPrintSettings({ orientation: 'landscape' })}
+                  aria-label="اتجاه أفقي (عرضي)"
+                  aria-pressed={printSettings.orientation === 'landscape'}
                   className={cn(
-                    'h-7.5 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none',
+                    'h-7 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     printSettings.orientation === 'landscape'
                       ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
                       : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
                   )}
-                  title="اتجاه أفقي (عرضي)"
                 >
                   <PageOrientationIcon isLandscape={true} className="w-3.5 h-3.5" />
                   <span>أفقي</span>
@@ -769,7 +772,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                         setPrintSettings({ cutLineStyle: val as typeof printSettings.cutLineStyle })
                       }
                     >
-                      <SelectTrigger className="h-6.5 w-[84px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-2xs rounded">
+                      <SelectTrigger className="h-7 w-[84px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-2xs rounded">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent dir="rtl" className="z-(--z-print-toolbar)">
@@ -797,7 +800,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                         setPrintSettings({ colorSpace: val as 'sRGB' | 'CMYK' })
                       }
                     >
-                      <SelectTrigger className="h-6.5 w-[98px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-2xs rounded">
+                      <SelectTrigger className="h-7 w-[98px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-2xs rounded">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent dir="rtl" className="z-(--z-print-toolbar)">

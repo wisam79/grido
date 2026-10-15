@@ -167,7 +167,13 @@ export function CollageAutofillTab() {
                   key={`${index}-${src.slice(-16)}`}
                   className="w-7 h-7 rounded-md border border-border/70 bg-muted/60 overflow-hidden shrink-0"
                 >
-                  <img src={src} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={src}
+                    alt={`صورة مستوردة ${index + 1}`}
+                    loading="lazy"
+                    draggable={false}
+                    className="w-full h-full object-cover"
+                  />
                 </span>
               ))}
               {images.length > 8 && (

@@ -10,6 +10,7 @@ import { withShadowlessDrag } from './drag-shadow';
 import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
 import { loadGoogleFont, onFontReady } from '@/lib/io/fonts';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
+import { isArabicText as isArabicTextHelper } from '@/lib/canvas/text-helpers';
 
 export const KonvaTextElement = React.memo(function KonvaTextElement({
   element: _element,
@@ -92,7 +93,13 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
 
   useEffect(() => {
     if (!element.curve && textRef.current) {
-      const actualHeight = Math.max(0.01, textRef.current.height() / canvasHeight);
+      const node = textRef.current as Konva.Text;
+      // قياس الارتفاع الفعلي لأسطر النص لمنع تجميده عند تمرير height لـ Konva verticalAlign
+      const textHeightPx = node.textHeight || node.height();
+      const naturalHeight = Math.max(0.01, textHeightPx / canvasHeight);
+      const hasVAlign = element.textVerticalAlign && element.textVerticalAlign !== 'top';
+      const actualHeight = hasVAlign ? Math.max(element.height || 0, naturalHeight) : naturalHeight;
+
       if (
         lastSetHeightRef.current === null ||
         Math.abs(lastSetHeightRef.current - actualHeight) > 0.001
@@ -108,6 +115,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     element.fontWeight,
     element.fontStyle,
     element.textAlign,
+    element.textVerticalAlign,
     element.color,
     element.width,
     element.id,
@@ -133,9 +141,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     rawText = rawText.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
   }
 
-  const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
-    rawText,
-  );
+  const isArabic = isArabicTextHelper(rawText);
   const spacing = element.letterSpacing || 0;
 
   let renderText = rawText;
@@ -304,8 +310,10 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
             }
             textDecoration={element.textDecoration || ''}
             direction={isArabic ? 'rtl' : 'inherit'}
-            wrap="word"
+            wrap={element.wrap || 'word'}
             ellipsis={false}
+            verticalAlign={element.textVerticalAlign || 'top'}
+            height={h}
           />
         )}
       </Group>
