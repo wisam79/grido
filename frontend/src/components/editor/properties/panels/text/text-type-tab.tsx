@@ -113,9 +113,10 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
     useEditorStore.getState().pushHistory();
   };
 
-  const toggleButtonClassName = (active: boolean) =>
+  const toggleButtonClassName = (active: boolean, fullWidth = false) =>
     cn(
-      'w-8 h-8 rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none',
+      fullWidth ? 'w-full h-7' : 'w-7 h-7',
+      'rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none',
       active
         ? 'bg-background text-primary shadow-xs font-extrabold'
         : 'hover:bg-background/60 text-muted-foreground hover:text-foreground',
@@ -209,12 +210,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
           </div>
 
           <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-micro font-bold text-muted-foreground">الحجم</span>
-              <span className="text-micro font-bold font-mono text-primary">
-                {currentFontSize}px
-              </span>
-            </div>
+            <span className="text-micro font-bold text-muted-foreground">الحجم</span>
             <div className="relative">
               <select
                 value={currentFontSize}
@@ -247,7 +243,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
           label="حجم الخط"
           value={currentFontSize}
           min={8}
-          max={200}
+          max={Math.max(500, currentFontSize)}
           step={1}
           unit="px"
           onChange={(val) => onUpdate(element.id, { fontSize: val })}
@@ -288,8 +284,9 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
         icon={<Article className="w-4 h-4 text-primary" weight="duotone" />}
         title="التنسيق والمحاذاة"
       >
-        {/* الصف 1: التنسيقات والمحاذاة */}
+        {/* الصف 1: أنماط الخط وحالة الأحرف */}
         <div className="flex items-center justify-between p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
+          {/* نمط الخط: عريض، مائل، تسطير، شطب */}
           <div className="flex items-center gap-0.5">
             <button
               type="button"
@@ -301,6 +298,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               }}
               className={toggleButtonClassName(isBold)}
               title="عريض (B)"
+              aria-label="خط عريض"
+              aria-pressed={isBold}
             >
               <TextB className="w-4 h-4" weight={isBold ? 'bold' : 'regular'} />
             </button>
@@ -313,6 +312,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               }}
               className={toggleButtonClassName(isItalic)}
               title="مائل (I)"
+              aria-label="خط مائل"
+              aria-pressed={isItalic}
             >
               <TextItalic className="w-4 h-4" weight={isItalic ? 'bold' : 'regular'} />
             </button>
@@ -325,6 +326,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               }}
               className={toggleButtonClassName(isUnderline)}
               title="تسطير (U)"
+              aria-label="تسطير النص"
+              aria-pressed={isUnderline}
             >
               <TextUnderline className="w-4 h-4" weight={isUnderline ? 'bold' : 'regular'} />
             </button>
@@ -337,6 +340,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               }}
               className={toggleButtonClassName(isLineThrough)}
               title="شطب (S)"
+              aria-label="شطب النص"
+              aria-pressed={isLineThrough}
             >
               <TextStrikethrough className="w-4 h-4" weight={isLineThrough ? 'bold' : 'regular'} />
             </button>
@@ -344,15 +349,50 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
 
           <div className="w-px h-4 bg-border/60 mx-1" />
 
+          {/* حالة الأحرف اللاتينية */}
           <div className="flex items-center gap-0.5">
+            {[
+              { id: 'none', label: 'Aa', title: 'عادي' },
+              { id: 'uppercase', label: 'AA', title: 'أحرف كبيرة' },
+              { id: 'lowercase', label: 'aa', title: 'أحرف صغيرة' },
+              { id: 'capitalize', label: 'Abc', title: 'بداية كلمة كبيرة' },
+            ].map((tr) => (
+              <button
+                key={tr.id}
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, {
+                    textTransform: tr.id as 'none' | 'uppercase' | 'lowercase' | 'capitalize',
+                  });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={cn(
+                  'h-7 px-1.5 rounded-md text-micro font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                  element.textTransform === tr.id
+                    ? 'bg-background text-primary shadow-2xs font-extrabold'
+                    : 'hover:text-foreground text-muted-foreground hover:bg-background/40',
+                )}
+                title={tr.title}
+                aria-label={tr.title}
+              >
+                {tr.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* الصف 2: المحاذاة الأفقية والعمودية بتوزيع شبكي متناسق */}
+        <div className="flex items-center gap-1.5 p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
+          {/* المحاذاة الأفقية */}
+          <div className="flex-1 grid grid-cols-3 gap-0.5" role="group" aria-label="محاذاة أفقية">
             <button
               type="button"
               onClick={() => {
                 onUpdate(element.id, { textAlign: 'right' });
                 useEditorStore.getState().pushHistory();
               }}
-              className={toggleButtonClassName(textAlign === 'right')}
-              title="يمين"
+              className={toggleButtonClassName(textAlign === 'right', true)}
+              title="محاذاة يمين"
               aria-label="محاذاة يمين"
               aria-pressed={textAlign === 'right'}
             >
@@ -368,8 +408,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                 onUpdate(element.id, { textAlign: 'center' });
                 useEditorStore.getState().pushHistory();
               }}
-              className={toggleButtonClassName(textAlign === 'center')}
-              title="توسيط"
+              className={toggleButtonClassName(textAlign === 'center', true)}
+              title="توسيط أفقي"
               aria-label="توسيط أفقي"
               aria-pressed={textAlign === 'center'}
             >
@@ -385,8 +425,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                 onUpdate(element.id, { textAlign: 'left' });
                 useEditorStore.getState().pushHistory();
               }}
-              className={toggleButtonClassName(textAlign === 'left')}
-              title="يسار"
+              className={toggleButtonClassName(textAlign === 'left', true)}
+              title="محاذاة يسار"
               aria-label="محاذاة يسار"
               aria-pressed={textAlign === 'left'}
             >
@@ -397,18 +437,18 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
             </button>
           </div>
 
-          <div className="w-px h-4 bg-border/60 mx-1" />
+          <div className="w-px h-5 bg-border/60 shrink-0" />
 
-          {/* المحاذاة العمودية داخل صندوق النص */}
-          <div className="flex items-center gap-0.5" role="group" aria-label="محاذاة عمودية">
+          {/* المحاذاة العمودية */}
+          <div className="flex-1 grid grid-cols-3 gap-0.5" role="group" aria-label="محاذاة عمودية">
             <button
               type="button"
               onClick={() => {
                 onUpdate(element.id, { textVerticalAlign: 'top' });
                 useEditorStore.getState().pushHistory();
               }}
-              className={toggleButtonClassName(vAlign === 'top')}
-              title="أعلى"
+              className={toggleButtonClassName(vAlign === 'top', true)}
+              title="محاذاة أعلى"
               aria-label="محاذاة أعلى"
               aria-pressed={vAlign === 'top'}
             >
@@ -420,8 +460,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                 onUpdate(element.id, { textVerticalAlign: 'middle' });
                 useEditorStore.getState().pushHistory();
               }}
-              className={toggleButtonClassName(vAlign === 'middle')}
-              title="وسط عمودي"
+              className={toggleButtonClassName(vAlign === 'middle', true)}
+              title="توسيط عمودي"
               aria-label="توسيط عمودي"
               aria-pressed={vAlign === 'middle'}
             >
@@ -436,8 +476,8 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                 onUpdate(element.id, { textVerticalAlign: 'bottom' });
                 useEditorStore.getState().pushHistory();
               }}
-              className={toggleButtonClassName(vAlign === 'bottom')}
-              title="أسفل"
+              className={toggleButtonClassName(vAlign === 'bottom', true)}
+              title="محاذاة أسفل"
               aria-label="محاذاة أسفل"
               aria-pressed={vAlign === 'bottom'}
             >
@@ -446,67 +486,38 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
           </div>
         </div>
 
-        {/* الصف 2: حالة الأحرف والأرقام وملاءمة العرض */}
-        <div className="flex items-center justify-between p-1 bg-muted/25 rounded-lg border border-border/40 text-micro font-semibold">
-          <div className="flex items-center gap-0.5">
-            {[
-              { id: 'none', label: 'Aa' },
-              { id: 'uppercase', label: 'AA' },
-              { id: 'lowercase', label: 'aa' },
-              { id: 'capitalize', label: 'Abc' },
-            ].map((tr) => (
-              <button
-                key={tr.id}
-                type="button"
-                onClick={() => {
-                  onUpdate(element.id, {
-                    textTransform: tr.id as 'none' | 'uppercase' | 'lowercase' | 'capitalize',
-                  });
-                  useEditorStore.getState().pushHistory();
-                }}
-                className={cn(
-                  'px-1.5 py-0.5 rounded-md text-micro font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-                  element.textTransform === tr.id
-                    ? 'bg-background text-primary shadow-2xs font-extrabold'
-                    : 'hover:text-foreground text-muted-foreground hover:bg-background/40',
-                )}
-              >
-                {tr.label}
-              </button>
-            ))}
-          </div>
+        {/* الصف 3: الأدوات الذكية (الأرقام المشرقية وملاءمة العرض) */}
+        <div className="grid grid-cols-2 gap-2 pt-0.5">
+          <button
+            type="button"
+            onClick={() => {
+              onUpdate(element.id, { arabicNumerals: !isArabicNumerals });
+              useEditorStore.getState().pushHistory();
+            }}
+            className={cn(
+              'h-7 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs font-semibold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none border',
+              isArabicNumerals
+                ? 'bg-background text-primary shadow-xs font-bold border-primary/30'
+                : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground',
+            )}
+            title="تحويل الأرقام إلى المشرقية (١٢٣)"
+            aria-label="أرقام مشرقية"
+            aria-pressed={isArabicNumerals}
+          >
+            <Hash className="w-3.5 h-3.5" weight={isArabicNumerals ? 'bold' : 'regular'} />
+            <span>أرقام مشرقية</span>
+          </button>
 
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, { arabicNumerals: !isArabicNumerals });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={cn(
-                'h-6 px-1.5 rounded-md flex items-center justify-center gap-0.5 transition-all cursor-pointer text-micro font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none',
-                isArabicNumerals
-                  ? 'bg-background text-primary shadow-xs font-extrabold border border-primary/30'
-                  : 'hover:bg-background/60 text-muted-foreground hover:text-foreground',
-              )}
-              title="أرقام عربية (١٢٣)"
-            >
-              <Hash className="w-3 h-3" weight={isArabicNumerals ? 'bold' : 'regular'} />
-              <span>١٢٣</span>
-            </button>
-
-            <div className="w-px h-3.5 bg-border/50" />
-
-            <button
-              type="button"
-              onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
-              className="h-6 px-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-micro font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shrink-0"
-              title="ملاءمة عرض الصندوق"
-            >
-              <ArrowsInLineHorizontal className="w-3 h-3" weight="bold" />
-              <span>ملاءمة</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
+            className="h-7 px-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:scale-[1.02] active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+            title="ملاءمة عرض الصندوق مع النص تلقائياً"
+            aria-label="ملاءمة العرض"
+          >
+            <ArrowsInLineHorizontal className="w-3.5 h-3.5" weight="bold" />
+            <span>ملاءمة العرض</span>
+          </button>
         </div>
       </FluentSection>
 
