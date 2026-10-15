@@ -665,12 +665,11 @@ export const SlotProperties = React.memo(function SlotProperties({
             originalImageSrc={slot.originalImageSrc}
             onCropSave={async (cropped) => {
               try {
-                if (wailsIsDesktop()) {
-                  const localPath = await SaveImageFromBase64(cropped);
-                  onUpdate(slot.id, { imageSrc: localPath });
-                } else {
-                  onUpdate(slot.id, { imageSrc: cropped });
+                let localPath = cropped;
+                if (wailsIsDesktop() && cropped.startsWith('data:image/')) {
+                  localPath = await SaveImageFromBase64(cropped);
                 }
+                onUpdate(slot.id, { imageSrc: localPath });
               } catch (err) {
                 logger.error('Failed to save cropped slot image:', err);
                 toast.error(toErrorMessage(err, 'فشل حفظ القص'));

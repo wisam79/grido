@@ -165,10 +165,7 @@ export function ElementMenuSection({
                         }
                       }
 
-                      const img = new Image();
-                      img.onload = () => {
-                        const w = dims?.width || img.width;
-                        const h = dims?.height || img.height;
+                      const applyUpdate = (w: number, h: number) => {
                         const croppedAspect = w / h;
                         const state = useEditorStore.getState();
                         const canvasRatio = state.canvasWidth / state.canvasHeight;
@@ -184,14 +181,23 @@ export function ElementMenuSection({
                         state.setLastEditedImageAspect(croppedAspect);
                         state.pushHistory();
                       };
-                      img.onerror = () => {
-                        updateElement(imgEl.id, {
-                          imageSrc: finalPath,
-                          originalImageSrc: imgEl.originalImageSrc || imgEl.imageSrc,
-                        } as Partial<CanvasElement>);
-                        pushHistory();
-                      };
-                      img.src = croppedB64;
+
+                      if (dims && dims.width > 0 && dims.height > 0) {
+                        applyUpdate(dims.width, dims.height);
+                      } else {
+                        const img = new Image();
+                        img.onload = () => {
+                          applyUpdate(img.width, img.height);
+                        };
+                        img.onerror = () => {
+                          updateElement(imgEl.id, {
+                            imageSrc: finalPath,
+                            originalImageSrc: imgEl.originalImageSrc || imgEl.imageSrc,
+                          } as Partial<CanvasElement>);
+                          useEditorStore.getState().pushHistory();
+                        };
+                        img.src = croppedB64;
+                      }
                     } catch (err) {
                       logger.error('Failed to crop image in context menu:', err);
                     }

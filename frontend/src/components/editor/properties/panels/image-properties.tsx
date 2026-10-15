@@ -776,22 +776,14 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             originalImageSrc={element.originalImageSrc}
             onCropSave={async (cropped, dims) => {
               try {
-                // حفظ الصورة المقصوصة محلياً بدلاً من تخزين Base64 في الذاكرة
-                const localPath = await SaveImageFromBase64(cropped);
+                let localPath = cropped;
+                if (cropped.startsWith('data:image/')) {
+                  localPath = await SaveImageFromBase64(cropped);
+                }
 
-                const img = new Image();
-                img.onload = () => {
-                  const width = img.width;
-                  const height = img.height;
-                  img.onload = null;
-                  img.onerror = null;
-                  img.src = '';
+                const applyUpdate = (w: number, h: number) => {
                   if (!isMountedRef.current) return;
-
-                  const croppedAspect =
-                    dims && dims.width > 0 && dims.height > 0
-                      ? dims.width / dims.height
-                      : width / height;
+                  const croppedAspect = w / h;
                   const state = useEditorStore.getState();
                   const canvasRatio = state.canvasWidth / state.canvasHeight;
                   const newHeight = (element.width * canvasRatio) / croppedAspect;
@@ -806,14 +798,28 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   // حفظ القص يُسجل كخطوة تراجع مستقلة (إصلاح E-5)
                   state.pushHistory();
                 };
-                img.onerror = () => {
-                  img.onload = null;
-                  img.onerror = null;
-                  img.src = '';
-                  // إشعار فشل فك تشفير الصورة المقصوصة — بدون تحديث للعنصر
-                  toast.error('فشل قراءة القص');
-                };
-                img.src = cropped;
+
+                if (dims && dims.width > 0 && dims.height > 0) {
+                  applyUpdate(dims.width, dims.height);
+                } else {
+                  const img = new Image();
+                  img.onload = () => {
+                    const width = img.width;
+                    const height = img.height;
+                    img.onload = null;
+                    img.onerror = null;
+                    img.src = '';
+                    applyUpdate(width, height);
+                  };
+                  img.onerror = () => {
+                    img.onload = null;
+                    img.onerror = null;
+                    img.src = '';
+                    // إشعار فشل فك تشفير الصورة المقصوصة — بدون تحديث للعنصر
+                    toast.error('فشل قراءة القص');
+                  };
+                  img.src = cropped;
+                }
               } catch (err) {
                 logger.error('Failed to save cropped image:', err);
                 toast.error(toErrorMessage(err, 'فشل حفظ القص'));

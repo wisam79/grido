@@ -18,6 +18,7 @@ import {
   ArrowCounterClockwise,
   Sparkle,
   Compass,
+  CircleNotch,
 } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
@@ -25,6 +26,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { FluentSliderField } from '@/components/ui/blocks';
+import { uploadCanvasBlob } from '@/lib/io/media-upload';
+import { wailsIsDesktop } from '@/lib/wails-env';
 
 interface CropDialogProps {
   open: boolean;
@@ -97,7 +100,9 @@ export function CropDialog({
     }
   }, [aspect]);
 
-  const handleCrop = () => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleCrop = async () => {
     const cropper = cropperRef.current?.cropper;
     if (cropper) {
       const croppedCanvas = cropper.getCroppedCanvas({
@@ -105,11 +110,33 @@ export function CropDialog({
         imageSmoothingQuality: 'high',
       });
       if (croppedCanvas && croppedCanvas.width > 0 && croppedCanvas.height > 0) {
-        onCropSave(croppedCanvas.toDataURL(), {
-          width: croppedCanvas.width,
-          height: croppedCanvas.height,
-        });
-        onOpenChange(false);
+        setIsSaving(true);
+        try {
+          let finalPath = '';
+          if (wailsIsDesktop()) {
+            const uploadRes = await uploadCanvasBlob(
+              croppedCanvas,
+              'image/png',
+              undefined,
+              'cropped.png',
+            );
+            if (uploadRes?.imageSrc) {
+              finalPath = uploadRes.imageSrc;
+            }
+          }
+          if (!finalPath) {
+            finalPath = croppedCanvas.toDataURL();
+          }
+          onCropSave(finalPath, {
+            width: croppedCanvas.width,
+            height: croppedCanvas.height,
+          });
+          onOpenChange(false);
+        } catch {
+          toast.error('فشل حفظ الصورة المقصوصة');
+        } finally {
+          setIsSaving(false);
+        }
       } else {
         toast.error('حدد منطقة قص صالحة');
       }
@@ -372,9 +399,11 @@ export function CropDialog({
           </Button>
           <Button
             onClick={handleCrop}
+            disabled={isSaving}
             className="rounded-md h-8 px-5 text-xs font-semibold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98]"
           >
-            <span>تطبيق القص</span>
+            {isSaving && <CircleNotch className="w-3.5 h-3.5 animate-spin" />}
+            <span>{isSaving ? 'جاري الحفظ...' : 'تطبيق القص'}</span>
           </Button>
         </DialogFooter>
       </DialogContent>
