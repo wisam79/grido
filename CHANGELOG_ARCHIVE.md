@@ -1680,3 +1680,14 @@
   1. إضافة إذن `pull-requests: read` في سير العمل `ci.yml` ووظيفة `changes` (`Detect Changed Areas`): كان حصر الصلاحيات على `contents: read` يمنع `dorny/paths-filter@v3` من استدعاء GitHub REST API (`listFiles`) عند أحداث `pull_request`، مما أسفر عن خطأ `Resource not accessible by integration` وفشل كل طلبات السحب (بما فيها تحديثات Dependabot).
   2. توسيع مرشحات المسارات لتشمل `build/**` و `Taskfile.yml` ضمن مسارات الباك إند، و `scripts/**` ضمن مسارات سير العمل لضمان إعادة التحقق عند تعديل سكربتات البناء أو الإطلاق.
   3. فصل تثبيت اعتماديات النظام لـ Playwright (`npx playwright install-deps webkit/chromium`) عن تثبيت الثنائيات، مما يضمن وجود حزم النظام (مثل `libwoff2dec1.0.2`) على بيئة التشغيل حتى عند استعادة ثنائيات المتصفح من الكاش.
+
+
+## [v1.15.0] - 2026-10-12
+
+### Added
+- **نقل عزل الخلفية بالذكاء الاصطناعي إلى محرك Go الأصلي (Go Native ONNX Runtime Background Removal):**
+  1. تشغيل نموذج `modnet.onnx` فائق الدقة المخصص لصور البورتريه والاستوديوهات الاحترافية محلياً 100% عبر مكتبة `github.com/yalue/onnxruntime_go` (v1.16.0 المتوافقة مع Microsoft ORT API v20).
+  2. الحفاظ الكامل على معمارية الملف التنفيذي الواحد المستقل (Single Portable Executable): تضمين `onnxruntime.dll` و `modnet.onnx` داخل الثنائي عبر `//go:embed`؛ يتم استخراج المكتبة ذرياً لمرة واحدة فقط في `%APPDATA%\GridoStudio\bin` بينما يُحمَّل النموذج مباشرة من الذاكرة (In-Memory Session) بدون كتابة على القرص.
+  3. دمج ومعالجة القناع بأعلى سرعة عبر أنوية المعالج بالكامل (`compositeMaskParallel` و `ResizeGrayLinear`) مع مكافحة تسرب الهالات البيضاء على خصلات الشعر وحماية ألوان خلفيات الاستوديو (Chroma Decontamination) والترميم الناعم.
+  4. استجابة فائقة وزمن استدلال ~270ms على المعالج (CPU) دون استهلاك كرت الشاشة في WebView2، والتخلص التام من انهيارات WebGL وتجميد الواجهة وتسريبات الذاكرة لـ Web Worker.
+  5. حذف `bg-removal.worker.ts` والاستغناء عن حزمة `@mediapipe/tasks-vision` في عزل الخلفية.

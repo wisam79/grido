@@ -12,6 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.16.1] - 2026-10-15
+
+### Performance
+- تفريغ العمليات الثقيلة إلى Go والتدفق الثنائي للكانفاس وتحسين استهلاك الذاكرة:
+- استبدال تشفير `canvas.toDataURL` والنصوص العريضة في `refine-bg-dialog` بالضخ الثنائي المباشر عبر `uploadCanvasBlob` كـ `multipart/form-data` مع كاش لحظي للأبعاد.
+- تفويض تحسين الدقة بالذكاء الاصطناعي (`EnhanceImageWithAI`) لمسارات الصور المحلية في Go مباشرة دون استدعاء DOM Image أو تحجيم Canvas وإعادة تشفير JPEG في المتصفح.
+- تسريع حفظ مخرجات الماسح الضوئي (`image-properties.tsx`) عبر الحفظ المتوازي واستعلام أبعاد الدفعة `resolveBatchImageAspectRatios` مع إدراج ذري واحد في الستور (`addImageElementsBatch`).
+- تسريع قص وتصدير الصور وإلغاء اختناقات Base64:
+- استبدال `toDataURL` في `crop-dialog.tsx` بالضخ الثنائي المباشر `uploadCanvasBlob` كـ `multipart/form-data` مع مؤشر حفظ مرئي.
+- تحديث فوري للأبعاد في ألواح الخصائص وقوائم السياق دون إنشاء عقد DOM `new Image()` وانتظار `onload`.
+- تسريع فك ترميز التصدير عبر `createImageBitmap` المسرَّع بالعتاد في `export-watermark.ts` و `export-bleed.ts` مع احتياطي آمن.
 ## [v1.16.0] - 2026-10-15
 
 ### Added
@@ -117,13 +128,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   3. هرمية الاستدارة: صفوف وأزرار التحكم `rounded-md` بمستوى عناصر التحكم.
   4. حذف متغير الحجم `icon-xs` غير المستخدم من `button.tsx`.
   5. لم يُمس شريط الكانفس السريع (`h-6 w-6`): عقد أبعاد موثق ومحمي باختبار.
-
-## [v1.15.0] - 2026-10-12
-
-### Added
-- **نقل عزل الخلفية بالذكاء الاصطناعي إلى محرك Go الأصلي (Go Native ONNX Runtime Background Removal):**
-  1. تشغيل نموذج `modnet.onnx` فائق الدقة المخصص لصور البورتريه والاستوديوهات الاحترافية محلياً 100% عبر مكتبة `github.com/yalue/onnxruntime_go` (v1.16.0 المتوافقة مع Microsoft ORT API v20).
-  2. الحفاظ الكامل على معمارية الملف التنفيذي الواحد المستقل (Single Portable Executable): تضمين `onnxruntime.dll` و `modnet.onnx` داخل الثنائي عبر `//go:embed`؛ يتم استخراج المكتبة ذرياً لمرة واحدة فقط في `%APPDATA%\GridoStudio\bin` بينما يُحمَّل النموذج مباشرة من الذاكرة (In-Memory Session) بدون كتابة على القرص.
-  3. دمج ومعالجة القناع بأعلى سرعة عبر أنوية المعالج بالكامل (`compositeMaskParallel` و `ResizeGrayLinear`) مع مكافحة تسرب الهالات البيضاء على خصلات الشعر وحماية ألوان خلفيات الاستوديو (Chroma Decontamination) والترميم الناعم.
-  4. استجابة فائقة وزمن استدلال ~270ms على المعالج (CPU) دون استهلاك كرت الشاشة في WebView2، والتخلص التام من انهيارات WebGL وتجميد الواجهة وتسريبات الذاكرة لـ Web Worker.
-  5. حذف `bg-removal.worker.ts` والاستغناء عن حزمة `@mediapipe/tasks-vision` في عزل الخلفية.
