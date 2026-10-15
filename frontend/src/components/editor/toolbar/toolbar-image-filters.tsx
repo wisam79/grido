@@ -61,7 +61,7 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
             aria-label="المرشحات"
             className={cn(
               compact ? 'h-7 w-7 p-0' : 'h-8 px-2.5',
-              'text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer',
+              'text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
             )}
           >
             <FadersHorizontal className="w-4 h-4" />
@@ -71,7 +71,7 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
       <PopoverContent
         align="start"
         dir="rtl"
-        className="w-80 p-3 font-cairo bg-popover text-popover-foreground border border-border rounded-xl shadow-fluent-16 fluent-specular z-50"
+        className="w-80 p-3 font-cairo bg-popover text-popover-foreground border border-border rounded-xl shadow-fluent-16 fluent-specular z-(--z-popover)"
       >
         <div className="text-xs font-bold mb-2 text-foreground/80 text-start" dir="rtl">
           المرشحات
@@ -104,6 +104,9 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
                     <img
                       src={imageSrc}
                       alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                      draggable={false}
                       className="w-full h-full object-cover"
                       style={{ filter: f.css }}
                     />

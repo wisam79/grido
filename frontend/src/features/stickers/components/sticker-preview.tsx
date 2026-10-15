@@ -438,8 +438,7 @@ export const StickerPreview = React.memo(function StickerPreview({
             }}
             disabled={!canUndo}
             aria-label="تراجع (Ctrl+Z)"
-            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 cursor-pointer"
-            title="تراجع (Ctrl+Z)"
+            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             <ArrowUUpLeft className="w-3.5 h-3.5" />
           </button>
@@ -451,8 +450,7 @@ export const StickerPreview = React.memo(function StickerPreview({
             }}
             disabled={!canRedo}
             aria-label="إعادة (Ctrl+Y)"
-            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 cursor-pointer"
-            title="إعادة (Ctrl+Y)"
+            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             <ArrowUUpRight className="w-3.5 h-3.5" />
           </button>
@@ -467,8 +465,7 @@ export const StickerPreview = React.memo(function StickerPreview({
             }}
             disabled={zoomLevel <= 0.5}
             aria-label="تصغير معاينة"
-            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 cursor-pointer"
-            title="تصغير"
+            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             <MagnifyingGlassMinus className="w-3.5 h-3.5" />
           </button>
@@ -486,8 +483,7 @@ export const StickerPreview = React.memo(function StickerPreview({
             }}
             disabled={zoomLevel >= 2.5}
             aria-label="تكبير معاينة"
-            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 cursor-pointer"
-            title="تكبير"
+            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             <MagnifyingGlassPlus className="w-3.5 h-3.5" />
           </button>

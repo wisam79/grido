@@ -374,9 +374,10 @@ export function CollageArrangeTab() {
               return (
                 <div
                   key={`cell-${r}-${c}`}
-                  title={isFilled ? `خانة ${index} (ممتلئة)` : `خانة ${index} (فارغة)`}
+                  role="img"
+                  aria-label={isFilled ? `خانة ${index} ممتلئة` : `خانة ${index} فارغة`}
                   className={cn(
-                    'h-7.5 rounded-md border text-xs font-mono font-bold flex items-center justify-center transition-colors select-none',
+                    'h-7 rounded-md border text-xs font-mono font-bold flex items-center justify-center transition-colors select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isFilled
                       ? 'border-border/80 bg-card text-foreground shadow-2xs'
                       : 'border-dashed border-border/40 bg-muted/20 text-muted-foreground/40',

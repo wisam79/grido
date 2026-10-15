@@ -172,7 +172,7 @@ const SortableLayerItem = React.memo(
     const isGrouped = !!el.groupId;
     const isComfortable = density === 'comfortable';
     const isHidden = !isVisible;
-    const rowHeight = isComfortable ? 'h-11' : 'h-8.5';
+    const rowHeight = isComfortable ? 'h-11' : 'h-8';
     const thumbSize = isComfortable ? 'w-8 h-8' : 'w-7 h-7';
 
     return (
@@ -232,7 +232,7 @@ const SortableLayerItem = React.memo(
           role="button"
           tabIndex={0}
           aria-label="اسحب لإعادة الترتيب"
-          className="flex items-center justify-center w-5 h-5 rounded shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground hover:bg-muted/60 opacity-30 group-hover/row:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-all"
+          className="flex items-center justify-center w-7 h-7 rounded shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground hover:bg-muted/60 opacity-60 group-hover/row:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-all"
           onClick={(e) => e.stopPropagation()}
         >
           <DotsSixVertical className="w-3 h-3" weight="bold" />
@@ -429,7 +429,7 @@ const SortableLayerItem = React.memo(
               size="icon"
               aria-label="حذف الطبقة"
               className={cn(
-                'w-7 h-7 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:outline-none disabled:opacity-30 transition-all',
+                'w-7 h-7 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-40 transition-all',
                 isSelected
                   ? 'opacity-100'
                   : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100',

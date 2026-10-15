@@ -197,7 +197,6 @@ export function CollagePaperToolsTab() {
               type="button"
               onClick={() => setPrintSettings({ copiesPerSheet: Math.max(1, copiesPerSheet - 1) })}
               disabled={copiesPerSheet <= 1}
-              title="تقليل النسخ"
               aria-label="تقليل عدد النسخ"
               className="w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
@@ -213,7 +212,6 @@ export function CollagePaperToolsTab() {
               type="button"
               onClick={() => setPrintSettings({ copiesPerSheet: Math.min(48, copiesPerSheet + 1) })}
               disabled={copiesPerSheet >= 48}
-              title="إضافة نسخة"
               aria-label="زيادة عدد النسخ"
               className="w-7 h-7 rounded-md border border-border/60 bg-muted/60 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
