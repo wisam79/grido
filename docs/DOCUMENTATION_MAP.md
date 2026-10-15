@@ -100,9 +100,9 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=122
+vitest_test_files=123
 e2e_spec_files=27
-go_test_files=48
+go_test_files=49
 docs_files=6
 ```
 
@@ -110,10 +110,10 @@ docs_files=6
 
 | الرقم | القيمة (تحقق: 2026-10-08) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | **1074 ناجحة + 1 متخطاة (0 فاشلة)** — آخر شبكة كاملة: 2026-10-12؛ جلسة 0.81 (2026-10-15) أضافت ملفَي اختبار و**+8 حالات مؤكدة بالتشغيل المستهدف** (عدّ الملفات الحالي: 122 في البلوك أعلاه) | `npm --prefix frontend run test` |
+| حالات Vitest | **1078 ناجحة + 1 متخطاة (0 فاشلة)** — آخر شبكة كاملة: 2026-10-12؛ جلسة 0.82 (2026-10-15) أضافت ملف اختبار `image-dimensions.test.ts` و**+4 حالات مؤكدة بالتشغيل المستهدف** (عدّ الملفات الحالي: 123 في البلوك أعلاه) | `npm --prefix frontend run test` |
 | حالات E2E | 165 حالة (آخر جرد: 2026-10-08) في **27 ملف مواصفة** (عدّ آلي: 2026-10-15 — مطابق لبلوك الأرقام أعلاه، كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
-| دوال اختبار Go | **254 دالة في 48 ملفاً** — تحقق: 2026-10-15 (جلسة 0.81 أضافت 11 دالة: ملفان جديدان + دالة في `updater_test.go`) | `go test ./internal/... -list "^Test"` |
+| دوال اختبار Go | **255 دالة في 49 ملفاً** — تحقق: 2026-10-15 (جلسة 0.82 أضافت دالة واحدة وملف `internal/server/asset_server_test.go`) | `go test ./internal/... -list "^Test"` |
 | عدد صفائح الحصص اليومية | free 5 / pro 15 / enterprise 50 | `internal/service/ai_service.go` + migration `20260730000001` + `frontend/src/lib/ai/quota.ts` (ثلاثة مواضع متزامنة — قرار محمي؛ وحدة الحسم الواحدة هي `lib/ai/quota.ts` والخادم هو مصدر الحقيقة، ويُثبَّت ذلك بتأكيدين في `docs-gate`) |
 | منطقة يوم الحصة (محلي/UTC) | **UTC** في الخادم والمُقيِّد المحلي والواجهة | `internal/service/ai_service.go` (`aiUsageDayKey`) + `frontend/src/lib/ai/quota.ts` (`aiUtcDayKey`) مقابل `date_trunc('day', timezone('utc', now()))` |
 

@@ -3,7 +3,11 @@ import { useEditorStore } from '@/lib/editor-store';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import type Konva from 'konva';
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
-import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import {
+  resolveImageAspectRatio,
+  resolveBatchImageAspectRatios,
+  setCachedImageAspectRatio,
+} from '@/lib/canvas/image-dimensions';
 import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
 import { fetchLocalApi } from '@/lib/local-api';
 import { createLogger } from '@/lib/logger';
@@ -64,8 +68,12 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
                       const resJson = (await resp.json().catch(() => null)) as {
                         status?: string;
                         imageSrc?: string;
+                        aspectRatio?: number;
                       } | null;
                       if (resJson?.status === 'success' && resJson.imageSrc) {
+                        if (resJson.aspectRatio) {
+                          setCachedImageAspectRatio(resJson.imageSrc, resJson.aspectRatio);
+                        }
                         return resJson.imageSrc;
                       }
                     }
@@ -171,11 +179,14 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
             const aspect = await resolveImageAspectRatio(uploadedSrcs[0]);
             freshState.addImageElement(uploadedSrcs[0], aspect);
           } else {
-            const items: { src: string; aspectRatio: number }[] = [];
-            for (const src of uploadedSrcs) {
-              const aspect = await resolveImageAspectRatio(src);
-              items.push({ src, aspectRatio: aspect });
-            }
+            const aspectMap =
+              typeof resolveBatchImageAspectRatios === 'function'
+                ? await resolveBatchImageAspectRatios(uploadedSrcs)
+                : new Map<string, number>();
+            const items = uploadedSrcs.map((src) => ({
+              src,
+              aspectRatio: aspectMap.get(src) || 1,
+            }));
             freshState.addImageElementsBatch(items);
           }
         }

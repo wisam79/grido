@@ -31,7 +31,10 @@ import { wailsIsDesktop } from '@/lib/wails-env';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('toolbar-file-ops');
-import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import {
+  resolveImageAspectRatio,
+  resolveBatchImageAspectRatios,
+} from '@/lib/canvas/image-dimensions';
 
 // معالجة متوازية مقيدة التزامن — تمنع تجميد الزر أثناء حفظ/قياس دفعات الصور
 // (التسلسل الكامل كان يفك ترميز كل صورة واحدة تلو الأخرى)
@@ -156,8 +159,8 @@ export function ToolbarFileOps() {
             const aspect = await resolveImageAspectRatio(finalSrc);
             freshState.addImageElement(finalSrc, aspect);
           } else {
-            // حفظ وقياس متوازي (4 خيوط) بدل التسلسل الذي يجمد الزر مع الدفعات الكبيرة
-            const items = await mapWithConcurrency(b64s, 4, async (b64) => {
+            // حفظ وتحويل المسارات إن كانت base64
+            const finalSrcs = await mapWithConcurrency(b64s, 4, async (b64) => {
               let finalSrc = b64;
               if (isWailsDesktop && b64.startsWith('data:image/')) {
                 try {
@@ -167,9 +170,21 @@ export function ToolbarFileOps() {
                   logger.error('Failed to save image locally in batch mode:', e);
                 }
               }
-              const aspect = await resolveImageAspectRatio(finalSrc);
-              return { src: finalSrc, aspectRatio: aspect };
+              return finalSrc;
             });
+
+            let aspectMap: Map<string, number>;
+            if (typeof resolveBatchImageAspectRatios === 'function') {
+              aspectMap = await resolveBatchImageAspectRatios(finalSrcs);
+            } else {
+              const aspects = await Promise.all(finalSrcs.map((s) => resolveImageAspectRatio(s)));
+              aspectMap = new Map(finalSrcs.map((s, idx) => [s, aspects[idx]]));
+            }
+
+            const items = finalSrcs.map((src) => ({
+              src,
+              aspectRatio: aspectMap.get(src) || 1,
+            }));
             freshState.addImageElementsBatch(items);
           }
         }

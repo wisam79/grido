@@ -5,11 +5,12 @@ import {
   GetClipboardText,
   SetClipboardText,
 } from '../../../wailsjs/go/main/App';
-import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import { resolveImageAspectRatio, setCachedImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { z } from 'zod';
 import { CanvasElementSchema } from '@/lib/schema';
 import { createLogger } from '@/lib/logger';
 import { sanitizeText, TEXT_MAX_LENGTH } from '@/lib/canvas/text-helpers';
+import { fetchLocalApi } from '@/lib/local-api';
 
 const logger = createLogger('clipboard-utils');
 
@@ -75,40 +76,77 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
         const imageType = item.types.find((t) => t.startsWith('image/'));
         if (imageType) {
           const blob = await item.getType(imageType);
-          const reader = new FileReader();
-          return new Promise((resolve) => {
-            reader.onload = async (event) => {
-              if (event.target?.result) {
-                const b64 = event.target.result as string;
-                try {
-                  const localPath = await SaveImageFromBase64(b64);
-                  if (localPath) {
-                    // قراءة آنية: القالب الملتقط قبل await رأى خانات/تحديداً
-                    // قد يكون تغيّر أثناء قراءة الحافظة والترميز
-                    const { mode, selectedId, slots, setSlotImage, addImageElement } = readState();
-                    if (mode === 'collage') {
-                      let targetSlotId = selectedId;
-                      if (!targetSlotId) {
-                        const emptySlot = slots.find((s) => !s.imageSrc);
-                        if (emptySlot) targetSlotId = emptySlot.id;
-                        else if (slots.length > 0) targetSlotId = slots[0].id;
-                      }
-                      if (targetSlotId) setSlotImage(targetSlotId, localPath);
-                    } else {
-                      const aspect = await resolveImageAspectRatio(localPath);
-                      addImageElement(localPath, aspect);
-                    }
-                    resolve(true);
-                    return;
+          let localPath: string | null = null;
+          let aspect: number | null = null;
+
+          // 🚀 1. المسار المكتبي السريع: بث ثنائي مباشر إلى Go عبر /api/upload-media (صفر Base64)
+          if (
+            typeof window !== 'undefined' &&
+            window.location?.origin &&
+            !window.location.origin.startsWith('file:') &&
+            typeof fetch === 'function'
+          ) {
+            try {
+              const resp = await fetchLocalApi(`${window.location.origin}/api/upload-media`, {
+                method: 'POST',
+                body: blob,
+              });
+              if (resp.ok) {
+                const resJson = (await resp.json().catch(() => null)) as {
+                  status?: string;
+                  imageSrc?: string;
+                  aspectRatio?: number;
+                } | null;
+                if (resJson?.status === 'success' && resJson.imageSrc) {
+                  localPath = resJson.imageSrc;
+                  if (resJson.aspectRatio) {
+                    aspect = resJson.aspectRatio;
+                    setCachedImageAspectRatio(localPath, aspect);
                   }
-                } catch (e) {
-                  logger.error('Failed to save image from clipboard read', e);
                 }
               }
-              resolve(false);
-            };
-            reader.readAsDataURL(blob);
-          });
+            } catch {
+              // Fallback إلى SaveImageFromBase64 أدناه
+            }
+          }
+
+          // 2. المسار الاحتياطي: تحويل Base64 فقط إذا تعذر البث الثنائي المباشر
+          if (!localPath) {
+            localPath = await new Promise<string | null>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = async (event) => {
+                if (event.target?.result) {
+                  try {
+                    const saved = await SaveImageFromBase64(event.target.result as string);
+                    resolve(saved || null);
+                    return;
+                  } catch (e) {
+                    logger.error('Failed to save image from clipboard base64', e);
+                  }
+                }
+                resolve(null);
+              };
+              reader.onerror = () => resolve(null);
+              reader.readAsDataURL(blob);
+            });
+          }
+
+          if (localPath) {
+            const { mode, selectedId, slots, setSlotImage, addImageElement } = readState();
+            if (mode === 'collage') {
+              let targetSlotId = selectedId;
+              if (!targetSlotId) {
+                const emptySlot = slots.find((s) => !s.imageSrc);
+                if (emptySlot) targetSlotId = emptySlot.id;
+                else if (slots.length > 0) targetSlotId = slots[0].id;
+              }
+              if (targetSlotId) setSlotImage(targetSlotId, localPath);
+            } else {
+              const resolvedAspect = aspect ?? (await resolveImageAspectRatio(localPath));
+              addImageElement(localPath, resolvedAspect);
+            }
+            return true;
+          }
         }
       }
     }

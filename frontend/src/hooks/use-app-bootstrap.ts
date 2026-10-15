@@ -12,6 +12,11 @@ import { EventsOn } from '../../wailsjs/runtime/runtime';
 import { useEditorStore } from '@/lib/editor-store';
 import { addImageFromSrc } from '@/lib/canvas/load-image';
 import {
+  resolveImageAspectRatio,
+  resolveBatchImageAspectRatios,
+} from '@/lib/canvas/image-dimensions';
+import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
+import {
   isSessionSupersededError,
   sessionSupersededMessage,
 } from '@/lib/store/slices/license-slice';
@@ -167,11 +172,37 @@ export function useAppBootstrap(): AppBootstrapState {
 
         unbindFileDrop = EventsOn(
           'native-file-drop',
-          (data: { x: number; y: number; images: string[] }) => {
+          async (data: { x?: number; y?: number; images: string[] }) => {
             if (!data || !data.images || data.images.length === 0) return;
-            data.images.forEach((src) => {
-              void addImageFromSrc(src);
-            });
+            const images = data.images;
+            const store = useEditorStore.getState();
+
+            if (store.mode === 'collage') {
+              const assignments = buildCollageInsertAssignments(
+                store.slots,
+                images,
+                store.selectedId,
+                Boolean(store.collageTemplate?.physicalLayout),
+              );
+              store.setSlotImagesBatch(assignments, images[0] || null);
+            } else {
+              if (images.length === 1) {
+                void addImageFromSrc(images[0]);
+              } else {
+                let aspectMap: Map<string, number>;
+                if (typeof resolveBatchImageAspectRatios === 'function') {
+                  aspectMap = await resolveBatchImageAspectRatios(images);
+                } else {
+                  const aspects = await Promise.all(images.map((s) => resolveImageAspectRatio(s)));
+                  aspectMap = new Map(images.map((s, idx) => [s, aspects[idx]]));
+                }
+                const items = images.map((src) => ({
+                  src,
+                  aspectRatio: aspectMap.get(src) || 1,
+                }));
+                store.addImageElementsBatch(items);
+              }
+            }
           },
         );
 

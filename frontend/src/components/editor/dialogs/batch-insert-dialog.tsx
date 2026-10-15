@@ -24,7 +24,10 @@ import {
   Stack,
 } from '@/components/ui/icons';
 import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
-import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import {
+  resolveImageAspectRatio,
+  resolveBatchImageAspectRatios,
+} from '@/lib/canvas/image-dimensions';
 import { useEditorStore } from '@/lib/editor-store';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -130,7 +133,7 @@ export function BatchInsertDialog({
       if (!fileSrcs || fileSrcs.length === 0) return;
 
       const isDesktop = wailsIsDesktop();
-      const newItems: QueuedImage[] = [];
+      const normalizedSrcs: string[] = [];
 
       for (let i = 0; i < fileSrcs.length; i++) {
         let src = fileSrcs[i];
@@ -142,14 +145,23 @@ export function BatchInsertDialog({
             logger.error('SaveImageFromBase64 failed:', e);
           }
         }
-        const aspect = await resolveImageAspectRatio(src);
-        newItems.push({
-          id: `img-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
-          src,
-          aspectRatio: aspect,
-          copies: 1,
-        });
+        normalizedSrcs.push(src);
       }
+
+      let aspectMap: Map<string, number>;
+      if (typeof resolveBatchImageAspectRatios === 'function') {
+        aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
+      } else {
+        const aspects = await Promise.all(normalizedSrcs.map((s) => resolveImageAspectRatio(s)));
+        aspectMap = new Map(normalizedSrcs.map((s, idx) => [s, aspects[idx]]));
+      }
+
+      const newItems: QueuedImage[] = normalizedSrcs.map((src, i) => ({
+        id: `img-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
+        src,
+        aspectRatio: aspectMap.get(src) || 1,
+        copies: 1,
+      }));
 
       setImages((prev) => [...prev, ...newItems]);
       toast.success(`تمت إضافة ${newItems.length} صورة للقائمة`);
@@ -169,7 +181,7 @@ export function BatchInsertDialog({
       if (!fileSrcs || fileSrcs.length === 0) return;
 
       const isDesktop = wailsIsDesktop();
-      const newItems: QueuedImage[] = [];
+      const normalizedSrcs: string[] = [];
 
       for (let i = 0; i < fileSrcs.length; i++) {
         let src = fileSrcs[i];
@@ -181,14 +193,23 @@ export function BatchInsertDialog({
             logger.error('SaveImageFromBase64 directory failed:', e);
           }
         }
-        const aspect = await resolveImageAspectRatio(src);
-        newItems.push({
-          id: `dir-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
-          src,
-          aspectRatio: aspect,
-          copies: 1,
-        });
+        normalizedSrcs.push(src);
       }
+
+      let aspectMap: Map<string, number>;
+      if (typeof resolveBatchImageAspectRatios === 'function') {
+        aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
+      } else {
+        const aspects = await Promise.all(normalizedSrcs.map((s) => resolveImageAspectRatio(s)));
+        aspectMap = new Map(normalizedSrcs.map((s, idx) => [s, aspects[idx]]));
+      }
+
+      const newItems: QueuedImage[] = normalizedSrcs.map((src, i) => ({
+        id: `dir-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
+        src,
+        aspectRatio: aspectMap.get(src) || 1,
+        copies: 1,
+      }));
 
       setImages((prev) => [...prev, ...newItems]);
       toast.success(`تم استيراد ${newItems.length} صورة`);

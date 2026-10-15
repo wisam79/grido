@@ -17,7 +17,7 @@ flowchart TD
     end
 
     subgraph FE ["Frontend Component & Unit (Vitest)"]
-        VTests["Vitest + React Testing Library (122 ملف اختبار؛ آخر شبكة كاملة 2026-10-12: 1074 ناجحة + 1 متخطّاة، وجلسة 0.81 أضافت 8 حالات مؤكدة 2026-10-15)"]
+        VTests["Vitest + React Testing Library (123 ملف اختبار؛ آخر شبكة كاملة 2026-10-12: 1074 ناجحة + 1 متخطّاة، وجلستا 0.81-0.82 أضافتا 12 حالة مؤكدة 2026-10-15)"]
         Zustand["Zustand Slices + Math + Canvas & Collage Hooks"]
         Comps["React 19 Components (Freeform, Stickers, Panels)"]
         VTests --> Zustand
@@ -165,8 +165,8 @@ go test -count=1 -v ./internal/...
 
 > 📌 الأرقام أدناه **تحقق: 2026-10-15**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة. (التحقق الثقيل يُشغَّل في GitHub Actions — القاعدة: لا إجهاد للبيئة المحلية.)
 
-- **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/utils` تجتاز الاختبارات بنسبة 100% (**48 ملفاً / 254 دالة اختبار** — `go test ./internal/... -list "^Test"`؛ أضافت جلسة 0.81 إحدى عشرة دالة: ملفان جديدان + دالة في `updater_test.go`).
-- **Vitest Frontend:** **122 ملف اختبار** (عدّ آلي: 2026-10-15)؛ آخر شبكة كاملة (2026-10-12): **1074 ناجحة + 1 متخطّاة**، وجلسة 0.81 أضافت **+8 حالات** مؤكدة بالتشغيل المستهدف. منها عقد حمولة الطباعة `test/print-payload-builder.test.ts` (قفل إصلاحات RV-16)، ومنها **مسار تصدير CMYK الجديد:** `test/export-cmyk.test.ts` (14 اختباراً: بناء `PrintRequest`، تسلسل لقطة←رفع←تحويل←قراءة، حالات الفشل) و`test/export-dialog.test.tsx` (11 اختباراً: تبديل فضاء الألوان، معاملات الطلب الفعلية، الامتداد المحفوظ).
+- **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/server` و`internal/utils` تجتاز الاختبارات بنسبة 100% (**49 ملفاً / 255 دالة اختبار** — `go test ./internal/... -list "^Test"`؛ أضافت جلسة 0.82 دالة وملف `internal/server/asset_server_test.go`).
+- **Vitest Frontend:** **123 ملف اختبار** (عدّ آلي: 2026-10-15)؛ آخر شبكة كاملة (2026-10-12): **1074 ناجحة + 1 متخطّاة**، وجلستا 0.81-0.82 أضافتا **+12 حالة** مؤكدة بالتشغيل المستهدف. منها عقد حمولة الطباعة `test/print-payload-builder.test.ts` (قفل إصلاحات RV-16)، ومنها **مسار تصدير CMYK الجديد:** `test/export-cmyk.test.ts` (14 اختباراً: بناء `PrintRequest`، تسلسل لقطة←رفع←تحويل←قراءة، حالات الفشل) و`test/export-dialog.test.tsx` (11 اختباراً: تبديل فضاء الألوان، معاملات الطلب الفعلية، الامتداد المحفوظ).
 - **Go — فصل أحبار CMYK:** `print_cmyk_tiff_test.go` (وسوم `photometric=5`/`InkSet`/`SamplesPerPixel`/`ExtraSamples` + دورة قنوات حرفية + Stride لصورة فرعية + رفض مدخلات غير صالحة) و`print_fullpage_cmyk_test.go` (عقد حوار التصدير: كامل الصفحة حدّاً-لحدّ + الامتداد + قيد JPEG).
 - **Playwright E2E:** **27 ملف مواصفة** يضم **165 حالة** (آخر جرد للحالات: 2026-10-08؛ عدّ الملفات: 2026-10-15) عبر كل المشاريع (chromium + firefox + webkit)؛ `npm run test:e2e:fast` يقتصر على chromium — التحقق: `npx playwright test --list`.
 - **التغطية (Coverage):** الحدود الدنيا في `frontend/vitest.config.ts` (statements 36 / branches 30 / functions 32 / lines 36) وتُقرأ الأرقام الفعلية من `coverage/coverage-summary.json` في CI.

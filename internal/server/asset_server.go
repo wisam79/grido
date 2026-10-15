@@ -290,10 +290,27 @@ func NewAssetHandler(deps AssetServerDeps) http.Handler {
 				return
 			}
 
+			imageSrc := "/local-image/" + filename
+			var width, height int
+			var aspectRatio float64 = 1.0
+
+			if dims, err := deps.MediaSvc.GetImageDimensions(imageSrc); err == nil && dims.Width > 0 && dims.Height > 0 {
+				width = dims.Width
+				height = dims.Height
+				if dims.IsRotated {
+					aspectRatio = float64(dims.Height) / float64(dims.Width)
+				} else {
+					aspectRatio = float64(dims.Width) / float64(dims.Height)
+				}
+			}
+
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"status":   "success",
-				"imageSrc": "/local-image/" + filename,
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"status":      "success",
+				"imageSrc":    imageSrc,
+				"width":       width,
+				"height":      height,
+				"aspectRatio": aspectRatio,
 			})
 			return
 		}

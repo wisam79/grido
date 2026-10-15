@@ -6,7 +6,9 @@ import { useEditorStore } from '../src/lib/editor-store';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 
 vi.mock('../src/lib/io/file-dialog-utils', () => ({
-  openImageFileDialog: vi.fn(() => Promise.resolve(['data:image/png;base64,mock1', 'data:image/png;base64,mock2'])),
+  openImageFileDialog: vi.fn(() =>
+    Promise.resolve(['data:image/png;base64,mock1', 'data:image/png;base64,mock2']),
+  ),
   openDirectoryImageDialog: vi.fn(() => Promise.resolve(['data:image/png;base64,dir1'])),
 }));
 
@@ -16,6 +18,9 @@ vi.mock('../wailsjs/go/main/App', () => ({
 
 vi.mock('../src/lib/canvas/image-dimensions', () => ({
   resolveImageAspectRatio: vi.fn(() => Promise.resolve(1.5)),
+  resolveBatchImageAspectRatios: vi.fn((srcs: string[]) =>
+    Promise.resolve(new Map(srcs.map((s: string) => [s, 1.5]))),
+  ),
 }));
 
 describe('BatchInsertDialog Component Tests', () => {
@@ -42,7 +47,7 @@ describe('BatchInsertDialog Component Tests', () => {
         open={true}
         onOpenChange={vi.fn()}
         initialImages={['img1.jpg', 'img2.jpg']}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -54,9 +59,7 @@ describe('BatchInsertDialog Component Tests', () => {
 
   it('allows adding images via file dialog and executing batch insert', async () => {
     const handleOpenChange = vi.fn();
-    renderWithProviders(
-      <BatchInsertDialog open={true} onOpenChange={handleOpenChange} />
-    );
+    renderWithProviders(<BatchInsertDialog open={true} onOpenChange={handleOpenChange} />);
 
     const addFilesBtn = screen.getByText('إدراج صور');
     fireEvent.click(addFilesBtn);

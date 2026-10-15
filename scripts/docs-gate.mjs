@@ -762,6 +762,35 @@ const CODE_ASSERTIONS = [
     file: 'frontend/src/hooks/use-face-frame.ts',
     mustContain: ['activeConsumers', 'cancelActiveFrameFlow'],
   },
+  {
+    label: 'PERF-ASPECT-CACHE — كاش الذاكرة وحل أبعاد الدفعات بطلب IPC موحد',
+    file: 'frontend/src/lib/canvas/image-dimensions.ts',
+    mustContain: [
+      'const aspectRatioCache = new Map<string, number>()',
+      'export function getCachedImageAspectRatio',
+      'export function setCachedImageAspectRatio',
+      'export async function resolveBatchImageAspectRatios',
+      'GetBatchImageDimensions(localSrcs)',
+    ],
+  },
+  {
+    label: 'PERF-UPLOAD-DIMS — إرجاع أبعاد الصورة فورياً مع استجابة /api/upload-media',
+    file: 'internal/server/asset_server.go',
+    mustContain: [
+      'dims, err := deps.MediaSvc.GetImageDimensions(imageSrc)',
+      '"aspectRatio": aspectRatio',
+      '"width":       width',
+      '"height":      height',
+    ],
+  },
+  {
+    label: 'PERF-CLIPBOARD-STREAM — بث ثنائي للصور المنسوخة عبر /api/upload-media بدل Base64',
+    file: 'frontend/src/lib/io/clipboard-utils.ts',
+    mustContain: [
+      'fetchLocalApi(`${window.location.origin}/api/upload-media`',
+      'body: blob',
+    ],
+  },
 ];
 
 function checkCodeAssertions() {

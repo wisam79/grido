@@ -1,4 +1,9 @@
-import { getExifOrientation } from "../io/exif-utils";
+import { getExifOrientation } from '../io/exif-utils';
+import {
+  getCachedImageAspectRatio,
+  setCachedImageAspectRatio,
+  resolveImageAspectRatio,
+} from './image-dimensions';
 
 /**
  * قياس نسبة أبعاد الصورة مع عقد NaN عند الفشل.
@@ -6,16 +11,35 @@ import { getExifOrientation } from "../io/exif-utils";
  * collage-slice حيث أي استيراد لسلسلة الـ store يسبب دورة استيراد
  * (createCollageSlice is not a function في الاختبارات).
  *
- * تُستخدم لمقارنة نسب الاستبدال قبل تصفير إزاحات القص — الفشل يُتجاهل
- * بصمت عبر Number.isFinite بدل التصفير الخاطئ. تتضمن تصحيح EXIF للصور
- * الرأسية (كانت تُحسب مقلوبة فتُصفّر القص خطأً).
+ * تستفيد من كاش الذاكرة O(1) ومن مسار Go السريع للصور المحلية (/local-image/)
+ * قبل اللجوء لإنشاء Image في DOM وقراءة EXIF.
  */
-export function measureImageAspect(src: string): Promise<number> {
-  return new Promise((resolve) => {
-    if (!src) {
-      resolve(NaN);
-      return;
+export async function measureImageAspect(src: string): Promise<number> {
+  if (!src) {
+    return NaN;
+  }
+
+  // 1. فحص كاش الذاكرة الفوري
+  const cached = getCachedImageAspectRatio(src);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  // 2. مسار Go السريع للصور المحلية (قراءة الترويسة الثنائية بلا DOM وبلا exifr)
+  if (src.startsWith('/local-image/')) {
+    try {
+      const aspect = await resolveImageAspectRatio(src);
+      if (Number.isFinite(aspect) && aspect > 0) {
+        setCachedImageAspectRatio(src, aspect);
+        return aspect;
+      }
+    } catch {
+      // السقوط للمسار القياسي أدناه
     }
+  }
+
+  // 3. المسار الاحتياطي للصور الخارجية والمشتقة
+  return new Promise((resolve) => {
     const img = new Image();
     // ⏱️ مهلة: صورة تتعطّل كانت تُبقي الوعيد معلّقاً للأبد
     const timer = setTimeout(() => {
@@ -27,6 +51,9 @@ export function measureImageAspect(src: string): Promise<number> {
       clearTimeout(timer);
       img.onload = null;
       img.onerror = null;
+      if (Number.isFinite(value) && value > 0) {
+        setCachedImageAspectRatio(src, value);
+      }
       resolve(value);
     };
     img.onload = async () => {

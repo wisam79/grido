@@ -1,30 +1,60 @@
-import { GetImageDimensions } from '../../../wailsjs/go/main/App';
+import { GetImageDimensions, GetBatchImageDimensions } from '../../../wailsjs/go/main/App';
 import { getExifOrientation } from '../io/exif-utils';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('image-dimensions');
 
+// كاش في الذاكرة للنسب الباعية لتفادي أي استدعاءات مكررة للصورة نفسها
+const aspectRatioCache = new Map<string, number>();
+
+/**
+ * استرجاع النسبة الباعية المخزنة في الكاش إن وجدت
+ */
+export function getCachedImageAspectRatio(src: string): number | undefined {
+  if (!src) return undefined;
+  return aspectRatioCache.get(src);
+}
+
+/**
+ * تخزين النسبة الباعية في الكاش يدوياً
+ */
+export function setCachedImageAspectRatio(src: string, aspectRatio: number): void {
+  if (src && Number.isFinite(aspectRatio) && aspectRatio > 0) {
+    aspectRatioCache.set(src, aspectRatio);
+  }
+}
+
+/**
+ * تفريغ كاش النسب الباعية (مفيد في الاختبارات)
+ */
+export function clearImageAspectRatioCache(): void {
+  aspectRatioCache.clear();
+}
+
 /**
  * دالة موحدة فائقة الدقة والسرعة لحساب النسبة الباعية الحقيقية (Native Aspect Ratio = Width / Height) لأي صورة
  * مع مراعاة وسم تدوير الكاميرات (EXIF Orientation 1..8)
  *
- * 1. تفحص أولاً Go Backend عبر `GetImageDimensions` للصور المحلية (/local-image/) لقراءة أبعاد الملف الأصلية
+ * 1. تفحص كاش الذاكرة أولاً O(1).
+ * 2. تفحص Go Backend عبر `GetImageDimensions` للصور المحلية (/local-image/) لقراءة أبعاد الملف الأصلية
  *    مع تصحيح التدوير إذا كانت الصورة ملتقطة رأسياً بكاميرا/هاتف.
- * 2. تستخدم `createImageBitmap` مع `imageOrientation: 'from-image'` لفك الأبعاد مع التدوير التلقائي.
- * 3. تضمن عدم إجبار أي صورة على نسبة افتراضية غير دقيقة 1:1 إطلاقاً
+ * 3. تستخدم `createImageBitmap` مع `imageOrientation: 'from-image'` لفك الأبعاد مع التدوير التلقائي.
+ * 4. تضمن عدم إجبار أي صورة على نسبة افتراضية غير دقيقة 1:1 إطلاقاً
  */
 export async function resolveImageAspectRatio(src: string): Promise<number> {
   if (!src) return 1;
+
+  const cached = aspectRatioCache.get(src);
+  if (cached !== undefined) return cached;
 
   // 1. استخدام Go Backend السريع للصور المحلية (/local-image/) مع قراءة EXIF في Go مباشرة
   if (typeof GetImageDimensions === 'function' && src.startsWith('/local-image/')) {
     try {
       const dims = await GetImageDimensions(src);
       if (dims && dims.width > 0 && dims.height > 0) {
-        if (dims.isRotated) {
-          return dims.height / dims.width;
-        }
-        return dims.width / dims.height;
+        const aspect = dims.isRotated ? dims.height / dims.width : dims.width / dims.height;
+        setCachedImageAspectRatio(src, aspect);
+        return aspect;
       }
     } catch (e) {
       logger.warn(
@@ -45,7 +75,9 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
       const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
       try {
         if (bitmap && bitmap.width > 0 && bitmap.height > 0) {
-          return bitmap.width / bitmap.height;
+          const aspect = bitmap.width / bitmap.height;
+          setCachedImageAspectRatio(src, aspect);
+          return aspect;
         }
       } finally {
         // إغلاق دائماً (بما فيه مسار القياس الصفري) — كان يتسرب قبل السقوط
@@ -67,11 +99,9 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
       img.src = '';
       if (w > 0 && h > 0) {
         const exif = await getExifOrientation(src);
-        if (exif.isQuarterRotated) {
-          resolve(h / w);
-        } else {
-          resolve(w / h);
-        }
+        const aspect = exif.isQuarterRotated ? h / w : w / h;
+        setCachedImageAspectRatio(src, aspect);
+        resolve(aspect);
       } else {
         resolve(1);
       }
@@ -84,4 +114,69 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
     };
     img.src = src;
   });
+}
+
+/**
+ * قياس أبعاد مجموعة صور دفعة واحدة وبسرعة قصوى:
+ * يستفيد من كاش الذاكرة أولاً، ثم يستدعي GetBatchImageDimensions في Go دفعة واحدة
+ * لجميع الصور المحلية عبر طلب IPC واحد بالتوازي على كل أنوية المعالج.
+ */
+export async function resolveBatchImageAspectRatios(srcs: string[]): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (!srcs || srcs.length === 0) return result;
+
+  const uncached: string[] = [];
+  for (const src of srcs) {
+    if (!src) continue;
+    const cached = aspectRatioCache.get(src);
+    if (cached !== undefined) {
+      result.set(src, cached);
+    } else {
+      uncached.push(src);
+    }
+  }
+
+  if (uncached.length === 0) {
+    return result;
+  }
+
+  // فرز المسارات المحلية لاستدعائها دفعة واحدة عبر Go GetBatchImageDimensions
+  const localSrcs = uncached.filter((s) => s.startsWith('/local-image/'));
+
+  if (localSrcs.length > 0 && typeof GetBatchImageDimensions === 'function') {
+    try {
+      const batchDims = await GetBatchImageDimensions(localSrcs);
+      if (batchDims && typeof batchDims === 'object') {
+        for (const src of localSrcs) {
+          const dims = (
+            batchDims as Record<string, { width: number; height: number; isRotated?: boolean }>
+          )[src];
+          if (dims && dims.width > 0 && dims.height > 0) {
+            const aspect = dims.isRotated ? dims.height / dims.width : dims.width / dims.height;
+            setCachedImageAspectRatio(src, aspect);
+            result.set(src, aspect);
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn('[resolveBatchImageAspectRatios] Go batch call failed, will fallback:', e);
+    }
+  }
+
+  // معالجة أي مسار لم يتم حله بعد (غير محلي أو فشل في Go) بالتوازي
+  const stillUnresolved = uncached.filter((s) => !result.has(s));
+  if (stillUnresolved.length > 0) {
+    await Promise.all(
+      stillUnresolved.map(async (src) => {
+        try {
+          const aspect = await resolveImageAspectRatio(src);
+          result.set(src, aspect);
+        } catch {
+          result.set(src, 1);
+        }
+      }),
+    );
+  }
+
+  return result;
 }
