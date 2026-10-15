@@ -683,6 +683,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <button
                   type="button"
                   onClick={() => setPrintSettings({ orientation: 'portrait' })}
+                  title="اتجاه رأسي (عمودي)"
                   aria-label="اتجاه رأسي (عمودي)"
                   aria-pressed={printSettings.orientation !== 'landscape'}
                   className={cn(
@@ -698,6 +699,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <button
                   type="button"
                   onClick={() => setPrintSettings({ orientation: 'landscape' })}
+                  title="اتجاه أفقي (عرضي)"
                   aria-label="اتجاه أفقي (عرضي)"
                   aria-pressed={printSettings.orientation === 'landscape'}
                   className={cn(

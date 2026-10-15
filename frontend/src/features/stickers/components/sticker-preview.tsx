@@ -437,6 +437,7 @@ export const StickerPreview = React.memo(function StickerPreview({
               onUndo?.();
             }}
             disabled={!canUndo}
+            title="تراجع (Ctrl+Z)"
             aria-label="تراجع (Ctrl+Z)"
             className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
@@ -449,6 +450,7 @@ export const StickerPreview = React.memo(function StickerPreview({
               onRedo?.();
             }}
             disabled={!canRedo}
+            title="إعادة (Ctrl+Y)"
             aria-label="إعادة (Ctrl+Y)"
             className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
@@ -464,6 +466,7 @@ export const StickerPreview = React.memo(function StickerPreview({
               handleZoomOut();
             }}
             disabled={zoomLevel <= 0.5}
+            title="تصغير"
             aria-label="تصغير معاينة"
             className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
@@ -482,6 +485,7 @@ export const StickerPreview = React.memo(function StickerPreview({
               handleZoomIn();
             }}
             disabled={zoomLevel >= 2.5}
+            title="تكبير"
             aria-label="تكبير معاينة"
             className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
