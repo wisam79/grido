@@ -2,9 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useEditorStore } from '@/lib/editor-store';
 import { useStageRef } from '@/lib/canvas/stage-context';
-import { ExportPrintSheet, PrintNative } from '@bindings/grido/internal/handlers/printhandler';
+import {
+  ExportPrintSheet,
+  PrintNative,
+  PrintDirect,
+} from '@bindings/grido/internal/handlers/printhandler';
 import { SetTaskbarProgress } from '@bindings/grido/app';
 import * as domain from '@bindings/grido/internal/core/domain';
+
+export interface PrintExecuteOptions {
+  directPrint?: boolean;
+  printerName?: string;
+  formName?: string;
+}
 import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { CanvasTooLargeError } from '@/lib/export/export-limits';
 import type { usePrintLayout } from '@/hooks/use-print-layout';
@@ -124,10 +134,11 @@ export function usePrintExport({
   const printInvocationRef = useRef<{
     effectiveMarginMM: number;
     onDone: () => void;
+    options?: PrintExecuteOptions;
   } | null>(null);
 
   const setPrintInvocation = useCallback(
-    (inv: { effectiveMarginMM: number; onDone: () => void }) => {
+    (inv: { effectiveMarginMM: number; onDone: () => void; options?: PrintExecuteOptions }) => {
       printInvocationRef.current = inv;
     },
     [],
@@ -370,7 +381,7 @@ export function usePrintExport({
   );
 
   const executePrint = useCallback(
-    async (effectiveMarginMM: number, onDone: () => void) => {
+    async (effectiveMarginMM: number, onDone: () => void, options?: PrintExecuteOptions) => {
       // 🖨️ الحارس على ref فقط (RV-Print-19): حالة state للعرض، والقرار الذري هنا.
       if (isExportingRef.current) return;
       setExporting(true);
@@ -478,6 +489,48 @@ export function usePrintExport({
 
         SetTaskbarProgress(0, 'none').catch(() => {});
 
+        // 🖨️ المسار المباشر عبر Win32 GDI (Direct Spooling):
+        if (options?.directPrint && result.filePath && typeof PrintDirect === 'function') {
+          SetTaskbarProgress(75, 'indeterminate').catch(() => {});
+          try {
+            const printRes = await withTimeout(
+              PrintDirect(
+                domain.DirectPrintRequest.createFrom({
+                  printerName: options.printerName || '',
+                  filePath: result.filePath,
+                  paperWidthMM: paperWidth,
+                  paperHeightMM: paperHeight,
+                  orientation: printOrientation || 'portrait',
+                  copies: 1,
+                  color: true,
+                  borderless: effectiveMarginMM === 0,
+                  formName: options.formName,
+                }),
+              ),
+              30_000,
+              'PrintDirect',
+            );
+            if (printRes.success) {
+              SetTaskbarProgress(100, 'normal').catch(() => {});
+              later(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
+              toast.success(
+                `تم إرسال الورقة بنجاح إلى طابعة ${options.printerName || 'النظام'} (المهمة #${printRes.jobId})`,
+              );
+              setExporting(false);
+              onDone();
+              return;
+            } else {
+              logger.warn('Direct print failed, falling back to browser dialog:', printRes.error);
+              toast.warning(
+                `تعذرت الطباعة المباشرة (${printRes.error || 'خطأ غير معروف'})، سيتم فتح حوار النظام`,
+              );
+            }
+          } catch (e) {
+            logger.error('Direct print call threw exception:', e);
+            toast.warning('تعذرت الطباعة المباشرة، جاري فتح حوار النظام');
+          }
+        }
+
         // 1. إغلاق نافذة إعدادات الطباعة أولاً لضمان عدم بقائها عالقة خلف حوار الطباعة
         setExporting(false);
         onDone();
@@ -531,13 +584,17 @@ export function usePrintExport({
   // يُسلّم وعد التنفيذ للمستدعي (كان مُهملاً في التفكيك) — لا يغيّر سلوك زر «طباعة»
   // الذي يتجاهل القيمة، ويمنح الاختبارات والمستدعين القدرة على انتظار انتهاء الدورة.
   const handlePrint = useCallback(
-    (effectiveMarginMM?: number, onDone?: () => void): Promise<void> | void => {
+    (
+      effectiveMarginMM?: number,
+      onDone?: () => void,
+      options?: PrintExecuteOptions,
+    ): Promise<void> | void => {
       if (effectiveMarginMM !== undefined && onDone !== undefined) {
-        return executePrint(effectiveMarginMM, onDone);
+        return executePrint(effectiveMarginMM, onDone, options);
       }
       const inv = printInvocationRef.current;
       if (!inv) return;
-      return executePrint(inv.effectiveMarginMM, inv.onDone);
+      return executePrint(inv.effectiveMarginMM, inv.onDone, options ?? inv.options);
     },
     [executePrint],
   );

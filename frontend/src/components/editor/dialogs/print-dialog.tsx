@@ -32,6 +32,7 @@ import {
   Scissors,
   Gear,
   FileText,
+  Lightning,
 } from '@/components/ui/icons';
 import { toast } from 'sonner';
 import { createLogger } from '@/lib/logger';
@@ -140,6 +141,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [selectedPrinter, setSelectedPrinter] = useState<string>('');
   const [isLoadingPrinters, setIsLoadingPrinters] = useState(false);
   const [isOpeningPrefs, setIsOpeningPrefs] = useState(false);
+  const [isDirectPrint, setIsDirectPrint] = useState(true);
 
   // 🖨️ التحديد المبدئي يطابق طابعة النظام الافتراضية — الاختيار هنا يحدد هدف زر
   // «الخصائص» فقط؛ الطابعة الفعلية تُختار في نافذة الطباعة الأصلية (window.print).
@@ -362,8 +364,12 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     exporter.setPrintInvocation({
       effectiveMarginMM,
       onDone: () => onOpenChange(false),
+      options: {
+        directPrint: isDirectPrint,
+        printerName: selectedPrinter,
+      },
     });
-  }, [exporter, effectiveMarginMM, onOpenChange]);
+  }, [exporter, effectiveMarginMM, onOpenChange, isDirectPrint, selectedPrinter]);
 
   useEffect(() => {
     if (!open) {
@@ -607,12 +613,29 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 </Button>
               </div>
 
-              {/* توضيح صريح: هذا الاختيار يحدد هدف زر «الخصائص» فقط؛ الطابعة الفعلية
-                  تُختار في نافذة الطباعة الأصلية التي تظهر عند الضغط على «طباعة الورقة». */}
-              <p className="text-micro leading-relaxed text-muted-foreground/80">
-                يُحدَّد هذا الاختيار طابعة زر «الخصائص»، أما الطابعة الفعلية فتُختار في نافذة
-                الطباعة الأصلية عند الضغط على «طباعة الورقة».
-              </p>
+              {/* خيار الطباعة المباشرة (Win32 Spooler) */}
+              <div className="flex items-center justify-between pt-1 border-t border-border/30">
+                <div className="flex flex-col gap-0.5 max-w-[240px]">
+                  <Label
+                    htmlFor="direct-print-toggle"
+                    className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Lightning className="w-3.5 h-3.5 text-amber-500" weight="fill" />
+                    <span>طباعة مباشرة (Win32)</span>
+                  </Label>
+                  <span className="text-micro text-muted-foreground/80 leading-tight">
+                    {isDirectPrint
+                      ? 'إرسال فوري للطابعة المختارة بدقة 300 DPI دون حوار المتصفح'
+                      : 'فتح حوار الطباعة لنظام التشغيل (Browser Dialog)'}
+                  </span>
+                </div>
+                <Switch
+                  id="direct-print-toggle"
+                  checked={isDirectPrint}
+                  onCheckedChange={setIsDirectPrint}
+                  className="data-[state=checked]:bg-primary shrink-0"
+                />
+              </div>
             </div>
 
             {/* بلوك 2: الورقة والاتجاه (Paper & Orientation Block) */}
@@ -982,8 +1005,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             </Button>
 
             <Button
-              onClick={() => handlePrint(effectiveMarginMM, () => onOpenChange(false))}
-              title="طباعة (Enter)"
+              onClick={() =>
+                handlePrint(effectiveMarginMM, () => onOpenChange(false), {
+                  directPrint: isDirectPrint,
+                  printerName: selectedPrinter,
+                })
+              }
+              title={isDirectPrint ? 'طباعة مباشرة إلى الطابعة (Enter)' : 'طباعة الورقة (Enter)'}
               aria-keyshortcuts="Enter"
               className="h-8 px-5 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs transition-all duration-150 cursor-pointer rounded-lg shadow-sm hover:shadow active:scale-98"
               disabled={isExporting || !hasContent}
@@ -994,7 +1022,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 </>
               ) : (
                 <>
-                  <Printer className="w-3.5 h-3.5 shrink-0" weight="bold" />{' '}
+                  {isDirectPrint ? (
+                    <Lightning className="w-3.5 h-3.5 shrink-0 text-amber-300" weight="fill" />
+                  ) : (
+                    <Printer className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                  )}
                   <span>طباعة الورقة</span>
                 </>
               )}
