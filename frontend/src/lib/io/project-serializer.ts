@@ -62,6 +62,17 @@ export function serializeEditorState(
     columnsMargin: state.columnsMargin,
     columnsGutter: state.columnsGutter,
 
+    // Ruler and guide settings
+    showRuler: state.showRuler,
+    rulerUnit: state.rulerUnit,
+    userGuides: state.userGuides,
+    showUserGuides: state.showUserGuides,
+    lockUserGuides: state.lockUserGuides,
+    showBleedGuides: state.showBleedGuides,
+    bleedMarginMM: state.bleedMarginMM,
+    safeMarginMM: state.safeMarginMM,
+    cutShapeType: state.cutShapeType,
+
     // Collage settings
     collageGap: state.collageGap,
     collageMargin: state.collageMargin,
@@ -117,6 +128,25 @@ export function migrateProject(raw: unknown): ProjectFileV1 {
     // Provide sensible defaults for missing fields if necessary
     showGrid: record.showGrid ?? false,
     gridSize: record.gridSize ?? 48,
+    showRuler: record.showRuler ?? true,
+    rulerUnit: (['mm', 'cm', 'in', 'px'].includes(record.rulerUnit as string)
+      ? record.rulerUnit
+      : 'mm') as 'mm' | 'cm' | 'in' | 'px',
+    userGuides: Array.isArray(record.userGuides) ? record.userGuides : [],
+    showUserGuides: record.showUserGuides ?? true,
+    lockUserGuides: record.lockUserGuides ?? false,
+    showBleedGuides: record.showBleedGuides ?? false,
+    bleedMarginMM:
+      typeof record.bleedMarginMM === 'number' && Number.isFinite(record.bleedMarginMM)
+        ? record.bleedMarginMM
+        : 2,
+    safeMarginMM:
+      typeof record.safeMarginMM === 'number' && Number.isFinite(record.safeMarginMM)
+        ? record.safeMarginMM
+        : 2,
+    cutShapeType: (['rectangle', 'circle', 'rounded-rect'].includes(record.cutShapeType as string)
+      ? record.cutShapeType
+      : 'rectangle') as 'rectangle' | 'circle' | 'rounded-rect',
     collageGap: record.collageGap ?? 0,
     collageMargin: record.collageMargin ?? 0,
     collageRadius: record.collageRadius ?? 0,
@@ -207,6 +237,25 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     columnsColor: dbProj.columnsColor ?? 'rgba(239, 68, 68, 0.08)',
     columnsMargin: dbProj.columnsMargin ?? 20,
     columnsGutter: dbProj.columnsGutter ?? 12,
+    showRuler: ((dbProj as unknown as Record<string, unknown>).showRuler as boolean) ?? true,
+    rulerUnit:
+      ((dbProj as unknown as Record<string, unknown>).rulerUnit as 'mm' | 'cm' | 'in' | 'px') ??
+      'mm',
+    userGuides: parseSafely(
+      (dbProj as unknown as Record<string, unknown>).userGuides as string,
+      [],
+    ),
+    showUserGuides:
+      ((dbProj as unknown as Record<string, unknown>).showUserGuides as boolean) ?? true,
+    lockUserGuides:
+      ((dbProj as unknown as Record<string, unknown>).lockUserGuides as boolean) ?? false,
+    showBleedGuides:
+      ((dbProj as unknown as Record<string, unknown>).showBleedGuides as boolean) ?? false,
+    bleedMarginMM: ((dbProj as unknown as Record<string, unknown>).bleedMarginMM as number) ?? 2,
+    safeMarginMM: ((dbProj as unknown as Record<string, unknown>).safeMarginMM as number) ?? 2,
+    cutShapeType:
+      ((dbProj as unknown as Record<string, unknown>).cutShapeType as
+        'rectangle' | 'circle' | 'rounded-rect') ?? 'rectangle',
     collageGap: dbProj.collageGap ?? 0,
     collageMargin: dbProj.collageMargin ?? 0,
     collageRadius: dbProj.collageRadius ?? 0,

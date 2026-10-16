@@ -204,6 +204,13 @@ export const CollageTemplateSchema = z.object({
     .optional(),
 });
 
+export const UserGuideSchema = z.object({
+  id: z.string(),
+  type: z.enum(['h', 'v']),
+  pos: z.number().min(0).max(1),
+});
+export type UserGuideData = z.infer<typeof UserGuideSchema>;
+
 export const ProjectSchema = z.object({
   mode: z.enum(['single', 'collage']).default('single'),
   // معرّف المشروع في المكتبة — اختياري (مسودة قديمة بلا معرّف تبدأ مشروعاً جديداً،
@@ -240,6 +247,17 @@ export const ProjectSchema = z.object({
   columnsColor: z.string().optional().default('rgba(239, 68, 68, 0.08)'),
   columnsMargin: z.number().optional().default(20),
   columnsGutter: z.number().optional().default(12),
+
+  // مساطر وخطوط الإرشاد وهوامش القص
+  showRuler: z.boolean().optional().default(true),
+  rulerUnit: z.enum(['mm', 'cm', 'in', 'px']).optional().default('mm'),
+  userGuides: z.array(UserGuideSchema).optional().default([]),
+  showUserGuides: z.boolean().optional().default(true),
+  lockUserGuides: z.boolean().optional().default(false),
+  showBleedGuides: z.boolean().optional().default(false),
+  bleedMarginMM: z.number().optional().default(2),
+  safeMarginMM: z.number().optional().default(2),
+  cutShapeType: z.enum(['rectangle', 'circle', 'rounded-rect']).optional().default('rectangle'),
 
   // تخصيصات الكولاج
   collageGap: z.number().optional().default(0),

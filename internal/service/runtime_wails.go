@@ -40,3 +40,22 @@ func (WailsRuntimeBridge) Quit() {
 		app.Quit()
 	}
 }
+
+func (WailsRuntimeBridge) SaveFileDialog(title, defaultFilename string, filters []domain.FileFilter) (string, error) {
+	app := application.Get()
+	if app == nil {
+		return "", errors.New("dialog service not configured: application runtime is nil")
+	}
+	d := app.Dialog.SaveFile()
+	if title != "" {
+		d.SetMessage(title)
+	}
+	if defaultFilename != "" {
+		d.SetFilename(defaultFilename)
+	}
+	for _, f := range filters {
+		d.AddFilter(f.DisplayName, f.Pattern)
+	}
+	return d.PromptForSingleSelection()
+}
+

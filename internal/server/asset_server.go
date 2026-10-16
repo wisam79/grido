@@ -13,10 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"grido/internal/core/domain"
 	"grido/internal/service"
 	"grido/internal/utils"
-
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type AssetServerDeps struct {
@@ -25,23 +24,53 @@ type AssetServerDeps struct {
 	MemorySvc    *service.MemoryService
 	ImageProc    *service.ImageProcessorService
 	MediaSvc     *service.MediaService
+	Runtime      domain.RuntimeBridge
+}
+
+// AssetServer خادم HTTP للمسارات المحلية والأصول الثابتة وحوارات حفظ الملفات
+type AssetServer struct {
+	deps     AssetServerDeps
+	apiGuard *service.LocalApiGuard
+	runtime  domain.RuntimeBridge
+}
+
+var _ http.Handler = (*AssetServer)(nil)
+
+// NewAssetServer ينشئ خادم أصول جديد مع تهيئة حارس المسارات وجسر الرنتايم
+func NewAssetServer(deps AssetServerDeps) *AssetServer {
+	rt := deps.Runtime
+	if rt == nil {
+		rt = service.NewWailsRuntimeBridge()
+	}
+	return &AssetServer{
+		deps:     deps,
+		apiGuard: service.NewLocalApiGuard(deps.SessionToken),
+		runtime:  rt,
+	}
+}
+
+// SetRuntimeBridge يستبدل جسر الرنتايم (اختبارات/بيئات معزولة) — nil يُتجاهل
+func (s *AssetServer) SetRuntimeBridge(bridge domain.RuntimeBridge) {
+	if bridge != nil {
+		s.runtime = bridge
+	}
 }
 
 // NewAssetHandler ينشئ معالج HTTP للمسارات المحلية والأصول الثابتة
-func NewAssetHandler(deps AssetServerDeps) http.Handler {
-	// 🛡️ حارس مسارات /api المحلية: فحص الأصل + توكن جلسة العملية (فشل مغلق).
-	// التفاصيل والاختبارات في internal/service/local_api_guard.go.
-	apiGuard := service.NewLocalApiGuard(deps.SessionToken)
+func NewAssetHandler(deps AssetServerDeps) *AssetServer {
+	return NewAssetServer(deps)
+}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/api/") && !apiGuard.Authorize(w, r) {
-			return
+func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, "/api/") && !s.apiGuard.Authorize(w, r) {
+		return
+	}
+	deps := s.deps
+
+	if r.Method == http.MethodPost && r.URL.Path == "/api/trim-memory" {
+		if deps.MemorySvc != nil {
+			deps.MemorySvc.TrimNow()
 		}
-
-		if r.Method == http.MethodPost && r.URL.Path == "/api/trim-memory" {
-			if deps.MemorySvc != nil {
-				deps.MemorySvc.TrimNow()
-			}
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 			return
@@ -121,21 +150,25 @@ func NewAssetHandler(deps AssetServerDeps) http.Handler {
 
 			if filePath == "" {
 				ext := strings.ToLower(filepath.Ext(filename))
-				d := application.Get().Dialog.SaveFile()
-				d.SetMessage("Save Image")
-				d.SetFilename(filename)
+				var filters []domain.FileFilter
 				if ext == ".png" {
-					d.AddFilter("PNG Image (*.png)", "*.png")
+					filters = []domain.FileFilter{
+						{DisplayName: "PNG Image (*.png)", Pattern: "*.png"},
+					}
 				} else if ext == ".tif" || ext == ".tiff" {
 					// 🖨️ CMYK يُصدَّر TIFF افتراضياً — كانت البوابة تقتصر على PNG/JPEG
 					// فيُحفظ ملف TIFF بفلتر خاطئ (لا يظهر في حوار الحفظ).
-					d.AddFilter("TIFF Image (*.tif;*.tiff)", "*.tif;*.tiff")
+					filters = []domain.FileFilter{
+						{DisplayName: "TIFF Image (*.tif;*.tiff)", Pattern: "*.tif;*.tiff"},
+					}
 				} else {
-					d.AddFilter("JPEG Image (*.jpg;*.jpeg)", "*.jpg;*.jpeg")
+					filters = []domain.FileFilter{
+						{DisplayName: "JPEG Image (*.jpg;*.jpeg)", Pattern: "*.jpg;*.jpeg"},
+					}
 				}
 
 				var err error
-				filePath, err = d.PromptForSingleSelection()
+				filePath, err = s.runtime.SaveFileDialog("Save Image", filename, filters)
 				if err != nil {
 					http.Error(w, "Dialog error: "+err.Error(), http.StatusInternalServerError)
 					return
@@ -384,5 +417,4 @@ func NewAssetHandler(deps AssetServerDeps) http.Handler {
 		if deps.FileServer != nil {
 			deps.FileServer.ServeHTTP(w, r)
 		}
-	})
 }

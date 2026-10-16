@@ -19,6 +19,7 @@ import {
 import { generateInitialSlots, remapSlotsToCells } from './collage-slice';
 import { DEFAULT_PRINT_SETTINGS } from './print-slice';
 import { DEFAULT_HISTORY_ENTRY_EXTRAS, seedHistorySnapshot } from './history-slice';
+import { DEFAULT_GRID_STATE, type RulerUnit, type UserGuide } from './grid-slice';
 import { invalidateImageCache } from '../../canvas/image-cache';
 import { uid } from '../../utils';
 import { canvasMm, findPaperByMm } from '../../canvas/units';
@@ -106,6 +107,14 @@ type CoreSliceCross = CoreSlice & {
   columnsMargin: number;
   columnsGutter: number;
   showRuler: boolean;
+  rulerUnit: RulerUnit;
+  userGuides: UserGuide[];
+  showUserGuides: boolean;
+  lockUserGuides: boolean;
+  showBleedGuides: boolean;
+  bleedMarginMM: number;
+  safeMarginMM: number;
+  cutShapeType: 'rectangle' | 'circle' | 'rounded-rect';
   history: HistoryEntry[];
   historyIndex: number;
   collageGap: number;
@@ -360,7 +369,15 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       columnsColor: 'rgba(239, 68, 68, 0.08)',
       columnsMargin: 20,
       columnsGutter: 12,
-      showRuler: true,
+      showRuler: DEFAULT_GRID_STATE.showRuler,
+      rulerUnit: DEFAULT_GRID_STATE.rulerUnit,
+      userGuides: [],
+      showUserGuides: DEFAULT_GRID_STATE.showUserGuides,
+      lockUserGuides: DEFAULT_GRID_STATE.lockUserGuides,
+      showBleedGuides: DEFAULT_GRID_STATE.showBleedGuides,
+      bleedMarginMM: DEFAULT_GRID_STATE.bleedMarginMM,
+      safeMarginMM: DEFAULT_GRID_STATE.safeMarginMM,
+      cutShapeType: DEFAULT_GRID_STATE.cutShapeType,
       printSettings: DEFAULT_PRINT_SETTINGS,
       printImageSrc: null,
       history: [{ elements: [], slots: freshSlots, ...DEFAULT_HISTORY_ENTRY_EXTRAS }],
@@ -520,6 +537,38 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       });
     }
 
+    // تنظيف خطوط الإرشاد (User Guides) للتأكد من سلامة الموضع والنوع وتفرد المعرّفات
+    const rawUserGuides = Array.isArray(project.userGuides) ? project.userGuides : [];
+    const validUserGuides: UserGuide[] = rawUserGuides
+      .filter((g): g is UserGuide => {
+        if (!g || typeof g !== 'object') return false;
+        const { type, pos } = g as Record<string, unknown>;
+        return (
+          (type === 'h' || type === 'v') &&
+          typeof pos === 'number' &&
+          Number.isFinite(pos) &&
+          pos >= 0 &&
+          pos <= 1
+        );
+      })
+      .map((g) => ({
+        id: typeof g.id === 'string' && g.id.trim().length > 0 ? g.id : uid(),
+        type: g.type,
+        pos: g.pos,
+      }));
+
+    const seenGuideIds = new Set<string>();
+    const uniqueUserGuides = validUserGuides.map((g, idx) => {
+      const rawId = typeof g.id === 'string' && g.id.trim().length > 0 ? g.id : `guide-${idx}`;
+      if (!seenGuideIds.has(rawId)) {
+        seenGuideIds.add(rawId);
+        return { ...g, id: rawId };
+      }
+      const newId = `${rawId}-dup-${idx}-${Math.random().toString(36).slice(2, 6)}`;
+      seenGuideIds.add(newId);
+      return { ...g, id: newId };
+    });
+
     set({
       projectId,
       mode: resolvedMode,
@@ -581,6 +630,31 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       columnsColor: project.columnsColor ?? 'rgba(239, 68, 68, 0.08)',
       columnsMargin: project.columnsMargin ?? 20,
       columnsGutter: project.columnsGutter ?? 12,
+      showRuler: project.showRuler ?? DEFAULT_GRID_STATE.showRuler,
+      rulerUnit: (['mm', 'cm', 'in', 'px'].includes(project.rulerUnit as string)
+        ? project.rulerUnit
+        : DEFAULT_GRID_STATE.rulerUnit) as RulerUnit,
+      userGuides: uniqueUserGuides,
+      showUserGuides: project.showUserGuides ?? DEFAULT_GRID_STATE.showUserGuides,
+      lockUserGuides: project.lockUserGuides ?? DEFAULT_GRID_STATE.lockUserGuides,
+      showBleedGuides: project.showBleedGuides ?? DEFAULT_GRID_STATE.showBleedGuides,
+      bleedMarginMM:
+        typeof project.bleedMarginMM === 'number' &&
+        Number.isFinite(project.bleedMarginMM) &&
+        project.bleedMarginMM >= 0
+          ? project.bleedMarginMM
+          : DEFAULT_GRID_STATE.bleedMarginMM,
+      safeMarginMM:
+        typeof project.safeMarginMM === 'number' &&
+        Number.isFinite(project.safeMarginMM) &&
+        project.safeMarginMM >= 0
+          ? project.safeMarginMM
+          : DEFAULT_GRID_STATE.safeMarginMM,
+      cutShapeType: (['rectangle', 'circle', 'rounded-rect'].includes(
+        project.cutShapeType as string,
+      )
+        ? project.cutShapeType
+        : DEFAULT_GRID_STATE.cutShapeType) as 'rectangle' | 'circle' | 'rounded-rect',
       collageGap: project.collageGap ?? 0,
       collageMargin: project.collageMargin ?? 0,
       collageRadius: project.collageRadius ?? 0,
