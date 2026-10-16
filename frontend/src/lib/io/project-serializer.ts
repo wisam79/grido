@@ -230,32 +230,31 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     gridColor: dbProj.gridColor ?? '#000000',
     gridOpacity: dbProj.gridOpacity ?? 0.15,
     gridSubdivisions: dbProj.gridSubdivisions ?? 5,
-    gridType: (dbProj.gridType as 'lines' | 'dots') ?? 'lines',
+    gridType: dbProj.gridType === 'dots' ? 'dots' : 'lines',
     snapToGrid: dbProj.snapToGrid ?? false,
     showColumns: dbProj.showColumns ?? false,
     columnsCount: dbProj.columnsCount ?? 12,
     columnsColor: dbProj.columnsColor ?? 'rgba(239, 68, 68, 0.08)',
     columnsMargin: dbProj.columnsMargin ?? 20,
     columnsGutter: dbProj.columnsGutter ?? 12,
-    showRuler: ((dbProj as unknown as Record<string, unknown>).showRuler as boolean) ?? true,
-    rulerUnit:
-      ((dbProj as unknown as Record<string, unknown>).rulerUnit as 'mm' | 'cm' | 'in' | 'px') ??
-      'mm',
-    userGuides: parseSafely(
-      (dbProj as unknown as Record<string, unknown>).userGuides as string,
-      [],
-    ),
-    showUserGuides:
-      ((dbProj as unknown as Record<string, unknown>).showUserGuides as boolean) ?? true,
-    lockUserGuides:
-      ((dbProj as unknown as Record<string, unknown>).lockUserGuides as boolean) ?? false,
-    showBleedGuides:
-      ((dbProj as unknown as Record<string, unknown>).showBleedGuides as boolean) ?? false,
-    bleedMarginMM: ((dbProj as unknown as Record<string, unknown>).bleedMarginMM as number) ?? 2,
-    safeMarginMM: ((dbProj as unknown as Record<string, unknown>).safeMarginMM as number) ?? 2,
-    cutShapeType:
-      ((dbProj as unknown as Record<string, unknown>).cutShapeType as
-        'rectangle' | 'circle' | 'rounded-rect') ?? 'rectangle',
+    showRuler: dbProj.showRuler ?? true,
+    rulerUnit: (['mm', 'cm', 'in', 'px'].includes(dbProj.rulerUnit) ? dbProj.rulerUnit : 'mm') as
+      'mm' | 'cm' | 'in' | 'px',
+    userGuides: parseSafely(dbProj.userGuides, []),
+    showUserGuides: dbProj.showUserGuides ?? true,
+    lockUserGuides: dbProj.lockUserGuides ?? false,
+    showBleedGuides: dbProj.showBleedGuides ?? false,
+    bleedMarginMM:
+      typeof dbProj.bleedMarginMM === 'number' && Number.isFinite(dbProj.bleedMarginMM)
+        ? dbProj.bleedMarginMM
+        : 2,
+    safeMarginMM:
+      typeof dbProj.safeMarginMM === 'number' && Number.isFinite(dbProj.safeMarginMM)
+        ? dbProj.safeMarginMM
+        : 2,
+    cutShapeType: (['rectangle', 'circle', 'rounded-rect'].includes(dbProj.cutShapeType)
+      ? dbProj.cutShapeType
+      : 'rectangle') as 'rectangle' | 'circle' | 'rounded-rect',
     collageGap: dbProj.collageGap ?? 0,
     collageMargin: dbProj.collageMargin ?? 0,
     collageRadius: dbProj.collageRadius ?? 0,
@@ -300,6 +299,15 @@ export function projectFileToDomainProject(
     columnsColor: file.columnsColor ?? 'rgba(239, 68, 68, 0.08)',
     columnsMargin: file.columnsMargin ?? 20,
     columnsGutter: file.columnsGutter ?? 12,
+    showRuler: file.showRuler ?? true,
+    rulerUnit: file.rulerUnit ?? 'mm',
+    userGuides: JSON.stringify(file.userGuides || []),
+    showUserGuides: file.showUserGuides ?? true,
+    lockUserGuides: file.lockUserGuides ?? false,
+    showBleedGuides: file.showBleedGuides ?? false,
+    bleedMarginMM: file.bleedMarginMM ?? 2,
+    safeMarginMM: file.safeMarginMM ?? 2,
+    cutShapeType: file.cutShapeType ?? 'rectangle',
     collageGap: file.collageGap ?? 0,
     collageMargin: file.collageMargin ?? 0,
     collageRadius: file.collageRadius ?? 0,

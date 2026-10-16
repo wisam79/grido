@@ -7,6 +7,7 @@ import {
   projectFileToDomainProject,
   ProjectFileV1,
 } from '../src/lib/io/project-serializer';
+import { hydrateProjectState, makeUniqueId } from '../src/lib/io/project-hydrator';
 import { EditorState, useEditorStore } from '../src/lib/editor-store';
 import { DEFAULT_GRID_STATE } from '../src/lib/store/slices/grid-slice';
 import { domain } from '../wailsjs/go/models';
@@ -134,6 +135,57 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
     expect(mappedDbProj.gridSize).toBe(30);
     expect(mappedDbProj.gridType).toBe('dots');
     expect(mappedDbProj.collageShowEndCutLine).toBe(true);
+  });
+
+  it('should cleanly map all 9 guide and ruler fields bidirectionally between domain.Project and ProjectFile', () => {
+    const rawGuides = [
+      { id: 'g-h1', type: 'h' as const, pos: 0.33 },
+      { id: 'g-v1', type: 'v' as const, pos: 0.67 },
+    ];
+    const dbProj = new domain.Project({
+      id: 'proj-guides-9',
+      name: 'Guides Project',
+      mode: 'single',
+      canvasWidth: 2000,
+      canvasHeight: 1500,
+      backgroundColor: '#FFFFFF',
+      elements: '[]',
+      slots: '[]',
+      template: '',
+      collageTemplate: '',
+      printSettings: '',
+      showRuler: false,
+      rulerUnit: 'cm',
+      userGuides: JSON.stringify(rawGuides),
+      showUserGuides: false,
+      lockUserGuides: true,
+      showBleedGuides: true,
+      bleedMarginMM: 3.5,
+      safeMarginMM: 1.5,
+      cutShapeType: 'rounded-rect',
+    });
+
+    const file = domainProjectToProjectFile(dbProj);
+    expect(file.showRuler).toBe(false);
+    expect(file.rulerUnit).toBe('cm');
+    expect(file.userGuides).toEqual(rawGuides);
+    expect(file.showUserGuides).toBe(false);
+    expect(file.lockUserGuides).toBe(true);
+    expect(file.showBleedGuides).toBe(true);
+    expect(file.bleedMarginMM).toBe(3.5);
+    expect(file.safeMarginMM).toBe(1.5);
+    expect(file.cutShapeType).toBe('rounded-rect');
+
+    const mappedBack = projectFileToDomainProject(file, 'proj-guides-9', 'Guides Project');
+    expect(mappedBack.showRuler).toBe(false);
+    expect(mappedBack.rulerUnit).toBe('cm');
+    expect(JSON.parse(mappedBack.userGuides)).toEqual(rawGuides);
+    expect(mappedBack.showUserGuides).toBe(false);
+    expect(mappedBack.lockUserGuides).toBe(true);
+    expect(mappedBack.showBleedGuides).toBe(true);
+    expect(mappedBack.bleedMarginMM).toBe(3.5);
+    expect(mappedBack.safeMarginMM).toBe(1.5);
+    expect(mappedBack.cutShapeType).toBe('rounded-rect');
   });
 
   describe('Project Guides and Ruler Persistence Parity', () => {
@@ -283,6 +335,237 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
       expect(state.bleedMarginMM).toBe(2);
       expect(state.safeMarginMM).toBe(2);
       expect(state.cutShapeType).toBe('rectangle');
+    });
+  });
+
+  describe('hydrateProjectState and makeUniqueId unit tests', () => {
+    it('makeUniqueId generates a candidate not in seen set and preserves base', () => {
+      const seen = new Set<string>(['elem-dup-0-abc']);
+      const id = makeUniqueId('elem', 0, seen);
+      expect(id.startsWith('elem-dup-0-')).toBe(true);
+      expect(seen.has(id)).toBe(false);
+    });
+
+    it('returns null on invalid or non-object project payload', () => {
+      expect(hydrateProjectState(null as unknown as ProjectFileV1)).toBeNull();
+      expect(hydrateProjectState(undefined as unknown as ProjectFileV1)).toBeNull();
+      expect(hydrateProjectState('invalid' as unknown as ProjectFileV1)).toBeNull();
+    });
+
+    it('deduplicates element IDs and slot IDs', () => {
+      const project = {
+        version: 1,
+        mode: 'single',
+        canvasWidth: 2480,
+        canvasHeight: 3508,
+        backgroundColor: '#FFFFFF',
+        elements: [
+          {
+            id: 'dup-id',
+            type: 'text',
+            x: 0.1,
+            y: 0.1,
+            width: 0.2,
+            height: 0.1,
+            rotation: 0,
+            opacity: 1,
+            zIndex: 1,
+            text: 'A',
+            fontSize: 20,
+          },
+          {
+            id: 'dup-id',
+            type: 'text',
+            x: 0.3,
+            y: 0.3,
+            width: 0.2,
+            height: 0.1,
+            rotation: 0,
+            opacity: 1,
+            zIndex: 2,
+            text: 'B',
+            fontSize: 20,
+          },
+        ],
+        slots: [
+          {
+            id: 'slot-dup',
+            cellIndex: 0,
+            x: 0,
+            y: 0,
+            w: 100,
+            h: 100,
+            filter: 'none',
+            brightness: 100,
+            contrast: 100,
+            saturation: 100,
+            zoom: 1,
+            dragX: 0,
+            dragY: 0,
+          },
+          {
+            id: 'slot-dup',
+            cellIndex: 1,
+            x: 100,
+            y: 0,
+            w: 100,
+            h: 100,
+            filter: 'none',
+            brightness: 100,
+            contrast: 100,
+            saturation: 100,
+            zoom: 1,
+            dragX: 0,
+            dragY: 0,
+          },
+        ],
+      };
+
+      const hydrated = hydrateProjectState(project as unknown as ProjectFileV1, {
+        projectId: 'test-p1',
+      });
+      expect(hydrated).not.toBeNull();
+      expect(hydrated!.projectId).toBe('test-p1');
+      expect(hydrated!.elements).toHaveLength(2);
+      expect(hydrated!.elements[0].id).toBe('dup-id');
+      expect(hydrated!.elements[1].id).not.toBe('dup-id');
+      expect(hydrated!.elements[1].id.startsWith('dup-id-dup-1-')).toBe(true);
+
+      expect(hydrated!.slots).toHaveLength(2);
+      expect(hydrated!.slots[0].id).toBe('slot-dup');
+      expect(hydrated!.slots[1].id).not.toBe('slot-dup');
+      expect(hydrated!.slots[1].id.startsWith('slot-dup-dup-1-')).toBe(true);
+    });
+
+    it('discards malformed elements, slots, and invalid user guides', () => {
+      const project = {
+        version: 1,
+        mode: 'single',
+        canvasWidth: -50,
+        canvasHeight: 30000,
+        backgroundColor: '#000000',
+        elements: [
+          {
+            id: 'valid-el',
+            type: 'text',
+            x: 0.1,
+            y: 0.1,
+            width: 0.2,
+            height: 0.1,
+            rotation: 0,
+            opacity: 1,
+            zIndex: 1,
+            text: 'OK',
+            fontSize: 16,
+          },
+          {
+            id: 'nan-el',
+            type: 'text',
+            x: NaN,
+            y: 0.1,
+            width: 0.2,
+            height: 0.1,
+            rotation: 0,
+            opacity: 1,
+            zIndex: 2,
+            text: 'Bad',
+            fontSize: 16,
+          },
+          {
+            id: 'zero-w-el',
+            type: 'text',
+            x: 0.1,
+            y: 0.1,
+            width: 0,
+            height: 0.1,
+            rotation: 0,
+            opacity: 1,
+            zIndex: 3,
+            text: 'Bad',
+            fontSize: 16,
+          },
+        ],
+        slots: [
+          {
+            id: 'valid-slot',
+            cellIndex: 0,
+            x: 0,
+            y: 0,
+            w: 100,
+            h: 100,
+            filter: 'none',
+            brightness: 100,
+            contrast: 100,
+            saturation: 100,
+            zoom: 1,
+            dragX: 0,
+            dragY: 0,
+          },
+          {
+            id: 'neg-w-slot',
+            cellIndex: 1,
+            x: 0,
+            y: 0,
+            w: -50,
+            h: 100,
+            filter: 'none',
+            brightness: 100,
+            contrast: 100,
+            saturation: 100,
+            zoom: 1,
+            dragX: 0,
+            dragY: 0,
+          },
+        ],
+        userGuides: [
+          { id: 'g-ok', type: 'h', pos: 0.4 },
+          { id: 'g-bad-type', type: 'diag' as unknown as 'h', pos: 0.4 },
+          { id: 'g-bad-pos', type: 'v', pos: 1.2 },
+          { id: 'g-neg-pos', type: 'v', pos: -0.1 },
+        ],
+      };
+
+      const hydrated = hydrateProjectState(project as unknown as ProjectFileV1);
+      expect(hydrated).not.toBeNull();
+      // Canvas dimensions clamped to defaults
+      expect(hydrated!.canvasWidth).toBe(2480);
+      expect(hydrated!.canvasHeight).toBe(3508);
+
+      expect(hydrated!.elements).toHaveLength(1);
+      expect(hydrated!.elements[0].id).toBe('valid-el');
+
+      expect(hydrated!.slots).toHaveLength(1);
+      expect(hydrated!.slots[0].id).toBe('valid-slot');
+
+      expect(hydrated!.userGuides).toHaveLength(1);
+      expect(hydrated!.userGuides[0].id).toBe('g-ok');
+    });
+
+    it('reconciles flipped paper width/height in legacy printSettings', () => {
+      const project = {
+        version: 1,
+        mode: 'single',
+        canvasWidth: 2480,
+        canvasHeight: 3508,
+        backgroundColor: '#FFFFFF',
+        elements: [],
+        slots: [],
+        printSettings: {
+          paperId: 'a4',
+          paperWidthMM: 297,
+          paperHeightMM: 210,
+          marginMM: 5,
+          dpi: 300,
+          copiesPerSheet: 1,
+          showCutLines: false,
+          orientation: 'landscape',
+        },
+      };
+
+      const hydrated = hydrateProjectState(project as unknown as ProjectFileV1);
+      expect(hydrated).not.toBeNull();
+      expect(hydrated!.printSettings.paperWidthMM).toBe(210);
+      expect(hydrated!.printSettings.paperHeightMM).toBe(297);
     });
   });
 });

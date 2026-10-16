@@ -38,6 +38,15 @@ type Project struct {
 	CollageShowEndCutLine    bool      `json:"collageShowEndCutLine"`
 	CollageStrokeWidth       int       `json:"collageStrokeWidth"`
 	CollageStrokeColor       string    `json:"collageStrokeColor"`
+	ShowRuler                bool      `json:"showRuler"`
+	RulerUnit                string    `json:"rulerUnit"`
+	UserGuides               JSONText  `gorm:"type:text" json:"userGuides"`
+	ShowUserGuides           bool      `json:"showUserGuides"`
+	LockUserGuides           bool      `json:"lockUserGuides"`
+	ShowBleedGuides          bool      `json:"showBleedGuides"`
+	BleedMarginMM            float64   `json:"bleedMarginMM"`
+	SafeMarginMM             float64   `json:"safeMarginMM"`
+	CutShapeType             string    `json:"cutShapeType"`
 	CreatedAt                time.Time `json:"-"`                  // مخفي من Wails bindings لتفادي خطأ time.Time
 	UpdatedAt                time.Time `json:"-" gorm:"index"`     // فهرس لترتيب FindAll (updated_at desc) بدل المسح الكامل
 	CreatedAtStr             string    `gorm:"-" json:"createdAt"` // حقل محسوب للتسلسل

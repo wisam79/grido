@@ -69,6 +69,15 @@ func TestProjectRepository_SaveAndGet(t *testing.T) {
 		BackgroundColor: "#000000",
 		Elements:        "[]",
 		Slots:           "[]",
+		ShowRuler:       true,
+		RulerUnit:       "cm",
+		UserGuides:      `[{"id":"g1","axis":"x","pos":15.5}]`,
+		ShowUserGuides:  true,
+		LockUserGuides:  true,
+		ShowBleedGuides: true,
+		BleedMarginMM:   3.5,
+		SafeMarginMM:    4.2,
+		CutShapeType:    "rounded-rect",
 	}
 
 	// 2. اختبار الحفظ (Save)
@@ -88,6 +97,33 @@ func TestProjectRepository_SaveAndGet(t *testing.T) {
 	}
 	if retrieved.CreatedAtStr == "" {
 		t.Error("expected CreatedAtStr to be populated")
+	}
+	if !retrieved.ShowRuler {
+		t.Errorf("expected ShowRuler to be true, got %v", retrieved.ShowRuler)
+	}
+	if retrieved.RulerUnit != "cm" {
+		t.Errorf("expected RulerUnit 'cm', got '%s'", retrieved.RulerUnit)
+	}
+	if string(retrieved.UserGuides) != `[{"id":"g1","axis":"x","pos":15.5}]` {
+		t.Errorf("expected UserGuides '[{\"id\":\"g1\",\"axis\":\"x\",\"pos\":15.5}]', got '%s'", retrieved.UserGuides)
+	}
+	if !retrieved.ShowUserGuides {
+		t.Errorf("expected ShowUserGuides to be true, got %v", retrieved.ShowUserGuides)
+	}
+	if !retrieved.LockUserGuides {
+		t.Errorf("expected LockUserGuides to be true, got %v", retrieved.LockUserGuides)
+	}
+	if !retrieved.ShowBleedGuides {
+		t.Errorf("expected ShowBleedGuides to be true, got %v", retrieved.ShowBleedGuides)
+	}
+	if retrieved.BleedMarginMM != 3.5 {
+		t.Errorf("expected BleedMarginMM 3.5, got %f", retrieved.BleedMarginMM)
+	}
+	if retrieved.SafeMarginMM != 4.2 {
+		t.Errorf("expected SafeMarginMM 4.2, got %f", retrieved.SafeMarginMM)
+	}
+	if retrieved.CutShapeType != "rounded-rect" {
+		t.Errorf("expected CutShapeType 'rounded-rect', got '%s'", retrieved.CutShapeType)
 	}
 
 	// 4. اختبار جلب الكل (FindAll)
