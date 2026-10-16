@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"grido/internal/core/domain"
 )
 
 func TestIsVersionGreater(t *testing.T) {
@@ -329,5 +331,52 @@ func TestUpdaterRejectsNonHTTPSInitialURL(t *testing.T) {
 	}
 	if got := atomic.LoadInt32(&hits); got != 0 {
 		t.Fatalf("server was contacted %d time(s) — a network request was attempted before the scheme guard", got)
+	}
+}
+
+// ─── بث تقدم التنزيل عبر جسر الرنتايم المحقون ─────────────────────
+//
+// العقد المُختبَر: progressWriter يبث عبر المنفذ المحقون بلا أي رنتايم Wails،
+// ولا يعيد بث نفس النسبة مرتين. هذا هو ما كان يستحيل اختباره عندما كان المحدّث
+// يستدعي application.Get() مباشرة.
+
+// recordingBridge يسجل أسماء الأحداث المبثوثة
+type recordingBridge struct {
+	domain.NoopRuntimeBridge
+	events []string
+}
+
+func (b *recordingBridge) Emit(name string, _ ...any) {
+	b.events = append(b.events, name)
+}
+
+func TestProgressWriterEmitsThroughInjectedBridge(t *testing.T) {
+	recorder := &recordingBridge{}
+	pw := &progressWriter{total: 100, runtime: recorder}
+
+	// 25٪ ثم 50٪ ثم كتابة صفرية (لا بث) ثم 100٪
+	for _, size := range []int{25, 25, 0, 50} {
+		if _, err := pw.Write(make([]byte, size)); err != nil {
+			t.Fatalf("Write(%d bytes): %v", size, err)
+		}
+	}
+
+	if len(recorder.events) != 3 {
+		t.Fatalf("emitted %d events (%v), want 3", len(recorder.events), recorder.events)
+	}
+	for i, name := range recorder.events {
+		if name != "update-progress" {
+			t.Errorf("event[%d] = %q, want %q", i, name, "update-progress")
+		}
+	}
+}
+
+func TestUpdaterServiceDefaultsToRuntimeBridge(t *testing.T) {
+	svc := NewUpdaterService()
+
+	svc.SetRuntimeBridge(nil)
+
+	if svc.runtime == nil {
+		t.Error("runtime bridge must stay wired when a nil bridge is passed")
 	}
 }

@@ -2,9 +2,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createHistorySlice, HistoryCross } from './slices/history-slice';
 import { DEFAULT_COLLAGE_STATE } from './slices/collage-slice';
 import { DEFAULT_GRID_STATE } from './slices/grid-slice';
+import { DEFAULT_PRINT_SETTINGS } from './slices/print-slice';
+import { SNAPSHOT_KEYS, DEFAULT_HISTORY_ENTRY_EXTRAS, type SnapshotKey } from './history-snapshot';
 import { create } from 'zustand';
 import type { UseBoundStore, StoreApi } from 'zustand';
-import type { CanvasElement } from './types';
+import type { CanvasElement, HistoryEntry } from './types';
 
 describe('history-slice', () => {
   let store: UseBoundStore<StoreApi<HistoryCross>>;
@@ -40,6 +42,13 @@ describe('history-slice', () => {
       gridType: DEFAULT_GRID_STATE.gridType,
       // نفس المرجع (وليس نسخة فارغة) — userGuides تُقارَن بالمرجع
       userGuides: DEFAULT_GRID_STATE.userGuides,
+      // بقية حقول اللقطة الصريحة في النوع (تطابق القيم الافتراضية للسجل)
+      template: null,
+      backgroundGradientColor2: null,
+      backgroundGradientAngle: 135,
+      lastEditedImage: null,
+      lastEditedImageAspect: null,
+      printSettings: DEFAULT_PRINT_SETTINGS,
       mode: 'collage',
       selectedId: null,
       selectedIds: [],
@@ -104,5 +113,34 @@ describe('history-slice', () => {
     const finalState = store.getState();
     // Only 1 push should actually be registered in past because the second was structurally identical
     expect(finalState.history.length).toBe(2); // Initial + 1 push
+  });
+
+  it('should define a default for every snapshot key', () => {
+    for (const key of SNAPSHOT_KEYS) {
+      expect(DEFAULT_HISTORY_ENTRY_EXTRAS).toHaveProperty(key);
+    }
+  });
+
+  it('should lock the registry to every HistoryEntry snapshot field (type-level)', () => {
+    // إن أُضيف حقل إلى HistoryEntry دون إدراجه في SNAPSHOT_KEYS يفشل هذا التحقق
+    // النوعي عند الـ typecheck — فلا ينزلق حقل من اللقطة بصمت (صنف Bug#1/H4).
+    type Uncovered = Exclude<Exclude<keyof HistoryEntry, 'elements' | 'slots'>, SnapshotKey>;
+    const registryCoversAllFields: [Uncovered] extends [never] ? true : never = true;
+    expect(registryCoversAllFields).toBe(true);
+  });
+
+  it('should restore printSettings and grid state on undo (H4 regression)', () => {
+    store.setState({ printSettings: { ...DEFAULT_PRINT_SETTINGS, dpi: 600 }, showGrid: true });
+    store.getState().pushHistory();
+    store.setState({ printSettings: { ...DEFAULT_PRINT_SETTINGS, dpi: 900 } });
+    store.getState().pushHistory();
+
+    store.getState().undo();
+    expect(store.getState().printSettings?.dpi).toBe(600);
+    expect(store.getState().showGrid).toBe(true);
+
+    store.getState().undo();
+    expect(store.getState().printSettings?.dpi).toBe(DEFAULT_PRINT_SETTINGS.dpi);
+    expect(store.getState().showGrid).toBe(false);
   });
 });

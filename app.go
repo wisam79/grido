@@ -55,9 +55,6 @@ func NewApp(templates domain.CustomTemplateRepository) *App {
 func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
 	a.ctx = ctx
 	a.phoneBridgeSvc.SetContext(ctx)
-	if a.licenseSvc != nil {
-		a.licenseSvc.SetContext(ctx)
-	}
 	if a.memorySvc != nil {
 		a.memorySvc.StartAutoTrim(ctx)
 	}

@@ -1,17 +1,17 @@
 import { StateCreator } from 'zustand';
-import {
-  CanvasElement,
-  CanvasSlot,
-  HistoryEntry,
-  PhotoTemplate,
-  CollageTemplate,
-  PrintSettings,
-} from '../types';
+import { CanvasElement, CanvasSlot, HistoryEntry } from '../types';
 import { DEFAULT_COLLAGE_STATE } from './collage-slice';
-import { DEFAULT_PRINT_SETTINGS } from './print-slice';
-import { DEFAULT_GRID_STATE } from './grid-slice';
-// النوع فقط (import type) — القيمة المطلوبة هنا هي DEFAULT_GRID_STATE أعلاه
-import type { UserGuide } from './grid-slice';
+import {
+  DEFAULT_HISTORY_ENTRY_EXTRAS,
+  SNAPSHOT_KEYS,
+  captureHistoryEntry,
+  snapshotValuesEqual,
+  type SnapshotSource,
+  type SnapshotValues,
+} from '../history-snapshot';
+
+// إعادة تصدير المصدر الوحيد للقيم الافتراضية (يستهلكها core-slice لبذرة reset)
+export { DEFAULT_HISTORY_ENTRY_EXTRAS };
 
 export interface HistorySlice {
   history: HistoryEntry[];
@@ -20,40 +20,6 @@ export interface HistorySlice {
   undo: () => void;
   redo: () => void;
 }
-
-// القيم الافتراضية للحقول الإضافية — يجب أن تطابق DEFAULT_CORE_STATE في core-slice
-export const DEFAULT_HISTORY_ENTRY_EXTRAS = {
-  mode: 'collage' as const,
-  canvasWidth: 2480,
-  canvasHeight: 3508,
-  backgroundColor: '#FFFFFF',
-  // يطابق الحالة الابتدائية الفعلية (نفس مرجع قالب الكولاج الافتراضي)
-  template: null as PhotoTemplate | null,
-  collageTemplate: DEFAULT_COLLAGE_STATE.collageTemplate as CollageTemplate | null,
-  backgroundGradientColor2: null as string | null,
-  backgroundGradientAngle: 135,
-  collageGap: 0,
-  collageMargin: 0,
-  collageRadius: 0,
-  collageShowCutLines: false,
-  collageShowEndCutLine: true,
-  collageStrokeWidth: 0,
-  collageStrokeColor: '#000000',
-  // الشبكة والإرشادات — بدونها كان التراجع يستعيد الخانات ويُبقي الشبكة/الأدلة
-  // الجديدة، فتتباعد الحالتان بلا إمكانية عكس التغيير (نفس صنف إصلاح H4)
-  showGrid: DEFAULT_GRID_STATE.showGrid,
-  gridSize: DEFAULT_GRID_STATE.gridSize,
-  gridColor: DEFAULT_GRID_STATE.gridColor,
-  gridOpacity: DEFAULT_GRID_STATE.gridOpacity,
-  gridSubdivisions: DEFAULT_GRID_STATE.gridSubdivisions,
-  gridType: DEFAULT_GRID_STATE.gridType,
-  // نفس مرجع مصفوفة الحالة الابتدائية (مثل collageTemplate) — مصفوفة جديدة
-  // تجعل مقارنة اللقطتين ترى الإرشادات "مختلفة" فتُدفع لقطة وهمية في كل مرة
-  userGuides: DEFAULT_GRID_STATE.userGuides,
-  lastEditedImage: null as string | null,
-  lastEditedImageAspect: null as number | null,
-  printSettings: DEFAULT_PRINT_SETTINGS,
-};
 
 export const DEFAULT_HISTORY_STATE = {
   history: [
@@ -68,117 +34,44 @@ export const DEFAULT_HISTORY_STATE = {
   historyIndex: 0,
 };
 
-export type HistoryCross = HistorySlice & {
-  elements: CanvasElement[];
-  slots: CanvasSlot[];
-  selectedId: string | null;
-  selectedIds: string[];
-  editingTextId: string | null;
-  mode?: 'single' | 'collage';
-  canvasWidth?: number;
-  canvasHeight?: number;
-  backgroundColor?: string;
-  template?: PhotoTemplate | null;
-  collageTemplate?: CollageTemplate | null;
-  backgroundGradientColor2?: string | null;
-  backgroundGradientAngle?: number;
-  collageGap?: number;
-  collageMargin?: number;
-  collageRadius?: number;
-  collageShowCutLines?: boolean;
-  collageShowEndCutLine?: boolean;
-  collageStrokeWidth?: number;
-  collageStrokeColor?: string;
-  showGrid?: boolean;
-  gridSize?: number;
-  gridColor?: string;
-  gridOpacity?: number;
-  gridSubdivisions?: number;
-  gridType?: 'lines' | 'dots';
-  userGuides?: UserGuide[];
-  lastEditedImage?: string | null;
-  lastEditedImageAspect?: number | null;
-  // 🛡️ إعدادات الطباعة (H4 من تدقيق 2026-10-08): تغيير الـ DPI يعيد بناء
-  // هندسة الخانات (`remapSlotsToCells`)، وكان التراجع يستعيد الخانات ويُبقي
-  // الـ DPI الجديد — الحالتان تفترقان بلا إمكانية عكس التغيير نهائياً.
-  printSettings?: PrintSettings;
-};
-
-// التقاط لقطة كاملة للحالة القابلة للتراجع (عناصر + خانات + إعدادات بصرية مؤثرة)
-const captureSnapshot = (s: HistoryCross): HistoryEntry => ({
-  // نسخ سطحي يمنع نسخ البيانات الضخمة مع ضمان فصل المراجع
-  elements: s.elements.map((el) => ({ ...el })),
-  slots: s.slots.map((sl) => ({ ...sl })),
-  mode: s.mode,
-  canvasWidth: s.canvasWidth,
-  canvasHeight: s.canvasHeight,
-  backgroundColor: s.backgroundColor,
-  template: s.template ?? null,
-  collageTemplate: s.collageTemplate ?? null,
-  // تسوية undefined إلى null لتطابق الـ dedupe مع الإدخال الابتدائي
-  backgroundGradientColor2: s.backgroundGradientColor2 ?? null,
-  backgroundGradientAngle: s.backgroundGradientAngle ?? 135,
-  collageGap: s.collageGap,
-  collageMargin: s.collageMargin,
-  collageRadius: s.collageRadius,
-  collageShowCutLines: s.collageShowCutLines,
-  collageShowEndCutLine: s.collageShowEndCutLine,
-  collageStrokeWidth: s.collageStrokeWidth,
-  collageStrokeColor: s.collageStrokeColor,
-  showGrid: s.showGrid,
-  gridSize: s.gridSize,
-  gridColor: s.gridColor,
-  gridOpacity: s.gridOpacity,
-  gridSubdivisions: s.gridSubdivisions,
-  gridType: s.gridType,
-  userGuides: s.userGuides,
-  // تسوية undefined إلى null — يضمن تطابق JSON مع الإدخال الابتدائي في الـ dedupe
-  lastEditedImage: s.lastEditedImage ?? null,
-  lastEditedImageAspect: s.lastEditedImageAspect ?? null,
-  // نسخة منفصلة (لا مرجع مشترك) — التراجع يستعيدها دون أن تتلوث بلاحق
-  printSettings: s.printSettings ? { ...s.printSettings } : DEFAULT_PRINT_SETTINGS,
-});
+// حقول اللقطة (mode..printSettings) مشتقة من سجل history-snapshot — مطلوبة
+// كاملة في نوع الحالة (لا optional) فلا يسقط حقل جديد من اللقطة بصمت.
+export type HistoryCross = HistorySlice &
+  SnapshotValues & {
+    elements: CanvasElement[];
+    slots: CanvasSlot[];
+    selectedId: string | null;
+    selectedIds: string[];
+    editingTextId: string | null;
+  };
 
 // استعادة حقول اللقطة — الحقول غير المعرفة (undefined) لا تُفرض على الحالة الحالية
-const restoreEntry = (entry: HistoryEntry) => {
+type RestoredSnapshot = Partial<SnapshotValues> & {
+  elements: CanvasElement[];
+  slots: CanvasSlot[];
+};
+
+const restoreEntry = (entry: HistoryEntry): RestoredSnapshot => {
   const restored: Record<string, unknown> = {
     elements: entry.elements.map((el) => ({ ...el })),
     slots: entry.slots.map((sl) => ({ ...sl })),
   };
-  const optionalKeys = [
-    'mode',
-    'canvasWidth',
-    'canvasHeight',
-    'backgroundColor',
-    'template',
-    'collageTemplate',
-    'backgroundGradientColor2',
-    'backgroundGradientAngle',
-    'collageGap',
-    'collageMargin',
-    'collageRadius',
-    'collageShowCutLines',
-    'collageShowEndCutLine',
-    'collageStrokeWidth',
-    'collageStrokeColor',
-    'showGrid',
-    'gridSize',
-    'gridColor',
-    'gridOpacity',
-    'gridSubdivisions',
-    'gridType',
-    'userGuides',
-    'lastEditedImage',
-    'lastEditedImageAspect',
-    'printSettings',
-  ] as const;
-  for (const key of optionalKeys) {
+  for (const key of SNAPSHOT_KEYS) {
     if (entry[key] !== undefined) {
       restored[key] = entry[key];
     }
   }
-  return restored;
+  return restored as RestoredSnapshot;
 };
+
+/**
+ * يبذر رأس سجل التراجع من حالة كاملة بعد التسوية (loadProject) — اللقطة الأولى
+ * تطابق الحالة الفعلية بالضبط فتبقى قابلة للعكس كاملاً ويمر الـ dedupe أول مرة.
+ */
+export const seedHistorySnapshot = (source: SnapshotSource) => ({
+  history: [captureHistoryEntry(source)],
+  historyIndex: 0,
+});
 
 /**
  * 🚀 مقارنة عميقة بلا تسلسل JSON — كانت pushHistory تُسلسل اللقطة كاملة
@@ -191,53 +84,9 @@ const isSameSnapshot = (a: HistoryEntry, b: HistoryEntry): boolean => {
   if (a.elements.length !== b.elements.length) return false;
   if (a.slots.length !== b.slots.length) return false;
 
-  const scalarKeys = [
-    'mode',
-    'canvasWidth',
-    'canvasHeight',
-    'backgroundColor',
-    // القالبان يُقارنان بالمرجع (الستور immutable) — تغييرهما يُسجّل خطوة فعلاً
-    'template',
-    'collageTemplate',
-    'backgroundGradientColor2',
-    'backgroundGradientAngle',
-    'collageGap',
-    'collageMargin',
-    'collageRadius',
-    'collageShowCutLines',
-    'collageShowEndCutLine',
-    'collageStrokeWidth',
-    'collageStrokeColor',
-    'showGrid',
-    'gridSize',
-    'gridColor',
-    'gridOpacity',
-    'gridSubdivisions',
-    'gridType',
-    // الأدلة تُقارَن بالمرجع — grid-slice يستبدل المصفوفة كلها عند أي تغيير
-    'userGuides',
-    'lastEditedImage',
-    'lastEditedImageAspect',
-    // ملاحظة: `printSettings` مقصياً من هذه القائمة عمداً — اللقطة تحمل نسخة
-    // مستقلة (`{ ...s.printSettings }`) فالمقارنة المرجعية تجعل كل لقطتين
-    // مختلفتين وتسجّل خطوة تراجع وهمية عند كل عملية. يُقارن حقوله يدوياً أدناه.
-  ] as const;
-  for (const key of scalarKeys) {
-    if ((a[key] ?? null) !== (b[key] ?? null)) return false;
-  }
-
-  // 🛡️ إعدادات الطباعة (H4): المقارنة بالمرجع لا تصلح — اللقطة تحمل نسخة
-  // مستقلة (`{ ...s.printSettings }`)، فالمقارنة المرجعية تجعل كل لقطتين
-  // "مختلفتين" وتسجّل خطوة تراجع وهمية عند كل عملية. نقارن حقولها يدوياً.
-  const psA = a.printSettings;
-  const psB = b.printSettings;
-  if (psA || psB) {
-    if (!psA || !psB) return false;
-    const keys = Object.keys(psA) as (keyof PrintSettings)[];
-    for (const k of keys) {
-      if (psA[k] !== psB[k]) return false;
-    }
-  }
+  // كل حقول اللقطة عبر السجل الموحّد: عددية/نصية مباشرة مع تسوية null،
+  // القوالب والأدلة بالمرجع، وإعدادات الطباعة بحقولها (انظر history-snapshot.ts)
+  if (!snapshotValuesEqual(a, b)) return false;
 
   const valuesEqual = (x: unknown, y: unknown): boolean => {
     if (typeof x === 'string' && typeof y === 'string') {
@@ -343,10 +192,10 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
   ...DEFAULT_HISTORY_STATE,
 
   pushHistory: () => {
-    const state = get() as HistoryCross;
+    const state = get();
     const { history, historyIndex } = state;
 
-    const snapshot = captureSnapshot(state);
+    const snapshot = captureHistoryEntry(state);
 
     // Avoid pushing identical states with fast structural check
     // 🚀 مقارنة عميقة بلا JSON.stringify — التسلسل كان يستهلك ميغابايتات
@@ -375,7 +224,7 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
   },
 
   undo: () => {
-    const { history, historyIndex } = get() as HistoryCross;
+    const { history, historyIndex } = get();
     if (historyIndex <= 0) return;
     const prev = history[historyIndex - 1];
     set({
@@ -388,7 +237,7 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
   },
 
   redo: () => {
-    const { history, historyIndex } = get() as HistoryCross;
+    const { history, historyIndex } = get();
     if (historyIndex >= history.length - 1) return;
     const next = history[historyIndex + 1];
     set({

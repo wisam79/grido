@@ -24,8 +24,8 @@ description: أنماط وقواعد إدارة الحالة المركزية ب
 
 ## 🧩 2. نمط تجزئة الشرائح (Slice Pattern in Zustand v5)
 
-ينقسم متجر Grido Studio المركزي إلى 7 شرائح في `frontend/src/lib/store/slices/`:
-`core-slice.ts`, `grid-slice.ts`, `history-slice.ts`, `license-slice.ts`, `element-slice.ts`, `collage-slice.ts`, `print-slice.ts`.
+ينقسم متجر Grido Studio المركزي إلى 8 شرائح في `frontend/src/lib/store/slices/`:
+`core-slice.ts`, `grid-slice.ts`, `history-slice.ts`, `license-slice.ts`, `element-slice.ts`, `collage-slice.ts`, `print-slice.ts`, `workflow-slice.ts`.
 
 ### الهيكل القياسي لإنشاء الشريحة (Standard Slice Creator)
 
@@ -104,7 +104,7 @@ const addImage = useEditorStore((s) => s.addImageElement);
 ## 🏛️ 5. قواعد متانة الحالة والتراجع (Undo/Redo & State Robustness)
 
 1. **شمولية بذر لقطة التاريخ الابتدائية (History Seeding Parity):**
-   عند تهيئة التاريخ أو فتح مشروع (`loadProject` / `reset`)، يجب أن تتضمن اللقطة الأولى `history[0]` كافة الحقول التي تستعيدها دالة `restoreEntry` (بما فيها `template` و `collageTemplate` وألوان التدرج `backgroundGradientColor2` و `backgroundGradientAngle`). غياب أي حقل عن اللقطة الابتدائية يجعل التراجع (Ctrl+Z) غير قادر على استعادة الحالة الأصلية ويترك التعديلات الجديدة عالقة.
+   عند تهيئة التاريخ أو فتح مشروع (`loadProject` / `reset`)، يجب أن تتضمن اللقطة الأولى `history[0]` كافة الحقول القابلة للتراجع. المصدر الواحد لهذه الحقول هو سجل `history-snapshot.ts` (`SNAPSHOT_KEYS` + `SNAPSHOT_FIELDS`) الذي تُشتق منه كل العمليات: الالتقاط (`captureHistoryEntry`)، الاستعادة، المقارنة (`snapshotValuesEqual`)، والافتراضيات (`DEFAULT_HISTORY_ENTRY_EXTRAS`) — ويُبذر `loadProject` لقطته عبر `seedHistorySnapshot(get())` بعد كل التسويات. إضافة حقل جديد إلى `HistoryEntry` = سطران في السجل فقط، واختبار قفل نوعي في `history-slice.test.ts` يفشل الـ typecheck إن سقط الحقل من `SNAPSHOT_KEYS`. غياب أي حقل عن اللقطة الابتدائية يجعل التراجع (Ctrl+Z) غير قادر على استعادة الحالة الأصلية ويترك التعديلات الجديدة عالقة.
 
 2. **إعادة الربط المكاني عند تعديل أبعاد الكانفس والشبكة (Spatial Slot Remapping):**
    عند تعديل أبعاد الكانفاس (`setCanvasSize`) أو إعدادات الطباعة (`setPrintSettings`) في وضع الكولاج، يُمنع إجبارياً ربط الخانات القديمة بالجديدة عبر مؤشر المصفوفة `slots[i]`. يجب استخدام المطابقة المكانية لأقرب مركز خلية (`remapSlotsToCells`) لضمان بقاء الصور في مواضعها البصرية الصحيحة عند تغير ترتيب الشبكة. كما يجب تخطي إعادة بناء الخانات إذا لم تتغير أبعاد أو عدد الخلايا فعلياً.

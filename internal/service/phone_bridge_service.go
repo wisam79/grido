@@ -18,9 +18,8 @@ import (
 	"sync"
 	"time"
 
+	"grido/internal/core/domain"
 	"grido/internal/utils"
-
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 //go:embed embedded/phone_camera_page.html
@@ -47,7 +46,9 @@ type BridgeStatus struct {
 }
 
 type PhoneBridgeService struct {
-	mediaSvc      *MediaService
+	mediaSvc *MediaService
+	// runtime جسر بث أحداث الواجهة (phone:photo-received) — منفذ قابل للاستبدال
+	runtime       domain.RuntimeBridge
 	ctx           context.Context
 	server        *http.Server
 	listener      net.Listener
@@ -63,7 +64,18 @@ type PhoneBridgeService struct {
 func NewPhoneBridgeService(mediaSvc *MediaService) *PhoneBridgeService {
 	return &PhoneBridgeService{
 		mediaSvc: mediaSvc,
+		runtime:  NewWailsRuntimeBridge(),
 	}
+}
+
+// SetRuntimeBridge يستبدل جسر بث الأحداث (اختبارات/بيئات أخرى) — nil يُتجاهل
+func (s *PhoneBridgeService) SetRuntimeBridge(bridge domain.RuntimeBridge) {
+	if s == nil || bridge == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.runtime = bridge
 }
 
 func (s *PhoneBridgeService) SetContext(ctx context.Context) {
@@ -345,11 +357,9 @@ func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Re
 	s.lastReceived = time.Now().Format("15:04:05")
 	s.mu.Unlock()
 
-	if application.Get() != nil {
-		application.Get().Event.Emit("phone:photo-received", map[string]string{
-			"path": virtualPath,
-		})
-	}
+	s.runtime.Emit("phone:photo-received", map[string]string{
+		"path": virtualPath,
+	})
 
 	slog.Info("Phone bridge received photo successfully", "path", virtualPath)
 

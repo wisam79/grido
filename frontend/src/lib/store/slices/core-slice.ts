@@ -18,7 +18,7 @@ import {
 } from '../../templates';
 import { generateInitialSlots, remapSlotsToCells } from './collage-slice';
 import { DEFAULT_PRINT_SETTINGS } from './print-slice';
-import { DEFAULT_HISTORY_ENTRY_EXTRAS } from './history-slice';
+import { DEFAULT_HISTORY_ENTRY_EXTRAS, seedHistorySnapshot } from './history-slice';
 import { invalidateImageCache } from '../../canvas/image-cache';
 import { uid } from '../../utils';
 import { canvasMm, findPaperByMm } from '../../canvas/units';
@@ -44,8 +44,8 @@ export interface CoreSlice {
   canvasWidth: number;
   canvasHeight: number;
   backgroundColor: string;
-  /** لون نهاية تدرج خلفية الورقة — undefined يعني تعبئة مصمتة (لون واحد فقط) */
-  backgroundGradientColor2?: string | null;
+  /** لون نهاية تدرج خلفية الورقة — null يعني تعبئة مصمتة (لون واحد فقط) */
+  backgroundGradientColor2: string | null;
   /** زاوية التدرج الخطي بالدرجات (0° = يسار→يمين، مع عقارب الساعة) */
   backgroundGradientAngle: number;
   lastEditedImage: string | null;
@@ -569,30 +569,6 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       selectedId: null,
       selectedIds: [],
       editingTextId: null,
-      history: [
-        {
-          // تُبذر بداية التاريخ بالعناصر المفلترة نفسها المعروضة — إعادة الخام
-          // تعني أن أول تراجع يعيد العنصر التالف (NaN/أبعاد صفرية) للكانفس.
-          mode: resolvedMode,
-          elements: uniqueElements,
-          slots: reconciledSlots,
-          canvasWidth: validWidth,
-          canvasHeight: validHeight,
-          template: restoredTemplate,
-          collageTemplate: restoredCollageTemplate,
-          backgroundColor: project.backgroundColor || '#FFFFFF',
-          backgroundGradientColor2: project.backgroundGradientColor2 || null,
-          backgroundGradientAngle: project.backgroundGradientAngle ?? 135,
-          collageGap: project.collageGap ?? 0,
-          collageMargin: project.collageMargin ?? 0,
-          collageRadius: project.collageRadius ?? 0,
-          collageShowCutLines: project.collageShowCutLines ?? false,
-          collageShowEndCutLine: project.collageShowEndCutLine ?? true,
-          collageStrokeWidth: project.collageStrokeWidth ?? 0,
-          collageStrokeColor: project.collageStrokeColor ?? '#000000',
-        },
-      ],
-      historyIndex: 0,
       showGrid: project.showGrid ?? false,
       gridSize: project.gridSize ?? 48,
       gridColor: project.gridColor ?? '#000000',
@@ -613,5 +589,11 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       collageStrokeWidth: project.collageStrokeWidth ?? 0,
       collageStrokeColor: project.collageStrokeColor ?? '#000000',
     });
+
+    // 🛡️ ابذر رأس سجل التراجع من الحالة المحمَّلة نفسها بعد كل التسويات — البذرة
+    // الجزئية السابقة (كولاج فقط) كانت تُبقي شبكة/إعدادات طباعة/آخر صورة محررة
+    // خارج اللقطة الأولى فيصير أول Undo غير قادر على عكسها (نفس صنف H4/Bug#1).
+    // الالتقاط عبر سجل اللقطات الموحّد يضم أي حقل جديد تلقائياً.
+    set(seedHistorySnapshot(get()));
   },
 });

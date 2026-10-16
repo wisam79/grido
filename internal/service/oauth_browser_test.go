@@ -11,8 +11,9 @@ import (
 // اختبارات منفذ فتح المتصفح الموحّد (MAINT-06)
 //
 // كانت الطبقة ثلاث نسخ build-tag (rundll32/xdg-open/open) بلا مستدعٍ سوى
-// oauth_server.go — استُبدلت بـ runtime.BrowserOpenURL خلف منفذ محقون
-// قابل للاختبار بلا فتح متصفح حقيقي.
+// oauth_server.go — استُبدلت بمنفذ محقون قابل للاختبار في LicenseService بلا
+// فتح متصفح حقيقي. المنفذ الافتراضي الآن جسر الرنتايم (WailsRuntimeBridge)
+// ويبقى قابلاً للاستبدال المباشر بالحقل أو بـ SetBrowserOpener.
 // ────────────────────────────────────────────────────────────────────────────
 
 func TestBuildOAuthAuthorizeURL_ContainsProviderAndCallback(t *testing.T) {
@@ -60,8 +61,8 @@ func TestOpenBrowserURL_ReturnsOpenerError(t *testing.T) {
 	}
 }
 
-// بدون SetContext (بيئة بلا Wails: اختبارات/CLI) يُرجع المنفذ خطأ واضحاً
-// ولا يُسبب ذعراً أو سلوكاً صامتاً غامضاً.
+// بلا رنتايم Wails (بيئة اختبارات/CLI) يُرجع المنفذ الافتراضي (جسر الرنتايم)
+// خطأ واضحاً ولا يُسبب ذعراً أو سلوكاً صامتاً غامضاً.
 func TestOpenBrowserURL_NotConfiguredFailsClearly(t *testing.T) {
 	svc := NewLicenseService(nil)
 
@@ -74,13 +75,31 @@ func TestOpenBrowserURL_NotConfiguredFailsClearly(t *testing.T) {
 	}
 }
 
-// SetContext(nil) يجب أن يبقى آمناً ولا يبني منفذاً
-func TestSetContext_NilContextIsIgnored(t *testing.T) {
+// SetBrowserOpener(nil) يجب أن يُتجاهل ويُبقي المنفذ الافتراضي موصولاً
+func TestSetBrowserOpener_NilIsIgnored(t *testing.T) {
 	svc := NewLicenseService(nil)
-	//lint:ignore SA1012 testing nil context safety
-	svc.SetContext(nil)
 
-	if svc.browserOpen != nil {
-		t.Error("browserOpen must stay nil for a nil context")
+	svc.SetBrowserOpener(nil)
+
+	if svc.browserOpen == nil {
+		t.Error("browserOpen must stay wired when a nil opener is passed")
+	}
+}
+
+// SetBrowserOpener يستبدل المنفذ الافتراضي فعلاً
+func TestSetBrowserOpener_OverridesDefault(t *testing.T) {
+	svc := NewLicenseService(nil)
+
+	called := false
+	svc.SetBrowserOpener(func(string) error {
+		called = true
+		return nil
+	})
+
+	if err := svc.openBrowserURL("https://example.test/authorize"); err != nil {
+		t.Fatalf("openBrowserURL returned error: %v", err)
+	}
+	if !called {
+		t.Error("injected opener was not used")
 	}
 }

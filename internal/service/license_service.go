@@ -16,8 +16,6 @@ import (
 
 	"grido/internal/core/domain"
 	"grido/internal/utils"
-
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,26 +30,25 @@ import (
 
 type LicenseService struct {
 	repo domain.LicenseRepository
-	// browserOpen يفتح رابط تفويض OAuth في المتصفح الافتراضي.
-	// قابل للاستبدال داخل الاختبارات.
+	// browserOpen يفتح رابط تفويض OAuth في المتصفح الافتراضي — منفذ محقون
+	// (MAINT-06). الافتراضي جسر الرنتايم (بلا تطبيق Wails يفشل بخطأ واضح)،
+	// ويُستبدل في الاختبارات بـ SetBrowserOpener أو مباشرةً بالحقل.
 	browserOpen func(url string) error
 }
 
 func NewLicenseService(repo domain.LicenseRepository) *LicenseService {
-	return &LicenseService{repo: repo}
+	return &LicenseService{
+		repo:        repo,
+		browserOpen: NewWailsRuntimeBridge().OpenURL,
+	}
 }
 
-// SetContext يحافظ على التوافقية مع Wails Runtime
-func (s *LicenseService) SetContext(ctx context.Context) {
-	if s == nil || ctx == nil {
+// SetBrowserOpener يستبدل منفذ فتح المتصفح المحقون (اختبارات/بيئات أخرى) — nil يُتجاهل
+func (s *LicenseService) SetBrowserOpener(open func(url string) error) {
+	if s == nil || open == nil {
 		return
 	}
-	s.browserOpen = func(url string) error {
-		if app := application.Get(); app != nil {
-			return app.Browser.OpenURL(url)
-		}
-		return errors.New("browser opener is not configured: application runtime is nil")
-	}
+	s.browserOpen = open
 }
 
 // openBrowserURL يفتح الرابط عبر المنفذ المحقون (يبقى قابلاً للاختبار).

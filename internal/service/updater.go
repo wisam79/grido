@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/wailsapp/wails/v3/pkg/application"
+	"grido/internal/core/domain"
 )
 
 // updateMutex يمنع تعارض تنظيف مجلد التحديثات مع تحميل نشط في نفس الوقت
@@ -54,7 +54,10 @@ type UpdateInfo struct {
 	InstallerSignature string `json:"signature"`
 }
 
-type UpdaterService struct{}
+type UpdaterService struct {
+	// runtime جسر الرنتايم لبث تقدم التحديث وطلب الإغلاق بعد التثبيت
+	runtime domain.RuntimeBridge
+}
 
 const checksumsAssetName = "grido-checksums.txt"
 const defaultInstallerFallbackURL = "https://grido.cloud-ip.cc/api/download"
@@ -133,7 +136,15 @@ func CleanupTempUpdates() {
 }
 
 func NewUpdaterService() *UpdaterService {
-	return &UpdaterService{}
+	return &UpdaterService{runtime: NewWailsRuntimeBridge()}
+}
+
+// SetRuntimeBridge يستبدل جسر الرنتايم (اختبارات/بيئات أخرى) — nil يُتجاهل
+func (u *UpdaterService) SetRuntimeBridge(bridge domain.RuntimeBridge) {
+	if u == nil || bridge == nil {
+		return
+	}
+	u.runtime = bridge
 }
 
 func (u *UpdaterService) CheckForUpdate() (*UpdateInfo, error) {
@@ -433,6 +444,7 @@ type progressWriter struct {
 	downloaded int64
 	ctx        context.Context
 	lastEmit   int
+	runtime    domain.RuntimeBridge
 }
 
 func (pw *progressWriter) Write(p []byte) (int, error) {
@@ -442,9 +454,7 @@ func (pw *progressWriter) Write(p []byte) (int, error) {
 		percentage := int(float64(pw.downloaded) / float64(pw.total) * 100)
 		if percentage != pw.lastEmit {
 			pw.lastEmit = percentage
-			if application.Get() != nil {
-				application.Get().Event.Emit("update-progress", percentage)
-			}
+			pw.runtime.Emit("update-progress", percentage)
 		}
 	}
 	return n, nil
@@ -559,8 +569,9 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	// 🛡️ حساب بصمة SHA-256 أثناء التحميل (تيار واحد: ملف + تقدم + هاش)
 	hasher := sha256.New()
 	pw := &progressWriter{
-		total: resp.ContentLength,
-		ctx:   ctx,
+		total:   resp.ContentLength,
+		ctx:     ctx,
+		runtime: u.runtime,
 	}
 
 	mw := io.MultiWriter(out, pw, hasher)
@@ -608,9 +619,7 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 		slog.Info("Update installer signature verified against pinned public key")
 	}
 
-	if application.Get() != nil {
-		application.Get().Event.Emit("update-progress", 100)
-	}
+	u.runtime.Emit("update-progress", 100)
 
 	// Execute user-scope NSIS installer in silent mode (/S)
 	if err := runInstaller(installerPath, "/S"); err != nil {
@@ -624,12 +633,11 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 		slog.Warn("Installer process not observed before shutdown window — quitting anyway", "installer", installerPath)
 	}
 
-	// إغلاق نظيف عبر Wails Runtime بدل os.Exit — يضمن تنفيذ OnShutdown
-	// (حفظ حالة النافذة، إيقاف مهام الخلفية، وإغلاق قاعدة البيانات) قبل خروج العملية،
-	// ويحرر أقفال الملفات و Single-Instance Mutex بشكل طبيعي ليستبدلها المثبت.
-	if application.Get() != nil {
-		application.Get().Quit()
-	}
+	// إغلاق نظيف عبر جسر الرنتايم بدل os.Exit — في الإنتاج يصل إلى Wails Quit
+	// فينفّذ OnShutdown (حفظ حالة النافذة، إيقاف مهام الخلفية، وإغلاق قاعدة
+	// البيانات) قبل خروج العملية، ويحرر أقفال الملفات و Single-Instance Mutex
+	// بشكل طبيعي ليستبدلها المثبت.
+	u.runtime.Quit()
 	return nil
 }
 
