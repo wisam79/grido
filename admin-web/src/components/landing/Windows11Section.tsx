@@ -34,6 +34,7 @@ export function Windows11Section() {
           <div className="lg:col-span-6 flex flex-col items-start text-start">
             <SectionHeader
               title="برنامج خفيف وسريع، لا يثقل جهازك"
+              description="تجربة سطح مكتب أصلية على ويندوز: إقلاع فوري، استهلاك أخف من 120MB، وحفظ تلقائي مستمر"
               align="start"
               size="lg"
               gap="none"
@@ -48,12 +49,12 @@ export function Windows11Section() {
                     key={perk.title}
                     className="ds-card flex items-start gap-3.5 p-3.5 hover:border-white/20 transition-all duration-200 shadow-sm"
                   >
-                    <div className="ds-icon-tile w-10 h-10 text-[#3b82f6] mt-0.5 shadow-xs">
+                    <div className="ds-icon-tile w-10 h-10 text-brand-primary mt-0.5 shadow-xs">
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="flex-1">
                       <h4 className="text-xs sm:text-sm font-bold text-white mb-0.5">{perk.title}</h4>
-                      <p className="text-xs text-[#9E9E9E] leading-relaxed">{perk.desc}</p>
+                      <p className="text-xs text-text-secondary leading-relaxed">{perk.desc}</p>
                     </div>
                   </div>
                 );
@@ -66,14 +67,14 @@ export function Windows11Section() {
             <div className="ds-card w-full max-w-lg p-6 sm:p-8 shadow-md">
               
               {/* Header Bar */}
-              <div className="flex items-center justify-between pb-4 border-b border-[#2C2C2C] mb-5">
+              <div className="flex items-center justify-between pb-4 border-b border-border-subtle mb-5">
                 <div className="flex items-center gap-3">
-                  <div className="ds-icon-tile w-10 h-10 text-[#3b82f6]">
+                  <div className="ds-icon-tile w-10 h-10 text-brand-primary">
                     <Sliders className="w-5 h-5" />
                   </div>
                   <h4 className="text-sm font-bold text-white">كفاءة تشغيل الاستوديو</h4>
                 </div>
-                <span className="text-xs font-bold text-[#10b981] bg-[#141414] px-3 py-1 rounded-full border border-[#2C2C2C]">
+                <span className="text-xs font-bold text-status-success bg-inset px-3 py-1 rounded-full border border-border-subtle">
                   جاهز للعمل
                 </span>
               </div>
@@ -82,49 +83,49 @@ export function Windows11Section() {
               <div className="space-y-3 text-xs">
                 
                 {/* Metric 1: RAM */}
-                <div className="p-3.5 rounded-xl bg-[#141414] border border-[#2C2C2C] flex flex-col gap-2">
+                <div className="p-3.5 rounded-xl bg-inset border border-border-subtle flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-white font-medium">
-                      <Zap className="w-4 h-4 text-[#3b82f6]" />
+                      <Zap className="w-4 h-4 text-brand-primary" />
                       <span>استهلاك الذاكرة</span>
                     </div>
-                    <span className="font-mono text-[#10b981] font-bold text-xs">118 MB فقط</span>
+                    <span className="font-mono text-status-success font-bold text-xs">118 MB فقط</span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-[#1E1E1E] overflow-hidden">
-                    <div className="h-full w-[12%] bg-[#10b981] rounded-full" />
+                  <div className="w-full h-1.5 rounded-full bg-card overflow-hidden">
+                    <div className="h-full w-[12%] bg-status-success rounded-full" />
                   </div>
                 </div>
 
                 {/* Metric 2: Printing Quality */}
-                <div className="p-3.5 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-inset border border-border-subtle flex items-center justify-between">
                   <div className="flex items-center gap-2 text-white font-medium">
-                    <Cpu className="w-4 h-4 text-[#60a5fa]" />
+                    <Cpu className="w-4 h-4 text-brand-light" />
                     <span>ألوان الطباعة</span>
                   </div>
-                  <span className="font-bold text-white text-xs bg-[#1E1E1E] px-2.5 py-1 rounded-lg border border-[#2C2C2C]">
+                  <span className="font-bold text-white text-xs bg-card px-2.5 py-1 rounded-lg border border-border-subtle">
                     مطابقة للشاشة 100%
                   </span>
                 </div>
 
                 {/* Metric 3: Safe Save */}
-                <div className="p-3.5 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-inset border border-border-subtle flex items-center justify-between">
                   <div className="flex items-center gap-2 text-white font-medium">
-                    <HardDrive className="w-4 h-4 text-[#f59e0b]" />
+                      <HardDrive className="w-4 h-4 text-status-warning" />
                     <span>الحفظ التلقائي</span>
                   </div>
-                  <span className="text-[#10b981] font-bold text-xs">
+                  <span className="text-status-success font-bold text-xs">
                     مفعل دائماً
                   </span>
                 </div>
               </div>
 
               {/* Status Footer */}
-              <div className="mt-5 pt-4 border-t border-[#2C2C2C] flex items-center justify-between text-xs text-[#9E9E9E]">
+              <div className="mt-5 pt-4 border-t border-border-subtle flex items-center justify-between text-xs text-text-secondary">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#10b981]" />
+                  <span className="w-2 h-2 rounded-full bg-status-success" />
                   <span className="text-white">ويندوز 11 و 10 و 7</span>
                 </div>
-                <span className="text-[#60a5fa] font-bold text-xs">100% أوفلاين</span>
+                <span className="text-brand-light font-bold text-xs">100% أوفلاين</span>
               </div>
             </div>
           </div>

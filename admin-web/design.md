@@ -101,7 +101,7 @@
 }
 ```
 
-> **ممارسة معتمدة:** المكونات تستخدم أيضاً قيم Tailwind الحرفية بنفس القيم الحرفية للتوكنات (`bg-[#1E1E1E]`, `border-[#2C2C2C]`, `text-[#9E9E9E]` …). عند إعادة الاستخدام المتكرر يُفضَّل التجسيد في فئة مشتركة من `@layer components` (مثل `ds-card`/`ds-icon-tile`) بدل تكرار السلسلة اليدوية.
+> **ممارسة معتمدة (جلسة 0.90):** الاستخدام الافتراضي في المكونات هو أدوات التوكنات مباشرة (`bg-sidebar`/`bg-card`/`bg-inset`, `border-border-subtle`, `text-text-primary/secondary/muted`, `brand-primary/hover/light`, `status-*` مع معدِّلات الشفافية `/15 /40 /70 /85`). القيم الحرفية مسموحة فقط في: لوحات الاستنساخ البصري (`AppMockup`، مشاهد `CMYK3DStack`/`Biometric3DCard`)، والاستعارات الدلالية المقصودة (أخضر واتساب `#25D366`، سماوي CMYK `#06b6d4`، تدرجات السماء `#38bdf8`). عند إعادة الاستخدام المتكرر يُفضَّل التجسيد في فئة مشتركة من `@layer components` (مثل `ds-card`/`ds-icon-tile`).
 
 ### C. Geometry & Radii — `index.css:66-71`
 | التوكن | القيمة | الاستخدام |
@@ -141,10 +141,10 @@
 | :--- | :--- | :--- |
 | **Hero Title** | `text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-black tracking-tight leading-[1.15] text-balance` (مع span `text-gradient-brand`) | `HeroSection.tsx:55-60` |
 | **Section Header (H2)** | عنوان أبيض كبير **واحد** فقط لكل قسم: `text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight` (مقاس `xl`) · `… lg:text-[40px] leading-[1.2]` (مقاس `lg` للأعمدة الضيقة) | `SectionHeader.tsx` |
-| ~~Section Subtitle~~ | **أُزيل (جلسة 0.87):** كان الوصف `text-sm sm:text-base text-[#9E9E9E]`؛ حُذفت الشارة (eyebrow) والوصف معاً فصار الرأس عنواناً واحداً (أيقونة الرأس حسنت معه) | — |
-| **Hero Sub-headline** | `text-sm sm:text-base md:text-lg text-[#A3A3A3] leading-relaxed text-balance` (قيمة حرفية خارج التوكنات) | `HeroSection.tsx:63-65` |
+| **Section Description (وصف القسم)** | **أُعيد بمقاس مصقول (جلسة 0.90):** `mt-3 text-xs sm:text-sm text-text-secondary leading-relaxed text-balance` — موسّط بعرض `max-w-2xl mx-auto` (افتراضي الأقسام الثمانية) أو `max-w-md` بمحاذاة البداية (`align="start"` في Windows 11)؛ الشارة (eyebrow) تبقى محذوفة (جلسة 0.87) | `SectionHeader.tsx:48-56` |
+| **Hero Sub-headline** | `text-sm sm:text-base md:text-lg text-text-secondary leading-relaxed text-balance` (رُبط بالتوكن — جلسة 0.90) | `HeroSection.tsx:63-65` |
 | **Card Title (H3)** | `text-sm sm:text-base font-bold text-white` | `AiSpotlightSection.tsx:223` |
-| **Body / Desc** | `text-xs leading-relaxed text-[#9E9E9E]` و`text-xs sm:text-sm` داخل البطاقات | `Windows11Section.tsx:59` |
+| **Body / Desc** | `text-xs leading-relaxed text-text-secondary` (رُبط بالتوكن — جلسة 0.90) و`text-xs sm:text-sm` داخل البطاقات | `Windows11Section.tsx:57` |
 | **Technical Readout** | `font-mono` لأرقام الخطوات `tabular-nums` والأسعار والإصدارات | `AiSpotlightSection.tsx:228` · `PricingSection.tsx:85` |
 
 ---
@@ -210,7 +210,7 @@
 > ✅ **سلوك منفَّذ:** التوهج يتبع المؤشر فعلياً — المتتبّع العام في `LandingPage.tsx:35-39` يضبط `--mouse-x/y` للعنصر المطابق لـ`closest('.spotlight-card, .spotlight-hover')` عبر rAF وبلا إعادة رندر، وعند غياب حركة المؤشر يسقط التدرج على المركز `50%` (القيمة الافتراضية لـ`--mouse-x/y` في `:root` — `index.css:79`).
 
 ### D. Layering Rule (@layer components) — `index.css:458-462`
-بدائيات `.ds-card/.ds-card-inset/.ds-icon-tile/.btn-primary/.btn-secondary` مسجَّلة عمداً داخل `@layer components` كي تتغلب عليها utilities الطبقة المتأخرة عند الحاجة (طبقات Tailwind v4 تُحسم قبل النوعية). هذا ما يجعل أمثلة مثل `bg-[#171717]` (`ComparisonSection.tsx:71`) و`hover:border-[#3b82f6]/40` (`ComparisonSection.tsx:116`) وحدود فتح الأسئلة (`FaqSection.tsx:79-83`) فعّالة. **أي بدائية CSS غير طبقية تُكتب مستقبلاً ستُلغي utilities بصمت — تُمنع.**
+بدائيات `.ds-card/.ds-card-inset/.ds-icon-tile/.btn-primary/.btn-secondary` مسجَّلة عمداً داخل `@layer components` كي تتغلب عليها utilities الطبقة المتأخرة عند الحاجة (طبقات Tailwind v4 تُحسم قبل النوعية). هذا ما يجعل أمثلة مثل `bg-sidebar` (`ComparisonSection.tsx:66`) و`border-brand-primary/40` (`ComparisonSection.tsx:103`) وحدود فتح الأسئلة (`FaqSection.tsx:78-79`) فعّالة. **أي بدائية CSS غير طبقية تُكتب مستقبلاً ستُلغي utilities بصمت — تُمنع.**
 
 ---
 
@@ -221,7 +221,7 @@
 | المكون | الساكنة (Resting) | التحويم (Hover) | الضغط (Active) |
 | :--- | :--- | :--- | :--- |
 | **`.btn-primary`** `index.css:135-160` | `bg #3b82f6` · نص أبيض · `14px/600` · `radius-md` · `10px 22px` · ظل `0 1px 2px rgba(0,0,0,.3)` | `#2563eb` + `translateY(-1px)` | `scale(0.98)` |
-| **`.btn-secondary`** `index.css:162-187` | `bg #1E1E1E` · حد `#2C2C2C` · `14px/500` · `10px 20px` | `#262626` + حد `white/20` + `translateY(-1px)` | `scale(0.98)` |
+| **`.btn-secondary`** `index.css:162-187` | `background: var(--grido-surface-card)` · حد `#2C2C2C` · `14px/500` · `10px 20px` (رُبط بالتوكن — جلسة 0.90) | `var(--grido-surface-card-hover)` + حد `white/20` + `translateY(-1px)` | `scale(0.98)` |
 | **`.ds-card-interactive`** `index.css:491-500` | — | حد `white/20` + خلفية `#262626` | `scale(0.99)` |
 | **`.ds-range`** `index.css:218-286` | مسار `8px` بخلفية `#141414` وحد subtle · مقبض `18px` بخلفية `--range-accent` | تمدد المقبض `scale(1.1)` | انضغاط `scale(0.95)` |
 | **`.cta-shine`** `index.css:190-211` | — | وميض ضوئي يكتسح الزر (`::after`, 0.55s) | — |
@@ -231,20 +231,20 @@
 
 ### B. Sliders (حاسبة التوفير)
 - التعبئة حتى المقبض عبر `--range-fill` + `background-image` متدرج، مع انعكاس الاتجاه في RTL (`[dir='rtl'] .ds-range`) — `index.css:229-250`.
-- لون المقبض يُمرَّر من المكوّن: `[--range-accent:#3b82f6]` للزبائن و`[--range-accent:#10b981]` للسعر (`RoiCalculator.tsx:98-99,121-122`).
+- لون المقبض يُمرَّر من المكوّن: `[--range-accent:var(--grido-brand-primary)]` للزبائن و`[--range-accent:var(--grido-status-success)]` للسعر (رُبطا بالتوكنات — جلسة 0.90) (`RoiCalculator.tsx`).
 
 ### C. Badges & Telemetry Pills
 - **`.ai-badge`:** كبسولة `rgba(30,30,30,0.85)` + حد subtle + نص `#60a5fa` + `blur(12px)` (`index.css:289-302`).
 - **`.ai-badge-pulse`:** صبغة زرقاء `rgba(59,130,246,0.12)` + حد `rgba(59,130,246,0.35)` + نقطة نابضة — يُستعمل في شارة إصدار الهيرو (`index.css:305-309` · `HeroSection.tsx:49-52`).
-- **وسوم الحالة:** وسم النجاح النصي `text-[#10b981] bg-[#141414] border-[#2C2C2C]` (أمثلة: `AiSpotlightSection.tsx:115`).
+- **وسوم الحالة:** وسم النجاح النصي `text-status-success bg-inset border-border-subtle` (رُبط بالتوكنات — جلسة 0.90؛ أمثلة: `ComparisonSection.tsx:108`).
 
 ### D. Sticky Navigation Header (`Header.tsx`)
-- **السطح:** شفاف في الأعلى، وعند التمرير `bg-[#121212]/80 backdrop-blur-2xl` + حد سفلي `white/[0.08]` + حد علوي مضيء داخلي `inset 0 1px 0 rgba(255,255,255,0.05)` وظل ناعم (`Header.tsx:113-120`).
-- **مؤشر التنقل (Magic Pill):** كبسولة زرقاء شفافة `bg-[#3b82f6]/15 border-[#3b82f6]/30` تُقاس وتُموضع عند تغيّر المقطع النشط / resize / جهوزية الخطوط عبر `offsetLeft/offsetWidth` (`Header.tsx:65-83`) — وليس حجباً أزرق صلباً.
-- **الروابط:** 7 روابط في كبسولة `bg-[#171717]/85` (`Header.tsx:5-12`): المميزات · الذكاء الاصطناعي · ويندوز 11 · الحاسبة · الآراء · الأسعار · الأسئلة — مع `scrollspy`.
-- **زر التحميل:** كبسولة زرقاء مع `.cta-shine` (`Header.tsx:165`)، ووقع الإصدار من `useAppVersion()` مع fallback `v2.4`. **لا يوجد مبدّل لغة (AR/EN) في المنفَّذ.**
-- **شريط تقدم التمرير:** `2px` أسفل الهيدر، تدرج `#3b82f6 → #38bdf8 → #3b82f6`، يُحدَّث عبر rAF على DOM مباشرة بلا إعادة رندر، `origin-right` للاتجاه العربي (`Header.tsx:232-239`).
-- **قائمة الجوال:** خلفية معتمة تُغلق بالنقر + درج `bg-[#171717]/95` بدخول متتابع `animate-dropIn` (تأخير 35ms/عنصر) + إغلاق `Escape` + `aria-controls="mobile-nav"` (`Header.tsx:85-91,175-226`).
+- **السطح:** شفاف في الأعلى، وعند التمرير `bg-workspace/80 backdrop-blur-2xl` + حد سفلي `white/[0.08]` + حد علوي مضيء داخلي `inset 0 1px 0 rgba(255,255,255,0.05)` وظل ناعم (`Header.tsx:100`).
+- **مؤشر التنقل (Magic Pill):** كبسولة زرقاء شفافة `bg-brand-primary/15 border-brand-primary/30` تُقاس وتُموضع عند تغيّر المقطع النشط / resize / جهوزية الخطوط عبر `offsetLeft/offsetWidth` (`Header.tsx:135`) — وليس حجباً أزرق صلباً.
+- **الروابط:** 7 روابط في كبسولة `bg-sidebar/85` (`Header.tsx:131`): المميزات · الذكاء الاصطناعي · ويندوز 11 · الحاسبة · الآراء · الأسعار · الأسئلة — مع `scrollspy`.
+- **زر التحميل:** كبسولة زرقاء `bg-brand-primary hover:bg-brand-hover` مع `.cta-shine`، ووقع الإصدار من `useAppVersion()` مع fallback `v2.4`. **لا يوجد مبدّل لغة (AR/EN) في المنفَّذ.**
+- **شريط تقدم التمرير:** `2px` أسفل الهيدر، تدرج `from-brand-primary via-[#38bdf8] to-brand-primary` (سماوي السماء يُبقي حرفياً — جلسة 0.90)، يُحدَّث عبر rAF على DOM مباشرة بلا إعادة رندر، `origin-right` للاتجاه العربي (`Header.tsx:237`).
+- **قائمة الجوال:** خلفية معتمة تُغلق بالنقر + درج `bg-sidebar/95` بدخول متتابع `animate-dropIn` (تأخير 35ms/عنصر) + إغلاق `Escape` + `aria-controls="mobile-nav"` (`Header.tsx:198`).
 
 ### E. Admin Dashboard Shell (قشرة اللوحة)
 - حلقة تركيز مزدوجة إلزامية: `0 0 0 2px canvas, 0 0 0 4px brand` على كل عنصر تفاعلي في `.admin-shell` و`.landing-shell` (`index.css:516-519,611-616`).
@@ -255,7 +255,7 @@
 ## 6. Landing Page UI Architecture (Section-by-Section Spec)
 
 ### الهيكل العام — `LandingPage.tsx`
-- القشرة: `dir="rtl"` + `.landing-shell` + خلفية `#121212` + `selection` زرقاء (`LandingPage.tsx:102-105`).
+- القشرة: `dir="rtl"` + `.landing-shell` + خلفية `bg-workspace` + `selection:bg-brand-primary/30` (رُبطا بالتوكنات — جلسة 0.90) (`LandingPage.tsx:102-105`).
 - **رابط التخطي:** `.skip-to-content` أول عنصر تفاعلي (`LandingPage.tsx:107-109` · `index.css:617-635`).
 - **شريط تقدم الصفحة:** مقتصر على شريط أسفل `Header` (يُكتب على DOM عبر rAF)؛ أُزيل الشريط الثابت العلوي المكرّر ذو `3px` (جلسة 0.87) — `LandingPage.tsx`.
 - **ترتيب الأقسام:** Hero → Bento → AI → Windows 11 → Audience → ROI → Comparison → Testimonials → Pricing → FAQ → CTA Banner (`LandingPage.tsx:122-177`)، وبعدها Footer + زر واتساب عائم + زر تحميل سفلي يظهر بعد تمرير `500px` (`LandingPage.tsx:180-195`).
@@ -271,28 +271,28 @@
 - **العرض البصري:** `AppMockup` — نافذة ويندوز 11 كاملة بسير عمل متحرك (تأطير → عزل → تجهيز) (`AppMockup.tsx`).
 
 ### Section 2: Core Capabilities (Bento Grid) — `#capabilities` (`BentoGrid.tsx`)
-- رأس موحّد عبر `SectionHeader` والعنوان: «كل ما يحتاجه استوديو التصوير».
+- رأس موحّد عبر `SectionHeader` بعنوان «كل ما يحتاجه استوديو التصوير» ووصف «أربع قدرات أساسية تغطي دورة العمل كاملة — من الصورة الخام إلى ورقة الطباعة الجاهزة» (جلسة 0.90).
 - شبكة `lg:grid-cols-12 gap-5` بأربع بطاقات `ds-card + card-specular-edge + spotlight-hover` بكشف متتابع (`reveal-stagger` — تأخير 80ms ثم +60ms/بطاقة):
-  1. `lg:col-span-8` — توليد صور الهوية والفيزا (هوفر أزرق `#3b82f6/40`، معاينة 3D كسولة `Biometric3DCard`).
+  1. `lg:col-span-8` — توليد صور الهوية والفيزا (هوفر أزرق `brand-primary/40`، معاينة 3D كسولة `Biometric3DCard`).
   2. `lg:col-span-4` — صانع الكولاج الذكي (معاينة شبكية `CMYK3DStack`، هوفر أزرق، معاينة `flex-1`).
-  3. `lg:col-span-4` — خصوصية تامة وعمل بدون إنترنت (هوفر أخضر `#10b981/40`، لوحة «الاتصال السحابي: معطل»).
-  4. `lg:col-span-8` — أدوات مراكز الطباعة (هوفر كهرماني `#f59e0b/40`، خطوط القص والهوامش).
+  3. `lg:col-span-4` — خصوصية تامة وعمل بدون إنترنت (هوفر أخضر `status-success/40`، لوحة «الاتصال السحابي: معطل»).
+  4. `lg:col-span-8` — أدوات مراكز الطباعة (هوفر كهرماني `status-warning/40`، خطوط القص والهوامش).
 
 ### Section 3: The AI Engine Spotlight — `#ai-engine` (`AiSpotlightSection.tsx`)
-- رأس `SectionHeader`: «محرك الذكاء الاصطناعي الثنائي».
+- رأس `SectionHeader`: «محرك الذكاء الاصطناعي الثنائي» + وصف «ثلاث خطوات تلقائية تحوّل صورة الزبون الخام إلى طقم طباعة معتمد — دون أي تعديل يدوي» (جلسة 0.90).
 - بطاقة `ds-card` واحدة على شبكة 12 عموداً (`pt-5, gap-6 lg:gap-8 items-center`):
   - **الوسائط (`lg:col-span-5`):** مقياس قبل/بعد تفاعلي `aspect-[3/4]` بـ `role="slider"` كامل (أسهم، Home/End، PageUp/Down، `aria-valuenow/valuetext`) (`:124-189`)؛ تحت `lg` يُقيَّد `max-w-sm mx-auto`.
   - **مسار الخطوات (`lg:col-span-7`):** قائمة `ol` عمودية من 3 بطاقات؛ كل بطاقة: بلاطة أيقونة `ds-icon-tile` + عنوان + وصف + شريط سفلي (`border-t`) يحمل الوسم التقني فقط (أُزيلت علامة النجاح المكررة — جلسة 0.87).
-- **الخطوة البارزة تتبع المقبض لحظياً** (`activeStep = sliderPos > 66 ? 0 : sliderPos > 33 ? 1 : 2`، `:76-81`) مع `aria-current="step"` وحدود زرقاء `#3b82f6/50` عند التفعيل.
+- **الخطوة البارزة تتبع المقبض لحظياً** (`activeStep = sliderPos > 66 ? 0 : sliderPos > 33 ? 1 : 2`، `:76-81`) مع `aria-current="step"` وحدود زرقاء `border-brand-primary/50` عند التفعيل (`:192`).
 - **الانضباط اللوني:** أزرق العلامة + الأخضر الدلالي فقط.
 
 ### Section 4: Windows 11 Native Experience — `#windows-experience` (`Windows11Section.tsx`)
 - تقسيم `lg:col-span-6/6` (`gap-8 lg:gap-12 items-center`).
-- **عمود النص:** `SectionHeader` (align start, size lg) بعنوان «برنامج خفيف وسريع، لا يثقل جهازك» + 4 بطاقات `ds-card` ببلاطات أيقونات: واجهة داكنة · إقلاع لحظي (`<120MB`) · حفظ تلقائي · توافق طابعات DNP/Epson/Canon.
+- **عمود النص:** `SectionHeader` (align start, size lg) بعنوان «برنامج خفيف وسريع، لا يثقل جهازك» + وصف «تجربة سطح مكتب أصلية على ويندوز: إقلاع فوري، استهلاك أخف من 120MB، وحفظ تلقائي مستمر» + 4 بطاقات `ds-card` ببلاطات أيقونات: واجهة داكنة · إقلاع لحظي (`<120MB`) · حفظ تلقائي · توافق طابعات DNP/Epson/Canon.
 - **عمود العرض:** بطاقة «كفاءة تشغيل الاستوديو» `max-w-lg`: شريط ذاكرة `118 MB` أخضر، مطابقة ألوان 100%، حفظ تلقائي مفعّل، وتذييل «ويندوز 11 و10 و7 · 100% أوفلاين».
 
 ### Section 5: Target Audience Segmentation — `#audience` (`AudienceSection.tsx`)
-- `SectionHeader`: «من يستفيد من استوديو جريدو؟».
+- `SectionHeader`: «من يستفيد من استوديو جريدو؟» + وصف «أربعة مسارات عمل مصمّمة لمن يقف خلف الكاميرا أو الطابعة يومياً — كل مسار بميزاته الجاهزة» (جلسة 0.90).
 - 4 بطاقات `ds-card` (`sm:grid-cols-2 lg:grid-cols-4` بكشف متتابع `reveal-stagger`): استوديوهات التصوير · مراكز الطباعة · المصممون · الأفراد — كل بطاقة: بلاطة أيقونة + عنوان + قائمة مزايا بعلامات خضراء (أُزيل الدور اللاتيني والوصف — جلسة 0.87).
 
 ### Section 6: ROI Calculator — `#roi` (`RoiCalculator.tsx`)
@@ -302,27 +302,31 @@
 - **النتائج:** شبكتان: الوقت الموفر شهرياً وأرباح إضافية تقديرية (0.25 زبون/سعر/26 يوم) بخط `font-mono`.
 
 ### Section 7: Speed & Legacy Comparison — `#comparison` (`ComparisonSection.tsx`)
+- رأس `SectionHeader`: «لماذا يختار المحترفون استوديو جريدو؟» + وصف «مقارنة مباشرة بين سير العمل التقليدي وما يوفره استوديو جريدو في كل صورة تُطبع» (جلسة 0.90).
 - عمودان `lg:grid-cols-2 items-stretch`:
-  - «البرامج والطرق التقليدية» — `ds-card bg-[#171717]` (تجاوز utility مقصود)، 5 عيوب بعلامات حمراء.
-  - «استوديو جريدو» — `ds-card border-[#3b82f6]/40`، 5 مزايا بعلامات خضراء ووسوم إبراز (`أسرع 90%`, `توفير 35%`…) (أُزيلت شارة «الخيار الأسرع للاستوديوهات» العائمة — جلسة 0.87).
+  - «البرامج والطرق التقليدية» — `ds-card bg-sidebar` (رُبط بالتوكن — جلسة 0.90)، 5 عيوب بعلامات حمراء.
+  - «استوديو جريدو» — `ds-card border-brand-primary/40`، 5 مزايا بعلامات خضراء ووسوم إبراز (`أسرع 90%`, `توفير 35%`…) (أُزيلت شارة «الخيار الأسرع للاستوديوهات» العائمة — جلسة 0.87).
 
 ### Section 8: Testimonials — `#testimonials` (`TestimonialsSection.tsx`)
+- رأس `SectionHeader`: «ماذا يقول أصحاب الاستوديوهات؟» + وصف «شهادات حقيقية من استوديوهات ومراكز طباعة تعتمد على جريدو في عملها اليومي» (جلسة 0.90).
 - 3 بطاقات `md:grid-cols-3` (`ds-card` بكشف متتابع `reveal-stagger`): وسم مقياس أخضر، اقتباس بعلامة `Quote` بنص `text-sm sm:text-base leading-relaxed`، وتذييل بمعرّف أحرف (`ds-icon-tile font-mono`)، اسم، استوديو، وموقع (أُزيلت النجوم وحقل `rating` — جلسة 0.87).
 
 ### Section 9: Pricing & Licensing — `#pricing` (`PricingSection.tsx`)
+- رأس `SectionHeader`: «استثمر مرة واحدة، واستفد للأبد» + وصف «دفعة واحدة بلا اشتراكات — رخصة دائمة مع تحديثات مجانية للأبد» (جلسة 0.90).
 - شبكة `lg:grid-cols-12 gap-6 lg:gap-8 items-stretch`: **بطاقة السعر `lg:col-span-7`** + **لوحة الضمانات `lg:col-span-5`**.
-- بطاقة السعر: شارة «ترخيص مدى الحياة (Lifetime)» عائمة أعلى الحد، حد أزرق `#3b82f6/40`، السعر الحالي بخط `font-mono text-4xl sm:text-5xl font-black` وبجانبه السعر الأصلي مشطوباً `line-through`، ثم 9 مزايا بعلامات خضراء، وزر أساسي بعرض كامل «تحميل وتفعيل رخصتك الآن».
+- بطاقة السعر: شارة «ترخيص مدى الحياة (Lifetime)» عائمة أعلى الحد، حد أزرق `border-brand-primary/40`، السعر الحالي بخط `font-mono text-4xl sm:text-5xl font-black` وبجانبه السعر الأصلي مشطوباً `line-through`، ثم 9 مزايا بعلامات خضراء، وزر أساسي بعرض كامل «تحميل وتفعيل رخصتك الآن».
 - لوحة الضمانات: بطاقتا `ds-card` أفقيتان (`items-center` بكشف متتابع `reveal-stagger`): استثمار لمرة واحدة · تفعيل فوري ودعم فني — ببلاطات `ds-icon-tile w-11 h-11`.
 
 ### Section 10: FAQ — `#faq` (`FaqSection.tsx`)
+- رأس `SectionHeader`: «أسئلة يتكرر سماعها من الاستوديوهات» + وصف «إجابات مباشرة عن العمل دون إنترنت، الطباعة، التفعيل، والمعايير الدولية» (جلسة 0.90).
 - عمودان `lg:grid-cols-12 gap-8 lg:gap-12 items-start`: رأس + صندوق واتساب (`lg:col-span-5`) مقابل أكورديون (`lg:col-span-7`).
-- الأكورديون: `ds-card ds-card-interactive` + `aria-expanded`، الخيار الأول مفتوح افتراضياً (`openIdx = 0`)، حالة الفتح بحد أزرق `#3b82f6/40` ودوران `ChevronDown 180°`.
+- الأكورديون: `ds-card ds-card-interactive` + `aria-expanded`، الخيار الأول مفتوح افتراضياً (`openIdx = 0`)، حالة الفتح بحد أزرق `border-brand-primary/40` ودوران `ChevronDown 180°` (`FaqSection.tsx:78-79`).
 
 ### Section 11: Closing CTA Banner — `CtaBanner.tsx`
 - هالة `aurora-bg` محيطة + بطاقة `ds-card card-specular-edge` منسّطة: «سرّع عمل استوديو التصوير اليوم»، زر أساسي بعرض تلقائي، وسطر «حجم البرنامج ~45 MB» (بلا أيقونة — جلسة 0.87).
 
 ### Footer (`Footer.tsx`)
-- خلفية `bg-[#141414]` + حد علوي `#2C2C2C`، شبكة `md:grid-cols-12` (هوية `5` · تنقل `3` · دعم وقانوني `4`)، شارة نظام خضراء تتضمن `displayVersion` (`v2.4` fallback)، وسطرا حقوق النشر ونوع المنصة.
+- خلفية `bg-inset` + حد علوي `border-border-subtle` (رُبطا بالتوكنات — جلسة 0.90)، شبكة `md:grid-cols-12` (هوية `5` · تنقل `3` · دعم وقانوني `4`)، شارة نظام خضراء تتضمن `displayVersion` (`v2.4` fallback)، وسطرا حقوق النشر ونوع المنصة.
 
 ---
 
@@ -375,7 +379,7 @@
   - `#9E9E9E` على `#1E1E1E` ≈ **6.2:1** (AA).
   - `#8A8A8A` على `#121212` ≈ **5.5:1** (AA) — رُفع من `#737373` في جلسة 0.84.
 - **حلقات التركيز:** حلقة مزدوجة موحّدة `0 0 0 2px canvas + 0 0 0 4px #3b82f6` لكل عنصر تفاعلي في `.landing-shell` و`.admin-shell` (`index.css:611-616,516-519`)، وفئة `.ds-focusable` للعناصر المخصصة (`index.css:504-508`).
-- **لوحة المفاتيح:** مقياس المقارنة يدعم الأسهم وHome/End/PageUp/PageDown (`AiSpotlightSection.tsx:42-62`)؛ إغلاق قائمة الجوال بـ`Escape`؛ استخدام `aria` صحيح: `aria-controls`, `aria-expanded`, `aria-current="step"`, `aria-pressed` لمبدّل العملة, و`aria-label` لكل زر أيقوني.
+- **لوحة المفاتيح:** مقياس المقارنة يدعم الأسهم وHome/End/PageUp/PageDown (`AiSpotlightSection.tsx:42-62`)؛ إغلاق قائمة الجوال بـ`Escape`؛ استخدام `aria` صحيح: `aria-controls`, `aria-expanded`, `aria-current="step"`, `aria-pressed` لمبدّل العملة ومجموعتي مبدّلات بنتو (`role="group"` + `aria-label` — جلسة 0.90), و`aria-label` لكل زر أيقوني.
 - **رابط التخطي:** `.skip-to-content` يظهر أولاً عند التنقل بـ`Tab` (`LandingPage.tsx:107-109`).
 
 ---
@@ -391,3 +395,4 @@
 | **v2.2** | `2026-10-16` | **(جلسة 0.86 — استعارة انتقائية من إتقان الصفحات التسويقية):** كشف متتابع للبطاقات (`reveal-stagger` — انطلاق 80ms ثم +60ms على opacity/transform فقط)، تجميد حركات ودورات `AppMockup` خارج الشاشة (`.mockups-paused` + IO هامش 120px)، رفع كثافة اقتباسات الآراء إلى `text-sm sm:text-base`، وحذف حركات mockup ميتة (`scan-hud`/`wipe`/`beam`/`pulse` ≈47 سطراً بلا مستهلك). |
 | **v2.3** | `2026-10-16` | **(جلسة 0.87):** تقليم رؤوس الأقسام والأيقونات — `SectionHeader` صار عنواناً أبيض **واحداً** (حذف الشارة/الوصف في الأقسام الثمانية)، وإزالة الأيقونات التزيينية (نجوم الآراء + حقل `rating`، شارات ترويجية عائمة، إيموجي الوسوم، أيقونات روابط التنقل/شريط الثقة/شارة الختام) وفق مبدأ Fluent 2 «الأيقونة ذات غرض دلالي لا زخرفي»، مع إزالة شريط تقدم الصفحة العلوي المكرّر. |
 | **v2.4** | `2026-10-16` | **(جلسة 0.87 — سلّم الارتفاع بمرجع مهارة Fluent 2):** إدخال درجات ارتفاع مسمّاة (`.ds-elevate-rest/raised/overlay/dialog`) على التوكنات `--material-shadow-2/4/8/16`، وتطبيقها على عناصر الهبوط العائمة (أزرار الهيدر، درج الجوال، زر التحميل العائم، زر واتساب) مع إزالة توهج `#3b82f6` من أزرار الهيدر التزاماً بمبدأ Zero Button Glow. |
+| **v2.5** | `2026-10-16` | **(جلسة 0.90 — إعادة وصف الأقسام وتوحيد التوكنات):** إعادة وصف واحد مختصر لكل قسم عبر `SectionHeader` الجديد (`description?: ReactNode` — `text-xs sm:text-sm text-text-secondary text-balance`، موسّط `max-w-2xl` أو `max-w-md` بمحاذاة البداية) للأقسام الثمانية، واستبدال كل القيم الحرفية القابلة للربط بأدوات التوكنات في 15 ملف هبوط (هيدر، هيرو، بنتو، AI، ويندوز، جمهور، ROI، مقارنة، آراء، أسعار، FAQ، ختام، فوتر، الصفحة) مع الإبقاء المقصود على لوحات الاستنساخ البصري (`AppMockup`/المشاهد 3D) والاستعارات (واتساب، CMYK)، وربط `.btn-secondary` بالتوكنات في `index.css`، وإسناد `role="group" aria-pressed` لمبدّلات بنتو. |

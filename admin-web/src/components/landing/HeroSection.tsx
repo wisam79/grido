@@ -47,7 +47,7 @@ export function HeroSection() {
 
           {/* Version Badge — نسخة مميزة بنقطة نابضة */}
           <div className="ai-badge ai-badge-pulse mb-4 sm:mb-5 shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-[#60a5fa] animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-brand-light animate-pulse" />
             <span className="font-semibold">{displayVersion}</span>
           </div>
 
@@ -60,7 +60,7 @@ export function HeroSection() {
           </h1>
 
           {/* Sub-headline */}
-          <p className="text-sm sm:text-base md:text-lg text-[#A3A3A3] leading-relaxed max-w-2xl mb-8 font-normal text-balance">
+          <p className="text-sm sm:text-base md:text-lg text-text-secondary leading-relaxed max-w-2xl mb-8 font-normal text-balance">
             ضبط تلقائي لمعايير الجوازات والفيزا الدولية (ICAO)، عزل نقي للخلفيات، وتوزيع شبكي يقلل هدر الورق — يعمل محلياً 100% دون إنترنت.
           </p>
 
@@ -80,16 +80,16 @@ export function HeroSection() {
               onClick={() => setShowTour(true)}
               className="btn-secondary !h-13 !px-6 text-sm font-semibold hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
             >
-              <Play className="w-4 h-4 text-[#60a5fa] fill-[#60a5fa]" />
+              <Play className="w-4 h-4 text-brand-light fill-brand-light" />
               <span>جولة سريعة: 3 خطوات فقط</span>
             </button>
           </div>
 
           {/* Unified Trust Strip — فواصل نقطية أنظف */}
-          <div className="ds-card-inset flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-2.5 px-5 backdrop-blur-md text-xs text-[#9E9E9E] shadow-sm">
+          <div className="ds-card-inset flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-2.5 px-5 backdrop-blur-md text-xs text-text-secondary shadow-sm">
             {['سير عمل أسرع بخطوات أقل', 'خفيف جداً (<120MB ذاكرة)', 'مطابق لمعايير ICAO'].map((label, i) => (
               <div key={label} className="flex items-center gap-1.5 text-white">
-                {i > 0 && <span className="w-1 h-1 rounded-full bg-[#3b82f6]/50 mx-0.5" aria-hidden="true" />}
+                {i > 0 && <span className="w-1 h-1 rounded-full bg-brand-primary/50 mx-0.5" aria-hidden="true" />}
                 <span className="font-semibold">{label}</span>
               </div>
             ))}

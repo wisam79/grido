@@ -93,14 +93,14 @@ export function AiSpotlightSection() {
     <section id="ai-engine" className="py-16 md:py-24 relative overflow-hidden scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
-        <SectionHeader title="محرك الذكاء الاصطناعي الثنائي" />
+        <SectionHeader title="محرك الذكاء الاصطناعي الثنائي" description="ثلاث خطوات تلقائية تحوّل صورة الزبون الخام إلى طقم طباعة معتمد — دون أي تعديل يدوي" />
 
         {/* Live Showcase + Step Rail
             كان المعرض سابقاً في بطاقة بعرض كامل بينما الوسائط `max-w-md` (448px) موسّطة،
             فبقي ~330px فراغاً ميتاً على كل جانب والخطوات الثلاث في صف منفصل تحته.
             الآن عمودان متوازنان: الوسائط المتفاعلة بجانب مسار الخطوات العمودي. */}
         <div className="ds-card w-full p-4 sm:p-5 lg:p-6 shadow-xl relative overflow-hidden">
-          <div className="pb-3.5 border-b border-[#2C2C2C]">
+          <div className="pb-3.5 border-b border-border-subtle">
             <h3 className="text-sm sm:text-base font-bold text-white truncate">معاينة حية للمقارنة (1:1)</h3>
           </div>
 
@@ -123,10 +123,10 @@ export function AiSpotlightSection() {
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
                 onPointerCancel={onPointerUp}
-                className="relative w-full max-w-sm mx-auto lg:max-w-none aspect-[3/4] rounded-2xl overflow-hidden border border-[#333333] bg-[#141414] select-none shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] flex items-center justify-center cursor-ew-resize touch-none focus-visible:ring-2 focus-visible:ring-[#3b82f6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#141414] focus-visible:outline-none"
+                className="relative w-full max-w-sm mx-auto lg:max-w-none aspect-[3/4] rounded-2xl overflow-hidden border border-border-subtle bg-inset select-none shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] flex items-center justify-center cursor-ew-resize touch-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-inset focus-visible:outline-none"
               >
                 {/* Layer 1: AFTER Image */}
-                <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#141414]">
+                <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-inset">
                   <img
                     src="/sample-passport-after.png"
                     alt="بعد معالجة الذكاء الاصطناعي — عزل خلفية نقي"
@@ -137,7 +137,7 @@ export function AiSpotlightSection() {
                   />
                   <div
                     dir="rtl"
-                    className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-[#2C2C2C] shadow-lg pointer-events-none z-10"
+                    className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-border-subtle shadow-lg pointer-events-none z-10"
                   >
                     بعد المعالجة
                   </div>
@@ -145,7 +145,7 @@ export function AiSpotlightSection() {
 
                 {/* Layer 2: BEFORE Image */}
                 <div
-                  className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#141414] pointer-events-none overflow-hidden"
+                  className="absolute inset-0 w-full h-full flex items-center justify-center bg-inset pointer-events-none overflow-hidden"
                   style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
                 >
                   <img
@@ -158,7 +158,7 @@ export function AiSpotlightSection() {
                   />
                   <div
                     dir="rtl"
-                    className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-[#9E9E9E] font-semibold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-[#2C2C2C] shadow-lg pointer-events-none z-10"
+                    className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-text-secondary font-semibold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-border-subtle shadow-lg pointer-events-none z-10"
                   >
                     الأصل
                   </div>
@@ -169,13 +169,13 @@ export function AiSpotlightSection() {
                   className="absolute inset-y-0 w-0.5 bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)] z-30 pointer-events-none flex items-center justify-center"
                   style={{ left: `${sliderPos}%` }}
                 >
-                  <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-2xl font-bold text-xs border-2 border-[#3b82f6]">
+                  <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-2xl font-bold text-xs border-2 border-brand-primary">
                     ↔
                   </div>
                 </div>
               </div>
 
-              <p className="pt-3 text-[11px] text-[#9E9E9E]">اسحب المقبض لمشاهدة دقة العزل.</p>
+              <p className="pt-3 text-[11px] text-text-secondary">اسحب المقبض لمشاهدة دقة العزل.</p>
             </div>
 
             {/* Step Rail Column — مرتبط بموضع مقبض المقارنة لحظياً */}
@@ -189,8 +189,8 @@ export function AiSpotlightSection() {
                     aria-current={isActive ? 'step' : undefined}
                     className={`group relative rounded-2xl border p-4 sm:p-5 transition-colors duration-300 ${
                       isActive
-                        ? 'bg-[#171717] border-[#3b82f6]/50'
-                        : 'bg-[#141414] border-[#2C2C2C] hover:border-[#3b82f6]/40'
+                        ? 'bg-sidebar border-brand-primary/50'
+                        : 'bg-inset border-border-subtle hover:border-brand-primary/40'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3 mb-2.5">
@@ -198,8 +198,8 @@ export function AiSpotlightSection() {
                         <div
                           className={`ds-icon-tile w-10 h-10 transition-colors ${
                             isActive
-                              ? 'bg-[#1E1E1E] border-[#3b82f6]/50 text-[#60a5fa]'
-                              : 'text-[#3b82f6] group-hover:border-[#3b82f6]/40'
+                              ? 'bg-card border-brand-primary/50 text-brand-light'
+                              : 'text-brand-primary group-hover:border-brand-primary/40'
                           }`}
                         >
                           <Icon className="w-5 h-5" />
@@ -210,20 +210,20 @@ export function AiSpotlightSection() {
                       </div>
                       <span
                         className={`text-xl font-mono font-black leading-none tabular-nums shrink-0 transition-colors ${
-                          isActive ? 'text-[#60a5fa]' : 'text-[#8A8A8A]'
+                          isActive ? 'text-brand-light' : 'text-text-muted'
                         }`}
                       >
                         {item.step}
                       </span>
                     </div>
 
-                    <p className="text-[#9E9E9E] text-xs leading-relaxed">{item.desc}</p>
+                    <p className="text-text-secondary text-xs leading-relaxed">{item.desc}</p>
 
                     <div
                       className={`mt-3.5 pt-3 border-t text-[11px] font-semibold transition-colors ${
                         isActive
-                          ? 'border-[#3b82f6]/30 text-white'
-                          : 'border-[#2C2C2C] text-[#60a5fa]'
+                          ? 'border-brand-primary/30 text-white'
+                          : 'border-border-subtle text-brand-light'
                       }`}
                     >
                       <span className="font-mono">{item.tag}</span>

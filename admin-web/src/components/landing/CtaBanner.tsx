@@ -14,7 +14,7 @@ export function CtaBanner() {
             سرّع عمل استوديو التصوير اليوم
           </h2>
 
-          <p className="text-sm sm:text-base text-[#9E9E9E] max-w-lg mx-auto mb-6 leading-relaxed">
+          <p className="text-sm sm:text-base text-text-secondary max-w-lg mx-auto mb-6 leading-relaxed">
             وفّر ساعات من العمل، قلل هدر الورق، وقدّم صور هوية فورية بجودة معتمدة.
           </p>
 
@@ -30,7 +30,7 @@ export function CtaBanner() {
             </a>
           </div>
 
-          <div className="flex items-center justify-center text-[11px] text-[#8A8A8A]">
+          <div className="flex items-center justify-center text-[11px] text-text-muted">
             <span>حجم البرنامج ~45 MB</span>
           </div>
         </div>

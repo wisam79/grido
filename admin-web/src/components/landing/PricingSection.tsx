@@ -41,7 +41,7 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
         
         {/* مبدّل العملة موحّد في حاسبة التوفير (#roi) أعلى الصفحة —
             إبقاء مبدّل ثانٍ هنا كان يشتت (مبدلان لنفس الغرض في صفحة واحدة) */}
-        <SectionHeader title="استثمر مرة واحدة، واستفد للأبد" />
+        <SectionHeader title="استثمر مرة واحدة، واستفد للأبد" description="دفعة واحدة بلا اشتراكات — رخصة دائمة مع تحديثات مجانية للأبد" />
 
         {/* 2-Column Balanced Pricing Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
@@ -49,26 +49,26 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
           {/* Main Pricing Card (col-span-12 lg:col-span-7) */}
           <div className="lg:col-span-7 relative pt-3 flex flex-col">
             
-            <div className="absolute -top-1 inset-x-0 mx-auto w-max z-20 bg-[#3b82f6] text-white text-[11px] sm:text-xs font-extrabold px-4 py-1 rounded-full whitespace-nowrap border border-white/20 shadow-md">
+            <div className="absolute -top-1 inset-x-0 mx-auto w-max z-20 bg-brand-primary text-white text-[11px] sm:text-xs font-extrabold px-4 py-1 rounded-full whitespace-nowrap border border-white/20 shadow-md">
               <span>ترخيص مدى الحياة (Lifetime)</span>
             </div>
 
-            <div className="rounded-2xl bg-[#1E1E1E] border border-[#3b82f6]/40 p-6 sm:p-8 shadow-xl relative hover:border-white/20 transition-all duration-300 flex-1 flex flex-col justify-between">
+            <div className="rounded-2xl bg-card border border-brand-primary/40 p-6 sm:p-8 shadow-xl relative hover:border-white/20 transition-all duration-300 flex-1 flex flex-col justify-between">
               
-              <div className="text-center pb-5 border-b border-[#2C2C2C] mb-6 pt-2">
+              <div className="text-center pb-5 border-b border-border-subtle mb-6 pt-2">
                 <h3 className="text-2xl font-black text-white mb-1">Grido Studio</h3>
-                <p className="text-xs text-[#9E9E9E] mb-5">النسخة الكاملة لاستوديوهات ومراكز الطباعة</p>
+                <p className="text-xs text-text-secondary mb-5">النسخة الكاملة لاستوديوهات ومراكز الطباعة</p>
 
                 {/* Price Row (Dynamic Currency) */}
                 <div className="flex items-baseline justify-center gap-2.5 mb-2.5">
-                  <span className="text-sm text-[#8A8A8A] line-through font-mono">
+                  <span className="text-sm text-text-muted line-through font-mono">
                     {currentCurr.originalPriceFormatted}
                   </span>
                   <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tight">
                     {currentCurr.priceFormatted}
                   </span>
                   <div className="flex flex-col items-start text-start">
-                    <span className="text-sm font-bold text-[#3b82f6]">{currentCurr.unit}</span>
+                    <span className="text-sm font-bold text-brand-primary">{currentCurr.unit}</span>
                   </div>
                 </div>
               </div>
@@ -77,7 +77,7 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
               <div className="space-y-2.5 mb-6 flex-1">
                 {FEATURES.map((feat) => (
                   <div key={feat} className="flex items-center gap-2.5 text-xs sm:text-sm text-white">
-                    <div className="w-4 h-4 rounded bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#10b981] shrink-0">
+                    <div className="w-4 h-4 rounded bg-inset border border-border-subtle flex items-center justify-center text-status-success shrink-0">
                       <Check className="w-3 h-3" />
                     </div>
                     <span className="leading-normal">{feat}</span>
@@ -97,7 +97,7 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
                   <span>تحميل وتفعيل رخصتك الآن</span>
                 </a>
 
-                <div className="flex flex-wrap items-center justify-center gap-2.5 text-[11px] text-[#9E9E9E]">
+                <div className="flex flex-wrap items-center justify-center gap-2.5 text-[11px] text-text-secondary">
                   <span>تنزيل فوري</span>
                 </div>
               </div>
@@ -115,14 +115,14 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
               return (
                 <div
                   key={g.title}
-                  className="ds-card p-5 sm:p-6 flex items-center gap-4 flex-1 hover:border-[#3b82f6]/40 transition-colors shadow-sm"
+                  className="ds-card p-5 sm:p-6 flex items-center gap-4 flex-1 hover:border-brand-primary/40 transition-colors shadow-sm"
                 >
-                  <div className="ds-icon-tile w-11 h-11 text-[#3b82f6]">
+                  <div className="ds-icon-tile w-11 h-11 text-brand-primary">
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-sm font-bold text-white mb-1">{g.title}</h4>
-                    <p className="text-xs text-[#9E9E9E] leading-relaxed">
+                    <p className="text-xs text-text-secondary leading-relaxed">
                       {g.desc}
                     </p>
                   </div>

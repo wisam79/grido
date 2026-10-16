@@ -39,6 +39,7 @@ export function FaqSection() {
           <div className="lg:col-span-5 flex flex-col items-start text-start">
             <SectionHeader
               title="الأسئلة الشائعة"
+              description="إجابات مباشرة عن العمل دون إنترنت، الطباعة، التفعيل، والمعايير الدولية"
               align="start"
               size="lg"
               gap="none"
@@ -52,7 +53,7 @@ export function FaqSection() {
                 </div>
                 <span>لديك استفسار خاص؟</span>
               </div>
-              <p className="text-xs text-[#9E9E9E] leading-relaxed">
+              <p className="text-xs text-text-secondary leading-relaxed">
                 تواصل معنا مباشرة وسنجيبك خلال دقائق.
               </p>
               <a
@@ -75,7 +76,7 @@ export function FaqSection() {
                   key={faq.q}
                   className={`ds-card ds-card-interactive overflow-hidden ${
                     isOpen
-                      ? 'border-[#3b82f6]/40 shadow-md'
+                      ? 'border-brand-primary/40 shadow-md'
                       : 'hover:border-white/20'
                   }`}
                 >
@@ -85,9 +86,9 @@ export function FaqSection() {
                     aria-expanded={isOpen}
                   >
                     <span className="leading-snug">{faq.q}</span>
-                    <div
-                      className={`w-6 h-6 rounded-lg bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#9E9E9E] shrink-0 transition-transform duration-200 ${
-                        isOpen ? 'rotate-180 text-[#60a5fa] border-[#3b82f6]/40' : ''
+                      <div
+                      className={`w-6 h-6 rounded-lg bg-inset border border-border-subtle flex items-center justify-center text-text-secondary shrink-0 transition-transform duration-200 ${
+                        isOpen ? 'rotate-180 text-brand-light border-brand-primary/40' : ''
                       }`}
                     >
                       <ChevronDown className="w-3.5 h-3.5" />
@@ -95,7 +96,7 @@ export function FaqSection() {
                   </button>
 
                   {isOpen && (
-                    <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs sm:text-sm text-[#D4D4D4] leading-relaxed border-t border-[#2C2C2C] pt-3.5 animate-fadeIn">
+                    <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs sm:text-sm text-text-primary leading-relaxed border-t border-border-subtle pt-3.5 animate-fadeIn">
                       {faq.a}
                     </div>
                   )}

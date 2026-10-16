@@ -161,7 +161,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .btn-secondary {
-    background: #1E1E1E;
+    background: var(--grido-surface-card);
     color: var(--grido-text-primary);
     font-family: var(--font-arabic);
     font-size: 14px;
@@ -178,7 +178,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .btn-secondary:hover {
-    background: #262626;
+    background: var(--grido-surface-card-hover);
     border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-1px);
   }
@@ -433,7 +433,7 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2C2C2C;
+  background: var(--grido-border-subtle);
   border-radius: 9999px;
 }
 

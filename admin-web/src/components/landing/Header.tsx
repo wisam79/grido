@@ -97,7 +97,7 @@ export function Header() {
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-[#121212]/80 backdrop-blur-2xl border-b border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_8px_24px_rgba(0,0,0,0.45)] py-2 sm:py-2.5'
+          ? 'bg-workspace/80 backdrop-blur-2xl border-b border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_8px_24px_rgba(0,0,0,0.45)] py-2 sm:py-2.5'
           : 'bg-transparent border-b border-transparent py-3 sm:py-3.5'
       }`}
     >
@@ -116,23 +116,23 @@ export function Header() {
             />
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-sm sm:text-base font-black tracking-tight text-white group-hover:text-[#60a5fa] transition-colors">
+                <span className="text-sm sm:text-base font-black tracking-tight text-white group-hover:text-brand-light transition-colors">
                   Grido Studio
                 </span>
-                <span className="text-[9px] font-mono font-bold text-[#60a5fa] bg-[#3b82f6]/10 px-1.5 py-0.5 rounded-full border border-[#3b82f6]/25">
+                <span className="text-[9px] font-mono font-bold text-brand-light bg-brand-primary/10 px-1.5 py-0.5 rounded-full border border-brand-primary/25">
                   {displayVersion}
                 </span>
               </div>
-              <span className="text-[10px] text-[#8A8A8A] -mt-0.5 hidden sm:block">استوديو الهوية والطباعة</span>
+              <span className="text-[10px] text-text-muted -mt-0.5 hidden sm:block">استوديو الهوية والطباعة</span>
             </div>
           </a>
 
           {/* Desktop Nav Links — Capsule مصقولة مع مؤشر منزلق (Magic Pill) */}
-          <nav className="relative hidden lg:flex items-center gap-1 bg-[#171717]/85 backdrop-blur-xl p-1 rounded-full border border-white/[0.08] shadow-inner shadow-black/40" aria-label="التنقل الرئيسي">
+          <nav className="relative hidden lg:flex items-center gap-1 bg-sidebar/85 backdrop-blur-xl p-1 rounded-full border border-white/[0.08] shadow-inner shadow-black/40" aria-label="التنقل الرئيسي">
             <span
               ref={pillRef}
               aria-hidden="true"
-              className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/30 opacity-0 transition-[left,width,opacity] duration-300 ease-out"
+              className="pointer-events-none absolute top-1 bottom-1 left-0 rounded-full bg-brand-primary/15 border border-brand-primary/30 opacity-0 transition-[left,width,opacity] duration-300 ease-out"
             />
             {NAV_LINKS.map((link) => {
               const isActive = activeSection === link.href;
@@ -145,7 +145,7 @@ export function Header() {
                   }}
                   aria-current={isActive ? 'true' : undefined}
                   className={`relative z-10 px-3.5 py-1.5 text-xs rounded-full transition-colors duration-200 ${
-                    isActive ? 'text-white font-bold' : 'text-[#9E9E9E] hover:text-white'
+                    isActive ? 'text-white font-bold' : 'text-text-secondary hover:text-white'
                   }`}
                 >
                   {link.label}
@@ -161,7 +161,7 @@ export function Header() {
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="cta-shine hidden sm:inline-flex h-9 px-4 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] text-white text-xs font-bold ds-elevate-raised items-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="cta-shine hidden sm:inline-flex h-9 px-4 rounded-full bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold ds-elevate-raised items-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               aria-label="تحميل البرنامج"
             >
               <Download className="w-3.5 h-3.5" />
@@ -171,7 +171,7 @@ export function Header() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-full bg-[#171717]/80 text-white border border-white/[0.08] cursor-pointer hover:bg-[#262626] hover:border-white/[0.16] transition-colors"
+              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-full bg-sidebar/80 text-white border border-white/[0.08] cursor-pointer hover:bg-card-hover hover:border-white/[0.16] transition-colors"
               aria-label="القائمة"
               aria-expanded={menuOpen}
               aria-controls="mobile-nav"
@@ -195,7 +195,7 @@ export function Header() {
 
         {/* Mobile Dropdown Menu Drawer */}
         {menuOpen && (
-          <div id="mobile-nav" className="relative z-50 lg:hidden mt-2 p-3 rounded-2xl border border-white/[0.08] bg-[#171717]/95 backdrop-blur-2xl ds-elevate-dialog animate-fadeIn">
+          <div id="mobile-nav" className="relative z-50 lg:hidden mt-2 p-3 rounded-2xl border border-white/[0.08] bg-sidebar/95 backdrop-blur-2xl ds-elevate-dialog animate-fadeIn">
             <nav className="flex flex-col gap-1" aria-label="التنقل للجوال">
               {NAV_LINKS.map((link, index) => {
                 const isActive = activeSection === link.href;
@@ -206,7 +206,7 @@ export function Header() {
                     onClick={() => setMenuOpen(false)}
                     style={{ animationDelay: `${60 + index * 35}ms` }}
                     className={`animate-dropIn flex items-center gap-3 px-3.5 py-2 text-xs font-semibold rounded-xl border transition-colors ${
-                      isActive ? 'text-white bg-[#3b82f6]/15 border-[#3b82f6]/30' : 'border-transparent text-[#9E9E9E] hover:text-white hover:bg-white/[0.05]'
+                      isActive ? 'text-white bg-brand-primary/15 border-brand-primary/30' : 'border-transparent text-text-secondary hover:text-white hover:bg-white/[0.05]'
                     }`}
                   >
                     <span>{link.label}</span>
@@ -218,7 +218,7 @@ export function Header() {
                   href={GITHUB_RELEASE_DOWNLOAD_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="cta-shine w-full h-9 px-4 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] text-white text-xs font-bold ds-elevate-raised flex items-center justify-center gap-2 transition-all"
+                  className="cta-shine w-full h-9 px-4 rounded-full bg-brand-primary hover:bg-brand-hover text-white text-xs font-bold ds-elevate-raised flex items-center justify-center gap-2 transition-all"
                 >
                   <Download className="w-4 h-4" />
                   <span>تحميل مباشر لويندوز</span>
@@ -234,7 +234,7 @@ export function Header() {
         ref={progressRef}
         aria-hidden="true"
         style={{ transform: 'scaleX(0)' }}
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] origin-right bg-gradient-to-l from-[#3b82f6] via-[#38bdf8] to-[#3b82f6] will-change-transform"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] origin-right bg-gradient-to-l from-brand-primary via-[#38bdf8] to-brand-primary will-change-transform"
       />
     </header>
   );

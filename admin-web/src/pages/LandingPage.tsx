@@ -92,7 +92,7 @@ export default function LandingPage() {
   return (
     <div
       dir="rtl"
-      className="landing-shell relative min-h-screen overflow-x-hidden bg-[#121212] font-sans text-[#F5F5F5] selection:bg-[#3b82f6]/30 selection:text-white"
+      className="landing-shell relative min-h-screen overflow-x-hidden bg-workspace font-sans text-text-primary selection:bg-brand-primary/30 selection:text-white"
     >
       {/* رابط التخطي — يظهر لمستخدمي لوحة المفاتيح قبل التنقل */}
       <a href="#main-content" className="skip-to-content">
@@ -169,7 +169,7 @@ export default function LandingPage() {
           href={GITHUB_RELEASE_DOWNLOAD_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-4 end-4 sm:bottom-6 sm:end-6 z-50 flex items-center gap-1.5 sm:gap-2 px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold text-[11px] sm:text-xs ds-elevate-overlay transition-all duration-200 hover:scale-105 active:scale-95 animate-fadeIn"
+          className="fixed bottom-4 end-4 sm:bottom-6 sm:end-6 z-50 flex items-center gap-1.5 sm:gap-2 px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full bg-brand-primary hover:bg-brand-hover text-white font-semibold text-[11px] sm:text-xs ds-elevate-overlay transition-all duration-200 hover:scale-105 active:scale-95 animate-fadeIn"
           aria-label="تحميل مباشر الآن"
         >
           <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />

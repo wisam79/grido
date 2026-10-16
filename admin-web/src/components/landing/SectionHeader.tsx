@@ -3,6 +3,11 @@ import type { ReactNode } from 'react';
 interface SectionHeaderProps {
   title: ReactNode;
   /**
+   * سطر دعم واحد خافت تحت العنوان — يحسّن قابلية المسح البصري للقسم
+   * دون إعادة طبقات 0.87 المحذوفة (لا شارة eyebrow ولا أيقونة ولا وصف ثانٍ).
+   */
+  description?: ReactNode;
+  /**
    * `center` (افتراضي) للأقسام المستقلة بعرض الصفحة،
    * و`start` للعناوين داخل عمود شبكة (الأسئلة الشائعة/ويندوز 11).
    */
@@ -25,19 +30,30 @@ const GAPS = {
 } as const;
 
 /**
- * عنوان القسم الموحّد — عنوان أبيض كبير واحد فقط.
- * أُلغيت الشارة (eyebrow) والوصف: كانت ثلاث طبقات نصية متنافسة في رأس كل قسم.
+ * عنوان القسم الموحّد — عنوان أبيض كبير واحد (نفس دستور 0.87: بلا شارة eyebrow)
+ * مع سطر دعم خافت اختياري لتحسين قابلية المسح دون منافسة العنوان.
  */
-export function SectionHeader({ title, align = 'center', size = 'xl', gap = 'md' }: SectionHeaderProps) {
+export function SectionHeader({ title, description, align = 'center', size = 'xl', gap = 'md' }: SectionHeaderProps) {
   const isCentered = align !== 'start';
 
   return (
-    <h2
-      className={`${TITLE_SIZES[size]} font-black text-white tracking-tight ${GAPS[gap]} ${
-        isCentered ? 'text-center max-w-3xl mx-auto' : ''
-      }`}
-    >
-      {title}
-    </h2>
+    <div className={`${GAPS[gap]} ${isCentered ? 'text-center' : ''}`}>
+      <h2
+        className={`${TITLE_SIZES[size]} font-black text-white tracking-tight ${
+          isCentered ? 'max-w-3xl mx-auto' : ''
+        }`}
+      >
+        {title}
+      </h2>
+      {description && (
+        <p
+          className={`mt-3 text-xs sm:text-sm text-text-secondary leading-relaxed text-balance ${
+            isCentered ? 'max-w-2xl mx-auto' : 'max-w-md'
+          }`}
+        >
+          {description}
+        </p>
+      )}
+    </div>
   );
 }
