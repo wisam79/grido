@@ -17,6 +17,8 @@ import (
 // (أو SetBrowserOpener في الترخيص).
 type WailsRuntimeBridge struct{}
 
+var _ domain.RuntimeBridge = WailsRuntimeBridge{}
+
 func NewWailsRuntimeBridge() WailsRuntimeBridge { return WailsRuntimeBridge{} }
 
 func (WailsRuntimeBridge) Emit(name string, data ...any) {
