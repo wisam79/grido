@@ -1,18 +1,15 @@
-import { Download, Sparkles, ShieldCheck } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { GITHUB_RELEASE_DOWNLOAD_URL } from '../../lib/version';
 
 export function CtaBanner() {
   return (
     <section className="py-16 md:py-24 relative overflow-hidden">
+      {/* هالة ختامية محيطة — تعطي شريط الدعوة الأخير ثقلاً بصرياً بدل صندوق مسطّح */}
+      <div aria-hidden="true" className="aurora-bg" />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        <div className="w-full rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-6 sm:p-12 text-center shadow-xl relative overflow-hidden">
+        <div className="ds-card card-specular-edge w-full p-6 sm:p-12 text-center shadow-xl relative overflow-hidden">
           
-          <div className="ai-badge mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-[#3b82f6]" />
-            <span>ابدأ الآن</span>
-          </div>
-
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-2.5 tracking-tight">
             سرّع عمل استوديو التصوير اليوم
           </h2>
@@ -33,13 +30,8 @@ export function CtaBanner() {
             </a>
           </div>
 
-          <div className="flex items-center justify-center gap-3 text-[11px] text-[#8A8A8A]">
-            <div className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#10b981]" />
-              <span>آمن ومفحوص 100%</span>
-            </div>
-            <span>•</span>
-            <span>حجم البرنامج (~45 MB)</span>
+          <div className="flex items-center justify-center text-[11px] text-[#8A8A8A]">
+            <span>حجم البرنامج ~45 MB</span>
           </div>
         </div>
 

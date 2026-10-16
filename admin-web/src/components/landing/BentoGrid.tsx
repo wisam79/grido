@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense } from 'react';
 import { Sparkles, Grid, ShieldCheck, Printer, Scissors, Check, Box } from 'lucide-react';
 import { ErrorBoundary } from '../common/ErrorBoundary';
+import { SectionHeader } from './SectionHeader';
 
 const Biometric3DCard = lazy(() => import('./Biometric3DCard').then((m) => ({ default: m.Biometric3DCard })));
 const CMYK3DStack = lazy(() => import('./CMYK3DStack').then((m) => ({ default: m.CMYK3DStack })));
@@ -13,37 +14,22 @@ export function BentoGrid() {
     <section id="capabilities" className="py-16 md:py-24 relative scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-          <div className="ai-badge mb-3">
-            <Sparkles className="w-3.5 h-3.5 text-[#3b82f6]" />
-            <span>القدرات الأساسية والمجسمات التفاعلية</span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-2.5 tracking-tight">
-            كل ما يحتاجه استوديو التصوير
-          </h2>
-          <p className="text-sm sm:text-base text-[#9E9E9E]">
-            سير عمل فائق السرعة لتجهيز وطباعة صور الهوية بدقة هندسية ثلاثية الأبعاد.
-          </p>
-        </div>
+        <SectionHeader title="كل ما يحتاجه استوديو التصوير" gap="lg" />
 
         {/* 4-Card Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 reveal-stagger">
 
           {/* Card 1: Large (col-span-12 lg:col-span-8) - AI ID & Biometric Passport */}
-          <div className="lg:col-span-8 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-[#3b82f6]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
+          <div className="ds-card lg:col-span-8 p-6 sm:p-7 flex flex-col justify-between hover:border-[#3b82f6]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
             <div>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0">
+                  <div className="ds-icon-tile w-10 h-10 text-[#3b82f6]">
                     <Sparkles className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-white">
-                      تجهيز صور الجوازات والفيزا فورياً
-                    </h3>
-                    <span className="text-xs text-[#9E9E9E]">عزل نقي ومطابقة كاملة لمعايير ICAO</span>
-                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">
+                    تجهيز صور الجوازات والفيزا فورياً
+                  </h3>
                 </div>
 
                 {/* 2D / 3D Toggle */}
@@ -111,7 +97,7 @@ export function BentoGrid() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-2.5">
                       <div className="flex items-center justify-between w-full text-xs">
                         <span className="bg-[#3b82f6] text-white px-2 py-0.5 rounded font-bold text-[10px]">
-                          ✓ عزل نقي
+                          عزل نقي
                         </span>
                         <span className="text-[10px] font-mono text-slate-300 bg-black/70 px-2 py-0.5 rounded">
                           معتمد دولياً
@@ -141,15 +127,12 @@ export function BentoGrid() {
           </div>
 
           {/* Card 2: Medium (col-span-12 lg:col-span-4) - Smart Collage Canvas */}
-          <div className="lg:col-span-4 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-[#3b82f6]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
+          <div className="ds-card lg:col-span-4 p-6 sm:p-7 flex flex-col justify-between hover:border-[#3b82f6]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0">
+              <div className="mb-3">
+                <div className="ds-icon-tile w-10 h-10 text-[#3b82f6]">
                   <Grid className="w-5 h-5" />
                 </div>
-                <span className="text-xs font-bold text-[#9E9E9E] bg-[#141414] px-2.5 py-0.5 rounded-full border border-[#2C2C2C]">
-                  محرر حر
-                </span>
               </div>
 
               <h3 className="text-lg sm:text-xl font-bold text-white mb-1.5">
@@ -160,9 +143,10 @@ export function BentoGrid() {
               </p>
             </div>
 
-            {/* Mini Collage Grid Mockup */}
-            <div className="rounded-xl border border-[#2C2C2C] bg-[#141414] p-3 flex flex-col justify-between min-h-[140px]">
-              <div className="grid grid-cols-2 gap-1.5 flex-1 mb-2">
+            {/* Mini Collage Grid Mockup — flex-1 يجعل المعاينة تمتص ارتفاع الصف
+                الممتد بدل أن يبقى فراغ أسفلها عند مجاورة البطاقة الأطول. */}
+            <div className="rounded-xl border border-[#2C2C2C] bg-[#141414] p-3 flex flex-col justify-between flex-1 min-h-[140px]">
+              <div className="grid grid-cols-2 gap-1.5 flex-1">
                 <div className="rounded-md bg-[#1E1E1E] border border-dashed border-[#3b82f6]/40 flex items-center justify-center p-1.5 text-center">
                   <span className="text-[10px] font-mono text-[#60a5fa]">35×45mm</span>
                 </div>
@@ -176,24 +160,16 @@ export function BentoGrid() {
                   <span className="text-[10px] font-mono text-[#10b981]">35×45mm</span>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between text-[10px] text-[#9E9E9E] bg-[#1E1E1E] px-2 py-1 rounded border border-[#2C2C2C]">
-                <span>محاذاة مغناطيسية</span>
-                <span className="text-[#10b981] font-bold">Snap 100%</span>
-              </div>
             </div>
           </div>
 
           {/* Card 3: Medium (col-span-12 lg:col-span-4) - Offline & Privacy */}
-          <div className="lg:col-span-4 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-[#10b981]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
+          <div className="ds-card lg:col-span-4 p-6 sm:p-7 flex flex-col justify-between hover:border-[#10b981]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#10b981] shrink-0">
+              <div className="mb-3">
+                <div className="ds-icon-tile w-10 h-10 text-[#10b981]">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
-                <span className="text-xs font-bold text-[#10b981] bg-[#141414] px-2.5 py-0.5 rounded-full border border-[#2C2C2C]">
-                  100% أوفلاين
-                </span>
               </div>
 
               <h3 className="text-lg sm:text-xl font-bold text-white mb-1.5">
@@ -204,7 +180,7 @@ export function BentoGrid() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-[#2C2C2C] bg-[#141414] p-3 space-y-2 text-xs min-h-[140px] flex flex-col justify-center">
+            <div className="rounded-xl border border-[#2C2C2C] bg-[#141414] p-3 flex flex-col justify-center gap-2 text-xs flex-1 min-h-[140px]">
               <div className="flex items-center justify-between p-2 rounded bg-[#1E1E1E] border border-[#2C2C2C]">
                 <span className="text-[11px] text-white">الاتصال السحابي:</span>
                 <span className="text-[10px] font-bold text-[#10b981]">معطل (0 Uploads)</span>
@@ -217,19 +193,16 @@ export function BentoGrid() {
           </div>
 
           {/* Card 4: Wide (col-span-12 lg:col-span-8) - Print & Cutter Sheets */}
-          <div className="lg:col-span-8 p-6 sm:p-7 flex flex-col justify-between rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-[#f59e0b]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
+          <div className="ds-card lg:col-span-8 p-6 sm:p-7 flex flex-col justify-between hover:border-[#f59e0b]/40 transition-all duration-300 shadow-md card-specular-edge spotlight-hover">
             <div>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#f59e0b] shrink-0">
+                  <div className="ds-icon-tile w-10 h-10 text-[#f59e0b]">
                     <Printer className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-bold text-white">
-                      مراكز الطباعة وخطوط القص
-                    </h3>
-                    <span className="text-xs text-[#9E9E9E]">توفير الورق والأحبار بدقة ألوان كاملة</span>
-                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">
+                    مراكز الطباعة وخطوط القص
+                  </h3>
                 </div>
 
                 {/* 2D / 3D Toggle */}

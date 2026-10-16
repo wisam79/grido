@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from 'react';
-import { Download, Play, Shield, Zap, Laptop, CheckCircle2 } from 'lucide-react';
+import { Download, Play } from 'lucide-react';
 import { AppMockup } from './AppMockup';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { TourModal } from '../common/TourModal';
@@ -48,7 +48,7 @@ export function HeroSection() {
           {/* Version Badge — نسخة مميزة بنقطة نابضة */}
           <div className="ai-badge ai-badge-pulse mb-4 sm:mb-5 shadow-xs">
             <span className="w-2 h-2 rounded-full bg-[#60a5fa] animate-pulse" />
-            <span className="font-semibold">{displayVersion} • محرك ذكاء اصطناعي محلي فوري</span>
+            <span className="font-semibold">{displayVersion}</span>
           </div>
 
           {/* Grand Main Headline */}
@@ -61,7 +61,7 @@ export function HeroSection() {
 
           {/* Sub-headline */}
           <p className="text-sm sm:text-base md:text-lg text-[#A3A3A3] leading-relaxed max-w-2xl mb-8 font-normal text-balance">
-            حل هندسي شامل لاستوديوهات ومراكز الطباعة: ضبط تلقائي لمعايير الجوازات والفيزا الدولية (ICAO)، عزل نقي للخلفيات، وتوزيع شبكي يقلل هدر الورق — يعمل محلياً 100% دون إنترنت.
+            ضبط تلقائي لمعايير الجوازات والفيزا الدولية (ICAO)، عزل نقي للخلفيات، وتوزيع شبكي يقلل هدر الورق — يعمل محلياً 100% دون إنترنت.
           </p>
 
           {/* Action Buttons Row */}
@@ -70,7 +70,7 @@ export function HeroSection() {
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary !h-13 !px-8 text-sm sm:text-base font-bold shadow-xl shadow-[#3b82f6]/25 hover:shadow-[#3b82f6]/40 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
+              className="btn-primary !h-13 !px-8 text-sm sm:text-base font-bold hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
             >
               <Download className="w-5 h-5" />
               <span>تحميل مجاني لـ Windows</span>
@@ -78,7 +78,7 @@ export function HeroSection() {
 
             <button
               onClick={() => setShowTour(true)}
-              className="btn-secondary !h-13 !px-6 text-xs sm:text-sm font-semibold hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
+              className="btn-secondary !h-13 !px-6 text-sm font-semibold hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
             >
               <Play className="w-4 h-4 text-[#60a5fa] fill-[#60a5fa]" />
               <span>جولة سريعة: 3 خطوات فقط</span>
@@ -86,16 +86,10 @@ export function HeroSection() {
           </div>
 
           {/* Unified Trust Strip — فواصل نقطية أنظف */}
-          <div className="ds-card-inset flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-2.5 px-5 backdrop-blur-md text-xs text-[#9E9E9E] shadow-sm rounded-2xl border border-[#2C2C2C]/70">
-            {[
-              { icon: Shield, color: 'text-[#10b981]', label: '100% محلي دون إنترنت' },
-              { icon: Zap, color: 'text-[#3b82f6]', label: 'سير عمل أسرع بخطوات أقل' },
-              { icon: Laptop, color: 'text-[#60a5fa]', label: 'خفيف جداً (<120MB ذاكرة)' },
-              { icon: CheckCircle2, color: 'text-[#10b981]', label: 'مطابق لمعايير ICAO' },
-            ].map(({ icon: Icon, color, label }, i) => (
+          <div className="ds-card-inset flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-2.5 px-5 backdrop-blur-md text-xs text-[#9E9E9E] shadow-sm">
+            {['سير عمل أسرع بخطوات أقل', 'خفيف جداً (<120MB ذاكرة)', 'مطابق لمعايير ICAO'].map((label, i) => (
               <div key={label} className="flex items-center gap-1.5 text-white">
                 {i > 0 && <span className="w-1 h-1 rounded-full bg-[#3b82f6]/50 mx-0.5" aria-hidden="true" />}
-                <Icon className={`w-3.5 h-3.5 ${color}`} />
                 <span className="font-semibold">{label}</span>
               </div>
             ))}

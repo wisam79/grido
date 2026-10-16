@@ -18,7 +18,6 @@ import type { CurrencyCode } from '../data/landing-content';
 import { GITHUB_RELEASE_DOWNLOAD_URL } from '../lib/version';
 
 export default function LandingPage() {
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [showFloatingCta, setShowFloatingCta] = useState(false);
   const [currency, setCurrency] = useState<CurrencyCode>('IQD');
 
@@ -32,7 +31,7 @@ export default function LandingPage() {
       const e = lastEvent;
       lastEvent = null;
       if (!e) return;
-      const card = (e.target as Element | null)?.closest?.('.spotlight-card') as HTMLElement | null;
+      const card = (e.target as Element | null)?.closest?.('.spotlight-card, .spotlight-hover') as HTMLElement | null;
       if (!card) return;
       const rect = card.getBoundingClientRect();
       card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
@@ -51,7 +50,7 @@ export default function LandingPage() {
     };
   }, []);
 
-  // Track scroll progress & floating CTA visibility
+  // إظهار زر التحميل العائم بعد تجاوز الهيرو (شريط التقدم يقع في الهيدر)
   useEffect(() => {
     let ticking = false;
 
@@ -61,15 +60,7 @@ export default function LandingPage() {
 
       requestAnimationFrame(() => {
         ticking = false;
-        const scrollY = window.scrollY;
-        const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-
-        if (totalHeight > 0) {
-          const progress = Math.round((scrollY / totalHeight) * 100);
-          setScrollProgress((prev) => (prev !== progress ? progress : prev));
-        }
-
-        const shouldShow = scrollY > 500;
+        const shouldShow = window.scrollY > 500;
         setShowFloatingCta((prev) => (prev !== shouldShow ? shouldShow : prev));
       });
     };
@@ -108,14 +99,6 @@ export default function LandingPage() {
         تخطَّ إلى المحتوى الرئيسي
       </a>
 
-      {/* Top Scroll Progress Bar — متدرج بلا توهج */}
-      <div className="fixed top-0 inset-x-0 h-[3px] bg-[#1A1A1A] z-[60] pointer-events-none">
-        <div
-          className="absolute top-0 start-0 h-full bg-gradient-to-l from-[#60a5fa] via-[#3b82f6] to-[#2563eb] transition-[width] duration-150 ease-out"
-          style={{ width: `${scrollProgress}%` }}
-        />
-      </div>
-
       {/* Navigation Header */}
       <Header />
 
@@ -126,7 +109,7 @@ export default function LandingPage() {
         </div>
 
         {/* Section 2: Core Capabilities (Bento Grid) */}
-        <div className="reveal-on-scroll is-visible">
+        <div className="reveal-on-scroll">
           <BentoGrid />
         </div>
 
@@ -186,7 +169,7 @@ export default function LandingPage() {
           href={GITHUB_RELEASE_DOWNLOAD_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="fixed bottom-4 end-4 sm:bottom-6 sm:end-6 z-50 flex items-center gap-1.5 sm:gap-2 px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold text-[11px] sm:text-xs shadow-xl shadow-[#3b82f6]/25 transition-all duration-200 hover:scale-105 active:scale-95 animate-fadeIn"
+          className="fixed bottom-4 end-4 sm:bottom-6 sm:end-6 z-50 flex items-center gap-1.5 sm:gap-2 px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold text-[11px] sm:text-xs ds-elevate-overlay transition-all duration-200 hover:scale-105 active:scale-95 animate-fadeIn"
           aria-label="تحميل مباشر الآن"
         >
           <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />

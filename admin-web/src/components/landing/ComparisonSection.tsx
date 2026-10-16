@@ -1,4 +1,5 @@
-import { Check, X, Sparkles, Zap } from 'lucide-react';
+import { Check, X } from 'lucide-react';
+import { SectionHeader } from './SectionHeader';
 
 const OLD_WAY = [
   {
@@ -56,36 +57,16 @@ export function ComparisonSection() {
     <section id="comparison" className="py-16 md:py-24 relative scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <div className="ai-badge mb-3">
-            <Zap className="w-3.5 h-3.5 text-[#3b82f6]" />
-            <span>مقارنة الأداء</span>
-          </div>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-2.5 tracking-tight">
-            لماذا يختار المحترفون استوديو جريدو؟
-          </h2>
-          <p className="text-xs sm:text-base text-[#9E9E9E] max-w-2xl mx-auto leading-relaxed">
-            مقارنة مباشرة بين الطرق التقليدية وسير العمل الفوري مع Grido Studio.
-          </p>
-        </div>
+        <SectionHeader title="لماذا يختار المحترفون استوديو جريدو؟" />
 
         {/* 2-Column Versus Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           
           {/* Column 1: The Old Way */}
-          <div className="rounded-2xl bg-[#171717] border border-[#2C2C2C] p-5 sm:p-7 flex flex-col justify-between shadow-sm">
+          <div className="ds-card bg-[#171717] p-5 sm:p-7 flex flex-col justify-between shadow-sm">
             <div>
               <div className="flex items-center justify-between pb-3.5 border-b border-[#2C2C2C] mb-5">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#ef4444]">
-                    <X className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-white">البرامج والطرق التقليدية</h3>
-                    <span className="text-[10px] text-[#8A8A8A]">بطيئة وتستهلك الوقت</span>
-                  </div>
-                </div>
+                <h3 className="text-sm sm:text-base font-bold text-white">البرامج والطرق التقليدية</h3>
                 <span className="text-[10px] font-bold text-[#ef4444] bg-[#141414] px-2 py-0.5 rounded border border-[#2C2C2C]">
                   هدر في الوقت
                 </span>
@@ -104,7 +85,7 @@ export function ComparisonSection() {
                       <h4 className="text-xs sm:text-sm font-bold text-[#D4D4D4] mb-0.5">
                         {item.title}
                       </h4>
-                      <p className="text-[11px] text-[#737373] leading-relaxed">
+                      <p className="text-[11px] text-[#8A8A8A] leading-relaxed">
                         {item.desc}
                       </p>
                     </div>
@@ -119,24 +100,11 @@ export function ComparisonSection() {
           </div>
 
           {/* Column 2: Grido Studio */}
-          <div className="rounded-2xl bg-[#1E1E1E] border border-[#3b82f6]/40 p-5 sm:p-7 flex flex-col justify-between shadow-xl relative">
-            
-            <div className="absolute -top-3 start-6 bg-[#3b82f6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-0.5 rounded-full border border-white/20 shadow-sm flex items-center gap-1">
-              <Sparkles className="w-3 h-3 fill-current" />
-              <span>الخيار الأسرع للاستوديوهات</span>
-            </div>
+          <div className="ds-card border-[#3b82f6]/40 p-5 sm:p-7 flex flex-col justify-between shadow-xl relative">
 
             <div>
               <div className="flex items-center justify-between pb-3.5 border-b border-[#2C2C2C] mb-5 pt-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#141414] border border-[#3b82f6]/30 flex items-center justify-center text-[#3b82f6]">
-                    <Sparkles className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-white">استوديو جريدو</h3>
-                    <span className="text-[10px] text-[#60a5fa]">إنتاج فوري بـ 3 ثوانٍ</span>
-                  </div>
-                </div>
+                <h3 className="text-sm sm:text-base font-bold text-white">استوديو جريدو</h3>
                 <span className="text-[10px] font-bold text-[#10b981] bg-[#141414] px-2 py-0.5 rounded border border-[#2C2C2C]">
                   إنتاجية قصوى
                 </span>

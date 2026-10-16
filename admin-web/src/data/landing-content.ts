@@ -140,12 +140,10 @@ export const MOCKUP_PRESETS: MockupPreset[] = [
 export interface Testimonial {
   id: string;
   name: string;
-  role: string;
   studioName: string;
   location: string;
   quote: string;
   highlightMetric: string;
-  rating: number;
   avatarSeed: string;
 }
 
@@ -153,34 +151,28 @@ export const TESTIMONIALS: Testimonial[] = [
   {
     id: 'test-1',
     name: 'حيدر الكعبي',
-    role: 'مالك الاستوديو والمصور الرئيسي',
     studioName: 'استوديو بغداد آرت',
     location: 'بغداد — المنصور',
     quote: 'كنا نأخذ 8 دقائق لكل زبون لعزل الصورة وتعديل الإضاءة وترتيبها للطباعة في الفوتوشوب. مع استوديو جريدو صار الموضوع يكتمل بـ 3 ثوانٍ فقط وبدقة عزل مذهلة للشعر والأطراف دون أي هالات بيضاء!',
     highlightMetric: 'توفير 4 ساعات يومياً',
-    rating: 5,
     avatarSeed: 'HK',
   },
   {
     id: 'test-2',
     name: 'آزاد هلكورد',
-    role: 'مدير العمليات والطباعة الرقمية',
     studioName: 'مركز ألفا لخدمات الطباعة',
     location: 'أربيل — كولان',
     quote: 'أكثر ميزة غيرت عملنا هي خطوط القص الآلية وتوزيع الصور في الورقة. وفرنا أكثر من 30% من ورق DNP الغالي، واختفت تماماً مشكلة رفض السفارات لصور الفيزا الأمريكية وشينغن بسبب المقاسات.',
     highlightMetric: 'توفير 35% استهلاك الورق',
-    rating: 5,
     avatarSeed: 'AH',
   },
   {
     id: 'test-3',
     name: 'عمار التميمي',
-    role: 'مصور ومصمم معاملات',
     studioName: 'استوديو الأضواء الرقمي',
     location: 'البصرة — العشار',
     quote: 'أهم شيء عندنا أن البرنامج يعمل محلياً 100% دون إنترنت؛ حتى لو قطعت الشبكة في المحل فالعمل لا يتوقف ثانية واحدة، وسرعة إقلاع البرنامج خفيفة جداً حتى على أجهزتنا المتوسطة.',
     highlightMetric: '100% عمل مستمر دون انقطاع',
-    rating: 5,
     avatarSeed: 'AT',
   },
 ];

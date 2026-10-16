@@ -36,11 +36,26 @@ export function AppMockup() {
   const [timerCycle, setTimerCycle] = useState(0);
   const [litSheets, setLitSheets] = useState(0);
   const zoomOpenerRef = useRef<HTMLButtonElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [isInView, setIsInView] = useState(true);
   const version = useAppVersion();
   const displayVersion = version ? `v${version}` : 'v2.4';
 
+  // إيقاف دورة المحاكاة وحركاتها عندما تكون النافذة خارج الشاشة
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsInView(entry.isIntersecting),
+      { rootMargin: '120px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   // دورة سير العمل الهادئة: تأطير (3 ثوانٍ) ← عزل (3 ثوانٍ) ← ترميم/طباعة (3 ثوانٍ)
   useEffect(() => {
+    if (!isInView) return;
     const stageTimer = window.setInterval(() => {
       setStage((current) => {
         const idx = STAGE_SEQUENCE.indexOf(current);
@@ -48,7 +63,7 @@ export function AppMockup() {
       });
     }, STAGE_DURATION_MS);
     return () => window.clearInterval(stageTimer);
-  }, [timerCycle]);
+  }, [timerCycle, isInView]);
 
   // ملء خلايا الورقة بتسلسل هادئ وسلس خلال مرحلة الطباعة
   useEffect(() => {
@@ -56,11 +71,12 @@ export function AppMockup() {
       setLitSheets(0);
       return;
     }
+    if (!isInView) return;
     const sheetTimer = window.setInterval(() => {
       setLitSheets((n) => Math.min(n + 1, 8));
     }, 240);
     return () => window.clearInterval(sheetTimer);
-  }, [stage]);
+  }, [stage, isInView]);
 
   const handleStageClick = useCallback((newStage: WorkflowStage) => {
     setStage(newStage);
@@ -101,9 +117,9 @@ export function AppMockup() {
   const menuItems = ['ملف', 'تحرير', 'عرض', 'أدوات', 'مساعدة'];
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto">
+    <div ref={rootRef} className="relative w-full max-w-6xl mx-auto">
       {/* ==================== App Window (bg-background #141414) ==================== */}
-      <div className="relative h-[490px] xs:h-[530px] sm:h-[600px] lg:h-[640px] rounded-2xl border border-[#333333] bg-[#141414] shadow-[0_24px_70px_rgba(0,0,0,0.85),0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden transition-all duration-300 flex flex-col select-none">
+      <div className={`relative h-[490px] xs:h-[530px] sm:h-[600px] lg:h-[640px] rounded-2xl border border-[#333333] bg-[#141414] shadow-[0_24px_70px_rgba(0,0,0,0.85),0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden transition-all duration-300 flex flex-col select-none${isInView ? '' : ' mockups-paused'}`}>
 
         {/* ==================== Title Bar (h-9 sm:h-10, bg-sidebar #1A1A1A) ==================== */}
         <div className="h-9 sm:h-10 shrink-0 bg-[#1A1A1A]/95 backdrop-blur-xl border-b border-[#333] px-2.5 sm:px-3.5 flex items-center justify-between" dir="rtl">
@@ -364,7 +380,7 @@ export function AppMockup() {
                 {(isA4Sheet ? [5, 10, 15, 20, 25, 30] : [2, 4, 6, 8, 10, 12, 14, 15]).map((cm) => (
                   <div key={cm} className="flex items-center gap-1.5 shrink-0">
                     <div className="w-px h-1.5 bg-[#555]" />
-                    <span className="text-[8px] font-mono text-[#666]">{cm}</span>
+                    <span className="text-[8px] font-mono text-[#8A8A8A]">{cm}</span>
                   </div>
                 ))}
               </div>

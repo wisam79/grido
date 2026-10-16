@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ChevronDown, HelpCircle, MessageCircle } from 'lucide-react';
+import { ChevronDown, MessageCircle } from 'lucide-react';
 import { WHATSAPP_URL } from './WhatsAppButton';
+import { SectionHeader } from './SectionHeader';
 
 const FAQS = [
   {
@@ -36,21 +37,15 @@ export function FaqSection() {
           
           {/* Right Column: Section Header & Contact Card (col-span-12 lg:col-span-5) */}
           <div className="lg:col-span-5 flex flex-col items-start text-start">
-            <div className="ai-badge mb-3">
-              <HelpCircle className="w-3.5 h-3.5 text-[#3b82f6]" />
-              <span>إجابات سريعة</span>
-            </div>
-            
-            <h2 className="text-2xl sm:text-4xl lg:text-[40px] font-black text-white mb-2.5 tracking-tight leading-[1.2]">
-              الأسئلة الشائعة
-            </h2>
-            
-            <p className="text-sm sm:text-base text-[#9E9E9E] mb-6 leading-relaxed">
-              إجابات مباشرة حول تشغيل وترخيص استوديو جريدو.
-            </p>
+            <SectionHeader
+              title="الأسئلة الشائعة"
+              align="start"
+              size="lg"
+              gap="none"
+            />
 
             {/* Quick WhatsApp Support Box */}
-            <div className="ds-card w-full p-5 space-y-3">
+            <div className="ds-card w-full p-5 space-y-3 mt-6">
               <div className="flex items-center gap-2.5 text-white font-bold text-sm">
                 <div className="w-8 h-8 rounded-lg bg-[#25D366]/10 border border-[#25D366]/30 flex items-center justify-center text-[#25D366]">
                   <MessageCircle className="w-4 h-4" />

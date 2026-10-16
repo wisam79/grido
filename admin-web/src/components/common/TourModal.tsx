@@ -98,7 +98,7 @@ export function TourModal({ open, onClose, steps, title }: TourModalProps) {
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-2xl rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-5 shadow-2xl"
+        className="ds-card relative w-full max-w-2xl p-5 shadow-2xl"
       >
         <div className="flex items-center justify-between pb-3 border-b border-[#2C2C2C] mb-4">
           <h3 className="text-sm font-bold text-white">{title}</h3>

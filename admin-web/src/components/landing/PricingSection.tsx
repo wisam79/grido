@@ -1,6 +1,7 @@
-import { Check, Sparkles, Download, ShieldCheck, Zap, Star, RefreshCw, Headphones, Award } from 'lucide-react';
+import { Check, Download, Headphones, Award } from 'lucide-react';
 import { CURRENCIES, type CurrencyCode } from '../../data/landing-content';
 import { GITHUB_RELEASE_DOWNLOAD_URL } from '../../lib/version';
+import { SectionHeader } from './SectionHeader';
 
 const FEATURES = [
   'رخصة أصلية لمدى الحياة (Lifetime)',
@@ -21,11 +22,6 @@ const GUARANTEES = [
     icon: Award,
   },
   {
-    title: 'ضمان استرجاع 14 يوماً',
-    desc: 'جرب البرنامج بحرية؛ إن لم يناسبك، نضمن لك استرجاع المبلغ بالكامل دون أي تعقيدات.',
-    icon: RefreshCw,
-  },
-  {
     title: 'تفعيل فوري ودعم فني',
     desc: 'مفتاح ترخيص فوري مع مساعدة في التثبيت والإعداد على كافة أجهزتك من فريق الدعم.',
     icon: Headphones,
@@ -43,22 +39,9 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
     <section id="pricing" className="py-16 md:py-24 relative scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
-          <div className="ai-badge mb-3">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#3b82f6]" />
-            <span>باقة واحدة شفافة</span>
-          </div>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-2.5 tracking-tight">
-            استثمر مرة واحدة، واستفد للأبد
-          </h2>
-          <p className="text-sm sm:text-base text-[#9E9E9E] mb-5">
-            لا اشتراكات شهرية ولا تكاليف خفية — ترخيص دائم لكافة أجهزتك.
-          </p>
-
-          {/* مبدّل العملة موحّد في حاسبة التوفير (#roi) أعلى الصفحة —
-              إبقاء مبدّل ثانٍ هنا كان يشتت (مبدلان لنفس الغرض في صفحة واحدة) */}
-        </div>
+        {/* مبدّل العملة موحّد في حاسبة التوفير (#roi) أعلى الصفحة —
+            إبقاء مبدّل ثانٍ هنا كان يشتت (مبدلان لنفس الغرض في صفحة واحدة) */}
+        <SectionHeader title="استثمر مرة واحدة، واستفد للأبد" />
 
         {/* 2-Column Balanced Pricing Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
@@ -66,21 +49,13 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
           {/* Main Pricing Card (col-span-12 lg:col-span-7) */}
           <div className="lg:col-span-7 relative pt-3 flex flex-col">
             
-            <div className="absolute -top-1 inset-x-0 mx-auto w-max z-20 bg-[#3b82f6] text-white text-[11px] sm:text-xs font-extrabold px-4 py-1 rounded-full flex items-center gap-1.5 whitespace-nowrap border border-white/20 shadow-md">
-              <Sparkles className="w-3.5 h-3.5 fill-current" />
+            <div className="absolute -top-1 inset-x-0 mx-auto w-max z-20 bg-[#3b82f6] text-white text-[11px] sm:text-xs font-extrabold px-4 py-1 rounded-full whitespace-nowrap border border-white/20 shadow-md">
               <span>ترخيص مدى الحياة (Lifetime)</span>
             </div>
 
             <div className="rounded-2xl bg-[#1E1E1E] border border-[#3b82f6]/40 p-6 sm:p-8 shadow-xl relative hover:border-white/20 transition-all duration-300 flex-1 flex flex-col justify-between">
               
               <div className="text-center pb-5 border-b border-[#2C2C2C] mb-6 pt-2">
-                <div className="flex items-center justify-center gap-1 mb-2 text-[#f59e0b]">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star key={s} className="w-3.5 h-3.5 fill-current" />
-                  ))}
-                  <span className="text-xs text-[#9E9E9E] ms-1 font-semibold">مرضي عنه استوديوهات مُعتمِدة — <a href="#testimonials" className="text-[#60a5fa] hover:underline">اقرأ تجاربهم</a></span>
-                </div>
-
                 <h3 className="text-2xl font-black text-white mb-1">Grido Studio</h3>
                 <p className="text-xs text-[#9E9E9E] mb-5">النسخة الكاملة لاستوديوهات ومراكز الطباعة</p>
 
@@ -94,13 +69,7 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
                   </span>
                   <div className="flex flex-col items-start text-start">
                     <span className="text-sm font-bold text-[#3b82f6]">{currentCurr.unit}</span>
-                    <span className="text-[10px] text-[#9E9E9E]">{currentCurr.note}</span>
                   </div>
-                </div>
-                
-                <div className="inline-flex items-center gap-1 bg-[#141414] px-3 py-0.5 rounded-full border border-[#2C2C2C] text-[#10b981] text-[11px] font-semibold">
-                  <Check className="w-3 h-3" />
-                  <span>رخصة دائمة • بدون اشتراك شهري</span>
                 </div>
               </div>
 
@@ -128,41 +97,35 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
                   <span>تحميل وتفعيل رخصتك الآن</span>
                 </a>
 
-                {/* Guarantee Badges */}
                 <div className="flex flex-wrap items-center justify-center gap-2.5 text-[11px] text-[#9E9E9E]">
-                  <div className="flex items-center gap-1">
-                    <Zap className="w-3 h-3 text-[#3b82f6]" />
-                    <span>تنزيل فوري</span>
-                  </div>
-                  <span>•</span>
-                  <div className="flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-[#10b981]" />
-                    <span>ضمان استرجاع 14 يوماً</span>
-                  </div>
+                  <span>تنزيل فوري</span>
                 </div>
               </div>
 
             </div>
           </div>
 
-          {/* Value & Guarantees Side Panel */}
-          <div className="lg:col-span-5 flex flex-col justify-between gap-4 pt-3">
+          {/* Value & Guarantees Side Panel —
+              كان كل ضمان بطاقة رأسية بـ justify-between تدفع العنوان للأعلى والوصف للأسفل،
+              فتبقى داخل البطاقة الممتدة فراغ ~70px في المنتصف. الآن صف أفقي موسّط رأسياً
+              فيقرأ التمدد كحشوة متعمّدة بدل فجوة. */}
+          <div className="lg:col-span-5 flex flex-col justify-between gap-4 pt-3 reveal-stagger">
             {GUARANTEES.map((g) => {
               const Icon = g.icon;
               return (
                 <div
                   key={g.title}
-                  className="p-5 sm:p-6 rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] flex flex-col justify-between flex-1 hover:border-white/20 transition-all shadow-sm"
+                  className="ds-card p-5 sm:p-6 flex items-center gap-4 flex-1 hover:border-[#3b82f6]/40 transition-colors shadow-sm"
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <h4 className="text-sm font-bold text-white">{g.title}</h4>
+                  <div className="ds-icon-tile w-11 h-11 text-[#3b82f6]">
+                    <Icon className="w-5 h-5" />
                   </div>
-                  <p className="text-xs text-[#9E9E9E] leading-relaxed">
-                    {g.desc}
-                  </p>
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-bold text-white mb-1">{g.title}</h4>
+                    <p className="text-xs text-[#9E9E9E] leading-relaxed">
+                      {g.desc}
+                    </p>
+                  </div>
                 </div>
               );
             })}

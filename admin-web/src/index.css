@@ -70,10 +70,11 @@
   --radius-xl: 16px;
   --radius-2xl: 20px;
 
-  /* Fluent 2 Standard Shadows (Zero Button Glow) */
+  /* Fluent 2 Standard Shadows (Zero Button Glow) — سلّم ارتفاع مسمّى */
   --material-shadow-2: 0 2px 4px rgba(0, 0, 0, 0.3);
   --material-shadow-4: 0 4px 8px rgba(0, 0, 0, 0.4);
   --material-shadow-8: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --material-shadow-16: 0 16px 40px rgba(0, 0, 0, 0.55);
 
   /* Mouse Tracking Coordinates */
   --mouse-x: 50%;
@@ -114,121 +115,174 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-mono) !important;
 }
 
-/* Typographic Scale Tokens */
-.text-hero {
-  font-size: clamp(36px, 5vw, 54px);
-  font-weight: 800;
-  line-height: 1.18;
-}
-
-.text-h1 {
-  font-size: clamp(28px, 3.5vw, 40px);
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.text-h2 {
-  font-size: clamp(20px, 2.5vw, 28px);
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.text-h3 {
-  font-size: clamp(16px, 1.8vw, 20px);
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.text-body {
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.55;
-  color: var(--grido-text-secondary);
-}
-
 /* ==========================================================================
    Microsoft Fluent 2 Materials (Zero Button Glow)
    ========================================================================== */
-
-.acrylic-panel {
-  background: rgba(30, 30, 30, 0.85);
-  backdrop-filter: blur(24px) saturate(110%);
-  -webkit-backdrop-filter: blur(24px) saturate(110%);
-  border: 1px solid var(--grido-border-subtle);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--material-shadow-4);
-}
-
-.fluent-mica {
-  background: #171717;
-  border: 1px solid var(--grido-border-subtle);
-}
 
 .fluent-specular {
   border: 1px solid var(--grido-border-subtle);
   box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
 }
 
-.fluent-focus-ring:focus-visible {
-  outline: 2px solid var(--grido-brand-primary) !important;
-  outline-offset: 2px !important;
+/* ==========================================================================
+   Buttons (Clean & Modern - Zero Glows)
+   داخل @layer components كي تُحترم أدوات المقاس/الوزن المكتوبة في مواضع الاستدعاء
+   (كانت ميتة لأن القاعدة غير الطبقية تسبق utilities في Tailwind v4).
+   ملاحظة: ظلال التوهج الأزرق (أدوات shadow-xl و shadow بنُوق عمودي) أُزيلت من
+   مواضع الاستدعاء لأن دستور التصميم ينص على "Zero Button Glow" — بدون إزالتها
+   كانت الطبقة ستُعيدها إلى الحياة فوراً.
+   ========================================================================== */
+@layer components {
+  .btn-primary {
+    background: var(--grido-brand-primary);
+    color: #FFFFFF;
+    font-family: var(--font-arabic);
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    padding: 10px 22px;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-primary:hover {
+    background: var(--grido-brand-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .btn-secondary {
+    background: #1E1E1E;
+    color: var(--grido-text-primary);
+    font-family: var(--font-arabic);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    padding: 10px 20px;
+    border: 1px solid var(--grido-border-subtle);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .btn-secondary:hover {
+    background: #262626;
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary:active {
+    transform: scale(0.98);
+  }
+}
+
+/* وميض ضوئي يكتسح زر الإجراء الرئيسي عند التحويم (Premium Sheen) */
+.cta-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 38%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.55s ease;
+  pointer-events: none;
+}
+
+.cta-shine:hover::after {
+  left: 130%;
 }
 
 /* ==========================================================================
-   Buttons (Clean & Modern - Zero Glows)
+   Range Slider (Fluent) — مقبض مرئي موحّد
+   كان `appearance-none` بلا أنماط مقبض يحذف المقبض كلياً في Chromium/Firefox
+   (وaccent-color لا يعمل معه). يُضبط لون المقبض عبر متغير --range-accent.
+   داخل @layer components كي يتمكن أي utility من تجاوزها عند الحاجة (طبقية Tailwind v4).
    ========================================================================== */
-.btn-primary {
-  background: var(--grido-brand-primary);
-  color: #FFFFFF;
-  font-family: var(--font-arabic);
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  padding: 10px 22px;
-  border: 1px solid transparent;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.15s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
+@layer components {
+  .ds-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 9999px;
+    border: 1px solid var(--grido-border-subtle);
+    cursor: pointer;
+    /* تعبئة المسار حتى المقبض — بلاها يبدو المنزلق مسطحاً ولا تُقرأ القيمة
+       نسبةً إلى مداها. النسبة تُمرَّر من المكوّن عبر --range-fill. */
+    background-image: linear-gradient(
+      to right,
+      var(--range-accent, var(--grido-brand-primary)) 0,
+      var(--range-accent, var(--grido-brand-primary)) var(--range-fill, 0%),
+      var(--grido-surface-inset) var(--range-fill, 0%),
+      var(--grido-surface-inset) 100%
+    );
+  }
 
-.btn-primary:hover {
-  background: var(--grido-brand-hover);
-  transform: translateY(-1px);
-}
+  /* في الاتجاه RTL ينعكس المنزلق (الحد الأدنى يميناً) فينعكس اتجاه التعبئة معه */
+  [dir='rtl'] .ds-range {
+    background-image: linear-gradient(
+      to left,
+      var(--range-accent, var(--grido-brand-primary)) 0,
+      var(--range-accent, var(--grido-brand-primary)) var(--range-fill, 0%),
+      var(--grido-surface-inset) var(--range-fill, 0%),
+      var(--grido-surface-inset) 100%
+    );
+  }
 
-.btn-primary:active {
-  transform: scale(0.98);
-}
+  .ds-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: var(--range-accent, var(--grido-brand-primary));
+    border: 2px solid #FFFFFF;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    transition: transform 0.15s ease;
+  }
 
-.btn-secondary {
-  background: #1E1E1E;
-  color: var(--grido-text-primary);
-  font-family: var(--font-arabic);
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: var(--radius-md);
-  padding: 10px 20px;
-  border: 1px solid var(--grido-border-subtle);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-}
+  .ds-range::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+  }
 
-.btn-secondary:hover {
-  background: #262626;
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
+  .ds-range::-webkit-slider-thumb:active {
+    transform: scale(0.95);
+  }
 
-.btn-secondary:active {
-  transform: scale(0.98);
+  .ds-range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+    background: var(--range-accent, var(--grido-brand-primary));
+    border: 2px solid #FFFFFF;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    transition: transform 0.15s ease;
+  }
+
+  .ds-range::-moz-range-track {
+    height: 8px;
+    border-radius: 9999px;
+    background: transparent;
+  }
 }
 
 /* Pill badge (Clean Neutral - Zero Glow) */
@@ -269,6 +323,34 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(0);
 }
 
+/* كشف متتابع لبطاقات الشبكات — يبدأ بعد كشف القسم الأب (.reveal-on-scroll) */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(12px);
+  /* انتقالات التحويم القصيرة (حدود/خلفية/ظل) تُحفظ بعد تجاوز transition-all */
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease,
+    background-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.reveal-on-scroll.is-visible .reveal-stagger > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* التأخير يخص كشف الدخول فقط (opacity/transform) — التحويم بلا تأخير */
+.reveal-stagger > *:nth-child(1) { transition-delay: 80ms, 80ms, 0ms, 0ms, 0ms; }
+.reveal-stagger > *:nth-child(2) { transition-delay: 140ms, 140ms, 0ms, 0ms, 0ms; }
+.reveal-stagger > *:nth-child(3) { transition-delay: 200ms, 200ms, 0ms, 0ms, 0ms; }
+.reveal-stagger > *:nth-child(4) { transition-delay: 260ms, 260ms, 0ms, 0ms, 0ms; }
+.reveal-stagger > *:nth-child(5) { transition-delay: 320ms, 320ms, 0ms, 0ms, 0ms; }
+.reveal-stagger > *:nth-child(6) { transition-delay: 380ms, 380ms, 0ms, 0ms, 0ms; }
+.reveal-stagger > *:nth-child(7) { transition-delay: 440ms, 440ms, 0ms, 0ms, 0ms; }
+.reveal-stagger > *:nth-child(8) { transition-delay: 500ms, 500ms, 0ms, 0ms, 0ms; }
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -278,26 +360,18 @@ h1, h2, h3, h4, h5, h6 {
   animation: fadeIn 0.25s ease-out both;
 }
 
-@keyframes popIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+/* دخول عناصر قائمة الجوال بتتابع خفيف */
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes floatIcon {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-4px);
-  }
-}
-
-.animate-float {
-  animation: floatIcon 3.5s ease-in-out infinite alternate;
+.animate-dropIn {
+  animation: dropIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* ==========================================================================
-   Visual Polish Primitives — توهج ناعم، تدرجات نصية، فواصل، ضوضاء خفيفة
+   Visual Polish Primitives — تدرج نصي، حد علوي مضيء، حلقة تتبع المؤشر
    ========================================================================== */
 
 /* نص متدرج احترافي — بلا توهج زائد */
@@ -322,24 +396,6 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
 }
 
-/* توهج سفلي أزرق خفيف جداً للبطاقات العائمة (يُستخدم بحدود واعية للأداء) */
-.soft-ambient-glow {
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 24px 60px -24px rgba(59, 130, 246, 0.18);
-}
-
-/* فواصل أقسام متدرجة بدل خطوط صلبة */
-.section-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #2C2C2C 20%, #2C2C2C 80%, transparent);
-  border: 0;
-}
-
-/* شبكة خلفية ناعمة للأقسام (نقاط 1px، تكلفة رسم شبه معدومة) */
-.bg-dot-grid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 26px 26px;
-}
-
 /* حلقة توهج تتبع المؤشر على البطاقات (Spotlight) — يستعمل --mouse-x/y */
 .spotlight-hover {
   position: relative;
@@ -362,6 +418,8 @@ h1, h2, h3, h4, h5, h6 {
 /* تمرير سلس مع موضع الأقسام المثبتة */
 html {
   scroll-behavior: smooth;
+  /* تعويض ارتفاع الهيدر اللاصق عند القفز لروابط الأقسام */
+  scroll-padding-top: 6rem;
 }
 
 /* Scrollbars */
@@ -384,9 +442,14 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }
 
@@ -396,53 +459,57 @@ html {
    في 15 مكوناً، وتوحّد البطاقات والشارات والأزرار العائمة على توكن واحد.
    ========================================================================== */
 
-/* بطاقة القسم القياسية — سطح card + حد subtle + استدارة موحدة */
-.ds-card {
-  background: var(--grido-surface-card);
-  border: 1px solid var(--grido-border-subtle);
-  border-radius: var(--radius-2xl);
-}
+/* !!! داخل @layer components عن قصد !!!
+   بدائيات CSS غير الطبقية تغلب utilities في Tailwind v4 (الطبقات تُحسم قبل
+   النوعية)، فكان `.ds-card` غير الطبقي يبتلع `hover:border-*` و`bg-[#171717]`
+   ويفسد حالة فتح الأسئلة الشائعة. وضعها في `components` يجعل utilities الطبقة
+   المتأخرة قادرة على تجاوزها عند الحاجة، وهو ما تعتمده Tailwind v4. */
+@layer components {
+  /* بطاقة القسم القياسية — سطح card + حد subtle + استدارة موحدة */
+  .ds-card {
+    background: var(--grido-surface-card);
+    border: 1px solid var(--grido-border-subtle);
+    border-radius: var(--radius-2xl);
+  }
 
-/* بطاقة غائرة (inset) للحقول والقيم الرقمية */
-.ds-card-inset {
-  background: var(--grido-surface-inset);
-  border: 1px solid var(--grido-border-subtle);
-  border-radius: var(--radius-lg);
-}
+  /* بطاقة غائرة (inset) للحقول والقيم الرقمية */
+  .ds-card-inset {
+    background: var(--grido-surface-inset);
+    border: 1px solid var(--grido-border-subtle);
+    border-radius: var(--radius-lg);
+  }
 
-/* كبسولة قيمة mono — للأرقام والإحصاءات المميزة */
-.ds-value-pill {
-  background: var(--grido-surface-inset);
-  border: 1px solid var(--grido-border-subtle);
-  border-radius: var(--radius-md);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  padding: 2px 10px;
-}
+  /* بلاطة أيقونة قياسية — كانت `rounded-xl bg-[#141414] border border-[#2C2C2C]
+     flex items-center justify-center` مكررة في 9 مواضع؛ المقاس واللون يبقيان utilities. */
+  .ds-icon-tile {
+    background: var(--grido-surface-inset);
+    border: 1px solid var(--grido-border-subtle);
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
 
-/* فاصل نقطي بين عناصر شريط الثقة */
-.ds-dot {
-  color: var(--grido-text-muted);
-  user-select: none;
-}
+  /* حالة التحويم الموحدة للبطاقات القابلة للنقر (بدون توهج) */
+  .ds-card-interactive {
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  }
+  .ds-card-interactive:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--grido-surface-card-hover);
+  }
+  .ds-card-interactive:active {
+    transform: scale(0.99);
+  }
 
-/* ترويسة قسم موحدة — تُستخدم مع ai-badge + h2 + وصف */
-.ds-section-head {
-  text-align: center;
-  max-width: 42rem;
-  margin-inline: auto;
-}
-
-/* حالة التحويم الموحدة للبطاقات القابلة للنقر (بدون توهج) */
-.ds-card-interactive {
-  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
-}
-.ds-card-interactive:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: var(--grido-surface-card-hover);
-}
-.ds-card-interactive:active {
-  transform: scale(0.99);
+  /* سلّم الارتفاع المسموح (Fluent 2 Elevation) — درجات مسمّاة بدل shadow-* الحرفية:
+     rest الساكن · raised التحويم/القوائم · overlay العوائم والعناصر العائمة · dialog النوافذ الحوارية.
+     "Zero Button Glow": لا ظلال ملونة — الإبراز بالأزرق عند الحدود فقط. */
+  .ds-elevate-rest { box-shadow: var(--material-shadow-2); }
+  .ds-elevate-raised { box-shadow: var(--material-shadow-4); }
+  .ds-elevate-overlay { box-shadow: var(--material-shadow-8); }
+  .ds-elevate-dialog { box-shadow: var(--material-shadow-16); }
 }
 
 /* حلقة تركيز موحّدة WCAG — تستخدم مع كل عنصر تفاعلي مخصص */
@@ -599,62 +666,15 @@ html {
   }
 }
 
-@keyframes mockup-scan-hud {
-  0%, 100% {
-    opacity: 0.85;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.02);
-  }
-}
-
-@keyframes mockup-ai-wipe-down {
-  0% {
-    clip-path: inset(0 0 100% 0);
-  }
-  100% {
-    clip-path: inset(0 0 0% 0);
-  }
-}
-
-@keyframes mockup-beam-glow {
-  0% {
-    top: 0%;
-  }
-  100% {
-    top: 100%;
-  }
-}
-
-@keyframes mockup-glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 5px rgba(59, 130, 246, 0);
-  }
-}
-
 .animate-mockup-laser {
   animation: mockup-laser-sweep 2.0s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-.animate-mockup-scan-hud {
-  animation: mockup-scan-hud 2.4s ease-in-out infinite;
-}
-
-.animate-mockup-wipe {
-  animation: mockup-ai-wipe-down 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-mockup-beam {
-  animation: mockup-beam-glow 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-mockup-pulse {
-  animation: mockup-glow-pulse 2s infinite ease-in-out;
+/* إيقاف كل حركات المحاكاة عندما تكون النافذة خارج الشاشة (انضباط حركة + توفير GPU) */
+.mockups-paused *,
+.mockups-paused *::before,
+.mockups-paused *::after {
+  animation-play-state: paused !important;
 }
 
 /* Hide scrollbar for clean horizontal mobile strips */

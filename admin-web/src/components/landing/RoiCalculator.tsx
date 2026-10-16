@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { Calculator, Clock, TrendingUp } from 'lucide-react';
 import { CURRENCIES, type CurrencyCode } from '../../data/landing-content';
 
@@ -6,6 +6,11 @@ interface RoiCalculatorProps {
   currency?: CurrencyCode;
   onCurrencyChange?: (c: CurrencyCode) => void;
 }
+
+// حدود منزلق عدد الزبائن — مصدر واحد يغذّي المنزلق ونسبة التعبئة معاً
+const CLIENT_MIN = 5;
+const CLIENT_MAX = 150;
+const CLIENT_STEP = 5;
 
 export function RoiCalculator({ currency = 'IQD', onCurrencyChange }: RoiCalculatorProps) {
   const currentCurr = CURRENCIES[currency] || CURRENCIES.IQD;
@@ -22,12 +27,22 @@ export function RoiCalculator({ currency = 'IQD', onCurrencyChange }: RoiCalcula
   const savedHoursPerMonth = Math.round((savedMinutesPerDay * 26) / 60);
   const monthlyExtraRevenue = Math.round(dailyClients * sheetPrice * 26 * 0.25);
 
+  // نسبة تعبئة المسار للقراءة البصرية السريعة (تحرس القسمة على صفر)
+  const clientsFill = Math.round(((dailyClients - CLIENT_MIN) / (CLIENT_MAX - CLIENT_MIN)) * 100);
+  const priceSpan = currentCurr.roiMaxPrice - currentCurr.roiMinPrice;
+  // السعر يُقيَّد بمدى العملة الحالية: لحظة تبديل العملة يبقى السعر السابق حتى يزامنه
+  // التأثير، فالقراءة المقيَّدة تمنع قفزة تعبئة خارج النطاق 0–100.
+  const clampedSheetPrice = Math.min(currentCurr.roiMaxPrice, Math.max(currentCurr.roiMinPrice, sheetPrice));
+  const priceFill = priceSpan > 0
+    ? Math.round(((clampedSheetPrice - currentCurr.roiMinPrice) / priceSpan) * 100)
+    : 0;
+
   return (
     <section id="roi" className="py-16 md:py-24 relative scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Harmonized Charcoal Card */}
-        <div className="w-full rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-5 sm:p-8 shadow-md relative overflow-hidden">
+        <div className="ds-card w-full p-5 sm:p-8 shadow-md relative overflow-hidden">
           
           {/* Header */}
           <div className="text-center max-w-2xl mx-auto mb-7 sm:mb-9">
@@ -40,7 +55,6 @@ export function RoiCalculator({ currency = 'IQD', onCurrencyChange }: RoiCalcula
             </h2>
             <p className="text-xs sm:text-sm text-[#9E9E9E] mb-4">
               حرّك المؤشر لحساب الوقت والمال الموفر داخل الاستوديو بناءً على حجم زبائنك.
-              <span className="text-[#666]"> — العملة المختارة تنسحب أيضاً على قسم الأسعار أدناه.</span>
             </p>
 
             {/* Inline Currency Selector */}
@@ -82,13 +96,14 @@ export function RoiCalculator({ currency = 'IQD', onCurrencyChange }: RoiCalcula
                 <input
                   id="roi-clients"
                   type="range"
-                  min="5"
-                  max="150"
-                  step="5"
+                  min={CLIENT_MIN}
+                  max={CLIENT_MAX}
+                  step={CLIENT_STEP}
                   value={dailyClients}
                   onChange={(e) => setDailyClients(Number(e.target.value))}
                   aria-label={`عدد زبائن صور الهوية يومياً: ${dailyClients}`}
-                  className="w-full h-2 bg-[#141414] rounded-lg appearance-none cursor-pointer accent-[#3b82f6]"
+                  style={{ '--range-fill': `${clientsFill}%` } as CSSProperties}
+                  className="ds-range w-full [--range-accent:#3b82f6]"
                 />
               </div>
 
@@ -110,7 +125,8 @@ export function RoiCalculator({ currency = 'IQD', onCurrencyChange }: RoiCalcula
                   value={sheetPrice}
                   onChange={(e) => setSheetPrice(Number(e.target.value))}
                   aria-label={`سعر طقم الصور للزبون: ${sheetPrice.toLocaleString()} ${currentCurr.unit}`}
-                  className="w-full h-2 bg-[#141414] rounded-lg appearance-none cursor-pointer accent-[#10b981]"
+                  style={{ '--range-fill': `${priceFill}%` } as CSSProperties}
+                  className="ds-range w-full [--range-accent:#10b981]"
                 />
               </div>
             </div>

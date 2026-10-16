@@ -7,7 +7,7 @@ export function WhatsAppFloatingButton() {
       href={WHATSAPP_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-4 start-4 sm:bottom-6 sm:start-6 z-50 group flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-[11px] sm:text-xs transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
+      className="fixed bottom-4 start-4 sm:bottom-6 sm:start-6 z-50 group flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-[11px] sm:text-xs transition-all duration-200 hover:scale-105 active:scale-95 ds-elevate-overlay"
       aria-label="تواصل عبر واتساب"
     >
       <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">

@@ -1,4 +1,5 @@
 import { Monitor, Sliders, Cpu, Zap, HardDrive, Printer } from 'lucide-react';
+import { SectionHeader } from './SectionHeader';
 
 const PERKS = [
   {
@@ -31,29 +32,23 @@ export function Windows11Section() {
           
           {/* Right Column: Title & Feature List */}
           <div className="lg:col-span-6 flex flex-col items-start text-start">
-            <div className="ai-badge mb-3">
-              <Zap className="w-3.5 h-3.5 text-[#3b82f6]" />
-              <span>سرعة وخفة فائقة</span>
-            </div>
-            
-            <h2 className="text-2xl sm:text-4xl lg:text-[40px] font-black text-white mb-3 tracking-tight leading-[1.2]">
-              برنامج خفيف وسريع، لا يثقل جهازك
-            </h2>
-            
-            <p className="text-sm sm:text-base text-[#9E9E9E] mb-6 leading-relaxed">
-              يعمل بسلاسة تامة حتى على أجهزة الكمبيوتر القديمة أو المتوسطة دون أي بطء.
-            </p>
+            <SectionHeader
+              title="برنامج خفيف وسريع، لا يثقل جهازك"
+              align="start"
+              size="lg"
+              gap="none"
+            />
 
             {/* 4 Feature Cards */}
-            <div className="w-full space-y-3">
+            <div className="w-full space-y-3 mt-6">
               {PERKS.map((perk) => {
                 const Icon = perk.icon;
                 return (
                   <div
                     key={perk.title}
-                    className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] hover:border-white/20 transition-all duration-200 shadow-sm"
+                    className="ds-card flex items-start gap-3.5 p-3.5 hover:border-white/20 transition-all duration-200 shadow-sm"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0 mt-0.5 shadow-xs">
+                    <div className="ds-icon-tile w-10 h-10 text-[#3b82f6] mt-0.5 shadow-xs">
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="flex-1">
@@ -68,18 +63,15 @@ export function Windows11Section() {
 
           {/* Left Column: System Monitor Card */}
           <div className="lg:col-span-6 relative flex justify-center">
-            <div className="w-full max-w-lg rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-6 sm:p-8 shadow-md">
+            <div className="ds-card w-full max-w-lg p-6 sm:p-8 shadow-md">
               
               {/* Header Bar */}
               <div className="flex items-center justify-between pb-4 border-b border-[#2C2C2C] mb-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shrink-0">
+                  <div className="ds-icon-tile w-10 h-10 text-[#3b82f6]">
                     <Sliders className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">كفاءة تشغيل الاستوديو</h4>
-                    <span className="text-xs text-[#9E9E9E]">استجابة فورية</span>
-                  </div>
+                  <h4 className="text-sm font-bold text-white">كفاءة تشغيل الاستوديو</h4>
                 </div>
                 <span className="text-xs font-bold text-[#10b981] bg-[#141414] px-3 py-1 rounded-full border border-[#2C2C2C]">
                   جاهز للعمل

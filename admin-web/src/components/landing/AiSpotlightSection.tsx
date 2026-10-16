@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
-import { Sparkles, Upload, Wand2, FileCheck, CheckCircle2 } from 'lucide-react';
+import { Upload, Wand2, FileCheck } from 'lucide-react';
+import { SectionHeader } from './SectionHeader';
 
 const STEPS = [
   {
@@ -72,6 +73,13 @@ export function AiSpotlightSection() {
     }
   };
 
+  /**
+   * الخطوة البارزة تتبع ما يعرضه الإطار فعلاً: المقبض على 100 يُظهر الصورة
+   * الأصلية كاملة ← «إسقاط الصورة»؛ وعلى 0 تظهر النتيجة المعالجة ← «جاهز للطباعة»؛
+   * وبينهما يقع حدّ العزل نفسه ← «عزل وترميم فوري». فيتقدّم المسار مع سحب المقبض.
+   */
+  const activeStep = sliderPos > 66 ? 0 : sliderPos > 33 ? 1 : 2;
+
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     setIsDragging(false);
     try {
@@ -84,142 +92,147 @@ export function AiSpotlightSection() {
   return (
     <section id="ai-engine" className="py-16 md:py-24 relative overflow-hidden scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
-          <div className="ai-badge mb-3">
-            <Wand2 className="w-3.5 h-3.5 text-[#3b82f6]" />
-            <span>مسار المعالجة الفوري</span>
-          </div>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-2.5 tracking-tight">
-            محرك الذكاء الاصطناعي الثنائي
-          </h2>
-          <p className="text-sm sm:text-base text-[#9E9E9E]">
-            3 خطوات سريعة تفصلك عن صورة هوية مطابقة للمواصفات.
-          </p>
-        </div>
 
-        {/* Interactive Before / After Live Slider Showcase */}
-        <div className="w-full mb-10 sm:mb-12 rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-4 sm:p-6 shadow-xl relative overflow-hidden">
-          <div className="flex items-center justify-between pb-3.5 border-b border-[#2C2C2C] mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6]">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <h3 className="text-sm sm:text-base font-bold text-white">معاينة حية للمقارنة (1:1)</h3>
-            </div>
-            <span className="text-[11px] font-bold text-[#10b981] bg-[#141414] px-2.5 py-0.5 rounded border border-[#2C2C2C]">
-              نتائج حقيقية
-            </span>
+        <SectionHeader title="محرك الذكاء الاصطناعي الثنائي" />
+
+        {/* Live Showcase + Step Rail
+            كان المعرض سابقاً في بطاقة بعرض كامل بينما الوسائط `max-w-md` (448px) موسّطة،
+            فبقي ~330px فراغاً ميتاً على كل جانب والخطوات الثلاث في صف منفصل تحته.
+            الآن عمودان متوازنان: الوسائط المتفاعلة بجانب مسار الخطوات العمودي. */}
+        <div className="ds-card w-full p-4 sm:p-5 lg:p-6 shadow-xl relative overflow-hidden">
+          <div className="pb-3.5 border-b border-[#2C2C2C]">
+            <h3 className="text-sm sm:text-base font-bold text-white truncate">معاينة حية للمقارنة (1:1)</h3>
           </div>
 
-          {/* Interactive Split View Container */}
-          <div
-            ref={containerRef}
-            dir="ltr"
-            role="slider"
-            tabIndex={0}
-            aria-label="مقارنة الصورة قبل وبعد المعالجة بالذكاء الاصطناعي"
-            aria-valuenow={Math.round(sliderPos)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuetext={`${Math.round(sliderPos)}% بعد المعالجة`}
-            onKeyDown={handleKeyDown}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            className="relative w-full max-w-md mx-auto aspect-[3/4] rounded-2xl overflow-hidden border border-[#333333] bg-[#141414] select-none shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] flex items-center justify-center cursor-ew-resize touch-none focus-visible:ring-2 focus-visible:ring-[#3b82f6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#141414] focus-visible:outline-none"
-          >
-            {/* Layer 1: AFTER Image */}
-            <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#141414]">
-              <img
-                src="/sample-passport-after.png"
-                alt="بعد معالجة الذكاء الاصطناعي — عزل خلفية نقي"
-                loading="lazy"
-                decoding="async"
-                className="w-full h-full object-cover object-top pointer-events-none"
-                draggable={false}
-              />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center pt-5">
+            {/* Media Column */}
+            <div className="lg:col-span-5">
+              {/* Interactive Split View Container */}
               <div
-                dir="rtl"
-                className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-[#2C2C2C] shadow-lg pointer-events-none z-10"
+                ref={containerRef}
+                dir="ltr"
+                role="slider"
+                tabIndex={0}
+                aria-label="مقارنة الصورة قبل وبعد المعالجة بالذكاء الاصطناعي"
+                aria-valuenow={Math.round(sliderPos)}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuetext={`${Math.round(sliderPos)}% بعد المعالجة`}
+                onKeyDown={handleKeyDown}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
+                className="relative w-full max-w-sm mx-auto lg:max-w-none aspect-[3/4] rounded-2xl overflow-hidden border border-[#333333] bg-[#141414] select-none shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] flex items-center justify-center cursor-ew-resize touch-none focus-visible:ring-2 focus-visible:ring-[#3b82f6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#141414] focus-visible:outline-none"
               >
-                ✨ بعد المعالجة (عزل نقي)
+                {/* Layer 1: AFTER Image */}
+                <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#141414]">
+                  <img
+                    src="/sample-passport-after.png"
+                    alt="بعد معالجة الذكاء الاصطناعي — عزل خلفية نقي"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover object-top pointer-events-none"
+                    draggable={false}
+                  />
+                  <div
+                    dir="rtl"
+                    className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-[#2C2C2C] shadow-lg pointer-events-none z-10"
+                  >
+                    بعد المعالجة
+                  </div>
+                </div>
+
+                {/* Layer 2: BEFORE Image */}
+                <div
+                  className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#141414] pointer-events-none overflow-hidden"
+                  style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+                >
+                  <img
+                    src="/sample-passport-before.png"
+                    alt="الصورة الأصلية قبل المعالجة"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover object-top pointer-events-none"
+                    draggable={false}
+                  />
+                  <div
+                    dir="rtl"
+                    className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-[#9E9E9E] font-semibold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-[#2C2C2C] shadow-lg pointer-events-none z-10"
+                  >
+                    الأصل
+                  </div>
+                </div>
+
+                {/* Draggable Divider Line */}
+                <div
+                  className="absolute inset-y-0 w-0.5 bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)] z-30 pointer-events-none flex items-center justify-center"
+                  style={{ left: `${sliderPos}%` }}
+                >
+                  <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-2xl font-bold text-xs border-2 border-[#3b82f6]">
+                    ↔
+                  </div>
+                </div>
               </div>
+
+              <p className="pt-3 text-[11px] text-[#9E9E9E]">اسحب المقبض لمشاهدة دقة العزل.</p>
             </div>
 
-            {/* Layer 2: BEFORE Image */}
-            <div
-              className="absolute inset-0 w-full h-full flex items-center justify-center bg-[#141414] pointer-events-none overflow-hidden"
-              style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
-            >
-              <img
-                src="/sample-passport-before.png"
-                alt="الصورة الأصلية قبل المعالجة"
-                loading="lazy"
-                decoding="async"
-                className="w-full h-full object-cover object-top pointer-events-none"
-                draggable={false}
-              />
-              <div
-                dir="rtl"
-                className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-[#9E9E9E] font-semibold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-[#2C2C2C] shadow-lg pointer-events-none z-10"
-              >
-                📷 الأصل (قبل)
-              </div>
-            </div>
-
-            {/* Draggable Divider Line */}
-            <div
-              className="absolute inset-y-0 w-0.5 bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)] z-30 pointer-events-none flex items-center justify-center"
-              style={{ left: `${sliderPos}%` }}
-            >
-              <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-2xl font-bold text-xs border-2 border-[#3b82f6]">
-                ↔
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-3 text-[11px] text-[#9E9E9E]">
-            <span>اسحب المقبض لمشاهدة دقة العزل</span>
-            <span className="font-semibold text-[#60a5fa]">دقة طباعة فائقة</span>
-          </div>
-        </div>
-
-        {/* 3-Step Flow */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative">
-          {STEPS.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div key={item.step} className="relative flex flex-col">
-                <div className="rounded-2xl bg-[#1E1E1E] border border-[#2C2C2C] p-5 sm:p-6 flex-1 flex flex-col justify-between hover:border-white/20 transition-all duration-300 shadow-sm">
-                  <div>
-                    <div className="flex items-center justify-between mb-3.5">
-                      <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#2C2C2C] flex items-center justify-center text-[#3b82f6] shadow-xs">
-                        <Icon className="w-4 h-4" />
+            {/* Step Rail Column — مرتبط بموضع مقبض المقارنة لحظياً */}
+            <ol className="lg:col-span-7 flex flex-col gap-3.5">
+              {STEPS.map((item, index) => {
+                const Icon = item.icon;
+                const isActive = index === activeStep;
+                return (
+                  <li
+                    key={item.step}
+                    aria-current={isActive ? 'step' : undefined}
+                    className={`group relative rounded-2xl border p-4 sm:p-5 transition-colors duration-300 ${
+                      isActive
+                        ? 'bg-[#171717] border-[#3b82f6]/50'
+                        : 'bg-[#141414] border-[#2C2C2C] hover:border-[#3b82f6]/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-2.5">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={`ds-icon-tile w-10 h-10 transition-colors ${
+                            isActive
+                              ? 'bg-[#1E1E1E] border-[#3b82f6]/50 text-[#60a5fa]'
+                              : 'text-[#3b82f6] group-hover:border-[#3b82f6]/40'
+                          }`}
+                        >
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-sm sm:text-base font-bold text-white truncate">
+                          {item.title}
+                        </h3>
                       </div>
-                      <span className="text-xl font-mono font-black text-[#8A8A8A]">
+                      <span
+                        className={`text-xl font-mono font-black leading-none tabular-nums shrink-0 transition-colors ${
+                          isActive ? 'text-[#60a5fa]' : 'text-[#8A8A8A]'
+                        }`}
+                      >
                         {item.step}
                       </span>
                     </div>
 
-                    <h3 className="text-base font-bold text-white mb-1">
-                      {item.title}
-                    </h3>
-                    <p className="text-[#9E9E9E] text-xs leading-relaxed mb-4">
-                      {item.desc}
-                    </p>
-                  </div>
+                    <p className="text-[#9E9E9E] text-xs leading-relaxed">{item.desc}</p>
 
-                  <div className="pt-3 border-t border-[#2C2C2C] flex items-center justify-between text-[11px] text-[#60a5fa] font-semibold">
-                    <span>{item.tag}</span>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#10b981]" />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                    <div
+                      className={`mt-3.5 pt-3 border-t text-[11px] font-semibold transition-colors ${
+                        isActive
+                          ? 'border-[#3b82f6]/30 text-white'
+                          : 'border-[#2C2C2C] text-[#60a5fa]'
+                      }`}
+                    >
+                      <span className="font-mono">{item.tag}</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
         </div>
 
       </div>
