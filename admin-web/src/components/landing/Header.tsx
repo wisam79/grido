@@ -106,16 +106,14 @@ export function Header() {
 
           {/* Clean Responsive Logo & Version Pill */}
           <a href="#top" className="flex items-center gap-3 select-none group shrink-0">
-            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 p-1 flex items-center justify-center shrink-0 shadow-inner group-hover:border-[#3b82f6]/60 group-hover:scale-105 transition-all duration-200">
-              <img
-                src="/logo.png"
-                alt="Grido Studio Logo"
-                className="w-full h-full object-contain drop-shadow"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/appicon.png';
-                }}
-              />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Grido Studio Logo"
+              className="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow group-hover:scale-105 transition-transform duration-200"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/appicon.png';
+              }}
+            />
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-sm sm:text-base font-black tracking-tight text-white group-hover:text-[#60a5fa] transition-colors">
