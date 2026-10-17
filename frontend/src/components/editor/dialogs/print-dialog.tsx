@@ -442,6 +442,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         directPrint: directPrintActive,
         printerName: selectedPrinter,
         formName: matchedPaper?.name,
+        borderless: matchedPaper?.isBorderless ?? false,
       },
     });
   }, [exporter, effectiveMarginMM, onOpenChange, directPrintActive, selectedPrinter, matchedPaper]);
@@ -1111,6 +1112,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   directPrint: directPrintActive,
                   printerName: selectedPrinter,
                   formName: matchedPaper?.name,
+                  borderless: matchedPaper?.isBorderless ?? false,
                 })
               }
               title={

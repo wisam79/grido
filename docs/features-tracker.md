@@ -196,6 +196,19 @@
 
 ---
 
+## 0.84 سجل جلسة إصلاح قص الطباعة المباشرة عبر Win32 GDI وحماية مقاسات الورق القياسية — 17 أكتوبر 2026
+
+**المرجع:** طلب المالك — التحقيق الهندسي وحل مشكلة قص أعلى ورقة الكولاج ورؤوس الصور في ناتج الطباعة الفورية (`jijo.pdf`) رغم سلامة المعاينة على الكانفاس.
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| تصحيح راية الحواف الصفرية في الواجهة | إلغاء الربط التلقائي الزائف `borderless: effectiveMarginMM === 0`، وحصر تفعيل `borderless` بالورق الذي يدعم الحواف الصفرية فعلياً في درايفر الطابعة عبر `matchedPaper?.isBorderless` وتمريره في خيارات `PrintExecuteOptions` | `use-print-export.ts:34,514` + `print-dialog.tsx:445,1114` ✅ |
+| أولوية قوالب ويندوز القياسية في Go | في `configurePrinterDevMode`: فحص `matchStandardPaperID` أولاً وتعيين المعرّف القياسي (مثل `DMPAPER_A4 = 9`) لمنع رفض الدرايفرات لقالب `dmPaperUser` المخصص وسقوط درايفرات مثل Microsoft Print to PDF في مقاس Letter الافتراضي | `printer_gdi_windows.go:388-400` + `TestConfigurePrinterDevMode_StandardPaperIDPrecedence` (PASS) ✅ |
+| نمط الاحتواء وحظر الإزاحات السالبة في GDI | في `calculatePrintDestRect`: اعتماد نمط الاحتواء والتوسيط (Contain) مع فرض حد أدنى صفري حتمي `destX >= 0, destY >= 0` لمنع انزلاق محتوى الورقة ورؤوس الصور خارج حدود مساحة الطباعة الفيزيائية | `printer_gdi_windows.go:605-625` + `TestCalculatePrintDestRect_A4OnLetterPdf_NoTopClipping` (PASS) ✅ |
+| بوابات الجودة والتوثيق | نجاح `docs-gate.mjs --strict-refs`، `npm run lint` (0 أخطاء)، `npm run typecheck` (0 أخطاء)، ونجاح اختبارات Go (Service) والـ Vitest كاملة | 2026-10-17 ✅ |
+
+---
+
 ## 0.83 سجل جلسة تفريغ العمليات الثقيلة إلى Go والتدفق الثنائي (Binary Stream Canvas · Native Local Image AI · Batch Scanner Ingestion) — 15 أكتوبر 2026
 
 **المرجع:** طلب المالك — فحص وتفريغ العمليات الثقيلة التي تتم في الواجهة بدلاً من Go واستبدال وسائط Base64 الضخمة بالتدفق الثنائي وحلول النظام الأصلية.

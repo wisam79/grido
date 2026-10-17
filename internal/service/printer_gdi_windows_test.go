@@ -324,14 +324,14 @@ func TestCalculatePrintDestRect_BorderlessCover(t *testing.T) {
 		PrintableHeight: 3900,
 	}
 	// صورة 3000x2000 في وضع Borderless
-	// scaleX = 4000/3000 = 1.3333333333, scaleY = 4000/2000 = 2.0 -> scale = 2.0 (Cover)
-	// destW = ceil(3000*2) = 6000, destH = ceil(2000*2) = 4000
+	// scaleX = 4000/3000 = 1.3333333333, scaleY = 4000/2000 = 2.0 -> scale = 1.3333333333 (Contain لحماية الورقة من القص)
+	// destW = floor(3000*1.3333333333) = 4000, destH = floor(2000*1.3333333333) = 2666
 	// originX = -50, originY = -50
-	// destX = -50 + (4000-6000)/2 = -1050
-	// destY = -50 + (4000-4000)/2 = -50
+	// destX = max(0, -50 + (4000-4000)/2) = max(0, -50) = 0
+	// destY = max(0, -50 + (4000-2666)/2) = max(0, -50 + 667) = 617
 	destX, destY, destW, destH := calculatePrintDestRect(metrics, 3000, 2000, true)
-	if destX != -1050 || destY != -50 || destW != 6000 || destH != 4000 {
-		t.Fatalf("calculatePrintDestRect (borderless) = (%d, %d, %d, %d), want (-1050, -50, 6000, 4000)",
+	if destX != 0 || destY != 617 || destW != 4000 || destH != 2666 {
+		t.Fatalf("calculatePrintDestRect (borderless contain) = (%d, %d, %d, %d), want (0, 617, 4000, 2666)",
 			destX, destY, destW, destH)
 	}
 }
@@ -593,11 +593,52 @@ func TestCalculatePrintDestRect_ExtremePanorama(t *testing.T) {
 		t.Fatalf("Panorama contain = (%d, %d, %d, %d), want (0, 375, 3000, 250)", destX, destY, destW, destH)
 	}
 
-	// 2. وضع الحواف الصفرية (Cover): مقياس = max(0.5, 2.0) = 2.0
-	// destW = 12000, destH = 1000, destX = (3000-12000)/2 = -4500, destY = 0
+	// 2. وضع الحواف الصفرية (Contain لحماية الورقة من القص الكارثي): مقياس = min(0.5, 2.0) = 0.5
+	// destW = 3000, destH = 250, destX = (3000-3000)/2 = 0, destY = (1000-250)/2 = 375
 	destX, destY, destW, destH = calculatePrintDestRect(metrics, 6000, 500, true)
-	if destX != -4500 || destY != 0 || destW != 12000 || destH != 1000 {
-		t.Fatalf("Panorama cover = (%d, %d, %d, %d), want (-4500, 0, 12000, 1000)", destX, destY, destW, destH)
+	if destX != 0 || destY != 375 || destW != 3000 || destH != 250 {
+		t.Fatalf("Panorama borderless contain = (%d, %d, %d, %d), want (0, 375, 3000, 250)", destX, destY, destW, destH)
+	}
+}
+
+func TestCalculatePrintDestRect_A4OnLetterPdf_NoTopClipping(t *testing.T) {
+	// محاكاة درايفر Microsoft Print to PDF بمقاس Letter الافتراضي (600 DPI)
+	metrics := deviceMetrics{
+		PhysicalWidth:   5100,
+		PhysicalHeight:  6600,
+		PrintableWidth:  5100,
+		PrintableHeight: 6600,
+		MarginLeft:      0,
+		MarginTop:       0,
+	}
+	// ورقة A4 كاملة مولدة بدقة 300 DPI (2480x3508)
+	// يجب ألا تكون destY سالبة إطلاقاً في أي من الوضعين (العادي أو الحواف الصفرية)
+	destX, destY, destW, destH := calculatePrintDestRect(metrics, 2480, 3508, true)
+	if destY < 0 {
+		t.Fatalf("borderless destY = %d (negative, causes top clipping)", destY)
+	}
+	if destX < 0 {
+		t.Fatalf("borderless destX = %d (negative, causes left clipping)", destX)
+	}
+	if destW > 5100 || destH > 6600 {
+		t.Fatalf("borderless dest dimensions (%d, %d) exceed page (5100, 6600)", destW, destH)
+	}
+
+	// الوضع العادي
+	destXStd, destYStd, destWStd, destHStd := calculatePrintDestRect(metrics, 2480, 3508, false)
+	if destYStd < 0 || destXStd < 0 {
+		t.Fatalf("standard dest (%d, %d) has negative coordinates", destXStd, destYStd)
+	}
+	if destWStd > 5100 || destHStd > 6600 {
+		t.Fatalf("standard dest dimensions (%d, %d) exceed page (5100, 6600)", destWStd, destHStd)
+	}
+}
+
+func TestConfigurePrinterDevMode_StandardPaperIDPrecedence(t *testing.T) {
+	// التحقق من أن أبعاد A4 القياسية ترجع DMPAPER_A4 = 9 حتى مع وجود FormName
+	id := matchStandardPaperID(210, 297)
+	if id != 9 {
+		t.Fatalf("matchStandardPaperID(210, 297) = %d, want 9 (DMPAPER_A4)", id)
 	}
 }
 

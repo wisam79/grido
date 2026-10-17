@@ -31,6 +31,7 @@ export interface PrintExecuteOptions {
   directPrint?: boolean;
   printerName?: string;
   formName?: string;
+  borderless?: boolean;
 }
 
 // Re-export helpers for backward compatibility with existing unit tests
@@ -511,7 +512,7 @@ export function usePrintExport({
                   orientation: printOrientation || 'portrait',
                   copies: 1,
                   color: true,
-                  borderless: effectiveMarginMM === 0,
+                  borderless: options?.borderless ?? false,
                   formName: options.formName,
                 }),
               ),

@@ -381,28 +381,32 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 		dm.DmColor = dmColorMonochrome
 	}
 
-	// اسم القالب أو المقاس المخصص
-	if req.FormName != "" {
-		// قالب مخصص بالاسم: DM_FORMNAME مع DMPAPER_USER
+	// اسم القالب أو المقاس المخصص:
+	// الأولوية 1: إذا كانت الأبعاد تطابق قالباً قياسياً في ويندوز (مثل A4, A3, Letter...)
+	// نعتمد المعرف القياسي DMPAPER_* أولاً، لأنه الخيار الموثوق المقبول لدى كافة الدرايفرات.
+	// مع تعيين اسم القالب (DmFormName) إذا وُجد لتأكيد المطابقة لدى الدرايفرات التي تفحص الاسم.
+	if stdID := matchStandardPaperID(req.PaperWidthMM, req.PaperHeightMM); stdID != 0 {
+		dm.DmFields |= dmPaperSizeField
+		dm.DmFields &^= (dmPaperWidthField | dmPaperLengthField)
+		dm.DmPaperSize = int16(stdID)
+		dm.DmPaperWidth = 0
+		dm.DmPaperLength = 0
+		if req.FormName != "" {
+			dm.DmFields |= dmFormNameField
+			dm.DmFormName = formNameField(req.FormName)
+		}
+	} else if req.FormName != "" {
+		// 2. قالب مخصص غير قياسي بالاسم: DM_FORMNAME مع DMPAPER_USER
 		dm.DmFields |= dmFormNameField | dmPaperSizeField
 		dm.DmPaperSize = dmPaperUser
 		dm.DmFormName = formNameField(req.FormName)
 	} else if req.PaperWidthMM > 0 && req.PaperHeightMM > 0 {
-		if stdID := matchStandardPaperID(req.PaperWidthMM, req.PaperHeightMM); stdID != 0 {
-			// قالب قياسي معتمد في ويندوز (A4, A3, Letter...) — تعيين DMPAPER_* القياسي
-			// يمنع رفض السائقين الذين لا يدعمون DMPAPER_USER للمقاسات القياسية.
-			dm.DmFields |= dmPaperSizeField
-			dm.DmFields &^= (dmPaperWidthField | dmPaperLengthField)
-			dm.DmPaperSize = int16(stdID)
-			dm.DmPaperWidth = 0
-			dm.DmPaperLength = 0
-		} else {
-			dm.DmFields |= dmPaperSizeField | dmPaperWidthField | dmPaperLengthField
-			dm.DmPaperSize = dmPaperUser
-			// في GDI الأبعاد تُمرر بـ عُشر المليمتر (0.1 mm)
-			dm.DmPaperWidth = int16(req.PaperWidthMM * 10)
-			dm.DmPaperLength = int16(req.PaperHeightMM * 10)
-		}
+		// 3. أبعاد مخصصة بالأبعاد الفيزيائية (عُشر المليمتر)
+		dm.DmFields |= dmPaperSizeField | dmPaperWidthField | dmPaperLengthField
+		dm.DmPaperSize = dmPaperUser
+		// في GDI الأبعاد تُمرر بـ عُشر المليمتر (0.1 mm)
+		dm.DmPaperWidth = int16(req.PaperWidthMM * 10)
+		dm.DmPaperLength = int16(req.PaperHeightMM * 10)
 	}
 
 	// الخطوة 4: دمج التعديلات والتحقق من صحتها عبر الدرايفر
@@ -573,7 +577,9 @@ func sanitizePrintFilePath(filePath string) (string, error) {
 }
 
 // calculatePrintDestRect يحسب موضع وأبعاد رسم الصورة في سياق الطابعة (GDI):
-// - في وضع Borderless: تغطية كاملة (cover) للأبعاد الفيزيائية للورقة وتوسيطها بنسبة الأبعاد.
+// calculatePrintDestRect يحسب موضع وأبعاد رسم الصورة في سياق الطابعة (GDI):
+// - في وضع Borderless: احتواء (contain) داخل الأبعاد الفيزيائية للورقة وتوسيطها بنسبة الأبعاد،
+// مع منع الإزاحات السالبة نهائياً لحماية أطراف الورقة ورؤوس الصور من القص الميكانيكي.
 // - في الوضع العادي: احتواء وتوسيط (contain) داخل المساحة القابلة للطباعة (Printable Area).
 func calculatePrintDestRect(metrics deviceMetrics, imgW, imgH int, borderless bool) (destX, destY, destW, destH int32) {
 	if imgW <= 0 || imgH <= 0 {
@@ -599,13 +605,21 @@ func calculatePrintDestRect(metrics deviceMetrics, imgW, imgH int, borderless bo
 			scaleX := float64(baseW) / float64(imgW)
 			scaleY := float64(baseH) / float64(imgH)
 			scale := scaleX
-			if scaleY > scale {
+			if scaleY < scale {
 				scale = scaleY
 			}
-			destW = int32(math.Ceil(float64(imgW) * scale))
-			destH = int32(math.Ceil(float64(imgH) * scale))
+			destW = int32(math.Floor(float64(imgW) * scale))
+			destH = int32(math.Floor(float64(imgH) * scale))
 			destX = int32(originX + (baseW-int(destW))/2)
 			destY = int32(originY + (baseH-int(destH))/2)
+			// حماية حتمية ضد القص: إحداثيات الرسم في GDI يجب ألا تكون سالبة
+			// لأن سياق الطابعة يقتطع أي بكسل في النطاق السالب بصمت.
+			if destX < 0 {
+				destX = 0
+			}
+			if destY < 0 {
+				destY = 0
+			}
 		}
 		return destX, destY, destW, destH
 	}
@@ -620,6 +634,12 @@ func calculatePrintDestRect(metrics deviceMetrics, imgW, imgH int, borderless bo
 	destH = int32(float64(imgH) * scale)
 	destX = int32((metrics.PrintableWidth - int(destW)) / 2)
 	destY = int32((metrics.PrintableHeight - int(destH)) / 2)
+	if destX < 0 {
+		destX = 0
+	}
+	if destY < 0 {
+		destY = 0
+	}
 	return destX, destY, destW, destH
 }
 
