@@ -16,12 +16,13 @@
 
 | البند | التنفيذ | الإثبات |
 | --- | --- | --- |
-| صفحة الهاتف بمعايير Apple HIG | تطوير صفحة `admin-web/src/pages/PhoneCameraPage.tsx` بتصميم iOS Camera الأصلي (True OLED Black `#000000`، شريط Dynamic Island علوي بحالة الاتصال، زر التقاط آبل الدائري الأيقوني 76px، وميض الالتقاط، استجابة لمسية Haptic Vibrate، ومعاينة شبكة 3x3) | `admin-web/src/pages/PhoneCameraPage.tsx` + `admin-web/src/App.tsx:26` ✅ |
-| قنوات النقل السحابي الفوري | إعداد باكت `phone-bridge` في Supabase Storage مع سياسات RLS للمسارات المؤقتة وحظر أي وصول خارج الجلسة، ونقل مشفر لا يتأثر بجدران الحماية | Supabase Storage `phone-bridge` + RLS Policies ✅ |
+| صفحة الهاتف بمعايير Apple HIG | تطوير صفحة `admin-web/src/pages/PhoneCameraPage.tsx` بتصميم iOS Camera الأصلي (True OLED Black `#000000`، شريط Dynamic Island علوي بحالة الاتصال والاقتران، زر التقاط آبل الدائري 76px، وميض الالتقاط، استجابة لمسية Haptic Vibrate، ومعاينة شبكة 3x3) | `admin-web/src/pages/PhoneCameraPage.tsx` + `admin-web/src/App.tsx:26` ✅ |
+| اقتران ثنائي آمن وتعرف على الجهاز | إرسال مصافحة اقتران فورية `.handshake.json` من الهاتف عند الفتح، والتعرف التلقائي على طراز الجهاز (iPhone Pro / Android) وعرض حالة الاقتران والاسم في حاسوب الاستوديو والهاتف | `internal/service/phone_bridge_service.go:587` + `PhoneCameraPage.tsx:162` ✅ |
+| قدرات الكاميرا والتحكم العتادي | دعم كاميرا النظام الأصلية، وتفعيل مستويات التكبير (1x, 2x, 3x)، ومفتاح الفلاش (Torch)، والنقر للتركيز (Tap-to-Focus) بإطار أصفر نبضي وأيقونة شمس التعريض، وصوت غالق ميكانيكي بـ Web Audio API، وقفل الشاشة (Wake Lock) | `admin-web/src/pages/PhoneCameraPage.tsx:50-100,270-360` ✅ |
+| تنظيف الواجهة واستئصال العبارات الدعائية | إزالة النصوص الترويجية والصناديق الإعلانية من حوار `PhoneBridgeDialog.tsx` وصفحة الهاتف، واعتماد تبويبين مباشرين (عبر الإنترنت / شبكة محلية LAN) وشريط حالة مدمج وأنيق | `frontend/src/components/editor/dialogs/phone-bridge-dialog.tsx:234` ✅ |
 | الحذف الفوري والتصفير (Instant Purge) | استماع Go الخلفي لحظياً وسحب الصور وتخزينها محلياً بـ `utils.CreateAtomic` وبث حدث الكانفاس، ثم حذف الصورة من السيرفر السحابي فورياً خلال ثانيتين لضمان استهلاك 0 ميجابايت دائم و 0 سجلات قاعدة بيانات | `internal/service/phone_bridge_service.go:pollCloudBridge,deleteCloudObject` ✅ |
-| التوافق المزدوج في واجهة التطبيق | إضافة مفتاح تبديل نمط الجسر (السحابي الذكي الموصى به / الشبكة المحلية) في `PhoneBridgeDialog.tsx` مع توليد فوري للـ QR Code ونسخ الرابط النشط | `frontend/src/components/editor/dialogs/phone-bridge-dialog.tsx` ✅ |
 | نقاط وصول ثابتة لمسارات SPA | توليد مجلدات ثابتة لمساري `/cam` و `/camera` في سير عمل `deploy-pages.yml` لتخدمهما GitHub Pages برمز 200 OK مباشر وتفادي أخطاء 404 | `.github/workflows/deploy-pages.yml:47` ✅ |
-| بوابات الجودة والتحقق | بناء `admin-web` نظيف بنجاح (3.04s) · فحص `go vet` نظيف 100% · فحص الأنواع `typecheck` نظيف 100% · بوابة التوثيق `docs-gate` ناجحة | 2026-10-17 ✅ |
+| بوابات الجودة والتحقق | بناء `admin-web` نظيف بنجاح (2.03s) · فحص `go vet` نظيف 100% · فحص الأنواع `typecheck` للواجهة نظيف 100% · بوابة التوثيق `docs-gate` ناجحة | 2026-10-17 ✅ |
 
 ---
 

@@ -7,17 +7,93 @@ import {
   CheckCircle2, 
   AlertCircle, 
   RefreshCw,
-  Info
+  Info,
+  Zap,
+  ZapOff,
+  Volume2,
+  VolumeX,
+  Sun,
+  ShieldCheck
 } from 'lucide-react';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://mvovehnyvoiawvwaurav.supabase.co';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12b3ZlaG55dm9pYXd2d2F1cmF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3Nzg2MjQsImV4cCI6MjA5OTM1NDYyNH0.DrZxhJkwjHrk1qP1kJ6JtwAo5AJZegOvFol2L-pGuUg';
 
+interface FocusPoint {
+  x: number;
+  y: number;
+  id: number;
+}
+
+// دالة التعرف الذكي على نوع وطراز الجهاز للمصادقة وتأكيد الاقتران
+function detectDeviceModel(): string {
+  const ua = navigator.userAgent;
+  if (/iPhone/i.test(ua)) {
+    if (/iPhone1[4-6]/i.test(ua)) return 'iPhone Pro';
+    return 'iPhone';
+  } else if (/iPad/i.test(ua)) {
+    return 'iPad';
+  } else if (/Android/i.test(ua)) {
+    const match = ua.match(/Android.*?; ([^;)]+)\s*Build/i) || ua.match(/Android.*?; ([^;)]+)\)/i);
+    if (match && match[1]) {
+      const model = match[1].trim();
+      return model.length > 20 ? model.substring(0, 20) : model;
+    }
+    return 'Android Phone';
+  } else if (/Macintosh/i.test(ua)) {
+    return 'Mac';
+  } else if (/Windows/i.test(ua)) {
+    return 'Windows PC';
+  }
+  return 'هاتف محمول';
+}
+
+// صوت نقرة غالق الكاميرا الفيزيائي الميكانيكي عبر Web Audio API
+function playShutterSound() {
+  try {
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    const now = ctx.currentTime;
+
+    // النقرة الأولى: صوت تحرير شفرات الغالق المعدنية (High Snap)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'triangle';
+    osc1.frequency.setValueAtTime(1600, now);
+    osc1.frequency.exponentialRampToValueAtTime(180, now + 0.035);
+    gain1.gain.setValueAtTime(0.4, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.035);
+
+    // النقرة الثانية: صوت إغلاق ستارة الغالق الميكانيكية بعد 40ms
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(700, now + 0.04);
+    osc2.frequency.exponentialRampToValueAtTime(100, now + 0.075);
+    gain2.gain.setValueAtTime(0.35, now + 0.04);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.04);
+    osc2.stop(now + 0.075);
+  } catch {
+    // تجاهل القيود إن حجب المتصفح الصوت قبل تفاعل المستخدم
+  }
+}
+
 export default function PhoneCameraPage() {
   const [sessionId, setSessionId] = useState<string>('');
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadQueueCount, setUploadQueueCount] = useState<number>(0);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [statusType, setStatusType] = useState<'success' | 'error' | 'info' | null>(null);
   const [photosSent, setPhotosSent] = useState<number>(0);
@@ -26,13 +102,22 @@ export default function PhoneCameraPage() {
   const [flashActive, setFlashActive] = useState<boolean>(false);
   const [recentThumbnail, setRecentThumbnail] = useState<string | null>(null);
 
+  // إعدادات الكاميرا المتقدمة (Apple Camera Features)
+  const [isPaired, setIsPaired] = useState<boolean>(false);
+  const [pairedDeviceName, setPairedDeviceName] = useState<string>('');
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [torchAvailable, setTorchAvailable] = useState<boolean>(false);
+  const [torchActive, setTorchActive] = useState<boolean>(false);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [focusPoint, setFocusPoint] = useState<FocusPoint | null>(null);
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const nativeCameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 1. استخراج معرف الجلسة من رابط الصفحة (#session=... أو ?session=...)
+  // 1. استخراج معرف الجلسة من رابط الصفحة وتفعيل عميل Supabase
   useEffect(() => {
     const parseSessionId = () => {
       // قراءة الـ hash أولاً (#session=xyz) لخصوصية تامة بدون إرسالها للهيدر
@@ -60,7 +145,82 @@ export default function PhoneCameraPage() {
     }
   }, []);
 
-  // 2. تفعيل كاميرا الهاتف المباشرة (Live Viewfinder)
+  // 2. قفل الشاشة لمنع الإغلاق التلقائي أثناء جلسة التصوير (Screen Wake Lock API)
+  useEffect(() => {
+    let wakeLockSentinel: { release: () => Promise<void> } | null = null;
+    const requestWakeLock = async () => {
+      const nav = navigator as unknown as { wakeLock?: { request: (type: string) => Promise<{ release: () => Promise<void> }> } };
+      if (nav.wakeLock && typeof nav.wakeLock.request === 'function') {
+        try {
+          wakeLockSentinel = await nav.wakeLock.request('screen');
+        } catch {
+          // يمكن أن يفشل إذا كانت البطارية منخفضة جداً
+        }
+      }
+    };
+
+    requestWakeLock();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockSentinel) {
+        wakeLockSentinel.release().catch(() => {});
+      }
+    };
+  }, []);
+
+  // 3. إرسال مصافحة الاقتران الآمنة ثنائية الاتجاه مع الحاسوب فور الاتصال (Two-Way Handshake)
+  useEffect(() => {
+    if (!supabase || !sessionId) return;
+
+    let isMounted = true;
+    const performHandshake = async () => {
+      try {
+        const device = detectDeviceModel();
+        if (isMounted) {
+          setPairedDeviceName(device);
+        }
+
+        const handshakeData = {
+          device,
+          platform: navigator.platform,
+          userAgent: navigator.userAgent,
+          screen: `${window.screen.width}x${window.screen.height}`,
+          timestamp: Date.now(),
+        };
+
+        const blob = new Blob([JSON.stringify(handshakeData)], { type: 'application/json' });
+        const { error } = await supabase.storage
+          .from('phone-bridge')
+          .upload(`${sessionId}/.handshake.json`, blob, {
+            contentType: 'application/json',
+            upsert: true,
+          });
+
+        if (!error && isMounted) {
+          setIsPaired(true);
+        }
+      } catch (err) {
+        console.warn('Pairing handshake error:', err);
+      }
+    };
+
+    performHandshake();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [supabase, sessionId]);
+
+  // 4. تفعيل كاميرا الهاتف المباشرة (Live Viewfinder) مع قراءة قدرات المستشعر
   const startCamera = useCallback(async () => {
     try {
       if (streamRef.current) {
@@ -86,6 +246,18 @@ export default function PhoneCameraPage() {
         videoRef.current.srcObject = stream;
       }
       setHasCameraPermission(true);
+
+      // استكشاف قدرات الفلاش (Torch) والزوم الميكانيكي
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack && 'getCapabilities' in videoTrack) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const capabilities = (videoTrack as any).getCapabilities?.();
+        setTorchAvailable(Boolean(capabilities?.torch));
+      } else {
+        setTorchAvailable(false);
+      }
+      setTorchActive(false);
+      setZoomLevel(1);
     } catch (err) {
       console.warn('Live camera viewfinder not available, fallback to native camera input:', err);
       setHasCameraPermission(false);
@@ -112,8 +284,88 @@ export default function PhoneCameraPage() {
     }, 3500);
   };
 
-  // 3. رفع الصورة إلى مسار الجسر المؤقت في Supabase Storage
-  const uploadImageBlob = async (blob: Blob) => {
+  // التحكم في الفلاش (Torch)
+  const toggleTorch = async () => {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (track && 'applyConstraints' in track) {
+      try {
+        const next = !torchActive;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (track as any).applyConstraints({
+          advanced: [{ torch: next }],
+        });
+        setTorchActive(next);
+        if (typeof navigator.vibrate === 'function') {
+          navigator.vibrate(10);
+        }
+      } catch (err) {
+        console.warn('Torch toggle failed:', err);
+      }
+    }
+  };
+
+  // تطبيق مستوى التكبير (Zoom)
+  const applyZoom = async (level: number) => {
+    setZoomLevel(level);
+    if (typeof navigator.vibrate === 'function') {
+      navigator.vibrate(8);
+    }
+
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (track && 'applyConstraints' in track) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (track as any).applyConstraints({
+          advanced: [{ zoom: level }],
+        });
+      } catch {
+        // إذا لم يدعم المستشعر أمر zoom المباشر، سيتولى المعالج الرقمي التكبير via CSS & Canvas
+      }
+    }
+  };
+
+  // النقر للتركيز وتعديل التعريض (Tap to Focus & Exposure)
+  const handleViewfinderTap = async (e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const pointId = Date.now();
+
+    setFocusPoint({ x, y, id: pointId });
+
+    if (typeof navigator.vibrate === 'function') {
+      navigator.vibrate(12);
+    }
+
+    // محاولة إرسال نقاط الاهتمام للمستشعر (pointsOfInterest)
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (track && 'applyConstraints' in track) {
+      try {
+        const relX = Math.max(0, Math.min(1, x / rect.width));
+        const relY = Math.max(0, Math.min(1, y / rect.height));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (track as any).applyConstraints({
+          advanced: [{
+            pointsOfInterest: [{ x: relX, y: relY }],
+            focusMode: 'continuous',
+          }],
+        });
+      } catch {
+        // تجاهل القيود إن لم تكن مدعومة
+      }
+    }
+
+    // إخفاء إطار التركيز بعد 1.8 ثانية
+    setTimeout(() => {
+      setFocusPoint((prev) => (prev?.id === pointId ? null : prev));
+    }, 1800);
+  };
+
+  // 5. رفع الصورة إلى مسار الجسر المؤقت في Supabase Storage مع طابور الرفع التراكمي
+  const uploadImageBlob = async (blob: Blob, customName?: string) => {
     if (!supabase) {
       showStatus('فشل الاتصال بخادم المزامنة', 'error');
       return;
@@ -125,17 +377,16 @@ export default function PhoneCameraPage() {
     }
 
     setIsUploading(true);
-    setUploadProgress(20);
+    setUploadQueueCount((prev) => prev + 1);
 
     try {
-      const filename = `photo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
+      const filename = customName || `photo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
       const filePath = `${sessionId}/${filename}`;
 
       // إنشاء صورة مصغرة فورية لزر المعرض السفلي
       const thumbUrl = URL.createObjectURL(blob);
       setRecentThumbnail(thumbUrl);
 
-      setUploadProgress(50);
       const { error } = await supabase.storage
         .from('phone-bridge')
         .upload(filePath, blob, {
@@ -148,49 +399,88 @@ export default function PhoneCameraPage() {
         throw error;
       }
 
-      setUploadProgress(100);
       setPhotosSent((prev) => prev + 1);
 
-      // لمس اهتزازي لطيف بأسلوب آبل عند نجاح الإرسال (Haptic Feedback)
+      // لمس اهتزازي لطيف بأسلوب آبل عند اكتمال الإرسال (Haptic Feedback)
       if (typeof navigator.vibrate === 'function') {
-        navigator.vibrate([20, 50, 20]);
+        navigator.vibrate([15, 35, 15]);
       }
 
-      showStatus('تم استلام الصورة في Grido Studio بنجاح!', 'success');
+      showStatus('تم إرسال الصورة', 'success');
     } catch (err: unknown) {
       console.error('Upload error:', err);
-      showStatus('تعذر إرسال الصورة. تحقق من الاتصال.', 'error');
+      showStatus('تعذر إرسال الصورة', 'error');
     } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+      setUploadQueueCount((prev) => {
+        const next = Math.max(0, prev - 1);
+        if (next === 0) {
+          setIsUploading(false);
+        }
+        return next;
+      });
     }
   };
 
-  // 4. التقاط الصورة من البث المباشر أو فتح كاميرا النظام الأصلية
+  // 6. التقاط الصورة من البث المباشر بدقة كاملة واستجابة لمسية وصوتية فورية
   const handleCapture = async () => {
     // وميض الشاشة الفيزيائي مثل كاميرا آيفون الأصلية (Shutter Flash)
     setFlashActive(true);
-    setTimeout(() => setFlashActive(false), 90);
+    setTimeout(() => setFlashActive(false), 85);
 
-    if (typeof navigator.vibrate === 'function') {
-      navigator.vibrate(15);
+    // صوت الغالق الاحترافي (إذا لم يكن مكتوماً)
+    if (soundEnabled) {
+      playShutterSound();
     }
 
-    // إذا كانت الكاميرا الحية تعمل بسلاسة، نلتقط من الكانفاس بأعلى دقة
+    // لمس اهتزازي لطيف
+    if (typeof navigator.vibrate === 'function') {
+      navigator.vibrate(18);
+    }
+
+    // محاولة استخدام ImageCapture API إن كان متاحاً في المتصفح للحصول على دقة المستشعر القصوى
+    const videoTrack = streamRef.current?.getVideoTracks()[0];
+    if (videoTrack && 'ImageCapture' in window) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const imageCapture = new (window as any).ImageCapture(videoTrack);
+        const photoBlob = await imageCapture.takePhoto();
+        if (photoBlob) {
+          uploadImageBlob(photoBlob);
+          return;
+        }
+      } catch (e) {
+        console.warn('ImageCapture API failed, fallback to canvas frame:', e);
+      }
+    }
+
+    // إذا كانت الكاميرا الحية تعمل بسلاسة، نلتقط من الكانفاس بأعلى دقة ممكنة مع مراعاة التكبير
     if (hasCameraPermission && videoRef.current && videoRef.current.videoWidth > 0) {
       const video = videoRef.current;
       const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+
+      canvas.width = vw;
+      canvas.height = vh;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        if (zoomLevel > 1) {
+          // قص وتكبير الجزء الموسط وفق نسبة الزوم الرقمي لمطابقة شاشة المعاينة
+          const cropW = vw / zoomLevel;
+          const cropH = vh / zoomLevel;
+          const cropX = (vw - cropW) / 2;
+          const cropY = (vh - cropH) / 2;
+          ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, vw, vh);
+        } else {
+          ctx.drawImage(video, 0, 0, vw, vh);
+        }
+
         canvas.toBlob(
           (blob) => {
             if (blob) {
               uploadImageBlob(blob);
             } else {
-              fileInputRef.current?.click();
+              nativeCameraInputRef.current?.click();
             }
           },
           'image/jpeg',
@@ -201,87 +491,134 @@ export default function PhoneCameraPage() {
     }
 
     // بديل فوري: فتح تطبيق الكاميرا الأصلي للنظام بأقصى دقة عدسة للمستشعر (Full Sensor RAW/HDR)
-    fileInputRef.current?.click();
+    nativeCameraInputRef.current?.click();
   };
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      uploadImageBlob(file);
+  // معالجة اختيار ملفات متعددة من المعرض أو كاميرا النظام
+  const handleMultipleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        uploadImageBlob(file, `photo_${Date.now()}_${i}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`);
+      }
     }
-    // تفريغ القيمة للسماح بالتقاط صور متتالية لنفس الملف
     e.target.value = '';
   };
 
   const toggleCameraFacing = () => {
     setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
+    if (typeof navigator.vibrate === 'function') {
+      navigator.vibrate(10);
+    }
   };
 
   return (
     <div 
       className="fixed inset-0 bg-black text-white font-sans select-none overflow-hidden flex flex-col justify-between"
       style={{
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
-        paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 16px)',
-        paddingRight: 'calc(env(safe-area-inset-right, 0px) + 16px)',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+        paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 12px)',
+        paddingRight: 'calc(env(safe-area-inset-right, 0px) + 12px)',
         touchAction: 'manipulation',
       }}
       dir="rtl"
     >
-      {/* وميض الشاشة عند الالتقاط (iOS Shutter Flash Animation) */}
+      {/* وميض الشاشة الفيزيائي عند الالتقاط (iOS Shutter Flash Animation) */}
       <div 
         className={`fixed inset-0 bg-white z-50 pointer-events-none transition-opacity duration-150 ${
           flashActive ? 'opacity-100' : 'opacity-0'
         }`}
       />
 
-      {/* مدخلات ملفات الكاميرا ومعرض الصور الخلفية غير المرئية */}
+      {/* مدخلات الكاميرا الأصلية والمعرض (مع دعم الدقة الفائقة والاختيار المتعدد) */}
       <input
-        ref={fileInputRef}
+        ref={nativeCameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={handleFileInputChange}
+        onChange={handleMultipleFilesChange}
       />
       <input
         ref={galleryInputRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
-        onChange={handleFileInputChange}
+        onChange={handleMultipleFilesChange}
       />
 
       {/* ─────────────────────────────────────────────────────────────
           1. الشريط العلوي: جزيرة إشعارات آبل التفاعلية (Dynamic Island Style)
          ───────────────────────────────────────────────────────────── */}
       <header className="w-full flex flex-col items-center gap-2 z-30 shrink-0">
-        {/* Dynamic Island Pill */}
-        <div className="flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-neutral-900/90 border border-white/10 shadow-2xl backdrop-blur-2xl transition-all duration-300">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-          </span>
-          <span className="text-xs font-semibold tracking-wide text-neutral-200">
-            Grido Studio
-          </span>
-          {sessionId && (
-            <span className="text-[10px] font-mono font-medium text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
-              #{sessionId.slice(0, 6)}
-            </span>
+        <div className="w-full flex items-center justify-between px-2">
+          {/* زر الفلاش / الإضاءة المتواصلة (Torch) */}
+          {torchAvailable ? (
+            <button
+              onClick={toggleTorch}
+              aria-label="تشغيل الفلاش"
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                torchActive 
+                  ? 'bg-amber-400 text-black shadow-lg shadow-amber-400/30' 
+                  : 'bg-white/10 text-white/80 active:scale-90'
+              }`}
+            >
+              {torchActive ? <Zap className="w-4 h-4 fill-black" /> : <ZapOff className="w-4 h-4" />}
+            </button>
+          ) : (
+            <div className="w-9 h-9" />
           )}
+
+          {/* Dynamic Island Pill المركزي */}
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900/95 border border-white/15 shadow-2xl backdrop-blur-2xl transition-all duration-300">
+            <span className="relative flex h-2 w-2">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                isPaired ? 'bg-emerald-400' : 'bg-amber-400'
+              }`} />
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                isPaired ? 'bg-emerald-500' : 'bg-amber-500'
+              }`} />
+            </span>
+            <span className="text-xs font-semibold tracking-wide text-neutral-100">
+              Grido Studio
+            </span>
+            {isPaired ? (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                <ShieldCheck className="w-3 h-3" />
+                <span>مقترن ({pairedDeviceName})</span>
+              </span>
+            ) : sessionId ? (
+              <span className="text-[10px] font-mono font-medium text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                #{sessionId.slice(0, 6)}
+              </span>
+            ) : null}
+          </div>
+
+          {/* زر كتم / تفعيل صوت غالق الكاميرا */}
+          <button
+            onClick={() => {
+              setSoundEnabled((prev) => !prev);
+              if (typeof navigator.vibrate === 'function') navigator.vibrate(8);
+            }}
+            aria-label="تبديل صوت الغالق"
+            className="w-9 h-9 rounded-full bg-white/10 text-white/80 flex items-center justify-center active:scale-90 transition-transform"
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-neutral-400" />}
+          </button>
         </div>
 
-        {/* إشعار الحالة اللحظي (Animated Banner) */}
+        {/* إشعار الحالة اللحظي (Apple HIG Dynamic Banner) */}
         {statusMessage && (
           <div 
-            className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-semibold shadow-2xl backdrop-blur-3xl animate-in fade-in slide-in-from-top duration-200 ${
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-2xl text-xs font-semibold shadow-2xl backdrop-blur-3xl animate-in fade-in slide-in-from-top duration-200 ${
               statusType === 'success'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                ? 'bg-emerald-500/25 text-emerald-200 border border-emerald-500/40'
                 : statusType === 'error'
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                : 'bg-white/10 text-neutral-200 border border-white/15'
+                ? 'bg-rose-500/25 text-rose-200 border border-rose-500/40'
+                : 'bg-white/15 text-neutral-100 border border-white/20'
             }`}
           >
             {statusType === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
@@ -291,77 +628,132 @@ export default function PhoneCameraPage() {
           </div>
         )}
 
-        {/* شريط تقدم الرفع فائق النحافة (iOS Progress Bar) */}
+        {/* شريط تقدم الرفع فائق النحافة عند إرسال الصور */}
         {isUploading && (
-          <div className="w-32 bg-white/10 h-1 rounded-full overflow-hidden mt-1">
-            <div 
-              className="bg-primary h-full transition-all duration-200"
-              style={{ width: `${uploadProgress || 60}%` }}
-            />
+          <div className="w-36 bg-white/10 h-1 rounded-full overflow-hidden mt-0.5 relative">
+            <div className="bg-primary h-full w-full animate-pulse transition-all duration-300" />
+            {uploadQueueCount > 1 && (
+              <span className="absolute -top-4 right-0 text-[9px] text-neutral-400 font-mono">
+                جاري رفع {uploadQueueCount}...
+              </span>
+            )}
           </div>
         )}
       </header>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. منطقة المشهد ومعاينة الكاميرا (iOS Viewfinder & Grid)
+          2. منطقة المشهد ومعاينة الكاميرا (iOS Viewfinder & Grid & Tap-Focus)
          ───────────────────────────────────────────────────────────── */}
-      <main className="relative flex-1 w-full my-3 rounded-[32px] overflow-hidden bg-neutral-950 border border-white/10 shadow-2xl flex items-center justify-center">
-        {/* فيديو المعاينة الحية */}
+      <main 
+        onClick={handleViewfinderTap}
+        className="relative flex-1 w-full my-2 rounded-[32px] overflow-hidden bg-neutral-950 border border-white/10 shadow-2xl flex items-center justify-center cursor-crosshair touch-none select-none"
+      >
+        {/* فيديو المعاينة الحية مع الزوم الرقمي السلس */}
         {hasCameraPermission ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-          />
+          <div className="w-full h-full overflow-hidden flex items-center justify-center">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover transition-transform duration-200 ease-out"
+              style={{
+                transform: `scale(${zoomLevel})`,
+              }}
+            />
+          </div>
         ) : (
           <div 
-            onClick={() => fileInputRef.current?.click()}
+            onClick={(e) => {
+              e.stopPropagation();
+              nativeCameraInputRef.current?.click();
+            }}
             className="flex flex-col items-center justify-center gap-4 p-6 text-center cursor-pointer select-none"
           >
-            <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
+            <div className="w-20 h-20 rounded-full bg-white/5 border border-white/15 flex items-center justify-center shadow-inner active:scale-95 transition-transform">
               <Camera className="w-10 h-10 text-white/80" />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-bold text-white">اضغط هنا لفتح الكاميرا</p>
-              <p className="text-xs text-neutral-400 max-w-[240px] leading-relaxed">
-                التقط صور المنتجات أو الوثائق بدقة الكاميرا الكاملة لتظهر فورياً في التصميم
-              </p>
+              <p className="text-sm font-semibold text-white">اضغط لفتح الكاميرا</p>
             </div>
           </div>
         )}
 
-        {/* شبكة التأطير بنسبة الثلث (3x3 Golden Ratio Camera Grid) */}
-        <div className="absolute inset-0 pointer-events-none grid grid-cols-3 grid-rows-3 opacity-25">
-          <div className="border-r border-b border-white/20" />
-          <div className="border-r border-b border-white/20" />
-          <div className="border-b border-white/20" />
-          <div className="border-r border-b border-white/20" />
-          <div className="border-r border-b border-white/20" />
-          <div className="border-b border-white/20" />
-          <div className="border-r border-white/20" />
-          <div className="border-r border-white/20" />
+        {/* شبكة التأطير بنسبة الثلث الذهبية (3x3 Golden Ratio Rule-of-Thirds Grid) */}
+        <div className="absolute inset-0 pointer-events-none grid grid-cols-3 grid-rows-3 opacity-20">
+          <div className="border-r border-b border-white/30" />
+          <div className="border-r border-b border-white/30" />
+          <div className="border-b border-white/30" />
+          <div className="border-r border-b border-white/30" />
+          <div className="border-r border-b border-white/30" />
+          <div className="border-b border-white/30" />
+          <div className="border-r border-white/30" />
+          <div className="border-r border-white/30" />
           <div />
         </div>
 
-        {/* مؤشر النمط النشط بأسلوب iOS الكلاسيكي (PHOTO / صورة) */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none z-20">
-          <span className="text-[11px] font-bold tracking-widest text-amber-400 uppercase drop-shadow-md">
-            صورة
-          </span>
-        </div>
+        {/* إطار التركيز الأصفر التفاعلي بأسلوب آبل الأصلي (Tap-to-Focus Reticle) */}
+        {focusPoint && (
+          <div 
+            className="absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 z-30 transition-all duration-150 animate-in fade-in zoom-in-75"
+            style={{ left: focusPoint.x, top: focusPoint.y }}
+          >
+            <div className="w-14 h-14 border border-amber-400 rounded-xs shadow-md shadow-amber-400/20 relative">
+              <Sun className="w-3.5 h-3.5 text-amber-400 absolute -right-5 top-0.5 opacity-90 animate-pulse" />
+            </div>
+          </div>
+        )}
+
+        {/* أزرار التكبير والتبئير بأسلوب آيفون الأصلي (0.5x | 1x | 2x) */}
+        {hasCameraPermission && (
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1 rounded-full bg-black/50 border border-white/15 backdrop-blur-md shadow-xl"
+          >
+            {[1, 2, 3].map((lvl) => (
+              <button
+                key={lvl}
+                type="button"
+                onClick={() => applyZoom(lvl)}
+                className={`w-7 h-7 rounded-full text-[11px] font-bold transition-all duration-150 flex items-center justify-center ${
+                  zoomLevel === lvl
+                    ? 'bg-amber-400 text-black shadow-md scale-105'
+                    : 'text-neutral-300 hover:text-white active:scale-95'
+                }`}
+              >
+                {lvl}x
+              </button>
+            ))}
+          </div>
+        )}
       </main>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. شريط التحكم السفلي الأصلي لكاميرا آبل (iOS Shutter Bar)
+          3. زر تفعيل كاميرا النظام الأصلية
+         ───────────────────────────────────────────────────────────── */}
+      <div className="w-full flex justify-center py-1 z-30 shrink-0">
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof navigator.vibrate === 'function') navigator.vibrate(12);
+            nativeCameraInputRef.current?.click();
+          }}
+          className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-neutral-900 border border-white/20 text-neutral-200 text-xs font-medium backdrop-blur-2xl shadow-xl active:scale-95 transition-all hover:border-white/40"
+        >
+          <Camera className="w-3.5 h-3.5 text-neutral-300 shrink-0" />
+          <span>كاميرا النظام</span>
+        </button>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          4. شريط التحكم السفلي الأصلي لكاميرا آبل (iOS Shutter Bar)
          ───────────────────────────────────────────────────────────── */}
       <footer className="w-full flex items-center justify-between px-6 py-2 z-30 shrink-0">
-        {/* الزر الأيسر: فتح معرض الصور لاختيار لقطة سابقة */}
+        {/* الزر الأيسر: فتح معرض الصور لاختيار لقطات سابقة أو دفعة صور (Batch Upload) */}
         <button
           onClick={() => galleryInputRef.current?.click()}
           aria-label="اختيار من الصور"
-          className="relative w-12 h-12 rounded-2xl bg-neutral-900 border border-white/15 overflow-hidden flex items-center justify-center transition-transform active:scale-90"
+          className="relative w-12 h-12 rounded-2xl bg-neutral-900 border border-white/20 overflow-hidden flex items-center justify-center transition-transform active:scale-90 shadow-lg"
         >
           {recentThumbnail ? (
             <img src={recentThumbnail} alt="الأخيرة" className="w-full h-full object-cover" />
@@ -369,7 +761,7 @@ export default function PhoneCameraPage() {
             <Images className="w-5 h-5 text-neutral-300" />
           )}
           {photosSent > 0 && (
-            <span className="absolute -top-1 -right-1 bg-primary text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-black">
+            <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-black shadow">
               {photosSent}
             </span>
           )}
@@ -379,9 +771,8 @@ export default function PhoneCameraPage() {
         <div className="relative flex items-center justify-center">
           <button
             onClick={handleCapture}
-            disabled={isUploading}
             aria-label="التقاط صورة"
-            className="w-[76px] h-[76px] rounded-full border-[3.5px] border-white p-[3px] flex items-center justify-center transition-transform duration-150 active:scale-90 cursor-pointer disabled:opacity-50"
+            className="w-[76px] h-[76px] rounded-full border-[3.5px] border-white p-[3px] flex items-center justify-center transition-transform duration-150 active:scale-90 cursor-pointer shadow-2xl"
           >
             <div className="w-full h-full rounded-full bg-white transition-all duration-150 active:scale-95 shadow-md flex items-center justify-center">
               {isUploading && (
@@ -391,11 +782,11 @@ export default function PhoneCameraPage() {
           </button>
         </div>
 
-        {/* الزر الأيمن: قلب الكاميرا (أمامية/خلفية) */}
+        {/* الزر الأيمن: قلب الكاميرا (أمامية / خلفية) */}
         <button
           onClick={toggleCameraFacing}
           aria-label="تبديل الكاميرا"
-          className="w-12 h-12 rounded-full bg-neutral-900/90 border border-white/15 flex items-center justify-center transition-transform active:scale-90"
+          className="w-12 h-12 rounded-full bg-neutral-900/90 border border-white/20 flex items-center justify-center transition-transform active:scale-90 shadow-lg"
         >
           <SwitchCamera className="w-5 h-5 text-neutral-300" />
         </button>

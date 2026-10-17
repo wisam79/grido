@@ -44,6 +44,7 @@ type BridgeStatus struct {
 	IsRunning     bool   `json:"isRunning"`
 	URL           string `json:"url"`
 	CloudURL      string `json:"cloudUrl"`
+	PairedDevice  string `json:"pairedDevice"`
 	ReceivedCount int    `json:"receivedCount"`
 	LastReceived  string `json:"lastReceived"`
 }
@@ -61,6 +62,7 @@ type PhoneBridgeService struct {
 	url           string
 	cloudURL      string
 	cloudCancel   context.CancelFunc
+	pairedDevice  string
 	receivedCount int
 	lastReceived  string
 	mu            sync.RWMutex
@@ -213,6 +215,7 @@ func (s *PhoneBridgeService) Stop() error {
 	s.url = ""
 	s.cloudURL = ""
 	s.token = ""
+	s.pairedDevice = ""
 
 	if tokenToClean != "" {
 		s.cleanCloudSession(tokenToClean)
@@ -230,6 +233,7 @@ func (s *PhoneBridgeService) GetStatus() *BridgeStatus {
 		IsRunning:     s.server != nil,
 		URL:           s.url,
 		CloudURL:      s.cloudURL,
+		PairedDevice:  s.pairedDevice,
 		ReceivedCount: s.receivedCount,
 		LastReceived:  s.lastReceived,
 	}
@@ -571,13 +575,48 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 				continue
 			}
 
-			// 2. سحب ومعالجة كل صورة وردت
+			// 2. سحب ومعالجة كل ملف وارد
 			for _, item := range items {
-				if item.Name == "" || strings.HasPrefix(item.Name, ".") {
+				if item.Name == "" {
 					continue
 				}
 
 				objectPath := sessionToken + "/" + item.Name
+
+				// معالجة مصافحة اقتران الجهاز (Handshake)
+				if strings.HasSuffix(item.Name, ".handshake.json") || strings.HasSuffix(item.Name, ".handshake") {
+					downURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge/" + objectPath
+					downReq, _ := http.NewRequestWithContext(ctx, "GET", downURL, nil)
+					if downReq != nil {
+						downReq.Header.Set("apikey", SupabaseAnonKey)
+						downReq.Header.Set("Authorization", "Bearer "+SupabaseAnonKey)
+						if dResp, err := client.Do(downReq); err == nil && dResp.StatusCode == http.StatusOK {
+							var hsData struct {
+								Device string `json:"device"`
+							}
+							_ = json.NewDecoder(io.LimitReader(dResp.Body, 16*1024)).Decode(&hsData)
+							dResp.Body.Close()
+							if hsData.Device != "" {
+								s.mu.Lock()
+								s.pairedDevice = hsData.Device
+								s.mu.Unlock()
+								s.runtime.Emit("phone:paired", map[string]interface{}{
+									"device": hsData.Device,
+									"time":   time.Now().Format("15:04:05"),
+								})
+								slog.Info("Phone bridge paired with device", "device", hsData.Device)
+							}
+						}
+					}
+					s.deleteCloudObject(deleteURL, objectPath)
+					continue
+				}
+
+				if strings.HasPrefix(item.Name, ".") {
+					s.deleteCloudObject(deleteURL, objectPath)
+					continue
+				}
+
 				downloadURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge/" + objectPath
 
 				downReq, dErr := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)

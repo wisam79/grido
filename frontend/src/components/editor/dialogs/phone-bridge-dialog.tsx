@@ -28,6 +28,7 @@ import {
   GetPhoneBridgeStatus,
 } from '../../../../wailsjs/go/main/App';
 import { service } from '../../../../wailsjs/go/models';
+import { EventsOn, EventsOff } from '../../../../wailsjs/runtime/runtime';
 
 const phoneLog = createLogger('PhoneBridgeDialog');
 
@@ -39,6 +40,7 @@ export interface PhoneBridgeDialogProps {
 export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps) {
   const [bridgeInfo, setBridgeInfo] = useState<service.BridgeInfo | null>(null);
   const [bridgeMode, setBridgeMode] = useState<'cloud' | 'local'>('cloud');
+  const [pairedDevice, setPairedDevice] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
@@ -75,6 +77,9 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
       if (!isMountedRef.current) return;
       if (status) {
         setReceivedCount(status.receivedCount);
+        if (status.pairedDevice) {
+          setPairedDevice(status.pairedDevice);
+        }
       }
     } catch (err) {
       phoneLog.error('[PhoneBridgeDialog] Failed to start phone bridge:', err);
@@ -104,6 +109,23 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     }
   }, [open, initBridge]);
 
+  // الاستماع لحدث اقتران الهاتف المباشر
+  useEffect(() => {
+    if (!open) return;
+    EventsOn('phone:paired', (data: { device?: string }) => {
+      if (data?.device && isMountedRef.current) {
+        setPairedDevice(data.device);
+        toast.success(`تم اقتران الهاتف بنجاح (${data.device})`);
+      }
+    });
+
+    return () => {
+      if (typeof EventsOff === 'function') {
+        EventsOff('phone:paired');
+      }
+    };
+  }, [open]);
+
   // Poll status occasionally while dialog is open to refresh photo count
   useEffect(() => {
     if (!open || !bridgeInfo?.isRunning) return;
@@ -113,11 +135,14 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
         const status = await GetPhoneBridgeStatus();
         if (isMountedRef.current && status) {
           setReceivedCount(status.receivedCount);
+          if (status.pairedDevice) {
+            setPairedDevice(status.pairedDevice);
+          }
         }
       } catch {
         // Silently ignore polling errors
       }
-    }, 2500);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [open, bridgeInfo?.isRunning]);
@@ -167,7 +192,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <DialogTitle className="text-base font-bold text-foreground truncate">
-                جسر كاميرا الهاتف
+                ربط كاميرا الهاتف
               </DialogTitle>
             </div>
             <DialogCloseButton />
@@ -211,34 +236,34 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                 <button
                   type="button"
                   onClick={() => setBridgeMode('cloud')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     bridgeMode === 'cloud'
                       ? 'bg-background text-foreground shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <Cloud className="w-3.5 h-3.5 text-primary" weight="bold" />
-                  <span>السحابي الذكي (موصى به)</span>
+                  <span>عبر الإنترنت</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setBridgeMode('local')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     bridgeMode === 'local'
                       ? 'bg-background text-foreground shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  <WifiHigh className="w-3.5 h-3.5" weight="bold" />
-                  <span>الشبكة المحلية (Wi-Fi)</span>
+                  <WifiHigh className="w-3.5 h-3.5 text-primary" weight="bold" />
+                  <span>شبكة محلية (LAN)</span>
                 </button>
               </div>
 
-              {/* QR Code Container (High-contrast for easy phone camera scanning) */}
+              {/* QR Code Container */}
               <div className="relative group p-4 bg-card dark:bg-white rounded-2xl shadow-fluent-8 border border-border/40 flex items-center justify-center">
                 <QRCodeSVG
                   value={activeUrl}
-                  size={185}
+                  size={190}
                   level="M"
                   bgColor="#ffffff"
                   fgColor="#090d16"
@@ -247,54 +272,24 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                 <div className="absolute inset-0 rounded-2xl pointer-events-none ring-1 ring-inset ring-black/5" />
               </div>
 
-              {/* Status and Network Info */}
-              <div className="w-full flex flex-col gap-2.5">
-                <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-                    </span>
-                    <span className="font-semibold text-foreground">
-                      {bridgeMode === 'cloud' ? 'الجسر السحابي نشط' : 'الجسر المحلي نشط'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    {bridgeMode === 'cloud' ? (
-                      <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
-                        مشفّر ومحمي 100%
-                      </span>
-                    ) : (
-                      <>
-                        <WifiHigh className="w-3.5 h-3.5 text-primary" weight="bold" />
-                        <span className="font-mono text-xs">
-                          {bridgeInfo.ip}:{bridgeInfo.port}
-                        </span>
-                      </>
-                    )}
-                  </div>
+              {/* Status and Received Photos Row */}
+              <div className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  <span className="font-semibold text-foreground">
+                    {pairedDevice ? `متصل: ${pairedDevice}` : 'بانتظار مسح الرمز...'}
+                  </span>
                 </div>
-
-                {/* Received Photos Counter */}
-                <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-primary/5 border border-primary/20 text-xs">
-                  <div className="flex items-center gap-2 text-primary font-medium">
-                    <ImageIcon className="w-4 h-4" weight="duotone" />
-                    <span>الصور المستلمة:</span>
-                  </div>
-                  <span className="font-bold text-foreground text-sm font-mono bg-background/80 px-2 py-0.5 rounded-md border border-border/40">
+                <div className="flex items-center gap-1.5 font-mono text-xs">
+                  <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
+                  <span className="text-muted-foreground text-[11px]">الصور:</span>
+                  <span className="font-bold text-foreground bg-background px-2 py-0.5 rounded-md border border-border/40">
                     {receivedCount}
                   </span>
                 </div>
-              </div>
-
-              {/* Instructions Banner */}
-              <div className="w-full text-center space-y-1 bg-muted/20 p-3 rounded-xl border border-border/40">
-                <p className="text-xs font-semibold text-foreground">امسح الرمز بكاميرا هاتفك</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {bridgeMode === 'cloud'
-                    ? 'يعمل على أي شبكة بالعالم (Wi-Fi أو بيانات 4G/5G). خصوصية كاملة وحذف فوري.'
-                    : 'الهاتف والكمبيوتر على نفس شبكة Wi-Fi. النقل محلي بالكامل.'}
-                </p>
               </div>
 
               {/* Manual URL Bar with Copy */}
@@ -339,7 +334,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
             className="h-8 rounded-md text-xs font-medium gap-1 text-muted-foreground hover:text-foreground"
           >
             <ArrowClockwise className="w-3.5 h-3.5" />
-            إعادة تعيين الجلسة
+            تحديث الرمز
           </Button>
 
           <Button
@@ -348,7 +343,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
             onClick={() => onOpenChange(false)}
             className="h-8 rounded-md text-xs font-semibold px-4"
           >
-            إلغاء
+            إغلاق
           </Button>
         </DialogFooter>
       </DialogContent>
