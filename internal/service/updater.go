@@ -450,12 +450,23 @@ type progressWriter struct {
 func (pw *progressWriter) Write(p []byte) (int, error) {
 	n := len(p)
 	pw.downloaded += int64(n)
-	if pw.total > 0 {
-		percentage := int(float64(pw.downloaded) / float64(pw.total) * 100)
-		if percentage != pw.lastEmit {
-			pw.lastEmit = percentage
-			pw.runtime.Emit("update-progress", percentage)
-		}
+	total := pw.total
+	if total <= 0 {
+		// تقدير تقريبي (~68MB) إذا لم يعلن الخادم Content-Length لتفادي تجميد شريط التقدم على 0%
+		total = 68 * 1024 * 1024
+	}
+	percentage := int(float64(pw.downloaded) / float64(total) * 100)
+	if pw.total <= 0 && percentage > 95 {
+		percentage = 95
+	}
+	if percentage != pw.lastEmit {
+		pw.lastEmit = percentage
+		pw.runtime.Emit("update-progress", percentage)
+		pw.runtime.Emit("update:progress", map[string]interface{}{
+			"percentage": percentage,
+			"downloaded": pw.downloaded,
+			"total":      total,
+		})
 	}
 	return n, nil
 }
@@ -620,6 +631,11 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	}
 
 	u.runtime.Emit("update-progress", 100)
+	u.runtime.Emit("update:progress", map[string]interface{}{
+		"percentage": 100,
+		"downloaded": pw.downloaded,
+		"total":      pw.total,
+	})
 
 	// Execute user-scope NSIS installer in silent mode (/S)
 	if err := runInstaller(installerPath, "/S"); err != nil {

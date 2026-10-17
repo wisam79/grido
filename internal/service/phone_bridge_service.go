@@ -558,6 +558,7 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 
 	listURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/list/phone-bridge"
 	deleteURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge"
+	processedFiles := make(map[string]time.Time)
 
 	for {
 		select {
@@ -571,6 +572,14 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 			if !running {
 				s.cleanCloudSession(sessionToken)
 				return
+			}
+
+			// تنظيف السجلات القديمة لتفادي استهلاك الذاكرة (أقدم من 5 دقائق)
+			now := time.Now()
+			for name, t := range processedFiles {
+				if now.Sub(t) > 5*time.Minute {
+					delete(processedFiles, name)
+				}
 			}
 
 			// 1. فحص وجود كائنات في المسار المؤقت لجلسة المستخدم الحالية
@@ -612,6 +621,12 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 				if item.Name == "" {
 					continue
 				}
+
+				// 🛡️ تفادي الإدراج المزدوج: تخطي أي ملف تمت معالجته بالفعل أو قيد المعالجة
+				if _, seen := processedFiles[item.Name]; seen {
+					continue
+				}
+				processedFiles[item.Name] = now
 
 				objectPath := sessionToken + "/" + item.Name
 

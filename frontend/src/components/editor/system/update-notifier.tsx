@@ -108,14 +108,33 @@ export function UpdateNotifier() {
     const handleManualCheck = () => performCheck(true);
     window.addEventListener('grido:check-updates', handleManualCheck);
 
-    const unsubscribe = EventsOn('update-progress', (p: number) => {
-      setProgress(p);
-    });
+    const handleProgress = (data: unknown) => {
+      let val: number | null = null;
+      if (typeof data === 'number') {
+        val = data;
+      } else if (typeof data === 'string') {
+        val = Number(data);
+      } else if (typeof data === 'object' && data !== null) {
+        const obj = data as Record<string, unknown>;
+        if (typeof obj.percentage === 'number') val = obj.percentage;
+        else if (typeof obj.progress === 'number') val = obj.progress;
+        else if (typeof obj.data === 'number') val = obj.data;
+        else if (Array.isArray(data) && typeof data[0] === 'number') val = data[0];
+      }
+      if (val !== null && !isNaN(val)) {
+        setProgress(Math.min(100, Math.max(0, val)));
+      }
+    };
+
+    const unsubProgress = EventsOn('update-progress', handleProgress);
+    const unsubProgressMap = EventsOn('update:progress', handleProgress);
 
     return () => {
       window.removeEventListener('grido:check-updates', handleManualCheck);
+      if (typeof unsubProgress === 'function') unsubProgress();
+      if (typeof unsubProgressMap === 'function') unsubProgressMap();
       if (typeof EventsOff === 'function') {
-        EventsOff('update-progress');
+        EventsOff('update-progress', 'update:progress');
       }
     };
   }, [performCheck]);
@@ -221,19 +240,19 @@ export function UpdateNotifier() {
             <div className="p-3.5 rounded-xl bg-muted/40 dark:bg-white/5 border border-border/70 space-y-2.5 animate-in fade-in duration-200">
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-foreground flex items-center gap-2">
-                  <Spinner className="w-3.5 h-3.5 text-muted-foreground shrink-0" size={14} />
+                  <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} />
                   <span>
-                    {progress >= 100 ? 'جاري تطبيق التحديث ...' : 'جاري تحميل التحديث ...'}
+                    {progress >= 100 ? 'جاري التحقق وتثبيت التحديث ...' : 'جاري تحميل التحديث ...'}
                   </span>
                 </span>
                 <span className="font-mono text-foreground font-bold text-xs">
                   {Math.round(progress)}%
                 </span>
               </div>
-              <div className="w-full bg-muted/70 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-muted/70 rounded-full h-2 overflow-hidden relative">
                 <div
-                  className="bg-foreground/85 h-full transition-all duration-300 rounded-full"
-                  style={{ width: `${progress}%` }}
+                  className="bg-primary h-full transition-all duration-300 rounded-full"
+                  style={{ width: `${Math.max(progress, 4)}%` }}
                 />
               </div>
               <p className="text-micro text-muted-foreground text-center">

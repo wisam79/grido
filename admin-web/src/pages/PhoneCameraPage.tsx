@@ -116,6 +116,7 @@ export default function PhoneCameraPage() {
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isCapturingRef = useRef<boolean>(false);
 
   // 1. استخراج معرف الجلسة من رابط الصفحة وتفعيل عميل Supabase
   useEffect(() => {
@@ -364,8 +365,8 @@ export default function PhoneCameraPage() {
     }, 1800);
   };
 
-  // تحسين حجم وضغط الصورة الملتقطة للحفاظ على دقة 4K كاملة (300+ DPI) مع ضغط 90%
-  const optimizeImageBlob = async (rawBlob: Blob, maxDim = 3840, quality = 0.90): Promise<Blob> => {
+  // تحسين حجم وضغط الصورة الملتقطة للحفاظ على دقة فائقة (300+ DPI للطباعة) مع سرعة رفع فائقة
+  const optimizeImageBlob = async (rawBlob: Blob, maxDim = 2560, quality = 0.85): Promise<Blob> => {
     try {
       const bitmap = await createImageBitmap(rawBlob);
       const { width, height } = bitmap;
@@ -383,7 +384,8 @@ export default function PhoneCameraPage() {
         }
       }
 
-      if (targetW === width && targetH === height && rawBlob.size < 1.2 * 1024 * 1024 && rawBlob.type === 'image/jpeg') {
+      // إذا كانت الصورة بالأبعاد المطلوبة ومضغوطة أصلاً بشكل كافٍ (< 600KB) لا داعي لإعادة المعالجة
+      if (targetW === width && targetH === height && rawBlob.size < 600 * 1024 && rawBlob.type === 'image/jpeg') {
         bitmap.close();
         return rawBlob;
       }
@@ -431,7 +433,7 @@ export default function PhoneCameraPage() {
     setUploadQueueCount((prev) => prev + 1);
 
     try {
-      const blob = await optimizeImageBlob(rawBlob, 3840, 0.90);
+      const blob = await optimizeImageBlob(rawBlob, 2560, 0.85);
       const filename = customName || `photo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
       const filePath = `${sessionId}/${filename}`;
 
@@ -473,77 +475,83 @@ export default function PhoneCameraPage() {
     }
   };
 
-  // 6. التقاط الصورة من البث المباشر بدقة كاملة واستجابة لمسية وصوتية فورية
+  // 6. التقاط الصورة من البث المباشر فورياً بدون أي تأخير وبدقة عالية
   const handleCapture = async () => {
-    // وميض الشاشة الفيزيائي مثل كاميرا آيفون الأصلية (Shutter Flash)
-    setFlashActive(true);
-    setTimeout(() => setFlashActive(false), 85);
+    if (isCapturingRef.current || isUploading) return;
+    isCapturingRef.current = true;
 
-    // صوت الغالق الاحترافي (إذا لم يكن مكتوماً)
-    if (soundEnabled) {
-      playShutterSound();
-    }
+    try {
+      // وميض الشاشة الفيزيائي مثل كاميرا آيفون الأصلية (Shutter Flash)
+      setFlashActive(true);
+      setTimeout(() => setFlashActive(false), 85);
 
-    // لمس اهتزازي لطيف
-    if (typeof navigator.vibrate === 'function') {
-      navigator.vibrate(18);
-    }
+      // صوت الغالق الاحترافي (إذا لم يكن مكتوماً)
+      if (soundEnabled) {
+        playShutterSound();
+      }
 
-    // محاولة استخدام ImageCapture API إن كان متاحاً في المتصفح للحصول على دقة المستشعر القصوى
-    const videoTrack = streamRef.current?.getVideoTracks()[0];
-    if (videoTrack && 'ImageCapture' in window) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const imageCapture = new (window as any).ImageCapture(videoTrack);
-        const photoBlob = await imageCapture.takePhoto();
-        if (photoBlob) {
-          uploadImageBlob(photoBlob);
+      // لمس اهتزازي لطيف
+      if (typeof navigator.vibrate === 'function') {
+        navigator.vibrate(18);
+      }
+
+      // التقاط فوري من إطار الفيديو المباشر (سرعة 0ms بدون تجميد عدسة المستشعر)
+      if (hasCameraPermission && videoRef.current && videoRef.current.videoWidth > 0) {
+        const video = videoRef.current;
+        const canvas = document.createElement('canvas');
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+
+        let outW = vw;
+        let outH = vh;
+        const maxDim = 2560;
+        if (outW > maxDim || outH > maxDim) {
+          if (outW > outH) {
+            outH = Math.round((vh * maxDim) / vw);
+            outW = maxDim;
+          } else {
+            outW = Math.round((vw * maxDim) / vh);
+            outH = maxDim;
+          }
+        }
+
+        canvas.width = outW;
+        canvas.height = outH;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          if (zoomLevel > 1) {
+            // قص وتكبير الجزء الموسط وفق نسبة الزوم الرقمي لمطابقة شاشة المعاينة
+            const cropW = vw / zoomLevel;
+            const cropH = vh / zoomLevel;
+            const cropX = (vw - cropW) / 2;
+            const cropY = (vh - cropH) / 2;
+            ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
+          } else {
+            ctx.drawImage(video, 0, 0, vw, vh, 0, 0, outW, outH);
+          }
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                uploadImageBlob(blob);
+              } else {
+                nativeCameraInputRef.current?.click();
+              }
+            },
+            'image/jpeg',
+            0.85
+          );
           return;
         }
-      } catch (e) {
-        console.warn('ImageCapture API failed, fallback to canvas frame:', e);
       }
+
+      // بديل فوري: فتح تطبيق الكاميرا الأصلي للنظام إن لم يكن الفيديو المباشر متاحاً
+      nativeCameraInputRef.current?.click();
+    } finally {
+      setTimeout(() => {
+        isCapturingRef.current = false;
+      }, 350);
     }
-
-    // إذا كانت الكاميرا الحية تعمل بسلاسة، نلتقط من الكانفاس بأعلى دقة ممكنة مع مراعاة التكبير
-    if (hasCameraPermission && videoRef.current && videoRef.current.videoWidth > 0) {
-      const video = videoRef.current;
-      const canvas = document.createElement('canvas');
-      const vw = video.videoWidth;
-      const vh = video.videoHeight;
-
-      canvas.width = vw;
-      canvas.height = vh;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        if (zoomLevel > 1) {
-          // قص وتكبير الجزء الموسط وفق نسبة الزوم الرقمي لمطابقة شاشة المعاينة
-          const cropW = vw / zoomLevel;
-          const cropH = vh / zoomLevel;
-          const cropX = (vw - cropW) / 2;
-          const cropY = (vh - cropH) / 2;
-          ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, vw, vh);
-        } else {
-          ctx.drawImage(video, 0, 0, vw, vh);
-        }
-
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              uploadImageBlob(blob);
-            } else {
-              nativeCameraInputRef.current?.click();
-            }
-          },
-          'image/jpeg',
-          0.90
-        );
-        return;
-      }
-    }
-
-    // بديل فوري: فتح تطبيق الكاميرا الأصلي للنظام بأقصى دقة عدسة للمستشعر (Full Sensor RAW/HDR)
-    nativeCameraInputRef.current?.click();
   };
 
   // معالجة اختيار ملفات متعددة من المعرض أو كاميرا النظام
@@ -823,8 +831,11 @@ export default function PhoneCameraPage() {
         <div className="relative flex items-center justify-center">
           <button
             onClick={handleCapture}
+            disabled={isUploading}
             aria-label="التقاط صورة"
-            className="w-[76px] h-[76px] rounded-full border-[3.5px] border-white p-[3px] flex items-center justify-center transition-transform duration-150 active:scale-90 cursor-pointer shadow-2xl"
+            className={`w-[76px] h-[76px] rounded-full border-[3.5px] border-white p-[3px] flex items-center justify-center transition-transform duration-150 active:scale-90 shadow-2xl ${
+              isUploading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+            }`}
           >
             <div className="w-full h-full rounded-full bg-white transition-all duration-150 active:scale-95 shadow-md flex items-center justify-center">
               {isUploading && (
