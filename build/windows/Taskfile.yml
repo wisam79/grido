@@ -57,7 +57,7 @@ tasks:
       - cmd: rm -f *.syso
         platforms: [linux, darwin]
     vars:
-      APP_VERSION: '{{.APP_VERSION | default "v1.17.0"}}'
+      APP_VERSION: '{{.APP_VERSION | default "v1.17.1"}}'
       SUPABASE_URL: '{{.SUPABASE_URL | default ""}}'
       SUPABASE_ANON_KEY: '{{.SUPABASE_ANON_KEY | default ""}}'
       # 🔏 مفتاح Ed25519 العام للتحقق من توقيع المثبت — مفتاح عام لا سرّ فيه.
