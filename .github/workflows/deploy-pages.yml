@@ -44,8 +44,11 @@ jobs:
         run: npm run build
         working-directory: admin-web
 
-      - name: Create 404 fallback for SPA client-side routing
-        run: cp admin-web/dist/index.html admin-web/dist/404.html
+      - name: Create 404 fallback and SPA route entrypoints
+        run: |
+          cp admin-web/dist/index.html admin-web/dist/404.html
+          mkdir -p admin-web/dist/cam && cp admin-web/dist/index.html admin-web/dist/cam/index.html
+          mkdir -p admin-web/dist/camera && cp admin-web/dist/index.html admin-web/dist/camera/index.html
 
       - name: Host static API endpoints and installer for clients
         env:

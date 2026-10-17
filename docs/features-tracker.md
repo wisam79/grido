@@ -20,6 +20,7 @@
 | قنوات النقل السحابي الفوري | إعداد باكت `phone-bridge` في Supabase Storage مع سياسات RLS للمسارات المؤقتة وحظر أي وصول خارج الجلسة، ونقل مشفر لا يتأثر بجدران الحماية | Supabase Storage `phone-bridge` + RLS Policies ✅ |
 | الحذف الفوري والتصفير (Instant Purge) | استماع Go الخلفي لحظياً وسحب الصور وتخزينها محلياً بـ `utils.CreateAtomic` وبث حدث الكانفاس، ثم حذف الصورة من السيرفر السحابي فورياً خلال ثانيتين لضمان استهلاك 0 ميجابايت دائم و 0 سجلات قاعدة بيانات | `internal/service/phone_bridge_service.go:pollCloudBridge,deleteCloudObject` ✅ |
 | التوافق المزدوج في واجهة التطبيق | إضافة مفتاح تبديل نمط الجسر (السحابي الذكي الموصى به / الشبكة المحلية) في `PhoneBridgeDialog.tsx` مع توليد فوري للـ QR Code ونسخ الرابط النشط | `frontend/src/components/editor/dialogs/phone-bridge-dialog.tsx` ✅ |
+| نقاط وصول ثابتة لمسارات SPA | توليد مجلدات ثابتة لمساري `/cam` و `/camera` في سير عمل `deploy-pages.yml` لتخدمهما GitHub Pages برمز 200 OK مباشر وتفادي أخطاء 404 | `.github/workflows/deploy-pages.yml:47` ✅ |
 | بوابات الجودة والتحقق | بناء `admin-web` نظيف بنجاح (3.04s) · فحص `go vet` نظيف 100% · فحص الأنواع `typecheck` نظيف 100% · بوابة التوثيق `docs-gate` ناجحة | 2026-10-17 ✅ |
 
 ---
