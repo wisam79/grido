@@ -374,22 +374,26 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   });
 
   it.each([
-    { marginMM: 5, borderless: false },
-    { marginMM: 0, borderless: true },
+    { borderlessOption: true, expectedBorderless: true },
+    { borderlessOption: false, expectedBorderless: false },
+    { borderlessOption: undefined, expectedBorderless: false },
   ])(
-    'يمرر borderless=$borderless مع هامش $marginMM مم لطلب GDI',
-    async ({ marginMM, borderless }) => {
+    'يمرر borderless=$expectedBorderless بناءً على خيار الورقة لا الهامش',
+    async ({ borderlessOption, expectedBorderless }) => {
       const { result } = renderHook((props: PrintExportContext) => usePrintExport(props), {
         initialProps: makeContext({ printColorSpace: 'sRGB' }),
       });
       await act(async () => {
-        await result.current.handlePrint(marginMM, () => {}, {
+        await result.current.handlePrint(0, () => {}, {
           directPrint: true,
           printerName: 'X',
+          borderless: borderlessOption,
         });
       });
 
-      expect(mockPrintDirect).toHaveBeenCalledWith(expect.objectContaining({ borderless }));
+      expect(mockPrintDirect).toHaveBeenCalledWith(
+        expect.objectContaining({ borderless: expectedBorderless }),
+      );
     },
   );
 
