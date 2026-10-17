@@ -46,8 +46,10 @@ import {
 } from '../../../../wailsjs/go/handlers/PrintHandler';
 import type { SupportedPaperInfo } from '@bindings/grido/internal/core/domain';
 import { PageOrientationIcon } from '@/components/ui/image-icons';
-import { PAPER_SIZES } from '@/lib/templates/constants';
+import { PAPER_SIZES, ADVANCED_PAPER_SIZES } from '@/lib/templates/constants';
 import { SheetPreview } from '../print/print-preview';
+
+const ALL_PRINT_PAPER_SIZES = [...PAPER_SIZES, ...ADVANCED_PAPER_SIZES];
 import { useShallow } from 'zustand/react/shallow';
 import { usePrintExport } from '../print/use-print-export';
 
@@ -442,6 +444,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         directPrint: directPrintActive,
         printerName: selectedPrinter,
         formName: matchedPaper?.name,
+        paperId: matchedPaper?.id,
         borderless: matchedPaper?.isBorderless ?? false,
       },
     });
@@ -766,7 +769,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     });
                     return;
                   }
-                  const selected = PAPER_SIZES.find((p) => p.id === val);
+                  const selected = ALL_PRINT_PAPER_SIZES.find((p) => p.id === val);
                   if (selected) {
                     setPrintSettings({
                       paperId: selected.id,
@@ -786,7 +789,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   >
                     {`الكانفاس (${Math.round(imageWidthMM || 0)} × ${Math.round(imageHeightMM || 0)} مم)`}
                   </SelectItem>
-                  {PAPER_SIZES.map((size) => (
+                  {ALL_PRINT_PAPER_SIZES.map((size) => (
                     <SelectItem
                       key={size.id}
                       value={size.id}
@@ -1112,6 +1115,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   directPrint: directPrintActive,
                   printerName: selectedPrinter,
                   formName: matchedPaper?.name,
+                  paperId: matchedPaper?.id,
                   borderless: matchedPaper?.isBorderless ?? false,
                 })
               }

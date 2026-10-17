@@ -106,6 +106,7 @@ type DirectPrintRequest struct {
 	Color         bool    `json:"color,omitempty"`
 	Borderless    bool    `json:"borderless,omitempty"`
 	FormName      string  `json:"formName,omitempty"`
+	PaperID       uint16  `json:"paperId,omitempty"`
 }
 
 // DirectPrintResult نتيجة إرسال المهمة المباشرة إلى طابور الطباعة

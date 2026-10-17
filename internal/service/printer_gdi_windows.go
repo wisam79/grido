@@ -359,9 +359,10 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 	// الخطوة 3: تطبيق التعديلات
 	dm := (*devModeW)(unsafe.Pointer(&devModeBuf[0]))
 
-	// اتجاه الصفحة
+	// اتجاه الصفحة: إذا طلب landscape صراحة أو كانت الأبعاد المطلوبة عرضية (W > H)
+	isLandscape := strings.EqualFold(req.Orientation, "landscape") || (req.PaperWidthMM > req.PaperHeightMM && req.PaperHeightMM > 0)
 	dm.DmFields |= dmOrientationField
-	if strings.EqualFold(req.Orientation, "landscape") {
+	if isLandscape {
 		dm.DmOrientation = dmOrientLandscape
 	} else {
 		dm.DmOrientation = dmOrientPortrait
@@ -381,32 +382,57 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 		dm.DmColor = dmColorMonochrome
 	}
 
-	// اسم القالب أو المقاس المخصص:
-	// الأولوية 1: إذا كانت الأبعاد تطابق قالباً قياسياً في ويندوز (مثل A4, A3, Letter...)
-	// نعتمد المعرف القياسي DMPAPER_* أولاً، لأنه الخيار الموثوق المقبول لدى كافة الدرايفرات.
-	// مع تعيين اسم القالب (DmFormName) إذا وُجد لتأكيد المطابقة لدى الدرايفرات التي تفحص الاسم.
-	if stdID := matchStandardPaperID(req.PaperWidthMM, req.PaperHeightMM); stdID != 0 {
+	// اسم القالب أو المقاس المخصص (فرض مقاس الورق المحدد):
+	// الأولوية 1: إذا مرر المستدعي معرف ورق صريح
+	// الأولوية 2: مطابقة المقاس القياسي في ويندوز (مثل A4, A3, Letter, A5, A6...)
+	// الأولوية 3: استعلام قوالب الطابعة الحية عبر DeviceCapabilities لمقاسات الصور (مثل 10x15 سم أو 13x18 سم)
+	// الأولوية 4: أبعاد مخصصة فيزيائية بالكامل (DMPAPER_USER مع DmPaperWidth/DmPaperLength)
+	paperID := req.PaperID
+	matchedFormName := req.FormName
+
+	if paperID == 0 {
+		if stdID := matchStandardPaperID(req.PaperWidthMM, req.PaperHeightMM); stdID != 0 {
+			paperID = stdID
+		} else {
+			driverID, driverForm, found := findPrinterPaperMatch(pPrinterName, req.PaperWidthMM, req.PaperHeightMM, req.Borderless, req.FormName)
+			if found && driverID != 0 {
+				paperID = driverID
+				if driverForm != "" {
+					matchedFormName = driverForm
+				}
+			}
+		}
+	}
+
+	if paperID != 0 {
+		// قالب معتمد بمعرف رقمي صريح (سواء كان قياسياً في ويندوز أو خاصاً بالدرايفر)
 		dm.DmFields |= dmPaperSizeField
 		dm.DmFields &^= (dmPaperWidthField | dmPaperLengthField)
-		dm.DmPaperSize = int16(stdID)
+		dm.DmPaperSize = int16(paperID)
 		dm.DmPaperWidth = 0
 		dm.DmPaperLength = 0
+		if matchedFormName != "" {
+			dm.DmFields |= dmFormNameField
+			dm.DmFormName = formNameField(matchedFormName)
+		}
+	} else if req.PaperWidthMM > 0 && req.PaperHeightMM > 0 {
+		// أبعاد مخصصة فيزيائية بالكامل (DMPAPER_USER)
+		// في GDI الأبعاد تُمرر بعُشر المليمتر (0.1 mm)
+		// القيمة الأقصر لـ DmPaperWidth والأطول لـ DmPaperLength مع ترك DmOrientation يحدد الاتجاه
+		dimMin := math.Min(req.PaperWidthMM, req.PaperHeightMM)
+		dimMax := math.Max(req.PaperWidthMM, req.PaperHeightMM)
+		dm.DmFields |= dmPaperSizeField | dmPaperWidthField | dmPaperLengthField
+		dm.DmPaperSize = dmPaperUser
+		dm.DmPaperWidth = int16(math.Round(dimMin * 10))
+		dm.DmPaperLength = int16(math.Round(dimMax * 10))
 		if req.FormName != "" {
 			dm.DmFields |= dmFormNameField
 			dm.DmFormName = formNameField(req.FormName)
 		}
 	} else if req.FormName != "" {
-		// 2. قالب مخصص غير قياسي بالاسم: DM_FORMNAME مع DMPAPER_USER
 		dm.DmFields |= dmFormNameField | dmPaperSizeField
 		dm.DmPaperSize = dmPaperUser
 		dm.DmFormName = formNameField(req.FormName)
-	} else if req.PaperWidthMM > 0 && req.PaperHeightMM > 0 {
-		// 3. أبعاد مخصصة بالأبعاد الفيزيائية (عُشر المليمتر)
-		dm.DmFields |= dmPaperSizeField | dmPaperWidthField | dmPaperLengthField
-		dm.DmPaperSize = dmPaperUser
-		// في GDI الأبعاد تُمرر بـ عُشر المليمتر (0.1 mm)
-		dm.DmPaperWidth = int16(req.PaperWidthMM * 10)
-		dm.DmPaperLength = int16(req.PaperHeightMM * 10)
 	}
 
 	// الخطوة 4: دمج التعديلات والتحقق من صحتها عبر الدرايفر
@@ -419,9 +445,27 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 		uintptr(dmInBuffer|dmOutBuffer),
 	)
 	if int32(rMerge) < 0 {
-		// إذا فشل الدمج الكامل (غالباً بسبب رفض السائق لمقاس الورق المخصص)، نحاول دمج
-		// الاتجاه وعدد النسخ والألوان فقط على النسخة الاحتياطية لإنقاذ اتجاه الصفحة
-		slog.Warn("Full DocumentProperties merge failed; attempting fallback merge with orientation/copies only", "err", win32ErrText(lastErr))
+		slog.Warn("Full DocumentProperties merge failed; evaluating fallback recovery", "err", win32ErrText(lastErr))
+		// إذا كان الرفض بسبب DMPAPER_USER، نحاول التحويل لمقاس A4 القياسي الأكثر قبولاً لدى الدرايفرات
+		if dm.DmPaperSize == dmPaperUser {
+			dm.DmPaperSize = 9 // DMPAPER_A4
+			dm.DmFields &^= (dmPaperWidthField | dmPaperLengthField | dmFormNameField)
+			dm.DmPaperWidth = 0
+			dm.DmPaperLength = 0
+			rStd, _, _ := procDocumentProperties.Call(
+				0,
+				uintptr(hPrinter),
+				uintptr(unsafe.Pointer(pPrinterName)),
+				uintptr(unsafe.Pointer(&devModeBuf[0])),
+				uintptr(unsafe.Pointer(&devModeBuf[0])),
+				uintptr(dmInBuffer|dmOutBuffer),
+			)
+			if int32(rStd) >= 0 {
+				slog.Info("Custom paper was rejected by driver; safely adapted to standard A4 container", "printer", printerName)
+				return devModeBuf, nil
+			}
+		}
+
 		dmBackup := (*devModeW)(unsafe.Pointer(&backupBuf[0]))
 		dmBackup.DmFields |= dmOrientationField | dmCopiesField | dmColorField
 		dmBackup.DmOrientation = dm.DmOrientation
@@ -445,6 +489,132 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 	return devModeBuf, nil
 }
 
+// findPrinterPaperMatch يبحث عن أفضل قالب ورق متوافق مع المقاس المطلوب من قائمة قوالب الطابعة الحية:
+// يستعلم DeviceCapabilities (DC_PAPERS, DC_PAPERNAMES, DC_PAPERSIZE) للبحث عن معرف القالب الخاص بالدرايفر
+// (Vendor Form ID) مثل ورق الصور 10x15 سم (4x6 بوصة) أو 13x18 سم في طابعات الصور (Epson/Canon/HP).
+func findPrinterPaperMatch(pPrinterName *uint16, targetW, targetH float64, borderless bool, requestedForm string) (paperID uint16, matchedForm string, isMatched bool) {
+	if pPrinterName == nil || (targetW <= 0 && targetH <= 0 && requestedForm == "") {
+		return 0, requestedForm, false
+	}
+
+	count, _, _ := procDeviceCapabilities.Call(
+		uintptr(unsafe.Pointer(pPrinterName)),
+		0,
+		uintptr(dcPapers),
+		0, 0,
+	)
+	n := int(int32(count))
+	if n <= 0 || n > 10000 {
+		return 0, requestedForm, false
+	}
+
+	paperIDs := make([]uint16, n)
+	rIDs, _, _ := procDeviceCapabilities.Call(
+		uintptr(unsafe.Pointer(pPrinterName)),
+		0,
+		uintptr(dcPapers),
+		uintptr(unsafe.Pointer(&paperIDs[0])),
+		0,
+	)
+	if int32(rIDs) < 0 {
+		return 0, requestedForm, false
+	}
+
+	namesBuf := make([]uint16, n*64)
+	rNames, _, _ := procDeviceCapabilities.Call(
+		uintptr(unsafe.Pointer(pPrinterName)),
+		0,
+		uintptr(dcPaperNames),
+		uintptr(unsafe.Pointer(&namesBuf[0])),
+		0,
+	)
+	if int32(rNames) < 0 {
+		return 0, requestedForm, false
+	}
+
+	type point struct{ X, Y int32 }
+	sizesBuf := make([]point, n)
+	rSizes, _, _ := procDeviceCapabilities.Call(
+		uintptr(unsafe.Pointer(pPrinterName)),
+		0,
+		uintptr(dcPaperSize),
+		uintptr(unsafe.Pointer(&sizesBuf[0])),
+		0,
+	)
+	if int32(rSizes) < 0 {
+		return 0, requestedForm, false
+	}
+
+	type candidate struct {
+		id           uint16
+		name         string
+		widthMM      float64
+		heightMM     float64
+		isBorderless bool
+		diff         float64
+	}
+
+	var candidates []candidate
+	dimMin := math.Min(targetW, targetH)
+	dimMax := math.Max(targetW, targetH)
+
+	for i := 0; i < n; i++ {
+		formName := windows.UTF16ToString(namesBuf[i*64 : (i+1)*64])
+		formW := float64(sizesBuf[i].X) / 10.0
+		formH := float64(sizesBuf[i].Y) / 10.0
+		cMin := math.Min(formW, formH)
+		cMax := math.Max(formW, formH)
+
+		isBrd := strings.Contains(strings.ToLower(formName), "borderless") ||
+			strings.Contains(formName, "بدون حواف")
+
+		diffMin := math.Abs(dimMin - cMin)
+		diffMax := math.Abs(dimMax - cMax)
+		diff := diffMin + diffMax
+
+		// مطابقة الأبعاد بتسامح 2.5 مم، أو مطابقة الاسم إذا وُجد
+		isDimMatch := targetW > 0 && targetH > 0 && diffMin <= 2.5 && diffMax <= 2.5
+		isNameMatch := requestedForm != "" && strings.EqualFold(strings.TrimSpace(formName), strings.TrimSpace(requestedForm))
+
+		if isDimMatch || isNameMatch {
+			candidates = append(candidates, candidate{
+				id:           paperIDs[i],
+				name:         formName,
+				widthMM:      formW,
+				heightMM:     formH,
+				isBorderless: isBrd,
+				diff:         diff,
+			})
+		}
+	}
+
+	if len(candidates) == 0 {
+		return 0, requestedForm, false
+	}
+
+	var best candidate
+	bestScore := math.MaxFloat64
+
+	for _, c := range candidates {
+		score := c.diff
+		if borderless {
+			if !c.isBorderless {
+				score += 100.0
+			}
+		} else {
+			if c.isBorderless {
+				score += 100.0
+			}
+		}
+		if score < bestScore {
+			bestScore = score
+			best = c
+		}
+	}
+
+	return best.id, best.name, true
+}
+
 // matchStandardPaperID يطابق أبعاد الورقة بالمليمتر مع معرفات قوالب ويندوز القياسية (DMPAPER_*)
 // بتسامح 1.5 مم لاستيعاب فروق التقريب بين البوصة والمليمتر.
 func matchStandardPaperID(w, h float64) uint16 {
@@ -460,6 +630,10 @@ func matchStandardPaperID(w, h float64) uint16 {
 		return 8 // DMPAPER_A3
 	case near(dimMin, 148) && near(dimMax, 210):
 		return 11 // DMPAPER_A5
+	case near(dimMin, 105) && near(dimMax, 148):
+		return 70 // DMPAPER_A6
+	case near(dimMin, 420) && near(dimMax, 594):
+		return 66 // DMPAPER_A2
 	case near(dimMin, 215.9) && near(dimMax, 279.4):
 		return 1 // DMPAPER_LETTER
 	case near(dimMin, 215.9) && near(dimMax, 355.6):
@@ -470,8 +644,16 @@ func matchStandardPaperID(w, h float64) uint16 {
 		return 13 // DMPAPER_B5
 	case near(dimMin, 250) && near(dimMax, 354):
 		return 12 // DMPAPER_B4
+	case near(dimMin, 128) && near(dimMax, 182):
+		return 88 // DMPAPER_B6_JIS
 	case near(dimMin, 184.15) && near(dimMax, 266.7):
 		return 7 // DMPAPER_EXECUTIVE
+	case near(dimMin, 100) && near(dimMax, 148):
+		return 43 // DMPAPER_JAPANESE_POSTCARD
+	case near(dimMin, 139.7) && near(dimMax, 215.9):
+		return 6 // DMPAPER_STATEMENT
+	case near(dimMin, 254) && near(dimMax, 355.6):
+		return 16 // DMPAPER_10X14
 	default:
 		return 0
 	}

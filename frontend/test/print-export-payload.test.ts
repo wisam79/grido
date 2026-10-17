@@ -397,6 +397,28 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     },
   );
 
+  it('يمرر paperId و formName إلى PrintDirect لفرض مقاس الورق المعتمد', async () => {
+    const { result } = renderHook((props: PrintExportContext) => usePrintExport(props), {
+      initialProps: makeContext({ printColorSpace: 'sRGB' }),
+    });
+    await act(async () => {
+      await result.current.handlePrint(0, () => {}, {
+        directPrint: true,
+        printerName: 'Epson L805',
+        formName: '10 x 15 cm (4 x 6 in)',
+        paperId: 260,
+      });
+    });
+
+    expect(mockPrintDirect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        printerName: 'Epson L805',
+        formName: '10 x 15 cm (4 x 6 in)',
+        paperId: 260,
+      }),
+    );
+  });
+
   it('لا يستدعي PrintDirect أبداً مع فضاء CMYK (GDI يرسم RGB فقط)', async () => {
     // مخرج CMYK يُصدَّر TIFF بفصل أحبار لا يفكّه المحرك — الطلب المباشر يُتجاهل
     // ويسقط لمسار حوار النظام (المُجدوَل بعد أنيميشن الإغلاق).

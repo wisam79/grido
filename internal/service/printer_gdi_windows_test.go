@@ -642,4 +642,49 @@ func TestConfigurePrinterDevMode_StandardPaperIDPrecedence(t *testing.T) {
 	}
 }
 
+func TestMatchStandardPaperID_AllSupportedSizes(t *testing.T) {
+	tests := []struct {
+		name     string
+		w, h     float64
+		expected uint16
+	}{
+		{"A4 Portrait", 210, 297, 9},
+		{"A4 Landscape", 297, 210, 9},
+		{"A3 Portrait", 297, 420, 8},
+		{"A5 Portrait", 148, 210, 11},
+		{"A6 Portrait", 105, 148, 70},
+		{"A2 Portrait", 420, 594, 66},
+		{"Letter", 215.9, 279.4, 1},
+		{"Legal", 215.9, 355.6, 5},
+		{"Tabloid", 279.4, 431.8, 3},
+		{"B5 JIS", 182, 257, 13},
+		{"B4 JIS", 250, 354, 12},
+		{"B6 JIS", 128, 182, 88},
+		{"Japanese Postcard", 100, 148, 43},
+		{"Statement", 139.7, 215.9, 6},
+		{"10x14", 254, 355.6, 16},
+		{"11x17 (Tabloid)", 279.4, 431.8, 3},
+		{"Executive", 184.15, 266.7, 7},
+		{"Custom Unknown Size (85x55 mm)", 85, 55, 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := matchStandardPaperID(tt.w, tt.h)
+			if got != tt.expected {
+				t.Fatalf("matchStandardPaperID(%.1f, %.1f) = %d, want %d", tt.w, tt.h, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestFindPrinterPaperMatch_NilPrinterFallback(t *testing.T) {
+	// عند تمرير مؤشر طابعة فارغ، يجب ألا ينهار البرنامج ويعيد false بأمان
+	paperID, formName, matched := findPrinterPaperMatch(nil, 85, 55, false, "Custom")
+	if matched || paperID != 0 || formName != "Custom" {
+		t.Fatalf("findPrinterPaperMatch(nil, 85, 55) = (%d, %q, %v), want (0, 'Custom', false)", paperID, formName, matched)
+	}
+}
+
+
 

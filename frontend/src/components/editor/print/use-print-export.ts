@@ -31,6 +31,7 @@ export interface PrintExecuteOptions {
   directPrint?: boolean;
   printerName?: string;
   formName?: string;
+  paperId?: number;
   borderless?: boolean;
 }
 
@@ -514,6 +515,7 @@ export function usePrintExport({
                   color: true,
                   borderless: options?.borderless ?? false,
                   formName: options.formName,
+                  paperId: options.paperId,
                 }),
               ),
               30_000,
