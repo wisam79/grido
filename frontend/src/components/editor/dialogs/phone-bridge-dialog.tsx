@@ -192,7 +192,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <DialogTitle className="text-base font-bold text-foreground truncate">
-                ربط كاميرا الهاتف
+                جسر كاميرا الهاتف
               </DialogTitle>
             </div>
             <DialogCloseButton />
@@ -280,12 +280,12 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                   </span>
                   <span className="font-semibold text-foreground">
-                    {pairedDevice ? `متصل: ${pairedDevice}` : 'بانتظار مسح الرمز...'}
+                    {pairedDevice ? `متصل: ${pairedDevice}` : 'الجسر متصل ويعمل'}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 font-mono text-xs">
                   <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
-                  <span className="text-muted-foreground text-[11px]">الصور:</span>
+                  <span className="text-muted-foreground text-xs">الصور:</span>
                   <span className="font-bold text-foreground bg-background px-2 py-0.5 rounded-md border border-border/40">
                     {receivedCount}
                   </span>
