@@ -16,6 +16,7 @@ const IMAGE_SRC = '/local-image/e2e-print.png';
 const PREF_METHOD = 2929786627; // OpenPrinterPreferences
 const EXPORT_METHOD = 334009393; // ExportPrintSheet
 const NATIVE_METHOD = 100771007; // PrintNative
+const DIRECT_METHOD = 1268920029; // PrintDirect
 
 /** إعداد الجسر والملاحة وجاهزية التطبيق. */
 async function bootApp(page: Page) {
@@ -165,6 +166,9 @@ test.describe('Print Dialog — Printer Flow', () => {
       }),
       [NATIVE_METHOD]: async () => {
         throw new Error('Native print unavailable, testing browser fallback');
+      },
+      [DIRECT_METHOD]: async () => {
+        throw new Error('Direct print unavailable, testing browser fallback');
       },
     });
     await page.goto('/');

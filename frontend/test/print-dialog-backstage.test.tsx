@@ -18,6 +18,7 @@ vi.mock('../wailsjs/go/handlers/PrintHandler', () => ({
     }),
   ),
   OpenPrinterPreferences: vi.fn(() => Promise.resolve({ success: true })),
+  GetSupportedPapers: vi.fn(() => Promise.resolve({ success: true, papers: [] })),
 }));
 
 vi.mock('../wailsjs/go/main/App', () => ({

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type Konva from 'konva';
 import {
   Dialog,
@@ -32,6 +32,7 @@ import {
   Scissors,
   Gear,
   FileText,
+  Lightning,
 } from '@/components/ui/icons';
 import { toast } from 'sonner';
 import { createLogger } from '@/lib/logger';
@@ -41,7 +42,9 @@ import {
   GetPrinters,
   GetDefaultPrinterName,
   OpenPrinterPreferences,
+  GetSupportedPapers,
 } from '../../../../wailsjs/go/handlers/PrintHandler';
+import type { SupportedPaperInfo } from '@bindings/grido/internal/core/domain';
 import { PageOrientationIcon } from '@/components/ui/image-icons';
 import { PAPER_SIZES } from '@/lib/templates/constants';
 import { SheetPreview } from '../print/print-preview';
@@ -50,8 +53,11 @@ import { usePrintExport } from '../print/use-print-export';
 
 const logger = createLogger('print-dialog');
 
-/** مفتاح حفظ الطابعة المختارة بين الجلسات (يحدد هدف زر «الخصائص»). */
+/** مفتاح حفظ الطابعة المختارة بين الجلسات (هدف «الخصائص» والطباعة المباشرة). */
 const PRINT_PRINTER_STORAGE_KEY = 'grido-print-selected-printer';
+
+/** مفتاح تفضيل الطباعة المباشرة (الافتراضي: مفعّل). */
+const PRINT_DIRECT_STORAGE_KEY = 'grido.print.directPrint';
 
 function readStoredPrinter(): string {
   try {
@@ -66,6 +72,22 @@ function storePrinter(name: string): void {
     localStorage.setItem(PRINT_PRINTER_STORAGE_KEY, name);
   } catch {
     /* التخزين غير متاح — لا نُفشل الاختيار */
+  }
+}
+
+function readStoredDirectPrint(): boolean {
+  try {
+    return localStorage.getItem(PRINT_DIRECT_STORAGE_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+function storeDirectPrint(enabled: boolean): void {
+  try {
+    localStorage.setItem(PRINT_DIRECT_STORAGE_KEY, enabled ? '1' : '0');
+  } catch {
+    /* التخزين غير متاح — التفضيل يبقى للجلسة الحالية */
   }
 }
 
@@ -140,9 +162,42 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [selectedPrinter, setSelectedPrinter] = useState<string>('');
   const [isLoadingPrinters, setIsLoadingPrinters] = useState(false);
   const [isOpeningPrefs, setIsOpeningPrefs] = useState(false);
+  const [isDirectPrint, setIsDirectPrint] = useState(readStoredDirectPrint);
 
-  // 🖨️ التحديد المبدئي يطابق طابعة النظام الافتراضية — الاختيار هنا يحدد هدف زر
-  // «الخصائص» فقط؛ الطابعة الفعلية تُختار في نافذة الطباعة الأصلية (window.print).
+  // 🖨️ الطباعة المباشرة (GDI) ترسم RGB فقط — مخرج CMYK يُصدَّر TIFF بفصل أحبار
+  // لا يفكّه المحرك، فيُعطَّل المفتاح تلقائياً بدل فشل صامت في الـ spooler.
+  const isCmykPrint = (printSettings.colorSpace || 'sRGB') === 'CMYK';
+  const directPrintActive = isDirectPrint && !isCmykPrint;
+
+  const handleDirectPrintChange = useCallback((checked: boolean) => {
+    setIsDirectPrint(checked);
+    storeDirectPrint(checked);
+  }, []);
+
+  const [supportedPapers, setSupportedPapers] = useState<SupportedPaperInfo[]>([]);
+
+  // استعلام قوالب الورق المدعومة من الطابعة المختارة لاستخراج اسم القالب الأنسب
+  useEffect(() => {
+    if (!open || !selectedPrinter || typeof GetSupportedPapers !== 'function') {
+      return;
+    }
+    let cancelled = false;
+    GetSupportedPapers(selectedPrinter)
+      .then((res) => {
+        if (!cancelled && res?.success && Array.isArray(res.papers)) {
+          setSupportedPapers(res.papers);
+        }
+      })
+      .catch((err) => {
+        logger.warn('Failed to query supported papers:', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, selectedPrinter]);
+
+  // 🖨️ التحديد المبدئي يطابق طابعة النظام الافتراضية — الاختيار هنا يحدد هدف
+  // زر «الخصائص» وهدف الطباعة المباشرة معاً؛ الطباعة العادية تُمرَّر لحوار النظام.
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -358,12 +413,38 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, isExporting, hasContent, exporter]);
 
+  // مطابقة قالب الورق المدعوم من الطابعة مع مقاس الورقة الحالي
+  const matchedPaper = useMemo(() => {
+    if (!supportedPapers.length) return null;
+    const targetW = paperWidth;
+    const targetH = paperHeight;
+    const isBorderless = effectiveMarginMM === 0;
+
+    const matches = supportedPapers.filter((p) => {
+      return (
+        (Math.abs(p.widthMM - targetW) <= 2.5 && Math.abs(p.heightMM - targetH) <= 2.5) ||
+        (Math.abs(p.widthMM - targetH) <= 2.5 && Math.abs(p.heightMM - targetW) <= 2.5)
+      );
+    });
+
+    if (isBorderless) {
+      const borderlessMatch = matches.find((p) => p.isBorderless);
+      if (borderlessMatch) return borderlessMatch;
+    }
+    return matches[0] || null;
+  }, [supportedPapers, paperWidth, paperHeight, effectiveMarginMM]);
+
   useEffect(() => {
     exporter.setPrintInvocation({
       effectiveMarginMM,
       onDone: () => onOpenChange(false),
+      options: {
+        directPrint: directPrintActive,
+        printerName: selectedPrinter,
+        formName: matchedPaper?.name,
+      },
     });
-  }, [exporter, effectiveMarginMM, onOpenChange]);
+  }, [exporter, effectiveMarginMM, onOpenChange, directPrintActive, selectedPrinter, matchedPaper]);
 
   useEffect(() => {
     if (!open) {
@@ -607,12 +688,55 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 </Button>
               </div>
 
-              {/* توضيح صريح: هذا الاختيار يحدد هدف زر «الخصائص» فقط؛ الطابعة الفعلية
-                  تُختار في نافذة الطباعة الأصلية التي تظهر عند الضغط على «طباعة الورقة». */}
-              <p className="text-micro leading-relaxed text-muted-foreground/80">
-                يُحدَّد هذا الاختيار طابعة زر «الخصائص»، أما الطابعة الفعلية فتُختار في نافذة
-                الطباعة الأصلية عند الضغط على «طباعة الورقة».
-              </p>
+              {matchedPaper && (
+                <div className="flex items-center gap-1.5 text-micro text-muted-foreground/80 px-0.5">
+                  <span className="font-semibold text-foreground/80">قالب الطابعة:</span>
+                  <span className="truncate">{matchedPaper.name}</span>
+                  {effectiveMarginMM === 0 && (
+                    <span
+                      className={cn(
+                        'px-1.5 py-0.2 rounded text-micro font-medium shrink-0',
+                        matchedPaper.isBorderless
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+                      )}
+                    >
+                      {matchedPaper.isBorderless ? 'بدون حواف' : 'قد لا يدعم الحواف الصفرية'}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* خيار الطباعة المباشرة (Win32 Spooler) */}
+              <div className="flex items-center justify-between pt-1 border-t border-border/30">
+                <div className="flex flex-col gap-0.5 max-w-[240px]">
+                  <Label
+                    htmlFor="direct-print-toggle"
+                    className={cn(
+                      'text-xs font-semibold text-foreground flex items-center gap-1.5',
+                      isCmykPrint ? 'opacity-60' : 'cursor-pointer',
+                    )}
+                  >
+                    <Lightning className="w-3.5 h-3.5 text-amber-500" weight="fill" />
+                    <span>طباعة مباشرة (Win32)</span>
+                  </Label>
+                  <span className="text-micro text-muted-foreground/80 leading-tight">
+                    {isCmykPrint
+                      ? 'غير متاحة مع فضاء CMYK — سيُحفظ ملف TIFF لفتحه في الطابعة'
+                      : directPrintActive
+                        ? `إرسال فوري للطابعة المختارة بدقة ${printSettings.dpi || 300} DPI دون حوار المتصفح`
+                        : 'فتح حوار الطباعة لنظام التشغيل (Browser Dialog)'}
+                  </span>
+                </div>
+                <Switch
+                  id="direct-print-toggle"
+                  checked={directPrintActive}
+                  onCheckedChange={handleDirectPrintChange}
+                  disabled={isCmykPrint}
+                  title={isCmykPrint ? 'الطباعة المباشرة تدعم sRGB فقط' : undefined}
+                  className="data-[state=checked]:bg-primary shrink-0"
+                />
+              </div>
             </div>
 
             {/* بلوك 2: الورقة والاتجاه (Paper & Orientation Block) */}
@@ -982,8 +1106,16 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             </Button>
 
             <Button
-              onClick={() => handlePrint(effectiveMarginMM, () => onOpenChange(false))}
-              title="طباعة (Enter)"
+              onClick={() =>
+                handlePrint(effectiveMarginMM, () => onOpenChange(false), {
+                  directPrint: directPrintActive,
+                  printerName: selectedPrinter,
+                  formName: matchedPaper?.name,
+                })
+              }
+              title={
+                directPrintActive ? 'طباعة مباشرة إلى الطابعة (Enter)' : 'طباعة الورقة (Enter)'
+              }
               aria-keyshortcuts="Enter"
               className="h-8 px-5 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs transition-all duration-150 cursor-pointer rounded-lg shadow-sm hover:shadow active:scale-98"
               disabled={isExporting || !hasContent}
@@ -994,7 +1126,11 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 </>
               ) : (
                 <>
-                  <Printer className="w-3.5 h-3.5 shrink-0" weight="bold" />{' '}
+                  {directPrintActive ? (
+                    <Lightning className="w-3.5 h-3.5 shrink-0 text-amber-300" weight="fill" />
+                  ) : (
+                    <Printer className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                  )}
                   <span>طباعة الورقة</span>
                 </>
               )}

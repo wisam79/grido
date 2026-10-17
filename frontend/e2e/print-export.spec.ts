@@ -11,11 +11,22 @@ test.describe('Print & Export Workflows E2E', () => {
 
   test('Open and interact with Print Dialog', async ({ page }) => {
     // Add image first so there is content to print
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
-    await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    await page
+      .getByTestId('toolbar-insert')
+      .or(page.getByRole('button', { name: /إدراج/ }))
+      .first()
+      .click();
 
     // Click Print button in toolbar
-    const printBtn = page.getByRole('button', { name: /طباعة/ }).or(page.getByTitle(/طباعة/)).first();
+    const printBtn = page
+      .getByRole('button', { name: /طباعة/ })
+      .or(page.getByTitle(/طباعة/))
+      .first();
     await expect(printBtn).toBeVisible();
     await printBtn.click();
 
@@ -30,10 +41,21 @@ test.describe('Print & Export Workflows E2E', () => {
   });
 
   test('Open and interact with Export Dialog', async ({ page }) => {
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
-    await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    await page
+      .getByTestId('toolbar-insert')
+      .or(page.getByRole('button', { name: /إدراج/ }))
+      .first()
+      .click();
 
-    const exportBtn = page.getByRole('button', { name: /تصدير/ }).or(page.getByTitle(/تصدير/)).first();
+    const exportBtn = page
+      .getByRole('button', { name: /تصدير/ })
+      .or(page.getByTitle(/تصدير/))
+      .first();
     await expect(exportBtn).toBeVisible();
     await exportBtn.click();
 
@@ -45,9 +67,19 @@ test.describe('Print & Export Workflows E2E', () => {
     await expect(exportModal).not.toBeVisible();
   });
 
-  test('Full export flow: preview renders, export completes, native print triggered', async ({ page }) => {
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
-    await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
+  test('Full export flow: preview renders, export completes, native print triggered', async ({
+    page,
+  }) => {
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    await page
+      .getByTestId('toolbar-insert')
+      .or(page.getByRole('button', { name: /إدراج/ }))
+      .first()
+      .click();
 
     // لا يوجد Backend في E2E — اعتراض رفع لقطة الطباعة لتمرير مسار الالتقاط
     await page.route('**/api/upload-print-image', async (route) => {
@@ -58,13 +90,18 @@ test.describe('Print & Export Workflows E2E', () => {
       });
     });
 
-    const printBtn = page.getByRole('button', { name: /طباعة/ }).or(page.getByTitle(/طباعة/)).first();
+    const printBtn = page
+      .getByRole('button', { name: /طباعة/ })
+      .or(page.getByTitle(/طباعة/))
+      .first();
     await printBtn.click();
     const printModal = page.getByRole('dialog').filter({ hasText: /طباعة/ });
     await expect(printModal).toBeVisible();
 
     // المعاينة النهائية تُرسم داخل نافذة الطباعة الرئيسية
-    await expect(printModal.locator('img.w-full.h-full.object-contain')).toBeVisible({ timeout: 15000 });
+    await expect(printModal.locator('img.w-full.h-full.object-contain')).toBeVisible({
+      timeout: 15000,
+    });
 
     const exportBtn = printModal.getByRole('button', { name: /طباعة|تصدير وعرض/ }).last();
     await expect(exportBtn).toBeEnabled();
@@ -72,12 +109,22 @@ test.describe('Print & Export Workflows E2E', () => {
 
     // العملية تتم للنهاية: الحوار يُغلق (mock بلا htmlDoc ← مسار الطباعة الأصلية)
     await expect(printModal).not.toBeVisible({ timeout: 15000 });
-    await expect(page.getByText(/الطباعة الأصلية بنجاح/)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/تم إرسال الورقة بنجاح/)).toBeVisible({ timeout: 15000 });
   });
 
-  test('Creates top-level print container after preview when HTML doc is returned', async ({ page }) => {
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
-    await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
+  test('Creates top-level print container after preview when HTML doc is returned', async ({
+    page,
+  }) => {
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    await page
+      .getByTestId('toolbar-insert')
+      .or(page.getByRole('button', { name: /إدراج/ }))
+      .first()
+      .click();
 
     await page.route('**/api/upload-print-image', async (route) => {
       await route.fulfill({
@@ -98,9 +145,16 @@ test.describe('Print & Export Workflows E2E', () => {
       100771007: async () => {
         throw new Error('Native print unavailable, testing browser fallback');
       },
+      // 1268920029 = PrintDirect — يُفشَل أيضاً ليُختبر المسار الاحتياطي عبر المتصفح
+      1268920029: async () => {
+        throw new Error('Direct print unavailable, testing browser fallback');
+      },
     });
 
-    const printBtn = page.getByRole('button', { name: /طباعة/ }).or(page.getByTitle(/طباعة/)).first();
+    const printBtn = page
+      .getByRole('button', { name: /طباعة/ })
+      .or(page.getByTitle(/طباعة/))
+      .first();
     await printBtn.click();
     const printModal = page.getByRole('dialog').filter({ hasText: /طباعة/ });
     await expect(printModal).toBeVisible();
@@ -135,7 +189,8 @@ test.describe('Print & Export Workflows E2E', () => {
         for (const mutation of mutations) {
           for (const node of Array.from(mutation.addedNodes)) {
             if (node instanceof HTMLStyleElement && node.id === 'grido-print-sheet-style') {
-              (window as unknown as { __printPageRule: string }).__printPageRule = node.textContent ?? '';
+              (window as unknown as { __printPageRule: string }).__printPageRule =
+                node.textContent ?? '';
             }
           }
         }
@@ -152,19 +207,21 @@ test.describe('Print & Export Workflows E2E', () => {
       .poll(
         () =>
           page.evaluate(
-            () => (window as unknown as { __printContainers: (string | null)[] }).__printContainers?.length ?? 0
+            () =>
+              (window as unknown as { __printContainers: (string | null)[] }).__printContainers
+                ?.length ?? 0,
           ),
-        { timeout: 15000 }
+        { timeout: 15000 },
       )
       .toBe(1);
     const containerFlag = await page.evaluate(
-      () => (window as unknown as { __printContainers: (string | null)[] }).__printContainers[0]
+      () => (window as unknown as { __printContainers: (string | null)[] }).__printContainers[0],
     );
     expect(containerFlag).toBe('true');
 
     // قاعدة @page بمقاس الورقة حقنت في المستند الأعلى (تُلتقط لحظة الإنشاء)
     const pageRule = await page.evaluate(
-      () => (window as unknown as { __printPageRule: string }).__printPageRule
+      () => (window as unknown as { __printPageRule: string }).__printPageRule,
     );
     expect(pageRule).toContain('@page');
   });

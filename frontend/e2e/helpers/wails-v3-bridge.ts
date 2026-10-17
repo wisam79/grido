@@ -146,6 +146,15 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   }), // GetPrinters
   657414139: async () => 'Brother DCP-T520W', // GetDefaultPrinterName
   2929786627: async () => ({ success: true }), // OpenPrinterPreferences
+  2075115632: async () => ({
+    success: true,
+    papers: [
+      { id: 9, name: 'A4', widthMM: 210, heightMM: 297, isBorderless: false },
+      { id: 256, name: 'A4 Borderless', widthMM: 210, heightMM: 297, isBorderless: true },
+    ],
+  }), // GetSupportedPapers
+  1373740449: async () => ({ success: true, jobId: 1, status: 'Completed' }), // PollJobStatus
+  1268920029: async () => ({ success: true, jobId: 1, status: 'Spooling' }), // PrintDirect
 };
 
 /**
@@ -370,6 +379,14 @@ export async function setupWailsV3Bridge(
             filePath: 'C:/mock/sheet.png',
           }),
           PrintNative: async () => ({ success: true, filePath: 'C:/mock/sheet.png' }),
+          PrintDirect: async () => ({
+            success: true,
+            jobId: 42,
+            status: 'Printed',
+            error: '',
+          }),
+          GetSupportedPapers: async () => ({ success: true, papers: [] }),
+          PollJobStatus: async () => ({ success: true, jobId: 42, status: 'Printed', error: '' }),
         },
       },
     };

@@ -93,3 +93,41 @@ type PrintersResult struct {
 	Printers []PrinterInfo `json:"printers"`
 	Error    string        `json:"error,omitempty"`
 }
+
+// DirectPrintRequest طلب طباعة مباشرة للمهمة إلى طابعة معينة عبر Win32 GDI Spooler
+type DirectPrintRequest struct {
+	PrinterName   string  `json:"printerName"`
+	FilePath      string  `json:"filePath"`
+	JobTitle      string  `json:"jobTitle,omitempty"`
+	PaperWidthMM  float64 `json:"paperWidthMM,omitempty"`
+	PaperHeightMM float64 `json:"paperHeightMM,omitempty"`
+	Orientation   string  `json:"orientation,omitempty"` // "portrait" or "landscape"
+	Copies        int     `json:"copies,omitempty"`
+	Color         bool    `json:"color,omitempty"`
+	Borderless    bool    `json:"borderless,omitempty"`
+	FormName      string  `json:"formName,omitempty"`
+}
+
+// DirectPrintResult نتيجة إرسال المهمة المباشرة إلى طابور الطباعة
+type DirectPrintResult struct {
+	Success bool   `json:"success"`
+	JobID   int32  `json:"jobId,omitempty"`
+	Status  string `json:"status,omitempty"`
+	Error   string `json:"error,omitempty"`
+}
+
+// SupportedPaperInfo معلومات قالب الورق الذي يدعمه برنامج تشغيل الطابعة
+type SupportedPaperInfo struct {
+	ID           uint16  `json:"id"`
+	Name         string  `json:"name"`
+	WidthMM      float64 `json:"widthMM"`
+	HeightMM     float64 `json:"heightMM"`
+	IsBorderless bool    `json:"isBorderless"`
+}
+
+// SupportedPapersResult نتيجة استعلام قوالب الورق المدعومة من الطابعة
+type SupportedPapersResult struct {
+	Success bool                 `json:"success"`
+	Papers  []SupportedPaperInfo `json:"papers"`
+	Error   string               `json:"error,omitempty"`
+}

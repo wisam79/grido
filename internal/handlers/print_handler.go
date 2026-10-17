@@ -89,3 +89,47 @@ func (h *PrintHandler) OpenPrinterPreferences(printerName string) domain.PrintRe
 		Success: true,
 	}
 }
+
+// PrintDirect يرسل صورة المستند/الورقة المصدرة مباشرة إلى الطابعة عبر Win32 GDI
+func (h *PrintHandler) PrintDirect(req domain.DirectPrintRequest) domain.DirectPrintResult {
+	jobID, err := h.printService.PrintImageDirectGDI(req)
+	if err != nil {
+		return domain.DirectPrintResult{
+			Success: false,
+			Error:   err.Error(),
+		}
+	}
+	return domain.DirectPrintResult{
+		Success: true,
+		JobID:   jobID,
+		Status:  "Spooling",
+	}
+}
+
+// GetSupportedPapers يستعلم قوالب الورق وأحجامها وإمكانية الطباعة بدون حواف
+func (h *PrintHandler) GetSupportedPapers(printerName string) domain.SupportedPapersResult {
+	papers, err := h.printService.GetSupportedPapers(printerName)
+	if err != nil {
+		return domain.SupportedPapersResult{
+			Success: false,
+			Error:   err.Error(),
+		}
+	}
+	return domain.SupportedPapersResult{
+		Success: true,
+		Papers:  papers,
+	}
+}
+
+// PollJobStatus يستعلم عن حالة المهمة الحالية في طابور الويندوز
+func (h *PrintHandler) PollJobStatus(printerName string, jobID int32) domain.DirectPrintResult {
+	result, err := h.printService.PollJobStatus(printerName, jobID)
+	if err != nil {
+		return domain.DirectPrintResult{
+			Success: false,
+			JobID:   jobID,
+			Error:   err.Error(),
+		}
+	}
+	return result
+}
