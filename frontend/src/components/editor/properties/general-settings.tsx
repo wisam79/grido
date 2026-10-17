@@ -51,7 +51,7 @@ export function GeneralSettings() {
         ref={paperSectionRef}
         icon={<PaintBrush className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
         title="خلفية الورقة"
-        subtitle="لون الورقة وتدرجها — تُطبَّق على الكانفاس ومعاينة الطباعة"
+        subtitle="تُطبَّق على الكانفاس ومعاينة الطباعة"
         collapsible
         open={paperOpen}
         onOpenChange={setPaperOpen}

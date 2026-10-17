@@ -92,9 +92,7 @@ ${report.stack_trace}
               تم رصد إغلاق غير متوقع
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-              {report.has_autosave
-                ? 'واجه التطبيق إغلاقاً مفاجئاً في الجلسة السابقة، ولكن تم تأمين مسودة مشروعك بنجاح. يمكنك استعادة العمل فوراً أو بدء مشروع جديد.'
-                : 'واجه التطبيق إغلاقاً مفاجئاً في الجلسة السابقة. يمكنك الاطلاع على التفاصيل الفنية ونسخها للمطور.'}
+              {report.has_autosave ? 'مسودة مشروعك محفوظة.' : ''}
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -157,7 +155,7 @@ ${report.stack_trace}
                 onClick={onRecover}
                 className="w-full sm:w-auto h-8 px-4 text-xs font-bold shadow-xs cursor-pointer"
               >
-                استعادة المسودة ومتابعة العمل
+                استعادة المسودة
               </Button>
               <Button
                 variant="outline"
@@ -165,7 +163,7 @@ ${report.stack_trace}
                 onClick={onDismiss}
                 className="w-full sm:w-auto h-8 px-3 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
-                تجاهل والبدء بمشروع جديد
+                تجاهل المسودة
               </Button>
             </>
           ) : (

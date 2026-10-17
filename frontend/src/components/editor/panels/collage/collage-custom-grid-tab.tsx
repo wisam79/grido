@@ -656,7 +656,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 variant="outline"
                 className="flex-1"
                 onClick={() => onApply(rows, cols, photoType, gridAlign)}
-                title="إعادة بناء الشبكة وإعادة توزيع الصور من جديد"
+                title="إعادة بناء الشبكة وتوزيع الصور"
               >
                 <ArrowClockwise className="w-4 h-4" weight="bold" />
                 <span>إعادة البناء</span>

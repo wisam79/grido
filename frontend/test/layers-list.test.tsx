@@ -19,7 +19,7 @@ describe('LayersList Component Tests', () => {
     renderWithProviders(<LayersList />);
 
     expect(screen.getByText('لا توجد طبقات بعد')).toBeInTheDocument();
-    expect(screen.getByText(/أضف صوراً أو نصوصاً أو أشكالاً/)).toBeInTheDocument();
+    expect(screen.getByText(/أضف عناصر من تبويب العناصر/)).toBeInTheDocument();
   });
 
   it('renders element list with correct labels and icons', () => {

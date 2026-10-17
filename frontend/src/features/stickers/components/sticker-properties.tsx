@@ -557,7 +557,7 @@ export const StickerProperties = React.memo(function StickerProperties({
               size="sm"
               onClick={handleAutoFitSheet}
               className="w-full h-8 text-xs font-bold rounded-xl gap-1.5 cursor-pointer border-primary/40 text-primary hover:bg-primary/10"
-              title="حساب أكبر شبكة تتسع على ورقة الطباعة"
+              title="أكبر شبكة تتسع على ورقة الطباعة"
             >
               <Sparkle className="w-3.5 h-3.5" weight="duotone" />
               <span>ملاءمة تلقائية على الورقة</span>

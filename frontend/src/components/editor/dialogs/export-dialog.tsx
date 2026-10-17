@@ -546,14 +546,14 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               </div>
             )}
 
-            <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
-              <Warning className="text-amber-500 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
-              <span className="font-medium">
-                {colorSpace === 'rgb'
-                  ? 'تصدير بنظام الألوان RGB للطباعة الرقمية.'
-                  : 'تصدير بنظام الألوان CMYK لمطابع الأوفست — قد يختلف التباين عن المعاينة.'}
-              </span>
-            </div>
+            {colorSpace === 'cmyk' && (
+              <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
+                <Warning className="text-amber-500 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
+                <span className="font-medium">
+                  CMYK لمطابع الأوفست — قد يختلف التباين عن المعاينة.
+                </span>
+              </div>
+            )}
 
             {colorSpace === 'rgb' && (
               <>

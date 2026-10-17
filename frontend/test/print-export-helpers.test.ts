@@ -44,7 +44,7 @@ describe('describeError', () => {
     expect(describeError('total pixels exceed 144 megapixels')).toContain('أكثر من 144 ميجابكسل');
     expect(describeError('cmyk tiff too large')).toContain('ورقة CMYK TIFF كبيرة جداً');
     expect(describeError('unsupported feature: color model')).toContain(
-      'صيغة اللون CMYK بفصل الأحبار غير مدعومة',
+      'CMYK بفصل الأحبار غير مدعوم',
     );
     expect(describeError('too many expanded print cells')).toContain('عدد النسخ كبير جداً');
     expect(describeError('too many items: 1000')).toContain('عدد العناصر كبير جداً');

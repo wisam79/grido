@@ -113,8 +113,6 @@ export function CollagePaperToolsTab() {
       >
         <FluentSettingRow
           label="خطوط النزيف"
-          description="هامش أمان حول كل صورة"
-          tooltip="خطوط إرشاد تُظهر المساحة التي ستُقص خارج حدود الصورة"
           control={
             <Switch
               checked={showBleedGuides}

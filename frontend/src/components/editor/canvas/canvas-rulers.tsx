@@ -1,5 +1,5 @@
-import React from "react";
-import { HorizontalRuler, VerticalRuler, RulerUnit, SelectionBoundsProjection } from "./ruler";
+import React from 'react';
+import { HorizontalRuler, VerticalRuler, RulerUnit, SelectionBoundsProjection } from './ruler';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,7 +7,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Check,
   Trash,
@@ -16,7 +16,7 @@ import {
   LockSimple,
   LockSimpleOpen,
   Ruler,
-} from "@/components/ui/icons";
+} from '@/components/ui/icons';
 
 export interface ViewportFixedRulersProps {
   showRuler: boolean;
@@ -48,10 +48,10 @@ export interface ViewportFixedRulersProps {
 }
 
 const RULER_UNITS: { id: RulerUnit; label: string; sub: string }[] = [
-  { id: "mm", label: "مليمتر (mm)", sub: "قياسي لصور الهوية والجوازات" },
-  { id: "cm", label: "سنتيمتر (cm)", sub: "للطباعة والبوسترات" },
-  { id: "in", label: "بوصة (in)", sub: "إنش - معايير الطباعة الدولية" },
-  { id: "px", label: "بكسل (px)", sub: "بكسلات الشاشة الرقمية" },
+  { id: 'mm', label: 'مليمتر (mm)', sub: 'قياسي لصور الهوية والجوازات' },
+  { id: 'cm', label: 'سنتيمتر (cm)', sub: 'للطباعة والبوسترات' },
+  { id: 'in', label: 'بوصة (in)', sub: 'إنش - معايير الطباعة الدولية' },
+  { id: 'px', label: 'بكسل (px)', sub: 'بكسلات الشاشة الرقمية' },
 ];
 
 export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulersHeader({
@@ -73,17 +73,30 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
   onToggleShowGuides,
   lockUserGuides,
   onToggleLockGuides,
-}: Omit<ViewportFixedRulersProps, "viewportHeight" | "originY" | "displayH" | "heightMM" | "canvasPxH" | "selectionBoundsY" | "onStartDragVGuide" | "marginPxY">) {
+}: Omit<
+  ViewportFixedRulersProps,
+  | 'viewportHeight'
+  | 'originY'
+  | 'displayH'
+  | 'heightMM'
+  | 'canvasPxH'
+  | 'selectionBoundsY'
+  | 'onStartDragVGuide'
+  | 'marginPxY'
+>) {
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="flex h-[20px] w-full bg-ruler-surface border-b border-ruler-border z-(--z-ruler) shrink-0 select-none shadow-2xs" dir="ltr">
+    <div
+      className="flex h-[20px] w-full bg-ruler-surface border-b border-ruler-border z-(--z-ruler) shrink-0 select-none shadow-2xs"
+      dir="ltr"
+    >
       {/* 🧭 مربع الزاوية القياسي بنمط Figma / Photoshop (Unit & Origin Box) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            title="انقر لتغيير وحدة القياس أو إدارة الخطوط الإرشادية (Ctrl+R)"
+            title="وحدة القياس وإدارة الخطوط الإرشادية (Ctrl+R)"
             aria-label="خيارات وحدة قياس المسطرة"
             className="w-[20px] h-[20px] shrink-0 bg-ruler-corner hover:bg-ruler-corner-hover border-r border-ruler-border flex items-center justify-center select-none z-(--z-ruler) cursor-pointer transition-all group active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none relative"
           >
@@ -92,7 +105,10 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
             </span>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 font-cairo text-xs z-(--z-menu) rounded-xl backdrop-blur-xl fluent-acrylic fluent-specular shadow-fluent-16">
+        <DropdownMenuContent
+          align="start"
+          className="w-56 font-cairo text-xs z-(--z-menu) rounded-xl backdrop-blur-xl fluent-acrylic fluent-specular shadow-fluent-16"
+        >
           <div dir="rtl">
             <DropdownMenuLabel className="text-micro text-muted-foreground font-bold flex items-center justify-between">
               <span className="flex items-center gap-1.5">
@@ -116,7 +132,9 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                     </div>
                     <span className="text-micro text-muted-foreground font-normal">{u.sub}</span>
                   </div>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />}
+                  {isSelected && (
+                    <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />
+                  )}
                 </DropdownMenuItem>
               );
             })}
@@ -133,11 +151,16 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
               >
                 <div className="flex items-center gap-2">
                   {showUserGuides ? (
-                    <EyeSlash className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="fill" />
+                    <EyeSlash
+                      className="w-3.5 h-3.5 text-muted-foreground shrink-0"
+                      weight="fill"
+                    />
                   ) : (
                     <Eye className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="regular" />
                   )}
-                  <span>{showUserGuides ? "إخفاء الخطوط الإرشادية" : "إظهار الخطوط الإرشادية"}</span>
+                  <span>
+                    {showUserGuides ? 'إخفاء الخطوط الإرشادية' : 'إظهار الخطوط الإرشادية'}
+                  </span>
                 </div>
                 <span className="text-micro text-muted-foreground/70 font-mono">Ctrl+;</span>
               </DropdownMenuItem>
@@ -149,11 +172,19 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
                 className="flex items-center gap-2 cursor-pointer py-1.5 font-semibold text-xs"
               >
                 {lockUserGuides ? (
-                  <LockSimpleOpen className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="regular" />
+                  <LockSimpleOpen
+                    className="w-3.5 h-3.5 text-muted-foreground shrink-0"
+                    weight="regular"
+                  />
                 ) : (
-                  <LockSimple className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="fill" />
+                  <LockSimple
+                    className="w-3.5 h-3.5 text-muted-foreground shrink-0"
+                    weight="fill"
+                  />
                 )}
-                <span>{lockUserGuides ? "إلغاء قفل الخطوط الإرشادية" : "قفل الخطوط الإرشادية"}</span>
+                <span>
+                  {lockUserGuides ? 'إلغاء قفل الخطوط الإرشادية' : 'قفل الخطوط الإرشادية'}
+                </span>
               </DropdownMenuItem>
             )}
 
@@ -199,11 +230,29 @@ export const ViewportFixedRulersSidebar = React.memo(function ViewportFixedRuler
   marginPxY = 0,
   selectionBoundsY,
   onStartDragVGuide,
-}: Omit<ViewportFixedRulersProps, "viewportWidth" | "originX" | "displayW" | "widthMM" | "canvasPxW" | "onChangeRulerUnit" | "onClearGuides" | "hasGuides" | "showUserGuides" | "onToggleShowGuides" | "lockUserGuides" | "onToggleLockGuides" | "marginPxX">) {
+}: Omit<
+  ViewportFixedRulersProps,
+  | 'viewportWidth'
+  | 'originX'
+  | 'displayW'
+  | 'widthMM'
+  | 'canvasPxW'
+  | 'onChangeRulerUnit'
+  | 'onClearGuides'
+  | 'hasGuides'
+  | 'showUserGuides'
+  | 'onToggleShowGuides'
+  | 'lockUserGuides'
+  | 'onToggleLockGuides'
+  | 'marginPxX'
+>) {
   if (!showRuler || printMode) return null;
 
   return (
-    <div className="w-[20px] h-full bg-ruler-surface border-r border-ruler-border z-20 shrink-0 select-none shadow-2xs" dir="ltr">
+    <div
+      className="w-[20px] h-full bg-ruler-surface border-r border-ruler-border z-20 shrink-0 select-none shadow-2xs"
+      dir="ltr"
+    >
       <VerticalRuler
         viewportHeight={viewportHeight}
         originY={originY}

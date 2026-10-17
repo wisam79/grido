@@ -167,12 +167,9 @@ export function useAiEnhance(
 
     // 🔒 التحقق الدقيق من حد الاستهلاك اليومي المربوط بالحساب
     if (remainingQuota <= 0) {
-      toast.warning(
-        `وصلت للحد الأقصى اليومي لاستخدام الذكاء الاصطناعي (${dailyLimit} صور/يومياً). يتجدد الرصيد غداً`,
-        {
-          duration: 5000,
-        },
-      );
+      toast.warning(`وصلت الحد اليومي للذكاء الاصطناعي (${dailyLimit} صور/يومياً). يتجدد غداً`, {
+        duration: 5000,
+      });
       return;
     }
 
@@ -236,12 +233,7 @@ export function useAiEnhance(
       const AI_ENHANCE_TIMEOUT_MS = 200000;
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(
-          () =>
-            reject(
-              new Error(
-                'استغرق الطلب وقتاً طويلاً. إن تكرر، تحقق من الرصيد المتبقي — قد تكون المحاولة احتُسبت على حصتك اليومية.',
-              ),
-            ),
+          () => reject(new Error('تأخر الطلب. تحقق من حصتك اليومية — قد تكون المحاولة احتُسبت.')),
           AI_ENHANCE_TIMEOUT_MS, // مواءمة مع مهلة الخلفية 3 دقائق + هامش
         );
       });

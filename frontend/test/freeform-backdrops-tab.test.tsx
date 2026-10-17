@@ -166,7 +166,7 @@ describe('FreeformBackdropsTab — المفضلة وآخر استخدام', () =
 
     // قسم التدرج المخصص مطوي افتراضياً — نفتحه بالضغط على رأسه
     fireEvent.click(screen.getByText('تدرج مخصص'));
-    fireEvent.click(screen.getByLabelText('حفظ التدرج المخصص في المفضلة أو إزالته منها'));
+    fireEvent.click(screen.getByLabelText('حفظ التدرج في المفضلة أو إزالته'));
     // «من» يبدأ من لون الورقة الحالي (أبيض بعد reset) — هذا هو التصميم المقصود
     expect(JSON.parse(localStorage.getItem('grido_favorite_gradients')!)).toEqual([
       'custom:#FFFFFF|#1E40AF|135',

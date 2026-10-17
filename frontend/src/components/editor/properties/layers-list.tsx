@@ -589,7 +589,7 @@ export function LayersList({
         <div className="space-y-1.5 max-w-[200px]">
           <p className="text-xs font-bold text-foreground">لا توجد طبقات بعد</p>
           <p className="text-micro leading-relaxed text-muted-foreground text-center" dir="rtl">
-            أضف صوراً أو نصوصاً أو أشكالاً من تبويب العناصر — ستظهر هنا مرتبة حسب العمق
+            أضف عناصر من تبويب العناصر — ستظهر هنا مرتبة حسب العمق
           </p>
         </div>
         <div className="flex items-center gap-1.5 text-micro text-muted-foreground/70">
@@ -626,7 +626,7 @@ export function LayersList({
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     if (isFiltered) {
-      toast.info('السحب معطّل أثناء البحث أو التصفية — امسح الفلتر لإعادة الترتيب');
+      toast.info('السحب معطّل أثناء التصفية — امسح الفلتر لإعادة الترتيب');
       return;
     }
     const oldIndex = sorted.findIndex((el) => el.id === active.id);

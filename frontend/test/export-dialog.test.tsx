@@ -101,7 +101,7 @@ describe('ExportDialog Component Tests', () => {
       expect(screen.getByText('فضاء الألوان')).toBeInTheDocument();
       expect(screen.getByText('CMYK')).toBeInTheDocument();
       expect(screen.queryByText('TIFF')).not.toBeInTheDocument();
-      expect(screen.getByText('تصدير بنظام الألوان RGB للطباعة الرقمية.')).toBeInTheDocument();
+      expect(screen.queryByText(/قد يختلف التباين/)).not.toBeInTheDocument();
     });
 
     it('يبدّل الصيغ إلى TIFF/JPEG ويخفي PNG/JPG عند اختيار CMYK', () => {
@@ -113,7 +113,7 @@ describe('ExportDialog Component Tests', () => {
       expect(screen.getByText('JPEG')).toBeInTheDocument();
       expect(screen.queryByText('PNG')).not.toBeInTheDocument();
       expect(screen.queryByText('JPG')).not.toBeInTheDocument();
-      expect(screen.getByText(/تصدير بنظام الألوان CMYK لمطابع الأوفست/)).toBeInTheDocument();
+      expect(screen.getByText(/CMYK لمطابع الأوفست/)).toBeInTheDocument();
     });
 
     it('يخفي النزيف وعلامات القص (مسار RGB فقط) في وضع CMYK', () => {

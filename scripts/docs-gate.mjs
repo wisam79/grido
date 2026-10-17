@@ -516,7 +516,7 @@ const CODE_ASSERTIONS = [
     file: 'frontend/src/hooks/use-ai-enhance.ts',
     mustContain: [
       'const AI_ENHANCE_TIMEOUT_MS = 200000',
-      'قد تكون المحاولة احتُسبت على حصتك اليومية',
+      'قد تكون المحاولة احتُسبت',
     ],
     mustNotContain: ['120000, // مهلة 120 ثانية'],
   },

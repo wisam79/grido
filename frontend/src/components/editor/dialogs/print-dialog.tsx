@@ -679,8 +679,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   size="sm"
                   onClick={handleOpenPreferences}
                   disabled={isOpeningPrefs || !selectedPrinter}
-                  aria-label="الخصائص: خصائص الطابعة (نوع الورق وجودة الطباعة)"
-                  title="خصائص الطابعة (نوع الورق وجودة الطباعة)"
+                  aria-label="خصائص الطابعة: نوع الورق والجودة"
+                  title="خصائص الطابعة: نوع الورق والجودة"
                   className="h-8 px-3 text-xs font-semibold shrink-0 gap-1.5 bg-background hover:bg-muted border-border/60 rounded-lg shadow-2xs cursor-pointer active:scale-[0.98] transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
                   {isOpeningPrefs ? (
@@ -948,9 +948,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                       سيُحفظ الملف TIFF بفصل أحبار حقيقي للمطابع — افتحه مباشرة في الطابعة.
                     </p>
                   )}
-                  <p className="text-micro text-muted-foreground/80 leading-relaxed">
-                    sRGB للطابعات المنزلية، CMYK لطابعات الأوفست.
-                  </p>
                 </div>
               </div>
             </div>

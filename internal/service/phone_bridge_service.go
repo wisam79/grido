@@ -542,8 +542,18 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 		return
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	ticker := time.NewTicker(1500 * time.Millisecond)
+	tr := &http.Transport{
+		MaxIdleConns:        10,
+		MaxIdleConnsPerHost: 5,
+		IdleConnTimeout:     90 * time.Second,
+		DisableCompression:  false,
+		DisableKeepAlives:   false,
+	}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   10 * time.Second,
+	}
+	ticker := time.NewTicker(350 * time.Millisecond)
 	defer ticker.Stop()
 
 	listURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/list/phone-bridge"
@@ -716,8 +726,8 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 
 				slog.Info("Phone bridge received cloud photo successfully", "path", virtualPath)
 
-				// 3. الحذف الفوري (Instant Purge) من السيرفر السحابي لحماية الخصوصية ومساحة التخزين
-				s.deleteCloudObject(deleteURL, objectPath)
+				// 3. الحذف الفوري (Instant Purge) من السيرفر السحابي في الخلفية دون تعطيل ظهور الصورة
+				go s.deleteCloudObject(deleteURL, objectPath)
 			}
 		}
 	}

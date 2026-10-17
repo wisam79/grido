@@ -364,8 +364,59 @@ export default function PhoneCameraPage() {
     }, 1800);
   };
 
+  // تحسين حجم وضغط الصورة الملتقطة للحفاظ على دقة 4K كاملة (300+ DPI) مع ضغط 90%
+  const optimizeImageBlob = async (rawBlob: Blob, maxDim = 3840, quality = 0.90): Promise<Blob> => {
+    try {
+      const bitmap = await createImageBitmap(rawBlob);
+      const { width, height } = bitmap;
+
+      let targetW = width;
+      let targetH = height;
+
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          targetW = maxDim;
+          targetH = Math.round((height * maxDim) / width);
+        } else {
+          targetH = maxDim;
+          targetW = Math.round((width * maxDim) / height);
+        }
+      }
+
+      if (targetW === width && targetH === height && rawBlob.size < 1.2 * 1024 * 1024 && rawBlob.type === 'image/jpeg') {
+        bitmap.close();
+        return rawBlob;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        bitmap.close();
+        return rawBlob;
+      }
+
+      ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+      bitmap.close();
+
+      return await new Promise<Blob>((resolve) => {
+        canvas.toBlob(
+          (b) => {
+            resolve(b || rawBlob);
+          },
+          'image/jpeg',
+          quality
+        );
+      });
+    } catch (err) {
+      console.warn('Image optimization fallback to raw:', err);
+      return rawBlob;
+    }
+  };
+
   // 5. رفع الصورة إلى مسار الجسر المؤقت في Supabase Storage مع طابور الرفع التراكمي
-  const uploadImageBlob = async (blob: Blob, customName?: string) => {
+  const uploadImageBlob = async (rawBlob: Blob, customName?: string) => {
     if (!supabase) {
       showStatus('فشل الاتصال بخادم المزامنة', 'error');
       return;
@@ -380,6 +431,7 @@ export default function PhoneCameraPage() {
     setUploadQueueCount((prev) => prev + 1);
 
     try {
+      const blob = await optimizeImageBlob(rawBlob, 3840, 0.90);
       const filename = customName || `photo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.jpg`;
       const filePath = `${sessionId}/${filename}`;
 
@@ -390,7 +442,7 @@ export default function PhoneCameraPage() {
       const { error } = await supabase.storage
         .from('phone-bridge')
         .upload(filePath, blob, {
-          contentType: blob.type || 'image/jpeg',
+          contentType: 'image/jpeg',
           cacheControl: 'no-cache',
           upsert: false,
         });
@@ -484,7 +536,7 @@ export default function PhoneCameraPage() {
             }
           },
           'image/jpeg',
-          0.96
+          0.90
         );
         return;
       }

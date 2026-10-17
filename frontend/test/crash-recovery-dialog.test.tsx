@@ -33,8 +33,8 @@ describe('CrashRecoveryDialog', () => {
     );
 
     expect(screen.getByText('تم رصد إغلاق غير متوقع')).toBeInTheDocument();
-    expect(screen.getByText('استعادة المسودة ومتابعة العمل')).toBeInTheDocument();
-    expect(screen.getByText('تجاهل والبدء بمشروع جديد')).toBeInTheDocument();
+    expect(screen.getByText('استعادة المسودة')).toBeInTheDocument();
+    expect(screen.getByText('تجاهل المسودة')).toBeInTheDocument();
     expect(screen.getByText('نسخ التقرير')).toBeInTheDocument();
   });
 
@@ -49,7 +49,7 @@ describe('CrashRecoveryDialog', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('استعادة المسودة ومتابعة العمل'));
+    fireEvent.click(screen.getByText('استعادة المسودة'));
     expect(onRecover).toHaveBeenCalledTimes(1);
   });
 
@@ -64,7 +64,7 @@ describe('CrashRecoveryDialog', () => {
       />,
     );
 
-    fireEvent.click(screen.getByText('تجاهل والبدء بمشروع جديد'));
+    fireEvent.click(screen.getByText('تجاهل المسودة'));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
@@ -84,7 +84,7 @@ describe('CrashRecoveryDialog', () => {
     );
 
     expect(screen.getByText('متابعة')).toBeInTheDocument();
-    expect(screen.queryByText('استعادة المسودة ومتابعة العمل')).not.toBeInTheDocument();
+    expect(screen.queryByText('استعادة المسودة')).not.toBeInTheDocument();
   });
 
   it('expands technical stack trace details on toggle', () => {

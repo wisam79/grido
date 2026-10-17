@@ -147,8 +147,7 @@ export function useAutoSave() {
             draftLoaded = true;
             logger.error('Failed to parse autosave draft — preserved on disk', e);
             toast.error('تعذّر قراءة مسودة العمل السابقة', {
-              description:
-                'أُبقي الملف كما هو دون حذف حتى لا تفقد عملك. أعد الفتح بعد إصلاح المشكلة أو امسحه يدوياً.',
+              description: 'أُبقي الملف كما هو. أعد الفتح بعد إصلاح المشكلة أو امسحه يدوياً.',
               action: {
                 label: 'مسح المسودة',
                 onClick: () => {

@@ -40,26 +40,23 @@ export function describeError(err: unknown): string {
 function humanizePrintError(msg: string): string {
   // السقوف والأخطاء القابلة للترجمة — نكشفها بالنص الإنجليزي الخام
   if (/total pixels exceed 144 megapixels/i.test(msg))
-    return 'الورقة كبيرة جداً (أكثر من 144 ميجابكسل). قلّل الـ DPI أو اختر مقاساً أصغر.';
+    return 'الورقة كبيرة جداً (أكثر من 144 ميجابكسل) — قلّل الـ DPI أو المقاس.';
   if (/image dimensions too large/i.test(msg) && /MP > \d+ MP max/i.test(msg))
-    return 'صورة كبيرة جداً للطباعة. قلّل الـ DPI أو استخدم صورة أصغر.';
+    return 'صورة كبيرة جداً للطباعة — قلّل الـ DPI أو استخدم صورة أصغر.';
   if (/cmyk tiff too large/i.test(msg))
-    return 'ورقة CMYK TIFF كبيرة جداً. اختر sRGB أو قلّل الـ DPI.';
+    return 'ورقة CMYK TIFF كبيرة جداً — اختر sRGB أو قلّل الـ DPI.';
   if (/unsupported feature: color model/i.test(msg))
-    return 'صيغة اللون CMYK بفصل الأحبار غير مدعومة في الطباعة المباشرة (GDI). استخدم sRGB.';
-  if (/cmyk jpeg too large/i.test(msg)) return 'ورقة CMYK كبيرة جداً. قلّل الـ DPI.';
-  if (/too many expanded print cells/i.test(msg))
-    return 'عدد النسخ كبير جداً. قلّل عدد النسخ في الورقة.';
-  if (/too many copies for one item/i.test(msg))
-    return 'عدد النسخ للعنصر كبير جداً. قلّل عدد النسخ.';
-  if (/too many items.*1000/i.test(msg))
-    return 'عدد العناصر كبير جداً (الحد 1000). قلّل عدد الصور.';
-  if (/invalid DPI/i.test(msg)) return 'قيمة DPI غير صالحة. اختر قيمة بين 50 و 600.';
+    return 'CMYK بفصل الأحبار غير مدعوم في الطباعة المباشرة (GDI) — استخدم sRGB.';
+  if (/cmyk jpeg too large/i.test(msg)) return 'ورقة CMYK كبيرة جداً — قلّل الـ DPI.';
+  if (/too many expanded print cells/i.test(msg)) return 'عدد النسخ كبير جداً — قلّل نسخ الورقة.';
+  if (/too many copies for one item/i.test(msg)) return 'عدد النسخ للعنصر كبير جداً — قلّله.';
+  if (/too many items.*1000/i.test(msg)) return 'عدد العناصر كبير جداً (الحد 1000) — قلّل الصور.';
+  if (/invalid DPI/i.test(msg)) return 'قيمة DPI غير صالحة — اختر بين 50 و 600.';
   if (/upload failed/i.test(msg) || /upload timed out/i.test(msg))
-    return 'فشل رفع صورة الطباعة. تحقّق من الاتصال وحاول مجدداً.';
+    return 'فشل رفع صورة الطباعة — تحقّق من الاتصال.';
   if (/انتهت المهلة/i.test(msg)) return msg; // مهلة withTimeout عربية أصلاً
   if (/invalid image dimensions/i.test(msg)) return 'أبعاد صورة غير صالحة.';
-  if (/decode.*image/i.test(msg)) return 'تعذّر قراءة إحدى الصور. تأكد من سلامة الملف.';
+  if (/decode.*image/i.test(msg)) return 'تعذّر قراءة إحدى الصور — تأكد من سلامة الملف.';
   return msg;
 }
 

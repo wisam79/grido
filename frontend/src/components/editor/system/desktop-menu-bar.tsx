@@ -172,7 +172,7 @@ export function DesktopMenuBar() {
       const movedMb = ((res?.freedBytes || 0) / (1024 * 1024)).toFixed(1);
       const movedCount = res?.cleanedCount || 0;
       if (movedCount === 0) {
-        toast.info(`كافة وسائط التطبيق (${mb} ميجابايت) قيد الاستخدام في مشاريعك أو مسوداتك`);
+        toast.info(`كافة وسائط التطبيق (${mb} ميجابايت) قيد الاستخدام في مشاريعك`);
         return;
       }
       toast.success(
@@ -195,14 +195,14 @@ export function DesktopMenuBar() {
       }
 
       const confirmed = window.confirm(
-        `هل تريد بالتأكيد إفراغ سلة الوسائط نهائياً؟\nسيتم حذف ${trashCount} ملف وتحرير ${trashMb} ميجابايت من القرص بشكل دائم.`,
+        `هل تريد إفراغ سلة الوسائط نهائياً؟\nسيُحذف ${trashCount} ملف وتُحرَّر ${trashMb} ميجابايت.`,
       );
       if (!confirmed) return;
 
       const res = await EmptyMediaTrash();
       const freedMb = (((res?.freedBytes as number) || 0) / (1024 * 1024)).toFixed(1);
       toast.success(
-        `تم إفراغ سلة الوسائط نهائياً وحذف ${(res?.deletedCount as number) || 0} ملف واستعادة ${freedMb} ميجابايت من القرص`,
+        `تم إفراغ سلة الوسائط نهائياً — حُذف ${(res?.deletedCount as number) || 0} ملف واستُعيد ${freedMb} ميجابايت`,
       );
     } catch (e) {
       toast.error('حدث خطأ أثناء إفراغ سلة الوسائط: ' + String(e));

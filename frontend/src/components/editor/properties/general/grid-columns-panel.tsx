@@ -369,9 +369,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
               </div>
             ) : (
               <div className="p-3 text-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">
-                <p className="text-mini leading-relaxed">
-                  الأعمدة الإرشادية معطلة. فعّلها للتوزيع الدقيق.
-                </p>
+                <p className="text-mini leading-relaxed">فعّل الأعمدة الإرشادية للتوزيع الدقيق.</p>
               </div>
             )}
           </div>

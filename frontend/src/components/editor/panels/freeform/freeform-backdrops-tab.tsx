@@ -691,7 +691,7 @@ export function FreeformBackdropsTab() {
                 ? 'محفوظ في المفضلة — انقر للإزالة'
                 : 'حفظ في المفضلة'
             }
-            aria-label="حفظ التدرج المخصص في المفضلة أو إزالته منها"
+            aria-label="حفظ التدرج في المفضلة أو إزالته"
             onClick={() =>
               toggleFavoriteGradient(customGradientPrefKey(customFrom, customTo, customAngle))
             }

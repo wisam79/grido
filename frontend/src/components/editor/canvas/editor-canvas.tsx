@@ -420,7 +420,7 @@ export const EditorCanvas = React.memo(
                       key={guide.id}
                       title={
                         lockUserGuides
-                          ? 'خط إرشادي مقفل (انقر لفتح القفل من قائمة المسطرة)'
+                          ? 'خط إرشادي مقفل — افتح القفل من قائمة المسطرة'
                           : 'خط إرشادي: اسحب للتحريك أو انقر مرتين للحذف'
                       }
                       role="separator"

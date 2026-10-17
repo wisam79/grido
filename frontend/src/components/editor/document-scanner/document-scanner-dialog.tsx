@@ -417,11 +417,7 @@ export function DocumentScannerDialog({
                 className="max-h-full max-w-full object-contain rounded-xl shadow-fluent-8 shadow-black/20 border border-border/30 animate-in fade-in-50 duration-200"
               />
             ) : (
-              <div
-                role="application"
-                aria-label="لوحة ضبط حدود المستند — اسحب الدبابيس الأربع لتحديد الزوايا"
-                className="relative"
-              >
+              <div role="application" aria-label="لوحة ضبط زوايا المستند" className="relative">
                 <canvas
                   ref={canvasRef as React.RefObject<HTMLCanvasElement>}
                   aria-hidden="true"

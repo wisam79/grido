@@ -271,7 +271,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
               <WifiHigh className="w-10 h-10 text-muted-foreground/60" />
               <div className="text-sm font-bold text-foreground">الجسر متوقف حالياً</div>
               <p className="text-xs text-muted-foreground max-w-xs">
-                يمكنك تشغيل الجسر في أي وقت للربط مع كاميرا هاتفك وإسقاط الصور في الكانفاس مباشرة.
+                اربط كاميرا هاتفك وأسقط الصور في الكانفاس مباشرة.
               </p>
               <Button
                 variant="default"
