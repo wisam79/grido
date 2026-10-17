@@ -695,7 +695,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   {effectiveMarginMM === 0 && (
                     <span
                       className={cn(
-                        'px-1.5 py-0.2 rounded text-[10px] font-medium shrink-0',
+                        'px-1.5 py-0.2 rounded text-micro font-medium shrink-0',
                         matchedPaper.isBorderless
                           ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                           : 'bg-amber-500/15 text-amber-600 dark:text-amber-400',

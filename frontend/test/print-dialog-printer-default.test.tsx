@@ -18,6 +18,7 @@ vi.mock('../wailsjs/go/handlers/PrintHandler', () => ({
   GetPrinters: () => getPrintersMock(),
   GetDefaultPrinterName: () => getDefaultPrinterMock(),
   OpenPrinterPreferences: (name: string) => openPrefsMock(name),
+  GetSupportedPapers: vi.fn(() => Promise.resolve({ success: true, papers: [] })),
 }));
 
 vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
