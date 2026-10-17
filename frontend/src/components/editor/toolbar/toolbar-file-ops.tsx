@@ -31,6 +31,7 @@ import { wailsIsDesktop } from '@/lib/wails-env';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('toolbar-file-ops');
+import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
 import {
   resolveImageAspectRatio,
   resolveBatchImageAspectRatios,
@@ -62,6 +63,9 @@ export function ToolbarFileOps() {
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [isBatchInsertOpen, setIsBatchInsertOpen] = useState(false);
   const [isPhoneBridgeOpen, setIsPhoneBridgeOpen] = useState(false);
+  const isPhoneBridgeRunning = usePhoneBridgeStore((s) => s.isRunning);
+  const phoneBridgePairedDevice = usePhoneBridgeStore((s) => s.pairedDevice);
+  const phoneBridgeReceivedCount = usePhoneBridgeStore((s) => s.receivedCount);
 
   const { mode, slots, setSlotImage, addImageElement, addImageElementsBatch, selectedId } =
     useEditorStore(
@@ -268,10 +272,44 @@ export function ToolbarFileOps() {
               >
                 <DeviceMobileCamera className="w-4 h-4 shrink-0" />
                 <span className="font-bold text-foreground flex-1">كاميرا الهاتف</span>
+                {isPhoneBridgeRunning && (
+                  <span className="flex items-center gap-1 text-micro text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/15 px-1.5 py-0.5 rounded">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>نشط</span>
+                  </span>
+                )}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* مؤشر كاميرا الهاتف النشط مع اسم الجهاز وعدد الصور المستلمة */}
+        {isPhoneBridgeRunning && (
+          <TooltipBtn
+            content={`كاميرا الهاتف متصلة (${phoneBridgePairedDevice || 'جاهز للاستلام'}) — انقر للإدارة أو الإيقاف`}
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsPhoneBridgeOpen(true)}
+              className="h-8 px-2.5 gap-1.5 border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer text-xs font-semibold rounded-md flex items-center justify-center select-none"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <DeviceMobileCamera className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="hidden md:inline font-bold">
+                {phoneBridgePairedDevice ? phoneBridgePairedDevice : 'كاميرا الهاتف'}
+              </span>
+              {phoneBridgeReceivedCount > 0 && (
+                <span className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 rounded font-mono text-micro font-bold">
+                  {phoneBridgeReceivedCount}
+                </span>
+              )}
+            </Button>
+          </TooltipBtn>
+        )}
 
         {/* المكتبة المحلية */}
         <Suspense fallback={null}>

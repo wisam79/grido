@@ -178,6 +178,11 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 		s.pollCloudBridge(cloudCtx, tokenCopy)
 	})
 
+	s.runtime.Emit("phone:status", map[string]interface{}{
+		"isRunning": true,
+		"token":     s.token,
+	})
+
 	return &BridgeInfo{
 		IP:        s.ip,
 		Port:      s.port,
@@ -203,6 +208,11 @@ func (s *PhoneBridgeService) Stop() error {
 		if tokenToClean != "" {
 			s.cleanCloudSession(tokenToClean)
 		}
+		s.runtime.Emit("phone:status", map[string]interface{}{
+			"isRunning":     false,
+			"pairedDevice":  "",
+			"receivedCount": 0,
+		})
 		return nil
 	}
 
@@ -220,6 +230,12 @@ func (s *PhoneBridgeService) Stop() error {
 	if tokenToClean != "" {
 		s.cleanCloudSession(tokenToClean)
 	}
+
+	s.runtime.Emit("phone:status", map[string]interface{}{
+		"isRunning":     false,
+		"pairedDevice":  "",
+		"receivedCount": 0,
+	})
 
 	slog.Info("Phone bridge server stopped")
 	return err
@@ -390,14 +406,20 @@ func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Re
 
 	virtualPath := "/local-image/" + filename
 
-	// 6. Update counts and notify Frontend
 	s.mu.Lock()
 	s.receivedCount++
 	s.lastReceived = time.Now().Format("15:04:05")
+	count := s.receivedCount
+	lastRec := s.lastReceived
 	s.mu.Unlock()
 
 	s.runtime.Emit("phone:photo-received", map[string]string{
 		"path": virtualPath,
+	})
+	s.runtime.Emit("phone:status", map[string]interface{}{
+		"isRunning":     true,
+		"receivedCount": count,
+		"lastReceived":  lastRec,
 	})
 
 	slog.Info("Phone bridge received photo successfully", "path", virtualPath)
@@ -604,6 +626,10 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 									"device": hsData.Device,
 									"time":   time.Now().Format("15:04:05"),
 								})
+								s.runtime.Emit("phone:status", map[string]interface{}{
+									"isRunning":    true,
+									"pairedDevice": hsData.Device,
+								})
 								slog.Info("Phone bridge paired with device", "device", hsData.Device)
 							}
 						}
@@ -675,10 +701,17 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 				s.mu.Lock()
 				s.receivedCount++
 				s.lastReceived = time.Now().Format("15:04:05")
+				cloudCount := s.receivedCount
+				cloudLastRec := s.lastReceived
 				s.mu.Unlock()
 
 				s.runtime.Emit("phone:photo-received", map[string]string{
 					"path": virtualPath,
+				})
+				s.runtime.Emit("phone:status", map[string]interface{}{
+					"isRunning":     true,
+					"receivedCount": cloudCount,
+					"lastReceived":  cloudLastRec,
 				})
 
 				slog.Info("Phone bridge received cloud photo successfully", "path", virtualPath)

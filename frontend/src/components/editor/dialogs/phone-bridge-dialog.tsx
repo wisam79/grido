@@ -17,11 +17,13 @@ import {
   Image as ImageIcon,
   WarningCircle,
   Cloud,
+  XCircle,
 } from '@/components/ui/icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { toErrorMessage } from '@/lib/wails-error';
 import { createLogger } from '@/lib/logger';
+import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
 import {
   StartPhoneBridge,
   StopPhoneBridge,
@@ -73,6 +75,8 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
       const info = await StartPhoneBridge();
       if (!isMountedRef.current) return;
       setBridgeInfo(info);
+      usePhoneBridgeStore.getState().setIsRunning(true);
+
       const status = await GetPhoneBridgeStatus();
       if (!isMountedRef.current) return;
       if (status) {
@@ -80,6 +84,12 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
         if (status.pairedDevice) {
           setPairedDevice(status.pairedDevice);
         }
+        usePhoneBridgeStore.getState().updateStatus({
+          isRunning: status.isRunning,
+          pairedDevice: status.pairedDevice,
+          receivedCount: status.receivedCount,
+          lastReceived: status.lastReceived,
+        });
       }
     } catch (err) {
       phoneLog.error('[PhoneBridgeDialog] Failed to start phone bridge:', err);
@@ -93,19 +103,14 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     }
   }, []);
 
-  const isRunningRef = useRef(false);
-  useEffect(() => {
-    isRunningRef.current = Boolean(bridgeInfo?.isRunning);
-  }, [bridgeInfo?.isRunning]);
-
+  // بدء الجسر عند فتح النافذة لأول مرة.
+  // 🛡️ معمارية الجلسة المستمرة: إغلاق نافذة الـ QR لا يوقف الجسر إطلاقاً!
+  // المصور يغلق النافذة ليرى الكانفاس ويبدأ بالتقاط الصور من هاتفه.
+  // إيقاف الجسر يتم حصراً عبر الزر الصريح «إيقاف الجسر» أو عند إغلاق التطبيق.
   useEffect(() => {
     if (open) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       initBridge();
-    } else if (isRunningRef.current) {
-      // 🛡️ إيقاف الخادم عند dismiss — كان يستمر بالعمل (منفذ/بطارية/كاميرا)
-      // بعد إغلاق الحوار بلا مسار إيقاف إلا إعادة التشغيل اليدوية.
-      StopPhoneBridge().catch((err) => phoneLog.error('Stop on close failed:', err));
     }
   }, [open, initBridge]);
 
@@ -115,6 +120,10 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     EventsOn('phone:paired', (data: { device?: string }) => {
       if (data?.device && isMountedRef.current) {
         setPairedDevice(data.device);
+        usePhoneBridgeStore.getState().updateStatus({
+          isRunning: true,
+          pairedDevice: data.device,
+        });
         toast.success(`تم اقتران الهاتف بنجاح (${data.device})`);
       }
     });
@@ -126,7 +135,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     };
   }, [open]);
 
-  // Poll status occasionally while dialog is open to refresh photo count
+  // تحديث دوري للعداد أثناء فتح النافذة
   useEffect(() => {
     if (!open || !bridgeInfo?.isRunning) return;
 
@@ -138,6 +147,12 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
           if (status.pairedDevice) {
             setPairedDevice(status.pairedDevice);
           }
+          usePhoneBridgeStore.getState().updateStatus({
+            isRunning: status.isRunning,
+            pairedDevice: status.pairedDevice,
+            receivedCount: status.receivedCount,
+            lastReceived: status.lastReceived,
+          });
         }
       } catch {
         // Silently ignore polling errors
@@ -171,12 +186,34 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
   const handleRestart = async () => {
     try {
+      setIsLoading(true);
       await StopPhoneBridge();
       await initBridge();
       if (isMountedRef.current) toast.success('تمت إعادة تشغيل الجسر');
     } catch (err) {
       phoneLog.error('Restart error:', err);
       if (isMountedRef.current) toast.error('تعذر إعادة التشغيل');
+    } finally {
+      if (isMountedRef.current) setIsLoading(false);
+    }
+  };
+
+  const handleStopBridge = async () => {
+    try {
+      setIsLoading(true);
+      await StopPhoneBridge();
+      if (isMountedRef.current) {
+        setBridgeInfo(null);
+        setPairedDevice('');
+        setReceivedCount(0);
+        usePhoneBridgeStore.getState().reset();
+        toast.info('تم إيقاف جسر كاميرا الهاتف');
+      }
+    } catch (err) {
+      phoneLog.error('Stop error:', err);
+      if (isMountedRef.current) toast.error('تعذر إيقاف الجسر');
+    } finally {
+      if (isMountedRef.current) setIsLoading(false);
     }
   };
 
@@ -229,7 +266,26 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
             </div>
           )}
 
-          {!isLoading && !error && bridgeInfo && (
+          {!isLoading && !error && (!bridgeInfo || !bridgeInfo.isRunning) && (
+            <div className="w-full flex flex-col items-center gap-3 py-10 px-4 bg-muted/20 rounded-xl border border-border/40 text-center">
+              <WifiHigh className="w-10 h-10 text-muted-foreground/60" />
+              <div className="text-sm font-bold text-foreground">الجسر متوقف حالياً</div>
+              <p className="text-xs text-muted-foreground max-w-xs">
+                يمكنك تشغيل الجسر في أي وقت للربط مع كاميرا هاتفك وإسقاط الصور في الكانفاس مباشرة.
+              </p>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={initBridge}
+                className="h-8 rounded-md text-xs mt-2 gap-1.5 font-bold cursor-pointer"
+              >
+                <WifiHigh className="w-3.5 h-3.5" />
+                <span>تشغيل الجسر</span>
+              </Button>
+            </div>
+          )}
+
+          {!isLoading && !error && bridgeInfo && bridgeInfo.isRunning && (
             <>
               {/* Segmented Mode Selector: Cloud vs Local */}
               <div className="flex items-center w-full p-1 bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/60">
@@ -325,23 +381,42 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
         </div>
 
         {/* Modal Footer */}
-        <DialogFooter className="px-6 py-3 border-t border-border/40 bg-muted/20 flex items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRestart}
-            disabled={isLoading}
-            className="h-8 rounded-md text-xs font-medium gap-1 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowClockwise className="w-3.5 h-3.5" />
-            تحديث الرمز
-          </Button>
+        <DialogFooter className="px-6 py-3 border-t border-border/40 bg-muted/20 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {bridgeInfo && bridgeInfo.isRunning && (
+              <>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleStopBridge}
+                  disabled={isLoading}
+                  className="h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer"
+                  title="إيقاف الجسر وقطع الاتصال"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                  <span>إيقاف الجسر</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRestart}
+                  disabled={isLoading}
+                  className="h-8 rounded-md text-xs font-medium gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                  title="توليد رمز اتصال جديد"
+                >
+                  <ArrowClockwise className="w-3.5 h-3.5" />
+                  <span>تحديث الرمز</span>
+                </Button>
+              </>
+            )}
+          </div>
 
           <Button
             variant="outline"
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="h-8 rounded-md text-xs font-semibold px-4"
+            className="h-8 rounded-md text-xs font-semibold px-4 cursor-pointer"
           >
             إغلاق
           </Button>
