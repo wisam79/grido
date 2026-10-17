@@ -462,11 +462,6 @@ func (pw *progressWriter) Write(p []byte) (int, error) {
 	if percentage != pw.lastEmit {
 		pw.lastEmit = percentage
 		pw.runtime.Emit("update-progress", percentage)
-		pw.runtime.Emit("update:progress", map[string]interface{}{
-			"percentage": percentage,
-			"downloaded": pw.downloaded,
-			"total":      total,
-		})
 	}
 	return n, nil
 }
@@ -631,11 +626,6 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	}
 
 	u.runtime.Emit("update-progress", 100)
-	u.runtime.Emit("update:progress", map[string]interface{}{
-		"percentage": 100,
-		"downloaded": pw.downloaded,
-		"total":      pw.total,
-	})
 
 	// Execute user-scope NSIS installer in silent mode (/S)
 	if err := runInstaller(installerPath, "/S"); err != nil {
