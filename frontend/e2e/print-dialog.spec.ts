@@ -110,7 +110,7 @@ test.describe('Print Dialog — Printer Flow', () => {
     await selectEpsonPrinter(page, printModal);
 
     // زر «الخصائص» يتبع الاختيار
-    await printModal.getByRole('button', { name: /الخصائص/ }).click();
+    await printModal.getByRole('button', { name: /الخصائص|خصائص/ }).click();
     await expect.poll(() => openPrefsCalls.length).toBeGreaterThan(0);
     expect(openPrefsCalls.at(-1)).toBe('EPSON L805 Series');
 
