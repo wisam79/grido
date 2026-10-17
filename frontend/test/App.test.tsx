@@ -53,6 +53,11 @@ vi.mock('../wailsjs/go/main/App', () => ({
   EnhanceImageWithAI: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
   SelectExportDirectory: vi.fn(() => Promise.resolve('C:\\Export')),
   GetStartupFile: vi.fn(() => Promise.resolve('')),
+  StartPhoneBridge: vi.fn(() => Promise.resolve({ isRunning: false, url: '', port: 0, ip: '' })),
+  StopPhoneBridge: vi.fn(() => Promise.resolve()),
+  GetPhoneBridgeStatus: vi.fn(() =>
+    Promise.resolve({ isRunning: false, url: '', port: 0, ip: '', receivedCount: 0 }),
+  ),
 }));
 
 // Mock Wails runtime functions
