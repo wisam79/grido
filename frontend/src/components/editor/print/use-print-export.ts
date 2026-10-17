@@ -6,15 +6,10 @@ import {
   ExportPrintSheet,
   PrintNative,
   PrintDirect,
+  PollJobStatus,
 } from '@bindings/grido/internal/handlers/printhandler';
 import { SetTaskbarProgress } from '@bindings/grido/app';
 import * as domain from '@bindings/grido/internal/core/domain';
-
-export interface PrintExecuteOptions {
-  directPrint?: boolean;
-  printerName?: string;
-  formName?: string;
-}
 import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { CanvasTooLargeError } from '@/lib/export/export-limits';
 import type { usePrintLayout } from '@/hooks/use-print-layout';
@@ -31,6 +26,12 @@ import {
 } from './print-transport';
 
 import { buildCollagePayload, buildSinglePayload, type BuiltItems } from './print-payload-builder';
+
+export interface PrintExecuteOptions {
+  directPrint?: boolean;
+  printerName?: string;
+  formName?: string;
+}
 
 // Re-export helpers for backward compatibility with existing unit tests
 export {
@@ -387,6 +388,9 @@ export function usePrintExport({
       setExporting(true);
       // رمز الجيل: أي نتيجة تصل بعد بدء تصدير أحدث تُتجاهل بصمت.
       const attempt = ++attemptRef.current;
+      // وميض 100% (نجاح/خطأ) يجري عبر later المؤقت — الـ finally كان يمسحه فوراً
+      // فيختفي الوميض قبل رسمه؛ هذه الراية تُبقي finally بعيداً عن الوميض المُجدوَل.
+      let flashPending = false;
       try {
         // نُسلّم إطار رسم واحد بعد إظهار حالة التحميل — وإلا ظلّت الواجهة
         // مجمدة أثناء التقاط كانفاس 50MP المتزامن على خيط UI قبل أن يُرسم المؤشر
@@ -481,6 +485,7 @@ export function usePrintExport({
 
         if (!result.success) {
           SetTaskbarProgress(100, 'error').catch(() => {});
+          flashPending = true;
           // 🖨️ مؤقت مُتتبَّع (RV-Print-21): الخام كان يمسح تقدّم تصدير لاحق ناجح.
           later(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
           toast.error('فشل التصدير: ' + (result.error || 'خطأ غير معروف'));
@@ -489,8 +494,11 @@ export function usePrintExport({
 
         SetTaskbarProgress(0, 'none').catch(() => {});
 
-        // 🖨️ المسار المباشر عبر Win32 GDI (Direct Spooling):
-        if (options?.directPrint && result.filePath && typeof PrintDirect === 'function') {
+        // 🖨️ المسار المباشر عبر Win32 GDI (Direct Spooling): يُستبعد لمخرج CMYK —
+        // الورقة تُصدّر TIFF بفصل أحبار (photometric=5) لا يفكّه x/image/tiff،
+        // وGDI يرسم RGB أصلاً فتضيع الألوان المرسلة؛ الحوار يعطّل المفتاح لنفس السبب.
+        const directPrintEligible = options?.directPrint && printColorSpace !== 'CMYK';
+        if (directPrintEligible && result.filePath && typeof PrintDirect === 'function') {
           SetTaskbarProgress(75, 'indeterminate').catch(() => {});
           try {
             const printRes = await withTimeout(
@@ -510,24 +518,56 @@ export function usePrintExport({
               30_000,
               'PrintDirect',
             );
+            // ⏳ حارس الجيل بعد جولة IPC جديدة: إلغاء/إعادة طباعة أثناء انتظار
+            // الـ spooler كان يُغلق حوار الجيل الجديد ويبدّل حالته من نتيجة قديمة.
+            if (attempt !== attemptRef.current) return;
             if (printRes.success) {
               SetTaskbarProgress(100, 'normal').catch(() => {});
+              flashPending = true;
               later(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
               toast.success(
                 `تم إرسال الورقة بنجاح إلى طابعة ${options.printerName || 'النظام'} (المهمة #${printRes.jobId})`,
               );
               setExporting(false);
               onDone();
+
+              // 🖨️ مراقبة حالة المهمة في طابور الويندوز عبر PollJobStatus:
+              // استدعاء فوري لكشف أخطاء الورق أو انقطاع الطابعة التي تظهر بعد إرسال الـ Spooler
+              if (printRes.jobId && typeof PollJobStatus === 'function') {
+                const printer = options.printerName || '';
+                const jId = printRes.jobId;
+                setTimeout(async () => {
+                  try {
+                    const poll = await PollJobStatus(printer, jId);
+                    if (!poll.success && poll.error) {
+                      logger.warn('Print job reported error after spooling:', poll.error);
+                      toast.error(`تنبيه الطابعة للمهمة #${jId}: ${poll.error}`);
+                    }
+                  } catch (err) {
+                    logger.debug('PollJobStatus error (ignored):', err);
+                  }
+                }, 1500);
+              }
               return;
             } else {
+              const reason = describeError(printRes.error || 'خطأ غير معروف');
               logger.warn('Direct print failed, falling back to browser dialog:', printRes.error);
-              toast.warning(
-                `تعذرت الطباعة المباشرة (${printRes.error || 'خطأ غير معروف'})، سيتم فتح حوار النظام`,
-              );
+              toast.warning(`تعذرت الطباعة المباشرة (${reason})، سيتم فتح حوار النظام`);
             }
           } catch (e) {
+            if (attempt !== attemptRef.current) return;
             logger.error('Direct print call threw exception:', e);
-            toast.warning('تعذرت الطباعة المباشرة، جاري فتح حوار النظام');
+            const detail = describeError(e);
+            // ⏳ مهلة بلا إلغاء (Wails IPC): المهمة قد تكون ما زالت تُرسل للطابعة،
+            // ففتح حوار المتصفح تلقائياً كان يعني طباعة مزدوجة محتملة — نُبلّغ ونتوقف.
+            if (detail.includes('انتهت المهلة')) {
+              toast.warning(
+                'تأخرت الطباعة المباشرة عن المهلة — قد تكون المهمة ما زالت قيد الإرسال للطابعة. تحقّق من طابور الطباعة قبل إعادة المحاولة.',
+              );
+              onDone();
+              return;
+            }
+            toast.warning(`تعذرت الطباعة المباشرة (${detail})، سيتم فتح حوار النظام`);
           }
         }
 
@@ -552,11 +592,14 @@ export function usePrintExport({
       } catch (err) {
         if (attempt !== attemptRef.current) return;
         SetTaskbarProgress(100, 'error').catch(() => {});
+        flashPending = true;
         later(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
         toast.error('حدث خطأ أثناء توليد ورقة الطباعة: ' + describeError(err));
       } finally {
         if (attempt === attemptRef.current) {
-          SetTaskbarProgress(0, 'none').catch(() => {});
+          if (!flashPending) {
+            SetTaskbarProgress(0, 'none').catch(() => {});
+          }
           setExporting(false);
         }
       }

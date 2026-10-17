@@ -3,8 +3,15 @@ import { renderHook, act } from '@testing-library/react';
 import {
   usePrintExport,
   type PrintExportContext,
+  type PrintExecuteOptions,
 } from '../src/components/editor/print/use-print-export';
-import { ExportPrintSheet, PrintNative } from '@bindings/grido/internal/handlers/printhandler';
+import {
+  ExportPrintSheet,
+  PrintNative,
+  PrintDirect,
+  PollJobStatus,
+  GetSupportedPapers,
+} from '@bindings/grido/internal/handlers/printhandler';
 import { toast } from 'sonner';
 import type { usePrintLayout } from '../src/hooks/use-print-layout';
 import type { CanvasSlot } from '../src/lib/store/types';
@@ -18,6 +25,7 @@ import type { CanvasSlot } from '../src/lib/store/types';
 //   3. الأبعاد والعناصر وعلامات القص والاتجاه تُمرَّر كما هي إلى Go.
 //   4. تسلسل الإنهاء الآمن: onDone وتحرير pointerEvents قبل إطلاق حوار الطباعة.
 //   5. حارس حدود الورقة يمنع الإرسال بدل القصّ الصامت في Go.
+//   6. عقد الطباعة المباشرة (GDI): sRGB فقط — وأي فشل يسقط بأمان لحوار النظام.
 //
 // المحاكاة على هوية الوحدة الفعلية (@bindings/grido/internal/handlers/printhandler)
 // لا على جسر wailsjs/**، لأن المحرك يستورد الربطات المولدة مباشرةً.
@@ -32,7 +40,24 @@ vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
     Promise.resolve({ success: true, filePath: 'C:/mock/sheet.png', htmlDoc: '' }),
   ),
   PrintNative: vi.fn(() => Promise.resolve({ success: true })),
+  PrintDirect: vi.fn(() =>
+    Promise.resolve({ success: true, jobId: 42, status: 'Printed', error: '' }),
+  ),
+  PollJobStatus: vi.fn(() =>
+    Promise.resolve({ success: true, jobId: 42, status: 'Completed', error: '' }),
+  ),
+  GetSupportedPapers: vi.fn(() => Promise.resolve({ success: true, papers: [], error: '' })),
 }));
+
+// طلب GDI المولّد createFrom يُمرَّر كما هو حتى تظل التأكيدات على القيم المرسلة
+// (مع تمرير بقية النماذج الحقيقية — بنّاء الحمولة يستخدمها للتصدير الفعلي)
+vi.mock('@bindings/grido/internal/core/domain', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@bindings/grido/internal/core/domain')>();
+  return {
+    ...actual,
+    DirectPrintRequest: { createFrom: vi.fn((input: unknown) => input) },
+  };
+});
 
 vi.mock('@bindings/grido/app', () => ({
   SetTaskbarProgress: vi.fn(() => Promise.resolve()),
@@ -41,7 +66,12 @@ vi.mock('@bindings/grido/app', () => ({
 
 const mockExportPrintSheet = vi.mocked(ExportPrintSheet);
 const mockPrintNative = vi.mocked(PrintNative);
+const mockPrintDirect = vi.mocked(PrintDirect);
+const mockPollJobStatus = vi.mocked(PollJobStatus);
+const mockGetSupportedPapers = vi.mocked(GetSupportedPapers);
 const mockToastError = vi.mocked(toast.error);
+const mockToastSuccess = vi.mocked(toast.success);
+const mockToastWarning = vi.mocked(toast.warning);
 
 /** شبكة طباعة بمقاسات ثابتة: خانة واحدة في الورقة (14mm هامش داخلي + 90×120mm صورة) */
 const makeLayout = (overrides: Partial<Record<string, unknown>> = {}) =>
@@ -110,12 +140,16 @@ const makeContext = (overrides: Partial<PrintExportContext> = {}): PrintExportCo
   ...overrides,
 });
 
-async function runPrint(context: PrintExportContext, onDone: () => void = () => {}) {
+async function runPrint(
+  context: PrintExportContext,
+  onDone: () => void = () => {},
+  options?: PrintExecuteOptions,
+) {
   const { result } = renderHook((props: PrintExportContext) => usePrintExport(props), {
     initialProps: context,
   });
   await act(async () => {
-    await result.current.handlePrint(5, onDone);
+    await result.current.handlePrint(5, onDone, options);
   });
   return result;
 }
@@ -308,5 +342,264 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     expect(mockExportPrintSheet).not.toHaveBeenCalled();
     expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('تتجاوز حدود الورقة'));
     expect(result.current.isExporting).toBe(false);
+  });
+
+  // ─── عقد الطباعة المباشرة (GDI Direct Spooling) ───
+
+  it('يستدعي PrintDirect بطلب spooling كامل ويسلّم onDone عند النجاح (sRGB)', async () => {
+    const onDone = vi.fn();
+    await runPrint(makeContext({ printColorSpace: 'sRGB' }), onDone, {
+      directPrint: true,
+      printerName: 'HP LaserJet',
+    });
+
+    expect(mockPrintDirect).toHaveBeenCalledTimes(1);
+    expect(mockPrintDirect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        printerName: 'HP LaserJet',
+        filePath: 'C:/mock/sheet.png',
+        paperWidthMM: 210,
+        paperHeightMM: 297,
+        orientation: 'landscape',
+        copies: 1,
+        color: true,
+        // هامش 5مم ⇒ ليست بلا حواف
+        borderless: false,
+      }),
+    );
+    // النجاح المباشر لا يمر بحوار النظام إطلاقاً
+    expect(mockPrintNative).not.toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining('تم إرسال الورقة بنجاح'));
+  });
+
+  it.each([
+    { marginMM: 5, borderless: false },
+    { marginMM: 0, borderless: true },
+  ])(
+    'يمرر borderless=$borderless مع هامش $marginMM مم لطلب GDI',
+    async ({ marginMM, borderless }) => {
+      const { result } = renderHook((props: PrintExportContext) => usePrintExport(props), {
+        initialProps: makeContext({ printColorSpace: 'sRGB' }),
+      });
+      await act(async () => {
+        await result.current.handlePrint(marginMM, () => {}, {
+          directPrint: true,
+          printerName: 'X',
+        });
+      });
+
+      expect(mockPrintDirect).toHaveBeenCalledWith(expect.objectContaining({ borderless }));
+    },
+  );
+
+  it('لا يستدعي PrintDirect أبداً مع فضاء CMYK (GDI يرسم RGB فقط)', async () => {
+    // مخرج CMYK يُصدَّر TIFF بفصل أحبار لا يفكّه المحرك — الطلب المباشر يُتجاهل
+    // ويسقط لمسار حوار النظام (المُجدوَل بعد أنيميشن الإغلاق).
+    await runPrint(makeContext({ printColorSpace: 'CMYK' }), () => {}, {
+      directPrint: true,
+      printerName: 'HP LaserJet',
+    });
+
+    expect(mockExportPrintSheet).toHaveBeenCalledWith(
+      expect.objectContaining({ exportFormat: 'tiff', colorSpace: 'CMYK' }),
+    );
+    expect(mockPrintDirect).not.toHaveBeenCalled();
+  });
+
+  it('عند فشل الطباعة المباشرة: تحذير عربي ثم سقوط آمن لحوار النظام', async () => {
+    mockPrintDirect.mockResolvedValueOnce({
+      success: false,
+      jobId: 0,
+      status: '',
+      error: 'OpenPrinter failed: 5',
+    } as Awaited<ReturnType<typeof PrintDirect>>);
+
+    await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+      directPrint: true,
+      printerName: 'HP LaserJet',
+    });
+
+    expect(mockToastWarning).toHaveBeenCalledWith(
+      expect.stringContaining('تعذرت الطباعة المباشرة'),
+    );
+    // الفشل المباشر لا يبتلع الدورة — مسار التصدير اكتمل مرة واحدة ويتاح الحوار
+    expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
+  });
+
+  it('يمرر اسم قالب الورق (formName) إلى طلب PrintDirect عند توفره', async () => {
+    await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+      directPrint: true,
+      printerName: 'Epson L8050',
+      formName: 'A4 (Borderless)',
+    });
+
+    expect(mockPrintDirect).toHaveBeenCalledTimes(1);
+    expect(mockPrintDirect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        printerName: 'Epson L8050',
+        formName: 'A4 (Borderless)',
+      }),
+    );
+  });
+
+  it('يراقب حالة المهمة خلفياً عبر PollJobStatus بعد نجاح إرسال PrintDirect', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      mockPrintDirect.mockResolvedValueOnce({
+        success: true,
+        jobId: 88,
+        status: 'Spooling',
+        error: '',
+      } as Awaited<ReturnType<typeof PrintDirect>>);
+
+      await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+        directPrint: true,
+        printerName: 'Canon Pro-1000',
+      });
+
+      expect(mockPrintDirect).toHaveBeenCalledTimes(1);
+      expect(mockPollJobStatus).not.toHaveBeenCalled();
+
+      await act(async () => {
+        vi.advanceTimersByTime(1600);
+      });
+
+      expect(mockPollJobStatus).toHaveBeenCalledWith('Canon Pro-1000', 88);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('يُظهر تنبيه خطأ إذا كشف PollJobStatus عطلاً في المهمة بعد الإرسال', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      mockPrintDirect.mockResolvedValueOnce({
+        success: true,
+        jobId: 99,
+        status: 'Spooling',
+        error: '',
+      } as Awaited<ReturnType<typeof PrintDirect>>);
+      mockPollJobStatus.mockResolvedValueOnce({
+        success: false,
+        jobId: 99,
+        status: 'Out of Paper',
+        error: 'نفد الورق من الدرج الخلفي',
+      } as Awaited<ReturnType<typeof PollJobStatus>>);
+
+      await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+        directPrint: true,
+        printerName: 'Canon Pro-1000',
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(1600);
+      });
+
+      expect(mockToastError).toHaveBeenCalledWith(
+        expect.stringContaining('تنبيه الطابعة للمهمة #99: نفد الورق من الدرج الخلفي'),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('يتعامل بأمان مع استثناءات PrintDirect ويسقط لحوار النظام مع تحذير عربي', async () => {
+    mockPrintDirect.mockRejectedValueOnce(new Error('RPC connection closed unexpectedly'));
+
+    await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+      directPrint: true,
+      printerName: 'HP LaserJet',
+    });
+
+    expect(mockToastWarning).toHaveBeenCalledWith(
+      expect.stringContaining('تعذرت الطباعة المباشرة'),
+    );
+    // التصدير اكتمل وسقط الحوار للنظام
+    expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
+  });
+
+  it('يتعامل مع مهلة PrintDirect بتنبيه خاص ويمنع السقوط التلقائي تفادياً للطباعة المزدوجة', async () => {
+    const onDone = vi.fn();
+    mockPrintDirect.mockRejectedValueOnce(new Error('PrintDirect: انتهت المهلة (30 ث)'));
+
+    await runPrint(makeContext({ printColorSpace: 'sRGB' }), onDone, {
+      directPrint: true,
+      printerName: 'HP LaserJet',
+    });
+
+    expect(mockToastWarning).toHaveBeenCalledWith(
+      expect.stringContaining('تأخرت الطباعة المباشرة عن المهلة'),
+    );
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(mockPrintNative).not.toHaveBeenCalled();
+  });
+
+  it('يمرر مصفوفة عناصر فارغة إذا كانت الخانات فارغة في وضع الكولاج', async () => {
+    await runPrint(makeContext({ slots: [] }));
+
+    expect(mockExportPrintSheet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [],
+      }),
+    );
+  });
+
+  it('يمرر اسم طابعة فارغاً إذا لم يُحدد في الخيارات لتمكين السقوط للطابعة الافتراضية', async () => {
+    await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+      directPrint: true,
+      printerName: '',
+    });
+
+    expect(mockPrintDirect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        printerName: '',
+      }),
+    );
+  });
+
+  it('يعرض اسم الطابعة المخصصة ورقم المهمة بدقة في إشعار النجاح', async () => {
+    mockPrintDirect.mockResolvedValueOnce({
+      success: true,
+      jobId: 105,
+      status: 'Spooling',
+      error: '',
+    } as Awaited<ReturnType<typeof PrintDirect>>);
+
+    await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+      directPrint: true,
+      printerName: 'Epson Stylus Pro 4900',
+    });
+
+    expect(mockToastSuccess).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'تم إرسال الورقة بنجاح إلى طابعة Epson Stylus Pro 4900 (المهمة #105)',
+      ),
+    );
+  });
+
+  it('يتجاهل استدعاء PollJobStatus إذا أعادت الطباعة المباشرة jobId صفرياً أو غير معرف', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      mockPrintDirect.mockResolvedValueOnce({
+        success: true,
+        jobId: 0,
+        status: 'Printed',
+        error: '',
+      } as Awaited<ReturnType<typeof PrintDirect>>);
+
+      await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+        directPrint: true,
+        printerName: 'Brother HL-L2350DW',
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+      });
+
+      expect(mockPollJobStatus).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -39,6 +39,20 @@ describe('describeError', () => {
     expect(describeError(null)).toBe('خطأ غير معروف');
     expect(describeError(undefined)).toBe('خطأ غير معروف');
   });
+
+  it('يترجم سقوف وأخطاء الطباعة التقنية إلى رسائل عربية واضحة', () => {
+    expect(describeError('total pixels exceed 144 megapixels')).toContain('أكثر من 144 ميجابكسل');
+    expect(describeError('cmyk tiff too large')).toContain('ورقة CMYK TIFF كبيرة جداً');
+    expect(describeError('unsupported feature: color model')).toContain(
+      'صيغة اللون CMYK بفصل الأحبار غير مدعومة',
+    );
+    expect(describeError('too many expanded print cells')).toContain('عدد النسخ كبير جداً');
+    expect(describeError('too many items: 1000')).toContain('عدد العناصر كبير جداً');
+    expect(describeError('invalid DPI')).toContain('قيمة DPI غير صالحة');
+    expect(describeError('PrintDirect: انتهت المهلة (30 ث)')).toBe(
+      'PrintDirect: انتهت المهلة (30 ث)',
+    );
+  });
 });
 
 describe('withTimeout', () => {

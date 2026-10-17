@@ -379,6 +379,14 @@ export async function setupWailsV3Bridge(
             filePath: 'C:/mock/sheet.png',
           }),
           PrintNative: async () => ({ success: true, filePath: 'C:/mock/sheet.png' }),
+          PrintDirect: async () => ({
+            success: true,
+            jobId: 42,
+            status: 'Printed',
+            error: '',
+          }),
+          GetSupportedPapers: async () => ({ success: true, papers: [] }),
+          PollJobStatus: async () => ({ success: true, jobId: 42, status: 'Printed', error: '' }),
         },
       },
     };
