@@ -16,6 +16,7 @@ import {
   WifiHigh,
   Image as ImageIcon,
   WarningCircle,
+  Cloud,
 } from '@/components/ui/icons';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -37,6 +38,7 @@ export interface PhoneBridgeDialogProps {
 
 export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps) {
   const [bridgeInfo, setBridgeInfo] = useState<service.BridgeInfo | null>(null);
+  const [bridgeMode, setBridgeMode] = useState<'cloud' | 'local'>('cloud');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
@@ -120,10 +122,16 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     return () => clearInterval(interval);
   }, [open, bridgeInfo?.isRunning]);
 
+  const activeUrl =
+    bridgeMode === 'cloud'
+      ? bridgeInfo?.cloudUrl ||
+        (bridgeInfo?.token ? `https://grido.cloud-ip.cc/cam#session=${bridgeInfo.token}` : '')
+      : bridgeInfo?.url || '';
+
   const handleCopyUrl = async () => {
-    if (!bridgeInfo?.url) return;
+    if (!activeUrl) return;
     try {
-      await navigator.clipboard.writeText(bridgeInfo.url);
+      await navigator.clipboard.writeText(activeUrl);
       if (!isMountedRef.current) return;
       setCopied(true);
       toast.success('تم نسخ الرابط');
@@ -167,7 +175,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
         </DialogHeader>
 
         {/* Modal Body */}
-        <div className="p-6 flex flex-col items-center gap-5 max-h-[75vh] overflow-y-auto">
+        <div className="p-6 flex flex-col items-center gap-4 max-h-[75vh] overflow-y-auto">
           {isLoading && (
             <div
               role="status"
@@ -198,11 +206,39 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
           {!isLoading && !error && bridgeInfo && (
             <>
+              {/* Segmented Mode Selector: Cloud vs Local */}
+              <div className="flex items-center w-full p-1 bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/60">
+                <button
+                  type="button"
+                  onClick={() => setBridgeMode('cloud')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    bridgeMode === 'cloud'
+                      ? 'bg-background text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Cloud className="w-3.5 h-3.5 text-primary" weight="bold" />
+                  <span>السحابي الذكي (موصى به)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBridgeMode('local')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    bridgeMode === 'local'
+                      ? 'bg-background text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <WifiHigh className="w-3.5 h-3.5" weight="bold" />
+                  <span>الشبكة المحلية (Wi-Fi)</span>
+                </button>
+              </div>
+
               {/* QR Code Container (High-contrast for easy phone camera scanning) */}
               <div className="relative group p-4 bg-card dark:bg-white rounded-2xl shadow-fluent-8 border border-border/40 flex items-center justify-center">
                 <QRCodeSVG
-                  value={bridgeInfo.url}
-                  size={190}
+                  value={activeUrl}
+                  size={185}
                   level="M"
                   bgColor="#ffffff"
                   fgColor="#090d16"
@@ -219,13 +255,23 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
                     </span>
-                    <span className="font-semibold text-foreground">الجسر متصل ويعمل</span>
+                    <span className="font-semibold text-foreground">
+                      {bridgeMode === 'cloud' ? 'الجسر السحابي نشط' : 'الجسر المحلي نشط'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <WifiHigh className="w-3.5 h-3.5 text-primary" weight="bold" />
-                    <span className="font-mono text-xs">
-                      {bridgeInfo.ip}:{bridgeInfo.port}
-                    </span>
+                    {bridgeMode === 'cloud' ? (
+                      <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
+                        مشفّر ومحمي 100%
+                      </span>
+                    ) : (
+                      <>
+                        <WifiHigh className="w-3.5 h-3.5 text-primary" weight="bold" />
+                        <span className="font-mono text-xs">
+                          {bridgeInfo.ip}:{bridgeInfo.port}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -245,7 +291,9 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
               <div className="w-full text-center space-y-1 bg-muted/20 p-3 rounded-xl border border-border/40">
                 <p className="text-xs font-semibold text-foreground">امسح الرمز بكاميرا هاتفك</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  الهاتف والكمبيوتر على نفس شبكة Wi-Fi. الصور تظهر فوراً.
+                  {bridgeMode === 'cloud'
+                    ? 'يعمل على أي شبكة بالعالم (Wi-Fi أو بيانات 4G/5G). خصوصية كاملة وحذف فوري.'
+                    : 'الهاتف والكمبيوتر على نفس شبكة Wi-Fi. النقل محلي بالكامل.'}
                 </p>
               </div>
 
@@ -254,7 +302,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                 <input
                   type="text"
                   readOnly
-                  value={bridgeInfo.url}
+                  value={activeUrl}
                   className="w-full bg-transparent px-2.5 text-xs font-mono text-muted-foreground outline-none select-all truncate"
                 />
                 <Button

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
@@ -35,12 +36,14 @@ type BridgeInfo struct {
 	Port      int    `json:"port"`
 	Token     string `json:"token"`
 	URL       string `json:"url"`
+	CloudURL  string `json:"cloudUrl"`
 	IsRunning bool   `json:"isRunning"`
 }
 
 type BridgeStatus struct {
 	IsRunning     bool   `json:"isRunning"`
 	URL           string `json:"url"`
+	CloudURL      string `json:"cloudUrl"`
 	ReceivedCount int    `json:"receivedCount"`
 	LastReceived  string `json:"lastReceived"`
 }
@@ -56,6 +59,8 @@ type PhoneBridgeService struct {
 	port          int
 	token         string
 	url           string
+	cloudURL      string
+	cloudCancel   context.CancelFunc
 	receivedCount int
 	lastReceived  string
 	mu            sync.RWMutex
@@ -95,6 +100,7 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 			Port:      s.port,
 			Token:     s.token,
 			URL:       s.url,
+			CloudURL:  s.cloudURL,
 			IsRunning: true,
 		}, nil
 	}
@@ -132,6 +138,7 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 	}
 	s.port = tcpAddr.Port
 	s.url = fmt.Sprintf("http://%s:%d?token=%s", s.ip, s.port, s.token)
+	s.cloudURL = fmt.Sprintf("https://grido.cloud-ip.cc/cam#session=%s", s.token)
 	s.listener = listener
 
 	// 4. Setup HTTP Mux
@@ -158,11 +165,23 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 		}
 	})
 
+	// 5. بدء مزامنة الجسر السحابي الذكي الفورية في الخلفية
+	if s.cloudCancel != nil {
+		s.cloudCancel()
+	}
+	cloudCtx, cancel := context.WithCancel(context.Background())
+	s.cloudCancel = cancel
+	tokenCopy := s.token
+	utils.SafeGo("phone-bridge.cloud-sync", func() {
+		s.pollCloudBridge(cloudCtx, tokenCopy)
+	})
+
 	return &BridgeInfo{
 		IP:        s.ip,
 		Port:      s.port,
 		Token:     s.token,
 		URL:       s.url,
+		CloudURL:  s.cloudURL,
 		IsRunning: true,
 	}, nil
 }
@@ -171,7 +190,17 @@ func (s *PhoneBridgeService) Stop() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if s.cloudCancel != nil {
+		s.cloudCancel()
+		s.cloudCancel = nil
+	}
+
+	tokenToClean := s.token
+
 	if s.server == nil {
+		if tokenToClean != "" {
+			s.cleanCloudSession(tokenToClean)
+		}
 		return nil
 	}
 
@@ -182,7 +211,12 @@ func (s *PhoneBridgeService) Stop() error {
 	s.server = nil
 	s.listener = nil
 	s.url = ""
+	s.cloudURL = ""
 	s.token = ""
+
+	if tokenToClean != "" {
+		s.cleanCloudSession(tokenToClean)
+	}
 
 	slog.Info("Phone bridge server stopped")
 	return err
@@ -195,6 +229,7 @@ func (s *PhoneBridgeService) GetStatus() *BridgeStatus {
 	return &BridgeStatus{
 		IsRunning:     s.server != nil,
 		URL:           s.url,
+		CloudURL:      s.cloudURL,
 		ReceivedCount: s.receivedCount,
 		LastReceived:  s.lastReceived,
 	}
@@ -467,3 +502,187 @@ func (s *PhoneBridgeService) discoverLocalIP() (string, error) {
 
 	return "127.0.0.1", nil
 }
+
+type cloudStorageItem struct {
+	Name string `json:"name"`
+	Id   string `json:"id"`
+}
+
+// pollCloudBridge يقوم بالاستماع اللحظي إلى باكت Supabase Storage المؤقت، وسحب أي صورة
+// تم التقاطها من هاتف المستخدم وحفظها محلياً فورياً ثم حذفها من السيرفر فوراً.
+func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken string) {
+	if SupabaseURL == "" || SupabaseAnonKey == "" {
+		slog.Debug("Supabase credentials not configured, skipping cloud bridge sync")
+		return
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	ticker := time.NewTicker(1500 * time.Millisecond)
+	defer ticker.Stop()
+
+	listURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/list/phone-bridge"
+	deleteURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge"
+
+	for {
+		select {
+		case <-ctx.Done():
+			s.cleanCloudSession(sessionToken)
+			return
+		case <-ticker.C:
+			s.mu.RLock()
+			running := s.server != nil && s.token == sessionToken
+			s.mu.RUnlock()
+			if !running {
+				s.cleanCloudSession(sessionToken)
+				return
+			}
+
+			// 1. فحص وجود كائنات في المسار المؤقت لجلسة المستخدم الحالية
+			listPayload, err := json.Marshal(map[string]interface{}{
+				"prefix": sessionToken + "/",
+				"limit":  10,
+			})
+			if err != nil {
+				continue
+			}
+
+			req, err := http.NewRequestWithContext(ctx, "POST", listURL, bytes.NewBuffer(listPayload))
+			if err != nil {
+				continue
+			}
+			req.Header.Set("apikey", SupabaseAnonKey)
+			req.Header.Set("Authorization", "Bearer "+SupabaseAnonKey)
+			req.Header.Set("Content-Type", "application/json")
+
+			resp, err := client.Do(req)
+			if err != nil {
+				continue
+			}
+
+			if resp.StatusCode != http.StatusOK {
+				resp.Body.Close()
+				continue
+			}
+
+			var items []cloudStorageItem
+			decodeErr := json.NewDecoder(io.LimitReader(resp.Body, 256*1024)).Decode(&items)
+			resp.Body.Close()
+			if decodeErr != nil || len(items) == 0 {
+				continue
+			}
+
+			// 2. سحب ومعالجة كل صورة وردت
+			for _, item := range items {
+				if item.Name == "" || strings.HasPrefix(item.Name, ".") {
+					continue
+				}
+
+				objectPath := sessionToken + "/" + item.Name
+				downloadURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge/" + objectPath
+
+				downReq, dErr := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
+				if dErr != nil {
+					continue
+				}
+				downReq.Header.Set("apikey", SupabaseAnonKey)
+				downReq.Header.Set("Authorization", "Bearer "+SupabaseAnonKey)
+
+				downResp, dErr := client.Do(downReq)
+				if dErr != nil || downResp.StatusCode != http.StatusOK {
+					if downResp != nil {
+						downResp.Body.Close()
+					}
+					continue
+				}
+
+				// التحقق من نوع المحتوى لضمان أنه صورة
+				headerBuf := make([]byte, 512)
+				n, _ := io.ReadFull(downResp.Body, headerBuf)
+				detectedMime := http.DetectContentType(headerBuf[:n])
+
+				if !strings.HasPrefix(detectedMime, "image/") {
+					downResp.Body.Close()
+					s.deleteCloudObject(deleteURL, objectPath)
+					continue
+				}
+
+				fullReader := io.MultiReader(bytes.NewReader(headerBuf[:n]), downResp.Body)
+
+				mediaDir := s.mediaSvc.GetMediaDir()
+				ext := s.mediaSvc.GetExtensionFromMime(detectedMime)
+				filename := fmt.Sprintf("cloud_%d%s", time.Now().UnixNano(), ext)
+				finalPath := filepath.Join(mediaDir, filename)
+
+				af, createErr := utils.CreateAtomic(finalPath, 0o644)
+				if createErr != nil {
+					downResp.Body.Close()
+					continue
+				}
+
+				_, copyErr := io.Copy(af, io.LimitReader(fullReader, MaxUploadSize))
+				downResp.Body.Close()
+
+				if copyErr != nil {
+					af.Abort()
+					continue
+				}
+
+				if commitErr := af.Commit(); commitErr != nil {
+					continue
+				}
+
+				virtualPath := "/local-image/" + filename
+
+				s.mu.Lock()
+				s.receivedCount++
+				s.lastReceived = time.Now().Format("15:04:05")
+				s.mu.Unlock()
+
+				s.runtime.Emit("phone:photo-received", map[string]string{
+					"path": virtualPath,
+				})
+
+				slog.Info("Phone bridge received cloud photo successfully", "path", virtualPath)
+
+				// 3. الحذف الفوري (Instant Purge) من السيرفر السحابي لحماية الخصوصية ومساحة التخزين
+				s.deleteCloudObject(deleteURL, objectPath)
+			}
+		}
+	}
+}
+
+// deleteCloudObject يحذف الملف من باكت التخزين السحابي فوراً
+func (s *PhoneBridgeService) deleteCloudObject(deleteURL, objectPath string) {
+	if SupabaseURL == "" || SupabaseAnonKey == "" {
+		return
+	}
+	delPayload, err := json.Marshal(map[string]interface{}{
+		"prefixes": []string{objectPath},
+	})
+	if err != nil {
+		return
+	}
+	req, err := http.NewRequest("DELETE", deleteURL, bytes.NewBuffer(delPayload))
+	if err != nil {
+		return
+	}
+	req.Header.Set("apikey", SupabaseAnonKey)
+	req.Header.Set("Authorization", "Bearer "+SupabaseAnonKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err == nil && resp != nil {
+		resp.Body.Close()
+	}
+}
+
+// cleanCloudSession ينظف كافة ملفات الجلسة السحابية عند إغلاق الجسر
+func (s *PhoneBridgeService) cleanCloudSession(sessionToken string) {
+	if sessionToken == "" || SupabaseURL == "" || SupabaseAnonKey == "" {
+		return
+	}
+	deleteURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge"
+	s.deleteCloudObject(deleteURL, sessionToken)
+}
+

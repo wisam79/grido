@@ -7,6 +7,7 @@ import { FeedbackProvider } from './components/common/FeedbackProvider';
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = React.lazy(() => import('./pages/TermsOfService'));
+const PhoneCameraPage = React.lazy(() => import('./pages/PhoneCameraPage'));
 
 export default function App() {
   return (
@@ -24,6 +25,8 @@ export default function App() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/admin/*" element={<AdminDashboard />} />
+            <Route path="/cam" element={<PhoneCameraPage />} />
+            <Route path="/camera" element={<PhoneCameraPage />} />
           </Routes>
         </Suspense>
       </BrowserRouter>
