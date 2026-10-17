@@ -163,9 +163,9 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
   }, [open, bridgeInfo?.isRunning]);
 
   const activeUrl =
-    bridgeMode === 'cloud'
-      ? bridgeInfo?.cloudUrl ||
-        (bridgeInfo?.token ? `https://grido.cloud-ip.cc/cam#session=${bridgeInfo.token}` : '')
+    bridgeMode === 'cloud' && (bridgeInfo?.cloudUrl || bridgeInfo?.token)
+      ? bridgeInfo.cloudUrl ||
+        (bridgeInfo.token ? `https://grido.cloud-ip.cc/cam#session=${bridgeInfo.token}` : '')
       : bridgeInfo?.url || '';
 
   const handleCopyUrl = async () => {
@@ -338,10 +338,15 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                   <span className="font-semibold text-foreground">
                     {pairedDevice ? `متصل: ${pairedDevice}` : 'الجسر متصل ويعمل'}
                   </span>
+                  {bridgeInfo.ip && bridgeInfo.port && (
+                    <span className="text-muted-foreground font-mono text-micro">
+                      {bridgeInfo.ip}:{bridgeInfo.port}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 font-mono text-xs">
                   <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
-                  <span className="text-muted-foreground text-xs">الصور:</span>
+                  <span className="text-muted-foreground text-xs">الصور المستلمة:</span>
                   <span className="font-bold text-foreground bg-background px-2 py-0.5 rounded-md border border-border/40">
                     {receivedCount}
                   </span>
@@ -406,7 +411,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                   title="توليد رمز اتصال جديد"
                 >
                   <ArrowClockwise className="w-3.5 h-3.5" />
-                  <span>تحديث الرمز</span>
+                  <span>إعادة تعيين الجلسة</span>
                 </Button>
               </>
             )}
