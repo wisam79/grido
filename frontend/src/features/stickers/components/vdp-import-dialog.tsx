@@ -20,8 +20,26 @@ import { toErrorMessage } from '@/lib/wails-error';
 import { StickerTemplate, StickerParams } from '../types';
 import { parseVdpFile, VdpDataset, VDP_MAX_ROWS } from '../lib/vdp-parser';
 import { renderVdpBatch } from '../lib/vdp-batch';
+import { computeSmartGridLayout } from '@/lib/canvas/grid-layout-math';
 
 const logger = createLogger('VdpImportDialog');
+
+/**
+ * سقف فتح المخزن المؤقت قبل الإدراج على الكانفس: كل 50 بطاقة (بإحداثيات
+ * محسوبة مقدماً) تُسلَّم فوراً فلا تتراكم Data URLs في الذاكرة على الويب —
+ * إدراج ذري لكل شوط لا يقرر تخطيط الشبكة من جديد فتبقى المواضع مطابقة
+ * لتخطيط دفعة واحدة كاملة.
+ */
+const VDP_INSERT_CHUNK = 50;
+
+interface VdpBufferedCard {
+  src: string;
+  aspectRatio: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export interface VdpImportDialogProps {
   open: boolean;
@@ -50,6 +68,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
 
   // حارس الإلغاء: لا تُدرج عناصر ولا تُظهر رسالة بعد إغلاق النافذة أثناء التوليد
   const cancelledRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -86,30 +105,72 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
     if (!dataset || mappedFieldCount === 0) return;
     setIsGenerating(true);
     setProgress({ done: 0, total: dataset.rows.length });
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // تخطيط الشبكة يُحسب مرة واحدة لكل الصفوف (نفس محرك addImageElementsBatch
+    // وبنفس قيم الافتراض) — البطاقات الناجحة تنتقي مواضعها تسلسلياً فتبقى
+    // الشبكة متماسكة بلا فراغات وإن فشلت صفوف.
+    const storeState = useEditorStore.getState();
+    const placedCells = computeSmartGridLayout(
+      dataset.rows.map(() => ({ src: '', aspectRatio: template.aspectRatio || 1 })),
+      {
+        canvasWidth: storeState.canvasWidth || 2480,
+        canvasHeight: storeState.canvasHeight || 3508,
+        layoutMode: 'grid',
+      },
+    );
+
+    const buffer: VdpBufferedCard[] = [];
+    let placedCursor = 0;
+    let insertedCount = 0;
+    const flushBuffer = () => {
+      if (buffer.length === 0) return;
+      useEditorStore.getState().addImageElementsBatch(buffer.splice(0, buffer.length));
+    };
+
     try {
-      const { pngUrls, failedRows } = await renderVdpBatch(
+      const { failedRows, aborted } = await renderVdpBatch(
         template,
         baseParams,
         dataset.rows,
         mapping,
         setProgress,
+        {
+          signal: controller.signal,
+          onRendered: (src) => {
+            const cell = placedCells[placedCursor++];
+            if (!cell) return;
+            buffer.push({
+              src,
+              aspectRatio: template.aspectRatio || 1,
+              x: cell.x,
+              y: cell.y,
+              width: cell.width,
+              height: cell.height,
+            });
+            insertedCount++;
+            if (buffer.length >= VDP_INSERT_CHUNK) flushBuffer();
+          },
+        },
       );
-      if (cancelledRef.current) return;
-      if (pngUrls.length === 0) {
+      // بعد الإلغاء تبقى ما أُدرج فعلاً، وذيل المخزن يُلغى بلا إدراج —
+      // التصيير المتوقف نصفه لن يُرمى عمله المكتمل معه.
+      if (aborted || cancelledRef.current) return;
+      flushBuffer();
+      if (insertedCount === 0) {
         toast.error('لم تُصيَّر أي بطاقة — تحقق من ربط الأعمدة');
         return;
       }
-      useEditorStore.getState().addImageElementsBatch(
-        pngUrls.map((src) => ({ src })),
-        { layoutMode: 'grid' },
-      );
       const warn = failedRows > 0 ? ` (${failedRows} صف فشل)` : '';
-      toast.success(`أُدرجت ${pngUrls.length} بطاقة${warn}`);
+      toast.success(`أُدرجت ${insertedCount} بطاقة${warn}`);
       onOpenChange(false);
     } catch (err) {
       logger.error('VDP batch generation failed:', err);
       toast.error(toErrorMessage(err, 'فشل توليد البطاقات'));
     } finally {
+      if (abortRef.current === controller) abortRef.current = null;
       setIsGenerating(false);
     }
   }, [dataset, mappedFieldCount, template, baseParams, mapping, onOpenChange]);
@@ -118,6 +179,8 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
   React.useEffect(() => {
     if (!open) {
       cancelledRef.current = true;
+      abortRef.current?.abort();
+      abortRef.current = null;
       setIsLoadingFile(false);
       setIsGenerating(false);
       setIsDragging(false);
@@ -126,6 +189,14 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
       cancelledRef.current = false;
     }
   }, [open]);
+
+  // إلغاء أي دفعة جارية عند إغلاق المكوّن أو إزالته
+  React.useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
 
   const closeAndReset = useCallback(() => {
     setDataset(null);

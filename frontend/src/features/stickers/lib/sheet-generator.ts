@@ -4,8 +4,13 @@
  *
  * يقبل الأبعاد بالمليمتر (Hidef للمطبعة) أو بالبكسل مباشرة للتوافق:
  * عند تمرير spacingMm/sheetWidthMm تُحسب البكسلات عبر 300DPI الحقيقية.
+ *
+ * المسار الوحيد: `generateStickerSheetBlob` (بلا Base64) — الاستدعاء
+ * يرفع Blob ثنائياً على سطح المكتب ويحوّل إلى Data URL على الويب فقط.
  */
 import { mmToPx, STICKER_DPI } from './sticker-text';
+import { assertRasterBudget } from './export-limits';
+import { canvasToBlob } from './svg-rasterizer';
 
 export interface SheetOptions {
   rows: number;
@@ -55,10 +60,14 @@ export function autoFitSheetGrid(input: SheetAutoFitInput): SheetAutoFitResult {
   return { rows: Math.min(rows, 12), cols: Math.min(cols, 12), count: rows * cols };
 }
 
-export async function generateStickerSheet(
-  singleStickerPngUrl: string,
+/**
+ * يرسم شبكة الملصقات ويعيد Blob. يستخدم Master واحداً ويعيد استخدامه لكل
+ * خلية، ثم يحرر رابط المصدر المؤقت في `finally`.
+ */
+export async function generateStickerSheetBlob(
+  singleStickerPng: string | Blob,
   options: SheetOptions = { rows: 3, cols: 3 },
-): Promise<string> {
+): Promise<Blob> {
   const dpi = options.dpi && options.dpi > 0 ? options.dpi : STICKER_DPI;
   const drawCutMarks = options.drawCutMarks ?? true;
   const gapPx =
@@ -74,113 +83,120 @@ export async function generateStickerSheet(
     options.sheetHeightMm !== undefined
       ? mmToPx(options.sheetHeightMm, dpi)
       : (options.sheetHeight ?? 2400);
-  const rows = options.rows;
-  const cols = options.cols;
 
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
+  // حماية الذاكرة قبل أي تخصيص Canvas
+  assertRasterBudget(sheetWidth, sheetHeight);
 
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = sheetWidth;
-        canvas.height = sheetHeight;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Cannot get 2D canvas context'));
-          return;
-        }
-        ctx.imageSmoothingEnabled = true;
-        try {
-          ctx.imageSmoothingQuality = 'high';
-        } catch {
-          // متصفحات قديمة — تُتجاهل بصمت
-        }
+  const rows = Math.max(1, Math.floor(options.rows));
+  const cols = Math.max(1, Math.floor(options.cols));
 
-        // Available area for grid
-        const availableW = sheetWidth - paddingPx * 2 - (cols - 1) * gapPx;
-        const availableH = sheetHeight - paddingPx * 2 - (rows - 1) * gapPx;
+  let objectUrl: string | null = null;
+  const source =
+    typeof singleStickerPng === 'string'
+      ? singleStickerPng
+      : (() => {
+          objectUrl = URL.createObjectURL(singleStickerPng);
+          return objectUrl;
+        })();
 
-        const cellW = availableW / cols;
-        const cellH = availableH / rows;
-        const imgAspect = img.width / img.height || 1;
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('Failed to load sticker image for sheet'));
+      image.src = source;
+    });
 
-        // Maintain aspect ratio of sticker within cell
-        let drawW = cellW;
-        let drawH = cellW / imgAspect;
-        if (drawH > cellH) {
-          drawH = cellH;
-          drawW = cellH * imgAspect;
-        }
+    const canvas = document.createElement('canvas');
+    canvas.width = sheetWidth;
+    canvas.height = sheetHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Cannot get 2D canvas context');
 
-        ctx.fillStyle = 'transparent';
-        ctx.clearRect(0, 0, sheetWidth, sheetHeight);
+    ctx.imageSmoothingEnabled = true;
+    try {
+      ctx.imageSmoothingQuality = 'high';
+    } catch {
+      // متصفحات قديمة — تُتجاهل بصمت
+    }
 
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            const cellX = paddingPx + c * (cellW + gapPx);
-            const cellY = paddingPx + r * (cellH + gapPx);
+    // Available area for grid
+    const availableW = sheetWidth - paddingPx * 2 - (cols - 1) * gapPx;
+    const availableH = sheetHeight - paddingPx * 2 - (rows - 1) * gapPx;
 
-            const x = cellX + (cellW - drawW) / 2;
-            const y = cellY + (cellH - drawH) / 2;
+    const cellW = availableW / cols;
+    const cellH = availableH / rows;
+    const imgAspect = img.width / img.height || 1;
 
-            // Draw sticker image
-            ctx.drawImage(img, x, y, drawW, drawH);
-          }
-        }
+    // Maintain aspect ratio of sticker within cell
+    let drawW = cellW;
+    let drawH = cellW / imgAspect;
+    if (drawH > cellH) {
+      drawH = cellH;
+      drawW = cellH * imgAspect;
+    }
 
-        // علامات قص حقيقية للمطبعة: أسود رفيع بإزاحة 2مم وطول 5مم (دفعة stroke واحدة)
-        if (drawCutMarks) {
-          ctx.strokeStyle = '#111827';
-          ctx.lineWidth = Math.max(1.5, dpi / 200);
-          const markLen = mmToPx(5, dpi);
-          const markOff = mmToPx(2, dpi);
-          ctx.beginPath();
+    ctx.clearRect(0, 0, sheetWidth, sheetHeight);
 
-          for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-              const cellX = paddingPx + c * (cellW + gapPx);
-              const cellY = paddingPx + r * (cellH + gapPx);
-              const x = cellX + (cellW - drawW) / 2;
-              const y = cellY + (cellH - drawH) / 2;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cellX = paddingPx + c * (cellW + gapPx);
+        const cellY = paddingPx + r * (cellH + gapPx);
 
-              // Top-left
-              ctx.moveTo(x - markOff, y);
-              ctx.lineTo(x - markOff - markLen, y);
-              ctx.moveTo(x, y - markOff);
-              ctx.lineTo(x, y - markOff - markLen);
+        const x = cellX + (cellW - drawW) / 2;
+        const y = cellY + (cellH - drawH) / 2;
 
-              // Top-right
-              ctx.moveTo(x + drawW + markOff, y);
-              ctx.lineTo(x + drawW + markOff + markLen, y);
-              ctx.moveTo(x + drawW, y - markOff);
-              ctx.lineTo(x + drawW, y - markOff - markLen);
-
-              // Bottom-left
-              ctx.moveTo(x - markOff, y + drawH);
-              ctx.lineTo(x - markOff - markLen, y + drawH);
-              ctx.moveTo(x, y + drawH + markOff);
-              ctx.lineTo(x, y + drawH + markOff + markLen);
-
-              // Bottom-right
-              ctx.moveTo(x + drawW + markOff, y + drawH);
-              ctx.lineTo(x + drawW + markOff + markLen, y + drawH);
-              ctx.moveTo(x + drawW, y + drawH + markOff);
-              ctx.lineTo(x + drawW, y + drawH + markOff + markLen);
-            }
-          }
-
-          ctx.stroke();
-        }
-
-        resolve(canvas.toDataURL('image/png'));
-      } catch (err) {
-        reject(err);
+        ctx.drawImage(img, x, y, drawW, drawH);
       }
-    };
+    }
 
-    img.onerror = (e) => reject(new Error('Failed to load sticker image for sheet: ' + String(e)));
-    img.src = singleStickerPngUrl;
-  });
+    // علامات قص حقيقية للمطبعة: أسود رفيع بإزاحة 2مم وطول 5مم (دفعة stroke واحدة)
+    if (drawCutMarks) {
+      ctx.strokeStyle = '#111827';
+      ctx.lineWidth = Math.max(1.5, dpi / 200);
+      const markLen = mmToPx(5, dpi);
+      const markOff = mmToPx(2, dpi);
+      ctx.beginPath();
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const cellX = paddingPx + c * (cellW + gapPx);
+          const cellY = paddingPx + r * (cellH + gapPx);
+          const x = cellX + (cellW - drawW) / 2;
+          const y = cellY + (cellH - drawH) / 2;
+
+          // Top-left
+          ctx.moveTo(x - markOff, y);
+          ctx.lineTo(x - markOff - markLen, y);
+          ctx.moveTo(x, y - markOff);
+          ctx.lineTo(x, y - markOff - markLen);
+
+          // Top-right
+          ctx.moveTo(x + drawW + markOff, y);
+          ctx.lineTo(x + drawW + markOff + markLen, y);
+          ctx.moveTo(x + drawW, y - markOff);
+          ctx.lineTo(x + drawW, y - markOff - markLen);
+
+          // Bottom-left
+          ctx.moveTo(x - markOff, y + drawH);
+          ctx.lineTo(x - markOff - markLen, y + drawH);
+          ctx.moveTo(x, y + drawH + markOff);
+          ctx.lineTo(x, y + drawH + markOff + markLen);
+
+          // Bottom-right
+          ctx.moveTo(x + drawW + markOff, y + drawH);
+          ctx.lineTo(x + drawW + markOff + markLen, y + drawH);
+          ctx.moveTo(x + drawW, y + drawH + markOff);
+          ctx.lineTo(x + drawW, y + drawH + markOff + markLen);
+        }
+      }
+
+      ctx.stroke();
+    }
+
+    return await canvasToBlob(canvas, 'image/png');
+  } finally {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  }
 }

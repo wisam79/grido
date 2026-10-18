@@ -1,4 +1,5 @@
 import { StickerParams, StickerUserPreset } from '../types';
+import { StickerUserPresetSchema, stripDangerousKeys } from './sticker-design/schema';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('sticker-presets');
@@ -13,20 +14,22 @@ export function loadStickerPresets(): StickerUserPreset[] {
     const raw = localStorage.getItem(STICKER_PRESETS_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed.filter(
-        (p) =>
-          p &&
-          typeof p === 'object' &&
-          typeof p.id === 'string' &&
-          typeof p.templateId === 'string' &&
-          p.params &&
-          typeof p.params === 'object' &&
-          p.params.fields &&
-          typeof p.params.fields === 'object',
-      );
+    if (!Array.isArray(parsed)) return [];
+
+    // تحقق مخطط كامل بدل فحص سطحي: يرفض الحقول الزائدة/التالفة ويمنع
+    // تمرير كائنات غير موثوقة إلى buildStickerSvg لاحقاً.
+    const seen = new Set<string>();
+    const valid: StickerUserPreset[] = [];
+    for (const item of parsed) {
+      // تقميع المفاتيح الخطرة قبل المخطط: تعيين السجلات داخل zod المباشر
+      // يستدعي setter النموذج الأولي إن مر مثل `__proto__` بقيمة كائن.
+      const result = StickerUserPresetSchema.safeParse(stripDangerousKeys(item));
+      if (!result.success || seen.has(result.data.id)) continue;
+      seen.add(result.data.id);
+      valid.push(result.data);
+      if (valid.length >= 50) break;
     }
-    return [];
+    return valid;
   } catch (e) {
     logger.error('Failed to load sticker presets:', e);
     return [];
@@ -60,6 +63,7 @@ export function saveStickerPreset(
     templateId,
     params: {
       ...params,
+      version: 2,
       fields: { ...params.fields },
     },
     createdAt: Date.now(),

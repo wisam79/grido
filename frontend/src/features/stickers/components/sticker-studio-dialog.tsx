@@ -34,7 +34,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import { wailsIsDesktop } from '@/lib/wails-env';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
-import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { uploadMediaBlob } from '@/lib/io/media-upload';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import type { StickerElementSource, CanvasElement } from '@/lib/store/types';
 import { toast } from 'sonner';
@@ -43,18 +43,23 @@ import {
   StickerCategoryGroupId,
   StickerShape,
   StickerTemplate,
-  StickerParams,
   SheetGridConfig,
 } from '../types';
 import { ALL_STICKER_TEMPLATES } from '../templates';
 import { findHiddenFieldIds } from '../templates/svg-elements';
-import { renderSvgToPngDataUrl, downloadFile } from '../lib/svg-rasterizer';
-import { postProcessStickerSvg, stickerRasterSize } from '../lib/sticker-text';
+import {
+  renderSvgToPngBlob,
+  renderSvgToPngDataUrl,
+  downloadBlob,
+  blobToDataUrl,
+} from '../lib/svg-rasterizer';
+import { stickerRasterSize } from '../lib/sticker-text';
 import { embedStickerFonts } from '../lib/sticker-font-embed';
-import { sanitizeStickerColor, sanitizeStickerFontFamily } from '../lib/svg-safety';
 import { sanitizeSvgMarkup } from '@/lib/utils';
 import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from '../lib/clipboard-utils';
-import { generateStickerSheet } from '../lib/sheet-generator';
+import { generateStickerSheetBlob } from '../lib/sheet-generator';
+import { buildDefaultStickerParams, buildStickerSvg } from '../lib/sticker-design/build-svg';
+import { migrateStickerParams } from '../lib/sticker-design/schema';
 import { generateDieCutContour, DEFAULT_BLEED_PERCENT } from '../lib/die-cut-offset';
 import { useStickerParamsHistory } from '../lib/params-history';
 import { VdpImportDialog } from './vdp-import-dialog';
@@ -74,20 +79,6 @@ export interface StickerStudioDialogProps {
   editingElement?: { id: string; source: StickerElementSource } | null;
 }
 
-function buildDefaultParams(template: StickerTemplate): StickerParams {
-  return {
-    fields: Object.fromEntries(template.fields.map((f) => [f.id, f.defaultValue])),
-    primaryColor: template.defaultColors.primary,
-    secondaryColor: template.defaultColors.secondary,
-    backgroundColor: template.defaultColors.background,
-    isTransparent: false,
-    fontFamily: 'Cairo',
-    fontScale: 1,
-    finish: 'standard',
-    dieCutBorder: true,
-  };
-}
-
 /** ورق الشيت = أبعاد الطباعة الفعالة (A4 الافتراضي) مع احترام الاتجاه — لا مربع ثابت */
 function resolveStickerSheetMm(): { width: number; height: number } {
   const s = useEditorStore.getState().printSettings;
@@ -99,25 +90,6 @@ function resolveStickerSheetMm(): { width: number; height: number } {
 }
 
 const logger = createLogger('StickerStudioDialog');
-
-// 🛡️ M35 من تدقيق 2026-10-08: الـ object URL كان يُلغى فوراً بعد
-// `downloadFile(...).click()` — قد يُلغي القفل قبل أن يبدأ المتصفح قراءة
-// البيانات فيخرج ملف صفري. التأجيل بنافذة زمنية آمنة يضمن اكتمال الكتابة،
-// والمؤقّت مُحفوظ ليتعرّف عليه التنظيف عند إغلاق الحوار.
-const OBJECT_URL_REVOKE_DELAY = 60_000;
-let objectUrlRevokeTimer: ReturnType<typeof setTimeout> | null = null;
-
-function revokeObjectUrlLater(url: string): void {
-  if (objectUrlRevokeTimer !== null) {
-    clearTimeout(objectUrlRevokeTimer);
-  }
-  // تأجيل الإلغاء 60 ثانية: إلغاء فوري قد يسبق قراءة المتصفح للبيانات فيخرج
-  // ملف صفري (M35)، مع دمج الطلبات المتتالية في مؤقّت واحد لتفادي التسرّب.
-  objectUrlRevokeTimer = setTimeout(() => {
-    objectUrlRevokeTimer = null;
-    URL.revokeObjectURL(url);
-  }, OBJECT_URL_REVOKE_DELAY);
-}
 
 export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   open,
@@ -167,13 +139,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         );
         if (template) {
           setSelectedTemplate(template);
-          return {
-            ...buildDefaultParams(template),
-            ...editingElement.source.params,
-          } as StickerParams;
+          return migrateStickerParams(editingElement.source.params, template);
         }
       }
-      return buildDefaultParams(ALL_STICKER_TEMPLATES[0]);
+      return buildDefaultStickerParams(ALL_STICKER_TEMPLATES[0]);
     });
 
   // وضع إعادة التحرير: نبدأ مباشرة في وضع التخصيص (لا معنى للمعرض)
@@ -198,7 +167,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   const handleSelectTemplate = useCallback(
     (template: StickerTemplate) => {
       setSelectedTemplate(template);
-      resetParams(buildDefaultParams(template));
+      resetParams(buildDefaultStickerParams(template));
       setView('customize');
     },
     [resetParams],
@@ -258,7 +227,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
 
   // إعادة الضبط تلتزم كخطوة في السجل — تُتراجع بـ Ctrl+Z بدل أن تمحو العمل نهائياً
   const handleResetDefaults = useCallback(() => {
-    commitParams(buildDefaultParams(selectedTemplate));
+    commitParams(buildDefaultStickerParams(selectedTemplate));
   }, [selectedTemplate, commitParams]);
 
   // الكتابة الحية تُؤجَّل عن الرسم: الحقول تستجيب فوراً بينما يُعاد توليد
@@ -268,28 +237,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   const svgString = useMemo(() => {
     if (view === 'gallery') return '';
     try {
-      // كل قيم التصميم تُعقّم هنا قبل حقنها في سمات SVG (الألوان والخط)
-      const cleanFamily = sanitizeStickerFontFamily(deferredParams.fontFamily || 'Cairo');
-      const safeFamily = cleanFamily.includes(' ') ? `'${cleanFamily}'` : cleanFamily;
-      const raw = selectedTemplate.generateSvg({
-        ...deferredParams,
-        primaryColor: sanitizeStickerColor(
-          deferredParams.primaryColor,
-          selectedTemplate.defaultColors.primary,
-        ),
-        secondaryColor: sanitizeStickerColor(
-          deferredParams.secondaryColor,
-          selectedTemplate.defaultColors.secondary,
-        ),
-        backgroundColor: sanitizeStickerColor(
-          deferredParams.backgroundColor,
-          selectedTemplate.defaultColors.background,
-        ),
-        fontFamily: safeFamily,
+      // نقطة التوليد الوحيدة: تعقيم + RTL/ملاءمة + فضّ معرّفات
+      return buildStickerSvg(selectedTemplate, deferredParams, {
+        namespace: `live-${selectedTemplate.id}`,
       });
-      // معالجة مركزية: اتجاه تلقائي + ملاءمة مقاس + إسقاط تباعد العربي،
-      // مع فضّ المعرّفات فلا تتضارب الفلاتر/الأقواس مع بطاقات المعرض المفتوحة
-      return postProcessStickerSvg(raw, { namespace: `live-${selectedTemplate.id}` });
     } catch (err) {
       logger.error('Failed to generate SVG:', err);
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><text x="200" y="200" text-anchor="middle">Error</text></svg>`;
@@ -314,18 +265,25 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   );
 
   const handleInsertToCanvas = useCallback(
-    async (pngDataUrl: string, vectorSvg?: string) => {
-      let finalSrc = pngDataUrl;
-
-      if (wailsIsDesktop() && pngDataUrl.startsWith('data:image/')) {
+    async (png: Blob, vectorSvg?: string) => {
+      // مسار ثنائي أولاً: على سطح المكتب نرفع Blob مباشرة إلى خادم الوسائط
+      // (صفر Base64 في V8). على الويب نعود إلى Data URL للتوافق مع الستور.
+      let finalSrc: string;
+      if (wailsIsDesktop()) {
         try {
-          const localPath = await SaveImageFromBase64(pngDataUrl);
+          const uploaded = await uploadMediaBlob(png, `${selectedTemplate.id}.png`);
           if (cancelledRef.current) return;
-          if (localPath) finalSrc = localPath;
+          finalSrc = uploaded.imageSrc;
         } catch (e) {
+          // فشل خادم الوسائط والاحتياطي معاً لا يضيع عمل المستخدم — نرتد
+          // إلى Data URL كما يفعل مسار VDP، والإدراج يكمل.
           logger.error('Failed to save sticker locally on desktop:', e);
+          finalSrc = await blobToDataUrl(png);
         }
+      } else {
+        finalSrc = await blobToDataUrl(png);
       }
+      if (cancelledRef.current) return;
 
       const aspect = await resolveImageAspectRatio(finalSrc);
       if (cancelledRef.current) return;
@@ -376,10 +334,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         selectedTemplate.aspectRatio,
         selectedTemplate.defaultMm,
       );
-      const pngUrl = await renderSvgToPngDataUrl(svgString, width, height, [
+      const pngBlob = await renderSvgToPngBlob(svgString, width, height, [
         params.fontFamily || 'Cairo',
       ]);
-      await handleInsertToCanvas(pngUrl, exportableSvg || svgString);
+      await handleInsertToCanvas(pngBlob, exportableSvg || svgString);
       if (cancelledRef.current) return;
       toast.success('أُدرج الملصق');
       onOpenChange(false);
@@ -406,13 +364,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         selectedTemplate.aspectRatio,
         selectedTemplate.defaultMm,
       );
-      const singlePng = await renderSvgToPngDataUrl(svgString, width, height, [
+      const singlePng = await renderSvgToPngBlob(svgString, width, height, [
         params.fontFamily || 'Cairo',
       ]);
       // شيت يطابق نسبة ورق الطباعة الحالية (A4 الافتراضي 210×297) بدل مربع ثابت —
       // يُدرج على الكانفس بلا هوامش فارغة، وعلامات القص بالمليمتر النظامي
       const sheetMm = resolveStickerSheetMm();
-      const sheetPng = await generateStickerSheet(singlePng, {
+      const sheetPng = await generateStickerSheetBlob(singlePng, {
         rows: gridConfig.rows,
         cols: gridConfig.cols,
         spacingMm: gridConfig.spacingMm,
@@ -494,9 +452,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       ]);
       if (cancelledRef.current) return;
       const blob = new Blob([portable], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      downloadFile(url, `${selectedTemplate.id}.svg`);
-      revokeObjectUrlLater(url);
+      downloadBlob(blob, `${selectedTemplate.id}.svg`);
       toast.success(
         portable !== (exportableSvg || svgString) ? 'نُزّل SVG بخط مضمّن' : 'نُزّل ملف SVG',
       );
@@ -519,9 +475,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       ]);
       if (cancelledRef.current) return;
       const blob = new Blob([portable], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      downloadFile(url, `${selectedTemplate.id}-cutcontour.svg`);
-      revokeObjectUrlLater(url);
+      downloadBlob(blob, `${selectedTemplate.id}-cutcontour.svg`);
       toast.success('نُزّل SVG مع طبقة خط القص (CutContour) للمطابع');
     } catch (err) {
       logger.error('Cut contour download failed:', err);
@@ -538,9 +492,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         bleedPercent: DEFAULT_BLEED_PERCENT,
       });
       const blob = new Blob([dieCut.standaloneContourSvg], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      downloadFile(url, `${selectedTemplate.id}-plotter-contour.svg`);
-      revokeObjectUrlLater(url);
+      downloadBlob(blob, `${selectedTemplate.id}-plotter-contour.svg`);
       toast.success('نُزّل مسار خط القص النقي لماكينة القص (Plotter)');
     } catch (err) {
       logger.error('Plotter contour download failed:', err);
@@ -559,11 +511,11 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
           selectedTemplate.defaultMm,
           dpi,
         );
-        const pngUrl = await renderSvgToPngDataUrl(svgString, width, height, [
+        const pngBlob = await renderSvgToPngBlob(svgString, width, height, [
           params.fontFamily || 'Cairo',
         ]);
         if (cancelledRef.current) return;
-        downloadFile(pngUrl, `${selectedTemplate.id}-${dpi}dpi.png`);
+        downloadBlob(pngBlob, `${selectedTemplate.id}-${dpi}dpi.png`);
         toast.success(
           dpi === 600 ? 'صُدّر PNG فائق الدقة (600 DPI)' : 'صُدّر PNG عالي الدقة (300 DPI)',
         );

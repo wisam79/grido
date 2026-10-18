@@ -8,7 +8,7 @@ import { cn, sanitizeSvgMarkupCached } from '@/lib/utils';
 import { StickerCategory, StickerCategoryGroupId, StickerShape, StickerTemplate } from '../types';
 import { ALL_STICKER_TEMPLATES, searchStickerTemplates } from '../templates';
 import { CATEGORY_ITEMS, SHAPE_ITEMS } from '../constants';
-import { postProcessStickerSvg } from '../lib/sticker-text';
+import { buildDefaultStickerParams, buildStickerSvg } from '../lib/sticker-design/build-svg';
 
 export interface StickerCatalogProps {
   selectedCategory: StickerCategoryGroupId | StickerCategory | 'all';
@@ -62,17 +62,10 @@ function getTemplatePreview(template: StickerTemplate): string {
   const cached = PREVIEW_CACHE.get(template.id);
   if (cached !== undefined) return cached;
   try {
-    const defaultFields = Object.fromEntries(template.fields.map((f) => [f.id, f.defaultValue]));
-    const raw = template.generateSvg({
-      fields: defaultFields,
-      primaryColor: template.defaultColors.primary,
-      secondaryColor: template.defaultColors.secondary,
-      backgroundColor: template.defaultColors.background,
-      isTransparent: false,
+    // نفس نقطة البناء المركزية: تعقيم + RTL/ملاءمة + فضّ معرّفات
+    const svg = buildStickerSvg(template, buildDefaultStickerParams(template), {
+      namespace: `tpl-${template.id}`,
     });
-    // نفس خط المعالجة الحي: اتجاه RTL + ملاءمة + إسقاط تباعد العربي،
-    // مع فضّ المعرّفات بمفتاح القالب فلا تتضارب الفلاتر والأقواس بين البطاقات
-    const svg = postProcessStickerSvg(raw, { namespace: `tpl-${template.id}` });
     PREVIEW_CACHE.set(template.id, svg);
     return svg;
   } catch {

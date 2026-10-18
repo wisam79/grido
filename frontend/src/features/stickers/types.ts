@@ -1,29 +1,22 @@
 export type StickerCategory =
-  | "badges"
-  | "shipping"
-  | "packaging"
-  | "barcodes"
-  | "retail"
-  | "safety"
-  | "social"
-  | "greeting"
-  | "cafe"
-  | "beauty"
-  | "kids"
-  | "seasonal"
-  | "frames";
+  | 'badges'
+  | 'shipping'
+  | 'packaging'
+  | 'barcodes'
+  | 'retail'
+  | 'safety'
+  | 'social'
+  | 'greeting'
+  | 'cafe'
+  | 'beauty'
+  | 'kids'
+  | 'seasonal'
+  | 'frames';
 
 export type StickerCategoryGroupId =
-  | "all"
-  | "commercial"
-  | "packaging"
-  | "codes"
-  | "stores"
-  | "occasions"
-  | "safety"
-  | "frames";
+  'all' | 'commercial' | 'packaging' | 'codes' | 'stores' | 'occasions' | 'safety' | 'frames';
 
-export type StickerShape = "circle" | "rect" | "square";
+export type StickerShape = 'circle' | 'rect' | 'square';
 
 export interface StickerCategoryInfo {
   id: StickerCategory;
@@ -33,7 +26,7 @@ export interface StickerCategoryInfo {
   description: string;
 }
 
-export type StickerFieldType = "text" | "number" | "select" | "color" | "boolean";
+export type StickerFieldType = 'text' | 'number' | 'select' | 'color' | 'boolean';
 
 export interface StickerFieldOption {
   label: string;
@@ -55,9 +48,25 @@ export interface StickerColors {
   background: string;
 }
 
-export type StickerFinish = "standard" | "glossy" | "matte" | "holographic";
+export type StickerFinish = 'standard' | 'glossy' | 'matte' | 'holographic';
+
+export interface StickerSizeMm {
+  width: number;
+  height: number;
+}
+
+/** تحريك/تحجيم/تدوير حقل نصي داخل القالب — يُطبَّق كتحويل SVG آمن. */
+export interface StickerLayoutOverride {
+  dxMm: number;
+  dyMm: number;
+  scale: number;
+  rotationDeg: number;
+  visible: boolean;
+}
 
 export interface StickerParams {
+  /** إصدار مخطط التخصيص — غيابه يعني بيانات v1 قديمة. */
+  version?: 2;
   fields: Record<string, string>;
   primaryColor: string;
   secondaryColor: string;
@@ -67,6 +76,11 @@ export interface StickerParams {
   fontScale?: number; // 0.8 to 1.3
   finish?: StickerFinish;
   dieCutBorder?: boolean;
+  /** المقاس الفيزيائي الفعلي — يتجاوز defaultMm عند التحرير. */
+  sizeMm?: StickerSizeMm;
+  bleedMm?: number;
+  safeMm?: number;
+  overrides?: Record<string, StickerLayoutOverride>;
 }
 
 export interface StickerTemplate {
@@ -91,7 +105,7 @@ export interface SheetGridConfig {
   spacingMm: number;
 }
 
-export type MockupBackground = "checker" | "white" | "cardboard" | "dark";
+export type MockupBackground = 'checker' | 'white' | 'cardboard' | 'dark';
 
 export interface StickerUserPreset {
   id: string;
