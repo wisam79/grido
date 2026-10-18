@@ -107,12 +107,12 @@ test.describe('Print & Export Workflows E2E', () => {
     await expect(exportBtn).toBeEnabled();
     await exportBtn.click();
 
-    // العملية تتم للنهاية: الحوار يُغلق (mock بلا htmlDoc ← مسار الطباعة الأصلية)
+    // العملية تتم للنهاية: الحوار يُغلق ومسار الطباعة المباشرة ينجح
     await expect(printModal).not.toBeVisible({ timeout: 15000 });
     await expect(page.getByText(/تم إرسال الورقة بنجاح/)).toBeVisible({ timeout: 15000 });
   });
 
-  test('Creates top-level print container after preview when HTML doc is returned', async ({
+  test('shows explicit error toast and prevents DOM pollution when direct print fails', async ({
     page,
   }) => {
     await page
@@ -134,20 +134,15 @@ test.describe('Print & Export Workflows E2E', () => {
       });
     });
 
-    // تجاوز mock ليعيد وثيقة HTML ويحاكي تعذر الطباعة الأصلية لاختبار مسار المتصفح الاحتياطي
-    // 334009393 = ExportPrintSheet (انظر WAILS_V3_METHOD_HANDLERS)
+    // 334009393 = ExportPrintSheet
+    // 1268920029 = PrintDirect — يُحاكى فشله للتأكد من إظهار إشعار الخطأ دون تلويث الـ DOM بحاوية متصفح
     await setupWailsV3Bridge(page, {
       334009393: async () => ({
         success: true,
         filePath: 'C:/mock/sheet.png',
-        htmlDoc: '<!DOCTYPE html><html><body><img src="/local-image/e2e-print.png"></body></html>',
       }),
-      100771007: async () => {
-        throw new Error('Native print unavailable, testing browser fallback');
-      },
-      // 1268920029 = PrintDirect — يُفشَل أيضاً ليُختبر المسار الاحتياطي عبر المتصفح
       1268920029: async () => {
-        throw new Error('Direct print unavailable, testing browser fallback');
+        throw new Error('Direct print spooler failed');
       },
     });
 
@@ -161,68 +156,18 @@ test.describe('Print & Export Workflows E2E', () => {
 
     const exportBtn = printModal.getByRole('button', { name: /طباعة|تصدير وعرض/ }).last();
     await expect(exportBtn).toBeEnabled();
-
-    // مراقب race-free: حاوية الطباعة تُزال ذاتياً بعد الطباعة (afterprint/مهلة)،
-    // فالتقاط لحظة إنشائها عبر MutationObserver بدل انتظار عنصر عابر.
-    // الطباعة من المستوى الأعلى الآن — لا iframe: iframe المخفي يُسقط سياق @page
-    // في WebView2 فتُطبع الورقة على Letter بهوامش المتصفح (خللا تم إصلاحه)
-    await page.evaluate(() => {
-      const w = window as unknown as {
-        __printContainers: (string | null)[];
-        __printPageRule: string;
-      };
-      w.__printContainers = [];
-      w.__printPageRule = '';
-      new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          for (const node of Array.from(mutation.addedNodes)) {
-            if (node instanceof HTMLDivElement && node.id === 'print-container') {
-              w.__printContainers.push(node.getAttribute('aria-hidden'));
-            }
-            if (node instanceof HTMLStyleElement && node.id === 'grido-print-sheet-style') {
-              w.__printPageRule = node.textContent ?? '';
-            }
-          }
-        }
-      }).observe(document.body, { childList: true });
-      new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          for (const node of Array.from(mutation.addedNodes)) {
-            if (node instanceof HTMLStyleElement && node.id === 'grido-print-sheet-style') {
-              (window as unknown as { __printPageRule: string }).__printPageRule =
-                node.textContent ?? '';
-            }
-          }
-        }
-      }).observe(document.head, { childList: true });
-    });
-
     await exportBtn.click();
 
-    // العملية تتم للنهاية: الحوار يُغلق بعد نجاح التصدير
+    // الحوار يغلق بعد إتمام توليد الورقة
     await expect(printModal).not.toBeVisible({ timeout: 15000 });
 
-    // حاوية الطباعة أُنشئت في المستند الأعلى (aria-hidden="true")
-    await expect
-      .poll(
-        () =>
-          page.evaluate(
-            () =>
-              (window as unknown as { __printContainers: (string | null)[] }).__printContainers
-                ?.length ?? 0,
-          ),
-        { timeout: 15000 },
-      )
-      .toBe(1);
-    const containerFlag = await page.evaluate(
-      () => (window as unknown as { __printContainers: (string | null)[] }).__printContainers[0],
-    );
-    expect(containerFlag).toBe('true');
+    // تظهر رسالة الخطأ الصريحة بدلاً من فتح حوار المتصفح
+    await expect(
+      page.getByText(/تعذر إرسال أمر الطباعة إلى الطابعة المحددة: Direct print spooler failed/),
+    ).toBeVisible({ timeout: 15000 });
 
-    // قاعدة @page بمقاس الورقة حقنت في المستند الأعلى (تُلتقط لحظة الإنشاء)
-    const pageRule = await page.evaluate(
-      () => (window as unknown as { __printPageRule: string }).__printPageRule,
-    );
-    expect(pageRule).toContain('@page');
+    // التأكد التام من عدم حقن أي حاوية طباعة أو ستايل في الصفحة
+    expect(await page.locator('#print-container').count()).toBe(0);
+    expect(await page.locator('#grido-print-sheet-style').count()).toBe(0);
   });
 });

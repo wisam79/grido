@@ -15,7 +15,6 @@ import { setupWailsMock, setupWailsV3Bridge, waitForAppReady } from './helpers/w
 const IMAGE_SRC = '/local-image/e2e-print.png';
 const PREF_METHOD = 2929786627; // OpenPrinterPreferences
 const EXPORT_METHOD = 334009393; // ExportPrintSheet
-const NATIVE_METHOD = 100771007; // PrintNative
 const DIRECT_METHOD = 1268920029; // PrintDirect
 
 /** إعداد الجسر والملاحة وجاهزية التطبيق. */
@@ -153,22 +152,17 @@ test.describe('Print Dialog — Printer Flow', () => {
     await expect.poll(() => exportCalls.length).toBeGreaterThan(0);
   });
 
-  test('falls back to the browser print path (top-level container + @page) in collage mode', async ({
+  test('handles direct print failure gracefully with error toast and no DOM pollution in collage mode', async ({
     page,
   }) => {
     await setupWailsMock(page);
-    // وثيقة HTML من الخادم + تعذّر الطباعة الأصلية ⇒ مسار المتصفح الاحتياطي
     await setupWailsV3Bridge(page, {
       [EXPORT_METHOD]: async () => ({
         success: true,
         filePath: 'C:/mock/collage.png',
-        htmlDoc: `<!DOCTYPE html><html><body><img src="${IMAGE_SRC}"></body></html>`,
       }),
-      [NATIVE_METHOD]: async () => {
-        throw new Error('Native print unavailable, testing browser fallback');
-      },
       [DIRECT_METHOD]: async () => {
-        throw new Error('Direct print unavailable, testing browser fallback');
+        throw new Error('Direct print spooler failed');
       },
     });
     await page.goto('/');
@@ -179,59 +173,16 @@ test.describe('Print Dialog — Printer Flow', () => {
 
     const printModal = await openPrintDialog(page);
 
-    // مراقب race-free: حاوية الطباعة تُزال ذاتياً بعد الطباعة (afterprint/مهلة)،
-    // فتُلتقط لحظة إنشائها في المستند الأعلى بدل انتظار عنصر عابر.
-    await page.evaluate(() => {
-      const w = window as unknown as {
-        __printContainers: (string | null)[];
-        __printPageRule: string;
-      };
-      w.__printContainers = [];
-      w.__printPageRule = '';
-      new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          for (const node of Array.from(mutation.addedNodes)) {
-            if (node instanceof HTMLDivElement && node.id === 'print-container') {
-              w.__printContainers.push(node.getAttribute('aria-hidden'));
-            }
-          }
-        }
-      }).observe(document.body, { childList: true });
-      new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          for (const node of Array.from(mutation.addedNodes)) {
-            if (node instanceof HTMLStyleElement && node.id === 'grido-print-sheet-style') {
-              w.__printPageRule = node.textContent ?? '';
-            }
-          }
-        }
-      }).observe(document.head, { childList: true });
-    });
-
     await printModal.getByRole('button', { name: 'طباعة الورقة' }).click();
     await expect(printModal).not.toBeVisible({ timeout: 15000 });
 
-    // حاوية الطباعة أُنشئت في المستند الأعلى (aria-hidden="true")
-    await expect
-      .poll(
-        () =>
-          page.evaluate(
-            () =>
-              (window as unknown as { __printContainers: (string | null)[] }).__printContainers
-                ?.length ?? 0,
-          ),
-        { timeout: 15000 },
-      )
-      .toBe(1);
-    const containerFlag = await page.evaluate(
-      () => (window as unknown as { __printContainers: (string | null)[] }).__printContainers[0],
-    );
-    expect(containerFlag).toBe('true');
+    // تظهر رسالة الخطأ الصريحة بدلاً من فتح حوار المتصفح
+    await expect(
+      page.getByText(/تعذر إرسال أمر الطباعة إلى الطابعة المحددة: Direct print spooler failed/),
+    ).toBeVisible({ timeout: 15000 });
 
-    // قاعدة @page بمقاس الورقة حُقنت في المستند الأعلى
-    const pageRule = await page.evaluate(
-      () => (window as unknown as { __printPageRule: string }).__printPageRule,
-    );
-    expect(pageRule).toContain('@page');
+    // التأكد التام من عدم حقن أي حاوية طباعة أو قواعد أنماط عابرة في الـ DOM
+    expect(await page.locator('#print-container').count()).toBe(0);
+    expect(await page.locator('#grido-print-sheet-style').count()).toBe(0);
   });
 });
