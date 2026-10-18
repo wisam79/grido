@@ -697,7 +697,7 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     }
   });
 
-  it('يتجاهل نتائج PrintDirect المتأخرة إذا انطلقت محاولة تصدير جديدة أحدث (حماية السباق الزمني)', async () => {
+  it('يتجاهل نتائج PrintDirect المتأخرة عند استدعاء cancelExport (حماية الجيل والإلغاء)', async () => {
     let resolveFirstPrint: (val: unknown) => void = () => {};
     const firstPrintPromise = new Promise((resolve) => {
       resolveFirstPrint = resolve;
@@ -705,37 +705,25 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
 
     mockPrintDirect.mockReturnValueOnce(firstPrintPromise as never);
 
-    const onDone1 = vi.fn();
-    const onDone2 = vi.fn();
-
+    const onDone = vi.fn();
     const { result } = renderHook((props: PrintExportContext) => usePrintExport(props), {
       initialProps: makeContext({ printColorSpace: 'sRGB' }),
     });
 
-    // إطلاق المهمة الأولى (attempt 1)
+    // 1. إطلاق المهمة الأولى
     act(() => {
-      void result.current.executePrint(0, onDone1, {
+      void result.current.executePrint(0, onDone, {
         directPrint: true,
         printerName: 'Epson 1',
       });
     });
 
-    // إطلاق المهمة الثانية فوراً (attempt 2)
-    mockPrintDirect.mockResolvedValueOnce({
-      success: true,
-      jobId: 202,
-      status: 'Spooling',
-      error: '',
-    } as Awaited<ReturnType<typeof PrintDirect>>);
-
-    await act(async () => {
-      await result.current.executePrint(0, onDone2, {
-        directPrint: true,
-        printerName: 'Epson 2',
-      });
+    // 2. المستخدم يلغي التصدير أثناء الإرسال
+    act(() => {
+      result.current.cancelExport();
     });
 
-    // الآن تكتمل المهمة الأولى المتأخرة
+    // 3. اكتمال المهمة الأولى المتأخرة
     await act(async () => {
       resolveFirstPrint({
         success: true,
@@ -745,8 +733,8 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
       });
     });
 
-    // المهمة القديمة يجب ألا تطلق onDone1 يخصها بعد استبدالها بالمحاولة الأحدث
-    expect(onDone2).toHaveBeenCalledTimes(1);
-    expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining('المهمة #202'));
+    // النتيجة الملغاة يجب ألا تستدعي onDone ولا تعرض إشعار نجاح
+    expect(onDone).not.toHaveBeenCalled();
+    expect(mockToastSuccess).not.toHaveBeenCalled();
   });
 });
