@@ -17,8 +17,8 @@
 ---
 
 ## 2. الثوابت الأمنية والمعمارية المطلقة (Absolute Safety Invariants)
-1. **حظر تشغيل أو اقتراح أمر `cd` مطلقاً:** يُمنع استخدام `cd` للتنقل بين المجلدات في أي صدفة (Shell)؛ حدد مسار العمل دائماً عبر المعامل `Cwd` أو المسارات الكاملة.
-2. **الاعتماد الكلي على GitHub Actions ومنع إجهاد الجهاز المحلي:** يُمنع إجبارياً على أي وكيل تشغيل اختبارات E2E (Playwright) أو حزم اختبارات الوحدة الثقيلة أو محاكيات البناء محلياً. التحقق يتم بدفع الكود (`git push origin main`) ومراقبة دورة الـ CI السحابية فورياً عبر `gh run list` و `gh run watch`. الاستثناء الوحيد المصرح به محلياً هو الفحص السريع الخفيف: `npm run lint` و `npm run typecheck` و `node scripts/docs-gate.mjs`.
+1. **حظر تشغيل أو اقتراح أمر `cd` مطلقاً:** يُمنع استخدام `cd` للتنقل بين المجلدات في أي صدفة (Shell)؛ حدد مسار العمل دائماً عبر المعامل `Cwd` أو المسارات الكاملة (محمي آلياً ومرفوض فورياً عبر خطاف Antigravity في [`.agents/hooks.json`](file:///c:/projects/grido/.agents/hooks.json)).
+2. **الاعتماد الكلي على GitHub Actions ومنع إجهاد الجهاز المحلي:** يُمنع إجبارياً على أي وكيل تشغيل اختبارات E2E (Playwright) أو حزم اختبارات الوحدة الثقيلة أو محاكيات البناء محلياً (محمي آلياً بحظر تشغيل Playwright المحلي وتجاوز الـ hooks عبر [`.agents/hooks.json`](file:///c:/projects/grido/.agents/hooks.json)). التحقق يتم بدفع الكود (`git push origin main`) ومراقبة دورة الـ CI السحابية فورياً عبر `gh run list` و `gh run watch`. الاستثناء الوحيد المصرح به محلياً هو الفحص السريع الخفيف: `npm run lint` و `npm run typecheck` و `node scripts/docs-gate.mjs`.
 3. **الكتابة الذرية للملفات وتفريغ القرص (Atomic Writes & fsync):** أي كتابة لملفات التكوين أو المشاريع أو تصدير الطباعة في Go يجب أن تمر عبر ملف مؤقت `.tmp` مع `defer os.Remove(tmp)` واستدعاء `f.Sync()` قبل استبدال الملف بـ `os.Rename`.
 4. **حظر تسريب أو تخزين أسرار في الثنائي (No Shared Secrets):** يُمنع تشفير أي مفاتيح API أو أسرار مشتركة داخل الكود أو الثنائي؛ التوثيق للخدمات السحابية يعتمد حصراً على توكن المستخدم الفردي (`Authorization: Bearer <JWT>`).
 5. **حظر إعادة البناء من الصفر (Zero-Rewrite Invariant):** يُمنع اقتراح أو بدء إعادة كتابة التطبيق بأطر عمل أخرى (Flutter/C#/Electron)؛ الحفاظ التام على محرك الكانفاس والرياضيات في React+Konva وترقية المنظومة تراكمياً.
@@ -62,6 +62,10 @@
 - [`grido-qa-security-auditor`](file:///c:/projects/grido/.agents/skills/grido-qa-security-auditor/SKILL.md): الجودة والأمان وهندسة الإصدارات.
 - [`grido-architecture-navigator`](file:///c:/projects/grido/.agents/skills/grido-architecture-navigator/SKILL.md): خريطة الكود ومعمارية التدفق.
 - [`grido-performance-checklist`](file:///c:/projects/grido/.agents/skills/grido-performance-checklist/SKILL.md): قائمة فحص الأداء السريعة.
+- [`canvas-export-qa`](file:///c:/projects/grido/.agents/skills/canvas-export-qa/SKILL.md): فحص محرك الرسم وجودة التصدير فائق الدقة (300+ DPI) والقص والنزيف (`/canvas-export-qa`).
+- [`database-migration`](file:///c:/projects/grido/.agents/skills/database-migration/SKILL.md): صياغة وفحص وتطبيق هجرات Supabase وتأمين RLS (`/database-migration`).
+- [`release-deployment`](file:///c:/projects/grido/.agents/skills/release-deployment/SKILL.md): ترفيع وإطلاق الإصدارات ومزامنة التكوين والـ CI (`/release-deployment`).
+- [`security-audit`](file:///c:/projects/grido/.agents/skills/security-audit/SKILL.md): الجولة الأمنية الدورية لفحص المصادقة والجلسات وتطهير السجلات (`/security-audit`).
 
 ---
 
