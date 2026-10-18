@@ -47,12 +47,8 @@ import {
 } from '../types';
 import { ALL_STICKER_TEMPLATES } from '../templates';
 import { findHiddenFieldIds } from '../templates/svg-elements';
-import {
-  renderSvgToPngBlob,
-  renderSvgToPngDataUrl,
-  downloadBlob,
-  blobToDataUrl,
-} from '../lib/svg-rasterizer';
+import { renderSvgToPngBlob, renderSvgToPngDataUrl, downloadBlob } from '../lib/svg-rasterizer';
+import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { stickerRasterSize } from '../lib/sticker-text';
 import { embedStickerFonts } from '../lib/sticker-font-embed';
 import { sanitizeSvgMarkup } from '@/lib/utils';

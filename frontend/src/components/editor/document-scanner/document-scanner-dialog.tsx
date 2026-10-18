@@ -32,7 +32,7 @@ interface DocumentScannerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   imageSrc: string;
-  onSave: (processedBase64: string | string[]) => void;
+  onSave: (processed: Blob | Blob[]) => void;
 }
 
 export function DocumentScannerDialog({

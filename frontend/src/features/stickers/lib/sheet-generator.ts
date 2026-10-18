@@ -10,7 +10,7 @@
  */
 import { mmToPx, STICKER_DPI } from './sticker-text';
 import { assertRasterBudget } from './export-limits';
-import { canvasToBlob } from './svg-rasterizer';
+import { canvasToBlob } from '@/lib/canvas/canvas-blob';
 
 export interface SheetOptions {
   rows: number;

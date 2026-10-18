@@ -1,5 +1,6 @@
 import type { StickerTemplate, StickerParams } from '@/features/stickers';
-import { renderSvgToPngBlob, blobToDataUrl } from './svg-rasterizer';
+import { renderSvgToPngBlob } from './svg-rasterizer';
+import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { applyRowToParams } from './vdp-parser';
 import { buildStickerSvg } from './sticker-design/build-svg';
 import { stickerRasterSize } from './sticker-text';

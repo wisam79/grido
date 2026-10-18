@@ -10,3 +10,4 @@ export * from './ml-detector';
 export * from './opencv-detector';
 export * from './detect-fusion';
 export * from './document-detector';
+export * from './target-dims';

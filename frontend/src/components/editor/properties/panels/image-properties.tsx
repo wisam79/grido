@@ -31,6 +31,8 @@ import { toast } from 'sonner';
 import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { uploadMediaBlob } from '@/lib/io/media-upload';
+import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { useBgRemoval } from '@/hooks/use-bg-removal';
 import { useAiEnhance } from '@/hooks/use-ai-enhance';
 import { useFaceFrame } from '@/hooks/use-face-frame';
@@ -217,19 +219,27 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [refineOpen, setRefineOpen] = useState(false);
 
-  const handleScannerSave = async (processedResult: string | string[]) => {
+  const handleScannerSave = async (processedResult: Blob | Blob[]) => {
     try {
-      const base64List = Array.isArray(processedResult) ? processedResult : [processedResult];
-      if (base64List.length === 0) return;
+      const blobList = Array.isArray(processedResult) ? processedResult : [processedResult];
+      if (blobList.length === 0) return;
 
       const state = useEditorStore.getState();
       const canvasRatio = state.canvasWidth / state.canvasHeight;
+      const stamp = Date.now();
 
-      // 1. حفظ جميع مسارات الصور بتوازي تام O(1) بدلاً من الحلقات التسلسلية
+      // 1. مسار Blob-first: رفع ثنائي مباشر إلى خادم الوسائط (بلا Base64 في
+      //    V8 Heap)، مع تراجع إلى Data URL لبيئات لا تتوفر فيها المسارات الأصلية.
       const paths = await Promise.all(
-        base64List.map((b64) =>
-          b64.startsWith('data:image/') ? SaveImageFromBase64(b64) : Promise.resolve(b64),
-        ),
+        blobList.map(async (blob, i) => {
+          try {
+            const uploadRes = await uploadMediaBlob(blob, `scan-${stamp}-${i}.png`);
+            if (uploadRes?.imageSrc) return uploadRes.imageSrc;
+          } catch (err) {
+            logger.error('Failed to persist scanned blob:', err);
+          }
+          return await blobToDataUrl(blob);
+        }),
       );
 
       // 2. حل أبعاد الدفعة الكبيرة بطلب Go واحد متوازي O(1)
