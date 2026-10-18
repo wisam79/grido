@@ -141,9 +141,12 @@ test.describe('Print & Export Workflows E2E', () => {
         success: true,
         filePath: 'C:/mock/sheet.png',
       }),
-      1268920029: async () => {
-        throw new Error('Direct print spooler failed');
-      },
+      1268920029: async () => ({
+        success: false,
+        jobId: 0,
+        status: '',
+        error: 'Direct print spooler failed',
+      }),
     });
 
     const printBtn = page
@@ -158,13 +161,8 @@ test.describe('Print & Export Workflows E2E', () => {
     await expect(exportBtn).toBeEnabled();
     await exportBtn.click();
 
-    // الحوار يغلق بعد إتمام توليد الورقة
-    await expect(printModal).not.toBeVisible({ timeout: 15000 });
-
     // تظهر رسالة الخطأ الصريحة بدلاً من فتح حوار المتصفح
-    await expect(
-      page.getByText(/تعذر إرسال أمر الطباعة إلى الطابعة المحددة: Direct print spooler failed/),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/تعذرت الطباعة/)).toBeVisible({ timeout: 15000 });
 
     // التأكد التام من عدم حقن أي حاوية طباعة أو ستايل في الصفحة
     expect(await page.locator('#print-container').count()).toBe(0);

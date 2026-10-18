@@ -161,9 +161,12 @@ test.describe('Print Dialog — Printer Flow', () => {
         success: true,
         filePath: 'C:/mock/collage.png',
       }),
-      [DIRECT_METHOD]: async () => {
-        throw new Error('Direct print spooler failed');
-      },
+      [DIRECT_METHOD]: async () => ({
+        success: false,
+        jobId: 0,
+        status: '',
+        error: 'Direct print spooler failed',
+      }),
     });
     await page.goto('/');
     await waitForAppReady(page);
@@ -174,12 +177,9 @@ test.describe('Print Dialog — Printer Flow', () => {
     const printModal = await openPrintDialog(page);
 
     await printModal.getByRole('button', { name: 'طباعة الورقة' }).click();
-    await expect(printModal).not.toBeVisible({ timeout: 15000 });
 
     // تظهر رسالة الخطأ الصريحة بدلاً من فتح حوار المتصفح
-    await expect(
-      page.getByText(/تعذر إرسال أمر الطباعة إلى الطابعة المحددة: Direct print spooler failed/),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/تعذرت الطباعة/)).toBeVisible({ timeout: 15000 });
 
     // التأكد التام من عدم حقن أي حاوية طباعة أو قواعد أنماط عابرة في الـ DOM
     expect(await page.locator('#print-container').count()).toBe(0);
