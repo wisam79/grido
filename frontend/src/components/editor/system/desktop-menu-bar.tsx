@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -7,6 +7,16 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -183,7 +193,11 @@ export function DesktopMenuBar() {
     }
   };
 
-  const handleEmptyMediaTrash = async () => {
+  const [emptyTrashDialogOpen, setEmptyTrashDialogOpen] = useState(false);
+  const [trashStats, setTrashStats] = useState<{ count: number; mb: string } | null>(null);
+  const [isClearingTrash, setIsClearingTrash] = useState(false);
+
+  const handleRequestEmptyMediaTrash = async () => {
     try {
       const stats = await GetMediaStorageStats();
       const trashMb = ((stats.trashTotalBytes || 0) / (1024 * 1024)).toFixed(1);
@@ -194,18 +208,26 @@ export function DesktopMenuBar() {
         return;
       }
 
-      const confirmed = window.confirm(
-        `هل تريد إفراغ سلة الوسائط نهائياً؟\nسيُحذف ${trashCount} ملف وتُحرَّر ${trashMb} ميجابايت.`,
-      );
-      if (!confirmed) return;
+      setTrashStats({ count: trashCount, mb: trashMb });
+      setEmptyTrashDialogOpen(true);
+    } catch (e) {
+      toast.error('حدث خطأ أثناء فحص سلة الوسائط: ' + String(e));
+    }
+  };
 
+  const handleConfirmEmptyTrash = async () => {
+    setIsClearingTrash(true);
+    try {
       const res = await EmptyMediaTrash();
       const freedMb = (((res?.freedBytes as number) || 0) / (1024 * 1024)).toFixed(1);
       toast.success(
         `تم إفراغ سلة الوسائط نهائياً — حُذف ${(res?.deletedCount as number) || 0} ملف واستُعيد ${freedMb} ميجابايت`,
       );
+      setEmptyTrashDialogOpen(false);
     } catch (e) {
       toast.error('حدث خطأ أثناء إفراغ سلة الوسائط: ' + String(e));
+    } finally {
+      setIsClearingTrash(false);
     }
   };
 
@@ -651,7 +673,7 @@ export function DesktopMenuBar() {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={handleEmptyMediaTrash}
+            onClick={handleRequestEmptyMediaTrash}
             className="gap-2.5 text-xs cursor-pointer rounded-md py-1.5 text-rose-500 hover:text-rose-600 dark:text-rose-400"
           >
             <Trash className="w-4 h-4" />
@@ -692,6 +714,53 @@ export function DesktopMenuBar() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* حوار تأكيد إفراغ سلة الوسائط الأصيل وفق Fluent 2 */}
+      <AlertDialog open={emptyTrashDialogOpen} onOpenChange={setEmptyTrashDialogOpen}>
+        <AlertDialogContent
+          dir="rtl"
+          className="font-cairo rounded-2xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-16 p-6 max-w-md"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-start text-base font-bold flex items-center gap-2">
+              <Trash className="w-5 h-5 text-destructive" />
+              <span>إفراغ سلة وسائط التطبيق نهائياً</span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-start text-xs text-muted-foreground leading-relaxed pt-2">
+              هل أنت متأكد من رغبتك في إفراغ السلة نهائياً؟
+              <br />
+              سيُحذف{' '}
+              <strong className="text-foreground font-bold font-mono">
+                {trashStats?.count ?? 0}
+              </strong>{' '}
+              ملف وسائط غير مستخدم، وتُحرَّر مساحة{' '}
+              <strong className="text-foreground font-bold font-mono">
+                {trashStats?.mb ?? '0'} ميجابايت
+              </strong>{' '}
+              من القرص. لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 pt-4">
+            <AlertDialogCancel
+              disabled={isClearingTrash}
+              className="cursor-pointer rounded-md h-8 text-xs font-semibold"
+            >
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isClearingTrash}
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmEmptyTrash();
+              }}
+              className="cursor-pointer rounded-md h-8 text-xs font-semibold bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5"
+            >
+              <Trash className="w-4 h-4" />
+              <span>{isClearingTrash ? 'جاري الإفراغ ...' : 'إفراغ نهائي'}</span>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

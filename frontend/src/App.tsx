@@ -258,7 +258,17 @@ export default function App() {
               )}
               // شريط النافذة بنمط RTL العربي الأصيل (القوائم تبدأ يميناً وأزرار التحكم يساراً)
               dir="rtl"
-              onDoubleClick={handleMaximize}
+              onDoubleClick={(e) => {
+                // 🛡️ منع تقليص النافذة (Unmaximise) عند النقر المزدوج على عناصر التحكم
+                if (
+                  (e.target as HTMLElement).closest(
+                    '.title-bar-controls, button, [role="tab"], [role="menuitem"], a, input, select',
+                  )
+                ) {
+                  return;
+                }
+                handleMaximize();
+              }}
             >
               <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
                 <div className="flex items-center gap-2.5">
@@ -270,7 +280,10 @@ export default function App() {
                     </h1>
                   </div>
                   <div className="w-px h-4 bg-border/60 mx-1 hidden sm:block" />
-                  <div className="hidden sm:flex items-center title-bar-controls">
+                  <div
+                    className="hidden sm:flex items-center title-bar-controls"
+                    onDoubleClick={(e) => e.stopPropagation()}
+                  >
                     <DesktopMenuBar />
                   </div>
                   {/* مبدّل الوضع المدمج للشاشات الصغيرة — المبدّل الكامل مخفي
@@ -326,6 +339,7 @@ export default function App() {
                 <div
                   className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 title-bar-controls hidden md:block"
                   dir="rtl"
+                  onDoubleClick={(e) => e.stopPropagation()}
                 >
                   <div
                     role="tablist"
@@ -403,7 +417,10 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 h-full title-bar-controls">
+                <div
+                  className="flex items-center gap-1.5 h-full title-bar-controls"
+                  onDoubleClick={(e) => e.stopPropagation()}
+                >
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button

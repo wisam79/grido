@@ -411,6 +411,20 @@
       sans-serif;
   }
 
+  /* 🛡️ منع تقليص أو اهتزاز واجهة سطح المكتب عند فتح نوافذ الحوار في Radix UI */
+  html {
+    --removed-body-scroll-bar-size: 0px !important;
+  }
+
+  body[data-scroll-locked],
+  body[style*='overflow: hidden'] {
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    overflow: hidden !important;
+  }
+
   body {
     color: var(--foreground);
     font-family:

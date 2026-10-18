@@ -38,6 +38,7 @@ export default tseslint.config(
       'jsx-a11y/no-autofocus': 'warn',
       'jsx-a11y/anchor-has-content': 'warn',
       'jsx-a11y/label-has-associated-control': 'warn',
+      'no-alert': 'error',
     },
   },
   {
