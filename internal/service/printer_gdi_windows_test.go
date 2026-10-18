@@ -686,5 +686,200 @@ func TestFindPrinterPaperMatch_NilPrinterFallback(t *testing.T) {
 	}
 }
 
+func TestCalculatePrintDestRect_StudioPhotoPaperSizes(t *testing.T) {
+	// مقاسات استوديوهات التصوير الفوتوغرافي الشائعة
+	metrics := deviceMetrics{
+		PhysicalWidth:   3600,
+		PhysicalHeight:  5400,
+		PrintableWidth:  3500,
+		PrintableHeight: 5300,
+		MarginLeft:      50,
+		MarginTop:       50,
+	}
+
+	scenarios := []struct {
+		name       string
+		imgW, imgH int
+	}{
+		{"4x6 Photo (1200x1800)", 1200, 1800},
+		{"5x7 Photo (1500x2100)", 1500, 2100},
+		{"6x8 Photo (1800x2400)", 1800, 2400},
+		{"ID Card (86x54 mm ratio)", 1016, 638},
+		{"Panorama (1200x3600)", 1200, 3600},
+	}
+
+	for _, sc := range scenarios {
+		t.Run(sc.name+"_Contain", func(t *testing.T) {
+			destX, destY, destW, destH := calculatePrintDestRect(metrics, sc.imgW, sc.imgH, false)
+			if destX < 0 || destY < 0 {
+				t.Fatalf("unexpected negative coordinates: (%d, %d)", destX, destY)
+			}
+			if destW <= 0 || destH <= 0 {
+				t.Fatalf("unexpected non-positive dimensions: %dx%d", destW, destH)
+			}
+			if int(destW) > metrics.PrintableWidth || int(destH) > metrics.PrintableHeight {
+				t.Fatalf("contain exceeded printable area: %dx%d > %dx%d", destW, destH, metrics.PrintableWidth, metrics.PrintableHeight)
+			}
+		})
+
+		t.Run(sc.name+"_BorderlessCover", func(t *testing.T) {
+			_, _, destW, destH := calculatePrintDestRect(metrics, sc.imgW, sc.imgH, true)
+			if destW <= 0 || destH <= 0 {
+				t.Fatalf("unexpected non-positive borderless dimensions: %dx%d", destW, destH)
+			}
+			// في نمط الحواف الصفرية، الصورة يجب أن تغطي العرض الفيزيائي أو الارتفاع الفيزيائي كاملاً
+			coversWidth := int(destW) >= metrics.PhysicalWidth
+			coversHeight := int(destH) >= metrics.PhysicalHeight
+			if !coversWidth && !coversHeight {
+				t.Fatalf("borderless failed to cover physical page: %dx%d vs %dx%d", destW, destH, metrics.PhysicalWidth, metrics.PhysicalHeight)
+			}
+		})
+	}
+}
+
+func TestConvertToBottomUpDIB_ExtremeAlphaCases(t *testing.T) {
+	// 1. صورة شفافة 100%
+	transparentImg := image.NewNRGBA(image.Rect(0, 0, 2, 2))
+	buf, bmi := convertToBottomUpDIB(transparentImg)
+	if bmi.BmiHeader.BiWidth != 2 || bmi.BmiHeader.BiHeight != 2 {
+		t.Fatalf("bmi dimensions (%d, %d) want (2, 2)", bmi.BmiHeader.BiWidth, bmi.BmiHeader.BiHeight)
+	}
+	if len(buf) != 2*2*4 {
+		t.Fatalf("buffer length %d want 16", len(buf))
+	}
+	for i, b := range buf {
+		if b != 0 {
+			t.Fatalf("transparent byte at %d is %d, want 0", i, b)
+		}
+	}
+
+	// 2. صورة معتمة تماماً بألوان زاهية
+	opaqueImg := image.NewNRGBA(image.Rect(0, 0, 1, 1))
+	opaqueImg.SetNRGBA(0, 0, color.NRGBA{R: 200, G: 100, B: 50, A: 255})
+	bufOpaque, _ := convertToBottomUpDIB(opaqueImg)
+	// ترتيب BGRA
+	if bufOpaque[0] != 50 || bufOpaque[1] != 100 || bufOpaque[2] != 200 || bufOpaque[3] != 255 {
+		t.Fatalf("opaque BGRA = (%d, %d, %d, %d), want (50, 100, 200, 255)",
+			bufOpaque[0], bufOpaque[1], bufOpaque[2], bufOpaque[3])
+	}
+}
+
+func TestValidateDirectPrintRequest_BoundaryAndExtremeCases(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     domain.DirectPrintRequest
+		wantErr bool
+	}{
+		{
+			name: "حد أدنى مسموح (10.1 مم)",
+			req: domain.DirectPrintRequest{
+				PaperWidthMM:  10.1,
+				PaperHeightMM: 10.1,
+				Copies:        1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "أقل من الحد الأدنى (9.9 مم)",
+			req: domain.DirectPrintRequest{
+				PaperWidthMM:  9.9,
+				PaperHeightMM: 100,
+				Copies:        1,
+			},
+			wantErr: true,
+		},
+		{
+			name: "حد أقصى مسموح (1000 مم)",
+			req: domain.DirectPrintRequest{
+				PaperWidthMM:  1000,
+				PaperHeightMM: 1000,
+				Copies:        1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "أكبر من الحد الأقصى (1000.1 مم)",
+			req: domain.DirectPrintRequest{
+				PaperWidthMM:  1000.1,
+				PaperHeightMM: 500,
+				Copies:        1,
+			},
+			wantErr: true,
+		},
+		{
+			name: "عدد نسخ 0 (مقبول — يسقط للافتراضي 1 في devmode)",
+			req: domain.DirectPrintRequest{
+				PaperWidthMM:  210,
+				PaperHeightMM: 297,
+				Copies:        0,
+			},
+			wantErr: false,
+		},
+		{
+			name: "عدد نسخ أقصى 999",
+			req: domain.DirectPrintRequest{
+				PaperWidthMM:  210,
+				PaperHeightMM: 297,
+				Copies:        999,
+			},
+			wantErr: false,
+		},
+		{
+			name: "عدد نسخ متجاوز 1000",
+			req: domain.DirectPrintRequest{
+				PaperWidthMM:  210,
+				PaperHeightMM: 297,
+				Copies:        1000,
+			},
+			wantErr: true,
+		},
+		{
+			name: "أبعاد أفقية مع طلب portrait (يقبلها الفحص الهندسي)",
+			req: domain.DirectPrintRequest{
+				PaperWidthMM:  297,
+				PaperHeightMM: 210,
+				Orientation:   "portrait",
+				Copies:        1,
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateDirectPrintRequest(tt.req)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("validateDirectPrintRequest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestPrintImageDirectGDI_CorruptedFile_ReturnsSafeError(t *testing.T) {
+	// إنشاء ملف تالف ببادئة مقبولة في مجلد Temp
+	corruptFile := filepath.Join(os.TempDir(), "grido_print_corrupt_"+time.Now().Format("150405.000000000")+".jpg")
+	if err := os.WriteFile(corruptFile, []byte("NOT_A_REAL_JPEG_HEADER_CORRUPT"), 0o644); err != nil {
+		t.Fatalf("failed to create corrupt temp file: %v", err)
+	}
+	defer os.Remove(corruptFile)
+
+	svc := &PrintService{}
+	req := domain.DirectPrintRequest{
+		FilePath:      corruptFile,
+		PrinterName:   "FakeNonExistentPrinter12345",
+		PaperWidthMM:  210,
+		PaperHeightMM: 297,
+		Copies:        1,
+	}
+
+	jobID, err := svc.PrintImageDirectGDI(req)
+	if err == nil {
+		t.Fatalf("expected error for corrupted image file, got jobID=%d", jobID)
+	}
+	if !strings.Contains(err.Error(), "تعذر قراءة ترويسة الصورة") {
+		t.Fatalf("expected header decode error, got: %v", err)
+	}
+}
+
 
 

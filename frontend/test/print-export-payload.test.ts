@@ -628,4 +628,125 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
       vi.useRealTimers();
     }
   });
+
+  it('يحظر تماماً استدعاء PrintDirect عند اختيار فضاء ألوان CMYK حتى مع تمرير directPrint: true', async () => {
+    await runPrint(makeContext({ printColorSpace: 'CMYK' }), () => {}, {
+      directPrint: true,
+      printerName: 'Epson L8050',
+    });
+
+    // يجب ألا يُستدعى PrintDirect أبداً لأن GDI يدعم RGB فقط ومخرج CMYK هو TIFF
+    expect(mockPrintDirect).not.toHaveBeenCalled();
+    expect(mockExportPrintSheet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        colorSpace: 'CMYK',
+        exportFormat: 'tiff',
+      }),
+    );
+  });
+
+  it('يمرر بدقة معلمات borderless و paperId إلى PrintDirect عند طلب طباعة بدون حواف', async () => {
+    await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+      directPrint: true,
+      printerName: 'Canon Pro-1000',
+      borderless: true,
+      paperId: 43,
+      formName: 'Postcard (Borderless)',
+    });
+
+    expect(mockPrintDirect).toHaveBeenCalledWith(
+      expect.objectContaining({
+        printerName: 'Canon Pro-1000',
+        borderless: true,
+        paperId: 43,
+        formName: 'Postcard (Borderless)',
+      }),
+    );
+  });
+
+  it('يتعامل بدقة مع أخطاء طابور الطباعة الميدانية (انحشار الورق وحالة عدم الاتصال)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      mockPrintDirect.mockResolvedValueOnce({
+        success: true,
+        jobId: 101,
+        status: 'Spooling',
+        error: '',
+      } as Awaited<ReturnType<typeof PrintDirect>>);
+      mockPollJobStatus.mockResolvedValueOnce({
+        success: false,
+        jobId: 101,
+        status: 'Error',
+        error: 'انحشار في مسار الورق (Paper Jam)',
+      } as Awaited<ReturnType<typeof PollJobStatus>>);
+
+      await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+        directPrint: true,
+        printerName: 'DNP DS-RX1',
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(1600);
+      });
+
+      expect(mockToastError).toHaveBeenCalledWith(
+        expect.stringContaining('تنبيه الطابعة للمهمة #101: انحشار في مسار الورق (Paper Jam)'),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('يتجاهل نتائج PrintDirect المتأخرة إذا انطلقت محاولة تصدير جديدة أحدث (حماية السباق الزمني)', async () => {
+    let resolveFirstPrint: (val: unknown) => void = () => {};
+    const firstPrintPromise = new Promise((resolve) => {
+      resolveFirstPrint = resolve;
+    });
+
+    mockPrintDirect.mockReturnValueOnce(firstPrintPromise as never);
+
+    const onDone1 = vi.fn();
+    const onDone2 = vi.fn();
+
+    const { result } = renderHook((props: PrintExportContext) => usePrintExport(props), {
+      initialProps: makeContext({ printColorSpace: 'sRGB' }),
+    });
+
+    // إطلاق المهمة الأولى (attempt 1)
+    act(() => {
+      void result.current.executePrint(0, onDone1, {
+        directPrint: true,
+        printerName: 'Epson 1',
+      });
+    });
+
+    // إطلاق المهمة الثانية فوراً (attempt 2)
+    mockPrintDirect.mockResolvedValueOnce({
+      success: true,
+      jobId: 202,
+      status: 'Spooling',
+      error: '',
+    } as Awaited<ReturnType<typeof PrintDirect>>);
+
+    await act(async () => {
+      await result.current.executePrint(0, onDone2, {
+        directPrint: true,
+        printerName: 'Epson 2',
+      });
+    });
+
+    // الآن تكتمل المهمة الأولى المتأخرة
+    await act(async () => {
+      resolveFirstPrint({
+        success: true,
+        jobId: 101,
+        status: 'Spooling',
+        error: '',
+      });
+    });
+
+    // المهمة القديمة يجب ألا تطلق onDone1 يخصها بعد استبدالها بالمحاولة الأحدث
+    expect(onDone2).toHaveBeenCalledTimes(1);
+    expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining('المهمة #202'));
+  });
 });

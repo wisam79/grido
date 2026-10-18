@@ -110,10 +110,10 @@ docs_files=6
 
 | الرقم | القيمة (تحقق: 2026-10-08) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | **1128 ناجحة + 1 متخطاة (0 فاشلة)** — آخر شبكة كاملة: 2026-10-17 (منها 14 حالة عقد جديدة للطباعة المباشرة في `print-export-payload.test.ts` بإجمالي 22 حالة + اختبار سقوف الأخطاء في `print-export-helpers.test.ts`) | `npm --prefix frontend run test` |
+| حالات Vitest | **1132 ناجحة + 1 متخطاة (0 فاشلة)** — آخر شبكة كاملة: 2026-10-18 (منها 18 حالة عقد للطباعة المباشرة في `print-export-payload.test.ts` بإجمالي 26 حالة + اختبار سقوف الأخطاء في `print-export-helpers.test.ts`) | `npm --prefix frontend run test` |
 | حالات E2E | 165 حالة (آخر جرد: 2026-10-08) في **27 ملف مواصفة** (عدّ آلي: 2026-10-15 — مطابق لبلوك الأرقام أعلاه، كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
-| دوال اختبار Go | **279 دالة في 50 ملفاً** — تحقق: 2026-10-17 (جلسة 0.94 أضافت `printer_gdi_windows_test.go` بـ 15 دالة تغطي محرك GDI: فك قوالب الورق، تدرج الرمادي Grayscale، اقتطاع SubImage، تطابق الأبعاد، وبانوراما الزوايا الحادة، وتوسيط Cover/Contain، وتصفير البكسلات الشفافة، وحالات Spooler الرقمية، والمسار الأمني، وتحويل DIB السريع، ورسائل Win32، وإنهاء NUL، والتحقق من المدخلات) | `go test ./internal/... -list "^Test"` |
+| دوال اختبار Go | **283 دالة في 50 ملفاً** — تحقق: 2026-10-18 (جلسة 1.00 أضافت 4 دوال لـ `printer_gdi_windows_test.go` تغطي مقاسات صور الاستوديو، حالات الألفا المتطرفة، أمان الملفات التالفة، وحدود طلبات الطباعة) | `go test ./internal/... -list "^Test"` |
 | عدد صفائح الحصص اليومية | free 5 / pro 15 / enterprise 50 | `internal/service/ai_service.go` + migration `20260730000001` + `frontend/src/lib/ai/quota.ts` (ثلاثة مواضع متزامنة — قرار محمي؛ وحدة الحسم الواحدة هي `lib/ai/quota.ts` والخادم هو مصدر الحقيقة، ويُثبَّت ذلك بتأكيدين في `docs-gate`) |
 | منطقة يوم الحصة (محلي/UTC) | **UTC** في الخادم والمُقيِّد المحلي والواجهة | `internal/service/ai_service.go` (`aiUsageDayKey`) + `frontend/src/lib/ai/quota.ts` (`aiUtcDayKey`) مقابل `date_trunc('day', timezone('utc', now()))` |
 
