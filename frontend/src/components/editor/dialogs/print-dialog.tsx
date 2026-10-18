@@ -32,7 +32,7 @@ import {
   Scissors,
   Gear,
   FileText,
-  Lightning,
+  FloppyDisk,
 } from '@/components/ui/icons';
 import { toast } from 'sonner';
 import { createLogger } from '@/lib/logger';
@@ -58,9 +58,6 @@ const logger = createLogger('print-dialog');
 /** مفتاح حفظ الطابعة المختارة بين الجلسات (هدف «الخصائص» والطباعة المباشرة). */
 const PRINT_PRINTER_STORAGE_KEY = 'grido-print-selected-printer';
 
-/** مفتاح تفضيل الطباعة المباشرة (الافتراضي: مفعّل). */
-const PRINT_DIRECT_STORAGE_KEY = 'grido.print.directPrint';
-
 function readStoredPrinter(): string {
   try {
     return localStorage.getItem(PRINT_PRINTER_STORAGE_KEY) || '';
@@ -74,22 +71,6 @@ function storePrinter(name: string): void {
     localStorage.setItem(PRINT_PRINTER_STORAGE_KEY, name);
   } catch {
     /* التخزين غير متاح — لا نُفشل الاختيار */
-  }
-}
-
-function readStoredDirectPrint(): boolean {
-  try {
-    return localStorage.getItem(PRINT_DIRECT_STORAGE_KEY) !== '0';
-  } catch {
-    return true;
-  }
-}
-
-function storeDirectPrint(enabled: boolean): void {
-  try {
-    localStorage.setItem(PRINT_DIRECT_STORAGE_KEY, enabled ? '1' : '0');
-  } catch {
-    /* التخزين غير متاح — التفضيل يبقى للجلسة الحالية */
   }
 }
 
@@ -164,17 +145,8 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const [selectedPrinter, setSelectedPrinter] = useState<string>('');
   const [isLoadingPrinters, setIsLoadingPrinters] = useState(false);
   const [isOpeningPrefs, setIsOpeningPrefs] = useState(false);
-  const [isDirectPrint, setIsDirectPrint] = useState(readStoredDirectPrint);
-
-  // 🖨️ الطباعة المباشرة (GDI) ترسم RGB فقط — مخرج CMYK يُصدَّر TIFF بفصل أحبار
-  // لا يفكّه المحرك، فيُعطَّل المفتاح تلقائياً بدل فشل صامت في الـ spooler.
+  // 🖨️ فضاء ألوان CMYK يُصدَّر TIFF بفصل أحبار للمطابع بدل الإرسال لطابور GDI
   const isCmykPrint = (printSettings.colorSpace || 'sRGB') === 'CMYK';
-  const directPrintActive = isDirectPrint && !isCmykPrint;
-
-  const handleDirectPrintChange = useCallback((checked: boolean) => {
-    setIsDirectPrint(checked);
-    storeDirectPrint(checked);
-  }, []);
 
   const [supportedPapers, setSupportedPapers] = useState<SupportedPaperInfo[]>([]);
 
@@ -441,14 +413,13 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       effectiveMarginMM,
       onDone: () => onOpenChange(false),
       options: {
-        directPrint: directPrintActive,
         printerName: selectedPrinter,
         formName: matchedPaper?.name,
         paperId: matchedPaper?.id,
         borderless: matchedPaper?.isBorderless ?? false,
       },
     });
-  }, [exporter, effectiveMarginMM, onOpenChange, directPrintActive, selectedPrinter, matchedPaper]);
+  }, [exporter, effectiveMarginMM, onOpenChange, selectedPrinter, matchedPaper]);
 
   useEffect(() => {
     if (!open) {
@@ -710,37 +681,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   )}
                 </div>
               )}
-
-              {/* خيار الطباعة المباشرة (Win32 Spooler) */}
-              <div className="flex items-center justify-between pt-1 border-t border-border/30">
-                <div className="flex flex-col gap-0.5 max-w-[240px]">
-                  <Label
-                    htmlFor="direct-print-toggle"
-                    className={cn(
-                      'text-xs font-semibold text-foreground flex items-center gap-1.5',
-                      isCmykPrint ? 'opacity-60' : 'cursor-pointer',
-                    )}
-                  >
-                    <Lightning className="w-3.5 h-3.5 text-amber-500" weight="fill" />
-                    <span>طباعة مباشرة (Win32)</span>
-                  </Label>
-                  <span className="text-micro text-muted-foreground/80 leading-tight">
-                    {isCmykPrint
-                      ? 'غير متاحة مع فضاء CMYK — سيُحفظ ملف TIFF لفتحه في الطابعة'
-                      : directPrintActive
-                        ? `إرسال فوري للطابعة المختارة بدقة ${printSettings.dpi || 300} DPI دون حوار المتصفح`
-                        : 'فتح حوار الطباعة لنظام التشغيل (Browser Dialog)'}
-                  </span>
-                </div>
-                <Switch
-                  id="direct-print-toggle"
-                  checked={directPrintActive}
-                  onCheckedChange={handleDirectPrintChange}
-                  disabled={isCmykPrint}
-                  title={isCmykPrint ? 'الطباعة المباشرة تدعم sRGB فقط' : undefined}
-                  className="data-[state=checked]:bg-primary shrink-0"
-                />
-              </div>
             </div>
 
             {/* بلوك 2: الورقة والاتجاه (Paper & Orientation Block) */}
@@ -1109,7 +1049,6 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             <Button
               onClick={() =>
                 handlePrint(effectiveMarginMM, () => onOpenChange(false), {
-                  directPrint: directPrintActive,
                   printerName: selectedPrinter,
                   formName: matchedPaper?.name,
                   paperId: matchedPaper?.id,
@@ -1117,7 +1056,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 })
               }
               title={
-                directPrintActive ? 'طباعة مباشرة إلى الطابعة (Enter)' : 'طباعة الورقة (Enter)'
+                isCmykPrint
+                  ? 'تصدير ورقة الطباعة للمطبعة بصيغة TIFF CMYK (Enter)'
+                  : 'طباعة مباشرة إلى الطابعة (Enter)'
               }
               aria-keyshortcuts="Enter"
               className="h-8 px-5 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs transition-all duration-150 cursor-pointer rounded-lg shadow-sm hover:shadow active:scale-98"
@@ -1127,13 +1068,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 <>
                   <Spinner className="w-3.5 h-3.5" size={14} /> <span>جاري التجهيز ...</span>
                 </>
+              ) : isCmykPrint ? (
+                <>
+                  <FloppyDisk className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                  <span>تصدير ملف المطبعة (TIFF)</span>
+                </>
               ) : (
                 <>
-                  {directPrintActive ? (
-                    <Lightning className="w-3.5 h-3.5 shrink-0 text-amber-300" weight="fill" />
-                  ) : (
-                    <Printer className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                  )}
+                  <Printer className="w-3.5 h-3.5 shrink-0" weight="bold" />
                   <span>طباعة الورقة</span>
                 </>
               )}

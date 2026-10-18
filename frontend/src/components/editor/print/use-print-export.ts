@@ -4,7 +4,6 @@ import { useEditorStore } from '@/lib/editor-store';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import {
   ExportPrintSheet,
-  PrintNative,
   PrintDirect,
   PollJobStatus,
 } from '@bindings/grido/internal/handlers/printhandler';
@@ -228,161 +227,6 @@ export function usePrintExport({
     printCutLineStyle,
   ]);
 
-  const fallbackBrowserPrint = useCallback(
-    (result: domain.PrintResult) => {
-      if (result.htmlDoc) {
-        const win = window as Window & {
-          __gridoPrintCleanup?: (() => void) | null;
-        };
-        win.__gridoPrintCleanup?.();
-
-        const imageSrc = extractPrintImageSrc(result.htmlDoc);
-        if (!imageSrc) {
-          if (result.filePath && typeof PrintNative === 'function') {
-            PrintNative(result.filePath)
-              .then(() => toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح'))
-              .catch((err) => logger.error('PrintNative failed:', err));
-          }
-          return;
-        }
-
-        const styleEl = document.createElement('style');
-        styleEl.id = 'grido-print-sheet-style';
-        styleEl.textContent = generatePrintPageStyle(paperWidth, paperHeight);
-
-        const container = document.createElement('div');
-        container.id = 'print-container';
-        container.setAttribute('aria-hidden', 'true');
-        container.style.display = 'none';
-
-        const img = document.createElement('img');
-        img.alt = '';
-        img.src = imageSrc;
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.maxWidth = '100%';
-        img.style.maxHeight = '100%';
-        // ⚖️ contain لا fill — انظر generatePrintPageStyle: fill يسحق الورقة إن
-        // اختلفت نسبة أبعاد الورق المختار في حوار الطباعة الأصلي عن نسبة التركيب.
-        img.style.objectFit = 'contain';
-        img.style.display = 'block';
-        container.appendChild(img);
-
-        let done = false;
-        let safetyTimer: ReturnType<typeof setTimeout> | undefined;
-        const cleanup = () => {
-          if (done) return;
-          done = true;
-          win.__gridoPrintCleanup = null;
-          window.removeEventListener('afterprint', cleanup);
-          if (safetyTimer) {
-            clearTimeout(safetyTimer);
-            safetyTimer = undefined;
-          }
-          styleEl.remove();
-          container.remove();
-          if (typeof document !== 'undefined' && document.body) {
-            document.body.style.pointerEvents = '';
-            const stuckContent = document.querySelector('[data-slot="dialog-content"]');
-            const stuckOverlay = document.querySelector('[data-slot="dialog-overlay"]');
-            if (stuckContent?.getAttribute('data-state') === 'closed') {
-              stuckContent.remove();
-              stuckOverlay?.remove();
-            }
-          }
-          window.focus();
-        };
-        win.__gridoPrintCleanup = cleanup;
-
-        try {
-          document.head.appendChild(styleEl);
-          document.body.appendChild(container);
-          window.addEventListener('afterprint', cleanup, { once: true });
-          safetyTimer = setTimeout(cleanup, 30_000);
-        } catch (e) {
-          logger.error('Print container injection failed:', e);
-          cleanup();
-          if (result.filePath && typeof PrintNative === 'function') {
-            PrintNative(result.filePath)
-              .then(() => toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح'))
-              .catch((err) => logger.error('PrintNative fallback failed:', err));
-          }
-          return;
-        }
-
-        const triggerPrint = () => {
-          try {
-            window.print();
-            // 🛡️ صدق الرسائل: window.print يفتح حوار النظام فقط (قد يُلغى) —
-            // النجاح يُعلن عند afterprint لا لحظة الفتح.
-            const onAfterPrint = () => {
-              window.removeEventListener('afterprint', onAfterPrint);
-              toast.success('تم إرسال الورقة إلى الطباعة بنجاح');
-            };
-            window.addEventListener('afterprint', onAfterPrint);
-          } catch (e) {
-            logger.error('Browser print error:', e);
-            cleanup();
-            if (result.filePath && typeof PrintNative === 'function') {
-              PrintNative(result.filePath)
-                .then(() => toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح'))
-                .catch((err) => logger.error('PrintNative after browser error failed:', err));
-            }
-          }
-        };
-
-        let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
-        const runPrint = () => {
-          if (fallbackTimer) {
-            clearTimeout(fallbackTimer);
-            fallbackTimer = undefined;
-          }
-          triggerPrint();
-        };
-        if (img.complete && img.naturalWidth > 0) {
-          runPrint();
-        } else {
-          img.onload = runPrint;
-          img.onerror = () => {
-            if (fallbackTimer) {
-              clearTimeout(fallbackTimer);
-              fallbackTimer = undefined;
-            }
-            logger.error('Print image failed to load, falling back to PrintNative');
-            cleanup();
-            if (result.filePath && typeof PrintNative === 'function') {
-              PrintNative(result.filePath)
-                .then(() => toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح'))
-                .catch((err) => logger.error('PrintNative fallback failed:', err));
-            }
-          };
-          fallbackTimer = setTimeout(runPrint, 10_000);
-        }
-      } else if (result.filePath && typeof PrintNative === 'function') {
-        PrintNative(result.filePath)
-          .then(() => toast.success('تم إرسال الورقة إلى الطباعة الأصلية بنجاح'))
-          .catch((err) => logger.error('PrintNative failed:', err));
-      }
-    },
-    [paperWidth, paperHeight],
-  );
-
-  /**
-   * 🧭 عرض نتيجة الطباعة: يفتح حوار الطباعة التراجعية (WebView2/@page) أو يبلّغ عن الفشل.
-   */
-  const showPrintResult = useCallback(
-    (result: domain.PrintResult) => {
-      setExporting(false);
-      if (!result.success) {
-        toast.error('فشل التصدير: ' + (result.error || 'خطأ غير معروف'));
-        return;
-      }
-
-      fallbackBrowserPrint(result);
-    },
-    [fallbackBrowserPrint, setExporting],
-  );
-
   const executePrint = useCallback(
     async (effectiveMarginMM: number, onDone: () => void, options?: PrintExecuteOptions) => {
       // 🖨️ الحارس على ref فقط (RV-Print-19): حالة state للعرض، والقرار الذري هنا.
@@ -496,17 +340,29 @@ export function usePrintExport({
 
         SetTaskbarProgress(0, 'none').catch(() => {});
 
-        // 🖨️ المسار المباشر عبر Win32 GDI (Direct Spooling): يُستبعد لمخرج CMYK —
-        // الورقة تُصدّر TIFF بفصل أحبار (photometric=5) لا يفكّه x/image/tiff،
-        // وGDI يرسم RGB أصلاً فتضيع الألوان المرسلة؛ الحوار يعطّل المفتاح لنفس السبب.
-        const directPrintEligible = options?.directPrint && printColorSpace !== 'CMYK';
-        if (directPrintEligible && result.filePath && typeof PrintDirect === 'function') {
+        // 🖨️ فضاء ألوان CMYK: يُصدَّر TIFF حقيقي عالي الدقة بفصل أحبار للمطابع
+        if (printColorSpace === 'CMYK') {
+          SetTaskbarProgress(100, 'normal').catch(() => {});
+          flashPending = true;
+          later(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
+          toast.success(
+            result.filePath
+              ? `تم تصدير ورقة الطباعة للمطبعة (TIFF CMYK): ${result.filePath}`
+              : 'تم تصدير ورقة الطباعة للمطبعة (TIFF CMYK) بنجاح',
+          );
+          setExporting(false);
+          onDone();
+          return;
+        }
+
+        // 🖨️ المسار المباشر الأصلي لويندوز (Win32 GDI Direct Spooling):
+        if (result.filePath && typeof PrintDirect === 'function') {
           SetTaskbarProgress(75, 'indeterminate').catch(() => {});
           try {
             const printRes = await withTimeout(
               PrintDirect(
                 domain.DirectPrintRequest.createFrom({
-                  printerName: options.printerName || '',
+                  printerName: options?.printerName || '',
                   filePath: result.filePath,
                   paperWidthMM: paperWidth,
                   paperHeightMM: paperHeight,
@@ -514,30 +370,27 @@ export function usePrintExport({
                   copies: 1,
                   color: true,
                   borderless: options?.borderless ?? false,
-                  formName: options.formName,
-                  paperId: options.paperId,
+                  formName: options?.formName,
+                  paperId: options?.paperId,
                 }),
               ),
               30_000,
               'PrintDirect',
             );
-            // ⏳ حارس الجيل بعد جولة IPC جديدة: إلغاء/إعادة طباعة أثناء انتظار
-            // الـ spooler كان يُغلق حوار الجيل الجديد ويبدّل حالته من نتيجة قديمة.
             if (attempt !== attemptRef.current) return;
             if (printRes.success) {
               SetTaskbarProgress(100, 'normal').catch(() => {});
               flashPending = true;
               later(() => SetTaskbarProgress(0, 'none').catch(() => {}), 2000);
               toast.success(
-                `تم إرسال الورقة بنجاح إلى طابعة ${options.printerName || 'النظام'} (المهمة #${printRes.jobId})`,
+                `تم إرسال الورقة بنجاح إلى طابعة ${options?.printerName || 'النظام'} (المهمة #${printRes.jobId})`,
               );
               setExporting(false);
               onDone();
 
-              // 🖨️ مراقبة حالة المهمة في طابور الويندوز عبر PollJobStatus:
-              // استدعاء فوري لكشف أخطاء الورق أو انقطاع الطابعة التي تظهر بعد إرسال الـ Spooler
+              // مراقبة حالة المهمة في طابور الويندوز عبر PollJobStatus
               if (printRes.jobId && typeof PollJobStatus === 'function') {
-                const printer = options.printerName || '';
+                const printer = options?.printerName || '';
                 const jId = printRes.jobId;
                 setTimeout(async () => {
                   try {
@@ -554,15 +407,15 @@ export function usePrintExport({
               return;
             } else {
               const reason = describeError(printRes.error || 'خطأ غير معروف');
-              logger.warn('Direct print failed, falling back to browser dialog:', printRes.error);
-              toast.warning(`تعذرت الطباعة المباشرة (${reason})، سيتم فتح حوار النظام`);
+              logger.error('Direct print failed:', printRes.error);
+              toast.error(`تعذرت الطباعة: ${reason}`);
+              setExporting(false);
+              return;
             }
           } catch (e) {
             if (attempt !== attemptRef.current) return;
             logger.error('Direct print call threw exception:', e);
             const detail = describeError(e);
-            // ⏳ مهلة بلا إلغاء (Wails IPC): المهمة قد تكون ما زالت تُرسل للطابعة،
-            // ففتح حوار المتصفح تلقائياً كان يعني طباعة مزدوجة محتملة — نُبلّغ ونتوقف.
             if (detail.includes('انتهت المهلة')) {
               toast.warning(
                 'تأخرت الطباعة المباشرة عن المهلة — قد تكون المهمة قيد الإرسال. تحقّق من طابور الطباعة قبل إعادة المحاولة.',
@@ -570,28 +423,14 @@ export function usePrintExport({
               onDone();
               return;
             }
-            toast.warning(`تعذرت الطباعة المباشرة (${detail})، سيتم فتح حوار النظام`);
+            toast.error(`تعذرت الطباعة: ${detail}`);
+            setExporting(false);
+            return;
           }
         }
 
-        // 1. إغلاق نافذة إعدادات الطباعة أولاً لضمان عدم بقائها عالقة خلف حوار الطباعة
         setExporting(false);
         onDone();
-
-        // ضمان استعادة تفاعل الصفحة فوراً بإزالة أي قيد inline بدل فرض "auto"
-        if (typeof document !== 'undefined' && document.body) {
-          document.body.style.pointerEvents = '';
-        }
-
-        // 2. إطلاق حوار الطباعة بعد اكتمال أنيميشن إغلاق Radix بالكامل (300ms).
-        // حرج جداً: window.print() في WebView2/Chromium هو استدعاء تجميدي تزامني (blocking modal)
-        // ويُطبّق @media print التي تفرض display: none على عناصر الصفحة عدا حاوية الطباعة.
-        // إذا انطلق window.print() أثناء حركة إغلاق Radix (duration-100)، يُلغي المتصفح أنيميشن
-        // الـ CSS فوراً دون إطلاق حدث animationend، فيعلق DialogContent في DOM كعنصر زومبي
-        // بعد إغلاق حوار الطباعة الأصلي وتصبح الواجهة مجمدة على "جاري تجهيز المعاينة ...".
-        later(() => {
-          showPrintResult(result);
-        }, 300);
       } catch (err) {
         if (attempt !== attemptRef.current) return;
         SetTaskbarProgress(100, 'error').catch(() => {});
@@ -621,7 +460,6 @@ export function usePrintExport({
       printCutLineStyle,
       printOrientation,
       printColorSpace,
-      showPrintResult,
       setExporting,
       later,
     ],

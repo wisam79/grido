@@ -433,7 +433,7 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     expect(mockPrintDirect).not.toHaveBeenCalled();
   });
 
-  it('عند فشل الطباعة المباشرة: تحذير عربي ثم سقوط آمن لحوار النظام', async () => {
+  it('عند فشل الطباعة المباشرة: يعرض تنبيهاً صريحاً بالخطأ للمستخدم دون حوار المتصفح', async () => {
     mockPrintDirect.mockResolvedValueOnce({
       success: false,
       jobId: 0,
@@ -442,14 +442,10 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     } as Awaited<ReturnType<typeof PrintDirect>>);
 
     await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
-      directPrint: true,
       printerName: 'HP LaserJet',
     });
 
-    expect(mockToastWarning).toHaveBeenCalledWith(
-      expect.stringContaining('تعذرت الطباعة المباشرة'),
-    );
-    // الفشل المباشر لا يبتلع الدورة — مسار التصدير اكتمل مرة واحدة ويتاح الحوار
+    expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('تعذرت الطباعة'));
     expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
   });
 
@@ -530,18 +526,14 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     }
   });
 
-  it('يتعامل بأمان مع استثناءات PrintDirect ويسقط لحوار النظام مع تحذير عربي', async () => {
+  it('يتعامل بأمان مع استثناءات PrintDirect ويعرض رسالة خطأ صريحة للمستخدم', async () => {
     mockPrintDirect.mockRejectedValueOnce(new Error('RPC connection closed unexpectedly'));
 
     await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
-      directPrint: true,
       printerName: 'HP LaserJet',
     });
 
-    expect(mockToastWarning).toHaveBeenCalledWith(
-      expect.stringContaining('تعذرت الطباعة المباشرة'),
-    );
-    // التصدير اكتمل وسقط الحوار للنظام
+    expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('تعذرت الطباعة'));
     expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
   });
 
@@ -629,9 +621,8 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     }
   });
 
-  it('يحظر تماماً استدعاء PrintDirect عند اختيار فضاء ألوان CMYK حتى مع تمرير directPrint: true', async () => {
+  it('يحظر تماماً استدعاء PrintDirect عند اختيار فضاء ألوان CMYK ويُعلن نجاح تصدير ملف المطبعة', async () => {
     await runPrint(makeContext({ printColorSpace: 'CMYK' }), () => {}, {
-      directPrint: true,
       printerName: 'Epson L8050',
     });
 
@@ -642,6 +633,9 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
         colorSpace: 'CMYK',
         exportFormat: 'tiff',
       }),
+    );
+    expect(mockToastSuccess).toHaveBeenCalledWith(
+      expect.stringContaining('تم تصدير ورقة الطباعة للمطبعة (TIFF CMYK)'),
     );
   });
 

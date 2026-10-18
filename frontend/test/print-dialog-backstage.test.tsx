@@ -137,8 +137,9 @@ describe('PrintDialog Backstage View Tests', () => {
   it('shows CMYK amber hint only when CMYK is selected', async () => {
     renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
 
-    // افتراضياً sRGB بلا تحذير
+    // افتراضياً sRGB بلا تحذير والزر يحمل نص طباعة الورقة
     expect(screen.queryByText(/سيُحفظ الملف TIFF/)).not.toBeInTheDocument();
+    expect(screen.getByText('طباعة الورقة')).toBeInTheDocument();
 
     await act(async () => {
       useEditorStore.getState().setPrintSettings({ colorSpace: 'CMYK' });
@@ -146,6 +147,7 @@ describe('PrintDialog Backstage View Tests', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/سيُحفظ الملف TIFF بفصل أحبار/)).toBeInTheDocument();
+      expect(screen.getByText('تصدير ملف المطبعة (TIFF)')).toBeInTheDocument();
     });
   });
 

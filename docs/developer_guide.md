@@ -192,7 +192,7 @@ The compiled executable will be placed in the `bin/` folder (`BIN_DIR` in `Taskf
 
 ### Print Studio & System Printing Engine (Backstage View)
 - **واجهة الاستوديو:** شاشة كاملة متسعة بنمط Backstage View في `frontend/src/components/editor/dialogs/print-dialog.tsx` مخصصة لتجهيز الورقة والاتجاه والهوامش وخطوط القص مع طاولة معاينة مركزية فسيحة بنمط Lightbox بنسبة 1:1.
-- **محرك الطباعة المباشر (WebView2):** يعتمد على حقن حاوية طباعة دقيقة مع `@page` وهوامش صفرية واستدعاء `window.print()` مباشرة، متفادياً معالج صور ويندوز العتيق (`photowiz.dll`).
+- **محرك الطباعة المباشر الأصلي (Win32 GDI Spooler):** يعتمد على إرسال مصفوفات بكسلات DIB فائقة الدقة (300+ DPI) مباشرة إلى طابور طباعة ويندوز (Windows Print Spooler) عبر Win32 GDI (CreateDCW, StartDocW, StretchDIBits)، متفادياً حوارات المتصفح التجميدية ومعالج صور ويندوز العتيق (photowiz.dll).
 - **تفضيلات درايفر الطابعة (Windows):** استدعاء نافذة إعدادات الشركة المصنّعة الرسمية عبر `rundll32.exe printui.dll,PrintUIEntry /e /n` بطلب المستخدم.
 
 For the NSIS installer (requires `makensis` on PATH):
