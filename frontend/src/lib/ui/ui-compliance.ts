@@ -154,11 +154,10 @@ export function ltrSpan(value: string): { dir: 'ltr'; value: string } {
 // ولا يعتمد على وراثة الشجرة المستدعية (قد تكون داخل جزيرة ltr).
 //
 // الجزر المسموحة بـ dir="ltr" حصراً (موثقة بتعليق /* ltr-island */ في موضعها):
-//  1) header النافذة (App.tsx) — تثبيت فيزيائي لأزرار الويندوز.
-//  2) main التخطيط WorkspaceLayout — يفرض Rail يساراً والمفتش يميناً فيزيائياً.
-//  3) محررات الكانفس (freeform-canvas-editor) — إحداثيات Konva لا تُقلب.
-//  4) الحقول الرقمية/المونو (font-mono + tabular-nums) — dir="ltr" + text-left.
-//  5) Switch — dir="ltr" عمداً (سلوك Windows ثابت: التفعيل يميناً).
+//  1) main التخطيط WorkspaceLayout — يفرض Rail يساراً والمفتش يميناً فيزيائياً لبرامج التصميم.
+//  2) محررات الكانفس (freeform-canvas-editor) — إحداثيات Konva لا تُقلب.
+//  3) الحقول الرقمية/المونو (font-mono + tabular-nums) — dir="ltr" + text-left.
+//  4) Switch — dir="ltr" عمداً (سلوك Windows ثابت: التفعيل يميناً).
 //
 // القاعدة: خارج هذه الجزر استخدم الخصائص المنطقية حصراً
 // (ms-/me-/ps-/pe-/start-/end- + text-start/end + border-s/e).

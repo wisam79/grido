@@ -53,7 +53,7 @@ export function WindowControls({
   return (
     <div
       className="inline-flex items-stretch h-full select-none title-bar-controls z-(--z-quick-bar)"
-      dir="ltr"
+      dir="rtl"
     >
       {/* زر التصغير Minimize */}
       <button

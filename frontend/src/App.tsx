@@ -256,9 +256,8 @@ export default function App() {
                 'border-b border-border bg-sidebar/85 backdrop-blur-xl no-print title-bar-draggable select-none transition-opacity duration-200 z-(--z-panel) fluent-specular shadow-2xs',
                 !isFocused && 'opacity-75',
               )}
-              // ltr-island موثقة (عقد الاتجاه): شريط النافذة ثابت LTR فيزيائياً
-              // لأزرار الويندوز، والمبدّل الأوسط معزول بـ dir="rtl" الخاص به.
-              dir="ltr"
+              // شريط النافذة بنمط RTL العربي الأصيل (القوائم تبدأ يميناً وأزرار التحكم يساراً)
+              dir="rtl"
               onDoubleClick={handleMaximize}
             >
               <div className="flex items-center justify-between ps-3 pe-0 py-0 h-9 relative">
