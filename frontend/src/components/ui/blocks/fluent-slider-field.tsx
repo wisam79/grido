@@ -174,7 +174,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
         <div
           id={labelId}
           className={cn(
-            'flex items-center gap-1.5 text-xs font-semibold text-foreground/85 shrink-0 select-none',
+            'flex items-center gap-1.5 text-xs font-normal text-foreground/80 shrink-0 select-none',
             labelWidth || 'w-16',
           )}
           title={typeof label === 'string' ? label : undefined}
@@ -200,7 +200,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
 
         <span
           dir="ltr"
-          className="font-mono font-bold text-mini bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-foreground/90 select-none shrink-0 min-w-10 text-center"
+          className="font-mono text-mini tabular-nums bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-muted-foreground select-none shrink-0 min-w-10 text-center"
         >
           {displayVal}
         </span>
@@ -217,13 +217,13 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       )}
     >
       <div className="flex justify-between items-center text-xs">
-        <div id={labelId} className="flex items-center gap-1.5 font-semibold text-foreground/90">
+        <div id={labelId} className="flex items-center gap-1.5 font-normal text-foreground/85">
           {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
           <span>{label}</span>
         </div>
         <span
           dir="ltr"
-          className="font-mono font-bold text-xs bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-foreground/90 select-none"
+          className="font-mono text-mini tabular-nums bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-muted-foreground select-none"
         >
           {displayVal}
         </span>

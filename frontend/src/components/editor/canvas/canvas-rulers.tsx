@@ -214,6 +214,12 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
           onPointerDown={onStartDragHGuide}
         />
       </div>
+
+      {/* 🧭 الزاوية العلوية اليمنى أعلى شريط التمرير الرأسي (20x20px) */}
+      <div
+        className="w-[20px] h-[20px] shrink-0 bg-ruler-corner border-l border-ruler-border select-none"
+        aria-hidden="true"
+      />
     </div>
   );
 });

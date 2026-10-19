@@ -4,7 +4,11 @@ import { PaintBrush, Palette, Sparkle, ArrowsOutCardinal } from '@/components/ui
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
-import { ImageStyleProperties, ImageAdjustProperties } from './panels/image-properties';
+import {
+  ImageStyleProperties,
+  ImageAdjustProperties,
+  ImageEffectsProperties,
+} from './panels/image-properties';
 import {
   TextStyleProperties,
   TextColorProperties,
@@ -68,7 +72,9 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
                   />
                 ),
                 tooltip:
-                  element.type === 'image' ? 'الألوان وفلاتر الصورة' : 'الألوان والتعبئة والتدرجات',
+                  element.type === 'image'
+                    ? 'تعديل الألوان والإضاءة'
+                    : 'الألوان والتعبئة والتدرجات',
                 className: 'px-1.5 gap-1',
               },
               {
@@ -79,7 +85,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
                     weight={activeTab === 'effects' ? 'duotone' : 'regular'}
                   />
                 ),
-                tooltip: 'التأثيرات والظلال',
+                tooltip: element.type === 'image' ? 'المرشحات وتأثيرات الظل' : 'التأثيرات والظلال',
                 className: 'px-1.5 gap-1',
               },
               {
@@ -158,13 +164,17 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
               element.locked && 'pointer-events-none opacity-50 select-none',
             )}
           >
-            {element.type === 'text' ? (
+            {element.type === 'text' && (
               <TextEffectsProperties
                 element={element}
                 onUpdate={onUpdate}
                 onNavigateTab={setActiveTab}
               />
-            ) : (
+            )}
+            {element.type === 'image' && (
+              <ImageEffectsProperties element={element} onUpdate={onUpdate} />
+            )}
+            {element.type === 'shape' && (
               <ShadowGlowSection element={element} onUpdate={onUpdate} />
             )}
           </TabsContent>

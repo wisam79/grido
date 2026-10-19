@@ -100,7 +100,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=129
+vitest_test_files=130
 e2e_spec_files=27
 go_test_files=50
 docs_files=6
@@ -110,7 +110,7 @@ docs_files=6
 
 | الرقم | القيمة (تحقق: 2026-10-08) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | **1161 ناجحة + 1 متخطاة (0 فاشلة)** — آخر شبكة كاملة: 2026-10-18 عبر **129 ملفاً** (شملت 8 حالات جديدة لوحدة أبعاد ماسح المستندات في `target-dims.test.ts`، إضافة لتغطية الطباعة المباشرة في `print-export-payload.test.ts` و`print-export-helpers.test.ts`) | `npm --prefix frontend run test` |
+| حالات Vitest | **1170 ناجحة + 1 متخطاة (0 فاشلة)** — آخر شبكة كاملة: 2026-10-19 عبر **130 ملفاً** (شملت 9 حالات لشريط ومساطر التمرير والتأطير المتوازن في `canvas-scrollbars.test.tsx`، و8 حالات لوحدة أبعاد ماسح المستندات في `target-dims.test.ts`) | `npm --prefix frontend run test` |
 | حالات E2E | 165 حالة (آخر جرد: 2026-10-08) في **27 ملف مواصفة** (عدّ آلي: 2026-10-15 — مطابق لبلوك الأرقام أعلاه، كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
 | دوال اختبار Go | **283 دالة في 50 ملفاً** — تحقق: 2026-10-18 (جلسة 1.00 أضافت 4 دوال لـ `printer_gdi_windows_test.go` تغطي مقاسات صور الاستوديو، حالات الألفا المتطرفة، أمان الملفات التالفة، وحدود طلبات الطباعة) | `go test ./internal/... -list "^Test"` |

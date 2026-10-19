@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GridFour, Columns, Crop, Eye } from '@/components/ui/icons';
+import { GridFour, Eye } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 import {
@@ -107,17 +107,9 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
           onChange={setActiveGridTab}
           size="sm"
           options={[
-            {
-              id: 'grid',
-              label: 'الشبكة',
-              icon: <GridFour className="w-3.5 h-3.5" weight="regular" />,
-            },
-            {
-              id: 'columns',
-              label: 'الأعمدة',
-              icon: <Columns className="w-3.5 h-3.5" weight="regular" />,
-            },
-            { id: 'bleed', label: 'القص', icon: <Crop className="w-3.5 h-3.5" weight="regular" /> },
+            { id: 'grid', label: 'الشبكة' },
+            { id: 'columns', label: 'الأعمدة' },
+            { id: 'bleed', label: 'القص' },
           ]}
         />
 
@@ -182,25 +174,26 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   </div>
                 </div>
 
-                {/* صف النمط */}
+                {/* صف النمط — زر تبديل مفرد ينوب عن زرين نصيين */}
                 <div
-                  className="flex items-center justify-between bg-card/60 border border-border/70 rounded-lg px-2.5 py-1 min-h-9"
+                  className="flex items-center justify-between bg-card/60 border border-border/70 rounded-md px-2.5 h-8 select-none"
                   dir="rtl"
                 >
                   <span className="text-mini font-bold text-muted-foreground select-none shrink-0">
                     النمط
                   </span>
-                  <FluentSegmentedControl<'lines' | 'dots'>
-                    layoutId="grid-columns-gridtype-toggle"
-                    value={gridType}
-                    onChange={setGridType}
-                    size="sm"
-                    fullWidth={false}
-                    options={[
-                      { id: 'lines', label: 'خطوط' },
-                      { id: 'dots', label: 'نقاط' },
-                    ]}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setGridType(gridType === 'lines' ? 'dots' : 'lines')}
+                    title={
+                      gridType === 'lines'
+                        ? 'النمط: خطوط متصلة (انقر للتبديل إلى نقاط)'
+                        : 'النمط: نقاط متقطعة (انقر للتبديل إلى خطوط)'
+                    }
+                    className="flex items-center gap-1.5 px-2.5 h-6.5 rounded-sm bg-muted/60 hover:bg-muted border border-border/60 text-xs font-semibold text-foreground transition-all cursor-pointer active:scale-95 shadow-2xs"
+                  >
+                    <span>{gridType === 'lines' ? 'خطوط متصلة' : 'نقاط متقطعة'}</span>
+                  </button>
                 </div>
 
                 {/* شريط الشفافية القياسي */}

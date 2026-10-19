@@ -14,6 +14,8 @@ import {
 import { useShallow } from 'zustand/react/shallow';
 import { FluentSection, FluentSettingRow, FluentSegmentedControl } from '@/components/ui/blocks';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
+import { PageOrientationIcon } from '@/components/ui/image-icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // canvas-dimensions-panel.tsx — لوحة "مساحة العمل" (المقاس + الأبعاد + الاتجاه)
@@ -297,11 +299,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     { id: 'px', label: 'px', title: 'بكسل' },
   ];
 
-  const orientationOptions = [
-    { id: 'portrait' as const, label: 'عمودي', title: 'عمودي', glyph: 'w-3 h-4' },
-    { id: 'landscape' as const, label: 'أفقي', title: 'أفقي', glyph: 'w-4 h-3' },
-  ];
-
   return (
     <FluentSection
       icon={<Crop className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
@@ -435,6 +432,32 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* زر تبديل الاتجاه المفرد (Single Orientation Toggle) — يستبدل صف الاتجاه الكامل بنمط Figma و Fluent 2 */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={handleSwapDimensions}
+                title={isPortrait ? 'أفقي' : 'عمودي'}
+                aria-label={isPortrait ? 'تبديل الاتجاه إلى أفقي' : 'تبديل الاتجاه إلى عمودي'}
+                className={cn(
+                  'w-8 h-8 rounded-md border border-border/80 bg-card hover:bg-muted/60 hover:text-foreground text-muted-foreground flex items-center justify-center transition-all cursor-pointer shadow-2xs shrink-0 active:scale-95',
+                  FOCUS_RING,
+                )}
+              >
+                <PageOrientationIcon
+                  isLandscape={!isPortrait}
+                  className="w-4 h-4 text-foreground/80 transition-transform duration-200"
+                />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="font-cairo text-xs font-semibold">
+              {isPortrait
+                ? 'الاتجاه: عمودي (انقر للتبديل لأفقي)'
+                : 'الاتجاه: أفقي (انقر للتبديل لعمودي)'}
+            </TooltipContent>
+          </Tooltip>
+
           {/* وحدة القياس — mm أولاً لأنها الوحدة الافتراضية للطباعة */}
           <FluentSegmentedControl<'mm' | 'px'>
             layoutId="canvas-dimensions-unit-toggle"
@@ -449,44 +472,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             }))}
           />
         </div>
-
-        {/* 2. الاتجاه — المصدر الوحيد لتبديل العرض بالارتفاع (قبل الأبعاد:
-            تختار المقاس ثم الاتجاه ثم تضبط الأرقام، فلا يلغي التبديل أرقامك) */}
-        <FluentSettingRow
-          layout="vertical"
-          label="الاتجاه"
-          control={
-            <FluentSegmentedControl<'portrait' | 'landscape'>
-              layoutId="canvas-dimensions-orientation-toggle"
-              value={isPortrait ? 'portrait' : 'landscape'}
-              onChange={(val) => {
-                if (val === 'portrait' && !isPortrait) handleSwapDimensions();
-                if (val === 'landscape' && isPortrait) handleSwapDimensions();
-              }}
-              size="sm"
-              fullWidth={true}
-              options={orientationOptions.map((option) => ({
-                id: option.id,
-                label: (
-                  <span className="flex items-center justify-center gap-1.5 font-sans">
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        'rounded-sm border-[1.5px] transition-colors shrink-0',
-                        option.glyph,
-                        (option.id === 'portrait' ? isPortrait : !isPortrait)
-                          ? 'border-foreground bg-foreground/25'
-                          : 'border-muted-foreground/60',
-                      )}
-                    />
-                    <span className="font-sans">{option.label}</span>
-                  </span>
-                ),
-                tooltip: option.title,
-              }))}
-            />
-          }
-        />
 
         {/* 3. الأبعاد: العرض والارتفاع مع قفل نسبة الأبعاد */}
         <FluentSettingRow

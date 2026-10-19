@@ -53,6 +53,21 @@ export function computeDefaultStageOrigin(
  * لا يوجد وضع Wheel منفصل يفرض التوسيط، لأن فرضه كان يسبب snap-back مزعجاً
  * على لوحات اللمس عند محاولة التمرير.
  */
+export function getStageClampBounds(
+  displayW: number,
+  displayH: number,
+  viewportW: number,
+  viewportH: number,
+): { minX: number; maxX: number; minY: number; maxY: number; minVisible: number } {
+  const minVisible = Math.max(40, Math.min(150, Math.min(displayW, displayH) * 0.4));
+  const minX = minVisible - displayW;
+  const maxX = viewportW - minVisible;
+  const minY = minVisible - displayH;
+  const maxY = viewportH - minVisible;
+
+  return { minX, maxX, minY, maxY, minVisible };
+}
+
 export function clampStagePos(
   pos: { x: number; y: number },
   displayW: number,
@@ -60,11 +75,7 @@ export function clampStagePos(
   viewportW: number,
   viewportH: number,
 ): { x: number; y: number } {
-  const minVisible = Math.max(40, Math.min(150, Math.min(displayW, displayH) * 0.4));
-  const minX = minVisible - displayW;
-  const maxX = viewportW - minVisible;
-  const minY = minVisible - displayH;
-  const maxY = viewportH - minVisible;
+  const { minX, maxX, minY, maxY } = getStageClampBounds(displayW, displayH, viewportW, viewportH);
 
   return {
     x: Math.max(minX, Math.min(maxX, pos.x)),
@@ -178,7 +189,7 @@ export function useCanvasViewport(
       if (innerRef?.current) {
         innerRef.current.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
       }
-      // 3. تدريج المساطر
+      // 3. تدريج المساطر وعصي التمرير فلوينت
       const shell = node.closest('[data-testid="workspace-canvas-shell"]');
       if (shell) {
         const dx = pos.x - initialPanPosRef.current.x;
@@ -187,6 +198,43 @@ export function useCanvasViewport(
         const vContent = shell.querySelector('#v-ruler-content') as SVGGElement | null;
         if (hContent) hContent.style.transform = `translate3d(${dx}px, 0, 0)`;
         if (vContent) vContent.style.transform = `translate3d(0, ${dy}px, 0)`;
+
+        // 🧭 تزامن عصي التمرير فلوينت بالـ GPU Compositor فورياً (Zero-Latency Scrollbars)
+        const vW = viewportSizeRef.current.w;
+        const vH = viewportSizeRef.current.h;
+        const curW = displayWRef.current;
+        const curH = displayHRef.current;
+        const bounds = getStageClampBounds(curW, curH, vW, vH);
+
+        const hThumb = shell.querySelector('[data-canvas-h-thumb]') as HTMLElement | null;
+        if (hThumb) {
+          const spanX = bounds.maxX - bounds.minX;
+          const tx = spanX > 0 ? Math.max(0, Math.min(1, (bounds.maxX - pos.x) / spanX)) : 0.5;
+          const totalRangeX = spanX + vW;
+          const ratioX = totalRangeX > 0 ? Math.min(1, vW / totalRangeX) : 1;
+          const trackLength = Math.max(40, vW);
+          const thumbLength = Math.max(28, Math.min(trackLength, Math.round(trackLength * ratioX)));
+          const maxOffset = Math.max(0, trackLength - thumbLength);
+          const offset = Math.round(tx * maxOffset);
+          hThumb.style.width = `${thumbLength}px`;
+          hThumb.style.transform = `translate3d(${offset}px, 0, 0)`;
+          hThumb.dataset.maxOffset = maxOffset.toString();
+        }
+
+        const vThumb = shell.querySelector('[data-canvas-v-thumb]') as HTMLElement | null;
+        if (vThumb) {
+          const spanY = bounds.maxY - bounds.minY;
+          const ty = spanY > 0 ? Math.max(0, Math.min(1, (bounds.maxY - pos.y) / spanY)) : 0.5;
+          const totalRangeY = spanY + vH;
+          const ratioY = totalRangeY > 0 ? Math.min(1, vH / totalRangeY) : 1;
+          const trackLength = Math.max(40, vH);
+          const thumbLength = Math.max(28, Math.min(trackLength, Math.round(trackLength * ratioY)));
+          const maxOffset = Math.max(0, trackLength - thumbLength);
+          const offset = Math.round(ty * maxOffset);
+          vThumb.style.height = `${thumbLength}px`;
+          vThumb.style.transform = `translate3d(0, ${offset}px, 0)`;
+          vThumb.dataset.maxOffset = maxOffset.toString();
+        }
       }
     };
 
@@ -279,6 +327,45 @@ export function useCanvasViewport(
           y: clamped.y - newOrigin.y,
         });
         setCanvasZoom(nextZ);
+
+        // 🧭 تزامن مقاس وموضع عصي التمرير فلوينت فورياً عند التكبير/التصغير
+        const shell = node.closest('[data-testid="workspace-canvas-shell"]');
+        if (shell) {
+          const hThumb = shell.querySelector('[data-canvas-h-thumb]') as HTMLElement | null;
+          if (hThumb) {
+            const ratioX = Math.min(1, vW / Math.max(vW, nextMetrics.displayW));
+            const trackLenX = Math.max(40, vW);
+            const thumbLenX = Math.max(
+              28,
+              Math.min(trackLenX, Math.round(trackLenX * Math.max(0.12, ratioX * 0.85))),
+            );
+            const maxOffX = Math.max(0, trackLenX - thumbLenX);
+            const { minX, maxX } = getStageClampBounds(nextMetrics.displayW, 100, vW, 100);
+            const spanX = maxX - minX;
+            const tx = spanX > 0 ? Math.max(0, Math.min(1, (maxX - clamped.x) / spanX)) : 0.5;
+            const offX = Math.round(tx * maxOffX);
+            hThumb.style.width = `${thumbLenX}px`;
+            hThumb.style.transform = `translate3d(${offX}px, 0, 0)`;
+            hThumb.dataset.maxOffset = String(maxOffX);
+          }
+          const vThumb = shell.querySelector('[data-canvas-v-thumb]') as HTMLElement | null;
+          if (vThumb) {
+            const ratioY = Math.min(1, vH / Math.max(vH, nextMetrics.displayH));
+            const trackLenY = Math.max(40, vH);
+            const thumbLenY = Math.max(
+              28,
+              Math.min(trackLenY, Math.round(trackLenY * Math.max(0.12, ratioY * 0.85))),
+            );
+            const maxOffY = Math.max(0, trackLenY - thumbLenY);
+            const { minY, maxY } = getStageClampBounds(100, nextMetrics.displayH, 100, vH);
+            const spanY = maxY - minY;
+            const ty = spanY > 0 ? Math.max(0, Math.min(1, (maxY - clamped.y) / spanY)) : 0.5;
+            const offY = Math.round(ty * maxOffY);
+            vThumb.style.height = `${thumbLenY}px`;
+            vThumb.style.transform = `translate3d(0, ${offY}px, 0)`;
+            vThumb.dataset.maxOffset = String(maxOffY);
+          }
+        }
       } else if (wheelPanX !== 0 || wheelPanY !== 0) {
         // تمرير إجرائي فوري وسلس (Konva Fast-Path) بلا ارتعاش وبلا رندر متكرر
         const currentStagePos = stagePosRef.current;

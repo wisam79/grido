@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect, useRef } from 'react';
-import { ImageElement, useEditorStore } from '@/lib/editor-store';
+import { ImageElement, CanvasElement, useEditorStore } from '@/lib/editor-store';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
@@ -38,6 +38,7 @@ import { useAiEnhance } from '@/hooks/use-ai-enhance';
 import { useFaceFrame } from '@/hooks/use-face-frame';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { PopoverColorPicker } from '../shared-controls';
+import { ShadowGlowSection } from '../element/shared/shadow-glow-section';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
 
@@ -55,7 +56,7 @@ const RefineBgDialog = lazy(() =>
 );
 interface ImagePropertiesProps {
   element: ImageElement;
-  onUpdate: (id: string, patch: Partial<ImageElement>) => void;
+  onUpdate: (id: string, patch: Partial<CanvasElement>) => void;
 }
 
 export function ImageAdjustProperties({
@@ -76,7 +77,9 @@ export function ImageAdjustProperties({
       >
         {/* قوالب تدرج لوني سريعة للاستوديوهات */}
         <div className="space-y-1.5 pb-2 border-b border-border/20">
-          <span className="text-micro font-bold text-muted-foreground block">قوالب الاستوديو</span>
+          <span className="text-micro font-normal text-muted-foreground block">
+            قوالب الاستوديو
+          </span>
           <div className="grid grid-cols-2 gap-1.5">
             {[
               { label: 'استوديو دافئ', b: 104, c: 106, s: 108 },
@@ -88,7 +91,7 @@ export function ImageAdjustProperties({
                 key={preset.label}
                 variant="outline"
                 size="sm"
-                className="h-7 text-micro font-semibold rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="h-7 text-micro font-normal rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 onClick={() => {
                   onUpdate(element.id, {
                     brightness: preset.b,
@@ -173,7 +176,7 @@ export function ImageAdjustProperties({
           <Button
             variant="ghost"
             size="sm"
-            className="w-full h-8 text-xs font-semibold text-muted-foreground hover:text-foreground gap-1.5 rounded-md border border-border/40 hover:bg-muted"
+            className="w-full h-8 text-xs font-normal text-muted-foreground hover:text-foreground gap-1.5 rounded-md border border-border/40 hover:bg-muted"
             onClick={() => {
               onUpdate(element.id, {
                 filter: 'none',
@@ -208,6 +211,88 @@ export function ImageAdjustProperties({
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
       </FluentSection>
+    </div>
+  );
+}
+
+/**
+ * 🎴 ImageFiltersSection — بطاقة المرشحات لمعاينة واختيار فلاتر الصورة
+ */
+export function ImageFiltersSection({ element, onUpdate }: ImagePropertiesProps) {
+  return (
+    <FluentSection
+      icon={<FadersHorizontal className="w-4 h-4 text-primary" weight="duotone" />}
+      title="المرشحات"
+      collapsible
+      defaultOpen={true}
+      action={
+        element.filter ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              onUpdate(element.id, { filter: undefined });
+              useEditorStore.getState().pushHistory();
+            }}
+            className="text-micro text-muted-foreground hover:text-foreground cursor-pointer"
+          >
+            إزالة المرشح
+          </Button>
+        ) : undefined
+      }
+    >
+      <div className="grid grid-cols-4 gap-1.5">
+        {IMAGE_FILTERS.map((filter) => {
+          const isActive = element.filter === filter.id;
+          return (
+            <button
+              key={filter.id}
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { filter: filter.id });
+                useEditorStore.getState().pushHistory();
+              }}
+              aria-pressed={isActive}
+              aria-label={filter.name}
+              title={filter.name}
+              className={cn(
+                'flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer',
+                'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                isActive
+                  ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
+                  : 'border-border/60 bg-card hover:bg-accent text-muted-foreground',
+              )}
+            >
+              <span className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
+                <img
+                  src={element.imageSrc}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  style={{ filter: filter.css }}
+                />
+              </span>
+              <span className="text-micro w-full text-center leading-tight">
+                {filterShortName(filter.name)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </FluentSection>
+  );
+}
+
+/**
+ * 🎴 ImageEffectsProperties — تبويب التأثيرات للصور (المرشحات + الظل والوهج)
+ */
+export function ImageEffectsProperties({ element, onUpdate }: ImagePropertiesProps) {
+  return (
+    <div className="space-y-3 font-cairo animate-in fade-in duration-200">
+      {/* 🎴 بطاقة 1: المرشحات */}
+      <ImageFiltersSection element={element} onUpdate={onUpdate} />
+
+      {/* 🎴 بطاقة 2: الظل والوهج */}
+      <ShadowGlowSection element={element} onUpdate={onUpdate} />
     </div>
   );
 }
@@ -321,68 +406,6 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
   return (
     <div className="space-y-2.5 font-cairo animate-in fade-in duration-200">
-      {/* 🎴 بطاقة 0: المرشحات — كانت الواجهة الوحيدة لها مكتوبة في مجموعة أدوات
-          الشريط العلوي وغير مربوطة، فبقي الكانفاس يرسم المرشح بلا طريقة لاختياره. */}
-      <FluentSection
-        icon={<FadersHorizontal className="w-4 h-4 text-primary" weight="duotone" />}
-        title="المرشحات"
-        collapsible
-        defaultOpen={true}
-        action={
-          element.filter ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                onUpdate(element.id, { filter: undefined });
-                useEditorStore.getState().pushHistory();
-              }}
-              className="text-micro text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              إزالة المرشح
-            </Button>
-          ) : undefined
-        }
-      >
-        <div className="grid grid-cols-4 gap-1.5">
-          {IMAGE_FILTERS.map((filter) => {
-            const isActive = element.filter === filter.id;
-            return (
-              <button
-                key={filter.id}
-                type="button"
-                onClick={() => {
-                  onUpdate(element.id, { filter: filter.id });
-                  useEditorStore.getState().pushHistory();
-                }}
-                aria-pressed={isActive}
-                aria-label={filter.name}
-                title={filter.name}
-                className={cn(
-                  'flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer',
-                  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                  isActive
-                    ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
-                    : 'border-border/60 bg-card hover:bg-accent text-muted-foreground',
-                )}
-              >
-                <span className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
-                  <img
-                    src={element.imageSrc}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    style={{ filter: filter.css }}
-                  />
-                </span>
-                <span className="text-micro w-full text-center leading-tight">
-                  {filterShortName(filter.name)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </FluentSection>
-
       {/* 🎴 بطاقة 1: شبكة أدوات الذكاء الاصطناعي الفاخرة (2x2 Grid) */}
       <FluentSection
         icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
@@ -743,7 +766,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
         {/* أزرار اختيار قناع القص المتجه */}
         <div className="pt-2 border-t border-border/30 space-y-1.5">
-          <span className="text-micro font-semibold text-muted-foreground block">
+          <span className="text-micro font-normal text-muted-foreground block">
             قناع الشكل (Vector Mask)
           </span>
           <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">

@@ -38,12 +38,12 @@ export const FluentCapsuleButton = React.memo(function FluentCapsuleButton({
           data-testid={testId}
           aria-label={label}
           className={cn(
-            'w-8 h-8 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer',
-            'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95 border border-transparent',
-            // تفعيل محايد — الأزرق حصري للأوامر التعبوية
+            'w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer',
+            'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95',
+            // عند التفعيل نعتمد على تعبئة الأيقونة (Fill) بدون تعبئة المربع لتفادي الازدواجية البصرية
             active
-              ? 'text-foreground bg-accent-active'
-              : 'text-muted-foreground/75 hover:text-foreground hover:bg-muted/60',
+              ? 'text-foreground hover:bg-muted/50 border border-transparent'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent',
             className,
           )}
         >

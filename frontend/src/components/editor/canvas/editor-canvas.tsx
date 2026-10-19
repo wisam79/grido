@@ -10,6 +10,7 @@ import { KonvaCanvas } from '../konva/konva-canvas';
 import { useShallow } from 'zustand/react/shallow';
 import { ContextMenuPosition, ContextMenuTarget } from './context-menu';
 import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from './canvas-rulers';
+import { CanvasVerticalScrollbar, CanvasScrollbarsBottomBar } from './canvas-scrollbars';
 import { TextEditingOverlay } from './text-editing-overlay';
 import { CanvasContextMenu } from './canvas-context-menu';
 import { CanvasQuickBar } from './canvas-quick-bar';
@@ -148,7 +149,28 @@ export const EditorCanvas = React.memo(
       resolvedFitMode,
       leftoverRatio,
       isPanning,
+      setStagePos,
+      resetPan,
     } = useCanvasViewport(containerRef, innerRef);
+
+    // 🧭 معالجات التمرير للأشرطة الجانبية والسفلية
+    const handleScrollX = useCallback(
+      (newX: number) => {
+        setStagePos((prev) => ({ x: newX, y: prev.y }));
+      },
+      [setStagePos],
+    );
+
+    const handleScrollY = useCallback(
+      (newY: number) => {
+        setStagePos((prev) => ({ x: prev.x, y: newY }));
+      },
+      [setStagePos],
+    );
+
+    const handleResetPan = useCallback(() => {
+      resetPan();
+    }, [resetPan]);
 
     // 🧭 حركة مؤشر الفأرة على المساطر
     const { handleWorkspaceMouseMove, handleWorkspaceMouseLeave } = useRulerMetricsPreview(
@@ -573,7 +595,28 @@ export const EditorCanvas = React.memo(
               )}
             </div>
           </div>
+
+          {/* 🧭 شريط التمرير الرأسي في الجهة اليمنى المقابل للمسطرة اليسرى */}
+          {!printMode && showRuler && (
+            <CanvasVerticalScrollbar
+              viewportHeight={viewportSize.h}
+              displayH={displayH}
+              stagePosY={stagePos.y}
+              onScrollY={handleScrollY}
+            />
+          )}
         </div>
+
+        {/* 🧭 شريط التمرير الأفقي والزاويتان في الجهة السفلية المقابل للمسطرة العلوية */}
+        {!printMode && showRuler && (
+          <CanvasScrollbarsBottomBar
+            viewportWidth={viewportSize.w}
+            displayW={displayW}
+            stagePosX={stagePos.x}
+            onScrollX={handleScrollX}
+            onResetPan={handleResetPan}
+          />
+        )}
       </div>
     );
   }),

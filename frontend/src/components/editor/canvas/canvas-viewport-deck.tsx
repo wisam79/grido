@@ -12,6 +12,10 @@ import {
   MagnifyingGlassPlus,
   MagnifyingGlassMinus,
   Keyboard,
+  ArrowsOut,
+  ArrowsHorizontal,
+  FrameCorners,
+  Sparkle,
 } from '@/components/ui/icons';
 import {
   DropdownMenu,
@@ -77,11 +81,26 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
   } = useCanvasZoom();
 
   // أوضاع الملاءمة في قائمة واحدة — الفعل يعيّن الوضع ويرجع الزوم لـ 100%
-  const fitModeActions: { mode: CanvasFitMode; run: () => void; hint: string }[] = [
-    { mode: 'auto', run: autoFitZoom, hint: 'يختار الأنسب لهندسة النافذة' },
-    { mode: 'height', run: fitZoom, hint: 'الورقة كاملة على الشاشة' },
-    { mode: 'width', run: fitWidthZoom, hint: 'تملأ العرض ويُمرَّر الباقي' },
-    { mode: 'actual', run: actualSizeZoom, hint: 'بكسل حقيقي 1:1 مع تمرير أفقي ورأسي' },
+  const fitModeActions: {
+    mode: CanvasFitMode;
+    run: () => void;
+    hint: string;
+    icon: typeof ArrowsOut;
+  }[] = [
+    { mode: 'auto', run: autoFitZoom, hint: 'يختار الأنسب لهندسة النافذة', icon: Sparkle },
+    { mode: 'height', run: fitZoom, hint: 'الورقة كاملة على الشاشة', icon: ArrowsOut },
+    {
+      mode: 'width',
+      run: fitWidthZoom,
+      hint: 'تملأ العرض ويُمرَّر الباقي',
+      icon: ArrowsHorizontal,
+    },
+    {
+      mode: 'actual',
+      run: actualSizeZoom,
+      hint: 'بكسل حقيقي 1:1 مع تمرير أفقي ورأسي',
+      icon: FrameCorners,
+    },
   ];
   const leftoverPercent = Math.round(fitLeftoverRatio * 100);
   const fitStatusLabel =
@@ -149,10 +168,10 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                   <button
                     type="button"
                     aria-label="تغيير مقاس مساحة العمل"
-                    className="h-8 flex items-center gap-1.5 px-2 rounded-md hover:bg-muted/80 text-foreground transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                    className="h-7 flex items-center gap-1.5 px-2 rounded-md hover:bg-muted/80 text-foreground transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                   >
-                    <FileText className="w-4 h-4 text-primary shrink-0" weight="duotone" />
-                    <span className="text-foreground font-bold text-xs">
+                    <FileText className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+                    <span className="text-foreground font-semibold text-xs">
                       {activePaper
                         ? activePaper.shortName || activePaper.name.split(' (')[0]
                         : 'مخصص'}
@@ -247,6 +266,8 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             </DropdownMenuContent>
           </DropdownMenu>
 
+          <Separator orientation="vertical" className="h-4 bg-border/60 mx-0.5" />
+
           {/* زر تبديل الاتجاه */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -254,7 +275,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 type="button"
                 onClick={handleToggleOrientation}
                 aria-label={isLandscape ? 'تبديل الاتجاه إلى رأسي' : 'تبديل الاتجاه إلى أفقي'}
-                className="w-8 h-8 rounded-md bg-muted/70 hover:bg-primary/15 text-muted-foreground hover:text-primary border border-border/60 hover:border-primary/30 transition-all cursor-pointer flex items-center justify-center active:scale-95 group shadow-2xs"
+                className="w-7 h-7 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all cursor-pointer flex items-center justify-center active:scale-95 group"
               >
                 <PageOrientationIcon
                   isLandscape={isLandscape}
@@ -282,7 +303,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
       <div className="h-8 flex items-center gap-0.5 bg-card/90 dark:bg-card/75 backdrop-blur-xl p-0.5 rounded-lg border border-border/80 dark:border-white/10 shadow-2xs select-none fluent-specular">
         {/* زر المساطر */}
         <FluentCapsuleButton
-          icon={<Ruler className="w-4 h-4" weight={showRuler ? 'duotone' : 'regular'} />}
+          icon={<Ruler className="w-4 h-4" weight={showRuler ? 'fill' : 'regular'} />}
           label="المساطر (Ctrl + R)"
           tooltip={showRuler ? 'إخفاء المساطر' : 'إظهار المساطر'}
           shortcut="Ctrl+R"
@@ -293,7 +314,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
 
         {/* زر الشبكة */}
         <FluentCapsuleButton
-          icon={<GridFour className="w-4 h-4" weight={showGrid ? 'duotone' : 'regular'} />}
+          icon={<GridFour className="w-4 h-4" weight={showGrid ? 'fill' : 'regular'} />}
           label="الشبكة (Ctrl + ')"
           tooltip={showGrid ? 'إخفاء شبكة المحاذاة' : 'إظهار شبكة المحاذاة'}
           shortcut="Ctrl+'"
@@ -303,7 +324,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
 
         {/* زر المغناطيس والمحاذاة الذكية */}
         <FluentCapsuleButton
-          icon={<Magnet className="w-4 h-4" weight={snapToGrid ? 'duotone' : 'regular'} />}
+          icon={<Magnet className="w-4 h-4" weight={snapToGrid ? 'fill' : 'regular'} />}
           label="المغناطيس والمحاذاة الذكية"
           tooltip={
             snapToGrid
@@ -316,7 +337,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
 
         {/* زر الخطوط الإرشادية للمستخدم */}
         <FluentCapsuleButton
-          icon={<Columns className="w-4 h-4" weight={showUserGuides ? 'duotone' : 'regular'} />}
+          icon={<Columns className="w-4 h-4" weight={showUserGuides ? 'fill' : 'regular'} />}
           label="الخطوط الإرشادية (Ctrl + ;)"
           tooltip={
             showUserGuides
@@ -332,7 +353,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
         {mode === 'collage' && (
           <FluentCapsuleButton
             icon={
-              <Scissors className="w-4 h-4" weight={collageShowCutLines ? 'duotone' : 'regular'} />
+              <Scissors className="w-4 h-4" weight={collageShowCutLines ? 'fill' : 'regular'} />
             }
             label="خطوط القص للطباعة"
             tooltip={
@@ -367,7 +388,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="h-8 min-w-[46px] px-1.5 text-xs font-mono font-bold text-center select-none cursor-pointer hover:bg-muted/60 hover:text-primary rounded-md transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+                className="h-7 min-w-[44px] px-1.5 text-xs font-mono font-normal tabular-nums text-center select-none cursor-pointer hover:bg-muted/60 text-foreground/90 hover:text-foreground rounded-md transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
                 onClick={resetZoom}
                 aria-label="إعادة تعيين المقياس إلى 100%"
               >
@@ -397,43 +418,35 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             testId="canvas-zoom-in"
           />
 
-          {/* زر ملاءمة الكل بنقرة واحدة (Ctrl+0) */}
-          <FluentCapsuleButton
-            icon={
-              <FileText
-                className="w-4 h-4"
-                weight={canvasFitMode === 'height' ? 'duotone' : 'regular'}
-              />
-            }
-            label="ملاءمة الكل"
-            tooltip={`ملاءمة الكل (${CANVAS_FIT_LABELS.height}) — الورقة كاملة على الشاشة`}
-            shortcut="Ctrl+0"
-            active={canvasFitMode === 'height'}
-            onClick={fitZoom}
-            testId="canvas-fit-all"
-          />
-
-          {/* قائمة أوضاع ملاءمة الورقة التفاعلية بالكامل */}
-          <DropdownMenu>
+          {/* كبسولة ملاءمة الورقة المدمجة (Fluent 2 Split Fit Control) */}
+          <div className="flex items-center h-7 rounded-md bg-muted/40 hover:bg-muted/60 border border-border/60 dark:border-white/10 transition-colors mx-0.5">
+            {/* زر ملاءمة الكل بنقرة واحدة (Ctrl+0) — أيقونة فصيحة حسب الوضع الفعّال مع إخفاء النص بصرياً */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    data-testid="canvas-fit-menu"
-                    aria-label="أوضاع ملاءمة الورقة"
-                    className="h-8 px-2 flex items-center gap-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+                <button
+                  type="button"
+                  data-testid="canvas-fit-all"
+                  onClick={fitZoom}
+                  aria-label="ملاءمة الكل (Ctrl+0)"
+                  className="h-full w-7 flex items-center justify-center rounded-s-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer select-none"
+                >
+                  {resolvedFit === 'width' ? (
+                    <ArrowsHorizontal className="w-3.5 h-3.5 shrink-0" weight="regular" />
+                  ) : resolvedFit === 'actual' ? (
+                    <FrameCorners className="w-3.5 h-3.5 shrink-0" weight="regular" />
+                  ) : canvasFitMode === 'auto' ? (
+                    <Sparkle className="w-3.5 h-3.5 shrink-0" weight="regular" />
+                  ) : (
+                    <ArrowsOut className="w-3.5 h-3.5 shrink-0" weight="regular" />
+                  )}
+                  <span
+                    data-testid="canvas-fit-status"
+                    data-fit-mode={resolvedFit}
+                    className="sr-only"
                   >
-                    <span
-                      data-testid="canvas-fit-status"
-                      data-fit-mode={resolvedFit}
-                      className="text-micro font-bold select-none cursor-pointer"
-                    >
-                      {fitStatusLabel}
-                    </span>
-                    <CaretDown className="w-3.5 h-3.5 text-muted-foreground/80 shrink-0" />
-                  </button>
-                </DropdownMenuTrigger>
+                    {fitStatusLabel}
+                  </span>
+                </button>
               </TooltipTrigger>
               <TooltipContent
                 side="top"
@@ -441,48 +454,83 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 align="center"
                 className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8"
               >
-                <span>
-                  {canvasFitMode === 'auto'
-                    ? `ملاءمة تلقائية (${resolvedFit === 'width' ? 'ملاءمة العرض' : 'ملاءمة الكل'})`
-                    : resolvedFit === 'actual'
-                      ? 'الحجم الفعلي 1:1 — بكسل الورقة = بكسل الشاشة'
-                      : resolvedFit === 'width'
-                        ? `ملاءمة العرض — الفراغ الجانبي ${leftoverPercent}% في وضع الكل`
-                        : 'ملاءمة الكل — الورقة كاملة على الشاشة'}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span>
+                    {canvasFitMode === 'auto'
+                      ? `ملاءمة تلقائية (${resolvedFit === 'width' ? 'ملاءمة العرض' : 'ملاءمة الكل'})`
+                      : resolvedFit === 'actual'
+                        ? 'الحجم الفعلي 1:1 — بكسل الورقة = بكسل الشاشة'
+                        : resolvedFit === 'width'
+                          ? `ملاءمة العرض — الفراغ الجانبي ${leftoverPercent}% في وضع الكل`
+                          : 'ملاءمة الكل — الورقة كاملة على الشاشة'}
+                  </span>
+                  <FluentKbd keys="Ctrl+0" />
+                </div>
               </TooltipContent>
             </Tooltip>
-            <DropdownMenuContent
-              align="start"
-              className="w-64 font-cairo text-xs z-(--z-menu) rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16"
-            >
-              <div dir="rtl">
-                <DropdownMenuLabel className="text-micro text-muted-foreground font-bold flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
-                  <span>ملاءمة الورقة</span>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {fitModeActions.map((item) => (
-                  <DropdownMenuItem
-                    key={item.mode}
-                    data-testid={`canvas-fit-${item.mode}`}
-                    onClick={item.run}
-                    className="flex items-center justify-between cursor-pointer py-1.5 font-semibold group"
-                  >
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-xs">{CANVAS_FIT_LABELS[item.mode]}</span>
-                      <span className="text-micro text-muted-foreground font-normal">
-                        {item.hint}
-                      </span>
-                    </div>
-                    {canvasFitMode === item.mode && (
-                      <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+
+            {/* سهم القائمة المنسدلة لأوضاع الملاءمة الإضافية */}
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      data-testid="canvas-fit-menu"
+                      aria-label="أوضاع ملاءمة الورقة"
+                      className="h-full px-1 flex items-center justify-center rounded-e-md border-s border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+                    >
+                      <CaretDown className="w-3 h-3 shrink-0" />
+                    </button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  sideOffset={8}
+                  align="center"
+                  className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8"
+                >
+                  <span>خيارات ملاءمة الورقة</span>
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent
+                align="start"
+                className="w-64 font-cairo text-xs z-(--z-menu) rounded-xl backdrop-blur-xl fluent-specular shadow-fluent-16"
+              >
+                <div dir="rtl">
+                  <DropdownMenuLabel className="text-micro text-muted-foreground font-bold flex items-center gap-1.5">
+                    <ArrowsOut className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
+                    <span>ملاءمة الورقة</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {fitModeActions.map((item) => {
+                    const ItemIcon = item.icon;
+                    return (
+                      <DropdownMenuItem
+                        key={item.mode}
+                        data-testid={`canvas-fit-${item.mode}`}
+                        onClick={item.run}
+                        className="flex items-center justify-between cursor-pointer py-1.5 font-semibold group gap-2"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <ItemIcon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs">{CANVAS_FIT_LABELS[item.mode]}</span>
+                            <span className="text-micro text-muted-foreground font-normal">
+                              {item.hint}
+                            </span>
+                          </div>
+                        </div>
+                        {canvasFitMode === item.mode && (
+                          <Check className="w-3.5 h-3.5 text-primary shrink-0" weight="bold" />
+                        )}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           <Separator orientation="vertical" className="h-4 bg-border/60 mx-0.5" />
 
