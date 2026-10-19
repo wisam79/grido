@@ -14,12 +14,12 @@ export function UsageLogsTable({ aiUsageLogs, totalAiRuns }: UsageLogsTableProps
   return (
     <div className="bg-[#1E1E1E] border border-[#2C2C2C] rounded-2xl overflow-hidden p-5 space-y-4 relative z-10 tab-content-reveal">
       <div className="flex items-center justify-between border-b border-[#2C2C2C] pb-4">
-        <h3 className="font-bold text-white text-xs font-mono uppercase tracking-wider flex items-center gap-2">
+        <h3 className="font-bold text-white text-xs font-sans flex items-center gap-2">
           <Wand2 className="w-4 h-4 text-purple-400" />
-          سجل عمليات الترميم ومعالجة الذكاء الاصطناعي (AI USAGE LOGS)
+          سجل استهلاك الذكاء الاصطناعي والترميم
         </h3>
-        <span className="text-xs text-[#9E9E9E] font-mono">
-          TOTAL RUNS: {totalAiRuns} · المعروض: {aiUsageLogs.length}
+        <span className="text-xs text-[#9E9E9E] font-sans">
+          إجمالي العمليات: {totalAiRuns} · المعروض: {aiUsageLogs.length}
         </span>
       </div>
 
@@ -50,8 +50,8 @@ export function UsageLogsTable({ aiUsageLogs, totalAiRuns }: UsageLogsTableProps
                   </span>
                 </td>
                 <td className="p-3.5 text-[#9E9E9E]">{new Date(log.used_at).toLocaleString('ar-SA')}</td>
-                <td className="p-3.5">{((log.image_bytes || 0) / 1024 / 1024).toFixed(2)} MB</td>
-                <td className="p-3.5">{(log.execution_seconds || 1.2).toFixed(1)}s</td>
+                <td className="p-3.5">{((log.image_bytes || 0) / 1024 / 1024).toFixed(2)} ميغابايت</td>
+                <td className="p-3.5">{(log.execution_seconds || 1.2).toFixed(1)} ثانية</td>
                 <td className="p-3.5 text-emerald-400">${(log.cost_usd || 0.012).toFixed(3)}</td>
               </tr>
             ))}

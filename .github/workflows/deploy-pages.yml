@@ -49,6 +49,7 @@ jobs:
           cp admin-web/dist/index.html admin-web/dist/404.html
           mkdir -p admin-web/dist/cam && cp admin-web/dist/index.html admin-web/dist/cam/index.html
           mkdir -p admin-web/dist/camera && cp admin-web/dist/index.html admin-web/dist/camera/index.html
+          mkdir -p admin-web/dist/admin && cp admin-web/dist/index.html admin-web/dist/admin/index.html
 
       - name: Host static API endpoints and installer for clients
         env:

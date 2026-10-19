@@ -32,9 +32,9 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
             <span className="font-extrabold font-display text-sm text-white tracking-tight">
               GRIDO STUDIO
             </span>
-            <span className="text-[9px] font-mono text-[#9E9E9E] uppercase tracking-widest flex items-center gap-1">
+            <span className="text-[10px] text-[#9E9E9E] flex items-center gap-1 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-              SYSTEM ACTIVE
+              النظام متصل
             </span>
           </div>
         </div>
@@ -73,7 +73,7 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
         >
           <span className="flex items-center gap-2.5">
             <Key className="w-4 h-4" />
-            التراخيص والتوليد المجمع
+            مفاتيح التراخيص
           </span>
           <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
         </button>
@@ -88,7 +88,7 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
         >
           <span className="flex items-center gap-2.5">
             <Wand2 className="w-4 h-4" />
-            سجل استهلاك الـ AI
+            سجل الذكاء الاصطناعي
           </span>
           <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
         </button>
@@ -103,7 +103,7 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
         >
           <span className="flex items-center gap-2.5">
             <BarChart3 className="w-4 h-4" />
-            إحصائيات الإيرادات والأداء
+            المؤشرات والإحصائيات
           </span>
           <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
         </button>
@@ -118,14 +118,14 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
         >
           <span className="flex items-center gap-2.5">
             <Sliders className="w-4 h-4" />
-            إعدادات محلية (مسودة)
+            الإعدادات العامة
           </span>
           <ChevronLeft className="w-3.5 h-3.5 opacity-60" />
         </button>
       </nav>
 
-      <div className="p-4 border-t border-[#2C2C2C] text-[10px] text-[#9E9E9E] text-center font-mono uppercase tracking-wider select-none">
-        SUPABASE LIVE CONNECTED
+      <div className="p-4 border-t border-[#2C2C2C] text-[11px] text-[#9E9E9E] text-center font-medium select-none">
+        قاعدة البيانات متصلة
       </div>
     </aside>
   );

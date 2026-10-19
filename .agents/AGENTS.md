@@ -12,7 +12,7 @@
 - **محرك الكانفاس (Canvas Engine):** Konva + React-Konva مع معالجة رياضية فائقة الدقة للطباعة (300+ DPI).
 - **الباك إند وسطح المكتب (Backend & Desktop Runtime):** Go 1.24 + Wails v3 (`v3.0.0-beta.28`) + SQLite (عبر CGO).
 - **الذكاء الاصطناعي السحابي (Cloud AI):** Modal AI (CodeFormer + Real-ESRGAN على خوادم A10G) مقترن مع Supabase Auth & DB.
-- **لوحة الإدارة (Admin Web):** React + Netlify Functions.
+- **لوحة الإدارة وصفحة الهبوط (Web & Admin):** React 19 + TypeScript + Vite + Tailwind CSS v4 منشور على GitHub Pages (`grido.cloud-ip.cc`).
 
 ---
 

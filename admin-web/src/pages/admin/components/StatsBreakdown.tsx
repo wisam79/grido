@@ -43,7 +43,7 @@ export function StatsBreakdown({
       <div onMouseMove={handleMouseMove} className="spotlight-card p-6 border border-[#2C2C2C] space-y-5">
         <h3 className="font-bold text-white text-sm font-display flex items-center gap-2 tracking-tight">
           <Activity className="w-4 h-4 text-emerald-400" />
-          توزيع الاشتراكات والفاعلية (SUBSCRIPTION BREAKDOWN)
+          توزيع فئات الاشتراكات
         </h3>
         {sampleTruncated && (
           <p className="text-[10px] text-[#9E9E9E] font-mono">
@@ -52,9 +52,9 @@ export function StatsBreakdown({
         )}
         <div className="space-y-4 text-xs font-mono">
           <div>
-            <div className="flex justify-between text-slate-300 mb-1.5">
-              <span>PRO PLAN</span>
-              <span className="font-bold text-blue-400">
+            <div className="flex justify-between text-slate-300 mb-1.5 font-sans">
+              <span>باقة المحترفين (Pro)</span>
+              <span className="font-bold text-blue-400 font-mono">
                 {proCount} ({proPct}%)
               </span>
             </div>
@@ -64,9 +64,9 @@ export function StatsBreakdown({
           </div>
 
           <div>
-            <div className="flex justify-between text-slate-300 mb-1.5">
-              <span>ENTERPRISE PLAN</span>
-              <span className="font-bold text-purple-400">
+            <div className="flex justify-between text-slate-300 mb-1.5 font-sans">
+              <span>باقة المؤسسات (Enterprise)</span>
+              <span className="font-bold text-purple-400 font-mono">
                 {entCount} ({entPct}%)
               </span>
             </div>
@@ -76,9 +76,9 @@ export function StatsBreakdown({
           </div>
 
           <div>
-            <div className="flex justify-between text-slate-300 mb-1.5">
-              <span>FREE TIER</span>
-              <span className="font-bold text-[#9E9E9E]">
+            <div className="flex justify-between text-slate-300 mb-1.5 font-sans">
+              <span>الباقة المجانية</span>
+              <span className="font-bold text-[#9E9E9E] font-mono">
                 {freeCount} ({100 - proPct - entPct}%)
               </span>
             </div>
@@ -92,23 +92,23 @@ export function StatsBreakdown({
       <div onMouseMove={handleMouseMove} className="spotlight-card p-6 border border-[#2C2C2C] space-y-5">
         <h3 className="font-bold text-white text-sm font-display flex items-center gap-2 tracking-tight">
           <Coins className="w-4 h-4 text-amber-400" />
-          المؤشرات المالية واسترداد التكلفة (REVENUE METRICS)
+          المؤشرات المالية والإيرادات
         </h3>
         <div className="grid grid-cols-2 gap-4 text-xs font-mono">
           <div className="p-4 bg-[#141414] rounded-xl border border-[#2C2C2C]">
-            <div className="text-[#9E9E9E] uppercase tracking-wider">MRR ESTIMATED</div>
+            <div className="text-[#9E9E9E] font-medium font-sans">الدخل الشهري التقديري</div>
             <div className="text-2xl font-black text-emerald-400 mt-1">${estimatedMRR}</div>
           </div>
           <div className="p-4 bg-[#141414] rounded-xl border border-[#2C2C2C]">
-            <div className="text-[#9E9E9E] uppercase tracking-wider">ARR PROJECTED</div>
+            <div className="text-[#9E9E9E] font-medium font-sans">الدخل السنوي المتوقع</div>
             <div className="text-2xl font-black text-emerald-300 mt-1">${estimatedMRR * 12}</div>
           </div>
           <div className="p-4 bg-[#141414] rounded-xl border border-[#2C2C2C]">
-            <div className="text-[#9E9E9E] uppercase tracking-wider">PRO CONVERSION RATE</div>
+            <div className="text-[#9E9E9E] font-medium font-sans">معدل التحويل للاشتراك المدفوع</div>
             <div className="text-2xl font-black text-blue-400 mt-1">{proPct + entPct}%</div>
           </div>
           <div className="p-4 bg-[#141414] rounded-xl border border-[#2C2C2C]">
-            <div className="text-[#9E9E9E] uppercase tracking-wider">AI COST (آخر {aiLogsCount})</div>
+            <div className="text-[#9E9E9E] font-medium font-sans">تكلفة الذكاء الاصطناعي (آخر {aiLogsCount})</div>
             <div className="text-2xl font-black text-purple-400 mt-1">${windowAiCost.toFixed(2)}</div>
           </div>
         </div>

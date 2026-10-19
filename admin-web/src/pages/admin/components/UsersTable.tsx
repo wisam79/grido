@@ -46,57 +46,57 @@ export function UsersTable({
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
-          <div className="flex items-center gap-1 bg-[#141414] border border-[#2C2C2C] p-1 rounded-xl text-xs font-mono">
+          <div className="flex items-center gap-1 bg-[#141414] border border-[#2C2C2C] p-1 rounded-xl text-xs font-sans">
             <button
               onClick={() => onStatusFilterChange('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer uppercase ${statusFilter === 'all' ? 'bg-[#3b82f6] text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer ${statusFilter === 'all' ? 'bg-[#3b82f6] text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
             >
-              ALL
+              الكل
             </button>
             <button
               onClick={() => onStatusFilterChange('pro')}
-              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer uppercase ${statusFilter === 'pro' ? 'bg-[#3b82f6] text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer ${statusFilter === 'pro' ? 'bg-[#3b82f6] text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
             >
-              PRO
+              احترافي
             </button>
             <button
               onClick={() => onStatusFilterChange('enterprise')}
-              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer uppercase ${statusFilter === 'enterprise' ? 'bg-purple-600 text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer ${statusFilter === 'enterprise' ? 'bg-purple-600 text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
             >
-              ENT
+              مؤسسات
             </button>
             <button
               onClick={() => onStatusFilterChange('free')}
-              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer uppercase ${statusFilter === 'free' ? 'bg-white/10 text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer ${statusFilter === 'free' ? 'bg-white/10 text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
             >
-              FREE
+              مجاني
             </button>
             <button
               onClick={() => onStatusFilterChange('trial')}
-              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer uppercase ${statusFilter === 'trial' ? 'bg-amber-600 text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer ${statusFilter === 'trial' ? 'bg-amber-600 text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
             >
-              TRIAL
+              تجريبي
             </button>
             <button
               onClick={() => onStatusFilterChange('expired')}
-              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer uppercase ${statusFilter === 'expired' ? 'bg-slate-600 text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer ${statusFilter === 'expired' ? 'bg-slate-600 text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
             >
-              EXPIRED
+              منتهي
             </button>
             <button
               onClick={() => onStatusFilterChange('banned')}
-              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer uppercase ${statusFilter === 'banned' ? 'bg-rose-600 text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer ${statusFilter === 'banned' ? 'bg-rose-600 text-white font-bold' : 'text-[#9E9E9E] hover:text-white'}`}
             >
-              BANNED
+              محظور
             </button>
           </div>
 
           <button
             onClick={onExportCSV}
-            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white border border-[#2C2C2C] rounded-xl text-xs flex items-center gap-2 cursor-pointer font-mono font-bold uppercase tracking-wider"
+            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white border border-[#2C2C2C] rounded-xl text-xs flex items-center gap-2 cursor-pointer font-medium"
           >
             <Download className="w-3.5 h-3.5 text-white" />
-            EXPORT CSV
+            تصدير CSV
           </button>
         </div>
       </div>
@@ -135,7 +135,7 @@ export function UsersTable({
                       </td>
                       <td className="p-4">
                         <span
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase ${
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-sans font-bold ${
                             user.plan === 'enterprise'
                               ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                               : user.plan === 'pro'
@@ -143,24 +143,30 @@ export function UsersTable({
                                 : 'bg-white/5 text-[#9E9E9E] border border-[#2C2C2C]'
                           }`}
                         >
-                          {user.plan}
+                          {user.plan === 'enterprise'
+                            ? 'مؤسسات'
+                            : user.plan === 'pro'
+                              ? 'احترافي'
+                              : user.plan === 'trial'
+                                ? 'تجريبي'
+                                : 'مجاني'}
                         </span>
                       </td>
                       <td className="p-4 font-mono">
                         {isBanned ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30 font-sans">
                             <Ban className="w-3 h-3 shrink-0" />
-                            BANNED
+                            محظور
                           </span>
                         ) : isExpired ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 font-sans">
                             <Clock className="w-3 h-3 shrink-0" />
-                            EXPIRED
+                            منتهي
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-sans">
                             <CheckCircle2 className="w-3 h-3 shrink-0" />
-                            ACTIVE
+                            نشط
                           </span>
                         )}
                       </td>
@@ -180,36 +186,36 @@ export function UsersTable({
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => onOpenEditUser(user)}
-                            className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white border border-[#2C2C2C] rounded-lg text-[11px] cursor-pointer flex items-center gap-1 font-mono"
+                            className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white border border-[#2C2C2C] rounded-lg text-[11px] cursor-pointer flex items-center gap-1 font-sans font-medium"
                           >
                             <Sliders className="w-3 h-3" />
-                            EDIT
+                            تعديل
                           </button>
                           <button
                             onClick={() => onExtendLicense(user.id, 1)}
-                            className="px-2.5 py-1.5 bg-white/5 hover:bg-white/15 text-slate-200 border border-[#2C2C2C] rounded-lg text-[11px] font-mono cursor-pointer"
-                            title="+1 شهر"
+                            className="px-2.5 py-1.5 bg-white/5 hover:bg-white/15 text-slate-200 border border-[#2C2C2C] rounded-lg text-[11px] font-sans cursor-pointer"
+                            title="تمديد الصلاحية لشهر إضافي"
                           >
-                            +1M
+                            +شهر
                           </button>
                           {user.plan !== 'free' && (
                             <button
                               onClick={() => onRevokeLicense(user.id)}
-                              className="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-lg text-[11px] font-mono cursor-pointer"
-                              title="سحب الترخيص وإعادته للـ Free"
+                              className="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-lg text-[11px] font-sans cursor-pointer"
+                              title="سحب الترخيص وتحويل الحساب للباقة المجانية"
                             >
-                              REVOKE
+                              سحب
                             </button>
                           )}
                           <button
                             onClick={() => onToggleBanUser(user)}
-                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-mono cursor-pointer border ${
+                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-sans cursor-pointer border ${
                               isBanned
                                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                                 : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                             }`}
                           >
-                            {isBanned ? 'UNBAN' : 'BAN'}
+                            {isBanned ? 'إلغاء الحظر' : 'حظر'}
                           </button>
                         </div>
                       </td>

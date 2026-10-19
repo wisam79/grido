@@ -84,20 +84,20 @@ export function KeysTable({
         <div className="flex items-center justify-between border-b border-[#2C2C2C] pb-4">
           <h3 className="font-bold text-white text-sm font-display flex items-center gap-2 tracking-tight">
             <Key className="w-4 h-4 text-white" />
-            أداة توليد مفاتيح الترخيص السحابية (LICENSE GENERATOR)
+            توليد مفاتيح الترخيص السحابية
           </h3>
-          <div className="flex items-center gap-1 bg-[#141414] border border-[#2C2C2C] p-1 rounded-xl font-mono text-xs">
+          <div className="flex items-center gap-1 bg-[#141414] border border-[#2C2C2C] p-1 rounded-xl font-sans text-xs">
             <button
               onClick={() => onGenModeChange('single')}
               className={`px-3.5 py-1.5 rounded-lg cursor-pointer ${genMode === 'single' ? 'bg-[#3b82f6] text-white font-bold' : 'text-[#9E9E9E]'}`}
             >
-              SINGLE KEY
+              مفتاح فردي
             </button>
             <button
               onClick={() => onGenModeChange('batch')}
               className={`px-3.5 py-1.5 rounded-lg cursor-pointer ${genMode === 'batch' ? 'bg-[#3b82f6] text-white font-bold' : 'text-[#9E9E9E]'}`}
             >
-              BATCH KEYS
+              دفعة مفاتيح
             </button>
           </div>
         </div>
@@ -149,10 +149,10 @@ export function KeysTable({
 
             <button
               type="submit"
-              className="py-3 bg-[#3b82f6] hover:bg-[#2563eb] text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 magnetic-pill"
+              className="py-3 bg-[#3b82f6] hover:bg-[#2563eb] text-white font-sans font-bold rounded-xl text-xs cursor-pointer flex items-center justify-center gap-2 magnetic-pill"
             >
               <Plus className="w-4 h-4" />
-              GENERATE KEY
+              توليد المفتاح
             </button>
           </form>
         ) : (
@@ -217,14 +217,14 @@ export function KeysTable({
             <button
               type="submit"
               disabled={generatingBatch}
-              className="py-3 bg-[#3b82f6] hover:bg-[#2563eb] text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 magnetic-pill"
+              className="py-3 bg-[#3b82f6] hover:bg-[#2563eb] text-white font-sans font-bold rounded-xl text-xs cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 magnetic-pill"
             >
               {generatingBatch ? (
                 <Loader2 className="w-4 h-4 animate-spin text-white" />
               ) : (
                 <Sparkles className="w-4 h-4" />
               )}
-              GENERATE BATCH
+              توليد الدفعة
             </button>
           </form>
         )}
@@ -233,17 +233,17 @@ export function KeysTable({
         {generatedKey && genMode === 'single' && (
           <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-3">
-              <span className="text-emerald-400 font-bold">KEY GENERATED:</span>
+              <span className="text-emerald-400 font-bold font-sans">المفتاح المُولَّد:</span>
               <code className="text-white text-sm bg-[#141414] px-3 py-1.5 rounded-lg border border-[#2C2C2C]">
                 {generatedKey}
               </code>
             </div>
             <button
               onClick={onCopyKey}
-              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer uppercase"
+              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-lg text-xs font-sans font-bold flex items-center gap-1.5 cursor-pointer"
             >
               <Copy className="w-3.5 h-3.5" />
-              COPY KEY
+              نسخ المفتاح
             </button>
           </div>
         )}
@@ -252,24 +252,24 @@ export function KeysTable({
         {generatedBatchKeys.length > 0 && genMode === 'batch' && (
           <div className="p-5 bg-[#141414] border border-[#2C2C2C] rounded-xl space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <span className="text-xs font-sans font-bold text-white flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-emerald-400" />
-                BATCH KEYS GENERATED ({generatedBatchKeys.length})
+                المفاتيح المُولَّدة ({generatedBatchKeys.length})
               </span>
-              <div className="flex items-center gap-2 font-mono">
+              <div className="flex items-center gap-2 font-sans">
                 <button
                   onClick={() => onExportBatch('txt')}
-                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs flex items-center gap-1 cursor-pointer font-medium"
                 >
                   <FileText className="w-3.5 h-3.5 text-white" />
-                  TXT
+                  تصدير TXT
                 </button>
                 <button
                   onClick={() => onExportBatch('csv')}
-                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs flex items-center gap-1 cursor-pointer font-medium"
                 >
                   <Download className="w-3.5 h-3.5 text-emerald-400" />
-                  CSV
+                  تصدير CSV
                 </button>
               </div>
             </div>
@@ -279,7 +279,7 @@ export function KeysTable({
                   <span>
                     {i + 1}. {k}
                   </span>
-                  <span className="text-emerald-400 font-bold">READY</span>
+                  <span className="text-emerald-400 font-bold font-sans">جاهز</span>
                 </div>
               ))}
             </div>
@@ -295,30 +295,30 @@ export function KeysTable({
           </h4>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="flex items-center gap-1 bg-[#141414] border border-[#2C2C2C] p-1 rounded-xl text-xs font-mono">
+            <div className="flex items-center gap-1 bg-[#141414] border border-[#2C2C2C] p-1 rounded-xl text-xs font-sans">
               <button
                 onClick={() => onKeyStatusFilterChange('all')}
                 className={`px-3 py-1 rounded-lg cursor-pointer ${keyStatusFilter === 'all' ? 'bg-[#3b82f6] text-white font-bold' : 'text-[#9E9E9E]'}`}
               >
-                ALL
+                الكل
               </button>
               <button
                 onClick={() => onKeyStatusFilterChange('unused')}
                 className={`px-3 py-1 rounded-lg cursor-pointer ${keyStatusFilter === 'unused' ? 'bg-emerald-500 text-black font-bold' : 'text-[#9E9E9E]'}`}
               >
-                UNUSED
+                متاح
               </button>
               <button
                 onClick={() => onKeyStatusFilterChange('used')}
                 className={`px-3 py-1 rounded-lg cursor-pointer ${keyStatusFilter === 'used' ? 'bg-white/10 text-white' : 'text-[#9E9E9E]'}`}
               >
-                USED
+                مستخدم
               </button>
               <button
                 onClick={() => onKeyStatusFilterChange('revoked')}
                 className={`px-3 py-1 rounded-lg cursor-pointer ${keyStatusFilter === 'revoked' ? 'bg-rose-600 text-white font-bold' : 'text-[#9E9E9E]'}`}
               >
-                REVOKED
+                ملغي
               </button>
             </div>
 
@@ -362,26 +362,26 @@ export function KeysTable({
                     </code>
                   </td>
                   <td className="p-3.5">
-                    <span className="px-2.5 py-0.5 rounded-lg text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 uppercase">
-                      {k.plan}
+                    <span className="px-2.5 py-0.5 rounded-lg text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 font-sans">
+                      {k.plan === 'enterprise' ? 'مؤسسات' : 'احترافي'}
                     </span>
                   </td>
-                  <td className="p-3.5">{k.duration_months} M</td>
+                  <td className="p-3.5 font-sans">{k.duration_months} شهر</td>
                   <td className="p-3.5">
                     {k.status === 'unused' ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
+                      <span className="inline-flex items-center gap-1 text-emerald-400 font-bold font-sans">
                         <CheckCircle2 className="w-3 h-3 shrink-0" />
-                        UNUSED
+                        متاح
                       </span>
                     ) : k.status === 'revoked' ? (
-                      <span className="inline-flex items-center gap-1 text-rose-400 font-bold">
+                      <span className="inline-flex items-center gap-1 text-rose-400 font-bold font-sans">
                         <Ban className="w-3 h-3 shrink-0" />
-                        REVOKED
+                        ملغي
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[#9E9E9E]">
+                      <span className="inline-flex items-center gap-1 text-[#9E9E9E] font-sans">
                         <Circle className="w-3 h-3 shrink-0" />
-                        ACTIVATED
+                        مفعل
                       </span>
                     )}
                   </td>

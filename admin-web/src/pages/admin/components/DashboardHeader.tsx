@@ -22,13 +22,13 @@ export function DashboardHeader({ activeTab, loading, onSync }: DashboardHeaderP
           {activeTab === 'stats' && <BarChart3 className="w-5 h-5 text-white" />}
           {activeTab === 'settings' && <Sliders className="w-5 h-5 text-white" />}
           {activeTab === 'users' && 'إدارة الحسابات والمشتركين'}
-          {activeTab === 'keys' && 'إدارة مفاتيح الترخيص والتوليد المجمع'}
-          {activeTab === 'usage' && 'سجل استخدام وخصم حصص الذكاء الاصطناعي'}
-          {activeTab === 'stats' && 'إحصائيات الخادم وتوقعات الإيرادات (MRR)'}
-          {activeTab === 'settings' && 'إعدادات محلية (مسودة غير مدفوعة للخادم)'}
+          {activeTab === 'keys' && 'إدارة وتوليد مفاتيح الترخيص'}
+          {activeTab === 'usage' && 'سجل استهلاك الذكاء الاصطناعي'}
+          {activeTab === 'stats' && 'مؤشرات الاشتراكات والإيرادات'}
+          {activeTab === 'settings' && 'إعدادات وحصص النظام'}
         </h2>
         <p className="text-xs text-[#9E9E9E] mt-1 font-sans">
-          منظومة تحكم سينمائية لإدارة الاشتراكات والتأثيرات السحابية فورياً
+          لوحة مركزية لإدارة التراخيص والمشتركين والخدمات السحابية
         </p>
       </div>
 
@@ -36,10 +36,10 @@ export function DashboardHeader({ activeTab, loading, onSync }: DashboardHeaderP
         <button
           onClick={onSync}
           disabled={loading}
-          className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-mono font-bold border border-[#2C2C2C] flex items-center gap-2 cursor-pointer transition-colors"
+          className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-medium border border-[#2C2C2C] flex items-center gap-2 cursor-pointer transition-colors"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>SYNC DATA</span>
+          <span>تحديث البيانات</span>
         </button>
       </div>
     </div>

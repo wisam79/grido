@@ -85,7 +85,7 @@ export function LoginForm({
 
           <div className="border-t border-[#2C2C2C] my-4 pt-4 space-y-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 block">البريد الإلكتروني للادمن</label>
+              <label className="text-xs font-semibold text-slate-300 block">البريد الإلكتروني للمسؤول</label>
               <input
                 type="email"
                 required
@@ -112,14 +112,14 @@ export function LoginForm({
           <button
             type="submit"
             disabled={loginLoading}
-            className="w-full py-3 bg-[#3b82f6] hover:bg-[#2563eb] text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 magnetic-pill"
+            className="w-full py-3 bg-[#3b82f6] hover:bg-[#2563eb] text-white font-sans font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 magnetic-pill"
           >
             {loginLoading ? (
               <Loader2 className="w-4 h-4 animate-spin text-white" />
             ) : (
               <>
                 <ShieldCheck className="w-4 h-4" />
-                <span>AUTHENTICATE ADMIN</span>
+                <span>تسجيل الدخول كمسؤول</span>
               </>
             )}
           </button>

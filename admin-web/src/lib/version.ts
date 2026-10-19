@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 /**
- * جلب إصدار التطبيق الحالي من Netlify Function (/api/version)
+ * جلب إصدار التطبيق الحالي من نقطة نهاية (/api/version) المخدومة عبر GitHub Pages
  * مع كاش على مستوى الوحدة لمنع تكرار الطلب بين المكونات (Hero + CTA).
  * الاستجابة: { tag_name: "v1.2.10", ... } — نعرض الرقم بدون السابقة v.
  */

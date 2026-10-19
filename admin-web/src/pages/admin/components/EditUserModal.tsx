@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import { useEffect, type FormEvent } from 'react';
 import { Loader2, Sliders, UserCheck, X } from 'lucide-react';
 import type { UserProfile } from '../types';
 
@@ -37,17 +37,46 @@ export function EditUserModal({
   onExpiresChange,
   onSubmit,
 }: EditUserModalProps) {
+  useEffect(() => {
+    if (!editModalUser) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [editModalUser, onClose]);
+
   if (!editModalUser) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4" dir="rtl">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-user-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-center p-4 animate-fadeIn"
+      dir="rtl"
+    >
       <div className="w-full max-w-lg bg-[#1E1E1E] border border-[#2C2C2C] rounded-2xl shadow-2xl p-6 space-y-5 relative">
         <div className="flex items-center justify-between border-b border-[#2C2C2C] pb-4">
-          <h3 className="font-bold text-white text-sm font-display flex items-center gap-2 tracking-tight">
+          <h3
+            id="edit-user-modal-title"
+            className="font-bold text-white text-sm font-display flex items-center gap-2 tracking-tight"
+          >
             <Sliders className="w-4 h-4 text-white" />
-            تعديل وتخصيص حساب: {editModalUser.email}
+            تعديل حساب: {editModalUser.email}
           </h3>
-          <button onClick={onClose} className="p-1 text-[#9E9E9E] hover:text-white rounded-lg cursor-pointer">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="إغلاق النافذة"
+            className="p-1 text-[#9E9E9E] hover:text-white rounded-lg cursor-pointer"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -79,11 +108,11 @@ export function EditUserModal({
               <select
                 value={editPlan}
                 onChange={(e) => onPlanChange(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#141414] border border-[#2C2C2C] rounded-xl text-xs text-white font-mono"
+                className="w-full px-3.5 py-2.5 bg-[#141414] border border-[#2C2C2C] rounded-xl text-xs text-white font-sans"
               >
-                <option value="free">FREE (مجاني)</option>
-                <option value="pro">PRO (احترافي)</option>
-                <option value="enterprise">ENTERPRISE (مؤسسات)</option>
+                <option value="free">مجاني (Free)</option>
+                <option value="pro">احترافي (Pro)</option>
+                <option value="enterprise">مؤسسات (Enterprise)</option>
               </select>
             </div>
 
@@ -92,18 +121,18 @@ export function EditUserModal({
               <select
                 value={editStatus}
                 onChange={(e) => onStatusChange(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#141414] border border-[#2C2C2C] rounded-xl text-xs text-white font-mono"
+                className="w-full px-3.5 py-2.5 bg-[#141414] border border-[#2C2C2C] rounded-xl text-xs text-white font-sans"
               >
-                <option value="active">ACTIVE (نشط)</option>
-                <option value="expired">EXPIRED (منتهي)</option>
-                <option value="banned">BANNED (محظور)</option>
+                <option value="active">نشط</option>
+                <option value="expired">منتهي</option>
+                <option value="banned">محظور</option>
               </select>
             </div>
           </div>
 
           <div>
             <label className="text-xs text-slate-300 font-semibold block mb-1">
-              تاريخ انتهاء الصلاحية المخصص
+              تاريخ انتهاء الصلاحية
             </label>
             <input
               type="date"
@@ -117,21 +146,21 @@ export function EditUserModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 bg-white/10 text-slate-300 rounded-xl text-xs font-mono hover:bg-white/20 cursor-pointer"
+              className="px-4 py-2.5 bg-white/10 text-slate-300 rounded-xl text-xs font-sans hover:bg-white/20 cursor-pointer font-medium"
             >
-              CANCEL
+              إلغاء
             </button>
             <button
               type="submit"
               disabled={savingUser}
-              className="px-5 py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded-xl text-xs font-mono font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50 magnetic-pill"
+              className="px-5 py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded-xl text-xs font-sans font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50 magnetic-pill"
             >
               {savingUser ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
               ) : (
                 <UserCheck className="w-3.5 h-3.5" />
               )}
-              <span>SAVE CHANGES</span>
+              <span>حفظ التعديلات</span>
             </button>
           </div>
         </form>
