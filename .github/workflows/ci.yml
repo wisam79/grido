@@ -512,19 +512,23 @@ jobs:
 
       # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28): مفتاح الكاش يحمل رقم
       #    الإصدار فيُبطَل أي كاش قديم، والتحقق أدناه يكشف أي تراجع فعلي.
+      # `shell: pwsh` (PowerShell 7) لا Windows PowerShell 5.1: الأخير يقرأ ملف
+      # السكربت بترميز ANSI فيحوّل أي نص غير لاتيني (عربي هنا) إلى بايتات تكسر
+      # المحلل (ParserError: Unexpected token) قبل تنفيذ أي سطر. الرسائل داخل
+      # هذا السطر تبقى ASCII أيضاً كطبقة أمان ثانية.
       - name: Install Wails3 CLI
-        shell: powershell
+        shell: pwsh
         run: |
           if (-not (Get-Command wails3 -ErrorAction SilentlyContinue)) {
             go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
           }
-          # `wails3 version` يطبع عبر Go println إلى stderr — نحوّله لملف ونفحصه
+          # wails3 version prints via Go println to stderr -> capture both streams
           $verFile = Join-Path $env:TEMP 'wails3-version.txt'
           wails3 version > $verFile 2>&1
           $v = (Get-Content $verFile -Raw).Trim()
           Write-Host "wails3 version => $v"
           if ($v -notmatch '3\.0\.0-beta\.28') {
-            throw "إصدار wails3 CLI لا يطابق المثبّت v3.0.0-beta.28 (الفعلي '$v') — امسح كاش go/bin وأعد المحاولة."
+            throw "wails3 CLI version mismatch: expected v3.0.0-beta.28 (actual '$v'). Clear the go/bin cache and retry."
           }
 
       - name: Build Wails v3 App Binary (Smoke Test)
