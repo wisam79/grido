@@ -310,10 +310,15 @@ type aiUsageSnapshot struct {
 // callAIUsageRPC يستدعي RPC check_and_record_ai_usage في Supabase — الحجة الرسمية
 // الوحيدة للحد اليومي. تعمل بوضع الفحص المسبق (check_only) أو التسجيل (record)
 // وتعيد لقطة القيم الخادمية عند توفرها (nil عند تعذّر قراءة الحمولة).
+//
+// ثابت عقدي (إصلاح TOCTOU — 2026-10-19): هذا المسار يبقى **فحصاً محضاً**.
+// لا يُرسل p_reserve ولا p_request_id؛ الحجز الذرّي للحصة (الصف المعلّق) هو
+// مسؤولية خادم Modal AI وحده، لأن المستخدم لا يدفع ثمن GPU إلا عنده. إضافة
+// حجز هنا تعني خصماً لحظة قبل أن يقرر المستخدم المتابعة، ولو غيّر رأيه.
 func callAIUsageRPC(token string, userID string, imageBytes int64, checkOnly bool) (*aiUsageSnapshot, error) {
 	payload, err := json.Marshal(map[string]interface{}{
 		"p_user_id":      userID,
-		"p_daily_limit":  0, // مهمل خادمياً — يُشتق من خطة المستخدم
+		"p_daily_limit":  0, // مهمل خادمياً — يُشتق من الاستحقاق (status/expires_at)
 		"p_image_bytes":  imageBytes,
 		"p_exec_seconds": 0,
 		"p_cost_usd":     0,
@@ -572,7 +577,9 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 
 	if resp.StatusCode != http.StatusOK {
 		bodyStr := strings.TrimSpace(string(body))
-		slog.Error("Modal AI HTTP error", "status", resp.StatusCode, "body", bodyStr)
+		// 🛡️ سلامة السجلات: لا تُمرَّر استجابة الخادم الخام إلى slog (قد تحوي بيانات
+		// المستخدم أو محتوى الطلب) — يسجَّل طولها بالبايتات فقط.
+		slog.Error("Modal AI HTTP error", "status", resp.StatusCode, "bytes", len(body))
 
 		var errRes struct {
 			Error string `json:"error"`
@@ -596,7 +603,8 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 	}
 	if err := json.Unmarshal(body, &modalResp); err == nil {
 		if modalResp.UsageRecorded != nil && !*modalResp.UsageRecorded {
-			slog.Error("Modal AI returned image with unrecorded usage", "body", string(body))
+			// 🛡️ سلامة السجلات: لا تُمرَّر استجابة الخادم الخام إلى slog — طول البايتات فقط.
+			slog.Error("Modal AI returned image with unrecorded usage", "bytes", len(body))
 			return "", fmt.Errorf("تعذر تسجيل استهلاك حصة الذكاء الاصطناعي في قاعدة البيانات. يرجى إعادة المحاولة")
 		}
 	}

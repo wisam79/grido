@@ -51,7 +51,7 @@ jobs:
       workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           # Full history: paths-filter diffs push events against `before`,
           # which a shallow clone does not contain.
@@ -59,7 +59,7 @@ jobs:
 
       - name: Filter changed paths
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@15192bc058cc28a13dbf6cde61f19e18988b7af6 # v3
         with:
           filters: |
             frontend:
@@ -92,12 +92,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
 
@@ -127,7 +127,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
         run: |
@@ -135,13 +135,13 @@ jobs:
           sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -149,18 +149,27 @@ jobs:
 
       - name: Cache Go Binaries (Wails)
         id: cache-go-bin
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/go/bin
-          key: ${{ runner.os }}-go-bin-v1
+          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-v1
 
       - name: Add Go Bin to PATH
         run: echo "$HOME/go/bin" >> $GITHUB_PATH
 
+      # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28): مفتاح الكاش يحمل رقم
+      #    الإصدار فيُبطَل أي كاش قديم، والتحقق أدناه يكشف أي تراجع فعلي.
       - name: Install Wails3 CLI
         run: |
           if ! command -v wails3 >/dev/null 2>&1; then
             go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
+          fi
+          # `wails3 version` يطبع عبر Go println إلى stderr — نحوّله لملف ونفحصه
+          wails3 version > "$RUNNER_TEMP/wails3-version.txt" 2>&1
+          echo "wails3 version => $(cat "$RUNNER_TEMP/wails3-version.txt")"
+          if ! grep -q '3\.0\.0-beta\.28' "$RUNNER_TEMP/wails3-version.txt"; then
+            echo "::error::إصدار wails3 CLI لا يطابق المثبّت v3.0.0-beta.28 — امسح كاش go/bin وأعد المحاولة."
+            exit 1
           fi
 
       - name: Generate Wails v3 Bindings
@@ -214,7 +223,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
         run: |
@@ -222,7 +231,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -230,13 +239,13 @@ jobs:
       # مطلوب لخطوة الملخّص (node scripts/ci-step-summary.mjs) — كانت المشغّلات
       # تستعمل node المثبّت مسبقاً في الصورة ضمناً، فصار الاعتماد صريحاً
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Cache Go Tools (staticcheck)
         id: cache-staticcheck
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/go/bin/staticcheck
           key: ${{ runner.os }}-staticcheck-2025.1.1
@@ -291,10 +300,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -354,7 +363,7 @@ jobs:
         shardTotal: [4]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
         run: |
@@ -362,13 +371,13 @@ jobs:
           sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -376,18 +385,26 @@ jobs:
 
       - name: Cache Go Binaries (Wails)
         id: cache-go-bin
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/go/bin
-          key: ${{ runner.os }}-go-bin-v1
+          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-v1
 
       - name: Add Go Bin to PATH
         run: echo "$HOME/go/bin" >> $GITHUB_PATH
 
+      # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28): مفتاح الكاش يحمل رقم
+      #    الإصدار فيُبطَل أي كاش قديم، والتحقق أدناه يكشف أي تراجع فعلي.
       - name: Install Wails3 CLI
         run: |
           if ! command -v wails3 >/dev/null 2>&1; then
             go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
+          fi
+          wails3 version > "$RUNNER_TEMP/wails3-version.txt" 2>&1
+          echo "wails3 version => $(cat "$RUNNER_TEMP/wails3-version.txt")"
+          if ! grep -q '3\.0\.0-beta\.28' "$RUNNER_TEMP/wails3-version.txt"; then
+            echo "::error::إصدار wails3 CLI لا يطابق المثبّت v3.0.0-beta.28 — امسح كاش go/bin وأعد المحاولة."
+            exit 1
           fi
 
       - name: Generate Wails v3 Bindings
@@ -399,7 +416,7 @@ jobs:
 
       - name: Cache Playwright Browsers
         id: cache-playwright
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
@@ -427,7 +444,7 @@ jobs:
 
       - name: Upload Playwright Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: playwright-report-shard-${{ matrix.shardIndex }}
           path: frontend/playwright-report/
@@ -457,16 +474,16 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Cache Go Build Cache (Windows)
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~\AppData\Local\go-build
           key: ${{ runner.os }}-go-build-${{ hashFiles('go.sum') }}
@@ -474,7 +491,7 @@ jobs:
             ${{ runner.os }}-go-build-
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -482,10 +499,10 @@ jobs:
 
       - name: Cache Go Binaries (Wails)
         id: cache-go-bin
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~\go\bin
-          key: ${{ runner.os }}-go-bin-v2
+          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-v1
 
       - name: Add Go Bin to PATH
         shell: powershell
@@ -493,11 +510,21 @@ jobs:
           $gopath = $(go env GOPATH)
           "$gopath\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
+      # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28): مفتاح الكاش يحمل رقم
+      #    الإصدار فيُبطَل أي كاش قديم، والتحقق أدناه يكشف أي تراجع فعلي.
       - name: Install Wails3 CLI
         shell: powershell
         run: |
           if (-not (Get-Command wails3 -ErrorAction SilentlyContinue)) {
             go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
+          }
+          # `wails3 version` يطبع عبر Go println إلى stderr — نحوّله لملف ونفحصه
+          $verFile = Join-Path $env:TEMP 'wails3-version.txt'
+          wails3 version > $verFile 2>&1
+          $v = (Get-Content $verFile -Raw).Trim()
+          Write-Host "wails3 version => $v"
+          if ($v -notmatch '3\.0\.0-beta\.28') {
+            throw "إصدار wails3 CLI لا يطابق المثبّت v3.0.0-beta.28 (الفعلي '$v') — امسح كاش go/bin وأعد المحاولة."
           }
 
       - name: Build Wails v3 App Binary (Smoke Test)
@@ -565,7 +592,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
         run: |
@@ -573,31 +600,39 @@ jobs:
           sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Cache Go Binaries (Wails)
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/go/bin
-          key: ${{ runner.os }}-go-bin-v1
+          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-v1
 
       - name: Add Go Bin to PATH
         run: echo "$HOME/go/bin" >> $GITHUB_PATH
 
+      # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28): مفتاح الكاش يحمل رقم
+      #    الإصدار فيُبطَل أي كاش قديم، والتحقق أدناه يكشف أي تراجع فعلي.
       - name: Install Wails3 CLI
         run: |
           if ! command -v wails3 >/dev/null 2>&1; then
             go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
+          fi
+          wails3 version > "$RUNNER_TEMP/wails3-version.txt" 2>&1
+          echo "wails3 version => $(cat "$RUNNER_TEMP/wails3-version.txt")"
+          if ! grep -q '3\.0\.0-beta\.28' "$RUNNER_TEMP/wails3-version.txt"; then
+            echo "::error::إصدار wails3 CLI لا يطابق المثبّت v3.0.0-beta.28 — امسح كاش go/bin وأعد المحاولة."
+            exit 1
           fi
 
       - name: Generate Wails v3 Bindings
@@ -615,7 +650,7 @@ jobs:
       # بنفس نمط Chromium (مفتاح مقفل على package-lock).
       - name: Cache Playwright WebKit Browser
         id: cache-playwright-webkit
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-webkit-${{ hashFiles('frontend/package-lock.json') }}
@@ -639,7 +674,7 @@ jobs:
 
       - name: Upload WebKit Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: playwright-report-webkit
           path: frontend/playwright-report/

@@ -14,14 +14,26 @@ func ZipDirectory(source, target string) error {
 	if err != nil {
 		return err
 	}
-	defer zipfile.Close()
 
 	archive := zip.NewWriter(zipfile)
-	defer archive.Close()
 
-	return filepath.WalkDir(source, func(path string, d os.DirEntry, err error) error {
+	// 🛡️ استبعاد ملف الـ zip الهدف من المشي: لو وقع target داخل source
+	// (أرشيف الدعم الذاتي) فسيُقرأ الأرشيف المتنامي داخل نفسه ⇒ نمو متسارع
+	// حتى امتلاء القرص. المقارنة بمسارات مطلقة منظفة (abs + Clean).
+	targetAbs, absErr := filepath.Abs(target)
+	if absErr == nil {
+		targetAbs = filepath.Clean(targetAbs)
+	}
+
+	walkErr := filepath.WalkDir(source, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+
+		if absErr == nil {
+			if pathAbs, pathErr := filepath.Abs(path); pathErr == nil && filepath.Clean(pathAbs) == targetAbs {
+				return nil // تجاهل ملف الـ zip الهدف نفسه
+			}
 		}
 
 		info, err := d.Info()
@@ -67,4 +79,17 @@ func ZipDirectory(source, target string) error {
 		file.Close()
 		return copyErr
 	})
+
+	// 🔧 إغلاق صريح بترتيب صحيح: Close للأرشيف يكتب فهرس الـ zip النهائي،
+	// ثم Close للملف الفعلي. الـ defer الصامت كان يبتلع فشل الضغط/الكتابة
+	// فيُعاد نجاح كاذب مع ملف ناقص.
+	closeErr := archive.Close()
+	fileErr := zipfile.Close()
+	if walkErr != nil {
+		return walkErr
+	}
+	if closeErr != nil {
+		return closeErr
+	}
+	return fileErr
 }

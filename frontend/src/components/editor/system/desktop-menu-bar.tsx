@@ -327,7 +327,12 @@ export function DesktopMenuBar() {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem
-            onClick={() => useEditorStore.getState().reset()}
+            onClick={() =>
+              // 🛡️ نفس قناة الشريط (`grido:clear-canvas-request`): المسار القديم
+              // كان يستدعي reset() مباشرة فيتجاوز نافذة التأكيد ولا يمسح مسودة
+              // الحفظ التلقائي — قائمة الشريط تُملكها ToolbarFileOps وحدها.
+              window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))
+            }
             className="gap-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md py-1.5"
           >
             <Broom className="w-4 h-4" />

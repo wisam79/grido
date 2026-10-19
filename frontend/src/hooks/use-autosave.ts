@@ -13,9 +13,11 @@ const logger = createLogger('useAutoSave');
 
 /**
  * هل مساحة العمل ما زالت كما وُلدت (لا عناصر، لا صور خانات، لا مشروع محمّل،
- * لا خطوة تراجع)؟ يُستخدم لمنع مسودة قديمة من طمس عمل بدأه المستخدم.
+ * لا خطوة تراجع)؟ يُستخدم لمنع مسودة قديمة من طمس عمل بدأه المستخدم،
+ * ويُعاد استخدامه في نافذة المشاريع لتأكيد استبدال عمل غير محفوظ
+ * بتحميل مشروع آخر — فالحارس واحد لا يزيد تكراراً بين الموضعين.
  */
-function isPristineWorkspace(): boolean {
+export function isPristineWorkspace(): boolean {
   const s = useEditorStore.getState();
   return (
     s.projectId === null &&
@@ -32,6 +34,18 @@ function isEmptyWorkspace(data: { elements: unknown[]; slots?: unknown[] }): boo
     (!data.slots || data.slots.every((s) => !(s as { imageSrc?: string }).imageSrc))
   );
 }
+
+// ─── مصدر قائمة مراقبة الحفظ التلقائي ─────────────────────────────────────
+// كانت القائمة (getDeps) مكتوبة يدوياً فتنزلق عن المسلسل: كل حقل يُضاف
+// لملف المشروع (userGuides، showRuler، rulerUnit، lockUserGuides،
+// showBleedGuides، bleedMarginMM، safeMarginMM، cutShapeType، projectId …)
+// كان يحتاج تعديلاً في موضعين — وما سُقط منه فُقدت تعديلاته بلا حفظ.
+// الآن القائمة تُشتق حرفياً من مفاتيح مخرجات `serializeEditorState` —
+// المصدر الوحيد لما يُحفظ فعلاً في ملف المشروع — فأي حقل جديد يُراقب
+// تلقائياً ولا يمكن للقائمة أن تنزلق عن المسلسل بعد اليوم.
+// المفاتيح التي يضيفها المسلسل بنفسه ولا تقابل حالة متجر تُستثنى (لو رُوعبت
+// لانطلق حفظٌ بلا معنى: savedAt جديد في كل نداء مثلاً).
+const SERIALIZER_METADATA_KEYS = new Set(['version', 'savedAt', 'embeddedAssets']);
 
 // ─── التفريغ النهائي قبل إغلاق النافذة (H5 من تدقيق 2026-10-08) ────────────
 // كان المسار القديم يعتمد على كتابة عائمة غير منتظرة داخل تنظيف React تسابق
@@ -268,41 +282,19 @@ export function useAutoSave() {
     // تأخير فحص وحفظ البيانات بالكامل لثانيتين بعد توقف حركة السحب/التعديل
     const debouncedSave = debounce(handleStateChange, 2000);
 
-    const getDeps = (state: EditorStoreSnapshot) => [
-      state.elements,
-      state.slots,
-      state.mode,
-      state.canvasWidth,
-      state.canvasHeight,
-      state.backgroundColor,
-      // 🎨 التدرج يُسلسل مع المشروع — بدون مراقبته لا تُحفظ تغييرات التدرج وحده
-      state.backgroundGradientColor2,
-      state.backgroundGradientAngle,
-      state.template,
-      state.collageTemplate,
-      state.printSettings,
-      state.showGrid,
-      state.gridSize,
-      state.gridColor,
-      state.gridOpacity,
-      state.gridSubdivisions,
-      state.gridType,
-      state.snapToGrid, // كانتا غير مراقبتين رغم أنهما تُسلسلان مع المشروع
-      state.showColumns,
-      state.columnsCount,
-      state.columnsColor,
-      state.columnsMargin,
-      state.columnsGutter,
-      state.collageGap,
-      state.collageMargin,
-      state.collageRadius,
-      state.collageStrokeWidth,
-      state.collageStrokeColor,
-      // كانتا غير مراقبتين رغم أنهما تُسلسلان مع المشروع (نفس صنف إصلاح gridType/snapToGrid)
-      state.collageShowCutLines,
-      state.collageShowEndCutLine,
-      // ملاحظة: showRuler تفضيل واجهة وليست بيانات مشروع (لا تُسلسل) — لذا استُبعدت من المراقبة
-    ];
+    // قائمة المراقبة مشتقة من المسلسل (انظر SERIALIZER_METADATA_KEYS أعلاه):
+    // تُحسب مرة واحدة أولّ تحديث حالة ثم تُعاد استخدامها — مفتاح ناقص في
+    // المسلسل يعني نصاً يُشتق من كوده لا من قائمة يدوية قابلة للنسيان.
+    let watchedKeys: string[] | null = null;
+    const getDeps = (state: EditorStoreSnapshot): unknown[] => {
+      if (!watchedKeys) {
+        watchedKeys = Object.keys(serializeEditorState(state)).filter(
+          (key) => !SERIALIZER_METADATA_KEYS.has(key),
+        );
+      }
+      const stateRecord = state as unknown as Record<string, unknown>;
+      return watchedKeys.map((key) => stateRecord[key]);
+    };
 
     let lastDeps = getDeps(useEditorStore.getState());
 

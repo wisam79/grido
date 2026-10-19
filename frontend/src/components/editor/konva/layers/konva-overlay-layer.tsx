@@ -6,6 +6,18 @@ import { SnapGuide } from '@/lib/canvas/snap-utils';
 import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
 import { EditorTransformer } from '../elements/editor-transformer';
 
+/**
+ * 🎚️ تطبيع الدوران لنطاق ‎[-180, 180) — نفس اصطلاح Konva الداخلي
+ * (`Util._getRotation`). ضروري عند تصحيح قلب المحوّل لأن الانعكاس يُخزَّن
+ * عند Konva كدوران ±180° ويجب إرجاعه إلى زاويته الأصلية قبل الحفظ.
+ */
+function normalizeRotation180(deg: number): number {
+  let r = deg % 360;
+  if (r >= 180) r -= 360;
+  if (r < -180) r += 360;
+  return r;
+}
+
 interface KonvaOverlayLayerProps {
   selectedIds: string[];
   sortedElements: CanvasElement[];
@@ -86,19 +98,52 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
 
         const newWidth = newW / canvasWidth;
         const newHeight = newH / canvasHeight;
-        const rawX = node.x() / canvasWidth;
-        const rawY = node.y() / canvasHeight;
+        const originX = node.x();
+        const originY = node.y();
 
-        // إذا قام المستخدم بسحب المقبض لما بعد الصفر يعكس حالة القلب
-        const nextFlipX = sx < 0 ? !el.flipX : (el.flipX ?? false);
-        const nextFlipY = sy < 0 ? !el.flipY : (el.flipY ?? false);
+        // 🪞 كشف الانعكاس: `Transform.decompose()` (Util.js) يُخرج **دائماً**
+        // `scaleX >= 0` ويصبّ أي معامل سالب في `scaleY` مع إزاحة الدوران 180°،
+        // لذلك كان شرط `sx < 0` أعلاه كوداً ميتاً: كان قلب الأفق يُخزَّن قلباً
+        // رأسياً مع دوران ≈180°. العلامة الحقيقية للانعكاس هي `sy < 0`.
+        const reflected = sy < 0;
+
+        let nextRotation = node.rotation();
+        let rawX = originX / canvasWidth;
+        let rawY = originY / canvasHeight;
+        let nextFlipX = el.flipX ?? false;
+        const nextFlipY = el.flipY ?? false;
+
+        if (reflected) {
+          // 🔧 توحيد الانعكاس قبل الحفظ: العارضون (صورة/نص/شكل — image-node.tsx
+          // 236-242, text-node.tsx 213-222, shape-node.tsx 305-315) يقلبون حول
+          // **مركز** الصندوق (`offsetX/offsetY = w/2,h/2` مع `scale=-1`)، بينما
+          // يعكس Konva حول نقطة أصل العقدة (والزاوية المخزَّنة مساوية للأصلية
+          // +180°). نحوّله هنا إلى الصيغة
+          // التي يفهمها العارضون: قلب أفقي (flipX) + تصغير الدوران 180° مع
+          // تعويض موضع الأصل حتى يبقى الصندوق المرسوم مطابقاً للإيماءة.
+          //
+          // الفحص الرقمي (كانفاس 1000px، عنصر (100,200) مقاس 60×40، دوران 0):
+          //   قلب أفقي بحت على Konva → scaleX=1, scaleY=-1, rotation=180°,
+          //   x=220, y=200 فصندوق الإيماءة = [160,220]×[200,240] والمحتوى
+          //   (u,v) → (220−u, 200+v) (مرآة أفقية حقيقية).
+          //   المسار القديم: x=0.22, y=0.2, rot=180, flipY=true → العارض يقلب
+          //   حول المركز فيرسم (220−u, 160+v): قفزة بمقدار 40 = الارتفاع.
+          //   المسار الجديد: x=(220+60·cos180°)/1000=0.16, y=0.2, rot=180−180=0,
+          //   flipX=true, flipY=false → (160+(60−u), 200+v) = (220−u, 200+v):
+          //   نفس الصندوق ونفس القلب تماماً، بلا أي قفزة (والدوران يعود 0).
+          const rad = (node.rotation() * Math.PI) / 180;
+          rawX = (originX + newW * Math.cos(rad)) / canvasWidth;
+          rawY = (originY + newW * Math.sin(rad)) / canvasHeight;
+          nextRotation = normalizeRotation180(node.rotation() - 180);
+          nextFlipX = !nextFlipX;
+        }
 
         const patch: Partial<CanvasElement> = {
           x: rawX,
           y: rawY,
           width: newWidth,
           ...(el.type !== 'text' ? { height: newHeight } : {}),
-          rotation: node.rotation(),
+          rotation: nextRotation,
           flipX: nextFlipX,
           flipY: nextFlipY,
         };

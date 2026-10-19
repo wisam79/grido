@@ -483,8 +483,18 @@ func TestCleanUnusedMediaNow(t *testing.T) {
 
 	img1 := filepath.Join(mediaDir, "used.jpg")
 	img2 := filepath.Join(mediaDir, "unused.jpg")
+	img3 := filepath.Join(mediaDir, "fresh-unused.jpg")
 	_ = os.WriteFile(img1, []byte("referenced-data"), 0644)
 	_ = os.WriteFile(img2, []byte("unreferenced-data-to-clean"), 0644)
+	_ = os.WriteFile(img3, []byte("freshly-imported-needs-reference-window"), 0644)
+
+	// تنظيف «الآن» يحترم درجة حماية من نفس فئة المسار التلقائي: ملف أحدث
+	// من 24 ساعة قد لم يُحفظ مرجعه في autosave بعد ⇒ لا يُنقل. نُسند
+	// التواريخ يدوياً حتى يكون السيناريو قابلاً للحكم (بلا انتظار حقيقي).
+	oldTime := time.Now().Add(-48 * time.Hour)
+	if err := os.Chtimes(img2, oldTime, oldTime); err != nil {
+		t.Fatalf("failed to chtimes unused.jpg: %v", err)
+	}
 
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	if err != nil {
@@ -527,6 +537,13 @@ func TestCleanUnusedMediaNow(t *testing.T) {
 	// unused.jpg must be moved to MediaTrash/
 	if _, err := os.Stat(filepath.Join(trashDir, "unused.jpg")); os.IsNotExist(err) {
 		t.Error("expected unused.jpg to be in MediaTrash/")
+	}
+	// fresh-unused.jpg (أحدث من 24 ساعة) يجب أن يبقى — حماية نافذة الحفظ
+	if _, err := os.Stat(img3); os.IsNotExist(err) {
+		t.Error("expected fresh-unused.jpg to remain in Media/ (age guard)")
+	}
+	if _, err := os.Stat(filepath.Join(trashDir, "fresh-unused.jpg")); err == nil {
+		t.Error("fresh-unused.jpg must not be trashed before the 24h guard elapses")
 	}
 }
 

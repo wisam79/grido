@@ -104,7 +104,8 @@ function renderBleedCanvas(
       }
     }
 
-    // رسم علامات القص
+    // رسم علامات القص — حاجز احتياطي: المُنادي يعود مبكراً عندما لا يوجد نزيف
+    // مرسوم، فالعلامات لا تُرسم أبداً فوق المحتوى (لا توجد مساحة لها).
     if (showCropMarks && bleedPx > 0) {
       ctx.strokeStyle = TEXT_COLOR_DEFAULT;
       ctx.lineWidth = Math.max(1, Math.round(dpi / 150));
@@ -156,7 +157,17 @@ export async function applyBleedAndCropMarks(
   quality = 0.95,
   dpi = 300,
 ): Promise<Blob> {
-  if (bleedMM === 0 && !showCropMarks) return blob;
+  // 🛡️ منطق واحد لـ«هل سنرسم شيئاً فعلاً؟»: منطقة النزيف تُقاس بالبكسل
+  // (Math.round قد يُصفّر نزيفاً تحت نصف بكسل)، وعلامات القص تُرسم **داخل**
+  // منطقة النزيف حصراً (offset = markLen = bleedPx). فحين لا يوجد نزيف
+  // مرسوم لا معالم أيضاً — وكان المخرج حينها لوحةً بنفس الأبعاد أُعيد ترميزها
+  // بلا أي تغيير (فقدان JPEG حراري بلا مقابل). نعيد البلوب الأصلي كما هو.
+  const bleedPx = Math.round((bleedMM * dpi) / 25.4);
+  const drawsBleed = bleedPx > 0;
+  // العلامات مشروطة بوجود مساحة نزيف — حاجز واحد يطابق الحاجز في renderBleedCanvas
+  const drawsCropMarks = showCropMarks && drawsBleed;
+
+  if (!drawsBleed && !drawsCropMarks) return blob;
 
   // 🚀 مسار فك الترميز غير المتزامن المسرَّع بالعتاد (createImageBitmap)
   if (typeof createImageBitmap === 'function') {

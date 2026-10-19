@@ -167,7 +167,7 @@ class ImageEnhancer:
                         "apikey": SUPABASE_ANON_KEY
                     }
                 )
-                with urllib.request.urlopen(verify_req) as response:
+                with urllib.request.urlopen(verify_req, timeout=10) as response:
                     user_data = json.loads(response.read().decode())
                     user_id = user_data.get("id")
                     if not user_id:
@@ -184,50 +184,32 @@ class ImageEnhancer:
             import numpy as np
             import uuid
 
+            # 🛡️ سقف حجم الدخل قبل قراءة الجسم — جسم ضخم كان يُقرأ كاملاً في RAM قبل أي فحص.
+            # 30MB تغطي أي صورة هوية مشروعة (العميل يقلّص مسبقاً إلى 2048px).
+            max_request_bytes = 30 * 1024 * 1024
+            content_length = request.headers.get("Content-Length")
+            if content_length is not None:
+                try:
+                    declared_length = int(content_length)
+                except (TypeError, ValueError):
+                    declared_length = None
+                if declared_length is not None and declared_length > max_request_bytes:
+                    return Response(
+                        content='{"error": "حجم الطلب كبير جداً قبل المعالجة (الحد 30MB)"}',
+                        media_type="application/json",
+                        status_code=413
+                    )
+
             data = await request.json()
             image_b64 = data.get("image", "")
+            # dailyLimit للتوافقية فقط — الحد يُشتق خادمياً من الاستحقاق لا من العميل.
             daily_limit = data.get("dailyLimit", 2)
-            request_id = data.get("requestId") or str(uuid.uuid4())
 
-            # 🛡️ فحص مسبق للرصيد اليومي قبل حرق أي ثانية GPU مكلفة.
-            # الحد يُشتق خادمياً من خطة المستخدم (p_daily_limit مهمل في RPC الجديد).
-            try:
-                precheck_payload = json.dumps({
-                    "p_user_id": user_id,
-                    "p_daily_limit": daily_limit,
-                    "p_image_bytes": 0,
-                    "p_check_only": True
-                }).encode('utf-8')
-                precheck_req = urllib.request.Request(
-                    f"{SUPABASE_URL}/rest/v1/rpc/check_and_record_ai_usage",
-                    data=precheck_payload,
-                    headers={
-                        "Authorization": f"Bearer {jwt_token}",
-                        "apikey": SUPABASE_ANON_KEY,
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal"
-                    },
-                    method="POST"
-                )
-                with urllib.request.urlopen(precheck_req) as precheck_res:
-                    pass  # الرصيد متاح — نتابع للمعالجة
-            except urllib.error.HTTPError as e:
-                err_body = e.read().decode()
-                print(f"Pre-flight quota check blocked request: {err_body}")
-                return Response(
-                    content='{"error": "تم الوصول للحد اليومي المسموح به لاستخدام الذكاء الاصطناعي (429 Quota Exceeded)"}',
-                    media_type="application/json",
-                    status_code=429
-                )
-            except Exception as e:
-                # فشل الفحص المسبق لأسباب شبكية أو تعطل الخادم — نفشل مغلقاً لمنع الاستهلاك غير المحسوب
-                print(f"Pre-flight quota check failed (failing closed): {e}", flush=True)
-                return Response(
-                    content='{"error": "تعذر التحقق من الحصة اليومية لاستخدام الذكاء الاصطناعي (خدمة التحقق غير متاحة مؤقتاً)"}',
-                    media_type="application/json",
-                    status_code=503
-                )
-            
+            # 🛡️ (P1) معرّف الطلب يُولَّد **خادمياً** دائماً: الثقة بقيمة العميل كانت
+            # تسمح بإعادة إرسال طلب محسوب بنفس المعرّف فيرجع الـRPC نجاحاً معلّقاً
+            # بلا إدراج ولا فحص حد ⇒ استهلاك مجاني للحصة.
+            request_id = str(uuid.uuid4())
+
             if not image_b64:
                 return Response(content='{"error": "الصورة غير موجودة"}', media_type="application/json", status_code=400)
 
@@ -249,6 +231,75 @@ class ImageEnhancer:
 
             if img_raw is None:
                 return Response(content='{"error": "فشل قراءة الصورة"}', media_type="application/json", status_code=400)
+
+            # 🛡️ (P2) حدود أبعاد الصورة المفكوكة **قبل أي تحويل/تقليص**: صورة متجهة
+            # أو مخربة كانت تُحمَّل كاملةً في RAM/VRAM ثم تُقلَّص. حد البكسل/الضلع
+            # يقطع ذلك مبكراً (64M بكسل ≈ 8000x8000 — يتجاوز بكثير أي صورة هوية).
+            h_decoded, w_decoded = img_raw.shape[:2]
+            if h_decoded * w_decoded > 64_000_000 or max(h_decoded, w_decoded) > 8192:
+                del img_raw
+                return Response(
+                    content='{"error": "أبعاد الصورة تتجاوز الحد المسموح (64M بكسل أو ضلع > 8192)"}',
+                    media_type="application/json",
+                    status_code=413
+                )
+
+            # 🛡️ (P2) حجز ذرّي للحصة اليومية قبل أي ثانية GPU.
+            # الفحص العددي القديم كان يسمح لكل الطلبات المتزامنة بالمرور ثم يُفشل
+            # الخاسرون بـ429 **بعد** عمل مدفوع على GPU. الحجز يُدرج صفاً معلّقاً
+            # مفتاحياً بـrequest_id داخل نفس المعاملة المقفلة كفحص الحد، فيصبح
+            # تجاوز الحصة مستحيلاً حتى مع توازي تام. الحجز يحدث **بعد** التحقق من
+            # المدخلات حتى لا تُستهلك حصة على صورة مرفوضة.
+            try:
+                reserve_payload = json.dumps({
+                    "p_user_id": user_id,
+                    "p_daily_limit": daily_limit,
+                    "p_image_bytes": 0,
+                    "p_exec_seconds": 0,
+                    "p_cost_usd": 0,
+                    "p_check_only": False,
+                    "p_request_id": request_id,
+                    "p_reserve": True
+                }).encode('utf-8')
+                reserve_req = urllib.request.Request(
+                    f"{SUPABASE_URL}/rest/v1/rpc/check_and_record_ai_usage",
+                    data=reserve_payload,
+                    headers={
+                        "Authorization": f"Bearer {jwt_token}",
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    method="POST"
+                )
+                with urllib.request.urlopen(reserve_req, timeout=10) as reserve_res:
+                    reserve_body = json.loads(reserve_res.read().decode() or "{}")
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode()
+                print(f"Quota reservation blocked request: {err_body}")
+                return Response(
+                    content='{"error": "تم الوصول للحد اليومي المسموح به لاستخدام الذكاء الاصطناعي (429 Quota Exceeded)"}',
+                    media_type="application/json",
+                    status_code=429
+                )
+            except Exception as e:
+                # فشل الحجز لأسباب شبكية أو تعطل الخادم — نفشل مغلقاً لمنع الاستهلاك غير المحسوب
+                print(f"Quota reservation failed (failing closed): {e}", flush=True)
+                return Response(
+                    content='{"error": "تعذر التحقق من الحصة اليومية لاستخدام الذكاء الاصطناعي (خدمة التحقق غير متاحة مؤقتاً)"}',
+                    media_type="application/json",
+                    status_code=503
+                )
+
+            # إعادة إرسال نفس المعرّف ⇒ success=false (idempotent replay): طلب مكرر
+            # يُرفض ولا يُعاد تنفيذه كنجاح جديد.
+            if reserve_body.get("success") is False or reserve_body.get("idempotent") is True:
+                print(f"Idempotent replay rejected (not a fresh success): {request_id}", flush=True)
+                return Response(
+                    content='{"error": "طلب مكرر: تمت معالجة هذا الطلب مسبقاً (409 Duplicate)"}',
+                    media_type="application/json",
+                    status_code=409
+                )
 
             # 🛡️ الكشف عن قناة الشفافية (Alpha Channel) لعزلها والحفاظ عليها لصور العزل والقص
             has_alpha = False
@@ -373,6 +424,8 @@ class ImageEnhancer:
             usage_recorded = False
             try:
                 raw_bytes_estimate = int((len(image_b64) * 3) / 4)
+                # التسجيل يحوّل الحجز المعلّق (request_id) إلى صف نهائي — لا صفاً
+                # جديداً ⇒ لا خصم مزدوج ولا تعارض 23505. p_reserve=false صريح.
                 rpc_payload = json.dumps({
                     "p_user_id": user_id,
                     "p_daily_limit": daily_limit,
@@ -380,7 +433,8 @@ class ImageEnhancer:
                     "p_exec_seconds": exec_seconds,
                     "p_cost_usd": total_cost_usd,
                     "p_check_only": False,
-                    "p_request_id": request_id
+                    "p_request_id": request_id,
+                    "p_reserve": False
                 }).encode('utf-8')
 
                 def _post_usage():
@@ -395,8 +449,10 @@ class ImageEnhancer:
                         },
                         method="POST"
                     )
-                    with urllib.request.urlopen(rpc_req, timeout=15):
-                        pass # Recorded successfully
+                    with urllib.request.urlopen(rpc_req, timeout=15) as record_res:
+                        # 200 يعني التحويل تم (أو أن الحجز استُرد وأُعيد إدراجه نهائياً).
+                        # إعادة الإرسال بعد فقدان الرد تُرجع idempotent ⇒ محتسب أيضاً.
+                        record_res.read()  # استهلاك الجسم لإغلاق الاتصال نظيفاً
 
                 try:
                     _post_usage()

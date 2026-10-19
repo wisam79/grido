@@ -186,16 +186,29 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			defer af.Abort()
 
-			// 🖨️ كشف الاقتطاع (RV-Print-09): نسخ بحد+1 — أي تجاوز يعني body
-			// ناقصاً يُجهض بـ 413 بدل ملف مبتور ناجح ظاهرياً.
-			limitReader := io.LimitReader(r.Body, service.MaxFileSize+1)
-			written, err := io.Copy(af, limitReader)
-			if err != nil {
-				http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
+			// 🖨️ الجسم يُقرأ كاملاً في الذاكرة بحد+1: أي تجاوز يعني body
+			// ناقصاً أو مفرطاً يُجهض بـ 413 بدل ملف مبتور ناجح ظاهرياً،
+			// ويتيح ذلك نافذة لحقن بيانات الكثافة قبل الالتزام الذري.
+			body, readErr := io.ReadAll(io.LimitReader(r.Body, service.MaxFileSize+1))
+			if readErr != nil {
+				http.Error(w, "Failed to read file: "+readErr.Error(), http.StatusInternalServerError)
 				return
 			}
-			if written > service.MaxFileSize {
+			if len(body) > service.MaxFileSize {
 				http.Error(w, "File exceeds size limit", http.StatusRequestEntityTooLarge)
+				return
+			}
+
+			// 🖨️ كثافة الطباعة: مسار RGB كان يكتب PNG/JPEG كما وردته الواجهة
+			// تماماً بلا بيانات كثافة، فيفترض أدوات الطباعة الخارجية 72/96
+			// DPI وقد تُخرج مقاساً فيزيائياً خاطئاً. الحقن يتم هنا على البايتات
+			// (pHYs لـ PNG / JFIF لـ JPEG) بلا أي إعادة ترميز أو تغيير بكسل.
+			if dpi := parseDPI(r.URL.Query().Get("dpi")); dpi > 0 {
+				body = patchImageDPI(body, strings.ToLower(filepath.Ext(filePath)), dpi)
+			}
+
+			if _, err := af.Write(body); err != nil {
+				http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
 			if err := af.Commit(); err != nil {
@@ -384,7 +397,10 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("X-Content-Type-Options", "nosniff")
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			// 🛡️ الصور القابلة لإعادة الكتابة بنفس الاسم (تحرير داخل التطبيق)
+			// لا يجوز كاشها immutable لسنة — نعتمد revalidation مشروطاً عبر
+			// Last-Modified (ServeFile) مع كاش قصير و stale-while-revalidate.
+			w.Header().Set("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400")
 
 			ext := strings.ToLower(filepath.Ext(filename))
 			contentType := mime.TypeByExtension(ext)

@@ -119,6 +119,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     })),
   );
 
+  // ✂️ علامات القص لا تُرسم إلا داخل منطقة النزيف (applyBleedAndCropMarks):
+  // بلا نزيف لا شيء يُرسم، فالمفتاح يُعطَّل مع تلميح بدل لا-فعل صامت.
+  const cropMarksEnabled = bleedMM > 0;
+
   // تصفير مؤشرات التحميل ومزامنة هوامش النزيف للمطابع (Fluent 2 Wait UX Invariant)
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -147,10 +151,14 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     SetTaskbarProgress(0, 'normal').catch(() => {});
     setTimeout(async () => {
       try {
+        // 🖨️ كثافة الحفظ: نفس القيمة المعروضة في «الدقة» أعلى الحوار (قالب →
+        // إعدادات طباعة → 300). تُرسل لمسار الحفظ ليحقنها في بايتات PNG/JPEG
+        // لكل ملف (المفرد والمُجلَّد) — TIFF/CMYK لا يحمل بيانات كثافة.
+        const exportDpi = template?.dpi || printSettings.dpi || 300;
         // 🎨 مسار CMYK: يُنفَّذ في الخلفية (Go) عبر ExportPrintSheet — لا يدعم
         // تصدير الخلايا المنفصلة، لذا يسبق فرع الدفعات ويُخرج التصميم كملف واحد.
         if (colorSpace === 'cmyk') {
-          const dpi = template?.dpi || printSettings.dpi || 300;
+          const dpi = exportDpi;
           // 🖨️ هندسة صفرية الانحراف: مقاس الورقة المُرسل لـGo يجب أن يُنتج نفس أبعاد
           // اللقطة بالبكسل (mmToPx(mm, dpi) == canvasPx) وإلا أعاد محرك الطباعة تشكيل
           // الصورة صامتاً. لذا نأخذ مقاس القالب الفيزيائي فقط حين يطابق الكانفاس عند
@@ -233,7 +241,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             if (blob) {
               const ext = format === 'png' ? 'png' : 'jpg';
               const name = `collage-photo-${i + 1}-${Date.now()}.${ext}`;
-              const res = await downloadBlob(blob, name, targetDir);
+              const res = await downloadBlob(blob, name, targetDir, exportDpi);
               if (res === 'success') successCount++;
               else if (res === '') break;
             }
@@ -291,7 +299,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               : mode === 'collage'
                 ? `Grido_Collage_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`
                 : `Grido_Design_${dateStr}_${Date.now().toString().slice(-4)}.${ext}`;
-            const res = await downloadBlob(finalBlob, name);
+            const res = await downloadBlob(finalBlob, name, undefined, exportDpi);
             setProgress(100);
             SetTaskbarProgress(0, 'none').catch(() => {});
             // المستخدم أغلق أثناء حوار الحفظ — خروج صامت بدل نجاح/فشل كاذب
@@ -560,15 +568,26 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">
                   <FluentSettingRow
                     label="علامات القص الإرشادية"
-                    description="خطوط حول منطقة النزيف"
+                    description={
+                      cropMarksEnabled ? 'خطوط حول منطقة النزيف' : 'تتطلب هامش نزيف أولاً'
+                    }
                     control={
                       <Switch
-                        checked={showCropMarks}
+                        checked={showCropMarks && cropMarksEnabled}
                         onCheckedChange={setShowCropMarks}
+                        disabled={!cropMarksEnabled}
                         aria-label="علامات القص الإرشادية"
                       />
                     }
                   />
+                  {/* ✂️ علامات القص تُرسم داخل منطقة النزيف حصراً، فبلا نزيف لا
+                      تُرسم شيئاً — المفتاح يُعطَّل مع سبب صريح بدل لا-فعل صامت. */}
+                  {!cropMarksEnabled && (
+                    <p className="text-micro text-amber-600 dark:text-amber-400 mt-1.5 font-semibold">
+                      حدّد هامش النزيف أكبر من 0 مم — تُرسم العلامات داخل منطقة النزيف، فتظهر للقاصّ
+                      حول حدود التصميم.
+                    </p>
+                  )}
                 </div>
 
                 <div className="p-3 border border-border/80 rounded-xl bg-card space-y-2.5 fluent-specular">

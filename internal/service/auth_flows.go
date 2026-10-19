@@ -80,7 +80,7 @@ func (s *LicenseService) Register(name, email, password string) (*domain.UserPro
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
-		slog.Error("Supabase signup error", "status", resp.StatusCode, "body", string(body), "email", email)
+		slog.Error("Supabase signup error", "status", resp.StatusCode, "bytes", len(body), "email", email)
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			return nil, errors.New(errMsg)
 		}
@@ -182,7 +182,7 @@ func (s *LicenseService) ResendOTP(email string) (*domain.UserProfile, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
-		slog.Error("Supabase resend OTP error", "status", resp.StatusCode, "body", string(body), "email", email)
+		slog.Error("Supabase resend OTP error", "status", resp.StatusCode, "bytes", len(body), "email", email)
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			return nil, errors.New(errMsg)
 		}
@@ -254,7 +254,7 @@ func (s *LicenseService) VerifyOTP(email, token string) (*domain.UserProfile, er
 			}
 		}
 
-		slog.Warn("Supabase verify attempt failed", "type", vType, "status", resp.StatusCode, "body", string(body))
+		slog.Warn("Supabase verify attempt failed", "type", vType, "status", resp.StatusCode, "bytes", len(body))
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			lastErr = errors.New(errMsg)
 		} else {
@@ -342,7 +342,7 @@ func (s *LicenseService) Login(email, password string) (*domain.UserProfile, err
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
-		slog.Error("Supabase login error", "status", resp.StatusCode, "body", string(body), "email", email)
+		slog.Error("Supabase login error", "status", resp.StatusCode, "bytes", len(body), "email", email)
 		if errMsg := parseSupabaseError(body); errMsg != "" {
 			if strings.Contains(errMsg, "تأكيد") || strings.Contains(string(body), "Email not confirmed") {
 				return nil, errors.New(errMsg) // Wails will just pass the error string

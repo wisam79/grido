@@ -5,6 +5,7 @@ import type { KonvaEventObject } from 'konva/lib/Node';
 import { KonvaCollageImage } from '../elements/collage-image';
 import type { CanvasSlot as Slot, CollageTemplate } from '@/lib/store/types';
 import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
+import { buildMidpointCutLines, type AxisInterval } from '@/lib/print/cut-lines-utils';
 import {
   useCanvasColors,
   collageCut,
@@ -81,59 +82,36 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   const { margin, gap, availW, availH } = geo;
 
   // ✂️ حساب خطوط الشبكة الممتدة المفردة لمنتصف الفجوة 50% (Single Midpoint Cut Lines)
+  // 📐 الرياضيات من المصدر المشترك الوحيد (buildMidpointCutLines) — نفس الذي
+  // تستخدمه معاينة الطباعة ومسار Go، بانحياز البكسل بدل المليمتر هنا. أي
+  // تعديد سابق للتقاصد كان يقصّ الخانات في التخطيطات المتراكبة (P1).
   const cutLinesData = React.useMemo(() => {
     if (!collageShowCutLines || slots.length === 0) return null;
 
-    const colLefts = new Set<number>();
-    const colRights = new Set<number>();
-    const rowTops = new Set<number>();
-    const rowBottoms = new Set<number>();
+    // 🛡️ كائن هندسة محلي داخل الـ memo: geo يُبنى جديداً في كل render، ومروره
+    // كـ dependency يُبطل الذاكرة المؤقتة كل إطار (الثوابت الأربعة كافية ومستقرة).
+    const rectGeo = { margin, gap, availW, availH };
+    const xIntervals: AxisInterval[] = [];
+    const yIntervals: AxisInterval[] = [];
 
     for (const slot of slots) {
-      const left = Math.round(margin + slot.x * availW + gap / 2);
-      const top = Math.round(margin + slot.y * availH + gap / 2);
-      const right = Math.round(left + slot.w * availW - gap);
-      const bottom = Math.round(top + slot.h * availH - gap);
-
-      colLefts.add(left);
-      colRights.add(right);
-      rowTops.add(top);
-      rowBottoms.add(bottom);
+      // الأبعاد غير الصالحة (0 أو NaN) تُستبعد — والمستطيل من getSlotRect
+      // وهو مصدر هندسة الخلية الوحيد (رسم + التقاط موضع + خطوط القص).
+      if (!(slot.w > 0 && slot.h > 0)) continue;
+      const rect = getSlotRect(slot, rectGeo);
+      xIntervals.push({ start: rect.left, end: rect.left + rect.width });
+      yIntervals.push({ start: rect.top, end: rect.top + rect.height });
     }
 
-    const sortedLefts = Array.from(colLefts).sort((a, b) => a - b);
-    const sortedRights = Array.from(colRights).sort((a, b) => a - b);
-    const sortedTops = Array.from(rowTops).sort((a, b) => a - b);
-    const sortedBottoms = Array.from(rowBottoms).sort((a, b) => a - b);
-
-    if (sortedLefts.length === 0 || sortedTops.length === 0) return null;
-
-    // خطوط X المنفردة: اليسار الخارجي، منتصف الفجوة لكل عمودين متجاورين، اليمين الخارجي
-    const xCutLines: number[] = [];
-    xCutLines.push(Math.round(sortedLefts[0] - gap / 2));
-    for (let i = 0; i < sortedRights.length - 1; i++) {
-      const midX = Math.round((sortedRights[i] + sortedLefts[i + 1]) / 2);
-      xCutLines.push(midX);
-    }
-    xCutLines.push(Math.round(sortedRights[sortedRights.length - 1] + gap / 2));
-
-    // خطوط Y المنفردة: الأعلى الخارجي، منتصف الفجوة لكل صفين متجاورين، الأسفل الخارجي
-    const yCutLines: number[] = [];
-    yCutLines.push(Math.round(sortedTops[0] - gap / 2));
-    for (let i = 0; i < sortedBottoms.length - 1; i++) {
-      const midY = Math.round((sortedBottoms[i] + sortedTops[i + 1]) / 2);
-      yCutLines.push(midY);
-    }
-    const gridBottomY = Math.round(sortedBottoms[sortedBottoms.length - 1] + gap / 2);
-    yCutLines.push(gridBottomY);
-
-    const minX = xCutLines[0];
-    const maxX = xCutLines[xCutLines.length - 1];
-    const minY = yCutLines[0];
-    const maxY = yCutLines[yCutLines.length - 1];
-
-    return { xCutLines, yCutLines, minX, maxX, minY, maxY };
-  }, [collageShowCutLines, slots, margin, availW, availH, gap]);
+    return buildMidpointCutLines({
+      xIntervals,
+      yIntervals,
+      gapX: gap,
+      gapY: gap,
+      paperWidth: canvasWidth,
+      paperHeight: canvasHeight,
+    });
+  }, [collageShowCutLines, slots, margin, availW, availH, gap, canvasWidth, canvasHeight]);
 
   const renderCutLines = () => {
     if (!cutLinesData) return null;

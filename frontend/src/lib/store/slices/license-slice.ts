@@ -138,6 +138,19 @@ let inFlightCheck: Promise<UserProfile | null> | null = null;
 // نداءان متزامنان يتشاركان نفس الوعد بدل تحميل الملف مرتين
 let inFlightAiLogsLoad: Promise<AiUsageRecord[]> | null = null;
 
+/**
+ * إبطال أي فحص ترخيص معلّق (in-flight) بعد نجاح مسار مصادقة.
+ * 🛡️ تسابق زمني: كان فحص `checkLicenseStatus` بدأه الإقلاع/شاشة الترخيص قبل
+ * الدخول يُكمل بعد نجاح الدخول فيكتب `set({ user })` من جلسة قديمة (أو null
+ * قبل وجود الجلسة) — فيطمس جلسة سجّل المستخدم للتو فيرتدّ لواجهة الترخيص.
+ * رفع الجيل يُلغي نتيجة الفحص القديم (حارس `epoch !== licenseCheckEpoch`)،
+ * وتصفير inFlight يمنع مشاركة وعده القديم مع نداء جديد.
+ */
+function invalidateInFlightLicenseCheck(): void {
+  licenseCheckEpoch++;
+  inFlightCheck = null;
+}
+
 export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice> = (set, get) => ({
   user: null,
   licenseLoading: false,
@@ -229,6 +242,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     try {
       const profile = await LicenseHandler.RegisterAccount(name, email, password);
       if (!profile) throw new Error('فشل إنشاء الحساب');
+      invalidateInFlightLicenseCheck();
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
@@ -243,6 +257,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     try {
       const profile = await LicenseHandler.VerifyOTP(email, otp);
       if (!profile) throw new Error('رمز التحقق غير صحيح');
+      invalidateInFlightLicenseCheck();
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
@@ -271,6 +286,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     try {
       const profile = await LicenseHandler.LoginAccount(email, password);
       if (!profile) throw new Error('بريد إلكتروني أو كلمة مرور غير صحيحة');
+      invalidateInFlightLicenseCheck();
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
@@ -285,6 +301,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     try {
       const profile = await LicenseHandler.LoginWithGoogle();
       if (!profile) throw new Error('فشل تسجيل الدخول بواسطة Google');
+      invalidateInFlightLicenseCheck();
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
@@ -299,6 +316,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     try {
       const profile = await LicenseHandler.ActivateLicenseKey(key);
       if (!profile) throw new Error('مفتاح تفعيل غير صالحة أو مستخدم سابقاً');
+      invalidateInFlightLicenseCheck();
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {
@@ -325,6 +343,7 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     try {
       const profile = await LicenseHandler.VerifyRecoveryOTP(email, token, newPassword);
       if (!profile) throw new Error('فشل تعيين كلمة المرور الجديدة');
+      invalidateInFlightLicenseCheck();
       set({ user: profile, licenseLoading: false });
       return profile;
     } catch (err: unknown) {

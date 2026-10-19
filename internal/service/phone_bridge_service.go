@@ -29,7 +29,16 @@ var phoneCameraPageHTML []byte
 const (
 	DefaultPhoneBridgePort = 8741
 	MaxUploadSize          = 50 * 1024 * 1024 // 50MB
+
+	// رسائل عربية واضحة تُبثّ للواجهة عبر حدث phone:cloud-error. بدونها يصمت
+	// الجسر السحابي فيبقى المصوّر ينتظر صوراً لا تصل أبداً بلا سبب ظاهر.
+	errPhoneBridgeSignInRequired = "يجب تسجيل الدخول إلى حساب Grido أولاً لتشغيل جسر الكاميرا عبر الإنترنت — استخرج رمز الـQR بعد الدخول، أو استخدم وضع الشبكة المحلية (LAN)."
+	errPhoneBridgeSessionInvalid = "تعذّر التحقق من جلسة حسابك في Supabase (انتهت الصلاحية أو رُفض التوكن) — أعد تسجيل الدخول ثم شغّل جسر الكاميرا من جديد."
 )
+
+// phoneBridgeAuthClient — عميل محدود المهلة (5ث) لاشتقاق هوية المستخدم. لا
+// يُشارَك مع عملاء AI (10-15ث) حتى لا تتجمّد واجهة فتح الجسر على شبكة بطيئة.
+var phoneBridgeAuthClient = &http.Client{Timeout: 5 * time.Second}
 
 type BridgeInfo struct {
 	IP        string `json:"ip"`
@@ -65,7 +74,16 @@ type PhoneBridgeService struct {
 	pairedDevice  string
 	receivedCount int
 	lastReceived  string
-	mu            sync.RWMutex
+	// cloudUserID/cloudAccessToken هوية session المستخدم المسجّل: المفتاح العام
+	// (anon) لم يعد يملك أي تفويض على الباكت — قائمة/سحب/حذف كائنات الجسر
+	// تتطلب JWT المستخدم (`Authorization: Bearer`)، ومسار الكائنات الشخصي
+	// `<uid>/<sessionToken>/...` هو ما تفرضه سياسات RLS على storage.objects.
+	// 🔒 لا تُسجَّل حقول الهوية أبداً (سجلّ التطبيق ملف على قرص المستخدم).
+	cloudUserID      string
+	cloudAccessToken string
+	// cloudErrMsg آخر رسالة خطأ سحابية عربية معروضة للمستخدم (تُمسح عند النجاح)
+	cloudErrMsg string
+	mu          sync.RWMutex
 }
 
 func NewPhoneBridgeService(mediaSvc *MediaService) *PhoneBridgeService {
@@ -91,12 +109,160 @@ func (s *PhoneBridgeService) SetContext(ctx context.Context) {
 	s.ctx = ctx
 }
 
+// resolveCloudIdentity يقرأ توكن الدخول من المخزن المشفّر المحلي
+// (`utils.LoadEncryptedToken`) ويشتق معرّف المستخدم من Supabase Auth بنفس
+// التوكن. القيم المعادة: (معرّف المستخدم، توكن الدخول، الخطأ).
+// أخطاءٌ كلها عربية جاهزة للعرض في الواجهة، لأنها حالُ مستخدم لا خطأ نظام،
+// وبدونها يصمت الجسر السحابي بلا سبب مفهوم.
+func (s *PhoneBridgeService) resolveCloudIdentity() (string, string, error) {
+	if SupabaseURL == "" || SupabaseAnonKey == "" {
+		return "", "", errors.New(errPhoneBridgeSignInRequired)
+	}
+
+	accessToken, _, err := utils.LoadEncryptedToken()
+	if err != nil || accessToken == "" {
+		// لا ملف توكن/ملف تالف ⇒ لا جلسة حسّابة ⇒ لا تفويض سحابي
+		return "", "", errors.New(errPhoneBridgeSignInRequired)
+	}
+
+	userID, err := fetchSupabaseBridgeUserID(accessToken)
+	if err != nil || userID == "" {
+		// سجلّ التشخيص بالأخطاء الشبكية فقط (حظر تسريب نص الاستجابة/التوكن)
+		slog.Warn("phone bridge: unable to derive Supabase user id from stored session token")
+		return "", "", errors.New(errPhoneBridgeSessionInvalid)
+	}
+
+	return userID, accessToken, nil
+}
+
+// fetchSupabaseBridgeUserID يشتق معرّف (`sub`) مستخدم Supabase عبر
+// `/auth/v1/user` باستخدام JWT المستخدم — مرآة مصغّرة لـ fetchSupabaseUserInfo:
+// نحتاج الهوية فقط لتشكيل مسار RLS، فلا داعي لطلب جدول `profiles`.
+// 🔒 لا يُسجَّل جسم الاستجابة أبداً (قد يحمل توكنات)، فقط الحالة Code.
+func fetchSupabaseBridgeUserID(accessToken string) (string, error) {
+	if accessToken == "" {
+		return "", errors.New("empty access token")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, strings.TrimRight(SupabaseURL, "/")+"/auth/v1/user", nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("apikey", SupabaseAnonKey)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := phoneBridgeAuthClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("supabase auth user lookup returned %d", resp.StatusCode)
+	}
+
+	var userData struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 256*1024)).Decode(&userData); err != nil || userData.ID == "" {
+		return "", errors.New("invalid user payload from supabase auth")
+	}
+	return userData.ID, nil
+}
+
+// cloudObjectPrefix مسار الجلسة السحابية الشخصي: `<uid>/<sessionToken>`.
+// كل الكائنات (صور + مصافحة الاقتران) تُكتب ويُقرأ داخل هذا البادئة فقط.
+func (s *PhoneBridgeService) cloudObjectPrefixLocked() string {
+	if s.cloudUserID == "" || s.token == "" {
+		return ""
+	}
+	return s.cloudUserID + "/" + s.token
+}
+
+// initCloudSyncLocked يبدأ (أو يُعيد) استقصاء الجسر السحابي. القفل ممسوك.
+// 🛡️ لا يُطلق أي طلب سحابي بالمفتاح العام (anon): بلا جلسة مستخدم مُحقَّقة لا
+// توجد مزامنة سحابية إطلاقاً، ويُبثّ خطأ عربي واضح للمستخدم بدل الصمت.
+func (s *PhoneBridgeService) initCloudSyncLocked() {
+	if s.cloudCancel != nil {
+		return // المزامنة تعمل بالفعل
+	}
+
+	if s.cloudUserID == "" || s.cloudAccessToken == "" {
+		s.emitCloudErrorLocked(s.cloudErrMsg)
+		return
+	}
+
+	cloudPrefix := s.cloudObjectPrefixLocked()
+	if cloudPrefix == "" {
+		s.emitCloudErrorLocked(errPhoneBridgeSignInRequired)
+		return
+	}
+
+	cloudCtx, cancel := context.WithCancel(context.Background())
+	s.cloudCancel = cancel
+	objectPrefix := cloudPrefix
+	accessToken := s.cloudAccessToken
+	sessionToken := s.token
+	utils.SafeGo("phone-bridge.cloud-sync", func() {
+		s.pollCloudBridge(cloudCtx, sessionToken, objectPrefix, accessToken)
+	})
+}
+
+// emitCloudErrorLocked يبثّ خطأ الجسر السحابي للواجهة (حدث phone:cloud-error).
+// القفل ممسوك — يتوافق مع بقية بثّ الأحداث داخل Start/Stop.
+func (s *PhoneBridgeService) emitCloudErrorLocked(message string) {
+	if message == "" {
+		message = errPhoneBridgeSignInRequired
+	}
+	if s.cloudErrMsg == "" {
+		s.cloudErrMsg = message
+	}
+	s.runtime.Emit("phone:cloud-error", map[string]string{"message": message})
+}
+
+// disableCloudSync يوقف المزامنة السحابية ويسمح بإعادة تشغيلها لاحقاً (يُستدعى
+// عند رفض الجلسة: انتهت صلاحية JWT مثلاً) ثم يبثّ رسالة عربية واضحة.
+func (s *PhoneBridgeService) disableCloudSync(message string) {
+	s.mu.Lock()
+	if s.cloudCancel != nil {
+		s.cloudCancel()
+		s.cloudCancel = nil
+	}
+	alreadyReported := s.cloudErrMsg
+	s.mu.Unlock()
+
+	if message != "" && message != alreadyReported {
+		s.runtime.Emit("phone:cloud-error", map[string]string{"message": message})
+	}
+}
+
 func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
+	// 0. اشتقاق هوية المستخدم (المطلوبة للمسار السحابي المقصور بالمستخدم) — يُقرأ
+	// **قبل** مسك القفل: نداء Auth محدود المهلة، ولا يصحّ تجميد الحالة/الإيقاف
+	// على شبكة بطيئة. الهوية لا تمنع وضع الشبكة المحلية (LAN)، بل تمنع فقط
+	// المزامنة السحابية التي كانت تعمل بالمفتاح العام قبل تأمين RLS.
+	cloudUserID, cloudToken, cloudErr := s.resolveCloudIdentity()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	// If already running, return current info
 	if s.server != nil && s.listener != nil {
+		// الجسر يعمل: نُعيد الجلسة القائمة كما هي (نفس التوكن/المنفذ) ونُعيد
+		// تهيئة المزامنة السحابية إن كانت متوقفة (مثلاً دخل المستخدم لحسابه بعد
+		// محاولة سابقة وهو خارج الحساب).
+		if cloudUserID != "" {
+			s.cloudUserID = cloudUserID
+		}
+		if cloudToken != "" {
+			s.cloudAccessToken = cloudToken
+		}
+		if cloudErr != nil {
+			s.cloudErrMsg = cloudErr.Error()
+		} else {
+			s.cloudErrMsg = ""
+		}
+		s.initCloudSyncLocked()
 		return &BridgeInfo{
 			IP:        s.ip,
 			Port:      s.port,
@@ -120,6 +286,26 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 		return nil, fmt.Errorf("generate session token: %w", err)
 	}
 	s.token = hex.EncodeToString(tokenBytes)
+
+	// 2b. تجهيز رابط الجسر السحابي: يجب أن يحمل بادئة المستخدم
+	// `<uid>/<sessionToken>` لأن سياسات storage.objects تحصر القراءة والحذف على
+	// `(storage.foldername(name))[1] = auth.uid()`. الهاتف يرفع بالمفتاح العام
+	// (INSERT فقط) داخل هذا المسار، والتطبيق يسحبه بـ JWT المستخدم.
+	if cloudErr == nil && cloudUserID != "" {
+		s.cloudUserID = cloudUserID
+		s.cloudAccessToken = cloudToken
+		s.cloudErrMsg = ""
+		s.cloudURL = fmt.Sprintf("https://grido.cloud-ip.cc/cam#session=%s/%s", cloudUserID, s.token)
+	} else {
+		s.cloudUserID = ""
+		s.cloudAccessToken = ""
+		s.cloudURL = ""
+		if cloudErr != nil {
+			s.cloudErrMsg = cloudErr.Error()
+		} else {
+			s.cloudErrMsg = errPhoneBridgeSignInRequired
+		}
+	}
 
 	// 3. Listen on preferred port (8741) or fallback to dynamic port (:0)
 	var listener net.Listener
@@ -168,15 +354,7 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 	})
 
 	// 5. بدء مزامنة الجسر السحابي الذكي الفورية في الخلفية
-	if s.cloudCancel != nil {
-		s.cloudCancel()
-	}
-	cloudCtx, cancel := context.WithCancel(context.Background())
-	s.cloudCancel = cancel
-	tokenCopy := s.token
-	utils.SafeGo("phone-bridge.cloud-sync", func() {
-		s.pollCloudBridge(cloudCtx, tokenCopy)
-	})
+	s.initCloudSyncLocked()
 
 	s.runtime.Emit("phone:status", map[string]interface{}{
 		"isRunning": true,
@@ -202,11 +380,17 @@ func (s *PhoneBridgeService) Stop() error {
 		s.cloudCancel = nil
 	}
 
-	tokenToClean := s.token
+	// تنظيف الكائنات السحابية المتبقية في المسار الشخصي للجلسة
+	// (`<uid>/<sessionToken>` — يتطلب JWT المستخدم وفق سياسات RLS).
+	cloudPrefixToClean := s.cloudObjectPrefixLocked()
+	cloudTokenToClean := s.cloudAccessToken
+	s.cloudUserID = ""
+	s.cloudAccessToken = ""
+	s.cloudErrMsg = ""
 
 	if s.server == nil {
-		if tokenToClean != "" {
-			s.cleanCloudSession(tokenToClean)
+		if cloudPrefixToClean != "" && cloudTokenToClean != "" {
+			s.cleanCloudSession(cloudPrefixToClean, cloudTokenToClean)
 		}
 		s.runtime.Emit("phone:status", map[string]interface{}{
 			"isRunning":     false,
@@ -227,8 +411,8 @@ func (s *PhoneBridgeService) Stop() error {
 	s.token = ""
 	s.pairedDevice = ""
 
-	if tokenToClean != "" {
-		s.cleanCloudSession(tokenToClean)
+	if cloudPrefixToClean != "" && cloudTokenToClean != "" {
+		s.cleanCloudSession(cloudPrefixToClean, cloudTokenToClean)
 	}
 
 	s.runtime.Emit("phone:status", map[string]interface{}{
@@ -536,9 +720,16 @@ type cloudStorageItem struct {
 
 // pollCloudBridge يقوم بالاستماع اللحظي إلى باكت Supabase Storage المؤقت، وسحب أي صورة
 // تم التقاطها من هاتف المستخدم وحفظها محلياً فورياً ثم حذفها من السيرفر فوراً.
-func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken string) {
+func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, objectPrefix, userJWT string) {
 	if SupabaseURL == "" || SupabaseAnonKey == "" {
 		slog.Debug("Supabase credentials not configured, skipping cloud bridge sync")
+		return
+	}
+	if objectPrefix == "" || userJWT == "" {
+		// بلا هوية مستخدم مُحقَّقة لا استقصاء: الباكت مؤمَّن بسياسات RLS ولا يملك
+		// المفتاح العام أي تفويض عليه بعد الآن (فشل مُغلق بدل صمت محيّر).
+		slog.Warn("phone bridge cloud sync skipped: missing authenticated user identity")
+		s.disableCloudSync(errPhoneBridgeSignInRequired)
 		return
 	}
 
@@ -556,21 +747,22 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 	ticker := time.NewTicker(350 * time.Millisecond)
 	defer ticker.Stop()
 
-	listURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/list/phone-bridge"
-	deleteURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge"
+	bucketBase := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge"
+	listURL := bucketBase + "/list"
+	deleteURL := bucketBase
 	processedFiles := make(map[string]time.Time)
 
 	for {
 		select {
 		case <-ctx.Done():
-			s.cleanCloudSession(sessionToken)
+			s.cleanCloudSession(objectPrefix, userJWT)
 			return
 		case <-ticker.C:
 			s.mu.RLock()
 			running := s.server != nil && s.token == sessionToken
 			s.mu.RUnlock()
 			if !running {
-				s.cleanCloudSession(sessionToken)
+				s.cleanCloudSession(objectPrefix, userJWT)
 				return
 			}
 
@@ -584,7 +776,7 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 
 			// 1. فحص وجود كائنات في المسار المؤقت لجلسة المستخدم الحالية
 			listPayload, err := json.Marshal(map[string]interface{}{
-				"prefix": sessionToken + "/",
+				"prefix": objectPrefix + "/",
 				"limit":  10,
 			})
 			if err != nil {
@@ -596,12 +788,21 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 				continue
 			}
 			req.Header.Set("apikey", SupabaseAnonKey)
-			req.Header.Set("Authorization", "Bearer "+SupabaseAnonKey)
+			req.Header.Set("Authorization", "Bearer "+userJWT)
 			req.Header.Set("Content-Type", "application/json")
 
 			resp, err := client.Do(req)
 			if err != nil {
 				continue
+			}
+
+			// رفض التفويض (401/403) = JWT منتهي/مرفوض ⇒ توقف صريح برسالة عربية
+			// بدل استمرار صمت: بلا JWT صالح لا يرى المستخدم أي صورة قادمة.
+			if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+				resp.Body.Close()
+				slog.Warn("phone bridge cloud session rejected by supabase storage", "status", resp.StatusCode)
+				s.disableCloudSync(errPhoneBridgeSessionInvalid)
+				return
 			}
 
 			if resp.StatusCode != http.StatusOK {
@@ -628,15 +829,15 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 				}
 				processedFiles[item.Name] = now
 
-				objectPath := sessionToken + "/" + item.Name
+				objectPath := objectPrefix + "/" + item.Name
 
 				// معالجة مصافحة اقتران الجهاز (Handshake)
 				if strings.HasSuffix(item.Name, ".handshake.json") || strings.HasSuffix(item.Name, ".handshake") {
-					downURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge/" + objectPath
+					downURL := bucketBase + "/" + objectPath
 					downReq, _ := http.NewRequestWithContext(ctx, "GET", downURL, nil)
 					if downReq != nil {
 						downReq.Header.Set("apikey", SupabaseAnonKey)
-						downReq.Header.Set("Authorization", "Bearer "+SupabaseAnonKey)
+						downReq.Header.Set("Authorization", "Bearer "+userJWT)
 						if dResp, err := client.Do(downReq); err == nil && dResp.StatusCode == http.StatusOK {
 							var hsData struct {
 								Device string `json:"device"`
@@ -659,23 +860,23 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 							}
 						}
 					}
-					s.deleteCloudObject(deleteURL, objectPath)
+					s.deleteCloudObject(deleteURL, objectPath, userJWT)
 					continue
 				}
 
 				if strings.HasPrefix(item.Name, ".") {
-					s.deleteCloudObject(deleteURL, objectPath)
+					s.deleteCloudObject(deleteURL, objectPath, userJWT)
 					continue
 				}
 
-				downloadURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge/" + objectPath
+				downloadURL := bucketBase + "/" + objectPath
 
 				downReq, dErr := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
 				if dErr != nil {
 					continue
 				}
 				downReq.Header.Set("apikey", SupabaseAnonKey)
-				downReq.Header.Set("Authorization", "Bearer "+SupabaseAnonKey)
+				downReq.Header.Set("Authorization", "Bearer "+userJWT)
 
 				downResp, dErr := client.Do(downReq)
 				if dErr != nil || downResp.StatusCode != http.StatusOK {
@@ -692,7 +893,7 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 
 				if !strings.HasPrefix(detectedMime, "image/") {
 					downResp.Body.Close()
-					s.deleteCloudObject(deleteURL, objectPath)
+					s.deleteCloudObject(deleteURL, objectPath, userJWT)
 					continue
 				}
 
@@ -709,15 +910,26 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 					continue
 				}
 
-				_, copyErr := io.Copy(af, io.LimitReader(fullReader, MaxUploadSize))
+				// الاقتطاع الصامت يُدمّر الأصلية (RV): ننسخ بحد+1 فأي زيادة بايت
+				// واحد تعني كائناً ناقصاً ⇒ إجهاض بدون الحذف من السحابة حتى لا
+				// يُفقد الأصل نهائياً (نمط asset_server.go: /api/upload-print-image).
+				written, copyErr := io.Copy(af, io.LimitReader(fullReader, MaxUploadSize+1))
 				downResp.Body.Close()
 
 				if copyErr != nil {
 					af.Abort()
+					slog.Warn("phone bridge: aborted streaming oversized cloud object", "object", objectPath, "written", written)
+					continue
+				}
+
+				if written > MaxUploadSize {
+					af.Abort()
+					slog.Warn("phone bridge: cloud object exceeds upload budget, kept in bucket for retry", "object", objectPath, "written", written)
 					continue
 				}
 
 				if commitErr := af.Commit(); commitErr != nil {
+					af.Abort()
 					continue
 				}
 
@@ -742,15 +954,17 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken s
 				slog.Info("Phone bridge received cloud photo successfully", "path", virtualPath)
 
 				// 3. الحذف الفوري (Instant Purge) من السيرفر السحابي في الخلفية دون تعطيل ظهور الصورة
-				go s.deleteCloudObject(deleteURL, objectPath)
+				go s.deleteCloudObject(deleteURL, objectPath, userJWT)
 			}
 		}
 	}
 }
 
-// deleteCloudObject يحذف الملف من باكت التخزين السحابي فوراً
-func (s *PhoneBridgeService) deleteCloudObject(deleteURL, objectPath string) {
-	if SupabaseURL == "" || SupabaseAnonKey == "" {
+// deleteCloudObject يحذف الملف من باكت التخزين السحابي فوراً بتفويض JWT المستخدم
+// (سياسة DELETE على storage.objects مقصورة على `authenticated` داخل مسار
+// `<uid>/...` — المفتاح العام لم يبق له أي تفويض على الباكت).
+func (s *PhoneBridgeService) deleteCloudObject(deleteURL, objectPath, userJWT string) {
+	if objectPath == "" || userJWT == "" || SupabaseURL == "" || SupabaseAnonKey == "" {
 		return
 	}
 	delPayload, err := json.Marshal(map[string]interface{}{
@@ -764,7 +978,7 @@ func (s *PhoneBridgeService) deleteCloudObject(deleteURL, objectPath string) {
 		return
 	}
 	req.Header.Set("apikey", SupabaseAnonKey)
-	req.Header.Set("Authorization", "Bearer "+SupabaseAnonKey)
+	req.Header.Set("Authorization", "Bearer "+userJWT)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 5 * time.Second}
@@ -774,12 +988,13 @@ func (s *PhoneBridgeService) deleteCloudObject(deleteURL, objectPath string) {
 	}
 }
 
-// cleanCloudSession ينظف كافة ملفات الجلسة السحابية عند إغلاق الجسر
-func (s *PhoneBridgeService) cleanCloudSession(sessionToken string) {
-	if sessionToken == "" || SupabaseURL == "" || SupabaseAnonKey == "" {
+// cleanCloudSession ينظف كافة ملفات الجلسة السحابية عند إغلاق الجسر.
+// توقيعه الجديد يقبل بادئة المسار الشخصي `<uid>/<sessionToken>` و JWT تفويضها،
+// لأن حذف الباكت يستدعي الآن دور `authenticated` بنفس هوية المستخدم.
+func (s *PhoneBridgeService) cleanCloudSession(objectPrefix, userJWT string) {
+	if objectPrefix == "" || userJWT == "" || SupabaseURL == "" || SupabaseAnonKey == "" {
 		return
 	}
 	deleteURL := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge"
-	s.deleteCloudObject(deleteURL, sessionToken)
+	s.deleteCloudObject(deleteURL, objectPrefix, userJWT)
 }
-

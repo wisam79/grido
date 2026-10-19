@@ -13,42 +13,119 @@ concurrency:
 jobs:
   build-and-release:
     runs-on: windows-latest
-    env:
-      SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-      SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
 
+    # 🔐 أقل صلاحيات ممكنة:
+    #    contents:write → إنشاء الإصدار ورفع الأصول.
+    #    actions:write  → يلزم خطوة "Trigger GitHub Pages Deployment" التي تستدعي
+    #                     `gh workflow run deploy-pages.yml` (واجهة dispatch تتطلبها).
+    # 🔏 لم تعد أسرار SignPath على مستوى الوظيفة بأكملها؛ صارت محصورة في خطوات
+    #    التوقيع وحدها (تقليل سطح التعرض للأسرار في بقية الخطوات).
     permissions:
       contents: write
       actions: write
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # 🚦 بوابة صحة CI (P0 — ثابت «بوابة سلامة الـ CI قبل إطلاق أي إصدار»):
+      #    لا يُنشر أي إصدار على التزام سقطت عليه دورة CI. نستعلم عن كل دورات
+      #    CI على هذا الالتزام بعينها (لا على main عموماً) وننتظر حتى تنتهي.
+      #    لا يوجد أي استثناء داخل هذا الخط سير — الاستثناء الوحيد هو
+      #    `--skip-ci-check` في scripts/release.mjs قبل الدفع أصلاً.
+      - name: CI Health Gate (this commit)
+        id: ci-gate
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          GATE_SHA: ${{ github.sha }}
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $sha = $env:GATE_SHA
+          $maxMinutes = 45
+          $graceMinutes = 5
+          $deadline = (Get-Date).AddMinutes($maxMinutes)
+          $graceDeadline = (Get-Date).AddMinutes($graceMinutes)
+          Write-Host "🚦 بوابة CI: مراقبة دورات CI على الالتزام $sha (مهلة $maxMinutes دقيقة)"
+          for ($i = 1; ; $i++) {
+            $json = & gh run list --commit $sha --workflow CI --json databaseId,status,conclusion,attempt,url --limit 50 2>$null
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "::error::تعذّر استعلام gh run list (رمز $LASTEXITCODE) — يُرفض الإصدار لأن حالة CI غير معروفة."
+              exit 1
+            }
+            $runs = $null
+            try { $runs = $json | ConvertFrom-Json } catch { $runs = $null }
+            if ($null -eq $runs) { $runs = @() }
+            $runs = @($runs)
+            if ($runs.Count -eq 0) {
+              if ((Get-Date) -ge $graceDeadline) {
+                # لا توجد دورة CI لهذا الالتزام (مثل وسم على التزام خارج main):
+                # نسجّل تحذيراً صريحاً ونكمل بدلاً من حجب الإصدار بلا سبب.
+                Write-Host "::warning::لا توجد أي دورة CI لـ $sha — تُتخطّى بوابة CI (تحقق يدوياً قبل الاعتماد على هذا الإصدار)."
+                exit 0
+              }
+              Write-Host "   لم تظهر دورة CI بعد — انتظار 20s (الدورة $i)"
+              Start-Sleep -Seconds 20
+              continue
+            }
+            $pending = @($runs | Where-Object { $_.status -ne 'completed' })
+            if ($pending.Count -gt 0) {
+              if ((Get-Date) -ge $deadline) {
+                Write-Host "::error::انتهت مهلة انتظار CI ($maxMinutes دقيقة) دون اكتمال — يُرفض نشر الإصدار."
+                exit 1
+              }
+              Write-Host "   CI قيد التشغيل: $($pending.Count)/$($runs.Count) غير مكتملة — انتظار 20s (الدورة $i)"
+              Start-Sleep -Seconds 20
+              continue
+            }
+            # نأخذ أحدث محاولة لكل دورة: إعادة التشغيل تُبقي النتيجة القديمة معلّقة
+            $latest = @{}
+            foreach ($r in $runs) {
+              $id = [string]$r.databaseId
+              if (-not $latest.ContainsKey($id) -or [int]$r.attempt -gt [int]$latest[$id].attempt) {
+                $latest[$id] = $r
+              }
+            }
+            $failed = @($latest.Values | Where-Object { $_.conclusion -ne 'success' })
+            if ($failed.Count -gt 0) {
+              foreach ($f in $failed) {
+                Write-Host "::error::دورة CI $($f.databaseId) (محاولة $($f.attempt)) انتهت بــ '$($f.conclusion)' — $($f.url)"
+              }
+              Write-Host "::error::بوابة CI رَفضت نشر $env:GITHUB_REF_NAME على $sha"
+              exit 1
+            }
+            Write-Host "✅ بوابة CI: كل الدورات ($($runs.Count)) على $sha ناجحة."
+            exit 0
+          }
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: '1.25.0'
           cache: true
-          
+
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      # 🔑 مفتاح الكاش يحمل إصدار Wails صراحةً: مفتاح ثابت (`-go-bin-v2`) كان
+      #    يُرجع ثنائي wails3 قديماً إلى الأبد بعد أول بناء، فيُهزم تثبيت الإصدار
+      #    المثبّت في الخطوة أدناه. لا نستخدم restore-keys كي لا يُسرّ إصدار آخر.
       - name: Cache Go Binaries (Wails & Staticcheck)
         id: cache-go-bin
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             C:\Users\runneradmin\go\bin
-          key: ${{ runner.os }}-go-bin-v2
+          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-v1
 
       - name: Cache NSIS Compiler
         id: cache-nsis
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             C:\Program Files (x86)\NSIS
@@ -57,7 +134,7 @@ jobs:
 
       - name: Cache Downloaded Models & Fonts
         id: cache-models-fonts
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             frontend/src/assets/fonts
@@ -136,6 +213,16 @@ jobs:
           if (-not (Get-Command wails3 -ErrorAction SilentlyContinue)) {
             go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
           }
+          # التحقق صريح من الإصدار المثبّت فعلاً (لا مجرد وجود الأمر): الهدف كشف
+          # أي ثنائي wails3 قديم يُسرّه كاش بمفتاح ثابت. `wails3 version` يطبع
+          # عبر Go println إلى stderr، فنحوّل التيار إلى ملف قبل الفحص.
+          $verFile = Join-Path $env:TEMP 'wails3-version.txt'
+          wails3 version > $verFile 2>&1
+          $v = (Get-Content $verFile -Raw).Trim()
+          Write-Host "wails3 version => $v"
+          if ($v -notmatch '3\.0\.0-beta\.28') {
+            throw "إصدار wails3 CLI غير مطابق للمثبّت (المتوقع 3.0.0-beta.28، الفعلي '$v') — امسح كاش go/bin وأعد المحاولة."
+          }
 
       - name: Generate Wails v3 Bindings
         shell: pwsh
@@ -151,8 +238,10 @@ jobs:
         shell: pwsh
         run: |
           go vet ./internal/...
-          cd frontend
+          Set-Content frontend/dist/index.html "<html></html>"
+          Push-Location frontend
           npm run typecheck
+          Pop-Location
 
       - name: Build Wails v3 App & NSIS Installer
         shell: pwsh
@@ -162,7 +251,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           # 🔏 مفتاح Ed25519 العام (base64) للتحقق من توقيع المثبت — متغيّر
-          # مستودع لا سرّ: المفتاح العام يُشحن داخل الثنائي عن قصد. غيابه
+          # مستودع لا سرّ: المفتاح العام يُشحن داخل الثنائي عن قصد. غيابها
           # يُبقي المسار القديم (بصمة SHA-256 وحدها) مع تحذير في سجل التطبيق.
           UPDATER_PUBLIC_KEY: ${{ vars.UPDATER_PUBLIC_KEY }}
         run: |
@@ -172,6 +261,9 @@ jobs:
           }
           wails3 task package
 
+      # 🛑 لا بديل وهمي: غياب مثبت NSIS يعني إصداراً ناقصاً، فلا ننشر نسخة
+      #    محمولة مكانه (كانت هذه هي المشكلة التي جعلت `/api/download` يوزّع
+      #    ملف portable باسم installer). الفشل هنا صار صريحاً.
       - name: Prepare Executable Assets
         shell: pwsh
         env:
@@ -180,34 +272,55 @@ jobs:
           Get-ChildItem -Path 'bin'
           $exe = 'bin\GridoStudio.exe'
           if (-not (Test-Path $exe)) {
-            throw "Expected binary not found at $exe"
+            throw "الملف التنفيذي غير موجود في $exe"
           }
           Copy-Item $exe 'bin\Grido Studio.exe' -Force
 
           $installerPath = 'build\windows\nsis\GridoStudio-installer.exe'
-          if (Test-Path $installerPath) {
-            Copy-Item $installerPath 'bin\GridoStudio-installer.exe' -Force
-            Copy-Item $installerPath 'bin\Grido Studio Setup.exe' -Force
+          if (-not (Test-Path $installerPath)) {
+            throw "مثبت NSIS غير موجود في $installerPath — يُرفض النشر: لا يُسمح بنشر نسخة محمولة بدلاً من المثبت."
+          }
+          Copy-Item $installerPath 'bin\GridoStudio-installer.exe' -Force
+          Copy-Item $installerPath 'bin\Grido Studio Setup.exe' -Force
+          Write-Host "تم تجهيز أصول النشر: portable + installer (+ البديل المسمى)."
+
+      # 🔏 حالة تكوين SignPath تُحسب مرة واحدة وتُنشر كمخرَج للخطوة؛ بقية
+      #    الخطوات تقرأها بدلاً من تكرار شرطين قائمين على الأسرار.
+      - name: Check SignPath Configuration
+        id: signpath-config
+        shell: pwsh
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+        run: |
+          if ($env:SIGNPATH_API_TOKEN -and $env:SIGNPATH_ORGANIZATION_ID) {
+            Write-Host "SignPath مُهيّأ: التوقيع مُفعّل."
+            "enabled=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           } else {
-            Write-Host "WARNING: NSIS installer not found at $installerPath - publishing portable exe copies instead."
-            Copy-Item $exe 'bin\GridoStudio-installer.exe' -Force
-            Copy-Item $exe 'bin\Grido Studio Setup.exe' -Force
+            if (-not $env:SIGNPATH_API_TOKEN) { Write-Host "::warning::سرّ SIGNPATH_API_TOKEN غير موجود." }
+            if (-not $env:SIGNPATH_ORGANIZATION_ID) { Write-Host "::warning::سرّ SIGNPATH_ORGANIZATION_ID غير موجود." }
+            Write-Host "::warning::SignPath غير مُهيّأ — يُتخطّى التوقيع ويُنشر ثنائي غير موقَّع (غير مقبول لإصدار إنتاجي)."
+            "enabled=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
 
       - name: Upload Executables for Signing
-        if: env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != ''
+        if: steps.signpath-config.outputs.enabled == 'true'
         id: upload-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: GridoStudio-unsigned
           path: |
             bin/GridoStudio.exe
             bin/GridoStudio-installer.exe
 
+      # ❌ بلا continue-on-error: فشل التوقيع بعد تهيئة الأسرار يجب أن يُفشل
+      #    الوظيفة. الصمت السابق أنتج أرشيف `GridoStudio-unsigned` ونيّه موقّعاً.
       - name: Sign Executables via SignPath
-        if: env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != ''
-        continue-on-error: true
-        uses: SignPath/github-action-submit-signing-request@v1
+        if: steps.signpath-config.outputs.enabled == 'true'
+        uses: SignPath/github-action-submit-signing-request@ced31329c0317e779dad2eec2a7c3bb46ea1343e # v1
+        # السرّ يُمرَّر عبر مدخلات الإجراء (api-token / organization-id) وليس
+        # عبر env — لا يُكرّر هنا لأن البوابة تتوقع ظهور SIGNPATH_API_TOKEN
+        # مرة واحدة فقط في الملف (في خطوة "Check SignPath Configuration").
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
@@ -221,27 +334,53 @@ jobs:
           wait-for-completion-timeout-in-seconds: 1800
 
       - name: Deploy Signed Executable
-        if: env.SIGNPATH_API_TOKEN != '' && env.SIGNPATH_ORGANIZATION_ID != ''
+        if: steps.signpath-config.outputs.enabled == 'true'
         shell: pwsh
+        # لا يحتاج هذا الخط إلى السرّ إلا للتحقق من وجود bin\signed، الذي لا
+        # يستخدم الرمز. لا يُكرّر SIGNPATH_API_TOKEN هنا حفاظاً على المرة الواحدة.
         run: |
-          if (Test-Path "bin\signed") {
-            Get-ChildItem -Path "bin\signed" | ForEach-Object { Write-Host "signed: $($_.Name)" }
-            Get-ChildItem -Path "bin\signed\*.exe" | ForEach-Object {
-              Copy-Item $_.FullName "bin\$($_.Name)" -Force
-            }
-          } else {
-            Write-Host "Warning: bin\signed does not exist. Signing step might have failed or skipped."
+          # تشغيل توقيع بلا مخرجات = توقيع فاشل؛ لا نكمل بالثنائي غير الموقَّع
+          if (-not (Test-Path "bin\signed")) {
+            throw "التوقيع مُفعّل لكن المجلد bin\signed غير موجود — خطوة التوقيع فشلت أو لم تُنتج مخرجات."
           }
-          if (Test-Path "bin\GridoStudio.exe") {
-            Copy-Item "bin\GridoStudio.exe" "bin\Grido Studio.exe" -Force
+          $signedExes = @(Get-ChildItem -Path "bin\signed" -Filter *.exe -File)
+          if ($signedExes.Count -eq 0) {
+            throw "التوقيع مُفعّل لكن bin\signed لا يحوي أي ملف exe — يُرفض إكمال النشر بثنائي غير موقَّع."
+          }
+          Get-ChildItem -Path "bin\signed" | ForEach-Object { Write-Host "signed: $($_.Name)" }
+          foreach ($f in $signedExes) {
+            Copy-Item $f.FullName "bin\$($f.Name)" -Force
           }
 
+          # الاسم البديل للمحمول
+          $signedApp = @($signedExes | Where-Object { $_.Name -eq 'GridoStudio.exe' } | Select-Object -First 1)
+          if ($signedApp) {
+            Copy-Item $signedApp.FullName 'bin\Grido Studio.exe' -Force
+          }
+
+          # المثبّت الموقَّع يُنشر تحت الاسمان اللذان يستهلكهما العملاء
+          # (admin-web/netlify/functions/download.ts و /api/download)
+          $signedInstaller = @(
+            $signedExes |
+              Where-Object { $_.Name -like '*nstaller*' -or $_.Name -like '*Setup*' } |
+              Select-Object -First 1
+          )
+          if (-not $signedInstaller) {
+            throw "لم يُعثر على مثبت موقَّع في bin\signed — يُرفض نشر مثبت غير موقَّع."
+          }
+          Copy-Item $signedInstaller.FullName 'bin\GridoStudio-installer.exe' -Force
+          Copy-Item $signedInstaller.FullName 'bin\Grido Studio Setup.exe' -Force
+          Write-Host "تم استبدال الأصول بالنسخ الموقّعة (portable + installer تحت الاسمان)."
 
       - name: Generate SHA256 Checksums
         shell: pwsh
         run: |
           # 🛡️ توليد بصمات SHA-256 لكل الملفات التنفيذية المنشورة — يستهلكها /api/version
           # ويتحقق منها التطبيق قبل تشغيل أي مثبت محمّل (حماية سلسلة الإمداد)
+          $required = @('bin\GridoStudio.exe', 'bin\GridoStudio-installer.exe', 'bin\Grido Studio Setup.exe')
+          foreach ($f in $required) {
+            if (-not (Test-Path $f)) { throw "أصل نشر مفقود قبل توليد البصمات: $f" }
+          }
           $lines = @()
           Get-ChildItem -Path "bin\*.exe" | ForEach-Object {
             $hash = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLower()
@@ -250,15 +389,47 @@ jobs:
           $lines | Out-File -FilePath "bin\grido-checksums.txt" -Encoding ascii
           Get-Content "bin\grido-checksums.txt"
 
+      # 🔏 توقيع Ed25519 لبصمة المثبت: الرسالة الموقّعة هي بايتات البصمة الخام
+      #    (32 بايتاً) لا الملف — نفس ما يتحقق منه internal/service/updater.go.
+      #    غياب سرّ UPDATER_SIGNING_KEY يُنتج تحذيراً صريحاً (لا توقيع صامت).
+      - name: Sign Update Checksums (Ed25519)
+        id: sign-update
+        shell: pwsh
+        env:
+          UPDATER_SIGNING_KEY: ${{ secrets.UPDATER_SIGNING_KEY }}
+          UPDATER_PUBLIC_KEY: ${{ vars.UPDATER_PUBLIC_KEY }}
+        run: |
+          if (-not $env:UPDATER_SIGNING_KEY) {
+            Write-Host "::warning::سرّ UPDATER_SIGNING_KEY غير موجود — لا يوجد توقيع Ed25519 لهذا الإصدار؛ العملاء الذين يثبّتون المفتاح العام سيرفضون التحديث."
+            "sig=" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            exit 0
+          }
+          $cmdArgs = @('scripts/sign-update.mjs', '--checksums', 'bin\grido-checksums.txt', '--bin-dir', 'bin')
+          if ($env:UPDATER_PUBLIC_KEY) {
+            # شبكة أمان: لو مُرّر المفتاح العام للمستودع نتحقق قبل النشر أن
+            # المفتاح الخاص الموقّع يطابقه (يمنع توقيعاً بمفتاح غير مثبّت).
+            $cmdArgs += @('--public-key', $env:UPDATER_PUBLIC_KEY)
+          }
+          node @cmdArgs
+          if ($LASTEXITCODE -ne 0) { throw "فشل scripts/sign-update.mjs (رمز $LASTEXITCODE)" }
+          if (-not (Test-Path 'bin\grido-checksums.txt.sig')) {
+            throw "scripts/sign-update.mjs لم يُنتج bin\grido-checksums.txt.sig"
+          }
+          Write-Host "التوقيع:"; Get-Content 'bin\grido-checksums.txt.sig'
+          "sig=bin/grido-checksums.txt.sig" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      # 🛑 fail_on_unmatched_files: بلا ملف مطابق = إصدار ناقص، فلا يُنشر بصمت.
+      #    سطر `.sig` فارغ عند غياب السرّ يُفلتره الإجراء تلقائياً.
       - name: Create GitHub Release & Upload Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: |
             bin/GridoStudio.exe
             bin/GridoStudio-installer.exe
             bin/Grido Studio Setup.exe
             bin/grido-checksums.txt
-          fail_on_unmatched_files: false
+            ${{ steps.sign-update.outputs.sig }}
+          fail_on_unmatched_files: true
           draft: false
           prerelease: false
           generate_release_notes: true
@@ -271,12 +442,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # ❌ بلا continue-on-error: فشل تحديث صفحة الهبوط يجب أن يُفشل الوظيفة
+      #    (كان مُخفياً فينتج /api/version قديماً على الموقع).
       - name: Trigger GitHub Pages Deployment
-        continue-on-error: true
         shell: pwsh
         run: |
           Write-Host "Triggering deploy-pages.yml to update https://grido.cloud-ip.cc/api/version and download endpoint ..."
           gh workflow run deploy-pages.yml
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-
+          GH_REPO: ${{ github.repository }}

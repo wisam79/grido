@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"grido/internal/desktop"
@@ -146,17 +147,21 @@ func main() {
 			if strings.HasPrefix(arg, "-") {
 				continue
 			}
-			if fi, err := os.Stat(arg); err == nil && !fi.IsDir() {
-				ext := strings.ToLower(filepath.Ext(arg))
-				switch ext {
-				case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
-					appInstance.setStartupFile(arg)
-				}
+			if fi, err := os.Stat(arg); err == nil && !fi.IsDir() && isImageFilePath(arg) {
+				appInstance.setStartupFile(arg)
 			}
 		}
 	}
 
 	var mainWindow *application.WebviewWindow
+
+	// 📥 طابور حمولات المثيل الثاني (Single Instance) — يُملأ قبل وجود النافذة:
+	// Wails يُشغّل OnSecondInstanceLaunch على goroutine مستقلة لحظة وصول إشعار
+	// المثيل الثاني (الطابور في newSingleInstanceManager يعمل منذ application.New)،
+	// أي أن النافذة قد لا تكون قد أُنشئت بعد — فقراءة mainWindow فوراً كانت
+	// سباق بيانات، وقد تُفقد Show/Focus/UnMinimise وحدث file-opened كاملاً.
+	// نراكم الحمولة هنا ثم تُصرَّف بعد اكتمال التهيئة (انظر drain أدناه).
+	secondInstanceQueue := make(chan application.SecondInstanceData, 8)
 
 	// 🔔 تهيئة خدمة الإشعارات التفاعلية لويندوز
 	notifSvc := notifications.New()
@@ -213,26 +218,13 @@ func main() {
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "grido-studio-single-instance-lock-v1",
 			OnSecondInstanceLaunch: func(secondInstanceData application.SecondInstanceData) {
-				if mainWindow != nil {
-					mainWindow.UnMinimise()
-					mainWindow.Show()
-					mainWindow.Focus()
-				}
-				if len(secondInstanceData.Args) > 0 {
-					for _, arg := range secondInstanceData.Args {
-						if strings.HasPrefix(arg, "-") {
-							continue
-						}
-						if fi, err := os.Stat(arg); err == nil && !fi.IsDir() {
-							ext := strings.ToLower(filepath.Ext(arg))
-							switch ext {
-							case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
-								if application.Get() != nil {
-									application.Get().Event.Emit("file-opened", arg)
-								}
-							}
-						}
-					}
+				// 🛡️ إرسال غير محجوب: طابور ممتلئ أو لا مستهلك بعد لا يجوز أن
+				// يُعلّق خيط أحداث المثيل الثاني — نُسجّل الفقدان صراحةً.
+				select {
+				case secondInstanceQueue <- secondInstanceData:
+				default:
+					slog.Warn("Second instance launch payload dropped — queue is full",
+						"args", len(secondInstanceData.Args))
 				}
 			},
 		},
@@ -247,7 +239,14 @@ func main() {
 		MinWidth:           840,
 		MinHeight:          560,
 		Frameless:          true,
-		Hidden:             true, // تبدأ مخفية لمنع وميض الحجم — تُظهر بعد WindowRuntimeReady
+		// 🪟 قاعدة دورة حياة Wails v3: لا `Hidden: true` + انتظار غير متزامن
+		// لإظهار النافذة من خيط مختلف (سباق مع Win32/WebView2 قد يُلغي
+		// الإظهار نهائياً — انظر .agents/rules/backend-wails-runtime.md وقاعدة
+		// نجمة SKILL wails-v3-runtime-mastery §1.2). البديل الصحيح: Hidden
+		// مخفي افتراضياً (false) مع تمرير حالة البدء صراحةً عبر StartState
+		// (WindowStateMaximised أو WindowStateNormal) — يطبّقها Wails على خيط
+		// الواجهة أثناء التهيئة فلا يرى المستخدم وميض حجم أو قفزة تكبير.
+		Hidden:             false,
 		ZoomControlEnabled: false,
 		EnableFileDrop:     true,
 		BackgroundType:     application.BackgroundTypeTranslucent,
@@ -276,29 +275,32 @@ func main() {
 	mainWindow = wailsApp.Window.NewWithOptions(winOptions)
 	appInstance.desktopSvc.SetMainWindow(mainWindow)
 
-	// 🪟 إظهار النافذة بعد جاهزية الـ WebView لمنع وميض الحجم الأولي:
-	// النافذة تبدأ مخفية (Hidden:true) فلا يرى المستخدم إطاراً فارغاً أو
-	// قفزة حجم من الافتراضي إلى المُكبّر — تظهر بعد اكتمال تحميل الواجهة.
+	// 🪟 النافذة تُنشأ الآن ظاهرة (Hidden:false + StartState) فلا حاجة لروتين
+	// إظهار مؤجَّل. نكتفي بتأكيد التركيز مرة واحدة وبخنق زمني للتنظيف الأول:
+	// WindowRuntimeReady قد يصل أكثر من مرة (إعادة تحميل/استرجاع WebView2)،
+	// فمرحلة الإقلاع محميّة بـ sync.Once — Once.Do لا يعيد شيئاً أبداً.
+	var runtimeReadyOnce sync.Once
 	mainWindow.OnWindowEvent(events.Common.WindowRuntimeReady, func(_ *application.WindowEvent) {
-		mainWindow.Show()
-		mainWindow.Focus()
-		// 🧹 تنظيف ذكي لذاكرة الإقلاع بعد استقرار واجهة المستخدم
-		time.AfterFunc(2*time.Second, func() {
-			if appInstance != nil && appInstance.memorySvc != nil {
-				appInstance.memorySvc.TrimNow()
-			}
+		runtimeReadyOnce.Do(func() {
+			mainWindow.Show()
+			mainWindow.Focus()
+			// 🧹 تنظيف ذكي لذاكرة الإقلاع بعد استقرار واجهة المستخدم
+			time.AfterFunc(2*time.Second, func() {
+				if appInstance != nil && appInstance.memorySvc != nil {
+					appInstance.memorySvc.TrimNow()
+				}
+			})
 		})
 	})
 
-	// 🧹 تفريغ ذاكرة العمل (Working Set) تلقائياً عند تصغير النافذة أو فقدان التركيز
+	// 🧹 تفريغ ذاكرة العمل عند تصغير النافذة فقط — وبخنق زمني 5 دقائق:
+	// فقدان التركيز أُزيل تماماً لأنه لا يعني ضغط ذاكرة إطلاقاً؛ المستخدم
+	// ينتقل بين نوافذ أخرى باستمرار، وكل فقدان كان يُطلق دورة GC كاملة
+	// (stop-the-world) + EmptyWorkingSet لكل عمليات WebView2 التابعة، فتُجمِّد
+	// الواجهة للحظات بلا سبب. التنظيف الدوري (StartAutoTrim) يحمي الذاكرة.
 	mainWindow.OnWindowEvent(events.Common.WindowMinimise, func(_ *application.WindowEvent) {
 		if appInstance != nil && appInstance.memorySvc != nil {
-			appInstance.memorySvc.TrimNow()
-		}
-	})
-	mainWindow.OnWindowEvent(events.Common.WindowLostFocus, func(_ *application.WindowEvent) {
-		if appInstance != nil && appInstance.memorySvc != nil {
-			appInstance.memorySvc.TrimNow()
+			appInstance.memorySvc.TrimThrottled()
 		}
 	})
 
@@ -314,6 +316,31 @@ func main() {
 	// الاستدعاء قبل Run صحيح ومقصود: Wails يؤجّل إنشاء الصينية حتى الإقلاع.
 	SetupSystemTray(wailsApp, mainWindow)
 
+	// 📥 تصريف حمولات المثيل الثاني بعد وجود النافذة — يُغلق الفتحة بين
+	// application.New (بداية الاستماع لإشارات المثيل الثاني) وإنشاء النافذة:
+	// أي حمولة وصلت قبله تُعالج الآن بالترتيب، فلا يُفقد إظهار/تركيز النافذة
+	// ولا حدث file-opened الذي يستمعه الواجهة. الخيط يعيش طول التطبيق.
+	utils.SafeGo("main.second-instance-drain", func() {
+		for secondInstanceData := range secondInstanceQueue {
+			if mainWindow == nil {
+				continue
+			}
+			if mainWindow.IsMinimised() {
+				mainWindow.UnMinimise()
+			}
+			mainWindow.Show()
+			mainWindow.Focus()
+			for _, arg := range secondInstanceData.Args {
+				if strings.HasPrefix(arg, "-") {
+					continue
+				}
+				if fi, err := os.Stat(arg); err == nil && !fi.IsDir() && isImageFilePath(arg) {
+					wailsApp.Event.Emit("file-opened", arg)
+				}
+			}
+		}
+	})
+
 	// 📂 معالجة سحب وإفلات الملفات من نظام التشغيل مباشرة
 	mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {
 		ctx := e.Context()
@@ -326,9 +353,7 @@ func main() {
 		}
 		var validPaths []string
 		for _, p := range paths {
-			ext := strings.ToLower(filepath.Ext(p))
-			switch ext {
-			case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
+			if isImageFilePath(p) {
 				validPaths = append(validPaths, p)
 			}
 		}
@@ -345,9 +370,18 @@ func main() {
 
 	// ── تتبع أبعاد النافذة قبل التكبير (Restored Geometry) ─────────────
 	// عند الإغلاق أثناء التكبير، mainWindow.Size() تُرجع أبعاد الشاشة
-	// الكاملة — وإذا فُتح التطبيق لاحقاً على شاشة أصغر بحالة max=false
+	// الكاملة — وإذا فُفتح التطبيق لاحقاً على شاشة أصغر بحالة max=false
 	// (شاشة فُصلت مثلاً)، تظهر النافذة بحجم مبالغ فيه.
 	// الحل: نتذكر آخر أبعاد وموضع "طبيعي" ونحفظها بدل أبعاد التكبير.
+	//
+	// 🔒 سباق البيانات: Wails يُوزّع كل مستمع حدث نافذة على goroutine مستقلة
+	// (WebviewWindow.HandleWindowEvent → `go func()` لكل مستمع)، فكانت
+	// restoredW/H و restoredX/Y و lastMaximised تُقرأ وتُكتب بالتوازي من
+	// مسارات WindowDidResize و WindowDidMove و WindowClosing والحفظ الدوري.
+	// القاعدة الصارمة: استدعِ Wails أولاً (Size/Position/IsMaximised) ثم
+	// اقفل القفل واكتب — فلا يُحمل القفل أبداً أثناء نداء Wails (InvokeSync
+	// ينتظر خيط الواجهة الرئيسي، وحمله أثناء نداء آخر قد يُشلّ الإقلاع).
+	var geometryMu sync.Mutex
 	restoredW, restoredH := initialWidth, initialHeight
 	restoredX, restoredY := initialX, initialY
 
@@ -358,16 +392,27 @@ func main() {
 	mainWindow.OnWindowEvent(events.Common.WindowDidResize, func(_ *application.WindowEvent) {
 		isMax := mainWindow.IsMaximised()
 		if !isMax && !mainWindow.IsFullscreen() {
-			restoredW, restoredH = mainWindow.Size()
+			sizeW, sizeH := mainWindow.Size()
+			geometryMu.Lock()
+			restoredW, restoredH = sizeW, sizeH
+			geometryMu.Unlock()
 		}
-		if isMax != lastMaximised {
+		geometryMu.Lock()
+		maxChanged := isMax != lastMaximised
+		if maxChanged {
 			lastMaximised = isMax
+		}
+		geometryMu.Unlock()
+		if maxChanged {
 			wailsApp.Event.Emit("window-maximized-changed", isMax)
 		}
 	})
 	mainWindow.OnWindowEvent(events.Common.WindowDidMove, func(_ *application.WindowEvent) {
 		if !mainWindow.IsMaximised() && !mainWindow.IsFullscreen() {
-			restoredX, restoredY = mainWindow.Position()
+			posX, posY := mainWindow.Position()
+			geometryMu.Lock()
+			restoredX, restoredY = posX, posY
+			geometryMu.Unlock()
 		}
 	})
 
@@ -376,8 +421,9 @@ func main() {
 		isMax := mainWindow.IsMaximised()
 		var w, h, x, y int
 		if isMax {
-			w, h = restoredW, restoredH
-			x, y = restoredX, restoredY
+			geometryMu.Lock()
+			w, h, x, y = restoredW, restoredH, restoredX, restoredY
+			geometryMu.Unlock()
 		} else {
 			w, h = mainWindow.Size()
 			x, y = mainWindow.Position()
@@ -385,10 +431,17 @@ func main() {
 		return desktop.WindowState{Width: w, Height: h, X: x, Y: y, Max: isMax}
 	}
 
-	// حفظ مقاسات وموضع النافذة عند إغلاقها
-	mainWindow.OnWindowEvent(events.Common.WindowClosing, func(_ *application.WindowEvent) {
-		_ = desktop.SaveWindowState(buildWindowState())
-	})
+	// 🔒 قفل مستقل لكتابة ملف حالة النافذة: SaveWindowState ليس مؤمّناً
+	// داخلياً (مسار .tmp واحد تحت utils.AtomicWriteFile)، وخيط الإغلاق
+	// والحفظ الدوري كل 30 ثانية يعملان معاً — التسلسل هنا يمنع تداخل
+	// كتابتين على نفس الملف.
+	var saveStateMu sync.Mutex
+	saveWindowStateNow := func() {
+		state := buildWindowState()
+		saveStateMu.Lock()
+		defer saveStateMu.Unlock()
+		_ = desktop.SaveWindowState(state)
+	}
 
 	// ⏱️ حفظ دوري كل 30 ثانية — يحمي من فقدان الحالة عند الإغلاق القسري
 	// (kill, crash, انقطاع كهربائي). الحفظ ذري (AtomicWriteFile) فلا فساد.
@@ -396,12 +449,32 @@ func main() {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
-			_ = desktop.SaveWindowState(buildWindowState())
+			saveWindowStateNow()
 		}
+	})
+
+	// ── إغلاق النافذة: حفظ الحالة ثم خروج نظيف (عقد app:quit-requested) ──
+	//
+	// ⚠️ سجل SDK (v3.0.0-beta.28): `Windows.WindowClosing` لا يُلغى من مسار
+	// الإغلاق الأصلي (زر X / Alt+F4): معالج WM_CLOSE يبثّ الحدث فقط ويعيد 0،
+	// والمستمع الافتراضي في NewWindow هو من يُغلق النافذة فعلياً. لكن
+	// RegisterHook يعمل **متزامناً قبل** كل المستمعين، ونداء event.Cancel()
+	// يُسقط توزيعهم بالكامل — أي أن إلغاء الحدث يمنع المستمع الافتراضي من
+	// الإغلاق فيبقى الإغلاق تحت سيطرتنا (نُمرّر الحالة للواجهة لتفريغ الحفظ
+	// التلقائي أولاً، ومهلة الأمان تضمن الخروج لو تعذّر ذلك).
+	mainWindow.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		saveWindowStateNow()
+		if event != nil {
+			event.Cancel()
+		}
+		requestGracefulQuit(wailsApp)
 	})
 
 	// إيقاف الخدمات وتنظيف الموارد عند إغلاق التطبيق
 	wailsApp.OnShutdown(func() {
+		// 🛑 الخروج المؤكَّد: نُلغي مؤقت أمان الخروج المعلّق كي لا يُطلق
+		// Quit على تطبيق في طريق الإغلاق (OnShutdown يعمل فقط عبر App.Quit).
+		cancelQuitSafetyTimeout()
 		repository.StopCleanupUnusedMedia()
 		_ = repository.CloseDB()
 	})
@@ -436,7 +509,12 @@ func createCSPMiddleware() application.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			devScriptSrc := "'self' 'wasm-unsafe-eval'"
-			if isDevMode() || strings.Contains(r.Host, "9245") || strings.Contains(r.Host, "localhost") || strings.Contains(r.Host, "127.0.0.1") {
+			// 🔒 تفخيخ CSP مقصور على بيئة التطوير: خادم الأصول في الإنتاج
+			// يستقبل كل طلباته على المضيف wails.localhost، فالمطابقة الجزئية
+			// `Contains("localhost")` كانت تُضعف سياسة الإنتاج برمّتها
+			// (unsafe-inline + unsafe-eval) لكل صفحة — أي أن CSP الإنتاج
+			// كانت ملغاة عملياً. مطابقة المضيف الآن حرفية بلا Contains.
+			if isDevMode() || isDevAssetHost(r.Host) {
 				devScriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'"
 			}
 			w.Header().Set("Content-Security-Policy",
@@ -466,4 +544,29 @@ func isDevMode() bool {
 	// كشف بيئة التطوير موحّد في utils (يُستخدَم أيضًا لتقييد قراءة .env من مجلد
 	// العمل في internal/service) — وسم البناء هو الحاكم، والكشف بالبيئة يكمّله.
 	return isDevBuild || utils.IsDevEnvironment()
+}
+
+// isDevAssetHost يطابق مضيف خادم تطوير Vite حرفياً (منفذ 9245 كما في
+// Taskfile.yml → WAILS_VITE_PORT و frontend/vite.config.ts). المقارنة تتم على
+// المضيف كاملاً (بمنفذه) وبعد تصغير الأحرف — فلا تُطابق "localhost" اسم مضيف
+// أطول يحتويها مثل wails.localhost الذي يُقدّم خادم أصول الإنتاج.
+func isDevAssetHost(host string) bool {
+	switch strings.ToLower(strings.TrimSpace(host)) {
+	case "localhost:9245", "127.0.0.1:9245", "[::1]:9245":
+		return true
+	default:
+		return false
+	}
+}
+
+// isImageFilePath يفحص امتدادات الصور المدعومة — مصدر وحيد لكل مداخل فتح
+// الصور (وسائط CLI، إطلاق مثيل ثانٍ، السحب والإفلات) لمنع تفرّع قوائم
+// الامتدادات في ثلاثة مواضع (حظر ازدواجية المنطق).
+func isImageFilePath(path string) bool {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp":
+		return true
+	default:
+		return false
+	}
 }

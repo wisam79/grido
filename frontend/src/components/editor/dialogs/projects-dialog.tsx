@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toErrorMessage } from '@/lib/wails-error';
 import { createLogger } from '@/lib/logger';
+import { isPristineWorkspace } from '@/hooks/use-autosave';
 
 const logger = createLogger('projects-dialog');
 import {
@@ -98,6 +99,13 @@ export function ProjectsDialog({
   // Search & Sort & Pin states
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'name_asc'>('date_desc');
+
+  // 🛡️ حارس تزامن الحفظ: Enter في حقل الاسم يستدعي handleSave مباشرة ولا يرث
+  // تعطيل الزر — فضغطتا Enter متتاليتان كانتا تشغّلان SaveProject مرتين
+  // (تكرار/تبادل سجلات في المكتبة). المرجع فوري فلا يعتمد على دورة render.
+  const saveInFlightRef = useRef(false);
+  // مشروع بانتظار تأكيد الاستبدال — يُحفظ هنا قبل تحميله فوق عمل غير محفوظ
+  const [pendingLoadProject, setPendingLoadProject] = useState<domain.Project | null>(null);
   const [pinnedProjects, setPinnedProjects] = useState<string[]>(() => {
     try {
       const savedPinned = localStorage.getItem('grido_pinned_projects');
@@ -153,8 +161,14 @@ export function ProjectsDialog({
       toast.error('أدخل اسم المشروع');
       return;
     }
+    // 🛡️ حماية من الحفظ المزدوج (Enter المتكرر أو نقرة أثناء الانتظار)
+    if (saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
 
     const state = useEditorStore.getState();
+    // معرّف المشروع كما كان قبل الانتظار — لا نكتب معرّفاً جديداً فوق
+    // مشروع فتحه المستخدم أثناء الحفظ
+    const projectIdBefore = state.projectId;
     setIsLoading(true);
     try {
       const currentId = state.projectId || uid();
@@ -168,19 +182,23 @@ export function ProjectsDialog({
           : 'تم حفظ المشروع بنجاح في قاعدة البيانات المحلية',
       );
       setProjectName('');
-      // تحديث المعرف في الستور ليكون هذا المعرف إذا كان جديداً
-      useEditorStore.setState({ projectId: currentId });
+      // تحديث المعرف في الستور ليكون هذا المعرف إذا كان جديداً — فقط إن لم
+      // يتغير المشروع المفتوح خلال الانتظار (تحميل/تفريغ موازٍ)
+      if (useEditorStore.getState().projectId === projectIdBefore) {
+        useEditorStore.setState({ projectId: currentId });
+      }
       fetchProjects();
       setActiveTab('list'); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ
     } catch (err) {
       logger.error('Failed to save project:', err);
       toast.error(toErrorMessage(err, 'فشل حفظ المشروع'));
     } finally {
+      saveInFlightRef.current = false;
       setIsLoading(false);
     }
   };
 
-  const handleLoad = (project: domain.Project) => {
+  const performLoad = (project: domain.Project) => {
     try {
       const projectData = domainProjectToProjectFile(project);
 
@@ -194,6 +212,18 @@ export function ProjectsDialog({
       logger.error('Failed to load project details:', err);
       toast.error(toErrorMessage(err, 'فشل تحميل المشروع'));
     }
+  };
+
+  // 🛡️ تحميل مشروع فوق عمل غير محفوظ كان يطمسه بلا أي تحذير (نفس حارس
+  // المسودة القديمة في use-autosave): مساحة عمل نقية (لا عناصر، لا صور
+  // خانات، لا مشروع محمّل، لا خطوة تراجع) = لا شيء يُفقد فيُحمَّل مباشرة،
+  // وغير ذلك يمر بتأكيد صريح أولاً.
+  const handleLoad = (project: domain.Project) => {
+    if (isPristineWorkspace()) {
+      performLoad(project);
+      return;
+    }
+    setPendingLoadProject(project);
   };
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
@@ -405,6 +435,7 @@ export function ProjectsDialog({
                     value={projectName}
                     onChange={(e) => setProjectName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                    disabled={isLoading}
                   />
                 </div>
                 <Button
@@ -652,6 +683,40 @@ export function ProjectsDialog({
                 className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
               >
                 حذف
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* 🛡️ تأكيد استبدال عمل غير محفوظ قبل تحميل مشروع من المكتبة */}
+        <AlertDialog
+          open={!!pendingLoadProject}
+          onOpenChange={(open) => !open && setPendingLoadProject(null)}
+        >
+          <AlertDialogContent
+            dir="rtl"
+            className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl"
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-cairo text-start">تحميل مشروع آخر</AlertDialogTitle>
+              <AlertDialogDescription className="font-cairo text-start text-xs">
+                لديك عمل غير محفوظ في مساحة العمل. تحميل «{pendingLoadProject?.name}» سيستبدله
+                نهائياً. متابعة؟
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="font-cairo">
+              <AlertDialogCancel className="font-cairo h-8 px-4 text-xs font-semibold rounded-md">
+                إلغاء
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  const target = pendingLoadProject;
+                  setPendingLoadProject(null);
+                  if (target) performLoad(target);
+                }}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-cairo h-8 px-4 text-xs font-semibold rounded-md shadow-xs"
+              >
+                تحميل واستبدال
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

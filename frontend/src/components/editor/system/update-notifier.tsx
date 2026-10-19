@@ -20,9 +20,10 @@ import {
 import { toast } from 'sonner';
 import { CheckForUpdate, DownloadAndInstallUpdate } from '../../../../wailsjs/go/main/App';
 import { service } from '../../../../wailsjs/go/models';
-import { EventsOn, EventsOff, BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
+import { EventsOn, BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
 import { toErrorMessage } from '@/lib/wails-error';
 import { createLogger } from '@/lib/logger';
+import { flushAutoSave } from '@/hooks/use-autosave';
 
 const logger = createLogger('update-notifier');
 
@@ -131,11 +132,11 @@ export function UpdateNotifier() {
 
     return () => {
       window.removeEventListener('grido:check-updates', handleManualCheck);
+      // 🛡️ إلغاء الاشتراك بدالة الإرجاع المُنظَّمة لكل EventsOn — لا بـ
+      // EventsOff العام الذي يقتطع مستمِعين لا يملكها هذا المكوّن (وقد
+      // يبقي مستمعاً معلّقاً على حدث آخر يشاركه الاسم).
       if (typeof unsubProgress === 'function') unsubProgress();
       if (typeof unsubProgressMap === 'function') unsubProgressMap();
-      if (typeof EventsOff === 'function') {
-        EventsOff('update-progress', 'update:progress');
-      }
     };
   }, [performCheck]);
 
@@ -158,6 +159,11 @@ export function UpdateNotifier() {
     setProgress(0);
 
     try {
+      // 🛡️ تفريغ مسودة الحفظ التلقائي قبل التثبيت: المثبِّت يُغلق العملية
+      // بعد التحميل فلا مسار كتابة لاحق — بلا هذا التفريغ تُفقد تعديلات آخر
+      // ثانيتين عند إعادة التشغيل للتحديث.
+      await flushAutoSave();
+
       const url =
         updateInfo.download_url ||
         'https://github.com/wisam79/grido/releases/latest/download/GridoStudio-installer.exe';

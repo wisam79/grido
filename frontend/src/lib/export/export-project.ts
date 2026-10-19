@@ -16,8 +16,21 @@ function blobToDataURL(blob: Blob): Promise<string> {
   });
 }
 
-// تنزيل صورة من Blob عبر Wails (تيار ثنائي فائق السرعة مع fallback لـ Base64)
-export async function downloadBlob(blob: Blob, filename: string, dir?: string): Promise<string> {
+/**
+ * تنزيل صورة من Blob عبر Wails (تيار ثنائي فائق السرعة مع fallback لـ Base64).
+ *
+ * 🖨️ `dpi` اختياري: كثافة الطباعة التي يعرضها حوار التصدير. تُرسل كمعامل
+ * `dpi` لمسار `/api/save-file` فيحقنها الخلفية في بايتات الملف (pHYs لـ PNG /
+ * JFIF لـ JPEG) بلا أي إعادة ترميز — دونها كانت أدوات الطباعة الخارجية تفترض
+ * 72/96 DPI فتحسب مقاساً فيزيائياً خاطئاً لنفس الصورة. تُهمل بصمت لأي صيغة لا
+ * تحمل بيانات كثافة (TIFF/CMYK مثلاً) ولأي قيمة غير موجبة.
+ */
+export async function downloadBlob(
+  blob: Blob,
+  filename: string,
+  dir?: string,
+  dpi?: number,
+): Promise<string> {
   try {
     // 🚀 مسار البث الثنائي المباشر: تجنب تحويل الـ Blob إلى Base64 DataURL في V8
     if (
@@ -29,6 +42,13 @@ export async function downloadBlob(blob: Blob, filename: string, dir?: string): 
       try {
         const query = new URLSearchParams({ filename });
         if (dir) query.set('dir', dir);
+        // الحقن يعتمد امتداد الملف المُرسل (الخلفية تقرأ filepath.Ext) — فنطابقه
+        // هنا حصراً على صيغ الصور التي تحمل بيانات كثافة فعلاً.
+        const dpiParam =
+          typeof dpi === 'number' && Number.isFinite(dpi) && dpi > 0 ? Math.round(dpi) : 0;
+        if (dpiParam > 0 && /\.(png|jpe?g)$/i.test(filename)) {
+          query.set('dpi', String(dpiParam));
+        }
         // 🔑 fetchLocalApi يضيف ترويسة توكن الجلسة المفروضة على مسارات /api
         const resp = await fetchLocalApi(
           `${window.location.origin}/api/save-file?${query.toString()}`,

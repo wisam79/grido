@@ -101,6 +101,13 @@ func (s *LicenseService) claimSession(token string) string {
 	}
 	if err := utils.SaveSessionID(sid); err != nil {
 		slog.Warn("Failed to persist session id", "error", err)
+		// 🛡️ الحجز تأكد خادمياً لكن النسخة المحلية فشلت: الملف يحمل sid أقدم
+		// يختلف عن الصف النشط ⇒ أي check_session لاحق يراه «مطروداً» فيطرد
+		// المستخدم من جلسته هو. مسح المعرّف يجبر إعادة الحجز بدل الطرد
+		// الكاذب. فشل المسح غير حاجز (sid فارغ ⇒ لا يُعرض للفحص).
+		if clearErr := utils.ClearSessionID(); clearErr != nil {
+			slog.Warn("Failed to clear stale session id", "error", clearErr)
+		}
 		return ""
 	}
 	return sid

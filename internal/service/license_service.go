@@ -302,7 +302,7 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
-		slog.Warn("Failed to refresh token", "status", resp.StatusCode, "body", string(body))
+		slog.Warn("Failed to refresh token", "status", resp.StatusCode, "bytes", len(body))
 
 		if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
 			local.RefreshToken = ""

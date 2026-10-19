@@ -15,7 +15,7 @@ import {
   computeDynamicCollageCells,
   getEffectiveDpi,
 } from '../../templates';
-import { generateInitialSlots, remapSlotsToCells } from './collage-slice';
+import { generateInitialSlots, remapSlotsToCells, DEFAULT_COLLAGE_STATE } from './collage-slice';
 import { DEFAULT_PRINT_SETTINGS } from './print-slice';
 import { DEFAULT_HISTORY_ENTRY_EXTRAS, seedHistorySnapshot } from './history-slice';
 import { DEFAULT_GRID_STATE, type RulerUnit, type UserGuide } from './grid-slice';
@@ -340,6 +340,9 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       collageMargin: 0,
       collageRadius: 0,
       collageShowCutLines: false,
+      // 🛡️ كان السطر الوحيد الناقص من الافتراضيات هنا: `reset()` يُبقي القيمة
+      // القديمة فيُحمَّل مع المشروع التالي بلا مصدر لها (المسلسل والحفظ يعرفانه).
+      collageShowEndCutLine: DEFAULT_COLLAGE_STATE.collageShowEndCutLine,
       collageStrokeWidth: 0,
       collageStrokeColor: '#000000',
       showGrid: false,

@@ -316,11 +316,17 @@ func CleanUnusedMediaNow() (cleanedCount int, freedBytes int64, err error) {
 		filePath := filepath.Join(mediaDir, filename)
 
 		if !referenced[filename] {
+			// 🛡️ حد أدنى للعمر قبل النقل (24 ساعة) — اتساقاً مع السبب الذي
+			// يفرض حماية عمر في المسار التلقائي (moveUnreferencedToTrash):
+			// الملف المستورد حديثاً قد لا يكون مرجعه قد حُفظ بعد في مشروع
+			// أو مسودة autosave (debounce ثانيتين + idle)، فنقله الفوري =
+			// فقدان صورة المستخدم. 24 ساعة تغطي كل تأجيلات الحفظ المعروفة
+			// مع إبقاء «التنظيف الآن» فورياً بمعناه. نقرأ Stat مباشرةً.
 			info, err := os.Stat(filePath)
-			fileSize := int64(0)
-			if err == nil {
-				fileSize = info.Size()
+			if err != nil || time.Since(info.ModTime()) < 24*time.Hour {
+				continue
 			}
+			fileSize := info.Size()
 			trashPath := filepath.Join(trashDir, filename)
 			if err := os.Rename(filePath, trashPath); err != nil {
 				slog.Error("Failed to move file to trash during manual clean", "src", filePath, "dst", trashPath, "error", err)
