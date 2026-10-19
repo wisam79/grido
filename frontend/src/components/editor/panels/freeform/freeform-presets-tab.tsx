@@ -3,8 +3,8 @@ import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
 import {
   IdentificationCard,
-  Printer,
-  DeviceMobile,
+  Camera,
+  FileText,
   Check,
   FrameCorners,
   ArrowsClockwise,
@@ -39,18 +39,12 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
   // فحص المقاس النشط حالياً
   const isPresetActive = useCallback(
     (preset: CanvasSizePreset) => {
-      if (preset.widthMM && preset.heightMM) {
-        return (
-          (currentW_MM === preset.widthMM && currentH_MM === preset.heightMM) ||
-          (currentW_MM === preset.heightMM && currentH_MM === preset.widthMM)
-        );
-      }
       return (
-        (canvasWidth === preset.widthPx && canvasHeight === preset.heightPx) ||
-        (canvasWidth === preset.heightPx && canvasHeight === preset.widthPx)
+        (currentW_MM === preset.widthMM && currentH_MM === preset.heightMM) ||
+        (currentW_MM === preset.heightMM && currentH_MM === preset.widthMM)
       );
     },
-    [currentW_MM, currentH_MM, canvasWidth, canvasHeight],
+    [currentW_MM, currentH_MM],
   );
 
   const handleSelectPreset = useCallback(
@@ -66,9 +60,9 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
   };
 
   return (
-    <div className="space-y-2.5 font-cairo animate-in fade-in duration-150" dir="rtl">
+    <div className="space-y-3 font-cairo animate-in fade-in duration-150" dir="rtl">
       {/* 📐 شريط المقاس النشط المدمج بتصميم Fluent 2 الأنيق */}
-      <div className="flex items-center justify-between p-2 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular">
+      <div className="flex items-center justify-between p-2.5 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular">
         <div className="flex items-center gap-2 min-w-0">
           <FrameCorners className="w-4 h-4 text-muted-foreground shrink-0" weight="duotone" />
           <div className="flex items-baseline gap-1.5 min-w-0">
@@ -84,15 +78,15 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
         <button
           type="button"
           onClick={handleToggleOrientation}
-          className="flex items-center gap-1 text-micro font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer bg-muted/60 hover:bg-muted px-2 py-1 rounded-md border border-border/60 shadow-2xs active:scale-95 shrink-0 select-none"
-          title="تبديل الاتجاه"
+          className="flex items-center gap-1.5 text-micro font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer bg-muted/60 hover:bg-muted px-2.5 py-1 rounded-md border border-border/60 shadow-2xs active:scale-95 shrink-0 select-none"
+          title="تبديل الاتجاه (أفقي / رأسي)"
         >
-          <ArrowsClockwise className="w-3 h-3" />
+          <ArrowsClockwise className="w-3.5 h-3.5" />
           <span>{canvasWidth >= canvasHeight ? 'أفقي' : 'رأسي'}</span>
         </button>
       </div>
 
-      {/* 🧭 كبسولات التصفية المدمجة بدون قص أو فيضان أفقي */}
+      {/* 🧭 كبسولات التصفية للمقاسات القياسية المعتمدة في السوق */}
       <FluentFilterChips
         layoutId="freeform-presets-filter-chips"
         value={selectedCategory}
@@ -101,14 +95,14 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
         className="w-full justify-between"
         options={[
           { id: 'all', label: 'الكل' },
-          { id: 'id', label: 'وثائق', icon: <IdentificationCard /> },
-          { id: 'print', label: 'مطبوعات', icon: <Printer /> },
-          { id: 'social', label: 'وسائط', icon: <DeviceMobile /> },
+          { id: 'photo', label: 'ورق صور', icon: <Camera /> },
+          { id: 'standard', label: 'ورق قياسي', icon: <FileText /> },
+          { id: 'cards', label: 'كروت', icon: <IdentificationCard /> },
         ]}
       />
 
-      {/* 📄 قائمة المقاسات الكاملة بدون أي اقتطاع مع شريط تمرير Fluent ناعم */}
-      <div className="space-y-1 max-h-[calc(100vh-210px)] overflow-y-auto pe-1 ps-0.5 custom-scrollbar">
+      {/* 📄 قائمة مقاسات الورق الحقيقية المدعومة في الطابعات والأسواق */}
+      <div className="space-y-1.5 max-h-[calc(100vh-320px)] overflow-y-auto pe-1 ps-0.5 custom-scrollbar">
         {filteredPresets.map((preset) => {
           const active = isPresetActive(preset);
 
@@ -119,9 +113,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
               onClick={() => handleSelectPreset(preset)}
               title={`${preset.name} - ${preset.tag}`}
               className={cn(
-                // min-h بدل h ثابتة: الأسماء الطويلة («غلاف عريض (Landscape 16:9)»)
-                // كانت تُقتطع داخل صف 36px، فيتمدد الصف سطراً ثانياً بدل بتر الاسم
-                'group w-full min-h-9 px-2.5 py-1.5 rounded-md border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2 select-none active:scale-[0.99] text-start',
+                'group w-full min-h-10 px-2.5 py-1.5 rounded-lg border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2.5 select-none active:scale-[0.99] text-start',
                 active
                   ? 'bg-card border-border/90 text-foreground shadow-xs ring-1 ring-foreground/25 font-bold'
                   : 'bg-card/40 hover:bg-accent/60 border-border/50 hover:border-border text-foreground/90',
@@ -129,42 +121,49 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
             >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 {/* مصغر أيقونة الفئة الدلالية */}
-                <div className="w-5 h-5 rounded-md bg-muted/70 flex items-center justify-center shrink-0 border border-border/40">
-                  {preset.category === 'id' ? (
-                    <IdentificationCard
+                <div className="w-6 h-6 rounded-md bg-muted/70 flex items-center justify-center shrink-0 border border-border/40">
+                  {preset.category === 'photo' ? (
+                    <Camera
                       className={cn(
-                        'w-3 h-3',
+                        'w-3.5 h-3.5',
                         active ? 'text-foreground' : 'text-muted-foreground',
                       )}
                     />
-                  ) : preset.category === 'social' ? (
-                    <DeviceMobile
+                  ) : preset.category === 'cards' ? (
+                    <IdentificationCard
                       className={cn(
-                        'w-3 h-3',
+                        'w-3.5 h-3.5',
                         active ? 'text-foreground' : 'text-muted-foreground',
                       )}
                     />
                   ) : (
-                    <Printer
+                    <FileText
                       className={cn(
-                        'w-3 h-3',
+                        'w-3.5 h-3.5',
                         active ? 'text-foreground' : 'text-muted-foreground',
                       )}
                     />
                   )}
                 </div>
 
-                {/* اسم المقاس كاملاً بدون أي اقتطاع */}
-                <span
-                  className={cn(
-                    'text-xs leading-tight transition-colors',
-                    active
-                      ? 'text-foreground font-bold'
-                      : 'text-foreground font-medium group-hover:text-foreground',
+                {/* اسم المقاس والوصف المختصر */}
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span
+                    className={cn(
+                      'text-xs leading-tight transition-colors',
+                      active
+                        ? 'text-foreground font-bold'
+                        : 'text-foreground font-medium group-hover:text-foreground',
+                    )}
+                  >
+                    {preset.name}
+                  </span>
+                  {preset.description && (
+                    <span className="text-2xs text-muted-foreground truncate leading-tight mt-0.5">
+                      {preset.description}
+                    </span>
                   )}
-                >
-                  {preset.name}
-                </span>
+                </div>
               </div>
 
               {/* الأبعاد وعلامة الاختيار النشط */}

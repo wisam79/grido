@@ -25,8 +25,10 @@ export const PAPER_SIZES: PaperSize[] = [
     widthMM: 127,
     heightMM: 178,
   },
-  { id: 'a3', name: 'A3 (297×420 مم)', shortName: 'A3', widthMM: 297, heightMM: 420 },
   { id: 'a5', name: 'A5 (148×210 مم)', shortName: 'A5', widthMM: 148, heightMM: 210 },
+  { id: 'a6', name: 'A6 (105×148 مم)', shortName: 'A6', widthMM: 105, heightMM: 148 },
+  { id: 'a3', name: 'A3 (297×420 مم)', shortName: 'A3', widthMM: 297, heightMM: 420 },
+  { id: 'biz-card', name: 'كارت شخصي (85×55 مم)', shortName: '85×55', widthMM: 85, heightMM: 55 },
 ];
 
 // مقاس أمريكي متقدم — مخفي افتراضياً عن مسار صور الهوية

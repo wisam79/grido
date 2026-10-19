@@ -129,7 +129,8 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
         const minY = el.y + Math.min(...cornersY);
         const maxY = el.y + Math.max(...cornersY);
 
-        if (minX > 1.25 || minY > 1.25 || maxX < -0.25 || maxY < -0.25) {
+        // استبعاد العناصر البعيدة جداً خارج مساحة العمل (Pasteboard)
+        if (minX > 5 || minY > 5 || maxX < -4 || maxY < -4) {
           return null;
         }
 

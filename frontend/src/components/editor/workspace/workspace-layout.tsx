@@ -54,7 +54,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
     <main
       data-testid="workspace-layout"
       dir="ltr"
-      className="flex-1 flex h-full w-full overflow-hidden relative select-none"
+      className="flex-1 flex h-full w-full min-w-0 overflow-hidden relative select-none"
     >
       {/* 1. الشريط الأيقوني الجانبي الأيسر (Rail - 48px) يظهر في Standard و Wide */}
       {!isCompact && (
@@ -97,7 +97,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
       >
         {/* حاوية العناصر العائمة داخل الكانفاس: `overflow-hidden` هنا هو ما يمنع
             شريط التحديد السريع من الطفو على الشريط الجانبي/الأدوات */}
-        <div className="flex-1 relative h-full w-full overflow-hidden">
+        <div className="flex-1 relative w-full min-h-0 overflow-hidden">
           <CanvasOverlayHost>
             {canvasContent}
             {floatingFeedback}

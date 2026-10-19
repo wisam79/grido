@@ -1,19 +1,19 @@
-import { describe, it, expect } from "vitest";
-import { buildSingleComposition } from "../src/lib/print/single-print-composition";
-import type { ImageElement } from "../src/lib/store/types";
+import { describe, it, expect } from 'vitest';
+import { buildSingleComposition } from '../src/lib/print/single-print-composition';
+import type { ImageElement } from '../src/lib/store/types';
 
 const base = {
   canvasWidth: 1240,
   canvasHeight: 1754,
   canvasWidthMM: 101.6,
   canvasHeightMM: 152.4,
-  backgroundColor: "#FFFFFF",
+  backgroundColor: '#FFFFFF',
 };
 
 const imageElement = (overrides: Partial<ImageElement> = {}): ImageElement => ({
-  id: "img1",
-  type: "image",
-  imageSrc: "/local-image/photo.jpg",
+  id: 'img1',
+  type: 'image',
+  imageSrc: '/local-image/photo.jpg',
   x: 0.1,
   y: 0.2,
   width: 0.5,
@@ -21,7 +21,7 @@ const imageElement = (overrides: Partial<ImageElement> = {}): ImageElement => ({
   rotation: 0,
   opacity: 1,
   zIndex: 1,
-  filter: "none",
+  filter: 'none',
   brightness: 100,
   contrast: 100,
   saturation: 100,
@@ -30,8 +30,8 @@ const imageElement = (overrides: Partial<ImageElement> = {}): ImageElement => ({
   ...overrides,
 });
 
-describe("buildSingleComposition", () => {
-  it("maps eligible image elements to canvas pixel coordinates", () => {
+describe('buildSingleComposition', () => {
+  it('maps eligible image elements to canvas pixel coordinates', () => {
     const result = buildSingleComposition({
       ...base,
       elements: [imageElement()],
@@ -42,10 +42,10 @@ describe("buildSingleComposition", () => {
     const comp = result.composition!;
     expect(comp.canvasWidthPx).toBe(1240);
     expect(comp.canvasWidthMM).toBe(101.6);
-    expect(comp.backgroundColor).toBe("#FFFFFF");
+    expect(comp.backgroundColor).toBe('#FFFFFF');
     expect(comp.items).toHaveLength(1);
     expect(comp.items[0]).toMatchObject({
-      imageSrc: "/local-image/photo.jpg",
+      imageSrc: '/local-image/photo.jpg',
       x: 124,
       y: 350.8,
       w: 620,
@@ -55,76 +55,99 @@ describe("buildSingleComposition", () => {
     });
   });
 
-  it("sorts items by zIndex ascending (Konva draw order)", () => {
+  it('sorts items by zIndex ascending (Konva draw order)', () => {
     const result = buildSingleComposition({
       ...base,
       elements: [
-        imageElement({ id: "a", zIndex: 5 }),
-        imageElement({ id: "b", zIndex: 1, imageSrc: "/local-image/b.jpg" }),
+        imageElement({ id: 'a', zIndex: 5 }),
+        imageElement({ id: 'b', zIndex: 1, imageSrc: '/local-image/b.jpg' }),
       ],
     });
 
     expect(result.composition!.items.map((i) => i.imageSrc)).toEqual([
-      "/local-image/b.jpg",
-      "/local-image/photo.jpg",
+      '/local-image/b.jpg',
+      '/local-image/photo.jpg',
     ]);
   });
 
-  it("supports filters implemented in the Go service", () => {
+  it('supports filters implemented in the Go service', () => {
     const result = buildSingleComposition({
       ...base,
-      elements: [imageElement({ filter: "cinematic", brightness: 110 })],
+      elements: [imageElement({ filter: 'cinematic', brightness: 110 })],
     });
 
     expect(result.eligible).toBe(true);
-    expect(result.composition!.items[0].filter).toBe("cinematic");
+    expect(result.composition!.items[0].filter).toBe('cinematic');
     expect(result.composition!.items[0].brightness).toBe(110);
   });
 
-  it("falls back to capture for text elements", () => {
+  it('falls back to capture for text elements', () => {
     const result = buildSingleComposition({
       ...base,
-      elements: [imageElement(), { id: "t", type: "text", x: 0, y: 0, width: 0.2, height: 0.1, rotation: 0, opacity: 1, zIndex: 2, text: "مرحباً", fontSize: 32 }],
+      elements: [
+        imageElement(),
+        {
+          id: 't',
+          type: 'text',
+          x: 0,
+          y: 0,
+          width: 0.2,
+          height: 0.1,
+          rotation: 0,
+          opacity: 1,
+          zIndex: 2,
+          text: 'مرحباً',
+          fontSize: 32,
+        },
+      ],
     });
 
     expect(result.eligible).toBe(false);
-    expect(result.reason).toContain("غير صورة");
+    expect(result.reason).toContain('غير صورة');
   });
 
   it.each([
-    ["rotated element", imageElement({ rotation: 90 })],
-    ["partial opacity", imageElement({ opacity: 0.5 })],
-    ["blurred element", imageElement({ blur: 4 })],
-    ["shadowed element", imageElement({ shadowColor: "#000", shadowOpacity: 0.5 })],
-    ["custom blend mode", imageElement({ globalCompositeOperation: "multiply" })],
-    ["non-local image source", imageElement({ imageSrc: "data:image/png;base64,AAAA" })],
-    ["unsupported filter", imageElement({ filter: "vivid" })],
-  ])("falls back to capture for %s", (_name, el) => {
+    ['rotated element', imageElement({ rotation: 90 })],
+    ['partial opacity', imageElement({ opacity: 0.5 })],
+    ['blurred element', imageElement({ blur: 4 })],
+    ['shadowed element', imageElement({ shadowColor: '#000', shadowOpacity: 0.5 })],
+    ['custom blend mode', imageElement({ globalCompositeOperation: 'multiply' })],
+    ['non-local image source', imageElement({ imageSrc: 'data:image/png;base64,AAAA' })],
+    ['unsupported filter', imageElement({ filter: 'vivid' })],
+    ['element overflowing left edge', imageElement({ x: -0.1 })],
+    ['element overflowing top edge', imageElement({ y: -0.1 })],
+    ['element overflowing right edge', imageElement({ x: 0.8, width: 0.4 })],
+    ['element overflowing bottom edge', imageElement({ y: 0.8, height: 0.4 })],
+    [
+      'element scaled larger than canvas (zoom framing)',
+      imageElement({ x: -0.2, y: -0.2, width: 1.4, height: 1.4 }),
+    ],
+  ])('falls back to capture for %s', (_name, el) => {
     const result = buildSingleComposition({ ...base, elements: [el] });
     expect(result.eligible).toBe(false);
     expect(result.reason).toBeTruthy();
   });
 
-  it("falls back to capture for non-solid backgrounds", () => {
+  it('falls back to capture for non-solid backgrounds', () => {
     const result = buildSingleComposition({
       ...base,
-      backgroundColor: "transparent",
+      backgroundColor: 'transparent',
       elements: [imageElement()],
     });
     expect(result.eligible).toBe(false);
-    expect(result.reason).toContain("خلفية");
+    expect(result.reason).toContain('خلفية');
   });
 
-  it("falls back to capture for a 4-digit hex background", () => {
+  it('falls back to capture for a 4-digit hex background', () => {
     const result = buildSingleComposition({
       ...base,
-      backgroundColor: "#FFF",
+      backgroundColor: '#FFF',
       elements: [imageElement()],
     });
     expect(result.eligible).toBe(false);
   });
 
-  it("ignores hidden elements and produces an empty composition (solid canvas)", () => {
+  it('ignores hidden elements and produces an empty composition (solid canvas)', () => {
     const result = buildSingleComposition({
       ...base,
       elements: [imageElement({ visible: false })],
@@ -134,46 +157,46 @@ describe("buildSingleComposition", () => {
     expect(result.composition!.items).toHaveLength(0);
   });
 
-  it("falls back to capture for gradient backgrounds (solid colors only)", () => {
+  it('falls back to capture for gradient backgrounds (solid colors only)', () => {
     const result = buildSingleComposition({
       ...base,
-      backgroundGradientColor2: "#000000",
+      backgroundGradientColor2: '#000000',
       elements: [imageElement()],
     });
 
     expect(result.eligible).toBe(false);
     expect(result.composition).toBeUndefined();
-    expect(result.reason).toContain("متدرجة");
+    expect(result.reason).toContain('متدرجة');
   });
 
-  it("produces an empty composition for an empty canvas (solid fast path)", () => {
+  it('produces an empty composition for an empty canvas (solid fast path)', () => {
     const result = buildSingleComposition({ ...base, elements: [] });
 
     expect(result.eligible).toBe(true);
     expect(result.composition).toBeDefined();
     expect(result.composition!.items).toHaveLength(0);
-    expect(result.composition!.backgroundColor).toBe("#FFFFFF");
+    expect(result.composition!.backgroundColor).toBe('#FFFFFF');
   });
 });
 
-describe("buildSingleComposition canvas dimension guards", () => {
+describe('buildSingleComposition canvas dimension guards', () => {
   it.each([
-    ["zero canvas width", { canvasWidth: 0 }],
-    ["zero canvas height", { canvasHeight: 0 }],
-    ["negative canvas width", { canvasWidth: -10 }],
-    ["NaN canvas height", { canvasHeight: Number.NaN }],
-    ["zero width in millimeters", { canvasWidthMM: 0 }],
-    ["negative height in millimeters", { canvasHeightMM: -1 }],
-    ["NaN width in millimeters", { canvasWidthMM: Number.NaN }],
-    ["infinite height in millimeters", { canvasHeightMM: Number.POSITIVE_INFINITY }],
-  ])("falls back to capture for %s", (_name, overrides) => {
+    ['zero canvas width', { canvasWidth: 0 }],
+    ['zero canvas height', { canvasHeight: 0 }],
+    ['negative canvas width', { canvasWidth: -10 }],
+    ['NaN canvas height', { canvasHeight: Number.NaN }],
+    ['zero width in millimeters', { canvasWidthMM: 0 }],
+    ['negative height in millimeters', { canvasHeightMM: -1 }],
+    ['NaN width in millimeters', { canvasWidthMM: Number.NaN }],
+    ['infinite height in millimeters', { canvasHeightMM: Number.POSITIVE_INFINITY }],
+  ])('falls back to capture for %s', (_name, overrides) => {
     const result = buildSingleComposition({ ...base, ...overrides, elements: [imageElement()] });
     expect(result.eligible).toBe(false);
     expect(result.composition).toBeUndefined();
-    expect(result.reason).toContain("أبعاد الكانفاس");
+    expect(result.reason).toContain('أبعاد الكانفاس');
   });
 
-  it("keeps a valid composition eligible (regression guard)", () => {
+  it('keeps a valid composition eligible (regression guard)', () => {
     const result = buildSingleComposition({ ...base, elements: [imageElement()] });
     expect(result.eligible).toBe(true);
     expect(result.composition).toBeDefined();

@@ -225,14 +225,34 @@ export function useKonvaDrag({
     const margin = 0.25;
     const currentVisualX = xLogical + vBox.offsetX;
     const currentVisualY = yLogical + vBox.offsetY;
-    const clampedVisualX = Math.max(
-      -canvasWidth * margin,
-      Math.min(canvasWidth * (1 + margin) - vBox.width, currentVisualX),
-    );
-    const clampedVisualY = Math.max(
-      -canvasHeight * margin,
-      Math.min(canvasHeight * (1 + margin) - vBox.height, currentVisualY),
-    );
+
+    // 🎯 حدود السحب الحر لعناصر التصميم:
+    // للعناصر العادية (أصغر من الورقة): احترام هامش 25% حول الورقة لمنع ضياع العنصر.
+    // للعناصر المكبرة (W > canvasWidth أو H > canvasHeight — مثل صورة شخصية مكبرة لتأطير الوجه):
+    // السماح بتمرير كامل مساحة الصورة بحرية عبر الكانفاس ليتمكن المصمم من إظهار أي جزء مطلوب
+    // دون أن تُحبس الصورة أو تُجمَّد الحركة نتيجة انعكاس حدود Math.min/max:
+    let minVisualX = -canvasWidth * margin;
+    let maxVisualX = canvasWidth * (1 + margin) - vBox.width;
+    if (minVisualX > maxVisualX) {
+      minVisualX = canvasWidth * margin - vBox.width;
+      maxVisualX = canvasWidth * (1 - margin);
+    } else if (vBox.width > canvasWidth) {
+      minVisualX = Math.min(minVisualX, canvasWidth * margin - vBox.width);
+      maxVisualX = Math.max(maxVisualX, canvasWidth * (1 - margin));
+    }
+
+    let minVisualY = -canvasHeight * margin;
+    let maxVisualY = canvasHeight * (1 + margin) - vBox.height;
+    if (minVisualY > maxVisualY) {
+      minVisualY = canvasHeight * margin - vBox.height;
+      maxVisualY = canvasHeight * (1 - margin);
+    } else if (vBox.height > canvasHeight) {
+      minVisualY = Math.min(minVisualY, canvasHeight * margin - vBox.height);
+      maxVisualY = Math.max(maxVisualY, canvasHeight * (1 - margin));
+    }
+
+    const clampedVisualX = Math.max(minVisualX, Math.min(maxVisualX, currentVisualX));
+    const clampedVisualY = Math.max(minVisualY, Math.min(maxVisualY, currentVisualY));
     xLogical = clampedVisualX - vBox.offsetX;
     yLogical = clampedVisualY - vBox.offsetY;
 

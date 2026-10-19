@@ -130,7 +130,13 @@ export function useUserGuides(
   useEffect(() => {
     if (!isDragging) return;
 
-    const handlePointerMove = (e: DomPointerEvent) => {
+    let moveRafId: number | null = null;
+    let pendingEvent: DomPointerEvent | null = null;
+
+    const flushMove = () => {
+      moveRafId = null;
+      const e = pendingEvent;
+      if (!e) return;
       const current = dragGuideStateRef.current;
       if (!current || !innerRef.current) return;
       const paperRect = innerRef.current.getBoundingClientRect();
@@ -149,7 +155,18 @@ export function useUserGuides(
       }
     };
 
+    const handlePointerMove = (e: DomPointerEvent) => {
+      pendingEvent = e;
+      if (moveRafId === null) {
+        moveRafId = requestAnimationFrame(flushMove);
+      }
+    };
+
     const handlePointerUp = () => {
+      if (moveRafId !== null) {
+        cancelAnimationFrame(moveRafId);
+        moveRafId = null;
+      }
       const current = dragGuideStateRef.current;
       if (current) {
         const { type, pos, guideId } = current;
@@ -171,6 +188,9 @@ export function useUserGuides(
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
     return () => {
+      if (moveRafId !== null) {
+        cancelAnimationFrame(moveRafId);
+      }
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };

@@ -88,114 +88,68 @@ describe('use-canvas-viewport — clampStagePos boundaries', () => {
   beforeEach(() => {
     installCanvasMock();
   });
-  it('wheel mode: يثبّت الورقة في المنتصف تماماً عندما تكون أصغر من النافذة أو تلائمها', () => {
+  it('يمنع snap-back: يحافظ على هامش 150px مرئي بدل فرض توسيط عند التمرير بعيداً', () => {
     const viewportW = 1000;
     const viewportH = 800;
     const displayW = 600;
     const displayH = 500;
 
-    // محاولة التمرير بعيداً بعجلة الفأرة العادية
     const scrolledAway = { x: -500, y: -2000 };
-    const clamped = clampStagePos(scrolledAway, displayW, displayH, viewportW, viewportH, 'wheel');
+    const clamped = clampStagePos(scrolledAway, displayW, displayH, viewportW, viewportH);
 
-    // يجب أن تبقى في المنتصف بالضبط
-    expect(clamped.x).toBe((viewportW - displayW) / 2); // 200
-    expect(clamped.y).toBe((viewportH - displayH) / 2); // 150
+    // minX = 150 - 600 = -450 | minY = 150 - 500 = -350
+    expect(clamped.x).toBe(-450);
+    expect(clamped.y).toBe(-350);
   });
 
-  it('wheel mode: يسمح بالتمرير الرأسي فقط بين أعلى وأسفل الورقة عندما تكون أطول من النافذة', () => {
+  it('يسمح بالتمرير الحر على المحورين عندما تكون الورقة أطول من النافذة', () => {
     const viewportW = 1000;
     const viewportH = 800;
     const displayW = 600;
-    const displayH = 1600; // أطول من النافذة بمرتين
+    const displayH = 1600;
 
-    // التمرير لأعلى نقطة (تجاوز السقف)
-    const topExcess = clampStagePos(
-      { x: 200, y: 500 },
-      displayW,
-      displayH,
-      viewportW,
-      viewportH,
-      'wheel',
-    );
-    expect(topExcess.y).toBe(40); // لا يتجاوز هامش 40px من الأعلى
+    // موضع ظاهر بالكامل ضمن الحدود يُقبل كما هو
+    const topExcess = clampStagePos({ x: 200, y: 500 }, displayW, displayH, viewportW, viewportH);
+    expect(topExcess.y).toBe(500);
 
-    // التمرير لأسفل نقطة (تجاوز القاع)
+    // minY = minVisible - displayH = 150 - 1600 = -1450
     const bottomExcess = clampStagePos(
       { x: 200, y: -2500 },
       displayW,
       displayH,
       viewportW,
       viewportH,
-      'wheel',
     );
-    // minY = viewportH - displayH - 40 = 800 - 1600 - 40 = -840
-    expect(bottomExcess.y).toBe(-840);
+    expect(bottomExcess.y).toBe(-1450);
 
-    // التمرير في المنتصف يُقبل كما هو
-    const midScroll = clampStagePos(
-      { x: 200, y: -400 },
-      displayW,
-      displayH,
-      viewportW,
-      viewportH,
-      'wheel',
-    );
+    const midScroll = clampStagePos({ x: 200, y: -400 }, displayW, displayH, viewportW, viewportH);
     expect(midScroll.y).toBe(-400);
   });
 
-  it('freePan mode: يمنع هروب الورقة كلياً خارج حدود الشاشة عند التحريك الحر بمفتاح المسافة', () => {
+  it('يمنع هروب الورقة كلياً خارج حدود الشاشة عند التحريك الحر', () => {
     const viewportW = 1200;
     const viewportH = 900;
     const displayW = 800;
     const displayH = 600;
 
     // محاولة رمي الورقة لليسار في الفراغ اللانهائي
-    const farLeft = clampStagePos(
-      { x: -10000, y: 150 },
-      displayW,
-      displayH,
-      viewportW,
-      viewportH,
-      'freePan',
-    );
+    const farLeft = clampStagePos({ x: -10000, y: 150 }, displayW, displayH, viewportW, viewportH);
     // minX = 150 - displayW = 150 - 800 = -650
     expect(farLeft.x).toBe(-650);
     // الورقة تحتفظ بـ 150px مرئية على يسار الشاشة (-650 + 800 = 150px)
     expect(farLeft.x + displayW).toBe(150);
 
     // محاولة رمي الورقة لليمين في الفراغ اللانهائي
-    const farRight = clampStagePos(
-      { x: 10000, y: 150 },
-      displayW,
-      displayH,
-      viewportW,
-      viewportH,
-      'freePan',
-    );
+    const farRight = clampStagePos({ x: 10000, y: 150 }, displayW, displayH, viewportW, viewportH);
     // maxX = viewportW - 150 = 1200 - 150 = 1050
     expect(farRight.x).toBe(1050);
 
     // محاولة رمي الورقة لأعلى في الفراغ اللانهائي
-    const farTop = clampStagePos(
-      { x: 200, y: -10000 },
-      displayW,
-      displayH,
-      viewportW,
-      viewportH,
-      'freePan',
-    );
+    const farTop = clampStagePos({ x: 200, y: -10000 }, displayW, displayH, viewportW, viewportH);
     expect(farTop.y + displayH).toBe(150);
 
     // محاولة رمي الورقة لأسفل في الفراغ اللانهائي
-    const farBottom = clampStagePos(
-      { x: 200, y: 10000 },
-      displayW,
-      displayH,
-      viewportW,
-      viewportH,
-      'freePan',
-    );
+    const farBottom = clampStagePos({ x: 200, y: 10000 }, displayW, displayH, viewportW, viewportH);
     expect(farBottom.y).toBe(viewportH - 150);
   });
 

@@ -131,6 +131,19 @@ export function buildSingleComposition(input: SingleCompositionInput): SingleCom
     if (el.filter && !GO_SUPPORTED_FILTERS.has(el.filter)) {
       return fail(`مرشح غير مدعوم في الخدمة (${el.filter})`);
     }
+    // 🛡️ إذا كان العنصر يتجاوز حدود الكانفاس (مثل صورة مكبرة أو مزاحة لتأطير الوجه)،
+    // فإن رسم العنصر مباشرة كـ PrintItem مستقل في Go سيتجاوز بطاقة الورقة أو يرفضه
+    // حارس الحدود (invalid item geometry أو overflowItem). يتطلب هذا قَصّاً دقيقاً
+    // على حدود الكانفاس عبر مسار التقاط Konva المباشر بدقة الطباعة الكاملة (300+ DPI).
+    const TOLERANCE = 0.001;
+    if (
+      el.x < -TOLERANCE ||
+      el.y < -TOLERANCE ||
+      el.x + el.width > 1 + TOLERANCE ||
+      el.y + el.height > 1 + TOLERANCE
+    ) {
+      return fail('عنصر يتجاوز حدود الكانفاس ويتطلب قَصّاً على إطار العمل');
+    }
   }
 
   const sorted = [...visible].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));

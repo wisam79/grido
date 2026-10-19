@@ -62,7 +62,7 @@ describe('useKonvaDrag canonical architecture', () => {
         shiftPressedRef,
         getKonvaNode,
         setActiveGuides,
-      })
+      }),
     );
 
     // 1. Candidate position in the second half of canvas (e.g. x = 700px, 70% of canvas)
@@ -135,7 +135,7 @@ describe('useKonvaDrag canonical architecture', () => {
         shiftPressedRef,
         getKonvaNode,
         setActiveGuides,
-      })
+      }),
     );
 
     // Simulate drag start
@@ -151,7 +151,7 @@ describe('useKonvaDrag canonical architecture', () => {
 
     result.current.onDragEnd(mockDragEvent);
 
-    const updated = useEditorStore.getState().elements.find(e => e.id === flippedElement.id);
+    const updated = useEditorStore.getState().elements.find((e) => e.id === flippedElement.id);
     expect(updated).toBeDefined();
     // In canonical architecture, x is simply 600 / 1000 = 0.6 and y is 350 / 1000 = 0.35
     expect(updated?.x).toBeCloseTo(0.6, 4);
@@ -219,7 +219,7 @@ describe('useKonvaDrag canonical architecture', () => {
         shiftPressedRef,
         getKonvaNode,
         setActiveGuides,
-      })
+      }),
     );
 
     result.current.onDragStart();
@@ -245,9 +245,7 @@ describe('useKonvaDrag canonical architecture', () => {
 
     // The active guide must be emitted at coord: 0.5 (center of canvas, 500px), NOT at 0.602 or 0.6!
     expect(setActiveGuides).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({ type: 'v', coord: 0.5 })
-      ])
+      expect.arrayContaining([expect.objectContaining({ type: 'v', coord: 0.5 })]),
     );
   });
 
@@ -281,11 +279,86 @@ describe('useKonvaDrag canonical architecture', () => {
 
     useEditorStore.getState().alignSelectedElements('center');
 
-    const updated = useEditorStore.getState().elements.find(e => e.id === rotatedElement.id);
+    const updated = useEditorStore.getState().elements.find((e) => e.id === rotatedElement.id);
     expect(updated).toBeDefined();
     // Visual center must be at 0.5 (500px).
     // For width 0.2 (200px) and rotation 180, visual bounds are [400px, 600px].
     // Therefore node.x must be 0.6 (600px)!
     expect(updated?.x).toBeCloseTo(0.6, 4);
+  });
+
+  it('allows oversized elements (zoom framing) to drag freely across the entire canvas without lockup', () => {
+    const canvasWidth = 1000;
+    const canvasHeight = 1000;
+
+    // An oversized image element (1.5x canvas size, e.g. zoomed in to frame a face)
+    const oversizedElement: CanvasElement = {
+      id: 'el-oversized-1',
+      type: 'image',
+      imageSrc: 'face.png',
+      x: -0.25,
+      y: -0.25,
+      width: 1.5,
+      height: 1.5,
+      rotation: 0,
+      opacity: 1,
+      zIndex: 1,
+      flipX: false,
+      flipY: false,
+    };
+
+    useEditorStore.setState({
+      elements: [oversizedElement],
+      selectedIds: [oversizedElement.id],
+      selectedId: oversizedElement.id,
+      canvasWidth,
+      canvasHeight,
+    });
+
+    const mockStage = { scaleX: () => 1 };
+    const mockNode = {
+      x: vi.fn().mockReturnValue(-250),
+      y: vi.fn().mockReturnValue(-250),
+      getStage: () => mockStage,
+    };
+
+    const altPressedRef = { current: false };
+    const shiftPressedRef = { current: false };
+    const setActiveGuides = vi.fn();
+    const getKonvaNode = vi.fn().mockReturnValue(mockNode);
+
+    const { result } = renderHook(() =>
+      useKonvaDrag({
+        element: oversizedElement,
+        canvasWidth,
+        canvasHeight,
+        snapToGrid: false,
+        altPressedRef,
+        shiftPressedRef,
+        getKonvaNode,
+        setActiveGuides,
+      }),
+    );
+
+    // 1. Move to show the left part of the image on the canvas (x = 500)
+    const moveLeftPart = result.current.dragBoundFunc({ x: 500, y: 0 });
+    expect(moveLeftPart.x).toBe(500);
+
+    // 2. Move to center (x = -250)
+    const moveCenter = result.current.dragBoundFunc({ x: -250, y: -250 });
+    expect(moveCenter.x).toBe(-250);
+    expect(moveCenter.y).toBe(-250);
+
+    // 3. Move to show the right part of the image on the canvas (x = -1000)
+    const moveRightPart = result.current.dragBoundFunc({ x: -1000, y: -500 });
+    expect(moveRightPart.x).toBe(-1000);
+    expect(moveRightPart.y).toBe(-500);
+
+    // 4. Clamping protects against complete displacement into the void while allowing full panning
+    const clampedExtremeLeft = result.current.dragBoundFunc({ x: -5000, y: 0 });
+    expect(clampedExtremeLeft.x).toBe(250 - 1500); // -1250 (right edge still covers 250px of canvas)
+
+    const clampedExtremeRight = result.current.dragBoundFunc({ x: 5000, y: 0 });
+    expect(clampedExtremeRight.x).toBe(750); // left edge still covers 250px of canvas
   });
 });

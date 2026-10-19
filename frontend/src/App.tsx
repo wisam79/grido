@@ -659,12 +659,7 @@ export default function App() {
                 </div>
               ) : null
             }
-            footerContent={
-              <CanvasViewportDeck
-                isZenMode={panelsHook.isZenMode}
-                onToggleZenMode={panelsHook.toggleZenMode}
-              />
-            }
+            footerContent={<CanvasViewportDeck />}
           />
 
           {/* استضافة الحوارات الكسولة والمودال والإشعارات */}

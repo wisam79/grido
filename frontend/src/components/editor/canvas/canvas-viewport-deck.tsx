@@ -9,8 +9,6 @@ import {
   Magnet,
   Columns,
   Scissors,
-  Eye,
-  EyeSlash,
   MagnifyingGlassPlus,
   MagnifyingGlassMinus,
   Keyboard,
@@ -42,14 +40,10 @@ const ALL_PAPER_SIZES = [...PAPER_SIZES, ...ADVANCED_PAPER_SIZES];
 
 export interface CanvasViewportDeckProps {
   className?: string;
-  isZenMode?: boolean;
-  onToggleZenMode?: () => void;
 }
 
 export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
   className,
-  isZenMode = false,
-  onToggleZenMode,
 }: CanvasViewportDeckProps) {
   // الحالة عبر المحددات المشتركة (كانت 16 حقلاً في useShallow واحد هنا)
   const { template, canvasWidth, canvasHeight, mode, printSettings } = useCanvasContext();
@@ -139,7 +133,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
   return (
     <div
       className={cn(
-        'w-full flex items-center justify-between gap-3 select-none font-cairo text-xs',
+        'w-full flex items-center justify-between gap-3 select-none font-cairo text-xs flex-nowrap overflow-x-auto scrollbar-none',
         className,
       )}
       dir="rtl"
@@ -348,25 +342,6 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             }
             active={collageShowCutLines}
             onClick={() => setCollageShowCutLines(!collageShowCutLines)}
-          />
-        )}
-
-        {/* زر وضع التركيز / المعاينة النظيفة */}
-        {onToggleZenMode && (
-          <FluentCapsuleButton
-            icon={
-              isZenMode ? (
-                <EyeSlash className="w-4 h-4" weight="fill" />
-              ) : (
-                <Eye className="w-4 h-4" weight="regular" />
-              )
-            }
-            label={isZenMode ? 'استعادة الألواح الجانبية' : 'وضع التركيز'}
-            tooltip={
-              isZenMode ? 'استعادة الألواح الجانبية' : 'وضع التركيز (إخفاء الألواح الجانبية)'
-            }
-            active={isZenMode}
-            onClick={onToggleZenMode}
           />
         )}
       </div>

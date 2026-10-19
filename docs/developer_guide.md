@@ -71,9 +71,9 @@ $$\text{Pixel Position} = \text{Normalized Coordinate} \times \text{Canvas Dimen
 ### Full-Viewport Stage & Layer Architecture
 - **Stage Viewport Model:** In accordance with professional canvas architectures (Figma/Illustrator), `<Stage>` covers 100% of the viewport container dimensions (`viewportW`, `viewportH`). Zoom and pan are governed purely by native Stage transformations (`stage.scale({ x, y })` and `stage.position({ x, y })`), eliminating dynamic stage canvas reallocations and VRAM thrashing.
 - **Fixed `pixelRatio`:** `Konva.pixelRatio` is clamped to `Math.min(window.devicePixelRatio || 1, 2)` once upon component mounting, completely preventing element jitter and flashing during wheel zooming ticks.
-- **Bounded Navigation (`clampStagePos`):** Restricts paper position to prevent drifting into empty infinity:
-  - *Wheel scroll mode:* Locks exactly to viewport center when sheet fits on screen; scrolls strictly within sheet edges with a 40px margin when sheet exceeds viewport height.
-  - *Free-Pan mode (Spacebar/Middle-drag):* Preserves at least 150px of the paper visible inside viewport bounds.
+- **Unified Bounded Navigation (`clampStagePos`):** Restricts paper position to prevent drifting into empty infinity with one shared rule for wheel, trackpad, Spacebar, and Middle-drag. It preserves `minVisible = clamp(min(displayW, displayH) * 0.4, 40, 150)` pixels of the paper inside the viewport on both axes. There is no separate wheel-centering mode, so trackpad gestures never snap the sheet back to center.
+- **Stable Viewport Measurement (`useStableViewportSize`):** The first container measurement commits immediately; subsequent `ResizeObserver` changes are debounced by 140ms. This keeps `<Stage width height>` allocation stable during the 100ms panel transition instead of reallocating the canvas every frame.
+- **Frame-Batched Wheel Input:** Wheel deltas are normalized for line/page modes, accumulated, and applied once per `requestAnimationFrame`. Plain wheel/trackpad input pans both axes; Ctrl/Meta wheel zooms exponentially around the pointer.
 - **Multi-Layer Separation (`KonvaOverlayLayer`):** Separates the `<EditorTransformer>` and marquee selection rectangle (`marquee-rect`) into an isolated top `<Layer name="overlay-tools-layer">`. Content elements (`KonvaSingleLayer`) remain untouched and do not redraw during marquee selections or transformer handle interactions.
 
 ---

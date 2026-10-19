@@ -21,9 +21,45 @@ import { useImageDrop } from './use-image-drop';
 import { useRulerMetricsPreview } from './use-ruler-metrics';
 import { CanvasBleedGuides } from './canvas-bleed-guides';
 import { formatGuideMeasurement } from '@/lib/canvas/units';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('editor-canvas');
+
+/**
+ * 🧭 عزل خطوط المحاذاة الذكية في مكوّن مستقل لمنع إعادة رندر شجرة الكانفاس الأب
+ * عند ظهور أو اختفاء خطوط المحاذاة أثناء سحب العناصر.
+ */
+const CanvasActiveSnapGuides = React.memo(function CanvasActiveSnapGuides({
+  printMode,
+}: {
+  printMode: boolean;
+}) {
+  const activeGuides = useCanvasInteraction((s) => s.activeGuides);
+  if (printMode || activeGuides.length === 0) return null;
+
+  return (
+    <>
+      {activeGuides.map((guide, idx) => {
+        const isCenter = Math.abs(guide.coord - 0.5) < 0.005;
+        const color = isCenter ? guideCenter() : guideEdge();
+        return (
+          <div
+            key={`${guide.type}-${guide.coord}-${idx}`}
+            className="absolute pointer-events-none z-(--z-canvas-guides) transition-opacity duration-75"
+            style={{
+              left: guide.type === 'v' ? `${guide.coord * 100}%` : 0,
+              top: guide.type === 'h' ? `${guide.coord * 100}%` : 0,
+              width: guide.type === 'v' ? '1px' : '100%',
+              height: guide.type === 'h' ? '1px' : '100%',
+              backgroundColor: color,
+            }}
+          />
+        );
+      })}
+    </>
+  );
+});
 
 export interface EditorCanvasProps {
   printMode?: boolean;
@@ -40,7 +76,10 @@ export const EditorCanvas = React.memo(
     const innerRef = useRef<HTMLDivElement>(null);
 
     const lastDblClickRef = useRef<number>(0);
-    const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
+    const setActiveGuides = useCallback(
+      (guides: SnapGuide[]) => useCanvasInteraction.getState().setActiveGuides(guides),
+      [],
+    );
 
     const [contextMenu, setContextMenu] = useState<{
       position: ContextMenuPosition;
@@ -91,7 +130,6 @@ export const EditorCanvas = React.memo(
     const canvasWidth = useEditorStore((s) => s.canvasWidth);
     const canvasHeight = useEditorStore((s) => s.canvasHeight);
     const backgroundColor = useEditorStore((s) => s.backgroundColor);
-    const canvasZoom = useEditorStore((s) => s.canvasZoom);
     const showRuler = useEditorStore((s) => s.showRuler);
     const template = useEditorStore((s) => s.template);
     const printSettings = useEditorStore((s) => s.printSettings);
@@ -109,17 +147,13 @@ export const EditorCanvas = React.memo(
       stageScale,
       resolvedFitMode,
       leftoverRatio,
+      isPanning,
     } = useCanvasViewport(containerRef, innerRef);
-
-    // حجم العرض التقديري لحساب أبعاد الورقة (يُستخدم أيضاً كتبعية لقياسات المساطر)
-    const aspect = canvasWidth / (canvasHeight || 1);
 
     // 🧭 حركة مؤشر الفأرة على المساطر
     const { handleWorkspaceMouseMove, handleWorkspaceMouseLeave } = useRulerMetricsPreview(
       containerRef,
-      innerRef,
       { showRuler, printMode },
-      { canvasZoom, mode, aspect },
     );
 
     // يُنشر الوضع الفعّل ونسبة الفراغ لشريط العرض في التذييل (خارج شجرة الكانفاس)
@@ -329,7 +363,7 @@ export const EditorCanvas = React.memo(
           onToggleLockGuides={() => setLockUserGuides(!lockUserGuides)}
         />
 
-        <div className="flex flex-1 overflow-hidden relative" dir="ltr">
+        <div className="flex flex-1 min-h-0 overflow-hidden relative" dir="ltr">
           <ViewportFixedRulersSidebar
             showRuler={showRuler}
             printMode={printMode}
@@ -352,7 +386,7 @@ export const EditorCanvas = React.memo(
                 (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
               }
             }}
-            className="flex-1 overflow-hidden workspace-grid relative select-none"
+            className="flex-1 overflow-hidden canvas-viewport workspace-grid relative select-none"
             onMouseMove={handleWorkspaceMouseMove}
             onMouseLeave={handleWorkspaceMouseLeave}
             onDragOver={handleDragOver}
@@ -383,10 +417,12 @@ export const EditorCanvas = React.memo(
               data-fit-mode={resolvedFitMode}
               className="absolute pointer-events-none"
               style={{
-                left: stagePos.x,
-                top: stagePos.y,
+                left: 0,
+                top: 0,
                 width: displayW,
                 height: displayH,
+                transform: `translate3d(${stagePos.x}px, ${stagePos.y}px, 0)`,
+                willChange: isPanning ? 'transform' : 'auto',
               }}
             >
               {isLoading && (
@@ -485,25 +521,8 @@ export const EditorCanvas = React.memo(
                   );
                 })}
 
-              {/* 🧭 خطوط المحاذاة الذكية أثناء التحريك (Smart Snap Alignment Guides) */}
-              {!printMode &&
-                activeGuides.map((guide, idx) => {
-                  const isCenter = Math.abs(guide.coord - 0.5) < 0.005;
-                  const color = isCenter ? guideCenter() : guideEdge();
-                  return (
-                    <div
-                      key={`${guide.type}-${guide.coord}-${idx}`}
-                      className="absolute pointer-events-none z-(--z-canvas-guides) transition-opacity duration-75"
-                      style={{
-                        left: guide.type === 'v' ? `${guide.coord * 100}%` : 0,
-                        top: guide.type === 'h' ? `${guide.coord * 100}%` : 0,
-                        width: guide.type === 'v' ? '1px' : '100%',
-                        height: guide.type === 'h' ? '1px' : '100%',
-                        backgroundColor: color,
-                      }}
-                    />
-                  );
-                })}
+              {/* 🧭 خطوط المحاذاة الذكية أثناء التحريك معزولة في مكوّن مستقل */}
+              <CanvasActiveSnapGuides printMode={printMode} />
 
               <TextEditingOverlay
                 key={editingTextId || 'none'}

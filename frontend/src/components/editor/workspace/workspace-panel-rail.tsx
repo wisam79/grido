@@ -571,7 +571,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
               )}
             >
-              {/* نفس أيقونة «وضع التركيز» في كبسولة الكانفاس: عين مفتوحة/مغلقة */}
+              {/* زر «وضع التركيز» الحصري: عين مفتوحة/مغلقة لإخفاء أو استعادة الألواح الجانبية (Ctrl+.) */}
               {isZenMode ? (
                 <EyeSlash className="size-5" weight="fill" />
               ) : (
