@@ -85,7 +85,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
                     weight={activeTab === 'effects' ? 'duotone' : 'regular'}
                   />
                 ),
-                tooltip: element.type === 'image' ? 'المرشحات وتأثيرات الظل' : 'التأثيرات والظلال',
+                tooltip: element.type === 'image' ? 'التأثيرات وفلاتر الصورة' : 'التأثيرات والظلال',
                 className: 'px-1.5 gap-1',
               },
               {

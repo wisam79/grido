@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CollageCustomGridTab } from '../src/components/editor/panels/collage/collage-custom-grid-tab';
 import { GeneralSettings } from '../src/components/editor/properties/general-settings';
+import { TooltipProvider } from '../src/components/ui/tooltip';
 
 describe('CollageCustomGridTab Component Suite', () => {
   const defaultProps = {
@@ -167,7 +168,11 @@ describe('CollageCustomGridTab Component Suite', () => {
 
 describe('GeneralSettings (Paper Tab Properties)', () => {
   it('renders Canvas Dimensions, Paper Background, and Grid Columns sections', () => {
-    render(<GeneralSettings />);
+    render(
+      <TooltipProvider>
+        <GeneralSettings />
+      </TooltipProvider>,
+    );
 
     expect(screen.getByText('مساحة العمل')).toBeInTheDocument();
     expect(screen.getByText('خلفية الورقة')).toBeInTheDocument();

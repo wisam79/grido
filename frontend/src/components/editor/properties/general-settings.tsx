@@ -7,6 +7,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { FluentSection } from '@/components/ui/blocks';
 import { PaintBrush } from '@/components/ui/icons';
 import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function GeneralSettings() {
   const {
@@ -44,29 +45,31 @@ export function GeneralSettings() {
   }, []);
 
   return (
-    <div className="space-y-3 font-cairo" dir="rtl">
-      <CanvasDimensionsPanel />
+    <TooltipProvider delayDuration={300}>
+      <div className="space-y-3 font-cairo" dir="rtl">
+        <CanvasDimensionsPanel />
 
-      <FluentSection
-        ref={paperSectionRef}
-        icon={<PaintBrush className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
-        title="خلفية الورقة"
-        subtitle="تُطبَّق على الكانفاس ومعاينة الطباعة"
-        collapsible
-        open={paperOpen}
-        onOpenChange={setPaperOpen}
-      >
-        <StudioCanvasColorDeck
-          color={backgroundColor}
-          onChange={setBackgroundColor}
-          gradientColor2={backgroundGradientColor2}
-          onChangeGradientColor2={setBackgroundGradientColor2}
-          gradientAngle={backgroundGradientAngle}
-          onChangeGradientAngle={setBackgroundGradientAngle}
-        />
-      </FluentSection>
+        <FluentSection
+          ref={paperSectionRef}
+          icon={<PaintBrush className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
+          title="خلفية الورقة"
+          subtitle="تُطبَّق على الكانفاس ومعاينة الطباعة"
+          collapsible
+          open={paperOpen}
+          onOpenChange={setPaperOpen}
+        >
+          <StudioCanvasColorDeck
+            color={backgroundColor}
+            onChange={setBackgroundColor}
+            gradientColor2={backgroundGradientColor2}
+            onChangeGradientColor2={setBackgroundGradientColor2}
+            gradientAngle={backgroundGradientAngle}
+            onChangeGradientAngle={setBackgroundGradientAngle}
+          />
+        </FluentSection>
 
-      <GridColumnsPanel />
-    </div>
+        <GridColumnsPanel />
+      </div>
+    </TooltipProvider>
   );
 }
