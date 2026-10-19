@@ -224,7 +224,6 @@ export interface CanvasSizePreset {
   heightPx: number;
   dpi: number;
   tag: string;
-  description?: string;
 }
 
 export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
@@ -239,7 +238,6 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     heightPx: Math.round((152 / 25.4) * 300),
     dpi: 300,
     tag: '102 × 152 مم',
-    description: 'ورق الصور القياسي الأكثر انتشاراً في طابعات الاستوديو',
   },
   {
     id: 'preset-photo-5x7',
@@ -251,7 +249,6 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     heightPx: Math.round((178 / 25.4) * 300),
     dpi: 300,
     tag: '127 × 178 مم',
-    description: 'ورق صور البورتريه والمناسبات الفاخر',
   },
   {
     id: 'preset-paper-a6',
@@ -263,7 +260,6 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     heightPx: Math.round((148 / 25.4) * 300),
     dpi: 300,
     tag: '105 × 148 مم',
-    description: 'كروت بريدية وصور فوتوغرافية مصغرة',
   },
   {
     id: 'preset-photo-6x8',
@@ -275,7 +271,6 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     heightPx: Math.round((203 / 25.4) * 300),
     dpi: 300,
     tag: '152 × 203 مم',
-    description: 'مقاس البورتريه المكتبي والإطارات المتوسطة',
   },
 
   // 📄 ورق قياسي ومكتبي (Standard Commercial Paper)
@@ -289,7 +284,6 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     heightPx: Math.round((297 / 25.4) * 300),
     dpi: 300,
     tag: '210 × 297 مم',
-    description: 'المقاس العالمي الأول للطباعة والمستندات وتكرار الهويات',
   },
   {
     id: 'preset-paper-a5',
@@ -301,7 +295,6 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     heightPx: Math.round((210 / 25.4) * 300),
     dpi: 300,
     tag: '148 × 210 مم',
-    description: 'كتيبات، مطبوعات صغيرة، وقوائم',
   },
   {
     id: 'preset-paper-a3',
@@ -313,7 +306,6 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     heightPx: Math.round((420 / 25.4) * 300),
     dpi: 300,
     tag: '297 × 420 مم',
-    description: 'بوسترات وملصقات ومطبوعات مكبرة',
   },
   {
     id: 'preset-paper-letter',
@@ -325,13 +317,12 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     heightPx: Math.round((279 / 25.4) * 300),
     dpi: 300,
     tag: '216 × 279 مم',
-    description: 'الورق المكتبي القياسي الأمريكي والدولي',
   },
 
   // 📇 كروت وبطاقات مطبوعة (Printed Cards)
   {
     id: 'preset-card-cr80',
-    name: 'بطاقة قياسية CR-80 (شخصية)',
+    name: 'بطاقة قياسية CR-80',
     category: 'cards',
     widthMM: 85,
     heightMM: 55,
@@ -339,11 +330,10 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     heightPx: Math.round((55 / 25.4) * 300),
     dpi: 300,
     tag: '85 × 55 مم',
-    description: 'كروت الأعمال وبطاقات الهوية البلاستيكية',
   },
   {
     id: 'preset-card-business',
-    name: 'كارت عمل عريض (90×50 مم)',
+    name: 'كارت عمل (90×50 مم)',
     category: 'cards',
     widthMM: 90,
     heightMM: 50,
@@ -351,7 +341,6 @@ export const CANVAS_SIZE_PRESETS: CanvasSizePreset[] = [
     heightPx: Math.round((50 / 25.4) * 300),
     dpi: 300,
     tag: '90 × 50 مم',
-    description: 'كروت الشركات والعمل القياسية',
   },
 ];
 

@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
 	"image/jpeg"
+	"image/png"
 	"io"
 	"log/slog"
 	"net/http"
@@ -418,15 +420,62 @@ func (s *AIService) EnhanceImageWithAI(base64Image string, token string, limit i
 		bounds := img.Bounds()
 		if bounds.Dx() > 2048 || bounds.Dy() > 2048 {
 			img = imaging.Fit(img, 2048, 2048, imaging.Lanczos)
+			bounds = img.Bounds()
+		}
+
+		// فحص وجود قناة ألفا (الشفافية) للصور المفرغة والمقصوصة لمنع تحول الخلفية لأسود
+		hasAlpha := false
+		ext := strings.ToLower(filepath.Ext(realPath))
+		if ext == ".png" || ext == ".webp" {
+			switch m := img.(type) {
+			case *image.NRGBA:
+				step := 4
+				for y := bounds.Min.Y; y < bounds.Max.Y && !hasAlpha; y += step {
+					for x := bounds.Min.X; x < bounds.Max.X; x += step {
+						if m.NRGBAAt(x, y).A < 250 {
+							hasAlpha = true
+							break
+						}
+					}
+				}
+			case *image.RGBA:
+				step := 4
+				for y := bounds.Min.Y; y < bounds.Max.Y && !hasAlpha; y += step {
+					for x := bounds.Min.X; x < bounds.Max.X; x += step {
+						if m.RGBAAt(x, y).A < 250 {
+							hasAlpha = true
+							break
+						}
+					}
+				}
+			default:
+				step := 8
+				for y := bounds.Min.Y; y < bounds.Max.Y && !hasAlpha; y += step {
+					for x := bounds.Min.X; x < bounds.Max.X; x += step {
+						_, _, _, a := img.At(x, y).RGBA()
+						if a < 64000 {
+							hasAlpha = true
+							break
+						}
+					}
+				}
+			}
 		}
 
 		var buf bytes.Buffer
-		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 92}); err != nil {
-			return "", fmt.Errorf("encode jpeg for AI: %w", err)
+		if hasAlpha {
+			if err := png.Encode(&buf, img); err != nil {
+				return "", fmt.Errorf("encode png for AI: %w", err)
+			}
+			inputImageBytes = int64(buf.Len())
+			modalImagePayload = "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+		} else {
+			if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 92}); err != nil {
+				return "", fmt.Errorf("encode jpeg for AI: %w", err)
+			}
+			inputImageBytes = int64(buf.Len())
+			modalImagePayload = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
 		}
-
-		inputImageBytes = int64(buf.Len())
-		modalImagePayload = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
 	} else {
 		inputImageBytes = int64(len(base64Image)) * 3 / 4
 		modalImagePayload = base64Image

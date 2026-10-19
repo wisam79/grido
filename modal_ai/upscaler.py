@@ -244,11 +244,25 @@ class ImageEnhancer:
                 del image_bytes
                 return Response(content='{"error": "الصورة كبيرة جداً بعد الفك (الحد 15MB)"}', media_type="application/json", status_code=413)
             np_arr = np.frombuffer(image_bytes, np.uint8)
-            img_bgr = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            img_raw = cv2.imdecode(np_arr, cv2.IMREAD_UNCHANGED)
             del image_bytes, np_arr
-            
-            if img_bgr is None:
+
+            if img_raw is None:
                 return Response(content='{"error": "فشل قراءة الصورة"}', media_type="application/json", status_code=400)
+
+            # 🛡️ الكشف عن قناة الشفافية (Alpha Channel) لعزلها والحفاظ عليها لصور العزل والقص
+            has_alpha = False
+            alpha_mask = None
+            if len(img_raw.shape) == 3 and img_raw.shape[2] == 4:
+                alpha = img_raw[:, :, 3]
+                if np.any(alpha < 254):
+                    has_alpha = True
+                    alpha_mask = alpha
+                img_bgr = img_raw[:, :, :3]
+            elif len(img_raw.shape) == 2:
+                img_bgr = cv2.cvtColor(img_raw, cv2.COLOR_GRAY2BGR)
+            else:
+                img_bgr = img_raw[:, :, :3] if len(img_raw.shape) == 3 else img_raw
 
             # ⚡ تقليص الأبعاد الكبيرة جداً إلى 1920px قبل المعالجة لتسريع التشغيل وتوفير تكلفة الـ GPU
             h_orig, w_orig = img_bgr.shape[:2]
@@ -257,6 +271,8 @@ class ImageEnhancer:
                 scale = max_dim / float(max(h_orig, w_orig))
                 new_w, new_h = int(w_orig * scale), int(h_orig * scale)
                 img_bgr = cv2.resize(img_bgr, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                if has_alpha and alpha_mask is not None:
+                    alpha_mask = cv2.resize(alpha_mask, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
             # 🌟 إجراء معالجة فائقة المزدوجة (ترميم الوجوه بالـ CodeFormer وتوضيح الخلفية والملابس بالـ Real-ESRGAN)
             import sys
@@ -317,11 +333,28 @@ class ImageEnhancer:
             face_helper.get_inverse_affine(None)
             restored_img = face_helper.paste_faces_to_input_image(upsample_img=bg_img)
             
-            # تحويل النتيجة من BGR إلى JPEG Base64 عالية الجودة (Quality 93) لتسريع التشفير والتنزيل بـ 95%
-            success, encoded_img = cv2.imencode('.jpg', restored_img, [int(cv2.IMWRITE_JPEG_QUALITY), 93])
-            if not success:
-                raise Exception("فشل تشفير الصورة الناتجة")
-                
+            if has_alpha and alpha_mask is not None:
+                # 🌟 إعادة تركيب وتكبير قناع الشفافية الأصلي (Lanczos4) بدقة متطابقة مع أبعاد التكبير
+                restored_h, restored_w = restored_img.shape[:2]
+                upscaled_alpha = cv2.resize(alpha_mask, (restored_w, restored_h), interpolation=cv2.INTER_LANCZOS4)
+                restored_bgra = cv2.merge([
+                    restored_img[:, :, 0],
+                    restored_img[:, :, 1],
+                    restored_img[:, :, 2],
+                    upscaled_alpha
+                ])
+                # تشفير PNG فائق الجودة للحفاظ التام على الشفافية وخلفية القص المفرغة
+                success, encoded_img = cv2.imencode('.png', restored_bgra, [int(cv2.IMWRITE_PNG_COMPRESSION), 4])
+                if not success:
+                    raise Exception("فشل تشفير صورة PNG الشفافة الناتجة")
+                mime_type = "image/png"
+            else:
+                # تحويل النتيجة من BGR إلى JPEG Base64 عالية الجودة (Quality 93) لتسريع التشفير والتنزيل بـ 95%
+                success, encoded_img = cv2.imencode('.jpg', restored_img, [int(cv2.IMWRITE_JPEG_QUALITY), 93])
+                if not success:
+                    raise Exception("فشل تشفير الصورة الناتجة")
+                mime_type = "image/jpeg"
+
             img_str = base64.b64encode(encoded_img.tobytes()).decode("utf-8")
             
             # حساب تكلفة المعالجة بالدولار لكرت L4 (الفئة الفعلية في @app.cls(gpu="L4") — سعر الساعة $0.60)
@@ -391,7 +424,7 @@ class ImageEnhancer:
 
             return {
                 "success": True,
-                "image": f"data:image/jpeg;base64,{img_str}",
+                "image": f"data:{mime_type};base64,{img_str}",
                 "execution_seconds": exec_seconds,
                 "cost_usd": cost_usd,
                 "total_cost_usd": total_cost_usd,

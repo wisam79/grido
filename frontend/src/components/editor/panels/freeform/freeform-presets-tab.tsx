@@ -146,24 +146,17 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
                   )}
                 </div>
 
-                {/* اسم المقاس والوصف المختصر */}
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span
-                    className={cn(
-                      'text-xs leading-tight transition-colors',
-                      active
-                        ? 'text-foreground font-bold'
-                        : 'text-foreground font-medium group-hover:text-foreground',
-                    )}
-                  >
-                    {preset.name}
-                  </span>
-                  {preset.description && (
-                    <span className="text-2xs text-muted-foreground truncate leading-tight mt-0.5">
-                      {preset.description}
-                    </span>
+                {/* اسم المقاس */}
+                <span
+                  className={cn(
+                    'text-xs leading-tight transition-colors min-w-0 flex-1',
+                    active
+                      ? 'text-foreground font-bold'
+                      : 'text-foreground font-medium group-hover:text-foreground',
                   )}
-                </div>
+                >
+                  {preset.name}
+                </span>
               </div>
 
               {/* الأبعاد وعلامة الاختيار النشط */}

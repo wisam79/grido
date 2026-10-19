@@ -53,6 +53,110 @@ if (typeof window !== 'undefined') {
 // واحتياطي محلي على **يوم UTC** قبل أول عملية في اليوم — لا اشتقاق محلي موازٍ
 // بيوم محلي (كان يعرض رصيداً متبقياً بينما يرفض الخادم الطلب — التدقيق 12/F-01).
 
+/**
+ * يفحص ما إذا كان الكانفاس يحتوي على بكسلات شفافة (قناة ألفا < 250).
+ * فحص عينات سريعة كل 16 بكسل لتفادي أي إجهاد للـ CPU/DOM.
+ */
+function checkCanvasHasAlpha(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+): boolean {
+  try {
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const data = imgData.data;
+    for (let i = 3; i < data.length; i += 16) {
+      if (data[i] < 250) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
+function loadImageElement(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+/**
+ * شبكة أمان العميل (Client-Side Transparency Safeguard):
+ * إذا كانت الصورة الأصلية تحتوي على بكسلات شفافة (قص / عزل خلفية)،
+ * ولكن خادم الذكاء الاصطناعي أعادها بدون شفافية (بخلفية سوداء JPEG)،
+ * تُعاد زراعة قناع الشفافية الأصلي فوق الصورة المرممة باستخدام destination-in
+ * بنعومة ومطابقة أبعاد 1:1.
+ */
+export async function ensureTransparencyPreserved(
+  originalSrc: string,
+  enhancedDataUrl: string,
+): Promise<string> {
+  // إذا كانت الصورة المحسنة تأتي كـ PNG وفيها شفافية بالفعل، لا حاجة للمعالجة
+  if (enhancedDataUrl.startsWith('data:image/png')) {
+    const testImg = await loadImageElement(enhancedDataUrl);
+    if (testImg) {
+      const testCanvas = document.createElement('canvas');
+      testCanvas.width = testImg.naturalWidth || testImg.width;
+      testCanvas.height = testImg.naturalHeight || testImg.height;
+      const testCtx = testCanvas.getContext('2d');
+      if (testCtx) {
+        testCtx.drawImage(testImg, 0, 0);
+        if (checkCanvasHasAlpha(testCtx, testCanvas.width, testCanvas.height)) {
+          return enhancedDataUrl;
+        }
+      }
+    }
+  }
+
+  // فحص ما إذا كانت الصورة الأصلية ذات خلفية شفافة
+  const origImg = await loadImageElement(originalSrc);
+  if (!origImg) return enhancedDataUrl;
+
+  const origCanvas = document.createElement('canvas');
+  const origW = origImg.naturalWidth || origImg.width;
+  const origH = origImg.naturalHeight || origImg.height;
+  origCanvas.width = origW;
+  origCanvas.height = origH;
+  const origCtx = origCanvas.getContext('2d');
+  if (!origCtx) return enhancedDataUrl;
+
+  origCtx.drawImage(origImg, 0, 0);
+  const origHasAlpha = checkCanvasHasAlpha(origCtx, origW, origH);
+  if (!origHasAlpha) {
+    return enhancedDataUrl;
+  }
+
+  // الصورة الأصلية مقصوصة/شفافة ولكن النتيجة تفتقر للشفافية
+  const enhancedImg = await loadImageElement(enhancedDataUrl);
+  if (!enhancedImg) return enhancedDataUrl;
+
+  const outCanvas = document.createElement('canvas');
+  const outW = enhancedImg.naturalWidth || enhancedImg.width;
+  const outH = enhancedImg.naturalHeight || enhancedImg.height;
+  outCanvas.width = outW;
+  outCanvas.height = outH;
+  const outCtx = outCanvas.getContext('2d');
+  if (!outCtx) return enhancedDataUrl;
+
+  // 1. رسم الصورة المرممة
+  outCtx.drawImage(enhancedImg, 0, 0, outW, outH);
+
+  // 2. تطبيق قناع الشفافية الأصلي بدقة الأبعاد عبر destination-in
+  outCtx.globalCompositeOperation = 'destination-in';
+  outCtx.imageSmoothingEnabled = true;
+  outCtx.imageSmoothingQuality = 'high';
+  outCtx.drawImage(origImg, 0, 0, outW, outH);
+
+  // 3. تصدير صورة PNG شفافة مطابقة للأصل
+  return outCanvas.toDataURL('image/png');
+}
+
 export async function prepareImageForAiUpload(
   src: string,
   maxDim = 2048,
@@ -87,7 +191,14 @@ export async function prepareImageForAiUpload(
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+
+      // فحص وجود قناة ألفا للحفاظ على الشفافية بصيغة PNG
+      const hasAlpha = checkCanvasHasAlpha(ctx, w, h);
+      if (hasAlpha) {
+        resolve(canvas.toDataURL('image/png'));
+      } else {
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      }
     };
     img.onerror = () => resolve(src);
     img.src = src;
@@ -258,7 +369,9 @@ export function useAiEnhance(
       if (result.image) {
         setEnhanceProgress(95);
         setEnhanceProgressText('جاري حفظ الصورة ...');
-        const localPath = await SaveImageFromBase64(result.image);
+        // 🛡️ حماية الشفافية: استعادة قناع الشفافية الأصلي في حال تحول الخلفية لأسود
+        const finalImagePayload = await ensureTransparencyPreserved(element.imageSrc, result.image);
+        const localPath = await SaveImageFromBase64(finalImagePayload);
 
         // 🛡️ حارس الطزاثة الموحّد (`commitAiImageResult`, H3 من تدقيق 2026-10-08):
         // دورة الترميم السحابية تستغرق دقائق، فيُلغى التطبيق بصمت إن استُبدلت

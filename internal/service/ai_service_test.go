@@ -535,3 +535,88 @@ func TestEnhanceImageWithAI_LocalImagePath(t *testing.T) {
 	}
 }
 
+// TestEnhanceImageWithAI_LocalImagePath_TransparentPNG verifies that transparent PNG images
+// preserve their alpha channel and are sent as data:image/png;base64 to prevent black backgrounds.
+func TestEnhanceImageWithAI_LocalImagePath_TransparentPNG(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	mediaDir := filepath.Join(tempDir, "Media")
+	if err := os.MkdirAll(mediaDir, 0755); err != nil {
+		t.Fatalf("Failed to create media dir: %v", err)
+	}
+
+	// Create a test 100x100 PNG with transparency (cutout/background removed)
+	img := image.NewNRGBA(image.Rect(0, 0, 100, 100))
+	for y := 0; y < 100; y++ {
+		for x := 0; x < 100; x++ {
+			if x > 50 {
+				img.Set(x, y, color.NRGBA{R: 200, G: 100, B: 50, A: 255})
+			} else {
+				img.Set(x, y, color.NRGBA{R: 0, G: 0, B: 0, A: 0}) // Transparent
+			}
+		}
+	}
+	imgPath := filepath.Join(mediaDir, "cutout_ai_test.png")
+	f, err := os.Create(imgPath)
+	if err != nil {
+		t.Fatalf("Failed to create sample image: %v", err)
+	}
+	if err := png.Encode(f, img); err != nil {
+		f.Close()
+		t.Fatalf("Failed to encode sample image: %v", err)
+	}
+	f.Close()
+
+	GlobalAIRateLimiter.mu.Lock()
+	oldFilePath := GlobalAIRateLimiter.filePath
+	oldLoaded := GlobalAIRateLimiter.loaded
+	GlobalAIRateLimiter.usage = make(map[string]*AIRateEntry)
+	GlobalAIRateLimiter.filePath = filepath.Join(tempDir, "ai_rate_limits.json")
+	GlobalAIRateLimiter.loaded = true
+	GlobalAIRateLimiter.mu.Unlock()
+
+	defer func() {
+		GlobalAIRateLimiter.mu.Lock()
+		GlobalAIRateLimiter.filePath = oldFilePath
+		GlobalAIRateLimiter.loaded = oldLoaded
+		GlobalAIRateLimiter.usage = make(map[string]*AIRateEntry)
+		GlobalAIRateLimiter.mu.Unlock()
+	}()
+
+	var receivedImagePayload string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var reqBody map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if imgStr, ok := reqBody["image"].(string); ok {
+			receivedImagePayload = imgStr
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"image": "data:image/png;base64,mock_enhanced_png",
+		})
+	}))
+	defer ts.Close()
+
+	oldModalURL := ModalAIURL
+	ModalAIURL = ts.URL
+	defer func() { ModalAIURL = oldModalURL }()
+
+	aiSvc := NewAIService()
+	respStr, err := aiSvc.EnhanceImageWithAI("/local-image/cutout_ai_test.png", "test-valid-token", 5)
+	if err != nil {
+		t.Fatalf("EnhanceImageWithAI failed for transparent local image: %v", err)
+	}
+
+	if !strings.HasPrefix(receivedImagePayload, "data:image/png;base64,") {
+		t.Errorf("Expected payload to start with data:image/png;base64, got %s", receivedImagePayload[:min(30, len(receivedImagePayload))])
+	}
+	if !strings.Contains(respStr, "mock_enhanced_png") {
+		t.Errorf("Expected response to contain mock_enhanced_png, got %s", respStr)
+	}
+}
+
+
