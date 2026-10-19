@@ -427,13 +427,13 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             icon={
               <FileText
                 className="w-4 h-4"
-                weight={resolvedFit === 'height' ? 'duotone' : 'regular'}
+                weight={canvasFitMode === 'height' ? 'duotone' : 'regular'}
               />
             }
             label="ملاءمة الكل"
             tooltip={`ملاءمة الكل (${CANVAS_FIT_LABELS.height}) — الورقة كاملة على الشاشة`}
             shortcut="Ctrl+0"
-            active={resolvedFit === 'height'}
+            active={canvasFitMode === 'height'}
             onClick={fitZoom}
             testId="canvas-fit-all"
           />
@@ -467,11 +467,13 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 className="font-cairo text-xs font-semibold py-1 px-2.5 shadow-fluent-8"
               >
                 <span>
-                  {resolvedFit === 'actual'
-                    ? 'الحجم الفعلي 1:1 — بكسل الورقة = بكسل الشاشة'
-                    : resolvedFit === 'width'
-                      ? `ملاءمة العرض — الفراغ الجانبي ${leftoverPercent}% في وضع الكل`
-                      : 'ملاءمة الكل — انقر للاختيار بين أوضاع الملاءمة'}
+                  {canvasFitMode === 'auto'
+                    ? `ملاءمة تلقائية (${resolvedFit === 'width' ? 'ملاءمة العرض' : 'ملاءمة الكل'})`
+                    : resolvedFit === 'actual'
+                      ? 'الحجم الفعلي 1:1 — بكسل الورقة = بكسل الشاشة'
+                      : resolvedFit === 'width'
+                        ? `ملاءمة العرض — الفراغ الجانبي ${leftoverPercent}% في وضع الكل`
+                        : 'ملاءمة الكل — الورقة كاملة على الشاشة'}
                 </span>
               </TooltipContent>
             </Tooltip>

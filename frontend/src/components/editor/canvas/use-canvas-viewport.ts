@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { clampZoomRaw } from '@/lib/canvas/zoom';
-import { computeCanvasDisplay } from '@/lib/canvas/fit';
+import { computeCanvasDisplay, CANVAS_FIT_PADDING } from '@/lib/canvas/fit';
+import { RESET_CANVAS_PAN_EVENT } from '@/hooks/use-canvas-zoom';
 
 /**
  * عناصر تستهلك مفتاح المسافة نيابة عن المستخدم: حقول الكتابة (تكتب مسافة)
@@ -22,6 +23,25 @@ export function isSpaceHandledByTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el || typeof el.tagName !== 'string') return false;
   return SPACE_CONSUMED_TAGS.has(el.tagName) || el.isContentEditable === true;
+}
+
+/**
+ * حساب الموضع الافتراضي غير المزاح (Origin) لمسرح الكانفاس:
+ * - إذا كان البُعد أصغر من أو يساوي النافذة، يُوسَّط تماماً.
+ * - إذا كان البُعد أكبر من النافذة (مثل الارتفاع في ملاءمة العرض أو الحجم الفعلي 1:1)،
+ *   يبدأ من هامش الحماية العلوي/الجانبي (padding / 2) حتى لا يُقطع رأس أو جانب الورقة.
+ */
+export function computeDefaultStageOrigin(
+  displayW: number,
+  displayH: number,
+  viewportW: number,
+  viewportH: number,
+  padding = CANVAS_FIT_PADDING,
+): { x: number; y: number } {
+  const margin = Math.round(padding / 2);
+  const x = displayW <= viewportW ? Math.round((viewportW - displayW) / 2) : margin;
+  const y = displayH <= viewportH ? Math.round((viewportH - displayH) / 2) : margin;
+  return { x, y };
 }
 
 /**
@@ -105,6 +125,16 @@ export function useCanvasViewport(
   const [viewportSize, setViewportSize] = useState({ w: 800, h: 600 });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [prevGeomKey, setPrevGeomKey] = useState(
+    () => `${canvasFitMode}:${canvasWidth}:${canvasHeight}`,
+  );
+  const currentGeomKey = `${canvasFitMode}:${canvasWidth}:${canvasHeight}`;
+
+  // تصفير إزاحة التحريك عند تغيّر وضع الملاءمة أو أبعاد الورقة أثناء التصيير
+  if (prevGeomKey !== currentGeomKey) {
+    setPrevGeomKey(currentGeomKey);
+    setPan({ x: 0, y: 0 });
+  }
 
   const aspect = canvasWidth / (canvasHeight || 1);
 
@@ -121,13 +151,17 @@ export function useCanvasViewport(
 
   const { displayW, displayH, resolved: resolvedFitMode, leftoverRatio } = displayMetrics;
 
-  // إحداثيات الورقة في مساحة العمل مشتقة رياضياً: المركز التلقائي + إزاحة المستخدم (Pan)
-  const defaultCenterX = Math.round((viewportSize.w - displayW) / 2);
-  const defaultCenterY = Math.round((viewportSize.h - displayH) / 2);
+  // إحداثيات الورقة في مساحة العمل مشتقة رياضياً: المركز/البداية التلقائية + إزاحة المستخدم (Pan)
+  const defaultOrigin = computeDefaultStageOrigin(
+    displayW,
+    displayH,
+    viewportSize.w,
+    viewportSize.h,
+  );
 
   const rawStagePos = {
-    x: defaultCenterX + pan.x,
-    y: defaultCenterY + pan.y,
+    x: defaultOrigin.x + pan.x,
+    y: defaultOrigin.y + pan.y,
   };
 
   // تقييد إحداثيات الورقة حتى لا تضيع في الفضاء الخارجي أبداً
@@ -232,12 +266,16 @@ export function useCanvasViewport(
           'freePan',
         );
 
-        const newCenterX = Math.round((vW - nextMetrics.displayW) / 2);
-        const newCenterY = Math.round((vH - nextMetrics.displayH) / 2);
+        const newOrigin = computeDefaultStageOrigin(
+          nextMetrics.displayW,
+          nextMetrics.displayH,
+          vW,
+          vH,
+        );
 
         setPan({
-          x: clamped.x - newCenterX,
-          y: clamped.y - newCenterY,
+          x: clamped.x - newOrigin.x,
+          y: clamped.y - newOrigin.y,
         });
         setCanvasZoom(nextZ);
       } else {
@@ -251,12 +289,11 @@ export function useCanvasViewport(
 
         const clamped = clampStagePos({ x: targetX, y: targetY }, curW, curH, vW, vH, 'wheel');
 
-        const curCenterX = Math.round((vW - curW) / 2);
-        const curCenterY = Math.round((vH - curH) / 2);
+        const curOrigin = computeDefaultStageOrigin(curW, curH, vW, vH);
 
         setPan({
-          x: clamped.x - curCenterX,
-          y: clamped.y - curCenterY,
+          x: clamped.x - curOrigin.x,
+          y: clamped.y - curOrigin.y,
         });
       }
     };
@@ -286,12 +323,11 @@ export function useCanvasViewport(
 
         const clamped = clampStagePos({ x: targetX, y: targetY }, curW, curH, vW, vH, 'freePan');
 
-        const curCenterX = Math.round((vW - curW) / 2);
-        const curCenterY = Math.round((vH - curH) / 2);
+        const curOrigin = computeDefaultStageOrigin(curW, curH, vW, vH);
 
         setPan({
-          x: clamped.x - curCenterX,
-          y: clamped.y - curCenterY,
+          x: clamped.x - curOrigin.x,
+          y: clamped.y - curOrigin.y,
         });
       }
     };
@@ -349,6 +385,15 @@ export function useCanvasViewport(
     };
   }, [containerRef, setCanvasZoom]);
 
+  // الاستماع لحدث إعادة توسيط الكانفاس الصادر من أزرار الملاءمة والزوم
+  useEffect(() => {
+    const handleResetPan = () => {
+      setPan({ x: 0, y: 0 });
+    };
+    window.addEventListener(RESET_CANVAS_PAN_EVENT, handleResetPan);
+    return () => window.removeEventListener(RESET_CANVAS_PAN_EVENT, handleResetPan);
+  }, []);
+
   return {
     viewportSize,
     stagePos,
@@ -367,11 +412,10 @@ export function useCanvasViewport(
       const vH = viewportSize.h;
       const target = typeof pos === 'function' ? pos(stagePos) : pos;
       const clamped = clampStagePos(target, displayW, displayH, vW, vH, 'freePan');
-      const curCenterX = Math.round((vW - displayW) / 2);
-      const curCenterY = Math.round((vH - displayH) / 2);
+      const curOrigin = computeDefaultStageOrigin(displayW, displayH, vW, vH);
       setPan({
-        x: clamped.x - curCenterX,
-        y: clamped.y - curCenterY,
+        x: clamped.x - curOrigin.x,
+        y: clamped.y - curOrigin.y,
       });
     },
     resetPan: () => setPan({ x: 0, y: 0 }),

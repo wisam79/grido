@@ -3,7 +3,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { Stage } from 'react-konva';
 import type Konva from 'konva';
-import { clampStagePos } from '../src/components/editor/canvas/use-canvas-viewport';
+import {
+  clampStagePos,
+  computeDefaultStageOrigin,
+} from '../src/components/editor/canvas/use-canvas-viewport';
+import {
+  RESET_CANVAS_PAN_EVENT,
+  fitZoomStore,
+  fitWidthZoomStore,
+  autoFitZoomStore,
+  actualSizeZoomStore,
+  resetZoomStore,
+} from '../src/hooks/use-canvas-zoom';
 
 const noop = () => {};
 
@@ -281,5 +292,44 @@ describe('use-canvas-viewport — clampStagePos boundaries', () => {
     expect(layer?.clipWidth()).toBe(1000);
     expect(layer?.clipHeight()).toBe(700);
     unmount();
+  });
+
+  it('computeDefaultStageOrigin: يوسط الورقة عندما تلائم الشاشة ويبدأ من الهامش العلوي عندما تكون أطول', () => {
+    // 1. تلائم الشاشة تماماً: توسيط رياضي
+    const fitted = computeDefaultStageOrigin(600, 400, 1000, 800, 32);
+    expect(fitted.x).toBe(200); // (1000 - 600) / 2
+    expect(fitted.y).toBe(200); // (800 - 400) / 2
+
+    // 2. ملاءمة العرض (أطول من الشاشة): عرض موسط ورأس يبدأ من هامش 16px دون قطع الرأس
+    const wideTall = computeDefaultStageOrigin(968, 1400, 1000, 800, 32);
+    expect(wideTall.x).toBe(16); // (1000 - 968) / 2
+    expect(wideTall.y).toBe(16); // margin = 32 / 2
+
+    // 3. الحجم الفعلي 1:1 (أعرض وأطول من الشاشة): يبدأ من أعلى اليسار بهامش 16px
+    const actualHuge = computeDefaultStageOrigin(2480, 3508, 1200, 800, 32);
+    expect(actualHuge.x).toBe(16);
+    expect(actualHuge.y).toBe(16);
+  });
+
+  it('أفعال الملاءمة والزوم تُطلق حدث RESET_CANVAS_PAN_EVENT لإعادة التوسيط الفوري', () => {
+    const handler = vi.fn();
+    window.addEventListener(RESET_CANVAS_PAN_EVENT, handler);
+
+    fitZoomStore();
+    expect(handler).toHaveBeenCalledTimes(1);
+
+    fitWidthZoomStore();
+    expect(handler).toHaveBeenCalledTimes(2);
+
+    autoFitZoomStore();
+    expect(handler).toHaveBeenCalledTimes(3);
+
+    actualSizeZoomStore();
+    expect(handler).toHaveBeenCalledTimes(4);
+
+    resetZoomStore();
+    expect(handler).toHaveBeenCalledTimes(5);
+
+    window.removeEventListener(RESET_CANVAS_PAN_EVENT, handler);
   });
 });

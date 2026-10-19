@@ -1,11 +1,5 @@
-import { useEditorStore } from "@/lib/editor-store";
-import {
-  ZOOM_DEFAULT,
-  canZoomIn,
-  canZoomOut,
-  isDefaultZoom,
-  stepZoom,
-} from "@/lib/canvas/zoom";
+import { useEditorStore } from '@/lib/editor-store';
+import { ZOOM_DEFAULT, canZoomIn, canZoomOut, isDefaultZoom, stepZoom } from '@/lib/canvas/zoom';
 
 /**
  * use-canvas-zoom — أفعال الزوم الموحدة (كانت متناثرة نصاً متطابقاً في
@@ -22,6 +16,14 @@ import {
  * `grido:fit-canvas-to-screen` — فتغيير وضع الملاءمة يمرّ من متجر واحد.
  */
 
+export const RESET_CANVAS_PAN_EVENT = 'grido:reset-canvas-pan';
+
+export function dispatchResetCanvasPan(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(RESET_CANVAS_PAN_EVENT));
+  }
+}
+
 export function zoomInStore(): void {
   useEditorStore.getState().setCanvasZoom((z) => stepZoom(z, 1));
 }
@@ -32,27 +34,31 @@ export function zoomOutStore(): void {
 
 export function resetZoomStore(): void {
   useEditorStore.getState().setCanvasZoom(ZOOM_DEFAULT);
+  dispatchResetCanvasPan();
 }
 
-/** ملاءمة الكل — الورقة كاملة داخل منطقة العمل (بلا تمرير) */
+/** ملاءمة الكل — الورقة كاملة داخل منطقة العمل (بلا تمرير) مع إعادة التوسيط */
 export function fitZoomStore(): void {
   const { setCanvasFitMode, setCanvasZoom } = useEditorStore.getState();
-  setCanvasFitMode("height");
+  setCanvasFitMode('height');
   setCanvasZoom(ZOOM_DEFAULT);
+  dispatchResetCanvasPan();
 }
 
-/** ملاءمة العرض — الورقة تملأ عرض منطقة العمل ويُمرَّر الباقي رأسياً */
+/** ملاءمة العرض — الورقة تملأ عرض منطقة العمل ويُمرَّر الباقي رأسياً مع البدء من الأعلى */
 export function fitWidthZoomStore(): void {
   const { setCanvasFitMode, setCanvasZoom } = useEditorStore.getState();
-  setCanvasFitMode("width");
+  setCanvasFitMode('width');
   setCanvasZoom(ZOOM_DEFAULT);
+  dispatchResetCanvasPan();
 }
 
-/** ملاءمة تلقائية — يختار المحرر الوضع الأنسب لهندسة النافذة */
+/** ملاءمة تلقائية — يختار المحرر الوضع الأنسب لهندسة النافذة مع إعادة التوسيط */
 export function autoFitZoomStore(): void {
   const { setCanvasFitMode, setCanvasZoom } = useEditorStore.getState();
-  setCanvasFitMode("auto");
+  setCanvasFitMode('auto');
   setCanvasZoom(ZOOM_DEFAULT);
+  dispatchResetCanvasPan();
 }
 
 /**
@@ -61,8 +67,9 @@ export function autoFitZoomStore(): void {
  */
 export function actualSizeZoomStore(): void {
   const { setCanvasFitMode, setCanvasZoom } = useEditorStore.getState();
-  setCanvasFitMode("actual");
+  setCanvasFitMode('actual');
   setCanvasZoom(ZOOM_DEFAULT);
+  dispatchResetCanvasPan();
 }
 
 export function useCanvasZoom() {
