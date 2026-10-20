@@ -231,10 +231,12 @@ export const SlotProperties = React.memo(function SlotProperties({
 
   return (
     <div className="space-y-3 font-cairo select-none pb-4">
-      {/* 🎴 بطاقة 1: أبعاد ومعاينة الخلية */}
+      {/* 🎴 بطاقة 1: أبعاد ومعاينة الخلية — متقدمة، مطوية افتراضياً */}
       <FluentSection
         icon={<ImageSquare className="w-3.5 h-3.5" weight="duotone" />}
         title="أبعاد الطباعة"
+        collapsible
+        defaultOpen={false}
         action={
           <span
             className="text-micro font-semibold text-muted-foreground/80 bg-muted px-2 py-0.5 rounded-md border border-border/40 font-mono"
@@ -351,6 +353,8 @@ export const SlotProperties = React.memo(function SlotProperties({
       <FluentSection
         icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
         title="تعبئة الخلايا"
+        collapsible
+        defaultOpen={false}
         action={
           slots.length > 1 ? (
             <DropdownMenu>
@@ -475,10 +479,12 @@ export const SlotProperties = React.memo(function SlotProperties({
         </div>
       </FluentSection>
 
-      {/* 🎴 بطاقة 4: لون خلفية صورة الهوية */}
+      {/* 🎴 بطاقة 4: لون خلفية صورة الهوية — متقدمة، مطوية افتراضياً */}
       <FluentSection
         icon={<Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />}
         title="خلفية الصورة"
+        collapsible
+        defaultOpen={false}
       >
         <div className="flex items-center gap-1.5 flex-wrap">
           {[
@@ -635,12 +641,12 @@ export const SlotProperties = React.memo(function SlotProperties({
         </div>
       </FluentSection>
 
-      {/* 🎴 بطاقة 6: تكبير الصورة داخل الخلية */}
+      {/* 🎴 بطاقة 6: تكبير الصورة داخل الخلية — متقدمة، مطوية افتراضياً */}
       <FluentSection
         icon={<MagnifyingGlassPlus className="w-3.5 h-3.5 text-primary" weight="duotone" />}
         title="تكبير الصورة"
         collapsible
-        defaultOpen={true}
+        defaultOpen={false}
       >
         <FluentSliderField
           label="نسبة التكبير"

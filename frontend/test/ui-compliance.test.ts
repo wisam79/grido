@@ -117,6 +117,31 @@ describe('UI Compliance Guard — هرمية نصف القطر (طابع سطح 
   });
 });
 
+describe('UI Compliance Guard — ميزانية الأيقونات في المفتش', () => {
+  it('صفوف الإعدادات (سلايدر/صف) بلا أيقونة مكرّرة للتسمية', () => {
+    // قاعدة 21 أكتوبر 2026: الأيقونة حاجة بصرية لا فرض ولا زينة. أيقونة
+    // بجوار تسمية صريحة («السطوع»، «إزاحة أفقية») تكرّر النص وتقتطع عرض
+    // التسمية في عمود الخصائص (296px). المسموح: أيقونة رأس المجموعة
+    // (FluentSection) وأيقونات الأزرار.
+    const inspectorDir = join(SRC, 'components/editor/properties');
+    const offenders: string[] = [];
+
+    for (const full of walkSource(inspectorDir)) {
+      const lines = readFileSync(full, 'utf-8').split('\n');
+      let inRow = false;
+      lines.forEach((line, i) => {
+        if (/<Fluent(SliderField|SettingRow)\b/.test(line)) inRow = true;
+        if (inRow && /\bicon=\{/.test(line)) {
+          offenders.push(`${basename(full)}:${i + 1} → ${line.trim()}`);
+        }
+        if (inRow && /(\/>|>)\s*$/.test(line)) inRow = false;
+      });
+    }
+
+    expect(offenders, `أيقونات مكرّرة في صفوف المفتش:\n${offenders.join('\n')}`).toEqual([]);
+  });
+});
+
 describe('UI Compliance Guard — طبقات الارتفاع (Shadow Fluent)', () => {
   it('كل صنف ظل مستعمل في المصدر معرّف فعلاً في index.css', () => {
     // يمنع تكرار علة shadow-fluent-24: صنف غير معرّف لا يُولَّد إطلاقاً

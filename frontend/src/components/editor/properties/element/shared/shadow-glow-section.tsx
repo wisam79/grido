@@ -1,5 +1,5 @@
 import { CanvasElement, useEditorStore } from '@/lib/editor-store';
-import { Sparkle, Eye, Drop, ArrowsLeftRight, ArrowsDownUp } from '@/components/ui/icons';
+import { Sparkle } from '@/components/ui/icons';
 import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
 import { PopoverColorPicker } from '../../shared-controls';
 
@@ -31,7 +31,6 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
 
       <FluentSliderField
         label="شدة الظل"
-        icon={<Eye className="w-3.5 h-3.5" weight="regular" />}
         value={Math.round((element.shadowOpacity ?? 0) * 100)}
         min={0}
         max={100}
@@ -43,7 +42,6 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
 
       <FluentSliderField
         label="التمويه"
-        icon={<Drop className="w-3.5 h-3.5" weight="regular" />}
         value={element.shadowBlur || 0}
         min={0}
         max={50}
@@ -55,7 +53,6 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
 
       <FluentSliderField
         label="إزاحة أفقية"
-        icon={<ArrowsLeftRight className="w-3.5 h-3.5" weight="regular" />}
         value={element.shadowOffsetX || 0}
         min={-50}
         max={50}
@@ -67,7 +64,6 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
 
       <FluentSliderField
         label="إزاحة عمودية"
-        icon={<ArrowsDownUp className="w-3.5 h-3.5" weight="regular" />}
         value={element.shadowOffsetY || 0}
         min={-50}
         max={50}

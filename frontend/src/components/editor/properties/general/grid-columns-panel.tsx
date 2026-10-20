@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GridFour, Eye } from '@/components/ui/icons';
+import { GridFour } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 import {
@@ -208,7 +208,6 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   step={5}
                   unit="%"
                   onChange={(val) => setGridOpacity(val / 100)}
-                  icon={<Eye className="w-3.5 h-3.5" weight="regular" />}
                 />
 
                 {/* ألوان الشبكة */}

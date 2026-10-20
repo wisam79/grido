@@ -1,12 +1,4 @@
-import {
-  ArrowsOutCardinal,
-  Square,
-  BoundingBox,
-  Scissors,
-  Rows,
-  GridFour,
-  Check,
-} from '@/components/ui/icons';
+import { BoundingBox, Scissors, GridFour, Check } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { Switch } from '@/components/ui/switch';
 import { useShallow } from 'zustand/react/shallow';
@@ -80,7 +72,6 @@ export function CollageSettings() {
         <div className="flex flex-col gap-2.5">
           <FluentSliderField
             label="التباعد الداخلي"
-            icon={<Rows className="w-3.5 h-3.5" weight="regular" />}
             value={collageGap}
             min={0}
             max={30}
@@ -94,7 +85,6 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="الهوامش الخارجية"
-            icon={<ArrowsOutCardinal className="w-3.5 h-3.5" weight="regular" />}
             value={collageMargin}
             min={0}
             max={100}
@@ -108,7 +98,6 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="الزوايا"
-            icon={<Square className="w-3.5 h-3.5" weight="regular" />}
             value={collageRadius}
             min={0}
             max={50}
@@ -132,7 +121,6 @@ export function CollageSettings() {
               نكرّره في كل صف (كان: إطار الصور ← سُمك الإطار ← لون الإطار). */}
           <FluentSliderField
             label="السُّمك"
-            icon={<BoundingBox className="w-3.5 h-3.5" weight="regular" />}
             value={collageStrokeWidth}
             min={0}
             max={15}

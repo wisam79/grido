@@ -49,7 +49,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* شريط تبويبات لاصق: يبقى سياق التبويب ظاهراً أثناء تمرير الأقسام */}
-          <div className="sticky top-0 z-20 -mx-3.5 border-b border-border/40 bg-sidebar/95 px-3.5 pb-2 pt-0.5 backdrop-blur-xl">
+          <div className="sticky top-0 z-20 -mx-3 border-b border-border/40 bg-sidebar/95 px-3 pb-2 pt-0.5 backdrop-blur-xl">
             <FluentSegmentedControl<string>
               layoutId="element-properties-tabs"
               value={activeTab}

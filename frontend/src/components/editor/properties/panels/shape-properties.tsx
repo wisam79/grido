@@ -1,16 +1,5 @@
 import { ShapeElement, useEditorStore } from '@/lib/editor-store';
-import {
-  Palette,
-  Square,
-  BoundingBox,
-  Eye,
-  Sparkle,
-  Circle,
-  Star,
-  Polygon,
-  ArrowRight,
-  ArrowsLeftRight,
-} from '@/components/ui/icons';
+import { Palette, BoundingBox, Eye, Sparkle } from '@/components/ui/icons';
 import { PopoverColorPicker, QuickColorPalette } from '../shared-controls';
 import {
   FluentSection,
@@ -156,7 +145,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
         <div className="space-y-1.5 pt-1">
           <FluentSliderField
             label={isLine ? 'سمك الخط' : 'سماكة الحد'}
-            icon={<BoundingBox className="w-4 h-4" weight="regular" />}
             value={
               isLine
                 ? element.strokeWidth && element.strokeWidth > 0
@@ -209,7 +197,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             <FluentSettingRow
               layout="vertical"
               label="لون الحد"
-              icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
               control={
                 <PopoverColorPicker
                   color={element.stroke || '#000000'}
@@ -283,7 +270,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
               <div className="space-y-1.5 pt-2 border-t border-border/30">
                 <FluentSliderField
                   label="الزوايا"
-                  icon={<Square className="w-4 h-4" weight="regular" />}
                   value={uniformRadius}
                   min={0}
                   max={50}
@@ -322,7 +308,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                   (Konva.cornerRadius يقبل مصفوفة) — وإلغاء التفعيل يعيد الاستدارة الموحدة */}
                 <FluentSettingRow
                   label="زوايا مستقلة"
-                  icon={<Square className="w-3.5 h-3.5" weight="regular" />}
                   control={
                     <Switch
                       checked={!!element.radiusCorners}
@@ -368,7 +353,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           <div className="space-y-1.5 pt-2 border-t border-border/30">
             <FluentSliderField
               label="عدد أضلاع المضلع"
-              icon={<Polygon className="w-4 h-4" weight="regular" />}
               value={element.sides ?? 6}
               min={3}
               max={12}
@@ -385,7 +369,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           <div className="space-y-1.5 pt-2 border-t border-border/30">
             <FluentSliderField
               label="عدد الرؤوس"
-              icon={<Star className="w-4 h-4" weight="regular" />}
               value={element.starPoints ?? 5}
               min={3}
               max={20}
@@ -396,7 +379,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             />
             <FluentSliderField
               label="عمق الرؤوس"
-              icon={<Star className="w-4 h-4" weight="regular" />}
               value={Math.round((element.starInnerRatio ?? 0.5) * 100)}
               min={10}
               max={90}
@@ -413,7 +395,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           <div className="space-y-1.5 pt-2 border-t border-border/30">
             <FluentSliderField
               label="زاوية القوس"
-              icon={<Circle className="w-4 h-4" weight="regular" />}
               value={element.arcAngle ?? (element.shape === 'wedge' ? 90 : 270)}
               min={10}
               max={360}
@@ -454,7 +435,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           <div className="space-y-1.5 pt-2 border-t border-border/30">
             <FluentSliderField
               label="نصف القطر الداخلي"
-              icon={<Circle className="w-4 h-4" weight="regular" />}
               value={resolveRingInnerRadius(element.innerRadius, ringWidthPx, ringHeightPx)}
               min={1}
               max={ringInnerRadiusMax(ringWidthPx, ringHeightPx)}
@@ -471,7 +451,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           <div className="space-y-2 pt-2 border-t border-border/30">
             <FluentSliderField
               label="طول رأس السهم"
-              icon={<ArrowRight className="w-4 h-4" weight="regular" />}
               value={element.pointerLength ?? 14}
               min={6}
               max={40}
@@ -482,7 +461,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             />
             <FluentSliderField
               label="عرض رأس السهم"
-              icon={<ArrowRight className="w-4 h-4" weight="regular" />}
               value={element.pointerWidth ?? 14}
               min={6}
               max={40}
@@ -495,7 +473,6 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             {/* رأس في البداية — يحوّل السهم إلى مزدوج الرأسين (Konva.pointerAtBeginning) */}
             <FluentSettingRow
               label="رأس في البداية"
-              icon={<ArrowsLeftRight className="w-3.5 h-3.5" weight="regular" />}
               control={
                 <Switch
                   checked={element.pointerAtBeginning === true}
@@ -657,7 +634,6 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
       >
         <FluentSliderField
           label="شفافية الشكل"
-          icon={<Eye className="w-4 h-4" weight="regular" />}
           value={currentOpacity}
           min={0}
           max={100}

@@ -14,10 +14,6 @@ import {
   PaintBrush,
   Palette,
   Check,
-  Sun,
-  CircleHalfTilt,
-  Drop,
-  EyeSlash,
   ArrowClockwise,
   X,
   Scan,
@@ -109,7 +105,6 @@ export function ImageAdjustProperties({
 
         <FluentSliderField
           label="السطوع"
-          icon={<Sun className="w-4 h-4" weight="regular" />}
           value={element.brightness ?? 100}
           min={0}
           max={200}
@@ -125,7 +120,6 @@ export function ImageAdjustProperties({
         />
         <FluentSliderField
           label="التباين"
-          icon={<CircleHalfTilt className="w-4 h-4" weight="regular" />}
           value={element.contrast ?? 100}
           min={0}
           max={200}
@@ -141,7 +135,6 @@ export function ImageAdjustProperties({
         />
         <FluentSliderField
           label="التشبع"
-          icon={<Drop className="w-4 h-4" weight="regular" />}
           value={element.saturation ?? 100}
           min={0}
           max={200}
@@ -157,7 +150,6 @@ export function ImageAdjustProperties({
         />
         <FluentSliderField
           label="الضبابية"
-          icon={<EyeSlash className="w-4 h-4" weight="regular" />}
           value={element.blur ?? 0}
           min={0}
           max={20}
@@ -201,7 +193,6 @@ export function ImageAdjustProperties({
       >
         <FluentSliderField
           label="شفافية الصورة"
-          icon={<Eye className="w-4 h-4" weight="regular" />}
           value={currentOpacity}
           min={0}
           max={100}
@@ -555,10 +546,12 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         )}
       </FluentSection>
 
-      {/* 🎴 بطاقة 2: خلفية الصورة */}
+      {/* 🎴 بطاقة 2: خلفية الصورة — متقدمة، مطوية افتراضياً (كشف تدريجي) */}
       <FluentSection
         icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
         title="خلفية الصورة"
+        collapsible
+        defaultOpen={false}
       >
         <div className="flex items-center gap-1.5 flex-wrap">
           {[
@@ -751,7 +744,6 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       >
         <FluentSliderField
           label="الزوايا"
-          icon={<Square className="w-4 h-4" weight="regular" />}
           value={element.cornerRadius || 0}
           min={0}
           max={200}

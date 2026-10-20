@@ -175,7 +175,9 @@ export const FluentSliderField = React.memo(function FluentSliderField({
           id={labelId}
           className={cn(
             'flex items-center gap-1.5 text-xs font-normal text-foreground/80 shrink-0 select-none',
-            labelWidth || 'w-16',
+            // 80px بدل 64px: تسعة أحرف عربية كاملة بلا بتر في عمود 296px،
+            // بعد حذف أيقونة الصف التي كانت تلتهم 18px من العرض.
+            labelWidth || 'w-20',
           )}
           title={typeof label === 'string' ? label : undefined}
         >
