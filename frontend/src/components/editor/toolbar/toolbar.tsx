@@ -7,7 +7,6 @@ import {
   Export,
   DotsThreeVertical,
   Folders,
-  MagnifyingGlass,
 } from '@/components/ui/icons';
 import { ToolbarFileOps } from './toolbar-file-ops';
 import {
@@ -59,8 +58,11 @@ function CommandGroup({ children, className }: { children: React.ReactNode; clas
  *                                        [حفظ | طباعة | تصدير] [⋯] ← يسار
  *
  * - الترتيب من اليمين يتبع تدفق عمل المستخدم: إدخال → تعديل → إخراج.
- * - مجموعات مفصولة بخطوط رقيقة ومساحة تنفس، مع بحث أوامر في المنتصف
- *   وشريط حالة في المنتصف — لغة أوامر سطح مكتب لا صفحة ويب.
+ * - مجموعات مفصولة بخطوط رقيقة ومساحة تنفس، وشريط حالة في المنتصف — لغة
+ *   أوامر سطح مكتب لا صفحة ويب.
+ * - لا شريط بحث في الشريط: لوحة الأدوات (Ctrl+K) هي المرجع الوحيد للبحث
+ *   عن أمر، فلا تتكرر القدرة ولا يظهر الحقل الفارغ وسط الأوامر
+ *   (قاعدة «لوحة واحدة» في AGENTS.md).
  * - زر «مسح مساحة العمل» الأحمر انتقل إلى قائمة «المزيد» (⋯) — الإجراءات
  *   المدمِّرة لا تُثبَّت في الشريط الرئيسي (مبدأ Fluent: تقليل الخطورة الدائمة).
  */
@@ -103,27 +105,6 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
           <CommandGroup>
             <ToolbarSelectionTools />
           </CommandGroup>
-
-          {/* بحث الأوامر الوسطي — نمط شريط أوامر سطح المكتب (Office/VS Code):
-              يجعل الشريط مرجعاً واحداً للوصول إلى كل أداة بلا حفر في القوائم.
-              في التدفق لا فوقه: يتمدّد في الفراغ المتبقي ولا يغطي مجموعة
-              عندما تتضاعف أدوات التحديد. */}
-          <div className="hidden xl:flex flex-1 min-w-[180px] items-center justify-center px-3 h-full">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'))}
-              data-testid="toolbar-command-search"
-              aria-label="ابحث أو نفّذ أمراً (Ctrl + K)"
-              title="ابحث عن أداة أو أمر (Ctrl+K)"
-              className="flex h-8 w-full max-w-[284px] items-center gap-2 rounded-md border border-border/70 bg-background/70 px-2.5 text-mini text-muted-foreground hover:border-border hover:bg-background hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <MagnifyingGlass className="w-3.5 h-3.5 shrink-0" />
-              <span className="flex-1 text-start truncate">ابحث أو نفّذ أمراً…</span>
-              <kbd className="shrink-0 px-1 py-0.5 text-2xs leading-none font-mono bg-muted/80 rounded-sm border border-border/70">
-                Ctrl+K
-              </kbd>
-            </button>
-          </div>
         </div>
 
         {/* المجموعة النهائية: الحفظ والطباعة والتصدير في مجموعة أوامر موحدة */}
