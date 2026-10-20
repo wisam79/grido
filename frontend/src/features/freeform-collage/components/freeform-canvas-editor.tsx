@@ -294,7 +294,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
         : null;
 
     return (
-      <div className="w-full flex items-center justify-center bg-muted/30 rounded-2xl relative flex-1 min-h-0 overflow-hidden p-3 border border-border/40 font-cairo select-none">
+      <div className="w-full flex items-center justify-center bg-muted/30 rounded-xl relative flex-1 min-h-0 overflow-hidden p-3 border border-border/40 font-cairo select-none">
         {/* ظل خلفي ناعم يحاكي طاولة الاستوديو */}
         <div
           ref={paperRef}

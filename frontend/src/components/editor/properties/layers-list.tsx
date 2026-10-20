@@ -588,11 +588,11 @@ export function LayersList({
   // ── Empty ───────────────────────────────────────────────────────────────
   if (elements.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 dark:bg-muted/10 p-6 text-center select-none flex flex-col items-center justify-center gap-3 animate-in fade-in duration-100">
-        <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/15 flex items-center justify-center text-primary shadow-2xs">
-          <Stack className="w-6 h-6 opacity-90" weight="duotone" />
+      <div className="rounded-md border border-dashed border-border/60 bg-transparent p-4 text-center select-none flex flex-col items-center justify-center gap-2 animate-in fade-in duration-100">
+        <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+          <Stack className="w-5 h-5 opacity-90" weight="duotone" />
         </div>
-        <div className="space-y-1.5 max-w-[200px]">
+        <div className="space-y-1 max-w-[200px]">
           <p className="text-xs font-bold text-foreground">لا توجد طبقات بعد</p>
           <p className="text-micro leading-relaxed text-muted-foreground text-center" dir="rtl">
             أضف عناصر من تبويب العناصر — ستظهر هنا مرتبة حسب العمق

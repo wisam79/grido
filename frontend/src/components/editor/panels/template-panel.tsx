@@ -227,7 +227,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
           if (!open) setPendingTemplate(null);
         }}
       >
-        <AlertDialogContent dir="rtl" className="font-cairo rounded-2xl border fluent-specular">
+        <AlertDialogContent dir="rtl" className="font-cairo rounded-xl border fluent-specular">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-start text-base font-bold">
               {droppedCount > 0 ? 'تبديل قالب الكولاج' : 'وضع الكولاج'}

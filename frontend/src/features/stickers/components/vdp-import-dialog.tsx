@@ -212,7 +212,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(o) : closeAndReset())}>
       <DialogContent
         showCloseButton={false}
-        className="w-[94vw] sm:max-w-[560px] max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular gap-0"
+        className="w-[94vw] sm:max-w-[560px] max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-28 font-cairo fluent-specular gap-0"
         dir="rtl"
       >
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">

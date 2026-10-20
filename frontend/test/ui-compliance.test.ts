@@ -68,7 +68,7 @@ describe('UI Compliance Guard — ثوابت الحارس الداخلية', () 
   it('الحد الأدنى لهدف اللمس 44px وسلاسل التوكنز معرّفة', () => {
     expect(TOUCH_TARGET_MIN).toBe(44);
     expect(RADIUS.control).toBe('rounded-md');
-    expect(RADIUS.modal).toBe('rounded-2xl');
+    expect(RADIUS.modal).toBe('rounded-xl');
     expect(typeof MOTION.normal).toBe('number');
     // هرم z رقمي تصاعدي: القمة أعلى من كل الطبقات
     const values = Object.values(Z);

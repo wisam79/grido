@@ -364,12 +364,12 @@ export const StickerPreview = React.memo(function StickerPreview({
 
           {/* Glossy Sheen Overlay */}
           {finish === 'glossy' && (
-            <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-tr from-transparent via-white/10 to-white/25 opacity-70 group-hover:opacity-90 transition-opacity" />
+            <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-tr from-transparent via-white/10 to-white/25 opacity-70 group-hover:opacity-90 transition-opacity" />
           )}
 
           {/* Holographic Iridescent Shimmer */}
           {finish === 'holographic' && (
-            <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-r from-pink-500/20 via-cyan-400/25 to-yellow-400/20 mix-blend-overlay opacity-80 group-hover:opacity-100 transition-opacity" />
+            <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-r from-pink-500/20 via-cyan-400/25 to-yellow-400/20 mix-blend-overlay opacity-80 group-hover:opacity-100 transition-opacity" />
           )}
         </div>
 

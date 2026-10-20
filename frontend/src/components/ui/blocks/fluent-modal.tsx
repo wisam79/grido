@@ -77,7 +77,7 @@ export const FluentModal = React.memo(function FluentModal({
         dir="rtl"
         showCloseButton={false}
         className={cn(
-          'max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular transition-all duration-150 gap-0',
+          'max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular transition-all duration-150 gap-0',
           SIZE_CLASSES[size],
           contentClassName,
         )}
@@ -92,7 +92,7 @@ export const FluentModal = React.memo(function FluentModal({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               {icon && (
-                <div className="w-9 h-9 rounded-xl bg-muted/80 dark:bg-white/5 text-muted-foreground flex items-center justify-center shrink-0 border border-border/60">
+                <div className="w-8 h-8 rounded-md bg-muted/60 dark:bg-white/5 text-muted-foreground flex items-center justify-center shrink-0 border border-border/60">
                   {icon}
                 </div>
               )}

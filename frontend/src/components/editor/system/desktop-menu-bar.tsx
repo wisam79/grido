@@ -724,7 +724,7 @@ export function DesktopMenuBar() {
       <AlertDialog open={emptyTrashDialogOpen} onOpenChange={setEmptyTrashDialogOpen}>
         <AlertDialogContent
           dir="rtl"
-          className="font-cairo rounded-2xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-16 p-6 max-w-md"
+          className="font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-16 p-6 max-w-md"
         >
           <AlertDialogHeader>
             <AlertDialogTitle className="text-start text-base font-bold flex items-center gap-2">

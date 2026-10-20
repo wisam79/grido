@@ -24,7 +24,7 @@ const Command = React.forwardRef<
   <CommandPrimitive
     ref={ref}
     className={cn(
-      'flex h-full w-full flex-col overflow-hidden rounded-xl bg-background text-foreground font-cairo',
+      'flex h-full w-full flex-col overflow-hidden rounded-lg bg-background text-foreground font-cairo',
       className,
     )}
     {...props}
@@ -36,7 +36,7 @@ const CommandInput = React.forwardRef<
   React.ComponentRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-  <div className="flex items-center gap-2 border-b border-border/70 px-3 py-2.5">
+  <div className="flex items-center gap-2 border-b border-border/70 px-2.5 py-2">
     <MagnifyingGlass className="w-4 h-4 shrink-0 text-muted-foreground" weight="duotone" />
     <CommandPrimitive.Input
       ref={ref}
@@ -108,7 +108,7 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      'relative flex cursor-pointer select-none items-center gap-2.5 rounded-md px-2 py-2 text-xs outline-none transition-colors duration-100',
+      'relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none transition-colors duration-100',
       'data-[selected=true]:bg-accent-active data-[selected=true]:text-foreground',
       'data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50',
       'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',

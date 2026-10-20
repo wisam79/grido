@@ -192,7 +192,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[480px] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular gap-0"
+        className="w-[96vw] sm:max-w-[480px] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular gap-0"
         dir="rtl"
       >
         {/* Title Bar with Close Button */}
@@ -308,7 +308,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
               {/* QR Code Container */}
               {activeUrl ? (
-                <div className="relative group p-4 bg-card dark:bg-white rounded-2xl shadow-fluent-8 border border-border/40 flex items-center justify-center">
+                <div className="relative group p-4 bg-card dark:bg-white rounded-xl shadow-fluent-8 border border-border/40 flex items-center justify-center">
                   <QRCodeSVG
                     value={activeUrl}
                     size={190}
@@ -317,7 +317,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                     fgColor="#090d16"
                     includeMargin={false}
                   />
-                  <div className="absolute inset-0 rounded-2xl pointer-events-none ring-1 ring-inset ring-black/5" />
+                  <div className="absolute inset-0 rounded-xl pointer-events-none ring-1 ring-inset ring-black/5" />
                 </div>
               ) : null}
 

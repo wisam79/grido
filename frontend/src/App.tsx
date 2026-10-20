@@ -324,7 +324,7 @@ export default function App() {
                     role="tablist"
                     aria-label="وضع العمل"
                     dir="rtl"
-                    className="flex md:hidden items-center gap-0.5 p-0.5 rounded-lg bg-muted/40 dark:bg-black/20 border border-border/50 shadow-inner select-none title-bar-controls"
+                    className="flex md:hidden items-center gap-0.5 p-0.5 rounded-md bg-muted/40 dark:bg-black/20 border border-border/50 select-none title-bar-controls"
                   >
                     <button
                       type="button"
@@ -376,7 +376,7 @@ export default function App() {
                   <div
                     role="tablist"
                     aria-label="وضع العمل"
-                    className="relative inline-flex items-center p-0.5 rounded-lg bg-muted/40 dark:bg-black/20 border border-border/50 shadow-inner select-none"
+                    className="relative inline-flex items-center p-0.5 rounded-md bg-muted/40 dark:bg-black/20 border border-border/50 select-none"
                   >
                     {/* خيار 1: كولاج */}
                     <button

@@ -594,7 +594,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         showCloseButton={false}
         // 🛡️ بلا min-h ثابت (كان يحجب الفوتر تحت ~590px) وبلا قص أفقي
         // صامت للعمودين (670px ثابتة) — تمرير أفقي بدلاً من ذلك
-        className="w-[94vw] sm:max-w-[920px] h-[640px] max-h-[88vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular gap-0"
+        className="w-[94vw] sm:max-w-[920px] h-[640px] max-h-[88vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-28 font-cairo fluent-specular gap-0"
         dir="rtl"
       >
         {/* ── Title Bar Header (Adapts to Active Stage) ── */}

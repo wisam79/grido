@@ -23,7 +23,7 @@ export function assertSpacing(value: number, where: string): void {
 export const RADIUS = {
   control: 'rounded-md', // 4-6px: أزرار/حقول/قوائم
   container: 'rounded-xl', // 8-12px: بطاقات/ألواح
-  modal: 'rounded-2xl', // 16-24px: مودالات
+  modal: 'rounded-xl', // 10px: مودالات سطح المكتب — لا بطاقات ويب دائرية
   pill: 'rounded-full', // كبسولات/أفاتار
 } as const;
 

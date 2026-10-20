@@ -102,7 +102,7 @@ export function KeyboardShortcutsDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
         showCloseButton={false}
-        className="w-[95vw] sm:max-w-[480px] max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 rounded-2xl font-cairo fluent-specular transition-all duration-150 gap-0"
+        className="w-[95vw] sm:max-w-[480px] max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 shadow-fluent-16 rounded-xl font-cairo fluent-specular transition-all duration-150 gap-0"
         dir="rtl"
       >
         {/* رأس النافذة الثابت */}

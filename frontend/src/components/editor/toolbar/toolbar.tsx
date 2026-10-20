@@ -1,6 +1,5 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import {
   Broom,
   FloppyDisk,
@@ -8,6 +7,7 @@ import {
   Export,
   DotsThreeVertical,
   Folders,
+  MagnifyingGlass,
 } from '@/components/ui/icons';
 import { ToolbarFileOps } from './toolbar-file-ops';
 import {
@@ -24,6 +24,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
 
 interface ToolbarProps {
   onPrint: () => void;
@@ -32,147 +34,198 @@ interface ToolbarProps {
 }
 
 /**
+ * مجموعة أوامر — أزرار متجاورة يفصلها خط شعري رقيق. بلا عنوان مرئي:
+ * الأزرار التي تحتاج اسماً تحمله (مثل «إدراج»)، والبقية تُشرح بـTooltip
+ * عند التحويم — عناوين المجموعات كانت تكراراً بصرياً بلا معلومة إضافية.
+ */
+function CommandGroup({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn(
+        'h-full shrink-0 flex items-center justify-center gap-0.5 px-1.5 border-e border-border/50 last:border-e-0',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
  * شريط الأدوات العلوي — توزيع احترافي بمنطق «ثابت → سياقي → أوامر»:
  *
- *   [ملف] | [تراجع/إعادة] | [إضافة عناصر] | [نقل للكولاج]  ← يسار (RTL)
+ *   [ملف] | [تراجع/إعادة] | [إضافة عناصر] | [نقل للكولاج]  ← يمين (RTL)
  *   [أدوات التحديد السياقية — تظهر عند التحديد]
- *                                        [حفظ | طباعة | تصدير] [⋯] ← يمين
+ *                                        [حفظ | طباعة | تصدير] [⋯] ← يسار
  *
- * - الترتيب من اليسار يتبع تدفق عمل المستخدم: إدخال → تعديل (تراجع/إضافة) →
- *   إخراج (نقل/تحديد)، والأوامر النهائية مثبتة يميناً بلا إزاحة مهما تغيّر الوسط.
+ * - الترتيب من اليمين يتبع تدفق عمل المستخدم: إدخال → تعديل → إخراج.
+ * - مجموعات مفصولة بخطوط رقيقة ومساحة تنفس، مع بحث أوامر في المنتصف
+ *   وشريط حالة في المنتصف — لغة أوامر سطح مكتب لا صفحة ويب.
  * - زر «مسح مساحة العمل» الأحمر انتقل إلى قائمة «المزيد» (⋯) — الإجراءات
  *   المدمِّرة لا تُثبَّت في الشريط الرئيسي (مبدأ Fluent: تقليل الخطورة الدائمة).
  */
 // 🚀 memo: الترويسة تستقبل دوال معالجات ثابتة من App — بلا memo كانت أي إعادة
 // رسم في App (فتح حوار، toast، حالة تشغيل) تجرف الشريط كاملاً وأدواته الفرعية.
 export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
+  // مجموعة «نقل إلى الكولاج» ترجع null خارج وضع التعديل الحر، فإبقاء عنوانها
+  // كان يترك تسمية معلّقة فوق فراغ.
+  const isSingleMode = useEditorStore((s) => s.mode === 'single');
+
   return (
     <div
       data-testid="workspace-toolbar"
       dir="rtl"
-      className="relative h-12 shrink-0 border-b border-border bg-sidebar/95 backdrop-blur-xl select-none no-print font-cairo"
+      className="relative h-12 shrink-0 border-b border-border bg-sidebar select-none no-print font-cairo"
     >
-      <div className="h-full flex items-center justify-between gap-2 px-3">
-        {/* المجموعات الرئيسية (ملف، أدوات، تحرير)
+      <div className="h-full flex items-center justify-between gap-1 px-1.5">
+        {/* المجموعات الرئيسية (ملف، تحرير، إدراج، كولاج، تحديد)
             ⚠️ عند ضيق النافذة تُمرَّر هذه المجموعة أفقياً بلا شريط ظهور
             بدل أن يُقطع الطرف الآخر (الحفظ/الطباعة/التصدير). */}
-        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-x-auto scrollbar-none">
-          {/* المجموعة 1: إدخال المحتوى — إدراج صور/مشاريع */}
-          <ToolbarFileOps />
+        <div className="flex items-stretch h-full min-w-0 flex-1 overflow-x-auto scrollbar-none">
+          <CommandGroup>
+            <ToolbarFileOps />
+          </CommandGroup>
 
-          <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
+          <CommandGroup>
+            <ToolbarHistoryTools />
+          </CommandGroup>
 
-          {/* المجموعة 2: التحرير — تراجع/إعادة (مثبتة بشكل دائم لمنع أي إزاحة تخطيطية Layout Shift) */}
-          <ToolbarHistoryTools />
+          <CommandGroup>
+            <ToolbarAddTools />
+          </CommandGroup>
 
-          <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
+          {isSingleMode && (
+            <CommandGroup>
+              <ToolbarTransferToCollage />
+            </CommandGroup>
+          )}
 
-          {/* المجموعة 3: إضافة عناصر (نص / أشكال / ملصقات) متاحة دائماً */}
-          <ToolbarAddTools />
+          <CommandGroup>
+            <ToolbarSelectionTools />
+          </CommandGroup>
 
-          {/* المجموعة 4: إخراج التصميم — نقل وتكراره في شبكة الكولاج (وضع التصميم الحر) */}
-          <ToolbarTransferToCollage />
-
-          {/* المجموعة 5: أدوات التحديد والسياق — تظهر بسلاسة عند تحديد عنصر */}
-          <ToolbarSelectionTools />
+          {/* بحث الأوامر الوسطي — نمط شريط أوامر سطح المكتب (Office/VS Code):
+              يجعل الشريط مرجعاً واحداً للوصول إلى كل أداة بلا حفر في القوائم.
+              في التدفق لا فوقه: يتمدّد في الفراغ المتبقي ولا يغطي مجموعة
+              عندما تتضاعف أدوات التحديد. */}
+          <div className="hidden xl:flex flex-1 min-w-[180px] items-center justify-center px-3 h-full">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('grido:open-tool-launcher'))}
+              data-testid="toolbar-command-search"
+              aria-label="ابحث أو نفّذ أمراً (Ctrl + K)"
+              title="ابحث عن أداة أو أمر (Ctrl+K)"
+              className="flex h-8 w-full max-w-[284px] items-center gap-2 rounded-md border border-border/70 bg-background/70 px-2.5 text-mini text-muted-foreground hover:border-border hover:bg-background hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <MagnifyingGlass className="w-3.5 h-3.5 shrink-0" />
+              <span className="flex-1 text-start truncate">ابحث أو نفّذ أمراً…</span>
+              <kbd className="shrink-0 px-1 py-0.5 text-2xs leading-none font-mono bg-muted/80 rounded-sm border border-border/70">
+                Ctrl+K
+              </kbd>
+            </button>
+          </div>
         </div>
 
         {/* المجموعة النهائية: الحفظ والطباعة والتصدير في مجموعة أوامر موحدة */}
-        <div className="flex items-center gap-1 shrink-0 ms-auto">
-          <div className="fluent-command-group shadow-2xs">
-            {/* حفظ (Ctrl+S) — زر أيقوني قياسي موحّد */}
-            <TooltipBtn content="حفظ المشروع (Ctrl + S)">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onSave}
-                data-testid="toolbar-save"
-                aria-label="حفظ المشروع"
-                className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
-              >
-                <FloppyDisk className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
-              </Button>
-            </TooltipBtn>
-
-            {/* طباعة (Ctrl+P) — زر أيقوني قياسي موحّد */}
-            <TooltipBtn content="طباعة المستند (Ctrl + P)">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onPrint}
-                data-testid="toolbar-print"
-                aria-label="طباعة المستند"
-                className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
-              >
-                <Printer className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
-              </Button>
-            </TooltipBtn>
-
-            {/* تصدير (Ctrl+E) — زر أيقوني قياسي موحّد */}
-            <TooltipBtn content="تصدير صورة (Ctrl + E)">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onExport}
-                data-testid="toolbar-export"
-                aria-label="تصدير صورة"
-                className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
-              >
-                <Export className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
-              </Button>
-            </TooltipBtn>
-          </div>
-
-          {/* قائمة المزيد: الخيارات الإضافية للمستند والمشاريع */}
-          <DropdownMenu>
-            <TooltipBtn content="المزيد من الخيارات">
-              <DropdownMenuTrigger asChild>
+        <div className="flex items-stretch h-full shrink-0">
+          <CommandGroup className="border-e-0">
+            <div className="fluent-command-group">
+              {/* حفظ (Ctrl+S) — زر أيقوني قياسي موحّد */}
+              <TooltipBtn content="حفظ المشروع (Ctrl + S)">
                 <Button
                   variant="ghost"
-                  size="icon"
-                  data-testid="toolbar-more"
-                  aria-label="المزيد من الخيارات"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md transition-all cursor-pointer"
+                  size="sm"
+                  onClick={onSave}
+                  data-testid="toolbar-save"
+                  aria-label="حفظ المشروع"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
                 >
-                  <DotsThreeVertical className="w-4 h-4" weight="bold" />
+                  <FloppyDisk className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
                 </Button>
-              </DropdownMenuTrigger>
-            </TooltipBtn>
-            <DropdownMenuContent
-              align="end"
-              className="w-52 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5 space-y-1"
-            >
-              <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 select-none">
-                خيارات المستند
-              </div>
+              </TooltipBtn>
 
-              <DropdownMenuItem
-                onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'list' } }),
-                  );
-                }}
-                className="flex items-center justify-between p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Folders className="w-4 h-4 text-muted-foreground" weight="duotone" />
-                  <span className="font-semibold">مكتبة المشاريع</span>
-                </div>
-              </DropdownMenuItem>
+              {/* طباعة (Ctrl+P) — زر أيقوني قياسي موحّد */}
+              <TooltipBtn content="طباعة المستند (Ctrl + P)">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onPrint}
+                  data-testid="toolbar-print"
+                  aria-label="طباعة المستند"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
+                >
+                  <Printer className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
+                </Button>
+              </TooltipBtn>
 
-              {/* مسح مساحة العمل — إجراء مدمِّر معزول في قائمة التأكيد */}
-              <DropdownMenuSeparator className="my-1 border-border/50" />
-              <DropdownMenuItem
-                onClick={() => window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))}
-                className="flex items-center justify-between p-2 text-xs rounded-lg cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+              {/* تصدير (Ctrl+E) — زر أيقوني قياسي موحّد */}
+              <TooltipBtn content="تصدير صورة (Ctrl + E)">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onExport}
+                  data-testid="toolbar-export"
+                  aria-label="تصدير صورة"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
+                >
+                  <Export className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
+                </Button>
+              </TooltipBtn>
+            </div>
+
+            {/* قائمة المزيد: الخيارات الإضافية للمستند والمشاريع */}
+            <DropdownMenu>
+              <TooltipBtn content="المزيد من الخيارات">
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    data-testid="toolbar-more"
+                    aria-label="المزيد من الخيارات"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md transition-all cursor-pointer"
+                  >
+                    <DotsThreeVertical className="w-4 h-4" weight="bold" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipBtn>
+              <DropdownMenuContent
+                align="end"
+                className="w-52 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5 space-y-1"
               >
-                <div className="flex items-center gap-2">
-                  <Broom className="w-4 h-4" weight="duotone" />
-                  <span className="font-semibold">مسح مساحة العمل…</span>
+                <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 select-none">
+                  خيارات المستند
                 </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'list' } }),
+                    );
+                  }}
+                  className="flex items-center justify-between p-2 text-xs rounded-md cursor-pointer hover:bg-accent/80 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Folders className="w-4 h-4 text-muted-foreground" weight="duotone" />
+                    <span className="font-semibold">مكتبة المشاريع</span>
+                  </div>
+                </DropdownMenuItem>
+
+                {/* مسح مساحة العمل — إجراء مدمِّر معزول في قائمة التأكيد */}
+                <DropdownMenuSeparator className="my-1 border-border/50" />
+                <DropdownMenuItem
+                  onClick={() =>
+                    window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))
+                  }
+                  className="flex items-center justify-between p-2 text-xs rounded-md cursor-pointer text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Broom className="w-4 h-4" weight="duotone" />
+                    <span className="font-semibold">مسح مساحة العمل…</span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </CommandGroup>
         </div>
       </div>
     </div>

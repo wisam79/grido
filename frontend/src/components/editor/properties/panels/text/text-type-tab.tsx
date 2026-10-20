@@ -240,7 +240,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
 
         {/* مؤشر الحجم السريع */}
         <FluentSliderField
-          label="حجم الخط"
+          label="الحجم"
           value={currentFontSize}
           min={8}
           max={Math.max(500, currentFontSize)}

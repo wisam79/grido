@@ -563,7 +563,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
   return (
     <Dialog open={open} onOpenChange={(v) => !isSaving && onOpenChange(v)}>
       <DialogContent
-        className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 overflow-hidden fluent-specular"
+        className="sm:max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0 bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 overflow-hidden fluent-specular"
         dir="rtl"
         showCloseButton={false}
       >

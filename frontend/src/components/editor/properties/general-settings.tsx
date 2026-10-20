@@ -46,14 +46,13 @@ export function GeneralSettings() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="space-y-3 font-cairo" dir="rtl">
+      <div className="space-y-0 font-cairo" dir="rtl">
         <CanvasDimensionsPanel />
 
         <FluentSection
           ref={paperSectionRef}
           icon={<PaintBrush className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
           title="خلفية الورقة"
-          subtitle="تُطبَّق على الكانفاس ومعاينة الطباعة"
           collapsible
           open={paperOpen}
           onOpenChange={setPaperOpen}

@@ -313,7 +313,7 @@ export function BatchInsertDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[860px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-2xl shadow-fluent-28 font-cairo fluent-specular fluent-acrylic transition-all duration-150 gap-0"
+        className="w-[96vw] sm:max-w-[860px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular fluent-acrylic transition-all duration-150 gap-0"
         dir="rtl"
       >
         {/* Header */}
@@ -421,7 +421,7 @@ export function BatchInsertDialog({
           <div className="md:col-span-7 border-l border-border/40 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-2.5 bg-background/50">
             {images.length === 0 ? (
               <div className="flex flex-col items-center justify-center flex-1 py-12 px-4 text-center border-2 border-dashed border-border/50 rounded-xl bg-muted/10">
-                <div className="p-4 rounded-2xl bg-muted/40 text-muted-foreground/60 mb-3">
+                <div className="p-4 rounded-xl bg-muted/40 text-muted-foreground/60 mb-3">
                   <Images className="w-8 h-8 shrink-0" weight="duotone" />
                 </div>
                 <h4 className="text-sm font-bold text-foreground">قائمة الصور فارغة</h4>

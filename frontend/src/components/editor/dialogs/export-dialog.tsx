@@ -62,9 +62,9 @@ function FormatOptionButton({
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none ${
+      className={`flex items-center gap-2 p-2 rounded-md border transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none ${
         selected
-          ? 'border-2 border-primary bg-primary/10 shadow-xs font-bold text-primary ring-1 ring-primary/20'
+          ? 'border-primary bg-primary/10 font-bold text-primary ring-1 ring-primary/20'
           : 'border-border hover:border-primary/50 bg-input hover:bg-muted/30 text-foreground'
       }`}
     >
@@ -370,7 +370,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     >
       <DialogContent
         showCloseButton={false}
-        className="max-w-md font-cairo rounded-2xl border border-border bg-card fluent-specular p-5 sm:p-6"
+        className="max-w-md font-cairo rounded-xl border border-border bg-card fluent-specular p-4 sm:p-5"
         dir="rtl"
       >
         <DialogHeader className="border-b border-border/40 pb-3">
@@ -384,7 +384,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-3 py-1">
           <div>
             <Label
               id="export-colorspace-label"

@@ -190,7 +190,7 @@ export function UpdateNotifier() {
     >
       <DialogContent
         showCloseButton={false}
-        className="max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 rounded-2xl p-5 fluent-acrylic fluent-specular font-cairo"
+        className="max-w-md bg-card border border-border/80 dark:border-white/10 shadow-fluent-16 rounded-xl p-5 fluent-acrylic fluent-specular font-cairo"
         dir="rtl"
       >
         {/* الهيدر مع شارة التحديث الفاخرة وزر الإغلاق في شريط العنوان */}

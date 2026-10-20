@@ -288,7 +288,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
         defaultOpen={true}
       >
         <FluentSliderField
-          label="التدوير"
+          label="الزاوية"
           icon={<ArrowClockwise className="w-3.5 h-3.5" weight="regular" />}
           value={(((element.rotation % 360) + 540) % 360) - 180}
           min={-180}

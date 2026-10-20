@@ -159,7 +159,8 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
     >
       {/* 1. الجانب الأيمن: كبسولة معلومات مساحة العمل والأبعاد وتغيير المقاس */}
       <div className="flex items-center shrink-0">
-        <div className="h-8 flex items-center gap-1 p-0.5 rounded-lg bg-card/90 dark:bg-card/75 backdrop-blur-xl border border-border/80 dark:border-white/10 shadow-2xs font-semibold fluent-specular">
+        {/* شريط حالة سطح المكتب: مجموعات مسطّحة بلا كبسولات عائمة أو ظلال */}
+        <div className="h-7 flex items-center gap-1 font-semibold">
           {/* زر تغيير المقاس التفاعلي */}
           <DropdownMenu>
             <Tooltip>
@@ -300,7 +301,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
       </div>
 
       {/* 2. الوسط: كبسولة أدوات المحاذاة والرؤية الموحدة (Fluent 2 Icon Capsule) */}
-      <div className="h-8 flex items-center gap-0.5 bg-card/90 dark:bg-card/75 backdrop-blur-xl p-0.5 rounded-lg border border-border/80 dark:border-white/10 shadow-2xs select-none fluent-specular">
+      <div className="h-7 flex items-center gap-0.5 select-none border-x border-border/50 px-1.5">
         {/* زر المساطر */}
         <FluentCapsuleButton
           icon={<Ruler className="w-4 h-4" weight={showRuler ? 'fill' : 'regular'} />}
@@ -369,10 +370,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
 
       {/* 3. الجانب الأيسر: كبسولة الزوم واختصارات المفاتيح المدمجة بالكامل */}
       <div className="flex items-center shrink-0">
-        <div
-          className="h-8 flex items-center gap-0.5 bg-card/90 dark:bg-card/75 backdrop-blur-xl p-0.5 rounded-lg border border-border/80 dark:border-white/10 shadow-2xs select-none font-cairo fluent-specular"
-          dir="ltr"
-        >
+        <div className="h-7 flex items-center gap-0.5 select-none font-cairo" dir="ltr">
           {/* زر تصغير */}
           <FluentCapsuleButton
             icon={<MagnifyingGlassMinus className="w-4 h-4" weight="regular" />}
@@ -419,7 +417,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
           />
 
           {/* كبسولة ملاءمة الورقة المدمجة (Fluent 2 Split Fit Control) */}
-          <div className="flex items-center h-7 rounded-md bg-muted/40 hover:bg-muted/60 border border-border/60 dark:border-white/10 transition-colors mx-0.5">
+          <div className="flex items-center h-7 rounded-sm bg-muted/30 hover:bg-muted/50 transition-colors mx-0.5">
             {/* زر ملاءمة الكل بنقرة واحدة (Ctrl+0) — أيقونة فصيحة حسب الوضع الفعّال مع إخفاء النص بصرياً */}
             <Tooltip>
               <TooltipTrigger asChild>

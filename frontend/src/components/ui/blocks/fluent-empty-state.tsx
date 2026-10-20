@@ -31,19 +31,19 @@ export const FluentEmptyState = React.memo(
       <div
         ref={ref}
         className={cn(
-          'flex flex-col items-center justify-center text-center p-6 rounded-xl border border-dashed border-border/80 bg-muted/20 dark:bg-muted/10 font-cairo select-none space-y-3',
+          'flex flex-col items-center justify-center text-center p-4 rounded-md border border-dashed border-border/60 bg-transparent font-cairo select-none space-y-2',
           className,
         )}
         {...props}
       >
-        <div className="p-3 rounded-2xl bg-muted/80 dark:bg-white/5 text-muted-foreground border border-border/60 shadow-2xs">
+        <div className="p-2 rounded-md bg-muted/50 dark:bg-white/5 text-muted-foreground">
           {icon}
         </div>
 
         <div className="space-y-1 max-w-xs">
           <h4 className="text-xs font-bold text-foreground">{title}</h4>
           {description && (
-            <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
+            <p className="text-mini text-muted-foreground leading-relaxed">{description}</p>
           )}
         </div>
 

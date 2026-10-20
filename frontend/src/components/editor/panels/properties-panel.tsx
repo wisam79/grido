@@ -82,10 +82,12 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
     panelTitle = 'خصائص الخلية';
     panelSubtitle = `الخلية ${selectedSlot.cellIndex + 1}`;
   } else if (mode === 'collage') {
-    panelTitle = generalTab === 'collage' ? 'إعدادات الكولاج' : 'إعدادات الورقة';
+    // التبويبان داخل اللوح يسمّيان القسم (الكولاج / الورقة)، فرأس اللوح
+    // يحمل هوية اللوح فقط بدل تكرار الاسم في سطرين متتاليين.
+    panelTitle = 'الخصائص';
     panelSubtitle =
       generalTab === 'collage'
-        ? 'التخطيط والفواصل والهوامش'
+        ? undefined
         : `${Math.round(canvasWidth)} × ${Math.round(canvasHeight)} px`;
   } else {
     panelTitle = 'إعدادات الورقة';

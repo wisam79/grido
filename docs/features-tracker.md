@@ -305,6 +305,23 @@
 
 ---
 
+## 0.100 سجل جلسة إعادة تصميم الواجهة نحو طابع سطح المكتب الأصلي (Desktop-Native Flat UI) — 21 أكتوبر 2026
+
+**المرجع:** اتجاه جديد معتمد في جلسة 21 أكتوبر 2026 — إعادة تصميم واجهة المحرر على نمط أدوات سطح المكتب (Figma / Photoshop / Office) بدل النمط «بطاقات ويب» المستدير: أسطح مسطّحة، حدود شعرية، حواف حادة، وكثافة أعلى. طبّق على 54 ملفاً (بنية أساسية + ألواح + حوارات).
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| خفض أساس نصف القطر | `--radius` من `0.5rem` (8px) إلى `0.375rem` (6px) في `index.css`، فتصير القيم الفعلية `rounded-md` = 4px و`rounded-lg` = 6px و`rounded-xl` = 10px — حافة حادة تميّز تطبيقات ويندوز 11 (4–6px) عن البطاقات المستديرة الكبيرة (16px+) | `frontend/src/index.css:128` ✅ |
+| تسطيح أقسام لوحة الخصائص | `FluentSection` تحوّل من بطاقة عائمة (حدود + ظل + حشو) إلى صفّ مسطّح يفصله خط شعري `border-b border-border/55`، مع أيقونة سطرية بلا شارة خلفية وعنوان `text-xs font-bold` | `frontend/src/components/ui/blocks/fluent-segmented-control.tsx:92` + `frontend/src/components/ui/blocks/fluent-section.tsx:59` ✅ |
+| تبويب سفلي بدل الكبسولة | `FluentSegmentedControl` في الوضع الأفقي صار تبويباً بخط سفلي نشط (`absolute inset-x-1 bottom-0 h-0.5 bg-primary`) بلا كبسولة عائمة أو ظل، والوضع العمودي يبقى بطاقة مسطّحة | `frontend/src/components/ui/blocks/fluent-segmented-control.tsx:92` ✅ |
+| تخفيف الحوارات والقوائم المنبثقة | `Dialog` من `rounded-2xl`/`p-6`/`gap-4`/`shadow-fluent-28` إلى `rounded-xl`/`p-5`/`gap-3`/`shadow-fluent-16`، ومثله `Popover` و`DropdownMenu` و`Command` و`Sheet` (حشو 12px → 10px) | `frontend/src/components/ui/dialog.tsx:77` ✅ |
+| ضغط رأس اللوح ومحتواه | رأس `PanelShell` من `min-h-12` + `text-sm` إلى `h-9` + `text-xs` (48px → 36px)، وحشو المحتوى من `p-3.5` إلى `px-3 py-2` — كثافة ألواح محررات سطح المكتب | `frontend/src/components/editor/panels/panel-shell.tsx:80` ✅ |
+| حالة فارغة مسطّحة | `FluentEmptyState` من بطاقة `rounded-xl` + شارة أيقونة + `shadow-2xs` إلى حدّ متقطّع `rounded-md` بلا خلفية مصمتة، ووصف مختصر `text-mini` بدل السطر المطوّل | `frontend/src/components/ui/blocks/fluent-empty-state.tsx:34` ✅ |
+| توثيق القاعدة | تحديث `.agents/skills/fluent2-design-system/SKILL.md` (سلم الاستدارة الجديد + قواعد السطح المسطّح) و`ui-compliance.ts` (`RADIUS.modal` = `rounded-xl`) لتثبيت الاتجاه حتى لا يعود الكود قديماً | `.agents/skills/fluent2-design-system/SKILL.md:122` + `frontend/src/lib/ui/ui-compliance.ts:26` ✅ |
+| بوابات الجودة والتحقق | `npm run typecheck` نظيف · `npm run lint` نظيف (0 تحذيرات) · `node scripts/docs-gate.mjs --strict-refs` ناجح | 2026-10-21 ✅ |
+
+---
+
 ## 0.99 سجل جلسة معالجة ازدواجية صور جسر الهاتف والالتقاط اللحظي وإصلاح تقدم التحديثات — 18 أكتوبر 2026
 
 **المرجع:** حل السبب الجذري لوصول صور جسر الهاتف بشكل مزدوج وتأخر الرفع (5+ ثوانٍ)، وتصحيح شريط تقدم تحديثات التطبيق العالق عند 0%.

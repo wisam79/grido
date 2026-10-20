@@ -165,7 +165,7 @@ const RailToolButton = React.memo(function RailToolButton({
           aria-label={tool.label}
           aria-pressed={isActive}
           className={cn(
-            'group h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer relative',
+            'group h-8 w-8 rounded-md transition-colors duration-150 cursor-pointer relative',
             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
             isActive
               ? 'text-foreground'
@@ -177,7 +177,7 @@ const RailToolButton = React.memo(function RailToolButton({
           {isActive && (
             <motion.span
               layoutId={pillLayoutId}
-              className="absolute inset-0 bg-accent-active rounded-lg border border-border/80 shadow-2xs"
+              className="absolute inset-0 bg-accent-active rounded-md border border-border/80 shadow-2xs"
               transition={{ duration: 0.12, ease: 'easeOut' }}
             />
           )}
@@ -452,7 +452,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
         // border-e منطقي = يميناً داخل LTR فيحافظ على الفاصل الحالي ويتبع أي
         // تغيير مستقبلي للاتجاه. side="right" للـ Tooltip/Popover فيزيائي عمداً
         // لنفس السبب (يفتح نحو الكانفس).
-        'w-12 shrink-0 h-full flex flex-col items-center justify-between py-2 border-e border-border/80 bg-sidebar/95 backdrop-blur-xl z-20 select-none font-cairo shadow-2xs fluent-specular overflow-hidden relative',
+        'w-11 shrink-0 h-full flex flex-col items-center justify-between py-1.5 border-e border-border/80 bg-sidebar z-20 select-none font-cairo overflow-hidden relative',
         className,
       )}
     >
@@ -466,7 +466,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
           المحتوى ارتفاع الشريط ويدفع الأزرار المثبّتة خارجه. */}
       <nav
         aria-label={toolsHeading}
-        className="flex flex-col items-center gap-1.5 w-full px-1.5 py-1 flex-1 min-h-0 overflow-y-auto scrollbar-none"
+        className="flex flex-col items-center gap-0.5 w-full px-1 py-1 flex-1 min-h-0 overflow-y-auto scrollbar-none"
       >
         {groups.map((group, groupIndex) => (
           <React.Fragment key={group.name}>
@@ -474,7 +474,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
               <div
                 role="separator"
                 aria-orientation="horizontal"
-                className="w-7 h-px my-1.5 shrink-0 bg-gradient-to-l from-transparent via-border to-transparent"
+                className="w-6 h-px my-1 shrink-0 bg-gradient-to-l from-transparent via-border to-transparent"
               />
             )}
             {group.tools.map((tool) => (
@@ -494,11 +494,11 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
       </nav>
 
       {/* أسفل الشريط: لوحة كل الأدوات + وضع التركيز (لا تمرّ هاتان أبداً) */}
-      <div className="flex flex-col items-center gap-1.5 w-full px-1.5 shrink-0">
+      <div className="flex flex-col items-center gap-0.5 w-full px-1 shrink-0">
         <div
           role="separator"
           aria-orientation="horizontal"
-          className="w-7 h-px my-1.5 bg-gradient-to-l from-transparent via-border to-transparent"
+          className="w-6 h-px my-1 bg-gradient-to-l from-transparent via-border to-transparent"
         />
 
         <Popover open={isLauncherOpen} onOpenChange={onLauncherOpenChange}>
@@ -511,7 +511,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                   data-testid="rail-tool-launcher"
                   aria-label="كل الأدوات"
                   className={cn(
-                    'h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer',
+                    'h-8 w-8 rounded-md transition-colors duration-150 cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isLauncherOpen
                       ? 'text-foreground bg-accent-active border border-border/80'
@@ -540,7 +540,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             align="end"
             sideOffset={10}
             dir="rtl"
-            className="w-[380px] p-0 rounded-2xl border fluent-specular font-cairo overflow-hidden"
+            className="w-[380px] p-0 rounded-xl border fluent-specular font-cairo overflow-hidden"
           >
             <ToolLauncherContent
               tools={tools}
@@ -564,7 +564,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
               data-testid="rail-zen-mode"
               aria-label={isZenMode ? 'استعادة الألواح' : 'وضع التركيز'}
               className={cn(
-                'h-9 w-9 rounded-lg transition-colors duration-150 cursor-pointer',
+                'h-8 w-8 rounded-md transition-colors duration-150 cursor-pointer',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                 isZenMode
                   ? 'text-foreground bg-accent-active border border-border/80'
@@ -692,7 +692,7 @@ export function CompactToolLauncher({
         align="start"
         sideOffset={10}
         dir="rtl"
-        className="w-[calc(100vw-2rem)] max-w-[380px] p-0 rounded-2xl border fluent-specular font-cairo overflow-hidden"
+        className="w-[calc(100vw-2rem)] max-w-[380px] p-0 rounded-xl border fluent-specular font-cairo overflow-hidden"
       >
         <ToolLauncherContent
           tools={tools}

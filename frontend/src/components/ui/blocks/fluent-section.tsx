@@ -50,14 +50,14 @@ export const FluentSection = React.memo(
       onOpenChange?.(next);
     };
 
+    // سطح مكتب: قسم لوحة الخصائص صفٌّ مسطّح يفصله خط شعري — لا بطاقة
+    // عائمة بحواف مستديرة وظل، وهي أقوى إشارة بصرية «ويب/جوال» في اللوحة.
     return (
       <div
         ref={ref}
         className={cn(
-          'rounded-xl border p-3 fluent-specular transition-colors duration-150',
-          isOpen
-            ? 'bg-card border-border/70 dark:border-white/10 shadow-xs'
-            : 'bg-card/60 border-border/50 hover:border-border/80 hover:bg-card/85 shadow-none',
+          'border-b border-border/55 py-2.5 first:pt-0 last:border-b-0 last:pb-0 transition-colors duration-150',
+          !isOpen && 'opacity-90',
           className,
         )}
         {...props}
@@ -79,31 +79,31 @@ export const FluentSection = React.memo(
           tabIndex={collapsible ? 0 : undefined}
           aria-expanded={collapsible ? isOpen : undefined}
           className={cn(
-            'flex items-center justify-between gap-2 select-none',
-            isOpen ? 'pb-2 mb-2.5 border-b border-border/40' : 'pb-0 mb-0',
+            'flex items-center justify-between gap-2 select-none min-h-6',
+            isOpen ? 'mb-2' : 'mb-0',
             collapsible &&
-              'cursor-pointer group/sec-header rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+              'cursor-pointer group/sec-header rounded-sm -mx-1 px-1 py-0.5 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:bg-accent/50',
             headerClassName,
           )}
         >
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
             {icon && (
-              // شارة الأيقونة محايدة — التباين يعكس حالة التوسيع بدون ألوان دخيلة
-              <div
+              // أيقونة سطرية بلا شارة خلفية — كثافة ألواح سطح المكتب
+              <span
                 className={cn(
-                  'size-6 rounded-md shrink-0 flex items-center justify-center transition-colors duration-150',
+                  'shrink-0 flex items-center justify-center transition-colors duration-150',
                   '[&_svg]:size-3.5 [&_svg]:text-muted-foreground',
-                  isOpen ? 'bg-muted/60 dark:bg-white/[0.06]' : 'bg-muted/35 dark:bg-white/[0.035]',
+                  !isOpen && 'opacity-70',
                 )}
               >
                 {icon}
-              </div>
+              </span>
             )}
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <span
                   className={cn(
-                    'text-xs font-semibold truncate transition-colors duration-150',
+                    'text-xs font-bold truncate tracking-tight transition-colors duration-150',
                     isOpen
                       ? 'text-foreground'
                       : 'text-foreground/90 group-hover/sec-header:text-foreground',

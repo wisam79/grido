@@ -101,7 +101,7 @@ export function LicenseLockScreen({
 
       {/* شاشة التفعيل المركزية */}
       <div className="flex-1 flex items-center justify-center bg-background/95 backdrop-blur-2xl text-start p-6">
-        <div className="w-full max-w-md bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 p-8 rounded-2xl shadow-fluent-28 space-y-6 text-center fluent-specular">
+        <div className="w-full max-w-md bg-card border border-border/80 dark:border-white/10 p-8 rounded-xl shadow-fluent-16 space-y-6 text-center fluent-specular">
           <div className="inline-flex p-4 bg-destructive/10 text-destructive rounded-full border border-destructive/20 animate-pulse">
             <LockSimple className="w-10 h-10" weight="duotone" />
           </div>

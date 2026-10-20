@@ -77,13 +77,13 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           data-testid="workspace-panel-templates"
           data-collapsed={!isLeftDrawerOpen}
           className={cn(
-            'h-full border-e border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion',
+            'h-full border-e border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
             isLeftDrawerOpen
-              ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
+              ? 'w-[288px] min-w-[288px] max-w-[288px] opacity-100'
               : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-e-0 shadow-none',
           )}
         >
-          <div dir="rtl" className="h-full w-[296px] flex flex-col overflow-hidden">
+          <div dir="rtl" className="h-full w-[288px] flex flex-col overflow-hidden">
             {templatesContent}
           </div>
         </aside>
@@ -120,7 +120,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
 
         {/* الشريط السفلي المثبت */}
         {footerContent && (
-          <footer className="h-10 shrink-0 border-t border-border bg-sidebar px-3 flex items-center justify-center relative z-(--z-panel) no-print select-none">
+          <footer className="h-9 shrink-0 border-t border-border bg-sidebar px-2 flex items-center justify-center relative z-(--z-panel) no-print select-none">
             {footerContent}
           </footer>
         )}
@@ -138,13 +138,13 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           data-testid={isStandard ? 'workspace-panel-inspector' : 'workspace-panel-properties'}
           data-collapsed={!isRightPanelOpen}
           className={cn(
-            'h-full border-s border-border bg-sidebar/95 backdrop-blur-xl z-(--z-panel) overflow-hidden fluent-panel-motion',
+            'h-full border-s border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
             isRightPanelOpen
-              ? 'w-[296px] min-w-[296px] max-w-[296px] opacity-100 shadow-fluent-8'
+              ? 'w-[288px] min-w-[288px] max-w-[288px] opacity-100'
               : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-s-0 shadow-none',
           )}
         >
-          <div dir="rtl" className="h-full w-[296px] flex flex-col overflow-hidden">
+          <div dir="rtl" className="h-full w-[288px] flex flex-col overflow-hidden">
             {isStandard ? (
               <>
                 <div

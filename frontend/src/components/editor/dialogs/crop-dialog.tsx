@@ -172,7 +172,7 @@ export function CropDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-2xl border border-border bg-card/95 backdrop-blur-2xl p-5 sm:p-6 shadow-fluent-28 transition-all duration-150 fluent-specular"
+        className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-xl border border-border bg-card p-5 sm:p-6 shadow-fluent-16 transition-all duration-150 fluent-specular"
         dir="rtl"
       >
         {/* هيدر النافذة */}

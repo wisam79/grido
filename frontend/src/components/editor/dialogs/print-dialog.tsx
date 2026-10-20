@@ -628,7 +628,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     >
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[1060px] h-[92vh] sm:max-h-[860px] overflow-hidden flex flex-col border border-border dark:border-white/10 bg-card rounded-2xl shadow-fluent-28 p-0 gap-0 fluent-specular fluent-acrylic pointer-events-auto data-[state=closed]:duration-75"
+        className="w-[96vw] sm:max-w-[1060px] h-[92vh] sm:max-h-[860px] overflow-hidden flex flex-col border border-border dark:border-white/10 bg-card rounded-xl shadow-fluent-16 p-0 gap-0 fluent-specular fluent-acrylic pointer-events-auto data-[state=closed]:duration-75"
         dir="rtl"
         onEscapeKeyDown={(e) => {
           if (e.defaultPrevented) return;
@@ -1024,7 +1024,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           </aside>
 
           {/* العمود الأيسر: مساحة المعاينة التفاعلية المباشرة (Preview Lightbox Canvas) */}
-          <main className="flex-1 border border-border/60 rounded-2xl overflow-hidden bg-print-surface flex flex-col shadow-inner relative min-w-0">
+          <main className="flex-1 border border-border/60 rounded-xl overflow-hidden bg-print-surface flex flex-col shadow-inner relative min-w-0">
             {/* شريط عنوان وتكبير المعاينة */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-print-header-border bg-print-header backdrop-blur-md select-none z-10 shrink-0">
               <span className="text-xs font-bold text-print-header-title flex items-center gap-2">

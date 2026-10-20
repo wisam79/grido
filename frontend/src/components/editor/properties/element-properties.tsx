@@ -119,7 +119,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             id="element-properties-tabs-content-style"
             aria-labelledby="element-properties-tabs-trigger-style"
             className={cn(
-              'mt-3 space-y-3 animate-in fade-in duration-150',
+              'mt-2 space-y-0 animate-in fade-in duration-150',
               element.locked && 'pointer-events-none opacity-50 select-none',
             )}
           >
@@ -148,7 +148,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             id="element-properties-tabs-content-adjust"
             aria-labelledby="element-properties-tabs-trigger-adjust"
             className={cn(
-              'mt-3 space-y-3 animate-in fade-in duration-150',
+              'mt-2 space-y-0 animate-in fade-in duration-150',
               element.locked && 'pointer-events-none opacity-50 select-none',
             )}
           >
@@ -177,7 +177,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             id="element-properties-tabs-content-effects"
             aria-labelledby="element-properties-tabs-trigger-effects"
             className={cn(
-              'mt-3 space-y-3 animate-in fade-in duration-150',
+              'mt-2 space-y-0 animate-in fade-in duration-150',
               element.locked && 'pointer-events-none opacity-50 select-none',
             )}
           >
@@ -202,7 +202,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             id="element-properties-tabs-content-arrange"
             aria-labelledby="element-properties-tabs-trigger-arrange"
             className={cn(
-              'mt-3 space-y-3 animate-in fade-in duration-150',
+              'mt-2 space-y-0 animate-in fade-in duration-150',
               element.locked && 'pointer-events-none opacity-50 select-none',
             )}
           >

@@ -76,7 +76,7 @@ ${report.stack_trace}
   return (
     <Dialog open={open}>
       <DialogContent
-        className="max-w-md w-full font-cairo bg-card/95 backdrop-blur-2xl border border-border/80 rounded-2xl p-6 shadow-fluent-24 fluent-specular"
+        className="max-w-md w-full font-cairo bg-card border border-border/80 rounded-xl p-6 shadow-fluent-24 fluent-specular"
         dir="rtl"
         showCloseButton={false}
         onEscapeKeyDown={blockImplicitDismiss}

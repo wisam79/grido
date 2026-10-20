@@ -364,7 +364,7 @@ export function ProjectsDialog({
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
         <DialogContent
           showCloseButton={false}
-          className="sm:max-w-[520px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 rounded-2xl p-5 sm:p-6 font-cairo fluent-specular"
+          className="sm:max-w-[520px] bg-card border border-border/80 dark:border-white/10 shadow-fluent-16 rounded-xl p-5 sm:p-6 font-cairo fluent-specular"
           dir="rtl"
         >
           <DialogHeader className="border-b border-border/40 pb-3">
@@ -666,7 +666,7 @@ export function ProjectsDialog({
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
           <AlertDialogContent
             dir="rtl"
-            className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl"
+            className="rounded-xl border border-border/80 dark:border-white/10 shadow-fluent-16 bg-card"
           >
             <AlertDialogHeader>
               <AlertDialogTitle className="font-cairo text-start">حذف المشروع</AlertDialogTitle>
@@ -695,7 +695,7 @@ export function ProjectsDialog({
         >
           <AlertDialogContent
             dir="rtl"
-            className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl"
+            className="rounded-xl border border-border/80 dark:border-white/10 shadow-fluent-16 bg-card"
           >
             <AlertDialogHeader>
               <AlertDialogTitle className="font-cairo text-start">تحميل مشروع آخر</AlertDialogTitle>
@@ -727,7 +727,7 @@ export function ProjectsDialog({
       <Dialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
         <DialogContent
           showCloseButton={false}
-          className="sm:max-w-[400px] p-5 sm:p-6 rounded-2xl bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28"
+          className="sm:max-w-[400px] p-5 sm:p-6 rounded-xl bg-card border border-border/80 dark:border-white/10 shadow-fluent-16"
           dir="rtl"
         >
           <DialogHeader className="border-b border-border/40 pb-2.5">
@@ -797,7 +797,7 @@ export function ProjectsDialog({
       <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
         <AlertDialogContent
           dir="rtl"
-          className="rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl"
+          className="rounded-xl border border-border/80 dark:border-white/10 shadow-fluent-16 bg-card"
         >
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-start flex items-center gap-2 text-destructive text-sm font-bold">

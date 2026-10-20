@@ -389,7 +389,7 @@ export function ToolbarFileOps() {
       <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
         <AlertDialogContent
           dir="rtl"
-          className="rounded-2xl border border-border/80 dark:border-white/10 fluent-specular shadow-fluent-28 bg-card/95 backdrop-blur-2xl"
+          className="rounded-xl border border-border/80 dark:border-white/10 fluent-specular shadow-fluent-28 bg-card"
         >
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-start">مسح مساحة العمل</AlertDialogTitle>

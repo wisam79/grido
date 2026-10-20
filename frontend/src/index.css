@@ -123,7 +123,9 @@
 :root {
   --font-cairo: 'Readex Pro', 'IBM Plex Sans Arabic', 'Cairo', 'Inter', system-ui, sans-serif;
   --font-tajawal: 'Readex Pro', 'IBM Plex Sans Arabic', 'Tajawal', 'Inter', system-ui, sans-serif;
-  --radius: 0.5rem;
+  /* حواف سطح مكتب حادة (6px أساس) بدل 8px — البطاقات المستديرة الكبيرة
+     إشارة بصرية ويب/جوال، بينما أدوات ويندوز 11 تستخدم 4–6px. */
+  --radius: 0.375rem;
 
   /* Grido Studio Light Theme (Clean Crisp Fluent Blue Palette for Windows 11 Mica) */
   --background: rgba(
@@ -781,7 +783,7 @@
 
   /* ─── Fluent 2 Command Groups ────────────────────────────── */
   .fluent-command-group {
-    @apply flex items-center gap-0.5 bg-muted/50 dark:bg-background/90 border border-border/60 dark:border-border p-0.5 rounded-lg shadow-2xs;
+    @apply flex items-center gap-0 bg-muted/50 dark:bg-background/90 border border-border/60 dark:border-border p-0.5 rounded-md;
   }
 
   /* ─── Native Visual Depth & High-Contrast System (4-Tier Hierarchy) ─── */

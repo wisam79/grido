@@ -750,7 +750,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         title="استدارة وقناع القص"
       >
         <FluentSliderField
-          label="استدارة الزوايا"
+          label="الزوايا"
           icon={<Square className="w-4 h-4" weight="regular" />}
           value={element.cornerRadius || 0}
           min={0}

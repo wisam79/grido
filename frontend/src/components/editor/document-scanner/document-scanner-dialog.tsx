@@ -327,7 +327,7 @@ export function DocumentScannerDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="sm:max-w-[1140px] w-[94vw] h-[86vh] max-h-[900px] overflow-hidden flex flex-col rounded-2xl border border-border/80 dark:border-white/10 bg-card/95 backdrop-blur-2xl p-4 sm:p-5 shadow-fluent-28 transition-all duration-150 fluent-specular gap-3 font-cairo"
+        className="sm:max-w-[1140px] w-[94vw] h-[86vh] max-h-[900px] overflow-hidden flex flex-col rounded-xl border border-border/80 dark:border-white/10 bg-card p-4 sm:p-5 shadow-fluent-28 transition-all duration-150 fluent-specular gap-3 font-cairo"
         dir="rtl"
       >
         {/* 🔹 رأس النافذة الأنيق مع زر الإغلاق وشارة النمط */}
@@ -364,7 +364,7 @@ export function DocumentScannerDialog({
           {/* Canvas Main Container */}
           <div
             ref={containerRef as React.RefObject<HTMLDivElement>}
-            className="flex-1 bg-canvas-stage dark:bg-black/85 rounded-2xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/50 relative shadow-inner p-2 select-none"
+            className="flex-1 bg-canvas-stage dark:bg-black/85 rounded-xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/50 relative shadow-inner p-2 select-none"
           >
             {/* Top Floating Status Badge — aria-live لقارئ الشاشة */}
             <div

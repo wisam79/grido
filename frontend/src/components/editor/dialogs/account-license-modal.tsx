@@ -99,7 +99,7 @@ export function AccountLicenseModal() {
     <Dialog open={accountModalOpen} onOpenChange={handleModalOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[95vw] sm:max-w-[460px] bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 rounded-2xl p-5 sm:p-6 fluent-specular overflow-hidden"
+        className="w-[95vw] sm:max-w-[460px] bg-card border border-border/80 dark:border-white/10 shadow-fluent-16 rounded-xl p-5 sm:p-6 fluent-specular overflow-hidden"
         dir="rtl"
       >
         {/* 🔹 1. رأس النافذة المتناسق مع زر الإغلاق المدمج */}

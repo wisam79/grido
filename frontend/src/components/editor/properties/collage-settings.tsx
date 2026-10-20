@@ -69,7 +69,7 @@ export function CollageSettings() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-3 font-cairo" dir="rtl">
+    <div className="flex flex-col font-cairo" dir="rtl">
       {/* 🎴 بطاقة 1: المسافات والاستدارة */}
       <FluentSection
         icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
@@ -128,8 +128,10 @@ export function CollageSettings() {
         defaultOpen={true}
       >
         <div className="space-y-2.5">
+          {/* التسمية مختصرة: عنوان القسم «إطار الصور» يحمل السياق، فلا
+              نكرّره في كل صف (كان: إطار الصور ← سُمك الإطار ← لون الإطار). */}
           <FluentSliderField
-            label="سُمك الإطار"
+            label="السُّمك"
             icon={<BoundingBox className="w-3.5 h-3.5" weight="regular" />}
             value={collageStrokeWidth}
             min={0}
@@ -144,7 +146,7 @@ export function CollageSettings() {
           {collageStrokeWidth > 0 && (
             <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-foreground/90">لون الإطار</span>
+                <span className="text-xs font-semibold text-foreground/90">اللون</span>
 
                 <div className="flex items-center gap-1.5">
                   {[
@@ -202,47 +204,42 @@ export function CollageSettings() {
         </div>
       </FluentSection>
 
-      {/* 🎴 بطاقة 3: خطوط القص */}
+      {/* 🎴 بطاقة 3: خطوط القص — العنوان يكفي، ومفتاح التشغيل في رأس القسم
+          بدل صف يعيد العنوان نفسه ثلاث مرات (خطوط القص ← خطوط القص ←
+          خطوط القص بين الصور). */}
       <FluentSection
         icon={<Scissors className="w-3.5 h-3.5" weight="duotone" />}
         title="خطوط القص"
         collapsible
         defaultOpen={true}
-      >
-        <div className="space-y-2">
-          <FluentSettingRow
-            label="خطوط القص"
-            description="خطوط القص بين الصور"
-            control={
-              <Switch
-                checked={collageShowCutLines}
-                onCheckedChange={setCollageShowCutLines}
-                aria-label="إظهار خطوط القص"
-              />
-            }
+        action={
+          <Switch
+            checked={collageShowCutLines}
+            onCheckedChange={setCollageShowCutLines}
+            aria-label="إظهار خطوط القص"
           />
-
-          {collageShowCutLines && (
-            <div className="rounded-lg border border-border/50 bg-muted/20 p-2 animate-in fade-in-50 duration-150">
-              <FluentSettingRow
-                label={
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
-                    <span>خط نهاية الطباعة</span>
-                  </div>
-                }
-                description="نهاية الطباعة على الورقة"
-                control={
-                  <Switch
-                    checked={collageShowEndCutLine}
-                    onCheckedChange={setCollageShowEndCutLine}
-                    aria-label="إظهار خط نهاية الطباعة"
-                  />
-                }
-              />
-            </div>
-          )}
-        </div>
+        }
+      >
+        {collageShowCutLines && (
+          <div className="rounded-md border border-border/50 bg-muted/20 p-2 animate-in fade-in-50 duration-150">
+            <FluentSettingRow
+              label={
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
+                  <span>خط نهاية الطباعة</span>
+                </div>
+              }
+              description="نهاية الطباعة على الورقة"
+              control={
+                <Switch
+                  checked={collageShowEndCutLine}
+                  onCheckedChange={setCollageShowEndCutLine}
+                  aria-label="إظهار خط نهاية الطباعة"
+                />
+              }
+            />
+          </div>
+        )}
       </FluentSection>
     </div>
   );

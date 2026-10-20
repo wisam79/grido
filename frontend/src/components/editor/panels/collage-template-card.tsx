@@ -64,7 +64,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent
-            className="font-cairo text-start rounded-2xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card/95 backdrop-blur-2xl fluent-specular"
+            className="font-cairo text-start rounded-xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card fluent-specular"
             dir="rtl"
             onClick={(e) => e.stopPropagation()}
           >
