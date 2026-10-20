@@ -326,6 +326,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                   control={
                     <Switch
                       checked={!!element.radiusCorners}
+                      aria-label="زوايا مستقلة"
                       onCheckedChange={(checked) => {
                         const radius = element.radius ?? 8;
                         onUpdate(element.id, {
@@ -498,6 +499,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
               control={
                 <Switch
                   checked={element.pointerAtBeginning === true}
+                  aria-label="رأس في البداية"
                   onCheckedChange={(checked) => {
                     onUpdate(element.id, { pointerAtBeginning: checked });
                     useEditorStore.getState().pushHistory();

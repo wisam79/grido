@@ -33,7 +33,7 @@ const CUT_SHAPES = [
 ] as const;
 
 const REPEAT_MODES = [
-  { id: 'all', label: 'شبكة كاملة' },
+  { id: 'all', label: 'الكل', ariaLabel: 'شبكة كاملة' },
   { id: 'row', label: 'صفوف' },
   { id: 'column', label: 'أعمدة' },
 ] as const;
@@ -183,7 +183,11 @@ export function CollagePaperToolsTab() {
               onChange={(mode) => setPrintSettings({ repeatMode: mode })}
               size="sm"
               className="p-0.5 border-0 h-8"
-              options={REPEAT_MODES.map((mode) => ({ id: mode.id, label: mode.label }))}
+              options={REPEAT_MODES.map((mode) => ({
+                id: mode.id,
+                label: mode.label,
+                ariaLabel: 'ariaLabel' in mode ? mode.ariaLabel : undefined,
+              }))}
             />
           }
         />

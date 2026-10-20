@@ -26,6 +26,7 @@
 | هرمية أقسام أهدأ | `FluentSection` خفّف الحدود والظلال، جعل شارة الأيقونة محايدة 24px، واعتمد عنواناً semibold وفاصلاً أخف؛ ووُحّد إيقاع 10px بين أقسام النص والصورة والشكل والترتيب | `ui/blocks/fluent-section.tsx` ولوحات الخصائص ✅ |
 | ثبات التسلسل | حقول `wrap` و`fillImage*` معلنة في `schema.ts`، فلا تُسقط عند الحفظ | `lib/schema.ts` ✅ |
 | بوابات الجودة | `tsc --noEmit` و`eslint` بلا أخطاء/تحذيرات، وVitest كامل أخضر، وبوابة التوثيق تمر | `changelog/fragments/20261020-text-system-and-properties-panel.md` ✅ |
+| إصلاح تلميح اللون وهندسة الألواح | تلميح «تغيير اللون» صار Fluent داخل التطبيق ويفتح أعلى الزر بدل التلميح الأصلي الذي كان يتسرّب أسفل بطاقة «إطار الصور»؛ وأُضيفت أسماء وصول لمفتاحَي «زوايا مستقلة» و«رأس في البداية»، واختُصر «شبكة كاملة» مرئياً إلى «الكل» مع إبقاء الاسم الوصفي في `aria-label` | `shared-controls.tsx` و`shape-properties.tsx` و`collage-paper-tools-tab.tsx` و`changelog/fragments/20261020-properties-color-and-geometry-fixes.md` ✅ |
 
 ---
 

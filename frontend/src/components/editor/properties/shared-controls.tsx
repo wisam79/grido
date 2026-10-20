@@ -193,48 +193,22 @@ export function PopoverColorPicker({
         }
       }}
     >
-      <PopoverTrigger asChild>
-        <button
-          disabled={disabled}
-          className={cn(
-            swatchOnly
-              ? 'w-8 h-8 rounded-md border border-border/80 dark:border-white/10 p-0.5 bg-card hover:bg-muted/60 hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none'
-              : 'flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border/80 bg-card hover:bg-muted/60 hover:border-primary/45 transition-all cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-            className,
-          )}
-          title="تغيير اللون"
-          aria-label={ariaLabel ?? (typeof label === 'string' ? label : 'تغيير اللون')}
-        >
-          {swatchOnly ? (
-            <div
-              className="w-full h-full rounded border border-black/15 dark:border-white/20 shadow-2xs relative overflow-hidden transition-all before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
-              style={{ backgroundColor: color === 'transparent' ? previewWhite() : color }}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <button
+              disabled={disabled}
+              className={cn(
+                swatchOnly
+                  ? 'w-8 h-8 rounded-md border border-border/80 dark:border-white/10 p-0.5 bg-card hover:bg-muted/60 hover:border-primary/60 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none'
+                  : 'flex items-center justify-between gap-2 px-2.5 h-8 rounded-md border border-border/80 bg-card hover:bg-muted/60 hover:border-primary/45 transition-all cursor-pointer shadow-2xs active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                className,
+              )}
+              aria-label={ariaLabel ?? (typeof label === 'string' ? label : 'تغيير اللون')}
             >
-              {color === 'transparent' && (
+              {swatchOnly ? (
                 <div
-                  className="w-full h-full"
-                  style={{
-                    backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
-                    backgroundSize: '4px 4px',
-                  }}
-                />
-              )}
-            </div>
-          ) : (
-            <>
-              {label && (
-                <div className="text-xs font-semibold text-foreground/90 shrink-0">{label}</div>
-              )}
-
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span
-                  className="px-1.5 py-0.5 rounded bg-muted/60 dark:bg-muted/40 border border-border/40 font-mono text-mini font-bold text-foreground/80 tracking-tight select-none"
-                  dir="ltr"
-                >
-                  {color === 'transparent' ? 'شفاف' : color.toUpperCase()}
-                </span>
-                <div
-                  className="w-5 h-5 rounded-md border border-black/15 dark:border-white/20 shrink-0 relative overflow-hidden shadow-2xs before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
+                  className="w-full h-full rounded border border-black/15 dark:border-white/20 shadow-2xs relative overflow-hidden transition-all before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
                   style={{ backgroundColor: color === 'transparent' ? previewWhite() : color }}
                 >
                   {color === 'transparent' && (
@@ -247,11 +221,43 @@ export function PopoverColorPicker({
                     />
                   )}
                 </div>
-              </div>
-            </>
-          )}
-        </button>
-      </PopoverTrigger>
+              ) : (
+                <>
+                  {label && (
+                    <div className="text-xs font-semibold text-foreground/90 shrink-0">{label}</div>
+                  )}
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className="px-1.5 py-0.5 rounded bg-muted/60 dark:bg-muted/40 border border-border/40 font-mono text-mini font-bold text-foreground/80 tracking-tight select-none"
+                      dir="ltr"
+                    >
+                      {color === 'transparent' ? 'شفاف' : color.toUpperCase()}
+                    </span>
+                    <div
+                      className="w-5 h-5 rounded-md border border-black/15 dark:border-white/20 shrink-0 relative overflow-hidden shadow-2xs before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
+                      style={{ backgroundColor: color === 'transparent' ? previewWhite() : color }}
+                    >
+                      {color === 'transparent' && (
+                        <div
+                          className="w-full h-full"
+                          style={{
+                            backgroundImage: `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`,
+                            backgroundSize: '4px 4px',
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs font-bold font-cairo">
+          تغيير اللون
+        </TooltipContent>
+      </Tooltip>
       <PopoverContent
         className="w-72 p-0 border-0 bg-transparent shadow-none"
         sideOffset={8}
