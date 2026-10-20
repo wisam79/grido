@@ -21,6 +21,7 @@
 | الاستماع لأخطاء الجسر وتنبيه الواجهة | ربط حدث `phone:cloud-error` في خطاف `usePhoneBridgeListener` وإظهار تنبيه واضح، مع تحويل تلقائي إلى وضع LAN وإظهار بانر إرشادي في الحوار عند غياب جلسة السحابة | `frontend/src/components/editor/system/use-phone-bridge.ts:132` و`frontend/src/components/editor/dialogs/phone-bridge-dialog.tsx:145` ✅ |
 | ترشيق الصور وتسريع النقل 75% | ضبط سقف أبعاد الصور السحابية إلى 2048px وجودة 0.80 في صفحة الهاتف (كافية لطباعة 300+ DPI)، مما خفض حجم الصور من 3MB+ إلى ~450KB وسرّع الرفع والسحب | `admin-web/src/pages/PhoneCameraPage.tsx:369,507,542` ✅ |
 | تحسين تجربة الاقتران والمعرض | إلغاء الاستماع المزدوج لحدث الاقتران في الحوار لمنع تكرار الـ Toast، وتفعيل الاختيار المتعدد في معرض صفحة الكاميرا المحلية | `frontend/src/components/editor/dialogs/phone-bridge-dialog.tsx:43` و`internal/service/embedded/phone_camera_page.html:455,622` ✅ |
+| امتثال خطوط الحوار لنظام Fluent 2 | توحيد مقياس خطوط نصوص التحذير في حوار الجسر واستبدال فئات الحجم الاعتباطي بـ `text-xs` للامتثال لحارس الاتساق البصري | `frontend/src/components/editor/dialogs/phone-bridge-dialog.tsx:294` ✅ |
 
 ---
 

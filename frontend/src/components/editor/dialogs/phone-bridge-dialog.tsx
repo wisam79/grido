@@ -291,7 +291,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                 <div className="w-full flex flex-col items-center gap-2 py-4 px-3 bg-amber-500/10 dark:bg-amber-500/15 rounded-xl border border-amber-500/30 text-center">
                   <WarningCircle className="w-6 h-6 text-amber-500 shrink-0" weight="duotone" />
                   <div className="text-xs font-bold text-foreground">يتطلب تسجيل الدخول للحساب</div>
-                  <p className="text-[11px] text-muted-foreground max-w-xs leading-relaxed">
+                  <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
                     لتشغيل جسر الكاميرا عبر الإنترنت، سجّل دخولك إلى حسابك أولاً، أو استخدم وضع
                     «شبكة محلية (LAN)» فوراً بدون إنترنت.
                   </p>
