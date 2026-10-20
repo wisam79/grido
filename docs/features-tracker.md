@@ -317,7 +317,8 @@
 | توكنز الهرمية في الحارس | `RADIUS` صار يحمل `control`/`inset`/`overlay`/`modal`/`panel`/`pill` بدل `container` القديم، مع تعليق يثبّت اشتقاق القيم من أساس 6px | `frontend/src/lib/ui/ui-compliance.ts:23` ✅ |
 | حارس آلي (4 حراس) | اختبار يمنع `rounded-2xl/3xl` في المصدر، ويمنع أي `shadow-fluent-N` غير معرّف في `index.css` (صنفات الظل الميتة)، ويمنع بقايا `shadow-fluent-28`، ويؤكّد أن `FluentSection` صف مسطّح بلا نصف قطر/ظل وأن رأس اللوح `h-9` | `frontend/test/ui-compliance.test.ts:86` ✅ |
 | توثيق القاعدة | تحديث `.agents/rules/ui-ux-fluent.md` (الهرمية الجديدة) و`grido-ui-designer-guide` (المبدأ 1.2 + قالب الحوار) و`fluent2-design-system` (سلم الاستدارة + قواعد السطح المسطّح)، مع وسم سطرَي تقريرَي التدقيق القديمين كـ SUPERSEDED | `.agents/rules/ui-ux-fluent.md:14` + `.agents/skills/grido-ui-designer-guide/SKILL.md:14` ✅ |
-| بوابات الجودة والتحقق | `npm run typecheck` نظيف · `npm run lint` نظيف (0 تحذيرات) · `vitest test/ui-compliance.test.ts` = 31/31 ناجحة · `docs-gate.mjs --strict-refs` ناجح | 2026-10-21 ✅ |
+| توحيد تسمية سلايدر الزوايا | «استدارة الزوايا» ← «الزوايا» في خصائص الأشكال والكولاج لتطابق خصائص الصور — التسمية القديمة كانت تكرّر «استدارة» داخل قسم «الحدود والاستدارة»؛ حُدّث معه اختبارا الوحدة وE2E اللذان كانا يتوقعان النص القديم | `frontend/src/components/editor/properties/panels/shape-properties.tsx:285` + `frontend/test/element-properties-tabs.test.tsx:68` ✅ |
+| بوابات الجودة والتحقق | `npm run typecheck` نظيف · `npm run lint` نظيف (0 تحذيرات) · `vitest test/ui-compliance.test.ts` = 31/31 · `vitest test/element-properties-tabs.test.tsx` = 5/5 · `docs-gate.mjs --strict-refs` ناجح · CI سحابي ناجح 100% | 2026-10-21 ✅ |
 
 ---
 

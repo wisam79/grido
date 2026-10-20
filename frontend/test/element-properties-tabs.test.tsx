@@ -61,11 +61,11 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     render(
       <TooltipProvider>
         <ElementProperties element={shapeElement} onUpdate={mockOnUpdate} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
-    // 1. Style tab (default): should contain "استدارة الزوايا" for rect shape
-    expect(screen.getByText('استدارة الزوايا')).toBeInTheDocument();
+    // 1. Style tab (default): should contain "الزوايا" for rect shape
+    expect(screen.getByText('الزوايا')).toBeInTheDocument();
 
     // 2. Switch to Colors (adjust) tab: should contain "شفافية الشكل"
     fireEvent.click(screen.getByRole('tab', { name: /الألوان/i }));
@@ -92,17 +92,17 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     render(
       <TooltipProvider>
         <ElementProperties element={ellipseElement} onUpdate={mockOnUpdate} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
-    expect(screen.queryByText('استدارة الزوايا')).not.toBeInTheDocument();
+    expect(screen.queryByText('الزوايا')).not.toBeInTheDocument();
   });
 
   it('renders Text element properties with stroke in Colors tab and no duplicate in Effects', () => {
     render(
       <TooltipProvider>
         <ElementProperties element={textElement} onUpdate={mockOnUpdate} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     // 1. Switch to Colors tab: should have "إطار وحدود النص" and "شفافية النص"
@@ -126,11 +126,11 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     render(
       <TooltipProvider>
         <ElementProperties element={imageElement} onUpdate={mockOnUpdate} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
-    // 1. Style tab: should contain "استدارة الزوايا"
-    expect(screen.getByText('استدارة الزوايا')).toBeInTheDocument();
+    // 1. Style tab: should contain "الزوايا"
+    expect(screen.getByText('الزوايا')).toBeInTheDocument();
 
     // 2. Switch to Colors tab: should contain "تعديل الألوان" and "شفافية الصورة"
     fireEvent.click(screen.getByRole('tab', { name: /الألوان/i }));
@@ -160,7 +160,7 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     const { unmount } = render(
       <TooltipProvider>
         <ElementProperties element={zeroOpacityImage} onUpdate={mockOnUpdate} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     fireEvent.click(screen.getByRole('tab', { name: /الألوان/i }));
@@ -172,7 +172,7 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     render(
       <TooltipProvider>
         <ElementProperties element={textElement} onUpdate={mockOnUpdate} />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     fireEvent.click(screen.getByRole('tab', { name: /الألوان/i }));

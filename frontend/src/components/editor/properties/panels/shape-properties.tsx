@@ -282,7 +282,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
             return (
               <div className="space-y-1.5 pt-2 border-t border-border/30">
                 <FluentSliderField
-                  label="استدارة الزوايا"
+                  label="الزوايا"
                   icon={<Square className="w-4 h-4" weight="regular" />}
                   value={uniformRadius}
                   min={0}

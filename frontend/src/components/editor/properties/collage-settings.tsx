@@ -107,7 +107,7 @@ export function CollageSettings() {
             }}
           />
           <FluentSliderField
-            label="استدارة الزوايا"
+            label="الزوايا"
             icon={<Square className="w-3.5 h-3.5" weight="regular" />}
             value={collageRadius}
             min={0}
