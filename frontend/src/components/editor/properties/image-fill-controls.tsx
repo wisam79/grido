@@ -145,6 +145,7 @@ export function ImageFillControls({ value, onChange, onCommit }: ImageFillContro
             </span>
             <FluentSegmentedControl<ShapeFillImageFit>
               layoutId="shape-image-fit"
+              variant="field"
               value={fit}
               onChange={(nextFit) => {
                 onChange({ fillImageFit: nextFit });

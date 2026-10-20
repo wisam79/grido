@@ -140,6 +140,7 @@ export function CollagePaperToolsTab() {
           control={
             <FluentSegmentedControl<(typeof CUT_SHAPES)[number]['id']>
               layoutId="paper-cut-shape"
+              variant="field"
               value={cutShapeType}
               onChange={setCutShapeType}
               size="sm"

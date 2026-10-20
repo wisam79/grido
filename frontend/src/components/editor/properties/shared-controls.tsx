@@ -7,7 +7,6 @@ import {
   Palette,
   Eyedropper,
   Check,
-  PaintBrush,
   Copy,
   Drop,
   SlidersHorizontal,
@@ -228,12 +227,6 @@ export function PopoverColorPicker({
                   )}
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span
-                      className="px-1.5 py-0.5 rounded bg-muted/60 dark:bg-muted/40 border border-border/40 font-mono text-mini font-bold text-foreground/80 tracking-tight select-none"
-                      dir="ltr"
-                    >
-                      {color === 'transparent' ? 'شفاف' : color.toUpperCase()}
-                    </span>
                     <div
                       className="w-5 h-5 rounded-md border border-black/15 dark:border-white/20 shrink-0 relative overflow-hidden shadow-2xs before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:pointer-events-none"
                       style={{ backgroundColor: color === 'transparent' ? previewWhite() : color }}
@@ -248,6 +241,12 @@ export function PopoverColorPicker({
                         />
                       )}
                     </div>
+                    <span
+                      className="px-1.5 py-0.5 rounded bg-muted/60 dark:bg-muted/40 border border-border/40 font-mono text-mini font-bold text-foreground/80 tracking-tight select-none"
+                      dir="ltr"
+                    >
+                      {color === 'transparent' ? 'شفاف' : color.toUpperCase()}
+                    </span>
                   </div>
                 </>
               )}
@@ -632,27 +631,17 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
       className={cn('space-y-2.5 w-full font-cairo', compact && 'space-y-1.5', className)}
       dir="rtl"
     >
-      {/* لون مخصص + قطارة — القرار الأكثر تكراراً أولاً (يستهدف السطر الأول) */}
+      {/* اللون الحالي + القطارة — صفّ واحد: حقل اللون يمتدّ، والقطارة على
+          حافته. بلا «لون مخصص» ولا أيقونة فرشاة: الرقعة هي اللون. */}
       <div className="flex items-center gap-1.5 w-full">
         <PopoverColorPicker
           color={color}
           onChange={onChange}
           className={cn(
             'flex-1 h-8 rounded-md border-border/80 bg-card hover:bg-muted/60 hover:border-primary/40 shadow-2xs',
-            compact && 'h-7 text-micro',
+            compact && 'h-7',
           )}
-          ariaLabel="لون مخصص"
-          label={
-            <div
-              className={cn(
-                'flex items-center gap-1.5 text-xs font-semibold text-foreground/90',
-                compact && 'text-micro gap-1',
-              )}
-            >
-              <PaintBrush className="text-muted-foreground shrink-0 w-3.5 h-3.5" weight="duotone" />
-              <span>لون مخصص</span>
-            </div>
-          }
+          ariaLabel="لون خلفية الورقة"
         />
 
         {hasEyeDropper && (
@@ -749,16 +738,8 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
       {hasGradientProps && (
         <div className="pt-2 border-t border-border/30">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-foreground/90 font-semibold flex items-center gap-1.5">
-              <Drop
-                className={cn(
-                  'w-4 h-4',
-                  isGradientActive ? 'text-foreground' : 'text-muted-foreground',
-                )}
-                weight="duotone"
-              />
-              <span>تعبئة متدرجة</span>
-            </span>
+            {/* بلا أيقونة قطرة: المفتاح والاسم يقولان كل شيء (ميزانية الأيقونات) */}
+            <span className="text-xs text-foreground/90 font-semibold">تعبئة متدرجة</span>
             <Switch
               checked={isGradientActive}
               onCheckedChange={toggleGradient}

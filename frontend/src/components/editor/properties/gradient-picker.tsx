@@ -127,6 +127,7 @@ export const GradientPicker = ({
       {showFillType && (
         <FluentSegmentedControl<FillType>
           layoutId="gradient-fill-type"
+          variant="field"
           value={fillType}
           onChange={onChangeType}
           size="sm"

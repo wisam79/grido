@@ -458,12 +458,15 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
             </TooltipContent>
           </Tooltip>
 
-          {/* وحدة القياس — mm أولاً لأنها الوحدة الافتراضية للطباعة */}
+          {/* وحدة القياس — mm أولاً لأنها الوحدة الافتراضية للطباعة.
+              بنمط «حقل» المؤطّر ليشارك إطار القائمة المنسدلة المجاورة،
+              لا كشريط تبويبات عارٍ وسط صف الحقول. */}
           <FluentSegmentedControl<'mm' | 'px'>
             layoutId="canvas-dimensions-unit-toggle"
             value={activeUnit}
             onChange={setRulerUnit}
             size="sm"
+            variant="field"
             fullWidth={false}
             options={unitOptions.map((unit) => ({
               id: unit.id,
@@ -480,7 +483,8 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
           description={`النسبة ${ratioLabel}`}
           control={
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
-              {/* العرض */}
+              {/* العرض — بلا لاحقة الوحدة: مبدّل الوحدة (px/mm) أعلى الصف
+                  يحدّدها، وتكرارها داخل كل حقل كان يقتطع القيمة. */}
               <div className={FIELD_SHELL} dir="ltr">
                 <span className="text-micro font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
                   W
@@ -499,9 +503,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   className="w-full min-w-0 bg-transparent border-0 p-0 text-start font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
                   dir="ltr"
                 />
-                <span className="text-micro font-mono text-muted-foreground/70 shrink-0 select-none">
-                  {activeUnit}
-                </span>
               </div>
 
               {/* قفل نسبة الأبعاد — يحفظ التناسب عند تعديل أي بُعد */}
@@ -545,9 +546,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                   className="w-full min-w-0 bg-transparent border-0 p-0 text-start font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
                   dir="ltr"
                 />
-                <span className="text-micro font-mono text-muted-foreground/70 shrink-0 select-none">
-                  {activeUnit}
-                </span>
               </div>
             </div>
           }

@@ -218,6 +218,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           <span className="text-micro font-semibold text-muted-foreground block">نمط الحد</span>
           <FluentSegmentedControl<'solid' | 'dashed' | 'dotted'>
             layoutId="shape-stroke-style"
+            variant="field"
             value={element.strokeStyle ?? 'solid'}
             onChange={(style) => {
               onUpdate(element.id, { strokeStyle: style });
@@ -235,6 +236,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           {isLinearShape && (element.strokeStyle ?? 'solid') !== 'dotted' && (
             <FluentSegmentedControl<'butt' | 'round' | 'square'>
               layoutId="shape-line-cap"
+              variant="field"
               value={element.lineCap ?? 'butt'}
               onChange={(cap) => {
                 onUpdate(element.id, { lineCap: cap });

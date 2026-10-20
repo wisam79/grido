@@ -256,6 +256,7 @@ export function FreeformPaletteTab() {
             value={target}
             onChange={setTarget}
             layoutId="palette-target-compact"
+            variant="field"
             size="sm"
             className="flex-1"
             options={[

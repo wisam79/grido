@@ -33,7 +33,9 @@ export const FluentSettingRow = React.memo(
     if (layout === 'vertical') {
       return (
         <div ref={ref} className={cn('space-y-1.5', className)} {...props}>
-          <div className="flex items-center justify-between gap-2 text-xs">
+          {/* الوصف يتبع العنوان مباشرةً (لا يُدفع إلى الطرف المقابل) — فالوصف
+              بيانات ثانوية كتأحتها لا قيمة حقل. */}
+          <div className="flex items-center gap-2 text-xs">
             <div className="flex items-center gap-1.5 font-normal text-foreground/85">
               {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
               <span>{label}</span>

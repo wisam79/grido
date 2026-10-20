@@ -20,6 +20,13 @@ export interface FluentSegmentedControlProps<T extends string = string> {
   options: SegmentedOption<T>[];
   size?: 'sm' | 'md' | 'lg';
   stacked?: boolean;
+  /**
+   * نمط العرض:
+   * - `tabs` (افتراضي): شريط تبويبات مسطّح بخط سفلي — لأسفل الألواح.
+   * - `field`: مفتاح اختيار مؤطّر داخل صف حقول — يشارك الحقول إطاراً واحداً
+   *   فلا يظهر تبويب عارٍ وسط قائمة من الحقول.
+   */
+  variant?: 'tabs' | 'field';
   fullWidth?: boolean;
   className?: string;
   layoutId?: string;
@@ -41,6 +48,7 @@ export function FluentSegmentedControl<T extends string = string>({
   options,
   size = 'sm',
   stacked = false,
+  variant = 'tabs',
   fullWidth = true,
   className,
   layoutId,
@@ -90,9 +98,11 @@ export function FluentSegmentedControl<T extends string = string>({
         // سطح مكتب: تبويبات مسطّحة بخط سفلي بدل كبسولة بيضية عائمة — نمط
         // ألواح الخصائص في محررات سطح المكتب (Figma/Photoshop/Office).
         'flex items-center gap-0.5 select-none min-w-0 max-w-full',
-        stacked
-          ? 'flex-col gap-0.5 p-0.5 rounded-md border border-border/60 bg-muted/40'
-          : 'border-b border-border/60 rounded-none p-0',
+        variant === 'field'
+          ? 'flex-row gap-0.5 p-0.5 rounded-md border border-border/60 bg-muted/40'
+          : stacked
+            ? 'flex-col gap-0.5 p-0.5 rounded-md border border-border/60 bg-muted/40'
+            : 'border-b border-border/60 rounded-none p-0',
         fullWidth ? 'w-full' : 'w-fit inline-flex',
         className,
       )}
@@ -134,9 +144,10 @@ export function FluentSegmentedControl<T extends string = string>({
               'relative flex items-center justify-center font-cairo cursor-pointer transition-colors duration-150 z-10 select-none min-w-0 overflow-hidden',
               'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               fullWidth ? 'flex-1' : 'shrink-0',
-              stacked
+              stacked || variant === 'field'
                 ? cn(
-                    'flex-col gap-0.5 h-10 px-1 text-mini rounded-sm',
+                    'flex-col gap-0.5 rounded-sm',
+                    variant === 'field' ? 'h-7 px-2 text-xs' : 'h-10 px-1 text-mini',
                     isActive ? 'bg-card shadow-2xs' : 'hover:bg-accent/60',
                   )
                 : cn(
@@ -157,7 +168,7 @@ export function FluentSegmentedControl<T extends string = string>({
               <motion.div
                 layoutId={effectiveLayoutId}
                 className={
-                  stacked
+                  stacked || variant === 'field'
                     ? 'absolute inset-0 bg-card border border-border/80 dark:border-white/15 rounded-sm shadow-2xs -z-10'
                     : 'absolute inset-x-1 bottom-0 h-0.5 bg-primary rounded-full -z-10'
                 }

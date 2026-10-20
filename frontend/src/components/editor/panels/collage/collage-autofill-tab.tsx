@@ -216,6 +216,7 @@ export function CollageAutofillTab() {
           control={
             <FluentSegmentedControl<FillMode>
               layoutId="autofill-mode"
+              variant="field"
               value={mode}
               onChange={setMode}
               size="sm"
@@ -234,6 +235,7 @@ export function CollageAutofillTab() {
           control={
             <FluentSegmentedControl<FillOrder>
               layoutId="autofill-order"
+              variant="field"
               value={order}
               onChange={setOrder}
               size="sm"

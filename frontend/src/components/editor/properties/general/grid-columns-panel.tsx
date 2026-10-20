@@ -394,6 +394,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   </span>
                   <FluentSegmentedControl<'rectangle' | 'rounded-rect' | 'circle'>
                     layoutId="grid-columns-cutshape-toggle"
+                    variant="field"
                     value={cutShapeType}
                     onChange={setCutShapeType}
                     size="sm"

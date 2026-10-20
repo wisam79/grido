@@ -495,6 +495,7 @@ export function CollagePresetsTab({
           {/* زر التبديل بين نمط القائمة العريضة ونمط الشبكة */}
           <FluentSegmentedControl<'list' | 'grid'>
             layoutId="presets-view-mode-pill"
+            variant="field"
             value={viewMode}
             onChange={setViewMode}
             size="sm"
