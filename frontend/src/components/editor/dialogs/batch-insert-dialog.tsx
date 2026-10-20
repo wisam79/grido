@@ -330,7 +330,7 @@ export function BatchInsertDialog({
             <div className="flex items-center gap-2.5 shrink-0">
               {/* Quick stats badge */}
               {images.length > 0 && (
-                <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-xl bg-muted/60 border border-border/50 text-foreground">
+                <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-md bg-muted/60 border border-border/50 text-foreground">
                   <span>{images.length} صور</span>
                   <span className="text-muted-foreground">•</span>
                   <span className="text-primary">{totalCopies} إجمالي النسخ</span>
@@ -420,8 +420,8 @@ export function BatchInsertDialog({
           {/* Images Queue List (7 Cols) */}
           <div className="md:col-span-7 border-l border-border/40 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-2.5 bg-background/50">
             {images.length === 0 ? (
-              <div className="flex flex-col items-center justify-center flex-1 py-12 px-4 text-center border-2 border-dashed border-border/50 rounded-xl bg-muted/10">
-                <div className="p-4 rounded-xl bg-muted/40 text-muted-foreground/60 mb-3">
+              <div className="flex flex-col items-center justify-center flex-1 py-12 px-4 text-center border-2 border-dashed border-border/50 rounded-md bg-muted/10">
+                <div className="p-4 rounded-md bg-muted/40 text-muted-foreground/60 mb-3">
                   <Images className="w-8 h-8 shrink-0" weight="duotone" />
                 </div>
                 <h4 className="text-sm font-bold text-foreground">قائمة الصور فارغة</h4>
@@ -451,7 +451,7 @@ export function BatchInsertDialog({
                 {images.map((img, idx) => (
                   <div
                     key={img.id}
-                    className="flex items-center gap-2.5 p-2 rounded-xl bg-card border border-border/60 shadow-xs hover:border-border transition-all"
+                    className="flex items-center gap-2.5 p-2 rounded-md bg-card border border-border/60 shadow-xs hover:border-border transition-all"
                   >
                     {/* Thumbnail */}
                     <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted shrink-0 border border-border/40 relative flex items-center justify-center">
@@ -640,7 +640,7 @@ export function BatchInsertDialog({
             )}
 
             {mode === 'collage' && (
-              <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20 text-xs text-primary/90 mt-2">
+              <div className="p-2.5 rounded-md bg-primary/5 border border-primary/20 text-xs text-primary/90 mt-2">
                 وضع الكولاج: تُملأ الخانات بترتيب الصور.
               </div>
             )}

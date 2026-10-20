@@ -127,7 +127,7 @@ export function KeyboardShortcutsDialog() {
                 <Sparkle className="opacity-70 w-3.5 h-3.5 shrink-0" weight="duotone" />
                 <span>{cat.title}</span>
               </div>
-              <div className="bg-muted/30 rounded-xl border border-border/40 p-2 space-y-1">
+              <div className="bg-muted/30 rounded-md border border-border/40 p-2 space-y-1">
                 {cat.items.map((shortcut, itemIdx) => (
                   <React.Fragment key={itemIdx}>
                     <div className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-muted/50 transition-colors text-xs">

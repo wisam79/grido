@@ -152,7 +152,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
         {hasStroke && (
           <div className="space-y-2.5 animate-in fade-in duration-150">
             {/* وحدة لون الحد المدمجة */}
-            <div className="space-y-1.5 bg-background/40 p-2 rounded-xl border border-border/50 shadow-2xs">
+            <div className="space-y-1.5 bg-background/40 p-2 rounded-md border border-border/50 shadow-2xs">
               <div className="flex items-center justify-between text-micro font-bold text-muted-foreground px-0.5">
                 <span>لون الحد</span>
                 <div className="flex items-center gap-1.5">

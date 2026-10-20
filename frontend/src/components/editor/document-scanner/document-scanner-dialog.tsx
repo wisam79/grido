@@ -327,13 +327,13 @@ export function DocumentScannerDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="sm:max-w-[1140px] w-[94vw] h-[86vh] max-h-[900px] overflow-hidden flex flex-col rounded-xl border border-border/80 dark:border-white/10 bg-card p-4 sm:p-5 shadow-fluent-28 transition-all duration-150 fluent-specular gap-3 font-cairo"
+        className="sm:max-w-[1140px] w-[94vw] h-[86vh] max-h-[900px] overflow-hidden flex flex-col rounded-xl border border-border/80 dark:border-white/10 bg-card p-4 sm:p-5 shadow-fluent-16 transition-all duration-150 fluent-specular gap-3 font-cairo"
         dir="rtl"
       >
         {/* 🔹 رأس النافذة الأنيق مع زر الإغلاق وشارة النمط */}
         <DialogHeader className="pb-3 border-b border-border/40 flex flex-row items-center justify-between shrink-0 space-y-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-muted/60 border border-border/60 text-foreground/80 flex items-center justify-center shadow-xs shrink-0">
+            <div className="w-10 h-10 rounded-md bg-muted/60 border border-border/60 text-foreground/80 flex items-center justify-center shadow-xs shrink-0">
               <Scan size={22} weight="duotone" />
             </div>
             <div className="flex flex-col min-w-0">
@@ -364,7 +364,7 @@ export function DocumentScannerDialog({
           {/* Canvas Main Container */}
           <div
             ref={containerRef as React.RefObject<HTMLDivElement>}
-            className="flex-1 bg-canvas-stage dark:bg-black/85 rounded-xl overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/50 relative shadow-inner p-2 select-none"
+            className="flex-1 bg-canvas-stage dark:bg-black/85 rounded-md overflow-hidden flex items-center justify-center h-full min-h-0 border border-border/50 relative shadow-inner p-2 select-none"
           >
             {/* Top Floating Status Badge — aria-live لقارئ الشاشة */}
             <div
@@ -414,7 +414,7 @@ export function DocumentScannerDialog({
                 src={processor.previewSrc}
                 alt="المستند المستعدل"
                 onError={() => toast.error('تعذر عرض المعاينة — أعد المحاولة')}
-                className="max-h-full max-w-full object-contain rounded-xl shadow-fluent-8 shadow-black/20 border border-border/30 animate-in fade-in-50 duration-200"
+                className="max-h-full max-w-full object-contain rounded-md shadow-fluent-8 shadow-black/20 border border-border/30 animate-in fade-in-50 duration-200"
               />
             ) : (
               <div role="application" aria-label="لوحة ضبط زوايا المستند" className="relative">
@@ -426,7 +426,7 @@ export function DocumentScannerDialog({
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
                   className={cn(
-                    'touch-none rounded-xl cursor-crosshair transition-opacity duration-150',
+                    'touch-none rounded-md cursor-crosshair transition-opacity duration-150',
                     activeCorner !== null && 'cursor-grabbing',
                   )}
                 />

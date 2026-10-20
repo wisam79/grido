@@ -71,7 +71,7 @@ export const ImageFiltersPopover = React.memo(function ImageFiltersPopover({
       <PopoverContent
         align="start"
         dir="rtl"
-        className="w-80 p-3 font-cairo bg-popover text-popover-foreground border border-border rounded-xl shadow-fluent-16 fluent-specular z-(--z-popover)"
+        className="w-80 p-3 font-cairo bg-popover text-popover-foreground border border-border rounded-lg shadow-fluent-16 fluent-specular z-(--z-popover)"
       >
         <div className="text-xs font-bold mb-2 text-foreground/80 text-start" dir="rtl">
           المرشحات

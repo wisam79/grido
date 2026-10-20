@@ -151,7 +151,7 @@ export function AccountLicenseModal() {
 
         {/* 🔹 2. بطاقة الملف الشخصي للمستخدم المسجل (Profile Bento Hero) */}
         {user && user.token && (
-          <div className="bg-muted/40 dark:bg-muted/20 border border-border/60 dark:border-white/10 p-3 rounded-xl flex items-center justify-between mt-3.5 fluent-specular">
+          <div className="bg-muted/40 dark:bg-muted/20 border border-border/60 dark:border-white/10 p-3 rounded-md flex items-center justify-between mt-3.5 fluent-specular">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-full bg-primary/15 text-primary border border-primary/30 font-bold text-xs flex items-center justify-center shrink-0">
                 {(user.name || user.email || 'U').charAt(0).toUpperCase()}

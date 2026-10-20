@@ -343,7 +343,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-64 font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8 max-h-[380px] overflow-y-auto"
+              className="w-64 font-cairo rounded-lg border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8 max-h-[380px] overflow-y-auto"
               align="start"
             >
               <DropdownMenuItem

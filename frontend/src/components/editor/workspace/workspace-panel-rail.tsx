@@ -540,7 +540,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             align="end"
             sideOffset={10}
             dir="rtl"
-            className="w-[380px] p-0 rounded-xl border fluent-specular font-cairo overflow-hidden"
+            className="w-[380px] p-0 rounded-lg border fluent-specular font-cairo overflow-hidden"
           >
             <ToolLauncherContent
               tools={tools}
@@ -692,7 +692,7 @@ export function CompactToolLauncher({
         align="start"
         sideOffset={10}
         dir="rtl"
-        className="w-[calc(100vw-2rem)] max-w-[380px] p-0 rounded-xl border fluent-specular font-cairo overflow-hidden"
+        className="w-[calc(100vw-2rem)] max-w-[380px] p-0 rounded-lg border fluent-specular font-cairo overflow-hidden"
       >
         <ToolLauncherContent
           tools={tools}

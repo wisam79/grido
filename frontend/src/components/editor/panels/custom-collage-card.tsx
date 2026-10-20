@@ -376,7 +376,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
       {/* 3️⃣ تبويب الكولاج الحر بالملم — سطر واحد وزر، بلا شارات تسويقية */}
       {effectiveTab === 'freeform' && (
-        <div className="p-3 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular flex flex-col items-center text-center gap-2.5 animate-in fade-in duration-200">
+        <div className="p-3 rounded-md bg-card border border-border/80 shadow-2xs fluent-specular flex flex-col items-center text-center gap-2.5 animate-in fade-in duration-200">
           <p className="text-micro text-muted-foreground leading-relaxed">
             ارسم شبكتك بالمليمتر مع تقسيم ومحاذاة ومغناطيس
           </p>

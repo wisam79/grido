@@ -19,11 +19,16 @@ export function assertSpacing(value: number, where: string): void {
   }
 }
 
-// ─── R18: هرمية نصف القطر ───
+// ─── R18: هرمية نصف القطر (طابع سطح المكتب الأصلي — 6px أساس) ───
+// الأساس في index.css هو `--radius: 0.375rem` (6px)، فالقيم الفعلية:
+// rounded-sm = 2px · rounded-md = 4px · rounded-lg = 6px · rounded-xl = 10px.
+// البطاقات المستديرة الكبيرة (16px+) إشارة بصرية «ويب/جوال» ومُنعت في محرر سطح المكتب.
 export const RADIUS = {
-  control: 'rounded-md', // 4-6px: أزرار/حقول/قوائم
-  container: 'rounded-xl', // 8-12px: بطاقات/ألواح
-  modal: 'rounded-xl', // 10px: مودالات سطح المكتب — لا بطاقات ويب دائرية
+  control: 'rounded-md', // 4px: أزرار/حقول/قوائم وعناصر تحكم
+  inset: 'rounded-md', // 4px: أسطح داخلية (بطاقة داخل لوحة أو حوار)
+  overlay: 'rounded-lg', // 6px: أسطح عائمة (Popover/Dropdown/Select/Command)
+  modal: 'rounded-xl', // 10px: نوافذ وحوارات سطح المكتب — لا بطاقات ويب دائرية
+  panel: 'rounded-none', // 0px: ألواح الخصائص — صفوف مسطّحة يفصلها خط شعري
   pill: 'rounded-full', // كبسولات/أفاتار
 } as const;
 

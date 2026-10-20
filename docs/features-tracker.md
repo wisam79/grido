@@ -305,6 +305,22 @@
 
 ---
 
+## 0.101 سجل جلسة تسطيح الأسطح وتثبيت حارس هرمية الاستدارة — 21 أكتوبر 2026
+
+**المرجع:** تكملة جلسة «الطابع الأصلي لسطح المكتب» — بعد حفظ الكود في كومت وقائي، جُرِعت البقايا المتعارضة على الكود فحُوِّلت إلى مصدر حقيقة واحد (قاعدة + مهارة + توكنز + حارس آلي).
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| تسطيح الأسطح الداخلية | 115 موضعاً `rounded-xl` → `rounded-md` (4px) داخل الألواح والحوارات، و24 موضعاً → `rounded-lg` (6px) للأسطح العائمة (Popover/Dropdown/Select/Command وقوائم شريط القوائم)، وتوحيد AlertDialog مع Dialog (`p-5` + `gap-3` + `shadow-fluent-16` + عنوان `text-base font-bold`) | `frontend/src/components/ui/select.tsx:51` + `frontend/src/components/editor/system/desktop-menu-bar.tsx:249` ✅ |
+| إصلاح صنف ظل ميت | `shadow-fluent-24` كان مستعملاً في `crash-recovery-dialog.tsx` و`shared-controls.tsx` بينما `--fluent-shadow-24` غير معرّف في `index.css` — فلا يُولَّد الصنف ولا يظهر ظل إطلاقاً؛ استُبدل بـ `shadow-fluent-16` | `frontend/src/components/crash-recovery-dialog.tsx:79` + `frontend/src/components/editor/properties/shared-controls.tsx:412` ✅ |
+| توحيد درجة الارتفاع | كل الأسطح العائمة من `shadow-fluent-28` إلى `shadow-fluent-16` (8 مواضع) لتطابق أساس `Dialog`، فلا تبدو نافذة أثقل من غيرها | `frontend/src/components/ui/sheet.tsx:58` ✅ |
+| توكنز الهرمية في الحارس | `RADIUS` صار يحمل `control`/`inset`/`overlay`/`modal`/`panel`/`pill` بدل `container` القديم، مع تعليق يثبّت اشتقاق القيم من أساس 6px | `frontend/src/lib/ui/ui-compliance.ts:23` ✅ |
+| حارس آلي (4 حراس) | اختبار يمنع `rounded-2xl/3xl` في المصدر، ويمنع أي `shadow-fluent-N` غير معرّف في `index.css` (صنفات الظل الميتة)، ويمنع بقايا `shadow-fluent-28`، ويؤكّد أن `FluentSection` صف مسطّح بلا نصف قطر/ظل وأن رأس اللوح `h-9` | `frontend/test/ui-compliance.test.ts:86` ✅ |
+| توثيق القاعدة | تحديث `.agents/rules/ui-ux-fluent.md` (الهرمية الجديدة) و`grido-ui-designer-guide` (المبدأ 1.2 + قالب الحوار) و`fluent2-design-system` (سلم الاستدارة + قواعد السطح المسطّح)، مع وسم سطرَي تقريرَي التدقيق القديمين كـ SUPERSEDED | `.agents/rules/ui-ux-fluent.md:14` + `.agents/skills/grido-ui-designer-guide/SKILL.md:14` ✅ |
+| بوابات الجودة والتحقق | `npm run typecheck` نظيف · `npm run lint` نظيف (0 تحذيرات) · `vitest test/ui-compliance.test.ts` = 31/31 ناجحة · `docs-gate.mjs --strict-refs` ناجح | 2026-10-21 ✅ |
+
+---
+
 ## 0.100 سجل جلسة إعادة تصميم الواجهة نحو طابع سطح المكتب الأصلي (Desktop-Native Flat UI) — 21 أكتوبر 2026
 
 **المرجع:** اتجاه جديد معتمد في جلسة 21 أكتوبر 2026 — إعادة تصميم واجهة المحرر على نمط أدوات سطح المكتب (Figma / Photoshop / Office) بدل النمط «بطاقات ويب» المستدير: أسطح مسطّحة، حدود شعرية، حواف حادة، وكثافة أعلى. طبّق على 54 ملفاً (بنية أساسية + ألواح + حوارات).

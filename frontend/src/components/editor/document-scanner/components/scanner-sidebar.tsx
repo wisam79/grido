@@ -76,9 +76,9 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
   const isMultiActive = detectionMode === 'multi' || detectedDocs.length > 1;
 
   return (
-    <div className="w-full md:w-72 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-xl border border-border/60 overflow-y-auto h-full min-h-0 fluent-specular select-none custom-scrollbar">
+    <div className="w-full md:w-72 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-md border border-border/60 overflow-y-auto h-full min-h-0 fluent-specular select-none custom-scrollbar">
       {/* 🔹 1. محدد نمط المسح (المسح المفرد الافتراضي vs المسح المتعدد الثانوي) */}
-      <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
+      <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-md border border-border/50">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-bold text-foreground/90 flex items-center gap-1.5">
             <Scan size={15} weight="duotone" className="text-muted-foreground shrink-0" />
@@ -185,7 +185,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
 
       {/* 🔹 2. قائمة المستندات المتعددة المكتشفة (تظهر عند المسح المتعدد أو عند وجود أكثر من مستند) */}
       {isMultiActive && (
-        <div className="space-y-2 bg-emerald-950/15 dark:bg-emerald-950/25 p-2.5 rounded-xl border border-emerald-500/30 animate-in fade-in-50 duration-200">
+        <div className="space-y-2 bg-emerald-950/15 dark:bg-emerald-950/25 p-2.5 rounded-md border border-emerald-500/30 animate-in fade-in-50 duration-200">
           <div className="flex items-center justify-between">
             <Label className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
               <FileText size={15} weight="duotone" className="shrink-0" />
@@ -242,7 +242,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
       )}
 
       {/* 🔹 3. معالجة وتصفية الورقة (6 فلاتر نقية) */}
-      <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
+      <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-md border border-border/50">
         <Label
           id="scanner-filters-label"
           className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
@@ -408,7 +408,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
       </div>
 
       {/* 🔹 4. قياس ونسبة المستند */}
-      <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
+      <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-md border border-border/50">
         <Label
           id="scanner-aspect-label"
           className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
@@ -489,7 +489,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
       </div>
 
       {/* 🔹 5. تدوير المستند وإعادة الضبط */}
-      <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-xl border border-border/50">
+      <div className="space-y-2 bg-muted/40 dark:bg-muted/20 p-2.5 rounded-md border border-border/50">
         <div className="flex items-center justify-between">
           <Label
             id="scanner-rotate-label"

@@ -633,7 +633,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
 
       {/* ═══ بطاقة 4: إجراءات التطبيق والحفظ — مثبتة أسفل اللوحة أثناء التمرير
           حتى تبقى الأفعال الرئيسية في متناول اليد مهما طالت البطاقات فوقها */}
-      <div className="sticky bottom-0 z-10 p-3 rounded-xl bg-card/95 backdrop-blur-md border border-border/80 shadow-2xs fluent-specular space-y-2">
+      <div className="sticky bottom-0 z-10 p-3 rounded-md bg-card/95 backdrop-blur-md border border-border/80 shadow-2xs fluent-specular space-y-2">
         {/* شارة الحالة الحية: تعكس حالة الكانفس لا زر لا يفعل شيئاً */}
         {isLiveCombo && (
           <div

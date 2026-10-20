@@ -212,7 +212,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(o) : closeAndReset())}>
       <DialogContent
         showCloseButton={false}
-        className="w-[94vw] sm:max-w-[560px] max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-28 font-cairo fluent-specular gap-0"
+        className="w-[94vw] sm:max-w-[560px] max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular gap-0"
         dir="rtl"
       >
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
@@ -247,7 +247,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
                 if (f) handleFile(f);
               }}
               className={cn(
-                'flex flex-col items-center justify-center gap-2 h-40 rounded-xl border-2 border-dashed cursor-pointer transition-all text-center px-4',
+                'flex flex-col items-center justify-center gap-2 h-40 rounded-md border-2 border-dashed cursor-pointer transition-all text-center px-4',
                 isDragging
                   ? 'border-primary bg-primary/5'
                   : 'border-border/60 hover:border-primary/50 hover:bg-muted/20',
@@ -280,7 +280,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
           ) : (
             <>
               {/* ملف محمَّل: ملخص */}
-              <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-card/60 border border-border/40">
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-md bg-card/60 border border-border/40">
                 <div className="flex items-center gap-2 min-w-0">
                   <GridFour className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                   <div className="min-w-0">
@@ -349,7 +349,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
 
               {/* 3. معاينة الصف الأول */}
               {previewRow && mappedFieldCount > 0 && (
-                <div className="p-2.5 rounded-xl bg-muted/20 border border-border/30 space-y-1">
+                <div className="p-2.5 rounded-md bg-muted/20 border border-border/30 space-y-1">
                   <p className="text-micro font-bold text-muted-foreground">معاينة الصف الأول</p>
                   {template.fields
                     .filter((f) => mapping[f.id])
@@ -367,7 +367,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
               )}
 
               {mappedFieldCount === 0 && (
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/10 border border-amber-500/30">
                   <WarningCircle className="w-4 h-4 text-amber-500 shrink-0" weight="duotone" />
                   <p className="text-mini font-semibold text-foreground/90">
                     اربط عموداً واحداً على الأقل لتوليد البطاقات

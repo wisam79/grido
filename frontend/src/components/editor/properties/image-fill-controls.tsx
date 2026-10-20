@@ -80,7 +80,7 @@ export function ImageFillControls({ value, onChange, onCommit }: ImageFillContro
   return (
     <div className="space-y-2.5 w-full">
       {hasImage ? (
-        <div className="flex items-center gap-2 p-2 rounded-xl bg-background/50 border border-border/60 shadow-2xs w-full">
+        <div className="flex items-center gap-2 p-2 rounded-md bg-background/50 border border-border/60 shadow-2xs w-full">
           <div
             className="w-12 h-12 rounded-lg overflow-hidden border border-border/60 shrink-0"
             style={{
@@ -128,7 +128,7 @@ export function ImageFillControls({ value, onChange, onCommit }: ImageFillContro
           type="button"
           onClick={handlePick}
           disabled={isPicking}
-          className="w-full h-16 rounded-xl border border-dashed border-border/80 hover:border-primary/50 bg-muted/30 hover:bg-primary/5 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary disabled:opacity-60 disabled:cursor-wait"
+          className="w-full h-16 rounded-md border border-dashed border-border/80 hover:border-primary/50 bg-muted/30 hover:bg-primary/5 transition-colors cursor-pointer flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary disabled:opacity-60 disabled:cursor-wait"
         >
           <ImageIcon className="w-4 h-4" weight="duotone" />
           <span className="text-xs font-semibold">

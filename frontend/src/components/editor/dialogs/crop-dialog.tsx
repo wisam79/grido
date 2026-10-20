@@ -192,7 +192,7 @@ export function CropDialog({
             تلقائية + سقف للشريط الجانبي مع تمريره الداخلي */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row gap-3 py-1.5 min-h-0 md:h-full">
           {/* منطقة الكانفس الخاصة بالقص - التوسع الديناميكي الكامل */}
-          <div className="flex-1 bg-muted rounded-xl overflow-hidden flex items-center justify-center h-64 sm:h-72 md:h-full min-h-0 border border-border/40 relative shadow-inner p-1.5">
+          <div className="flex-1 bg-muted rounded-md overflow-hidden flex items-center justify-center h-64 sm:h-72 md:h-full min-h-0 border border-border/40 relative shadow-inner p-1.5">
             {open && (
               <Cropper
                 src={currentSrc}
@@ -211,7 +211,7 @@ export function CropDialog({
           </div>
 
           {/* لوحة التحكم الجانبية المتناسقة مع الأزرار دون تشوه */}
-          <div className="w-full md:w-52 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-xl border border-border/40 overflow-y-auto h-auto md:h-full min-h-0 max-h-[38vh] md:max-h-none fluent-specular">
+          <div className="w-full md:w-52 flex flex-col gap-3 shrink-0 bg-card/60 dark:bg-card/40 p-3 rounded-md border border-border/40 overflow-y-auto h-auto md:h-full min-h-0 max-h-[38vh] md:max-h-none fluent-specular">
             {/* 1. أدوات التكبير والتدوير */}
             <div className="space-y-2">
               <Label
@@ -225,7 +225,7 @@ export function CropDialog({
               <div
                 role="group"
                 aria-labelledby="crop-controls-label"
-                className="grid grid-cols-3 gap-1 p-1 bg-muted/40 dark:bg-muted/20 rounded-xl border border-border/30"
+                className="grid grid-cols-3 gap-1 p-1 bg-muted/40 dark:bg-muted/20 rounded-md border border-border/30"
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -272,7 +272,7 @@ export function CropDialog({
             </div>
 
             {/* 1.5 ضبط استقامة الزوايا الدقيقة */}
-            <div className="space-y-2 bg-muted/20 p-2.5 rounded-xl border border-border/40">
+            <div className="space-y-2 bg-muted/20 p-2.5 rounded-md border border-border/40">
               <FluentSliderField
                 label="استقامة الزاوية"
                 icon={<Compass className="text-primary w-3.5 h-3.5 shrink-0" weight="duotone" />}

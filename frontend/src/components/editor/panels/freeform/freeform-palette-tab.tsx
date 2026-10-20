@@ -249,7 +249,7 @@ export function FreeformPaletteTab() {
   return (
     <div className="space-y-2 font-cairo animate-in fade-in duration-150" dir="rtl">
       {/* 🎛️ 1. بطاقة التحكم المدمجة بالوجهة واللون النشط */}
-      <div className="p-2 rounded-xl bg-card border border-border/80 shadow-2xs fluent-specular space-y-2">
+      <div className="p-2 rounded-md bg-card border border-border/80 shadow-2xs fluent-specular space-y-2">
         {/* مبدل الوجهة السريع مع مؤشر اللون النشط وأزراره في سطر واحد */}
         <div className="flex items-center justify-between gap-1.5">
           <FluentSegmentedControl<ColorTarget>

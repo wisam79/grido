@@ -51,7 +51,7 @@
 - `index.css:54-210`: لوحات كاملة light/dark دلالية (`--background/--card/--muted/--border/--primary`) + مقياس radius مشتق من `--radius: 0.5rem` + ظروف رفع Fluent 2 (`--fluent-shadow-2..64`)
 - **حوالي 40 متغير `--canvas-*` دلالي لـ Konva** تُستهلك عبر `lib/canvas/canvas-colors.ts` — الكانفاس نفسه يحترم الثيم. أمر نادر وممتاز
 - Glassmorphism منهجي: أدوات `fluent-acrylic`/`fluent-smoke-backdrop`/`.fluent-specular` + 38 استخدام `backdrop-blur` (منها `canvas-viewport-deck.tsx:113,143,293`, `dialog.tsx:80`)
-- تدرج radius مقصود وليس عشوائياً: `rounded-md` للأزرار (437 استخداماً) → `rounded-xl/lg` للبطاقات (241) → `rounded-2xl` للحوارات (31) → `rounded-full` للحبوب (77)
+- تدرج radius مقصود وليس عشوائياً: `rounded-md` للأزرار (437 استخداماً) → `rounded-xl/lg` للبطاقات (241) → `rounded-2xl` للحوارات (31) → `rounded-full` للحبوب (77). *(تقرير تاريخي — أُعيد تدرّج السلم في 21 أكتوبر 2026 إلى أساس 6px: `rounded-md` تحكم/أسطح داخلية → `rounded-lg` أسطح عائمة → `rounded-xl` نوافذ فقط، ومُنعت `rounded-2xl`.)*
 
 **التسريبات (سبب الخصم):**
 - `canvas-rulers.tsx:80,88,207` و `ruler.tsx:158,340`: تثبيت مباشر `dark:bg-[#18181b]`/`dark:bg-[#202024]`

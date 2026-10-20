@@ -148,7 +148,7 @@ export const GradientPicker = ({
           onCommit={onCommitImageFill}
         />
       ) : fillType === 'solid' ? (
-        <div className="flex items-center justify-between gap-2 bg-background/50 p-2 rounded-xl border border-border/40 shadow-2xs w-full">
+        <div className="flex items-center justify-between gap-2 bg-background/50 p-2 rounded-md border border-border/40 shadow-2xs w-full">
           <span className="text-xs text-foreground/90 font-semibold flex items-center gap-1.5 shrink-0">
             <Palette className="w-4 h-4 text-primary" weight="duotone" />
             <span>لون التعبئة</span>
@@ -164,7 +164,7 @@ export const GradientPicker = ({
       ) : (
         <div className="space-y-2.5 w-full max-w-full overflow-hidden">
           {/* وحدة التدرج الموحدة الفاخرة (شريط معاينة زجاجي + مقابض لونية متناسقة) */}
-          <div className="p-2 rounded-xl bg-background/50 border border-border/60 shadow-2xs space-y-2 fluent-specular">
+          <div className="p-2 rounded-md bg-background/50 border border-border/60 shadow-2xs space-y-2 fluent-specular">
             {/* شريط المعاينة التفاعلي الرشيق */}
             <div className="relative h-7 w-full rounded-lg overflow-hidden border border-black/15 dark:border-white/20 shadow-inner">
               <div

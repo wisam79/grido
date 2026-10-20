@@ -168,7 +168,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
           </TooltipBtn>
           <DropdownMenuContent
             align="start"
-            className="w-68 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5 space-y-1"
+            className="w-68 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5 space-y-1"
           >
             <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground select-none">
               أدوات الذكاء الاصطناعي

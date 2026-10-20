@@ -141,7 +141,7 @@ export const FreeformToolbar: React.FC<FreeformToolbarProps> = React.memo(functi
 
   return (
     <div
-      className="flex items-center gap-0.5 p-1 rounded-xl bg-card/95 backdrop-blur-sm border border-border/80 dark:border-white/10 shadow-2xs fluent-specular font-cairo select-none"
+      className="flex items-center gap-0.5 p-1 rounded-md bg-card/95 backdrop-blur-sm border border-border/80 dark:border-white/10 shadow-2xs fluent-specular font-cairo select-none"
       dir="rtl"
     >
       {/* ── مجموعة 1: المحفوظات والإضافة ── */}

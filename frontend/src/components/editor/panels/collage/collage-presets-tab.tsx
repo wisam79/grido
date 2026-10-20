@@ -301,7 +301,7 @@ export function CollagePresetsTab({
         aria-label={`${preset.title} - ${preset.spec}`}
         onClick={() => handleApplyPreset(preset.id)}
         className={cn(
-          'w-full p-2 rounded-xl border text-start transition-colors duration-150 cursor-pointer flex items-center gap-2.5 select-none relative group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none min-h-[58px] fluent-specular',
+          'w-full p-2 rounded-md border text-start transition-colors duration-150 cursor-pointer flex items-center gap-2.5 select-none relative group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none min-h-[58px] fluent-specular',
           isActive
             ? 'border-foreground/70 bg-accent-active text-foreground shadow-xs ring-1 ring-foreground/20'
             : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-border hover:shadow-xs',
@@ -362,7 +362,7 @@ export function CollagePresetsTab({
         aria-label={`${preset.title} - ${preset.spec}`}
         onClick={() => handleApplyPreset(preset.id)}
         className={cn(
-          'p-2 rounded-xl border text-center transition-colors duration-150 cursor-pointer flex flex-col items-center justify-between select-none relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group min-h-[120px] fluent-specular',
+          'p-2 rounded-md border text-center transition-colors duration-150 cursor-pointer flex flex-col items-center justify-between select-none relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group min-h-[120px] fluent-specular',
           isActive
             ? 'border-foreground/70 bg-accent-active text-foreground shadow-xs ring-1 ring-foreground/20'
             : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-border hover:shadow-xs hover:-translate-y-0.5',
@@ -461,7 +461,7 @@ export function CollagePresetsTab({
               </SelectTrigger>
               <SelectContent
                 align="start"
-                className="font-cairo min-w-[210px] rounded-xl border border-border bg-popover shadow-fluent-16"
+                className="font-cairo min-w-[210px] rounded-lg border border-border bg-popover shadow-fluent-16"
               >
                 {categories.map((cat) => {
                   const Icon = cat.icon;
@@ -583,7 +583,7 @@ export function CollagePresetsTab({
                         }}
                         onClick={() => onSelect(t)}
                         className={cn(
-                          'p-2 rounded-xl border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden',
+                          'p-2 rounded-md border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden',
                           'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                           isActive
                             ? 'border-foreground/70 bg-accent-active text-foreground font-bold shadow-xs ring-1 ring-foreground/20'
@@ -612,8 +612,8 @@ export function CollagePresetsTab({
       ) : presetCategory === 'saved' ? (
         /* 🎴 قسم القوالب المحفوظة */
         savedTemplates.length === 0 ? (
-          <div className="py-7 px-4 rounded-xl border border-dashed border-border/70 bg-card/40 flex flex-col items-center text-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-muted/80 dark:bg-white/5 text-muted-foreground flex items-center justify-center shadow-2xs">
+          <div className="py-7 px-4 rounded-md border border-dashed border-border/70 bg-card/40 flex flex-col items-center text-center gap-2">
+            <div className="w-10 h-10 rounded-md bg-muted/80 dark:bg-white/5 text-muted-foreground flex items-center justify-center shadow-2xs">
               <FolderSimple className="w-5 h-5" weight="duotone" />
             </div>
             <div className="space-y-0.5">
@@ -687,7 +687,7 @@ export function CollagePresetsTab({
                     }}
                     onClick={() => onSelect(t)}
                     className={cn(
-                      'p-2 rounded-xl border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden',
+                      'p-2 rounded-md border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden',
                       'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                       isActive
                         ? 'border-foreground/70 bg-accent-active text-foreground font-bold shadow-xs ring-1 ring-foreground/20'

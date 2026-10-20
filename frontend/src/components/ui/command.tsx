@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
  * ⌘ لوحة الأوامر القياسية (Command Palette — Fluent 2 Styled)
  *
  * غلاف موحد فوق cmdk يتبع معايير الواجهة المعتمدة:
- * - استدارة الحاويات rounded-xl مع إطار fluent-specular.
+ * - استدارة السطح العائم rounded-lg مع إطار fluent-specular.
  * - حلقة التركيز المزدوجة على العناصر التفاعلية.
  * - دعم RTL كامل مع الاختصار في الطرف المقابل للاسم.
  *

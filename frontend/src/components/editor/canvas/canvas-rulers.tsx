@@ -107,7 +107,7 @@ export const ViewportFixedRulersHeader = React.memo(function ViewportFixedRulers
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
-          className="w-56 font-cairo text-xs z-(--z-menu) rounded-xl backdrop-blur-xl fluent-acrylic fluent-specular shadow-fluent-16"
+          className="w-56 font-cairo text-xs z-(--z-menu) rounded-lg backdrop-blur-xl fluent-acrylic fluent-specular shadow-fluent-16"
         >
           <div dir="rtl">
             <DropdownMenuLabel className="text-micro text-muted-foreground font-bold flex items-center justify-between">

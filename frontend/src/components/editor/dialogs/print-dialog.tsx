@@ -644,7 +644,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         <DialogHeader className="px-5 py-3 border-b border-border/40 bg-card/70 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-muted/60 border border-border/40 flex items-center justify-center text-foreground shrink-0 shadow-2xs">
+              <div className="w-8 h-8 rounded-md bg-muted/60 border border-border/40 flex items-center justify-center text-foreground shrink-0 shadow-2xs">
                 <Printer className="w-4 h-4 text-foreground/80" weight="duotone" />
               </div>
               <div className="flex items-center gap-2">
@@ -675,7 +675,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           {/* العمود الأيمن: لوحة البلوكات المنظمة (Bento Sidebar Panel) */}
           <aside className="w-full md:w-[356px] shrink-0 flex flex-col gap-3 overflow-y-auto pl-0.5 select-none min-h-0">
             {/* بلوك 1: الطابعة (Printer Block) */}
-            <div className="rounded-xl border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
+            <div className="rounded-md border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
               <div className="flex items-center justify-between pb-1 border-b border-border/30">
                 <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Printer className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
@@ -760,7 +760,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             </div>
 
             {/* بلوك 2: الورقة والاتجاه (Paper & Orientation Block) */}
-            <div className="rounded-xl border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
+            <div className="rounded-md border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
               <div className="flex items-center justify-between pb-1 border-b border-border/30">
                 <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
@@ -908,7 +908,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             </div>
 
             {/* بلوك 3: خيارات الطباعة (Print Options Block) */}
-            <div className="rounded-xl border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
+            <div className="rounded-md border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
               <div className="flex items-center justify-between pb-1 border-b border-border/30">
                 <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Scissors className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
@@ -1024,7 +1024,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           </aside>
 
           {/* العمود الأيسر: مساحة المعاينة التفاعلية المباشرة (Preview Lightbox Canvas) */}
-          <main className="flex-1 border border-border/60 rounded-xl overflow-hidden bg-print-surface flex flex-col shadow-inner relative min-w-0">
+          <main className="flex-1 border border-border/60 rounded-md overflow-hidden bg-print-surface flex flex-col shadow-inner relative min-w-0">
             {/* شريط عنوان وتكبير المعاينة */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-print-header-border bg-print-header backdrop-blur-md select-none z-10 shrink-0">
               <span className="text-xs font-bold text-print-header-title flex items-center gap-2">

@@ -28,12 +28,12 @@ export function DialogLazyFallback() {
       aria-label="جاري التحميل ..."
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
     >
-      <div className="w-[min(480px,90vw)] rounded-xl border border-border/60 bg-background/95 p-5 space-y-3 shadow-2xl fluent-specular">
+      <div className="w-[min(480px,90vw)] rounded-lg border border-border/60 bg-background/95 p-5 space-y-3 shadow-2xl fluent-specular">
         <Skeleton className="h-6 w-1/2" />
         <Skeleton className="h-3 w-3/4" />
         <div className="grid grid-cols-2 gap-2 pt-2">
-          <Skeleton className="h-16 rounded-xl" />
-          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="h-16 rounded-md" />
+          <Skeleton className="h-16 rounded-md" />
         </div>
         <Skeleton className="h-8 w-full rounded-md" />
       </div>

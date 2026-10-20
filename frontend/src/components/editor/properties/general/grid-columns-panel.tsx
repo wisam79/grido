@@ -167,7 +167,7 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                       >
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl">
+                      <SelectContent className="font-cairo rounded-md border border-border bg-popover/95 backdrop-blur-xl">
                         <SelectItem value="0">تعطيل</SelectItem>
                         <SelectItem value="2">كل 2</SelectItem>
                         <SelectItem value="5">كل 5</SelectItem>

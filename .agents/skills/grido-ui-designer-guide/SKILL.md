@@ -18,9 +18,12 @@ description: دليل تصميم الواجهات وتجربة المستخدم 
      - موقع الويب ولوحة الإدارة (`admin-web/`): يعتمد على `lucide-react`.
    - مثال (تطبيق سطح المكتب): استخدم أيقونة `<Wand className="w-4 h-4" />` لإزالة الخلفية مع Tooltip "إزالة الخلفية بالذكاء الاصطناعي".
 
-2. **طابع عصري ومحترف (Figma-like Aesthetic):**
-   - تصميم مضغوط، حواف ناعمة (`rounded-xl` أو `rounded-2xl`)، وظلال ناعمة خفيفة.
-   - خلفيات شبه شفافة متدرجة بزجاجية (Glassmorphism): `bg-background/80 backdrop-blur-xl border border-border/50`.
+2. **طابع سطح المكتب الأصلي (Desktop-Native Aesthetic — معتمد 21 أكتوبر 2026):**
+   - تصميم مضغوط على نمط أدوات سطح المكتب (Figma / Photoshop / Office): أسطح مسطّحة، حدود شعرية، وحواف حادة (4–10px) بدل البطاقات المستديرة الكبيرة.
+   - سلم الاستدارة: `rounded-md` (4px) للتحكم وللأسطح الداخلية · `rounded-lg` (6px) للأسطح العائمة · `rounded-xl` (10px) للنوافذ والحوارات فقط. مُمنوع `rounded-2xl`/`rounded-3xl` في محرر سطح المكتب.
+   - ألواح الخصائص: سطح واحد مسطّح، صفوف يفصلها خط شعري، بلا بطاقة عائمة لكل سطر إعدادات.
+   - الظلال محجوزة للطبقات العائمة (Popover / Menu / Modal)؛ الأسطح المسطّحة داخل الألواح بلا ظل.
+   - الخلفية شبه الشفافة `backdrop-blur-xl` تبقى للطبقات العائمة فقط (Popover / Sheet / الشريط العائم) — لا تُستخدم كخلفية عامة لكل بطاقة.
 
 3. **لوحة الألوان والتباين (Curated HSL Palette):**
    - تجنب الألوان البدائية الفاقعة (الأحمر/الأزرق الصريح). استخدم درجات HSL المتناسقة مع نظام Dark/Light Mode عبر المتغيرات: `bg-primary`, `text-muted-foreground`, `border-border/40`.
@@ -61,7 +64,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 // DialogDescription وأي أيقونة تُستورد فقط عند حاجة وظيفية حقيقية (مبدأ «صفر الحشو»)
 
 <Dialog open={open} onOpenChange={onOpenChange}>
-  <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-[700px] border border-border/60 bg-background/95 backdrop-blur-2xl rounded-2xl shadow-2xl p-5 sm:p-6" dir="rtl">
+  <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-[700px] border border-border/60 bg-background/95 backdrop-blur-2xl rounded-xl shadow-fluent-16 p-5" dir="rtl">
     {/* 1. Header with integrated Close Button in title bar — Minimal by default (Zero Filler) */}
     <DialogHeader className="border-b border-border/40 pb-3.5">
       <div className="flex items-center justify-between gap-3">

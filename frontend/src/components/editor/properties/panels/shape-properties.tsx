@@ -100,7 +100,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
       <FluentSection icon={shapeGlyph} title={sectionTitle} collapsible defaultOpen={true}>
         {/* بطاقة لون التعبئة / الخط: العنوان والوصف في صف، والمنتقي بعرض كامل تحته
             حتى لا يزاحم شارة الـHEX النصَّ ويقتطعه في لوح بعرض ~296px */}
-        <div className="p-2.5 rounded-xl bg-muted/30 dark:bg-muted/20 border border-border/60 space-y-2 shadow-2xs">
+        <div className="p-2.5 rounded-md bg-muted/30 dark:bg-muted/20 border border-border/60 space-y-2 shadow-2xs">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <div className="min-w-0">
@@ -173,7 +173,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           />
 
           {/* أزرار سماكة سريعة في مسار مجوف Fluent 2 */}
-          <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
+          <div className="grid grid-cols-5 gap-1 p-1 rounded-md bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
             {STROKE_WIDTH_PRESETS.map((preset) => {
               const currVal = isLine
                 ? element.strokeWidth && element.strokeWidth > 0
@@ -294,7 +294,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                 />
 
                 {/* أزرار استدارة سريعة في مسار مجوف Fluent 2 */}
-                <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
+                <div className="grid grid-cols-4 gap-1 p-1 rounded-md bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
                   {CORNER_RADIUS_PRESETS.map((preset) => {
                     const isActive = uniformRadius === preset.val;
                     return (
@@ -422,7 +422,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
               onChange={(v) => onUpdate(element.id, { arcAngle: v })}
               onCommit={() => useEditorStore.getState().pushHistory()}
             />
-            <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
+            <div className="grid grid-cols-4 gap-1 p-1 rounded-md bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
               {ARC_ANGLE_PRESETS.map((deg) => {
                 const defaultAngle = element.shape === 'wedge' ? 90 : 270;
                 const isActive = Math.round(element.arcAngle ?? defaultAngle) === deg;
@@ -668,7 +668,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
         />
 
         {/* أزرار الشفافية السريعة في مسار مجوف Fluent 2 */}
-        <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
+        <div className="grid grid-cols-4 gap-1 p-1 rounded-md bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
           {OPACITY_PRESETS.map((pct) => (
             <button
               key={pct}

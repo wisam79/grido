@@ -135,7 +135,7 @@ const GalleryCard = React.memo(function GalleryCard({
       aria-pressed={isSelected}
       aria-label={`${template.name} — ${mm.width}×${mm.height} مم`}
       className={cn(
-        'group relative flex flex-col p-2.5 rounded-xl transition-all cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_145px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'group relative flex flex-col p-2.5 rounded-md transition-all cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_145px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         isSelected
           ? 'bg-primary/10 border-primary shadow-fluent-4 ring-1 ring-primary/50'
           : 'bg-card/60 hover:bg-card border-border/40 hover:border-primary/50 hover:shadow-fluent-2 hover:-translate-y-0.5',

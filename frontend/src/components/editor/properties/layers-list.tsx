@@ -611,8 +611,8 @@ export function LayersList({
   // ── Filtered empty ─────────────────────────────────────────────────────
   if (isFiltered && filtered.length === 0) {
     return (
-      <div className="rounded-xl border border-border/60 bg-card/40 p-6 text-center flex flex-col items-center gap-3 animate-in fade-in duration-100">
-        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground border border-border/60">
+      <div className="rounded-md border border-border/60 bg-card/40 p-6 text-center flex flex-col items-center gap-3 animate-in fade-in duration-100">
+        <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center text-muted-foreground border border-border/60">
           <MagnifyingGlass className="w-5 h-5" />
         </div>
         <div className="space-y-1">
@@ -714,7 +714,7 @@ export function LayersList({
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl shadow-xs fluent-specular select-none overflow-hidden">
+    <div className="bg-card border border-border rounded-md shadow-xs fluent-specular select-none overflow-hidden">
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}

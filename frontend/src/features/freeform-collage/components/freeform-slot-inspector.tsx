@@ -96,7 +96,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
   }) {
     if (!slot) {
       return (
-        <div className="flex flex-col items-center justify-center p-4 text-center rounded-xl bg-card/60 border border-dashed border-border/70 fluent-specular shadow-2xs h-full min-h-[160px] text-muted-foreground select-none gap-1.5">
+        <div className="flex flex-col items-center justify-center p-4 text-center rounded-md bg-card/60 border border-dashed border-border/70 fluent-specular shadow-2xs h-full min-h-[160px] text-muted-foreground select-none gap-1.5">
           <SlidersHorizontal className="w-6 h-6 opacity-30 text-primary" weight="duotone" />
           <span className="text-xs font-bold text-foreground">لا خلية محددة</span>
           <span className="text-micro leading-relaxed text-muted-foreground">
@@ -172,7 +172,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
 
     return (
       <div
-        className="space-y-2.5 p-3 rounded-xl bg-card/75 border border-border/80 dark:border-white/10 fluent-specular shadow-2xs text-xs font-cairo"
+        className="space-y-2.5 p-3 rounded-md bg-card/75 border border-border/80 dark:border-white/10 fluent-specular shadow-2xs text-xs font-cairo"
         dir="rtl"
       >
         {/* شريط التحديد الجماعي */}

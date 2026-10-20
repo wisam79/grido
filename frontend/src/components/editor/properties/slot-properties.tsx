@@ -192,7 +192,7 @@ export const SlotProperties = React.memo(function SlotProperties({
             </span>
           }
         >
-          <div className="text-xs text-muted-foreground text-center py-6 bg-muted/20 rounded-xl border border-dashed border-border/60 mb-2.5">
+          <div className="text-xs text-muted-foreground text-center py-6 bg-muted/20 rounded-md border border-dashed border-border/60 mb-2.5">
             لا توجد صورة
           </div>
           <div className="space-y-2">

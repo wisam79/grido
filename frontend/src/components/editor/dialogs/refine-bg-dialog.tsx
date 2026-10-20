@@ -655,7 +655,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             </div>
 
             {/* فحص نقاء العزل بخلفيات ملونة */}
-            <div className="space-y-2 bg-background p-3 rounded-xl border border-border/40">
+            <div className="space-y-2 bg-background p-3 rounded-md border border-border/40">
               <span className="text-xs font-bold text-foreground/80 block">خلفية المعاينة</span>
               <div className="grid grid-cols-4 gap-1.5">
                 {[
@@ -687,7 +687,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             </div>
 
             {tool !== 'pan' && tool !== 'magic' && (
-              <div className="bg-background p-3 rounded-xl border border-border/40">
+              <div className="bg-background p-3 rounded-md border border-border/40">
                 <FluentSliderField
                   label="حجم الفرشاة"
                   value={brushSize}
@@ -700,7 +700,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
             )}
 
             {tool === 'magic' && (
-              <div className="bg-background p-3 rounded-xl border border-border/40">
+              <div className="bg-background p-3 rounded-md border border-border/40">
                 <FluentSliderField
                   label="الفارق اللوني"
                   value={tolerance}

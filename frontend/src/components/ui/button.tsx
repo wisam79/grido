@@ -28,7 +28,7 @@ const buttonVariants = cva(
         sm: 'h-7 rounded-md gap-1 px-2.5 text-xs has-[>svg]:px-2',
         lg: 'h-9 rounded-md px-4 text-xs font-semibold has-[>svg]:px-3',
         xl: 'h-10 rounded-md px-5 text-sm font-semibold has-[>svg]:px-3.5',
-        '2xl': 'h-12 rounded-xl px-6 text-sm font-bold has-[>svg]:px-4',
+        '2xl': 'h-12 rounded-lg px-6 text-sm font-bold has-[>svg]:px-4',
         icon: 'size-8 p-0',
         // الحد الأدنى المطلق للأزرار الأيقونية h-7 w-7 (سلم الارتفاعات) —
         // حُذف متغير icon-xs (‏size-6) لمنع أهداف 24px مستقبلاً؛ استخدم icon-sm.

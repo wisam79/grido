@@ -91,7 +91,7 @@ export function ElementHeaderBadge({ element, onUnlock }: ElementHeaderBadgeProp
   if (!element.locked) return null;
 
   return (
-    <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-xl flex items-center justify-between text-xs font-semibold mb-2 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+    <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-md flex items-center justify-between text-xs font-semibold mb-2 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
       <div className="flex items-center gap-2">
         <LockSimple className="w-3.5 h-3.5 shrink-0" weight="fill" />
         <span>القفل يمنع التعديل من الكانفاس والخصائص</span>

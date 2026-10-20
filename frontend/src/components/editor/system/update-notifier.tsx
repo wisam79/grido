@@ -207,7 +207,7 @@ export function UpdateNotifier() {
 
         <div className="space-y-3 my-1">
           {/* 1. بطاقة مقارنة الإصدارات الأنيقة */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40 dark:bg-muted/20 border border-border/70 fluent-specular">
+          <div className="flex items-center justify-between p-3 rounded-md bg-muted/40 dark:bg-muted/20 border border-border/70 fluent-specular">
             <div className="flex flex-col gap-0.5">
               <span className="text-micro text-muted-foreground font-semibold">الإصدار المثبت</span>
               <span className="font-mono text-xs text-foreground/80 font-bold bg-background/90 px-2 py-0.5 rounded-md border border-border/50 inline-block w-fit">
@@ -235,7 +235,7 @@ export function UpdateNotifier() {
                 <CheckCircle className="w-3.5 h-3.5 text-success shrink-0" weight="duotone" />
                 <span>مميزات التحديث:</span>
               </span>
-              <div className="bg-muted/30 dark:bg-muted/10 rounded-xl p-3 max-h-36 overflow-y-auto border border-border/60 fluent-specular">
+              <div className="bg-muted/30 dark:bg-muted/10 rounded-md p-3 max-h-36 overflow-y-auto border border-border/60 fluent-specular">
                 <FormattedReleaseNotes notes={updateInfo.release_notes} />
               </div>
             </div>
@@ -243,7 +243,7 @@ export function UpdateNotifier() {
 
           {/* 3. شريط تقدم التحميل التفاعلي */}
           {isDownloading && (
-            <div className="p-3.5 rounded-xl bg-muted/40 dark:bg-white/5 border border-border/70 space-y-2.5 animate-in fade-in duration-200">
+            <div className="p-3.5 rounded-md bg-muted/40 dark:bg-white/5 border border-border/70 space-y-2.5 animate-in fade-in duration-200">
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="text-foreground flex items-center gap-2">
                   <Spinner className="w-3.5 h-3.5 text-primary shrink-0" size={14} />
@@ -269,7 +269,7 @@ export function UpdateNotifier() {
 
           {/* 4. رسالة الخطأ في حال الفشل مع زر التحميل اليدوي */}
           {error && (
-            <div className="p-3 text-xs text-destructive bg-destructive/10 rounded-xl border border-destructive/20 font-medium flex items-start gap-2">
+            <div className="p-3 text-xs text-destructive bg-destructive/10 rounded-md border border-destructive/20 font-medium flex items-start gap-2">
               <WarningCircle className="w-4 h-4 shrink-0 mt-0.5" weight="fill" />
               <span>{error}</span>
             </div>

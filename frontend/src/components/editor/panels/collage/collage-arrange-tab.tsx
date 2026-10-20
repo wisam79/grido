@@ -349,7 +349,7 @@ export function CollageArrangeTab() {
       dir="rtl"
     >
       {/* 📐 المخطط الهيكلي التجريدي للشبكة — مخطط هندسي نظيف برقم الخانة بدون تكرار الصور المعروضة على الكانفاس */}
-      <div className="bg-card/60 border border-border/80 rounded-xl p-2.5 shadow-2xs space-y-2 select-none">
+      <div className="bg-card/60 border border-border/80 rounded-md p-2.5 shadow-2xs space-y-2 select-none">
         <div className="flex items-center justify-between px-0.5">
           <div className="flex items-center gap-1.5 min-w-0">
             <FrameCorners className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
@@ -392,7 +392,7 @@ export function CollageArrangeTab() {
       </div>
 
       {/* 🧭 عمليات فرز وترتيب الصور والتحويلات الجماعية */}
-      <div className="bg-card/60 border border-border/80 rounded-xl p-2.5 shadow-2xs space-y-3 select-none">
+      <div className="bg-card/60 border border-border/80 rounded-md p-2.5 shadow-2xs space-y-3 select-none">
         {/* قسم ترتيب الصور */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between px-0.5">

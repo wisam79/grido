@@ -27,7 +27,7 @@ export function SkeletonListItem({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'flex items-center gap-2.5 p-2.5 rounded-xl border border-border/60',
+        'flex items-center gap-2.5 p-2.5 rounded-md border border-border/60',
         className,
       )}
       aria-hidden="true"
@@ -46,7 +46,7 @@ export function SkeletonListItem({ className }: { className?: string }) {
 export function SkeletonGridCard({ className }: { className?: string }) {
   return (
     <div
-      className={cn('rounded-xl border border-border/60 p-2 space-y-2', className)}
+      className={cn('rounded-md border border-border/60 p-2 space-y-2', className)}
       aria-hidden="true"
     >
       <Skeleton className="w-full aspect-square rounded-lg" />

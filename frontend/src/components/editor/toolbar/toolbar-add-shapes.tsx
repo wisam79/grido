@@ -39,7 +39,7 @@ export const AddShapesDropdown = React.memo(function AddShapesDropdown() {
       </TooltipBtn>
       <DropdownMenuContent
         align="start"
-        className="w-44 max-h-[460px] overflow-y-auto font-cairo rounded-xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1"
+        className="w-44 max-h-[460px] overflow-y-auto font-cairo rounded-lg backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1"
       >
         {SHAPE_CATEGORIES.map((group, gi) => (
           <React.Fragment key={group.id}>

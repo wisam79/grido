@@ -364,12 +364,12 @@ export const StickerPreview = React.memo(function StickerPreview({
 
           {/* Glossy Sheen Overlay */}
           {finish === 'glossy' && (
-            <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-tr from-transparent via-white/10 to-white/25 opacity-70 group-hover:opacity-90 transition-opacity" />
+            <div className="pointer-events-none absolute inset-0 rounded-md bg-gradient-to-tr from-transparent via-white/10 to-white/25 opacity-70 group-hover:opacity-90 transition-opacity" />
           )}
 
           {/* Holographic Iridescent Shimmer */}
           {finish === 'holographic' && (
-            <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-r from-pink-500/20 via-cyan-400/25 to-yellow-400/20 mix-blend-overlay opacity-80 group-hover:opacity-100 transition-opacity" />
+            <div className="pointer-events-none absolute inset-0 rounded-md bg-gradient-to-r from-pink-500/20 via-cyan-400/25 to-yellow-400/20 mix-blend-overlay opacity-80 group-hover:opacity-100 transition-opacity" />
           )}
         </div>
 
@@ -395,7 +395,7 @@ export const StickerPreview = React.memo(function StickerPreview({
         <div
           role="toolbar"
           aria-label="خلفية وتكبير"
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 p-1 bg-card/90 backdrop-blur-md rounded-xl border border-border/50 shadow-fluent-8"
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 p-1 bg-card/90 backdrop-blur-md rounded-lg border border-border/50 shadow-fluent-8"
         >
           {MOCKUP_OPTIONS.map((opt) => {
             const isActive = mockupBg === opt.id;

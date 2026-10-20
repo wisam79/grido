@@ -82,6 +82,103 @@ describe('UI Compliance Guard — ثوابت الحارس الداخلية', () 
   });
 });
 
+describe('UI Compliance Guard — هرمية نصف القطر (طابع سطح المكتب الأصلي)', () => {
+  it('أساس النظام 6px فتكون القيم 4/6/10px كما هو موثّق', () => {
+    const css = read('index.css');
+    // الأساس: --radius: 0.375rem (6px) — منه تُشتق rounded-md=4 و lg=6 و xl=10
+    expect(css).toMatch(/--radius:\s*0\.375rem/);
+    expect(css).toContain('--radius-md: calc(var(--radius) - 2px)');
+    expect(css).toContain('--radius-lg: var(--radius)');
+    expect(css).toContain('--radius-xl: calc(var(--radius) + 4px)');
+  });
+
+  it('توكنز RADIUS تعكس الهرمية المعتمدة', () => {
+    expect(RADIUS.control).toBe('rounded-md');
+    expect(RADIUS.inset).toBe('rounded-md');
+    expect(RADIUS.overlay).toBe('rounded-lg');
+    expect(RADIUS.modal).toBe('rounded-xl');
+    expect(RADIUS.panel).toBe('rounded-none');
+    expect(RADIUS.pill).toBe('rounded-full');
+  });
+
+  it('لا استدارة كبيرة (ويب/جوال) في أي مصدر — 16px+ ممنوعة', () => {
+    // rounded-2xl/3xl كانت تُستخدم في الحوارات قبل 21 أكتوبر 2026؛
+    // حصرها يمنع عودة البطاقات المستديرة العائمة إلى محرر سطح المكتب.
+    const offenders: string[] = [];
+    for (const full of walkSource(SRC)) {
+      const lines = readFileSync(full, 'utf-8').split('\n');
+      lines.forEach((line, i) => {
+        if (/(?:^|\s)rounded-(2xl|3xl)(?=\s|$)/.test(line)) {
+          offenders.push(`${basename(full)}:${i + 1} → ${line.trim()}`);
+        }
+      });
+    }
+    expect(offenders, `استدارة كبيرة ممنوعة:\n${offenders.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('UI Compliance Guard — طبقات الارتفاع (Shadow Fluent)', () => {
+  it('كل صنف ظل مستعمل في المصدر معرّف فعلاً في index.css', () => {
+    // يمنع تكرار علة shadow-fluent-24: صنف غير معرّف لا يُولَّد إطلاقاً
+    // فيرسم العنصر بلا ظل دون أي خطأ ظاهر.
+    const css = read('index.css');
+    const defined = new Set<string>();
+    for (const m of css.matchAll(/--fluent-shadow-(\d+)\s*:/g)) defined.add(m[1]);
+
+    const used = new Map<string, string[]>();
+    for (const full of walkSource(SRC)) {
+      const text = readFileSync(full, 'utf-8');
+      for (const m of text.matchAll(/shadow-fluent-(\d+)/g)) {
+        const list = used.get(m[1]) ?? [];
+        list.push(basename(full));
+        used.set(m[1], list);
+      }
+    }
+
+    const missing = [...used.keys()].filter((token) => !defined.has(token));
+    expect(
+      missing,
+      `أصناف ظل مستعملة وغير معرّفة في index.css: ${missing
+        .map((t) => `shadow-fluent-${t} (${used.get(t)?.slice(0, 3).join(', ')})`)
+        .join(' | ')}`,
+    ).toEqual([]);
+  });
+
+  it('لا ظل ثقيل (28) على الأسطح العائمة — الدرجة المعتمدة 16', () => {
+    const offenders: string[] = [];
+    for (const full of walkSource(SRC)) {
+      const lines = readFileSync(full, 'utf-8').split('\n');
+      lines.forEach((line, i) => {
+        if (/(?:^|\s)shadow-fluent-28(?=\s|$)/.test(line)) {
+          offenders.push(`${basename(full)}:${i + 1}`);
+        }
+      });
+    }
+    expect(offenders, `ظلال 28px باقية:\n${offenders.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('UI Compliance Guard — سطوح الألواح المسطّحة', () => {
+  it('FluentSection صف مسطّح بخط فاصل — بلا بطاقة عائمة', () => {
+    const source = read('components/ui/blocks/fluent-section.tsx');
+    expect(source).toContain('border-b');
+    expect(source).not.toMatch(/(?:^|\s)rounded-(xl|2xl|full)(?=\s|$)/);
+    expect(source).not.toMatch(/(?:^|\s)shadow-(xs|2xs|sm|md|lg|xl)(?=\s|$)/);
+  });
+
+  it('FluentSegmentedControl الأفقي بخط سفلي نشط — بلا كبسولة عائمة', () => {
+    const source = read('components/ui/blocks/fluent-segmented-control.tsx');
+    expect(source).toContain('bottom-0');
+    expect(source).toContain('h-0.5');
+  });
+
+  it('ألواح الخصائص: رأس مضغوط 36px بدل 48px', () => {
+    const source = read('components/editor/panels/panel-shell.tsx');
+    expect(source).toContain('h-9');
+    expect(source).not.toContain('min-h-12');
+  });
+});
+
 describe('UI Compliance Guard — حلقة التركيز البؤرية (R24/R36)', () => {
   it.each(FOCUS_RING_FILES)('%s يستعمل الحلقة البؤرية الأساسية', (rel) => {
     // الحد الأدنى الذهبي في كل عنصر تحكّم/كتلة: ring-2 + ring-primary متجاورتان

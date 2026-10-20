@@ -271,7 +271,7 @@ export function ToolbarFileOps() {
             </TooltipBtn>
             <DropdownMenuContent
               align="start"
-              className="w-56 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5 space-y-1"
+              className="w-56 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5 space-y-1"
             >
               <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 select-none">
                 خيارات الإدراج
@@ -389,7 +389,7 @@ export function ToolbarFileOps() {
       <AlertDialog open={isClearAlertOpen} onOpenChange={setIsClearAlertOpen}>
         <AlertDialogContent
           dir="rtl"
-          className="rounded-xl border border-border/80 dark:border-white/10 fluent-specular shadow-fluent-28 bg-card"
+          className="rounded-lg border border-border/80 dark:border-white/10 fluent-specular shadow-fluent-16 bg-card"
         >
           <AlertDialogHeader>
             <AlertDialogTitle className="font-cairo text-start">مسح مساحة العمل</AlertDialogTitle>

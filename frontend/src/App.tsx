@@ -239,7 +239,7 @@ export default function App() {
         dir="rtl"
       >
         <div className="relative flex flex-col items-center max-w-xs text-center px-4">
-          <div className="w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-2xl flex items-center justify-center mb-5 border border-primary/20 shadow-fluent-16 shadow-primary/10">
+          <div className="w-16 h-16 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center mb-5 border border-primary/20 shadow-fluent-16 shadow-primary/10">
             <Spinner className="w-8 h-8 text-primary" size={32} />
           </div>
           <h1 className="text-xl font-extrabold tracking-tight">Grido Studio</h1>

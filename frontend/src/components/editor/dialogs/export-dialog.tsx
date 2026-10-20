@@ -370,7 +370,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     >
       <DialogContent
         showCloseButton={false}
-        className="max-w-md font-cairo rounded-xl border border-border bg-card fluent-specular p-4 sm:p-5"
+        className="max-w-md font-cairo rounded-md border border-border bg-card fluent-specular p-4 sm:p-5"
         dir="rtl"
       >
         <DialogHeader className="border-b border-border/40 pb-3">
@@ -459,7 +459,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           </div>
 
           {colorSpace === 'cmyk' && (
-            <div className="rounded-xl border border-border/80 bg-primary/5 p-3 text-xs space-y-1.5 fluent-specular">
+            <div className="rounded-md border border-border/80 bg-primary/5 p-3 text-xs space-y-1.5 fluent-specular">
               <div className="font-bold text-foreground/90">تحويل CMYK في الخلفية</div>
               <p className="text-micro text-muted-foreground leading-relaxed">
                 يُلتقط التصميم كاملاً (بنفس دقة التصدير والعلامة المائية) ثم يحوّله محرك الطباعة إلى
@@ -471,7 +471,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           )}
 
           {(colorSpace === 'rgb' ? format === 'jpg' : cmykFormat === 'jpeg') && (
-            <div className="bg-card p-3 rounded-xl border border-border/80 space-y-2 fluent-specular">
+            <div className="bg-card p-3 rounded-md border border-border/80 space-y-2 fluent-specular">
               <FluentSliderField
                 label="جودة الصورة"
                 value={quality}
@@ -484,7 +484,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             </div>
           )}
 
-          <div className="rounded-xl border border-border/80 bg-muted/30 p-3 text-xs space-y-1.5 fluent-specular">
+          <div className="rounded-md border border-border/80 bg-muted/30 p-3 text-xs space-y-1.5 fluent-specular">
             <div className="flex justify-between">
               <span className="text-muted-foreground font-semibold">الأبعاد:</span>
               <span className="font-mono font-bold">
@@ -545,7 +545,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           <div className="border-t border-border/40 pt-3 space-y-2.5">
             {(template?.dpi || printSettings.dpi || 300) < 150 && (
-              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-xs text-destructive flex items-start gap-2">
+              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-xs text-destructive flex items-start gap-2">
                 <Warning className="shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
                 <span className="font-medium">
                   الدقة الحالية ({template?.dpi || printSettings.dpi} DPI) منخفضة. يُفضل 300 DPI
@@ -555,7 +555,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             )}
 
             {colorSpace === 'cmyk' && (
-              <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
+              <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-md text-xs text-amber-600 dark:text-amber-400 flex items-start gap-2">
                 <Warning className="text-amber-500 shrink-0 mt-0.5 w-4 h-4" weight="duotone" />
                 <span className="font-medium">
                   CMYK لمطابع الأوفست — قد يختلف التباين عن المعاينة.
@@ -565,7 +565,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
             {colorSpace === 'rgb' && (
               <>
-                <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">
+                <div className="p-3 border border-border/80 rounded-md bg-card hover:bg-muted/30 transition-colors fluent-specular">
                   <FluentSettingRow
                     label="علامات القص الإرشادية"
                     description={
@@ -590,7 +590,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                   )}
                 </div>
 
-                <div className="p-3 border border-border/80 rounded-xl bg-card space-y-2.5 fluent-specular">
+                <div className="p-3 border border-border/80 rounded-md bg-card space-y-2.5 fluent-specular">
                   <FluentSliderField
                     label="هامش النزيف والقص"
                     value={bleedMM}
@@ -606,7 +606,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             )}
 
             {mode === 'collage' && colorSpace === 'rgb' && (
-              <div className="p-3 border border-border/80 rounded-xl bg-card hover:bg-muted/30 transition-colors fluent-specular">
+              <div className="p-3 border border-border/80 rounded-md bg-card hover:bg-muted/30 transition-colors fluent-specular">
                 <FluentSettingRow
                   label="تصدير الصور كملفات منفصلة"
                   description="حفظ كل صورة كملف مستقل"

@@ -515,7 +515,7 @@ export const StickerProperties = React.memo(function StickerProperties({
           /* ── شيت الطباعة Tab ── */
           <div className="space-y-3">
             {/* Miniature Sheet Grid Preview */}
-            <div className="relative w-full h-28 rounded-xl bg-muted/25 border border-border/40 p-2 flex items-center justify-center overflow-hidden">
+            <div className="relative w-full h-28 rounded-md bg-muted/25 border border-border/40 p-2 flex items-center justify-center overflow-hidden">
               <div
                 className="relative bg-card/95 rounded-lg border border-border/60 shadow-xs flex items-center justify-center p-1.5 transition-all duration-200"
                 style={{ width: '130px', height: '80px' }}
@@ -556,7 +556,7 @@ export const StickerProperties = React.memo(function StickerProperties({
               variant="outline"
               size="sm"
               onClick={handleAutoFitSheet}
-              className="w-full h-8 text-xs font-bold rounded-xl gap-1.5 cursor-pointer border-primary/40 text-primary hover:bg-primary/10"
+              className="w-full h-8 text-xs font-bold rounded-md gap-1.5 cursor-pointer border-primary/40 text-primary hover:bg-primary/10"
               title="أكبر شبكة تتسع على ورقة الطباعة"
             >
               <Sparkle className="w-3.5 h-3.5" weight="duotone" />
@@ -564,7 +564,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             </Button>
 
             {/* Grid Presets */}
-            <div className="grid grid-cols-4 gap-1 bg-muted/60 dark:bg-black/35 p-1 rounded-xl border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
+            <div className="grid grid-cols-4 gap-1 bg-muted/60 dark:bg-black/35 p-1 rounded-md border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
               {[
                 { r: 2, c: 2, label: '2×2' },
                 { r: 3, c: 3, label: '3×3' },
@@ -593,7 +593,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             </div>
 
             {/* Sliders */}
-            <div className="p-2.5 rounded-xl bg-card/40 border border-border/30 space-y-2">
+            <div className="p-2.5 rounded-md bg-card/40 border border-border/30 space-y-2">
               <FluentSliderField
                 layout="inline"
                 label="صفوف"
@@ -631,7 +631,7 @@ export const StickerProperties = React.memo(function StickerProperties({
           /* ── 3. تبويب قوالبي المحفوظة (Presets Tab) ── */
           <div className="space-y-3">
             {/* حفظ التخصيص الحالي */}
-            <div className="p-3 rounded-xl bg-card/60 border border-border/40 space-y-2.5">
+            <div className="p-3 rounded-md bg-card/60 border border-border/40 space-y-2.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                 <FloppyDisk className="w-4 h-4 text-primary" weight="duotone" />
                 <span>حفظ التخصيص</span>
@@ -680,7 +680,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                   {templatePresets.map((preset) => (
                     <div
                       key={preset.id}
-                      className="p-2.5 rounded-xl bg-card/60 hover:bg-card border border-border/40 hover:border-primary/40 transition-all space-y-2"
+                      className="p-2.5 rounded-md bg-card/60 hover:bg-card border border-border/40 hover:border-primary/40 transition-all space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span
@@ -744,7 +744,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                   ))}
                 </div>
               ) : (
-                <div className="p-4 rounded-xl bg-card/30 border border-dashed border-border/50 text-center space-y-1.5">
+                <div className="p-4 rounded-md bg-card/30 border border-dashed border-border/50 text-center space-y-1.5">
                   <BookmarkSimple
                     className="w-7 h-7 mx-auto text-muted-foreground/60"
                     weight="duotone"

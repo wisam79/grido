@@ -105,7 +105,7 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
           >
             <SelectValue placeholder="مقاس الورق" />
           </SelectTrigger>
-          <SelectContent className="font-cairo z-(--z-print-toolbar) rounded-xl border-border/60 max-h-64">
+          <SelectContent className="font-cairo z-(--z-print-toolbar) rounded-lg border-border/60 max-h-64">
             <SelectItem value="custom" className="text-mini font-bold rounded-md">
               مخصص
             </SelectItem>

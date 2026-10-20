@@ -409,10 +409,10 @@ export function ColorWheelPicker({
 
   return (
     <div
-      className="p-3.5 bg-popover rounded-xl border border-border/80 dark:border-white/10 shadow-fluent-24 fluent-specular animate-in fade-in duration-150 flex flex-col gap-3 w-72 select-none"
+      className="p-3.5 bg-popover rounded-lg border border-border/80 dark:border-white/10 shadow-fluent-16 fluent-specular animate-in fade-in duration-150 flex flex-col gap-3 w-72 select-none"
       dir="rtl"
     >
-      <div className="custom-color-picker w-full rounded-xl overflow-hidden shadow-inner border border-border/40">
+      <div className="custom-color-picker w-full rounded-md overflow-hidden shadow-inner border border-border/40">
         <HexColorPicker
           color={isTransparent ? '#ffffff' : color}
           onChange={(newColor) => {

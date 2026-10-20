@@ -39,7 +39,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
       }}
       onClick={() => onSelect(tpl)}
       className={cn(
-        'group flex flex-col items-stretch gap-2.5 p-3 rounded-xl border transition-all duration-200 text-start relative overflow-hidden bg-card shadow-2xs hover:border-foreground/40 hover:shadow-xs hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer select-none fluent-specular focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+        'group flex flex-col items-stretch gap-2.5 p-3 rounded-md border transition-all duration-200 text-start relative overflow-hidden bg-card shadow-2xs hover:border-foreground/40 hover:shadow-xs hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer select-none fluent-specular focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
         isActive
           ? 'border-2 border-foreground/70 bg-accent-active shadow-xs ring-1 ring-foreground/20'
           : 'border-border/90 hover:bg-muted/40 dark:hover:bg-secondary',
@@ -64,7 +64,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent
-            className="font-cairo text-start rounded-xl border border-border/80 dark:border-white/10 shadow-fluent-28 bg-card fluent-specular"
+            className="font-cairo text-start rounded-lg border border-border/80 dark:border-white/10 shadow-fluent-16 bg-card fluent-specular"
             dir="rtl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -99,7 +99,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
       )}
 
       {/* Collage Preview Frame */}
-      <div className="aspect-square w-full bg-muted/80 rounded-xl p-1.5 border border-border/70 relative shrink-0">
+      <div className="aspect-square w-full bg-muted/80 rounded-md p-1.5 border border-border/70 relative shrink-0">
         <div className="w-full h-full relative overflow-hidden rounded-lg bg-background shadow-inner border border-border/40">
           {tpl.cells.map((c, i) => (
             <div

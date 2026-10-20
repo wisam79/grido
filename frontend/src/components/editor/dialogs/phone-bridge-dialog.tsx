@@ -221,7 +221,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
           )}
 
           {!isLoading && error && (
-            <div className="w-full flex flex-col items-center gap-3 py-8 px-4 bg-destructive/5 rounded-xl border border-destructive/20 text-center">
+            <div className="w-full flex flex-col items-center gap-3 py-8 px-4 bg-destructive/5 rounded-md border border-destructive/20 text-center">
               <WarningCircle className="w-10 h-10 text-destructive" weight="duotone" />
               <div className="text-sm font-bold text-foreground">تعذر تشغيل خادم الكاميرا</div>
               <div className="text-xs text-muted-foreground">{error}</div>
@@ -238,7 +238,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
           )}
 
           {!isLoading && !error && (!bridgeInfo || !bridgeInfo.isRunning) && (
-            <div className="w-full flex flex-col items-center gap-3 py-10 px-4 bg-muted/20 rounded-xl border border-border/40 text-center">
+            <div className="w-full flex flex-col items-center gap-3 py-10 px-4 bg-muted/20 rounded-md border border-border/40 text-center">
               <WifiHigh className="w-10 h-10 text-muted-foreground/60" />
               <div className="text-sm font-bold text-foreground">الجسر متوقف حالياً</div>
               <p className="text-xs text-muted-foreground max-w-xs">
@@ -259,7 +259,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
           {!isLoading && !error && bridgeInfo && bridgeInfo.isRunning && (
             <>
               {/* Segmented Mode Selector: Cloud vs Local */}
-              <div className="flex items-center w-full p-1 bg-muted/60 dark:bg-muted/30 rounded-xl border border-border/60">
+              <div className="flex items-center w-full p-1 bg-muted/60 dark:bg-muted/30 rounded-md border border-border/60">
                 <button
                   type="button"
                   onClick={() => setBridgeMode('cloud')}
@@ -288,7 +288,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
               {/* تحذير عند اختيار وضع الإنترنت والمستخدم غير مسجل الدخول */}
               {bridgeMode === 'cloud' && !bridgeInfo.cloudUrl && (
-                <div className="w-full flex flex-col items-center gap-2 py-4 px-3 bg-amber-500/10 dark:bg-amber-500/15 rounded-xl border border-amber-500/30 text-center">
+                <div className="w-full flex flex-col items-center gap-2 py-4 px-3 bg-amber-500/10 dark:bg-amber-500/15 rounded-md border border-amber-500/30 text-center">
                   <WarningCircle className="w-6 h-6 text-amber-500 shrink-0" weight="duotone" />
                   <div className="text-xs font-bold text-foreground">يتطلب تسجيل الدخول للحساب</div>
                   <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
@@ -308,7 +308,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
 
               {/* QR Code Container */}
               {activeUrl ? (
-                <div className="relative group p-4 bg-card dark:bg-white rounded-xl shadow-fluent-8 border border-border/40 flex items-center justify-center">
+                <div className="relative group p-4 bg-card dark:bg-white rounded-md shadow-fluent-8 border border-border/40 flex items-center justify-center">
                   <QRCodeSVG
                     value={activeUrl}
                     size={190}
@@ -317,12 +317,12 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                     fgColor="#090d16"
                     includeMargin={false}
                   />
-                  <div className="absolute inset-0 rounded-xl pointer-events-none ring-1 ring-inset ring-black/5" />
+                  <div className="absolute inset-0 rounded-md pointer-events-none ring-1 ring-inset ring-black/5" />
                 </div>
               ) : null}
 
               {/* Status and Received Photos Row */}
-              <div className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
+              <div className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-md bg-muted/40 border border-border/60 text-xs">
                 <div className="flex items-center gap-2">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />

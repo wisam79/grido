@@ -167,7 +167,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
-            className="w-40 font-cairo [direction:rtl] rounded-xl bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1 space-y-0.5"
+            className="w-40 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1 space-y-0.5"
           >
             <DropdownMenuItem
               onClick={() => alignElement('left')}

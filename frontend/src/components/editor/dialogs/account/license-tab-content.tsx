@@ -63,8 +63,8 @@ export function LicenseTabContent({
   return (
     <div className="space-y-3.5">
       {user && (user.plan === 'pro' || user.plan === 'enterprise') ? (
-        <div className="bg-emerald-500/5 border border-emerald-500/20 dark:border-emerald-500/30 rounded-xl p-4 text-center space-y-2.5 fluent-specular">
-          <div className="inline-flex p-2.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-500/30 shadow-2xs">
+        <div className="bg-emerald-500/5 border border-emerald-500/20 dark:border-emerald-500/30 rounded-md p-4 text-center space-y-2.5 fluent-specular">
+          <div className="inline-flex p-2.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-md border border-emerald-500/30 shadow-2xs">
             <ShieldCheck className="w-6 h-6 shrink-0" weight="duotone" />
           </div>
           <div>

@@ -505,11 +505,11 @@ export function ProjectsDialog({
                 {isLoading ? (
                   <ProjectsSkeleton rows={4} />
                 ) : projectsList.length === 0 ? (
-                  <div className="text-center py-10 border-2 border-dashed rounded-xl text-muted-foreground text-xs">
+                  <div className="text-center py-10 border-2 border-dashed rounded-md text-muted-foreground text-xs">
                     لا توجد مشاريع محفوظة
                   </div>
                 ) : filteredProjects.length === 0 ? (
-                  <div className="text-center py-10 border border-dashed rounded-xl text-muted-foreground text-xs">
+                  <div className="text-center py-10 border border-dashed rounded-md text-muted-foreground text-xs">
                     لا توجد نتائج
                   </div>
                 ) : (
@@ -528,7 +528,7 @@ export function ProjectsDialog({
                             }
                           }}
                           onClick={() => handleLoad(project)}
-                          className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden fluent-specular"
+                          className="flex items-center justify-between p-2.5 rounded-md border border-border/60 bg-muted/20 hover:bg-accent/40 cursor-pointer transition-colors duration-150 group relative overflow-hidden fluent-specular"
                         >
                           {isPinned && (
                             <div className="absolute top-0 right-0 w-1.5 h-full bg-primary/80" />
@@ -594,7 +594,7 @@ export function ProjectsDialog({
                 className="space-y-4 py-2"
               >
                 <div className="space-y-3">
-                  <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
+                  <div className="p-3 border border-border/60 rounded-md bg-card shadow-xs flex items-center justify-between fluent-specular">
                     <div>
                       <h4 className="text-xs font-bold text-foreground/90">تصدير نسخة احتياطية</h4>
                       <p className="text-xs text-muted-foreground">حفظ كل المشاريع في ملف JSON</p>
@@ -619,7 +619,7 @@ export function ProjectsDialog({
                     </Button>
                   </div>
 
-                  <div className="p-3 border border-border/60 rounded-xl bg-card shadow-xs flex items-center justify-between fluent-specular">
+                  <div className="p-3 border border-border/60 rounded-md bg-card shadow-xs flex items-center justify-between fluent-specular">
                     <div>
                       <h4 className="text-xs font-bold text-foreground/90">
                         استيراد نسخة احتياطية
@@ -641,7 +641,7 @@ export function ProjectsDialog({
                     </label>
                   </div>
 
-                  <div className="p-3 border rounded-xl bg-destructive/5 border-destructive/20 flex items-center justify-between">
+                  <div className="p-3 border rounded-md bg-destructive/5 border-destructive/20 flex items-center justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-destructive">تهيئة مكتبة المشاريع</h4>
                       <p className="text-xs text-muted-foreground">حذف جميع المشاريع نهائياً</p>
@@ -747,7 +747,7 @@ export function ProjectsDialog({
               onValueChange={(val: string) => setImportMode(val as 'merge' | 'overwrite')}
               className="space-y-2"
             >
-              <div className="flex items-center space-x-reverse space-x-2 border border-border/60 rounded-xl p-3 hover:bg-accent/40 cursor-pointer fluent-specular transition-colors">
+              <div className="flex items-center space-x-reverse space-x-2 border border-border/60 rounded-md p-3 hover:bg-accent/40 cursor-pointer fluent-specular transition-colors">
                 <RadioGroupItem value="merge" id="r-merge" />
                 <Label htmlFor="r-merge" className="cursor-pointer flex-1 space-y-0.5">
                   <div className="font-semibold text-xs text-foreground">دمج المشاريع</div>
@@ -756,7 +756,7 @@ export function ProjectsDialog({
                   </div>
                 </Label>
               </div>
-              <div className="flex items-center space-x-reverse space-x-2 border rounded-xl p-3 hover:bg-accent/40 cursor-pointer border-destructive/20 hover:border-destructive/30 transition-colors">
+              <div className="flex items-center space-x-reverse space-x-2 border rounded-md p-3 hover:bg-accent/40 cursor-pointer border-destructive/20 hover:border-destructive/30 transition-colors">
                 <RadioGroupItem value="overwrite" id="r-overwrite" />
                 <Label htmlFor="r-overwrite" className="cursor-pointer flex-1 space-y-0.5">
                   <div className="font-semibold text-xs text-destructive">استبدال بالكامل</div>
