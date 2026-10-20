@@ -127,11 +127,25 @@ export function usePhoneBridgeListener() {
       },
     );
 
+    // 4. الاستماع لأخطاء الجسر السحابي وتنبيه المستخدم
+    const unsubCloudError = EventsOn(
+      'phone:cloud-error',
+      (payload: { message?: string } | string) => {
+        if (!isSubscribed) return;
+        const msg = typeof payload === 'string' ? payload : payload?.message;
+        if (!msg) return;
+        toast.warning(msg, {
+          duration: 6000,
+        });
+      },
+    );
+
     return () => {
       isSubscribed = false;
       if (typeof unsubStatus === 'function') unsubStatus();
       if (typeof unsubPaired === 'function') unsubPaired();
       if (typeof unsubPhoto === 'function') unsubPhoto();
+      if (typeof unsubCloudError === 'function') unsubCloudError();
     };
   }, []);
 }

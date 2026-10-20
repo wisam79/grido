@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import { 
   Camera, 
   SwitchCamera, 
@@ -117,6 +117,7 @@ export default function PhoneCameraPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isCapturingRef = useRef<boolean>(false);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   // 1. استخراج معرف الجلسة من رابط الصفحة وتفعيل عميل Supabase
   useEffect(() => {
@@ -178,11 +179,34 @@ export default function PhoneCameraPage() {
     };
   }, []);
 
-  // 3. إرسال مصافحة الاقتران الآمنة ثنائية الاتجاه مع الحاسوب فور الاتصال (Two-Way Handshake)
+  // 3. ربط قناة Realtime اللحظية (Push Events مثل WhatsApp) ومصافحة الاقتران
   useEffect(() => {
     if (!supabase || !sessionId) return;
 
     let isMounted = true;
+    const roomToken = sessionId.split('/').pop() || sessionId;
+    const channelTopic = `phone-bridge:${roomToken}`;
+    const channel = supabase.channel(channelTopic, {
+      config: { broadcast: { self: false } },
+    });
+
+    channelRef.current = channel;
+
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED' && isMounted) {
+        const device = detectDeviceModel();
+        setPairedDeviceName(device);
+        setIsPaired(true);
+
+        // إرسال إشعار الاقتران اللحظي المباشر للكمبيوتر عبر WebSocket
+        channel.send({
+          type: 'broadcast',
+          event: 'paired',
+          payload: { device },
+        });
+      }
+    });
+
     const performHandshake = async () => {
       try {
         const device = detectDeviceModel();
@@ -218,6 +242,8 @@ export default function PhoneCameraPage() {
 
     return () => {
       isMounted = false;
+      channel.unsubscribe();
+      channelRef.current = null;
     };
   }, [supabase, sessionId]);
 
@@ -366,7 +392,7 @@ export default function PhoneCameraPage() {
   };
 
   // تحسين حجم وضغط الصورة الملتقطة للحفاظ على دقة فائقة (300+ DPI للطباعة) مع سرعة رفع فائقة
-  const optimizeImageBlob = async (rawBlob: Blob, maxDim = 2560, quality = 0.85): Promise<Blob> => {
+  const optimizeImageBlob = async (rawBlob: Blob, maxDim = 2048, quality = 0.80): Promise<Blob> => {
     try {
       const bitmap = await createImageBitmap(rawBlob);
       const { width, height } = bitmap;
@@ -455,6 +481,15 @@ export default function PhoneCameraPage() {
 
       setPhotosSent((prev) => prev + 1);
 
+      // إرسال إشعار فوري (Push Notification عبر WebSocket) للحاسوب بسحب الصورة لحظياً
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'photo-ready',
+          payload: { path: filePath },
+        });
+      }
+
       // لمس اهتزازي لطيف بأسلوب آبل عند اكتمال الإرسال (Haptic Feedback)
       if (typeof navigator.vibrate === 'function') {
         navigator.vibrate([15, 35, 15]);
@@ -504,7 +539,7 @@ export default function PhoneCameraPage() {
 
         let outW = vw;
         let outH = vh;
-        const maxDim = 2560;
+        const maxDim = 2048;
         if (outW > maxDim || outH > maxDim) {
           if (outW > outH) {
             outH = Math.round((vh * maxDim) / vw);
@@ -539,7 +574,7 @@ export default function PhoneCameraPage() {
               }
             },
             'image/jpeg',
-            0.85
+            0.80
           );
           return;
         }
@@ -652,7 +687,7 @@ export default function PhoneCameraPage() {
               </span>
             ) : sessionId ? (
               <span className="text-[10px] font-mono font-medium text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
-                #{sessionId.slice(0, 6)}
+                #{sessionId.split('/').pop()?.slice(0, 6) || sessionId.slice(0, 6)}
               </span>
             ) : null}
           </div>

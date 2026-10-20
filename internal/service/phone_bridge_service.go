@@ -14,10 +14,13 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/coder/websocket"
 
 	"grido/internal/core/domain"
 	"grido/internal/utils"
@@ -39,6 +42,19 @@ const (
 // phoneBridgeAuthClient — عميل محدود المهلة (5ث) لاشتقاق هوية المستخدم. لا
 // يُشارَك مع عملاء AI (10-15ث) حتى لا تتجمّد واجهة فتح الجسر على شبكة بطيئة.
 var phoneBridgeAuthClient = &http.Client{Timeout: 5 * time.Second}
+
+// phoneBridgeHTTPClient — عميل اتصالات مشترك مع Transport محسّن و Keep-Alive
+// لإعادة استخدام الاتصالات ومنع استنزاف منافذ TCP أثناء الاستقصاء وحذف الكائنات
+var phoneBridgeHTTPClient = &http.Client{
+	Timeout: 15 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:        20,
+		MaxIdleConnsPerHost: 10,
+		IdleConnTimeout:     90 * time.Second,
+		DisableCompression:  false,
+		DisableKeepAlives:   false,
+	},
+}
 
 type BridgeInfo struct {
 	IP        string `json:"ip"`
@@ -82,8 +98,9 @@ type PhoneBridgeService struct {
 	cloudUserID      string
 	cloudAccessToken string
 	// cloudErrMsg آخر رسالة خطأ سحابية عربية معروضة للمستخدم (تُمسح عند النجاح)
-	cloudErrMsg string
-	mu          sync.RWMutex
+	cloudErrMsg         string
+	processedCloudFiles sync.Map
+	mu                  sync.RWMutex
 }
 
 func NewPhoneBridgeService(mediaSvc *MediaService) *PhoneBridgeService {
@@ -203,7 +220,12 @@ func (s *PhoneBridgeService) initCloudSyncLocked() {
 	objectPrefix := cloudPrefix
 	accessToken := s.cloudAccessToken
 	sessionToken := s.token
-	utils.SafeGo("phone-bridge.cloud-sync", func() {
+	// قناة WebSocket اللحظية (Push Events مثل WhatsApp)
+	utils.SafeGo("phone-bridge.realtime-sync", func() {
+		s.startRealtimeSync(cloudCtx, sessionToken, objectPrefix, accessToken)
+	})
+	// استقصاء احتياطي هادئ وطويل الأمد لضمان عدم فقدان أي لقطة
+	utils.SafeGo("phone-bridge.cloud-fallback-poll", func() {
 		s.pollCloudBridge(cloudCtx, sessionToken, objectPrefix, accessToken)
 	})
 }
@@ -253,6 +275,9 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 		// محاولة سابقة وهو خارج الحساب).
 		if cloudUserID != "" {
 			s.cloudUserID = cloudUserID
+			if s.token != "" {
+				s.cloudURL = fmt.Sprintf("https://grido.cloud-ip.cc/cam#session=%s/%s", cloudUserID, s.token)
+			}
 		}
 		if cloudToken != "" {
 			s.cloudAccessToken = cloudToken
@@ -326,7 +351,6 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 	}
 	s.port = tcpAddr.Port
 	s.url = fmt.Sprintf("http://%s:%d?token=%s", s.ip, s.port, s.token)
-	s.cloudURL = fmt.Sprintf("https://grido.cloud-ip.cc/cam#session=%s", s.token)
 	s.listener = listener
 
 	// 4. Setup HTTP Mux
@@ -718,34 +742,275 @@ type cloudStorageItem struct {
 	Id   string `json:"id"`
 }
 
-// pollCloudBridge يقوم بالاستماع اللحظي إلى باكت Supabase Storage المؤقت، وسحب أي صورة
-// تم التقاطها من هاتف المستخدم وحفظها محلياً فورياً ثم حذفها من السيرفر فوراً.
+// downloadAndSaveCloudPhoto يقوم بسحب كائن صورة محدد من Supabase Storage وحفظه ذرياً
+// في مسار Media المحلي وبثه للكانفاس، ثم حذفه فورياً من السحابة بتفويض المستخدم
+func (s *PhoneBridgeService) downloadAndSaveCloudPhoto(ctx context.Context, objectPath, userJWT string) error {
+	if objectPath == "" || userJWT == "" || SupabaseURL == "" || SupabaseAnonKey == "" {
+		return errors.New("invalid arguments or credentials")
+	}
+
+	// تفادي المعالجة المزدوجة بين WebSocket والـ Polling الاحتياطي
+	if _, loaded := s.processedCloudFiles.LoadOrStore(objectPath, time.Now()); loaded {
+		return nil
+	}
+
+	bucketBase := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge"
+	downloadURL := bucketBase + "/" + objectPath
+
+	downReq, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+	if err != nil {
+		s.processedCloudFiles.Delete(objectPath)
+		return err
+	}
+	downReq.Header.Set("apikey", SupabaseAnonKey)
+	downReq.Header.Set("Authorization", "Bearer "+userJWT)
+
+	downResp, err := phoneBridgeHTTPClient.Do(downReq)
+	if err != nil {
+		s.processedCloudFiles.Delete(objectPath)
+		return err
+	}
+	defer downResp.Body.Close()
+
+	if downResp.StatusCode != http.StatusOK {
+		s.processedCloudFiles.Delete(objectPath)
+		return fmt.Errorf("download returned status %d", downResp.StatusCode)
+	}
+
+	headerBuf := make([]byte, 512)
+	n, _ := io.ReadFull(downResp.Body, headerBuf)
+	detectedMime := http.DetectContentType(headerBuf[:n])
+
+	if !strings.HasPrefix(detectedMime, "image/") {
+		deleteURL := bucketBase
+		s.deleteCloudObject(deleteURL, objectPath, userJWT)
+		return errors.New("downloaded object is not an image")
+	}
+
+	fullReader := io.MultiReader(bytes.NewReader(headerBuf[:n]), downResp.Body)
+
+	mediaDir := s.mediaSvc.GetMediaDir()
+	ext := s.mediaSvc.GetExtensionFromMime(detectedMime)
+	filename := fmt.Sprintf("cloud_%d%s", time.Now().UnixNano(), ext)
+	finalPath := filepath.Join(mediaDir, filename)
+
+	af, createErr := utils.CreateAtomic(finalPath, 0o644)
+	if createErr != nil {
+		s.processedCloudFiles.Delete(objectPath)
+		return createErr
+	}
+	defer af.Abort()
+
+	written, copyErr := io.Copy(af, io.LimitReader(fullReader, MaxUploadSize+1))
+	if copyErr != nil {
+		s.processedCloudFiles.Delete(objectPath)
+		slog.Warn("phone bridge: aborted streaming oversized cloud object", "object", objectPath, "written", written)
+		return copyErr
+	}
+
+	if written > MaxUploadSize {
+		s.processedCloudFiles.Delete(objectPath)
+		slog.Warn("phone bridge: cloud object exceeds upload budget", "object", objectPath, "written", written)
+		return errors.New("file exceeds max upload size")
+	}
+
+	if commitErr := af.Commit(); commitErr != nil {
+		s.processedCloudFiles.Delete(objectPath)
+		return commitErr
+	}
+
+	virtualPath := "/local-image/" + filename
+
+	s.mu.Lock()
+	s.receivedCount++
+	s.lastReceived = time.Now().Format("15:04:05")
+	cloudCount := s.receivedCount
+	cloudLastRec := s.lastReceived
+	s.mu.Unlock()
+
+	s.runtime.Emit("phone:photo-received", map[string]string{
+		"path": virtualPath,
+	})
+	s.runtime.Emit("phone:status", map[string]interface{}{
+		"isRunning":     true,
+		"receivedCount": cloudCount,
+		"lastReceived":  cloudLastRec,
+	})
+
+	slog.Info("Phone bridge received cloud photo successfully", "path", virtualPath)
+
+	deleteURL := bucketBase
+	go s.deleteCloudObject(deleteURL, objectPath, userJWT)
+
+	return nil
+}
+
+// startRealtimeSync يتصل بقناة Supabase Realtime (WebSocket) بنمط Phoenix Channels
+// ويستمع فورياً لأحداث اقتران الجهاز والتقاط الصور (Push Events مثل WhatsApp) بصفر استقصاء
+func (s *PhoneBridgeService) startRealtimeSync(ctx context.Context, sessionToken, objectPrefix, userJWT string) {
+	if SupabaseURL == "" || SupabaseAnonKey == "" {
+		return
+	}
+
+	wsURL := strings.Replace(strings.TrimRight(SupabaseURL, "/"), "https://", "wss://", 1)
+	wsURL = strings.Replace(wsURL, "http://", "ws://", 1)
+	wsURL = fmt.Sprintf("%s/realtime/v1/websocket?apikey=%s&vsn=1.0.0", wsURL, url.QueryEscape(SupabaseAnonKey))
+
+	topic := "realtime:phone-bridge:" + sessionToken
+	backoff := 1 * time.Second
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		s.mu.RLock()
+		running := s.server != nil && s.token == sessionToken
+		s.mu.RUnlock()
+		if !running {
+			return
+		}
+
+		dialCtx, dialCancel := context.WithTimeout(ctx, 10*time.Second)
+		conn, _, err := websocket.Dial(dialCtx, wsURL, nil)
+		dialCancel()
+
+		if err != nil {
+			slog.Debug("Phone bridge realtime dial failed, retrying", "error", err, "backoff", backoff)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(backoff):
+				if backoff < 10*time.Second {
+					backoff *= 2
+				}
+				continue
+			}
+		}
+
+		backoff = 1 * time.Second
+		slog.Info("Phone bridge realtime WebSocket connected", "topic", topic)
+
+		// الانضمام لغرفة الجلسة
+		joinMsg := map[string]interface{}{
+			"topic": topic,
+			"event": "phx_join",
+			"payload": map[string]interface{}{
+				"config": map[string]interface{}{
+					"broadcast": map[string]interface{}{
+						"self": false,
+						"ack":  false,
+					},
+				},
+			},
+			"ref":      "1",
+			"join_ref": "1",
+		}
+		joinBytes, _ := json.Marshal(joinMsg)
+		if writeErr := conn.Write(ctx, websocket.MessageText, joinBytes); writeErr != nil {
+			_ = conn.Close(websocket.StatusInternalError, "join failed")
+			continue
+		}
+
+		hbCtx, hbCancel := context.WithCancel(ctx)
+		utils.SafeGo("phone-bridge.realtime-heartbeat", func() {
+			ticker := time.NewTicker(25 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-hbCtx.Done():
+					return
+				case <-ticker.C:
+					hbMsg := map[string]interface{}{
+						"topic":   "phoenix",
+						"event":   "heartbeat",
+						"payload": map[string]interface{}{},
+						"ref":     "hb",
+					}
+					hbBytes, _ := json.Marshal(hbMsg)
+					if err := conn.Write(hbCtx, websocket.MessageText, hbBytes); err != nil {
+						return
+					}
+				}
+			}
+		})
+
+		for {
+			_, msgBytes, readErr := conn.Read(ctx)
+			if readErr != nil {
+				slog.Debug("Phone bridge realtime read error, reconnecting", "error", readErr)
+				break
+			}
+
+			var envelope struct {
+				Event   string `json:"event"`
+				Topic   string `json:"topic"`
+				Payload struct {
+					Event   string `json:"event"`
+					Type    string `json:"type"`
+					Payload struct {
+						Path   string `json:"path"`
+						Device string `json:"device"`
+					} `json:"payload"`
+				} `json:"payload"`
+			}
+
+			if err := json.Unmarshal(msgBytes, &envelope); err != nil {
+				continue
+			}
+
+			if envelope.Event == "broadcast" && envelope.Payload.Type == "broadcast" {
+				switch envelope.Payload.Event {
+				case "paired":
+					device := envelope.Payload.Payload.Device
+					if device != "" {
+						s.mu.Lock()
+						s.pairedDevice = device
+						s.mu.Unlock()
+						s.runtime.Emit("phone:paired", map[string]interface{}{
+							"device": device,
+							"time":   time.Now().Format("15:04:05"),
+						})
+						s.runtime.Emit("phone:status", map[string]interface{}{
+							"isRunning":    true,
+							"pairedDevice": device,
+						})
+						slog.Info("Phone bridge paired instantly via WebSocket", "device", device)
+					}
+				case "photo-ready":
+					photoPath := envelope.Payload.Payload.Path
+					if photoPath != "" {
+						slog.Info("Phone bridge received photo-ready notification via WebSocket", "path", photoPath)
+						_ = s.downloadAndSaveCloudPhoto(ctx, photoPath, userJWT)
+					}
+				}
+			}
+		}
+
+		hbCancel()
+		_ = conn.Close(websocket.StatusNormalClosure, "reconnecting")
+	}
+}
+
+// pollCloudBridge شبكة أمان واستقصاء احتياطي هادئ وطويل الأمد (كل 12 ثانية)
+// لضمان عدم ضياع أي صورة في حال انقطاع اتصال الـ WebSocket المؤقت
 func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, objectPrefix, userJWT string) {
 	if SupabaseURL == "" || SupabaseAnonKey == "" {
 		slog.Debug("Supabase credentials not configured, skipping cloud bridge sync")
 		return
 	}
 	if objectPrefix == "" || userJWT == "" {
-		// بلا هوية مستخدم مُحقَّقة لا استقصاء: الباكت مؤمَّن بسياسات RLS ولا يملك
-		// المفتاح العام أي تفويض عليه بعد الآن (فشل مُغلق بدل صمت محيّر).
 		slog.Warn("phone bridge cloud sync skipped: missing authenticated user identity")
 		s.disableCloudSync(errPhoneBridgeSignInRequired)
 		return
 	}
 
-	tr := &http.Transport{
-		MaxIdleConns:        10,
-		MaxIdleConnsPerHost: 5,
-		IdleConnTimeout:     90 * time.Second,
-		DisableCompression:  false,
-		DisableKeepAlives:   false,
-	}
-	client := &http.Client{
-		Transport: tr,
-		Timeout:   10 * time.Second,
-	}
-	ticker := time.NewTicker(350 * time.Millisecond)
-	defer ticker.Stop()
+	client := phoneBridgeHTTPClient
+	pollInterval := 12 * time.Second
+	timer := time.NewTimer(pollInterval)
+	defer timer.Stop()
 
 	bucketBase := strings.TrimRight(SupabaseURL, "/") + "/storage/v1/object/phone-bridge"
 	listURL := bucketBase + "/list"
@@ -757,7 +1022,7 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 		case <-ctx.Done():
 			s.cleanCloudSession(objectPrefix, userJWT)
 			return
-		case <-ticker.C:
+		case <-timer.C:
 			s.mu.RLock()
 			running := s.server != nil && s.token == sessionToken
 			s.mu.RUnlock()
@@ -780,11 +1045,13 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 				"limit":  10,
 			})
 			if err != nil {
+				timer.Reset(pollInterval)
 				continue
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "POST", listURL, bytes.NewBuffer(listPayload))
 			if err != nil {
+				timer.Reset(pollInterval)
 				continue
 			}
 			req.Header.Set("apikey", SupabaseAnonKey)
@@ -793,11 +1060,17 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 
 			resp, err := client.Do(req)
 			if err != nil {
+				timer.Reset(pollInterval)
 				continue
 			}
 
-			// رفض التفويض (401/403) = JWT منتهي/مرفوض ⇒ توقف صريح برسالة عربية
-			// بدل استمرار صمت: بلا JWT صالح لا يرى المستخدم أي صورة قادمة.
+			if resp.StatusCode == http.StatusTooManyRequests {
+				resp.Body.Close()
+				slog.Warn("phone bridge cloud poll rate limited, backing off 15s")
+				timer.Reset(15 * time.Second)
+				continue
+			}
+
 			if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
 				resp.Body.Close()
 				slog.Warn("phone bridge cloud session rejected by supabase storage", "status", resp.StatusCode)
@@ -807,6 +1080,7 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 
 			if resp.StatusCode != http.StatusOK {
 				resp.Body.Close()
+				timer.Reset(pollInterval)
 				continue
 			}
 
@@ -814,16 +1088,15 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 			decodeErr := json.NewDecoder(io.LimitReader(resp.Body, 256*1024)).Decode(&items)
 			resp.Body.Close()
 			if decodeErr != nil || len(items) == 0 {
+				timer.Reset(pollInterval)
 				continue
 			}
 
-			// 2. سحب ومعالجة كل ملف وارد
 			for _, item := range items {
 				if item.Name == "" {
 					continue
 				}
 
-				// 🛡️ تفادي الإدراج المزدوج: تخطي أي ملف تمت معالجته بالفعل أو قيد المعالجة
 				if _, seen := processedFiles[item.Name]; seen {
 					continue
 				}
@@ -831,7 +1104,7 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 
 				objectPath := objectPrefix + "/" + item.Name
 
-				// معالجة مصافحة اقتران الجهاز (Handshake)
+				// معالجة مصافحة اقتران الجهاز الاحتياطية (Handshake)
 				if strings.HasSuffix(item.Name, ".handshake.json") || strings.HasSuffix(item.Name, ".handshake") {
 					downURL := bucketBase + "/" + objectPath
 					downReq, _ := http.NewRequestWithContext(ctx, "GET", downURL, nil)
@@ -856,7 +1129,6 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 									"isRunning":    true,
 									"pairedDevice": hsData.Device,
 								})
-								slog.Info("Phone bridge paired with device", "device", hsData.Device)
 							}
 						}
 					}
@@ -869,93 +1141,10 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 					continue
 				}
 
-				downloadURL := bucketBase + "/" + objectPath
-
-				downReq, dErr := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
-				if dErr != nil {
-					continue
-				}
-				downReq.Header.Set("apikey", SupabaseAnonKey)
-				downReq.Header.Set("Authorization", "Bearer "+userJWT)
-
-				downResp, dErr := client.Do(downReq)
-				if dErr != nil || downResp.StatusCode != http.StatusOK {
-					if downResp != nil {
-						downResp.Body.Close()
-					}
-					continue
-				}
-
-				// التحقق من نوع المحتوى لضمان أنه صورة
-				headerBuf := make([]byte, 512)
-				n, _ := io.ReadFull(downResp.Body, headerBuf)
-				detectedMime := http.DetectContentType(headerBuf[:n])
-
-				if !strings.HasPrefix(detectedMime, "image/") {
-					downResp.Body.Close()
-					s.deleteCloudObject(deleteURL, objectPath, userJWT)
-					continue
-				}
-
-				fullReader := io.MultiReader(bytes.NewReader(headerBuf[:n]), downResp.Body)
-
-				mediaDir := s.mediaSvc.GetMediaDir()
-				ext := s.mediaSvc.GetExtensionFromMime(detectedMime)
-				filename := fmt.Sprintf("cloud_%d%s", time.Now().UnixNano(), ext)
-				finalPath := filepath.Join(mediaDir, filename)
-
-				af, createErr := utils.CreateAtomic(finalPath, 0o644)
-				if createErr != nil {
-					downResp.Body.Close()
-					continue
-				}
-
-				// الاقتطاع الصامت يُدمّر الأصلية (RV): ننسخ بحد+1 فأي زيادة بايت
-				// واحد تعني كائناً ناقصاً ⇒ إجهاض بدون الحذف من السحابة حتى لا
-				// يُفقد الأصل نهائياً (نمط asset_server.go: /api/upload-print-image).
-				written, copyErr := io.Copy(af, io.LimitReader(fullReader, MaxUploadSize+1))
-				downResp.Body.Close()
-
-				if copyErr != nil {
-					af.Abort()
-					slog.Warn("phone bridge: aborted streaming oversized cloud object", "object", objectPath, "written", written)
-					continue
-				}
-
-				if written > MaxUploadSize {
-					af.Abort()
-					slog.Warn("phone bridge: cloud object exceeds upload budget, kept in bucket for retry", "object", objectPath, "written", written)
-					continue
-				}
-
-				if commitErr := af.Commit(); commitErr != nil {
-					af.Abort()
-					continue
-				}
-
-				virtualPath := "/local-image/" + filename
-
-				s.mu.Lock()
-				s.receivedCount++
-				s.lastReceived = time.Now().Format("15:04:05")
-				cloudCount := s.receivedCount
-				cloudLastRec := s.lastReceived
-				s.mu.Unlock()
-
-				s.runtime.Emit("phone:photo-received", map[string]string{
-					"path": virtualPath,
-				})
-				s.runtime.Emit("phone:status", map[string]interface{}{
-					"isRunning":     true,
-					"receivedCount": cloudCount,
-					"lastReceived":  cloudLastRec,
-				})
-
-				slog.Info("Phone bridge received cloud photo successfully", "path", virtualPath)
-
-				// 3. الحذف الفوري (Instant Purge) من السيرفر السحابي في الخلفية دون تعطيل ظهور الصورة
-				go s.deleteCloudObject(deleteURL, objectPath, userJWT)
+				// سحب ومعالجة الصورة الاحتياطية
+				_ = s.downloadAndSaveCloudPhoto(ctx, objectPath, userJWT)
 			}
+			timer.Reset(pollInterval)
 		}
 	}
 }
@@ -973,7 +1162,7 @@ func (s *PhoneBridgeService) deleteCloudObject(deleteURL, objectPath, userJWT st
 	if err != nil {
 		return
 	}
-	req, err := http.NewRequest("DELETE", deleteURL, bytes.NewBuffer(delPayload))
+	req, err := http.NewRequest(http.MethodDelete, deleteURL, bytes.NewBuffer(delPayload))
 	if err != nil {
 		return
 	}
@@ -981,10 +1170,9 @@ func (s *PhoneBridgeService) deleteCloudObject(deleteURL, objectPath, userJWT st
 	req.Header.Set("Authorization", "Bearer "+userJWT)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := phoneBridgeHTTPClient.Do(req)
 	if err == nil && resp != nil {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }
 

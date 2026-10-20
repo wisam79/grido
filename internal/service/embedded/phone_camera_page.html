@@ -452,7 +452,7 @@
 
       <!-- Hidden Native File Inputs -->
       <input type="file" id="camera-in" accept="image/*" capture="environment" style="display: none;">
-      <input type="file" id="gallery-in" accept="image/*" style="display: none;">
+      <input type="file" id="gallery-in" accept="image/*" multiple style="display: none;">
     </div>
 
     <!-- Recent Session Reel (Icon-Driven) -->
@@ -620,7 +620,11 @@
     });
 
     document.getElementById('gallery-in').addEventListener('change', function() {
-      if (this.files && this.files[0]) sendFile(this.files[0]);
+      if (this.files && this.files.length > 0) {
+        for (let i = 0; i < this.files.length; i++) {
+          sendFile(this.files[i]);
+        }
+      }
     });
 
     // Fullscreen / App Mode Toggle

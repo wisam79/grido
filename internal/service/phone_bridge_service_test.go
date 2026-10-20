@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -182,5 +183,47 @@ func TestPhoneBridgeService_DiscoverLocalIP(t *testing.T) {
 	parts := strings.Split(ip, ".")
 	if len(parts) != 4 {
 		t.Errorf("expected IPv4 address, got %q", ip)
+	}
+}
+
+func TestPhoneBridgeService_CloudURLFormatting(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "grido-bridge-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	mediaSvc := NewMediaService()
+	bridgeSvc := NewPhoneBridgeService(mediaSvc)
+
+	// Case 1: unauthenticated (no Supabase session) -> CloudURL must be empty
+	info, err := bridgeSvc.Start()
+	if err != nil {
+		t.Fatalf("bridge start failed: %v", err)
+	}
+	defer func() { _ = bridgeSvc.Stop() }()
+
+	if info.CloudURL != "" {
+		t.Errorf("expected empty CloudURL when unauthenticated, got %q", info.CloudURL)
+	}
+
+	// Case 2: when cloud session is present, prefix must embed <uid>/<token>
+	bridgeSvc.mu.Lock()
+	bridgeSvc.cloudUserID = "user-uuid-1234"
+	bridgeSvc.cloudAccessToken = "jwt-token-5678"
+	bridgeSvc.cloudURL = fmt.Sprintf("https://grido.cloud-ip.cc/cam#session=%s/%s", bridgeSvc.cloudUserID, bridgeSvc.token)
+	prefix := bridgeSvc.cloudObjectPrefixLocked()
+	bridgeSvc.mu.Unlock()
+
+	expectedPrefix := "user-uuid-1234/" + bridgeSvc.token
+	if prefix != expectedPrefix {
+		t.Errorf("expected object prefix %q, got %q", expectedPrefix, prefix)
+	}
+
+	expectedURL := fmt.Sprintf("https://grido.cloud-ip.cc/cam#session=user-uuid-1234/%s", bridgeSvc.token)
+	status := bridgeSvc.GetStatus()
+	if status.CloudURL != expectedURL {
+		t.Errorf("expected status.CloudURL %q, got %q", expectedURL, status.CloudURL)
 	}
 }

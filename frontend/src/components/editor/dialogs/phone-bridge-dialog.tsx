@@ -30,7 +30,6 @@ import {
   GetPhoneBridgeStatus,
 } from '../../../../wailsjs/go/main/App';
 import { service } from '../../../../wailsjs/go/models';
-import { EventsOn, EventsOff } from '../../../../wailsjs/runtime/runtime';
 
 const phoneLog = createLogger('PhoneBridgeDialog');
 
@@ -42,7 +41,7 @@ export interface PhoneBridgeDialogProps {
 export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps) {
   const [bridgeInfo, setBridgeInfo] = useState<service.BridgeInfo | null>(null);
   const [bridgeMode, setBridgeMode] = useState<'cloud' | 'local'>('cloud');
-  const [pairedDevice, setPairedDevice] = useState<string>('');
+  const pairedDevice = usePhoneBridgeStore((s) => s.pairedDevice);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
@@ -76,14 +75,15 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
       if (!isMountedRef.current) return;
       setBridgeInfo(info);
       usePhoneBridgeStore.getState().setIsRunning(true);
+      // إذا لم يكن الرابط السحابي متاحاً (المستخدم غير مسجل)، نحوّل تلقائياً للشبكة المحلية
+      if (!info?.cloudUrl) {
+        setBridgeMode('local');
+      }
 
       const status = await GetPhoneBridgeStatus();
       if (!isMountedRef.current) return;
       if (status) {
         setReceivedCount(status.receivedCount);
-        if (status.pairedDevice) {
-          setPairedDevice(status.pairedDevice);
-        }
         usePhoneBridgeStore.getState().updateStatus({
           isRunning: status.isRunning,
           pairedDevice: status.pairedDevice,
@@ -114,27 +114,6 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     }
   }, [open, initBridge]);
 
-  // الاستماع لحدث اقتران الهاتف المباشر
-  useEffect(() => {
-    if (!open) return;
-    EventsOn('phone:paired', (data: { device?: string }) => {
-      if (data?.device && isMountedRef.current) {
-        setPairedDevice(data.device);
-        usePhoneBridgeStore.getState().updateStatus({
-          isRunning: true,
-          pairedDevice: data.device,
-        });
-        toast.success(`تم اقتران الهاتف بنجاح (${data.device})`);
-      }
-    });
-
-    return () => {
-      if (typeof EventsOff === 'function') {
-        EventsOff('phone:paired');
-      }
-    };
-  }, [open]);
-
   // تحديث دوري للعداد أثناء فتح النافذة
   useEffect(() => {
     if (!open || !bridgeInfo?.isRunning) return;
@@ -144,9 +123,6 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
         const status = await GetPhoneBridgeStatus();
         if (isMountedRef.current && status) {
           setReceivedCount(status.receivedCount);
-          if (status.pairedDevice) {
-            setPairedDevice(status.pairedDevice);
-          }
           usePhoneBridgeStore.getState().updateStatus({
             isRunning: status.isRunning,
             pairedDevice: status.pairedDevice,
@@ -162,11 +138,7 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
     return () => clearInterval(interval);
   }, [open, bridgeInfo?.isRunning]);
 
-  const activeUrl =
-    bridgeMode === 'cloud' && (bridgeInfo?.cloudUrl || bridgeInfo?.token)
-      ? bridgeInfo.cloudUrl ||
-        (bridgeInfo.token ? `https://grido.cloud-ip.cc/cam#session=${bridgeInfo.token}` : '')
-      : bridgeInfo?.url || '';
+  const activeUrl = bridgeMode === 'cloud' ? bridgeInfo?.cloudUrl || '' : bridgeInfo?.url || '';
 
   const handleCopyUrl = async () => {
     if (!activeUrl) return;
@@ -204,7 +176,6 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
       await StopPhoneBridge();
       if (isMountedRef.current) {
         setBridgeInfo(null);
-        setPairedDevice('');
         setReceivedCount(0);
         usePhoneBridgeStore.getState().reset();
         toast.info('تم إيقاف جسر كاميرا الهاتف');
@@ -315,18 +286,40 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
                 </button>
               </div>
 
+              {/* تحذير عند اختيار وضع الإنترنت والمستخدم غير مسجل الدخول */}
+              {bridgeMode === 'cloud' && !bridgeInfo.cloudUrl && (
+                <div className="w-full flex flex-col items-center gap-2 py-4 px-3 bg-amber-500/10 dark:bg-amber-500/15 rounded-xl border border-amber-500/30 text-center">
+                  <WarningCircle className="w-6 h-6 text-amber-500 shrink-0" weight="duotone" />
+                  <div className="text-xs font-bold text-foreground">يتطلب تسجيل الدخول للحساب</div>
+                  <p className="text-[11px] text-muted-foreground max-w-xs leading-relaxed">
+                    لتشغيل جسر الكاميرا عبر الإنترنت، سجّل دخولك إلى حسابك أولاً، أو استخدم وضع
+                    «شبكة محلية (LAN)» فوراً بدون إنترنت.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBridgeMode('local')}
+                    className="h-7 text-xs rounded-lg mt-1 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 cursor-pointer"
+                  >
+                    التحويل إلى الشبكة المحلية
+                  </Button>
+                </div>
+              )}
+
               {/* QR Code Container */}
-              <div className="relative group p-4 bg-card dark:bg-white rounded-2xl shadow-fluent-8 border border-border/40 flex items-center justify-center">
-                <QRCodeSVG
-                  value={activeUrl}
-                  size={190}
-                  level="M"
-                  bgColor="#ffffff"
-                  fgColor="#090d16"
-                  includeMargin={false}
-                />
-                <div className="absolute inset-0 rounded-2xl pointer-events-none ring-1 ring-inset ring-black/5" />
-              </div>
+              {activeUrl ? (
+                <div className="relative group p-4 bg-card dark:bg-white rounded-2xl shadow-fluent-8 border border-border/40 flex items-center justify-center">
+                  <QRCodeSVG
+                    value={activeUrl}
+                    size={190}
+                    level="M"
+                    bgColor="#ffffff"
+                    fgColor="#090d16"
+                    includeMargin={false}
+                  />
+                  <div className="absolute inset-0 rounded-2xl pointer-events-none ring-1 ring-inset ring-black/5" />
+                </div>
+              ) : null}
 
               {/* Status and Received Photos Row */}
               <div className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
@@ -354,33 +347,35 @@ export function PhoneBridgeDialog({ open, onOpenChange }: PhoneBridgeDialogProps
               </div>
 
               {/* Manual URL Bar with Copy */}
-              <div className="w-full flex items-center gap-1.5 bg-muted/30 border border-border/60 rounded-lg p-1">
-                <input
-                  type="text"
-                  readOnly
-                  value={activeUrl}
-                  className="w-full bg-transparent px-2.5 text-xs font-mono text-muted-foreground outline-none select-all truncate"
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopyUrl}
-                  className="h-7 px-2.5 gap-1 text-xs font-medium shrink-0 rounded-md"
-                  title="نسخ الرابط"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>تم النسخ</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>نسخ</span>
-                    </>
-                  )}
-                </Button>
-              </div>
+              {activeUrl ? (
+                <div className="w-full flex items-center gap-1.5 bg-muted/30 border border-border/60 rounded-lg p-1">
+                  <input
+                    type="text"
+                    readOnly
+                    value={activeUrl}
+                    className="w-full bg-transparent px-2.5 text-xs font-mono text-muted-foreground outline-none select-all truncate"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyUrl}
+                    className="h-7 px-2.5 gap-1 text-xs font-medium shrink-0 rounded-md"
+                    title="نسخ الرابط"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>تم النسخ</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>نسخ</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ) : null}
             </>
           )}
         </div>
