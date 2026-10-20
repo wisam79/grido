@@ -107,10 +107,61 @@ function evaluateOpenCvQuadScore(
 }
 
 /**
- * كشف المستندات والبطاقات باستخدام محرك OpenCV (WASM) فائق الدقة
+ * أبعاد عمل محرك OpenCV: تصغير إلى 640px كحد أقصى (نفس سلوك المسار السابق).
+ */
+export function computeOpenCvScale(
+  originalWidth: number,
+  originalHeight: number,
+): { sw: number; sh: number } {
+  const maxDim = 640;
+  const scale = Math.min(1, maxDim / originalWidth, maxDim / originalHeight);
+  return {
+    sw: Math.max(1, Math.round(originalWidth * scale)),
+    sh: Math.max(1, Math.round(originalHeight * scale)),
+  };
+}
+
+/**
+ * كشف المستندات والبطاقات باستخدام محرك OpenCV (WASM) فائق الدقة — المسار
+ * المتزامن على الخيط الرئيسي (احتياطي حين يتعذّر العامل).
  */
 export async function detectDocumentsWithOpenCV(
   src: HTMLCanvasElement | HTMLImageElement,
+  originalWidth: number,
+  originalHeight: number,
+  mode: DetectionMode = 'multi',
+): Promise<DetectionResult | null> {
+  const { sw, sh } = computeOpenCvScale(originalWidth, originalHeight);
+
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = sw;
+  offCanvas.height = sh;
+  const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+  if (!offCtx) return null;
+
+  offCtx.drawImage(src, 0, 0, sw, sh);
+  const imgData = offCtx.getImageData(0, 0, sw, sh);
+  offCanvas.width = 0;
+  offCanvas.height = 0;
+
+  return detectDocumentsWithOpenCVFromImageData(
+    imgData,
+    sw,
+    sh,
+    originalWidth,
+    originalHeight,
+    mode,
+  );
+}
+
+/**
+ * جوهر كشف OpenCV — يقبل ImageData جاهزة (بدل DOM) ليعمل داخل Web Worker
+ * بلا أي اعتماد على document/canvas.
+ */
+export async function detectDocumentsWithOpenCVFromImageData(
+  imgData: ImageData,
+  sw: number,
+  sh: number,
   originalWidth: number,
   originalHeight: number,
   mode: DetectionMode = 'multi',
@@ -131,20 +182,7 @@ export async function detectDocumentsWithOpenCV(
   // توقيعات Mat كاملة غير لازمة هنا، فنمرر عبر الواجهة الدقيقة cv-types.
   const cv = cvFull as unknown as CvRuntimeLike;
 
-  const maxDim = 640;
-  const scale = Math.min(1, maxDim / originalWidth, maxDim / originalHeight);
-  const sw = Math.max(1, Math.round(originalWidth * scale));
-  const sh = Math.max(1, Math.round(originalHeight * scale));
   const totalPixels = sw * sh;
-
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = sw;
-  offCanvas.height = sh;
-  const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
-  if (!offCtx) return null;
-
-  offCtx.drawImage(src, 0, 0, sw, sh);
-  const imgData = offCtx.getImageData(0, 0, sw, sh);
 
   // مصفوفات OpenCV للتنظيف الإجباري في النهاية
   const matsToFree: CvDisposableLike[] = [];
@@ -597,7 +635,5 @@ export async function detectDocumentsWithOpenCV(
         // ignore
       }
     }
-    offCanvas.width = 0;
-    offCanvas.height = 0;
   }
 }

@@ -22,6 +22,7 @@ import {
   FolderSimple,
 } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
+import { getThumbnailSrc } from '@/lib/canvas/thumbnail-src';
 import { useShallow } from 'zustand/react/shallow';
 import {
   DndContext,
@@ -174,6 +175,8 @@ const SortableLayerItem = React.memo(
     const isHidden = !isVisible;
     const rowHeight = isComfortable ? 'h-11' : 'h-8';
     const thumbSize = isComfortable ? 'w-8 h-8' : 'w-7 h-7';
+    const imageSrc = el.type === 'image' ? (el as ImageElement).imageSrc : '';
+    const thumbnailSrc = imageSrc ? getThumbnailSrc(imageSrc, 128) : '';
 
     return (
       <div
@@ -235,7 +238,7 @@ const SortableLayerItem = React.memo(
           className="flex flex-1 min-w-0 items-center gap-1.5 rounded-sm text-start cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none"
         >
           {/* المعاينة المصغرة (Thumbnail) — تلي المقبض مباشرة لثبات الهيكلية */}
-          {el.type === 'image' && (el as ImageElement).imageSrc ? (
+          {el.type === 'image' && imageSrc ? (
             <div
               className={cn(
                 'shrink-0 rounded-md overflow-hidden border shadow-2xs bg-muted/50 flex items-center justify-center',
@@ -245,11 +248,17 @@ const SortableLayerItem = React.memo(
               )}
             >
               <img
-                src={(el as ImageElement).imageSrc}
+                src={thumbnailSrc}
                 alt=""
                 className="w-full h-full object-cover select-none pointer-events-none"
                 loading="lazy"
+                decoding="async"
                 draggable={false}
+                onError={(event) => {
+                  const image = event.currentTarget;
+                  image.onerror = null;
+                  image.src = imageSrc;
+                }}
               />
             </div>
           ) : (

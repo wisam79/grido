@@ -1,13 +1,14 @@
-import { ScannerFilterMode } from "./types";
-import { buildIntegralImage } from "./fast-vision";
+import { ScannerFilterMode } from './types';
+import { ScannerCanvas, getScanner2DContext } from './scanner-canvas';
+import { buildIntegralImage } from './fast-vision';
 
 /**
  * فلتر المسح الذكي (Magic Color Filter):
  * يقوم بتبييض خلفية الورقة وإزالة ظلال الكاميرا وتوحيد الألوان والتباين للطباعة
  * مع حماية ألوان الأختام والصور الشخصية
  */
-export function applyMagicColorFilter(canvas: HTMLCanvasElement): HTMLCanvasElement {
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+export function applyMagicColorFilter(canvas: ScannerCanvas): ScannerCanvas {
+  const ctx = getScanner2DContext(canvas, true);
   if (!ctx) return canvas;
 
   const w = canvas.width;
@@ -82,8 +83,8 @@ export function applyMagicColorFilter(canvas: HTMLCanvasElement): HTMLCanvasElem
  * فلتر أبيض وأسود ذكي وتكيفي (Adaptive Document Binarization):
  * يستند إلى الصورة التكاملية (Integral Image) لمعالجة التغيرات في إضاءة الورقة والظلال
  */
-export function applyOtsuFilter(canvas: HTMLCanvasElement): HTMLCanvasElement {
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+export function applyOtsuFilter(canvas: ScannerCanvas): ScannerCanvas {
+  const ctx = getScanner2DContext(canvas, true);
   if (!ctx) return canvas;
 
   const w = canvas.width;
@@ -144,8 +145,8 @@ export function applyOtsuFilter(canvas: HTMLCanvasElement): HTMLCanvasElement {
  * فلتر التدرج الرمادي المحسن للطباعة (Photo-grade Enhanced Grayscale):
  * يحافظ على التفاصيل اللونية والرمادية بدون تقطيع ثنائي مع تبييض خلفية الورقة
  */
-export function applyGrayscaleFilter(canvas: HTMLCanvasElement): HTMLCanvasElement {
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+export function applyGrayscaleFilter(canvas: ScannerCanvas): ScannerCanvas {
+  const ctx = getScanner2DContext(canvas, true);
   if (!ctx) return canvas;
 
   const w = canvas.width;
@@ -196,8 +197,8 @@ export function applyGrayscaleFilter(canvas: HTMLCanvasElement): HTMLCanvasEleme
  * فلتر توضيح وشحذ النصوص الدقيقة (Text Sharpen / Unsharp Mask):
  * يزيد من وضوح الحروف العربية، الأختام، الأرقام والباركود
  */
-export function applySharpenFilter(canvas: HTMLCanvasElement): HTMLCanvasElement {
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+export function applySharpenFilter(canvas: ScannerCanvas): ScannerCanvas {
+  const ctx = getScanner2DContext(canvas, true);
   if (!ctx) return canvas;
 
   const w = canvas.width;
@@ -238,7 +239,8 @@ export function applySharpenFilter(canvas: HTMLCanvasElement): HTMLCanvasElement
       for (let c = 0; c < 3; c++) {
         const val =
           src[idx + c] * centerWeight +
-          (src[idxUp + c] + src[idxDown + c] + src[idxLeft + c] + src[idxRight + c]) * neighborWeight;
+          (src[idxUp + c] + src[idxDown + c] + src[idxLeft + c] + src[idxRight + c]) *
+            neighborWeight;
         dst[idx + c] = Math.max(0, Math.min(255, Math.round(val)));
       }
       dst[idx + 3] = 255;
@@ -253,8 +255,8 @@ export function applySharpenFilter(canvas: HTMLCanvasElement): HTMLCanvasElement
  * فلتر إزالة الاصفرار والتقادم (De-Yellow & Vintage Paper Restoration):
  * يزيل درجات اللون الأصفر والبني من المستندات والكتب القديمة مع الحفاظ على الحبر الأسود والأزرق
  */
-export function applyDeYellowFilter(canvas: HTMLCanvasElement): HTMLCanvasElement {
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+export function applyDeYellowFilter(canvas: ScannerCanvas): ScannerCanvas {
+  const ctx = getScanner2DContext(canvas, true);
   if (!ctx) return canvas;
 
   const w = canvas.width;
@@ -292,8 +294,8 @@ export function applyDeYellowFilter(canvas: HTMLCanvasElement): HTMLCanvasElemen
 /**
  * خوارزمية مساندة: إزالة الظلال الموضعية ولمعان الكاميرا (Shadow & Glare Removal)
  */
-export function applyShadowRemoval(canvas: HTMLCanvasElement): HTMLCanvasElement {
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+export function applyShadowRemoval(canvas: ScannerCanvas): ScannerCanvas {
+  const ctx = getScanner2DContext(canvas, true);
   if (!ctx) return canvas;
 
   const w = canvas.width;
@@ -348,8 +350,8 @@ export function applyShadowRemoval(canvas: HTMLCanvasElement): HTMLCanvasElement
 /**
  * خوارزمية مساندة: تشذيب وتنظيف حواف المستند من شوائب وقصاصات الماسح (Border Margin Cleanup)
  */
-export function applyBorderCleanup(canvas: HTMLCanvasElement, borderPx: number = 2): HTMLCanvasElement {
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+export function applyBorderCleanup(canvas: ScannerCanvas, borderPx: number = 2): ScannerCanvas {
+  const ctx = getScanner2DContext(canvas, true);
   if (!ctx) return canvas;
 
   const w = canvas.width;
@@ -383,21 +385,21 @@ export function applyBorderCleanup(canvas: HTMLCanvasElement, borderPx: number =
  * تطبيق نمط الفلتر المطلوب على الكانفاس
  */
 export function applyFilterMode(
-  canvas: HTMLCanvasElement,
-  filterMode: ScannerFilterMode
-): HTMLCanvasElement {
+  canvas: ScannerCanvas,
+  filterMode: ScannerFilterMode,
+): ScannerCanvas {
   switch (filterMode) {
-    case "magic":
+    case 'magic':
       return applyMagicColorFilter(canvas);
-    case "bw":
+    case 'bw':
       return applyOtsuFilter(canvas);
-    case "grayscale":
+    case 'grayscale':
       return applyGrayscaleFilter(canvas);
-    case "sharpen":
+    case 'sharpen':
       return applySharpenFilter(canvas);
-    case "deyellow":
+    case 'deyellow':
       return applyDeYellowFilter(canvas);
-    case "original":
+    case 'original':
     default:
       return canvas;
   }

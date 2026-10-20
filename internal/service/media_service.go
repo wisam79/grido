@@ -24,6 +24,7 @@ import (
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/webp"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/singleflight"
 
 	"grido/internal/utils"
 )
@@ -39,10 +40,17 @@ type ImageDimensions struct {
 	IsRotated   bool `json:"isRotated"`
 }
 
-type MediaService struct{}
+type MediaService struct {
+	thumbnailGroup singleflight.Group
+	thumbnailSem   chan struct{}
+}
 
 func NewMediaService() *MediaService {
-	return &MediaService{}
+	return &MediaService{
+		// لا نولّد أكثر من مصغرتين بالتوازي: فك ترميز صور 50MP متزامناً
+		// يضاعف ذاكرة Go بلا فائدة ملموسة على زمن أول إطار.
+		thumbnailSem: make(chan struct{}, 2),
+	}
 }
 
 // readExifOrientation يستخرج وسم اتجاه الكاميرا (EXIF Orientation 1..8) من صور JPEG

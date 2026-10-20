@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -59,6 +60,85 @@ func (s *AssetServer) SetRuntimeBridge(bridge domain.RuntimeBridge) {
 // NewAssetHandler ينشئ معالج HTTP للمسارات المحلية والأصول الثابتة
 func NewAssetHandler(deps AssetServerDeps) *AssetServer {
 	return NewAssetServer(deps)
+}
+
+// serveThumbnail يقدّم مصغرة مشتقة من صورة Media. المسار تحت /local-image/
+// وليس /api/ لأن <img src> لا يستطيع إرسال هيدر جلسة عبر LocalApiGuard.
+func (s *AssetServer) serveThumbnail(w http.ResponseWriter, r *http.Request) {
+	deps := s.deps
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if deps.MediaSvc == nil {
+		http.Error(w, "Media service unavailable", http.StatusInternalServerError)
+		return
+	}
+
+	raw := strings.TrimPrefix(r.URL.Path, "/local-image/thumb/")
+	if raw == "" || strings.ContainsAny(raw, `/\`) {
+		http.Error(w, "Invalid thumbnail path", http.StatusBadRequest)
+		return
+	}
+	filename := filepath.Base(filepath.Clean(raw))
+	if filename != raw || filename == "." || filename == ".." {
+		http.Error(w, "Invalid thumbnail path", http.StatusBadRequest)
+		return
+	}
+	if strings.HasPrefix(strings.ToLower(filename), "print_") {
+		http.Error(w, "Thumbnail not available for print previews", http.StatusNotFound)
+		return
+	}
+
+	width := 256
+	if rawWidth := r.URL.Query().Get("w"); rawWidth != "" {
+		parsed, err := strconv.Atoi(rawWidth)
+		if err != nil || (parsed != 128 && parsed != 256 && parsed != 512) {
+			http.Error(w, "Invalid thumbnail width", http.StatusBadRequest)
+			return
+		}
+		width = parsed
+	}
+
+	result, err := deps.MediaSvc.EnsureThumbnail(r.Context(), "/local-image/"+filename, width)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidThumbnailWidth):
+			http.Error(w, "Invalid thumbnail width", http.StatusBadRequest)
+		case errors.Is(err, service.ErrThumbnailUnsupported):
+			http.Error(w, "Unsupported image type for thumbnail", http.StatusUnsupportedMediaType)
+		case errors.Is(err, service.ErrThumbnailTooLarge):
+			http.Error(w, "Image too large for thumbnail", http.StatusRequestEntityTooLarge)
+		case os.IsNotExist(err):
+			http.Error(w, "Image not found", http.StatusNotFound)
+		default:
+			http.Error(w, "Failed to generate thumbnail", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	f, err := os.Open(result.Path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			http.Error(w, "Thumbnail not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to open thumbnail", http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	fi, err := f.Stat()
+	if err != nil {
+		http.Error(w, "Failed to read thumbnail", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", result.ContentType)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800")
+	http.ServeContent(w, r, filename, fi.ModTime(), f)
 }
 
 func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -358,6 +438,11 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				"height":      height,
 				"aspectRatio": aspectRatio,
 			})
+			return
+		}
+
+		if strings.HasPrefix(r.URL.Path, "/local-image/thumb/") {
+			s.serveThumbnail(w, r)
 			return
 		}
 

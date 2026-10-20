@@ -91,6 +91,7 @@ export const WAIT_COPY = {
   isolating: 'جاري عزل الخلفية ...',
   enhancing: 'جاري المعالجة وتحسين الوضوح ...',
   scanningDoc: 'جاري مسح المستند ...',
+  warping: 'جاري استعدال المستند ...',
   fittingFace: 'جاري ضبط الوجه ...',
   syncing: 'جاري المزامنة ...',
   loadingUpdate: 'جاري تحميل التحديث ...',

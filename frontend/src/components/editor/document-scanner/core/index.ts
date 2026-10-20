@@ -6,6 +6,8 @@ export * from './overlap-tuning';
 export * from './multi-doc-segmenter';
 export * from './perspective-warper';
 export * from './filters';
+export * from './scanner-canvas';
+export * from './warp-pipeline';
 export * from './ml-detector';
 export * from './opencv-detector';
 export * from './detect-fusion';

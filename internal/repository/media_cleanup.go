@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -241,6 +242,70 @@ func purgeOldTrash(trashDir string) {
 	}
 }
 
+// thumbnailOriginalName يستخرج اسم الصورة الأصلية من اسم مصغرة بالصيغة
+// <originalFilename>__w<width>.<ext>. أي اسم لا يطابق الصيغة يُتجاهل.
+func thumbnailOriginalName(thumbName string) string {
+	idx := strings.LastIndex(thumbName, "__w")
+	if idx <= 0 {
+		return ""
+	}
+	rest := thumbName[idx+3:]
+	dot := strings.IndexByte(rest, '.')
+	if dot <= 0 {
+		return ""
+	}
+	for _, r := range rest[:dot] {
+		if r < '0' || r > '9' {
+			return ""
+		}
+	}
+	return thumbName[:idx]
+}
+
+// cleanupThumbnails يحذف المصغرات المشتقة التي فقد أصلها أو لم يعد مشاراً
+// إليه. المصغرات قابلة لإعادة التوليد، لكن نمنح الأصل المشار إليه حديثاً
+// مهلة أمان قبل الحذف لتفادي سباق الحفظ التلقائي.
+func cleanupThumbnails(mediaDir string, referenced map[string]bool, minAge time.Duration) (count int, freedBytes int64) {
+	thumbDir := filepath.Join(mediaDir, ".thumbs")
+	entries, err := os.ReadDir(thumbDir)
+	if err != nil {
+		return 0, 0
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		thumbName := entry.Name()
+		originalName := thumbnailOriginalName(thumbName)
+		if originalName == "" {
+			continue
+		}
+		thumbPath := filepath.Join(thumbDir, thumbName)
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+
+		originalPath := filepath.Join(mediaDir, originalName)
+		_, originalErr := os.Stat(originalPath)
+		originalExists := originalErr == nil
+		if originalExists && referenced[originalName] {
+			continue
+		}
+		// إذا كان الأصل موجوداً لكنه غير مشار إليه، لا نحذف إلا بعد المهلة.
+		if originalExists && time.Since(info.ModTime()) < minAge {
+			continue
+		}
+		// إذا اختفى الأصل فالمصغرة يتيمة فوراً وقابلة للحذف.
+		if err := os.Remove(thumbPath); err == nil {
+			count++
+			freedBytes += info.Size()
+		}
+	}
+	return count, freedBytes
+}
+
 func runCleanupMedia() {
 	defer func() {
 		if r := recover(); r != nil {
@@ -271,6 +336,7 @@ func runCleanupMedia() {
 		return
 	}
 	moveUnreferencedToTrash(mediaDir, trashDir, referenced)
+	cleanupThumbnails(mediaDir, referenced, 24*time.Hour)
 	purgeOldTrash(trashDir)
 }
 
@@ -338,6 +404,10 @@ func CleanUnusedMediaNow() (cleanedCount int, freedBytes int64, err error) {
 			cleanedCount++
 		}
 	}
+
+	thumbCount, thumbBytes := cleanupThumbnails(mediaDir, referenced, 24*time.Hour)
+	cleanedCount += thumbCount
+	freedBytes += thumbBytes
 
 	purgeOldTrash(trashDir)
 

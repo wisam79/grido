@@ -21,7 +21,15 @@ function localImagePlugin(): Plugin {
         if (!req.url || !req.url.startsWith('/local-image/')) {
           return next()
         }
-        const filename = basename(req.url.replace('/local-image/', ''))
+        // 🖼️ المسارات في التطوير: /local-image/thumb/<file>?w=128 هي مصغرة
+        // يولّدها Go في الإنتاج. خادم Vite لا يملك مُصغِّراً، فيخدم الملف
+        // الأصلي (تقريب بصري صحيح) بدل 404 الذي يكسر المعاينة.
+        const [pathname] = req.url.split('?')
+        const isThumb = pathname.startsWith('/local-image/thumb/')
+        const relative = isThumb
+          ? pathname.replace('/local-image/thumb/', '')
+          : pathname.replace('/local-image/', '')
+        const filename = basename(relative)
         const filePath = join(mediaDir, filename)
 
         if (!existsSync(filePath)) {

@@ -1,6 +1,6 @@
-import { Point, ScannerFilterMode } from "./types";
-import { sortCornerPoints } from "./quad-geometry";
-import { applyFilterMode } from "./filters";
+import { Point, ScannerFilterMode } from './types';
+import { sortCornerPoints } from './quad-geometry';
+import { applyFilterMode } from './filters';
 
 /**
  * حساب مصفوفة التحويل المنظوري 3x3 (Perspective Transformation Homography Matrix)
@@ -10,7 +10,9 @@ import { applyFilterMode } from "./filters";
  */
 export function computePerspectiveTransform(src: Point[], dst: Point[]): number[] {
   if (!src || !dst || src.length !== 4 || dst.length !== 4) {
-    throw new Error("computePerspectiveTransform requires exactly 4 source and 4 destination points");
+    throw new Error(
+      'computePerspectiveTransform requires exactly 4 source and 4 destination points',
+    );
   }
   const a: number[][] = [];
   const b: number[] = [];
@@ -50,8 +52,12 @@ export function computePerspectiveTransform(src: Point[], dst: Point[]): number[
       let foundPivot = false;
       for (let r = i + 1; r < n; r++) {
         if (Math.abs(a[r][i]) >= 1e-12) {
-          const tR = a[i]; a[i] = a[r]; a[r] = tR;
-          const tB = b[i]; b[i] = b[r]; b[r] = tB;
+          const tR = a[i];
+          a[i] = a[r];
+          a[r] = tR;
+          const tB = b[i];
+          b[i] = b[r];
+          b[r] = tB;
           foundPivot = true;
           break;
         }
@@ -86,7 +92,9 @@ export function computePerspectiveTransform(src: Point[], dst: Point[]): number[
   }
 
   if (singular) {
-    throw new Error("computePerspectiveTransform failed: degenerate (collinear/self-intersecting) quad");
+    throw new Error(
+      'computePerspectiveTransform failed: degenerate (collinear/self-intersecting) quad',
+    );
   }
 
   return h;
@@ -102,27 +110,31 @@ export function warpPerspective(
   arg4?: number | Point[],
   arg5?: string | number,
   arg6?: number,
-  arg7?: string
+  arg7?: string,
 ): HTMLCanvasElement {
   let srcCanvas: HTMLCanvasElement;
   let corners: Point[];
   let outWidth: number;
   let outHeight: number;
-  let filterMode: ScannerFilterMode = "original";
+  let filterMode: ScannerFilterMode = 'original';
   let isTempSrcCanvas = false;
 
   const coerceFilterMode = (value: unknown): ScannerFilterMode => {
-    return value === "magic" || value === "bw" || value === "grayscale" || value === "sharpen" || value === "deyellow"
+    return value === 'magic' ||
+      value === 'bw' ||
+      value === 'grayscale' ||
+      value === 'sharpen' ||
+      value === 'deyellow'
       ? value
-      : "original";
+      : 'original';
   };
 
   if (Array.isArray(arg2)) {
     // Standard signature: (srcImg, corners, outWidth, outHeight, filterMode)
     corners = arg2;
-    outWidth = typeof arg3 === "number" && arg3 > 0 ? arg3 : 300;
-    outHeight = typeof arg4 === "number" && arg4 > 0 ? arg4 : 400;
-    if (typeof arg5 === "string") filterMode = coerceFilterMode(arg5);
+    outWidth = typeof arg3 === 'number' && arg3 > 0 ? arg3 : 300;
+    outHeight = typeof arg4 === 'number' && arg4 > 0 ? arg4 : 400;
+    if (typeof arg5 === 'string') filterMode = coerceFilterMode(arg5);
 
     if ((src as { canvas?: HTMLCanvasElement }).canvas) {
       srcCanvas = (src as { canvas: HTMLCanvasElement }).canvas;
@@ -132,26 +144,28 @@ export function warpPerspective(
       const img = src as HTMLImageElement;
       const w = img.naturalWidth || img.width || outWidth;
       const h = img.naturalHeight || img.height || outHeight;
-      srcCanvas = document.createElement("canvas");
+      srcCanvas = document.createElement('canvas');
       srcCanvas.width = w;
       srcCanvas.height = h;
       isTempSrcCanvas = true;
-      const c = srcCanvas.getContext("2d");
+      const c = srcCanvas.getContext('2d');
       if (c) c.drawImage(img, 0, 0, w, h);
     }
   } else {
     // Legacy signature: (ctx, srcW, srcH, corners, outW, outH, filterMode)
     const srcW = Number(arg2) || 100;
     const srcH = Number(arg3) || 100;
-    corners = Array.isArray(arg4) ? arg4 : [
-      { x: 0, y: 0 },
-      { x: srcW, y: 0 },
-      { x: srcW, y: srcH },
-      { x: 0, y: srcH },
-    ];
-    outWidth = typeof arg5 === "number" && arg5 > 0 ? arg5 : srcW;
-    outHeight = typeof arg6 === "number" && arg6 > 0 ? arg6 : srcH;
-    if (typeof arg7 === "string") filterMode = coerceFilterMode(arg7);
+    corners = Array.isArray(arg4)
+      ? arg4
+      : [
+          { x: 0, y: 0 },
+          { x: srcW, y: 0 },
+          { x: srcW, y: srcH },
+          { x: 0, y: srcH },
+        ];
+    outWidth = typeof arg5 === 'number' && arg5 > 0 ? arg5 : srcW;
+    outHeight = typeof arg6 === 'number' && arg6 > 0 ? arg6 : srcH;
+    if (typeof arg7 === 'string') filterMode = coerceFilterMode(arg7);
 
     if ((src as { canvas?: HTMLCanvasElement }).canvas) {
       srcCanvas = (src as { canvas: HTMLCanvasElement }).canvas;
@@ -159,11 +173,11 @@ export function warpPerspective(
       srcCanvas = src;
     } else {
       const img = src as HTMLImageElement;
-      srcCanvas = document.createElement("canvas");
+      srcCanvas = document.createElement('canvas');
       srcCanvas.width = srcW;
       srcCanvas.height = srcH;
       isTempSrcCanvas = true;
-      const c = srcCanvas.getContext("2d");
+      const c = srcCanvas.getContext('2d');
       if (c && img) {
         try {
           c.drawImage(img, 0, 0, srcW, srcH);
@@ -174,10 +188,10 @@ export function warpPerspective(
     }
   }
 
-  const canvas = document.createElement("canvas");
+  const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, outWidth);
   canvas.height = Math.max(1, outHeight);
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) {
     if (isTempSrcCanvas) {
       srcCanvas.width = 0;
@@ -208,7 +222,7 @@ export function warpPerspective(
 
   const srcW = srcCanvas.width;
   const srcH = srcCanvas.height;
-  const srcCtx = srcCanvas.getContext("2d", { willReadFrequently: true });
+  const srcCtx = srcCanvas.getContext('2d', { willReadFrequently: true });
   const srcData = srcCtx ? srcCtx.getImageData(0, 0, srcW, srcH).data : null;
 
   if (!srcData) {
@@ -236,9 +250,15 @@ export function warpPerspective(
   const outImgData = ctx.createImageData(outWidth, outHeight);
   const outData = outImgData.data;
 
-  const h0 = hInv[0], h1 = hInv[1], h2 = hInv[2];
-  const h3 = hInv[3], h4 = hInv[4], h5 = hInv[5];
-  const h6 = hInv[6], h7 = hInv[7], h8 = hInv[8];
+  const h0 = hInv[0],
+    h1 = hInv[1],
+    h2 = hInv[2];
+  const h3 = hInv[3],
+    h4 = hInv[4],
+    h5 = hInv[5];
+  const h6 = hInv[6],
+    h7 = hInv[7],
+    h8 = hInv[8];
 
   let outIdx = 0;
   for (let y = 0; y < outHeight; y++) {
@@ -271,10 +291,27 @@ export function warpPerspective(
         const idx01 = (y1 * srcW + x0) * 4;
         const idx11 = (y1 * srcW + x1) * 4;
 
-        outData[outIdx] = Math.round(w00 * srcData[idx00] + w10 * srcData[idx10] + w01 * srcData[idx01] + w11 * srcData[idx11]);
-        outData[outIdx + 1] = Math.round(w00 * srcData[idx00 + 1] + w10 * srcData[idx10 + 1] + w01 * srcData[idx01 + 1] + w11 * srcData[idx11 + 1]);
-        outData[outIdx + 2] = Math.round(w00 * srcData[idx00 + 2] + w10 * srcData[idx10 + 2] + w01 * srcData[idx01 + 2] + w11 * srcData[idx11 + 2]);
-        outData[outIdx + 3] = Math.round(w00 * srcData[idx00 + 3] + w10 * srcData[idx10 + 3] + w01 * srcData[idx01 + 3] + w11 * srcData[idx11 + 3]);
+        outData[outIdx] = Math.round(
+          w00 * srcData[idx00] + w10 * srcData[idx10] + w01 * srcData[idx01] + w11 * srcData[idx11],
+        );
+        outData[outIdx + 1] = Math.round(
+          w00 * srcData[idx00 + 1] +
+            w10 * srcData[idx10 + 1] +
+            w01 * srcData[idx01 + 1] +
+            w11 * srcData[idx11 + 1],
+        );
+        outData[outIdx + 2] = Math.round(
+          w00 * srcData[idx00 + 2] +
+            w10 * srcData[idx10 + 2] +
+            w01 * srcData[idx01 + 2] +
+            w11 * srcData[idx11 + 2],
+        );
+        outData[outIdx + 3] = Math.round(
+          w00 * srcData[idx00 + 3] +
+            w10 * srcData[idx10 + 3] +
+            w01 * srcData[idx01 + 3] +
+            w11 * srcData[idx11 + 3],
+        );
       }
 
       outIdx += 4;
@@ -288,7 +325,8 @@ export function warpPerspective(
     srcCanvas.height = 0;
   }
 
-  return applyFilterMode(canvas, filterMode);
+  // المسار المتزامن يعمل دائماً على HTMLCanvasElement (العامل يستخدم warp-pipeline).
+  return applyFilterMode(canvas, filterMode) as HTMLCanvasElement;
 }
 
 /**
@@ -303,7 +341,7 @@ export function refineCornersSubPixel(
   srcImg: CanvasImageSource,
   originalWidth: number,
   originalHeight: number,
-  searchRadius: number = 6
+  searchRadius: number = 6,
 ): Point[] {
   if (!corners || corners.length !== 4 || originalWidth <= 0 || originalHeight <= 0) {
     return corners;
@@ -313,10 +351,10 @@ export function refineCornersSubPixel(
   const patchDim = Math.min(Math.min(originalWidth, originalHeight), patchRadius * 2 + 1);
   if (patchDim < 3) return corners;
 
-  const patchCanvas = document.createElement("canvas");
+  const patchCanvas = document.createElement('canvas');
   patchCanvas.width = patchDim;
   patchCanvas.height = patchDim;
-  const ctx = patchCanvas.getContext("2d", { willReadFrequently: true });
+  const ctx = patchCanvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return corners;
 
   const refined = corners.map((corner) => {
@@ -354,10 +392,14 @@ export function refineCornersSubPixel(
       const curr = y * patchDim;
       const next = (y + 1) * patchDim;
       for (let x = 1; x < patchDim - 1; x++) {
-        const p00 = patchGray[prev + x - 1], p02 = patchGray[prev + x + 1];
-        const p10 = patchGray[curr + x - 1], p12 = patchGray[curr + x + 1];
-        const p20 = patchGray[next + x - 1], p22 = patchGray[next + x + 1];
-        const p01 = patchGray[prev + x], p21 = patchGray[next + x];
+        const p00 = patchGray[prev + x - 1],
+          p02 = patchGray[prev + x + 1];
+        const p10 = patchGray[curr + x - 1],
+          p12 = patchGray[curr + x + 1];
+        const p20 = patchGray[next + x - 1],
+          p22 = patchGray[next + x + 1];
+        const p01 = patchGray[prev + x],
+          p21 = patchGray[next + x];
 
         ix[curr + x] = -p00 + p02 - 2 * p10 + 2 * p12 - p20 + p22;
         iy[curr + x] = -p00 - 2 * p01 - p02 + p20 + 2 * p21 + p22;
@@ -383,7 +425,9 @@ export function refineCornersSubPixel(
         if (dist > searchRadius) continue;
 
         // حساب موتر الهيكل في نافذة 3x3 حول النقطة
-        let sxx = 0, syy = 0, sxy = 0;
+        let sxx = 0,
+          syy = 0,
+          sxy = 0;
         for (let wy = -1; wy <= 1; wy++) {
           const rowOff = (py + wy) * patchDim;
           for (let wx = -1; wx <= 1; wx++) {
@@ -408,7 +452,8 @@ export function refineCornersSubPixel(
         const det = sxx * syy - sxy * sxy;
         const harris = det - 0.04 * (trace * trace);
 
-        const cornerMetric = minEigen * 0.75 + Math.max(0, harris > 0 ? Math.sqrt(harris) : 0) * 0.25;
+        const cornerMetric =
+          minEigen * 0.75 + Math.max(0, harris > 0 ? Math.sqrt(harris) : 0) * 0.25;
         const combinedScore = cornerMetric * (1 - 0.45 * (dist / searchRadius));
 
         if (combinedScore > maxCornerScore) {
@@ -450,14 +495,14 @@ export function refineCornersSubPixel(
 export function rotateCanvas(
   srcCanvas: HTMLCanvasElement,
   angle: number,
-  destroySrcCanvas: boolean = true
+  destroySrcCanvas: boolean = true,
 ): HTMLCanvasElement {
   const normAngle = ((angle % 360) + 360) % 360;
   if (normAngle === 0 || (normAngle !== 90 && normAngle !== 180 && normAngle !== 270)) {
     return srcCanvas;
   }
 
-  const dst = document.createElement("canvas");
+  const dst = document.createElement('canvas');
   const rad = (normAngle * Math.PI) / 180;
 
   if (normAngle === 90 || normAngle === 270) {
@@ -468,7 +513,7 @@ export function rotateCanvas(
     dst.height = srcCanvas.height;
   }
 
-  const ctx = dst.getContext("2d");
+  const ctx = dst.getContext('2d');
   if (!ctx) return srcCanvas;
 
   ctx.translate(dst.width / 2, dst.height / 2);

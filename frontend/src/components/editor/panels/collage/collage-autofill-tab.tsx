@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
+import { getThumbnailSrc } from '@/lib/canvas/thumbnail-src';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
 
@@ -168,11 +169,17 @@ export function CollageAutofillTab() {
                   className="w-7 h-7 rounded-md border border-border/70 bg-muted/60 overflow-hidden shrink-0"
                 >
                   <img
-                    src={src}
+                    src={getThumbnailSrc(src, 128)}
                     alt={`صورة مستوردة ${index + 1}`}
                     loading="lazy"
+                    decoding="async"
                     draggable={false}
                     className="w-full h-full object-cover"
+                    onError={(event) => {
+                      const image = event.currentTarget;
+                      image.onerror = null;
+                      image.src = src;
+                    }}
                   />
                 </span>
               ))}

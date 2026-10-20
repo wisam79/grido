@@ -485,12 +485,19 @@ export function DocumentScannerDialog({
           <div>
             <Button
               variant="outline"
-              onClick={() => processor.handleTogglePreview(corners, aspect)}
-              disabled={!cornersReady && !isPreviewMode}
+              onClick={() => {
+                void processor.handleTogglePreview(corners, aspect);
+              }}
+              disabled={(!cornersReady && !isPreviewMode) || processor.isPreviewing}
               title={cornersReady ? undefined : 'حدّد أركان المستند أولاً'}
               className="rounded-md h-8 px-3 text-xs font-semibold cursor-pointer gap-1.5 border border-border/60 shadow-2xs hover:bg-accent flex items-center disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
-              {isPreviewMode ? (
+              {processor.isPreviewing ? (
+                <>
+                  <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />
+                  <span>{WAIT_COPY.warping}</span>
+                </>
+              ) : isPreviewMode ? (
                 <>
                   <ArrowCounterClockwise
                     size={14}

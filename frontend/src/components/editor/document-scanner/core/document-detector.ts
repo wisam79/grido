@@ -45,11 +45,12 @@ import {
   addManualDocumentQuad,
 } from './multi-doc-segmenter';
 import { refineCornersSubPixel } from './perspective-warper';
-import { detectDocumentsWithOpenCV } from './opencv-detector';
+import { detectDocumentsWithOpenCV, computeOpenCvScale } from './opencv-detector';
 import { detectDocumentWithMl } from './ml-detector';
 import { fuseDetections, mlGraceBudgetMs } from './detect-fusion';
 import { OVERLAP_TUNING } from './overlap-tuning';
 import { getLoadedOpenCV, loadOpenCV } from '../opencv-loader';
+import { DetectorWorkerClient } from './detector-worker-client';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('document-detector');
@@ -611,25 +612,18 @@ export function runJsDetection(
   return docs;
 }
 
-let detectorWorkerInstance: Worker | null = null;
-let nextWorkerReqId = 1;
+// 🧵 عميل واحد لعامل الكشف: هرم الرؤية النقية + محرك OpenCV (WASM) معاً —
+// فتبقى تهيئة WASM（约13MB） وحسابات الكفاف خارج الخيط الرئيسي.
+const detectorWorkerClient = new DetectorWorkerClient();
 
-function getDetectorWorker(): Worker | null {
-  if (typeof window === 'undefined' || typeof Worker === 'undefined') {
-    return null;
-  }
-  if (!detectorWorkerInstance) {
-    try {
-      detectorWorkerInstance = new Worker(
-        new URL('../../../../workers/document-detector.worker.ts', import.meta.url),
-        { type: 'module' },
-      );
-    } catch (e) {
-      logger.warn('Failed to initialize document detector worker, falling back to sync:', e);
-      detectorWorkerInstance = null;
-    }
-  }
-  return detectorWorkerInstance;
+/** تهيئة OpenCV داخل العامل مسبقاً (بلا كلفة على الخيط الرئيسي). */
+export function warmupDocumentDetectorWorker(): void {
+  detectorWorkerClient.warmup();
+}
+
+/** إنهاء عامل الكشف وتحرير ذاكرة WASM — يُستدعى عند إغلاق الماسح. */
+export function terminateDocumentDetectorWorker(): void {
+  detectorWorkerClient.terminate();
 }
 
 /**
@@ -654,68 +648,85 @@ export async function runJsDetectionAsync(
   offCanvas.width = 0;
   offCanvas.height = 0;
 
-  const worker = getDetectorWorker();
-  if (worker) {
-    try {
-      const requestId = nextWorkerReqId++;
-      // نسخة مخصصة للنقل: postMessage بمخزن منقول يُفرغه (detach)، ومسار
-      // الـ fallback أدناه يعيد استخدام smallImgData الأصلية — نقل الأصلية
-      // مباشرة كان يترك الـ fallback أمام مخزن مفصول (قيم صفرية/استثناء).
-      const transferCopy = smallImgData.data.slice().buffer;
-
-      // مهلة أمان: Worker ميت/معلق يُرفض ليتدخل الـ fallback المتزامن
-      // بدل تعليق الوعد للأبد (طلبان متزامنان يتسابقان على Worker وحيد).
-      const WORKER_TIMEOUT_MS = 15000;
-      return await new Promise<DetectedDocument[]>((resolve, reject) => {
-        const timer = setTimeout(() => {
-          worker.removeEventListener('message', handleMessage);
-          worker.removeEventListener('error', handleError);
-          reject(new Error('Document detector worker timed out'));
-        }, WORKER_TIMEOUT_MS);
-
-        const handleMessage = (e: MessageEvent) => {
-          if (e.data && e.data.requestId === requestId) {
-            clearTimeout(timer);
-            worker.removeEventListener('message', handleMessage);
-            worker.removeEventListener('error', handleError);
-            if (e.data.type === 'success') {
-              resolve(e.data.docs || []);
-            } else {
-              reject(new Error(e.data.error || 'Detection failed'));
-            }
-          }
-        };
-
-        const handleError = (e: ErrorEvent) => {
-          clearTimeout(timer);
-          worker.removeEventListener('message', handleMessage);
-          worker.removeEventListener('error', handleError);
-          reject(e.error || new Error('Worker execution error'));
-        };
-
-        worker.addEventListener('message', handleMessage);
-        worker.addEventListener('error', handleError);
-
-        worker.postMessage(
-          {
-            type: 'detect',
-            requestId,
-            buffer: transferCopy,
-            sw,
-            sh,
-            originalWidth,
-            originalHeight,
-          },
-          [transferCopy],
-        );
-      });
-    } catch (workerErr) {
-      logger.warn('Worker detection failed, falling back to sync JS:', workerErr);
+  // المسار غير المتزامن عبر العامل (هرم الرؤية النقية)
+  try {
+    const response = await detectorWorkerClient.request('detect', smallImgData, {
+      originalWidth,
+      originalHeight,
+    });
+    if (response?.type === 'success') {
+      return response.docs ?? [];
     }
+  } catch (workerErr) {
+    logger.warn('Worker detection failed, falling back to sync JS:', workerErr);
   }
 
   // Fallback متين في حال عدم توفر Web Worker
   return autoDetectAllDocumentCorners(smallImgData, sw, sh, originalWidth, originalHeight);
+}
+
+/**
+ * نتيجة محاولة تشغيل OpenCV داخل العامل.
+ * - ran: نجح العامل (قد لا يجد مستنداً — النتيجة null مشروعة)
+ * - unavailable: لا يوجد Worker في هذه البيئة → نعود للمسار المتزامن
+ * - failed: العامل موجود لكنه لم يجب (بطء/خطأ) → نكمل بهرم JS بلا تحميل WASM
+ */
+type OpenCvWorkerOutcome =
+  | { status: 'ran'; result: DetectionResult | null }
+  | { status: 'unavailable' }
+  | { status: 'failed' };
+
+/** مهلة انتظار OpenCV في العامل — بعدها نكمل بهرم JS (لا نحمّل WASM على الخيط الرئيسي). */
+const OPENCV_WORKER_TIMEOUT_MS = 4000;
+
+/**
+ * تشغيل كشف OpenCV داخل العامل: الخيط_MAIN يرسم الصورة مصغّرة (640px) ويرسل
+ * البكسلات، والعامل ينفّذ محرك WASM بالكامل. النتيجة مطابقة للمسار المتزامن
+ * لأن البكسلات نفسها.
+ */
+async function runOpenCvDetectionInWorker(
+  src: CanvasImageSource,
+  originalWidth: number,
+  originalHeight: number,
+  mode: DetectionMode,
+): Promise<OpenCvWorkerOutcome> {
+  const { sw, sh } = computeOpenCvScale(originalWidth, originalHeight);
+
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = sw;
+  offCanvas.height = sh;
+  const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+  if (!offCtx) return { status: 'unavailable' };
+
+  offCtx.drawImage(src, 0, 0, sw, sh);
+  const imgData = offCtx.getImageData(0, 0, sw, sh);
+  offCanvas.width = 0;
+  offCanvas.height = 0;
+
+  // العامل غير متاح في هذه البيئة (بلا Worker) → المسار المتزامن.
+  if (!detectorWorkerClient.isAvailable()) {
+    return { status: 'unavailable' };
+  }
+
+  const request = detectorWorkerClient
+    .request('opencv', imgData, { originalWidth, originalHeight, mode })
+    .then((response) => {
+      if (!response) return { status: 'failed' as const };
+      if (response.type === 'opencv-success') {
+        return { status: 'ran' as const, result: response.result ?? null };
+      }
+      return { status: 'failed' as const };
+    })
+    .catch((error) => {
+      logger.warn('OpenCV worker detection failed:', error);
+      return { status: 'failed' as const };
+    });
+
+  const timeout = new Promise<{ status: 'failed' }>((resolve) => {
+    setTimeout(() => resolve({ status: 'failed' }), OPENCV_WORKER_TIMEOUT_MS);
+  });
+
+  return Promise.race([request, timeout]);
 }
 
 /**
@@ -729,35 +740,47 @@ async function runClassicalDetection(
   originalHeight: number,
   mode: DetectionMode = 'single',
 ): Promise<DetectionResult> {
-  // 🌟 محرك OpenCV WASM — انتظار قصير مشترك (1200ms) إن كان التحميل
-  // جارياً (الحالة الشائعة عند فتح الماسح بعد الإقلاع مباشرة)، بدل تخطيه
-  // كلياً والسقوط لـ JS. الـ loadOpenCV م_cached/in-flight فالانتظار رخيص.
-  const cvReady =
-    getLoadedOpenCV() ??
-    (await Promise.race([
-      loadOpenCV(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
-    ]));
+  // 🌟 محرك OpenCV WASM — المفضّل داخل العامل (الخيط_MAIN يبقى خفيفاً).
   let cvResult: DetectionResult | null = null;
-  if (cvReady) {
-    try {
-      cvResult = await detectDocumentsWithOpenCV(src, originalWidth, originalHeight, mode);
-      if (cvResult && cvResult.documents && cvResult.documents.length > 0) {
-        if (mode !== 'multi' || cvResult.documents.length >= 2) {
-          // فحص أمان: إذا كان المستند المكتشف في وضع المفرد يغطي مساحة صغيرة فقط (< 40% من مساحة الصورة)
-          // ولا يمثل بطاقة هوية، فقد يكون مجرد كتلة نصوص داخلية (مثل حقل نصوص بطاقة الهوية).
-          // في هذه الحالة نمرر المعالجة لهرم الرؤية النقية JS للتأكد من عدم وجود المستند الكامل الأكبر.
-          const topDoc = cvResult.documents[0];
-          const areaRatio = quadAreaRatio(topDoc.corners, originalWidth, originalHeight);
-          const isSuspectSubBlock =
-            mode === 'single' && areaRatio < 0.4 && topDoc.aspectType !== 'id_card';
-          if (!isSuspectSubBlock) {
-            return cvResult;
-          }
-        }
+  let cvOutcome: OpenCvWorkerOutcome = { status: 'failed' };
+  try {
+    cvOutcome = await runOpenCvDetectionInWorker(src, originalWidth, originalHeight, mode);
+  } catch (error) {
+    logger.warn('OpenCV worker path failed:', error);
+  }
+
+  if (cvOutcome.status === 'unavailable') {
+    // ⚠️ لا يوجد Worker في هذه البيئة — نحمل OpenCV على الخيط الرئيسي
+    // (سلوك سابق) مع انتظار قصير مشترك (1200ms) كما كان.
+    const cvReady =
+      getLoadedOpenCV() ??
+      (await Promise.race([
+        loadOpenCV(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+      ]));
+    if (cvReady) {
+      try {
+        cvResult = await detectDocumentsWithOpenCV(src, originalWidth, originalHeight, mode);
+      } catch {
+        // Fall through to pure JS detection
       }
-    } catch {
-      // Fall through to pure JS detection
+    }
+  } else if (cvOutcome.status === 'ran') {
+    cvResult = cvOutcome.result;
+  }
+
+  if (cvResult && cvResult.documents && cvResult.documents.length > 0) {
+    if (mode !== 'multi' || cvResult.documents.length >= 2) {
+      // فحص أمان: إذا كان المستند المكتشف في وضع المفرد يغطي مساحة صغيرة فقط (< 40% من مساحة الصورة)
+      // ولا يمثل بطاقة هوية، فقد يكون مجرد كتلة نصوص داخلية (مثل حقل نصوص بطاقة الهوية).
+      // في هذه الحالة نمرر المعالجة لهرم الرؤية النقية JS للتأكد من عدم وجود المستند الكامل الأكبر.
+      const topDoc = cvResult.documents[0];
+      const areaRatio = quadAreaRatio(topDoc.corners, originalWidth, originalHeight);
+      const isSuspectSubBlock =
+        mode === 'single' && areaRatio < 0.4 && topDoc.aspectType !== 'id_card';
+      if (!isSuspectSubBlock) {
+        return cvResult;
+      }
     }
   }
 

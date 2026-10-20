@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import {
   Point,
   DetectedDocument,
@@ -12,8 +12,10 @@ import {
   addManualDocumentQuad,
   splitQuadIntoIdCards,
   warmupMlDetector,
-} from "../core";
-import { formatSolvableError } from "@/lib/ui/ui-compliance";
+  warmupDocumentDetectorWorker,
+  terminateDocumentDetectorWorker,
+} from '../core';
+import { formatSolvableError } from '@/lib/ui/ui-compliance';
 
 export interface ScannerDetectionApi {
   detectedDocs: DetectedDocument[];
@@ -35,26 +37,26 @@ export interface ScannerDetectionApi {
     cornersSetter: (c: Point[]) => void,
     aspectSetter: (a: DocumentAspectType) => void,
     rotationSetter: (r: number) => void,
-    previewResetter: () => void
+    previewResetter: () => void,
   ) => void;
   toggleDocSelection: (id: string) => void;
   selectAllDocs: () => void;
   handleAddManualDocument: (
     cornersSetter: (c: Point[]) => void,
     aspectSetter: (a: DocumentAspectType) => void,
-    previewResetter: () => void
+    previewResetter: () => void,
   ) => void;
   handleDeleteDocument: (
     id: string,
     cornersSetter: (c: Point[]) => void,
     aspectSetter: (a: DocumentAspectType) => void,
-    previewResetter: () => void
+    previewResetter: () => void,
   ) => void;
   handleSplitIdCards: (
     corners: Point[],
     cornersSetter: (c: Point[]) => void,
     aspectSetter: (a: DocumentAspectType) => void,
-    previewResetter: () => void
+    previewResetter: () => void,
   ) => void;
   handleAutoDetect: (mode?: DetectionMode) => void;
   setDetectionCallbacks: (cbs: DetectionCallbacks) => void;
@@ -71,11 +73,8 @@ export interface DetectionCallbacks {
  * 🛡️ حارس العدد التنازلي (reqId) يمنع استدعاءات الكشف المتقاطعة —
  * نتائج الكشف القديمة تُتجاهل. كانت هذه الكتلة مضمّنة في Dialog.
  */
-export function useScannerDetection(
-  open: boolean,
-  imageSrc: string
-): ScannerDetectionApi {
-  const [detectionMode, setDetectionMode] = useState<DetectionMode>("single");
+export function useScannerDetection(open: boolean, imageSrc: string): ScannerDetectionApi {
+  const [detectionMode, setDetectionMode] = useState<DetectionMode>('single');
   const [detectedDocs, setDetectedDocs] = useState<DetectedDocument[]>([]);
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const [activeDocIndex, setActiveDocIndex] = useState<number>(0);
@@ -92,66 +91,63 @@ export function useScannerDetection(
     cbsRef.current = cbs;
   }, []);
 
-  const runDetection = useCallback(
-    async (notify: boolean, mode: DetectionMode) => {
-      const img = imgRef.current;
-      if (!img) return;
-      const reqId = ++activeReqIdRef.current;
-      setIsDetecting(true);
-      try {
-        const result = await detectDocumentAuto(img, img.naturalWidth, img.naturalHeight, mode);
-        if (reqId !== activeReqIdRef.current) return;
-        if (result.documents && result.documents.length > 0) {
-          setDetectedDocs(result.documents);
-          setSelectedDocIds(result.documents.map((d) => d.id));
-          setActiveDocIndex(0);
-          const first = result.documents[0];
-          cbsRef.current.onCorners(first.corners);
-          if (first.aspectType !== "free") {
-            cbsRef.current.onAspect(first.aspectType);
-          }
+  const runDetection = useCallback(async (notify: boolean, mode: DetectionMode) => {
+    const img = imgRef.current;
+    if (!img) return;
+    const reqId = ++activeReqIdRef.current;
+    setIsDetecting(true);
+    try {
+      const result = await detectDocumentAuto(img, img.naturalWidth, img.naturalHeight, mode);
+      if (reqId !== activeReqIdRef.current) return;
+      if (result.documents && result.documents.length > 0) {
+        setDetectedDocs(result.documents);
+        setSelectedDocIds(result.documents.map((d) => d.id));
+        setActiveDocIndex(0);
+        const first = result.documents[0];
+        cbsRef.current.onCorners(first.corners);
+        if (first.aspectType !== 'free') {
+          cbsRef.current.onAspect(first.aspectType);
+        }
 
-          if (notify) {
-            if (result.documents.length > 1) {
-              toast.success(`تم اكتشاف ${result.documents.length} مستندات في الصورة بنجاح!`);
-            } else if (result.method === "scanic") {
-              toast.success(`كشف فائق بالذكاء الاصطناعي (${Math.round(result.confidence * 100)}%)`);
-            } else if (result.method === "opencv") {
-              toast.success(`كشف تلقائي دقيق (${Math.round(result.confidence * 100)}%)`);
-            } else if (result.method === "js") {
-              toast.success("كشف ذكي للمستند/البطاقة");
-            } else {
-              toast.warning("لم يُكتشف المستند بدقة — اضبط الأركان يدوياً");
-            }
+        if (notify) {
+          if (result.documents.length > 1) {
+            toast.success(`تم اكتشاف ${result.documents.length} مستندات في الصورة بنجاح!`);
+          } else if (result.method === 'scanic') {
+            toast.success(`كشف فائق بالذكاء الاصطناعي (${Math.round(result.confidence * 100)}%)`);
+          } else if (result.method === 'opencv') {
+            toast.success(`كشف تلقائي دقيق (${Math.round(result.confidence * 100)}%)`);
+          } else if (result.method === 'js') {
+            toast.success('كشف ذكي للمستند/البطاقة');
+          } else {
+            toast.warning('لم يُكتشف المستند بدقة — اضبط الأركان يدوياً');
           }
-        } else if (result.corners) {
-          cbsRef.current.onCorners(result.corners);
-          const inferred = inferSmartDocumentAspect(result.corners);
-          if (inferred !== "free") {
-            cbsRef.current.onAspect(inferred);
-          }
-          if (notify) toast.success("تم كشف المستند");
-        } else {
-          if (notify) toast.warning("لم يُنتج الكشف أي أركان — استخدم التعديل اليدوي");
         }
-      } catch {
-        if (reqId === activeReqIdRef.current && notify) {
-          toast.error(
-            formatSolvableError({
-              reason: "تعذر إتمام الكشف التلقائي",
-              fix: "تأكد من وضوح الصورة ثم اضغط كشف تلقائي مجدداً أو اضبط الأركان يدوياً",
-              code: "SCN-DETECT-01",
-            })
-          );
+      } else if (result.corners) {
+        cbsRef.current.onCorners(result.corners);
+        const inferred = inferSmartDocumentAspect(result.corners);
+        if (inferred !== 'free') {
+          cbsRef.current.onAspect(inferred);
         }
-      } finally {
-        if (reqId === activeReqIdRef.current) {
-          setIsDetecting(false);
-        }
+        if (notify) toast.success('تم كشف المستند');
+      } else {
+        if (notify) toast.warning('لم يُنتج الكشف أي أركان — استخدم التعديل اليدوي');
       }
-    },
-    []
-  );
+    } catch {
+      if (reqId === activeReqIdRef.current && notify) {
+        toast.error(
+          formatSolvableError({
+            reason: 'تعذر إتمام الكشف التلقائي',
+            fix: 'تأكد من وضوح الصورة ثم اضغط كشف تلقائي مجدداً أو اضبط الأركان يدوياً',
+            code: 'SCN-DETECT-01',
+          }),
+        );
+      }
+    } finally {
+      if (reqId === activeReqIdRef.current) {
+        setIsDetecting(false);
+      }
+    }
+  }, []);
 
   const selectDocument = useCallback(
     (
@@ -159,22 +155,26 @@ export function useScannerDetection(
       cornersSetter: (c: Point[]) => void,
       aspectSetter: (a: DocumentAspectType) => void,
       rotationSetter: (r: number) => void,
-      previewResetter: () => void
+      previewResetter: () => void,
     ) => {
       if (index < 0 || index >= detectedDocs.length) return;
       setActiveDocIndex(index);
       const doc = detectedDocs[index];
       cornersSetter(doc.corners);
-      aspectSetter(doc.aspectType || "free");
+      aspectSetter(doc.aspectType || 'free');
       rotationSetter(doc.rotation || 0);
       previewResetter();
     },
-    [detectedDocs]
+    [detectedDocs],
   );
 
   const toggleDocSelection = useCallback((id: string) => {
     setSelectedDocIds((prev) =>
-      prev.includes(id) ? (prev.length > 1 ? prev.filter((d) => d !== id) : [...prev, id]) : [...prev, id]
+      prev.includes(id)
+        ? prev.length > 1
+          ? prev.filter((d) => d !== id)
+          : [...prev, id]
+        : [...prev, id],
     );
   }, []);
 
@@ -192,10 +192,10 @@ export function useScannerDetection(
     (
       cornersSetter: (c: Point[]) => void,
       aspectSetter: (a: DocumentAspectType) => void,
-      previewResetter: () => void
+      previewResetter: () => void,
     ) => {
       if (!imgSize.w || !imgSize.h) return;
-      setDetectionMode("multi");
+      setDetectionMode('multi');
       const newDoc = addManualDocumentQuad(detectedDocs, imgSize.w, imgSize.h);
       const nextDocs = [...detectedDocs, newDoc];
       setDetectedDocs(nextDocs);
@@ -206,7 +206,7 @@ export function useScannerDetection(
       previewResetter();
       toast.success(`تمت إضافة ${newDoc.label} — اضبط حدوده بالسحب أو الأسهم`);
     },
-    [detectedDocs, imgSize]
+    [detectedDocs, imgSize],
   );
 
   const handleDeleteDocument = useCallback(
@@ -214,10 +214,10 @@ export function useScannerDetection(
       id: string,
       cornersSetter: (c: Point[]) => void,
       aspectSetter: (a: DocumentAspectType) => void,
-      previewResetter: () => void
+      previewResetter: () => void,
     ) => {
       if (detectedDocs.length <= 1) {
-        toast.warning("يجب الإبقاء على مستند واحد على الأقل");
+        toast.warning('يجب الإبقاء على مستند واحد على الأقل');
         return;
       }
       const deletedIdx = detectedDocs.findIndex((d) => d.id === id);
@@ -247,17 +247,17 @@ export function useScannerDetection(
           deletedIdx === activeDocIndex
             ? 0
             : deletedIdx < activeDocIndex
-            ? activeDocIndex - 1
-            : activeDocIndex
-        )
+              ? activeDocIndex - 1
+              : activeDocIndex,
+        ),
       );
       setActiveDocIndex(newActiveIdx);
       cornersSetter(nextDocs[newActiveIdx].corners);
-      aspectSetter(nextDocs[newActiveIdx].aspectType || "free");
+      aspectSetter(nextDocs[newActiveIdx].aspectType || 'free');
       previewResetter();
-      toast.info("تم حذف المستند");
+      toast.info('تم حذف المستند');
     },
-    [detectedDocs, selectedDocIds, activeDocIndex]
+    [detectedDocs, selectedDocIds, activeDocIndex],
   );
 
   const handleSplitIdCards = useCallback(
@@ -265,20 +265,20 @@ export function useScannerDetection(
       corners: Point[],
       cornersSetter: (c: Point[]) => void,
       aspectSetter: (a: DocumentAspectType) => void,
-      previewResetter: () => void
+      previewResetter: () => void,
     ) => {
       if (corners.length !== 4) {
         toast.warning(
           formatSolvableError({
-            reason: "تعذر التقسيم — الأركان غير مكتملة",
-            fix: "اضبط النقاط الأربع على المستند أولاً ثم أعد التقسيم",
-            code: "SCN-SPLIT-01",
-          })
+            reason: 'تعذر التقسيم — الأركان غير مكتملة',
+            fix: 'اضبط النقاط الأربع على المستند أولاً ثم أعد التقسيم',
+            code: 'SCN-SPLIT-01',
+          }),
         );
         return;
       }
-      setDetectionMode("multi");
-      const cards = splitQuadIntoIdCards(corners, "vertical");
+      setDetectionMode('multi');
+      const cards = splitQuadIntoIdCards(corners, 'vertical');
       if (cards.length === 2) {
         // دمج البطاقتين في القائمة الموجودة بدل استبدال المستندات كلها،
         // والنشط ينتقل لأول بطاقة جديدة (index = طول البقية).
@@ -287,12 +287,12 @@ export function useScannerDetection(
         setSelectedDocIds(cards.map((c) => c.id));
         setActiveDocIndex(others.length);
         cornersSetter(cards[0].corners);
-        aspectSetter("id_card");
+        aspectSetter('id_card');
         previewResetter();
-        toast.success("تم تقسيم المستند إلى بطاقتي هوية (وجه أمامي وخلفي)");
+        toast.success('تم تقسيم المستند إلى بطاقتي هوية (وجه أمامي وخلفي)');
       }
     },
-    [detectedDocs]
+    [detectedDocs],
   );
 
   const handleAutoDetect = useCallback(
@@ -303,7 +303,7 @@ export function useScannerDetection(
       }
       runDetection(true, targetMode);
     },
-    [detectionMode, runDetection]
+    [detectionMode, runDetection],
   );
 
   // 🔒 تنظيف الحالات عند الإغلاق وإلغاء أي كشف جارٍ (Fluent 2 Wait UX Invariant)
@@ -315,8 +315,10 @@ export function useScannerDetection(
       setDetectedDocs([]);
       setSelectedDocIds([]);
       setActiveDocIndex(0);
-      setDetectionMode("single");
+      setDetectionMode('single');
       imgRef.current = null;
+      // 🧹 إنهاء عامل الكشف وتحرير ذاكرة OpenCV (WASM) مع إغلاق النافذة
+      terminateDocumentDetectorWorker();
     }
   }, [open]);
 
@@ -325,13 +327,18 @@ export function useScannerDetection(
     if (!open || !imageSrc) return;
 
     // تسخين نموذج الذكاء الاصطناعي في الخلفية عند الخمول — لا ينافس الكشف
-    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
-    if (typeof ric === "function") ric.call(window, () => void warmupMlDetector());
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void })
+      .requestIdleCallback;
+    if (typeof ric === 'function') ric.call(window, () => void warmupMlDetector());
     else setTimeout(() => void warmupMlDetector(), 500);
+
+    // ⚡ تهيئة محرك OpenCV داخل العامل (خارج الخيط الرئيسي) — يتقدّم على أول
+    // كشف فلا نتحمّل تهيئة WASM في أول طلب ولا على الخيط الرئيسي إطلاقاً.
+    warmupDocumentDetectorWorker();
 
     let isCancelled = false;
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    img.crossOrigin = 'anonymous';
 
     img.onload = () => {
       if (isCancelled) return;
@@ -339,18 +346,18 @@ export function useScannerDetection(
       setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
 
       cbsRef.current.onCorners(defaultInsetCorners(img.naturalWidth, img.naturalHeight));
-      setDetectionMode("single");
-      runDetection(false, "single");
+      setDetectionMode('single');
+      runDetection(false, 'single');
     };
 
     img.onerror = () => {
       if (!isCancelled) {
         toast.error(
           formatSolvableError({
-            reason: "فشل تحميل صورة المستند للمسح",
-            fix: "أعد إدراج الصورة بصيغة مدعومة (PNG/JPG) ثم أعد فتح الماسح",
-            code: "SCN-LOAD-01",
-          })
+            reason: 'فشل تحميل صورة المستند للمسح',
+            fix: 'أعد إدراج الصورة بصيغة مدعومة (PNG/JPG) ثم أعد فتح الماسح',
+            code: 'SCN-LOAD-01',
+          }),
         );
       }
     };
@@ -366,7 +373,7 @@ export function useScannerDetection(
       // تحرير الصورة المفكوكة من الذاكرة دون revoke (الـ blob URL ملك المنادي
       // وقد يُعاد استخدامه — التفريغ عبر src="" يكفي لتحرير البتماب).
       try {
-        img.src = "";
+        img.src = '';
       } catch {
         // ignore
       }
