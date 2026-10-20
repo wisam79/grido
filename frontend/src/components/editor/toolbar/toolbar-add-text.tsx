@@ -27,71 +27,57 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import type { TextPresetType } from '@/lib/templates';
+import {
+  TEXT_PRESET_CATALOG,
+  type TextPresetMenuGroup,
+  type TextPresetType,
+} from '@/lib/templates';
 
-interface TextPresetDef {
-  id: TextPresetType;
-  title: string;
-  /** لون رمادي دلالي فاخر (نجمة، ختم) — اختياري */
-  tone?: string;
-  Icon: Icon;
-}
+// أيقونات القائمة عرض فقط — الاسم/الوصف/التجميع تأتي من الكتالوج الموحّد
+const PRESET_ICONS: Record<TextPresetType, Icon> = {
+  heading: TextHOne,
+  subheading: TextHTwo,
+  body: FileText,
+  badge: Tag,
+  watermark: Copyright,
+  'studio-date': CalendarBlank,
+  'gold-luxury': Crown,
+  'neon-glow': Lightning,
+  'stamp-circle': Stamp,
+  '3d-title': Cube,
+  'outline-modern': FrameCorners,
+  'photographer-tag': Camera,
+  'caption-card': Note,
+  congrats: Crown,
+  'sale-offer': Tag,
+  certificate: FileText,
+  'special-price': Tag,
+};
 
-const TEXT_PRESET_GROUPS: { header: string; items: TextPresetDef[] }[] = [
-  {
-    header: 'قياسية',
-    items: [
-      { id: 'heading', title: 'عنوان رئيسي', Icon: TextHOne },
-      { id: 'subheading', title: 'عنوان فرعي', Icon: TextHTwo },
-      { id: 'body', title: 'نص عادي', Icon: FileText },
-    ],
-  },
-  {
-    header: 'توثيق',
-    items: [
-      { id: 'studio-date', title: 'تاريخ اليوم', Icon: CalendarBlank },
-      { id: 'photographer-tag', title: 'توقيع المصور', Icon: Camera },
-      { id: 'badge', title: 'شارة مميزة', Icon: Tag },
-      { id: 'watermark', title: 'علامة مائية', Icon: Copyright },
-    ],
-  },
-  {
-    header: 'تأثيرات',
-    items: [
-      {
-        id: 'gold-luxury',
-        title: 'ذهب ملكي',
-        tone: 'text-amber-600 dark:text-amber-400',
-        Icon: Crown,
-      },
-      {
-        id: 'neon-glow',
-        title: 'نيون متوهج',
-        tone: 'text-cyan-600 dark:text-cyan-400',
-        Icon: Lightning,
-      },
-      { id: 'stamp-circle', title: 'ختم مقوس', tone: 'text-destructive', Icon: Stamp },
-      {
-        id: '3d-title',
-        title: 'عنوان مجسّم',
-        tone: 'text-indigo-600 dark:text-indigo-400',
-        Icon: Cube,
-      },
-      {
-        id: 'outline-modern',
-        title: 'نص مفرغ',
-        tone: 'text-violet-600 dark:text-violet-400',
-        Icon: FrameCorners,
-      },
-      {
-        id: 'caption-card',
-        title: 'بطاقة ملاحظة',
-        tone: 'text-teal-600 dark:text-teal-400',
-        Icon: Note,
-      },
-    ],
-  },
+const PRESET_TONES: Partial<Record<TextPresetType, string>> = {
+  'gold-luxury': 'text-amber-600 dark:text-amber-400',
+  'neon-glow': 'text-cyan-600 dark:text-cyan-400',
+  'stamp-circle': 'text-destructive',
+  '3d-title': 'text-indigo-600 dark:text-indigo-400',
+  'outline-modern': 'text-violet-600 dark:text-violet-400',
+  'caption-card': 'text-teal-600 dark:text-teal-400',
+};
+
+const MENU_GROUP_LABELS: Array<{ id: TextPresetMenuGroup; header: string }> = [
+  { id: 'standard', header: 'قياسية' },
+  { id: 'documentation', header: 'توثيق' },
+  { id: 'effects', header: 'تأثيرات' },
 ];
+
+const TEXT_PRESET_GROUPS = MENU_GROUP_LABELS.map((group) => ({
+  header: group.header,
+  items: TEXT_PRESET_CATALOG.filter((preset) => preset.menuGroup === group.id).map((preset) => ({
+    id: preset.id,
+    title: preset.label,
+    tone: PRESET_TONES[preset.id],
+    Icon: PRESET_ICONS[preset.id],
+  })),
+}));
 
 /** قائمة النصوص الجاهزة — أيقونة سطرية + اسم فقط (بلا صناديق ولا وصف مكرر) */
 export const AddTextDropdown = React.memo(function AddTextDropdown() {

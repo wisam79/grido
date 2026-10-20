@@ -65,7 +65,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
   }, [element.id, element.flipY, onUpdate]);
 
   return (
-    <div className="space-y-3 font-cairo">
+    <div className="space-y-2.5 font-cairo">
       {/* بطاقة 1: الموضع والمحاذاة السريعة */}
       <FluentSection
         icon={<ArrowsOutCardinal className="w-4 h-4 text-primary" weight="duotone" />}

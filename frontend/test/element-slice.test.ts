@@ -1,13 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useEditorStore } from '../src/lib/editor-store';
 import type { TextElement, ShapeElement } from '../src/lib/store/types';
-import {
-  VECTOR_SHAPES,
-  SHAPE_PATH_TRIANGLE,
-  SHAPE_PATH_HEART,
-  SHAPE_PATH_DIAMOND,
-  getShapePath,
-} from '../src/lib/io/svg-paths';
+import { SHAPE_PATH_TRIANGLE, SHAPE_PATH_HEART, SHAPE_PATH_DIAMOND } from '../src/lib/io/svg-paths';
+import { SHAPE_CATALOG, QUICK_SHAPES, getShapeByPath } from '../src/lib/io/shape-catalog';
 
 describe('ElementSlice Unit Tests', () => {
   beforeEach(() => {
@@ -33,8 +28,10 @@ describe('ElementSlice Unit Tests', () => {
   });
 
   it('adds vector path shapes (triangle, heart, diamond) with svgPath and viewBox correctly', () => {
-    expect(VECTOR_SHAPES.length).toBeGreaterThanOrEqual(6);
-    expect(getShapePath('triangle')).toBe(SHAPE_PATH_TRIANGLE);
+    // الكتالوج الموحّد هو مرجع القوائم — لا قوائم أشكال ثانية في الواجهات
+    expect(SHAPE_CATALOG.length).toBeGreaterThanOrEqual(30);
+    expect(QUICK_SHAPES.length).toBeGreaterThanOrEqual(12);
+    expect(getShapeByPath(SHAPE_PATH_TRIANGLE)?.id).toBe('triangle');
 
     useEditorStore.getState().addShapeElement('path', SHAPE_PATH_TRIANGLE);
     let el = useEditorStore.getState().elements[0] as ShapeElement;

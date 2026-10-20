@@ -76,6 +76,21 @@ $$\text{Pixel Position} = \text{Normalized Coordinate} \times \text{Canvas Dimen
 - **Frame-Batched Wheel Input:** Wheel deltas are normalized for line/page modes, accumulated, and applied once per `requestAnimationFrame`. Plain wheel/trackpad input pans both axes; Ctrl/Meta wheel zooms exponentially around the pointer.
 - **Multi-Layer Separation (`KonvaOverlayLayer`):** Separates the `<EditorTransformer>` and marquee selection rectangle (`marquee-rect`) into an isolated top `<Layer name="overlay-tools-layer">`. Content elements (`KonvaSingleLayer`) remain untouched and do not redraw during marquee selections or transformer handle interactions.
 
+### Shapes: One Catalog, Native Konva Primitives
+- **Single catalog (`lib/io/shape-catalog.ts`):** every shape is defined once (`id`, Arabic label, Konva `kind` or 24×24 SVG `path`, category, optional insertion aspect/defaults). The toolbar dropdown, the freeform quick grid, the properties header glyph (`components/editor/shapes/shape-glyph.tsx`), the Konva node, and the manual export all read from it — there is no second shape list.
+- **Native Konva kinds:** `rect` (`cornerRadius` accepts a number or `[tl,tr,br,bl]`), `ellipse`, `line`, `arrow` (`pointerAtBeginning` for double heads), `star` (`starPoints` + `starInnerRatio`), `polygon` (`sides`), `ring`/`arc` (`innerRadius`/`outerRadius` + `arcAngle`, rotation −90 starts at 12 o'clock), `wedge` (`arcAngle`), and `path` (SVG).
+- **Dash & cap:** `strokeStyle` (solid/dashed/dotted) resolves through `lib/canvas/shape-pattern.ts` — `dash` scales with stroke width, and dotted uses `[0.001, w*2]` with `lineCap: round` (the documented Konva dot trick).
+- **Image fill:** `fillType: 'image'` renders through Konva `fillPatternImage` with mandatory `fillPriority: 'pattern'` (the default priority is color, which would hide the pattern). `computeShapePattern` derives `repeat/scale/rotation/offset` for `stretch | cover | contain | tile`; `shapePatternMatrix` returns the equivalent `[a,b,c,d,e,f]` for the manual export via `CanvasPattern.setTransform`. Path nodes draw in a scaled 24×24 space, so `toLocalPattern` compensates that internal scale — preview and export stay pixel-identical.
+- **Persistence:** any new shape field must be declared in `lib/schema.ts`; zod silently strips undeclared keys on save.
+
+### Text: One Render State, Shared Wrapping, Any Fill
+- **Single render state (`lib/canvas/text-helpers.ts`):** `resolveTextRenderState` applies Arabic-Indic numerals, letter-spacing handling for Arabic (spacing becomes spaces instead of breaking joins), and Latin case transforms once for both the Konva preview and the manual exporter. Do not re-implement these transforms in either path.
+- **Single wrap algorithm (`lib/canvas/text-layout.ts`):** `wrapTextLines` implements `word | char | none` and is shared by preview and export. `wrap` is persisted in `schema.ts`.
+- **Single fill resolver (`lib/canvas/fill-paint.ts`):** `buildGradientFill`, `resolveElementFill`, `createElementPattern`, and `createElementGlyphPainter` serve straight text, curved text, shapes, and the fallback exporter. Pattern math stays in `shape-pattern.ts`; there is no second copy of the fit/rotation/offset equations.
+- **Konva fill priority:** straight text image fills use `fillPatternImage` and must set `fillPriority: 'pattern'`; solid/gradient paths set `'color'`/`'linear-gradient'`/`'radial-gradient'` explicitly so a stale pattern priority cannot hide a later color change.
+- **Curved fills:** each glyph is painted with the element-space fill. Gradients are mapped into glyph-local space; image patterns are corrected with `inverseGlyphTransform · elementMatrix` so the texture does not rotate glyph-by-glyph. This assumes rigid glyph transforms (translation + rotation).
+- **One preset catalog (`lib/templates/text-presets.ts`):** `TEXT_PRESETS` is the only source for labels, descriptions, categories, menu groups, sample text, preview color, and line height. `TEXT_PRESET_CATALOG` feeds the add-text menu, freeform quick presets, and the text style tab.
+
 ---
 
 ## 3. Zustand Editor Store & History Stack

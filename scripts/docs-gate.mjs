@@ -434,9 +434,9 @@ const CODE_ASSERTIONS = [
     mustContain: ['strings.HasPrefix(filename, "print_")', 'utils.CreateAtomic('],
   },
   {
-    label: 'BUG-CRIT-03 — فحص data:image/ قبل SaveImageFromBase64',
-    file: 'frontend/src/components/editor/properties/panels/image-properties.tsx',
-    mustContain: ["b64.startsWith('data:image/')"],
+    label: 'BUG-CRIT-03 — فحص data:image/ قبل SaveImageFromBase64 (في المصدر الوحيد لاختيار الصور)',
+    file: 'frontend/src/lib/io/file-dialog-utils.ts',
+    mustContain: ["picked.startsWith('data:image/')"],
   },
   {
     label: 'BUG-MED-03 — تجميع أوامر Canvas 2D لخطوط القص بدل stroke لكل خط',

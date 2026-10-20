@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
-import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { pickLocalImage } from '@/lib/io/file-dialog-utils';
 import { uploadMediaBlob } from '@/lib/io/media-upload';
 import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { useBgRemoval } from '@/hooks/use-bg-removal';
@@ -67,7 +67,7 @@ export function ImageAdjustProperties({
   const currentOpacity = Math.round((element.opacity ?? 1) * 100);
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-200 font-cairo">
+    <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
       {/* بطاقة 1: تعديل الألوان */}
       <FluentSection
         icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
@@ -287,7 +287,7 @@ export function ImageFiltersSection({ element, onUpdate }: ImagePropertiesProps)
  */
 export function ImageEffectsProperties({ element, onUpdate }: ImagePropertiesProps) {
   return (
-    <div className="space-y-3 font-cairo animate-in fade-in duration-200">
+    <div className="space-y-2.5 font-cairo animate-in fade-in duration-150">
       {/* 🎴 بطاقة 1: المرشحات */}
       <ImageFiltersSection element={element} onUpdate={onUpdate} />
 
@@ -388,11 +388,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
     if (isFileDialogOpen) return;
     setIsFileDialogOpen(true);
     try {
-      const [b64] = await openImageFileDialog(false);
-      if (b64) {
-        // OpenFile قد يعيد مساراً محفوظاً مسبقاً (/local-image/...) وليس بيانات
-        // base64 — SaveImageFromBase64 على مسار عادي يفجّر استثناء فك التشفير في Go
-        const finalPath = b64.startsWith('data:image/') ? await SaveImageFromBase64(b64) : b64;
+      const finalPath = await pickLocalImage();
+      if (finalPath) {
         onUpdate(element.id, { imageSrc: finalPath });
         useEditorStore.getState().pushHistory();
       }
@@ -405,7 +402,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
   };
 
   return (
-    <div className="space-y-2.5 font-cairo animate-in fade-in duration-200">
+    <div className="space-y-2.5 font-cairo animate-in fade-in duration-150">
       {/* 🎴 بطاقة 1: شبكة أدوات الذكاء الاصطناعي الفاخرة (2x2 Grid) */}
       <FluentSection
         icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}

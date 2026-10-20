@@ -59,19 +59,32 @@ export const CanvasElementSchema = z.object({
   curveDirection: z.enum(['up', 'down']).optional(),
   arabicNumerals: z.boolean().optional(),
 
-  shape: z.enum(['rect', 'ellipse', 'line', 'star', 'path', 'polygon', 'arrow', 'ring']).optional(),
+  shape: z
+    .enum(['rect', 'ellipse', 'line', 'star', 'path', 'polygon', 'arrow', 'ring', 'arc', 'wedge'])
+    .optional(),
   fill: z.string().optional(),
   stroke: z.string().optional(),
   strokeWidth: z.number().optional(),
   radius: z.number().optional(),
+  // استدارة الزوايا المستقلة [أعلى-يسار، أعلى-يمين، أسفل-يمين، أسفل-يسار]
+  radiusCorners: z.array(z.number()).length(4).optional(),
   sides: z.number().optional(),
   pointerLength: z.number().optional(),
   pointerWidth: z.number().optional(),
+  pointerAtBeginning: z.boolean().optional(),
   innerRadius: z.number().optional(),
+  // زاوية القوس/القطاع (arc/wedge) بالدرجات
+  arcAngle: z.number().optional(),
+  // رؤوس النجمة وعمقها — كانتا غير معلنتين فيُسقطهما zod عند الحفظ (نفس صنف Bug#3)
+  starPoints: z.number().optional(),
+  starInnerRatio: z.number().optional(),
+  // نمط الحد وطرفه — خصائص Konva أصلية (dash + lineCap)
+  strokeStyle: z.enum(['solid', 'dashed', 'dotted']).optional(),
+  lineCap: z.enum(['butt', 'round', 'square']).optional(),
   maskShape: z.enum(['none', 'circle', 'heart', 'star']).optional(),
 
   // gradient properties
-  fillType: z.enum(['solid', 'linear', 'radial']).optional(),
+  fillType: z.enum(['solid', 'linear', 'radial', 'image']).optional(),
   fillLinearGradientStartPoint: z.object({ x: z.number(), y: z.number() }).optional(),
   fillLinearGradientEndPoint: z.object({ x: z.number(), y: z.number() }).optional(),
   fillLinearGradientColorStops: z.array(z.union([z.number(), z.string()])).optional(),
@@ -80,6 +93,14 @@ export const CanvasElementSchema = z.object({
   fillRadialGradientEndPoint: z.object({ x: z.number(), y: z.number() }).optional(),
   fillRadialGradientEndRadius: z.number().optional(),
   fillRadialGradientColorStops: z.array(z.union([z.number(), z.string()])).optional(),
+
+  // تعبئة صور الأشكال (fillType='image') — تُسقط عند الحفظ دون إعلانها هنا
+  fillImageSrc: z.string().optional(),
+  fillImageFit: z.enum(['stretch', 'cover', 'contain', 'tile']).optional(),
+  fillImageScale: z.number().optional(),
+  fillImageRotation: z.number().optional(),
+  fillImageOffsetX: z.number().optional(),
+  fillImageOffsetY: z.number().optional(),
 
   // خصائص متقدمة
   shadowColor: z.string().optional(),

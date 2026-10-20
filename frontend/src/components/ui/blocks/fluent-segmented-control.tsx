@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 export interface SegmentedOption<T extends string = string> {
   id: T;
   label?: React.ReactNode;
+  /** اسم وصول وصفي عند اختصار النص المرئي (مثال: «ضبط» ← «الألوان والضبط») */
+  ariaLabel?: string;
   icon?: React.ReactNode;
   badge?: React.ReactNode;
   tooltip?: React.ReactNode;
@@ -90,11 +92,12 @@ export function FluentSegmentedControl<T extends string = string>({
       {options.map((opt) => {
         const isActive = value === opt.id;
         const accessibleLabel =
-          typeof opt.label === 'string'
+          opt.ariaLabel ??
+          (typeof opt.label === 'string'
             ? opt.label
             : typeof opt.tooltip === 'string'
               ? opt.tooltip
-              : opt.id;
+              : opt.id);
 
         const titleText =
           typeof opt.tooltip === 'string'

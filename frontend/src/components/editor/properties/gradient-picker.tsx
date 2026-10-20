@@ -5,12 +5,17 @@ import { FluentSegmentedControl, FluentSliderField } from '@/components/ui/block
 import { Check, ArrowsLeftRight, Sparkle, Palette } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { formatGradientCss, GRADIENT_PRESETS } from './gradient-utils';
+import { ImageFillControls } from './image-fill-controls';
+import type { ImageFillFields } from './image-fill-patch';
+
+/** أنواع التعبئة الموحدة — 'image' (تعبئة بصورة) للأشكال فقط عبر allowImageFill */
+export type FillType = 'solid' | 'linear' | 'radial' | 'image';
 
 export interface GradientPickerProps {
-  fillType: 'solid' | 'linear' | 'radial';
+  fillType: FillType;
   color: string;
   colorStops: Array<number | string>;
-  onChangeType: (type: 'solid' | 'linear' | 'radial') => void;
+  onChangeType: (type: FillType) => void;
   onChangeSolidColor: (color: string) => void;
   onChangeColorStops: (stops: Array<number | string>) => void;
   /** زاوية التدرج الخطي الحالية (0-360) — تُحسب من نقطتي البداية/النهاية */
@@ -27,6 +32,11 @@ export interface GradientPickerProps {
    * التطبيق (مكتبة تبويب الخلفيات) فلا يتكرر نفس المعرض في لوحتين.
    */
   showPresets?: boolean;
+  /** إظهار خيار التعبئة بصورة في المبدّل (الأشكال والنصوص) مع لوحة الصورة الكاملة */
+  allowImageFill?: boolean;
+  imageFill?: ImageFillFields;
+  onChangeImageFill?: (patch: Partial<ImageFillFields>) => void;
+  onCommitImageFill?: () => void;
 }
 
 const PRESET_CATEGORIES = [
@@ -57,6 +67,10 @@ export const GradientPicker = ({
   onCommitAngle,
   showFillType = true,
   showPresets = true,
+  allowImageFill = false,
+  imageFill,
+  onChangeImageFill,
+  onCommitImageFill,
 }: GradientPickerProps) => {
   const [activeCategory, setActiveCategory] = useState<string>('luxury');
 
@@ -111,7 +125,7 @@ export const GradientPicker = ({
     <div className="space-y-2.5 font-cairo w-full max-w-full overflow-hidden" dir="rtl">
       {/* محول نوع التعبئة القياسي بأسلوب Fluent 2 الموحد */}
       {showFillType && (
-        <FluentSegmentedControl<'solid' | 'linear' | 'radial'>
+        <FluentSegmentedControl<FillType>
           layoutId="gradient-fill-type"
           value={fillType}
           onChange={onChangeType}
@@ -120,11 +134,20 @@ export const GradientPicker = ({
             { id: 'solid', label: 'مصمت' },
             { id: 'linear', label: 'خطي' },
             { id: 'radial', label: 'دائري' },
+            ...(allowImageFill && onChangeImageFill
+              ? [{ id: 'image' as const, label: 'صورة' }]
+              : []),
           ]}
         />
       )}
 
-      {fillType === 'solid' ? (
+      {fillType === 'image' && onChangeImageFill ? (
+        <ImageFillControls
+          value={imageFill ?? {}}
+          onChange={onChangeImageFill}
+          onCommit={onCommitImageFill}
+        />
+      ) : fillType === 'solid' ? (
         <div className="flex items-center justify-between gap-2 bg-background/50 p-2 rounded-xl border border-border/40 shadow-2xs w-full">
           <span className="text-xs text-foreground/90 font-semibold flex items-center gap-1.5 shrink-0">
             <Palette className="w-4 h-4 text-primary" weight="duotone" />

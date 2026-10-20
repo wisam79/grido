@@ -38,13 +38,14 @@ export const createShapeElementsSlice: StateCreator<
     get().pushHistory();
   },
 
-  addShapeElement: (shape, svgPath) => {
+  addShapeElement: (shape, svgPath, options) => {
     const id = uid();
     const state = get();
 
     const isLinear = shape === 'line' || shape === 'arrow';
     const basePx = Math.min(state.canvasWidth, state.canvasHeight) * 0.25;
-    const wPx = isLinear ? basePx * 1.5 : basePx;
+    const aspect = options?.aspect && options.aspect > 0 ? options.aspect : 1;
+    const wPx = isLinear ? basePx * 1.5 : basePx * aspect;
     const hPx = isLinear ? Math.max(24, basePx * 0.1) : basePx;
 
     const wPercent = wPx / state.canvasWidth;
@@ -69,7 +70,13 @@ export const createShapeElementsSlice: StateCreator<
       sides: shape === 'polygon' ? 6 : undefined,
       pointerLength: shape === 'arrow' ? 14 : undefined,
       pointerWidth: shape === 'arrow' ? 14 : undefined,
-      innerRadius: shape === 'ring' ? resolveRingInnerRadius(undefined, basePx, basePx) : undefined,
+      arcAngle: shape === 'wedge' ? 90 : shape === 'arc' ? 270 : undefined,
+      // القوس الحلقي يشارك الحلقة هندستها الداخلية نفسها (مصدر واحد: ring-geometry)
+      innerRadius:
+        shape === 'ring' || shape === 'arc'
+          ? resolveRingInnerRadius(undefined, basePx, basePx)
+          : undefined,
+      ...options?.defaults,
     };
     set((s) => ({
       elements: [...s.elements, newEl],

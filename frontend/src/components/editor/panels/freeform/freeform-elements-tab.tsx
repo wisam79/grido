@@ -3,29 +3,15 @@ import { useEditorStore } from '@/lib/editor-store';
 import { Button } from '@/components/ui/button';
 import { FluentSegmentedControl, FluentFilterChips } from '@/components/ui/blocks';
 import { toast } from 'sonner';
-import {
-  Plus,
-  Stamp,
-  Shapes,
-  TextT,
-  Star,
-  Circle,
-  Square,
-  Heart,
-  Shield,
-  Diamond,
-  ArrowRight,
-  Calendar,
-  Camera,
-  CaretRight,
-} from '@/components/ui/icons';
+import { Plus, Stamp, Shapes, TextT, Calendar, Camera, CaretRight } from '@/components/ui/icons';
 import {
   QUICK_SHAPES,
   QUICK_TEXT_PRESETS,
   TEXT_FILTER_OPTIONS,
-  QuickShapeItem,
   QuickTextItem,
 } from './freeform-panel-constants';
+import type { ShapeCatalogItem } from '@/lib/io/shape-catalog';
+import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
 import {
   BADGE_TEMPLATES,
   FRAME_TEMPLATES,
@@ -326,10 +312,10 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
     return QUICK_TEXT_PRESETS.filter((p) => p.category === selectedTextFilter);
   }, [selectedTextFilter]);
 
-  // إضافة شكل هندسي بنقرة واحدة
+  // إضافة شكل هندسي بنقرة واحدة — من الكتالوج الموحّد مباشرة
   const handleAddShape = useCallback(
-    (item: QuickShapeItem) => {
-      addShapeElement(item.shape, item.svgPath);
+    (item: ShapeCatalogItem) => {
+      addShapeElement(item.kind, item.path, { aspect: item.aspect, defaults: item.defaults });
     },
     [addShapeElement],
   );
@@ -519,7 +505,9 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
         <div className="space-y-2">
           <div className="px-1 flex items-center justify-between">
             <span className="text-xs font-bold text-foreground/80">أشكال هندسية وتصاميم</span>
-            <span className="text-3xs font-mono text-muted-foreground font-semibold">12 شكلاً</span>
+            <span className="text-3xs font-mono text-muted-foreground font-semibold">
+              {QUICK_SHAPES.length} شكلاً
+            </span>
           </div>
 
           <div className="grid grid-cols-3 gap-1.5">
@@ -531,71 +519,14 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 title={shape.label}
                 className="group flex items-center justify-center gap-1.5 h-8 px-2 bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg transition-all duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none select-none active:scale-[0.98] shadow-2xs"
               >
-                {shape.shape === 'rect' && (
-                  <Square
-                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
-                    weight="bold"
-                  />
-                )}
-                {shape.shape === 'ellipse' && (
-                  <Circle
-                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
-                    weight="bold"
-                  />
-                )}
-                {shape.shape === 'ring' && (
-                  <span className="font-bold text-xs shrink-0 text-muted-foreground group-hover:text-foreground">
-                    ◎
-                  </span>
-                )}
-                {shape.shape === 'polygon' && (
-                  <span className="font-bold text-xs shrink-0 text-muted-foreground group-hover:text-foreground">
-                    ⬢
-                  </span>
-                )}
-                {shape.shape === 'arrow' && (
-                  <ArrowRight
-                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
-                    weight="bold"
-                  />
-                )}
-                {shape.shape === 'star' && (
-                  <Star
-                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
-                    weight="fill"
-                  />
-                )}
-                {shape.id === 'triangle' && (
-                  <span className="font-bold text-xs shrink-0 text-muted-foreground group-hover:text-foreground">
-                    ▲
-                  </span>
-                )}
-                {shape.id === 'heart' && (
-                  <Heart
-                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
-                    weight="fill"
-                  />
-                )}
-                {shape.id === 'shield' && (
-                  <Shield
-                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
-                    weight="fill"
-                  />
-                )}
-                {shape.id === 'diamond' && (
-                  <Diamond
-                    className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
-                    weight="fill"
-                  />
-                )}
-                {shape.id === 'line' && (
-                  <div className="w-3.5 h-0.5 bg-muted-foreground group-hover:bg-foreground rounded-full shrink-0" />
-                )}
-                {shape.id === 'hexagon' && (
-                  <span className="font-bold text-xs shrink-0 text-muted-foreground group-hover:text-foreground">
-                    ⬡
-                  </span>
-                )}
+                <ShapeGlyph
+                  kind={shape.kind}
+                  path={shape.path}
+                  sides={shape.defaults?.sides}
+                  starPoints={shape.defaults?.starPoints}
+                  doubleArrow={shape.defaults?.pointerAtBeginning === true}
+                  className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
+                />
                 <span className="text-xs font-medium text-foreground truncate">{shape.label}</span>
               </button>
             ))}

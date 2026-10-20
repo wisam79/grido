@@ -1,12 +1,9 @@
-import type { ShapeElement } from '@/lib/editor-store';
-import type { TextPresetType } from '@/lib/templates';
 import {
-  SHAPE_PATH_TRIANGLE,
-  SHAPE_PATH_HEART,
-  SHAPE_PATH_DIAMOND,
-  SHAPE_PATH_HEXAGON,
-  SHAPE_PATH_SHIELD,
-} from '@/lib/io/svg-paths';
+  TEXT_PRESET_CATALOG,
+  TEXT_PRESET_CATEGORY_LABELS,
+  type TextPresetCategory,
+  type TextPresetType,
+} from '@/lib/templates';
 
 // نوع تبويبات وضع التعديل الحر — مصدره سجل الأدوات الموحّد فلا يتكرّر تعريفه
 export type { FreeformTab } from '@/lib/workspace-tools';
@@ -22,197 +19,44 @@ export const ELEMENT_CATEGORIES: ElementCategoryItem[] = [
   { id: 'text', label: 'نصوص جاهزة' },
 ];
 
-export interface QuickShapeItem {
-  id: string;
-  label: string;
-  shape: ShapeElement['shape'];
-  svgPath?: string;
-  color?: string;
-}
+// أشكال الإدراج السريع — إعادة تصدير من الكتالوج الموحّد (لا قائمة ثانية
+// تُصان يدوياً؛ أي شكل يُضاف للكتالوج يظهر هنا بوسم quickAccess)
+export { QUICK_SHAPES } from '@/lib/io/shape-catalog';
 
-export const QUICK_SHAPES: QuickShapeItem[] = [
-  { id: 'rect', label: 'مستطيل', shape: 'rect', color: '#2563eb' },
-  { id: 'circle', label: 'دائرة', shape: 'ellipse', color: '#7c3aed' },
-  { id: 'ring', label: 'حلقة دائرية', shape: 'ring', color: '#06b6d4' },
-  { id: 'polygon', label: 'مضلع سداسي', shape: 'polygon', color: '#8b5cf6' },
-  { id: 'star', label: 'نجمة', shape: 'star', color: '#d97706' },
-  { id: 'line', label: 'خط فاصل', shape: 'line', color: '#059669' },
-  { id: 'arrow-native', label: 'سهم متجه', shape: 'arrow', color: '#ea580c' },
-  { id: 'triangle', label: 'مثلث', shape: 'path', svgPath: SHAPE_PATH_TRIANGLE, color: '#dc2626' },
-  { id: 'heart', label: 'قلب', shape: 'path', svgPath: SHAPE_PATH_HEART, color: '#e11d48' },
-  { id: 'shield', label: 'درع', shape: 'path', svgPath: SHAPE_PATH_SHIELD, color: '#0284c7' },
-  { id: 'diamond', label: 'معين', shape: 'path', svgPath: SHAPE_PATH_DIAMOND, color: '#4f46e5' },
-  { id: 'hexagon', label: 'مسدس', shape: 'path', svgPath: SHAPE_PATH_HEXAGON, color: '#0d9488' },
-];
-
-export type TextPresetCategory = 'all' | 'titles' | 'effects' | 'badges' | 'phrases';
+export type { TextPresetCategory };
 
 export interface TextFilterOption {
   id: string;
   label: string;
 }
 
+// فئات التصفية مشتقة من كتالوج النصوص الموحّد — لا قائمة تسميات ثانية
 export const TEXT_FILTER_OPTIONS: TextFilterOption[] = [
   { id: 'all', label: 'الكل' },
-  { id: 'effects', label: 'تأثيرات' },
-  { id: 'badges', label: 'شارات' },
-  { id: 'phrases', label: 'عبارات' },
+  ...(Object.keys(TEXT_PRESET_CATEGORY_LABELS) as TextPresetCategory[]).map((id) => ({
+    id,
+    label: TEXT_PRESET_CATEGORY_LABELS[id],
+  })),
 ];
 
 export interface QuickTextItem {
   id: TextPresetType;
   label: string;
   description: string;
-  category: 'titles' | 'effects' | 'badges' | 'phrases';
+  category: TextPresetCategory;
   previewColor: string;
-  sampleText?: string;
+  sampleText: string;
 }
 
-export const QUICK_TEXT_PRESETS: QuickTextItem[] = [
-  // 🏷️ 1. هرمية العناوين الأساسية
-  {
-    id: 'heading',
-    label: 'عنوان رئيسي',
-    description: 'خط عريض وبارز',
-    category: 'titles',
-    previewColor: '#0f172a',
-    sampleText: 'عنوان رئيسي',
-  },
-  {
-    id: 'subheading',
-    label: 'عنوان فرعي',
-    description: 'خط متوسط أنيق',
-    category: 'titles',
-    previewColor: '#334155',
-    sampleText: 'عنوان فرعي',
-  },
-  {
-    id: 'body',
-    label: 'نص فقرة',
-    description: 'نص توضيحي مريح',
-    category: 'titles',
-    previewColor: '#475569',
-    sampleText: 'اكتب وصفاً أو تفاصيل...',
-  },
-
-  // ✨ 2. تأثيرات فنية واحترافية
-  {
-    id: 'gold-luxury',
-    label: 'ذهبي فاخر',
-    description: 'تدرج ذهبي متوهج',
-    category: 'effects',
-    previewColor: '#d97706',
-    sampleText: 'استوديو الفخامة',
-  },
-  {
-    id: 'neon-glow',
-    label: 'نيون متوهج',
-    description: 'إشعاع سيبراني أزرق',
-    category: 'effects',
-    previewColor: '#00f0ff',
-    sampleText: 'NEON GLOW',
-  },
-  {
-    id: '3d-title',
-    label: 'ثلاثي الأبعاد',
-    description: 'ظل 3D مجسم',
-    category: 'effects',
-    previewColor: '#6366f1',
-    sampleText: 'إصدار مجسم 3D',
-  },
-  {
-    id: 'outline-modern',
-    label: 'حدود عصرية',
-    description: 'نص مفرغ بإطار',
-    category: 'effects',
-    previewColor: '#059669',
-    sampleText: 'MODERN DESIGN',
-  },
-
-  // 🛡️ 3. شارات وتوثيق
-  {
-    id: 'badge',
-    label: 'شارة كبسولة',
-    description: 'نص داخل كبسولة',
-    category: 'badges',
-    previewColor: '#2563eb',
-    sampleText: 'استوديو احترافي',
-  },
-  {
-    id: 'studio-date',
-    label: 'تاريخ الاستوديو',
-    description: 'تاريخ وبصمة اليوم',
-    category: 'badges',
-    previewColor: '#64748b',
-    sampleText: 'تاريخ الاستوديو',
-  },
-  {
-    id: 'photographer-tag',
-    label: 'بصمة المصور',
-    description: 'توثيق حقوق المصور',
-    category: 'badges',
-    previewColor: '#475569',
-    sampleText: 'تصوير: الاستوديو',
-  },
-  {
-    id: 'watermark',
-    label: 'علامة مائية',
-    description: 'نص مائل شفاف',
-    category: 'badges',
-    previewColor: '#94a3b8',
-    sampleText: 'مسودة غير معتمدة',
-  },
-  {
-    id: 'caption-card',
-    label: 'بطاقة وصف',
-    description: 'إطار بحواف ناعمة',
-    category: 'badges',
-    previewColor: '#1e293b',
-    sampleText: 'بطاقة توثيق مؤطرة',
-  },
-
-  // 💬 4. عبارات ومناسبات
-  {
-    id: 'congrats',
-    label: 'تهنئة وتخرج',
-    description: 'مبروك التخرج والنجاح',
-    category: 'phrases',
-    previewColor: '#047857',
-    sampleText: 'ألف مبروك النجاح',
-  },
-  {
-    id: 'sale-offer',
-    label: 'عروض وخصومات',
-    description: 'عروض كبرى · خصم 50%',
-    category: 'phrases',
-    previewColor: '#dc2626',
-    sampleText: 'عروض كبرى 50%',
-  },
-  {
-    id: 'certificate',
-    label: 'شهادة تقدير',
-    description: 'شهادة شكر وتقدير',
-    category: 'phrases',
-    previewColor: '#1e3a8a',
-    sampleText: 'شهادة شكر وتقدير',
-  },
-  {
-    id: 'stamp-circle',
-    label: 'ختم مقوّس',
-    description: 'نص مقوّس أحمر',
-    category: 'phrases',
-    previewColor: '#dc2626',
-    sampleText: 'معتمد وموثق رسمي',
-  },
-  {
-    id: 'special-price',
-    label: 'شارة تسعير',
-    description: 'السعر: 25,000 د.ع',
-    category: 'phrases',
-    previewColor: '#0284c7',
-    sampleText: 'السعر: 25,000 د.ع',
-  },
-];
+// بطاقات النصوص الجاهزة تُشتق من الكتالوج نفسه (الاسم/الوصف/اللون/النص)
+export const QUICK_TEXT_PRESETS: QuickTextItem[] = TEXT_PRESET_CATALOG.map((preset) => ({
+  id: preset.id,
+  label: preset.label,
+  description: preset.description,
+  category: preset.category,
+  previewColor: preset.previewColor,
+  sampleText: preset.sampleText,
+}));
 
 export interface CanvasSizePreset {
   id: string;

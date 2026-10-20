@@ -1,5 +1,6 @@
-import { useEditorStore } from '@/lib/editor-store';
+import { useEditorStore, type TextElement } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
+import { TEXT_PRESETS } from '@/lib/templates';
 import {
   TextHOne,
   TextHTwo,
@@ -73,43 +74,42 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
     element.text || '',
   );
   const vAlign = element.textVerticalAlign || 'top';
+  const wrapMode = element.wrap || 'word';
 
   const currentFontSize = element.fontSize ?? 32;
   const currentLineHeight = element.lineHeight ?? 1.2;
   const currentSpacing = element.letterSpacing ?? 0;
 
   const applyPreset = (type: 'heading' | 'subheading' | 'body' | 'badge' | 'stamp') => {
-    if (type === 'heading') {
-      onUpdate(element.id, { fontSize: 48, fontWeight: 900, lineHeight: 1.1, curve: 0 });
-    } else if (type === 'subheading') {
-      onUpdate(element.id, { fontSize: 28, fontWeight: 700, lineHeight: 1.2, curve: 0 });
-    } else if (type === 'body') {
-      onUpdate(element.id, { fontSize: 18, fontWeight: 400, lineHeight: 1.35, curve: 0 });
-    } else if (type === 'badge') {
-      onUpdate(element.id, {
-        fontSize: 22,
-        fontWeight: 700,
-        textBgColor:
-          element.textBgColor && element.textBgColor !== 'transparent'
-            ? element.textBgColor
-            : '#2563eb',
-        color: '#ffffff',
-        textBgRadius: 8,
-        textBgPadding: 8,
-        textBgPaddingX: 12,
-        textBgPaddingY: 6,
-        curve: 0,
-      });
-    } else if (type === 'stamp') {
-      onUpdate(element.id, {
-        fontSize: 24,
-        fontWeight: 700,
-        color: element.color || '#dc2626',
-        stroke: element.color || '#dc2626',
-        strokeWidth: 0.8,
-        curve: 60,
-      });
+    // نفس أرقام قوالب الإدراج (TEXT_PRESETS) — لا نسخة ثانية من الأنماط
+    const presetId = type === 'stamp' ? 'stamp-circle' : type;
+    const config = TEXT_PRESETS[presetId];
+    const patch: Partial<TextElement> = {
+      fontSize: config.fontSize,
+      fontWeight: config.fontWeight,
+      lineHeight: config.lineHeight ?? 1.2,
+      curve: config.curve ?? 0,
+    };
+
+    if (type === 'badge') {
+      patch.textBgColor =
+        element.textBgColor && element.textBgColor !== 'transparent'
+          ? element.textBgColor
+          : (config.textBgColor ?? '#2563eb');
+      patch.color = config.color;
+      patch.textBgRadius = config.textBgRadius ?? 8;
+      patch.textBgPadding = config.textBgPadding;
+      patch.textBgPaddingX = config.textBgPaddingX;
+      patch.textBgPaddingY = config.textBgPaddingY;
     }
+
+    if (type === 'stamp') {
+      patch.color = element.color || config.color;
+      patch.stroke = element.color || config.color;
+      patch.strokeWidth = config.strokeWidth ?? 0.8;
+    }
+
+    onUpdate(element.id, patch);
     useEditorStore.getState().pushHistory();
   };
 
@@ -486,7 +486,38 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
           </div>
         </div>
 
-        {/* الصف 3: الأدوات الذكية (الأرقام المشرقية وملاءمة العرض) */}
+        {/* الصف 3: نمط التفاف النص — نفس خيارات Konva wrap */}
+        <div className="flex items-center gap-1.5 p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
+          <span className="text-micro font-bold text-muted-foreground px-1 shrink-0">
+            التفاف النص
+          </span>
+          <div className="flex-1 grid grid-cols-3 gap-0.5" role="group" aria-label="التفاف النص">
+            {(
+              [
+                { id: 'word', label: 'كلمات' },
+                { id: 'char', label: 'أحرف' },
+                { id: 'none', label: 'بلا' },
+              ] as const
+            ).map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, { wrap: mode.id });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={toggleButtonClassName(wrapMode === mode.id, true)}
+                title={`التفاف: ${mode.label}`}
+                aria-label={`التفاف النص: ${mode.label}`}
+                aria-pressed={wrapMode === mode.id}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* الصف 4: الأدوات الذكية (الأرقام المشرقية وملاءمة العرض) */}
         <div className="grid grid-cols-2 gap-2 pt-0.5">
           <button
             type="button"

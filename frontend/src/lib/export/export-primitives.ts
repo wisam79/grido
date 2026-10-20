@@ -144,9 +144,11 @@ export function drawRoundRect(
   y: number,
   w: number,
   h: number,
-  r: number,
+  r: number | number[],
 ) {
   ctx.beginPath();
+  // ctx.roundRect يقبل رقماً واحداً أو مصفوفة حتى 4 زوايا
+  // [أعلى-يسار، أعلى-يمين، أسفل-يمين، أسفل-يسار] — نفس عقد Konva.cornerRadius
   ctx.roundRect(x, y, w, h, r);
   ctx.closePath();
 }

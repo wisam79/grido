@@ -2,20 +2,7 @@ import React from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import {
-  CaretDown,
-  Square,
-  Circle,
-  Triangle,
-  Diamond,
-  Hexagon,
-  Star,
-  Heart,
-  Shield,
-  ArrowRight,
-  LineSegment,
-  type Icon,
-} from '@/components/ui/icons';
+import { CaretDown } from '@/components/ui/icons';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -24,52 +11,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { GeometricShapesIcon } from '@/components/ui/image-icons';
 import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
-import {
-  SHAPE_PATH_TRIANGLE,
-  SHAPE_PATH_HEART,
-  SHAPE_PATH_DIAMOND,
-  SHAPE_PATH_HEXAGON,
-  SHAPE_PATH_SHIELD,
-} from '@/lib/io/svg-paths';
+import { SHAPE_CATEGORIES, shapesInCategory } from '@/lib/io/shape-catalog';
+import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
 
-interface ShapeDef {
-  label: string;
-  kind: 'rect' | 'ellipse' | 'star' | 'line' | 'arrow' | 'path';
-  path?: string;
-  Icon: Icon;
-  iconWeight?: 'bold' | 'fill' | 'regular';
-}
-
-const SHAPE_GROUPS: { header: string; items: ShapeDef[] }[] = [
-  {
-    header: 'أشكال هندسية',
-    items: [
-      { label: 'مستطيل', kind: 'rect', Icon: Square },
-      { label: 'دائرة', kind: 'ellipse', Icon: Circle },
-      {
-        label: 'مثلث',
-        kind: 'path',
-        path: SHAPE_PATH_TRIANGLE,
-        Icon: Triangle,
-        iconWeight: 'fill',
-      },
-      { label: 'معين', kind: 'path', path: SHAPE_PATH_DIAMOND, Icon: Diamond, iconWeight: 'fill' },
-      { label: 'سداسي', kind: 'path', path: SHAPE_PATH_HEXAGON, Icon: Hexagon, iconWeight: 'fill' },
-    ],
-  },
-  {
-    header: 'رموز وتأطير',
-    items: [
-      { label: 'نجمة', kind: 'star', Icon: Star, iconWeight: 'fill' },
-      { label: 'قلب', kind: 'path', path: SHAPE_PATH_HEART, Icon: Heart, iconWeight: 'fill' },
-      { label: 'درع', kind: 'path', path: SHAPE_PATH_SHIELD, Icon: Shield, iconWeight: 'fill' },
-      { label: 'سهم', kind: 'arrow', Icon: ArrowRight, iconWeight: 'bold' },
-      { label: 'خط', kind: 'line', Icon: LineSegment },
-    ],
-  },
-];
-
-/** قائمة الأشكال — أيقونة الشكل نفسها + اسمها (بلا صناديق ملونة) */
+/**
+ * قائمة إضافة الأشكال — تُبنى من كتالوج الأشكال الموحّد (shape-catalog)
+ * بمعاينة هندسية حقيقية لكل شكل بدل أيقونات تقريبية منفصلة.
+ */
 export const AddShapesDropdown = React.memo(function AddShapesDropdown() {
   const addShapeElement = useEditorStore((state) => state.addShapeElement);
 
@@ -91,27 +39,32 @@ export const AddShapesDropdown = React.memo(function AddShapesDropdown() {
       </TooltipBtn>
       <DropdownMenuContent
         align="start"
-        className="w-40 max-h-[420px] overflow-y-auto font-cairo rounded-xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1"
+        className="w-44 max-h-[460px] overflow-y-auto font-cairo rounded-xl backdrop-blur-2xl bg-popover/95 border border-border/80 dark:border-white/10 shadow-fluent-16 p-1"
       >
-        {SHAPE_GROUPS.map((group, gi) => (
-          <React.Fragment key={group.header}>
+        {SHAPE_CATEGORIES.map((group, gi) => (
+          <React.Fragment key={group.id}>
             {gi > 0 && <Separator className="my-1 bg-border/50" />}
             <div className="px-2 py-1 text-mini font-bold text-muted-foreground/70 select-none">
-              {group.header}
+              {group.label}
             </div>
-            {group.items.map((shape) => (
+            {shapesInCategory(group.id).map((shape) => (
               <DropdownMenuItem
-                key={shape.label}
+                key={shape.id}
                 onClick={() =>
-                  shape.kind === 'path' && shape.path
-                    ? addShapeElement('path', shape.path)
-                    : addShapeElement(shape.kind as Exclude<ShapeDef['kind'], 'path'>)
+                  addShapeElement(shape.kind, shape.path, {
+                    aspect: shape.aspect,
+                    defaults: shape.defaults,
+                  })
                 }
                 className="flex items-center gap-2.5 px-2 py-1.5 text-xs rounded-md cursor-pointer transition-colors"
               >
-                <shape.Icon
+                <ShapeGlyph
+                  kind={shape.kind}
+                  path={shape.path}
+                  sides={shape.defaults?.sides}
+                  starPoints={shape.defaults?.starPoints}
+                  doubleArrow={shape.defaults?.pointerAtBeginning === true}
                   className="w-4 h-4 shrink-0 text-muted-foreground"
-                  weight={shape.iconWeight}
                 />
                 <span className="font-medium text-foreground">{shape.label}</span>
               </DropdownMenuItem>

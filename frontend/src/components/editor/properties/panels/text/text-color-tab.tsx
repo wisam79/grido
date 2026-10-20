@@ -2,6 +2,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 import { Palette, Eye, Sparkle, BoundingBox } from '@/components/ui/icons';
 import { GradientPicker } from '../../gradient-picker';
+import { normalizeImageFillPatch } from '../../image-fill-patch';
 import { gradientAngleFromPoints, gradientPointsFromAngle } from '../../gradient-utils';
 import { PopoverColorPicker, QuickColorPalette } from '../../shared-controls';
 import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
@@ -15,7 +16,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
   const hasBadge = !!element.textBgColor && element.textBgColor !== 'transparent';
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-150 font-cairo">
+    <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
       {/* 🎴 بطاقة 1: تعبئة ولون النص */}
       <FluentSection
         icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
@@ -25,13 +26,33 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
         action={
           element.fillType && element.fillType !== 'solid' ? (
             <span className="text-micro font-bold text-muted-foreground px-2 py-0.5 rounded-full bg-muted/60 border border-border/50 select-none">
-              {element.fillType === 'linear' ? 'خطي' : 'دائري'}
+              {element.fillType === 'linear'
+                ? 'خطي'
+                : element.fillType === 'radial'
+                  ? 'دائري'
+                  : element.fillType === 'image'
+                    ? 'صورة'
+                    : 'مصمت'}
             </span>
           ) : undefined
         }
       >
         <GradientPicker
           fillType={element.fillType || 'solid'}
+          allowImageFill
+          imageFill={{
+            fillImageSrc: element.fillImageSrc,
+            fillImageFit: element.fillImageFit,
+            fillImageScale: element.fillImageScale,
+            fillImageRotation: element.fillImageRotation,
+            fillImageOffsetX: element.fillImageOffsetX,
+            fillImageOffsetY: element.fillImageOffsetY,
+          }}
+          onChangeImageFill={(patch) => {
+            // نفس قاعدة الأشكال: إزالة الصورة تعيد النص لتعبئة مصمتة
+            onUpdate(element.id, normalizeImageFillPatch(patch));
+          }}
+          onCommitImageFill={() => useEditorStore.getState().pushHistory()}
           color={currentColor}
           colorStops={
             element.fillLinearGradientColorStops ||

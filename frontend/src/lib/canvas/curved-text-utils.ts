@@ -4,6 +4,14 @@
  */
 import { TEXT_COLOR_DEFAULT } from './canvas-colors';
 import { warmTextStrokeFilter } from './text-stroke-filter';
+import type { CanvasFillStyle, GlyphTransform } from './fill-paint';
+
+/**
+ * تعبئة النص المقوّس: لون/تدرج/نقش ثابت، أو دالة تُنتج التعبئة لكل حرف
+ * لتبقى الصورة/التدرج في فضاء العنصر رغم دوران الحروف على القوس.
+ */
+export type CurvedTextFill =
+  CanvasFillStyle | ((ctx: CanvasRenderingContext2D, glyph: GlyphTransform) => CanvasFillStyle);
 
 export interface CurvedTextOptions {
   text: string;
@@ -16,6 +24,7 @@ export interface CurvedTextOptions {
   fontWeight?: number;
   fontStyle?: string;
   color?: string;
+  fillStyle?: CurvedTextFill;
   stroke?: string;
   strokeWidth?: number;
   textAlign?: 'left' | 'center' | 'right';
@@ -200,6 +209,7 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
     fontWeight = 400,
     fontStyle = 'normal',
     color = TEXT_COLOR_DEFAULT,
+    fillStyle,
     stroke,
     strokeWidth = 0,
     curve,
@@ -334,12 +344,15 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
   }
 
   // رسم تعبئة النص فوق الخلفية مع الحدود الموحدة
-  ctx.fillStyle = color;
   for (let i = 0; i < charTransforms.length; i++) {
     const { char, charX, charY, rotation } = charTransforms[i];
     ctx.save();
     ctx.translate(charX, charY);
     ctx.rotate(rotation);
+    ctx.fillStyle =
+      typeof fillStyle === 'function'
+        ? fillStyle(ctx, { x: charX, y: charY, rotation: (rotation * 180) / Math.PI })
+        : (fillStyle ?? color);
     ctx.fillText(char, 0, 0);
     ctx.restore();
   }

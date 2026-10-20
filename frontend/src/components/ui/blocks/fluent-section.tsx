@@ -56,8 +56,8 @@ export const FluentSection = React.memo(
         className={cn(
           'rounded-xl border p-3 fluent-specular transition-colors duration-150',
           isOpen
-            ? 'bg-card border-border dark:border-white/10 shadow-xs'
-            : 'bg-card/75 border-border/70 hover:border-border/90 hover:bg-card/95 shadow-2xs',
+            ? 'bg-card border-border/70 dark:border-white/10 shadow-xs'
+            : 'bg-card/60 border-border/50 hover:border-border/80 hover:bg-card/85 shadow-none',
           className,
         )}
         {...props}
@@ -80,7 +80,7 @@ export const FluentSection = React.memo(
           aria-expanded={collapsible ? isOpen : undefined}
           className={cn(
             'flex items-center justify-between gap-2 select-none',
-            isOpen ? 'pb-2.5 mb-2.5 border-b border-border/50' : 'pb-0 mb-0',
+            isOpen ? 'pb-2 mb-2.5 border-b border-border/40' : 'pb-0 mb-0',
             collapsible &&
               'cursor-pointer group/sec-header rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             headerClassName,
@@ -91,10 +91,9 @@ export const FluentSection = React.memo(
               // شارة الأيقونة محايدة — التباين يعكس حالة التوسيع بدون ألوان دخيلة
               <div
                 className={cn(
-                  'p-1 rounded-md shrink-0 flex items-center justify-center transition-colors duration-150',
-                  isOpen
-                    ? 'bg-muted text-foreground border border-border/80'
-                    : 'bg-muted/60 dark:bg-white/5 text-muted-foreground border border-border/60',
+                  'size-6 rounded-md shrink-0 flex items-center justify-center transition-colors duration-150',
+                  '[&_svg]:size-3.5 [&_svg]:text-muted-foreground',
+                  isOpen ? 'bg-muted/60 dark:bg-white/[0.06]' : 'bg-muted/35 dark:bg-white/[0.035]',
                 )}
               >
                 {icon}
@@ -104,7 +103,7 @@ export const FluentSection = React.memo(
               <div className="flex items-center gap-1.5">
                 <span
                   className={cn(
-                    'text-xs font-bold truncate transition-colors duration-150',
+                    'text-xs font-semibold truncate transition-colors duration-150',
                     isOpen
                       ? 'text-foreground'
                       : 'text-foreground/90 group-hover/sec-header:text-foreground',
@@ -138,10 +137,10 @@ export const FluentSection = React.memo(
               <div
                 title={isOpen ? 'طي القسم' : 'توسيع القسم'}
                 className={cn(
-                  'w-6 h-6 rounded-md flex items-center justify-center transition-colors duration-150 shrink-0',
+                  'w-5 h-5 rounded-md flex items-center justify-center transition-colors duration-150 shrink-0',
                   isOpen
-                    ? 'bg-muted/70 text-foreground'
-                    : 'bg-muted/40 group-hover/sec-header:bg-muted group-hover/sec-header:text-foreground text-muted-foreground/80',
+                    ? 'text-muted-foreground'
+                    : 'text-muted-foreground/65 group-hover/sec-header:text-foreground',
                 )}
               >
                 <CaretDown

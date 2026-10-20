@@ -3,6 +3,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import type { CanvasElement } from '@/lib/store/types';
 import { GeneralSettings } from '../properties/general-settings';
 import { ElementProperties } from '../properties/element-properties';
+import { ElementHeaderActions } from '../properties/element/element-header-badge';
 import { SlotProperties } from '../properties/slot-properties';
 import { CollageSettings } from '../properties/collage-settings';
 import { PanelShell } from './panel-shell';
@@ -26,6 +27,8 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
   const mode = useEditorStore((state) => state.mode);
   const selectedId = useEditorStore((state) => state.selectedId);
   const selectedIds = useEditorStore((state) => state.selectedIds);
+  const canvasWidth = useEditorStore((state) => state.canvasWidth);
+  const canvasHeight = useEditorStore((state) => state.canvasHeight);
   const updateSlot = useEditorStore((state) => state.updateSlot);
   const activeElementId = selectedId || (selectedIds.length > 0 ? selectedIds[0] : null);
   const selectedElement = useEditorStore((state) =>
@@ -52,23 +55,40 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
     return () => window.removeEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
   }, []);
 
-  // استنباط عنوان اللوح ديناميكياً وفق العنصر النشط
+  // استنباط عنوان اللوح وسياقه ديناميكياً وفق العنصر النشط
   let panelTitle = 'الخصائص';
+  let panelSubtitle: string | undefined;
+  const isMultiSelection = selectedIds.length > 1;
+
+  const elementTypeLabel =
+    selectedElement?.type === 'image'
+      ? 'الصورة'
+      : selectedElement?.type === 'text'
+        ? 'النص'
+        : selectedElement?.type === 'shape'
+          ? 'الشكل'
+          : 'العنصر';
 
   if (selectedElement) {
-    if (selectedElement.type === 'image') {
-      panelTitle = 'خصائص الصورة';
-    } else if (selectedElement.type === 'text') {
-      panelTitle = 'خصائص النص';
-    } else {
-      panelTitle = 'خصائص الشكل';
-    }
+    panelTitle = `خصائص ${elementTypeLabel}`;
+    panelSubtitle = isMultiSelection
+      ? `تحديد متعدد · ${selectedIds.length} عناصر`
+      : `${Math.max(1, Math.round(selectedElement.width * canvasWidth))} × ${Math.max(
+          1,
+          Math.round(selectedElement.height * canvasHeight),
+        )} px`;
   } else if (selectedSlot) {
     panelTitle = 'خصائص الخلية';
+    panelSubtitle = `الخلية ${selectedSlot.cellIndex + 1}`;
   } else if (mode === 'collage') {
     panelTitle = generalTab === 'collage' ? 'إعدادات الكولاج' : 'إعدادات الورقة';
+    panelSubtitle =
+      generalTab === 'collage'
+        ? 'التخطيط والفواصل والهوامش'
+        : `${Math.round(canvasWidth)} × ${Math.round(canvasHeight)} px`;
   } else {
     panelTitle = 'إعدادات الورقة';
+    panelSubtitle = `${Math.round(canvasWidth)} × ${Math.round(canvasHeight)} px`;
   }
 
   const handleUpdateElement = useCallback((id: string, patch: Partial<Record<string, unknown>>) => {
@@ -108,6 +128,12 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
   return (
     <PanelShell
       title={panelTitle}
+      subtitle={panelSubtitle}
+      headerExtra={
+        selectedElement ? (
+          <ElementHeaderActions element={selectedElement} onUpdate={handleUpdateElement} />
+        ) : undefined
+      }
       onCollapse={onCollapse}
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
       collapseIcon={

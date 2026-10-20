@@ -9,14 +9,18 @@ import {
   Arrow as KonvaArrow,
   RegularPolygon as KonvaRegularPolygon,
   Ring as KonvaRing,
+  Arc as KonvaArc,
+  Wedge as KonvaWedge,
 } from 'react-konva';
 import Konva from 'konva';
 import { ShapeElement } from '@/lib/editor-store';
 import { useKonvaDrag } from '@/hooks/use-konva-drag';
+import { useAsyncImage } from '@/hooks/use-async-image';
 import { ElementProps, propsAreEqual } from './types';
 import { getFillProps } from './fill-utils';
 import { withShadowlessDrag } from './drag-shadow';
-import { VECTOR_SHAPES } from '@/lib/io/svg-paths';
+import { getShapeByPath } from '@/lib/io/shape-catalog';
+import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
 import { gradientStart, useCanvasColors, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
 import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
 
@@ -35,7 +39,7 @@ function getSvgPathBounds(pathStr: string): SvgPathBounds {
   const cached = pathBoundsCache.get(pathStr);
   if (cached) return cached;
 
-  const def = VECTOR_SHAPES.find((s) => s.path === pathStr);
+  const def = getShapeByPath(pathStr);
   if (def?.viewBox) {
     const res: SvgPathBounds = { w: def.viewBox.w, h: def.viewBox.h, minX: 0, minY: 0 };
     pathBoundsCache.set(pathStr, res);
@@ -106,6 +110,19 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   const flippedY = element.flipY === true;
   const hasAnimatedRef = React.useRef(false);
 
+  // صورة تعبئة الشكل (fillType='image'): تُحمَّل بالـhook الموحّد (كاش + LRU).
+  // النداء غير مشروط — السلسلة الفارغة في غير وضع الصورة تعني "لا تحميل".
+  const [fillImage] = useAsyncImage(element.fillType === 'image' ? element.fillImageSrc || '' : '');
+  const isLinearShape = element.shape === 'line' || element.shape === 'arrow';
+  const resolvedStrokeWidth = isLinearShape
+    ? element.strokeWidth && element.strokeWidth > 0
+      ? element.strokeWidth
+      : 4
+    : element.strokeWidth || 0;
+  // أشكال المسار تُرسم بمقياس داخلي إلى viewBox — يُحسب مرة واحدة ليخدم
+  // تعويض نقش الصورة وهندسة الرسم معاً (بلا حساب مزدوج)
+  const pathBounds = element.shape === 'path' ? getSvgPathBounds(element.svgPath || '') : null;
+
   const { onDragStart, dragBoundFunc, onDragMove, onDragEnd } = useKonvaDrag({
     element,
     canvasWidth,
@@ -147,19 +164,22 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     shadowOffsetX: element.shadowOffsetX || 0,
     shadowOffsetY: element.shadowOffsetY || 0,
     shadowOpacity: element.shadowOpacity ?? 0,
-    ...getFillProps(element, w, h),
-    stroke:
-      element.shape === 'line' || element.shape === 'arrow'
-        ? element.stroke || element.fill || gradientStart()
-        : element.strokeWidth && element.strokeWidth > 0
-          ? element.stroke || TEXT_COLOR_DEFAULT
-          : undefined,
-    strokeWidth:
-      element.shape === 'line' || element.shape === 'arrow'
-        ? element.strokeWidth && element.strokeWidth > 0
-          ? element.strokeWidth
-          : 4
-        : element.strokeWidth || 0,
+    ...getFillProps(
+      element,
+      w,
+      h,
+      fillImage ?? null,
+      pathBounds ? { scaleX: w / pathBounds.w, scaleY: h / pathBounds.h } : undefined,
+    ),
+    stroke: isLinearShape
+      ? element.stroke || element.fill || gradientStart()
+      : element.strokeWidth && element.strokeWidth > 0
+        ? element.stroke || TEXT_COLOR_DEFAULT
+        : undefined,
+    strokeWidth: resolvedStrokeWidth,
+    // نمط الحد (متصل/متقطع/منقّط) — الـdash يتدرّج مع سماكة الحد الفعلية
+    dash: resolveStrokeDash(element.strokeStyle, resolvedStrokeWidth),
+    lineCap: resolveLineCap(element.strokeStyle, element.lineCap),
   };
 
   const renderShapeGeometry = () => {
@@ -170,7 +190,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     }
 
     if (element.shape === 'line') {
-      const strokeW = element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4;
+      const strokeW = resolvedStrokeWidth;
       const lineH = Math.max(h, strokeW, 16);
       return (
         <KonvaLine
@@ -185,7 +205,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     }
 
     if (element.shape === 'arrow') {
-      const strokeW = element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 4;
+      const strokeW = resolvedStrokeWidth;
       const arrowH = Math.max(h, strokeW, 16);
       return (
         <KonvaArrow
@@ -195,8 +215,12 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
           points={[0, arrowH / 2, w, arrowH / 2]}
           pointerLength={element.pointerLength ?? 14}
           pointerWidth={element.pointerWidth ?? 14}
+          pointerAtBeginning={element.pointerAtBeginning === true}
           stroke={element.stroke || element.fill || gradientStart()}
           fill={element.fill || element.stroke || gradientStart()}
+          // رأس السهم يُعبَّأ باللون المصمت دائماً — مطابق لمسار التصدير،
+          // ويمنع أن يغلب نقش الصورة (fillPriority='pattern') على اللون
+          fillPriority="color"
           strokeWidth={strokeW}
           hitStrokeWidth={Math.max(20, strokeW + 12)}
         />
@@ -204,14 +228,15 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
     }
 
     if (element.shape === 'star') {
+      const outerR = Math.min(w, h) / 2;
       return (
         <KonvaStar
           {...commonVisualProps}
           x={w / 2}
           y={h / 2}
-          numPoints={5}
-          innerRadius={Math.min(w, h) / 4}
-          outerRadius={Math.min(w, h) / 2}
+          numPoints={Math.max(3, Math.round(element.starPoints ?? 5))}
+          innerRadius={outerR * (element.starInnerRatio ?? 0.5)}
+          outerRadius={outerR}
         />
       );
     }
@@ -242,8 +267,38 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
       );
     }
 
+    // قوس حلقي (شريحة حلقة) — Konva.Arc الأصلي: نصف قطر داخلي/خارجي + زاوية.
+    // rotation=-90 يجعل الزاوية تبدأ من أعلى الشكل (موضع عقارب 12) لا من يمينه.
+    if (element.shape === 'arc') {
+      return (
+        <KonvaArc
+          {...commonVisualProps}
+          x={w / 2}
+          y={h / 2}
+          innerRadius={resolveRingInnerRadius(element.innerRadius, w, h)}
+          outerRadius={ringOuterRadius(w, h)}
+          angle={element.arcAngle ?? 270}
+          rotation={-90}
+        />
+      );
+    }
+
+    // قطاع دائري (بيتزا) — Konva.Wedge الأصلي: نصف قطر + زاوية من أعلى الشكل
+    if (element.shape === 'wedge') {
+      return (
+        <KonvaWedge
+          {...commonVisualProps}
+          x={w / 2}
+          y={h / 2}
+          radius={Math.min(w, h) / 2}
+          angle={element.arcAngle ?? 90}
+          rotation={-90}
+        />
+      );
+    }
+
     if (element.shape === 'path') {
-      const bounds = getSvgPathBounds(element.svgPath || '');
+      const bounds = pathBounds ?? getSvgPathBounds(element.svgPath || '');
       // المسار قد لا يبدأ عند (0,0) — الإزاحة تجعله يملأ صندوق العنصر بدل
       // أن يترك فراغاً بحسب الإحداثي الأدنى داخل المسار
       const scaleX = w / bounds.w;
@@ -267,7 +322,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
         y={0}
         width={w}
         height={h}
-        cornerRadius={element.radius || 0}
+        cornerRadius={element.radiusCorners ?? element.radius ?? 0}
       />
     );
   };

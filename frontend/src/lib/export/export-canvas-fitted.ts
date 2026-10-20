@@ -2,14 +2,18 @@
  * فرع العناصر (صورة/نص/شكل) من التصدير اليدوي — الوضع الحر.
  * مستخرج من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
-import { ImageElement, useEditorStore } from '@/lib/editor-store';
+import { useEditorStore } from '@/lib/editor-store';
 import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
+import { createElementGlyphPainter, resolveElementFill } from '@/lib/canvas/fill-paint';
+import { wrapTextLines } from '@/lib/canvas/text-layout';
+import { resolveTextRenderState } from '@/lib/canvas/text-helpers';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
 import { gradientStart, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
-import { VECTOR_SHAPES } from '@/lib/io/svg-paths';
+import { getShapeByPath } from '@/lib/io/shape-catalog';
+import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
 import { drawImageCover, drawRoundRect, drawStar, loadImage } from './export-primitives';
-import { buildGradientFill, colorWithAlpha, getRoundedPool } from './export-color';
+import { colorWithAlpha, getRoundedPool } from './export-color';
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
 import { renderWithPixelFilter } from './export-pixel-filter';
@@ -31,13 +35,20 @@ export async function renderFittedBranch(
 
   const elImageMap: Record<string, HTMLImageElement> = {};
   const elLoadPromises = sorted
-    .filter((el): el is ImageElement => el.type === 'image' && !!el.imageSrc)
+    .filter(
+      (el) =>
+        (el.type === 'image' && !!el.imageSrc) ||
+        // صورة تعبئة الشكل/النص تُحمَّل مسبقاً بنفس المسبح حتى لا تُحجب شبكة النقش
+        (el.fillType === 'image' && !!el.fillImageSrc),
+    )
     .map(async (el) => {
+      const src = el.type === 'image' ? el.imageSrc : el.fillImageSrc;
+      if (!src) return;
       try {
-        const img = await loadImage(el.imageSrc);
+        const img = await loadImage(src);
         elImageMap[el.id] = img;
       } catch (e) {
-        logger.error('Failed to pre-load element image:', el.imageSrc, e);
+        logger.error('Failed to pre-load element image:', src, e);
       }
     });
   await Promise.all(elLoadPromises);
@@ -188,21 +199,13 @@ export async function renderFittedBranch(
         ctx.restore();
       }
 
-      let rawText = el.text || '';
-      if (el.arabicNumerals) {
-        rawText = rawText.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
-      }
-
-      // #1 — تطبيق textTransform قبل الرسم (uppercase/lowercase/capitalize)
-      const textTransform = el.textTransform || 'none';
-      if (textTransform === 'uppercase') rawText = rawText.toUpperCase();
-      else if (textTransform === 'lowercase') rawText = rawText.toLowerCase();
-      else if (textTransform === 'capitalize')
-        rawText = rawText.replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+      // تجهيز النص الموحّد — نفس دالة المعاينة (أرقام مشرقية/حالة/تباعد عربي)
+      const { text: rawText, isArabic, letterSpacing } = resolveTextRenderState(el);
 
       const fontStyle = el.fontStyle === 'italic' ? 'italic ' : '';
       const fontFamily = el.fontFamily || 'Cairo, Tajawal, sans-serif';
       const isCurved = typeof el.curve === 'number' && el.curve !== 0;
+      const fillImage = elImageMap[el.id];
 
       if (isCurved) {
         drawCurvedText(ctx, {
@@ -216,27 +219,26 @@ export async function renderFittedBranch(
           fontWeight: el.fontWeight || 400, // #6 — موحَّد مع المعاينة
           fontStyle: el.fontStyle || 'normal',
           color: el.color || TEXT_COLOR_DEFAULT,
+          // تدرج/صورة في فضاء العنصر رغم دوران كل حرف على القوس
+          fillStyle: createElementGlyphPainter(ctx, el, w, h, fillImage),
           stroke: el.strokeWidth ? el.stroke || TEXT_COLOR_DEFAULT : undefined,
           strokeWidth: el.strokeWidth || 0,
           textAlign: el.textAlign || 'center',
           curve: el.curve || 0,
-          letterSpacing: el.letterSpacing || 0,
+          letterSpacing,
         });
       } else {
         ctx.font = `${fontStyle}${el.fontWeight || 400} ${fontSize}px ${fontFamily}`; // #6
-        ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.color || TEXT_COLOR_DEFAULT;
+        ctx.fillStyle = resolveElementFill(ctx, el, w, h, fillImage);
         ctx.textAlign = (el.textAlign as CanvasTextAlign) || 'center';
         ctx.textBaseline = 'middle';
         // #5 — كشف تلقائي للاتجاه بدلاً من RTL الثابت الذي يكسر اللاتيني
-        const _isArabicBlock = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
-          rawText.slice(0, 30),
-        );
         ctx.direction =
           ((el as unknown as Record<string, unknown>).direction as CanvasDirection | undefined) ??
-          (_isArabicBlock ? 'rtl' : 'ltr');
+          (isArabic ? 'rtl' : 'ltr');
         // #2 — letterSpacing: متاح في Chromium/Electron (بيئة Wails)
-        if (el.letterSpacing) {
-          (ctx as unknown as Record<string, unknown>).letterSpacing = `${el.letterSpacing}px`;
+        if (letterSpacing) {
+          (ctx as unknown as Record<string, unknown>).letterSpacing = `${letterSpacing}px`;
         }
 
         if (el.shadowColor && ((el.shadowBlur ?? 0) > 0 || (el.shadowOpacity ?? 0) > 0)) {
@@ -246,26 +248,8 @@ export async function renderFittedBranch(
           ctx.shadowOffsetY = el.shadowGlow ? 0 : el.shadowOffsetY || 0;
         }
 
-        // تقسيم الأسطر مع مراعاة التفاف الكلمات (Word-wrap)
-        const rawParagraphs = rawText.split('\n');
-        const wrappedLines: string[] = [];
-
-        for (const para of rawParagraphs) {
-          const words = para.split(' ');
-          let currentLine = '';
-          for (let i = 0; i < words.length; i++) {
-            const testLine = currentLine ? `${currentLine} ${words[i]}` : words[i];
-            const testW = ctx.measureText(testLine).width;
-
-            if (testW > w && i > 0) {
-              wrappedLines.push(currentLine);
-              currentLine = words[i];
-            } else {
-              currentLine = testLine;
-            }
-          }
-          wrappedLines.push(currentLine);
-        }
+        // تقسيم الأسطر وفق نمط wrap المخزَّن (كلمات/أحرف/بلا) — نفس منطق Konva
+        const wrappedLines = wrapTextLines(ctx, rawText, w, el.wrap || 'word');
 
         const lineHeight = fontSize * (el.lineHeight ?? 1.2);
         const startY = h / 2 - ((wrappedLines.length - 1) * lineHeight) / 2;
@@ -309,8 +293,8 @@ export async function renderFittedBranch(
 
         if (decoSegments.length > 0) {
           ctx.save();
-          ctx.strokeStyle =
-            typeof ctx.fillStyle === 'string' ? ctx.fillStyle : el.color || TEXT_COLOR_DEFAULT;
+          // نفس تعبئة النص (تدرج/نقش) بدل السقوط للون المصمت فقط
+          ctx.strokeStyle = ctx.fillStyle;
           ctx.lineWidth = decoThickness;
           ctx.beginPath();
           for (const seg of decoSegments) {
@@ -322,30 +306,60 @@ export async function renderFittedBranch(
         }
       }
     } else if (el.type === 'shape') {
-      ctx.fillStyle = buildGradientFill(ctx, el, w, h) || el.fill || gradientStart();
+      const isLinear = el.shape === 'line' || el.shape === 'arrow';
+      const strokeW = isLinear ? Math.max(1, el.strokeWidth || 4) : el.strokeWidth || 0;
+      ctx.lineWidth = strokeW;
+      // نمط الحد وطرفه — نفس دالتي resolveStrokeDash/resolveLineCap في عقدة Konva
+      ctx.setLineDash(resolveStrokeDash(el.strokeStyle, strokeW) ?? []);
+      ctx.lineCap = resolveLineCap(el.strokeStyle, el.lineCap);
       ctx.strokeStyle = el.stroke || TEXT_COLOR_DEFAULT;
-      ctx.lineWidth = el.strokeWidth || 0;
+
+      // التعبئة: نفس دالة الرسم المشتركة (نقش صورة/تدرج/لون) — لا نسخة
+      // ثانية من مصفوفة النقش هنا، فالمعاينة والتصدير يتشاركان fill-paint.
+      const fillImg = elImageMap[el.id];
+      // بُعد المسار المرجعي (viewBox) يُستخدم لتعويض مقياس النقش ورسم المسار
+      // معاً — يُحسب مرة واحدة بلا تكرار بحث
+      const pathDef = el.shape === 'path' && el.svgPath ? getShapeByPath(el.svgPath) : undefined;
+      const vbW = pathDef?.viewBox?.w || 24;
+      const vbH = pathDef?.viewBox?.h || 24;
+      ctx.fillStyle = resolveElementFill(
+        ctx,
+        el,
+        w,
+        h,
+        fillImg,
+        // نفس تعويض مقياس عقدة المسار المستخدم في المعاينة
+        el.shape === 'path' ? { scaleX: w / vbW, scaleY: h / vbH } : undefined,
+      );
+
       if (el.shape === 'rect') {
-        const r = el.radius || 0;
-        drawRoundRect(ctx, 0, 0, w, h, r);
+        // مصفوفة الزوايا المستقلة تتقدم على الاستدارة الموحدة (نفس عقد Konva)
+        drawRoundRect(ctx, 0, 0, w, h, el.radiusCorners ?? el.radius ?? 0);
         ctx.fill();
-        if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke();
+        if (strokeW > 0) ctx.stroke();
       } else if (el.shape === 'ellipse') {
         ctx.beginPath();
         ctx.ellipse(w / 2, h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
         ctx.fill();
-        if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke();
+        if (strokeW > 0) ctx.stroke();
       } else if (el.shape === 'line') {
         ctx.beginPath();
         ctx.moveTo(0, h / 2);
         ctx.lineTo(w, h / 2);
-        ctx.lineWidth = Math.max(1, el.strokeWidth || 4);
         ctx.strokeStyle = el.fill || gradientStart();
         ctx.stroke();
       } else if (el.shape === 'star') {
-        drawStar(ctx, w / 2, h / 2, 5, Math.min(w, h) / 2, Math.min(w, h) / 4);
+        const outerR = Math.min(w, h) / 2;
+        drawStar(
+          ctx,
+          w / 2,
+          h / 2,
+          Math.max(3, Math.round(el.starPoints ?? 5)),
+          outerR,
+          outerR * (el.starInnerRatio ?? 0.5),
+        );
         ctx.fill();
-        if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke();
+        if (strokeW > 0) ctx.stroke();
       } else if (el.shape === 'polygon') {
         const sides = el.sides || 6;
         const radius = Math.min(w, h) / 2;
@@ -361,7 +375,7 @@ export async function renderFittedBranch(
         }
         ctx.closePath();
         ctx.fill();
-        if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke();
+        if (strokeW > 0) ctx.stroke();
       } else if (el.shape === 'ring') {
         const outerR = ringOuterRadius(w, h);
         const innerR = resolveRingInnerRadius(el.innerRadius, w, h);
@@ -372,14 +386,35 @@ export async function renderFittedBranch(
         ctx.arc(cx, cy, innerR, 0, Math.PI * 2, true);
         ctx.closePath();
         ctx.fill();
-        if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke();
+        if (strokeW > 0) ctx.stroke();
+      } else if (el.shape === 'arc') {
+        // قوس حلقي: يبدأ من أعلى الشكل (-90°) كما في Konva.Arc مع rotation=-90
+        const outerR = ringOuterRadius(w, h);
+        const innerR = resolveRingInnerRadius(el.innerRadius, w, h);
+        const start = -Math.PI / 2;
+        const end = start + ((el.arcAngle ?? 270) * Math.PI) / 180;
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, outerR, start, end, false);
+        ctx.arc(w / 2, h / 2, innerR, end, start, true);
+        ctx.closePath();
+        ctx.fill();
+        if (strokeW > 0) ctx.stroke();
+      } else if (el.shape === 'wedge') {
+        // قطاع دائري: يبدأ من أعلى الشكل (-90°) كما في Konva.Wedge مع rotation=-90
+        const radius = Math.min(w, h) / 2;
+        const start = -Math.PI / 2;
+        const end = start + ((el.arcAngle ?? 90) * Math.PI) / 180;
+        ctx.beginPath();
+        ctx.moveTo(w / 2, h / 2);
+        ctx.arc(w / 2, h / 2, radius, start, end, false);
+        ctx.closePath();
+        ctx.fill();
+        if (strokeW > 0) ctx.stroke();
       } else if (el.shape === 'arrow') {
-        const strokeW = Math.max(1, el.strokeWidth || 4);
         const pLen = el.pointerLength || 14;
         const pWidth = el.pointerWidth || 14;
         const arrowH = Math.max(h, strokeW, 16);
         const arrowY = arrowH / 2;
-        ctx.lineWidth = strokeW;
         ctx.strokeStyle = el.stroke || el.fill || gradientStart();
         ctx.fillStyle = el.fill || el.stroke || gradientStart();
         ctx.beginPath();
@@ -393,16 +428,23 @@ export async function renderFittedBranch(
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+        // رأس في البداية (سهم مزدوج) — نفس عقد Konva.pointerAtBeginning
+        if (el.pointerAtBeginning) {
+          ctx.beginPath();
+          ctx.moveTo(0, arrowY);
+          ctx.lineTo(pLen, arrowY - pWidth / 2);
+          ctx.lineTo(pLen, arrowY + pWidth / 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
       } else if (el.shape === 'path' && el.svgPath) {
         // قياس المسار المتجه ليملأ صندوق العنصر — نفس منطق KonvaPath (viewBox مرجعي)
-        const def = VECTOR_SHAPES.find((s) => s.path === el.svgPath);
-        const vbW = def?.viewBox.w || 24;
-        const vbH = def?.viewBox.h || 24;
         const path2d = new Path2D(el.svgPath);
         ctx.save();
         ctx.scale(w / vbW, h / vbH);
         ctx.fill(path2d);
-        if (el.strokeWidth && el.strokeWidth > 0) ctx.stroke(path2d);
+        if (strokeW > 0) ctx.stroke(path2d);
         ctx.restore();
       }
     }

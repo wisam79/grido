@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
  */
 export interface PanelShellProps {
   title: React.ReactNode;
+  /** سطر سياقي مختصر أسفل العنوان (نوع العنصر، الأبعاد، عدد التحديد) */
+  subtitle?: React.ReactNode;
   /** يخفي الزر عند غيابه (مثل عرض اللوح داخل Sheet الجوال) */
   onCollapse?: () => void;
   collapseTitle?: string;
@@ -31,6 +33,7 @@ export interface PanelShellProps {
 
 export const PanelShell = React.memo(function PanelShell({
   title,
+  subtitle,
   onCollapse,
   collapseTitle = 'إخفاء اللوحة',
   collapseIcon,
@@ -72,13 +75,18 @@ export const PanelShell = React.memo(function PanelShell({
 
   return (
     <div className={cn('flex flex-col h-full min-h-0', className)}>
-      {/* الرأس */}
-      <div className="shrink-0 flex items-center gap-2.5 px-3.5 h-12 select-none">
+      {/* الرأس — عنوان وسياق ثابتان أثناء تمرير الخصائص */}
+      <div className="shrink-0 flex items-center gap-2.5 px-3.5 min-h-12 py-1.5 select-none">
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-bold text-foreground truncate">{title}</div>
+          <div className="text-sm font-bold text-foreground truncate leading-5">{title}</div>
+          {subtitle && (
+            <div className="text-micro text-muted-foreground truncate leading-4 font-normal">
+              {subtitle}
+            </div>
+          )}
         </div>
 
-        {headerExtra && <div className="shrink-0">{headerExtra}</div>}
+        {headerExtra && <div className="shrink-0 flex items-center gap-1">{headerExtra}</div>}
 
         {onCollapse && (
           <Tooltip>
@@ -107,7 +115,7 @@ export const PanelShell = React.memo(function PanelShell({
           <div className="absolute inset-x-0 top-0 h-2 pointer-events-none z-10 bg-gradient-to-b from-background/70 to-transparent panel-scroll-hint" />
         )}
         <ScrollArea className="h-full">
-          <div className={cn('p-3 pb-8 font-cairo', bodyClassName)}>{children}</div>
+          <div className={cn('p-3.5 pb-10 font-cairo', bodyClassName)}>{children}</div>
         </ScrollArea>
       </div>
 

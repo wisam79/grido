@@ -1,5 +1,6 @@
 import { PhotoTemplate, CollageTemplate } from '../templates';
 import { ProjectFileV1 } from '../io/project-serializer';
+import type { ShapeFillImageFit } from '../canvas/shape-pattern';
 // import type فقط: النوع يُبعَّد وقت الترجمة فلا تُنشأ حلقة استيراد وقت التشغيل
 // (grid-slice يعتمد بالمثل على أنواع الستور)
 import type { UserGuide } from './slices/grid-slice';
@@ -34,7 +35,7 @@ export interface BaseCanvasElement {
   locked?: boolean;
   visible?: boolean;
 
-  fillType?: 'solid' | 'linear' | 'radial';
+  fillType?: 'solid' | 'linear' | 'radial' | 'image';
   fillLinearGradientStartPoint?: { x: number; y: number };
   fillLinearGradientEndPoint?: { x: number; y: number };
   fillLinearGradientColorStops?: Array<number | string>;
@@ -43,6 +44,18 @@ export interface BaseCanvasElement {
   fillRadialGradientEndPoint?: { x: number; y: number };
   fillRadialGradientEndRadius?: number;
   fillRadialGradientColorStops?: Array<number | string>;
+
+  /** تعبئة بصورة (fillType='image') — الصورة تُرسم كنقش fillPattern في Konva */
+  fillImageSrc?: string;
+  /** طريقة ملاءمة الصورة داخل صندوق العنصر (شكل أو نص) */
+  fillImageFit?: ShapeFillImageFit;
+  /** مضاعف حجم النقش في وضع التكرار (1 = البكسل الطبيعي) */
+  fillImageScale?: number;
+  /** دوران النقش بالدرجات حول مركز العنصر */
+  fillImageRotation?: number;
+  /** إزاحة مركز النقش كنسبة من أبعاد العنصر (-0.5..0.5) */
+  fillImageOffsetX?: number;
+  fillImageOffsetY?: number;
 
   shadowColor?: string;
   shadowBlur?: number;
@@ -121,16 +134,30 @@ export interface TextElement extends BaseCanvasElement {
 
 export interface ShapeElement extends BaseCanvasElement {
   type: 'shape';
-  shape: 'rect' | 'ellipse' | 'line' | 'star' | 'path' | 'polygon' | 'arrow' | 'ring';
+  shape:
+    'rect' | 'ellipse' | 'line' | 'star' | 'path' | 'polygon' | 'arrow' | 'ring' | 'arc' | 'wedge';
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
   radius?: number;
+  /** استدارة زوايا مستقلة [أعلى-يسار، أعلى-يمين، أسفل-يمين، أسفل-يسار] — تتقدم على radius */
+  radiusCorners?: number[];
   svgPath?: string;
   sides?: number;
   pointerLength?: number;
   pointerWidth?: number;
+  /** رأس في بداية السهم أيضاً (سهم مزدوج الرأسين) */
+  pointerAtBeginning?: boolean;
   innerRadius?: number;
+  /** زاوية القوس/القطاع بالدرجات — للنوعين arc و wedge */
+  arcAngle?: number;
+  /** عدد رؤوس النجمة (star) */
+  starPoints?: number;
+  /** نسبة عمق رؤوس النجمة من نصف القطر الخارجي 0..1 (star) */
+  starInnerRatio?: number;
+  /** نمط الحد: متصل / متقطع / منقّط */
+  strokeStyle?: 'solid' | 'dashed' | 'dotted';
+  lineCap?: 'butt' | 'round' | 'square';
 }
 
 export type CanvasElement = ImageElement | TextElement | ShapeElement;

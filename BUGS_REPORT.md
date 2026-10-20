@@ -28,7 +28,7 @@
 > - **`release.yml` ومسارات البناء:** كانت الخطوات تقود Wails v2 (`wails build -nsis`، `build\bin`) وصُححت في 2026-09-18 إلى `wails3 task package` و`bin/` — راجع `CHANGELOG.md` قسم `[BUILD-FIX]`.
 >
 > **تصحيح ثالث (2026-09-23 — تحقق أسطر فعلي قبل إصدار 9.5):** البنود التالية **مُصلحة فعلاً** في الكود الحالي ولا يجوز إعادة العمل عليها:
-> - **[BUG-CRIT-03]** مُصلح: `image-properties.tsx:315` يفحص `startsWith("data:image/")` قبل `SaveImageFromBase64`.
+> - **[BUG-CRIT-03]** مُصلح: `file-dialog-utils.ts:83` (المصدر الوحيد لاختيار الصور عبر `pickLocalImage`) يفحص `startsWith("data:image/")` قبل `SaveImageFromBase64`.
 > - **[BUG-HIGH-05]** مُصلح: `export-image.ts:394` يمرر `(canvasWidth, canvasHeight)` في `drawImage`، و`konva-export-utils.ts:147` بسقف `MAX_EXPORT_RATIO=8` مع ميزانية `256MB`.
 > - **[BUG-HIGH-06]** مُصلح: `collage-image.tsx:131-137` يفرّغ الكاش عند `onDragStart` ويعيد بناءه عند `onDragEnd:197-204`.
 > - **[BUG-HIGH-07]** مُصلح: `export-image.ts:885-904` يقرأ `collageMargin/collageGap` الحقيقية مع `physicalLayout`.
@@ -57,7 +57,7 @@
 |---|---|---|
 | BUG-CRIT-01 | ✅ مُصلح | `internal/service/ai_service.go:331` يستدعي `callAIUsageRPC(token, userID, inputImageBytes, true)` فقط — لا `defer` تسجيل؛ الفحص المسبق في `modal_ai/upscaler.py:195-211` والتسجيل الفعلي في `:311-334` |
 | BUG-CRIT-02 | ✅ مُصلح — **بآلية مختلفة عمّا وصفه التصحيح الرابع** | `SIGNPATH_*` منقولة إلى `env` على مستوى الـ **job** في `release.yml:16-18` ⇒ صارت `env.SIGNPATH_*` متاحة عند تقييم `if:` للخطوتين `:165` و`:181` (العلة الأصلية: `env` على مستوى الخطوة فقط) |
-| BUG-CRIT-03 | ✅ مُصلح | `image-properties.tsx:315` — `b64.startsWith("data:image/") ? await SaveImageFromBase64(b64) : b64` |
+| BUG-CRIT-03 | ✅ مُصلح | `file-dialog-utils.ts:83` — `picked.startsWith('data:image/') ? await SaveImageFromBase64(picked) : picked` (مصدر واحد يخدم خصائص الصورة وتعبئة الأشكال) |
 | BUG-HIGH-04 | ✅ مُصلح | `internal/repository/db.go:403-409` يرجع `fmt.Errorf("corrupt autosave.json encountered: %w")` و`db.go:512-516` يوقف `runCleanupMedia` قبل أي نقل |
 | BUG-HIGH-05..11 | ✅ مُصلحة (سجل التصحيح الثالث صحيح في المضمون) | أرقام الأسطر فيه متقادمة بعد تقسيم اللاحق للملفات؛ المعنى صحيح |
 | BUG-MED-01 | ✅ مُصلح | `media_service.go:294,386` (`CreateAtomic`) و`:484` (`AtomicWriteFile`) · `print_export.go:96` · `print_pdf_export.go:92` · `window_state.go:65` — عكس صف «الكتابة الذرية» في §1 |
@@ -193,7 +193,7 @@
 ---
 
 ### [BUG-CRIT-03] انهيار استبدال الصور من لوحة الخصائص الجانبية في نظام ويندوز
-- **الموقع:** [`frontend/src/components/editor/properties/panels/image-properties.tsx:L286-L291`](file:///C:/projects/grido/frontend/src/components/editor/properties/panels/image-properties.tsx#L286-L291)
+- **الموقع:** [`frontend/src/lib/io/file-dialog-utils.ts:L80-L84`](file:///C:/projects/grido/frontend/src/lib/io/file-dialog-utils.ts#L80-L84) — نُقل الفحص إلى المصدر الوحيد `pickLocalImage()` الذي يخدم خصائص الصورة وتعبئة الأشكال معاً (كان في `image-properties.tsx`).
 - **درجة الخطورة:** 🔴 **Critical (تعطل وظيفة أساسية)**
 - **الوصف:**
   عند اختيار صورة جديدة لاستبدال الصورة المحددة من لوحة الخصائص، يتم استدعاء دالة `SaveImageFromBase64(b64)` بشكل غير مشروط:
@@ -202,14 +202,12 @@
   ```
   إذا كانت الصورة المختارة قادمة من `OpenFile()` في Go backend، فإن `b64` يحمل بالفعل مسار ملف محلي محفوظ مسبقاً يبدأ بـ `/local-image/img_...` وليس سلسلة بيانات `data:image/...`. استدعاء `SaveImageFromBase64` على مسار عادي يفجر استثناء فك تشفير في Go، ويُظهر للمستخدم إشعار خطأ "فشل تغيير الصورة".
 - **الحل الجذري:**
-  التحقق من بادئة السلسلة قبل استدعاء الحفظ:
+  التحقق من بادئة السلسلة قبل استدعاء الحفظ مرة واحدة في الدالة المشتركة:
   ```ts
-  let finalPath = b64;
-  if (b64.startsWith("data:image/")) {
-    finalPath = await SaveImageFromBase64(b64);
-  }
-  onUpdate({ imageSrc: finalPath });
+  // file-dialog-utils.ts — pickLocalImage()
+  return picked.startsWith('data:image/') ? await SaveImageFromBase64(picked) : picked;
   ```
+  ثم يستدعيها كل مسار اختيار صورة (خصائص الصورة، تعبئة الشكل)، فلا يعود الفحص مكرراً أو قابلاً للنسيان في لوحة جديدة.
 
 ---
 

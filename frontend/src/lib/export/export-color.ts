@@ -3,8 +3,9 @@
  * مستخرجة من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  * ملاحظة: الرسم متسلسل فمشاركة roundedPool آمنة — لا تصدير متوازٍ يشترك فيها.
  */
-import type { CanvasElement } from '@/lib/editor-store';
-import { gradientStart, gradientEnd } from '@/lib/canvas/canvas-colors';
+// إعادة تصدير بناء التدرج من وحدة الرسم المشتركة — واجهة الاستيراد القديمة
+// تبقى كما هي بلا نسخة ثانية من المنطق.
+export { buildGradientFill } from '@/lib/canvas/fill-paint';
 
 // محلل ألوان خفيف مع كاش — يتجنب readback متزامن (getImageData) في كل استدعاء
 // أثناء حلقات التصدير. الأنساق الغريبة تسقط على probe مشترك واحد (fallback).
@@ -106,43 +107,4 @@ export function getRoundedPool(
   if (!octx) return null;
   octx.filter = 'none';
   return { canvas: roundedPool, ctx: octx };
-}
-
-// بناء تعبئة تدرج (linear/radial) مطابقة لمنطق getFillProps في Konva — null تعني اللون الصلب
-export function buildGradientFill(
-  ctx: CanvasRenderingContext2D,
-  el: CanvasElement,
-  w: number,
-  h: number,
-): CanvasGradient | null {
-  const addStops = (grad: CanvasGradient, stops?: Array<number | string>) => {
-    const s = stops && stops.length >= 4 ? stops : [0, gradientStart(), 1, gradientEnd()];
-    for (let i = 0; i + 1 < s.length; i += 2) {
-      grad.addColorStop(Number(s[i]), String(s[i + 1]));
-    }
-  };
-  if (el.fillType === 'linear') {
-    const start = el.fillLinearGradientStartPoint || { x: 0, y: 0 };
-    const end = el.fillLinearGradientEndPoint || { x: 1, y: 1 };
-    const grad = ctx.createLinearGradient(start.x * w, start.y * h, end.x * w, end.y * h);
-    addStops(grad, el.fillLinearGradientColorStops);
-    return grad;
-  }
-  if (el.fillType === 'radial') {
-    const start = el.fillRadialGradientStartPoint || { x: 0.5, y: 0.5 };
-    const end = el.fillRadialGradientEndPoint || { x: 0.5, y: 0.5 };
-    const rStart = el.fillRadialGradientStartRadius ?? 0;
-    const rEnd = el.fillRadialGradientEndRadius ?? 0.5;
-    const grad = ctx.createRadialGradient(
-      start.x * w,
-      start.y * h,
-      rStart * Math.max(w, h),
-      end.x * w,
-      end.y * h,
-      rEnd * Math.max(w, h),
-    );
-    addStops(grad, el.fillRadialGradientColorStops);
-    return grad;
-  }
-  return null;
 }

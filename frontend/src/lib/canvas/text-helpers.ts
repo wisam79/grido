@@ -41,3 +41,62 @@ export function isArabicText(text: string | undefined | null): boolean {
   if (!text) return false;
   return ARABIC_RE.test(text);
 }
+
+export interface TextRenderSource {
+  text?: string;
+  arabicNumerals?: boolean;
+  letterSpacing?: number;
+  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+}
+
+export interface TextRenderState {
+  /** النص النهائي بعد الأرقام المشرقية وتحويلات الحالة وتباعد الكلمات العربي */
+  text: string;
+  isArabic: boolean;
+  /** التباعد الفعلي الممرَّر إلى Konva/Canvas (يتصفّر للعربي مع تعويض مسافات) */
+  letterSpacing: number;
+}
+
+/**
+ * تجهيز النص المشترك بين المعاينة والتصدير ومحرر النص:
+ * - الأرقام المشرقية (٠-٩)
+ * - تحويلات الحالة للاتيني فقط (تطبيقها على العربي يخرب التشكيل)
+ * - تباعد الحروف للعربي: Konva يفكك الوصلات، لذا نستخدم مسافات كلمات
+ *   إضافية مع تصفير letterSpacing (نفس الحيلة في overlay: wordSpacing).
+ * وجود هذا المنطق في مكان واحد يمنع انحراف WYSIWYG بين المسارات.
+ */
+export function resolveTextRenderState(source: TextRenderSource): TextRenderState {
+  let text = source.text || '';
+
+  if (source.arabicNumerals) {
+    text = text.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
+  }
+
+  const isArabic = ARABIC_RE.test(text);
+  const spacing = source.letterSpacing || 0;
+  let effectiveLetterSpacing = spacing;
+
+  if (isArabic && spacing > 0) {
+    effectiveLetterSpacing = 0;
+    const extraSpaces = ' '.repeat(Math.min(6, Math.max(1, Math.round(spacing / 3.5))));
+    text = text.replace(/ /g, extraSpaces);
+  }
+
+  if (!isArabic) {
+    switch (source.textTransform) {
+      case 'uppercase':
+        text = text.toUpperCase();
+        break;
+      case 'lowercase':
+        text = text.toLowerCase();
+        break;
+      case 'capitalize':
+        text = text.replace(/\b\w/g, (c) => c.toUpperCase());
+        break;
+      default:
+        break;
+    }
+  }
+
+  return { text, isArabic, letterSpacing: effectiveLetterSpacing };
+}

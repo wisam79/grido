@@ -37,7 +37,15 @@ export interface ElementSlice {
   ) => void;
   addTextElement: (text?: string) => void;
   addTextPreset: (preset: TextPresetType) => void;
-  addShapeElement: (shape: ShapeElement['shape'], svgPath?: string) => void;
+  /**
+   * إدراج شكل. options.aspect يحسم نسبة الأبعاد الابتدائية (من الكتالوج)
+   * و options.defaults يُدمج فوق القيم الافتراضية (رؤوس نجمة، سهم مزدوج...).
+   */
+  addShapeElement: (
+    shape: ShapeElement['shape'],
+    svgPath?: string,
+    options?: { aspect?: number; defaults?: Partial<ShapeElement> },
+  ) => void;
   /**
    * مستطيل خلفية كامل يغطي الورقة ويُوضع خلف كل العناصر — بإنشاء واحد
    * وإدخال واحد في السجل. (addShapeElement ثم updateElement كانا يتركان

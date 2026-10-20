@@ -6,19 +6,27 @@ import {
   Eye,
   Sparkle,
   Circle,
-  LineSegment,
   Star,
   Polygon,
   ArrowRight,
+  ArrowsLeftRight,
 } from '@/components/ui/icons';
 import { PopoverColorPicker, QuickColorPalette } from '../shared-controls';
-import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+import {
+  FluentSection,
+  FluentSegmentedControl,
+  FluentSettingRow,
+  FluentSliderField,
+} from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { GradientPicker } from '../gradient-picker';
+import { normalizeImageFillPatch } from '../image-fill-patch';
 import { gradientAngleFromPoints, gradientPointsFromAngle } from '../gradient-utils';
 import { resolveRingInnerRadius, ringInnerRadiusMax } from '@/lib/canvas/ring-geometry';
+import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
 
 export interface ShapePropertiesProps {
   element: ShapeElement;
@@ -43,6 +51,11 @@ const CORNER_RADIUS_PRESETS = [
 
 const OPACITY_PRESETS = [25, 50, 75, 100];
 
+/** ترتيب الزوايا يطابق عقد Konva.cornerRadius: [أعلى-يسار، أعلى-يمين، أسفل-يمين، أسفل-يسار] */
+const CORNER_LABELS = ['أعلى يسار', 'أعلى يمين', 'أسفل يمين', 'أسفل يسار'];
+
+const ARC_ANGLE_PRESETS = [90, 180, 270, 360];
+
 /**
  * تبويب التنسيق للأشكال (Shape Style Properties):
  * يركز على استدارة الزوايا، سماكة الحد، وعينة سريعة للون متوافقة مع معايير Fluent 2
@@ -50,6 +63,7 @@ const OPACITY_PRESETS = [25, 50, 75, 100];
 export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: ShapePropertiesProps) {
   const currentFill = element.fill || '#6366f1';
   const isLine = element.shape === 'line';
+  const isLinearShape = element.shape === 'line' || element.shape === 'arrow';
   // مقاسات الكانفس مطلوبة لتحويل أبعاد الحلقة النسبية إلى بكسل — محدّثات
   // عبر محدِّد المتجر (وليس getState) حتى تُعاد حوسبة الحدود عند تغيّرها
   const canvasWidth = useEditorStore((state) => state.canvasWidth);
@@ -57,38 +71,33 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
   const ringWidthPx = element.width * canvasWidth;
   const ringHeightPx = element.height * canvasHeight;
 
-  const getShapeIcon = () => {
-    switch (element.shape) {
-      case 'line':
-        return <LineSegment className="w-4 h-4 text-primary" weight="duotone" />;
-      case 'arrow':
-        return <ArrowRight className="w-4 h-4 text-primary" weight="bold" />;
-      case 'ellipse':
-      case 'ring':
-        return <Circle className="w-4 h-4 text-primary" weight="duotone" />;
-      case 'star':
-        return <Star className="w-4 h-4 text-primary" weight="duotone" />;
-      case 'polygon':
-      case 'path':
-        return <Polygon className="w-4 h-4 text-primary" weight="duotone" />;
-      case 'rect':
-      default:
-        return <Square className="w-4 h-4 text-primary" weight="duotone" />;
-    }
-  };
+  // معاينة هندسية حقيقية من الكتالوج الموحّد — لا مفتاح أيقونات تقريبية هنا
+  const shapeGlyph = (
+    <ShapeGlyph
+      kind={element.shape}
+      path={element.svgPath}
+      sides={element.sides}
+      starPoints={element.starPoints}
+      className="w-4 h-4 text-primary"
+    />
+  );
 
   const sectionTitle = isLine
     ? 'تنسيق الخط'
     : element.shape === 'arrow'
       ? 'تنسيق السهم'
-      : element.shape === 'ellipse' || element.shape === 'ring' || element.shape === 'polygon'
+      : element.shape === 'ellipse' ||
+          element.shape === 'ring' ||
+          element.shape === 'polygon' ||
+          element.shape === 'arc' ||
+          element.shape === 'wedge'
         ? 'الحدود والهندسة'
         : 'الحدود والاستدارة';
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-200 font-cairo">
+    <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
       {/* بطاقة: الحدود والاستدارة الهندسية */}
-      <FluentSection icon={getShapeIcon()} title={sectionTitle} collapsible defaultOpen={true}>
+      <FluentSection icon={shapeGlyph} title={sectionTitle} collapsible defaultOpen={true}>
         {/* بطاقة لون التعبئة / الخط: العنوان والوصف في صف، والمنتقي بعرض كامل تحته
             حتى لا يزاحم شارة الـHEX النصَّ ويقتطعه في لوح بعرض ~296px */}
         <div className="p-2.5 rounded-xl bg-muted/30 dark:bg-muted/20 border border-border/60 space-y-2 shadow-2xs">
@@ -103,7 +112,9 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                     ? 'تدرج خطي'
                     : element.fillType === 'radial'
                       ? 'تدرج شعاعي'
-                      : 'لون مصمت'}
+                      : element.fillType === 'image'
+                        ? 'تعبئة بصورة'
+                        : 'لون مصمت'}
                 </span>
               </div>
             </div>
@@ -214,47 +225,142 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           </div>
         )}
 
-        {/* سلايدر استدارة الزوايا للمستطيلات مع كبسولات سريعة */}
-        {element.shape === 'rect' && (
-          <div className="space-y-1.5 pt-2 border-t border-border/30">
-            <FluentSliderField
-              label="استدارة الزوايا"
-              icon={<Square className="w-4 h-4" weight="regular" />}
-              value={element.radius ?? 0}
-              min={0}
-              max={50}
-              step={1}
-              unit="px"
-              onChange={(v) => onUpdate(element.id, { radius: v })}
-              onCommit={() => useEditorStore.getState().pushHistory()}
+        {/* نمط الحد: متصل / متقطع / منقّط — خصائص Konva أصلية (dash + lineCap)
+            والـdash يتدرّج مع سماكة الحد فلا تختفي الشرطات في الحدود السميكة */}
+        <div className="space-y-1.5 pt-2 border-t border-border/30">
+          <span className="text-micro font-semibold text-muted-foreground block">نمط الحد</span>
+          <FluentSegmentedControl<'solid' | 'dashed' | 'dotted'>
+            layoutId="shape-stroke-style"
+            value={element.strokeStyle ?? 'solid'}
+            onChange={(style) => {
+              onUpdate(element.id, { strokeStyle: style });
+              useEditorStore.getState().pushHistory();
+            }}
+            size="sm"
+            options={[
+              { id: 'solid', label: 'متصل' },
+              { id: 'dashed', label: 'متقطع' },
+              { id: 'dotted', label: 'منقّط' },
+            ]}
+          />
+          {/* طرف الخط — للخط والسهم فقط، والمنقّط يُثبَّت على مستدير
+              (توثيق Konva: النقاط الدائرية تحتاج lineCap: round) */}
+          {isLinearShape && (element.strokeStyle ?? 'solid') !== 'dotted' && (
+            <FluentSegmentedControl<'butt' | 'round' | 'square'>
+              layoutId="shape-line-cap"
+              value={element.lineCap ?? 'butt'}
+              onChange={(cap) => {
+                onUpdate(element.id, { lineCap: cap });
+                useEditorStore.getState().pushHistory();
+              }}
+              size="sm"
+              options={[
+                { id: 'round', label: 'مستدير' },
+                { id: 'butt', label: 'مسطح' },
+                { id: 'square', label: 'مربع' },
+              ]}
             />
+          )}
+        </div>
 
-            {/* أزرار استدارة سريعة في مسار مجوف Fluent 2 */}
-            <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
-              {CORNER_RADIUS_PRESETS.map((preset) => {
-                const isActive = (element.radius ?? 0) === preset.val;
-                return (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    className={cn(
-                      'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
-                      isActive
-                        ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
-                    )}
-                    onClick={() => {
-                      onUpdate(element.id, { radius: preset.val });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* سلايدر استدارة الزوايا للمستطيلات مع كبسولات سريعة */}
+        {element.shape === 'rect' &&
+          (() => {
+            // عند تفعيل الزوايا المستقلة تُطبَّق الاستدارة الموحدة على الزوايا الأربع
+            // معاً — وإلا صار السلايدر معطلاً لأن المصفوفة تتقدم على radius في الرسم
+            const independent = Array.isArray(element.radiusCorners);
+            const uniformRadius = independent
+              ? (element.radiusCorners?.[0] ?? 0)
+              : (element.radius ?? 0);
+            const applyUniformRadius = (v: number) => {
+              onUpdate(
+                element.id,
+                independent ? { radius: v, radiusCorners: [v, v, v, v] } : { radius: v },
+              );
+            };
+
+            return (
+              <div className="space-y-1.5 pt-2 border-t border-border/30">
+                <FluentSliderField
+                  label="استدارة الزوايا"
+                  icon={<Square className="w-4 h-4" weight="regular" />}
+                  value={uniformRadius}
+                  min={0}
+                  max={50}
+                  step={1}
+                  unit="px"
+                  onChange={applyUniformRadius}
+                  onCommit={() => useEditorStore.getState().pushHistory()}
+                />
+
+                {/* أزرار استدارة سريعة في مسار مجوف Fluent 2 */}
+                <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
+                  {CORNER_RADIUS_PRESETS.map((preset) => {
+                    const isActive = uniformRadius === preset.val;
+                    return (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        className={cn(
+                          'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
+                          isActive
+                            ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
+                        )}
+                        onClick={() => {
+                          applyUniformRadius(preset.val);
+                          useEditorStore.getState().pushHistory();
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* زوايا مستقلة: أربع قيم منفصلة [أعلى-يسار، أعلى-يمين، أسفل-يمين، أسفل-يسار]
+                  (Konva.cornerRadius يقبل مصفوفة) — وإلغاء التفعيل يعيد الاستدارة الموحدة */}
+                <FluentSettingRow
+                  label="زوايا مستقلة"
+                  icon={<Square className="w-3.5 h-3.5" weight="regular" />}
+                  control={
+                    <Switch
+                      checked={!!element.radiusCorners}
+                      onCheckedChange={(checked) => {
+                        const radius = element.radius ?? 8;
+                        onUpdate(element.id, {
+                          radiusCorners: checked ? [radius, radius, radius, radius] : undefined,
+                        });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                    />
+                  }
+                />
+
+                {element.radiusCorners && (
+                  <div className="grid grid-cols-2 gap-2 animate-in fade-in duration-150">
+                    {CORNER_LABELS.map((label, idx) => (
+                      <FluentSliderField
+                        key={label}
+                        label={label}
+                        value={element.radiusCorners?.[idx] ?? 0}
+                        min={0}
+                        max={80}
+                        step={1}
+                        unit="px"
+                        onChange={(v) => {
+                          const next = [...(element.radiusCorners ?? [0, 0, 0, 0])];
+                          next[idx] = v;
+                          onUpdate(element.id, { radiusCorners: next });
+                        }}
+                        onCommit={() => useEditorStore.getState().pushHistory()}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
         {/* سلايدر عدد أضلاع المضلع */}
         {element.shape === 'polygon' && (
@@ -273,8 +379,77 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           </div>
         )}
 
-        {/* سلايدر نصف القطر الداخلي للحلقة */}
-        {element.shape === 'ring' && (
+        {/* رؤوس النجمة وعمقها — Konva.Star الأصلي (numPoints + innerRadius) */}
+        {element.shape === 'star' && (
+          <div className="space-y-1.5 pt-2 border-t border-border/30">
+            <FluentSliderField
+              label="عدد الرؤوس"
+              icon={<Star className="w-4 h-4" weight="regular" />}
+              value={element.starPoints ?? 5}
+              min={3}
+              max={20}
+              step={1}
+              unit=""
+              onChange={(v) => onUpdate(element.id, { starPoints: v })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
+            <FluentSliderField
+              label="عمق الرؤوس"
+              icon={<Star className="w-4 h-4" weight="regular" />}
+              value={Math.round((element.starInnerRatio ?? 0.5) * 100)}
+              min={10}
+              max={90}
+              step={5}
+              unit="%"
+              onChange={(v) => onUpdate(element.id, { starInnerRatio: v / 100 })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
+          </div>
+        )}
+
+        {/* زاوية القوس/القطاع الدائري — تبدأ دائماً من أعلى الشكل */}
+        {(element.shape === 'arc' || element.shape === 'wedge') && (
+          <div className="space-y-1.5 pt-2 border-t border-border/30">
+            <FluentSliderField
+              label="زاوية القوس"
+              icon={<Circle className="w-4 h-4" weight="regular" />}
+              value={element.arcAngle ?? (element.shape === 'wedge' ? 90 : 270)}
+              min={10}
+              max={360}
+              step={5}
+              unit="°"
+              onChange={(v) => onUpdate(element.id, { arcAngle: v })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
+            />
+            <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
+              {ARC_ANGLE_PRESETS.map((deg) => {
+                const defaultAngle = element.shape === 'wedge' ? 90 : 270;
+                const isActive = Math.round(element.arcAngle ?? defaultAngle) === deg;
+                return (
+                  <button
+                    key={deg}
+                    type="button"
+                    className={cn(
+                      'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
+                      isActive
+                        ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
+                    )}
+                    onClick={() => {
+                      onUpdate(element.id, { arcAngle: deg });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                  >
+                    {deg}°
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* سلايدر نصف القطر الداخلي للحلقة والقوس الحلقي (هندسة واحدة مشتركة) */}
+        {(element.shape === 'ring' || element.shape === 'arc') && (
           <div className="space-y-1.5 pt-2 border-t border-border/30">
             <FluentSliderField
               label="نصف القطر الداخلي"
@@ -315,6 +490,21 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
               onChange={(v) => onUpdate(element.id, { pointerWidth: v })}
               onCommit={() => useEditorStore.getState().pushHistory()}
             />
+
+            {/* رأس في البداية — يحوّل السهم إلى مزدوج الرأسين (Konva.pointerAtBeginning) */}
+            <FluentSettingRow
+              label="رأس في البداية"
+              icon={<ArrowsLeftRight className="w-3.5 h-3.5" weight="regular" />}
+              control={
+                <Switch
+                  checked={element.pointerAtBeginning === true}
+                  onCheckedChange={(checked) => {
+                    onUpdate(element.id, { pointerAtBeginning: checked });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                />
+              }
+            />
           </div>
         )}
       </FluentSection>
@@ -333,7 +523,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
   const currentOpacity = Math.round((element.opacity ?? 1) * 100);
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-200 font-cairo">
+    <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
       {/* بطاقة 1: التعبئة والتدرج */}
       <FluentSection
         icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
@@ -343,6 +533,20 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
       >
         <GradientPicker
           fillType={element.fillType || 'solid'}
+          allowImageFill
+          imageFill={{
+            fillImageSrc: element.fillImageSrc,
+            fillImageFit: element.fillImageFit,
+            fillImageScale: element.fillImageScale,
+            fillImageRotation: element.fillImageRotation,
+            fillImageOffsetX: element.fillImageOffsetX,
+            fillImageOffsetY: element.fillImageOffsetY,
+          }}
+          onChangeImageFill={(patch) => {
+            // إزالة الصورة تُعيد الشكل لتعبئة مصمتة بدل إبقاء وضع صورة بلا صورة
+            onUpdate(element.id, normalizeImageFillPatch(patch));
+          }}
+          onCommitImageFill={() => useEditorStore.getState().pushHistory()}
           color={currentFill}
           colorStops={
             element.fillLinearGradientColorStops ||

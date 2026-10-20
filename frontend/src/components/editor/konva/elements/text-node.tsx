@@ -8,9 +8,11 @@ import { ElementProps, propsAreEqual } from './types';
 import { getFillProps } from './fill-utils';
 import { withShadowlessDrag } from './drag-shadow';
 import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
+import { createElementGlyphPainter } from '@/lib/canvas/fill-paint';
+import { useAsyncImage } from '@/hooks/use-async-image';
 import { loadGoogleFont, onFontReady } from '@/lib/io/fonts';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
-import { isArabicText as isArabicTextHelper } from '@/lib/canvas/text-helpers';
+import { resolveTextRenderState } from '@/lib/canvas/text-helpers';
 
 export const KonvaTextElement = React.memo(function KonvaTextElement({
   element: _element,
@@ -38,6 +40,8 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const isEditing = useEditorStore((state) => state.editingTextId === element.id);
   const hasAnimatedRef = React.useRef(false);
   const textRef = useRef<Konva.Text | null>(null);
+  // صورة تعبئة النص — يُعاد استخدام نفس كاش الصور ونفس رياضيات نقش الأشكال
+  const [fillImage] = useAsyncImage(element.fillType === 'image' ? element.fillImageSrc || '' : '');
 
   const { onDragStart, dragBoundFunc, onDragMove, onDragEnd } = useKonvaDrag({
     element,
@@ -124,6 +128,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
     element.curve,
     element.lineHeight,
     element.letterSpacing,
+    element.wrap,
     element.textTransform,
     element.arabicNumerals,
   ]);
@@ -133,34 +138,18 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
   const w = element.width * stageCanvasWidth;
   const h = element.height * canvasHeight;
 
-  // فحص هل يحتوي النص على أحرف عربية لمنع تقطيع الأحرف المتصلة (Letter Spacing Exploding)
-  let rawText = element.text || '';
-
-  // تحويل الأرقام إلى المشرقية (٠-٩) إذا تم تفعيل الخيار
-  if (element.arabicNumerals) {
-    rawText = rawText.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
-  }
-
-  const isArabic = isArabicTextHelper(rawText);
-  const spacing = element.letterSpacing || 0;
-
-  let renderText = rawText;
-  let effectiveLetterSpacing = spacing;
-
-  if (isArabic && spacing > 0) {
-    effectiveLetterSpacing = 0; // إلغاء التباعد بين الأحرف لمنع تفكيك وتفجير أحرف الكلمة الواحدة
-    const extraSpaces = ' '.repeat(Math.min(6, Math.max(1, Math.round(spacing / 3.5))));
-    renderText = rawText.replace(/ /g, extraSpaces);
-  }
-
-  // تحويلات الحالة لاتينية فقط — تطبيقها على العربي يخرب التشكيل بلا فائدة
-  if (!isArabic && element.textTransform === 'uppercase') {
-    renderText = renderText.toUpperCase();
-  } else if (!isArabic && element.textTransform === 'lowercase') {
-    renderText = renderText.toLowerCase();
-  } else if (!isArabic && element.textTransform === 'capitalize') {
-    renderText = renderText.replace(/\b\w/g, (c) => c.toUpperCase());
-  }
+  // تجهيز النص الموحّد (أرقام مشرقية + تحويلات حالة + تباعد كلمات عربي)
+  // — نفس الدالة في التصدير تمنع انحراف المعاينة عن الملف النهائي.
+  const {
+    text: renderText,
+    isArabic,
+    letterSpacing: effectiveLetterSpacing,
+  } = resolveTextRenderState({
+    text: element.text,
+    arabicNumerals: element.arabicNumerals,
+    letterSpacing: element.letterSpacing,
+    textTransform: element.textTransform,
+  });
 
   const hasBg = !!element.textBgColor && element.textBgColor !== 'transparent';
   const bgPaddingX = element.textBgPaddingX ?? element.textBgPadding ?? 0;
@@ -253,6 +242,8 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
                 fontWeight: element.fontWeight || 400,
                 fontStyle: element.fontStyle || 'normal',
                 color: element.color || TEXT_COLOR_DEFAULT,
+                // تدرج/صورة في فضاء العنصر رغم دوران كل حرف على القوس
+                fillStyle: createElementGlyphPainter(ctx, element, w, h, fillImage),
                 stroke: element.strokeWidth ? element.stroke || TEXT_COLOR_DEFAULT : undefined,
                 strokeWidth: element.strokeWidth || 0,
                 textAlign: element.textAlign || 'center',
@@ -292,7 +283,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
             ]
               .filter(Boolean)
               .join(' ')}
-            {...getFillProps(element, w, h)}
+            {...getFillProps(element, w, h, fillImage ?? null)}
             fontFamily={element.fontFamily || 'sans-serif'}
             align={element.textAlign || 'center'}
             lineHeight={element.lineHeight ?? 1.2}

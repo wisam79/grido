@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
-import { drawCurvedText } from "../src/lib/canvas/curved-text-utils";
+import { describe, it, expect, vi } from 'vitest';
+import { drawCurvedText } from '../src/lib/canvas/curved-text-utils';
 
-describe("Curved Text Drawing Tests", () => {
-  it("does nothing when curve is 0 or text is empty", () => {
+describe('Curved Text Drawing Tests', () => {
+  it('does nothing when curve is 0 or text is empty', () => {
     const mockCtx = {
       save: vi.fn(),
       restore: vi.fn(),
@@ -11,31 +11,31 @@ describe("Curved Text Drawing Tests", () => {
     } as unknown as CanvasRenderingContext2D;
 
     drawCurvedText(mockCtx, {
-      text: "",
+      text: '',
       x: 0,
       y: 0,
       width: 200,
       height: 100,
       fontSize: 20,
-      fontFamily: "Arial",
+      fontFamily: 'Arial',
       curve: 50,
     });
     expect(mockCtx.fillText).not.toHaveBeenCalled();
 
     drawCurvedText(mockCtx, {
-      text: "Hello",
+      text: 'Hello',
       x: 0,
       y: 0,
       width: 200,
       height: 100,
       fontSize: 20,
-      fontFamily: "Arial",
+      fontFamily: 'Arial',
       curve: 0,
     });
     expect(mockCtx.fillText).not.toHaveBeenCalled();
   });
 
-  it("draws each character rotated along arc when curve is positive or negative", () => {
+  it('draws each character rotated along arc when curve is positive or negative', () => {
     const fillTextSpy = vi.fn();
     const rotateSpy = vi.fn();
     const translateSpy = vi.fn();
@@ -51,15 +51,15 @@ describe("Curved Text Drawing Tests", () => {
     } as unknown as CanvasRenderingContext2D;
 
     drawCurvedText(mockCtx, {
-      text: "GRIDO",
+      text: 'GRIDO',
       x: 0,
       y: 0,
       width: 300,
       height: 150,
       fontSize: 24,
-      fontFamily: "Cairo",
+      fontFamily: 'Cairo',
       curve: 60,
-      stroke: "#000000",
+      stroke: '#000000',
       strokeWidth: 2,
     });
 
@@ -67,5 +67,39 @@ describe("Curved Text Drawing Tests", () => {
     expect(fillTextSpy).toHaveBeenCalledTimes(5);
     expect(rotateSpy).toHaveBeenCalledTimes(5);
     expect(translateSpy).toHaveBeenCalledTimes(5);
+  });
+
+  it('resolves a per-glyph fill for gradient/pattern paints', () => {
+    const fillTextSpy = vi.fn();
+    const fillStyleForGlyph = vi.fn(() => '#ff0000');
+
+    const mockCtx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      fillText: fillTextSpy,
+      measureText: vi.fn().mockReturnValue({ width: 10 }),
+      fillStyle: '#000000',
+    } as unknown as CanvasRenderingContext2D;
+
+    drawCurvedText(mockCtx, {
+      text: 'AB',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 100,
+      fontSize: 24,
+      fontFamily: 'Cairo',
+      curve: 40,
+      fillStyle: fillStyleForGlyph,
+    });
+
+    expect(fillStyleForGlyph).toHaveBeenCalledTimes(2);
+    expect(fillStyleForGlyph).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ rotation: expect.any(Number) }),
+    );
+    expect(mockCtx.fillStyle).toBe('#ff0000');
   });
 });

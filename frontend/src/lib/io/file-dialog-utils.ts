@@ -1,4 +1,9 @@
-import { OpenFile, OpenMultipleFiles, OpenDirectoryDialog } from '../../../wailsjs/go/main/App';
+import {
+  OpenFile,
+  OpenMultipleFiles,
+  OpenDirectoryDialog,
+  SaveImageFromBase64,
+} from '../../../wailsjs/go/main/App';
 import { wailsIsDesktop } from '../wails-env';
 import { createLogger } from '@/lib/logger';
 
@@ -62,6 +67,20 @@ export async function openImageFileDialog(multiple = false): Promise<string[]> {
     input.oncancel = () => resolve([]);
     input.click();
   });
+}
+
+/**
+ * اختيار صورة واحدة من الجهاز وإرجاع مسارها الدائم الجاهز للاستخدام.
+ *
+ * في Wails قد يعيد OpenFile مساراً محفوظاً مسبقاً (/local-image/...) وليس
+ * بيانات base64 — وتمرير مسار عادي إلى SaveImageFromBase64 يفجّر استثناء
+ * فك التشفير في Go، لذا تُمرَّر بيانات dataURL فقط. مصدر واحد لكل مسارات
+ * «اختيار صورة» في التطبيق (بدل تكرار الفحص في كل لوحة خصائص).
+ */
+export async function pickLocalImage(): Promise<string | null> {
+  const [picked] = await openImageFileDialog(false);
+  if (!picked) return null;
+  return picked.startsWith('data:image/') ? await SaveImageFromBase64(picked) : picked;
 }
 
 /**
