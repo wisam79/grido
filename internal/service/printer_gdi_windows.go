@@ -391,8 +391,11 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 	matchedFormName := req.FormName
 
 	if paperID == 0 {
-		if stdID := matchStandardPaperID(req.PaperWidthMM, req.PaperHeightMM); stdID != 0 {
+		if stdID, stdName := matchStandardPaper(req.PaperWidthMM, req.PaperHeightMM); stdID != 0 {
 			paperID = stdID
+			if matchedFormName == "" {
+				matchedFormName = stdName
+			}
 		} else {
 			driverID, driverForm, found := findPrinterPaperMatch(pPrinterName, req.PaperWidthMM, req.PaperHeightMM, req.Borderless, req.FormName)
 			if found && driverID != 0 {
@@ -401,6 +404,12 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 					matchedFormName = driverForm
 				}
 			}
+		}
+	} else if matchedFormName == "" {
+		if stdName := standardFormNameByID(paperID); stdName != "" {
+			matchedFormName = stdName
+		} else if _, stdName := matchStandardPaper(req.PaperWidthMM, req.PaperHeightMM); stdName != "" {
+			matchedFormName = stdName
 		}
 	}
 
@@ -414,6 +423,9 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 		if matchedFormName != "" {
 			dm.DmFields |= dmFormNameField
 			dm.DmFormName = formNameField(matchedFormName)
+		} else {
+			dm.DmFields &^= dmFormNameField
+			dm.DmFormName = [32]uint16{}
 		}
 	} else if req.PaperWidthMM > 0 && req.PaperHeightMM > 0 {
 		// أبعاد مخصصة فيزيائية بالكامل (DMPAPER_USER)
@@ -428,6 +440,9 @@ func configurePrinterDevMode(printerName string, req domain.DirectPrintRequest) 
 		if req.FormName != "" {
 			dm.DmFields |= dmFormNameField
 			dm.DmFormName = formNameField(req.FormName)
+		} else {
+			dm.DmFields &^= dmFormNameField
+			dm.DmFormName = [32]uint16{}
 		}
 	} else if req.FormName != "" {
 		dm.DmFields |= dmFormNameField | dmPaperSizeField
@@ -615,9 +630,9 @@ func findPrinterPaperMatch(pPrinterName *uint16, targetW, targetH float64, borde
 	return best.id, best.name, true
 }
 
-// matchStandardPaperID يطابق أبعاد الورقة بالمليمتر مع معرفات قوالب ويندوز القياسية (DMPAPER_*)
-// بتسامح 1.5 مم لاستيعاب فروق التقريب بين البوصة والمليمتر.
-func matchStandardPaperID(w, h float64) uint16 {
+// matchStandardPaper يطابق أبعاد الورقة بالمليمتر مع معرفات قوالب ويندوز القياسية (DMPAPER_*)
+// واسم القالب المقابل بتسامح 1.5 مم لاستيعاب فروق التقريب بين البوصة والمليمتر.
+func matchStandardPaper(w, h float64) (id uint16, formName string) {
 	dimMin := math.Min(w, h)
 	dimMax := math.Max(w, h)
 	near := func(a, b float64) bool {
@@ -625,37 +640,82 @@ func matchStandardPaperID(w, h float64) uint16 {
 	}
 	switch {
 	case near(dimMin, 210) && near(dimMax, 297):
-		return 9 // DMPAPER_A4
+		return 9, "A4" // DMPAPER_A4
 	case near(dimMin, 297) && near(dimMax, 420):
-		return 8 // DMPAPER_A3
+		return 8, "A3" // DMPAPER_A3
 	case near(dimMin, 148) && near(dimMax, 210):
-		return 11 // DMPAPER_A5
+		return 11, "A5" // DMPAPER_A5
 	case near(dimMin, 105) && near(dimMax, 148):
-		return 70 // DMPAPER_A6
+		return 70, "A6" // DMPAPER_A6
 	case near(dimMin, 420) && near(dimMax, 594):
-		return 66 // DMPAPER_A2
+		return 66, "A2" // DMPAPER_A2
 	case near(dimMin, 215.9) && near(dimMax, 279.4):
-		return 1 // DMPAPER_LETTER
+		return 1, "Letter" // DMPAPER_LETTER
 	case near(dimMin, 215.9) && near(dimMax, 355.6):
-		return 5 // DMPAPER_LEGAL
+		return 5, "Legal" // DMPAPER_LEGAL
 	case near(dimMin, 279.4) && near(dimMax, 431.8):
-		return 3 // DMPAPER_TABLOID
+		return 3, "Tabloid" // DMPAPER_TABLOID
 	case near(dimMin, 182) && near(dimMax, 257):
-		return 13 // DMPAPER_B5
+		return 13, "B5 (JIS)" // DMPAPER_B5
 	case near(dimMin, 250) && near(dimMax, 354):
-		return 12 // DMPAPER_B4
+		return 12, "B4 (JIS)" // DMPAPER_B4
 	case near(dimMin, 128) && near(dimMax, 182):
-		return 88 // DMPAPER_B6_JIS
+		return 88, "B6 (JIS)" // DMPAPER_B6_JIS
 	case near(dimMin, 184.15) && near(dimMax, 266.7):
-		return 7 // DMPAPER_EXECUTIVE
+		return 7, "Executive" // DMPAPER_EXECUTIVE
 	case near(dimMin, 100) && near(dimMax, 148):
-		return 43 // DMPAPER_JAPANESE_POSTCARD
+		return 43, "Japanese Postcard" // DMPAPER_JAPANESE_POSTCARD
 	case near(dimMin, 139.7) && near(dimMax, 215.9):
-		return 6 // DMPAPER_STATEMENT
+		return 6, "Statement" // DMPAPER_STATEMENT
 	case near(dimMin, 254) && near(dimMax, 355.6):
-		return 16 // DMPAPER_10X14
+		return 16, "10x14" // DMPAPER_10X14
 	default:
-		return 0
+		return 0, ""
+	}
+}
+
+// matchStandardPaperID يطابق أبعاد الورقة بالمليمتر مع معرفات قوالب ويندوز القياسية (DMPAPER_*)
+// بتسامح 1.5 مم لاستيعاب فروق التقريب بين البوصة والمليمتر.
+func matchStandardPaperID(w, h float64) uint16 {
+	id, _ := matchStandardPaper(w, h)
+	return id
+}
+
+// standardFormNameByID يعيد الاسم القياسي لقالب ويندوز المقابل لمعرف الورق DMPAPER_*
+func standardFormNameByID(id uint16) string {
+	switch id {
+	case 1:
+		return "Letter"
+	case 3:
+		return "Tabloid"
+	case 5:
+		return "Legal"
+	case 6:
+		return "Statement"
+	case 7:
+		return "Executive"
+	case 8:
+		return "A3"
+	case 9:
+		return "A4"
+	case 11:
+		return "A5"
+	case 12:
+		return "B4 (JIS)"
+	case 13:
+		return "B5 (JIS)"
+	case 16:
+		return "10x14"
+	case 43:
+		return "Japanese Postcard"
+	case 66:
+		return "A2"
+	case 70:
+		return "A6"
+	case 88:
+		return "B6 (JIS)"
+	default:
+		return ""
 	}
 }
 

@@ -74,6 +74,10 @@ function storePrinter(name: string): void {
   }
 }
 
+function getDriverPaperKey(p: SupportedPaperInfo): string {
+  return `driver:${p.id}:${p.name}`;
+}
+
 interface PrintDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -387,9 +391,30 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, isExporting, hasContent, exporter]);
 
+  // تطهير وإلغاء تكرار قوالب الورق المسترجعة من درايفر الطابعة
+  const sanitizedDriverPapers = useMemo(() => {
+    if (!supportedPapers || supportedPapers.length === 0) return [];
+    const seen = new Set<string>();
+    return supportedPapers.filter((p) => {
+      if (!p.name || p.widthMM <= 10 || p.heightMM <= 10) return false;
+      const key = `${p.id}:${p.name.trim().toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [supportedPapers]);
+
   // مطابقة قالب الورق المدعوم من الطابعة مع مقاس الورقة الحالي
   const matchedPaper = useMemo(() => {
     if (!supportedPapers.length) return null;
+
+    if (printSettings.paperId?.startsWith('driver:')) {
+      const directMatch = supportedPapers.find(
+        (p) => getDriverPaperKey(p) === printSettings.paperId,
+      );
+      if (directMatch) return directMatch;
+    }
+
     const targetW = paperWidth;
     const targetH = paperHeight;
     const isBorderless = effectiveMarginMM === 0;
@@ -406,7 +431,55 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       if (borderlessMatch) return borderlessMatch;
     }
     return matches[0] || null;
-  }, [supportedPapers, paperWidth, paperHeight, effectiveMarginMM]);
+  }, [supportedPapers, printSettings.paperId, paperWidth, paperHeight, effectiveMarginMM]);
+
+  // استنتاج القيمة المحددة في قائمة اختيار مقاس الورق
+  const selectedPaperValue = useMemo(() => {
+    const currentId = printSettings.paperId || 'canvas';
+    if (currentId === 'canvas') return 'canvas';
+
+    if (currentId.startsWith('driver:')) {
+      const exists = sanitizedDriverPapers.some((p) => getDriverPaperKey(p) === currentId);
+      if (exists) return currentId;
+    }
+
+    if (sanitizedDriverPapers.length > 0) {
+      const std = ALL_PRINT_PAPER_SIZES.find((p) => p.id === currentId);
+      const targetW = std ? std.widthMM : printSettings.paperWidthMM;
+      const targetH = std ? std.heightMM : printSettings.paperHeightMM;
+
+      const matched = sanitizedDriverPapers.find((p) => {
+        if (currentId === 'a4' && (p.id === 9 || p.name.trim().toLowerCase() === 'a4')) {
+          return true;
+        }
+        if (currentId === 'letter' && (p.id === 1 || p.name.trim().toLowerCase() === 'letter')) {
+          return true;
+        }
+        if (currentId === 'a3' && (p.id === 8 || p.name.trim().toLowerCase() === 'a3')) {
+          return true;
+        }
+        if (currentId === 'a5' && (p.id === 11 || p.name.trim().toLowerCase() === 'a5')) {
+          return true;
+        }
+        return (
+          (Math.abs(p.widthMM - targetW) <= 2.5 && Math.abs(p.heightMM - targetH) <= 2.5) ||
+          (Math.abs(p.widthMM - targetH) <= 2.5 && Math.abs(p.heightMM - targetW) <= 2.5)
+        );
+      });
+      if (matched) return getDriverPaperKey(matched);
+    }
+
+    if (ALL_PRINT_PAPER_SIZES.some((p) => p.id === currentId)) {
+      return currentId;
+    }
+
+    return 'canvas';
+  }, [
+    printSettings.paperId,
+    printSettings.paperWidthMM,
+    printSettings.paperHeightMM,
+    sanitizedDriverPapers,
+  ]);
 
   useEffect(() => {
     exporter.setPrintInvocation({
@@ -699,7 +772,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
               </div>
 
               <Select
-                value={printSettings.paperId || 'canvas'}
+                value={selectedPaperValue}
                 onValueChange={(val) => {
                   if (val === 'canvas') {
                     const isCanvasLandscape = (imageWidthMM || 210) > (imageHeightMM || 297);
@@ -712,6 +785,22 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     });
                     return;
                   }
+
+                  if (val.startsWith('driver:')) {
+                    const driverPaper = sanitizedDriverPapers.find(
+                      (p) => getDriverPaperKey(p) === val,
+                    );
+                    if (driverPaper) {
+                      setPrintSettings({
+                        paperId: val,
+                        paperWidthMM: driverPaper.widthMM,
+                        paperHeightMM: driverPaper.heightMM,
+                        ...(driverPaper.isBorderless ? { marginMM: 0 } : {}),
+                      });
+                      return;
+                    }
+                  }
+
                   const selected = ALL_PRINT_PAPER_SIZES.find((p) => p.id === val);
                   if (selected) {
                     setPrintSettings({
@@ -728,27 +817,56 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                 >
                   <SelectValue placeholder="مقاس الورقة" />
                 </SelectTrigger>
-                <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
+                <SelectContent className="z-(--z-print-toolbar) max-h-72" dir="rtl">
                   <SelectItem
                     value="canvas"
                     className="text-xs font-bold text-primary cursor-pointer"
                   >
                     {`الكانفاس (${Math.round(imageWidthMM || 0)} × ${Math.round(imageHeightMM || 0)} مم)`}
                   </SelectItem>
-                  {ALL_PRINT_PAPER_SIZES.map((size) => (
-                    <SelectItem
-                      key={size.id}
-                      value={size.id}
-                      className="text-xs font-semibold cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between w-full gap-2">
-                        <span>{size.name}</span>
-                        <span className="text-micro font-mono text-muted-foreground">
-                          {size.widthMM} × {size.heightMM} مم
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
+
+                  {sanitizedDriverPapers.length > 0
+                    ? sanitizedDriverPapers.map((paper) => {
+                        const val = getDriverPaperKey(paper);
+                        return (
+                          <SelectItem
+                            key={val}
+                            value={val}
+                            className="text-xs font-semibold cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between w-full gap-2">
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span>{paper.name}</span>
+                                {paper.isBorderless && (
+                                  <span className="text-micro font-medium bg-primary/10 text-primary px-1 rounded">
+                                    بدون حواف
+                                  </span>
+                                )}
+                              </div>
+                              <span
+                                className="text-micro font-mono text-muted-foreground shrink-0"
+                                dir="ltr"
+                              >
+                                {paper.widthMM} × {paper.heightMM} مم
+                              </span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })
+                    : ALL_PRINT_PAPER_SIZES.map((size) => (
+                        <SelectItem
+                          key={size.id}
+                          value={size.id}
+                          className="text-xs font-semibold cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between w-full gap-2">
+                            <span>{size.name}</span>
+                            <span className="text-micro font-mono text-muted-foreground" dir="ltr">
+                              {size.widthMM} × {size.heightMM} مم
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                 </SelectContent>
               </Select>
 

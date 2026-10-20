@@ -3,6 +3,7 @@
 package service
 
 import (
+	"unsafe"
 	"image"
 	"image/color"
 	"math"
@@ -639,6 +640,77 @@ func TestConfigurePrinterDevMode_StandardPaperIDPrecedence(t *testing.T) {
 	id := matchStandardPaperID(210, 297)
 	if id != 9 {
 		t.Fatalf("matchStandardPaperID(210, 297) = %d, want 9 (DMPAPER_A4)", id)
+	}
+}
+
+func TestMatchStandardPaper(t *testing.T) {
+	tests := []struct {
+		name     string
+		w, h     float64
+		wantID   uint16
+		wantForm string
+	}{
+		{"A4 Portrait", 210, 297, 9, "A4"},
+		{"A4 Landscape", 297, 210, 9, "A4"},
+		{"Letter Portrait", 215.9, 279.4, 1, "Letter"},
+		{"A3 Portrait", 297, 420, 8, "A3"},
+		{"A5 Portrait", 148, 210, 11, "A5"},
+		{"Unknown size", 80, 80, 0, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotID, gotForm := matchStandardPaper(tt.w, tt.h)
+			if gotID != tt.wantID || gotForm != tt.wantForm {
+				t.Fatalf("matchStandardPaper(%.1f, %.1f) = (%d, %q), want (%d, %q)",
+					tt.w, tt.h, gotID, gotForm, tt.wantID, tt.wantForm)
+			}
+		})
+	}
+}
+
+func TestStandardFormNameByID(t *testing.T) {
+	if got := standardFormNameByID(9); got != "A4" {
+		t.Fatalf("standardFormNameByID(9) = %q, want %q", got, "A4")
+	}
+	if got := standardFormNameByID(1); got != "Letter" {
+		t.Fatalf("standardFormNameByID(1) = %q, want %q", got, "Letter")
+	}
+	if got := standardFormNameByID(8); got != "A3" {
+		t.Fatalf("standardFormNameByID(8) = %q, want %q", got, "A3")
+	}
+	if got := standardFormNameByID(999); got != "" {
+		t.Fatalf("standardFormNameByID(999) = %q, want empty", got)
+	}
+}
+
+func TestConfigurePrinterDevMode_LiveA4Enforcement(t *testing.T) {
+	printerName, err := GetDefaultPrinter()
+	if err != nil || printerName == "" {
+		t.Skip("لا توجد طابعة افتراضية متاحة في بيئة الاختبار")
+	}
+
+	req := domain.DirectPrintRequest{
+		PrinterName:   printerName,
+		PaperWidthMM:  210,
+		PaperHeightMM: 297,
+		Orientation:   "portrait",
+		Copies:        1,
+		Color:         true,
+	}
+
+	buf, err := configurePrinterDevMode(printerName, req)
+	if err != nil || len(buf) == 0 {
+		t.Fatalf("configurePrinterDevMode failed: %v", err)
+	}
+
+	dm := (*devModeW)(unsafe.Pointer(&buf[0]))
+	if dm.DmPaperSize != 9 {
+		t.Errorf("DmPaperSize = %d, want 9 (DMPAPER_A4)", dm.DmPaperSize)
+	}
+	formName := windows.UTF16ToString(dm.DmFormName[:])
+	if formName != "A4" {
+		t.Errorf("DmFormName = %q, want %q", formName, "A4")
 	}
 }
 
