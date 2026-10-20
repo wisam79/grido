@@ -1,18 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Toolbar,
-  TemplatePanel,
-  PropertiesPanel,
-  EditorCanvas,
-  AccountLicenseModal,
-  UpdateNotifier,
-  WindowResizeHandles,
-  CanvasViewportDeck,
-  DesktopMenuBar,
-  WorkspaceLayout,
-  AppDialogsHost,
-} from '@/components/editor';
+// استيرادات مباشرة بدل برميل @/components/editor: البرميل كان يُدخل كل
+// اللوحات والحوارات (ومنها print-dialog وprojects-dialog) في الحزمة الرئيسية
+// فيُلغي فائدة lazy() تماماً.
+import { Toolbar } from '@/components/editor/toolbar/toolbar';
+import { TemplatePanel } from '@/components/editor/panels/template-panel';
+import { PropertiesPanel } from '@/components/editor/panels/properties-panel';
+import { EditorCanvas } from '@/components/editor/canvas/editor-canvas';
+import { AccountLicenseModal } from '@/components/editor/dialogs/account-license-modal';
+import { UpdateNotifier } from '@/components/editor/system/update-notifier';
+import { WindowResizeHandles } from '@/components/editor/system/window-resize-handles';
+import { CanvasViewportDeck } from '@/components/editor/canvas/canvas-viewport-deck';
+import { DesktopMenuBar } from '@/components/editor/system/desktop-menu-bar';
+import { WorkspaceLayout } from '@/components/editor/workspace/workspace-layout';
+import { AppDialogsHost } from '@/components/editor/workspace/app-dialogs-host';
 import {
   useWorkspacePanels,
   type CollageTab,

@@ -179,24 +179,10 @@ const SortableLayerItem = React.memo(
       <div
         ref={setNodeRef}
         style={style}
-        role="option"
-        aria-selected={isSelected}
-        aria-label={getLayerLabel(el, layerNumber)}
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            if (e.shiftKey || e.ctrlKey || e.metaKey) toggleElementSelection(el.id);
-            else selectElement(el.id);
-          }
-        }}
-        onClick={(e) => {
-          if (e.shiftKey || e.ctrlKey || e.metaKey) toggleElementSelection(el.id);
-          else selectElement(el.id);
-        }}
+        role="listitem"
         className={cn(
-          'group/row relative flex items-center gap-1.5 rounded-md border text-start cursor-pointer select-none',
-          'transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+          'group/row relative flex items-center gap-1.5 rounded-md border text-start select-none',
+          'transition-colors duration-150',
           rowHeight,
           isComfortable ? 'px-1.5' : 'px-1.5',
           // State
@@ -238,70 +224,81 @@ const SortableLayerItem = React.memo(
           <DotsSixVertical className="w-3 h-3" weight="bold" />
         </div>
 
-        {/* المعاينة المصغرة (Thumbnail) — تلي المقبض مباشرة لثبات الهيكلية */}
-        {el.type === 'image' && (el as ImageElement).imageSrc ? (
-          <div
-            className={cn(
-              'shrink-0 rounded-md overflow-hidden border shadow-2xs bg-muted/50 flex items-center justify-center',
-              thumbSize,
-              isHidden ? 'grayscale opacity-70' : 'border-border/60',
-              isSelected && 'border-primary/40',
-            )}
-          >
-            <img
-              src={(el as ImageElement).imageSrc}
-              alt=""
-              className="w-full h-full object-cover select-none pointer-events-none"
-              loading="lazy"
-              draggable={false}
-            />
-          </div>
-        ) : (
-          <span
-            className={cn(
-              'shrink-0 rounded-md flex items-center justify-center border',
-              thumbSize,
-              el.type === 'text'
-                ? 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400'
-                : el.type === 'shape'
-                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-sky-500/10 border-sky-500/20 text-sky-600 dark:text-sky-400',
-              isHidden && 'opacity-60',
-            )}
-          >
-            {el.type === 'image' && <Image className="w-3.5 h-3.5" />}
-            {el.type === 'text' && <TextAa className="w-3.5 h-3.5" weight="bold" />}
-            {el.type === 'shape' && <Shapes className="w-3.5 h-3.5" />}
-          </span>
-        )}
-
-        {/* اسم وتفاصيل الطبقة — يملأ المساحة المتبقية بالكامل دون أي بتر قسري */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center gap-0 pe-1">
-          <span
-            className={cn(
-              'truncate leading-none',
-              isComfortable ? 'text-xs font-semibold' : 'text-xs font-semibold',
-              isSelected ? 'text-foreground font-bold' : 'text-foreground/90',
-              isHidden && 'line-through decoration-muted-foreground/40',
-            )}
-            title={getLayerLabel(el, layerNumber)}
-          >
-            {getLayerLabel(el, layerNumber)}
-          </span>
-          {isComfortable && (
-            <span className="truncate text-micro leading-none text-muted-foreground font-medium">
-              {getLayerSubLabel(el)}
-              {isGrouped && ' · مجمّعة'}
+        <button
+          type="button"
+          aria-label={getLayerLabel(el, layerNumber)}
+          aria-current={isSelected ? 'true' : undefined}
+          onClick={(e) => {
+            if (e.shiftKey || e.ctrlKey || e.metaKey) toggleElementSelection(el.id);
+            else selectElement(el.id);
+          }}
+          className="flex flex-1 min-w-0 items-center gap-1.5 rounded-sm text-start cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none"
+        >
+          {/* المعاينة المصغرة (Thumbnail) — تلي المقبض مباشرة لثبات الهيكلية */}
+          {el.type === 'image' && (el as ImageElement).imageSrc ? (
+            <div
+              className={cn(
+                'shrink-0 rounded-md overflow-hidden border shadow-2xs bg-muted/50 flex items-center justify-center',
+                thumbSize,
+                isHidden ? 'grayscale opacity-70' : 'border-border/60',
+                isSelected && 'border-primary/40',
+              )}
+            >
+              <img
+                src={(el as ImageElement).imageSrc}
+                alt=""
+                className="w-full h-full object-cover select-none pointer-events-none"
+                loading="lazy"
+                draggable={false}
+              />
+            </div>
+          ) : (
+            <span
+              className={cn(
+                'shrink-0 rounded-md flex items-center justify-center border',
+                thumbSize,
+                el.type === 'text'
+                  ? 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400'
+                  : el.type === 'shape'
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-sky-500/10 border-sky-500/20 text-sky-600 dark:text-sky-400',
+                isHidden && 'opacity-60',
+              )}
+            >
+              {el.type === 'image' && <Image className="w-3.5 h-3.5" />}
+              {el.type === 'text' && <TextAa className="w-3.5 h-3.5" weight="bold" />}
+              {el.type === 'shape' && <Shapes className="w-3.5 h-3.5" />}
             </span>
           )}
-        </div>
 
-        {/* شارة مجمّعة في الوضع المدمج */}
-        {!isComfortable && isGrouped && (
-          <span className="hidden sm:inline-flex items-center justify-center w-5 h-5 rounded-md bg-primary/10 border border-primary/15 text-primary shrink-0">
-            <FolderSimple className="w-3 h-3" weight="fill" />
-          </span>
-        )}
+          {/* اسم وتفاصيل الطبقة — يملأ المساحة المتبقية بالكامل دون أي بتر قسري */}
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-0 pe-1">
+            <span
+              className={cn(
+                'truncate leading-none',
+                isComfortable ? 'text-xs font-semibold' : 'text-xs font-semibold',
+                isSelected ? 'text-foreground font-bold' : 'text-foreground/90',
+                isHidden && 'line-through decoration-muted-foreground/40',
+              )}
+              title={getLayerLabel(el, layerNumber)}
+            >
+              {getLayerLabel(el, layerNumber)}
+            </span>
+            {isComfortable && (
+              <span className="truncate text-micro leading-none text-muted-foreground font-medium">
+                {getLayerSubLabel(el)}
+                {isGrouped && ' · مجمّعة'}
+              </span>
+            )}
+          </div>
+
+          {/* شارة مجمّعة في الوضع المدمج */}
+          {!isComfortable && isGrouped && (
+            <span className="hidden sm:inline-flex items-center justify-center w-5 h-5 rounded-md bg-primary/10 border border-primary/15 text-primary shrink-0">
+              <FolderSimple className="w-3 h-3" weight="fill" />
+            </span>
+          )}
+        </button>
 
         {/* أدوات السطر المدمجة كلياً في نفس بطاقة السطر (بدون بطاقة طافية أو إطار منفصل) */}
         <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -651,9 +648,8 @@ export function LayersList({
   const listContent = (
     <>
       <div
-        role="listbox"
+        role="list"
         aria-label="قائمة الطبقات"
-        aria-multiselectable
         className={cn(
           'space-y-1 custom-scrollbar',
           standalone

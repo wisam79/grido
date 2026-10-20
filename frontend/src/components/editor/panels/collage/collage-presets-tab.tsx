@@ -442,7 +442,10 @@ export function CollagePresetsTab({
               value={presetCategory}
               onValueChange={(val) => onPresetCategoryChange(val as CollagePresetCategory)}
             >
-              <SelectTrigger className="w-full h-8 px-2.5 text-xs font-bold bg-card border-border/80 rounded-md shadow-2xs hover:bg-muted/40 transition-colors cursor-pointer">
+              <SelectTrigger
+                aria-label="فئة قوالب الكولاج"
+                className="w-full h-8 px-2.5 text-xs font-bold bg-card border-border/80 rounded-md shadow-2xs hover:bg-muted/40 transition-colors cursor-pointer"
+              >
                 <div className="flex items-center gap-2 min-w-0 truncate">
                   <currentCat.icon
                     className="w-4 h-4 text-muted-foreground shrink-0"

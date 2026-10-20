@@ -48,6 +48,15 @@ const (
 
 type PrintService struct{}
 
+// printJobSem يمنع تنفيذ طلبتَي طباعة معاً: كل طلب يخصّص كانفس الورقة +
+// كانفس التركيب + صور العناصر المعالَجة، وتزامن طلبين كان يضاعف الذروة.
+var printJobSem = make(chan struct{}, 1)
+
+// printBatchBudgetBytes ميزانية الصور المعالَجة في الدفعة الواحدة. كانت
+// المعالجة السابقة تُبقي كل صور العناصر حيّةً حتى نهاية الرسم (مجموع كامل)،
+// بينما الرسم الآن يجري دفعةً بدفعة فتُحرَّر مراجع الدفعة السابقة فوراً.
+const printBatchBudgetBytes = 512 << 20 // 512 MiB
+
 func NewPrintService() *PrintService {
 	return &PrintService{}
 }
@@ -260,9 +269,51 @@ func countGridTemplates(items []domain.PrintItem) int {
 	return n
 }
 
+// printBatchSize يحدد كم عنصراً تُعالَج صوره قبل رسمها وتحريرها. التقدير
+// يعتمد على وسم العنصر النهائي (W×H بالبكسل عند DPI × 4 بايت)؛ الحد الأدنى 1
+// حتى لا يتجاوز عنصر ضخم وحده الميزانية، والأقصى عدد أنوية المعالجة.
+func printBatchSize(req domain.PrintRequest, maxParallel int) int {
+	if len(req.Items) == 0 || maxParallel < 1 {
+		return 1
+	}
+	var totalBytes int64
+	var counted int64
+	for _, item := range req.Items {
+		if item.ImageSrc == "" {
+			continue
+		}
+		w := int64(math.Round(mmToPx(item.W, req.DPI)))
+		h := int64(math.Round(mmToPx(item.H, req.DPI)))
+		if w <= 0 || h <= 0 {
+			continue
+		}
+		totalBytes += w * h * 4
+		counted++
+	}
+	if counted == 0 {
+		return maxParallel
+	}
+	avg := totalBytes / counted
+	if avg <= 0 {
+		return maxParallel
+	}
+	size := int(int64(printBatchBudgetBytes) / avg)
+	if size < 1 {
+		size = 1
+	}
+	if size > maxParallel {
+		size = maxParallel
+	}
+	return size
+}
+
 // GeneratePrintSheet يولّد ورقة الطباعة كاملة: تحقق ← تركيب ← معالجة متوازية للصور
 // ← رسم تسلسلي (gg ليس آمناً للتزامن) ← خطوط قص ← حفظ المخرجات.
 func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, string, error) {
+	// طلب واحد في كل مرة — يمنع مضاعفة ذروة الذاكرة عند نقرتين متتاليتين
+	printJobSem <- struct{}{}
+	defer func() { <-printJobSem }()
+
 	// Ensure logical dimensions match orientation (defensive: callers may send raw 210x297 + landscape or raw 297x210 + portrait)
 	// 🖨️ RV-16-L8: التبديل كان يصحح الأبعاد بصمت فتُطمس دعوات غير متسقة — يُسجَّل
 	// تحذيراً الآن كي يُكتشف المرسل المخالف بدل إخفائه (عناصر وخطوط القص لا
@@ -312,56 +363,65 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 		return "", "", err
 	}
 
-	// 1. Process all images in parallel
-	processedImages := make([]image.Image, len(req.Items))
-	var g errgroup.Group
-
-	// Limit concurrency to number of CPUs to avoid memory spikes and context switching overhead
-	maxConcurrency := runtime.NumCPU()
-	if maxConcurrency < 2 {
-		maxConcurrency = 2
+	// 1+2. Process images in memory-bounded batches, drawing each batch before
+	// moving on. Keeping every processed image alive until the end meant peak
+	// memory grew with the number of items (sum of all processed bitmaps).
+	maxParallel := runtime.NumCPU()
+	if maxParallel < 2 {
+		maxParallel = 2
 	}
-	g.SetLimit(maxConcurrency)
+	batchSize := printBatchSize(req, maxParallel)
 
-	for i, item := range req.Items {
-		if item.ImageSrc == "" {
-			continue
-		}
-
-		// Capture loop variables for the goroutine
-		i, item := i, item
-		g.Go(func() (err error) {
-			// 🛡️ أي panic داخل عامل المعالجة يتحول لخطأ يصل للمستخدم بدل
-			// إسقاط العملية كاملاً (errgroup لا يلتقط panics بذاته)
-			defer recoverPrintWorkerPanic(i, &err)
-			img, err := s.loadAndProcessImage(item, req.DPI, imgCache, procCache)
-			if err != nil {
-				return err
-			}
-			processedImages[i] = img
-			return nil
-		})
-	}
-
-	if err := g.Wait(); err != nil {
-		return "", "", err
-	}
-
-	// 2. Draw everything sequentially (gg.Context is NOT thread-safe)
-	for i, item := range req.Items {
+	drawItem := func(i int, img image.Image) {
+		item := req.Items[i]
 		if item.ImageSrc == "" {
 			// عنصر بلا صورة: إذا وُجد تركيب كانفاس (وضع حر من العناصر) نرسمه في الخلية،
 			// وإلا نستبقيه فارغاً (السلوك التاريخي)
 			if composedCanvas != nil {
 				drawItemImage(dc, composedCanvas, item, req.DPI)
 			}
-			continue
+			return
 		}
-		if processedImages[i] == nil {
-			continue
+		if img != nil {
+			drawItemImage(dc, img, item, req.DPI)
+		}
+	}
+
+	for start := 0; start < len(req.Items); start += batchSize {
+		end := start + batchSize
+		if end > len(req.Items) {
+			end = len(req.Items)
+		}
+		batch := make([]image.Image, end-start)
+
+		var g errgroup.Group
+		g.SetLimit(maxParallel)
+		for i := start; i < end; i++ {
+			if req.Items[i].ImageSrc == "" {
+				continue
+			}
+			i := i
+			g.Go(func() (err error) {
+				// 🛡️ أي panic داخل عامل المعالجة يتحول لخطأ يصل للمستخدم بدل
+				// إسقاط العملية كاملاً (errgroup لا يلتقط panics بذاته)
+				defer recoverPrintWorkerPanic(i, &err)
+				img, err := s.loadAndProcessImage(req.Items[i], req.DPI, imgCache, procCache)
+				if err != nil {
+					return err
+				}
+				batch[i-start] = img
+				return nil
+			})
+		}
+		if err := g.Wait(); err != nil {
+			return "", "", err
 		}
 
-		drawItemImage(dc, processedImages[i], item, req.DPI)
+		// 2. Draw sequentially (gg.Context is NOT thread-safe)
+		for i := start; i < end; i++ {
+			drawItem(i, batch[i-start])
+		}
+		clear(batch)
 	}
 
 	// 🖨️ RV-16-M1: مسار PDF يرسم خطوط القص متجهة فوق الصورة (drawPDFCutLines)

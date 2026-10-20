@@ -1,5 +1,6 @@
 import type Konva from 'konva';
 import { createLogger } from '@/lib/logger';
+import { getDisplaySource } from './display-image';
 
 const logger = createLogger('konva-export-utils');
 
@@ -13,6 +14,51 @@ interface CachedImageNode {
 interface KonvaNodeLike {
   hide: () => void;
   show: () => void;
+}
+
+interface KonvaImageNodeLike {
+  image: {
+    (): CanvasImageSource | undefined;
+    (image: CanvasImageSource): void;
+  };
+}
+
+/**
+ * يستبدل نسخ العرض المخفّضة (2048px) بالصور الأصلية قبل الالتقاط.
+ * بدون ذلك كان الطباعة/التصدير يكبّرون نسخة العرض فينخفض الحساب الفعلي
+ * تحت 300DPI رغم طلب نسبة عالية. يعيد قائمة الاستعادة.
+ */
+function upgradeImagesToFullResolution(
+  stage: Konva.Stage,
+): { node: KonvaImageNodeLike; image: CanvasImageSource }[] {
+  const restored: { node: KonvaImageNodeLike; image: CanvasImageSource }[] = [];
+  try {
+    const nodes = stage.find('Image') as unknown as KonvaImageNodeLike[];
+    for (const node of nodes) {
+      const current = node.image();
+      const source = getDisplaySource(current as HTMLCanvasElement | null);
+      if (source && current !== source) {
+        restored.push({ node, image: current as CanvasImageSource });
+        node.image(source);
+      }
+    }
+    if (restored.length > 0) stage.batchDraw();
+  } catch (err) {
+    logger.warn('Failed to upgrade image nodes to full resolution', err);
+  }
+  return restored;
+}
+
+function restoreImageNodes(
+  restored: { node: KonvaImageNodeLike; image: CanvasImageSource }[],
+): void {
+  for (const item of restored) {
+    try {
+      item.node.image(item.image);
+    } catch {
+      // تجاهل عقدة دُمّرت أثناء الالتقاط
+    }
+  }
 }
 
 function getScreenPixelRatio(node: CachedImageNode): number {
@@ -138,6 +184,11 @@ function upgradeCachesForExport(stage: Konva.Stage, targetPixelRatio: number): C
  * تمرير وسيط بـ Base64/DataURL (يوفر 33% من الحجم + حلقة فك ترميز كاملة).
  * يعيد Blob أو null عند الفشل.
  */
+export interface CaptureStageOptions {
+  /** استبدال نسخ العرض 2048px بالأصل قبل الالتقاط (دقة طباعة كاملة). */
+  useFullResolution?: boolean;
+}
+
 export async function captureStageBlob(
   stage: Konva.Stage,
   targetPixelRatio: number,
@@ -145,8 +196,10 @@ export async function captureStageBlob(
   quality?: number,
   /** أبعاد الورقة بالإحداثيات المنطقية — تصدير مستقل عن الزوم الحالي */
   captureRect?: { x: number; y: number; width: number; height: number },
+  options?: CaptureStageOptions,
 ): Promise<Blob | null> {
   const cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
+  const upgradedImages = options?.useFullResolution ? upgradeImagesToFullResolution(stage) : [];
 
   // 🧭 في معمارية Viewport Canvas: الـ Stage يحمل إزاحة وزوم مؤقتين.
   // نحفظ الموضع والمقياس ونعيدهما إلى (0,0) و scale=1 لحظياً أثناء الالتقاط لضمان
@@ -182,5 +235,7 @@ export async function captureStageBlob(
     stage.batchDraw();
     // إعادة كاش العناصر للعرض العادي على الشاشة للحفاظ على سلاسة الأداء وخفة الذاكرة
     restoreScreenCache(cachedNodes);
+    restoreImageNodes(upgradedImages);
+    if (upgradedImages.length > 0) stage.batchDraw();
   }
 }

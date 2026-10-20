@@ -100,7 +100,7 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=137
+vitest_test_files=138
 e2e_spec_files=27
 go_test_files=51
 docs_files=6
@@ -110,7 +110,7 @@ docs_files=6
 
 | الرقم | القيمة (تحقق: 2026-10-08) | أمر التحقق |
 |---|---|---|
-| حالات Vitest | **1211 ناجحة + 1 متخطاة (0 فاشلة)** — آخر شبكة كاملة: 2026-10-20 عبر **137 ملفاً** (أضافت جلسة 1.13 خمسة ملفات: `text-render-state` و`text-layout` و`text-preset-catalog` و`fill-paint` و`fill-utils`، ووسّعت `curved-text` لتغطية تعبئة كل حرف؛ وأضافت جلسة 1.12 ملفي `shape-pattern` و`shape-catalog`) | `npm --prefix frontend run test` |
+| حالات Vitest | **1216 ناجحة + 1 متخطاة (0 فاشلة)** — آخر شبكة كاملة: 2026-10-20 عبر **138 ملفاً** (جلسة 1.15 حدّثت اختبار كتالوج الملصقات إلى `aria-pressed` بلا تغيير في العدد؛ وأضافت جلسة 1.14 ملف `image-cache` لميزانية البايتات وسقف الإخلاء، وأضافت جلسة 1.13 خمسة ملفات: `text-render-state` و`text-layout` و`text-preset-catalog` و`fill-paint` و`fill-utils`، ووسّعت `curved-text` لتغطية تعبئة كل حرف؛ وأضافت جلسة 1.12 ملفي `shape-pattern` و`shape-catalog`) | `npm --prefix frontend run test` |
 | حالات E2E | 165 حالة (آخر جرد: 2026-10-08) في **27 ملف مواصفة** (عدّ آلي: 2026-10-15 — مطابق لبلوك الأرقام أعلاه، كل المشاريع) | `cd frontend && npx playwright test --list` |
 | حالات E2E السريعة | مشروع chromium فقط | `cd frontend && npm run test:e2e:fast` |
 | دوال اختبار Go | **283 دالة في 50 ملفاً** — تحقق: 2026-10-18 (جلسة 1.00 أضافت 4 دوال لـ `printer_gdi_windows_test.go` تغطي مقاسات صور الاستوديو، حالات الألفا المتطرفة، أمان الملفات التالفة، وحدود طلبات الطباعة) | `go test ./internal/... -list "^Test"` |

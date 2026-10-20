@@ -43,8 +43,8 @@ export function FluentFilterChips<T extends string = string>({
 
   return (
     <div
-      role="tablist"
-      aria-orientation="horizontal"
+      role="group"
+      aria-label="تصفية"
       className={cn(
         'flex items-center gap-1 bg-muted/70 dark:bg-black/40 p-1 rounded-xl border border-border/70 dark:border-white/10 fluent-specular shadow-inner overflow-x-auto scrollbar-none select-none min-w-0 max-w-full touch-pan-x',
         className,
@@ -60,8 +60,7 @@ export function FluentFilterChips<T extends string = string>({
           <button
             key={opt.id}
             type="button"
-            role="tab"
-            aria-selected={isActive}
+            aria-pressed={isActive}
             disabled={opt.disabled}
             onClick={() => onChange(opt.id)}
             className={cn(

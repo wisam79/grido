@@ -97,7 +97,7 @@
 - جديد: `frontend/src/components/editor/workspace/mobile-panels-sheet.tsx`
 - جديد: `frontend/src/hooks/use-workspace-panels.ts`
 - تعديل: `frontend/src/App.tsx`
-- تعديل: `frontend/src/components/editor/index.ts`
+- تعديل: `frontend/src/components/editor/index.ts` (حُذف لاحقاً في 2026-10-20 — جلسة الأداء 1.14 استبدلت البرميل باستيرادات مباشرة)
 - تعديل محدود: `frontend/src/index.css`
 
 ### العمل

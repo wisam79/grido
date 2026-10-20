@@ -161,7 +161,10 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                       value={String(gridSubdivisions)}
                       onValueChange={(val) => setGridSubdivisions(Number(val))}
                     >
-                      <SelectTrigger className="w-auto h-7 border-0 bg-transparent p-0 text-xs font-mono font-bold focus:ring-0 focus:outline-none text-foreground justify-end gap-1">
+                      <SelectTrigger
+                        aria-label="عدد تقسيمات الشبكة"
+                        className="w-auto h-7 border-0 bg-transparent p-0 text-xs font-mono font-bold focus:ring-0 focus:outline-none text-foreground justify-end gap-1"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="font-cairo rounded-xl border border-border bg-popover/95 backdrop-blur-xl">

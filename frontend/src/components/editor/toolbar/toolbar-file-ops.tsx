@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { lazy, useState, useEffect, useRef, Suspense } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { Button } from '@/components/ui/button';
 import { useShallow } from 'zustand/react/shallow';
@@ -22,13 +22,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ProjectsDialog } from '../dialogs/projects-dialog';
-import { BatchInsertDialog } from '../dialogs/batch-insert-dialog';
-import { PhoneBridgeDialog } from '../dialogs/phone-bridge-dialog';
 import { ClearAutoSave, SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
 import { wailsIsDesktop } from '@/lib/wails-env';
 import { createLogger } from '@/lib/logger';
+
+// حوارات ثقيلة تُحمَّل عند أول فتح فقط: كانت تُستورد استيراداً ثابتاً فتدخل
+// الحزمة الرئيسية (projects يجرّ قاعدة المشاريع، phone-bridge يجرّ qrcode.react).
+const ProjectsDialog = lazy(() =>
+  import('../dialogs/projects-dialog').then((m) => ({ default: m.ProjectsDialog })),
+);
+const BatchInsertDialog = lazy(() =>
+  import('../dialogs/batch-insert-dialog').then((m) => ({ default: m.BatchInsertDialog })),
+);
+const PhoneBridgeDialog = lazy(() =>
+  import('../dialogs/phone-bridge-dialog').then((m) => ({ default: m.PhoneBridgeDialog })),
+);
 
 const logger = createLogger('toolbar-file-ops');
 import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
@@ -59,10 +68,13 @@ async function mapWithConcurrency<T, R>(
 export function ToolbarFileOps() {
   const [isClearAlertOpen, setIsClearAlertOpen] = useState(false);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+  const [projectsMounted, setProjectsMounted] = useState(false);
   const [projectsTab, setProjectsTab] = useState<'save' | 'list'>('save');
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [isBatchInsertOpen, setIsBatchInsertOpen] = useState(false);
+  const [batchMounted, setBatchMounted] = useState(false);
   const [isPhoneBridgeOpen, setIsPhoneBridgeOpen] = useState(false);
+  const [phoneBridgeMounted, setPhoneBridgeMounted] = useState(false);
   const isPhoneBridgeRunning = usePhoneBridgeStore((s) => s.isRunning);
   const phoneBridgePairedDevice = usePhoneBridgeStore((s) => s.pairedDevice);
   const phoneBridgeReceivedCount = usePhoneBridgeStore((s) => s.receivedCount);
@@ -85,10 +97,17 @@ export function ToolbarFileOps() {
       const customEvent = e as CustomEvent<{ tab?: 'save' | 'list' }> | undefined;
       const targetTab = customEvent?.detail?.tab || 'save';
       setProjectsTab(targetTab);
+      setProjectsMounted(true);
       setIsProjectsOpen(true);
     };
-    const openBatch = () => setIsBatchInsertOpen(true);
-    const openPhoneBridge = () => setIsPhoneBridgeOpen(true);
+    const openBatch = () => {
+      setBatchMounted(true);
+      setIsBatchInsertOpen(true);
+    };
+    const openPhoneBridge = () => {
+      setPhoneBridgeMounted(true);
+      setIsPhoneBridgeOpen(true);
+    };
     // طلب المسح من قائمة «المزيد» في الشريط — نافذة التأكيد تبقى ملكاً لهذا المكوّن
     const clearCanvasRequest = () => setIsClearAlertOpen(true);
     window.addEventListener('grido:open-projects-dialog', openProjects);
@@ -258,7 +277,10 @@ export function ToolbarFileOps() {
                 خيارات الإدراج
               </div>
               <DropdownMenuItem
-                onClick={() => setIsBatchInsertOpen(true)}
+                onClick={() => {
+                  setBatchMounted(true);
+                  setIsBatchInsertOpen(true);
+                }}
                 className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
               >
                 <Stack className="w-4 h-4 shrink-0" />
@@ -267,7 +289,10 @@ export function ToolbarFileOps() {
               </DropdownMenuItem>
 
               <DropdownMenuItem
-                onClick={() => setIsPhoneBridgeOpen(true)}
+                onClick={() => {
+                  setPhoneBridgeMounted(true);
+                  setIsPhoneBridgeOpen(true);
+                }}
                 className="flex items-center gap-2.5 p-2 text-xs rounded-lg cursor-pointer hover:bg-accent/80 transition-colors"
               >
                 <DeviceMobileCamera className="w-4 h-4 shrink-0" />
@@ -291,7 +316,10 @@ export function ToolbarFileOps() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsPhoneBridgeOpen(true)}
+              onClick={() => {
+                setPhoneBridgeMounted(true);
+                setIsPhoneBridgeOpen(true);
+              }}
               className="h-8 px-2.5 gap-1.5 border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer text-xs font-semibold rounded-md flex items-center justify-center select-none"
             >
               <span className="relative flex h-2 w-2">
@@ -312,37 +340,48 @@ export function ToolbarFileOps() {
         )}
 
         {/* المكتبة المحلية */}
-        <Suspense fallback={null}>
-          <TooltipBtn content="مكتبة المشاريع">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setProjectsTab('list');
-                setIsProjectsOpen(true);
-              }}
-              data-testid="toolbar-projects"
-              aria-label="مكتبة المشاريع"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer group"
-            >
-              <Folders
-                className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground group-hover:scale-105 transition-all"
-                weight="duotone"
-              />
-            </Button>
-          </TooltipBtn>
-          <ProjectsDialog
-            open={isProjectsOpen}
-            onOpenChange={setIsProjectsOpen}
-            defaultTab={projectsTab}
-          />
-        </Suspense>
+        <TooltipBtn content="مكتبة المشاريع">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setProjectsTab('list');
+              setProjectsMounted(true);
+              setIsProjectsOpen(true);
+            }}
+            data-testid="toolbar-projects"
+            aria-label="مكتبة المشاريع"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer group"
+          >
+            <Folders
+              className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground group-hover:scale-105 transition-all"
+              weight="duotone"
+            />
+          </Button>
+        </TooltipBtn>
+        {projectsMounted && (
+          <Suspense fallback={null}>
+            <ProjectsDialog
+              open={isProjectsOpen}
+              onOpenChange={setIsProjectsOpen}
+              defaultTab={projectsTab}
+            />
+          </Suspense>
+        )}
 
         {/* نافذة الإدراج المتعدد الذكي */}
-        <BatchInsertDialog open={isBatchInsertOpen} onOpenChange={setIsBatchInsertOpen} />
+        {batchMounted && (
+          <Suspense fallback={null}>
+            <BatchInsertDialog open={isBatchInsertOpen} onOpenChange={setIsBatchInsertOpen} />
+          </Suspense>
+        )}
 
         {/* نافذة جسر كاميرا الهاتف اللاسلكي */}
-        <PhoneBridgeDialog open={isPhoneBridgeOpen} onOpenChange={setIsPhoneBridgeOpen} />
+        {phoneBridgeMounted && (
+          <Suspense fallback={null}>
+            <PhoneBridgeDialog open={isPhoneBridgeOpen} onOpenChange={setIsPhoneBridgeOpen} />
+          </Suspense>
+        )}
       </div>
 
       {/* مسح مساحة العمل — انتقل زره إلى قائمة «المزيد» (grido:clear-canvas-request)،

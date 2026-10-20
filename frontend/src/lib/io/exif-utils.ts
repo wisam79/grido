@@ -1,5 +1,3 @@
-import exifr from "exifr";
-
 export interface ImageExifOrientation {
   orientation: number; // 1..8
   rotationDeg: number; // 0, 90, 180, 270
@@ -10,13 +8,16 @@ export interface ImageExifOrientation {
 /**
  * قراءة وسم EXIF Orientation بسرعة فائقة (~1ms) من ملف أو كائن ثنائي أو مسار Base64
  * وتحديد زاوية التدوير اللازمة ومطابقتها.
+ * exifr يُحمَّل عند الطلب فقط: المسار السريع للصور المحلية يقرأ الترويسة في Go
+ * (measure-image)، فلا داعي لتحميل ~75 ك.ب في حزمة الإقلاع لصور لا تحتاجه.
  */
 export async function getExifOrientation(
-  input: File | Blob | string | ArrayBuffer
+  input: File | Blob | string | ArrayBuffer,
 ): Promise<ImageExifOrientation> {
   try {
+    const { default: exifr } = await import('exifr');
     const orientation = await exifr.orientation(input as Parameters<typeof exifr.orientation>[0]);
-    const tag = typeof orientation === "number" ? orientation : 1;
+    const tag = typeof orientation === 'number' ? orientation : 1;
 
     let rotationDeg = 0;
     let flipHorizontal = false;
@@ -84,7 +85,7 @@ export async function getExifOrientation(
 export async function getTrueImageAspect(
   src: File | Blob | string,
   rawWidth: number,
-  rawHeight: number
+  rawHeight: number,
 ): Promise<{ width: number; height: number; aspectRatio: number; rotationDeg: number }> {
   if (rawWidth <= 0 || rawHeight <= 0) {
     return { width: 1, height: 1, aspectRatio: 1, rotationDeg: 0 };

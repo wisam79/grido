@@ -100,6 +100,7 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
         >
           <SelectTrigger
             size="sm"
+            aria-label="مقاس الورق"
             className="h-7 text-mini font-bold rounded-md bg-background border-border/60 min-w-[110px] shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <SelectValue placeholder="مقاس الورق" />

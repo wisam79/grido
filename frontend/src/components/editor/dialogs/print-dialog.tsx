@@ -618,7 +618,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     onValueChange={handlePrinterChange}
                     disabled={isLoadingPrinters || printers.length === 0}
                   >
-                    <SelectTrigger className="h-8 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg w-full">
+                    <SelectTrigger
+                      aria-label="اختيار الطابعة"
+                      className="h-8 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg w-full"
+                    >
                       <SelectValue
                         placeholder={isLoadingPrinters ? 'جاري البحث ...' : 'اختر الطابعة'}
                       />
@@ -719,7 +722,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   }
                 }}
               >
-                <SelectTrigger className="h-8 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg w-full">
+                <SelectTrigger
+                  aria-label="مقاس الورقة"
+                  className="h-8 text-xs font-semibold bg-background border-border/60 shadow-2xs rounded-lg w-full"
+                >
                   <SelectValue placeholder="مقاس الورقة" />
                 </SelectTrigger>
                 <SelectContent className="z-(--z-print-toolbar)" dir="rtl">
@@ -842,7 +848,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                         setPrintSettings({ cutLineStyle: val as typeof printSettings.cutLineStyle })
                       }
                     >
-                      <SelectTrigger className="h-7 w-[84px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-2xs rounded">
+                      <SelectTrigger
+                        aria-label="نمط خطوط القص"
+                        className="h-7 w-[84px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-2xs rounded"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent dir="rtl" className="z-(--z-print-toolbar)">
@@ -870,7 +879,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                         setPrintSettings({ colorSpace: val as 'sRGB' | 'CMYK' })
                       }
                     >
-                      <SelectTrigger className="h-7 w-[98px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-2xs rounded">
+                      <SelectTrigger
+                        aria-label="مساحة اللون"
+                        className="h-7 w-[98px] px-2 py-0 text-micro font-semibold bg-background border-border/50 shadow-2xs rounded"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent dir="rtl" className="z-(--z-print-toolbar)">

@@ -56,7 +56,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
       );
 
       expect(screen.getByRole('searchbox')).toBeInTheDocument();
-      expect(screen.getByRole('tab', { name: /الكل/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /الكل/ })).toHaveAttribute('aria-pressed', 'true');
     });
 
     it('filters templates when search query is entered', async () => {

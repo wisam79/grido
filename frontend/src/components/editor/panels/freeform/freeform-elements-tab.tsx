@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useEditorStore } from '@/lib/editor-store';
 import { Button } from '@/components/ui/button';
 import { FluentSegmentedControl, FluentFilterChips } from '@/components/ui/blocks';
@@ -12,14 +12,7 @@ import {
 } from './freeform-panel-constants';
 import type { ShapeCatalogItem } from '@/lib/io/shape-catalog';
 import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
-import {
-  BADGE_TEMPLATES,
-  FRAME_TEMPLATES,
-  RETAIL_TEMPLATES,
-  GREETING_TEMPLATES,
-  SEASONAL_TEMPLATES,
-} from '@/features/stickers/templates';
-import { StickerTemplate } from '@/features/stickers/types';
+import type { StickerTemplate } from '@/features/stickers/types';
 import { renderSvgToPngDataUrl } from '@/features/stickers/lib/svg-rasterizer';
 import { sanitizeSvgMarkupCached } from '@/lib/utils';
 import { createLogger } from '@/lib/logger';
@@ -283,24 +276,57 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
   // تصفية الملصقات سريعة العرض
   const [selectedStickerFilter, setSelectedStickerFilter] = useState<string>('all');
 
+  // 📦 قوالب الملصقات (~149KB من تعريفات SVG) تُحمَّل كحزمة منفصلة عند فتح
+  // تبويب العناصر، لا ضمن الحزمة الرئيسية. الواجهة تعرض هيكلاً مؤقتاً حتى وصولها.
+  const [stickerGroups, setStickerGroups] = useState<{
+    badges: StickerTemplate[];
+    frames: StickerTemplate[];
+    retail: StickerTemplate[];
+    greeting: StickerTemplate[];
+    seasonal: StickerTemplate[];
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    import('@/features/stickers/templates')
+      .then((m) => {
+        if (cancelled) return;
+        setStickerGroups({
+          badges: m.BADGE_TEMPLATES,
+          frames: m.FRAME_TEMPLATES,
+          retail: m.RETAIL_TEMPLATES,
+          greeting: m.GREETING_TEMPLATES,
+          seasonal: m.SEASONAL_TEMPLATES,
+        });
+      })
+      .catch((err) => {
+        logger.warn('Failed to load sticker templates', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const displayedStickers = useMemo(() => {
+    if (!stickerGroups) return [];
+    const { badges, frames, retail, greeting, seasonal } = stickerGroups;
     if (selectedStickerFilter === 'badges') {
-      return BADGE_TEMPLATES;
+      return badges;
     }
     if (selectedStickerFilter === 'frames') {
-      return FRAME_TEMPLATES;
+      return frames;
     }
     if (selectedStickerFilter === 'retail') {
-      return [...RETAIL_TEMPLATES, ...GREETING_TEMPLATES, ...SEASONAL_TEMPLATES];
+      return [...retail, ...greeting, ...seasonal];
     }
     // "all": تشكيلة منوعة ومتوازنة وجذابة بصرياً تبدأ بالأختام الملونة ثم العروض ثم الإطارات
     return [
-      ...BADGE_TEMPLATES.slice(0, 8),
-      ...RETAIL_TEMPLATES.slice(0, 4),
-      ...GREETING_TEMPLATES.slice(0, 4),
-      ...FRAME_TEMPLATES.slice(0, 4),
+      ...badges.slice(0, 8),
+      ...retail.slice(0, 4),
+      ...greeting.slice(0, 4),
+      ...frames.slice(0, 4),
     ];
-  }, [selectedStickerFilter]);
+  }, [selectedStickerFilter, stickerGroups]);
 
   // تصفية النصوص الجاهزة سريعة العرض
   const [selectedTextFilter, setSelectedTextFilter] = useState<string>('all');
@@ -441,6 +467,11 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
           />
           {/* شبكة بطاقات الملصقات المتجاوبة بنسب أبعاد مضبوطة وتفاصيل واضحة ورشيقة */}
           <div className="grid grid-cols-2 gap-1.5 max-h-[calc(100vh-250px)] overflow-y-auto px-0.5 custom-scrollbar">
+            {!stickerGroups && (
+              <div className="col-span-2 flex items-center justify-center py-6 text-xs text-muted-foreground">
+                جارٍ تحميل الملصقات…
+              </div>
+            )}
             {displayedStickers.map((tmpl) => {
               const svg = getStickerSvgPreview(tmpl);
               const isBusy = isInserting === tmpl.id;

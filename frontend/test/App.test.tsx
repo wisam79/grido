@@ -1,7 +1,7 @@
 import { render, screen, cleanup } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import App from '../src/App';
-import { TemplatePanel } from '../src/components/editor';
+import { TemplatePanel } from '../src/components/editor/panels/template-panel';
 import React from 'react';
 import { useEditorStore } from '../src/lib/editor-store';
 

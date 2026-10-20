@@ -31,6 +31,8 @@ export interface FluentSegmentedControlProps<T extends string = string> {
    * معرّف trigger غير موجود (زر التبويب بلا id).
    */
   idPrefix?: string;
+  /** اسم وصول للـ tablist نفسه (مثال: «أقسام الحساب») — axe يطلب tablist مسمّى */
+  ariaLabel?: string;
 }
 
 export function FluentSegmentedControl<T extends string = string>({
@@ -44,6 +46,7 @@ export function FluentSegmentedControl<T extends string = string>({
   layoutId,
   dir = 'rtl',
   idPrefix,
+  ariaLabel = 'تبويبات',
 }: FluentSegmentedControlProps<T>) {
   const autoId = React.useId();
   const effectiveLayoutId = layoutId || `fluent-segmented-${autoId}`;
@@ -80,6 +83,7 @@ export function FluentSegmentedControl<T extends string = string>({
       role="tablist"
       id={tablistId}
       tabIndex={-1}
+      aria-label={ariaLabel}
       aria-orientation={stacked ? 'vertical' : 'horizontal'}
       onKeyDown={handleTablistKeyDown}
       className={cn(

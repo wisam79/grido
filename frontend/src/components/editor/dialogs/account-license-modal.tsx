@@ -208,6 +208,7 @@ export function AccountLicenseModal() {
           <FluentSegmentedControl<'auth' | 'license'>
             layoutId="account-license-modal-tabs"
             idPrefix="account-tabs"
+            ariaLabel="أقسام الحساب والترخيص"
             value={activeTab}
             onChange={setActiveTab}
             size="md"

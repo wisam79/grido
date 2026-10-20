@@ -70,6 +70,7 @@ export async function exportCanvas(
         needsWhiteFlatten ? 'image/png' : format === 'png' ? 'image/png' : 'image/jpeg',
         needsWhiteFlatten ? undefined : quality,
         captureRect,
+        { useFullResolution: true },
       );
       if (needsWhiteFlatten && stageBlob) {
         const captured = await createImageBitmap(stageBlob);

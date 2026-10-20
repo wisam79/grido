@@ -20,6 +20,7 @@ import { DEFAULT_PRINT_SETTINGS } from './print-slice';
 import { DEFAULT_HISTORY_ENTRY_EXTRAS, seedHistorySnapshot } from './history-slice';
 import { DEFAULT_GRID_STATE, type RulerUnit, type UserGuide } from './grid-slice';
 import { invalidateImageCache } from '../../canvas/image-cache';
+import { clearDisplayCache } from '../../canvas/display-image';
 import { uid } from '../../utils';
 import { canvasMm, findPaperByMm } from '../../canvas/units';
 import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from '../../canvas/fit';
@@ -318,6 +319,11 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
 
   reset: () => {
     const freshSlots = generateInitialSlots();
+    // مستند جديد: لا معنى للاحتفاظ بصور المستند السابق (كاش الصور الكامل
+    // ونسخ العرض 2048px) — تحريرها فوراً يمنع تراكم مئات الميغابايتات
+    // عند فتح/إغلاق عدة مشاريع في الجلسة الواحدة.
+    invalidateImageCache();
+    clearDisplayCache();
     set({
       projectId: null,
       mode: 'collage' as EditorMode,

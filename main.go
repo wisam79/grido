@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -45,6 +46,13 @@ var localApiSessionToken string
 func main() {
 	// 🪵 تهيئة نظام التسجيل الموحد الوحيد (lumberjack + slog) — ملف واحد داخل logs/
 	service.InitLogger()
+
+	// 🧠 سقف ذاكرة ناعم لـ Go: مسار الطباعة يخصّص كانفس الورقة + كانفس
+	// التركيب + دفعات الصور (قد تبلغ ~2GB ذروة مشروعة). السقف 3GiB يجعل
+	// جامع القمامة يعمل قبل أن يصل التطبيق إلى حد النظام، بدل أن تفاجئه
+	// نافذة 144MP على جهاز بذاكرة محدودة. الحد الناعم لا يرفض التخصيص، لكنه
+	// يمنع تضخّم الكومة غير المستخدمة.
+	debug.SetMemoryLimit(3 << 30)
 
 	// 🔑 توكن جلسة مسارات /api المحلية — قبل إنشاء خادم الأصول (المستهلك له).
 	// لا يُسجَّل أبداً: أي سطر لوج يحمله يُسرّبه لكل من يقرأ السجلّات.
@@ -233,12 +241,12 @@ func main() {
 
 	// إعداد خيارات النافذة الرئيسية مع خامة Mica الأصلية وسحب بدون تأخير
 	winOptions := application.WebviewWindowOptions{
-		Title:              "Grido Studio",
-		Width:              initialWidth,
-		Height:             initialHeight,
-		MinWidth:           840,
-		MinHeight:          560,
-		Frameless:          true,
+		Title:     "Grido Studio",
+		Width:     initialWidth,
+		Height:    initialHeight,
+		MinWidth:  840,
+		MinHeight: 560,
+		Frameless: true,
 		// 🪟 قاعدة دورة حياة Wails v3: لا `Hidden: true` + انتظار غير متزامن
 		// لإظهار النافذة من خيط مختلف (سباق مع Win32/WebView2 قد يُلغي
 		// الإظهار نهائياً — انظر .agents/rules/backend-wails-runtime.md وقاعدة

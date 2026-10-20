@@ -403,7 +403,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto scrollbar-none p-4"
-        role="listbox"
+        role="group"
         aria-label="القوالب"
       >
         {filteredTemplates.length === 0 ? (

@@ -5,6 +5,7 @@ import {
   Scissors,
   Rows,
   GridFour,
+  Check,
 } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { Switch } from '@/components/ui/switch';
@@ -139,38 +140,52 @@ export function CollageSettings() {
             onCommit={() => useEditorStore.getState().pushHistory()}
           />
 
-          {/* Frame Color Row — shown only when stroke is active */}
+          {/* لوحة لون الإطار — تظهر فقط عند تفعيل السُمك */}
           {collageStrokeWidth > 0 && (
-            <div className="flex items-center justify-between gap-2 border-t border-border/40 pt-2.5 animate-in slide-in-from-top-2 duration-200">
-              <div className="flex items-center gap-1.5">
-                {[
-                  { hex: '#e10e0e', label: 'أحمر' },
-                  { hex: '#000000', label: 'أسود' },
-                  { hex: '#9ca3af', label: 'رمادي' },
-                  { hex: '#2563eb', label: 'أزرق' },
-                  { hex: '#ffffff', label: 'أبيض' },
-                ].map(({ hex, label }) => {
-                  const isSelected = collageStrokeColor.toLowerCase() === hex.toLowerCase();
-                  return (
-                    <button
-                      key={hex}
-                      type="button"
-                      aria-label={label}
-                      aria-pressed={isSelected}
-                      onClick={() => {
-                        setCollageStrokeColor(hex);
-                        commitColorLater();
-                      }}
-                      title={label}
-                      className={cn(
-                        'w-6 h-6 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-110 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                        isSelected &&
-                          'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-xs',
-                      )}
-                      style={{ backgroundColor: hex }}
-                    />
-                  );
-                })}
+            <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-foreground/90">لون الإطار</span>
+
+                <div className="flex items-center gap-1.5">
+                  {[
+                    { hex: '#e10e0e', label: 'أحمر' },
+                    { hex: '#000000', label: 'أسود' },
+                    { hex: '#9ca3af', label: 'رمادي' },
+                    { hex: '#2563eb', label: 'أزرق' },
+                    { hex: '#ffffff', label: 'أبيض' },
+                  ].map(({ hex, label }) => {
+                    const isSelected = collageStrokeColor.toLowerCase() === hex.toLowerCase();
+                    return (
+                      <button
+                        key={hex}
+                        type="button"
+                        aria-label={`لون الإطار ${label}`}
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          setCollageStrokeColor(hex);
+                          commitColorLater();
+                        }}
+                        title={label}
+                        className={cn(
+                          'w-6 h-6 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-110 shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                          isSelected &&
+                            'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-xs',
+                        )}
+                        style={{ backgroundColor: hex }}
+                      >
+                        {isSelected && (
+                          <Check
+                            className={cn(
+                              'w-3 h-3',
+                              hex === '#ffffff' ? 'text-slate-900' : 'text-white',
+                            )}
+                            weight="bold"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <PopoverColorPicker
@@ -179,7 +194,7 @@ export function CollageSettings() {
                   setCollageStrokeColor(hex);
                   commitColorLater();
                 }}
-                className="w-32 h-8"
+                className="w-full h-8"
                 ariaLabel="لون إطار الكولاج"
               />
             </div>
@@ -208,7 +223,7 @@ export function CollageSettings() {
           />
 
           {collageShowCutLines && (
-            <div className="pt-2 border-t border-border/20 animate-in fade-in-50 duration-150 pr-2">
+            <div className="rounded-lg border border-border/50 bg-muted/20 p-2 animate-in fade-in-50 duration-150">
               <FluentSettingRow
                 label={
                   <div className="flex items-center gap-1.5">
@@ -222,7 +237,6 @@ export function CollageSettings() {
                     checked={collageShowEndCutLine}
                     onCheckedChange={setCollageShowEndCutLine}
                     aria-label="إظهار خط نهاية الطباعة"
-                    className="scale-90"
                   />
                 }
               />

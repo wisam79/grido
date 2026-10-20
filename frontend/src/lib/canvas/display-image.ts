@@ -4,18 +4,53 @@
  */
 const MAX_DISPLAY_DIM = 2048;
 const CACHE_LIMIT = 24;
+// 2048×2048×4 ≈ 16 MiB للنسخة الواحدة؛ 24 نسخة تعني ~384 MiB. الميزانية
+// تُبقي أحدث النسخ فقط بغض النظر عن العدد، وتُحرَّر مع مستند جديد.
+const MAX_DISPLAY_BYTES = 128 * 1024 * 1024;
 const displayCache = new Map<HTMLImageElement, HTMLCanvasElement>();
 const pendingProxy = new Map<HTMLImageElement, Promise<HTMLCanvasElement | null>>();
+const displayBytes = new Map<HTMLImageElement, number>();
+// خريطة عكسية ضعيفة: نسخة العرض ← الصورة الأصلية، ليتمكن مسار الطباعة من
+// التقاط الدقة الكاملة بدل تكبير نسخة 2048px. WeakMap لا يمنع تحرير الأصل.
+const proxySources = new WeakMap<HTMLCanvasElement, HTMLImageElement>();
+let totalDisplayBytes = 0;
+
+function canvasBytes(canvas: HTMLCanvasElement): number {
+  return canvas.width * canvas.height * 4;
+}
+
+function dropDisplayEntry(image: HTMLImageElement): void {
+  if (!displayCache.delete(image)) return;
+  totalDisplayBytes -= displayBytes.get(image) ?? 0;
+  displayBytes.delete(image);
+}
+
 function touchCacheOrder(image: HTMLImageElement, canvas: HTMLCanvasElement): void {
-  displayCache.delete(image);
+  dropDisplayEntry(image);
   displayCache.set(image, canvas);
-  while (displayCache.size > CACHE_LIMIT) {
+  const bytes = canvasBytes(canvas);
+  displayBytes.set(image, bytes);
+  totalDisplayBytes += bytes;
+  proxySources.set(canvas, image);
+  while (
+    displayCache.size > 1 &&
+    (displayCache.size > CACHE_LIMIT || totalDisplayBytes > MAX_DISPLAY_BYTES)
+  ) {
     const oldest = displayCache.keys().next();
     if (oldest.done) break;
-    displayCache.delete(oldest.value);
+    dropDisplayEntry(oldest.value);
     pendingProxy.delete(oldest.value);
   }
 }
+
+/** يعيد الصورة الأصلية لنسخة عرض، أو null إن لم تكن نسخة مُشتقة. */
+export function getDisplaySource(
+  image: HTMLImageElement | HTMLCanvasElement | null | undefined,
+): HTMLImageElement | null {
+  if (!image || !(image instanceof HTMLCanvasElement)) return null;
+  return proxySources.get(image) ?? null;
+}
+
 function naturalSizeOf(image: HTMLImageElement): { w: number; h: number } {
   const w = image.naturalWidth || image.width || 0;
   const h = image.naturalHeight || image.height || 0;
@@ -126,4 +161,6 @@ export function displayCacheSize(): number {
 export function clearDisplayCache(): void {
   displayCache.clear();
   pendingProxy.clear();
+  displayBytes.clear();
+  totalDisplayBytes = 0;
 }

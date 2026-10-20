@@ -7,8 +7,9 @@ import { ElementHeaderActions } from '../properties/element/element-header-badge
 import { SlotProperties } from '../properties/slot-properties';
 import { CollageSettings } from '../properties/collage-settings';
 import { PanelShell } from './panel-shell';
-import { CaretRight, SlidersHorizontal, FileText } from '@/components/ui/icons';
+import { CaretRight, FileText, GridFour } from '@/components/ui/icons';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 
 export interface PropertiesPanelProps {
@@ -157,33 +158,74 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
 
         {/* إعدادات عامة */}
         {!selectedElement && !selectedSlot && (
-          <div className="space-y-3">
+          <>
             {mode === 'collage' ? (
-              <>
-                <FluentSegmentedControl<'collage' | 'canvas'>
-                  layoutId="properties-general-tabs"
-                  value={generalTab}
-                  onChange={setGeneralTab}
-                  size="sm"
-                  options={[
-                    {
-                      id: 'collage',
-                      label: 'الكولاج',
-                      icon: <SlidersHorizontal className="w-4 h-4" weight="regular" />,
-                    },
-                    {
-                      id: 'canvas',
-                      label: 'الورقة',
-                      icon: <FileText className="w-4 h-4" weight="regular" />,
-                    },
-                  ]}
-                />
-                {generalTab === 'collage' ? <CollageSettings /> : <GeneralSettings />}
-              </>
+              <Tabs
+                value={generalTab}
+                onValueChange={(value) => setGeneralTab(value as 'collage' | 'canvas')}
+                className="w-full"
+              >
+                {/* شريط تبويبات لاصق — يبقي سياق الإعدادات ظاهراً أثناء التمرير */}
+                <div className="sticky top-0 z-20 -mx-3.5 border-b border-border/40 bg-sidebar/95 px-3.5 pb-2.5 pt-0.5 backdrop-blur-xl">
+                  <FluentSegmentedControl<'collage' | 'canvas'>
+                    layoutId="properties-general-tabs"
+                    value={generalTab}
+                    onChange={setGeneralTab}
+                    size="md"
+                    idPrefix="properties-general-tabs"
+                    options={[
+                      {
+                        id: 'collage',
+                        label: 'الكولاج',
+                        ariaLabel: 'إعدادات الكولاج',
+                        tooltip: 'التخطيط والفواصل والهوامش',
+                        icon: (
+                          <GridFour
+                            className="w-3.5 h-3.5 shrink-0"
+                            weight={generalTab === 'collage' ? 'duotone' : 'regular'}
+                          />
+                        ),
+                        className: 'px-1 gap-1',
+                      },
+                      {
+                        id: 'canvas',
+                        label: 'الورقة',
+                        ariaLabel: 'إعدادات الورقة',
+                        tooltip: 'أبعاد الورقة وخلفيتها',
+                        icon: (
+                          <FileText
+                            className="w-3.5 h-3.5 shrink-0"
+                            weight={generalTab === 'canvas' ? 'duotone' : 'regular'}
+                          />
+                        ),
+                        className: 'px-1 gap-1',
+                      },
+                    ]}
+                  />
+                </div>
+
+                <TabsContent
+                  value="collage"
+                  id="properties-general-tabs-content-collage"
+                  aria-labelledby="properties-general-tabs-trigger-collage"
+                  className="pt-1 outline-none"
+                >
+                  <CollageSettings />
+                </TabsContent>
+
+                <TabsContent
+                  value="canvas"
+                  id="properties-general-tabs-content-canvas"
+                  aria-labelledby="properties-general-tabs-trigger-canvas"
+                  className="pt-1 outline-none"
+                >
+                  <GeneralSettings />
+                </TabsContent>
+              </Tabs>
             ) : (
               <GeneralSettings />
             )}
-          </div>
+          </>
         )}
       </div>
     </PanelShell>

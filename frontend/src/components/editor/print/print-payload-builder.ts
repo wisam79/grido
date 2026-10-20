@@ -216,6 +216,7 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
       'image/png',
       undefined,
       captureRect,
+      { useFullResolution: true },
     );
     if (!capturedBlob) {
       throw new Error('stage capture returned no blob');

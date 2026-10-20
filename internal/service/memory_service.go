@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"log/slog"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -31,13 +32,31 @@ func NewMemoryService() *MemoryService {
 // فقدان تركيز يقع داخل هذه النافذة يُتجاهل: الذاكرة مُدارة بالتقليم الدوري.
 const trimCooldown = 5 * time.Minute
 
-// StartAutoTrim starts periodic background memory trimming every 30 seconds,
-// with an initial trim 4 seconds after launch to clear startup bloat.
+const (
+	// autoTrimInterval فاصل فحص ضغط الذاكرة. الفحص رخيص (ReadMemStats)؛
+	// التقليم نفسه هو المكلف ولا يُنفَّذ إلا عند تجاوز أحد الحدود أدناه.
+	autoTrimInterval = 45 * time.Second
+
+	// heapTrimThreshold: عند تجاوز الذاكرة الحيّة لهذا الحد (بعد تصدير كبير
+	// أو معالجة صور) نُقليم فوراً بدل انتظار الدورة الصيانوية.
+	heapTrimThreshold = 320 << 20 // 320 MiB
+
+	// idleMaintenanceTrim: تقليم صيانوي حتى لو لم يتجاوز الكومة الحد، لإعادة
+	// صفحات WebView2 غير المستخدمة. كل 30 ثانية كان يجمّد الواجهة بلا داعٍ؛
+	// عشر دقائق تكفي لاستعادة الذاكرة دون التضحية بسلاسة الرسم.
+	idleMaintenanceTrim = 10 * time.Minute
+
+	// startupTrimDelay تأخير أول تقليم بعد الإقلاع لتجاوز اندفاع التحميل الأولي.
+	startupTrimDelay = 4 * time.Second
+)
+
+// StartAutoTrim starts periodic background memory pressure checks, trimming only
+// when the live heap is large or a long idle interval has elapsed.
 func (s *MemoryService) StartAutoTrim(ctx context.Context) {
 	go func() {
 		// First cleanup cycle shortly after startup
 		select {
-		case <-time.After(4 * time.Second):
+		case <-time.After(startupTrimDelay):
 			s.TrimNow()
 		case <-ctx.Done():
 			return
@@ -45,7 +64,7 @@ func (s *MemoryService) StartAutoTrim(ctx context.Context) {
 			return
 		}
 
-		ticker := time.NewTicker(30 * time.Second)
+		ticker := time.NewTicker(autoTrimInterval)
 		defer ticker.Stop()
 
 		for {
@@ -55,10 +74,30 @@ func (s *MemoryService) StartAutoTrim(ctx context.Context) {
 			case <-s.stopCh:
 				return
 			case <-ticker.C:
-				s.TrimNow()
+				s.trimIfNeeded()
 			}
 		}
 	}()
+}
+
+// trimIfNeeded ينفّذ التقليم فقط عند وجود ضغط فعلي على الكومة أو بعد مرور
+// فترة صيانة طويلة. هذا يمنع التقليم الدوري العنيف (GC كامل + إفراغ مجموعات
+// عمل WebView2) الذي كان يسبّب تجمّدات واسترجاع صفحات من القرص كل 30 ثانية.
+func (s *MemoryService) trimIfNeeded() {
+	var ms runtime.MemStats
+	runtime.ReadMemStats(&ms)
+
+	s.trimMu.Lock()
+	sinceLast := time.Since(s.lastTrimTime)
+	s.trimMu.Unlock()
+
+	if ms.HeapAlloc >= heapTrimThreshold || sinceLast >= idleMaintenanceTrim {
+		s.TrimNow()
+		return
+	}
+
+	slog.Debug("Skipping auto memory trim — heap below pressure threshold",
+		"heap_mb", ms.HeapAlloc>>20, "since_last_trim", sinceLast.String())
 }
 
 // Stop halts the background auto-trim routine.
