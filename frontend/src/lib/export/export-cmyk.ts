@@ -2,7 +2,7 @@
  * export-cmyk.ts — تصدير فضاء ألوان CMYK (TIFF/JPEG) عبر مسار الطباعة الخلفي الموجود.
  *
  * التفكيك: يُلتقط الكانفاس الحالي كصورة PNG (نفس مسار التصدير RGB بالضبط، بنفس
- * الدقة والعلامة المائية)، ثم يُرفع ويُرسل إلى Go عبر `ExportPrintSheet` مع
+ * الدقة)، ثم يُرفع ويُرسل إلى Go عبر `ExportPrintSheet` مع
  * `colorSpace: "cmyk"` — وهو المسار الوحيد الذي يحوّل الألوان إلى CMYK.
  * يعيد Go مسار ملف `print_*` في مجلد Exports، وهو مخدوم عبر `/local-image/`
  * فنقرؤه كـ Blob ليُحفظ في مكان يختاره المستخدم.
@@ -95,7 +95,7 @@ export interface CmykExportResult {
  * يرمي عند أي فشل برسالة عربية صريحة.
  */
 export async function runCmykExport(params: RunCmykExportParams): Promise<CmykExportResult> {
-  // 1) التقاط الكانفاس (نفس دقة مسار RGB: pixelRatio=1) — العلامة المائية مطبّقة كالمعتاد
+  // 1) التقاط الكانفاس (نفس دقة مسار RGB: pixelRatio=1)
   const pngBlob = await exportCanvas('png', 1, params.stage);
   if (!pngBlob) {
     throw new Error('تعذر التقاط التصميم للتصدير');

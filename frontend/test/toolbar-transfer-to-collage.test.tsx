@@ -77,14 +77,14 @@ describe('ToolbarTransferToCollage — نقل التصميم إلى الكولا
     expect(after.slots.length).toBe(slotsBefore);
   });
 
-  it('تلتقط التصميم بلا علامة مائية (لقطة وسيطة)', async () => {
+  it('تلتقط التصميم بدقة الطباعة بلا خيارات تصدير إضافية', async () => {
     renderButton();
     await clickTransfer();
     // ننتظر انتهاء سلسلة النقل كاملةً فلا تتسرّب وعديات إلى الاختبار التالي
     await waitFor(() => expect(useEditorStore.getState().mode).toBe('collage'));
 
     const { exportCanvas } = await import('../src/lib/export');
-    expect(exportCanvas).toHaveBeenCalledWith('png', 1, expect.anything(), { watermark: false });
+    expect(exportCanvas).toHaveBeenCalledWith('png', 1, expect.anything());
   });
 
   it('لا تُلمس الخانات ولا الوضع عند كانفس فارغ', async () => {

@@ -462,10 +462,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             <div className="rounded-md border border-border/80 bg-primary/5 p-3 text-xs space-y-1.5 fluent-specular">
               <div className="font-bold text-foreground/90">تحويل CMYK في الخلفية</div>
               <p className="text-micro text-muted-foreground leading-relaxed">
-                يُلتقط التصميم كاملاً (بنفس دقة التصدير والعلامة المائية) ثم يحوّله محرك الطباعة إلى
-                CMYK ويُنتج ملف {cmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} يغطّي حدود التصميم بالضبط
-                (بلا نزيف أو علامات قص). TIFF هو الحامل الحقيقي لفصل أحبار CMYK، أما JPEG فيُسلَّم
-                بفضاء RGB لأن مُرمِّز النظام لا يدعم CMYK.
+                يُلتقط التصميم كاملاً (بنفس دقة التصدير) ثم يحوّله محرك الطباعة إلى CMYK ويُنتج ملف{' '}
+                {cmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} يغطّي حدود التصميم بالضبط (بلا نزيف أو
+                علامات قص). TIFF هو الحامل الحقيقي لفصل أحبار CMYK، أما JPEG فيُسلَّم بفضاء RGB لأن
+                مُرمِّز النظام لا يدعم CMYK.
               </p>
             </div>
           )}

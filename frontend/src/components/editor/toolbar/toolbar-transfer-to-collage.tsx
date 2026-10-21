@@ -46,10 +46,8 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
 
     setIsTransferring(true);
     try {
-      // 1. التقاط التصميم بالكامل بدقة الطباعة مع إخفاء خطوط التحديد والأدلة.
-      //    watermark: false لأن اللقطة وسيطة لا تُسلَّم للمستخدم — الكولاج النهائي
-      //    يطبّق علامته عند تصديره، فطلبها هنا كان يُظهرها مرتين (مرة داخل التصميم)
-      const blob = await exportCanvas('png', 1, stage, { watermark: false });
+      // 1. التقاط التصميم بالكامل بدقة الطباعة مع إخفاء خطوط التحديد والأدلة
+      const blob = await exportCanvas('png', 1, stage);
       if (!blob) {
         toast.error('فشل التقاط التصميم');
         return;

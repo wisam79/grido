@@ -12,29 +12,16 @@ import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { renderCollageBranch } from './export-canvas-collage';
 import { renderFittedBranch } from './export-canvas-fitted';
-import { applyWatermarkIfFree } from './export-watermark';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('export-canvas');
-
-export interface ExportCanvasOptions {
-  /**
-   * false لتخطي العلامة المائية في الالتقاطات الوسيطة.
-   * يُستخدمه زر "التكرار في الكولاج": لقطة الكانفس لا تُسلَّم للمستخدم بل تدخل
-   * تصميم الكولاج كصورة عادية، وتُصدَّر لاحقاً مع الكولاج فتظهر العلامة مرتين.
-   * القيمة الافتراضية true — كل مسارات التسليم للمستخدم تُبقى عليها.
-   */
-  watermark?: boolean;
-}
 
 // تصدير الكانفس الحالي كصورة PNG/JPG
 export async function exportCanvas(
   format: 'png' | 'jpg' = 'png',
   quality = 0.95,
   stageRef?: Konva.Stage | null,
-  options: ExportCanvasOptions = {},
 ): Promise<Blob | null> {
-  const shouldWatermark = options.watermark !== false;
   const {
     mode,
     canvasWidth,
@@ -97,7 +84,7 @@ export async function exportCanvas(
     }
 
     if (stageBlob) {
-      return shouldWatermark ? await applyWatermarkIfFree(stageBlob, format, quality) : stageBlob;
+      return stageBlob;
     }
   }
 
@@ -153,19 +140,6 @@ export async function exportCanvas(
   }
 
   return new Promise((resolve) => {
-    canvas.toBlob(
-      async (blob) => {
-        if (blob) {
-          const watermarked = shouldWatermark
-            ? await applyWatermarkIfFree(blob, format, quality)
-            : blob;
-          resolve(watermarked);
-        } else {
-          resolve(null);
-        }
-      },
-      format === 'png' ? 'image/png' : 'image/jpeg',
-      quality,
-    );
+    canvas.toBlob((blob) => resolve(blob), format === 'png' ? 'image/png' : 'image/jpeg', quality);
   });
 }

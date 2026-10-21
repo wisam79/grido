@@ -15,7 +15,6 @@ import {
 } from './export-primitives';
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { renderWithPixelFilter } from './export-pixel-filter';
-import { applyWatermarkIfFree } from './export-watermark';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('export-slot');
@@ -99,14 +98,7 @@ export async function exportSlotCanvas(
 
     return new Promise((resolve) => {
       canvas.toBlob(
-        async (blob) => {
-          if (blob) {
-            const watermarked = await applyWatermarkIfFree(blob, format, quality);
-            resolve(watermarked);
-          } else {
-            resolve(null);
-          }
-        },
+        (blob) => resolve(blob),
         format === 'png' ? 'image/png' : 'image/jpeg',
         quality,
       );
