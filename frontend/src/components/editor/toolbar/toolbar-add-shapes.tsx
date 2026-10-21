@@ -29,7 +29,7 @@ export const AddShapesDropdown = React.memo(function AddShapesDropdown() {
             variant="ghost"
             size="sm"
             data-testid="toolbar-add-shape"
-            className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
+            className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer gap-1"
             aria-label="إضافة شكل"
           >
             <GeometricShapesIcon className="w-5 h-5" />

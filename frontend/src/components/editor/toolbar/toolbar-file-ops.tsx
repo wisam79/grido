@@ -249,9 +249,9 @@ export function ToolbarFileOps() {
               onClick={handleOpenFile}
               data-testid="toolbar-insert"
               aria-label="إدراج صورة جديدة"
-              className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-s-md rounded-e-none hover:bg-background/80 active:scale-95 transition-all cursor-pointer text-xs flex items-center justify-center select-none group border-e border-border/40"
+              className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-s-md rounded-e-none hover:bg-background/80 transition-colors cursor-pointer text-xs flex items-center justify-center select-none group border-e border-border/40"
             >
-              <AddPhotoIcon className="w-4 h-4 text-foreground group-hover:scale-105 transition-transform" />
+              <AddPhotoIcon className="w-4 h-4 text-foreground" />
               <span>إدراج</span>
             </Button>
           </TooltipBtn>
@@ -263,7 +263,7 @@ export function ToolbarFileOps() {
                   variant="ghost"
                   size="sm"
                   aria-label="خيارات الإدراج"
-                  className="h-8 px-1.5 text-muted-foreground hover:text-foreground rounded-s-none rounded-e-md hover:bg-background/80 active:scale-95 transition-all cursor-pointer"
+                  className="h-8 px-1.5 text-muted-foreground hover:text-foreground rounded-s-none rounded-e-md hover:bg-background/80 transition-colors cursor-pointer"
                 >
                   <CaretDown className="w-3.5 h-3.5 opacity-70" />
                 </Button>
@@ -320,7 +320,7 @@ export function ToolbarFileOps() {
                 setPhoneBridgeMounted(true);
                 setIsPhoneBridgeOpen(true);
               }}
-              className="h-8 px-2.5 gap-1.5 border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all cursor-pointer text-xs font-semibold rounded-md flex items-center justify-center select-none"
+              className="h-8 px-2.5 gap-1.5 border border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer text-xs font-semibold rounded-md flex items-center justify-center select-none"
             >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -351,10 +351,10 @@ export function ToolbarFileOps() {
             }}
             data-testid="toolbar-projects"
             aria-label="مكتبة المشاريع"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer group"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer group"
           >
             <Folders
-              className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground group-hover:scale-105 transition-all"
+              className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground transition-colors"
               weight="duotone"
             />
           </Button>

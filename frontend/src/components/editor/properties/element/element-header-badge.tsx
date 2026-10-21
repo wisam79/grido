@@ -35,7 +35,7 @@ export function ElementHeaderActions({ element, onUpdate }: ElementHeaderActions
               'flex size-7 items-center justify-center rounded-md transition-colors cursor-pointer',
               'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               isHidden
-                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                ? 'bg-warning/10 text-warning'
                 : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
             )}
           >
@@ -62,7 +62,7 @@ export function ElementHeaderActions({ element, onUpdate }: ElementHeaderActions
               'flex size-7 items-center justify-center rounded-md transition-colors cursor-pointer',
               'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               isLocked
-                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                ? 'bg-warning/10 text-warning'
                 : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
             )}
           >
@@ -91,7 +91,7 @@ export function ElementHeaderBadge({ element, onUnlock }: ElementHeaderBadgeProp
   if (!element.locked) return null;
 
   return (
-    <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 p-2.5 rounded-md flex items-center justify-between text-xs font-semibold mb-2 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
+    <div className="bg-warning/10 border border-warning/20 text-warning p-2.5 rounded-md flex items-center justify-between text-xs font-semibold mb-2 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
       <div className="flex items-center gap-2">
         <LockSimple className="w-3.5 h-3.5 shrink-0" weight="fill" />
         <span>القفل يمنع التعديل من الكانفاس والخصائص</span>
@@ -100,7 +100,7 @@ export function ElementHeaderBadge({ element, onUnlock }: ElementHeaderBadgeProp
         variant="ghost"
         size="sm"
         onClick={onUnlock}
-        className="h-7 px-2 text-micro bg-amber-500/15 enabled:hover:bg-amber-500/25 border border-amber-500/20 rounded-md transition-colors cursor-pointer text-amber-700 dark:text-amber-300 font-bold"
+        className="h-7 px-2 text-mini bg-warning/15 enabled:hover:bg-warning/25 border border-warning/20 rounded-md transition-colors cursor-pointer text-warning font-bold"
       >
         إلغاء القفل
       </Button>

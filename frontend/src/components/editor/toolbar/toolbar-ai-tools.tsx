@@ -137,14 +137,11 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
             aria-label="عزل الخلفية"
             className={cn(
               compact ? 'h-7 px-2' : 'h-8 px-2.5',
-              'gap-1.5 font-bold text-xs text-primary hover:text-primary hover:bg-primary/10 rounded-s-md rounded-e-none border-e border-primary/20 transition-all cursor-pointer flex items-center select-none group',
+              'gap-1.5 font-bold text-xs text-primary hover:text-primary hover:bg-primary/10 rounded-s-md rounded-e-none border-e border-primary/20 transition-colors cursor-pointer flex items-center select-none group',
             )}
             onClick={() => handleRemoveBg(selectedItem)}
           >
-            <Sparkle
-              className="w-4 h-4 text-primary shrink-0 group-hover:scale-105 transition-transform"
-              weight="duotone"
-            />
+            <Sparkle className="w-4 h-4 text-primary shrink-0" weight="duotone" />
             <span>عزل</span>
           </Button>
         </TooltipBtn>
@@ -159,7 +156,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
                 aria-label="المزيد من أدوات الذكاء الاصطناعي"
                 className={cn(
                   compact ? 'h-7 px-1' : 'h-8 px-1.5',
-                  'text-primary hover:text-primary hover:bg-primary/10 rounded-s-none rounded-e-md transition-all cursor-pointer flex items-center justify-center',
+                  'text-primary hover:text-primary hover:bg-primary/10 rounded-s-none rounded-e-md transition-colors cursor-pointer flex items-center justify-center',
                 )}
               >
                 <CaretDown className="w-3.5 h-3.5 opacity-80" />

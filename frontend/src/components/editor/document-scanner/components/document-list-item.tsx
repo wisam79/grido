@@ -31,7 +31,7 @@ export const DocumentListItem = React.memo(function DocumentListItem({
     <div
       role="listitem"
       className={cn(
-        'min-h-8 px-2 py-1 flex items-center justify-between gap-1 rounded-md transition-all border text-xs select-none group focus-within:border-primary focus-visible:outline-none',
+        'min-h-8 px-2 py-1 flex items-center justify-between gap-1 rounded-md transition-colors border text-xs select-none group focus-within:border-primary focus-visible:outline-none',
         isActive
           ? 'bg-emerald-600/25 border-emerald-500 text-foreground font-bold shadow-xs'
           : 'bg-background/40 border-emerald-500/20 text-foreground hover:bg-emerald-500/10',
@@ -43,7 +43,7 @@ export const DocumentListItem = React.memo(function DocumentListItem({
           onClick={() => onToggleCheck(doc.id)}
           aria-pressed={isSelected}
           className={cn(
-            'w-7 h-7 rounded flex items-center justify-center border transition-all cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            'w-7 h-7 rounded flex items-center justify-center border transition-colors cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             isSelected
               ? 'bg-emerald-500 border-emerald-400 text-white shadow-2xs'
               : 'border-muted-foreground/40 bg-background/60 hover:border-emerald-400',
@@ -78,7 +78,7 @@ export const DocumentListItem = React.memo(function DocumentListItem({
                 type="button"
                 aria-label={`حذف ${doc.label}`}
                 onClick={() => onDelete(doc.id)}
-                className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <X size={13} weight="bold" />
               </button>

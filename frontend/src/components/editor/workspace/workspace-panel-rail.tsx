@@ -669,7 +669,7 @@ export function CompactToolLauncher({
               className={cn(
                 'h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-fluent-16 cursor-pointer',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                'active:scale-95 transition-transform duration-100',
+                'transition-colors duration-100',
               )}
             >
               <Faders className="size-5" weight={isLauncherOpen ? 'duotone' : 'regular'} />

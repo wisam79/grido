@@ -178,7 +178,7 @@ export const GradientPicker = ({
             <div className="flex items-center justify-between gap-1.5">
               {/* بداية التدرج */}
               <div className="flex-1 flex items-center justify-between bg-muted/40 hover:bg-muted/70 px-2.5 py-1.5 rounded-lg border border-border/40 transition-colors min-w-0">
-                <span className="text-micro font-bold text-muted-foreground">البداية</span>
+                <span className="text-mini font-bold text-muted-foreground">البداية</span>
                 <PopoverColorPicker
                   color={stop1}
                   onChange={handleStop1Change}
@@ -194,7 +194,7 @@ export const GradientPicker = ({
                   <button
                     type="button"
                     onClick={handleReverseStops}
-                    className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground border border-border/50 hover:border-primary/40 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0"
+                    className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-primary/15 hover:text-primary text-muted-foreground border border-border/50 hover:border-primary/40 flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0"
                     title="عكس الألوان"
                   >
                     <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
@@ -207,7 +207,7 @@ export const GradientPicker = ({
 
               {/* نهاية التدرج */}
               <div className="flex-1 flex items-center justify-between bg-muted/40 hover:bg-muted/70 px-2.5 py-1.5 rounded-lg border border-border/40 transition-colors min-w-0">
-                <span className="text-micro font-bold text-muted-foreground">النهاية</span>
+                <span className="text-mini font-bold text-muted-foreground">النهاية</span>
                 <PopoverColorPicker
                   color={stop2}
                   onChange={handleStop2Change}
@@ -246,7 +246,7 @@ export const GradientPicker = ({
                             onCommitAngle?.(deg);
                           }}
                           className={cn(
-                            'h-6 text-micro font-semibold rounded-md transition-all cursor-pointer border flex items-center justify-center active:scale-95 tabular-nums select-none',
+                            'h-6 text-mini font-semibold rounded-md transition-colors cursor-pointer border flex items-center justify-center tabular-nums select-none',
                             isAngleActive
                               ? 'bg-primary/20 text-primary border-primary/40 font-bold shadow-2xs'
                               : 'bg-muted/40 hover:bg-muted text-muted-foreground border-border/40 hover:text-foreground',
@@ -273,7 +273,7 @@ export const GradientPicker = ({
                   <Sparkle className="w-3.5 h-3.5 text-amber-500" weight="duotone" />
                   <span>تدرجات جاهزة</span>
                 </span>
-                <span className="text-micro text-muted-foreground font-semibold tabular-nums">
+                <span className="text-mini text-muted-foreground font-semibold tabular-nums">
                   ({filteredPresets.length})
                 </span>
               </div>
@@ -307,7 +307,7 @@ export const GradientPicker = ({
                           type="button"
                           onClick={() => onChangeColorStops(preset.stops)}
                           className={cn(
-                            'group relative w-full aspect-square rounded-lg p-[1.5px] transition-all duration-150 cursor-pointer flex items-center justify-center shadow-2xs hover:scale-108 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                            'group relative w-full aspect-square rounded-lg p-[1.5px] transition-colors duration-150 cursor-pointer flex items-center justify-center shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                             isSelected
                               ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-105 z-10 shadow-xs border border-primary'
                               : 'border border-black/10 dark:border-white/15 hover:border-primary/50',

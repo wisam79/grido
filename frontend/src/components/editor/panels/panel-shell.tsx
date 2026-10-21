@@ -89,7 +89,7 @@ export const PanelShell = React.memo(function PanelShell({
             <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-foreground truncate leading-4">{title}</div>
               {subtitle && (
-                <div className="text-micro text-muted-foreground truncate leading-4 font-normal">
+                <div className="text-mini text-muted-foreground truncate leading-4 font-normal">
                   {subtitle}
                 </div>
               )}
@@ -104,7 +104,7 @@ export const PanelShell = React.memo(function PanelShell({
                     type="button"
                     onClick={onCollapse}
                     aria-label={collapseTitle}
-                    className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
+                    className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
                   >
                     {collapseIcon || <SidebarSimple className="w-4 h-4" weight="regular" />}
                   </button>

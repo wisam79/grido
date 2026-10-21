@@ -185,7 +185,8 @@ export function ProjectsDialog({
       // تحديث المعرف في الستور ليكون هذا المعرف إذا كان جديداً — فقط إن لم
       // يتغير المشروع المفتوح خلال الانتظار (تحميل/تفريغ موازٍ)
       if (useEditorStore.getState().projectId === projectIdBefore) {
-        useEditorStore.setState({ projectId: currentId });
+        // نقطة حفظ نظيفة: الهوية والاسم يظهران في شريط العنوان وتزول علامة التعديل
+        useEditorStore.getState().markProjectSaved(currentId, projectName.trim());
       }
       fetchProjects();
       setActiveTab('list'); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ
@@ -202,7 +203,7 @@ export function ProjectsDialog({
     try {
       const projectData = domainProjectToProjectFile(project);
 
-      useEditorStore.getState().loadProject(projectData, project.id);
+      useEditorStore.getState().loadProject(projectData, project.id, project.name);
 
       toast.success(`تم تحميل المشروع: ${project.name}`);
       // ملء حقل الاسم تلقائياً لسهولة التحديث
@@ -239,7 +240,8 @@ export function ProjectsDialog({
       // إذا كان هذا هو المشروع المفتوح حالياً، فمسح المعرف
       const state = useEditorStore.getState();
       if (state.projectId === deleteId) {
-        useEditorStore.setState({ projectId: null });
+        // حُذف المشروع المفتوح: المستند على الكانفس صار بلا هدف حفظ — يُذكر ذلك صدقاً
+        useEditorStore.setState({ projectId: null, projectName: null, isDirty: true });
       }
       fetchProjects();
     } catch (err) {

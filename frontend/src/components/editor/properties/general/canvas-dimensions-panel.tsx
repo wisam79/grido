@@ -24,7 +24,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 //   - سلم الارتفاعات: كل عناصر التحكم h-8 (32px) — لا ارتفاع شاذ.
 //   - هرمية الاستدارة: عناصر التحكم rounded-md، مجموعات التحكم rounded-md.
 //   - حلقة التركيز المزدوجة الموحّدة: ring-2 + ring-offset-2 (للفأرة ولوحة المفاتيح).
-//   - قابلية القراءة: لا نصوص 8px؛ التسميات text-micro والقيم text-xs بخط monospace.
+//   - قابلية القراءة: لا نصوص 8px؛ التسميات text-mini والقيم text-xs بخط monospace.
 //   - الدقة (DPI) ظاهرة في ترويسة القسم لأن تحويل ملم↔بكسل يعتمد عليها.
 //
 // إزالة التكرار الوظيفي: كان باللوحة عنصران يؤديان نفس العملية تماماً
@@ -308,7 +308,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       defaultOpen={true}
       action={
         <span
-          className="text-micro font-mono font-bold text-foreground/80 bg-muted/60 dark:bg-muted/40 border border-border/50 px-2 py-0.5 rounded-md shrink-0 select-none shadow-2xs"
+          className="text-mini font-mono font-bold text-foreground/80 bg-muted/60 dark:bg-muted/40 border border-border/50 px-2 py-0.5 rounded-md shrink-0 select-none shadow-2xs"
           dir="ltr"
         >
           {activeUnit === 'px'
@@ -441,7 +441,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
                 title={isPortrait ? 'أفقي' : 'عمودي'}
                 aria-label={isPortrait ? 'تبديل الاتجاه إلى أفقي' : 'تبديل الاتجاه إلى عمودي'}
                 className={cn(
-                  'w-8 h-8 rounded-md border border-border/80 bg-card hover:bg-muted/60 hover:text-foreground text-muted-foreground flex items-center justify-center transition-all cursor-pointer shadow-2xs shrink-0 active:scale-95',
+                  'w-8 h-8 rounded-md border border-border/80 bg-card hover:bg-muted/60 hover:text-foreground text-muted-foreground flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0',
                   FOCUS_RING,
                 )}
               >
@@ -486,7 +486,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
               {/* العرض — بلا لاحقة الوحدة: مبدّل الوحدة (px/mm) أعلى الصف
                   يحدّدها، وتكرارها داخل كل حقل كان يقتطع القيمة. */}
               <div className={FIELD_SHELL} dir="ltr">
-                <span className="text-micro font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
+                <span className="text-mini font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
                   W
                 </span>
                 <input
@@ -529,7 +529,7 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
 
               {/* الارتفاع */}
               <div className={FIELD_SHELL} dir="ltr">
-                <span className="text-micro font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
+                <span className="text-mini font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
                   H
                 </span>
                 <input

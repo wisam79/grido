@@ -355,7 +355,7 @@ export function CollageArrangeTab() {
             <FrameCorners className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
             <span className="text-xs font-bold text-foreground">مخطط الشبكة</span>
           </div>
-          <span className="text-micro font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/40 shrink-0">
+          <span className="text-mini font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/40 shrink-0">
             {grid.rows}×{grid.cols} · {imageCount} صورة · {emptyCount} فارغة
           </span>
         </div>
@@ -396,9 +396,9 @@ export function CollageArrangeTab() {
         {/* قسم ترتيب الصور */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between px-0.5">
-            <span className="text-micro font-bold text-muted-foreground">ترتيب الصور</span>
+            <span className="text-mini font-bold text-muted-foreground">ترتيب الصور</span>
             {!grid.isComplete && (
-              <span className="text-3xs text-muted-foreground/70">العمليات على الممتلئة فقط</span>
+              <span className="text-mini text-muted-foreground/70">العمليات على الممتلئة فقط</span>
             )}
           </div>
 
@@ -413,7 +413,7 @@ export function CollageArrangeTab() {
                 title={action.hint}
                 onClick={action.onClick}
                 className={cn(
-                  'h-8 px-2 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-[0.98]',
+                  'h-8 px-2 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors',
                   action.fullWidth ? 'col-span-2 justify-center' : 'justify-start text-start',
                 )}
               >
@@ -427,7 +427,7 @@ export function CollageArrangeTab() {
         {/* قسم التحويلات الجماعية */}
         <div className="space-y-1.5 pt-2 border-t border-border/40">
           <div className="px-0.5">
-            <span className="text-micro font-bold text-muted-foreground">تحويلات جماعية</span>
+            <span className="text-mini font-bold text-muted-foreground">تحويلات جماعية</span>
           </div>
 
           <div className="grid grid-cols-2 gap-1.5">
@@ -441,7 +441,7 @@ export function CollageArrangeTab() {
                 title={action.hint}
                 onClick={action.onClick}
                 className={cn(
-                  'h-8 px-2 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-[0.98]',
+                  'h-8 px-2 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors',
                   action.fullWidth
                     ? 'col-span-2 justify-center text-muted-foreground hover:text-foreground'
                     : 'justify-start text-start',

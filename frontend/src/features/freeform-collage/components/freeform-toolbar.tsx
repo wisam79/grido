@@ -89,7 +89,7 @@ const ToolBtn: React.FC<{
         disabled={disabled}
         aria-label={title}
         className={cn(
-          'h-7 w-7 rounded-md cursor-pointer shrink-0 transition-all duration-150',
+          'h-7 w-7 rounded-md cursor-pointer shrink-0 transition-colors duration-150',
           'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
           active &&
             'text-foreground bg-card border border-border/80 dark:border-white/15 shadow-xs font-bold',

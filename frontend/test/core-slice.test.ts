@@ -59,7 +59,11 @@ describe('CoreSlice Unit Tests', () => {
 
   it('loadProject clears clipboardElements and lastEditedImage from previous project', () => {
     useEditorStore.getState().setLastEditedImage('projectA.jpg');
-    useEditorStore.setState({ clipboardElements: [{ id: 'el-a' }] as any });
+    useEditorStore.setState({
+      clipboardElements: [{ id: 'el-a' }] as any,
+      isDirty: true,
+      projectName: 'مشروع قديم',
+    });
 
     useEditorStore.getState().loadProject(
       {
@@ -71,11 +75,43 @@ describe('CoreSlice Unit Tests', () => {
         slots: [],
       } as any,
       'proj-b',
+      'مشروع ب',
     );
 
     expect(useEditorStore.getState().projectId).toBe('proj-b');
+    expect(useEditorStore.getState().projectName).toBe('مشروع ب');
+    expect(useEditorStore.getState().isDirty).toBe(false);
     expect(useEditorStore.getState().lastEditedImage).toBeNull();
     expect(useEditorStore.getState().clipboardElements).toEqual([]);
+  });
+
+  it('tracks project identity and dirty state across edits, saves, and reset', () => {
+    const store = useEditorStore.getState();
+    expect(store.projectName).toBeNull();
+    expect(store.isDirty).toBe(false);
+
+    // أي تعديل يُمرَّر عبر سجل التراجع يرفع علامة الحفظ
+    store.addTextElement('تعديل غير محفوظ');
+    expect(useEditorStore.getState().isDirty).toBe(true);
+
+    // الحفظ يثبّت الهوية ويرفع العلامة
+    useEditorStore.getState().markProjectSaved('proj-1', 'مشروع الهوية');
+    let state = useEditorStore.getState();
+    expect(state.projectId).toBe('proj-1');
+    expect(state.projectName).toBe('مشروع الهوية');
+    expect(state.isDirty).toBe(false);
+
+    // تعديل لاحق يعيد العلامة
+    useEditorStore.getState().setBackgroundColor('#111111');
+    useEditorStore.getState().pushHistory();
+    expect(useEditorStore.getState().isDirty).toBe(true);
+
+    // مستند جديد يمسح الهوية والعلامة معاً
+    useEditorStore.getState().reset();
+    state = useEditorStore.getState();
+    expect(state.projectId).toBeNull();
+    expect(state.projectName).toBeNull();
+    expect(state.isDirty).toBe(false);
   });
 
   it('updates zoom level via number or callback function', () => {

@@ -39,7 +39,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
       }}
       onClick={() => onSelect(tpl)}
       className={cn(
-        'group flex flex-col items-stretch gap-2.5 p-3 rounded-md border transition-all duration-200 text-start relative overflow-hidden bg-card shadow-2xs hover:border-foreground/40 hover:shadow-xs hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer select-none fluent-specular focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+        'group flex flex-col items-stretch gap-2.5 p-3 rounded-md border transition-colors duration-150 text-start relative overflow-hidden bg-card shadow-2xs hover:border-foreground/40 hover:shadow-xs cursor-pointer select-none fluent-specular focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
         isActive
           ? 'border-2 border-foreground/70 bg-accent-active shadow-xs ring-1 ring-foreground/20'
           : 'border-border/90 hover:bg-muted/40 dark:hover:bg-secondary',
@@ -47,7 +47,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
     >
       {/* Active Indicator Dot (Top Right) */}
       {isActive && (
-        <span className="absolute top-2.5 start-2.5 w-2 h-2 rounded-full bg-foreground/80 z-10 animate-pulse" />
+        <span className="absolute top-2.5 start-2.5 w-2 h-2 rounded-full bg-foreground/80 z-10" />
       )}
 
       {/* Delete Button (Top Left) */}
@@ -57,14 +57,14 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             <button
               type="button"
               onClick={(e) => e.stopPropagation()}
-              className="absolute top-2.5 end-2.5 z-10 w-6 h-6 rounded-md bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center border border-destructive/20 transition-all cursor-pointer opacity-0 group-hover:opacity-100 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="absolute top-2.5 end-2.5 z-10 w-6 h-6 rounded-md bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground flex items-center justify-center border border-destructive/20 transition-[opacity,background-color,color,border-color] cursor-pointer opacity-0 group-hover:opacity-100 shadow-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
               title="حذف القالب"
             >
               <Trash className="w-3.5 h-3.5" weight="regular" />
             </button>
           </AlertDialogTrigger>
           <AlertDialogContent
-            className="font-cairo text-start rounded-lg border border-border/80 dark:border-white/10 shadow-fluent-16 bg-card fluent-specular"
+            className="font-cairo text-start rounded-lg border border-border/80 shadow-fluent-16 bg-card fluent-specular"
             dir="rtl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -147,7 +147,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
             className={cn(
               'px-2 py-0.5 rounded-md font-mono text-mini font-bold border transition-colors',
               isActive
-                ? 'bg-card text-foreground border-border/80 dark:border-white/15 shadow-xs'
+                ? 'bg-card text-foreground border-border/80 shadow-xs'
                 : 'bg-muted text-muted-foreground border-border/60',
             )}
           >
@@ -155,7 +155,7 @@ export const CollageTemplateCard = React.memo(function CollageTemplateCard({
           </span>
           <span
             className={cn(
-              'text-2xs font-bold transition-colors',
+              'text-mini font-bold transition-colors',
               isActive ? 'text-foreground' : 'text-muted-foreground/80 group-hover:text-foreground',
             )}
           >

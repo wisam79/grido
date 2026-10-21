@@ -148,7 +148,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'stamp-circle':
       return (
         <div className="w-full h-full px-1.5 rounded-lg bg-rose-500/5 border border-rose-500/20 flex items-center justify-center text-center overflow-hidden">
-          <div className="inline-flex items-center px-2 py-0.5 rounded-full border border-dashed border-rose-600/70 text-rose-600 dark:text-rose-400 font-bold text-micro truncate -rotate-1">
+          <div className="inline-flex items-center px-2 py-0.5 rounded-full border border-dashed border-rose-600/70 text-rose-600 dark:text-rose-400 font-bold text-mini truncate -rotate-1">
             <span>{preset.sampleText || preset.label}</span>
           </div>
         </div>
@@ -157,7 +157,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'badge':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-micro shadow-2xs truncate font-tajawal">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-mini shadow-2xs truncate font-tajawal">
             {preset.sampleText || preset.label}
           </span>
         </div>
@@ -166,7 +166,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'studio-date':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card text-foreground border border-border/60 text-micro font-semibold truncate shadow-2xs font-cairo">
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card text-foreground border border-border/60 text-mini font-semibold truncate shadow-2xs font-cairo">
             <Calendar className="w-3 h-3 text-muted-foreground shrink-0" weight="bold" />
             <span className="truncate">تاريخ اليوم</span>
           </div>
@@ -176,7 +176,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'photographer-tag':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card text-muted-foreground border border-border/50 text-micro font-medium truncate shadow-2xs">
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card text-muted-foreground border border-border/50 text-mini font-medium truncate shadow-2xs">
             <Camera className="w-3 h-3 text-foreground/80 shrink-0" weight="bold" />
             <span className="truncate">بصمة المصور</span>
           </div>
@@ -188,7 +188,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         <div className="w-full h-full px-2 rounded-lg bg-muted/40 border border-border/40 flex items-center justify-center text-center overflow-hidden relative">
           <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:6px_6px] dark:bg-[radial-gradient(#fff_1px,transparent_1px)]" />
           <span
-            className="text-micro font-black text-foreground/35 -rotate-12 tracking-widest truncate z-10"
+            className="text-mini font-black text-foreground/35 -rotate-12 tracking-widest truncate z-10"
             style={{ fontFamily: 'Alexandria, sans-serif' }}
           >
             GRIDO مسودة
@@ -199,7 +199,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'caption-card':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <div className="px-2 py-0.5 rounded border border-border/80 bg-background/90 text-foreground text-micro font-medium shadow-2xs truncate font-tajawal">
+          <div className="px-2 py-0.5 rounded border border-border/80 bg-background/90 text-foreground text-mini font-medium shadow-2xs truncate font-tajawal">
             {preset.sampleText || preset.label}
           </div>
         </div>
@@ -218,7 +218,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
       return (
         <div className="w-full h-full px-2 rounded-lg bg-red-500/10 border border-red-500/25 flex items-center justify-center text-center overflow-hidden">
           <span
-            className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-600 text-white font-black text-micro tracking-wide shadow-2xs truncate"
+            className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-600 text-white font-black text-mini tracking-wide shadow-2xs truncate"
             style={{ fontFamily: 'Changa, sans-serif' }}
           >
             🔥 {preset.sampleText || preset.label}
@@ -241,7 +241,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'special-price':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-card border border-border/60 flex items-center justify-center text-center overflow-hidden">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-sky-600 text-white font-bold text-micro shadow-2xs truncate font-tajawal">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-sky-600 text-white font-bold text-mini shadow-2xs truncate font-tajawal">
             🏷️ {preset.sampleText || preset.label}
           </span>
         </div>
@@ -440,7 +440,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
           <Button
             type="button"
             onClick={handleOpenFullStickerStudio}
-            className="w-full h-8 px-2.5 rounded-md text-xs font-semibold bg-card hover:bg-accent text-foreground border border-border/80 transition-all flex items-center justify-between shadow-2xs cursor-pointer select-none active:scale-[0.98]"
+            className="w-full h-8 px-2.5 rounded-md text-xs font-semibold bg-card hover:bg-accent text-foreground border border-border/80 transition-colors flex items-center justify-between shadow-2xs cursor-pointer select-none"
           >
             <div className="flex items-center gap-2 min-w-0">
               <Stamp className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
@@ -466,7 +466,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
             ]}
           />
           {/* شبكة بطاقات الملصقات المتجاوبة بنسب أبعاد مضبوطة وتفاصيل واضحة ورشيقة */}
-          <div className="grid grid-cols-2 gap-1.5 max-h-[calc(100vh-250px)] overflow-y-auto px-0.5 custom-scrollbar">
+          <div className="grid grid-cols-2 gap-1.5 px-0.5">
             {!stickerGroups && (
               <div className="col-span-2 flex items-center justify-center py-6 text-xs text-muted-foreground">
                 جارٍ تحميل الملصقات…
@@ -483,13 +483,13 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   disabled={isBusy}
                   onClick={() => handleInsertSticker(tmpl)}
                   title={tmpl.name}
-                  className="group relative bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg p-1.5 transition-all duration-150 flex flex-col items-center cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50 overflow-hidden"
+                  className="group relative bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg p-1.5 transition-colors duration-150 flex flex-col items-center cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:opacity-50 overflow-hidden"
                 >
                   {/* حاوية المعاينة مع خلفية أكريليك ناعمة تُظهر تفاصيل التصميم بوضوح */}
-                  <div className="w-full h-18 rounded-md bg-background/80 dark:bg-muted/30 border border-border/30 group-hover:border-foreground/30 flex items-center justify-center p-1.5 relative overflow-hidden transition-all">
+                  <div className="w-full h-18 rounded-md bg-background/80 dark:bg-muted/30 border border-border/30 group-hover:border-foreground/30 flex items-center justify-center p-1.5 relative overflow-hidden transition-colors">
                     {svg ? (
                       <div
-                        className="w-full h-full flex items-center justify-center [&_svg]:max-w-full [&_svg]:max-h-full [&_svg]:w-auto [&_svg]:h-auto transition-transform group-hover:scale-105 duration-200 pointer-events-none drop-shadow-2xs"
+                        className="w-full h-full flex items-center justify-center [&_svg]:max-w-full [&_svg]:max-h-full [&_svg]:w-auto [&_svg]:h-auto duration-200 pointer-events-none drop-shadow-2xs"
                         dangerouslySetInnerHTML={{ __html: sanitizeSvgMarkupCached(svg) }}
                       />
                     ) : (
@@ -497,14 +497,14 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                     )}
 
                     {/* زر + صغير يظهر عند التحويم لإعطاء إيحاء فوري بالإدراج السريع */}
-                    <span className="absolute bottom-1 end-1 w-4.5 h-4.5 rounded-md bg-foreground text-background opacity-0 group-hover:opacity-100 transition-all duration-150 flex items-center justify-center shadow-xs scale-90 group-hover:scale-100">
+                    <span className="absolute bottom-1 end-1 w-4.5 h-4.5 rounded-md bg-foreground text-background opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center justify-center shadow-xs">
                       <Plus className="w-2.5 h-2.5" weight="bold" />
                     </span>
 
                     {/* حالة التحميل والمعالجة */}
                     {isBusy && (
                       <div className="absolute inset-0 bg-background/85 backdrop-blur-xs flex items-center justify-center rounded-md">
-                        <span className="text-3xs font-bold text-foreground/80 animate-pulse">
+                        <span className="text-mini font-bold text-foreground/80 animate-pulse">
                           جاري الإدراج...
                         </span>
                       </div>
@@ -521,7 +521,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                   </span>
 
                   {/* شارة التصنيف الدلالية المجهرية */}
-                  <span className="text-3xs text-muted-foreground/75 mt-0.5 truncate w-full text-center leading-none">
+                  <span className="text-mini text-muted-foreground/75 mt-0.5 truncate w-full text-center leading-none">
                     {getCategoryBadgeLabel(tmpl.category)}
                   </span>
                 </button>
@@ -536,7 +536,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
         <div className="space-y-2">
           <div className="px-1 flex items-center justify-between">
             <span className="text-xs font-bold text-foreground/80">أشكال هندسية وتصاميم</span>
-            <span className="text-3xs font-mono text-muted-foreground font-semibold">
+            <span className="text-mini font-mono text-muted-foreground font-semibold">
               {QUICK_SHAPES.length} شكلاً
             </span>
           </div>
@@ -548,7 +548,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 type="button"
                 onClick={() => handleAddShape(shape)}
                 title={shape.label}
-                className="group flex items-center justify-center gap-1.5 h-8 px-2 bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg transition-all duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none select-none active:scale-[0.98] shadow-2xs"
+                className="group flex items-center justify-center gap-1.5 h-8 px-2 bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg transition-colors duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none select-none shadow-2xs"
               >
                 <ShapeGlyph
                   kind={shape.kind}
@@ -577,9 +577,9 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 addTextPreset('heading');
               }}
               title="عنوان رئيسي عريض"
-              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
+              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none"
             >
-              <span className="w-5 h-5 rounded-md bg-muted text-foreground flex items-center justify-center shrink-0 font-bold text-micro border border-border/60 font-mono">
+              <span className="w-5 h-5 rounded-md bg-muted text-foreground flex items-center justify-center shrink-0 font-bold text-mini border border-border/60 font-mono">
                 H1
               </span>
               <span className="text-xs font-bold text-foreground truncate group-hover:text-foreground transition-colors">
@@ -594,9 +594,9 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 addTextPreset('subheading');
               }}
               title="عنوان فرعي (28px)"
-              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
+              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none"
             >
-              <span className="w-5 h-5 rounded-md bg-muted text-foreground/80 flex items-center justify-center shrink-0 font-bold text-micro border border-border/60 font-mono">
+              <span className="w-5 h-5 rounded-md bg-muted text-foreground/80 flex items-center justify-center shrink-0 font-bold text-mini border border-border/60 font-mono">
                 H2
               </span>
               <span className="text-xs font-semibold text-foreground truncate group-hover:text-foreground transition-colors">
@@ -611,9 +611,9 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 addTextPreset('body');
               }}
               title="نص فقرة (18px)"
-              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-foreground/40 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none active:scale-[0.97]"
+              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-foreground/40 transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none"
             >
-              <span className="w-5 h-5 rounded-md bg-muted/60 text-muted-foreground flex items-center justify-center shrink-0 font-medium text-micro border border-border/40 font-mono">
+              <span className="w-5 h-5 rounded-md bg-muted/60 text-muted-foreground flex items-center justify-center shrink-0 font-medium text-mini border border-border/40 font-mono">
                 P
               </span>
               <span className="text-xs font-normal text-muted-foreground truncate group-hover:text-foreground transition-colors">
@@ -633,14 +633,14 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
           />
 
           {/* شبكة بطاقات الأنماط والتأثيرات الجاهزة مع معاينة حية واقعية WYSIWYG */}
-          <div className="grid grid-cols-2 gap-2 max-h-[calc(100vh-270px)] overflow-y-auto px-1 custom-scrollbar">
+          <div className="grid grid-cols-2 gap-2 px-1">
             {displayedTextPresets.map((preset) => (
               <button
                 key={preset.id}
                 type="button"
                 onClick={() => handleAddText(preset)}
                 title={preset.label}
-                className="group relative w-full bg-card/70 hover:bg-card border border-border/60 hover:border-foreground/40 rounded-md p-2 transition-all duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden text-start"
+                className="group relative w-full bg-card/70 hover:bg-card border border-border/60 hover:border-foreground/40 rounded-md p-2 transition-colors duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden text-start"
               >
                 {/* صندوق المعاينة الحية الواقعية */}
                 <div className="w-full aspect-[16/9] flex items-center justify-center mb-1.5 overflow-hidden rounded-lg">

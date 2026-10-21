@@ -247,7 +247,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
                 if (f) handleFile(f);
               }}
               className={cn(
-                'flex flex-col items-center justify-center gap-2 h-40 rounded-md border-2 border-dashed cursor-pointer transition-all text-center px-4',
+                'flex flex-col items-center justify-center gap-2 h-40 rounded-md border-2 border-dashed cursor-pointer transition-colors text-center px-4',
                 isDragging
                   ? 'border-primary bg-primary/5'
                   : 'border-border/60 hover:border-primary/50 hover:bg-muted/20',
@@ -383,7 +383,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
             <div className="flex-1 space-y-1">
               <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full bg-primary rounded-full transition-all duration-200"
+                  className="h-full bg-primary rounded-full transition-[width] duration-200"
                   style={{
                     width: `${progress.total ? Math.round((progress.done / progress.total) * 100) : 0}%`,
                   }}
@@ -415,7 +415,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
               size="sm"
               onClick={handleGenerate}
               disabled={!dataset || mappedFieldCount === 0 || isGenerating}
-              className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all"
+              className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               {isGenerating ? (
                 <>

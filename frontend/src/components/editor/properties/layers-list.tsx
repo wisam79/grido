@@ -221,7 +221,7 @@ const SortableLayerItem = React.memo(
           role="button"
           tabIndex={0}
           aria-label="اسحب لإعادة الترتيب"
-          className="flex items-center justify-center w-7 h-7 rounded shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground hover:bg-muted/60 opacity-60 group-hover/row:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-all"
+          className="flex items-center justify-center w-7 h-7 rounded shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-foreground hover:bg-muted/60 opacity-60 group-hover/row:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-[opacity,color,background-color]"
           onClick={(e) => e.stopPropagation()}
         >
           <DotsSixVertical className="w-3 h-3" weight="bold" />
@@ -294,7 +294,7 @@ const SortableLayerItem = React.memo(
               {getLayerLabel(el, layerNumber)}
             </span>
             {isComfortable && (
-              <span className="truncate text-micro leading-none text-muted-foreground font-medium">
+              <span className="truncate text-mini leading-none text-muted-foreground font-medium">
                 {getLayerSubLabel(el)}
                 {isGrouped && ' · مجمّعة'}
               </span>
@@ -309,26 +309,10 @@ const SortableLayerItem = React.memo(
           )}
         </button>
 
-        {/* أدوات السطر المدمجة كلياً في نفس بطاقة السطر (بدون بطاقة طافية أو إطار منفصل) */}
+        {/* أدوات السطر المدمجة كلياً في نفس بطاقة السطر (بدون بطاقة طافية أو إطار منفصل).
+            التكرار والحذف انتقلا لقائمة «المزيد»: بقاؤهما هنا كان يبتلع اسم الطبقة
+            في لوح 288px. الإجراءات اليومية (قفل/رؤية/المزيد) تبقى بنقرة واحدة. */}
         <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-          {/* زر التكرار — مدمج في السطر ويظهر بسلاسة عند التحويم أو التحديد */}
-          <TooltipBtn content="تكرار" side="top">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="تكرار الطبقة"
-              className={cn(
-                'w-7 h-7 rounded-md hover:bg-muted text-muted-foreground/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-all',
-                isSelected
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100',
-              )}
-              onClick={(e) => duplicateLayer(el.id, e)}
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </Button>
-          </TooltipBtn>
-
           {/* زر المزيد (...) — ظاهر دائماً للوصول المباشر لكافة الإجراءات */}
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
@@ -343,7 +327,7 @@ const SortableLayerItem = React.memo(
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={6} className="min-w-44 font-cairo">
-              <DropdownMenuLabel className="text-micro">إجراءات الطبقة</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-mini">إجراءات الطبقة</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => {
                   duplicateLayer(el.id, {
@@ -395,7 +379,7 @@ const SortableLayerItem = React.memo(
               size="icon"
               aria-label={isLocked ? 'فك القفل' : 'قفل الطبقة'}
               className={cn(
-                'shrink-0 w-7 h-7 rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none transition-all',
+                'shrink-0 w-7 h-7 rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none transition-colors',
                 isLocked
                   ? 'text-warning bg-warning/10 hover:bg-warning/15 border border-warning/20 opacity-100'
                   : 'text-muted-foreground/40 hover:text-foreground hover:bg-muted/80 opacity-70 group-hover/row:opacity-100',
@@ -417,7 +401,7 @@ const SortableLayerItem = React.memo(
               size="icon"
               aria-label={isVisible ? 'إخفاء الطبقة' : 'إظهار الطبقة'}
               className={cn(
-                'shrink-0 w-7 h-7 rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none transition-all',
+                'shrink-0 w-7 h-7 rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none transition-colors',
                 isHidden
                   ? 'text-muted-foreground/50 hover:text-foreground bg-muted/40 opacity-100'
                   : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted/80 opacity-70 group-hover/row:opacity-100',
@@ -425,25 +409,6 @@ const SortableLayerItem = React.memo(
               onClick={(e) => toggleVisibility(el, e)}
             >
               {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeSlash className="w-3.5 h-3.5" />}
-            </Button>
-          </TooltipBtn>
-
-          {/* زر الحذف — مدمج في السطر ويظهر بسلاسة عند التحويم أو التحديد */}
-          <TooltipBtn content="حذف" side="top">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="حذف الطبقة"
-              className={cn(
-                'w-7 h-7 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:opacity-40 transition-all',
-                isSelected
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100',
-              )}
-              disabled={isLocked}
-              onClick={(e) => deleteLayer(el.id, e)}
-            >
-              <Trash className="w-3.5 h-3.5" />
             </Button>
           </TooltipBtn>
         </div>
@@ -594,11 +559,11 @@ export function LayersList({
         </div>
         <div className="space-y-1 max-w-[200px]">
           <p className="text-xs font-bold text-foreground">لا توجد طبقات بعد</p>
-          <p className="text-micro leading-relaxed text-muted-foreground text-center" dir="rtl">
+          <p className="text-mini leading-relaxed text-muted-foreground text-center" dir="rtl">
             أضف عناصر من تبويب العناصر — ستظهر هنا مرتبة حسب العمق
           </p>
         </div>
-        <div className="flex items-center gap-1.5 text-micro text-muted-foreground/70">
+        <div className="flex items-center gap-1.5 text-mini text-muted-foreground/70">
           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
           <span>اسحب لإعادة الترتيب</span>
           <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
@@ -617,12 +582,10 @@ export function LayersList({
         </div>
         <div className="space-y-1">
           <p className="text-xs font-bold">لا نتائج</p>
-          <p className="text-micro text-muted-foreground">
-            لا توجد طبقات مطابقة لـ “{searchQuery}”
-          </p>
+          <p className="text-mini text-muted-foreground">لا توجد طبقات مطابقة لـ “{searchQuery}”</p>
         </div>
         {typeFilter !== 'all' && (
-          <p className="text-micro text-muted-foreground">الفلتر الحالي: {typeFilter}</p>
+          <p className="text-mini text-muted-foreground">الفلتر الحالي: {typeFilter}</p>
         )}
       </div>
     );
@@ -659,12 +622,9 @@ export function LayersList({
       <div
         role="list"
         aria-label="قائمة الطبقات"
-        className={cn(
-          'space-y-1 custom-scrollbar',
-          standalone
-            ? 'max-h-[calc(100vh-280px)] overflow-y-auto pe-1'
-            : 'max-h-[340px] overflow-y-auto pe-0.5',
-        )}
+        // تمرير واحد فقط: PanelShell (ScrollArea) هو مصدر التمرير في اللوحة.
+        // max-height/overflow هنا كانا يصنعان تمريراً متداخلاً داخل الدرج والمفتش.
+        className="space-y-1 custom-scrollbar"
       >
         {filtered.map((el) => {
           const origIndex = sorted.findIndex((s) => s.id === el.id);
@@ -688,7 +648,7 @@ export function LayersList({
         })}
       </div>
       {isFiltered && (
-        <p className="text-micro text-muted-foreground pt-1.5 text-center">
+        <p className="text-mini text-muted-foreground pt-1.5 text-center">
           السحب معطّل أثناء التصفية · {filtered.length} من {sorted.length}
         </p>
       )}
@@ -725,7 +685,7 @@ export function LayersList({
             <Stack className="w-3.5 h-3.5" weight="duotone" />
           </span>
           الطبقات
-          <span className="ms-1 px-1.5 py-0.5 rounded-full bg-muted border border-border/60 text-micro font-mono font-bold text-muted-foreground">
+          <span className="ms-1 px-1.5 py-0.5 rounded-full bg-muted border border-border/60 text-mini font-mono font-bold text-muted-foreground">
             {elements.length}
           </span>
         </span>

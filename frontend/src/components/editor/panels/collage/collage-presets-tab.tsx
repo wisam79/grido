@@ -80,7 +80,7 @@ function StudioPaperThumbnail({
     <div className="flex items-center justify-center select-none shrink-0" aria-hidden="true">
       <div
         className={cn(
-          'rounded-md relative transition-all duration-200 p-0.5 flex items-center justify-center overflow-hidden',
+          'rounded-md relative transition-colors duration-200 p-0.5 flex items-center justify-center overflow-hidden',
           active
             ? 'bg-white dark:bg-card border-2 border-foreground/70 shadow-fluent-8 ring-1 ring-foreground/20'
             : 'bg-white dark:bg-card border border-border/80 shadow-2xs group-hover:border-foreground/50 group-hover:shadow-xs',
@@ -123,7 +123,7 @@ function StudioPaperThumbnail({
             const showPortrait = w >= 13 && h >= 15;
 
             return (
-              <g key={idx} className="transition-all duration-150">
+              <g key={idx} className="transition-colors duration-150">
                 {/* إطار الصورة الفوتوغرافية */}
                 <rect
                   x={x}
@@ -325,12 +325,12 @@ export function CollagePresetsTab({
             </span>
             <div className="flex items-center gap-1 shrink-0">
               {preset.tag && (
-                <span className="text-micro font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60 leading-none">
+                <span className="text-mini font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60 leading-none">
                   {preset.tag}
                 </span>
               )}
               <span
-                className="text-micro font-mono font-bold text-muted-foreground bg-muted/70 px-2 py-0.5 rounded-full border border-border/40 leading-none"
+                className="text-mini font-mono font-bold text-muted-foreground bg-muted/70 px-2 py-0.5 rounded-full border border-border/40 leading-none"
                 title={`${preset.slots} صور`}
               >
                 {preset.slots}×
@@ -338,7 +338,7 @@ export function CollagePresetsTab({
             </div>
           </div>
 
-          <SpecText spec={preset.spec} className="text-micro text-muted-foreground font-mono" />
+          <SpecText spec={preset.spec} className="text-mini text-muted-foreground font-mono" />
         </div>
 
         {/* أيقونة التحديد النشط */}
@@ -365,7 +365,7 @@ export function CollagePresetsTab({
           'p-2 rounded-md border text-center transition-colors duration-150 cursor-pointer flex flex-col items-center justify-between select-none relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group min-h-[120px] fluent-specular',
           isActive
             ? 'border-foreground/70 bg-accent-active text-foreground shadow-xs ring-1 ring-foreground/20'
-            : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-border hover:shadow-xs hover:-translate-y-0.5',
+            : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-border hover:shadow-xs',
         )}
       >
         {/* شارة التحديد النشطة */}
@@ -377,7 +377,7 @@ export function CollagePresetsTab({
 
         {/* شارة التصنيف */}
         {preset.tag && !isActive && (
-          <span className="absolute top-1.5 end-1.5 text-2xs font-bold px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground border border-border/50 leading-none z-10">
+          <span className="absolute top-1.5 end-1.5 text-mini font-bold px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground border border-border/50 leading-none z-10">
             {preset.tag}
           </span>
         )}
@@ -391,13 +391,13 @@ export function CollagePresetsTab({
             <span className="text-xs font-bold text-foreground truncate group-hover:text-foreground transition-colors">
               {preset.title}
             </span>
-            <span className="text-micro font-mono font-bold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full shrink-0">
+            <span className="text-mini font-mono font-bold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full shrink-0">
               {preset.slots}×
             </span>
           </div>
           {/* الشبكة الضيقة تعرض المقاسات فقط (أهم معلومة) والمواصفات كاملة في التلميح */}
           <span
-            className="text-micro text-muted-foreground mt-0.5 w-full text-center font-mono truncate"
+            className="text-mini text-muted-foreground mt-0.5 w-full text-center font-mono truncate"
             dir="ltr"
             title={preset.spec}
           >
@@ -453,7 +453,7 @@ export function CollagePresetsTab({
                   />
                   <span className="truncate">{currentCat.label}</span>
                   {currentCat.badgeCount !== undefined && (
-                    <span className="text-micro font-mono font-bold px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground border border-border/60 shrink-0">
+                    <span className="text-mini font-mono font-bold px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground border border-border/60 shrink-0">
                       {currentCat.badgeCount}
                     </span>
                   )}
@@ -480,7 +480,7 @@ export function CollagePresetsTab({
                           <span className="truncate">{cat.label}</span>
                         </div>
                         {cat.badgeCount !== undefined && (
-                          <span className="text-micro font-mono px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-bold shrink-0">
+                          <span className="text-mini font-mono px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-bold shrink-0">
                             {cat.badgeCount}
                           </span>
                         )}
@@ -597,7 +597,7 @@ export function CollagePresetsTab({
                           </div>
                           <div className="flex flex-col items-start min-w-0 gap-0.5">
                             <span className="text-xs font-bold truncate text-start">{t.name}</span>
-                            <span className="text-micro font-mono text-muted-foreground">
+                            <span className="text-mini font-mono text-muted-foreground">
                               {t.slots}× صور
                             </span>
                           </div>
@@ -619,7 +619,7 @@ export function CollagePresetsTab({
             </div>
             <div className="space-y-0.5">
               <p className="text-xs font-bold text-foreground">لا قوالب محفوظة</p>
-              <p className="text-micro text-muted-foreground max-w-[220px] leading-relaxed">
+              <p className="text-mini text-muted-foreground max-w-[220px] leading-relaxed">
                 خصص شبكتك ثم احفظها.
               </p>
             </div>
@@ -669,7 +669,7 @@ export function CollagePresetsTab({
               </div>
             </div>
 
-            <div className="space-y-1.5 max-h-[420px] overflow-y-auto pe-0.5">
+            <div className="space-y-1.5 pe-0.5">
               {savedTemplates.map((t) => {
                 const isActive = activeTemplateId === t.id;
                 return (
@@ -705,7 +705,7 @@ export function CollagePresetsTab({
                         </span>
                         <span
                           className={cn(
-                            'text-micro font-mono',
+                            'text-mini font-mono',
                             isActive ? 'text-foreground font-bold' : 'text-muted-foreground',
                           )}
                         >
@@ -746,7 +746,7 @@ export function CollagePresetsTab({
                     <span>{section.title}</span>
                   </div>
                   <span
-                    className="text-micro font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full font-bold"
+                    className="text-mini font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full font-bold"
                     dir="ltr"
                   >
                     {section.presets.length}

@@ -277,7 +277,7 @@ export const StickerInlineEditor = React.memo(function StickerInlineEditor({
             type="button"
             onClick={() => onChangeColor(activeColor!.role, c)}
             className={cn(
-              'h-7 rounded-md border flex items-center justify-center transition-transform hover:scale-105 cursor-pointer shadow-xs',
+              'h-7 rounded-md border flex items-center justify-center transition-colors cursor-pointer shadow-xs',
               activeColor!.currentColor.toLowerCase() === c.toLowerCase()
                 ? 'border-primary ring-2 ring-primary/40'
                 : 'border-border/60',

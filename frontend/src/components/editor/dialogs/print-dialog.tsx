@@ -85,7 +85,7 @@ interface PrintDialogProps {
 
 const toggleButtonClassName = (active: boolean) =>
   cn(
-    'rounded-md text-xs font-semibold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+    'rounded-md text-xs font-semibold transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
     active
       ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
       : 'text-muted-foreground hover:text-foreground hover:bg-background/70',
@@ -677,7 +677,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* بلوك 1: الطابعة (Printer Block) */}
             <div className="rounded-md border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
               <div className="flex items-center justify-between pb-1 border-b border-border/30">
-                <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <span className="text-micro font-bold text-muted-foreground flex items-center gap-1.5">
                   <Printer className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
                   <span>الطابعة</span>
                 </span>
@@ -728,7 +728,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   disabled={isOpeningPrefs || !selectedPrinter}
                   aria-label="الخصائص: نوع الورق والجودة"
                   title="الخصائص: نوع الورق والجودة"
-                  className="h-8 px-3 text-xs font-semibold shrink-0 gap-1.5 bg-background hover:bg-muted border-border/60 rounded-lg shadow-2xs cursor-pointer active:scale-[0.98] transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="h-8 px-3 text-xs font-semibold shrink-0 gap-1.5 bg-background hover:bg-muted border-border/60 rounded-lg shadow-2xs cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
                   {isOpeningPrefs ? (
                     <Spinner className="w-3.5 h-3.5 text-muted-foreground" size={14} />
@@ -762,11 +762,14 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* بلوك 2: الورقة والاتجاه (Paper & Orientation Block) */}
             <div className="rounded-md border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
               <div className="flex items-center justify-between pb-1 border-b border-border/30">
-                <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <span className="text-micro font-bold text-muted-foreground flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
                   <span>الورقة والاتجاه</span>
                 </span>
-                <span className="text-micro font-mono text-muted-foreground/80 font-medium px-1.5 py-0.2 rounded bg-muted/60 border border-border/30">
+                <span
+                  className="text-micro font-mono text-muted-foreground/80 font-medium px-1.5 py-0.2 rounded bg-muted/60 border border-border/30"
+                  dir="ltr"
+                >
                   {Math.round(paperWidth)} × {Math.round(paperHeight)} مم
                 </span>
               </div>
@@ -879,7 +882,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   aria-label="اتجاه رأسي (عمودي)"
                   aria-pressed={printSettings.orientation !== 'landscape'}
                   className={cn(
-                    'h-7 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                    'h-7 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     printSettings.orientation !== 'landscape'
                       ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
                       : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
@@ -895,7 +898,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   aria-label="اتجاه أفقي (عرضي)"
                   aria-pressed={printSettings.orientation === 'landscape'}
                   className={cn(
-                    'h-7 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                    'h-7 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     printSettings.orientation === 'landscape'
                       ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
                       : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
@@ -910,7 +913,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* بلوك 3: خيارات الطباعة (Print Options Block) */}
             <div className="rounded-md border border-border/50 bg-card/70 backdrop-blur-md p-3 flex flex-col gap-2.5 shadow-2xs">
               <div className="flex items-center justify-between pb-1 border-b border-border/30">
-                <span className="text-micro font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <span className="text-micro font-bold text-muted-foreground flex items-center gap-1.5">
                   <Scissors className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
                   <span>خيارات الطباعة</span>
                 </span>
@@ -1039,7 +1042,10 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   }
                 />
                 <span>معاينة الورقة المطبوعة</span>
-                <span className="text-micro font-mono text-muted-foreground hidden sm:inline px-1.5 py-0.2 rounded bg-muted/40 border border-border/20">
+                <span
+                  className="text-micro font-mono text-muted-foreground hidden sm:inline px-1.5 py-0.2 rounded bg-muted/40 border border-border/20"
+                  dir="ltr"
+                >
                   {Math.round(paperWidth)}×{Math.round(paperHeight)} مم
                 </span>
               </span>
@@ -1083,7 +1089,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
             {/* لوحة الورقة البيضاء الممركزة داخل مساحة العمل */}
             <div className="flex-1 overflow-auto p-6 flex items-center justify-center select-none workspace-grid relative">
               <div
-                className="bg-white rounded-md relative border border-print-paper-border shadow-[0_12px_40px_rgba(0,0,0,0.14)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.9),0_4px_20px_rgba(0,0,0,0.7)] dark:ring-1 dark:ring-white/12 transition-all duration-200"
+                className="bg-white rounded-md relative border border-print-paper-border shadow-[0_12px_40px_rgba(0,0,0,0.14)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.9),0_4px_20px_rgba(0,0,0,0.7)] dark:ring-1 dark:ring-white/12 transition-[width,height] duration-200"
                 style={{
                   width: paperWidth * scaleFactor * zoom,
                   height: paperHeight * scaleFactor * zoom,
@@ -1191,7 +1197,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                   : 'طباعة مباشرة إلى الطابعة (Enter)'
               }
               aria-keyshortcuts="Enter"
-              className="h-8 px-5 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs transition-all duration-150 cursor-pointer rounded-lg shadow-sm hover:shadow active:scale-98"
+              className="h-8 px-5 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs transition-colors duration-150 cursor-pointer rounded-lg shadow-sm hover:shadow"
               disabled={isExporting || !hasContent}
             >
               {isExporting ? (

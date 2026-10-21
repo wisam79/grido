@@ -313,7 +313,7 @@ export function FreeformBackdropsTab() {
       <PaperBackgroundSummary
         extraStatus={
           backdropRects.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-1.5 py-0.5 text-micro font-bold leading-none text-muted-foreground">
+            <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-1.5 py-0.5 text-mini font-bold leading-none text-muted-foreground">
               <ArrowLineDown className="w-2.5 h-2.5" weight="bold" />
               {backdropRects.length === 1 ? 'خلفية كاملة' : `${backdropRects.length} خلفيات كاملة`}
             </span>
@@ -367,11 +367,11 @@ export function FreeformBackdropsTab() {
                         aria-pressed={isActive}
                         aria-label={`تطبيق ${entry.name} من المفضلة`}
                         className={cn(
-                          'w-full overflow-hidden rounded-lg border text-start transition-all duration-150 cursor-pointer',
+                          'w-full overflow-hidden rounded-lg border text-start transition-colors duration-150 cursor-pointer',
                           'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                           isActive
                             ? 'border-primary ring-1 ring-primary/40 shadow-xs'
-                            : 'border-border/70 hover:border-foreground/40 hover:shadow-xs active:scale-[0.98]',
+                            : 'border-border/70 hover:border-foreground/40 hover:shadow-xs',
                         )}
                       >
                         <span
@@ -381,12 +381,12 @@ export function FreeformBackdropsTab() {
                           }}
                         />
                         <span className="flex h-5 items-center justify-between gap-1 bg-card px-2">
-                          <span className="min-w-0 truncate text-micro font-bold text-foreground">
+                          <span className="min-w-0 truncate text-mini font-bold text-foreground">
                             {entry.name}
                           </span>
                           {entry.angle !== PRESET_ANGLE && (
                             <span
-                              className="shrink-0 text-micro font-mono text-muted-foreground"
+                              className="shrink-0 text-mini font-mono text-muted-foreground"
                               dir="ltr"
                             >
                               {entry.angle}°
@@ -410,7 +410,7 @@ export function FreeformBackdropsTab() {
 
           {recentKeys.length > 0 && (
             <div className={cn(favoriteKeys.length > 0 && 'mt-1.5')}>
-              <span className="mb-1 flex items-center gap-1 text-micro font-semibold text-muted-foreground">
+              <span className="mb-1 flex items-center gap-1 text-mini font-semibold text-muted-foreground">
                 <Clock className="w-2.5 h-2.5" weight="regular" />
                 آخر استخدام
               </span>
@@ -448,7 +448,7 @@ export function FreeformBackdropsTab() {
         icon={<GridNine className="w-3.5 h-3.5" weight="duotone" />}
         title="تدرجات جاهزة"
         badge={
-          <span className="rounded-full border border-border/70 bg-muted px-1.5 py-0.2 text-micro font-mono font-bold text-muted-foreground">
+          <span className="rounded-full border border-border/70 bg-muted px-1.5 py-0.2 text-mini font-mono font-bold text-muted-foreground">
             {gradients.length}
           </span>
         }
@@ -483,7 +483,7 @@ export function FreeformBackdropsTab() {
               size="sm"
               onClick={() => selectAllElements()}
               title="تحديد الكل"
-              className="h-8 shrink-0 px-2 text-micro font-semibold"
+              className="h-8 shrink-0 px-2 text-mini font-semibold"
             >
               <SelectionAll className="w-3 h-3" weight="bold" />
               <span>تحديد الكل</span>
@@ -518,11 +518,11 @@ export function FreeformBackdropsTab() {
                   }
                   title={preset.name}
                   className={cn(
-                    'group/card relative w-full overflow-hidden rounded-lg border text-start transition-all duration-150 cursor-pointer',
+                    'group/card relative w-full overflow-hidden rounded-lg border text-start transition-colors duration-150 cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isActive
                       ? 'border-primary ring-1 ring-primary/40 shadow-xs'
-                      : 'border-border/70 hover:border-foreground/40 hover:shadow-xs active:scale-[0.98]',
+                      : 'border-border/70 hover:border-foreground/40 hover:shadow-xs',
                   )}
                 >
                   <span
@@ -530,7 +530,7 @@ export function FreeformBackdropsTab() {
                     style={{ background: formatGradientCss(preset.stops, 'linear', PRESET_ANGLE) }}
                   />
                   <span className="flex h-5.5 items-center justify-between gap-1 bg-card px-2">
-                    <span className="min-w-0 truncate text-micro font-bold text-foreground">
+                    <span className="min-w-0 truncate text-mini font-bold text-foreground">
                       {preset.name}
                     </span>
                     <span className="flex shrink-0 items-center gap-1">
@@ -580,16 +580,16 @@ export function FreeformBackdropsTab() {
         defaultOpen={false}
       >
         {/* شريط المعاينة الحيّ بالزاوية الفعلية */}
-        <div className="relative h-8 w-full overflow-hidden rounded-lg border border-black/15 dark:border-white/20 shadow-inner">
+        <div className="relative h-8 w-full overflow-hidden rounded-lg border border-border/60 shadow-inner">
           <div className="h-full w-full" style={{ background: customPreview }} />
-          <span className="absolute bottom-0.5 left-1 rounded bg-black/45 px-1 text-micro font-mono font-bold text-white">
+          <span className="absolute bottom-0.5 start-1 rounded bg-black/45 px-1 text-mini font-mono font-bold text-white">
             {customAngle}°
           </span>
         </div>
 
         <div className="flex items-center gap-1.5">
           <div className="flex min-w-0 flex-1 items-center justify-between gap-1.5 rounded-lg border border-border/50 bg-muted/40 px-2 py-1.5">
-            <span className="text-micro font-bold text-muted-foreground">من</span>
+            <span className="text-mini font-bold text-muted-foreground">من</span>
             <PopoverColorPicker
               color={customFrom}
               onChange={setCustomFrom}
@@ -613,7 +613,7 @@ export function FreeformBackdropsTab() {
           />
 
           <div className="flex min-w-0 flex-1 items-center justify-between gap-1.5 rounded-lg border border-border/50 bg-muted/40 px-2 py-1.5">
-            <span className="text-micro font-bold text-muted-foreground">إلى</span>
+            <span className="text-mini font-bold text-muted-foreground">إلى</span>
             <PopoverColorPicker
               color={customTo}
               onChange={setCustomTo}
@@ -646,7 +646,7 @@ export function FreeformBackdropsTab() {
                 aria-label={`زاوية ${item.label} — ${item.tip}`}
                 aria-pressed={isAngleActive}
                 className={cn(
-                  'h-6 rounded-md border text-micro font-bold tabular-nums transition-colors cursor-pointer',
+                  'h-6 rounded-md border text-mini font-bold tabular-nums transition-colors cursor-pointer',
                   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   isAngleActive
                     ? 'border-border/80 bg-accent-active text-foreground shadow-2xs'

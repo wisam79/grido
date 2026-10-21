@@ -135,10 +135,10 @@ const GalleryCard = React.memo(function GalleryCard({
       aria-pressed={isSelected}
       aria-label={`${template.name} — ${mm.width}×${mm.height} مم`}
       className={cn(
-        'group relative flex flex-col p-2.5 rounded-md transition-all cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_145px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'group relative flex flex-col p-2.5 rounded-md transition-colors cursor-pointer text-start overflow-hidden border [content-visibility:auto] [contain-intrinsic-size:0_145px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         isSelected
           ? 'bg-primary/10 border-primary shadow-fluent-4 ring-1 ring-primary/50'
-          : 'bg-card/60 hover:bg-card border-border/40 hover:border-primary/50 hover:shadow-fluent-2 hover:-translate-y-0.5',
+          : 'bg-card/60 hover:bg-card border-border/40 hover:border-primary/50 hover:shadow-fluent-2',
       )}
     >
       {/* Selection Check Badge */}
@@ -149,7 +149,7 @@ const GalleryCard = React.memo(function GalleryCard({
       )}
 
       {/* SVG Preview Stage */}
-      <div className="w-full h-26 rounded-lg bg-background/60 border border-border/25 flex items-center justify-center p-2 overflow-hidden transition-all duration-150 group-hover:bg-background group-hover:scale-[1.01]">
+      <div className="w-full h-26 rounded-lg bg-background/60 border border-border/25 flex items-center justify-center p-2 overflow-hidden transition-colors duration-150 group-hover:bg-background">
         {miniSvg ? (
           <div
             className="w-full h-full flex items-center justify-center pointer-events-none drop-shadow-2xs [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
@@ -372,7 +372,7 @@ export const StickerCatalog = React.memo(function StickerCatalog({
                         aria-checked={isActive}
                         aria-label={shape.label}
                         className={cn(
-                          'w-7 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer',
+                          'w-7 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer',
                           isActive
                             ? 'bg-background text-foreground shadow-2xs font-bold'
                             : 'text-muted-foreground hover:text-foreground hover:bg-background/40',

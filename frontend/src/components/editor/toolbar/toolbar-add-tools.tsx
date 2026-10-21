@@ -87,7 +87,7 @@ export const ToolbarAddTools = React.memo(function ToolbarAddTools() {
           onMouseEnter={preloadBarcodeDialog}
           onFocus={preloadBarcodeDialog}
           aria-label="الملصقات"
-          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer flex items-center justify-center"
+          className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer flex items-center justify-center"
         >
           {/* 🎨 الأيقونة ترث حالة الزر (رمادي في الراحة → داكن عند التمرير) —
               الأزرق محجوز لحالة التفعيل الفعلية، فراجع نمط «مفعّل» في

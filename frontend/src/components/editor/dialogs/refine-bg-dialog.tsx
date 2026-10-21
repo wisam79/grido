@@ -674,7 +674,7 @@ export function RefineBgDialog({ open, onOpenChange, element, onSave }: RefineBg
                     title={item.label}
                     onClick={() => setPreviewBg(item.id as 'checker' | 'white' | 'black' | 'blue')}
                     className={cn(
-                      'h-7 rounded-md border border-border/60 transition-all flex items-center justify-center cursor-pointer shadow-2xs',
+                      'h-7 rounded-md border border-border/60 transition-colors flex items-center justify-center cursor-pointer shadow-2xs',
                       previewBg === item.id && 'ring-2 ring-primary border-primary font-bold',
                     )}
                     style={{

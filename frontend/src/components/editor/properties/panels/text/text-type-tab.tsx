@@ -61,7 +61,7 @@ const LETTER_SPACING_OPTIONS = [
 ];
 
 const selectClassName =
-  'w-full h-8 bg-input hover:bg-background border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-inner';
+  'w-full h-8 bg-input hover:bg-background border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-colors shadow-inner';
 
 export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) {
   const isBold = (element.fontWeight || 400) >= 700;
@@ -116,7 +116,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
   const toggleButtonClassName = (active: boolean, fullWidth = false) =>
     cn(
       fullWidth ? 'w-full h-7' : 'w-7 h-7',
-      'rounded-md flex items-center justify-center transition-all cursor-pointer text-xs font-bold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none',
+      'rounded-md flex items-center justify-center transition-colors cursor-pointer text-xs font-bold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none',
       active
         ? 'bg-background text-primary shadow-xs font-extrabold'
         : 'hover:bg-background/60 text-muted-foreground hover:text-foreground',
@@ -133,7 +133,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
       >
         {/* النمط السريع */}
         <div className="space-y-1">
-          <div className="grid grid-cols-3 gap-1 text-micro">
+          <div className="grid grid-cols-3 gap-1 text-mini">
             {[
               { id: 'heading' as const, label: 'رئيسي', icon: TextHOne },
               { id: 'subheading' as const, label: 'فرعي', icon: TextHTwo },
@@ -145,7 +145,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   key={preset.id}
                   type="button"
                   onClick={() => applyPreset(preset.id)}
-                  className="h-7 px-1.5 bg-card hover:bg-muted/60 hover:text-foreground hover:border-border text-foreground/90 border border-border/80 rounded-md font-bold transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="h-7 px-1.5 bg-card hover:bg-muted/60 hover:text-foreground hover:border-border text-foreground/90 border border-border/80 rounded-md font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                   title={`نمط ${preset.label}`}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
@@ -154,7 +154,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               );
             })}
           </div>
-          <div className="grid grid-cols-2 gap-1 text-micro">
+          <div className="grid grid-cols-2 gap-1 text-mini">
             {[
               { id: 'badge' as const, label: 'شارة', icon: Tag },
               { id: 'stamp' as const, label: 'ختم', icon: Stamp },
@@ -165,7 +165,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   key={preset.id}
                   type="button"
                   onClick={() => applyPreset(preset.id)}
-                  className="h-7 px-2 bg-card hover:bg-muted/60 hover:text-foreground hover:border-border text-foreground/90 border border-border/80 rounded-md font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="h-7 px-2 bg-card hover:bg-muted/60 hover:text-foreground hover:border-border text-foreground/90 border border-border/80 rounded-md font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
                   title={`نمط ${preset.label}`}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
@@ -184,7 +184,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
         {/* سماكة وحجم الخط */}
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <span className="text-micro font-bold text-muted-foreground block">السمك</span>
+            <span className="text-mini font-bold text-muted-foreground block">السمك</span>
             <div className="relative">
               <select
                 value={element.fontWeight || 700}
@@ -210,7 +210,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
           </div>
 
           <div className="space-y-1">
-            <span className="text-micro font-bold text-muted-foreground">الحجم</span>
+            <span className="text-mini font-bold text-muted-foreground">الحجم</span>
             <div className="relative">
               <select
                 value={currentFontSize}
@@ -367,7 +367,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   useEditorStore.getState().pushHistory();
                 }}
                 className={cn(
-                  'h-7 px-1.5 rounded-md text-micro font-bold transition-all cursor-pointer select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                  'h-7 px-1.5 rounded-md text-mini font-bold transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                   element.textTransform === tr.id
                     ? 'bg-background text-primary shadow-2xs font-extrabold'
                     : 'hover:text-foreground text-muted-foreground hover:bg-background/40',
@@ -488,7 +488,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
 
         {/* الصف 3: نمط التفاف النص — نفس خيارات Konva wrap */}
         <div className="flex items-center gap-1.5 p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
-          <span className="text-micro font-bold text-muted-foreground px-1 shrink-0">
+          <span className="text-mini font-bold text-muted-foreground px-1 shrink-0">
             التفاف النص
           </span>
           <div className="flex-1 grid grid-cols-3 gap-0.5" role="group" aria-label="التفاف النص">
@@ -526,7 +526,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
               useEditorStore.getState().pushHistory();
             }}
             className={cn(
-              'h-7 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer text-xs font-semibold active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none border',
+              'h-7 px-2 rounded-md flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-xs font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none border',
               isArabicNumerals
                 ? 'bg-background text-primary shadow-xs font-bold border-primary/30'
                 : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground',
@@ -542,7 +542,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
           <button
             type="button"
             onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
-            className="h-7 px-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:scale-[1.02] active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="h-7 px-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
             title="ملاءمة عرض الصندوق مع النص تلقائياً"
             aria-label="ملاءمة العرض"
           >
@@ -559,7 +559,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
       >
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <span className="text-micro font-bold text-muted-foreground flex items-center gap-1">
+            <span className="text-mini font-bold text-muted-foreground flex items-center gap-1">
               <ArrowsInLineVertical className="w-3 h-3 text-primary/70" weight="regular" />
               <span>ارتفاع الأسطر</span>
             </span>
@@ -572,7 +572,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   onUpdate(element.id, { lineHeight: val });
                   useEditorStore.getState().pushHistory();
                 }}
-                className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-2xs font-cairo"
+                className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-colors shadow-2xs font-cairo"
               >
                 {!LINE_HEIGHT_OPTIONS.some((o) => o.value === currentLineHeight) && (
                   <option value={currentLineHeight}>{currentLineHeight}x</option>
@@ -591,7 +591,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
           </div>
 
           <div className="space-y-1">
-            <span className="text-micro font-bold text-muted-foreground flex items-center gap-1">
+            <span className="text-mini font-bold text-muted-foreground flex items-center gap-1">
               <ArrowsHorizontal className="w-3 h-3 text-primary/70" weight="regular" />
               <span>{isArabic ? 'تباعد الكلمات' : 'تباعد الحروف'}</span>
             </span>
@@ -604,7 +604,7 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
                   onUpdate(element.id, { letterSpacing: val });
                   useEditorStore.getState().pushHistory();
                 }}
-                className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-all shadow-2xs font-cairo"
+                className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-colors shadow-2xs font-cairo"
               >
                 {!LETTER_SPACING_OPTIONS.some((o) => o.value === currentSpacing) && (
                   <option value={currentSpacing}>{currentSpacing}px</option>

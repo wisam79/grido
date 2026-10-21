@@ -144,7 +144,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
         type="button"
         onClick={handleGoogleLogin}
         variant="outline"
-        className="w-full h-9 text-xs font-bold gap-2.5 border-border/80 dark:border-white/15 bg-background hover:bg-muted/70 dark:bg-card/80 dark:hover:bg-accent rounded-md shadow-2xs hover:shadow-xs transition-all cursor-pointer group active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+        className="w-full h-9 text-xs font-bold gap-2.5 border-border/80 dark:border-white/15 bg-background hover:bg-muted/70 dark:bg-card/80 dark:hover:bg-accent rounded-md shadow-2xs hover:shadow-xs transition-colors cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
         disabled={loading || loadingGoogle}
       >
         {loadingGoogle ? (
@@ -154,7 +154,7 @@ export function AuthTabContent({ forms }: { forms: AuthFormsApi }) {
           </>
         ) : (
           <>
-            <GoogleIcon className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform duration-200" />
+            <GoogleIcon className="w-4 h-4 shrink-0" />
             <span className="font-semibold text-foreground/90 group-hover:text-foreground">
               متابعة باستخدام Google
             </span>

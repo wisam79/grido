@@ -15,14 +15,15 @@ const Slider = React.forwardRef<
       value,
       min = 0,
       max = 100,
-      dir,
+      // Radix يقرأ الاتجاه من DirectionProvider وإلا يعود LTR؛ التطبيق rtl
+      // بلا مزوّد، فكانت المنزلقات تُسحب معكوسة. الافتراضي هنا rtl صراحةً.
+      dir = 'rtl',
       'aria-label': ariaLabel,
       'aria-labelledby': ariaLabelledBy,
       ...props
     },
     ref,
   ) => {
-    // R37 + RTL: عدم فرض ltr — يرث اتجاه الواجهة (rtl) تلقائياً.
     // القيم الرقمية نفسها تبقى LTR عبر tabular-nums في CSS، لكن اتجاه
     // الحركة (يمين=زيادة) يجب أن يتبع RTL مثل بقية الواجهة.
     const _values = React.useMemo(
@@ -56,14 +57,16 @@ const Slider = React.forwardRef<
         <SliderPrimitive.Track
           data-slot="slider-track"
           className={cn(
-            'relative grow overflow-hidden rounded-full bg-muted border border-border h-[5px] data-[orientation=vertical]:w-[5px] transition-colors',
+            // مسار مرئي في الوضعين: تعبئة foreground شفافة تتبع لون النص
+            // (أسود في الفاتح/أبيض في الداكن) بدل bg-muted الباهت.
+            'relative grow overflow-hidden rounded-full bg-foreground/10 border border-foreground/20 h-1.5 data-[orientation=vertical]:w-1.5 transition-colors',
           )}
         >
           <SliderPrimitive.Range
             data-slot="slider-range"
             className={cn(
               // المسار المعبأ محايد — القيمة ليست أمراً تعبوياً
-              'bg-foreground/85 absolute rounded-full data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full',
+              'bg-foreground/80 absolute rounded-full data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full',
             )}
           />
         </SliderPrimitive.Track>
@@ -72,7 +75,7 @@ const Slider = React.forwardRef<
             data-slot="slider-thumb"
             key={index}
             {...thumbAriaProps}
-            className="block size-4 shrink-0 rounded-full bg-background border-2 border-foreground/85 shadow-sm shadow-black/20 hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing transition-transform duration-75"
+            className="block size-4 shrink-0 rounded-full bg-background border-2 border-foreground/80 shadow-sm shadow-black/20 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 cursor-grab active:cursor-grabbing"
           />
         ))}
       </SliderPrimitive.Root>

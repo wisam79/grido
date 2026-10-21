@@ -3,8 +3,10 @@ import { useEditorStore } from '@/lib/editor-store';
 import { Switch } from '@/components/ui/switch';
 import { useShallow } from 'zustand/react/shallow';
 import { cn } from '@/lib/utils';
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useMemo } from 'react';
 import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+import { getEffectiveDpi } from '@/lib/templates';
+import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { PopoverColorPicker } from './shared-controls';
 
 export function CollageSettings() {
@@ -16,6 +18,9 @@ export function CollageSettings() {
     collageShowEndCutLine,
     collageStrokeWidth,
     collageStrokeColor,
+    canvasWidth,
+    canvasHeight,
+    printSettings,
     previewCollageGap,
     previewCollageMargin,
     commitCollageSpacing,
@@ -33,6 +38,9 @@ export function CollageSettings() {
       collageShowEndCutLine: state.collageShowEndCutLine,
       collageStrokeWidth: state.collageStrokeWidth,
       collageStrokeColor: state.collageStrokeColor,
+      canvasWidth: state.canvasWidth,
+      canvasHeight: state.canvasHeight,
+      printSettings: state.printSettings,
       previewCollageGap: state.previewCollageGap,
       previewCollageMargin: state.previewCollageMargin,
       commitCollageSpacing: state.commitCollageSpacing,
@@ -43,6 +51,15 @@ export function CollageSettings() {
       setCollageStrokeColor: state.setCollageStrokeColor,
     })),
   );
+
+  // 🖨️ المسافات تُخزَّن بكسلات الكانفس لكنها تُعرض بالمليمتر — نفس DPI الفعلي
+  // المستخدم في الطباعة، فلا يرى المستخدم وحدتين متضاربتين في مستند ورقي.
+  const dpi = useMemo(
+    () => getEffectiveDpi(canvasWidth, canvasHeight, printSettings?.dpi || 300),
+    [canvasWidth, canvasHeight, printSettings?.dpi],
+  );
+  const toMm = useCallback((px: number) => Math.round(pxToMm(px, dpi) * 10) / 10, [dpi]);
+  const toPx = useCallback((mm: number) => Math.round(mmToPx(mm, dpi)), [dpi]);
 
   // لون الإطار يُدخل باستمرار (نص/عجلة) — ندفع سطر تراجع واحد بعد توقف الكتابة (إصلاح Bug#2)
   const colorCommitTimerRef = useRef<number | null>(null);
@@ -71,13 +88,14 @@ export function CollageSettings() {
       >
         <div className="flex flex-col gap-2.5">
           <FluentSliderField
-            label="التباعد الداخلي"
-            value={collageGap}
+            label="التباعد بين الصور"
+            value={toMm(collageGap)}
             min={0}
-            max={30}
-            step={2}
-            unit="px"
-            onChange={previewCollageGap}
+            max={toMm(30)}
+            step={0.1}
+            unit="mm"
+            defaultValue={0}
+            onChange={(mm) => previewCollageGap(toPx(mm))}
             onCommit={() => {
               commitCollageSpacing();
               useEditorStore.getState().pushHistory();
@@ -85,12 +103,13 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="الهوامش الخارجية"
-            value={collageMargin}
+            value={toMm(collageMargin)}
             min={0}
-            max={100}
-            step={2}
-            unit="px"
-            onChange={previewCollageMargin}
+            max={toMm(100)}
+            step={0.1}
+            unit="mm"
+            defaultValue={0}
+            onChange={(mm) => previewCollageMargin(toPx(mm))}
             onCommit={() => {
               commitCollageSpacing();
               useEditorStore.getState().pushHistory();
@@ -98,12 +117,13 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="الزوايا"
-            value={collageRadius}
+            value={toMm(collageRadius)}
             min={0}
-            max={50}
-            step={2}
-            unit="px"
-            onChange={setCollageRadius}
+            max={toMm(50)}
+            step={0.1}
+            unit="mm"
+            defaultValue={0}
+            onChange={(mm) => setCollageRadius(toPx(mm))}
             onCommit={() => useEditorStore.getState().pushHistory()}
           />
         </div>
@@ -157,9 +177,9 @@ export function CollageSettings() {
                         }}
                         title={label}
                         className={cn(
-                          'w-6 h-6 rounded-full border border-black/20 dark:border-white/25 transition-all cursor-pointer hover:scale-110 shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                          'w-7 h-7 rounded-full border border-black/20 dark:border-white/25 transition-colors cursor-pointer shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                           isSelected &&
-                            'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 shadow-xs',
+                            'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xs',
                         )}
                         style={{ backgroundColor: hex }}
                       >

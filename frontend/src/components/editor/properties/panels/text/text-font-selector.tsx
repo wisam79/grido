@@ -191,7 +191,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         <button
           type="button"
           className={cn(
-            'w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between shadow-2xs transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+            'w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between shadow-2xs transition-colors cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
             isOpen && 'border-primary ring-2 ring-primary/20 bg-background',
           )}
         >
@@ -202,21 +202,21 @@ export const TextFontSelector = React.memo(function TextFontSelector({
             >
               {currentFontObj.arabicName || currentFontObj.name}
             </span>
-            <span className="text-micro text-muted-foreground font-medium truncate">
+            <span className="text-mini text-muted-foreground font-medium truncate">
               ({currentFontObj.englishName})
             </span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {currentFontObj.isOffline ? (
               <span
-                className="text-3xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1 py-0.5 rounded"
+                className="text-mini font-bold text-success bg-success/15 border border-success/30 px-1 py-0.5 rounded"
                 title="مدمج أوفلاين"
               >
                 أوفلاين
               </span>
             ) : (
               <span
-                className="text-3xs font-bold text-sky-600 dark:text-sky-400 bg-sky-500/15 border border-sky-500/30 px-1 py-0.5 rounded flex items-center gap-0.5"
+                className="text-mini font-bold text-info bg-info/15 border border-info/30 px-1 py-0.5 rounded flex items-center gap-0.5"
                 title="سحابي Google Fonts"
               >
                 <Cloud className="w-2.5 h-2.5" weight="regular" />
@@ -259,7 +259,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 setFocusedIndex(-1);
               }}
               placeholder="بحث في الخطوط..."
-              className="w-full h-8 bg-background/90 border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md pr-8 pl-8 text-xs text-foreground placeholder:text-muted-foreground/60 outline-hidden transition-all shadow-2xs"
+              className="w-full h-8 bg-background/90 border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md pr-8 pl-8 text-xs text-foreground placeholder:text-muted-foreground/60 outline-hidden transition-colors shadow-2xs"
             />
             {searchQuery ? (
               <button
@@ -311,7 +311,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         </div>
 
         {/* Category Filter Chips — التفاف كامل بدل شريط تمرير أفقي يُخفي الفئات */}
-        <div className="flex flex-wrap items-center gap-1 pb-1 text-micro">
+        <div className="flex flex-wrap items-center gap-1 pb-1 text-mini">
           {allCategoryPills.map((cat) => (
             <button
               key={cat.id}
@@ -321,7 +321,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                 setFocusedIndex(-1);
               }}
               className={cn(
-                'px-2 py-1 rounded-md whitespace-nowrap font-bold transition-all cursor-pointer shadow-2xs flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                'px-2 py-1 rounded-md whitespace-nowrap font-bold transition-colors cursor-pointer shadow-2xs flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                 activeCategory === cat.id
                   ? 'bg-primary text-primary-foreground shadow-xs'
                   : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40',
@@ -339,12 +339,12 @@ export const TextFontSelector = React.memo(function TextFontSelector({
         {/* Fonts List */}
         <div
           ref={listContainerRef}
-          className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar pr-0.5"
+          className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar pe-0.5"
         >
           {filteredFonts.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground space-y-1">
               <p className="font-semibold">لا خط مطابق</p>
-              <p className="text-micro text-muted-foreground/70">جرّب اسم خط أو فئة أخرى</p>
+              <p className="text-mini text-muted-foreground/70">جرّب اسم خط أو فئة أخرى</p>
             </div>
           ) : (
             filteredFonts.map((font, idx) => {
@@ -369,7 +369,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                   }}
                   onClick={() => handleSelectFont(font)}
                   className={cn(
-                    'w-full text-start px-2.5 py-2 rounded-md transition-all flex items-center justify-between cursor-pointer group border select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                    'w-full text-start px-2.5 py-2 rounded-md transition-colors flex items-center justify-between cursor-pointer group border select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                     isSelected
                       ? 'bg-primary/15 border-primary/50 text-primary shadow-2xs'
                       : isFocused
@@ -387,19 +387,19 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                     </span>
 
                     {/* Font Meta Details */}
-                    <div className="text-micro text-muted-foreground font-medium flex items-center gap-1.5 truncate">
+                    <div className="text-mini text-muted-foreground font-medium flex items-center gap-1.5 truncate">
                       <span className="font-bold text-foreground/75 truncate">
                         {font.arabicName}
                       </span>
-                      <span className="text-micro opacity-70 truncate font-mono">
+                      <span className="text-mini opacity-70 truncate font-mono">
                         ({font.englishName})
                       </span>
                       {font.isOffline ? (
-                        <span className="text-3xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-1 py-px rounded font-bold">
+                        <span className="text-mini bg-success/10 text-success border border-success/20 px-1 py-px rounded font-bold">
                           أوفلاين
                         </span>
                       ) : (
-                        <span className="text-3xs bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 px-1 py-px rounded font-bold">
+                        <span className="text-mini bg-info/10 text-info border border-info/20 px-1 py-px rounded font-bold">
                           Google Font
                         </span>
                       )}
@@ -412,7 +412,7 @@ export const TextFontSelector = React.memo(function TextFontSelector({
                       type="button"
                       onClick={(e) => toggleFavorite(font.id, e)}
                       className={cn(
-                        'w-6 h-6 rounded-md flex items-center justify-center transition-all cursor-pointer hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                        'w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
                         isFav ? 'text-amber-400' : 'text-muted-foreground/40 hover:text-amber-400',
                       )}
                       title={isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}

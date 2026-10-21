@@ -126,7 +126,7 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
             data-testid="toolbar-transfer-to-collage"
             aria-label="تكرار في الكولاج"
             title={elementsCount === 0 ? 'الكانفس فارغ — أضف عناصر أولاً' : undefined}
-            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer flex items-center justify-center disabled:opacity-40"
+            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer flex items-center justify-center disabled:opacity-40"
           >
             {isTransferring ? (
               <Spinner className="w-4 h-4 animate-spin" />

@@ -92,7 +92,7 @@ export const AddTextDropdown = React.memo(function AddTextDropdown() {
             size="sm"
             data-testid="toolbar-add-text"
             aria-label="إضافة نص"
-            className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
+            className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer gap-1"
           >
             <TextT className="w-5 h-5" />
             <CaretDown className="w-3.5 h-3.5 opacity-60" />

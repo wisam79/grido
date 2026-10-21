@@ -280,7 +280,7 @@ export function FreeformPaletteTab() {
               className="w-6 h-6 rounded-md shadow-none border-0"
               ariaLabel="لون مخصص"
             />
-            <span className="font-mono font-bold text-micro text-foreground px-1 uppercase select-all">
+            <span className="font-mono font-bold text-mini text-foreground px-1 uppercase select-all">
               {customColor}
             </span>
 
@@ -343,7 +343,7 @@ export function FreeformPaletteTab() {
                     type="button"
                     onClick={() => applyColor(item.color)}
                     aria-label={item.label}
-                    className="flex-1 h-5 rounded border border-black/10 dark:border-white/15 transition-transform hover:scale-110 active:scale-95 cursor-pointer shadow-2xs relative overflow-hidden"
+                    className="flex-1 h-5 rounded border border-black/10 dark:border-white/15 transition-colors cursor-pointer shadow-2xs relative overflow-hidden"
                     style={{ backgroundColor: item.color }}
                   />
                 </TooltipTrigger>
@@ -417,7 +417,7 @@ export function FreeformPaletteTab() {
                 <button
                   type="button"
                   onClick={distributeHarmony}
-                  className="text-micro font-bold text-primary hover:underline px-1.5 py-0.5 rounded cursor-pointer shrink-0"
+                  className="text-mini font-bold text-primary hover:underline px-1.5 py-0.5 rounded cursor-pointer shrink-0"
                 >
                   توزيع
                 </button>
@@ -432,7 +432,7 @@ export function FreeformPaletteTab() {
                       type="button"
                       onClick={() => applyColor(color)}
                       aria-label={`تطبيق ${color}`}
-                      className="flex-1 h-5 rounded border border-black/10 dark:border-white/15 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                      className="flex-1 h-5 rounded border border-black/10 dark:border-white/15 transition-colors cursor-pointer"
                       style={{ backgroundColor: color }}
                     />
                   </TooltipTrigger>
@@ -448,7 +448,7 @@ export function FreeformPaletteTab() {
         {/* 📷 شريط الألوان المستخرجة من الصور إذا تم استخراجها */}
         {extracted.length > 0 && (
           <div className="pt-1.5 border-t border-border/40 space-y-1 animate-in fade-in-50 duration-150">
-            <div className="flex items-center justify-between text-micro text-muted-foreground">
+            <div className="flex items-center justify-between text-mini text-muted-foreground">
               <span>ألوان مستخرجة من التصميم</span>
               {selectedElements.length >= 2 && (
                 <button
@@ -476,7 +476,7 @@ export function FreeformPaletteTab() {
                       type="button"
                       onClick={() => applyColor(color)}
                       aria-label={`تطبيق ${color}`}
-                      className="aspect-square rounded border border-black/10 dark:border-white/15 transition-transform hover:scale-110 active:scale-95 cursor-pointer shadow-2xs"
+                      className="aspect-square rounded border border-black/10 dark:border-white/15 transition-colors cursor-pointer shadow-2xs"
                       style={{ backgroundColor: color }}
                     />
                   </TooltipTrigger>
@@ -501,17 +501,17 @@ export function FreeformPaletteTab() {
       />
 
       {/* 🏛️ 3. قائمة الهويات البصرية المدمجة والرشيقة */}
-      <div className="space-y-1.5 max-h-[calc(100vh-220px)] overflow-y-auto pe-1 ps-0.5 custom-scrollbar">
+      <div className="space-y-1.5 pe-1 ps-0.5">
         {filteredPalettes.map((palette) => (
           <div
             key={palette.id}
-            className="p-2 rounded-lg bg-card/50 hover:bg-card border border-border/60 hover:border-foreground/20 transition-all select-none group space-y-1.5 shadow-2xs"
+            className="p-2 rounded-lg bg-card/50 hover:bg-card border border-border/60 hover:border-foreground/20 transition-colors select-none group space-y-1.5 shadow-2xs"
           >
             {/* معلومات الهوية وأزرار الإجراءات السريعة */}
             <div className="flex items-center justify-between gap-1">
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="text-xs font-bold text-foreground truncate">{palette.name}</span>
-                <span className="text-3xs px-1.5 py-0.2 rounded bg-muted/60 text-muted-foreground border border-border/40 shrink-0 font-medium">
+                <span className="text-mini px-1.5 py-0.2 rounded bg-muted/60 text-muted-foreground border border-border/40 shrink-0 font-medium">
                   {palette.categoryLabel}
                 </span>
               </div>
@@ -565,13 +565,13 @@ export function FreeformPaletteTab() {
                         type="button"
                         onClick={() => applyColor(color)}
                         aria-label={`${roleName}: ${color}`}
-                        className="flex-1 h-full transition-all cursor-pointer hover:brightness-110 active:scale-95 focus-visible:ring-1 focus-visible:ring-primary focus-visible:z-10 focus-visible:outline-none"
+                        className="flex-1 h-full transition-[filter] cursor-pointer hover:brightness-110 focus-visible:ring-1 focus-visible:ring-primary focus-visible:z-10 focus-visible:outline-none"
                         style={{ backgroundColor: color }}
                       />
                     </TooltipTrigger>
                     <TooltipContent side="top" className="text-xs font-cairo text-center">
                       <div className="font-bold">{roleName}</div>
-                      <div className="text-3xs font-mono text-muted-foreground">
+                      <div className="text-mini font-mono text-muted-foreground">
                         {color.toUpperCase()}
                       </div>
                     </TooltipContent>
@@ -594,7 +594,7 @@ export function FreeformPaletteTab() {
                     type="button"
                     onClick={() => applyColor(color)}
                     aria-label={`تطبيق ${color}`}
-                    className="w-5 h-5 rounded border border-border shrink-0 transition-transform hover:scale-110 cursor-pointer"
+                    className="w-5 h-5 rounded border border-border shrink-0 transition-colors cursor-pointer"
                     style={{ backgroundColor: color }}
                   />
                 </TooltipTrigger>
@@ -611,7 +611,7 @@ export function FreeformPaletteTab() {
               setFavorites([]);
               writeStoredList(PREF_KEYS.favoriteColors, []);
             }}
-            className="text-micro text-muted-foreground hover:text-foreground shrink-0 px-1 cursor-pointer"
+            className="text-mini text-muted-foreground hover:text-foreground shrink-0 px-1 cursor-pointer"
           >
             مسح
           </button>

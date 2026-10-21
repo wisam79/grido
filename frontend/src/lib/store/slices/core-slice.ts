@@ -27,6 +27,10 @@ import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from '../..
 import { hydrateProjectState } from '../../io/project-hydrator';
 export interface CoreSlice {
   projectId: string | null;
+  /** اسم المشروع المحفوظ/المفتوح — null لمستند جديد لم يُحفظ بعد */
+  projectName: string | null;
+  /** توجد تعديلات منذ آخر حفظ أو تحميل — يظهر مؤشرها في شريط العنوان */
+  isDirty: boolean;
   mode: EditorMode;
   canvasWidth: number;
   canvasHeight: number;
@@ -48,7 +52,13 @@ export interface CoreSlice {
   setLastEditedImage: (src: string | null) => void;
   setLastEditedImageAspect: (aspect: number | null) => void;
   reset: () => void;
-  loadProject: (project: ProjectFileV1, projectId?: string | null) => void;
+  loadProject: (
+    project: ProjectFileV1,
+    projectId?: string | null,
+    projectName?: string | null,
+  ) => void;
+  /** يثبّت هوية المشروع بعد حفظ ناجح ويرفع علامة التعديل */
+  markProjectSaved: (projectId: string, projectName: string) => void;
   canvasZoom: number;
   setCanvasZoom: (zoom: number | ((prev: number) => number)) => void;
   /** وضع ملاءمة الورقة — تفضيل عرض محفوظ محلياً، لا يُصدَّر في ملف المشروع */
@@ -58,6 +68,8 @@ export interface CoreSlice {
 
 export const DEFAULT_CORE_STATE = {
   projectId: null as string | null,
+  projectName: null as string | null,
+  isDirty: false,
   mode: 'collage' as EditorMode,
   canvasWidth: 2480,
   canvasHeight: 3508,
@@ -326,6 +338,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     clearDisplayCache();
     set({
       projectId: null,
+      projectName: null,
+      isDirty: false,
       mode: 'collage' as EditorMode,
       canvasWidth: 2480,
       canvasHeight: 3508,
@@ -379,10 +393,19 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     });
   },
 
-  loadProject: (project: ProjectFileV1, projectId: string | null = null) => {
+  loadProject: (
+    project: ProjectFileV1,
+    projectId: string | null = null,
+    projectName: string | null = null,
+  ) => {
     const hydrated = hydrateProjectState(project, { projectId });
     if (!hydrated) return;
-    set(hydrated);
+    // مشروع محمّل = نقطة حفظ نظيفة: لا تعديلات معلّقة فوق محتواه
+    set({ ...hydrated, projectName, isDirty: false });
     set(seedHistorySnapshot(get()));
+  },
+
+  markProjectSaved: (projectId, projectName) => {
+    set({ projectId, projectName, isDirty: false });
   },
 });

@@ -77,7 +77,7 @@ export const FluentModal = React.memo(function FluentModal({
         dir="rtl"
         showCloseButton={false}
         className={cn(
-          'max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular transition-all duration-150 gap-0',
+          'max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular transition-colors duration-150 gap-0',
           SIZE_CLASSES[size],
           contentClassName,
         )}

@@ -80,15 +80,15 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               <Button
                 variant="ghost"
                 size="sm"
-                aria-label="محاذاة لليسار"
-                onClick={() => alignSelectedElements('left')}
+                aria-label="محاذاة لليمين"
+                onClick={() => alignSelectedElements('right')}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
-                <AlignLeftIcon className="w-4 h-4" />
+                <AlignRightIcon className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
-              محاذاة لليسار
+              محاذاة لليمين
             </TooltipContent>
           </Tooltip>
 
@@ -114,15 +114,15 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               <Button
                 variant="ghost"
                 size="sm"
-                aria-label="محاذاة لليمين"
-                onClick={() => alignSelectedElements('right')}
+                aria-label="محاذاة لليسار"
+                onClick={() => alignSelectedElements('left')}
                 className="h-8 w-8 p-0 rounded-md hover:bg-background hover:text-primary hover:shadow-xs cursor-pointer transition-colors"
               >
-                <AlignRightIcon className="w-4 h-4" />
+                <AlignLeftIcon className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs font-cairo">
-              محاذاة لليمين
+              محاذاة لليسار
             </TooltipContent>
           </Tooltip>
 
@@ -182,7 +182,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
 
         {/* شبكة الإحداثيات والأبعاد */}
         <div className="grid grid-cols-2 gap-2 text-mini">
-          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all">
+          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-colors">
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               X:
             </span>
@@ -203,7 +203,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all">
+          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-colors">
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               Y:
             </span>
@@ -224,7 +224,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all">
+          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-colors">
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               W:
             </span>
@@ -249,7 +249,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-all">
+          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-colors">
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               H:
             </span>
@@ -313,7 +313,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             onClick={handleRotate90}
             aria-label="تدوير 90°"
             title="تدوير 90°"
-            className="h-8 w-full rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="h-8 w-full rounded-md border-border/60 hover:border-primary/45 transition-colors cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
             <ArrowClockwise className="w-3.5 h-3.5 text-muted-foreground" weight="regular" />
           </Button>
@@ -324,9 +324,9 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             aria-label="قلب أفقي"
             title="قلب أفقي"
             className={cn(
-              'h-8 w-full rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'h-8 w-full rounded-md border-border/60 hover:border-primary/45 transition-colors cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               element.flipX &&
-                'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40',
+                'bg-card text-foreground border border-border/80 shadow-xs font-bold ring-1 ring-primary/40',
             )}
           >
             <FlipHorizontal
@@ -344,9 +344,9 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             aria-label="قلب عمودي"
             title="قلب عمودي"
             className={cn(
-              'h-8 w-full rounded-md border-border/60 hover:border-primary/45 transition-all cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'h-8 w-full rounded-md border-border/60 hover:border-primary/45 transition-colors cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               element.flipY &&
-                'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40',
+                'bg-card text-foreground border border-border/80 shadow-xs font-bold ring-1 ring-primary/40',
             )}
           >
             <FlipVertical

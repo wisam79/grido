@@ -23,7 +23,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
           action={<button>إعادة ضبط</button>}
         >
           <div data-testid="section-content">محتوى تجريبي</div>
-        </FluentSection>
+        </FluentSection>,
       );
 
       expect(screen.getByText('إعدادات الكانفاس')).toBeInTheDocument();
@@ -44,7 +44,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
             tooltip="مساعدة إضافية"
             control={<input type="checkbox" data-testid="cut-switch" />}
           />
-        </TooltipProvider>
+        </TooltipProvider>,
       );
 
       expect(screen.getByText('علامات القص')).toBeInTheDocument();
@@ -54,13 +54,9 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
 
     it('renders vertical setting row properly', () => {
       render(
-        <FluentSettingRow
-          layout="vertical"
-          label="الاسم"
-          description="اسم القالب"
-        >
+        <FluentSettingRow layout="vertical" label="الاسم" description="اسم القالب">
           <input data-testid="name-input" />
-        </FluentSettingRow>
+        </FluentSettingRow>,
       );
 
       expect(screen.getByText('الاسم')).toBeInTheDocument();
@@ -70,7 +66,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
   });
 
   describe('FluentSliderField', () => {
-    it('renders slider field with current value and unit', () => {
+    it('renders slider field with editable numeric value and unit', () => {
       const handleChange = vi.fn();
       render(
         <FluentSliderField
@@ -80,11 +76,89 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
           max={50}
           unit="mm"
           onChange={handleChange}
-        />
+        />,
       );
 
       expect(screen.getByText('الهامش')).toBeInTheDocument();
-      expect(screen.getByText('15 mm')).toBeInTheDocument();
+      expect(screen.getByText('mm')).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: 'قيمة الهامش' })).toHaveValue('15');
+    });
+
+    it('commits typed value on Enter only and clamps it to the range', () => {
+      const handleChange = vi.fn();
+      const handleCommit = vi.fn();
+      render(
+        <FluentSliderField
+          label="الهامش"
+          value={15}
+          min={0}
+          max={50}
+          unit="mm"
+          onChange={handleChange}
+          onCommit={handleCommit}
+        />,
+      );
+
+      const input = screen.getByRole('textbox', { name: 'قيمة الهامش' });
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: '75' } });
+      expect(handleChange).not.toHaveBeenCalled();
+
+      fireEvent.keyDown(input, { key: 'Enter' });
+      expect(handleChange).toHaveBeenCalledWith(50);
+      expect(handleCommit).toHaveBeenCalledWith(50);
+    });
+
+    it('accepts Arabic-Indic digits and Arabic decimal separator', () => {
+      const handleChange = vi.fn();
+      render(
+        <FluentSliderField
+          label="الهامش"
+          value={15}
+          min={0}
+          max={50}
+          unit="mm"
+          onChange={handleChange}
+        />,
+      );
+
+      const input = screen.getByRole('textbox', { name: 'قيمة الهامش' });
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: '٢٫٥' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      expect(handleChange).toHaveBeenCalledWith(2.5);
+    });
+
+    it('shows a reset action only when the value differs from defaultValue', () => {
+      const handleChange = vi.fn();
+      const { rerender } = render(
+        <FluentSliderField
+          label="التباعد"
+          value={10}
+          min={0}
+          max={30}
+          defaultValue={0}
+          onChange={handleChange}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'إعادة تعيين إلى القيمة الافتراضية' }));
+      expect(handleChange).toHaveBeenCalledWith(0);
+
+      rerender(
+        <FluentSliderField
+          label="التباعد"
+          value={0}
+          min={0}
+          max={30}
+          defaultValue={0}
+          onChange={handleChange}
+        />,
+      );
+      expect(
+        screen.queryByRole('button', { name: 'إعادة تعيين إلى القيمة الافتراضية' }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -99,7 +173,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
             { id: 'a', label: 'الخيار الأول' },
             { id: 'b', label: 'الخيار الثاني' },
           ]}
-        />
+        />,
       );
 
       expect(screen.getByText('الخيار الأول')).toBeInTheDocument();
@@ -120,7 +194,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
           description="أنشئ مشروعاً جديداً للبدء"
           actionLabel="مشروع جديد"
           onAction={handleAction}
-        />
+        />,
       );
 
       expect(screen.getByTestId('empty-icon')).toBeInTheDocument();
@@ -145,7 +219,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
           >
             تنفيذ
           </FluentIconButton>
-        </TooltipProvider>
+        </TooltipProvider>,
       );
 
       expect(screen.getByTestId('btn-icon')).toBeInTheDocument();

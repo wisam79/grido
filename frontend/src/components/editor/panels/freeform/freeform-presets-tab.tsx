@@ -69,7 +69,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
             <span className="font-bold text-foreground font-mono text-xs truncate">
               {currentW_MM} × {currentH_MM} مم
             </span>
-            <span className="text-micro font-mono text-muted-foreground shrink-0">
+            <span className="text-mini font-mono text-muted-foreground shrink-0">
               {currentDpi} DPI
             </span>
           </div>
@@ -78,7 +78,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
         <button
           type="button"
           onClick={handleToggleOrientation}
-          className="flex items-center gap-1.5 text-micro font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer bg-muted/60 hover:bg-muted px-2.5 py-1 rounded-md border border-border/60 shadow-2xs active:scale-95 shrink-0 select-none"
+          className="flex items-center gap-1.5 text-mini font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer bg-muted/60 hover:bg-muted px-2.5 py-1 rounded-md border border-border/60 shadow-2xs shrink-0 select-none"
           title="تبديل الاتجاه (أفقي / رأسي)"
         >
           <ArrowsClockwise className="w-3.5 h-3.5" />
@@ -102,7 +102,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
       />
 
       {/* 📄 قائمة مقاسات الورق الحقيقية المدعومة في الطابعات والأسواق */}
-      <div className="space-y-1.5 max-h-[calc(100vh-320px)] overflow-y-auto pe-1 ps-0.5 custom-scrollbar">
+      <div className="space-y-1.5 pe-1 ps-0.5">
         {filteredPresets.map((preset) => {
           const active = isPresetActive(preset);
 
@@ -113,7 +113,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
               onClick={() => handleSelectPreset(preset)}
               title={`${preset.name} - ${preset.tag}`}
               className={cn(
-                'group w-full min-h-10 px-2.5 py-1.5 rounded-lg border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2.5 select-none active:scale-[0.99] text-start',
+                'group w-full min-h-10 px-2.5 py-1.5 rounded-lg border transition-colors duration-150 cursor-pointer flex items-center justify-between gap-2.5 select-none text-start',
                 active
                   ? 'bg-card border-border/90 text-foreground shadow-xs ring-1 ring-foreground/25 font-bold'
                   : 'bg-card/40 hover:bg-accent/60 border-border/50 hover:border-border text-foreground/90',
@@ -161,7 +161,7 @@ export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
 
               {/* الأبعاد وعلامة الاختيار النشط */}
               <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-micro font-mono font-medium px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40">
+                <span className="text-mini font-mono font-medium px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40">
                   {preset.tag}
                 </span>
                 {active && (

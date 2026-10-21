@@ -23,7 +23,7 @@ const CURVE_PRESETS = [
 
 const toggleButtonClassName = (active: boolean) =>
   cn(
-    'h-7 px-2.5 rounded-md border text-micro font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+    'h-7 px-2.5 rounded-md border text-mini font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
     active
       ? 'bg-primary text-primary-foreground border-primary font-bold'
       : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60',
@@ -168,7 +168,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
         }
       >
         {/* أنماط سريعة */}
-        <div className="grid grid-cols-5 gap-1 text-micro">
+        <div className="grid grid-cols-5 gap-1 text-mini">
           {SHADOW_PRESETS.map((p) => (
             <button
               key={p.id}
@@ -184,7 +184,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                 useEditorStore.getState().pushHistory();
               }}
               className={cn(
-                'h-7 w-full px-1 rounded-md border text-micro font-bold transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                'h-7 w-full px-1 rounded-md border text-mini font-bold transition-colors cursor-pointer shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                 isShadowPresetActive(element, p)
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 border-border/50 text-muted-foreground',
@@ -236,7 +236,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
         {hasCurve && (
           <div className="space-y-2 animate-in fade-in duration-150">
             {/* زوايا جاهزة */}
-            <div className="grid grid-cols-5 gap-1 text-micro">
+            <div className="grid grid-cols-5 gap-1 text-mini">
               {CURVE_PRESETS.map((cp) => (
                 <button
                   key={cp.label}
@@ -246,7 +246,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                     useEditorStore.getState().pushHistory();
                   }}
                   className={cn(
-                    'h-7 w-full px-1 rounded-md border text-micro font-bold transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                    'h-7 w-full px-1 rounded-md border text-mini font-bold transition-colors cursor-pointer shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                     (element.curve ?? 0) === cp.value
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'bg-background hover:bg-primary/10 text-muted-foreground border-border/50',

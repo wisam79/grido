@@ -109,7 +109,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
             size="sm"
             onClick={() => actOnSelection(duplicateElement, duplicateElements)}
             aria-label="تكرار"
-            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer"
           >
             <Copy className="w-5 h-5" />
           </Button>
@@ -130,7 +130,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               onClick={groupSelectedElements}
               aria-label="تجميع"
               // 🎨 رمادي في الراحة → داكن عند التمرير (اتساق أيقونات الشريط)
-              className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer"
+              className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer"
             >
               <Link className="w-5 h-5" />
             </Button>
@@ -144,7 +144,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               size="sm"
               onClick={ungroupSelectedElements}
               aria-label="فك التجميع"
-              className="h-8 px-2.5 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-md transition-all cursor-pointer"
+              className="h-8 px-2.5 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-md transition-colors cursor-pointer"
             >
               <LinkBreak className="w-5 h-5" />
             </Button>
@@ -158,7 +158,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-all cursor-pointer gap-1"
+              className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer gap-1"
               aria-label="محاذاة"
             >
               <AlignCenterHorizontalIcon className="w-5 h-5" />
@@ -202,7 +202,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
             size="sm"
             onClick={() => actOnSelection(removeElement, removeElements, true)}
             aria-label="حذف"
-            className="h-8 px-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:scale-95 rounded-md transition-all cursor-pointer"
+            className="h-8 px-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer"
           >
             <Trash className="w-5 h-5" />
           </Button>

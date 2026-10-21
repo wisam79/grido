@@ -93,7 +93,7 @@ export function ImageFillControls({ value, onChange, onCommit }: ImageFillContro
           </div>
           <div className="flex-1 min-w-0 space-y-0.5">
             <span className="text-xs font-bold text-foreground block truncate">صورة التعبئة</span>
-            <span className="text-micro text-muted-foreground block truncate">
+            <span className="text-mini text-muted-foreground block truncate">
               {FIT_LABELS[fit]}
             </span>
           </div>
@@ -140,7 +140,7 @@ export function ImageFillControls({ value, onChange, onCommit }: ImageFillContro
       {hasImage && (
         <>
           <div className="space-y-1">
-            <span className="text-micro font-semibold text-muted-foreground block">
+            <span className="text-mini font-semibold text-muted-foreground block">
               ملاءمة الصورة
             </span>
             <FluentSegmentedControl<ShapeFillImageFit>

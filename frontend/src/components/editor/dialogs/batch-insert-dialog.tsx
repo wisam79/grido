@@ -313,7 +313,7 @@ export function BatchInsertDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-[96vw] sm:max-w-[860px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular fluent-acrylic transition-all duration-150 gap-0"
+        className="w-[96vw] sm:max-w-[860px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular fluent-acrylic transition-colors duration-150 gap-0"
         dir="rtl"
       >
         {/* Header */}
@@ -451,7 +451,7 @@ export function BatchInsertDialog({
                 {images.map((img, idx) => (
                   <div
                     key={img.id}
-                    className="flex items-center gap-2.5 p-2 rounded-md bg-card border border-border/60 shadow-xs hover:border-border transition-all"
+                    className="flex items-center gap-2.5 p-2 rounded-md bg-card border border-border/60 shadow-xs hover:border-border transition-colors"
                   >
                     {/* Thumbnail */}
                     <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted shrink-0 border border-border/40 relative flex items-center justify-center">
@@ -523,9 +523,7 @@ export function BatchInsertDialog({
 
           {/* Layout Settings Panel (5 Cols) */}
           <div className="md:col-span-5 p-5 overflow-y-auto custom-scrollbar flex flex-col gap-4 bg-muted/10">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              خيارات التوزيع والمحاذاة
-            </h4>
+            <h4 className="text-xs font-bold text-muted-foreground">خيارات التوزيع والمحاذاة</h4>
 
             {/* Layout Mode Selector */}
             <div className="space-y-1.5">
@@ -543,7 +541,7 @@ export function BatchInsertDialog({
                   size="sm"
                   onClick={() => setLayoutMode('grid')}
                   className={cn(
-                    'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-all border-border/60',
+                    'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-colors border-border/60',
                     layoutMode === 'grid'
                       ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
                       : 'hover:bg-muted/60 text-foreground',
@@ -559,7 +557,7 @@ export function BatchInsertDialog({
                   size="sm"
                   onClick={() => setLayoutMode('cascade')}
                   className={cn(
-                    'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-all border-border/60',
+                    'h-8 rounded-md text-xs font-semibold gap-1.5 cursor-pointer transition-colors border-border/60',
                     layoutMode === 'cascade'
                       ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
                       : 'hover:bg-muted/60 text-foreground',

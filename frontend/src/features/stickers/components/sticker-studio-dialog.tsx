@@ -735,7 +735,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   type="button"
                   size="sm"
                   onClick={() => setView('customize')}
-                  className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all"
+                  className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
                   <span>تخصيص</span>
                   <Sparkle className="w-3.5 h-3.5" weight="bold" />
@@ -866,7 +866,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   size="sm"
                   onClick={handleInsertSingle}
                   disabled={isInserting || isGeneratingSheet || busyExport}
-                  className="h-8 px-5 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] transition-all min-w-[90px]"
+                  className="h-8 px-5 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 transition-colors min-w-[90px]"
                 >
                   {isInserting ? (
                     <>

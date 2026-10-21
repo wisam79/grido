@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { GridFour, MagicWand } from '@/components/ui/icons';
 import { COLLAGE_TOOLS, type CollageTab } from '@/lib/workspace-tools';
 import { CollageTemplate } from '@/lib/templates';
+import { getTemplateGrid } from '@/lib/canvas/collage-grid';
 import { FreeformCollageModal } from '@/features/freeform-collage';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
 import {
@@ -120,35 +121,21 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     }
   }
 
+  // شبكة القالب المطبقة فعلياً على الكانفس — تُشتق من الإحداثيات لا من تعداد
+  // حالات ثابت (كان 4/6/8/9/12 فقط يترك أي عدد آخر بقيم قديمة في النموذج)
+  const appliedGrid = useMemo(() => getTemplateGrid(collageTemplate), [collageTemplate]);
+
   // مزامنة حالة عناصر التحكم المحلية مع القالب النشط حالياً على الكانفس
   useEffect(() => {
     if (!collageTemplate) return;
-    if (collageTemplate.physicalLayout) {
-      const pl = collageTemplate.physicalLayout;
-      if (pl.rows) setRows(pl.rows);
-      if (pl.cols) setCols(pl.cols);
-      if (pl.type) setPhotoType(pl.type as PhotoGridType);
-      if (pl.align) setGridAlign(pl.align as GridAlignment);
-    } else if (collageTemplate.cells && collageTemplate.cells.length > 0) {
-      const count = collageTemplate.cells.length;
-      if (count === 4) {
-        setRows(2);
-        setCols(2);
-      } else if (count === 6) {
-        setRows(2);
-        setCols(3);
-      } else if (count === 8) {
-        setRows(2);
-        setCols(4);
-      } else if (count === 9) {
-        setRows(3);
-        setCols(3);
-      } else if (count === 12) {
-        setRows(3);
-        setCols(4);
-      }
+    if (appliedGrid) {
+      setRows(appliedGrid.rows);
+      setCols(appliedGrid.cols);
     }
-  }, [collageTemplate]);
+    const pl = collageTemplate.physicalLayout;
+    if (pl?.type) setPhotoType(pl.type as PhotoGridType);
+    if (pl?.align) setGridAlign(pl.align as GridAlignment);
+  }, [collageTemplate, appliedGrid]);
 
   const applyCustomCollage = useCallback(
     (
@@ -335,6 +322,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           photoType={photoType}
           gridAlign={gridAlign}
           isCustomActive={isCustomActive}
+          appliedGrid={appliedGrid}
           canvasWidth={canvasWidth || 2480}
           canvasHeight={canvasHeight || 3508}
           storedDpi={storedDpi}
@@ -377,13 +365,13 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
       {/* 3️⃣ تبويب الكولاج الحر بالملم — سطر واحد وزر، بلا شارات تسويقية */}
       {effectiveTab === 'freeform' && (
         <div className="p-3 rounded-md bg-card border border-border/80 shadow-2xs fluent-specular flex flex-col items-center text-center gap-2.5 animate-in fade-in duration-200">
-          <p className="text-micro text-muted-foreground leading-relaxed">
+          <p className="text-mini text-muted-foreground leading-relaxed">
             ارسم شبكتك بالمليمتر مع تقسيم ومحاذاة ومغناطيس
           </p>
           <button
             type="button"
             onClick={() => setShowFreeformModal(true)}
-            className="w-full h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="w-full h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             <MagicWand className="w-3.5 h-3.5" weight="bold" />
             <span>فتح المحرر</span>

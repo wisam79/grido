@@ -468,7 +468,7 @@ export default function App() {
                           <User className="w-4 h-4 text-muted-foreground" />
                         )}
                         {user?.plan === 'trial' && (
-                          <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full animate-pulse ring-2 ring-background" />
+                          <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-background" />
                         )}
                       </Button>
                     </TooltipTrigger>
@@ -495,7 +495,7 @@ export default function App() {
                         }
                       >
                         {themeMode === 'system' ? (
-                          <Desktop className="w-4 h-4 text-primary" weight="duotone" />
+                          <Desktop className="w-4 h-4" weight="duotone" />
                         ) : themeMode === 'dark' ? (
                           <Moon className="w-4 h-4" />
                         ) : (
@@ -523,9 +523,9 @@ export default function App() {
                         size="sm"
                         onClick={() => panelsHook.togglePanel('templates')}
                         className={cn(
-                          'hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all',
+                          'hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-colors',
                           isTemplatesOpen
-                            ? 'text-primary bg-primary/10 hover:bg-primary/20 font-bold'
+                            ? 'text-foreground bg-accent-active'
                             : 'text-muted-foreground hover:bg-muted/80',
                         )}
                         aria-label={
@@ -572,9 +572,9 @@ export default function App() {
                         size="sm"
                         onClick={() => panelsHook.togglePanel('properties')}
                         className={cn(
-                          'hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-all',
+                          'hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-colors',
                           isPropertiesOpen
-                            ? 'text-primary bg-primary/10 hover:bg-primary/20 font-bold'
+                            ? 'text-foreground bg-accent-active'
                             : 'text-muted-foreground hover:bg-muted/80',
                         )}
                         aria-label={isPropertiesOpen ? 'إخفاء لوحة الخصائص' : 'إظهار لوحة الخصائص'}
@@ -690,7 +690,7 @@ export default function App() {
                       size="sm"
                       variant="ghost"
                       onClick={cancelActiveOperation}
-                      className="h-6 px-2 text-mini font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer transition-all"
+                      className="h-6 px-2 text-mini font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer transition-colors"
                     >
                       إلغاء
                     </Button>

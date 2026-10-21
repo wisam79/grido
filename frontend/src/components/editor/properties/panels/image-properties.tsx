@@ -73,9 +73,7 @@ export function ImageAdjustProperties({
       >
         {/* قوالب تدرج لوني سريعة للاستوديوهات */}
         <div className="space-y-1.5 pb-2 border-b border-border/20">
-          <span className="text-micro font-normal text-muted-foreground block">
-            قوالب الاستوديو
-          </span>
+          <span className="text-mini font-normal text-muted-foreground block">قوالب الاستوديو</span>
           <div className="grid grid-cols-2 gap-1.5">
             {[
               { label: 'استوديو دافئ', b: 104, c: 106, s: 108 },
@@ -87,7 +85,7 @@ export function ImageAdjustProperties({
                 key={preset.label}
                 variant="outline"
                 size="sm"
-                className="h-7 text-micro font-normal rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="h-7 text-mini font-normal rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 onClick={() => {
                   onUpdate(element.id, {
                     brightness: preset.b,
@@ -225,7 +223,7 @@ export function ImageFiltersSection({ element, onUpdate }: ImagePropertiesProps)
               onUpdate(element.id, { filter: undefined });
               useEditorStore.getState().pushHistory();
             }}
-            className="text-micro text-muted-foreground hover:text-foreground cursor-pointer"
+            className="text-mini text-muted-foreground hover:text-foreground cursor-pointer"
           >
             إزالة المرشح
           </Button>
@@ -262,7 +260,7 @@ export function ImageFiltersSection({ element, onUpdate }: ImagePropertiesProps)
                   style={{ filter: filter.css }}
                 />
               </span>
-              <span className="text-micro w-full text-center leading-tight">
+              <span className="text-mini w-full text-center leading-tight">
                 {filterShortName(filter.name)}
               </span>
             </button>
@@ -409,7 +407,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 variant={isRemovingBg ? 'destructive' : 'outline'}
                 title={isRemovingBg ? 'إلغاء العزل' : 'عزل الخلفية'}
                 className={cn(
-                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]',
+                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
                   isRemovingBg &&
                     'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent',
                 )}
@@ -436,7 +434,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 title={`ترميم الوجه (${remainingQuota}/${dailyLimit})`}
                 disabled={isEnhancing || isRemovingBg}
                 className={cn(
-                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]',
+                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
                   (isEnhancing || isRemovingBg) && 'opacity-50 cursor-not-allowed',
                 )}
                 onClick={() => handleEnhance(element)}
@@ -463,7 +461,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 variant={isFraming ? 'destructive' : 'outline'}
                 title={isFraming ? 'إلغاء ضبط الوجه' : 'تأطير الوجه تلقائياً'}
                 className={cn(
-                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]',
+                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
                   isFraming &&
                     'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent',
                 )}
@@ -488,7 +486,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <Button
                 variant="outline"
                 title="مسح وتقويم المستند"
-                className="h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-all cursor-pointer px-2.5 shadow-2xs active:scale-[0.98]"
+                className="h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs"
                 onClick={() => setScannerOpen(true)}
               >
                 <Scan className="w-4 h-4 text-primary shrink-0" weight="duotone" />
@@ -502,13 +500,13 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         {/* أشرطة تقدم العمليات */}
         {isRemovingBg && (
           <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-micro font-bold text-primary">
+            <div className="flex justify-between items-center text-mini font-bold text-primary">
               <span className="animate-pulse">{bgProgressText}</span>
               <span>{Math.round(bgProgress)}%</span>
             </div>
             <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary rounded-full transition-all duration-300"
+                className="h-full bg-primary rounded-full transition-[width] duration-300"
                 style={{ width: `${bgProgress}%` }}
               />
             </div>
@@ -517,13 +515,13 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
         {isEnhancing && (
           <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-micro font-bold text-primary">
+            <div className="flex justify-between items-center text-mini font-bold text-primary">
               <span className="animate-pulse">{enhanceProgressText}</span>
               <span>{Math.round(enhanceProgress)}%</span>
             </div>
             <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary rounded-full transition-all duration-300"
+                className="h-full bg-primary rounded-full transition-[width] duration-300"
                 style={{ width: `${enhanceProgress}%` }}
               />
             </div>
@@ -532,13 +530,13 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
         {isFraming && (
           <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-micro font-bold text-primary">
+            <div className="flex justify-between items-center text-mini font-bold text-primary">
               <span className="animate-pulse">{frameProgressText}</span>
               <span>{Math.round(frameProgress)}%</span>
             </div>
             <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary rounded-full transition-all duration-300"
+                className="h-full bg-primary rounded-full transition-[width] duration-300"
                 style={{ width: `${frameProgress}%` }}
               />
             </div>
@@ -576,7 +574,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     aria-pressed={isActive}
                     title={colorItem.label}
                     className={cn(
-                      'w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                      'w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-colors duration-150 relative shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
                       isActive && 'ring-2 ring-primary ring-offset-1 border-primary',
                     )}
                     style={{
@@ -637,7 +635,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
+                className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-colors duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={() => setCropOpen(true)}
               >
                 <Crop
@@ -655,7 +653,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
+                className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-colors duration-200 cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs group text-foreground shadow-2xs"
                 onClick={handleOpenFile}
               >
                 <ImageSquare
@@ -675,7 +673,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-md border-border/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                className="h-8 rounded-md border-border/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                 onClick={() => {
                   onUpdate(element.id, {
                     imageSrc: element.originalImageSrc,
@@ -694,7 +692,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer select-none active:bg-primary active:text-primary-foreground shadow-2xs"
+                className="h-8 rounded-md border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer select-none active:bg-primary active:text-primary-foreground shadow-2xs"
                 onPointerDown={() => {
                   const curr = element.imageSrc;
                   onUpdate(element.id, { imageSrc: element.originalImageSrc });
@@ -726,7 +724,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
             <Button
               variant="outline"
-              className="w-full h-8 text-xs font-semibold transition-all duration-200 flex items-center justify-center px-3 gap-1.5 cursor-pointer rounded-md border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group shadow-2xs"
+              className="w-full h-8 text-xs font-semibold transition-colors duration-200 flex items-center justify-center px-3 gap-1.5 cursor-pointer rounded-md border-border/70 hover:border-primary/50 bg-muted/20 hover:bg-muted/50 text-muted-foreground hover:text-foreground group shadow-2xs"
               onClick={() => setRefineOpen(true)}
               title="تعديل العزل يدوياً"
             >
@@ -755,7 +753,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
 
         {/* أزرار اختيار قناع القص المتجه */}
         <div className="pt-2 border-t border-border/30 space-y-1.5">
-          <span className="text-micro font-normal text-muted-foreground block">
+          <span className="text-mini font-normal text-muted-foreground block">
             قناع الشكل (Vector Mask)
           </span>
           <div className="grid grid-cols-4 gap-1 p-1 rounded-md bg-muted/60 dark:bg-black/35 border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
@@ -771,7 +769,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                   key={mask.id}
                   type="button"
                   className={cn(
-                    'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
+                    'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
                     isActive
                       ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
                       : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',

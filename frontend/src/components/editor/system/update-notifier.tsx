@@ -257,7 +257,7 @@ export function UpdateNotifier() {
               </div>
               <div className="w-full bg-muted/70 rounded-full h-2 overflow-hidden relative">
                 <div
-                  className="bg-primary h-full transition-all duration-300 rounded-full"
+                  className="bg-primary h-full transition-[width] duration-300 rounded-full"
                   style={{ width: `${Math.max(progress, 4)}%` }}
                 />
               </div>

@@ -43,6 +43,8 @@ export type HistoryCross = HistorySlice &
     selectedId: string | null;
     selectedIds: string[];
     editingTextId: string | null;
+    /** علامة التعديل منذ آخر حفظ — يملكها core-slice ويحدّثها سجل التاريخ */
+    isDirty: boolean;
   };
 
 // استعادة حقول اللقطة — الحقول غير المعرفة (undefined) لا تُفرض على الحالة الحالية
@@ -220,7 +222,7 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
       const dropped = newHistory.shift();
       if (dropped) totalBytes -= cachedEntryBytes(dropped);
     }
-    set({ history: newHistory, historyIndex: newHistory.length - 1 });
+    set({ history: newHistory, historyIndex: newHistory.length - 1, isDirty: true });
   },
 
   undo: () => {
@@ -233,6 +235,7 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
       selectedId: null,
       selectedIds: [],
       editingTextId: null,
+      isDirty: true,
     } as Partial<HistoryCross>);
   },
 
@@ -246,6 +249,7 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
       selectedId: null,
       selectedIds: [],
       editingTextId: null,
+      isDirty: true,
     } as Partial<HistoryCross>);
   },
 });

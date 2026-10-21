@@ -411,7 +411,7 @@ export const StickerPreview = React.memo(function StickerPreview({
                     aria-pressed={isActive}
                     aria-label={`خلفية: ${opt.label}`}
                     className={cn(
-                      'w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer',
+                      'w-7 h-7 flex items-center justify-center rounded-md transition-colors cursor-pointer',
                       isActive
                         ? 'bg-background shadow-2xs border border-border/50 ring-1 ring-primary/40'
                         : 'hover:bg-muted/50',

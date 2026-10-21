@@ -96,7 +96,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                 <span className="text-xs font-bold text-foreground block truncate">
                   {isLine ? 'لون الخط' : 'لون الشكل'}
                 </span>
-                <span className="text-micro text-muted-foreground block truncate">
+                <span className="text-mini text-muted-foreground block truncate">
                   {element.fillType === 'linear'
                     ? 'تدرج خطي'
                     : element.fillType === 'radial'
@@ -174,7 +174,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                   key={preset.label}
                   type="button"
                   className={cn(
-                    'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
+                    'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
                     isActive
                       ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
                       : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
@@ -215,7 +215,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
         {/* نمط الحد: متصل / متقطع / منقّط — خصائص Konva أصلية (dash + lineCap)
             والـdash يتدرّج مع سماكة الحد فلا تختفي الشرطات في الحدود السميكة */}
         <div className="space-y-1.5 pt-2 border-t border-border/30">
-          <span className="text-micro font-semibold text-muted-foreground block">نمط الحد</span>
+          <span className="text-mini font-semibold text-muted-foreground block">نمط الحد</span>
           <FluentSegmentedControl<'solid' | 'dashed' | 'dotted'>
             layoutId="shape-stroke-style"
             variant="field"
@@ -290,7 +290,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                         key={preset.label}
                         type="button"
                         className={cn(
-                          'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
+                          'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
                           isActive
                             ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
                             : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
@@ -414,7 +414,7 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                     key={deg}
                     type="button"
                     className={cn(
-                      'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
+                      'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
                       isActive
                         ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
                         : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',
@@ -568,9 +568,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
         {/* باليتة ألوان سريعة في حالة اللون المصمت */}
         {(element.fillType === 'solid' || !element.fillType) && (
           <div className="pt-2 border-t border-border/30 space-y-1.5">
-            <span className="text-micro font-semibold text-muted-foreground block">
-              ألوان سريعة
-            </span>
+            <span className="text-mini font-semibold text-muted-foreground block">ألوان سريعة</span>
             <QuickColorPalette
               currentColor={currentFill}
               onSelectColor={(col) => {
@@ -613,7 +611,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
           />
 
           <div className="space-y-1 pt-1 border-t border-border/30">
-            <span className="text-micro font-semibold text-muted-foreground block">ألوان الحد</span>
+            <span className="text-mini font-semibold text-muted-foreground block">ألوان الحد</span>
             <QuickColorPalette
               currentColor={currentStroke}
               onSelectColor={(col) => {
@@ -652,7 +650,7 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
               key={pct}
               type="button"
               className={cn(
-                'h-7 px-1 text-micro font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-95',
+                'h-7 px-1 text-mini font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
                 currentOpacity === pct
                   ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
                   : 'text-muted-foreground hover:text-foreground hover:bg-card/40 border-transparent font-medium',

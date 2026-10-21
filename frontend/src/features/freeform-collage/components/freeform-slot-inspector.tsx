@@ -243,7 +243,7 @@ export const FreeformSlotInspector: React.FC<FreeformSlotInspectorProps> = React
               type="button"
               onClick={toggleAspectLock}
               className={cn(
-                'cursor-pointer p-0.5 rounded transition-all',
+                'cursor-pointer p-0.5 rounded transition-colors',
                 slot.lockAspect ? 'text-primary' : 'text-muted-foreground/60 hover:text-foreground',
               )}
               title={slot.lockAspect ? 'فك القفل' : 'قفل النسبة'}

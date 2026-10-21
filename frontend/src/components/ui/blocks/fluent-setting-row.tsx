@@ -7,7 +7,6 @@ export interface FluentSettingRowProps extends React.HTMLAttributes<HTMLDivEleme
   label: React.ReactNode;
   description?: React.ReactNode;
   tooltip?: string;
-  icon?: React.ReactNode;
   control?: React.ReactNode;
   children?: React.ReactNode;
   layout?: 'horizontal' | 'vertical';
@@ -15,17 +14,7 @@ export interface FluentSettingRowProps extends React.HTMLAttributes<HTMLDivEleme
 
 export const FluentSettingRow = React.memo(
   React.forwardRef<HTMLDivElement, FluentSettingRowProps>(function FluentSettingRow(
-    {
-      label,
-      description,
-      tooltip,
-      icon,
-      control,
-      children,
-      layout = 'horizontal',
-      className,
-      ...props
-    },
+    { label, description, tooltip, control, children, layout = 'horizontal', className, ...props },
     ref,
   ) {
     const actionElement = control || children;
@@ -37,15 +26,14 @@ export const FluentSettingRow = React.memo(
               بيانات ثانوية كتأحتها لا قيمة حقل. */}
           <div className="flex items-center gap-2 text-xs">
             <div className="flex items-center gap-1.5 font-normal text-foreground/85">
-              {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
               <span>{label}</span>
               {tooltip && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      className="text-muted-foreground/70 hover:text-foreground cursor-pointer rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                      aria-label="المزيد"
+                      className="inline-flex items-center justify-center p-1 -m-1 text-muted-foreground/70 hover:text-foreground cursor-pointer rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      aria-label={typeof label === 'string' ? `شرح: ${label}` : 'شرح الإعداد'}
                     >
                       <Question className="size-3.5 shrink-0" weight="bold" />
                     </button>
@@ -73,7 +61,6 @@ export const FluentSettingRow = React.memo(
         {...props}
       >
         <div className="flex items-center gap-2 min-w-0">
-          {icon && <span className="text-primary shrink-0">{icon}</span>}
           <div className="min-w-0 text-start">
             <div className="flex items-center gap-1.5 font-normal text-foreground/85">
               <span className="truncate">{label}</span>
@@ -82,8 +69,8 @@ export const FluentSettingRow = React.memo(
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      className="text-muted-foreground/70 hover:text-foreground cursor-pointer inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                      aria-label="المزيد"
+                      className="text-muted-foreground/70 hover:text-foreground cursor-pointer inline-flex items-center justify-center p-1 -m-1 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      aria-label={typeof label === 'string' ? `شرح: ${label}` : 'شرح الإعداد'}
                     >
                       <Question className="size-3.5 shrink-0" weight="bold" />
                     </button>

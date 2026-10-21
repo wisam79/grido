@@ -164,7 +164,8 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     );
 
     fireEvent.click(screen.getByRole('tab', { name: /الألوان/i }));
-    expect(screen.getByText('0%')).toBeInTheDocument();
+    // قيمة الشفافية صارت حقلاً رقمياً قابلاً للتحرير (وحدة القياس منفصلة)
+    expect(screen.getByRole('textbox', { name: 'قيمة شفافية الصورة' })).toHaveValue('0');
 
     unmount();
 

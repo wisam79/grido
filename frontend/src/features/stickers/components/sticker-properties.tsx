@@ -73,7 +73,7 @@ function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonPr
   return (
     <div
       className={cn(
-        'relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md bg-card/60 border transition-all',
+        'relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md bg-card/60 border transition-colors',
         disabled
           ? 'opacity-35 pointer-events-none border-border/40'
           : 'border-border/40 hover:border-primary/60 cursor-pointer group',
@@ -366,7 +366,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                     onChangeParams((prev) => ({ ...prev, isTransparent: !prev.isTransparent }))
                   }
                   className={cn(
-                    'relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md border transition-all cursor-pointer text-center',
+                    'relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md border transition-colors cursor-pointer text-center',
                     params.isTransparent
                       ? 'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40'
                       : 'bg-card/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-card',
@@ -423,7 +423,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                             }))
                           }
                           className={cn(
-                            'h-7 px-2 rounded-md border flex items-center gap-1 shrink-0 transition-all cursor-pointer',
+                            'h-7 px-2 rounded-md border flex items-center gap-1 shrink-0 transition-colors cursor-pointer',
                             isActive
                               ? 'bg-primary/15 border-primary shadow-2xs ring-1 ring-primary/40'
                               : 'bg-background/60 hover:bg-background border-border/40 hover:border-border/70',
@@ -517,7 +517,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             {/* Miniature Sheet Grid Preview */}
             <div className="relative w-full h-28 rounded-md bg-muted/25 border border-border/40 p-2 flex items-center justify-center overflow-hidden">
               <div
-                className="relative bg-card/95 rounded-lg border border-border/60 shadow-xs flex items-center justify-center p-1.5 transition-all duration-200"
+                className="relative bg-card/95 rounded-lg border border-border/60 shadow-xs flex items-center justify-center p-1.5 transition-colors duration-200"
                 style={{ width: '130px', height: '80px' }}
               >
                 <div
@@ -532,7 +532,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                       <div
                         key={idx}
                         className={cn(
-                          'w-full h-full max-w-[14px] max-h-[14px] mx-auto border transition-all duration-150 shadow-2xs',
+                          'w-full h-full max-w-[14px] max-h-[14px] mx-auto border transition-colors duration-150 shadow-2xs',
                           template.shape === 'circle'
                             ? 'rounded-full'
                             : template.shape === 'rect'
@@ -580,7 +580,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                       onChangeGridConfig((prev) => ({ ...prev, rows: p.r, cols: p.c }))
                     }
                     className={cn(
-                      'h-7 text-xs font-semibold rounded-md transition-all cursor-pointer flex items-center justify-center select-none active:scale-[0.98]',
+                      'h-7 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
                       isActive
                         ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
                         : 'text-muted-foreground hover:text-foreground hover:bg-card/40 dark:hover:bg-white/5 border-transparent font-medium',
@@ -680,7 +680,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                   {templatePresets.map((preset) => (
                     <div
                       key={preset.id}
-                      className="p-2.5 rounded-md bg-card/60 hover:bg-card border border-border/40 hover:border-primary/40 transition-all space-y-2"
+                      className="p-2.5 rounded-md bg-card/60 hover:bg-card border border-border/40 hover:border-primary/40 transition-colors space-y-2"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span
@@ -734,7 +734,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                             type="button"
                             size="sm"
                             onClick={() => handleApplyPreset(preset)}
-                            className="h-7 px-3 text-xs font-bold rounded-md cursor-pointer bg-primary/15 text-primary hover:bg-primary hover:text-primary-foreground transition-all gap-1"
+                            className="h-7 px-3 text-xs font-bold rounded-md cursor-pointer bg-primary/15 text-primary hover:bg-primary hover:text-primary-foreground transition-colors gap-1"
                           >
                             <span>تطبيق</span>
                           </Button>

@@ -327,7 +327,7 @@ export function DocumentScannerDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="sm:max-w-[1140px] w-[94vw] h-[86vh] max-h-[900px] overflow-hidden flex flex-col rounded-xl border border-border/80 dark:border-white/10 bg-card p-4 sm:p-5 shadow-fluent-16 transition-all duration-150 fluent-specular gap-3 font-cairo"
+        className="sm:max-w-[1140px] w-[94vw] h-[86vh] max-h-[900px] overflow-hidden flex flex-col rounded-xl border border-border/80 dark:border-white/10 bg-card p-4 sm:p-5 shadow-fluent-16 transition-colors duration-150 fluent-specular gap-3 font-cairo"
         dir="rtl"
       >
         {/* 🔹 رأس النافذة الأنيق مع زر الإغلاق وشارة النمط */}
@@ -548,7 +548,7 @@ export function DocumentScannerDialog({
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-md h-8 px-3.5 text-xs font-bold gap-1.5 cursor-pointer border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-xs transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="rounded-md h-8 px-3.5 text-xs font-bold gap-1.5 cursor-pointer border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-xs transition-colors focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 onClick={() =>
                   processor.handleApplySelected(
                     detectedDocs.filter((d) => selectedDocIds.includes(d.id)),
@@ -575,7 +575,7 @@ export function DocumentScannerDialog({
               }
               disabled={!cornersReady || processor.isExporting}
               title={cornersReady ? undefined : 'حدّد أركان المستند أولاً'}
-              className="rounded-md h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98] disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="rounded-md h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-colors disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
               {processor.isExporting ? (
                 <Spinner className="w-3.5 h-3.5 shrink-0" size={14} />

@@ -25,7 +25,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
         defaultOpen={true}
         action={
           element.fillType && element.fillType !== 'solid' ? (
-            <span className="text-micro font-bold text-muted-foreground px-2 py-0.5 rounded-full bg-muted/60 border border-border/50 select-none">
+            <span className="text-mini font-bold text-muted-foreground px-2 py-0.5 rounded-full bg-muted/60 border border-border/50 select-none">
               {element.fillType === 'linear'
                 ? 'خطي'
                 : element.fillType === 'radial'
@@ -90,9 +90,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
         {/* باليتة الألوان السريعة في حالة اللون المصمت */}
         {(element.fillType === 'solid' || !element.fillType) && (
           <div className="pt-2 border-t border-border/30 space-y-1.5">
-            <span className="text-micro font-semibold text-muted-foreground block">
-              ألوان سريعة
-            </span>
+            <span className="text-mini font-semibold text-muted-foreground block">ألوان سريعة</span>
             <QuickColorPalette
               currentColor={currentColor}
               onSelectColor={(col) => {
@@ -135,7 +133,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
               }}
               aria-label={hasStroke ? 'مفعّل' : 'إضافة'}
               className={cn(
-                'h-7 px-2.5 rounded-full text-micro font-bold transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1.5 border select-none',
+                'h-7 px-2.5 rounded-full text-mini font-bold transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5 border select-none',
                 hasStroke
                   ? 'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40'
                   : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border-border/60',
@@ -153,11 +151,11 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
           <div className="space-y-2.5 animate-in fade-in duration-150">
             {/* وحدة لون الحد المدمجة */}
             <div className="space-y-1.5 bg-background/40 p-2 rounded-md border border-border/50 shadow-2xs">
-              <div className="flex items-center justify-between text-micro font-bold text-muted-foreground px-0.5">
+              <div className="flex items-center justify-between text-mini font-bold text-muted-foreground px-0.5">
                 <span>لون الحد</span>
                 <div className="flex items-center gap-1.5">
                   <span
-                    className="font-mono text-micro text-muted-foreground/70 uppercase select-none"
+                    className="font-mono text-mini text-muted-foreground/70 uppercase select-none"
                     dir="ltr"
                   >
                     {currentStroke}
@@ -247,7 +245,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
         title="الشفافية"
         action={
           <span
-            className="text-micro font-bold font-mono px-2 py-0.5 rounded-md bg-muted/60 border border-border/50 text-foreground/90 tabular-nums select-none"
+            className="text-mini font-bold font-mono px-2 py-0.5 rounded-md bg-muted/60 border border-border/50 text-foreground/90 tabular-nums select-none"
             dir="ltr"
           >
             {currentOpacity}%

@@ -43,7 +43,7 @@ export const PaperDimInput: React.FC<PaperDimInputProps> = ({ value, onCommit, a
       dir="ltr"
       aria-label={ariaLabel}
       value={text}
-      className="h-7 text-mini rounded-md w-[52px] font-mono font-black text-center bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all"
+      className="h-7 text-mini rounded-md w-[52px] font-mono font-black text-center bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors"
       onFocus={() => setFocused(true)}
       onChange={(e) => setText(e.target.value.replace(/[^\d]/g, '').slice(0, 4))}
       onBlur={() => {

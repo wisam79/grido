@@ -78,7 +78,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
         <button
           type="button"
           className={cn(
-            'w-full h-8 bg-card/60 hover:bg-card border border-border/50 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between gap-2 shadow-2xs transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+            'w-full h-8 bg-card/60 hover:bg-card border border-border/50 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between gap-2 shadow-2xs transition-colors cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
             isOpen && 'border-primary ring-1 ring-primary/30 bg-card',
             className,
           )}
@@ -139,7 +139,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="بحث في الخطوط..."
-            className="w-full h-7 bg-muted/40 border border-border/60 rounded-md pr-7 pl-2 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+            className="w-full h-7 bg-muted/40 border border-border/60 rounded-md pr-7 pl-2 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
           />
         </div>
 
@@ -182,7 +182,7 @@ export const StickerFontSelector = React.memo(function StickerFontSelector({
                     }
                   }}
                   className={cn(
-                    'w-full text-start p-2 rounded-md border transition-all cursor-pointer flex items-center justify-between gap-2 group',
+                    'w-full text-start p-2 rounded-md border transition-colors cursor-pointer flex items-center justify-between gap-2 group',
                     isSelected
                       ? 'border-primary/50 bg-primary/10 text-primary'
                       : 'border-transparent hover:border-border/60 hover:bg-muted/30 text-foreground',

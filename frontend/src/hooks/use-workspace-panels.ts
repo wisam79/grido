@@ -339,7 +339,9 @@ export function useWorkspacePanels() {
 
   // Zen Mode toggle: collapse all panels or restore default
   const isZenMode = useMemo(() => {
-    if (breakpoint === 'compact') return true;
+    // في compact لا توجد ألواح مثبّتة تُطوى، وإرجاع true كان يمنع تركيب
+    // CompactToolLauncher فيصبح Ctrl+K ميتاً. الـ zen يخصّ standard/wide فقط.
+    if (breakpoint === 'compact') return false;
     if (breakpoint === 'wide') {
       return !isTemplatesDrawerOpen && !isInspectorPinned;
     }

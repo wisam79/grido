@@ -52,6 +52,7 @@ describe('history-slice', () => {
       mode: 'collage',
       selectedId: null,
       selectedIds: [],
+      isDirty: false,
     }));
   });
 
@@ -113,6 +114,23 @@ describe('history-slice', () => {
     const finalState = store.getState();
     // Only 1 push should actually be registered in past because the second was structurally identical
     expect(finalState.history.length).toBe(2); // Initial + 1 push
+  });
+
+  it('marks the document dirty only when history actually changes', () => {
+    const s = store.getState();
+    // دفعة مطابقة للبذرة لا تغيّر شيئاً → لا علامة تعديل
+    s.pushHistory();
+    expect(store.getState().isDirty).toBe(false);
+
+    store.setState({ elements: [{ id: '1', type: 'shape' }] as CanvasElement[] });
+    store.getState().pushHistory();
+    expect(store.getState().isDirty).toBe(true);
+
+    // التراجع والإعادة يبقيان تعديلاً غير محفوظ حتى لو عاد المحتوى لحالته
+    store.getState().undo();
+    expect(store.getState().isDirty).toBe(true);
+    store.getState().redo();
+    expect(store.getState().isDirty).toBe(true);
   });
 
   it('should define a default for every snapshot key', () => {

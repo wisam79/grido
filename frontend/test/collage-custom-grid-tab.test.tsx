@@ -135,24 +135,51 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(onApply).toHaveBeenCalledWith(1, 4, 'iq-national-id', 'top-left');
   });
 
-  it('reflects the applied state on the status badge (not a dead button)', () => {
+  it('reflects the applied canvas grid on the status badge (not a dead button)', () => {
     const { rerender } = render(<CollageCustomGridTab {...defaultProps} />);
     // قبل التطبيق: زر التطبيق الرئيسي، وبلا شارة الحالة
     expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
     expect(screen.queryByText('الشبكة مطبقة')).not.toBeInTheDocument();
 
-    rerender(<CollageCustomGridTab {...defaultProps} isCustomActive />);
-    // بعد التطبيق: شارة حالة حية (role=status) + أفعال ثانوية
+    rerender(
+      <CollageCustomGridTab
+        {...defaultProps}
+        isCustomActive
+        appliedGrid={{ rows: 2, cols: 3, source: 'physical' }}
+      />,
+    );
+    // بعد التطبيق: شارة حالة حية (role=status) تعرض شبكة الكانفس
     expect(screen.getByText('الشبكة مطبقة')).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('الشبكة مطبقة');
-    expect(screen.getByText('إعادة البناء')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('2×3');
     expect(screen.getByText('حفظ كقالب')).toBeInTheDocument();
-    // في الحالة الحية يُستبدل زر التطبيق بإعادة البناء — بلا زر ميت بحالة «تم»
-    expect(screen.queryByText('تطبيق الشبكة')).not.toBeInTheDocument();
 
-    // «إعادة البناء» فعل حقيقي: يعيد تطبيق نفس التركيب عبر onApply
-    fireEvent.click(screen.getByText('إعادة البناء'));
+    // زر التطبيق يبقى فعلاً حقيقياً: يعيد تطبيق نفس التركيب عبر onApply
+    fireEvent.click(screen.getByText('تطبيق الشبكة'));
     expect(defaultProps.onApply).toHaveBeenCalledWith(2, 3, 'iq-national-id', 'top-left');
+  });
+
+  it('shows pending changes with the applied canvas grid when the form diverges', () => {
+    render(
+      <CollageCustomGridTab
+        {...defaultProps}
+        isCustomActive
+        appliedGrid={{ rows: 6, cols: 5, source: 'cells' }}
+      />,
+    );
+    // الشارة تصف الكانفس فعلاً (6×5) وتصرّح بأن النموذج (2×3) لم يُطبَّق
+    expect(screen.getByText('تغييرات غير مطبقة')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('6×5');
+    expect(screen.queryByText('الشبكة مطبقة')).not.toBeInTheDocument();
+    // زر التطبيق الأساسي متاح لإزالة التباعد
+    expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
+  });
+
+  it('hides the status badge when the applied grid is irregular or unknown', () => {
+    render(<CollageCustomGridTab {...defaultProps} isCustomActive appliedGrid={null} />);
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByText('الشبكة مطبقة')).not.toBeInTheDocument();
+    expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
   });
 
   it('toggles template save form on clicking save button', () => {

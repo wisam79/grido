@@ -169,7 +169,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                   <button
                     type="button"
                     aria-label="تغيير مقاس مساحة العمل"
-                    className="h-7 flex items-center gap-1.5 px-2 rounded-md hover:bg-muted/80 text-foreground transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                    className="h-7 flex items-center gap-1.5 px-2 rounded-md hover:bg-muted/80 text-foreground transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                   >
                     <FileText className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
                     <span className="text-foreground font-semibold text-xs">
@@ -276,7 +276,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
                 type="button"
                 onClick={handleToggleOrientation}
                 aria-label={isLandscape ? 'تبديل الاتجاه إلى رأسي' : 'تبديل الاتجاه إلى أفقي'}
-                className="w-7 h-7 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all cursor-pointer flex items-center justify-center active:scale-95 group"
+                className="w-7 h-7 rounded-md hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center group"
               >
                 <PageOrientationIcon
                   isLandscape={isLandscape}
@@ -386,7 +386,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="h-7 min-w-[44px] px-1.5 text-xs font-mono font-normal tabular-nums text-center select-none cursor-pointer hover:bg-muted/60 text-foreground/90 hover:text-foreground rounded-md transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95"
+                className="h-7 min-w-[44px] px-1.5 text-xs font-mono font-normal tabular-nums text-center select-none cursor-pointer hover:bg-muted/60 text-foreground/90 hover:text-foreground rounded-md transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                 onClick={resetZoom}
                 aria-label="إعادة تعيين المقياس إلى 100%"
               >

@@ -6,7 +6,7 @@ export function PhotoTypeMiniature({ type, active }: { type: string; active: boo
   return (
     <div
       className={cn(
-        'w-7 h-9 rounded-md border flex items-center justify-center mb-1 transition-all duration-200',
+        'w-7 h-9 rounded-md border flex items-center justify-center mb-1 transition-colors duration-200',
         active
           ? 'border-foreground/70 bg-accent-active shadow-[0_0_8px_rgba(0,0,0,0.12)]'
           : 'border-border/60 bg-muted/20',
@@ -23,7 +23,7 @@ export function PhotoTypeMiniature({ type, active }: { type: string; active: boo
       ) : (
         <div
           className={cn(
-            'rounded-sm border border-dashed transition-all duration-200',
+            'rounded-sm border border-dashed transition-colors duration-200',
             type === 'visa'
               ? 'w-4 h-4'
               : type === 'iq-general-id'

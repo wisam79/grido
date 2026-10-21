@@ -152,7 +152,7 @@ export function FreeformFontsTab() {
           title={onlyFavorites ? 'عرض جميع الخطوط' : 'عرض الخطوط المفضلة'}
           aria-pressed={onlyFavorites}
           className={cn(
-            'h-8 px-2.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shrink-0',
+            'h-8 px-2.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0',
             onlyFavorites
               ? 'bg-warning/15 text-warning border-warning/40 shadow-xs'
               : 'bg-card border-border/80 text-muted-foreground hover:border-foreground/30 hover:text-foreground',
@@ -160,13 +160,13 @@ export function FreeformFontsTab() {
         >
           <Star className="w-3.5 h-3.5" weight={onlyFavorites ? 'fill' : 'regular'} />
           {favorites.length > 0 && (
-            <span className="text-micro font-mono font-semibold">{favorites.length}</span>
+            <span className="text-mini font-mono font-semibold">{favorites.length}</span>
           )}
         </button>
       </div>
 
       {/* ── بطاقات الخطوط الرشيقة: سطر واحد مدمج مع تطبيق الخط على الاسم نفسه ── */}
-      <div className="flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-170px)] pe-1 ps-0.5 custom-scrollbar">
+      <div className="flex flex-col gap-1 pe-1 ps-0.5">
         {visibleFonts.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground text-xs">
             {onlyFavorites ? 'لا توجد خطوط مفضلة حالياً' : 'لم يتم العثور على أي خط مطابق'}
@@ -191,7 +191,7 @@ export function FreeformFontsTab() {
                 onMouseEnter={() => loadGoogleFont(font.family)}
                 title={`${font.arabicName} (${font.englishName})`}
                 className={cn(
-                  'group relative flex items-center justify-between min-h-[40px] h-10 px-3 rounded-lg border transition-all cursor-pointer select-none active:scale-[0.99]',
+                  'group relative flex items-center justify-between min-h-[40px] h-10 px-3 rounded-lg border transition-colors cursor-pointer select-none',
                   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   'bg-card/50 hover:bg-card hover:border-foreground/30 shadow-2xs',
                   isActive
@@ -216,7 +216,7 @@ export function FreeformFontsTab() {
                   {font.englishName &&
                     font.englishName.toLowerCase() !== font.arabicName.toLowerCase() && (
                       <span
-                        className="text-micro text-muted-foreground/60 truncate shrink-0"
+                        className="text-mini text-muted-foreground/60 truncate shrink-0"
                         dir="ltr"
                         style={{ fontFamily: font.family }}
                       >
@@ -225,7 +225,7 @@ export function FreeformFontsTab() {
                     )}
 
                   {isActive && (
-                    <span className="text-3xs px-1.5 py-0.5 rounded-full font-bold bg-primary text-primary-foreground shrink-0 shadow-2xs leading-none">
+                    <span className="text-mini px-1.5 py-0.5 rounded-full font-bold bg-primary text-primary-foreground shrink-0 shadow-2xs leading-none">
                       مطبّق
                     </span>
                   )}

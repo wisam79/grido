@@ -38,8 +38,8 @@ export const FluentCapsuleButton = React.memo(function FluentCapsuleButton({
           data-testid={testId}
           aria-label={label}
           className={cn(
-            'w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 cursor-pointer',
-            'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none active:scale-95',
+            'w-7 h-7 flex items-center justify-center rounded-md transition-colors duration-150 cursor-pointer',
+            'focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
             // عند التفعيل نعتمد على تعبئة الأيقونة (Fill) بدون تعبئة المربع لتفادي الازدواجية البصرية
             active
               ? 'text-foreground hover:bg-muted/50 border border-transparent'

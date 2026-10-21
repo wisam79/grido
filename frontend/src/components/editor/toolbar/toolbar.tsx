@@ -119,9 +119,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onSave}
                   data-testid="toolbar-save"
                   aria-label="حفظ المشروع"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-colors duration-150 group"
                 >
-                  <FloppyDisk className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
+                  <FloppyDisk className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground transition-colors" />
                 </Button>
               </TooltipBtn>
 
@@ -133,9 +133,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onPrint}
                   data-testid="toolbar-print"
                   aria-label="طباعة المستند"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-colors duration-150 group"
                 >
-                  <Printer className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
+                  <Printer className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground transition-colors" />
                 </Button>
               </TooltipBtn>
 
@@ -147,9 +147,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onExport}
                   data-testid="toolbar-export"
                   aria-label="تصدير صورة"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-all duration-150 active:scale-[0.98] group"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-colors duration-150 group"
                 >
-                  <Export className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground group-hover:scale-105 transition-all" />
+                  <Export className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground transition-colors" />
                 </Button>
               </TooltipBtn>
             </div>
@@ -163,7 +163,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                     size="icon"
                     data-testid="toolbar-more"
                     aria-label="المزيد من الخيارات"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md transition-all cursor-pointer"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md transition-colors cursor-pointer"
                   >
                     <DotsThreeVertical className="w-4 h-4" weight="bold" />
                   </Button>

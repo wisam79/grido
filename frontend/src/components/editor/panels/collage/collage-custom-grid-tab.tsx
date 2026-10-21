@@ -14,8 +14,10 @@ import {
   Scissors,
   Check,
   CheckCircle,
+  Info,
   ArrowClockwise,
 } from '@/components/ui/icons';
+import type { DerivedCollageGrid } from '@/lib/canvas/collage-grid';
 import {
   PhotoGridType,
   GridAlignment,
@@ -146,6 +148,8 @@ export interface CollageCustomGridTabProps {
   photoType: PhotoGridType;
   gridAlign: GridAlignment;
   isCustomActive: boolean;
+  /** شبكة القالب المطبقة على الكانفس (مشتقة من خاناته) — null إذا كانت غير منتظمة */
+  appliedGrid?: DerivedCollageGrid | null;
   canvasWidth: number;
   canvasHeight: number;
   storedDpi: number;
@@ -166,6 +170,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   photoType,
   gridAlign,
   isCustomActive,
+  appliedGrid,
   canvasWidth,
   canvasHeight,
   storedDpi,
@@ -204,12 +209,19 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   const isCornerStrip = rows === 1 && cols === Math.min(4, maxCols) && gridAlign === 'top-left';
 
   /**
-   * حالة «مطبّق الآن»: القالب النشط على الكانفس هو هذا التركيب بالضبط.
-   * تُستخدم في شارة الحالة فقط (لا زر) — الشارة ستُخفى بأمان إذا تغيّر
-   * القالب من مكان آخر لأنها تُشتق من الخاصية isCustomActive المتزامنة
-   * مع القالب النشط، فلا تبقى معلومة قديمة معروضة.
+   * صدق الشارة: «مطبقة» لا تُعرض إلا إذا طابقت شبكة النموذج شبكة القالب
+   * المطبّقة فعلياً على الكانفس (المشتقة من خاناته) — لا شبكة النموذج وحده.
+   * الشبكات غير المنتظمة (بلا صفوف/أعمدة واضحة) تُبقي الشارة مخفية.
    */
-  const isLiveCombo = isCustomActive && !showSaveForm;
+  const isGridApplied =
+    isCustomActive &&
+    !showSaveForm &&
+    appliedGrid != null &&
+    appliedGrid.rows === rows &&
+    appliedGrid.cols === cols;
+
+  const hasPendingGridChanges =
+    isCustomActive && !showSaveForm && appliedGrid != null && !isGridApplied;
 
   // نسبة تغطية الورقة: التمدد الحر يملأ الورقة دائماً 100%،
   // والمقاسات الفيزيائية تُحسب من مجموع مساحات الصور مقابل مساحة الورقة.
@@ -244,9 +256,11 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
 
   /** تنقل لوحة المفاتيح داخل مصفوفة المحاذاة (Roving Tabindex) */
   const handleAlignKeyDown = (e: React.KeyboardEvent, align: GridAlignment) => {
+    // المصفوفة مرسومة داخل جزيرة dir="ltr" (سطر 545)، فالسهم يميناً يزيد
+    // الفهرس. عكس القيم هنا كان يجعل التنقل مرئياً معكوساً.
     const deltas: Record<string, number> = {
-      ArrowLeft: 1,
-      ArrowRight: -1,
+      ArrowLeft: -1,
+      ArrowRight: 1,
       ArrowUp: -3,
       ArrowDown: 3,
     };
@@ -463,7 +477,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         onOpenChange={setCardOpen('photoSize')}
         action={
           /* محايدة: الحالة تعيش في المبدّلات لا في الشارة */
-          <span className="h-5 text-2xs font-bold font-mono px-2 rounded-full bg-muted text-muted-foreground border border-border/70 flex items-center select-none">
+          <span className="h-5 text-mini font-bold font-mono px-2 rounded-full bg-muted text-muted-foreground border border-border/70 flex items-center select-none">
             {photoType === 'stretch' ? 'تلقائي' : sizeBadge}
           </span>
         }
@@ -617,21 +631,31 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
       {/* ═══ بطاقة 4: إجراءات التطبيق والحفظ — مثبتة أسفل اللوحة أثناء التمرير
           حتى تبقى الأفعال الرئيسية في متناول اليد مهما طالت البطاقات فوقها */}
       <div className="sticky bottom-0 z-10 p-3 rounded-md bg-card/95 backdrop-blur-md border border-border/80 shadow-2xs fluent-specular space-y-2">
-        {/* شارة الحالة الحية: تعكس حالة الكانفس لا زر لا يفعل شيئاً */}
-        {isLiveCombo && (
+        {/* شارة الحالة: تعكس شبكة الكانفس الفعلية لا قيم النموذج وحدها */}
+        {(isGridApplied || hasPendingGridChanges) && (
           <div
             role="status"
             className="flex items-center gap-2 h-7 px-2.5 rounded-md bg-card/70 border border-border/60 shadow-2xs select-none"
           >
-            <CheckCircle className="w-4 h-4 text-success shrink-0" weight="duotone" />
-            <span className="text-micro font-bold text-foreground">الشبكة مطبقة</span>
-            <span className="text-2xs font-mono text-muted-foreground shrink-0" dir="ltr">
-              {rows}×{cols}
+            {isGridApplied ? (
+              <CheckCircle className="w-4 h-4 text-success shrink-0" weight="duotone" />
+            ) : (
+              <Info className="w-4 h-4 text-muted-foreground shrink-0" weight="regular" />
+            )}
+            <span className="text-mini font-bold text-foreground">
+              {isGridApplied ? 'الشبكة مطبقة' : 'تغييرات غير مطبقة'}
+            </span>
+            <span
+              className="text-2xs font-mono text-muted-foreground shrink-0"
+              dir="ltr"
+              title="الشبكة المطبقة على الكانفس"
+            >
+              {appliedGrid?.rows}×{appliedGrid?.cols}
             </span>
           </div>
         )}
         <div className="flex items-center gap-2">
-          {isLiveCombo ? (
+          {isGridApplied ? (
             /* الحالة الحية: كلا الفعلين ثانويان — الإبراز للشارة لا للأزرار */
             <>
               <Button
@@ -639,10 +663,10 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 variant="outline"
                 className="flex-1"
                 onClick={() => onApply(rows, cols, photoType, gridAlign)}
-                title="إعادة بناء الشبكة وتوزيع الصور"
+                title="إعادة تطبيق الشبكة على الكانفس"
               >
                 <ArrowClockwise className="w-4 h-4" weight="bold" />
-                <span>إعادة البناء</span>
+                <span>تطبيق الشبكة</span>
               </Button>
               <Button
                 type="button"

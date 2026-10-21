@@ -154,7 +154,7 @@ export function CollagePaperToolsTab() {
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('grido:open-properties-panel'))}
           title="فتح لوحة الخصائص"
-          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md border border-dashed border-border/70 text-micro text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md border border-dashed border-border/70 text-mini text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
         >
           <SlidersHorizontal
             className="w-3.5 h-3.5 shrink-0 text-muted-foreground"
@@ -255,7 +255,7 @@ export function CollagePaperToolsTab() {
                 title={guide.label}
                 onClick={() => guideSetters[guide.key](!checked)}
                 className={cn(
-                  'flex items-center gap-2 px-2 py-2 rounded-md border transition-all cursor-pointer select-none active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                  'flex items-center gap-2 px-2 py-2 rounded-md border transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
                   checked
                     ? 'bg-accent-active border-border/80 text-foreground shadow-2xs'
                     : 'bg-card/40 border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent/60',

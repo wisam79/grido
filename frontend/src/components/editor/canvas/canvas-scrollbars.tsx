@@ -387,7 +387,7 @@ export const CanvasCornerResetButton = React.memo(function CanvasCornerResetButt
             onClick={onResetPan}
             title="إعادة توسيط الكانفاس (Home)"
             aria-label="إعادة توسيط الكانفاس"
-            className="w-[18px] h-[18px] flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-ruler-corner-hover rounded-xs transition-all active:scale-90 cursor-pointer focus-visible:outline-hidden"
+            className="w-[18px] h-[18px] flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-ruler-corner-hover rounded-xs transition-colors cursor-pointer focus-visible:outline-hidden"
           >
             <Crosshair className="w-3 h-3" weight="regular" />
           </button>

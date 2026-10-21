@@ -141,7 +141,7 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
       collapseTitle="إخفاء لوحة الخصائص (Ctrl+Shift+B)"
       collapseIcon={
         <CaretRight
-          className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all"
+          className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-[color,transform]"
           weight="bold"
         />
       }

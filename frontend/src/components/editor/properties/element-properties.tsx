@@ -118,10 +118,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             value="style"
             id="element-properties-tabs-content-style"
             aria-labelledby="element-properties-tabs-trigger-style"
-            className={cn(
-              'mt-2 space-y-0 animate-in fade-in duration-150',
-              element.locked && 'pointer-events-none opacity-50 select-none',
-            )}
+            className="mt-2 space-y-0 animate-in fade-in duration-150"
           >
             {element.type === 'image' && (
               <ImageStyleProperties element={element} onUpdate={onUpdate} />
@@ -147,10 +144,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             value="adjust"
             id="element-properties-tabs-content-adjust"
             aria-labelledby="element-properties-tabs-trigger-adjust"
-            className={cn(
-              'mt-2 space-y-0 animate-in fade-in duration-150',
-              element.locked && 'pointer-events-none opacity-50 select-none',
-            )}
+            className="mt-2 space-y-0 animate-in fade-in duration-150"
           >
             {element.type === 'image' && (
               <ImageAdjustProperties element={element} onUpdate={onUpdate} showReset={true} />
@@ -176,10 +170,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             value="effects"
             id="element-properties-tabs-content-effects"
             aria-labelledby="element-properties-tabs-trigger-effects"
-            className={cn(
-              'mt-2 space-y-0 animate-in fade-in duration-150',
-              element.locked && 'pointer-events-none opacity-50 select-none',
-            )}
+            className="mt-2 space-y-0 animate-in fade-in duration-150"
           >
             {element.type === 'text' && (
               <TextEffectsProperties
@@ -201,10 +192,7 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
             value="arrange"
             id="element-properties-tabs-content-arrange"
             aria-labelledby="element-properties-tabs-trigger-arrange"
-            className={cn(
-              'mt-2 space-y-0 animate-in fade-in duration-150',
-              element.locked && 'pointer-events-none opacity-50 select-none',
-            )}
+            className="mt-2 space-y-0 animate-in fade-in duration-150"
           >
             <ElementArrangeTab element={element} onUpdate={onUpdate} />
           </TabsContent>

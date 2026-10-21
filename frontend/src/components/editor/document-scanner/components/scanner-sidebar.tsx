@@ -134,7 +134,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
             <Button
               variant="secondary"
               size="sm"
-              className="w-full h-8 rounded-md font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs bg-secondary/80 hover:bg-secondary text-secondary-foreground border border-border/70 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+              className="w-full h-8 rounded-md font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs bg-secondary/80 hover:bg-secondary text-secondary-foreground border border-border/70 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
               onClick={() => onAutoDetect('single')}
               disabled={isDetecting}
             >
@@ -154,7 +154,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
               <Button
                 variant="secondary"
                 size="sm"
-                className="h-8 rounded-md font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-secondary/80 hover:bg-secondary text-secondary-foreground border border-border/70 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="h-8 rounded-md font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs bg-secondary/80 hover:bg-secondary text-secondary-foreground border border-border/70 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 onClick={() => onAutoDetect('multi')}
                 disabled={isDetecting}
               >
@@ -170,7 +170,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 rounded-md border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  className="h-8 rounded-md border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   onClick={onSplitIdCards}
                   disabled={isDetecting}
                 >
@@ -261,7 +261,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 variant={filterMode === 'original' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-colors border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   filterMode === 'original'
                     ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
                     : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
@@ -286,7 +286,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 variant={filterMode === 'magic' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  'h-8 rounded-md text-xs font-bold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  'h-8 rounded-md text-xs font-bold justify-start px-2.5 gap-2 cursor-pointer transition-colors border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   filterMode === 'magic'
                     ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
                     : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
@@ -311,7 +311,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 variant={filterMode === 'grayscale' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-colors border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   filterMode === 'grayscale'
                     ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
                     : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
@@ -336,7 +336,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 variant={filterMode === 'bw' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-colors border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   filterMode === 'bw'
                     ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
                     : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
@@ -361,7 +361,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 variant={filterMode === 'sharpen' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-colors border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   filterMode === 'sharpen'
                     ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
                     : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
@@ -386,7 +386,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
                 variant={filterMode === 'deyellow' ? 'default' : 'outline'}
                 size="sm"
                 className={cn(
-                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                  'h-8 rounded-md text-xs font-semibold justify-start px-2.5 gap-2 cursor-pointer transition-colors border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                   filterMode === 'deyellow'
                     ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
                     : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
@@ -425,7 +425,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
             variant={aspectType === 'free' ? 'default' : 'outline'}
             size="sm"
             className={cn(
-              'h-8 rounded-md text-xs font-bold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'h-8 rounded-md text-xs font-bold cursor-pointer transition-colors border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               aspectType === 'free'
                 ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
                 : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
@@ -440,7 +440,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
             variant={aspectType === 'a4_p' ? 'default' : 'outline'}
             size="sm"
             className={cn(
-              'h-8 rounded-md text-xs font-semibold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'h-8 rounded-md text-xs font-semibold cursor-pointer transition-colors border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               aspectType === 'a4_p'
                 ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
                 : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
@@ -455,7 +455,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
             variant={aspectType === 'a4_l' ? 'default' : 'outline'}
             size="sm"
             className={cn(
-              'h-8 rounded-md text-xs font-semibold cursor-pointer transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'h-8 rounded-md text-xs font-semibold cursor-pointer transition-colors border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               aspectType === 'a4_l'
                 ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
                 : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',
@@ -470,7 +470,7 @@ export const ScannerSidebar = React.memo(function ScannerSidebar({
             variant={aspectType === 'id_card' ? 'default' : 'outline'}
             size="sm"
             className={cn(
-              'h-8 rounded-md text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-all border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+              'h-8 rounded-md text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 transition-colors border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
               aspectType === 'id_card'
                 ? 'bg-card dark:bg-zinc-800 text-foreground border-border/90 dark:border-white/20 shadow-xs font-bold ring-1 ring-border/40'
                 : 'hover:bg-muted/60 text-muted-foreground hover:text-foreground bg-transparent border-transparent',

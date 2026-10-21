@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Slider } from '@/components/ui/slider';
+import { ArrowCounterClockwise } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 
 export interface FluentSliderFieldProps {
@@ -19,6 +20,25 @@ export interface FluentSliderFieldProps {
   valueFormatter?: (val: number) => string;
   layout?: 'stacked' | 'inline';
   labelWidth?: string;
+  /** عند تمريره يظهر زر إعادة تعيين كلما ابتعدت القيمة عنه */
+  defaultValue?: number;
+}
+
+const ARABIC_INDIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+const EXTENDED_ARABIC_INDIC_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
+
+/** يقبل الأرقام العربية-الهندية والفارسية والفاصلة العشرية العربية */
+function normalizeNumericInput(raw: string): string {
+  return raw
+    .replace(/[٠-٩]/g, (digit) => String(ARABIC_INDIC_DIGITS.indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String(EXTENDED_ARABIC_INDIC_DIGITS.indexOf(digit)))
+    .replace(/٫/g, '.')
+    .replace(/[^\d.-]/g, '');
+}
+
+function formatNumber(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  return Number.isFinite(rounded) ? String(rounded) : '0';
 }
 
 export const FluentSliderField = React.memo(function FluentSliderField({
@@ -38,6 +58,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   valueFormatter,
   layout = 'stacked',
   labelWidth,
+  defaultValue,
 }: FluentSliderFieldProps) {
   const [localValue, setLocalValue] = useState(value);
   const latestValRef = useRef(value);
@@ -45,6 +66,17 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   const pendingRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
   const keyCommitTimerRef = useRef<number | null>(null);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const skipCommitRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const editable = !valueFormatter;
+  const canReset =
+    editable &&
+    !disabled &&
+    defaultValue !== undefined &&
+    Math.abs(localValue - defaultValue) > 1e-9;
 
   const onChangeRef = useRef(onChange);
   const onCommitRef = useRef(onCommit);
@@ -158,9 +190,111 @@ export const FluentSliderField = React.memo(function FluentSliderField({
     };
   }, []);
 
-  const displayVal = valueFormatter
-    ? valueFormatter(localValue)
-    : `${localValue}${unit ? (unit === '%' || unit === '°' ? unit : ` ${unit}`) : ''}`;
+  // 🛡️ القيمة المكتوبة تُقيَّد بالمدى وتُقرَّب لخانتين، ولا تُدفع أثناء الكتابة
+  // (الدفع عند Enter/الخروج من الحقل فقط) منعاً لإعادة رسم الكانفس لكل حرف.
+  const applyValue = useCallback(
+    (next: number) => {
+      const bounded = Math.min(max, Math.max(min, Math.round(next * 100) / 100));
+      if (Math.abs(bounded - latestValRef.current) < 1e-9) return bounded;
+      setLocalValue(bounded);
+      latestValRef.current = bounded;
+      onChangeRef.current(bounded);
+      onCommitRef.current?.(bounded);
+      return bounded;
+    },
+    [min, max],
+  );
+
+  const beginEditing = useCallback(() => {
+    skipCommitRef.current = false;
+    if (!editable || disabled) return;
+    setDraft(formatNumber(latestValRef.current));
+    setIsEditing(true);
+    requestAnimationFrame(() => inputRef.current?.select());
+  }, [editable, disabled]);
+
+  const commitEditing = useCallback(() => {
+    setIsEditing(false);
+    if (skipCommitRef.current) {
+      skipCommitRef.current = false;
+      return;
+    }
+    const parsed = Number.parseFloat(normalizeNumericInput(draft));
+    if (!Number.isFinite(parsed)) return;
+    applyValue(parsed);
+  }, [draft, applyValue]);
+
+  const handleNumericKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        commitEditing();
+        // تجاهل blur التالي بعد تثبيت القيمة (منع دفعة ثانية لا معنى لها)
+        skipCommitRef.current = true;
+        inputRef.current?.blur();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsEditing(false);
+        skipCommitRef.current = true;
+        inputRef.current?.blur();
+      } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        const direction = event.key === 'ArrowUp' ? 1 : -1;
+        const next = applyValue(latestValRef.current + direction * step);
+        setDraft(formatNumber(next));
+      }
+    },
+    [applyValue, commitEditing, step],
+  );
+
+  const resetToDefault = useCallback(() => {
+    if (defaultValue === undefined) return;
+    const next = applyValue(defaultValue);
+    setDraft(formatNumber(next));
+  }, [applyValue, defaultValue]);
+
+  const displayVal = valueFormatter ? valueFormatter(localValue) : formatNumber(localValue);
+
+  const valueControl = (
+    <div dir="ltr" className="flex items-center gap-0.5 shrink-0">
+      {canReset && (
+        <button
+          type="button"
+          onClick={resetToDefault}
+          aria-label="إعادة تعيين إلى القيمة الافتراضية"
+          title="إعادة تعيين"
+          className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+        >
+          <ArrowCounterClockwise className="w-3 h-3" weight="bold" />
+        </button>
+      )}
+      <span
+        dir="ltr"
+        title={editable ? `من ${min} إلى ${max}${unit ? ` ${unit}` : ''}` : undefined}
+        className="flex items-center gap-1 font-mono text-mini tabular-nums bg-muted/60 dark:bg-muted/40 ps-1.5 pe-1 py-0.5 rounded border border-border/40 text-muted-foreground select-none shrink-0 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40"
+      >
+        {editable ? (
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            aria-label={typeof label === 'string' ? `قيمة ${label}` : 'قيمة الإعداد'}
+            value={isEditing ? draft : formatNumber(localValue)}
+            onFocus={beginEditing}
+            onBlur={commitEditing}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={handleNumericKeyDown}
+            disabled={disabled}
+            className="w-10 bg-transparent text-center outline-none font-mono text-mini tabular-nums text-inherit"
+          />
+        ) : (
+          <span className="text-center px-0.5">{displayVal}</span>
+        )}
+        {editable && unit && <span className="text-muted-foreground/80">{unit}</span>}
+      </span>
+    </div>
+  );
 
   if (layout === 'inline') {
     return (
@@ -200,12 +334,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
           className="py-1 flex-1"
         />
 
-        <span
-          dir="ltr"
-          className="font-mono text-mini tabular-nums bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-muted-foreground select-none shrink-0 min-w-10 text-center"
-        >
-          {displayVal}
-        </span>
+        {valueControl}
       </div>
     );
   }
@@ -223,12 +352,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
           {icon && <span className="text-muted-foreground shrink-0">{icon}</span>}
           <span>{label}</span>
         </div>
-        <span
-          dir="ltr"
-          className="font-mono text-mini tabular-nums bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded border border-border/40 text-muted-foreground select-none"
-        >
-          {displayVal}
-        </span>
+        {valueControl}
       </div>
 
       {/* 🛡️ نفس إرث RTL أعلاه — الشارة الرقمية وحدها ltr */}

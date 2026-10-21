@@ -172,7 +172,7 @@ export function CropDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-xl border border-border bg-card p-5 sm:p-6 shadow-fluent-16 transition-all duration-150 fluent-specular"
+        className="sm:max-w-[1140px] w-[88vw] h-[84vh] max-h-[88vh] overflow-hidden flex flex-col rounded-xl border border-border bg-card p-5 sm:p-6 shadow-fluent-16 transition-colors duration-150 fluent-specular"
         dir="rtl"
       >
         {/* هيدر النافذة */}
@@ -318,7 +318,7 @@ export function CropDialog({
                       variant={isSelected ? 'default' : 'outline'}
                       size="sm"
                       className={cn(
-                        'text-xs h-8 rounded-md cursor-pointer font-semibold transition-all border-border/80',
+                        'text-xs h-8 rounded-md cursor-pointer font-semibold transition-colors border-border/80',
                         isSelected
                           ? 'bg-primary text-primary-foreground shadow-2xs'
                           : 'hover:bg-accent/60 text-foreground/80',
@@ -335,7 +335,7 @@ export function CropDialog({
                     variant={aspect === templateAspect ? 'default' : 'outline'}
                     size="sm"
                     className={cn(
-                      'text-xs h-8 col-span-2 font-semibold rounded-md border-primary/40 cursor-pointer flex items-center justify-center gap-1.5 transition-all mt-0.5',
+                      'text-xs h-8 col-span-2 font-semibold rounded-md border-primary/40 cursor-pointer flex items-center justify-center gap-1.5 transition-colors mt-0.5',
                       aspect === templateAspect
                         ? 'bg-primary text-primary-foreground shadow-2xs'
                         : 'hover:bg-primary/10 text-primary border-primary/30',
@@ -400,7 +400,7 @@ export function CropDialog({
           <Button
             onClick={handleCrop}
             disabled={isSaving}
-            className="rounded-md h-8 px-5 text-xs font-semibold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all active:scale-[0.98]"
+            className="rounded-md h-8 px-5 text-xs font-semibold gap-1.5 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-colors"
           >
             {isSaving && <CircleNotch className="w-3.5 h-3.5 animate-spin" />}
             <span>{isSaving ? 'جاري الحفظ...' : 'تطبيق القص'}</span>

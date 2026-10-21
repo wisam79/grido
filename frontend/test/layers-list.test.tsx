@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { LayersList } from '../src/components/editor/properties/layers-list';
@@ -157,7 +158,8 @@ describe('LayersList Component Tests', () => {
     expect(useEditorStore.getState().elements[0].locked).toBe(true);
   });
 
-  it('duplicates an element', () => {
+  it('duplicates an element from the overflow menu', async () => {
+    const user = userEvent.setup();
     useEditorStore.setState({
       elements: [
         {
@@ -178,11 +180,13 @@ describe('LayersList Component Tests', () => {
     });
 
     renderWithProviders(<LayersList />);
-    fireEvent.click(screen.getByRole('button', { name: 'تكرار الطبقة' }));
+    await user.click(screen.getByRole('button', { name: 'المزيد' }));
+    await user.click(await screen.findByRole('menuitem', { name: /تكرار/ }));
     expect(useEditorStore.getState().elements.length).toBe(2);
   });
 
-  it('deletes an element', () => {
+  it('deletes an element from the overflow menu', async () => {
+    const user = userEvent.setup();
     useEditorStore.setState({
       elements: [
         {
@@ -203,7 +207,8 @@ describe('LayersList Component Tests', () => {
     });
 
     renderWithProviders(<LayersList />);
-    fireEvent.click(screen.getByRole('button', { name: 'حذف الطبقة' }));
+    await user.click(screen.getByRole('button', { name: 'المزيد' }));
+    await user.click(await screen.findByRole('menuitem', { name: /حذف/ }));
     expect(useEditorStore.getState().elements.length).toBe(0);
   });
 });

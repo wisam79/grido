@@ -64,7 +64,7 @@ export function FluentFilterChips<T extends string = string>({
             disabled={opt.disabled}
             onClick={() => onChange(opt.id)}
             className={cn(
-              'relative flex items-center justify-center transition-all duration-150 cursor-pointer whitespace-nowrap select-none active:scale-[0.98] z-10',
+              'relative flex items-center justify-center transition-colors duration-150 cursor-pointer whitespace-nowrap select-none z-10',
               'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
               isFullWidth ? 'flex-1' : 'shrink-0',
               radiusClass,

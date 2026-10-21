@@ -37,7 +37,6 @@ describe('Accessibility (jest-axe)', () => {
     const { container } = render(
       <TooltipProvider>
         <FluentSettingRow
-          icon={<Gear className="size-3.5 shrink-0" />}
           label="عرض الشبكة"
           description="تفعيل خطوط الشبكة على الكانفاس"
           tooltip="يساعد في محاذاة الصور بدقة"

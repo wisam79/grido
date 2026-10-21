@@ -30,7 +30,7 @@ const DialogCloseButton = React.forwardRef<
     ref={ref}
     data-slot="dialog-close-button"
     className={cn(
-      'rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none cursor-pointer flex items-center justify-center shrink-0 pointer-events-auto',
+      'rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none cursor-pointer flex items-center justify-center shrink-0 pointer-events-auto',
       className,
     )}
     {...props}
@@ -83,7 +83,7 @@ const DialogContent = React.forwardRef<
       {showCloseButton && (
         <DialogPrimitive.Close
           data-slot="dialog-close"
-          className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer pointer-events-auto"
+          className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer pointer-events-auto"
         >
           <X className="size-4 shrink-0" weight="bold" />
           <span className="sr-only">إغلاق</span>

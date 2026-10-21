@@ -185,7 +185,7 @@ export const SlotProperties = React.memo(function SlotProperties({
           title="أبعاد الخلية"
           action={
             <span
-              className="text-micro font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 font-mono"
+              className="text-mini font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 font-mono"
               dir="ltr"
             >
               {widthMM} × {heightMM} mm · {dpi} DPI
@@ -199,7 +199,7 @@ export const SlotProperties = React.memo(function SlotProperties({
             <Button
               variant="outline"
               size="sm"
-              className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all text-xs"
+              className="w-full gap-2 h-8 rounded-md font-semibold cursor-pointer border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-colors text-xs"
               onClick={handleOpenFile}
             >
               <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
@@ -235,7 +235,7 @@ export const SlotProperties = React.memo(function SlotProperties({
         defaultOpen={false}
         action={
           <span
-            className="text-micro font-semibold text-muted-foreground/80 bg-muted px-2 py-0.5 rounded-md border border-border/40 font-mono"
+            className="text-mini font-semibold text-muted-foreground/80 bg-muted px-2 py-0.5 rounded-md border border-border/40 font-mono"
             dir="ltr"
           >
             {widthMM} × {heightMM} mm · {dpi} DPI
@@ -246,7 +246,7 @@ export const SlotProperties = React.memo(function SlotProperties({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
+            className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-colors cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={handleOpenFile}
           >
             <ImageSquare className="w-4 h-4 text-primary" weight="regular" />
@@ -255,7 +255,7 @@ export const SlotProperties = React.memo(function SlotProperties({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
+            className="h-8 rounded-md border-border/80 hover:border-primary/45 hover:bg-primary/5 transition-colors cursor-pointer flex items-center justify-center gap-1.5 font-semibold text-xs shadow-2xs"
             onClick={() => setCropOpen(true)}
           >
             <Crop className="w-4 h-4 text-primary" weight="regular" />
@@ -275,7 +275,7 @@ export const SlotProperties = React.memo(function SlotProperties({
               variant="outline"
               size="sm"
               className={cn(
-                'h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80',
+                'h-8 flex-1 rounded-md transition-colors cursor-pointer flex items-center justify-center border-border/80',
                 slot.flipX &&
                   'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40',
               )}
@@ -296,7 +296,7 @@ export const SlotProperties = React.memo(function SlotProperties({
               variant="outline"
               size="sm"
               className={cn(
-                'h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80',
+                'h-8 flex-1 rounded-md transition-colors cursor-pointer flex items-center justify-center border-border/80',
                 slot.flipY &&
                   'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40',
               )}
@@ -316,7 +316,7 @@ export const SlotProperties = React.memo(function SlotProperties({
             <Button
               variant="outline"
               size="sm"
-              className="h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent"
+              className="h-8 flex-1 rounded-md transition-colors cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent"
               onClick={() => {
                 const currentRotation = slot.rotation ?? 0;
                 const newRotation = (currentRotation + 90) % 360;
@@ -333,7 +333,7 @@ export const SlotProperties = React.memo(function SlotProperties({
               variant="outline"
               size="sm"
               disabled={!slot.flipX && !slot.flipY && !(slot.rotation ?? 0)}
-              className="h-8 flex-1 rounded-md transition-all cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent disabled:opacity-40"
+              className="h-8 flex-1 rounded-md transition-colors cursor-pointer flex items-center justify-center border-border/80 hover:bg-accent disabled:opacity-40"
               onClick={() => {
                 onUpdate(slot.id, { flipX: false, flipY: false, rotation: 0 });
                 useEditorStore.getState().pushHistory();
@@ -358,14 +358,14 @@ export const SlotProperties = React.memo(function SlotProperties({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 px-2 text-micro rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
+                  className="h-7 px-2 text-mini rounded-md gap-1 border-border/80 hover:bg-primary/5 hover:border-primary/40 font-semibold cursor-pointer text-primary"
                 >
                   <ArrowsLeftRight className="w-3.5 h-3.5" weight="bold" />
                   <span>تبديل الموضع</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 font-cairo text-xs">
-                <div className="px-2 py-1 text-micro font-bold text-muted-foreground border-b border-border/20">
+                <div className="px-2 py-1 text-mini font-bold text-muted-foreground border-b border-border/20">
                   تبديل مع الخلية:
                 </div>
                 {slots
@@ -379,7 +379,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                       <span className="font-semibold">
                         الخلية #{otherSlot.cellIndex + 1 || idx + 1}
                       </span>
-                      <span className="text-micro text-muted-foreground font-mono">
+                      <span className="text-mini text-muted-foreground font-mono">
                         {otherSlot.imageSrc ? 'ممتلئة' : 'فارغة'}
                       </span>
                     </DropdownMenuItem>
@@ -394,7 +394,7 @@ export const SlotProperties = React.memo(function SlotProperties({
             <FluentTooltip content="تعبئة الصف" side="top">
               <Button
                 variant="outline"
-                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                className="h-8 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillRow}
               >
                 <Rows className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
@@ -405,7 +405,7 @@ export const SlotProperties = React.memo(function SlotProperties({
             <FluentTooltip content="تعبئة العمود" side="top">
               <Button
                 variant="outline"
-                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                className="h-8 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillColumn}
               >
                 <Columns className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
@@ -416,7 +416,7 @@ export const SlotProperties = React.memo(function SlotProperties({
             <FluentTooltip content="تعبئة الفارغة" side="top">
               <Button
                 variant="outline"
-                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                className="h-8 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={() => {
                   if (slot.imageSrc) {
                     fillEmptySlots(slot.imageSrc, slot.id);
@@ -431,7 +431,7 @@ export const SlotProperties = React.memo(function SlotProperties({
             <FluentTooltip content="تعبئة الكل" side="top">
               <Button
                 variant="outline"
-                className="h-8 rounded-md transition-all cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
+                className="h-8 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-1 text-xs font-semibold border-border/80 hover:bg-accent hover:border-primary/40 px-1"
                 onClick={handleFillAll}
               >
                 <GridFour className="w-3.5 h-3.5 text-primary shrink-0" weight="regular" />
@@ -510,7 +510,7 @@ export const SlotProperties = React.memo(function SlotProperties({
                   freshStore.pushHistory();
                 }}
                 className={cn(
-                  'w-8 h-8 rounded-lg border flex items-center justify-center cursor-pointer transition-all duration-150 relative shadow-2xs hover:scale-110 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none',
+                  'w-8 h-8 rounded-lg border flex items-center justify-center cursor-pointer transition-colors duration-150 relative shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none',
                   isActive
                     ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10'
                     : 'border-black/10 dark:border-white/15 hover:border-foreground/40',

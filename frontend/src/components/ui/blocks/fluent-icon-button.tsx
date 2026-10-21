@@ -41,7 +41,7 @@ export const FluentIconButton = React.memo(
         disabled={disabled || loading}
         className={cn(
           sizeClasses,
-          'rounded-md font-cairo cursor-pointer transition-all duration-150 select-none shadow-2xs',
+          'rounded-md font-cairo cursor-pointer transition-colors duration-150 select-none shadow-2xs',
           'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
           // التحديد المحايد الموحد — الأزرق حصري للأوامر التعبوية لا لحالة التفعيل
           active && 'bg-accent-active text-foreground font-bold shadow-xs',
