@@ -6,7 +6,7 @@ import { GridFour, MagicWand } from '@/components/ui/icons';
 import { FreeformCollageModal } from '@/features/freeform-collage';
 import { getTemplateGrid } from '@/lib/canvas/collage-grid';
 import { useEditorStore } from '@/lib/editor-store';
-import { COLLAGE_TOOLS, type CollageTab } from '@/lib/workspace-tools';
+import { getCollageSectionForTab, type CollageTab } from '@/lib/workspace-tools';
 import { CollageArrangeTab } from './collage/collage-arrange-tab';
 import { CollageAutofillTab } from './collage/collage-autofill-tab';
 import { CollageCustomGridTab } from './collage/collage-custom-grid-tab';
@@ -32,7 +32,6 @@ interface CustomCollageCardProps {
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
   activeTab?: CollageTab;
   onActiveTabChange?: (tab: CollageTab) => void;
-  showInternalTabs?: boolean;
 }
 
 const CustomCollageCard = React.memo(function CustomCollageCard({
@@ -44,7 +43,6 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   fileInputRef,
   activeTab: propActiveTab,
   onActiveTabChange,
-  showInternalTabs = false,
 }: CustomCollageCardProps) {
   const { canvasWidth, canvasHeight, printSettings, collageTemplate } = useEditorStore(
     useShallow((state) => ({
@@ -269,44 +267,42 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     isCustomActive,
   ]);
 
-  // تبويبات الشاشات المدمجة تتبع قائمة أدوات الكولاج المتاحة بالكامل
+  // 🧭 تبويبات الوجهة النشطة — تظهر دائماً (سطح مكتب وcompact) لأن الوجهة
+  // سطح واحد وتبويباتها تفاصيلها. تُبنى من وجهة التبويب نفسها فلا تُعرض
+  // تبويبات وجهة أخرى، ووجهة «القص» ذات التبويب الواحد تختفي تلقائياً.
+  const activeSection = useMemo(() => getCollageSectionForTab(effectiveTab), [effectiveTab]);
   const collageTabOptions = useMemo(
     () =>
-      COLLAGE_TOOLS.map((tool) => {
+      activeSection.tabs.map((tool) => {
         const isInUse =
-          tool.badge === 'collage-grid'
-            ? isCustomActive
-            : tool.badge === 'collage-freeform'
-              ? isFreeformActive
-              : false;
+          tool.id === 'custom' ? isCustomActive : tool.id === 'freeform' ? isFreeformActive : false;
         return {
           id: tool.id,
           label: tool.label,
-          icon: <tool.icon className="w-4 h-4 text-muted-foreground" weight="duotone" />,
+          icon:
+            activeSection.tabs.length <= 2 ? (
+              <tool.icon className="w-4 h-4" weight="duotone" />
+            ) : undefined,
           tooltip: tool.title,
           badge: isInUse ? (
             <span className="w-2 h-2 rounded-full bg-success ring-2 ring-success/30 animate-pulse" />
           ) : undefined,
         };
       }),
-    [isCustomActive, isFreeformActive],
+    [activeSection, isCustomActive, isFreeformActive],
   );
 
   return (
     <div className="flex flex-col gap-2.5 font-cairo" dir="rtl">
-      {/* 🧭 شريط تبويبات الكولاج للشاشات المدمجة — يُبنى من سجل الأدوات فلا
-          تبقى أداة جديدة غير قابلة للوصول عند ضيق النافذة، ويمرّ أفقياً عند الحاجة */}
-      {showInternalTabs && (
-        <div className="overflow-x-auto pb-0.5 -mb-0.5">
-          <FluentSegmentedControl
-            layoutId="collage-main-tabs"
-            fullWidth={false}
-            options={collageTabOptions}
-            value={effectiveTab}
-            onChange={(val) => handleTabChange(val as CollageTab)}
-            size="sm"
-          />
-        </div>
+      {/* 🧭 شريط تبويبات الوجهة — مبدّل بارز يميّز سطح الوجهة عن تبويباتها الفرعية */}
+      {collageTabOptions.length > 1 && (
+        <FluentSegmentedControl
+          layoutId={`collage-section-tabs-${activeSection.id}`}
+          variant="panel"
+          options={collageTabOptions}
+          value={effectiveTab}
+          onChange={(val) => handleTabChange(val as CollageTab)}
+        />
       )}
 
       {/* 1️⃣ تبويب تخصيص الشبكة الذاتي (صفوف وأعمدة ومقاسات رسمية) */}

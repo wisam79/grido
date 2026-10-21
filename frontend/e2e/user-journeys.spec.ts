@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { openStudioElementsCategory } from './helpers/studio-elements';
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Integrated User Journeys E2E', () => {
@@ -59,16 +60,10 @@ test.describe('Integrated User Journeys E2E', () => {
       .click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
-    const addTextBtn = page
-      .getByTestId('toolbar-add-text')
-      .or(page.getByRole('button', { name: /إضافة نص/ }))
-      .first();
+    await openStudioElementsCategory(page, 'text');
+    const addTextBtn = page.getByTestId('element-add-text-heading');
     if (await addTextBtn.isVisible()) {
       await addTextBtn.click();
-      const textItem = page.getByRole('menuitem').first();
-      if (await textItem.isVisible()) {
-        await textItem.click();
-      }
     }
 
     await expect(page.locator('#canvas-area')).toBeVisible();
@@ -86,23 +81,25 @@ test.describe('Integrated User Journeys E2E', () => {
   test('User Journey 3: Sticker Studio browsing and parameter tabs interaction', async ({
     page,
   }) => {
-    const stickerBtn = page
-      .getByRole('button', { name: /ملصقات|استوديو الملصقات/ })
-      .or(page.getByTitle(/ملصقات/))
-      .first();
-    if (await stickerBtn.isVisible()) {
-      await stickerBtn.click();
-      const dialog = page.getByRole('dialog');
-      await expect(dialog).toBeVisible();
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    await openStudioElementsCategory(page, 'stickers');
+    const stickerBtn = page.getByTestId('element-open-sticker-studio');
+    await expect(stickerBtn).toBeVisible();
+    await stickerBtn.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
 
-      const allTab = dialog.getByRole('tab', { name: /الكل/ }).first();
-      if (await allTab.isVisible()) {
-        await expect(allTab).toBeVisible();
-      }
-
-      await page.keyboard.press('Escape');
-      await expect(dialog).not.toBeVisible();
+    const allTab = dialog.getByRole('tab', { name: /الكل/ }).first();
+    if (await allTab.isVisible()) {
+      await expect(allTab).toBeVisible();
     }
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
   });
 
   test('User Journey 4: Keyboard accessibility and modal escape dismissal', async ({ page }) => {

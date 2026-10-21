@@ -2,16 +2,17 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 
 import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
-import { FluentSegmentedControl, FluentFilterChips } from '@/components/ui/blocks';
+import { FluentFilterChips } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import { Plus, Stamp, Shapes, TextT, Calendar, Camera, CaretRight } from '@/components/ui/icons';
+import { Plus, Stamp, Calendar, Camera, CaretRight } from '@/components/ui/icons';
 import { renderSvgToPngDataUrl } from '@/features/stickers/lib/svg-rasterizer';
 import { useEditorStore } from '@/lib/editor-store';
+import { SHAPE_CATEGORIES, shapesInCategory } from '@/lib/io/shape-catalog';
 import { createLogger } from '@/lib/logger';
 import { sanitizeSvgMarkupCached } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
-import { QUICK_SHAPES, QUICK_TEXT_PRESETS, TEXT_FILTER_OPTIONS } from './freeform-panel-constants';
+import { QUICK_TEXT_PRESETS, TEXT_FILTER_OPTIONS } from './freeform-panel-constants';
 
 import type { QuickTextItem } from './freeform-panel-constants';
 import type { StickerTemplate } from '@/features/stickers/types';
@@ -243,14 +244,12 @@ function renderTextPresetPreview(preset: QuickTextItem) {
 }
 
 export interface FreeformElementsTabProps {
-  category?: 'badges' | 'shapes' | 'text';
+  category: 'stickers' | 'shapes' | 'text';
 }
 
 export const FreeformElementsTab = React.memo(function FreeformElementsTab({
-  category: controlledCategory,
-}: FreeformElementsTabProps = {}) {
-  const [internalCategory, setInternalCategory] = useState<'badges' | 'shapes' | 'text'>('badges');
-  const activeCategory = controlledCategory ?? internalCategory;
+  category: activeCategory,
+}: FreeformElementsTabProps) {
   const [isInserting, setIsInserting] = useState<string | null>(null);
 
   const addShapeElement = useEditorStore((state) => state.addShapeElement);
@@ -371,58 +370,18 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
   };
 
   return (
-    <div className="space-y-3 font-cairo animate-in fade-in duration-150" dir="rtl">
-      {/* 🏷️ شريط تصنيفات العناصر (يظهر فقط كـ fallback إذا لم يتم تحديد التصنيف مباشرة من الشريط) */}
-      {!controlledCategory && (
-        <FluentSegmentedControl<'badges' | 'shapes' | 'text'>
-          layoutId="freeform-element-categories-pill"
-          value={activeCategory}
-          onChange={setInternalCategory}
-          size="sm"
-          options={[
-            {
-              id: 'badges',
-              label: 'شارات',
-              icon: (
-                <Stamp
-                  className="w-3.5 h-3.5 shrink-0"
-                  weight={activeCategory === 'badges' ? 'fill' : 'regular'}
-                />
-              ),
-              tooltip: 'شارات وأختام',
-            },
-            {
-              id: 'shapes',
-              label: 'أشكال',
-              icon: (
-                <Shapes
-                  className="w-3.5 h-3.5 shrink-0"
-                  weight={activeCategory === 'shapes' ? 'fill' : 'regular'}
-                />
-              ),
-              tooltip: 'أشكال وتصاميم',
-            },
-            {
-              id: 'text',
-              label: 'نصوص',
-              icon: (
-                <TextT
-                  className="w-3.5 h-3.5 shrink-0"
-                  weight={activeCategory === 'text' ? 'fill' : 'regular'}
-                />
-              ),
-              tooltip: 'نصوص جاهزة',
-            },
-          ]}
-        />
-      )}
-
+    <div
+      data-testid={`studio-elements-${activeCategory}`}
+      className="space-y-3 font-cairo animate-in fade-in duration-150"
+      dir="rtl"
+    >
       {/* 🌟 1. استعراض الشارات والأختام الرسمية بتصميم Fluent 2 المتطور */}
-      {activeCategory === 'badges' && (
+      {activeCategory === 'stickers' && (
         <div className="space-y-3">
           {/* زر الاستوديو الكامل المدمج (32px) وفق معايير Fluent 2 النظيفة */}{' '}
           <Button
             type="button"
+            data-testid="element-open-sticker-studio"
             onClick={handleOpenFullStickerStudio}
             className="w-full h-8 px-2.5 rounded-md text-xs font-semibold bg-card hover:bg-accent text-foreground border border-border/80 transition-colors flex items-center justify-between shadow-2xs cursor-pointer select-none"
           >
@@ -515,37 +474,52 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
         </div>
       )}
 
-      {/* 🔷 2. استعراض الأشكال الهندسية والتزيينية بشبكة ثلاثية رشيقة */}
+      {/* 🔷 2. كتالوج الأشكال الكامل بفئاته — بديل قائمة الشريط العلوي بعد حذفها */}
       {activeCategory === 'shapes' && (
-        <div className="space-y-2">
-          <div className="px-1 flex items-center justify-between">
-            <span className="text-xs font-bold text-foreground/80">أشكال هندسية وتصاميم</span>
-            <span className="text-mini font-mono text-muted-foreground font-semibold">
-              {QUICK_SHAPES.length} شكلاً
-            </span>
-          </div>
+        <div className="space-y-3">
+          {SHAPE_CATEGORIES.map((group) => {
+            const shapes = shapesInCategory(group.id);
+            if (shapes.length === 0) return null;
 
-          <div className="grid grid-cols-3 gap-1.5">
-            {QUICK_SHAPES.map((shape) => (
-              <button
-                key={shape.id}
-                type="button"
-                onClick={() => handleAddShape(shape)}
-                title={shape.label}
-                className="group flex items-center justify-center gap-1.5 h-8 px-2 bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg transition-colors duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none select-none shadow-2xs"
-              >
-                <ShapeGlyph
-                  kind={shape.kind}
-                  path={shape.path}
-                  sides={shape.defaults?.sides}
-                  starPoints={shape.defaults?.starPoints}
-                  doubleArrow={shape.defaults?.pointerAtBeginning === true}
-                  className="w-3.5 h-3.5 shrink-0 text-muted-foreground group-hover:text-foreground"
-                />
-                <span className="text-xs font-medium text-foreground truncate">{shape.label}</span>
-              </button>
-            ))}
-          </div>
+            return (
+              <div key={group.id} className="space-y-1.5">
+                <div className="px-1 flex items-center justify-between">
+                  <span className="text-mini font-bold text-muted-foreground/70">
+                    {group.label}
+                  </span>
+                  <span className="text-mini font-mono text-muted-foreground/60 font-semibold">
+                    {shapes.length}
+                  </span>
+                </div>
+
+                {/* رموز الأشكال وحدها: المستخدم يعرف المربع من الدائرة، فالاسم
+                    تكرار بصري. ثلاثة أعمدة برموز كبيرة توازن الوضوح مع الكثافة،
+                    والاسم يبقى تلميحاً ووصفاً وصولياً. */}
+                <div className="grid grid-cols-3 gap-2">
+                  {shapes.map((shape) => (
+                    <button
+                      key={shape.id}
+                      type="button"
+                      data-testid={`element-add-shape-${shape.id}`}
+                      onClick={() => handleAddShape(shape)}
+                      title={shape.label}
+                      aria-label={shape.label}
+                      className="group flex items-center justify-center h-12 bg-card/60 hover:bg-card border border-border/60 hover:border-foreground/30 rounded-lg transition-colors duration-150 cursor-pointer focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none select-none shadow-2xs"
+                    >
+                      <ShapeGlyph
+                        kind={shape.kind}
+                        path={shape.path}
+                        sides={shape.defaults?.sides}
+                        starPoints={shape.defaults?.starPoints}
+                        doubleArrow={shape.defaults?.pointerAtBeginning === true}
+                        className="w-6 h-6 shrink-0 text-muted-foreground group-hover:text-foreground"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -557,6 +531,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
             {/* 1. عنوان رئيسي H1 */}
             <button
               type="button"
+              data-testid="element-add-text-heading"
               onClick={() => {
                 addTextPreset('heading');
               }}
@@ -574,6 +549,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
             {/* 2. عنوان فرعي H2 */}
             <button
               type="button"
+              data-testid="element-add-text-subheading"
               onClick={() => {
                 addTextPreset('subheading');
               }}
@@ -591,6 +567,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
             {/* 3. نص فقرة P */}
             <button
               type="button"
+              data-testid="element-add-text-body"
               onClick={() => {
                 addTextPreset('body');
               }}
@@ -622,6 +599,7 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
               <button
                 key={preset.id}
                 type="button"
+                data-testid={`element-add-preset-${preset.id}`}
                 onClick={() => handleAddText(preset)}
                 title={preset.label}
                 className="group relative w-full bg-card/70 hover:bg-card border border-border/60 hover:border-foreground/40 rounded-md p-2 transition-colors duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden text-start"

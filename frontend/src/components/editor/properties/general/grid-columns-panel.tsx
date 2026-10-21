@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { FluentSection, FluentSegmentedControl, FluentSliderField } from '@/components/ui/blocks';
-import { GridFour } from '@/components/ui/icons';
 import {
   Select,
   SelectContent,
@@ -14,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 
-import { PopoverColorPicker } from '../shared-controls';
+import { ColorField, ColorPanel } from '../color-panel';
 
 export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
   const {
@@ -91,7 +90,6 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
 
   return (
     <FluentSection
-      icon={<GridFour className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
       title="الشبكة والقص"
       collapsible
       defaultOpen={Boolean(showGrid || showColumns || showBleedGuides)}
@@ -212,44 +210,14 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                   onChange={(val) => setGridOpacity(val / 100)}
                 />
 
-                {/* ألوان الشبكة */}
-                <div className="flex items-center justify-between pt-1" dir="rtl">
-                  <span className="text-mini font-bold text-muted-foreground">لون الشبكة</span>
-                  <div className="flex items-center gap-1.5">
-                    {[
-                      { hex: '#cbd5e1', label: 'رمادي فاتح' },
-                      { hex: '#94a3b8', label: 'رمادي' },
-                      { hex: '#3b82f6', label: 'أزرق' },
-                      { hex: '#ef4444', label: 'أحمر' },
-                      { hex: '#10b981', label: 'أخضر' },
-                    ].map((col) => {
-                      const isSelected = gridColor.toLowerCase() === col.hex.toLowerCase();
-                      return (
-                        <button
-                          key={col.hex}
-                          type="button"
-                          aria-label={col.label}
-                          title={col.label}
-                          onClick={() => setGridColor(col.hex)}
-                          className={cn(
-                            'w-5 h-5 rounded-md border border-border/80 transition-colors cursor-pointer relative shadow-2xs',
-                            isSelected
-                              ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110'
-                              : 'opacity-80 hover:opacity-100',
-                          )}
-                          style={{ backgroundColor: col.hex }}
-                        />
-                      );
-                    })}
-                    <PopoverColorPicker
-                      color={gridColor}
-                      onChange={setGridColor}
-                      swatchOnly
-                      className="w-5 h-5 rounded-md"
-                      ariaLabel="لون خطوط الشبكة"
-                    />
-                  </div>
-                </div>
+                <ColorPanel wheelPosition="bottom">
+                  <ColorField
+                    color={gridColor}
+                    onChange={setGridColor}
+                    className="w-full"
+                    ariaLabel="لون خطوط الشبكة"
+                  />
+                </ColorPanel>
               </div>
             ) : (
               <div className="p-3 text-center rounded-lg border border-dashed border-border/60 bg-muted/20 text-muted-foreground">

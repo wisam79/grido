@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { openStudioElementsCategory } from './helpers/studio-elements';
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Freeform Collage & Elements Workflow E2E', () => {
@@ -15,17 +16,11 @@ test.describe('Freeform Collage & Elements Workflow E2E', () => {
       .or(page.getByRole('tab', { name: 'تعديل حر' }))
       .first()
       .click();
-    const addTextBtn = page
-      .getByTestId('toolbar-add-text')
-      .or(page.getByRole('button', { name: /إضافة نص/ }))
-      .first();
+    // النص يُدرج من مكتبة العناصر في الشريط الجانبي (نُقلت من الشريط العلوي)
+    await openStudioElementsCategory(page, 'text');
+    const addTextBtn = page.getByTestId('element-add-text-heading');
     await expect(addTextBtn).toBeVisible();
     await addTextBtn.click();
-
-    // Select text preset from dropdown
-    const textPreset = page.getByRole('menuitem').first();
-    await expect(textPreset).toBeVisible();
-    await textPreset.click();
 
     // Text element is inserted and properties panel displays text properties
     await expect(page.locator('#canvas-area')).toBeVisible();
@@ -48,17 +43,10 @@ test.describe('Freeform Collage & Elements Workflow E2E', () => {
       .or(page.getByRole('tab', { name: 'تعديل حر' }))
       .first()
       .click();
-    const addShapeBtn = page
-      .getByTestId('toolbar-add-shape')
-      .or(page.getByRole('button', { name: /إضافة شكل/ }))
-      .first();
-    if (await addShapeBtn.isVisible()) {
-      await addShapeBtn.click();
-      const shapeItem = page.getByRole('menuitem').first();
-      if (await shapeItem.isVisible()) {
-        await shapeItem.click();
-      }
-      await expect(page.locator('#canvas-area')).toBeVisible();
-    }
+    await openStudioElementsCategory(page, 'shapes');
+    const addShapeBtn = page.getByTestId('element-add-shape-rect');
+    await expect(addShapeBtn).toBeVisible();
+    await addShapeBtn.click();
+    await expect(page.locator('#canvas-area')).toBeVisible();
   });
 });

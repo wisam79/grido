@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import { useEditorStore } from '../src/lib/editor-store';
 import {
-  getToolsForWorkflow,
+  getDefaultStudioTab,
+  getSectionsForWorkflow,
   isStudioTab,
   isCollageTab,
   migrateLegacyStudioTab,
@@ -130,34 +131,40 @@ describe('Workflow slice & rail registry (sidebar de-clutter)', () => {
     useEditorStore.getState().setWorkflow('studio');
   });
 
-  it('quick mode hides the merged elements hub from studio tools only', () => {
-    const studioAll = getToolsForWorkflow('single', 'studio');
-    const studioQuick = getToolsForWorkflow('single', 'quick');
-    expect(studioAll.map((t) => t.id)).toContain('elements');
-    expect(studioQuick.map((t) => t.id)).not.toContain('elements');
-    expect(studioQuick.length).toBe(studioAll.length - 1);
-    // Collage tools unaffected by workflow
-    expect(getToolsForWorkflow('collage', 'quick')).toHaveLength(
-      getToolsForWorkflow('collage', 'studio').length,
+  it('quick mode starts from layers while keeping every insertion tool', () => {
+    const studioAll = getSectionsForWorkflow('single', 'studio');
+    const studioQuick = getSectionsForWorkflow('single', 'quick');
+    const allSections = studioAll.map((section) => section.id);
+    const quickSections = studioQuick.map((section) => section.id);
+    expect(allSections).toEqual(['layers', 'stickers', 'shapes', 'text']);
+    expect(quickSections).toEqual(allSections);
+    expect(getDefaultStudioTab('quick')).toBe('layers');
+    expect(getDefaultStudioTab('studio')).toBe('stickers');
+    // Collage sections unaffected by workflow
+    expect(getSectionsForWorkflow('collage', 'quick')).toHaveLength(
+      getSectionsForWorkflow('collage', 'studio').length,
     );
   });
 
-  it('registry has no filler duplicates: single elements hub, no separate backdrop', () => {
+  it('registry has one tab per insertion tool and no filler duplicates', () => {
     expect(STUDIO_TOOLS.filter((t) => ['stickers', 'shapes', 'text'].includes(t.id))).toHaveLength(
-      0,
+      3,
     );
-    expect(STUDIO_TOOLS.map((t) => t.id)).toContain('elements');
+    expect(STUDIO_TOOLS.map((t) => t.id)).not.toContain('elements');
     expect(COLLAGE_TOOLS.map((t) => t.id)).not.toContain('backdrop');
     expect(COLLAGE_TOOLS.map((t) => t.id)).toContain('custom');
   });
 
   it('migrates legacy stored tabs and validates current ones', () => {
-    expect(migrateLegacyStudioTab('stickers')).toBe('elements');
-    expect(migrateLegacyStudioTab('shapes')).toBe('elements');
-    expect(migrateLegacyStudioTab('text')).toBe('elements');
+    expect(migrateLegacyStudioTab('elements')).toBe('stickers');
+    expect(migrateLegacyStudioTab('presets')).toBe('stickers');
+    expect(migrateLegacyStudioTab('stickers')).toBeNull();
+    expect(migrateLegacyStudioTab('shapes')).toBeNull();
+    expect(migrateLegacyStudioTab('text')).toBeNull();
     expect(migrateLegacyStudioTab('layers')).toBeNull();
-    expect(isStudioTab('elements')).toBe(true);
-    expect(isStudioTab('stickers')).toBe(false);
+    expect(isStudioTab('stickers')).toBe(true);
+    expect(isStudioTab('elements')).toBe(false);
+    expect(isStudioTab('presets')).toBe(false);
     expect(isCollageTab('backdrop')).toBe(false);
     expect(isCollageTab('custom')).toBe(true);
   });

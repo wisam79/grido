@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { openStudioElementsCategory } from './helpers/studio-elements';
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 import type { Page, Locator } from '@playwright/test';
@@ -89,19 +90,13 @@ export function expectPanelClean(label: string, result: PanelAudit) {
 
 const ELEMENT_TABS = ['التنسيق', 'الألوان', 'التأثيرات', 'الترتيب'];
 
-const RAIL_TOOLS = [
-  'rail-collage-grid',
-  'rail-collage-presets',
-  'rail-collage-freeform',
-  'rail-collage-paper',
-  'rail-collage-autofill',
-  'rail-collage-arrange',
+const COLLAGE_RAIL_SECTIONS = ['rail-collage-grid', 'rail-collage-slots', 'rail-collage-paper'];
+
+const STUDIO_RAIL_SECTIONS = [
   'rail-studio-layers',
-  'rail-studio-elements',
-  'rail-studio-presets',
-  'rail-studio-fonts',
-  'rail-studio-palette',
-  'rail-studio-backdrops',
+  'rail-studio-stickers',
+  'rail-studio-shapes',
+  'rail-studio-text',
 ];
 
 function activePanel(page: Page): Locator {
@@ -166,8 +161,10 @@ test.describe('Panel geometry guard', () => {
       if (kind === 'image') {
         await page.getByTestId('toolbar-insert').first().click();
       } else {
-        await page.getByTestId(kind === 'text' ? 'toolbar-add-text' : 'toolbar-add-shape').click();
-        await page.getByRole('menuitem').first().click();
+        await openStudioElementsCategory(page, kind === 'text' ? 'text' : 'shapes');
+        await page
+          .getByTestId(kind === 'text' ? 'element-add-text-heading' : 'element-add-shape-rect')
+          .click();
       }
       await expect(page.getByRole('tabpanel')).toBeVisible();
 
@@ -181,9 +178,9 @@ test.describe('Panel geometry guard', () => {
     });
   }
 
-  for (const [mode, tools] of [
-    ['كولاج', RAIL_TOOLS.slice(0, 6)],
-    ['استوديو', RAIL_TOOLS.slice(6)],
+  for (const [mode, sections] of [
+    ['كولاج', COLLAGE_RAIL_SECTIONS],
+    ['استوديو', STUDIO_RAIL_SECTIONS],
   ] as const) {
     test(`${mode}: كل ألواح الشريط الجانبي نظيفة`, async ({ page }) => {
       if (mode === 'استوديو') {
@@ -195,14 +192,14 @@ test.describe('Panel geometry guard', () => {
       }
 
       const opened: string[] = [];
-      for (const toolId of tools) {
+      for (const toolId of sections) {
         const panel = await openRailPanel(page, toolId);
         if (!panel) continue;
         opened.push(toolId);
         expectPanelClean(`${mode}/${toolId}`, await auditPanel(panel));
       }
       // حماية من فحص «أخضر» لأن كل الألواح لم تُفتح فعلاً
-      expect(opened.length, `عدد الألواح المفتوحة في وضع ${mode}`).toBeGreaterThanOrEqual(5);
+      expect(opened.length, `عدد الألواح المفتوحة في وضع ${mode}`).toBe(sections.length);
     });
   }
 });

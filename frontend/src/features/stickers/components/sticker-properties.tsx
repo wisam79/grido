@@ -4,12 +4,10 @@ import { toast } from 'sonner';
 import { FluentSection, FluentSliderField, FluentSegmentedControl } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import {
-  Palette,
   Printer,
   ArrowCounterClockwise,
   Scissors,
   Sparkle,
-  TextT,
   SlidersHorizontal,
   BookmarkSimple,
   FloppyDisk,
@@ -289,12 +287,7 @@ export const StickerProperties = React.memo(function StickerProperties({
           <>
             {/* 1. النصوص */}
             {template.fields.length > 0 && (
-              <FluentSection
-                icon={<TextT className="w-3.5 h-3.5" weight="duotone" />}
-                title="النصوص"
-                collapsible
-                defaultOpen
-              >
+              <FluentSection title="النصوص" collapsible defaultOpen>
                 <div className="space-y-2">
                   {template.fields.map((field) => {
                     const val = params.fields[field.id] ?? field.defaultValue;
@@ -340,12 +333,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             )}
 
             {/* 2. الألوان */}
-            <FluentSection
-              icon={<Palette className="w-3.5 h-3.5" weight="duotone" />}
-              title="الألوان"
-              collapsible
-              defaultOpen
-            >
+            <FluentSection title="الألوان" collapsible defaultOpen>
               <div className="grid grid-cols-4 gap-1.5">
                 <ColorRoleButton
                   label="الأساسي"
@@ -457,12 +445,7 @@ export const StickerProperties = React.memo(function StickerProperties({
             </FluentSection>
 
             {/* 3. المظهر */}
-            <FluentSection
-              icon={<Sparkle className="w-3.5 h-3.5" weight="duotone" />}
-              title="المظهر"
-              collapsible
-              defaultOpen
-            >
+            <FluentSection title="المظهر" collapsible defaultOpen>
               {/* Font Selector */}
               <StickerFontSelector
                 value={params.fontFamily || 'Cairo'}

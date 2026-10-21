@@ -1,11 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { FluentSection } from '@/components/ui/blocks';
-import { PaintBrush } from '@/components/ui/icons';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/editor-store';
-import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 
 import { CanvasDimensionsPanel } from './general/canvas-dimensions-panel';
 import { GridColumnsPanel } from './general/grid-columns-panel';
@@ -30,22 +28,9 @@ export function GeneralSettings() {
     })),
   );
 
-  // أداة خلفية الورقة الوحيدة في التطبيق: تُفتح وتُمرَّر إليها عند طلبها من
-  // بطاقة الحالة في اللوحات الجانبية (حدث موحّد بدل تكرار الأداة هناك).
-  // تبقى مفتوحة افتراضياً — لكن بأداة مبسّطة (رقعة + قيمة + قطارة + عينات).
+  // أداة خلفية الورقة الوحيدة في التطبيق — مفتوحة افتراضياً وبأداة مبسّطة
+  // (رقعة + قيمة + قطارة + عينات).
   const [paperOpen, setPaperOpen] = useState(true);
-  const paperSectionRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const focusPaperBackground = () => {
-      setPaperOpen(true);
-      requestAnimationFrame(() => {
-        paperSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    };
-    window.addEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
-    return () => window.removeEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
-  }, []);
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -53,8 +38,6 @@ export function GeneralSettings() {
         <CanvasDimensionsPanel />
 
         <FluentSection
-          ref={paperSectionRef}
-          icon={<PaintBrush className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
           title="خلفية الورقة"
           collapsible
           open={paperOpen}

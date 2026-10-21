@@ -331,6 +331,10 @@ import {
   Keyboard20Regular as _Keyboard20Regular,
   Keyboard24Filled as _Keyboard24Filled,
   Keyboard24Regular as _Keyboard24Regular,
+  Layer20Filled as _Layer20Filled,
+  Layer20Regular as _Layer20Regular,
+  Layer24Filled as _Layer24Filled,
+  Layer24Regular as _Layer24Regular,
   Link16Filled as _Link16Filled,
   Link16Regular as _Link16Regular,
   Link20Filled as _Link20Filled,
@@ -1018,6 +1022,10 @@ export const Keyboard: Icon = createIcon({
   16: [_Keyboard16Regular, _Keyboard16Filled],
   20: [_Keyboard20Regular, _Keyboard20Filled],
   24: [_Keyboard24Regular, _Keyboard24Filled],
+});
+export const Layer: Icon = createIcon({
+  20: [_Layer20Regular, _Layer20Filled],
+  24: [_Layer24Regular, _Layer24Filled],
 });
 export const Lightning: Icon = createIcon({
   16: [_Flash16Regular, _Flash16Filled],

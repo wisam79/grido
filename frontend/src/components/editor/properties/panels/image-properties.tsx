@@ -13,13 +13,9 @@ import {
   ArrowCounterClockwise,
   Eye,
   PaintBrush,
-  Palette,
-  Check,
   ArrowClockwise,
   X,
   Scan,
-  Square,
-  FadersHorizontal,
 } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useAiEnhance } from '@/hooks/use-ai-enhance';
@@ -37,8 +33,8 @@ import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
+import { ColorField, ColorPanel } from '../color-panel';
 import { ShadowGlowSection } from '../element/shared/shadow-glow-section';
-import { PopoverColorPicker } from '../shared-controls';
 
 import type { ImageElement, CanvasElement } from '@/lib/editor-store';
 
@@ -69,12 +65,7 @@ export function ImageAdjustProperties({
   return (
     <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
       {/* بطاقة 1: تعديل الألوان */}
-      <FluentSection
-        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
-        title="تعديل الألوان"
-        collapsible
-        defaultOpen={true}
-      >
+      <FluentSection title="تعديل الألوان" collapsible defaultOpen={true}>
         {/* قوالب تدرج لوني سريعة للاستوديوهات */}
         <div className="space-y-1.5 pb-2 border-b border-border/20">
           <span className="text-mini font-normal text-muted-foreground block">قوالب الاستوديو</span>
@@ -189,10 +180,7 @@ export function ImageAdjustProperties({
       </FluentSection>
 
       {/* بطاقة 2: الشفافية العامة */}
-      <FluentSection
-        icon={<Eye className="w-4 h-4 text-primary" weight="duotone" />}
-        title="الشفافية"
-      >
+      <FluentSection title="الشفافية">
         <FluentSliderField
           label="شفافية الصورة"
           value={currentOpacity}
@@ -214,7 +202,6 @@ export function ImageAdjustProperties({
 export function ImageFiltersSection({ element, onUpdate }: ImagePropertiesProps) {
   return (
     <FluentSection
-      icon={<FadersHorizontal className="w-4 h-4 text-primary" weight="duotone" />}
       title="المرشحات"
       collapsible
       defaultOpen={true}
@@ -397,12 +384,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
   return (
     <div className="space-y-2.5 font-cairo animate-in fade-in duration-150">
       {/* 🎴 بطاقة 1: شبكة أدوات الذكاء الاصطناعي الفاخرة (2x2 Grid) */}
-      <FluentSection
-        icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
-        title="أدوات الذكاء الاصطناعي"
-        collapsible
-        defaultOpen={true}
-      >
+      <FluentSection title="أدوات الذكاء الاصطناعي" collapsible defaultOpen={true}>
         <div className="grid grid-cols-2 gap-1.5">
           {/* 1. عزل الخلفية */}
           <Tooltip>
@@ -549,90 +531,22 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       </FluentSection>
 
       {/* 🎴 بطاقة 2: خلفية الصورة — متقدمة، مطوية افتراضياً (كشف تدريجي) */}
-      <FluentSection
-        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
-        title="خلفية الصورة"
-        collapsible
-        defaultOpen={false}
-      >
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {[
-            { id: 'trans', label: 'شفاف', val: 'transparent' },
-            { id: 'white', label: 'أبيض', val: '#ffffff' },
-            { id: 'blue', label: 'أزرق رسمي', val: '#1d4ed8' },
-            { id: 'lblue', label: 'أزرق فاتح', val: '#3b82f6' },
-            { id: 'gray', label: 'رمادي', val: '#e5e7eb' },
-          ].map((colorItem) => {
-            const currBg = element.bgColor || 'transparent';
-            const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
-            return (
-              <Tooltip key={colorItem.id}>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onUpdate(element.id, { bgColor: colorItem.val });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                    aria-label={colorItem.label}
-                    aria-pressed={isActive}
-                    title={colorItem.label}
-                    className={cn(
-                      'w-7 h-7 rounded-md border border-border flex items-center justify-center cursor-pointer transition-colors duration-150 relative shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-                      isActive && 'ring-2 ring-primary ring-offset-1 border-primary',
-                    )}
-                    style={{
-                      backgroundColor: colorItem.val === 'transparent' ? undefined : colorItem.val,
-                      backgroundImage:
-                        colorItem.val === 'transparent'
-                          ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)'
-                          : undefined,
-                      backgroundSize: colorItem.val === 'transparent' ? '6px 6px' : undefined,
-                      backgroundPosition:
-                        colorItem.val === 'transparent'
-                          ? '0 0, 0 3px, 3px -3px, -3px 0px'
-                          : undefined,
-                    }}
-                  >
-                    {isActive && (
-                      <Check
-                        className={cn(
-                          'w-3.5 h-3.5',
-                          colorItem.val === '#ffffff' || colorItem.val === '#e5e7eb'
-                            ? 'text-slate-900'
-                            : 'text-white',
-                        )}
-                        weight="bold"
-                      />
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top">{colorItem.label}</TooltipContent>
-              </Tooltip>
-            );
-          })}
-
-          {/* Custom Color Input */}
-          <PopoverColorPicker
-            // 🛡️ 'transparent' يُمرَّر كما هو (رقعة الشطرنج + تسمية «شفاف» في
-            // المنتقي) — تحويله إلى '#ffffff' يجعل أول تعديل hex يدهس النية
+      <FluentSection title="خلفية الصورة" collapsible defaultOpen={false}>
+        <ColorPanel wheelPosition="bottom">
+          <ColorField
             color={element.bgColor ?? 'transparent'}
             onChange={(val) => {
               onUpdate(element.id, { bgColor: val });
               useEditorStore.getState().pushHistory();
             }}
-            swatchOnly
-            className="w-7 h-7"
+            className="w-full"
             ariaLabel="لون خلفية الصورة"
           />
-        </div>
+        </ColorPanel>
       </FluentSection>
 
       {/* 🎴 بطاقة 3: أدوات الصورة والقص */}
-      <FluentSection
-        icon={<Crop className="w-4 h-4 text-primary" weight="duotone" />}
-        title="الصورة والقص"
-      >
+      <FluentSection title="الصورة والقص">
         <div className="grid grid-cols-2 gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -740,10 +654,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       </FluentSection>
 
       {/* 🎴 بطاقة 4: استدارة الحواف وقناع القص */}
-      <FluentSection
-        icon={<Square className="w-4 h-4 text-primary" weight="duotone" />}
-        title="استدارة وقناع القص"
-      >
+      <FluentSection title="استدارة وقناع القص">
         <FluentSliderField
           label="الزوايا"
           value={element.cornerRadius || 0}

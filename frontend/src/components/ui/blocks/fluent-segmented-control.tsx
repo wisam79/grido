@@ -26,8 +26,12 @@ export interface FluentSegmentedControlProps<T extends string = string> {
    * - `tabs` (افتراضي): شريط تبويبات مسطّح بخط سفلي — لأسفل الألواح.
    * - `field`: مفتاح اختيار مؤطّر داخل صف حقول — يشارك الحقول إطاراً واحداً
    *   فلا يظهر تبويب عارٍ وسط قائمة من الحقول.
+   * - `panel`: مبدّل وجهات بارز أعلى لوح جانبي — مسار غائر وبطاقة نشطة،
+   *   فيتميّز عن التبويبات الفرعية المسطّحة داخل المحتوى.
    */
-  variant?: 'tabs' | 'field';
+  variant?: 'tabs' | 'field' | 'panel';
+  /** في `field`: يضع التسمية بجوار الأيقونة بدل تحتها (صف أفقي). */
+  iconInline?: boolean;
   fullWidth?: boolean;
   className?: string;
   layoutId?: string;
@@ -50,6 +54,7 @@ export function FluentSegmentedControl<T extends string = string>({
   size = 'sm',
   stacked = false,
   variant = 'tabs',
+  iconInline = false,
   fullWidth = true,
   className,
   layoutId,
@@ -101,9 +106,11 @@ export function FluentSegmentedControl<T extends string = string>({
         'flex items-center gap-0.5 select-none min-w-0 max-w-full',
         variant === 'field'
           ? 'flex-row gap-0.5 p-0.5 rounded-md border border-border/60 bg-muted/40'
-          : stacked
-            ? 'flex-col gap-0.5 p-0.5 rounded-md border border-border/60 bg-muted/40'
-            : 'border-b border-border/60 rounded-none p-0',
+          : variant === 'panel'
+            ? 'flex-row gap-1 p-1 rounded-lg border border-border/60 bg-muted/30'
+            : stacked
+              ? 'flex-col gap-0.5 p-0.5 rounded-md border border-border/60 bg-muted/40'
+              : 'border-b border-border/60 rounded-none p-0',
         fullWidth ? 'w-full' : 'w-fit inline-flex',
         className,
       )}
@@ -147,19 +154,22 @@ export function FluentSegmentedControl<T extends string = string>({
               fullWidth ? 'flex-1' : 'shrink-0',
               stacked || variant === 'field'
                 ? cn(
-                    'flex-col gap-0.5 rounded-sm',
+                    'rounded-sm',
+                    iconInline && variant === 'field' ? 'gap-1.5' : 'flex-col gap-0.5',
                     variant === 'field' ? 'h-7 px-2 text-xs' : 'h-10 px-1 text-mini',
                     isActive ? 'bg-card shadow-2xs' : 'hover:bg-accent/60',
                   )
-                : cn(
-                    'gap-1.5 rounded-none',
-                    size === 'sm'
-                      ? 'h-7 px-2 text-xs'
-                      : size === 'lg'
-                        ? 'h-9 px-3 text-xs font-bold'
-                        : 'h-8 px-2.5 text-xs',
-                    isActive ? 'bg-accent/40' : 'hover:bg-accent/50',
-                  ),
+                : variant === 'panel'
+                  ? cn('gap-1.5 rounded-md h-8 px-2.5 text-xs', !isActive && 'hover:bg-accent/50')
+                  : cn(
+                      'gap-1.5 rounded-none',
+                      size === 'sm'
+                        ? 'h-7 px-2 text-xs'
+                        : size === 'lg'
+                          ? 'h-9 px-3 text-xs font-bold'
+                          : 'h-8 px-2.5 text-xs',
+                      isActive ? 'bg-accent/40' : 'hover:bg-accent/50',
+                    ),
               isActive ? 'text-foreground font-bold' : 'text-muted-foreground font-medium',
               opt.disabled && 'opacity-40 cursor-not-allowed pointer-events-none',
               opt.className,
@@ -169,9 +179,11 @@ export function FluentSegmentedControl<T extends string = string>({
               <motion.div
                 layoutId={effectiveLayoutId}
                 className={
-                  stacked || variant === 'field'
-                    ? 'absolute inset-0 bg-card border border-border/80 dark:border-white/15 rounded-sm shadow-2xs -z-10'
-                    : 'absolute inset-x-1 bottom-0 h-0.5 bg-primary rounded-full -z-10'
+                  variant === 'panel'
+                    ? 'absolute inset-0 bg-card border border-border/70 dark:border-white/15 rounded-md shadow-2xs -z-10'
+                    : stacked || variant === 'field'
+                      ? 'absolute inset-0 bg-card border border-border/80 dark:border-white/15 rounded-sm shadow-2xs -z-10'
+                      : 'absolute inset-x-1 bottom-0 h-0.5 bg-primary rounded-full -z-10'
                 }
                 transition={{ duration: 0.12, ease: 'easeOut' }}
               />

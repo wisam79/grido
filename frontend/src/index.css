@@ -1067,34 +1067,6 @@
   overscroll-behavior: contain;
 }
 
-/* تخصيص مظهر منتقي الألوان ليتلاءم مع هوية استوديو الهوية */
-.custom-color-picker .react-colorful {
-  width: 100% !important;
-  height: 115px !important;
-  border-radius: 12px !important;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--border) 40%, transparent) !important;
-  background: none !important;
-}
-
-.custom-color-picker .react-colorful__saturation {
-  border-bottom: none !important;
-  border-radius: 0 !important;
-}
-
-.custom-color-picker .react-colorful__hue {
-  height: 12px !important;
-  border-radius: 0 !important;
-  border-top: 1px solid color-mix(in srgb, var(--border) 40%, transparent) !important;
-}
-
-.custom-color-picker .react-colorful__pointer {
-  width: 14px !important;
-  height: 14px !important;
-  border: 2px solid #ffffff !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
-}
-
 /* رسومات متحركة خفيفة لتحسين تجربة المستخدم دون التأثير على الأداء */
 @keyframes slide-fade-in-rtl {
   from {

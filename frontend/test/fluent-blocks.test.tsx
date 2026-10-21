@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 
-import { Gear, Sparkle, Folder } from '@/components/ui/icons';
+import { Sparkle, Folder } from '@/components/ui/icons';
 
 import {
   FluentSection,
@@ -16,10 +16,9 @@ import { TooltipProvider } from '../src/components/ui/tooltip';
 
 describe('Fluent 2 UI Blocks Component Suite', () => {
   describe('FluentSection', () => {
-    it('renders section title, subtitle, icon, action, and children', () => {
+    it('renders section title, subtitle, action, and children', () => {
       render(
         <FluentSection
-          icon={<Gear data-testid="section-icon" className="size-4 shrink-0" />}
           title="إعدادات الكانفاس"
           subtitle="تعديل الأبعاد والهوامش"
           action={<button>إعادة ضبط</button>}
@@ -30,7 +29,6 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
 
       expect(screen.getByText('إعدادات الكانفاس')).toBeInTheDocument();
       expect(screen.getByText('تعديل الأبعاد والهوامش')).toBeInTheDocument();
-      expect(screen.getByTestId('section-icon')).toBeInTheDocument();
       expect(screen.getByText('إعادة ضبط')).toBeInTheDocument();
       expect(screen.getByTestId('section-content')).toBeInTheDocument();
     });

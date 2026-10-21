@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { FluentSection, FluentSettingRow, FluentSegmentedControl } from '@/components/ui/blocks';
+import { FluentSegmentedControl } from '@/components/ui/blocks/fluent-segmented-control';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -10,23 +10,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { CaretDown, Check, Crop, FrameCorners, Link, LinkBreak } from '@/components/ui/icons';
+import { CaretDown, Check, FrameCorners, Link, LinkBreak } from '@/components/ui/icons';
 import { PageOrientationIcon } from '@/components/ui/image-icons';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import { PAPER_SIZES, ADVANCED_PAPER_SIZES, CARD_AND_LABEL_SIZES } from '@/lib/templates';
 import { cn } from '@/lib/utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// canvas-dimensions-panel.tsx — لوحة "مساحة العمل" (المقاس + الأبعاد + الاتجاه)
+// canvas-dimensions-panel.tsx — قسم إعدادات الورقة (المقاس + الحقول المخصصة + الاتجاه)
 //
 // قواعد الهوية البصرية المطبَّقة (Fluent 2):
 //   - سلم الارتفاعات: كل عناصر التحكم h-8 (32px) — لا ارتفاع شاذ.
 //   - هرمية الاستدارة: عناصر التحكم rounded-md، مجموعات التحكم rounded-md.
 //   - حلقة التركيز المزدوجة الموحّدة: ring-2 + ring-offset-2 (للفأرة ولوحة المفاتيح).
 //   - قابلية القراءة: لا نصوص 8px؛ التسميات text-mini والقيم text-xs بخط monospace.
-//   - الدقة (DPI) ظاهرة في ترويسة القسم لأن تحويل ملم↔بكسل يعتمد عليها.
+//   - لا ترويسة داخلية مكررة: عنوان العمود «إعدادات الورقة» يكفي، والمقاس
+//     والأبعاد ظاهرة في المحدد وحقلي W/H فلا تُعاد في شارة أو وصف.
 //
 // إزالة التكرار الوظيفي: كان باللوحة عنصران يؤديان نفس العملية تماماً
 // (زر "تبديل الأبعاد" + محدد "الاتجاه" — كلاهما يستبدل العرض بالارتفاع).
@@ -56,7 +56,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     setBleedMarginMM,
     setCutShapeType,
     rulerUnit,
-    setRulerUnit,
   } = useEditorStore(
     useShallow((state) => ({
       canvasWidth: state.canvasWidth,
@@ -69,7 +68,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       setBleedMarginMM: state.setBleedMarginMM,
       setCutShapeType: state.setCutShapeType,
       rulerUnit: state.rulerUnit,
-      setRulerUnit: state.setRulerUnit,
     })),
   );
 
@@ -106,16 +104,6 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
   }, [canvasWidth, canvasHeight, toDisplay]);
 
   const aspectRatio = canvasHeight > 0 ? canvasWidth / canvasHeight : 1;
-
-  // نسبة مبسّطة للعرض فقط (1 : 1.41 لعمل عمودي)
-  const ratioLabel = React.useMemo(() => {
-    if (!isFinite(aspectRatio) || aspectRatio <= 0) return '—';
-    const long = Math.max(canvasWidth, canvasHeight);
-    const short = Math.min(canvasWidth, canvasHeight);
-    if (short <= 0) return '—';
-    const r = (long / short).toFixed(2);
-    return canvasWidth <= canvasHeight ? `1 : ${r}` : `${r} : 1`;
-  }, [aspectRatio, canvasWidth, canvasHeight]);
 
   const clampPx = React.useCallback(
     (px: number) => Math.max(MIN_PX, Math.min(MAX_PX, Math.round(px))),
@@ -295,263 +283,215 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
       ? `${Math.round(mmToPx(widthMM, currentDpi))}×${Math.round(mmToPx(heightMM, currentDpi))} بكسل`
       : `${widthMM}×${heightMM} مم`;
 
-  const unitOptions: { id: 'mm' | 'px'; label: string; title: string }[] = [
-    { id: 'mm', label: 'mm', title: 'مليمتر' },
-    { id: 'px', label: 'px', title: 'بكسل' },
-  ];
-
   return (
-    <FluentSection
-      icon={<Crop className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />}
-      title="مساحة العمل"
-      subtitle={`${currentDpi} DPI`}
-      collapsible
-      defaultOpen={true}
-      action={
-        <span
-          className="text-mini font-mono font-bold text-foreground/80 bg-muted/60 dark:bg-muted/40 border border-border/50 px-2 py-0.5 rounded-md shrink-0 select-none shadow-2xs"
-          dir="ltr"
-        >
-          {activeUnit === 'px'
-            ? `${canvasWidth} × ${canvasHeight} px`
-            : `${Number(pxToMm(canvasWidth, currentDpi).toFixed(1))} × ${Number(pxToMm(canvasHeight, currentDpi).toFixed(1))} mm`}
-        </span>
-      }
-    >
-      <div className="space-y-2.5 animate-in fade-in duration-200 font-cairo">
-        {/* 1. المقاس: قائمة الأوراق والكروت القياسية + وحدة القياس */}
-        <div className="flex items-center gap-1.5 w-full min-w-0" dir="rtl">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label={`المقاس: ${activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}`}
-                className={cn(
-                  'flex-1 min-w-0 flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-card hover:bg-muted/60 border border-border/80 hover:border-foreground/40 text-foreground text-xs font-semibold transition-colors cursor-pointer shadow-2xs overflow-hidden',
-                  FOCUS_RING,
-                )}
-              >
-                <span className="flex items-center gap-1.5 min-w-0">
-                  <FrameCorners
-                    className="w-3.5 h-3.5 text-muted-foreground shrink-0"
-                    weight="duotone"
-                  />
-                  <span className="truncate text-xs font-semibold">
-                    {activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}
-                  </span>
-                </span>
-                <CaretDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-64 font-cairo rounded-lg border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8 max-h-[380px] overflow-y-auto"
-              align="start"
+    <div className="space-y-2.5 animate-in fade-in duration-200 font-cairo">
+      {/* 1. المقاس: قائمة الأوراق والكروت القياسية + الاتجاه */}
+      <div className="flex w-full min-w-0 flex-col gap-1.5" dir="rtl">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={`المقاس: ${activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}`}
+              className={cn(
+                'w-full flex items-center justify-between gap-1.5 px-2.5 h-8 rounded-md bg-card hover:bg-muted/60 border border-border/80 hover:border-foreground/40 text-foreground text-xs font-semibold transition-colors cursor-pointer shadow-2xs overflow-hidden',
+                FOCUS_RING,
+              )}
             >
+              <span className="flex items-center gap-1.5 min-w-0">
+                <FrameCorners
+                  className="w-3.5 h-3.5 text-muted-foreground shrink-0"
+                  weight="duotone"
+                />
+                <span className="truncate text-xs font-semibold">
+                  {activePreset ? activePreset.name.split(' (')[0] : 'مقاس مخصص'}
+                </span>
+              </span>
+              <CaretDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="w-64 font-cairo rounded-lg border border-border bg-popover/95 backdrop-blur-xl shadow-fluent-8 max-h-[380px] overflow-y-auto"
+            align="start"
+          >
+            <DropdownMenuItem
+              onClick={() => {
+                if (template) setTemplate(null);
+              }}
+              className={cn(
+                'text-xs text-start justify-between font-bold cursor-pointer rounded-md',
+                FOCUS_RING,
+              )}
+            >
+              <span>مقاس مخصص</span>
+              {activePresetId === 'custom' && (
+                <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
+              )}
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>أوراق قياسية</DropdownMenuLabel>
+            {PAPER_SIZES.map((p) => (
               <DropdownMenuItem
-                onClick={() => {
-                  if (template) setTemplate(null);
-                }}
+                key={p.id}
+                onClick={() => handlePresetChange(p.id)}
                 className={cn(
-                  'text-xs text-start justify-between font-bold cursor-pointer rounded-md',
+                  'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
                   FOCUS_RING,
                 )}
               >
-                <span>مقاس مخصص</span>
-                {activePresetId === 'custom' && (
+                <span>{`${p.name.split(' (')[0].replace(' بوصة', '″')} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
+                {activePresetId === p.id && (
                   <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
                 )}
               </DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>أوراق قياسية</DropdownMenuLabel>
-              {PAPER_SIZES.map((p) => (
-                <DropdownMenuItem
-                  key={p.id}
-                  onClick={() => handlePresetChange(p.id)}
-                  className={cn(
-                    'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
-                    FOCUS_RING,
-                  )}
-                >
-                  <span>{`${p.name.split(' (')[0].replace(' بوصة', '″')} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
-                  {activePresetId === p.id && (
-                    <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-              {ADVANCED_PAPER_SIZES.map((p) => (
-                <DropdownMenuItem
-                  key={p.id}
-                  onClick={() => handlePresetChange(p.id)}
-                  className={cn(
-                    'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
-                    FOCUS_RING,
-                  )}
-                >
-                  <span>{`${p.name.split(' (')[0].replace(' بوصة', '″')} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
-                  {activePresetId === p.id && (
-                    <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>كروت وبطاقات</DropdownMenuLabel>
-              {CARD_AND_LABEL_SIZES.filter((p) => p.category === 'card').map((p) => (
-                <DropdownMenuItem
-                  key={p.id}
-                  onClick={() => handlePresetChange(p.id)}
-                  className={cn(
-                    'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
-                    FOCUS_RING,
-                  )}
-                >
-                  <span>{`${p.name} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
-                  {activePresetId === p.id && (
-                    <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>ملصقات الشحن والباركود</DropdownMenuLabel>
-              {CARD_AND_LABEL_SIZES.filter((p) => p.category !== 'card').map((p) => (
-                <DropdownMenuItem
-                  key={p.id}
-                  onClick={() => handlePresetChange(p.id)}
-                  className={cn(
-                    'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
-                    FOCUS_RING,
-                  )}
-                >
-                  <span>{`${p.name} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
-                  {activePresetId === p.id && (
-                    <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* زر تبديل الاتجاه المفرد (Single Orientation Toggle) — يستبدل صف الاتجاه الكامل بنمط Figma و Fluent 2 */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={handleSwapDimensions}
-                title={isPortrait ? 'أفقي' : 'عمودي'}
-                aria-label={isPortrait ? 'تبديل الاتجاه إلى أفقي' : 'تبديل الاتجاه إلى عمودي'}
+            ))}
+            {ADVANCED_PAPER_SIZES.map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() => handlePresetChange(p.id)}
                 className={cn(
-                  'w-8 h-8 rounded-md border border-border/80 bg-card hover:bg-muted/60 hover:text-foreground text-muted-foreground flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0',
+                  'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
                   FOCUS_RING,
                 )}
               >
-                <PageOrientationIcon
-                  isLandscape={!isPortrait}
-                  className="w-4 h-4 text-foreground/80 transition-transform duration-200"
-                />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="font-cairo text-xs font-semibold">
-              {isPortrait
-                ? 'الاتجاه: عمودي (انقر للتبديل لأفقي)'
-                : 'الاتجاه: أفقي (انقر للتبديل لعمودي)'}
-            </TooltipContent>
-          </Tooltip>
+                <span>{`${p.name.split(' (')[0].replace(' بوصة', '″')} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
+                {activePresetId === p.id && (
+                  <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
+                )}
+              </DropdownMenuItem>
+            ))}
 
-          {/* وحدة القياس — mm أولاً لأنها الوحدة الافتراضية للطباعة.
-              بنمط «حقل» المؤطّر ليشارك إطار القائمة المنسدلة المجاورة،
-              لا كشريط تبويبات عارٍ وسط صف الحقول. */}
-          <FluentSegmentedControl<'mm' | 'px'>
-            layoutId="canvas-dimensions-unit-toggle"
-            value={activeUnit}
-            onChange={setRulerUnit}
-            size="sm"
-            variant="field"
-            fullWidth={false}
-            options={unitOptions.map((unit) => ({
-              id: unit.id,
-              label: unit.label,
-              tooltip: unit.title,
-            }))}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>كروت وبطاقات</DropdownMenuLabel>
+            {CARD_AND_LABEL_SIZES.filter((p) => p.category === 'card').map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() => handlePresetChange(p.id)}
+                className={cn(
+                  'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
+                  FOCUS_RING,
+                )}
+              >
+                <span>{`${p.name} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
+                {activePresetId === p.id && (
+                  <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
+                )}
+              </DropdownMenuItem>
+            ))}
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>ملصقات الشحن والباركود</DropdownMenuLabel>
+            {CARD_AND_LABEL_SIZES.filter((p) => p.category !== 'card').map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() => handlePresetChange(p.id)}
+                className={cn(
+                  'text-xs text-start justify-between cursor-pointer rounded-md flex items-center',
+                  FOCUS_RING,
+                )}
+              >
+                <span>{`${p.name} (${presetSizeLabel(p.widthMM, p.heightMM)})`}</span>
+                {activePresetId === p.id && (
+                  <Check className="w-3.5 h-3.5 text-primary" weight="bold" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* مبدّل الاتجاه: مساحة واضحة بخيارين مسمّيين بدل زر أيقونة معزول */}
+        <FluentSegmentedControl
+          value={isPortrait ? 'portrait' : 'landscape'}
+          onChange={(next) => {
+            if (next !== (isPortrait ? 'portrait' : 'landscape')) handleSwapDimensions();
+          }}
+          variant="field"
+          iconInline
+          size="sm"
+          className="w-full"
+          ariaLabel="اتجاه اللوحة"
+          options={[
+            {
+              id: 'portrait',
+              label: 'عمودي',
+              icon: <PageOrientationIcon isLandscape={false} className="w-3.5 h-3.5" />,
+            },
+            {
+              id: 'landscape',
+              label: 'أفقي',
+              icon: <PageOrientationIcon isLandscape className="w-3.5 h-3.5" />,
+            },
+          ]}
+        />
+      </div>
+
+      {/* 3. الأبعاد: العرض والارتفاع مع قفل نسبة الأبعاد */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+        {/* العرض — بلا لاحقة الوحدة: مبدّل الوحدة (px/mm) أعلى الصف
+                  يحدّدها، وتكرارها داخل كل حقل كان يقتطع القيمة. */}
+        <div className={FIELD_SHELL} dir="ltr">
+          <span className="text-mini font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
+            W
+          </span>
+          <input
+            type="text"
+            inputMode="decimal"
+            aria-label="العرض"
+            value={widthVal}
+            onChange={(e) => handleWidthChange(e.target.value)}
+            onBlur={handleWidthCommit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleWidthCommit();
+              revertOnEscape(e, () => setWidthVal(toDisplay(canvasWidth)));
+            }}
+            className="w-full min-w-0 bg-transparent border-0 p-0 text-start font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
+            dir="ltr"
           />
         </div>
 
-        {/* 3. الأبعاد: العرض والارتفاع مع قفل نسبة الأبعاد */}
-        <FluentSettingRow
-          layout="vertical"
-          label="الأبعاد"
-          description={`النسبة ${ratioLabel}`}
-          control={
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
-              {/* العرض — بلا لاحقة الوحدة: مبدّل الوحدة (px/mm) أعلى الصف
-                  يحدّدها، وتكرارها داخل كل حقل كان يقتطع القيمة. */}
-              <div className={FIELD_SHELL} dir="ltr">
-                <span className="text-mini font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
-                  W
-                </span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  aria-label="العرض"
-                  value={widthVal}
-                  onChange={(e) => handleWidthChange(e.target.value)}
-                  onBlur={handleWidthCommit}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleWidthCommit();
-                    revertOnEscape(e, () => setWidthVal(toDisplay(canvasWidth)));
-                  }}
-                  className="w-full min-w-0 bg-transparent border-0 p-0 text-start font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
-                  dir="ltr"
-                />
-              </div>
+        {/* قفل نسبة الأبعاد — يحفظ التناسب عند تعديل أي بُعد */}
+        <button
+          type="button"
+          onClick={() => setLockAspect((prev) => !prev)}
+          aria-pressed={lockAspect}
+          aria-label={lockAspect ? 'إلغاء قفل نسبة الأبعاد' : 'قفل نسبة الأبعاد'}
+          title={lockAspect ? 'نسبة الأبعاد مقفلة' : 'قفل نسبة الأبعاد'}
+          className={cn(
+            'w-8 h-8 rounded-md border flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0',
+            lockAspect
+              ? 'bg-accent-active text-foreground border-border/80 font-bold'
+              : 'bg-card border-border/80 text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:border-border',
+            FOCUS_RING,
+          )}
+        >
+          {lockAspect ? (
+            <Link className="w-3.5 h-3.5" weight="bold" />
+          ) : (
+            <LinkBreak className="w-3.5 h-3.5" weight="bold" />
+          )}
+        </button>
 
-              {/* قفل نسبة الأبعاد — يحفظ التناسب عند تعديل أي بُعد */}
-              <button
-                type="button"
-                onClick={() => setLockAspect((prev) => !prev)}
-                aria-pressed={lockAspect}
-                aria-label={lockAspect ? 'إلغاء قفل نسبة الأبعاد' : 'قفل نسبة الأبعاد'}
-                title={lockAspect ? 'نسبة الأبعاد مقفلة' : 'قفل نسبة الأبعاد'}
-                className={cn(
-                  'w-8 h-8 rounded-md border flex items-center justify-center transition-colors cursor-pointer shadow-2xs shrink-0',
-                  lockAspect
-                    ? 'bg-accent-active text-foreground border-border/80 font-bold'
-                    : 'bg-card border-border/80 text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:border-border',
-                  FOCUS_RING,
-                )}
-              >
-                {lockAspect ? (
-                  <Link className="w-3.5 h-3.5" weight="bold" />
-                ) : (
-                  <LinkBreak className="w-3.5 h-3.5" weight="bold" />
-                )}
-              </button>
-
-              {/* الارتفاع */}
-              <div className={FIELD_SHELL} dir="ltr">
-                <span className="text-mini font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
-                  H
-                </span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  aria-label="الارتفاع"
-                  value={heightVal}
-                  onChange={(e) => handleHeightChange(e.target.value)}
-                  onBlur={handleHeightCommit}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleHeightCommit();
-                    revertOnEscape(e, () => setHeightVal(toDisplay(canvasHeight)));
-                  }}
-                  className="w-full min-w-0 bg-transparent border-0 p-0 text-start font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
-                  dir="ltr"
-                />
-              </div>
-            </div>
-          }
-        />
+        {/* الارتفاع */}
+        <div className={FIELD_SHELL} dir="ltr">
+          <span className="text-mini font-bold text-muted-foreground/70 uppercase select-none shrink-0 font-mono">
+            H
+          </span>
+          <input
+            type="text"
+            inputMode="decimal"
+            aria-label="الارتفاع"
+            value={heightVal}
+            onChange={(e) => handleHeightChange(e.target.value)}
+            onBlur={handleHeightCommit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleHeightCommit();
+              revertOnEscape(e, () => setHeightVal(toDisplay(canvasHeight)));
+            }}
+            className="w-full min-w-0 bg-transparent border-0 p-0 text-start font-mono text-xs font-semibold text-foreground focus:ring-0 focus:outline-none select-all"
+            dir="ltr"
+          />
+        </div>
       </div>
-    </FluentSection>
+    </div>
   );
 });

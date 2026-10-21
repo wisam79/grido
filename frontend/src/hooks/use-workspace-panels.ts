@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 
-import { isCollageTab, isStudioTab, migrateLegacyStudioTab } from '@/lib/workspace-tools';
+import { useEditorStore } from '@/lib/editor-store';
+import {
+  getDefaultStudioTab,
+  isCollageTab,
+  isStudioTab,
+  migrateLegacyStudioTab,
+} from '@/lib/workspace-tools';
 
 import type { CollageTab, FreeformTab } from '@/lib/workspace-tools';
 
@@ -45,6 +51,7 @@ function getBreakpoint(width: number): WorkspaceBreakpoint {
 }
 
 export function useWorkspacePanels() {
+  const workflow = useEditorStore((state) => state.workflow);
   const [windowWidth, setWindowWidth] = useState<number>(() =>
     typeof window !== 'undefined' ? window.innerWidth : 1280,
   );
@@ -54,8 +61,8 @@ export function useWorkspacePanels() {
   // Load initial preferences
   const [activePanel, setActivePanelState] = useState<WorkspacePanel>(() => {
     const saved = getStoredPreferences().lastActivePanel;
-    // 🪟 الافتراضي عند الإقلاع: لوحة التبويب الأول مفتوحة — «الطبقات» في الوضع
-    // الحر و«شبكة الكولاج» في الكولاج (أول أدوات كل وضع في سجل workspace-tools).
+    // 🪟 الافتراضي عند الإقلاع: لوحة التبويب الأول مفتوحة — «الملصقات» في الوضع
+    // الحر و«الشبكة» في الكولاج (التبويب الافتراضي لوجهة كل وضع في workspace-tools).
     // لا نبدأ بلا لوحة نشطة: قيمة `null` المحفوظة (إغلاق/وضع التركيز في جلسة
     // سابقة) لا تُعطّل الافتراضي، بينما الاختيار الصريح للوح محدد يُحترم.
     // ملاحظة: هذا يُعدّل معيار الخطة `workspace-layout-repair-plan.md:114,124`
@@ -68,13 +75,13 @@ export function useWorkspacePanels() {
     return saved !== undefined ? saved : true;
   });
 
-  // Active studio tab (layers, elements, presets)
+  // Active studio tool — «الملصقات» افتراضياً، و«الطبقات» في المسار السريع
   const [activeStudioTab, setActiveStudioTabState] = useState<FreeformTab>(() => {
     const saved = getStoredPreferences().lastActiveStudioTab;
-    // ترحيل التبويبات المدمجة (stickers/shapes/text → elements) ثم السقوط
-    // على الافتراضي إن كان المخزن يحمل تبويباً غير موجود
+    // ترحيل التبويبات الموحّدة (elements/presets → stickers) ثم السقوط
+    // على الافتراضي إن كان المخزن يحمل قيمة غير صالحة
     const migrated = migrateLegacyStudioTab(saved) ?? saved;
-    return isStudioTab(migrated) ? migrated : 'layers';
+    return isStudioTab(migrated) ? migrated : getDefaultStudioTab(workflow);
   });
 
   // Active collage tab (custom grid, presets, freeform)

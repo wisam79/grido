@@ -1,25 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
-   التفضيلات المحلية (مفضلة/آخر استخدام) — مصدر واحد للمفاتيح.
-   كُتبت لتفادي تكرار أسماء مفاتيح localStorage في كل مكوّن يقرأها،
-   وهو ما كان يُنتج مفاتيح متقاربة الاسم لا يشارك بعضها بعضاً.
+   قراءة وكتابة قوائم التفضيلات المحلية (مفضلة/آخر استخدام) بأمان.
    ═══════════════════════════════════════════════════════════════ */
-
-export const PREF_KEYS = {
-  favoriteFonts: 'grido_favorite_fonts',
-  recentFonts: 'grido_recent_fonts',
-  favoriteColors: 'grido_favorite_colors',
-  recentColors: 'grido_recent_colors',
-  /** تدرجات مُنجّمة (معرّفات جاهزة أو صيغة `custom:<من>|<إلى>|<زاوية>`) */
-  favoriteGradients: 'grido_favorite_gradients',
-  /** تدرجات طُبّقت حديثاً — نفس صيغة مفاتيح المفضلة */
-  recentGradients: 'grido_recent_gradients',
-} as const;
-
-/** خطوط مفضّلة افتراضية عند أول تشغيل (خطوط عربية شائعة في الاستوديو) */
-export const DEFAULT_FAVORITE_FONTS = ['cairo', 'tajawal', 'amiri'];
-
-const MAX_FAVORITES = 60;
-const MAX_RECENTS = 12;
 
 /** قراءة قائمة نصوص من localStorage بأمان (بيئة الاختبار/المتصفح قد تمنع الوصول) */
 export function readStoredList(key: string, fallback: string[] = []): string[] {
@@ -42,27 +23,4 @@ export function writeStoredList(key: string, list: string[]): void {
   } catch {
     /* تجاهل أخطاء التخزين */
   }
-}
-
-/** إضافة/إزالة عنصر من قائمة (مع سقف حجم) وإرجاع القائمة الجديدة */
-export function toggleStoredValue(list: string[], value: string): string[] {
-  const next = list.includes(value)
-    ? list.filter((item) => item !== value)
-    : [...list, value].slice(-MAX_FAVORITES);
-  return next;
-}
-
-/** دفع عنصر إلى مقدمة قائمة «آخر استخدام» بلا تكرار */
-export function pushStoredRecent(list: string[], value: string): string[] {
-  return [value, ...list.filter((item) => item !== value)].slice(0, MAX_RECENTS);
-}
-
-/** صيغة مفتاح تدرج مخصص في المفضلة/الأخيرة: `custom:<من>|<إلى>|<زاوية>` */
-export function customGradientPrefKey(from: string, to: string, angle: number): string {
-  return `custom:${from}|${to}|${angle}`;
-}
-
-/** مفتاح التخزين لتدرج جاهز — معرّفه نفسه */
-export function presetGradientPrefKey(presetId: string): string {
-  return `preset:${presetId}`;
 }

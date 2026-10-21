@@ -21,17 +21,12 @@ import {
   GridFour,
   Crosshair,
   Trash,
-  Palette,
-  Check,
   ArrowsLeftRight,
   Copy,
   Rows,
   Columns,
-  Sun,
-  MagnifyingGlassPlus,
 } from '@/components/ui/icons';
 import { Switch } from '@/components/ui/switch';
-import { checkerColor } from '@/lib/canvas/canvas-colors';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
@@ -41,7 +36,7 @@ import { cn } from '@/lib/utils';
 import { wailsIsDesktop } from '@/lib/wails-env';
 import { toErrorMessage } from '@/lib/wails-error';
 
-import { PopoverColorPicker } from './shared-controls';
+import { ColorField, ColorPanel } from './color-panel';
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 
 import type { CanvasSlot } from '@/lib/editor-store';
@@ -185,7 +180,6 @@ export const SlotProperties = React.memo(function SlotProperties({
     return (
       <div className="space-y-3 font-cairo select-none h-full flex flex-col justify-start">
         <FluentSection
-          icon={<ImageSquare className="w-3.5 h-3.5" weight="duotone" />}
           title="أبعاد الخلية"
           action={
             <span
@@ -233,7 +227,6 @@ export const SlotProperties = React.memo(function SlotProperties({
     <div className="space-y-3 font-cairo select-none pb-4">
       {/* 🎴 بطاقة 1: أبعاد ومعاينة الخلية — متقدمة، مطوية افتراضياً */}
       <FluentSection
-        icon={<ImageSquare className="w-3.5 h-3.5" weight="duotone" />}
         title="أبعاد الطباعة"
         collapsible
         defaultOpen={false}
@@ -269,10 +262,7 @@ export const SlotProperties = React.memo(function SlotProperties({
       </FluentSection>
 
       {/* 🎴 بطاقة 2: تحويل وتدوير الصورة */}
-      <FluentSection
-        icon={<ArrowClockwise className="w-3.5 h-3.5" weight="duotone" />}
-        title="تحويل وتدوير"
-      >
+      <FluentSection title="تحويل وتدوير">
         <div className="flex items-center gap-1.5">
           <FluentTooltip content="قلب أفقي" side="top">
             <Button
@@ -351,7 +341,6 @@ export const SlotProperties = React.memo(function SlotProperties({
 
       {/* 🎴 بطاقة 3: تعبئة الخلايا والموضع */}
       <FluentSection
-        icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
         title="تعبئة الخلايا"
         collapsible
         defaultOpen={false}
@@ -480,75 +469,9 @@ export const SlotProperties = React.memo(function SlotProperties({
       </FluentSection>
 
       {/* 🎴 بطاقة 4: لون خلفية صورة الهوية — متقدمة، مطوية افتراضياً */}
-      <FluentSection
-        icon={<Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />}
-        title="خلفية الصورة"
-        collapsible
-        defaultOpen={false}
-      >
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {[
-            { id: 'trans', label: 'شفاف', val: 'transparent' },
-            { id: 'white', label: 'أبيض للجوازات', val: '#FFFFFF' },
-            { id: 'blue', label: 'أزرق رسمي', val: '#2563EB' },
-            { id: 'lblue', label: 'أزرق فاتح', val: '#38BDF8' },
-            { id: 'gray', label: 'رمادي استوديو', val: '#F4F4F5' },
-          ].map((colorItem) => {
-            const currBg = slot.bgColor || 'transparent';
-            const isActive = currBg.toLowerCase() === colorItem.val.toLowerCase();
-            return (
-              <button
-                key={colorItem.id}
-                type="button"
-                title={colorItem.label}
-                onClick={() => {
-                  const freshStore = useEditorStore.getState();
-                  if (autoFill) {
-                    freshStore.updateSlotsBatch(
-                      freshStore.slots.map((s) => s.id),
-                      { bgColor: colorItem.val },
-                    );
-                  } else {
-                    onUpdate(slot.id, { bgColor: colorItem.val });
-                  }
-                  freshStore.pushHistory();
-                }}
-                className={cn(
-                  'w-8 h-8 rounded-lg border flex items-center justify-center cursor-pointer transition-colors duration-150 relative shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1/2 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:pointer-events-none',
-                  isActive
-                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-primary scale-105 z-10'
-                    : 'border-black/10 dark:border-white/15 hover:border-foreground/40',
-                )}
-                style={{
-                  backgroundColor: colorItem.val === 'transparent' ? undefined : colorItem.val,
-                  backgroundImage:
-                    colorItem.val === 'transparent'
-                      ? `linear-gradient(45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(-45deg, ${checkerColor()} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${checkerColor()} 75%), linear-gradient(-45deg, transparent 75%, ${checkerColor()} 75%)`
-                      : undefined,
-                  backgroundSize: colorItem.val === 'transparent' ? '6px 6px' : undefined,
-                  backgroundPosition:
-                    colorItem.val === 'transparent' ? '0 0, 0 3px, 3px -3px, -3px 0px' : undefined,
-                }}
-              >
-                {isActive && (
-                  <Check
-                    className={cn(
-                      'w-3.5 h-3.5 z-10 drop-shadow-xs',
-                      colorItem.val === '#FFFFFF' || colorItem.val === '#F4F4F5'
-                        ? 'text-slate-900'
-                        : 'text-white',
-                    )}
-                    weight="bold"
-                  />
-                )}
-              </button>
-            );
-          })}
-
-          <PopoverColorPicker
-            // 🛡️ 'transparent' يُمرَّر كما هو: المنتقي يرسم رقعة الشطرنج وتسمية
-            // «شفاف» لهذه القيمة. تحويلها إلى '#ffffff' كان يجعل قيمة التحكم
-            // غير مشتقة من الستور، فأول تعديل hex يدهس نية الشفافية بصمت.
+      <FluentSection title="خلفية الصورة" collapsible defaultOpen={false}>
+        <ColorPanel wheelPosition="bottom">
+          <ColorField
             color={slot.bgColor ?? 'transparent'}
             onChange={(val: string) => {
               const freshStore = useEditorStore.getState();
@@ -562,20 +485,14 @@ export const SlotProperties = React.memo(function SlotProperties({
               }
               freshStore.pushHistory();
             }}
-            swatchOnly
-            className="w-8 h-8"
+            className="w-full"
             ariaLabel="لون خلفية الخانة"
           />
-        </div>
+        </ColorPanel>
       </FluentSection>
 
       {/* 🎴 بطاقة 5: تعديل الألوان والسطوع */}
-      <FluentSection
-        icon={<Sun className="w-3.5 h-3.5 text-primary" weight="duotone" />}
-        title="تعديل الألوان"
-        collapsible
-        defaultOpen={true}
-      >
+      <FluentSection title="تعديل الألوان" collapsible defaultOpen={true}>
         <div className="space-y-3">
           <FluentSliderField
             label="السطوع"
@@ -642,12 +559,7 @@ export const SlotProperties = React.memo(function SlotProperties({
       </FluentSection>
 
       {/* 🎴 بطاقة 6: تكبير الصورة داخل الخلية — متقدمة، مطوية افتراضياً */}
-      <FluentSection
-        icon={<MagnifyingGlassPlus className="w-3.5 h-3.5 text-primary" weight="duotone" />}
-        title="تكبير الصورة"
-        collapsible
-        defaultOpen={false}
-      >
+      <FluentSection title="تكبير الصورة" collapsible defaultOpen={false}>
         <FluentSliderField
           label="نسبة التكبير"
           value={Math.round((slot.zoom ?? 1) * 100)}

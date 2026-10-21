@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 
 import { FluentSegmentedControl } from '@/components/ui/blocks';
 import { CaretRight, FileText, GridFour } from '@/components/ui/icons';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useEditorStore } from '@/lib/editor-store';
-import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 
 import { PanelShell } from './panel-shell';
 import { CollageSettings } from '../properties/collage-settings';
@@ -48,17 +47,6 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
 
   const [generalTab, setGeneralTab] = useState<'collage' | 'canvas'>('collage');
 
-  // 🎯 انتقال موحّد إلى أداة خلفية الورقة: إلغاء التحديد (لأن الإعدادات العامة
-  // ومنها الورقة تظهر فقط بلا تحديد) ثم تحويل تبويب الإعدادات إلى «الورقة»
-  useEffect(() => {
-    const focusPaperBackground = () => {
-      useEditorStore.getState().selectElement(null);
-      setGeneralTab('canvas');
-    };
-    window.addEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
-    return () => window.removeEventListener(PAPER_BACKGROUND_EVENTS.focus, focusPaperBackground);
-  }, []);
-
   // استنباط عنوان اللوح وسياقه ديناميكياً وفق العنصر النشط
   let panelTitle = 'الخصائص';
   let panelSubtitle: string | undefined;
@@ -88,13 +76,12 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
     // التبويبان داخل اللوح يسمّيان القسم (الكولاج / الورقة)، فرأس اللوح
     // يحمل هوية اللوح فقط بدل تكرار الاسم في سطرين متتاليين.
     panelTitle = 'الخصائص';
-    panelSubtitle =
-      generalTab === 'collage'
-        ? undefined
-        : `${Math.round(canvasWidth)} × ${Math.round(canvasHeight)} px`;
+    panelSubtitle = undefined;
   } else {
     panelTitle = 'إعدادات الورقة';
-    panelSubtitle = `${Math.round(canvasWidth)} × ${Math.round(canvasHeight)} px`;
+    // أبعاد الورقة معروضة أصلاً داخل اللوحة (شارة «مساحة العمل» + حقلا W/H)،
+    // فذكرها تحت العنوان تكرار بلا معلومة جديدة.
+    panelSubtitle = undefined;
   }
 
   const handleUpdateElement = useCallback((id: string, patch: Partial<Record<string, unknown>>) => {

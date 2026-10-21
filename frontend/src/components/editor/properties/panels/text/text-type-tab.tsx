@@ -21,7 +21,6 @@ import {
   AlignCenterVertical,
   AlignBottom,
   Palette,
-  TextAa,
 } from '@/components/ui/icons';
 import { useEditorStore, type TextElement } from '@/lib/editor-store';
 import { loadGoogleFont } from '@/lib/io/fonts';
@@ -30,7 +29,7 @@ import { cn } from '@/lib/utils';
 
 import { TextFontSelector } from './text-font-selector';
 import { WEIGHT_OPTIONS } from './text-tab-types';
-import { PopoverColorPicker } from '../../shared-controls';
+import { ColorField, ColorPanel } from '../../color-panel';
 
 import type { TextTabProps } from './text-tab-types';
 
@@ -126,506 +125,507 @@ export function TextTypeTab({ element, onUpdate, onNavigateTab }: TextTabProps) 
     );
 
   return (
-    <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
-      {/* 🎴 بطاقة 1: نوع الخط والقياسات */}
-      <FluentSection
-        icon={<TextAa className="w-4 h-4 text-primary" weight="duotone" />}
-        title="نوع وحجم الخط"
-        collapsible
-        defaultOpen={true}
-      >
-        {/* النمط السريع */}
-        <div className="space-y-1">
-          <div className="grid grid-cols-3 gap-1 text-mini">
-            {[
-              { id: 'heading' as const, label: 'رئيسي', icon: TextHOne },
-              { id: 'subheading' as const, label: 'فرعي', icon: TextHTwo },
-              { id: 'body' as const, label: 'عادي', icon: Article },
-            ].map((preset) => {
-              const Icon = preset.icon;
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => applyPreset(preset.id)}
-                  className="h-7 px-1.5 bg-card hover:bg-muted/60 hover:text-foreground hover:border-border text-foreground/90 border border-border/80 rounded-md font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                  title={`نمط ${preset.label}`}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                  <span className="truncate">{preset.label}</span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="grid grid-cols-2 gap-1 text-mini">
-            {[
-              { id: 'badge' as const, label: 'شارة', icon: Tag },
-              { id: 'stamp' as const, label: 'ختم', icon: Stamp },
-            ].map((preset) => {
-              const Icon = preset.icon;
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => applyPreset(preset.id)}
-                  className="h-7 px-2 bg-card hover:bg-muted/60 hover:text-foreground hover:border-border text-foreground/90 border border-border/80 rounded-md font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-                  title={`نمط ${preset.label}`}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
-                  <span className="truncate">{preset.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* نوع الخط */}
-        <div className="space-y-1">
-          <TextFontSelector element={element} onUpdate={onUpdate} />
-        </div>
-
-        {/* سماكة وحجم الخط */}
-        <div className="grid grid-cols-2 gap-2">
+    <ColorPanel wheelPosition="top">
+      <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
+        {/* 🎴 بطاقة 1: نوع الخط والقياسات */}
+        <FluentSection title="نوع وحجم الخط" collapsible defaultOpen={true}>
+          {/* النمط السريع */}
           <div className="space-y-1">
-            <span className="text-mini font-bold text-muted-foreground block">السمك</span>
-            <div className="relative">
-              <select
-                value={element.fontWeight || 700}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
+            <div className="grid grid-cols-3 gap-1 text-mini">
+              {[
+                { id: 'heading' as const, label: 'رئيسي', icon: TextHOne },
+                { id: 'subheading' as const, label: 'فرعي', icon: TextHTwo },
+                { id: 'body' as const, label: 'عادي', icon: Article },
+              ].map((preset) => {
+                const Icon = preset.icon;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyPreset(preset.id)}
+                    className="h-7 px-1.5 bg-card hover:bg-muted/60 hover:text-foreground hover:border-border text-foreground/90 border border-border/80 rounded-md font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                    title={`نمط ${preset.label}`}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                    <span className="truncate">{preset.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="grid grid-cols-2 gap-1 text-mini">
+              {[
+                { id: 'badge' as const, label: 'شارة', icon: Tag },
+                { id: 'stamp' as const, label: 'ختم', icon: Stamp },
+              ].map((preset) => {
+                const Icon = preset.icon;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyPreset(preset.id)}
+                    className="h-7 px-2 bg-card hover:bg-muted/60 hover:text-foreground hover:border-border text-foreground/90 border border-border/80 rounded-md font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+                    title={`نمط ${preset.label}`}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" weight="bold" />
+                    <span className="truncate">{preset.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* نوع الخط */}
+          <div className="space-y-1">
+            <TextFontSelector element={element} onUpdate={onUpdate} />
+          </div>
+
+          {/* سماكة وحجم الخط */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <span className="text-mini font-bold text-muted-foreground block">السمك</span>
+              <div className="relative">
+                <select
+                  value={element.fontWeight || 700}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    loadGoogleFont(element.fontFamily || 'Cairo');
+                    onUpdate(element.id, { fontWeight: val });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className={selectClassName}
+                >
+                  {WEIGHT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <CaretDown
+                  className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                  weight="bold"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-mini font-bold text-muted-foreground">الحجم</span>
+              <div className="relative">
+                <select
+                  value={currentFontSize}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    onUpdate(element.id, { fontSize: val });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className={`${selectClassName} font-mono`}
+                >
+                  {!MODULAR_FONT_SIZES.includes(currentFontSize) && (
+                    <option value={currentFontSize}>{currentFontSize}px</option>
+                  )}
+                  {MODULAR_FONT_SIZES.map((sz) => (
+                    <option key={sz} value={sz}>
+                      {sz}px
+                    </option>
+                  ))}
+                </select>
+                <CaretDown
+                  className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                  weight="bold"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* مؤشر الحجم السريع */}
+          <FluentSliderField
+            label="الحجم"
+            value={currentFontSize}
+            min={8}
+            max={Math.max(500, currentFontSize)}
+            step={1}
+            unit="px"
+            onChange={(val) => onUpdate(element.id, { fontSize: val })}
+            onCommit={() => useEditorStore.getState().pushHistory()}
+          />
+
+          {/* لون النص السريع مع إمكانية الانتقال للاستوديو الكامل */}
+          <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg border border-border/40">
+            <span className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
+              <span>لون النص</span>
+            </span>
+            <div className="flex items-center gap-2">
+              <ColorField
+                color={element.color || '#000000'}
+                onChange={(col) => {
+                  onUpdate(element.id, { color: col });
+                  useEditorStore.getState().pushHistory();
+                }}
+                swatchOnly
+                ariaLabel="لون النص"
+              />
+              {onNavigateTab && (
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('adjust')}
+                  className="text-mini text-primary font-bold hover:underline cursor-pointer transition-colors"
+                >
+                  تخصيص كامل ←
+                </button>
+              )}
+            </div>
+          </div>
+        </FluentSection>
+
+        {/* 🎴 بطاقة 2: التنسيق والمحاذاة */}
+        <FluentSection title="التنسيق والمحاذاة">
+          {/* الصف 1: أنماط الخط وحالة الأحرف */}
+          <div className="flex items-center justify-between p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
+            {/* نمط الخط: عريض، مائل، تسطير، شطب */}
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const nextWeight = isBold ? 400 : 700;
                   loadGoogleFont(element.fontFamily || 'Cairo');
-                  onUpdate(element.id, { fontWeight: val });
+                  onUpdate(element.id, { fontWeight: nextWeight });
                   useEditorStore.getState().pushHistory();
                 }}
-                className={selectClassName}
+                className={toggleButtonClassName(isBold)}
+                title="عريض (B)"
+                aria-label="خط عريض"
+                aria-pressed={isBold}
               >
-                {WEIGHT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <CaretDown
-                className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                weight="bold"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <span className="text-mini font-bold text-muted-foreground">الحجم</span>
-            <div className="relative">
-              <select
-                value={currentFontSize}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  onUpdate(element.id, { fontSize: val });
-                  useEditorStore.getState().pushHistory();
-                }}
-                className={`${selectClassName} font-mono`}
-              >
-                {!MODULAR_FONT_SIZES.includes(currentFontSize) && (
-                  <option value={currentFontSize}>{currentFontSize}px</option>
-                )}
-                {MODULAR_FONT_SIZES.map((sz) => (
-                  <option key={sz} value={sz}>
-                    {sz}px
-                  </option>
-                ))}
-              </select>
-              <CaretDown
-                className="w-3.5 h-3.5 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                weight="bold"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* مؤشر الحجم السريع */}
-        <FluentSliderField
-          label="الحجم"
-          value={currentFontSize}
-          min={8}
-          max={Math.max(500, currentFontSize)}
-          step={1}
-          unit="px"
-          onChange={(val) => onUpdate(element.id, { fontSize: val })}
-          onCommit={() => useEditorStore.getState().pushHistory()}
-        />
-
-        {/* لون النص السريع مع إمكانية الانتقال للاستوديو الكامل */}
-        <div className="flex items-center justify-between p-2 bg-muted/30 rounded-lg border border-border/40">
-          <span className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-primary" weight="duotone" />
-            <span>لون النص</span>
-          </span>
-          <div className="flex items-center gap-2">
-            <PopoverColorPicker
-              color={element.color || '#000000'}
-              onChange={(col) => {
-                onUpdate(element.id, { color: col });
-                useEditorStore.getState().pushHistory();
-              }}
-              swatchOnly
-              ariaLabel="لون النص"
-            />
-            {onNavigateTab && (
-              <button
-                type="button"
-                onClick={() => onNavigateTab('adjust')}
-                className="text-mini text-primary font-bold hover:underline cursor-pointer transition-colors"
-              >
-                تخصيص كامل ←
+                <TextB className="w-4 h-4" weight={isBold ? 'bold' : 'regular'} />
               </button>
-            )}
-          </div>
-        </div>
-      </FluentSection>
 
-      {/* 🎴 بطاقة 2: التنسيق والمحاذاة */}
-      <FluentSection
-        icon={<Article className="w-4 h-4 text-primary" weight="duotone" />}
-        title="التنسيق والمحاذاة"
-      >
-        {/* الصف 1: أنماط الخط وحالة الأحرف */}
-        <div className="flex items-center justify-between p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
-          {/* نمط الخط: عريض، مائل، تسطير، شطب */}
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              onClick={() => {
-                const nextWeight = isBold ? 400 : 700;
-                loadGoogleFont(element.fontFamily || 'Cairo');
-                onUpdate(element.id, { fontWeight: nextWeight });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(isBold)}
-              title="عريض (B)"
-              aria-label="خط عريض"
-              aria-pressed={isBold}
-            >
-              <TextB className="w-4 h-4" weight={isBold ? 'bold' : 'regular'} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, { fontStyle: isItalic ? 'normal' : 'italic' });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(isItalic)}
-              title="مائل (I)"
-              aria-label="خط مائل"
-              aria-pressed={isItalic}
-            >
-              <TextItalic className="w-4 h-4" weight={isItalic ? 'bold' : 'regular'} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, { textDecoration: isUnderline ? 'none' : 'underline' });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(isUnderline)}
-              title="تسطير (U)"
-              aria-label="تسطير النص"
-              aria-pressed={isUnderline}
-            >
-              <TextUnderline className="w-4 h-4" weight={isUnderline ? 'bold' : 'regular'} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, { textDecoration: isLineThrough ? 'none' : 'line-through' });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(isLineThrough)}
-              title="شطب (S)"
-              aria-label="شطب النص"
-              aria-pressed={isLineThrough}
-            >
-              <TextStrikethrough className="w-4 h-4" weight={isLineThrough ? 'bold' : 'regular'} />
-            </button>
-          </div>
-
-          <div className="w-px h-4 bg-border/60 mx-1" />
-
-          {/* حالة الأحرف اللاتينية */}
-          <div className="flex items-center gap-0.5">
-            {[
-              { id: 'none', label: 'Aa', title: 'عادي' },
-              { id: 'uppercase', label: 'AA', title: 'أحرف كبيرة' },
-              { id: 'lowercase', label: 'aa', title: 'أحرف صغيرة' },
-              { id: 'capitalize', label: 'Abc', title: 'بداية كلمة كبيرة' },
-            ].map((tr) => (
               <button
-                key={tr.id}
                 type="button"
                 onClick={() => {
-                  onUpdate(element.id, {
-                    textTransform: tr.id as 'none' | 'uppercase' | 'lowercase' | 'capitalize',
-                  });
+                  onUpdate(element.id, { fontStyle: isItalic ? 'normal' : 'italic' });
                   useEditorStore.getState().pushHistory();
                 }}
-                className={cn(
-                  'h-7 px-1.5 rounded-md text-mini font-bold transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-                  element.textTransform === tr.id
-                    ? 'bg-background text-primary shadow-2xs font-extrabold'
-                    : 'hover:text-foreground text-muted-foreground hover:bg-background/40',
-                )}
-                title={tr.title}
-                aria-label={tr.title}
+                className={toggleButtonClassName(isItalic)}
+                title="مائل (I)"
+                aria-label="خط مائل"
+                aria-pressed={isItalic}
               >
-                {tr.label}
+                <TextItalic className="w-4 h-4" weight={isItalic ? 'bold' : 'regular'} />
               </button>
-            ))}
-          </div>
-        </div>
 
-        {/* الصف 2: المحاذاة الأفقية والعمودية بتوزيع شبكي متناسق */}
-        <div className="flex items-center gap-1.5 p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
-          {/* المحاذاة الأفقية */}
-          <div className="flex-1 grid grid-cols-3 gap-0.5" role="group" aria-label="محاذاة أفقية">
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, { textAlign: 'right' });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(textAlign === 'right', true)}
-              title="محاذاة يمين"
-              aria-label="محاذاة يمين"
-              aria-pressed={textAlign === 'right'}
-            >
-              <TextAlignRight
-                className="w-4 h-4"
-                weight={textAlign === 'right' ? 'bold' : 'regular'}
-              />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, { textAlign: 'center' });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(textAlign === 'center', true)}
-              title="توسيط أفقي"
-              aria-label="توسيط أفقي"
-              aria-pressed={textAlign === 'center'}
-            >
-              <TextAlignCenter
-                className="w-4 h-4"
-                weight={textAlign === 'center' ? 'bold' : 'regular'}
-              />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, { textAlign: 'left' });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(textAlign === 'left', true)}
-              title="محاذاة يسار"
-              aria-label="محاذاة يسار"
-              aria-pressed={textAlign === 'left'}
-            >
-              <TextAlignLeft
-                className="w-4 h-4"
-                weight={textAlign === 'left' ? 'bold' : 'regular'}
-              />
-            </button>
-          </div>
-
-          <div className="w-px h-5 bg-border/60 shrink-0" />
-
-          {/* المحاذاة العمودية */}
-          <div className="flex-1 grid grid-cols-3 gap-0.5" role="group" aria-label="محاذاة عمودية">
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, { textVerticalAlign: 'top' });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(vAlign === 'top', true)}
-              title="محاذاة أعلى"
-              aria-label="محاذاة أعلى"
-              aria-pressed={vAlign === 'top'}
-            >
-              <AlignTop className="w-4 h-4" weight={vAlign === 'top' ? 'bold' : 'regular'} />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, { textVerticalAlign: 'middle' });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(vAlign === 'middle', true)}
-              title="توسيط عمودي"
-              aria-label="توسيط عمودي"
-              aria-pressed={vAlign === 'middle'}
-            >
-              <AlignCenterVertical
-                className="w-4 h-4"
-                weight={vAlign === 'middle' ? 'bold' : 'regular'}
-              />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, { textVerticalAlign: 'bottom' });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(vAlign === 'bottom', true)}
-              title="محاذاة أسفل"
-              aria-label="محاذاة أسفل"
-              aria-pressed={vAlign === 'bottom'}
-            >
-              <AlignBottom className="w-4 h-4" weight={vAlign === 'bottom' ? 'bold' : 'regular'} />
-            </button>
-          </div>
-        </div>
-
-        {/* الصف 3: نمط التفاف النص — نفس خيارات Konva wrap */}
-        <div className="flex items-center gap-1.5 p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
-          <span className="text-mini font-bold text-muted-foreground px-1 shrink-0">
-            التفاف النص
-          </span>
-          <div className="flex-1 grid grid-cols-3 gap-0.5" role="group" aria-label="التفاف النص">
-            {(
-              [
-                { id: 'word', label: 'كلمات' },
-                { id: 'char', label: 'أحرف' },
-                { id: 'none', label: 'بلا' },
-              ] as const
-            ).map((mode) => (
               <button
-                key={mode.id}
                 type="button"
                 onClick={() => {
-                  onUpdate(element.id, { wrap: mode.id });
+                  onUpdate(element.id, { textDecoration: isUnderline ? 'none' : 'underline' });
                   useEditorStore.getState().pushHistory();
                 }}
-                className={toggleButtonClassName(wrapMode === mode.id, true)}
-                title={`التفاف: ${mode.label}`}
-                aria-label={`التفاف النص: ${mode.label}`}
-                aria-pressed={wrapMode === mode.id}
+                className={toggleButtonClassName(isUnderline)}
+                title="تسطير (U)"
+                aria-label="تسطير النص"
+                aria-pressed={isUnderline}
               >
-                {mode.label}
+                <TextUnderline className="w-4 h-4" weight={isUnderline ? 'bold' : 'regular'} />
               </button>
-            ))}
-          </div>
-        </div>
 
-        {/* الصف 4: الأدوات الذكية (الأرقام المشرقية وملاءمة العرض) */}
-        <div className="grid grid-cols-2 gap-2 pt-0.5">
-          <button
-            type="button"
-            onClick={() => {
-              onUpdate(element.id, { arabicNumerals: !isArabicNumerals });
-              useEditorStore.getState().pushHistory();
-            }}
-            className={cn(
-              'h-7 px-2 rounded-md flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-xs font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none border',
-              isArabicNumerals
-                ? 'bg-background text-primary shadow-xs font-bold border-primary/30'
-                : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground',
-            )}
-            title="تحويل الأرقام إلى المشرقية (١٢٣)"
-            aria-label="أرقام مشرقية"
-            aria-pressed={isArabicNumerals}
-          >
-            <Hash className="w-3.5 h-3.5" weight={isArabicNumerals ? 'bold' : 'regular'} />
-            <span>أرقام مشرقية</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
-            className="h-7 px-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-            title="ملاءمة عرض الصندوق مع النص تلقائياً"
-            aria-label="ملاءمة العرض"
-          >
-            <ArrowsInLineHorizontal className="w-3.5 h-3.5" weight="bold" />
-            <span>ملاءمة العرض</span>
-          </button>
-        </div>
-      </FluentSection>
-
-      {/* 🎴 بطاقة 3: التباعد والمسافات */}
-      <FluentSection
-        icon={<ArrowsInLineVertical className="w-4 h-4 text-primary" weight="duotone" />}
-        title="التباعد والمسافات"
-      >
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <span className="text-mini font-bold text-muted-foreground flex items-center gap-1">
-              <ArrowsInLineVertical className="w-3 h-3 text-primary/70" weight="regular" />
-              <span>ارتفاع الأسطر</span>
-            </span>
-            <div className="relative">
-              <select
-                dir="rtl"
-                value={currentLineHeight}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  onUpdate(element.id, { lineHeight: val });
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, { textDecoration: isLineThrough ? 'none' : 'line-through' });
                   useEditorStore.getState().pushHistory();
                 }}
-                className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-colors shadow-2xs font-cairo"
+                className={toggleButtonClassName(isLineThrough)}
+                title="شطب (S)"
+                aria-label="شطب النص"
+                aria-pressed={isLineThrough}
               >
-                {!LINE_HEIGHT_OPTIONS.some((o) => o.value === currentLineHeight) && (
-                  <option value={currentLineHeight}>{currentLineHeight}x</option>
-                )}
-                {LINE_HEIGHT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <CaretDown
-                className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                weight="bold"
-              />
+                <TextStrikethrough
+                  className="w-4 h-4"
+                  weight={isLineThrough ? 'bold' : 'regular'}
+                />
+              </button>
+            </div>
+
+            <div className="w-px h-4 bg-border/60 mx-1" />
+
+            {/* حالة الأحرف اللاتينية */}
+            <div className="flex items-center gap-0.5">
+              {[
+                { id: 'none', label: 'Aa', title: 'عادي' },
+                { id: 'uppercase', label: 'AA', title: 'أحرف كبيرة' },
+                { id: 'lowercase', label: 'aa', title: 'أحرف صغيرة' },
+                { id: 'capitalize', label: 'Abc', title: 'بداية كلمة كبيرة' },
+              ].map((tr) => (
+                <button
+                  key={tr.id}
+                  type="button"
+                  onClick={() => {
+                    onUpdate(element.id, {
+                      textTransform: tr.id as 'none' | 'uppercase' | 'lowercase' | 'capitalize',
+                    });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className={cn(
+                    'h-7 px-1.5 rounded-md text-mini font-bold transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                    element.textTransform === tr.id
+                      ? 'bg-background text-primary shadow-2xs font-extrabold'
+                      : 'hover:text-foreground text-muted-foreground hover:bg-background/40',
+                  )}
+                  title={tr.title}
+                  aria-label={tr.title}
+                >
+                  {tr.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="space-y-1">
-            <span className="text-mini font-bold text-muted-foreground flex items-center gap-1">
-              <ArrowsHorizontal className="w-3 h-3 text-primary/70" weight="regular" />
-              <span>{isArabic ? 'تباعد الكلمات' : 'تباعد الحروف'}</span>
-            </span>
-            <div className="relative">
-              <select
-                dir="rtl"
-                value={currentSpacing}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  onUpdate(element.id, { letterSpacing: val });
+          {/* الصف 2: المحاذاة الأفقية والعمودية بتوزيع شبكي متناسق */}
+          <div className="flex items-center gap-1.5 p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
+            {/* المحاذاة الأفقية */}
+            <div className="flex-1 grid grid-cols-3 gap-0.5" role="group" aria-label="محاذاة أفقية">
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, { textAlign: 'right' });
                   useEditorStore.getState().pushHistory();
                 }}
-                className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-colors shadow-2xs font-cairo"
+                className={toggleButtonClassName(textAlign === 'right', true)}
+                title="محاذاة يمين"
+                aria-label="محاذاة يمين"
+                aria-pressed={textAlign === 'right'}
               >
-                {!LETTER_SPACING_OPTIONS.some((o) => o.value === currentSpacing) && (
-                  <option value={currentSpacing}>{currentSpacing}px</option>
-                )}
-                {LETTER_SPACING_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <CaretDown
-                className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
-                weight="bold"
-              />
+                <TextAlignRight
+                  className="w-4 h-4"
+                  weight={textAlign === 'right' ? 'bold' : 'regular'}
+                />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, { textAlign: 'center' });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={toggleButtonClassName(textAlign === 'center', true)}
+                title="توسيط أفقي"
+                aria-label="توسيط أفقي"
+                aria-pressed={textAlign === 'center'}
+              >
+                <TextAlignCenter
+                  className="w-4 h-4"
+                  weight={textAlign === 'center' ? 'bold' : 'regular'}
+                />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, { textAlign: 'left' });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={toggleButtonClassName(textAlign === 'left', true)}
+                title="محاذاة يسار"
+                aria-label="محاذاة يسار"
+                aria-pressed={textAlign === 'left'}
+              >
+                <TextAlignLeft
+                  className="w-4 h-4"
+                  weight={textAlign === 'left' ? 'bold' : 'regular'}
+                />
+              </button>
+            </div>
+
+            <div className="w-px h-5 bg-border/60 shrink-0" />
+
+            {/* المحاذاة العمودية */}
+            <div
+              className="flex-1 grid grid-cols-3 gap-0.5"
+              role="group"
+              aria-label="محاذاة عمودية"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, { textVerticalAlign: 'top' });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={toggleButtonClassName(vAlign === 'top', true)}
+                title="محاذاة أعلى"
+                aria-label="محاذاة أعلى"
+                aria-pressed={vAlign === 'top'}
+              >
+                <AlignTop className="w-4 h-4" weight={vAlign === 'top' ? 'bold' : 'regular'} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, { textVerticalAlign: 'middle' });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={toggleButtonClassName(vAlign === 'middle', true)}
+                title="توسيط عمودي"
+                aria-label="توسيط عمودي"
+                aria-pressed={vAlign === 'middle'}
+              >
+                <AlignCenterVertical
+                  className="w-4 h-4"
+                  weight={vAlign === 'middle' ? 'bold' : 'regular'}
+                />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, { textVerticalAlign: 'bottom' });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={toggleButtonClassName(vAlign === 'bottom', true)}
+                title="محاذاة أسفل"
+                aria-label="محاذاة أسفل"
+                aria-pressed={vAlign === 'bottom'}
+              >
+                <AlignBottom
+                  className="w-4 h-4"
+                  weight={vAlign === 'bottom' ? 'bold' : 'regular'}
+                />
+              </button>
             </div>
           </div>
-        </div>
-      </FluentSection>
-    </div>
+
+          {/* الصف 3: نمط التفاف النص — نفس خيارات Konva wrap */}
+          <div className="flex items-center gap-1.5 p-1 bg-muted/40 dark:bg-muted/20 rounded-lg border border-border/50 shadow-2xs">
+            <span className="text-mini font-bold text-muted-foreground px-1 shrink-0">
+              التفاف النص
+            </span>
+            <div className="flex-1 grid grid-cols-3 gap-0.5" role="group" aria-label="التفاف النص">
+              {(
+                [
+                  { id: 'word', label: 'كلمات' },
+                  { id: 'char', label: 'أحرف' },
+                  { id: 'none', label: 'بلا' },
+                ] as const
+              ).map((mode) => (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => {
+                    onUpdate(element.id, { wrap: mode.id });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className={toggleButtonClassName(wrapMode === mode.id, true)}
+                  title={`التفاف: ${mode.label}`}
+                  aria-label={`التفاف النص: ${mode.label}`}
+                  aria-pressed={wrapMode === mode.id}
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* الصف 4: الأدوات الذكية (الأرقام المشرقية وملاءمة العرض) */}
+          <div className="grid grid-cols-2 gap-2 pt-0.5">
+            <button
+              type="button"
+              onClick={() => {
+                onUpdate(element.id, { arabicNumerals: !isArabicNumerals });
+                useEditorStore.getState().pushHistory();
+              }}
+              className={cn(
+                'h-7 px-2 rounded-md flex items-center justify-center gap-1.5 transition-colors cursor-pointer text-xs font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none select-none border',
+                isArabicNumerals
+                  ? 'bg-background text-primary shadow-xs font-bold border-primary/30'
+                  : 'bg-muted/30 border-border/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground',
+              )}
+              title="تحويل الأرقام إلى المشرقية (١٢٣)"
+              aria-label="أرقام مشرقية"
+              aria-pressed={isArabicNumerals}
+            >
+              <Hash className="w-3.5 h-3.5" weight={isArabicNumerals ? 'bold' : 'regular'} />
+              <span>أرقام مشرقية</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => useEditorStore.getState().autoFitTextWidth(element.id)}
+              className="h-7 px-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+              title="ملاءمة عرض الصندوق مع النص تلقائياً"
+              aria-label="ملاءمة العرض"
+            >
+              <ArrowsInLineHorizontal className="w-3.5 h-3.5" weight="bold" />
+              <span>ملاءمة العرض</span>
+            </button>
+          </div>
+        </FluentSection>
+
+        {/* 🎴 بطاقة 3: التباعد والمسافات */}
+        <FluentSection title="التباعد والمسافات">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <span className="text-mini font-bold text-muted-foreground flex items-center gap-1">
+                <ArrowsInLineVertical className="w-3 h-3 text-primary/70" weight="regular" />
+                <span>ارتفاع الأسطر</span>
+              </span>
+              <div className="relative">
+                <select
+                  dir="rtl"
+                  value={currentLineHeight}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    onUpdate(element.id, { lineHeight: val });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-colors shadow-2xs font-cairo"
+                >
+                  {!LINE_HEIGHT_OPTIONS.some((o) => o.value === currentLineHeight) && (
+                    <option value={currentLineHeight}>{currentLineHeight}x</option>
+                  )}
+                  {LINE_HEIGHT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <CaretDown
+                  className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                  weight="bold"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-mini font-bold text-muted-foreground flex items-center gap-1">
+                <ArrowsHorizontal className="w-3 h-3 text-primary/70" weight="regular" />
+                <span>{isArabic ? 'تباعد الكلمات' : 'تباعد الحروف'}</span>
+              </span>
+              <div className="relative">
+                <select
+                  dir="rtl"
+                  value={currentSpacing}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    onUpdate(element.id, { letterSpacing: val });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className="w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md px-2 text-xs font-bold text-foreground cursor-pointer appearance-none outline-hidden transition-colors shadow-2xs font-cairo"
+                >
+                  {!LETTER_SPACING_OPTIONS.some((o) => o.value === currentSpacing) && (
+                    <option value={currentSpacing}>{currentSpacing}px</option>
+                  )}
+                  {LETTER_SPACING_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <CaretDown
+                  className="w-3 h-3 text-muted-foreground absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none"
+                  weight="bold"
+                />
+              </div>
+            </div>
+          </div>
+        </FluentSection>
+      </div>
+    </ColorPanel>
   );
 }

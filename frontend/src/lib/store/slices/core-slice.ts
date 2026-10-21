@@ -300,7 +300,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
   },
 
   // لا pushHistory هنا — يُستدعى باستمرار أثناء اختيار اللون؛
-  // الدفع يتم عند الإغلاق (PopoverColorPicker) أو بتأجيل من ColorWheelPicker المباشر (إصلاح Bug#2)
+  // الدفع يتم عند اكتمال التفاعل خارج العجلة/الحقل (إصلاح Bug#2)
   setBackgroundColor: (c) => {
     set({ backgroundColor: c });
   },

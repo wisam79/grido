@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { CrashRecoveryDialog } from '@/components/crash-recovery-dialog';
 import { AccountLicenseModal } from '@/components/editor/dialogs/account-license-modal';
 import { KeyboardShortcutsDialog } from '@/components/editor/dialogs/keyboard-shortcuts-dialog';
+import { StickerStudioHost } from '@/components/editor/dialogs/sticker-studio-host';
 import { UpdateNotifier } from '@/components/editor/system/update-notifier';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -80,6 +81,7 @@ export function AppDialogsHost({
 
       <AccountLicenseModal />
       <UpdateNotifier />
+      <StickerStudioHost />
       <CrashRecoveryDialog
         open={crashReport !== null}
         report={crashReport}

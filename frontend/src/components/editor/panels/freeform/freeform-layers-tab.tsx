@@ -125,6 +125,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
 
   return (
     <div
+      data-testid="studio-layers-panel"
       className="flex flex-col gap-2 font-cairo select-none animate-in fade-in duration-150"
       dir="rtl"
     >

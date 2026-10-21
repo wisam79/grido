@@ -25,6 +25,14 @@ export const PAPER_SIZES: PaperSize[] = [
     widthMM: 127,
     heightMM: 178,
   },
+  {
+    id: '6x8',
+    name: '15×20 سم (6×8 بوصة)',
+    shortName: '15×20 سم',
+    inchLabel: '6×8″',
+    widthMM: 152,
+    heightMM: 203,
+  },
   { id: 'a5', name: 'A5 (148×210 مم)', shortName: 'A5', widthMM: 148, heightMM: 210 },
   { id: 'a6', name: 'A6 (105×148 مم)', shortName: 'A6', widthMM: 105, heightMM: 148 },
   { id: 'a3', name: 'A3 (297×420 مم)', shortName: 'A3', widthMM: 297, heightMM: 420 },
@@ -61,6 +69,15 @@ export const CARD_AND_LABEL_SIZES: CardAndLabelSize[] = [
     category: 'card',
     widthMM: 85,
     heightMM: 55,
+    shape: 'rectangle',
+    defaultBleedMM: 2,
+  },
+  {
+    id: 'biz-card-90x50',
+    name: 'كارت عمل (90×50 مم)',
+    category: 'card',
+    widthMM: 90,
+    heightMM: 50,
     shape: 'rectangle',
     defaultBleedMM: 2,
   },
@@ -161,15 +178,3 @@ export const IMAGE_FILTERS: ImageFilter[] = [
  * فيُعرض المختصر في الشبكة ويبقى الاسم الكامل في التلميح والاسم البرمجي.
  */
 export const filterShortName = (name: string) => name.split('—')[0].trim();
-
-// ألوان خلفية الاستوديو المعتمدة
-export const BACKGROUND_COLORS: { name: string; value: string }[] = [
-  { name: 'أبيض ناصع', value: '#FFFFFF' },
-  { name: 'رمادي استوديو', value: '#F4F4F5' },
-  { name: 'رمادي حيادي', value: '#E4E4E7' },
-  { name: 'أزرق رسمي', value: '#2563EB' },
-  { name: 'أزرق سماوي', value: '#38BDF8' },
-  { name: 'رمادي دافئ', value: '#F5F5F4' },
-  { name: 'كحلي داكن', value: '#1E293B' },
-  { name: 'فحمي داكن', value: '#18181B' },
-];

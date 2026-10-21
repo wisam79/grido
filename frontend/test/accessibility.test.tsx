@@ -3,7 +3,7 @@ import { axe } from 'jest-axe';
 import React from 'react';
 import { describe, it, expect } from 'vitest';
 
-import { Gear, Sparkle, Folder } from '@/components/ui/icons';
+import { Sparkle, Folder } from '@/components/ui/icons';
 
 import {
   FluentSection,
@@ -24,7 +24,6 @@ describe('Accessibility (jest-axe)', () => {
   it('FluentSection has no accessibility violations', async () => {
     const { container } = render(
       <FluentSection
-        icon={<Gear className="size-4 shrink-0" />}
         title="إعدادات الكانفاس"
         subtitle="تعديل الأبعاد والهوامش"
         action={<button>إعادة ضبط</button>}

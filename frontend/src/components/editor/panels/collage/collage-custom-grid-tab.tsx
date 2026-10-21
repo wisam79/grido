@@ -11,7 +11,6 @@ import {
   FloppyDisk,
   CornersOut,
   Rows,
-  Ruler,
   Scissors,
   Check,
   CheckCircle,
@@ -276,7 +275,6 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
     <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
       {/* ═══ بطاقة 1: أبعاد الشبكة والصفوف والأعمدة ═══ */}
       <FluentSection
-        icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
         title="أبعاد الشبكة"
         collapsible
         open={collapsePrefs.dims ?? true}
@@ -466,7 +464,6 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
 
       {/* ═══ بطاقة 2: مقاس الوثيقة الرسمي ═══ */}
       <FluentSection
-        icon={<Ruler className="w-3.5 h-3.5" weight="duotone" />}
         title="مقاس الصورة"
         collapsible
         open={collapsePrefs.photoSize ?? true}
@@ -528,7 +525,6 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
       {/* ═══ بطاقة 3: المحاذاة على الورقة (تظهر فقط عند تثبيت المقاس) ═══ */}
       {photoType !== 'stretch' && (
         <FluentSection
-          icon={<Crosshair className="w-3.5 h-3.5" weight="duotone" />}
           title="المحاذاة على الورقة"
           collapsible
           open={collapsePrefs.align ?? true}

@@ -16,7 +16,7 @@ import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { useEditorStore } from '@/lib/editor-store';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
 import { createLogger } from '@/lib/logger';
-import { getToolsForWorkflow } from '@/lib/workspace-tools';
+import { getSectionsForWorkflow } from '@/lib/workspace-tools';
 
 import type { CanvasElement } from '@/lib/editor-store';
 
@@ -265,34 +265,33 @@ export function useKeyboardShortcuts() {
     { ignoreEventWhen: shouldIgnoreCanvasAction },
   );
 
-  // Switch Studio / Collage Tabs: Alt+1 … Alt+9 — مفهرسة من سجل الأدوات الموحّد
-  // (كانت مكتوبة يدوياً لكل تبويب؛ الربط بالفهرس يوسّعها تلقائياً عند إضافة أداة)
-  // 🛡️ نفس حارس تكديس المودالات أعلاه — تبديل التبويبات/الوضع خلف مودال مفتوح ممنوع.
-  // ملاحظة: الفهرس يُحل من القائمة المفلترة لمسار العمل (وليس الكاملة) —
-  // في مسار quick يُخفى تبويب elements من الشريط فتطابق الأرقام المعروضة.
+  // Switch workspace sections: Alt+1 … Alt+9 — مفهرسة من سجل الوجهات الموحّد
+  // (كانت مكتوبة يدوياً لكل تبويب؛ الربط بالفهرس يوسّعها تلقائياً عند إضافة وجهة)
+  // 🛡️ نفس حارس تكديس المودالات أعلاه — تبديل الوجهات/الوضع خلف مودال مفتوح ممنوع.
+  // ملاحظة: الفهرس يُحل من قائمة وجهات مسار العمل — في مسار quick تنطوي وجهة
+  // العناصر إلى «الطبقات» فيبقى Alt+1 هو الوجهة الأولى كما تظهر في الشريط.
   const tabGuard = { ignoreEventWhen: shouldIgnoreCanvasAction };
-  const selectVisibleTabByIndex = (e: KeyboardEvent, index: number) => {
+  const selectVisibleSectionByIndex = (e: KeyboardEvent, index: number) => {
     e.preventDefault();
     const { mode, workflow } = useEditorStore.getState();
-    const tools = getToolsForWorkflow(mode, workflow);
-    const tool = tools[index];
-    if (!tool) return;
+    const section = getSectionsForWorkflow(mode, workflow)[index];
+    if (!section) return;
     const isCollage = mode === 'collage';
     window.dispatchEvent(
       new CustomEvent(isCollage ? 'grido:select-collage-tab' : 'grido:select-studio-tab', {
-        detail: { tab: tool.id },
+        detail: { tab: section.defaultTab },
       }),
     );
   };
-  useHotkeys('alt+1', (e) => selectVisibleTabByIndex(e, 0), tabGuard);
-  useHotkeys('alt+2', (e) => selectVisibleTabByIndex(e, 1), tabGuard);
-  useHotkeys('alt+3', (e) => selectVisibleTabByIndex(e, 2), tabGuard);
-  useHotkeys('alt+4', (e) => selectVisibleTabByIndex(e, 3), tabGuard);
-  useHotkeys('alt+5', (e) => selectVisibleTabByIndex(e, 4), tabGuard);
-  useHotkeys('alt+6', (e) => selectVisibleTabByIndex(e, 5), tabGuard);
-  useHotkeys('alt+7', (e) => selectVisibleTabByIndex(e, 6), tabGuard);
-  useHotkeys('alt+8', (e) => selectVisibleTabByIndex(e, 7), tabGuard);
-  useHotkeys('alt+9', (e) => selectVisibleTabByIndex(e, 8), tabGuard);
+  useHotkeys('alt+1', (e) => selectVisibleSectionByIndex(e, 0), tabGuard);
+  useHotkeys('alt+2', (e) => selectVisibleSectionByIndex(e, 1), tabGuard);
+  useHotkeys('alt+3', (e) => selectVisibleSectionByIndex(e, 2), tabGuard);
+  useHotkeys('alt+4', (e) => selectVisibleSectionByIndex(e, 3), tabGuard);
+  useHotkeys('alt+5', (e) => selectVisibleSectionByIndex(e, 4), tabGuard);
+  useHotkeys('alt+6', (e) => selectVisibleSectionByIndex(e, 5), tabGuard);
+  useHotkeys('alt+7', (e) => selectVisibleSectionByIndex(e, 6), tabGuard);
+  useHotkeys('alt+8', (e) => selectVisibleSectionByIndex(e, 7), tabGuard);
+  useHotkeys('alt+9', (e) => selectVisibleSectionByIndex(e, 8), tabGuard);
 
   // Switch Editor Mode: Ctrl+Alt+1 (كولاج) / Ctrl+Alt+2 (تعديل حر)
   // كانت عناوين مبدّل الوضع في الواجهة تعد بهذين الاختصارين بلا تسجيل فعلي لهما

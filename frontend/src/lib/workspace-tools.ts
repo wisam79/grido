@@ -1,16 +1,14 @@
 import {
-  Stack,
+  Layer,
   Shapes,
-  Ruler,
+  Stamp,
+  TextT,
   GridFour,
   SquaresFour,
   DotsSixVertical,
   Scissors,
   Images,
   Columns,
-  TextAa,
-  Swatches,
-  PaintBucket,
 } from '@/components/ui/icons';
 import {
   actualSizeZoomStore,
@@ -37,191 +35,289 @@ import type { EditorMode } from '@/lib/store/types';
 
 export type CollageTab = 'custom' | 'presets' | 'freeform' | 'paper' | 'autofill' | 'arrange';
 
-export type FreeformTab = 'layers' | 'elements' | 'presets' | 'fonts' | 'palette' | 'backdrops';
+export type FreeformTab = 'stickers' | 'shapes' | 'text' | 'layers';
 
-/** ترحيل التبويبات المحذوفة من التخزين المحلي — stickers/shapes/text صارت elements */
+/** وجهات الشريط الجانبي — كل وجهة سطح واحد يضم تبويبات مترابطة، لا زر لكل تبويب */
+export type CollageSection = 'grid' | 'slots' | 'paper';
+/** أدوات الإدراج الأربع أزرار مستقلة في الشريط كما طلب المالك */
+export type StudioSection = 'stickers' | 'shapes' | 'text' | 'layers';
+
+/** ترحيل تبويبات النسخ السابقة: الوجهة الموحّدة والمقاسات المحذوفة → الملصقات */
 export function migrateLegacyStudioTab(value: unknown): FreeformTab | null {
-  if (value === 'stickers' || value === 'shapes' || value === 'text') return 'elements';
+  if (value === 'elements' || value === 'presets') return 'stickers';
   return null;
 }
 
-/** شارات الحالة الديناميكية على زر الأداة */
-export type ToolBadge = 'elements' | 'collage-grid' | 'collage-freeform';
+/** شارات الحالة الديناميكية على وجهة الشريط */
+export type ToolBadge = 'elements';
 
+/** تبويب داخل وجهة — يظهر في الشريط المصغّر أعلى اللوح */
 export interface WorkspaceTool<T extends string> {
   id: T;
-  /** اسم مختصر للـ Alt+الرقم والتلميح */
+  /** اسم مختصر للتبويب والتلميح */
   label: string;
-  /** عنوان ترويسة اللوحة */
+  /** العنوان الوصفي الكامل */
   title: string;
-  /** وصف ترويسة اللوحة */
+  /** وصف مختصر */
   subtitle: string;
-  /** مجموعة الأداة — تفصل الشريط إلى أقسام وتُنظّم لوحة الأدوات */
-  group: string;
   icon: Icon;
   testId: string;
   badge?: ToolBadge;
 }
 
+/** وجهة دائمة في الشريط الجانبي — سطح واحد وتبويباته الداخلية */
+export interface WorkspaceSection<S extends string, T extends string> {
+  id: S;
+  /** اسم الوجهة المختصر (Alt+الرقم والتلميح) */
+  label: string;
+  /** عنوان ترويسة اللوح */
+  title: string;
+  /** وصف ترويسة اللوح */
+  subtitle: string;
+  icon: Icon;
+  testId: string;
+  /** التبويب الذي يُفتح عند اختيار الوجهة من الشريط */
+  defaultTab: T;
+  tabs: WorkspaceTool<T>[];
+  badge?: ToolBadge;
+  /** نقطة «مطبَّق على الكانفاس» على وجهة الكولاج */
+  inUse?: 'collage-template';
+}
+
+export type WorkspaceModeSection =
+  WorkspaceSection<CollageSection, CollageTab> | WorkspaceSection<StudioSection, FreeformTab>;
+
 export const COLLAGE_TOOLS: WorkspaceTool<CollageTab>[] = [
   {
     id: 'custom',
-    label: 'شبكة الكولاج',
-    title: 'شبكة الكولاج',
+    label: 'مخصص',
+    title: 'شبكة مخصصة',
     subtitle: 'الصفوف والأعمدة والمقاسات',
-    group: 'بناء الشبكة',
     icon: GridFour,
-    testId: 'rail-collage-grid',
-    badge: 'collage-grid',
+    testId: 'tab-collage-custom',
   },
   {
     id: 'presets',
-    label: 'قوالب الكولاج',
-    title: 'قوالب الكولاج',
+    label: 'قوالب',
+    title: 'قوالب جاهزة',
     subtitle: 'تشكيلات جاهزة',
-    group: 'بناء الشبكة',
     icon: SquaresFour,
-    testId: 'rail-collage-presets',
+    testId: 'tab-collage-presets',
   },
   {
     id: 'freeform',
-    label: 'كولاج حر بالملم',
-    title: 'كولاج حر بالملم',
+    label: 'حر',
+    title: 'شبكة حرة بالملم',
     subtitle: 'شبكات مخصصة بالملم',
-    group: 'بناء الشبكة',
     // شبكة نُقَط حرّة = خانات مخصّصة بالملم بلا شبكة صُلبة مفروضة،
     // وهي تتعاكس بصريًا مع مربعات «شبكة الكولاج» الثابتة
     icon: DotsSixVertical,
-    testId: 'rail-collage-freeform',
-    badge: 'collage-freeform',
+    testId: 'tab-collage-freeform',
   },
   {
     id: 'paper',
-    label: 'الورق والقص',
+    label: 'القص',
     title: 'الورق والقص',
     subtitle: 'نزيف وقص ونسخ',
-    group: 'جاهزية الطباعة',
     icon: Scissors,
-    testId: 'rail-collage-paper',
+    testId: 'tab-collage-paper',
   },
   {
     id: 'autofill',
-    label: 'تعبئة تلقائية',
-    title: 'تعبئة تلقائية',
+    label: 'تعبئة',
+    title: 'تعبئة الخانات',
     subtitle: 'توزيع الصور',
-    group: 'جاهزية الطباعة',
     icon: Images,
-    testId: 'rail-collage-autofill',
+    testId: 'tab-collage-autofill',
   },
   {
     id: 'arrange',
-    label: 'فرز وترتيب',
+    label: 'فرز',
     title: 'فرز وترتيب الخانات',
     subtitle: 'قلب وخلط وتوزيع',
-    group: 'تنسيق الخانات',
     // أعمدة مرتبة = فرز وترتيب الخانات بدل سهمي التقاطع المشوّشين
     icon: Columns,
-    testId: 'rail-collage-arrange',
+    testId: 'tab-collage-arrange',
   },
 ];
 
 export const STUDIO_TOOLS: WorkspaceTool<FreeformTab>[] = [
   {
+    id: 'stickers',
+    label: 'الملصقات',
+    title: 'الملصقات والأختام',
+    subtitle: 'أختام وإطارات وعروض وتهاني',
+    icon: Stamp,
+    testId: 'tab-studio-stickers',
+  },
+  {
+    id: 'shapes',
+    label: 'الأشكال',
+    title: 'الأشكال',
+    subtitle: 'كتالوج الأشكال المتجهة',
+    icon: Shapes,
+    testId: 'tab-studio-shapes',
+  },
+  {
+    id: 'text',
+    label: 'النصوص',
+    title: 'النصوص',
+    subtitle: 'عناوين وأسطر وأنماط جاهزة',
+    icon: TextT,
+    testId: 'tab-studio-text',
+  },
+  {
     id: 'layers',
     label: 'الطبقات',
     title: 'الطبقات',
     subtitle: 'ترتيب عناصر الكانفاس',
-    group: 'بناء التصميم',
-    icon: Stack,
-    testId: 'rail-studio-layers',
-    badge: 'elements',
-  },
-  {
-    id: 'elements',
-    label: 'العناصر',
-    title: 'العناصر',
-    subtitle: 'ملصقات وأشكال ونصوص',
-    group: 'بناء التصميم',
-    icon: Shapes,
-    testId: 'rail-studio-elements',
-  },
-  {
-    id: 'presets',
-    label: 'المقاسات والورق',
-    title: 'المقاسات والورق',
-    subtitle: 'نماذج ومقاسات مخصصة',
-    group: 'المقاسات والهوية',
-    // مسطرة = قياس/مقاسات، بدل مستطيل بلا دلالة
-    icon: Ruler,
-    testId: 'rail-studio-presets',
-  },
-  {
-    id: 'fonts',
-    label: 'مكتبة الخطوط',
-    title: 'مكتبة الخطوط',
-    subtitle: 'عربية ومعاينة حية',
-    group: 'المقاسات والهوية',
-    icon: TextAa,
-    testId: 'rail-studio-fonts',
-  },
-  {
-    id: 'palette',
-    label: 'الألوان والهوية',
-    title: 'الألوان والهوية',
-    subtitle: 'هويات جاهزة وتناغم لوني',
-    group: 'المقاسات والهوية',
-    icon: Swatches,
-    testId: 'rail-studio-palette',
-  },
-  {
-    id: 'backdrops',
-    label: 'الخلفيات والأنماط',
-    title: 'الخلفيات والأنماط',
-    subtitle: 'ورقة وتدرجات جاهزة',
-    group: 'المقاسات والهوية',
-    icon: PaintBucket,
-    testId: 'rail-studio-backdrops',
+    icon: Layer,
+    testId: 'tab-studio-layers',
   },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
-   أدوات وضع الكانفاس الموحّدة:
-   مصدر الحقيقة هو `mode` وحده ("collage" أو "single") — نفس القيمة
-   التي يرسم بها الكانفاس وتعتمدها اختصارات Alt+الرقم.
+   وجهات الشريط الجانبي — الكولاج بثلاث وجهات والاستوديو بأربع:
+   الطبقات، الملصقات، الأشكال، النصوص. كل أداة إدراج زر مستقل في
+   الشريط الجانبي، فلا شريط تبويبات داخلي فوق اللوح. ترتيب الوجهات
+   هو نفسه المستخدم في اختصارات Alt+1..4.
    ═══════════════════════════════════════════════════════════════ */
 
-/** أدوات الكولاج المتاحة بالكامل */
-export function getCollageTools(): WorkspaceTool<CollageTab>[] {
-  return COLLAGE_TOOLS;
+function pickTools<T extends string>(tools: WorkspaceTool<T>[], ids: T[]): WorkspaceTool<T>[] {
+  const byId = new Map(tools.map((tool) => [tool.id, tool]));
+  return ids.flatMap((id) => {
+    const tool = byId.get(id);
+    return tool ? [tool] : [];
+  });
 }
 
-/** أدوات الكولاج — اسم بديل للتوافقية */
-export const getCollageToolsForWorkflow = getCollageTools;
+export const COLLAGE_SECTIONS: WorkspaceSection<CollageSection, CollageTab>[] = [
+  {
+    id: 'grid',
+    label: 'الشبكة',
+    title: 'شبكة الكولاج',
+    subtitle: 'مخصصة أو قالب جاهز أو حرة',
+    icon: GridFour,
+    testId: 'rail-collage-grid',
+    defaultTab: 'custom',
+    tabs: pickTools(COLLAGE_TOOLS, ['custom', 'presets', 'freeform']),
+    inUse: 'collage-template',
+  },
+  {
+    id: 'slots',
+    label: 'الخانات',
+    title: 'تعبئة وفرز الخانات',
+    subtitle: 'توزيع الصور وترتيبها',
+    icon: Images,
+    testId: 'rail-collage-slots',
+    defaultTab: 'autofill',
+    tabs: pickTools(COLLAGE_TOOLS, ['autofill', 'arrange']),
+  },
+  {
+    id: 'paper',
+    label: 'القص',
+    title: 'الورق والقص',
+    subtitle: 'نزيف وقص ونسخ',
+    icon: Scissors,
+    testId: 'rail-collage-paper',
+    defaultTab: 'paper',
+    tabs: pickTools(COLLAGE_TOOLS, ['paper']),
+  },
+];
 
-/** ترجع مصفوفة الأدوات المناسبة لوضع الكانفاس الحالي */
-export function getToolsForMode(mode: EditorMode): WorkspaceTool<string>[] {
-  return mode === 'collage' ? COLLAGE_TOOLS : STUDIO_TOOLS;
-}
+export const STUDIO_SECTIONS: WorkspaceSection<StudioSection, FreeformTab>[] = [
+  {
+    id: 'layers',
+    label: 'الطبقات',
+    title: 'الطبقات',
+    subtitle: 'ترتيب عناصر الكانفاس',
+    icon: Layer,
+    testId: 'rail-studio-layers',
+    defaultTab: 'layers',
+    tabs: pickTools(STUDIO_TOOLS, ['layers']),
+    badge: 'elements',
+  },
+  {
+    id: 'stickers',
+    label: 'الملصقات',
+    title: 'الملصقات',
+    subtitle: 'أختام وإطارات وعروض وتهاني',
+    icon: Stamp,
+    testId: 'rail-studio-stickers',
+    defaultTab: 'stickers',
+    tabs: pickTools(STUDIO_TOOLS, ['stickers']),
+  },
+  {
+    id: 'shapes',
+    label: 'الأشكال',
+    title: 'الأشكال',
+    subtitle: 'كتالوج الأشكال المتجهة',
+    icon: Shapes,
+    testId: 'rail-studio-shapes',
+    defaultTab: 'shapes',
+    tabs: pickTools(STUDIO_TOOLS, ['shapes']),
+  },
+  {
+    id: 'text',
+    label: 'النصوص',
+    title: 'النصوص',
+    subtitle: 'عناوين وأسطر وأنماط جاهزة',
+    icon: TextT,
+    testId: 'rail-studio-text',
+    defaultTab: 'text',
+    tabs: pickTools(STUDIO_TOOLS, ['text']),
+  },
+];
 
 /** اسم بديل للتوافقية مع أي استيرادات سابقة */
 export type { WorkflowMode } from '@/lib/store/slices/workflow-slice';
 
-/** تبويبات الاستوديو المخفية في مسار الإنتاج السريع — مصورو الهوية يعملون على الكولاج أولاً */
-const QUICK_HIDDEN_STUDIO_TABS: FreeformTab[] = ['elements'];
+/**
+ * وجهات الاستوديو لا تتغيّر بمسار العمل: الأربع تبقى ظاهرة دائماً،
+ * وإخفاء أي تبويب يقطع مدخل أداة إدراج كلياً. المسار السريع يغيّر
+ * التبويب الافتراضي فقط عبر getDefaultStudioTab.
+ */
+export function getStudioSectionsForWorkflow(
+  _workflow: WorkflowMode = 'studio',
+): WorkspaceSection<StudioSection, FreeformTab>[] {
+  return STUDIO_SECTIONS;
+}
 
-export function getToolsForWorkflow(
+/** وجهات الوضع الحالي — مصدر الشريط ولوحة الأوامر واختصارات Alt+الرقم */
+export function getSectionsForWorkflow(
   mode: EditorMode,
   workflow: WorkflowMode = 'studio',
-): WorkspaceTool<string>[] {
-  const tools = getToolsForMode(mode);
-  if (workflow !== 'quick') return tools;
-  return tools.filter((tool) => !QUICK_HIDDEN_STUDIO_TABS.includes(tool.id as FreeformTab));
+): WorkspaceModeSection[] {
+  return mode === 'collage' ? COLLAGE_SECTIONS : getStudioSectionsForWorkflow(workflow);
+}
+
+/** التبويب الافتراضي للاستوديو — «الملصقات» أولاً، والطبقات في المسار السريع */
+export function getDefaultStudioTab(workflow: WorkflowMode = 'studio'): FreeformTab {
+  return workflow === 'quick' ? 'layers' : 'stickers';
+}
+
+/** وجهة التبويب النشط — تُبقي زر الشريط مضاءً أياً كان التبويب الداخلي */
+export function getCollageSectionForTab(
+  tab: CollageTab,
+): WorkspaceSection<CollageSection, CollageTab> {
+  return (
+    COLLAGE_SECTIONS.find((section) => section.tabs.some((item) => item.id === tab)) ??
+    COLLAGE_SECTIONS[0]
+  );
+}
+
+export function getStudioSectionForTab(
+  tab: FreeformTab,
+  workflow: WorkflowMode = 'studio',
+): WorkspaceSection<StudioSection, FreeformTab> {
+  const sections = getStudioSectionsForWorkflow(workflow);
+  return sections.find((section) => section.tabs.some((item) => item.id === tab)) ?? sections[0];
 }
 
 /** الحد الأقصى لاختصارات Alt+1..Alt+9 — لا يوجد اختصار Alt+10 */
 export const MAX_TOOL_SHORTCUTS = 9;
 
-/** اختصار Alt+الرقم يتكوّن من ترتيب الأداة في شريطها (بحد أقصى 9 أدوات) */
+/** اختصار Alt+الرقم يتكوّن من ترتيب الوجهة في شريطها (بحد أقصى 9 وجهات) */
 export function toolShortcut(index: number): string {
   if (index < 0 || index >= MAX_TOOL_SHORTCUTS) return '';
   return `Alt+${index + 1}`;
@@ -237,35 +333,13 @@ export function isStudioTab(value: unknown): value is FreeformTab {
   return typeof value === 'string' && STUDIO_TOOLS.some((tool) => tool.id === value);
 }
 
-/** استخراج عنوان/وصف الترويسة من السجل بدل سلاسل الشروط الثلاثية */
+/** استخراج عنوان/وصف التبويب من السجل بدل سلاسل الشروط الثلاثية */
 export function getCollageTool(tab: CollageTab): WorkspaceTool<CollageTab> {
   return COLLAGE_TOOLS.find((tool) => tool.id === tab) ?? COLLAGE_TOOLS[0];
 }
 
 export function getStudioTool(tab: FreeformTab): WorkspaceTool<FreeformTab> {
   return STUDIO_TOOLS.find((tool) => tool.id === tab) ?? STUDIO_TOOLS[0];
-}
-
-export interface ToolGroup<T extends string> {
-  name: string;
-  /** رقم الأداة الأول في السجل — يُستخدم لحساب اختصار Alt بلا فقدان الترتيب */
-  offset: number;
-  tools: WorkspaceTool<T>[];
-}
-
-/**
- * تقسيم الأدوات إلى مجموعات مع الحفاظ على ترتيب السجل.
- * الترتيب هو نفسه المستخدم في اختصارات Alt+الرقم، فلا يتغيّر رقم أي أداة
- * بسبب التجميع (وهو ما كان سيحدث لو أُعيد ترتيب السجل بصرياً).
- */
-export function groupTools<T extends string>(tools: WorkspaceTool<T>[]): ToolGroup<T>[] {
-  const groups: ToolGroup<T>[] = [];
-  tools.forEach((tool, index) => {
-    const last = groups[groups.length - 1];
-    if (last && last.name === tool.group) last.tools.push(tool);
-    else groups.push({ name: tool.group, offset: index, tools: [tool] });
-  });
-  return groups;
 }
 
 /**
@@ -731,7 +805,7 @@ export const WORKSPACE_STATE_COMMANDS: StateCommand[] = [
       const { setWorkflow } = useEditorStore.getState();
       const isActive = input.workflow === 'quick';
       return {
-        subtitle: isActive ? 'هو المسار الحالي' : 'كولاج أولاً بلا تبويب العناصر',
+        subtitle: isActive ? 'هو المسار الحالي' : 'كولاج أولاً — يبدأ من الطبقات',
         disabled: isActive,
         run: () => setWorkflow('quick'),
       };

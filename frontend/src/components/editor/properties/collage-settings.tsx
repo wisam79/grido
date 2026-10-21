@@ -1,13 +1,11 @@
 import { useRef, useCallback, useEffect, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
-import { BoundingBox, Scissors, GridFour, Check } from '@/components/ui/icons';
 import { Switch } from '@/components/ui/switch';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import { getEffectiveDpi } from '@/lib/templates';
-import { cn } from '@/lib/utils';
-import { PopoverColorPicker } from './shared-controls';
+import { ColorField, ColorPanel } from './color-panel';
 
 export function CollageSettings() {
   const {
@@ -80,12 +78,7 @@ export function CollageSettings() {
   return (
     <div className="flex flex-col font-cairo" dir="rtl">
       {/* 🎴 بطاقة 1: المسافات والاستدارة */}
-      <FluentSection
-        icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
-        title="المسافات والاستدارة"
-        collapsible
-        defaultOpen={true}
-      >
+      <FluentSection title="المسافات والاستدارة" collapsible defaultOpen={true}>
         <div className="flex flex-col gap-2.5">
           <FluentSliderField
             label="التباعد بين الصور"
@@ -130,12 +123,7 @@ export function CollageSettings() {
       </FluentSection>
 
       {/* 🎴 بطاقة 2: إطار وحدود الخلايا */}
-      <FluentSection
-        icon={<BoundingBox className="w-3.5 h-3.5" weight="duotone" />}
-        title="إطار الصور"
-        collapsible
-        defaultOpen={true}
-      >
+      <FluentSection title="إطار الصور" collapsible defaultOpen={true}>
         <div className="space-y-2.5">
           {/* التسمية مختصرة: عنوان القسم «إطار الصور» يحمل السياق، فلا
               نكرّره في كل صف (كان: إطار الصور ← سُمك الإطار ← لون الإطار). */}
@@ -150,55 +138,12 @@ export function CollageSettings() {
             onCommit={() => useEditorStore.getState().pushHistory()}
           />
 
-          {/* لوحة لون الإطار — تظهر فقط عند تفعيل السُمك */}
           {collageStrokeWidth > 0 && (
-            <div className="space-y-2 rounded-lg border border-border/60 bg-muted/20 p-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-foreground/90">اللون</span>
-
-                <div className="flex items-center gap-1.5">
-                  {[
-                    { hex: '#e10e0e', label: 'أحمر' },
-                    { hex: '#000000', label: 'أسود' },
-                    { hex: '#9ca3af', label: 'رمادي' },
-                    { hex: '#2563eb', label: 'أزرق' },
-                    { hex: '#ffffff', label: 'أبيض' },
-                  ].map(({ hex, label }) => {
-                    const isSelected = collageStrokeColor.toLowerCase() === hex.toLowerCase();
-                    return (
-                      <button
-                        key={hex}
-                        type="button"
-                        aria-label={`لون الإطار ${label}`}
-                        aria-pressed={isSelected}
-                        onClick={() => {
-                          setCollageStrokeColor(hex);
-                          commitColorLater();
-                        }}
-                        title={label}
-                        className={cn(
-                          'w-7 h-7 rounded-full border border-black/20 dark:border-white/25 transition-colors cursor-pointer shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                          isSelected &&
-                            'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xs',
-                        )}
-                        style={{ backgroundColor: hex }}
-                      >
-                        {isSelected && (
-                          <Check
-                            className={cn(
-                              'w-3 h-3',
-                              hex === '#ffffff' ? 'text-slate-900' : 'text-white',
-                            )}
-                            weight="bold"
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <PopoverColorPicker
+            <ColorPanel
+              wheelPosition="bottom"
+              className="rounded-lg border border-border/60 bg-muted/20 p-2.5 animate-in fade-in slide-in-from-top-1 duration-150"
+            >
+              <ColorField
                 color={collageStrokeColor}
                 onChange={(hex) => {
                   setCollageStrokeColor(hex);
@@ -207,7 +152,7 @@ export function CollageSettings() {
                 className="w-full h-8"
                 ariaLabel="لون إطار الكولاج"
               />
-            </div>
+            </ColorPanel>
           )}
         </div>
       </FluentSection>
@@ -216,7 +161,6 @@ export function CollageSettings() {
           بدل صف يعيد العنوان نفسه ثلاث مرات (خطوط القص ← خطوط القص ←
           خطوط القص بين الصور). */}
       <FluentSection
-        icon={<Scissors className="w-3.5 h-3.5" weight="duotone" />}
         title="خطوط القص"
         collapsible
         defaultOpen={true}

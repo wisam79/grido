@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   Stack,
+  Layer,
   Eye,
   EyeSlash,
   LockSimple,
@@ -555,23 +556,19 @@ export function LayersList({
 
   // ── Empty ───────────────────────────────────────────────────────────────
   if (elements.length === 0) {
+    // أيقونة وحدها تكفي: العنوان والشرح وتلميحات السحب حشو بصري بلا
+    // معلومة جديدة (معيار «حظر الحشو البصري») — والشرح ينتقل إلى Tooltip.
+    // بلا بطاقة ولا إطار: الإطار يحوّل الأيقونة إلى زرٍّ كاذب. وبلون باهت
+    // بحجم 5× فتذوب مع الخلفية بدل أن تنافس عناصر اللوح. والارتفاع
+    // 60vh يضعها في منتصف البطاقة لا ملتصقاً بأعلى اللوح.
     return (
-      <div className="rounded-md border border-dashed border-border/60 bg-transparent p-4 text-center select-none flex flex-col items-center justify-center gap-2 animate-in fade-in duration-100">
-        <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center text-primary">
-          <Stack className="w-5 h-5 opacity-90" weight="duotone" />
-        </div>
-        <div className="space-y-1 max-w-[200px]">
-          <p className="text-xs font-bold text-foreground">لا توجد طبقات بعد</p>
-          <p className="text-mini leading-relaxed text-muted-foreground text-center" dir="rtl">
-            أضف عناصر من تبويب العناصر — ستظهر هنا مرتبة حسب العمق
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 text-mini text-muted-foreground/70">
-          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-          <span>اسحب لإعادة الترتيب</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-          <span>انقر للتحديد</span>
-        </div>
+      <div className="min-h-[60vh] w-full select-none flex items-center justify-center animate-in fade-in duration-100">
+        <TooltipBtn
+          content="لا توجد طبقات بعد — أضف من الملصقات أو الأشكال أو النصوص"
+          side="bottom"
+        >
+          <Layer className="h-6 w-6 scale-500 text-muted-foreground/20" />
+        </TooltipBtn>
       </div>
     );
   }

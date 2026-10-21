@@ -1,7 +1,7 @@
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
-import { requestStickerReedit } from '@/components/editor/toolbar/sticker-reedit-bus';
+import { requestStickerReedit } from '@/components/editor/dialogs/sticker-reedit-bus';
 import { Spinner } from '@/components/ui/huge-icon';
 import {
   Copy,

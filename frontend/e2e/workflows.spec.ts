@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { openStudioElementsCategory } from './helpers/studio-elements';
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
@@ -29,10 +30,13 @@ test.describe('Editor Core Workflows E2E', () => {
   });
 
   test('Add-text is available, theme toggle works', async ({ page }) => {
-    const addText = page
-      .getByTestId('toolbar-add-text')
-      .or(page.getByRole('button', { name: 'إضافة نص' }))
-      .first();
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    await openStudioElementsCategory(page, 'text');
+    const addText = page.getByTestId('element-add-text-heading');
     await expect(addText).toBeEnabled();
 
     // تبديل الوضع المضيء/الداكن لا يكسر التطبيق

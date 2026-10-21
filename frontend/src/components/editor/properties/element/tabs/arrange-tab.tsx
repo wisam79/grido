@@ -10,12 +10,7 @@ import {
 } from '@/components/ui/alignment-icons';
 import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import {
-  ArrowClockwise,
-  FlipHorizontal,
-  FlipVertical,
-  ArrowsOutCardinal,
-} from '@/components/ui/icons';
+import { ArrowClockwise, FlipHorizontal, FlipVertical } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { rotateElementAroundCenter } from '@/lib/canvas/element-geometry';
 import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
@@ -70,12 +65,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
   return (
     <div className="space-y-2.5 font-cairo">
       {/* بطاقة 1: الموضع والمحاذاة السريعة */}
-      <FluentSection
-        icon={<ArrowsOutCardinal className="w-4 h-4 text-primary" weight="duotone" />}
-        title="الموضع والمحاذاة"
-        collapsible
-        defaultOpen={true}
-      >
+      <FluentSection title="الموضع والمحاذاة" collapsible defaultOpen={true}>
         {/* أزرار المحاذاة السريعة للكانفاس */}
         <div className="flex items-center justify-between bg-muted/40 p-1 rounded-lg border border-border/40">
           <Tooltip>
@@ -284,12 +274,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
       </FluentSection>
 
       {/* بطاقة 2: التدوير والقلب */}
-      <FluentSection
-        icon={<ArrowClockwise className="w-4 h-4 text-primary" weight="duotone" />}
-        title="التدوير والقلب"
-        collapsible
-        defaultOpen={true}
-      >
+      <FluentSection title="التدوير والقلب" collapsible defaultOpen={true}>
         <FluentSliderField
           label="الزاوية"
           value={(((element.rotation % 360) + 540) % 360) - 180}

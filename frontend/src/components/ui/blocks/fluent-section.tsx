@@ -4,7 +4,6 @@ import { CaretDown } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 
 export interface FluentSectionProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
-  icon?: React.ReactNode;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   badge?: React.ReactNode;
@@ -21,7 +20,6 @@ export interface FluentSectionProps extends Omit<React.HTMLAttributes<HTMLDivEle
 export const FluentSection = React.memo(
   React.forwardRef<HTMLDivElement, FluentSectionProps>(function FluentSection(
     {
-      icon,
       title,
       subtitle,
       badge,
@@ -91,18 +89,6 @@ export const FluentSection = React.memo(
           )}
         >
           <div className="flex items-center gap-1.5 min-w-0">
-            {icon && (
-              // أيقونة سطرية بلا شارة خلفية — كثافة ألواح سطح المكتب
-              <span
-                className={cn(
-                  'shrink-0 flex items-center justify-center transition-colors duration-150',
-                  '[&_svg]:size-3.5 [&_svg]:text-muted-foreground',
-                  !isOpen && 'opacity-70',
-                )}
-              >
-                {icon}
-              </span>
-            )}
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <span

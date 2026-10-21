@@ -15,12 +15,15 @@ describe('LayersList Component Tests', () => {
     return render(<TooltipProvider>{ui}</TooltipProvider>);
   };
 
-  it('renders empty state when canvas has no elements', () => {
+  it('renders the accessible empty state when canvas has no elements', () => {
     useEditorStore.setState({ elements: [] });
     renderWithProviders(<LayersList />);
 
-    expect(screen.getByText('لا توجد طبقات بعد')).toBeInTheDocument();
-    expect(screen.getByText(/أضف عناصر من تبويب العناصر/)).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', {
+        name: 'لا توجد طبقات بعد — أضف من الملصقات أو الأشكال أو النصوص',
+      }),
+    ).toBeInTheDocument();
   });
 
   it('renders element list with correct labels and icons', () => {

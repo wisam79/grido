@@ -32,7 +32,7 @@
 | ملف القاعدة | نطاق التفعيل (Trigger & Globs) | الموضوع والتركيز |
 |---|---|---|
 | [`.agents/rules/architecture-governance.md`](file:///c:/projects/grido/.agents/rules/architecture-governance.md) | `always_on` (دائم) | الاستراتيجية المعمارية، عزل الفروع، حظر الازدواجية، وسيادة المصدر الواحد وبوابة التوثيق |
-| [`.agents/rules/ui-ux-fluent.md`](file:///c:/projects/grido/.agents/rules/ui-ux-fluent.md) | `glob`: `frontend/src/**/*.{ts,tsx,css}`, `admin-web/...` | نظام Fluent 2، الأيقونات، المساطر، ألوان ونوافذ الحوار، واختصارات لوحة الأدوات |
+| [`.agents/rules/ui-ux-fluent.md`](file:///c:/projects/grido/.agents/rules/ui-ux-fluent.md) | `glob`: `frontend/src/**/*.{ts,tsx,css}`, `admin-web/...` | نظام Fluent 2، الأيقونات، المساطر، ألوان ونوافذ الحوار، اختصارات لوحة الأدوات، وحارس تقليل النصوص (Text Minimalism Gate) |
 | [`.agents/rules/konva-canvas-engine.md`](file:///c:/projects/grido/.agents/rules/konva-canvas-engine.md) | `glob`: `frontend/src/**/{konva,canvas,stickers}/**` | ثوابت Konva، طبقة السحب الرسمية، كاش الفلاتر، تحجيم الكولاج، وتصدير الطباعة 300+ DPI |
 | [`.agents/rules/backend-wails-runtime.md`](file:///c:/projects/grido/.agents/rules/backend-wails-runtime.md) | `glob`: `internal/**/*.go`, `modal_ai/**`, `main.go` | معمارية JS ↔ Go، جسور Wails v3 IPC، مسارات Modal AI، تقييد الحصص، وأمان الملفات |
 | [`.agents/rules/database-security-authz.md`](file:///c:/projects/grido/.agents/rules/database-security-authz.md) | `glob`: `supabase/**`, `internal/service/*auth*` | سياسات RLS، دوال `SECURITY DEFINER`، فحص `IS NOT TRUE`، أمان المصادقة والجلسة الواحدة |

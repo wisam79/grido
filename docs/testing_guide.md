@@ -17,7 +17,7 @@ flowchart TD
     end
 
     subgraph FE ["Frontend Component & Unit (Vitest)"]
-        VTests["Vitest + React Testing Library (137 ملف اختبار؛ آخر شبكة كاملة 2026-10-20: 1211 ناجحة + 1 متخطّاة، 0 فاشلة)"]
+        VTests["Vitest + React Testing Library (143 ملف اختبار؛ آخر شبكة كاملة 2026-10-21: 1250 ناجحة + 1 متخطّاة، 0 فاشلة)"]
         Zustand["Zustand Slices + Math + Canvas & Collage Hooks"]
         Comps["React 19 Components (Freeform, Stickers, Panels)"]
         VTests --> Zustand
@@ -85,7 +85,7 @@ case 1234567890: // اسم الدالة الجديدة
 | :--- | :--- | :--- |
 | `task test:all` | تشغيل كافة اختبارات الباكيند والفرونت إند و E2E كاملة | المشروع بالكامل |
 | `task test:backend` | تشغيل كافة اختبارات الـ Go backend مع تفاصيل الحزم | Backend (`internal/...`) |
-| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (122 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md) | Frontend Unit/Component |
+| `task test:frontend` | تشغيل كافة اختبارات Vitest للفرونت إند (143 ملف اختبار — العدد المرجعي في docs/DOCUMENTATION_MAP.md) | Frontend Unit/Component |
 | `task test:e2e` | تشغيل اختبارات Playwright E2E السريعة على Chromium | E2E Browser |
 
 ### 3.2 عبر npm في مجلد `frontend`
@@ -182,7 +182,7 @@ go test -count=1 -v ./internal/...
 > 📌 الأرقام أدناه **تحقق: 2026-10-20**، والأرقام المرجعية الحاكمة (وروابط أوامرها) في `docs/DOCUMENTATION_MAP.md` القسم 4. أي رقم يُحدَّث من أمره فقط — لا من الذاكرة. (التحقق الثقيل يُشغَّل في GitHub Actions — القاعدة: لا إجهاد للبيئة المحلية.)
 
 - **Go Backend:** `internal/handlers` و`internal/service` و`internal/repository` و`internal/server` و`internal/utils` تجتاز الاختبارات بنسبة 100% (**49 ملفاً / 255 دالة اختبار** — `go test ./internal/... -list "^Test"`؛ أضافت جلسة 0.82 دالة وملف `internal/server/asset_server_test.go`).
-- **Vitest Frontend:** **142 ملف اختبار** (عدّ آلي: 2026-10-21)؛ آخر شبكة كاملة (2026-10-21): **1250 ناجحة + 1 متخطّاة (0 فاشلة)** — أضافت جلسة 1.20 ملف `test/collage-grid.test.ts` (7 حالات لاستنتاج الشبكة من الإحداثيات وتفضيل `physicalLayout`)، وحذفت جلسة 1.18 ملف `test/export-canvas-watermark.test.ts` (حالتان) مع إزالة العلامة المائية من التصدير، وأضافت جلسة 1.21 ملف `test/mobile-panels-sheet.test.tsx`. أضافت جلسة 1.13 خمسة ملفات: `test/text-render-state.test.ts` (الأرقام العربية وتباعد الحروف وتحويل حالة الأحرف)، `test/text-layout.test.ts` (أنماط `word/char/none`)، `test/text-preset-catalog.test.ts` (سلامة كتالوج النصوص)، `test/fill-paint.test.ts` (التدرج والنقش وتحويلات الحروف المقوّسة)، و`test/fill-utils.test.ts` (أولوية التعبئة). ووسّعت `test/curved-text.test.ts` لتغطية تعبئة كل حرف. ويبقى منها ملفا نظام الأشكال: `test/shape-pattern.test.ts` (8 حالات) و`test/shape-catalog.test.ts` (3 حالات)، وعقد حمولة الطباعة `test/print-payload-builder.test.ts` (قفل إصلاحات RV-16)، و**مسار تصدير CMYK:** `test/export-cmyk.test.ts` (14 اختباراً) و`test/export-dialog.test.tsx` (11 اختباراً).
+- **Vitest Frontend:** **143 ملف اختبار** (عدّ آلي: 2026-10-21، بعد حذف `test/freeform-backdrops-tab.test.tsx` في جلسة 1.28 مع إزالة وجهة الهوية البصرية، وبعد إعادة تسمية اختبار أداة الورقة إلى `test/canvas-color-deck.test.tsx`؛ وبما فيها ملفا جلسة 1.24: `test/color-wheel.test.ts` و`test/color-panel.test.tsx`)؛ آخر شبكة كاملة (2026-10-21): **1250 ناجحة + 1 متخطّاة (0 فاشلة)** عبر 142 ملفاً قبل إضافة الملفين، ولم تُعَد الشبكة الكاملة بعدهما (تُشغَّل في CI). شغّلت جلسة 1.27 استهدافاً خفيفاً لملفَي `test/layers-list.test.tsx` و`test/collage-custom-grid-tab.test.tsx` بنتيجة **17/17** بعد مواءمتهما مع الحد الأدنى البصري، وشغّلت جلسة 1.28 استهدافاً على أربعة ملفات بنتيجة **56/56** بعد إعادة تصميم شريط اللون وإزالة وجهة الهوية. — أضافت جلسة 1.20 ملف `test/collage-grid.test.ts` (7 حالات لاستنتاج الشبكة من الإحداثيات وتفضيل `physicalLayout`)، وحذفت جلسة 1.18 ملف `test/export-canvas-watermark.test.ts` (حالتان) مع إزالة العلامة المائية من التصدير، وأضافت جلسة 1.21 ملف `test/mobile-panels-sheet.test.tsx`. أضافت جلسة 1.13 خمسة ملفات: `test/text-render-state.test.ts` (الأرقام العربية وتباعد الحروف وتحويل حالة الأحرف)، `test/text-layout.test.ts` (أنماط `word/char/none`)، `test/text-preset-catalog.test.ts` (سلامة كتالوج النصوص)، `test/fill-paint.test.ts` (التدرج والنقش وتحويلات الحروف المقوّسة)، و`test/fill-utils.test.ts` (أولوية التعبئة). ووسّعت `test/curved-text.test.ts` لتغطية تعبئة كل حرف. ويبقى منها ملفا نظام الأشكال: `test/shape-pattern.test.ts` (8 حالات) و`test/shape-catalog.test.ts` (3 حالات)، وعقد حمولة الطباعة `test/print-payload-builder.test.ts` (قفل إصلاحات RV-16)، و**مسار تصدير CMYK:** `test/export-cmyk.test.ts` (14 اختباراً) و`test/export-dialog.test.tsx` (11 اختباراً).
 - **Go — فصل أحبار CMYK:** `print_cmyk_tiff_test.go` (وسوم `photometric=5`/`InkSet`/`SamplesPerPixel`/`ExtraSamples` + دورة قنوات حرفية + Stride لصورة فرعية + رفض مدخلات غير صالحة) و`print_fullpage_cmyk_test.go` (عقد حوار التصدير: كامل الصفحة حدّاً-لحدّ + الامتداد + قيد JPEG).
 - **Playwright E2E:** **27 ملف مواصفة** يضم **165 حالة** (آخر جرد للحالات: 2026-10-08؛ عدّ الملفات: 2026-10-15) عبر كل المشاريع (chromium + firefox + webkit)؛ `npm run test:e2e:fast` يقتصر على chromium — التحقق: `npx playwright test --list`.
 - **التغطية (Coverage):** الحدود الدنيا في `frontend/vitest.config.ts` (statements 36 / branches 30 / functions 32 / lines 36) وتُقرأ الأرقام الفعلية من `coverage/coverage-summary.json` في CI.

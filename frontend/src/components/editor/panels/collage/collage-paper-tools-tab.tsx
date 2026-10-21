@@ -6,15 +6,7 @@ import {
   FluentSliderField,
   FluentSegmentedControl,
 } from '@/components/ui/blocks';
-import {
-  Scissors,
-  Ruler,
-  GridFour,
-  Columns,
-  Copy,
-  FrameCorners,
-  SlidersHorizontal,
-} from '@/components/ui/icons';
+import { Ruler, GridFour, Columns, FrameCorners, SlidersHorizontal } from '@/components/ui/icons';
 import { Switch } from '@/components/ui/switch';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
@@ -106,11 +98,7 @@ export function CollagePaperToolsTab() {
   return (
     <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
       {/* النزيف وشكل القص */}
-      <FluentSection
-        icon={<Scissors className="w-3.5 h-3.5" weight="duotone" />}
-        title="النزيف والقص"
-        collapsible
-      >
+      <FluentSection title="النزيف والقص" collapsible>
         <FluentSettingRow
           label="خطوط النزيف"
           control={
@@ -168,11 +156,7 @@ export function CollagePaperToolsTab() {
       </FluentSection>
 
       {/* النسخ والمسافات على الورقة */}
-      <FluentSection
-        icon={<Copy className="w-3.5 h-3.5" weight="duotone" />}
-        title="النسخ على الورقة"
-        collapsible
-      >
+      <FluentSection title="النسخ على الورقة" collapsible>
         <FluentSettingRow
           layout="vertical"
           label="وضع التكرار"
@@ -237,7 +221,6 @@ export function CollagePaperToolsTab() {
 
       {/* الإرشادات البصرية — شبكة مدمجة 2×2 بدل 4 صفوف */}
       <FluentSection
-        icon={<Ruler className="w-3.5 h-3.5" weight="duotone" />}
         title="الإرشادات"
         subtitle={activeGuides > 0 ? `${activeGuides} مفعّلة` : 'كلها مطفأة'}
         collapsible

@@ -130,7 +130,6 @@ export function CollageAutofillTab() {
     <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
       {/* مصدر الصور */}
       <FluentSection
-        icon={<Images className="w-3.5 h-3.5" weight="duotone" />}
         title="مصدر الصور"
         subtitle={images.length > 0 ? `${images.length} صورة جاهزة` : 'لم تُختَر صور بعد'}
         collapsible
@@ -204,7 +203,6 @@ export function CollageAutofillTab() {
 
       {/* طريقة التوزيع */}
       <FluentSection
-        icon={<GridFour className="w-3.5 h-3.5" weight="duotone" />}
         title="طريقة التوزيع"
         subtitle={`${filledCount} ممتلئة · ${emptyCount} فارغة`}
         collapsible

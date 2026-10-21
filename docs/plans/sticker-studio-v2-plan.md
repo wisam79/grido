@@ -26,7 +26,7 @@
 
 - **لا إعادة كتابة من الصفر** ولا استبدال محرك الكانفاس (Zero-Rewrite Invariant).
 - **لا مكتبة PDF جديدة في المرحلة 1**: يوجد مسار PDF في Go (`internal/service/print_pdf_export.go`)؛ نعيد استخدامه ونمنع الازدواجية. أي إضافة JavaScript لاحقة تحتاج مبرراً من متطلب مطبعة فعلي.
-- **Culori 4.0.2 مثبتة ومستخدمة بالفعل** (`frontend/src/lib/canvas/palette-extract.ts`)؛ نوسّعها بدل إضافة مكتبة ألوان ثانية.
+- **لا مكتبة ألوان ثانية:** `palette-extract.ts` (الذي كان يستخدم Culori) حُذف في الجلسة 1.28 بتاريخ 2026-10-21؛ Culori ما زالت مثبتة بلا مستخدم، فأي عمل ألوان جديد يعيد استخدامها بدل إضافة مكتبة ثانية.
 - **jsbarcode + qrcode.react** يبقيان للرموز الحالية؛ `bwip-js` يُقيَّم فقط عند الحاجة الفعلية إلى GS1-128/Data Matrix.
 - **Blob-first**: لا `toDataURL` في خط الأنابيب الداخلي؛ الحفظ المكتبي عبر `/api/upload-media` الثنائي بدل `SaveImageFromBase64`.
 - **OffscreenCanvas + Worker** مع Fallback على الخيط الرئيسي وحدود بكسل صريحة.

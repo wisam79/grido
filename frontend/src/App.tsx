@@ -49,7 +49,6 @@ import {
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useEditorStore } from '@/lib/editor-store';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
-import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
 import { cn } from '@/lib/utils';
 
 import { EventsOn, Quit } from '../wailsjs/runtime/runtime';
@@ -73,7 +72,7 @@ export default function App() {
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
 
-  const { togglePanel, openPanel, toggleZenMode, selectCollageTab, selectStudioTab } = panelsHook;
+  const { togglePanel, toggleZenMode, selectCollageTab, selectStudioTab } = panelsHook;
 
   useEffect(() => {
     const handleToggleRight = () => togglePanel('templates');
@@ -91,15 +90,11 @@ export default function App() {
         selectStudioTab(detail.tab);
       }
     };
-    // 🎯 انتقال موحّد إلى أداة خلفية الورقة الوحيدة (لوحة الخصائص)
-    const handleOpenPropertiesPanel = () => openPanel('properties');
-
     window.addEventListener('grido:toggle-right-sidebar', handleToggleRight);
     window.addEventListener('grido:toggle-left-sidebar', handleToggleLeft);
     window.addEventListener('grido:toggle-zen-mode', handleToggleZen);
     window.addEventListener('grido:select-collage-tab', handleSelectCollageTab);
     window.addEventListener('grido:select-studio-tab', handleSelectStudioTab);
-    window.addEventListener(PAPER_BACKGROUND_EVENTS.openPanel, handleOpenPropertiesPanel);
 
     return () => {
       window.removeEventListener('grido:toggle-right-sidebar', handleToggleRight);
@@ -107,9 +102,8 @@ export default function App() {
       window.removeEventListener('grido:toggle-zen-mode', handleToggleZen);
       window.removeEventListener('grido:select-collage-tab', handleSelectCollageTab);
       window.removeEventListener('grido:select-studio-tab', handleSelectStudioTab);
-      window.removeEventListener(PAPER_BACKGROUND_EVENTS.openPanel, handleOpenPropertiesPanel);
     };
-  }, [togglePanel, openPanel, toggleZenMode, selectCollageTab, selectStudioTab]);
+  }, [togglePanel, toggleZenMode, selectCollageTab, selectStudioTab]);
 
   const { isMaximized, isFocused, handleMinimize, handleMaximize, handleClose } =
     useWindowControls();
@@ -155,7 +149,7 @@ export default function App() {
   // وكان اعتماده كاملاً يعيد تسجيل التأثير (تنظيف + إعادة تشغيل) في كل تحديث
   // لأي حالة داخل App. حارس prevSelectedIdRef يضمن التشغيل مرة واحدة لكل تحديد،
   // فقراءة breakpoint/activePanel عند الإطلاق فقط سلوك مطابق للأصل.
-  const { openPanel: panelsOpenPanel, setActiveStudioTab: panelsSetActiveStudioTab } = panelsHook;
+  const { openPanel: panelsOpenPanel } = panelsHook;
 
   useEffect(() => {
     if (selectedId && selectedId !== prevSelectedIdRef.current) {
@@ -172,17 +166,6 @@ export default function App() {
 
   const mode = useEditorStore((state) => state.mode);
   const setMode = useEditorStore((state) => state.setMode);
-  const workflow = useEditorStore((state) => state.workflow);
-
-  // مسار الإنتاج السريع يخفي تبويب العناصر — إن كان مفتوحاً نعيده للطبقات
-  // بدل زر بلا إبراز ولوحة بلا مدخل في الشريط
-  useEffect(() => {
-    if (workflow === 'quick' && panelsHook.activeStudioTab === 'elements') {
-      panelsSetActiveStudioTab('layers');
-    }
-    // 🛡️ activeStudioTab قراءة عند إطلاق التأثير فقط — التبعية الحقيقية workflow.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workflow, panelsSetActiveStudioTab]);
 
   // [FIX #7] قراءة user مباشرة لضمان إعادة render عند تغيير أي من حقوله
   const user = useEditorStore((state) => state.user);
@@ -652,10 +635,8 @@ export default function App() {
                   collapseSide={panelsHook.breakpoint === 'wide' ? 'left' : 'right'}
                   hideHeader={panelsHook.breakpoint === 'compact'}
                   activeStudioTab={panelsHook.activeStudioTab}
-                  onActiveStudioTabChange={panelsHook.setActiveStudioTab}
                   activeCollageTab={panelsHook.activeCollageTab}
                   onActiveCollageTabChange={panelsHook.setActiveCollageTab}
-                  showInternalCollageTabs={panelsHook.breakpoint === 'compact'}
                 />
               </ErrorBoundary>
             }

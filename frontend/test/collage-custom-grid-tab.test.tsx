@@ -195,14 +195,17 @@ describe('CollageCustomGridTab Component Suite', () => {
 });
 
 describe('GeneralSettings (Paper Tab Properties)', () => {
-  it('renders Canvas Dimensions, Paper Background, and Grid Columns sections', () => {
+  it('renders canvas dimensions and paper background without a redundant workspace header', () => {
     render(
       <TooltipProvider>
         <GeneralSettings />
       </TooltipProvider>,
     );
 
-    expect(screen.getByText('مساحة العمل')).toBeInTheDocument();
+    expect(screen.queryByText('مساحة العمل')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('المقاس: A4')).toBeInTheDocument();
+    expect(screen.getByLabelText('العرض')).toBeInTheDocument();
+    expect(screen.getByLabelText('الارتفاع')).toBeInTheDocument();
     expect(screen.getByText('خلفية الورقة')).toBeInTheDocument();
   });
 });

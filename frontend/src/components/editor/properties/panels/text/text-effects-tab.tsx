@@ -1,9 +1,8 @@
 import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
-import { Palette, Sparkle, ArrowCounterClockwise } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 
-import { PopoverColorPicker } from '../../shared-controls';
+import { ColorField, ColorPanel } from '../../color-panel';
 
 import type { TextTabProps } from './text-tab-types';
 
@@ -46,232 +45,231 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
   const hasCurve = typeof element.curve === 'number' && element.curve !== 0;
 
   return (
-    <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
-      {/* 🎴 بطاقة 1: الخلفية والشارة */}
-      <FluentSection
-        icon={<Palette className="w-4 h-4 text-primary" weight="duotone" />}
-        title="الخلفية والشارة"
-        open={hasBadge}
-        action={
-          <div className="flex items-center gap-1.5">
-            {hasBadge && (
-              <PopoverColorPicker
-                color={element.textBgColor || '#2563eb'}
-                onChange={(val: string) => {
-                  onUpdate(element.id, { textBgColor: val });
-                  useEditorStore.getState().pushHistory();
-                }}
-                swatchOnly
-                ariaLabel="لون خلفية النص"
-              />
-            )}
-
-            <button
-              type="button"
-              onClick={() => {
-                if (hasBadge) {
-                  onUpdate(element.id, { textBgColor: 'transparent', textBgBorderWidth: 0 });
-                } else {
-                  onUpdate(element.id, {
-                    textBgColor: '#2563eb',
-                    textBgRadius: element.textBgRadius ?? 8,
-                    textBgPadding: element.textBgPadding ?? 8,
-                    textBgPaddingX: element.textBgPaddingX ?? 12,
-                    textBgPaddingY: element.textBgPaddingY ?? 6,
-                  });
-                }
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(hasBadge)}
-            >
-              {hasBadge ? 'مفعّلة' : 'إضافة'}
-            </button>
-          </div>
-        }
-      >
-        {hasBadge && (
-          <div className="space-y-2.5 animate-in fade-in duration-150">
-            <FluentSliderField
-              label="أفقي (X)"
-              value={element.textBgPaddingX ?? element.textBgPadding ?? 12}
-              min={0}
-              max={48}
-              step={1}
-              unit="px"
-              onChange={(val) => onUpdate(element.id, { textBgPaddingX: val })}
-              onCommit={() => useEditorStore.getState().pushHistory()}
-            />
-
-            <FluentSliderField
-              label="عمودي (Y)"
-              value={element.textBgPaddingY ?? element.textBgPadding ?? 6}
-              min={0}
-              max={36}
-              step={1}
-              unit="px"
-              onChange={(val) => onUpdate(element.id, { textBgPaddingY: val })}
-              onCommit={() => useEditorStore.getState().pushHistory()}
-            />
-
-            <FluentSliderField
-              label="الاستدارة"
-              value={element.textBgRadius ?? 8}
-              min={0}
-              max={64}
-              step={1}
-              unit="px"
-              onChange={(val) => onUpdate(element.id, { textBgRadius: val })}
-              onCommit={() => useEditorStore.getState().pushHistory()}
-            />
-          </div>
-        )}
-      </FluentSection>
-
-      {/* 🎴 بطاقة 2: الظل والتوهج */}
-      <FluentSection
-        icon={<Sparkle className="w-4 h-4 text-primary" weight="duotone" />}
-        title="الظل والتوهج"
-        open={hasShadow}
-        action={
-          <div className="flex items-center gap-1.5">
-            {hasShadow && (
-              <PopoverColorPicker
-                color={element.shadowColor || '#000000'}
-                onChange={(val: string) => {
-                  onUpdate(element.id, { shadowColor: val });
-                  useEditorStore.getState().pushHistory();
-                }}
-                swatchOnly
-                ariaLabel="لون الظل"
-              />
-            )}
-
-            <button
-              type="button"
-              onClick={() => {
-                if (hasShadow) {
-                  onUpdate(element.id, { shadowBlur: 0, shadowOpacity: 0 });
-                } else {
-                  onUpdate(element.id, {
-                    shadowColor: element.shadowColor || '#000000',
-                    shadowBlur: 10,
-                    shadowOpacity: 0.5,
-                    shadowOffsetX: 2,
-                    shadowOffsetY: 2,
-                  });
-                }
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(hasShadow)}
-            >
-              {hasShadow ? 'مفعّل' : 'إضافة'}
-            </button>
-          </div>
-        }
-      >
-        {/* أنماط سريعة */}
-        <div className="grid grid-cols-5 gap-1 text-mini">
-          {SHADOW_PRESETS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => {
-                onUpdate(element.id, {
-                  shadowColor: p.color,
-                  shadowBlur: p.blur,
-                  shadowOffsetX: p.ox,
-                  shadowOffsetY: p.oy,
-                  shadowOpacity: p.opacity,
-                });
-                useEditorStore.getState().pushHistory();
-              }}
-              className={cn(
-                'h-7 w-full px-1 rounded-md border text-mini font-bold transition-colors cursor-pointer shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-                isShadowPresetActive(element, p)
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 border-border/50 text-muted-foreground',
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-
-        {hasShadow && (
-          <div className="space-y-1.5 pt-1 animate-in fade-in duration-150">
-            <FluentSliderField
-              label="التمويه"
-              value={element.shadowBlur ?? 10}
-              min={0}
-              max={40}
-              step={2}
-              unit="px"
-              onChange={(val) => onUpdate(element.id, { shadowBlur: val })}
-              onCommit={() => useEditorStore.getState().pushHistory()}
-            />
-          </div>
-        )}
-      </FluentSection>
-
-      {/* 🎴 بطاقة 3: تقويس النص */}
-      <FluentSection
-        icon={<ArrowCounterClockwise className="w-4 h-4 text-primary" weight="duotone" />}
-        title="تقويس النص"
-        open={hasCurve}
-        action={
-          <button
-            type="button"
-            onClick={() => {
-              if (hasCurve) {
-                onUpdate(element.id, { curve: 0 });
-              } else {
-                onUpdate(element.id, { curve: 60 });
-              }
-              useEditorStore.getState().pushHistory();
-            }}
-            className={toggleButtonClassName(hasCurve)}
-          >
-            {hasCurve ? 'مفعّل' : 'إضافة'}
-          </button>
-        }
-      >
-        {hasCurve && (
-          <div className="space-y-2 animate-in fade-in duration-150">
-            {/* زوايا جاهزة */}
-            <div className="grid grid-cols-5 gap-1 text-mini">
-              {CURVE_PRESETS.map((cp) => (
-                <button
-                  key={cp.label}
-                  type="button"
-                  onClick={() => {
-                    onUpdate(element.id, { curve: cp.value });
+    <ColorPanel wheelPosition="top">
+      <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
+        {/* 🎴 بطاقة 1: الخلفية والشارة */}
+        <FluentSection
+          title="الخلفية والشارة"
+          open={hasBadge}
+          action={
+            <div className="flex items-center gap-1.5">
+              {hasBadge && (
+                <ColorField
+                  color={element.textBgColor || '#2563eb'}
+                  onChange={(val: string) => {
+                    onUpdate(element.id, { textBgColor: val });
                     useEditorStore.getState().pushHistory();
                   }}
-                  className={cn(
-                    'h-7 w-full px-1 rounded-md border text-mini font-bold transition-colors cursor-pointer shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-                    (element.curve ?? 0) === cp.value
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background hover:bg-primary/10 text-muted-foreground border-border/50',
-                  )}
-                >
-                  {cp.label}
-                </button>
-              ))}
-            </div>
+                  swatchOnly
+                  ariaLabel="لون خلفية النص"
+                />
+              )}
 
-            <FluentSliderField
-              label="زاوية التقويس"
-              value={element.curve ?? 60}
-              min={-100}
-              max={100}
-              step={5}
-              unit="°"
-              onChange={(val) => onUpdate(element.id, { curve: val })}
-              onCommit={() => useEditorStore.getState().pushHistory()}
-            />
+              <button
+                type="button"
+                onClick={() => {
+                  if (hasBadge) {
+                    onUpdate(element.id, { textBgColor: 'transparent', textBgBorderWidth: 0 });
+                  } else {
+                    onUpdate(element.id, {
+                      textBgColor: '#2563eb',
+                      textBgRadius: element.textBgRadius ?? 8,
+                      textBgPadding: element.textBgPadding ?? 8,
+                      textBgPaddingX: element.textBgPaddingX ?? 12,
+                      textBgPaddingY: element.textBgPaddingY ?? 6,
+                    });
+                  }
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={toggleButtonClassName(hasBadge)}
+              >
+                {hasBadge ? 'مفعّلة' : 'إضافة'}
+              </button>
+            </div>
+          }
+        >
+          {hasBadge && (
+            <div className="space-y-2.5 animate-in fade-in duration-150">
+              <FluentSliderField
+                label="أفقي (X)"
+                value={element.textBgPaddingX ?? element.textBgPadding ?? 12}
+                min={0}
+                max={48}
+                step={1}
+                unit="px"
+                onChange={(val) => onUpdate(element.id, { textBgPaddingX: val })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
+              />
+
+              <FluentSliderField
+                label="عمودي (Y)"
+                value={element.textBgPaddingY ?? element.textBgPadding ?? 6}
+                min={0}
+                max={36}
+                step={1}
+                unit="px"
+                onChange={(val) => onUpdate(element.id, { textBgPaddingY: val })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
+              />
+
+              <FluentSliderField
+                label="الاستدارة"
+                value={element.textBgRadius ?? 8}
+                min={0}
+                max={64}
+                step={1}
+                unit="px"
+                onChange={(val) => onUpdate(element.id, { textBgRadius: val })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
+              />
+            </div>
+          )}
+        </FluentSection>
+
+        {/* 🎴 بطاقة 2: الظل والتوهج */}
+        <FluentSection
+          title="الظل والتوهج"
+          open={hasShadow}
+          action={
+            <div className="flex items-center gap-1.5">
+              {hasShadow && (
+                <ColorField
+                  color={element.shadowColor || '#000000'}
+                  onChange={(val: string) => {
+                    onUpdate(element.id, { shadowColor: val });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  swatchOnly
+                  ariaLabel="لون الظل"
+                />
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (hasShadow) {
+                    onUpdate(element.id, { shadowBlur: 0, shadowOpacity: 0 });
+                  } else {
+                    onUpdate(element.id, {
+                      shadowColor: element.shadowColor || '#000000',
+                      shadowBlur: 10,
+                      shadowOpacity: 0.5,
+                      shadowOffsetX: 2,
+                      shadowOffsetY: 2,
+                    });
+                  }
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={toggleButtonClassName(hasShadow)}
+              >
+                {hasShadow ? 'مفعّل' : 'إضافة'}
+              </button>
+            </div>
+          }
+        >
+          {/* أنماط سريعة */}
+          <div className="grid grid-cols-5 gap-1 text-mini">
+            {SHADOW_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  onUpdate(element.id, {
+                    shadowColor: p.color,
+                    shadowBlur: p.blur,
+                    shadowOffsetX: p.ox,
+                    shadowOffsetY: p.oy,
+                    shadowOpacity: p.opacity,
+                  });
+                  useEditorStore.getState().pushHistory();
+                }}
+                className={cn(
+                  'h-7 w-full px-1 rounded-md border text-mini font-bold transition-colors cursor-pointer shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                  isShadowPresetActive(element, p)
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 border-border/50 text-muted-foreground',
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
-        )}
-      </FluentSection>
-    </div>
+
+          {hasShadow && (
+            <div className="space-y-1.5 pt-1 animate-in fade-in duration-150">
+              <FluentSliderField
+                label="التمويه"
+                value={element.shadowBlur ?? 10}
+                min={0}
+                max={40}
+                step={2}
+                unit="px"
+                onChange={(val) => onUpdate(element.id, { shadowBlur: val })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
+              />
+            </div>
+          )}
+        </FluentSection>
+
+        {/* 🎴 بطاقة 3: تقويس النص */}
+        <FluentSection
+          title="تقويس النص"
+          open={hasCurve}
+          action={
+            <button
+              type="button"
+              onClick={() => {
+                if (hasCurve) {
+                  onUpdate(element.id, { curve: 0 });
+                } else {
+                  onUpdate(element.id, { curve: 60 });
+                }
+                useEditorStore.getState().pushHistory();
+              }}
+              className={toggleButtonClassName(hasCurve)}
+            >
+              {hasCurve ? 'مفعّل' : 'إضافة'}
+            </button>
+          }
+        >
+          {hasCurve && (
+            <div className="space-y-2 animate-in fade-in duration-150">
+              {/* زوايا جاهزة */}
+              <div className="grid grid-cols-5 gap-1 text-mini">
+                {CURVE_PRESETS.map((cp) => (
+                  <button
+                    key={cp.label}
+                    type="button"
+                    onClick={() => {
+                      onUpdate(element.id, { curve: cp.value });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className={cn(
+                      'h-7 w-full px-1 rounded-md border text-mini font-bold transition-colors cursor-pointer shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+                      (element.curve ?? 0) === cp.value
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background hover:bg-primary/10 text-muted-foreground border-border/50',
+                    )}
+                  >
+                    {cp.label}
+                  </button>
+                ))}
+              </div>
+
+              <FluentSliderField
+                label="زاوية التقويس"
+                value={element.curve ?? 60}
+                min={-100}
+                max={100}
+                step={5}
+                unit="°"
+                onChange={(val) => onUpdate(element.id, { curve: val })}
+                onCommit={() => useEditorStore.getState().pushHistory()}
+              />
+            </div>
+          )}
+        </FluentSection>
+      </div>
+    </ColorPanel>
   );
 }

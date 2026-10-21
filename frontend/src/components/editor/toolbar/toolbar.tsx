@@ -22,7 +22,6 @@ import { cn } from '@/lib/utils';
 import { ToolbarFileOps } from './toolbar-file-ops';
 import {
   TooltipBtn,
-  ToolbarAddTools,
   ToolbarHistoryTools,
   ToolbarSelectionTools,
   ToolbarTransferToCollage,
@@ -55,7 +54,7 @@ function CommandGroup({ children, className }: { children: React.ReactNode; clas
 /**
  * شريط الأدوات العلوي — توزيع احترافي بمنطق «ثابت → سياقي → أوامر»:
  *
- *   [ملف] | [تراجع/إعادة] | [إضافة عناصر] | [نقل للكولاج]  ← يمين (RTL)
+ *   [ملف] | [تراجع/إعادة] | [نقل للكولاج]  ← يمين (RTL)
  *   [أدوات التحديد السياقية — تظهر عند التحديد]
  *                                        [حفظ | طباعة | تصدير] [⋯] ← يسار
  *
@@ -82,7 +81,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
       className="relative h-12 shrink-0 border-b border-border bg-sidebar select-none no-print font-cairo"
     >
       <div className="h-full flex items-center justify-between gap-1 px-1.5">
-        {/* المجموعات الرئيسية (ملف، تحرير، إدراج، كولاج، تحديد)
+        {/* المجموعات الرئيسية (ملف، تحرير، كولاج، تحديد)
             ⚠️ عند ضيق النافذة تُمرَّر هذه المجموعة أفقياً بلا شريط ظهور
             بدل أن يُقطع الطرف الآخر (الحفظ/الطباعة/التصدير). */}
         <div className="flex items-stretch h-full min-w-0 flex-1 overflow-x-auto scrollbar-none">
@@ -92,10 +91,6 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
 
           <CommandGroup>
             <ToolbarHistoryTools />
-          </CommandGroup>
-
-          <CommandGroup>
-            <ToolbarAddTools />
           </CommandGroup>
 
           {isSingleMode && (

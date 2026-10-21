@@ -1,28 +1,32 @@
 import { describe, it, expect } from 'vitest';
 
+import { Layer } from '../src/components/ui/icons';
 import { useEditorStore } from '../src/lib/editor-store';
 import {
+  COLLAGE_SECTIONS,
   COLLAGE_TOOLS,
+  STUDIO_SECTIONS,
   STUDIO_TOOLS,
   WORKSPACE_COMMANDS,
   WORKSPACE_STATE_COMMANDS,
   MAX_TOOL_SHORTCUTS,
+  getCollageSectionForTab,
   getCollageTool,
-  getStudioTool,
-  getToolsForMode,
-  getToolsForWorkflow,
-  getCollageToolsForWorkflow,
+  getDefaultStudioTab,
+  getSectionsForWorkflow,
   getStateCommandGroups,
+  getStudioSectionForTab,
+  getStudioTool,
+  getStudioSectionsForWorkflow,
   groupCommands,
-  groupTools,
   isCollageTab,
   isStudioTab,
+  migrateLegacyStudioTab,
   selectStateCommandInput,
   toolShortcut,
-  type WorkspaceTool,
 } from '../src/lib/workspace-tools';
 
-describe('سجل أدوات الشريط الجانبي', () => {
+describe('سجل تبويبات الشريط الجانبي', () => {
   it('يحتفظ بمعرّفات فريدة في كل وضع', () => {
     for (const tools of [COLLAGE_TOOLS, STUDIO_TOOLS]) {
       const ids = tools.map((tool) => tool.id);
@@ -30,59 +34,134 @@ describe('سجل أدوات الشريط الجانبي', () => {
     }
   });
 
-  it('يمنح كل أداة عنواناً ووصفاً وأيقونة واختباراً — لا أدوات ناقصة الوصف', () => {
+  it('يمنح كل تبويب تسمية قصيرة وعنواناً ووصفاً وأيقونة واختباراً', () => {
     for (const tool of [...COLLAGE_TOOLS, ...STUDIO_TOOLS]) {
       expect(tool.label.trim().length).toBeGreaterThan(0);
       expect(tool.title.trim().length).toBeGreaterThan(0);
       expect(tool.subtitle.trim().length).toBeGreaterThan(0);
-      expect(tool.testId.startsWith('rail-')).toBe(true);
+      expect(tool.testId.startsWith('tab-')).toBe(true);
       expect(tool.icon).toBeTruthy();
     }
   });
 
-  it('يبقى عدد الأدوات داخل حدود اختصارات Alt+1..Alt+9', () => {
+  it('يبقى عدد التبويبات داخل حدود اختصارات Alt+1..Alt+9', () => {
     expect(COLLAGE_TOOLS.length).toBeLessThanOrEqual(9);
     expect(STUDIO_TOOLS.length).toBeLessThanOrEqual(9);
   });
 
-  it('يُبني اختصار كل أداة من ترتيبها في السجل', () => {
+  it('يُبني اختصار كل وجهة من ترتيبها في السجل', () => {
     expect(toolShortcut(0)).toBe('Alt+1');
     expect(toolShortcut(8)).toBe('Alt+9');
   });
 
-  it('يمنح كل أداة مجموعة غير فارغة', () => {
-    expect(COLLAGE_TOOLS.every((tool) => tool.group.trim().length > 0)).toBe(true);
-    expect(STUDIO_TOOLS.every((tool) => tool.group.trim().length > 0)).toBe(true);
+  it('يعرض «الملصقات» أولاً في الاستوديو و«الشبكة» أولاً في الكولاج', () => {
+    expect(STUDIO_TOOLS[0].id).toBe('stickers');
+    expect(COLLAGE_TOOLS[0].id).toBe('custom');
   });
 
-  /** التجميع لا يُسقط أداة ولا يغيّر ترتيبها، والإزاحة تحفظ رقم اختصار Alt */
-  function expectGroupingPreservesOrder<T extends string>(tools: WorkspaceTool<T>[]) {
-    const groups = groupTools(tools);
-    // لا أدوات مفقودة ولا مكرّرة عند التجميع
-    expect(groups.flatMap((group) => group.tools)).toEqual(tools);
-
-    // لكل مجموعة اسم واحد فقط، والأسماء متجاورة بلا تكرار متقطّع
-    const names = groups.map((group) => group.name);
-    expect(new Set(names).size).toBe(names.length);
-
-    // الإزاحة تحفظ رقم اختصار Alt لكل أداة بعد التجميع
-    for (const group of groups) {
-      for (const tool of group.tools) {
-        expect(tools.indexOf(tool)).toBeGreaterThanOrEqual(group.offset);
-      }
-    }
-  }
-
-  it('يجمّع الأدوات تباعاً بلا فقدان أي أداة أو تغيير ترتيبها', () => {
-    expectGroupingPreservesOrder(COLLAGE_TOOLS);
-    expectGroupingPreservesOrder(STUDIO_TOOLS);
-  });
-
-  it('يرجع الأداة المطابقة، ويسقط على الأولى عند معرّف غير معروف', () => {
+  it('يرجع التبويب المطابق، ويسقط على الأول عند معرّف غير معروف', () => {
     expect(getCollageTool('paper').id).toBe('paper');
-    expect(getStudioTool('backdrops').id).toBe('backdrops');
+    expect(getStudioTool('layers').id).toBe('layers');
     // @ts-expect-error معرّف غير موجود فعلاً — يتأكد السلوك الاحتياطي
     expect(getCollageTool('nope').id).toBe(COLLAGE_TOOLS[0].id);
+    // @ts-expect-error «القوالب» حُذفت من الاستوديو — تسقط على «الملصقات»
+    expect(getStudioTool('presets').id).toBe(STUDIO_TOOLS[0].id);
+  });
+});
+
+describe('سجل وجهات الشريط الجانبي', () => {
+  it('يعرّف وجهات دائمة بمعرّفات فريدة لكل وضع', () => {
+    expect(STUDIO_SECTIONS).toHaveLength(4);
+    expect(COLLAGE_SECTIONS).toHaveLength(3);
+    for (const sections of [COLLAGE_SECTIONS, STUDIO_SECTIONS]) {
+      const ids = sections.map((section) => section.id);
+      expect(new Set(ids).size).toBe(sections.length);
+      expect(sections.every((section) => section.testId.startsWith('rail-'))).toBe(true);
+      expect(sections.every((section) => section.label.trim().length > 0)).toBe(true);
+      expect(sections.every((section) => section.title.trim().length > 0)).toBe(true);
+    }
+  });
+
+  it('يحتوي كل وجهة على تبويبات غير فارغة وتبويب افتراضي منها', () => {
+    for (const section of [...COLLAGE_SECTIONS, ...STUDIO_SECTIONS]) {
+      expect(section.tabs.length).toBeGreaterThan(0);
+      expect(section.tabs.some((tab) => tab.id === section.defaultTab)).toBe(true);
+    }
+  });
+
+  it('يوزّع كل تبويب على وجهة واحدة بلا فقدان أو تكرار', () => {
+    for (const [tools, sections] of [
+      [COLLAGE_TOOLS, COLLAGE_SECTIONS],
+      [STUDIO_TOOLS, STUDIO_SECTIONS],
+    ] as const) {
+      const sectionTabIds = sections.flatMap((section) => section.tabs.map((tab) => tab.id));
+      // ترتيب الوجهات مختلف عن ترتيب السجل، فالمقارنة بالمجموعة لا بالتسلسل
+      expect([...sectionTabIds].sort()).toEqual(tools.map((tool) => tool.id).sort());
+    }
+  });
+
+  it('يمنح كل أداة إدراج وجهة مستقلة في شريط الأيقونات', () => {
+    expect(STUDIO_SECTIONS.map((section) => section.id)).toEqual([
+      'layers',
+      'stickers',
+      'shapes',
+      'text',
+    ]);
+    // أيقونة الطبقات في الشريط هي نفسها المستخدمة داخل اللوح
+    expect(STUDIO_SECTIONS[0].icon).toBe(Layer);
+    expect(STUDIO_SECTIONS.map((section) => section.testId)).toEqual([
+      'rail-studio-layers',
+      'rail-studio-stickers',
+      'rail-studio-shapes',
+      'rail-studio-text',
+    ]);
+    for (const section of STUDIO_SECTIONS) {
+      expect(section.tabs.map((tab) => tab.id)).toEqual([section.id]);
+      expect(section.defaultTab).toBe(section.id);
+    }
+  });
+
+  it('يرتّب وجهات الكولاج: الشبكة ← الخانات ← القص', () => {
+    expect(COLLAGE_SECTIONS.map((section) => section.id)).toEqual(['grid', 'slots', 'paper']);
+    expect(COLLAGE_SECTIONS[0].tabs.map((tab) => tab.id)).toEqual([
+      'custom',
+      'presets',
+      'freeform',
+    ]);
+    expect(COLLAGE_SECTIONS[1].tabs.map((tab) => tab.id)).toEqual(['autofill', 'arrange']);
+    expect(COLLAGE_SECTIONS[2].tabs.map((tab) => tab.id)).toEqual(['paper']);
+  });
+
+  it('يُبقي زر الوجهة مضاءً حسب التبويب النشط', () => {
+    expect(getStudioSectionForTab('layers').id).toBe('layers');
+    expect(getStudioSectionForTab('stickers').id).toBe('stickers');
+    expect(getStudioSectionForTab('shapes').id).toBe('shapes');
+    expect(getStudioSectionForTab('text').id).toBe('text');
+    expect(getCollageSectionForTab('freeform').id).toBe('grid');
+    expect(getCollageSectionForTab('arrange').id).toBe('slots');
+    expect(getCollageSectionForTab('paper').id).toBe('paper');
+  });
+
+  it('يبدأ مسار الإنتاج السريع من «الطبقات» مع إبقاء أدوات الإدراج متاحة', () => {
+    const quickSections = getStudioSectionsForWorkflow('quick');
+    expect(quickSections).toBe(STUDIO_SECTIONS);
+    expect(quickSections.map((section) => section.id)).toEqual([
+      'layers',
+      'stickers',
+      'shapes',
+      'text',
+    ]);
+    expect(getDefaultStudioTab('quick')).toBe('layers');
+    expect(getDefaultStudioTab('studio')).toBe('stickers');
+    for (const tool of ['stickers', 'shapes', 'text']) {
+      expect(quickSections.some((section) => section.id === tool)).toBe(true);
+    }
+  });
+
+  it('لا يغيّر مسار العمل وجهات الكولاج', () => {
+    expect(getSectionsForWorkflow('collage', 'quick')).toBe(COLLAGE_SECTIONS);
+    expect(getSectionsForWorkflow('collage', 'studio')).toBe(COLLAGE_SECTIONS);
+    expect(getSectionsForWorkflow('single', 'studio')).toBe(STUDIO_SECTIONS);
   });
 });
 
@@ -260,16 +339,15 @@ describe('أوامر الحالة الحية (WORKSPACE_STATE_COMMANDS)', () => 
   });
 });
 
-describe('قائمة الأدوات الموحّدة حسب وضع الكانفاس', () => {
-  it('يرجع أدوات الكولاج الكاملة عند وضع collage', () => {
-    expect(getToolsForMode('collage')).toBe(COLLAGE_TOOLS);
-    expect(getCollageToolsForWorkflow()).toBe(COLLAGE_TOOLS);
-    expect(getToolsForWorkflow('collage')).toBe(COLLAGE_TOOLS);
+describe('قائمة الوجهات الموحّدة حسب وضع الكانفاس', () => {
+  it('يرجع وجهات الكولاج الكاملة عند وضع collage', () => {
+    expect(getSectionsForWorkflow('collage')).toBe(COLLAGE_SECTIONS);
+    expect(getSectionsForWorkflow('collage', 'quick')).toBe(COLLAGE_SECTIONS);
   });
 
-  it('يرجع أدوات التعديل الحر عند وضع single', () => {
-    expect(getToolsForMode('single')).toBe(STUDIO_TOOLS);
-    expect(getToolsForWorkflow('single')).toBe(STUDIO_TOOLS);
+  it('يرجع وجهات التعديل الحر الأربعة نفسها في مساري العمل', () => {
+    expect(getSectionsForWorkflow('single', 'studio')).toBe(STUDIO_SECTIONS);
+    expect(getSectionsForWorkflow('single', 'quick')).toBe(STUDIO_SECTIONS);
   });
 
   it('لا يمنح اختصاراً لأداة تتجاوز حد Alt+9', () => {
@@ -282,13 +360,25 @@ describe('قائمة الأدوات الموحّدة حسب وضع الكانف�
   it('يرفض تبويباً محذوفاً أو قيمة محفوظة قديمة', () => {
     expect(isCollageTab('paper')).toBe(true);
     expect(isStudioTab('layers')).toBe(true);
+    expect(isStudioTab('stickers')).toBe(true);
+    expect(isStudioTab('shapes')).toBe(true);
+    expect(isStudioTab('text')).toBe(true);
     expect(isCollageTab('elements')).toBe(false);
-    expect(isStudioTab('elements')).toBe(true);
-    expect(isStudioTab('stickers')).toBe(false);
+    expect(isStudioTab('elements')).toBe(false);
+    expect(isStudioTab('presets')).toBe(false);
     expect(isCollageTab('backdrop')).toBe(false);
     expect(isStudioTab(undefined)).toBe(false);
     expect(isCollageTab(null)).toBe(false);
     expect(isStudioTab(7)).toBe(false);
+  });
+
+  it('يرحّل التبويبات الموحّدة والمحذوفة إلى «الملصقات» ويُبقي الصالحة', () => {
+    expect(migrateLegacyStudioTab('elements')).toBe('stickers');
+    expect(migrateLegacyStudioTab('presets')).toBe('stickers');
+    expect(migrateLegacyStudioTab('stickers')).toBeNull();
+    expect(migrateLegacyStudioTab('shapes')).toBeNull();
+    expect(migrateLegacyStudioTab('text')).toBeNull();
+    expect(migrateLegacyStudioTab('layers')).toBeNull();
   });
 });
 

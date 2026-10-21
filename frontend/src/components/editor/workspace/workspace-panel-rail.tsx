@@ -21,10 +21,11 @@ import { cn } from '@/lib/utils';
 import {
   WORKSPACE_COMMANDS,
   dispatchWorkspaceCommand,
+  getCollageSectionForTab,
+  getSectionsForWorkflow,
   getStateCommandGroups,
-  getToolsForWorkflow,
+  getStudioSectionForTab,
   groupCommands,
-  groupTools,
   isCollageTab,
   isStudioTab,
   selectStateCommandInput,
@@ -36,7 +37,7 @@ import type {
   CommandGroupView,
   FreeformTab,
   WorkspaceCommand,
-  WorkspaceTool,
+  WorkspaceModeSection,
 } from '@/lib/workspace-tools';
 
 interface WorkspacePanelRailProps {
@@ -58,20 +59,20 @@ interface WorkspacePanelRailProps {
  * يُمنع إنشاء لوحة ثانية: أي trigger جديد يستخدم هذا المكوّن حصراً.
  */
 export function ToolLauncherContent({
-  tools,
-  activeTab,
+  sections,
+  activeSectionId,
   toolsHeading,
   getShortcut,
-  onSelectTool,
+  onSelectSection,
   onAfterRun,
   onRunCommand,
   commandGroups,
 }: {
-  tools: WorkspaceTool<string>[];
-  activeTab: string;
+  sections: WorkspaceModeSection[];
+  activeSectionId: string;
   toolsHeading: string;
-  getShortcut: (tool: WorkspaceTool<string>) => string;
-  onSelectTool: (tool: WorkspaceTool<string>) => void;
+  getShortcut: (section: WorkspaceModeSection) => string;
+  onSelectSection: (section: WorkspaceModeSection) => void;
   onAfterRun: () => void;
   onRunCommand: (command: WorkspaceCommand) => void;
   commandGroups: CommandGroupView<WorkspaceCommand>[];
@@ -82,15 +83,15 @@ export function ToolLauncherContent({
       <CommandList className="max-h-[60vh]">
         <CommandEmpty>لا توجد نتائج مطابقة</CommandEmpty>
 
-        {/* الأدوات — نفس قائمة الشريط (وتتقلّص في مسار الإنتاج السريع) */}
+        {/* الوجهات — نفس قائمة الشريط حرفياً */}
         <CommandGroup heading={toolsHeading}>
-          {tools.map((tool) => (
+          {sections.map((section) => (
             <PaletteToolItem
-              key={tool.id}
-              tool={tool}
-              shortcut={getShortcut(tool)}
-              isActive={activeTab === tool.id}
-              onSelectTool={onSelectTool}
+              key={section.id}
+              section={section}
+              shortcut={getShortcut(section)}
+              isActive={activeSectionId === section.id}
+              onSelectSection={onSelectSection}
             />
           ))}
         </CommandGroup>
@@ -120,29 +121,26 @@ export function ToolLauncherContent({
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   الشريط الجانبي — أزرار الأدوات في مجموعات منطقية + «لوحة الأدوات»
-   المثبّتة في الأسفل.
-
-   السبب: عدد الأدوات صار يصل إلى 9، فالشريط يحتاج تمريراً طولياً في
-   النوافذ القصيرة، ويضيع المستخدم بين أيقونات بلا أسماء. اللوحة
-   المثبّتة لا تمرّ أبداً وتعرض كل أداة باسمها ووصفها واختصارها.
-   قائمة الأدوات تأتي من getToolsForWorkflow — نفس المصدر المستخدم
-   في اختصارات Alt+الرقم ولوحة القوالب، فلا تختلف القائمة عن الاختصار.
+   الشريط الجانبي — وجهات الوضع الحالي كأزرار مستقلة + «لوحة الأدوات»
+   المثبّتة في الأسفل. في التعديل الحر: الملصقات والأشكال والنصوص
+   والطبقات (زر لكل أداة إدراج)؛ وفي الكولاج: الشبكة والخانات والقص.
+   قائمة الوجهات تأتي من getSectionsForWorkflow — نفس المصدر المستخدم
+   في اختصارات Alt+الرقم ولوحة الأوامر.
    ═══════════════════════════════════════════════════════════════ */
 
-/** زر أداة في الشريط — يُبنى من سجل الأدوات بدل تكرار العلامات لكل أداة.
+/** زر وجهة في الشريط — يُبنى من سجل الوجهات بدل تكرار العلامات لكل وجهة.
     مذكّرة (memo): خاصيات الأب مستقرّة (سجل ثابت + useCallback) فلا يعيد
     التصيير مع كل تغيّر زوم/سجل ما لم تتبدّل حالته هو. */
 const RailToolButton = React.memo(function RailToolButton({
-  tool,
+  section,
   index,
   isActive,
   badgeCount,
   isInUse,
   pillLayoutId,
-  onSelectTool,
+  onSelectSection,
 }: {
-  tool: WorkspaceTool<string>;
+  section: WorkspaceModeSection;
   index: number;
   isActive: boolean;
   /** شارة رقمية (عدد الطبقات) */
@@ -151,7 +149,7 @@ const RailToolButton = React.memo(function RailToolButton({
   isInUse?: boolean;
   /** معرّف مشترك بين أزرار الشريط نفسه لتحريك الإطار بينها بلا تسرّب لشريط آخر */
   pillLayoutId: string;
-  onSelectTool: (tool: WorkspaceTool<string>) => void;
+  onSelectSection: (section: WorkspaceModeSection) => void;
 }) {
   const shortcut = toolShortcut(index);
   const showBadge = badgeCount !== undefined && badgeCount > 0;
@@ -162,12 +160,12 @@ const RailToolButton = React.memo(function RailToolButton({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => onSelectTool(tool)}
-          data-testid={tool.testId}
-          aria-label={tool.label}
+          onClick={() => onSelectSection(section)}
+          data-testid={section.testId}
+          aria-label={section.label}
           aria-pressed={isActive}
           className={cn(
-            'group h-8 w-8 rounded-md transition-colors duration-150 cursor-pointer relative',
+            'group h-9 w-full rounded-lg transition-colors duration-150 cursor-pointer relative',
             'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
             isActive
               ? 'text-foreground'
@@ -179,28 +177,31 @@ const RailToolButton = React.memo(function RailToolButton({
           {isActive && (
             <motion.span
               layoutId={pillLayoutId}
-              className="absolute inset-0 bg-accent-active rounded-md border border-border/80 shadow-2xs"
+              className="absolute inset-0 bg-accent-active rounded-lg border border-border/80 shadow-2xs"
               transition={{ duration: 0.12, ease: 'easeOut' }}
             />
           )}
 
           {/* الأيقونة فوق الإطار بلا z-index سالب — يرتفع فوق الشرائح بقيمته الصريحة.
               المقاس 20px (size-5) شبكة Fluent الأصلية، فلا تُصغَّر الأيقونة بلا داعٍ. */}
-          <tool.icon className="size-5 relative z-10" weight={isActive ? 'duotone' : 'regular'} />
+          <section.icon
+            className="size-5 relative z-10"
+            weight={isActive ? 'duotone' : 'regular'}
+          />
 
           {showBadge && (
             <span
-              className="absolute -top-0.5 -end-0.5 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-2xs font-bold tabular-nums flex items-center justify-center leading-none pointer-events-none ring-2 ring-sidebar z-20"
+              className="absolute top-0 end-0 min-w-3.5 h-3.5 px-1 rounded-full bg-primary text-primary-foreground text-2xs font-bold tabular-nums flex items-center justify-center leading-none pointer-events-none ring-2 ring-sidebar z-20"
               aria-hidden="true"
             >
               {badgeCount > 99 ? '99+' : badgeCount}
             </span>
           )}
 
-          {/* نقطة «مطبَّق على الكانفاس» — أسفل يمين الزر */}
+          {/* نقطة «مطبَّق على الكانفاس» — أعلى يسار الزر */}
           {isInUse && (
             <span
-              className="absolute bottom-1 end-1 w-1.5 h-1.5 rounded-full bg-success ring-2 ring-sidebar pointer-events-none z-20"
+              className="absolute top-1.5 start-1.5 w-1.5 h-1.5 rounded-full bg-success ring-2 ring-sidebar pointer-events-none z-20"
               aria-hidden="true"
             />
           )}
@@ -210,7 +211,7 @@ const RailToolButton = React.memo(function RailToolButton({
         side="right"
         className="font-cairo text-xs font-semibold py-1 px-2.5 flex items-center gap-2"
       >
-        <span>{showBadge ? `${tool.label} (${badgeCount})` : tool.label}</span>
+        <span>{showBadge ? `${section.label} (${badgeCount})` : section.label}</span>
         {shortcut && (
           <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
             {shortcut}
@@ -304,25 +305,25 @@ const PaletteStateCommands = React.memo(function PaletteStateCommands({
   );
 });
 
-/** صف أداة في اللوحة — مذكّر؛ التحديد عبر useCallback مستقر من الأب. */
+/** صف وجهة في اللوحة — مذكّر؛ التحديد عبر useCallback مستقر من الأب. */
 const PaletteToolItem = React.memo(function PaletteToolItem({
-  tool,
+  section,
   shortcut,
   isActive,
-  onSelectTool,
+  onSelectSection,
 }: {
-  tool: WorkspaceTool<string>;
+  section: WorkspaceModeSection;
   shortcut: string;
   isActive: boolean;
-  onSelectTool: (tool: WorkspaceTool<string>) => void;
+  onSelectSection: (section: WorkspaceModeSection) => void;
 }) {
-  const handleSelect = useCallback(() => onSelectTool(tool), [onSelectTool, tool]);
-  const ToolIcon = tool.icon;
+  const handleSelect = useCallback(() => onSelectSection(section), [onSelectSection, section]);
+  const SectionIcon = section.icon;
   return (
     <CommandItem
-      value={`${tool.title} ${tool.subtitle} ${tool.label} ${shortcut}`}
+      value={`${section.title} ${section.subtitle} ${section.label} ${shortcut}`}
       onSelect={handleSelect}
-      data-testid={`launcher-${tool.id}`}
+      data-testid={`launcher-${section.id}`}
     >
       <span
         className={cn(
@@ -330,11 +331,11 @@ const PaletteToolItem = React.memo(function PaletteToolItem({
           isActive ? 'bg-accent-active text-foreground' : 'bg-muted/70 text-muted-foreground',
         )}
       >
-        <ToolIcon className="w-4 h-4" weight="duotone" />
+        <SectionIcon className="w-4 h-4" weight="duotone" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-bold truncate">{tool.title}</span>
-        <span className="block text-mini text-muted-foreground truncate">{tool.subtitle}</span>
+        <span className="block font-bold truncate">{section.title}</span>
+        <span className="block text-mini text-muted-foreground truncate">{section.subtitle}</span>
       </span>
       {shortcut && <CommandShortcut>{shortcut}</CommandShortcut>}
     </CommandItem>
@@ -366,7 +367,7 @@ const PaletteGlobalCommandItem = React.memo(function PaletteGlobalCommandItem({
 });
 
 export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
-  activeStudioTab = 'layers',
+  activeStudioTab = 'stickers',
   activeCollageTab = 'custom',
   isZenMode,
   onSelectStudioTab,
@@ -390,32 +391,27 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
   // حالة اللوحة ومستمع Ctrl+K مرفوعان لـ useWorkspacePanels (يعيش في App
   // دائماً) — بقاؤهما هنا كان يُميت Ctrl+K في compact حيث الشريط غائب.
 
-  // قائمة الأدوات تتبع وضع الكانفاس (`mode`) ومسار العمل (`workflow`) معاً —
-  // مسار الإنتاج السريع يخفي تبويب العناصر (شريحة workflow-slice)
+  // قائمة الوجهات تتبع وضع الكانفاس (`mode`) — مسار العمل يغيّر الافتراضي
+  // فقط (الطبقات في السريع) ولا يخفي أي زر إدراج
   const isCollage = mode === 'collage';
-  const tools = useMemo(() => getToolsForWorkflow(mode, workflow), [mode, workflow]);
+  const sections = useMemo(() => getSectionsForWorkflow(mode, workflow), [mode, workflow]);
 
-  const isCustomGridInUse = collageTemplate?.id === 'collage-custom';
-  const isFreeformInUse =
-    typeof collageTemplate?.id === 'string' && collageTemplate.id.startsWith('freeform-');
-
-  const activeTab = isCollage ? activeCollageTab : activeStudioTab;
+  const activeSectionId = isCollage
+    ? getCollageSectionForTab(activeCollageTab).id
+    : getStudioSectionForTab(activeStudioTab, workflow).id;
   const toolsHeading = isCollage ? 'أدوات الكولاج' : 'أدوات التعديل الحر';
-  const groups = useMemo(() => groupTools(tools), [tools]);
   const commandGroups = useMemo(() => groupCommands(WORKSPACE_COMMANDS), []);
-  // ترتيب الأداة في قائمتها الظاهرة — هو نفسه المستخدم في Alt+الرقم في الشريط واللوحة معاً
-  const toolIndexById = useMemo(
-    () => new Map<string, number>(tools.map((tool, index): [string, number] => [tool.id, index])),
-    [tools],
+  // ترتيب الوجهة في قائمتها الظاهرة — هو نفسه المستخدم في Alt+الرقم في الشريط واللوحة معاً
+  const sectionIndexById = useMemo(
+    () =>
+      new Map<string, number>(
+        sections.map((section, index): [string, number] => [section.id, index]),
+      ),
+    [sections],
   );
-  const toolIndex = (tool: WorkspaceTool<string>) => toolIndexById.get(tool.id) ?? 0;
 
-  const isToolInUse = (tool: WorkspaceTool<string>) =>
-    tool.badge === 'collage-grid'
-      ? isCustomGridInUse
-      : tool.badge === 'collage-freeform'
-        ? isFreeformInUse
-        : undefined;
+  const isSectionInUse = (section: WorkspaceModeSection) =>
+    section.inUse === 'collage-template' ? collageTemplate != null : undefined;
 
   // مذكّرات مستقرّة — تُمرَّر لصفوف memo فلا يعاد بناؤها مع كل تصيير للأب
   const closeLauncher = useCallback(() => onLauncherOpenChange(false), [onLauncherOpenChange]);
@@ -427,22 +423,39 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
     [onLauncherOpenChange],
   );
 
-  const selectTool = useCallback(
-    (tool: WorkspaceTool<string>) => {
+  const selectSection = useCallback(
+    (section: WorkspaceModeSection) => {
       if (isCollage) {
-        if (isCollageTab(tool.id)) onSelectCollageTab?.(tool.id);
-      } else if (isStudioTab(tool.id)) {
-        onSelectStudioTab?.(tool.id);
+        // النقر على الوجهة النشطة يبقي التبويب الحالي (فيتولّى الخطاف طيّ اللوح)
+        const target =
+          getCollageSectionForTab(activeCollageTab).id === section.id
+            ? activeCollageTab
+            : section.defaultTab;
+        if (isCollageTab(target)) onSelectCollageTab?.(target);
+      } else {
+        const target =
+          getStudioSectionForTab(activeStudioTab, workflow).id === section.id
+            ? activeStudioTab
+            : section.defaultTab;
+        if (isStudioTab(target)) onSelectStudioTab?.(target);
       }
       onLauncherOpenChange(false);
     },
-    [isCollage, onSelectCollageTab, onSelectStudioTab, onLauncherOpenChange],
+    [
+      activeCollageTab,
+      activeStudioTab,
+      isCollage,
+      onSelectCollageTab,
+      onSelectStudioTab,
+      onLauncherOpenChange,
+      workflow,
+    ],
   );
-  // 🛡️ يقرأ الخريطة مباشرة من التبعية — تمرير toolIndex (غير مذكّرة) كان
+  // 🛡️ يقرأ الخريطة مباشرة من التبعية — تمرير sectionIndex (غير مذكّرة) كان
   // سيغلق على خريطة قديمة بعد تغيّر مسار العمل.
   const getShortcut = useCallback(
-    (tool: WorkspaceTool<string>) => toolShortcut(toolIndexById.get(tool.id) ?? 0),
-    [toolIndexById],
+    (section: WorkspaceModeSection) => toolShortcut(sectionIndexById.get(section.id) ?? 0),
+    [sectionIndexById],
   );
 
   return (
@@ -463,40 +476,29 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
         aria-hidden="true"
         className="pointer-events-none absolute inset-y-0 end-0 w-px bg-gradient-to-b from-transparent via-border/60 to-transparent"
       />
-      {/* أدوات الوضع الحالي (كولاج / تعديل حر) — مقسّمة إلى مجموعات بفواصل رقيقة.
-          min-h-0 ضروري ليصبح التمرير فعلياً داخل flex column بدل أن يتجاوز
-          المحتوى ارتفاع الشريط ويدفع الأزرار المثبّتة خارجه. */}
+      {/* وجهات الوضع الحالي (كولاج / تعديل حر) — ثلاث وجهات ثابتة بلا مجموعات
+          ولا فواصل؛ التفاصيل تعيش في تبويبات الوجهة الداخلية. min-h-0 ضروري
+          ليصبح التمرير فعلياً داخل flex column في النوافذ القصيرة. */}
       <nav
         aria-label={toolsHeading}
-        className="flex flex-col items-center gap-0.5 w-full px-1 py-1 flex-1 min-h-0 overflow-y-auto scrollbar-none"
+        className="flex flex-col items-center gap-1 w-full px-1 py-1 flex-1 min-h-0 overflow-y-auto scrollbar-none"
       >
-        {groups.map((group, groupIndex) => (
-          <React.Fragment key={group.name}>
-            {groupIndex > 0 && (
-              <div
-                role="separator"
-                aria-orientation="horizontal"
-                className="w-6 h-px my-1 shrink-0 bg-gradient-to-l from-transparent via-border to-transparent"
-              />
-            )}
-            {group.tools.map((tool) => (
-              <RailToolButton
-                key={tool.id}
-                tool={tool}
-                index={toolIndex(tool)}
-                isActive={activeTab === tool.id}
-                isInUse={isToolInUse(tool)}
-                badgeCount={tool.badge === 'elements' ? elementsCount : undefined}
-                pillLayoutId={pillLayoutId}
-                onSelectTool={selectTool}
-              />
-            ))}
-          </React.Fragment>
+        {sections.map((section, index) => (
+          <RailToolButton
+            key={section.id}
+            section={section}
+            index={index}
+            isActive={activeSectionId === section.id}
+            isInUse={isSectionInUse(section)}
+            badgeCount={section.badge === 'elements' ? elementsCount : undefined}
+            pillLayoutId={pillLayoutId}
+            onSelectSection={selectSection}
+          />
         ))}
       </nav>
 
       {/* أسفل الشريط: لوحة كل الأدوات + وضع التركيز (لا تمرّ هاتان أبداً) */}
-      <div className="flex flex-col items-center gap-0.5 w-full px-1 shrink-0">
+      <div className="flex flex-col items-center gap-1 w-full px-1 shrink-0">
         <div
           role="separator"
           aria-orientation="horizontal"
@@ -511,9 +513,9 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
                   variant="ghost"
                   size="icon"
                   data-testid="rail-tool-launcher"
-                  aria-label="كل الأدوات"
+                  aria-label="لوحة الأدوات"
                   className={cn(
-                    'h-8 w-8 rounded-md transition-colors duration-150 cursor-pointer',
+                    'h-9 w-9 rounded-md transition-colors duration-150 cursor-pointer',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                     isLauncherOpen
                       ? 'text-foreground bg-accent-active border border-border/80'
@@ -530,7 +532,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
               side="right"
               className="font-cairo text-xs font-semibold py-1 px-2.5 flex items-center gap-2"
             >
-              <span>كل الأدوات</span>
+              <span>لوحة الأدوات</span>
               <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
                 Ctrl+K
               </kbd>
@@ -545,11 +547,11 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
             className="w-[380px] p-0 rounded-lg border fluent-specular font-cairo overflow-hidden"
           >
             <ToolLauncherContent
-              tools={tools}
-              activeTab={activeTab}
+              sections={sections}
+              activeSectionId={activeSectionId}
               toolsHeading={toolsHeading}
               getShortcut={getShortcut}
-              onSelectTool={selectTool}
+              onSelectSection={selectSection}
               onAfterRun={closeLauncher}
               onRunCommand={runGlobalCommand}
               commandGroups={commandGroups}
@@ -566,7 +568,7 @@ export const WorkspacePanelRail = React.memo(function WorkspacePanelRail({
               data-testid="rail-zen-mode"
               aria-label={isZenMode ? 'استعادة الألواح' : 'وضع التركيز'}
               className={cn(
-                'h-8 w-8 rounded-md transition-colors duration-150 cursor-pointer',
+                'h-9 w-9 rounded-md transition-colors duration-150 cursor-pointer',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                 isZenMode
                   ? 'text-foreground bg-accent-active border border-border/80'
@@ -611,7 +613,7 @@ interface CompactToolLauncherProps {
 }
 
 export function CompactToolLauncher({
-  activeStudioTab = 'layers',
+  activeStudioTab = 'stickers',
   activeCollageTab = 'custom',
   onSelectStudioTab,
   onSelectCollageTab,
@@ -626,17 +628,22 @@ export function CompactToolLauncher({
   );
 
   const isCollage = mode === 'collage';
-  const tools = useMemo(() => getToolsForWorkflow(mode, workflow), [mode, workflow]);
-  const activeTab = isCollage ? activeCollageTab : activeStudioTab;
+  const sections = useMemo(() => getSectionsForWorkflow(mode, workflow), [mode, workflow]);
+  const activeSectionId = isCollage
+    ? getCollageSectionForTab(activeCollageTab).id
+    : getStudioSectionForTab(activeStudioTab, workflow).id;
   const toolsHeading = isCollage ? 'أدوات الكولاج' : 'أدوات التعديل الحر';
   const commandGroups = useMemo(() => groupCommands(WORKSPACE_COMMANDS), []);
-  const toolIndexById = useMemo(
-    () => new Map<string, number>(tools.map((tool, index): [string, number] => [tool.id, index])),
-    [tools],
+  const sectionIndexById = useMemo(
+    () =>
+      new Map<string, number>(
+        sections.map((section, index): [string, number] => [section.id, index]),
+      ),
+    [sections],
   );
   const getShortcut = useCallback(
-    (tool: WorkspaceTool<string>) => toolShortcut(toolIndexById.get(tool.id) ?? 0),
-    [toolIndexById],
+    (section: WorkspaceModeSection) => toolShortcut(sectionIndexById.get(section.id) ?? 0),
+    [sectionIndexById],
   );
   const closeLauncher = useCallback(() => onLauncherOpenChange(false), [onLauncherOpenChange]);
   const runGlobalCommand = useCallback(
@@ -646,16 +653,32 @@ export function CompactToolLauncher({
     },
     [onLauncherOpenChange],
   );
-  const selectTool = useCallback(
-    (tool: WorkspaceTool<string>) => {
+  const selectSection = useCallback(
+    (section: WorkspaceModeSection) => {
       if (isCollage) {
-        if (isCollageTab(tool.id)) onSelectCollageTab?.(tool.id);
-      } else if (isStudioTab(tool.id)) {
-        onSelectStudioTab?.(tool.id);
+        const target =
+          getCollageSectionForTab(activeCollageTab).id === section.id
+            ? activeCollageTab
+            : section.defaultTab;
+        if (isCollageTab(target)) onSelectCollageTab?.(target);
+      } else {
+        const target =
+          getStudioSectionForTab(activeStudioTab, workflow).id === section.id
+            ? activeStudioTab
+            : section.defaultTab;
+        if (isStudioTab(target)) onSelectStudioTab?.(target);
       }
       onLauncherOpenChange(false);
     },
-    [isCollage, onSelectCollageTab, onSelectStudioTab, onLauncherOpenChange],
+    [
+      activeCollageTab,
+      activeStudioTab,
+      isCollage,
+      onSelectCollageTab,
+      onSelectStudioTab,
+      onLauncherOpenChange,
+      workflow,
+    ],
   );
 
   return (
@@ -667,7 +690,7 @@ export function CompactToolLauncher({
               variant="default"
               size="icon"
               data-testid="compact-tool-launcher"
-              aria-label="كل الأدوات"
+              aria-label="لوحة الأدوات"
               className={cn(
                 'h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-fluent-16 cursor-pointer',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
@@ -682,7 +705,7 @@ export function CompactToolLauncher({
           side="top"
           className="font-cairo text-xs font-semibold py-1 px-2.5 flex items-center gap-2"
         >
-          <span>كل الأدوات</span>
+          <span>لوحة الأدوات</span>
           <kbd className="px-1 py-0.5 text-micro font-mono bg-muted/80 rounded border border-border">
             Ctrl+K
           </kbd>
@@ -697,11 +720,11 @@ export function CompactToolLauncher({
         className="w-[calc(100vw-2rem)] max-w-[380px] p-0 rounded-lg border fluent-specular font-cairo overflow-hidden"
       >
         <ToolLauncherContent
-          tools={tools}
-          activeTab={activeTab}
+          sections={sections}
+          activeSectionId={activeSectionId}
           toolsHeading={toolsHeading}
           getShortcut={getShortcut}
-          onSelectTool={selectTool}
+          onSelectSection={selectSection}
           onAfterRun={closeLauncher}
           onRunCommand={runGlobalCommand}
           commandGroups={commandGroups}

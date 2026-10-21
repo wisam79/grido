@@ -11,14 +11,17 @@ describe('CanvasDimensionsPanel Component Tests', () => {
     useEditorStore.getState().reset();
   });
 
-  it('renders canvas dimensions header correctly', () => {
+  it('renders the paper controls without a redundant workspace header', () => {
     render(
       <TooltipProvider>
         <CanvasDimensionsPanel />
       </TooltipProvider>,
     );
 
-    expect(screen.getByText('مساحة العمل')).toBeInTheDocument();
+    expect(screen.queryByText('مساحة العمل')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('المقاس: A4')).toBeInTheDocument();
+    expect(screen.getByLabelText('العرض')).toBeInTheDocument();
+    expect(screen.getByLabelText('الارتفاع')).toBeInTheDocument();
   });
 
   it('swaps canvas dimensions when orientation toggle button is clicked', () => {

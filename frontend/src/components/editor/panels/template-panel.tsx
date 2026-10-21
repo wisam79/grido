@@ -16,7 +16,7 @@ import { CaretLeft, CaretRight } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
-import { getCollageTool, getStudioTool } from '@/lib/workspace-tools';
+import { getCollageSectionForTab, getStudioSectionForTab } from '@/lib/workspace-tools';
 
 import { CustomCollageCard } from './custom-collage-card';
 import { FreeformStudioPanel } from './freeform';
@@ -42,29 +42,25 @@ export interface TemplatePanelProps {
   /** يخفي رأس اللوحة عندما تعرض التبويبات الداخلية اسم الأداة (compact) */
   hideHeader?: boolean;
   activeStudioTab?: FreeformTab;
-  onActiveStudioTabChange?: (tab: FreeformTab) => void;
   activeCollageTab?: CollageTab;
   onActiveCollageTabChange?: (tab: CollageTab) => void;
-  /** يُمكّن شريط التبويبات الداخلي في الشاشات المدمجة (< 1024px) */
-  showInternalCollageTabs?: boolean;
 }
 
 export const TemplatePanel = React.memo(function TemplatePanel({
   onCollapse,
   collapseSide = 'right',
   hideHeader = false,
-  activeStudioTab = 'layers',
-  onActiveStudioTabChange,
+  activeStudioTab = 'stickers',
   activeCollageTab = 'custom',
   onActiveCollageTabChange,
-  showInternalCollageTabs = false,
 }: TemplatePanelProps) {
-  const { setCollageTemplate, collageTemplate, slots, mode, elements } = useEditorStore(
+  const { setCollageTemplate, collageTemplate, slots, mode, workflow, elements } = useEditorStore(
     useShallow((state) => ({
       setCollageTemplate: state.setCollageTemplate,
       collageTemplate: state.collageTemplate,
       slots: state.slots,
       mode: state.mode,
+      workflow: state.workflow,
       elements: state.elements,
     })),
   );
@@ -160,16 +156,18 @@ export const TemplatePanel = React.memo(function TemplatePanel({
     }
   };
 
-  // العنوان يُقرأ من سجل الأدوات الموحّد (كانت 4 سلاسل شروط ثلاثية)
-  const activeTool =
-    mode === 'collage' ? getCollageTool(activeCollageTab) : getStudioTool(activeStudioTab);
+  // العنوان يُقرأ من سجل الوجهات الموحّد — الوجهة سطح واحد وتبويباتها تفاصيلها
+  const activeSection =
+    mode === 'collage'
+      ? getCollageSectionForTab(activeCollageTab)
+      : getStudioSectionForTab(activeStudioTab, workflow);
 
   return (
     <PanelShell
-      title={activeTool.title}
+      title={activeSection.title}
       showHeader={!hideHeader}
       onCollapse={onCollapse}
-      collapseTitle={`إخفاء ${activeTool.label} (Ctrl+B)`}
+      collapseTitle={`إخفاء ${activeSection.label} (Ctrl+B)`}
       collapseIcon={
         collapseSide === 'left' ? (
           <CaretLeft
@@ -226,15 +224,10 @@ export const TemplatePanel = React.memo(function TemplatePanel({
             fileInputRef={fileInputRef}
             activeTab={activeCollageTab}
             onActiveTabChange={onActiveCollageTabChange}
-            showInternalTabs={showInternalCollageTabs}
           />
         </div>
       ) : (
-        <FreeformStudioPanel
-          activeTab={activeStudioTab}
-          onActiveTabChange={onActiveStudioTabChange}
-          showInternalTabs={showInternalCollageTabs}
-        />
+        <FreeformStudioPanel activeTab={activeStudioTab} />
       )}
 
       {/* Confirmation Dialog when switching templates with existing photos */}
