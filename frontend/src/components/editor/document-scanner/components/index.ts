@@ -1,2 +1,2 @@
-export * from "./document-list-item";
-export * from "./scanner-sidebar";
+export * from './document-list-item';
+export * from './scanner-sidebar';

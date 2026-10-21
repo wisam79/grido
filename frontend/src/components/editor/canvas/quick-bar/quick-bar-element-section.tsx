@@ -1,4 +1,8 @@
 import React from 'react';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import { Button } from '@/components/ui/button';
 import {
   ArrowUp,
   ArrowDown,
@@ -7,16 +11,15 @@ import {
   ArrowCounterClockwise,
   Eye,
 } from '@/components/ui/icons';
-import { QuickBarGroup } from './quick-bar-group';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { useShallow } from 'zustand/react/shallow';
-import { useEditorStore } from '@/lib/editor-store';
-import type { CanvasElement } from '@/lib/store/types';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { rotateElementAroundCenter } from '@/lib/canvas/element-geometry';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
+
+import { QuickBarGroup } from './quick-bar-group';
+
+import type { CanvasElement } from '@/lib/store/types';
 
 /**
  * QuickBarElementSection — قسم العنصر الفردي في وضع التعديل الحر.

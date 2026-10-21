@@ -1,23 +1,27 @@
 import { useState } from 'react';
-import { CanvasElement, useEditorStore } from '@/lib/editor-store';
-import { PaintBrush, Palette, Sparkle, ArrowsOutCardinal } from '@/components/ui/icons';
-import { cn } from '@/lib/utils';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
+
 import { FluentSegmentedControl } from '@/components/ui/blocks';
+import { PaintBrush, Palette, Sparkle, ArrowsOutCardinal } from '@/components/ui/icons';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
+
+import { ElementHeaderBadge } from './element/element-header-badge';
+import { ShadowGlowSection } from './element/shared/shadow-glow-section';
+import { ElementArrangeTab } from './element/tabs/arrange-tab';
 import {
   ImageStyleProperties,
   ImageAdjustProperties,
   ImageEffectsProperties,
 } from './panels/image-properties';
+import { ShapeStyleProperties, ShapeColorProperties } from './panels/shape-properties';
 import {
   TextStyleProperties,
   TextColorProperties,
   TextEffectsProperties,
 } from './panels/text-properties';
-import { ShapeStyleProperties, ShapeColorProperties } from './panels/shape-properties';
-import { ElementHeaderBadge } from './element/element-header-badge';
-import { ElementArrangeTab } from './element/tabs/arrange-tab';
-import { ShadowGlowSection } from './element/shared/shadow-glow-section';
+
+import type { CanvasElement } from '@/lib/editor-store';
 
 export interface ElementPropertiesProps {
   element: CanvasElement;

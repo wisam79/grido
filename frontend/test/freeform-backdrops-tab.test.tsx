@@ -1,10 +1,11 @@
-import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { FreeformBackdropsTab } from '../src/components/editor/panels/freeform/freeform-backdrops-tab';
-import { useEditorStore } from '../src/lib/editor-store';
-import { TooltipProvider } from '../src/components/ui/tooltip';
 import { GRADIENT_PRESETS } from '../src/components/editor/properties/gradient-utils';
+import { TooltipProvider } from '../src/components/ui/tooltip';
+import { useEditorStore } from '../src/lib/editor-store';
 
 /**
  * تبويب الخلفيات في التعديل الحر — الانحدارات التي تثبت هذا الاختبار:

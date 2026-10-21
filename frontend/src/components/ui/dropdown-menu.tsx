@@ -1,9 +1,9 @@
 'use client';
 
-import * as React from 'react';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
-import { Check, CaretRight, Circle } from '@/components/ui/icons';
+import * as React from 'react';
 
+import { Check, CaretRight, Circle } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 
 function DropdownMenu({

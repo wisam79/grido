@@ -1,14 +1,15 @@
 import { render, screen, act } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
-import { CanvasQuickBar } from '../src/components/editor/canvas/canvas-quick-bar';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { CanvasOverlayHost } from '../src/components/editor/canvas/canvas-overlay-host';
-import { useEditorStore } from '../src/lib/editor-store';
+import { CanvasQuickBar } from '../src/components/editor/canvas/canvas-quick-bar';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import {
   useCanvasInteraction,
   resetCanvasInteraction,
 } from '../src/lib/canvas/canvas-interaction-store';
+import { useEditorStore } from '../src/lib/editor-store';
 
 describe('CanvasQuickBar Component Tests', () => {
   beforeEach(() => {

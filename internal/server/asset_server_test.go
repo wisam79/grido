@@ -250,4 +250,3 @@ func TestAssetServer_SetRuntimeBridge_NilIgnored(t *testing.T) {
 		t.Error("SetRuntimeBridge(nil) should not overwrite existing runtime bridge")
 	}
 }
-

@@ -1,7 +1,34 @@
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type Modifier,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import React, { useState, useCallback, useMemo } from 'react';
-import { useEditorStore, CanvasElement } from '@/lib/editor-store';
-import type { TextElement, ShapeElement, ImageElement } from '@/lib/store/types';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import {
   Stack,
   Eye,
@@ -21,26 +48,12 @@ import {
   ArrowsOut,
   FolderSimple,
 } from '@/components/ui/icons';
-import { cn } from '@/lib/utils';
 import { getThumbnailSrc } from '@/lib/canvas/thumbnail-src';
-import { useShallow } from 'zustand/react/shallow';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  type Modifier,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
+
+import type { CanvasElement } from '@/lib/editor-store';
+import type { TextElement, ShapeElement, ImageElement } from '@/lib/store/types';
 
 // ── Vertical-only Drag Modifier ──────────────────────────────────────────────
 // قفل حركة سحب الطبقات حصرياً على المحور الرأسي Y لمنع أي انزياح أو اهتزاز أفقي
@@ -48,16 +61,6 @@ const restrictToVerticalAxis: Modifier = ({ transform }) => ({
   ...transform,
   x: 0,
 });
-import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 

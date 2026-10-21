@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+
 import {
   applyRowToParams,
   buildDatasetForTest,
@@ -7,6 +8,7 @@ import {
   VDP_MAX_ROWS,
   VDP_PARSE_ROW_LIMIT,
 } from '@/features/stickers/lib/vdp-parser';
+
 import type { StickerParams } from '@/features/stickers';
 
 // 🛡️ مكتبة xlsx من npm تحمل ثغرة تلوّث نموذج أولي بلا إصلاح متاح من npm

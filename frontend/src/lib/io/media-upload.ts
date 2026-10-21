@@ -1,5 +1,6 @@
-import { fetchLocalApi } from '@/lib/local-api';
 import { setCachedImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import { fetchLocalApi } from '@/lib/local-api';
+
 import { SaveImageFromBase64 } from '../../../wailsjs/go/main/App';
 
 export interface UploadMediaResult {

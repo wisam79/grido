@@ -1,10 +1,11 @@
+import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { downloadBlob, quickExportPNG } from '../src/lib/export/export-project';
+
 import { useEditorStore } from '../src/lib/editor-store';
-import * as AppGo from '../wailsjs/go/main/App';
 import * as ExportImage from '../src/lib/export/export-image';
 import { CanvasTooLargeError } from '../src/lib/export/export-limits';
-import { toast } from 'sonner';
+import { downloadBlob, quickExportPNG } from '../src/lib/export/export-project';
+import * as AppGo from '../wailsjs/go/main/App';
 
 vi.mock('../wailsjs/go/main/App', () => ({
   SaveFileDialog: vi.fn(),
@@ -40,7 +41,7 @@ describe('ExportProject Unit Tests', () => {
         expect.stringContaining('data:image/png;base64,'),
         'photo.png',
         'PNG Image (*.png)',
-        '*.png'
+        '*.png',
       );
     });
 
@@ -55,7 +56,7 @@ describe('ExportProject Unit Tests', () => {
         expect.stringContaining('data:image/jpeg;base64,'),
         'avatar.jpg',
         'JPEG Image (*.jpg;*.jpeg)',
-        '*.jpg;*.jpeg'
+        '*.jpg;*.jpeg',
       );
     });
 
@@ -70,7 +71,7 @@ describe('ExportProject Unit Tests', () => {
         expect.any(String),
         'image.webp',
         'Image File',
-        '*.png;*.jpg;*.jpeg'
+        '*.png;*.jpg;*.jpeg',
       );
     });
 
@@ -118,13 +119,15 @@ describe('ExportProject Unit Tests', () => {
 
     it('handles CanvasTooLargeError with specific 50MP guidance message', async () => {
       vi.mocked(ExportImage.exportCanvas).mockRejectedValueOnce(
-        new CanvasTooLargeError(8000, 7000)
+        new CanvasTooLargeError(8000, 7000),
       );
 
       await quickExportPNG();
 
       expect(toast.error).toHaveBeenCalledWith(
-        expect.stringContaining('الأبعاد كبيرة جداً للتصدير (8000×7000 بكسل ≈ 56.0 ميجابكسل) — الحد الأقصى 50 ميجابكسل')
+        expect.stringContaining(
+          'الأبعاد كبيرة جداً للتصدير (8000×7000 بكسل ≈ 56.0 ميجابكسل) — الحد الأقصى 50 ميجابكسل',
+        ),
       );
       expect(AppGo.SaveFileDialog).not.toHaveBeenCalled();
     });
@@ -139,4 +142,3 @@ describe('ExportProject Unit Tests', () => {
     });
   });
 });
-

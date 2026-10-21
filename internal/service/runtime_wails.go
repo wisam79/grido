@@ -58,4 +58,3 @@ func (WailsRuntimeBridge) SaveFileDialog(title, defaultFilename string, filters 
 	}
 	return d.PromptForSingleSelection()
 }
-

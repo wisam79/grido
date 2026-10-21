@@ -1,15 +1,19 @@
+import Konva from 'konva';
 import React, { useEffect } from 'react';
 import { Image as KonvaImage, Group, Rect } from 'react-konva';
+
 import { useAsyncImage } from '@/hooks/use-async-image';
-import Konva from 'konva';
-import { ImageElement } from '@/lib/editor-store';
-import { getKonvaFilters } from '@/lib/filters/konva-filters';
-import { useRenderQuality } from '@/lib/canvas/render-quality';
-import { useFilterCache } from '@/hooks/use-filter-cache';
 import { useDisplayImage } from '@/hooks/use-display-image';
+import { useFilterCache } from '@/hooks/use-filter-cache';
 import { useKonvaDrag } from '@/hooks/use-konva-drag';
-import { ElementProps, propsAreEqual } from './types';
+import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { getKonvaFilters } from '@/lib/filters/konva-filters';
+
 import { MagicAiScanner } from './magic-ai-scanner';
+import { propsAreEqual } from './types';
+import type { ElementProps } from './types';
+import type { CacheableKonvaNode } from '@/hooks/use-filter-cache';
+import type { ImageElement } from '@/lib/editor-store';
 import '@/lib/filters/custom-filters';
 
 export const URLImage = React.memo(function URLImage({
@@ -19,7 +23,7 @@ export const URLImage = React.memo(function URLImage({
   onTouchStart,
   onClick,
   onTap,
-  onChange,
+  onChange: _onChange,
   canvasWidth,
   canvasHeight,
   setActiveGuides,
@@ -81,9 +85,7 @@ export const URLImage = React.memo(function URLImage({
     return { filters: res.filters, filterProps: res };
   }, [element.filter, element.brightness, element.contrast, element.saturation, element.blur]);
 
-  const imageNodeRef = React.useRef<import('@/hooks/use-filter-cache').CacheableKonvaNode | null>(
-    null,
-  );
+  const imageNodeRef = React.useRef<CacheableKonvaNode | null>(null);
   // الأبعاد خارج المفتاح عمداً: التحجيم يعيد الكاش المكلف في كل إطار،
   // ويُعاد بناؤه صراحةً بعد استقرار التحويل (onTransformEnd) والتصدير يرفع الدقة بنفسه
   const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}`;

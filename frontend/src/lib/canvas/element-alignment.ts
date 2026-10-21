@@ -6,8 +6,9 @@
  * مستخرج من element-slice.ts لتحقيق النقاء الحسابي وقابلية الفحص الآلي المستقل.
  */
 
-import { CanvasElement } from '../store/types';
 import { getElementVisualBox } from './element-geometry';
+
+import type { CanvasElement } from '../store/types';
 
 export type AlignmentType = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
 export type DistributionAxis = 'horizontal' | 'vertical';

@@ -1,16 +1,19 @@
 import { useCallback, useState, type DragEvent, type RefObject } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
-import { useStageRef } from '@/lib/canvas/stage-context';
-import type Konva from 'konva';
-import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+
+import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
 import {
   resolveImageAspectRatio,
   resolveBatchImageAspectRatios,
   setCachedImageAspectRatio,
 } from '@/lib/canvas/image-dimensions';
-import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
+import { useStageRef } from '@/lib/canvas/stage-context';
+import { useEditorStore } from '@/lib/editor-store';
 import { fetchLocalApi } from '@/lib/local-api';
 import { createLogger } from '@/lib/logger';
+
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+
+import type Konva from 'konva';
 
 const logger = createLogger('use-image-drop');
 

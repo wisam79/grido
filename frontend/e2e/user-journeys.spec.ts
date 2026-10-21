@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Integrated User Journeys E2E', () => {
@@ -8,18 +9,35 @@ test.describe('Integrated User Journeys E2E', () => {
     await waitForAppReady(page);
   });
 
-  test('User Journey 1: Import image, edit, switch to collage, and trigger export', async ({ page }) => {
+  test('User Journey 1: Import image, edit, switch to collage, and trigger export', async ({
+    page,
+  }) => {
     // 1. Add image to canvas
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
-    await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    await page
+      .getByTestId('toolbar-insert')
+      .or(page.getByRole('button', { name: /إدراج/ }))
+      .first()
+      .click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
     // 2. Switch to Collage Mode
-    await page.getByTestId('mode-tab-collage').or(page.getByRole('tab', { name: 'كولاج', exact: true })).first().click();
+    await page
+      .getByTestId('mode-tab-collage')
+      .or(page.getByRole('tab', { name: 'كولاج', exact: true }))
+      .first()
+      .click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
     // 3. Open Export dialog
-    const exportBtn = page.getByRole('button', { name: /تصدير/ }).or(page.getByTitle(/تصدير/)).first();
+    const exportBtn = page
+      .getByRole('button', { name: /تصدير/ })
+      .or(page.getByTitle(/تصدير/))
+      .first();
     await exportBtn.click();
 
     const exportModal = page.getByRole('dialog').filter({ hasText: /تصدير/ });
@@ -31,11 +49,20 @@ test.describe('Integrated User Journeys E2E', () => {
     await expect(exportModal).not.toBeVisible();
   });
 
-  test('User Journey 2: Freeform elements manipulation and undo/redo stability', async ({ page }) => {
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
+  test('User Journey 2: Freeform elements manipulation and undo/redo stability', async ({
+    page,
+  }) => {
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
-    const addTextBtn = page.getByTestId('toolbar-add-text').or(page.getByRole('button', { name: /إضافة نص/ })).first();
+    const addTextBtn = page
+      .getByTestId('toolbar-add-text')
+      .or(page.getByRole('button', { name: /إضافة نص/ }))
+      .first();
     if (await addTextBtn.isVisible()) {
       await addTextBtn.click();
       const textItem = page.getByRole('menuitem').first();
@@ -46,15 +73,23 @@ test.describe('Integrated User Journeys E2E', () => {
 
     await expect(page.locator('#canvas-area')).toBeVisible();
 
-    const undoBtn = page.getByTestId('canvas-undo').or(page.getByRole('button', { name: /تراجع/ })).first();
-    if (await undoBtn.isVisible() && await undoBtn.isEnabled()) {
+    const undoBtn = page
+      .getByTestId('canvas-undo')
+      .or(page.getByRole('button', { name: /تراجع/ }))
+      .first();
+    if ((await undoBtn.isVisible()) && (await undoBtn.isEnabled())) {
       await undoBtn.click();
       await expect(page.locator('#canvas-area')).toBeVisible();
     }
   });
 
-  test('User Journey 3: Sticker Studio browsing and parameter tabs interaction', async ({ page }) => {
-    const stickerBtn = page.getByRole('button', { name: /ملصقات|استوديو الملصقات/ }).or(page.getByTitle(/ملصقات/)).first();
+  test('User Journey 3: Sticker Studio browsing and parameter tabs interaction', async ({
+    page,
+  }) => {
+    const stickerBtn = page
+      .getByRole('button', { name: /ملصقات|استوديو الملصقات/ })
+      .or(page.getByTitle(/ملصقات/))
+      .first();
     if (await stickerBtn.isVisible()) {
       await stickerBtn.click();
       const dialog = page.getByRole('dialog');
@@ -71,7 +106,10 @@ test.describe('Integrated User Journeys E2E', () => {
   });
 
   test('User Journey 4: Keyboard accessibility and modal escape dismissal', async ({ page }) => {
-    const shortcutsBtn = page.getByRole('button', { name: /اختصارات/ }).or(page.getByTitle(/اختصارات/)).first();
+    const shortcutsBtn = page
+      .getByRole('button', { name: /اختصارات/ })
+      .or(page.getByTitle(/اختصارات/))
+      .first();
     if (await shortcutsBtn.isVisible()) {
       await shortcutsBtn.click();
       const modal = page.getByRole('dialog');

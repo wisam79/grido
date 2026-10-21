@@ -1,6 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { TextElement, useEditorStore } from '@/lib/editor-store';
-import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, FontOption } from '@/lib/io/fonts';
+
 import {
   MagnifyingGlass,
   CaretDown,
@@ -11,10 +10,15 @@ import {
   Cloud,
   CheckCircle,
 } from '@/components/ui/icons';
-import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-// #12 — استخدام readStoredList/writeStoredList لضمان قراءة string[] فقط وسقف 60
+import { useEditorStore } from '@/lib/editor-store';
+import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont } from '@/lib/io/fonts';
 import { readStoredList, writeStoredList } from '@/lib/local-prefs';
+import { cn } from '@/lib/utils';
+
+import type { TextElement } from '@/lib/editor-store';
+import type { FontOption } from '@/lib/io/fonts';
+// #12 — استخدام readStoredList/writeStoredList لضمان قراءة string[] فقط وسقف 60
 
 interface TextFontSelectorProps {
   element: TextElement;

@@ -1,6 +1,9 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
+
+import { Gear, Sparkle, Folder } from '@/components/ui/icons';
+
 import {
   FluentSection,
   FluentSettingRow,
@@ -10,7 +13,6 @@ import {
   FluentIconButton,
 } from '../src/components/ui/blocks';
 import { TooltipProvider } from '../src/components/ui/tooltip';
-import { Gear, Sparkle, Folder } from '@/components/ui/icons';
 
 describe('Fluent 2 UI Blocks Component Suite', () => {
   describe('FluentSection', () => {

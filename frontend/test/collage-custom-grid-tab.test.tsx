@@ -1,6 +1,7 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { CollageCustomGridTab } from '../src/components/editor/panels/collage/collage-custom-grid-tab';
 import { GeneralSettings } from '../src/components/editor/properties/general-settings';
 import { TooltipProvider } from '../src/components/ui/tooltip';

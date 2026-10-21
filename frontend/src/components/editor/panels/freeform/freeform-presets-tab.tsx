@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
+
+import { FluentFilterChips } from '@/components/ui/blocks';
 import {
   IdentificationCard,
   Camera,
@@ -9,10 +10,13 @@ import {
   FrameCorners,
   ArrowsClockwise,
 } from '@/components/ui/icons';
-import { CANVAS_SIZE_PRESETS, CanvasSizePreset } from './freeform-panel-constants';
-import { cn } from '@/lib/utils';
-import { FluentFilterChips } from '@/components/ui/blocks';
 import { canvasMm } from '@/lib/canvas/units';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
+
+import { CANVAS_SIZE_PRESETS } from './freeform-panel-constants';
+
+import type { CanvasSizePreset } from './freeform-panel-constants';
 
 export const FreeformPresetsTab = React.memo(function FreeformPresetsTab() {
   const { canvasWidth, canvasHeight, setCanvasSize, printSettings, template } = useEditorStore(

@@ -1,7 +1,10 @@
-import React from 'react';
 import { render } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
 import { axe } from 'jest-axe';
+import React from 'react';
+import { describe, it, expect } from 'vitest';
+
+import { Gear, Sparkle, Folder } from '@/components/ui/icons';
+
 import {
   FluentSection,
   FluentSettingRow,
@@ -12,7 +15,6 @@ import {
   FluentCapsuleButton,
 } from '../src/components/ui/blocks';
 import { TooltipProvider } from '../src/components/ui/tooltip';
-import { Gear, Sparkle, Folder } from '@/components/ui/icons';
 
 /**
  * اختبارات الوصول (a11y) — تفعيل بنية jest-axe الموجودة مسبقاً في setup.ts.

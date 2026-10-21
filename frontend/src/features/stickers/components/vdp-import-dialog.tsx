@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { UploadSimple, GridFour, Link, CaretRight, WarningCircle } from '@/components/ui/icons';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,18 +11,20 @@ import {
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
+import { UploadSimple, GridFour, Link, CaretRight, WarningCircle } from '@/components/ui/icons';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { computeSmartGridLayout } from '@/lib/canvas/grid-layout-math';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
-import { StickerTemplate, StickerParams } from '../types';
-import { parseVdpFile, VdpDataset, VDP_MAX_ROWS } from '../lib/vdp-parser';
+
 import { renderVdpBatch } from '../lib/vdp-batch';
-import { computeSmartGridLayout } from '@/lib/canvas/grid-layout-math';
+import { parseVdpFile, VDP_MAX_ROWS } from '../lib/vdp-parser';
+
+import type { VdpDataset } from '../lib/vdp-parser';
+import type { StickerTemplate, StickerParams } from '../types';
 
 const logger = createLogger('VdpImportDialog');
 

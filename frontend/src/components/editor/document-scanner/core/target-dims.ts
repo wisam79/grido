@@ -1,5 +1,6 @@
 import { MAX_EXPORT_PIXELS } from '@/lib/export/export-limits';
-import { DocumentAspectType } from './types';
+
+import type { DocumentAspectType } from './types';
 
 export interface TargetDims {
   targetW: number;

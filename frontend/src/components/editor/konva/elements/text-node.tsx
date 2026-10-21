@@ -1,18 +1,23 @@
+import Konva from 'konva';
 import React, { useEffect, useRef } from 'react';
 import { Text as KonvaText, Rect as KonvaRect, Group, Shape as KonvaShape } from 'react-konva';
-import Konva from 'konva';
-import { TextElement, useEditorStore } from '@/lib/editor-store';
+
+import { useAsyncImage } from '@/hooks/use-async-image';
 import { useKonvaDrag } from '@/hooks/use-konva-drag';
 import { TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
-import { ElementProps, propsAreEqual } from './types';
-import { getFillProps } from './fill-utils';
-import { withShadowlessDrag } from './drag-shadow';
 import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
 import { createElementGlyphPainter } from '@/lib/canvas/fill-paint';
-import { useAsyncImage } from '@/hooks/use-async-image';
-import { loadGoogleFont, onFontReady } from '@/lib/io/fonts';
-import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
 import { resolveTextRenderState } from '@/lib/canvas/text-helpers';
+import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
+import { useEditorStore } from '@/lib/editor-store';
+import { loadGoogleFont, onFontReady } from '@/lib/io/fonts';
+
+import { withShadowlessDrag } from './drag-shadow';
+import { getFillProps } from './fill-utils';
+import { propsAreEqual } from './types';
+
+import type { ElementProps } from './types';
+import type { TextElement } from '@/lib/editor-store';
 
 export const KonvaTextElement = React.memo(function KonvaTextElement({
   element: _element,

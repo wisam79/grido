@@ -1,14 +1,17 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { Image as KonvaImage, Group } from 'react-konva';
-import type Konva from 'konva';
+
 import { useAsyncImage } from '@/hooks/use-async-image';
-import { getKonvaFilters } from '@/lib/filters/konva-filters';
-import { useRenderQuality } from '@/lib/canvas/render-quality';
-import { useFilterCache } from '@/hooks/use-filter-cache';
 import { useDisplayImage } from '@/hooks/use-display-image';
-import { liftToDragLayer, dropFromDragLayer, findLiftRoot } from '../drag-layer';
+import { useFilterCache } from '@/hooks/use-filter-cache';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
+import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { getKonvaFilters } from '@/lib/filters/konva-filters';
+
+import { liftToDragLayer, dropFromDragLayer, findLiftRoot } from '../drag-layer';
 import { MagicAiScanner } from './magic-ai-scanner';
+
+import type Konva from 'konva';
 
 export const KonvaCollageImage = React.memo(
   function KonvaCollageImage({

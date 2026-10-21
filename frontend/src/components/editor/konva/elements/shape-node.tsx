@@ -1,3 +1,4 @@
+import Konva from 'konva';
 import React, { useEffect } from 'react';
 import {
   Group as KonvaGroup,
@@ -12,17 +13,20 @@ import {
   Arc as KonvaArc,
   Wedge as KonvaWedge,
 } from 'react-konva';
-import Konva from 'konva';
-import { ShapeElement } from '@/lib/editor-store';
-import { useKonvaDrag } from '@/hooks/use-konva-drag';
+
 import { useAsyncImage } from '@/hooks/use-async-image';
-import { ElementProps, propsAreEqual } from './types';
-import { getFillProps } from './fill-utils';
-import { withShadowlessDrag } from './drag-shadow';
-import { getShapeByPath } from '@/lib/io/shape-catalog';
-import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
+import { useKonvaDrag } from '@/hooks/use-konva-drag';
 import { gradientStart, useCanvasColors, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
 import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
+import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
+import { getShapeByPath } from '@/lib/io/shape-catalog';
+
+import { withShadowlessDrag } from './drag-shadow';
+import { getFillProps } from './fill-utils';
+import { propsAreEqual } from './types';
+
+import type { ElementProps } from './types';
+import type { ShapeElement } from '@/lib/editor-store';
 
 interface SvgPathBounds {
   w: number;
@@ -90,7 +94,7 @@ export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   onTouchStart,
   onClick,
   onTap,
-  onChange,
+  onChange: _onChange,
   canvasWidth,
   canvasHeight,
   setActiveGuides,

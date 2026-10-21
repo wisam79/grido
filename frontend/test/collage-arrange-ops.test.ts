@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import {
   collectFilled,
   emptySrcMatrix,
@@ -37,7 +38,12 @@ describe('collage-arrange-ops — عكس الصفوف/الأعمدة على شب
     const next = reverseRowsWithinFilled(matrix);
 
     expect(next).toEqual([['B', undefined, 'A', undefined]]);
-    expect(sourceCounts(next)).toEqual(new Map([['A', 1], ['B', 1]]));
+    expect(sourceCounts(next)).toEqual(
+      new Map([
+        ['A', 1],
+        ['B', 1],
+      ]),
+    );
   });
 
   it('عكس صف فيه صورة واحدة يترك الشبكة كما هي', () => {
@@ -52,7 +58,12 @@ describe('collage-arrange-ops — عكس الصفوف/الأعمدة على شب
     const next = reverseColumnsWithinFilled(matrix);
 
     expect(next).toEqual([['B'], [undefined], ['A'], [undefined]]);
-    expect(sourceCounts(next)).toEqual(new Map([['A', 1], ['B', 1]]));
+    expect(sourceCounts(next)).toEqual(
+      new Map([
+        ['A', 1],
+        ['B', 1],
+      ]),
+    );
   });
 });
 
@@ -69,7 +80,13 @@ describe('collage-arrange-ops — الخلط العشوائي', () => {
       ['B', undefined, 'C'],
       [undefined, 'A', undefined],
     ]);
-    expect(sourceCounts(next)).toEqual(new Map([['A', 1], ['B', 1], ['C', 1]]));
+    expect(sourceCounts(next)).toEqual(
+      new Map([
+        ['A', 1],
+        ['B', 1],
+        ['C', 1],
+      ]),
+    );
     expect(collectFilled(next).positions).toEqual(collectFilled(matrix).positions);
   });
 

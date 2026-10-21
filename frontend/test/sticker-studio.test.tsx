@@ -1,11 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { StickerCatalog } from '../src/features/stickers/components/sticker-catalog';
 import { StickerProperties } from '../src/features/stickers/components/sticker-properties';
 import { ALL_STICKER_TEMPLATES } from '../src/features/stickers/templates';
-import { StickerTemplate, StickerParams, SheetGridConfig } from '../src/features/stickers/types';
+
+import type {
+  StickerTemplate,
+  StickerParams,
+  SheetGridConfig,
+} from '../src/features/stickers/types';
 
 describe('Sticker Studio Unit & Component Tests', () => {
   const sampleTemplate: StickerTemplate = ALL_STICKER_TEMPLATES[0];

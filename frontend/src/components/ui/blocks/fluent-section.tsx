@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { cn } from '@/lib/utils';
+
 import { CaretDown } from '@/components/ui/icons';
+import { cn } from '@/lib/utils';
 
 export interface FluentSectionProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   icon?: React.ReactNode;

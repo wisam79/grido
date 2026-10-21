@@ -12,6 +12,8 @@
 
 > 🔒 **إلزام:** قبل بدء العمل أعلن المستندات التي سيتغيّرها العمل، وقبل أي كومت/دفع شغّل `node scripts/docs-gate.mjs --strict-refs` (مفروض آلياً عبر `.husky/pre-commit` و`.husky/pre-push` وخطوة `Documentation Gate` في CI). **لا رقم من الذاكرة** — الأرقام المرجعية في الخريطة القسم 4 بأوامرها.
 
+> 🧰 **حزمة معايير الكود P0 (الجلسة 1.22):** أُضيفت بوابات Prettier و`gofmt` إلى CI، وتقوية ESLint (ترتيب الاستيراد، `import type`، منع المتغيرات غير المستخدمة و`no-console`)، وخطاف Conventional Commits (`.husky/commit-msg`). قبل الكومت: `npm --prefix frontend run format:check` و`npm --prefix frontend run lint`، ورسالة الالتزام بصيغة `type(scope): وصف`.
+
 ## ما أُنجز في الجلسة السابقة (موجود في شجرة العمل — تم التحقق منه بالقياس الميداني)
 
 1. **معالجة ازدواجية صور جسر الهاتف والالتقاط اللحظي (Phone Bridge Deduplication & Zero-Lag Shutter):**

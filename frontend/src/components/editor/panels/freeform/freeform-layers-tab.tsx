@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
+import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
+
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
   Eye,
   EyeSlash,
@@ -21,9 +21,11 @@ import {
   ArrowsHorizontal,
   ArrowsVertical,
 } from '@/components/ui/icons';
-import { LayersList } from '../../properties/layers-list';
-import { toast } from 'sonner';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
+
+import { LayersList } from '../../properties/layers-list';
 
 interface QuickActionBtnProps {
   content: string;

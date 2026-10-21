@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
+
 import {
   extractSvgViewBox,
   generateDieCutContour,
   DEFAULT_BLEED_PERCENT,
-  DEFAULT_CORNER_RADIUS_PERCENT,
 } from '../src/features/stickers/lib/die-cut-offset';
 
 describe('die-cut-offset library', () => {
@@ -49,7 +49,6 @@ describe('die-cut-offset library', () => {
 
   it('generates a rounded rect contour enclosing the whole artwork', () => {
     const res = generateDieCutContour(sampleSquareSvg);
-    const r = (DEFAULT_CORNER_RADIUS_PERCENT / 100) * 500; // 30
 
     // الحدود: -20 .. 520 على المحورين (workspace موسّع بمقدار النزف)
     expect(res.pathData).toContain('M 10.00 -20.00');

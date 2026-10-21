@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { wrapTextLines } from '../src/lib/canvas/text-layout';
 
 const measurer = {

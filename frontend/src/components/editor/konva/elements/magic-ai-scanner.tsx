@@ -1,6 +1,7 @@
+import Konva from 'konva';
 import React, { useEffect, useRef } from 'react';
 import { Group, Rect, Line, Circle } from 'react-konva';
-import Konva from 'konva';
+
 import {
   useCanvasColors,
   scannerBeam,

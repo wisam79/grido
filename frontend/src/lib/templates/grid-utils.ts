@@ -1,9 +1,9 @@
-import type { CollageTemplate } from './types';
 import { PAPER_SIZES } from './constants';
+
+import type { CollageTemplate } from './types';
 export function getEffectiveDpi(W: number, H: number, storedDpi: number = 300): number {
   let dpi = storedDpi;
-  outerLoop:
-  for (const paper of PAPER_SIZES) {
+  outerLoop: for (const paper of PAPER_SIZES) {
     for (const [pW, pH] of [
       [paper.widthMM, paper.heightMM],
       [paper.heightMM, paper.widthMM],
@@ -32,8 +32,8 @@ function getGridCells(
   gapMM: number,
   paperW: number,
   paperH: number,
-  align: string = "center",
-  marginMM: number = 4
+  align: string = 'center',
+  marginMM: number = 4,
 ) {
   const marginX = marginMM;
   const marginY = marginMM;
@@ -59,28 +59,28 @@ function getGridCells(
   let startX = (paperW - gridW) / 2;
   let startY = (paperH - gridH) / 2;
 
-  if (align === "top-left") {
+  if (align === 'top-left') {
     startX = marginX;
     startY = marginY;
-  } else if (align === "top-center") {
+  } else if (align === 'top-center') {
     startX = (paperW - gridW) / 2;
     startY = marginY;
-  } else if (align === "top-right") {
+  } else if (align === 'top-right') {
     startX = paperW - marginX - gridW;
     startY = marginY;
-  } else if (align === "center-left") {
+  } else if (align === 'center-left') {
     startX = marginX;
     startY = (paperH - gridH) / 2;
-  } else if (align === "center-right") {
+  } else if (align === 'center-right') {
     startX = paperW - marginX - gridW;
     startY = (paperH - gridH) / 2;
-  } else if (align === "bottom-left") {
+  } else if (align === 'bottom-left') {
     startX = marginX;
     startY = paperH - marginY - gridH;
-  } else if (align === "bottom-center") {
+  } else if (align === 'bottom-center') {
     startX = (paperW - gridW) / 2;
     startY = paperH - marginY - gridH;
-  } else if (align === "bottom-right") {
+  } else if (align === 'bottom-right') {
     startX = paperW - marginX - gridW;
     startY = paperH - marginY - gridH;
   }
@@ -103,8 +103,8 @@ function getMixedCells(
   paperW: number,
   paperH: number,
   gapMM: number,
-  align: string = "center",
-  marginMM: number = 4
+  align: string = 'center',
+  marginMM: number = 4,
 ) {
   const marginX = marginMM;
   const marginY = marginMM;
@@ -141,28 +141,28 @@ function getMixedCells(
   let startX = (paperW - gridW) / 2;
   let startY = (paperH - gridH) / 2;
 
-  if (align === "top-left") {
+  if (align === 'top-left') {
     startX = marginX;
     startY = marginY;
-  } else if (align === "top-center") {
+  } else if (align === 'top-center') {
     startX = (paperW - gridW) / 2;
     startY = marginY;
-  } else if (align === "top-right") {
+  } else if (align === 'top-right') {
     startX = paperW - marginX - gridW;
     startY = marginY;
-  } else if (align === "center-left") {
+  } else if (align === 'center-left') {
     startX = marginX;
     startY = (paperH - gridH) / 2;
-  } else if (align === "center-right") {
+  } else if (align === 'center-right') {
     startX = paperW - marginX - gridW;
     startY = (paperH - gridH) / 2;
-  } else if (align === "bottom-left") {
+  } else if (align === 'bottom-left') {
     startX = marginX;
     startY = paperH - marginY - gridH;
-  } else if (align === "bottom-center") {
+  } else if (align === 'bottom-center') {
     startX = (paperW - gridW) / 2;
     startY = paperH - marginY - gridH;
-  } else if (align === "bottom-right") {
+  } else if (align === 'bottom-right') {
     startX = paperW - marginX - gridW;
     startY = paperH - marginY - gridH;
   }
@@ -198,8 +198,8 @@ function getTravelerCells(
   paperW: number,
   paperH: number,
   gapMM: number,
-  align: string = "center",
-  marginMM: number = 4
+  align: string = 'center',
+  marginMM: number = 4,
 ) {
   const marginX = marginMM;
   const marginY = marginMM;
@@ -235,28 +235,28 @@ function getTravelerCells(
   let startX = (paperW - gridW) / 2;
   let startY = (paperH - gridH) / 2;
 
-  if (align === "top-left") {
+  if (align === 'top-left') {
     startX = marginX;
     startY = marginY;
-  } else if (align === "top-center") {
+  } else if (align === 'top-center') {
     startX = (paperW - gridW) / 2;
     startY = marginY;
-  } else if (align === "top-right") {
+  } else if (align === 'top-right') {
     startX = paperW - marginX - gridW;
     startY = marginY;
-  } else if (align === "center-left") {
+  } else if (align === 'center-left') {
     startX = marginX;
     startY = (paperH - gridH) / 2;
-  } else if (align === "center-right") {
+  } else if (align === 'center-right') {
     startX = paperW - marginX - gridW;
     startY = (paperH - gridH) / 2;
-  } else if (align === "bottom-left") {
+  } else if (align === 'bottom-left') {
     startX = marginX;
     startY = paperH - marginY - gridH;
-  } else if (align === "bottom-center") {
+  } else if (align === 'bottom-center') {
     startX = (paperW - gridW) / 2;
     startY = paperH - marginY - gridH;
-  } else if (align === "bottom-right") {
+  } else if (align === 'bottom-right') {
     startX = paperW - marginX - gridW;
     startY = paperH - marginY - gridH;
   }
@@ -297,46 +297,46 @@ export function computeDynamicCollageCells(
   canvasH: number,
   dpi: number,
   collageGap: number = 0,
-  collageMargin: number = 0
+  collageMargin: number = 0,
 ): { x: number; y: number; w: number; h: number }[] | null {
   if (!template.physicalLayout) return null;
 
-  const { type, rows, cols, align = "center" } = template.physicalLayout;
+  const { type, rows, cols, align = 'center' } = template.physicalLayout;
   const paperW_mm = (canvasW / dpi) * 25.4;
   const paperH_mm = (canvasH / dpi) * 25.4;
 
   const gap = collageGap > 0 ? (collageGap / dpi) * 25.4 : 2.0;
   const margin = collageMargin > 0 ? (collageMargin / dpi) * 25.4 : 4.0;
 
-  if (type === "iq-mixed") {
+  if (type === 'iq-mixed') {
     return getMixedCells(paperW_mm, paperH_mm, gap, align, margin);
   }
 
-  if (type === "combo-traveler") {
+  if (type === 'combo-traveler') {
     return getTravelerCells(paperW_mm, paperH_mm, gap, align, margin);
   }
 
   let wMM = 35;
   let hMM = 45;
 
-  if (type === "iq-national-id" || type === "passport") {
+  if (type === 'iq-national-id' || type === 'passport') {
     wMM = 35;
     hMM = 45;
-  } else if (type === "iq-civil-id") {
+  } else if (type === 'iq-civil-id') {
     wMM = 32;
     hMM = 40;
-  } else if (type === "iq-general-id" || type === "id") {
-    if (template.id === "collage-iq-general") {
+  } else if (type === 'iq-general-id' || type === 'id') {
+    if (template.id === 'collage-iq-general') {
       wMM = 60;
       hMM = 40;
     } else {
       wMM = 40;
       hMM = 60;
     }
-  } else if (type === "iq-transactions") {
+  } else if (type === 'iq-transactions') {
     wMM = 30;
     hMM = 40;
-  } else if (type === "visa") {
+  } else if (type === 'visa') {
     wMM = 35;
     hMM = 45;
   } else {

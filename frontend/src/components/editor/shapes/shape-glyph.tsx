@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { ShapeElement } from '@/lib/editor-store';
 
 export interface ShapeGlyphProps {

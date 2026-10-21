@@ -1,11 +1,6 @@
-import type * as React from "react";
+import type * as React from 'react';
 
-export type TemplateCategory =
-  | "id"
-  | "passport"
-  | "visa"
-  | "personal"
-  | "collage";
+export type TemplateCategory = 'id' | 'passport' | 'visa' | 'personal' | 'collage';
 
 export interface PhotoTemplate {
   id: string;
@@ -40,26 +35,26 @@ export interface CollageTemplate {
   icon?: React.ComponentType<Record<string, unknown>>;
   physicalLayout?: {
     type:
-      | "iq-national-id"
-      | "iq-civil-id"
-      | "iq-general-id"
-      | "iq-transactions"
-      | "passport"
-      | "visa"
-      | "id"
-      | "iq-mixed"
-      | "combo-traveler";
+      | 'iq-national-id'
+      | 'iq-civil-id'
+      | 'iq-general-id'
+      | 'iq-transactions'
+      | 'passport'
+      | 'visa'
+      | 'id'
+      | 'iq-mixed'
+      | 'combo-traveler';
     rows: number;
     cols: number;
     align?:
-      | "center"
-      | "top-left"
-      | "top-center"
-      | "top-right"
-      | "center-left"
-      | "center-right"
-      | "bottom-left"
-      | "bottom-center"
-      | "bottom-right";
+      | 'center'
+      | 'top-left'
+      | 'top-center'
+      | 'top-right'
+      | 'center-left'
+      | 'center-right'
+      | 'bottom-left'
+      | 'bottom-center'
+      | 'bottom-right';
   };
 }

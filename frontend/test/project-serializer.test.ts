@@ -1,16 +1,19 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
+import { useEditorStore } from '../src/lib/editor-store';
+import { hydrateProjectState, makeUniqueId } from '../src/lib/io/project-hydrator';
 import {
   serializeEditorState,
   deserializeProjectFile,
   migrateProject,
   domainProjectToProjectFile,
   projectFileToDomainProject,
-  ProjectFileV1,
 } from '../src/lib/io/project-serializer';
-import { hydrateProjectState, makeUniqueId } from '../src/lib/io/project-hydrator';
-import { EditorState, useEditorStore } from '../src/lib/editor-store';
 import { DEFAULT_GRID_STATE } from '../src/lib/store/slices/grid-slice';
 import { domain } from '../wailsjs/go/models';
+
+import type { EditorState } from '../src/lib/editor-store';
+import type { ProjectFileV1 } from '../src/lib/io/project-serializer';
 
 describe('project-serializer - Project Serialization and Migration Tests', () => {
   const mockEditorState: Partial<EditorState> = {

@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
+import { getSnapPositions } from '../src/lib/canvas/snap-utils';
 import { useEditorStore } from '../src/lib/editor-store';
 import { serializeEditorState } from '../src/lib/io/project-serializer';
-import { getSnapPositions } from '../src/lib/canvas/snap-utils';
+
 import type { CanvasElement } from '../src/lib/store/types';
 
 // مولد حتمي (seeded) — Math.random() السابق كان يجعل النتائج تتذبذب بين التشغيلات
@@ -88,7 +90,16 @@ describe('Performance Benchmarks', () => {
     let defined = false;
     const duration = medianMs(() => {
       const store = useEditorStore.getState();
-      const snapResult = getSnapPositions('drag-id', 0.5, 0.5, 0.1, 0.1, store.elements, 0.01, 0.01);
+      const snapResult = getSnapPositions(
+        'drag-id',
+        0.5,
+        0.5,
+        0.1,
+        0.1,
+        store.elements,
+        0.01,
+        0.01,
+      );
       defined = snapResult !== undefined && snapResult !== null;
     });
 

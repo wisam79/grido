@@ -1,13 +1,10 @@
-import { Point, ScannerFilterMode } from './types';
-import { sortCornerPoints } from './quad-geometry';
-import { computePerspectiveTransform } from './perspective-warper';
 import { applyFilterMode } from './filters';
-import {
-  ScannerCanvas,
-  createScannerCanvas,
-  getScanner2DContext,
-  releaseScannerCanvas,
-} from './scanner-canvas';
+import { computePerspectiveTransform } from './perspective-warper';
+import { sortCornerPoints } from './quad-geometry';
+import { createScannerCanvas, getScanner2DContext, releaseScannerCanvas } from './scanner-canvas';
+
+import type { ScannerCanvas } from './scanner-canvas';
+import type { Point, ScannerFilterMode } from './types';
 
 /**
  * 🧩 نواة الاستعدال القابلة للتشغيل داخل Web Worker.

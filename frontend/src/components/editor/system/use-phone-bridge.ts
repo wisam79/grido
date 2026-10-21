@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import { EventsOn } from '../../../../wailsjs/runtime/runtime';
-import { GetPhoneBridgeStatus } from '../../../../wailsjs/go/main/App';
-import { useEditorStore } from '@/lib/editor-store';
-import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
+
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
+import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
 import { toErrorMessage } from '@/lib/wails-error';
+
+import { GetPhoneBridgeStatus } from '../../../../wailsjs/go/main/App';
+import { EventsOn } from '../../../../wailsjs/runtime/runtime';
 
 const logger = createLogger('use-phone-bridge');
 

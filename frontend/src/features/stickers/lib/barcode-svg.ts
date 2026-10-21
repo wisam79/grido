@@ -3,6 +3,7 @@
 // فيحمّل المستخدم المكتبتين عند الإقلاع وإن لم يولّد باركود قط.
 // الاستيراد الديناميكي يجعل مكتبات التوليد chunk منفصلاً يُجلب عند أول استدعاء.
 import React from 'react';
+
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('barcode-svg');

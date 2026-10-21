@@ -8,7 +8,6 @@
  *
  * لإعادة التوليد: npm run icons:generate
  */
-import * as React from 'react';
 import {
   Add12Filled as _Add12Filled,
   Add12Regular as _Add12Regular,
@@ -541,6 +540,7 @@ import {
   ZoomOut16Filled as _ZoomOut16Filled,
   ZoomOut16Regular as _ZoomOut16Regular,
 } from '@fluentui/react-icons';
+import * as React from 'react';
 
 export type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
 

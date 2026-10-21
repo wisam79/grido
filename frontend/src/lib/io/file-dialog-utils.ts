@@ -1,3 +1,5 @@
+import { createLogger } from '@/lib/logger';
+
 import {
   OpenFile,
   OpenMultipleFiles,
@@ -5,7 +7,6 @@ import {
   SaveImageFromBase64,
 } from '../../../wailsjs/go/main/App';
 import { wailsIsDesktop } from '../wails-env';
-import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('file-dialog-utils');
 

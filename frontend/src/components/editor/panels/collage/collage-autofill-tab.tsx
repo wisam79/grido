@@ -1,25 +1,7 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  Images,
-  FolderOpen,
-  Shuffle,
-  Trash,
-  GridFour,
-  Rows,
-  Columns,
-  ArrowsClockwise,
-} from '@/components/ui/icons';
-import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
-import { Button } from '@/components/ui/button';
-import {
-  FluentSection,
-  FluentSettingRow,
-  FluentSegmentedControl,
-  FluentEmptyState,
-} from '@/components/ui/blocks';
-import { Switch } from '@/components/ui/switch';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,8 +12,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
+import {
+  FluentSection,
+  FluentSettingRow,
+  FluentSegmentedControl,
+  FluentEmptyState,
+} from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
+import {
+  Images,
+  FolderOpen,
+  Shuffle,
+  Trash,
+  GridFour,
+  Rows,
+  Columns,
+  ArrowsClockwise,
+} from '@/components/ui/icons';
+import { Switch } from '@/components/ui/switch';
 import { getThumbnailSrc } from '@/lib/canvas/thumbnail-src';
+import { useEditorStore } from '@/lib/editor-store';
+import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
 
@@ -46,13 +47,11 @@ type FillMode = 'empty' | 'all';
 type FillOrder = 'row' | 'column';
 
 export function CollageAutofillTab() {
-  const { slots, setSlotImagesBatch, clearSlots, canvasWidth, canvasHeight } = useEditorStore(
+  const { slots, setSlotImagesBatch, clearSlots } = useEditorStore(
     useShallow((state) => ({
       slots: state.slots,
       setSlotImagesBatch: state.setSlotImagesBatch,
       clearSlots: state.clearSlots,
-      canvasWidth: state.canvasWidth,
-      canvasHeight: state.canvasHeight,
     })),
   );
 

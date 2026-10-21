@@ -1,15 +1,18 @@
 import { memo, useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
-import { buildAdjustmentCSS, buildCSSFilter, cn } from '@/lib/utils';
+
+import { formatGradientCss } from '@/components/editor/properties/gradient-utils';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { computeBlockPosition, computeSlotRectMM } from '@/lib/print/print-layout-math';
+import { buildAdjustmentCSS, buildCSSFilter, cn } from '@/lib/utils';
+
 import {
   getPixelPreviewNaturalSize,
   isPrintPixelFilter,
   renderPixelFilterPreview,
 } from './print-pixel-preview';
-import { formatGradientCss } from '@/components/editor/properties/gradient-utils';
-import type { CanvasSlot } from '@/lib/store/types';
+
 import type { SheetGrid } from '@/lib/print/print-layout-math';
+import type { CanvasSlot } from '@/lib/store/types';
 
 interface SheetPreviewProps {
   grid: SheetGrid;

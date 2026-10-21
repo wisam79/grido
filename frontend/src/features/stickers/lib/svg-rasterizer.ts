@@ -8,6 +8,7 @@
 
 import { blobToDataUrl, canvasToBlob } from '@/lib/canvas/canvas-blob';
 import { registerObjectUrl } from '@/lib/io/object-url-registry';
+
 import { assertRasterBudget } from './export-limits';
 
 export function escapeXml(unsafe: string): string {

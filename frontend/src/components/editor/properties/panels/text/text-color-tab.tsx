@@ -1,11 +1,13 @@
+import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+import { Palette, Eye, Sparkle, BoundingBox } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
-import { Palette, Eye, Sparkle, BoundingBox } from '@/components/ui/icons';
+
 import { GradientPicker } from '../../gradient-picker';
-import { normalizeImageFillPatch } from '../../image-fill-patch';
 import { gradientAngleFromPoints, gradientPointsFromAngle } from '../../gradient-utils';
+import { normalizeImageFillPatch } from '../../image-fill-patch';
 import { PopoverColorPicker, QuickColorPalette } from '../../shared-controls';
-import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+
 import type { TextTabProps } from './text-tab-types';
 
 export function TextColorTab({ element, onUpdate }: TextTabProps) {

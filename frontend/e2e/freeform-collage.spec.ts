@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Freeform Collage & Elements Workflow E2E', () => {
@@ -9,8 +10,15 @@ test.describe('Freeform Collage & Elements Workflow E2E', () => {
   });
 
   test('Add text element and modify typography', async ({ page }) => {
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
-    const addTextBtn = page.getByTestId('toolbar-add-text').or(page.getByRole('button', { name: /إضافة نص/ })).first();
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    const addTextBtn = page
+      .getByTestId('toolbar-add-text')
+      .or(page.getByRole('button', { name: /إضافة نص/ }))
+      .first();
     await expect(addTextBtn).toBeVisible();
     await addTextBtn.click();
 
@@ -35,8 +43,15 @@ test.describe('Freeform Collage & Elements Workflow E2E', () => {
   });
 
   test('Add shape element and inspect geometry controls', async ({ page }) => {
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
-    const addShapeBtn = page.getByTestId('toolbar-add-shape').or(page.getByRole('button', { name: /إضافة شكل/ })).first();
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    const addShapeBtn = page
+      .getByTestId('toolbar-add-shape')
+      .or(page.getByRole('button', { name: /إضافة شكل/ }))
+      .first();
     if (await addShapeBtn.isVisible()) {
       await addShapeBtn.click();
       const shapeItem = page.getByRole('menuitem').first();

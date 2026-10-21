@@ -1,14 +1,18 @@
 import React from 'react';
-import { CanvasElement, useEditorStore } from '@/lib/editor-store';
-import { getSnapPositionsWithTargets, SnapTarget, SnapGuide } from '@/lib/canvas/snap-utils';
+
 import { liftToDragLayer, dropFromDragLayer } from '@/components/editor/konva/drag-layer';
-import { getElementPixelVisualBox, getElementVisualBox } from '@/lib/canvas/element-geometry';
 import {
   useCanvasInteraction,
   resetCanvasInteraction,
 } from '@/lib/canvas/canvas-interaction-store';
-import { KonvaEventObject } from 'konva/lib/Node';
+import { getElementPixelVisualBox, getElementVisualBox } from '@/lib/canvas/element-geometry';
+import { getSnapPositionsWithTargets } from '@/lib/canvas/snap-utils';
+import { useEditorStore } from '@/lib/editor-store';
+
+import type { SnapTarget, SnapGuide } from '@/lib/canvas/snap-utils';
+import type { CanvasElement } from '@/lib/editor-store';
 import type Konva from 'konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
 
 interface UseKonvaDragProps {
   element: CanvasElement;
@@ -28,7 +32,7 @@ export function useKonvaDrag({
   element,
   canvasWidth,
   canvasHeight,
-  canvasZoom = 1,
+  canvasZoom: _canvasZoom = 1,
   snapToGrid,
   gridSize,
   altPressedRef,
@@ -339,7 +343,7 @@ export function useKonvaDrag({
     }
   };
 
-  const onDragEnd = (e: KonvaEventObject<DragEvent>) => {
+  const onDragEnd = (_e: KonvaEventObject<DragEvent>) => {
     useCanvasInteraction.getState().setIsDragging(false);
     // 🚀 الاستعادة أولاً — قبل أي كتابة للستور، حتى لا ترى React
     // العقد خارج موضعها المعلن ولو لإطار واحد.
@@ -349,7 +353,6 @@ export function useKonvaDrag({
       // تجاهل آمن
     }
     const { selectedIds, updateElements, pushHistory } = useEditorStore.getState();
-    const draggedNode = e.target;
     const draggedId = element.id;
     const startPos = dragStartPositionsRef.current[draggedId];
 
@@ -360,9 +363,6 @@ export function useKonvaDrag({
     }
 
     if (startPos) {
-      const dx = draggedNode.x() - startPos.x;
-      const dy = draggedNode.y() - startPos.y;
-
       const currentElements = useEditorStore.getState().elements;
       // استبعاد المقفلة من كتابة المواضع النهائية — مواضعها لم تتغير أصلاً
       const movableIds = selectedIds.filter(

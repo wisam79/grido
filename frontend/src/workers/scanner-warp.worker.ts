@@ -10,6 +10,7 @@
  */
 
 import { warpSourceImage } from '../components/editor/document-scanner/core/warp-pipeline';
+
 import type { Point, ScannerFilterMode } from '../components/editor/document-scanner/core/types';
 
 export interface ScannerWarpRequest {

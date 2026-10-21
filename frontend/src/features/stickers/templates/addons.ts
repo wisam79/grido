@@ -1,33 +1,47 @@
-import { StickerTemplate } from "../types";
-import { escapeXml } from "../lib/svg-rasterizer";
-import { starPoints, scallopCirclePath } from "./svg-elements";
+import { starPoints, scallopCirclePath } from './svg-elements';
+import { escapeXml } from '../lib/svg-rasterizer';
+
+import type { StickerTemplate } from '../types';
 
 export const ADDON_TEMPLATES: StickerTemplate[] = [
   {
-    id: "badge_verified_trust",
-    name: "ختم موثوق ومعتمد رسمي",
-    nameEn: "Verified Trust Seal",
-    category: "badges",
-    shape: "circle",
-    description: "شارة توثيق الجودة والأصالة الدائرية مع علامة التحقق المزدوجة",
+    id: 'badge_verified_trust',
+    name: 'ختم موثوق ومعتمد رسمي',
+    nameEn: 'Verified Trust Seal',
+    category: 'badges',
+    shape: 'circle',
+    description: 'شارة توثيق الجودة والأصالة الدائرية مع علامة التحقق المزدوجة',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#2563EB",
-      secondary: "#1D4ED8",
-      background: "#EFF6FF",
+      primary: '#2563EB',
+      secondary: '#1D4ED8',
+      background: '#EFF6FF',
     },
     fields: [
-      { id: "topText", label: "النص العلوي", type: "text", defaultValue: "★ متجر موثوق ومعتمد ★" },
-      { id: "centerText", label: "الحالة", type: "text", defaultValue: "VERIFIED" },
-      { id: "subText", label: "الوصف السفلي", type: "text", defaultValue: "ضمان أمان المعاملات 100%" },
+      { id: 'topText', label: 'النص العلوي', type: 'text', defaultValue: '★ متجر موثوق ومعتمد ★' },
+      { id: 'centerText', label: 'الحالة', type: 'text', defaultValue: 'VERIFIED' },
+      {
+        id: 'subText',
+        label: 'الوصف السفلي',
+        type: 'text',
+        defaultValue: 'ضمان أمان المعاملات 100%',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topText || "");
-      const center = escapeXml(fields.centerText || "");
-      const sub = escapeXml(fields.subText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topText || '');
+      const center = escapeXml(fields.centerText || '');
+      const sub = escapeXml(fields.subText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
       const scallopD = scallopCirclePath(250, 250, 220, 24, 1.08);
 
@@ -60,30 +74,38 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "badge_handmade_love",
-    name: "ختم صنع يدوياً بكل حب",
-    nameEn: "Handmade With Love Seal",
-    category: "badges",
-    shape: "circle",
-    description: "ختم حِرفي لطيف ومحبب للمنتجات اليدوية، الإكسسوارات، والحلويات",
+    id: 'badge_handmade_love',
+    name: 'ختم صنع يدوياً بكل حب',
+    nameEn: 'Handmade With Love Seal',
+    category: 'badges',
+    shape: 'circle',
+    description: 'ختم حِرفي لطيف ومحبب للمنتجات اليدوية، الإكسسوارات، والحلويات',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#E11D48",
-      secondary: "#9F1239",
-      background: "#FFF1F2",
+      primary: '#E11D48',
+      secondary: '#9F1239',
+      background: '#FFF1F2',
     },
     fields: [
-      { id: "topText", label: "النص المقوس", type: "text", defaultValue: "HANDMADE WITH LOVE" },
-      { id: "centerText", label: "النص الأوسط", type: "text", defaultValue: "صُنع يدوياً" },
-      { id: "subText", label: "النص السفلي", type: "text", defaultValue: "بكل حب وعناية ♡" },
+      { id: 'topText', label: 'النص المقوس', type: 'text', defaultValue: 'HANDMADE WITH LOVE' },
+      { id: 'centerText', label: 'النص الأوسط', type: 'text', defaultValue: 'صُنع يدوياً' },
+      { id: 'subText', label: 'النص السفلي', type: 'text', defaultValue: 'بكل حب وعناية ♡' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topText || "");
-      const center = escapeXml(fields.centerText || "");
-      const sub = escapeXml(fields.subText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topText || '');
+      const center = escapeXml(fields.centerText || '');
+      const sub = escapeXml(fields.subText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
@@ -112,30 +134,43 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "badge_eco_friendly",
-    name: "ختم صديق للبيئة وعضوي",
-    nameEn: "Eco Friendly Green Stamp",
-    category: "badges",
-    shape: "circle",
-    description: "ختم بيئي طبيعي للمنتجات العضوية والقابلة للتدوير ومستحضرات الطبيعة",
+    id: 'badge_eco_friendly',
+    name: 'ختم صديق للبيئة وعضوي',
+    nameEn: 'Eco Friendly Green Stamp',
+    category: 'badges',
+    shape: 'circle',
+    description: 'ختم بيئي طبيعي للمنتجات العضوية والقابلة للتدوير ومستحضرات الطبيعة',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#15803D",
-      secondary: "#166534",
-      background: "#F0FDF4",
+      primary: '#15803D',
+      secondary: '#166534',
+      background: '#F0FDF4',
     },
     fields: [
-      { id: "topText", label: "النص العلوي", type: "text", defaultValue: "100% ECO FRIENDLY" },
-      { id: "mainText", label: "النص الرئيسي", type: "text", defaultValue: "صديق للبيئة" },
-      { id: "subText", label: "النص الفرعي", type: "text", defaultValue: "عضوي • طبيعي • قابل لإعادة التدوير" },
+      { id: 'topText', label: 'النص العلوي', type: 'text', defaultValue: '100% ECO FRIENDLY' },
+      { id: 'mainText', label: 'النص الرئيسي', type: 'text', defaultValue: 'صديق للبيئة' },
+      {
+        id: 'subText',
+        label: 'النص الفرعي',
+        type: 'text',
+        defaultValue: 'عضوي • طبيعي • قابل لإعادة التدوير',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topText || "");
-      const main = escapeXml(fields.mainText || "");
-      const sub = escapeXml(fields.subText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topText || '');
+      const main = escapeXml(fields.mainText || '');
+      const sub = escapeXml(fields.subText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
@@ -165,30 +200,38 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "badge_best_seller",
-    name: "ختم الأكثر مبيعاً الأفضل",
-    nameEn: "Best Seller Trophy Badge",
-    category: "badges",
-    shape: "circle",
-    description: "شارة مبيعات كبرى للمنتجات المتصدرة والسلع الأعلى تقييماً",
+    id: 'badge_best_seller',
+    name: 'ختم الأكثر مبيعاً الأفضل',
+    nameEn: 'Best Seller Trophy Badge',
+    category: 'badges',
+    shape: 'circle',
+    description: 'شارة مبيعات كبرى للمنتجات المتصدرة والسلع الأعلى تقييماً',
     defaultWidth: 500,
     defaultHeight: 520,
     aspectRatio: 500 / 520,
     defaultColors: {
-      primary: "#EA580C",
-      secondary: "#9A3412",
-      background: "#FFF7ED",
+      primary: '#EA580C',
+      secondary: '#9A3412',
+      background: '#FFF7ED',
     },
     fields: [
-      { id: "rankText", label: "الترتيب", type: "text", defaultValue: "#1" },
-      { id: "titleText", label: "العنوان الرئيسي", type: "text", defaultValue: "الأكثر مبيعاً" },
-      { id: "ribbonText", label: "نص الوشاح", type: "text", defaultValue: "BEST SELLER" },
+      { id: 'rankText', label: 'الترتيب', type: 'text', defaultValue: '#1' },
+      { id: 'titleText', label: 'العنوان الرئيسي', type: 'text', defaultValue: 'الأكثر مبيعاً' },
+      { id: 'ribbonText', label: 'نص الوشاح', type: 'text', defaultValue: 'BEST SELLER' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const rank = escapeXml(fields.rankText || "#1");
-      const title = escapeXml(fields.titleText || "");
-      const ribbon = escapeXml(fields.ribbonText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const rank = escapeXml(fields.rankText || '#1');
+      const title = escapeXml(fields.titleText || '');
+      const ribbon = escapeXml(fields.ribbonText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
       const star = starPoints(250, 220, 20, 200, 180);
 
@@ -223,31 +266,39 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "retail_buy1_get1",
-    name: "ملصق اشتري 1 واحصل على 1 مجاناً",
-    nameEn: "Buy 1 Get 1 Free Promo",
-    category: "retail",
-    shape: "rect",
-    description: "ملصق ترويجي جاذب لعروض BOGO الترويجية للمتاجر والمولات",
+    id: 'retail_buy1_get1',
+    name: 'ملصق اشتري 1 واحصل على 1 مجاناً',
+    nameEn: 'Buy 1 Get 1 Free Promo',
+    category: 'retail',
+    shape: 'rect',
+    description: 'ملصق ترويجي جاذب لعروض BOGO الترويجية للمتاجر والمولات',
     defaultWidth: 500,
     defaultHeight: 300,
     aspectRatio: 500 / 300,
     defaultMm: { width: 100, height: 60 },
     defaultColors: {
-      primary: "#DC2626",
-      secondary: "#FBBF24",
-      background: "#991B1B",
+      primary: '#DC2626',
+      secondary: '#FBBF24',
+      background: '#991B1B',
     },
     fields: [
-      { id: "badge", label: "شارة العرض", type: "text", defaultValue: "عرض خاص ومحدود" },
-      { id: "mainText", label: "العرض الرئيسي", type: "text", defaultValue: "اشترِ 1 واحصل على 1" },
-      { id: "highlight", label: "الكلمة البارزة", type: "text", defaultValue: "مـجـانـاً !" },
+      { id: 'badge', label: 'شارة العرض', type: 'text', defaultValue: 'عرض خاص ومحدود' },
+      { id: 'mainText', label: 'العرض الرئيسي', type: 'text', defaultValue: 'اشترِ 1 واحصل على 1' },
+      { id: 'highlight', label: 'الكلمة البارزة', type: 'text', defaultValue: 'مـجـانـاً !' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const badge = escapeXml(fields.badge || "");
-      const main = escapeXml(fields.mainText || "");
-      const hl = escapeXml(fields.highlight || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const badge = escapeXml(fields.badge || '');
+      const main = escapeXml(fields.mainText || '');
+      const hl = escapeXml(fields.highlight || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 300" width="500" height="300">
@@ -277,31 +328,39 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "retail_mega_clearance",
-    name: "ملصق تصفية كبرى وأسعار محطمة",
-    nameEn: "Mega Clearance Sale Tag",
-    category: "retail",
-    shape: "rect",
-    description: "ملصق تنزيلات وتصفية مواسم لافت للأنظار وموجه للمتاجر والمستودعات",
+    id: 'retail_mega_clearance',
+    name: 'ملصق تصفية كبرى وأسعار محطمة',
+    nameEn: 'Mega Clearance Sale Tag',
+    category: 'retail',
+    shape: 'rect',
+    description: 'ملصق تنزيلات وتصفية مواسم لافت للأنظار وموجه للمتاجر والمستودعات',
     defaultWidth: 500,
     defaultHeight: 320,
     aspectRatio: 500 / 320,
     defaultMm: { width: 100, height: 64 },
     defaultColors: {
-      primary: "#EA580C",
-      secondary: "#0F172A",
-      background: "#FEF08A",
+      primary: '#EA580C',
+      secondary: '#0F172A',
+      background: '#FEF08A',
     },
     fields: [
-      { id: "topAlert", label: "تنبيه التصفية", type: "text", defaultValue: "💥 تحطيم أسعار 💥" },
-      { id: "bigText", label: "النص العريض", type: "text", defaultValue: "تصفية كبرى" },
-      { id: "discount", label: "نسبة الخصم", type: "text", defaultValue: "خصم يصل إلى 70%" },
+      { id: 'topAlert', label: 'تنبيه التصفية', type: 'text', defaultValue: '💥 تحطيم أسعار 💥' },
+      { id: 'bigText', label: 'النص العريض', type: 'text', defaultValue: 'تصفية كبرى' },
+      { id: 'discount', label: 'نسبة الخصم', type: 'text', defaultValue: 'خصم يصل إلى 70%' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const alert = escapeXml(fields.topAlert || "");
-      const big = escapeXml(fields.bigText || "");
-      const disc = escapeXml(fields.discount || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const alert = escapeXml(fields.topAlert || '');
+      const big = escapeXml(fields.bigText || '');
+      const disc = escapeXml(fields.discount || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 320" width="500" height="320">
@@ -332,31 +391,49 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "packaging_fragile_arabic",
-    name: "ملصق قابل للكسر مع كود الشحن",
-    nameEn: "Fragile Handle With Care",
-    category: "packaging",
-    shape: "rect",
-    description: "ملصق شحن احترافي مع رمز الكأس والأسهم التوجيهية للطرود الحساسة",
+    id: 'packaging_fragile_arabic',
+    name: 'ملصق قابل للكسر مع كود الشحن',
+    nameEn: 'Fragile Handle With Care',
+    category: 'packaging',
+    shape: 'rect',
+    description: 'ملصق شحن احترافي مع رمز الكأس والأسهم التوجيهية للطرود الحساسة',
     defaultWidth: 500,
     defaultHeight: 350,
     aspectRatio: 500 / 350,
     defaultMm: { width: 100, height: 70 },
     defaultColors: {
-      primary: "#DC2626",
-      secondary: "#1E293B",
-      background: "#FFFFFF",
+      primary: '#DC2626',
+      secondary: '#1E293B',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "mainText", label: "التحذير الرئيسي", type: "text", defaultValue: "قابل للكسر" },
-      { id: "enText", label: "النص بالإنجليزية", type: "text", defaultValue: "FRAGILE • HANDLE WITH CARE" },
-      { id: "instruction", label: "تعليمات المناولة", type: "text", defaultValue: "يرجى عدم الضغط أو الرمي — هذا الجانب لأعلى" },
+      { id: 'mainText', label: 'التحذير الرئيسي', type: 'text', defaultValue: 'قابل للكسر' },
+      {
+        id: 'enText',
+        label: 'النص بالإنجليزية',
+        type: 'text',
+        defaultValue: 'FRAGILE • HANDLE WITH CARE',
+      },
+      {
+        id: 'instruction',
+        label: 'تعليمات المناولة',
+        type: 'text',
+        defaultValue: 'يرجى عدم الضغط أو الرمي — هذا الجانب لأعلى',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const main = escapeXml(fields.mainText || "");
-      const en = escapeXml(fields.enText || "");
-      const inst = escapeXml(fields.instruction || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const main = escapeXml(fields.mainText || '');
+      const en = escapeXml(fields.enText || '');
+      const inst = escapeXml(fields.instruction || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 350" width="500" height="350">
@@ -395,30 +472,48 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "greeting_grad_cap",
-    name: "ملصق تهنئة تخرج ونجاح",
-    nameEn: "Graduation Excellence Seal",
-    category: "greeting",
-    shape: "circle",
-    description: "ملصق مباركة التخرج المبهج مع قبعة التخرج وشهادة التقدير",
+    id: 'greeting_grad_cap',
+    name: 'ملصق تهنئة تخرج ونجاح',
+    nameEn: 'Graduation Excellence Seal',
+    category: 'greeting',
+    shape: 'circle',
+    description: 'ملصق مباركة التخرج المبهج مع قبعة التخرج وشهادة التقدير',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#4F46E5",
-      secondary: "#D97706",
-      background: "#EEF2FF",
+      primary: '#4F46E5',
+      secondary: '#D97706',
+      background: '#EEF2FF',
     },
     fields: [
-      { id: "topText", label: "العبارة العلوية", type: "text", defaultValue: "★ دفعة المتفوقين 2026 ★" },
-      { id: "mainText", label: "التهنئة الرئيسية", type: "text", defaultValue: "مبارك التخرج" },
-      { id: "nameText", label: "اسم الخريج / التخصص", type: "text", defaultValue: "مع تمنياتنا بدوام التميز والنجاح" },
+      {
+        id: 'topText',
+        label: 'العبارة العلوية',
+        type: 'text',
+        defaultValue: '★ دفعة المتفوقين 2026 ★',
+      },
+      { id: 'mainText', label: 'التهنئة الرئيسية', type: 'text', defaultValue: 'مبارك التخرج' },
+      {
+        id: 'nameText',
+        label: 'اسم الخريج / التخصص',
+        type: 'text',
+        defaultValue: 'مع تمنياتنا بدوام التميز والنجاح',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topText || "");
-      const main = escapeXml(fields.mainText || "");
-      const name = escapeXml(fields.nameText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topText || '');
+      const main = escapeXml(fields.mainText || '');
+      const name = escapeXml(fields.nameText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
@@ -452,35 +547,63 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "cafe_specialty_beans",
-    name: "ملصق حبوب بن مختصة ومحمصة",
-    nameEn: "Specialty Roasted Coffee",
-    category: "cafe",
-    shape: "rect",
-    description: "ملصق أكياس القهوة المختصة مع بيانات المعالجة والإيحاءات وتاريخ التحميص",
+    id: 'cafe_specialty_beans',
+    name: 'ملصق حبوب بن مختصة ومحمصة',
+    nameEn: 'Specialty Roasted Coffee',
+    category: 'cafe',
+    shape: 'rect',
+    description: 'ملصق أكياس القهوة المختصة مع بيانات المعالجة والإيحاءات وتاريخ التحميص',
     defaultWidth: 500,
     defaultHeight: 650,
     aspectRatio: 500 / 650,
     defaultMm: { width: 100, height: 130 },
     defaultColors: {
-      primary: "#78350F",
-      secondary: "#D97706",
-      background: "#FFFBEB",
+      primary: '#78350F',
+      secondary: '#D97706',
+      background: '#FFFBEB',
     },
     fields: [
-      { id: "roastery", label: "اسم المحمصة", type: "text", defaultValue: "محمصة الأصالة • ROASTERY" },
-      { id: "origin", label: "المصدر / السلالة", type: "text", defaultValue: "إثيوبيا - يرغاتشيفي" },
-      { id: "process", label: "المعالجة والارتفاع", type: "text", defaultValue: "مجففة لا هوائية • 2,100م" },
-      { id: "notes", label: "الإيحاءات", type: "text", defaultValue: "زهور • خوخ • شوكولاتة داكنة" },
-      { id: "weight", label: "الوزن الصافي", type: "text", defaultValue: "250g NET WEIGHT" },
+      {
+        id: 'roastery',
+        label: 'اسم المحمصة',
+        type: 'text',
+        defaultValue: 'محمصة الأصالة • ROASTERY',
+      },
+      {
+        id: 'origin',
+        label: 'المصدر / السلالة',
+        type: 'text',
+        defaultValue: 'إثيوبيا - يرغاتشيفي',
+      },
+      {
+        id: 'process',
+        label: 'المعالجة والارتفاع',
+        type: 'text',
+        defaultValue: 'مجففة لا هوائية • 2,100م',
+      },
+      {
+        id: 'notes',
+        label: 'الإيحاءات',
+        type: 'text',
+        defaultValue: 'زهور • خوخ • شوكولاتة داكنة',
+      },
+      { id: 'weight', label: 'الوزن الصافي', type: 'text', defaultValue: '250g NET WEIGHT' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const roastery = escapeXml(fields.roastery || "");
-      const origin = escapeXml(fields.origin || "");
-      const process = escapeXml(fields.process || "");
-      const notes = escapeXml(fields.notes || "");
-      const weight = escapeXml(fields.weight || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const roastery = escapeXml(fields.roastery || '');
+      const origin = escapeXml(fields.origin || '');
+      const process = escapeXml(fields.process || '');
+      const notes = escapeXml(fields.notes || '');
+      const weight = escapeXml(fields.weight || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 650" width="500" height="650">
@@ -528,30 +651,48 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "greeting_order_appreciation",
-    name: "ملصق شكر وتقدير عملاء المتجر",
-    nameEn: "Customer Appreciation Sticker",
-    category: "greeting",
-    shape: "circle",
-    description: "ملصق شكر أنيق يوضع مع طرود المتاجر الإلكترونية والهدايا لإسعاد العميل",
+    id: 'greeting_order_appreciation',
+    name: 'ملصق شكر وتقدير عملاء المتجر',
+    nameEn: 'Customer Appreciation Sticker',
+    category: 'greeting',
+    shape: 'circle',
+    description: 'ملصق شكر أنيق يوضع مع طرود المتاجر الإلكترونية والهدايا لإسعاد العميل',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#0D9488",
-      secondary: "#0F766E",
-      background: "#F0FDFA",
+      primary: '#0D9488',
+      secondary: '#0F766E',
+      background: '#F0FDFA',
     },
     fields: [
-      { id: "topText", label: "العبارة المقوسة", type: "text", defaultValue: "THANK YOU FOR YOUR ORDER" },
-      { id: "mainText", label: "الشكر الرئيسي", type: "text", defaultValue: "شكراً لطلبك !" },
-      { id: "subText", label: "رسالة اللطف", type: "text", defaultValue: "صُنع وجُهّز خصيصاً لأجلك ♡" },
+      {
+        id: 'topText',
+        label: 'العبارة المقوسة',
+        type: 'text',
+        defaultValue: 'THANK YOU FOR YOUR ORDER',
+      },
+      { id: 'mainText', label: 'الشكر الرئيسي', type: 'text', defaultValue: 'شكراً لطلبك !' },
+      {
+        id: 'subText',
+        label: 'رسالة اللطف',
+        type: 'text',
+        defaultValue: 'صُنع وجُهّز خصيصاً لأجلك ♡',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topText || "");
-      const main = escapeXml(fields.mainText || "");
-      const sub = escapeXml(fields.subText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topText || '');
+      const main = escapeXml(fields.mainText || '');
+      const sub = escapeXml(fields.subText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
@@ -583,30 +724,48 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "food_hot_pizza",
-    name: "ملصق بيتزا ساخنة طازجة",
-    nameEn: "Hot & Fresh Pizza Seal",
-    category: "cafe",
-    shape: "circle",
-    description: "ملصق تغليف دائري لمحلات البيتزا والوجبات السريعة مع شريحة بيتزا ساخنة",
+    id: 'food_hot_pizza',
+    name: 'ملصق بيتزا ساخنة طازجة',
+    nameEn: 'Hot & Fresh Pizza Seal',
+    category: 'cafe',
+    shape: 'circle',
+    description: 'ملصق تغليف دائري لمحلات البيتزا والوجبات السريعة مع شريحة بيتزا ساخنة',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#DC2626",
-      secondary: "#991B1B",
-      background: "#FEF2F2",
+      primary: '#DC2626',
+      secondary: '#991B1B',
+      background: '#FEF2F2',
     },
     fields: [
-      { id: "topText", label: "العبارة العلوية", type: "text", defaultValue: "★ HOT & FRESH PIZZA ★" },
-      { id: "mainText", label: "اسم المنتج", type: "text", defaultValue: "بيتزا طازجة" },
-      { id: "subText", label: "العبارة السفلية", type: "text", defaultValue: "ساخنة من الفرن مباشرة" },
+      {
+        id: 'topText',
+        label: 'العبارة العلوية',
+        type: 'text',
+        defaultValue: '★ HOT & FRESH PIZZA ★',
+      },
+      { id: 'mainText', label: 'اسم المنتج', type: 'text', defaultValue: 'بيتزا طازجة' },
+      {
+        id: 'subText',
+        label: 'العبارة السفلية',
+        type: 'text',
+        defaultValue: 'ساخنة من الفرن مباشرة',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topText || "");
-      const main = escapeXml(fields.mainText || "");
-      const sub = escapeXml(fields.subText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topText || '');
+      const main = escapeXml(fields.mainText || '');
+      const sub = escapeXml(fields.subText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
       const scallopD = scallopCirclePath(250, 250, 230, 28, 1.06);
 
@@ -645,30 +804,48 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "food_shawarma_grill",
-    name: "ملصق شاورما ومشويات الفحم",
-    nameEn: "Charcoal Shawarma & Grill",
-    category: "cafe",
-    shape: "rect",
-    description: "لاصق مطاعم الشاورما والمشويات العراقية والشامية على الفحم",
+    id: 'food_shawarma_grill',
+    name: 'ملصق شاورما ومشويات الفحم',
+    nameEn: 'Charcoal Shawarma & Grill',
+    category: 'cafe',
+    shape: 'rect',
+    description: 'لاصق مطاعم الشاورما والمشويات العراقية والشامية على الفحم',
     defaultWidth: 600,
     defaultHeight: 400,
     aspectRatio: 600 / 400,
     defaultColors: {
-      primary: "#EA580C",
-      secondary: "#9A3412",
-      background: "#FFF7ED",
+      primary: '#EA580C',
+      secondary: '#9A3412',
+      background: '#FFF7ED',
     },
     fields: [
-      { id: "restaurant", label: "اسم المطعم", type: "text", defaultValue: "مطعم ومشويات بغداد الأصيل" },
-      { id: "dish", label: "اسم الوجبة", type: "text", defaultValue: "شاورما دجاج ع الفحم" },
-      { id: "slogan", label: "الشعار", type: "text", defaultValue: "الطعم الأصلي بتتبيلة عراقية مميزة" },
+      {
+        id: 'restaurant',
+        label: 'اسم المطعم',
+        type: 'text',
+        defaultValue: 'مطعم ومشويات بغداد الأصيل',
+      },
+      { id: 'dish', label: 'اسم الوجبة', type: 'text', defaultValue: 'شاورما دجاج ع الفحم' },
+      {
+        id: 'slogan',
+        label: 'الشعار',
+        type: 'text',
+        defaultValue: 'الطعم الأصلي بتتبيلة عراقية مميزة',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const rest = escapeXml(fields.restaurant || "");
-      const dish = escapeXml(fields.dish || "");
-      const slog = escapeXml(fields.slogan || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const rest = escapeXml(fields.restaurant || '');
+      const dish = escapeXml(fields.dish || '');
+      const slog = escapeXml(fields.slogan || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
@@ -705,30 +882,48 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "food_oriental_sweets",
-    name: "ملصق حلويات شرقية فاخرة",
-    nameEn: "Luxury Oriental Sweets",
-    category: "cafe",
-    shape: "circle",
-    description: "شارة مذهبة راقية لعلب البقلاوة والحلويات الشرقية والمناسبات",
+    id: 'food_oriental_sweets',
+    name: 'ملصق حلويات شرقية فاخرة',
+    nameEn: 'Luxury Oriental Sweets',
+    category: 'cafe',
+    shape: 'circle',
+    description: 'شارة مذهبة راقية لعلب البقلاوة والحلويات الشرقية والمناسبات',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#B45309",
-      secondary: "#78350F",
-      background: "#FFFBEB",
+      primary: '#B45309',
+      secondary: '#78350F',
+      background: '#FFFBEB',
     },
     fields: [
-      { id: "brand", label: "اسم المتجر / المعمل", type: "text", defaultValue: "حلويات الرافدين الملكية" },
-      { id: "quality", label: "نوع الحلويات", type: "text", defaultValue: "بقلاوة وحلويات شرقية" },
-      { id: "city", label: "العبارة السفلية", type: "text", defaultValue: "طازج يومياً بالسمن الحر 100%" },
+      {
+        id: 'brand',
+        label: 'اسم المتجر / المعمل',
+        type: 'text',
+        defaultValue: 'حلويات الرافدين الملكية',
+      },
+      { id: 'quality', label: 'نوع الحلويات', type: 'text', defaultValue: 'بقلاوة وحلويات شرقية' },
+      {
+        id: 'city',
+        label: 'العبارة السفلية',
+        type: 'text',
+        defaultValue: 'طازج يومياً بالسمن الحر 100%',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const brand = escapeXml(fields.brand || "");
-      const qual = escapeXml(fields.quality || "");
-      const city = escapeXml(fields.city || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const brand = escapeXml(fields.brand || '');
+      const qual = escapeXml(fields.quality || '');
+      const city = escapeXml(fields.city || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
@@ -760,30 +955,43 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "food_natural_honey",
-    name: "ملصق عسل سدر بري طبيعي",
-    nameEn: "100% Pure Natural Honey",
-    category: "packaging",
-    shape: "rect",
-    description: "ملصق برطمانات العسل الطبيعي مع خلايا النحل وتأكيد النقاوة 100%",
+    id: 'food_natural_honey',
+    name: 'ملصق عسل سدر بري طبيعي',
+    nameEn: '100% Pure Natural Honey',
+    category: 'packaging',
+    shape: 'rect',
+    description: 'ملصق برطمانات العسل الطبيعي مع خلايا النحل وتأكيد النقاوة 100%',
     defaultWidth: 600,
     defaultHeight: 450,
     aspectRatio: 600 / 450,
     defaultColors: {
-      primary: "#D97706",
-      secondary: "#78350F",
-      background: "#FFFBEB",
+      primary: '#D97706',
+      secondary: '#78350F',
+      background: '#FFFBEB',
     },
     fields: [
-      { id: "title", label: "عنوان المنتج", type: "text", defaultValue: "عسل سدر جبلي طبيعي" },
-      { id: "badge", label: "شارة النقاوة", type: "text", defaultValue: "100% PURE NATURAL HONEY" },
-      { id: "weight", label: "الوزن الصافي", type: "text", defaultValue: "الوزن الصافي: 1000 غرام" },
+      { id: 'title', label: 'عنوان المنتج', type: 'text', defaultValue: 'عسل سدر جبلي طبيعي' },
+      { id: 'badge', label: 'شارة النقاوة', type: 'text', defaultValue: '100% PURE NATURAL HONEY' },
+      {
+        id: 'weight',
+        label: 'الوزن الصافي',
+        type: 'text',
+        defaultValue: 'الوزن الصافي: 1000 غرام',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.title || "");
-      const badge = escapeXml(fields.badge || "");
-      const wt = escapeXml(fields.weight || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.title || '');
+      const badge = escapeXml(fields.badge || '');
+      const wt = escapeXml(fields.weight || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450">
@@ -823,30 +1031,43 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "greeting_eid_mubarak",
-    name: "ملصق عيدكم مبارك وسعيد",
-    nameEn: "Eid Mubarak Celebration",
-    category: "seasonal",
-    shape: "circle",
-    description: "ختم احتفالي مذهب لعيدي الفطر والأضحى المبارك مع هلال وأضواء",
+    id: 'greeting_eid_mubarak',
+    name: 'ملصق عيدكم مبارك وسعيد',
+    nameEn: 'Eid Mubarak Celebration',
+    category: 'seasonal',
+    shape: 'circle',
+    description: 'ختم احتفالي مذهب لعيدي الفطر والأضحى المبارك مع هلال وأضواء',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#059669",
-      secondary: "#047857",
-      background: "#ECFDF5",
+      primary: '#059669',
+      secondary: '#047857',
+      background: '#ECFDF5',
     },
     fields: [
-      { id: "topText", label: "العبارة العلوية", type: "text", defaultValue: "★ تقبل الله منا ومنكم صالح الأعمال ★" },
-      { id: "mainText", label: "التهنئة الرئيسية", type: "text", defaultValue: "عيدكم مبارك" },
-      { id: "subText", label: "الدعاء", type: "text", defaultValue: "كل عام وأنتم بألف خير" },
+      {
+        id: 'topText',
+        label: 'العبارة العلوية',
+        type: 'text',
+        defaultValue: '★ تقبل الله منا ومنكم صالح الأعمال ★',
+      },
+      { id: 'mainText', label: 'التهنئة الرئيسية', type: 'text', defaultValue: 'عيدكم مبارك' },
+      { id: 'subText', label: 'الدعاء', type: 'text', defaultValue: 'كل عام وأنتم بألف خير' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topText || "");
-      const main = escapeXml(fields.mainText || "");
-      const sub = escapeXml(fields.subText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topText || '');
+      const main = escapeXml(fields.mainText || '');
+      const sub = escapeXml(fields.subText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
       const scallopD = scallopCirclePath(250, 250, 230, 32, 1.05);
 
@@ -877,30 +1098,48 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "greeting_wedding_congrats",
-    name: "ملصق عقد قران وزفاف مبارك",
-    nameEn: "Wedding & Marriage Congrats",
-    category: "greeting",
-    shape: "circle",
-    description: "ملصق فاخر لكروت وتوزيعات الأعراس وعقد القران مع دبلتين ذهبيتين",
+    id: 'greeting_wedding_congrats',
+    name: 'ملصق عقد قران وزفاف مبارك',
+    nameEn: 'Wedding & Marriage Congrats',
+    category: 'greeting',
+    shape: 'circle',
+    description: 'ملصق فاخر لكروت وتوزيعات الأعراس وعقد القران مع دبلتين ذهبيتين',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#BE185D",
-      secondary: "#9D174D",
-      background: "#FDF2F8",
+      primary: '#BE185D',
+      secondary: '#9D174D',
+      background: '#FDF2F8',
     },
     fields: [
-      { id: "dua", label: "الدعاء النبوي", type: "text", defaultValue: "بَارَكَ اللَّهُ لَكُمَا وَبَارَكَ عَلَيْكُمَا" },
-      { id: "names", label: "عنوان المناسبة", type: "text", defaultValue: "ألف مبروك الزواج" },
-      { id: "sub", label: "العبارة السفلية", type: "text", defaultValue: "وجمع بينكما في خير وسعادة ♡" },
+      {
+        id: 'dua',
+        label: 'الدعاء النبوي',
+        type: 'text',
+        defaultValue: 'بَارَكَ اللَّهُ لَكُمَا وَبَارَكَ عَلَيْكُمَا',
+      },
+      { id: 'names', label: 'عنوان المناسبة', type: 'text', defaultValue: 'ألف مبروك الزواج' },
+      {
+        id: 'sub',
+        label: 'العبارة السفلية',
+        type: 'text',
+        defaultValue: 'وجمع بينكما في خير وسعادة ♡',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const dua = escapeXml(fields.dua || "");
-      const names = escapeXml(fields.names || "");
-      const sub = escapeXml(fields.sub || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const dua = escapeXml(fields.dua || '');
+      const names = escapeXml(fields.names || '');
+      const sub = escapeXml(fields.sub || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
@@ -933,30 +1172,48 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "greeting_baby_welcome",
-    name: "ملصق استقبال المولود الجديد",
-    nameEn: "Welcome New Baby Celebration",
-    category: "greeting",
-    shape: "circle",
-    description: "شارة لطيفة لتوزيعات المواليد الجدد وحفلات السبوع والاستقبال",
+    id: 'greeting_baby_welcome',
+    name: 'ملصق استقبال المولود الجديد',
+    nameEn: 'Welcome New Baby Celebration',
+    category: 'greeting',
+    shape: 'circle',
+    description: 'شارة لطيفة لتوزيعات المواليد الجدد وحفلات السبوع والاستقبال',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#0284C7",
-      secondary: "#0369A1",
-      background: "#F0F9FF",
+      primary: '#0284C7',
+      secondary: '#0369A1',
+      background: '#F0F9FF',
     },
     fields: [
-      { id: "welcome", label: "عبارة الترحيب", type: "text", defaultValue: "أهلاً بقدومك يا صغيري" },
-      { id: "blessing", label: "اسم المولود / التهنئة", type: "text", defaultValue: "نورت الدنيا يا حبيبنا" },
-      { id: "note", label: "الدعاء", type: "text", defaultValue: "جعله الله من الصالحين والبارين" },
+      {
+        id: 'welcome',
+        label: 'عبارة الترحيب',
+        type: 'text',
+        defaultValue: 'أهلاً بقدومك يا صغيري',
+      },
+      {
+        id: 'blessing',
+        label: 'اسم المولود / التهنئة',
+        type: 'text',
+        defaultValue: 'نورت الدنيا يا حبيبنا',
+      },
+      { id: 'note', label: 'الدعاء', type: 'text', defaultValue: 'جعله الله من الصالحين والبارين' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const welc = escapeXml(fields.welcome || "");
-      const bless = escapeXml(fields.blessing || "");
-      const note = escapeXml(fields.note || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const welc = escapeXml(fields.welcome || '');
+      const bless = escapeXml(fields.blessing || '');
+      const note = escapeXml(fields.note || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
       const scallopD = scallopCirclePath(250, 250, 230, 24, 1.07);
 
@@ -988,30 +1245,43 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "greeting_jummah_blessed",
-    name: "ملصق جمعة مباركة وطيبة",
-    nameEn: "Blessed Friday Floral Stamp",
-    category: "greeting",
-    shape: "square",
-    description: "ملصق بطاقات ورسائل الجمعة المباركة مع زخارف إسلامية محرابية",
+    id: 'greeting_jummah_blessed',
+    name: 'ملصق جمعة مباركة وطيبة',
+    nameEn: 'Blessed Friday Floral Stamp',
+    category: 'greeting',
+    shape: 'square',
+    description: 'ملصق بطاقات ورسائل الجمعة المباركة مع زخارف إسلامية محرابية',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#4F46E5",
-      secondary: "#3730A3",
-      background: "#EEF2FF",
+      primary: '#4F46E5',
+      secondary: '#3730A3',
+      background: '#EEF2FF',
     },
     fields: [
-      { id: "main", label: "التهنئة الرئيسية", type: "text", defaultValue: "جمعة مباركة" },
-      { id: "dua", label: "الدعاء", type: "text", defaultValue: "نورٌ بين الجمعتين ورزقٌ وفير" },
-      { id: "salawat", label: "الصلاة على النبي", type: "text", defaultValue: "اللهم صلِّ على محمد وآل محمد" },
+      { id: 'main', label: 'التهنئة الرئيسية', type: 'text', defaultValue: 'جمعة مباركة' },
+      { id: 'dua', label: 'الدعاء', type: 'text', defaultValue: 'نورٌ بين الجمعتين ورزقٌ وفير' },
+      {
+        id: 'salawat',
+        label: 'الصلاة على النبي',
+        type: 'text',
+        defaultValue: 'اللهم صلِّ على محمد وآل محمد',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const main = escapeXml(fields.main || "");
-      const dua = escapeXml(fields.dua || "");
-      const sal = escapeXml(fields.salawat || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const main = escapeXml(fields.main || '');
+      const dua = escapeXml(fields.dua || '');
+      const sal = escapeXml(fields.salawat || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
@@ -1045,32 +1315,60 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "school_notebook_label",
-    name: "ملصق تسمية الدفاتر والكتب المدرسية",
-    nameEn: "Student School Notebook Label",
-    category: "kids",
-    shape: "rect",
-    description: "ملصق مستطيل لدفاتر الطلاب المدرسية لكتابة الاسم والصف والمادة والمدرسة",
+    id: 'school_notebook_label',
+    name: 'ملصق تسمية الدفاتر والكتب المدرسية',
+    nameEn: 'Student School Notebook Label',
+    category: 'kids',
+    shape: 'rect',
+    description: 'ملصق مستطيل لدفاتر الطلاب المدرسية لكتابة الاسم والصف والمادة والمدرسة',
     defaultWidth: 600,
     defaultHeight: 400,
     aspectRatio: 600 / 400,
     defaultColors: {
-      primary: "#2563EB",
-      secondary: "#1E40AF",
-      background: "#EFF6FF",
+      primary: '#2563EB',
+      secondary: '#1E40AF',
+      background: '#EFF6FF',
     },
     fields: [
-      { id: "studentName", label: "الاسم", type: "text", defaultValue: "الاسم: ......................................." },
-      { id: "grade", label: "الصف والشعبة", type: "text", defaultValue: "الصف: ......................................." },
-      { id: "subject", label: "المادة الدراسية", type: "text", defaultValue: "المادة: ......................................" },
-      { id: "school", label: "اسم المدرسة", type: "text", defaultValue: "المدرسة: ...................................." },
+      {
+        id: 'studentName',
+        label: 'الاسم',
+        type: 'text',
+        defaultValue: 'الاسم: .......................................',
+      },
+      {
+        id: 'grade',
+        label: 'الصف والشعبة',
+        type: 'text',
+        defaultValue: 'الصف: .......................................',
+      },
+      {
+        id: 'subject',
+        label: 'المادة الدراسية',
+        type: 'text',
+        defaultValue: 'المادة: ......................................',
+      },
+      {
+        id: 'school',
+        label: 'اسم المدرسة',
+        type: 'text',
+        defaultValue: 'المدرسة: ....................................',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const name = escapeXml(fields.studentName || "");
-      const gr = escapeXml(fields.grade || "");
-      const sub = escapeXml(fields.subject || "");
-      const sch = escapeXml(fields.school || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const name = escapeXml(fields.studentName || '');
+      const gr = escapeXml(fields.grade || '');
+      const sub = escapeXml(fields.subject || '');
+      const sch = escapeXml(fields.school || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
@@ -1111,30 +1409,43 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "school_star_student",
-    name: "وسام الطالب المتميز والمتفوق",
-    nameEn: "Star Student Honor Badge",
-    category: "kids",
-    shape: "circle",
-    description: "شارة تشجيعية وتكريمية مدرسية للطلاب المتفوقين مع نجمة ذهبية وشريط شرف",
+    id: 'school_star_student',
+    name: 'وسام الطالب المتميز والمتفوق',
+    nameEn: 'Star Student Honor Badge',
+    category: 'kids',
+    shape: 'circle',
+    description: 'شارة تشجيعية وتكريمية مدرسية للطلاب المتفوقين مع نجمة ذهبية وشريط شرف',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#EAB308",
-      secondary: "#A16207",
-      background: "#FEFCE8",
+      primary: '#EAB308',
+      secondary: '#A16207',
+      background: '#FEFCE8',
     },
     fields: [
-      { id: "header", label: "عنوان الوسام", type: "text", defaultValue: "وسام التفوق والاجتهاد" },
-      { id: "starTitle", label: "اللقب", type: "text", defaultValue: "طالب متميز ★" },
-      { id: "cheer", label: "عبارة التحفيز", type: "text", defaultValue: "فخورون بنجاحك وإبداعك !" },
+      { id: 'header', label: 'عنوان الوسام', type: 'text', defaultValue: 'وسام التفوق والاجتهاد' },
+      { id: 'starTitle', label: 'اللقب', type: 'text', defaultValue: 'طالب متميز ★' },
+      {
+        id: 'cheer',
+        label: 'عبارة التحفيز',
+        type: 'text',
+        defaultValue: 'فخورون بنجاحك وإبداعك !',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const head = escapeXml(fields.header || "");
-      const st = escapeXml(fields.starTitle || "");
-      const ch = escapeXml(fields.cheer || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const head = escapeXml(fields.header || '');
+      const st = escapeXml(fields.starTitle || '');
+      const ch = escapeXml(fields.cheer || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
       const starPoly = starPoints(250, 250, 235, 195, 16);
 
@@ -1164,32 +1475,60 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "medical_rx_pharmacy",
-    name: "ملصق صيدلية وتعليمات الوصفة الطبية (Rx)",
-    nameEn: "Pharmacy Prescription Rx Label",
-    category: "safety",
-    shape: "rect",
-    description: "ملصق صيدلية رسمي لتعليمات تعاطي الأدوية وجدول الجرعات اليومية",
+    id: 'medical_rx_pharmacy',
+    name: 'ملصق صيدلية وتعليمات الوصفة الطبية (Rx)',
+    nameEn: 'Pharmacy Prescription Rx Label',
+    category: 'safety',
+    shape: 'rect',
+    description: 'ملصق صيدلية رسمي لتعليمات تعاطي الأدوية وجدول الجرعات اليومية',
     defaultWidth: 600,
     defaultHeight: 400,
     aspectRatio: 600 / 400,
     defaultColors: {
-      primary: "#059669",
-      secondary: "#065F46",
-      background: "#ECFDF5",
+      primary: '#059669',
+      secondary: '#065F46',
+      background: '#ECFDF5',
     },
     fields: [
-      { id: "pharmacyName", label: "اسم الصيدلية", type: "text", defaultValue: "صيدلية الشفاء المركزية" },
-      { id: "patient", label: "اسم المريض", type: "text", defaultValue: "المريض: ................................" },
-      { id: "instructions", label: "إرشادات الجرعة", type: "text", defaultValue: "الجرعة: ملعقة واحدة بعد الأكل مرتين يومياً" },
-      { id: "warning", label: "تنبيه الحفظ", type: "text", defaultValue: "يُحفظ بعيداً عن متناول الأطفال وأشعة الشمس" },
+      {
+        id: 'pharmacyName',
+        label: 'اسم الصيدلية',
+        type: 'text',
+        defaultValue: 'صيدلية الشفاء المركزية',
+      },
+      {
+        id: 'patient',
+        label: 'اسم المريض',
+        type: 'text',
+        defaultValue: 'المريض: ................................',
+      },
+      {
+        id: 'instructions',
+        label: 'إرشادات الجرعة',
+        type: 'text',
+        defaultValue: 'الجرعة: ملعقة واحدة بعد الأكل مرتين يومياً',
+      },
+      {
+        id: 'warning',
+        label: 'تنبيه الحفظ',
+        type: 'text',
+        defaultValue: 'يُحفظ بعيداً عن متناول الأطفال وأشعة الشمس',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const ph = escapeXml(fields.pharmacyName || "");
-      const pat = escapeXml(fields.patient || "");
-      const ins = escapeXml(fields.instructions || "");
-      const warn = escapeXml(fields.warning || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const ph = escapeXml(fields.pharmacyName || '');
+      const pat = escapeXml(fields.patient || '');
+      const ins = escapeXml(fields.instructions || '');
+      const warn = escapeXml(fields.warning || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
@@ -1229,30 +1568,53 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "medical_keep_cold",
-    name: "ملصق تنبيه: يُحفظ مبرداً (2°-8°C)",
-    nameEn: "Medical Keep Refrigerated (2-8C)",
-    category: "safety",
-    shape: "rect",
-    description: "ملصق تحذيري للأدوية واللقاحات والمستحضرات الحيوية التي تتطلب تبريداً مستمراً",
+    id: 'medical_keep_cold',
+    name: 'ملصق تنبيه: يُحفظ مبرداً (2°-8°C)',
+    nameEn: 'Medical Keep Refrigerated (2-8C)',
+    category: 'safety',
+    shape: 'rect',
+    description: 'ملصق تحذيري للأدوية واللقاحات والمستحضرات الحيوية التي تتطلب تبريداً مستمراً',
     defaultWidth: 600,
     defaultHeight: 400,
     aspectRatio: 600 / 400,
     defaultColors: {
-      primary: "#0284C7",
-      secondary: "#0369A1",
-      background: "#F0F9FF",
+      primary: '#0284C7',
+      secondary: '#0369A1',
+      background: '#F0F9FF',
     },
     fields: [
-      { id: "alertHeader", label: "عنوان التنبيه", type: "text", defaultValue: "تنبيه طبي: مستحضر حيوي مبرد" },
-      { id: "tempRange", label: "درجة الحرارة المطلوبة", type: "text", defaultValue: "يُحفظ مبرداً بين 2° إلى 8°C" },
-      { id: "warningText", label: "التحذير الإضافي", type: "text", defaultValue: "ممنوع التجميد نهائياً - DO NOT FREEZE" },
+      {
+        id: 'alertHeader',
+        label: 'عنوان التنبيه',
+        type: 'text',
+        defaultValue: 'تنبيه طبي: مستحضر حيوي مبرد',
+      },
+      {
+        id: 'tempRange',
+        label: 'درجة الحرارة المطلوبة',
+        type: 'text',
+        defaultValue: 'يُحفظ مبرداً بين 2° إلى 8°C',
+      },
+      {
+        id: 'warningText',
+        label: 'التحذير الإضافي',
+        type: 'text',
+        defaultValue: 'ممنوع التجميد نهائياً - DO NOT FREEZE',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const al = escapeXml(fields.alertHeader || "");
-      const tmp = escapeXml(fields.tempRange || "");
-      const wrn = escapeXml(fields.warningText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const al = escapeXml(fields.alertHeader || '');
+      const tmp = escapeXml(fields.tempRange || '');
+      const wrn = escapeXml(fields.warningText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
@@ -1291,4 +1653,3 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     },
   },
 ];
-

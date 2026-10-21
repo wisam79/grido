@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Slider } from '@/components/ui/slider';
+
 import { ArrowCounterClockwise } from '@/components/ui/icons';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 export interface FluentSliderFieldProps {

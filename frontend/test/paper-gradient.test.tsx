@@ -1,17 +1,19 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import React from 'react';
 import { render } from '@testing-library/react';
+import React from 'react';
 import { Stage } from 'react-konva';
-import type Konva from 'konva';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { KonvaBackgroundLayer } from '../src/components/editor/konva/layers/konva-background-layer';
 import { SheetPreview } from '../src/components/editor/print/print-preview';
+import { formatGradientCss } from '../src/components/editor/properties/gradient-utils';
+import { getCollageGeometry, getSlotRect } from '../src/lib/canvas/collage-geometry';
 import {
   canvasAngleToCss,
   gradientPixelPoints,
   gradientPointsFromAngle,
 } from '../src/lib/canvas/gradient-geometry';
-import { formatGradientCss } from '../src/components/editor/properties/gradient-utils';
-import { getCollageGeometry, getSlotRect } from '../src/lib/canvas/collage-geometry';
+
+import type Konva from 'konva';
 
 /* ═══════════════════════════════════════════════════════════════
    خلفية الورقة المتدرجة — اختبارات انحدار على المخاطر الثلاث التي

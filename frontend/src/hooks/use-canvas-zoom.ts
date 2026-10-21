@@ -1,5 +1,5 @@
-import { useEditorStore } from '@/lib/editor-store';
 import { ZOOM_DEFAULT, canZoomIn, canZoomOut, isDefaultZoom, stepZoom } from '@/lib/canvas/zoom';
+import { useEditorStore } from '@/lib/editor-store';
 
 /**
  * use-canvas-zoom — أفعال الزوم الموحدة (كانت متناثرة نصاً متطابقاً في

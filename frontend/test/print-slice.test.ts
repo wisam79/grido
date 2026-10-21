@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { useEditorStore } from '../src/lib/editor-store';
 
 describe('PrintSlice Unit Tests', () => {
@@ -25,7 +26,9 @@ describe('PrintSlice Unit Tests', () => {
   });
 
   it('sets print paper dimensions and orientation in settings', () => {
-    useEditorStore.getState().setPrintSettings({ paperWidthMM: 297, paperHeightMM: 420, orientation: 'landscape' });
+    useEditorStore
+      .getState()
+      .setPrintSettings({ paperWidthMM: 297, paperHeightMM: 420, orientation: 'landscape' });
     const settings = useEditorStore.getState().printSettings;
 
     expect(settings.paperWidthMM).toBe(297);

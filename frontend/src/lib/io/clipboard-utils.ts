@@ -1,16 +1,19 @@
+import { z } from 'zod';
+
+import { resolveImageAspectRatio, setCachedImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import { sanitizeText, TEXT_MAX_LENGTH } from '@/lib/canvas/text-helpers';
 import { useEditorStore } from '@/lib/editor-store';
-import { CanvasElement } from '@/lib/store/types';
+import { fetchLocalApi } from '@/lib/local-api';
+import { createLogger } from '@/lib/logger';
+import { CanvasElementSchema } from '@/lib/schema';
+
 import {
   SaveImageFromBase64,
   GetClipboardText,
   SetClipboardText,
 } from '../../../wailsjs/go/main/App';
-import { resolveImageAspectRatio, setCachedImageAspectRatio } from '@/lib/canvas/image-dimensions';
-import { z } from 'zod';
-import { CanvasElementSchema } from '@/lib/schema';
-import { createLogger } from '@/lib/logger';
-import { sanitizeText, TEXT_MAX_LENGTH } from '@/lib/canvas/text-helpers';
-import { fetchLocalApi } from '@/lib/local-api';
+
+import type { CanvasElement } from '@/lib/store/types';
 
 const logger = createLogger('clipboard-utils');
 

@@ -1,16 +1,18 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll } from 'vitest';
+
 import {
   sortCornerPoints,
   autoDetectDocumentCorners,
   warpPerspective,
-  Point,
-} from "../src/components/editor/document-scanner/perspective-transform";
+} from '../src/components/editor/document-scanner/perspective-transform';
 
-describe("Perspective Transform & Document Scanner Utility Tests", () => {
+import type { Point } from '../src/components/editor/document-scanner/perspective-transform';
+
+describe('Perspective Transform & Document Scanner Utility Tests', () => {
   beforeAll(() => {
     // Mock HTMLCanvasElement.prototype.getContext for jsdom
     HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, contextId: string) {
-      if (contextId === "2d") {
+      if (contextId === '2d') {
         const canvas = this;
         const w = canvas.width || 100;
         const h = canvas.height || 100;
@@ -32,10 +34,10 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
               const targetH = canvas.height || 100;
               const srcW = src.width || 100;
 
-              const readSx = typeof sw !== "undefined" ? (sx || 0) : 0;
-              const readSy = typeof sw !== "undefined" ? (sy || 0) : 0;
-              const readSw = typeof sw !== "undefined" ? (sw || srcW) : srcW;
-              const readSh = typeof sw !== "undefined" ? (sh || 100) : 100;
+              const readSx = typeof sw !== 'undefined' ? sx || 0 : 0;
+              const readSy = typeof sw !== 'undefined' ? sy || 0 : 0;
+              const readSw = typeof sw !== 'undefined' ? sw || srcW : srcW;
+              const readSh = typeof sw !== 'undefined' ? sh || 100 : 100;
 
               for (let y = 0; y < readSh && y < targetH; y++) {
                 for (let x = 0; x < readSw && x < targetW; x++) {
@@ -87,23 +89,23 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     } as any;
   });
 
-  it("should correctly sort quadrilateral corners in clockwise order (TL, TR, BR, BL)", () => {
+  it('should correctly sort quadrilateral corners in clockwise order (TL, TR, BR, BL)', () => {
     const unorderedPoints: Point[] = [
       { x: 100, y: 100 }, // BR
-      { x: 0, y: 100 },   // BL
-      { x: 100, y: 0 },   // TR
-      { x: 0, y: 0 },     // TL
+      { x: 0, y: 100 }, // BL
+      { x: 100, y: 0 }, // TR
+      { x: 0, y: 0 }, // TL
     ];
 
     const sorted = sortCornerPoints(unorderedPoints);
 
-    expect(sorted[0]).toEqual({ x: 0, y: 0 });     // Top-Left
-    expect(sorted[1]).toEqual({ x: 100, y: 0 });   // Top-Right
+    expect(sorted[0]).toEqual({ x: 0, y: 0 }); // Top-Left
+    expect(sorted[1]).toEqual({ x: 100, y: 0 }); // Top-Right
     expect(sorted[2]).toEqual({ x: 100, y: 100 }); // Bottom-Right
-    expect(sorted[3]).toEqual({ x: 0, y: 100 });   // Bottom-Left
+    expect(sorted[3]).toEqual({ x: 0, y: 100 }); // Bottom-Left
   });
 
-  it("should auto detect corners fallback on empty/uniform image data", () => {
+  it('should auto detect corners fallback on empty/uniform image data', () => {
     const width = 100;
     const height = 100;
     const dummyData = new Uint8ClampedArray(width * height * 4);
@@ -118,7 +120,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(corners[2].y).toBe(95);
   });
 
-  it("should auto detect corners when high-contrast document edges are present", () => {
+  it('should auto detect corners when high-contrast document edges are present', () => {
     const width = 100;
     const height = 100;
     const dummyData = new Uint8ClampedArray(width * height * 4);
@@ -144,7 +146,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(corners[2].y).toBeLessThanOrEqual(88);
   });
 
-  it("should handle warpPerspective gracefully even with degenerate/collinear corner points without throwing NaN/Infinity errors", () => {
+  it('should handle warpPerspective gracefully even with degenerate/collinear corner points without throwing NaN/Infinity errors', () => {
     const mockImageData = {
       data: new Uint8ClampedArray(100 * 100 * 4),
       width: 100,
@@ -164,24 +166,15 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     ];
 
     expect(() => {
-      const resultCanvas = warpPerspective(
-        mockCtx,
-        100,
-        100,
-        degenerateCorners,
-        50,
-        50,
-        "magic"
-      );
+      const resultCanvas = warpPerspective(mockCtx, 100, 100, degenerateCorners, 50, 50, 'magic');
       expect(resultCanvas.width).toBe(50);
       expect(resultCanvas.height).toBe(50);
     }).not.toThrow();
   });
 
-  it("should correctly infer smart document aspect ratios (A4, ID card, Square)", async () => {
-    const { inferSmartDocumentAspect } = await import(
-      "../src/components/editor/document-scanner/perspective-transform"
-    );
+  it('should correctly infer smart document aspect ratios (A4, ID card, Square)', async () => {
+    const { inferSmartDocumentAspect } =
+      await import('../src/components/editor/document-scanner/perspective-transform');
 
     // A4 Portrait ratio ~ 1 / 1.414 = 0.707
     const a4PortraitCorners: Point[] = [
@@ -190,7 +183,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
       { x: 210, y: 297 },
       { x: 0, y: 297 },
     ];
-    expect(inferSmartDocumentAspect(a4PortraitCorners)).toBe("a4_p");
+    expect(inferSmartDocumentAspect(a4PortraitCorners)).toBe('a4_p');
 
     // A4 Landscape ratio ~ 1.414
     const a4LandscapeCorners: Point[] = [
@@ -199,7 +192,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
       { x: 297, y: 210 },
       { x: 0, y: 210 },
     ];
-    expect(inferSmartDocumentAspect(a4LandscapeCorners)).toBe("a4_l");
+    expect(inferSmartDocumentAspect(a4LandscapeCorners)).toBe('a4_l');
 
     // ID Card ratio ~ 85.6 / 54 = 1.58
     const idCardCorners: Point[] = [
@@ -208,7 +201,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
       { x: 86, y: 54 },
       { x: 0, y: 54 },
     ];
-    expect(inferSmartDocumentAspect(idCardCorners)).toBe("id_card");
+    expect(inferSmartDocumentAspect(idCardCorners)).toBe('id_card');
 
     // Square ratio ~ 1.0
     const squareCorners: Point[] = [
@@ -217,15 +210,14 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
       { x: 100, y: 100 },
       { x: 0, y: 100 },
     ];
-    expect(inferSmartDocumentAspect(squareCorners)).toBe("square");
+    expect(inferSmartDocumentAspect(squareCorners)).toBe('square');
   });
 
-  it("should run detectDocumentAuto and return valid detection results", async () => {
-    const { detectDocumentAuto } = await import(
-      "../src/components/editor/document-scanner/perspective-transform"
-    );
+  it('should run detectDocumentAuto and return valid detection results', async () => {
+    const { detectDocumentAuto } =
+      await import('../src/components/editor/document-scanner/perspective-transform');
 
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = 200;
     canvas.height = 200;
 
@@ -233,10 +225,10 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(res).toBeDefined();
     expect(res.corners).toBeDefined();
     expect(res.corners?.length).toBe(4);
-    expect(["scanic", "opencv", "js", "default"]).toContain(res.method);
+    expect(['scanic', 'opencv', 'js', 'default']).toContain(res.method);
   });
 
-  it("should accurately reconstruct sharp corners via RANSAC line intersection even with clipped/chamfered corners", () => {
+  it('should accurately reconstruct sharp corners via RANSAC line intersection even with clipped/chamfered corners', () => {
     const width = 120;
     const height = 120;
     const dummyData = new Uint8ClampedArray(width * height * 4);
@@ -273,7 +265,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(corners[3].y).toBeGreaterThanOrEqual(85);
   });
 
-  it("should accurately detect a dark ID card centered on a light background inside a vertical screenshot", () => {
+  it('should accurately detect a dark ID card centered on a light background inside a vertical screenshot', () => {
     const width = 180;
     const height = 360;
     const dummyData = new Uint8ClampedArray(width * height * 4);
@@ -328,10 +320,9 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(corners[3].y).toBeLessThanOrEqual(218);
   });
 
-  it("should accurately detect multiple documents in the same image", async () => {
-    const { autoDetectAllDocumentCorners } = await import(
-      "../src/components/editor/document-scanner/perspective-transform"
-    );
+  it('should accurately detect multiple documents in the same image', async () => {
+    const { autoDetectAllDocumentCorners } =
+      await import('../src/components/editor/document-scanner/perspective-transform');
 
     const width = 300;
     const height = 150;
@@ -396,19 +387,19 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
         const minArea = Math.min(a1, a2);
 
         if (minArea > 0) {
-          expect(interArea / minArea).toBeLessThanOrEqual(0.50);
+          expect(interArea / minArea).toBeLessThanOrEqual(0.5);
         }
       }
     }
   });
 
-  it("should correctly sort diamond/45-degree rotated quad points in clockwise order starting at Top-Left", () => {
+  it('should correctly sort diamond/45-degree rotated quad points in clockwise order starting at Top-Left', () => {
     // Diamond shape: Top=(50, 0), Right=(100, 50), Bottom=(50, 100), Left=(0, 50)
     const diamondPoints: Point[] = [
       { x: 50, y: 100 }, // Bottom
-      { x: 0, y: 50 },   // Left
+      { x: 0, y: 50 }, // Left
       { x: 100, y: 50 }, // Right
-      { x: 50, y: 0 },   // Top
+      { x: 50, y: 0 }, // Top
     ];
 
     const sorted = sortCornerPoints(diamondPoints);
@@ -422,17 +413,16 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(cross).toBeGreaterThan(0);
   });
 
-  it("should preserve text in shadow using applyOtsuFilter (Local Adaptive Thresholding)", async () => {
-    const { applyOtsuFilter } = await import(
-      "../src/components/editor/document-scanner/core/filters"
-    );
+  it('should preserve text in shadow using applyOtsuFilter (Local Adaptive Thresholding)', async () => {
+    const { applyOtsuFilter } =
+      await import('../src/components/editor/document-scanner/core/filters');
 
     const width = 80;
     const height = 80;
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     const imgData = ctx!.getImageData(0, 0, width, height);
     const data = imgData.data;
 
@@ -486,23 +476,22 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(resData[brightTextIdx]).toBe(0);
   });
 
-  it("should boost blue channel correctly in applyMagicColorFilter without corruption", async () => {
-    const { applyMagicColorFilter } = await import(
-      "../src/components/editor/document-scanner/core/filters"
-    );
+  it('should boost blue channel correctly in applyMagicColorFilter without corruption', async () => {
+    const { applyMagicColorFilter } =
+      await import('../src/components/editor/document-scanner/core/filters');
 
     const width = 10;
     const height = 10;
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     const imgData = ctx!.getImageData(0, 0, width, height);
     const data = imgData.data;
 
     // Set a grayish blue stamp pixel
     for (let i = 0; i < width * height; i++) {
-      data[i * 4] = 140;     // R
+      data[i * 4] = 140; // R
       data[i * 4 + 1] = 150; // G
       data[i * 4 + 2] = 200; // B (predominant blue)
       data[i * 4 + 3] = 255;
@@ -518,17 +507,16 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(resData[2]).toBeGreaterThan(resData[1]);
   });
 
-  it("should refine corners with localized sub-pixel accuracy without allocating full image", async () => {
-    const { refineCornersSubPixel } = await import(
-      "../src/components/editor/document-scanner/core/perspective-warper"
-    );
+  it('should refine corners with localized sub-pixel accuracy without allocating full image', async () => {
+    const { refineCornersSubPixel } =
+      await import('../src/components/editor/document-scanner/core/perspective-warper');
 
     const width = 100;
     const height = 100;
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     const imgData = ctx!.getImageData(0, 0, width, height);
     const dummyData = imgData.data;
 
@@ -559,10 +547,9 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(refined[0].y).toBeLessThanOrEqual(21);
   });
 
-  it("should split a quad into two ID cards (vertical and horizontal) with valid coordinates", async () => {
-    const { splitQuadIntoIdCards } = await import(
-      "../src/components/editor/document-scanner/core/document-detector"
-    );
+  it('should split a quad into two ID cards (vertical and horizontal) with valid coordinates', async () => {
+    const { splitQuadIntoIdCards } =
+      await import('../src/components/editor/document-scanner/core/document-detector');
 
     const quad: Point[] = [
       { x: 0, y: 0 },
@@ -571,10 +558,10 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
       { x: 0, y: 300 },
     ];
 
-    const vSplit = splitQuadIntoIdCards(quad, "vertical");
+    const vSplit = splitQuadIntoIdCards(quad, 'vertical');
     expect(vSplit.length).toBe(2);
-    expect(vSplit[0].aspectType).toBe("id_card");
-    expect(vSplit[1].aspectType).toBe("id_card");
+    expect(vSplit[0].aspectType).toBe('id_card');
+    expect(vSplit[1].aspectType).toBe('id_card');
     // Card 1 top half: y from 0 to 147 (due to 2% gap)
     expect(vSplit[0].corners[0]).toEqual({ x: 0, y: 0 });
     expect(vSplit[0].corners[2]).toEqual({ x: 200, y: 147 });
@@ -582,7 +569,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(vSplit[1].corners[0]).toEqual({ x: 0, y: 153 });
     expect(vSplit[1].corners[2]).toEqual({ x: 200, y: 300 });
 
-    const hSplit = splitQuadIntoIdCards(quad, "horizontal");
+    const hSplit = splitQuadIntoIdCards(quad, 'horizontal');
     expect(hSplit.length).toBe(2);
     // Card 1 left half: x from 0 to 98 (due to 2% gap)
     expect(hSplit[0].corners[1]).toEqual({ x: 98, y: 0 });
@@ -590,14 +577,13 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(hSplit[1].corners[0]).toEqual({ x: 102, y: 0 });
   });
 
-  it("should add a manual document quad without exceeding image dimensions", async () => {
-    const { addManualDocumentQuad } = await import(
-      "../src/components/editor/document-scanner/core/document-detector"
-    );
+  it('should add a manual document quad without exceeding image dimensions', async () => {
+    const { addManualDocumentQuad } =
+      await import('../src/components/editor/document-scanner/core/document-detector');
 
     const existingDocs = [
       {
-        id: "doc-1",
+        id: 'doc-1',
         corners: [
           { x: 10, y: 10 },
           { x: 100, y: 10 },
@@ -605,8 +591,8 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
           { x: 10, y: 100 },
         ],
         confidence: 0.9,
-        label: "مستند 1",
-        aspectType: "free" as const,
+        label: 'مستند 1',
+        aspectType: 'free' as const,
       },
     ];
 
@@ -618,20 +604,20 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(newDoc.corners[2].y).toBeLessThanOrEqual(500);
   });
 
-  it("should correctly apply supporting filters (Grayscale, Sharpen, DeYellow, ShadowRemoval, BorderCleanup)", async () => {
+  it('should correctly apply supporting filters (Grayscale, Sharpen, DeYellow, ShadowRemoval, BorderCleanup)', async () => {
     const {
       applyGrayscaleFilter,
       applySharpenFilter,
       applyDeYellowFilter,
       applyShadowRemoval,
       applyBorderCleanup,
-    } = await import("../src/components/editor/document-scanner/core/filters");
+    } = await import('../src/components/editor/document-scanner/core/filters');
 
     // 1. Grayscale Filter
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = 40;
     canvas.height = 40;
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext('2d')!;
     const imgData = ctx.getImageData(0, 0, 40, 40);
     for (let i = 0; i < 40 * 40; i++) {
       imgData.data[i * 4] = 200;
@@ -642,7 +628,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     ctx.putImageData(imgData, 0, 0);
 
     const grayCanvas = applyGrayscaleFilter(canvas);
-    const grayData = grayCanvas.getContext("2d")!.getImageData(0, 0, 40, 40).data;
+    const grayData = grayCanvas.getContext('2d')!.getImageData(0, 0, 40, 40).data;
     // In grayscale, R, G, and B should be identical
     expect(grayData[0]).toBe(grayData[1]);
     expect(grayData[1]).toBe(grayData[2]);
@@ -656,13 +642,13 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     }
     ctx.putImageData(imgData, 0, 0);
     const deyellowCanvas = applyDeYellowFilter(canvas);
-    const dyData = deyellowCanvas.getContext("2d")!.getImageData(0, 0, 40, 40).data;
+    const dyData = deyellowCanvas.getContext('2d')!.getImageData(0, 0, 40, 40).data;
     // Blue channel should be boosted to neutralize yellow
     expect(dyData[2]).toBeGreaterThan(150);
 
     // 3. Border Cleanup
     const cleaned = applyBorderCleanup(canvas, 2);
-    const clData = cleaned.getContext("2d")!.getImageData(0, 0, 40, 40).data;
+    const clData = cleaned.getContext('2d')!.getImageData(0, 0, 40, 40).data;
     // Border pixels should be pure white [255, 255, 255]
     expect(clData[0]).toBe(255);
     expect(clData[1]).toBe(255);
@@ -675,10 +661,9 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(shadowCanvas.width).toBe(40);
   });
 
-  it("should score text-rich quads significantly higher than blank empty rectangular borders", async () => {
-    const { computeInternalTextDensity, evaluateCandidateQuad } = await import(
-      "../src/components/editor/document-scanner/core/multi-doc-segmenter"
-    );
+  it('should score text-rich quads significantly higher than blank empty rectangular borders', async () => {
+    const { computeInternalTextDensity, evaluateCandidateQuad } =
+      await import('../src/components/editor/document-scanner/core/multi-doc-segmenter');
 
     const sw = 100;
     const sh = 100;
@@ -707,7 +692,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     const textScore = computeInternalTextDensity(quad, grayText, mag, sw, sh);
 
     expect(textScore).toBeGreaterThan(blankTextScore);
-    expect(textScore).toBeGreaterThan(0.20);
+    expect(textScore).toBeGreaterThan(0.2);
 
     const scoreBlank = evaluateCandidateQuad(quad, sw, sh, mag, grayBlank, 100);
     const scoreText = evaluateCandidateQuad(quad, sw, sh, mag, grayText, 100);
@@ -715,10 +700,9 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(scoreText).toBeGreaterThan(scoreBlank * 1.5);
   });
 
-  it("should strictly reject physically impossible document angles (acute diamonds, severe non-orthogonal cuts)", async () => {
-    const { isPhysicallyPlausibleDocumentQuad, computeQuadOrthogonality } = await import(
-      "../src/components/editor/document-scanner/core/quad-geometry"
-    );
+  it('should strictly reject physically impossible document angles (acute diamonds, severe non-orthogonal cuts)', async () => {
+    const { isPhysicallyPlausibleDocumentQuad, computeQuadOrthogonality } =
+      await import('../src/components/editor/document-scanner/core/quad-geometry');
 
     // 1. Valid rectangular document under perspective
     const validCard: Point[] = [
@@ -728,18 +712,7 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
       { x: 37, y: 72 },
     ];
     expect(isPhysicallyPlausibleDocumentQuad(validCard)).toBe(true);
-    expect(computeQuadOrthogonality(validCard)).toBeGreaterThan(0.70);
-
-    // 2. Impossible 45-degree acute diamond (scissor cut / invalid tilt)
-    const impossibleDiamond: Point[] = [
-      { x: 50, y: 10 },
-      { x: 90, y: 50 },
-      { x: 50, y: 90 },
-      { x: 10, y: 50 },
-    ];
-    // Under perspective, a 45-degree rotated acute diamond is not a card
-    const d1 = Math.hypot(impossibleDiamond[2].x - impossibleDiamond[0].x, impossibleDiamond[2].y - impossibleDiamond[0].y);
-    const d2 = Math.hypot(impossibleDiamond[3].x - impossibleDiamond[1].x, impossibleDiamond[3].y - impossibleDiamond[1].y);
+    expect(computeQuadOrthogonality(validCard)).toBeGreaterThan(0.7);
 
     // 3. Acute needle triangle/trapezoid
     const acuteNeedle: Point[] = [
@@ -752,32 +725,30 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(computeQuadOrthogonality(acuteNeedle)).toBe(0);
   });
 
-  it("should provide valid asset base url and safe warmup for ML detector", async () => {
-    const { getScanicAssetBaseUrl, warmupMlDetector } = await import(
-      "../src/components/editor/document-scanner/core/ml-detector"
-    );
+  it('should provide valid asset base url and safe warmup for ML detector', async () => {
+    const { getScanicAssetBaseUrl, warmupMlDetector } =
+      await import('../src/components/editor/document-scanner/core/ml-detector');
 
     const url = getScanicAssetBaseUrl();
     expect(url).toBeDefined();
-    expect(url).toContain("models/scanic/");
+    expect(url).toContain('models/scanic/');
 
     // Safe warmup should not throw even in Node/JSDOM
     await expect(warmupMlDetector()).resolves.toBeUndefined();
   });
 
-  it("should handle detectDocumentWithMl gracefully and return null or valid scanic result", async () => {
-    const { detectDocumentWithMl } = await import(
-      "../src/components/editor/document-scanner/core/ml-detector"
-    );
+  it('should handle detectDocumentWithMl gracefully and return null or valid scanic result', async () => {
+    const { detectDocumentWithMl } =
+      await import('../src/components/editor/document-scanner/core/ml-detector');
 
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = 300;
     canvas.height = 200;
 
     // In a test environment without a running HTTP server for .ort, it should gracefully return null
     const res = await detectDocumentWithMl(canvas, 300, 200);
     if (res !== null) {
-      expect(res.method).toBe("scanic");
+      expect(res.method).toBe('scanic');
       expect(res.corners.length).toBe(4);
       expect(res.documents?.length).toBeGreaterThan(0);
     } else {
@@ -785,10 +756,9 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     }
   });
 
-  it("should correctly process and refine corners when ML detector succeeds", async () => {
-    const { detectDocumentWithMl, setScanicModuleForTesting } = await import(
-      "../src/components/editor/document-scanner/core/ml-detector"
-    );
+  it('should correctly process and refine corners when ML detector succeeds', async () => {
+    const { detectDocumentWithMl, setScanicModuleForTesting } =
+      await import('../src/components/editor/document-scanner/core/ml-detector');
 
     try {
       setScanicModuleForTesting({
@@ -801,16 +771,16 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
             bottomRight: { x: 275, y: 185 },
             bottomLeft: { x: 25, y: 175 },
           },
-        })) as unknown as typeof import("scanic")["scanDocument"],
+        })) as unknown as (typeof import('scanic'))['scanDocument'],
       });
 
-      const canvas = document.createElement("canvas");
+      const canvas = document.createElement('canvas');
       canvas.width = 300;
       canvas.height = 200;
 
       const res = await detectDocumentWithMl(canvas, 300, 200);
       expect(res).not.toBeNull();
-      expect(res?.method).toBe("scanic");
+      expect(res?.method).toBe('scanic');
       expect(res?.confidence).toBeGreaterThanOrEqual(0.95);
       expect(res?.corners.length).toBe(4);
       expect(res?.documents?.length).toBe(1);
@@ -820,10 +790,9 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     }
   });
 
-  it("should faithfully retain low ML confidence scores without inflating with a false floor", async () => {
-    const { detectDocumentWithMl, setScanicModuleForTesting } = await import(
-      "../src/components/editor/document-scanner/core/ml-detector"
-    );
+  it('should faithfully retain low ML confidence scores without inflating with a false floor', async () => {
+    const { detectDocumentWithMl, setScanicModuleForTesting } =
+      await import('../src/components/editor/document-scanner/core/ml-detector');
 
     try {
       setScanicModuleForTesting({
@@ -836,10 +805,10 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
             bottomRight: { x: 280, y: 185 },
             bottomLeft: { x: 20, y: 185 },
           },
-        })) as unknown as typeof import("scanic")["scanDocument"],
+        })) as unknown as (typeof import('scanic'))['scanDocument'],
       });
 
-      const canvas = document.createElement("canvas");
+      const canvas = document.createElement('canvas');
       canvas.width = 300;
       canvas.height = 200;
 
@@ -852,10 +821,9 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     }
   });
 
-  it("should rectify slightly tilted/skewed corners to perfect horizontal alignment", async () => {
-    const { rectifyNearAxisAlignedQuad } = await import(
-      "../src/components/editor/document-scanner/core/quad-geometry"
-    );
+  it('should rectify slightly tilted/skewed corners to perfect horizontal alignment', async () => {
+    const { rectifyNearAxisAlignedQuad } =
+      await import('../src/components/editor/document-scanner/core/quad-geometry');
 
     // Quad with slightly tilted top edge due to contrast/photo (y=25 on left vs y=15 on right) but horizontal bottom (y=180 on both)
     const skewedQuad = [
@@ -877,10 +845,3 @@ describe("Perspective Transform & Document Scanner Utility Tests", () => {
     expect(rectified[1].x).toBe(rectified[2].x);
   });
 });
-
-
-
-
-
-
-

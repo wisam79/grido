@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 /**
  * QuickBarGroup — مجموعة أزرار مترابطة داخل الشريط السريع.

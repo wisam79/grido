@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { describe, it, expect } from 'vitest';
 
 describe('حارس توحيد ارتفاعات شريط الأدوات العلوي (Toolbar Height Uniformity Guard)', () => {
   const toolbarDir = join(__dirname, '../src/components/editor/toolbar');

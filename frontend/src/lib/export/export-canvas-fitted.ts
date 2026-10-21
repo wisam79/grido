@@ -2,22 +2,24 @@
  * فرع العناصر (صورة/نص/شكل) من التصدير اليدوي — الوضع الحر.
  * مستخرج من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
-import { useEditorStore } from '@/lib/editor-store';
-import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
+import { gradientStart, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
 import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
 import { createElementGlyphPainter, resolveElementFill } from '@/lib/canvas/fill-paint';
-import { wrapTextLines } from '@/lib/canvas/text-layout';
-import { resolveTextRenderState } from '@/lib/canvas/text-helpers';
-import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
-import { gradientStart, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
-import { getShapeByPath } from '@/lib/io/shape-catalog';
-import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
-import { drawImageCover, drawRoundRect, drawStar, loadImage } from './export-primitives';
-import { colorWithAlpha, getRoundedPool } from './export-color';
-import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
-import { renderWithPixelFilter } from './export-pixel-filter';
+import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
+import { resolveTextRenderState } from '@/lib/canvas/text-helpers';
+import { wrapTextLines } from '@/lib/canvas/text-layout';
+import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
+import { isPixelFilter } from '@/lib/filters/pixel-filters';
+import { getShapeByPath } from '@/lib/io/shape-catalog';
 import { createLogger } from '@/lib/logger';
+import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
+
+import { colorWithAlpha, getRoundedPool } from './export-color';
+import { renderWithPixelFilter } from './export-pixel-filter';
+import { drawImageCover, drawRoundRect, drawStar, loadImage } from './export-primitives';
+
+import type { useEditorStore } from '@/lib/editor-store';
 
 const logger = createLogger('export-canvas-fitted');
 

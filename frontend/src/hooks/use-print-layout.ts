@@ -1,7 +1,10 @@
 import { useMemo } from 'react';
-import { PhotoTemplate, CollageTemplate } from '@/lib/templates';
-import { PrintSettings, EditorMode } from '@/lib/editor-store';
-import { computeSheetGrid, GridAlignment } from '@/lib/print/print-layout-math';
+
+import { computeSheetGrid } from '@/lib/print/print-layout-math';
+
+import type { PrintSettings, EditorMode } from '@/lib/editor-store';
+import type { GridAlignment } from '@/lib/print/print-layout-math';
+import type { PhotoTemplate, CollageTemplate } from '@/lib/templates';
 
 interface UsePrintLayoutProps {
   template: PhotoTemplate | null;

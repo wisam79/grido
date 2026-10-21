@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Document Scanner Workflow E2E', () => {
@@ -10,8 +11,16 @@ test.describe('Document Scanner Workflow E2E', () => {
 
   test('Open document scanner dialog via image properties or menu', async ({ page }) => {
     // Add an image first
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
-    await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    await page
+      .getByTestId('toolbar-insert')
+      .or(page.getByRole('button', { name: /إدراج/ }))
+      .first()
+      .click();
 
     // Look for document scanner action button in image properties
     const scannerBtn = page.getByRole('button', { name: /مسح المستند|ماسح المستندات/ }).first();
@@ -26,7 +35,9 @@ test.describe('Document Scanner Workflow E2E', () => {
     await expect(scannerModal).toBeVisible({ timeout: 10000 });
 
     // الشريط الجانبي للماسح ظهر فعلاً (ليس حواراً فارغاً)
-    await expect(scannerModal.getByText(/نمط المسح|كشف تلقائي|فلاتر الورقة/).first()).toBeVisible({ timeout: 10000 });
+    await expect(scannerModal.getByText(/نمط المسح|كشف تلقائي|فلاتر الورقة/).first()).toBeVisible({
+      timeout: 10000,
+    });
 
     // Cancel and close via Escape
     await page.keyboard.press('Escape');

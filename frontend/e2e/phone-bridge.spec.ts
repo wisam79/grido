@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Phone Bridge & Camera Sync E2E', () => {

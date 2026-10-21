@@ -13,7 +13,9 @@
  * إن كان فيه `Mat` دالة — فالاختبار يحقن المحاكاة دون أي تعديل على كود الإنتاج.
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
 import { detectDocumentsWithOpenCV } from '../core/opencv-detector';
+
 import type { Point } from '../core/types';
 
 const SW = 640;

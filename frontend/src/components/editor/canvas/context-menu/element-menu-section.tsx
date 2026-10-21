@@ -1,5 +1,7 @@
-import { useEditorStore } from '@/lib/editor-store';
+import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
+
+import { requestStickerReedit } from '@/components/editor/toolbar/sticker-reedit-bus';
 import { Spinner } from '@/components/ui/huge-icon';
 import {
   Copy,
@@ -14,13 +16,12 @@ import {
   Sticker,
   Code,
 } from '@/components/ui/icons';
-import { toast } from 'sonner';
-import { requestStickerReedit } from '@/components/editor/toolbar/sticker-reedit-bus';
 import { copySvgCodeToClipboard } from '@/features/stickers/lib/clipboard-utils';
+import { useEditorStore } from '@/lib/editor-store';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
-import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
+import { createLogger } from '@/lib/logger';
 import { wailsIsDesktop } from '@/lib/wails-env';
-import type { ImageElement, CanvasElement } from '@/lib/store/types';
+
 import {
   menuItemClassName,
   menuItemDangerClassName,
@@ -28,7 +29,9 @@ import {
   menuSectionLabelClassName,
   menuSeparatorClassName,
 } from './menu-item-styles';
-import { createLogger } from '@/lib/logger';
+import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
+
+import type { ImageElement, CanvasElement } from '@/lib/store/types';
 
 const logger = createLogger('element-menu-section');
 
@@ -71,7 +74,6 @@ export function ElementMenuSection({
     bringToFront,
     sendToBack,
     updateElement,
-    pushHistory,
     elements,
   } = useEditorStore(
     useShallow((state) => ({
@@ -83,7 +85,6 @@ export function ElementMenuSection({
       bringToFront: state.bringToFront,
       sendToBack: state.sendToBack,
       updateElement: state.updateElement,
-      pushHistory: state.pushHistory,
       elements: state.elements,
     })),
   );

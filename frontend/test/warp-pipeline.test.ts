@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+
 import {
   computeSourceCrop,
   toLocalCorners,
   warpSourceImage,
 } from '../src/components/editor/document-scanner/core/warp-pipeline';
+
 import type { Point } from '../src/components/editor/document-scanner/core/types';
 
 /**

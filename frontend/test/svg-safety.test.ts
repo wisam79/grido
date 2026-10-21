@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeSvgMarkup } from '@/lib/utils';
+
 import {
   isSafeCssColor,
   sanitizeStickerColor,
   sanitizeStickerFontFamily,
 } from '@/features/stickers/lib/svg-safety';
 import { ALL_STICKER_TEMPLATES } from '@/features/stickers/templates';
+import { sanitizeSvgMarkup } from '@/lib/utils';
 
 const INJECTIONS = [
   `red" onload="alert(1)`,

@@ -1,12 +1,14 @@
-import { expect } from "vitest";
+import { expect } from 'vitest';
+
+import { useEditorStore } from '../../src/lib/editor-store';
+import { DEFAULT_PRINT_SETTINGS } from '../../src/lib/store/slices/print-slice';
+
 import type {
   ImageElement,
   TextElement,
   ShapeElement,
   PrintSettings,
-} from "../../src/lib/store/types";
-import { DEFAULT_PRINT_SETTINGS } from "../../src/lib/store/slices/print-slice";
-import { useEditorStore } from "../../src/lib/editor-store";
+} from '../../src/lib/store/types';
 
 let idCounter = 0;
 
@@ -17,8 +19,8 @@ export function createMockImageElement(overrides: Partial<ImageElement> = {}): I
   idCounter += 1;
   return {
     id: `img-${idCounter}-${Date.now()}`,
-    type: "image",
-    imageSrc: "/local-image/test-sample.jpg",
+    type: 'image',
+    imageSrc: '/local-image/test-sample.jpg',
     x: 0,
     y: 0,
     width: 0.5,
@@ -26,7 +28,7 @@ export function createMockImageElement(overrides: Partial<ImageElement> = {}): I
     rotation: 0,
     opacity: 1,
     zIndex: 1,
-    filter: "none",
+    filter: 'none',
     brightness: 100,
     contrast: 100,
     saturation: 100,
@@ -43,12 +45,12 @@ export function createMockTextElement(overrides: Partial<TextElement> = {}): Tex
   idCounter += 1;
   return {
     id: `txt-${idCounter}-${Date.now()}`,
-    type: "text",
-    text: "نص تجريبي",
+    type: 'text',
+    text: 'نص تجريبي',
     fontSize: 24,
-    fontFamily: "Arial",
-    color: "#000000",
-    textAlign: "right",
+    fontFamily: 'Arial',
+    color: '#000000',
+    textAlign: 'right',
     x: 0,
     y: 0,
     width: 0.4,
@@ -56,7 +58,7 @@ export function createMockTextElement(overrides: Partial<TextElement> = {}): Tex
     rotation: 0,
     opacity: 1,
     zIndex: 2,
-    wrap: "word",
+    wrap: 'word',
     ...overrides,
   };
 }
@@ -68,9 +70,9 @@ export function createMockShapeElement(overrides: Partial<ShapeElement> = {}): S
   idCounter += 1;
   return {
     id: `shp-${idCounter}-${Date.now()}`,
-    type: "shape",
-    shape: "rect",
-    fill: "#0078D4",
+    type: 'shape',
+    shape: 'rect',
+    fill: '#0078D4',
     x: 0.1,
     y: 0.1,
     width: 0.3,
@@ -78,7 +80,7 @@ export function createMockShapeElement(overrides: Partial<ShapeElement> = {}): S
     rotation: 0,
     opacity: 1,
     zIndex: 1,
-    stroke: "#000000",
+    stroke: '#000000',
     strokeWidth: 1,
     cornerRadius: 0,
     ...overrides,
@@ -91,14 +93,14 @@ export function createMockShapeElement(overrides: Partial<ShapeElement> = {}): S
 export function createMockPrintSettings(overrides: Partial<PrintSettings> = {}): PrintSettings {
   return {
     ...DEFAULT_PRINT_SETTINGS,
-    paperId: "a4",
+    paperId: 'a4',
     paperWidthMM: 210,
     paperHeightMM: 297,
-    orientation: "portrait",
+    orientation: 'portrait',
     marginMM: 5,
     gapMM: 2,
     copiesPerSheet: 1,
-    repeatMode: "all",
+    repeatMode: 'all',
     fitToPage: false,
     dpi: 300,
     ...overrides,
@@ -111,7 +113,7 @@ export function createMockPrintSettings(overrides: Partial<PrintSettings> = {}):
  */
 export function resetEditorStore(): void {
   useEditorStore.setState({
-    mode: "single",
+    mode: 'single',
     elements: [],
     selectedIds: [],
     slots: [],
@@ -120,7 +122,7 @@ export function resetEditorStore(): void {
     canvasZoom: 1,
     canvasWidth: 1200,
     canvasHeight: 1800,
-    backgroundColor: "#ffffff",
+    backgroundColor: '#ffffff',
     backgroundGradientColor2: null,
     printSettings: { ...DEFAULT_PRINT_SETTINGS },
   });
@@ -130,7 +132,7 @@ export function resetEditorStore(): void {
  * Lightweight in-memory canvas 2D mock for simulating pixel buffers in headless tests.
  */
 export function createMockCanvasContext(width = 100, height = 100) {
-  const canvas = document.createElement("canvas");
+  const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const mockData = new Uint8ClampedArray(width * height * 4);
@@ -190,6 +192,6 @@ export function createMockCanvasContext(width = 100, height = 100) {
 export function assertWithinTolerance(actual: number, expected: number, tolerance = 0.01): void {
   expect(
     Math.abs(actual - expected),
-    `Expected ${actual} to be within ${tolerance} of ${expected}`
+    `Expected ${actual} to be within ${tolerance} of ${expected}`,
   ).toBeLessThanOrEqual(tolerance);
 }

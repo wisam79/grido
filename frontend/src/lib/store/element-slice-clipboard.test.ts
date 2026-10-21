@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { useEditorStore } from '../editor-store';
 
 describe('element-slice clipboard', () => {
@@ -8,7 +9,7 @@ describe('element-slice clipboard', () => {
   });
 
   it('should copy selected elements to clipboardElements', () => {
-    useEditorStore.getState().addTextElement("نص للتجربة");
+    useEditorStore.getState().addTextElement('نص للتجربة');
     const el = useEditorStore.getState().elements[0];
     expect(el).toBeDefined();
 
@@ -18,7 +19,7 @@ describe('element-slice clipboard', () => {
   });
 
   it('should cut selected elements and remove them from canvas', () => {
-    useEditorStore.getState().addTextElement("نص للقص");
+    useEditorStore.getState().addTextElement('نص للقص');
     const el = useEditorStore.getState().elements[0];
 
     useEditorStore.getState().cutSelectedElements([el.id]);
@@ -27,7 +28,7 @@ describe('element-slice clipboard', () => {
   });
 
   it('should paste copied elements onto canvas with new IDs', () => {
-    useEditorStore.getState().addTextElement("نص للصق");
+    useEditorStore.getState().addTextElement('نص للصق');
     const originalEl = useEditorStore.getState().elements[0];
 
     useEditorStore.getState().copySelectedElements([originalEl.id]);

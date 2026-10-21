@@ -1,9 +1,10 @@
-import type { StateCreator } from 'zustand';
-import type { CanvasElement } from '../../types';
-import { uid } from '../../../utils';
-import { computeSmartGridLayout } from '../../../canvas/grid-layout-math';
 import { nextZIndex, normalizeSelection } from './types';
+import { computeSmartGridLayout } from '../../../canvas/grid-layout-math';
+import { uid } from '../../../utils';
+
 import type { ElementCross, ElementSlice } from './types';
+import type { CanvasElement } from '../../types';
+import type { StateCreator } from 'zustand';
 
 export const createImageElementsSlice: StateCreator<
   ElementCross,

@@ -1,8 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
+import { describe, it, expect, vi } from 'vitest';
+
 import { ElementProperties } from '../src/components/editor/properties/element-properties';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+
 import type { ShapeElement, TextElement, ImageElement } from '../src/lib/editor-store';
 
 describe('ElementProperties Tab Structure and Deduplication Tests', () => {

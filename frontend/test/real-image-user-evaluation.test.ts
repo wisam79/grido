@@ -1,13 +1,16 @@
-import { describe, it, expect } from "vitest";
-import fs from "fs";
-import path from "path";
-import zlib from "zlib";
+import fs from 'fs';
+import path from 'path';
+import zlib from 'zlib';
+
+import { describe, it, expect } from 'vitest';
+
 import {
   autoDetectAllDocumentCorners,
   sortCornerPoints,
   computePerspectiveTransform,
-  Point,
-} from "../src/components/editor/document-scanner/perspective-transform";
+} from '../src/components/editor/document-scanner/perspective-transform';
+
+import type { Point } from '../src/components/editor/document-scanner/perspective-transform';
 
 // Simple PNG Decoder (Zero-Dependency via Node.js zlib)
 function decodePNG(buffer: Buffer): { width: number; height: number; rgba: Uint8ClampedArray } {
@@ -18,14 +21,14 @@ function decodePNG(buffer: Buffer): { width: number; height: number; rgba: Uint8
 
   while (offset < buffer.length) {
     const length = buffer.readUInt32BE(offset);
-    const type = buffer.toString("ascii", offset + 4, offset + 8);
+    const type = buffer.toString('ascii', offset + 4, offset + 8);
     const data = buffer.subarray(offset + 8, offset + 8 + length);
     offset += 12 + length;
 
-    if (type === "IHDR") {
+    if (type === 'IHDR') {
       width = data.readUInt32BE(0);
       height = data.readUInt32BE(4);
-    } else if (type === "IDAT") {
+    } else if (type === 'IDAT') {
       idatChunks.push(data);
     }
   }
@@ -100,7 +103,7 @@ function encodePNG(width: number, height: number, rgba: Uint8ClampedArray | Uint
     const len = data.length;
     const buf = Buffer.alloc(12 + len);
     buf.writeUInt32BE(len, 0);
-    buf.write(type, 4, 4, "ascii");
+    buf.write(type, 4, 4, 'ascii');
     data.copy(buf, 8);
     // Simple CRC approximation or standard crc32
     const crc = crc32(buf.subarray(4, 8 + len));
@@ -108,9 +111,9 @@ function encodePNG(width: number, height: number, rgba: Uint8ClampedArray | Uint
     return buf;
   };
 
-  const idatChunk = makeChunk("IDAT", compressed);
-  const ihdrChunk = makeChunk("IHDR", ihdr);
-  const iendChunk = makeChunk("IEND", Buffer.alloc(0));
+  const idatChunk = makeChunk('IDAT', compressed);
+  const ihdrChunk = makeChunk('IHDR', ihdr);
+  const iendChunk = makeChunk('IEND', Buffer.alloc(0));
 
   return Buffer.concat([signature, ihdrChunk, idatChunk, iendChunk]);
 }
@@ -127,17 +130,14 @@ function crc32(buf: Buffer): number {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-describe("Document Scanner - Real Image Evaluation", () => {
+describe('Document Scanner - Real Image Evaluation', () => {
   // عينة حقيقية اختيارية داخل الريبو — ضع صورة PNG باسم sample-photo.png
   // في test/fixtures/document-scanner/ لتفعيل هذا الاختبار محلياً وفي CI.
   // الغياب = تخطٍّ صريح يُعلنه المشغّل (ctx.skip) لا "نجاح" يُحتسب في العدّاد.
   // كان `return` يجعل Vitest يعدّه ناجحاً ويمنح ثقة كاذبة بالكشف الحقيقي.
-  const realImagePath = path.resolve(
-    __dirname,
-    "fixtures/document-scanner/sample-photo.png"
-  );
+  const realImagePath = path.resolve(__dirname, 'fixtures/document-scanner/sample-photo.png');
 
-  it("analyzes the uploaded photo and detects the two Iraqi ID cards with precision", (ctx) => {
+  it('analyzes the uploaded photo and detects the two Iraqi ID cards with precision', (ctx) => {
     if (!fs.existsSync(realImagePath)) {
       ctx.skip();
       return;
@@ -161,7 +161,7 @@ describe("Document Scanner - Real Image Evaluation", () => {
     // Run multi-document detection
     const docs = autoDetectAllDocumentCorners(imgData, width, height, width, height);
 
-    console.log("Detected Documents Count:", docs.length);
+    console.log('Detected Documents Count:', docs.length);
     for (const [idx, doc] of docs.entries()) {
       console.log(`Document #${idx + 1}:`, {
         label: doc.label,
@@ -175,7 +175,7 @@ describe("Document Scanner - Real Image Evaluation", () => {
 
     // Save detected visualizations to artifacts directory داخل الريبو
     // (كان مساراً مطلقاً لجهاز المطور خارج الريبو).
-    const artifactsDir = path.resolve(__dirname, "../test-results/document-scanner");
+    const artifactsDir = path.resolve(__dirname, '../test-results/document-scanner');
     fs.mkdirSync(artifactsDir, { recursive: true });
 
     // 1. Draw bounding boxes on a copy of the original image
@@ -212,8 +212,8 @@ describe("Document Scanner - Real Image Evaluation", () => {
     }
 
     const annotatedBuf = encodePNG(width, height, annotated);
-    fs.writeFileSync(path.join(artifactsDir, "real_image_detected_preview.png"), annotatedBuf);
-    console.log("Saved preview to real_image_detected_preview.png");
+    fs.writeFileSync(path.join(artifactsDir, 'real_image_detected_preview.png'), annotatedBuf);
+    console.log('Saved preview to real_image_detected_preview.png');
 
     // 2. Perform perspective correction & cropping on each detected ID card
     for (const [docIdx, doc] of docs.entries()) {
@@ -234,9 +234,15 @@ describe("Document Scanner - Real Image Evaluation", () => {
       const hMatrix = computePerspectiveTransform(sorted, dstCorners);
 
       // Invert matrix for backward texture sampling (Bilinear Interpolation)
-      const a = hMatrix[0], b = hMatrix[1], c = hMatrix[2];
-      const d = hMatrix[3], e = hMatrix[4], f = hMatrix[5];
-      const g = hMatrix[6], h = hMatrix[7], k = hMatrix[8];
+      const a = hMatrix[0],
+        b = hMatrix[1],
+        c = hMatrix[2];
+      const d = hMatrix[3],
+        e = hMatrix[4],
+        f = hMatrix[5];
+      const g = hMatrix[6],
+        h = hMatrix[7],
+        k = hMatrix[8];
 
       // Matrix adjoint for 3x3 inversion
       const A = e * k - f * h;
@@ -252,9 +258,15 @@ describe("Document Scanner - Real Image Evaluation", () => {
 
       if (Math.abs(det) > 1e-9) {
         const invH = [
-          A / det, D / det, G / det,
-          B / det, E / det, H / det,
-          C / det, F / det, K / det,
+          A / det,
+          D / det,
+          G / det,
+          B / det,
+          E / det,
+          H / det,
+          C / det,
+          F / det,
+          K / det,
         ];
 
         for (let y = 0; y < cardH; y++) {

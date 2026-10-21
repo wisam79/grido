@@ -243,7 +243,6 @@ func resolveUserInfoForToken(tokenHash string, token string) (string, int) {
 	return userID, limit
 }
 
-
 // fetchSupabaseUserInfo يجلب معرّف المستخدم وخطته من Supabase عبر JWT المستخدم
 func fetchSupabaseUserInfo(token string) (userID string, plan string, err error) {
 	client := aiSupabaseClient

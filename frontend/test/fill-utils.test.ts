@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { CanvasElement, ShapeElement, TextElement } from '../src/lib/editor-store';
+
 import { getFillProps } from '../src/components/editor/konva/elements/fill-utils';
+
+import type { CanvasElement, ShapeElement, TextElement } from '../src/lib/editor-store';
 
 function textElement(patch: Partial<TextElement>): CanvasElement {
   return {

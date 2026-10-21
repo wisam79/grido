@@ -2,20 +2,21 @@
  * تصدير خانة واحدة من الكولاج كصورة مستقلة (استخدام في تصدير الدفعات).
  * مستخرج من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
-import { useEditorStore } from '@/lib/editor-store';
-import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
-import { computeSlotRectMM } from '@/lib/print/print-layout-math';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
+import { useEditorStore } from '@/lib/editor-store';
 import { assertExportablePixels, CanvasTooLargeError } from '@/lib/export/export-limits';
+import { isPixelFilter } from '@/lib/filters/pixel-filters';
+import { createLogger } from '@/lib/logger';
+import { computeSlotRectMM } from '@/lib/print/print-layout-math';
+import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
+
+import { renderWithPixelFilter } from './export-pixel-filter';
 import {
   applySlotTransform,
   drawSlotImage,
   drawSlotImageLocal,
   loadImage,
 } from './export-primitives';
-import { isPixelFilter } from '@/lib/filters/pixel-filters';
-import { renderWithPixelFilter } from './export-pixel-filter';
-import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('export-slot');
 

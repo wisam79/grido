@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
@@ -64,9 +65,7 @@ test.describe('Transformer box follows store geometry', () => {
     // تكبير ناعم (عامل 1.015 لكل ضغطة) — تغيّر أبعاد من المتجر
     await page.keyboard.press('Alt+ArrowUp');
     await page.keyboard.press('Alt+ArrowUp');
-    await expect
-      .poll(() => transformerBox(page), { timeout: 5000 })
-      .not.toEqual(initial);
+    await expect.poll(() => transformerBox(page), { timeout: 5000 }).not.toEqual(initial);
     const grown = await transformerBox(page);
     expect(grown!.w).toBeGreaterThan(initial!.w + 1);
     expect(grown!.h).toBeGreaterThan(initial!.h + 1);
@@ -76,9 +75,7 @@ test.describe('Transformer box follows store geometry', () => {
     // إزاحة يميناً — تغيّر موضع من المتجر
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
-    await expect
-      .poll(() => transformerBox(page), { timeout: 5000 })
-      .not.toEqual(grown);
+    await expect.poll(() => transformerBox(page), { timeout: 5000 }).not.toEqual(grown);
     const moved = await transformerBox(page);
     expect(moved!.x).toBeGreaterThan(grown!.x);
     expect(moved!.w).toBeCloseTo(grown!.w, 0);

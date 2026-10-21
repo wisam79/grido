@@ -1,33 +1,52 @@
-import { StickerTemplate } from "../types";
-import { escapeXml } from "../lib/svg-rasterizer";
+import { escapeXml } from '../lib/svg-rasterizer';
+
+import type { StickerTemplate } from '../types';
 
 export const SAFETY_TEMPLATES: StickerTemplate[] = [
   {
-    id: "safety_no_blade",
-    name: "ممنوع استخدام شفرة للفتح",
-    nameEn: "Do Not Open with Blade",
-    category: "safety",
-    shape: "rect",
-    description: "ملصق تحذيري لحماية محتويات الصندوق والملابس من التمزق بشفرة القاطع",
+    id: 'safety_no_blade',
+    name: 'ممنوع استخدام شفرة للفتح',
+    nameEn: 'Do Not Open with Blade',
+    category: 'safety',
+    shape: 'rect',
+    description: 'ملصق تحذيري لحماية محتويات الصندوق والملابس من التمزق بشفرة القاطع',
     defaultWidth: 500,
     defaultHeight: 340,
     aspectRatio: 500 / 340,
     defaultMm: { width: 70, height: 48 },
     defaultColors: {
-      primary: "#DC2626",
-      secondary: "#0F172A",
-      background: "#FFFFFF",
+      primary: '#DC2626',
+      secondary: '#0F172A',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "warningTitle", label: "عنوان التحذير", type: "text", defaultValue: "لا تستخدم شفرة للفتح" },
-      { id: "enWarning", label: "النص بالإنجليزية", type: "text", defaultValue: "DO NOT OPEN WITH BLADE" },
-      { id: "subText", label: "التوجيه", type: "text", defaultValue: "المحتوى حساس للخدش والتمزق" },
+      {
+        id: 'warningTitle',
+        label: 'عنوان التحذير',
+        type: 'text',
+        defaultValue: 'لا تستخدم شفرة للفتح',
+      },
+      {
+        id: 'enWarning',
+        label: 'النص بالإنجليزية',
+        type: 'text',
+        defaultValue: 'DO NOT OPEN WITH BLADE',
+      },
+      { id: 'subText', label: 'التوجيه', type: 'text', defaultValue: 'المحتوى حساس للخدش والتمزق' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.warningTitle || "لا تستخدم شفرة للفتح");
-      const en = escapeXml(fields.enWarning || "DO NOT OPEN WITH BLADE");
-      const sub = escapeXml(fields.subText || "المحتوى حساس للخدش والتمزق");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.warningTitle || 'لا تستخدم شفرة للفتح');
+      const en = escapeXml(fields.enWarning || 'DO NOT OPEN WITH BLADE');
+      const sub = escapeXml(fields.subText || 'المحتوى حساس للخدش والتمزق');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 340" width="500" height="340">
@@ -59,31 +78,39 @@ export const SAFETY_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "safety_flammable",
-    name: "سائل سريع الاشتعال",
-    nameEn: "Flammable Liquid Warning",
-    category: "safety",
-    shape: "square",
-    description: "ملصق السلامة الدولي للمواد القابلة للاشتعال والعطور والمذيبات",
+    id: 'safety_flammable',
+    name: 'سائل سريع الاشتعال',
+    nameEn: 'Flammable Liquid Warning',
+    category: 'safety',
+    shape: 'square',
+    description: 'ملصق السلامة الدولي للمواد القابلة للاشتعال والعطور والمذيبات',
     defaultWidth: 460,
     defaultHeight: 460,
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
     defaultColors: {
-      primary: "#DC2626",
-      secondary: "#000000",
-      background: "#FFFFFF",
+      primary: '#DC2626',
+      secondary: '#000000',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "mainText", label: "التحذير", type: "text", defaultValue: "سائل سريع الاشتعال" },
-      { id: "enText", label: "النص بالإنجليزية", type: "text", defaultValue: "FLAMMABLE LIQUID" },
-      { id: "hazardClass", label: "فئة الخطر الدولي", type: "text", defaultValue: "CLASS 3" },
+      { id: 'mainText', label: 'التحذير', type: 'text', defaultValue: 'سائل سريع الاشتعال' },
+      { id: 'enText', label: 'النص بالإنجليزية', type: 'text', defaultValue: 'FLAMMABLE LIQUID' },
+      { id: 'hazardClass', label: 'فئة الخطر الدولي', type: 'text', defaultValue: 'CLASS 3' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const main = escapeXml(fields.mainText || "سائل سريع الاشتعال");
-      const en = escapeXml(fields.enText || "FLAMMABLE LIQUID");
-      const cls = escapeXml(fields.hazardClass || "CLASS 3");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const main = escapeXml(fields.mainText || 'سائل سريع الاشتعال');
+      const en = escapeXml(fields.enText || 'FLAMMABLE LIQUID');
+      const cls = escapeXml(fields.hazardClass || 'CLASS 3');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460" width="460" height="460">
@@ -110,31 +137,44 @@ export const SAFETY_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "safety_keep_frozen",
-    name: "يحفظ مجمداً (-18°C)",
-    nameEn: "Keep Frozen (-18°C)",
-    category: "safety",
-    shape: "rect",
-    description: "ملصق لسلسلة التبريد والأطعمة واللقاحات والمستحضرات الحساسة للحرارة",
+    id: 'safety_keep_frozen',
+    name: 'يحفظ مجمداً (-18°C)',
+    nameEn: 'Keep Frozen (-18°C)',
+    category: 'safety',
+    shape: 'rect',
+    description: 'ملصق لسلسلة التبريد والأطعمة واللقاحات والمستحضرات الحساسة للحرارة',
     defaultWidth: 500,
     defaultHeight: 340,
     aspectRatio: 500 / 340,
     defaultMm: { width: 70, height: 48 },
     defaultColors: {
-      primary: "#0284C7",
-      secondary: "#0369A1",
-      background: "#F0F9FF",
+      primary: '#0284C7',
+      secondary: '#0369A1',
+      background: '#F0F9FF',
     },
     fields: [
-      { id: "mainText", label: "تعليمات الحفظ", type: "text", defaultValue: "يُحفظ مجمداً" },
-      { id: "temp", label: "درجة الحرارة", type: "text", defaultValue: "-18°C / 0°F" },
-      { id: "enText", label: "النص بالإنجليزية", type: "text", defaultValue: "KEEP FROZEN - DO NOT THAW" },
+      { id: 'mainText', label: 'تعليمات الحفظ', type: 'text', defaultValue: 'يُحفظ مجمداً' },
+      { id: 'temp', label: 'درجة الحرارة', type: 'text', defaultValue: '-18°C / 0°F' },
+      {
+        id: 'enText',
+        label: 'النص بالإنجليزية',
+        type: 'text',
+        defaultValue: 'KEEP FROZEN - DO NOT THAW',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const main = escapeXml(fields.mainText || "يُحفظ مجمداً");
-      const temp = escapeXml(fields.temp || "-18°C / 0°F");
-      const en = escapeXml(fields.enText || "KEEP FROZEN - DO NOT THAW");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const main = escapeXml(fields.mainText || 'يُحفظ مجمداً');
+      const temp = escapeXml(fields.temp || '-18°C / 0°F');
+      const en = escapeXml(fields.enText || 'KEEP FROZEN - DO NOT THAW');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 340" width="500" height="340">
@@ -160,31 +200,44 @@ export const SAFETY_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "safety_lithium_battery",
-    name: "بطارية ليثيوم (UN3481)",
-    nameEn: "Lithium Battery Shipping Label",
-    category: "safety",
-    shape: "rect",
-    description: "ملصق الشحن الجوي والبري الإلزامي للأجهزة التي تحتوي على بطاريات ليثيوم",
+    id: 'safety_lithium_battery',
+    name: 'بطارية ليثيوم (UN3481)',
+    nameEn: 'Lithium Battery Shipping Label',
+    category: 'safety',
+    shape: 'rect',
+    description: 'ملصق الشحن الجوي والبري الإلزامي للأجهزة التي تحتوي على بطاريات ليثيوم',
     defaultWidth: 500,
     defaultHeight: 380,
     aspectRatio: 500 / 380,
     defaultMm: { width: 80, height: 60 },
     defaultColors: {
-      primary: "#DC2626",
-      secondary: "#0F172A",
-      background: "#FFFFFF",
+      primary: '#DC2626',
+      secondary: '#0F172A',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "unCode", label: "رمز الأمم المتحدة UN", type: "text", defaultValue: "UN 3481" },
-      { id: "contactPhone", label: "هاتف الطوارئ والاستفسار", type: "text", defaultValue: "+964 770 123 4567" },
-      { id: "title", label: "عنوان الشحنة", type: "text", defaultValue: "LITHIUM ION BATTERIES" },
+      { id: 'unCode', label: 'رمز الأمم المتحدة UN', type: 'text', defaultValue: 'UN 3481' },
+      {
+        id: 'contactPhone',
+        label: 'هاتف الطوارئ والاستفسار',
+        type: 'text',
+        defaultValue: '+964 770 123 4567',
+      },
+      { id: 'title', label: 'عنوان الشحنة', type: 'text', defaultValue: 'LITHIUM ION BATTERIES' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const un = escapeXml(fields.unCode || "UN 3481");
-      const phone = escapeXml(fields.contactPhone || "+964 770 123 4567");
-      const title = escapeXml(fields.title || "LITHIUM ION BATTERIES");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const un = escapeXml(fields.unCode || 'UN 3481');
+      const phone = escapeXml(fields.contactPhone || '+964 770 123 4567');
+      const title = escapeXml(fields.title || 'LITHIUM ION BATTERIES');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 380" width="500" height="380">

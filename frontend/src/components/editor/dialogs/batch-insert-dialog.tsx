@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { createLogger } from '@/lib/logger';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
 
-const logger = createLogger('batch-insert-dialog');
+import { FluentSliderField } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,9 +12,6 @@ import {
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import {
   SquaresFour,
   FolderOpen,
@@ -23,19 +22,22 @@ import {
   Minus,
   Stack,
 } from '@/components/ui/icons';
-import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   resolveImageAspectRatio,
   resolveBatchImageAspectRatios,
 } from '@/lib/canvas/image-dimensions';
 import { getThumbnailSrc } from '@/lib/canvas/thumbnail-src';
 import { useEditorStore } from '@/lib/editor-store';
-import { toast } from 'sonner';
+import { openImageFileDialog, openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
+import { createLogger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
-import { useShallow } from 'zustand/react/shallow';
-import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 import { wailsIsDesktop } from '@/lib/wails-env';
-import { FluentSliderField } from '@/components/ui/blocks';
+
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+
+const logger = createLogger('batch-insert-dialog');
 
 export interface BatchInsertDialogProps {
   open: boolean;
@@ -67,17 +69,14 @@ export function BatchInsertDialog({
   const [marginPx, setMarginPx] = useState<number>(40);
   const [centerLastRow, setCenterLastRow] = useState<boolean>(true);
 
-  const { mode, slots, setSlotImagesBatch, addImageElementsBatch, canvasWidth, canvasHeight } =
-    useEditorStore(
-      useShallow((state) => ({
-        mode: state.mode,
-        slots: state.slots,
-        setSlotImagesBatch: state.setSlotImagesBatch,
-        addImageElementsBatch: state.addImageElementsBatch,
-        canvasWidth: state.canvasWidth,
-        canvasHeight: state.canvasHeight,
-      })),
-    );
+  const { mode, slots, setSlotImagesBatch, addImageElementsBatch } = useEditorStore(
+    useShallow((state) => ({
+      mode: state.mode,
+      slots: state.slots,
+      setSlotImagesBatch: state.setSlotImagesBatch,
+      addImageElementsBatch: state.addImageElementsBatch,
+    })),
+  );
 
   // Reset states when dialog opens / closes (Wait UX Invariant)
   useEffect(() => {

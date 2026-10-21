@@ -1,18 +1,19 @@
 import React from 'react';
-import { useEditorStore } from '@/lib/editor-store';
+
+import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { CaretDown } from '@/components/ui/icons';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import { CaretDown } from '@/components/ui/icons';
 import { GeometricShapesIcon } from '@/components/ui/image-icons';
-import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
+import { Separator } from '@/components/ui/separator';
+import { useEditorStore } from '@/lib/editor-store';
 import { SHAPE_CATEGORIES, shapesInCategory } from '@/lib/io/shape-catalog';
-import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
 
 /**
  * قائمة إضافة الأشكال — تُبنى من كتالوج الأشكال الموحّد (shape-catalog)

@@ -67,4 +67,3 @@ func GetWebviewCacheDir() string {
 	appDir := utils.GetAppDir()
 	return filepath.Join(appDir, "webview_cache")
 }
-

@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, basename } from 'node:path';
+
+import { describe, it, expect } from 'vitest';
+
 import {
   FOCUS_RING,
   SPACING_RAMP,

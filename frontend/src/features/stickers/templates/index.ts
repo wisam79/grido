@@ -1,26 +1,27 @@
-import {
+import { CATEGORY_ITEMS } from '../constants';
+import { ADDON_TEMPLATES } from './addons';
+import { BADGE_TEMPLATES } from './badges';
+import { BARCODE_TEMPLATES } from './barcodes';
+import { BEAUTY_TEMPLATES } from './beauty';
+import { CAFE_TEMPLATES } from './cafe';
+import { FRAME_TEMPLATES } from './frames';
+import { GREETING_TEMPLATES } from './greeting';
+import { KIDS_TEMPLATES } from './kids';
+import { PACKAGING_TEMPLATES } from './packaging';
+import { RETAIL_TEMPLATES } from './retail';
+import { SAFETY_TEMPLATES } from './safety';
+import { SEASONAL_TEMPLATES } from './seasonal';
+import { SHIPPING_TEMPLATES } from './shipping';
+import { SOCIAL_TEMPLATES } from './social';
+import { normalizeArabicQuery } from '../lib/sticker-text';
+
+import type {
   StickerCategory,
   StickerCategoryGroupId,
   StickerCategoryInfo,
   StickerShape,
   StickerTemplate,
 } from '../types';
-import { CATEGORY_ITEMS } from '../constants';
-import { normalizeArabicQuery } from '../lib/sticker-text';
-import { BADGE_TEMPLATES } from './badges';
-import { SHIPPING_TEMPLATES } from './shipping';
-import { PACKAGING_TEMPLATES } from './packaging';
-import { BARCODE_TEMPLATES } from './barcodes';
-import { RETAIL_TEMPLATES } from './retail';
-import { SAFETY_TEMPLATES } from './safety';
-import { SOCIAL_TEMPLATES } from './social';
-import { GREETING_TEMPLATES } from './greeting';
-import { CAFE_TEMPLATES } from './cafe';
-import { BEAUTY_TEMPLATES } from './beauty';
-import { KIDS_TEMPLATES } from './kids';
-import { SEASONAL_TEMPLATES } from './seasonal';
-import { FRAME_TEMPLATES } from './frames';
-import { ADDON_TEMPLATES } from './addons';
 
 export * from './badges';
 export * from './shipping';

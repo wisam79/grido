@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll } from 'vitest';
+
 import {
   approxPolyDP,
   extractFourCornersFromHull,
@@ -10,14 +11,15 @@ import {
   rgbaToGrayscale,
   fastBoxBlur,
   computeOtsuThreshold,
-  Point,
-} from "../core";
-import type { DetectedDocument } from "../core/types";
+} from '../core';
 
-describe("Document Scanner - Core Geometry & Vision", () => {
+import type { Point } from '../core';
+import type { DetectedDocument } from '../core/types';
+
+describe('Document Scanner - Core Geometry & Vision', () => {
   beforeAll(() => {
     HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, contextId: string) {
-      if (contextId === "2d") {
+      if (contextId === '2d') {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const canvas = this;
         const w = canvas.width || 100;
@@ -74,18 +76,18 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       return null;
     } as unknown as typeof HTMLCanvasElement.prototype.getContext;
   });
-  describe("approxPolyDP", () => {
-    it("simplifies a segmented polygon with intermediate collinear-ish points into 4 corners", () => {
+  describe('approxPolyDP', () => {
+    it('simplifies a segmented polygon with intermediate collinear-ish points into 4 corners', () => {
       // مستطيل به نقاط زائدة على الحواف
       const points: Point[] = [
         { x: 0, y: 0 },
-        { x: 50, y: 1 },    // نقطة زائدة قريبة من الحافة العلوية
+        { x: 50, y: 1 }, // نقطة زائدة قريبة من الحافة العلوية
         { x: 100, y: 0 },
-        { x: 101, y: 50 },  // نقطة زائدة قريبة من الحافة اليمنى
+        { x: 101, y: 50 }, // نقطة زائدة قريبة من الحافة اليمنى
         { x: 100, y: 100 },
-        { x: 50, y: 99 },   // نقطة زائدة قريبة من الحافة السفلية
+        { x: 50, y: 99 }, // نقطة زائدة قريبة من الحافة السفلية
         { x: 0, y: 100 },
-        { x: 0, y: 0 },     // مغلق
+        { x: 0, y: 0 }, // مغلق
       ];
 
       const approx = approxPolyDP(points, 5);
@@ -98,7 +100,7 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(unique[3]).toEqual({ x: 0, y: 100 });
     });
 
-    it("handles degenerate 2-point arrays gracefully", () => {
+    it('handles degenerate 2-point arrays gracefully', () => {
       const line: Point[] = [
         { x: 10, y: 10 },
         { x: 90, y: 90 },
@@ -108,8 +110,8 @@ describe("Document Scanner - Core Geometry & Vision", () => {
     });
   });
 
-  describe("extractFourCornersFromHull", () => {
-    it("extracts four true corners from an 8-point convex hull polygon", () => {
+  describe('extractFourCornersFromHull', () => {
+    it('extracts four true corners from an 8-point convex hull polygon', () => {
       const hull: Point[] = [
         { x: 10, y: 10 },
         { x: 50, y: 12 },
@@ -134,7 +136,7 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       }
     });
 
-    it("returns sorted points directly if hull already has exactly 4 points", () => {
+    it('returns sorted points directly if hull already has exactly 4 points', () => {
       const quad: Point[] = [
         { x: 200, y: 50 },
         { x: 50, y: 50 },
@@ -148,8 +150,8 @@ describe("Document Scanner - Core Geometry & Vision", () => {
     });
   });
 
-  describe("sortCornerPoints", () => {
-    it("sorts shuffled points into clockwise TL, TR, BR, BL order", () => {
+  describe('sortCornerPoints', () => {
+    it('sorts shuffled points into clockwise TL, TR, BR, BL order', () => {
       const shuffled: Point[] = [
         { x: 300, y: 400 }, // BR
         { x: 100, y: 100 }, // TL
@@ -165,59 +167,59 @@ describe("Document Scanner - Core Geometry & Vision", () => {
     });
   });
 
-  describe("inferSmartDocumentAspect", () => {
-    it("identifies standard ID Card (ID-1 / 1.586)", () => {
+  describe('inferSmartDocumentAspect', () => {
+    it('identifies standard ID Card (ID-1 / 1.586)', () => {
       const idCardQuad: Point[] = [
         { x: 0, y: 0 },
         { x: 158, y: 0 },
         { x: 158, y: 100 },
         { x: 0, y: 100 },
       ];
-      expect(inferSmartDocumentAspect(idCardQuad)).toBe("id_card");
+      expect(inferSmartDocumentAspect(idCardQuad)).toBe('id_card');
     });
 
-    it("identifies A4 Portrait (0.707)", () => {
+    it('identifies A4 Portrait (0.707)', () => {
       const a4Portrait: Point[] = [
         { x: 0, y: 0 },
         { x: 70, y: 0 },
         { x: 70, y: 100 },
         { x: 0, y: 100 },
       ];
-      expect(inferSmartDocumentAspect(a4Portrait)).toBe("a4_p");
+      expect(inferSmartDocumentAspect(a4Portrait)).toBe('a4_p');
     });
 
-    it("identifies A4 Landscape (1.414)", () => {
+    it('identifies A4 Landscape (1.414)', () => {
       const a4Landscape: Point[] = [
         { x: 0, y: 0 },
         { x: 141, y: 0 },
         { x: 141, y: 100 },
         { x: 0, y: 100 },
       ];
-      expect(inferSmartDocumentAspect(a4Landscape)).toBe("a4_l");
+      expect(inferSmartDocumentAspect(a4Landscape)).toBe('a4_l');
     });
 
-    it("identifies Square documents", () => {
+    it('identifies Square documents', () => {
       const squareQuad: Point[] = [
         { x: 0, y: 0 },
         { x: 100, y: 0 },
         { x: 100, y: 100 },
         { x: 0, y: 100 },
       ];
-      expect(inferSmartDocumentAspect(squareQuad)).toBe("square");
+      expect(inferSmartDocumentAspect(squareQuad)).toBe('square');
     });
 
-    it("identifies custom/free ratios", () => {
+    it('identifies custom/free ratios', () => {
       const freeQuad: Point[] = [
         { x: 0, y: 0 },
         { x: 300, y: 0 },
         { x: 300, y: 100 },
         { x: 0, y: 100 },
       ];
-      expect(inferSmartDocumentAspect(freeQuad)).toBe("free");
+      expect(inferSmartDocumentAspect(freeQuad)).toBe('free');
     });
   });
 
-  describe("splitQuadIntoIdCards", () => {
+  describe('splitQuadIntoIdCards', () => {
     const parentQuad: Point[] = [
       { x: 0, y: 0 },
       { x: 200, y: 0 },
@@ -225,13 +227,13 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       { x: 0, y: 260 },
     ];
 
-    it("splits vertically into 2 ID card documents with a small safety margin", () => {
-      const cards = splitQuadIntoIdCards(parentQuad, "vertical");
+    it('splits vertically into 2 ID card documents with a small safety margin', () => {
+      const cards = splitQuadIntoIdCards(parentQuad, 'vertical');
       expect(cards.length).toBe(2);
-      expect(cards[0].id).toContain("doc-");
-      expect(cards[1].id).toContain("doc-");
-      expect(cards[0].aspectType).toBe("id_card");
-      expect(cards[1].aspectType).toBe("id_card");
+      expect(cards[0].id).toContain('doc-');
+      expect(cards[1].id).toContain('doc-');
+      expect(cards[0].aspectType).toBe('id_card');
+      expect(cards[1].aspectType).toBe('id_card');
 
       // Card 1 top half
       expect(cards[0].corners[0]).toEqual({ x: 0, y: 0 });
@@ -242,15 +244,15 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(cards[1].corners[3]).toEqual({ x: 0, y: 260 });
     });
 
-    it("splits horizontally into 2 ID card documents", () => {
-      const cards = splitQuadIntoIdCards(parentQuad, "horizontal");
+    it('splits horizontally into 2 ID card documents', () => {
+      const cards = splitQuadIntoIdCards(parentQuad, 'horizontal');
       expect(cards.length).toBe(2);
-      expect(cards[0].aspectType).toBe("id_card");
-      expect(cards[1].aspectType).toBe("id_card");
+      expect(cards[0].aspectType).toBe('id_card');
+      expect(cards[1].aspectType).toBe('id_card');
     });
 
-    it("honors an explicit seam ratio instead of always cutting at the midpoint", () => {
-      const cards = splitQuadIntoIdCards(parentQuad, "vertical", 0.4);
+    it('honors an explicit seam ratio instead of always cutting at the midpoint', () => {
+      const cards = splitQuadIntoIdCards(parentQuad, 'vertical', 0.4);
       expect(cards.length).toBe(2);
       // الحد انتقل إلى 40% (بفاصل أمان ±1%) بدل المنتصف 50%
       expect(cards[0].corners[2].y).toBe(Math.round(260 * 0.39));
@@ -259,23 +261,23 @@ describe("Document Scanner - Core Geometry & Vision", () => {
     });
   });
 
-  describe("addManualDocumentQuad", () => {
-    it("adds a clean new document quad in an organized grid", () => {
+  describe('addManualDocumentQuad', () => {
+    it('adds a clean new document quad in an organized grid', () => {
       const existing: DetectedDocument[] = [];
       const doc1 = addManualDocumentQuad(existing, 1000, 800);
       expect(doc1.corners.length).toBe(4);
-      expect(doc1.aspectType).toBe("free");
-      expect(doc1.label).toContain("1");
+      expect(doc1.aspectType).toBe('free');
+      expect(doc1.label).toContain('1');
 
       const doc2 = addManualDocumentQuad([doc1], 1000, 800);
-      expect(doc2.label).toContain("2");
+      expect(doc2.label).toContain('2');
       // doc2 should be in column 2
       expect(doc2.corners[0].x).toBeGreaterThan(doc1.corners[0].x);
     });
   });
 
-  describe("computePerspectiveTransform", () => {
-    it("computes an accurate homography transform for a standard rectangle", () => {
+  describe('computePerspectiveTransform', () => {
+    it('computes an accurate homography transform for a standard rectangle', () => {
       const src: Point[] = [
         { x: 10, y: 10 },
         { x: 110, y: 10 },
@@ -298,13 +300,25 @@ describe("Document Scanner - Core Geometry & Vision", () => {
     });
   });
 
-  describe("Vision & Filters", () => {
-    it("accurately converts RGBA to Grayscale using 10-bit fixed point weights", () => {
+  describe('Vision & Filters', () => {
+    it('accurately converts RGBA to Grayscale using 10-bit fixed point weights', () => {
       const rgba = new Uint8Array([
-        255, 255, 255, 255, // Pure white
-        0, 0, 0, 255,       // Pure black
-        255, 0, 0, 255,     // Pure red (0.299 * 255 ~ 76)
-        0, 255, 0, 255,     // Pure green (0.587 * 255 ~ 150)
+        255,
+        255,
+        255,
+        255, // Pure white
+        0,
+        0,
+        0,
+        255, // Pure black
+        255,
+        0,
+        0,
+        255, // Pure red (0.299 * 255 ~ 76)
+        0,
+        255,
+        0,
+        255, // Pure green (0.587 * 255 ~ 150)
       ]);
       const gray = rgbaToGrayscale(rgba, 2, 2);
       expect(gray[0]).toBe(255); // White stays 255 (306+601+117 = 1024 -> 255*1024 >> 10 = 255)
@@ -313,31 +327,24 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(gray[3]).toBe(149);
     });
 
-    it("smooths image using fastBoxBlur", () => {
-      const gray = new Uint8Array([
-        100, 100, 100,
-        100, 200, 100,
-        100, 100, 100,
-      ]);
+    it('smooths image using fastBoxBlur', () => {
+      const gray = new Uint8Array([100, 100, 100, 100, 200, 100, 100, 100, 100]);
       const blurred = fastBoxBlur(gray, 3, 3, 1);
       expect(blurred.length).toBe(9);
       expect(blurred[4]).toBeLessThan(200); // Center peak smoothed out
     });
 
-    it("computes Otsu threshold cleanly", () => {
-      const gray = new Uint8Array([
-        10, 10, 10, 10, 10,
-        240, 240, 240, 240, 240,
-      ]);
+    it('computes Otsu threshold cleanly', () => {
+      const gray = new Uint8Array([10, 10, 10, 10, 10, 240, 240, 240, 240, 240]);
       const thresh = computeOtsuThreshold(gray, 10);
       expect(thresh).toBeGreaterThanOrEqual(10);
       expect(thresh).toBeLessThan(240);
     });
   });
 
-  describe("Safety, Overlaps & Memory Verification", () => {
-    it("computes quad overlap stats safely without negative union area", async () => {
-      const { computeQuadOverlapStats } = await import("../core/quad-geometry");
+  describe('Safety, Overlaps & Memory Verification', () => {
+    it('computes quad overlap stats safely without negative union area', async () => {
+      const { computeQuadOverlapStats } = await import('../core/quad-geometry');
       const q1: Point[] = [
         { x: 0, y: 0 },
         { x: 100, y: 0 },
@@ -358,7 +365,7 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(stats.overlapRatio2).toBeGreaterThan(0);
     });
 
-    it("prevents call stack overflow on deeply complex polygons via approxPolyDP depth guard", () => {
+    it('prevents call stack overflow on deeply complex polygons via approxPolyDP depth guard', () => {
       const complexPoly: Point[] = [];
       for (let i = 0; i < 200; i++) {
         complexPoly.push({ x: i * 2, y: (i % 2 === 0 ? 10 : 20) + i * 0.1 });
@@ -367,8 +374,8 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(approx.length).toBeGreaterThan(0);
     });
 
-    it("handles degenerate collinear points in findRotatedQuadCorners gracefully", async () => {
-      const { findRotatedQuadCorners } = await import("../core/quad-geometry");
+    it('handles degenerate collinear points in findRotatedQuadCorners gracefully', async () => {
+      const { findRotatedQuadCorners } = await import('../core/quad-geometry');
       const collinear: Point[] = [
         { x: 10, y: 10 },
         { x: 50, y: 50 },
@@ -379,7 +386,7 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(res?.length).toBe(4);
     });
 
-    it("safely handles addManualDocumentQuad wrapping when count > 6", () => {
+    it('safely handles addManualDocumentQuad wrapping when count > 6', () => {
       const existing: DetectedDocument[] = [];
       for (let i = 0; i < 10; i++) {
         const doc = addManualDocumentQuad(existing, 1000, 800);
@@ -392,12 +399,12 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(existing.length).toBe(10);
     });
 
-    it("rotates canvas with destroySrcCanvas = false preserving source canvas dimensions", async () => {
-      const { rotateCanvas } = await import("../core/perspective-warper");
-      const c = document.createElement("canvas");
+    it('rotates canvas with destroySrcCanvas = false preserving source canvas dimensions', async () => {
+      const { rotateCanvas } = await import('../core/perspective-warper');
+      const c = document.createElement('canvas');
       c.width = 100;
       c.height = 200;
-      const ctx = c.getContext("2d");
+      const ctx = c.getContext('2d');
       if (ctx) {
         const imgData = ctx.createImageData(100, 200);
         ctx.putImageData(imgData, 0, 0);
@@ -408,12 +415,12 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(c.width).toBe(100); // Preserved
     });
 
-    it("applies border cleanup safely with bounds clamping", async () => {
-      const { applyBorderCleanup } = await import("../core/filters");
-      const c = document.createElement("canvas");
+    it('applies border cleanup safely with bounds clamping', async () => {
+      const { applyBorderCleanup } = await import('../core/filters');
+      const c = document.createElement('canvas');
       c.width = 50;
       c.height = 50;
-      const ctx = c.getContext("2d");
+      const ctx = c.getContext('2d');
       if (ctx) {
         const imgData = ctx.createImageData(50, 50);
         // Fill black
@@ -426,7 +433,7 @@ describe("Document Scanner - Core Geometry & Vision", () => {
         ctx.putImageData(imgData, 0, 0);
 
         const cleaned = applyBorderCleanup(c, 5);
-        const data = cleaned.getContext("2d")!.getImageData(0, 0, 50, 50).data;
+        const data = cleaned.getContext('2d')!.getImageData(0, 0, 50, 50).data;
         // Border pixel at (0, 0) should be white (255)
         expect(data[0]).toBe(255);
         expect(data[1]).toBe(255);
@@ -438,9 +445,9 @@ describe("Document Scanner - Core Geometry & Vision", () => {
     });
   });
 
-  describe("20x Precision Computer Vision & RANSAC Geometry", () => {
-    it("computes multi-channel gradient capturing color edges invisible to pure grayscale", async () => {
-      const { computeMultiChannelGradient } = await import("../core/fast-vision");
+  describe('20x Precision Computer Vision & RANSAC Geometry', () => {
+    it('computes multi-channel gradient capturing color edges invisible to pure grayscale', async () => {
+      const { computeMultiChannelGradient } = await import('../core/fast-vision');
       const w = 10;
       const h = 10;
       const rgba = new Uint8Array(w * h * 4);
@@ -468,8 +475,8 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(grad.maxMag).toBeGreaterThan(50); // Strong edge detected at border
     });
 
-    it("applies morphological gradient amplifying step edges while rejecting slow gradients", async () => {
-      const { applyMorphologicalGradient } = await import("../core/fast-vision");
+    it('applies morphological gradient amplifying step edges while rejecting slow gradients', async () => {
+      const { applyMorphologicalGradient } = await import('../core/fast-vision');
       const w = 10;
       const h = 10;
       const gray = new Uint8Array(w * h);
@@ -488,8 +495,8 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(morph[4 * w + 1]).toBe(0);
     });
 
-    it("applies Canny NMS and hysteresis producing clean 1-pixel edge contours", async () => {
-      const { applyCannyNmsHysteresis } = await import("../core/fast-vision");
+    it('applies Canny NMS and hysteresis producing clean 1-pixel edge contours', async () => {
+      const { applyCannyNmsHysteresis } = await import('../core/fast-vision');
       const w = 12;
       const h = 12;
       const mag = new Float32Array(w * h);
@@ -512,8 +519,8 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       expect(edges[5 * w + 7]).toBe(0);
     });
 
-    it("reconstructs sharp 4-line intersection quad via fitRobustQuadLinesRANSAC from noisy contour points", async () => {
-      const { fitRobustQuadLinesRANSAC } = await import("../core/quad-geometry");
+    it('reconstructs sharp 4-line intersection quad via fitRobustQuadLinesRANSAC from noisy contour points', async () => {
+      const { fitRobustQuadLinesRANSAC } = await import('../core/quad-geometry');
 
       // مولد حتمي (mulberry32) — كان Math.random() يجعل الاختبار flaky.
       let seed = 0x2f6e2b1;
@@ -559,8 +566,8 @@ describe("Document Scanner - Core Geometry & Vision", () => {
       }
     });
 
-    it("evaluates vanishing point physics correctly for perspective document quads", async () => {
-      const { evaluateVanishingPointPhysics } = await import("../core/quad-geometry");
+    it('evaluates vanishing point physics correctly for perspective document quads', async () => {
+      const { evaluateVanishingPointPhysics } = await import('../core/quad-geometry');
 
       // Perspective trapezoid (valid camera projection)
       const trapezoid: Point[] = [
@@ -575,16 +582,16 @@ describe("Document Scanner - Core Geometry & Vision", () => {
     });
   });
 
-  describe("useScannerProcessor Hook & Modal Cleanup", () => {
-    it("resets isExporting and previewMode when open transitions to false", async () => {
-      const { renderHook, act } = await import("@testing-library/react");
-      const { useScannerProcessor } = await import("../hooks/use-scanner-processor");
+  describe('useScannerProcessor Hook & Modal Cleanup', () => {
+    it('resets isExporting and previewMode when open transitions to false', async () => {
+      const { renderHook, act } = await import('@testing-library/react');
+      const { useScannerProcessor } = await import('../hooks/use-scanner-processor');
 
       const imgRef = { current: null };
       let isOpen = true;
 
       const { result, rerender } = renderHook(() =>
-        useScannerProcessor(imgRef, "original", 0, isOpen)
+        useScannerProcessor(imgRef, 'original', 0, isOpen),
       );
 
       expect(result.current.isExporting).toBe(false);
@@ -602,4 +609,3 @@ describe("Document Scanner - Core Geometry & Vision", () => {
     });
   });
 });
-

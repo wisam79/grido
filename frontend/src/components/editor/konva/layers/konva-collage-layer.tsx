@@ -1,11 +1,6 @@
 import React from 'react';
 import { Layer, Group, Rect, Line, Circle } from 'react-konva';
-import type Konva from 'konva';
-import type { KonvaEventObject } from 'konva/lib/Node';
-import { KonvaCollageImage } from '../elements/collage-image';
-import type { CanvasSlot as Slot, CollageTemplate } from '@/lib/store/types';
-import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
-import { buildMidpointCutLines, type AxisInterval } from '@/lib/print/cut-lines-utils';
+
 import {
   useCanvasColors,
   collageCut,
@@ -18,6 +13,14 @@ import {
   slotPlaceholderIcon,
   slotPlaceholderIconHover,
 } from '@/lib/canvas/canvas-colors';
+import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
+import { buildMidpointCutLines, type AxisInterval } from '@/lib/print/cut-lines-utils';
+
+import { KonvaCollageImage } from '../elements/collage-image';
+
+import type { CanvasSlot as Slot, CollageTemplate } from '@/lib/store/types';
+import type Konva from 'konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
 
 interface KonvaCollageLayerProps {
   slots: Slot[];

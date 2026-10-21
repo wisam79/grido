@@ -13,7 +13,7 @@ export interface GridLayoutOptions {
   gapPx?: number;
   marginPx?: number;
   centerLastRow?: boolean;
-  layoutMode?: "grid" | "cascade" | "stack";
+  layoutMode?: 'grid' | 'cascade' | 'stack';
 }
 
 export interface PlacedGridElement {
@@ -31,7 +31,7 @@ export interface PlacedGridElement {
 export function calculateOptimalColumns(
   count: number,
   canvasWidth: number,
-  canvasHeight: number
+  canvasHeight: number,
 ): number {
   if (count <= 1) return 1;
   if (count === 2) return canvasWidth >= canvasHeight ? 2 : 1;
@@ -48,7 +48,7 @@ export function calculateOptimalColumns(
  */
 export function computeSmartGridLayout(
   items: Array<{ src: string; aspectRatio?: number }>,
-  options: GridLayoutOptions
+  options: GridLayoutOptions,
 ): PlacedGridElement[] {
   const {
     canvasWidth,
@@ -57,7 +57,7 @@ export function computeSmartGridLayout(
     gapPx = 20,
     marginPx = 40,
     centerLastRow = true,
-    layoutMode = "grid",
+    layoutMode = 'grid',
   } = options;
 
   const N = items.length;
@@ -69,7 +69,7 @@ export function computeSmartGridLayout(
   const normGapY = gapPx / Math.max(canvasHeight, 1);
 
   // 1. Stack mode: Center all items (legacy)
-  if (layoutMode === "stack") {
+  if (layoutMode === 'stack') {
     return items.map((item) => {
       const aspect = item.aspectRatio || 1;
       let hPercent = 0.5;
@@ -90,7 +90,7 @@ export function computeSmartGridLayout(
   }
 
   // 2. Cascade mode: Staircase staggered layout
-  if (layoutMode === "cascade") {
+  if (layoutMode === 'cascade') {
     const baseW = 0.4;
     return items.map((item, idx) => {
       const aspect = item.aspectRatio || 1;
@@ -111,9 +111,10 @@ export function computeSmartGridLayout(
   }
 
   // 3. Grid mode
-  const cols = columns && columns > 0
-    ? Math.min(N, columns)
-    : calculateOptimalColumns(N, canvasWidth, canvasHeight);
+  const cols =
+    columns && columns > 0
+      ? Math.min(N, columns)
+      : calculateOptimalColumns(N, canvasWidth, canvasHeight);
 
   const rows = Math.ceil(N / cols);
 

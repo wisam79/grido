@@ -8,7 +8,6 @@
  *
  * كل مسارات `kind: 'path'` مرسومة في إطار 24×24 (نفس مرجع svg-paths.ts).
  */
-import type { ShapeElement } from '@/lib/store/types';
 import {
   SHAPE_PATH_TRIANGLE,
   SHAPE_PATH_HEART,
@@ -34,6 +33,8 @@ import {
   SHAPE_PATH_BOOKMARK,
   SHAPE_PATH_BURST,
 } from './svg-paths';
+
+import type { ShapeElement } from '@/lib/store/types';
 
 export type ShapeKind = ShapeElement['shape'];
 export type ShapeCategoryId = 'geometric' | 'arrows' | 'symbols';

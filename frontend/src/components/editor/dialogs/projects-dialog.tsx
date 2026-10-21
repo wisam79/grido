@@ -1,9 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { toErrorMessage } from '@/lib/wails-error';
-import { createLogger } from '@/lib/logger';
-import { isPristineWorkspace } from '@/hooks/use-autosave';
+import { toast } from 'sonner';
 
-const logger = createLogger('projects-dialog');
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { FluentSegmentedControl } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -13,31 +22,7 @@ import {
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { FluentSegmentedControl } from '@/components/ui/blocks';
-import { useEditorStore } from '@/lib/editor-store';
-import {
-  serializeEditorState,
-  projectFileToDomainProject,
-  domainProjectToProjectFile,
-} from '@/lib/io/project-serializer';
-import {
-  SaveProject,
-  GetAllProjects,
-  DeleteProject,
-} from '../../../../wailsjs/go/handlers/ProjectHandler';
-import {
-  ExportBackup,
-  ImportBackup,
-  ResetLibrary,
-} from '../../../../wailsjs/go/handlers/BackupHandler';
-import { SaveFileDialog } from '../../../../wailsjs/go/main/App';
-import { domain } from '../../../../wailsjs/go/models';
-import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/huge-icon';
-import { ProjectsSkeleton } from '@/components/ui/skeleton';
 import {
   FolderOpen,
   FloppyDisk,
@@ -52,18 +37,36 @@ import {
   PushPin,
   PushPinSlash,
 } from '@/components/ui/icons';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ProjectsSkeleton } from '@/components/ui/skeleton';
+import { isPristineWorkspace } from '@/hooks/use-autosave';
+import { useEditorStore } from '@/lib/editor-store';
+import {
+  serializeEditorState,
+  projectFileToDomainProject,
+  domainProjectToProjectFile,
+} from '@/lib/io/project-serializer';
+import { createLogger } from '@/lib/logger';
 import { uid } from '@/lib/utils';
+import { toErrorMessage } from '@/lib/wails-error';
+
+import {
+  ExportBackup,
+  ImportBackup,
+  ResetLibrary,
+} from '../../../../wailsjs/go/handlers/BackupHandler';
+import {
+  SaveProject,
+  GetAllProjects,
+  DeleteProject,
+} from '../../../../wailsjs/go/handlers/ProjectHandler';
+import { SaveFileDialog } from '../../../../wailsjs/go/main/App';
+
+import type { domain } from '../../../../wailsjs/go/models';
+
+const logger = createLogger('projects-dialog');
 
 interface ProjectsDialogProps {
   open?: boolean;

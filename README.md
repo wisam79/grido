@@ -47,7 +47,7 @@
 | الأداة | الإصدار |
 |---|---|
 | [Go](https://go.dev/dl/) | 1.25+ |
-| [Node.js](https://nodejs.org/) | 22+ |
+| [Node.js](https://nodejs.org/) | 22+ (الإصدار المثبَّت في `.nvmrc`؛ `frontend/package.json` يفرض `>=22`) |
 | [Wails CLI](https://v3.wails.io/) | `wails3` v3.0.0-beta.28 |
 | NSIS | للبناء على ويندوز فقط |
 
@@ -183,8 +183,13 @@ npm run test            # Vitest
 npm run test:coverage   # مع تقرير التغطية
 npm run test:e2e        # Playwright (محلياً chromium + firefox، وفي CI chromium فقط)
 npm run typecheck       # فحص الأنواع
-npm run lint            # ESLint (صفر تحذيرات)
+npm run lint            # ESLint (صفر تحذيرات) — ترتيب الاستيراد واستيراد الأنواع
+npm run lint:fix        # إصلاح آلي لقواعد ESLint
+npm run format:check    # Prettier (فحص فقط — نفس بوابة CI)
+npm run format          # Prettier (كتابة)
 ```
+
+> 🧱 **معايير الكود الملزمة:** `.editorconfig` يحكم المسافات ونهايات الأسطر · ESLint يفرض ترتيب الاستيراد (`import-x/order`)، واستيراد الأنواع الصريح (`import type`)، ومنع المتغيرات غير المستخدمة، و`no-console` خارج sink التسجيل · Go يُنسَّق بـ`gofmt` · رسائل الالتزام تتبع Conventional Commits عبر `.husky/commit-msg` و`scripts/commit-msg-lint.mjs` (الأنواع المسموحة: `feat/fix/perf/refactor/docs/security/release/build/ci/chore/test/style`).
 
 > 🤖 كل الوظائف أعلاه تعمل في CI على كل push وPR — بوابة التوثيق دائماً، والوظائف الثقيلة فقط عند تغيّر ملفاتها (فلترة المسارات في `ci.yml`).
 

@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
 import { X, Check, ArrowCounterClockwise, CaretUp, CaretDown } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
 import { isSafeCssColor } from '../lib/svg-safety';
-import { StickerTemplate, StickerField } from '../types';
+
+import type { StickerTemplate, StickerField } from '../types';
 
 /** هدف التحرير النشط — القيم تُقرأ لحظياً من params في المكوّن الأم */
 export interface ActiveFieldState {

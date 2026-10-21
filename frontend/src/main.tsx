@@ -1,11 +1,14 @@
+import { MotionConfig } from 'framer-motion';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { MotionConfig } from 'framer-motion';
+
 import './index.css';
+import { StageProvider } from '@/lib/canvas/stage-context';
+import { createLogger } from '@/lib/logger';
+
 import App from './App';
 import { ErrorBoundary } from './components/error-boundary';
 import { LogFrontendError } from '../wailsjs/go/main/App';
-import { createLogger } from '@/lib/logger';
 
 // RV-4: المسجل الموحد بدل console الخام — يوجّه للخلفية (lumberjack) والكونسول معاً
 const bootstrapLogger = createLogger('bootstrap');
@@ -73,8 +76,6 @@ if (typeof window !== 'undefined') {
   window.addEventListener('gesturechange', (e) => e.preventDefault());
   window.addEventListener('gestureend', (e) => e.preventDefault());
 }
-
-import { StageProvider } from '@/lib/canvas/stage-context';
 
 // 🛑 Wails v3 لا يحقن window.go (واجهة v2 القديمة) إطلاقاً ⇒ الشرط `!window.go`
 // كان صحيحاً دائماً في الإنتاج، فيُركَّب محاكي خلفية يُخفي أي فشل حقيقي للجسر.

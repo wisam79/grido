@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+
 import {
   GetStartupFile,
   ProcessLocalImageFile,
@@ -7,21 +8,24 @@ import {
   DismissCrashReport,
   ClearAutoSave,
 } from '@bindings/grido/app';
-import type { CrashReport } from '@bindings/grido/internal/service/models';
-import { EventsOn } from '../../wailsjs/runtime/runtime';
-import { useEditorStore } from '@/lib/editor-store';
-import { addImageFromSrc } from '@/lib/canvas/load-image';
+
+import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
 import {
   resolveImageAspectRatio,
   resolveBatchImageAspectRatios,
 } from '@/lib/canvas/image-dimensions';
-import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
+import { addImageFromSrc } from '@/lib/canvas/load-image';
+import { useEditorStore } from '@/lib/editor-store';
+import { createLogger } from '@/lib/logger';
 import {
   isSessionSupersededError,
   sessionSupersededMessage,
 } from '@/lib/store/slices/license-slice';
-import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
+
+import { EventsOn } from '../../wailsjs/runtime/runtime';
+
+import type { CrashReport } from '@bindings/grido/internal/service/models';
 
 const logger = createLogger('useAppBootstrap');
 

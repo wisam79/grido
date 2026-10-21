@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
+
 import { snapGuidePosToPixel } from '../src/components/editor/canvas/use-user-guides';
 
 /**

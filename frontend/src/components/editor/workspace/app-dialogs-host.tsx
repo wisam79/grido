@@ -1,11 +1,13 @@
 import { lazy, Suspense } from 'react';
+
+import { CrashRecoveryDialog } from '@/components/crash-recovery-dialog';
+import { AccountLicenseModal } from '@/components/editor/dialogs/account-license-modal';
+import { KeyboardShortcutsDialog } from '@/components/editor/dialogs/keyboard-shortcuts-dialog';
+import { UpdateNotifier } from '@/components/editor/system/update-notifier';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AccountLicenseModal } from '@/components/editor/dialogs/account-license-modal';
-import { UpdateNotifier } from '@/components/editor/system/update-notifier';
-import { KeyboardShortcutsDialog } from '@/components/editor/dialogs/keyboard-shortcuts-dialog';
-import { CrashRecoveryDialog } from '@/components/crash-recovery-dialog';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+
 import type { CrashReport } from '@bindings/grido/internal/service/models';
 
 const ExportDialog = lazy(() =>

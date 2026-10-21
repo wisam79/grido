@@ -1,12 +1,10 @@
 import { useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { SaveImageFromBase64, EnhanceImageWithAI } from '@bindings/grido/app';
-import { useEditorStore } from '@/lib/editor-store';
-import { toErrorMessage } from '@/lib/wails-error';
-import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
-import { useOperationStatusStore } from '@/lib/ui/operation-status';
-import { createLogger } from '@/lib/logger';
 import { create } from 'zustand';
+
+import { SaveImageFromBase64, EnhanceImageWithAI } from '@bindings/grido/app';
+
+import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
 import {
   aiPlanDailyLimit,
   parseQuotaSnapshotFromResponse,
@@ -206,6 +204,10 @@ export async function prepareImageForAiUpload(
 }
 
 import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { useEditorStore } from '@/lib/editor-store';
+import { createLogger } from '@/lib/logger';
+import { useOperationStatusStore } from '@/lib/ui/operation-status';
+import { toErrorMessage } from '@/lib/wails-error';
 
 export function useAiEnhance(
   onUpdate: (id: string, patch: Partial<Record<string, unknown>>) => void,

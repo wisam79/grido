@@ -1,8 +1,6 @@
-export {
-  useEditorStore,
-} from "./store/index";
+export { useEditorStore } from './store/index';
 
-export type { EditorState } from "./store/index";
+export type { EditorState } from './store/index';
 
 export type {
   ProjectStateData,
@@ -14,6 +12,6 @@ export type {
   CanvasSlot,
   EditorMode,
   PrintSettings,
-} from "./store/types";
+} from './store/types';
 
-export type { PhotoTemplate, CollageTemplate, ProjectFileV1 } from "./store/types";
+export type { PhotoTemplate, CollageTemplate, ProjectFileV1 } from './store/types';

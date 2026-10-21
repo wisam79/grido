@@ -1,4 +1,8 @@
 import React, { useState, useMemo } from 'react';
+import { toast } from 'sonner';
+
+import { FluentSection, FluentSliderField, FluentSegmentedControl } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   Palette,
   Printer,
@@ -12,31 +16,30 @@ import {
   Trash,
   Plus,
 } from '@/components/ui/icons';
-import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { FluentSection, FluentSliderField, FluentSegmentedControl } from '@/components/ui/blocks';
-import { cn } from '@/lib/utils';
-import {
-  StickerTemplate,
-  StickerParams,
-  SheetGridConfig,
-  StickerFinish,
-  StickerUserPreset,
-} from '../types';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+
 import { CURATED_PALETTES } from '../constants';
 import { StickerFontSelector } from './sticker-font-selector';
-import { contrastRatio } from '../lib/sticker-a11y';
-import { autoFitSheetGrid } from '../lib/sheet-generator';
 import {
   loadStickerPresets,
   saveStickerPreset,
   deleteStickerPreset,
   getPresetsForTemplate,
 } from '../lib/preset-utils';
+import { autoFitSheetGrid } from '../lib/sheet-generator';
+import { contrastRatio } from '../lib/sticker-a11y';
+
+import type {
+  StickerTemplate,
+  StickerParams,
+  SheetGridConfig,
+  StickerFinish,
+  StickerUserPreset,
+} from '../types';
 
 export interface StickerPropertiesProps {
   template: StickerTemplate;

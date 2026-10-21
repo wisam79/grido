@@ -1,17 +1,6 @@
 import { lazy, useState, useEffect, useRef, Suspense } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
-import { Button } from '@/components/ui/button';
-import { useShallow } from 'zustand/react/shallow';
-import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { toast } from 'sonner';
-import { Stack, Folders, DeviceMobileCamera, CaretDown } from '@/components/ui/icons';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
-import { AddPhotoIcon } from '@/components/ui/image-icons';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,10 +11,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ClearAutoSave, SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import { Stack, Folders, DeviceMobileCamera, CaretDown } from '@/components/ui/icons';
+import { AddPhotoIcon } from '@/components/ui/image-icons';
+import {
+  resolveImageAspectRatio,
+  resolveBatchImageAspectRatios,
+} from '@/lib/canvas/image-dimensions';
+import { useEditorStore } from '@/lib/editor-store';
 import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
-import { wailsIsDesktop } from '@/lib/wails-env';
 import { createLogger } from '@/lib/logger';
+import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
+import { wailsIsDesktop } from '@/lib/wails-env';
+
+import { ClearAutoSave, SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 
 // حوارات ثقيلة تُحمَّل عند أول فتح فقط: كانت تُستورد استيراداً ثابتاً فتدخل
 // الحزمة الرئيسية (projects يجرّ قاعدة المشاريع، phone-bridge يجرّ qrcode.react).
@@ -40,11 +46,6 @@ const PhoneBridgeDialog = lazy(() =>
 );
 
 const logger = createLogger('toolbar-file-ops');
-import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
-import {
-  resolveImageAspectRatio,
-  resolveBatchImageAspectRatios,
-} from '@/lib/canvas/image-dimensions';
 
 // معالجة متوازية مقيدة التزامن — تمنع تجميد الزر أثناء حفظ/قياس دفعات الصور
 // (التسلسل الكامل كان يفك ترميز كل صورة واحدة تلو الأخرى)
@@ -78,19 +79,6 @@ export function ToolbarFileOps() {
   const isPhoneBridgeRunning = usePhoneBridgeStore((s) => s.isRunning);
   const phoneBridgePairedDevice = usePhoneBridgeStore((s) => s.pairedDevice);
   const phoneBridgeReceivedCount = usePhoneBridgeStore((s) => s.receivedCount);
-
-  const { mode, slots, setSlotImage, addImageElement, addImageElementsBatch, selectedId } =
-    useEditorStore(
-      useShallow((state) => ({
-        mode: state.mode,
-        slots: state.slots,
-        setSlotImage: state.setSlotImage,
-        addImageElement: state.addImageElement,
-        addImageElementsBatch: state.addImageElementsBatch,
-        template: state.template,
-        selectedId: state.selectedId,
-      })),
-    );
 
   useEffect(() => {
     const openProjects = (e?: Event) => {

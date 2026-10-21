@@ -1,11 +1,6 @@
 import React, { useEffect } from 'react';
 import { Transformer as KonvaTransformer, Group, Rect, Text } from 'react-konva';
-import Konva from 'konva';
-import type { KonvaEventObject } from 'konva/lib/Node';
-import { CanvasElement, useEditorStore } from '@/lib/editor-store';
-import type { SnapGuide } from '@/lib/canvas/snap-utils';
-import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
-import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
+
 import {
   useCanvasColors,
   transformerPrimary,
@@ -16,6 +11,14 @@ import {
   transformerBadgeBg,
   transformerBadgeText,
 } from '@/lib/canvas/canvas-colors';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
+import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
+import { useEditorStore } from '@/lib/editor-store';
+
+import type { SnapGuide } from '@/lib/canvas/snap-utils';
+import type { CanvasElement } from '@/lib/editor-store';
+import type Konva from 'konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
 
 interface EditorTransformerProps {
   trRef: React.RefObject<Konva.Transformer | null>;
@@ -42,7 +45,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
   isText,
   getKonvaNode,
   onTransformEnd,
-  setActiveGuides,
+  setActiveGuides: _setActiveGuides,
   altPressedRef,
 }: EditorTransformerProps) {
   // 🛡️ إعادة تصيير المحوّل بألوان الثيم الجديد (C5 — تدقيق 2026-10-08)
@@ -251,7 +254,7 @@ export const EditorTransformer = React.memo(function EditorTransformer({
 
   // تخصيص مظهر المحابث (Anchors) بنمط Fluent 2 المحترف مع ظلال ناعمة
   const primaryColor = isLocked ? transformerLocked() : transformerPrimary();
-  const strokeColor = isLocked ? transformerLockedStroke() : transformerStroke();
+  const _strokeColor = isLocked ? transformerLockedStroke() : transformerStroke();
 
   return (
     <React.Fragment>

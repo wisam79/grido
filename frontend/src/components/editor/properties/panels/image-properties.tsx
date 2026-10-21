@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useEffect, useRef } from 'react';
-import { ImageElement, CanvasElement, useEditorStore } from '@/lib/editor-store';
-import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { toast } from 'sonner';
+
+import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
 import {
@@ -20,23 +21,26 @@ import {
   Square,
   FadersHorizontal,
 } from '@/components/ui/icons';
-import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
-import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useAiEnhance } from '@/hooks/use-ai-enhance';
+import { useBgRemoval } from '@/hooks/use-bg-removal';
+import { useFaceFrame } from '@/hooks/use-face-frame';
+import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
+import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { useEditorStore } from '@/lib/editor-store';
 import { pickLocalImage } from '@/lib/io/file-dialog-utils';
 import { uploadMediaBlob } from '@/lib/io/media-upload';
-import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
-import { useBgRemoval } from '@/hooks/use-bg-removal';
-import { useAiEnhance } from '@/hooks/use-ai-enhance';
-import { useFaceFrame } from '@/hooks/use-face-frame';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { PopoverColorPicker } from '../shared-controls';
-import { ShadowGlowSection } from '../element/shared/shadow-glow-section';
 import { createLogger } from '@/lib/logger';
+import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
+import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
+
+import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
+import { ShadowGlowSection } from '../element/shared/shadow-glow-section';
+import { PopoverColorPicker } from '../shared-controls';
+
+import type { ImageElement, CanvasElement } from '@/lib/editor-store';
 
 const logger = createLogger('image-properties');
 
@@ -289,7 +293,7 @@ export function ImageEffectsProperties({ element, onUpdate }: ImagePropertiesPro
 export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps) {
   const [cropOpen, setCropOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
-  const isLicenseActive = useEditorStore((state) => state.isLicenseActive());
+  const _isLicenseActive = useEditorStore((state) => state.isLicenseActive());
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [refineOpen, setRefineOpen] = useState(false);
 

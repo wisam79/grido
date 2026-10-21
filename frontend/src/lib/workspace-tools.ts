@@ -1,6 +1,3 @@
-import type { Icon } from '@/components/ui/icons';
-import type { EditorMode } from '@/lib/store/types';
-import type { WorkflowMode } from '@/lib/store/slices/workflow-slice';
 import {
   Stack,
   Shapes,
@@ -15,8 +12,6 @@ import {
   Swatches,
   PaintBucket,
 } from '@/components/ui/icons';
-import { useEditorStore } from '@/lib/editor-store';
-import { canZoomIn, canZoomOut, isDefaultZoom } from '@/lib/canvas/zoom';
 import {
   actualSizeZoomStore,
   autoFitZoomStore,
@@ -27,6 +22,12 @@ import {
   zoomOutStore,
 } from '@/hooks/use-canvas-zoom';
 import { CANVAS_FIT_LABELS, type CanvasFitMode } from '@/lib/canvas/fit';
+import { canZoomIn, canZoomOut, isDefaultZoom } from '@/lib/canvas/zoom';
+import { useEditorStore } from '@/lib/editor-store';
+
+import type { Icon } from '@/components/ui/icons';
+import type { WorkflowMode } from '@/lib/store/slices/workflow-slice';
+import type { EditorMode } from '@/lib/store/types';
 
 /* ═══════════════════════════════════════════════════════════════
    سجل أدوات الشريط الجانبي — مصدر حقيقة واحد للأوضاع الثلاثة:

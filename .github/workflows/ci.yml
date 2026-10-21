@@ -8,10 +8,9 @@ permissions:
   pull-requests: read
 
 # Single source of truth for toolchain versions (Dependabot watches the
-# actions; these two pins are bumped together in one place).
+# actions; Go is pinned here, Node is pinned in .nvmrc for local/CI parity).
 env:
   GO_VERSION: "1.25.0"
-  NODE_VERSION: "22"
 
 on:
   push:
@@ -99,7 +98,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
 
       - name: Run Documentation Sync Gate
         run: node scripts/docs-gate.mjs --push --ci
@@ -143,7 +142,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
@@ -193,6 +192,11 @@ jobs:
         working-directory: ./frontend
         run: npm run lint
 
+      - name: Check Frontend Formatting (Prettier)
+        id: format
+        working-directory: ./frontend
+        run: npm run format:check
+
       - name: Run Frontend Unit Tests & Coverage
         id: unit_tests
         working-directory: ./frontend
@@ -208,6 +212,7 @@ jobs:
             --title "⚡ Frontend Quality & Unit Tests Summary" \
             --row "TypeScript Typecheck=${{ steps.typecheck.outcome }}" \
             --row "ESLint (src + test + e2e, 0 warnings)=${{ steps.lint.outcome }}" \
+            --row "Prettier (src + test + e2e)=${{ steps.format.outcome }}" \
             --row "Vitest Unit & Component Tests=${{ steps.unit_tests.outcome }}" \
             --coverage coverage/coverage-summary.json
 
@@ -241,7 +246,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
 
       - name: Cache Go Tools (staticcheck)
         id: cache-staticcheck
@@ -261,6 +266,16 @@ jobs:
       - name: Go Vet
         id: go_vet
         run: go vet ./internal/...
+
+      - name: Check Go Formatting (gofmt)
+        id: gofmt
+        run: |
+          unformatted="$(git ls-files -z '*.go' | xargs -0 gofmt -l)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::Go files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
 
       # Pinned release (verified: dominikh/go-tools 2025.1.1) — `@latest`
       # silently moves the toolchain under CI and breaks reproducibility.
@@ -284,6 +299,7 @@ jobs:
           node scripts/ci-step-summary.mjs \
             --title "🛡️ Backend Quality & Go Tests Summary" \
             --row "Go Vet=${{ steps.go_vet.outcome }}" \
+            --row "gofmt (0 drift)=${{ steps.gofmt.outcome }}" \
             --row "Staticcheck (0 warnings)=${{ steps.staticcheck.outcome }}" \
             --row "Go Unit & Integration Tests=${{ steps.go_tests.outcome }}"
 
@@ -305,7 +321,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: "npm"
           cache-dependency-path: admin-web/package-lock.json
 
@@ -379,7 +395,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
@@ -493,7 +509,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
@@ -612,7 +628,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 

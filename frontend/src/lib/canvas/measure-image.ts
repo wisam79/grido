@@ -1,9 +1,9 @@
-import { getExifOrientation } from '../io/exif-utils';
 import {
   getCachedImageAspectRatio,
   setCachedImageAspectRatio,
   resolveImageAspectRatio,
 } from './image-dimensions';
+import { getExifOrientation } from '../io/exif-utils';
 
 /**
  * قياس نسبة أبعاد الصورة مع عقد NaN عند الفشل.

@@ -1,11 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from 'vitest';
+
 import {
   computeIdCropRect,
   faceBoxFromLandmarks,
   ICAO_BASE_EYE_LEVEL,
-} from "../src/lib/filters/face-frame-utils";
+} from '../src/lib/filters/face-frame-utils';
 
-describe("computeIdCropRect - Human Expert Photography Engine", () => {
+describe('computeIdCropRect - Human Expert Photography Engine', () => {
   const face = {
     eyeCenterX: 0.5,
     eyeCenterY: 0.35,
@@ -20,7 +21,7 @@ describe("computeIdCropRect - Human Expert Photography Engine", () => {
     hairVolumeRatio: 0.03,
   };
 
-  it("should anchor eye level at ~38% with top headroom like an expert studio photographer", () => {
+  it('should anchor eye level at ~38% with top headroom like an expert studio photographer', () => {
     const crop = computeIdCropRect(face, 0.7778);
 
     const eyeLevelInCrop = (face.eyeCenterY - crop.y) / crop.height;
@@ -35,7 +36,7 @@ describe("computeIdCropRect - Human Expert Photography Engine", () => {
     expect(faceCenterInCrop).toBeCloseTo(0.5, 2);
   });
 
-  it("should compensate for head pitch (looking slightly up/down)", () => {
+  it('should compensate for head pitch (looking slightly up/down)', () => {
     const lookingDownFace = { ...face, pitchAngle: -0.2 };
     const lookingUpFace = { ...face, pitchAngle: 0.2 };
 
@@ -45,7 +46,7 @@ describe("computeIdCropRect - Human Expert Photography Engine", () => {
     expect(downCrop.y).not.toEqual(upCrop.y);
   });
 
-  it("should disambiguate high hair volume without shrinking the face excessively", () => {
+  it('should disambiguate high hair volume without shrinking the face excessively', () => {
     const highHairFace = {
       ...face,
       hairTopY: 0.08,
@@ -58,7 +59,7 @@ describe("computeIdCropRect - Human Expert Photography Engine", () => {
     expect(crop.width / crop.height).toBeCloseTo(0.7778, 3);
   });
 
-  it("should clamp crop within image bounds and enforce max zoom", () => {
+  it('should clamp crop within image bounds and enforce max zoom', () => {
     const offCenterFace = { ...face, eyeCenterX: 0.05 };
     const crop = computeIdCropRect(offCenterFace, 0.7778);
 
@@ -67,7 +68,7 @@ describe("computeIdCropRect - Human Expert Photography Engine", () => {
     expect(crop.y + crop.height).toBeLessThanOrEqual(1);
   });
 
-  it("should output exact pixel aspect ratio matching target slot for non-square source images (3:4, 16:9)", () => {
+  it('should output exact pixel aspect ratio matching target slot for non-square source images (3:4, 16:9)', () => {
     const targetSlotAspect = 35 / 45; // 0.7778 (35x45mm)
     const sourceImageAspect = 3000 / 4000; // 0.75 (3:4 portrait photo)
 
@@ -81,14 +82,16 @@ describe("computeIdCropRect - Human Expert Photography Engine", () => {
     expect(actualCroppedPixelAspect).toBeCloseTo(targetSlotAspect, 3);
   });
 
-  it("should throw on invalid aspect ratio", () => {
+  it('should throw on invalid aspect ratio', () => {
     expect(() => computeIdCropRect(face, 0)).toThrow();
     expect(() => computeIdCropRect(face, -1)).toThrow();
   });
 });
 
-describe("faceBoxFromLandmarks", () => {
-  function buildLandmarks(pointsMap: Partial<Record<number, { x: number; y: number; z?: number }>>) {
+describe('faceBoxFromLandmarks', () => {
+  function buildLandmarks(
+    pointsMap: Partial<Record<number, { x: number; y: number; z?: number }>>,
+  ) {
     const points: Array<{ x: number; y: number; z?: number }> = [];
     for (let i = 0; i < 478; i++) {
       points.push({ x: 0.5, y: 0.5, z: 0 });
@@ -99,7 +102,7 @@ describe("faceBoxFromLandmarks", () => {
     return points;
   }
 
-  it("should derive human expert 3D metrics including pitch, roll, and hair volume ratio", () => {
+  it('should derive human expert 3D metrics including pitch, roll, and hair volume ratio', () => {
     const landmarks = buildLandmarks({
       33: { x: 0.4, y: 0.3, z: 0 },
       133: { x: 0.44, y: 0.3, z: 0 },
@@ -124,13 +127,11 @@ describe("faceBoxFromLandmarks", () => {
     expect(detailedBox.hairTopY).toBeLessThan(0.15);
     expect(detailedBox.chinY).toBe(0.55);
     expect(detailedBox.faceAspectRatio).toBeGreaterThan(0);
-    expect(typeof detailedBox.hairVolumeRatio).toBe("number");
+    expect(typeof detailedBox.hairVolumeRatio).toBe('number');
   });
 
-  it("should throw when landmarks are missing or incomplete", () => {
+  it('should throw when landmarks are missing or incomplete', () => {
     const tiny: Array<{ x: number; y: number }> = [{ x: 0.5, y: 0.5 }];
     expect(() => faceBoxFromLandmarks(tiny)).toThrow();
   });
 });
-
-

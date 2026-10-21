@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { buildSinglePayload } from '../src/components/editor/print/print-payload-builder';
+
 import type { usePrintLayout } from '../src/hooks/use-print-layout';
 import type { ImageElement } from '../src/lib/store/types';
 

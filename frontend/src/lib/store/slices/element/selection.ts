@@ -1,8 +1,9 @@
-import type { StateCreator } from 'zustand';
-import type { CanvasElement } from '../../types';
-import { uid } from '../../../utils';
 import { maxZIndex, minZIndex, normalizeSelection } from './types';
+import { uid } from '../../../utils';
+
 import type { ElementCross, ElementSlice } from './types';
+import type { CanvasElement } from '../../types';
+import type { StateCreator } from 'zustand';
 
 export const createElementSelectionSlice: StateCreator<
   ElementCross,

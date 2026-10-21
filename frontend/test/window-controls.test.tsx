@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { WindowControls } from '../src/components/editor/system/window-controls';
 
 vi.mock('../../../../wailsjs/runtime/runtime', () => ({
@@ -22,7 +23,7 @@ describe('WindowControls Unit Tests', () => {
         onMinimize={onMinimize}
         onMaximize={onMaximize}
         onClose={onClose}
-      />
+      />,
     );
 
     expect(screen.getByLabelText('تصغير')).toBeDefined();
@@ -41,7 +42,7 @@ describe('WindowControls Unit Tests', () => {
         onMinimize={onMinimize}
         onMaximize={onMaximize}
         onClose={onClose}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByLabelText('تصغير'));
@@ -61,7 +62,7 @@ describe('WindowControls Unit Tests', () => {
         onMinimize={vi.fn()}
         onMaximize={vi.fn()}
         onClose={vi.fn()}
-      />
+      />,
     );
 
     expect(screen.getByLabelText('استعادة')).toBeDefined();

@@ -3,19 +3,19 @@
  * كانت هذه الحسابات مكررة ثلاث مرات داخل custom-collage-card (الحدود، التطبيق، الحفظ).
  */
 
-import type { GridAlignment } from "@/lib/print/print-layout-math";
+import type { GridAlignment } from '@/lib/print/print-layout-math';
 // إعادة تصدير للمستهلكين الحاليين (arrange-tab، custom-grid-tab) — المصدر الوحيد print-layout-math.
 export type { GridAlignment };
 
 export type PhotoGridType =
-  | "stretch"
-  | "passport"
-  | "id"
-  | "visa"
-  | "iq-national-id"
-  | "iq-civil-id"
-  | "iq-general-id"
-  | "iq-transactions";
+  | 'stretch'
+  | 'passport'
+  | 'id'
+  | 'visa'
+  | 'iq-national-id'
+  | 'iq-civil-id'
+  | 'iq-general-id'
+  | 'iq-transactions';
 
 export interface PhotoDimensions {
   wMM: number;
@@ -26,21 +26,21 @@ export interface PhotoDimensions {
 /** مقاسات صور الوثائق العراقية المعتمدة بالمليمتر */
 export function getPhotoDimensions(photoType: PhotoGridType): PhotoDimensions {
   switch (photoType) {
-    case "iq-national-id":
-    case "passport":
-      return { wMM: 35, hMM: 45, label: "بطاقة وطنية / جواز" };
-    case "iq-civil-id":
-      return { wMM: 32, hMM: 40, label: "هوية أحوال" };
-    case "iq-general-id":
-      return { wMM: 40, hMM: 60, label: "هوية عامة" };
-    case "iq-transactions":
-      return { wMM: 30, hMM: 40, label: "معاملات" };
-    case "id":
-      return { wMM: 35, hMM: 45, label: "هوية قياسية" };
-    case "visa":
-      return { wMM: 35, hMM: 45, label: "فيزا شنغن" };
+    case 'iq-national-id':
+    case 'passport':
+      return { wMM: 35, hMM: 45, label: 'بطاقة وطنية / جواز' };
+    case 'iq-civil-id':
+      return { wMM: 32, hMM: 40, label: 'هوية أحوال' };
+    case 'iq-general-id':
+      return { wMM: 40, hMM: 60, label: 'هوية عامة' };
+    case 'iq-transactions':
+      return { wMM: 30, hMM: 40, label: 'معاملات' };
+    case 'id':
+      return { wMM: 35, hMM: 45, label: 'هوية قياسية' };
+    case 'visa':
+      return { wMM: 35, hMM: 45, label: 'فيزا شنغن' };
     default:
-      return { wMM: 35, hMM: 45, label: "بطاقة وطنية" };
+      return { wMM: 35, hMM: 45, label: 'بطاقة وطنية' };
   }
 }
 
@@ -60,30 +60,24 @@ const PAPER_SIZES_MM: [number, number][] = [
 export function resolveEffectiveDpi(
   canvasWidth: number,
   canvasHeight: number,
-  storedDpi: number
+  storedDpi: number,
 ): number {
   const W = canvasWidth;
   const H = canvasHeight;
-  if (typeof W !== "number" || typeof H !== "number" || W <= 0 || H <= 0) {
+  if (typeof W !== 'number' || typeof H !== 'number' || W <= 0 || H <= 0) {
     return storedDpi;
   }
   for (const [pW, pH] of PAPER_SIZES_MM) {
     const expectedW = (pW * storedDpi) / 25.4;
     const expectedH = (pH * storedDpi) / 25.4;
     // مطابقة عمودية (Portrait)
-    if (
-      Math.abs(W - expectedW) / expectedW < 0.02 &&
-      Math.abs(H - expectedH) / expectedH < 0.02
-    ) {
+    if (Math.abs(W - expectedW) / expectedW < 0.02 && Math.abs(H - expectedH) / expectedH < 0.02) {
       const dpiFromW = (W * 25.4) / pW;
       const dpiFromH = (H * 25.4) / pH;
       return (dpiFromW + dpiFromH) / 2;
     }
     // مطابقة أفقية (Landscape)
-    if (
-      Math.abs(W - expectedH) / expectedH < 0.02 &&
-      Math.abs(H - expectedW) / expectedW < 0.02
-    ) {
+    if (Math.abs(W - expectedH) / expectedH < 0.02 && Math.abs(H - expectedW) / expectedW < 0.02) {
       const dpiFromW = (W * 25.4) / pH;
       const dpiFromH = (H * 25.4) / pW;
       return (dpiFromW + dpiFromH) / 2;
@@ -102,9 +96,9 @@ export function getGridLimits(
   photoType: PhotoGridType,
   canvasWidth: number,
   canvasHeight: number,
-  storedDpi: number
+  storedDpi: number,
 ): GridLimits {
-  if (photoType === "stretch") {
+  if (photoType === 'stretch') {
     return { maxRows: 12, maxCols: 12 };
   }
   const W = canvasWidth || 2480;
@@ -123,26 +117,29 @@ export function getGridLimits(
 export function getGridAnchor(
   align: GridAlignment,
   totalGridW: number,
-  totalGridH: number
+  totalGridH: number,
 ): { startX: number; startY: number } {
   switch (align) {
-    case "top-left":
+    case 'top-left':
       return { startX: 0, startY: 0 };
-    case "top-center":
+    case 'top-center':
       return { startX: Math.max(0, (1 - totalGridW) / 2), startY: 0 };
-    case "top-right":
+    case 'top-right':
       return { startX: Math.max(0, 1 - totalGridW), startY: 0 };
-    case "center-left":
+    case 'center-left':
       return { startX: 0, startY: Math.max(0, (1 - totalGridH) / 2) };
-    case "center":
-      return { startX: Math.max(0, (1 - totalGridW) / 2), startY: Math.max(0, (1 - totalGridH) / 2) };
-    case "center-right":
+    case 'center':
+      return {
+        startX: Math.max(0, (1 - totalGridW) / 2),
+        startY: Math.max(0, (1 - totalGridH) / 2),
+      };
+    case 'center-right':
       return { startX: Math.max(0, 1 - totalGridW), startY: Math.max(0, (1 - totalGridH) / 2) };
-    case "bottom-left":
+    case 'bottom-left':
       return { startX: 0, startY: Math.max(0, 1 - totalGridH) };
-    case "bottom-center":
+    case 'bottom-center':
       return { startX: Math.max(0, (1 - totalGridW) / 2), startY: Math.max(0, 1 - totalGridH) };
-    case "bottom-right":
+    case 'bottom-right':
       return { startX: Math.max(0, 1 - totalGridW), startY: Math.max(0, 1 - totalGridH) };
   }
 }
@@ -165,7 +162,7 @@ export function buildPhysicalGridCells(
   align: GridAlignment,
   canvasWidth: number,
   canvasHeight: number,
-  storedDpi: number
+  storedDpi: number,
 ): NormalizedCell[] {
   const W = canvasWidth || 2480;
   const H = canvasHeight || 3508;

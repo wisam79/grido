@@ -1,14 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
 import { toast } from 'sonner';
-import { SaveImageFromBase64 } from '@bindings/grido/app';
-import { preloadImageIntoCache } from './use-async-image';
-import { useOperationStatusStore } from '@/lib/ui/operation-status';
-import { triggerMemoryTrim } from '@/lib/memory-trim';
-import type { CanvasElement, CanvasSlot } from '@/lib/store/types';
 import { create } from 'zustand';
+
+import { SaveImageFromBase64 } from '@bindings/grido/app';
+
+import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
+import { triggerMemoryTrim } from '@/lib/memory-trim';
+import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { toErrorMessage } from '@/lib/wails-error';
+
+import { preloadImageIntoCache } from './use-async-image';
+
+import type { CanvasElement, CanvasSlot } from '@/lib/store/types';
 
 const logger = createLogger('use-face-frame');
 

@@ -1,5 +1,8 @@
-import React from "react";
-import { StickerStudioDialog, StickerStudioDialogProps } from "@/features/stickers";
+import React from 'react';
+
+import { StickerStudioDialog } from '@/features/stickers';
+
+import type { StickerStudioDialogProps } from '@/features/stickers';
 
 export type BarcodeDialogProps = StickerStudioDialogProps;
 
@@ -12,6 +15,6 @@ export const BarcodeDialog = React.memo(function BarcodeDialog(props: BarcodeDia
   return <StickerStudioDialog {...props} />;
 });
 
-BarcodeDialog.displayName = "StickerStudioDialog(BarcodeAlias)";
+BarcodeDialog.displayName = 'StickerStudioDialog(BarcodeAlias)';
 
 export { StickerStudioDialog };

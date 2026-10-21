@@ -12,14 +12,14 @@ import { createLogger } from '../src/lib/logger';
 
 describe('unified frontend logger', () => {
   let errorSpy: ReturnType<typeof vi.spyOn>;
-  let warnSpy: ReturnType<typeof vi.spyOn>;
+  let _warnSpy: ReturnType<typeof vi.spyOn>;
   let infoSpy: ReturnType<typeof vi.spyOn>;
   let debugSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    _warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
     debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
   });

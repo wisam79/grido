@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { useEditorStore } from '../src/lib/editor-store';
-import type { TextElement, ShapeElement } from '../src/lib/store/types';
-import { SHAPE_PATH_TRIANGLE, SHAPE_PATH_HEART, SHAPE_PATH_DIAMOND } from '../src/lib/io/svg-paths';
 import { SHAPE_CATALOG, QUICK_SHAPES, getShapeByPath } from '../src/lib/io/shape-catalog';
+import { SHAPE_PATH_TRIANGLE, SHAPE_PATH_HEART, SHAPE_PATH_DIAMOND } from '../src/lib/io/svg-paths';
+
+import type { TextElement, ShapeElement } from '../src/lib/store/types';
 
 describe('ElementSlice Unit Tests', () => {
   beforeEach(() => {

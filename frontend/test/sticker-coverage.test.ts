@@ -1,4 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+import {
+  generateBarcodeInnerSvg,
+  generateBarcodeInnerSvgAsync,
+  generateQrCodeInnerSvgAsync,
+} from '@/features/stickers/lib/barcode-svg';
 import {
   loadStickerPresets,
   saveStickerPreset,
@@ -6,13 +12,8 @@ import {
   getPresetsForTemplate,
   STICKER_PRESETS_STORAGE_KEY,
 } from '@/features/stickers/lib/preset-utils';
-import type { StickerParams } from '@/features/stickers/types';
-import {
-  generateBarcodeInnerSvg,
-  generateBarcodeInnerSvgAsync,
-  generateQrCodeInnerSvgAsync,
-} from '@/features/stickers/lib/barcode-svg';
 import { embedStickerFonts } from '@/features/stickers/lib/sticker-font-embed';
+import { estimateTextWidth, mmToPx, stickerRasterSize } from '@/features/stickers/lib/sticker-text';
 import {
   ALL_STICKER_TEMPLATES,
   getStickerTemplateById,
@@ -21,7 +22,8 @@ import {
   searchStickerTemplates,
 } from '@/features/stickers/templates';
 import { findHiddenFieldIds } from '@/features/stickers/templates/svg-elements';
-import { estimateTextWidth, mmToPx, stickerRasterSize } from '@/features/stickers/lib/sticker-text';
+
+import type { StickerParams } from '@/features/stickers/types';
 
 function sampleParams(overrides: Partial<StickerParams> = {}): StickerParams {
   return {

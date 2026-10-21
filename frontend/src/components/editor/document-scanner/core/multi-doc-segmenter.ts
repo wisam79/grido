@@ -1,11 +1,12 @@
-import { Point, DetectedDocument, ScoredCandidate } from './types';
 import { computePolygonArea } from './contour-tracer';
+import { OVERLAP_TUNING } from './overlap-tuning';
 import {
   sortCornerPoints,
   computeQuadOrthogonality,
   computeQuadOverlapStats,
 } from './quad-geometry';
-import { OVERLAP_TUNING } from './overlap-tuning';
+
+import type { Point, DetectedDocument, ScoredCandidate } from './types';
 
 /**
  * قياس كثافة تدرجات الحواف على طول خط مستقيم بين نقطتين مع مقاومة الحجب الجزئي (Trimmed Mean)

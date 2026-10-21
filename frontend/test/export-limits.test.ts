@@ -1,15 +1,16 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { toast } from "sonner";
+import { toast } from 'sonner';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { useEditorStore } from '../src/lib/editor-store';
+import { exportCanvas, exportSlotCanvas } from '../src/lib/export/export-image';
 import {
   MAX_EXPORT_PIXELS,
   CanvasTooLargeError,
   assertExportablePixels,
-} from "../src/lib/export/export-limits";
-import { exportCanvas, exportSlotCanvas } from "../src/lib/export/export-image";
-import { quickExportPNG } from "../src/lib/export/export-project";
-import { useEditorStore } from "../src/lib/editor-store";
+} from '../src/lib/export/export-limits';
+import { quickExportPNG } from '../src/lib/export/export-project';
 
-vi.mock("sonner", () => ({
+vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
@@ -19,12 +20,12 @@ vi.mock("sonner", () => ({
 
 // صورة وهمية تُطلق onload فوراً — loadImage في تصدير الخانة المفردة تعتمد عليها
 class FakeImage {
-  crossOrigin = "anonymous";
+  crossOrigin = 'anonymous';
   width = 100;
   height = 100;
   onload: (() => void) | null = null;
   onerror: ((e: unknown) => void) | null = null;
-  private _src = "";
+  private _src = '';
   set src(v: string) {
     this._src = v;
     setTimeout(() => this.onload?.(), 0);
@@ -37,21 +38,21 @@ class FakeImage {
 function setLicenseActive() {
   useEditorStore.setState({
     user: {
-      plan: "pro",
-      status: "active",
+      plan: 'pro',
+      status: 'active',
       expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
     } as never,
   });
 }
 
-describe("export-limits — 50MP explicit guard", () => {
+describe('export-limits — 50MP explicit guard', () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
     setLicenseActive();
     vi.clearAllMocks();
-    vi.stubGlobal("Image", FakeImage);
+    vi.stubGlobal('Image', FakeImage);
     HTMLCanvasElement.prototype.toBlob = function (cb: any, type?: string) {
-      cb(new Blob(["mock-image-data"], { type: type || "image/png" }));
+      cb(new Blob(['mock-image-data'], { type: type || 'image/png' }));
     };
     HTMLCanvasElement.prototype.getContext = function () {
       return {} as never;
@@ -62,7 +63,7 @@ describe("export-limits — 50MP explicit guard", () => {
     vi.unstubAllGlobals();
   });
 
-  it("boundary: 50MP exactly passes, one pixel over throws with details", () => {
+  it('boundary: 50MP exactly passes, one pixel over throws with details', () => {
     expect(() => assertExportablePixels(5000, 10000)).not.toThrow();
     expect(5000 * 10000).toBe(MAX_EXPORT_PIXELS);
 
@@ -76,36 +77,36 @@ describe("export-limits — 50MP explicit guard", () => {
       expect(err.width).toBe(5000);
       expect(err.height).toBe(10001);
       expect(err.pixelCount).toBe(50005000);
-      expect(err.name).toBe("CanvasTooLargeError");
+      expect(err.name).toBe('CanvasTooLargeError');
     }
   });
 
-  it("exportCanvas throws CanvasTooLargeError instead of silent null", async () => {
+  it('exportCanvas throws CanvasTooLargeError instead of silent null', async () => {
     useEditorStore.setState({
-      mode: "fitted",
+      mode: 'fitted',
       canvasWidth: 8000,
       canvasHeight: 7000, // 56MP
-      backgroundColor: "#ffffff",
+      backgroundColor: '#ffffff',
       elements: [],
     } as never);
 
-    await expect(exportCanvas("png", 0.95, null)).rejects.toThrowError(CanvasTooLargeError);
+    await expect(exportCanvas('png', 0.95, null)).rejects.toThrowError(CanvasTooLargeError);
   });
 
-  it("exportSlotCanvas throws when a single slot exceeds the limit", async () => {
+  it('exportSlotCanvas throws when a single slot exceeds the limit', async () => {
     useEditorStore.setState({
-      mode: "collage",
+      mode: 'collage',
       canvasWidth: 8000,
       canvasHeight: 7000, // 56MP
-      backgroundColor: "#ffffff",
+      backgroundColor: '#ffffff',
       slots: [
         {
-          id: "s1",
+          id: 's1',
           x: 0,
           y: 0,
           w: 1,
           h: 1,
-          imageSrc: "/local-image/s1.png",
+          imageSrc: '/local-image/s1.png',
           zoom: 1,
           dragX: 0,
           dragY: 0,
@@ -116,28 +117,28 @@ describe("export-limits — 50MP explicit guard", () => {
       ],
     } as never);
 
-    await expect(exportSlotCanvas("s1", "png", 0.95)).rejects.toThrowError(CanvasTooLargeError);
+    await expect(exportSlotCanvas('s1', 'png', 0.95)).rejects.toThrowError(CanvasTooLargeError);
   });
 
-  it("quickExportPNG shows the explicit size message instead of a generic one", async () => {
+  it('quickExportPNG shows the explicit size message instead of a generic one', async () => {
     useEditorStore.setState({
-      mode: "fitted",
+      mode: 'fitted',
       canvasWidth: 8000,
       canvasHeight: 7000, // 56MP
-      backgroundColor: "#ffffff",
+      backgroundColor: '#ffffff',
       elements: [],
     } as never);
-    const saveDialogSpy = vi.fn().mockResolvedValue("success");
+    const saveDialogSpy = vi.fn().mockResolvedValue('success');
     (window as any).go = { main: { App: { SaveFileDialog: saveDialogSpy } } };
 
     await quickExportPNG();
 
     expect(saveDialogSpy).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("50 ميجابكسل"));
-    expect(toast.error).not.toHaveBeenCalledWith("تعذر تصدير الصورة");
+    expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('50 ميجابكسل'));
+    expect(toast.error).not.toHaveBeenCalledWith('تعذر تصدير الصورة');
   });
 
-  it("assertExportablePixels ignores degenerate dimensions instead of throwing", () => {
+  it('assertExportablePixels ignores degenerate dimensions instead of throwing', () => {
     expect(() => assertExportablePixels(0, 100)).not.toThrow();
     expect(() => assertExportablePixels(100, 0)).not.toThrow();
     expect(() => assertExportablePixels(-5, 100)).not.toThrow();
@@ -145,12 +146,12 @@ describe("export-limits — 50MP explicit guard", () => {
     expect(() => assertExportablePixels(2480, 3508)).not.toThrow();
   });
 
-  it("CanvasTooLargeError carries dimensions for explicit messaging", () => {
+  it('CanvasTooLargeError carries dimensions for explicit messaging', () => {
     const err = new CanvasTooLargeError(10000, 6000);
-    expect(err.name).toBe("CanvasTooLargeError");
+    expect(err.name).toBe('CanvasTooLargeError');
     expect(err.width).toBe(10000);
     expect(err.height).toBe(6000);
     expect(err.pixelCount).toBe(60_000_000);
-    expect(err.message).toContain("10000×6000");
+    expect(err.message).toContain('10000×6000');
   });
 });

@@ -1,6 +1,4 @@
-import { ShapeElement, useEditorStore } from '@/lib/editor-store';
-import { Palette, BoundingBox, Eye, Sparkle } from '@/components/ui/icons';
-import { PopoverColorPicker, QuickColorPalette } from '../shared-controls';
+import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
 import {
   FluentSection,
   FluentSegmentedControl,
@@ -8,14 +6,19 @@ import {
   FluentSliderField,
 } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
+import { Palette, BoundingBox, Eye, Sparkle } from '@/components/ui/icons';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { GradientPicker } from '../gradient-picker';
-import { normalizeImageFillPatch } from '../image-fill-patch';
-import { gradientAngleFromPoints, gradientPointsFromAngle } from '../gradient-utils';
 import { resolveRingInnerRadius, ringInnerRadiusMax } from '@/lib/canvas/ring-geometry';
-import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
+
+import { GradientPicker } from '../gradient-picker';
+import { gradientAngleFromPoints, gradientPointsFromAngle } from '../gradient-utils';
+import { normalizeImageFillPatch } from '../image-fill-patch';
+import { PopoverColorPicker, QuickColorPalette } from '../shared-controls';
+
+import type { ShapeElement } from '@/lib/editor-store';
 
 export interface ShapePropertiesProps {
   element: ShapeElement;

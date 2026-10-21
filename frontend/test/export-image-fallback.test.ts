@@ -1,10 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { exportCanvas, drawSlotImage } from "../src/lib/export/export-image";
-import { useEditorStore } from "../src/lib/editor-store";
-import { computeSlotRectMM, computeSheetGrid } from "../src/lib/print/print-layout-math";
-import { calculatePrintCutLines } from "../src/lib/print/cut-lines-utils";
-import { collageCut, collageEndCut } from "../src/lib/canvas/canvas-colors";
-import type { CanvasSlot } from "../src/lib/store/types";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { collageCut, collageEndCut } from '../src/lib/canvas/canvas-colors';
+import { useEditorStore } from '../src/lib/editor-store';
+import { exportCanvas, drawSlotImage } from '../src/lib/export/export-image';
+import { calculatePrintCutLines } from '../src/lib/print/cut-lines-utils';
+import { computeSlotRectMM, computeSheetGrid } from '../src/lib/print/print-layout-math';
+
+import type { CanvasSlot } from '../src/lib/store/types';
 
 const CANVAS_W = 2480;
 const CANVAS_H = 3508;
@@ -13,12 +15,12 @@ type DrawCall = { op: string; args: unknown[] };
 
 function makeRecordingContext() {
   const calls: DrawCall[] = [];
-  let strokeStyle = "";
-  let fillStyle = "";
+  let strokeStyle = '';
+  let fillStyle = '';
   const ctx: any = {
     calls,
     lineWidth: 0,
-    _filter: "none",
+    _filter: 'none',
     get filter() {
       return this._filter;
     },
@@ -30,20 +32,34 @@ function makeRecordingContext() {
     },
     set strokeStyle(v: string) {
       strokeStyle = v;
-      calls.push({ op: "setStrokeStyle", args: [v] });
+      calls.push({ op: 'setStrokeStyle', args: [v] });
     },
     get fillStyle() {
       return fillStyle;
     },
     set fillStyle(v: string) {
       fillStyle = v;
-      calls.push({ op: "setFillStyle", args: [v] });
+      calls.push({ op: 'setFillStyle', args: [v] });
     },
   };
   const ops = [
-    "fillRect", "drawImage", "save", "restore", "translate", "rotate", "scale",
-    "beginPath", "rect", "roundRect", "closePath", "clip", "moveTo", "lineTo",
-    "stroke", "fill", "setLineDash",
+    'fillRect',
+    'drawImage',
+    'save',
+    'restore',
+    'translate',
+    'rotate',
+    'scale',
+    'beginPath',
+    'rect',
+    'roundRect',
+    'closePath',
+    'clip',
+    'moveTo',
+    'lineTo',
+    'stroke',
+    'fill',
+    'setLineDash',
   ];
   for (const op of ops) {
     ctx[op] = (...args: unknown[]) => {
@@ -55,12 +71,12 @@ function makeRecordingContext() {
 
 // صورة وهمية تُطلق onload فوراً — loadImage في المسار الاحتياطي تعتمد عليها
 class FakeImage {
-  crossOrigin = "anonymous";
+  crossOrigin = 'anonymous';
   width = 100;
   height = 100;
   onload: (() => void) | null = null;
   onerror: ((e: unknown) => void) | null = null;
-  private _src = "";
+  private _src = '';
   set src(v: string) {
     this._src = v;
     setTimeout(() => this.onload?.(), 0);
@@ -73,8 +89,8 @@ class FakeImage {
 function setLicenseActive() {
   useEditorStore.setState({
     user: {
-      plan: "pro",
-      status: "active",
+      plan: 'pro',
+      status: 'active',
       expiresAt: new Date(Date.now() + 86400000 * 365).toISOString(),
     } as never,
   });
@@ -82,13 +98,13 @@ function setLicenseActive() {
 
 function baseSlot(overrides: Record<string, unknown>): CanvasSlot {
   return {
-    id: "s1",
+    id: 's1',
     cellIndex: 0,
     x: 0,
     y: 0,
     w: 0.5,
     h: 1,
-    imageSrc: "/local-image/s1.png",
+    imageSrc: '/local-image/s1.png',
     zoom: 1,
     dragX: 0,
     dragY: 0,
@@ -101,10 +117,10 @@ function baseSlot(overrides: Record<string, unknown>): CanvasSlot {
 
 function setupCollageState(slots: CanvasSlot[]) {
   useEditorStore.setState({
-    mode: "collage",
+    mode: 'collage',
     canvasWidth: CANVAS_W,
     canvasHeight: CANVAS_H,
-    backgroundColor: "#ffffff",
+    backgroundColor: '#ffffff',
     elements: [],
     slots,
     collageMargin: 100,
@@ -113,7 +129,7 @@ function setupCollageState(slots: CanvasSlot[]) {
     collageShowCutLines: true,
     collageShowEndCutLine: true,
     collageStrokeWidth: 0,
-    collageStrokeColor: "#000000",
+    collageStrokeColor: '#000000',
     collageTemplate: null,
   } as never);
 }
@@ -123,8 +139,8 @@ function recordedCutLineSegments(calls: DrawCall[]) {
   const segments: Array<[number, number, number, number]> = [];
   let start: [number, number] | null = null;
   for (const c of calls) {
-    if (c.op === "moveTo") start = [c.args[0] as number, c.args[1] as number];
-    else if (c.op === "lineTo" && start) {
+    if (c.op === 'moveTo') start = [c.args[0] as number, c.args[1] as number];
+    else if (c.op === 'lineTo' && start) {
       segments.push([start[0], start[1], c.args[0] as number, c.args[1] as number]);
       start = null;
     }
@@ -135,7 +151,7 @@ function recordedCutLineSegments(calls: DrawCall[]) {
 // مقاطع خطوط القص المتوقعة من المصدر المشترك بعد تقريب الرسم إلى بكسل صحيح
 function expectedCutLineSegments(slots: CanvasSlot[]) {
   return calculatePrintCutLines({
-    mode: "collage",
+    mode: 'collage',
     actualCopies: 1,
     imageWidthMM: CANVAS_W,
     imageHeightMM: CANVAS_H,
@@ -162,16 +178,16 @@ function expectedCutLineSegments(slots: CanvasSlot[]) {
   }).map((l) => [Math.round(l.x1), Math.round(l.y1), Math.round(l.x2), Math.round(l.y2)]);
 }
 
-describe("export-image manual fallback — golden tests", () => {
+describe('export-image manual fallback — golden tests', () => {
   let calls: DrawCall[];
 
   beforeEach(() => {
     useEditorStore.getState().reset();
     setLicenseActive();
     vi.clearAllMocks();
-    vi.stubGlobal("Image", FakeImage);
+    vi.stubGlobal('Image', FakeImage);
     HTMLCanvasElement.prototype.toBlob = function (cb: any, type?: string) {
-      cb(new Blob(["mock-image-data"], { type: type || "image/png" }));
+      cb(new Blob(['mock-image-data'], { type: type || 'image/png' }));
     };
   });
 
@@ -187,29 +203,29 @@ describe("export-image manual fallback — golden tests", () => {
     calls = recorder.calls;
   }
 
-  it("golden: slot rects and cut lines are bit-identical to shared print math", async () => {
+  it('golden: slot rects and cut lines are bit-identical to shared print math', async () => {
     const slots = [
-      baseSlot({ id: "s1", x: 0, y: 0, w: 0.5, h: 1 }),
-      baseSlot({ id: "s2", x: 0.5, y: 0, w: 0.5, h: 1 }),
+      baseSlot({ id: 's1', x: 0, y: 0, w: 0.5, h: 1 }),
+      baseSlot({ id: 's2', x: 0.5, y: 0, w: 0.5, h: 1 }),
     ];
     setupCollageState(slots);
     recordContext();
 
-    const blob = await exportCanvas("png", 0.95, null);
+    const blob = await exportCanvas('png', 0.95, null);
     expect(blob).not.toBeNull();
 
     // خلفية الورقة البيضاء تغطي الكانفاس كاملاً
-    expect(calls.find((c) => c.op === "fillRect")).toEqual({
-      op: "fillRect",
+    expect(calls.find((c) => c.op === 'fillRect')).toEqual({
+      op: 'fillRect',
       args: [0, 0, CANVAS_W, CANVAS_H],
     });
 
     const translates = calls
-      .filter((c) => c.op === "translate")
+      .filter((c) => c.op === 'translate')
       .map((c) => [c.args[0], c.args[1]] as number[])
       // drawSlotImage تصدر ترجمتين لكل خانة: مركز الصندوق ثم العودة للأصل
       .filter((_, i) => i % 2 === 0);
-    const drawImages = calls.filter((c) => c.op === "drawImage");
+    const drawImages = calls.filter((c) => c.op === 'drawImage');
 
     // كل خانة مرسومة مرة واحدة (صورة + قص)
     expect(drawImages).toHaveLength(2);
@@ -221,7 +237,7 @@ describe("export-image manual fallback — golden tests", () => {
         { x: s.x, y: s.y, w: s.w, h: s.h },
         { widthMM: CANVAS_W, heightMM: CANVAS_H },
         { marginXMM: 100, marginYMM: 100 },
-        { gapXMM: 50, gapYMM: 50 }
+        { gapXMM: 50, gapYMM: 50 },
       );
       return [r.xMM + r.wMM / 2, r.yMM + r.hMM / 2];
     });
@@ -231,21 +247,21 @@ describe("export-image manual fallback — golden tests", () => {
     expect(recordedCutLineSegments(calls)).toEqual(expectedCutLineSegments(slots));
   });
 
-  it("golden: hard-coded positions for a fixed 2-slot scenario", async () => {
+  it('golden: hard-coded positions for a fixed 2-slot scenario', async () => {
     const slots = [
-      baseSlot({ id: "s1", x: 0, y: 0, w: 0.5, h: 1 }),
-      baseSlot({ id: "s2", x: 0.5, y: 0, w: 0.5, h: 1 }),
+      baseSlot({ id: 's1', x: 0, y: 0, w: 0.5, h: 1 }),
+      baseSlot({ id: 's2', x: 0.5, y: 0, w: 0.5, h: 1 }),
     ];
     setupCollageState(slots);
     recordContext();
 
-    await exportCanvas("png", 0.95, null);
+    await exportCanvas('png', 0.95, null);
 
     // قيم محسوبة يدوياً: margin 100، gap 50، canvas 2480×3508
     // s1: left = 100 + 0×2280 + 25 = 125، width = 0.5×2280 − 50 = 1090
     // s2: left = 100 + 0.5×2280 + 25 = 1265
     const translates = calls
-      .filter((c) => c.op === "translate")
+      .filter((c) => c.op === 'translate')
       .map((c) => [c.args[0], c.args[1]] as number[])
       .filter((_, i) => i % 2 === 0);
     expect(translates).toEqual([
@@ -264,14 +280,11 @@ describe("export-image manual fallback — golden tests", () => {
 
     // التجميع الدفعي: فئة واحدة لكل نوع خط — setStrokeStyle مرتين فقط
     // (خطوط القص العادية دفعة، ثم خط النهاية الأزرق دفعة)
-    const strokeStyles = calls.filter((c) => c.op === "setStrokeStyle");
-    expect(strokeStyles.map((c) => c.args[0])).toEqual([
-      collageCut(),
-      collageEndCut(),
-    ]);
+    const strokeStyles = calls.filter((c) => c.op === 'setStrokeStyle');
+    expect(strokeStyles.map((c) => c.args[0])).toEqual([collageCut(), collageEndCut()]);
   });
 
-  it("drawSlotImage handles 90 and 270 degree rotations with inverted slotAspect", () => {
+  it('drawSlotImage handles 90 and 270 degree rotations with inverted slotAspect', () => {
     const { ctx, calls } = makeRecordingContext();
     const fakeImg = { width: 400, height: 200 } as unknown as HTMLImageElement;
 
@@ -279,7 +292,7 @@ describe("export-image manual fallback — golden tests", () => {
     // imgAspect is 400/200 = 2. Since imgAspect == slotAspect, sw = 400, sh = 200, defaultSx = 0, defaultSy = 0
     drawSlotImage(ctx, fakeImg, 10, 20, 100, 200, { rotation: 90 });
 
-    const drawImgCall = calls.find((c) => c.op === "drawImage");
+    const drawImgCall = calls.find((c) => c.op === 'drawImage');
     expect(drawImgCall).toBeDefined();
     // args: [img, sx, sy, sw, sh, dx, dy, dw, dh]
     expect(drawImgCall?.args[1]).toBe(0); // sx

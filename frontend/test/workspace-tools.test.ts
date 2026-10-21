@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+
+import { useEditorStore } from '../src/lib/editor-store';
 import {
   COLLAGE_TOOLS,
   STUDIO_TOOLS,
@@ -19,7 +21,6 @@ import {
   toolShortcut,
   type WorkspaceTool,
 } from '../src/lib/workspace-tools';
-import { useEditorStore } from '../src/lib/editor-store';
 
 describe('سجل أدوات الشريط الجانبي', () => {
   it('يحتفظ بمعرّفات فريدة في كل وضع', () => {

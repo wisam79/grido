@@ -1,4 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -6,7 +9,6 @@ import {
   DialogTitle,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
 import {
   Sparkle,
@@ -17,13 +19,14 @@ import {
   Globe,
   Tag,
 } from '@/components/ui/icons';
-import { toast } from 'sonner';
-import { CheckForUpdate, DownloadAndInstallUpdate } from '../../../../wailsjs/go/main/App';
-import { service } from '../../../../wailsjs/go/models';
-import { EventsOn, BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
-import { toErrorMessage } from '@/lib/wails-error';
-import { createLogger } from '@/lib/logger';
 import { flushAutoSave } from '@/hooks/use-autosave';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+import { CheckForUpdate, DownloadAndInstallUpdate } from '../../../../wailsjs/go/main/App';
+import { EventsOn, BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
+
+import type { service } from '../../../../wailsjs/go/models';
 
 const logger = createLogger('update-notifier');
 

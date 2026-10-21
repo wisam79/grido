@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
 import { toast } from 'sonner';
-import { CollageTemplate } from '@/lib/templates';
+import { useShallow } from 'zustand/react/shallow';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,22 +12,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { CaretLeft, CaretRight } from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+import { getCollageTool, getStudioTool } from '@/lib/workspace-tools';
+
+import { CustomCollageCard } from './custom-collage-card';
+import { FreeformStudioPanel } from './freeform';
+import { PanelShell } from './panel-shell';
 import {
   GetCustomTemplates,
   SaveCustomTemplate,
   DeleteCustomTemplate,
 } from '../../../../wailsjs/go/main/App';
+
 import type { NormalizedCell } from './collage/collage-grid-math';
-import { toErrorMessage } from '@/lib/wails-error';
-import { createLogger } from '@/lib/logger';
-import { CustomCollageCard } from './custom-collage-card';
-import { PanelShell } from './panel-shell';
-import { CaretLeft, CaretRight } from '@/components/ui/icons';
-import { getCollageTool, getStudioTool } from '@/lib/workspace-tools';
-import { useShallow } from 'zustand/react/shallow';
-import { FreeformStudioPanel } from './freeform';
 import type { FreeformTab } from './freeform/freeform-panel-constants';
 import type { CollageTab } from '@/hooks/use-workspace-panels';
+import type { CollageTemplate } from '@/lib/templates';
 
 const logger = createLogger('template-panel');
 

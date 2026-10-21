@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
 import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import { Button } from '@/components/ui/button';
 import {
   ArrowsDownUp,
   ArrowsClockwise,
@@ -12,16 +15,8 @@ import {
   FrameCorners,
 } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
-import { useShallow } from 'zustand/react/shallow';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import {
-  buildPhysicalGridCells,
-  buildStretchGridCells,
-  getPhotoDimensions,
-  resolveEffectiveDpi,
-} from './collage-grid-math';
-import type { GridAlignment, PhotoGridType } from './collage-grid-math';
+
 import {
   collectFilled,
   isSrc,
@@ -32,6 +27,14 @@ import {
   transposeIndexMap,
   type SrcMatrix,
 } from './collage-arrange-ops';
+import {
+  buildPhysicalGridCells,
+  buildStretchGridCells,
+  getPhotoDimensions,
+  resolveEffectiveDpi,
+} from './collage-grid-math';
+
+import type { GridAlignment, PhotoGridType } from './collage-grid-math';
 
 /* ═══════════════════════════════════════════════════════════════
    فرز وترتيب الخانات — إعادة ترتيب الصور داخل الشبكة القائمة
@@ -135,7 +138,7 @@ export function CollageArrangeTab() {
    * يطبّق ترتيباً جديداً للصور عبر مصفوفة الخانات.
    * تتخطّى الخطوات التي لا تغيّر شيئاً فلا يمتلئ سجل التراجع بنقلات فارغة.
    */
-  const applyMatrix = (nextSrc: SrcMatrix, label: string) => {
+  const applyMatrix = (nextSrc: SrcMatrix, _label: string) => {
     const current = currentSrcMatrix();
     if (srcMatricesEqual(current, nextSrc)) {
       return;

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import {
   newSlotId,
   snapToGrid,
@@ -13,6 +14,7 @@ import {
   parseLayoutFile,
   exportLayoutFile,
 } from '../src/features/freeform-collage/lib/slots';
+
 import type { FreeformSlot, FreeformLayoutFile } from '../src/features/freeform-collage/types';
 
 const slot = (over: Partial<FreeformSlot> = {}): FreeformSlot => ({

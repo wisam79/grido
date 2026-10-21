@@ -1,6 +1,13 @@
 import React from 'react';
-import { useEditorStore } from '@/lib/editor-store';
-import { Separator } from '@/components/ui/separator';
+
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import {
   TextT,
   CaretDown,
@@ -19,14 +26,8 @@ import {
   Note,
   type Icon,
 } from '@/components/ui/icons';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
-import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
-import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { useEditorStore } from '@/lib/editor-store';
 import {
   TEXT_PRESET_CATALOG,
   type TextPresetMenuGroup,

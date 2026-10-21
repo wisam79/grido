@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
+
 import { buildSingleComposition } from '../src/lib/print/single-print-composition';
+
 import type { ImageElement } from '../src/lib/store/types';
 
 const base = {

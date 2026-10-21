@@ -1,31 +1,45 @@
-import { StickerTemplate } from "../types";
-import { escapeXml } from "../lib/svg-rasterizer";
+import { escapeXml } from '../lib/svg-rasterizer';
+
+import type { StickerTemplate } from '../types';
 
 export const FRAME_TEMPLATES: StickerTemplate[] = [
   {
-    id: "frame_royal_certificate",
-    name: "إطار الشهادات الملكي",
-    nameEn: "Royal Certificate Frame",
-    category: "frames",
-    shape: "rect",
-    description: "إطار ذهبي رسمي فخم للشهادات والوثائق التقديرية مع نقوش وزوايا ملكية",
+    id: 'frame_royal_certificate',
+    name: 'إطار الشهادات الملكي',
+    nameEn: 'Royal Certificate Frame',
+    category: 'frames',
+    shape: 'rect',
+    description: 'إطار ذهبي رسمي فخم للشهادات والوثائق التقديرية مع نقوش وزوايا ملكية',
     defaultWidth: 600,
     defaultHeight: 450,
     aspectRatio: 600 / 450,
     defaultMm: { width: 150, height: 112 },
     defaultColors: {
-      primary: "#D97706",
-      secondary: "#78350F",
-      background: "#FFFBEB",
+      primary: '#D97706',
+      secondary: '#78350F',
+      background: '#FFFBEB',
     },
     fields: [
-      { id: "headerText", label: "عنوان الإطار / الشهادة", type: "text", defaultValue: "شهادة شكر وتقدير" },
-      { id: "footerText", label: "النص السفلي", type: "text", defaultValue: "معتمد وموثق رسمي" },
+      {
+        id: 'headerText',
+        label: 'عنوان الإطار / الشهادة',
+        type: 'text',
+        defaultValue: 'شهادة شكر وتقدير',
+      },
+      { id: 'footerText', label: 'النص السفلي', type: 'text', defaultValue: 'معتمد وموثق رسمي' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const header = escapeXml(fields.headerText || "");
-      const footer = escapeXml(fields.footerText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const header = escapeXml(fields.headerText || '');
+      const footer = escapeXml(fields.footerText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450">
@@ -90,29 +104,42 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_vintage_victorian",
-    name: "إطار فيكتوري عتيق",
-    nameEn: "Victorian Vintage Frame",
-    category: "frames",
-    shape: "rect",
-    description: "إطار كلاسيكي عتيق بنقوش فيليجري متناظرة للصور التذكارية والبورتريه",
+    id: 'frame_vintage_victorian',
+    name: 'إطار فيكتوري عتيق',
+    nameEn: 'Victorian Vintage Frame',
+    category: 'frames',
+    shape: 'rect',
+    description: 'إطار كلاسيكي عتيق بنقوش فيليجري متناظرة للصور التذكارية والبورتريه',
     defaultWidth: 500,
     defaultHeight: 650,
     aspectRatio: 500 / 650,
     defaultMm: { width: 100, height: 130 },
     defaultColors: {
-      primary: "#78350F",
-      secondary: "#B45309",
-      background: "#FFFDF7",
+      primary: '#78350F',
+      secondary: '#B45309',
+      background: '#FFFDF7',
     },
     fields: [
-      { id: "titleText", label: "عنوان اللوحة", type: "text", defaultValue: "ذكريات أصيلة" },
-      { id: "subtitleText", label: "النص الفرعي", type: "text", defaultValue: "VINTAGE COLLECTION" },
+      { id: 'titleText', label: 'عنوان اللوحة', type: 'text', defaultValue: 'ذكريات أصيلة' },
+      {
+        id: 'subtitleText',
+        label: 'النص الفرعي',
+        type: 'text',
+        defaultValue: 'VINTAGE COLLECTION',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.titleText || "");
-      const sub = escapeXml(fields.subtitleText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.titleText || '');
+      const sub = escapeXml(fields.subtitleText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 650" width="500" height="650">
@@ -147,29 +174,42 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_islamic_arabesque",
-    name: "إطار أرابيسك إسلامي",
-    nameEn: "Islamic Arabesque Frame",
-    category: "frames",
-    shape: "square",
-    description: "إطار تراثي إسلامي بنجوم ثمانية هندسية وزخارف زاوية بديعة",
+    id: 'frame_islamic_arabesque',
+    name: 'إطار أرابيسك إسلامي',
+    nameEn: 'Islamic Arabesque Frame',
+    category: 'frames',
+    shape: 'square',
+    description: 'إطار تراثي إسلامي بنجوم ثمانية هندسية وزخارف زاوية بديعة',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
     defaultColors: {
-      primary: "#047857",
-      secondary: "#D97706",
-      background: "#F0FDF4",
+      primary: '#047857',
+      secondary: '#D97706',
+      background: '#F0FDF4',
     },
     fields: [
-      { id: "topBar", label: "العبارة العلوية", type: "text", defaultValue: "بسم الله الرحمن الرحيم" },
-      { id: "bottomBar", label: "العبارة السفلية", type: "text", defaultValue: "بارك الله لكم" },
+      {
+        id: 'topBar',
+        label: 'العبارة العلوية',
+        type: 'text',
+        defaultValue: 'بسم الله الرحمن الرحيم',
+      },
+      { id: 'bottomBar', label: 'العبارة السفلية', type: 'text', defaultValue: 'بارك الله لكم' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topBar || "");
-      const btm = escapeXml(fields.bottomBar || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topBar || '');
+      const btm = escapeXml(fields.bottomBar || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
@@ -212,29 +252,42 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_modern_minimal_corners",
-    name: "إطار ستوديو مينيمال",
-    nameEn: "Modern Studio Minimal Frame",
-    category: "frames",
-    shape: "rect",
-    description: "إطار عصري أنيق بخطوط رفيعة وزوايا L هندسية متداخلة للتصاميم المعاصرة",
+    id: 'frame_modern_minimal_corners',
+    name: 'إطار ستوديو مينيمال',
+    nameEn: 'Modern Studio Minimal Frame',
+    category: 'frames',
+    shape: 'rect',
+    description: 'إطار عصري أنيق بخطوط رفيعة وزوايا L هندسية متداخلة للتصاميم المعاصرة',
     defaultWidth: 500,
     defaultHeight: 600,
     aspectRatio: 500 / 600,
     defaultMm: { width: 100, height: 120 },
     defaultColors: {
-      primary: "#0F172A",
-      secondary: "#64748B",
-      background: "#FFFFFF",
+      primary: '#0F172A',
+      secondary: '#64748B',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "studioName", label: "اسم الاستوديو", type: "text", defaultValue: "GRIDO STUDIO" },
-      { id: "collection", label: "المجموعة / الأرشيف", type: "text", defaultValue: "ARCHIVE // 2026" },
+      { id: 'studioName', label: 'اسم الاستوديو', type: 'text', defaultValue: 'GRIDO STUDIO' },
+      {
+        id: 'collection',
+        label: 'المجموعة / الأرشيف',
+        type: 'text',
+        defaultValue: 'ARCHIVE // 2026',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const studio = escapeXml(fields.studioName || "STUDIO");
-      const col = escapeXml(fields.collection || "COLLECTION");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const studio = escapeXml(fields.studioName || 'STUDIO');
+      const col = escapeXml(fields.collection || 'COLLECTION');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 600" width="500" height="600">
@@ -264,29 +317,37 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_floral_botanical",
-    name: "إطار أزهار ونباتات ناعم",
-    nameEn: "Botanical Floral Frame",
-    category: "frames",
-    shape: "rect",
-    description: "إطار أزهار وأوراق شجر رقيقة لمناسبات الزفاف والمواليد والبطاقات",
+    id: 'frame_floral_botanical',
+    name: 'إطار أزهار ونباتات ناعم',
+    nameEn: 'Botanical Floral Frame',
+    category: 'frames',
+    shape: 'rect',
+    description: 'إطار أزهار وأوراق شجر رقيقة لمناسبات الزفاف والمواليد والبطاقات',
     defaultWidth: 500,
     defaultHeight: 650,
     aspectRatio: 500 / 650,
     defaultMm: { width: 100, height: 130 },
     defaultColors: {
-      primary: "#BE185D",
-      secondary: "#047857",
-      background: "#FFF1F2",
+      primary: '#BE185D',
+      secondary: '#047857',
+      background: '#FFF1F2',
     },
     fields: [
-      { id: "topText", label: "العبارة العلوية", type: "text", defaultValue: "أجمل اللحظات" },
-      { id: "dateText", label: "التاريخ أو المناسبة", type: "text", defaultValue: "SAVE THE DATE" },
+      { id: 'topText', label: 'العبارة العلوية', type: 'text', defaultValue: 'أجمل اللحظات' },
+      { id: 'dateText', label: 'التاريخ أو المناسبة', type: 'text', defaultValue: 'SAVE THE DATE' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topText || "");
-      const date = escapeXml(fields.dateText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topText || '');
+      const date = escapeXml(fields.dateText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 650" width="500" height="650">
@@ -327,29 +388,42 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_polaroid_retro",
-    name: "إطار بولارويد كلاسيكي",
-    nameEn: "Retro Polaroid Frame",
-    category: "frames",
-    shape: "rect",
-    description: "إطار صور بولارويد الفورية الكلاسيكي مع مساحة للتعليق اليدوي وتاريخ الصورة",
+    id: 'frame_polaroid_retro',
+    name: 'إطار بولارويد كلاسيكي',
+    nameEn: 'Retro Polaroid Frame',
+    category: 'frames',
+    shape: 'rect',
+    description: 'إطار صور بولارويد الفورية الكلاسيكي مع مساحة للتعليق اليدوي وتاريخ الصورة',
     defaultWidth: 460,
     defaultHeight: 560,
     aspectRatio: 460 / 560,
     defaultMm: { width: 92, height: 112 },
     defaultColors: {
-      primary: "#1E293B",
-      secondary: "#94A3B8",
-      background: "#FFFFFF",
+      primary: '#1E293B',
+      secondary: '#94A3B8',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "caption", label: "التعليق المكتوب", type: "text", defaultValue: "ذكريات جميلة لا تُنسى ♡" },
-      { id: "dateText", label: "تاريخ الالتقاط", type: "text", defaultValue: "2026.09.14" },
+      {
+        id: 'caption',
+        label: 'التعليق المكتوب',
+        type: 'text',
+        defaultValue: 'ذكريات جميلة لا تُنسى ♡',
+      },
+      { id: 'dateText', label: 'تاريخ الالتقاط', type: 'text', defaultValue: '2026.09.14' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const caption = escapeXml(fields.caption || "");
-      const date = escapeXml(fields.dateText || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const caption = escapeXml(fields.caption || '');
+      const date = escapeXml(fields.dateText || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 560" width="460" height="560">
@@ -378,29 +452,42 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_serrated_postage_stamp",
-    name: "إطار طابع بريدي مسنن",
-    nameEn: "Postage Stamp Frame",
-    category: "frames",
-    shape: "square",
-    description: "إطار طابع بريدي مسنن الحواف للصور التذكارية والمراسلات الفاخرة",
+    id: 'frame_serrated_postage_stamp',
+    name: 'إطار طابع بريدي مسنن',
+    nameEn: 'Postage Stamp Frame',
+    category: 'frames',
+    shape: 'square',
+    description: 'إطار طابع بريدي مسنن الحواف للصور التذكارية والمراسلات الفاخرة',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
     defaultColors: {
-      primary: "#B91C1C",
-      secondary: "#1E3A8A",
-      background: "#FFFBEB",
+      primary: '#B91C1C',
+      secondary: '#1E3A8A',
+      background: '#FFFBEB',
     },
     fields: [
-      { id: "postTitle", label: "عنوان الطابع", type: "text", defaultValue: "POSTAGE • طابع تذكاري" },
-      { id: "priceTag", label: "القيمة الاسمية", type: "text", defaultValue: "250 د.ع" },
+      {
+        id: 'postTitle',
+        label: 'عنوان الطابع',
+        type: 'text',
+        defaultValue: 'POSTAGE • طابع تذكاري',
+      },
+      { id: 'priceTag', label: 'القيمة الاسمية', type: 'text', defaultValue: '250 د.ع' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.postTitle || "");
-      const price = escapeXml(fields.priceTag || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.postTitle || '');
+      const price = escapeXml(fields.priceTag || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       // Scalloped perforated border points
@@ -411,7 +498,7 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
       const offY = 20;
       const holeR = 6;
 
-      let holes = "";
+      let holes = '';
       for (let i = 1; i < n; i++) {
         const x = offX + (w * i) / n;
         holes += `<circle cx="${x}" cy="${offY}" r="${holeR}" fill="#ffffff"/>`;
@@ -442,29 +529,37 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_art_deco_luxury",
-    name: "إطار آرت ديكو ذهبي",
-    nameEn: "Art Deco Luxury Frame",
-    category: "frames",
-    shape: "rect",
-    description: "إطار آرت ديكو هندسي راقٍ بزوايا متدرجة وخطوط متوازية للتصاميم الفاخرة",
+    id: 'frame_art_deco_luxury',
+    name: 'إطار آرت ديكو ذهبي',
+    nameEn: 'Art Deco Luxury Frame',
+    category: 'frames',
+    shape: 'rect',
+    description: 'إطار آرت ديكو هندسي راقٍ بزوايا متدرجة وخطوط متوازية للتصاميم الفاخرة',
     defaultWidth: 500,
     defaultHeight: 650,
     aspectRatio: 500 / 650,
     defaultMm: { width: 100, height: 130 },
     defaultColors: {
-      primary: "#CA8A04",
-      secondary: "#18181B",
-      background: "#09090B",
+      primary: '#CA8A04',
+      secondary: '#18181B',
+      background: '#09090B',
     },
     fields: [
-      { id: "topLabel", label: "الشارة العليا", type: "text", defaultValue: "EXCELLENCE & LUXURY" },
-      { id: "bottomLabel", label: "الشارة السفلى", type: "text", defaultValue: "VIP EDITION" },
+      { id: 'topLabel', label: 'الشارة العليا', type: 'text', defaultValue: 'EXCELLENCE & LUXURY' },
+      { id: 'bottomLabel', label: 'الشارة السفلى', type: 'text', defaultValue: 'VIP EDITION' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topLabel || "");
-      const btm = escapeXml(fields.bottomLabel || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor: _secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topLabel || '');
+      const btm = escapeXml(fields.bottomLabel || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 650" width="500" height="650">
@@ -501,32 +596,40 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_cyber_neon_glow",
-    name: "إطار سايبر نيون تقني",
-    nameEn: "Cyber Neon Tech Frame",
-    category: "frames",
-    shape: "rect",
-    description: "إطار تكنولوجي عصري بزوايا مقطوعة ومؤشرات رقمية متوهجة",
+    id: 'frame_cyber_neon_glow',
+    name: 'إطار سايبر نيون تقني',
+    nameEn: 'Cyber Neon Tech Frame',
+    category: 'frames',
+    shape: 'rect',
+    description: 'إطار تكنولوجي عصري بزوايا مقطوعة ومؤشرات رقمية متوهجة',
     defaultWidth: 500,
     defaultHeight: 600,
     aspectRatio: 500 / 600,
     defaultMm: { width: 100, height: 120 },
     defaultColors: {
-      primary: "#06B6D4",
-      secondary: "#A855F7",
-      background: "#0F172A",
+      primary: '#06B6D4',
+      secondary: '#A855F7',
+      background: '#0F172A',
     },
     fields: [
-      { id: "hudTitle", label: "عنوان النظام", type: "text", defaultValue: "SYSTEM // ONLINE" },
-      { id: "tag", label: "الوسم التقني", type: "text", defaultValue: "ID: #2026-X" },
+      { id: 'hudTitle', label: 'عنوان النظام', type: 'text', defaultValue: 'SYSTEM // ONLINE' },
+      { id: 'tag', label: 'الوسم التقني', type: 'text', defaultValue: 'ID: #2026-X' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.hudTitle || "");
-      const tag = escapeXml(fields.tag || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.hudTitle || '');
+      const tag = escapeXml(fields.tag || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
-      const p = "M 40,15 L 460,15 L 485,40 L 485,560 L 460,585 L 40,585 L 15,560 L 15,40 Z";
+      const p = 'M 40,15 L 460,15 L 485,40 L 485,560 L 460,585 L 40,585 L 15,560 L 15,40 Z';
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 600" width="500" height="600">
   <defs>
@@ -560,29 +663,42 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_double_gold_filigree",
-    name: "إطار تكريم وفيليجري ملكي",
-    nameEn: "Double Gold Filigree Frame",
-    category: "frames",
-    shape: "rect",
-    description: "إطار شرفي فاخر مزدوج بزوايا فيليجري متموجة للشهادات والتكريمات الكبرى",
+    id: 'frame_double_gold_filigree',
+    name: 'إطار تكريم وفيليجري ملكي',
+    nameEn: 'Double Gold Filigree Frame',
+    category: 'frames',
+    shape: 'rect',
+    description: 'إطار شرفي فاخر مزدوج بزوايا فيليجري متموجة للشهادات والتكريمات الكبرى',
     defaultWidth: 600,
     defaultHeight: 480,
     aspectRatio: 600 / 480,
     defaultMm: { width: 150, height: 120 },
     defaultColors: {
-      primary: "#D97706",
-      secondary: "#92400E",
-      background: "#FFFDF5",
+      primary: '#D97706',
+      secondary: '#92400E',
+      background: '#FFFDF5',
     },
     fields: [
-      { id: "header", label: "عنوان التكريم", type: "text", defaultValue: "وسام الإبداع والتميز" },
-      { id: "award", label: "الدرجة أو المرتبة", type: "text", defaultValue: "المرتبة الأولى ★★★★★" },
+      { id: 'header', label: 'عنوان التكريم', type: 'text', defaultValue: 'وسام الإبداع والتميز' },
+      {
+        id: 'award',
+        label: 'الدرجة أو المرتبة',
+        type: 'text',
+        defaultValue: 'المرتبة الأولى ★★★★★',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const header = escapeXml(fields.header || "");
-      const award = escapeXml(fields.award || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const header = escapeXml(fields.header || '');
+      const award = escapeXml(fields.award || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 480" width="600" height="480">
@@ -627,29 +743,47 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_diploma_scroll",
-    name: "إطار شهادة الدبلوم والوثيقة الأكاديمية",
-    nameEn: "Academic Diploma Scroll Frame",
-    category: "frames",
-    shape: "rect",
-    description: "إطار تخرج وشهادات أكاديمية مع نقوش أركان يونانية مذهبة وتسمية جامعية",
+    id: 'frame_diploma_scroll',
+    name: 'إطار شهادة الدبلوم والوثيقة الأكاديمية',
+    nameEn: 'Academic Diploma Scroll Frame',
+    category: 'frames',
+    shape: 'rect',
+    description: 'إطار تخرج وشهادات أكاديمية مع نقوش أركان يونانية مذهبة وتسمية جامعية',
     defaultWidth: 600,
     defaultHeight: 450,
     aspectRatio: 600 / 450,
     defaultMm: { width: 150, height: 112 },
     defaultColors: {
-      primary: "#1E3A8A",
-      secondary: "#B45309",
-      background: "#FFFDF5",
+      primary: '#1E3A8A',
+      secondary: '#B45309',
+      background: '#FFFDF5',
     },
     fields: [
-      { id: "title", label: "عنوان الوثيقة", type: "text", defaultValue: "وثيقة تخرج جامعية معتمدة" },
-      { id: "institution", label: "اسم الجامعة / المؤسسة", type: "text", defaultValue: "جامعة الرافدين الأكاديمية" },
+      {
+        id: 'title',
+        label: 'عنوان الوثيقة',
+        type: 'text',
+        defaultValue: 'وثيقة تخرج جامعية معتمدة',
+      },
+      {
+        id: 'institution',
+        label: 'اسم الجامعة / المؤسسة',
+        type: 'text',
+        defaultValue: 'جامعة الرافدين الأكاديمية',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.title || "");
-      const inst = escapeXml(fields.institution || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.title || '');
+      const inst = escapeXml(fields.institution || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450">
@@ -698,28 +832,36 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_baroque_ornate",
-    name: "إطار الباروك الأوروبي العتيق",
-    nameEn: "Baroque Ornate Vintage Frame",
-    category: "frames",
-    shape: "square",
-    description: "إطار فني كلاسيكي مذهب ومستوحى من قصور الباروك للوحات الفنية والصور التذكارية",
+    id: 'frame_baroque_ornate',
+    name: 'إطار الباروك الأوروبي العتيق',
+    nameEn: 'Baroque Ornate Vintage Frame',
+    category: 'frames',
+    shape: 'square',
+    description: 'إطار فني كلاسيكي مذهب ومستوحى من قصور الباروك للوحات الفنية والصور التذكارية',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#B45309",
-      secondary: "#78350F",
-      background: "#FFFBEB",
+      primary: '#B45309',
+      secondary: '#78350F',
+      background: '#FFFBEB',
     },
     fields: [
-      { id: "header", label: "عنوان اللوحة", type: "text", defaultValue: "لوحة تذكارية تراثية" },
-      { id: "sub", label: "الوصف الفني", type: "text", defaultValue: "فن وأصالة عريقة" },
+      { id: 'header', label: 'عنوان اللوحة', type: 'text', defaultValue: 'لوحة تذكارية تراثية' },
+      { id: 'sub', label: 'الوصف الفني', type: 'text', defaultValue: 'فن وأصالة عريقة' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const header = escapeXml(fields.header || "");
-      const sub = escapeXml(fields.sub || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const header = escapeXml(fields.header || '');
+      const sub = escapeXml(fields.sub || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
@@ -764,28 +906,37 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_wooden_rustic",
-    name: "إطار الخشب الريفي الطبيعي",
-    nameEn: "Rustic Wooden Craft Frame",
-    category: "frames",
-    shape: "rect",
-    description: "إطار خشبي دافئ للصور العائلية ومطاعم الأكلات التراثية مع محاكاة عقد الخشب الطبيعية",
+    id: 'frame_wooden_rustic',
+    name: 'إطار الخشب الريفي الطبيعي',
+    nameEn: 'Rustic Wooden Craft Frame',
+    category: 'frames',
+    shape: 'rect',
+    description:
+      'إطار خشبي دافئ للصور العائلية ومطاعم الأكلات التراثية مع محاكاة عقد الخشب الطبيعية',
     defaultWidth: 560,
     defaultHeight: 420,
     aspectRatio: 560 / 420,
     defaultColors: {
-      primary: "#78350F",
-      secondary: "#92400E",
-      background: "#FEF3C7",
+      primary: '#78350F',
+      secondary: '#92400E',
+      background: '#FEF3C7',
     },
     fields: [
-      { id: "label", label: "عنوان الذكرى", type: "text", defaultValue: "ذكريات دافئة لا تُنسى" },
-      { id: "year", label: "سنة التأسيس / المناسبة", type: "text", defaultValue: "EST. 2026" },
+      { id: 'label', label: 'عنوان الذكرى', type: 'text', defaultValue: 'ذكريات دافئة لا تُنسى' },
+      { id: 'year', label: 'سنة التأسيس / المناسبة', type: 'text', defaultValue: 'EST. 2026' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const label = escapeXml(fields.label || "");
-      const yr = escapeXml(fields.year || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const label = escapeXml(fields.label || '');
+      const yr = escapeXml(fields.year || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 420" width="560" height="420">
@@ -830,28 +981,41 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "frame_hexagonal_geometric",
-    name: "إطار هندسي عصري سداسي",
-    nameEn: "Modern Hexagonal Geometric Frame",
-    category: "frames",
-    shape: "square",
-    description: "إطار هندسي مائل ذو خطوط سداسية وزوايا متداخلة ذهبية للمناسبات العصرية والمصممين",
+    id: 'frame_hexagonal_geometric',
+    name: 'إطار هندسي عصري سداسي',
+    nameEn: 'Modern Hexagonal Geometric Frame',
+    category: 'frames',
+    shape: 'square',
+    description: 'إطار هندسي مائل ذو خطوط سداسية وزوايا متداخلة ذهبية للمناسبات العصرية والمصممين',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#0D9488",
-      secondary: "#115E59",
-      background: "#F0FDFA",
+      primary: '#0D9488',
+      secondary: '#115E59',
+      background: '#F0FDFA',
     },
     fields: [
-      { id: "centerNote", label: "العبارة الإرشادية", type: "text", defaultValue: "لحظات إبداعية مميزة" },
-      { id: "tagline", label: "الشعار السفلي", type: "text", defaultValue: "MODERN GEOMETRIC" },
+      {
+        id: 'centerNote',
+        label: 'العبارة الإرشادية',
+        type: 'text',
+        defaultValue: 'لحظات إبداعية مميزة',
+      },
+      { id: 'tagline', label: 'الشعار السفلي', type: 'text', defaultValue: 'MODERN GEOMETRIC' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const note = escapeXml(fields.centerNote || "");
-      const tag = escapeXml(fields.tagline || "");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const note = escapeXml(fields.centerNote || '');
+      const tag = escapeXml(fields.tagline || '');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
@@ -894,4 +1058,3 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     },
   },
 ];
-

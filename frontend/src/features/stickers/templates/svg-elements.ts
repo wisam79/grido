@@ -9,7 +9,7 @@ export function starPoints(
   spikes: number,
   outerR: number,
   innerR: number,
-  startAngle = -Math.PI / 2
+  startAngle = -Math.PI / 2,
 ): string {
   const pts: string[] = [];
   for (let i = 0; i < spikes * 2; i++) {
@@ -17,7 +17,7 @@ export function starPoints(
     const a = startAngle + (i * Math.PI) / spikes;
     pts.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
   }
-  return pts.join(" ");
+  return pts.join(' ');
 }
 
 export function scallopCirclePath(
@@ -25,7 +25,7 @@ export function scallopCirclePath(
   cy: number,
   r: number,
   bumps: number,
-  bulge = 1.14
+  bulge = 1.14,
 ): string {
   const step = (Math.PI * 2) / bumps;
   const pt = (a: number, rr: number) =>
@@ -36,7 +36,7 @@ export function scallopCirclePath(
     const mid = a0 + step / 2;
     d += ` Q ${pt(mid, r * bulge)} ${pt((i + 1) * step, r)}`;
   }
-  return d + " Z";
+  return d + ' Z';
 }
 
 export function sunRaysPath(
@@ -45,7 +45,7 @@ export function sunRaysPath(
   rInner: number,
   rOuter: number,
   rays: number,
-  angularFill = 0.32
+  angularFill = 0.32,
 ): string {
   const step = (Math.PI * 2) / rays;
   const half = step * angularFill;
@@ -53,7 +53,7 @@ export function sunRaysPath(
     x: cx + r * Math.cos(a),
     y: cy + r * Math.sin(a),
   });
-  let d = "";
+  let d = '';
   for (let i = 0; i < rays; i++) {
     const a = i * step;
     const p1 = polar(a - half, rInner);
@@ -69,14 +69,14 @@ export function regularPolygonPoints(
   cy: number,
   r: number,
   sides: number,
-  rotation = -Math.PI / 2
+  rotation = -Math.PI / 2,
 ): string {
   const pts: string[] = [];
   for (let i = 0; i < sides; i++) {
     const a = rotation + (i * Math.PI * 2) / sides;
     pts.push(`${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`);
   }
-  return pts.join(" ");
+  return pts.join(' ');
 }
 
 export function speechBubblePath(
@@ -86,7 +86,7 @@ export function speechBubblePath(
   h: number,
   r: number,
   tailHeight: number,
-  tailWidth: number
+  tailWidth: number,
 ): string {
   const xa = x + w * 0.2;
   const xb = xa + tailWidth;
@@ -103,8 +103,8 @@ export function speechBubblePath(
     `Q ${x},${y + h} ${x},${y + h - r}`,
     `V ${y + r}`,
     `Q ${x},${y} ${x + r},${y}`,
-    "Z",
-  ].join(" ");
+    'Z',
+  ].join(' ');
 }
 
 export function runningStitchCircle(
@@ -113,7 +113,7 @@ export function runningStitchCircle(
   r: number,
   stroke: string,
   strokeWidth = 3,
-  dash = "10 7"
+  dash = '10 7',
 ): string {
   return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-dasharray="${dash}" stroke-linecap="round"/>`;
 }
@@ -123,7 +123,8 @@ type IconRenderer = (fill: string) => string;
 const ICONS: Record<string, IconRenderer> = {
   heart: (f) =>
     `<path d="M12 21.3l-1.4-1.3C5.4 15.4 2 12.3 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.8-3.4 6.9-8.6 11.5L12 21.3z" fill="${f}"/>`,
-  sparkle: (f) => `<path d="M12 2l2.3 7.7L22 12l-7.7 2.3L12 22l-2.3-7.7L2 12l7.7-2.3z" fill="${f}"/>`,
+  sparkle: (f) =>
+    `<path d="M12 2l2.3 7.7L22 12l-7.7 2.3L12 22l-2.3-7.7L2 12l7.7-2.3z" fill="${f}"/>`,
   star: (f) =>
     `<path d="M12 2.5l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17l-5.7 3 1.2-6.4L2.8 9.2l6.4-.8L12 2.5z" fill="${f}"/>`,
   coffee: (f) =>
@@ -162,20 +163,15 @@ export function iconMarkup(
   y: number,
   size: number,
   fill: string,
-  colorRole?: string
+  colorRole?: string,
 ): string {
   const render = ICONS[name];
-  if (!render) return "";
-  const role = colorRole ? ` data-color-role="${colorRole}"` : "";
+  if (!render) return '';
+  const role = colorRole ? ` data-color-role="${colorRole}"` : '';
   return `<g transform="translate(${x},${y}) scale(${(size / 24).toFixed(3)})"${role}>${render(fill)}</g>`;
 }
 
-export function curvedTextPathDefs(
-  idPrefix: string,
-  cx: number,
-  cy: number,
-  r: number
-): string {
+export function curvedTextPathDefs(idPrefix: string, cx: number, cy: number, r: number): string {
   return (
     `<path id="${idPrefix}-top" d="M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}" fill="none"/>` +
     `<path id="${idPrefix}-bottom" d="M ${cx - r},${cy} A ${r},${r} 0 0,0 ${cx + r},${cy}" fill="none"/>`

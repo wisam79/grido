@@ -1,9 +1,10 @@
-import { PhotoTemplate, CollageTemplate } from '../templates';
-import { ProjectFileV1 } from '../io/project-serializer';
-import type { ShapeFillImageFit } from '../canvas/shape-pattern';
-// import type فقط: النوع يُبعَّد وقت الترجمة فلا تُنشأ حلقة استيراد وقت التشغيل
+// import type فقط: الأنواع تُبعَّد وقت الترجمة فلا تُنشأ حلقة استيراد وقت التشغيل
 // (grid-slice يعتمد بالمثل على أنواع الستور)
+import type { ShapeFillImageFit } from '../canvas/shape-pattern';
+import type { ProjectFileV1 } from '../io/project-serializer';
+import type { PhotoTemplate, CollageTemplate } from '../templates';
 import type { UserGuide } from './slices/grid-slice';
+import type { StickerParams } from '@/features/stickers';
 
 export interface ProjectStateData {
   mode: EditorMode;
@@ -73,7 +74,7 @@ export interface BaseCanvasElement {
 /** مصدر الملصق على العنصر — يسمح بإعادة فتح استوديو الملصقات للتعديل على نفس العنصر */
 export interface StickerElementSource {
   templateId: string;
-  params: import('@/features/stickers').StickerParams;
+  params: StickerParams;
   /** نسخة SVG المتجهة لحظة الإدراج — تصدير متجه لاحقاً بلا إعادة توليد */
   svg?: string;
 }

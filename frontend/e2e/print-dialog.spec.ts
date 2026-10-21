@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
+
 import { setupWailsMock, setupWailsV3Bridge, waitForAppReady } from './helpers/wails-mock';
 
 /**
@@ -16,13 +17,6 @@ const IMAGE_SRC = '/local-image/e2e-print.png';
 const PREF_METHOD = 2929786627; // OpenPrinterPreferences
 const EXPORT_METHOD = 334009393; // ExportPrintSheet
 const DIRECT_METHOD = 1268920029; // PrintDirect
-
-/** إعداد الجسر والملاحة وجاهزية التطبيق. */
-async function bootApp(page: Page) {
-  await setupWailsMock(page);
-  await page.goto('/');
-  await waitForAppReady(page);
-}
 
 /** تمرير مسار لقطة الطباعة المرفوعة (لا Backend في E2E). */
 async function routePrintUpload(page: Page) {

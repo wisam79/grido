@@ -1,0 +1,3 @@
+#!/bin/sh
+# بوابة Conventional Commits — انظر scripts/commit-msg-lint.mjs
+node scripts/commit-msg-lint.mjs "$1"

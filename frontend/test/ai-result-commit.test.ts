@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useEditorStore } from '../src/lib/editor-store';
+
 import { commitAiImageResult, findLiveAiTarget } from '../src/lib/ai/ai-result-commit';
+import { useEditorStore } from '../src/lib/editor-store';
 
 const makeSlot = (over: Record<string, unknown> = {}) => ({
   id: 'slot-1',

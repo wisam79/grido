@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+
 import { getDisplayImage, ensureDisplayProxy, hasDisplayProxy } from '@/lib/canvas/display-image';
 
 /**

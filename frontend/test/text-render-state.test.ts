@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { resolveTextRenderState } from '../src/lib/canvas/text-helpers';
 
 describe('resolveTextRenderState', () => {

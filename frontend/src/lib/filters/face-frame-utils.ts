@@ -11,7 +11,7 @@
  * 4. التوازن البصري لحجم الكتفين وياقة الملابس (Collar & Shoulder Visual Balance).
  */
 
-import { clamp } from "@/lib/clamp";
+import { clamp } from '@/lib/clamp';
 
 export interface DetailedFaceBox {
   /** نقطة منتصف العينين — normalized x */
@@ -60,7 +60,7 @@ function rotatePointPhysical(
   cx: number,
   cy: number,
   angleRad: number,
-  imageAspect: number
+  imageAspect: number,
 ): { x: number; y: number } {
   const physX = x * imageAspect;
   const physCx = cx * imageAspect;
@@ -81,10 +81,10 @@ function rotatePointPhysical(
  */
 export function faceBoxFromLandmarks(
   landmarks: Array<{ x: number; y: number; z?: number }>,
-  imageAspectRatio: number = 1
+  imageAspectRatio: number = 1,
 ): DetailedFaceBox {
   if (!landmarks || landmarks.length < 455) {
-    throw new Error("بيانات وجه غير مكتملة. يلزم وجود نقاط كاشف الوجه الذكي.");
+    throw new Error('بيانات وجه غير مكتملة. يلزم وجود نقاط كاشف الوجه الذكي.');
   }
 
   const aspect = imageAspectRatio > 0 ? imageAspectRatio : 1;
@@ -105,10 +105,38 @@ export function faceBoxFromLandmarks(
   const rollAngle = Math.atan2(dyPhys, dxPhys);
 
   // 3. تدوير النقاط الاستراتيجية في الفضاء الفيزيائي المصحح
-  const chinRotated = rotatePointPhysical(landmarks[152].x, landmarks[152].y, eyeCenterX, eyeCenterY, -rollAngle, aspect);
-  const foreheadRotated = rotatePointPhysical(landmarks[10].x, landmarks[10].y, eyeCenterX, eyeCenterY, -rollAngle, aspect);
-  const leftCheekRotated = rotatePointPhysical(landmarks[234].x, landmarks[234].y, eyeCenterX, eyeCenterY, -rollAngle, aspect);
-  const rightCheekRotated = rotatePointPhysical(landmarks[454].x, landmarks[454].y, eyeCenterX, eyeCenterY, -rollAngle, aspect);
+  const chinRotated = rotatePointPhysical(
+    landmarks[152].x,
+    landmarks[152].y,
+    eyeCenterX,
+    eyeCenterY,
+    -rollAngle,
+    aspect,
+  );
+  const foreheadRotated = rotatePointPhysical(
+    landmarks[10].x,
+    landmarks[10].y,
+    eyeCenterX,
+    eyeCenterY,
+    -rollAngle,
+    aspect,
+  );
+  const leftCheekRotated = rotatePointPhysical(
+    landmarks[234].x,
+    landmarks[234].y,
+    eyeCenterX,
+    eyeCenterY,
+    -rollAngle,
+    aspect,
+  );
+  const rightCheekRotated = rotatePointPhysical(
+    landmarks[454].x,
+    landmarks[454].y,
+    eyeCenterX,
+    eyeCenterY,
+    -rollAngle,
+    aspect,
+  );
 
   // 4. تقدير زاوية التحديق للأعلى/الأسفل (3D Pitch Angle φ)
   const noseBridgeZ = landmarks[6]?.z ?? 0;
@@ -118,7 +146,7 @@ export function faceBoxFromLandmarks(
   // 5. الحساب الأنثروبومتري لارتفاع الجمجمة (Crown-to-Chin)
   const eyeToChinH = chinRotated.y - eyeCenterY;
   if (eyeToChinH <= 0) {
-    throw new Error("بيانات معالم الوجه غير صالحة للحسابات الأنثروبومترية.");
+    throw new Error('بيانات معالم الوجه غير صالحة للحسابات الأنثروبومترية.');
   }
 
   const headHeight = eyeToChinH / 0.505;
@@ -164,10 +192,10 @@ export function faceBoxFromLandmarks(
 export function computeIdCropRect(
   face: DetailedFaceBox,
   targetAspectRatio: number,
-  imageAspectRatio: number = 1
+  imageAspectRatio: number = 1,
 ): NormalizedRect {
   if (!(targetAspectRatio > 0) || !Number.isFinite(targetAspectRatio)) {
-    throw new Error("نسبة أبعاد غير صالحة");
+    throw new Error('نسبة أبعاد غير صالحة');
   }
 
   const imgAspect = imageAspectRatio > 0 ? imageAspectRatio : 1;
@@ -187,12 +215,11 @@ export function computeIdCropRect(
 
   // 1. التكيف مع زاوية النظرة والتحديق (Pitch Angle Compensation)
   const pitchShift = clamp(Math.sin(pitchAngle) * 0.03, -0.02, 0.02);
-  const targetEyeLevel = clamp(ICAO_BASE_EYE_LEVEL + pitchShift, 0.36, 0.40);
+  const targetEyeLevel = clamp(ICAO_BASE_EYE_LEVEL + pitchShift, 0.36, 0.4);
 
   // 2. التمييز الذكي لحجم الشعر/الغطاء العالي
-  const effectiveHairTopY = hairVolumeRatio > 0.15
-    ? skullTopY - 0.65 * (skullTopY - hairTopY)
-    : hairTopY;
+  const effectiveHairTopY =
+    hairVolumeRatio > 0.15 ? skullTopY - 0.65 * (skullTopY - hairTopY) : hairTopY;
 
   // 3. التكيف مع تركيبة الجسم والكتفين بحسب نسبة الوجه
   const adaptiveShoulderRatio = clamp(0.35 + (faceAspectRatio - 0.7) * 0.22, 0.35, 0.42);
@@ -201,8 +228,8 @@ export function computeIdCropRect(
   // 4. حساب ارتفاع القص المباشر بقرار المصور الخبير
   let cropH = Math.max(
     (eyeCenterY - effectiveHairTopY) / (targetEyeLevel - 0.09),
-    totalSpanH / 0.90,
-    1 / MAX_ZOOM
+    totalSpanH / 0.9,
+    1 / MAX_ZOOM,
   );
 
   // 5. تطبيق موقع قمة الإطار مع ضمان مسافة أمان علوية لا تقل عن 9% فوق أعلى نقطة شعر حقيقية
@@ -214,10 +241,7 @@ export function computeIdCropRect(
 
   // 6. حساب العرض والتأكد من عدم قص الأكتاف أو الأذنين
   const minWPhys = (face.headWidth * imgAspect) / 0.78;
-  let cropW = Math.max(
-    cropH * normalizedTargetAspect,
-    minWPhys / imgAspect
-  );
+  let cropW = Math.max(cropH * normalizedTargetAspect, minWPhys / imgAspect);
 
   // إعادة التوزيع للحفاظ المطلق على نسبة الأبعاد بدون مطّ
   cropH = cropW / normalizedTargetAspect;
@@ -247,6 +271,3 @@ export function computeIdCropRect(
     height: cropH,
   };
 }
-
-
-

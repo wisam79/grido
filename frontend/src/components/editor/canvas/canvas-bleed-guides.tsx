@@ -1,6 +1,7 @@
-import React from "react";
-import { useEditorStore } from "@/lib/editor-store";
-import { useShallow } from "zustand/react/shallow";
+import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
+
+import { useEditorStore } from '@/lib/editor-store';
 
 interface CanvasBleedGuidesProps {
   displayW: number;
@@ -11,23 +12,17 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
   displayW,
   displayH,
 }: CanvasBleedGuidesProps) {
-  const {
-    showBleedGuides,
-    bleedMarginMM,
-    safeMarginMM,
-    cutShapeType,
-    canvasWidth,
-    printSettings,
-  } = useEditorStore(
-    useShallow((state) => ({
-      showBleedGuides: state.showBleedGuides,
-      bleedMarginMM: state.bleedMarginMM,
-      safeMarginMM: state.safeMarginMM,
-      cutShapeType: state.cutShapeType,
-      canvasWidth: state.canvasWidth,
-      printSettings: state.printSettings,
-    }))
-  );
+  const { showBleedGuides, bleedMarginMM, safeMarginMM, cutShapeType, canvasWidth, printSettings } =
+    useEditorStore(
+      useShallow((state) => ({
+        showBleedGuides: state.showBleedGuides,
+        bleedMarginMM: state.bleedMarginMM,
+        safeMarginMM: state.safeMarginMM,
+        cutShapeType: state.cutShapeType,
+        canvasWidth: state.canvasWidth,
+        printSettings: state.printSettings,
+      })),
+    );
 
   if (!showBleedGuides || displayW <= 0 || displayH <= 0 || canvasWidth <= 0) {
     return null;
@@ -51,17 +46,17 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
   return (
     <div
       className="absolute inset-0 pointer-events-none z-20 select-none"
-      style={{ overflow: "visible" }}
+      style={{ overflow: 'visible' }}
       dir="rtl"
     >
       <svg
         width={displayW}
         height={displayH}
         className="w-full h-full"
-        style={{ overflow: "visible" }}
+        style={{ overflow: 'visible' }}
         xmlns="http://www.w3.org/2000/svg"
       >
-        {cutShapeType === "circle" ? (
+        {cutShapeType === 'circle' ? (
           <>
             {/* خط النزيف الخارجي الدائري/البيضاوي (أحمر متقطع) */}
             {bleedPx > 0 && (
@@ -108,7 +103,7 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
                 y={-bleedPx}
                 width={displayW + bleedPx * 2}
                 height={displayH + bleedPx * 2}
-                rx={cutShapeType === "rounded-rect" ? cornerRadiusPx + bleedPx : 0}
+                rx={cutShapeType === 'rounded-rect' ? cornerRadiusPx + bleedPx : 0}
                 fill="none"
                 stroke="#f43f5e"
                 strokeWidth="1.5"
@@ -121,7 +116,7 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
               y="0"
               width={displayW}
               height={displayH}
-              rx={cutShapeType === "rounded-rect" ? cornerRadiusPx : 0}
+              rx={cutShapeType === 'rounded-rect' ? cornerRadiusPx : 0}
               fill="none"
               stroke="#0ea5e9"
               strokeWidth="1.5"
@@ -133,7 +128,7 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
               y={safePx}
               width={Math.max(4, displayW - safePx * 2)}
               height={Math.max(4, displayH - safePx * 2)}
-              rx={cutShapeType === "rounded-rect" ? Math.max(0, cornerRadiusPx - safePx) : 0}
+              rx={cutShapeType === 'rounded-rect' ? Math.max(0, cornerRadiusPx - safePx) : 0}
               fill="none"
               stroke="#22c55e"
               strokeWidth="1.2"
@@ -164,4 +159,4 @@ export const CanvasBleedGuides = React.memo(function CanvasBleedGuides({
   );
 });
 
-CanvasBleedGuides.displayName = "CanvasBleedGuides";
+CanvasBleedGuides.displayName = 'CanvasBleedGuides';

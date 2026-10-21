@@ -1,9 +1,12 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { WorkspacePanelRail, CompactToolLauncher } from './workspace-panel-rail';
-import { MobilePanelsSheet } from './mobile-panels-sheet';
+
 import { CanvasOverlayHost } from '@/components/editor/canvas/canvas-overlay-host';
-import { useWorkspacePanels } from '@/hooks/use-workspace-panels';
+import { cn } from '@/lib/utils';
+
+import { MobilePanelsSheet } from './mobile-panels-sheet';
+import { WorkspacePanelRail, CompactToolLauncher } from './workspace-panel-rail';
+
+import type { useWorkspacePanels } from '@/hooks/use-workspace-panels';
 
 interface WorkspaceLayoutProps {
   templatesContent: React.ReactNode;
@@ -32,8 +35,6 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
     toggleZenMode,
     setIsMobileSheetOpen,
     setMobileActiveTab,
-    closeActivePanel,
-    setIsTemplatesDrawerOpen,
   } = panelsHook;
 
   const isCompact = breakpoint === 'compact';

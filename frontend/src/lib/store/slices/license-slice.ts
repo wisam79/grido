@@ -1,10 +1,12 @@
-import { StateCreator } from 'zustand';
-import * as LicenseHandler from '../../../../wailsjs/go/handlers/LicenseHandler';
-import * as App from '../../../../wailsjs/go/main/App';
-import { domain } from '../../../../wailsjs/go/models';
-import { toErrorMessage } from '@/lib/wails-error';
 import { aiUtcDayKey } from '@/lib/ai/quota';
 import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
+import * as LicenseHandler from '../../../../wailsjs/go/handlers/LicenseHandler';
+import * as App from '../../../../wailsjs/go/main/App';
+
+import type { domain } from '../../../../wailsjs/go/models';
+import type { StateCreator } from 'zustand';
 
 const logger = createLogger('license-slice');
 

@@ -1,10 +1,14 @@
 import React from 'react';
 import { Layer, Rect } from 'react-konva';
-import Konva from 'konva';
-import { CanvasElement, useEditorStore } from '@/lib/editor-store';
-import { SnapGuide } from '@/lib/canvas/snap-utils';
+
 import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
+import { useEditorStore } from '@/lib/editor-store';
+
 import { EditorTransformer } from '../elements/editor-transformer';
+
+import type { SnapGuide } from '@/lib/canvas/snap-utils';
+import type { CanvasElement } from '@/lib/editor-store';
+import type Konva from 'konva';
 
 /**
  * 🎚️ تطبيع الدوران لنطاق ‎[-180, 180) — نفس اصطلاح Konva الداخلي

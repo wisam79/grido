@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { usePhoneBridgeListener } from '../src/components/editor/system/use-phone-bridge';
 import { useEditorStore } from '../src/lib/editor-store';
 import * as runtime from '../wailsjs/runtime/runtime';
@@ -57,8 +58,10 @@ describe('usePhoneBridgeListener Hook Tests', () => {
     });
 
     const state = useEditorStore.getState();
-    expect(state.slots.find(s => s.id === 'slot-2')?.imageSrc).toBe('local-image://test-photo.jpg');
-    expect(state.slots.find(s => s.id === 'slot-1')?.imageSrc).toBeUndefined();
+    expect(state.slots.find((s) => s.id === 'slot-2')?.imageSrc).toBe(
+      'local-image://test-photo.jpg',
+    );
+    expect(state.slots.find((s) => s.id === 'slot-1')?.imageSrc).toBeUndefined();
   });
 
   it('assigns received photo to first empty slot when none is selected in collage mode', async () => {
@@ -78,7 +81,9 @@ describe('usePhoneBridgeListener Hook Tests', () => {
     });
 
     const state = useEditorStore.getState();
-    expect(state.slots.find(s => s.id === 'slot-2')?.imageSrc).toBe('local-image://empty-slot-photo.jpg');
+    expect(state.slots.find((s) => s.id === 'slot-2')?.imageSrc).toBe(
+      'local-image://empty-slot-photo.jpg',
+    );
   });
 
   it('adds image element to canvas in single mode', async () => {

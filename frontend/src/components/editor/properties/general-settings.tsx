@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+
+import { FluentSection } from '@/components/ui/blocks';
+import { PaintBrush } from '@/components/ui/icons';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { useEditorStore } from '@/lib/editor-store';
+import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
+
 import { CanvasDimensionsPanel } from './general/canvas-dimensions-panel';
 import { GridColumnsPanel } from './general/grid-columns-panel';
 import { StudioCanvasColorDeck } from './shared-controls';
-import { useEditorStore } from '@/lib/editor-store';
-import { useShallow } from 'zustand/react/shallow';
-import { FluentSection } from '@/components/ui/blocks';
-import { PaintBrush } from '@/components/ui/icons';
-import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
-import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function GeneralSettings() {
   const {

@@ -1,4 +1,9 @@
 import React, { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   ImageSquare,
   GridFour,
@@ -10,15 +15,13 @@ import {
   Eye,
   Broom,
 } from '@/components/ui/icons';
-import { Spinner } from '@/components/ui/huge-icon';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
-import { useShallow } from 'zustand/react/shallow';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useEditorStore } from '@/lib/editor-store';
-import type { CanvasSlot } from '@/lib/store/types';
+
 import { QuickBarGroup } from './quick-bar-group';
+
+import type { CanvasSlot } from '@/lib/store/types';
 
 /**
  * QuickBarSlotSection — قسم الخلية المحددة في وضع الكولاج.

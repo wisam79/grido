@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
+
+import { autoFitSheetGrid } from '@/features/stickers/lib/sheet-generator';
+import { contrastRatio, isLowContrastPair } from '@/features/stickers/lib/sticker-a11y';
 import {
   normalizeArabicQuery,
   namespaceStickerSvgIds,
   postProcessStickerSvg,
 } from '@/features/stickers/lib/sticker-text';
-import { contrastRatio, isLowContrastPair } from '@/features/stickers/lib/sticker-a11y';
-import { autoFitSheetGrid } from '@/features/stickers/lib/sheet-generator';
 import { searchStickerTemplates } from '@/features/stickers/templates';
 
 describe('sticker-quality: Arabic search normalization', () => {

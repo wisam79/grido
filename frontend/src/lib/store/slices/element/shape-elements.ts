@@ -1,9 +1,10 @@
-import type { StateCreator } from 'zustand';
-import type { CanvasElement, ShapeElement } from '../../types';
-import { uid } from '../../../utils';
-import { resolveRingInnerRadius } from '../../../canvas/ring-geometry';
 import { minZIndex, nextZIndex, normalizeSelection } from './types';
+import { resolveRingInnerRadius } from '../../../canvas/ring-geometry';
+import { uid } from '../../../utils';
+
 import type { ElementCross, ElementSlice } from './types';
+import type { CanvasElement, ShapeElement } from '../../types';
+import type { StateCreator } from 'zustand';
 
 export const createShapeElementsSlice: StateCreator<
   ElementCross,

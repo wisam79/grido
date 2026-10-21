@@ -1,10 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import React from 'react';
 import { render } from '@testing-library/react';
+import React from 'react';
 import { Stage } from 'react-konva';
-import type Konva from 'konva';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { KonvaCollageLayer } from '../src/components/editor/konva/layers/konva-collage-layer';
+
 import type { CanvasSlot } from '../src/lib/store/types';
+import type Konva from 'konva';
 
 /* ═══════════════════════════════════════════════════════════════
    حارس قابلية نقر الخلية الفارغة في الكولاج:

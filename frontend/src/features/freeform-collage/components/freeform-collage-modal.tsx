@@ -1,4 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
+
+import { SaveCustomTemplate } from '@bindings/grido/app';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,24 +13,18 @@ import {
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/huge-icon';
 import { FloppyDisk, DownloadSimple, UploadSimple } from '@/components/ui/icons';
-import { useEditorStore } from '@/lib/editor-store';
+import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type {
-  FreeformLayout,
-  FreeformSlot,
-  PhotoPresetType,
-  SlotAlignment,
-  DistributionAxis,
-  AutoPackStrategy,
-} from '../types';
-import { PHOTO_PRESET_LABELS } from '../lib/mixed-presets';
 import { clamp } from '@/lib/clamp';
+import { useEditorStore } from '@/lib/editor-store';
 import { toErrorMessage } from '@/lib/wails-error';
+
+import { FreeformCanvasEditor } from './freeform-canvas-editor';
+import { FreeformPaperSelector } from './freeform-paper-selector';
+import { FreeformSlotInspector } from './freeform-slot-inspector';
+import { FreeformToolbar } from './freeform-toolbar';
 import {
   splitSlot,
   removeSlot,
@@ -46,12 +45,16 @@ import {
   slotsFromFile,
   newSlotId,
 } from '../lib/freeform-math';
+import { PHOTO_PRESET_LABELS } from '../lib/mixed-presets';
 
-import { FreeformToolbar } from './freeform-toolbar';
-import { FreeformCanvasEditor } from './freeform-canvas-editor';
-import { FreeformPaperSelector } from './freeform-paper-selector';
-import { FreeformSlotInspector } from './freeform-slot-inspector';
-import { SaveCustomTemplate } from '@bindings/grido/app';
+import type {
+  FreeformLayout,
+  FreeformSlot,
+  PhotoPresetType,
+  SlotAlignment,
+  DistributionAxis,
+  AutoPackStrategy,
+} from '../types';
 
 interface FreeformCollageModalProps {
   open: boolean;

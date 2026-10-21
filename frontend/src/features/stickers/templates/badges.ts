@@ -1,34 +1,43 @@
-import { StickerTemplate } from "../types";
-import { escapeXml } from "../lib/svg-rasterizer";
+import { escapeXml } from '../lib/svg-rasterizer';
+
+import type { StickerTemplate } from '../types';
 
 export const BADGE_TEMPLATES: StickerTemplate[] = [
   {
-    id: "seal_gold_guarantee",
-    name: "ختم الضمان الذهبي",
-    nameEn: "Gold Guarantee Seal",
-    category: "badges",
-    description: "ختم تجاري ذهبي دائري مسنن للضمان المعتمد والأصالة 100%",
+    id: 'seal_gold_guarantee',
+    name: 'ختم الضمان الذهبي',
+    nameEn: 'Gold Guarantee Seal',
+    category: 'badges',
+    description: 'ختم تجاري ذهبي دائري مسنن للضمان المعتمد والأصالة 100%',
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#D97706",
-      secondary: "#78350F",
-      background: "#FFFBEB",
+      primary: '#D97706',
+      secondary: '#78350F',
+      background: '#FFFBEB',
     },
     fields: [
-      { id: "topText", label: "النص العلوي", type: "text", defaultValue: "★ أصلي ومضمون ★" },
-      { id: "centerText", label: "النص الرئيسي", type: "text", defaultValue: "100%" },
-      { id: "bottomText", label: "النص السفلي", type: "text", defaultValue: "ضمان ذهبي معتمد" },
+      { id: 'topText', label: 'النص العلوي', type: 'text', defaultValue: '★ أصلي ومضمون ★' },
+      { id: 'centerText', label: 'النص الرئيسي', type: 'text', defaultValue: '100%' },
+      { id: 'bottomText', label: 'النص السفلي', type: 'text', defaultValue: 'ضمان ذهبي معتمد' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topText || "★ أصلي ومضمون ★");
-      const center = escapeXml(fields.centerText || "100%");
-      const bottom = escapeXml(fields.bottomText || "ضمان ذهبي معتمد");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topText || '★ أصلي ومضمون ★');
+      const center = escapeXml(fields.centerText || '100%');
+      const bottom = escapeXml(fields.bottomText || 'ضمان ذهبي معتمد');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
-      let starPoints = "";
+      let starPoints = '';
       const numPoints = 28;
       const outerR = 230;
       const innerR = 210;
@@ -64,29 +73,37 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "seal_premium_ribbon",
-    name: "شريط الفخامة والتميز",
-    nameEn: "Premium Ribbon Seal",
-    category: "badges",
-    description: "شارة ملوكية أنيقة مع وشاح سفلي للمنتجات الراقية",
+    id: 'seal_premium_ribbon',
+    name: 'شريط الفخامة والتميز',
+    nameEn: 'Premium Ribbon Seal',
+    category: 'badges',
+    description: 'شارة ملوكية أنيقة مع وشاح سفلي للمنتجات الراقية',
     defaultWidth: 500,
     defaultHeight: 560,
     aspectRatio: 500 / 560,
     defaultColors: {
-      primary: "#B45309",
-      secondary: "#1E293B",
-      background: "#FFFFFF",
+      primary: '#B45309',
+      secondary: '#1E293B',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "ribbonText", label: "نص الوشاح", type: "text", defaultValue: "جودة ممتازة" },
-      { id: "mainText", label: "النص الأوسط", type: "text", defaultValue: "PREMIUM" },
-      { id: "subText", label: "النص الفرعي", type: "text", defaultValue: "مختار بعناية فائقة" },
+      { id: 'ribbonText', label: 'نص الوشاح', type: 'text', defaultValue: 'جودة ممتازة' },
+      { id: 'mainText', label: 'النص الأوسط', type: 'text', defaultValue: 'PREMIUM' },
+      { id: 'subText', label: 'النص الفرعي', type: 'text', defaultValue: 'مختار بعناية فائقة' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const ribbon = escapeXml(fields.ribbonText || "جودة ممتازة");
-      const main = escapeXml(fields.mainText || "PREMIUM");
-      const sub = escapeXml(fields.subText || "مختار بعناية فائقة");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const ribbon = escapeXml(fields.ribbonText || 'جودة ممتازة');
+      const main = escapeXml(fields.mainText || 'PREMIUM');
+      const sub = escapeXml(fields.subText || 'مختار بعناية فائقة');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 560" width="500" height="560">
@@ -119,29 +136,42 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "seal_handmade_craft",
-    name: "صنع يدوياً بحب",
-    nameEn: "Handmade Craft",
-    category: "badges",
-    description: "ملصق للأعمال اليدوية والمتاجر الحرفية والعائلية",
+    id: 'seal_handmade_craft',
+    name: 'صنع يدوياً بحب',
+    nameEn: 'Handmade Craft',
+    category: 'badges',
+    description: 'ملصق للأعمال اليدوية والمتاجر الحرفية والعائلية',
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#BE185D",
-      secondary: "#831843",
-      background: "#FDF2F8",
+      primary: '#BE185D',
+      secondary: '#831843',
+      background: '#FDF2F8',
     },
     fields: [
-      { id: "craftText", label: "النص الرئيسي", type: "text", defaultValue: "صُنع يدوياً بحب" },
-      { id: "storeName", label: "اسم المتجر أو الصانع", type: "text", defaultValue: "حِرف وأصالة" },
-      { id: "tagline", label: "الشعار اللطيف", type: "text", defaultValue: "قطعة فريدة صُممت لأجلك" },
+      { id: 'craftText', label: 'النص الرئيسي', type: 'text', defaultValue: 'صُنع يدوياً بحب' },
+      { id: 'storeName', label: 'اسم المتجر أو الصانع', type: 'text', defaultValue: 'حِرف وأصالة' },
+      {
+        id: 'tagline',
+        label: 'الشعار اللطيف',
+        type: 'text',
+        defaultValue: 'قطعة فريدة صُممت لأجلك',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const craft = escapeXml(fields.craftText || "صُنع يدوياً بحب");
-      const store = escapeXml(fields.storeName || "حِرف وأصالة");
-      const tagline = escapeXml(fields.tagline || "قطعة فريدة صُممت لأجلك");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const craft = escapeXml(fields.craftText || 'صُنع يدوياً بحب');
+      const store = escapeXml(fields.storeName || 'حِرف وأصالة');
+      const tagline = escapeXml(fields.tagline || 'قطعة فريدة صُممت لأجلك');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
@@ -162,29 +192,47 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "seal_organic_natural",
-    name: "منتج عضوي طبيعي 100%",
-    nameEn: "100% Organic Natural",
-    category: "badges",
-    description: "ملصق للمنتجات الغذائية الطبيعية، العسل، والمستحضرات العضوية",
+    id: 'seal_organic_natural',
+    name: 'منتج عضوي طبيعي 100%',
+    nameEn: '100% Organic Natural',
+    category: 'badges',
+    description: 'ملصق للمنتجات الغذائية الطبيعية، العسل، والمستحضرات العضوية',
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#15803D",
-      secondary: "#166534",
-      background: "#F0FDF4",
+      primary: '#15803D',
+      secondary: '#166534',
+      background: '#F0FDF4',
     },
     fields: [
-      { id: "title", label: "العنوان الرئيسي", type: "text", defaultValue: "100% طبيعي" },
-      { id: "subtitle", label: "الوصف العضوي", type: "text", defaultValue: "عضوي وخالٍ من الإضافات" },
-      { id: "source", label: "مصدر المكونات", type: "text", defaultValue: "مستخلص من الطبيعة النقية" },
+      { id: 'title', label: 'العنوان الرئيسي', type: 'text', defaultValue: '100% طبيعي' },
+      {
+        id: 'subtitle',
+        label: 'الوصف العضوي',
+        type: 'text',
+        defaultValue: 'عضوي وخالٍ من الإضافات',
+      },
+      {
+        id: 'source',
+        label: 'مصدر المكونات',
+        type: 'text',
+        defaultValue: 'مستخلص من الطبيعة النقية',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.title || "100% طبيعي");
-      const subtitle = escapeXml(fields.subtitle || "عضوي وخالٍ من الإضافات");
-      const source = escapeXml(fields.source || "مستخلص من الطبيعة النقية");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.title || '100% طبيعي');
+      const subtitle = escapeXml(fields.subtitle || 'عضوي وخالٍ من الإضافات');
+      const source = escapeXml(fields.source || 'مستخلص من الطبيعة النقية');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
@@ -207,31 +255,39 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "seal_sale_burst",
-    name: "نجمة العروض والتخفيضات",
-    nameEn: "Super Sale Burst",
-    category: "badges",
-    description: "ملصق عروض ترويجية ناري جاذب للانتباه على العبوات والمنتجات",
+    id: 'seal_sale_burst',
+    name: 'نجمة العروض والتخفيضات',
+    nameEn: 'Super Sale Burst',
+    category: 'badges',
+    description: 'ملصق عروض ترويجية ناري جاذب للانتباه على العبوات والمنتجات',
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#DC2626",
-      secondary: "#FEF08A",
-      background: "#FFFFFF",
+      primary: '#DC2626',
+      secondary: '#FEF08A',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "saleBadge", label: "شارة الخصم", type: "text", defaultValue: "خصم خاص" },
-      { id: "salePercent", label: "نسبة التخفيض", type: "text", defaultValue: "50%" },
-      { id: "salePeriod", label: "فترة العرض", type: "text", defaultValue: "لفترة محدودة" },
+      { id: 'saleBadge', label: 'شارة الخصم', type: 'text', defaultValue: 'خصم خاص' },
+      { id: 'salePercent', label: 'نسبة التخفيض', type: 'text', defaultValue: '50%' },
+      { id: 'salePeriod', label: 'فترة العرض', type: 'text', defaultValue: 'لفترة محدودة' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const badge = escapeXml(fields.saleBadge || "خصم خاص");
-      const percent = escapeXml(fields.salePercent || "50%");
-      const period = escapeXml(fields.salePeriod || "لفترة محدودة");
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor: _backgroundColor,
+      isTransparent: _isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const badge = escapeXml(fields.saleBadge || 'خصم خاص');
+      const percent = escapeXml(fields.salePercent || '50%');
+      const period = escapeXml(fields.salePeriod || 'لفترة محدودة');
       const fs = fontScale || 1;
 
-      let burst = "";
+      let burst = '';
       const spikes = 20;
       for (let i = 0; i < spikes * 2; i++) {
         const r = i % 2 === 0 ? 220 : 175;
@@ -257,29 +313,42 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "seal_quality_approved",
-    name: "فحص الجودة معتمد QC",
-    nameEn: "Quality Approved Stamp",
-    category: "badges",
-    description: "ختم مصنعي رسمي يؤكد اجتياز فحص الجودة والمطابقة",
+    id: 'seal_quality_approved',
+    name: 'فحص الجودة معتمد QC',
+    nameEn: 'Quality Approved Stamp',
+    category: 'badges',
+    description: 'ختم مصنعي رسمي يؤكد اجتياز فحص الجودة والمطابقة',
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#0284C7",
-      secondary: "#0369A1",
-      background: "#F0F9FF",
+      primary: '#0284C7',
+      secondary: '#0369A1',
+      background: '#F0F9FF',
     },
     fields: [
-      { id: "status", label: "الحالة", type: "text", defaultValue: "QC PASSED" },
-      { id: "inspector", label: "رقم الفاحص أو المعمل", type: "text", defaultValue: "مفتش الجودة #42" },
-      { id: "date", label: "تاريخ المطابقة", type: "text", defaultValue: "معتمد ومطابق للمواصفات" },
+      { id: 'status', label: 'الحالة', type: 'text', defaultValue: 'QC PASSED' },
+      {
+        id: 'inspector',
+        label: 'رقم الفاحص أو المعمل',
+        type: 'text',
+        defaultValue: 'مفتش الجودة #42',
+      },
+      { id: 'date', label: 'تاريخ المطابقة', type: 'text', defaultValue: 'معتمد ومطابق للمواصفات' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const status = escapeXml(fields.status || "QC PASSED");
-      const inspector = escapeXml(fields.inspector || "مفتش الجودة #42");
-      const date = escapeXml(fields.date || "معتمد ومطابق للمواصفات");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const status = escapeXml(fields.status || 'QC PASSED');
+      const inspector = escapeXml(fields.inspector || 'مفتش الجودة #42');
+      const date = escapeXml(fields.date || 'معتمد ومطابق للمواصفات');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
@@ -302,29 +371,42 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "seal_limited_edition",
-    name: "إصدار محدود فاخر",
-    nameEn: "Limited Edition Badge",
-    category: "badges",
-    description: "شارة ذهبية فاخرة للقطع الحصرية والإصدارات الخاصة المحدودة",
+    id: 'seal_limited_edition',
+    name: 'إصدار محدود فاخر',
+    nameEn: 'Limited Edition Badge',
+    category: 'badges',
+    description: 'شارة ذهبية فاخرة للقطع الحصرية والإصدارات الخاصة المحدودة',
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
     defaultColors: {
-      primary: "#C2410C",
-      secondary: "#7C2D12",
-      background: "#FFF7ED",
+      primary: '#C2410C',
+      secondary: '#7C2D12',
+      background: '#FFF7ED',
     },
     fields: [
-      { id: "top", label: "الشارة العليا", type: "text", defaultValue: "نسخة حصرية" },
-      { id: "title", label: "العنوان الرئيسي", type: "text", defaultValue: "LIMITED EDITION" },
-      { id: "number", label: "الترقيم أو التخصيص", type: "text", defaultValue: "إصدار مرقم ومحدود" },
+      { id: 'top', label: 'الشارة العليا', type: 'text', defaultValue: 'نسخة حصرية' },
+      { id: 'title', label: 'العنوان الرئيسي', type: 'text', defaultValue: 'LIMITED EDITION' },
+      {
+        id: 'number',
+        label: 'الترقيم أو التخصيص',
+        type: 'text',
+        defaultValue: 'إصدار مرقم ومحدود',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.top || "نسخة حصرية");
-      const title = escapeXml(fields.title || "LIMITED EDITION");
-      const num = escapeXml(fields.number || "إصدار مرقم ومحدود");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.top || 'نسخة حصرية');
+      const title = escapeXml(fields.title || 'LIMITED EDITION');
+      const num = escapeXml(fields.number || 'إصدار مرقم ومحدود');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">

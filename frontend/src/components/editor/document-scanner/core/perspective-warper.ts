@@ -1,6 +1,7 @@
-import { Point, ScannerFilterMode } from './types';
-import { sortCornerPoints } from './quad-geometry';
 import { applyFilterMode } from './filters';
+import { sortCornerPoints } from './quad-geometry';
+
+import type { Point, ScannerFilterMode } from './types';
 
 /**
  * حساب مصفوفة التحويل المنظوري 3x3 (Perspective Transformation Homography Matrix)

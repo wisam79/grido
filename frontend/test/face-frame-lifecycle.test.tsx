@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // 🎭 عامل وهمي — يسجّل الرسائل المرسلة والإنهاء، بنمط mock العامل المتبع في اختبارات الحزمة
 class MockWorker {

@@ -1,5 +1,5 @@
-import { StateCreator } from 'zustand';
-import { EditorState } from '../index';
+import type { EditorState } from '../index';
+import type { StateCreator } from 'zustand';
 
 /* ═══════════════════════════════════════════════════════════════
    شريحة مسار العمل — إنتاج سريع مقابل استوديو تصميم.

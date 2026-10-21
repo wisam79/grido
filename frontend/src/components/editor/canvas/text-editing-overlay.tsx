@@ -1,13 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { CanvasElement } from '@/lib/editor-store';
+
 import { TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
-import { loadGoogleFont } from '@/lib/io/fonts';
 import {
   TEXT_MAX_LENGTH,
   TEXT_LABEL_PREVIEW,
   sanitizeText,
   isArabicText as isArabicTextHelper,
 } from '@/lib/canvas/text-helpers';
+import { loadGoogleFont } from '@/lib/io/fonts';
+
+import type { CanvasElement } from '@/lib/editor-store';
 
 // إعادة تصدير للتوافق مع الاختبارات الحالية
 export { TEXT_MAX_LENGTH } from '@/lib/canvas/text-helpers';

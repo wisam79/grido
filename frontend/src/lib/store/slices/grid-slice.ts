@@ -1,13 +1,13 @@
-import { StateCreator } from "zustand";
-import { EditorState } from "../index";
+import type { RulerUnit } from '../../canvas/units';
+import type { EditorState } from '../index';
+import type { StateCreator } from 'zustand';
 
 // النوع القانوني في lib/canvas/units — يُعاد تصديره هنا للتوافقية مع المستوردين الحاليين
-import type { RulerUnit } from "../../canvas/units";
 export type { RulerUnit };
 
 export interface UserGuide {
   id: string;
-  type: "h" | "v";
+  type: 'h' | 'v';
   pos: number; // 0 to 1 relative to canvas dimension
 }
 
@@ -17,7 +17,7 @@ export interface GridSlice {
   gridColor: string;
   gridOpacity: number;
   gridSubdivisions: number;
-  gridType: "lines" | "dots";
+  gridType: 'lines' | 'dots';
   snapToGrid: boolean;
   showColumns: boolean;
   columnsCount: number;
@@ -32,14 +32,14 @@ export interface GridSlice {
   showBleedGuides: boolean;
   bleedMarginMM: number;
   safeMarginMM: number;
-  cutShapeType: "rectangle" | "circle" | "rounded-rect";
+  cutShapeType: 'rectangle' | 'circle' | 'rounded-rect';
 
   setShowGrid: (show: boolean) => void;
   setGridSize: (size: number) => void;
   setGridColor: (color: string) => void;
   setGridOpacity: (opacity: number) => void;
   setGridSubdivisions: (subdivisions: number) => void;
-  setGridType: (type: "lines" | "dots") => void;
+  setGridType: (type: 'lines' | 'dots') => void;
   setSnapToGrid: (snap: boolean) => void;
   setShowColumns: (show: boolean) => void;
   setColumnsCount: (count: number) => void;
@@ -48,7 +48,7 @@ export interface GridSlice {
   setColumnsGutter: (gutter: number) => void;
   setShowRuler: (show: boolean) => void;
   setRulerUnit: (unit: RulerUnit) => void;
-  addUserGuide: (guide: { id?: string; type: "h" | "v"; pos: number }) => void;
+  addUserGuide: (guide: { id?: string; type: 'h' | 'v'; pos: number }) => void;
   updateUserGuide: (id: string, pos: number) => void;
   removeUserGuide: (id: string) => void;
   clearUserGuides: () => void;
@@ -57,32 +57,32 @@ export interface GridSlice {
   setShowBleedGuides: (show: boolean) => void;
   setBleedMarginMM: (mm: number) => void;
   setSafeMarginMM: (mm: number) => void;
-  setCutShapeType: (shape: "rectangle" | "circle" | "rounded-rect") => void;
+  setCutShapeType: (shape: 'rectangle' | 'circle' | 'rounded-rect') => void;
 }
 
 export const DEFAULT_GRID_STATE = {
   showGrid: false,
   // R4: مضاعفات 4px — كان 50 مخالفاً
   gridSize: 48,
-  gridColor: "#000000",
+  gridColor: '#000000',
   gridOpacity: 0.15,
   gridSubdivisions: 5,
-  gridType: "lines" as const,
+  gridType: 'lines' as const,
   snapToGrid: true,
   showColumns: false,
   columnsCount: 12,
-  columnsColor: "rgba(239, 68, 68, 0.08)",
+  columnsColor: 'rgba(239, 68, 68, 0.08)',
   columnsMargin: 20,
   columnsGutter: 12,
   showRuler: true,
-  rulerUnit: "mm" as RulerUnit,
+  rulerUnit: 'mm' as RulerUnit,
   userGuides: [] as UserGuide[],
   showUserGuides: true,
   lockUserGuides: false,
   showBleedGuides: false,
   bleedMarginMM: 2,
   safeMarginMM: 2,
-  cutShapeType: "rectangle" as const,
+  cutShapeType: 'rectangle' as const,
 };
 
 let guideCounter = 0;
@@ -116,7 +116,7 @@ export const createGridSlice: StateCreator<EditorState, [], [], GridSlice> = (se
   updateUserGuide: (id, pos) =>
     set((state) => ({
       userGuides: state.userGuides.map((g) =>
-        g.id === id ? { ...g, pos: Math.min(1, Math.max(0, pos)) } : g
+        g.id === id ? { ...g, pos: Math.min(1, Math.max(0, pos)) } : g,
       ),
     })),
   removeUserGuide: (id) =>

@@ -8,9 +8,10 @@
  * المسار الوحيد: `generateStickerSheetBlob` (بلا Base64) — الاستدعاء
  * يرفع Blob ثنائياً على سطح المكتب ويحوّل إلى Data URL على الويب فقط.
  */
-import { mmToPx, STICKER_DPI } from './sticker-text';
-import { assertRasterBudget } from './export-limits';
 import { canvasToBlob } from '@/lib/canvas/canvas-blob';
+
+import { assertRasterBudget } from './export-limits';
+import { mmToPx, STICKER_DPI } from './sticker-text';
 
 export interface SheetOptions {
   rows: number;

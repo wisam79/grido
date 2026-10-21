@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Element Properties & Hierarchy E2E', () => {
@@ -10,8 +11,16 @@ test.describe('Element Properties & Hierarchy E2E', () => {
 
   test('Image properties expose all 4 standardized tabs without dead tabs', async ({ page }) => {
     // Add image
-    await page.getByTestId('mode-tab-single').or(page.getByRole('tab', { name: 'تعديل حر' })).first().click();
-    await page.getByTestId('toolbar-insert').or(page.getByRole('button', { name: /إدراج/ })).first().click();
+    await page
+      .getByTestId('mode-tab-single')
+      .or(page.getByRole('tab', { name: 'تعديل حر' }))
+      .first()
+      .click();
+    await page
+      .getByTestId('toolbar-insert')
+      .or(page.getByRole('button', { name: /إدراج/ }))
+      .first()
+      .click();
 
     // The 4 standardized tabs
     const styleTab = page.getByRole('tab', { name: /تنسيق|التنسيق/ }).first();

@@ -1,9 +1,10 @@
-import type { StateCreator } from 'zustand';
 import {
   calculateAlignmentPatches,
   calculateDistributionPatches,
 } from '../../../canvas/element-alignment';
+
 import type { ElementCross, ElementSlice } from './types';
+import type { StateCreator } from 'zustand';
 
 export const createElementAlignmentSlice: StateCreator<
   ElementCross,

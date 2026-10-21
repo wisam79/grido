@@ -48,13 +48,34 @@ export interface CvRuntimeLike {
   Size: new (width: number, height: number) => CvSize;
   matFromImageData: (data: ImageData) => CvMat;
   cvtColor: (src: CvMat, dst: CvMat, code: number) => void;
-  GaussianBlur: (src: CvMat, dst: CvMat, ksize: CvSize, sigmaX: number, sigmaY: number, borderType: number) => void;
+  GaussianBlur: (
+    src: CvMat,
+    dst: CvMat,
+    ksize: CvSize,
+    sigmaX: number,
+    sigmaY: number,
+    borderType: number,
+  ) => void;
   Canny: (src: CvMat, dst: CvMat, threshold1: number, threshold2: number) => void;
   getStructuringElement: (shape: number, ksize: CvSize) => CvMat;
   dilate: (src: CvMat, dst: CvMat, kernel: CvMat) => void;
-  adaptiveThreshold: (src: CvMat, dst: CvMat, maxVal: number, adaptMethod: number, threshType: number, blockSize: number, C: number) => void;
+  adaptiveThreshold: (
+    src: CvMat,
+    dst: CvMat,
+    maxVal: number,
+    adaptMethod: number,
+    threshType: number,
+    blockSize: number,
+    C: number,
+  ) => void;
   threshold: (src: CvMat, dst: CvMat, thresh: number, maxVal: number, type: number) => void;
-  findContours: (src: CvMat, contours: CvMatVector, hierarchy: CvMat, mode: number, method: number) => void;
+  findContours: (
+    src: CvMat,
+    contours: CvMatVector,
+    hierarchy: CvMat,
+    mode: number,
+    method: number,
+  ) => void;
   contourArea: (contour: CvMat) => number;
   arcLength: (curve: CvMat, closed: boolean) => number;
   approxPolyDP: (curve: CvMat, approx: CvMat, epsilon: number, closed: boolean) => void;

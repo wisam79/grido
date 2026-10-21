@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { OVERLAP_TUNING } from '../core/overlap-tuning';
-import { applyNMS } from '../core/multi-doc-segmenter';
+
 import { ML_CONFIRM_IOU, ML_MISS_IOU, ML_CONTAINMENT_BLOCK } from '../core/detect-fusion';
+import { applyNMS } from '../core/multi-doc-segmenter';
+import { OVERLAP_TUNING } from '../core/overlap-tuning';
+
 import type { Point, ScoredCandidate } from '../core/types';
 
 /**

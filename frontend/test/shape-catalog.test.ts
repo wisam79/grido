@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import Konva from 'konva';
+import { describe, it, expect } from 'vitest';
+
 import {
   QUICK_SHAPES,
   SHAPE_CATALOG,

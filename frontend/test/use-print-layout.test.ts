@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { usePrintLayout } from '../src/hooks/use-print-layout';
+import { describe, it, expect } from 'vitest';
+
 import { createMockPrintSettings } from './helpers/test-factories';
+import { usePrintLayout } from '../src/hooks/use-print-layout';
+
 import type { PhotoTemplate } from '../src/lib/templates';
 
 describe('usePrintLayout', () => {

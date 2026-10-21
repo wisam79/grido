@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+
+import { ALL_STICKER_TEMPLATES } from '@/features/stickers';
 import {
   detectTextDirection,
   isArabicText,
@@ -6,7 +8,6 @@ import {
   stickerRasterSize,
   postProcessStickerSvg,
 } from '@/features/stickers/lib/sticker-text';
-import { ALL_STICKER_TEMPLATES } from '@/features/stickers';
 
 describe('sticker-text: direction + fit + DPI', () => {
   it('detects Arabic vs Latin by first strong char', () => {

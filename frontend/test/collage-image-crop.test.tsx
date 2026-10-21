@@ -1,10 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import React, { act } from 'react';
-import { createRoot, Root } from 'react-dom/client';
 import { waitFor } from '@testing-library/react';
+import React, { act } from 'react';
+import { createRoot } from 'react-dom/client';
 import { Stage, Layer } from 'react-konva';
-import type Konva from 'konva';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { KonvaCollageImage } from '../src/components/editor/konva/elements/collage-image';
+
+import type Konva from 'konva';
+import type { Root } from 'react-dom/client';
 
 /**
  * انحدار إطار الصورة داخل خانة الكولاج:

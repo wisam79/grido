@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
+
 import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('use-filter-cache');

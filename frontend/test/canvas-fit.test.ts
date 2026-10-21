@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import {
   AUTO_FIT_LEFTOVER_RATIO,
   AUTO_FIT_MAX_VERTICAL_OVERFLOW,

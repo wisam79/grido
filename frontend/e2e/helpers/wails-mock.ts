@@ -1,5 +1,6 @@
-import { Page } from '@playwright/test';
 import { setupWailsV3Bridge, waitForAppReady } from './wails-v3-bridge';
+
+import type { Page } from '@playwright/test';
 
 export { setupWailsV3Bridge, waitForAppReady };
 

@@ -1,9 +1,11 @@
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { ToolbarTransferToCollage } from '../src/components/editor/toolbar/toolbar-transfer-to-collage';
-import { useEditorStore } from '../src/lib/editor-store';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { useEditorStore } from '../src/lib/editor-store';
+
 import type { CanvasElement } from '../src/lib/store/types';
 
 vi.mock('../src/lib/export', () => ({

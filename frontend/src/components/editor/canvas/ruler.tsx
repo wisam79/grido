@@ -1,7 +1,11 @@
 import React, { useMemo } from 'react';
+
 import { rulerCursor } from '@/lib/canvas/canvas-colors';
-import type { RulerUnit } from '@/lib/store/slices/grid-slice';
 import { cn } from '@/lib/utils';
+
+import { getRulerSteps, getUnitSpan, formatRulerNumber } from './ruler-utils';
+
+import type { RulerUnit } from '@/lib/store/slices/grid-slice';
 
 export type { RulerUnit };
 
@@ -50,8 +54,6 @@ export interface VerticalRulerProps {
   /** بدء سحب خط إرشادي جديد من المسطرة */
   onPointerDown?: (e: React.PointerEvent<SVGSVGElement>) => void;
 }
-
-import { getRulerSteps, getUnitSpan, formatRulerNumber } from './ruler-utils';
 
 /** عرض منطقة التدرج اللوني لظل حافة الورقة على المسطرة */
 const PAPER_EDGE_SHADOW = 5;

@@ -8,9 +8,10 @@
  * - Failures are NOT cached: the next call retries (inFlight is cleared on
  *   both success and failure; the resolved runtime is kept in `cached`).
  */
-import type cv from '@techstark/opencv-js';
-import type { CvRuntimeLike } from './core/cv-types';
 import { createLogger } from '@/lib/logger';
+
+import type { CvRuntimeLike } from './core/cv-types';
+import type cv from '@techstark/opencv-js';
 
 export type CvRuntime = typeof cv;
 

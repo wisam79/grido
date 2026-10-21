@@ -1,16 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
-import type { CanvasElement } from '@/lib/store/types';
-import { GeneralSettings } from '../properties/general-settings';
-import { ElementProperties } from '../properties/element-properties';
-import { ElementHeaderActions } from '../properties/element/element-header-badge';
-import { SlotProperties } from '../properties/slot-properties';
-import { CollageSettings } from '../properties/collage-settings';
-import { PanelShell } from './panel-shell';
-import { CaretRight, FileText, GridFour } from '@/components/ui/icons';
+
 import { FluentSegmentedControl } from '@/components/ui/blocks';
+import { CaretRight, FileText, GridFour } from '@/components/ui/icons';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { useEditorStore } from '@/lib/editor-store';
 import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
+
+import { PanelShell } from './panel-shell';
+import { CollageSettings } from '../properties/collage-settings';
+import { ElementHeaderActions } from '../properties/element/element-header-badge';
+import { ElementProperties } from '../properties/element-properties';
+import { GeneralSettings } from '../properties/general-settings';
+import { SlotProperties } from '../properties/slot-properties';
+
+import type { CanvasElement } from '@/lib/store/types';
 
 export interface PropertiesPanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */

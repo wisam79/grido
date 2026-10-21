@@ -12,6 +12,7 @@
 import { autoDetectAllDocumentCorners } from '../components/editor/document-scanner/core/document-detector';
 import { detectDocumentsWithOpenCVFromImageData } from '../components/editor/document-scanner/core/opencv-detector';
 import { loadOpenCV } from '../components/editor/document-scanner/opencv-loader';
+
 import type {
   DetectedDocument,
   DetectionMode,

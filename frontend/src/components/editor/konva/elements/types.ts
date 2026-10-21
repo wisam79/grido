@@ -1,7 +1,7 @@
-import { CanvasElement } from "@/lib/editor-store";
-import { KonvaEventObject } from "konva/lib/Node";
-import type Konva from "konva";
-import type { SnapGuide } from "@/lib/canvas/snap-utils";
+import type { SnapGuide } from '@/lib/canvas/snap-utils';
+import type { CanvasElement } from '@/lib/editor-store';
+import type Konva from 'konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
 
 /**
  * عناصر Konva داخل `elementRef` تتنوع (Group/Rect/Image/Text/...).
@@ -30,13 +30,15 @@ export interface ElementProps {
 }
 
 export const propsAreEqual = (prev: ElementProps, next: ElementProps) => {
-  return prev.element === next.element &&
-         prev.isSelected === next.isSelected &&
-         prev.canvasWidth === next.canvasWidth &&
-         prev.canvasHeight === next.canvasHeight &&
-         prev.snapToGrid === next.snapToGrid &&
-         prev.gridSize === next.gridSize &&
-         // onDblClick يغلق على حالة المكوّن (مثل isLoading) — تجاهله كان يجمّد
-         // نسخة قديمة من المعالج داخل العقدة فيصمت النقر المزدوج (إصلاح Bug#16)
-         prev.onDblClick === next.onDblClick;
+  return (
+    prev.element === next.element &&
+    prev.isSelected === next.isSelected &&
+    prev.canvasWidth === next.canvasWidth &&
+    prev.canvasHeight === next.canvasHeight &&
+    prev.snapToGrid === next.snapToGrid &&
+    prev.gridSize === next.gridSize &&
+    // onDblClick يغلق على حالة المكوّن (مثل isLoading) — تجاهله كان يجمّد
+    // نسخة قديمة من المعالج داخل العقدة فيصمت النقر المزدوج (إصلاح Bug#16)
+    prev.onDblClick === next.onDblClick
+  );
 };

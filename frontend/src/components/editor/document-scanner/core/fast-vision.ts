@@ -9,7 +9,7 @@
 export function rgbaToGrayscale(
   src: Uint8ClampedArray | Uint8Array,
   w: number,
-  h: number
+  h: number,
 ): Uint8Array {
   const total = w * h;
   const dst = new Uint8Array(total);
@@ -90,7 +90,11 @@ export function fastBoxBlur(src: Uint8Array, w: number, h: number, r: number = 2
  * لمستند 8MP). 🛡️ حارس overflow: المجموع الكلي = 255×عدد البكسلات ويتجاوز
  * حد Uint32 عند ~16.8MP (A3 300DPI ≈ 17.4MP) — فوق ذلك نُبقي Float64Array.
  */
-export function buildIntegralImage(gray: Uint8Array, w: number, h: number): Uint32Array | Float64Array {
+export function buildIntegralImage(
+  gray: Uint8Array,
+  w: number,
+  h: number,
+): Uint32Array | Float64Array {
   const stride = w + 1;
   // 2^32-1 حد Uint32 — مجموع أقصى قيمة (255) مضروباً بعدد البكسلات
   const maxTotal = 255 * w * h;
@@ -123,7 +127,7 @@ export function computeAdaptiveIntegralMasks(
   h: number,
   winRadius: number = 14,
   cOffset: number = 4,
-  prebuiltIntegral?: Uint32Array | Float64Array
+  prebuiltIntegral?: Uint32Array | Float64Array,
 ): { darkMask: Uint8Array; brightMask: Uint8Array } {
   const total = w * h;
   const stride = w + 1;
@@ -172,7 +176,7 @@ export function computeAdaptiveIntegralMasks(
 export function computeSobelGradients(
   gray: Uint8Array,
   w: number,
-  h: number
+  h: number,
 ): { mag: Float32Array; maxMag: number } {
   const total = w * h;
   const mag = new Float32Array(total);
@@ -257,7 +261,7 @@ export function computeColorSalienceMask(
   rgba: Uint8ClampedArray | Uint8Array,
   w: number,
   h: number,
-  threshold: number = 18
+  threshold: number = 18,
 ): Uint8Array {
   const total = w * h;
   if (total <= 0 || w <= 0 || h <= 0) return new Uint8Array(0);
@@ -267,7 +271,7 @@ export function computeColorSalienceMask(
   const sampleIndices = [
     0,
     Math.max(0, (w - 1) * 4),
-    Math.max(0, ((h - 1) * w) * 4),
+    Math.max(0, (h - 1) * w * 4),
     Math.max(0, (total - 1) * 4),
   ];
 
@@ -312,7 +316,7 @@ export function computeColorSalienceMask(
 export function computeMultiChannelGradient(
   rgba: Uint8ClampedArray | Uint8Array,
   w: number,
-  h: number
+  h: number,
 ): {
   mag: Float32Array;
   maxMag: number;
@@ -335,9 +339,12 @@ export function computeMultiChannelGradient(
     const nextRow = (y + 1) * w;
 
     for (let x = 1; x < w - 1; x++) {
-      let gRx = 0, gRy = 0;
-      let gGx = 0, gGy = 0;
-      let gBx = 0, gBy = 0;
+      let gRx = 0,
+        gRy = 0;
+      let gGx = 0,
+        gGy = 0;
+      let gBx = 0,
+        gBy = 0;
 
       // سوبل لكل قناة لونية على حدة
       const idxP00 = (prevRow + x - 1) * 4;
@@ -352,16 +359,52 @@ export function computeMultiChannelGradient(
       const idxP22 = (nextRow + x + 1) * 4;
 
       // Red
-      gRx = -rgba[idxP00] + rgba[idxP02] - 2 * rgba[idxP10] + 2 * rgba[idxP12] - rgba[idxP20] + rgba[idxP22];
-      gRy = -rgba[idxP00] - 2 * rgba[idxP01] - rgba[idxP02] + rgba[idxP20] + 2 * rgba[idxP21] + rgba[idxP22];
+      gRx =
+        -rgba[idxP00] +
+        rgba[idxP02] -
+        2 * rgba[idxP10] +
+        2 * rgba[idxP12] -
+        rgba[idxP20] +
+        rgba[idxP22];
+      gRy =
+        -rgba[idxP00] -
+        2 * rgba[idxP01] -
+        rgba[idxP02] +
+        rgba[idxP20] +
+        2 * rgba[idxP21] +
+        rgba[idxP22];
 
       // Green
-      gGx = -rgba[idxP00 + 1] + rgba[idxP02 + 1] - 2 * rgba[idxP10 + 1] + 2 * rgba[idxP12 + 1] - rgba[idxP20 + 1] + rgba[idxP22 + 1];
-      gGy = -rgba[idxP00 + 1] - 2 * rgba[idxP01 + 1] - rgba[idxP02 + 1] + rgba[idxP20 + 1] + 2 * rgba[idxP21 + 1] + rgba[idxP22 + 1];
+      gGx =
+        -rgba[idxP00 + 1] +
+        rgba[idxP02 + 1] -
+        2 * rgba[idxP10 + 1] +
+        2 * rgba[idxP12 + 1] -
+        rgba[idxP20 + 1] +
+        rgba[idxP22 + 1];
+      gGy =
+        -rgba[idxP00 + 1] -
+        2 * rgba[idxP01 + 1] -
+        rgba[idxP02 + 1] +
+        rgba[idxP20 + 1] +
+        2 * rgba[idxP21 + 1] +
+        rgba[idxP22 + 1];
 
       // Blue
-      gBx = -rgba[idxP00 + 2] + rgba[idxP02 + 2] - 2 * rgba[idxP10 + 2] + 2 * rgba[idxP12 + 2] - rgba[idxP20 + 2] + rgba[idxP22 + 2];
-      gBy = -rgba[idxP00 + 2] - 2 * rgba[idxP01 + 2] - rgba[idxP02 + 2] + rgba[idxP20 + 2] + 2 * rgba[idxP21 + 2] + rgba[idxP22 + 2];
+      gBx =
+        -rgba[idxP00 + 2] +
+        rgba[idxP02 + 2] -
+        2 * rgba[idxP10 + 2] +
+        2 * rgba[idxP12 + 2] -
+        rgba[idxP20 + 2] +
+        rgba[idxP22 + 2];
+      gBy =
+        -rgba[idxP00 + 2] -
+        2 * rgba[idxP01 + 2] -
+        rgba[idxP02 + 2] +
+        rgba[idxP20 + 2] +
+        2 * rgba[idxP21 + 2] +
+        rgba[idxP22 + 2];
 
       // الجمع الطيفي المعياري
       const mR = gRx * gRx + gRy * gRy;
@@ -390,7 +433,7 @@ export function applyMorphologicalGradient(
   gray: Uint8Array,
   w: number,
   h: number,
-  radius: number = 1
+  radius: number = 1,
 ): Uint8Array {
   const total = w * h;
   const gradient = new Uint8Array(total);
@@ -435,7 +478,7 @@ export function applyCannyNmsHysteresis(
   w: number,
   h: number,
   lowThresh: number = 15,
-  highThresh: number = 40
+  highThresh: number = 40,
 ): Uint8Array {
   const total = w * h;
   const nms = new Float32Array(total);
@@ -520,4 +563,3 @@ export function applyCannyNmsHysteresis(
 
   return edges;
 }
-

@@ -1,13 +1,15 @@
-import { describe, it, expect } from "vitest";
-import { calculatePrintCutLines } from "./cut-lines-utils";
-import { computeSheetGrid } from "@/lib/print/print-layout-math";
+import { describe, it, expect } from 'vitest';
+
+import { computeSheetGrid } from '@/lib/print/print-layout-math';
+
+import { calculatePrintCutLines } from './cut-lines-utils';
 
 const A4 = { paperWidth: 210, paperHeight: 297 };
 
 function assertValid(
   lines: { x1: number; y1: number; x2: number; y2: number }[],
   paperWidth: number,
-  paperHeight: number
+  paperHeight: number,
 ) {
   expect(lines.length).toBeGreaterThan(0);
   for (const l of lines) {
@@ -21,8 +23,8 @@ function assertValid(
   }
 }
 
-describe("calculatePrintCutLines", () => {
-  it("single mode: passport 35x45mm, 8 copies on A4 -> grid with full cut lines", () => {
+describe('calculatePrintCutLines', () => {
+  it('single mode: passport 35x45mm, 8 copies on A4 -> grid with full cut lines', () => {
     const imageWidthMM = 35;
     const imageHeightMM = 45;
     const gapMM = 2;
@@ -32,9 +34,7 @@ describe("calculatePrintCutLines", () => {
     const cols = Math.floor((availableWidthMM + gapMM) / (imageWidthMM + gapMM)); // 5
     const autoCount = 5 * Math.floor((availableHeightMM + gapMM) / (imageHeightMM + gapMM)); // 30
     const actualCopies = Math.min(8, autoCount); // 8
-    const rows = Math.ceil(actualCopies / cols); // 2
 
-    const gridWidth = cols * imageWidthMM + (cols - 1) * gapMM; // 183
     const grid = computeSheetGrid({
       cols,
       actualCopies,
@@ -50,7 +50,7 @@ describe("calculatePrintCutLines", () => {
     const offsetY = grid.offsetY;
 
     const lines = calculatePrintCutLines({
-      mode: "single",
+      mode: 'single',
       actualCopies,
       imageWidthMM,
       imageHeightMM,
@@ -93,7 +93,7 @@ describe("calculatePrintCutLines", () => {
     }
 
     const noEnd = calculatePrintCutLines({
-      mode: "single",
+      mode: 'single',
       actualCopies,
       imageWidthMM,
       imageHeightMM,
@@ -107,7 +107,7 @@ describe("calculatePrintCutLines", () => {
     expect(noEnd).toHaveLength(8);
   });
 
-  it("single mode: 2 copies on a 5-column grid -> only cut lines for the 2 active columns (no ghost cut lines)", () => {
+  it('single mode: 2 copies on a 5-column grid -> only cut lines for the 2 active columns (no ghost cut lines)', () => {
     const imageWidthMM = 35;
     const imageHeightMM = 45;
     const gapMM = 2;
@@ -125,7 +125,7 @@ describe("calculatePrintCutLines", () => {
     });
 
     const lines = calculatePrintCutLines({
-      mode: "single",
+      mode: 'single',
       actualCopies,
       imageWidthMM,
       imageHeightMM,
@@ -145,9 +145,9 @@ describe("calculatePrintCutLines", () => {
     ]);
   });
 
-  it("single mode: full-page A4 canvas -> cut lines at the 4 paper edges", () => {
+  it('single mode: full-page A4 canvas -> cut lines at the 4 paper edges', () => {
     const lines = calculatePrintCutLines({
-      mode: "single",
+      mode: 'single',
       actualCopies: 1,
       imageWidthMM: 210,
       imageHeightMM: 297,
@@ -174,7 +174,7 @@ describe("calculatePrintCutLines", () => {
     expect(horizontal.map((l) => l.y1)).toEqual([0, 297]);
   });
 
-  it("collage mode: 2x2 slots on 100x150mm paper -> 6 cut lines at slot boundaries", () => {
+  it('collage mode: 2x2 slots on 100x150mm paper -> 6 cut lines at slot boundaries', () => {
     const imageWidthMM = 100;
     const imageHeightMM = 150;
     const canvasWidth = 1181;
@@ -188,14 +188,14 @@ describe("calculatePrintCutLines", () => {
     const actualCopies = 1;
 
     const slots = [
-      { id: "s1", cellIndex: 0, x: 0, y: 0, w: 0.5, h: 0.5, imageSrc: "/local-image/a.png" },
-      { id: "s2", cellIndex: 1, x: 0.5, y: 0, w: 0.5, h: 0.5, imageSrc: "/local-image/b.png" },
-      { id: "s3", cellIndex: 2, x: 0, y: 0.5, w: 0.5, h: 0.5, imageSrc: "/local-image/c.png" },
-      { id: "s4", cellIndex: 3, x: 0.5, y: 0.5, w: 0.5, h: 0.5, imageSrc: "/local-image/d.png" },
+      { id: 's1', cellIndex: 0, x: 0, y: 0, w: 0.5, h: 0.5, imageSrc: '/local-image/a.png' },
+      { id: 's2', cellIndex: 1, x: 0.5, y: 0, w: 0.5, h: 0.5, imageSrc: '/local-image/b.png' },
+      { id: 's3', cellIndex: 2, x: 0, y: 0.5, w: 0.5, h: 0.5, imageSrc: '/local-image/c.png' },
+      { id: 's4', cellIndex: 3, x: 0.5, y: 0.5, w: 0.5, h: 0.5, imageSrc: '/local-image/d.png' },
     ];
 
     const lines = calculatePrintCutLines({
-      mode: "collage",
+      mode: 'collage',
       actualCopies,
       imageWidthMM,
       imageHeightMM,

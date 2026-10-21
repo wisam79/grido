@@ -1,7 +1,9 @@
 import React from 'react';
+
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { FluentKbd } from './fluent-kbd';
 import { cn } from '@/lib/utils';
+
+import { FluentKbd } from './fluent-kbd';
 
 export interface FluentCapsuleButtonProps {
   icon: React.ReactNode;

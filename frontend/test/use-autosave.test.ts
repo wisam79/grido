@@ -1,9 +1,10 @@
+import { renderHook, waitFor, act } from '@testing-library/react';
+import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { useAutoSave } from '../src/hooks/use-autosave';
 import { useEditorStore } from '../src/lib/editor-store';
-import { renderHook, waitFor, act } from '@testing-library/react';
 import { LoadAutoSave, SaveAutoSave } from '../wailsjs/go/main/App';
-import { toast } from 'sonner';
 
 // Mock sonner toast
 vi.mock('sonner', () => ({

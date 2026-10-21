@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { getThumbnailSrc, isLocalThumbnailable } from '../src/lib/canvas/thumbnail-src';
 
 describe('thumbnail-src', () => {

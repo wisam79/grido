@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { LockSimple, Key, Moon, Sun } from '@/components/ui/icons';
+import { toast } from 'sonner';
+
+import { AccountLicenseModal } from '@/components/editor/dialogs/account-license-modal';
+import { WindowControls } from '@/components/editor/system/window-controls';
+import { WindowResizeHandles } from '@/components/editor/system/window-resize-handles';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
+import { LockSimple, Key, Moon, Sun } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { WindowControls } from '@/components/editor/system/window-controls';
 // مسارات مباشرة بدل البرميل: كان هذا الملف (المُحمَّل مع App) يسحب كل الحوارات
 // واللوحات إلى الحزمة الرئيسية عبر @/components/editor.
-import { WindowResizeHandles } from '@/components/editor/system/window-resize-handles';
-import { AccountLicenseModal } from '@/components/editor/dialogs/account-license-modal';
-import { toast } from 'sonner';
 
 /**
  * LicenseLockScreen — شاشة قفل الترخيص المستقلة (رأس نافذة مختصر + نموذج التفعيل)

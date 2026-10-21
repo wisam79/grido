@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
-import { clampZoomRaw } from '@/lib/canvas/zoom';
-import { computeCanvasDisplay, CANVAS_FIT_PADDING } from '@/lib/canvas/fit';
+
 import { RESET_CANVAS_PAN_EVENT } from '@/hooks/use-canvas-zoom';
+import { computeCanvasDisplay, CANVAS_FIT_PADDING } from '@/lib/canvas/fit';
 import { useStageRef } from '@/lib/canvas/stage-context';
+import { clampZoomRaw } from '@/lib/canvas/zoom';
+import { useEditorStore } from '@/lib/editor-store';
+
 import { useStableViewportSize } from './use-stable-viewport-size';
 
 /**

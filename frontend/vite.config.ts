@@ -1,8 +1,8 @@
-import {defineConfig, Plugin} from 'vite'
-import react from '@vitejs/plugin-react'
-import { resolve, join, basename } from 'path'
-import { existsSync, createReadStream, statSync } from 'fs'
-import { homedir } from 'os'
+import { defineConfig, Plugin } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve, join, basename } from 'path';
+import { existsSync, createReadStream, statSync } from 'fs';
+import { homedir } from 'os';
 
 /**
  * Vite plugin to serve /local-image/ files from GridoStudio Media directory.
@@ -11,67 +11,67 @@ import { homedir } from 'os'
  */
 function localImagePlugin(): Plugin {
   // Resolve the Media directory path (same logic as Go's GetAppDir + "Media")
-  const appData = process.env.APPDATA || join(homedir(), 'AppData', 'Roaming')
-  const mediaDir = join(appData, 'GridoStudio', 'Media')
+  const appData = process.env.APPDATA || join(homedir(), 'AppData', 'Roaming');
+  const mediaDir = join(appData, 'GridoStudio', 'Media');
 
   return {
     name: 'local-image-server',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         if (!req.url || !req.url.startsWith('/local-image/')) {
-          return next()
+          return next();
         }
         // 🖼️ المسارات في التطوير: /local-image/thumb/<file>?w=128 هي مصغرة
         // يولّدها Go في الإنتاج. خادم Vite لا يملك مُصغِّراً، فيخدم الملف
         // الأصلي (تقريب بصري صحيح) بدل 404 الذي يكسر المعاينة.
-        const [pathname] = req.url.split('?')
-        const isThumb = pathname.startsWith('/local-image/thumb/')
+        const [pathname] = req.url.split('?');
+        const isThumb = pathname.startsWith('/local-image/thumb/');
         const relative = isThumb
           ? pathname.replace('/local-image/thumb/', '')
-          : pathname.replace('/local-image/', '')
-        const filename = basename(relative)
-        const filePath = join(mediaDir, filename)
+          : pathname.replace('/local-image/', '');
+        const filename = basename(relative);
+        const filePath = join(mediaDir, filename);
 
         if (!existsSync(filePath)) {
-          res.statusCode = 404
-          res.end('Image not found')
-          return
+          res.statusCode = 404;
+          res.end('Image not found');
+          return;
         }
 
-        const stat = statSync(filePath)
-        const ext = filename.split('.').pop()?.toLowerCase()
+        const stat = statSync(filePath);
+        const ext = filename.split('.').pop()?.toLowerCase();
         const mimeMap: Record<string, string> = {
           png: 'image/png',
           jpg: 'image/jpeg',
           jpeg: 'image/jpeg',
           webp: 'image/webp',
           gif: 'image/gif',
-        }
+        };
 
-        res.setHeader('Content-Type', mimeMap[ext || ''] || 'application/octet-stream')
-        res.setHeader('Content-Length', stat.size)
-        res.setHeader('Cache-Control', 'no-cache')
-        createReadStream(filePath).pipe(res)
-      })
+        res.setHeader('Content-Type', mimeMap[ext || ''] || 'application/octet-stream');
+        res.setHeader('Content-Length', stat.size);
+        res.setHeader('Cache-Control', 'no-cache');
+        createReadStream(filePath).pipe(res);
+      });
     },
-  }
+  };
 }
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), localImagePlugin()],
   worker: {
-    format: 'es'
+    format: 'es',
   },
   define: {
     'process.env': {},
-    global: 'globalThis'
+    global: 'globalThis',
   },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      '@bindings': resolve(__dirname, './bindings')
-    }
+      '@bindings': resolve(__dirname, './bindings'),
+    },
   },
   build: {
     target: 'esnext',
@@ -95,12 +95,12 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@techstark/opencv-js'],
     esbuildOptions: {
-      target: 'esnext'
-    }
+      target: 'esnext',
+    },
   },
   server: {
     host: '127.0.0.1',
     port: 9245,
     strictPort: true,
-  }
-})
+  },
+});

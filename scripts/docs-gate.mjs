@@ -319,6 +319,24 @@ const REF_ROOTS = [
   '.github/',
 ];
 
+/**
+ * مسارات مُولَّدة أو مُتجاهَلة من Git (مثل `frontend/bindings/` و`/bin`).
+ * لا يمكن أن توجد في نسخة نظيفة من المستودع، لذا يُعامَل مرجعها كتحذير
+ * لا كخطأ في الوضع الصارم — وإلا لأغلق الوضع `--strict-refs` كل كومت.
+ */
+function gitIgnoredPrefixes() {
+  const ignoreFile = join(ROOT, '.gitignore');
+  if (!existsSync(ignoreFile)) return [];
+  return readFileSync(ignoreFile, 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#') && !line.startsWith('!'))
+    .map((line) => line.replace(/^\//, '').replace(/\/$/, ''))
+    .filter(Boolean);
+}
+
+const GIT_IGNORED_PREFIXES = gitIgnoredPrefixes();
+
 function checkSkillReferences(mapText) {
   const ignoreMatch = mapText.match(/<!--\s*docs-gate:ignore-refs([\s\S]*?)-->/);
   const ignoreList = (ignoreMatch ? ignoreMatch[1].replace(/\([^)]*\)/g, '') : '')
@@ -359,6 +377,7 @@ function checkSkillReferences(mapText) {
   }
 
   const missing = new Set();
+  const generated = new Set();
   for (const file of targets) {
     const text = readFileSync(file, 'utf8');
     for (const raw of text.matchAll(/`([^`\n]+)`/g)) {
@@ -368,8 +387,19 @@ function checkSkillReferences(mapText) {
       if (!REF_ROOTS.some((root) => token.startsWith(root))) continue;
       if (/[*{}<>|$=\s]/.test(token) || token.includes('...')) continue;
       if (ignoreList.some((ignored) => token === ignored || token.startsWith(ignored))) continue;
-      if (!existsSync(join(ROOT, token))) missing.add(`${token}  ←  ${file.replace(ROOT, '.')}`);
+      if (existsSync(join(ROOT, token))) continue;
+      if (GIT_IGNORED_PREFIXES.some((prefix) => token === prefix || token.startsWith(`${prefix}/`))) {
+        generated.add(`${token}  ←  ${file.replace(ROOT, '.')}`);
+        continue;
+      }
+      missing.add(`${token}  ←  ${file.replace(ROOT, '.')}`);
     }
+  }
+
+  if (generated.size) {
+    warnings.push(
+      `مراجع مسارات مُولَّدة (غير موجودة في المستودع بشكل طبيعي): ${generated.size}`,
+    );
   }
 
   if (missing.size) {

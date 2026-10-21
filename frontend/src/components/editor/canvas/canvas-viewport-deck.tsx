@@ -1,5 +1,15 @@
 import React, { useCallback } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
+
+import { FluentCapsuleButton } from '@/components/ui/blocks/fluent-capsule-button';
+import { FluentKbd } from '@/components/ui/blocks/fluent-kbd';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Check,
   CaretDown,
@@ -17,26 +27,17 @@ import {
   FrameCorners,
   Sparkle,
 } from '@/components/ui/icons';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { CANVAS_FIT_LABELS, type CanvasFitMode } from '@/lib/canvas/fit';
-import { useCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
 import { PageOrientationIcon } from '@/components/ui/image-icons';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { FluentCapsuleButton } from '@/components/ui/blocks/fluent-capsule-button';
-import { FluentKbd } from '@/components/ui/blocks/fluent-kbd';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import { PAPER_SIZES, ADVANCED_PAPER_SIZES } from '@/lib/templates';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useCanvasZoom } from '@/hooks/use-canvas-zoom';
-import { useCanvasContext, useCollageViewFlags, useGridControls } from '@/lib/store/selectors';
+import { CANVAS_FIT_LABELS, type CanvasFitMode } from '@/lib/canvas/fit';
 import { canvasMm, findPaperByMm, formatDimensions, mmToPx } from '@/lib/canvas/units';
+import { useEditorStore } from '@/lib/editor-store';
+import { useCanvasContext, useCollageViewFlags, useGridControls } from '@/lib/store/selectors';
+import { PAPER_SIZES, ADVANCED_PAPER_SIZES } from '@/lib/templates';
+import { useCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
+import { cn } from '@/lib/utils';
 
 // كل المقاسات المعروضة في قائمة تغيير المقاس — تُبحث أيضاً عند تحديد الورقة
 // النشطة (كان اقتصر البحث على PAPER_SIZES فلا يظهر «Letter» مُحدداً بعد اختياره)

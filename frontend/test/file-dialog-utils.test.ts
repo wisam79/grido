@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { openImageFileDialog } from '../src/lib/io/file-dialog-utils';
 import * as AppGo from '../wailsjs/go/main/App';
 

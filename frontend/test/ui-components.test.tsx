@@ -1,15 +1,17 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { Button } from '../src/components/ui/button';
+import { describe, it, expect, vi } from 'vitest';
+
+import { Sparkle } from '@/components/ui/icons';
+
 import { Badge } from '../src/components/ui/badge';
+import { Button } from '../src/components/ui/button';
+import { HugeIcon, Spinner } from '../src/components/ui/huge-icon';
 import { Input } from '../src/components/ui/input';
 import { Label } from '../src/components/ui/label';
 import { Separator } from '../src/components/ui/separator';
 import { Switch } from '../src/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../src/components/ui/tabs';
-import { HugeIcon, Spinner } from '../src/components/ui/huge-icon';
-import { Sparkle } from '@/components/ui/icons';
 
 describe('UI Components Unit Tests', () => {
   it('renders Button component and handles click events', () => {
@@ -62,7 +64,9 @@ describe('UI Components Unit Tests', () => {
 
   it('renders Switch component and toggles checked state', () => {
     const handleCheckedChange = vi.fn();
-    render(<Switch checked={false} onCheckedChange={handleCheckedChange} aria-label="تفعيل الخيار" />);
+    render(
+      <Switch checked={false} onCheckedChange={handleCheckedChange} aria-label="تفعيل الخيار" />,
+    );
 
     const switchEl = screen.getByRole('switch');
     expect(switchEl).toBeInTheDocument();
@@ -80,7 +84,7 @@ describe('UI Components Unit Tests', () => {
         </TabsList>
         <TabsContent value="tab1">محتوى 1</TabsContent>
         <TabsContent value="tab2">محتوى 2</TabsContent>
-      </Tabs>
+      </Tabs>,
     );
 
     expect(screen.getByText('التبويب الأول')).toBeInTheDocument();
@@ -89,7 +93,12 @@ describe('UI Components Unit Tests', () => {
 
   it('renders HugeIcon and Spinner components properly', () => {
     const { container, rerender } = render(
-      <HugeIcon icon={Sparkle} size={24} className="test-huge-icon text-primary" data-testid="huge-sparkle" />
+      <HugeIcon
+        icon={Sparkle}
+        size={24}
+        className="test-huge-icon text-primary"
+        data-testid="huge-sparkle"
+      />,
     );
 
     const svgEl = container.querySelector('svg');
@@ -103,4 +112,3 @@ describe('UI Components Unit Tests', () => {
     expect(spinnerSvg).toHaveClass('custom-spin-class');
   });
 });
-

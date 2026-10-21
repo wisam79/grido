@@ -1,8 +1,9 @@
 import React from 'react';
-import { useEditorStore } from '@/lib/editor-store';
+
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import { ArrowUUpLeft, ArrowUUpRight } from '@/components/ui/icons';
-import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
+import { useEditorStore } from '@/lib/editor-store';
 
 /** التراجع/الإعادة. */
 export const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {

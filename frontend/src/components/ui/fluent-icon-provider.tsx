@@ -1,5 +1,6 @@
-import * as React from "react";
-import { IconContext, type IconWeight } from "./icons";
+import * as React from 'react';
+
+import { IconContext, type IconWeight } from './icons';
 
 export interface FluentIconProviderProps {
   children: React.ReactNode;
@@ -15,9 +16,9 @@ export interface FluentIconProviderProps {
  */
 export function FluentIconProvider({
   children,
-  weight = "regular",
+  weight = 'regular',
   size = 20,
-  color = "currentColor",
+  color = 'currentColor',
   mirrored = false,
 }: FluentIconProviderProps) {
   return (

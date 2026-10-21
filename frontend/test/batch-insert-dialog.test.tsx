@@ -1,9 +1,10 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { BatchInsertDialog } from '../src/components/editor/dialogs/batch-insert-dialog';
-import { useEditorStore } from '../src/lib/editor-store';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { useEditorStore } from '../src/lib/editor-store';
 
 vi.mock('../src/lib/io/file-dialog-utils', () => ({
   openImageFileDialog: vi.fn(() =>

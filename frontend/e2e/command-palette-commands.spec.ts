@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
@@ -33,8 +34,7 @@ test.describe('مدخل لوحة الأدوات وأوامرها الحقيقي�
   });
 
   test('أمر «تبديل المظهر» ينفّذ تبديلاً حقيقياً للمظهر', async ({ page }) => {
-    const isDark = () =>
-      page.evaluate(() => document.documentElement.classList.contains('dark'));
+    const isDark = () => page.evaluate(() => document.documentElement.classList.contains('dark'));
     const before = await isDark();
 
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('grido:toggle-theme')));

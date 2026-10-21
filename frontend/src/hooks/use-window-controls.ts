@@ -1,4 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+
+import { triggerMemoryTrim } from '@/lib/memory-trim';
+
+import { flushAutoSave } from './use-autosave';
 import {
   WindowMinimise,
   WindowToggleMaximise,
@@ -6,8 +10,6 @@ import {
   WindowIsMaximised,
   EventsOn,
 } from '../../wailsjs/runtime/runtime';
-import { flushAutoSave } from './use-autosave';
-import { triggerMemoryTrim } from '@/lib/memory-trim';
 
 /**
  * useWindowControls — يدير حالة نافذة التطبيق (تكبير/استعادة/تصغير/إغلاق/تركيز)

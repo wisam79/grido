@@ -1,8 +1,10 @@
-import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import React from 'react';
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { CollageArrangeTab } from '../src/components/editor/panels/collage/collage-arrange-tab';
 import { useEditorStore } from '../src/lib/editor-store';
+
 import type { CanvasSlot } from '../src/lib/store/types';
 
 /**

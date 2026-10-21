@@ -1,4 +1,23 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useDeferredValue } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogCloseButton,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   SealCheck,
   Plus,
@@ -12,57 +31,40 @@ import {
   Sparkle,
   Code,
   Scissors,
+  GridFour as TableIcon,
 } from '@/components/ui/icons';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogCloseButton,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/huge-icon';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useEditorStore } from '@/lib/editor-store';
-import { wailsIsDesktop } from '@/lib/wails-env';
-import { createLogger } from '@/lib/logger';
-import { toErrorMessage } from '@/lib/wails-error';
-import { uploadMediaBlob } from '@/lib/io/media-upload';
+import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
-import type { StickerElementSource, CanvasElement } from '@/lib/store/types';
-import { toast } from 'sonner';
-import {
+import { useEditorStore } from '@/lib/editor-store';
+import { uploadMediaBlob } from '@/lib/io/media-upload';
+import { createLogger } from '@/lib/logger';
+import { sanitizeSvgMarkup } from '@/lib/utils';
+import { wailsIsDesktop } from '@/lib/wails-env';
+import { toErrorMessage } from '@/lib/wails-error';
+
+import { StickerCatalog } from './sticker-catalog';
+import { StickerPreview } from './sticker-preview';
+import { StickerProperties } from './sticker-properties';
+import { VdpImportDialog } from './vdp-import-dialog';
+import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from '../lib/clipboard-utils';
+import { generateDieCutContour, DEFAULT_BLEED_PERCENT } from '../lib/die-cut-offset';
+import { useStickerParamsHistory } from '../lib/params-history';
+import { generateStickerSheetBlob } from '../lib/sheet-generator';
+import { buildDefaultStickerParams, buildStickerSvg } from '../lib/sticker-design/build-svg';
+import { migrateStickerParams } from '../lib/sticker-design/schema';
+import { embedStickerFonts } from '../lib/sticker-font-embed';
+import { stickerRasterSize } from '../lib/sticker-text';
+import { renderSvgToPngBlob, renderSvgToPngDataUrl, downloadBlob } from '../lib/svg-rasterizer';
+import { ALL_STICKER_TEMPLATES } from '../templates';
+import { findHiddenFieldIds } from '../templates/svg-elements';
+import type {
   StickerCategory,
   StickerCategoryGroupId,
   StickerShape,
   StickerTemplate,
   SheetGridConfig,
 } from '../types';
-import { ALL_STICKER_TEMPLATES } from '../templates';
-import { findHiddenFieldIds } from '../templates/svg-elements';
-import { renderSvgToPngBlob, renderSvgToPngDataUrl, downloadBlob } from '../lib/svg-rasterizer';
-import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
-import { stickerRasterSize } from '../lib/sticker-text';
-import { embedStickerFonts } from '../lib/sticker-font-embed';
-import { sanitizeSvgMarkup } from '@/lib/utils';
-import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from '../lib/clipboard-utils';
-import { generateStickerSheetBlob } from '../lib/sheet-generator';
-import { buildDefaultStickerParams, buildStickerSvg } from '../lib/sticker-design/build-svg';
-import { migrateStickerParams } from '../lib/sticker-design/schema';
-import { generateDieCutContour, DEFAULT_BLEED_PERCENT } from '../lib/die-cut-offset';
-import { useStickerParamsHistory } from '../lib/params-history';
-import { VdpImportDialog } from './vdp-import-dialog';
-import { GridFour as TableIcon } from '@/components/ui/icons';
-import { StickerCatalog } from './sticker-catalog';
-import { StickerProperties } from './sticker-properties';
-import { StickerPreview } from './sticker-preview';
+import type { StickerElementSource, CanvasElement } from '@/lib/store/types';
 
 export interface StickerStudioDialogProps {
   open: boolean;
@@ -93,8 +95,6 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   initialCategory = 'all',
   editingElement = null,
 }: StickerStudioDialogProps) {
-  const isEditMode = Boolean(editingElement);
-
   // Stage state: "gallery" for picking templates, "customize" for fine-tuning & inserting
   const [view, setView] = useState<'gallery' | 'customize'>('gallery');
 

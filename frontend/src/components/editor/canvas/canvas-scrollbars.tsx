@@ -1,6 +1,8 @@
 import React, { useCallback, useRef } from 'react';
+
 import { Crosshair } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+
 import { getStageClampBounds } from './use-canvas-viewport';
 
 const STEP_DELTA_PX = 40;

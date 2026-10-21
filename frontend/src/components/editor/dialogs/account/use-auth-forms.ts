@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+
 import { useEditorStore } from '@/lib/editor-store';
 import { toErrorMessage } from '@/lib/wails-error';
 

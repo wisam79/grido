@@ -4,6 +4,7 @@
  */
 import { TEXT_COLOR_DEFAULT } from './canvas-colors';
 import { warmTextStrokeFilter } from './text-stroke-filter';
+
 import type { CanvasFillStyle, GlyphTransform } from './fill-paint';
 
 /**

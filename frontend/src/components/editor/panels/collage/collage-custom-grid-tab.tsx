@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { FluentSection } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   GridFour,
   Plus,
@@ -17,16 +18,11 @@ import {
   Info,
   ArrowClockwise,
 } from '@/components/ui/icons';
-import type { DerivedCollageGrid } from '@/lib/canvas/collage-grid';
-import {
-  PhotoGridType,
-  GridAlignment,
-  getGridLimits,
-  getPhotoDimensions,
-} from './collage-grid-math';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FluentSection } from '@/components/ui/blocks';
+import { cn } from '@/lib/utils';
+import { getGridLimits, getPhotoDimensions } from './collage-grid-math';
+import type { PhotoGridType, GridAlignment } from './collage-grid-math';
+import type { DerivedCollageGrid } from '@/lib/canvas/collage-grid';
 
 /* ═══════════════════════════════════════════════════════════════
    تبويب الشبكة — تصميم Fluent 2 مريح ومتخصص حصراً في

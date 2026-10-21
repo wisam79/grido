@@ -1,5 +1,22 @@
-import { StateCreator } from 'zustand';
+import { generateInitialSlots, remapSlotsToCells, DEFAULT_COLLAGE_STATE } from './collage-slice';
+import { DEFAULT_GRID_STATE, type RulerUnit, type UserGuide } from './grid-slice';
+import { DEFAULT_HISTORY_ENTRY_EXTRAS, seedHistorySnapshot } from './history-slice';
+import { DEFAULT_PRINT_SETTINGS } from './print-slice';
+import { clearDisplayCache } from '../../canvas/display-image';
+import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from '../../canvas/fit';
+import { invalidateImageCache } from '../../canvas/image-cache';
+import { canvasMm, findPaperByMm } from '../../canvas/units';
+import { hydrateProjectState } from '../../io/project-hydrator';
 import {
+  COLLAGE_TEMPLATES,
+  PAPER_SIZES,
+  computeDynamicCollageCells,
+  getEffectiveDpi,
+} from '../../templates';
+import { uid } from '../../utils';
+
+import type { PhotoTemplate, CollageTemplate } from '../../templates';
+import type {
   EditorMode,
   ProjectFileV1,
   CanvasElement,
@@ -7,24 +24,7 @@ import {
   PrintSettings,
   HistoryEntry,
 } from '../types';
-import {
-  PhotoTemplate,
-  CollageTemplate,
-  COLLAGE_TEMPLATES,
-  PAPER_SIZES,
-  computeDynamicCollageCells,
-  getEffectiveDpi,
-} from '../../templates';
-import { generateInitialSlots, remapSlotsToCells, DEFAULT_COLLAGE_STATE } from './collage-slice';
-import { DEFAULT_PRINT_SETTINGS } from './print-slice';
-import { DEFAULT_HISTORY_ENTRY_EXTRAS, seedHistorySnapshot } from './history-slice';
-import { DEFAULT_GRID_STATE, type RulerUnit, type UserGuide } from './grid-slice';
-import { invalidateImageCache } from '../../canvas/image-cache';
-import { clearDisplayCache } from '../../canvas/display-image';
-import { uid } from '../../utils';
-import { canvasMm, findPaperByMm } from '../../canvas/units';
-import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from '../../canvas/fit';
-import { hydrateProjectState } from '../../io/project-hydrator';
+import type { StateCreator } from 'zustand';
 export interface CoreSlice {
   projectId: string | null;
   /** اسم المشروع المحفوظ/المفتوح — null لمستند جديد لم يُحفظ بعد */

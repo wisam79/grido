@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+
+import { ensureDisplayProxy } from '@/lib/canvas/display-image';
 import {
   touchCacheKey,
   setWithLRU,
@@ -6,7 +8,6 @@ import {
   invalidateImageCache,
   preloadImageIntoCache,
 } from '@/lib/canvas/image-cache';
-import { ensureDisplayProxy } from '@/lib/canvas/display-image';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('async-image');

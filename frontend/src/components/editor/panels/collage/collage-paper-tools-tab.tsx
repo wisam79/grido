@@ -1,3 +1,11 @@
+import { useShallow } from 'zustand/react/shallow';
+
+import {
+  FluentSection,
+  FluentSettingRow,
+  FluentSliderField,
+  FluentSegmentedControl,
+} from '@/components/ui/blocks';
 import {
   Scissors,
   Ruler,
@@ -7,15 +15,8 @@ import {
   FrameCorners,
   SlidersHorizontal,
 } from '@/components/ui/icons';
-import { useEditorStore } from '@/lib/editor-store';
-import { useShallow } from 'zustand/react/shallow';
-import {
-  FluentSection,
-  FluentSettingRow,
-  FluentSliderField,
-  FluentSegmentedControl,
-} from '@/components/ui/blocks';
 import { Switch } from '@/components/ui/switch';
+import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 
 /* ═══════════════════════════════════════════════════════════════

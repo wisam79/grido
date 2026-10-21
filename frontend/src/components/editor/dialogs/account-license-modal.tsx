@@ -1,4 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import { Badge } from '@/components/ui/badge';
+import { FluentSegmentedControl } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,16 +13,12 @@ import {
   DialogDescription,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { FluentSegmentedControl } from '@/components/ui/blocks';
-import { Badge } from '@/components/ui/badge';
 import { Key, User, SignOut } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
-import { toast } from 'sonner';
-import { useShallow } from 'zustand/react/shallow';
-import { useAuthForms } from './account/use-auth-forms';
+
 import { AuthTabContent } from './account/auth-tab-content';
 import { LicenseTabContent } from './account/license-tab-content';
+import { useAuthForms } from './account/use-auth-forms';
 
 export function AccountLicenseModal() {
   const {

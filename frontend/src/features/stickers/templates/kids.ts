@@ -1,34 +1,43 @@
-import { StickerTemplate } from "../types";
-import { escapeXml } from "../lib/svg-rasterizer";
-import { iconMarkup, scallopCirclePath, starPoints, regularPolygonPoints } from "./svg-elements";
+import { iconMarkup, scallopCirclePath, starPoints, regularPolygonPoints } from './svg-elements';
+import { escapeXml } from '../lib/svg-rasterizer';
+
+import type { StickerTemplate } from '../types';
 
 export const KIDS_TEMPLATES: StickerTemplate[] = [
   {
-    id: "kids_birthday_star",
-    name: "عيد ميلاد نجم",
-    nameEn: "Birthday Star",
-    category: "kids",
-    shape: "circle",
-    description: "ملصق عيد ميلاد مرحن بنجوم منفوخة وحروف لعوب للأطفال",
+    id: 'kids_birthday_star',
+    name: 'عيد ميلاد نجم',
+    nameEn: 'Birthday Star',
+    category: 'kids',
+    shape: 'circle',
+    description: 'ملصق عيد ميلاد مرحن بنجوم منفوخة وحروف لعوب للأطفال',
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
     defaultColors: {
-      primary: "#4F46E5",
-      secondary: "#F59E0B",
-      background: "#EEF2FF",
+      primary: '#4F46E5',
+      secondary: '#F59E0B',
+      background: '#EEF2FF',
     },
     fields: [
-      { id: "childName", label: "اسم الطفل", type: "text", defaultValue: "يارا" },
-      { id: "age", label: "العمر", type: "text", defaultValue: "٦ سنوات" },
-      { id: "wishText", label: "عبارة التمني", type: "text", defaultValue: "عيد ميلاد سعيد" },
+      { id: 'childName', label: 'اسم الطفل', type: 'text', defaultValue: 'يارا' },
+      { id: 'age', label: 'العمر', type: 'text', defaultValue: '٦ سنوات' },
+      { id: 'wishText', label: 'عبارة التمني', type: 'text', defaultValue: 'عيد ميلاد سعيد' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const name = escapeXml(fields.childName || "يارا");
-      const age = escapeXml(fields.age || "٦ سنوات");
-      const wish = escapeXml(fields.wishText || "عيد ميلاد سعيد");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const name = escapeXml(fields.childName || 'يارا');
+      const age = escapeXml(fields.age || '٦ سنوات');
+      const wish = escapeXml(fields.wishText || 'عيد ميلاد سعيد');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
       const scallops = scallopCirclePath(240, 240, 224, 12);
       const starL = starPoints(96, 130, 5, 22, 9);
@@ -53,31 +62,44 @@ export const KIDS_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "kids_party_dinosaur",
-    name: "حفلة الديناصور",
-    nameEn: "Dinosaur Party",
-    category: "kids",
-    shape: "rect",
-    description: "دعوة حفلة ديناصورات مغامرة للأطفال المحبين للاستكشاف",
+    id: 'kids_party_dinosaur',
+    name: 'حفلة الديناصور',
+    nameEn: 'Dinosaur Party',
+    category: 'kids',
+    shape: 'rect',
+    description: 'دعوة حفلة ديناصورات مغامرة للأطفال المحبين للاستكشاف',
     defaultWidth: 520,
     defaultHeight: 360,
     aspectRatio: 520 / 360,
     defaultMm: { width: 60, height: 42 },
     defaultColors: {
-      primary: "#15803D",
-      secondary: "#65A30D",
-      background: "#F7FEE7",
+      primary: '#15803D',
+      secondary: '#65A30D',
+      background: '#F7FEE7',
     },
     fields: [
-      { id: "title", label: "عنوان الحفلة", type: "text", defaultValue: "حفلة الديناصورات" },
-      { id: "childName", label: "اسم المدعو", type: "text", defaultValue: "البطل سيف" },
-      { id: "place", label: "المكان والوقت", type: "text", defaultValue: "قاعة المغامرات • 5 عصراً" },
+      { id: 'title', label: 'عنوان الحفلة', type: 'text', defaultValue: 'حفلة الديناصورات' },
+      { id: 'childName', label: 'اسم المدعو', type: 'text', defaultValue: 'البطل سيف' },
+      {
+        id: 'place',
+        label: 'المكان والوقت',
+        type: 'text',
+        defaultValue: 'قاعة المغامرات • 5 عصراً',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.title || "حفلة الديناصورات");
-      const name = escapeXml(fields.childName || "البطل سيف");
-      const place = escapeXml(fields.place || "قاعة المغامرات • 5 عصراً");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.title || 'حفلة الديناصورات');
+      const name = escapeXml(fields.childName || 'البطل سيف');
+      const place = escapeXml(fields.place || 'قاعة المغامرات • 5 عصراً');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
       const hexPts = regularPolygonPoints(118, 84, 42, 6, 0);
 
@@ -101,31 +123,39 @@ export const KIDS_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "kids_reward_chart",
-    name: "وسام إنجاز بطل",
-    nameEn: "Hero Achievement Medal",
-    category: "kids",
-    shape: "circle",
-    description: "وسام نجوم وإنجاز للتحفيز السلوكي ومكافآت المدارس والحضانات",
+    id: 'kids_reward_chart',
+    name: 'وسام إنجاز بطل',
+    nameEn: 'Hero Achievement Medal',
+    category: 'kids',
+    shape: 'circle',
+    description: 'وسام نجوم وإنجاز للتحفيز السلوكي ومكافآت المدارس والحضانات',
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 45, height: 45 },
     defaultColors: {
-      primary: "#D97706",
-      secondary: "#7C2D12",
-      background: "#FFFBEB",
+      primary: '#D97706',
+      secondary: '#7C2D12',
+      background: '#FFFBEB',
     },
     fields: [
-      { id: "title", label: "لقب الوسام", type: "text", defaultValue: "بطل الأسبوع" },
-      { id: "childName", label: "اسم البطل", type: "text", defaultValue: "الأستاذ حسين" },
-      { id: "stars", label: "عدد النجوم", type: "text", defaultValue: "★★★★★" },
+      { id: 'title', label: 'لقب الوسام', type: 'text', defaultValue: 'بطل الأسبوع' },
+      { id: 'childName', label: 'اسم البطل', type: 'text', defaultValue: 'الأستاذ حسين' },
+      { id: 'stars', label: 'عدد النجوم', type: 'text', defaultValue: '★★★★★' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.title || "بطل الأسبوع");
-      const name = escapeXml(fields.childName || "الأستاذ حسين");
-      const stars = escapeXml(fields.stars || "★★★★★");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.title || 'بطل الأسبوع');
+      const name = escapeXml(fields.childName || 'الأستاذ حسين');
+      const stars = escapeXml(fields.stars || '★★★★★');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
       const ribbonL = `M 168,404 L 128,470 L 168,452 L 198,472 L 190,410 Z`;
       const ribbonR = `M 312,404 L 352,470 L 312,452 L 282,472 L 290,410 Z`;
@@ -135,7 +165,7 @@ export const KIDS_TEMPLATES: StickerTemplate[] = [
   <path d="${ribbonR}" fill="${secondaryColor}" data-color-role="secondary"/>
   <circle cx="240" cy="240" r="190" fill="${bg}" stroke="${primaryColor}" stroke-width="8" data-color-role="background"/>
   <circle cx="240" cy="240" r="172" fill="none" stroke="${secondaryColor}" stroke-width="2.5" stroke-dasharray="8 5"/>
-  ${iconMarkup("star", 218, 116, 44, primaryColor)}
+  ${iconMarkup('star', 218, 116, 44, primaryColor)}
   <text data-field-id="title" x="240" y="228" font-family="${fontFamily}, sans-serif" font-size="${Math.round(38 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
     ${title}
   </text>

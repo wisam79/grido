@@ -1,7 +1,8 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+
 import { Question } from '@/components/ui/icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 export interface FluentSettingRowProps extends React.HTMLAttributes<HTMLDivElement> {
   label: React.ReactNode;

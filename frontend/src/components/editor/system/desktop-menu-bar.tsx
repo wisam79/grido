@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,16 +12,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useEditorStore } from '@/lib/editor-store';
-import { useShallow } from 'zustand/react/shallow';
+import { Button } from '@/components/ui/button';
 import {
-  autoFitZoomStore,
-  fitWidthZoomStore,
-  fitZoomStore,
-  resetZoomStore,
-  zoomInStore,
-  zoomOutStore,
-} from '@/hooks/use-canvas-zoom';
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import {
   Image,
   Images,
@@ -59,18 +52,27 @@ import {
   DeviceMobileCamera,
   Check,
 } from '@/components/ui/icons';
+import {
+  autoFitZoomStore,
+  fitWidthZoomStore,
+  fitZoomStore,
+  resetZoomStore,
+  zoomInStore,
+  zoomOutStore,
+} from '@/hooks/use-canvas-zoom';
+import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import { useEditorStore } from '@/lib/editor-store';
 import { openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
 
-const logger = createLogger('desktop-menu-bar');
-import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
-import { toast } from 'sonner';
 import {
   GetMediaStorageStats,
   CleanUnusedMediaNow,
   EmptyMediaTrash,
 } from '../../../../wailsjs/go/main/App';
+
+const logger = createLogger('desktop-menu-bar');
 
 export function DesktopMenuBar() {
   const {

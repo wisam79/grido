@@ -1,11 +1,12 @@
-import { DetectionMode, DetectionResult, DetectedDocument } from './types';
+import { computePolygonArea } from './contour-tracer';
+import { OVERLAP_TUNING } from './overlap-tuning';
 import {
   computeQuadOverlapStats,
   getDocumentAspectLabel,
   inferSmartDocumentAspect,
 } from './quad-geometry';
-import { computePolygonArea } from './contour-tracer';
-import { OVERLAP_TUNING } from './overlap-tuning';
+
+import type { DetectionMode, DetectionResult, DetectedDocument } from './types';
 
 /**
  * دمج النموذج العصبي (DocCornerNet) مع المسار الكلاسيكي (OpenCV / JS) —

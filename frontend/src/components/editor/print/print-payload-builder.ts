@@ -7,6 +7,11 @@
  */
 
 import * as domain from '@bindings/grido/internal/core/domain';
+
+import { previewWhite } from '@/lib/canvas/canvas-colors';
+import { paperCaptureRect } from '@/lib/canvas/fit';
+import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
+import { assertExportablePixels } from '@/lib/export/export-limits';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import {
   computeBlockPosition,
@@ -14,11 +19,9 @@ import {
   computeSlotRectMM,
 } from '@/lib/print/print-layout-math';
 import { buildSingleComposition } from '@/lib/print/single-print-composition';
-import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
-import { previewWhite } from '@/lib/canvas/canvas-colors';
-import { paperCaptureRect } from '@/lib/canvas/fit';
-import { assertExportablePixels } from '@/lib/export/export-limits';
+
 import { uploadPrintImage } from './print-transport';
+
 import type { usePrintLayout } from '@/hooks/use-print-layout';
 import type { CanvasSlot, CanvasElement, CollageTemplate, PrintSettings } from '@/lib/store/types';
 import type Konva from 'konva';

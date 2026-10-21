@@ -1,7 +1,7 @@
-import { CanvasElement } from "@/lib/store/types";
+import type { CanvasElement } from '@/lib/store/types';
 
 export interface SnapGuide {
-  type: "v" | "h";
+  type: 'v' | 'h';
   coord: number; // 0 to 1 relative coordinate
 }
 
@@ -57,7 +57,7 @@ export function getSnapPositionsWithTargets(
   thresholdX: number,
   thresholdY: number,
   resizeHandle: string | null = null,
-  grid?: GridSnapOptions
+  grid?: GridSnapOptions,
 ): SnapResult {
   const guides: SnapGuide[] = [];
   let snappedX = x;
@@ -93,14 +93,14 @@ export function getSnapPositionsWithTargets(
         bestVTarget = target.value;
       }
       // Check center
-      const diffCenter = Math.abs((x + w / 2) - target.value);
+      const diffCenter = Math.abs(x + w / 2 - target.value);
       if (diffCenter < minDiffX) {
         minDiffX = diffCenter;
         snappedX = target.value - w / 2;
         bestVTarget = target.value;
       }
       // Check right edge
-      const diffRight = Math.abs((x + w) - target.value);
+      const diffRight = Math.abs(x + w - target.value);
       if (diffRight < minDiffX) {
         minDiffX = diffRight;
         snappedX = target.value - w;
@@ -108,7 +108,7 @@ export function getSnapPositionsWithTargets(
       }
     }
     if (bestVTarget !== -1) {
-      guides.push({ type: "v", coord: bestVTarget });
+      guides.push({ type: 'v', coord: bestVTarget });
     }
 
     // 2. Move Snap Y — الشبكة تُنافس رياضياً O(1) مع الأهداف الخطية
@@ -137,14 +137,14 @@ export function getSnapPositionsWithTargets(
         bestHTarget = target.value;
       }
       // Check center
-      const diffCenter = Math.abs((y + h / 2) - target.value);
+      const diffCenter = Math.abs(y + h / 2 - target.value);
       if (diffCenter < minDiffY) {
         minDiffY = diffCenter;
         snappedY = target.value - h / 2;
         bestHTarget = target.value;
       }
       // Check bottom edge
-      const diffBottom = Math.abs((y + h) - target.value);
+      const diffBottom = Math.abs(y + h - target.value);
       if (diffBottom < minDiffY) {
         minDiffY = diffBottom;
         snappedY = target.value - h;
@@ -152,7 +152,7 @@ export function getSnapPositionsWithTargets(
       }
     }
     if (bestHTarget !== -1) {
-      guides.push({ type: "h", coord: bestHTarget });
+      guides.push({ type: 'h', coord: bestHTarget });
     }
   }
   // Snapping logic when RESIZING
@@ -160,7 +160,7 @@ export function getSnapPositionsWithTargets(
     const handle = resizeHandle.toLowerCase();
 
     // East side handles (e, ne, se) change width
-    if (handle.includes("e")) {
+    if (handle.includes('e')) {
       let minDiffX = thresholdX;
       let bestVTarget = -1;
       const rightX = x + w;
@@ -183,10 +183,10 @@ export function getSnapPositionsWithTargets(
           bestVTarget = target.value;
         }
       }
-      if (bestVTarget !== -1) guides.push({ type: "v", coord: bestVTarget });
+      if (bestVTarget !== -1) guides.push({ type: 'v', coord: bestVTarget });
     }
     // West side handles (w, nw, sw) change x and width
-    else if (handle.includes("w")) {
+    else if (handle.includes('w')) {
       let minDiffX = thresholdX;
       let bestVTarget = -1;
       const rightX = x + w;
@@ -211,11 +211,11 @@ export function getSnapPositionsWithTargets(
           bestVTarget = target.value;
         }
       }
-      if (bestVTarget !== -1) guides.push({ type: "v", coord: bestVTarget });
+      if (bestVTarget !== -1) guides.push({ type: 'v', coord: bestVTarget });
     }
 
     // South side handles (s, se, sw) change height
-    if (handle.includes("s")) {
+    if (handle.includes('s')) {
       let minDiffY = thresholdY;
       let bestHTarget = -1;
       const bottomY = y + h;
@@ -238,10 +238,10 @@ export function getSnapPositionsWithTargets(
           bestHTarget = target.value;
         }
       }
-      if (bestHTarget !== -1) guides.push({ type: "h", coord: bestHTarget });
+      if (bestHTarget !== -1) guides.push({ type: 'h', coord: bestHTarget });
     }
     // North side handles (n, nw, ne) change y and height
-    else if (handle.includes("n")) {
+    else if (handle.includes('n')) {
       let minDiffY = thresholdY;
       let bestHTarget = -1;
       const bottomY = y + h;
@@ -266,7 +266,7 @@ export function getSnapPositionsWithTargets(
           bestHTarget = target.value;
         }
       }
-      if (bestHTarget !== -1) guides.push({ type: "h", coord: bestHTarget });
+      if (bestHTarget !== -1) guides.push({ type: 'h', coord: bestHTarget });
     }
   }
 
@@ -275,7 +275,7 @@ export function getSnapPositionsWithTargets(
     y: snappedY,
     w: snappedW,
     h: snappedH,
-    guides
+    guides,
   };
 }
 
@@ -288,28 +288,38 @@ export function getSnapPositions(
   elements: CanvasElement[],
   thresholdX: number,
   thresholdY: number,
-  resizeHandle: string | null = null
+  resizeHandle: string | null = null,
 ): SnapResult {
   const vTargets: SnapTarget[] = [
-    { value: 0, origin: "canvas" },
-    { value: 0.5, origin: "canvas" },
-    { value: 1, origin: "canvas" },
+    { value: 0, origin: 'canvas' },
+    { value: 0.5, origin: 'canvas' },
+    { value: 1, origin: 'canvas' },
   ];
   const hTargets: SnapTarget[] = [
-    { value: 0, origin: "canvas" },
-    { value: 0.5, origin: "canvas" },
-    { value: 1, origin: "canvas" },
+    { value: 0, origin: 'canvas' },
+    { value: 0.5, origin: 'canvas' },
+    { value: 1, origin: 'canvas' },
   ];
 
   for (const el of elements) {
     if (el.id === dragId) continue;
-    vTargets.push({ value: el.x, origin: "element" });
-    vTargets.push({ value: el.x + el.width / 2, origin: "element" });
-    vTargets.push({ value: el.x + el.width, origin: "element" });
-    hTargets.push({ value: el.y, origin: "element" });
-    hTargets.push({ value: el.y + el.height / 2, origin: "element" });
-    hTargets.push({ value: el.y + el.height, origin: "element" });
+    vTargets.push({ value: el.x, origin: 'element' });
+    vTargets.push({ value: el.x + el.width / 2, origin: 'element' });
+    vTargets.push({ value: el.x + el.width, origin: 'element' });
+    hTargets.push({ value: el.y, origin: 'element' });
+    hTargets.push({ value: el.y + el.height / 2, origin: 'element' });
+    hTargets.push({ value: el.y + el.height, origin: 'element' });
   }
 
-  return getSnapPositionsWithTargets(x, y, w, h, vTargets, hTargets, thresholdX, thresholdY, resizeHandle);
+  return getSnapPositionsWithTargets(
+    x,
+    y,
+    w,
+    h,
+    vTargets,
+    hTargets,
+    thresholdX,
+    thresholdY,
+    resizeHandle,
+  );
 }

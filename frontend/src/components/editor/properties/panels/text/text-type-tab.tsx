@@ -1,6 +1,4 @@
-import { useEditorStore, type TextElement } from '@/lib/editor-store';
-import { cn } from '@/lib/utils';
-import { TEXT_PRESETS } from '@/lib/templates';
+import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
 import {
   TextHOne,
   TextHTwo,
@@ -25,11 +23,16 @@ import {
   Palette,
   TextAa,
 } from '@/components/ui/icons';
-import { PopoverColorPicker } from '../../shared-controls';
-import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
-import { TextFontSelector } from './text-font-selector';
+import { useEditorStore, type TextElement } from '@/lib/editor-store';
 import { loadGoogleFont } from '@/lib/io/fonts';
-import { TextTabProps, WEIGHT_OPTIONS } from './text-tab-types';
+import { TEXT_PRESETS } from '@/lib/templates';
+import { cn } from '@/lib/utils';
+
+import { TextFontSelector } from './text-font-selector';
+import { WEIGHT_OPTIONS } from './text-tab-types';
+import { PopoverColorPicker } from '../../shared-controls';
+
+import type { TextTabProps } from './text-tab-types';
 
 const MODULAR_FONT_SIZES = [
   10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 96, 120, 144, 180, 200,

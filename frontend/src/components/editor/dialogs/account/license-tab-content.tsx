@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/huge-icon';
 import { Warning, Key, ShieldCheck, DownloadSimple, ArrowSquareOut } from '@/components/ui/icons';
-import { ExportSupportLogs } from '../../../../../wailsjs/go/main/App';
-import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { toErrorMessage } from '@/lib/wails-error';
+
+import { ExportSupportLogs } from '../../../../../wailsjs/go/main/App';
+
 import type { UserProfile } from '@/lib/store/slices/license-slice';
 
 interface LicenseTabContentProps {
@@ -25,7 +28,7 @@ interface LicenseTabContentProps {
  */
 export function LicenseTabContent({
   user,
-  licenseActive,
+  licenseActive: _licenseActive,
   onActivate,
   onClearError,
   error,

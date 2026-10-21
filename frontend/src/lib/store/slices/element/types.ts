@@ -1,5 +1,5 @@
-import type { CanvasElement, ShapeElement, StickerElementSource } from '../../types';
 import type { TextPresetType } from '../../../templates';
+import type { CanvasElement, ShapeElement, StickerElementSource } from '../../types';
 
 export type { TextPresetType };
 

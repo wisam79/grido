@@ -1,11 +1,13 @@
 import { z } from 'zod';
-import { ProjectSchema } from '@/lib/schema';
-import { createLogger } from '@/lib/logger';
+
 import { sanitizeText } from '@/lib/canvas/text-helpers';
+import { createLogger } from '@/lib/logger';
+import { ProjectSchema } from '@/lib/schema';
 
 const logger = createLogger('project-serializer');
 import { domain } from '../../../wailsjs/go/models';
-import { EditorState } from '@/lib/editor-store';
+
+import type { EditorState } from '@/lib/editor-store';
 
 export const CURRENT_PROJECT_VERSION = 1;
 // إطار الترحيل الإصداري (2026-10-02): رفض صريح للإصدارات المستقبلية/التالفة

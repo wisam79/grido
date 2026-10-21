@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import {
   WarpCancelledError,
   WarpWorkerClient,
   supportsWorkerWarp,
 } from '../src/components/editor/document-scanner/core/warp-worker-client';
+
 import type { Point } from '../src/components/editor/document-scanner/core/types';
 
 class FakeWorker {

@@ -6,15 +6,15 @@
  * user-presentable Arabic message instead of raw serialized payloads.
  */
 
-const FALLBACK_MESSAGE = "حدث خطأ غير متوقع";
+const FALLBACK_MESSAGE = 'حدث خطأ غير متوقع';
 
 export function toErrorMessage(err: unknown, fallback = FALLBACK_MESSAGE): string {
-  if (typeof err === "string") {
+  if (typeof err === 'string') {
     const trimmed = err.trim();
     if (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) {
       try {
         const parsed: unknown = JSON.parse(trimmed);
-        if (typeof parsed === "string") return parsed;
+        if (typeof parsed === 'string') return parsed;
       } catch {
         /* not a JSON string literal */
       }
@@ -22,9 +22,9 @@ export function toErrorMessage(err: unknown, fallback = FALLBACK_MESSAGE): strin
     return trimmed || fallback;
   }
   if (err instanceof Error) return err.message || fallback;
-  if (err && typeof err === "object" && "message" in err) {
+  if (err && typeof err === 'object' && 'message' in err) {
     const msg = (err as { message?: unknown }).message;
-    if (typeof msg === "string" && msg) return msg;
+    if (typeof msg === 'string' && msg) return msg;
   }
   return fallback;
 }

@@ -1,4 +1,4 @@
-import type { CanvasSlot } from "@/lib/store/types";
+import type { CanvasSlot } from '@/lib/store/types';
 
 /**
  * Collage Geometry – Single Source of Truth
@@ -24,7 +24,7 @@ export function getCollageGeometry(
   canvasHeight: number,
   collageMargin: number,
   collageGap: number,
-  hasPhysicalLayout: boolean
+  hasPhysicalLayout: boolean,
 ): CollageGeometry {
   // 📐 التخطيط الفيزيائي (قوالب جاهزة) يحدّد مواضع الخلايا بنفسه: لا هوامش ولا فجوات
   const margin = hasPhysicalLayout ? 0 : collageMargin;
@@ -46,8 +46,8 @@ export interface SlotRect {
 
 /** مستطيل الخلية بالبكسل الكانفسي — المعادلة الحاكمة لكل من الرسم والتقاط الموضع */
 export function getSlotRect(
-  slot: Pick<CanvasSlot, "x" | "y" | "w" | "h">,
-  geo: CollageGeometry
+  slot: Pick<CanvasSlot, 'x' | 'y' | 'w' | 'h'>,
+  geo: CollageGeometry,
 ): SlotRect {
   return {
     left: geo.margin + slot.x * geo.availW + geo.gap / 2,

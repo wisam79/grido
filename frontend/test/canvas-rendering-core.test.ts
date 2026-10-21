@@ -1,11 +1,19 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Konva from 'konva';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import { isSpaceHandledByTarget } from '../src/components/editor/canvas/use-canvas-viewport';
+import { withHiddenOverlays } from '../src/lib/canvas/konva-export-utils';
 import { quantizePixels, buildColorHarmony } from '../src/lib/canvas/palette-extract';
+import {
+  RING_INNER_RATIO,
+  resolveRingInnerRadius,
+  ringInnerRadiusMax,
+  ringOuterRadius,
+} from '../src/lib/canvas/ring-geometry';
 import {
   ensureTextStrokeFilter,
   getTextStrokeFilterId,
 } from '../src/lib/canvas/text-stroke-filter';
-import { withHiddenOverlays } from '../src/lib/canvas/konva-export-utils';
 import { getKonvaFilters } from '../src/lib/filters/konva-filters';
 import {
   applyLuminanceThreshold,
@@ -13,15 +21,8 @@ import {
   isPixelFilter,
   PIXELATE_BLOCK_PX,
 } from '../src/lib/filters/pixel-filters';
-import {
-  RING_INNER_RATIO,
-  resolveRingInnerRadius,
-  ringInnerRadiusMax,
-  ringOuterRadius,
-} from '../src/lib/canvas/ring-geometry';
-import { buildAdjustmentCSS, buildCSSFilter } from '../src/lib/utils';
-import { isSpaceHandledByTarget } from '../src/components/editor/canvas/use-canvas-viewport';
 import { CanvasElementSchema } from '../src/lib/schema';
+import { buildAdjustmentCSS, buildCSSFilter } from '../src/lib/utils';
 
 describe('Canvas Core Rendering & Image Algorithms', () => {
   describe('Color Quantization (quantizePixels)', () => {

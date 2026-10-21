@@ -1,5 +1,5 @@
 import React from 'react';
-import { HorizontalRuler, VerticalRuler, RulerUnit, SelectionBoundsProjection } from './ruler';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,10 @@ import {
   LockSimpleOpen,
   Ruler,
 } from '@/components/ui/icons';
+
+import { HorizontalRuler, VerticalRuler } from './ruler';
+
+import type { RulerUnit, SelectionBoundsProjection } from './ruler';
 
 export interface ViewportFixedRulersProps {
   showRuler: boolean;

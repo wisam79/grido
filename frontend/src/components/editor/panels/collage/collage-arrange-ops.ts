@@ -21,13 +21,13 @@ export interface CellPosition {
 
 /** هل القيمة مصدر صورة فعلي؟ */
 export function isSrc(value: string | undefined | null): value is string {
-  return typeof value === "string" && value.length > 0;
+  return typeof value === 'string' && value.length > 0;
 }
 
 /** مصفوفة فارغة بالأبعاد المطلوبة */
 export function emptySrcMatrix(rows: number, cols: number): SrcMatrix {
   return Array.from({ length: Math.max(0, rows) }, () =>
-    Array.from({ length: Math.max(0, cols) }, () => undefined as string | undefined)
+    Array.from({ length: Math.max(0, cols) }, () => undefined as string | undefined),
   );
 }
 
@@ -44,7 +44,7 @@ export function collectFilled(matrix: SrcMatrix): {
         positions.push({ row: r, col: c });
         sources.push(src);
       }
-    })
+    }),
   );
   return { positions, sources };
 }
@@ -53,7 +53,7 @@ export function collectFilled(matrix: SrcMatrix): {
 export function placeSources(
   base: SrcMatrix,
   positions: CellPosition[],
-  sources: readonly string[]
+  sources: readonly string[],
 ): SrcMatrix {
   const next = base.map((row) => row.map(() => undefined as string | undefined));
   positions.forEach((pos, i) => {
@@ -98,10 +98,7 @@ export function reverseColumnsWithinFilled(matrix: SrcMatrix): SrcMatrix {
  * خلط عشوائي (Fisher–Yates) يتبادل مواضع الصور الممتلئة فقط — فالناتج
  * تبديل حقيقي (permutation) بلا تكرار ولا فقدان، والفارغ يبقى فارغاً.
  */
-export function shuffleWithinFilled(
-  matrix: SrcMatrix,
-  rng: () => number = Math.random
-): SrcMatrix {
+export function shuffleWithinFilled(matrix: SrcMatrix, rng: () => number = Math.random): SrcMatrix {
   const { positions, sources } = collectFilled(matrix);
   const shuffled = [...sources];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -141,7 +138,7 @@ export function transposeIndexMap(rows: number, matrix: SrcMatrix): Map<number, 
   matrix.forEach((row, r) =>
     row.forEach((src, c) => {
       if (isSrc(src)) map.set(c * nextCols + r, src);
-    })
+    }),
   );
   return map;
 }

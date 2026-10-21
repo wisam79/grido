@@ -1,5 +1,6 @@
-import { useEditorStore } from "@/lib/editor-store";
-import { resolveImageAspectRatio } from "./image-dimensions";
+import { useEditorStore } from '@/lib/editor-store';
+
+import { resolveImageAspectRatio } from './image-dimensions';
 
 /**
  * lib/canvas/load-image — تحميل صورة إلى الكانفس من أي مصدر (كانت 3 نسخ
@@ -17,11 +18,11 @@ export async function loadImageAspect(src: string): Promise<number> {
 
 export async function addImageFromSrc(
   src: string,
-  opts?: { setSingleMode?: boolean }
+  opts?: { setSingleMode?: boolean },
 ): Promise<void> {
   if (!src) return;
   const aspect = await loadImageAspect(src);
   const store = useEditorStore.getState();
-  if (opts?.setSingleMode) store.setMode("single");
+  if (opts?.setSingleMode) store.setMode('single');
   store.addImageElement(src, aspect);
 }

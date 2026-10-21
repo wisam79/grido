@@ -2,11 +2,14 @@
  * فرع الكولاج من التصدير اليدوي — رسم الخانات والحدود وخطوط القص.
  * مستخرج من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
-import { useEditorStore } from '@/lib/editor-store';
-import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
-import { computeSheetGrid, computeSlotRectMM } from '@/lib/print/print-layout-math';
-import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { collageCut, collageEndCut } from '@/lib/canvas/canvas-colors';
+import { isPixelFilter } from '@/lib/filters/pixel-filters';
+import { createLogger } from '@/lib/logger';
+import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
+import { computeSheetGrid, computeSlotRectMM } from '@/lib/print/print-layout-math';
+import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
+
+import { renderWithPixelFilter } from './export-pixel-filter';
 import {
   applySlotTransform,
   drawRoundRect,
@@ -14,9 +17,8 @@ import {
   drawSlotImageLocal,
   loadImage,
 } from './export-primitives';
-import { isPixelFilter } from '@/lib/filters/pixel-filters';
-import { renderWithPixelFilter } from './export-pixel-filter';
-import { createLogger } from '@/lib/logger';
+
+import type { useEditorStore } from '@/lib/editor-store';
 
 const logger = createLogger('export-canvas-collage');
 

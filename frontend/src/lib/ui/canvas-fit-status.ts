@@ -1,5 +1,6 @@
-import { create } from "zustand";
-import type { ResolvedFitMode } from "@/lib/canvas/fit";
+import { create } from 'zustand';
+
+import type { ResolvedFitMode } from '@/lib/canvas/fit';
 
 /**
  * حالة ملاءمة الكانفاس المعروضة — جسر صغير بين الكانفاس وشريط العرض.

@@ -1,23 +1,26 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import {
-  Point,
-  DetectedDocument,
-  DocumentAspectType,
-} from "../core";
-import {
-  docScannerPrimary, docScannerHover, docScannerDark,
-  docScannerInner, docScannerLoupe,
-} from "@/lib/canvas/canvas-colors";
+  docScannerPrimary,
+  docScannerHover,
+  docScannerDark,
+  docScannerInner,
+  docScannerLoupe,
+} from '@/lib/canvas/canvas-colors';
+
+import type { Point, DetectedDocument, DocumentAspectType } from '../core';
 
 function isPointInQuad(p: Point, quad: Point[]): boolean {
   if (!quad || quad.length < 4) return false;
   let inside = false;
   for (let i = 0, j = quad.length - 1; i < quad.length; j = i++) {
-    const xi = quad[i].x, yi = quad[i].y;
-    const xj = quad[j].x, yj = quad[j].y;
+    const xi = quad[i].x,
+      yi = quad[i].y;
+    const xj = quad[j].x,
+      yj = quad[j].y;
     const denom = yj - yi;
     if (denom === 0) continue;
-    const intersect = ((yi > p.y) !== (yj > p.y)) && (p.x < ((xj - xi) * (p.y - yi)) / denom + xi);
+    const intersect = yi > p.y !== yj > p.y && p.x < ((xj - xi) * (p.y - yi)) / denom + xi;
     if (intersect) inside = !inside;
   }
   return inside;
@@ -49,7 +52,7 @@ export function useScannerCanvasRender(
   imgSize: { w: number; h: number },
   onCornersChange: (corners: Point[]) => void,
   onAspectChange: (aspect: DocumentAspectType) => void,
-  selectDocument: (index: number) => void
+  selectDocument: (index: number) => void,
 ): ScannerCanvasApi {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -71,7 +74,7 @@ export function useScannerCanvasRender(
     const img = imgRef.current;
     if (!canvas || !img) return;
 
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     const container = containerRef.current;
@@ -88,7 +91,7 @@ export function useScannerCanvasRender(
     const displayH = Math.max(1, Math.round(img.naturalHeight * scale));
 
     // دعم دقة الشاشات العالية HiDPI / Retina
-    const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2.5) : 1;
+    const dpr = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2.5) : 1;
     const pixelW = Math.round(displayW * dpr);
     const pixelH = Math.round(displayH * dpr);
 
@@ -122,9 +125,9 @@ export function useScannerCanvasRender(
         ctx.lineTo(doc.corners[3].x * scale, doc.corners[3].y * scale);
         ctx.closePath();
 
-        ctx.fillStyle = "rgba(16, 185, 129, 0.12)";
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
         ctx.fill();
-        ctx.strokeStyle = "rgba(16, 185, 129, 0.85)";
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.85)';
         ctx.lineWidth = 1.5;
         ctx.setLineDash([5, 4]);
         ctx.stroke();
@@ -134,14 +137,14 @@ export function useScannerCanvasRender(
           ((doc.corners[0].x + doc.corners[1].x + doc.corners[2].x + doc.corners[3].x) / 4) * scale;
         const cy =
           ((doc.corners[0].y + doc.corners[1].y + doc.corners[2].y + doc.corners[3].y) / 4) * scale;
-        ctx.fillStyle = "rgba(16, 185, 129, 0.95)";
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.95)';
         ctx.beginPath();
         ctx.arc(cx, cy, 13, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 11px system-ui";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px system-ui';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText(`${idx + 1}`, cx, cy);
         ctx.restore();
       });
@@ -160,7 +163,7 @@ export function useScannerCanvasRender(
     ctx.lineTo(corners[3].x * scale, corners[3].y * scale);
     ctx.closePath();
 
-    ctx.fillStyle = "rgba(99, 102, 241, 0.20)";
+    ctx.fillStyle = 'rgba(99, 102, 241, 0.20)';
     ctx.fill();
 
     ctx.strokeStyle = docScannerPrimary();
@@ -179,7 +182,7 @@ export function useScannerCanvasRender(
 
       ctx.beginPath();
       ctx.arc(px, py, isActive ? 11 : isHover ? 9 : 7, 0, Math.PI * 2);
-      ctx.fillStyle = isActive ? docScannerPrimary() : isHover ? docScannerHover() : "#ffffff";
+      ctx.fillStyle = isActive ? docScannerPrimary() : isHover ? docScannerHover() : '#ffffff';
       ctx.fill();
       ctx.strokeStyle = docScannerDark();
       ctx.lineWidth = 2.5;
@@ -187,7 +190,7 @@ export function useScannerCanvasRender(
 
       ctx.beginPath();
       ctx.arc(px, py, 3, 0, Math.PI * 2);
-      ctx.fillStyle = isActive ? "#ffffff" : docScannerInner();
+      ctx.fillStyle = isActive ? '#ffffff' : docScannerInner();
       ctx.fill();
     });
 
@@ -234,7 +237,7 @@ export function useScannerCanvasRender(
       if (!loupeCanvas || !img || !canvas || corners.length <= cornerIndex) return;
 
       const pt = corners[cornerIndex];
-      const lCtx = loupeCanvas.getContext("2d");
+      const lCtx = loupeCanvas.getContext('2d');
       if (!lCtx) return;
 
       const loupeSize = 110;
@@ -286,7 +289,7 @@ export function useScannerCanvasRender(
         setLoupePos({ x: lx, y: ly });
       }
     },
-    [corners, imgRef]
+    [corners, imgRef],
   );
 
   const scheduleLoupeUpdate = useCallback(
@@ -299,7 +302,7 @@ export function useScannerCanvasRender(
         updateLoupe(cornerIndex, clientX, clientY);
       });
     },
-    [updateLoupe]
+    [updateLoupe],
   );
 
   const handlePointerDown = useCallback(
@@ -334,14 +337,23 @@ export function useScannerCanvasRender(
         scheduleLoupeUpdate(closestIdx, e.clientX, e.clientY);
       } else if (detectedDocs.length > 1) {
         const clickedDocIdx = detectedDocs.findIndex(
-          (doc, idx) => idx !== activeDocIndex && isPointInQuad({ x: clickX, y: clickY }, doc.corners)
+          (doc, idx) =>
+            idx !== activeDocIndex && isPointInQuad({ x: clickX, y: clickY }, doc.corners),
         );
         if (clickedDocIdx !== -1) {
           selectDocument(clickedDocIdx);
         }
       }
     },
-    [isPreviewMode, corners, imgSize, detectedDocs, activeDocIndex, selectDocument, scheduleLoupeUpdate]
+    [
+      isPreviewMode,
+      corners,
+      imgSize,
+      detectedDocs,
+      activeDocIndex,
+      selectDocument,
+      scheduleLoupeUpdate,
+    ],
   );
 
   const handlePointerMove = useCallback(
@@ -360,10 +372,10 @@ export function useScannerCanvasRender(
         const clampedY = Math.max(0, Math.min(imgSize.h, Math.round(clickY)));
 
         const nextCorners = corners.map((pt, idx) =>
-          idx === activeCorner ? { x: clampedX, y: clampedY } : pt
+          idx === activeCorner ? { x: clampedX, y: clampedY } : pt,
         );
         onCornersChange(nextCorners);
-        onAspectChange("free");
+        onAspectChange('free');
 
         scheduleLoupeUpdate(activeCorner, e.clientX, e.clientY);
       } else {
@@ -383,7 +395,16 @@ export function useScannerCanvasRender(
         }
       }
     },
-    [isPreviewMode, imgSize, activeCorner, corners, onCornersChange, onAspectChange, scheduleLoupeUpdate, requestDraw]
+    [
+      isPreviewMode,
+      imgSize,
+      activeCorner,
+      corners,
+      onCornersChange,
+      onAspectChange,
+      scheduleLoupeUpdate,
+      requestDraw,
+    ],
   );
 
   const handlePointerUp = useCallback(
@@ -394,8 +415,8 @@ export function useScannerCanvasRender(
         try {
           if (
             canvasRef.current &&
-            typeof canvasRef.current.releasePointerCapture === "function" &&
-            typeof canvasRef.current.hasPointerCapture === "function" &&
+            typeof canvasRef.current.releasePointerCapture === 'function' &&
+            typeof canvasRef.current.hasPointerCapture === 'function' &&
             canvasRef.current.hasPointerCapture(e.pointerId)
           ) {
             canvasRef.current.releasePointerCapture(e.pointerId);
@@ -405,7 +426,7 @@ export function useScannerCanvasRender(
         }
       }
     },
-    [activeCorner]
+    [activeCorner],
   );
 
   // 🔒 إلغاء إطارات الرسم المعلقة عند الإغلاق

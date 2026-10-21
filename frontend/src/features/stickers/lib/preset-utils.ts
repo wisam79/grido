@@ -1,6 +1,8 @@
-import { StickerParams, StickerUserPreset } from '../types';
-import { StickerUserPresetSchema, stripDangerousKeys } from './sticker-design/schema';
 import { createLogger } from '@/lib/logger';
+
+import { StickerUserPresetSchema, stripDangerousKeys } from './sticker-design/schema';
+
+import type { StickerParams, StickerUserPreset } from '../types';
 
 const logger = createLogger('sticker-presets');
 

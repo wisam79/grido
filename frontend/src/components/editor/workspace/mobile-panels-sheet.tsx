@@ -1,7 +1,8 @@
 import React from 'react';
+
+import { SquaresFour, Faders } from '@/components/ui/icons';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { SquaresFour, Faders } from '@/components/ui/icons';
 
 interface MobilePanelsSheetProps {
   open: boolean;

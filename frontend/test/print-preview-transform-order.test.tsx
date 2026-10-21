@@ -1,6 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+
 import { SheetPreview } from '../src/components/editor/print/print-preview';
+
 import type { CanvasSlot } from '../src/lib/store/types';
 
 /* ═══════════════════════════════════════════════════════════════

@@ -1,4 +1,6 @@
+import { act, renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+
 import {
   createParamsBuffer,
   pushParams,
@@ -7,8 +9,8 @@ import {
   useStickerParamsHistory,
   STICKER_HISTORY_LIMIT,
 } from '@/features/stickers/lib/params-history';
-import { act, renderHook } from '@testing-library/react';
 import { ALL_STICKER_TEMPLATES } from '@/features/stickers/templates';
+
 import type { StickerParams } from '@/features/stickers';
 
 const baseParams = (): StickerParams => ({

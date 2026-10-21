@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import {
   fuseDetections,
   mlGraceBudgetMs,
@@ -10,7 +11,8 @@ import {
   ML_GRACE_LOW_CONFIDENCE_MS,
   ML_GRACE_WEAK_MS,
 } from '../core/detect-fusion';
-import { Point, DetectionResult, DetectedDocument } from '../core/types';
+
+import type { Point, DetectionResult, DetectedDocument } from '../core/types';
 
 function rect(x: number, y: number, w: number, h: number): Point[] {
   return [

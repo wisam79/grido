@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useKonvaDrag } from './use-konva-drag';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { useEditorStore } from '@/lib/editor-store';
-import { CanvasElement } from '@/lib/store/types';
+
+import { useKonvaDrag } from './use-konva-drag';
+
+import type { CanvasElement } from '@/lib/store/types';
 import type { KonvaEventObject } from 'konva/lib/Node';
 
 describe('useKonvaDrag canonical architecture', () => {

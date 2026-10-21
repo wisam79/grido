@@ -1,15 +1,18 @@
 import React, { useMemo } from 'react';
-import { FreeformLayersTab } from './freeform-layers-tab';
-import { FreeformElementsTab } from './freeform-elements-tab';
-import { FreeformPresetsTab } from './freeform-presets-tab';
-import { FreeformFontsTab } from './freeform-fonts-tab';
-import { FreeformPaletteTab } from './freeform-palette-tab';
-import { FreeformBackdropsTab } from './freeform-backdrops-tab';
-import type { FreeformTab } from './freeform-panel-constants';
-import { FluentSegmentedControl } from '@/components/ui/blocks/fluent-segmented-control';
-import { getToolsForWorkflow } from '@/lib/workspace-tools';
-import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
+
+import { FluentSegmentedControl } from '@/components/ui/blocks/fluent-segmented-control';
+import { useEditorStore } from '@/lib/editor-store';
+import { getToolsForWorkflow } from '@/lib/workspace-tools';
+
+import { FreeformBackdropsTab } from './freeform-backdrops-tab';
+import { FreeformElementsTab } from './freeform-elements-tab';
+import { FreeformFontsTab } from './freeform-fonts-tab';
+import { FreeformLayersTab } from './freeform-layers-tab';
+import { FreeformPaletteTab } from './freeform-palette-tab';
+import { FreeformPresetsTab } from './freeform-presets-tab';
+
+import type { FreeformTab } from './freeform-panel-constants';
 
 /* ═══════════════════════════════════════════════════════════════
    لوحات وضع التعديل الحر — التبويب النشط يحدّد اللوحة المعروضة.

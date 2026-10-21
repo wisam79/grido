@@ -1,3 +1,7 @@
+import { DEFAULT_COLLAGE_STATE } from './slices/collage-slice';
+import { DEFAULT_GRID_STATE } from './slices/grid-slice';
+import { DEFAULT_PRINT_SETTINGS } from './slices/print-slice';
+
 import type {
   CanvasElement,
   CanvasSlot,
@@ -6,9 +10,6 @@ import type {
   PhotoTemplate,
   PrintSettings,
 } from './types';
-import { DEFAULT_COLLAGE_STATE } from './slices/collage-slice';
-import { DEFAULT_PRINT_SETTINGS } from './slices/print-slice';
-import { DEFAULT_GRID_STATE } from './slices/grid-slice';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // history-snapshot.ts — السجل الموحّد لحقول اللقطة القابلة للتراجع (مصدر واحد)

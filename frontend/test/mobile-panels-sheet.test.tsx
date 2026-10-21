@@ -1,5 +1,6 @@
 import { render, screen, cleanup } from '@testing-library/react';
 import { describe, it, expect, afterEach } from 'vitest';
+
 import { MobilePanelsSheet } from '../src/components/editor/workspace/mobile-panels-sheet';
 
 /**

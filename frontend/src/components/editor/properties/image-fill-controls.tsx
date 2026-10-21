@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+
 import { FluentSegmentedControl, FluentSliderField } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import { Image as ImageIcon, Trash, ArrowsClockwise } from '@/components/ui/icons';
 import { useAsyncImage } from '@/hooks/use-async-image';
-import { pickLocalImage } from '@/lib/io/file-dialog-utils';
-import { toErrorMessage } from '@/lib/wails-error';
-import { createLogger } from '@/lib/logger';
 import {
   TILE_SCALE_DEFAULT,
   TILE_SCALE_MAX,
   TILE_SCALE_MIN,
   type ShapeFillImageFit,
 } from '@/lib/canvas/shape-pattern';
+import { pickLocalImage } from '@/lib/io/file-dialog-utils';
+import { createLogger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/wails-error';
+
 import type { ImageFillFields } from './image-fill-patch';
 
 const logger = createLogger('image-fill-controls');

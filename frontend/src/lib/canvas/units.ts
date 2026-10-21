@@ -4,7 +4,7 @@
  * و`RulerUnit` معرّفاً مرتين، وصيغة `/25.4` مبعثرة في ~10 ملفات).
  */
 
-export type RulerUnit = "mm" | "cm" | "in" | "px";
+export type RulerUnit = 'mm' | 'cm' | 'in' | 'px';
 
 export const MM_PER_INCH = 25.4;
 export const DEFAULT_DPI = 300;
@@ -18,9 +18,9 @@ export function mmToPx(mm: number, dpi: number): number {
 }
 
 /** تنسيق قيمة مليمترية بوحدة العرض (الدقة موحدة: mm عشر واحد، cm/in عشران). */
-export function formatMm(mm: number, unit: Exclude<RulerUnit, "px">): string {
-  if (unit === "cm") return `${(mm / 10).toFixed(1)} cm`;
-  if (unit === "in") return `${(mm / MM_PER_INCH).toFixed(2)} in`;
+export function formatMm(mm: number, unit: Exclude<RulerUnit, 'px'>): string {
+  if (unit === 'cm') return `${(mm / 10).toFixed(1)} cm`;
+  if (unit === 'in') return `${(mm / MM_PER_INCH).toFixed(2)} in`;
   return `${mm.toFixed(1)} mm`;
 }
 
@@ -29,15 +29,15 @@ export function formatDimensions(
   canvasWidthPx: number,
   canvasHeightPx: number,
   dpi: number,
-  unit: RulerUnit
+  unit: RulerUnit,
 ): string {
-  if (unit === "px") {
+  if (unit === 'px') {
     return `${Math.round(canvasWidthPx)} × ${Math.round(canvasHeightPx)} px`;
   }
   const wMM = pxToMm(canvasWidthPx, dpi);
   const hMM = pxToMm(canvasHeightPx, dpi);
-  if (unit === "cm") return `${(wMM / 10).toFixed(1)} × ${(hMM / 10).toFixed(1)} cm`;
-  if (unit === "in")
+  if (unit === 'cm') return `${(wMM / 10).toFixed(1)} × ${(hMM / 10).toFixed(1)} cm`;
+  if (unit === 'in')
     return `${(wMM / MM_PER_INCH).toFixed(2)} × ${(hMM / MM_PER_INCH).toFixed(2)} in`;
   return `${wMM.toFixed(1)} × ${hMM.toFixed(1)} mm`;
 }
@@ -53,18 +53,18 @@ export function formatGuideMeasurement(
   widthMM: number,
   heightMM: number,
   canvasWidth: number,
-  canvasHeight: number
+  canvasHeight: number,
 ): string {
   const clamped = Math.min(1, Math.max(0, relPos));
-  if (unit === "px") {
+  if (unit === 'px') {
     const px = Math.round(clamped * (isH ? canvasHeight : canvasWidth));
     return `${px} px`;
   }
-  if (unit === "cm") {
+  if (unit === 'cm') {
     const cm = ((clamped * (isH ? heightMM : widthMM)) / 10).toFixed(2);
     return `${cm} cm`;
   }
-  if (unit === "in") {
+  if (unit === 'in') {
     const inch = ((clamped * (isH ? heightMM : widthMM)) / MM_PER_INCH).toFixed(2);
     return `${inch} in`;
   }
@@ -82,12 +82,12 @@ export interface PaperSizeLike {
 export function findPaperByMm<T extends PaperSizeLike>(
   wMM: number,
   hMM: number,
-  papers: T[]
+  papers: T[],
 ): T | undefined {
   const w = Math.round(wMM);
   const h = Math.round(hMM);
   return papers.find(
-    (p) => (p.widthMM === w && p.heightMM === h) || (p.widthMM === h && p.heightMM === w)
+    (p) => (p.widthMM === w && p.heightMM === h) || (p.widthMM === h && p.heightMM === w),
   );
 }
 
@@ -95,7 +95,7 @@ export function findPaperByMm<T extends PaperSizeLike>(
 export function canvasMm(
   canvasWidthPx: number,
   canvasHeightPx: number,
-  dpi: number
+  dpi: number,
 ): { wMM: number; hMM: number } {
   return {
     wMM: Math.round(pxToMm(canvasWidthPx, dpi)),

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+
 import { FluentSegmentedControl } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   FileText,
   Sparkle,
@@ -20,10 +20,18 @@ import {
   Circle,
   SquaresFour,
 } from '@/components/ui/icons';
-import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { DetectedDocument, DocumentAspectType, ScannerFilterMode, DetectionMode } from '../core';
+import { cn } from '@/lib/utils';
+
 import { DocumentListItem } from './document-list-item';
+
+import type {
+  DetectedDocument,
+  DocumentAspectType,
+  ScannerFilterMode,
+  DetectionMode,
+} from '../core';
 
 export interface ScannerSidebarProps {
   detectionMode?: DetectionMode;

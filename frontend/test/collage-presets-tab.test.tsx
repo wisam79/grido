@@ -1,6 +1,7 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
+
 import { CollagePresetsTab } from '../src/components/editor/panels/collage/collage-presets-tab';
 
 describe('CollagePresetsTab Component Suite', () => {

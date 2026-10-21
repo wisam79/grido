@@ -1,9 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { CanvasDimensionsPanel } from '../src/components/editor/properties/general/canvas-dimensions-panel';
-import { useEditorStore } from '../src/lib/editor-store';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { useEditorStore } from '../src/lib/editor-store';
 
 describe('CanvasDimensionsPanel Component Tests', () => {
   beforeEach(() => {
@@ -14,7 +15,7 @@ describe('CanvasDimensionsPanel Component Tests', () => {
     render(
       <TooltipProvider>
         <CanvasDimensionsPanel />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     expect(screen.getByText('مساحة العمل')).toBeInTheDocument();
@@ -29,7 +30,7 @@ describe('CanvasDimensionsPanel Component Tests', () => {
     render(
       <TooltipProvider>
         <CanvasDimensionsPanel />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     const landscapeBtn = screen.getByTitle('أفقي');

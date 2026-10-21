@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
+
 import {
-  Point,
   isQuad,
   autoDetectAllDocumentCorners,
   defaultInsetCorners,
@@ -19,6 +19,8 @@ import {
   splitQuadIntoIdCardsWithSeam,
   sortCornerPoints,
 } from '../core';
+
+import type { Point } from '../core';
 
 /**
  * اختبارات تثبيت (Hardening) لإصلاحات مراجعة الماسح الشاملة:

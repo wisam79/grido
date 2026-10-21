@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Batch Photo Insert Workflow E2E', () => {
@@ -8,7 +9,9 @@ test.describe('Batch Photo Insert Workflow E2E', () => {
     await waitForAppReady(page);
   });
 
-  test('Open batch insert dialog via custom event and inspect layout controls', async ({ page }) => {
+  test('Open batch insert dialog via custom event and inspect layout controls', async ({
+    page,
+  }) => {
     // Open Batch Insert dialog via custom event
     await page.evaluate(() => {
       window.dispatchEvent(new CustomEvent('grido:open-batch-insert-dialog'));

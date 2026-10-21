@@ -1,12 +1,8 @@
-import {
-  Point,
-  DetectedDocument,
-  DetectionResult,
-  ScoredCandidate,
-  DetectionMode,
-  STACKED_SPLIT_MIN_RATIO,
-  STACKED_SPLIT_MAX_RATIO,
-} from './types';
+import { createLogger } from '@/lib/logger';
+
+import { computePolygonArea, findConnectedContours, convexHull } from './contour-tracer';
+import { fuseDetections, mlGraceBudgetMs } from './detect-fusion';
+import { DetectorWorkerClient } from './detector-worker-client';
 import {
   rgbaToGrayscale,
   fastBoxBlur,
@@ -19,20 +15,7 @@ import {
   applyMorphologicalGradient,
   applyCannyNmsHysteresis,
 } from './fast-vision';
-import { computePolygonArea, findConnectedContours, convexHull } from './contour-tracer';
-import {
-  sortCornerPoints,
-  approxPolyDP,
-  findRotatedQuadCorners,
-  extractFourCornersFromHull,
-  inferSmartDocumentAspect,
-  isIdCardAspectRatio,
-  getAspectKindLabel,
-  getDocumentAspectLabel,
-  computeQuadOverlapStats,
-  fitRobustQuadLinesRANSAC,
-  evaluateVanishingPointPhysics,
-} from './quad-geometry';
+import { detectDocumentWithMl } from './ml-detector';
 import {
   computeQuadEdgeGradient,
   computeEdgeGradientAlongLine,
@@ -44,14 +27,31 @@ import {
   applyNMS,
   addManualDocumentQuad,
 } from './multi-doc-segmenter';
-import { refineCornersSubPixel } from './perspective-warper';
 import { detectDocumentsWithOpenCV, computeOpenCvScale } from './opencv-detector';
-import { detectDocumentWithMl } from './ml-detector';
-import { fuseDetections, mlGraceBudgetMs } from './detect-fusion';
 import { OVERLAP_TUNING } from './overlap-tuning';
+import { refineCornersSubPixel } from './perspective-warper';
+import {
+  sortCornerPoints,
+  approxPolyDP,
+  findRotatedQuadCorners,
+  extractFourCornersFromHull,
+  inferSmartDocumentAspect,
+  isIdCardAspectRatio,
+  getAspectKindLabel,
+  getDocumentAspectLabel,
+  fitRobustQuadLinesRANSAC,
+  evaluateVanishingPointPhysics,
+} from './quad-geometry';
+import { STACKED_SPLIT_MIN_RATIO, STACKED_SPLIT_MAX_RATIO } from './types';
 import { getLoadedOpenCV, loadOpenCV } from '../opencv-loader';
-import { DetectorWorkerClient } from './detector-worker-client';
-import { createLogger } from '@/lib/logger';
+
+import type {
+  Point,
+  DetectedDocument,
+  DetectionResult,
+  ScoredCandidate,
+  DetectionMode,
+} from './types';
 
 const logger = createLogger('document-detector');
 
@@ -73,9 +73,7 @@ export function defaultInsetCorners(w: number, h: number, insetRatio = 0.05): Po
 }
 
 const FRAME_HULL_MIN = 0.88;
-const FRAME_HULL_MAX = 0.999;
 const RING_UNIFORM_THRESHOLD = 0.08;
-const FRAME_TIER_BEST_AREA = 0.65;
 
 function quadAreaRatio(quad: Point[], w: number, h: number): number {
   return computePolygonArea(quad) / (w * h);
@@ -109,29 +107,6 @@ function computeBorderRingSalience(
     }
   }
   return { salient, total, ratio: total > 0 ? salient / total : 0 };
-}
-
-/**
- * فحص ما إذا كانت هناك ثنوية من المرشحين المتشابهين (مشهد متعدد المستندات) بدلاً من كتلة محتوى واحدة داخل المستند
- */
-function hasDisjointSimilarPair(candidates: ScoredCandidate[], totalPixels: number): boolean {
-  if (candidates.length < 2) return false;
-  const minArea = totalPixels * 0.015;
-  for (let i = 0; i < candidates.length; i++) {
-    const a = candidates[i];
-    const aArea = computePolygonArea(a.quad);
-    if (aArea < minArea) continue;
-    for (let j = i + 1; j < candidates.length; j++) {
-      const b = candidates[j];
-      const bArea = computePolygonArea(b.quad);
-      if (bArea < minArea) continue;
-      const ratio = Math.max(aArea, bArea) / Math.max(1, Math.min(aArea, bArea));
-      if (ratio > OVERLAP_TUNING.disjointPairMaxAreaRatio) continue;
-      const stats = computeQuadOverlapStats(a.quad, b.quad);
-      if (stats.iou < OVERLAP_TUNING.disjointPairMaxIou) return true;
-    }
-  }
-  return false;
 }
 
 /**
@@ -376,7 +351,6 @@ export function autoDetectAllDocumentCorners(
 
   const bestCand = selectedCandidates[0];
   const bestAreaRatio = bestCand ? quadAreaRatio(bestCand.quad, sw, sh) : 0;
-  const similarPair = hasDisjointSimilarPair(selectedCandidates, totalPixels);
 
   const bestCandEdgeGrad = bestCand ? computeQuadEdgeGradient(bestCand.quad, mag, sw, sh) : 0;
   const bestCandEdgeNorm = maxMag > 0 ? bestCandEdgeGrad / (maxMag * 0.22) : 0;

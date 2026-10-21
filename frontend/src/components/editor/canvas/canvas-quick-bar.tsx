@@ -1,21 +1,24 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from '@/components/ui/icons';
-import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
+
 import { Button } from '@/components/ui/button';
+import { X } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
-import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
-import { QuickBarSlotSection } from './quick-bar/quick-bar-slot-section';
-import { QuickBarMultiSelectionSection } from './quick-bar/quick-bar-multi-selection-section';
-import { QuickBarElementSection } from './quick-bar/quick-bar-element-section';
-import { useCanvasOverlayHost } from './canvas-overlay-host';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
-import { getElementVisualBox } from '@/lib/canvas/element-geometry';
 import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
-import type { CanvasElement } from '@/lib/store/types';
+import { getElementVisualBox } from '@/lib/canvas/element-geometry';
+import { useEditorStore } from '@/lib/editor-store';
+import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
+
+import { useCanvasOverlayHost } from './canvas-overlay-host';
+import { QuickBarElementSection } from './quick-bar/quick-bar-element-section';
+import { QuickBarMultiSelectionSection } from './quick-bar/quick-bar-multi-selection-section';
+import { QuickBarSlotSection } from './quick-bar/quick-bar-slot-section';
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+
+import type { CanvasElement } from '@/lib/store/types';
 
 const logger = createLogger('canvas-quick-bar');
 

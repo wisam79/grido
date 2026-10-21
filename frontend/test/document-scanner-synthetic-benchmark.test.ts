@@ -1,11 +1,13 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+
+import { computePolygonArea } from '../src/components/editor/document-scanner/core/contour-tracer';
+import { computeQuadOverlapStats } from '../src/components/editor/document-scanner/core/quad-geometry';
 import {
   sortCornerPoints,
   detectDocumentAuto,
-  Point,
 } from '../src/components/editor/document-scanner/perspective-transform';
-import { computePolygonArea } from '../src/components/editor/document-scanner/core/contour-tracer';
-import { computeQuadOverlapStats } from '../src/components/editor/document-scanner/core/quad-geometry';
+
+import type { Point } from '../src/components/editor/document-scanner/perspective-transform';
 
 describe('Document Scanner - Synthetic Image Benchmark & Edge-Case Robustness', () => {
   beforeAll(() => {
@@ -30,10 +32,10 @@ describe('Document Scanner - Synthetic Image Benchmark & Edge-Case Robustness', 
             sy?: any,
             sw?: any,
             sh?: any,
-            dx?: any,
-            dy?: any,
-            dw?: any,
-            dh?: any,
+            _dx?: any,
+            _dy?: any,
+            _dw?: any,
+            _dh?: any,
           ) => {
             if (src && (src._mockData || src instanceof HTMLCanvasElement)) {
               const srcData = src._mockData || (src as any)._mockData;
@@ -416,12 +418,6 @@ describe('Document Scanner - Synthetic Image Benchmark & Edge-Case Robustness', 
   it('Benchmark Case 11: High Aspect Ratio Receipt (1:3.2) with Thermal Print', async () => {
     const width = 240;
     const height = 260;
-    const groundTruth: Point[] = [
-      { x: 90, y: 15 },
-      { x: 150, y: 15 },
-      { x: 150, y: 245 },
-      { x: 90, y: 245 },
-    ];
 
     const { canvas } = createSyntheticImage(width, height, (x, y) => {
       if (x >= 90 && x <= 150 && y >= 15 && y <= 245) {

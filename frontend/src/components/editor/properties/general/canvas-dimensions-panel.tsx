@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { CaretDown, Check, Crop, FrameCorners, Link, LinkBreak } from '@/components/ui/icons';
-import { useEditorStore } from '@/lib/editor-store';
-import { PAPER_SIZES, ADVANCED_PAPER_SIZES, CARD_AND_LABEL_SIZES } from '@/lib/templates';
-import { cn } from '@/lib/utils';
+import { useShallow } from 'zustand/react/shallow';
+
+import { FluentSection, FluentSettingRow, FluentSegmentedControl } from '@/components/ui/blocks';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -11,11 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { useShallow } from 'zustand/react/shallow';
-import { FluentSection, FluentSettingRow, FluentSegmentedControl } from '@/components/ui/blocks';
-import { mmToPx, pxToMm } from '@/lib/canvas/units';
+import { CaretDown, Check, Crop, FrameCorners, Link, LinkBreak } from '@/components/ui/icons';
 import { PageOrientationIcon } from '@/components/ui/image-icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { mmToPx, pxToMm } from '@/lib/canvas/units';
+import { useEditorStore } from '@/lib/editor-store';
+import { PAPER_SIZES, ADVANCED_PAPER_SIZES, CARD_AND_LABEL_SIZES } from '@/lib/templates';
+import { cn } from '@/lib/utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // canvas-dimensions-panel.tsx — لوحة "مساحة العمل" (المقاس + الأبعاد + الاتجاه)

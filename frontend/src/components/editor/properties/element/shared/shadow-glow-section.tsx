@@ -1,7 +1,10 @@
-import { CanvasElement, useEditorStore } from '@/lib/editor-store';
-import { Sparkle } from '@/components/ui/icons';
 import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+import { Sparkle } from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+
 import { PopoverColorPicker } from '../../shared-controls';
+
+import type { CanvasElement } from '@/lib/editor-store';
 
 export interface ShadowGlowSectionProps {
   element: CanvasElement;

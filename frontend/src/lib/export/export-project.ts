@@ -1,9 +1,11 @@
 import { toast } from 'sonner';
+
+import { fetchLocalApi } from '@/lib/local-api';
+import { createLogger } from '@/lib/logger';
+
 import { exportCanvas } from './export-image';
 import { CanvasTooLargeError } from './export-limits';
 import { SaveFileDialog } from '../../../wailsjs/go/main/App';
-import { fetchLocalApi } from '@/lib/local-api';
-import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('export-project');
 

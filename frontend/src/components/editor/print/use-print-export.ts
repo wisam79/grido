@@ -1,22 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { useEditorStore } from '@/lib/editor-store';
-import { useStageRef } from '@/lib/canvas/stage-context';
+
+import { SetTaskbarProgress } from '@bindings/grido/app';
+import * as domain from '@bindings/grido/internal/core/domain';
 import {
   ExportPrintSheet,
   PrintDirect,
   PollJobStatus,
 } from '@bindings/grido/internal/handlers/printhandler';
-import { SetTaskbarProgress } from '@bindings/grido/app';
-import * as domain from '@bindings/grido/internal/core/domain';
+
 import { previewWhite } from '@/lib/canvas/canvas-colors';
+import { useStageRef } from '@/lib/canvas/stage-context';
+import { useEditorStore } from '@/lib/editor-store';
 import { CanvasTooLargeError } from '@/lib/export/export-limits';
-import type { usePrintLayout } from '@/hooks/use-print-layout';
-import type { PrintSettings } from '@/lib/store/types';
 import { createLogger } from '@/lib/logger';
 
 import { extractPrintImageSrc, generatePrintPageStyle } from './print-page-style';
-
+import { buildCollagePayload, buildSinglePayload, type BuiltItems } from './print-payload-builder';
 import {
   describeError,
   withTimeout,
@@ -24,7 +24,8 @@ import {
   UPLOAD_TIMEOUT_MS,
 } from './print-transport';
 
-import { buildCollagePayload, buildSinglePayload, type BuiltItems } from './print-payload-builder';
+import type { usePrintLayout } from '@/hooks/use-print-layout';
+import type { PrintSettings } from '@/lib/store/types';
 
 export interface PrintExecuteOptions {
   directPrint?: boolean;

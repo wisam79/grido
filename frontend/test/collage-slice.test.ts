@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+
 import { useEditorStore } from '../src/lib/editor-store';
 import { COLLAGE_TEMPLATES } from '../src/lib/templates/collage-templates';
 

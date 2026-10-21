@@ -1,8 +1,8 @@
-import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
+import React from 'react';
 import { Stage } from 'react-konva';
-import type Konva from 'konva';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import {
   clampStagePos,
   computeDefaultStageOrigin,
@@ -15,6 +15,8 @@ import {
   actualSizeZoomStore,
   resetZoomStore,
 } from '../src/hooks/use-canvas-zoom';
+
+import type Konva from 'konva';
 
 const noop = () => {};
 

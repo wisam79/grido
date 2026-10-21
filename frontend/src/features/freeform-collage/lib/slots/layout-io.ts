@@ -1,9 +1,11 @@
-import type { FreeformSlot, FreeformLayout, FreeformLayoutFile } from '../../types';
 import { SquaresFour } from '@/components/ui/icons';
-import type { CollageTemplate } from '@/lib/templates';
 import { clamp } from '@/lib/clamp';
+
 import { MIN_SIZE } from './constants';
 import { newSlotId } from './slot-ids';
+
+import type { FreeformSlot, FreeformLayout, FreeformLayoutFile } from '../../types';
+import type { CollageTemplate } from '@/lib/templates';
 
 export function convertToGridoTemplate(layout: FreeformLayout): CollageTemplate {
   return {

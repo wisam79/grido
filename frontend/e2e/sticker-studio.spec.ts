@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Sticker Studio & Barcode Generator E2E', () => {
@@ -9,7 +10,10 @@ test.describe('Sticker Studio & Barcode Generator E2E', () => {
   });
 
   test('Open sticker studio dialog and browse collections', async ({ page }) => {
-    const stickerBtn = page.getByRole('button', { name: /ملصقات|استوديو الملصقات/ }).or(page.getByTitle(/ملصقات/)).first();
+    const stickerBtn = page
+      .getByRole('button', { name: /ملصقات|استوديو الملصقات/ })
+      .or(page.getByTitle(/ملصقات/))
+      .first();
     if (await stickerBtn.isVisible()) {
       await stickerBtn.click();
       const dialog = page.getByRole('dialog');
@@ -22,7 +26,10 @@ test.describe('Sticker Studio & Barcode Generator E2E', () => {
   });
 
   test('Open barcode dialog if available', async ({ page }) => {
-    const barcodeBtn = page.getByRole('button', { name: /باركود|QR/ }).or(page.getByTitle(/باركود/)).first();
+    const barcodeBtn = page
+      .getByRole('button', { name: /باركود|QR/ })
+      .or(page.getByTitle(/باركود/))
+      .first();
     if (await barcodeBtn.isVisible()) {
       await barcodeBtn.click();
       await expect(page.getByRole('dialog')).toBeVisible();

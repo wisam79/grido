@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+
+import { Ruler } from '@/components/ui/icons';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -6,8 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Ruler } from '@/components/ui/icons';
 import { cn } from '@/lib/utils';
 
 import { COMMON_PAPER_PRESETS } from './freeform-paper-presets';

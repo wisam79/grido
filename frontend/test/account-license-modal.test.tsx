@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { AccountLicenseModal } from '../src/components/editor/dialogs/account-license-modal';
 import { useEditorStore } from '../src/lib/editor-store';
 import * as LicenseHandler from '../wailsjs/go/handlers/LicenseHandler';
@@ -92,7 +93,9 @@ describe('AccountLicenseModal Component Tests', () => {
     fireEvent.click(screen.getByText('إنشاء حساب'));
 
     fireEvent.change(screen.getByPlaceholderText('الاسم'), { target: { value: 'Ali' } });
-    fireEvent.change(screen.getByPlaceholderText('name@example.com'), { target: { value: 'pending@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText('name@example.com'), {
+      target: { value: 'pending@example.com' },
+    });
     fireEvent.change(screen.getByPlaceholderText('••••••••'), { target: { value: 'pass1234' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'إنشاء حساب' }));

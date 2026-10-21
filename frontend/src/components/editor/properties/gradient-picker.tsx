@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react';
-import { cn } from '@/lib/utils';
-import { PopoverColorPicker } from './shared-controls';
+
 import { FluentSegmentedControl, FluentSliderField } from '@/components/ui/blocks';
 import { Check, ArrowsLeftRight, Sparkle, Palette } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+
 import { formatGradientCss, GRADIENT_PRESETS } from './gradient-utils';
 import { ImageFillControls } from './image-fill-controls';
+import { PopoverColorPicker } from './shared-controls';
+
 import type { ImageFillFields } from './image-fill-patch';
 
 /** أنواع التعبئة الموحدة — 'image' (تعبئة بصورة) للأشكال فقط عبر allowImageFill */

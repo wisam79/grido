@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 // 1x1 transparent PNG data URL & base64
 export const MOCK_PNG_BASE64 =

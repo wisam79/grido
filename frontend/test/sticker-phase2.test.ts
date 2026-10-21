@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
+
 import { embedStickerFonts, isSafeFontFaceStyle } from '@/features/stickers/lib/sticker-font-embed';
-import { sanitizeSvgMarkup } from '@/lib/utils';
-import { CanvasElementSchema } from '@/lib/schema';
 import { mmToPx } from '@/features/stickers/lib/sticker-text';
+import { CanvasElementSchema } from '@/lib/schema';
+import { sanitizeSvgMarkup } from '@/lib/utils';
 
 describe('phase2: portable SVG + vector source + mm sheet', () => {
   it('allows safe @font-face data: style through sanitizer', () => {

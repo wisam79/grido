@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+
+import { FluentSection, FluentSegmentedControl, FluentSliderField } from '@/components/ui/blocks';
 import { GridFour } from '@/components/ui/icons';
-import { useEditorStore } from '@/lib/editor-store';
-import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -10,8 +11,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useShallow } from 'zustand/react/shallow';
-import { FluentSection, FluentSegmentedControl, FluentSliderField } from '@/components/ui/blocks';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
+
 import { PopoverColorPicker } from '../shared-controls';
 
 export const GridColumnsPanel = React.memo(function GridColumnsPanel() {

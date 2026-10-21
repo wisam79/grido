@@ -1,13 +1,16 @@
 import { useEffect } from 'react';
-import { useEditorStore, EditorState } from '@/lib/editor-store';
+import { toast } from 'sonner';
+
+import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from '@bindings/grido/app';
+
+import { useEditorStore } from '@/lib/editor-store';
+import { deserializeProjectFile, serializeEditorState } from '@/lib/io/project-serializer';
+import { createLogger } from '@/lib/logger';
+import { debounce } from '@/lib/utils';
+import { toErrorMessage } from '@/lib/wails-error';
+import type { EditorState } from '@/lib/editor-store';
 
 type EditorStoreSnapshot = EditorState;
-import { debounce } from '@/lib/utils';
-import { deserializeProjectFile, serializeEditorState } from '@/lib/io/project-serializer';
-import { LoadAutoSave, SaveAutoSave, ClearAutoSave } from '@bindings/grido/app';
-import { toast } from 'sonner';
-import { createLogger } from '@/lib/logger';
-import { toErrorMessage } from '@/lib/wails-error';
 
 const logger = createLogger('useAutoSave');
 

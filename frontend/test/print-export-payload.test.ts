@@ -1,18 +1,20 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import {
-  usePrintExport,
-  type PrintExportContext,
-  type PrintExecuteOptions,
-} from '../src/components/editor/print/use-print-export';
+import { toast } from 'sonner';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import {
   ExportPrintSheet,
   PrintNative,
   PrintDirect,
   PollJobStatus,
-  GetSupportedPapers,
 } from '@bindings/grido/internal/handlers/printhandler';
-import { toast } from 'sonner';
+
+import {
+  usePrintExport,
+  type PrintExportContext,
+  type PrintExecuteOptions,
+} from '../src/components/editor/print/use-print-export';
+
 import type { usePrintLayout } from '../src/hooks/use-print-layout';
 import type { CanvasSlot } from '../src/lib/store/types';
 
@@ -68,7 +70,6 @@ const mockExportPrintSheet = vi.mocked(ExportPrintSheet);
 const mockPrintNative = vi.mocked(PrintNative);
 const mockPrintDirect = vi.mocked(PrintDirect);
 const mockPollJobStatus = vi.mocked(PollJobStatus);
-const mockGetSupportedPapers = vi.mocked(GetSupportedPapers);
 const mockToastError = vi.mocked(toast.error);
 const mockToastSuccess = vi.mocked(toast.success);
 const mockToastWarning = vi.mocked(toast.warning);

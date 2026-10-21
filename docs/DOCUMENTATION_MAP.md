@@ -54,6 +54,7 @@
 | تغيير الإصدار أو الوسم أو آلية الإصدار | (يُجمع تلقائياً من fragments) + `.agents/skills/grido-qa-security-auditor/SKILL.md` (قسم الإصدار) + `.agents/AGENTS.md` عند تغيير القاعدة |
 | تغيير نظام تصميم أو مكتبة UI | `changelog/fragments/` + `.agents/skills/fluent2-design-system/SKILL.md` + `docs/features-tracker.md` |
 | تغيير متطلبات أو إصدار أداة | `README.md` (المتطلبات) + `changelog/fragments/` + `.agents/skills/wails-cross-compiler/SKILL.md` |
+| تغيير أدوات التنسيق أو قواعد ESLint أو سكربتات Git hooks | `changelog/fragments/` + `docs/testing_guide.md` + `README.md` (معايير الكود) + `.agents/AGENTS.md` |
 
 ---
 
@@ -73,10 +74,13 @@
 | 1 | انحراف الأرقام المرجعية (اختبارات / E2E / Go / مستندات) | `node scripts/docs-gate.mjs` | ⛔ **يُوقف الكومت** |
 | 2 | تغطية كل مستند في الجرد (لا مستند غير مُسجَّل) | نفس الأمر | ⛔ **يُوقف الكومت** |
 | 3 | كومت كود بلا fragment مرافق أو سكيمة فاسدة (`changelog/fragments/` — `type/scope/related_files`) | نفس الأمر | ⛔ **يُوقف الكومت** |
-| 4 | سلامة مراجع المسارات في AGENTS.md والمهارات | `--strict-refs` | ⚠️ تحذير افتراضياً · ⛔ صارم بالعلم |
-| 5 | **تأكيدات التحقق على الكود** (ادعاءات «مُصلح» لا تنهار صامتة: 50 تأكيداً في `scripts/docs-gate.mjs`) | `node scripts/docs-gate.mjs` | ⛔ **يُوقف الكومت** |
+| 4 | سلامة مراجع المسارات في AGENTS.md والمهارات (المسارات المُولَّدة والمُتجاهَلة من Git — مثل `frontend/bindings/` و`/bin` — تُعامَل كتحذير دائماً ولا تُغلق الوضع الصارم) | `--strict-refs` | ⚠️ تحذير افتراضياً · ⛔ صارم بالعلم |
+| 5 | **تأكيدات التحقق على الكود** (ادعاءات «مُصلح» لا تنهار صامتة: 53 تأكيداً في `scripts/docs-gate.mjs`) | `node scripts/docs-gate.mjs` | ⛔ **يُوقف الكومت** |
 | 6 | `CHANGELOG.md` لا يُعدَّل يدوياً — يُبنى من fragments عند `scripts/release.mjs` | `docs-gate` يفشل عند تعديل `CHANGELOG.md` مباشرة | ⛔ يُوقف الكومت |
 | 7 | Formatting والأنواع والاختبارات | `.husky/pre-commit` → `lint-staged` · `npm run test:all` للأعمال الكبيرة | ⛔ **يُوقف الكومت** |
+| 8 | تنسيق الواجهة (Prettier) — يشمل `test/` و`e2e/` وملفات الإعداد | `npm --prefix frontend run format:check` · خطوة CI | ⛔ **يُوقف الكومت/CI** |
+| 9 | تنسيق Go (صفر انحراف gofmt) | خطوة `gofmt` في `ci.yml` | ⛔ **يُوقف CI** |
+| 10 | صيغة رسالة الالتزام (Conventional Commits) | `.husky/commit-msg` → `scripts/commit-msg-lint.mjs` | ⛔ **يُوقف الكومت** |
 
 > **فحص 5 — ما هو:** لكل بند وُسم ✅ في `BUGS_REPORT.md` (أو ثابت معماري مغلق) **دليل نصّي في الكود** يُثبَّت في صفيف `CODE_ASSERTIONS` داخل `scripts/docs-gate.mjs` بثلاثة أنواع: `mustContain` (الدليل باقٍ) · `mustNotContain` (العبارة الممنوعة لم تعد تعود — مثال: نداء التسجيل `callAIUsageRPC(..., false)` الذي كان سبب الخصم المزدوج) · `count` (عدد مرات محدّد — مثال: تعريف `SIGNPATH_API_TOKEN` مرة واحدة فقط في `release.yml` على مستوى الـ job).
 > **لماذا:** بدونه كان يُمكن أن يعود عيب مغلق إلى الكود بينما يبقى التقرير يقول «مُصلح» — انحراف صامت. **مُثبَت بالاختبار:** حذف `utils.AtomicWriteFile` من `window_state.go` أخيراً ⇒ فشلت البوابة ⇒ إرجاع الملف ⇒ نجاح.

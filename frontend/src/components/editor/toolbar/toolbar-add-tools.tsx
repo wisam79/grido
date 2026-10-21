@@ -1,12 +1,15 @@
 import React from 'react';
+
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import { Sticker } from '@/components/ui/icons';
-import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { useEditorStore } from '@/lib/editor-store';
-import type { StickerElementSource } from '@/lib/store/types';
+
 import { REEDIT_STICKER_EVENT, type ReeditStickerEventDetail } from './sticker-reedit-bus';
-import { AddTextDropdown } from './toolbar-add-text';
 import { AddShapesDropdown } from './toolbar-add-shapes';
+import { AddTextDropdown } from './toolbar-add-text';
+
+import type { StickerElementSource } from '@/lib/store/types';
 
 const BarcodeDialog = React.lazy(() =>
   import('../dialogs/barcode-dialog').then((m) => ({ default: m.BarcodeDialog })),

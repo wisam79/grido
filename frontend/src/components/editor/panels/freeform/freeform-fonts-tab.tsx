@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
-import { MagnifyingGlass, Star, X } from '@/components/ui/icons';
-import { ARABIC_FONTS, loadGoogleFont, type FontOption } from '@/lib/io/fonts';
-import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
-import { cn } from '@/lib/utils';
+
+import { MagnifyingGlass, Star, X } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
+import { useEditorStore } from '@/lib/editor-store';
+import { ARABIC_FONTS, loadGoogleFont, type FontOption } from '@/lib/io/fonts';
 import {
   DEFAULT_FAVORITE_FONTS,
   PREF_KEYS,
@@ -13,6 +13,7 @@ import {
   toggleStoredValue,
   writeStoredList,
 } from '@/lib/local-prefs';
+import { cn } from '@/lib/utils';
 
 /* ═══════════════════════════════════════════════════════════════
    مكتبة الخطوط — تصميم رشيق، بسيط، ومباشر بنمط استوديو احترافي:

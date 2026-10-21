@@ -1,7 +1,10 @@
 import React from 'react';
-import { Toaster as Sonner, ToasterProps } from 'sonner';
-import { CheckCircle, XCircle, WarningCircle, Info } from '@/components/ui/icons';
+import { Toaster as Sonner } from 'sonner';
+
 import { Spinner } from '@/components/ui/huge-icon';
+import { CheckCircle, XCircle, WarningCircle, Info } from '@/components/ui/icons';
+
+import type { ToasterProps } from 'sonner';
 
 const Toaster = ({ offset = 20, ...props }: ToasterProps) => {
   const theme =

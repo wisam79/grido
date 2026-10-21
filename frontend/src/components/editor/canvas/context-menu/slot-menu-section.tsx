@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow';
-import { useEditorStore } from '@/lib/editor-store';
+
 import { Spinner } from '@/components/ui/huge-icon';
 import {
   Broom,
@@ -14,9 +14,10 @@ import {
   Columns,
   Rows,
 } from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
 import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
-import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
-import type { CanvasSlot } from '@/lib/store/types';
+import { createLogger } from '@/lib/logger';
+
 import {
   menuItemClassName,
   menuItemDangerClassName,
@@ -24,7 +25,9 @@ import {
   menuSectionLabelClassName,
   menuSeparatorClassName,
 } from './menu-item-styles';
-import { createLogger } from '@/lib/logger';
+import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
+
+import type { CanvasSlot } from '@/lib/store/types';
 
 const logger = createLogger('slot-menu-section');
 
@@ -58,7 +61,7 @@ export function SlotMenuSection({
   isEnhancing,
   handleRemoveBg,
   handleEnhance,
-  onUpdateSlot,
+  onUpdateSlot: _onUpdateSlot,
 }: SlotMenuShared) {
   // 🛡️ useShallow يمنع إعادة الرندر عند أي تغير في المتجر — كان selector
   // الكائني يعيد كائناً جديداً في كل استدعاء فيكسر Memoization القسم بأكمله

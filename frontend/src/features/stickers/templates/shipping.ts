@@ -1,35 +1,49 @@
-import { StickerTemplate } from "../types";
-import { escapeXml } from "../lib/svg-rasterizer";
-import { generateBarcodeInnerSvg } from "../lib/barcode-svg";
+import { generateBarcodeInnerSvg } from '../lib/barcode-svg';
+import { escapeXml } from '../lib/svg-rasterizer';
+
+import type { StickerTemplate } from '../types';
 
 export const SHIPPING_TEMPLATES: StickerTemplate[] = [
   {
-    id: "shipping_fragile",
-    name: "قابل للكسر (احذر)",
-    nameEn: "Fragile (Handle with Care)",
-    category: "shipping",
-    description: "ملصق تحذيري دولي للشحنات الحساسة والزجاجية مع رمز الكأس وباركود",
+    id: 'shipping_fragile',
+    name: 'قابل للكسر (احذر)',
+    nameEn: 'Fragile (Handle with Care)',
+    category: 'shipping',
+    description: 'ملصق تحذيري دولي للشحنات الحساسة والزجاجية مع رمز الكأس وباركود',
     defaultWidth: 600,
     defaultHeight: 400,
     aspectRatio: 600 / 400,
     defaultColors: {
-      primary: "#DC2626",
-      secondary: "#1F2937",
-      background: "#FFFFFF",
+      primary: '#DC2626',
+      secondary: '#1F2937',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "mainWarning", label: "عنوان التحذير", type: "text", defaultValue: "قابل للكسر" },
-      { id: "subWarning", label: "التعليمات اللوجستية", type: "text", defaultValue: "يُرجى التعامل معه بعناية فائقة" },
-      { id: "tracking", label: "رمز التتبع أو الشحنة", type: "text", defaultValue: "FRG-9842-EXP" },
+      { id: 'mainWarning', label: 'عنوان التحذير', type: 'text', defaultValue: 'قابل للكسر' },
+      {
+        id: 'subWarning',
+        label: 'التعليمات اللوجستية',
+        type: 'text',
+        defaultValue: 'يُرجى التعامل معه بعناية فائقة',
+      },
+      { id: 'tracking', label: 'رمز التتبع أو الشحنة', type: 'text', defaultValue: 'FRG-9842-EXP' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const main = escapeXml(fields.mainWarning || "قابل للكسر");
-      const sub = escapeXml(fields.subWarning || "يُرجى التعامل معه بعناية فائقة");
-      const track = escapeXml(fields.tracking || "FRG-9842-EXP");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const main = escapeXml(fields.mainWarning || 'قابل للكسر');
+      const sub = escapeXml(fields.subWarning || 'يُرجى التعامل معه بعناية فائقة');
+      const track = escapeXml(fields.tracking || 'FRG-9842-EXP');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
-      const innerBarcode = generateBarcodeInnerSvg(fields.tracking || "FRG-9842-EXP", "CODE128", {
+      const innerBarcode = generateBarcodeInnerSvg(fields.tracking || 'FRG-9842-EXP', 'CODE128', {
         lineColor: secondaryColor,
         width: 300,
         height: 48,
@@ -63,27 +77,35 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "shipping_this_way_up",
-    name: "هذا الجانب لأعلى",
-    nameEn: "This Way Up",
-    category: "shipping",
-    description: "ملصق اتجاه الصندوق لتفادي انقلاب الطرود والمعدات الحساسة",
+    id: 'shipping_this_way_up',
+    name: 'هذا الجانب لأعلى',
+    nameEn: 'This Way Up',
+    category: 'shipping',
+    description: 'ملصق اتجاه الصندوق لتفادي انقلاب الطرود والمعدات الحساسة',
     defaultWidth: 400,
     defaultHeight: 500,
     aspectRatio: 400 / 500,
     defaultColors: {
-      primary: "#0F172A",
-      secondary: "#0284C7",
-      background: "#FFFFFF",
+      primary: '#0F172A',
+      secondary: '#0284C7',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "topTitle", label: "النص العلوي", type: "text", defaultValue: "هذا الجانب لأعلى" },
-      { id: "enTitle", label: "النص بالإنجليزية", type: "text", defaultValue: "THIS WAY UP" },
+      { id: 'topTitle', label: 'النص العلوي', type: 'text', defaultValue: 'هذا الجانب لأعلى' },
+      { id: 'enTitle', label: 'النص بالإنجليزية', type: 'text', defaultValue: 'THIS WAY UP' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const ar = escapeXml(fields.topTitle || "هذا الجانب لأعلى");
-      const en = escapeXml(fields.enTitle || "THIS WAY UP");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const ar = escapeXml(fields.topTitle || 'هذا الجانب لأعلى');
+      const en = escapeXml(fields.enTitle || 'THIS WAY UP');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
@@ -107,29 +129,42 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "shipping_keep_dry",
-    name: "يحفظ بعيداً عن الماء",
-    nameEn: "Keep Dry",
-    category: "shipping",
-    description: "ملصق الحماية من الرطوبة والمطر مع رمز المظلة والقطرات",
+    id: 'shipping_keep_dry',
+    name: 'يحفظ بعيداً عن الماء',
+    nameEn: 'Keep Dry',
+    category: 'shipping',
+    description: 'ملصق الحماية من الرطوبة والمطر مع رمز المظلة والقطرات',
     defaultWidth: 400,
     defaultHeight: 500,
     aspectRatio: 400 / 500,
     defaultColors: {
-      primary: "#0284C7",
-      secondary: "#0F172A",
-      background: "#FFFFFF",
+      primary: '#0284C7',
+      secondary: '#0F172A',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "mainText", label: "النص العربي", type: "text", defaultValue: "يُحفظ في مكان جاف" },
-      { id: "enText", label: "النص الإنجليزي", type: "text", defaultValue: "KEEP DRY" },
-      { id: "note", label: "ملاحظة التخزين", type: "text", defaultValue: "تجنب التعرض للمطر والرطوبة" },
+      { id: 'mainText', label: 'النص العربي', type: 'text', defaultValue: 'يُحفظ في مكان جاف' },
+      { id: 'enText', label: 'النص الإنجليزي', type: 'text', defaultValue: 'KEEP DRY' },
+      {
+        id: 'note',
+        label: 'ملاحظة التخزين',
+        type: 'text',
+        defaultValue: 'تجنب التعرض للمطر والرطوبة',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const main = escapeXml(fields.mainText || "يُحفظ في مكان جاف");
-      const en = escapeXml(fields.enText || "KEEP DRY");
-      const note = escapeXml(fields.note || "تجنب التعرض للمطر والرطوبة");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const main = escapeXml(fields.mainText || 'يُحفظ في مكان جاف');
+      const en = escapeXml(fields.enText || 'KEEP DRY');
+      const note = escapeXml(fields.note || 'تجنب التعرض للمطر والرطوبة');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
@@ -159,29 +194,42 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "shipping_heavy_package",
-    name: "طرد ثقيل (احذر الرفع)",
-    nameEn: "Heavy Weight Package",
-    category: "shipping",
-    description: "تنبيه للأوزان الثقيلة التي تتطلب شخصين أو رافعة لتجنب إصابات الظهر",
+    id: 'shipping_heavy_package',
+    name: 'طرد ثقيل (احذر الرفع)',
+    nameEn: 'Heavy Weight Package',
+    category: 'shipping',
+    description: 'تنبيه للأوزان الثقيلة التي تتطلب شخصين أو رافعة لتجنب إصابات الظهر',
     defaultWidth: 500,
     defaultHeight: 400,
     aspectRatio: 500 / 400,
     defaultColors: {
-      primary: "#EA580C",
-      secondary: "#1E293B",
-      background: "#FFF7ED",
+      primary: '#EA580C',
+      secondary: '#1E293B',
+      background: '#FFF7ED',
     },
     fields: [
-      { id: "weightText", label: "الوزن المقدر", type: "text", defaultValue: "> 25 KG" },
-      { id: "warningText", label: "عنوان التنبيه", type: "text", defaultValue: "طرد ثقيل الوزن" },
-      { id: "actionText", label: "إجراء الرفع", type: "text", defaultValue: "يتطلب شخصين للرفع أو رافعة" },
+      { id: 'weightText', label: 'الوزن المقدر', type: 'text', defaultValue: '> 25 KG' },
+      { id: 'warningText', label: 'عنوان التنبيه', type: 'text', defaultValue: 'طرد ثقيل الوزن' },
+      {
+        id: 'actionText',
+        label: 'إجراء الرفع',
+        type: 'text',
+        defaultValue: 'يتطلب شخصين للرفع أو رافعة',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const weight = escapeXml(fields.weightText || "> 25 KG");
-      const warning = escapeXml(fields.warningText || "طرد ثقيل الوزن");
-      const action = escapeXml(fields.actionText || "يتطلب شخصين للرفع أو رافعة");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const weight = escapeXml(fields.weightText || '> 25 KG');
+      const warning = escapeXml(fields.warningText || 'طرد ثقيل الوزن');
+      const action = escapeXml(fields.actionText || 'يتطلب شخصين للرفع أو رافعة');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="500" height="400">
@@ -207,29 +255,42 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "shipping_do_not_stack",
-    name: "ممنوع التكديس",
-    nameEn: "Do Not Stack",
-    category: "shipping",
-    description: "ملصق لحظر وضع أي طرود أخرى فوق الصندوق في المستودع أو الشاحنة",
+    id: 'shipping_do_not_stack',
+    name: 'ممنوع التكديس',
+    nameEn: 'Do Not Stack',
+    category: 'shipping',
+    description: 'ملصق لحظر وضع أي طرود أخرى فوق الصندوق في المستودع أو الشاحنة',
     defaultWidth: 420,
     defaultHeight: 480,
     aspectRatio: 420 / 480,
     defaultColors: {
-      primary: "#E11D48",
-      secondary: "#0F172A",
-      background: "#FFFFFF",
+      primary: '#E11D48',
+      secondary: '#0F172A',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "mainText", label: "النص الرئيسي", type: "text", defaultValue: "ممنوع التكديس" },
-      { id: "subText", label: "النص بالإنجليزية", type: "text", defaultValue: "DO NOT STACK" },
-      { id: "note", label: "ملاحظة أمان", type: "text", defaultValue: "لا تضع أي طرود أو أثقال فوق هذا الصندوق" },
+      { id: 'mainText', label: 'النص الرئيسي', type: 'text', defaultValue: 'ممنوع التكديس' },
+      { id: 'subText', label: 'النص بالإنجليزية', type: 'text', defaultValue: 'DO NOT STACK' },
+      {
+        id: 'note',
+        label: 'ملاحظة أمان',
+        type: 'text',
+        defaultValue: 'لا تضع أي طرود أو أثقال فوق هذا الصندوق',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const main = escapeXml(fields.mainText || "ممنوع التكديس");
-      const sub = escapeXml(fields.subText || "DO NOT STACK");
-      const note = escapeXml(fields.note || "لا تضع أي طرود أو أثقال فوق هذا الصندوق");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const main = escapeXml(fields.mainText || 'ممنوع التكديس');
+      const sub = escapeXml(fields.subText || 'DO NOT STACK');
+      const note = escapeXml(fields.note || 'لا تضع أي طرود أو أثقال فوق هذا الصندوق');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 480" width="420" height="480">

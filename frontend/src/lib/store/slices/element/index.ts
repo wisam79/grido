@@ -1,14 +1,14 @@
-import type { StateCreator } from 'zustand';
-import { DEFAULT_ELEMENT_STATE } from './types';
-import type { BatchImageItem, ElementCross, ElementSlice } from './types';
-import type { TextPresetType } from './types';
-import { createImageElementsSlice } from './image-elements';
-import { createTextElementsSlice } from './text-elements';
-import { createShapeElementsSlice } from './shape-elements';
-import { createElementCrudSlice } from './crud';
-import { createElementClipboardSlice } from './clipboard';
-import { createElementSelectionSlice } from './selection';
 import { createElementAlignmentSlice } from './alignment';
+import { createElementClipboardSlice } from './clipboard';
+import { createElementCrudSlice } from './crud';
+import { createImageElementsSlice } from './image-elements';
+import { createElementSelectionSlice } from './selection';
+import { createShapeElementsSlice } from './shape-elements';
+import { createTextElementsSlice } from './text-elements';
+import { DEFAULT_ELEMENT_STATE } from './types';
+
+import type { BatchImageItem, ElementCross, ElementSlice, TextPresetType } from './types';
+import type { StateCreator } from 'zustand';
 
 export type { BatchImageItem, ElementCross, ElementSlice, TextPresetType };
 export {

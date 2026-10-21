@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
 import { Layer, Rect } from 'react-konva';
-import { GridLayer } from '../elements/grid-layer';
-import { ColumnsLayer } from '../elements/columns-layer';
-// 🎨 هندسة تدرج الورقة موحّدة مع التصدير (lib/canvas/gradient-geometry)
+
 import { gradientPixelPoints } from '@/lib/canvas/gradient-geometry';
+
+import { ColumnsLayer } from '../elements/columns-layer';
+import { GridLayer } from '../elements/grid-layer';
+// 🎨 هندسة تدرج الورقة موحّدة مع التصدير (lib/canvas/gradient-geometry)
 
 interface KonvaBackgroundLayerProps {
   canvasWidth: number;
@@ -33,7 +35,7 @@ export const KonvaBackgroundLayer = React.memo(function KonvaBackgroundLayer({
   backgroundColor,
   backgroundGradientColor2,
   backgroundGradientAngle = 135,
-  mode,
+  mode: _mode,
   showGrid,
   gridSize,
   gridColor,

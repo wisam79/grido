@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+
 import { invalidateCanvasColors } from '@/lib/canvas/canvas-colors';
 
 export type ThemeMode = 'system' | 'dark' | 'light';

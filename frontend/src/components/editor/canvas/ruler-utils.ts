@@ -1,20 +1,20 @@
 // النوع القانوني في lib/canvas/units — يُعاد تصديره هنا للتوافقية
-import type { RulerUnit } from "@/lib/canvas/units";
+import type { RulerUnit } from '@/lib/canvas/units';
 export type { RulerUnit };
 
 /**
  * حساب التدريج والخطوات التكيفية الذكية لمختلف الوحدات ومستويات الزوم (من 10% إلى 500%+)
  */
 export function getRulerSteps(pixelsPerUnit: number, unit: RulerUnit) {
-  const minLabelDistancePx = unit === "in" ? 54 : 44;
+  const minLabelDistancePx = unit === 'in' ? 54 : 44;
   const rawLabelStep = minLabelDistancePx / Math.max(pixelsPerUnit, 0.00001);
 
   let niceSteps: number[];
-  if (unit === "cm") {
+  if (unit === 'cm') {
     niceSteps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200];
-  } else if (unit === "in") {
+  } else if (unit === 'in') {
     niceSteps = [0.03125, 0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 12, 24, 48];
-  } else if (unit === "px") {
+  } else if (unit === 'px') {
     niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
   } else {
     // mm (الافتراضي للهويات والاستوديو)
@@ -24,21 +24,21 @@ export function getRulerSteps(pixelsPerUnit: number, unit: RulerUnit) {
   const labelStep = niceSteps.find((s) => s >= rawLabelStep) || niceSteps[niceSteps.length - 1];
 
   let subStep = 1;
-  if (unit === "in") {
+  if (unit === 'in') {
     if (labelStep >= 4) subStep = 1;
     else if (labelStep >= 2) subStep = 0.5;
     else if (labelStep >= 1) subStep = 0.25;
     else if (labelStep >= 0.5) subStep = 0.125;
     else if (labelStep >= 0.25) subStep = 0.0625;
     else subStep = 0.03125;
-  } else if (unit === "cm") {
+  } else if (unit === 'cm') {
     if (labelStep >= 10) subStep = 2;
     else if (labelStep >= 5) subStep = 1;
     else if (labelStep >= 2) subStep = 0.5;
     else if (labelStep >= 1) subStep = 0.1;
     else if (labelStep >= 0.5) subStep = 0.05;
     else subStep = 0.01;
-  } else if (unit === "px") {
+  } else if (unit === 'px') {
     if (labelStep >= 1000) subStep = labelStep / 10;
     else if (labelStep >= 500) subStep = labelStep / 5;
     else if (labelStep >= 200) subStep = labelStep / 10;
@@ -70,9 +70,9 @@ export function getRulerSteps(pixelsPerUnit: number, unit: RulerUnit) {
  * حساب المدى الإجمالي للورقة بحسب الوحدة المختارة
  */
 export function getUnitSpan(mm: number, px: number | undefined, unit: RulerUnit): number {
-  if (unit === "px") return px || (mm * 300) / 25.4;
-  if (unit === "cm") return mm / 10;
-  if (unit === "in") return mm / 25.4;
+  if (unit === 'px') return px || (mm * 300) / 25.4;
+  if (unit === 'cm') return mm / 10;
+  if (unit === 'in') return mm / 25.4;
   return mm; // mm
 }
 
@@ -80,12 +80,12 @@ export function getUnitSpan(mm: number, px: number | undefined, unit: RulerUnit)
  * تنسيق الرقم لعرض نقي وموجز على علامات المسطرة
  */
 export function formatRulerNumber(val: number, unit: RulerUnit): string {
-  if (Math.abs(val) < 0.00001) return "0";
-  if (unit === "in") {
+  if (Math.abs(val) < 0.00001) return '0';
+  if (unit === 'in') {
     // الإشارة تُحفظ: القيم السالبة (يسار/أعلى نقطة الصفر) تظهر على المسطرة
     // لأنها تستمر عبر مساحة العمل كلها. `Math.abs(val-0.25)` وحده كان
     // يعرض ‎-0.25‎ كـ«¼» فيضيع الاتجاه.
-    const sign = val < 0 ? "-" : "";
+    const sign = val < 0 ? '-' : '';
     const abs = Math.abs(val);
     if (Math.abs(abs - 0.25) < 0.001) return `${sign}¼`;
     if (Math.abs(abs - 0.5) < 0.001) return `${sign}½`;
@@ -96,10 +96,10 @@ export function formatRulerNumber(val: number, unit: RulerUnit): string {
     if (Math.abs(abs - 0.875) < 0.001) return `${sign}⅞`;
     return Number(val.toFixed(2)).toString();
   }
-  if (unit === "cm") {
+  if (unit === 'cm') {
     return Number(val.toFixed(2)).toString();
   }
-  if (unit === "px") {
+  if (unit === 'px') {
     return Math.round(val).toString();
   }
   return Number(val.toFixed(1)).toString();
@@ -110,8 +110,8 @@ export function formatRulerNumber(val: number, unit: RulerUnit): string {
  */
 export function formatRulerCoordinate(val: number, unit: RulerUnit): string {
   if (Math.abs(val) < 0.0001) return `0 ${unit}`;
-  if (unit === "in") return `${Number(val.toFixed(2))} in`;
-  if (unit === "cm") return `${Number(val.toFixed(2))} cm`;
-  if (unit === "px") return `${Math.round(val)} px`;
+  if (unit === 'in') return `${Number(val.toFixed(2))} in`;
+  if (unit === 'cm') return `${Number(val.toFixed(2))} cm`;
+  if (unit === 'px') return `${Math.round(val)} px`;
   return `${Number(val.toFixed(1))} mm`;
 }

@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/huge-icon';
 import { Warning, EnvelopeSimple, Key, Lock, User } from '@/components/ui/icons';
 import { GoogleIcon } from '@/components/ui/image-icons';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
 import type { useAuthForms } from './use-auth-forms';
 
 export type AuthFormsApi = ReturnType<typeof useAuthForms>;

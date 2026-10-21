@@ -1,6 +1,8 @@
-import { ScannerFilterMode } from './types';
-import { ScannerCanvas, getScanner2DContext } from './scanner-canvas';
 import { buildIntegralImage } from './fast-vision';
+import { getScanner2DContext } from './scanner-canvas';
+
+import type { ScannerCanvas } from './scanner-canvas';
+import type { ScannerFilterMode } from './types';
 
 /**
  * فلتر المسح الذكي (Magic Color Filter):

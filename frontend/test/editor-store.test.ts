@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useEditorStore, TextElement } from '../src/lib/editor-store';
+
+import { useEditorStore } from '../src/lib/editor-store';
 import {
   getToolsForWorkflow,
   isStudioTab,
@@ -8,6 +9,8 @@ import {
   STUDIO_TOOLS,
   COLLAGE_TOOLS,
 } from '../src/lib/workspace-tools';
+
+import type { TextElement } from '../src/lib/editor-store';
 
 describe('useEditorStore - Canvas Store Tests', () => {
   beforeEach(() => {

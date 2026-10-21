@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { useEditorStore } from '../src/lib/editor-store';
 import { ProjectSchema } from '../src/lib/schema';
 import { COLLAGE_TEMPLATES } from '../src/lib/templates/collage-templates';
@@ -74,7 +75,8 @@ describe('ProjectSchema — إعدادات لا تُسقط عند الحفظ/ا�
 
 describe('collage-slice — سلامة بيانات الخلايا', () => {
   it('setCollageTemplate يحتفظ بـ bgColor/القلب/الصورة الأصلية', () => {
-    const target = COLLAGE_TEMPLATES.find((t) => t.id !== COLLAGE_TEMPLATES[0].id) ?? COLLAGE_TEMPLATES[0];
+    const target =
+      COLLAGE_TEMPLATES.find((t) => t.id !== COLLAGE_TEMPLATES[0].id) ?? COLLAGE_TEMPLATES[0];
     store().setCollageTemplate(COLLAGE_TEMPLATES[0]);
 
     const slot = store().slots[0];

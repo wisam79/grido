@@ -1,29 +1,34 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
-import type Konva from 'konva';
-import type { KonvaEventObject } from 'konva/lib/Node';
-import { useEditorStore, CanvasElement } from '@/lib/editor-store';
-import { Spinner } from '@/components/ui/huge-icon';
-import { OpenFile, SaveImageFromBase64 } from '@bindings/grido/app';
-import { wailsIsDesktop } from '@/lib/wails-env';
-import { SnapGuide } from '@/lib/canvas/snap-utils';
-import { KonvaCanvas } from '../konva/konva-canvas';
 import { useShallow } from 'zustand/react/shallow';
-import { ContextMenuPosition, ContextMenuTarget } from './context-menu';
+
+import { OpenFile, SaveImageFromBase64 } from '@bindings/grido/app';
+
+import { Spinner } from '@/components/ui/huge-icon';
+import { guideCenter, guideEdge } from '@/lib/canvas/canvas-colors';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
+import { formatGuideMeasurement } from '@/lib/canvas/units';
+import { useEditorStore } from '@/lib/editor-store';
+import { createLogger } from '@/lib/logger';
+import { publishCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
+import { wailsIsDesktop } from '@/lib/wails-env';
+
+import { CanvasBleedGuides } from './canvas-bleed-guides';
+import { CanvasContextMenu } from './canvas-context-menu';
+import { CanvasQuickBar } from './canvas-quick-bar';
 import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from './canvas-rulers';
 import { CanvasVerticalScrollbar, CanvasScrollbarsBottomBar } from './canvas-scrollbars';
 import { TextEditingOverlay } from './text-editing-overlay';
-import { CanvasContextMenu } from './canvas-context-menu';
-import { CanvasQuickBar } from './canvas-quick-bar';
-import { guideCenter, guideEdge } from '@/lib/canvas/canvas-colors';
-import { publishCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
 import { useCanvasViewport } from './use-canvas-viewport';
-import { useUserGuides, snapGuidePosToPixel } from './use-user-guides';
 import { useImageDrop } from './use-image-drop';
 import { useRulerMetricsPreview } from './use-ruler-metrics';
-import { CanvasBleedGuides } from './canvas-bleed-guides';
-import { formatGuideMeasurement } from '@/lib/canvas/units';
-import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
-import { createLogger } from '@/lib/logger';
+import { useUserGuides, snapGuidePosToPixel } from './use-user-guides';
+import { KonvaCanvas } from '../konva/konva-canvas';
+
+import type { ContextMenuPosition, ContextMenuTarget } from './context-menu';
+import type { SnapGuide } from '@/lib/canvas/snap-utils';
+import type { CanvasElement } from '@/lib/editor-store';
+import type Konva from 'konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
 
 const logger = createLogger('editor-canvas');
 
@@ -70,7 +75,7 @@ export interface EditorCanvasProps {
 
 export const EditorCanvas = React.memo(
   React.forwardRef<HTMLDivElement, EditorCanvasProps>(function EditorCanvas(
-    { printMode = false, onOpenFile, onOpenTemplates },
+    { printMode = false, onOpenFile: _onOpenFile, onOpenTemplates: _onOpenTemplates },
     ref,
   ) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -111,16 +116,14 @@ export const EditorCanvas = React.memo(
     );
 
     // 🛡️ تقسيم الاشتراك: الدوال (هويات ثابتة أبداً) منفصلة عن الحالة
-    const { selectElement, setEditingTextId, updateElement, pushHistory, setCanvasZoom } =
-      useEditorStore(
-        useShallow((state) => ({
-          selectElement: state.selectElement,
-          setEditingTextId: state.setEditingTextId,
-          updateElement: state.updateElement,
-          pushHistory: state.pushHistory,
-          setCanvasZoom: state.setCanvasZoom,
-        })),
-      );
+    const { selectElement, setEditingTextId, updateElement, pushHistory } = useEditorStore(
+      useShallow((state) => ({
+        selectElement: state.selectElement,
+        setEditingTextId: state.setEditingTextId,
+        updateElement: state.updateElement,
+        pushHistory: state.pushHistory,
+      })),
+    );
 
     // 🛡️ تقسيم الاشتراكات: كل حقل في اشتراك مستقل حتى لا يُعاد رسم المكون
     // بسبب تغيير حقل واحد (مثل canvasZoom عند الزوم) — يقرأ من الذاكرة مباشرة فيعيد
@@ -130,14 +133,14 @@ export const EditorCanvas = React.memo(
     const editingTextId = useEditorStore((s) => s.editingTextId);
     const canvasWidth = useEditorStore((s) => s.canvasWidth);
     const canvasHeight = useEditorStore((s) => s.canvasHeight);
-    const backgroundColor = useEditorStore((s) => s.backgroundColor);
+    const _backgroundColor = useEditorStore((s) => s.backgroundColor);
     const showRuler = useEditorStore((s) => s.showRuler);
     const template = useEditorStore((s) => s.template);
     const printSettings = useEditorStore((s) => s.printSettings);
     const selectedIds = useEditorStore((s) => s.selectedIds);
     const collageMargin = useEditorStore((s) => s.collageMargin);
-    const slots = useEditorStore((s) => s.slots);
-    const canvasFitMode = useEditorStore((s) => s.canvasFitMode);
+    const _slots = useEditorStore((s) => s.slots);
+    const _canvasFitMode = useEditorStore((s) => s.canvasFitMode);
 
     // 🧭 محرك Viewport الكانفاس الحقيقي (Option B: Full-Viewport Konva Stage)
     const {

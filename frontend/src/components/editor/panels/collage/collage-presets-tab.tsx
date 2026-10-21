@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { cn } from '@/lib/utils';
+
+import { FluentEmptyState, FluentSegmentedControl } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   Check,
   FolderSimple,
@@ -13,17 +15,18 @@ import {
   MagnifyingGlass,
   X,
 } from '@/components/ui/icons';
-import { CollageTemplate, COLLAGE_TEMPLATES } from '@/lib/templates';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import { COLLAGE_TEMPLATES } from '@/lib/templates';
+import { cn } from '@/lib/utils';
+
 import {
-  CollagePresetCategory,
   ALL_STUDIO_PRESETS,
   STUDIO_COMBO_PRESETS,
   STUDIO_KEEPSAKE_PRESETS,
-  StudioPreset,
 } from './collage-preset-data';
-import { FluentEmptyState, FluentSegmentedControl } from '@/components/ui/blocks';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
+
+import type { CollagePresetCategory, StudioPreset } from './collage-preset-data';
+import type { CollageTemplate } from '@/lib/templates';
 
 /** نمط المقاطع الرقمية داخل جملة عربية (35×45) */
 const SPEC_NUMBER_PATTERN = /(\d+(?:[.,]\d+)?(?:\s*×\s*\d+(?:[.,]\d+)?)?)/g;

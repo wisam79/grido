@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import {
   computeBlockPosition,
   computeSheetGrid,
@@ -160,7 +161,6 @@ describe('computeSlotRectMM', () => {
 
   it('is bit-identical to the mm-domain formula used by buildItems/cut-lines', () => {
     const canvasWidth = 2480;
-    const canvasHeight = 3508;
     const collageMargin = 120;
     const collageGap = 60;
     const slot = { x: 0.25, y: 0.1, w: 0.4, h: 0.7 };

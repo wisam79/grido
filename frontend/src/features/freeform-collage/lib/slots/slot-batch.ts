@@ -1,7 +1,9 @@
-import type { FreeformSlot } from '../../types';
 import { clamp } from '@/lib/clamp';
+
 import { MIN_SIZE } from './constants';
 import { newSlotId } from './slot-ids';
+
+import type { FreeformSlot } from '../../types';
 
 /* ========================================================================== */
 /*  عمليات التحديد المتعدد والتحرير الجماعي (Multi-Select & Batch Editing)      */

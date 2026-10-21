@@ -1,12 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from 'vitest';
+
 import {
   computeSmartGridLayout,
   calculateOptimalColumns,
-} from "../src/lib/canvas/grid-layout-math";
-import { useEditorStore } from "../src/lib/editor-store";
+} from '../src/lib/canvas/grid-layout-math';
+import { useEditorStore } from '../src/lib/editor-store';
 
-describe("Grid Layout Math & Batch Insertion", () => {
-  it("calculates optimal columns correctly", () => {
+describe('Grid Layout Math & Batch Insertion', () => {
+  it('calculates optimal columns correctly', () => {
     // 1 image -> 1 col
     expect(calculateOptimalColumns(1, 2480, 3508)).toBe(1);
     // 4 images on portrait -> 2 cols
@@ -17,12 +18,12 @@ describe("Grid Layout Math & Batch Insertion", () => {
     expect(calculateOptimalColumns(6, 3508, 2480)).toBe(3);
   });
 
-  it("computes non-overlapping positions for 4 images in grid mode", () => {
+  it('computes non-overlapping positions for 4 images in grid mode', () => {
     const items = [
-      { src: "img1.png", aspectRatio: 1 },
-      { src: "img2.png", aspectRatio: 1 },
-      { src: "img3.png", aspectRatio: 1 },
-      { src: "img4.png", aspectRatio: 1 },
+      { src: 'img1.png', aspectRatio: 1 },
+      { src: 'img2.png', aspectRatio: 1 },
+      { src: 'img3.png', aspectRatio: 1 },
+      { src: 'img4.png', aspectRatio: 1 },
     ];
 
     const placed = computeSmartGridLayout(items, {
@@ -50,16 +51,16 @@ describe("Grid Layout Math & Batch Insertion", () => {
     expect(placed[0].y + placed[0].height).toBeLessThan(placed[2].y);
   });
 
-  it("computes cascade mode positions properly", () => {
+  it('computes cascade mode positions properly', () => {
     const items = [
-      { src: "img1.png", aspectRatio: 1 },
-      { src: "img2.png", aspectRatio: 1 },
+      { src: 'img1.png', aspectRatio: 1 },
+      { src: 'img2.png', aspectRatio: 1 },
     ];
 
     const placed = computeSmartGridLayout(items, {
       canvasWidth: 2000,
       canvasHeight: 2000,
-      layoutMode: "cascade",
+      layoutMode: 'cascade',
     });
 
     expect(placed.length).toBe(2);
@@ -67,16 +68,14 @@ describe("Grid Layout Math & Batch Insertion", () => {
     expect(placed[1].y).toBeGreaterThan(placed[0].y);
   });
 
-  it("addImageElementsBatch updates store atomically with single history push and multi-select", () => {
+  it('addImageElementsBatch updates store atomically with single history push and multi-select', () => {
     useEditorStore.getState().reset();
-    useEditorStore.getState().setMode("single");
-
-    const initialHistoryLength = useEditorStore.getState().history?.length || 0;
+    useEditorStore.getState().setMode('single');
 
     const items = [
-      { src: "a.jpg", aspectRatio: 1 },
-      { src: "b.jpg", aspectRatio: 1.5 },
-      { src: "c.jpg", aspectRatio: 0.75 },
+      { src: 'a.jpg', aspectRatio: 1 },
+      { src: 'b.jpg', aspectRatio: 1.5 },
+      { src: 'c.jpg', aspectRatio: 0.75 },
     ];
 
     useEditorStore.getState().addImageElementsBatch(items, {

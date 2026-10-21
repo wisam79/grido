@@ -1,21 +1,25 @@
+import Konva from 'konva';
 import React, { useRef, useEffect, useMemo } from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
-import Konva from 'konva';
-import type { KonvaEventObject } from 'konva/lib/Node';
-import { useEditorStore, CanvasElement } from '@/lib/editor-store';
-import { useStageRef } from '@/lib/canvas/stage-context';
-import { SnapGuide } from '@/lib/canvas/snap-utils';
-import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
 import { useShallow } from 'zustand/react/shallow';
-import { checkerColor } from '@/lib/canvas/canvas-colors';
-import { registerDragLayer, registerDragExtrasProvider } from './drag-layer';
-import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
-import '@/lib/filters/custom-filters';
 
+import { checkerColor } from '@/lib/canvas/canvas-colors';
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
+import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
+import { useStageRef } from '@/lib/canvas/stage-context';
+import { useEditorStore } from '@/lib/editor-store';
+
+import { registerDragLayer, registerDragExtrasProvider } from './drag-layer';
 import { KonvaBackgroundLayer } from './layers/konva-background-layer';
 import { KonvaCollageLayer } from './layers/konva-collage-layer';
-import { KonvaSingleLayer } from './layers/konva-single-layer';
 import { KonvaOverlayLayer } from './layers/konva-overlay-layer';
+import { KonvaSingleLayer } from './layers/konva-single-layer';
+
+import type { SnapGuide } from '@/lib/canvas/snap-utils';
+import type { CanvasElement } from '@/lib/editor-store';
+import type { KonvaEventObject } from 'konva/lib/Node';
+
+import '@/lib/filters/custom-filters';
 
 interface KonvaCanvasProps {
   viewportW: number;
@@ -39,7 +43,7 @@ export const KonvaCanvas = React.memo(
     stagePos,
     stageScale,
     displayW,
-    displayH,
+    displayH: _displayH,
     sortedElements,
     handleDoubleClick,
     setActiveGuides,

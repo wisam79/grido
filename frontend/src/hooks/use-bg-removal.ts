@@ -1,14 +1,17 @@
 import { useEffect, useRef } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
 import { toast } from 'sonner';
-import { RemoveBackground, WarmupBgRemoval } from '@bindings/grido/app';
-import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
-import { preloadImageIntoCache } from './use-async-image';
-import { createLogger } from '@/lib/logger';
-import { toErrorMessage } from '@/lib/wails-error';
-import { useOperationStatusStore } from '@/lib/ui/operation-status';
-import { triggerMemoryTrim } from '@/lib/memory-trim';
 import { create } from 'zustand';
+
+import { RemoveBackground, WarmupBgRemoval } from '@bindings/grido/app';
+
+import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
+import { useEditorStore } from '@/lib/editor-store';
+import { createLogger } from '@/lib/logger';
+import { triggerMemoryTrim } from '@/lib/memory-trim';
+import { useOperationStatusStore } from '@/lib/ui/operation-status';
+import { toErrorMessage } from '@/lib/wails-error';
+
+import { preloadImageIntoCache } from './use-async-image';
 
 const logger = createLogger('bg-removal');
 

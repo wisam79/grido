@@ -8,7 +8,6 @@
  * الرياضيات نفسها المستخدمة في عقدة Konva (shape-pattern) حتى تتطابق
  * المعاينة مع التصدير بلا نسخة ثانية من المعادلات.
  */
-import type { CanvasElement } from '@/lib/editor-store';
 import { gradientEnd, gradientStart, TEXT_COLOR_DEFAULT } from './canvas-colors';
 import {
   computeShapePattern,
@@ -16,6 +15,8 @@ import {
   toLocalPattern,
   type ShapeFillImageFit,
 } from './shape-pattern';
+
+import type { CanvasElement } from '@/lib/editor-store';
 
 export type CanvasFillStyle = string | CanvasGradient | CanvasPattern;
 

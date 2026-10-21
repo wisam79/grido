@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export interface ImageIconProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
@@ -8,7 +8,7 @@ export interface ImageIconProps extends React.SVGProps<SVGSVGElement> {
  * أيقونة "إضافة صورة" الاحترافية
  * بطاقة صورة فوتوغرافية مع شارة علامة (+) مصممة بدقة هندسية عالية
  */
-export function AddPhotoIcon({ className = "w-5 h-5", ...props }: ImageIconProps) {
+export function AddPhotoIcon({ className = 'w-5 h-5', ...props }: ImageIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"
@@ -42,12 +42,7 @@ export function AddPhotoIcon({ className = "w-5 h-5", ...props }: ImageIconProps
         strokeLinejoin="round"
       />
       {/* شارة الإضافة الدائرية البارزة في الزاوية السفلية اليمين */}
-      <circle
-        cx="14.5"
-        cy="14.5"
-        r="4.25"
-        fill="currentColor"
-      />
+      <circle cx="14.5" cy="14.5" r="4.25" fill="currentColor" />
       {/* خطوط علامة (+) واضحة ونقية بلون خلفية الواجهة */}
       <path
         d="M14.5 12V17M12 14.5H17"
@@ -63,7 +58,7 @@ export function AddPhotoIcon({ className = "w-5 h-5", ...props }: ImageIconProps
  * أيقونة "دفعة صور" الاحترافية
  * بطاقتان فوتوغرافيتان متراكبتان بعمق بصري نظيف
  */
-export function BatchPhotosIcon({ className = "w-5 h-5", ...props }: ImageIconProps) {
+export function BatchPhotosIcon({ className = 'w-5 h-5', ...props }: ImageIconProps) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -115,7 +110,7 @@ export function BatchPhotosIcon({ className = "w-5 h-5", ...props }: ImageIconPr
  * أيقونة "الأشكال الهندسية" المصممة بمعايير Figma & Fluent 2
  * مربع منحني مع دائرة خلفية بتأثير عمق أنيق
  */
-export function GeometricShapesIcon({ className = "w-5 h-5", ...props }: ImageIconProps) {
+export function GeometricShapesIcon({ className = 'w-5 h-5', ...props }: ImageIconProps) {
   return (
     <svg
       viewBox="0 0 20 20"
@@ -163,7 +158,7 @@ export interface PageOrientationIconProps extends React.SVGProps<SVGSVGElement> 
  */
 export function PageOrientationIcon({
   isLandscape = false,
-  className = "w-4 h-4",
+  className = 'w-4 h-4',
   ...props
 }: PageOrientationIconProps) {
   return (
@@ -240,14 +235,9 @@ export function PageOrientationIcon({
 /**
  * أيقونة Google الرسمية الملونة (4 ألوان قياسية)
  */
-export function GoogleIcon({ className = "w-4 h-4 shrink-0", ...props }: ImageIconProps) {
+export function GoogleIcon({ className = 'w-4 h-4 shrink-0', ...props }: ImageIconProps) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      {...props}
-    >
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className={className} {...props}>
       <path
         fill="#4285F4"
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -267,4 +257,3 @@ export function GoogleIcon({ className = "w-4 h-4 shrink-0", ...props }: ImageIc
     </svg>
   );
 }
-

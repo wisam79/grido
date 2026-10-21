@@ -1,8 +1,10 @@
-import { CanvasElement, useEditorStore } from '@/lib/editor-store';
 import { Button } from '@/components/ui/button';
 import { Eye, EyeSlash, LockSimple, LockSimpleOpen } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
+
+import type { CanvasElement } from '@/lib/editor-store';
 
 export interface ElementHeaderActionsProps {
   element: CanvasElement;

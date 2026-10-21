@@ -1,6 +1,7 @@
-import { CanvasElement } from '@/lib/editor-store';
 import { gradientStart, gradientEnd, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
 import { computeShapePattern, toLocalPattern } from '@/lib/canvas/shape-pattern';
+
+import type { CanvasElement } from '@/lib/editor-store';
 
 /**
  * نقطة حل التعبئة الوحيدة لكل عناصر الكانفاس (شكل/نص).

@@ -1,2 +1,39 @@
+* text=auto eol=lf
+
 .husky/pre-commit text eol=lf
 .husky/pre-push text eol=lf
+.husky/commit-msg text eol=lf
+
+# Windows-native scripts and project files keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.sln text eol=crlf
+*.vcxproj text eol=crlf
+
+# Binary assets must never be normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.webp binary
+*.avif binary
+*.bmp binary
+*.tif binary
+*.tiff binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.exe binary
+*.dll binary
+*.msi binary
+*.dmg binary
+*.onnx binary
+*.wasm binary
+*.pdf binary
+*.pfx binary
+*.p12 binary
+

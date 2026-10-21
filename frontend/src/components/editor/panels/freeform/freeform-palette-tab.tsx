@@ -1,5 +1,13 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import { PopoverColorPicker } from '@/components/editor/properties/shared-controls';
+import {
+  FluentSegmentedControl,
+  FluentFilterChips,
+  type FilterChipOption,
+} from '@/components/ui/blocks';
 import {
   Star,
   Eyedropper,
@@ -9,23 +17,15 @@ import {
   Check,
   PaintBucket,
 } from '@/components/ui/icons';
-import { useEditorStore } from '@/lib/editor-store';
-import { useShallow } from 'zustand/react/shallow';
-import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  FluentSegmentedControl,
-  FluentFilterChips,
-  type FilterChipOption,
-} from '@/components/ui/blocks';
-import { PopoverColorPicker } from '@/components/editor/properties/shared-controls';
-import { STUDIO_PALETTE } from '@/lib/canvas/canvas-colors';
 import { colorPatchFor } from '@/lib/canvas/apply-color';
+import { STUDIO_PALETTE } from '@/lib/canvas/canvas-colors';
 import {
   extractPaletteFromSources,
   buildColorHarmony,
   type ColorHarmonyKind,
 } from '@/lib/canvas/palette-extract';
+import { useEditorStore } from '@/lib/editor-store';
 import {
   PREF_KEYS,
   pushStoredRecent,
@@ -33,6 +33,8 @@ import {
   toggleStoredValue,
   writeStoredList,
 } from '@/lib/local-prefs';
+import { cn } from '@/lib/utils';
+
 import {
   IDENTITY_PALETTES,
   type IdentityPalette,
@@ -64,16 +66,14 @@ const HARMONY_CHIPS: FilterChipOption<ColorHarmonyKind>[] = [
 ];
 
 export function FreeformPaletteTab() {
-  const { elements, selectedIds, updateElements, setBackgroundColor, backgroundColor } =
-    useEditorStore(
-      useShallow((state) => ({
-        elements: state.elements,
-        selectedIds: state.selectedIds,
-        updateElements: state.updateElements,
-        setBackgroundColor: state.setBackgroundColor,
-        backgroundColor: state.backgroundColor,
-      })),
-    );
+  const { elements, selectedIds, updateElements, setBackgroundColor } = useEditorStore(
+    useShallow((state) => ({
+      elements: state.elements,
+      selectedIds: state.selectedIds,
+      updateElements: state.updateElements,
+      setBackgroundColor: state.setBackgroundColor,
+    })),
+  );
 
   const [target, setTarget] = useState<ColorTarget>('element');
   const [customColor, setCustomColor] = useState<string>('#2563eb');
@@ -83,7 +83,7 @@ export function FreeformPaletteTab() {
   const [favorites, setFavorites] = useState<string[]>(() =>
     readStoredList(PREF_KEYS.favoriteColors),
   );
-  const [recents, setRecents] = useState<string[]>(() => readStoredList(PREF_KEYS.recentColors));
+  const [, setRecents] = useState<string[]>(() => readStoredList(PREF_KEYS.recentColors));
   const [extracted, setExtracted] = useState<string[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);

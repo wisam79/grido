@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock Go bindings — هوية @bindings/grido/app الفعلية (نفس جسر wailsjs/go/main/App)
 vi.mock('@bindings/grido/app', () => ({

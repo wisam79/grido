@@ -1,6 +1,14 @@
 import React from 'react';
+
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import {
   PushPin,
   ArrowUUpLeft,
@@ -26,17 +34,12 @@ import {
   Ruler,
   ArrowsOutCardinal,
 } from '@/components/ui/icons';
-import type { PhotoPresetType, SlotAlignment, DistributionAxis, AutoPackStrategy } from '../types';
-import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from '../lib/freeform-math';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu';
+
+import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from '../lib/freeform-math';
+
+import type { PhotoPresetType, SlotAlignment, DistributionAxis, AutoPackStrategy } from '../types';
 
 export type MultiAlignMode =
   'left' | 'right' | 'top' | 'bottom' | 'center-h' | 'center-v' | 'same-size';

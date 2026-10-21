@@ -1,6 +1,7 @@
-import type { StickerParams, StickerTemplate } from '../../types';
 import { postProcessStickerSvg } from '../sticker-text';
 import { sanitizeStickerColor, sanitizeStickerFontFamily } from '../svg-safety';
+
+import type { StickerParams, StickerTemplate } from '../../types';
 
 /**
  * build-svg.ts — نقطة التوليد الوحيدة لكل ملصق.

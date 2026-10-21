@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont } from '../src/lib/io/fonts';
 
 describe('Font Engine Tests', () => {

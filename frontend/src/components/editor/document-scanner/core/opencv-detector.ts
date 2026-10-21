@@ -1,5 +1,12 @@
-import { Point, DetectedDocument, DetectionResult, ScoredCandidate, DetectionMode } from './types';
 import { computePolygonArea as calculatePolygonArea } from './contour-tracer';
+import { computeSobelGradients } from './fast-vision';
+import {
+  applyNMS,
+  locateSplitSeamRatio,
+  splitQuadIntoIdCardsWithSeam,
+  SPLIT_SEAM_RATIO_DEFAULT,
+} from './multi-doc-segmenter';
+import { OVERLAP_TUNING } from './overlap-tuning';
 import {
   sortCornerPoints,
   isIdCardAspectRatio,
@@ -8,17 +15,17 @@ import {
   inferSmartDocumentAspect,
   extractFourCornersFromHull,
 } from './quad-geometry';
-import {
-  applyNMS,
-  locateSplitSeamRatio,
-  splitQuadIntoIdCardsWithSeam,
-  SPLIT_SEAM_RATIO_DEFAULT,
-} from './multi-doc-segmenter';
-import { computeSobelGradients } from './fast-vision';
-import { OVERLAP_TUNING } from './overlap-tuning';
-import { loadOpenCV, getLoadedOpenCV, CvRuntime } from '../opencv-loader';
-import type { CvMat, CvMatVector, CvRuntimeLike } from './cv-types';
-import type { CvPoint } from './cv-types';
+import { loadOpenCV, getLoadedOpenCV } from '../opencv-loader';
+
+import type {
+  Point,
+  DetectedDocument,
+  DetectionResult,
+  ScoredCandidate,
+  DetectionMode,
+} from './types';
+import type { CvRuntime } from '../opencv-loader';
+import type { CvMat, CvMatVector, CvRuntimeLike, CvPoint } from './cv-types';
 
 interface CvDisposableLike {
   delete: () => void;

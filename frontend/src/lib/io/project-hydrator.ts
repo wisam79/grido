@@ -1,23 +1,23 @@
+import { createLogger } from '../logger';
+import { generateInitialSlots } from '../store/slices/collage-slice';
+import { DEFAULT_GRID_STATE, type RulerUnit, type UserGuide } from '../store/slices/grid-slice';
+import { DEFAULT_PRINT_SETTINGS } from '../store/slices/print-slice';
 import {
+  COLLAGE_TEMPLATES,
+  PHOTO_TEMPLATES,
+  computeDynamicCollageCells,
+  getEffectiveDpi,
+} from '../templates';
+import { uid } from '../utils';
+
+import type {
   EditorMode,
   ProjectFileV1,
   CanvasElement,
   CanvasSlot,
   PrintSettings,
 } from '../store/types';
-import {
-  PhotoTemplate,
-  CollageTemplate,
-  COLLAGE_TEMPLATES,
-  PHOTO_TEMPLATES,
-  computeDynamicCollageCells,
-  getEffectiveDpi,
-} from '../templates';
-import { generateInitialSlots } from '../store/slices/collage-slice';
-import { DEFAULT_PRINT_SETTINGS } from '../store/slices/print-slice';
-import { DEFAULT_GRID_STATE, type RulerUnit, type UserGuide } from '../store/slices/grid-slice';
-import { uid } from '../utils';
-import { createLogger } from '../logger';
+import type { PhotoTemplate, CollageTemplate } from '../templates';
 
 const logger = createLogger('project-hydrator');
 

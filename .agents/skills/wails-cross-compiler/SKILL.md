@@ -58,3 +58,12 @@ wails3 task package
 
 - للحصول على أسرع زمن تشغيل وأصغر حجم ملف محمول، استخدم ضغط UPX بعد البناء على مسار Wails v3 الرسمي:
   `upx --best --lzma bin/GridoStudio.exe`
+
+---
+
+## 🧰 4. تكافؤ سلسلة الأدوات مع CI (Toolchain Parity)
+
+- **Node مصدره `.nvmrc`** (22) — يقرأه `ci.yml` عبر `node-version-file`، و`frontend/package.json` يعلن `engines.node >=22`. لا تكرر رقم الإصدار في أكثر من ملف.
+- **بوابات ما قبل الدفع المطابقة للـCI:** `npm --prefix frontend run format:check` (Prettier لـ`src/test/e2e` وملفات الإعداد) · `npm --prefix frontend run lint` · `git ls-files -z '*.go' | xargs -0 gofmt -l` (يجب أن يعود فارغاً).
+- **رسائل الالتزام** تتبع Conventional Commits عبر `.husky/commit-msg` → `scripts/commit-msg-lint.mjs` — استخدم `type(scope): وصفاً عربياً موجزاً` (مثال: `refactor(build): توحيد بوابة gofmt في CI`).
+- **`.gitattributes`** يثبّت `lf` ويستثني الأصول الثنائية (`*.exe`, `*.dll`, `*.msi`, `*.onnx`, `*.wasm`...) من التطبيع، و**`.editorconfig`** يحكم المسافات (Tab في Go) — لا تعطّل أي منهما محلياً.

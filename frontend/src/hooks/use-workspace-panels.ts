@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import type { CollageTab, FreeformTab } from '@/lib/workspace-tools';
+
 import { isCollageTab, isStudioTab, migrateLegacyStudioTab } from '@/lib/workspace-tools';
+
+import type { CollageTab, FreeformTab } from '@/lib/workspace-tools';
 
 export type WorkspacePanel = 'templates' | 'properties' | null;
 export type WorkspaceBreakpoint = 'compact' | 'standard' | 'wide';

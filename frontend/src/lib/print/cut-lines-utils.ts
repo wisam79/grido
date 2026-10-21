@@ -1,4 +1,5 @@
 import { computeBlockPosition, computeSlotRectMM } from '@/lib/print/print-layout-math';
+
 import type { SheetGrid } from '@/lib/print/print-layout-math';
 import type { CanvasSlot } from '@/lib/store/types';
 

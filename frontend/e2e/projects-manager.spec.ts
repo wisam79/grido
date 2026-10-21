@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Projects Manager & Backup Workflow E2E', () => {
@@ -8,9 +9,14 @@ test.describe('Projects Manager & Backup Workflow E2E', () => {
     await waitForAppReady(page);
   });
 
-  test('Open projects modal, switch tabs, and inspect save/list/backup sections', async ({ page }) => {
+  test('Open projects modal, switch tabs, and inspect save/list/backup sections', async ({
+    page,
+  }) => {
     // Open projects dialog from toolbar
-    const projectsBtn = page.getByTestId('toolbar-projects').or(page.getByRole('button', { name: /مشاريع/ })).first();
+    const projectsBtn = page
+      .getByTestId('toolbar-projects')
+      .or(page.getByRole('button', { name: /مشاريع/ }))
+      .first();
     await expect(projectsBtn).toBeVisible();
     await projectsBtn.click();
 

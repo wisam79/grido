@@ -1,22 +1,21 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
-import { Button } from '@/components/ui/button';
-import { FluentSegmentedControl, FluentFilterChips } from '@/components/ui/blocks';
 import { toast } from 'sonner';
-import { Plus, Stamp, Shapes, TextT, Calendar, Camera, CaretRight } from '@/components/ui/icons';
-import {
-  QUICK_SHAPES,
-  QUICK_TEXT_PRESETS,
-  TEXT_FILTER_OPTIONS,
-  QuickTextItem,
-} from './freeform-panel-constants';
-import type { ShapeCatalogItem } from '@/lib/io/shape-catalog';
+
 import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
-import type { StickerTemplate } from '@/features/stickers/types';
+import { FluentSegmentedControl, FluentFilterChips } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
+import { Plus, Stamp, Shapes, TextT, Calendar, Camera, CaretRight } from '@/components/ui/icons';
 import { renderSvgToPngDataUrl } from '@/features/stickers/lib/svg-rasterizer';
-import { sanitizeSvgMarkupCached } from '@/lib/utils';
+import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
+import { sanitizeSvgMarkupCached } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
+
+import { QUICK_SHAPES, QUICK_TEXT_PRESETS, TEXT_FILTER_OPTIONS } from './freeform-panel-constants';
+
+import type { QuickTextItem } from './freeform-panel-constants';
+import type { StickerTemplate } from '@/features/stickers/types';
+import type { ShapeCatalogItem } from '@/lib/io/shape-catalog';
 
 const logger = createLogger('freeform-elements-tab');
 
@@ -60,21 +59,6 @@ function getCategoryBadgeLabel(category: string): string {
       return 'طعام ومشروبات';
     default:
       return 'ملصق فكتور';
-  }
-}
-
-function getTextCategoryBadgeLabel(category: string): string {
-  switch (category) {
-    case 'effects':
-      return 'تأثير فني';
-    case 'badges':
-      return 'شارة توثيق';
-    case 'phrases':
-      return 'عبارة جاهزة';
-    case 'titles':
-      return 'عنوان';
-    default:
-      return 'نمط مسبق';
   }
 }
 

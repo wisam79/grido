@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,10 +9,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { WarningOctagon, Copy, Check } from '@/components/ui/icons';
-import type { CrashReport } from '../../bindings/grido/internal/service/models';
 import { createLogger } from '@/lib/logger';
+
+import type { CrashReport } from '../../bindings/grido/internal/service/models';
 
 const logger = createLogger('crash-recovery-dialog');
 

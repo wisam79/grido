@@ -1,4 +1,5 @@
 import { useRef, useCallback } from 'react';
+
 import { WindowSnapAssist } from '../../../../wailsjs/runtime/runtime';
 
 /**

@@ -6,4 +6,4 @@
 # ─────────────────────────────────────────────────────────────────────────────
 node scripts/docs-gate.mjs || exit 1
 
-cd frontend && npx lint-staged
+cd frontend && npx lint-staged --max-arg-length 4000

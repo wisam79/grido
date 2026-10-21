@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
+
 import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
+
 import type { CanvasSlot } from '@/lib/store/types';
 
 /** خانة بحد أدنى من الحقول — الدالة لا تلمس سوى id/imageSrc */

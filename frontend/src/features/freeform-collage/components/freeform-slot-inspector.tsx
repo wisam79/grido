@@ -1,9 +1,13 @@
 import React from 'react';
-import type { FreeformSlot, PhotoPresetType, SlotAlignment } from '../types';
-import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from '../lib/freeform-math';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+
 import { FluentTooltip } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   ArrowClockwise,
   LockSimple,
@@ -18,13 +22,12 @@ import {
   CaretDown,
   ArrowsOut,
 } from '@/components/ui/icons';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+
+import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from '../lib/freeform-math';
+
+import type { FreeformSlot, PhotoPresetType, SlotAlignment } from '../types';
 
 interface FreeformSlotInspectorProps {
   slot: FreeformSlot | undefined;

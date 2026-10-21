@@ -1,6 +1,6 @@
 import type { PhotoPresetType } from '../../types';
+
 export { PHOTO_PRESET_LABELS } from '../mixed-presets';
-import { PHOTO_PRESET_LABELS } from '../mixed-presets';
 
 /**
  * خريطة أبعاد المقاسات القياسية بالمليمتر — المصدر الموحد: القياسات العراقية
@@ -21,5 +21,3 @@ export const PHOTO_PRESET_DIMENSIONS_MM: Record<PhotoPresetType, { w: number; h:
   photobooth: { w: 45, h: 35 },
   custom: { w: 35, h: 45 },
 };
-
-void PHOTO_PRESET_LABELS;

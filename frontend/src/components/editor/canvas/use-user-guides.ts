@@ -6,10 +6,11 @@ import {
   type PointerEvent as ReactPointerEvent,
   type RefObject,
 } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+
+import { useEditorStore } from '@/lib/editor-store';
 
 type DomPointerEvent = PointerEvent;
-import { useEditorStore } from '@/lib/editor-store';
-import { useShallow } from 'zustand/react/shallow';
 
 export interface DragGuideState {
   type: 'h' | 'v';

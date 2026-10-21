@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { describe, it, expect } from 'vitest';
 
 /**
  * 🛡️ حارس الاتساق البصري (UI Compliance Guard) — تنفيذ فعلي لقواعد كان مستندها

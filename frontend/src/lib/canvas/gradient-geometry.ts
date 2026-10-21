@@ -27,7 +27,7 @@ export function gradientPointsFromAngle(deg: number): {
 /** حساب زاوية التدرج من نقطتي البداية/النهاية (0° = يسار→يمين، مع عقارب الساعة) */
 export function gradientAngleFromPoints(
   start?: { x: number; y: number },
-  end?: { x: number; y: number }
+  end?: { x: number; y: number },
 ): number {
   const s = start || { x: 0, y: 0 };
   const e = end || { x: 1, y: 1 };
@@ -39,7 +39,7 @@ export function gradientAngleFromPoints(
 export function gradientPixelPoints(
   deg: number,
   width: number,
-  height: number
+  height: number,
 ): { start: { x: number; y: number }; end: { x: number; y: number } } {
   const { start, end } = gradientPointsFromAngle(deg);
   return {

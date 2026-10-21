@@ -1,11 +1,13 @@
 import React, { useRef, useEffect } from 'react';
+
+import { createLogger } from '@/lib/logger';
+
 import {
   WindowGetSize,
   WindowSetSize,
   WindowGetPosition,
   WindowSetPosition,
 } from '../../../../wailsjs/runtime/runtime';
-import { createLogger } from '@/lib/logger';
 
 const windowLog = createLogger('WindowResizeHandles');
 

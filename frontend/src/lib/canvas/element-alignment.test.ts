@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
+
 import { calculateAlignmentPatches, calculateDistributionPatches } from './element-alignment';
-import { CanvasElement } from '../store/types';
+
+import type { CanvasElement } from '../store/types';
 
 function createMockElement(
   id: string,

@@ -245,7 +245,7 @@ func convertToBottomUpDIB(img image.Image) ([]byte, bitmapInfo) {
 					buf[dstPixOffset+0] = src.Pix[srcPixOffset+2] // Blue
 					buf[dstPixOffset+1] = src.Pix[srcPixOffset+1] // Green
 					buf[dstPixOffset+2] = src.Pix[srcPixOffset+0] // Red
-					buf[dstPixOffset+3] = a                      // Alpha
+					buf[dstPixOffset+3] = a                       // Alpha
 				}
 			}
 		}

@@ -1,12 +1,12 @@
-import { BoundingBox, Scissors, GridFour, Check } from '@/components/ui/icons';
-import { useEditorStore } from '@/lib/editor-store';
-import { Switch } from '@/components/ui/switch';
-import { useShallow } from 'zustand/react/shallow';
-import { cn } from '@/lib/utils';
 import { useRef, useCallback, useEffect, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
-import { getEffectiveDpi } from '@/lib/templates';
+import { BoundingBox, Scissors, GridFour, Check } from '@/components/ui/icons';
+import { Switch } from '@/components/ui/switch';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
+import { useEditorStore } from '@/lib/editor-store';
+import { getEffectiveDpi } from '@/lib/templates';
+import { cn } from '@/lib/utils';
 import { PopoverColorPicker } from './shared-controls';
 
 export function CollageSettings() {

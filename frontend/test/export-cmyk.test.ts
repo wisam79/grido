@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { buildCmykPrintRequest, basename, runCmykExport } from '../src/lib/export/export-cmyk';
-import { exportCanvas } from '../src/lib/export/export-canvas';
-import { uploadPrintImage } from '../src/components/editor/print/print-transport';
+
 import { ExportPrintSheet } from '@bindings/grido/internal/handlers/printhandler';
+
+import { uploadPrintImage } from '../src/components/editor/print/print-transport';
+import { exportCanvas } from '../src/lib/export/export-canvas';
+import { buildCmykPrintRequest, basename, runCmykExport } from '../src/lib/export/export-cmyk';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // export-cmyk.test.ts — مسار تصدير CMYK (TIFF/JPEG)

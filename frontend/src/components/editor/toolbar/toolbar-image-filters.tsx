@@ -1,11 +1,12 @@
 import React from 'react';
-import { useEditorStore } from '@/lib/editor-store';
+import { useShallow } from 'zustand/react/shallow';
+
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import { FadersHorizontal } from '@/components/ui/icons';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { useEditorStore } from '@/lib/editor-store';
 import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
-import { useShallow } from 'zustand/react/shallow';
-import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { cn } from '@/lib/utils';
 
 interface ImageFiltersPopoverProps {

@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Professional E2E & Visual Testing Suite', () => {
-
   test.beforeEach(async ({ page }) => {
     await setupWailsMock(page);
   });
@@ -31,5 +31,4 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
 
     await expect(page.getByText('تم حفظ المشروع بنجاح في قاعدة البيانات المحلية')).toBeVisible();
   });
-
 });

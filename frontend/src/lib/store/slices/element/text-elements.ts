@@ -1,10 +1,12 @@
-import type { StateCreator } from 'zustand';
-import type { CanvasElement } from '../../types';
-import { uid } from '../../../utils';
-import { TEXT_PRESETS } from '../../../templates';
-import { nextZIndex, normalizeSelection } from './types';
-import type { ElementCross, ElementSlice } from './types';
 import { sanitizeText } from '@/lib/canvas/text-helpers';
+
+import { nextZIndex, normalizeSelection } from './types';
+import { TEXT_PRESETS } from '../../../templates';
+import { uid } from '../../../utils';
+
+import type { ElementCross, ElementSlice } from './types';
+import type { CanvasElement } from '../../types';
+import type { StateCreator } from 'zustand';
 
 export const createTextElementsSlice: StateCreator<
   ElementCross,

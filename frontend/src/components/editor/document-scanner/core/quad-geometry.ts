@@ -1,11 +1,7 @@
-import {
-  Point,
-  DocumentAspectType,
-  QuadOverlapStats,
-  ID_HALF_MIN_RATIO,
-  ID_HALF_MAX_RATIO,
-} from './types';
 import { computePolygonArea } from './contour-tracer';
+import { ID_HALF_MIN_RATIO, ID_HALF_MAX_RATIO } from './types';
+
+import type { Point, DocumentAspectType, QuadOverlapStats } from './types';
 
 /**
  * فرز الأركان الأربعة في اتجاه عقارب الساعة:

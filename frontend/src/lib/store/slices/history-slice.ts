@@ -1,5 +1,3 @@
-import { StateCreator } from 'zustand';
-import { CanvasElement, CanvasSlot, HistoryEntry } from '../types';
 import { DEFAULT_COLLAGE_STATE } from './collage-slice';
 import {
   DEFAULT_HISTORY_ENTRY_EXTRAS,
@@ -9,6 +7,9 @@ import {
   type SnapshotSource,
   type SnapshotValues,
 } from '../history-snapshot';
+
+import type { CanvasElement, CanvasSlot, HistoryEntry } from '../types';
+import type { StateCreator } from 'zustand';
 
 // إعادة تصدير المصدر الوحيد للقيم الافتراضية (يستهلكها core-slice لبذرة reset)
 export { DEFAULT_HISTORY_ENTRY_EXTRAS };

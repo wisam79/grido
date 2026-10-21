@@ -1,17 +1,15 @@
-import React from 'react';
 import { render, screen, act } from '@testing-library/react';
+import React from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { PropertiesPanel } from '../src/components/editor/panels/properties-panel';
 import {
   PaperBackgroundSummary,
   StudioCanvasColorDeck,
 } from '../src/components/editor/properties/shared-controls';
-import { useEditorStore } from '../src/lib/editor-store';
-import {
-  PAPER_BACKGROUND_EVENTS,
-  openPaperBackgroundTool,
-} from '../src/lib/ui/paper-background';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { useEditorStore } from '../src/lib/editor-store';
+import { PAPER_BACKGROUND_EVENTS, openPaperBackgroundTool } from '../src/lib/ui/paper-background';
 
 /**
  * خلفية الورقة أداة واحدة في التطبيق:
@@ -92,7 +90,7 @@ describe('أداة الورقة الوحيدة — بلا عناصر تحكم م
         onChangeGradientColor2={() => {}}
         gradientAngle={135}
         onChangeGradientAngle={() => {}}
-      />
+      />,
     );
 
     // محرر اللونين والزاوية يبقى (خطي دائماً)…

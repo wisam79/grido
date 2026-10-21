@@ -1,5 +1,8 @@
-import React from "react";
-import { ContextMenu, ContextMenuPosition, ContextMenuTarget } from "./context-menu";
+import React from 'react';
+
+import { ContextMenu } from './context-menu';
+
+import type { ContextMenuPosition, ContextMenuTarget } from './context-menu';
 
 interface CanvasContextMenuProps {
   contextMenu: {
@@ -18,10 +21,6 @@ export const CanvasContextMenu = React.memo(function CanvasContextMenu({
   if (!contextMenu || printMode) return null;
 
   return (
-    <ContextMenu
-      position={contextMenu.position}
-      target={contextMenu.target}
-      onClose={onClose}
-    />
+    <ContextMenu position={contextMenu.position} target={contextMenu.target} onClose={onClose} />
   );
 });

@@ -1,12 +1,22 @@
 import { create } from 'zustand';
-import { createCoreSlice, CoreSlice } from './slices/core-slice';
-import { createElementSlice, ElementSlice } from './slices/element-slice';
-import { createCollageSlice, CollageSlice } from './slices/collage-slice';
-import { createGridSlice, GridSlice } from './slices/grid-slice';
-import { createPrintSlice, PrintSlice } from './slices/print-slice';
-import { createHistorySlice, HistorySlice } from './slices/history-slice';
-import { createLicenseSlice, LicenseSlice } from './slices/license-slice';
-import { createWorkflowSlice, WorkflowSlice } from './slices/workflow-slice';
+
+import { createCollageSlice } from './slices/collage-slice';
+import { createCoreSlice } from './slices/core-slice';
+import { createElementSlice } from './slices/element-slice';
+import { createGridSlice } from './slices/grid-slice';
+import { createHistorySlice } from './slices/history-slice';
+import { createLicenseSlice } from './slices/license-slice';
+import { createPrintSlice } from './slices/print-slice';
+import { createWorkflowSlice } from './slices/workflow-slice';
+
+import type { CollageSlice } from './slices/collage-slice';
+import type { CoreSlice } from './slices/core-slice';
+import type { ElementSlice } from './slices/element-slice';
+import type { GridSlice } from './slices/grid-slice';
+import type { HistorySlice } from './slices/history-slice';
+import type { LicenseSlice } from './slices/license-slice';
+import type { PrintSlice } from './slices/print-slice';
+import type { WorkflowSlice } from './slices/workflow-slice';
 
 export type EditorState = CoreSlice &
   ElementSlice &

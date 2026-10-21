@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { CanvasElement } from '../src/lib/editor-store';
+
 import {
   buildGradientFill,
   glyphPatternMatrix,
@@ -9,6 +9,8 @@ import {
   toGlyphLocal,
   type AffineMatrix,
 } from '../src/lib/canvas/fill-paint';
+
+import type { CanvasElement } from '../src/lib/editor-store';
 
 function glyphMatrix(glyph: { x: number; y: number; rotation: number }): AffineMatrix {
   const rad = (glyph.rotation * Math.PI) / 180;

@@ -1,8 +1,10 @@
-import type { FreeformSlot, SnapLine } from '../../types';
-import type { ResizeHandle } from './constants';
 import { clamp } from '@/lib/clamp';
+
 import { MIN_SIZE } from './constants';
 import { newSlotId } from './slot-ids';
+
+import type { ResizeHandle } from './constants';
+import type { FreeformSlot, SnapLine } from '../../types';
 
 /**
  * تحجيم الخلية بمقابض 8 اتجاهات مع قفل اختياري لنسبة الأبعاد والمحاذاة المغناطيسية

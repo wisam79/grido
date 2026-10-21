@@ -1,4 +1,4 @@
-import { Point } from "./types";
+import type { Point } from './types';
 
 /**
  * حساب المساحة المحددة لأي مضلع (Shoelace Formula)
@@ -60,7 +60,7 @@ export function findConnectedContours(
   binImg: Uint8Array,
   w: number,
   h: number,
-  minArea: number = 100
+  minArea: number = 100,
 ): Point[][] {
   const total = w * h;
   if (total <= 0 || w <= 0 || h <= 0) return [];
@@ -70,17 +70,6 @@ export function findConnectedContours(
 
   const qX = new Int32Array(total);
   const qY = new Int32Array(total);
-
-  const neighbors = [
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-    [1, 1],
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-  ];
 
   for (let y = 0; y < h; y++) {
     const rowOffset = y * w;

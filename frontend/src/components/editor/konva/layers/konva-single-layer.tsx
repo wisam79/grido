@@ -1,10 +1,12 @@
 import React from 'react';
 import { Layer } from 'react-konva';
+
+import { URLImage, KonvaTextElement, KonvaShapeElement } from '../konva-elements';
+
+import type { SnapGuide } from '@/lib/canvas/snap-utils';
+import type { CanvasElement } from '@/lib/editor-store';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
-import { CanvasElement } from '@/lib/editor-store';
-import { SnapGuide } from '@/lib/canvas/snap-utils';
-import { URLImage, KonvaTextElement, KonvaShapeElement } from '../konva-elements';
 
 interface KonvaSingleLayerProps {
   sortedElements: CanvasElement[];

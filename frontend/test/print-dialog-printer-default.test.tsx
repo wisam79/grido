@@ -1,9 +1,10 @@
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { PrintDialog } from '../src/components/editor/dialogs/print-dialog';
-import { useEditorStore } from '../src/lib/editor-store';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { useEditorStore } from '../src/lib/editor-store';
 
 const STORAGE_KEY = 'grido-print-selected-printer';
 

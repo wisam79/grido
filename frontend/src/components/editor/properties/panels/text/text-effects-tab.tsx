@@ -1,8 +1,10 @@
+import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
+import { Palette, Sparkle, ArrowCounterClockwise } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
-import { Palette, Sparkle, ArrowCounterClockwise } from '@/components/ui/icons';
+
 import { PopoverColorPicker } from '../../shared-controls';
-import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
+
 import type { TextTabProps } from './text-tab-types';
 
 const SHADOW_PRESETS = [

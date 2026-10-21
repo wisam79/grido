@@ -1,11 +1,5 @@
 import { z } from 'zod';
-import type {
-  StickerFinish,
-  StickerLayoutOverride,
-  StickerParams,
-  StickerTemplate,
-  StickerUserPreset,
-} from '../../types';
+
 import { sanitizeStickerColor, sanitizeStickerFontFamily } from '../svg-safety';
 import {
   buildDefaultStickerParams,
@@ -13,6 +7,14 @@ import {
   MAX_STICKER_FONT_SCALE,
   MIN_STICKER_FONT_SCALE,
 } from './build-svg';
+
+import type {
+  StickerFinish,
+  StickerLayoutOverride,
+  StickerParams,
+  StickerTemplate,
+  StickerUserPreset,
+} from '../../types';
 
 /**
  * schema.ts — مخطط التخصيص v2 والتحقق من البيانات المحفوظة.

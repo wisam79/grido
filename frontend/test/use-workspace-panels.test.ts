@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { useWorkspacePanels } from '../src/hooks/use-workspace-panels';
 
 const STORAGE_KEY = 'grido_workspace_layout_v1';

@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,7 +10,6 @@ import {
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
 import {
   Scan,
@@ -18,15 +20,17 @@ import {
   ArrowCounterClockwise,
   FileText,
 } from '@/components/ui/icons';
-import { cn } from '@/lib/utils';
-import { WAIT_COPY, Z_CLASS } from '@/lib/ui/ui-compliance';
-import { Point, DocumentAspectType, ScannerFilterMode, defaultInsetCorners } from './core';
-import { toast } from 'sonner';
-import { ScannerSidebar } from './components/scanner-sidebar';
-import { useScannerDetection } from './hooks/use-scanner-detection';
-import { useScannerCanvasRender } from './hooks/use-scanner-canvas-render';
-import { useScannerProcessor } from './hooks/use-scanner-processor';
 import { triggerMemoryTrim } from '@/lib/memory-trim';
+import { WAIT_COPY, Z_CLASS } from '@/lib/ui/ui-compliance';
+import { cn } from '@/lib/utils';
+
+import { ScannerSidebar } from './components/scanner-sidebar';
+import { defaultInsetCorners } from './core';
+import { useScannerCanvasRender } from './hooks/use-scanner-canvas-render';
+import { useScannerDetection } from './hooks/use-scanner-detection';
+import { useScannerProcessor } from './hooks/use-scanner-processor';
+
+import type { Point, DocumentAspectType, ScannerFilterMode } from './core';
 
 interface DocumentScannerDialogProps {
   open: boolean;

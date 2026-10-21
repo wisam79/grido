@@ -1,7 +1,9 @@
 import React, { memo } from 'react';
+
 import { cn } from '@/lib/utils';
-import type { FreeformSlot } from '../types';
+
 import type { ResizeHandle } from '../lib/freeform-math';
+import type { FreeformSlot } from '../types';
 
 export interface FreeformSlotCardProps {
   slot: FreeformSlot;

@@ -1,35 +1,49 @@
-import { StickerTemplate } from "../types";
-import { escapeXml } from "../lib/svg-rasterizer";
-import { generateBarcodeInnerSvg, generateQrCodeInnerSvg } from "../lib/barcode-svg";
+import { generateBarcodeInnerSvg, generateQrCodeInnerSvg } from '../lib/barcode-svg';
+import { escapeXml } from '../lib/svg-rasterizer';
+
+import type { StickerTemplate } from '../types';
 
 export const BARCODE_TEMPLATES: StickerTemplate[] = [
   {
-    id: "barcode_code128",
-    name: "باركود تجاري (Code 128)",
-    nameEn: "Commercial Barcode (Code 128)",
-    category: "barcodes",
-    description: "ملصق باركود قياسي لمنتجات المتاجر ومستودعات التجزئة مع السعر",
+    id: 'barcode_code128',
+    name: 'باركود تجاري (Code 128)',
+    nameEn: 'Commercial Barcode (Code 128)',
+    category: 'barcodes',
+    description: 'ملصق باركود قياسي لمنتجات المتاجر ومستودعات التجزئة مع السعر',
     defaultWidth: 500,
     defaultHeight: 300,
     aspectRatio: 500 / 300,
     defaultColors: {
-      primary: "#0F172A",
-      secondary: "#0284C7",
-      background: "#FFFFFF",
+      primary: '#0F172A',
+      secondary: '#0284C7',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "storeTitle", label: "اسم المتجر / العلامة", type: "text", defaultValue: "شركة الرافدين للتجارة" },
-      { id: "barcodeValue", label: "قيمة الباركود", type: "text", defaultValue: "IQ-2026-99" },
-      { id: "priceTag", label: "السعر", type: "text", defaultValue: "25,000 د.ع" },
+      {
+        id: 'storeTitle',
+        label: 'اسم المتجر / العلامة',
+        type: 'text',
+        defaultValue: 'شركة الرافدين للتجارة',
+      },
+      { id: 'barcodeValue', label: 'قيمة الباركود', type: 'text', defaultValue: 'IQ-2026-99' },
+      { id: 'priceTag', label: 'السعر', type: 'text', defaultValue: '25,000 د.ع' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const store = escapeXml(fields.storeTitle || "شركة الرافدين للتجارة");
-      const codeVal = escapeXml(fields.barcodeValue || "IQ-2026-99");
-      const price = escapeXml(fields.priceTag || "25,000 د.ع");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const store = escapeXml(fields.storeTitle || 'شركة الرافدين للتجارة');
+      const codeVal = escapeXml(fields.barcodeValue || 'IQ-2026-99');
+      const price = escapeXml(fields.priceTag || '25,000 د.ع');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
-      const innerBarcode = generateBarcodeInnerSvg(fields.barcodeValue || "IQ-2026-99", "CODE128", {
+      const innerBarcode = generateBarcodeInnerSvg(fields.barcodeValue || 'IQ-2026-99', 'CODE128', {
         lineColor: primaryColor,
         width: 380,
         height: 70,
@@ -59,32 +73,45 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "barcode_ean13",
-    name: "باركود سلع استهلاكية (EAN-13)",
-    nameEn: "Retail Barcode (EAN-13)",
-    category: "barcodes",
-    description: "باركود التجزئة الدولي القياسي للسلع والمواد الغذائية",
+    id: 'barcode_ean13',
+    name: 'باركود سلع استهلاكية (EAN-13)',
+    nameEn: 'Retail Barcode (EAN-13)',
+    category: 'barcodes',
+    description: 'باركود التجزئة الدولي القياسي للسلع والمواد الغذائية',
     defaultWidth: 460,
     defaultHeight: 280,
     aspectRatio: 460 / 280,
     defaultColors: {
-      primary: "#111827",
-      secondary: "#15803D",
-      background: "#FFFFFF",
+      primary: '#111827',
+      secondary: '#15803D',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "itemDesc", label: "وصف السلعة", type: "text", defaultValue: "شاي أسود فاخر 250جم" },
-      { id: "barcodeValue", label: "رمز EAN (12 أو 13 رقم)", type: "text", defaultValue: "621100012345" },
-      { id: "price", label: "السعر شامل الضريبة", type: "text", defaultValue: "6,500 د.ع" },
+      { id: 'itemDesc', label: 'وصف السلعة', type: 'text', defaultValue: 'شاي أسود فاخر 250جم' },
+      {
+        id: 'barcodeValue',
+        label: 'رمز EAN (12 أو 13 رقم)',
+        type: 'text',
+        defaultValue: '621100012345',
+      },
+      { id: 'price', label: 'السعر شامل الضريبة', type: 'text', defaultValue: '6,500 د.ع' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const desc = escapeXml(fields.itemDesc || "شاي أسود فاخر 250جم");
-      const codeVal = escapeXml(fields.barcodeValue || "621100012345");
-      const price = escapeXml(fields.price || "6,500 د.ع");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const desc = escapeXml(fields.itemDesc || 'شاي أسود فاخر 250جم');
+      const codeVal = escapeXml(fields.barcodeValue || '621100012345');
+      const price = escapeXml(fields.price || '6,500 د.ع');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
-      const innerBarcode = generateBarcodeInnerSvg(fields.barcodeValue || "621100012345", "EAN13", {
+      const innerBarcode = generateBarcodeInnerSvg(fields.barcodeValue || '621100012345', 'EAN13', {
         lineColor: primaryColor,
         width: 320,
         height: 75,
@@ -109,32 +136,55 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "barcode_qr_custom",
-    name: "ملصق رمز استجابة (QR Code)",
-    nameEn: "QR Code Scan Tag",
-    category: "barcodes",
-    description: "ملصق مربع أنيق للمواقع، بطاقات الزيارة، قوائم الطعام، والدفع السريع",
+    id: 'barcode_qr_custom',
+    name: 'ملصق رمز استجابة (QR Code)',
+    nameEn: 'QR Code Scan Tag',
+    category: 'barcodes',
+    description: 'ملصق مربع أنيق للمواقع، بطاقات الزيارة، قوائم الطعام، والدفع السريع',
     defaultWidth: 440,
     defaultHeight: 480,
     aspectRatio: 440 / 480,
     defaultColors: {
-      primary: "#0F172A",
-      secondary: "#2563EB",
-      background: "#FFFFFF",
+      primary: '#0F172A',
+      secondary: '#2563EB',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "scanTitle", label: "العنوان أعلى الرمز", type: "text", defaultValue: "امسح الرمز لزيارة موقعنا" },
-      { id: "qrUrl", label: "الرابط أو النص (URL)", type: "text", defaultValue: "https://grido.app" },
-      { id: "scanSub", label: "العبارة السفلية", type: "text", defaultValue: "SCAN ME WITH CAMERA" },
+      {
+        id: 'scanTitle',
+        label: 'العنوان أعلى الرمز',
+        type: 'text',
+        defaultValue: 'امسح الرمز لزيارة موقعنا',
+      },
+      {
+        id: 'qrUrl',
+        label: 'الرابط أو النص (URL)',
+        type: 'text',
+        defaultValue: 'https://grido.app',
+      },
+      {
+        id: 'scanSub',
+        label: 'العبارة السفلية',
+        type: 'text',
+        defaultValue: 'SCAN ME WITH CAMERA',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.scanTitle || "امسح الرمز لزيارة موقعنا");
-      const sub = escapeXml(fields.scanSub || "SCAN ME WITH CAMERA");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.scanTitle || 'امسح الرمز لزيارة موقعنا');
+      const sub = escapeXml(fields.scanSub || 'SCAN ME WITH CAMERA');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
-      const qrSvg = generateQrCodeInnerSvg(fields.qrUrl || "https://grido.app", 250, {
+      const qrSvg = generateQrCodeInnerSvg(fields.qrUrl || 'https://grido.app', 250, {
         fgColor: primaryColor,
-        bgColor: "transparent",
+        bgColor: 'transparent',
       });
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 480" width="440" height="480">
@@ -157,36 +207,53 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "barcode_warehouse_box",
-    name: "ملصق كراتين ومستودعات",
-    nameEn: "Warehouse Pallet Label",
-    category: "barcodes",
-    description: "ملصق تخزين ولوجستيات عريض للكراتين والمنصات وتحديد موقع الرف",
+    id: 'barcode_warehouse_box',
+    name: 'ملصق كراتين ومستودعات',
+    nameEn: 'Warehouse Pallet Label',
+    category: 'barcodes',
+    description: 'ملصق تخزين ولوجستيات عريض للكراتين والمنصات وتحديد موقع الرف',
     defaultWidth: 600,
     defaultHeight: 380,
     aspectRatio: 600 / 380,
     defaultColors: {
-      primary: "#1E293B",
-      secondary: "#047857",
-      background: "#FFFFFF",
+      primary: '#1E293B',
+      secondary: '#047857',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "boxId", label: "رقم الطرد / الصندوق", type: "text", defaultValue: "BOX #9021-A" },
-      { id: "shelfLoc", label: "موقع الرف (ZONE/AISLE)", type: "text", defaultValue: "مستودعات بغداد - ممر 04 - رف 12" },
-      { id: "barcodeValue", label: "كود المستودع", type: "text", defaultValue: "IQ-WH-99238" },
+      { id: 'boxId', label: 'رقم الطرد / الصندوق', type: 'text', defaultValue: 'BOX #9021-A' },
+      {
+        id: 'shelfLoc',
+        label: 'موقع الرف (ZONE/AISLE)',
+        type: 'text',
+        defaultValue: 'مستودعات بغداد - ممر 04 - رف 12',
+      },
+      { id: 'barcodeValue', label: 'كود المستودع', type: 'text', defaultValue: 'IQ-WH-99238' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const box = escapeXml(fields.boxId || "BOX #9021-A");
-      const shelf = escapeXml(fields.shelfLoc || "مستودعات بغداد - ممر 04 - رف 12");
-      const codeVal = escapeXml(fields.barcodeValue || "IQ-WH-99238");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const box = escapeXml(fields.boxId || 'BOX #9021-A');
+      const shelf = escapeXml(fields.shelfLoc || 'مستودعات بغداد - ممر 04 - رف 12');
+      const codeVal = escapeXml(fields.barcodeValue || 'IQ-WH-99238');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
-      const innerBarcode = generateBarcodeInnerSvg(fields.barcodeValue || "IQ-WH-99238", "CODE128", {
-        lineColor: primaryColor,
-        width: 380,
-        height: 80,
-      });
+      const innerBarcode = generateBarcodeInnerSvg(
+        fields.barcodeValue || 'IQ-WH-99238',
+        'CODE128',
+        {
+          lineColor: primaryColor,
+          width: 380,
+          height: 80,
+        },
+      );
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 380" width="600" height="380">
   <rect x="12" y="12" width="576" height="356" rx="14" fill="${bg}" stroke="${primaryColor}" stroke-width="6" data-color-role="background"/>

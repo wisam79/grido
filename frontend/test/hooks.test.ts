@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { useTheme } from '../src/hooks/use-theme';
 import { useWindowControls } from '../src/hooks/use-window-controls';
 import { WindowToggleMaximise, WindowIsMaximised, EventsOn } from '../wailsjs/runtime/runtime';

@@ -1,5 +1,8 @@
-import { test, expect, Page, Locator } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+
+import type { Page, Locator } from '@playwright/test';
 
 /**
  * 🛡️ حارس هندسة الألواح (Panel Geometry Guard)

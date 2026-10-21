@@ -3,7 +3,6 @@
 package service
 
 import (
-	"unsafe"
 	"image"
 	"image/color"
 	"math"
@@ -12,6 +11,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unsafe"
 
 	"golang.org/x/sys/windows"
 
@@ -952,6 +952,3 @@ func TestPrintImageDirectGDI_CorruptedFile_ReturnsSafeError(t *testing.T) {
 		t.Fatalf("expected header decode error, got: %v", err)
 	}
 }
-
-
-

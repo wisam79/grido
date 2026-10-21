@@ -1,5 +1,6 @@
-import type { FreeformSlot, SlotAlignment, DistributionAxis } from '../../types';
 import { clamp } from '@/lib/clamp';
+
+import type { FreeformSlot, SlotAlignment, DistributionAxis } from '../../types';
 
 /**
  * محاذاة الخلية المحددة

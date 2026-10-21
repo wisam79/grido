@@ -1,5 +1,6 @@
-import { StickerTemplate } from '../types';
 import { escapeXml } from '../lib/svg-rasterizer';
+
+import type { StickerTemplate } from '../types';
 
 export const SOCIAL_TEMPLATES: StickerTemplate[] = [
   {

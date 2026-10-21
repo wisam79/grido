@@ -1,5 +1,6 @@
-import type { DetectedDocument, DetectionMode, DetectionResult } from './types';
 import { createLogger } from '@/lib/logger';
+
+import type { DetectedDocument, DetectionMode, DetectionResult } from './types';
 
 const logger = createLogger('detector-worker-client');
 

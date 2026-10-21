@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { useEditorStore } from '../src/lib/editor-store';
 import * as LicenseHandler from '../wailsjs/go/handlers/LicenseHandler';
 

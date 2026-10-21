@@ -1,12 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createHistorySlice, HistoryCross } from './slices/history-slice';
+import { create } from 'zustand';
+
+import { SNAPSHOT_KEYS, DEFAULT_HISTORY_ENTRY_EXTRAS, type SnapshotKey } from './history-snapshot';
 import { DEFAULT_COLLAGE_STATE } from './slices/collage-slice';
 import { DEFAULT_GRID_STATE } from './slices/grid-slice';
+import { createHistorySlice } from './slices/history-slice';
 import { DEFAULT_PRINT_SETTINGS } from './slices/print-slice';
-import { SNAPSHOT_KEYS, DEFAULT_HISTORY_ENTRY_EXTRAS, type SnapshotKey } from './history-snapshot';
-import { create } from 'zustand';
-import type { UseBoundStore, StoreApi } from 'zustand';
+
+import type { HistoryCross } from './slices/history-slice';
 import type { CanvasElement, HistoryEntry } from './types';
+import type { UseBoundStore, StoreApi } from 'zustand';
 
 describe('history-slice', () => {
   let store: UseBoundStore<StoreApi<HistoryCross>>;
@@ -90,8 +93,6 @@ describe('history-slice', () => {
   });
 
   it('should limit history to 30 entries and shift old entries', () => {
-    const s = store.getState();
-
     // Push 35 times
     for (let i = 0; i < 35; i++) {
       store.setState({ elements: [{ id: String(i), type: 'shape' }] as CanvasElement[] });
@@ -103,7 +104,6 @@ describe('history-slice', () => {
   });
 
   it('should not push if the structural state is unchanged', () => {
-    const s = store.getState();
     store.setState({ elements: [{ id: '1', type: 'shape' }] as CanvasElement[] });
     store.getState().pushHistory();
 

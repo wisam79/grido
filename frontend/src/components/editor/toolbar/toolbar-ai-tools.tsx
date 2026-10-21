@@ -1,25 +1,25 @@
 import React, { useState } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/huge-icon';
-import { Sparkle, PaintBrush, UserSquare, MagicWand, CaretDown } from '@/components/ui/icons';
 import { useShallow } from 'zustand/react/shallow';
+
 import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
-import { useBgRemoval } from '@/hooks/use-bg-removal';
-import { useAiEnhance } from '@/hooks/use-ai-enhance';
-import { useFaceFrame } from '@/hooks/use-face-frame';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import { Spinner } from '@/components/ui/huge-icon';
+import { Sparkle, PaintBrush, UserSquare, MagicWand, CaretDown } from '@/components/ui/icons';
+import { useAiEnhance } from '@/hooks/use-ai-enhance';
+import { useBgRemoval } from '@/hooks/use-bg-removal';
+import { useFaceFrame } from '@/hooks/use-face-frame';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
 
 const RefineBgDialog = React.lazy(() =>
   import('../dialogs/refine-bg-dialog').then((m) => ({ default: m.RefineBgDialog })),
 );
-
-import { cn } from '@/lib/utils';
 
 interface AiToolsToolbarGroupProps {
   compact?: boolean;

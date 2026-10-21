@@ -1,22 +1,24 @@
 import React, { useCallback } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import {
+  AlignLeftIcon,
+  AlignCenterHorizontalIcon,
+  AlignRightIcon,
+} from '@/components/ui/alignment-icons';
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Copy, Link, LinkBreak, Trash, CaretDown } from '@/components/ui/icons';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import {
-  AlignLeftIcon,
-  AlignCenterHorizontalIcon,
-  AlignRightIcon,
-} from '@/components/ui/alignment-icons';
-import { useShallow } from 'zustand/react/shallow';
-import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
-import { toast } from 'sonner';
+import { Copy, Link, LinkBreak, Trash, CaretDown } from '@/components/ui/icons';
+import { Separator } from '@/components/ui/separator';
+import { useEditorStore } from '@/lib/editor-store';
+
 import { AiToolsToolbarGroup } from './toolbar-ai-tools';
 import { ImageFiltersPopover } from './toolbar-image-filters';
 

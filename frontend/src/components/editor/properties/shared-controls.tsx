@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { HexColorPicker } from 'react-colorful';
+
 import {
   Palette,
   Eyedropper,
@@ -12,14 +10,18 @@ import {
   SlidersHorizontal,
   XCircle,
 } from '@/components/ui/icons';
-import { cn } from '@/lib/utils';
-import { useEditorStore } from '@/lib/editor-store';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { previewWhite, checkerColor, STUDIO_PALETTE } from '@/lib/canvas/canvas-colors';
+import { useEditorStore } from '@/lib/editor-store';
+import { BACKGROUND_COLORS } from '@/lib/templates';
+import { openPaperBackgroundTool } from '@/lib/ui/paper-background';
+import { cn } from '@/lib/utils';
+
 import { GradientPicker } from './gradient-picker';
 import { formatGradientCss } from './gradient-utils';
-import { openPaperBackgroundTool } from '@/lib/ui/paper-background';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { BACKGROUND_COLORS } from '@/lib/templates';
 
 export function Row({ label, value }: { label: string; value: string }) {
   return (

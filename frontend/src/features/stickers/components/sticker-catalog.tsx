@@ -1,14 +1,22 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+
+import { FluentFilterChips } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import { MagnifyingGlass, X, Check, SquaresFour } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { FluentFilterChips } from '@/components/ui/blocks';
 import { cn, sanitizeSvgMarkupCached } from '@/lib/utils';
-import { StickerCategory, StickerCategoryGroupId, StickerShape, StickerTemplate } from '../types';
-import { ALL_STICKER_TEMPLATES, searchStickerTemplates } from '../templates';
+
 import { CATEGORY_ITEMS, SHAPE_ITEMS } from '../constants';
 import { buildDefaultStickerParams, buildStickerSvg } from '../lib/sticker-design/build-svg';
+import { ALL_STICKER_TEMPLATES, searchStickerTemplates } from '../templates';
+
+import type {
+  StickerCategory,
+  StickerCategoryGroupId,
+  StickerShape,
+  StickerTemplate,
+} from '../types';
 
 export interface StickerCatalogProps {
   selectedCategory: StickerCategoryGroupId | StickerCategory | 'all';

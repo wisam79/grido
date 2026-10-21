@@ -15,9 +15,9 @@ export class CanvasTooLargeError extends Error {
     const pixelCount = width * height;
     super(
       `Canvas too large for export: ${width}×${height} = ${pixelCount}px exceeds ` +
-        `the ${MAX_EXPORT_PIXELS}px limit (~${Math.round((pixelCount * 4) / 1024 / 1024)}MB buffer).`
+        `the ${MAX_EXPORT_PIXELS}px limit (~${Math.round((pixelCount * 4) / 1024 / 1024)}MB buffer).`,
     );
-    this.name = "CanvasTooLargeError";
+    this.name = 'CanvasTooLargeError';
     this.width = width;
     this.height = height;
     this.pixelCount = pixelCount;

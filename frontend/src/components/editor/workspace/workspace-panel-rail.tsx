@@ -1,9 +1,8 @@
-import React, { useCallback, useId, useMemo } from 'react';
-import { Eye, EyeSlash, Faders } from '@/components/ui/icons';
 import { motion } from 'framer-motion';
+import React, { useCallback, useId, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Command,
   CommandInput,
@@ -14,14 +13,11 @@ import {
   CommandItem,
   CommandShortcut,
 } from '@/components/ui/command';
+import { Eye, EyeSlash, Faders } from '@/components/ui/icons';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
-import type {
-  CollageTab,
-  CommandGroupView,
-  FreeformTab,
-  WorkspaceCommand,
-  WorkspaceTool,
-} from '@/lib/workspace-tools';
 import {
   WORKSPACE_COMMANDS,
   dispatchWorkspaceCommand,
@@ -34,8 +30,14 @@ import {
   selectStateCommandInput,
   toolShortcut,
 } from '@/lib/workspace-tools';
-import { useEditorStore } from '@/lib/editor-store';
-import { useShallow } from 'zustand/react/shallow';
+
+import type {
+  CollageTab,
+  CommandGroupView,
+  FreeformTab,
+  WorkspaceCommand,
+  WorkspaceTool,
+} from '@/lib/workspace-tools';
 
 interface WorkspacePanelRailProps {
   activeStudioTab?: FreeformTab;

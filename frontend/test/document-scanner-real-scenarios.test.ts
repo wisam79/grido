@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+
 import {
   sortCornerPoints,
   autoDetectAllDocumentCorners,
@@ -10,6 +11,9 @@ import {
   applyMagicColorFilter,
   applyOtsuFilter,
   refineCornersSubPixel,
+} from '../src/components/editor/document-scanner/perspective-transform';
+
+import type {
   Point,
   DetectedDocument,
 } from '../src/components/editor/document-scanner/perspective-transform';
@@ -38,10 +42,10 @@ describe('Document Scanner - Realistic Test Scenarios & Synthetic Images', () =>
             sy?: any,
             sw?: any,
             sh?: any,
-            dx?: any,
-            dy?: any,
-            dw?: any,
-            dh?: any,
+            _dx?: any,
+            _dy?: any,
+            _dw?: any,
+            _dh?: any,
           ) => {
             if (src && (src._mockData || src instanceof HTMLCanvasElement)) {
               const srcData = src._mockData || (src as any)._mockData;
@@ -210,7 +214,7 @@ describe('Document Scanner - Realistic Test Scenarios & Synthetic Images', () =>
 
     // Card 1: x=25..150 (w=125), y=30..109 (h=79) -> ID aspect ~ 1.58
     // Card 2: x=175..301 (w=126), y=50..130 (h=80) -> ID aspect ~ 1.575
-    const { canvas, imgData } = createTestCanvas(width, height, (x, y) => {
+    const { canvas } = createTestCanvas(width, height, (x, y) => {
       const inCard1 = x >= 25 && x <= 150 && y >= 30 && y <= 109;
       const inCard2 = x >= 175 && x <= 301 && y >= 50 && y <= 130;
 
@@ -276,7 +280,7 @@ describe('Document Scanner - Realistic Test Scenarios & Synthetic Images', () =>
     });
 
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-    const processedCanvas = applyOtsuFilter(canvas);
+    applyOtsuFilter(canvas);
     const outData = ctx.getImageData(0, 0, width, height).data;
 
     // In shadow zone: Text should be black (0) and paper background should be white (255)
@@ -463,7 +467,7 @@ describe('Document Scanner - Realistic Test Scenarios & Synthetic Images', () =>
 
     // Background: light gray (215, 215, 215)
     // Document: slightly brighter paper (240, 240, 240) - small 25-level contrast delta
-    const { canvas, imgData } = createTestCanvas(width, height, (x, y) => {
+    const { imgData } = createTestCanvas(width, height, (x, y) => {
       const inDoc = x >= 30 && x <= 130 && y >= 30 && y <= 130;
       if (inDoc) {
         return [240, 240, 240, 255];
@@ -525,7 +529,7 @@ describe('Document Scanner - Realistic Test Scenarios & Synthetic Images', () =>
     // Top Card (Front Face): x=45..255 (w=210), y=40..170 (h=130) -> ID ratio 210/130 = 1.61
     // Bottom Card (Back Face): x=45..255 (w=210), y=220..350 (h=130) -> ID ratio 210/130 = 1.61
     // White gap in between: y=170..220 (h=50px white margin)
-    const { canvas, imgData } = createTestCanvas(width, height, (x, y) => {
+    const { imgData } = createTestCanvas(width, height, (x, y) => {
       const inTopCard = x >= 45 && x <= 255 && y >= 40 && y <= 170;
       const inBottomCard = x >= 45 && x <= 255 && y >= 220 && y <= 350;
 
@@ -575,7 +579,7 @@ describe('Document Scanner - Realistic Test Scenarios & Synthetic Images', () =>
 
     // The whole image is paper with text stripes (kept away from image borders so
     // the salience border-ring stays clean)
-    const { canvas, imgData } = createTestCanvas(width, height, (x, y) => {
+    const { canvas } = createTestCanvas(width, height, (x, y) => {
       const isText = x >= 50 && x <= 200 && y >= 30 && y <= 150 && y % 12 === 0;
       if (isText) return [30, 30, 30, 255];
       return [240, 235, 230, 255];
@@ -606,7 +610,7 @@ describe('Document Scanner - Realistic Test Scenarios & Synthetic Images', () =>
 
     // ID card filling ~91% of the frame, with thin desk margin
     // Card: (3,6) .. (198,134) = 195 x 128 = 0.9065 area ratio
-    const { canvas, imgData } = createTestCanvas(width, height, (x, y) => {
+    const { imgData } = createTestCanvas(width, height, (x, y) => {
       const inCard = x >= 3 && x <= 198 && y >= 6 && y <= 134;
       if (inCard) {
         // Solid ID card color (navy)

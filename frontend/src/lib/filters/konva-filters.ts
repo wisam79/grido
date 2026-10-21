@@ -1,9 +1,11 @@
 import Konva from 'konva';
+
+import { PIXELATE_BLOCK_PX, THRESHOLD_LEVEL } from './pixel-filters';
 import type { Filter } from 'konva/lib/Node';
+
 // تسجيل المرشّحات المخصصة مسؤوليتنا هنا — الاعتماد على مستوردِعَرَضي في
 // مكان آخر يجعلها undefined في صمت (فتصمت المعاينة بلا خطأ)
 import './custom-filters';
-import { PIXELATE_BLOCK_PX, THRESHOLD_LEVEL } from './pixel-filters';
 
 export interface FilterOptions {
   filter?: string;

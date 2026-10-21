@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
+
+import { buildDefaultStickerParams } from '@/features/stickers/lib/sticker-design/build-svg';
 import {
   migrateStickerParams,
   stripDangerousKeys,
 } from '@/features/stickers/lib/sticker-design/schema';
-import { buildDefaultStickerParams } from '@/features/stickers/lib/sticker-design/build-svg';
 import { ALL_STICKER_TEMPLATES } from '@/features/stickers/templates';
+
 import type { StickerParams } from '@/features/stickers';
 
 describe('sticker-design/schema migration', () => {

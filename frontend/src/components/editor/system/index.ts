@@ -1,3 +1,3 @@
-export * from "./update-notifier";
-export * from "./window-resize-handles";
-export * from "./desktop-menu-bar";
+export * from './update-notifier';
+export * from './window-resize-handles';
+export * from './desktop-menu-bar';

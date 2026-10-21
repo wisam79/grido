@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
-import { expect, vi } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { toHaveNoViolations } from 'jest-axe';
+import { expect, vi } from 'vitest';
 
 expect.extend(matchers);
 expect.extend(toHaveNoViolations);

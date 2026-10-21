@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+
 import { getCachedImage, invalidateImageCache, setWithLRU } from './image-cache';
 
 function fakeImage(width: number, height: number): HTMLImageElement {

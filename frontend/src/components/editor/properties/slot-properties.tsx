@@ -1,6 +1,15 @@
 import React, { lazy, Suspense, useState } from 'react';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import { FluentSection, FluentSliderField, FluentTooltip } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import { wailsIsDesktop } from '@/lib/wails-env';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   ImageSquare,
   Crop,
@@ -21,28 +30,23 @@ import {
   Sun,
   MagnifyingGlassPlus,
 } from '@/components/ui/icons';
-import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
-import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
-import { toast } from 'sonner';
-import { useEditorStore, CanvasSlot } from '@/lib/editor-store';
-import { createLogger } from '@/lib/logger';
-import { toErrorMessage } from '@/lib/wails-error';
-
-const logger = createLogger('slot-properties');
-import { useRenderQuality } from '@/lib/canvas/render-quality';
-import { PopoverColorPicker } from './shared-controls';
-import { FluentSection, FluentSliderField, FluentTooltip } from '@/components/ui/blocks';
-import { pxToMm } from '@/lib/canvas/units';
-import { cn } from '@/lib/utils';
-import { useShallow } from 'zustand/react/shallow';
 import { Switch } from '@/components/ui/switch';
 import { checkerColor } from '@/lib/canvas/canvas-colors';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { pxToMm } from '@/lib/canvas/units';
+import { useEditorStore } from '@/lib/editor-store';
+import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { createLogger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
+import { wailsIsDesktop } from '@/lib/wails-env';
+import { toErrorMessage } from '@/lib/wails-error';
+
+import { PopoverColorPicker } from './shared-controls';
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+
+import type { CanvasSlot } from '@/lib/editor-store';
+
+const logger = createLogger('slot-properties');
 
 const CropDialog = lazy(() =>
   import('../dialogs/crop-dialog').then((module) => ({ default: module.CropDialog })),

@@ -1,8 +1,10 @@
-import type { FreeformSlot, PhotoPresetType, AutoPackStrategy } from '../../types';
 import { clamp } from '@/lib/clamp';
+
 import { MIN_SIZE } from './constants';
-import { newSlotId } from './slot-ids';
 import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from './photo-presets';
+import { newSlotId } from './slot-ids';
+
+import type { FreeformSlot, PhotoPresetType, AutoPackStrategy } from '../../types';
 
 /**
  * البحث عن أول مساحة شاغرة على الورقة لإدراج خلية جديدة دون تداخل
@@ -146,7 +148,6 @@ export function autoPackSlots(
     const iWRel = iW / paperWidthMM;
     const iHRel = iH / paperHeightMM;
     const gapXRel = gapMM / paperWidthMM;
-    const gapYRel = gapMM / paperHeightMM;
 
     for (let c = 0; c < pCols; c++) {
       slots.push({

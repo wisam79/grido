@@ -1,13 +1,16 @@
 import React, { useEffect, useRef, useState, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
-import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
-import { useBgRemoval } from '@/hooks/use-bg-removal';
+
 import { useAiEnhance } from '@/hooks/use-ai-enhance';
-import type { CanvasSlot, CanvasElement } from '@/lib/store/types';
+import { useBgRemoval } from '@/hooks/use-bg-removal';
+import { useEditorStore } from '@/lib/editor-store';
+
+import { CanvasMenuSection } from './context-menu/canvas-menu-section';
 import { ElementMenuSection } from './context-menu/element-menu-section';
 import { SlotMenuSection } from './context-menu/slot-menu-section';
-import { CanvasMenuSection } from './context-menu/canvas-menu-section';
+
+import type { CanvasSlot, CanvasElement, ImageElement } from '@/lib/store/types';
 
 const CropDialog = lazy(() =>
   import('../dialogs/crop-dialog').then((m) => ({ default: m.CropDialog })),
@@ -188,8 +191,8 @@ export function ContextMenu({ position, target, onClose }: ContextMenuProps) {
           setCropTarget={setCropTarget}
           isRemovingBg={isRemovingBg}
           isEnhancing={isEnhancing}
-          handleRemoveBg={handleRemoveBg as (el: import('@/lib/store/types').ImageElement) => void}
-          handleEnhance={handleEnhance as (el: import('@/lib/store/types').ImageElement) => void}
+          handleRemoveBg={handleRemoveBg as (el: ImageElement) => void}
+          handleEnhance={handleEnhance as (el: ImageElement) => void}
         />
       )}
 

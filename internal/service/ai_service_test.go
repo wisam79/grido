@@ -618,5 +618,3 @@ func TestEnhanceImageWithAI_LocalImagePath_TransparentPNG(t *testing.T) {
 		t.Errorf("Expected response to contain mock_enhanced_png, got %s", respStr)
 	}
 }
-
-

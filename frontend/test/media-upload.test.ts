@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+import * as imageDimensions from '@/lib/canvas/image-dimensions';
 import { uploadMediaBlob, uploadCanvasBlob } from '@/lib/io/media-upload';
 import * as localApi from '@/lib/local-api';
-import * as imageDimensions from '@/lib/canvas/image-dimensions';
 
 describe('media-upload', () => {
   beforeEach(() => {

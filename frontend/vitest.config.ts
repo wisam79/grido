@@ -9,8 +9,8 @@ export default defineConfig({
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
       { find: '@bindings', replacement: resolve(__dirname, './bindings') },
-      { find: /^konva$/, replacement: resolve(__dirname, './node_modules/konva/lib/index.js') }
-    ]
+      { find: /^konva$/, replacement: resolve(__dirname, './node_modules/konva/lib/index.js') },
+    ],
   },
   test: {
     environment: 'jsdom',
@@ -22,14 +22,14 @@ export default defineConfig({
     minWorkers: 1,
     server: {
       deps: {
-        inline: ['konva', 'react-konva']
-      }
+        inline: ['konva', 'react-konva'],
+      },
     },
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       '**/e2e/**',
-      '**/.{idea,git,cache,output,temp}/**'
+      '**/.{idea,git,cache,output,temp}/**',
     ],
     coverage: {
       provider: 'v8',
@@ -52,8 +52,8 @@ export default defineConfig({
         statements: 36,
         branches: 30,
         functions: 32,
-        lines: 36
-      }
+        lines: 36,
+      },
     },
   },
 });

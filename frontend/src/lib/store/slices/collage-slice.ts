@@ -1,5 +1,9 @@
-import { StateCreator } from 'zustand';
-import {
+import { normalizeSelection } from './element-slice';
+import { measureImageAspect } from '../../canvas/measure-image';
+import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from '../../templates';
+import { uid } from '../../utils';
+
+import type {
   CanvasElement,
   CanvasSlot,
   PhotoTemplate,
@@ -7,10 +11,7 @@ import {
   PrintSettings,
   HistoryEntry,
 } from '../types';
-import { uid } from '../../utils';
-import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from '../../templates';
-import { measureImageAspect } from '../../canvas/measure-image';
-import { normalizeSelection } from './element-slice';
+import type { StateCreator } from 'zustand';
 
 export interface CollageSlice {
   template: PhotoTemplate | null;

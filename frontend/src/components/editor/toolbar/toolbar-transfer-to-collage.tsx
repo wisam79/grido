@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { useEditorStore } from '@/lib/editor-store';
-import { useStageRef } from '@/lib/canvas/stage-context';
-import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
-import { exportCanvas } from '@/lib/export';
-import { wailsIsDesktop } from '@/lib/wails-env';
-import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
+import { toast } from 'sonner';
+
+import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
 import { TableArrowRepeatAll } from '@/components/ui/icons';
 import { Separator } from '@/components/ui/separator';
-import { FluentTooltip as TooltipBtn } from '@/components/ui/blocks';
-import { toast } from 'sonner';
+import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
+import { useStageRef } from '@/lib/canvas/stage-context';
+import { useEditorStore } from '@/lib/editor-store';
+import { exportCanvas } from '@/lib/export';
 import { createLogger } from '@/lib/logger';
+import { wailsIsDesktop } from '@/lib/wails-env';
 import { toErrorMessage } from '@/lib/wails-error';
+
+import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 
 const logger = createLogger('transfer-to-collage');
 

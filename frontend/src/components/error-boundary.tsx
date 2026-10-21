@@ -1,8 +1,12 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react';
+
+import { LogFrontendError } from '@bindings/grido/app';
+
 import { Button } from '@/components/ui/button';
 import { WarningOctagon } from '@/components/ui/icons';
-import { LogFrontendError } from '@bindings/grido/app';
 import { createLogger } from '@/lib/logger';
+
+import type { ErrorInfo, ReactNode } from 'react';
 
 const log = createLogger('ErrorBoundary');
 

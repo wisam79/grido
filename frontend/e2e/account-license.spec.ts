@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Account, Authentication & License Management E2E', () => {
@@ -8,7 +9,9 @@ test.describe('Account, Authentication & License Management E2E', () => {
     await waitForAppReady(page);
   });
 
-  test('Open account modal, verify active Pro status, and switch auth/license tabs', async ({ page }) => {
+  test('Open account modal, verify active Pro status, and switch auth/license tabs', async ({
+    page,
+  }) => {
     // Open Account modal from top-right titlebar button
     const accountBtn = page.getByLabel(/الحساب والتراخيص/).first();
     await expect(accountBtn).toBeVisible();
@@ -21,8 +24,14 @@ test.describe('Account, Authentication & License Management E2E', () => {
     await expect(dialog.getByText(/الحساب والترخيص/)).toBeVisible();
 
     // Verify tabs exist (FluentSegmentedControl buttons)
-    const licenseTab = dialog.getByRole('button', { name: /الترخيص/ }).or(dialog.getByText('الترخيص')).first();
-    const authTab = dialog.getByRole('button', { name: /الحساب/ }).or(dialog.getByText('الحساب')).first();
+    const licenseTab = dialog
+      .getByRole('button', { name: /الترخيص/ })
+      .or(dialog.getByText('الترخيص'))
+      .first();
+    const authTab = dialog
+      .getByRole('button', { name: /الحساب/ })
+      .or(dialog.getByText('الحساب'))
+      .first();
 
     if (await licenseTab.isVisible()) {
       await expect(licenseTab).toBeVisible();

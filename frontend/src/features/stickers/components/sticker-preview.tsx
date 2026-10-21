@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+
 import {
   MagnifyingGlassPlus,
   MagnifyingGlassMinus,
@@ -8,8 +9,11 @@ import {
 } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn, sanitizeSvgMarkupCached } from '@/lib/utils';
-import { StickerTemplate, StickerParams, MockupBackground } from '../types';
-import { StickerInlineEditor, ActiveFieldState, ActiveColorState } from './sticker-inline-editor';
+
+import { StickerInlineEditor } from './sticker-inline-editor';
+
+import type { StickerTemplate, StickerParams, MockupBackground } from '../types';
+import type { ActiveFieldState, ActiveColorState } from './sticker-inline-editor';
 
 export interface StickerPreviewProps {
   template: StickerTemplate;

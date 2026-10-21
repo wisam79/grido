@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { getEffectiveDpi, computeDynamicCollageCells } from '../src/lib/templates/grid-utils';
+
 import { COLLAGE_TEMPLATES } from '../src/lib/templates/collage-templates';
+import { getEffectiveDpi, computeDynamicCollageCells } from '../src/lib/templates/grid-utils';
 
 describe('GridUtils Unit Tests', () => {
   it('calculates effective DPI correctly for standard paper size', () => {
@@ -16,7 +17,12 @@ describe('GridUtils Unit Tests', () => {
   });
 
   it('returns null when collage template has no physicalLayout', () => {
-    const result = computeDynamicCollageCells({ id: 'custom', name: 'Custom' } as any, 2480, 3508, 300);
+    const result = computeDynamicCollageCells(
+      { id: 'custom', name: 'Custom' } as any,
+      2480,
+      3508,
+      300,
+    );
     expect(result).toBeNull();
   });
 

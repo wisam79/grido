@@ -1,8 +1,11 @@
 import React from 'react';
-import { Button, ButtonProps } from '@/components/ui/button';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+
+import type { ButtonProps } from '@/components/ui/button';
 
 export interface FluentIconButtonProps extends Omit<ButtonProps, 'size'> {
   icon?: React.ReactNode;

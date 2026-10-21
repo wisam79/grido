@@ -1,6 +1,8 @@
-import type { FreeformSlot, SnapLine } from '../../types';
 import { clamp } from '@/lib/clamp';
+
 import { SNAP_TOLERANCE, CENTER_SNAP_TOLERANCE } from './constants';
+
+import type { FreeformSlot, SnapLine } from '../../types';
 
 /**
  * نقل الخلية بـ Center Drag مع المغناطيس الذكي والتصادم

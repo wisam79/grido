@@ -1,31 +1,29 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
 // استيرادات مباشرة بدل برميل @/components/editor: البرميل كان يُدخل كل
 // اللوحات والحوارات (ومنها print-dialog وprojects-dialog) في الحزمة الرئيسية
 // فيُلغي فائدة lazy() تماماً.
-import { Toolbar } from '@/components/editor/toolbar/toolbar';
-import { TemplatePanel } from '@/components/editor/panels/template-panel';
-import { PropertiesPanel } from '@/components/editor/panels/properties-panel';
+import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import { CanvasViewportDeck } from '@/components/editor/canvas/canvas-viewport-deck';
 import { EditorCanvas } from '@/components/editor/canvas/editor-canvas';
 import { AccountLicenseModal } from '@/components/editor/dialogs/account-license-modal';
-import { UpdateNotifier } from '@/components/editor/system/update-notifier';
-import { WindowResizeHandles } from '@/components/editor/system/window-resize-handles';
-import { CanvasViewportDeck } from '@/components/editor/canvas/canvas-viewport-deck';
+import { PropertiesPanel } from '@/components/editor/panels/properties-panel';
+import { TemplatePanel } from '@/components/editor/panels/template-panel';
 import { DesktopMenuBar } from '@/components/editor/system/desktop-menu-bar';
-import { WorkspaceLayout } from '@/components/editor/workspace/workspace-layout';
+import { LicenseLockScreen } from '@/components/editor/system/license-lock-screen';
+import { UpdateNotifier } from '@/components/editor/system/update-notifier';
+import { usePhoneBridgeListener } from '@/components/editor/system/use-phone-bridge';
+import { WindowControls } from '@/components/editor/system/window-controls';
+import { WindowResizeHandles } from '@/components/editor/system/window-resize-handles';
+import { Toolbar } from '@/components/editor/toolbar/toolbar';
 import { AppDialogsHost } from '@/components/editor/workspace/app-dialogs-host';
-import {
-  useWorkspacePanels,
-  type CollageTab,
-  type FreeformTab,
-} from '@/hooks/use-workspace-panels';
+import { WorkspaceLayout } from '@/components/editor/workspace/workspace-layout';
 import { ErrorBoundary } from '@/components/error-boundary';
-import { useAppBootstrap } from '@/hooks/use-app-bootstrap';
-
 import { Button } from '@/components/ui/button';
-import { useOperationStatusStore } from '@/lib/ui/operation-status';
-import { Spinner } from '@/components/ui/huge-icon';
 import { FluentIconProvider } from '@/components/ui/fluent-icon-provider';
+import { Spinner } from '@/components/ui/huge-icon';
 import {
   SquaresFour,
   Image,
@@ -37,22 +35,24 @@ import {
   SlidersHorizontal,
   User,
 } from '@/components/ui/icons';
-
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useAppBootstrap } from '@/hooks/use-app-bootstrap';
+import { flushAutoSave, useAutoSave } from '@/hooks/use-autosave';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useTheme } from '@/hooks/use-theme';
 import { useWindowControls } from '@/hooks/use-window-controls';
-import { WindowControls } from '@/components/editor/system/window-controls';
-import { LicenseLockScreen } from '@/components/editor/system/license-lock-screen';
-import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import { flushAutoSave, useAutoSave } from '@/hooks/use-autosave';
-import { EventsOn, Quit } from '../wailsjs/runtime/runtime';
-import { useEditorStore } from '@/lib/editor-store';
+import {
+  useWorkspacePanels,
+  type CollageTab,
+  type FreeformTab,
+} from '@/hooks/use-workspace-panels';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
-import { useShallow } from 'zustand/react/shallow';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { usePhoneBridgeListener } from '@/components/editor/system/use-phone-bridge';
+import { useEditorStore } from '@/lib/editor-store';
+import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { PAPER_BACKGROUND_EVENTS } from '@/lib/ui/paper-background';
+import { cn } from '@/lib/utils';
+
+import { EventsOn, Quit } from '../wailsjs/runtime/runtime';
 
 export default function App() {
   const [exportOpen, setExportOpen] = useState(false);

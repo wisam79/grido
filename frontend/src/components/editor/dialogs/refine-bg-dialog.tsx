@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import {
-  previewWhite,
-  previewBlack,
-  previewBlue,
-  previewChecker,
-} from '@/lib/canvas/canvas-colors';
+import { toast } from 'sonner';
+
+import { FluentSliderField } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -14,8 +12,6 @@ import {
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { FluentSliderField } from '@/components/ui/blocks';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
 import {
   PaintBrush,
@@ -28,10 +24,15 @@ import {
   FloppyDisk,
   PaintBucket,
 } from '@/components/ui/icons';
-import { toast } from 'sonner';
+import {
+  previewWhite,
+  previewBlack,
+  previewBlue,
+  previewChecker,
+} from '@/lib/canvas/canvas-colors';
 import { uploadCanvasBlob } from '@/lib/io/media-upload';
-import { cn } from '@/lib/utils';
 import { createLogger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
 const logger = createLogger('refine-bg-dialog');

@@ -1,32 +1,27 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
-import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
-import { GridFour, MagicWand } from '@/components/ui/icons';
-import { COLLAGE_TOOLS, type CollageTab } from '@/lib/workspace-tools';
-import { CollageTemplate } from '@/lib/templates';
-import { getTemplateGrid } from '@/lib/canvas/collage-grid';
-import { FreeformCollageModal } from '@/features/freeform-collage';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
+import { GridFour, MagicWand } from '@/components/ui/icons';
+import { FreeformCollageModal } from '@/features/freeform-collage';
+import { getTemplateGrid } from '@/lib/canvas/collage-grid';
+import { useEditorStore } from '@/lib/editor-store';
+import { COLLAGE_TOOLS, type CollageTab } from '@/lib/workspace-tools';
+import { CollageArrangeTab } from './collage/collage-arrange-tab';
+import { CollageAutofillTab } from './collage/collage-autofill-tab';
+import { CollageCustomGridTab } from './collage/collage-custom-grid-tab';
 import {
-  PhotoGridType,
-  GridAlignment,
   getGridLimits,
   getPhotoDimensions,
   buildPhysicalGridCells,
   buildStretchGridCells,
-  NormalizedCell,
 } from './collage/collage-grid-math';
-import {
-  STUDIO_COMBO_PRESETS,
-  STUDIO_KEEPSAKE_PRESETS,
-  CollagePresetCategory,
-} from './collage/collage-preset-data';
-import { CollagePresetsTab } from './collage/collage-presets-tab';
-import { CollageCustomGridTab } from './collage/collage-custom-grid-tab';
 import { CollagePaperToolsTab } from './collage/collage-paper-tools-tab';
-import { CollageAutofillTab } from './collage/collage-autofill-tab';
-import { CollageArrangeTab } from './collage/collage-arrange-tab';
+import { STUDIO_COMBO_PRESETS, STUDIO_KEEPSAKE_PRESETS } from './collage/collage-preset-data';
+import { CollagePresetsTab } from './collage/collage-presets-tab';
+import type { PhotoGridType, GridAlignment, NormalizedCell } from './collage/collage-grid-math';
+import type { CollagePresetCategory } from './collage/collage-preset-data';
+import type { CollageTemplate } from '@/lib/templates';
 
 interface CustomCollageCardProps {
   onSelect: (t: CollageTemplate) => void;

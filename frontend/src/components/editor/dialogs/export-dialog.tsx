@@ -1,4 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import { FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,12 +12,14 @@ import {
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/huge-icon';
 import { Warning } from '@/components/ui/icons';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { previewWhite } from '@/lib/canvas/canvas-colors';
+import { useStageRef } from '@/lib/canvas/stage-context';
+import { useEditorStore } from '@/lib/editor-store';
 import {
   exportCanvas,
   downloadBlob,
@@ -21,22 +28,18 @@ import {
   runCmykExport,
   CanvasTooLargeError,
 } from '@/lib/export';
-import type { CmykFormat } from '@/lib/export';
+import { createLogger } from '@/lib/logger';
+import { triggerMemoryTrim } from '@/lib/memory-trim';
+import { toErrorMessage } from '@/lib/wails-error';
+
 import {
   SelectExportDirectory,
   SetTaskbarProgress,
   SendNotification,
   OpenFolder,
 } from '../../../../wailsjs/go/main/App';
-import { useEditorStore } from '@/lib/editor-store';
-import { useStageRef } from '@/lib/canvas/stage-context';
-import { toast } from 'sonner';
-import { createLogger } from '@/lib/logger';
-import { toErrorMessage } from '@/lib/wails-error';
-import { previewWhite } from '@/lib/canvas/canvas-colors';
-import { useShallow } from 'zustand/react/shallow';
-import { FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
-import { triggerMemoryTrim } from '@/lib/memory-trim';
+
+import type { CmykFormat } from '@/lib/export';
 
 const logger = createLogger('export-dialog');
 

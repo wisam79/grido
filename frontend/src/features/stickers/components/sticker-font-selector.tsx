@@ -1,8 +1,11 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
+
 import { TextAa, MagnifyingGlass, CaretDown, Check, Cloud } from '@/components/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont, FontOption } from '@/lib/io/fonts';
+import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont } from '@/lib/io/fonts';
 import { cn } from '@/lib/utils';
+
+import type { FontOption } from '@/lib/io/fonts';
 
 export interface StickerFontSelectorProps {
   value?: string;

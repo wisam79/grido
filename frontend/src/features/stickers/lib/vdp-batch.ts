@@ -1,12 +1,14 @@
-import type { StickerTemplate, StickerParams } from '@/features/stickers';
-import { renderSvgToPngBlob } from './svg-rasterizer';
 import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
-import { applyRowToParams } from './vdp-parser';
-import { buildStickerSvg } from './sticker-design/build-svg';
-import { stickerRasterSize } from './sticker-text';
-import { wailsIsDesktop } from '@/lib/wails-env';
 import { uploadMediaBlob } from '@/lib/io/media-upload';
 import { createLogger } from '@/lib/logger';
+import { wailsIsDesktop } from '@/lib/wails-env';
+
+import { buildStickerSvg } from './sticker-design/build-svg';
+import { stickerRasterSize } from './sticker-text';
+import { renderSvgToPngBlob } from './svg-rasterizer';
+import { applyRowToParams } from './vdp-parser';
+
+import type { StickerTemplate, StickerParams } from '@/features/stickers';
 
 const logger = createLogger('vdp-batch');
 

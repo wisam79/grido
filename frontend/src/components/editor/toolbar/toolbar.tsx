@@ -1,5 +1,13 @@
 import React from 'react';
+
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import {
   Broom,
   FloppyDisk,
@@ -8,6 +16,9 @@ import {
   DotsThreeVertical,
   Folders,
 } from '@/components/ui/icons';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
+
 import { ToolbarFileOps } from './toolbar-file-ops';
 import {
   TooltipBtn,
@@ -16,15 +27,6 @@ import {
   ToolbarSelectionTools,
   ToolbarTransferToCollage,
 } from './toolbar-items';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { useEditorStore } from '@/lib/editor-store';
-import { cn } from '@/lib/utils';
 
 interface ToolbarProps {
   onPrint: () => void;

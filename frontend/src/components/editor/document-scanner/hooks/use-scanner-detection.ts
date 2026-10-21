@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+
+import { formatSolvableError } from '@/lib/ui/ui-compliance';
+
 import {
-  Point,
-  DetectedDocument,
-  DetectionMode,
-  DocumentAspectType,
   detectDocumentAuto,
   defaultInsetCorners,
   getDocumentAspectLabel,
@@ -15,7 +14,8 @@ import {
   warmupDocumentDetectorWorker,
   terminateDocumentDetectorWorker,
 } from '../core';
-import { formatSolvableError } from '@/lib/ui/ui-compliance';
+
+import type { Point, DetectedDocument, DetectionMode, DocumentAspectType } from '../core';
 
 export interface ScannerDetectionApi {
   detectedDocs: DetectedDocument[];

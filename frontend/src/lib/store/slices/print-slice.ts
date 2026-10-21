@@ -1,8 +1,9 @@
-import { StateCreator } from 'zustand';
-import { EditorState } from '../index';
-import { PrintSettings } from '../types';
-import { computeDynamicCollageCells, getEffectiveDpi } from '../../templates';
 import { remapSlotsToCells } from './collage-slice';
+import { computeDynamicCollageCells, getEffectiveDpi } from '../../templates';
+
+import type { EditorState } from '../index';
+import type { PrintSettings } from '../types';
+import type { StateCreator } from 'zustand';
 
 export interface PrintSlice {
   printSettings: PrintSettings;

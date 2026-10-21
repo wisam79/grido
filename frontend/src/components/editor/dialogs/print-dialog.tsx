@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type Konva from 'konva';
+import { toast } from 'sonner';
+
+import { useShallow } from 'zustand/react/shallow';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,21 +12,6 @@ import {
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useEditorStore } from '@/lib/editor-store';
-import { DEFAULT_PRINT_SETTINGS } from '@/lib/store/slices/print-slice';
-import { useStageRef } from '@/lib/canvas/stage-context';
-import { usePrintLayout } from '@/hooks/use-print-layout';
-import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/huge-icon';
 import {
   Printer,
@@ -34,25 +22,37 @@ import {
   FileText,
   FloppyDisk,
 } from '@/components/ui/icons';
-import { toast } from 'sonner';
+import { PageOrientationIcon } from '@/components/ui/image-icons';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { usePrintLayout } from '@/hooks/use-print-layout';
+import { useStageRef } from '@/lib/canvas/stage-context';
+import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
-import { toErrorMessage } from '@/lib/wails-error';
 import { triggerMemoryTrim } from '@/lib/memory-trim';
+import { DEFAULT_PRINT_SETTINGS } from '@/lib/store/slices/print-slice';
+import { PAPER_SIZES, ADVANCED_PAPER_SIZES } from '@/lib/templates/constants';
+import { cn } from '@/lib/utils';
+import { toErrorMessage } from '@/lib/wails-error';
 import {
   GetPrinters,
   GetDefaultPrinterName,
   OpenPrinterPreferences,
   GetSupportedPapers,
 } from '../../../../wailsjs/go/handlers/PrintHandler';
-import type { SupportedPaperInfo } from '@bindings/grido/internal/core/domain';
-import { PageOrientationIcon } from '@/components/ui/image-icons';
-import { PAPER_SIZES, ADVANCED_PAPER_SIZES } from '@/lib/templates/constants';
 import { SheetPreview } from '../print/print-preview';
+import { usePrintExport } from '../print/use-print-export';
+import type { SupportedPaperInfo } from '@bindings/grido/internal/core/domain';
+import type Konva from 'konva';
 
 const ALL_PRINT_PAPER_SIZES = [...PAPER_SIZES, ...ADVANCED_PAPER_SIZES];
-import { useShallow } from 'zustand/react/shallow';
-import { usePrintExport } from '../print/use-print-export';
-
 const logger = createLogger('print-dialog');
 
 /** مفتاح حفظ الطابعة المختارة بين الجلسات (هدف «الخصائص» والطباعة المباشرة). */
@@ -82,14 +82,6 @@ interface PrintDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const toggleButtonClassName = (active: boolean) =>
-  cn(
-    'rounded-md text-xs font-semibold transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-    active
-      ? 'bg-primary text-primary-foreground shadow-2xs font-bold'
-      : 'text-muted-foreground hover:text-foreground hover:bg-background/70',
-  );
 
 export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   const stageRef = useStageRef();
@@ -300,7 +292,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     printOrientation: printSettings.orientation,
     printColorSpace: printSettings.colorSpace || 'sRGB',
   });
-  const { isExporting, setIsExporting, cancelExport, handlePrint } = exporter;
+  const { isExporting, cancelExport, handlePrint } = exporter;
 
   useEffect(() => {
     if (open) {

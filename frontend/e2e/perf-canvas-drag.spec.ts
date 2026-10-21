@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
@@ -13,10 +14,14 @@ test.describe('Canvas interactivity performance', () => {
     await page.goto('/');
     await waitForAppReady(page);
 
-    await page.waitForFunction(() => {
-      const stage = document.querySelector('.konvajs-content') || document.querySelector('#canvas-area');
-      return stage !== null;
-    }, { timeout: 10000 });
+    await page.waitForFunction(
+      () => {
+        const stage =
+          document.querySelector('.konvajs-content') || document.querySelector('#canvas-area');
+        return stage !== null;
+      },
+      { timeout: 10000 },
+    );
 
     const report = await page.evaluate(async () => {
       const idle1: number[] = [];

@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
+
+import {
+  QUICK_TEXT_PRESETS,
+  TEXT_FILTER_OPTIONS,
+} from '../src/components/editor/panels/freeform/freeform-panel-constants';
 import {
   TEXT_PRESET_CATALOG,
   TEXT_PRESET_CATEGORY_LABELS,
   TEXT_PRESETS,
   type TextPresetType,
 } from '../src/lib/templates';
-import {
-  QUICK_TEXT_PRESETS,
-  TEXT_FILTER_OPTIONS,
-} from '../src/components/editor/panels/freeform/freeform-panel-constants';
 
 describe('text preset catalog', () => {
   it('covers every preset id exactly once', () => {

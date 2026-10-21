@@ -133,6 +133,22 @@ go test -count=1 -v ./internal/...
 
 ---
 
+### 3.5 بوابات التنسيق والالتزام (Pre-Commit / CI)
+
+| البوابة | الأمر | النطاق | الحالة عند الفشل |
+| :--- | :--- | :--- | :--- |
+| Prettier | `npm --prefix frontend run format:check` | `src`, `test`, `e2e`, وملفات إعداد Vite/Vitest/ESLint | ⛔ في CI |
+| ESLint | `npm --prefix frontend run lint` | نفس النطاق + `--max-warnings 0` | ⛔ في CI و`lint-staged` |
+| Go Format | `git ls-files -z '*.go' \| xargs -0 gofmt -l` | كل ملفات Go المتتبعة | ⛔ في CI |
+| Conventional Commits | `node scripts/commit-msg-lint.mjs "$1"` | رسالة كل كومت | ⛔ عبر `.husky/commit-msg` |
+
+- **`lint-staged`** يشغّل ESLint وPrettier على الملفات المرحّلة فقط، بينما CI يفحص الشبكة كاملة — فلا تمرّ مخالفة تنسيق أو استيراد من كومت محلي.
+- **`.editorconfig`** هو مرجع المسافات (2 للملفات العامة، Tab لـGo) ونهايات الأسطر، و**`.gitattributes`** يثبّت `lf` في Git ويعزل الأصول الثنائية عن التطبيع.
+- **`.nvmrc`** يحمل إصدار Node المرجعي (22)، وCI يقرأه عبر `node-version-file` بدل رقم مكرر في أكثر من مكان.
+- **رسائل الالتزام:** النوع من القائمة المسموحة فقط (`build/chore/ci/docs/feat/fix/perf/refactor/release/revert/security/style/test`)، مع scope اختياري بحروف صغيرة، وترويسة حتى 120 حرفاً. تُقبل رسائل الدمج و`fixup!/squash!/amend!` و`Revert "..."` تلقائياً.
+
+---
+
 ## 4. إرشادات كتابة الاختبارات (Best Practices)
 
 ### 4.1 اختبارات مكونات React (Vitest + RTL)

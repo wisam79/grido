@@ -1,4 +1,8 @@
+import { QRCodeSVG } from 'qrcode.react';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,7 +11,6 @@ import {
   DialogCloseButton,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
 import {
   Copy,
@@ -19,17 +22,17 @@ import {
   Cloud,
   XCircle,
 } from '@/components/ui/icons';
-import { QRCodeSVG } from 'qrcode.react';
-import { toast } from 'sonner';
-import { toErrorMessage } from '@/lib/wails-error';
 import { createLogger } from '@/lib/logger';
 import { usePhoneBridgeStore } from '@/lib/phone-bridge-store';
+import { toErrorMessage } from '@/lib/wails-error';
+
 import {
   StartPhoneBridge,
   StopPhoneBridge,
   GetPhoneBridgeStatus,
 } from '../../../../wailsjs/go/main/App';
-import { service } from '../../../../wailsjs/go/models';
+
+import type { service } from '../../../../wailsjs/go/models';
 
 const phoneLog = createLogger('PhoneBridgeDialog');
 

@@ -1,12 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { CanvasElement, useEditorStore } from '@/lib/editor-store';
-import { Button } from '@/components/ui/button';
-import {
-  ArrowClockwise,
-  FlipHorizontal,
-  FlipVertical,
-  ArrowsOutCardinal,
-} from '@/components/ui/icons';
+
 import {
   AlignLeftIcon,
   AlignCenterHorizontalIcon,
@@ -15,11 +8,21 @@ import {
   AlignCenterVerticalIcon,
   AlignBottomIcon,
 } from '@/components/ui/alignment-icons';
-import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
-import { rotateElementAroundCenter } from '@/lib/canvas/element-geometry';
-import { cn } from '@/lib/utils';
 import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
+import {
+  ArrowClockwise,
+  FlipHorizontal,
+  FlipVertical,
+  ArrowsOutCardinal,
+} from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { rotateElementAroundCenter } from '@/lib/canvas/element-geometry';
+import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
+import { useEditorStore } from '@/lib/editor-store';
+import { cn } from '@/lib/utils';
+
+import type { CanvasElement } from '@/lib/editor-store';
 
 export interface ElementArrangeTabProps {
   element: CanvasElement;

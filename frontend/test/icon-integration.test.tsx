@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
-import * as React from "react";
-import { render } from "@testing-library/react";
-import { FluentIconProvider } from "@/components/ui/fluent-icon-provider";
+import { render } from '@testing-library/react';
+import * as React from 'react';
+import { describe, it, expect } from 'vitest';
+
+import { FluentIconProvider } from '@/components/ui/fluent-icon-provider';
 import {
   Sparkle,
   Eye,
@@ -11,24 +12,24 @@ import {
   Scan,
   TextT,
   Image,
-} from "@/components/ui/icons";
+} from '@/components/ui/icons';
 
-describe("Fluent Icon Layer Integration & Multi-Weight System", () => {
-  it("renders FluentIconProvider and passes default context", () => {
+describe('Fluent Icon Layer Integration & Multi-Weight System', () => {
+  it('renders FluentIconProvider and passes default context', () => {
     const { container } = render(
       <FluentIconProvider weight="regular" size={20}>
         <div data-testid="icon-wrapper">
           <Sparkle data-testid="sparkle-icon" />
         </div>
-      </FluentIconProvider>
+      </FluentIconProvider>,
     );
 
-    const svg = container.querySelector("svg");
+    const svg = container.querySelector('svg');
     expect(svg).not.toBeNull();
-    expect(svg?.getAttribute("data-fui-icon")).not.toBeNull();
+    expect(svg?.getAttribute('data-fui-icon')).not.toBeNull();
   });
 
-  it("renders all 6 weights mapped onto Fluent variants (thin/light/regular -> Regular, bold/fill/duotone -> Filled)", () => {
+  it('renders all 6 weights mapped onto Fluent variants (thin/light/regular -> Regular, bold/fill/duotone -> Filled)', () => {
     const { container } = render(
       <FluentIconProvider>
         <div className="icon-grid">
@@ -39,18 +40,31 @@ describe("Fluent Icon Layer Integration & Multi-Weight System", () => {
           <LockSimple data-testid="fill-icon" weight="fill" />
           <Scan data-testid="duotone-icon" weight="duotone" />
         </div>
-      </FluentIconProvider>
+      </FluentIconProvider>,
     );
 
-    const svgs = container.querySelectorAll("svg");
+    const svgs = container.querySelectorAll('svg');
     expect(svgs.length).toBe(6);
-    for (const testId of ["thin-icon", "light-icon", "regular-icon", "bold-icon", "fill-icon", "duotone-icon"]) {
+    for (const testId of [
+      'thin-icon',
+      'light-icon',
+      'regular-icon',
+      'bold-icon',
+      'fill-icon',
+      'duotone-icon',
+    ]) {
       expect(container.querySelector(`[data-testid="${testId}"]`)).not.toBeNull();
     }
   });
 
-  it("supports dynamic stateful weight switching (regular <-> fill)", () => {
-    const StatefulToggle = ({ isLocked, isSelected }: { isLocked: boolean; isSelected: boolean }) => (
+  it('supports dynamic stateful weight switching (regular <-> fill)', () => {
+    const StatefulToggle = ({
+      isLocked,
+      isSelected,
+    }: {
+      isLocked: boolean;
+      isSelected: boolean;
+    }) => (
       <FluentIconProvider>
         <div>
           {isLocked ? (
@@ -58,20 +72,20 @@ describe("Fluent Icon Layer Integration & Multi-Weight System", () => {
           ) : (
             <LockSimpleOpen data-testid="lock-idle" weight="light" />
           )}
-          <Eye data-testid="visibility-toggle" weight={isSelected ? "bold" : "regular"} />
+          <Eye data-testid="visibility-toggle" weight={isSelected ? 'bold' : 'regular'} />
         </div>
       </FluentIconProvider>
     );
 
     const { rerender, getByTestId, queryByTestId } = render(
-      <StatefulToggle isLocked={false} isSelected={false} />
+      <StatefulToggle isLocked={false} isSelected={false} />,
     );
 
-    expect(getByTestId("lock-idle")).toBeDefined();
-    expect(queryByTestId("lock-active")).toBeNull();
+    expect(getByTestId('lock-idle')).toBeDefined();
+    expect(queryByTestId('lock-active')).toBeNull();
 
     rerender(<StatefulToggle isLocked={true} isSelected={true} />);
-    expect(getByTestId("lock-active")).toBeDefined();
-    expect(queryByTestId("lock-idle")).toBeNull();
+    expect(getByTestId('lock-active')).toBeDefined();
+    expect(queryByTestId('lock-idle')).toBeNull();
   });
 });

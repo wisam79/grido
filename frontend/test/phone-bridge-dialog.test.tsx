@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { PhoneBridgeDialog } from '../src/components/editor/dialogs/phone-bridge-dialog';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import * as AppWails from '../wailsjs/go/main/App';

@@ -1,6 +1,7 @@
+import { createLogger } from '@/lib/logger';
+
 import { GetImageDimensions, GetBatchImageDimensions } from '../../../wailsjs/go/main/App';
 import { getExifOrientation } from '../io/exif-utils';
-import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('image-dimensions');
 

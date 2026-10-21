@@ -1,4 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
+import { Cropper } from 'react-cropper';
+import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import { FluentSliderField } from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,10 +13,6 @@ import {
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Cropper, ReactCropperElement } from 'react-cropper';
-import 'cropperjs/dist/cropper.css';
 import {
   ArrowClockwise,
   MagnifyingGlassPlus,
@@ -20,14 +22,16 @@ import {
   Compass,
   CircleNotch,
 } from '@/components/ui/icons';
-import { useEditorStore } from '@/lib/editor-store';
-import { useShallow } from 'zustand/react/shallow';
+import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { FluentSliderField } from '@/components/ui/blocks';
+import { useEditorStore } from '@/lib/editor-store';
 import { uploadCanvasBlob } from '@/lib/io/media-upload';
+import { cn } from '@/lib/utils';
 import { wailsIsDesktop } from '@/lib/wails-env';
+
+import type { ReactCropperElement } from 'react-cropper';
+
+import 'cropperjs/dist/cropper.css';
 
 interface CropDialogProps {
   open: boolean;

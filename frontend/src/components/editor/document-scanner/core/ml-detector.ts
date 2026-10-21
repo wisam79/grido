@@ -1,10 +1,11 @@
-import { Point, DetectedDocument, DetectionResult } from './types';
+import { computePolygonArea } from './contour-tracer';
 import {
   sortCornerPoints,
   inferSmartDocumentAspect,
   rectifyNearAxisAlignedQuad,
 } from './quad-geometry';
-import { computePolygonArea } from './contour-tracer';
+
+import type { Point, DetectedDocument, DetectionResult } from './types';
 
 let scanicModulePromise: Promise<typeof import('scanic')> | null = null;
 let isWarmingUp = false;

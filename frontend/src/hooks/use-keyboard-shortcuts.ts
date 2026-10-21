@@ -1,11 +1,9 @@
 import { useEffect } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { toast } from 'sonner';
-import { CanvasElement, useEditorStore } from '@/lib/editor-store';
-import { getToolsForWorkflow } from '@/lib/workspace-tools';
+
 import { SaveImageFromBase64 } from '@bindings/grido/app';
-import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
-import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+
 import {
   autoFitZoomStore,
   fitWidthZoomStore,
@@ -14,7 +12,13 @@ import {
   zoomInStore,
   zoomOutStore,
 } from '@/hooks/use-canvas-zoom';
+import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
+import { useEditorStore } from '@/lib/editor-store';
+import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
 import { createLogger } from '@/lib/logger';
+import { getToolsForWorkflow } from '@/lib/workspace-tools';
+
+import type { CanvasElement } from '@/lib/editor-store';
 
 const logger = createLogger('use-keyboard-shortcuts');
 

@@ -1,5 +1,6 @@
-import { useEditorStore } from '@/lib/editor-store';
 import { useShallow } from 'zustand/react/shallow';
+
+import { useEditorStore } from '@/lib/editor-store';
 
 /**
  * lib/store/selectors — محددات Zustand المشتركة (كان `useShallow((state)=>...`

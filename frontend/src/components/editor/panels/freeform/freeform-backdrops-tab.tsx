@@ -1,5 +1,24 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { useShallow } from 'zustand/react/shallow';
+
+import {
+  GRADIENT_PRESETS,
+  formatGradientCss,
+  gradientPointsFromAngle,
+  type GradientPreset,
+} from '@/components/editor/properties/gradient-utils';
+import {
+  PaperBackgroundSummary,
+  PopoverColorPicker,
+} from '@/components/editor/properties/shared-controls';
+import {
+  FluentIconButton,
+  FluentSection,
+  FluentSegmentedControl,
+  FluentSliderField,
+} from '@/components/ui/blocks';
+import { Button } from '@/components/ui/button';
 import {
   ArrowLineDown,
   ArrowCounterClockwise,
@@ -18,25 +37,6 @@ import {
   XCircle,
 } from '@/components/ui/icons';
 import { useEditorStore, type CanvasElement } from '@/lib/editor-store';
-import { useShallow } from 'zustand/react/shallow';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import {
-  FluentIconButton,
-  FluentSection,
-  FluentSegmentedControl,
-  FluentSliderField,
-} from '@/components/ui/blocks';
-import {
-  PaperBackgroundSummary,
-  PopoverColorPicker,
-} from '@/components/editor/properties/shared-controls';
-import {
-  GRADIENT_PRESETS,
-  formatGradientCss,
-  gradientPointsFromAngle,
-  type GradientPreset,
-} from '@/components/editor/properties/gradient-utils';
 import {
   PREF_KEYS,
   customGradientPrefKey,
@@ -46,6 +46,7 @@ import {
   toggleStoredValue,
   writeStoredList,
 } from '@/lib/local-prefs';
+import { cn } from '@/lib/utils';
 
 /* ═══════════════════════════════════════════════════════════════
    الخلفيات والأنماط — خلفيات ومستطيلات التعديل الحر.
@@ -239,7 +240,7 @@ export function FreeformBackdropsTab() {
   };
 
   /** تطبيق تدرج على الهدف الحالي: عنصر محدد أو مستطيل خلفي كامل واحد */
-  const applyGradient = (stops: Array<number | string>, angle: number, name: string) => {
+  const applyGradient = (stops: Array<number | string>, angle: number, _name: string) => {
     rememberGradient(stops, angle);
 
     if (gradientTarget === 'backdrop') {
@@ -292,13 +293,6 @@ export function FreeformBackdropsTab() {
         : `حُذفت ${backdropRects.length} خلفيات كاملة`,
     );
   };
-
-  const backdropContext = topBackdrop ? 'يُحدَّث الخلفي الحالي' : 'مستطيل خلف كل العناصر';
-
-  const elementContext =
-    selectedElements.length > 0
-      ? `على ${selectedElements.length} ${selectedElements.length === 1 ? 'عنصر' : 'عناصر'}`
-      : 'لا تحديد بعد';
 
   const customPreview = formatGradientCss([0, customFrom, 1, customTo], 'linear', customAngle);
 

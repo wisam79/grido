@@ -1,4 +1,4 @@
-import { CanvasElement } from "@/lib/store/types";
+import type { CanvasElement } from '@/lib/store/types';
 
 export interface VisualBox {
   /** أصغر إحداثي سيني مرئي بالبكسل */
@@ -51,7 +51,7 @@ export function getElementPixelVisualBox(
   y: number,
   width: number,
   height: number,
-  rotationDeg: number = 0
+  rotationDeg: number = 0,
 ): VisualBox {
   const rot = ((rotationDeg % 360) + 360) % 360;
   if (Math.abs(rot) < 0.0001 || Math.abs(rot - 360) < 0.0001) {
@@ -105,9 +105,9 @@ export function getElementPixelVisualBox(
  * تحسب الصندوق المحيط المرئي النسبي لعنصر (0..1) مع مراعاة نسبة أبعاد الكانفس في الدوران.
  */
 export function getElementVisualBox(
-  element: Pick<CanvasElement, "x" | "y" | "width" | "height"> & { rotation?: number },
+  element: Pick<CanvasElement, 'x' | 'y' | 'width' | 'height'> & { rotation?: number },
   canvasWidth: number,
-  canvasHeight: number
+  canvasHeight: number,
 ): NormalizedVisualBox {
   const cw = canvasWidth > 0 ? canvasWidth : 1;
   const ch = canvasHeight > 0 ? canvasHeight : 1;
@@ -133,10 +133,10 @@ export function getElementVisualBox(
  * تحسب موضع الأصل الجديد (x, y) عند تغيير زاوية التدوير للحفاظ على ثبات مركز العنصر المرئي في مكانه.
  */
 export function rotateElementAroundCenter(
-  element: Pick<CanvasElement, "x" | "y" | "width" | "height"> & { rotation?: number },
+  element: Pick<CanvasElement, 'x' | 'y' | 'width' | 'height'> & { rotation?: number },
   newRotationDeg: number,
   canvasWidth: number,
-  canvasHeight: number
+  canvasHeight: number,
 ): { x: number; y: number } {
   const currentRot = element.rotation || 0;
   const normalizedNew = ((newRotationDeg % 360) + 360) % 360;

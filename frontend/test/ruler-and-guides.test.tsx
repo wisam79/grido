@@ -1,43 +1,32 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
 import React from 'react';
+import { describe, it, expect } from 'vitest';
+
 import {
-  HorizontalRuler,
-  VerticalRuler,
-} from '../src/components/editor/canvas/ruler';
+  ViewportFixedRulersHeader,
+  ViewportFixedRulersSidebar,
+} from '../src/components/editor/canvas/canvas-rulers';
+import { HorizontalRuler, VerticalRuler } from '../src/components/editor/canvas/ruler';
 import {
   getRulerSteps,
   formatRulerNumber,
   formatRulerCoordinate,
   getUnitSpan,
 } from '../src/components/editor/canvas/ruler-utils';
-import { ViewportFixedRulersHeader, ViewportFixedRulersSidebar } from '../src/components/editor/canvas/canvas-rulers';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 
 describe('Ruler & User Guides Integration Tests', () => {
   it('renders HorizontalRuler with various units and origin offset', () => {
     // 1. mm
     const { container: containerMM } = render(
-      <HorizontalRuler
-        viewportWidth={800}
-        originX={100}
-        displayW={600}
-        mmWidth={150}
-        unit="mm"
-      />
+      <HorizontalRuler viewportWidth={800} originX={100} displayW={600} mmWidth={150} unit="mm" />,
     );
     expect(containerMM.querySelector('svg')).toBeInTheDocument();
     expect(containerMM.querySelector('#h-ruler-cursor')).toBeInTheDocument();
 
     // 2. cm
     const { container: containerCM } = render(
-      <HorizontalRuler
-        viewportWidth={800}
-        originX={100}
-        displayW={600}
-        mmWidth={150}
-        unit="cm"
-      />
+      <HorizontalRuler viewportWidth={800} originX={100} displayW={600} mmWidth={150} unit="cm" />,
     );
     expect(containerCM.querySelector('svg')).toBeInTheDocument();
 
@@ -49,7 +38,7 @@ describe('Ruler & User Guides Integration Tests', () => {
         displayW={600}
         mmWidth={152.4}
         unit="in"
-      />
+      />,
     );
     expect(containerIN.querySelector('svg')).toBeInTheDocument();
 
@@ -62,20 +51,14 @@ describe('Ruler & User Guides Integration Tests', () => {
         mmWidth={150}
         pxWidth={1800}
         unit="px"
-      />
+      />,
     );
     expect(containerPX.querySelector('svg')).toBeInTheDocument();
   });
 
   it('renders VerticalRuler with clean cursor indicator', () => {
     const { container } = render(
-      <VerticalRuler
-        viewportHeight={600}
-        originY={50}
-        displayH={500}
-        mmHeight={100}
-        unit="mm"
-      />
+      <VerticalRuler viewportHeight={600} originY={50} displayH={500} mmHeight={100} unit="mm" />,
     );
 
     const svg = container.querySelector('svg');
@@ -88,16 +71,12 @@ describe('Ruler & User Guides Integration Tests', () => {
     // تستمر يميناً ويساراً في مساحة العمل (سلوك Figma/Photoshop) بدل أن
     // تتوقف عند حدود الورقة وتترك نصف الشريط بلا تدريج.
     const { container: hContainer } = render(
-      <HorizontalRuler
-        viewportWidth={800}
-        originX={200}
-        displayW={500}
-        mmWidth={100}
-        unit="mm"
-      />
+      <HorizontalRuler viewportWidth={800} originX={200} displayW={500} mmWidth={100} unit="mm" />,
     );
 
-    const hTexts = Array.from(hContainer.querySelectorAll('text')).map((t) => t.textContent?.trim());
+    const hTexts = Array.from(hContainer.querySelectorAll('text')).map((t) =>
+      t.textContent?.trim(),
+    );
     expect(hTexts.length).toBeGreaterThan(0);
     // قيم سالبة على يسار الورقة، وقيم تتجاوز عرضها على يمينها
     expect(hTexts.some((txt) => txt && txt.startsWith('-'))).toBe(true);
@@ -107,16 +86,12 @@ describe('Ruler & User Guides Integration Tests', () => {
 
     // Vertical ruler: y: 150..550 in a 600px tall viewport (height = 80mm)
     const { container: vContainer } = render(
-      <VerticalRuler
-        viewportHeight={600}
-        originY={150}
-        displayH={400}
-        mmHeight={80}
-        unit="mm"
-      />
+      <VerticalRuler viewportHeight={600} originY={150} displayH={400} mmHeight={80} unit="mm" />,
     );
 
-    const vTexts = Array.from(vContainer.querySelectorAll('text')).map((t) => t.textContent?.trim());
+    const vTexts = Array.from(vContainer.querySelectorAll('text')).map((t) =>
+      t.textContent?.trim(),
+    );
     expect(vTexts.length).toBeGreaterThan(0);
     expect(vTexts.some((txt) => txt && txt.startsWith('-'))).toBe(true);
     const vNums = vTexts.filter((t) => t && !isNaN(Number(t))).map(Number);
@@ -170,9 +145,9 @@ describe('Ruler & User Guides Integration Tests', () => {
   });
 
   it('renders ViewportFixedRulersHeader and toggles unit selector dropdown', () => {
-    let selectedUnit = 'mm';
+    let _selectedUnit = 'mm';
     const handleChangeUnit = (u: any) => {
-      selectedUnit = u;
+      _selectedUnit = u;
     };
 
     render(
@@ -191,7 +166,7 @@ describe('Ruler & User Guides Integration Tests', () => {
           lockUserGuides={false}
           onToggleLockGuides={() => {}}
         />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     // Check corner unit button
@@ -215,7 +190,7 @@ describe('Ruler & User Guides Integration Tests', () => {
         heightMM={100}
         canvasPxH={1200}
         rulerUnit="mm"
-      />
+      />,
     );
 
     expect(container.querySelector('svg')).toBeInTheDocument();
@@ -233,7 +208,7 @@ describe('Ruler & User Guides Integration Tests', () => {
         canvasPxW={1800}
         rulerUnit="mm"
         onChangeRulerUnit={() => {}}
-      />
+      />,
     );
     expect(c1.firstChild).toBeNull();
 
@@ -247,7 +222,7 @@ describe('Ruler & User Guides Integration Tests', () => {
         heightMM={100}
         canvasPxH={1200}
         rulerUnit="mm"
-      />
+      />,
     );
     expect(c2.firstChild).toBeNull();
   });

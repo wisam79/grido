@@ -6,8 +6,9 @@
  * مع هامش أعلى الرأس). كل المعالجة خارج الخيط الرئيسي فلا تتجمد الواجهة.
  */
 
-import type { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { faceBoxFromLandmarks, computeIdCropRect } from '../lib/filters/face-frame-utils';
+
+import type { FaceLandmarker } from '@mediapipe/tasks-vision';
 
 export interface FaceFrameResult {
   /** صورة PNG مقصوصة بصيغة Base64 */

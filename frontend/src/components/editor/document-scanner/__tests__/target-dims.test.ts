@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
+
 import { MAX_EXPORT_PIXELS } from '@/lib/export/export-limits';
+
 import { clampToPixelBudget, resolveTargetDims } from '../core';
 
 /**

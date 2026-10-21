@@ -1,4 +1,4 @@
-import type { CanvasElement } from "@/lib/store/types";
+import type { CanvasElement } from '@/lib/store/types';
 
 // الزخارف (حد/ظل/استدارة) مخزنة بكسل مطلق بينما الهندسة نسبية (0..1) — عند أي
 // تحجيم يجب قياسها بالنسبة نفسها حتى تبقى متناسبة مع العنصر (WYSIWYG عبر
@@ -10,12 +10,12 @@ const round1 = (v: number) => Math.round(v * 10) / 10;
 export function scaleElementDecorations(
   el: CanvasElement,
   absScaleX: number,
-  absScaleY: number
+  absScaleY: number,
 ): Partial<Record<string, number>> {
   const out: Partial<Record<string, number>> = {};
-  const isLineShape = el.type === "shape" && el.shape === "line";
+  const isLineShape = el.type === 'shape' && el.shape === 'line';
   const factor =
-    el.type === "text" || isLineShape
+    el.type === 'text' || isLineShape
       ? Math.abs(absScaleY)
       : Math.sqrt(Math.abs(absScaleX * absScaleY));
 
@@ -36,10 +36,10 @@ export function scaleElementDecorations(
   if (el.cornerRadius) out.cornerRadius = scaleDeco(el.cornerRadius);
 
   // حد بسمك 0 يعني «بلا حدود» — أرضية 0.5 تمنع اختفاءه بصرياً
-  if (el.type === "shape") {
+  if (el.type === 'shape') {
     if (el.strokeWidth) out.strokeWidth = scaleStroke(el.strokeWidth);
     if (el.radius) out.radius = scaleDeco(el.radius);
-  } else if (el.type === "text") {
+  } else if (el.type === 'text') {
     if (el.strokeWidth) out.strokeWidth = scaleStroke(el.strokeWidth);
     if (el.textBgBorderWidth) out.textBgBorderWidth = scaleDeco(el.textBgBorderWidth);
     if (el.textBgRadius) out.textBgRadius = scaleDeco(el.textBgRadius);

@@ -1,7 +1,5 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { CollageTemplate } from '@/lib/templates';
-import { Trash, Image } from '@/components/ui/icons';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +11,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Trash, Image } from '@/components/ui/icons';
+import { cn } from '@/lib/utils';
+
+import type { CollageTemplate } from '@/lib/templates';
 
 export const CollageTemplateCard = React.memo(function CollageTemplateCard({
   tpl,

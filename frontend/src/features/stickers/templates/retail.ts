@@ -1,35 +1,44 @@
-import { StickerTemplate } from "../types";
-import { escapeXml } from "../lib/svg-rasterizer";
+import { escapeXml } from '../lib/svg-rasterizer';
+
+import type { StickerTemplate } from '../types';
 
 export const RETAIL_TEMPLATES: StickerTemplate[] = [
   {
-    id: "retail_was_now",
-    name: "السعر قبل وبعد",
-    nameEn: "Was / Now Price Tag",
-    category: "retail",
-    shape: "rect",
-    description: "بطاقة تسعير ترويجية تعرض السعر السابق مشطوباً والسعر الجديد البارز",
+    id: 'retail_was_now',
+    name: 'السعر قبل وبعد',
+    nameEn: 'Was / Now Price Tag',
+    category: 'retail',
+    shape: 'rect',
+    description: 'بطاقة تسعير ترويجية تعرض السعر السابق مشطوباً والسعر الجديد البارز',
     defaultWidth: 500,
     defaultHeight: 320,
     aspectRatio: 500 / 320,
     defaultMm: { width: 70, height: 45 },
     defaultColors: {
-      primary: "#DC2626",
-      secondary: "#0F172A",
-      background: "#FFFFFF",
+      primary: '#DC2626',
+      secondary: '#0F172A',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "itemTitle", label: "اسم المنتج", type: "text", defaultValue: "عرض خاص ومميز" },
-      { id: "oldPrice", label: "السعر السابق", type: "text", defaultValue: "25,000 د.ع" },
-      { id: "newPrice", label: "السعر الجديد", type: "text", defaultValue: "18,000 د.ع" },
-      { id: "badgeText", label: "شارة التوفير", type: "text", defaultValue: "وفر 30%" },
+      { id: 'itemTitle', label: 'اسم المنتج', type: 'text', defaultValue: 'عرض خاص ومميز' },
+      { id: 'oldPrice', label: 'السعر السابق', type: 'text', defaultValue: '25,000 د.ع' },
+      { id: 'newPrice', label: 'السعر الجديد', type: 'text', defaultValue: '18,000 د.ع' },
+      { id: 'badgeText', label: 'شارة التوفير', type: 'text', defaultValue: 'وفر 30%' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const item = escapeXml(fields.itemTitle || "عرض خاص ومميز");
-      const oldP = escapeXml(fields.oldPrice || "25,000 د.ع");
-      const newP = escapeXml(fields.newPrice || "18,000 د.ع");
-      const badge = escapeXml(fields.badgeText || "وفر 30%");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const item = escapeXml(fields.itemTitle || 'عرض خاص ومميز');
+      const oldP = escapeXml(fields.oldPrice || '25,000 د.ع');
+      const newP = escapeXml(fields.newPrice || '18,000 د.ع');
+      const badge = escapeXml(fields.badgeText || 'وفر 30%');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 320" width="500" height="320">
@@ -60,31 +69,44 @@ export const RETAIL_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "retail_bogo_free",
-    name: "اشترِ 1 واحصل على 1 مجاناً",
-    nameEn: "BOGO 1+1 Free",
-    category: "retail",
-    shape: "circle",
-    description: "ملصق عروض ترويجية دائري للمتاجر والماركات والمطاعم",
+    id: 'retail_bogo_free',
+    name: 'اشترِ 1 واحصل على 1 مجاناً',
+    nameEn: 'BOGO 1+1 Free',
+    category: 'retail',
+    shape: 'circle',
+    description: 'ملصق عروض ترويجية دائري للمتاجر والماركات والمطاعم',
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
     defaultColors: {
-      primary: "#E11D48",
-      secondary: "#FEF08A",
-      background: "#FFFFFF",
+      primary: '#E11D48',
+      secondary: '#FEF08A',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "topText", label: "العبارة الأولى", type: "text", defaultValue: "اشترِ قطعة" },
-      { id: "centerText", label: "الرقم البارز", type: "text", defaultValue: "1+1" },
-      { id: "bottomText", label: "العبارة السفلية", type: "text", defaultValue: "والثانية مجاناً!" },
+      { id: 'topText', label: 'العبارة الأولى', type: 'text', defaultValue: 'اشترِ قطعة' },
+      { id: 'centerText', label: 'الرقم البارز', type: 'text', defaultValue: '1+1' },
+      {
+        id: 'bottomText',
+        label: 'العبارة السفلية',
+        type: 'text',
+        defaultValue: 'والثانية مجاناً!',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const top = escapeXml(fields.topText || "اشترِ قطعة");
-      const center = escapeXml(fields.centerText || "1+1");
-      const bottom = escapeXml(fields.bottomText || "والثانية مجاناً!");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const top = escapeXml(fields.topText || 'اشترِ قطعة');
+      const center = escapeXml(fields.centerText || '1+1');
+      const bottom = escapeXml(fields.bottomText || 'والثانية مجاناً!');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
@@ -105,31 +127,39 @@ export const RETAIL_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "retail_best_seller",
-    name: "الأكثر مبيعاً",
-    nameEn: "Best Seller Badge",
-    category: "retail",
-    shape: "circle",
-    description: "شارة شرفية ملوكية تميز المنتجات الأكثر طلباً في المتجر",
+    id: 'retail_best_seller',
+    name: 'الأكثر مبيعاً',
+    nameEn: 'Best Seller Badge',
+    category: 'retail',
+    shape: 'circle',
+    description: 'شارة شرفية ملوكية تميز المنتجات الأكثر طلباً في المتجر',
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 45, height: 45 },
     defaultColors: {
-      primary: "#D97706",
-      secondary: "#78350F",
-      background: "#FFFBEB",
+      primary: '#D97706',
+      secondary: '#78350F',
+      background: '#FFFBEB',
     },
     fields: [
-      { id: "title", label: "اللقب الشرفي", type: "text", defaultValue: "الأكثر مبيعاً" },
-      { id: "sub", label: "التقييم أو التميز", type: "text", defaultValue: "BEST SELLER" },
-      { id: "extra", label: "التقييم بالنجوم", type: "text", defaultValue: "★★★★★" },
+      { id: 'title', label: 'اللقب الشرفي', type: 'text', defaultValue: 'الأكثر مبيعاً' },
+      { id: 'sub', label: 'التقييم أو التميز', type: 'text', defaultValue: 'BEST SELLER' },
+      { id: 'extra', label: 'التقييم بالنجوم', type: 'text', defaultValue: '★★★★★' },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.title || "الأكثر مبيعاً");
-      const sub = escapeXml(fields.sub || "BEST SELLER");
-      const extra = escapeXml(fields.extra || "★★★★★");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.title || 'الأكثر مبيعاً');
+      const sub = escapeXml(fields.sub || 'BEST SELLER');
+      const extra = escapeXml(fields.extra || '★★★★★');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
@@ -151,31 +181,44 @@ export const RETAIL_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "retail_national_product",
-    name: "صُنع في العراق (منتج وطني)",
-    nameEn: "Made in Iraq (National Product)",
-    category: "retail",
-    shape: "square",
-    description: "ملصق فخر الصناعة الوطنية العراقية مع رمز النخيل للمنتجات والمحاصيل المحلية",
+    id: 'retail_national_product',
+    name: 'صُنع في العراق (منتج وطني)',
+    nameEn: 'Made in Iraq (National Product)',
+    category: 'retail',
+    shape: 'square',
+    description: 'ملصق فخر الصناعة الوطنية العراقية مع رمز النخيل للمنتجات والمحاصيل المحلية',
     defaultWidth: 460,
     defaultHeight: 460,
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
     defaultColors: {
-      primary: "#15803D",
-      secondary: "#14532D",
-      background: "#F0FDF4",
+      primary: '#15803D',
+      secondary: '#14532D',
+      background: '#F0FDF4',
     },
     fields: [
-      { id: "mainText", label: "النص الرئيسي", type: "text", defaultValue: "صُنع في العراق" },
-      { id: "subText", label: "الشعار الوطني", type: "text", defaultValue: "منتج عراقي وطني" },
-      { id: "enText", label: "النص بالإنجليزية", type: "text", defaultValue: "PROUDLY MADE IN IRAQ" },
+      { id: 'mainText', label: 'النص الرئيسي', type: 'text', defaultValue: 'صُنع في العراق' },
+      { id: 'subText', label: 'الشعار الوطني', type: 'text', defaultValue: 'منتج عراقي وطني' },
+      {
+        id: 'enText',
+        label: 'النص بالإنجليزية',
+        type: 'text',
+        defaultValue: 'PROUDLY MADE IN IRAQ',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const main = escapeXml(fields.mainText || "صُنع في العراق");
-      const sub = escapeXml(fields.subText || "منتج عراقي وطني");
-      const en = escapeXml(fields.enText || "PROUDLY MADE IN IRAQ");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const main = escapeXml(fields.mainText || 'صُنع في العراق');
+      const sub = escapeXml(fields.subText || 'منتج عراقي وطني');
+      const en = escapeXml(fields.enText || 'PROUDLY MADE IN IRAQ');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460" width="460" height="460">
@@ -203,31 +246,49 @@ export const RETAIL_TEMPLATES: StickerTemplate[] = [
     },
   },
   {
-    id: "retail_clearance_sale",
-    name: "تصفية كبرى وتخفيضات",
-    nameEn: "Mega Clearance Sale",
-    category: "retail",
-    shape: "rect",
-    description: "شريط عرض عريض ملفت للمنتجات المعروضة بأسعار التصفية",
+    id: 'retail_clearance_sale',
+    name: 'تصفية كبرى وتخفيضات',
+    nameEn: 'Mega Clearance Sale',
+    category: 'retail',
+    shape: 'rect',
+    description: 'شريط عرض عريض ملفت للمنتجات المعروضة بأسعار التصفية',
     defaultWidth: 600,
     defaultHeight: 280,
     aspectRatio: 600 / 280,
     defaultMm: { width: 100, height: 45 },
     defaultColors: {
-      primary: "#B91C1C",
-      secondary: "#FEF08A",
-      background: "#FFFFFF",
+      primary: '#B91C1C',
+      secondary: '#FEF08A',
+      background: '#FFFFFF',
     },
     fields: [
-      { id: "saleTitle", label: "عنوان التصفية", type: "text", defaultValue: "تصفية كبرى حتى نفاذ الكمية" },
-      { id: "discountAmount", label: "نسبة الخصم", type: "text", defaultValue: "خصم يصل إلى 70%" },
-      { id: "tagline", label: "العبارة الإنجليزية", type: "text", defaultValue: "MEGA CLEARANCE SALE" },
+      {
+        id: 'saleTitle',
+        label: 'عنوان التصفية',
+        type: 'text',
+        defaultValue: 'تصفية كبرى حتى نفاذ الكمية',
+      },
+      { id: 'discountAmount', label: 'نسبة الخصم', type: 'text', defaultValue: 'خصم يصل إلى 70%' },
+      {
+        id: 'tagline',
+        label: 'العبارة الإنجليزية',
+        type: 'text',
+        defaultValue: 'MEGA CLEARANCE SALE',
+      },
     ],
-    generateSvg: ({ fields, primaryColor, secondaryColor, backgroundColor, isTransparent, fontFamily = "Cairo", fontScale = 1 }) => {
-      const title = escapeXml(fields.saleTitle || "تصفية كبرى حتى نفاذ الكمية");
-      const discount = escapeXml(fields.discountAmount || "خصم يصل إلى 70%");
-      const tagline = escapeXml(fields.tagline || "MEGA CLEARANCE SALE");
-      const bg = isTransparent ? "none" : backgroundColor;
+    generateSvg: ({
+      fields,
+      primaryColor,
+      secondaryColor,
+      backgroundColor,
+      isTransparent,
+      fontFamily = 'Cairo',
+      fontScale = 1,
+    }) => {
+      const title = escapeXml(fields.saleTitle || 'تصفية كبرى حتى نفاذ الكمية');
+      const discount = escapeXml(fields.discountAmount || 'خصم يصل إلى 70%');
+      const tagline = escapeXml(fields.tagline || 'MEGA CLEARANCE SALE');
+      const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" width="600" height="280">
