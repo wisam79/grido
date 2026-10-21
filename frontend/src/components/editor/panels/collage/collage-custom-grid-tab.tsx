@@ -307,16 +307,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         <div className="grid grid-cols-2 gap-2">
           {/* عداد الصفوف */}
           <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/60">
-            <div className="flex items-center justify-between gap-1 text-mini font-bold text-muted-foreground select-none">
-              <span>الصفوف</span>
-              <span
-                className="text-2xs font-mono font-normal text-muted-foreground-hover"
-                title="الحد الأقصى للصفوف"
-                aria-label="الحد الأقصى للصفوف"
-              >
-                أقصى {maxRows}
-              </span>
-            </div>
+            {/* الحد الأقصى مذكور مرة واحدة في عنوان القسم — لا نكرّره في كل عدّاد */}
+            <div className="text-mini font-bold text-muted-foreground select-none">الصفوف</div>
             <div
               className="flex items-center justify-between gap-1"
               role="group"
@@ -353,16 +345,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
 
           {/* عداد الأعمدة */}
           <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-muted/50 border border-border/60">
-            <div className="flex items-center justify-between gap-1 text-mini font-bold text-muted-foreground select-none">
-              <span>الأعمدة</span>
-              <span
-                className="text-2xs font-mono font-normal text-muted-foreground-hover"
-                title="الحد الأقصى للأعمدة"
-                aria-label="الحد الأقصى للأعمدة"
-              >
-                أقصى {maxCols}
-              </span>
-            </div>
+            <div className="text-mini font-bold text-muted-foreground select-none">الأعمدة</div>
             <div
               className="flex items-center justify-between gap-1"
               role="group"

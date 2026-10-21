@@ -208,25 +208,24 @@ export function CollageSettings() {
           />
         }
       >
+        {/* صفّ مسطّح مباشرةً: كانت الحاوية المستديرة والوصف («نهاية الطباعة
+            على الورقة») يكرّران التسمية نفسها بلا معلومة جديدة. */}
         {collageShowCutLines && (
-          <div className="rounded-md border border-border/50 bg-muted/20 p-2 animate-in fade-in-50 duration-150">
-            <FluentSettingRow
-              label={
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
-                  <span>خط نهاية الطباعة</span>
-                </div>
-              }
-              description="نهاية الطباعة على الورقة"
-              control={
-                <Switch
-                  checked={collageShowEndCutLine}
-                  onCheckedChange={setCollageShowEndCutLine}
-                  aria-label="إظهار خط نهاية الطباعة"
-                />
-              }
-            />
-          </div>
+          <FluentSettingRow
+            label={
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
+                <span>خط نهاية الطباعة</span>
+              </div>
+            }
+            control={
+              <Switch
+                checked={collageShowEndCutLine}
+                onCheckedChange={setCollageShowEndCutLine}
+                aria-label="إظهار خط نهاية الطباعة"
+              />
+            }
+          />
         )}
       </FluentSection>
     </div>

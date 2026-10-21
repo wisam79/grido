@@ -639,11 +639,8 @@ export function CollagePresetsTab({
         ) : (
           <div className="space-y-2">
             {/* شريط الإجراءات للقوالب المحفوظة */}
-            <div className="flex items-center justify-between pb-0.5 select-none">
-              <span className="text-xs font-bold text-foreground/80">
-                {savedTemplates.length}{' '}
-                {savedTemplates.length === 1 ? 'قالب محفوظ' : 'قوالب محفوظة'}
-              </span>
+            {/* العدد يظهر أصلاً في مُشغّل الفئة أعلى اللوح — لا نكرّره هنا */}
+            <div className="flex items-center justify-end pb-0.5 select-none">
               <div className="flex items-center gap-1.5">
                 {onImportClick && (
                   <Button

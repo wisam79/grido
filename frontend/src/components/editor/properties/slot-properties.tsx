@@ -219,12 +219,8 @@ export const SlotProperties = React.memo(function SlotProperties({
           </div>
         </FluentSection>
 
-        <FluentSection
-          icon={<Copy className="w-3.5 h-3.5" weight="duotone" />}
-          title="التعبئة التلقائية"
-        >
-          {renderAutoFillToggle()}
-        </FluentSection>
+        {/* بلا قسم يكرّر تسمية الصف نفسه — المفتاح يحمل عنوانه وأيقونته */}
+        {renderAutoFillToggle()}
       </div>
     );
   }

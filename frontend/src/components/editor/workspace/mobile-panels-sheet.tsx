@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SquaresFour, Faders } from '@/components/ui/icons';
 
@@ -22,12 +22,14 @@ export const MobilePanelsSheet = React.memo(function MobilePanelsSheet({
 }: MobilePanelsSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[88vw] sm:w-[380px] p-0 font-cairo flex flex-col" dir="rtl">
-        <SheetHeader className="px-4 py-3 border-b border-border bg-sidebar/50">
-          <SheetTitle className="text-sm font-bold text-foreground flex items-center justify-between">
-            <span>لوحات العمل</span>
-          </SheetTitle>
-        </SheetHeader>
+      <SheetContent
+        side="right"
+        className="w-[88vw] sm:w-[380px] p-0 gap-0 font-cairo flex flex-col"
+        dir="rtl"
+      >
+        {/* العنوان للوصول فقط: شريط التبويبات نفسه يسمّي اللوحة، فرأس مرئي
+            ثانٍ («لوحات العمل») كان سطر كروم بلا معلومة جديدة. */}
+        <SheetTitle className="sr-only">لوحات العمل</SheetTitle>
 
         <Tabs
           value={activeTab}
@@ -35,7 +37,7 @@ export const MobilePanelsSheet = React.memo(function MobilePanelsSheet({
           className="flex-1 flex flex-col overflow-hidden"
           dir="rtl"
         >
-          <div className="px-3 pt-2 pb-1 border-b border-border/60 bg-muted/20">
+          <div className="ps-3 pe-10 pt-2.5 pb-1 border-b border-border/60 bg-muted/20">
             <TabsList className="w-full grid grid-cols-2 h-9">
               <TabsTrigger value="properties" className="gap-1.5 text-xs font-semibold">
                 <Faders className="w-4 h-4" />
@@ -43,7 +45,7 @@ export const MobilePanelsSheet = React.memo(function MobilePanelsSheet({
               </TabsTrigger>
               <TabsTrigger value="templates" className="gap-1.5 text-xs font-semibold">
                 <SquaresFour className="w-4 h-4" />
-                <span>القوالب</span>
+                <span>الأدوات</span>
               </TabsTrigger>
             </TabsList>
           </div>

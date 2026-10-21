@@ -128,12 +128,18 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
     >
       {/* 🎛️ شريط أدوات الطبقات الموحد الرشيق */}
       <div className="flex items-center justify-between h-8 px-2 rounded-lg border border-border/70 bg-card/60 shadow-2xs">
-        {/* عنوان اللوحة مع عداد العناصر والمحدد */}
+        {/* عدّاد فقط — رأس اللوح يحمل اسم «الطبقات» فلا نكرّره هنا؛
+            والباقي من عرض الصف يعود لأزرار الإجراءات. */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-xs font-bold text-foreground shrink-0">
-            {hasSelection ? 'المحدد' : 'العناصر'}
-          </span>
-          <span className="text-3xs font-mono font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0">
+          <span className="sr-only">{hasSelection ? 'العناصر المحددة' : 'عدد العناصر'}</span>
+          <span
+            title={
+              hasSelection
+                ? `المحدد ${selectedIds.length} من ${elements.length}`
+                : `${elements.length} عنصر`
+            }
+            className="text-3xs font-mono font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0"
+          >
             {selectedIds.length > 0 ? `${selectedIds.length}/${elements.length}` : elements.length}
           </span>
         </div>

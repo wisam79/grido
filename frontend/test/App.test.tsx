@@ -282,4 +282,14 @@ describe('Component Testing: UI Rendering', () => {
     // التحقق من عرض محتوى تبويب القوالب مباشرة
     expect(await screen.findByText('طقم سفر')).toBeInTheDocument();
   }, 15000);
+
+  it('hides only the duplicated panel header when embedded in the compact sheet', async () => {
+    // في compact تعرض التبويبات الداخلية اسم الأداة نفسه، فرأس PanelShell
+    // الثاني كان تكراراً — يُخفى وحده مع بقاء المحتوى كاملاً.
+    useEditorStore.setState({ mode: 'collage' });
+    render(<TemplatePanel hideHeader />);
+
+    expect(await screen.findByText('أبعاد الشبكة')).toBeInTheDocument();
+    expect(screen.queryByText('شبكة الكولاج')).toBeNull();
+  }, 15000);
 });

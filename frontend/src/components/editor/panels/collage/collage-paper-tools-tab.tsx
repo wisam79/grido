@@ -108,7 +108,6 @@ export function CollagePaperToolsTab() {
       <FluentSection
         icon={<Scissors className="w-3.5 h-3.5" weight="duotone" />}
         title="النزيف والقص"
-        subtitle={showBleedGuides ? `هامش النزيف ${bleedMarginMM} مم` : 'بلا نزيف'}
         collapsible
       >
         <FluentSettingRow
@@ -171,7 +170,6 @@ export function CollagePaperToolsTab() {
       <FluentSection
         icon={<Copy className="w-3.5 h-3.5" weight="duotone" />}
         title="النسخ على الورقة"
-        subtitle={`${copiesPerSheet} نسخة`}
         collapsible
       >
         <FluentSettingRow

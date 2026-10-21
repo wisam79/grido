@@ -447,7 +447,6 @@ export function FreeformBackdropsTab() {
       <FluentSection
         icon={<GridNine className="w-3.5 h-3.5" weight="duotone" />}
         title="تدرجات جاهزة"
-        subtitle={gradientTarget === 'backdrop' ? 'خلفية كاملة للورقة' : 'تُطبَّق على التحديد'}
         badge={
           <span className="rounded-full border border-border/70 bg-muted px-1.5 py-0.2 text-micro font-mono font-bold text-muted-foreground">
             {gradients.length}

@@ -644,7 +644,13 @@ export default function App() {
             templatesContent={
               <ErrorBoundary>
                 <TemplatePanel
-                  onCollapse={() => panelsHook.togglePanel('templates')}
+                  onCollapse={
+                    panelsHook.breakpoint === 'compact'
+                      ? undefined
+                      : () => panelsHook.togglePanel('templates')
+                  }
+                  collapseSide={panelsHook.breakpoint === 'wide' ? 'left' : 'right'}
+                  hideHeader={panelsHook.breakpoint === 'compact'}
                   activeStudioTab={panelsHook.activeStudioTab}
                   onActiveStudioTabChange={panelsHook.setActiveStudioTab}
                   activeCollageTab={panelsHook.activeCollageTab}
@@ -655,7 +661,13 @@ export default function App() {
             }
             propertiesContent={
               <ErrorBoundary>
-                <PropertiesPanel onCollapse={() => panelsHook.togglePanel('properties')} />
+                <PropertiesPanel
+                  onCollapse={
+                    panelsHook.breakpoint === 'compact'
+                      ? undefined
+                      : () => panelsHook.togglePanel('properties')
+                  }
+                />
               </ErrorBoundary>
             }
             canvasContent={

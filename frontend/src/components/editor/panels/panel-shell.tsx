@@ -27,6 +27,11 @@ export interface PanelShellProps {
   /** محتوى ثابت اسفل الجسم (اختياري) */
   footer?: React.ReactNode;
   headerExtra?: React.ReactNode;
+  /**
+   * إخفاء الرأس كاملاً — يُستخدم داخل ورقة الجوال حيث تعرض التبويبات
+   * الداخلية اسم الأداة نفسها، فرأس ثانٍ بالاسم ذاته حشو مكرر.
+   */
+  showHeader?: boolean;
   className?: string;
   bodyClassName?: string;
 }
@@ -40,6 +45,7 @@ export const PanelShell = React.memo(function PanelShell({
   children,
   footer,
   headerExtra,
+  showHeader = true,
   className,
   bodyClassName,
 }: PanelShellProps) {
@@ -77,38 +83,42 @@ export const PanelShell = React.memo(function PanelShell({
     <div className={cn('flex flex-col h-full min-h-0', className)}>
       {/* الرأس — شريط عنوان مضغوط بارتفاع 36px مثل ألواح محررات سطح المكتب
           (كان 48px بعنوان text-sm، فيبدو كرأس صفحة ويب فوق اللوحة). */}
-      <div className="shrink-0 flex items-center gap-2 px-3 h-9 select-none">
-        <div className="min-w-0 flex-1">
-          <div className="text-xs font-bold text-foreground truncate leading-4">{title}</div>
-          {subtitle && (
-            <div className="text-micro text-muted-foreground truncate leading-4 font-normal">
-              {subtitle}
+      {showHeader && (
+        <>
+          <div className="shrink-0 flex items-center gap-2 px-3 h-9 select-none">
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-foreground truncate leading-4">{title}</div>
+              {subtitle && (
+                <div className="text-micro text-muted-foreground truncate leading-4 font-normal">
+                  {subtitle}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {headerExtra && <div className="shrink-0 flex items-center gap-1">{headerExtra}</div>}
+            {headerExtra && <div className="shrink-0 flex items-center gap-1">{headerExtra}</div>}
 
-        {onCollapse && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={onCollapse}
-                aria-label={collapseTitle}
-                className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
-              >
-                {collapseIcon || <SidebarSimple className="w-4 h-4" weight="regular" />}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="font-cairo text-xs font-semibold">
-              {collapseTitle}
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </div>
+            {onCollapse && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={onCollapse}
+                    aria-label={collapseTitle}
+                    className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 active:scale-95 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group"
+                  >
+                    {collapseIcon || <SidebarSimple className="w-4 h-4" weight="regular" />}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="font-cairo text-xs font-semibold">
+                  {collapseTitle}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
 
-      <Separator className="bg-border/50 shrink-0" />
+          <Separator className="bg-border/50 shrink-0" />
+        </>
+      )}
 
       {/* الجسم القابل للتمرير مع تلاشي علوي خفيف يدل على قابلية التمرير */}
       <div ref={bodyRef} className="flex-1 min-h-0 relative panel-scroll-host">

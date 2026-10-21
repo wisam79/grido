@@ -22,7 +22,7 @@ import { toErrorMessage } from '@/lib/wails-error';
 import { createLogger } from '@/lib/logger';
 import { CustomCollageCard } from './custom-collage-card';
 import { PanelShell } from './panel-shell';
-import { CaretLeft } from '@/components/ui/icons';
+import { CaretLeft, CaretRight } from '@/components/ui/icons';
 import { getCollageTool, getStudioTool } from '@/lib/workspace-tools';
 import { useShallow } from 'zustand/react/shallow';
 import { FreeformStudioPanel } from './freeform';
@@ -34,6 +34,10 @@ const logger = createLogger('template-panel');
 export interface TemplatePanelProps {
   /** يُمرر من App لإظهار زر الطي الداخلي — يُحذف في عرض Sheet الجوال */
   onCollapse?: () => void;
+  /** جهة اللوح الفيزيائية — تحدد اتجاه سهم الطي (يسار في Wide، يمين في Standard) */
+  collapseSide?: 'left' | 'right';
+  /** يخفي رأس اللوحة عندما تعرض التبويبات الداخلية اسم الأداة (compact) */
+  hideHeader?: boolean;
   activeStudioTab?: FreeformTab;
   onActiveStudioTabChange?: (tab: FreeformTab) => void;
   activeCollageTab?: CollageTab;
@@ -44,6 +48,8 @@ export interface TemplatePanelProps {
 
 export const TemplatePanel = React.memo(function TemplatePanel({
   onCollapse,
+  collapseSide = 'right',
+  hideHeader = false,
   activeStudioTab = 'layers',
   onActiveStudioTabChange,
   activeCollageTab = 'custom',
@@ -158,13 +164,21 @@ export const TemplatePanel = React.memo(function TemplatePanel({
   return (
     <PanelShell
       title={activeTool.title}
+      showHeader={!hideHeader}
       onCollapse={onCollapse}
       collapseTitle={`إخفاء ${activeTool.label} (Ctrl+B)`}
       collapseIcon={
-        <CaretLeft
-          className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-all"
-          weight="bold"
-        />
+        collapseSide === 'left' ? (
+          <CaretLeft
+            className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:-translate-x-0.5 transition-all"
+            weight="bold"
+          />
+        ) : (
+          <CaretRight
+            className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all"
+            weight="bold"
+          />
+        )
       }
       className="bg-transparent select-none"
     >
