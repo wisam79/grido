@@ -70,7 +70,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         <div className="w-full h-full px-2 rounded-lg bg-gradient-to-br from-amber-950/40 via-slate-900 to-amber-950/30 border border-amber-500/30 flex items-center justify-center text-center overflow-hidden">
           {/* token-exception: خلفية معاينة "ذهبي فاخر" — ألوان محتوى التصميم تُعرض كما ستُطبع وليست ألوان واجهة */}
           <span
-            className="text-xs font-black font-cairo tracking-wide truncate"
+            className="max-w-full text-center text-xs font-black font-cairo tracking-wide leading-tight break-words"
             style={{
               background: 'linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #b45309 100%)',
               WebkitBackgroundClip: 'text',
@@ -88,7 +88,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         <div className="w-full h-full px-2 rounded-lg bg-slate-950 border border-sky-500/40 flex items-center justify-center text-center overflow-hidden">
           {/* token-exception: خلفية معاينة "توهج نيون" — ألوان محتوى التصميم تُعرض كما ستُطبع وليست ألوان واجهة */}
           <span
-            className="text-xs font-black tracking-wider truncate text-sky-400 font-sans"
+            className="max-w-full text-center text-xs font-black tracking-wider leading-tight break-words text-sky-400 font-sans"
             style={{
               fontFamily: 'Alexandria, sans-serif',
               textShadow: '0 0 6px rgba(56, 189, 248, 0.8), 0 0 12px rgba(2, 132, 199, 0.6)',
@@ -103,7 +103,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
       return (
         <div className="w-full h-full px-2 rounded-lg bg-indigo-950/20 border border-indigo-500/30 flex items-center justify-center text-center overflow-hidden">
           <span
-            className="text-xs font-black truncate text-indigo-500"
+            className="max-w-full text-center text-xs font-black leading-tight break-words text-indigo-500"
             style={{
               fontFamily: 'Changa, sans-serif',
               textShadow: '1.5px 1.5px 0px #312e81, 2.5px 2.5px 0px #1e1b4b',
@@ -118,7 +118,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/40 border border-border/60 flex items-center justify-center text-center overflow-hidden">
           <span
-            className="text-xs font-black truncate tracking-widest text-transparent"
+            className="max-w-full text-center text-xs font-black tracking-widest leading-tight break-words text-transparent"
             style={{
               fontFamily: 'Montserrat, sans-serif',
               WebkitTextStroke: '1.2px currentColor',
@@ -133,7 +133,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'stamp-circle':
       return (
         <div className="w-full h-full px-1.5 rounded-lg bg-rose-500/5 border border-rose-500/20 flex items-center justify-center text-center overflow-hidden">
-          <div className="inline-flex items-center px-2 py-0.5 rounded-full border border-dashed border-rose-600/70 text-rose-600 dark:text-rose-400 font-bold text-mini truncate -rotate-1">
+          <div className="inline-flex items-center max-w-full min-w-0 px-2 py-0.5 rounded-full border border-dashed border-rose-600/70 text-rose-600 dark:text-rose-400 font-bold text-mini text-center leading-tight break-words -rotate-1">
             <span>{preset.sampleText || preset.label}</span>
           </div>
         </div>
@@ -142,7 +142,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'badge':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-mini shadow-2xs truncate font-tajawal">
+          <span className="inline-flex items-center max-w-full min-w-0 px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-mini text-center leading-tight break-words shadow-2xs font-tajawal">
             {preset.sampleText || preset.label}
           </span>
         </div>
@@ -151,9 +151,9 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'studio-date':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card text-foreground border border-border/60 text-mini font-semibold truncate shadow-2xs font-cairo">
+          <div className="inline-flex items-center max-w-full min-w-0 gap-1 px-2 py-0.5 rounded-md bg-card text-foreground border border-border/60 text-mini font-semibold shadow-2xs font-cairo">
             <Calendar className="w-3 h-3 text-muted-foreground shrink-0" weight="bold" />
-            <span className="truncate">تاريخ اليوم</span>
+            <span className="min-w-0 text-center leading-tight break-words">تاريخ اليوم</span>
           </div>
         </div>
       );
@@ -161,9 +161,9 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'photographer-tag':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-card text-muted-foreground border border-border/50 text-mini font-medium truncate shadow-2xs">
+          <div className="inline-flex items-center max-w-full min-w-0 gap-1 px-2 py-0.5 rounded-md bg-card text-muted-foreground border border-border/50 text-mini font-medium shadow-2xs">
             <Camera className="w-3 h-3 text-foreground/80 shrink-0" weight="bold" />
-            <span className="truncate">بصمة المصور</span>
+            <span className="min-w-0 text-center leading-tight break-words">بصمة المصور</span>
           </div>
         </div>
       );
@@ -173,7 +173,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
         <div className="w-full h-full px-2 rounded-lg bg-muted/40 border border-border/40 flex items-center justify-center text-center overflow-hidden relative">
           <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:6px_6px] dark:bg-[radial-gradient(#fff_1px,transparent_1px)]" />
           <span
-            className="text-mini font-black text-foreground/35 -rotate-12 tracking-widest truncate z-10"
+            className="max-w-full text-center text-mini font-black text-foreground/35 -rotate-12 tracking-widest leading-tight break-words z-10"
             style={{ fontFamily: 'Alexandria, sans-serif' }}
           >
             GRIDO مسودة
@@ -184,7 +184,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'caption-card':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <div className="px-2 py-0.5 rounded border border-border/80 bg-background/90 text-foreground text-mini font-medium shadow-2xs truncate font-tajawal">
+          <div className="max-w-full px-2 py-0.5 rounded border border-border/80 bg-background/90 text-foreground text-mini font-medium text-center leading-tight break-words shadow-2xs font-tajawal">
             {preset.sampleText || preset.label}
           </div>
         </div>
@@ -193,7 +193,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'congrats':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-center overflow-hidden">
-          <span className="text-xs font-extrabold font-cairo text-emerald-700 dark:text-emerald-300 truncate drop-shadow-2xs">
+          <span className="max-w-full text-center text-xs font-extrabold font-cairo text-emerald-700 dark:text-emerald-300 leading-tight break-words drop-shadow-2xs">
             🎉 {preset.sampleText || preset.label}
           </span>
         </div>
@@ -203,7 +203,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
       return (
         <div className="w-full h-full px-2 rounded-lg bg-red-500/10 border border-red-500/25 flex items-center justify-center text-center overflow-hidden">
           <span
-            className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-600 text-white font-black text-mini tracking-wide shadow-2xs truncate"
+            className="inline-flex items-center max-w-full min-w-0 px-2 py-0.5 rounded-md bg-red-600 text-white font-black text-mini text-center leading-tight break-words tracking-wide shadow-2xs"
             style={{ fontFamily: 'Changa, sans-serif' }}
           >
             🔥 {preset.sampleText || preset.label}
@@ -215,7 +215,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
       return (
         <div className="w-full h-full px-2 rounded-lg bg-blue-950/10 dark:bg-blue-950/30 border border-blue-500/30 flex items-center justify-center text-center overflow-hidden">
           <span
-            className="text-xs font-bold text-blue-900 dark:text-blue-200 tracking-wide truncate border-b border-blue-500/40 pb-0.5"
+            className="max-w-full text-center text-xs font-bold text-blue-900 dark:text-blue-200 tracking-wide leading-tight break-words border-b border-blue-500/40 pb-0.5"
             style={{ fontFamily: "'Reem Kufi', sans-serif" }}
           >
             📜 {preset.sampleText || preset.label}
@@ -226,7 +226,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     case 'special-price':
       return (
         <div className="w-full h-full px-2 rounded-lg bg-card border border-border/60 flex items-center justify-center text-center overflow-hidden">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-sky-600 text-white font-bold text-mini shadow-2xs truncate font-tajawal">
+          <span className="inline-flex items-center max-w-full min-w-0 px-2 py-0.5 rounded-md bg-sky-600 text-white font-bold text-mini text-center leading-tight break-words shadow-2xs font-tajawal">
             🏷️ {preset.sampleText || preset.label}
           </span>
         </div>
@@ -235,7 +235,7 @@ function renderTextPresetPreview(preset: QuickTextItem) {
     default:
       return (
         <div className="w-full h-full px-2 rounded-lg bg-muted/60 border border-border/60 flex items-center justify-center text-center overflow-hidden">
-          <span className="text-xs font-bold text-foreground truncate">
+          <span className="max-w-full text-center text-xs font-bold text-foreground leading-tight break-words">
             {preset.sampleText || preset.label}
           </span>
         </div>
@@ -610,12 +610,12 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
                 </div>
 
                 {/* تذييل البطاقة: الاسم + أيقونة إدراج فقط (بلا تصنيف مكرر) */}
-                <div className="w-full flex items-center justify-between gap-1 pt-1">
-                  <span className="text-xs font-medium text-foreground truncate">
+                <div className="w-full flex items-start justify-between gap-1 pt-1">
+                  <span className="min-w-0 text-xs font-medium text-foreground leading-tight break-words">
                     {preset.label}
                   </span>
                   <Plus
-                    className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground shrink-0"
+                    className="w-3.5 h-3.5 mt-0.5 text-muted-foreground group-hover:text-foreground shrink-0"
                     weight="bold"
                   />
                 </div>

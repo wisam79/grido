@@ -260,10 +260,10 @@ describe('Component Testing: UI Rendering', () => {
       'grido_workspace_layout_v1',
       JSON.stringify({ lastActivePanel: 'templates' }),
     );
-    // الطبقات تظهر في وضع single (FreeformStudioPanel)
+    // اللوح الافتراضي في الاستوديو هو «الملصقات» (الطبقات تبقى أول الشريط)
     useEditorStore.setState({ mode: 'single' });
     render(<App />);
-    expect(await screen.findByText('الطبقات')).toBeInTheDocument();
+    expect(await screen.findByTestId('studio-elements-stickers')).toBeInTheDocument();
   }, 15000);
 
   it('renders initial collage templates correctly', async () => {
