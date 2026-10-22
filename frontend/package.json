@@ -97,6 +97,7 @@
     "jsbarcode": "^3.12.3",
     "konva": "^10.3.0",
     "papaparse": "^5.7.0",
+    "path-bool": "^1.0.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
     "react-cropper": "^2.3.3",

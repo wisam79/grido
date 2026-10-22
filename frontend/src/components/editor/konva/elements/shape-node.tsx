@@ -19,7 +19,7 @@ import { useKonvaDrag } from '@/hooks/use-konva-drag';
 import { gradientStart, useCanvasColors, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
 import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
 import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
-import { getShapeByPath } from '@/lib/io/shape-catalog';
+import { getSvgPathBounds } from '@/lib/canvas/svg-path-bounds';
 
 import { withShadowlessDrag } from './drag-shadow';
 import { getFillProps } from './fill-utils';
@@ -27,65 +27,6 @@ import { propsAreEqual } from './types';
 
 import type { ElementProps } from './types';
 import type { ShapeElement } from '@/lib/editor-store';
-
-interface SvgPathBounds {
-  w: number;
-  h: number;
-  /** أقل إحداثي داخل المسار — يلزم لإزاحة الرسم ليملأ صندوق العنصر */
-  minX: number;
-  minY: number;
-}
-
-const pathBoundsCache = new Map<string, SvgPathBounds>();
-
-function getSvgPathBounds(pathStr: string): SvgPathBounds {
-  if (!pathStr) return { w: 24, h: 24, minX: 0, minY: 0 };
-  const cached = pathBoundsCache.get(pathStr);
-  if (cached) return cached;
-
-  const def = getShapeByPath(pathStr);
-  if (def?.viewBox) {
-    const res: SvgPathBounds = { w: def.viewBox.w, h: def.viewBox.h, minX: 0, minY: 0 };
-    pathBoundsCache.set(pathStr, res);
-    return res;
-  }
-
-  try {
-    const segments = Konva.Path.parsePathData(pathStr);
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const seg of segments) {
-      if (seg.points) {
-        for (let i = 0; i < seg.points.length; i += 2) {
-          const px = seg.points[i];
-          const py = seg.points[i + 1];
-          if (px !== undefined && py !== undefined) {
-            minX = Math.min(minX, px);
-            minY = Math.min(minY, py);
-            maxX = Math.max(maxX, px);
-            maxY = Math.max(maxY, py);
-          }
-        }
-      }
-    }
-    const w = maxX > minX && isFinite(maxX) && isFinite(minX) ? maxX - minX : 24;
-    const h = maxY > minY && isFinite(maxY) && isFinite(minY) ? maxY - minY : 24;
-    const res: SvgPathBounds = {
-      w,
-      h,
-      minX: isFinite(minX) ? minX : 0,
-      minY: isFinite(minY) ? minY : 0,
-    };
-    pathBoundsCache.set(pathStr, res);
-    return res;
-  } catch {
-    const fallback: SvgPathBounds = { w: 24, h: 24, minX: 0, minY: 0 };
-    pathBoundsCache.set(pathStr, fallback);
-    return fallback;
-  }
-}
 
 export const KonvaShapeElement = React.memo(function KonvaShapeElement({
   element: _element,

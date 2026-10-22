@@ -2,15 +2,30 @@ import { createElementAlignmentSlice } from './alignment';
 import { createElementClipboardSlice } from './clipboard';
 import { createElementCrudSlice } from './crud';
 import { createImageElementsSlice } from './image-elements';
+import { createElementMergeSlice } from './merge';
 import { createElementSelectionSlice } from './selection';
 import { createShapeElementsSlice } from './shape-elements';
 import { createTextElementsSlice } from './text-elements';
 import { DEFAULT_ELEMENT_STATE } from './types';
 
-import type { BatchImageItem, ElementCross, ElementSlice, TextPresetType } from './types';
+import type {
+  BatchImageItem,
+  ElementCross,
+  ElementSlice,
+  MergeResult,
+  RasterizeResult,
+  TextPresetType,
+} from './types';
 import type { StateCreator } from 'zustand';
 
-export type { BatchImageItem, ElementCross, ElementSlice, TextPresetType };
+export type {
+  BatchImageItem,
+  ElementCross,
+  ElementSlice,
+  MergeResult,
+  RasterizeResult,
+  TextPresetType,
+};
 export {
   DEFAULT_ELEMENT_STATE,
   maxZIndex,
@@ -28,4 +43,5 @@ export const createElementSlice: StateCreator<ElementCross, [], [], ElementSlice
   ...createElementClipboardSlice(...a),
   ...createElementSelectionSlice(...a),
   ...createElementAlignmentSlice(...a),
+  ...createElementMergeSlice(...a),
 });

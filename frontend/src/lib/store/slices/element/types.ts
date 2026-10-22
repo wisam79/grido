@@ -1,7 +1,17 @@
 import type { TextPresetType } from '../../../templates';
-import type { CanvasElement, ShapeElement, StickerElementSource } from '../../types';
+import type { CanvasElement, EditorMode, ShapeElement, StickerElementSource } from '../../types';
+import type { BooleanOp } from '@/lib/canvas/path-boolean';
+import type Konva from 'konva';
 
 export type { TextPresetType };
+
+/** نتيجة دمج الطبقات — تُترجم في الواجهة إلى رسالة للمستخدم بدل toast داخل الستور */
+export type MergeResult =
+  'ok' | 'need-two-shapes' | 'locked' | 'unsupported' | 'empty-result' | 'failed';
+
+/** نتيجة تسطيح الطبقات إلى صورة */
+export type RasterizeResult =
+  'ok' | 'empty' | 'locked' | 'no-stage' | 'wrong-mode' | 'too-large' | 'failed';
 
 export interface BatchImageItem {
   src: string;
@@ -63,12 +73,22 @@ export interface ElementSlice {
   pasteCopiedElements: (customElements?: CanvasElement[]) => void;
   bringToFront: (id: string) => void;
   sendToBack: (id: string) => void;
+  /** تقديم بمقدار طبقة واحدة — يعيد false إن كانت الطبقة على القمة فلا يُسجَّل تاريخ */
+  bringForward: (id: string) => boolean;
+  /** تأخير بمقدار طبقة واحدة — يعيد false إن كانت الطبقة في القاع */
+  sendBackward: (id: string) => boolean;
   selectElement: (id: string | null) => void;
   selectAllElements: () => void;
   setSelectedIds: (ids: string[]) => void;
   toggleElementSelection: (id: string) => void;
   groupSelectedElements: () => void;
   ungroupSelectedElements: () => void;
+  /** دمج الأشكال المحددة في شكل واحد بعملية منطقية (الأخيرة هي قاطع الطرح) */
+  mergeSelectedShapes: (op: BooleanOp) => MergeResult;
+  /** تسطيح التحديد — أي مزيج صور/نصوص/أشكال — إلى عنصر صورة واحد بدقة الورقة */
+  rasterizeSelected: (stage: Konva.Stage | null) => Promise<RasterizeResult>;
+  /** اسم طبقة مخصص يظهر في لوحة الطبقات ويُحفظ مع المستند */
+  renameElement: (id: string, name: string) => void;
   setEditingTextId: (id: string | null) => void;
   autoFitTextWidth: (id: string, textWidthPx?: number) => void;
   centerElementHorizontally: (id: string) => void;
@@ -153,6 +173,7 @@ export const normalizeSelection = (
 export type ElementCross = ElementSlice & {
   canvasWidth: number;
   canvasHeight: number;
+  mode: EditorMode;
   lastEditedImage: string | null;
   lastEditedImageAspect: number | null;
   pushHistory: () => void;

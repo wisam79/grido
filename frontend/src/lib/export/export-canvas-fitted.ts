@@ -7,11 +7,11 @@ import { drawCurvedText } from '@/lib/canvas/curved-text-utils';
 import { createElementGlyphPainter, resolveElementFill } from '@/lib/canvas/fill-paint';
 import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
 import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
+import { getSvgPathBounds } from '@/lib/canvas/svg-path-bounds';
 import { resolveTextRenderState } from '@/lib/canvas/text-helpers';
 import { wrapTextLines } from '@/lib/canvas/text-layout';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
-import { getShapeByPath } from '@/lib/io/shape-catalog';
 import { createLogger } from '@/lib/logger';
 import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 
@@ -319,11 +319,12 @@ export async function renderFittedBranch(
       // التعبئة: نفس دالة الرسم المشتركة (نقش صورة/تدرج/لون) — لا نسخة
       // ثانية من مصفوفة النقش هنا، فالمعاينة والتصدير يتشاركان fill-paint.
       const fillImg = elImageMap[el.id];
-      // بُعد المسار المرجعي (viewBox) يُستخدم لتعويض مقياس النقش ورسم المسار
-      // معاً — يُحسب مرة واحدة بلا تكرار بحث
-      const pathDef = el.shape === 'path' && el.svgPath ? getShapeByPath(el.svgPath) : undefined;
-      const vbW = pathDef?.viewBox?.w || 24;
-      const vbH = pathDef?.viewBox?.h || 24;
+      // 🛡️ حدود المسار من المصدر المشترك مع عقدة Konva: كان التصدير يفترض
+      // viewBox ثابت 24×24 لأي مسار، فيتضاعف مقياس الأشكال المدموجة (وهي
+      // خارج كتالوج الأشكال) خطأً ويُهمل إزاحة أدنى إحداثي فينزاح الرسم.
+      const pathBounds = el.shape === 'path' && el.svgPath ? getSvgPathBounds(el.svgPath) : null;
+      const pathScaleX = pathBounds ? w / pathBounds.w : 1;
+      const pathScaleY = pathBounds ? h / pathBounds.h : 1;
       ctx.fillStyle = resolveElementFill(
         ctx,
         el,
@@ -331,7 +332,7 @@ export async function renderFittedBranch(
         h,
         fillImg,
         // نفس تعويض مقياس عقدة المسار المستخدم في المعاينة
-        el.shape === 'path' ? { scaleX: w / vbW, scaleY: h / vbH } : undefined,
+        pathBounds ? { scaleX: pathScaleX, scaleY: pathScaleY } : undefined,
       );
 
       if (el.shape === 'rect') {
@@ -440,11 +441,13 @@ export async function renderFittedBranch(
           ctx.fill();
           ctx.stroke();
         }
-      } else if (el.shape === 'path' && el.svgPath) {
-        // قياس المسار المتجه ليملأ صندوق العنصر — نفس منطق KonvaPath (viewBox مرجعي)
+      } else if (el.shape === 'path' && el.svgPath && pathBounds) {
+        // قياس المسار المتجه ليملأ صندوق العنصر — نفس منطق KonvaPath:
+        // إزاحة بأدنى إحداثي داخل المسار ثم مقياس الصندوق إلى حدود الحبر
         const path2d = new Path2D(el.svgPath);
         ctx.save();
-        ctx.scale(w / vbW, h / vbH);
+        ctx.translate(-pathBounds.minX * pathScaleX, -pathBounds.minY * pathScaleY);
+        ctx.scale(pathScaleX, pathScaleY);
         ctx.fill(path2d);
         if (strokeW > 0) ctx.stroke(path2d);
         ctx.restore();

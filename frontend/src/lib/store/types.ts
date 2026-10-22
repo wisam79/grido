@@ -69,6 +69,8 @@ export interface BaseCanvasElement {
   /** قلب عمودي — تكافؤ مع CanvasElementSchema في schema.ts (إصلاح عدم تطابق flipY) */
   flipY?: boolean;
   groupId?: string;
+  /** اسم طبقة مخصص — يعرض في لوحة الطبقات بدل التسمية التلقائية */
+  name?: string;
 }
 
 /** مصدر الملصق على العنصر — يسمح بإعادة فتح استوديو الملصقات للتعديل على نفس العنصر */

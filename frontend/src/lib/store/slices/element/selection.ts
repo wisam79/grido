@@ -5,6 +5,25 @@ import type { ElementCross, ElementSlice } from './types';
 import type { CanvasElement } from '../../types';
 import type { StateCreator } from 'zustand';
 
+/**
+ * تبادل zIndex مع الجار المباشر في ترتيب الطبقات — خطوة واحدة لا إلى الحافة.
+ * يُبلَّغ caller بعدم الحركة عند الحواف أو عند تعادل القيم حتى لا يُسجَّل
+ * تاريخ فارغ (pushHistory) لعملية لم تغيّر شيئاً.
+ */
+function stepPastNeighbour(get: () => ElementCross, id: string, direction: 1 | -1): boolean {
+  const sorted = [...get().elements].sort((a, b) => a.zIndex - b.zIndex);
+  const index = sorted.findIndex((el) => el.id === id);
+  if (index === -1) return false;
+  const self = sorted[index];
+  const neighbour = sorted[index + direction];
+  if (!neighbour || self.zIndex === neighbour.zIndex) return false;
+  get().updateElements([
+    { id: self.id, patch: { zIndex: neighbour.zIndex } },
+    { id: neighbour.id, patch: { zIndex: self.zIndex } },
+  ]);
+  return true;
+}
+
 export const createElementSelectionSlice: StateCreator<
   ElementCross,
   [],
@@ -13,6 +32,8 @@ export const createElementSelectionSlice: StateCreator<
     ElementSlice,
     | 'bringToFront'
     | 'sendToBack'
+    | 'bringForward'
+    | 'sendBackward'
     | 'selectElement'
     | 'selectAllElements'
     | 'setSelectedIds'
@@ -32,6 +53,18 @@ export const createElementSelectionSlice: StateCreator<
     const minZ = minZIndex(get().elements);
     get().updateElement(id, { zIndex: minZ - 10 });
     get().pushHistory();
+  },
+
+  bringForward: (id) => {
+    if (!stepPastNeighbour(get, id, 1)) return false;
+    get().pushHistory();
+    return true;
+  },
+
+  sendBackward: (id) => {
+    if (!stepPastNeighbour(get, id, -1)) return false;
+    get().pushHistory();
+    return true;
   },
 
   selectElement: (id) => {

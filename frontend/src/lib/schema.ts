@@ -114,6 +114,8 @@ export const CanvasElementSchema = z.object({
   flipY: z.boolean().optional(),
   svgPath: z.string().optional(),
   groupId: z.string().optional(),
+  // اسم الطبقة المخصص — يَسقط عند الحفظ إن لم يُصرَّح هنا (Zod يحذف المجهول)
+  name: z.string().optional(),
 });
 
 export const CanvasSlotSchema = z.object({

@@ -19,6 +19,7 @@ export const createElementCrudSlice: StateCreator<
     | 'removeElements'
     | 'duplicateElement'
     | 'duplicateElements'
+    | 'renameElement'
   >
 > = (set, get) => ({
   updateElement: (id, patch) => {
@@ -186,6 +187,20 @@ export const createElementCrudSlice: StateCreator<
       elements: nextElements,
       ...normalizeSelection(newSelectedIds),
     });
+    get().pushHistory();
+  },
+
+  renameElement: (id, name) => {
+    const el = get().elements.find((e: CanvasElement) => e.id === id);
+    if (!el) return;
+    // الاسم الفارغ = رجوع إلى التسمية التلقائية؛ ولا سجل لعملية لم تغيّر اسماً
+    const next =
+      name
+        .replace(/[\r\n]+/g, ' ')
+        .trim()
+        .slice(0, 100) || undefined;
+    if (next === (el.name || undefined)) return;
+    get().updateElement(id, { name: next });
     get().pushHistory();
   },
 });

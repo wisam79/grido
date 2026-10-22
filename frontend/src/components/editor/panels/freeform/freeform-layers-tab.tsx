@@ -1,15 +1,23 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
 import { Button } from '@/components/ui/button';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Eye,
   EyeSlash,
   LockSimple,
   LockSimpleOpen,
-  FolderSimplePlus,
-  FolderSimpleDashed,
+  Group,
+  GroupDismiss,
   Trash,
   Copy,
   AlignCenterHorizontal,
@@ -20,12 +28,25 @@ import {
   AlignBottom,
   ArrowsHorizontal,
   ArrowsVertical,
+  Merge,
+  ShapeUnion,
+  ShapeSubtract,
+  ShapeIntersect,
+  ShapeExclude,
+  ImageStack,
 } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 
 import { LayersList } from '../../properties/layers-list';
+
+import type { BooleanOp } from '@/lib/canvas/path-boolean';
+import type { MergeResult, RasterizeResult } from '@/lib/store/slices/element';
+
+const QUICK_BTN_CLASS =
+  'h-7 w-7 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 
 interface QuickActionBtnProps {
   content: string;
@@ -46,10 +67,7 @@ function QuickActionBtn({ content, onClick, disabled, children, className }: Qui
       disabled={disabled}
       onClick={onClick}
       aria-label={content}
-      className={cn(
-        'h-7 w-7 p-0 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-        className,
-      )}
+      className={cn(QUICK_BTN_CLASS, className)}
     >
       {children}
     </Button>
@@ -66,6 +84,43 @@ function QuickActionBtn({ content, onClick, disabled, children, className }: Qui
   );
 }
 
+/** الدمج يعمل على كامل التحديد لا على الطبقة المضغوطة وحدها */
+const MERGE_MESSAGES: Record<Exclude<MergeResult, 'ok'>, string> = {
+  'need-two-shapes': 'حدّد شكلين أو أكثر لدمجهما',
+  locked: 'بعض الطبقات المحددة مقفلة — فكّ القفل أولاً',
+  unsupported: 'الدمج المنطقي للأشكال المتجهة فقط — استخدم «تسطيح كصورة» للنصوص والصور',
+  'empty-result': 'لا تداخل بين الطبقات — الناتج شكل فارغ',
+  failed: 'تعذّر تنفيذ عملية الدمج',
+};
+
+const RASTERIZE_MESSAGES: Record<Exclude<RasterizeResult, 'ok'>, string> = {
+  empty: 'لا طبقات مرئية ضمن التحديد',
+  locked: 'بعض الطبقات المحددة مقفلة — فكّ القفل أولاً',
+  'no-stage': 'لوح العمل غير جاهز بعد',
+  'wrong-mode': 'التسطيح متاح في الطبقة الحرة فقط',
+  'too-large': 'منطقة التحديد أكبر مما يسمح به التسطيح',
+  failed: 'تعذّر التقاط الطبقات',
+};
+
+const MERGE_OPS: { op: BooleanOp; label: string; icon: React.ReactNode }[] = [
+  { op: 'union', label: 'اتحاد', icon: <ShapeUnion className="w-3.5 h-3.5" /> },
+  {
+    op: 'subtract',
+    label: 'طرح (الأمامية تقطع الخلفية)',
+    icon: <ShapeSubtract className="w-3.5 h-3.5" />,
+  },
+  {
+    op: 'intersect',
+    label: 'تقاطع (التداخل فقط)',
+    icon: <ShapeIntersect className="w-3.5 h-3.5" />,
+  },
+  {
+    op: 'exclude',
+    label: 'استثناء (ما عدا التداخل)',
+    icon: <ShapeExclude className="w-3.5 h-3.5" />,
+  },
+];
+
 export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
   const {
     elements,
@@ -77,6 +132,8 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
     ungroupSelectedElements,
     alignSelectedElements,
     distributeSelectedElements,
+    mergeSelectedShapes,
+    rasterizeSelected,
     pushHistory,
   } = useEditorStore(
     useShallow((state) => ({
@@ -89,13 +146,53 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
       ungroupSelectedElements: state.ungroupSelectedElements,
       alignSelectedElements: state.alignSelectedElements,
       distributeSelectedElements: state.distributeSelectedElements,
+      mergeSelectedShapes: state.mergeSelectedShapes,
+      rasterizeSelected: state.rasterizeSelected,
       pushHistory: state.pushHistory,
     })),
   );
 
+  const stageRef = useStageRef();
+  const [isRasterizing, setIsRasterizing] = useState(false);
+
   const hasElements = elements.length > 0;
   const hasMultipleSelected = selectedIds.length > 1;
   const hasSelection = selectedIds.length > 0;
+
+  const selectedElements = useMemo(
+    () => elements.filter((el) => selectedIds.includes(el.id)),
+    [elements, selectedIds],
+  );
+  // الطبقات المخفية خارج الحساب كما في كل أدوات الدمج: اتحاد طبقة مخفية كان
+  // يُنتج شكلاً غير مرئي فيصدر المستند بنقص صامت
+  const visibleSelected = useMemo(
+    () => selectedElements.filter((el) => el.visible !== false),
+    [selectedElements],
+  );
+  const selectionLocked = selectedElements.some((el) => el.locked);
+  const canMerge =
+    visibleSelected.length >= 2 && visibleSelected.every((el) => el.type === 'shape');
+  const canRasterize = visibleSelected.length >= 1 && !selectionLocked;
+
+  const runMerge = (op: BooleanOp) => {
+    const result = mergeSelectedShapes(op);
+    if (result === 'ok') {
+      toast.success('دُمجت الطبقات في شكل واحد');
+      return;
+    }
+    toast.error(MERGE_MESSAGES[result]);
+  };
+
+  const runRasterize = async () => {
+    setIsRasterizing(true);
+    try {
+      const result = await rasterizeSelected(stageRef.current);
+      if (result === 'ok') toast.success('طُسّلت الطبقات في صورة واحدة');
+      else toast.error(RASTERIZE_MESSAGES[result]);
+    } finally {
+      setIsRasterizing(false);
+    }
+  };
 
   // فحص حالة القفل والرؤية لجميع العناصر
   const allLocked = useMemo(
@@ -180,7 +277,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
             onClick={groupSelectedElements}
             disabled={!hasMultipleSelected}
           >
-            <FolderSimplePlus className="w-3.5 h-3.5" />
+            <Group className="w-3.5 h-3.5" />
           </QuickActionBtn>
 
           <QuickActionBtn
@@ -188,8 +285,60 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
             onClick={ungroupSelectedElements}
             disabled={!hasSelection}
           >
-            <FolderSimpleDashed className="w-3.5 h-3.5" />
+            <GroupDismiss className="w-3.5 h-3.5" />
           </QuickActionBtn>
+
+          {/* الدمج يعمل على كامل التحديد لا على الطبقة المضغوطة وحدها، فموضعه
+              شريط التحديد لا قائمة كل سطر — وسبب التعطيل في التلميح. */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <DropdownMenu dir="rtl">
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={!canMerge && !canRasterize}
+                      aria-label="دمج الطبقات المحددة"
+                      data-testid="layers-merge-menu"
+                      className={QUICK_BTN_CLASS}
+                    >
+                      <Merge className="w-3.5 h-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" sideOffset={6} className="w-56 font-cairo">
+                    <DropdownMenuLabel className="text-mini">دمج الطبقات المحددة</DropdownMenuLabel>
+                    {MERGE_OPS.map((item) => (
+                      <DropdownMenuItem
+                        key={item.op}
+                        disabled={!canMerge}
+                        onClick={() => runMerge(item.op)}
+                      >
+                        {item.icon}
+                        <span className="truncate">{item.label}</span>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={!canRasterize || isRasterizing}
+                      onClick={runRasterize}
+                    >
+                      <ImageStack className="w-3.5 h-3.5" />
+                      {isRasterizing ? 'جارٍ التسطيح…' : 'تسطيح كصورة'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="font-cairo text-xs font-semibold py-1 px-2.5">
+              {canMerge
+                ? 'دمج الأشكال المحددة في شكل واحد'
+                : canRasterize
+                  ? 'تسطيح الطبقات المحددة في صورة واحدة'
+                  : 'حدّد طبقتين من الأشكال للدمج المنطقي'}
+            </TooltipContent>
+          </Tooltip>
 
           <QuickActionBtn
             content="تكرار المحدد"

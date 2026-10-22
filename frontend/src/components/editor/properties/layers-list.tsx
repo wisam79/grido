@@ -15,7 +15,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -37,6 +37,7 @@ import {
   LockSimple,
   LockSimpleOpen,
   TextAa,
+  RenameA,
   Shapes,
   Image,
   Trash,
@@ -45,8 +46,10 @@ import {
   DotsThreeVertical,
   CaretDown,
   MagnifyingGlass,
-  ArrowsOutCardinal,
-  ArrowsOut,
+  ChevronDoubleUp,
+  ChevronDoubleDown,
+  ArrowUp,
+  ArrowDown,
   FolderSimple,
 } from '@/components/ui/icons';
 import { getThumbnailSrc } from '@/lib/canvas/thumbnail-src';
@@ -72,6 +75,7 @@ interface SortableLayerItemProps {
   el: CanvasElement;
   layerNumber: number;
   isSelected: boolean;
+  isRenaming: boolean;
   density: LayerDensity;
   toggleVisibility: (el: CanvasElement, e: React.MouseEvent) => void;
   toggleLock: (el: CanvasElement, e: React.MouseEvent) => void;
@@ -81,11 +85,18 @@ interface SortableLayerItemProps {
   toggleElementSelection: (id: string) => void;
   onBringToFront: (id: string) => void;
   onSendToBack: (id: string) => void;
+  onBringForward: (id: string) => void;
+  onSendBackward: (id: string) => void;
+  onStartRename: (id: string) => void;
+  onCommitRename: (id: string, name: string) => void;
+  onCancelRename: () => void;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function getLayerLabel(el: CanvasElement, layerNumber: number): string {
+  // اسم الطبقة المخصص يتقدم على التسمية التلقائية في اللوحة والبحث معاً
+  if (el.name) return el.name;
   const n = String(layerNumber).padStart(2, '0');
   if (el.type === 'image') return `صورة ${n}`;
   if (el.type === 'text')
@@ -151,6 +162,7 @@ const SortableLayerItem = React.memo(
     el,
     layerNumber,
     isSelected,
+    isRenaming,
     density,
     toggleVisibility,
     toggleLock,
@@ -160,10 +172,31 @@ const SortableLayerItem = React.memo(
     toggleElementSelection,
     onBringToFront,
     onSendToBack,
+    onBringForward,
+    onSendBackward,
+    onStartRename,
+    onCommitRename,
+    onCancelRename,
   }: SortableLayerItemProps) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
       id: el.id,
     });
+
+    const inputRef = useRef<HTMLInputElement>(null);
+    // Escape يعني «تجاهل ما كُتب»: blur التالي بعد الإلغاء لا يجب أن يحفظ
+    const cancelledRef = useRef(false);
+
+    // الـ input يُركَّب مع كل جلسة تسمية فيبدأ من الاسم المحفوظ لا من التسمية
+    // التلقائية (defaultValue)، والتحديد يختصر الكتابة فوق الاسم القديم
+    useEffect(() => {
+      if (!isRenaming) return;
+      cancelledRef.current = false;
+      const input = inputRef.current;
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, [isRenaming]);
 
     const style: React.CSSProperties = {
       transform: CSS.Translate.toString(transform ? { ...transform, x: 0 } : null),
@@ -181,6 +214,73 @@ const SortableLayerItem = React.memo(
     const thumbSize = isComfortable ? 'w-8 h-8' : 'w-7 h-7';
     const imageSrc = el.type === 'image' ? (el as ImageElement).imageSrc : '';
     const thumbnailSrc = imageSrc ? getThumbnailSrc(imageSrc, 128) : '';
+
+    // المعاينة المصغرة (Thumbnail) — تلي المقبض مباشرة لثبات الهيكلية،
+    // وتُشارك السطرَ نفسه في وضعي العرض العادي وإعادة التسمية
+    const thumbnail =
+      el.type === 'image' && imageSrc ? (
+        <div
+          className={cn(
+            'shrink-0 rounded-md overflow-hidden border shadow-2xs bg-muted/50 flex items-center justify-center',
+            thumbSize,
+            isHidden ? 'grayscale opacity-70' : 'border-border/60',
+            isSelected && 'border-primary/40',
+          )}
+        >
+          <img
+            src={thumbnailSrc}
+            alt=""
+            className="w-full h-full object-cover select-none pointer-events-none"
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            onError={(event) => {
+              const image = event.currentTarget;
+              image.onerror = null;
+              image.src = imageSrc;
+            }}
+          />
+        </div>
+      ) : (
+        <span
+          className={cn(
+            'shrink-0 rounded-md flex items-center justify-center border',
+            thumbSize,
+            el.type === 'text'
+              ? 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400'
+              : el.type === 'shape'
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                : 'bg-sky-500/10 border-sky-500/20 text-sky-600 dark:text-sky-400',
+            isHidden && 'opacity-60',
+          )}
+        >
+          {el.type === 'image' && <Image className="w-3.5 h-3.5" />}
+          {el.type === 'text' && <TextAa className="w-3.5 h-3.5" weight="bold" />}
+          {el.type === 'shape' && <Shapes className="w-3.5 h-3.5" />}
+        </span>
+      );
+
+    const labelBlock = (
+      <div className="flex-1 min-w-0 flex flex-col justify-center gap-0 pe-1">
+        <span
+          className={cn(
+            'truncate leading-none',
+            isComfortable ? 'text-xs font-semibold' : 'text-xs font-semibold',
+            isSelected ? 'text-foreground font-bold' : 'text-foreground/90',
+            isHidden && 'line-through decoration-muted-foreground/40',
+          )}
+          title={getLayerLabel(el, layerNumber)}
+        >
+          {getLayerLabel(el, layerNumber)}
+        </span>
+        {isComfortable && (
+          <span className="truncate text-mini leading-none text-muted-foreground font-medium">
+            {getLayerSubLabel(el)}
+            {isGrouped && ' · مجمّعة'}
+          </span>
+        )}
+      </div>
+    );
 
     return (
       <div
@@ -231,87 +331,61 @@ const SortableLayerItem = React.memo(
           <DotsSixVertical className="w-3 h-3" weight="bold" />
         </div>
 
-        <button
-          type="button"
-          aria-label={getLayerLabel(el, layerNumber)}
-          aria-current={isSelected ? 'true' : undefined}
-          onClick={(e) => {
-            if (e.shiftKey || e.ctrlKey || e.metaKey) toggleElementSelection(el.id);
-            else selectElement(el.id);
-          }}
-          className="flex flex-1 min-w-0 items-center gap-1.5 rounded-sm text-start cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none"
-        >
-          {/* المعاينة المصغرة (Thumbnail) — تلي المقبض مباشرة لثبات الهيكلية */}
-          {el.type === 'image' && imageSrc ? (
-            <div
-              className={cn(
-                'shrink-0 rounded-md overflow-hidden border shadow-2xs bg-muted/50 flex items-center justify-center',
-                thumbSize,
-                isHidden ? 'grayscale opacity-70' : 'border-border/60',
-                isSelected && 'border-primary/40',
-              )}
-            >
-              <img
-                src={thumbnailSrc}
-                alt=""
-                className="w-full h-full object-cover select-none pointer-events-none"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-                onError={(event) => {
-                  const image = event.currentTarget;
-                  image.onerror = null;
-                  image.src = imageSrc;
-                }}
-              />
-            </div>
-          ) : (
-            <span
-              className={cn(
-                'shrink-0 rounded-md flex items-center justify-center border',
-                thumbSize,
-                el.type === 'text'
-                  ? 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400'
-                  : el.type === 'shape'
-                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-sky-500/10 border-sky-500/20 text-sky-600 dark:text-sky-400',
-                isHidden && 'opacity-60',
-              )}
-            >
-              {el.type === 'image' && <Image className="w-3.5 h-3.5" />}
-              {el.type === 'text' && <TextAa className="w-3.5 h-3.5" weight="bold" />}
-              {el.type === 'shape' && <Shapes className="w-3.5 h-3.5" />}
-            </span>
-          )}
+        {isRenaming ? (
+          <div className="flex flex-1 min-w-0 items-center gap-1.5">
+            {thumbnail}
+            <input
+              ref={inputRef}
+              type="text"
+              defaultValue={el.name ?? ''}
+              onBlur={(e) => {
+                if (cancelledRef.current) return;
+                onCommitRename(el.id, e.currentTarget.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  cancelledRef.current = true;
+                  onCommitRename(el.id, e.currentTarget.value);
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  cancelledRef.current = true;
+                  onCancelRename();
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              placeholder={getLayerLabel(el, layerNumber)}
+              aria-label="اسم الطبقة"
+              className="min-w-0 flex-1 h-6 rounded-sm border border-primary/60 bg-background px-1.5 text-xs font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            aria-label={getLayerLabel(el, layerNumber)}
+            aria-current={isSelected ? 'true' : undefined}
+            onClick={(e) => {
+              if (e.shiftKey || e.ctrlKey || e.metaKey) toggleElementSelection(el.id);
+              else selectElement(el.id);
+            }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              onStartRename(el.id);
+            }}
+            className="flex flex-1 min-w-0 items-center gap-1.5 rounded-sm text-start cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none"
+          >
+            {thumbnail}
+            {labelBlock}
 
-          {/* اسم وتفاصيل الطبقة — يملأ المساحة المتبقية بالكامل دون أي بتر قسري */}
-          <div className="flex-1 min-w-0 flex flex-col justify-center gap-0 pe-1">
-            <span
-              className={cn(
-                'truncate leading-none',
-                isComfortable ? 'text-xs font-semibold' : 'text-xs font-semibold',
-                isSelected ? 'text-foreground font-bold' : 'text-foreground/90',
-                isHidden && 'line-through decoration-muted-foreground/40',
-              )}
-              title={getLayerLabel(el, layerNumber)}
-            >
-              {getLayerLabel(el, layerNumber)}
-            </span>
-            {isComfortable && (
-              <span className="truncate text-mini leading-none text-muted-foreground font-medium">
-                {getLayerSubLabel(el)}
-                {isGrouped && ' · مجمّعة'}
+            {/* شارة مجمّعة في الوضع المدمج */}
+            {!isComfortable && isGrouped && (
+              <span className="hidden sm:inline-flex items-center justify-center w-5 h-5 rounded-md bg-primary/10 border border-primary/15 text-primary shrink-0">
+                <FolderSimple className="w-3 h-3" weight="fill" />
               </span>
             )}
-          </div>
-
-          {/* شارة مجمّعة في الوضع المدمج */}
-          {!isComfortable && isGrouped && (
-            <span className="hidden sm:inline-flex items-center justify-center w-5 h-5 rounded-md bg-primary/10 border border-primary/15 text-primary shrink-0">
-              <FolderSimple className="w-3 h-3" weight="fill" />
-            </span>
-          )}
-        </button>
+          </button>
+        )}
 
         {/* أدوات السطر المدمجة كلياً في نفس بطاقة السطر (بدون بطاقة طافية أو إطار منفصل).
             التكرار والحذف انتقلا لقائمة «المزيد»: بقاؤهما هنا كان يبتلع اسم الطبقة
@@ -332,6 +406,9 @@ const SortableLayerItem = React.memo(
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" sideOffset={6} className="min-w-44 font-cairo">
               <DropdownMenuLabel className="text-mini">إجراءات الطبقة</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => onStartRename(el.id)}>
+                <RenameA className="w-3.5 h-3.5" /> إعادة تسمية
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
                   duplicateLayer(el.id, {
@@ -341,11 +418,18 @@ const SortableLayerItem = React.memo(
               >
                 <Copy className="w-3.5 h-3.5" /> تكرار
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onBringToFront(el.id)}>
-                <ArrowsOutCardinal className="w-3.5 h-3.5" /> إحضار للأمام
+                <ChevronDoubleUp className="w-3.5 h-3.5" /> إحضار للأمام
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onBringForward(el.id)}>
+                <ArrowUp className="w-3.5 h-3.5" /> تقديم طبقة واحدة
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSendBackward(el.id)}>
+                <ArrowDown className="w-3.5 h-3.5" /> تأخير طبقة واحدة
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onSendToBack(el.id)}>
-                <ArrowsOut className="w-3.5 h-3.5" /> إرسال للخلف
+                <ChevronDoubleDown className="w-3.5 h-3.5" /> إرسال للخلف
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -421,10 +505,12 @@ const SortableLayerItem = React.memo(
   },
   (prev, next) =>
     prev.isSelected === next.isSelected &&
+    prev.isRenaming === next.isRenaming &&
     prev.layerNumber === next.layerNumber &&
     prev.density === next.density &&
     prev.el.id === next.el.id &&
     prev.el.type === next.el.type &&
+    prev.el.name === next.el.name &&
     prev.el.visible === next.el.visible &&
     prev.el.locked === next.el.locked &&
     (prev.el as ImageElement).imageSrc === (next.el as ImageElement).imageSrc &&
@@ -456,6 +542,9 @@ export function LayersList({
     updateElements,
     removeElement,
     duplicateElement,
+    bringForward,
+    sendBackward,
+    renameElement,
     pushHistory,
     toggleElementSelection,
   } = useEditorStore(
@@ -468,12 +557,16 @@ export function LayersList({
       updateElements: state.updateElements,
       removeElement: state.removeElement,
       duplicateElement: state.duplicateElement,
+      bringForward: state.bringForward,
+      sendBackward: state.sendBackward,
+      renameElement: state.renameElement,
       pushHistory: state.pushHistory,
       toggleElementSelection: state.toggleElementSelection,
     })),
   );
 
   const [expanded, setExpanded] = useState(true);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -552,6 +645,31 @@ export function LayersList({
   const handleToggleSelection = useCallback(
     (id: string) => toggleElementSelection(id),
     [toggleElementSelection],
+  );
+
+  // الستور يعيد false عند الحافة (لا جار يتبادل معه zIndex) — فلا تلميح كاذب بنجاح
+  const handleBringForward = useCallback(
+    (id: string) => {
+      if (bringForward(id)) toast.success('قُدّمت الطبقة طبقة واحدة');
+    },
+    [bringForward],
+  );
+
+  const handleSendBackward = useCallback(
+    (id: string) => {
+      if (sendBackward(id)) toast.success('أُؤخّرت الطبقة طبقة واحدة');
+    },
+    [sendBackward],
+  );
+
+  const handleStartRename = useCallback((id: string) => setRenamingId(id), []);
+  const handleCancelRename = useCallback(() => setRenamingId(null), []);
+  const handleCommitRename = useCallback(
+    (id: string, name: string) => {
+      setRenamingId(null);
+      renameElement(id, name);
+    },
+    [renameElement],
   );
 
   // ── Empty ───────────────────────────────────────────────────────────────
@@ -634,6 +752,7 @@ export function LayersList({
               el={el}
               layerNumber={sorted.length - origIndex}
               isSelected={selectedIds.includes(el.id)}
+              isRenaming={renamingId === el.id}
               density={density}
               toggleVisibility={toggleVisibility}
               toggleLock={toggleLock}
@@ -643,6 +762,11 @@ export function LayersList({
               toggleElementSelection={handleToggleSelection}
               onBringToFront={handleBringToFront}
               onSendToBack={handleSendToBack}
+              onBringForward={handleBringForward}
+              onSendBackward={handleSendBackward}
+              onStartRename={handleStartRename}
+              onCommitRename={handleCommitRename}
+              onCancelRename={handleCancelRename}
             />
           );
         })}
