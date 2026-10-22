@@ -120,7 +120,7 @@ function renderStudioTextPreview(preset: QuickTextItem) {
         <div className="w-full h-full px-2 rounded-md bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
           <div className="inline-flex items-center gap-1 max-w-full px-2 py-0.5 rounded-md bg-card text-foreground border border-border/60 text-mini font-semibold shadow-2xs font-cairo select-none">
             <Calendar className="w-3 h-3 text-muted-foreground shrink-0" weight="bold" />
-            <span className="truncate">تاريخ الجلسة</span>
+            <span className="min-w-0 text-center leading-tight break-words">تاريخ الجلسة</span>
           </div>
         </div>
       );
@@ -130,7 +130,7 @@ function renderStudioTextPreview(preset: QuickTextItem) {
         <div className="w-full h-full px-2 rounded-md bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
           <div className="inline-flex items-center gap-1 max-w-full px-2 py-0.5 rounded-md bg-card text-muted-foreground border border-border/60 text-mini font-medium shadow-2xs select-none">
             <Camera className="w-3 h-3 text-foreground/80 shrink-0" weight="bold" />
-            <span className="truncate">بصمة وتوقيع المصور</span>
+            <span className="min-w-0 text-center leading-tight break-words">بصمة المصور</span>
           </div>
         </div>
       );
@@ -208,7 +208,7 @@ function renderStudioTextPreview(preset: QuickTextItem) {
     case 'heading':
       return (
         <div className="w-full h-full px-2 rounded-md bg-card border border-border/60 flex items-center justify-center text-center overflow-hidden">
-          <span className="text-sm font-extrabold font-cairo text-foreground truncate select-none">
+          <span className="text-sm font-extrabold font-cairo text-foreground select-none">
             عنوان رئيسي
           </span>
         </div>
@@ -217,17 +217,15 @@ function renderStudioTextPreview(preset: QuickTextItem) {
     case 'subheading':
       return (
         <div className="w-full h-full px-2 rounded-md bg-card border border-border/60 flex items-center justify-center text-center overflow-hidden">
-          <span className="text-xs font-semibold text-foreground/80 truncate select-none">
-            عنوان فرعي
-          </span>
+          <span className="text-xs font-semibold text-foreground/80 select-none">عنوان فرعي</span>
         </div>
       );
 
     case 'body':
       return (
         <div className="w-full h-full px-2 rounded-md bg-card border border-border/60 flex items-center justify-center text-center overflow-hidden">
-          <span className="text-mini font-normal text-muted-foreground truncate select-none">
-            فقرة تفصيلية مريحة
+          <span className="text-mini font-normal text-muted-foreground select-none">
+            فقرة تفصيلية
           </span>
         </div>
       );
@@ -323,17 +321,17 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
               className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0"
               weight="bold"
             />
-            <span className="truncate font-semibold">
+            <span className="font-semibold break-words min-w-0">
               نص محدد: &ldquo;{selectedTextElement.text.slice(0, 18)}
               {selectedTextElement.text.length > 18 ? '...' : ''}&rdquo;
             </span>
           </div>
-          <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 shrink-0 font-medium">
+          <span className="text-micro text-emerald-700/80 dark:text-emerald-300/80 shrink-0 font-medium">
             النقر يطبّق النمط
           </span>
         </div>
       ) : (
-        <div className="text-[11px] text-muted-foreground px-1 select-none">
+        <div className="text-mini text-muted-foreground px-1 select-none">
           انقر على أي نمط للإدراج المباشر في منتصف الكانفاس
         </div>
       )}
@@ -352,7 +350,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
             <TextHOne className="w-3.5 h-3.5 text-foreground shrink-0" weight="bold" />
             <span className="text-xs font-bold text-foreground">رئيسي</span>
           </div>
-          <span className="text-[9px] text-muted-foreground font-mono">48px</span>
+          <span className="text-2xs text-muted-foreground font-mono">48px</span>
         </button>
 
         {/* H2 فرعي */}
@@ -367,7 +365,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
             <TextHTwo className="w-3.5 h-3.5 text-foreground/80 shrink-0" weight="bold" />
             <span className="text-xs font-semibold text-foreground">فرعي</span>
           </div>
-          <span className="text-[9px] text-muted-foreground font-mono">28px</span>
+          <span className="text-2xs text-muted-foreground font-mono">28px</span>
         </button>
 
         {/* P فقرة */}
@@ -382,7 +380,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
             <Article className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
             <span className="text-xs font-normal text-foreground">فقرة</span>
           </div>
-          <span className="text-[9px] text-muted-foreground font-mono">18px</span>
+          <span className="text-2xs text-muted-foreground font-mono">18px</span>
         </button>
 
         {/* Caption توثيق */}
@@ -397,7 +395,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
             <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" weight="bold" />
             <span className="text-xs font-medium text-foreground">توثيق</span>
           </div>
-          <span className="text-[9px] text-muted-foreground font-mono">16px</span>
+          <span className="text-2xs text-muted-foreground font-mono">16px</span>
         </button>
       </div>
 
@@ -424,7 +422,7 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
                 : `إدراج ${preset.label}`
             }
             className={cn(
-              'group relative w-full bg-card/80 hover:bg-card border border-border/70 hover:border-foreground/40 rounded-lg p-2 transition-all duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none overflow-hidden text-start select-none',
+              'group relative w-full bg-card/80 hover:bg-card border border-border/70 hover:border-foreground/40 rounded-lg p-2 transition-all duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none text-start select-none',
             )}
           >
             {/* صندوق المعاينة الحية الواقعية */}
@@ -433,8 +431,8 @@ export const FreeformTextTab = React.memo(function FreeformTextTab() {
             </div>
 
             {/* تذييل البطاقة: التسمية + زر إدراج جديد كعنصر مستقل */}
-            <div className="w-full flex items-center justify-between gap-1 pt-1">
-              <span className="min-w-0 text-xs font-semibold text-foreground leading-tight truncate">
+            <div className="w-full flex items-start justify-between gap-1 pt-1">
+              <span className="min-w-0 text-xs font-semibold text-foreground leading-tight break-words">
                 {preset.label}
               </span>
               <button

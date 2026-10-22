@@ -397,9 +397,9 @@ export interface TextPresetCatalogItem {
 
 export const TEXT_PRESET_CATEGORY_LABELS: Record<TextPresetCategory, string> = {
   titles: 'عناوين',
-  badges: 'توثيق واستوديو',
-  effects: 'طباعة وفويل',
-  phrases: 'تراكيب ومناسبات',
+  badges: 'توثيق',
+  effects: 'تأثيرات',
+  phrases: 'تراكيب',
 };
 
 /**
