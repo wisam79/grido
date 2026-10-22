@@ -12,7 +12,7 @@ export const createTextElementsSlice: StateCreator<
   ElementCross,
   [],
   [],
-  Pick<ElementSlice, 'addTextElement' | 'addTextPreset' | 'autoFitTextWidth'>
+  Pick<ElementSlice, 'addTextElement' | 'addTextPreset' | 'applyTextPreset' | 'autoFitTextWidth'>
 > = (set, get) => ({
   addTextElement: (text = 'نص جديد') => {
     const sanitized = sanitizeText(String(text ?? 'نص جديد'));
@@ -53,13 +53,16 @@ export const createTextElementsSlice: StateCreator<
     get().pushHistory();
   },
 
-  addTextPreset: (preset) => {
+  addTextPreset: (preset, customText) => {
     const id = uid();
     const state = get();
     const canvasW = state.canvasWidth || 2480;
 
     const config = TEXT_PRESETS[preset] || TEXT_PRESETS.heading;
-    const text = config.getText();
+    const text =
+      customText && customText.trim().length > 0
+        ? sanitizeText(customText.trim())
+        : config.getText();
     const fontSize = config.fontSize;
 
     const charWidth = fontSize * 0.9;
@@ -109,6 +112,48 @@ export const createTextElementsSlice: StateCreator<
     set((s) => ({
       elements: [...s.elements, newEl],
       ...normalizeSelection(id),
+    }));
+    get().pushHistory();
+  },
+
+  applyTextPreset: (id, preset) => {
+    const el = get().elements.find((x) => x.id === id);
+    if (!el || el.type !== 'text') return;
+    const config = TEXT_PRESETS[preset] || TEXT_PRESETS.heading;
+
+    set((s) => ({
+      elements: s.elements.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              fontSize: config.fontSize,
+              fontWeight: config.fontWeight,
+              color: config.color,
+              fontFamily: config.fontFamily,
+              textBgColor: config.textBgColor ?? 'transparent',
+              textBgRadius: config.textBgRadius ?? 0,
+              textBgPadding: config.textBgPadding ?? 0,
+              textBgBorderColor: config.textBgBorderColor,
+              textBgBorderWidth: config.textBgBorderWidth,
+              textBgPaddingX: config.textBgPaddingX,
+              textBgPaddingY: config.textBgPaddingY,
+              lineHeight: config.lineHeight ?? 1.2,
+              stroke: config.stroke,
+              strokeWidth: config.strokeWidth,
+              shadowColor: config.shadowColor,
+              shadowBlur: config.shadowBlur,
+              shadowOffsetX: config.shadowOffsetX,
+              shadowOffsetY: config.shadowOffsetY,
+              shadowOpacity: config.shadowOpacity,
+              shadowGlow: config.shadowGlow,
+              curve: config.curve,
+              fillType: config.fillType ?? 'solid',
+              fillLinearGradientStartPoint: config.fillLinearGradientStartPoint,
+              fillLinearGradientEndPoint: config.fillLinearGradientEndPoint,
+              fillLinearGradientColorStops: config.fillLinearGradientColorStops,
+            }
+          : item,
+      ),
     }));
     get().pushHistory();
   },

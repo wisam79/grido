@@ -46,7 +46,8 @@ export interface ElementSlice {
     },
   ) => void;
   addTextElement: (text?: string) => void;
-  addTextPreset: (preset: TextPresetType) => void;
+  addTextPreset: (preset: TextPresetType, text?: string) => void;
+  applyTextPreset: (id: string, preset: TextPresetType) => void;
   /**
    * إدراج شكل. options.aspect يحسم نسبة الأبعاد الابتدائية (من الكتالوج)
    * و options.defaults يُدمج فوق القيم الافتراضية (رؤوس نجمة، سهم مزدوج...).

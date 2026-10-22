@@ -303,11 +303,11 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
   },
   congrats: {
     getText: () => 'ألف مبروك التخرج والنجاح',
-    label: 'تهنئة وتخرج',
-    description: 'مبروك التخرج والنجاح',
+    label: 'تهنئة ملكية',
+    description: 'خط عريض للمناسبات والنجاح',
     category: 'phrases',
     menuGroup: 'effects',
-    sampleText: 'ألف مبروك النجاح',
+    sampleText: 'ألف مبروك التخرج',
     previewColor: '#047857',
     lineHeight: 1.2,
     fontSize: 38,
@@ -321,12 +321,12 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
     height: 0.065,
   },
   'sale-offer': {
-    getText: () => 'عروض كبرى · خصم 50%',
-    label: 'عروض وخصومات',
-    description: 'عروض كبرى · خصم 50%',
+    getText: () => 'عروض الموسم الحصرية',
+    label: 'عرض استوديو',
+    description: 'شارة عروض وحسومات رصينة',
     category: 'phrases',
     menuGroup: 'effects',
-    sampleText: 'عروض كبرى 50%',
+    sampleText: 'عروض الموسم الحصرية',
     previewColor: '#dc2626',
     lineHeight: 1.15,
     fontSize: 38,
@@ -343,9 +343,9 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
     height: 0.07,
   },
   certificate: {
-    getText: () => 'شهادة شكر وتقدير',
+    getText: () => 'شهادة شكر وتقدير رسمية',
     label: 'شهادة تقدير',
-    description: 'شهادة شكر وتقدير',
+    description: 'ترويسة اعتماد وشهادات',
     category: 'phrases',
     menuGroup: 'effects',
     sampleText: 'شهادة شكر وتقدير',
@@ -364,12 +364,12 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
     height: 0.07,
   },
   'special-price': {
-    getText: () => 'السعر: 25,000 د.ع فقط',
-    label: 'شارة تسعير',
-    description: 'السعر: 25,000 د.ع',
+    getText: () => 'السعر: باقة التصوير الخاصة',
+    label: 'باقة تسعير',
+    description: 'تسعير جلسة وباقة استوديو',
     category: 'phrases',
     menuGroup: 'effects',
-    sampleText: 'السعر: 25,000 د.ع',
+    sampleText: 'السعر: باقة التصوير',
     previewColor: '#0284c7',
     lineHeight: 1.1,
     fontSize: 24,
@@ -397,9 +397,9 @@ export interface TextPresetCatalogItem {
 
 export const TEXT_PRESET_CATEGORY_LABELS: Record<TextPresetCategory, string> = {
   titles: 'عناوين',
-  effects: 'تأثيرات',
-  badges: 'شارات',
-  phrases: 'عبارات',
+  badges: 'توثيق واستوديو',
+  effects: 'طباعة وفويل',
+  phrases: 'تراكيب ومناسبات',
 };
 
 /**

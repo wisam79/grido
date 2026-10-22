@@ -2,6 +2,7 @@ import React from 'react';
 
 import { FreeformElementsTab } from './freeform-elements-tab';
 import { FreeformLayersTab } from './freeform-layers-tab';
+import { FreeformTextTab } from './freeform-text-tab';
 
 import type { FreeformTab } from './freeform-panel-constants';
 
@@ -23,7 +24,7 @@ export const FreeformStudioPanel = React.memo(function FreeformStudioPanel({
     <div className="flex-1 min-w-0 font-cairo" dir="rtl">
       {activeTab === 'stickers' && <FreeformElementsTab category="stickers" />}
       {activeTab === 'shapes' && <FreeformElementsTab category="shapes" />}
-      {activeTab === 'text' && <FreeformElementsTab category="text" />}
+      {activeTab === 'text' && <FreeformTextTab />}
       {activeTab === 'layers' && <FreeformLayersTab />}
     </div>
   );

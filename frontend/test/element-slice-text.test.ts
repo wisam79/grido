@@ -193,4 +193,36 @@ describe('Element Slice Text & Typography Tests', () => {
     el = useEditorStore.getState().elements.find((x) => x.id === id)!;
     expect(el.y + el.height / 2).toBeCloseTo(0.5, 2);
   });
+
+  it('inserts text preset with custom text when provided', () => {
+    useEditorStore.getState().addTextPreset('heading', 'عنوان مخصص للاختبار');
+    const elements = useEditorStore.getState().elements;
+    expect(elements.length).toBe(1);
+    const el = elements[0];
+    if (el.type === 'text') {
+      expect(el.text).toBe('عنوان مخصص للاختبار');
+      expect(el.fontSize).toBe(48);
+      expect(el.fontWeight).toBe(800);
+    }
+  });
+
+  it('applies preset style onto existing text element preserving content and position', () => {
+    useEditorStore.getState().addTextElement('نص موجود مسبقاً');
+    const id = useEditorStore.getState().selectedId!;
+    let el = useEditorStore.getState().elements.find((x) => x.id === id)!;
+    const originalX = el.x;
+    const originalY = el.y;
+
+    useEditorStore.getState().applyTextPreset(id, 'gold-luxury');
+    el = useEditorStore.getState().elements.find((x) => x.id === id)!;
+
+    if (el.type === 'text') {
+      expect(el.text).toBe('نص موجود مسبقاً');
+      expect(el.x).toBe(originalX);
+      expect(el.y).toBe(originalY);
+      expect(el.fillType).toBe('linear');
+      expect(el.fontWeight).toBe(800);
+      expect(el.shadowColor).toBeDefined();
+    }
+  });
 });

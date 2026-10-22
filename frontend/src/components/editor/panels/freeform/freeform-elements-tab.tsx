@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
 import { FluentFilterChips } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import { Plus, Stamp, Calendar, Camera, CaretRight } from '@/components/ui/icons';
+import { Plus, Stamp, CaretRight } from '@/components/ui/icons';
 import { renderSvgToPngDataUrl } from '@/features/stickers/lib/svg-rasterizer';
 import { useEditorStore } from '@/lib/editor-store';
 import { SHAPE_CATEGORIES, shapesInCategory } from '@/lib/io/shape-catalog';
@@ -12,9 +12,8 @@ import { createLogger } from '@/lib/logger';
 import { sanitizeSvgMarkupCached } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
-import { QUICK_TEXT_PRESETS, TEXT_FILTER_OPTIONS } from './freeform-panel-constants';
+import { FreeformTextTab } from './freeform-text-tab';
 
-import type { QuickTextItem } from './freeform-panel-constants';
 import type { StickerTemplate } from '@/features/stickers/types';
 import type { ShapeCatalogItem } from '@/lib/io/shape-catalog';
 
@@ -63,197 +62,18 @@ function getCategoryBadgeLabel(category: string): string {
   }
 }
 
-function renderTextPresetPreview(preset: QuickTextItem) {
-  switch (preset.id) {
-    case 'gold-luxury':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-gradient-to-br from-amber-950/40 via-slate-900 to-amber-950/30 border border-amber-500/30 flex items-center justify-center text-center overflow-hidden">
-          {/* token-exception: خلفية معاينة "ذهبي فاخر" — ألوان محتوى التصميم تُعرض كما ستُطبع وليست ألوان واجهة */}
-          <span
-            className="max-w-full text-center text-xs font-black font-cairo tracking-wide leading-tight break-words"
-            style={{
-              background: 'linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #b45309 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0 2px 4px rgba(180, 83, 9, 0.4))',
-            }}
-          >
-            {preset.sampleText || preset.label}
-          </span>
-        </div>
-      );
-
-    case 'neon-glow':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-slate-950 border border-sky-500/40 flex items-center justify-center text-center overflow-hidden">
-          {/* token-exception: خلفية معاينة "توهج نيون" — ألوان محتوى التصميم تُعرض كما ستُطبع وليست ألوان واجهة */}
-          <span
-            className="max-w-full text-center text-xs font-black tracking-wider leading-tight break-words text-sky-400 font-sans"
-            style={{
-              fontFamily: 'Alexandria, sans-serif',
-              textShadow: '0 0 6px rgba(56, 189, 248, 0.8), 0 0 12px rgba(2, 132, 199, 0.6)',
-            }}
-          >
-            {preset.sampleText || preset.label}
-          </span>
-        </div>
-      );
-
-    case '3d-title':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-indigo-950/20 border border-indigo-500/30 flex items-center justify-center text-center overflow-hidden">
-          <span
-            className="max-w-full text-center text-xs font-black leading-tight break-words text-indigo-500"
-            style={{
-              fontFamily: 'Changa, sans-serif',
-              textShadow: '1.5px 1.5px 0px #312e81, 2.5px 2.5px 0px #1e1b4b',
-            }}
-          >
-            {preset.sampleText || preset.label}
-          </span>
-        </div>
-      );
-
-    case 'outline-modern':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-muted/40 border border-border/60 flex items-center justify-center text-center overflow-hidden">
-          <span
-            className="max-w-full text-center text-xs font-black tracking-widest leading-tight break-words text-transparent"
-            style={{
-              fontFamily: 'Montserrat, sans-serif',
-              WebkitTextStroke: '1.2px currentColor',
-              color: 'transparent',
-            }}
-          >
-            {preset.sampleText || preset.label}
-          </span>
-        </div>
-      );
-
-    case 'stamp-circle':
-      return (
-        <div className="w-full h-full px-1.5 rounded-lg bg-rose-500/5 border border-rose-500/20 flex items-center justify-center text-center overflow-hidden">
-          <div className="inline-flex items-center max-w-full min-w-0 px-2 py-0.5 rounded-full border border-dashed border-rose-600/70 text-rose-600 dark:text-rose-400 font-bold text-mini text-center leading-tight break-words -rotate-1">
-            <span>{preset.sampleText || preset.label}</span>
-          </div>
-        </div>
-      );
-
-    case 'badge':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <span className="inline-flex items-center max-w-full min-w-0 px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-mini text-center leading-tight break-words shadow-2xs font-tajawal">
-            {preset.sampleText || preset.label}
-          </span>
-        </div>
-      );
-
-    case 'studio-date':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <div className="inline-flex items-center max-w-full min-w-0 gap-1 px-2 py-0.5 rounded-md bg-card text-foreground border border-border/60 text-mini font-semibold shadow-2xs font-cairo">
-            <Calendar className="w-3 h-3 text-muted-foreground shrink-0" weight="bold" />
-            <span className="min-w-0 text-center leading-tight break-words">تاريخ اليوم</span>
-          </div>
-        </div>
-      );
-
-    case 'photographer-tag':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <div className="inline-flex items-center max-w-full min-w-0 gap-1 px-2 py-0.5 rounded-md bg-card text-muted-foreground border border-border/50 text-mini font-medium shadow-2xs">
-            <Camera className="w-3 h-3 text-foreground/80 shrink-0" weight="bold" />
-            <span className="min-w-0 text-center leading-tight break-words">بصمة المصور</span>
-          </div>
-        </div>
-      );
-
-    case 'watermark':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-muted/40 border border-border/40 flex items-center justify-center text-center overflow-hidden relative">
-          <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:6px_6px] dark:bg-[radial-gradient(#fff_1px,transparent_1px)]" />
-          <span
-            className="max-w-full text-center text-mini font-black text-foreground/35 -rotate-12 tracking-widest leading-tight break-words z-10"
-            style={{ fontFamily: 'Alexandria, sans-serif' }}
-          >
-            GRIDO مسودة
-          </span>
-        </div>
-      );
-
-    case 'caption-card':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center text-center overflow-hidden">
-          <div className="max-w-full px-2 py-0.5 rounded border border-border/80 bg-background/90 text-foreground text-mini font-medium text-center leading-tight break-words shadow-2xs font-tajawal">
-            {preset.sampleText || preset.label}
-          </div>
-        </div>
-      );
-
-    case 'congrats':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-center overflow-hidden">
-          <span className="max-w-full text-center text-xs font-extrabold font-cairo text-emerald-700 dark:text-emerald-300 leading-tight break-words drop-shadow-2xs">
-            🎉 {preset.sampleText || preset.label}
-          </span>
-        </div>
-      );
-
-    case 'sale-offer':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-red-500/10 border border-red-500/25 flex items-center justify-center text-center overflow-hidden">
-          <span
-            className="inline-flex items-center max-w-full min-w-0 px-2 py-0.5 rounded-md bg-red-600 text-white font-black text-mini text-center leading-tight break-words tracking-wide shadow-2xs"
-            style={{ fontFamily: 'Changa, sans-serif' }}
-          >
-            🔥 {preset.sampleText || preset.label}
-          </span>
-        </div>
-      );
-
-    case 'certificate':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-blue-950/10 dark:bg-blue-950/30 border border-blue-500/30 flex items-center justify-center text-center overflow-hidden">
-          <span
-            className="max-w-full text-center text-xs font-bold text-blue-900 dark:text-blue-200 tracking-wide leading-tight break-words border-b border-blue-500/40 pb-0.5"
-            style={{ fontFamily: "'Reem Kufi', sans-serif" }}
-          >
-            📜 {preset.sampleText || preset.label}
-          </span>
-        </div>
-      );
-
-    case 'special-price':
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-card border border-border/60 flex items-center justify-center text-center overflow-hidden">
-          <span className="inline-flex items-center max-w-full min-w-0 px-2 py-0.5 rounded-md bg-sky-600 text-white font-bold text-mini text-center leading-tight break-words shadow-2xs font-tajawal">
-            🏷️ {preset.sampleText || preset.label}
-          </span>
-        </div>
-      );
-
-    default:
-      return (
-        <div className="w-full h-full px-2 rounded-lg bg-muted/60 border border-border/60 flex items-center justify-center text-center overflow-hidden">
-          <span className="max-w-full text-center text-xs font-bold text-foreground leading-tight break-words">
-            {preset.sampleText || preset.label}
-          </span>
-        </div>
-      );
-  }
-}
-
 export interface FreeformElementsTabProps {
   category: 'stickers' | 'shapes' | 'text';
 }
 
-export const FreeformElementsTab = React.memo(function FreeformElementsTab({
+const FreeformElementsContent = React.memo(function FreeformElementsContent({
   category: activeCategory,
-}: FreeformElementsTabProps) {
+}: {
+  category: 'stickers' | 'shapes';
+}) {
   const [isInserting, setIsInserting] = useState<string | null>(null);
 
   const addShapeElement = useEditorStore((state) => state.addShapeElement);
-  const addTextPreset = useEditorStore((state) => state.addTextPreset);
   const addImageElement = useEditorStore((state) => state.addImageElement);
 
   // تصفية الملصقات سريعة العرض
@@ -311,30 +131,12 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
     ];
   }, [selectedStickerFilter, stickerGroups]);
 
-  // تصفية النصوص الجاهزة سريعة العرض
-  const [selectedTextFilter, setSelectedTextFilter] = useState<string>('all');
-
-  const displayedTextPresets = useMemo(() => {
-    if (selectedTextFilter === 'all') {
-      return QUICK_TEXT_PRESETS.filter((p) => p.category !== 'titles');
-    }
-    return QUICK_TEXT_PRESETS.filter((p) => p.category === selectedTextFilter);
-  }, [selectedTextFilter]);
-
   // إضافة شكل هندسي بنقرة واحدة — من الكتالوج الموحّد مباشرة
   const handleAddShape = useCallback(
     (item: ShapeCatalogItem) => {
       addShapeElement(item.kind, item.path, { aspect: item.aspect, defaults: item.defaults });
     },
     [addShapeElement],
-  );
-
-  // إضافة نص جاهز بنقرة واحدة
-  const handleAddText = useCallback(
-    (item: QuickTextItem) => {
-      addTextPreset(item.id);
-    },
-    [addTextPreset],
   );
 
   // إدراج ملصق / ختم بنقرة واحدة
@@ -522,108 +324,15 @@ export const FreeformElementsTab = React.memo(function FreeformElementsTab({
           })}
         </div>
       )}
-
-      {/* ✍️ 3. استعراض النصوص والتنسيقات الجاهزة بتصميم متطور */}
-      {activeCategory === 'text' && (
-        <div className="space-y-3">
-          {/* هرمية العناوين السريعة — بلا ترويسة زائدة: الأزرار تكفي */}
-          <div className="grid grid-cols-3 gap-1.5">
-            {/* 1. عنوان رئيسي H1 */}
-            <button
-              type="button"
-              data-testid="element-add-text-heading"
-              onClick={() => {
-                addTextPreset('heading');
-              }}
-              title="عنوان رئيسي عريض"
-              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none"
-            >
-              <span className="w-5 h-5 rounded-md bg-muted text-foreground flex items-center justify-center shrink-0 font-bold text-mini border border-border/60 font-mono">
-                H1
-              </span>
-              <span className="text-xs font-bold text-foreground truncate group-hover:text-foreground transition-colors">
-                رئيسي
-              </span>
-            </button>
-
-            {/* 2. عنوان فرعي H2 */}
-            <button
-              type="button"
-              data-testid="element-add-text-subheading"
-              onClick={() => {
-                addTextPreset('subheading');
-              }}
-              title="عنوان فرعي (28px)"
-              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none"
-            >
-              <span className="w-5 h-5 rounded-md bg-muted text-foreground/80 flex items-center justify-center shrink-0 font-bold text-mini border border-border/60 font-mono">
-                H2
-              </span>
-              <span className="text-xs font-semibold text-foreground truncate group-hover:text-foreground transition-colors">
-                فرعي
-              </span>
-            </button>
-
-            {/* 3. نص فقرة P */}
-            <button
-              type="button"
-              data-testid="element-add-text-body"
-              onClick={() => {
-                addTextPreset('body');
-              }}
-              title="نص فقرة (18px)"
-              className="group flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg bg-card hover:bg-accent border border-border/60 hover:border-foreground/40 transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none shadow-2xs select-none"
-            >
-              <span className="w-5 h-5 rounded-md bg-muted/60 text-muted-foreground flex items-center justify-center shrink-0 font-medium text-mini border border-border/40 font-mono">
-                P
-              </span>
-              <span className="text-xs font-normal text-muted-foreground truncate group-hover:text-foreground transition-colors">
-                فقرة
-              </span>
-            </button>
-          </div>
-
-          {/* شريط الكبسولات الذكية لتصفية الأنماط والتأثيرات */}
-          <FluentFilterChips
-            layoutId="freeform-text-filter-chips"
-            value={selectedTextFilter}
-            onChange={setSelectedTextFilter}
-            size="sm"
-            className="w-full justify-between"
-            options={TEXT_FILTER_OPTIONS}
-          />
-
-          {/* شبكة بطاقات الأنماط والتأثيرات الجاهزة مع معاينة حية واقعية WYSIWYG */}
-          <div className="grid grid-cols-2 gap-2 px-1">
-            {displayedTextPresets.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                data-testid={`element-add-preset-${preset.id}`}
-                onClick={() => handleAddText(preset)}
-                title={preset.label}
-                className="group relative w-full bg-card/70 hover:bg-card border border-border/60 hover:border-foreground/40 rounded-md p-2 transition-colors duration-150 flex flex-col items-center justify-between cursor-pointer shadow-2xs hover:shadow-fluent-8 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none overflow-hidden text-start"
-              >
-                {/* صندوق المعاينة الحية الواقعية */}
-                <div className="w-full aspect-[16/9] flex items-center justify-center mb-1.5 overflow-hidden rounded-lg">
-                  {renderTextPresetPreview(preset)}
-                </div>
-
-                {/* تذييل البطاقة: الاسم + أيقونة إدراج فقط (بلا تصنيف مكرر) */}
-                <div className="w-full flex items-start justify-between gap-1 pt-1">
-                  <span className="min-w-0 text-xs font-medium text-foreground leading-tight break-words">
-                    {preset.label}
-                  </span>
-                  <Plus
-                    className="w-3.5 h-3.5 mt-0.5 text-muted-foreground group-hover:text-foreground shrink-0"
-                    weight="bold"
-                  />
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
+});
+
+export const FreeformElementsTab = React.memo(function FreeformElementsTab({
+  category: activeCategory,
+}: FreeformElementsTabProps) {
+  if (activeCategory === 'text') {
+    return <FreeformTextTab />;
+  }
+  return <FreeformElementsContent category={activeCategory} />;
 });
