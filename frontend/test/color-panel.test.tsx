@@ -41,4 +41,126 @@ describe('components/color-panel', () => {
 
     expect(document.querySelectorAll('[data-color-panel-wheel]')).toHaveLength(1);
   });
+
+  it('يدعم قطارة الشاشة ويستدعي onChange باللون المحدد عند نجاح سحب اللون', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const openMock = vi.fn().mockResolvedValue({ sRGBHex: '#2563EB' });
+    const originalEyeDropper = (window as unknown as { EyeDropper?: unknown }).EyeDropper;
+
+    class MockEyeDropper {
+      open = openMock;
+    }
+    (window as unknown as { EyeDropper: unknown }).EyeDropper = MockEyeDropper;
+
+    try {
+      renderField(<ColorField color="#FF0000" onChange={onChange} ariaLabel="تعبئة" />);
+
+      await user.click(screen.getByRole('button', { name: 'تعبئة' }));
+
+      const dropperBtn = screen.getByRole('button', { name: 'قطارة الشاشة' });
+      expect(dropperBtn).toBeInTheDocument();
+
+      await user.click(dropperBtn);
+
+      expect(openMock).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith('#2563EB');
+    } finally {
+      if (originalEyeDropper) {
+        (window as unknown as { EyeDropper: unknown }).EyeDropper = originalEyeDropper;
+      } else {
+        delete (window as unknown as { EyeDropper?: unknown }).EyeDropper;
+      }
+    }
+  });
+
+  it('يتعامل بسلام مع إلغاء قطارة الشاشة (AbortError) دون إغلاق المنتقي أو إطلاق أخطاء', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const abortErr = new Error('User canceled');
+    abortErr.name = 'AbortError';
+    const openMock = vi.fn().mockRejectedValue(abortErr);
+    const originalEyeDropper = (window as unknown as { EyeDropper?: unknown }).EyeDropper;
+
+    class MockEyeDropper {
+      open = openMock;
+    }
+    (window as unknown as { EyeDropper: unknown }).EyeDropper = MockEyeDropper;
+
+    try {
+      renderField(<ColorField color="#FF0000" onChange={onChange} ariaLabel="تعبئة" />);
+
+      await user.click(screen.getByRole('button', { name: 'تعبئة' }));
+
+      const dropperBtn = screen.getByRole('button', { name: 'قطارة الشاشة' });
+      await user.click(dropperBtn);
+
+      expect(openMock).toHaveBeenCalledTimes(1);
+      expect(onChange).not.toHaveBeenCalled();
+      expect(document.querySelectorAll('[data-color-panel-wheel]')).toHaveLength(1);
+    } finally {
+      if (originalEyeDropper) {
+        (window as unknown as { EyeDropper: unknown }).EyeDropper = originalEyeDropper;
+      } else {
+        delete (window as unknown as { EyeDropper?: unknown }).EyeDropper;
+      }
+    }
+  });
+
+  it('يتراجع تلقائياً إلى قطارة الكانفاس الداخلية ويسحب لون البكسل بدقة', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const originalEyeDropper = (window as unknown as { EyeDropper?: unknown }).EyeDropper;
+    delete (window as unknown as { EyeDropper?: unknown }).EyeDropper;
+
+    // تجهيز عنصر canvas وهمي قابل للقراءة بواسطة elementsFromPoint
+    const canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 100;
+    canvas.getBoundingClientRect = vi.fn().mockReturnValue({
+      width: 100,
+      height: 100,
+      left: 0,
+      top: 0,
+      right: 100,
+      bottom: 100,
+    });
+    const mockCtx = {
+      getImageData: vi.fn().mockReturnValue({ data: [37, 99, 235, 255] }),
+    };
+    canvas.getContext = vi.fn().mockReturnValue(mockCtx) as unknown as typeof canvas.getContext;
+    document.body.appendChild(canvas);
+
+    const originalElementsFromPoint = document.elementsFromPoint;
+    document.elementsFromPoint = vi.fn().mockReturnValue([canvas]);
+
+    try {
+      renderField(<ColorField color="#FF0000" onChange={onChange} ariaLabel="تعبئة" />);
+
+      await user.click(screen.getByRole('button', { name: 'تعبئة' }));
+
+      const dropperBtn = screen.getByRole('button', { name: 'قطارة الشاشة' });
+      await user.click(dropperBtn);
+
+      // انتظار تسجيل مستمع النقر
+      await new Promise((r) => setTimeout(r, 50));
+
+      // محاكاة النقر على موضع الكانفاس
+      const pointerEvent = new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 50,
+        clientY: 50,
+      });
+      window.dispatchEvent(pointerEvent);
+
+      expect(onChange).toHaveBeenCalledWith('#2563EB');
+    } finally {
+      document.elementsFromPoint = originalElementsFromPoint;
+      canvas.remove();
+      if (originalEyeDropper) {
+        (window as unknown as { EyeDropper: unknown }).EyeDropper = originalEyeDropper;
+      }
+    }
+  });
 });

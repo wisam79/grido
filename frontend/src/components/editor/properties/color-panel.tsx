@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { Check, Copy, Eyedropper, Palette } from '@/components/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -55,6 +56,7 @@ export function ColorField({
   ariaLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const isDropperActiveRef = useRef(false);
   const name = ariaLabel ?? (typeof label === 'string' ? label : 'اللون');
 
   const swatchFace = (
@@ -165,31 +167,109 @@ export function ColorField({
         sideOffset={8}
         align="start"
         collisionPadding={12}
+        onPointerDownOutside={(e) => {
+          if (isDropperActiveRef.current) {
+            e.preventDefault();
+          }
+        }}
+        onInteractOutside={(e) => {
+          if (isDropperActiveRef.current) {
+            e.preventDefault();
+          }
+        }}
+        onFocusOutside={(e) => {
+          if (isDropperActiveRef.current) {
+            e.preventDefault();
+          }
+        }}
       >
         <div className="pb-2">
           <span className="truncate text-xs font-semibold text-foreground/90">{name}</span>
         </div>
-        {open && <ColorWheelPicker color={color} onChange={onChange} />}
+        {open && (
+          <ColorWheelPicker
+            color={color}
+            onChange={onChange}
+            onDropperActiveChange={(active) => {
+              isDropperActiveRef.current = active;
+            }}
+          />
+        )}
       </PopoverContent>
     </Popover>
   );
 }
 
+function sampleColorFromPoint(clientX: number, clientY: number): string | null {
+  if (typeof document === 'undefined') return null;
+
+  const elements = document.elementsFromPoint(clientX, clientY);
+
+  // 1. أولاً: فحص طبقات الكانفاس (Konva Canvas Layers) وقراءة بيانات البكسل بدقة
+  for (const el of elements) {
+    if (el instanceof HTMLCanvasElement) {
+      try {
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) continue;
+        const scaleX = el.width / rect.width;
+        const scaleY = el.height / rect.height;
+        const px = Math.floor((clientX - rect.left) * scaleX);
+        const py = Math.floor((clientY - rect.top) * scaleY);
+        const ctx = el.getContext('2d', { willReadFrequently: true });
+        if (ctx) {
+          const data = ctx.getImageData(px, py, 1, 1).data;
+          if (data[3] > 0) {
+            const r = data[0];
+            const g = data[1];
+            const b = data[2];
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+          }
+        }
+      } catch {
+        // استمرار المحاولة مع الطبقات الأخرى
+      }
+    }
+  }
+
+  // 2. ثانياً: فحص ألوان خلفيات عناصر DOM كبديل احتياطي
+  for (const el of elements) {
+    if (el instanceof HTMLElement) {
+      const bg = window.getComputedStyle(el).backgroundColor;
+      if (bg && bg !== 'transparent' && !bg.startsWith('rgba(0, 0, 0, 0)')) {
+        const match = bg.match(/\d+/g);
+        if (match && match.length >= 3) {
+          const r = Number(match[0]);
+          const g = Number(match[1]);
+          const b = Number(match[2]);
+          return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 export function ColorWheelPicker({
   color,
   onChange,
+  onDropperActiveChange,
 }: {
   color: string;
   onChange: (hex: string) => void;
+  onDropperActiveChange?: (active: boolean) => void;
 }) {
   const isTransparent = color === 'transparent';
   const [inputValue, setInputValue] = useState(color);
   const [copied, setCopied] = useState(false);
+  const [isDropping, setIsDropping] = useState(false);
   const copiedTimerRef = useRef<number | null>(null);
+  const dropperTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
       if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
+      if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
     };
   }, []);
 
@@ -219,24 +299,102 @@ export function ColorWheelPicker({
     }
   };
 
-  const handleEyeDropper = async () => {
-    if (typeof window !== 'undefined' && 'EyeDropper' in window) {
+  const activateInAppSampler = () => {
+    setIsDropping(true);
+    onDropperActiveChange?.(true);
+    document.body.style.cursor = 'crosshair';
+    toast.info('انقر على أي صورة أو موضع في الكانفاس لسحب لونه (Esc للإلغاء)', {
+      id: 'eyedropper-active-hint',
+      duration: 10000,
+    });
+
+    const cleanup = () => {
+      setIsDropping(false);
+      document.body.style.cursor = '';
+      toast.dismiss('eyedropper-active-hint');
+      window.removeEventListener('pointerdown', handlePointerDown, true);
+      window.removeEventListener('keydown', handleKeyDown, true);
+      if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
+      dropperTimerRef.current = window.setTimeout(() => {
+        dropperTimerRef.current = null;
+        onDropperActiveChange?.(false);
+      }, 300);
+    };
+
+    const handlePointerDown = (evt: PointerEvent) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+
+      const hex = sampleColorFromPoint(evt.clientX, evt.clientY);
+      if (hex) {
+        setInputValue(hex);
+        onChange(hex);
+        toast.success(`تم اختيار اللون: ${hex}`);
+      }
+      cleanup();
+    };
+
+    const handleKeyDown = (evt: KeyboardEvent) => {
+      if (evt.key === 'Escape') {
+        cleanup();
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown, true);
+    window.addEventListener('keydown', handleKeyDown, true);
+  };
+
+  const handleEyeDropper = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (typeof window === 'undefined') return;
+
+    if ('EyeDropper' in window) {
+      setIsDropping(true);
+      onDropperActiveChange?.(true);
+      const startTime = Date.now();
+
       try {
         const eyeDropper = new (
           window as unknown as {
             EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> };
           }
         ).EyeDropper();
+
         const result = await eyeDropper.open();
         if (result?.sRGBHex) {
           const upper = result.sRGBHex.toUpperCase();
           setInputValue(upper);
           onChange(upper);
+          toast.success(`تم اختيار اللون: ${upper}`);
+          setIsDropping(false);
+          if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
+          dropperTimerRef.current = window.setTimeout(() => {
+            dropperTimerRef.current = null;
+            onDropperActiveChange?.(false);
+          }, 300);
+          return;
         }
-      } catch {
-        // cancelled
+      } catch (err: unknown) {
+        const elapsed = Date.now() - startTime;
+        const isAbort = (err as { name?: string })?.name === 'AbortError';
+
+        // إلغاء يدوي صريح من المستخدم بعد استمرار الجلسة لأكثر من ربع ثانية
+        if (isAbort && elapsed > 250) {
+          setIsDropping(false);
+          if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
+          dropperTimerRef.current = window.setTimeout(() => {
+            dropperTimerRef.current = null;
+            onDropperActiveChange?.(false);
+          }, 300);
+          return;
+        }
       }
     }
+
+    // الانتقال التلقائي للقطارة التفاعلية الداخلية في حال تعذر أو رفض المتصفح
+    activateInAppSampler();
   };
 
   const handleCopyHex = () => {
@@ -251,7 +409,7 @@ export function ColorWheelPicker({
     }
   };
 
-  const hasEyeDropper = typeof window !== 'undefined' && 'EyeDropper' in window;
+  const hasEyeDropper = typeof window !== 'undefined';
   const displayColor = isTransparent ? '#FFFFFF' : color;
 
   return (
@@ -290,11 +448,18 @@ export function ColorWheelPicker({
           <button
             type="button"
             onClick={handleEyeDropper}
-            className="w-8 h-8 rounded-lg border border-border/80 bg-card hover:bg-muted/60 text-muted-foreground hover:text-primary transition-colors cursor-pointer flex items-center justify-center shrink-0 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-            title="قطارة الشاشة"
+            className={cn(
+              'w-8 h-8 rounded-lg border border-border/80 bg-card hover:bg-muted/60 text-muted-foreground hover:text-primary transition-colors cursor-pointer flex items-center justify-center shrink-0 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
+              isDropping &&
+                'border-primary bg-primary/15 text-primary ring-2 ring-primary/30 animate-pulse',
+            )}
+            title={
+              isDropping ? 'انقر على أي نقطة بالشاشة لاختيار لونها (Esc للإلغاء)' : 'قطارة الشاشة'
+            }
             aria-label="قطارة الشاشة"
+            aria-pressed={isDropping}
           >
-            <Eyedropper className="w-4 h-4" weight="regular" />
+            <Eyedropper className="w-4 h-4" weight={isDropping ? 'fill' : 'regular'} />
           </button>
         )}
 

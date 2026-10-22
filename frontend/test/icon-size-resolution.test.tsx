@@ -71,9 +71,9 @@ describe('دقة الأيقونات (Fluent native grid resolution)', () => {
     const at12 = viewBoxOf(<CaretDown className="w-3 h-3" />);
     expect(at12.viewBox).toBe('0 0 12 12');
 
-    // خاصية size لها الأولوية على الأصناف
-    const at24 = viewBoxOf(<Sparkle size={24} className="w-3.5 h-3.5" />);
-    expect(at24.viewBox).toBe('0 0 24 24');
+    // خاصية size لها الأولوية على الأصناف (20 مقابل صنف 14 الذي يُقرَّب إلى 16)
+    const sizeWins = viewBoxOf(<Sparkle size={20} className="w-3.5 h-3.5" />);
+    expect(sizeWins.viewBox).toBe('0 0 20 20');
 
     // بلا أي تلميح: الافتراضي 16 (يطابق قاعدة Button)
     const fallback = viewBoxOf(<FileText />);
