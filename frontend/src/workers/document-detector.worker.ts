@@ -11,7 +11,10 @@
 
 import { autoDetectAllDocumentCorners } from '../components/editor/document-scanner/core/document-detector';
 import { detectDocumentsWithOpenCVFromImageData } from '../components/editor/document-scanner/core/opencv-detector';
-import { loadOpenCV } from '../components/editor/document-scanner/opencv-loader';
+import {
+  loadOpenCV,
+  WORKER_LOAD_TIMEOUT_MS,
+} from '../components/editor/document-scanner/opencv-loader';
 
 import type {
   DetectedDocument,
@@ -72,6 +75,7 @@ async function handleOpenCv(data: DetectWorkerMessage) {
       originalWidth,
       originalHeight,
       mode ?? 'multi',
+      WORKER_LOAD_TIMEOUT_MS,
     );
     ctx.postMessage({ type: 'opencv-success', requestId, result });
   } catch (err) {
@@ -85,7 +89,7 @@ ctx.onmessage = (e: MessageEvent<DetectWorkerMessage>) => {
 
   if (data.type === 'warmup') {
     // تهيئة OpenCV في الخلفية داخل العامل — بلا تجميد للخيط الرئيسي.
-    void loadOpenCV();
+    void loadOpenCV(WORKER_LOAD_TIMEOUT_MS);
     return;
   }
 

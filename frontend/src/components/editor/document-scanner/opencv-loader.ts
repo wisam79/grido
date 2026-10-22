@@ -24,6 +24,10 @@ let inFlight: Promise<CvRuntime | null> | null = null;
 // أو قرص Wails يتجاوز 3s بسهولة — 10s تمنع السقوط الظالم لمسار JS.
 const LOAD_TIMEOUT_MS = 10_000;
 
+// العامل الخلفي يمنح WASM وقتاً أطول للتهيئة الباردة (قياس CI: ~45s) لأن
+// سقف تجربة المستخدم يبقى في document-detector (4s) لا في مهلة التحميل.
+export const WORKER_LOAD_TIMEOUT_MS = 90_000;
+
 /** Minimal structural probe used to confirm a candidate is the cv runtime. */
 function hasMatConstructor(value: unknown): value is CvRuntimeLike {
   return !!value && typeof value === 'object' && typeof (value as CvRuntimeLike).Mat === 'function';
@@ -52,7 +56,7 @@ export function getLoadedOpenCV(): CvRuntime | null {
   return null;
 }
 
-export async function loadOpenCV(): Promise<CvRuntime | null> {
+export async function loadOpenCV(timeoutMs: number = LOAD_TIMEOUT_MS): Promise<CvRuntime | null> {
   if (cached) return cached;
   if (inFlight) return inFlight;
 
@@ -62,7 +66,7 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
       try {
         const modPromise = import('@techstark/opencv-js');
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('OpenCV WASM load timeout')), LOAD_TIMEOUT_MS);
+          setTimeout(() => reject(new Error('OpenCV WASM load timeout')), timeoutMs);
         });
         rawMod = await Promise.race([modPromise, timeoutPromise]);
       } catch {
@@ -151,7 +155,7 @@ export async function loadOpenCV(): Promise<CvRuntime | null> {
           probe();
           timeoutHandle = setTimeout(() => {
             if (!settled) reject(new Error('OpenCV WASM init timeout'));
-          }, LOAD_TIMEOUT_MS);
+          }, timeoutMs);
         });
 
         const finalCv = (hasMatConstructor(cvRuntime) ? cvRuntime : getGlobal().cv) as unknown as

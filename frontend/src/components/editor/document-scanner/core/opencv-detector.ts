@@ -172,11 +172,12 @@ export async function detectDocumentsWithOpenCVFromImageData(
   originalWidth: number,
   originalHeight: number,
   mode: DetectionMode = 'multi',
+  loadTimeoutMs?: number,
 ): Promise<DetectionResult | null> {
   let cvFull: CvRuntime | null = getLoadedOpenCV();
   if (!cvFull) {
     try {
-      cvFull = await loadOpenCV();
+      cvFull = await loadOpenCV(loadTimeoutMs);
     } catch {
       return null;
     }
