@@ -13,11 +13,7 @@ const QUICK_COLORS = [
   { hex: '#000000', name: 'أسود' },
   { hex: '#FFFFFF', name: 'أبيض' },
   { hex: '#EF4444', name: 'أحمر' },
-  { hex: '#F59E0B', name: 'برتقالي' },
-  { hex: '#10B981', name: 'أخضر' },
   { hex: '#3B82F6', name: 'أزرق' },
-  { hex: '#8B5CF6', name: 'بنفسجي' },
-  { hex: '#EC4899', name: 'وردي' },
 ];
 
 export interface ColorPanelProps {
@@ -145,14 +141,19 @@ export function ColorField({
                     aria-label={`لون ${quick.name}`}
                     aria-pressed={isActive}
                     onClick={() => onChange(quick.hex)}
-                    className={cn(
-                      'h-4 w-4 shrink-0 cursor-pointer rounded-full border shadow-2xs transition-transform hover:scale-110 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                      isActive
-                        ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-card'
-                        : 'border-black/20 dark:border-white/25',
-                    )}
-                    style={{ backgroundColor: quick.hex }}
-                  />
+                    className="group flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'h-4 w-4 rounded-full border shadow-2xs transition-transform group-hover:scale-110',
+                        isActive
+                          ? 'border-primary ring-2 ring-primary ring-offset-1 ring-offset-card'
+                          : 'border-black/20 dark:border-white/25',
+                      )}
+                      style={{ backgroundColor: quick.hex }}
+                    />
+                  </button>
                 );
               })}
             </div>

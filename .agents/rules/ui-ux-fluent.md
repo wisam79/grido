@@ -1,9 +1,6 @@
 ---
 trigger: glob
-globs:
-  - "frontend/src/**/*.{ts,tsx,css,html}"
-  - "frontend/index.html"
-  - "admin-web/src/**/*.{ts,tsx,css,html}"
+glob: "{frontend/src/**/*.{ts,tsx,css,html},frontend/index.html,admin-web/src/**/*.{ts,tsx,css,html}}"
 description: "قواعد واجهة وتجربة المستخدم ومعايير Microsoft Fluent 2 القياسية في Grido Studio"
 ---
 

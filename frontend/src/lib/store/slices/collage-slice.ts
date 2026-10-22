@@ -38,6 +38,9 @@ export interface CollageSlice {
     assignments: { slotId: string; src: string }[],
     lastEditedSrc?: string | null,
   ) => void;
+  /** قائمة صور معالج التعبئة — حالة جلسة تبقى عبر تبويبات لوحة الكولاج */
+  autofillImages: string[];
+  setAutofillImages: (images: string[]) => void;
 
   setCollageGap: (gap: number) => void;
   setCollageMargin: (margin: number) => void;
@@ -146,6 +149,7 @@ export const DEFAULT_COLLAGE_STATE = {
   collageShowEndCutLine: true,
   collageStrokeWidth: 0,
   collageStrokeColor: '#000000',
+  autofillImages: [] as string[],
 };
 
 type CollageCross = CollageSlice & {
@@ -166,6 +170,8 @@ type CollageCross = CollageSlice & {
 
 export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice> = (set, get) => ({
   ...DEFAULT_COLLAGE_STATE,
+
+  setAutofillImages: (images) => set({ autofillImages: images }),
 
   setTemplate: (template) => {
     if (template) {
@@ -342,25 +348,28 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
 
   setSlotImagesBatch: (assignments, lastEditedSrc) => {
     if (assignments.length === 0) return;
-    // التقاط القيم السابقة قبل التحديث — مقارنة ما بعد التحديث كانت
+    // فهارس O(1) بدل find داخل map — كانت الدفعة O(خانات × إسنادات)
+    // وتُجمّد اللوحة عند توزيع مئات الصور من مجلد واحد.
+    const srcBySlot = new Map<string, string>();
+    for (const a of assignments) srcBySlot.set(a.slotId, a.src);
+    // قيم «قبل» من لقطة ما قبل التحديث — مقارنة ما بعد التحديث كانت
     // تبطل الكشف عن الاستبدالات دائماً (imageSrc أصبح يساوي الجديد)
-    const slotsAtBatch = get().slots.map((sl: CanvasSlot) => ({ ...sl }));
-    const prevBySlot = new Map(
-      assignments.map((a) => [a.slotId, slotsAtBatch.find((sl) => sl.id === a.slotId)?.imageSrc]),
-    );
+    const prevBySlot = new Map<string, string | undefined>();
+    for (const sl of get().slots) {
+      if (srcBySlot.has(sl.id)) prevBySlot.set(sl.id, sl.imageSrc);
+    }
     set((state) => ({
       slots: state.slots.map((sl: CanvasSlot) => {
-        const a = assignments.find((x) => x.slotId === sl.id);
-        return a
-          ? {
-              ...sl,
-              imageSrc: a.src,
-              filter: 'none',
-              brightness: 100,
-              contrast: 100,
-              saturation: 100,
-            }
-          : sl;
+        const nextSrc = srcBySlot.get(sl.id);
+        if (nextSrc === undefined) return sl;
+        return {
+          ...sl,
+          imageSrc: nextSrc,
+          filter: 'none',
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+        };
       }),
       lastEditedImage: lastEditedSrc ?? state.lastEditedImage,
     }));
@@ -390,9 +399,12 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       // حارس قِدم: نتجاهل النتيجة إذا استُبدلت الصورة مجدداً أثناء القياس —
       // كل قيم «قبل» مقروءة من لقطة ما قبل الدفعة (لتُطبَّق على خاناتها لا على
       // خانات دفعة أحدث تجاورها في نفس المللي ثانية)
+      const currentSrcBySlot = new Map(
+        get().slots.map((sl: CanvasSlot) => [sl.id, sl.imageSrc] as const),
+      );
       const toReset = candidates.filter((id) => {
-        const a = assignments.find((x) => x.slotId === id);
-        return !!a && get().slots.find((sl) => sl.id === id)?.imageSrc === a.src;
+        const nextSrc = srcBySlot.get(id);
+        return nextSrc !== undefined && currentSrcBySlot.get(id) === nextSrc;
       });
       if (toReset.length === 0) return;
       // تصحيح واحد مدموج في نفس الدفعة — لا إدخال سجل ثانٍ (H7): الدفعة كلها

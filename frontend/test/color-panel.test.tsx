@@ -13,6 +13,7 @@ describe('components/color-panel', () => {
     renderField(<ColorField color="#FF0000" onChange={vi.fn()} ariaLabel="تعبئة" />);
 
     expect(document.querySelectorAll('[data-color-panel-wheel]')).toHaveLength(0);
+    expect(screen.getAllByRole('button', { name: /^لون / })).toHaveLength(4);
   });
 
   it('يفتح منتقياً واحداً يحوي عجلة واحدة عند النقر على الرقعة', async () => {

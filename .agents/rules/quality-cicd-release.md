@@ -1,14 +1,6 @@
 ---
 trigger: glob
-globs:
-  - ".github/**/*"
-  - "scripts/**/*"
-  - "build/**/*"
-  - "Taskfile.yml"
-  - "package.json"
-  - "admin-web/netlify/**/*"
-  - "vitest.config.ts"
-  - "playwright.config.ts"
+glob: "{.github/**/*,scripts/**/*,build/**/*,Taskfile.yml,package.json,admin-web/netlify/**/*,vitest.config.ts,playwright.config.ts}"
 description: "قواعد جودة الكود، أتمتة البناء NSIS، إجراءات ترفيع الإصدارات، وسياسات CI/CD"
 ---
 

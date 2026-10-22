@@ -1,13 +1,6 @@
 ---
 trigger: glob
-globs:
-  - "internal/**/*.go"
-  - "main.go"
-  - "app.go"
-  - "modal_ai/**/*"
-  - "frontend/bindings/**/*"
-  - "frontend/wailsjs/**/*"
-  - "frontend/src/lib/wails/**/*"
+glob: "{internal/**/*.go,main.go,app.go,modal_ai/**/*,frontend/bindings/**/*,frontend/wailsjs/**/*,frontend/src/lib/wails/**/*}"
 description: "قواعد بنية Wails v3 والباك إند بلغة Go ونماذج الذكاء الاصطناعي والحصص"
 ---
 

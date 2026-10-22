@@ -264,7 +264,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
           onClick={resetToDefault}
           aria-label="إعادة تعيين إلى القيمة الافتراضية"
           title="إعادة تعيين"
-          className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
         >
           <ArrowCounterClockwise className="w-3 h-3" weight="bold" />
         </button>

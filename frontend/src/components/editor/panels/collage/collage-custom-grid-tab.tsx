@@ -8,7 +8,7 @@ import {
   Minus,
   Crosshair,
   X,
-  FloppyDisk,
+  BookmarkSimple,
   CornersOut,
   Rows,
   Scissors,
@@ -93,17 +93,7 @@ function DocumentPresetGraphic({ type, active }: { type: string; active: boolean
   const styleClass = ratioStyles[type] || 'w-4 h-6 rounded-md';
 
   return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        styleClass,
-        'border flex flex-col items-center justify-center p-0.5 transition-colors relative overflow-hidden',
-        activeBorder,
-      )}
-    >
-      <div className="w-2.5 h-2.5 rounded-full border border-current opacity-85 mt-0.5 shrink-0" />
-      <div className="w-3.5 h-2 rounded-t-full bg-current opacity-60 -mb-0.5 shrink-0" />
-    </div>
+    <div aria-hidden="true" className={cn(styleClass, 'border transition-colors', activeBorder)} />
   );
 }
 
@@ -285,30 +275,17 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
             <span className="font-mono font-bold text-foreground" dir="ltr">
               {maxRows}×{maxCols}
             </span>{' '}
-            صور ({maxPhotos})
+            صور
           </>
         }
         action={
-          <div className="flex items-center gap-1.5 select-none">
-            {/* شارات محايدة: معلومة دائمة لا إجراء — الأزرق يُحفظ للحالة الحية في بطاقة الإجراءات */}
-            <span
-              className="h-5 text-2xs font-bold font-mono px-2 rounded-full bg-muted text-muted-foreground border border-border/60 flex items-center select-none"
-              title="عدد صور الشبكة الحالية"
-              aria-label="عدد صور الشبكة الحالية"
-            >
-              <span className="font-mono" dir="ltr">
-                {totalPhotos}
-              </span>
-              <span>صور</span>
-            </span>
-            <span
-              className="h-5 text-2xs font-mono font-bold px-2 rounded-full bg-muted text-muted-foreground border border-border/60 flex items-center select-none"
-              title="نسبة تغطية الورقة"
-              aria-label="نسبة تغطية الورقة"
-            >
-              {coverage}%
-            </span>
-          </div>
+          <span
+            className="h-5 text-2xs font-mono font-bold px-2 rounded-full bg-muted text-muted-foreground border border-border/60 flex items-center select-none"
+            title="نسبة تغطية الورقة"
+            aria-label="نسبة تغطية الورقة"
+          >
+            {coverage}%
+          </span>
         }
       >
         {/* عدادات الصفوف والأعمدة — شبكة ثنائية متوازنة */}
@@ -671,7 +648,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 }}
                 title="حفظ في المكتبة"
               >
-                <FloppyDisk className="w-4 h-4" weight="duotone" />
+                <BookmarkSimple className="w-4 h-4" weight="regular" />
                 <span>حفظ كقالب</span>
               </Button>
             </>
@@ -697,7 +674,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 }}
                 title="حفظ في المكتبة"
               >
-                <FloppyDisk className="w-4 h-4" weight="duotone" />
+                <BookmarkSimple className="w-4 h-4" weight="regular" />
                 <span>حفظ كقالب</span>
               </Button>
             </>
@@ -724,7 +701,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
               <X className="w-3.5 h-3.5" weight="bold" />
             </Button>
             <Button type="button" onClick={handleSave}>
-              <FloppyDisk className="w-3.5 h-3.5" weight="bold" />
+              <BookmarkSimple className="w-3.5 h-3.5" weight="bold" />
               <span>حفظ</span>
             </Button>
           </div>

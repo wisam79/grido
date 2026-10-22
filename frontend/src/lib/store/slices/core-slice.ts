@@ -88,6 +88,7 @@ type CoreSliceCross = CoreSlice & {
   selectedIds: string[];
   editingTextId: string | null;
   slots: CanvasSlot[];
+  autofillImages: string[];
   template: PhotoTemplate | null;
   collageTemplate: CollageTemplate | null;
   printSettings: PrintSettings;
@@ -365,6 +366,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       collageShowEndCutLine: DEFAULT_COLLAGE_STATE.collageShowEndCutLine,
       collageStrokeWidth: 0,
       collageStrokeColor: '#000000',
+      autofillImages: [],
       showGrid: false,
       gridSize: 48,
       gridColor: '#000000',

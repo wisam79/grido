@@ -1,12 +1,6 @@
 ---
 trigger: glob
-globs:
-  - "frontend/src/components/editor/konva/**/*"
-  - "frontend/src/lib/canvas/**/*"
-  - "frontend/src/lib/export/**/*"
-  - "frontend/src/components/editor/canvas/**/*"
-  - "frontend/src/features/stickers/**/*"
-  - "frontend/src/components/editor/dialogs/print-dialog.tsx"
+glob: "{frontend/src/components/editor/konva/**/*,frontend/src/lib/canvas/**/*,frontend/src/lib/export/**/*,frontend/src/components/editor/canvas/**/*,frontend/src/features/stickers/**/*,frontend/src/components/editor/dialogs/print-dialog.tsx}"
 description: "قواعد محرك الرسم Konva Canvas والأداء والذاكرة ومعالجة الصور والتصدير عالي الدقة"
 ---
 

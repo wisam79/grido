@@ -38,6 +38,8 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(screen.getByText('الأعمدة')).toBeInTheDocument();
     expect(screen.getByText('ملء الورقة')).toBeInTheDocument();
     expect(screen.getByText('شريط علوي')).toBeInTheDocument();
+    // عدد الصور الحالي مشتق من الصفوف×الأعمدة — لا شارة مكررة له
+    expect(screen.queryByLabelText('عدد صور الشبكة الحالية')).not.toBeInTheDocument();
 
     // Section 2: Photo Size (مفتوح افتراضياً أيضاً)
     expect(screen.getByText('مقاس الصورة')).toBeInTheDocument();

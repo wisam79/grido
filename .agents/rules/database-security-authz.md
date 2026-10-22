@@ -1,13 +1,6 @@
 ---
 trigger: glob
-globs:
-  - "supabase/**/*"
-  - "internal/service/*auth*"
-  - "internal/service/session*"
-  - "internal/service/license*"
-  - "internal/service/supabase_client.go"
-  - "frontend/src/lib/store/slices/license-slice.ts"
-  - "frontend/src/components/editor/dialogs/account/**/*"
+glob: "{supabase/**/*,internal/service/*auth*,internal/service/session*,internal/service/license*,internal/service/supabase_client.go,frontend/src/lib/store/slices/license-slice.ts,frontend/src/components/editor/dialogs/account/**/*}"
 description: "قواعد أمان قاعدة البيانات وتفويض Supabase وسياسات RLS والمصادقة وتشفير الجلسات"
 ---
 
