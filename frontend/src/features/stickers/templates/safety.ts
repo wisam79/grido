@@ -50,28 +50,24 @@ export const SAFETY_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 340" width="500" height="340">
-  <rect x="12" y="12" width="476" height="316" rx="16" fill="${bg}" stroke="${primaryColor}" stroke-width="6" data-color-role="background"/>
-  <!-- Top Danger Bar -->
-  <rect x="25" y="25" width="450" height="60" rx="8" fill="${primaryColor}" data-color-role="primary"/>
-  <text data-field-id="warningTitle" x="250" y="65" font-family="${fontFamily}, sans-serif" font-size="${Math.round(30 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
+  <rect x="12" y="12" width="476" height="316" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <text data-field-id="warningTitle" data-max-width="420" x="250" y="64" font-family="${fontFamily}, sans-serif" font-size="${Math.round(30 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
     ${title}
   </text>
-  <!-- Box with cutter prohibition -->
-  <g transform="translate(195, 105)" data-color-role="primary">
-    <!-- Box outline -->
-    <rect x="10" y="35" width="90" height="65" fill="none" stroke="${secondaryColor}" stroke-width="5"/>
-    <line x1="55" y1="35" x2="55" y2="100" stroke="${secondaryColor}" stroke-width="3" stroke-dasharray="4,4"/>
-    <!-- Blade Icon -->
-    <path d="M 45,5 L 65,5 L 65,30 L 45,30 Z" fill="${secondaryColor}"/>
-    <polygon points="50,30 60,30 55,42" fill="${secondaryColor}"/>
-    <!-- Prohibition Red Circle & Slash -->
-    <circle cx="55" cy="45" r="50" fill="none" stroke="${primaryColor}" stroke-width="8"/>
-    <line x1="20" y1="10" x2="90" y2="80" stroke="${primaryColor}" stroke-width="8"/>
+  <path d="M36 85H464" stroke="${primaryColor}" stroke-width="1" opacity="0.35"/>
+  <g transform="rotate(35 250 163)" stroke="${secondaryColor}" stroke-linejoin="round" data-color-role="secondary">
+    <rect x="239" y="111" width="22" height="66" rx="5" fill="${secondaryColor}" stroke-width="2"/>
+    <path d="M240 177H260V199L240 216Z M240 191H260 M240 202L253 199" fill="none" stroke-width="3"/>
+    <path d="M246 123V159 M254 123V159" stroke="${backgroundColor}" stroke-width="2"/>
   </g>
-  <text data-field-id="enWarning" x="250" y="250" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1">
+  <g fill="none" stroke="${primaryColor}" stroke-width="9" data-color-role="primary">
+    <circle cx="250" cy="163" r="64"/>
+    <path d="M205 118L295 208"/>
+  </g>
+  <text data-field-id="enWarning" data-max-width="414" x="250" y="266" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1">
     ${en}
   </text>
-  <text data-field-id="subText" x="250" y="295" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
+  <text data-field-id="subText" data-max-width="414" x="250" y="306" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
     ${sub}
   </text>
 </svg>`;
@@ -114,23 +110,20 @@ export const SAFETY_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460" width="460" height="460">
-  <!-- Diamond Rotated Square -->
-  <g transform="translate(230, 230) rotate(45)">
-    <rect x="-150" y="-150" width="300" height="300" rx="14" fill="${primaryColor}" data-color-role="primary"/>
-    <rect x="-140" y="-140" width="280" height="280" rx="10" fill="${bg}" data-color-role="background"/>
+  <!-- Keep the red hazard diamond and black flame; do not soften the safety geometry. -->
+  <path d="M230 18L442 230L230 442L18 230Z" fill="${bg}" data-color-role="background"/>
+  <path d="M230 18L442 230L230 442L18 230Z" fill="none" stroke="${primaryColor}" stroke-width="9" stroke-linejoin="miter" data-color-role="primary"/>
+  <g fill="${secondaryColor}" data-color-role="secondary">
+    <path d="M225 96C240 123 222 137 239 151C241 138 252 130 253 118C275 139 284 161 284 180C284 211 261 231 230 231C199 231 178 211 178 181C178 163 189 145 201 136C198 157 207 166 216 170C207 145 231 128 225 96ZM230 175C233 190 251 194 251 207C251 219 242 225 230 225C218 225 210 217 210 207C210 194 224 189 230 175Z" fill-rule="evenodd"/>
+    <path d="M183 238H277V244H183Z"/>
   </g>
-  <!-- Flame Graphic -->
-  <g transform="translate(195, 100)" fill="${primaryColor}" data-color-role="primary">
-    <path d="M 35,0 C 45,35 70,55 70,90 C 70,125 45,145 35,145 C 25,145 0,125 0,90 C 0,55 25,35 35,0 Z"/>
-    <path d="M 35,45 C 42,65 52,80 52,105 C 52,125 38,135 35,135 C 32,135 18,125 18,105 C 18,80 28,65 35,45 Z" fill="#FBBF24"/>
-  </g>
-  <text data-field-id="mainText" x="230" y="280" font-family="${fontFamily}, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle">
+  <text data-field-id="mainText" data-max-width="304" x="230" y="286" font-family="${fontFamily}, sans-serif" font-size="${Math.round(26 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
     ${main}
   </text>
-  <text data-field-id="enText" x="230" y="315" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" letter-spacing="1">
+  <text data-field-id="enText" data-max-width="236" x="230" y="323" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" letter-spacing="0.5">
     ${en}
   </text>
-  <text data-field-id="hazardClass" x="230" y="365" font-family="monospace, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle">
+  <text data-field-id="hazardClass" data-max-width="126" x="230" y="372" font-family="${fontFamily}, monospace" font-size="${Math.round(23 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
     ${cls}
   </text>
 </svg>`;
@@ -178,22 +171,22 @@ export const SAFETY_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 340" width="500" height="340">
-  <rect x="12" y="12" width="476" height="316" rx="16" fill="${bg}" stroke="${primaryColor}" stroke-width="6" data-color-role="background"/>
-  <!-- Snowflake Icon -->
-  <g transform="translate(250, 85)" stroke="${primaryColor}" stroke-width="5" stroke-linecap="round" data-color-role="primary">
-    <line x1="0" y1="-35" x2="0" y2="35"/>
-    <line x1="-30" y1="-17" x2="30" y2="17"/>
-    <line x1="-30" y1="17" x2="30" y2="-17"/>
-    <circle cx="0" cy="0" r="8" fill="${primaryColor}"/>
+  <rect x="12" y="12" width="476" height="316" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <!-- Six equal branches keep the cold-chain pictogram clear without a font glyph. -->
+  <g transform="translate(250 80)" fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" data-color-role="primary">
+    <path d="M0-40V40M-34.6-20L34.6 20M-34.6 20L34.6-20"/>
+    <path d="M-10-31L0-21L10-31M-10 31L0 21L10 31"/>
+    <path d="M-10-31L0-21L10-31M-10 31L0 21L10 31" transform="rotate(60)"/>
+    <path d="M-10-31L0-21L10-31M-10 31L0 21L10 31" transform="rotate(120)"/>
   </g>
-  <text data-field-id="mainText" x="250" y="175" font-family="${fontFamily}, sans-serif" font-size="${Math.round(34 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle">
+  <text data-field-id="mainText" data-max-width="416" x="250" y="173" font-family="${fontFamily}, sans-serif" font-size="${Math.round(32 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     ${main}
   </text>
-  <rect x="130" y="200" width="240" height="52" rx="10" fill="${primaryColor}" data-color-role="primary"/>
-  <text data-field-id="temp" x="250" y="236" font-family="monospace, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
+  <text data-field-id="temp" data-max-width="408" x="250" y="240" font-family="${fontFamily}, monospace" font-size="${Math.round(43 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${temp}
   </text>
-  <text data-field-id="enText" x="250" y="295" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1">
+  <path d="M40 266H460" stroke="${primaryColor}" stroke-width="1" opacity="0.35"/>
+  <text data-field-id="enText" data-max-width="416" x="250" y="300" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1">
     ${en}
   </text>
 </svg>`;
@@ -239,31 +232,40 @@ export const SAFETY_TEMPLATES: StickerTemplate[] = [
       const title = escapeXml(fields.title || 'LITHIUM ION BATTERIES');
       const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
+      // Aggregate the diagonal safety hatching into two paths, with no patterns or filters.
+      const horizontalStripes = Array.from({ length: 19 }, (_, i) => {
+        const x = 28 + i * 24;
+        return `M${x} 16h16l-12 12h-16ZM${x} 352h16l-12 12h-16Z`;
+      }).join('');
+      const verticalStripes = Array.from({ length: 14 }, (_, i) => {
+        const y = 28 + i * 24;
+        return `M16 ${y}v16l12-12v-16ZM472 ${y}v16l12-12v-16Z`;
+      }).join('');
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 380" width="500" height="380">
-  <!-- Red Striped Border -->
-  <rect x="10" y="10" width="480" height="360" rx="14" fill="${bg}" stroke="${primaryColor}" stroke-width="12" stroke-dasharray="18,12" data-color-role="background"/>
-  <!-- Dual Battery Graphics with Fire -->
-  <g transform="translate(195, 45)" fill="${secondaryColor}">
-    <rect x="15" y="15" width="30" height="60" rx="4"/>
-    <rect x="23" y="8" width="14" height="7" rx="2"/>
-    <rect x="65" y="15" width="30" height="60" rx="4"/>
-    <rect x="73" y="8" width="14" height="7" rx="2"/>
-    <!-- Small Flame between batteries -->
-    <path d="M 55,25 C 60,35 68,45 68,60 C 68,75 55,85 55,85 C 55,85 42,75 42,60 C 42,45 50,35 55,25 Z" fill="${primaryColor}" data-color-role="primary"/>
+  <rect x="16" y="16" width="468" height="348" fill="${bg}" data-color-role="background"/>
+  <g fill="${primaryColor}" data-color-role="primary">
+    <path d="${horizontalStripes}"/>
+    <path d="${verticalStripes}"/>
   </g>
-  <text data-field-id="title" x="250" y="160" font-family="${fontFamily}, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1">
+  <!-- Two batteries, one damaged and emitting flame; black pictogram on the safety surface. -->
+  <g fill="${secondaryColor}" data-color-role="secondary">
+    <path d="M166 76H200V134H166ZM175 68H191V76H175Z"/>
+    <path d="M211 93H250L263 105L255 118L269 134H211ZM264 93H325V134H279L267 119L275 104Z"/>
+    <path d="M291 42C305 61 291 68 302 77C306 70 310 65 311 59C324 76 326 83 320 89H282C274 82 279 67 286 62C284 71 289 76 293 77C286 64 297 56 291 42Z"/>
+    <path d="M156 139H336V143H156Z"/>
+  </g>
+  <text data-field-id="title" data-max-width="412" x="250" y="187" font-family="${fontFamily}, sans-serif" font-size="${Math.round(23 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1">
     ${title}
   </text>
-  <!-- UN Code Box -->
-  <rect x="130" y="190" width="240" height="60" rx="8" fill="${secondaryColor}" data-color-role="secondary"/>
-  <text data-field-id="unCode" x="250" y="233" font-family="monospace, sans-serif" font-size="${Math.round(34 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
+  <text data-field-id="unCode" data-max-width="412" x="250" y="249" font-family="${fontFamily}, monospace" font-size="${Math.round(43 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${un}
   </text>
-  <text x="250" y="295" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="700" fill="#64748B" text-anchor="middle">
+  <path d="M48 270H452" stroke="${secondaryColor}" stroke-width="1" opacity="0.25"/>
+  <text data-max-width="404" x="250" y="299" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">
     For additional information:
   </text>
-  <text data-field-id="contactPhone" x="250" y="330" font-family="monospace, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
+  <text data-field-id="contactPhone" data-max-width="404" x="250" y="334" font-family="${fontFamily}, monospace" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${phone}
   </text>
 </svg>`;

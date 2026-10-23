@@ -10,6 +10,7 @@ import { blobToDataUrl, canvasToBlob } from '@/lib/canvas/canvas-blob';
 import { registerObjectUrl } from '@/lib/io/object-url-registry';
 
 import { assertRasterBudget } from './export-limits';
+import { embedStickerFonts } from './sticker-font-embed';
 
 export function escapeXml(unsafe: string): string {
   return unsafe
@@ -58,7 +59,8 @@ async function rasterizeSvgToCanvas(
   const budget = assertRasterBudget(width, height);
   await ensureFontsReady(fontFamilies).catch(() => null);
 
-  const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+  const portableSvg = await embedStickerFonts(svgString, fontFamilies ?? []);
+  const svgBlob = new Blob([portableSvg], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(svgBlob);
   const img = new Image();
   img.crossOrigin = 'anonymous';

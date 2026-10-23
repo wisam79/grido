@@ -13,8 +13,8 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 340,
     aspectRatio: 600 / 340,
     defaultColors: {
-      primary: '#1E293B',
-      secondary: '#0284C7',
+      primary: '#263441',
+      secondary: '#315A6F',
       background: '#FFFFFF',
     },
     fields: [
@@ -40,35 +40,30 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" width="600" height="340">
-  <rect x="10" y="10" width="580" height="320" rx="14" fill="${bg}" stroke="${primaryColor}" stroke-width="4" data-color-role="background"/>
-  <!-- Header Bar -->
-  <path d="M 10,24 A 14,14 0 0,1 24,10 L 576,10 A 14,14 0 0,1 590,24 L 590,70 L 10,70 Z" fill="${secondaryColor}" data-color-role="secondary"/>
-  <text data-field-id="productName" x="300" y="48" font-family="${fontFamily}, sans-serif" font-size="${Math.round(26 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
+  <rect x="12" y="12" width="576" height="316" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="1.5" data-color-role="background"/>
+  <path d="M36 30H92" stroke="${secondaryColor}" stroke-width="4" data-color-role="secondary"/>
+  <text data-field-id="productName" data-max-width="528" x="300" y="70" font-family="${fontFamily}, sans-serif" font-size="${Math.round(27 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
     ${name}
   </text>
-  <!-- Table Grid Lines -->
-  <line x1="10" y1="150" x2="590" y2="150" stroke="${primaryColor}" stroke-width="2" stroke-dasharray="4,4"/>
-  <line x1="10" y1="230" x2="590" y2="230" stroke="${primaryColor}" stroke-width="2" stroke-dasharray="4,4"/>
-  <line x1="320" y1="70" x2="320" y2="330" stroke="${primaryColor}" stroke-width="2"/>
-  <!-- Row 1: Production -->
-  <text x="455" y="118" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
+  <!-- Consistent label/value columns, with rules confined to the content measure. -->
+  <path d="M36 94H564" stroke="${primaryColor}" stroke-width="1.5"/>
+  <path d="M36 167H564M36 240H564M318 110V306" stroke="${primaryColor}" stroke-width="1" opacity="0.2"/>
+  <text data-max-width="222" x="444" y="140" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
     تاريخ الإنتاج (MFG):
   </text>
-  <text data-field-id="mfgDate" x="160" y="118" font-family="monospace" font-size="${Math.round(24 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
+  <text data-field-id="mfgDate" data-max-width="256" x="172" y="142" font-family="${fontFamily}, monospace" font-size="${Math.round(25 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${mfg}
   </text>
-  <!-- Row 2: Expiry -->
-  <text x="455" y="198" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
+  <text data-max-width="222" x="444" y="213" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
     تاريخ الانتهاء (EXP):
   </text>
-  <text data-field-id="expDate" x="160" y="198" font-family="monospace" font-size="${Math.round(24 * fs)}" font-weight="800" fill="#DC2626" text-anchor="middle">
+  <text data-field-id="expDate" data-max-width="256" x="172" y="215" font-family="${fontFamily}, monospace" font-size="${Math.round(25 * fs)}" font-weight="800" fill="#B91C1C" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${exp}
   </text>
-  <!-- Row 3: Batch Number -->
-  <text x="455" y="280" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
+  <text data-max-width="222" x="444" y="286" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
     رقم التشغيلة (BATCH):
   </text>
-  <text data-field-id="batchNo" x="160" y="280" font-family="monospace" font-size="${Math.round(22 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
+  <text data-field-id="batchNo" data-max-width="256" x="172" y="288" font-family="${fontFamily}, monospace" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${batch}
   </text>
 </svg>`;
@@ -84,9 +79,9 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 380,
     aspectRatio: 500 / 380,
     defaultColors: {
-      primary: '#BE185D',
-      secondary: '#1F2937',
-      background: '#FFF1F2',
+      primary: '#A74856',
+      secondary: '#493B3B',
+      background: '#FFF8F3',
     },
     fields: [
       { id: 'thankTitle', label: 'عبارة الشكر', type: 'text', defaultValue: 'شكراً لطلبك الجميل!' },
@@ -119,19 +114,17 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 380" width="500" height="380">
-  <rect x="15" y="15" width="470" height="350" rx="24" fill="${bg}" stroke="${primaryColor}" stroke-width="4" data-color-role="background"/>
-  <!-- Heart Icon inside circle -->
-  <circle cx="250" cy="85" r="42" fill="${primaryColor}" opacity="0.15" data-color-role="primary"/>
-  <path d="M 250,75 C 240,55 210,55 200,77 C 190,100 250,135 250,135 C 250,135 310,100 300,77 C 290,55 260,55 250,75 Z" fill="${primaryColor}" data-color-role="primary"/>
-  <text data-field-id="thankTitle" x="250" y="195" font-family="${fontFamily}, sans-serif" font-size="${Math.round(34 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <rect x="15" y="15" width="470" height="350" rx="10" fill="${bg}" stroke="${primaryColor}" stroke-width="1.5" data-color-role="background"/>
+  <!-- A small, open heart keeps the message, not the ornament, in the foreground. -->
+  <path d="M250 119L224 95C203 75 229 51 250 74C271 51 297 75 276 95Z" fill="none" stroke="${primaryColor}" stroke-width="3" stroke-linejoin="round" data-color-role="primary"/>
+  <text data-field-id="thankTitle" data-max-width="414" x="250" y="191" font-family="${fontFamily}, sans-serif" font-size="${Math.round(35 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
     ${thank}
   </text>
-  <text data-field-id="sentiment" x="250" y="245" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle">
+  <text data-field-id="sentiment" data-max-width="414" x="250" y="243" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     ${sentiment}
   </text>
-  <!-- Handle Badge -->
-  <rect x="140" y="280" width="220" height="42" rx="21" fill="${primaryColor}" data-color-role="primary"/>
-  <text data-field-id="socialHandle" x="250" y="308" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="700" fill="#FFFFFF" text-anchor="middle" direction="ltr" unicode-bidi="embed">
+  <path d="M210 279H290" stroke="${primaryColor}" stroke-width="1"/>
+  <text data-field-id="socialHandle" data-max-width="374" x="250" y="319" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${social}
   </text>
 </svg>`;
@@ -147,9 +140,9 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 240,
     aspectRatio: 600 / 240,
     defaultColors: {
-      primary: '#0F172A',
-      secondary: '#D97706',
-      background: '#FEF3C7',
+      primary: '#28312D',
+      secondary: '#896222',
+      background: '#FFFAED',
     },
     fields: [
       { id: 'openText', label: 'نص الفتح', type: 'text', defaultValue: 'افتح من هنا بعناية' },
@@ -170,20 +163,20 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 240" width="600" height="240">
-  <rect x="10" y="10" width="580" height="220" rx="16" fill="${bg}" stroke="${secondaryColor}" stroke-width="4" data-color-role="background"/>
-  <!-- Cut Line -->
-  <line x1="40" y1="120" x2="560" y2="120" stroke="${primaryColor}" stroke-width="3" stroke-dasharray="14,10"/>
-  <!-- Scissor Icon -->
-  <g transform="translate(60, 100)" fill="${primaryColor}" data-color-role="primary">
-    <circle cx="15" cy="10" r="10" fill="none" stroke="${primaryColor}" stroke-width="3"/>
-    <circle cx="15" cy="30" r="10" fill="none" stroke="${primaryColor}" stroke-width="3"/>
-    <line x1="22" y1="13" x2="45" y2="35" stroke="${primaryColor}" stroke-width="3"/>
-    <line x1="22" y1="27" x2="45" y2="5" stroke="${primaryColor}" stroke-width="3"/>
+  <rect x="12" y="12" width="576" height="216" rx="6" fill="${bg}" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="background"/>
+  <!-- Open blades converge on the perforation; handles remain clear of the cut line. -->
+  <g fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" data-color-role="primary">
+    <circle cx="64" cy="95" r="14"/>
+    <circle cx="64" cy="145" r="14"/>
+    <path d="M76 102L142 149M76 138L142 91"/>
+    <circle cx="103" cy="120" r="3" fill="${primaryColor}" stroke="none"/>
   </g>
-  <text data-field-id="openText" x="350" y="85" font-family="${fontFamily}, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <path d="M160 120H554" fill="none" stroke="${primaryColor}" stroke-width="2" stroke-dasharray="10 8"/>
+  <path d="M12 112L20 120L12 128M588 112L580 120L588 128" fill="none" stroke="${secondaryColor}" stroke-width="2" data-color-role="secondary"/>
+  <text data-field-id="openText" data-max-width="386" x="357" y="83" font-family="${fontFamily}, sans-serif" font-size="${Math.round(29 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
     ${open}
   </text>
-  <text data-field-id="enText" x="350" y="180" font-family="${fontFamily}, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" letter-spacing="2">
+  <text data-field-id="enText" data-max-width="386" x="357" y="177" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle" letter-spacing="3">
     ${en}
   </text>
 </svg>`;
@@ -199,9 +192,9 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 460,
     aspectRatio: 1,
     defaultColors: {
-      primary: '#16A34A',
-      secondary: '#15803D',
-      background: '#F0FDF4',
+      primary: '#286947',
+      secondary: '#254735',
+      background: '#F7FAF1',
     },
     fields: [
       {
@@ -229,26 +222,21 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460" width="460" height="460">
-  <circle cx="230" cy="230" r="205" fill="${bg}" stroke="${primaryColor}" stroke-width="6" data-color-role="background"/>
-  <!-- Mobius Loop / Recycle 3 Arrows -->
-  <g transform="translate(145, 75)" fill="${primaryColor}" data-color-role="primary">
-    <!-- Arrow 1 (Top) -->
-    <path d="M 85,20 L 115,20 L 100,50 Z"/>
-    <path d="M 50,45 C 70,25 100,25 100,25" fill="none" stroke="${primaryColor}" stroke-width="12" stroke-linecap="round"/>
-    <!-- Arrow 2 (Right) -->
-    <path d="M 130,95 L 145,120 L 115,120 Z"/>
-    <path d="M 105,45 C 130,70 130,105 130,105" fill="none" stroke="${primaryColor}" stroke-width="12" stroke-linecap="round"/>
-    <!-- Arrow 3 (Left) -->
-    <path d="M 40,110 L 25,85 L 55,85 Z"/>
-    <path d="M 115,110 C 75,125 40,95 40,95" fill="none" stroke="${primaryColor}" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="230" cy="230" r="205" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <!-- Three equal bent arrows form a clockwise recycling loop with an open centre. -->
+  <g transform="translate(230 145)" fill="none" stroke="${primaryColor}" stroke-width="10" stroke-linecap="square" stroke-linejoin="round" data-color-role="primary">
+    <path d="M-46-16L-15-68Q-5-85 5-68L32-21M7-33L32-21L36-47"/>
+    <path d="M-46-16L-15-68Q-5-85 5-68L32-21M7-33L32-21L36-47" transform="rotate(120)"/>
+    <path d="M-46-16L-15-68Q-5-85 5-68L32-21M7-33L32-21L36-47" transform="rotate(240)"/>
   </g>
-  <text data-field-id="ecoTitle" x="230" y="270" font-family="${fontFamily}, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle">
+  <text data-field-id="ecoTitle" data-max-width="366" x="230" y="273" font-family="${fontFamily}, sans-serif" font-size="${Math.round(29 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     ${title}
   </text>
-  <text data-field-id="ecoSub" x="230" y="315" font-family="${fontFamily}, sans-serif" font-size="${Math.round(21 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
+  <text data-field-id="ecoSub" data-max-width="334" x="230" y="319" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
     ${sub}
   </text>
-  <text data-field-id="pledge" x="230" y="360" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="600" fill="#4B5563" text-anchor="middle">
+  <path d="M194 347H266" stroke="${primaryColor}" stroke-width="1"/>
+  <text data-field-id="pledge" data-max-width="260" x="230" y="380" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">
     ${pledge}
   </text>
 </svg>`;

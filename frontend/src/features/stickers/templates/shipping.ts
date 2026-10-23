@@ -50,27 +50,30 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
       });
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
-  <rect x="15" y="15" width="570" height="370" rx="16" fill="${bg}" stroke="${primaryColor}" stroke-width="8" data-color-role="background"/>
-  <rect x="30" y="30" width="540" height="90" rx="10" fill="${primaryColor}" data-color-role="primary"/>
-  <!-- Wine Glass Broken Icon -->
-  <g transform="translate(60, 160)" data-color-role="primary">
-    <path d="M 25,10 C 25,60 55,80 75,85 L 75,130 L 50,130 L 50,145 L 100,145 L 100,130 L 75,130 L 75,85 C 95,80 125,60 125,10 Z" fill="${primaryColor}"/>
-    <path d="M 75,25 L 85,45 L 65,60 L 80,75" stroke="#FFFFFF" stroke-width="4" fill="none"/>
-  </g>
-  <text data-field-id="mainWarning" x="300" y="90" font-family="${fontFamily}, sans-serif" font-size="${Math.round(52 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
+  <rect x="15" y="15" width="570" height="370" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <path d="M21 15H579Q585 15 585 21V118H15V21Q15 15 21 15Z" fill="${primaryColor}" data-color-role="primary"/>
+  <text data-field-id="mainWarning" data-max-width="514" x="300" y="86" font-family="${fontFamily}, sans-serif" font-size="${Math.round(46 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
     ${main}
   </text>
-  <text x="360" y="200" font-family="${fontFamily}, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
+  <!-- Broken goblet: a clear bowl, continuous stem and level foot. -->
+  <g fill="none" stroke="${primaryColor}" stroke-linejoin="round" data-color-role="primary">
+    <path d="M68 165H160L155 207C153 233 137 247 114 247C91 247 75 233 73 207Z" stroke-width="6"/>
+    <path d="M114 247V308M85 308H143" stroke-width="7"/>
+    <path d="M118 166L106 190L121 207L107 232" stroke-width="4"/>
+  </g>
+  <path d="M188 146V352" stroke="${secondaryColor}" stroke-width="1" opacity="0.2"/>
+  <text data-max-width="324" x="360" y="187" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     FRAGILE - HANDLE WITH CARE
   </text>
-  <text data-field-id="subWarning" x="360" y="245" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
+  <text data-field-id="subWarning" data-max-width="324" x="360" y="234" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
     ${sub}
   </text>
-  <!-- Authentic Scannable Vector Barcode -->
+  <!-- Opaque quiet zone stays white even when the label background is transparent. -->
+  <rect x="190" y="263" width="340" height="72" fill="#FFFFFF"/>
   <g transform="translate(210, 275)">
     ${innerBarcode}
   </g>
-  <text data-field-id="tracking" x="360" y="348" font-family="monospace" font-size="${Math.round(16 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" letter-spacing="3">
+  <text data-field-id="tracking" data-max-width="324" x="360" y="357" font-family="${fontFamily}, monospace" font-size="${Math.round(16 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle" letter-spacing="2" direction="ltr" unicode-bidi="embed">
     * ${track} *
   </text>
 </svg>`;
@@ -109,20 +112,17 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
-  <rect x="15" y="15" width="370" height="470" rx="14" fill="${bg}" stroke="${primaryColor}" stroke-width="6" data-color-role="background"/>
-  <!-- Dual Up Arrows -->
+  <rect x="15" y="15" width="370" height="470" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <!-- Equal shafts and square baseline preserve the familiar handling pictogram. -->
   <g fill="${primaryColor}" data-color-role="primary">
-    <!-- Left Arrow -->
-    <polygon points="120,70 165,140 135,140 135,260 105,260 105,140 75,140"/>
-    <!-- Right Arrow -->
-    <polygon points="280,70 325,140 295,140 295,260 265,260 265,140 235,140"/>
-    <!-- Bottom Baseline Bar -->
-    <rect x="70" y="280" width="260" height="24" rx="4"/>
+    <path d="M128 64L184 129H146V277H110V129H72Z"/>
+    <path d="M272 64L328 129H290V277H254V129H216Z"/>
+    <path d="M72 291H328V307H72Z"/>
   </g>
-  <text data-field-id="topTitle" x="200" y="370" font-family="${fontFamily}, sans-serif" font-size="${Math.round(34 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <text data-field-id="topTitle" data-max-width="320" x="200" y="374" font-family="${fontFamily}, sans-serif" font-size="${Math.round(31 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
     ${ar}
   </text>
-  <text data-field-id="enTitle" x="200" y="425" font-family="${fontFamily}, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" letter-spacing="2">
+  <text data-field-id="enTitle" data-max-width="308" x="200" y="430" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle" letter-spacing="3" data-color-role="secondary">
     ${en}
   </text>
 </svg>`;
@@ -168,26 +168,22 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="400" height="500">
-  <rect x="15" y="15" width="370" height="470" rx="14" fill="${bg}" stroke="${primaryColor}" stroke-width="6" data-color-role="background"/>
-  <!-- Raindrops -->
-  <g fill="${primaryColor}" opacity="0.8" data-color-role="primary">
-    <path d="M 140,60 C 135,75 145,85 145,85 C 145,85 155,75 150,60 C 145,50 140,60 140,60 Z"/>
-    <path d="M 200,45 C 195,60 205,70 205,70 C 205,70 215,60 210,45 C 205,35 200,45 200,45 Z"/>
-    <path d="M 260,60 C 255,75 265,85 265,85 C 265,85 275,75 270,60 C 265,50 260,60 260,60 Z"/>
+  <rect x="15" y="15" width="370" height="470" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <g fill="${primaryColor}" data-color-role="primary">
+    <path d="M126 62C122 71 115 79 115 86A11 11 0 0 0 137 86C137 79 130 71 126 62Z"/>
+    <path d="M200 44C196 53 189 61 189 68A11 11 0 0 0 211 68C211 61 204 53 200 44Z"/>
+    <path d="M274 62C270 71 263 79 263 86A11 11 0 0 0 285 86C285 79 278 71 274 62Z"/>
+    <!-- Semicircular canopy with three scallops, not a flat bowl. -->
+    <path d="M86 208C91 148 138 114 200 114C262 114 309 148 314 208Q285 185 257 208Q229 185 200 208Q171 185 143 208Q115 185 86 208Z"/>
   </g>
-  <!-- Umbrella -->
-  <g stroke="${secondaryColor}" stroke-width="8" fill="none">
-    <path d="M 100,185 C 100,105 300,105 300,185 Z" fill="${primaryColor}" stroke="${secondaryColor}" stroke-width="4" data-color-role="primary"/>
-    <line x1="200" y1="185" x2="200" y2="255"/>
-    <path d="M 200,255 C 200,275 175,275 175,255"/>
-  </g>
-  <text data-field-id="mainText" x="200" y="340" font-family="${fontFamily}, sans-serif" font-size="${Math.round(30 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle">
+  <path d="M200 104V268C200 295 164 295 164 268" fill="none" stroke="${secondaryColor}" stroke-width="7" stroke-linecap="round" data-color-role="secondary"/>
+  <text data-field-id="mainText" data-max-width="322" x="200" y="348" font-family="${fontFamily}, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
     ${main}
   </text>
-  <text data-field-id="enText" x="200" y="388" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" letter-spacing="2">
+  <text data-field-id="enText" data-max-width="310" x="200" y="395" font-family="${fontFamily}, sans-serif" font-size="${Math.round(23 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" letter-spacing="3">
     ${en}
   </text>
-  <text data-field-id="note" x="200" y="435" font-family="${fontFamily}, sans-serif" font-size="${Math.round(15 * fs)}" font-weight="600" fill="#64748B" text-anchor="middle">
+  <text data-field-id="note" data-max-width="316" x="200" y="441" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">
     ${note}
   </text>
 </svg>`;
@@ -233,22 +229,25 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 400" width="500" height="400">
-  <rect x="15" y="15" width="470" height="370" rx="16" fill="${bg}" stroke="${primaryColor}" stroke-width="8" data-color-role="background"/>
-  <!-- Warning Triangle Header -->
-  <path d="M 250,45 L 290,115 L 210,115 Z" fill="${primaryColor}" data-color-role="primary"/>
-  <text x="250" y="105" font-family="${fontFamily}, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">!</text>
-  <text data-field-id="warningText" x="250" y="170" font-family="${fontFamily}, sans-serif" font-size="${Math.round(34 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <rect x="15" y="15" width="470" height="370" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <path d="M82 39L115 97H49Z" fill="${primaryColor}" data-color-role="primary"/>
+  <text data-max-width="24" x="82" y="87" font-family="${fontFamily}, sans-serif" font-size="${Math.round(30 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">!</text>
+  <text data-field-id="warningText" data-max-width="318" x="294" y="83" font-family="${fontFamily}, sans-serif" font-size="${Math.round(31 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
     ${warning}
   </text>
-  <!-- Weight Badge -->
-  <rect x="150" y="200" width="200" height="70" rx="12" fill="${secondaryColor}" data-color-role="secondary"/>
-  <text data-field-id="weightText" x="250" y="250" font-family="monospace" font-size="${Math.round(38 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
+  <path d="M40 117H460" stroke="${primaryColor}" stroke-width="1" opacity="0.35"/>
+  <!-- A weight silhouette gives the mass a recognisable physical signifier. -->
+  <g data-color-role="secondary">
+    <path d="M222 160V149A28 28 0 0 1 278 149V160" fill="none" stroke="${secondaryColor}" stroke-width="9"/>
+    <path d="M143 163H357L375 262H125Z" fill="${secondaryColor}"/>
+  </g>
+  <text data-field-id="weightText" data-max-width="216" x="250" y="229" font-family="${fontFamily}, monospace" font-size="${Math.round(38 * fs)}" font-weight="800" fill="#FFFFFF" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${weight}
   </text>
-  <text data-field-id="actionText" x="250" y="325" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
+  <text data-field-id="actionText" data-max-width="414" x="250" y="313" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
     ${action}
   </text>
-  <text x="250" y="358" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
+  <text data-max-width="414" x="250" y="355" font-family="${fontFamily}, sans-serif" font-size="${Math.round(15 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle" letter-spacing="0.5">
     HEAVY PACKAGE - TEAM LIFT REQUIRED
   </text>
 </svg>`;
@@ -294,24 +293,24 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 480" width="420" height="480">
-  <rect x="15" y="15" width="390" height="450" rx="14" fill="${bg}" stroke="${primaryColor}" stroke-width="6" data-color-role="background"/>
-  <!-- Stack Graphics with Red Cross -->
-  <g transform="translate(130, 60)" data-color-role="primary">
-    <!-- Bottom Box -->
-    <rect x="10" y="80" width="140" height="80" fill="none" stroke="${secondaryColor}" stroke-width="6"/>
-    <!-- Top Box (Translucent) -->
-    <rect x="25" y="10" width="110" height="60" fill="none" stroke="${secondaryColor}" stroke-width="4" stroke-dasharray="6,4" opacity="0.6"/>
-    <!-- Big Prohibition Red Circle and Slash -->
-    <circle cx="80" cy="85" r="75" fill="none" stroke="${primaryColor}" stroke-width="12"/>
-    <line x1="27" y1="32" x2="133" y2="138" stroke="${primaryColor}" stroke-width="12"/>
+  <rect x="15" y="15" width="390" height="450" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <!-- Solid cartons stay legible beneath the standard red prohibition circle. -->
+  <g fill="none" stroke="${secondaryColor}" stroke-width="5" stroke-linejoin="round" data-color-role="secondary">
+    <path d="M158 158H262V218H158ZM172 90H248V145H172Z"/>
+    <path d="M210 90V108M210 158V180" stroke-width="4"/>
   </g>
-  <text data-field-id="mainText" x="210" y="300" font-family="${fontFamily}, sans-serif" font-size="${Math.round(34 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <g fill="none" stroke="${primaryColor}" stroke-width="12" data-color-role="primary">
+    <circle cx="210" cy="155" r="99"/>
+    <path d="M140 85L280 225"/>
+  </g>
+  <text data-field-id="mainText" data-max-width="338" x="210" y="319" font-family="${fontFamily}, sans-serif" font-size="${Math.round(34 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
     ${main}
   </text>
-  <text data-field-id="subText" x="210" y="350" font-family="${fontFamily}, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1">
+  <text data-field-id="subText" data-max-width="330" x="210" y="366" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" letter-spacing="2">
     ${sub}
   </text>
-  <text data-field-id="note" x="210" y="405" font-family="${fontFamily}, sans-serif" font-size="${Math.round(15 * fs)}" font-weight="600" fill="#64748B" text-anchor="middle">
+  <path d="M42 395H378" stroke="${secondaryColor}" stroke-width="1" opacity="0.2"/>
+  <text data-field-id="note" data-max-width="336" x="210" y="428" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">
     ${note}
   </text>
 </svg>`;

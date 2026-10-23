@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 import { embedStickerFonts, isSafeFontFaceStyle } from '@/features/stickers/lib/sticker-font-embed';
 import { mmToPx } from '@/features/stickers/lib/sticker-text';
@@ -33,6 +33,39 @@ describe('phase2: portable SVG + vector source + mm sheet', () => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><style>@font-face{font-family:'Cairo';}</style><text>x</text></svg>`;
     const out = await embedStickerFonts(svg, ['Cairo']);
     expect(out).toBe(svg);
+  });
+
+  it('embeds every script subset and weight of the requested family', async () => {
+    const style = document.createElement('style');
+    style.textContent = [400, 700]
+      .flatMap((weight) =>
+        ['U+0600-06FF', 'U+0000-00FF'].map(
+          (range, index) =>
+            `@font-face{font-family:'StickerSubsetTest';font-style:normal;font-weight:${weight};unicode-range:${range};src:url('/subset-${weight}-${index}.woff2') format('woff2');}`,
+        ),
+      )
+      .join('');
+    document.head.appendChild(style);
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'content-type': 'font/woff2' }),
+      arrayBuffer: async () => new Uint8Array([119, 79, 70, 50]).buffer,
+    } as Response);
+    try {
+      const out = await embedStickerFonts(
+        '<svg xmlns="http://www.w3.org/2000/svg"><text>مرحبا ABC</text></svg>',
+        ['StickerSubsetTest'],
+      );
+      expect(out.match(/@font-face/g)).toHaveLength(4);
+      expect(out.match(/font-weight:700/g)).toHaveLength(2);
+      expect(out).toContain('unicode-range:U+0600-06FF;');
+      expect(out).toContain('unicode-range:U+0000-00FF;');
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(out).toContain('src:url(data:font/woff2;base64,');
+    } finally {
+      style.remove();
+      fetchMock.mockRestore();
+    }
   });
 
   it('schema accepts vector svg in stickerSource (back-compat)', () => {

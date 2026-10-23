@@ -104,6 +104,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   >(initialCategory);
   const [selectedShape, setSelectedShape] = useState<StickerShape | 'all'>('all');
   const [selectedTemplate, setSelectedTemplate] = useState<StickerTemplate>(() => {
+    if (editingElement) {
+      const match = ALL_STICKER_TEMPLATES.find((t) => t.id === editingElement.source.templateId);
+      if (match) return match;
+    }
     if (initialCategory !== 'all') {
       const match = ALL_STICKER_TEMPLATES.find((t) => t.category === initialCategory);
       if (match) return match;

@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
 import { autoFitSheetGrid } from '@/features/stickers/lib/sheet-generator';
-import { contrastRatio, isLowContrastPair } from '@/features/stickers/lib/sticker-a11y';
+import {
+  contrastRatio,
+  isLowContrastPair,
+  textColorRoles,
+} from '@/features/stickers/lib/sticker-a11y';
 import {
   normalizeArabicQuery,
   namespaceStickerSvgIds,
@@ -77,6 +81,22 @@ describe('sticker-quality: contrast guard (WCAG)', () => {
   it('flags low-contrast pairs for print warning', () => {
     expect(isLowContrastPair('#f59e0b', '#ffffff')).toBe(true);
     expect(isLowContrastPair('#1e293b', '#ffffff')).toBe(false);
+  });
+
+  it('limits the warning to roles that actually paint text', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g fill="#1e293b"><text data-field-id="t">نص</text></g><path d="M0 0h10" fill="#f59e0b"/></svg>`;
+    const roles = textColorRoles(svg, { primaryColor: '#1e293b', secondaryColor: '#f59e0b' });
+    expect(roles).toEqual(new Set(['primary']));
+  });
+
+  it('detects both roles when both carry text, and returns null for broken SVG', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg"><text fill="#1e293b">أ</text><text><tspan fill="#f59e0b">ب</tspan></text></svg>`;
+    expect(textColorRoles(svg, { primaryColor: '#1e293b', secondaryColor: '#f59e0b' })).toEqual(
+      new Set(['primary', 'secondary']),
+    );
+    expect(
+      textColorRoles('<svg><text>', { primaryColor: '#1e293b', secondaryColor: '#f59e0b' }),
+    ).toBeNull();
   });
 });
 

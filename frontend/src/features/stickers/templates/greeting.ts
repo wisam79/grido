@@ -1,4 +1,4 @@
-import { speechBubblePath, starPoints, sunRaysPath, runningStitchCircle } from './svg-elements';
+import { speechBubblePath, sunRaysPath } from './svg-elements';
 import { escapeXml } from '../lib/svg-rasterizer';
 
 import type { StickerTemplate } from '../types';
@@ -16,9 +16,9 @@ export const GREETING_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 520 / 360,
     defaultMm: { width: 60, height: 42 },
     defaultColors: {
-      primary: '#7C3AED',
-      secondary: '#EC4899',
-      background: '#FDF4FF',
+      primary: '#51406F',
+      secondary: '#D98F91',
+      background: '#FAF3EE',
     },
     fields: [
       { id: 'mainText', label: 'عبارة الشكر', type: 'text', defaultValue: 'شكراً جزيلاً!' },
@@ -44,31 +44,24 @@ export const GREETING_TEMPLATES: StickerTemplate[] = [
       const handle = escapeXml(fields.handle || '@YourStore.iq');
       const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
-      const bubble = speechBubblePath(70, 40, 380, 190, 34, 42, 52);
+      const bubble = speechBubblePath(52, 42, 408, 192, 32, 34, 46);
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 360" width="520" height="360">
-  <defs>
-    <linearGradient id="grad-bubble" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${primaryColor}"/>
-      <stop offset="1" stop-color="${secondaryColor}"/>
-    </linearGradient>
-  </defs>
-  <rect x="14" y="14" width="492" height="332" rx="26" fill="${bg}" stroke="none" data-color-role="background"/>
-  <path d="${bubble}" fill="url(#grad-bubble)" data-color-role="primary"/>
-  <circle cx="448" cy="76" r="7" fill="${secondaryColor}" opacity="0.35"/>
-  <circle cx="468" cy="58" r="4.5" fill="${secondaryColor}" opacity="0.25"/>
-  <text data-field-id="mainText" x="260" y="135" font-family="${fontFamily}, sans-serif" font-size="${Math.round(44 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
+  <rect x="14" y="14" width="492" height="332" rx="20" fill="${bg}" data-color-role="background"/>
+  <path d="${bubble}" transform="translate(8 8)" fill="${secondaryColor}" data-color-role="secondary"/>
+  <path d="${bubble}" fill="${primaryColor}" data-color-role="primary"/>
+  <text data-field-id="mainText" data-max-width="344" x="256" y="133" font-family="${fontFamily}, sans-serif" font-size="${Math.round(45 * fs)}" font-weight="800" fill="${backgroundColor}" text-anchor="middle">
     ${main}
   </text>
-  <text data-field-id="subText" x="260" y="185" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="600" fill="#FFFFFF" fill-opacity="0.92" text-anchor="middle">
+  <path d="M 218,153 Q 256,160 294,153" fill="none" stroke="${secondaryColor}" stroke-width="3" stroke-linecap="round" data-color-role="secondary"/>
+  <text data-field-id="subText" data-max-width="344" x="256" y="198" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="500" fill="${backgroundColor}" text-anchor="middle">
     ${sub}
   </text>
-  <g transform="rotate(-4 260 270)">
-    <rect x="150" y="248" width="220" height="44" rx="22" fill="${bg}" stroke="${primaryColor}" stroke-width="2.5" stroke-dasharray="1 8" stroke-linecap="round"/>
-    <text data-field-id="handle" x="260" y="277" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
-      ${handle}
-    </text>
-  </g>
+  <text data-field-id="handle" data-max-width="274" x="275" y="302" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
+    ${handle}
+  </text>
+  <path d="M 433,299 C 412,287 416,271 427,273 Q 434,274 437,281 Q 443,272 450,278 C 461,290 445,298 433,306 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <path d="M 184,315 Q 272,320 361,315" fill="none" stroke="${secondaryColor}" stroke-width="1.5" stroke-linecap="round" data-color-role="secondary"/>
 </svg>`;
     },
   },
@@ -84,9 +77,9 @@ export const GREETING_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
     defaultColors: {
-      primary: '#F59E0B',
-      secondary: '#B45309',
-      background: '#FFFBEB',
+      primary: '#BF7234',
+      secondary: '#623E2F',
+      background: '#FFF4DC',
     },
     fields: [
       { id: 'topText', label: 'النص العلوي', type: 'text', defaultValue: 'ألف مبروك' },
@@ -107,27 +100,25 @@ export const GREETING_TEMPLATES: StickerTemplate[] = [
       const bottom = escapeXml(fields.bottomText || 'تستحق كل التهنئة');
       const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
-      const rays = sunRaysPath(250, 250, 176, 236, 16, 0.36);
-      const sparklePts = starPoints(250, 250, 4, 26, 9);
+      const rays = sunRaysPath(250, 250, 194, 237, 24, 0.34);
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
-  <defs>
-    <path id="celebrate-top" d="M 90,250 A 160,160 0 0,1 410,250" fill="none"/>
-    <path id="celebrate-bottom" d="M 90,250 A 160,160 0 0,0 410,250" fill="none"/>
-  </defs>
+  <circle cx="250" cy="250" r="190" fill="${bg}" data-color-role="background"/>
   <path d="${rays}" fill="${primaryColor}" data-color-role="primary"/>
-  <circle cx="250" cy="250" r="175" fill="${bg}" stroke="${secondaryColor}" stroke-width="3" data-color-role="background"/>
-  <circle cx="250" cy="250" r="160" fill="none" stroke="${primaryColor}" stroke-width="2" stroke-dasharray="2 6" stroke-linecap="round"/>
-  <text data-field-id="topText" font-family="${fontFamily}, sans-serif" font-size="${Math.round(21 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
-    <textPath data-field-id="topText" href="#celebrate-top" startOffset="50%">${top}</textPath>
+  <circle cx="250" cy="250" r="182" fill="none" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <path d="M 223,118 Q 250,102 277,118 M 236,101 L 232,92 M 250,97 V 86 M 264,101 L 268,92" fill="none" stroke="${primaryColor}" stroke-width="2.5" stroke-linecap="round" data-color-role="primary"/>
+  <text data-field-id="topText" data-max-width="258" x="250" y="177" font-family="${fontFamily}, sans-serif" font-size="${Math.round(26 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle">
+    ${top}
   </text>
-  <polygon points="${sparklePts}" fill="${primaryColor}" data-color-role="primary"/>
-  <text data-field-id="centerText" x="250" y="292" font-family="${fontFamily}, sans-serif" font-size="${Math.round(58 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <text data-field-id="centerText" data-max-width="308" x="250" y="259" font-family="${fontFamily}, sans-serif" font-size="${Math.round(60 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
     ${center}
   </text>
-  <text data-field-id="bottomText" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
-    <textPath data-field-id="bottomText" href="#celebrate-bottom" startOffset="50%">${bottom}</textPath>
+  <path d="M 213,282 Q 250,289 287,282" fill="none" stroke="${primaryColor}" stroke-width="2" stroke-linecap="round" data-color-role="primary"/>
+  <text data-field-id="bottomText" data-max-width="280" x="250" y="325" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">
+    ${bottom}
   </text>
+  <path d="M 197,358 Q 211,381 246,383 M 303,358 Q 289,381 254,383" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-linecap="round" data-color-role="secondary"/>
+  <path d="M 206,369 Q 188,370 188,354 Q 200,352 206,369 Z M 223,379 Q 205,389 199,375 Q 211,369 223,379 Z M 238,383 Q 229,395 219,388 Q 225,378 238,383 Z M 294,369 Q 312,370 312,354 Q 300,352 294,369 Z M 277,379 Q 295,389 301,375 Q 289,369 277,379 Z M 262,383 Q 271,395 281,388 Q 275,378 262,383 Z" fill="${primaryColor}" data-color-role="primary"/>
 </svg>`;
     },
   },
@@ -143,9 +134,9 @@ export const GREETING_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
     defaultColors: {
-      primary: '#9A3412',
-      secondary: '#FDE68A',
-      background: '#FFFBEB',
+      primary: '#475C54',
+      secondary: '#C3836F',
+      background: '#F6F0E6',
     },
     fields: [
       { id: 'mainText', label: 'النص الرئيسي', type: 'text', defaultValue: 'مصنوع بحب' },
@@ -166,15 +157,19 @@ export const GREETING_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
-  <circle cx="250" cy="250" r="225" fill="${bg}" stroke="${primaryColor}" stroke-width="7" data-color-role="background"/>
-  ${runningStitchCircle(250, 250, 200, secondaryColor, 4, '12 8')}
-  ${runningStitchCircle(250, 250, 172, primaryColor, 3, '2 9')}
-  <text data-field-id="mainText" x="250" y="238" font-family="${fontFamily}, sans-serif" font-size="${Math.round(52 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <circle cx="250" cy="250" r="225" fill="${bg}" data-color-role="background"/>
+  <circle cx="250" cy="250" r="208" fill="none" stroke="${primaryColor}" stroke-width="2" stroke-dasharray="7 9" stroke-linecap="round" data-color-role="primary"/>
+  <path d="M 247,203 C 223,183 195,163 199,139 C 203,113 233,112 247,134 C 263,108 295,116 297,142 C 299,165 274,187 247,203 Z" fill="${secondaryColor}" fill-opacity="0.16" stroke="${secondaryColor}" stroke-width="3" stroke-linejoin="round" data-color-role="secondary"/>
+  <path d="M 247,188 C 227,172 208,155 211,140 C 214,124 237,130 247,148 C 258,128 280,124 285,140 C 290,156 267,179 247,188 Z" fill="none" stroke="${primaryColor}" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round" data-color-role="primary"/>
+  <path d="M 247,203 C 270,222 318,205 313,180 C 308,157 291,173 307,185 C 325,198 343,165 322,121" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-linecap="round" data-color-role="secondary"/>
+  <path d="M 306,152 L 335,91 Q 339,85 342,88 Q 345,91 341,98 Z M 336,99 L 340,91" fill="none" stroke="${primaryColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-color-role="primary"/>
+  <text data-field-id="mainText" data-max-width="342" x="250" y="280" font-family="${fontFamily}, sans-serif" font-size="${Math.round(46 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
     ${main}
   </text>
-  <text data-field-id="subText" x="250" y="292" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${primaryColor}" fill-opacity="0.8" text-anchor="middle">
+  <text data-field-id="subText" data-max-width="318" x="250" y="333" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
     ${sub}
   </text>
+  <path d="M 220,372 L 228,380 M 228,372 L 220,380 M 246,372 L 254,380 M 254,372 L 246,380 M 272,372 L 280,380 M 280,372 L 272,380" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-linecap="round" data-color-role="secondary"/>
 </svg>`;
     },
   },

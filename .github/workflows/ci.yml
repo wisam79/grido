@@ -128,11 +128,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
-        run: |
-          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15"
-          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15" libgtk-4-dev libwebkitgtk-6.0-dev
-
       - name: Setup Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
@@ -171,8 +166,12 @@ jobs:
             exit 1
           fi
 
+      # CGO_ENABLED=0: توليد ربطات TypeScript يحلّل شجرة AST فقط ولا يترجم CGo،
+      # فيوفّر تثبيت 161 حزمة apt (libgtk-4-dev / libwebkitgtk-6.0-dev).
       - name: Generate Wails v3 Bindings
         id: generate_bindings
+        env:
+          CGO_ENABLED: "0"
         run: |
           mkdir -p frontend/dist
           echo "<html></html>" > frontend/dist/index.html
@@ -232,8 +231,16 @@ jobs:
 
       - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
         run: |
-          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15"
-          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15" libgtk-4-dev libwebkitgtk-6.0-dev
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+            if [ ! -s /etc/apt/apt-mirrors.txt ]; then
+              printf "https://mirrors.edge.kernel.org/ubuntu/\nhttp://archive.ubuntu.com/ubuntu/\n" | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+            fi
+          fi
+          sudo sed -i 's|http://azure\.archive\.ubuntu\.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null || true
+          printf 'Acquire::Retries "3";\nAcquire::http::Timeout "15";\nAcquire::https::Timeout "15";\n' | sudo tee /etc/apt/apt.conf.d/99ci-fast >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
@@ -381,11 +388,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
-        run: |
-          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15"
-          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15" libgtk-4-dev libwebkitgtk-6.0-dev
-
       - name: Setup Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
@@ -423,8 +425,11 @@ jobs:
             exit 1
           fi
 
+      # CGO_ENABLED=0: يولّد ربطات TypeScript من AST مباشرة دون الحاجة لحزم GTK4/WebKitGTK
       - name: Generate Wails v3 Bindings
         id: generate_bindings
+        env:
+          CGO_ENABLED: "0"
         run: |
           mkdir -p frontend/dist
           echo "<html></html>" > frontend/dist/index.html
@@ -442,10 +447,6 @@ jobs:
       - name: Install Frontend Dependencies
         working-directory: ./frontend
         run: npm ci --prefer-offline --no-audit --no-fund
-
-      - name: Install Playwright Chromium OS Dependencies
-        working-directory: ./frontend
-        run: npx playwright install-deps chromium
 
       - name: Install Playwright Browsers
         id: install_browsers
@@ -614,11 +615,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
-        run: |
-          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15"
-          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15" libgtk-4-dev libwebkitgtk-6.0-dev
-
       - name: Setup Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
@@ -657,6 +653,8 @@ jobs:
 
       - name: Generate Wails v3 Bindings
         id: generate_bindings
+        env:
+          CGO_ENABLED: "0"
         run: |
           mkdir -p frontend/dist
           echo "<html></html>" > frontend/dist/index.html
@@ -679,7 +677,16 @@ jobs:
 
       - name: Install Playwright WebKit OS Dependencies
         working-directory: ./frontend
-        run: npx playwright install-deps webkit
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+            if [ ! -s /etc/apt/apt-mirrors.txt ]; then
+              printf "https://mirrors.edge.kernel.org/ubuntu/\nhttp://archive.ubuntu.com/ubuntu/\n" | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+            fi
+          fi
+          sudo sed -i 's|http://azure\.archive\.ubuntu\.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null || true
+          printf 'Acquire::Retries "3";\nAcquire::http::Timeout "15";\nAcquire::https::Timeout "15";\n' | sudo tee /etc/apt/apt.conf.d/99ci-fast >/dev/null
+          npx playwright install-deps webkit
 
       - name: Install Playwright WebKit Browser
         id: install_browsers

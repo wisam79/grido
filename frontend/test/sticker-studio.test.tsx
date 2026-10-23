@@ -2,10 +2,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { FreeformElementsTab } from '../src/components/editor/panels/freeform/freeform-elements-tab';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { StickerCatalog } from '../src/features/stickers/components/sticker-catalog';
+import { StickerPreview } from '../src/features/stickers/components/sticker-preview';
 import { StickerProperties } from '../src/features/stickers/components/sticker-properties';
+import * as svgRasterizer from '../src/features/stickers/lib/svg-rasterizer';
 import { ALL_STICKER_TEMPLATES } from '../src/features/stickers/templates';
+import { useEditorStore } from '../src/lib/editor-store';
 
 import type {
   StickerTemplate,
@@ -101,6 +105,22 @@ describe('Sticker Studio Unit & Component Tests', () => {
     });
   });
 
+  describe('StickerPreview', () => {
+    it('uses an inherited artwork color role instead of treating rectangles as background', () => {
+      const { container } = renderWithProviders(
+        <StickerPreview
+          template={sampleTemplate}
+          params={sampleParams}
+          svgString='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g data-color-role="primary" fill="#2563eb"><rect x="20" y="20" width="60" height="60"/></g></svg>'
+          onChangeColor={vi.fn()}
+        />,
+      );
+      fireEvent.click(container.querySelector('svg [data-color-role="primary"] rect')!);
+      expect(screen.getByText('اللون الرئيسي')).toBeInTheDocument();
+      expect(screen.queryByText('لون الخلفية')).not.toBeInTheDocument();
+    });
+  });
+
   describe('StickerProperties', () => {
     it('renders editable parameters and tab headers', () => {
       renderWithProviders(
@@ -166,6 +186,39 @@ describe('Sticker Studio Unit & Component Tests', () => {
       );
 
       expect(screen.getByRole('tablist', { name: 'أقسام استوديو الملصقات' })).toBeInTheDocument();
+    });
+  });
+
+  describe('FreeformElementsTab quick sticker insertion', () => {
+    it('attaches stickerSource metadata so quick-inserted stickers can be re-edited from the context menu', async () => {
+      const rasterSpy = vi
+        .spyOn(svgRasterizer, 'renderSvgToPngDataUrl')
+        .mockResolvedValue(
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        );
+      useEditorStore.setState({ elements: [] });
+
+      try {
+        renderWithProviders(<FreeformElementsTab category="stickers" />);
+        const firstCard = await screen.findByTitle(sampleTemplate.name);
+        fireEvent.click(firstCard);
+
+        await waitFor(() => {
+          expect(useEditorStore.getState().elements).toHaveLength(1);
+        });
+
+        const inserted = useEditorStore.getState().elements[0];
+        expect(inserted.type).toBe('image');
+        if (inserted.type === 'image') {
+          expect(inserted.stickerSource?.templateId).toBe(sampleTemplate.id);
+          expect(inserted.stickerSource?.params.primaryColor).toBe(
+            sampleTemplate.defaultColors.primary,
+          );
+          expect(inserted.stickerSource?.svg).toContain('<svg');
+        }
+      } finally {
+        rasterSpy.mockRestore();
+      }
     });
   });
 });

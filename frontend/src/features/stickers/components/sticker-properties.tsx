@@ -31,7 +31,8 @@ import {
   getPresetsForTemplate,
 } from '../lib/preset-utils';
 import { autoFitSheetGrid } from '../lib/sheet-generator';
-import { contrastRatio } from '../lib/sticker-a11y';
+import { contrastRatio, textColorRoles } from '../lib/sticker-a11y';
+import { buildStickerSvg } from '../lib/sticker-design/build-svg';
 
 import type {
   StickerTemplate,
@@ -107,16 +108,40 @@ export const StickerProperties = React.memo(function StickerProperties({
   sheetMm,
 }: StickerPropertiesProps) {
   // تحذير التباين المنخفض: نص باهت يُطبع مقروءاً بصعوبة — يُحسب حياً بلا مكتبات
+  const textRoles = useMemo(
+    () => textColorRoles(buildStickerSvg(template, params), params),
+    [template, params],
+  );
   const contrastWarning = useMemo(() => {
     if (params.isTransparent) return null;
-    const pairs: { label: string; ratio: number | null }[] = [
-      { label: 'الأساسي', ratio: contrastRatio(params.primaryColor, params.backgroundColor) },
-      { label: 'الثانوي', ratio: contrastRatio(params.secondaryColor, params.backgroundColor) },
+    const pairs: { role: 'primary' | 'secondary'; label: string; ratio: number | null }[] = [
+      {
+        role: 'primary',
+        label: 'الأساسي',
+        ratio: contrastRatio(params.primaryColor, params.backgroundColor),
+      },
+      {
+        role: 'secondary',
+        label: 'الثانوي',
+        ratio: contrastRatio(params.secondaryColor, params.backgroundColor),
+      },
     ];
-    const low = pairs.filter((p) => p.ratio !== null && (p.ratio as number) < 3.0);
+    // اللون الزخرفي الذي لا يرسم نصاً لا يستوجب تحذير تباين
+    const low = pairs.filter(
+      (p) =>
+        (textRoles === null || textRoles.has(p.role)) &&
+        p.ratio !== null &&
+        (p.ratio as number) < 3.0,
+    );
     if (low.length === 0) return null;
     return low.map((p) => `${p.label} (${(p.ratio as number).toFixed(1)}:1)`).join('، ');
-  }, [params.primaryColor, params.secondaryColor, params.backgroundColor, params.isTransparent]);
+  }, [
+    textRoles,
+    params.primaryColor,
+    params.secondaryColor,
+    params.backgroundColor,
+    params.isTransparent,
+  ]);
 
   const handleAutoFitSheet = () => {
     const stickerMm = template.defaultMm || {

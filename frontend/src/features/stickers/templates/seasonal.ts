@@ -1,4 +1,4 @@
-import { iconMarkup, starPoints } from './svg-elements';
+import { starPoints } from './svg-elements';
 import { escapeXml } from '../lib/svg-rasterizer';
 
 import type { StickerTemplate } from '../types';
@@ -16,9 +16,9 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 55, height: 55 },
     defaultColors: {
-      primary: '#1E3A5F',
-      secondary: '#D4AF37',
-      background: '#FDFBF4',
+      primary: '#243E48',
+      secondary: '#B88D4B',
+      background: '#F8F3E7',
     },
     fields: [
       { id: 'greeting', label: 'عبارة التهنئة', type: 'text', defaultValue: 'رمضان كريم' },
@@ -39,24 +39,28 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
       const brand = escapeXml(fields.brand || '@YourStore.iq');
       const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
-      const starPts = starPoints(330, 150, 5, 18, 7.5);
+      const star = starPoints(275, 124, 8, 14, 6);
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
-  <circle cx="250" cy="250" r="225" fill="${bg}" stroke="${primaryColor}" stroke-width="5" data-color-role="background"/>
-  <circle cx="250" cy="250" r="212" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round"/>
-  <circle cx="228" cy="162" r="52" fill="${primaryColor}" data-color-role="primary"/>
-  <circle cx="252" cy="150" r="46" fill="${bg === 'none' ? '#ffffff' : backgroundColor}"/>
-  <polygon points="${starPts}" fill="${secondaryColor}" data-color-role="secondary"/>
-  <circle cx="168" cy="118" r="3" fill="${secondaryColor}"/>
-  <circle cx="196" cy="88" r="2.2" fill="${secondaryColor}" opacity="0.6"/>
-  <circle cx="356" cy="104" r="2.6" fill="${secondaryColor}" opacity="0.7"/>
-  <text data-field-id="greeting" x="250" y="292" font-family="${fontFamily}, sans-serif" font-size="${Math.round(48 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <circle cx="250" cy="250" r="226" fill="${bg}" data-color-role="background"/>
+  <path d="M 243,83 C 183,66 145,128 169,178 C 191,224 251,227 282,184 C 244,207 200,182 199,143 C 198,115 216,94 243,83 Z" fill="${primaryColor}" data-color-role="primary"/>
+  <path d="M 181,135 C 174,167 194,192 219,199" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-linecap="round" data-color-role="secondary"/>
+  <polygon points="${star}" fill="${secondaryColor}" data-color-role="secondary"/>
+  <path d="M 331,76 V 116" stroke="${primaryColor}" stroke-width="1.5" data-color-role="primary"/>
+  <circle cx="331" cy="122" r="6" fill="none" stroke="${primaryColor}" stroke-width="2" data-color-role="primary"/>
+  <path d="M 312,145 Q 316,132 331,128 Q 346,132 350,145 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <path d="M 309,149 H 353 L 348,191 L 331,207 L 314,191 Z" fill="${secondaryColor}" fill-opacity="0.2" stroke="${primaryColor}" stroke-width="2" stroke-linejoin="round" data-color-role="primary"/>
+  <path d="M 321,150 L 323,190 L 331,204 L 339,190 L 341,150 M 314,191 H 348 M 331,208 V 222" fill="none" stroke="${primaryColor}" stroke-width="1.5" stroke-linecap="round" data-color-role="primary"/>
+  <path d="M 331,159 C 321,172 322,182 331,185 C 340,182 341,172 331,159 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <path d="M 139,108 V 120 M 133,114 H 145 M 287,72 V 80 M 283,76 H 291" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-linecap="round" data-color-role="secondary"/>
+  <text data-field-id="greeting" data-max-width="366" x="250" y="298" font-family="${fontFamily}, sans-serif" font-size="${Math.round(47 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
     ${greeting}
   </text>
-  <text data-field-id="wish" x="250" y="338" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="600" fill="${primaryColor}" fill-opacity="0.75" text-anchor="middle">
+  <text data-field-id="wish" data-max-width="332" x="250" y="350" font-family="${fontFamily}, sans-serif" font-size="${Math.round(21 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
     ${wish}
   </text>
-  <text data-field-id="brand" x="250" y="408" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1">
+  <path d="M 220,375 H 280" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <text data-field-id="brand" data-max-width="280" x="250" y="408" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
     ${brand}
   </text>
 </svg>`;
@@ -74,9 +78,9 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 520 / 340,
     defaultMm: { width: 60, height: 39 },
     defaultColors: {
-      primary: '#0F172A',
-      secondary: '#E879F9',
-      background: '#1E1B4B',
+      primary: '#F6EDDF',
+      secondary: '#CBA76C',
+      background: '#202E41',
     },
     fields: [
       { id: 'year', label: 'السنة الجديدة', type: 'text', defaultValue: '2027' },
@@ -90,7 +94,7 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
     ],
     generateSvg: ({
       fields,
-      primaryColor: _primaryColor,
+      primaryColor,
       secondaryColor,
       backgroundColor,
       isTransparent,
@@ -102,24 +106,21 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
       const brand = escapeXml(fields.brand || '@YourStore.iq');
       const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
-      const spark1 = starPoints(88, 78, 4, 22, 8);
-      const spark2 = starPoints(438, 262, 4, 16, 6);
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 340" width="520" height="340">
-  <rect x="12" y="12" width="496" height="316" rx="24" fill="${bg}" stroke="${secondaryColor}" stroke-width="3" data-color-role="background"/>
-  <polygon points="${spark1}" fill="${secondaryColor}" data-color-role="secondary"/>
-  <polygon points="${spark2}" fill="${secondaryColor}" opacity="0.7"/>
-  <circle cx="140" cy="140" r="2.5" fill="${secondaryColor}"/>
-  <circle cx="392" cy="88" r="2" fill="${secondaryColor}" opacity="0.8"/>
-  <circle cx="460" cy="76" r="3" fill="${secondaryColor}" opacity="0.6"/>
-  <circle cx="60" cy="256" r="2.4" fill="${secondaryColor}" opacity="0.7"/>
-  <text data-field-id="year" x="260" y="176" font-family="${fontFamily}, sans-serif" font-size="${Math.round(76 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle" letter-spacing="3">
+  <rect x="12" y="12" width="496" height="316" rx="14" fill="${bg}" data-color-role="background"/>
+  <path d="M 36,151 V 304 H 102 M 484,151 V 304 H 418 M 156,44 H 226 M 294,44 H 364" fill="none" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <path d="M 91,53 V 30 M 91,80 V 104 M 77,67 H 53 M 105,67 H 129 M 81,57 L 64,40 M 101,77 L 118,94 M 81,77 L 64,94 M 101,57 L 118,40 M 429,53 V 30 M 429,80 V 104 M 415,67 H 391 M 443,67 H 467 M 419,57 L 402,40 M 439,77 L 456,94 M 419,77 L 402,94 M 439,57 L 456,40" fill="none" stroke="${secondaryColor}" stroke-width="2.5" stroke-linecap="round" data-color-role="secondary"/>
+  <path d="M 79,39 L 83,48 M 110,59 L 119,55 M 79,95 L 83,86 M 63,55 L 72,59 M 417,39 L 421,48 M 448,59 L 457,55 M 417,95 L 421,86 M 401,55 L 410,59" fill="none" stroke="${primaryColor}" stroke-width="1.5" stroke-linecap="round" data-color-role="primary"/>
+  <path d="M 250,44 L 260,34 L 270,44 L 260,54 Z" fill="none" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <text data-field-id="year" data-max-width="350" x="260" y="190" font-family="${fontFamily}, sans-serif" font-size="${Math.round(86 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" letter-spacing="2">
     ${year}
   </text>
-  <text data-field-id="greeting" x="260" y="228" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="600" fill="#E2E8F0" text-anchor="middle">
+  <text data-field-id="greeting" data-max-width="406" x="260" y="239" font-family="${fontFamily}, sans-serif" font-size="${Math.round(21 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
     ${greeting}
   </text>
-  <text data-field-id="brand" x="260" y="296" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="700" fill="${secondaryColor}" fill-opacity="0.85" text-anchor="middle" letter-spacing="1.5">
+  <path d="M 230,263 H 290" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <text data-field-id="brand" data-max-width="350" x="260" y="295" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
     ${brand}
   </text>
 </svg>`;
@@ -137,9 +138,9 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 520 / 320,
     defaultMm: { width: 65, height: 40 },
     defaultColors: {
-      primary: '#EA580C',
-      secondary: '#0EA5E9',
-      background: '#FFF7ED',
+      primary: '#AE5037',
+      secondary: '#277F8A',
+      background: '#FFF3DC',
     },
     fields: [
       { id: 'title', label: 'عنوان العرض', type: 'text', defaultValue: 'عرض الصيف الحار' },
@@ -162,17 +163,26 @@ export const SEASONAL_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 320" width="520" height="320">
-  <rect x="12" y="12" width="499" height="296" rx="24" fill="${bg}" stroke="${primaryColor}" stroke-width="4" data-color-role="background"/>
-  <path d="M 12,262 q 32,-20 64,0 t 64,0 t 64,0 t 64,0 t 64,0 t 64,0 t 64,0 V 308 H 12 Z" fill="${secondaryColor}" opacity="0.22" data-color-role="secondary"/>
-  <path d="M 12,286 q 40,-16 80,0 t 80,0 t 80,0 t 80,0 t 80,0 t 80,0 V 308 H 12 Z" fill="${primaryColor}" opacity="0.85" data-color-role="primary"/>
-  ${iconMarkup('sun', 420, 46, 58, primaryColor)}
-  <text data-field-id="title" x="240" y="100" font-family="${fontFamily}, sans-serif" font-size="${Math.round(36 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <defs>
+    <clipPath id="summer-wave-edge">
+      <rect x="12" y="12" width="496" height="296" rx="20"/>
+    </clipPath>
+  </defs>
+  <rect x="12" y="12" width="496" height="296" rx="20" fill="${bg}" data-color-role="background"/>
+  <circle cx="434" cy="92" r="31" fill="${primaryColor}" data-color-role="primary"/>
+  <path d="M 434,45 V 36 M 434,139 V 148 M 387,92 H 378 M 481,92 H 490 M 401,59 L 394,52 M 467,125 L 474,132 M 401,125 L 394,132 M 467,59 L 474,52" fill="none" stroke="${primaryColor}" stroke-width="2.5" stroke-linecap="round" data-color-role="primary"/>
+  <g clip-path="url(#summer-wave-edge)">
+    <path d="M 12,263 C 114,238 169,289 283,262 C 356,244 387,217 409,187 C 428,160 463,166 478,189 C 452,177 435,192 440,210 C 445,230 476,238 508,226 V 308 H 12 Z" fill="${secondaryColor}" fill-opacity="0.18" data-color-role="secondary"/>
+    <path d="M 12,280 C 128,260 183,310 294,280 C 367,258 398,233 421,217 C 443,202 464,210 474,225 C 445,218 441,245 462,252 Q 484,264 508,255 V 308 H 12 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+    <path d="M 346,279 Q 390,269 414,247 M 387,281 Q 406,272 417,262" fill="none" stroke="${backgroundColor}" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <text data-field-id="title" data-max-width="320" x="208" y="97" font-family="${fontFamily}, sans-serif" font-size="${Math.round(31 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
     ${title}
   </text>
-  <text data-field-id="discount" x="240" y="182" font-family="${fontFamily}, sans-serif" font-size="${Math.round(52 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle">
+  <text data-field-id="discount" data-max-width="320" x="208" y="176" font-family="${fontFamily}, sans-serif" font-size="${Math.round(53 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle">
     ${discount}
   </text>
-  <text data-field-id="period" x="240" y="236" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="600" fill="${primaryColor}" fill-opacity="0.8" text-anchor="middle">
+  <text data-field-id="period" data-max-width="310" x="208" y="228" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
     ${period}
   </text>
 </svg>`;

@@ -50,23 +50,21 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
       });
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 300" width="500" height="300">
-  <rect x="10" y="10" width="480" height="280" rx="12" fill="${bg}" stroke="${primaryColor}" stroke-width="4" data-color-role="background"/>
-  <!-- Store Header -->
-  <text data-field-id="storeTitle" x="250" y="52" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
+  <rect x="10" y="10" width="480" height="280" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="1.5" data-color-role="background"/>
+  <text data-field-id="storeTitle" data-max-width="428" x="250" y="51" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
     ${store}
   </text>
-  <line x1="30" y1="68" x2="470" y2="68" stroke="${primaryColor}" stroke-width="1.5" stroke-dasharray="6,4"/>
-  <!-- Barcode Area -->
+  <path d="M34 68H466" stroke="${primaryColor}" stroke-width="1" opacity="0.25"/>
+  <!-- White quiet zone is independent of the editable/transparent label surface. -->
+  <rect x="36" y="73" width="428" height="94" fill="#FFFFFF"/>
   <g transform="translate(60, 85)">
     ${innerBarcode}
   </g>
-  <!-- Barcode Text -->
-  <text data-field-id="barcodeValue" x="250" y="200" font-family="monospace" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" letter-spacing="3">
+  <text data-field-id="barcodeValue" data-max-width="428" x="250" y="199" font-family="${fontFamily}, monospace" font-size="${Math.round(19 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle" letter-spacing="2" direction="ltr" unicode-bidi="embed">
     * ${codeVal} *
   </text>
-  <!-- Price Strip -->
-  <rect x="140" y="222" width="220" height="42" rx="8" fill="${secondaryColor}" data-color-role="secondary"/>
-  <text data-field-id="priceTag" x="250" y="251" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
+  <path d="M34 219H466" stroke="${primaryColor}" stroke-width="1" opacity="0.25"/>
+  <text data-field-id="priceTag" data-max-width="428" x="250" y="263" font-family="${fontFamily}, sans-serif" font-size="${Math.round(29 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     ${price}
   </text>
 </svg>`;
@@ -118,18 +116,20 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
       });
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 280" width="460" height="280">
-  <rect x="8" y="8" width="444" height="264" rx="10" fill="${bg}" stroke="${primaryColor}" stroke-width="3" data-color-role="background"/>
-  <text data-field-id="itemDesc" x="230" y="45" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
+  <rect x="8" y="8" width="444" height="264" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="1.5" data-color-role="background"/>
+  <text data-field-id="itemDesc" data-max-width="388" x="230" y="42" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" data-color-role="primary">
     ${desc}
   </text>
+  <!-- The EAN symbol retains its native geometry and an uninterrupted white surround. -->
+  <rect x="46" y="55" width="368" height="98" fill="#FFFFFF"/>
   <g transform="translate(70, 65)">
     ${innerBarcode}
   </g>
-  <text data-field-id="barcodeValue" x="230" y="185" font-family="monospace" font-size="${Math.round(18 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" letter-spacing="4">
+  <text data-field-id="barcodeValue" data-max-width="372" x="230" y="183" font-family="${fontFamily}, monospace" font-size="${Math.round(20 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle" letter-spacing="3" direction="ltr" unicode-bidi="embed">
     ${codeVal}
   </text>
-  <!-- Price Tag -->
-  <text data-field-id="price" x="230" y="235" font-family="${fontFamily}, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle">
+  <path d="M32 207H428" stroke="${primaryColor}" stroke-width="1" opacity="0.25"/>
+  <text data-field-id="price" data-max-width="388" x="230" y="248" font-family="${fontFamily}, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     ${price}
   </text>
 </svg>`;
@@ -188,19 +188,16 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
       });
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 480" width="440" height="480">
-  <rect x="12" y="12" width="416" height="456" rx="20" fill="${bg}" stroke="${primaryColor}" stroke-width="4" data-color-role="background"/>
-  <text data-field-id="scanTitle" x="220" y="55" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
+  <rect x="12" y="12" width="416" height="456" rx="8" fill="${bg}" stroke="${primaryColor}" stroke-width="1.5" data-color-role="background"/>
+  <text data-field-id="scanTitle" data-max-width="368" x="220" y="43" font-family="${fontFamily}, sans-serif" font-size="${Math.round(21 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     ${title}
   </text>
-  <!-- QR Frame Container -->
-  <rect x="70" y="80" width="300" height="300" rx="16" fill="#FFFFFF" stroke="${primaryColor}" stroke-width="2"/>
+  <!-- 50px of white clears four modules even for version 1; the encoded square is untouched. -->
+  <rect x="45" y="55" width="350" height="350" fill="#FFFFFF"/>
   <g transform="translate(95, 105)">
     ${qrSvg}
   </g>
-
-  <!-- Scan prompt footer -->
-  <rect x="80" y="405" width="280" height="42" rx="10" fill="${primaryColor}" data-color-role="primary"/>
-  <text data-field-id="scanSub" x="220" y="433" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="800" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">
+  <text data-field-id="scanSub" data-max-width="368" x="220" y="439" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" letter-spacing="2" data-color-role="primary">
     ${sub}
   </text>
 </svg>`;
@@ -256,22 +253,21 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
       );
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 380" width="600" height="380">
-  <rect x="12" y="12" width="576" height="356" rx="14" fill="${bg}" stroke="${primaryColor}" stroke-width="6" data-color-role="background"/>
-  <!-- Top Bar -->
-  <rect x="12" y="12" width="576" height="85" fill="${primaryColor}" data-color-role="primary"/>
-  <text data-field-id="boxId" x="300" y="66" font-family="monospace" font-size="${Math.round(44 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
+  <rect x="12" y="12" width="576" height="356" rx="6" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <path d="M36 35V78" stroke="${secondaryColor}" stroke-width="5" data-color-role="secondary"/>
+  <text data-field-id="boxId" data-max-width="494" x="312" y="71" font-family="${fontFamily}, monospace" font-size="${Math.round(39 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed" data-color-role="primary">
     ${box}
   </text>
-  <!-- Location Banner -->
-  <rect x="40" y="115" width="520" height="46" rx="8" fill="${secondaryColor}" data-color-role="secondary"/>
-  <text data-field-id="shelfLoc" x="300" y="145" font-family="${fontFamily}, monospace" font-size="${Math.round(20 * fs)}" font-weight="800" fill="#FFFFFF" text-anchor="middle">
+  <path d="M36 97H564" stroke="${primaryColor}" stroke-width="1" opacity="0.25"/>
+  <text data-field-id="shelfLoc" data-max-width="516" x="300" y="141" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle">
     ${shelf}
   </text>
-  <!-- Barcode Area -->
+  <!-- No framing enters the barcode's white quiet zone or alters its aspect ratio. -->
+  <rect x="86" y="166" width="428" height="108" fill="#FFFFFF"/>
   <g transform="translate(110, 180)">
     ${innerBarcode}
   </g>
-  <text data-field-id="barcodeValue" x="300" y="325" font-family="monospace" font-size="${Math.round(26 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" letter-spacing="4">
+  <text data-field-id="barcodeValue" data-max-width="516" x="300" y="326" font-family="${fontFamily}, monospace" font-size="${Math.round(24 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle" letter-spacing="3" direction="ltr" unicode-bidi="embed">
     * ${codeVal} *
   </text>
 </svg>`;

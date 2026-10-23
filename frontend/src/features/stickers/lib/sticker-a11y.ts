@@ -46,3 +46,48 @@ export function isLowContrastPair(fg: string, bg: string, threshold = 3.0): bool
   const r = contrastRatio(fg, bg);
   return r !== null && r < threshold;
 }
+
+export type StickerTextRole = 'primary' | 'secondary';
+
+/**
+ * أدوار الألوان التي ترسم نصاً فعلياً في القالب — بديل عن فحص اللونين دوماً،
+ * لأن اللون الزخرفي (إطار، ختم، ونر) لا يحتاج تبايناً مع خلفية الورقة.
+ * ترجع null عند تعذّر تحليل SVG كي يبقى الفحص الاحتياطي شاملاً.
+ */
+export function textColorRoles(
+  svg: string,
+  colors: { primaryColor: string; secondaryColor: string },
+): Set<StickerTextRole> | null {
+  if (typeof DOMParser === 'undefined') return null;
+  let root: Document;
+  try {
+    root = new DOMParser().parseFromString(svg, 'image/svg+xml');
+  } catch {
+    return null;
+  }
+  if (root.querySelector('parsererror')) return null;
+
+  const targets = new Map<string, StickerTextRole[]>();
+  const byRole: Record<StickerTextRole, string> = {
+    primary: colors.primaryColor,
+    secondary: colors.secondaryColor,
+  };
+  for (const role of ['primary', 'secondary'] as const) {
+    const key = byRole[role].trim().toLowerCase();
+    if (key) targets.set(key, [...(targets.get(key) ?? []), role]);
+  }
+
+  const roles = new Set<StickerTextRole>();
+  for (const text of Array.from(root.querySelectorAll('text'))) {
+    const segments = [text, ...Array.from(text.querySelectorAll('tspan'))];
+    for (const segment of segments) {
+      let fill: string | null = null;
+      for (let node: Element | null = segment; node && fill === null; node = node.parentElement) {
+        fill = node.getAttribute('fill');
+      }
+      if (!fill) continue;
+      for (const role of targets.get(fill.trim().toLowerCase()) ?? []) roles.add(role);
+    }
+  }
+  return roles;
+}

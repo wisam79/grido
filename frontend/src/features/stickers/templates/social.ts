@@ -15,8 +15,8 @@ export const SOCIAL_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 500 / 320,
     defaultMm: { width: 70, height: 45 },
     defaultColors: {
-      primary: '#0F172A',
-      secondary: '#0284C7',
+      primary: '#243038',
+      secondary: '#25655E',
       background: '#FFFFFF',
     },
     fields: [
@@ -45,22 +45,24 @@ export const SOCIAL_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 320" width="500" height="320">
-  <rect x="12" y="12" width="476" height="296" rx="16" fill="${bg}" stroke="${primaryColor}" stroke-width="4" data-color-role="background"/>
-  <!-- Contactless Waves Icon -->
-  <g transform="translate(250, 60)" stroke="${secondaryColor}" stroke-width="4" fill="none" stroke-linecap="round" data-color-role="secondary">
-    <path d="M -15,-10 A 18,18 0 0,1 -15,10"/>
-    <path d="M -5,-18 A 28,28 0 0,1 -5,18"/>
-    <path d="M 5,-26 A 38,38 0 0,1 5,26"/>
+  <rect x="12" y="12" width="476" height="296" rx="8" fill="${bg}" stroke="${primaryColor}" stroke-width="1.5" data-color-role="background"/>
+  <!-- Payment card and concentric contactless waves, without simulated network logos. -->
+  <g fill="none" stroke="${primaryColor}" stroke-width="2.5" data-color-role="primary">
+    <rect x="44" y="53" width="74" height="50" rx="5"/>
+    <path d="M44 68H118M56 87H70"/>
   </g>
-  <text data-field-id="payTitle" x="250" y="125" font-family="${fontFamily}, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <g fill="none" stroke="${secondaryColor}" stroke-width="3" stroke-linecap="round" data-color-role="secondary">
+    <path d="M132 69Q140 78 132 87M142 61Q157 78 142 95M152 53Q174 78 152 103"/>
+  </g>
+  <text data-field-id="payTitle" data-max-width="264" x="322" y="88" font-family="${fontFamily}, sans-serif" font-size="${Math.round(27 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
     ${title}
   </text>
-  <!-- Accepted Networks Pill -->
-  <rect x="50" y="155" width="400" height="65" rx="14" fill="${primaryColor}" data-color-role="primary"/>
-  <text data-field-id="payMethods" x="250" y="198" font-family="${fontFamily}, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
+  <path d="M40 124H460" stroke="${primaryColor}" stroke-width="1" opacity="0.2"/>
+  <text data-field-id="payMethods" data-max-width="416" x="250" y="190" font-family="${fontFamily}, sans-serif" font-size="${Math.round(27 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle">
     ${methods}
   </text>
-  <text data-field-id="note" x="250" y="270" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
+  <path d="M40 228H460" stroke="${primaryColor}" stroke-width="1" opacity="0.2"/>
+  <text data-field-id="note" data-max-width="416" x="250" y="270" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">
     ${note}
   </text>
 </svg>`;
@@ -78,9 +80,9 @@ export const SOCIAL_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
     defaultColors: {
-      primary: '#BE185D',
-      secondary: '#1E293B',
-      background: '#FFF1F2',
+      primary: '#9F4055',
+      secondary: '#363038',
+      background: '#FFF8F5',
     },
     fields: [
       {
@@ -118,19 +120,18 @@ export const SOCIAL_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 460" width="460" height="460">
-  <rect x="18" y="18" width="424" height="424" rx="26" fill="${bg}" stroke="${primaryColor}" stroke-width="5" data-color-role="background"/>
-  <!-- At Symbol Icon -->
-  <circle cx="230" cy="115" r="45" fill="${primaryColor}" opacity="0.15" data-color-role="primary"/>
-  <text x="230" y="132" font-family="${fontFamily}, sans-serif" font-size="${Math.round(52 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">@</text>
-  <text data-field-id="callToAction" x="230" y="215" font-family="${fontFamily}, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle">
+  <rect x="18" y="18" width="424" height="424" rx="10" fill="${bg}" stroke="${primaryColor}" stroke-width="1.5" data-color-role="background"/>
+  <circle cx="230" cy="112" r="48" fill="none" stroke="${primaryColor}" stroke-width="1.5" data-color-role="primary"/>
+  <text data-max-width="74" x="230" y="131" font-family="${fontFamily}, sans-serif" font-size="${Math.round(54 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">@</text>
+  <text data-field-id="callToAction" data-max-width="364" x="230" y="219" font-family="${fontFamily}, sans-serif" font-size="${Math.round(27 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     ${cta}
   </text>
-  <!-- Handle Badge -->
-  <rect x="70" y="245" width="320" height="66" rx="16" fill="${primaryColor}" data-color-role="primary"/>
-  <text data-field-id="handle" x="230" y="288" font-family="monospace, sans-serif" font-size="${Math.round(28 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle" direction="ltr" unicode-bidi="embed">
+  <!-- The handle is the hero, with room for longer names instead of a tight capsule. -->
+  <text data-field-id="handle" data-max-width="368" x="230" y="293" font-family="${fontFamily}, monospace" font-size="${Math.round(32 * fs)}" font-weight="800" fill="${primaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${handle}
   </text>
-  <text data-field-id="platforms" x="230" y="365" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="800" fill="#64748B" text-anchor="middle">
+  <path d="M54 326H406" stroke="${primaryColor}" stroke-width="1" opacity="0.35"/>
+  <text data-field-id="platforms" data-max-width="352" x="230" y="379" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${platforms}
   </text>
 </svg>`;
@@ -148,9 +149,9 @@ export const SOCIAL_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 500 / 340,
     defaultMm: { width: 70, height: 48 },
     defaultColors: {
-      primary: '#2563EB',
-      secondary: '#0F172A',
-      background: '#EFF6FF',
+      primary: '#28617A',
+      secondary: '#26343E',
+      background: '#F6FAFB',
     },
     fields: [
       { id: 'wifiTitle', label: 'عنوان الشبكة', type: 'text', defaultValue: 'إنترنت مجاني للضيوف' },
@@ -173,33 +174,29 @@ export const SOCIAL_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 340" width="500" height="340">
-  <rect x="12" y="12" width="476" height="316" rx="16" fill="${bg}" stroke="${primaryColor}" stroke-width="4" data-color-role="background"/>
-  <!-- WiFi Signal Icon -->
-  <g transform="translate(250, 55)" stroke="${primaryColor}" stroke-width="4" fill="none" stroke-linecap="round" data-color-role="primary">
-    <path d="M -30,-5 A 38,38 0 0,1 30,-5"/>
-    <path d="M -18,6 A 22,22 0 0,1 18,6"/>
-    <circle cx="0" cy="16" r="3" fill="${primaryColor}"/>
+  <rect x="12" y="12" width="476" height="316" rx="8" fill="${bg}" stroke="${primaryColor}" stroke-width="1.5" data-color-role="background"/>
+  <g fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" data-color-role="primary">
+    <path d="M47 57Q78 29 109 57M58 68Q78 49 98 68M69 79Q78 71 87 79"/>
+    <circle cx="78" cy="90" r="3" fill="${primaryColor}" stroke="none"/>
   </g>
-  <text data-field-id="wifiTitle" x="250" y="120" font-family="${fontFamily}, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <text data-field-id="wifiTitle" data-max-width="310" x="302" y="76" font-family="${fontFamily}, sans-serif" font-size="${Math.round(25 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" data-color-role="secondary">
     ${title}
   </text>
-  <!-- SSID Box -->
-  <rect x="60" y="145" width="380" height="52" rx="10" fill="#DBEAFE"/>
-  <text x="150" y="178" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
+  <path d="M40 111H460M40 280H460" stroke="${primaryColor}" stroke-width="1" opacity="0.3"/>
+  <!-- Labels sit above full-width values, never competing for the same horizontal space. -->
+  <text data-max-width="416" x="250" y="141" font-family="${fontFamily}, sans-serif" font-size="${Math.round(15 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">
     الشبكة (SSID):
   </text>
-  <text data-field-id="ssid" x="350" y="178" font-family="monospace, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <text data-field-id="ssid" data-max-width="416" x="250" y="180" font-family="${fontFamily}, monospace" font-size="${Math.round(26 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${ssid}
   </text>
-  <!-- Password Box -->
-  <rect x="60" y="215" width="380" height="52" rx="10" fill="#DBEAFE"/>
-  <text x="150" y="248" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
+  <text data-max-width="416" x="250" y="220" font-family="${fontFamily}, sans-serif" font-size="${Math.round(15 * fs)}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">
     كلمة المرور:
   </text>
-  <text data-field-id="password" x="350" y="248" font-family="monospace, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="900" fill="#DC2626" text-anchor="middle">
+  <text data-field-id="password" data-max-width="416" x="250" y="259" font-family="${fontFamily}, monospace" font-size="${Math.round(26 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle" direction="ltr" unicode-bidi="embed">
     ${pass}
   </text>
-  <text x="250" y="300" font-family="${fontFamily}, sans-serif" font-size="${Math.round(15 * fs)}" font-weight="700" fill="#64748B" text-anchor="middle">
+  <text data-max-width="416" x="250" y="307" font-family="${fontFamily}, sans-serif" font-size="${Math.round(13 * fs)}" font-weight="600" fill="${secondaryColor}" text-anchor="middle" letter-spacing="1.5">
     FREE HIGH-SPEED GUEST WIFI
   </text>
 </svg>`;

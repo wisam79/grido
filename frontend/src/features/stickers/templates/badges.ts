@@ -1,6 +1,14 @@
+import { scallopCirclePath, starPoints } from './svg-elements';
 import { escapeXml } from '../lib/svg-rasterizer';
 
 import type { StickerTemplate } from '../types';
+
+function laurelSprig(x: number, y: number, color: string, mirrored = false): string {
+  return `<g transform="translate(${x} ${y}) scale(${mirrored ? -1 : 1} 1)" fill="${color}" data-color-role="primary">
+    <path d="M 0,56 C -30,26 -36,-18 -14,-54" fill="none" stroke="${color}" stroke-width="2"/>
+    <path d="M -9,44 Q -36,42 -38,19 Q -16,23 -9,44 Z M -22,23 Q -49,14 -43,-7 Q -24,1 -22,23 Z M -28,0 Q -48,-17 -36,-35 Q -22,-19 -28,0 Z M -25,-24 Q -34,-49 -16,-61 Q -10,-40 -25,-24 Z M -6,43 Q -14,19 2,8 Q 10,30 -6,43 Z M -21,18 Q -24,-6 -5,-15 Q -4,7 -21,18 Z M -26,-9 Q -22,-34 -5,-37 Q -7,-16 -26,-9 Z"/>
+  </g>`;
+}
 
 export const BADGE_TEMPLATES: StickerTemplate[] = [
   {
@@ -13,9 +21,9 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultColors: {
-      primary: '#D97706',
-      secondary: '#78350F',
-      background: '#FFFBEB',
+      primary: '#A77B36',
+      secondary: '#3B3021',
+      background: '#FCF7E9',
     },
     fields: [
       { id: 'topText', label: 'النص العلوي', type: 'text', defaultValue: '★ أصلي ومضمون ★' },
@@ -31,44 +39,27 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
       fontFamily = 'Cairo',
       fontScale = 1,
     }) => {
-      const top = escapeXml(fields.topText || '★ أصلي ومضمون ★');
-      const center = escapeXml(fields.centerText || '100%');
-      const bottom = escapeXml(fields.bottomText || 'ضمان ذهبي معتمد');
       const bg = isTransparent ? 'none' : backgroundColor;
-      const fs = fontScale || 1;
-
-      let starPoints = '';
-      const numPoints = 28;
-      const outerR = 230;
-      const innerR = 210;
-      for (let i = 0; i < numPoints * 2; i++) {
-        const r = i % 2 === 0 ? outerR : innerR;
-        const angle = (i * Math.PI) / numPoints;
-        const x = 250 + r * Math.cos(angle);
-        const y = 250 + r * Math.sin(angle);
-        starPoints += `${x.toFixed(1)},${y.toFixed(1)} `;
-      }
-
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">
   <defs>
-    <path id="badge-top-curve" d="M 90,250 A 160,160 0 0,1 410,250" fill="none"/>
-    <path id="badge-bottom-curve" d="M 90,250 A 160,160 0 0,0 410,250" fill="none"/>
-    <filter id="badge-shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.15"/>
-    </filter>
+    <linearGradient id="gold-rim" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="${secondaryColor}"/><stop offset="0.3" stop-color="${primaryColor}"/>
+      <stop offset="0.5" stop-color="${backgroundColor}"/><stop offset="0.7" stop-color="${primaryColor}"/><stop offset="1" stop-color="${secondaryColor}"/>
+    </linearGradient>
   </defs>
-  <polygon points="${starPoints.trim()}" fill="${primaryColor}" filter="url(#badge-shadow)" data-color-role="primary"/>
-  <circle cx="250" cy="250" r="195" fill="${bg}" stroke="${secondaryColor}" stroke-width="4" stroke-dasharray="8,5" data-color-role="background"/>
-  <circle cx="250" cy="250" r="182" fill="none" stroke="${primaryColor}" stroke-width="2"/>
-  <text data-field-id="topText" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
-    <textPath data-field-id="topText" href="#badge-top-curve" startOffset="50%">${top}</textPath>
-  </text>
-  <text data-field-id="centerText" x="250" y="272" font-family="${fontFamily}, sans-serif" font-size="${Math.round(70 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
-    ${center}
-  </text>
-  <text data-field-id="bottomText" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
-    <textPath data-field-id="bottomText" href="#badge-bottom-curve" startOffset="50%">${bottom}</textPath>
-  </text>
+  <path d="${scallopCirclePath(250, 250, 225, 36, 1.065)} M 461,250 A 211,211 0 1,0 39,250 A 211,211 0 1,0 461,250 Z" fill="url(#gold-rim)" fill-rule="evenodd" data-color-role="primary"/>
+  <circle cx="250" cy="250" r="211" fill="${bg}" data-color-role="background"/>
+  <circle cx="250" cy="250" r="202" fill="none" stroke="${primaryColor}" stroke-width="1.5"/>
+  <circle cx="250" cy="250" r="193" fill="none" stroke="${primaryColor}" stroke-width="1" stroke-dasharray="1 7" stroke-linecap="round"/>
+  ${laurelSprig(134, 275, primaryColor)}
+  ${laurelSprig(366, 275, primaryColor, true)}
+  <path d="M 213,104 H 238 M 262,104 H 287" stroke="${primaryColor}" stroke-width="1.5"/>
+  <polygon points="${starPoints(250, 104, 4, 10, 3.5)}" fill="${primaryColor}"/>
+  <text data-field-id="topText" data-max-width="280" x="250" y="157" font-family="${fontFamily}, sans-serif" font-size="${22 * fontScale}" font-weight="600" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.topText || '★ أصلي ومضمون ★')}</text>
+  <text data-field-id="centerText" data-max-width="242" x="250" y="277" font-family="${fontFamily}, sans-serif" font-size="${78 * fontScale}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.centerText || '100%')}</text>
+  <path d="M 199,310 H 301" stroke="${primaryColor}" stroke-width="1.5"/>
+  <text data-field-id="bottomText" data-max-width="276" x="250" y="356" font-family="${fontFamily}, sans-serif" font-size="${21 * fontScale}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.bottomText || 'ضمان ذهبي معتمد')}</text>
+  <circle cx="250" cy="390" r="3" fill="${primaryColor}"/>
 </svg>`;
     },
   },
@@ -82,9 +73,9 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 560,
     aspectRatio: 500 / 560,
     defaultColors: {
-      primary: '#B45309',
-      secondary: '#1E293B',
-      background: '#FFFFFF',
+      primary: '#A98552',
+      secondary: '#233F40',
+      background: '#FAF7EF',
     },
     fields: [
       { id: 'ribbonText', label: 'نص الوشاح', type: 'text', defaultValue: 'جودة ممتازة' },
@@ -100,38 +91,27 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
       fontFamily = 'Cairo',
       fontScale = 1,
     }) => {
-      const ribbon = escapeXml(fields.ribbonText || 'جودة ممتازة');
-      const main = escapeXml(fields.mainText || 'PREMIUM');
-      const sub = escapeXml(fields.subText || 'مختار بعناية فائقة');
       const bg = isTransparent ? 'none' : backgroundColor;
-      const fs = fontScale || 1;
-
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 560" width="500" height="560">
-  <defs>
-    <filter id="ribbon-shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity="0.2"/>
-    </filter>
-  </defs>
-  <!-- Ribbon Tails -->
-  <polygon points="120,380 90,490 150,460 210,490 190,380" fill="${primaryColor}" opacity="0.85" data-color-role="primary"/>
-  <polygon points="380,380 350,490 410,460 470,490 450,380" fill="${primaryColor}" opacity="0.85" data-color-role="primary"/>
-  <!-- Central Badge -->
-  <circle cx="250" cy="220" r="170" fill="${bg}" stroke="${primaryColor}" stroke-width="8" filter="url(#ribbon-shadow)" data-color-role="background"/>
-  <circle cx="250" cy="220" r="150" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-dasharray="4,4"/>
-  <!-- Stars -->
-  <path d="M 250,110 L 254,122 L 266,122 L 257,130 L 260,142 L 250,134 L 240,142 L 243,130 L 234,122 L 246,122 Z" fill="${primaryColor}"/>
-  <!-- Text -->
-  <text data-field-id="mainText" x="250" y="210" font-family="${fontFamily}, sans-serif" font-size="${Math.round(44 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle" letter-spacing="2">
-    ${main}
-  </text>
-  <text data-field-id="subText" x="250" y="252" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
-    ${sub}
-  </text>
-  <!-- Horizontal Banner Ribbon -->
-  <rect x="75" y="340" width="350" height="66" rx="10" fill="${primaryColor}" filter="url(#ribbon-shadow)" data-color-role="primary"/>
-  <text data-field-id="ribbonText" x="250" y="384" font-family="${fontFamily}, sans-serif" font-size="${Math.round(26 * fs)}" font-weight="800" fill="#FFFFFF" text-anchor="middle">
-    ${ribbon}
-  </text>
+  <path d="M 144,326 L 102,513 L 166,484 L 202,529 L 242,342 Z M 356,326 L 398,513 L 334,484 L 298,529 L 258,342 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <path d="M 156,356 L 130,486 M 195,362 L 175,471 M 344,356 L 370,486 M 305,362 L 325,471" fill="none" stroke="${primaryColor}" stroke-width="2"/>
+  <circle cx="250" cy="222" r="184" fill="${bg}" stroke="${primaryColor}" stroke-width="3" data-color-role="background"/>
+  <circle cx="250" cy="222" r="171" fill="none" stroke="${secondaryColor}" stroke-width="1.5"/>
+  <path d="M 111,205 A 141,141 0 0,1 389,205" fill="none" stroke="${primaryColor}" stroke-width="1"/>
+  <g fill="${primaryColor}" data-color-role="primary">
+    <polygon points="${starPoints(250, 117, 4, 19, 7)}"/>
+    <polygon points="${starPoints(213, 130, 4, 8, 3)}"/>
+    <polygon points="${starPoints(287, 130, 4, 8, 3)}"/>
+  </g>
+  <text data-field-id="mainText" data-max-width="282" x="250" y="221" font-family="${fontFamily}, sans-serif" font-size="${42 * fontScale}" font-weight="800" letter-spacing="3" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.mainText || 'PREMIUM')}</text>
+  <text data-field-id="subText" data-max-width="268" x="250" y="268" font-family="${fontFamily}, sans-serif" font-size="${19 * fontScale}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.subText || 'مختار بعناية فائقة')}</text>
+  <path d="M 191,295 H 237 M 263,295 H 309" stroke="${primaryColor}" stroke-width="1.5"/>
+  <circle cx="250" cy="295" r="3" fill="${primaryColor}"/>
+  <path d="M 41,349 H 110 V 417 H 41 L 59,383 Z M 459,349 H 390 V 417 H 459 L 441,383 Z" fill="${secondaryColor}"/>
+  <path d="M 75,397 L 110,417 V 397 Z M 425,397 L 390,417 V 397 Z" fill="${primaryColor}"/>
+  <rect x="75" y="333" width="350" height="64" rx="3" fill="${secondaryColor}" data-color-role="secondary"/>
+  <path d="M 88,342 H 412 M 88,388 H 412" stroke="${primaryColor}" stroke-width="1"/>
+  <text data-field-id="ribbonText" data-max-width="304" x="250" y="376" font-family="${fontFamily}, sans-serif" font-size="${25 * fontScale}" font-weight="700" fill="${backgroundColor}" text-anchor="middle">${escapeXml(fields.ribbonText || 'جودة ممتازة')}</text>
 </svg>`;
     },
   },
@@ -145,9 +125,9 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultColors: {
-      primary: '#BE185D',
-      secondary: '#831843',
-      background: '#FDF2F8',
+      primary: '#A45D4E',
+      secondary: '#563C35',
+      background: '#FBF3EA',
     },
     fields: [
       { id: 'craftText', label: 'النص الرئيسي', type: 'text', defaultValue: 'صُنع يدوياً بحب' },
@@ -168,26 +148,19 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
       fontFamily = 'Cairo',
       fontScale = 1,
     }) => {
-      const craft = escapeXml(fields.craftText || 'صُنع يدوياً بحب');
-      const store = escapeXml(fields.storeName || 'حِرف وأصالة');
-      const tagline = escapeXml(fields.tagline || 'قطعة فريدة صُممت لأجلك');
       const bg = isTransparent ? 'none' : backgroundColor;
-      const fs = fontScale || 1;
-
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
-  <rect x="25" y="25" width="430" height="430" rx="35" fill="${bg}" stroke="${primaryColor}" stroke-width="4" stroke-dasharray="10,6" data-color-role="background"/>
-  <!-- Heart Icon -->
-  <path d="M 240,110 C 220,75 160,75 140,120 C 120,165 240,240 240,240 C 240,240 360,165 340,120 C 320,75 260,75 240,110 Z" fill="${primaryColor}" data-color-role="primary"/>
-  <!-- Text Elements -->
-  <text data-field-id="craftText" x="240" y="295" font-family="${fontFamily}, sans-serif" font-size="${Math.round(34 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
-    ${craft}
-  </text>
-  <text data-field-id="storeName" x="240" y="345" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
-    ${store}
-  </text>
-  <text data-field-id="tagline" x="240" y="390" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="500" fill="#64748B" text-anchor="middle">
-    ${tagline}
-  </text>
+  <rect x="23" y="23" width="434" height="434" rx="92" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <rect x="35" y="35" width="410" height="410" rx="82" fill="none" stroke="${primaryColor}" stroke-width="1.4" stroke-dasharray="3 7" stroke-linecap="round"/>
+  <path d="M 240,113 C 212,76 171,97 176,132 C 181,165 219,184 240,200 C 261,184 299,165 304,132 C 309,97 268,76 240,113 Z" fill="${primaryColor}" fill-opacity="0.12"/>
+  <path d="M 240,126 C 219,95 190,108 192,132 C 194,154 222,172 240,186 C 258,172 286,154 288,132 C 290,108 261,95 240,126 Z" fill="none" stroke="${primaryColor}" stroke-width="3" data-color-role="primary"/>
+  <path d="M 240,186 C 207,221 170,185 153,202 C 142,214 165,224 178,210 M 260,114 L 300,78 M 294,83 L 300,78" fill="none" stroke="${primaryColor}" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="298" cy="80" rx="2.5" ry="5" transform="rotate(47 298 80)" fill="none" stroke="${secondaryColor}" stroke-width="1.5"/>
+  <path d="M 121,139 L 129,146 M 134,116 L 140,126 M 346,162 L 356,158 M 342,184 L 350,188" stroke="${primaryColor}" stroke-width="2.5" stroke-linecap="round"/>
+  <text data-field-id="craftText" data-max-width="344" x="240" y="281" font-family="${fontFamily}, sans-serif" font-size="${34 * fontScale}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.craftText || 'صُنع يدوياً بحب')}</text>
+  <text data-field-id="storeName" data-max-width="320" x="240" y="331" font-family="${fontFamily}, sans-serif" font-size="${23 * fontScale}" font-weight="600" fill="${primaryColor}" text-anchor="middle">${escapeXml(fields.storeName || 'حِرف وأصالة')}</text>
+  <path d="M 216,355 H 264" stroke="${primaryColor}" stroke-width="1.5"/>
+  <text data-field-id="tagline" data-max-width="324" x="240" y="390" font-family="${fontFamily}, sans-serif" font-size="${17 * fontScale}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.tagline || 'قطعة فريدة صُممت لأجلك')}</text>
 </svg>`;
     },
   },
@@ -201,9 +174,9 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultColors: {
-      primary: '#15803D',
-      secondary: '#166534',
-      background: '#F0FDF4',
+      primary: '#587451',
+      secondary: '#2D4638',
+      background: '#F6F5E9',
     },
     fields: [
       { id: 'title', label: 'العنوان الرئيسي', type: 'text', defaultValue: '100% طبيعي' },
@@ -229,28 +202,21 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
       fontFamily = 'Cairo',
       fontScale = 1,
     }) => {
-      const title = escapeXml(fields.title || '100% طبيعي');
-      const subtitle = escapeXml(fields.subtitle || 'عضوي وخالٍ من الإضافات');
-      const source = escapeXml(fields.source || 'مستخلص من الطبيعة النقية');
       const bg = isTransparent ? 'none' : backgroundColor;
-      const fs = fontScale || 1;
-
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
-  <circle cx="240" cy="240" r="215" fill="${bg}" stroke="${primaryColor}" stroke-width="5" data-color-role="background"/>
-  <circle cx="240" cy="240" r="198" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-dasharray="6,4"/>
-  <!-- Leaf Graphics -->
-  <path d="M 240,85 C 290,105 310,165 285,200 C 260,235 240,225 240,225 C 240,225 220,235 195,200 C 170,165 190,105 240,85 Z" fill="${primaryColor}" data-color-role="primary"/>
-  <path d="M 240,95 L 240,220" stroke="${bg}" stroke-width="3"/>
-  <!-- Text -->
-  <text data-field-id="title" x="240" y="278" font-family="${fontFamily}, sans-serif" font-size="${Math.round(38 * fs)}" font-weight="900" fill="${secondaryColor}" text-anchor="middle">
-    ${title}
-  </text>
-  <text data-field-id="subtitle" x="240" y="325" font-family="${fontFamily}, sans-serif" font-size="${Math.round(21 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
-    ${subtitle}
-  </text>
-  <text data-field-id="source" x="240" y="370" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="600" fill="#4B5563" text-anchor="middle">
-    ${source}
-  </text>
+  <circle cx="240" cy="240" r="220" fill="${bg}" stroke="${primaryColor}" stroke-width="2" data-color-role="background"/>
+  <path d="M 65,200 A 180,180 0 0,1 415,200 M 77,316 A 180,180 0 0,0 403,316" fill="none" stroke="${primaryColor}" stroke-width="1"/>
+  <circle cx="68" cy="285" r="3" fill="${primaryColor}"/><circle cx="412" cy="285" r="3" fill="${primaryColor}"/>
+  <path d="M 238,219 C 226,174 247,139 269,97" fill="none" stroke="${secondaryColor}" stroke-width="3" stroke-linecap="round"/>
+  <g fill="${primaryColor}" data-color-role="primary">
+    <path d="M 239,183 C 191,190 167,163 169,131 C 207,128 236,146 239,183 Z"/>
+    <path d="M 246,158 C 251,112 281,101 315,112 C 304,148 282,166 246,158 Z" fill-opacity="0.75"/>
+    <path d="M 262,115 C 240,98 244,73 264,57 C 286,77 286,99 262,115 Z"/>
+  </g>
+  <path d="M 185,143 Q 209,157 238,183 M 247,158 Q 278,140 300,123 M 263,74 L 262,114" fill="none" stroke="${backgroundColor}" stroke-width="1.5" stroke-linecap="round"/>
+  <text data-field-id="title" data-max-width="314" x="240" y="278" font-family="${fontFamily}, sans-serif" font-size="${39 * fontScale}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.title || '100% طبيعي')}</text>
+  <text data-field-id="subtitle" data-max-width="316" x="240" y="325" font-family="${fontFamily}, sans-serif" font-size="${21 * fontScale}" font-weight="600" fill="${primaryColor}" text-anchor="middle">${escapeXml(fields.subtitle || 'عضوي وخالٍ من الإضافات')}</text>
+  <text data-field-id="source" data-max-width="288" x="240" y="368" font-family="${fontFamily}, sans-serif" font-size="${16 * fontScale}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.source || 'مستخلص من الطبيعة النقية')}</text>
 </svg>`;
     },
   },
@@ -264,9 +230,9 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultColors: {
-      primary: '#DC2626',
-      secondary: '#FEF08A',
-      background: '#FFFFFF',
+      primary: '#B73C43',
+      secondary: '#F6DAA1',
+      background: '#FFF8EE',
     },
     fields: [
       { id: 'saleBadge', label: 'شارة الخصم', type: 'text', defaultValue: 'خصم خاص' },
@@ -277,38 +243,20 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
       fields,
       primaryColor,
       secondaryColor,
-      backgroundColor: _backgroundColor,
-      isTransparent: _isTransparent,
+      backgroundColor,
+      isTransparent,
       fontFamily = 'Cairo',
       fontScale = 1,
     }) => {
-      const badge = escapeXml(fields.saleBadge || 'خصم خاص');
-      const percent = escapeXml(fields.salePercent || '50%');
-      const period = escapeXml(fields.salePeriod || 'لفترة محدودة');
-      const fs = fontScale || 1;
-
-      let burst = '';
-      const spikes = 20;
-      for (let i = 0; i < spikes * 2; i++) {
-        const r = i % 2 === 0 ? 220 : 175;
-        const angle = (i * Math.PI) / spikes;
-        const x = 240 + r * Math.cos(angle);
-        const y = 240 + r * Math.sin(angle);
-        burst += `${x.toFixed(1)},${y.toFixed(1)} `;
-      }
-
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
-  <polygon points="${burst.trim()}" fill="${primaryColor}" data-color-role="primary"/>
-  <circle cx="240" cy="240" r="140" fill="${primaryColor}" stroke="${secondaryColor}" stroke-width="4" data-color-role="secondary"/>
-  <text data-field-id="saleBadge" x="240" y="170" font-family="${fontFamily}, sans-serif" font-size="${Math.round(24 * fs)}" font-weight="800" fill="${secondaryColor}" text-anchor="middle">
-    ${badge}
-  </text>
-  <text data-field-id="salePercent" x="240" y="260" font-family="${fontFamily}, sans-serif" font-size="${Math.round(75 * fs)}" font-weight="900" fill="#FFFFFF" text-anchor="middle">
-    ${percent}
-  </text>
-  <text data-field-id="salePeriod" x="240" y="315" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
-    ${period}
-  </text>
+  <polygon points="${starPoints(240, 240, 18, 225, 201)}" fill="${isTransparent ? 'none' : primaryColor}" stroke="${primaryColor}" stroke-width="2" data-color-role="primary"/>
+  <circle cx="240" cy="240" r="184" fill="none" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <path d="M 97,225 V 253 M 383,225 V 253" stroke="${secondaryColor}" stroke-width="2"/>
+  <rect x="161" y="104" width="158" height="40" rx="20" fill="${secondaryColor}"/>
+  <text data-field-id="saleBadge" data-max-width="132" x="240" y="132" font-family="${fontFamily}, sans-serif" font-size="${21 * fontScale}" font-weight="700" fill="${primaryColor}" text-anchor="middle">${escapeXml(fields.saleBadge || 'خصم خاص')}</text>
+  <text data-field-id="salePercent" data-max-width="278" x="240" y="281" font-family="${fontFamily}, sans-serif" font-size="${92 * fontScale}" font-weight="800" fill="${backgroundColor}" text-anchor="middle">${escapeXml(fields.salePercent || '50%')}</text>
+  <path d="M 181,313 H 299" stroke="${secondaryColor}" stroke-width="1.5"/>
+  <text data-field-id="salePeriod" data-max-width="266" x="240" y="354" font-family="${fontFamily}, sans-serif" font-size="${21 * fontScale}" font-weight="600" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.salePeriod || 'لفترة محدودة')}</text>
 </svg>`;
     },
   },
@@ -322,9 +270,9 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultColors: {
-      primary: '#0284C7',
-      secondary: '#0369A1',
-      background: '#F0F9FF',
+      primary: '#476D79',
+      secondary: '#233E4D',
+      background: '#F2F7F6',
     },
     fields: [
       { id: 'status', label: 'الحالة', type: 'text', defaultValue: 'QC PASSED' },
@@ -345,28 +293,19 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
       fontFamily = 'Cairo',
       fontScale = 1,
     }) => {
-      const status = escapeXml(fields.status || 'QC PASSED');
-      const inspector = escapeXml(fields.inspector || 'مفتش الجودة #42');
-      const date = escapeXml(fields.date || 'معتمد ومطابق للمواصفات');
       const bg = isTransparent ? 'none' : backgroundColor;
-      const fs = fontScale || 1;
-
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
-  <circle cx="240" cy="240" r="215" fill="${bg}" stroke="${primaryColor}" stroke-width="6" data-color-role="background"/>
-  <circle cx="240" cy="240" r="195" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-dasharray="8,6"/>
-  <!-- Checkmark Badge -->
-  <circle cx="240" cy="145" r="42" fill="${primaryColor}" data-color-role="primary"/>
-  <path d="M 224,145 L 236,157 L 258,133" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Texts -->
-  <text data-field-id="status" x="240" y="245" font-family="${fontFamily}, sans-serif" font-size="${Math.round(38 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle" letter-spacing="2">
-    ${status}
-  </text>
-  <text data-field-id="inspector" x="240" y="295" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
-    ${inspector}
-  </text>
-  <text data-field-id="date" x="240" y="340" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="600" fill="#64748B" text-anchor="middle">
-    ${date}
-  </text>
+  <circle cx="240" cy="240" r="218" fill="${bg}" stroke="${primaryColor}" stroke-width="3" data-color-role="background"/>
+  <circle cx="240" cy="240" r="204" fill="none" stroke="${primaryColor}" stroke-width="1"/>
+  <path d="M 201,98 Q 240,101 279,98 L 275,143 Q 272,167 240,183 Q 208,167 205,143 Z" fill="${primaryColor}" fill-opacity="0.12"/>
+  <path d="M 207,104 Q 240,106 273,104 L 269,140 Q 268,160 240,175 Q 212,160 211,140 Z" fill="none" stroke="${primaryColor}" stroke-width="2.5" data-color-role="primary"/>
+  <path d="M 225,136 L 237,148 L 258,123" fill="none" stroke="${secondaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  ${laurelSprig(161, 147, primaryColor)}
+  ${laurelSprig(319, 147, primaryColor, true)}
+  <text data-field-id="status" data-max-width="318" x="240" y="260" font-family="${fontFamily}, sans-serif" font-size="${37 * fontScale}" font-weight="800" letter-spacing="2" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.status || 'QC PASSED')}</text>
+  <path d="M 109,283 H 371" stroke="${primaryColor}" stroke-width="1"/>
+  <text data-field-id="inspector" data-max-width="312" x="240" y="325" font-family="${fontFamily}, sans-serif" font-size="${22 * fontScale}" font-weight="600" fill="${primaryColor}" text-anchor="middle">${escapeXml(fields.inspector || 'مفتش الجودة #42')}</text>
+  <text data-field-id="date" data-max-width="286" x="240" y="367" font-family="${fontFamily}, sans-serif" font-size="${17 * fontScale}" font-weight="500" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.date || 'معتمد ومطابق للمواصفات')}</text>
 </svg>`;
     },
   },
@@ -380,9 +319,9 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultColors: {
-      primary: '#C2410C',
-      secondary: '#7C2D12',
-      background: '#FFF7ED',
+      primary: '#A77455',
+      secondary: '#433B38',
+      background: '#FAF4EA',
     },
     fields: [
       { id: 'top', label: 'الشارة العليا', type: 'text', defaultValue: 'نسخة حصرية' },
@@ -403,27 +342,21 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
       fontFamily = 'Cairo',
       fontScale = 1,
     }) => {
-      const top = escapeXml(fields.top || 'نسخة حصرية');
-      const title = escapeXml(fields.title || 'LIMITED EDITION');
-      const num = escapeXml(fields.number || 'إصدار مرقم ومحدود');
       const bg = isTransparent ? 'none' : backgroundColor;
-      const fs = fontScale || 1;
-
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
-  <rect x="25" y="25" width="430" height="430" rx="30" fill="${bg}" stroke="${primaryColor}" stroke-width="5" data-color-role="background"/>
-  <rect x="38" y="38" width="404" height="404" rx="20" fill="none" stroke="${secondaryColor}" stroke-width="2"/>
-  <!-- Crown Icon -->
-  <path d="M 190,140 L 210,105 L 240,125 L 270,105 L 290,140 Z" fill="${primaryColor}" data-color-role="primary"/>
-  <!-- Text -->
-  <text data-field-id="top" x="240" y="200" font-family="${fontFamily}, sans-serif" font-size="${Math.round(22 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
-    ${top}
-  </text>
-  <text data-field-id="title" x="240" y="265" font-family="${fontFamily}, sans-serif" font-size="${Math.round(34 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle" letter-spacing="1">
-    ${title}
-  </text>
-  <text data-field-id="number" x="240" y="330" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="700" fill="${secondaryColor}" text-anchor="middle">
-    ${num}
-  </text>
+  <path d="M 55,25 H 425 L 455,55 V 425 L 425,455 H 55 L 25,425 V 55 Z" fill="${bg}" stroke="${primaryColor}" stroke-width="2.5" data-color-role="background"/>
+  <path d="M 61,37 H 419 L 443,61 V 419 L 419,443 H 61 L 37,419 V 61 Z" fill="none" stroke="${primaryColor}" stroke-width="1"/>
+  <path d="M 54,105 V 68 L 68,54 H 105 M 375,54 H 412 L 426,68 V 105 M 54,375 V 412 L 68,426 H 105 M 375,426 H 412 L 426,412 V 375" fill="none" stroke="${secondaryColor}" stroke-width="1.5"/>
+  <g stroke="${primaryColor}" stroke-width="2" stroke-linejoin="round" data-color-role="primary">
+    <path d="M 198,114 L 205,149 H 275 L 282,114 L 257,132 L 240,105 L 223,132 Z" fill="${primaryColor}" fill-opacity="0.14"/>
+    <path d="M 207,158 H 273"/>
+  </g>
+  <circle cx="198" cy="109" r="3" fill="${primaryColor}"/><circle cx="282" cy="109" r="3" fill="${primaryColor}"/><circle cx="240" cy="99" r="3" fill="${primaryColor}"/>
+  <text data-field-id="top" data-max-width="324" x="240" y="214" font-family="${fontFamily}, sans-serif" font-size="${22 * fontScale}" font-weight="600" fill="${primaryColor}" text-anchor="middle">${escapeXml(fields.top || 'نسخة حصرية')}</text>
+  <text data-field-id="title" data-max-width="360" x="240" y="277" font-family="${fontFamily}, sans-serif" font-size="${33 * fontScale}" font-weight="800" letter-spacing="2" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.title || 'LIMITED EDITION')}</text>
+  <path d="M 107,314 H 220 M 260,314 H 373" stroke="${primaryColor}" stroke-width="1"/>
+  <polygon points="240,308 246,314 240,320 234,314" fill="${primaryColor}"/>
+  <text data-field-id="number" data-max-width="316" x="240" y="367" font-family="${fontFamily}, sans-serif" font-size="${20 * fontScale}" font-weight="600" fill="${secondaryColor}" text-anchor="middle">${escapeXml(fields.number || 'إصدار مرقم ومحدود')}</text>
 </svg>`;
     },
   },

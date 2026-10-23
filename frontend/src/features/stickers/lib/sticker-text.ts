@@ -71,12 +71,13 @@ export function estimateTextWidth(
   fontFamily: string,
   fontWeight: string | number,
 ): number {
-  const plain = text.replace(/<[^>]*>/g, '').replace(/&(?:amp|lt|gt|quot|apos);/g, 'm');
+  const plain = text;
   if (!plain) return 0;
   const ctx = getMeasureCtx();
   if (ctx) {
     try {
-      ctx.font = `${fontWeight || 400} ${fontSize}px ${fontFamily || 'sans-serif'}`;
+      const family = fontFamily || 'sans-serif';
+      ctx.font = `${fontWeight || 400} ${fontSize}px ${family.includes(' ') ? `"${family}"` : family}`;
       return ctx.measureText(plain).width;
     } catch {
       // fallback أدناه
@@ -122,8 +123,8 @@ export function namespaceStickerSvgIds(svg: string, ns: string): string {
   if (!svg || !ns) return svg;
   const safeNs = ns.replace(/[^a-zA-Z0-9_-]/g, '');
   if (!safeNs) return svg;
-  let out = svg.replace(/\bid="([^"]+)"/g, (m, id: string) =>
-    id.startsWith(`${safeNs}-`) ? m : `id="${safeNs}-${id}"`,
+  let out = svg.replace(/(\s)id="([^"]+)"/g, (m, space: string, id: string) =>
+    id.startsWith(`${safeNs}-`) ? m : `${space}id="${safeNs}-${id}"`,
   );
   out = out.replace(/url\(#([^)"']+)\)/g, (m, id: string) =>
     id.startsWith(`${safeNs}-`) ? m : `url(#${safeNs}-${id})`,
@@ -146,13 +147,7 @@ function stripArabicLetterSpacing(attrs: string, dir: 'rtl' | 'ltr'): string {
   return attrs.replace(/\s*letter-spacing="[^"]*"/g, '');
 }
 
-/**
- * معالجة لاحقة لسلسلة SVG:
- * 1) حقن `direction/unicode-bidi` المفقودة حسب محتوى كل `<text>`.
- * 2) تقليص `font-size` عند فيض العرض عن ~84% من الـ viewBox (تخطي منحنيات textPath).
- * 3) إسقاط `letter-spacing` عن النص العربي (يفكّك الوصل) مع إبقائه للاتيني.
- * 4) فضّ تضارب المعرّفات اختيارياً عبر `options.namespace` لعرض آمن متعدد النسخ.
- */
+// data-max-width describes the usable label width or arc length, not the full sticker.
 export function postProcessStickerSvg(svg: string, options?: StickerSvgPostProcessOptions): string {
   if (!svg || !svg.includes('<text')) {
     return options?.namespace ? namespaceStickerSvgIds(svg, options.namespace) : svg;
@@ -164,15 +159,9 @@ export function postProcessStickerSvg(svg: string, options?: StickerSvgPostProce
   const processed = svg.replace(
     /<text([^>]*)>([\s\S]*?)<\/text>/g,
     (full, attrs: string, inner: string) => {
-      if (inner.includes('<textPath')) {
-        // منحني: اتجاه فقط بلا تغيير مقاس (القوس لا يُقاس خطياً)
-        const dir = detectTextDirection(stripTags(inner));
-        const nextAttrs = stripArabicLetterSpacing(attrs, dir);
-        if (/direction\s*=/.test(nextAttrs)) {
-          return nextAttrs === attrs ? full : `<text${nextAttrs}>${inner}</text>`;
-        }
-        return `<text${nextAttrs} direction="${dir}" unicode-bidi="embed">${inner}</text>`;
-      }
+      const fieldWidth = Number(attrs.match(/data-max-width="([\d.]+)"/)?.[1]);
+      const hasFieldWidth = Number.isFinite(fieldWidth) && fieldWidth > 0;
+      const availableWidth = hasFieldWidth ? Math.min(fieldWidth, vbW) : maxWidth;
       const plain = stripTags(inner).trim();
       const dir = /direction\s*=/.test(attrs)
         ? /direction="rtl"/.test(attrs)
@@ -184,7 +173,8 @@ export function postProcessStickerSvg(svg: string, options?: StickerSvgPostProce
         nextAttrs += ` direction="${dir}" unicode-bidi="embed"`;
       }
       const fsMatch = nextAttrs.match(/font-size="([\d.]+)"/);
-      if (fsMatch && plain.length > 4) {
+      const canFit = hasFieldWidth || (!inner.includes('<textPath') && plain.length > 4);
+      if (fsMatch && canFit && plain) {
         const base = parseFloat(fsMatch[1]);
         if (base > 0 && isFinite(base)) {
           const famMatch = nextAttrs.match(/font-family="([^"]*)"/);
@@ -193,14 +183,26 @@ export function postProcessStickerSvg(svg: string, options?: StickerSvgPostProce
             ? famMatch[1].split(',')[0].replace(/['"]/g, '').trim()
             : 'sans-serif';
           const weight = wMatch ? wMatch[1] : '400';
-          const measured = estimateTextWidth(plain, base, family, weight);
-          if (measured > maxWidth) {
+          const spacingMatch = nextAttrs.match(/letter-spacing="(-?[\d.]+)"/);
+          const spacing = spacingMatch ? Number(spacingMatch[1]) : 0;
+          const measured =
+            estimateTextWidth(plain, base, family, weight) +
+            Math.max(0, spacing) * Array.from(plain).length;
+          if (measured > availableWidth) {
+            const precision = hasFieldWidth ? 10 : 1;
             const fitted = Math.max(
-              Math.floor(base * 0.55),
-              Math.floor((base * maxWidth) / measured),
+              hasFieldWidth ? 0.1 : Math.floor(base * 0.55),
+              Math.floor(((base * availableWidth * 0.98) / measured) * precision) / precision,
             );
             if (fitted < base) {
               nextAttrs = nextAttrs.replace(/font-size="[\d.]+"/, `font-size="${fitted}"`);
+              if (spacingMatch && spacing > 0) {
+                const fittedSpacing = Math.floor(((spacing * fitted) / base) * 100) / 100;
+                nextAttrs = nextAttrs.replace(
+                  /letter-spacing="[\d.]+"/,
+                  `letter-spacing="${fittedSpacing}"`,
+                );
+              }
             }
           }
         }

@@ -5,6 +5,11 @@ import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
 import { FluentFilterChips } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import { Plus, Stamp, CaretRight } from '@/components/ui/icons';
+import {
+  buildDefaultStickerParams,
+  buildStickerSvg,
+} from '@/features/stickers/lib/sticker-design/build-svg';
+import { stickerRasterSize } from '@/features/stickers/lib/sticker-text';
 import { renderSvgToPngDataUrl } from '@/features/stickers/lib/svg-rasterizer';
 import { useEditorStore } from '@/lib/editor-store';
 import { SHAPE_CATEGORIES, shapesInCategory } from '@/lib/io/shape-catalog';
@@ -14,7 +19,7 @@ import { toErrorMessage } from '@/lib/wails-error';
 
 import { FreeformTextTab } from './freeform-text-tab';
 
-import type { StickerTemplate } from '@/features/stickers/types';
+import type { StickerParams, StickerTemplate } from '@/features/stickers/types';
 import type { ShapeCatalogItem } from '@/lib/io/shape-catalog';
 
 const logger = createLogger('freeform-elements-tab');
@@ -22,19 +27,19 @@ const logger = createLogger('freeform-elements-tab');
 // كاش محلي للـ SVG لتسريع العرض الفوري
 const SVG_PREVIEW_CACHE = new Map<string, string>();
 
+function buildQuickStickerParams(t: StickerTemplate): StickerParams {
+  return {
+    ...buildDefaultStickerParams(t),
+    isTransparent: t.category === 'frames',
+  };
+}
+
 function getStickerSvgPreview(t: StickerTemplate): string {
   const cached = SVG_PREVIEW_CACHE.get(t.id);
   if (cached) return cached;
   try {
-    const fields = Object.fromEntries(t.fields.map((f) => [f.id, f.defaultValue]));
-    const isFrame = t.category === 'frames';
-    const svg = t.generateSvg({
-      fields,
-      primaryColor: t.defaultColors.primary,
-      secondaryColor: t.defaultColors.secondary,
-      backgroundColor: t.defaultColors.background,
-      isTransparent: isFrame,
-      fontFamily: 'Cairo',
+    const svg = buildStickerSvg(t, buildQuickStickerParams(t), {
+      namespace: `quick-${t.id}`,
     });
     SVG_PREVIEW_CACHE.set(t.id, svg);
     return svg;
@@ -139,22 +144,29 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
     [addShapeElement],
   );
 
-  // إدراج ملصق / ختم بنقرة واحدة
+  // إدراج ملصق / ختم بنقرة واحدة مع حفظ مصدر الملصق لإتاحة «تعديل الملصق» ونسخ SVG من قائمة السياق
   const handleInsertSticker = useCallback(
     async (template: StickerTemplate) => {
       try {
         setIsInserting(template.id);
+        const params = buildQuickStickerParams(template);
         const svg = getStickerSvgPreview(template);
         if (!svg) {
           toast.error('تعذرت المعاينة');
           return;
         }
 
-        const pngUrl = await renderSvgToPngDataUrl(svg, 1000, 1000 / (template.aspectRatio || 1), [
-          'Cairo',
+        const { width, height } = stickerRasterSize(template.aspectRatio, template.defaultMm);
+        const pngUrl = await renderSvgToPngDataUrl(svg, width, height, [
+          params.fontFamily || 'Cairo',
         ]);
+        const exportableSvg = sanitizeSvgMarkupCached(svg) || svg;
 
-        addImageElement(pngUrl, template.aspectRatio || 1);
+        addImageElement(pngUrl, template.aspectRatio || 1, {
+          templateId: template.id,
+          params,
+          ...(exportableSvg ? { svg: exportableSvg } : {}),
+        });
         toast.success(`أُضيف ${template.name}`);
       } catch (err) {
         logger.error('Failed to insert quick sticker', err);

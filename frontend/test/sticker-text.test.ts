@@ -61,6 +61,50 @@ describe('sticker-text: direction + fit + DPI', () => {
     expect(out).toContain('font-size="20"');
   });
 
+  it('fits narrow fields rather than the whole sticker, including short values', () => {
+    const svg = `<svg viewBox="0 0 500 500"><text data-max-width="60" font-size="100">1+1</text></svg>`;
+    const out = postProcessStickerSvg(svg);
+    const fontSize = Number(out.match(/font-size="([\d.]+)"/)?.[1]);
+    expect(fontSize).toBeGreaterThan(0);
+    expect(fontSize).toBeLessThan(55);
+    expect(fontSize * 3 * 0.6).toBeLessThanOrEqual(60);
+  });
+
+  it('fits an explicitly bounded arc and preserves Arabic shaping', () => {
+    const svg = `<svg viewBox="0 0 500 500"><text data-max-width="100" font-size="30" letter-spacing="3"><textPath href="#curve">عبارة تهنئة عربية طويلة للمناسبة</textPath></text></svg>`;
+    const out = postProcessStickerSvg(svg);
+    expect(out).toContain('direction="rtl"');
+    expect(out).not.toContain('letter-spacing');
+    expect(out).toContain('href="#curve"');
+    expect(Number(out.match(/font-size="([\d.]+)"/)?.[1])).toBeLessThan(30);
+  });
+
+  it('fits Latin tracking with the font instead of overflowing a narrow label', () => {
+    const svg = `<svg viewBox="0 0 500 500"><text data-max-width="70" font-size="20" letter-spacing="8">PREMIUM</text></svg>`;
+    const out = postProcessStickerSvg(svg);
+    const size = Number(out.match(/font-size="([\d.]+)"/)?.[1]);
+    const spacing = Number(out.match(/letter-spacing="([\d.]+)"/)?.[1]);
+    expect(size).toBeLessThan(20);
+    expect(spacing).toBeLessThan(8);
+    expect(size * 7 * 0.6 + spacing * 7).toBeLessThanOrEqual(70);
+    expect(postProcessStickerSvg(out)).toBe(out);
+  });
+
+  it('retains literal XML-special field content when measuring its width', () => {
+    const svg = `<svg viewBox="0 0 500 500"><text data-max-width="80" font-size="40">&lt;Limited&gt; &amp; Co</text></svg>`;
+    const out = postProcessStickerSvg(svg);
+    expect(out).toContain('&lt;Limited&gt; &amp; Co');
+    expect(Number(out.match(/font-size="([\d.]+)"/)?.[1])).toBeLessThan(15);
+  });
+
+  it('namespaces SVG definitions without changing editable field identities', () => {
+    const svg = `<svg viewBox="0 0 500 500"><defs><path id="curve" d="M0 0H100"/></defs><text data-field-id="title" font-size="20"><textPath href="#curve">نص</textPath></text></svg>`;
+    const out = postProcessStickerSvg(svg, { namespace: 'preview' });
+    expect(out).toContain('id="preview-curve"');
+    expect(out).toContain('href="#preview-curve"');
+    expect(out).toContain('data-field-id="title"');
+  });
+
   it('post-process keeps every template valid XML', () => {
     const parser = new DOMParser();
     ALL_STICKER_TEMPLATES.forEach((t) => {

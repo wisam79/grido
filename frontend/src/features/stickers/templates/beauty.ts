@@ -1,4 +1,3 @@
-import { iconMarkup, starPoints, speechBubblePath } from './svg-elements';
 import { escapeXml } from '../lib/svg-rasterizer';
 
 import type { StickerTemplate } from '../types';
@@ -16,9 +15,9 @@ export const BEAUTY_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 520 / 320,
     defaultMm: { width: 65, height: 40 },
     defaultColors: {
-      primary: '#166534',
-      secondary: '#84CC16',
-      background: '#F0FDF4',
+      primary: '#344F43',
+      secondary: '#8DA58C',
+      background: '#F5F3E9',
     },
     fields: [
       { id: 'productName', label: 'اسم المنتج', type: 'text', defaultValue: 'زيت الأرض الطبيعي' },
@@ -41,16 +40,22 @@ export const BEAUTY_TEMPLATES: StickerTemplate[] = [
       const fs = fontScale || 1;
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 320" width="520" height="320">
-  <rect x="12" y="12" width="496" height="296" rx="24" fill="${bg}" stroke="${primaryColor}" stroke-width="4" data-color-role="background"/>
-  ${iconMarkup('leaf', 58, 96, 100, secondaryColor, 'secondary')}
-  <text data-field-id="productName" x="318" y="145" font-family="${fontFamily}, sans-serif" font-size="${Math.round(36 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <rect x="12" y="12" width="496" height="296" rx="16" fill="${bg}" data-color-role="background"/>
+  <path d="M 42,276 V 110 A 68,68 0 0,1 178,110 V 276 Z" fill="${secondaryColor}" fill-opacity="0.14" data-color-role="secondary"/>
+  <path d="M 57,257 C 84,213 74,126 123,67 M 78,166 Q 111,145 137,110" fill="none" stroke="${primaryColor}" stroke-width="2" stroke-linecap="round" data-color-role="primary"/>
+  <path d="M 82,190 C 54,182 49,163 54,152 C 77,155 88,172 82,190 Z M 81,159 C 60,144 60,124 68,116 C 86,127 90,145 81,159 Z M 93,123 C 75,105 80,86 91,79 C 104,94 103,110 93,123 Z M 104,103 C 103,78 119,60 133,58 C 137,77 122,96 104,103 Z M 99,148 C 100,127 122,119 135,121 C 130,141 116,151 99,148 Z M 123,129 C 123,105 141,94 153,95 C 153,114 138,128 123,129 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <rect x="104" y="182" width="47" height="70" rx="9" fill="${secondaryColor}" fill-opacity="0.22" stroke="${primaryColor}" stroke-width="2" data-color-role="primary"/>
+  <rect x="114" y="169" width="27" height="14" rx="3" fill="${primaryColor}" data-color-role="primary"/>
+  <path d="M 122,169 V 157 a 5.5,5.5 0 0,1 11,0 V 169 M 112,198 H 143 M 112,236 H 143" fill="none" stroke="${primaryColor}" stroke-width="2" data-color-role="primary"/>
+  <path d="M 127,207 C 117,220 117,226 127,228 C 137,226 137,220 127,207 Z" fill="${primaryColor}" data-color-role="primary"/>
+  <text data-field-id="productName" data-max-width="278" x="334" y="130" font-family="${fontFamily}, sans-serif" font-size="${Math.round(30 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
     ${name}
   </text>
-  <text data-field-id="benefit" x="318" y="195" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="600" fill="${primaryColor}" fill-opacity="0.75" text-anchor="middle">
+  <text data-field-id="benefit" data-max-width="268" x="334" y="177" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
     ${benefit}
   </text>
-  <rect x="248" y="232" width="140" height="38" rx="19" fill="${primaryColor}" data-color-role="primary"/>
-  <text data-field-id="volume" x="318" y="258" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="700" fill="#FFFFFF" text-anchor="middle">
+  <path d="M 304,207 H 364" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <text data-field-id="volume" data-max-width="170" x="334" y="245" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
     ${volume}
   </text>
 </svg>`;
@@ -68,9 +73,9 @@ export const BEAUTY_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
     defaultColors: {
-      primary: '#DB2777',
-      secondary: '#F9A8D4',
-      background: '#FDF2F8',
+      primary: '#794B53',
+      secondary: '#CE9E92',
+      background: '#FCF4EF',
     },
     fields: [
       { id: 'productName', label: 'اسم المنتج', type: 'text', defaultValue: 'سيروم التوهج' },
@@ -89,26 +94,29 @@ export const BEAUTY_TEMPLATES: StickerTemplate[] = [
       const claim = escapeXml(fields.claim || 'إشراقة فورية للبشرة');
       const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
-      const sparklePts = starPoints(240, 132, 4, 30, 11);
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
   <defs>
-    <radialGradient id="glow-bg" cx="0.5" cy="0.4" r="0.75">
-      <stop offset="0" stop-color="${secondaryColor}" stop-opacity="0.45"/>
-      <stop offset="1" stop-color="${bg === 'none' ? 'none' : backgroundColor}"/>
-    </radialGradient>
+    <linearGradient id="glow-serum" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${secondaryColor}" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="${secondaryColor}" stop-opacity="0.6"/>
+    </linearGradient>
   </defs>
-  <circle cx="240" cy="240" r="225" fill="${bg === 'none' ? 'none' : 'url(#glow-bg)'}" stroke="${primaryColor}" stroke-width="5" data-color-role="background"/>
-  <polygon points="${sparklePts}" fill="${primaryColor}" data-color-role="primary"/>
-  <circle cx="150" cy="110" r="3.5" fill="${primaryColor}" opacity="0.5"/>
-  <circle cx="336" cy="150" r="2.8" fill="${primaryColor}" opacity="0.4"/>
-  <circle cx="310" cy="94" r="2.2" fill="${secondaryColor}"/>
-  <text data-field-id="productName" x="240" y="252" font-family="${fontFamily}, sans-serif" font-size="${Math.round(40 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <circle cx="240" cy="240" r="226" fill="${bg}" data-color-role="background"/>
+  <path d="M 156,230 V 151 a 84,84 0 0,1 168,0 V 230" fill="none" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <rect x="202" y="139" width="76" height="94" rx="15" fill="url(#glow-serum)" stroke="${primaryColor}" stroke-width="2.5" data-color-role="secondary"/>
+  <rect x="213" y="118" width="54" height="23" rx="4" fill="${primaryColor}" data-color-role="primary"/>
+  <path d="M 228,118 V 98 C 228,82 252,82 252,98 V 118 M 218,126 V 134 M 228,126 V 134 M 238,126 V 134 M 248,126 V 134 M 258,126 V 134" fill="none" stroke="${secondaryColor}" stroke-width="2" data-color-role="secondary"/>
+  <path d="M 212,161 V 211 M 240,161 C 221,183 222,197 240,199 C 258,197 259,183 240,161 Z" fill="none" stroke="${primaryColor}" stroke-width="2" stroke-linecap="round" data-color-role="primary"/>
+  <path d="M 293,157 Q 302,160 306,173 Q 309,161 319,157 Q 309,154 306,142 Q 303,154 293,157 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <path d="M 180,219 Q 184,227 181,233 C 177,239 168,235 171,228 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <text data-field-id="productName" data-max-width="352" x="240" y="299" font-family="${fontFamily}, sans-serif" font-size="${Math.round(39 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
     ${name}
   </text>
-  <text data-field-id="claim" x="240" y="304" font-family="${fontFamily}, sans-serif" font-size="${Math.round(19 * fs)}" font-weight="600" fill="${primaryColor}" fill-opacity="0.72" text-anchor="middle">
+  <text data-field-id="claim" data-max-width="320" x="240" y="345" font-family="${fontFamily}, sans-serif" font-size="${Math.round(20 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
     ${claim}
   </text>
+  <path d="M 208,379 H 272" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
 </svg>`;
     },
   },
@@ -124,9 +132,9 @@ export const BEAUTY_TEMPLATES: StickerTemplate[] = [
     aspectRatio: 1,
     defaultMm: { width: 50, height: 50 },
     defaultColors: {
-      primary: '#BE185D',
-      secondary: '#FDA4AF',
-      background: '#FFF1F2',
+      primary: '#854A56',
+      secondary: '#CCA39A',
+      background: '#FBF2E9',
     },
     fields: [
       {
@@ -157,20 +165,26 @@ export const BEAUTY_TEMPLATES: StickerTemplate[] = [
       const maker = escapeXml(fields.maker || 'ورشة ليان الحرفية');
       const bg = isTransparent ? 'none' : backgroundColor;
       const fs = fontScale || 1;
-      const bubble = speechBubblePath(110, 72, 260, 92, 22, 26, 34);
 
       return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
-  <circle cx="240" cy="240" r="225" fill="${bg}" stroke="${primaryColor}" stroke-width="4.5" data-color-role="background"/>
-  <circle cx="240" cy="240" r="210" fill="none" stroke="${secondaryColor}" stroke-width="2" stroke-dasharray="1 7" stroke-linecap="round"/>
-  ${iconMarkup('heart', 218, 116, 44, primaryColor)}
-  <text data-field-id="craftName" x="240" y="226" font-family="${fontFamily}, sans-serif" font-size="${Math.round(34 * fs)}" font-weight="900" fill="${primaryColor}" text-anchor="middle">
+  <circle cx="240" cy="240" r="226" fill="${bg}" data-color-role="background"/>
+  <path d="M 174,212 C 148,190 154,153 144,128 M 298,212 Q 331,161 316,121" fill="none" stroke="${primaryColor}" stroke-width="2" stroke-linecap="round" data-color-role="primary"/>
+  <path d="M 153,169 C 132,165 128,145 133,139 C 150,140 160,154 153,169 Z M 150,145 C 151,129 165,118 177,123 C 173,140 162,146 150,145 Z M 312,177 C 332,174 341,157 337,147 C 320,147 310,162 312,177 Z M 319,146 C 299,140 295,124 300,116 C 317,121 324,132 319,146 Z" fill="${secondaryColor}" data-color-role="secondary"/>
+  <g transform="rotate(-8 240 172)">
+    <rect x="173" y="126" width="134" height="91" rx="26" fill="${secondaryColor}" fill-opacity="0.3" stroke="${primaryColor}" stroke-width="2.5" data-color-role="secondary"/>
+    <path d="M 181,188 Q 181,209 206,209 H 279 Q 297,208 300,194 M 188,143 Q 195,134 205,135" fill="none" stroke="${primaryColor}" stroke-width="1.5" stroke-linecap="round" data-color-role="primary"/>
+    <path d="M 232,126 V 217 M 250,126 V 217" stroke="${primaryColor}" stroke-width="1.5" stroke-opacity="0.5" data-color-role="primary"/>
+  </g>
+  <path d="M 239,139 C 216,139 207,121 216,109 C 208,94 224,82 238,89 C 251,77 269,88 267,102 C 283,109 275,131 258,132 C 255,140 247,143 239,139 Z" fill="${secondaryColor}" stroke="${primaryColor}" stroke-width="2" data-color-role="secondary"/>
+  <path d="M 240,119 C 225,117 224,102 237,100 C 251,93 263,110 251,119 C 240,130 222,121 221,111 M 239,111 Q 251,103 254,115 M 246,127 Q 260,128 267,117" fill="none" stroke="${primaryColor}" stroke-width="1.8" stroke-linecap="round" data-color-role="primary"/>
+  <text data-field-id="craftName" data-max-width="354" x="240" y="282" font-family="${fontFamily}, sans-serif" font-size="${Math.round(33 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle">
     ${name}
   </text>
-  <path d="${bubble}" fill="${secondaryColor}" opacity="0.4" data-color-role="secondary"/>
-  <text data-field-id="ingredient" x="240" y="282" font-family="${fontFamily}, sans-serif" font-size="${Math.round(16 * fs)}" font-weight="600" fill="${primaryColor}" fill-opacity="0.85" text-anchor="middle">
+  <text data-field-id="ingredient" data-max-width="324" x="240" y="329" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="500" fill="${primaryColor}" text-anchor="middle">
     ${ingredient}
   </text>
-  <text data-field-id="maker" x="240" y="342" font-family="${fontFamily}, sans-serif" font-size="${Math.round(17 * fs)}" font-weight="700" fill="${primaryColor}" text-anchor="middle" letter-spacing="1">
+  <path d="M 213,353 H 267" stroke="${secondaryColor}" stroke-width="1.5" data-color-role="secondary"/>
+  <text data-field-id="maker" data-max-width="286" x="240" y="390" font-family="${fontFamily}, sans-serif" font-size="${Math.round(18 * fs)}" font-weight="600" fill="${primaryColor}" text-anchor="middle">
     ${maker}
   </text>
 </svg>`;

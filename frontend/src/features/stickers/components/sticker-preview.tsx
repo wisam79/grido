@@ -172,7 +172,7 @@ export const StickerPreview = React.memo(function StickerPreview({
   /** استنتاج دور اللون من عنصر شكلي */
   const resolveColorRole = useCallback(
     (shapeEl: SVGGraphicsElement): 'primary' | 'secondary' | 'background' | null => {
-      const explicit = shapeEl.getAttribute('data-color-role') as
+      const explicit = shapeEl.closest('[data-color-role]')?.getAttribute('data-color-role') as
         'primary' | 'secondary' | 'background' | null;
       if (explicit) return explicit;
       const fill = shapeEl.getAttribute('fill');

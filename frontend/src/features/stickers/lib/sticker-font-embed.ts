@@ -18,6 +18,7 @@ interface FaceInfo {
   family: string;
   weight: string;
   style: string;
+  unicodeRange: string;
   urls: string[];
 }
 
@@ -54,10 +55,12 @@ function collectFontFaces(families: string[]): FaceInfo[] {
         if (urls.length === 0) continue;
         const wMatch = css.match(/font-weight\s*:\s*([^;]+)/i);
         const sMatch = css.match(/font-style\s*:\s*([^;]+)/i);
+        const rangeMatch = css.match(/unicode-range\s*:\s*([^;}]+)/i);
         out.push({
           family: fam,
           weight: (wMatch?.[1] || '400').trim(),
           style: (sMatch?.[1] || 'normal').trim(),
+          unicodeRange: (rangeMatch?.[1] || '').trim(),
           urls,
         });
       }
@@ -65,14 +68,8 @@ function collectFontFaces(families: string[]): FaceInfo[] {
   } catch {
     return out;
   }
-  // حد أعلى: وجهان لكل عائلة (400 + 700) لتفادي ملف ضخم
-  const byFamily = new Map<string, FaceInfo[]>();
-  for (const f of out) {
-    const arr = byFamily.get(f.family.toLowerCase()) || [];
-    if (arr.length < 2) arr.push(f);
-    byFamily.set(f.family.toLowerCase(), arr);
-  }
-  return Array.from(byFamily.values()).flat();
+  // One weight can span several script subsets; dropping faces changes the exported typography.
+  return out;
 }
 
 function arrayBufferToBase64(buf: ArrayBuffer): string {
@@ -124,8 +121,9 @@ export async function embedStickerFonts(svg: string, families: string[]): Promis
       const dataUrl = await urlToDataUrl(new URL(url, document.baseURI).toString());
       if (!dataUrl) continue;
       const safeFam = face.family.replace(/['"<>]/g, '');
+      const range = face.unicodeRange ? `unicode-range:${face.unicodeRange};` : '';
       blocks.push(
-        `@font-face{font-family:'${safeFam}';font-style:${face.style};font-weight:${face.weight};src:url(${dataUrl}) format('woff2');}`,
+        `@font-face{font-family:'${safeFam}';font-style:${face.style};font-weight:${face.weight};${range}src:url(${dataUrl}) format('woff2');}`,
       );
       break;
     }
