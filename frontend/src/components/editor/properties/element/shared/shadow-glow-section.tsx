@@ -21,6 +21,7 @@ export function ShadowGlowSection({ element, onUpdate }: ShadowGlowSectionProps)
             <ColorField
               color={element.shadowColor || '#000000'}
               onChange={(val) => onUpdate(element.id, { shadowColor: val })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
               ariaLabel="لون الظل"
               className="w-full"
             />

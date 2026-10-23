@@ -211,6 +211,7 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
       <ColorField
         color={color}
         onChange={onChange}
+        onCommit={() => useEditorStore.getState().pushHistory()}
         className={cn('w-full', compact && 'h-7')}
         ariaLabel="لون خلفية الورقة"
       />
@@ -237,6 +238,7 @@ export const StudioCanvasColorDeck = React.memo(function StudioCanvasColorDeck({
               onChangeType={() => {}}
               onChangeSolidColor={onChange}
               onChangeColorStops={handleGradientStops}
+              onCommitColor={() => useEditorStore.getState().pushHistory()}
               angle={gradientAngle ?? 135}
               onChangeAngle={(deg) => onChangeGradientAngle?.(deg)}
               onCommitAngle={() => useEditorStore.getState().pushHistory()}

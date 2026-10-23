@@ -32,6 +32,7 @@ export async function downloadBlob(
   filename: string,
   dir?: string,
   dpi?: number,
+  sourceFilename?: string,
 ): Promise<string> {
   try {
     // 🚀 مسار البث الثنائي المباشر: تجنب تحويل الـ Blob إلى Base64 DataURL في V8
@@ -44,6 +45,7 @@ export async function downloadBlob(
       try {
         const query = new URLSearchParams({ filename });
         if (dir) query.set('dir', dir);
+        if (sourceFilename) query.set('source', sourceFilename);
         // الحقن يعتمد امتداد الملف المُرسل (الخلفية تقرأ filepath.Ext) — فنطابقه
         // هنا حصراً على صيغ الصور التي تحمل بيانات كثافة فعلاً.
         const dpiParam =
@@ -56,7 +58,7 @@ export async function downloadBlob(
           `${window.location.origin}/api/save-file?${query.toString()}`,
           {
             method: 'POST',
-            body: blob,
+            body: sourceFilename ? undefined : blob,
           },
         );
         if (resp.status === 204) {

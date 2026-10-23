@@ -229,4 +229,14 @@ describe('runCmykExport', () => {
     await expect(runCmykExport(captureParams)).rejects.toThrow('upload failed');
     expect(mockExportPrintSheet).not.toHaveBeenCalled();
   });
+
+  it('يتخطى تنزيل الـ Blob عبر الشبكة عند تفعيل skipBlobFetch للحفظ المباشر من القرص', async () => {
+    const fetchMock = stubFetch({ status: 200 });
+
+    const result = await runCmykExport({ ...captureParams, skipBlobFetch: true });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.sourceFilename).toBe('print_7.tif');
+    expect(result.blob.size).toBe(0);
+  });
 });

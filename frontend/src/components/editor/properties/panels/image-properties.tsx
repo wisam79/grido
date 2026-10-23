@@ -108,7 +108,7 @@ export function ImageAdjustProperties({
             useRenderQuality.getState().setIsDraggingFilter(false);
             useEditorStore.getState().pushHistory();
           }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
         <FluentSliderField
@@ -123,7 +123,7 @@ export function ImageAdjustProperties({
             useRenderQuality.getState().setIsDraggingFilter(false);
             useEditorStore.getState().pushHistory();
           }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
         <FluentSliderField
@@ -138,7 +138,7 @@ export function ImageAdjustProperties({
             useRenderQuality.getState().setIsDraggingFilter(false);
             useEditorStore.getState().pushHistory();
           }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
         <FluentSliderField
@@ -153,7 +153,7 @@ export function ImageAdjustProperties({
             useRenderQuality.getState().setIsDraggingFilter(false);
             useEditorStore.getState().pushHistory();
           }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
           onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
         />
 
@@ -537,8 +537,8 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             color={element.bgColor ?? 'transparent'}
             onChange={(val) => {
               onUpdate(element.id, { bgColor: val });
-              useEditorStore.getState().pushHistory();
             }}
+            onCommit={() => useEditorStore.getState().pushHistory()}
             className="w-full"
             ariaLabel="لون خلفية الصورة"
           />

@@ -159,4 +159,37 @@ describe('Curved Text Drawing Tests', () => {
     );
     expect(mockCtx.fillStyle).toBe('#ff0000');
   });
+
+  it('reuses cached glyph layout across consecutive draws with only a single probe measurement', () => {
+    const measureSpy = vi.fn().mockReturnValue({ width: 14 });
+    const mockCtx = {
+      font: '',
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      fillText: vi.fn(),
+      measureText: measureSpy,
+      fillStyle: '#000000',
+    } as unknown as CanvasRenderingContext2D;
+
+    const opts = {
+      text: 'CACHED_CURVE',
+      x: 0,
+      y: 0,
+      width: 280,
+      height: 120,
+      fontSize: 22,
+      fontFamily: 'Cairo',
+      curve: 45,
+    };
+
+    drawCurvedText(mockCtx, opts);
+    const firstPassMeasures = measureSpy.mock.calls.length;
+    expect(firstPassMeasures).toBe(opts.text.length);
+
+    measureSpy.mockClear();
+    drawCurvedText(mockCtx, opts);
+    expect(measureSpy).toHaveBeenCalledTimes(1);
+  });
 });

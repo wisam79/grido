@@ -126,8 +126,8 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                   fill: col,
                   stroke: isLine ? col : element.stroke || col,
                 });
-                useEditorStore.getState().pushHistory();
               }}
+              onCommit={() => useEditorStore.getState().pushHistory()}
               ariaLabel={isLine ? 'لون الخط' : 'لون الشكل'}
               className="w-full"
             />
@@ -194,8 +194,8 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                     color={element.stroke || '#000000'}
                     onChange={(val) => {
                       onUpdate(element.id, { stroke: val });
-                      useEditorStore.getState().pushHistory();
                     }}
+                    onCommit={() => useEditorStore.getState().pushHistory()}
                     ariaLabel="لون الحد"
                     className="w-full"
                   />
@@ -531,15 +531,14 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
                 fill: col,
                 stroke: isLine ? col : element.stroke || col,
               });
-              useEditorStore.getState().pushHistory();
             }}
             onChangeColorStops={(stops) => {
               onUpdate(element.id, {
                 fillLinearGradientColorStops: stops,
                 fillRadialGradientColorStops: stops,
               });
-              useEditorStore.getState().pushHistory();
             }}
+            onCommitColor={() => useEditorStore.getState().pushHistory()}
             angle={gradientAngleFromPoints(
               element.fillLinearGradientStartPoint,
               element.fillLinearGradientEndPoint,
@@ -570,8 +569,8 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
                       strokeWidth:
                         element.strokeWidth && element.strokeWidth > 0 ? element.strokeWidth : 2,
                     });
-                    useEditorStore.getState().pushHistory();
                   }}
+                  onCommit={() => useEditorStore.getState().pushHistory()}
                   ariaLabel="لون الحد"
                   className="w-full"
                 />

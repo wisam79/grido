@@ -40,6 +40,7 @@ export function ColorWheelPanel(): null {
 export function ColorField({
   color,
   onChange,
+  onCommit,
   className,
   disabled,
   label,
@@ -48,6 +49,7 @@ export function ColorField({
 }: {
   color: string;
   onChange: (hex: string) => void;
+  onCommit?: (hex: string) => void;
   className?: string;
   disabled?: boolean;
   label?: React.ReactNode;
@@ -142,7 +144,10 @@ export function ColorField({
                     disabled={disabled}
                     aria-label={`لون ${quick.name}`}
                     aria-pressed={isActive}
-                    onClick={() => onChange(quick.hex)}
+                    onClick={() => {
+                      onChange(quick.hex);
+                      onCommit?.(quick.hex);
+                    }}
                     className="group flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                   >
                     <span
@@ -190,6 +195,7 @@ export function ColorField({
           <ColorWheelPicker
             color={color}
             onChange={onChange}
+            onCommit={onCommit}
             onDropperActiveChange={(active) => {
               isDropperActiveRef.current = active;
             }}
@@ -253,10 +259,12 @@ function sampleColorFromPoint(clientX: number, clientY: number): string | null {
 export function ColorWheelPicker({
   color,
   onChange,
+  onCommit,
   onDropperActiveChange,
 }: {
   color: string;
   onChange: (hex: string) => void;
+  onCommit?: (hex: string) => void;
   onDropperActiveChange?: (active: boolean) => void;
 }) {
   const isTransparent = color === 'transparent';
@@ -265,26 +273,46 @@ export function ColorWheelPicker({
   const [isDropping, setIsDropping] = useState(false);
   const copiedTimerRef = useRef<number | null>(null);
   const dropperTimerRef = useRef<number | null>(null);
+  const hexDirtyRef = useRef(false);
+  const latestHexRef = useRef(color);
+  const onCommitRef = useRef(onCommit);
+
+  useEffect(() => {
+    onCommitRef.current = onCommit;
+  }, [onCommit]);
 
   useEffect(() => {
     return () => {
       if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
       if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
+      if (hexDirtyRef.current) {
+        hexDirtyRef.current = false;
+        onCommitRef.current?.(latestHexRef.current);
+      }
     };
   }, []);
 
   useEffect(() => {
+    latestHexRef.current = color;
     const rafId = requestAnimationFrame(() => {
       setInputValue(color);
     });
     return () => cancelAnimationFrame(rafId);
   }, [color]);
 
+  const flushHexCommit = () => {
+    if (!hexDirtyRef.current) return;
+    hexDirtyRef.current = false;
+    onCommit?.(latestHexRef.current);
+  };
+
   const handleHexInput = (value: string) => {
     setInputValue(value);
 
     const cleanValue = value.trim();
     if (cleanValue === 'transparent') {
+      latestHexRef.current = 'transparent';
+      hexDirtyRef.current = true;
       onChange('transparent');
       return;
     }
@@ -295,7 +323,10 @@ export function ColorWheelPicker({
     }
 
     if (/^#([0-9A-F]{3}){1,2}$/i.test(hexValue)) {
-      onChange(hexValue.toUpperCase());
+      const upper = hexValue.toUpperCase();
+      latestHexRef.current = upper;
+      hexDirtyRef.current = true;
+      onChange(upper);
     }
   };
 
@@ -329,6 +360,7 @@ export function ColorWheelPicker({
       if (hex) {
         setInputValue(hex);
         onChange(hex);
+        onCommit?.(hex);
         toast.success(`تم اختيار اللون: ${hex}`);
       }
       cleanup();
@@ -367,6 +399,7 @@ export function ColorWheelPicker({
           const upper = result.sRGBHex.toUpperCase();
           setInputValue(upper);
           onChange(upper);
+          onCommit?.(upper);
           toast.success(`تم اختيار اللون: ${upper}`);
           setIsDropping(false);
           if (dropperTimerRef.current !== null) clearTimeout(dropperTimerRef.current);
@@ -420,6 +453,9 @@ export function ColorWheelPicker({
           setInputValue(newColor);
           onChange(newColor);
         }}
+        onCommit={(newColor) => {
+          onCommit?.(newColor);
+        }}
       />
 
       <div className="flex items-center gap-1.5" dir="ltr">
@@ -428,6 +464,7 @@ export function ColorWheelPicker({
           onClick={() => {
             setInputValue('transparent');
             onChange('transparent');
+            onCommit?.('transparent');
           }}
           className={cn(
             'w-8 h-8 rounded-md border flex items-center justify-center shrink-0 shadow-2xs cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
@@ -470,6 +507,12 @@ export function ColorWheelPicker({
             dir="ltr"
             value={inputValue.startsWith('#') ? inputValue.slice(1) : inputValue}
             onChange={(event) => handleHexInput(event.target.value)}
+            onBlur={flushHexCommit}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                flushHexCommit();
+              }
+            }}
             className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold uppercase"
             placeholder="FFFFFF"
             aria-label="قيمة HEX"

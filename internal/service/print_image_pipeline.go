@@ -330,10 +330,61 @@ type processedKey struct {
 }
 
 type imageCache struct {
-	mu     sync.RWMutex
-	images map[string]image.Image
-	access map[string]time.Time
-	group  singleflight.Group
+	mu         sync.RWMutex
+	images     map[string]image.Image
+	access     map[string]time.Time
+	totalBytes int64
+	group      singleflight.Group
+}
+
+const requestRawCacheMax = 8
+
+// requestRawCacheMaxBytes ميزانية بايتات إجمالية لكاش الصور الخام داخل الطلب الواحد (256MB).
+var requestRawCacheMaxBytes = int64(256 * 1024 * 1024)
+
+func imageDecodedBytes(img image.Image) int64 {
+	if img == nil {
+		return 0
+	}
+	b := img.Bounds()
+	return int64(b.Dx()) * int64(b.Dy()) * 4
+}
+
+func putRequestRaw(imgCache *imageCache, cacheKey string, img image.Image) {
+	entryBytes := imageDecodedBytes(img)
+	imgCache.mu.Lock()
+	defer imgCache.mu.Unlock()
+
+	if prev, ok := imgCache.images[cacheKey]; ok {
+		imgCache.totalBytes -= imageDecodedBytes(prev)
+		delete(imgCache.images, cacheKey)
+		delete(imgCache.access, cacheKey)
+	}
+
+	for len(imgCache.images) >= requestRawCacheMax ||
+		(imgCache.totalBytes+entryBytes > requestRawCacheMaxBytes && len(imgCache.images) > 0) {
+		var oldestKey string
+		var oldestTime time.Time
+		first := true
+		for k := range imgCache.images {
+			t := imgCache.access[k]
+			if first || t.Before(oldestTime) {
+				oldestTime = t
+				oldestKey = k
+				first = false
+			}
+		}
+		if first {
+			break
+		}
+		imgCache.totalBytes -= imageDecodedBytes(imgCache.images[oldestKey])
+		delete(imgCache.images, oldestKey)
+		delete(imgCache.access, oldestKey)
+	}
+
+	imgCache.images[cacheKey] = img
+	imgCache.access[cacheKey] = time.Now()
+	imgCache.totalBytes += entryBytes
 }
 
 type processedCache struct {
@@ -480,12 +531,9 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 	}
 	imgCache.mu.RUnlock()
 
-	// إصابة عبر الطلبات قبل فك الترميز — تُزرع أيضاً في كاش الطلب الحالي
+	// إصابة عبر الطلبات قبل فك الترميز — تُزرع أيضاً في كاش الطلب الحالي ضمن ميزانية البايتات
 	if shared := getSharedRaw(cacheKey, filePath); shared != nil {
-		imgCache.mu.Lock()
-		imgCache.images[cacheKey] = shared
-		imgCache.access[cacheKey] = time.Now()
-		imgCache.mu.Unlock()
+		putRequestRaw(imgCache, cacheKey, shared)
 		return shared, nil
 	}
 
@@ -559,25 +607,7 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 			}
 		}
 
-		imgCache.mu.Lock()
-		if len(imgCache.images) >= 8 {
-			var oldestKey string
-			var oldestTime time.Time
-			first := true
-			for k := range imgCache.images {
-				t := imgCache.access[k]
-				if first || t.Before(oldestTime) {
-					oldestTime = t
-					oldestKey = k
-					first = false
-				}
-			}
-			delete(imgCache.images, oldestKey)
-			delete(imgCache.access, oldestKey)
-		}
-		imgCache.images[cacheKey] = img
-		imgCache.access[cacheKey] = time.Now()
-		imgCache.mu.Unlock()
+		putRequestRaw(imgCache, cacheKey, img)
 
 		return img, nil
 	})

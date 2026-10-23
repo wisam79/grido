@@ -94,7 +94,15 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
   const currentSpacing = element.letterSpacing ?? 0;
 
   const commit = (patch: Partial<TextElement>) => {
-    onUpdate(element.id, patch);
+    // تعديل مقاييس الخط من لوحة الخصائص يبدأ تخطيطاً متمركزاً جديداً ولا يرث ركن تحجيم زاوية قديم
+    const resetsAnchor =
+      'fontSize' in patch ||
+      'fontWeight' in patch ||
+      'fontStyle' in patch ||
+      'lineHeight' in patch ||
+      'letterSpacing' in patch ||
+      'textTransform' in patch;
+    onUpdate(element.id, resetsAnchor ? { ...patch, textResizeAnchor: undefined } : patch);
     useEditorStore.getState().pushHistory();
   };
 
@@ -302,7 +310,8 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
           <FluentSettingRow label="لون النص">
             <ColorField
               color={element.color || '#000000'}
-              onChange={(col) => commit({ color: col })}
+              onChange={(col) => onUpdate(element.id, { color: col })}
+              onCommit={() => useEditorStore.getState().pushHistory()}
               swatchOnly
               ariaLabel="لون النص"
             />

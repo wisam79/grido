@@ -483,8 +483,8 @@ export const SlotProperties = React.memo(function SlotProperties({
               } else {
                 onUpdate(slot.id, { bgColor: val });
               }
-              freshStore.pushHistory();
             }}
+            onCommit={() => useEditorStore.getState().pushHistory()}
             className="w-full"
             ariaLabel="لون خلفية الخانة"
           />
@@ -506,7 +506,7 @@ export const SlotProperties = React.memo(function SlotProperties({
               useRenderQuality.getState().setIsDraggingFilter(false);
               useEditorStore.getState().pushHistory();
             }}
-            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
             onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
           />
           <FluentSliderField
@@ -521,7 +521,7 @@ export const SlotProperties = React.memo(function SlotProperties({
               useRenderQuality.getState().setIsDraggingFilter(false);
               useEditorStore.getState().pushHistory();
             }}
-            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
             onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
           />
           <FluentSliderField
@@ -536,7 +536,7 @@ export const SlotProperties = React.memo(function SlotProperties({
               useRenderQuality.getState().setIsDraggingFilter(false);
               useEditorStore.getState().pushHistory();
             }}
-            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true)}
+            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
             onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
           />
 

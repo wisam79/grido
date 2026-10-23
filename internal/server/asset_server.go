@@ -266,31 +266,75 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		defer af.Abort()
 
-		// 🖨️ الجسم يُقرأ كاملاً في الذاكرة بحد+1: أي تجاوز يعني body
-		// ناقصاً أو مفرطاً يُجهض بـ 413 بدل ملف مبتور ناجح ظاهرياً،
-		// ويتيح ذلك نافذة لحقن بيانات الكثافة قبل الالتزام الذري.
-		body, readErr := io.ReadAll(io.LimitReader(r.Body, service.MaxFileSize+1))
-		if readErr != nil {
-			http.Error(w, "Failed to read file: "+readErr.Error(), http.StatusInternalServerError)
-			return
-		}
-		if len(body) > service.MaxFileSize {
-			http.Error(w, "File exceeds size limit", http.StatusRequestEntityTooLarge)
+		// 🚀 مسار النسخ المباشر على القرص لمخرجات CMYK/Print الجاهزة في مجلد Exports
+		// (يتفادى تنزيل ملفات TIFF الضخمة إلى WebView2 ثم إعادة رفعها في الذاكرة)
+		if sourceName := r.URL.Query().Get("source"); sourceName != "" {
+			cleanSource := filepath.Base(filepath.Clean(sourceName))
+			if cleanSource == "." || cleanSource == "/" || !strings.HasPrefix(cleanSource, "print_") {
+				http.Error(w, "Invalid export source filename", http.StatusBadRequest)
+				return
+			}
+			exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
+			srcPath := filepath.Join(exportsDir, cleanSource)
+			srcFile, openErr := os.Open(srcPath)
+			if openErr != nil {
+				http.Error(w, "Failed to open source export: "+openErr.Error(), http.StatusNotFound)
+				return
+			}
+			_, copyErr := io.Copy(af, srcFile)
+			_ = srcFile.Close()
+			if copyErr != nil {
+				http.Error(w, "Failed to copy source export: "+copyErr.Error(), http.StatusInternalServerError)
+				return
+			}
+			if err := af.Commit(); err != nil {
+				http.Error(w, "Failed to finalize file: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			_ = os.Remove(srcPath)
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]string{"status": "success", "path": filePath})
 			return
 		}
 
-		// 🖨️ كثافة الطباعة: مسار RGB كان يكتب PNG/JPEG كما وردته الواجهة
-		// تماماً بلا بيانات كثافة، فيفترض أدوات الطباعة الخارجية 72/96
-		// DPI وقد تُخرج مقاساً فيزيائياً خاطئاً. الحقن يتم هنا على البايتات
-		// (pHYs لـ PNG / JFIF لـ JPEG) بلا أي إعادة ترميز أو تغيير بكسل.
-		if dpi := parseDPI(r.URL.Query().Get("dpi")); dpi > 0 {
+		dpi := parseDPI(r.URL.Query().Get("dpi"))
+		if dpi == 0 {
+			// 🚀 بث مباشر إلى الملف الذري عندما لا يلزم حقن ترويسة DPI في الذاكرة
+			written, copyErr := io.Copy(af, io.LimitReader(r.Body, service.MaxFileSize+1))
+			if copyErr != nil {
+				http.Error(w, "Failed to stream file: "+copyErr.Error(), http.StatusInternalServerError)
+				return
+			}
+			if written > service.MaxFileSize {
+				http.Error(w, "File exceeds size limit", http.StatusRequestEntityTooLarge)
+				return
+			}
+		} else {
+			// 🖨️ الجسم يُقرأ كاملاً في الذاكرة بحد+1: أي تجاوز يعني body
+			// ناقصاً أو مفرطاً يُجهض بـ 413 بدل ملف مبتور ناجح ظاهرياً،
+			// ويتيح ذلك نافذة لحقن بيانات الكثافة قبل الالتزام الذري.
+			body, readErr := io.ReadAll(io.LimitReader(r.Body, service.MaxFileSize+1))
+			if readErr != nil {
+				http.Error(w, "Failed to read file: "+readErr.Error(), http.StatusInternalServerError)
+				return
+			}
+			if len(body) > service.MaxFileSize {
+				http.Error(w, "File exceeds size limit", http.StatusRequestEntityTooLarge)
+				return
+			}
+
+			// 🖨️ كثافة الطباعة: مسار RGB كان يكتب PNG/JPEG كما وردته الواجهة
+			// تماماً بلا بيانات كثافة، فيفترض أدوات الطباعة الخارجية 72/96
+			// DPI وقد تُخرج مقاساً فيزيائياً خاطئاً. الحقن يتم هنا على البايتات
+			// (pHYs لـ PNG / JFIF لـ JPEG) بلا أي إعادة ترميز أو تغيير بكسل.
 			body = patchImageDPI(body, strings.ToLower(filepath.Ext(filePath)), dpi)
+
+			if _, err := af.Write(body); err != nil {
+				http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 
-		if _, err := af.Write(body); err != nil {
-			http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
 		if err := af.Commit(); err != nil {
 			http.Error(w, "Failed to finalize file: "+err.Error(), http.StatusInternalServerError)
 			return

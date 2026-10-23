@@ -493,3 +493,25 @@ export function isFontLoaded(fontFamily: string): boolean {
   }
   return false;
 }
+
+/**
+ * ينتظر جاهزية خطوط جميع عناصر النص المرئية قبل التصدير أو الطباعة.
+ * في البيئات التي لا تملك FontFaceSet (مثل jsdom) يحلّ فوراً دون إبطاء الاختبارات.
+ */
+export async function ensureElementsFontsLoaded(
+  elements: ReadonlyArray<{
+    type?: string;
+    visible?: boolean;
+    fontFamily?: string;
+    fontWeight?: number;
+    fontStyle?: 'normal' | 'italic';
+  }>,
+): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts) return;
+  const tasks = elements
+    .filter((el) => el.type === 'text' && el.visible !== false && !!el.fontFamily)
+    .map((el) => loadGoogleFont(el.fontFamily!, el.fontWeight, el.fontStyle));
+  if (tasks.length > 0) {
+    await Promise.all(tasks);
+  }
+}

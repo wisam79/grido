@@ -576,6 +576,8 @@ export function LayersList({
   const isFiltered = !!(searchQuery.trim() || typeFilter !== 'all');
 
   const sorted = useMemo(() => [...elements].sort((a, b) => b.zIndex - a.zIndex), [elements]);
+  const sortedIndexById = useMemo(() => new Map(sorted.map((s, idx) => [s.id, idx])), [sorted]);
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   const filtered = useMemo(() => {
     if (!isFiltered) return sorted;
@@ -716,8 +718,8 @@ export function LayersList({
       toast.info('السحب معطّل أثناء التصفية — امسح الفلتر لإعادة الترتيب');
       return;
     }
-    const oldIndex = sorted.findIndex((el) => el.id === active.id);
-    const newIndex = sorted.findIndex((el) => el.id === over.id);
+    const oldIndex = sortedIndexById.get(String(active.id)) ?? -1;
+    const newIndex = sortedIndexById.get(String(over.id)) ?? -1;
     if (oldIndex === -1 || newIndex === -1) return;
     const newSorted = [...sorted];
     const [moved] = newSorted.splice(oldIndex, 1);
@@ -745,13 +747,13 @@ export function LayersList({
         className="space-y-1 custom-scrollbar"
       >
         {filtered.map((el) => {
-          const origIndex = sorted.findIndex((s) => s.id === el.id);
+          const origIndex = sortedIndexById.get(el.id) ?? 0;
           return (
             <SortableLayerItem
               key={el.id}
               el={el}
               layerNumber={sorted.length - origIndex}
-              isSelected={selectedIds.includes(el.id)}
+              isSelected={selectedIdSet.has(el.id)}
               isRenaming={renamingId === el.id}
               density={density}
               toggleVisibility={toggleVisibility}

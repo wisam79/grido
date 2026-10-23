@@ -107,10 +107,12 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
       </TooltipProvider>,
     );
 
-    // 1. Switch to Colors tab: should have "إطار وحدود النص" and "شفافية النص"
+    // 1. Switch to Colors tab: should have "إطار وحدود النص" and "شفافية النص" without duplicate stroke color or HEX text
     fireEvent.click(screen.getByRole('tab', { name: /الألوان/i }));
     expect(screen.getByText('إطار وحدود النص')).toBeInTheDocument();
     expect(screen.getByText('شفافية النص')).toBeInTheDocument();
+    expect(screen.queryByText('#ff0000')).not.toBeInTheDocument();
+    expect(screen.queryByText('ألوان الخلفية والشارة')).not.toBeInTheDocument();
 
     // 2. Switch to Effects tab: should have "الخلفية والشارة", "الظل والتوهج", but NOT "الإطار والحدود"
     fireEvent.click(screen.getByRole('tab', { name: /التأثيرات/i }));
@@ -118,10 +120,39 @@ describe('ElementProperties Tab Structure and Deduplication Tests', () => {
     expect(screen.getByText('الظل والتوهج')).toBeInTheDocument();
     expect(screen.queryByText('الإطار والحدود')).not.toBeInTheDocument();
 
-    // 3. Switch to Arrange tab: should contain "التدوير والقلب" and NOT "الشفافية"
+    // 3. Switch to Arrange tab: should contain "التدوير والقلب" and NOT "الشفافية", and H should be disabled for text
     fireEvent.click(screen.getByRole('tab', { name: /الترتيب/i }));
     expect(screen.getByText('التدوير والقلب')).toBeInTheDocument();
     expect(screen.queryByText('الشفافية')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('H')).toBeDisabled();
+
+    mockOnUpdate.mockClear();
+    fireEvent.change(screen.getByLabelText('W'), { target: { value: '45' } });
+    expect(mockOnUpdate).toHaveBeenCalledWith(textElement.id, {
+      width: 0.45,
+      textSizing: 'fixed',
+      textResizeAnchor: undefined,
+    });
+  });
+
+  it('clears textResizeAnchor when typography metrics change in Style tab', () => {
+    mockOnUpdate.mockClear();
+    const anchoredText: TextElement = {
+      ...textElement,
+      textResizeAnchor: 'bottom-right',
+    };
+
+    render(
+      <TooltipProvider>
+        <ElementProperties element={anchoredText} onUpdate={mockOnUpdate} />
+      </TooltipProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'خط عريض' }));
+    expect(mockOnUpdate).toHaveBeenCalledWith(textElement.id, {
+      fontWeight: 700,
+      textResizeAnchor: undefined,
+    });
   });
 
   it('renders Image element properties with opacity in Colors tab and corner radius in Style tab', () => {

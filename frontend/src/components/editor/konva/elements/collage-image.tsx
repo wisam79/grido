@@ -133,6 +133,7 @@ export const KonvaCollageImage = React.memo(
     const hasTransform = flipX || flipY || rotation !== 0;
 
     useFilterCache({
+      targetId: id,
       nodeRef: imageRef,
       image: displayImage as unknown as HTMLImageElement,
       hasFilters,

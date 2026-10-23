@@ -180,7 +180,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           setProgress(50);
           SetTaskbarProgress(50, 'normal').catch(() => {});
 
-          const { blob: cmykBlob } = await runCmykExport({
+          const { blob: cmykBlob, sourceFilename } = await runCmykExport({
             stage: stageRef.current,
             format: cmykFormat,
             dpi,
@@ -188,6 +188,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             paperHeightMM: heightMM,
             // مسار الطباعة يرسم فوق خلفية صلبة — الشفافية تُسطَّح إلى بياض المعاينة
             backgroundColor: backgroundColor === 'transparent' ? previewWhite() : backgroundColor,
+            skipBlobFetch: true,
           });
 
           if (shouldStop()) {
@@ -201,7 +202,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             ? `Grido_${(template.name || 'Template').replace(/\s+/g, '_')}_${template.widthMM}x${template.heightMM}mm_${dateStr}_CMYK.${ext}`
             : `Grido_${mode === 'collage' ? 'Collage' : 'Design'}_${dateStr}_${Date.now().toString().slice(-4)}_CMYK.${ext}`;
 
-          const res = await downloadBlob(cmykBlob, name);
+          const res = await downloadBlob(cmykBlob, name, undefined, undefined, sourceFilename);
           setProgress(100);
           SetTaskbarProgress(0, 'none').catch(() => {});
           // المستخدم أغلق أثناء حوار الحفظ — لا رسائل مضللة بعد الإغلاق

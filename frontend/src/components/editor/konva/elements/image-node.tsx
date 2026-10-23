@@ -92,6 +92,7 @@ export const URLImage = React.memo(function URLImage({
   const hasFilters = filters.length > 0;
 
   const recacheFilters = useFilterCache({
+    targetId: element.id,
     nodeRef: imageNodeRef,
     image: displayImage as HTMLImageElement,
     hasFilters,

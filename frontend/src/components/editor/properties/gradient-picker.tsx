@@ -21,6 +21,7 @@ export interface GradientPickerProps {
   onChangeType: (type: FillType) => void;
   onChangeSolidColor: (color: string) => void;
   onChangeColorStops: (stops: Array<number | string>) => void;
+  onCommitColor?: () => void;
   /** زاوية التدرج الخطي الحالية (0-360) — تُحسب من نقطتي البداية/النهاية */
   angle?: number;
   onChangeAngle?: (deg: number) => void;
@@ -65,6 +66,7 @@ export const GradientPicker = ({
   onChangeType,
   onChangeSolidColor,
   onChangeColorStops,
+  onCommitColor,
   angle = 135,
   onChangeAngle,
   onCommitAngle,
@@ -104,6 +106,7 @@ export const GradientPicker = ({
       newStops.push(originalPos, colorStops[originalColorIndex]);
     }
     onChangeColorStops(newStops);
+    onCommitColor?.();
   };
 
   const filteredPresets = useMemo(() => {
@@ -161,6 +164,7 @@ export const GradientPicker = ({
             <ColorField
               color={color}
               onChange={onChangeSolidColor}
+              onCommit={() => onCommitColor?.()}
               swatchOnly
               className="w-8 h-8"
               ariaLabel="لون التعبئة"
@@ -186,6 +190,7 @@ export const GradientPicker = ({
                   <ColorField
                     color={stop1}
                     onChange={handleStop1Change}
+                    onCommit={() => onCommitColor?.()}
                     swatchOnly
                     className="w-6 h-6 rounded-md shadow-2xs border border-white/10"
                     ariaLabel="لون بداية التدرج"
@@ -215,6 +220,7 @@ export const GradientPicker = ({
                   <ColorField
                     color={stop2}
                     onChange={handleStop2Change}
+                    onCommit={() => onCommitColor?.()}
                     swatchOnly
                     className="w-6 h-6 rounded-md shadow-2xs border border-white/10"
                     ariaLabel="لون نهاية التدرج"
@@ -309,7 +315,10 @@ export const GradientPicker = ({
                         <TooltipTrigger asChild>
                           <button
                             type="button"
-                            onClick={() => onChangeColorStops(preset.stops)}
+                            onClick={() => {
+                              onChangeColorStops(preset.stops);
+                              onCommitColor?.();
+                            }}
                             className={cn(
                               'group relative w-full aspect-square rounded-lg p-[1.5px] transition-colors duration-150 cursor-pointer flex items-center justify-center shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                               isSelected

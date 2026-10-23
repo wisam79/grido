@@ -13,6 +13,7 @@ import { resolveTextRenderState } from '@/lib/canvas/text-helpers';
 import { wrapTextLines } from '@/lib/canvas/text-layout';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
+import { ensureElementsFontsLoaded } from '@/lib/io/fonts';
 import { createLogger } from '@/lib/logger';
 import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 
@@ -35,6 +36,8 @@ export async function renderFittedBranch(
   const sorted = [...elements]
     .filter((el) => el.visible !== false)
     .sort((a, b) => a.zIndex - b.zIndex);
+
+  await ensureElementsFontsLoaded(sorted);
 
   const elImageMap: Record<string, HTMLImageElement> = {};
   const elLoadPromises = sorted

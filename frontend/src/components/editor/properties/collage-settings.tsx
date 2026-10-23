@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
 import { Switch } from '@/components/ui/switch';
@@ -58,22 +58,6 @@ export function CollageSettings() {
   );
   const toMm = useCallback((px: number) => Math.round(pxToMm(px, dpi) * 10) / 10, [dpi]);
   const toPx = useCallback((mm: number) => Math.round(mmToPx(mm, dpi)), [dpi]);
-
-  // لون الإطار يُدخل باستمرار (نص/عجلة) — ندفع سطر تراجع واحد بعد توقف الكتابة (إصلاح Bug#2)
-  const colorCommitTimerRef = useRef<number | null>(null);
-  const commitColorLater = useCallback(() => {
-    if (colorCommitTimerRef.current !== null) window.clearTimeout(colorCommitTimerRef.current);
-    colorCommitTimerRef.current = window.setTimeout(() => {
-      colorCommitTimerRef.current = null;
-      useEditorStore.getState().pushHistory();
-    }, 400);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (colorCommitTimerRef.current !== null) window.clearTimeout(colorCommitTimerRef.current);
-    };
-  }, []);
 
   return (
     <div className="flex flex-col font-cairo" dir="rtl">
@@ -147,8 +131,8 @@ export function CollageSettings() {
                 color={collageStrokeColor}
                 onChange={(hex) => {
                   setCollageStrokeColor(hex);
-                  commitColorLater();
                 }}
+                onCommit={() => useEditorStore.getState().pushHistory()}
                 className="w-full h-8"
                 ariaLabel="لون إطار الكولاج"
               />

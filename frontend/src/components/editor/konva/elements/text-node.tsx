@@ -369,6 +369,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
             y={0}
             width={renderWidthPx}
             height={layoutHeightPx}
+            listening={false}
             sceneFunc={(context) => {
               const ctx = context._context;
               drawCurvedText(ctx, {
@@ -413,6 +414,7 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
             y={0}
             width={renderWidthPx}
             text={renderText}
+            listening={false}
             perfectDrawEnabled={false}
             shadowForStrokeEnabled={false}
             globalCompositeOperation={

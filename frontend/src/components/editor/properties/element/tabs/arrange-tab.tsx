@@ -232,7 +232,7 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
                 const newWidth = Math.max(0.05, v / 100);
                 const deco =
                   element.type === 'text'
-                    ? {}
+                    ? { textSizing: 'fixed' as const, textResizeAnchor: undefined }
                     : scaleElementDecorations(element, newWidth / Math.max(1e-6, element.width), 1);
                 coordDirtyRef.current = true;
                 onUpdate(element.id, { width: newWidth, ...deco });
@@ -242,7 +242,13 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-colors">
+          <div
+            title={element.type === 'text' ? 'ارتفاع النص مشتق تلقائياً من المحتوى' : undefined}
+            className={cn(
+              'flex items-center gap-1.5 bg-background border border-border/60 rounded-md px-2 h-8 shadow-xs focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background focus-within:border-primary transition-colors',
+              element.type === 'text' && 'opacity-60',
+            )}
+          >
             <span className="text-muted-foreground/60 font-mono font-bold select-none text-xs shrink-0">
               H:
             </span>
@@ -250,24 +256,23 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
               type="number"
               dir="ltr"
               aria-label="H"
+              disabled={element.type === 'text'}
               value={Math.round(element.height * 100)}
               onChange={(e) => {
+                if (element.type === 'text') return;
                 const v = Number(e.target.value);
                 if (e.target.value === '' || !Number.isFinite(v)) return;
                 const newHeight = Math.max(0.05, v / 100);
-                const deco =
-                  element.type === 'text'
-                    ? {}
-                    : scaleElementDecorations(
-                        element,
-                        1,
-                        newHeight / Math.max(1e-6, element.height),
-                      );
+                const deco = scaleElementDecorations(
+                  element,
+                  1,
+                  newHeight / Math.max(1e-6, element.height),
+                );
                 coordDirtyRef.current = true;
                 onUpdate(element.id, { height: newHeight, ...deco });
               }}
               onBlur={pushCoordHistory}
-              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold"
+              className="w-full bg-transparent border-0 p-0 text-xs font-mono focus:ring-0 focus:outline-hidden text-start text-foreground font-semibold disabled:cursor-not-allowed"
             />
           </div>
         </div>

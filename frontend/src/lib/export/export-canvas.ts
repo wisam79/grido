@@ -9,6 +9,7 @@ import { gradientPixelPoints } from '@/lib/canvas/gradient-geometry';
 import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { useEditorStore } from '@/lib/editor-store';
 import { assertExportablePixels } from '@/lib/export/export-limits';
+import { ensureElementsFontsLoaded } from '@/lib/io/fonts';
 import { createLogger } from '@/lib/logger';
 
 import { renderCollageBranch } from './export-canvas-collage';
@@ -38,6 +39,11 @@ export async function exportCanvas(
   // حارس الذاكرة: ~200MB خامة عند 50MP — التجاوز كان يفشل بصمت برسالة عامة.
   // الآن يرمي CanvasTooLargeError ويعرض المتصل للمستخدم الأبعاد الفعلية
   assertExportablePixels(canvasWidth, canvasHeight);
+
+  // انتظار جاهزية خطوط عناصر النص قبل التقاط الـ Stage أو الرسم اليدوي
+  if (mode !== 'collage') {
+    await ensureElementsFontsLoaded(elements);
+  }
 
   // محاولة التصدير مباشرةً من Konva Stage لتوحيد محرك التصيير للوضعين (Fitted & Collage)
   if (stageRef) {

@@ -22,6 +22,7 @@ export interface CacheableKonvaNode {
 }
 
 interface UseFilterCacheOptions {
+  targetId?: string;
   nodeRef: React.RefObject<CacheableKonvaNode | null>;
   image: HTMLImageElement | null | undefined;
   hasFilters: boolean;
@@ -38,13 +39,24 @@ const MAX_CACHE_PIXELS = 24_000_000;
 const ZOOM_UPGRADE_MARGIN = 1.05;
 
 export function useFilterCache({
+  targetId,
   nodeRef,
   image,
   hasFilters,
   canvasWidth,
   filterKey,
 }: UseFilterCacheOptions) {
-  const isDraggingFilter = useRenderQuality((s) => s.isDraggingFilter);
+  const isDraggingFilter = useRenderQuality((s) => {
+    if (!s.isDraggingFilter) return false;
+    if (!targetId || !s.draggingFilterId) return s.isDraggingFilter;
+    if (s.draggingFilterId === targetId) return true;
+    const selectedIds = useEditorStore.getState().selectedIds;
+    return (
+      selectedIds.length > 1 &&
+      selectedIds.includes(targetId) &&
+      selectedIds.includes(s.draggingFilterId)
+    );
+  });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRatioRef = useRef(0);
   const lastDimsRef = useRef({ w: 0, h: 0 });

@@ -265,23 +265,27 @@ function resolveStrokeFilter(strokeWidth: number, stroke: string): string {
 }
 
 // كانفاس مؤقت واحد يُعاد استخدامه بدل تخصيص واحد لكل إطار سحب/زوم.
+// ينمو عند الحاجة فقط دون تقليص متكرر عند تناوب ملصقين منحنيين مختلفي الأبعاد.
 let scratchCanvas: HTMLCanvasElement | null = null;
 
-function getScratchContext(width: number, height: number): CanvasRenderingContext2D | null {
+function getScratchContext(
+  width: number,
+  height: number,
+): { ctx: CanvasRenderingContext2D; w: number; h: number } | null {
   if (typeof document === 'undefined') return null;
   try {
     if (!scratchCanvas) scratchCanvas = document.createElement('canvas');
     const w = Math.max(1, Math.ceil(width));
     const h = Math.max(1, Math.ceil(height));
-    if (scratchCanvas.width !== w || scratchCanvas.height !== h) {
-      scratchCanvas.width = w;
-      scratchCanvas.height = h;
+    if (scratchCanvas.width < w || scratchCanvas.height < h) {
+      scratchCanvas.width = Math.max(scratchCanvas.width, w);
+      scratchCanvas.height = Math.max(scratchCanvas.height, h);
     }
     const sctx = scratchCanvas.getContext('2d');
     if (!sctx) return null;
     sctx.setTransform(1, 0, 0, 1, 0, 0);
     sctx.clearRect(0, 0, w, h);
-    return sctx;
+    return { ctx: sctx, w, h };
   } catch {
     return null;
   }
@@ -293,6 +297,39 @@ interface GlyphInkBox {
   right: number;
   ascent: number;
   descent: number;
+}
+
+interface CharTransform {
+  char: string;
+  charX: number;
+  charY: number;
+  rotation: number;
+}
+
+interface CurvedGlyphLayout {
+  charTransforms: CharTransform[];
+  hasInkBounds: boolean;
+  inkMinX: number;
+  inkMinY: number;
+  inkMaxX: number;
+  inkMaxY: number;
+}
+
+const MAX_CURVED_CACHE_ENTRIES = 128;
+const shapedGlyphsCache = new Map<string, string[]>();
+const curvedLayoutCache = new Map<string, CurvedGlyphLayout>();
+
+function getCachedCurvedGlyphs(text: string, isRtl: boolean): string[] {
+  const key = `${isRtl ? 'r' : 'l'}|${text}`;
+  const cached = shapedGlyphsCache.get(key);
+  if (cached) return cached;
+  const shaped = buildCurvedGlyphs(text, isRtl);
+  if (shapedGlyphsCache.size >= MAX_CURVED_CACHE_ENTRIES) {
+    const oldest = shapedGlyphsCache.keys().next().value;
+    if (oldest !== undefined) shapedGlyphsCache.delete(oldest);
+  }
+  shapedGlyphsCache.set(key, shaped);
+  return shaped;
 }
 
 /** قياس متوافق: بعض المحركات لا توفّر صناديق الحبر الفعلية في TextMetrics. */
@@ -346,7 +383,7 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
   const isRtl = options.direction ? options.direction === 'rtl' : isArabic;
 
   // تشكيل عربي + ترتيب بصري للمقاطع المختلطة (لاتيني داخل عربي والعكس)
-  const glyphs = buildCurvedGlyphs(text, isRtl);
+  const glyphs = getCachedCurvedGlyphs(text, isRtl);
   const numGlyphs = glyphs.length;
   if (numGlyphs === 0) {
     ctx.restore();
@@ -358,112 +395,148 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
   // Negative curve: center above, arches downward ⌣
   const normalizedCurve = Math.max(-100, Math.min(100, curve));
   const isUpward = normalizedCurve > 0;
-
-  // Measure glyph widths. Arabic spacing is already zeroed in the shared render
-  // state (positive values become extra word spaces); keep a guard here so a
-  // direct caller cannot break ligatures by adding per-letter gaps.
-  const glyphWidths: number[] = [];
-  const glyphInk: GlyphInkBox[] = [];
-  let totalTextWidth = 0;
   const effectiveSpacing = isArabic ? 0 : letterSpacing;
-
-  for (let i = 0; i < numGlyphs; i++) {
-    const metrics = ctx.measureText(glyphs[i]);
-    const advance = metrics.width;
-    const glyphW = advance + effectiveSpacing;
-    glyphWidths.push(glyphW);
-    totalTextWidth += glyphW;
-    // حبر الحرف حول نقطة التوسيط: أفقيّاً من -Left إلى +Right، ورأسيّاً من
-    // -Ascent إلى +Descent؛ مع تقدير آمن حين تغيب القياسات الفعلية.
-    glyphInk.push({
-      left: inkExtent(metrics.actualBoundingBoxLeft, advance / 2),
-      right: inkExtent(metrics.actualBoundingBoxRight, advance / 2),
-      ascent: inkExtent(metrics.actualBoundingBoxAscent, fontSize * 0.9),
-      descent: inkExtent(metrics.actualBoundingBoxDescent, fontSize * 0.4),
-    });
-  }
-
-  const { radius, angularSpan, sagitta } = getCurvedTextMetrics(
-    totalTextWidth,
-    width,
-    fontSize,
-    normalizedCurve,
-  );
-
-  // Center of curvature — منتصف كتلة الحروف على القوس يساوي منتصف الصندوق،
-  // فتكون كتلة النص متمركزة رأسياً وقابلة لاحتواء ارتفاع طبيعي = lineBox + sagitta.
-  const centerX = width / 2;
-  const centerY = isUpward ? height / 2 + radius - sagitta / 2 : height / 2 - radius + sagitta / 2;
-
-  // Start angle & step direction:
-  // For LTR (Latin): starts from Left side, advances towards Right
-  // For RTL (Arabic): starts from Right side, advances towards Left so it reads right-to-left naturally!
-  // #7 — textAlign: left/right يُزيح نقطة البداية على القوس بنصف العرض الزاوي؛ center = الافتراضي
   const textAlign = options.textAlign || 'center';
-  const alignOffset =
-    textAlign === 'left'
-      ? angularSpan / 2 // ابدأ من أقصى اليسار (نص بالكامل في النصف الأيمن)
-      : textAlign === 'right'
-        ? -angularSpan / 2 // ابدأ من أقصى اليمين (نص بالكامل في النصف الأيسر)
-        : 0; // center: متمركز على القوس (الوضع الافتراضي)
 
-  let currentAngle: number;
-  if (isRtl) {
-    if (isUpward) {
-      currentAngle = -Math.PI / 2 + angularSpan / 2 + alignOffset; // Start top-right
-    } else {
-      currentAngle = Math.PI / 2 - angularSpan / 2 - alignOffset; // Start bottom-right
-    }
-  } else {
-    if (isUpward) {
-      currentAngle = -Math.PI / 2 - angularSpan / 2 + alignOffset; // Start top-left
-    } else {
-      currentAngle = Math.PI / 2 + angularSpan / 2 - alignOffset; // Start bottom-left
-    }
-  }
+  // قياس الحرف الأول كسبار (probe) يضمن بطلان الكاش تلقائياً فور تغيّر قياسات الخط المحمّل
+  const firstMetrics = ctx.measureText(glyphs[0]);
+  const layoutKey = `${ctx.font}|${isRtl ? 'r' : 'l'}|${width}|${height}|${normalizedCurve}|${textAlign}|${effectiveSpacing}|${firstMetrics.width}|${text}`;
+  let layout = curvedLayoutCache.get(layoutKey);
 
-  interface CharTransform {
-    char: string;
-    charX: number;
-    charY: number;
-    rotation: number;
-  }
-  const charTransforms: CharTransform[] = [];
+  if (!layout) {
+    // Measure glyph widths. Arabic spacing is already zeroed in the shared render
+    // state (positive values become extra word spaces); keep a guard here so a
+    // direct caller cannot break ligatures by adding per-letter gaps.
+    const glyphWidths: number[] = [];
+    const glyphInk: GlyphInkBox[] = [];
+    let totalTextWidth = 0;
 
-  for (let i = 0; i < numGlyphs; i++) {
-    const char = glyphs[i];
-    const glyphW = glyphWidths[i];
-    const charAngle = glyphW / radius;
-
-    let midAngle: number;
-    if (isRtl) {
-      // Step leftward
-      midAngle = isUpward ? currentAngle - charAngle / 2 : currentAngle + charAngle / 2;
-    } else {
-      // Step rightward
-      midAngle = isUpward ? currentAngle + charAngle / 2 : currentAngle - charAngle / 2;
+    for (let i = 0; i < numGlyphs; i++) {
+      const metrics = i === 0 ? firstMetrics : ctx.measureText(glyphs[i]);
+      const advance = metrics.width;
+      const glyphW = advance + effectiveSpacing;
+      glyphWidths.push(glyphW);
+      totalTextWidth += glyphW;
+      // حبر الحرف حول نقطة التوسيط: أفقيّاً من -Left إلى +Right، ورأسيّاً من
+      // -Ascent إلى +Descent؛ مع تقدير آمن حين تغيب القياسات الفعلية.
+      glyphInk.push({
+        left: inkExtent(metrics.actualBoundingBoxLeft, advance / 2),
+        right: inkExtent(metrics.actualBoundingBoxRight, advance / 2),
+        ascent: inkExtent(metrics.actualBoundingBoxAscent, fontSize * 0.9),
+        descent: inkExtent(metrics.actualBoundingBoxDescent, fontSize * 0.4),
+      });
     }
 
-    const charX = centerX + Math.cos(midAngle) * radius;
-    const charY = centerY + Math.sin(midAngle) * radius;
-    const rotation = isUpward ? midAngle + Math.PI / 2 : midAngle - Math.PI / 2;
+    const { radius, angularSpan, sagitta } = getCurvedTextMetrics(
+      totalTextWidth,
+      width,
+      fontSize,
+      normalizedCurve,
+    );
 
-    charTransforms.push({ char, charX, charY, rotation });
+    // Center of curvature — منتصف كتلة الحروف على القوس يساوي منتصف الصندوق،
+    // فتكون كتلة النص متمركزة رأسياً وقابلة لاحتواء ارتفاع طبيعي = lineBox + sagitta.
+    const centerX = width / 2;
+    const centerY = isUpward
+      ? height / 2 + radius - sagitta / 2
+      : height / 2 - radius + sagitta / 2;
 
+    // Start angle & step direction:
+    // For LTR (Latin): starts from Left side, advances towards Right
+    // For RTL (Arabic): starts from Right side, advances towards Left so it reads right-to-left naturally!
+    // #7 — textAlign: left/right يُزيح نقطة البداية على القوس بنصف العرض الزاوي؛ center = الافتراضي
+    const alignOffset =
+      textAlign === 'left'
+        ? angularSpan / 2 // ابدأ من أقصى اليسار (نص بالكامل في النصف الأيمن)
+        : textAlign === 'right'
+          ? -angularSpan / 2 // ابدأ من أقصى اليمين (نص بالكامل في النصف الأيسر)
+          : 0; // center: متمركز على القوس (الوضع الافتراضي)
+
+    let currentAngle: number;
     if (isRtl) {
       if (isUpward) {
-        currentAngle -= charAngle;
+        currentAngle = -Math.PI / 2 + angularSpan / 2 + alignOffset; // Start top-right
       } else {
-        currentAngle += charAngle;
+        currentAngle = Math.PI / 2 - angularSpan / 2 - alignOffset; // Start bottom-right
       }
     } else {
       if (isUpward) {
-        currentAngle += charAngle;
+        currentAngle = -Math.PI / 2 - angularSpan / 2 + alignOffset; // Start top-left
       } else {
-        currentAngle -= charAngle;
+        currentAngle = Math.PI / 2 + angularSpan / 2 - alignOffset; // Start bottom-left
       }
     }
+
+    const charTransforms: CharTransform[] = [];
+    let inkMinX = Infinity;
+    let inkMinY = Infinity;
+    let inkMaxX = -Infinity;
+    let inkMaxY = -Infinity;
+
+    for (let i = 0; i < numGlyphs; i++) {
+      const char = glyphs[i];
+      const glyphW = glyphWidths[i];
+      const charAngle = glyphW / radius;
+
+      let midAngle: number;
+      if (isRtl) {
+        // Step leftward
+        midAngle = isUpward ? currentAngle - charAngle / 2 : currentAngle + charAngle / 2;
+      } else {
+        // Step rightward
+        midAngle = isUpward ? currentAngle + charAngle / 2 : currentAngle - charAngle / 2;
+      }
+
+      const charX = centerX + Math.cos(midAngle) * radius;
+      const charY = centerY + Math.sin(midAngle) * radius;
+      const rotation = isUpward ? midAngle + Math.PI / 2 : midAngle - Math.PI / 2;
+
+      charTransforms.push({ char, charX, charY, rotation });
+
+      const ink = glyphInk[i];
+      const cos = Math.cos(rotation);
+      const sin = Math.sin(rotation);
+      for (const localX of [-ink.left, ink.right]) {
+        for (const localY of [-ink.ascent, ink.descent]) {
+          const px = charX + localX * cos - localY * sin;
+          const py = charY + localX * sin + localY * cos;
+          if (px < inkMinX) inkMinX = px;
+          if (py < inkMinY) inkMinY = py;
+          if (px > inkMaxX) inkMaxX = px;
+          if (py > inkMaxY) inkMaxY = py;
+        }
+      }
+
+      if (isRtl) {
+        if (isUpward) {
+          currentAngle -= charAngle;
+        } else {
+          currentAngle += charAngle;
+        }
+      } else {
+        if (isUpward) {
+          currentAngle += charAngle;
+        } else {
+          currentAngle -= charAngle;
+        }
+      }
+    }
+
+    const hasInkBounds =
+      Number.isFinite(inkMinX) &&
+      Number.isFinite(inkMinY) &&
+      Number.isFinite(inkMaxX) &&
+      Number.isFinite(inkMaxY);
+
+    layout = { charTransforms, hasInkBounds, inkMinX, inkMinY, inkMaxX, inkMaxY };
+    if (curvedLayoutCache.size >= MAX_CURVED_CACHE_ENTRIES) {
+      const oldest = curvedLayoutCache.keys().next().value;
+      if (oldest !== undefined) curvedLayoutCache.delete(oldest);
+    }
+    curvedLayoutCache.set(layoutKey, layout);
   }
+
+  const { charTransforms, hasInkBounds, inkMinX, inkMinY, inkMaxX, inkMaxY } = layout;
 
   // تطبيق الحدود الموحدة عبر فلتر التمدد لمنع تشوه تقاطعات الحروف.
   // الفلتر يُطبَّق على عملية رسم واحدة، لذا نرسم كل الحروف على كانفاس مؤقت
@@ -491,31 +564,6 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
     // اتحاد صناديق الحبر المحلية بعد تدويرها حول مركز كل حرف، ثم نضيف هامش
     // نصف قطر الفلتر كي يظهر التمدد كاملاً.
     const pad = Math.ceil(strokeWidth) + 2;
-    let inkMinX = Infinity;
-    let inkMinY = Infinity;
-    let inkMaxX = -Infinity;
-    let inkMaxY = -Infinity;
-    for (let i = 0; i < numGlyphs; i++) {
-      const { charX, charY, rotation } = charTransforms[i];
-      const ink = glyphInk[i];
-      const cos = Math.cos(rotation);
-      const sin = Math.sin(rotation);
-      for (const localX of [-ink.left, ink.right]) {
-        for (const localY of [-ink.ascent, ink.descent]) {
-          const px = charX + localX * cos - localY * sin;
-          const py = charY + localX * sin + localY * cos;
-          if (px < inkMinX) inkMinX = px;
-          if (py < inkMinY) inkMinY = py;
-          if (px > inkMaxX) inkMaxX = px;
-          if (py > inkMaxY) inkMaxY = py;
-        }
-      }
-    }
-    const hasInkBounds =
-      Number.isFinite(inkMinX) &&
-      Number.isFinite(inkMinY) &&
-      Number.isFinite(inkMaxX) &&
-      Number.isFinite(inkMaxY);
     // احتياط كامل الصندوق إن تعذّر حساب الاتحاد (لا يفترض ألا يحدث)
     const originX = hasInkBounds ? inkMinX - pad : -pad;
     const originY = hasInkBounds ? inkMinY - pad : -pad;
@@ -529,8 +577,9 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
       getContextRenderScale(ctx),
       Math.sqrt(MAX_EXPORT_PIXELS / Math.max(1, boxW * boxH)),
     );
-    const offCtx = getScratchContext(boxW * renderScale, boxH * renderScale);
-    if (offCtx) {
+    const scratch = getScratchContext(boxW * renderScale, boxH * renderScale);
+    if (scratch) {
+      const { ctx: offCtx, w: offW, h: offH } = scratch;
       // تحويل واحد: إحداثيات العنصر تبقى كما هي (وهو ما تتوقعه paintGlyphs
       // والتدرجات والنقوش) مع مقياس نقطة يساوي مقياس سياق الهدف.
       offCtx.setTransform(
@@ -548,7 +597,7 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
       paintGlyphs(offCtx, offFill);
       ctx.save();
       ctx.filter = `url(#${filterId})`;
-      ctx.drawImage(scratchCanvas!, originX, originY, boxW, boxH);
+      ctx.drawImage(scratchCanvas!, 0, 0, offW, offH, originX, originY, boxW, boxH);
       ctx.restore();
       unifiedStroke = true;
     }

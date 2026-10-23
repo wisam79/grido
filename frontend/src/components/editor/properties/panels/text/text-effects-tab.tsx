@@ -58,8 +58,8 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                   color={element.textBgColor || '#2563eb'}
                   onChange={(val: string) => {
                     onUpdate(element.id, { textBgColor: val });
-                    useEditorStore.getState().pushHistory();
                   }}
+                  onCommit={() => useEditorStore.getState().pushHistory()}
                   swatchOnly
                   ariaLabel="لون خلفية النص"
                 />
@@ -137,8 +137,8 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                   color={element.shadowColor || '#000000'}
                   onChange={(val: string) => {
                     onUpdate(element.id, { shadowColor: val });
-                    useEditorStore.getState().pushHistory();
                   }}
+                  onCommit={() => useEditorStore.getState().pushHistory()}
                   swatchOnly
                   ariaLabel="لون الظل"
                 />

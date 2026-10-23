@@ -86,6 +86,8 @@ export interface RunCmykExportParams {
   paperWidthMM: number;
   paperHeightMM: number;
   backgroundColor: string;
+  /** تخطي سحب الـ Blob عبر الشبكة المحلية عندما يحفظ الخادم الملف مباشرة من Exports */
+  skipBlobFetch?: boolean;
 }
 
 export interface CmykExportResult {
@@ -125,6 +127,12 @@ export async function runCmykExport(params: RunCmykExportParams): Promise<CmykEx
   const name = basename(result.filePath);
   if (!name) {
     throw new Error('مسار ملف CMYK الناتج غير صالح');
+  }
+  if (params.skipBlobFetch) {
+    return {
+      blob: new Blob([], { type: params.format === 'tiff' ? 'image/tiff' : 'image/jpeg' }),
+      sourceFilename: name,
+    };
   }
   if (typeof window === 'undefined' || !window.location?.origin) {
     throw new Error('بيئة التشغيل لا تسمح بقراءة الملف الناتج');

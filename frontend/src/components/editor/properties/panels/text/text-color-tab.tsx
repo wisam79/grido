@@ -1,4 +1,4 @@
-import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
+import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 
@@ -14,7 +14,6 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
   const currentColor = element.color || '#000000';
   const hasStroke = (element.strokeWidth ?? 0) > 0;
   const currentStroke = element.stroke || '#000000';
-  const hasBadge = !!element.textBgColor && element.textBgColor !== 'transparent';
 
   return (
     <ColorPanel wheelPosition="top">
@@ -65,15 +64,14 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
             }}
             onChangeSolidColor={(col) => {
               onUpdate(element.id, { color: col });
-              useEditorStore.getState().pushHistory();
             }}
             onChangeColorStops={(stops) => {
               onUpdate(element.id, {
                 fillLinearGradientColorStops: stops,
                 fillRadialGradientColorStops: stops,
               });
-              useEditorStore.getState().pushHistory();
             }}
+            onCommitColor={() => useEditorStore.getState().pushHistory()}
             angle={gradientAngleFromPoints(
               element.fillLinearGradientStartPoint,
               element.fillLinearGradientEndPoint,
@@ -100,8 +98,8 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
                   color={currentStroke}
                   onChange={(val) => {
                     onUpdate(element.id, { stroke: val });
-                    useEditorStore.getState().pushHistory();
                   }}
+                  onCommit={() => useEditorStore.getState().pushHistory()}
                   swatchOnly
                   className="w-6 h-6 rounded-md shadow-2xs border border-white/10"
                   ariaLabel="لون إطار النص"
@@ -135,31 +133,6 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
         >
           {hasStroke && (
             <div className="space-y-2.5 animate-in fade-in duration-150">
-              {/* وحدة لون الحد المدمجة */}
-              <div className="space-y-1.5 bg-background/40 p-2 rounded-md border border-border/50 shadow-2xs">
-                <div className="flex items-center justify-between text-mini font-bold text-muted-foreground px-0.5">
-                  <span>لون الحد</span>
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="font-mono text-mini text-muted-foreground/70 uppercase select-none"
-                      dir="ltr"
-                    >
-                      {currentStroke}
-                    </span>
-                    <ColorField
-                      color={currentStroke}
-                      onChange={(val) => {
-                        onUpdate(element.id, { stroke: val });
-                        useEditorStore.getState().pushHistory();
-                      }}
-                      swatchOnly
-                      className="w-5 h-5 rounded"
-                      ariaLabel="لون الحد"
-                    />
-                  </div>
-                </div>
-              </div>
-
               <FluentSliderField
                 label="سماكة الحد"
                 value={element.strokeWidth ?? 2}
@@ -174,48 +147,7 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
           )}
         </FluentSection>
 
-        {/* 🎴 بطاقة 3: ألوان الشارة والخلفية إن وُجدت */}
-        {hasBadge && (
-          <FluentSection title="ألوان الخلفية والشارة">
-            <div className="space-y-2">
-              <FluentSettingRow
-                layout="vertical"
-                label="لون الخلفية"
-                control={
-                  <ColorField
-                    color={element.textBgColor || '#2563eb'}
-                    onChange={(val) => {
-                      onUpdate(element.id, { textBgColor: val });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                    ariaLabel="لون خلفية النص"
-                    className="w-full"
-                  />
-                }
-              />
-
-              {(element.textBgBorderWidth ?? 0) > 0 && (
-                <FluentSettingRow
-                  layout="vertical"
-                  label="إطار الشارة"
-                  control={
-                    <ColorField
-                      color={element.textBgBorderColor || '#000000'}
-                      onChange={(val) => {
-                        onUpdate(element.id, { textBgBorderColor: val });
-                        useEditorStore.getState().pushHistory();
-                      }}
-                      ariaLabel="لون إطار الشارة"
-                      className="w-full"
-                    />
-                  }
-                />
-              )}
-            </div>
-          </FluentSection>
-        )}
-
-        {/* 🎴 بطاقة 4: الشفافية */}
+        {/* 🎴 بطاقة 3: الشفافية */}
         <FluentSection
           title="الشفافية"
           action={

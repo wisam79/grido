@@ -112,9 +112,8 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
       // العناصر المقفلة لا تُلمس في البث الجماعي — شارة القفل يجب أن تحترم
       // في كل أدوات التعديل (إصلاح Bug#19)
       const { elements: freshElements } = useEditorStore.getState();
-      const broadcastIds = selectedIds.filter(
-        (sid) => !freshElements.find((e) => e.id === sid)?.locked,
-      );
+      const lockedById = new Map(freshElements.map((e) => [e.id, Boolean(e.locked)]));
+      const broadcastIds = selectedIds.filter((sid) => !lockedById.get(sid));
       if (broadcastIds.length > 0) {
         updateElements(
           broadcastIds.map((sid) => ({ id: sid, patch: stylePatch as Partial<CanvasElement> })),

@@ -1,9 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ColorField } from '../src/components/editor/properties/color-panel';
+import { ColorWheel } from '../src/components/editor/properties/color-wheel';
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { useRenderQuality } from '../src/lib/canvas/render-quality';
 import type { ReactElement } from 'react';
 
 const renderField = (ui: ReactElement) => render(<TooltipProvider>{ui}</TooltipProvider>);
@@ -162,5 +164,44 @@ describe('components/color-panel', () => {
         (window as unknown as { EyeDropper: unknown }).EyeDropper = originalEyeDropper;
       }
     }
+  });
+
+  it('يرسل onCommit مرة واحدة فقط عند إفلات سحب عجلة الألوان مع استمرار المعاينة الحية عبر onChange', () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    render(<ColorWheel color="#FF0000" onChange={onChange} onCommit={onCommit} />);
+
+    const wheel = screen.getByRole('slider', { name: 'عجلة الألوان' });
+    wheel.setPointerCapture = vi.fn();
+    wheel.hasPointerCapture = vi.fn().mockReturnValue(true);
+    wheel.releasePointerCapture = vi.fn();
+    wheel.getBoundingClientRect = vi.fn().mockReturnValue({
+      width: 156,
+      height: 156,
+      left: 0,
+      top: 0,
+      right: 156,
+      bottom: 156,
+    });
+
+    fireEvent.pointerDown(wheel, { button: 0, pointerId: 1, clientX: 30, clientY: 30 });
+    fireEvent.pointerMove(wheel, { pointerId: 1, clientX: 60, clientY: 40 });
+    fireEvent.pointerMove(wheel, { pointerId: 1, clientX: 90, clientY: 50 });
+
+    expect(onChange.mock.calls.length).toBeGreaterThanOrEqual(2);
+    expect(onCommit).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(wheel, { pointerId: 1, clientX: 90, clientY: 50 });
+    expect(onCommit).toHaveBeenCalledTimes(1);
+  });
+
+  it('يحصر علم سحب الفلتر بالعنصر المعدّل (draggingFilterId) لمنع إبطال كاش الصور الأخرى', () => {
+    useRenderQuality.getState().setIsDraggingFilter(true, 'img-active');
+    expect(useRenderQuality.getState().isDraggingFilter).toBe(true);
+    expect(useRenderQuality.getState().draggingFilterId).toBe('img-active');
+
+    useRenderQuality.getState().setIsDraggingFilter(false);
+    expect(useRenderQuality.getState().isDraggingFilter).toBe(false);
+    expect(useRenderQuality.getState().draggingFilterId).toBeNull();
   });
 });

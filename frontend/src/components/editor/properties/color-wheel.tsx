@@ -22,10 +22,12 @@ function clampRatio(value: number): number {
 export function ColorWheel({
   color,
   onChange,
+  onCommit,
   className,
 }: {
   color: string;
   onChange: (hex: string) => void;
+  onCommit?: (hex: string) => void;
   className?: string;
 }) {
   const hintId = useId();
@@ -130,11 +132,13 @@ export function ColorWheel({
 
     if (!handled) return;
     event.preventDefault();
-    commit({
+    const updated = {
       h: ((next.h % 360) + 360) % 360,
       s: clampRatio(next.s),
       v: next.v,
-    });
+    };
+    commit(updated);
+    onCommit?.(hsvToHex(updated));
   };
 
   const handleValueKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -150,7 +154,21 @@ export function ColorWheel({
 
     if (!handled) return;
     event.preventDefault();
-    commit({ ...hsvRef.current, v: clampRatio(value) });
+    const updated = { ...hsvRef.current, v: clampRatio(value) };
+    commit(updated);
+    onCommit?.(hsvToHex(updated));
+  };
+
+  const finishWheelDrag = () => {
+    if (!wheelDraggingRef.current) return;
+    wheelDraggingRef.current = false;
+    onCommit?.(hsvToHex(hsvRef.current));
+  };
+
+  const finishValueDrag = () => {
+    if (!valueDraggingRef.current) return;
+    valueDraggingRef.current = false;
+    onCommit?.(hsvToHex(hsvRef.current));
   };
 
   const markerAngle = (hsv.h * Math.PI) / 180;
@@ -187,17 +205,13 @@ export function ColorWheel({
           if (wheelDraggingRef.current) applyWheelPointer(event.clientX, event.clientY);
         }}
         onPointerUp={(event) => {
-          wheelDraggingRef.current = false;
+          finishWheelDrag();
           if (event.currentTarget.hasPointerCapture(event.pointerId)) {
             event.currentTarget.releasePointerCapture(event.pointerId);
           }
         }}
-        onPointerCancel={() => {
-          wheelDraggingRef.current = false;
-        }}
-        onLostPointerCapture={() => {
-          wheelDraggingRef.current = false;
-        }}
+        onPointerCancel={finishWheelDrag}
+        onLostPointerCapture={finishWheelDrag}
         className="relative shrink-0 rounded-full touch-none cursor-crosshair focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-popover"
         style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}
       >
@@ -233,17 +247,13 @@ export function ColorWheel({
           if (valueDraggingRef.current) applyValuePointer(event.clientX);
         }}
         onPointerUp={(event) => {
-          valueDraggingRef.current = false;
+          finishValueDrag();
           if (event.currentTarget.hasPointerCapture(event.pointerId)) {
             event.currentTarget.releasePointerCapture(event.pointerId);
           }
         }}
-        onPointerCancel={() => {
-          valueDraggingRef.current = false;
-        }}
-        onLostPointerCapture={() => {
-          valueDraggingRef.current = false;
-        }}
+        onPointerCancel={finishValueDrag}
+        onLostPointerCapture={finishValueDrag}
         className="relative h-3.5 w-full touch-none cursor-pointer rounded-full border border-border/70 shadow-inner focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-popover"
       >
         <div
