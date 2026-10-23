@@ -81,7 +81,11 @@ $$\text{Pixel Position} = \text{Normalized Coordinate} \times \text{Canvas Dimen
 - **Unified Bounded Navigation (`clampStagePos`):** Restricts paper position to prevent drifting into empty infinity with one shared rule for wheel, trackpad, Spacebar, and Middle-drag. It preserves `minVisible = clamp(min(displayW, displayH) * 0.4, 40, 150)` pixels of the paper inside the viewport on both axes. There is no separate wheel-centering mode, so trackpad gestures never snap the sheet back to center.
 - **Stable Viewport Measurement (`useStableViewportSize`):** The first container measurement commits immediately; subsequent `ResizeObserver` changes are debounced by 140ms. This keeps `<Stage width height>` allocation stable during the 100ms panel transition instead of reallocating the canvas every frame.
 - **Frame-Batched Wheel Input:** Wheel deltas are normalized for line/page modes, accumulated, and applied once per `requestAnimationFrame`. Plain wheel/trackpad input pans both axes; Ctrl/Meta wheel zooms exponentially around the pointer.
-- **Multi-Layer Separation (`KonvaOverlayLayer`):** Separates the `<EditorTransformer>` and marquee selection rectangle (`marquee-rect`) into an isolated top `<Layer name="overlay-tools-layer">`. Content elements (`KonvaSingleLayer`) remain untouched and do not redraw during marquee selections or transformer handle interactions.
+- **Multi-Layer Separation & VRAM Budget (4 Layers Max):** Stage is structured into 4 strict layers to cap HTML5 Canvas buffers to 8:
+  1. `KonvaBackgroundLayer` (`listening={false}`): Consolidates static non-interactive elements (`paper-shadow-rect`, `bg-rect`, `grid-layer` group, `columns-layer` group) into a single layer.
+  2. Content Layer: `KonvaSingleLayer` (freeform elements) or `KonvaCollageLayer` (grid slots).
+  3. `KonvaOverlayLayer`: `<EditorTransformer>`, marquee selection rectangle (`marquee-rect`), and smart snap guides. Content elements remain untouched during transformer or marquee interactions.
+  4. Official Drag Layer (`drag-layer`): Temporarily hosts dragged nodes to prevent content layer redraws during motion.
 
 ### Shapes: One Catalog, Native Konva Primitives
 - **Single catalog (`lib/io/shape-catalog.ts`):** every shape is defined once (`id`, Arabic label, Konva `kind` or 24×24 SVG `path`, category, optional insertion aspect/defaults). The toolbar dropdown, the freeform quick grid, the properties header glyph (`components/editor/shapes/shape-glyph.tsx`), the Konva node, and the manual export all read from it — there is no second shape list.

@@ -191,27 +191,108 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
       {/* 1. مسار مساحة العمل والورقة الفعلي */}
       <rect x={0} y={0} width={viewportWidth} height={20} className="fill-ruler-track" />
 
-      {displayW > 0 && (
-        <g>
-          {/* مساحة الورقة الفعلية (Paper Track Area) */}
-          <rect x={originX} y={0} width={displayW} height={20} className="fill-card" />
-          {/* ظل حواف الورقة الناعم */}
-          <rect
-            x={originX}
-            y={0}
-            width={Math.min(PAPER_EDGE_SHADOW, displayW)}
-            height={20}
-            fill="url(#h-paper-shadow-left)"
+      {/* محتوى المسطرة المتحرك مع إزاحة الورقة */}
+      <g id="h-ruler-content">
+        {displayW > 0 && (
+          <g>
+            {/* مساحة الورقة الفعلية (Paper Track Area) */}
+            <rect x={originX} y={0} width={displayW} height={20} className="fill-card" />
+            {/* ظل حواف الورقة الناعم */}
+            <rect
+              x={originX}
+              y={0}
+              width={Math.min(PAPER_EDGE_SHADOW, displayW)}
+              height={20}
+              fill="url(#h-paper-shadow-left)"
+            />
+            <rect
+              x={endX - Math.min(PAPER_EDGE_SHADOW, displayW)}
+              y={0}
+              width={Math.min(PAPER_EDGE_SHADOW, displayW)}
+              height={20}
+              fill="url(#h-paper-shadow-right)"
+            />
+          </g>
+        )}
+
+        {/* 2. خطوط التدريج الاحترافية (3-Tier Tick Marks) */}
+        {subPath && (
+          <path
+            d={subPath}
+            stroke="currentColor"
+            className="stroke-ruler-tick/70"
+            strokeWidth={0.65}
           />
-          <rect
-            x={endX - Math.min(PAPER_EDGE_SHADOW, displayW)}
-            y={0}
-            width={Math.min(PAPER_EDGE_SHADOW, displayW)}
-            height={20}
-            fill="url(#h-paper-shadow-right)"
+        )}
+        {midPath && (
+          <path
+            d={midPath}
+            stroke="currentColor"
+            className="stroke-ruler-tick-major/80"
+            strokeWidth={0.75}
           />
-        </g>
-      )}
+        )}
+
+        {/* 3. مؤشرات هوامش الصفحة بأسلوب Word — تظليل خفيف وحدود متقطعة */}
+        {marginPx > 0 && displayW > 0 && (
+          <g>
+            {[originX + marginPx, endX - marginPx].map((mx, i) => (
+              <line
+                key={`h-margin-${i}`}
+                x1={mx}
+                y1={3}
+                x2={mx}
+                y2={20}
+                className="stroke-primary/40"
+                strokeWidth={1}
+                strokeDasharray="2 2"
+              />
+            ))}
+          </g>
+        )}
+
+        {/* 4. شريط تحديد العنصر المُسقَط من الكانفس */}
+        {hasSelection && (
+          <g>
+            <rect
+              x={Math.max(0, selectionBounds!.startPx)}
+              y={13}
+              width={Math.min(
+                selectionBounds!.lengthPx - Math.max(0, -selectionBounds!.startPx),
+                viewportWidth - Math.max(0, selectionBounds!.startPx),
+              )}
+              height={7}
+              rx={2}
+              className="fill-primary/15 stroke-primary/60"
+              strokeWidth={1}
+            />
+            {selectionBounds!.label && (
+              <text
+                x={Math.max(0, selectionBounds!.startPx) + 3}
+                y={11.5}
+                fontSize={7.5}
+                style={{ paintOrder: 'stroke' }}
+                strokeWidth={2.5}
+                strokeLinejoin="round"
+                className="fill-primary font-mono font-bold select-none tracking-tighter stroke-ruler-surface"
+              >
+                {selectionBounds!.label}
+              </text>
+            )}
+          </g>
+        )}
+
+        {/* 5. علامة نقطة الصفر المثلثة (Origin Flag) بنمط Photoshop */}
+        {displayW > 0 && (
+          <polygon
+            points={`${originX - 4},0 ${originX + 4},0 ${originX},7`}
+            className="fill-primary"
+          />
+        )}
+
+        {/* 6. الأرقام والعلامات الرئيسية */}
+        {labelElements}
+      </g>
 
       {/* خط الإطار السفلي الفاصل مع الكانفس */}
       <line
@@ -222,84 +303,6 @@ export const HorizontalRuler = React.memo(function HorizontalRuler({
         className="stroke-ruler-border"
         strokeWidth={1}
       />
-
-      {/* 2. خطوط التدريج الاحترافية (3-Tier Tick Marks) */}
-      {subPath && (
-        <path
-          d={subPath}
-          stroke="currentColor"
-          className="stroke-ruler-tick/70"
-          strokeWidth={0.65}
-        />
-      )}
-      {midPath && (
-        <path
-          d={midPath}
-          stroke="currentColor"
-          className="stroke-ruler-tick-major/80"
-          strokeWidth={0.75}
-        />
-      )}
-
-      {/* 3. مؤشرات هوامش الصفحة بأسلوب Word — تظليل خفيف وحدود متقطعة */}
-      {marginPx > 0 && displayW > 0 && (
-        <g>
-          {[originX + marginPx, endX - marginPx].map((mx, i) => (
-            <line
-              key={`h-margin-${i}`}
-              x1={mx}
-              y1={3}
-              x2={mx}
-              y2={20}
-              className="stroke-primary/40"
-              strokeWidth={1}
-              strokeDasharray="2 2"
-            />
-          ))}
-        </g>
-      )}
-
-      {/* 4. شريط تحديد العنصر المُسقَط من الكانفس */}
-      {hasSelection && (
-        <g>
-          <rect
-            x={Math.max(0, selectionBounds!.startPx)}
-            y={13}
-            width={Math.min(
-              selectionBounds!.lengthPx - Math.max(0, -selectionBounds!.startPx),
-              viewportWidth - Math.max(0, selectionBounds!.startPx),
-            )}
-            height={7}
-            rx={2}
-            className="fill-primary/15 stroke-primary/60"
-            strokeWidth={1}
-          />
-          {selectionBounds!.label && (
-            <text
-              x={Math.max(0, selectionBounds!.startPx) + 3}
-              y={11.5}
-              fontSize={7.5}
-              style={{ paintOrder: 'stroke' }}
-              strokeWidth={2.5}
-              strokeLinejoin="round"
-              className="fill-primary font-mono font-bold select-none tracking-tighter stroke-ruler-surface"
-            >
-              {selectionBounds!.label}
-            </text>
-          )}
-        </g>
-      )}
-
-      {/* 5. علامة نقطة الصفر المثلثة (Origin Flag) بنمط Photoshop */}
-      {displayW > 0 && (
-        <polygon
-          points={`${originX - 4},0 ${originX + 4},0 ${originX},7`}
-          className="fill-primary"
-        />
-      )}
-
-      {/* 6. الأرقام والعلامات الرئيسية */}
-      {labelElements}
 
       {/* 7. مؤشر تتبع الماوس اللحظي النقي (Hairline Mouse Cursor) */}
       <line
@@ -465,27 +468,110 @@ export const VerticalRuler = React.memo(function VerticalRuler({
       {/* 1. مسار مساحة العمل والورقة الفعلي */}
       <rect x={0} y={0} width={20} height={viewportHeight} className="fill-ruler-track" />
 
-      {displayH > 0 && (
-        <g>
-          {/* مساحة الورقة الفعلية (Paper Track Area) */}
-          <rect x={0} y={originY} width={20} height={displayH} className="fill-card" />
-          {/* ظل حواف الورقة الناعم */}
-          <rect
-            x={0}
-            y={originY}
-            width={20}
-            height={Math.min(PAPER_EDGE_SHADOW, displayH)}
-            fill="url(#v-paper-shadow-top)"
+      {/* محتوى المسطرة المتحرك مع إزاحة الورقة */}
+      <g id="v-ruler-content">
+        {displayH > 0 && (
+          <g>
+            {/* مساحة الورقة الفعلية (Paper Track Area) */}
+            <rect x={0} y={originY} width={20} height={displayH} className="fill-card" />
+            {/* ظل حواف الورقة الناعم */}
+            <rect
+              x={0}
+              y={originY}
+              width={20}
+              height={Math.min(PAPER_EDGE_SHADOW, displayH)}
+              fill="url(#v-paper-shadow-top)"
+            />
+            <rect
+              x={0}
+              y={endY - Math.min(PAPER_EDGE_SHADOW, displayH)}
+              width={20}
+              height={Math.min(PAPER_EDGE_SHADOW, displayH)}
+              fill="url(#v-paper-shadow-bottom)"
+            />
+          </g>
+        )}
+
+        {/* 2. خطوط التدريج الاحترافية (3-Tier Tick Marks) */}
+        {subPath && (
+          <path
+            d={subPath}
+            stroke="currentColor"
+            className="stroke-ruler-tick/70"
+            strokeWidth={0.65}
           />
-          <rect
-            x={0}
-            y={endY - Math.min(PAPER_EDGE_SHADOW, displayH)}
-            width={20}
-            height={Math.min(PAPER_EDGE_SHADOW, displayH)}
-            fill="url(#v-paper-shadow-bottom)"
+        )}
+        {midPath && (
+          <path
+            d={midPath}
+            stroke="currentColor"
+            className="stroke-ruler-tick-major/80"
+            strokeWidth={0.75}
           />
-        </g>
-      )}
+        )}
+
+        {/* 3. مؤشرات هوامش الصفحة بأسلوب Word — حدود متقطعة */}
+        {marginPx > 0 && displayH > 0 && (
+          <g>
+            {[originY + marginPx, endY - marginPx].map((my, i) => (
+              <line
+                key={`v-margin-${i}`}
+                x1={3}
+                y1={my}
+                x2={20}
+                y2={my}
+                className="stroke-primary/40"
+                strokeWidth={1}
+                strokeDasharray="2 2"
+              />
+            ))}
+          </g>
+        )}
+
+        {/* 4. شريط تحديد العنصر المُسقَط من الكانفس */}
+        {hasSelection && (
+          <g>
+            <rect
+              x={13}
+              y={Math.max(0, selectionBounds!.startPx)}
+              width={7}
+              height={Math.min(
+                selectionBounds!.lengthPx - Math.max(0, -selectionBounds!.startPx),
+                viewportHeight - Math.max(0, selectionBounds!.startPx),
+              )}
+              rx={2}
+              className="fill-primary/15 stroke-primary/60"
+              strokeWidth={1}
+            />
+            {selectionBounds!.label && (
+              <text
+                x={11.5}
+                y={Math.max(0, selectionBounds!.startPx) + 3}
+                fontSize={7.5}
+                style={{ paintOrder: 'stroke' }}
+                strokeWidth={2.5}
+                strokeLinejoin="round"
+                className="fill-primary font-mono font-bold select-none tracking-tighter stroke-ruler-surface"
+                transform={`rotate(-90, 11.5, ${Math.max(0, selectionBounds!.startPx) + 3})`}
+                textAnchor="start"
+              >
+                {selectionBounds!.label}
+              </text>
+            )}
+          </g>
+        )}
+
+        {/* 5. علامة نقطة الصفر المثلثة (Origin Flag) بنمط Photoshop */}
+        {displayH > 0 && (
+          <polygon
+            points={`0,${originY - 4} 0,${originY + 4} 7,${originY}`}
+            className="fill-primary"
+          />
+        )}
+
+        {/* 6. الأرقام والعلامات الرئيسية */}
+        {labelElements}
+      </g>
 
       {/* خط الإطار الأيمن الفاصل مع الكانفس */}
       <line
@@ -496,86 +582,6 @@ export const VerticalRuler = React.memo(function VerticalRuler({
         className="stroke-ruler-border"
         strokeWidth={1}
       />
-
-      {/* 2. خطوط التدريج الاحترافية (3-Tier Tick Marks) */}
-      {subPath && (
-        <path
-          d={subPath}
-          stroke="currentColor"
-          className="stroke-ruler-tick/70"
-          strokeWidth={0.65}
-        />
-      )}
-      {midPath && (
-        <path
-          d={midPath}
-          stroke="currentColor"
-          className="stroke-ruler-tick-major/80"
-          strokeWidth={0.75}
-        />
-      )}
-
-      {/* 3. مؤشرات هوامش الصفحة بأسلوب Word — حدود متقطعة */}
-      {marginPx > 0 && displayH > 0 && (
-        <g>
-          {[originY + marginPx, endY - marginPx].map((my, i) => (
-            <line
-              key={`v-margin-${i}`}
-              x1={3}
-              y1={my}
-              x2={20}
-              y2={my}
-              className="stroke-primary/40"
-              strokeWidth={1}
-              strokeDasharray="2 2"
-            />
-          ))}
-        </g>
-      )}
-
-      {/* 4. شريط تحديد العنصر المُسقَط من الكانفس */}
-      {hasSelection && (
-        <g>
-          <rect
-            x={13}
-            y={Math.max(0, selectionBounds!.startPx)}
-            width={7}
-            height={Math.min(
-              selectionBounds!.lengthPx - Math.max(0, -selectionBounds!.startPx),
-              viewportHeight - Math.max(0, selectionBounds!.startPx),
-            )}
-            rx={2}
-            className="fill-primary/15 stroke-primary/60"
-            strokeWidth={1}
-          />
-          {selectionBounds!.label && (
-            <text
-              x={11.5}
-              y={Math.max(0, selectionBounds!.startPx) + 3}
-              fontSize={7.5}
-              style={{ paintOrder: 'stroke' }}
-              strokeWidth={2.5}
-              strokeLinejoin="round"
-              className="fill-primary font-mono font-bold select-none tracking-tighter stroke-ruler-surface"
-              transform={`rotate(-90, 11.5, ${Math.max(0, selectionBounds!.startPx) + 3})`}
-              textAnchor="start"
-            >
-              {selectionBounds!.label}
-            </text>
-          )}
-        </g>
-      )}
-
-      {/* 5. علامة نقطة الصفر المثلثة (Origin Flag) بنمط Photoshop */}
-      {displayH > 0 && (
-        <polygon
-          points={`0,${originY - 4} 0,${originY + 4} 7,${originY}`}
-          className="fill-primary"
-        />
-      )}
-
-      {/* 6. الأرقام والعلامات الرئيسية */}
-      {labelElements}
 
       {/* 7. مؤشر تتبع الماوس اللحظي النقي (Hairline Mouse Cursor) */}
       <line

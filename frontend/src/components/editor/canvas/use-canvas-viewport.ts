@@ -181,6 +181,30 @@ export function useCanvasViewport(
     let wheelClientY = 0;
     let wheelIsZoom = false;
 
+    // 🚀 كاش مراجع عناصر DOM المحيطة (Shell والمساطر وعصي التمرير) لتفادي استعلامات DOM المتكررة في كل إطار
+    let cachedShell: HTMLElement | null = null;
+    let cachedHContent: SVGGElement | null = null;
+    let cachedVContent: SVGGElement | null = null;
+    let cachedHThumb: HTMLElement | null = null;
+    let cachedVThumb: HTMLElement | null = null;
+
+    const getShellDom = () => {
+      if (!cachedShell || !cachedShell.isConnected) {
+        cachedShell = node.closest('[data-testid="workspace-canvas-shell"]');
+        cachedHContent = cachedShell?.querySelector('#h-ruler-content') ?? null;
+        cachedVContent = cachedShell?.querySelector('#v-ruler-content') ?? null;
+        cachedHThumb = cachedShell?.querySelector('[data-canvas-h-thumb]') ?? null;
+        cachedVThumb = cachedShell?.querySelector('[data-canvas-v-thumb]') ?? null;
+      }
+      return {
+        shell: cachedShell,
+        hContent: cachedHContent,
+        vContent: cachedVContent,
+        hThumb: cachedHThumb,
+        vThumb: cachedVThumb,
+      };
+    };
+
     const applyImperativeTransform = (pos: { x: number; y: number }) => {
       // 1. مسرح Konva وتصيير بكسلاته على الـ GPU فورياً
       if (stageRef.current) {
@@ -192,12 +216,10 @@ export function useCanvasViewport(
         innerRef.current.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
       }
       // 3. تدريج المساطر وعصي التمرير فلوينت
-      const shell = node.closest('[data-testid="workspace-canvas-shell"]');
+      const { shell, hContent, vContent, hThumb, vThumb } = getShellDom();
       if (shell) {
         const dx = pos.x - initialPanPosRef.current.x;
         const dy = pos.y - initialPanPosRef.current.y;
-        const hContent = shell.querySelector('#h-ruler-content') as SVGGElement | null;
-        const vContent = shell.querySelector('#v-ruler-content') as SVGGElement | null;
         if (hContent) hContent.style.transform = `translate3d(${dx}px, 0, 0)`;
         if (vContent) vContent.style.transform = `translate3d(0, ${dy}px, 0)`;
 
@@ -208,7 +230,6 @@ export function useCanvasViewport(
         const curH = displayHRef.current;
         const bounds = getStageClampBounds(curW, curH, vW, vH);
 
-        const hThumb = shell.querySelector('[data-canvas-h-thumb]') as HTMLElement | null;
         if (hThumb) {
           const spanX = bounds.maxX - bounds.minX;
           const tx = spanX > 0 ? Math.max(0, Math.min(1, (bounds.maxX - pos.x) / spanX)) : 0.5;
@@ -223,7 +244,6 @@ export function useCanvasViewport(
           hThumb.dataset.maxOffset = maxOffset.toString();
         }
 
-        const vThumb = shell.querySelector('[data-canvas-v-thumb]') as HTMLElement | null;
         if (vThumb) {
           const spanY = bounds.maxY - bounds.minY;
           const ty = spanY > 0 ? Math.max(0, Math.min(1, (bounds.maxY - pos.y) / spanY)) : 0.5;
@@ -241,13 +261,9 @@ export function useCanvasViewport(
     };
 
     const resetRulerTransforms = () => {
-      const shell = node.closest('[data-testid="workspace-canvas-shell"]');
-      if (shell) {
-        const hContent = shell.querySelector('#h-ruler-content') as SVGGElement | null;
-        const vContent = shell.querySelector('#v-ruler-content') as SVGGElement | null;
-        if (hContent) hContent.style.transform = '';
-        if (vContent) vContent.style.transform = '';
-      }
+      const { hContent, vContent } = getShellDom();
+      if (hContent) hContent.style.transform = '';
+      if (vContent) vContent.style.transform = '';
     };
 
     const normalizeWheelDelta = (
@@ -331,9 +347,8 @@ export function useCanvasViewport(
         setCanvasZoom(nextZ);
 
         // 🧭 تزامن مقاس وموضع عصي التمرير فلوينت فورياً عند التكبير/التصغير
-        const shell = node.closest('[data-testid="workspace-canvas-shell"]');
+        const { shell, hThumb, vThumb } = getShellDom();
         if (shell) {
-          const hThumb = shell.querySelector('[data-canvas-h-thumb]') as HTMLElement | null;
           if (hThumb) {
             const ratioX = Math.min(1, vW / Math.max(vW, nextMetrics.displayW));
             const trackLenX = Math.max(40, vW);
@@ -350,7 +365,6 @@ export function useCanvasViewport(
             hThumb.style.transform = `translate3d(${offX}px, 0, 0)`;
             hThumb.dataset.maxOffset = String(maxOffX);
           }
-          const vThumb = shell.querySelector('[data-canvas-v-thumb]') as HTMLElement | null;
           if (vThumb) {
             const ratioY = Math.min(1, vH / Math.max(vH, nextMetrics.displayH));
             const trackLenY = Math.max(40, vH);

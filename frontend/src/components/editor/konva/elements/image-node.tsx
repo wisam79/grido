@@ -9,6 +9,7 @@ import { useKonvaDrag } from '@/hooks/use-konva-drag';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { getKonvaFilters } from '@/lib/filters/konva-filters';
 
+import { withShadowlessDrag } from './drag-shadow';
 import { MagicAiScanner } from './magic-ai-scanner';
 import { propsAreEqual } from './types';
 import type { ElementProps } from './types';
@@ -121,27 +122,12 @@ export const URLImage = React.memo(function URLImage({
   const nodeW = element.width * canvasWidth;
   const nodeH = element.height * canvasHeight;
 
-  // ✨ لمسة الرفع أثناء السحب: ظل ناعم يجعل الصورة «ترتفع» عن الورقة
-  // (سلوك Figma/Fluent). يُفعَّل فقط للصور بلا ظل مخصص من المستخدم
-  // كي لا نطغى على تنسيقه، وينطفئ فور انتهاء السحب.
-  const [isDragLifted, setIsDragLifted] = React.useState(false);
-  const hasCustomShadow = (element.shadowOpacity ?? 0) > 0;
-  const liftActive = isDragLifted && !hasCustomShadow;
-
-  // 🧷 شبكة أمان: Konva لا يُطلق أحداث dragend إن انتهى السحب خارج النافذة أو
-  // فقد التطبيق التركيز — بدون هذا كان ظل الرفع يبقى عالقاً على الصورة.
-  React.useEffect(() => {
-    if (!isDragLifted) return;
-    const clear = () => setIsDragLifted(false);
-    window.addEventListener('pointerup', clear);
-    window.addEventListener('pointercancel', clear);
-    window.addEventListener('blur', clear);
-    return () => {
-      window.removeEventListener('pointerup', clear);
-      window.removeEventListener('pointercancel', clear);
-      window.removeEventListener('blur', clear);
-    };
-  }, [isDragLifted]);
+  // 🚀 إطفاء الظلال أثناء السحب بلا إعادة رسم React (انظر drag-shadow.ts و konva-rendering-invariants).
+  const { handleStart: handleShadowlessStart, handleEnd: handleShadowlessEnd } = withShadowlessDrag(
+    () => elementRef.current as unknown as Konva.Group | null,
+    onDragStart,
+    onDragEnd,
+  );
 
   const clipFunc = React.useMemo(() => {
     if (!element.maskShape || element.maskShape === 'none') return undefined;
@@ -215,22 +201,16 @@ export const URLImage = React.memo(function URLImage({
       // ظل الصورة من لوحة الخصائص لا يظهر على الشاشة ولا في التصدير. الظل على
       // المجموعة يُرسم من الأبناء في كل إطار: يتحدّث فوراً مع تحرير المستخدم
       // ويتبع ظل الرفع أثناء السحب بلا تفريغ الكاش (H1 من تدقيق 2026-10-08).
-      shadowColor={liftActive ? 'rgba(15, 23, 42, 0.45)' : element.shadowColor}
-      shadowBlur={isDragLifted ? (liftActive ? 8 : 0) : element.shadowBlur || 0}
-      shadowOffsetX={liftActive ? 0 : element.shadowOffsetX || 0}
-      shadowOffsetY={liftActive ? 4 : element.shadowOffsetY || 0}
-      shadowOpacity={isDragLifted ? (liftActive ? 0.25 : 0) : (element.shadowOpacity ?? 0)}
+      shadowColor={element.shadowColor}
+      shadowBlur={element.shadowBlur || 0}
+      shadowOffsetX={element.shadowOffsetX || 0}
+      shadowOffsetY={element.shadowOffsetY || 0}
+      shadowOpacity={element.shadowOpacity ?? 0}
       draggable={!element.locked && isSelected}
-      onDragStart={() => {
-        setIsDragLifted(true);
-        onDragStart();
-      }}
+      onDragStart={handleShadowlessStart}
       dragBoundFunc={dragBoundFunc}
       onDragMove={onDragMove}
-      onDragEnd={(e) => {
-        setIsDragLifted(false);
-        onDragEnd(e);
-      }}
+      onDragEnd={handleShadowlessEnd}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       onClick={onClick}

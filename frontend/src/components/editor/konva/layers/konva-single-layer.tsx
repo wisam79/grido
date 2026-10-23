@@ -1,6 +1,8 @@
 import React from 'react';
 import { Layer } from 'react-konva';
 
+import { getElementVisualBox } from '@/lib/canvas/element-geometry';
+
 import { URLImage, KonvaTextElement, KonvaShapeElement } from '../konva-elements';
 
 import type { SnapGuide } from '@/lib/canvas/snap-utils';
@@ -116,20 +118,12 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
       {sortedElements.map((el) => {
         if (el.visible === false) return null;
 
-        // حذف خارج الكانفس مع مراعاة الدوران: Konva يدير حول نقطة الأصل (x,y)
-        // — اختبار الصندوق غير المدار كان يخفي عناصر مدارة نصفها ظاهر (إصلاح Bug#11)
-        const rad = ((el.rotation || 0) * Math.PI) / 180;
-        const cos = Math.cos(rad);
-        const sin = Math.sin(rad);
-        const w = el.width;
-        const h = el.height;
-        // زوايا الصندوق المدارة حول الأصل
-        const cornersX = [0, w * cos, w * cos - h * sin, -h * sin];
-        const cornersY = [0, w * sin, w * sin + h * cos, h * cos];
-        const minX = el.x + Math.min(...cornersX);
-        const maxX = el.x + Math.max(...cornersX);
-        const minY = el.y + Math.min(...cornersY);
-        const maxY = el.y + Math.max(...cornersY);
+        // حذف خارج الكانفس مع مراعاة الدوران ونسبة أبعاد الكانفس في فضاء البكسل
+        const box = getElementVisualBox(el, canvasWidth, canvasHeight);
+        const minX = box.x;
+        const maxX = box.x + box.width;
+        const minY = box.y;
+        const maxY = box.y + box.height;
 
         // استبعاد العناصر البعيدة جداً خارج مساحة العمل (Pasteboard)
         if (minX > 5 || minY > 5 || maxX < -4 || maxY < -4) {

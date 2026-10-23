@@ -10,6 +10,8 @@ import { GridLayer } from '../elements/grid-layer';
 interface KonvaBackgroundLayerProps {
   canvasWidth: number;
   canvasHeight: number;
+  stageScale?: number;
+  checkerPattern?: HTMLCanvasElement | null;
   backgroundColor: string;
   /** لون نهاية التدرج — غيابه يعني تعبئة مصمتة */
   backgroundGradientColor2?: string | null;
@@ -32,6 +34,8 @@ interface KonvaBackgroundLayerProps {
 export const KonvaBackgroundLayer = React.memo(function KonvaBackgroundLayer({
   canvasWidth,
   canvasHeight,
+  stageScale = 1,
+  checkerPattern,
   backgroundColor,
   backgroundGradientColor2,
   backgroundGradientAngle = 135,
@@ -62,24 +66,42 @@ export const KonvaBackgroundLayer = React.memo(function KonvaBackgroundLayer({
   );
 
   return (
-    <>
+    <Layer listening={false}>
+      {/* 📄 مستطيل ظل الورقة والخلفية الأساسية */}
+      <Rect
+        name="paper-shadow-rect"
+        x={0}
+        y={0}
+        width={canvasWidth}
+        height={canvasHeight}
+        fill={backgroundColor === 'transparent' ? undefined : '#ffffff'}
+        fillPatternImage={
+          backgroundColor === 'transparent'
+            ? (checkerPattern as unknown as HTMLImageElement)
+            : undefined
+        }
+        shadowColor="rgba(0, 0, 0, 0.28)"
+        shadowBlur={24 / Math.max(0.001, stageScale)}
+        shadowOffset={{ x: 0, y: 8 / Math.max(0.001, stageScale) }}
+        shadowOpacity={0.35}
+        perfectDrawEnabled={false}
+      />
+
       {/* Background Color / Gradient Layer */}
-      <Layer listening={false}>
-        <Rect
-          name="bg-rect"
-          width={canvasWidth}
-          height={canvasHeight}
-          // التدرج والمصمت حصريان — Konva يعطي أولوية fill المصمت إن حضر معه التدرج
-          fill={!hasGradient && backgroundColor !== 'transparent' ? backgroundColor : undefined}
-          fillLinearGradientStartPoint={hasGradient ? gradient.start : undefined}
-          fillLinearGradientEndPoint={hasGradient ? gradient.end : undefined}
-          fillLinearGradientColorStops={
-            hasGradient ? [0, backgroundColor, 1, backgroundGradientColor2 as string] : undefined
-          }
-          listening={false}
-          perfectDrawEnabled={false}
-        />
-      </Layer>
+      <Rect
+        name="bg-rect"
+        width={canvasWidth}
+        height={canvasHeight}
+        // التدرج والمصمت حصريان — Konva يعطي أولوية fill المصمت إن حضر معه التدرج
+        fill={!hasGradient && backgroundColor !== 'transparent' ? backgroundColor : undefined}
+        fillLinearGradientStartPoint={hasGradient ? gradient.start : undefined}
+        fillLinearGradientEndPoint={hasGradient ? gradient.end : undefined}
+        fillLinearGradientColorStops={
+          hasGradient ? [0, backgroundColor, 1, backgroundGradientColor2 as string] : undefined
+        }
+        listening={false}
+        perfectDrawEnabled={false}
+      />
 
       {/* Grid Layer */}
       <GridLayer
@@ -103,6 +125,6 @@ export const KonvaBackgroundLayer = React.memo(function KonvaBackgroundLayer({
         displayW={canvasWidth}
         displayH={canvasHeight}
       />
-    </>
+    </Layer>
   );
 });

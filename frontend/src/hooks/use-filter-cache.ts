@@ -7,7 +7,7 @@ import { createLogger } from '@/lib/logger';
 const logger = createLogger('use-filter-cache');
 
 export interface CacheableKonvaNode {
-  getStage?: () => { width: () => number } | null;
+  getStage?: () => { width: () => number; scaleX?: () => number } | null;
   width?: () => number;
   height?: () => number;
   isCached?: () => boolean;
@@ -72,13 +72,15 @@ export function useFilterCache({
       const node = nodeRef.current;
       if (!node) return;
       const stage = node.getStage?.();
+      const stageScaleX = stage && typeof stage.scaleX === 'function' ? stage.scaleX() : 0;
       const stageW = stage && typeof stage.width === 'function' ? stage.width() : 0;
-      // 🛡️ M15: الـ Stage أصبح قياساً ثابتاً (zoom=1) والزوم يُطبَّق بـ CSS
-      // transform فوقه. بدون ضرب مضاعف الزوم هنا تكون الكاش مبنية على مقياس
-      // العرض عند 100% فتبدو الصورة المفلترة ضبابية بعد التكبير والخبز.
+      // 🛡️ في مسرح Konva بملء الحاوية (Option B)، يمثّل stage.scaleX() مقياس الورقة الفعلي
+      // (displayW / canvasWidth) شاملاً التكبير. نعتمد عليه مباشرة، ونحتفظ بالمعادلة
+      // الاحتياطية فقط للبيئات الوهمية (Mock Stages في الاختبارات).
       const cssZoom = useEditorStore.getState().canvasZoom;
       const zoom = cssZoom > 0 ? cssZoom : 1;
-      const displayScale = stageW > 0 ? (stageW * zoom) / Math.max(1, canvasWidth) : 1;
+      const displayScale =
+        stageScaleX > 0 ? stageScaleX : stageW > 0 ? (stageW * zoom) / Math.max(1, canvasWidth) : 1;
       const deviceRatio = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
 
       const rawRatio = isDraggingFilter

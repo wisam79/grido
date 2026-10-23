@@ -1,6 +1,6 @@
 import Konva from 'konva';
 import React, { useRef, useEffect, useMemo } from 'react';
-import { Stage, Layer, Rect } from 'react-konva';
+import { Stage, Layer } from 'react-konva';
 import { useShallow } from 'zustand/react/shallow';
 
 import { checkerColor } from '@/lib/canvas/canvas-colors';
@@ -557,31 +557,12 @@ export const KonvaCanvas = React.memo(
           }
         }}
       >
-        {/* 📄 طبقة ظل الورقة والخلفية الأساسية */}
-        <Layer listening={false}>
-          <Rect
-            name="paper-shadow-rect"
-            x={0}
-            y={0}
-            width={canvasWidth}
-            height={canvasHeight}
-            fill={backgroundColor === 'transparent' ? undefined : '#ffffff'}
-            fillPatternImage={
-              backgroundColor === 'transparent'
-                ? (checkerPattern as unknown as HTMLImageElement)
-                : undefined
-            }
-            shadowColor="rgba(0, 0, 0, 0.28)"
-            shadowBlur={24 / stageScale}
-            shadowOffset={{ x: 0, y: 8 / stageScale }}
-            shadowOpacity={0.35}
-            perfectDrawEnabled={false}
-          />
-        </Layer>
-
+        {/* 📄 طبقة الخلفية الساكنة الموحدة (ظل الورقة + لون/تدرج الورقة + الشبكة + الأعمدة) */}
         <KonvaBackgroundLayer
           canvasWidth={canvasWidth}
           canvasHeight={canvasHeight}
+          stageScale={stageScale}
+          checkerPattern={checkerPattern}
           backgroundColor={backgroundColor}
           backgroundGradientColor2={backgroundGradientColor2}
           backgroundGradientAngle={backgroundGradientAngle}

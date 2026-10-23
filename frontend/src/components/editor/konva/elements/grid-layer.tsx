@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layer, Shape } from 'react-konva';
+import { Group, Shape } from 'react-konva';
 
 export const GridLayer = React.memo(function GridLayer({
   showGrid,
@@ -32,7 +32,7 @@ export const GridLayer = React.memo(function GridLayer({
     totalCells > MAX_GRID_CELLS ? Math.ceil(Math.sqrt(totalCells / MAX_GRID_CELLS)) : 1;
 
   return (
-    <Layer listening={false} name="grid-layer" hitStrokeWidth={0}>
+    <Group listening={false} name="grid-layer">
       <Shape
         sceneFunc={(context, _shape) => {
           if (gridType === 'lines') {
@@ -107,6 +107,6 @@ export const GridLayer = React.memo(function GridLayer({
           context.closePath();
         }}
       />
-    </Layer>
+    </Group>
   );
 });
