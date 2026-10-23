@@ -87,3 +87,19 @@ export function PrintPreviewModal({ open, onOpenChange }: Props) {
    - يدير Radix قفل التمرير على عنصر `body` تلقائياً عند فتح الـ Dialog؛ لا تضف كوداً يدوياً يتلاعب بـ `document.body.style.overflow`.
 3. **التكامل مع النماذج غير المتزامنة (Async Submissions):**
    - عند الضغط على أزرار التأكيد أو الحفظ غير المتزامن (مثل حفظ المشروع أو إنشاء نسخة احتياطية)، يجب إبقاء النافذة مفتوحة وإظهار حالة الانتظار حتى اكتمال عملية Wails الخلفية بنجاح ثم إغلاقها برمجياً عبر `onOpenChange(false)`.
+
+---
+
+## 🧪 5. بروتوكول اختبارات E2E والتفاعل مع الكانفاس (E2E & Canvas Interaction Invariants)
+
+عند كتابة أو صيانة اختبارات Playwright التي تفتح قوائم Radix UI (مثل `Select`، `Popover`، `DropdownMenu`) ثم تتفاعل فوراً مع عناصر كانفاس Konva:
+1. **حظر التفاعل الفوري قبل تفريغ قفل المؤشر:**
+   تستخدم Radix مكتبة قفل التمرير التي تضع `pointer-events: none` على `<body>` وتنفذ حركة خروج مدتها 75ms (`duration-75`). أي إيماءة ماوس على الكانفاس قبل اكتمال الإغلاق ستُبتلع بصمت.
+2. **النمط الإلزامي للانتظار:**
+   بعد اختيار أي عنصر من القائمة، يجب دائماً انتظار اختفاء القائمة وتفريغ قفل `pointer-events` من الـ body:
+
+```typescript
+await page.getByRole('option', { name: '200px', exact: true }).click();
+await expect(page.getByRole('listbox')).toBeHidden();
+await page.waitForFunction(() => document.body.style.pointerEvents !== 'none');
+```

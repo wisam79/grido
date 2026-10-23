@@ -58,6 +58,10 @@ gh run watch <run-id> --interval 10
 
 # 3. في حال حدوث أي فشل، استخراج سجلات الفشل الدقيقة والتشخيص الفوري
 gh run view <run-id> --log-failed
+
+# 4. إعادة تشغيل المهام الفاشلة المعزولة فقط (توفير الوقت دون إعادة المهام الخضراء)
+# عند تعليق خطوة شبكة عابرة (مثل apt-get أو install-deps في أحد الـ Shards):
+gh run rerun <run-id> --failed
 ```
 
 تشمل دورة الـ CI السحابية المتكاملة 4 وظائف متوازية (Parallel Jobs) في `.github/workflows/ci.yml`:
