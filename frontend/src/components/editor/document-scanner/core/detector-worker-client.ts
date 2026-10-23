@@ -90,6 +90,8 @@ export class DetectorWorkerClient {
     return new Promise<DetectorWorkerResponse | null>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(requestId);
+        // 🛡️ قتل العامل المعلّق فوراً لتحرير ذاكرة WebView2 (WASM Heap) ومنع تراكم المهام المتتالية
+        this.terminate(new Error('Document detector worker timed out'));
         reject(new Error('Document detector worker timed out'));
       }, WORKER_TIMEOUT_MS);
 

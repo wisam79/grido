@@ -70,13 +70,16 @@ export const useOperationStatusStore = create<OperationStatusStore>((set, get) =
 
   cancelActiveOperation: () => {
     const current = get().activeOperation;
-    if (current && current.canCancel && current.onCancel) {
+    if (!current || !current.canCancel) return;
+    // 🛡️ تصفير الخانة أولاً قبل استدعاء onCancel لمنع الاستدعاء التكراري اللانهائي
+    // (RangeError: Maximum call stack size exceeded) إذا أعاد onCancel استدعاء cancelActiveOperation.
+    set({ activeOperation: null });
+    if (current.onCancel) {
       try {
         current.onCancel();
       } catch (err) {
         logger.error('Error cancelling operation:', err);
       }
-      set({ activeOperation: null });
     }
   },
 }));

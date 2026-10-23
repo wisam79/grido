@@ -597,6 +597,17 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                     imageSrc: element.originalImageSrc,
                     originalImageSrc: undefined,
                     bgColor: 'transparent',
+                    ...(element.stickerSource
+                      ? {
+                          stickerSource: {
+                            ...element.stickerSource,
+                            params: {
+                              ...element.stickerSource.params,
+                              isTransparent: false,
+                            },
+                          },
+                        }
+                      : {}),
                   });
                   useEditorStore.getState().pushHistory();
                   toast.success('تمت استعادة الصورة الأصلية');

@@ -264,7 +264,7 @@ export async function detectDocumentsWithOpenCVFromImageData(
         hierarchy = track(new cv.Mat());
         cv.findContours(binMat, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
 
-        const numContours = contours.size();
+        const numContours = Math.min(contours.size(), 500);
         for (let i = 0; i < numContours; i++) {
           const cnt = contours.get(i);
           const area = cv.contourArea(cnt);
@@ -280,9 +280,10 @@ export async function detectDocumentsWithOpenCVFromImageData(
           }
 
           const peri = cv.arcLength(cnt, true);
-          // هذه الثلاث تُحذف يدوياً في finally أدناه (لكل كونتور)، لذا لا
-          // تُتبعت في matsToFree — التتبع المزدوج السابق كان يحذفها مرتين.
+          // هذه الأربع تُحذف يدوياً في finally أدناه (لكل كونتور)، لذا لا
+          // تُتبعت في matsToFree لتفادي تراكمها في كومة WASM أو حذفها مرتين.
           const approx = new cv.Mat();
+          const approxTight = new cv.Mat();
           const hull = new cv.Mat();
           const hullApprox = new cv.Mat();
 
@@ -303,10 +304,7 @@ export async function detectDocumentsWithOpenCVFromImageData(
               quads.push(pts);
             }
 
-            // أ2) تقريب أضيق (0.012) لالتقاط الأركان الحادة دون قصها —
-            // يُتتبع فقط (track) ويُنظف في حلقة التنظيف النهائية، دون حذف
-            // يدوي هنا لتفادي الحذف المزدوج.
-            const approxTight = track(new cv.Mat());
+            // أ2) تقريب أضيق (0.012) لالتقاط الأركان الحادة دون قصها
             cv.approxPolyDP(cnt, approxTight, 0.012 * peri, true);
             if (approxTight.rows === 4 && cv.isContourConvex(approxTight)) {
               const pts: Point[] = [];
@@ -522,6 +520,11 @@ export async function detectDocumentsWithOpenCVFromImageData(
           } finally {
             try {
               approx.delete();
+            } catch {
+              /* ignore */
+            }
+            try {
+              approxTight.delete();
             } catch {
               /* ignore */
             }

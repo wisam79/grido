@@ -10,11 +10,14 @@ import {
   buildStickerSvg,
 } from '@/features/stickers/lib/sticker-design/build-svg';
 import { stickerRasterSize } from '@/features/stickers/lib/sticker-text';
-import { renderSvgToPngDataUrl } from '@/features/stickers/lib/svg-rasterizer';
+import { renderSvgToPngBlob } from '@/features/stickers/lib/svg-rasterizer';
+import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { useEditorStore } from '@/lib/editor-store';
+import { uploadMediaBlob } from '@/lib/io/media-upload';
 import { SHAPE_CATEGORIES, shapesInCategory } from '@/lib/io/shape-catalog';
 import { createLogger } from '@/lib/logger';
 import { sanitizeSvgMarkupCached } from '@/lib/utils';
+import { wailsIsDesktop } from '@/lib/wails-env';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { FreeformTextTab } from './freeform-text-tab';
@@ -157,12 +160,23 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
         }
 
         const { width, height } = stickerRasterSize(template.aspectRatio, template.defaultMm);
-        const pngUrl = await renderSvgToPngDataUrl(svg, width, height, [
+        const pngBlob = await renderSvgToPngBlob(svg, width, height, [
           params.fontFamily || 'Cairo',
         ]);
+        let finalSrc: string;
+        if (wailsIsDesktop()) {
+          try {
+            const uploaded = await uploadMediaBlob(pngBlob, `${template.id}.png`);
+            finalSrc = uploaded.imageSrc;
+          } catch {
+            finalSrc = await blobToDataUrl(pngBlob);
+          }
+        } else {
+          finalSrc = await blobToDataUrl(pngBlob);
+        }
         const exportableSvg = sanitizeSvgMarkupCached(svg) || svg;
 
-        addImageElement(pngUrl, template.aspectRatio || 1, {
+        addImageElement(finalSrc, template.aspectRatio || 1, {
           templateId: template.id,
           params,
           ...(exportableSvg ? { svg: exportableSvg } : {}),

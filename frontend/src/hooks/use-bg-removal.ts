@@ -4,14 +4,24 @@ import { create } from 'zustand';
 
 import { RemoveBackground, WarmupBgRemoval } from '@bindings/grido/app';
 
+import { buildStickerSvg } from '@/features/stickers/lib/sticker-design/build-svg';
+import { stickerRasterSize } from '@/features/stickers/lib/sticker-text';
+import { renderSvgToPngBlob } from '@/features/stickers/lib/svg-rasterizer';
+import { getStickerTemplateById } from '@/features/stickers/templates';
 import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
+import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { useEditorStore } from '@/lib/editor-store';
+import { uploadMediaBlob } from '@/lib/io/media-upload';
 import { createLogger } from '@/lib/logger';
 import { triggerMemoryTrim } from '@/lib/memory-trim';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
+import { sanitizeSvgMarkupCached } from '@/lib/utils';
+import { wailsIsDesktop } from '@/lib/wails-env';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { preloadImageIntoCache } from './use-async-image';
+
+import type { StickerElementSource } from '@/lib/store/types';
 
 const logger = createLogger('bg-removal');
 
@@ -58,6 +68,7 @@ interface BgRemovalElement {
   id: string;
   imageSrc?: string;
   originalImageSrc?: string;
+  stickerSource?: StickerElementSource;
 }
 
 type BgRemovalPatch = Partial<BgRemovalElement>;
@@ -89,12 +100,72 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
     setIsRemovingBg(false);
     setBgProgress(0);
     setBgProgressText('');
-    useOperationStatusStore.getState().cancelActiveOperation();
+    const activeOp = useOperationStatusStore.getState().activeOperation;
+    if (activeOp?.type === 'bg_removal') {
+      useOperationStatusStore.getState().finishOperation(activeOp.id);
+    }
     toast.info('تم إلغاء العملية.');
   };
 
   const handleRemoveBg = async (element: BgRemovalElement) => {
     if (!element.imageSrc) return;
+
+    // 🎨 مسار الملصقات المتجهة (Vector Stickers): تفريغ فوري أصلي (isTransparent: true)
+    // بدلاً من إرسال الملصق لنموذج الذكاء الاصطناعي للوجوه البشرية (MODNet ONNX).
+    if (element.stickerSource) {
+      const template = getStickerTemplateById(element.stickerSource.templateId);
+      if (template) {
+        if (element.stickerSource.params?.isTransparent) {
+          toast.info('خلفية الملصق شفافة بالفعل.');
+          return;
+        }
+        try {
+          const nextParams = {
+            ...element.stickerSource.params,
+            isTransparent: true,
+          };
+          const svg = buildStickerSvg(template, nextParams, {
+            namespace: `transparent-${template.id}`,
+          });
+          const { width, height } = stickerRasterSize(template.aspectRatio, template.defaultMm);
+          const pngBlob = await renderSvgToPngBlob(svg, width, height, [
+            nextParams.fontFamily || 'Cairo',
+          ]);
+          let finalSrc: string;
+          if (wailsIsDesktop()) {
+            try {
+              const uploaded = await uploadMediaBlob(pngBlob, `${template.id}-transparent.png`);
+              finalSrc = uploaded.imageSrc;
+            } catch {
+              finalSrc = await blobToDataUrl(pngBlob);
+            }
+          } else {
+            finalSrc = await blobToDataUrl(pngBlob);
+          }
+
+          await preloadImageIntoCache(finalSrc);
+          const exportableSvg = sanitizeSvgMarkupCached(svg) || svg;
+          const commit = commitAiImageResult(element, finalSrc, (id, patch) => {
+            onUpdateRef.current(id, {
+              ...patch,
+              stickerSource: {
+                templateId: template.id,
+                params: nextParams,
+                ...(exportableSvg ? { svg: exportableSvg } : {}),
+              },
+            });
+          });
+          if (commit === 'ok') {
+            toast.success('تم تفريغ خلفية الملصق المتجه فوراً ⚡');
+          }
+          return;
+        } catch (err) {
+          logger.error('Failed to make vector sticker transparent:', err);
+          toast.error(toErrorMessage(err, 'تعذّر تفريغ خلفية الملصق.'));
+          return;
+        }
+      }
+    }
 
     // التحقق من صلاحية الترخيص
     const isLicenseActive = useEditorStore.getState().isLicenseActive;

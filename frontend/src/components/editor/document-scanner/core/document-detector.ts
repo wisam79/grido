@@ -697,7 +697,11 @@ async function runOpenCvDetectionInWorker(
     });
 
   const timeout = new Promise<{ status: 'failed' }>((resolve) => {
-    setTimeout(() => resolve({ status: 'failed' }), OPENCV_WORKER_TIMEOUT_MS);
+    setTimeout(() => {
+      // 🛡️ قتل العامل إذا علقت خوارزمية OpenCV WASM كي لا يحجز الكومة أو يعطل هرم JS التالي
+      detectorWorkerClient.terminate(new Error('OpenCV worker timed out'));
+      resolve({ status: 'failed' });
+    }, OPENCV_WORKER_TIMEOUT_MS);
   });
 
   return Promise.race([request, timeout]);

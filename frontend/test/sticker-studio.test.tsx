@@ -192,10 +192,8 @@ describe('Sticker Studio Unit & Component Tests', () => {
   describe('FreeformElementsTab quick sticker insertion', () => {
     it('attaches stickerSource metadata so quick-inserted stickers can be re-edited from the context menu', async () => {
       const rasterSpy = vi
-        .spyOn(svgRasterizer, 'renderSvgToPngDataUrl')
-        .mockResolvedValue(
-          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-        );
+        .spyOn(svgRasterizer, 'renderSvgToPngBlob')
+        .mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
       useEditorStore.setState({ elements: [] });
 
       try {
