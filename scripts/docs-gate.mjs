@@ -217,14 +217,19 @@ function checkDocumentedCommit() {
     return;
   }
 
-  // كومت ترفيع الإصدار عبر release.mjs: يمسّ ملفات الإصدار وCHANGELOG ويحذف الشظايا.
+  // كومت أو دفعة ترفيع الإصدار عبر release.mjs: يمسّ ملفات الإصدار وCHANGELOG ويجمع الشظايا.
   const isReleaseOnly =
     files.length > 0 &&
     files.every((f) => RELEASE_ONLY_FILES.has(f) || f.startsWith('changelog/fragments/')) &&
     files.some((f) => f === 'CHANGELOG.md' || f === 'build/config.yml');
 
-  if (isReleaseOnly) {
-    notes.push('كومت ترفيع إصدار (Release commit) — جُمعت الشظايا وحُدثت ملفات الإصدار.');
+  const hasRelease =
+    files.includes('CHANGELOG.md') &&
+    files.includes('build/config.yml') &&
+    files.includes('frontend/package.json');
+
+  if (isReleaseOnly || hasRelease) {
+    notes.push('كومت/دفعة ترفيع إصدار (Release) — جُمعت الشظايا وحُدثت ملفات الإصدار في CHANGELOG.md.');
     return;
   }
   const sourceTouched = files.filter((file) => SOURCE_PATTERNS.some((p) => file === p || file.startsWith(p)));
