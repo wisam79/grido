@@ -146,20 +146,22 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/go/bin
-          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-v1
+          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-cgo0-v2
 
       - name: Add Go Bin to PATH
         run: echo "$HOME/go/bin" >> $GITHUB_PATH
 
-      # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28): مفتاح الكاش يحمل رقم
-      #    الإصدار فيُبطَل أي كاش قديم، والتحقق أدناه يكشف أي تراجع فعلي.
+      # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28) مع CGO_ENABLED=0 لتجنب ربط
+      #    internal/operatingsystem/webkit_linux.go بمكتبات libwebkitgtk-6.0.so.4.
       - name: Install Wails3 CLI
+        env:
+          CGO_ENABLED: "0"
         run: |
           if ! command -v wails3 >/dev/null 2>&1; then
             go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
           fi
           # `wails3 version` يطبع عبر Go println إلى stderr — نحوّله لملف ونفحصه
-          wails3 version > "$RUNNER_TEMP/wails3-version.txt" 2>&1
+          wails3 version > "$RUNNER_TEMP/wails3-version.txt" 2>&1 || true
           echo "wails3 version => $(cat "$RUNNER_TEMP/wails3-version.txt")"
           if ! grep -q '3\.0\.0-beta\.28' "$RUNNER_TEMP/wails3-version.txt"; then
             echo "::error::إصدار wails3 CLI لا يطابق المثبّت v3.0.0-beta.28 — امسح كاش go/bin وأعد المحاولة."
@@ -406,19 +408,21 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/go/bin
-          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-v1
+          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-cgo0-v2
 
       - name: Add Go Bin to PATH
         run: echo "$HOME/go/bin" >> $GITHUB_PATH
 
-      # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28): مفتاح الكاش يحمل رقم
-      #    الإصدار فيُبطَل أي كاش قديم، والتحقق أدناه يكشف أي تراجع فعلي.
+      # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28) مع CGO_ENABLED=0 لتجنب ربط
+      #    internal/operatingsystem/webkit_linux.go بمكتبات libwebkitgtk-6.0.so.4.
       - name: Install Wails3 CLI
+        env:
+          CGO_ENABLED: "0"
         run: |
           if ! command -v wails3 >/dev/null 2>&1; then
             go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
           fi
-          wails3 version > "$RUNNER_TEMP/wails3-version.txt" 2>&1
+          wails3 version > "$RUNNER_TEMP/wails3-version.txt" 2>&1 || true
           echo "wails3 version => $(cat "$RUNNER_TEMP/wails3-version.txt")"
           if ! grep -q '3\.0\.0-beta\.28' "$RUNNER_TEMP/wails3-version.txt"; then
             echo "::error::إصدار wails3 CLI لا يطابق المثبّت v3.0.0-beta.28 — امسح كاش go/bin وأعد المحاولة."
@@ -632,19 +636,21 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/go/bin
-          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-v1
+          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-cgo0-v2
 
       - name: Add Go Bin to PATH
         run: echo "$HOME/go/bin" >> $GITHUB_PATH
 
-      # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28): مفتاح الكاش يحمل رقم
-      #    الإصدار فيُبطَل أي كاش قديم، والتحقق أدناه يكشف أي تراجع فعلي.
+      # 🔒 تثبيت صارم لإصدار Wails v3 (v3.0.0-beta.28) مع CGO_ENABLED=0 لتجنب ربط
+      #    internal/operatingsystem/webkit_linux.go بمكتبات libwebkitgtk-6.0.so.4.
       - name: Install Wails3 CLI
+        env:
+          CGO_ENABLED: "0"
         run: |
           if ! command -v wails3 >/dev/null 2>&1; then
             go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
           fi
-          wails3 version > "$RUNNER_TEMP/wails3-version.txt" 2>&1
+          wails3 version > "$RUNNER_TEMP/wails3-version.txt" 2>&1 || true
           echo "wails3 version => $(cat "$RUNNER_TEMP/wails3-version.txt")"
           if ! grep -q '3\.0\.0-beta\.28' "$RUNNER_TEMP/wails3-version.txt"; then
             echo "::error::إصدار wails3 CLI لا يطابق المثبّت v3.0.0-beta.28 — امسح كاش go/bin وأعد المحاولة."
