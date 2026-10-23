@@ -12,7 +12,7 @@ import type { CollageTab, FreeformTab } from '@/lib/workspace-tools';
 
 export type WorkspacePanel = 'templates' | 'properties' | null;
 export type WorkspaceBreakpoint = 'compact' | 'standard' | 'wide';
-// الأنواع ومصدرها سجل الأدوات الموحّد (كانت مكرّرة هنا وفي freeform-panel-constants)
+// الأنواع ومصدرها سجل الأدوات الموحّد
 export type { CollageTab, FreeformTab };
 
 const STORAGE_KEY = 'grido_workspace_layout_v1';

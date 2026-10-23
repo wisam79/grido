@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveTextRenderState } from '../src/lib/canvas/text-helpers';
+import { resolveTextDirection, resolveTextRenderState } from '../src/lib/canvas/text-helpers';
+
+describe('resolveTextDirection (UAX #9 first strong)', () => {
+  it.each([
+    ['first strong letter is Arabic', 'تصميم 2026', 'rtl'],
+    ['digits before a Latin word stay neutral', '٢٠٢٦ Grido', 'ltr'],
+    ['Arabic comma before a Latin word stays neutral', '، Grido', 'ltr'],
+    ['Arabic question mark before Arabic stays neutral', '؟ تصميم', 'rtl'],
+    ['text of digits only falls back to ltr', '٢٠٢٦ 2026', 'ltr'],
+    ['empty text falls back to ltr', '', 'ltr'],
+  ])('%s', (_label, text, expected) => {
+    expect(resolveTextDirection(text)).toBe(expected);
+  });
+});
 
 describe('resolveTextRenderState', () => {
   it('converts Arabic-Indic numerals when enabled', () => {
@@ -19,6 +32,15 @@ describe('resolveTextRenderState', () => {
     });
     expect(state.letterSpacing).toBe(0);
     expect(state.text).toBe('مرحبا  بالعالم');
+  });
+
+  it('zeroes negative Arabic letter spacing instead of tightening ligatures', () => {
+    const state = resolveTextRenderState({
+      text: 'مرحبا',
+      letterSpacing: -4,
+    });
+    expect(state.letterSpacing).toBe(0);
+    expect(state.text).toBe('مرحبا');
   });
 
   it('keeps Latin letter spacing and applies case transforms', () => {

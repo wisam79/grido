@@ -346,13 +346,11 @@ export const StickerPreview = React.memo(function StickerPreview({
           </TooltipContent>
         </Tooltip>
 
-        {/* Real Dimensions & DPI Spec */}
+        {/* Physical Size Readout */}
         <div className="absolute top-3 end-3 z-10 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-card/75 backdrop-blur-md border border-border/30 text-micro font-mono text-muted-foreground/90 select-none pointer-events-none">
           <span>
             {currentMm.width}×{currentMm.height} مم
           </span>
-          <span className="text-border/60">•</span>
-          <span className="text-primary font-bold">300 DPI</span>
         </div>
 
         {/* Sticker with Physical Presence */}

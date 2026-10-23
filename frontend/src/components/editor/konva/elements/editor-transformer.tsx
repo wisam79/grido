@@ -13,6 +13,7 @@ import {
 } from '@/lib/canvas/canvas-colors';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
+import { isCornerAnchor } from '@/lib/canvas/transform-anchors';
 import { useEditorStore } from '@/lib/editor-store';
 
 import type { SnapGuide } from '@/lib/canvas/snap-utils';
@@ -269,7 +270,10 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         borderStrokeWidth={1.5}
         borderDash={isLocked ? [6, 4] : undefined}
         padding={3}
-        keepRatio={true}
+        // الأركان تُحجّم تناسبياً — وللنص تُترجم النسبة إلى fontSize في نهاية
+        // التحويل. Konva يطبّق keepRatio على الزوايا وحدها؛ منتصفات الحواف
+        // تبقى محوراً واحداً (العرض للنص) فلا تتأثر بهذا الخيار.
+        keepRatio
         shiftBehavior="inverted"
         ignoreStroke={true}
         rotateLineVisible={true}
@@ -279,25 +283,18 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         enabledAnchors={
           isLocked
             ? []
-            : isText && selectedIds.length === 1
-              ? [
-                  'top-left',
-                  'top-right',
-                  'bottom-left',
-                  'bottom-right',
-                  'middle-left',
-                  'middle-right',
-                ]
-              : [
-                  'top-left',
-                  'top-right',
-                  'bottom-left',
-                  'bottom-right',
-                  'middle-left',
-                  'middle-right',
-                  'top-center',
-                  'bottom-center',
-                ]
+            : // النص: الزوايا الأربعة تُحجّم الكتلة تناسبياً (حجم الخط + العرض)،
+              // ومنتصفات الحواف تضبط العرض فقط — ارتفاع النص مشتق من المحتوى.
+              [
+                'top-left',
+                'top-right',
+                'bottom-left',
+                'bottom-right',
+                'middle-left',
+                'middle-right',
+                'top-center',
+                'bottom-center',
+              ]
         }
         anchorStyleFunc={(anchor: Konva.Rect) => {
           // 🚀 بلا ظلال على المقابض — كل مقبض مظلل يعني تمريرة ضبابية
@@ -353,10 +350,37 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           }
         }}
         boundBoxFunc={(oldBox, newBox) => {
-          // النمط القياسي لـ Konva: حماية الحد الأدنى للمقاس دون تشويه الصندوق أو النسبة
-          if (Math.abs(newBox.width) < 10 || Math.abs(newBox.height) < 10) {
-            return oldBox;
+          // حد أدنى للعرض في كل الحالات؛ ارتفاع النص مشتق من المحتوى فقد يكون
+          // أصغر من 10px (سطر بحجم 8px) دون أن يكون ذلك تحجيماً غير صالح.
+          if (Math.abs(newBox.width) < 10) return oldBox;
+          if (isText) {
+            // زاوية السحب: تحجيم متناسب لكل الكتلة. نسمح للارتفاع بالتغيّر أثناء
+            // الإيماءة (العقدة تُعرض بمقياسها) ثم يُترجم المقياس إلى fontSize في
+            // نهاية التحويل؛ رفض تغيّر الارتفاع هنا كان يجعل تحجيم الخط مستحيلاً.
+            if (isCornerAnchor(trRef.current?.getActiveAnchor?.())) {
+              if (Math.abs(newBox.height) < 10) return oldBox;
+              return newBox;
+            }
+            // منتصفات الحواف: العرض فقط؛ الارتفاع يتبع المحتوى دائماً.
+            // تثبيت الارتفاع وحده لا يكفي: مقابض top-* تحرّك الحافة العليا فيُترجم
+            // الصندوق كاملاً رأسياً (انزياح واضح للنص) رغم ثبات الارتفاع.
+            // الحل: إسقاط إزاحة أصل الصندوق على محور x المحلي — إزالة المكوّن
+            // العمودي المحلي فقط — فتبقى الحافة العليا على خطها الأصلي. الإسقاط
+            // يجري في فضاء الصندوق المحلي لذا يبقى صحيحاً مع تدوير العنصر.
+            if (!Number.isFinite(oldBox.x) || !Number.isFinite(oldBox.y)) return newBox;
+            const cos = Math.cos(newBox.rotation);
+            const sin = Math.sin(newBox.rotation);
+            const dx = newBox.x - oldBox.x;
+            const dy = newBox.y - oldBox.y;
+            const alongWidth = dx * cos + dy * sin;
+            return {
+              ...newBox,
+              x: oldBox.x + alongWidth * cos,
+              y: oldBox.y + alongWidth * sin,
+              height: oldBox.height,
+            };
           }
+          if (Math.abs(newBox.height) < 10) return oldBox;
           return newBox;
         }}
         onTransformEnd={onTransformEnd}

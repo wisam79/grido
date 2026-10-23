@@ -4,7 +4,7 @@ import { FreeformElementsTab } from './freeform-elements-tab';
 import { FreeformLayersTab } from './freeform-layers-tab';
 import { FreeformTextTab } from './freeform-text-tab';
 
-import type { FreeformTab } from './freeform-panel-constants';
+import type { FreeformTab } from '@/lib/workspace-tools';
 
 /* ═══════════════════════════════════════════════════════════════
    لوحات وضع التعديل الحر — التبويب النشط يحدّد اللوحة المعروضة.

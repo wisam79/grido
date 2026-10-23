@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 import { FluentSegmentedControl } from '@/components/ui/blocks';
-import { PaintBrush, Palette, Sparkle, ArrowsOutCardinal } from '@/components/ui/icons';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
@@ -51,7 +50,8 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
       <div
         className={cn('min-w-0', element.locked && 'pointer-events-none opacity-50 select-none')}
       >
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Radix يفرض dir="ltr" افتراضياً على جذر Tabs فينقلب ترتيب حقول اللوحة العربية */}
+        <Tabs dir="rtl" value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* شريط تبويبات لاصق: يبقى سياق التبويب ظاهراً أثناء تمرير الأقسام */}
           <div className="sticky top-0 z-20 -mx-3 border-b border-border/40 bg-sidebar/95 px-3 pb-2 pt-0.5 backdrop-blur-xl">
             <FluentSegmentedControl<string>
@@ -65,53 +65,25 @@ export function ElementProperties({ element, onUpdate }: ElementPropertiesProps)
                   id: 'style',
                   label: 'تنسيق',
                   ariaLabel: 'التنسيق والقياسات',
-                  icon: (
-                    <PaintBrush
-                      className="w-3.5 h-3.5 shrink-0 transition-transform"
-                      weight={activeTab === 'style' ? 'duotone' : 'regular'}
-                    />
-                  ),
                   tooltip: 'التنسيق والقياسات',
-                  className: 'px-1 gap-1',
                 },
                 {
                   id: 'adjust',
                   label: fillTabLabel,
                   ariaLabel: isImage ? 'الألوان والضبط' : 'الألوان والتعبئة',
-                  icon: (
-                    <Palette
-                      className="w-3.5 h-3.5 shrink-0 transition-transform"
-                      weight={activeTab === 'adjust' ? 'duotone' : 'regular'}
-                    />
-                  ),
                   tooltip: fillTabTooltip,
-                  className: 'px-1 gap-1',
                 },
                 {
                   id: 'effects',
                   label: 'تأثير',
                   ariaLabel: 'التأثيرات',
-                  icon: (
-                    <Sparkle
-                      className="w-3.5 h-3.5 shrink-0 transition-transform"
-                      weight={activeTab === 'effects' ? 'duotone' : 'regular'}
-                    />
-                  ),
                   tooltip: isImage ? 'التأثيرات وفلاتر الصورة' : 'التأثيرات والظلال',
-                  className: 'px-1 gap-1',
                 },
                 {
                   id: 'arrange',
                   label: 'ترتيب',
                   ariaLabel: 'الترتيب',
-                  icon: (
-                    <ArrowsOutCardinal
-                      className="w-3.5 h-3.5 shrink-0 transition-transform"
-                      weight={activeTab === 'arrange' ? 'duotone' : 'regular'}
-                    />
-                  ),
                   tooltip: 'الترتيب — الموضع والمحاذاة والتدوير',
-                  className: 'px-1 gap-1',
                 },
               ]}
             />

@@ -97,6 +97,9 @@ export interface ImageElement extends BaseCanvasElement {
   maskShape?: 'none' | 'circle' | 'heart' | 'star';
 }
 
+/** الركن الذي يبقى مثبتاً في فضاء الكانفس بعد تحجيم زاوية نص */
+export type TextResizeAnchor = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
 export interface TextElement extends BaseCanvasElement {
   type: 'text';
   text: string;
@@ -105,7 +108,11 @@ export interface TextElement extends BaseCanvasElement {
   color?: string;
   fontFamily?: string;
   textAlign?: 'right' | 'center' | 'left';
-  /** المحاذاة العمودية داخل صندوق النص (P1) — تُمرَّر لـ Konva verticalAlign */
+  /**
+   * @deprecated بقية من نموذج الصندوق الثابت — لم يعد يُستهلك في الرندر أو
+   * القياس أو التصدير (الارتفاع يتبع المحتوى ويلتف من الأعلى). يُقبل فقط من
+   * الملفات المحفوظة القديمة ويُهمَل عند القراءة؛ لا تكتبه في كود جديد.
+   */
   textVerticalAlign?: 'top' | 'middle' | 'bottom';
   textBgColor?: string;
   textBgRadius?: number;
@@ -123,6 +130,14 @@ export interface TextElement extends BaseCanvasElement {
   textDecoration?: 'none' | 'underline' | 'line-through';
   textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
   wrap?: 'word' | 'char' | 'none';
+  /** auto: العرض يلتصق بالمحتوى · fixed: عرض ثابت — الارتفاع متكيف في الحالتين */
+  textSizing?: 'auto' | 'fixed';
+  /**
+   * ركن ارتساء تحجيم الزاوية: يبقى ثابتاً في فضاء الكانفس عند كل إعادة قياس
+   * لاحقة للصندوق (تحميل خط متأخر، فروق قياس). يُضبط على **الركن المقابل**
+   * للمقبض المسحوب، ويُمسح عند أي تعديل على المحتوى أو الطباعة.
+   */
+  textResizeAnchor?: TextResizeAnchor;
   shadowColor?: string;
   shadowBlur?: number;
   shadowOffsetX?: number;

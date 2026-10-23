@@ -4,22 +4,6 @@ import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('fonts');
 
-export interface FontCategoryInfo {
-  id: FontCategory;
-  name: string;
-  icon?: string;
-}
-
-export const FONT_CATEGORIES: FontCategoryInfo[] = [
-  { id: 'all', name: 'كل الخطوط' },
-  { id: 'kufi', name: 'كوفي وهندسي' },
-  { id: 'naskh', name: 'نسخي وكلاسيكي' },
-  { id: 'calligraphy', name: 'رقعة وديواني وحر' },
-  { id: 'modern', name: 'عصري وشركات' },
-  { id: 'display', name: 'عناوين وشعارات' },
-  { id: 'latin', name: 'خطوط لاتينية' },
-];
-
 export interface FontOption {
   id: string;
   name: string;
@@ -327,18 +311,54 @@ export const ARABIC_FONTS: FontOption[] = [
   },
 ];
 
-const loadedFonts = new Set<string>();
+const GENERIC_FAMILIES = new Set(['sans-serif', 'serif', 'cursive', 'monospace', 'system-ui']);
+
+/** خطوط نظام شائعة — لا نطلبها من Google ولا ننتظر تحميلها. */
+const SYSTEM_FAMILIES = new Set([
+  'arial',
+  'helvetica',
+  'helvetica neue',
+  'times new roman',
+  'times',
+  'georgia',
+  'verdana',
+  'tahoma',
+  'trebuchet ms',
+  'courier new',
+  'courier',
+  'segoe ui',
+  'segoe ui variable',
+  'calibri',
+  'cambria',
+  'ui-sans-serif',
+  'ui-serif',
+  'ui-monospace',
+  '-apple-system',
+  'blinkmacsystemfont',
+]);
+
+function cleanFamilyName(fontFamily: string): string {
+  return fontFamily.split(',')[0].trim().replace(/['"]/g, '');
+}
+
+function normalizeWeight(fontWeight?: number): number {
+  if (!fontWeight || !Number.isFinite(fontWeight)) return 400;
+  return Math.min(900, Math.max(100, Math.round(fontWeight / 100) * 100));
+}
+
+/** المفتاح يشمل الوزن: تحميل 400 لا يعني جاهزية 800 لنفس العائلة. */
+const fontLoads = new Map<string, Promise<boolean>>();
 
 /**
- * Callbacks to invoke when any new Google Font finishes loading.
- * Konva text nodes register here to trigger layer.batchDraw() so
- * that text measurement (measureText) uses the real font metrics
- * instead of the fallback font — per Konva's official guidance.
+ * Callbacks to invoke when a font face finishes loading.
+ * Konva text nodes register here to trigger a re-measure + layer.batchDraw()
+ * so text layout uses the real font metrics instead of the fallback font —
+ * per Konva's official guidance.
  */
-type FontReadyCallback = (fontFamily: string) => void;
+type FontReadyCallback = (fontFamily: string, fontWeight?: number) => void;
 const fontReadyCallbacks = new Set<FontReadyCallback>();
 
-/** Register a callback that fires whenever a new Google Font finishes loading. */
+/** Register a callback that fires whenever a font face finishes loading. */
 export function onFontReady(cb: FontReadyCallback): () => void {
   fontReadyCallbacks.add(cb);
   return () => {
@@ -346,78 +366,130 @@ export function onFontReady(cb: FontReadyCallback): () => void {
   };
 }
 
-/**
- * Loads Google Font dynamically on demand with full weight range (100-900).
- * After the stylesheet is injected, waits for the browser font subsystem
- * to report readiness, then notifies all registered listeners so Konva
- * layers can re-draw with correct metrics.
- */
-export function loadGoogleFont(fontFamily: string) {
-  if (typeof document === 'undefined' || !fontFamily) return;
-
-  // Extract clean font name from CSS family string, e.g. "Cairo, sans-serif" -> "Cairo"
-  const cleanName = fontFamily.split(',')[0].trim().replace(/['"]/g, '');
-
-  // Offline fonts bundled in assets/fonts:
-  const offlineMatch = ARABIC_FONTS.find(
-    (f) =>
-      f.isOffline &&
-      (f.family.includes(cleanName) || f.englishName.toLowerCase() === cleanName.toLowerCase()),
-  );
-
-  if (
-    offlineMatch ||
-    loadedFonts.has(cleanName) ||
-    ['sans-serif', 'serif', 'cursive', 'monospace'].includes(cleanName.toLowerCase())
-  ) {
-    return;
-  }
-
-  try {
-    const fontObj = ARABIC_FONTS.find(
-      (f) =>
-        f.family.includes(cleanName) ||
-        f.englishName.toLowerCase() === cleanName.toLowerCase() ||
-        f.id === cleanName.toLowerCase(),
-    );
-    const googleName = fontObj?.googleFontName || cleanName.replace(/ /g, '+');
-    const linkId = `google-font-${googleName.toLowerCase().replace(/\s+/g, '-')}`;
-    if (document.getElementById(linkId)) {
-      loadedFonts.add(cleanName);
-      return;
+function notifyFontReady(cleanName: string, fontWeight: number): void {
+  for (const cb of fontReadyCallbacks) {
+    try {
+      cb(cleanName, fontWeight);
+    } catch {
+      /* ignore listener errors */
     }
-
-    const link = document.createElement('link');
-    link.id = linkId;
-    link.rel = 'stylesheet';
-    link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
-    document.head.appendChild(link);
-    loadedFonts.add(cleanName);
-
-    // Wait for browser font subsystem to load the font, then notify
-    // Konva layers to re-draw with correct text metrics (per Konva docs:
-    // "Canvas measures against whatever font is currently active in
-    // browser memory — if a custom webfont has not finished loading,
-    // the browser silently substitutes a fallback font").
-    document.fonts.ready.then(() => {
-      for (const cb of fontReadyCallbacks) {
-        try {
-          cb(cleanName);
-        } catch {
-          /* ignore listener errors */
-        }
-      }
-    });
-  } catch (err) {
-    logger.warn('Failed to load Google Font:', cleanName, err);
   }
 }
 
 /**
- * Checks if font is currently ready or loading
+ * ينتظر تفعيل ورقة الأنماط قبل طلب الوجه. ملف الـ CSS يُحمَّل لا synchronously،
+ * و`document.fonts.load` يحلّ فوراً بقائمة فارغة إن لم تكن @font-face معلنة
+ * بعد — فيُقاس النص بخط بديل بلا أي إعادة قياس لاحقة. لا انتظار أبدي إن فشلت
+ * الشبكة: المهلة القصوى تكفي لتُظهر المعاينة بالخط البديل.
+ */
+function waitForStylesheet(link: HTMLLinkElement): Promise<void> {
+  if (link.sheet) return Promise.resolve();
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    link.addEventListener('load', done, { once: true });
+    link.addEventListener('error', done, { once: true });
+    setTimeout(done, 3000);
+  });
+}
+
+/**
+ * Loads a font face on demand (Google stylesheet أو خط مضمّن) وينتظر جاهزية
+ * الوجه المطلوب فعلياً عبر `document.fonts.load` — لا `document.fonts.ready`
+ * وحدها، لأنها قد تحل قبل أن يكتشف المتصفح الوجه الجديد أصلاً.
+ *
+ * يُرجع Promise يحلّ true عند اكتمال التحميل (أو تعذّره) — المتصل يعيد القياس
+ * حينها. الطلبات المتكررة لنفس (العائلة، الوزن) تتشارك نفس الوعد.
+ */
+export function loadGoogleFont(
+  fontFamily: string,
+  fontWeight?: number,
+  fontStyle?: 'normal' | 'italic',
+): Promise<boolean> {
+  if (typeof document === 'undefined' || !fontFamily) return Promise.resolve(false);
+
+  const cleanName = cleanFamilyName(fontFamily);
+  const weight = normalizeWeight(fontWeight);
+
+  if (!cleanName || GENERIC_FAMILIES.has(cleanName.toLowerCase())) {
+    return Promise.resolve(true);
+  }
+  if (SYSTEM_FAMILIES.has(cleanName.toLowerCase())) {
+    return Promise.resolve(true);
+  }
+
+  const key = `${cleanName.toLowerCase()}::${weight}::${fontStyle || 'normal'}`;
+  const existing = fontLoads.get(key);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    try {
+      const fontObj = ARABIC_FONTS.find(
+        (f) =>
+          f.family.includes(cleanName) ||
+          f.englishName.toLowerCase() === cleanName.toLowerCase() ||
+          f.id === cleanName.toLowerCase(),
+      );
+
+      // Offline fonts are already declared in offline-fonts.css — don't inject Google CSS.
+      // But they still need an explicit load + notification so Konva re-measures.
+      let stylesheet: HTMLLinkElement | null = null;
+      if (!fontObj?.isOffline) {
+        const googleName = fontObj?.googleFontName || cleanName.replace(/ /g, '+');
+        const linkId = `google-font-${googleName.toLowerCase().replace(/\s+/g, '-')}`;
+        stylesheet = document.getElementById(linkId) as HTMLLinkElement | null;
+        if (!stylesheet) {
+          const link = document.createElement('link');
+          link.id = linkId;
+          link.rel = 'stylesheet';
+          link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@100;200;300;400;500;600;700;800;900&display=swap`;
+          document.head.appendChild(link);
+          stylesheet = link;
+        }
+      }
+
+      // الوجه لا يمكن أن يوجد قبل تفعيل الورقة — الانتظار هنا هو ما يجعل
+      // `document.fonts.load` تقيس الوجه المطلوب فعلاً بدل قائمة فارغة.
+      if (stylesheet) await waitForStylesheet(stylesheet);
+
+      const fonts = typeof document !== 'undefined' ? document.fonts : undefined;
+      if (fonts?.load) {
+        const stylePrefix = fontStyle === 'italic' ? 'italic ' : '';
+        await fonts.load(`${stylePrefix}${weight} 16px "${cleanName}"`);
+      } else if (fonts?.ready) {
+        await fonts.ready;
+      }
+
+      notifyFontReady(cleanName, weight);
+      return true;
+    } catch (err) {
+      logger.warn('Failed to load font:', cleanName, weight, err);
+      // أبلغ المراقبين رغم الفشل كي لا يبقى المحرر مخفياً أو القياس معلّقاً
+      notifyFontReady(cleanName, weight);
+      fontLoads.delete(key);
+      return false;
+    }
+  })();
+
+  fontLoads.set(key, promise);
+  return promise;
+}
+
+/**
+ * Checks if a matching face is actually loaded (not just "nothing pending").
  */
 export function isFontLoaded(fontFamily: string): boolean {
   if (typeof document === 'undefined' || !document.fonts) return true;
-  const cleanName = fontFamily.split(',')[0].trim().replace(/['"]/g, '');
-  return document.fonts.check(`16px "${cleanName}"`);
+  const cleanName = cleanFamilyName(fontFamily).toLowerCase();
+  if (GENERIC_FAMILIES.has(cleanName)) return true;
+  for (const face of Array.from(document.fonts)) {
+    if (face.family.replace(/['"]/g, '').toLowerCase() === cleanName && face.status === 'loaded') {
+      return true;
+    }
+  }
+  return false;
 }

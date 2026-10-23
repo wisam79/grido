@@ -11,9 +11,71 @@ interface TextMeasurer {
   measureText(text: string): { width: number };
 }
 
+/** أطول بادئة تتسع للسطر — بحث ثنائي مطابق لمسار Konva بدل المسح التربيعي. */
+function longestPrefixLength(ctx: TextMeasurer, chars: string[], width: number): number {
+  let low = 0;
+  let high = chars.length;
+  let match = 0;
+  while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (ctx.measureText(chars.slice(0, mid + 1).join('')).width <= width) {
+      low = mid + 1;
+      match = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return match;
+}
+
+/** سطر واحد بلا التفاف — يطابق تكرار Konva لأسطر \n الفارغة. */
+function wrapParagraph(
+  ctx: TextMeasurer,
+  paragraph: string,
+  width: number,
+  wrapAtWord: boolean,
+): string[] {
+  const lines: string[] = [];
+  let chars = Array.from(paragraph);
+
+  while (chars.length > 0) {
+    const whole = chars.join('');
+    if (ctx.measureText(whole).width <= width) {
+      lines.push(whole);
+      break;
+    }
+
+    let fit = longestPrefixLength(ctx, chars, width);
+    // حرف واحد أعرض من الصندوق: نضعه وحده بدل حلقة لا نهائية.
+    if (fit === 0) fit = 1;
+
+    if (wrapAtWord) {
+      const nextChar = chars[fit];
+      const nextIsSpaceOrDash = nextChar === ' ' || nextChar === '-';
+      // الكلمات الطويلة جداً تُقطع بالمحارف كما يفعل Konva في وضع word.
+      if (!nextIsSpaceOrDash) {
+        let wrapAt = 0;
+        for (let i = fit; i > 0; i--) {
+          if (chars[i - 1] === ' ' || chars[i - 1] === '-') {
+            wrapAt = i;
+            break;
+          }
+        }
+        if (wrapAt > 0) fit = wrapAt;
+      }
+    }
+
+    lines.push(chars.slice(0, fit).join('').trimEnd());
+    chars = Array.from(chars.slice(fit).join('').trimStart());
+  }
+
+  if (lines.length === 0) lines.push('');
+  return lines;
+}
+
 /**
  * يعيد أسطر النص بعد الالتفاف وفق النمط المطلوب.
- * - word: يلتف عند حدود الكلمات (السلوك الافتراضي السابق).
+ * - word: يلتف عند حدود الكلمات ويقطع الكلمة الأعرض من السطر (سلوك Konva).
  * - char: يلتف عند أي محرف (للروابط والنصوص بلا مسافات).
  * - none: يحترم أسطر \n فقط ويترك الفائض يتجاوز الصندوق كما في Konva.
  */
@@ -26,38 +88,6 @@ export function wrapTextLines(
   const paragraphs = (text || '').split('\n');
   if (wrap === 'none') return paragraphs;
 
-  const lines: string[] = [];
   const width = Math.max(1, maxWidth);
-
-  for (const paragraph of paragraphs) {
-    if (wrap === 'char') {
-      let current = '';
-      for (const char of Array.from(paragraph)) {
-        const test = current + char;
-        if (current && ctx.measureText(test).width > width) {
-          lines.push(current);
-          current = char;
-        } else {
-          current = test;
-        }
-      }
-      lines.push(current);
-      continue;
-    }
-
-    const words = paragraph.split(' ');
-    let current = '';
-    for (let i = 0; i < words.length; i++) {
-      const test = current ? `${current} ${words[i]}` : words[i];
-      if (ctx.measureText(test).width > width && i > 0) {
-        lines.push(current);
-        current = words[i];
-      } else {
-        current = test;
-      }
-    }
-    lines.push(current);
-  }
-
-  return lines;
+  return paragraphs.flatMap((paragraph) => wrapParagraph(ctx, paragraph, width, wrap === 'word'));
 }

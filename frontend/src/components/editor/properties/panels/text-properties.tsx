@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 import { FluentSegmentedControl } from '@/components/ui/blocks';
-import { TextAa, Palette, Sparkle } from '@/components/ui/icons';
 
 // Sub-components
 import { TextColorTab } from './text/text-color-tab';
@@ -74,34 +73,16 @@ export function TextProperties({
           {
             id: 'type',
             label: 'الخط',
-            icon: (
-              <TextAa
-                className="w-3.5 h-3.5 shrink-0"
-                weight={activeTab === 'type' ? 'bold' : 'regular'}
-              />
-            ),
             tooltip: 'الخط والنمط والقياسات',
           },
           {
             id: 'color',
             label: 'الألوان',
-            icon: (
-              <Palette
-                className="w-3.5 h-3.5 shrink-0"
-                weight={activeTab === 'color' ? 'bold' : 'regular'}
-              />
-            ),
             tooltip: 'ألوان وتعبئة النص والشفافية',
           },
           {
             id: 'effects',
             label: 'التأثيرات',
-            icon: (
-              <Sparkle
-                className="w-3.5 h-3.5 shrink-0"
-                weight={activeTab === 'effects' ? 'bold' : 'regular'}
-              />
-            ),
             tooltip: 'الظلال، الحدود، الشارة، والتقويس',
             badge:
               hasBadge || hasStroke || hasShadow || hasCurve ? (

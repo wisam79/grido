@@ -7,6 +7,39 @@ import type { ElementCross, ElementSlice } from './types';
 import type { CanvasElement, ImageElement, TextElement } from '../../types';
 import type { StateCreator } from 'zustand';
 
+/**
+ * حقول تغيّر قياس النص. أي تحديث عليها يبدأ تخطيطاً جديداً، فلا يجوز أن يبقى
+ * ارتساء تحجيم زاوية قديم (وإلا نما الصندوق من ركن لا علاقة له بالتعديل الجديد).
+ */
+const TEXT_MEASURE_KEYS: ReadonlyArray<keyof TextElement> = [
+  'text',
+  'fontSize',
+  'fontFamily',
+  'fontWeight',
+  'fontStyle',
+  'letterSpacing',
+  'lineHeight',
+  'textTransform',
+  'arabicNumerals',
+  'wrap',
+  'curve',
+  'textSizing',
+];
+
+/**
+ * تعديل المحتوى/الطباعة يلغي ركن ارتساء تحجيم الزاوية. تحجيم الزاوية نفسه
+ * يكتب `textResizeAnchor` في نفس الـ patch فيُستثنى صراحةً.
+ */
+function resetTextResizeAnchor(
+  current: CanvasElement | undefined,
+  patch: Partial<CanvasElement>,
+): Partial<CanvasElement> {
+  if (current?.type !== 'text') return patch;
+  if (Object.prototype.hasOwnProperty.call(patch, 'textResizeAnchor')) return patch;
+  if (!TEXT_MEASURE_KEYS.some((key) => key in patch)) return patch;
+  return { ...(patch as Partial<TextElement>), textResizeAnchor: undefined };
+}
+
 export const createElementCrudSlice: StateCreator<
   ElementCross,
   [],
@@ -38,6 +71,7 @@ export const createElementCrudSlice: StateCreator<
           effectivePatch = { ...patch, text: sanitized } as Partial<CanvasElement>;
         }
       }
+      effectivePatch = resetTextResizeAnchor(currentEl, effectivePatch);
 
       // تخطي إعادة بناء المصفوفة عند عدم تغير أي قيمة (يحدث كثيراً مع تحديثات الـ drag المجمعة)
       const patchKeys = Object.keys(effectivePatch) as (keyof CanvasElement)[];
@@ -76,7 +110,8 @@ export const createElementCrudSlice: StateCreator<
       const patchMap = new Map(sanitizedPatches.map((p) => [p.id, p.patch]));
       const nextElements = s.elements.map((el: CanvasElement) => {
         const patch = patchMap.get(el.id);
-        return patch ? ({ ...el, ...patch } as CanvasElement) : el;
+        if (!patch) return el;
+        return { ...el, ...resetTextResizeAnchor(el, patch) } as CanvasElement;
       });
       const imageIds = new Set(
         s.elements.filter((e: CanvasElement) => e.type === 'image').map((e) => e.id),

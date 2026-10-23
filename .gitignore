@@ -13,6 +13,7 @@ frontend/public/onnxruntime-web-v2/
 frontend/playwright-report/
 frontend/test-results/
 frontend/scripts/package/
+.playwright-mcp/
 coverage.out
 *.out
 

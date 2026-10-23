@@ -1,14 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 
-import { FluentSection, FluentSliderField, FluentSegmentedControl } from '@/components/ui/blocks';
+import {
+  FluentSection,
+  FluentSettingRow,
+  FluentSliderField,
+  FluentSegmentedControl,
+} from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import {
-  Printer,
   ArrowCounterClockwise,
-  Scissors,
   Sparkle,
-  SlidersHorizontal,
   BookmarkSimple,
   FloppyDisk,
   Trash,
@@ -45,7 +47,6 @@ export interface StickerPropertiesProps {
   onChangeParams: (updater: (prev: StickerParams) => StickerParams) => void;
   /** التزام صريح كخطوة تراجع مستقلة (لوحات جاهزة، قوالب محفوظة، تبديل الخط) */
   onCommitParams?: (updater: (prev: StickerParams) => StickerParams) => void;
-  onResetDefaults: () => void;
   gridConfig: SheetGridConfig;
   onChangeGridConfig: (
     config: SheetGridConfig | ((prev: SheetGridConfig) => SheetGridConfig),
@@ -92,9 +93,6 @@ function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonPr
         />
       </div>
       <span className="text-micro font-semibold text-foreground/80">{label}</span>
-      <span className="text-2xs font-mono text-muted-foreground truncate max-w-full uppercase">
-        {color}
-      </span>
     </div>
   );
 }
@@ -104,7 +102,6 @@ export const StickerProperties = React.memo(function StickerProperties({
   params,
   onChangeParams,
   onCommitParams,
-  onResetDefaults,
   gridConfig,
   onChangeGridConfig,
   sheetMm,
@@ -192,69 +189,25 @@ export const StickerProperties = React.memo(function StickerProperties({
     }));
   };
 
-  const currentMm = template.defaultMm || {
-    width: 50,
-    height: Math.round(50 / template.aspectRatio),
-  };
-
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background/20 select-none">
       {/* ── Subheader / Tabs Header ── */}
-      <div className="p-2.5 border-b border-border/30 shrink-0 bg-muted/15 space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <h3 className="text-xs font-bold text-foreground truncate" title={template.name}>
-              {template.name}
-            </h3>
-            <p className="text-micro text-muted-foreground font-mono mt-0.5">
-              {currentMm.width} × {currentMm.height} مم • 300 DPI
-            </p>
-          </div>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onResetDefaults}
-                className="w-7 h-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-md hover:bg-muted/50 shrink-0"
-              >
-                <ArrowCounterClockwise className="w-3.5 h-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs font-cairo">
-              استعادة
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
+      <div className="p-2.5 border-b border-border/30 shrink-0 bg-muted/15">
         {/* Fluent Segmented Tabs: Design vs Sheet vs Presets */}
         <FluentSegmentedControl<'design' | 'sheet' | 'presets'>
           layoutId="sticker-properties-tabs"
           value={activeTab}
           onChange={setActiveTab}
           size="sm"
+          ariaLabel="أقسام استوديو الملصقات"
           options={[
             {
               id: 'design',
               label: 'التصميم',
-              icon: (
-                <SlidersHorizontal
-                  className="w-3.5 h-3.5"
-                  weight={activeTab === 'design' ? 'bold' : 'regular'}
-                />
-              ),
             },
             {
               id: 'sheet',
               label: 'الشيت',
-              icon: (
-                <Printer
-                  className="w-3.5 h-3.5"
-                  weight={activeTab === 'sheet' ? 'bold' : 'regular'}
-                />
-              ),
               badge: (
                 <span className="text-2xs font-mono px-1 py-0.2 rounded-full bg-primary/10 text-primary font-bold">
                   {gridConfig.rows * gridConfig.cols}
@@ -264,12 +217,6 @@ export const StickerProperties = React.memo(function StickerProperties({
             {
               id: 'presets',
               label: 'قوالبي',
-              icon: (
-                <BookmarkSimple
-                  className="w-3.5 h-3.5"
-                  weight={activeTab === 'presets' ? 'bold' : 'regular'}
-                />
-              ),
               badge:
                 templatePresets.length > 0 ? (
                   <span className="text-2xs font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold">
@@ -457,8 +404,8 @@ export const StickerProperties = React.memo(function StickerProperties({
               {/* Font Scale Slider */}
               <FluentSliderField
                 layout="inline"
-                label="الخط"
-                labelWidth="w-12"
+                label="حجم الخط"
+                labelWidth="w-16"
                 value={params.fontScale ?? 1}
                 min={0.8}
                 max={1.3}
@@ -469,7 +416,8 @@ export const StickerProperties = React.memo(function StickerProperties({
               />
 
               {/* Finish Options */}
-              <div className="pt-1 border-t border-border/30">
+              <div className="pt-1 border-t border-border/30 space-y-1.5">
+                <span className="text-mini font-bold text-muted-foreground block">اللمسة</span>
                 <FluentSegmentedControl
                   layoutId="sticker-finish-tabs"
                   value={params.finish || 'standard'}
@@ -477,24 +425,25 @@ export const StickerProperties = React.memo(function StickerProperties({
                     onChangeParams((prev) => ({ ...prev, finish: finish as StickerFinish }))
                   }
                   options={FINISH_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
+                  ariaLabel="لمسة الملصق"
                   className="w-full"
                 />
               </div>
 
               {/* Die-cut Cutline Toggle */}
-              <div className="h-8 flex items-center justify-between px-2.5 rounded-md bg-card/40 border border-border/30 hover:border-border/60 transition-colors">
-                <div className="flex items-center gap-1.5">
-                  <Scissors className="w-3.5 h-3.5 text-destructive" />
-                  <span className="text-xs font-semibold text-foreground/85">إطار القص</span>
-                </div>
-                <Switch
-                  id="diecut-toggle"
-                  checked={params.dieCutBorder ?? true}
-                  onCheckedChange={(checked) =>
-                    onChangeParams((prev) => ({ ...prev, dieCutBorder: checked }))
-                  }
-                />
-              </div>
+              <FluentSettingRow
+                label="إطار القص"
+                tooltip="خط القص حول الملصق لقصه آلياً في المطابع"
+                control={
+                  <Switch
+                    id="diecut-toggle"
+                    checked={params.dieCutBorder ?? true}
+                    onCheckedChange={(checked) =>
+                      onChangeParams((prev) => ({ ...prev, dieCutBorder: checked }))
+                    }
+                  />
+                }
+              />
             </FluentSection>
           </>
         ) : activeTab === 'sheet' ? (

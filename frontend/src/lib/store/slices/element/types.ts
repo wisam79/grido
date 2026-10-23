@@ -45,7 +45,8 @@ export interface ElementSlice {
       centerLastRow?: boolean;
     },
   ) => void;
-  addTextElement: (text?: string) => void;
+  /** يعيد معرّف العنصر الجديد لبدء التحرير المباشر فور الإدراج. */
+  addTextElement: (text?: string) => string;
   addTextPreset: (preset: TextPresetType, text?: string) => void;
   applyTextPreset: (id: string, preset: TextPresetType) => void;
   /**
@@ -91,7 +92,8 @@ export interface ElementSlice {
   /** اسم طبقة مخصص يظهر في لوحة الطبقات ويُحفظ مع المستند */
   renameElement: (id: string, name: string) => void;
   setEditingTextId: (id: string | null) => void;
-  autoFitTextWidth: (id: string, textWidthPx?: number) => void;
+  /** يفعّل الملاءمة التلقائية ويلائم العرض والارتفاع والموضع مع المحتوى الحالي */
+  fitTextToContent: (id: string) => void;
   centerElementHorizontally: (id: string) => void;
   centerElementVertically: (id: string) => void;
   alignSelectedElements: (

@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/huge-icon';
 import {
-  SealCheck,
   Plus,
   GridFour,
   DownloadSimple,
@@ -28,11 +27,13 @@ import {
   FileSvg,
   CaretDown,
   ArrowRight,
+  ArrowCounterClockwise,
   Sparkle,
   Code,
   Scissors,
   GridFour as TableIcon,
 } from '@/components/ui/icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { useEditorStore } from '@/lib/editor-store';
@@ -579,11 +580,6 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     }
   }, [exportableSvg]);
 
-  const templateMm = selectedTemplate.defaultMm || {
-    width: 50,
-    height: Math.round(50 / selectedTemplate.aspectRatio),
-  };
-
   // أبعاد ورقة الطباعة الفعالة لزر «ملاءمة تلقائية» في تبويب الشيت
   // (قراءة خفيفة من المتجر عند كل render — الورق لا يتغير والحوار مفتوح عادةً)
   const sheetMm = resolveStickerSheetMm();
@@ -636,9 +632,6 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                   <DialogTitle className="text-sm font-bold text-foreground truncate">
                     {selectedTemplate.name}
                   </DialogTitle>
-                  <span className="text-micro font-mono px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border/40">
-                    {templateMm.width}×{templateMm.height} مم
-                  </span>
                   <DialogDescription className="sr-only">
                     تخصيص ملصق {selectedTemplate.name}
                   </DialogDescription>
@@ -647,6 +640,26 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
             )}
 
             <div className="flex items-center gap-2.5 shrink-0">
+              {view === 'customize' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResetDefaults}
+                      disabled={isInserting || isGeneratingSheet || busyExport}
+                      className="w-7 h-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-md hover:bg-muted/50"
+                      aria-label="استعادة الافتراضي"
+                    >
+                      <ArrowCounterClockwise className="w-3.5 h-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-cairo">
+                    استعادة الافتراضي
+                  </TooltipContent>
+                </Tooltip>
+              )}
               <DialogCloseButton disabled={isInserting || isGeneratingSheet || busyExport} />
             </div>
           </div>
@@ -693,7 +706,6 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
                 params={params}
                 onChangeParams={setParams}
                 onCommitParams={commitParams}
-                onResetDefaults={handleResetDefaults}
                 gridConfig={gridConfig}
                 onChangeGridConfig={setGridConfig}
                 hiddenFieldIds={hiddenFieldIds}
@@ -707,41 +719,27 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         <DialogFooter className="px-5 py-2.5 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
           {view === 'gallery' ? (
             /* Gallery Footer */
-            <>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                <SealCheck className="w-4 h-4 text-primary shrink-0" weight="duotone" />
-                <span className="text-foreground font-bold truncate">{selectedTemplate.name}</span>
-                <span className="text-border/60">•</span>
-                <span className="text-mini">
-                  <span className="font-mono">
-                    {templateMm.width}×{templateMm.height}
-                  </span>{' '}
-                  مم
-                </span>
-              </div>
+            <div className="flex items-center gap-2 shrink-0 ms-auto">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="h-8 px-3.5 text-xs font-semibold rounded-md cursor-pointer"
+              >
+                إلغاء
+              </Button>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onOpenChange(false)}
-                  className="h-8 px-3.5 text-xs font-semibold rounded-md cursor-pointer"
-                >
-                  إلغاء
-                </Button>
-
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => setView('customize')}
-                  className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  <span>تخصيص</span>
-                  <Sparkle className="w-3.5 h-3.5" weight="bold" />
-                </Button>
-              </div>
-            </>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setView('customize')}
+                className="h-8 px-4 rounded-md text-xs font-bold gap-1.5 shadow-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <span>تخصيص</span>
+                <Sparkle className="w-3.5 h-3.5" weight="bold" />
+              </Button>
+            </div>
           ) : (
             /* Customize Footer */
             <>

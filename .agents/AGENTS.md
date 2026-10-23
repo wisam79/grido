@@ -45,7 +45,7 @@
 - [`fluent2-design-system`](file:///c:/projects/grido/.agents/skills/fluent2-design-system/SKILL.md): معايير وتوكنات Microsoft Fluent 2.
 - [`grido-ui-designer-guide`](file:///c:/projects/grido/.agents/skills/grido-ui-designer-guide/SKILL.md): دليل الواجهات وتجربة المستخدم والأيقونات والاختصارات.
 - [`konva-rendering-invariants`](file:///c:/projects/grido/.agents/skills/konva-rendering-invariants/SKILL.md): ثوابت الرسم والأداء ومجموعات Konva وطبقة السحب الرسمية.
-- [`konva-text-typography-fx`](file:///c:/projects/grido/.agents/skills/konva-text-typography-fx/SKILL.md): تصيير النصوص وفلتر التمدد الشكلي للحدود (`dilate`).
+- [`konva-text-typography-fx`](file:///c:/projects/grido/.agents/skills/konva-text-typography-fx/SKILL.md): تصيير النصوص ودورة الارتفاع وجاهزية الخط ومطابقة التحرير وفلتر التمدد الشكلي للحدود (`dilate`).
 - [`wails-konva-hi-res-export`](file:///c:/projects/grido/.agents/skills/wails-konva-hi-res-export/SKILL.md): تصدير الطباعة فائق الدقة ومطابقة الهندسة.
 - [`wails-v3-runtime-mastery`](file:///c:/projects/grido/.agents/skills/wails-v3-runtime-mastery/SKILL.md): رنتايم وأحداث ونوافذ Wails v3.
 - [`wails-v3-architecture-reference`](file:///c:/projects/grido/.agents/skills/wails-v3-architecture-reference/SKILL.md): سجل ومرجع الفروقات المعمارية لانتقال Grido Studio إلى Wails v3.

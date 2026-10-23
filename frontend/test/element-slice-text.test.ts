@@ -13,17 +13,14 @@ describe('Element Slice Text & Typography Tests', () => {
     });
   });
 
-  it('creates luxury gold preset correctly', () => {
-    useEditorStore.getState().addTextPreset('gold-luxury');
-    const elements = useEditorStore.getState().elements;
-    expect(elements.length).toBe(1);
-    const el = elements[0];
-    expect(el.type).toBe('text');
-    if (el.type === 'text') {
-      expect(el.fillType).toBe('linear');
-      expect(el.fontWeight).toBe(800);
-      expect(el.shadowColor).toBeDefined();
-    }
+  it('returns the inserted text id and selects it for immediate editing', () => {
+    const id = useEditorStore.getState().addTextElement('نص مخصص');
+
+    const state = useEditorStore.getState();
+    expect(state.elements).toHaveLength(1);
+    expect(state.elements[0].id).toBe(id);
+    expect(state.selectedId).toBe(id);
+    expect(state.elements[0]).toMatchObject({ type: 'text', text: 'نص مخصص' });
   });
 
   it('creates curved stamp preset correctly', () => {
@@ -85,99 +82,15 @@ describe('Element Slice Text & Typography Tests', () => {
     }
   });
 
-  it('creates neon glow preset with glow shadow and stroke', () => {
-    useEditorStore.getState().addTextPreset('neon-glow');
+  it('creates caption preset as a plain typographic label', () => {
+    useEditorStore.getState().addTextPreset('caption');
     const elements = useEditorStore.getState().elements;
     expect(elements.length).toBe(1);
     const el = elements[0];
     if (el.type === 'text') {
-      expect(el.shadowGlow).toBe(true);
-      expect(el.shadowBlur).toBe(20);
-      expect(el.stroke).toBe('#0284c7');
-    }
-  });
-
-  it('creates 3D title preset with strong offset shadow', () => {
-    useEditorStore.getState().addTextPreset('3d-title');
-    const elements = useEditorStore.getState().elements;
-    expect(elements.length).toBe(1);
-    const el = elements[0];
-    if (el.type === 'text') {
-      expect(el.shadowOffsetX).toBe(4);
-      expect(el.shadowOffsetY).toBe(4);
-      expect(el.fontWeight).toBe(900);
-    }
-  });
-
-  it('creates modern outline preset with transparent fill and stroke', () => {
-    useEditorStore.getState().addTextPreset('outline-modern');
-    const elements = useEditorStore.getState().elements;
-    expect(elements.length).toBe(1);
-    const el = elements[0];
-    if (el.type === 'text') {
-      expect(el.color).toBe('transparent');
-      expect(el.stroke).toBe('#0f172a');
-      expect(el.strokeWidth).toBe(2.5);
-    }
-  });
-
-  it('creates caption card preset with framed background', () => {
-    useEditorStore.getState().addTextPreset('caption-card');
-    const elements = useEditorStore.getState().elements;
-    expect(elements.length).toBe(1);
-    const el = elements[0];
-    if (el.type === 'text') {
-      expect(el.textBgColor).toBe('#f8fafc');
-      expect(el.textBgBorderColor).toBe('#cbd5e1');
-      expect(el.textBgBorderWidth).toBe(1.5);
-    }
-  });
-
-  it('creates congrats preset with emerald styling and shadow', () => {
-    useEditorStore.getState().addTextPreset('congrats');
-    const elements = useEditorStore.getState().elements;
-    expect(elements.length).toBe(1);
-    const el = elements[0];
-    if (el.type === 'text') {
-      expect(el.text).toContain('مبروك');
-      expect(el.color).toBe('#047857');
-      expect(el.fontWeight).toBe(800);
-    }
-  });
-
-  it('creates sale offer preset with red background badge', () => {
-    useEditorStore.getState().addTextPreset('sale-offer');
-    const elements = useEditorStore.getState().elements;
-    expect(elements.length).toBe(1);
-    const el = elements[0];
-    if (el.type === 'text') {
-      expect(el.text).toContain('عروض');
-      expect(el.textBgColor).toBe('#dc2626');
-      expect(el.color).toBe('#ffffff');
-    }
-  });
-
-  it('creates certificate preset with royal navy stroke', () => {
-    useEditorStore.getState().addTextPreset('certificate');
-    const elements = useEditorStore.getState().elements;
-    expect(elements.length).toBe(1);
-    const el = elements[0];
-    if (el.type === 'text') {
-      expect(el.text).toContain('شهادة');
-      expect(el.color).toBe('#1e3a8a');
-      expect(el.stroke).toBe('#1e3a8a');
-    }
-  });
-
-  it('creates special price preset with sky blue capsule', () => {
-    useEditorStore.getState().addTextPreset('special-price');
-    const elements = useEditorStore.getState().elements;
-    expect(elements.length).toBe(1);
-    const el = elements[0];
-    if (el.type === 'text') {
-      expect(el.text).toContain('السعر');
-      expect(el.textBgColor).toBe('#0284c7');
-      expect(el.color).toBe('#ffffff');
+      expect(el.fontSize).toBe(16);
+      expect(el.fontWeight).toBe(600);
+      expect(el.textBgColor).toBe('transparent');
     }
   });
 
@@ -213,16 +126,83 @@ describe('Element Slice Text & Typography Tests', () => {
     const originalX = el.x;
     const originalY = el.y;
 
-    useEditorStore.getState().applyTextPreset(id, 'gold-luxury');
+    useEditorStore.getState().applyTextPreset(id, 'heading');
     el = useEditorStore.getState().elements.find((x) => x.id === id)!;
 
     if (el.type === 'text') {
       expect(el.text).toBe('نص موجود مسبقاً');
       expect(el.x).toBe(originalX);
       expect(el.y).toBe(originalY);
-      expect(el.fillType).toBe('linear');
+      expect(el.fontSize).toBe(48);
       expect(el.fontWeight).toBe(800);
-      expect(el.shadowColor).toBeDefined();
     }
+  });
+});
+
+describe('Element Slice — text resize anchor', () => {
+  const anchorOf = (id: string) => {
+    const el = useEditorStore.getState().elements.find((x) => x.id === id);
+    return el?.type === 'text' ? el.textResizeAnchor : undefined;
+  };
+
+  beforeEach(() => {
+    useEditorStore.setState({
+      elements: [],
+      selectedId: null,
+      selectedIds: [],
+      canvasWidth: 1000,
+      canvasHeight: 1000,
+    });
+  });
+
+  it('survives geometry-only sync patches (the re-measure correction)', () => {
+    const id = useEditorStore.getState().addTextElement('مرساة');
+    const store = useEditorStore.getState();
+
+    // تحجيم الزاوية يكتب الركن مع حجم الخط والعرض في نفس التحديث.
+    store.updateElement(id, {
+      fontSize: 40,
+      width: 0.3,
+      height: 0.1,
+      x: 0.2,
+      y: 0.3,
+      textResizeAnchor: 'top-left',
+    });
+    expect(anchorOf(id)).toBe('top-left');
+
+    // تصحيح القياس اللاحق يغيّر الهندسة فقط — الركن يبقى.
+    store.updateElement(id, { width: 0.31, height: 0.09, x: 0.19, y: 0.31 });
+    expect(anchorOf(id)).toBe('top-left');
+  });
+
+  it('clears when typography or content changes and a new layout starts', () => {
+    const id = useEditorStore.getState().addTextElement('نص');
+    const store = useEditorStore.getState();
+    const setAnchor = () => store.updateElement(id, { textResizeAnchor: 'bottom-right' });
+
+    setAnchor();
+    store.updateElement(id, { fontSize: 64 });
+    expect(anchorOf(id)).toBeUndefined();
+
+    setAnchor();
+    store.updateElement(id, { text: 'نص جديد' });
+    expect(anchorOf(id)).toBeUndefined();
+
+    setAnchor();
+    store.updateElements([{ id, patch: { fontWeight: 400 } }]);
+    expect(anchorOf(id)).toBeUndefined();
+  });
+
+  it('clears on fit-to-content and preset application', () => {
+    const id = useEditorStore.getState().addTextElement('نص');
+    const store = useEditorStore.getState();
+
+    store.updateElement(id, { textResizeAnchor: 'top-right' });
+    store.fitTextToContent(id);
+    expect(anchorOf(id)).toBeUndefined();
+
+    store.updateElement(id, { textResizeAnchor: 'top-right' });
+    store.applyTextPreset(id, 'heading');
+    expect(anchorOf(id)).toBeUndefined();
   });
 });

@@ -8,6 +8,7 @@ import { createElementGlyphPainter, resolveElementFill } from '@/lib/canvas/fill
 import { resolveRingInnerRadius, ringOuterRadius } from '@/lib/canvas/ring-geometry';
 import { resolveLineCap, resolveStrokeDash } from '@/lib/canvas/shape-pattern';
 import { getSvgPathBounds } from '@/lib/canvas/svg-path-bounds';
+import { measureTextContentHeightPx } from '@/lib/canvas/text-fit';
 import { resolveTextRenderState } from '@/lib/canvas/text-helpers';
 import { wrapTextLines } from '@/lib/canvas/text-layout';
 import { ensureTextStrokeFilter } from '@/lib/canvas/text-stroke-filter';
@@ -64,20 +65,27 @@ export async function renderFittedBranch(
     const w = el.width * canvasWidth;
     const h = el.height * canvasHeight;
 
-    ctx.translate(x + w / 2, y + h / 2);
-    ctx.rotate((el.rotation * Math.PI) / 180);
-    if (el.flipX) ctx.scale(-1, 1);
-    if (el.flipY) ctx.scale(1, -1);
-    ctx.translate(-w / 2, -h / 2);
+    // 🔁 مطابقة عقد العرض في Konva حرفياً: الدوران حول **أصل العنصر** (x,y)
+    // لا حول مركز الصندوق، والقلب حول مركز الصندوق داخل الفضاء المدوّر (هكذا
+    // تُبنى المجموعة الداخلية في text/image/shape-node). الدوران حول المركز كان
+    // يزيح كل عنصر مدوّر بمئات البكسلات بين التصدير اليدوي والمعاينة.
+    ctx.translate(x, y);
+    ctx.rotate(((el.rotation || 0) * Math.PI) / 180);
+    if (el.flipX || el.flipY) {
+      ctx.translate(w / 2, h / 2);
+      ctx.scale(el.flipX ? -1 : 1, el.flipY ? -1 : 1);
+      ctx.translate(-w / 2, -h / 2);
+    }
 
     // نمط الدمج والظل — مطابقة خصائص Konva المشتركة (shadowOpacity تُدمج في ألفا اللون)
     ctx.globalCompositeOperation = (el.globalCompositeOperation ||
       'source-over') as GlobalCompositeOperation;
     if (el.shadowColor && (el.shadowOpacity ?? 0) > 0) {
+      const glow = el.type === 'text' && el.shadowGlow === true;
       ctx.shadowColor = colorWithAlpha(el.shadowColor, el.shadowOpacity ?? 1);
       ctx.shadowBlur = el.shadowBlur || 0;
-      ctx.shadowOffsetX = el.shadowOffsetX || 0;
-      ctx.shadowOffsetY = el.shadowOffsetY || 0;
+      ctx.shadowOffsetX = glow ? 0 : el.shadowOffsetX || 0;
+      ctx.shadowOffsetY = glow ? 0 : el.shadowOffsetY || 0;
     }
 
     if (el.type === 'image' && el.imageSrc && elImageMap[el.id]) {
@@ -174,6 +182,32 @@ export async function renderFittedBranch(
       }
     } else if (el.type === 'text') {
       const fontSize = el.fontSize || 32;
+      // تجهيز النص الموحّد — نفس دالة المعاينة (أرقام مشرقية/حالة/تباعد عربي)
+      const { text: rawText, direction, letterSpacing } = resolveTextRenderState(el);
+      const fontStyle = el.fontStyle === 'italic' ? 'italic ' : '';
+      const fontFamily = el.fontFamily || 'Cairo, Tajawal, sans-serif';
+      const isCurved = typeof el.curve === 'number' && el.curve !== 0;
+      const lineHeight = fontSize * (el.lineHeight ?? 1.2);
+
+      let wrappedLines: string[] = [];
+      let contentHeight = 0;
+      if (!isCurved) {
+        ctx.font = `${fontStyle}${el.fontWeight || 400} ${fontSize}px ${fontFamily}`;
+        ctx.direction = direction;
+        // letterSpacing: متاح في Chromium/Electron (بيئة Wails)
+        if (letterSpacing) {
+          (ctx as unknown as Record<string, unknown>).letterSpacing = `${letterSpacing}px`;
+        }
+        // التقسيم يطابق خوارزمية Konva بما فيها قطع الكلمة الأعرض من السطر
+        wrappedLines = wrapTextLines(ctx, rawText, w, el.wrap || 'word');
+        contentHeight = wrappedLines.length * lineHeight;
+      }
+
+      // الارتفاع دائمًا من المحتوى — الصندوق يلتصق بالكتلة في الوضعين.
+      // المنحني يشمل هبوط القوس (sagitta) المحسوب بنفس دالة عقدة المعاينة.
+      const layoutH = isCurved ? (measureTextContentHeightPx(el, w) ?? h) : contentHeight;
+      const fillImage = elImageMap[el.id];
+
       const hasBg = !!el.textBgColor && el.textBgColor !== 'transparent';
       const bgPadX = el.textBgPaddingX ?? el.textBgPadding ?? 0;
       const bgPadY = el.textBgPaddingY ?? el.textBgPadding ?? 0;
@@ -190,7 +224,7 @@ export async function renderFittedBranch(
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.fillStyle = el.textBgColor!;
-        drawRoundRect(ctx, -bgPadX, -bgPadY, w + bgPadX * 2, h + bgPadY * 2, bgRadius);
+        drawRoundRect(ctx, -bgPadX, -bgPadY, w + bgPadX * 2, layoutH + bgPadY * 2, bgRadius);
         ctx.fill();
 
         if (bgBorderW > 0) {
@@ -201,61 +235,41 @@ export async function renderFittedBranch(
         ctx.restore();
       }
 
-      // تجهيز النص الموحّد — نفس دالة المعاينة (أرقام مشرقية/حالة/تباعد عربي)
-      const { text: rawText, isArabic, letterSpacing } = resolveTextRenderState(el);
-
-      const fontStyle = el.fontStyle === 'italic' ? 'italic ' : '';
-      const fontFamily = el.fontFamily || 'Cairo, Tajawal, sans-serif';
-      const isCurved = typeof el.curve === 'number' && el.curve !== 0;
-      const fillImage = elImageMap[el.id];
-
       if (isCurved) {
         drawCurvedText(ctx, {
           text: rawText,
           x: 0,
           y: 0,
           width: w,
-          height: h,
+          height: layoutH,
           fontSize,
           fontFamily,
           fontWeight: el.fontWeight || 400, // #6 — موحَّد مع المعاينة
           fontStyle: el.fontStyle || 'normal',
           color: el.color || TEXT_COLOR_DEFAULT,
           // تدرج/صورة في فضاء العنصر رغم دوران كل حرف على القوس
-          fillStyle: createElementGlyphPainter(ctx, el, w, h, fillImage),
+          createFill: (target) => createElementGlyphPainter(target, el, w, layoutH, fillImage),
           stroke: el.strokeWidth ? el.stroke || TEXT_COLOR_DEFAULT : undefined,
           strokeWidth: el.strokeWidth || 0,
           textAlign: el.textAlign || 'center',
+          direction,
           curve: el.curve || 0,
           letterSpacing,
         });
       } else {
-        ctx.font = `${fontStyle}${el.fontWeight || 400} ${fontSize}px ${fontFamily}`; // #6
-        ctx.fillStyle = resolveElementFill(ctx, el, w, h, fillImage);
-        ctx.textAlign = (el.textAlign as CanvasTextAlign) || 'center';
-        ctx.textBaseline = 'middle';
-        // #5 — كشف تلقائي للاتجاه بدلاً من RTL الثابت الذي يكسر اللاتيني
-        ctx.direction =
-          ((el as unknown as Record<string, unknown>).direction as CanvasDirection | undefined) ??
-          (isArabic ? 'rtl' : 'ltr');
-        // #2 — letterSpacing: متاح في Chromium/Electron (بيئة Wails)
-        if (letterSpacing) {
-          (ctx as unknown as Record<string, unknown>).letterSpacing = `${letterSpacing}px`;
-        }
+        ctx.fillStyle = resolveElementFill(ctx, el, w, layoutH, fillImage);
+        // Konva يرسم بخط أساس ألفبائي مع إزاحة (صعود-هبوط)/2؛ استخدام middle
+        // كان يزيح النص والخطوط الزخرفية بضعة بكسلات عن المعاينة.
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
 
-        if (el.shadowColor && ((el.shadowBlur ?? 0) > 0 || (el.shadowOpacity ?? 0) > 0)) {
-          ctx.shadowColor = el.shadowColor;
-          ctx.shadowBlur = el.shadowBlur || 0;
-          ctx.shadowOffsetX = el.shadowGlow ? 0 : el.shadowOffsetX || 0;
-          ctx.shadowOffsetY = el.shadowGlow ? 0 : el.shadowOffsetY || 0;
-        }
+        const metrics = ctx.measureText('M');
+        const ascent = metrics.fontBoundingBoxAscent ?? metrics.actualBoundingBoxAscent ?? 0;
+        const descent = metrics.fontBoundingBoxDescent ?? metrics.actualBoundingBoxDescent ?? 0;
+        const baselineOffset = (ascent - descent) / 2 + lineHeight / 2;
+        // الصندوق يطابق المحتوى تمامًا، فلا إزاحة رأسية للكتلة
+        const alignY = 0;
 
-        // تقسيم الأسطر وفق نمط wrap المخزَّن (كلمات/أحرف/بلا) — نفس منطق Konva
-        const wrappedLines = wrapTextLines(ctx, rawText, w, el.wrap || 'word');
-
-        const lineHeight = fontSize * (el.lineHeight ?? 1.2);
-        const startY = h / 2 - ((wrappedLines.length - 1) * lineHeight) / 2;
-        const textX = el.textAlign === 'left' ? 0 : el.textAlign === 'right' ? w : w / 2;
         const strokeW = el.strokeWidth || 0;
         let strokeFilterId = '';
         if (strokeW > 0) {
@@ -266,32 +280,30 @@ export async function renderFittedBranch(
         }
 
         const deco = el.textDecoration || 'none';
-        const decoThickness = Math.max(1, fontSize / 16);
+        // سماكة وإزاحة الزخرفة مطابقة لـ Konva (fontSize/15 و fontSize/4)
+        const decoThickness = Math.max(1, fontSize / 15);
+        const decoOffset = Math.round(fontSize / 4);
         // تجميع مسارات التزيين لكل الأسطر ثم stroke واحد — beginPath+stroke
         // لكل سطر كان مضاعفاً تكاليف الرسم في النصوص متعددة الأسطر
         const decoSegments: { x: number; y: number; w: number }[] = [];
 
         // رسم أسطر النص (يتم تطبيق الحدود النظيفة الموحدة عبر الفلتر بدون تقطيع الوصلات)
         wrappedLines.forEach((line, i) => {
-          const lineY = startY + i * lineHeight;
-          ctx.fillText(line, textX, lineY);
+          const lineWidth = ctx.measureText(line).width;
+          const lineX =
+            el.textAlign === 'left'
+              ? 0
+              : el.textAlign === 'right'
+                ? w - lineWidth
+                : (w - lineWidth) / 2;
+          const baselineY = alignY + i * lineHeight + baselineOffset;
+          ctx.fillText(line, lineX, baselineY);
 
           if (deco !== 'none' && line.trim()) {
-            const lineW = ctx.measureText(line).width;
-            const fromX =
-              el.textAlign === 'left'
-                ? textX
-                : el.textAlign === 'right'
-                  ? textX - lineW
-                  : textX - lineW / 2;
-            const decoY = deco === 'underline' ? lineY + fontSize / 2 : lineY;
-            decoSegments.push({ x: fromX, y: decoY, w: lineW });
+            const decoY = deco === 'underline' ? baselineY + decoOffset : baselineY - decoOffset;
+            decoSegments.push({ x: lineX, y: decoY, w: lineWidth });
           }
         });
-
-        if (strokeFilterId) {
-          ctx.filter = 'none';
-        }
 
         if (decoSegments.length > 0) {
           ctx.save();
@@ -305,6 +317,11 @@ export async function renderFittedBranch(
           }
           ctx.stroke();
           ctx.restore();
+        }
+
+        // بعد الزخارف: Konva يرسمها داخل sceneFunc تحت الفلتر نفسه أيضاً
+        if (strokeFilterId) {
+          ctx.filter = 'none';
         }
       }
     } else if (el.type === 'shape') {

@@ -38,6 +38,7 @@ export const CanvasElementSchema = z.object({
   color: z.string().optional(),
   fontFamily: z.string().optional(),
   textAlign: z.enum(['right', 'center', 'left']).optional(),
+  // مهجور: يُقبل من الملفات القديمة فقط ويُهمَل عند الرندر (الارتفاع يتبع المحتوى)
   textVerticalAlign: z.enum(['top', 'middle', 'bottom']).optional(),
   textBgColor: z.string().optional(),
   textBgRadius: z.number().optional(),
@@ -53,6 +54,9 @@ export const CanvasElementSchema = z.object({
   textDecoration: z.enum(['none', 'underline', 'line-through']).optional(),
   textTransform: z.enum(['none', 'uppercase', 'lowercase', 'capitalize']).optional(),
   wrap: z.enum(['word', 'char', 'none']).optional(),
+  textSizing: z.enum(['auto', 'fixed']).optional(),
+  // ركن ثابت بعد تحجيم زاوية — يوجّه إعادة الملاءمة التلقائية اللاحقة
+  textResizeAnchor: z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right']).optional(),
   shadowGlow: z.boolean().optional(),
   curve: z.number().optional(),
   curveRadius: z.number().optional(),

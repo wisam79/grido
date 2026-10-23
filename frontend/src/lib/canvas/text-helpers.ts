@@ -37,9 +37,47 @@ export function sanitizeText(input: string, maxLen = TEXT_MAX_LENGTH): string {
 /** هل النص عربي/فارسي؟ — نفس التعبير الموحّد في text-node و overlay */
 export const ARABIC_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 
+/** مدى RTL الأوسع (عبري/سرياني/نكو) لتحديد الاتجاه الأول القوي */
+const RTL_RANGES: Array<[number, number]> = [
+  [0x0590, 0x05ff],
+  [0x0600, 0x06ff],
+  [0x0700, 0x074f],
+  [0x0750, 0x077f],
+  [0x0780, 0x07bf],
+  [0x07c0, 0x07ff],
+  [0x08a0, 0x08ff],
+  [0xfb1d, 0xfb4f],
+  [0xfb50, 0xfdff],
+  [0xfe70, 0xfeff],
+];
+
 export function isArabicText(text: string | undefined | null): boolean {
   if (!text) return false;
   return ARABIC_RE.test(text);
+}
+
+const LETTER_RE = /\p{L}/u;
+
+/**
+ * اتجاه الفقرة بقاعدة «أول محرف قوي» (UAX #9 First Strong):
+ * الأرقام والمسافات والعلامات محايدة ولا تحدد الاتجاه، فالنص المختلط
+ * «Grido 2026 تصميم» لاتيني، و«تصميم Grido» عربي — بخلاف فحص «يحتوي عربي».
+ *
+ * المحرف القوي لا بد أن يكون حرفاً فعلياً: الأرقام المشرقية (٠-٩) والعلامات
+ * العربية (، ؟) تقع داخل نطاقات RTL لكنها محايدة، فبدون بوابة \p{L} كان النص
+ * «٢٠٢٦ Grido» يُحسب عربياً خطأً.
+ */
+export function resolveTextDirection(text: string | undefined | null): 'rtl' | 'ltr' {
+  if (!text) return 'ltr';
+  for (const ch of text) {
+    if (!LETTER_RE.test(ch)) continue;
+    const cp = ch.codePointAt(0) ?? 0;
+    for (const [start, end] of RTL_RANGES) {
+      if (cp >= start && cp <= end) return 'rtl';
+    }
+    return 'ltr';
+  }
+  return 'ltr';
 }
 
 export interface TextRenderSource {
@@ -53,8 +91,32 @@ export interface TextRenderState {
   /** النص النهائي بعد الأرقام المشرقية وتحويلات الحالة وتباعد الكلمات العربي */
   text: string;
   isArabic: boolean;
+  /** اتجاه الفقرة الفعلي (أول محرف قوي) — بديل فحص «يحتوي عربي» */
+  direction: 'rtl' | 'ltr';
   /** التباعد الفعلي الممرَّر إلى Konva/Canvas (يتصفّر للعربي مع تعويض مسافات) */
   letterSpacing: number;
+}
+
+const EASTERN_ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+
+/** أرقام غربية → مشرقية (للعرض على الكانفس وفي المحرر) */
+export function toEasternArabicDigits(text: string): string {
+  return text.replace(/\d/g, (d) => EASTERN_ARABIC_DIGITS[parseInt(d, 10)]);
+}
+
+/** أرقام مشرقية → غربية قبل حفظ نص المحرر */
+export function fromEasternArabicDigits(text: string): string {
+  return text.replace(/[٠-٩]/g, (d) => String(EASTERN_ARABIC_DIGITS.indexOf(d)));
+}
+
+/** نص العرض داخل محرر النص — تحويل الحالة يبقى على CSS، والمسافات لا تُمس */
+export function toEditorDisplayText(text: string, arabicNumerals?: boolean): string {
+  return arabicNumerals ? toEasternArabicDigits(text) : text;
+}
+
+/** نص المحرر → النص المخزَّن (يعيد الأرقام المشرقية لغربية عند الخيار مفعّل) */
+export function fromEditorDisplayText(text: string, arabicNumerals?: boolean): string {
+  return arabicNumerals ? fromEasternArabicDigits(text) : text;
 }
 
 /**
@@ -69,15 +131,17 @@ export function resolveTextRenderState(source: TextRenderSource): TextRenderStat
   let text = source.text || '';
 
   if (source.arabicNumerals) {
-    text = text.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
+    text = toEasternArabicDigits(text);
   }
 
   const isArabic = ARABIC_RE.test(text);
+  const direction = resolveTextDirection(source.text || '');
   const spacing = source.letterSpacing || 0;
-  let effectiveLetterSpacing = spacing;
+  // التباعد يُصفَّر للعربي في الاتجاهين: السالب يقرّب الحروف فيكسر الوصلات،
+  // والموجب يعوَّض بمسافات كلمات بدل تفكيك الحروف.
+  const effectiveLetterSpacing = isArabic ? 0 : spacing;
 
   if (isArabic && spacing > 0) {
-    effectiveLetterSpacing = 0;
     const extraSpaces = ' '.repeat(Math.min(6, Math.max(1, Math.round(spacing / 3.5))));
     text = text.replace(/ /g, extraSpaces);
   }
@@ -98,5 +162,5 @@ export function resolveTextRenderState(source: TextRenderSource): TextRenderStat
     }
   }
 
-  return { text, isArabic, letterSpacing: effectiveLetterSpacing };
+  return { text, isArabic, direction, letterSpacing: effectiveLetterSpacing };
 }

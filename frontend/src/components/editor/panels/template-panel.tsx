@@ -28,9 +28,9 @@ import {
 } from '../../../../wailsjs/go/main/App';
 
 import type { NormalizedCell } from './collage/collage-grid-math';
-import type { FreeformTab } from './freeform/freeform-panel-constants';
 import type { CollageTab } from '@/hooks/use-workspace-panels';
 import type { CollageTemplate } from '@/lib/templates';
+import type { FreeformTab } from '@/lib/workspace-tools';
 
 const logger = createLogger('template-panel');
 

@@ -1,439 +1,93 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 
-import {
-  MagnifyingGlass,
-  CaretDown,
-  Star,
-  Clock,
-  X,
-  Sparkle,
-  Cloud,
-  CheckCircle,
-} from '@/components/ui/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { FontSelector } from '@/components/ui/font-selector';
 import { useEditorStore } from '@/lib/editor-store';
-import { ARABIC_FONTS, FONT_CATEGORIES, loadGoogleFont } from '@/lib/io/fonts';
-import { readStoredList, writeStoredList } from '@/lib/local-prefs';
-import { cn } from '@/lib/utils';
+import { loadGoogleFont } from '@/lib/io/fonts';
 
 import type { TextElement } from '@/lib/editor-store';
 import type { FontOption } from '@/lib/io/fonts';
-// #12 — استخدام readStoredList/writeStoredList لضمان قراءة string[] فقط وسقف 60
 
-interface TextFontSelectorProps {
-  element: TextElement;
-  onUpdate: (id: string, patch: Partial<TextElement>) => void;
-}
-
-const FAVORITES_STORAGE_KEY = 'grido_favorite_fonts';
-const RECENTS_STORAGE_KEY = 'grido_recent_fonts';
+type FontSnapshot = Pick<
+  TextElement,
+  'id' | 'fontFamily' | 'x' | 'y' | 'width' | 'height' | 'textResizeAnchor'
+>;
 
 export const TextFontSelector = React.memo(function TextFontSelector({
   element,
-  onUpdate,
-}: TextFontSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [previewText, setPreviewText] = useState<string>('');
-  const [showCustomPreviewInput, setShowCustomPreviewInput] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+}: {
+  element: TextElement;
+}) {
+  const snapshotsRef = useRef<FontSnapshot[]>([]);
+  const previewedRef = useRef(false);
 
-  const originalFamilyRef = useRef<string>(element.fontFamily || '');
-  const hasCommittedRef = useRef<boolean>(false);
-
-  // #12 — Favorites: readStoredList يضمن string[] + يتعامل مع JSON تالف بأمان
-  const [favorites, setFavorites] = useState<string[]>(() =>
-    readStoredList(FAVORITES_STORAGE_KEY, ['cairo', 'tajawal', 'amiri']),
-  );
-
-  // #12 — Recents: readStoredList بدلاً من JSON.parse الخام
-  const [recents, setRecents] = useState<string[]>(() => readStoredList(RECENTS_STORAGE_KEY, []));
-
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const listContainerRef = useRef<HTMLDivElement>(null);
-
-  const currentFamily = element.fontFamily || ARABIC_FONTS[0].family;
-  const currentFontObj =
-    ARABIC_FONTS.find(
-      (f) => f.family === currentFamily || f.family.includes(currentFamily.split(',')[0].trim()),
-    ) || ARABIC_FONTS[0];
-
-  const effectivePreviewText = previewText.trim() || element.text?.trim() || 'أبجد هوز 123';
-
-  const toggleFavorite = (fontId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFavorites((prev) => {
-      const next = prev.includes(fontId) ? prev.filter((id) => id !== fontId) : [...prev, fontId];
-      // #12 — writeStoredList يطبق السقف MAX_FAVORITES=60 تلقائياً
-      writeStoredList(FAVORITES_STORAGE_KEY, next);
-      return next;
-    });
-  };
-
-  const addRecent = useCallback((fontId: string) => {
-    setRecents((prev) => {
-      const filtered = prev.filter((id) => id !== fontId);
-      const next = [fontId, ...filtered].slice(0, 6);
-      // #12 — writeStoredList بدلاً من localStorage.setItem المباشر
-      writeStoredList(RECENTS_STORAGE_KEY, next);
-      return next;
-    });
+  const cancelPreview = useCallback(() => {
+    if (!previewedRef.current) return;
+    previewedRef.current = false;
+    const { elements, updateElements } = useEditorStore.getState();
+    updateElements(
+      snapshotsRef.current
+        .filter((snapshot) => elements.some((item) => item.id === snapshot.id))
+        .map(({ id, ...patch }) => ({ id, patch })),
+    );
   }, []);
 
-  const handleOpenChange = (open: boolean) => {
-    if (open) {
-      originalFamilyRef.current = element.fontFamily || '';
-      hasCommittedRef.current = false;
-      setTimeout(() => searchInputRef.current?.focus(), 60);
-    } else {
-      if (!hasCommittedRef.current && originalFamilyRef.current) {
-        onUpdate(element.id, { fontFamily: originalFamilyRef.current });
-      }
-      setSearchQuery('');
-      setShowCustomPreviewInput(false);
-      setFocusedIndex(-1);
-    }
-    setIsOpen(open);
-  };
+  useEffect(() => cancelPreview, [element.id, cancelPreview]);
 
-  const allCategoryPills = useMemo(() => {
-    const pills: { id: string; name: string; icon?: React.ReactNode; count?: number }[] = [
-      { id: 'all', name: 'الكل' },
-    ];
-    if (favorites.length > 0) {
-      pills.push({
-        id: 'favorites',
-        name: 'المفضلة',
-        icon: <Star className="w-2.5 h-2.5 text-amber-400" weight="fill" />,
-        count: favorites.length,
-      });
-    }
-    if (recents.length > 0) {
-      pills.push({
-        id: 'recents',
-        name: 'الأخيرة',
-        icon: <Clock className="w-2.5 h-2.5" weight="regular" />,
-      });
-    }
-    FONT_CATEGORIES.filter((c) => c.id !== 'all').forEach((cat) => {
-      pills.push({ id: cat.id, name: cat.name });
+  const applyFont = (font: FontOption) => {
+    const { elements, updateElements } = useEditorStore.getState();
+    const patches = snapshotsRef.current.flatMap(({ id, ...geometry }) => {
+      const current = elements.find((item) => item.id === id);
+      if (current?.type !== 'text' || current.locked) return [];
+      void loadGoogleFont(font.family, current.fontWeight, current.fontStyle);
+      return [{ id, patch: { ...geometry, fontFamily: font.family, textResizeAnchor: undefined } }];
     });
-    return pills;
-  }, [favorites, recents]);
-
-  const filteredFonts = useMemo(() => {
-    return ARABIC_FONTS.filter((font) => {
-      // Category check
-      if (activeCategory === 'favorites') {
-        if (!favorites.includes(font.id)) return false;
-      } else if (activeCategory === 'recents') {
-        if (!recents.includes(font.id)) return false;
-      } else if (activeCategory !== 'all') {
-        if (font.category !== activeCategory) return false;
-      }
-
-      // Query check
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        font.arabicName.toLowerCase().includes(q) ||
-        font.englishName.toLowerCase().includes(q) ||
-        font.name.toLowerCase().includes(q)
-      );
-    });
-  }, [activeCategory, favorites, recents, searchQuery]);
-
-  const handlePreviewFont = (font: FontOption) => {
-    if (!font.isOffline) {
-      loadGoogleFont(font.family);
-    }
-    onUpdate(element.id, { fontFamily: font.family });
-  };
-
-  const handleSelectFont = (font: FontOption) => {
-    if (!font.isOffline) {
-      loadGoogleFont(font.family);
-    }
-    hasCommittedRef.current = true;
-    addRecent(font.id);
-    onUpdate(element.id, { fontFamily: font.family });
-    useEditorStore.getState().pushHistory();
-    setIsOpen(false);
-  };
-
-  // Keyboard navigation with live canvas preview
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen) return;
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const nextIdx = focusedIndex < filteredFonts.length - 1 ? focusedIndex + 1 : 0;
-      setFocusedIndex(nextIdx);
-      if (filteredFonts[nextIdx]) {
-        handlePreviewFont(filteredFonts[nextIdx]);
-      }
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const nextIdx = focusedIndex > 0 ? focusedIndex - 1 : filteredFonts.length - 1;
-      setFocusedIndex(nextIdx);
-      if (filteredFonts[nextIdx]) {
-        handlePreviewFont(filteredFonts[nextIdx]);
-      }
-    } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < filteredFonts.length) {
-      e.preventDefault();
-      handleSelectFont(filteredFonts[focusedIndex]);
-    } else if (e.key === 'Escape') {
-      handleOpenChange(false);
-    }
+    updateElements(patches);
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        {/* Compact Trigger Button */}
-        <button
-          type="button"
-          className={cn(
-            'w-full h-8 bg-background/90 hover:bg-background border border-border/60 hover:border-primary/50 rounded-md px-2.5 text-xs text-foreground font-semibold flex items-center justify-between shadow-2xs transition-colors cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-            isOpen && 'border-primary ring-2 ring-primary/20 bg-background',
-          )}
-        >
-          <div className="flex items-center gap-2 truncate">
-            <span
-              className="text-xs truncate text-foreground font-bold"
-              style={{ fontFamily: currentFontObj.family }}
-            >
-              {currentFontObj.arabicName || currentFontObj.name}
-            </span>
-            <span className="text-mini text-muted-foreground font-medium truncate">
-              ({currentFontObj.englishName})
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {currentFontObj.isOffline ? (
-              <span
-                className="text-mini font-bold text-success bg-success/15 border border-success/30 px-1 py-0.5 rounded"
-                title="مدمج أوفلاين"
-              >
-                أوفلاين
-              </span>
-            ) : (
-              <span
-                className="text-mini font-bold text-info bg-info/15 border border-info/30 px-1 py-0.5 rounded flex items-center gap-0.5"
-                title="سحابي Google Fonts"
-              >
-                <Cloud className="w-2.5 h-2.5" weight="regular" />
-                <span>سحابي</span>
-              </span>
-            )}
-            <CaretDown
-              className={cn(
-                'w-3.5 h-3.5 text-muted-foreground transition-transform duration-200',
-                isOpen && 'rotate-180 text-primary',
-              )}
-              weight="bold"
-            />
-          </div>
-        </button>
-      </PopoverTrigger>
-
-      {/* Searchable Categorized Dropdown Portaled above EVERYTHING */}
-      <PopoverContent
-        side="bottom"
-        align="start"
-        sideOffset={6}
-        collisionPadding={12}
-        className="w-[305px] max-w-[calc(100vw-24px)] bg-card border border-border/80 rounded-lg shadow-fluent-16 z-(--z-popover) p-2.5 space-y-2 font-cairo fluent-specular"
-        onKeyDown={handleKeyDown}
-      >
-        {/* Search Box & Custom Preview Toggle */}
-        <div className="space-y-1.5">
-          <div className="relative flex items-center">
-            <MagnifyingGlass
-              className="w-3.5 h-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-              weight="regular"
-            />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setFocusedIndex(-1);
-              }}
-              placeholder="بحث في الخطوط..."
-              className="w-full h-8 bg-background/90 border border-border/60 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-md pr-8 pl-8 text-xs text-foreground placeholder:text-muted-foreground/60 outline-hidden transition-colors shadow-2xs"
-            />
-            {searchQuery ? (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="w-7 h-7 absolute left-1.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-              >
-                <X className="w-3 h-3" weight="bold" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowCustomPreviewInput(!showCustomPreviewInput)}
-                className={cn(
-                  'w-7 h-7 absolute left-1.5 top-1/2 -translate-y-1/2 rounded-md flex items-center justify-center transition-colors cursor-pointer text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
-                  showCustomPreviewInput && 'text-primary bg-primary/10',
-                )}
-                title="تخصيص المعاينة"
-                aria-label="تخصيص نص المعاينة"
-              >
-                <Sparkle className="w-3 h-3" weight={showCustomPreviewInput ? 'fill' : 'regular'} />
-              </button>
-            )}
-          </div>
-
-          {/* Custom Preview Text Field */}
-          {showCustomPreviewInput && (
-            <div className="flex items-center gap-1 p-1 bg-muted/40 rounded-md border border-border/40 animate-in fade-in duration-150">
-              <input
-                type="text"
-                value={previewText}
-                onChange={(e) => setPreviewText(e.target.value)}
-                placeholder={`نص المعاينة (افتراضي: ${element.text || 'أبجد هوز'})`}
-                className="w-full h-6 bg-transparent text-xs px-1 text-foreground placeholder:text-muted-foreground/50 outline-hidden"
-              />
-              {previewText && (
-                <button
-                  type="button"
-                  onClick={() => setPreviewText('')}
-                  className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-                  title="إعادة ضبط"
-                  aria-label="إعادة ضبط نص المعاينة"
-                >
-                  <X className="w-2.5 h-2.5" weight="bold" />
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Category Filter Chips — التفاف كامل بدل شريط تمرير أفقي يُخفي الفئات */}
-        <div className="flex flex-wrap items-center gap-1 pb-1 text-mini">
-          {allCategoryPills.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => {
-                setActiveCategory(cat.id);
-                setFocusedIndex(-1);
-              }}
-              className={cn(
-                'px-2 py-1 rounded-md whitespace-nowrap font-bold transition-colors cursor-pointer shadow-2xs flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-                activeCategory === cat.id
-                  ? 'bg-primary text-primary-foreground shadow-xs'
-                  : 'bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40',
-              )}
-            >
-              {cat.icon}
-              <span>{cat.name}</span>
-              {cat.count !== undefined && (
-                <span className="text-2xs opacity-80">({cat.count})</span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Fonts List */}
-        <div
-          ref={listContainerRef}
-          className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar pe-0.5"
-        >
-          {filteredFonts.length === 0 ? (
-            <div className="py-6 text-center text-xs text-muted-foreground space-y-1">
-              <p className="font-semibold">لا خط مطابق</p>
-              <p className="text-mini text-muted-foreground/70">جرّب اسم خط أو فئة أخرى</p>
-            </div>
-          ) : (
-            filteredFonts.map((font, idx) => {
-              const isSelected = currentFamily.includes(font.family.split(',')[0].trim());
-              const isFav = favorites.includes(font.id);
-              const isFocused = focusedIndex === idx;
-
-              return (
-                <div
-                  key={font.id}
-                  role="button"
-                  tabIndex={0}
-                  onMouseEnter={() => {
-                    setFocusedIndex(idx);
-                    handlePreviewFont(font);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleSelectFont(font);
-                    }
-                  }}
-                  onClick={() => handleSelectFont(font)}
-                  className={cn(
-                    'w-full text-start px-2.5 py-2 rounded-md transition-colors flex items-center justify-between cursor-pointer group border select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-                    isSelected
-                      ? 'bg-primary/15 border-primary/50 text-primary shadow-2xs'
-                      : isFocused
-                        ? 'bg-muted/80 border-border/60 text-foreground'
-                        : 'hover:bg-muted/50 text-foreground border-transparent',
-                  )}
-                >
-                  <div className="space-y-0.5 truncate flex-1 min-w-0 pr-1">
-                    {/* Font Sample Preview Text */}
-                    <span
-                      className="text-sm font-semibold truncate block text-foreground/90 group-hover:text-foreground"
-                      style={{ fontFamily: font.family }}
-                    >
-                      {effectivePreviewText}
-                    </span>
-
-                    {/* Font Meta Details */}
-                    <div className="text-mini text-muted-foreground font-medium flex items-center gap-1.5 truncate">
-                      <span className="font-bold text-foreground/75 truncate">
-                        {font.arabicName}
-                      </span>
-                      <span className="text-mini opacity-70 truncate font-mono">
-                        ({font.englishName})
-                      </span>
-                      {font.isOffline ? (
-                        <span className="text-mini bg-success/10 text-success border border-success/20 px-1 py-px rounded font-bold">
-                          أوفلاين
-                        </span>
-                      ) : (
-                        <span className="text-mini bg-info/10 text-info border border-info/20 px-1 py-px rounded font-bold">
-                          Google Font
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions: Favorite Star & Checkmark */}
-                  <div className="flex items-center gap-1 shrink-0 me-1.5">
-                    <button
-                      type="button"
-                      onClick={(e) => toggleFavorite(font.id, e)}
-                      className={cn(
-                        'w-6 h-6 rounded-md flex items-center justify-center transition-colors cursor-pointer hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
-                        isFav ? 'text-amber-400' : 'text-muted-foreground/40 hover:text-amber-400',
-                      )}
-                      title={isFav ? 'إزالة من المفضلة' : 'إضافة للمفضلة'}
-                    >
-                      <Star className="w-3.5 h-3.5" weight={isFav ? 'fill' : 'regular'} />
-                    </button>
-
-                    {isSelected && (
-                      <CheckCircle className="w-4 h-4 text-primary shrink-0" weight="fill" />
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
+    <FontSelector
+      key={element.id}
+      value={element.fontFamily || 'Cairo'}
+      onOpen={() => {
+        const { elements, selectedIds } = useEditorStore.getState();
+        const targets = selectedIds.includes(element.id) ? selectedIds : [element.id];
+        // لكل نص هندسته وخطه الأصلي؛ بث لقطة واحدة يفسد التحديد المتعدد.
+        snapshotsRef.current = elements
+          .filter(
+            (item): item is TextElement =>
+              item.type === 'text' && !item.locked && targets.includes(item.id),
+          )
+          .map(({ id, fontFamily, x, y, width, height, textResizeAnchor }) => ({
+            id,
+            fontFamily,
+            x,
+            y,
+            width,
+            height,
+            textResizeAnchor,
+          }));
+        previewedRef.current = false;
+      }}
+      onPreview={(font) => {
+        previewedRef.current = true;
+        applyFont(font);
+      }}
+      onCancel={cancelPreview}
+      onChange={(font) => {
+        const cleanName = (family: string) =>
+          family.split(',')[0].trim().replace(/['"]/g, '').toLowerCase();
+        if (
+          snapshotsRef.current.every(
+            (snapshot) => cleanName(snapshot.fontFamily || 'Cairo') === cleanName(font.family),
+          )
+        ) {
+          cancelPreview();
+          return;
+        }
+        applyFont(font);
+        previewedRef.current = false;
+        useEditorStore.getState().pushHistory();
+      }}
+    />
   );
 });

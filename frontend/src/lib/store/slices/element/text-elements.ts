@@ -1,3 +1,4 @@
+import { fitTextGeometry } from '@/lib/canvas/text-fit';
 import { sanitizeText } from '@/lib/canvas/text-helpers';
 
 import { nextZIndex, normalizeSelection } from './types';
@@ -5,33 +6,33 @@ import { TEXT_PRESETS } from '../../../templates';
 import { uid } from '../../../utils';
 
 import type { ElementCross, ElementSlice } from './types';
-import type { CanvasElement } from '../../types';
+import type { CanvasElement, TextElement } from '../../types';
 import type { StateCreator } from 'zustand';
 
 export const createTextElementsSlice: StateCreator<
   ElementCross,
   [],
   [],
-  Pick<ElementSlice, 'addTextElement' | 'addTextPreset' | 'applyTextPreset' | 'autoFitTextWidth'>
+  Pick<ElementSlice, 'addTextElement' | 'addTextPreset' | 'applyTextPreset' | 'fitTextToContent'>
 > = (set, get) => ({
   addTextElement: (text = 'نص جديد') => {
     const sanitized = sanitizeText(String(text ?? 'نص جديد'));
     const id = uid();
     const state = get();
     const canvasW = state.canvasWidth || 2480;
+    const canvasH = state.canvasHeight || 2480;
 
-    // قياس وتناسب عرض مربع النص مع طول النص بدقة لمنع المساحات الفارغة الشاسعة
+    // تقدير أولي يُستخدم فقط إن تعذّر القياس الحقيقي (بيئة بلا Canvas)
     const fontSize = 32;
     const charWidth = fontSize * 0.9;
     const estimatedPx = Math.max(160, Math.min(canvasW * 0.6, sanitized.length * charWidth + 60));
-    const initialW = estimatedPx / canvasW;
 
-    const newEl: CanvasElement = {
+    const newEl: TextElement = {
       id,
       type: 'text',
-      x: 0.5 - initialW / 2,
+      x: 0,
       y: 0.45,
-      width: initialW,
+      width: estimatedPx / canvasW,
       height: 0.05,
       rotation: 0,
       opacity: 1,
@@ -42,21 +43,32 @@ export const createTextElementsSlice: StateCreator<
       color: '#1a1a2e',
       fontFamily: '"IBM Plex Sans Arabic", Cairo, Tajawal, sans-serif',
       textAlign: 'center',
+      textSizing: 'auto',
       textBgColor: 'transparent',
       lineHeight: 1.2,
       letterSpacing: 0,
     };
+
+    const fit = fitTextGeometry(newEl, canvasW, canvasH);
+    if (fit?.measured) {
+      newEl.width = fit.width;
+      newEl.height = fit.height;
+    }
+    newEl.x = 0.5 - newEl.width / 2;
+
     set((s) => ({
       elements: [...s.elements, newEl],
       ...normalizeSelection(id),
     }));
     get().pushHistory();
+    return id;
   },
 
   addTextPreset: (preset, customText) => {
     const id = uid();
     const state = get();
     const canvasW = state.canvasWidth || 2480;
+    const canvasH = state.canvasHeight || 2480;
 
     const config = TEXT_PRESETS[preset] || TEXT_PRESETS.heading;
     const text =
@@ -67,14 +79,13 @@ export const createTextElementsSlice: StateCreator<
 
     const charWidth = fontSize * 0.9;
     const estimatedPx = Math.max(160, Math.min(canvasW * 0.7, text.length * charWidth + 60));
-    const initialW = estimatedPx / canvasW;
 
-    const newEl: CanvasElement = {
+    const newEl: TextElement = {
       id,
       type: 'text',
-      x: 0.5 - initialW / 2,
+      x: 0,
       y: 0.45,
-      width: initialW,
+      width: estimatedPx / canvasW,
       height: config.height,
       rotation: config.rotation ?? 0,
       opacity: config.opacity ?? 1,
@@ -85,6 +96,7 @@ export const createTextElementsSlice: StateCreator<
       color: config.color,
       fontFamily: config.fontFamily,
       textAlign: 'center',
+      textSizing: 'auto',
       textBgColor: config.textBgColor ?? 'transparent',
       textBgRadius: config.textBgRadius ?? 0,
       textBgPadding: config.textBgPadding ?? 0,
@@ -109,6 +121,13 @@ export const createTextElementsSlice: StateCreator<
       fillLinearGradientColorStops: config.fillLinearGradientColorStops,
     };
 
+    const fit = fitTextGeometry(newEl, canvasW, canvasH);
+    if (fit?.measured) {
+      newEl.width = fit.width;
+      newEl.height = fit.height;
+    }
+    newEl.x = 0.5 - newEl.width / 2;
+
     set((s) => ({
       elements: [...s.elements, newEl],
       ...normalizeSelection(id),
@@ -120,73 +139,78 @@ export const createTextElementsSlice: StateCreator<
     const el = get().elements.find((x) => x.id === id);
     if (!el || el.type !== 'text') return;
     const config = TEXT_PRESETS[preset] || TEXT_PRESETS.heading;
+    const state = get();
+
+    const patch: Partial<TextElement> = {
+      // نمط جديد = تخطيط جديد؛ لا يُورَّث ركن تحجيم زاوية قديم.
+      textResizeAnchor: undefined,
+      fontSize: config.fontSize,
+      fontWeight: config.fontWeight,
+      color: config.color,
+      fontFamily: config.fontFamily,
+      textBgColor: config.textBgColor ?? 'transparent',
+      textBgRadius: config.textBgRadius ?? 0,
+      textBgPadding: config.textBgPadding ?? 0,
+      textBgBorderColor: config.textBgBorderColor,
+      textBgBorderWidth: config.textBgBorderWidth,
+      textBgPaddingX: config.textBgPaddingX,
+      textBgPaddingY: config.textBgPaddingY,
+      lineHeight: config.lineHeight ?? 1.2,
+      stroke: config.stroke,
+      strokeWidth: config.strokeWidth,
+      shadowColor: config.shadowColor,
+      shadowBlur: config.shadowBlur,
+      shadowOffsetX: config.shadowOffsetX,
+      shadowOffsetY: config.shadowOffsetY,
+      shadowOpacity: config.shadowOpacity,
+      shadowGlow: config.shadowGlow,
+      curve: config.curve,
+      fillType: config.fillType ?? 'solid',
+      fillLinearGradientStartPoint: config.fillLinearGradientStartPoint,
+      fillLinearGradientEndPoint: config.fillLinearGradientEndPoint,
+      fillLinearGradientColorStops: config.fillLinearGradientColorStops,
+    };
+
+    // النمط يغيّر المقاس فوراً — نلائم الصندوق في نفس التحديث بدل نبضة لاحقة
+    const fit = fitTextGeometry(
+      { ...el, ...patch },
+      state.canvasWidth || 2480,
+      state.canvasHeight || 2480,
+    );
+    if (fit?.measured) {
+      patch.width = fit.width;
+      patch.height = fit.height;
+      patch.x = fit.x;
+      patch.y = fit.y;
+    }
 
     set((s) => ({
       elements: s.elements.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              fontSize: config.fontSize,
-              fontWeight: config.fontWeight,
-              color: config.color,
-              fontFamily: config.fontFamily,
-              textBgColor: config.textBgColor ?? 'transparent',
-              textBgRadius: config.textBgRadius ?? 0,
-              textBgPadding: config.textBgPadding ?? 0,
-              textBgBorderColor: config.textBgBorderColor,
-              textBgBorderWidth: config.textBgBorderWidth,
-              textBgPaddingX: config.textBgPaddingX,
-              textBgPaddingY: config.textBgPaddingY,
-              lineHeight: config.lineHeight ?? 1.2,
-              stroke: config.stroke,
-              strokeWidth: config.strokeWidth,
-              shadowColor: config.shadowColor,
-              shadowBlur: config.shadowBlur,
-              shadowOffsetX: config.shadowOffsetX,
-              shadowOffsetY: config.shadowOffsetY,
-              shadowOpacity: config.shadowOpacity,
-              shadowGlow: config.shadowGlow,
-              curve: config.curve,
-              fillType: config.fillType ?? 'solid',
-              fillLinearGradientStartPoint: config.fillLinearGradientStartPoint,
-              fillLinearGradientEndPoint: config.fillLinearGradientEndPoint,
-              fillLinearGradientColorStops: config.fillLinearGradientColorStops,
-            }
-          : item,
+        item.id === id ? ({ ...item, ...patch } as CanvasElement) : item,
       ),
     }));
     get().pushHistory();
   },
 
-  autoFitTextWidth: (id: string, textWidthPx?: number) => {
+  fitTextToContent: (id: string) => {
     const el = get().elements.find((x) => x.id === id);
     if (!el || el.type !== 'text') return;
 
     const canvasW = get().canvasWidth || 2480;
-    let newWidth = el.width;
-
-    if (textWidthPx && textWidthPx > 0) {
-      newWidth = Math.min(0.85, Math.max(0.04, (textWidthPx + 40) / canvasW));
-    } else if (typeof document !== 'undefined') {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        let textToMeasure = el.text || '';
-        if (el.arabicNumerals) {
-          textToMeasure = textToMeasure.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[parseInt(d, 10)]);
-        }
-        const fontStylePrefix = el.fontStyle === 'italic' ? 'italic ' : '';
-        ctx.font = `${fontStylePrefix}${el.fontWeight || 400} ${el.fontSize || 32}px ${el.fontFamily || 'Cairo, Tajawal, sans-serif'}`;
-        const metrics = ctx.measureText(textToMeasure);
-        const letterSpacingExtra = (el.letterSpacing || 0) * textToMeasure.length;
-        const totalW = metrics.width + Math.max(0, letterSpacingExtra);
-        newWidth = Math.min(0.95, Math.max(0.04, (totalW + 48) / canvasW));
-      }
+    const canvasH = get().canvasHeight || 2480;
+    const fit = fitTextGeometry({ ...el, textSizing: 'auto' }, canvasW, canvasH);
+    // الملاءمة تتمركز من جديد — ارتساء الزاوية السابق لم يعد ذا معنى.
+    const patch: Partial<TextElement> = { textSizing: 'auto', textResizeAnchor: undefined };
+    if (fit) {
+      patch.width = fit.width;
+      patch.height = fit.height;
+      patch.x = fit.x;
+      patch.y = fit.y;
     }
 
     set((s) => ({
-      elements: s.elements.map((item: CanvasElement) =>
-        item.id === id ? { ...item, width: newWidth } : item,
+      elements: s.elements.map((item) =>
+        item.id === id ? ({ ...item, ...patch } as CanvasElement) : item,
       ),
     }));
     get().pushHistory();

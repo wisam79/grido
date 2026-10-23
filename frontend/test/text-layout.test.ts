@@ -18,6 +18,23 @@ describe('wrapTextLines', () => {
     expect(wrapTextLines(measurer, 'abcdef', 25, 'char')).toEqual(['ab', 'cd', 'ef']);
   });
 
+  it('breaks words wider than the line like Konva does in word mode', () => {
+    expect(wrapTextLines(measurer, 'supercalifragilistic', 50, 'word')).toEqual([
+      'super',
+      'calif',
+      'ragil',
+      'istic',
+    ]);
+  });
+
+  it('wraps after dashes when no space fits', () => {
+    expect(wrapTextLines(measurer, 'alpha-beta-gamma', 60, 'word')).toEqual([
+      'alpha-',
+      'beta-',
+      'gamma',
+    ]);
+  });
+
   it('only splits explicit newlines in none mode', () => {
     expect(wrapTextLines(measurer, 'a very long line\nsecond', 20, 'none')).toEqual([
       'a very long line',

@@ -2,12 +2,13 @@ import React from 'react';
 import { Layer, Rect } from 'react-konva';
 
 import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
+import { isCornerAnchor, oppositeCornerAnchor } from '@/lib/canvas/transform-anchors';
 import { useEditorStore } from '@/lib/editor-store';
 
 import { EditorTransformer } from '../elements/editor-transformer';
 
 import type { SnapGuide } from '@/lib/canvas/snap-utils';
-import type { CanvasElement } from '@/lib/editor-store';
+import type { CanvasElement, TextElement } from '@/lib/editor-store';
 import type Konva from 'konva';
 
 /**
@@ -76,6 +77,10 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
   const handleTransformEnd = React.useCallback(() => {
     if (!trRef.current) return;
     const nodes = trRef.current.nodes();
+    // المقبض النشط متاح داخل transformend (Konva يُصفّره بعد إطلاقه) — الزوايا
+    // وحدها تُحجّم كتلة النص، ومنتصفات الحواف تضبط العرض فقط.
+    const activeAnchor = trRef.current.getActiveAnchor?.();
+    const cornerScaled = isCornerAnchor(activeAnchor);
     const patches = nodes
       .map((node: Konva.Node) => {
         const id = node.id();
@@ -87,11 +92,16 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
         const absScaleX = Math.abs(sx);
         const absScaleY = Math.abs(sy);
 
-        const baseW = el.width * canvasWidth;
-        const baseH = el.height * canvasHeight;
+        const nodeWidth = typeof node.width === 'function' ? node.width() : 0;
+        const nodeHeight = typeof node.height === 'function' ? node.height() : 0;
+        // الأساس من العقدة الحيّة: نص auto يعرض عرضه المقيس قبل أن يصل للستور،
+        // فالحساب من el.width كان ينتج قفزة عرض عند أول سحب.
+        const baseW = Math.max(1, nodeWidth || el.width * canvasWidth);
+        const baseH = Math.max(1, nodeHeight || el.height * canvasHeight);
 
         const newW = Math.max(10, baseW * absScaleX);
         const newH = Math.max(10, baseH * absScaleY);
+        const widthChanged = Math.abs(newW - baseW) > 0.5;
 
         // إعادة مقياس العقدة القياسي إلى 1 لتكون الأبعاد الفعلية هي المرجع،
         // ثم تثبيت الأبعاد على العقدة نفسها
@@ -145,22 +155,44 @@ export const KonvaOverlayLayer = React.memo(function KonvaOverlayLayer({
         const patch: Partial<CanvasElement> = {
           x: rawX,
           y: rawY,
-          width: newWidth,
-          ...(el.type !== 'text' ? { height: newHeight } : {}),
           rotation: nextRotation,
           flipX: nextFlipX,
           flipY: nextFlipY,
         };
 
         if (el.type === 'text') {
-          (patch as Partial<Record<string, unknown>>).fontSize = Math.max(
-            6,
-            Math.round((el.fontSize || 16) * absScaleY),
-          );
+          const textPatch = patch as Partial<TextElement>;
+          if (cornerScaled && Math.abs(absScaleY - 1) > 0.001) {
+            // 🔠 سحب زاوية = تحجيم كتلة النص: العقدة عُرضت بمقياسها أثناء السحب
+            // (نسبة keepRatio)، فتُترجم النسبة إلى fontSize والمقياس يعود 1 أعلاه.
+            // العرض يتحرك بالنسبة نفسها كي تبقى نقاط الالتفاف كما هي.
+            textPatch.fontSize = Math.max(6, Math.round((el.fontSize || 16) * absScaleY));
+            // العرض والارتفاع يُكتبان بنسبة الإيماءة نفسها: يمنعان «حضن» الملاءمة
+            // التلقائية من التوسّط بعد الحفظ، ويُتيحان لحساب الارتساء أن يعرف
+            // صندوق الإيماءة الفعلي (الارتفاع القديم في الستور قد يختلف عن المرئي
+            // لأن حجم الخط تغيّر). القياس يستبدل الارتفاع فوراً بالارتفاع الطبيعي.
+            textPatch.width = newWidth;
+            textPatch.height = newHeight;
+            // الركن المقابل للمقبض المسحوب يبقى مثبتاً عبر كل إعادة قياس لاحقة:
+            // تحميل خط متأخر أو فرق قياس بعد إعادة الرسم. بدونه كانت إعادة
+            // الملاءمة تُوسّع/تُضيّق من المركز أو من الحافة اليسرى فينزاح النص.
+            const anchorCorner = oppositeCornerAnchor(activeAnchor);
+            if (anchorCorner) textPatch.textResizeAnchor = anchorCorner;
+            Object.assign(patch, scaleElementDecorations(el, absScaleY, absScaleY));
+          } else if (widthChanged) {
+            // منتصف الحافة = اختيار عرض صريح: يتوقف الحضن التلقائي عند هذا العرض،
+            // والارتفاع يبقى مشتقاً من المحتوى وحجم الخط لا يتغيّر.
+            textPatch.width = newWidth;
+            textPatch.textSizing = 'fixed';
+            // تحجيم الحافة ليس تحجيم زاوية: لا ركن ارتساء بعد الآن.
+            textPatch.textResizeAnchor = undefined;
+          }
+        } else {
+          patch.width = newWidth;
+          patch.height = newHeight;
+          // الزخارف (حد/ظل/استدارة) تُقيَّس بنسبة التحجيم نفسها
+          Object.assign(patch, scaleElementDecorations(el, absScaleX, absScaleY));
         }
-
-        // الزخارف (حد/ظل/استدارة) تُقيَّس بنسبة التحجيم نفسها
-        Object.assign(patch, scaleElementDecorations(el, absScaleX, absScaleY));
 
         return { id, patch };
       })

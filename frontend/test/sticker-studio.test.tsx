@@ -32,13 +32,6 @@ describe('Sticker Studio Unit & Component Tests', () => {
   };
 
   beforeEach(() => {
-    // Mock IntersectionObserver using a standard class implementation
-    class MockIntersectionObserver {
-      observe = vi.fn();
-      unobserve = vi.fn();
-      disconnect = vi.fn();
-    }
-    window.IntersectionObserver = MockIntersectionObserver as any;
     Element.prototype.scrollTo = vi.fn();
   });
 
@@ -115,7 +108,6 @@ describe('Sticker Studio Unit & Component Tests', () => {
           template={sampleTemplate}
           params={sampleParams}
           onChangeParams={vi.fn()}
-          onResetDefaults={vi.fn()}
           gridConfig={sampleGridConfig}
           onChangeGridConfig={vi.fn()}
         />,
@@ -132,7 +124,6 @@ describe('Sticker Studio Unit & Component Tests', () => {
           template={sampleTemplate}
           params={sampleParams}
           onChangeParams={handleParamsChange}
-          onResetDefaults={vi.fn()}
           gridConfig={sampleGridConfig}
           onChangeGridConfig={vi.fn()}
         />,
@@ -143,6 +134,38 @@ describe('Sticker Studio Unit & Component Tests', () => {
         fireEvent.change(textInputs[0], { target: { value: 'نص جديد' } });
         expect(handleParamsChange).toHaveBeenCalled();
       }
+    });
+
+    it('does not repeat the template name, physical size or hex codes in the panel', () => {
+      renderWithProviders(
+        <StickerProperties
+          template={sampleTemplate}
+          params={sampleParams}
+          onChangeParams={vi.fn()}
+          gridConfig={sampleGridConfig}
+          onChangeGridConfig={vi.fn()}
+        />,
+      );
+
+      // اسم القالب والمقاس الفعلي محفوظان في ترويسة الحوار ومسرح المعاينة
+      expect(screen.queryByText(sampleTemplate.name)).not.toBeInTheDocument();
+      expect(screen.queryByText(/مم • 300 DPI/)).not.toBeInTheDocument();
+      // القيم اللونية السداسية تبقى في التلميح لا في التخطيط الدائم
+      expect(screen.queryByText('#2563eb')).not.toBeInTheDocument();
+    });
+
+    it('names the sections tablist for assistive technology', () => {
+      renderWithProviders(
+        <StickerProperties
+          template={sampleTemplate}
+          params={sampleParams}
+          onChangeParams={vi.fn()}
+          gridConfig={sampleGridConfig}
+          onChangeGridConfig={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByRole('tablist', { name: 'أقسام استوديو الملصقات' })).toBeInTheDocument();
     });
   });
 });

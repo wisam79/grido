@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 
 import { FluentSegmentedControl } from '@/components/ui/blocks';
-import { CaretRight, FileText, GridFour } from '@/components/ui/icons';
+import { CaretRight } from '@/components/ui/icons';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useEditorStore } from '@/lib/editor-store';
 
@@ -63,12 +63,20 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
 
   if (selectedElement) {
     panelTitle = `خصائص ${elementTypeLabel}`;
-    panelSubtitle = isMultiSelection
-      ? `تحديد متعدد · ${selectedIds.length} عناصر`
-      : `${Math.max(1, Math.round(selectedElement.width * canvasWidth))} × ${Math.max(
-          1,
-          Math.round(selectedElement.height * canvasHeight),
-        )} px`;
+    if (isMultiSelection) {
+      panelSubtitle = `تحديد متعدد · ${selectedIds.length} عناصر`;
+    } else if (selectedElement.type === 'text') {
+      // النص: الأبعاد تتغير مع المحتوى، فالسطر يوضّح الخط وسلوك الصندوق بدل
+      // أرقام عابرة (53 × 521 px) لا معنى لها في وضع الملاءمة التلقائية.
+      const fontSize = Math.round(selectedElement.fontSize ?? 32);
+      const sizing = selectedElement.textSizing === 'auto' ? 'ملاءمة تلقائية' : 'عرض ثابت';
+      panelSubtitle = `${fontSize}px · ${sizing}`;
+    } else {
+      panelSubtitle = `${Math.max(1, Math.round(selectedElement.width * canvasWidth))} × ${Math.max(
+        1,
+        Math.round(selectedElement.height * canvasHeight),
+      )} px`;
+    }
   } else if (selectedSlot) {
     panelTitle = 'خصائص الخلية';
     panelSubtitle = `الخلية ${selectedSlot.cellIndex + 1}`;
@@ -171,26 +179,12 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
                         label: 'الكولاج',
                         ariaLabel: 'إعدادات الكولاج',
                         tooltip: 'التخطيط والفواصل والهوامش',
-                        icon: (
-                          <GridFour
-                            className="w-3.5 h-3.5 shrink-0"
-                            weight={generalTab === 'collage' ? 'duotone' : 'regular'}
-                          />
-                        ),
-                        className: 'px-1 gap-1',
                       },
                       {
                         id: 'canvas',
                         label: 'الورقة',
                         ariaLabel: 'إعدادات الورقة',
                         tooltip: 'أبعاد الورقة وخلفيتها',
-                        icon: (
-                          <FileText
-                            className="w-3.5 h-3.5 shrink-0"
-                            weight={generalTab === 'canvas' ? 'duotone' : 'regular'}
-                          />
-                        ),
-                        className: 'px-1 gap-1',
                       },
                     ]}
                   />
