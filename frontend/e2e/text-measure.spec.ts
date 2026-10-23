@@ -117,7 +117,7 @@ test.describe('Text measurement on a real canvas', () => {
         textSizing: 'auto',
       };
       const shortText = 'نص';
-      const longText = 'سطر طويل من النص العربي يتجاوز عرض الصندوق بكثير ليلتف على عدة أسطر';
+      const longText = 'سطر طويل من النص العربي يتجاوز عرض الصندوق ليلتف';
 
       const shortAuto = mod.fitTextGeometry({ ...base, text: shortText }, 1000, 1000);
       const longAuto = mod.fitTextGeometry({ ...base, text: longText }, 1000, 1000);
@@ -261,6 +261,8 @@ test.describe('Text measurement on a real canvas', () => {
     // الحواف مع الزوايا ويلتقط Konva أقربها بدل المقبض المقصود.
     await page.getByRole('combobox', { name: 'حجم الخط', exact: true }).click();
     await page.getByRole('option', { name: '200px', exact: true }).click();
+    await expect(page.getByRole('listbox')).toBeHidden();
+    await page.waitForFunction(() => document.body.style.pointerEvents !== 'none');
 
     const readState = () =>
       page.evaluate(() => {
@@ -409,6 +411,8 @@ test.describe('Text measurement on a real canvas', () => {
 
     await page.getByRole('combobox', { name: 'حجم الخط', exact: true }).click();
     await page.getByRole('option', { name: '200px', exact: true }).click();
+    await expect(page.getByRole('listbox')).toBeHidden();
+    await page.waitForFunction(() => document.body.style.pointerEvents !== 'none');
 
     const readState = () =>
       page.evaluate(() => {
@@ -497,6 +501,8 @@ test.describe('Text measurement on a real canvas', () => {
     // الحواف مع الزوايا ويلتقط Konva أقربها بدل المقبض المقصود.
     await page.getByRole('combobox', { name: 'حجم الخط', exact: true }).click();
     await page.getByRole('option', { name: '200px', exact: true }).click();
+    await expect(page.getByRole('listbox')).toBeHidden();
+    await page.waitForFunction(() => document.body.style.pointerEvents !== 'none');
 
     const readState = () =>
       page.evaluate(() => {

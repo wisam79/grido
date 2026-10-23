@@ -11,7 +11,7 @@
 ```mermaid
 flowchart TD
     subgraph E2E ["End-to-End (E2E Layer)"]
-        PW["Playwright (27 ملف مواصفة / 165 حالة عبر كل المشاريع · chromium في الوضع السريع)"]
+        PW["Playwright (32 ملف مواصفة / 237 حالة عبر كل المشاريع · chromium في الوضع السريع)"]
         Bridge["Wails v3 Mock Bridge (/wails/runtime Route Interceptor)"]
         PW --> Bridge
     end
