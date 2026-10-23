@@ -130,8 +130,8 @@ jobs:
 
       - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
+          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15"
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15" libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
@@ -232,8 +232,8 @@ jobs:
 
       - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
+          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15"
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15" libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
@@ -371,7 +371,7 @@ jobs:
     # E2E runs against the mocked Wails bridge, so Go-only changes cannot
     # affect it — frontend or workflow changes re-run it.
     if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.workflows == 'true'
-    timeout-minutes: 40
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -383,8 +383,8 @@ jobs:
 
       - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
+          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15"
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15" libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
@@ -616,8 +616,8 @@ jobs:
 
       - name: Install Linux System Dependencies (GTK4 & WebKitGTK 6.0)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
+          sudo apt-get update -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15"
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 -o Acquire::http::Timeout="15" -o Acquire::https::Timeout="15" libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Setup Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
