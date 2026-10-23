@@ -27,7 +27,6 @@ import { Spinner } from '@/components/ui/huge-icon';
 import {
   SquaresFour,
   Image,
-  ShieldCheck,
   Moon,
   Sun,
   Desktop,
@@ -445,14 +444,12 @@ export default function App() {
                         className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 relative rounded-md"
                         aria-label="الحساب والتراخيص"
                       >
-                        {isLicenseActive ? (
-                          <ShieldCheck className="w-4 h-4 text-emerald-500" weight="duotone" />
-                        ) : (
-                          <User className="w-4 h-4 text-muted-foreground" />
-                        )}
-                        {user?.plan === 'trial' && (
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        {user?.plan === 'trial' ? (
                           <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-background" />
-                        )}
+                        ) : isLicenseActive ? (
+                          <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-background" />
+                        ) : null}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent
