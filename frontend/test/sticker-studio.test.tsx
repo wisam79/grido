@@ -200,7 +200,7 @@ describe('Sticker Studio Unit & Component Tests', () => {
 
       try {
         renderWithProviders(<FreeformElementsTab category="stickers" />);
-        const firstCard = await screen.findByTitle(sampleTemplate.name);
+        const [firstCard] = await screen.findAllByTitle(sampleTemplate.name);
         fireEvent.click(firstCard);
 
         await waitFor(() => {

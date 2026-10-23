@@ -22,6 +22,28 @@ interface FaceInfo {
   urls: string[];
 }
 
+function extractSheetFontFaceRules(sheet: CSSStyleSheet): string[] {
+  const rulesText: string[] = [];
+  try {
+    const rules = sheet.cssRules;
+    if (rules) {
+      for (const rule of Array.from(rules)) {
+        if (rule.type === 5 && /src\s*:/i.test(rule.cssText || '')) {
+          rulesText.push(rule.cssText);
+        }
+      }
+    }
+  } catch {
+    return rulesText; // cross-origin stylesheet — غير قابلة للقراءة
+  }
+  if (rulesText.length === 0) {
+    const rawCss = sheet.ownerNode?.textContent || '';
+    const matches = rawCss.match(/@font-face\s*\{[^}]*\}/gi);
+    if (matches) rulesText.push(...matches);
+  }
+  return rulesText;
+}
+
 function collectFontFaces(families: string[]): FaceInfo[] {
   const wanted = new Set(families.map((f) => cleanFamily(f).toLowerCase()).filter(Boolean));
   if (wanted.size === 0 || typeof document === 'undefined') return [];
@@ -29,16 +51,7 @@ function collectFontFaces(families: string[]): FaceInfo[] {
   try {
     const sheets = Array.from(document.styleSheets);
     for (const sheet of sheets) {
-      let rules: CSSRuleList | null = null;
-      try {
-        rules = sheet.cssRules;
-      } catch {
-        continue; // cross-origin stylesheet — غير قابلة للقراءة
-      }
-      if (!rules) continue;
-      for (const rule of Array.from(rules)) {
-        if (rule.type !== 5) continue; // FONT_FACE_RULE
-        const css = rule.cssText || '';
+      for (const css of extractSheetFontFaceRules(sheet)) {
         const famMatch = css.match(/font-family\s*:\s*['"]?([^;'"]+)/i);
         if (!famMatch) continue;
         const fam = famMatch[1].trim().replace(/['"]/g, '');
@@ -53,8 +66,8 @@ function collectFontFaces(families: string[]): FaceInfo[] {
           urls.push(u);
         }
         if (urls.length === 0) continue;
-        const wMatch = css.match(/font-weight\s*:\s*([^;]+)/i);
-        const sMatch = css.match(/font-style\s*:\s*([^;]+)/i);
+        const wMatch = css.match(/font-weight\s*:\s*([^;}]+)/i);
+        const sMatch = css.match(/font-style\s*:\s*([^;}]+)/i);
         const rangeMatch = css.match(/unicode-range\s*:\s*([^;}]+)/i);
         out.push({
           family: fam,
@@ -118,7 +131,19 @@ export async function embedStickerFonts(svg: string, families: string[]): Promis
   const blocks: string[] = [];
   for (const face of faces) {
     for (const url of face.urls.slice(0, 1)) {
-      const dataUrl = await urlToDataUrl(new URL(url, document.baseURI).toString());
+      let resolvedUrl = url;
+      try {
+        const base =
+          typeof window !== 'undefined' && /^https?:/i.test(window.location?.href || '')
+            ? window.location.href
+            : document.baseURI;
+        if (/^https?:/i.test(base)) {
+          resolvedUrl = new URL(url, base).toString();
+        }
+      } catch {
+        resolvedUrl = url;
+      }
+      const dataUrl = await urlToDataUrl(resolvedUrl);
       if (!dataUrl) continue;
       const safeFam = face.family.replace(/['"<>]/g, '');
       const range = face.unicodeRange ? `unicode-range:${face.unicodeRange};` : '';
