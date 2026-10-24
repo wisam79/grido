@@ -26,6 +26,7 @@ import {
   isIdCardAspectRatio,
 } from './quad-geometry';
 import { STACKED_SPLIT_MIN_RATIO, STACKED_SPLIT_MAX_RATIO } from './types';
+import { detectDocumentViaGo } from './warp-client';
 
 import type {
   Point,
@@ -401,6 +402,33 @@ export async function detectDocumentAuto(
   };
 
   try {
+    // 🚀 المسار الأصلي في Go أولاً: كشف فائق الدقة بـ FastViT-SA24 مع أركان Heatmap دقيقة
+    if (!engineOverride && typeof window !== 'undefined' && 'src' in src && src.src) {
+      const nativeResult = await detectDocumentViaGo(src as HTMLImageElement);
+      if (
+        nativeResult &&
+        nativeResult.confidence >= ML_STANDALONE_MIN &&
+        nativeResult.corners.length === 4
+      ) {
+        const validated = validateRawQuad(
+          nativeResult.corners,
+          nativeResult.confidence,
+          originalWidth,
+          originalHeight,
+          ML_STANDALONE_MIN,
+        );
+        if (validated) {
+          const doc = buildDoc(0, validated);
+          return {
+            corners: doc.corners,
+            confidence: doc.confidence,
+            method: 'scanic',
+            documents: [doc],
+          };
+        }
+      }
+    }
+
     const ingest = buildIngestCanvas(src as HTMLImageElement, ML_INGEST_SIZE);
     try {
       const found: ValidatedQuad[] = [];

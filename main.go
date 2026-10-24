@@ -499,22 +499,25 @@ func createAssetHandler(app *App) http.Handler {
 	var imageProc *service.ImageProcessorService
 	var mediaSvc *service.MediaService
 	var scannerWarp *service.ScannerWarpService
+	var scannerDetector *service.ScannerDetectorService
 	if app != nil {
 		memorySvc = app.memorySvc
 		imageProc = app.imageProc
 		mediaSvc = app.mediaSvc
 		if mediaSvc != nil {
 			scannerWarp = service.NewScannerWarpService(mediaSvc)
+			scannerDetector = service.NewScannerDetectorService(imageProc, mediaSvc)
 		}
 	}
 
 	return server.NewAssetHandler(server.AssetServerDeps{
-		FileServer:   application.AssetFileServerFS(assets),
-		SessionToken: localApiSessionToken,
-		MemorySvc:    memorySvc,
-		ImageProc:    imageProc,
-		MediaSvc:     mediaSvc,
-		ScannerWarp:  scannerWarp,
+		FileServer:      application.AssetFileServerFS(assets),
+		SessionToken:    localApiSessionToken,
+		MemorySvc:       memorySvc,
+		ImageProc:       imageProc,
+		MediaSvc:        mediaSvc,
+		ScannerWarp:     scannerWarp,
+		ScannerDetector: scannerDetector,
 	})
 }
 

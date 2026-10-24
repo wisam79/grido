@@ -16,6 +16,7 @@ import type { DocumentAspectType, Point, ScannerFilterMode } from '../core/types
  */
 
 export const SCANNER_WARP_ENDPOINT = '/api/scanner-warp';
+export const SCANNER_DETECT_ENDPOINT = '/api/scanner-detect';
 
 /** يستخرج مسار الوسائط المحلي النظيف (يبدأ بـ /local-image/) من أي رابط مطلق أو نسبي. */
 export function extractLocalImagePath(rawUrl: string | null | undefined): string | null {
@@ -185,4 +186,76 @@ export async function warpDocumentViaGo(
     width: typeof data.width === 'number' ? data.width : 0,
     height: typeof data.height === 'number' ? data.height : 0,
   };
+}
+
+export interface NativeDetectResult {
+  corners: Point[];
+  confidence: number;
+  width: number;
+  height: number;
+}
+
+/** ينفّذ كشف المستند العصبي عالي الدقة عبر Go (FastViT-SA24) من مسار الصورة المحلي. */
+export async function detectDocumentViaGo(
+  img: HTMLImageElement,
+): Promise<NativeDetectResult | null> {
+  let sourceUrl =
+    extractLocalImagePath(img.getAttribute?.('src')) ||
+    extractLocalImagePath(img.currentSrc) ||
+    extractLocalImagePath(img.src);
+
+  if (
+    !sourceUrl &&
+    (img.src?.startsWith('blob:') ||
+      img.src?.startsWith('data:') ||
+      img.currentSrc?.startsWith('blob:'))
+  ) {
+    try {
+      const srcToFetch = img.currentSrc || img.src;
+      const resp = await fetch(srcToFetch);
+      const blob = await resp.blob();
+      const uploaded = await uploadMediaBlob(blob, 'scanner_input.png');
+      sourceUrl = extractLocalImagePath(uploaded.imageSrc);
+    } catch {
+      // upload failed
+    }
+  }
+
+  if (!sourceUrl || !sourceUrl.startsWith('/local-image/')) {
+    return null;
+  }
+
+  try {
+    const response = await fetchLocalApi(SCANNER_DETECT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceUrl }),
+    });
+
+    if (!response.ok) return null;
+    const payload = (await response.json()) as {
+      status?: string;
+      corners?: Point[];
+      confidence?: number;
+      width?: number;
+      height?: number;
+    };
+
+    if (
+      payload.status === 'success' &&
+      Array.isArray(payload.corners) &&
+      payload.corners.length === 4
+    ) {
+      return {
+        corners: payload.corners,
+        confidence: typeof payload.confidence === 'number' ? payload.confidence : 0.85,
+        width: typeof payload.width === 'number' ? payload.width : img.naturalWidth || img.width,
+        height:
+          typeof payload.height === 'number' ? payload.height : img.naturalHeight || img.height,
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }

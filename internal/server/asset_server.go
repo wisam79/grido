@@ -20,13 +20,14 @@ import (
 )
 
 type AssetServerDeps struct {
-	FileServer   http.Handler
-	SessionToken string
-	MemorySvc    *service.MemoryService
-	ImageProc    *service.ImageProcessorService
-	MediaSvc     *service.MediaService
-	ScannerWarp  *service.ScannerWarpService
-	Runtime      domain.RuntimeBridge
+	FileServer      http.Handler
+	SessionToken    string
+	MemorySvc       *service.MemoryService
+	ImageProc       *service.ImageProcessorService
+	MediaSvc        *service.MediaService
+	ScannerWarp     *service.ScannerWarpService
+	ScannerDetector *service.ScannerDetectorService
+	Runtime         domain.RuntimeBridge
 }
 
 // AssetServer خادم HTTP للمسارات المحلية والأصول الثابتة وحوارات حفظ الملفات
@@ -250,6 +251,41 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"url":    result.URL,
 			"width":  result.Width,
 			"height": result.Height,
+		})
+		return
+	}
+
+	if r.Method == http.MethodPost && r.URL.Path == "/api/scanner-detect" {
+		const maxScannerDetectBody = 16 * 1024
+		body, readErr := io.ReadAll(io.LimitReader(r.Body, maxScannerDetectBody+1))
+		if readErr != nil || len(body) > maxScannerDetectBody {
+			http.Error(w, "Request body exceeds size limit", http.StatusBadRequest)
+			return
+		}
+		var req struct {
+			SourceURL string `json:"sourceUrl"`
+		}
+		if err := json.Unmarshal(body, &req); err != nil {
+			http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+			return
+		}
+		if deps.ScannerDetector == nil {
+			http.Error(w, "Scanner detector service unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		result, err := deps.ScannerDetector.DetectDocumentCorners(req.SourceURL)
+		if err != nil {
+			http.Error(w, "Scanner detect failed: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status":     "success",
+			"corners":    result.Corners,
+			"confidence": result.Confidence,
+			"width":      result.Width,
+			"height":     result.Height,
 		})
 		return
 	}
