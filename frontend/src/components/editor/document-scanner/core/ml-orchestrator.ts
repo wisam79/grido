@@ -121,9 +121,12 @@ export class MlWorkerClient {
     if (this.worker) return this.worker;
     if (!this.isAvailable()) return null;
     try {
-      const worker = new Worker(new URL('../../../workers/scanner-ml.worker.ts', import.meta.url), {
-        type: 'module',
-      });
+      const worker = new Worker(
+        new URL('../../../../workers/scanner-ml.worker.ts', import.meta.url),
+        {
+          type: 'module',
+        },
+      );
       worker.onmessage = (event: MessageEvent<MlWorkerResponse>) => {
         const message = event.data;
         if (!message || typeof message.requestId !== 'number') return;
