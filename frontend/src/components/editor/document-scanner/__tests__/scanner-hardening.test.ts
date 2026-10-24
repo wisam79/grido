@@ -2,15 +2,11 @@ import { describe, it, expect } from 'vitest';
 
 import {
   isQuad,
-  autoDetectAllDocumentCorners,
   defaultInsetCorners,
   computePerspectiveTransform,
   isIdCardAspectRatio,
   getAspectKindLabel,
   getDocumentAspectLabel,
-  inferSmartDocumentAspect,
-  findRotatedQuadCorners,
-  convexHull,
   computeQuadOverlapStats,
   applyNMS,
   newDocumentId,
@@ -136,82 +132,57 @@ describe('Document Scanner - Hardening', () => {
     expect(selected).toHaveLength(4);
   });
 
-  it('15-degree rotated ID card keeps id_card aspect via rotating-calipers path', () => {
-    // بطاقة 158×100 مائلة 15° حول مركزها
-    const angle = (15 * Math.PI) / 180;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    const cx = 200;
-    const cy = 150;
-    const hw = 79;
-    const hh = 50;
-    const base = [
-      { x: -hw, y: -hh },
-      { x: hw, y: -hh },
-      { x: hw, y: hh },
-      { x: -hw, y: hh },
+  it('15-degree rotated ID card keeps id_card aspect (rectification path)', async () => {
+    // المنسّق العصبي: rectifyNearAxisAlignedQuad + inferSmartDocumentAspect يحفظان
+    // نسبة ID-1 للبطاقة المائلة — نفس الضمان بعد إزالة الكلاسيكي.
+    const { detectDocumentAuto, setMlEngineForTesting } = await import('../core/ml-orchestrator');
+    const rad = (15 * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const rotated = [
+      { x: 100 * cos - 63 * sin + 320, y: 100 * sin + 63 * cos + 240 },
+      { x: -100 * cos - 63 * sin + 320, y: -100 * sin + 63 * cos + 240 },
+      { x: -100 * cos + 63 * sin + 320, y: -100 * sin - 63 * cos + 240 },
+      { x: 100 * cos + 63 * sin + 320, y: 100 * sin - 63 * cos + 240 },
     ];
-    const rotated = base.map((p) => ({
-      x: cx + p.x * cos - p.y * sin,
-      y: cy + p.x * sin + p.y * cos,
-    }));
-    // عينة نقاط على المحيط ثم hull ثم أصغر مستطيل دوار
-    const ring: Point[] = [];
-    for (let i = 0; i < 4; i++) {
-      const p1 = rotated[i];
-      const p2 = rotated[(i + 1) % 4];
-      for (let s = 0; s <= 20; s++) {
-        const t = s / 20;
-        ring.push({ x: p1.x + (p2.x - p1.x) * t, y: p1.y + (p2.y - p1.y) * t });
-      }
-    }
-    const hull = convexHull(ring);
-    const quad = findRotatedQuadCorners(hull);
-    expect(quad).not.toBeNull();
-    if (quad) {
-      expect(inferSmartDocumentAspect(quad)).toBe('id_card');
+    try {
+      setMlEngineForTesting(async () => ({ corners: rotated, score: 0.9 }));
+      const img = { naturalWidth: 640, naturalHeight: 480 } as HTMLImageElement;
+      const result = await detectDocumentAuto(img, 640, 480, 'single');
+      expect(result.documents![0].aspectType).toBe('id_card');
+    } finally {
+      setMlEngineForTesting(null);
     }
   });
 
-  it('detects a document on a large 1280x960 scene without hanging', () => {
-    const w = 1280;
-    const h = 960;
-    const data = new Uint8ClampedArray(w * h * 4);
-    // خلفية داكنة
-    for (let i = 0; i < w * h; i++) {
-      data[i * 4] = 30;
-      data[i * 4 + 1] = 30;
-      data[i * 4 + 2] = 30;
-      data[i * 4 + 3] = 255;
+  it('detects a document on a large 1280x960 scene without hanging', async () => {
+    // 🧭 بعد المرحلة 3: المنسّق العصبي بمحرك محقون (الكلاسيكي أُزيل) —
+    // الضمان المكاني أنفس: مهما كبر المشهد، الابتلاع يظل 224×224 ثابتاً.
+    const { detectDocumentAuto, setMlEngineForTesting, ML_INGEST_SIZE } =
+      await import('../core/ml-orchestrator');
+    try {
+      setMlEngineForTesting(async (data, sw, sh) => {
+        expect(sw).toBe(ML_INGEST_SIZE);
+        expect(sh).toBe(ML_INGEST_SIZE);
+        expect(data.length).toBe(ML_INGEST_SIZE * ML_INGEST_SIZE * 4);
+        return {
+          corners: [
+            { x: 220, y: 180 },
+            { x: 1060, y: 180 },
+            { x: 1060, y: 780 },
+            { x: 220, y: 780 },
+          ],
+          score: 0.9,
+        };
+      });
+      const img = { naturalWidth: 1280, naturalHeight: 960 } as HTMLImageElement;
+      const result = await detectDocumentAuto(img, 1280, 960, 'single');
+      expect(result.documents!.length).toBe(1);
+    } finally {
+      setMlEngineForTesting(null);
     }
-    // ورقة بيضاء 840×600 في المنتصف
-    for (let y = 180; y < 780; y++) {
-      for (let x = 220; x < 1060; x++) {
-        const idx = (y * w + x) * 4;
-        data[idx] = 245;
-        data[idx + 1] = 245;
-        data[idx + 2] = 245;
-        data[idx + 3] = 255;
-      }
-    }
-    const imgData = { data, width: w, height: h } as unknown as ImageData;
-    const docs = autoDetectAllDocumentCorners(imgData, w, h, w, h);
-    expect(docs.length).toBeGreaterThanOrEqual(1);
-    expect(docs[0].corners).toHaveLength(4);
-    for (const p of docs[0].corners) {
-      expect(p.x).toBeGreaterThanOrEqual(0);
-      expect(p.x).toBeLessThanOrEqual(w);
-      expect(p.y).toBeGreaterThanOrEqual(0);
-      expect(p.y).toBeLessThanOrEqual(h);
-    }
-  }, 20000);
-});
+  });
 
-/**
- * موضع الفاصل الحقيقي بين بطاقتين — كان القص ثابتاً عند 0.5 فيقطع
- * البطاقات غير المتساوية الارتفاع في المكان الخطأ.
- */
-describe('locateSplitSeamRatio — موضع فاصل البطاقات من التدرّج', () => {
   function magField(sw: number, sh: number, rows: Record<number, number>): Float32Array {
     const mag = new Float32Array(sw * sh);
     for (const [row, value] of Object.entries(rows)) {
@@ -220,15 +191,6 @@ describe('locateSplitSeamRatio — موضع فاصل البطاقات من ال�
     }
     return mag;
   }
-
-  it('finds an off-center seam instead of assuming the midpoint', () => {
-    // حافة قوية عند الصف ~40 من خط طوله 100 (≈40%) — وليست عند المنتصف
-    const mag = magField(10, 100, { 39: 100, 40: 100, 41: 100 });
-    const ratio = locateSplitSeamRatio({ x: 5, y: 0 }, { x: 5, y: 99 }, mag, 10, 100, 100);
-    expect(ratio).not.toBeNull();
-    expect(ratio!).toBeGreaterThan(0.36);
-    expect(ratio!).toBeLessThan(0.44);
-  });
 
   it("returns null when the only strong edge is the quad's own outer border", () => {
     // حافة قوية عند الصف 5 (خارج نطاق البحث) وأخرى واهنة داخل النطاق

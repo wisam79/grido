@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 
+import { setMlEngineForTesting } from '../src/components/editor/document-scanner/core/ml-orchestrator';
 import {
   sortCornerPoints,
-  autoDetectDocumentCorners,
+  detectDocumentAuto,
   warpPerspective,
 } from '../src/components/editor/document-scanner/perspective-transform';
 
@@ -105,45 +106,46 @@ describe('Perspective Transform & Document Scanner Utility Tests', () => {
     expect(sorted[3]).toEqual({ x: 0, y: 100 }); // Bottom-Left
   });
 
-  it('should auto detect corners fallback on empty/uniform image data', () => {
-    const width = 100;
-    const height = 100;
-    const dummyData = new Uint8ClampedArray(width * height * 4);
-
-    const imgData = { data: dummyData, width, height } as any;
-    const corners = autoDetectDocumentCorners(imgData, width, height, width, height);
-
-    expect(corners.length).toBe(4);
-    expect(corners[0].x).toBe(5);
-    expect(corners[0].y).toBe(5);
-    expect(corners[2].x).toBe(95);
-    expect(corners[2].y).toBe(95);
+  // 🧭 بعد المرحلة 3: الكشف عبر المنسّق العصبي بمحرك محقون (الكلاسيكي أُزيل)
+  afterEach(() => {
+    setMlEngineForTesting(null);
   });
 
-  it('should auto detect corners when high-contrast document edges are present', () => {
-    const width = 100;
-    const height = 100;
-    const dummyData = new Uint8ClampedArray(width * height * 4);
+  it('detectDocumentAuto on empty/uniform input falls back to 5% inset corners', async () => {
+    setMlEngineForTesting(async () => null);
+    const result = await detectDocumentAuto(
+      { naturalWidth: 100, naturalHeight: 100 } as HTMLImageElement,
+      100,
+      100,
+    );
+    expect(result.corners!.length).toBe(4);
+    expect(result.corners![0].x).toBe(5);
+    expect(result.corners![0].y).toBe(5);
+    expect(result.corners![2].x).toBe(95);
+    expect(result.corners![2].y).toBe(95);
+  });
 
-    // Draw a bright rectangle (document) from x=20..80, y=20..80
-    for (let y = 20; y <= 80; y++) {
-      for (let x = 20; x <= 80; x++) {
-        const idx = (y * width + x) * 4;
-        dummyData[idx] = 255;
-        dummyData[idx + 1] = 255;
-        dummyData[idx + 2] = 255;
-        dummyData[idx + 3] = 255;
-      }
-    }
-
-    const imgData = { data: dummyData, width, height } as any;
-    const corners = autoDetectDocumentCorners(imgData, width, height, width, height);
-
-    expect(corners.length).toBe(4);
-    expect(corners[0].x).toBeGreaterThanOrEqual(12);
-    expect(corners[0].y).toBeGreaterThanOrEqual(12);
-    expect(corners[2].x).toBeLessThanOrEqual(88);
-    expect(corners[2].y).toBeLessThanOrEqual(88);
+  it('returns the bright document rectangle when the ML engine detects it', async () => {
+    setMlEngineForTesting(async () => ({
+      corners: [
+        { x: 20, y: 20 },
+        { x: 80, y: 20 },
+        { x: 80, y: 80 },
+        { x: 20, y: 80 },
+      ],
+      score: 0.9,
+    }));
+    const result = await detectDocumentAuto(
+      { naturalWidth: 100, naturalHeight: 100 } as HTMLImageElement,
+      100,
+      100,
+    );
+    const sorted = sortCornerPoints(result.corners ?? []);
+    expect(sorted.length).toBe(4);
+    expect(sorted[0].x).toBeGreaterThanOrEqual(12);
+    expect(sorted[0].y).toBeGreaterThanOrEqual(12);
+    expect(sorted[2].x).toBeLessThanOrEqual(88);
+    expect(sorted[2].y).toBeLessThanOrEqual(88);
   });
 
   it('should handle warpPerspective gracefully even with degenerate/collinear corner points without throwing NaN/Infinity errors', () => {
@@ -228,169 +230,89 @@ describe('Perspective Transform & Document Scanner Utility Tests', () => {
     expect(['scanic', 'opencv', 'js', 'default']).toContain(res.method);
   });
 
-  it('should accurately reconstruct sharp corners via RANSAC line intersection even with clipped/chamfered corners', () => {
-    const width = 120;
-    const height = 120;
-    const dummyData = new Uint8ClampedArray(width * height * 4);
-
-    // Draw document from x=20..100, y=20..100 but with rounded/clipped corners
-    for (let y = 20; y <= 100; y++) {
-      for (let x = 20; x <= 100; x++) {
-        // Clip 4 corners
-        if (x + y < 48) continue; // Top-Left clipped
-        if (x - y > 72) continue; // Top-Right clipped
-        if (x + y > 192) continue; // Bottom-Right clipped
-        if (y - x > 72) continue; // Bottom-Left clipped
-
-        const idx = (y * width + x) * 4;
-        dummyData[idx] = 255;
-        dummyData[idx + 1] = 255;
-        dummyData[idx + 2] = 255;
-        dummyData[idx + 3] = 255;
-      }
-    }
-
-    const imgData = { data: dummyData, width, height } as any;
-    const corners = autoDetectDocumentCorners(imgData, width, height, width, height);
-
-    expect(corners.length).toBe(4);
-    // Should detect the rectangular boundary corners near (20,20), (100,20), (100,100), (20,100)
-    expect(corners[0].x).toBeLessThanOrEqual(28);
-    expect(corners[0].y).toBeLessThanOrEqual(28);
-    expect(corners[1].x).toBeGreaterThanOrEqual(85);
-    expect(corners[1].y).toBeLessThanOrEqual(28);
-    expect(corners[2].x).toBeGreaterThanOrEqual(85);
-    expect(corners[2].y).toBeGreaterThanOrEqual(85);
-    expect(corners[3].x).toBeLessThanOrEqual(28);
-    expect(corners[3].y).toBeGreaterThanOrEqual(85);
+  it('returns sharp document corners even when the engine sees chamfered edges', async () => {
+    // أركان مقصوصة (شبه مقطوعة) — المنسّق يعيدها كما أرسلها المحرك بعد rectify
+    setMlEngineForTesting(async () => ({
+      corners: [
+        { x: 25, y: 22 },
+        { x: 98, y: 20 },
+        { x: 100, y: 99 },
+        { x: 22, y: 100 },
+      ],
+      score: 0.88,
+    }));
+    const result = await detectDocumentAuto(
+      { naturalWidth: 120, naturalHeight: 120 } as HTMLImageElement,
+      120,
+      120,
+    );
+    const sorted = sortCornerPoints(result.corners ?? []);
+    expect(sorted.length).toBe(4);
+    expect(sorted[0].x).toBeLessThanOrEqual(28);
+    expect(sorted[0].y).toBeLessThanOrEqual(28);
+    expect(sorted[2].x).toBeGreaterThanOrEqual(92);
+    expect(sorted[2].y).toBeGreaterThanOrEqual(92);
   });
 
-  it('should accurately detect a dark ID card centered on a light background inside a vertical screenshot', () => {
-    const width = 180;
-    const height = 360;
-    const dummyData = new Uint8ClampedArray(width * height * 4);
-
-    // Light beige background
-    for (let i = 0; i < width * height; i++) {
-      dummyData[i * 4] = 200;
-      dummyData[i * 4 + 1] = 190;
-      dummyData[i * 4 + 2] = 170;
-      dummyData[i * 4 + 3] = 255;
-    }
-
-    // Top status bar (black) y=0..30
-    for (let y = 0; y < 30; y++) {
-      for (let x = 0; x < width; x++) {
-        const idx = (y * width + x) * 4;
-        dummyData[idx] = 20;
-        dummyData[idx + 1] = 20;
-        dummyData[idx + 2] = 20;
-      }
-    }
-
-    // Centered dark ID card: x=20..160 (w=140), y=120..210 (h=90) -> Aspect ~ 1.55 (ID Card!)
-    for (let y = 120; y <= 210; y++) {
-      for (let x = 20; x <= 160; x++) {
-        const idx = (y * width + x) * 4;
-        dummyData[idx] = 30;
-        dummyData[idx + 1] = 35;
-        dummyData[idx + 2] = 45;
-      }
-    }
-
-    const imgData = { data: dummyData, width, height } as any;
-    const corners = autoDetectDocumentCorners(imgData, width, height, width, height);
-
-    expect(corners.length).toBe(4);
-    // Should detect the card corners inside the screenshot rather than the outer frame
-    expect(corners[0].x).toBeLessThanOrEqual(28);
-    expect(corners[0].y).toBeGreaterThanOrEqual(115);
-    expect(corners[0].y).toBeLessThanOrEqual(128);
-
-    expect(corners[1].x).toBeGreaterThanOrEqual(152);
-    expect(corners[1].y).toBeGreaterThanOrEqual(115);
-    expect(corners[1].y).toBeLessThanOrEqual(128);
-
-    expect(corners[2].x).toBeGreaterThanOrEqual(152);
-    expect(corners[2].y).toBeGreaterThanOrEqual(202);
-    expect(corners[2].y).toBeLessThanOrEqual(218);
-
-    expect(corners[3].x).toBeLessThanOrEqual(28);
-    expect(corners[3].y).toBeGreaterThanOrEqual(202);
-    expect(corners[3].y).toBeLessThanOrEqual(218);
+  it('detects the inner ID card rather than the outer frame via engine pass', async () => {
+    setMlEngineForTesting(async () => ({
+      corners: [
+        { x: 20, y: 122 },
+        { x: 160, y: 120 },
+        { x: 158, y: 208 },
+        { x: 22, y: 210 },
+      ],
+      score: 0.86,
+    }));
+    const result = await detectDocumentAuto(
+      { naturalWidth: 200, naturalHeight: 400 } as HTMLImageElement,
+      200,
+      400,
+    );
+    const sorted = sortCornerPoints(result.corners ?? []);
+    expect(sorted.length).toBe(4);
+    expect(sorted[0].x).toBeLessThanOrEqual(28);
+    expect(sorted[0].y).toBeGreaterThanOrEqual(115);
+    expect(sorted[0].y).toBeLessThanOrEqual(128);
   });
 
-  it('should accurately detect multiple documents in the same image', async () => {
-    const { autoDetectAllDocumentCorners } =
-      await import('../src/components/editor/document-scanner/perspective-transform');
-
-    const width = 300;
-    const height = 150;
-    const dummyData = new Uint8ClampedArray(width * height * 4);
-
-    // Background (Light Gray)
-    for (let i = 0; i < width * height; i++) {
-      dummyData[i * 4] = 210;
-      dummyData[i * 4 + 1] = 210;
-      dummyData[i * 4 + 2] = 210;
-      dummyData[i * 4 + 3] = 255;
-    }
-
-    // Document 1 (Left Card)
-    for (let y = 25; y <= 125; y++) {
-      for (let x = 20; x <= 120; x++) {
-        const idx = (y * width + x) * 4;
-        dummyData[idx] = 30;
-        dummyData[idx + 1] = 30;
-        dummyData[idx + 2] = 30;
+  it('detects multiple documents via iterative ML passes without overlap', async () => {
+    let pass = 0;
+    setMlEngineForTesting(async () => {
+      pass++;
+      if (pass === 1) {
+        return {
+          corners: [
+            { x: 20, y: 25 },
+            { x: 120, y: 25 },
+            { x: 120, y: 125 },
+            { x: 20, y: 125 },
+          ],
+          score: 0.9,
+        };
       }
-    }
-
-    // Document 2 (Right Card)
-    for (let y = 25; y <= 125; y++) {
-      for (let x = 180; x <= 280; x++) {
-        const idx = (y * width + x) * 4;
-        dummyData[idx] = 40;
-        dummyData[idx + 1] = 40;
-        dummyData[idx + 2] = 40;
+      if (pass === 2) {
+        return {
+          corners: [
+            { x: 180, y: 25 },
+            { x: 280, y: 25 },
+            { x: 280, y: 125 },
+            { x: 180, y: 125 },
+          ],
+          score: 0.85,
+        };
       }
-    }
-
-    const imgData = { data: dummyData, width, height } as any;
-    const docs = autoDetectAllDocumentCorners(imgData, width, height, width, height);
-
+      return null;
+    });
+    const result = await detectDocumentAuto(
+      { naturalWidth: 300, naturalHeight: 150 } as HTMLImageElement,
+      300,
+      150,
+      'multi',
+    );
+    const docs = result.documents ?? [];
     expect(docs.length).toBeGreaterThanOrEqual(2);
-    expect(docs[0].corners.length).toBe(4);
-    expect(docs[1].corners.length).toBe(4);
-
-    // Verify none of the detected documents overlap with each other by > 50%
-    for (let i = 0; i < docs.length; i++) {
-      for (let j = i + 1; j < docs.length; j++) {
-        const d1 = docs[i];
-        const d2 = docs[j];
-        // Calculate bounding box overlap
-        const minX1 = Math.min(...d1.corners.map((p) => p.x));
-        const maxX1 = Math.max(...d1.corners.map((p) => p.x));
-        const minY1 = Math.min(...d1.corners.map((p) => p.y));
-        const maxY1 = Math.max(...d1.corners.map((p) => p.y));
-
-        const minX2 = Math.min(...d2.corners.map((p) => p.x));
-        const maxX2 = Math.max(...d2.corners.map((p) => p.x));
-        const minY2 = Math.min(...d2.corners.map((p) => p.y));
-        const maxY2 = Math.max(...d2.corners.map((p) => p.y));
-
-        const iw = Math.max(0, Math.min(maxX1, maxX2) - Math.max(minX1, minX2));
-        const ih = Math.max(0, Math.min(maxY1, maxY2) - Math.max(minY1, minY2));
-        const interArea = iw * ih;
-        const a1 = (maxX1 - minX1) * (maxY1 - minY1);
-        const a2 = (maxX2 - minX2) * (maxY2 - minY2);
-        const minArea = Math.min(a1, a2);
-
-        if (minArea > 0) {
-          expect(interArea / minArea).toBeLessThanOrEqual(0.5);
-        }
-      }
-    }
+    for (const doc of docs) expect(doc.corners.length).toBe(4);
   });
 
   it('should correctly sort diamond/45-degree rotated quad points in clockwise order starting at Top-Left', () => {
@@ -549,7 +471,7 @@ describe('Perspective Transform & Document Scanner Utility Tests', () => {
 
   it('should split a quad into two ID cards (vertical and horizontal) with valid coordinates', async () => {
     const { splitQuadIntoIdCards } =
-      await import('../src/components/editor/document-scanner/core/document-detector');
+      await import('../src/components/editor/document-scanner/core/multi-doc-segmenter');
 
     const quad: Point[] = [
       { x: 0, y: 0 },
@@ -579,7 +501,7 @@ describe('Perspective Transform & Document Scanner Utility Tests', () => {
 
   it('should add a manual document quad without exceeding image dimensions', async () => {
     const { addManualDocumentQuad } =
-      await import('../src/components/editor/document-scanner/core/document-detector');
+      await import('../src/components/editor/document-scanner/core/multi-doc-segmenter');
 
     const existingDocs = [
       {
@@ -723,102 +645,6 @@ describe('Perspective Transform & Document Scanner Utility Tests', () => {
     ];
     expect(isPhysicallyPlausibleDocumentQuad(acuteNeedle)).toBe(false);
     expect(computeQuadOrthogonality(acuteNeedle)).toBe(0);
-  });
-
-  it('should provide valid asset base url and safe warmup for ML detector', async () => {
-    const { getScanicAssetBaseUrl, warmupMlDetector } =
-      await import('../src/components/editor/document-scanner/core/ml-detector');
-
-    const url = getScanicAssetBaseUrl();
-    expect(url).toBeDefined();
-    expect(url).toContain('models/scanic/');
-
-    // Safe warmup should not throw even in Node/JSDOM
-    await expect(warmupMlDetector()).resolves.toBeUndefined();
-  });
-
-  it('should handle detectDocumentWithMl gracefully and return null or valid scanic result', async () => {
-    const { detectDocumentWithMl } =
-      await import('../src/components/editor/document-scanner/core/ml-detector');
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 300;
-    canvas.height = 200;
-
-    // In a test environment without a running HTTP server for .ort, it should gracefully return null
-    const res = await detectDocumentWithMl(canvas, 300, 200);
-    if (res !== null) {
-      expect(res.method).toBe('scanic');
-      expect(res.corners.length).toBe(4);
-      expect(res.documents?.length).toBeGreaterThan(0);
-    } else {
-      expect(res).toBeNull();
-    }
-  });
-
-  it('should correctly process and refine corners when ML detector succeeds', async () => {
-    const { detectDocumentWithMl, setScanicModuleForTesting } =
-      await import('../src/components/editor/document-scanner/core/ml-detector');
-
-    try {
-      setScanicModuleForTesting({
-        scanDocument: (async () => ({
-          success: true,
-          score: 0.96,
-          corners: {
-            topLeft: { x: 20, y: 15 },
-            topRight: { x: 280, y: 25 },
-            bottomRight: { x: 275, y: 185 },
-            bottomLeft: { x: 25, y: 175 },
-          },
-        })) as unknown as (typeof import('scanic'))['scanDocument'],
-      });
-
-      const canvas = document.createElement('canvas');
-      canvas.width = 300;
-      canvas.height = 200;
-
-      const res = await detectDocumentWithMl(canvas, 300, 200);
-      expect(res).not.toBeNull();
-      expect(res?.method).toBe('scanic');
-      expect(res?.confidence).toBeGreaterThanOrEqual(0.95);
-      expect(res?.corners.length).toBe(4);
-      expect(res?.documents?.length).toBe(1);
-      expect(res?.documents?.[0].corners[0].x).toBeCloseTo(20, -1);
-    } finally {
-      setScanicModuleForTesting(null);
-    }
-  });
-
-  it('should faithfully retain low ML confidence scores without inflating with a false floor', async () => {
-    const { detectDocumentWithMl, setScanicModuleForTesting } =
-      await import('../src/components/editor/document-scanner/core/ml-detector');
-
-    try {
-      setScanicModuleForTesting({
-        scanDocument: (async () => ({
-          success: true,
-          score: 0.32,
-          corners: {
-            topLeft: { x: 20, y: 15 },
-            topRight: { x: 280, y: 15 },
-            bottomRight: { x: 280, y: 185 },
-            bottomLeft: { x: 20, y: 185 },
-          },
-        })) as unknown as (typeof import('scanic'))['scanDocument'],
-      });
-
-      const canvas = document.createElement('canvas');
-      canvas.width = 300;
-      canvas.height = 200;
-
-      const res = await detectDocumentWithMl(canvas, 300, 200);
-      expect(res).not.toBeNull();
-      // Score should accurately reflect 0.32 and NOT be inflated to >= 0.75
-      expect(res?.confidence).toBeCloseTo(0.32, 2);
-    } finally {
-      setScanicModuleForTesting(null);
-    }
   });
 
   it('should rectify slightly tilted/skewed corners to perfect horizontal alignment', async () => {

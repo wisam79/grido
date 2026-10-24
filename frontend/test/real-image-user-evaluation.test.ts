@@ -5,7 +5,7 @@ import zlib from 'zlib';
 import { describe, it, expect } from 'vitest';
 
 import {
-  autoDetectAllDocumentCorners,
+  detectDocumentAuto,
   sortCornerPoints,
   computePerspectiveTransform,
 } from '../src/components/editor/document-scanner/perspective-transform';
@@ -137,7 +137,7 @@ describe('Document Scanner - Real Image Evaluation', () => {
   // كان `return` يجعل Vitest يعدّه ناجحاً ويمنح ثقة كاذبة بالكشف الحقيقي.
   const realImagePath = path.resolve(__dirname, 'fixtures/document-scanner/sample-photo.png');
 
-  it('analyzes the uploaded photo and detects the two Iraqi ID cards with precision', (ctx) => {
+  it('analyzes the uploaded photo and detects the two Iraqi ID cards with precision', async (ctx) => {
     if (!fs.existsSync(realImagePath)) {
       ctx.skip();
       return;
@@ -152,14 +152,18 @@ describe('Document Scanner - Real Image Evaluation', () => {
     expect(height).toBeGreaterThan(0);
     expect(rgba.length).toBe(width * height * 4);
 
-    const imgData = {
-      data: rgba,
+    const canvas = {
       width,
       height,
-    } as unknown as ImageData;
+      _mockData: rgba,
+      getContext: () => ({
+        getImageData: () => ({ data: rgba, width, height }),
+      }),
+    } as unknown as HTMLCanvasElement;
 
     // Run multi-document detection
-    const docs = autoDetectAllDocumentCorners(imgData, width, height, width, height);
+    const result = await detectDocumentAuto(canvas, width, height, 'multi');
+    const docs = result.documents || [];
 
     console.log('Detected Documents Count:', docs.length);
     for (const [idx, doc] of docs.entries()) {

@@ -498,10 +498,14 @@ func createAssetHandler(app *App) http.Handler {
 	var memorySvc *service.MemoryService
 	var imageProc *service.ImageProcessorService
 	var mediaSvc *service.MediaService
+	var scannerWarp *service.ScannerWarpService
 	if app != nil {
 		memorySvc = app.memorySvc
 		imageProc = app.imageProc
 		mediaSvc = app.mediaSvc
+		if mediaSvc != nil {
+			scannerWarp = service.NewScannerWarpService(mediaSvc)
+		}
 	}
 
 	return server.NewAssetHandler(server.AssetServerDeps{
@@ -510,6 +514,7 @@ func createAssetHandler(app *App) http.Handler {
 		MemorySvc:    memorySvc,
 		ImageProc:    imageProc,
 		MediaSvc:     mediaSvc,
+		ScannerWarp:  scannerWarp,
 	})
 }
 

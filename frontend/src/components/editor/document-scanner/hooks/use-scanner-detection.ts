@@ -11,8 +11,7 @@ import {
   addManualDocumentQuad,
   splitQuadIntoIdCards,
   warmupMlDetector,
-  warmupDocumentDetectorWorker,
-  terminateDocumentDetectorWorker,
+  terminateMlWorker,
 } from '../core';
 
 import type { Point, DetectedDocument, DetectionMode, DocumentAspectType } from '../core';
@@ -317,8 +316,8 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
       setActiveDocIndex(0);
       setDetectionMode('single');
       imgRef.current = null;
-      // 🧹 إنهاء عامل الكشف وتحرير ذاكرة OpenCV (WASM) مع إغلاق النافذة
-      terminateDocumentDetectorWorker();
+      // 🧹 إنهاء عامل ML وتحرير كومة WASM مع إغلاق النافذة
+      terminateMlWorker();
     }
   }, [open]);
 
@@ -332,9 +331,9 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
     if (typeof ric === 'function') ric.call(window, () => void warmupMlDetector());
     else setTimeout(() => void warmupMlDetector(), 500);
 
-    // ⚡ تهيئة محرك OpenCV داخل العامل (خارج الخيط الرئيسي) — يتقدّم على أول
-    // كشف فلا نتحمّل تهيئة WASM في أول طلب ولا على الخيط الرئيسي إطلاقاً.
-    warmupDocumentDetectorWorker();
+    // ⚡ تسخين النموذج العصبي داخل عامل ML عند فتح الحوار — لا تهيئة WASM
+    // على الخيط الرئيسي إطلاقاً ولا في أول كشف.
+    warmupMlDetector();
 
     let isCancelled = false;
     const img = new Image();

@@ -1,8 +1,35 @@
-import { buildIntegralImage } from './fast-vision';
 import { getScanner2DContext } from './scanner-canvas';
 
 import type { ScannerCanvas } from './scanner-canvas';
 import type { ScannerFilterMode } from './types';
+
+/**
+ * الصورة التكاملية — مهاجرة من fast-vision مع إزالة مسار الكنتورات
+ * (المرحلة 3 من خطة ترحيل الماسح). المستهلك الوحيد المتبقي: فلتر bw.
+ */
+function buildIntegralImage(gray: Uint8Array, w: number, h: number): Uint32Array | Float64Array {
+  const stride = w + 1;
+  // 2^32-1 حد Uint32 — مجموع أقصى قيمة (255) مضروباً بعدد البكسلات
+  const maxTotal = 255 * w * h;
+  const integral =
+    maxTotal <= 4294967295
+      ? new Uint32Array((w + 1) * (h + 1))
+      : new Float64Array((w + 1) * (h + 1));
+
+  for (let y = 0; y < h; y++) {
+    let rowSum = 0;
+    const grayOffset = y * w;
+    const currOffset = (y + 1) * stride;
+    const prevOffset = y * stride;
+
+    for (let x = 0; x < w; x++) {
+      rowSum += gray[grayOffset + x];
+      integral[currOffset + (x + 1)] = rowSum + integral[prevOffset + (x + 1)];
+    }
+  }
+
+  return integral;
+}
 
 /**
  * فلتر المسح الذكي (Magic Color Filter):

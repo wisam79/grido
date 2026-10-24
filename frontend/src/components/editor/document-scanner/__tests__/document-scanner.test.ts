@@ -8,9 +8,6 @@ import {
   splitQuadIntoIdCards,
   addManualDocumentQuad,
   computePerspectiveTransform,
-  rgbaToGrayscale,
-  fastBoxBlur,
-  computeOtsuThreshold,
 } from '../core';
 
 import type { Point } from '../core';
@@ -300,47 +297,7 @@ describe('Document Scanner - Core Geometry & Vision', () => {
     });
   });
 
-  describe('Vision & Filters', () => {
-    it('accurately converts RGBA to Grayscale using 10-bit fixed point weights', () => {
-      const rgba = new Uint8Array([
-        255,
-        255,
-        255,
-        255, // Pure white
-        0,
-        0,
-        0,
-        255, // Pure black
-        255,
-        0,
-        0,
-        255, // Pure red (0.299 * 255 ~ 76)
-        0,
-        255,
-        0,
-        255, // Pure green (0.587 * 255 ~ 150)
-      ]);
-      const gray = rgbaToGrayscale(rgba, 2, 2);
-      expect(gray[0]).toBe(255); // White stays 255 (306+601+117 = 1024 -> 255*1024 >> 10 = 255)
-      expect(gray[1]).toBe(0);
-      expect(gray[2]).toBe(76);
-      expect(gray[3]).toBe(149);
-    });
-
-    it('smooths image using fastBoxBlur', () => {
-      const gray = new Uint8Array([100, 100, 100, 100, 200, 100, 100, 100, 100]);
-      const blurred = fastBoxBlur(gray, 3, 3, 1);
-      expect(blurred.length).toBe(9);
-      expect(blurred[4]).toBeLessThan(200); // Center peak smoothed out
-    });
-
-    it('computes Otsu threshold cleanly', () => {
-      const gray = new Uint8Array([10, 10, 10, 10, 10, 240, 240, 240, 240, 240]);
-      const thresh = computeOtsuThreshold(gray, 10);
-      expect(thresh).toBeGreaterThanOrEqual(10);
-      expect(thresh).toBeLessThan(240);
-    });
-  });
+  describe('Vision & Filters', () => {});
 
   describe('Safety, Overlaps & Memory Verification', () => {
     it('computes quad overlap stats safely without negative union area', async () => {
@@ -442,143 +399,6 @@ describe('Document Scanner - Core Geometry & Vision', () => {
         const centerIdx = (25 * 50 + 25) * 4;
         expect(data[centerIdx]).toBe(0);
       }
-    });
-  });
-
-  describe('20x Precision Computer Vision & RANSAC Geometry', () => {
-    it('computes multi-channel gradient capturing color edges invisible to pure grayscale', async () => {
-      const { computeMultiChannelGradient } = await import('../core/fast-vision');
-      const w = 10;
-      const h = 10;
-      const rgba = new Uint8Array(w * h * 4);
-
-      // Left half: Red (255, 0, 0) -> Gray value ~ 76
-      // Right half: Green (0, 130, 0) -> Gray value ~ 76 (almost identical grayscale luminance!)
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const idx = (y * w + x) * 4;
-          if (x < 5) {
-            rgba[idx] = 255;
-            rgba[idx + 1] = 0;
-            rgba[idx + 2] = 0;
-            rgba[idx + 3] = 255;
-          } else {
-            rgba[idx] = 0;
-            rgba[idx + 1] = 130;
-            rgba[idx + 2] = 0;
-            rgba[idx + 3] = 255;
-          }
-        }
-      }
-
-      const grad = computeMultiChannelGradient(rgba, w, h);
-      expect(grad.maxMag).toBeGreaterThan(50); // Strong edge detected at border
-    });
-
-    it('applies morphological gradient amplifying step edges while rejecting slow gradients', async () => {
-      const { applyMorphologicalGradient } = await import('../core/fast-vision');
-      const w = 10;
-      const h = 10;
-      const gray = new Uint8Array(w * h);
-
-      // Add a step edge at x = 5
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          gray[y * w + x] = x < 5 ? 50 : 200;
-        }
-      }
-
-      const morph = applyMorphologicalGradient(gray, w, h, 1);
-      // Center boundary at x = 4, 5 should have high response (150)
-      expect(morph[4 * w + 5]).toBe(150);
-      // Flat region at x = 1 should have 0 response
-      expect(morph[4 * w + 1]).toBe(0);
-    });
-
-    it('applies Canny NMS and hysteresis producing clean 1-pixel edge contours', async () => {
-      const { applyCannyNmsHysteresis } = await import('../core/fast-vision');
-      const w = 12;
-      const h = 12;
-      const mag = new Float32Array(w * h);
-      const gx = new Float32Array(w * h);
-      const gy = new Float32Array(w * h);
-
-      // Create a vertical edge ridge with thickness 3 at x = 5, 6, 7 (peak at x = 6)
-      for (let y = 1; y < h - 1; y++) {
-        mag[y * w + 5] = 30;
-        mag[y * w + 6] = 80; // Peak
-        mag[y * w + 7] = 30;
-        gx[y * w + 6] = 80;
-      }
-
-      const edges = applyCannyNmsHysteresis(mag, gx, gy, w, h, 20, 60);
-      // Peak at x = 6 should be marked as 255
-      expect(edges[5 * w + 6]).toBe(255);
-      // Shoulders at x = 5 and x = 7 should be suppressed to 0 by NMS
-      expect(edges[5 * w + 5]).toBe(0);
-      expect(edges[5 * w + 7]).toBe(0);
-    });
-
-    it('reconstructs sharp 4-line intersection quad via fitRobustQuadLinesRANSAC from noisy contour points', async () => {
-      const { fitRobustQuadLinesRANSAC } = await import('../core/quad-geometry');
-
-      // مولد حتمي (mulberry32) — كان Math.random() يجعل الاختبار flaky.
-      let seed = 0x2f6e2b1;
-      const rng = () => {
-        seed |= 0;
-        seed = (seed + 0x6d2b79f5) | 0;
-        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-      };
-
-      // Generate noisy edge points for a rectangle [20, 20] to [100, 100] with clipped corners
-      const contourPts: Point[] = [];
-      // Top edge
-      for (let x = 30; x <= 90; x += 2) contourPts.push({ x, y: 20 + (rng() - 0.5) });
-      // Right edge
-      for (let y = 30; y <= 90; y += 2) contourPts.push({ x: 100 + (rng() - 0.5), y });
-      // Bottom edge
-      for (let x = 30; x <= 90; x += 2) contourPts.push({ x, y: 100 + (rng() - 0.5) });
-      // Left edge
-      for (let y = 30; y <= 90; y += 2) contourPts.push({ x: 20 + (rng() - 0.5), y });
-
-      const seedQuad: Point[] = [
-        { x: 25, y: 25 },
-        { x: 95, y: 25 },
-        { x: 95, y: 95 },
-        { x: 25, y: 95 },
-      ];
-
-      const reconstructed = fitRobustQuadLinesRANSAC(contourPts, seedQuad, rng);
-      expect(reconstructed).not.toBeNull();
-      if (reconstructed) {
-        expect(reconstructed.length).toBe(4);
-        // Should reconstruct sharp corners near (20, 20), (100, 20), (100, 100), (20, 100)
-        expect(reconstructed[0].x).toBeCloseTo(20, 0);
-        expect(reconstructed[0].y).toBeCloseTo(20, 0);
-        expect(reconstructed[1].x).toBeCloseTo(100, 0);
-        expect(reconstructed[1].y).toBeCloseTo(20, 0);
-        expect(reconstructed[2].x).toBeCloseTo(100, 0);
-        expect(reconstructed[2].y).toBeCloseTo(100, 0);
-        expect(reconstructed[3].x).toBeCloseTo(20, 0);
-        expect(reconstructed[3].y).toBeCloseTo(100, 0);
-      }
-    });
-
-    it('evaluates vanishing point physics correctly for perspective document quads', async () => {
-      const { evaluateVanishingPointPhysics } = await import('../core/quad-geometry');
-
-      // Perspective trapezoid (valid camera projection)
-      const trapezoid: Point[] = [
-        { x: 30, y: 20 },
-        { x: 90, y: 20 },
-        { x: 110, y: 100 },
-        { x: 10, y: 100 },
-      ];
-
-      const score = evaluateVanishingPointPhysics(trapezoid);
-      expect(score).toBeGreaterThan(0.5);
     });
   });
 

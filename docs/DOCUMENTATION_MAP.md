@@ -104,13 +104,15 @@ node scripts/docs-gate.mjs --push      # يفحص مدى كل الكومتات �
 البلوك التالي يُتحقق منه آلياً بواسطة `scripts/docs-gate.mjs` (عدّ ملفات فعلي — سريع وحتمي):
 
 ```docs-metrics
-vitest_test_files=150
-e2e_spec_files=32
-go_test_files=54
+vitest_test_files=148
+e2e_spec_files=30
+go_test_files=57
 docs_files=6
 ```
 
 الأرقام التي تحتاج تشغيل اختبارات لا تُوضع في البلوك الآلي، بل في الجدول التالي وتُحدَّث عند تغيّر الاختبارات:
+
+مراجعة 24 أكتوبر 2026 — المراحل 0 إلى 3 من ترحيل الماسح العصبي واستئصال OpenCV: أضيف `frontend/test/scanner-warp-golden.test.ts` (18 حالة: 15 Golden للاستعدال + فلاتر + EXIF) و`frontend/test/ml-orchestrator.test.ts`، وحُذفت ملفات اختبارات OpenCV القديمة الأربعة (`document-scanner-real-scenarios.test.ts` و`document-scanner-synthetic-benchmark.test.ts` و`detect-fusion.test.ts` و`opencv-detector.test.ts`) واستُخرج محاكي الكانفاس المشترك إلى `frontend/test/helpers/scanner-canvas-mock.ts` ليصبح عدّاد الواجهة **148**؛ وحُذف ملفا مواصفات probe لعامل OpenCV القديم في e2e (`cv-worker-probe.spec.ts` و`detector-worker-probe.spec.ts`) ليصبح عدّاد e2e هو **30**؛ وفي Go أضيفت ملفات `internal/service/scanner_warp_test.go` و`exif_orientation_test.go` و`internal/server/asset_server_scanner_warp_test.go` (خدمة استعدال الماسح خلف `/api/scanner-warp` بتوازي حرفي مع TS) فصار العدّاد **57**. شُغّل الاستهداف محلياً فمرّ بنجاح في الواجهة واختبارات الماسح كلها في Go (بما فيها HTTP)، مع `go vet` و`gofmt` نظيفين.
 
 مراجعة 23 أكتوبر 2026 — رسوم الملصقات وإعادة التحرير السريع: توسّعت حالات `frontend/test/sticker-text.test.ts` و`frontend/test/sticker-phase2.test.ts` و`frontend/test/sticker-quality.test.ts` و`frontend/test/sticker-studio.test.tsx` لحماية مساحة النص (`data-max-width`)، ومعرّفات التحرير، وتضمين أوزان الخط ومجموعاته العربية واللاتينية، وحفظ `stickerSource` عند الإدراج السريع من تبويب الملصقات. عدد الملفات لم يتغير؛ لم تُشغّل الشبكة الكاملة محلياً وفق الدستور، لذلك تبقى نتائج التشغيل السابقة أدناه تاريخية.
 

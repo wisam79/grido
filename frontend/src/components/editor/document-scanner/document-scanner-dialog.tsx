@@ -36,7 +36,8 @@ interface DocumentScannerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   imageSrc: string;
-  onSave: (processed: Blob | Blob[]) => void;
+  /** روابط وسائط محلية جاهزة للإدراج (ناتج استعدال Go — المرحلة 2 من الترحيل). */
+  onSave: (processed: string | string[]) => void;
 }
 
 export function DocumentScannerDialog({

@@ -1,6 +1,4 @@
 export * from './types';
-export * from './fast-vision';
-export * from './contour-tracer';
 export * from './quad-geometry';
 export * from './overlap-tuning';
 export * from './multi-doc-segmenter';
@@ -8,8 +6,6 @@ export * from './perspective-warper';
 export * from './filters';
 export * from './scanner-canvas';
 export * from './warp-pipeline';
-export * from './ml-detector';
-export * from './opencv-detector';
-export * from './detect-fusion';
-export * from './document-detector';
+export * from './ml-orchestrator';
 export * from './target-dims';
+export * from './warp-client';

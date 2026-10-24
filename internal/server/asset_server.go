@@ -25,6 +25,7 @@ type AssetServerDeps struct {
 	MemorySvc    *service.MemoryService
 	ImageProc    *service.ImageProcessorService
 	MediaSvc     *service.MediaService
+	ScannerWarp  *service.ScannerWarpService
 	Runtime      domain.RuntimeBridge
 }
 
@@ -141,6 +142,17 @@ func (s *AssetServer) serveThumbnail(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, filename, fi.ModTime(), f)
 }
 
+// writeScannerWarpJSONError خطأ عقد الماسح: رسالة عربية + كود SCN-WARP-* اختياري.
+func writeScannerWarpJSONError(w http.ResponseWriter, status int, message, code string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	payload := map[string]string{"error": message}
+	if code != "" {
+		payload["code"] = code
+	}
+	_ = json.NewEncoder(w).Encode(payload)
+}
+
 func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/api/") && !s.apiGuard.Authorize(w, r) {
 		return
@@ -198,6 +210,46 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status":   "success",
 			"imageSrc": localPath,
+		})
+		return
+	}
+
+	if r.Method == http.MethodPost && r.URL.Path == "/api/scanner-warp" {
+		// 🧭 استعدال ماسح المستندات في Go (المرحلة 1 من خطة الترحيل) —
+		// جسم JSON صغير حصراً (لا بايتات صور): مسار الوسائط + الأركان + الأهداف.
+		const maxScannerWarpBody = 64 * 1024
+		body, readErr := io.ReadAll(io.LimitReader(r.Body, maxScannerWarpBody+1))
+		if readErr != nil || len(body) > maxScannerWarpBody {
+			writeScannerWarpJSONError(w, http.StatusBadRequest, "جسم الطلب يتجاوز الحد المسموح", "")
+			return
+		}
+		var req service.ScannerWarpRequest
+		if err := json.Unmarshal(body, &req); err != nil {
+			writeScannerWarpJSONError(w, http.StatusBadRequest, "جسم الطلب ليس JSON صالحاً", "")
+			return
+		}
+		if deps.ScannerWarp == nil {
+			http.Error(w, "Scanner warp service unavailable", http.StatusServiceUnavailable)
+			return
+		}
+
+		result, err := deps.ScannerWarp.WarpFromMedia(req)
+		if err != nil {
+			var warpErr *service.ScannerWarpError
+			if errors.As(err, &warpErr) {
+				writeScannerWarpJSONError(w, http.StatusBadRequest, warpErr.Message, warpErr.Code)
+				return
+			}
+			http.Error(w, "Scanner warp failed: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status": "success",
+			"url":    result.URL,
+			"width":  result.Width,
+			"height": result.Height,
 		})
 		return
 	}

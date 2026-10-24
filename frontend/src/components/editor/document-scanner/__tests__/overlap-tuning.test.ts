@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 
-import { ML_CONFIRM_IOU, ML_MISS_IOU, ML_CONTAINMENT_BLOCK } from '../core/detect-fusion';
 import { applyNMS } from '../core/multi-doc-segmenter';
 import { OVERLAP_TUNING } from '../core/overlap-tuning';
 
@@ -12,6 +11,7 @@ import type { Point, ScoredCandidate } from '../core/types';
  * الغرض المزدوج: (1) تثبيت الأرقام صراحةً حتى لا يتغيّر أي منها «بالصدفة» مع
  * تغيير في المقياس، و(2) إثبات أن العتبات ما زالت **تدفع سلوك NMS الفعلي** —
  * أي أن الاختبار يعضّ، لا يكتفي بمقارنة أرقام بأرقام.
+ * (أقسام الدمج/الثنوية أُزيلت مع محركها في المرحلة 3 من ترحيل الماسح.)
  */
 
 describe('OVERLAP_TUNING — سطح المعايرة الموحّد', () => {
@@ -22,14 +22,6 @@ describe('OVERLAP_TUNING — سطح المعايرة الموحّد', () => {
       nmsContainerAreaRatio: 1.3,
       nmsMutualOverlapMax: 0.45,
       nmsIouThreshold: 0.3,
-      nmsIouThresholdFused: 0.4,
-      fusionConfirmIou: 0.55,
-      fusionMissIou: 0.35,
-      fusionRescueContainmentOverlap: 0.75,
-      fusionReplaceContainmentOverlap: 0.8,
-      fusionReplaceContainmentAreaRatio: 1.35,
-      disjointPairMaxIou: 0.25,
-      disjointPairMaxAreaRatio: 1.7,
     });
     expect(Object.isFrozen(OVERLAP_TUNING)).toBe(true);
   });
@@ -41,39 +33,12 @@ describe('OVERLAP_TUNING — سطح المعايرة الموحّد', () => {
       t.nmsContainerOverlap,
       t.nmsMutualOverlapMax,
       t.nmsIouThreshold,
-      t.nmsIouThresholdFused,
-      t.fusionConfirmIou,
-      t.fusionMissIou,
-      t.fusionRescueContainmentOverlap,
-      t.fusionReplaceContainmentOverlap,
-      t.disjointPairMaxIou,
     ];
     for (const v of overlaps) {
       expect(v).toBeGreaterThan(0);
       expect(v).toBeLessThan(1);
     }
-    for (const r of [
-      t.nmsContainerAreaRatio,
-      t.fusionReplaceContainmentAreaRatio,
-      t.disjointPairMaxAreaRatio,
-    ]) {
-      expect(r).toBeGreaterThan(1);
-    }
-
-    // عتبة الاسترداد أدقّ (أصغر IoU) من عتبة التأكيد
-    expect(t.fusionMissIou).toBeLessThan(t.fusionConfirmIou);
-    // «لا تُضِف نسخة» (75%) أدنى من «استبدل الهندسة» (80%) — قراران مختلفان
-    expect(t.fusionRescueContainmentOverlap).toBeLessThan(t.fusionReplaceContainmentOverlap);
-    // فحص الثنوية أكثر صرامةً من إخماد NMS العادي
-    expect(t.disjointPairMaxIou).toBeLessThan(t.nmsIouThreshold);
-    // مسار الدمج يستعمل عتبة IoU أصرح من الافتراضية
-    expect(t.nmsIouThresholdFused).toBeGreaterThan(t.nmsIouThreshold);
-  });
-
-  it('ثوابت detect-fusion مشتقّة من السطح (لا نسخ منفصلة تنحرف)', () => {
-    expect(ML_CONFIRM_IOU).toBe(OVERLAP_TUNING.fusionConfirmIou);
-    expect(ML_MISS_IOU).toBe(OVERLAP_TUNING.fusionMissIou);
-    expect(ML_CONTAINMENT_BLOCK).toBe(OVERLAP_TUNING.fusionRescueContainmentOverlap);
+    expect(t.nmsContainerAreaRatio).toBeGreaterThan(1);
   });
 
   it('عتبة التفصيل الداخلي تدفع قرار NMS فعلاً (فوق/تحت الحد)', () => {

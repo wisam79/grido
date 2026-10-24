@@ -36,30 +36,10 @@ export const OVERLAP_TUNING = Object.freeze({
   nmsMutualOverlapMax: 0.45,
   /** (ج) عتبة IoU الافتراضية في `applyNMS` */
   nmsIouThreshold: 0.3,
-  /** (ج) عتبة IoU الأكثر صرامة المستعملة في مسار الدمج متعدد المستندات */
-  nmsIouThresholdFused: 0.4,
 
-  // ───────────────────────── الدمج العصبي (detect-fusion.fuseDetections) ─────────────────────────
-  /** IoU ≥ هذا ⇒ النموذج العصبي يؤكد مرشح الكشف الكلاسيكي */
-  fusionConfirmIou: 0.55,
-  /** IoU < هذا ⇒ استرداد (عند ثقة ML عالية) أو لا تغيير (تشويش) */
-  fusionMissIou: 0.35,
-  /** تداخل ML داخل مرشح أكبر ≥ هذا ⇒ نفس المستند بحدود أضيق ⇒ يُمنع الاسترداد */
-  fusionRescueContainmentOverlap: 0.75,
-  /**
-   * تداخل المرشح الكلاسيكي داخل مضلع ML ≥ هذا (مع ضخامة مساحة ML) ⇒ استبدال
-   * «كتلة داخلية» بالكامل. لاحظ أنه أعلى عمداً من عتبة منع الاسترداد أعلاه:
-   * الأولى قرار «لا تُضِف نسخة»، وهذه قرار «استبدل الهندسة».
-   */
-  fusionReplaceContainmentOverlap: 0.8,
-  /** أدنى نسبة مساحة (mlArea / classicalArea) لاعتبار الاحتواء «كتلة داخلية» */
-  fusionReplaceContainmentAreaRatio: 1.35,
-
-  // ─────────────────── فحص الثنوية المتباعدة (document-detector.hasDisjointSimilarPair) ───────────────────
-  /** IoU < هذا بين مرشحين متشابهَي المساحة ⇒ مشهد متعدد المستندات لا كتلة واحدة */
-  disjointPairMaxIou: 0.25,
-  /** أقصى نسبة مساحة بين مرشحين لاعتبارهما «متشابهين» في فحص الثنوية */
-  disjointPairMaxAreaRatio: 1.7,
+  // ── أقسام الدمج (fusionConfirmIou…) والثنوية (disjointPair…) أُزيلت مع
+  // ── detect-fusion وdocument-detector في المرحلة 3 من ترحيل الماسح —
+  // ── التاريخ في git والخطة docs/plans/neural-scanner-warp-migration-spec.md.
 });
 
 /** نوع للقراءة فقط لسطح المعايرة — القيم أعلاه هي المصدر الوحيد للحقيقة. */

@@ -1,7 +1,21 @@
-import { computePolygonArea } from './contour-tracer';
 import { ID_HALF_MIN_RATIO, ID_HALF_MAX_RATIO } from './types';
 
 import type { Point, DocumentAspectType, QuadOverlapStats } from './types';
+
+/**
+ * حساب المساحة المحددة لأي مضلع (Shoelace Formula) — مهاجرة من contour-tracer
+ * مع إزالة مسار الكنتورات (المرحلة 3 من خطة ترحيل الماسح).
+ */
+export function computePolygonArea(poly: Point[]): number {
+  const n = poly.length;
+  if (n < 3) return 0;
+  let area = 0;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    area += poly[i].x * poly[j].y - poly[j].x * poly[i].y;
+  }
+  return Math.abs(area) * 0.5;
+}
 
 /**
  * فرز الأركان الأربعة في اتجاه عقارب الساعة:

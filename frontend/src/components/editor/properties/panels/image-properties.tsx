@@ -21,12 +21,10 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip
 import { useAiEnhance } from '@/hooks/use-ai-enhance';
 import { useBgRemoval } from '@/hooks/use-bg-removal';
 import { useFaceFrame } from '@/hooks/use-face-frame';
-import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useEditorStore } from '@/lib/editor-store';
 import { pickLocalImage } from '@/lib/io/file-dialog-utils';
-import { uploadMediaBlob } from '@/lib/io/media-upload';
 import { createLogger } from '@/lib/logger';
 import { IMAGE_FILTERS, filterShortName } from '@/lib/templates';
 import { cn } from '@/lib/utils';
@@ -284,33 +282,22 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [refineOpen, setRefineOpen] = useState(false);
 
-  const handleScannerSave = async (processedResult: Blob | Blob[]) => {
+  const handleScannerSave = async (processedResult: string | string[]) => {
     try {
-      const blobList = Array.isArray(processedResult) ? processedResult : [processedResult];
-      if (blobList.length === 0) return;
+      // مسار URL-first (المرحلة 2 من ترحيل الماسح): Go يكتب النتائج في
+      // الوسائط ويسلّم روابط /local-image/ جاهزة — لا Blob ولا رفع من الواجهة.
+      const paths = (Array.isArray(processedResult) ? processedResult : [processedResult]).filter(
+        (src) => typeof src === 'string' && src.length > 0,
+      );
+      if (paths.length === 0) return;
 
       const state = useEditorStore.getState();
       const canvasRatio = state.canvasWidth / state.canvasHeight;
-      const stamp = Date.now();
 
-      // 1. مسار Blob-first: رفع ثنائي مباشر إلى خادم الوسائط (بلا Base64 في
-      //    V8 Heap)، مع تراجع إلى Data URL لبيئات لا تتوفر فيها المسارات الأصلية.
-      const paths = await Promise.all(
-        blobList.map(async (blob, i) => {
-          try {
-            const uploadRes = await uploadMediaBlob(blob, `scan-${stamp}-${i}.png`);
-            if (uploadRes?.imageSrc) return uploadRes.imageSrc;
-          } catch (err) {
-            logger.error('Failed to persist scanned blob:', err);
-          }
-          return await blobToDataUrl(blob);
-        }),
-      );
-
-      // 2. حل أبعاد الدفعة الكبيرة بطلب Go واحد متوازي O(1)
+      // حل أبعاد الدفعة الكبيرة بطلب Go واحد متوازي O(1)
       const aspectMap = await resolveBatchImageAspectRatios(paths);
 
-      // 3. تحديث العنصر الأول بالكانفاس
+      // تحديث العنصر الأول بالكانفاس
       const firstPath = paths[0];
       const firstAspect = aspectMap.get(firstPath) || 1.0;
       if (isMountedRef.current) {
@@ -322,7 +309,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
         state.setLastEditedImageAspect(firstAspect);
       }
 
-      // 4. إدراج بقية المستندات المحددة كعناصر جديدة على الكانفاس بدفعة واحدة ولقطة تراجع واحدة
+      // إدراج بقية المستندات المحددة كعناصر جديدة على الكانفاس بدفعة واحدة ولقطة تراجع واحدة
       if (paths.length > 1) {
         const extraItems = paths.slice(1).map((src) => ({
           src,

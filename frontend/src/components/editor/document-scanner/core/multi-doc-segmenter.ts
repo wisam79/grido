@@ -1,6 +1,6 @@
-import { computePolygonArea } from './contour-tracer';
 import { OVERLAP_TUNING } from './overlap-tuning';
 import {
+  computePolygonArea,
   sortCornerPoints,
   computeQuadOrthogonality,
   computeQuadOverlapStats,

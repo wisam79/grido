@@ -1,42 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { canvasToBlob } from '@/lib/canvas/canvas-blob';
-
-import { warpPerspective, rotateCanvas, resolveTargetDims } from '../core';
-import {
-  WarpCancelledError,
-  WarpWorkerClient,
-  supportsWorkerWarp,
-} from '../core/warp-worker-client';
+import { warpDocumentViaGo, formatScannerWarpError } from '../core/warp-client';
 
 import type { Point, DocumentAspectType, ScannerFilterMode } from '../core';
 
 /**
- * 🧭 معالجة الماسح النهائية: استعدال المنظور بأبعاد حقيقية ديناميكية لكل
- * نوع مستند (A4/بطاقة/مربع)، التدوير، المعاينة السريعة، والتصدير المفرد/المتعدد.
+ * 🧭 معالجة الماسح النهائية — المرحلة 2 من خطة الترحيل
+ * (docs/plans/neural-scanner-warp-migration-spec.md §7).
  *
- * الاستعدال الثقيل (خصوصاً على صور 50MP) يُنفَّذ داخل Web Worker عبر
- * WarpWorkerClient حتى لا تتجمّد الواجهة؛ ويبقى المسار المتزامن كاحتياطي
- * للبيئات التي لا تدعم Worker/OffscreenCanvas.
+ * الاستعدال يحدث حصراً في Go عبر `/api/scanner-warp`: الواجهة ترسل مسار
+ * الوسائط والأركان فقط وتستقبل رابط `/local-image/` جاهزاً للعرض/الإدراج
+ * (bitmap خارج V8). **لا يبقى أي مسار استعدال داخل V8** — لا كانفاس بدقة
+ * المصدر على الخيط الرئيسي (إعدام C-5)، ولا Blob/ImageData كاملة (قاعدة B6:
+ * صفر بكسل استعدال في V8). عقد onSave تحوّل من Blob إلى URL.
  */
-
-/** يحسب أبعاد الإخراج (معاينة/تصدير) من أركان المستند ونوعه. */
-function resolveDocTargetDims(
-  docCorners: Point[],
-  docAspect: DocumentAspectType,
-  isPreview: boolean,
-): { targetW: number; targetH: number } {
-  const topW = Math.hypot(docCorners[1].x - docCorners[0].x, docCorners[1].y - docCorners[0].y);
-  const botW = Math.hypot(docCorners[2].x - docCorners[3].x, docCorners[2].y - docCorners[3].y);
-  const leftH = Math.hypot(docCorners[3].x - docCorners[0].x, docCorners[3].y - docCorners[0].y);
-  const rightH = Math.hypot(docCorners[2].x - docCorners[1].x, docCorners[2].y - docCorners[1].y);
-
-  const maxEdgeW = Math.round(Math.max(topW, botW));
-  const maxEdgeH = Math.round(Math.max(leftH, rightH));
-
-  return resolveTargetDims(docAspect, isPreview, maxEdgeW, maxEdgeH);
-}
 
 export function useScannerProcessor(
   imgRef: React.RefObject<HTMLImageElement | null>,
@@ -61,29 +39,17 @@ export function useScannerProcessor(
   // إلغاء التصدير متعدد المستندات (R39: عملية >3s قابلة للإلغاء).
   const exportCancelRef = useRef(false);
 
-  // 🧵 عامل الاستعدال (خارج الخيط الرئيسي) — يُنشأ عند أول استخدام ويُنهي عند الإغلاق.
-  const warpClientRef = useRef<WarpWorkerClient | null>(null);
-  // رابط الكائن لمعاينة Blob — يجب إبطالته عند الإلغاء/الإغلاق.
+  // روابط نتائج الاستعدال (media URLs تُديرها خدمة Go — لا revokeObjectURL).
   const previewUrlRef = useRef<string | null>(null);
 
-  const getWarpClient = useCallback((): WarpWorkerClient | null => {
-    if (!supportsWorkerWarp()) return null;
-    if (!warpClientRef.current) {
-      warpClientRef.current = new WarpWorkerClient();
-    }
-    return warpClientRef.current;
-  }, []);
-
   const revokePreviewUrl = useCallback(() => {
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-      previewUrlRef.current = null;
-    }
+    // روابط /local-image/ ملفات دائمة على القرص تُنظّف دورياً بواسطة خدمة
+    // الوسائط — لا نستدعي revoke (يخص blob: URLs حصراً) ونصفّر المرجع فقط.
+    previewUrlRef.current = null;
   }, []);
 
   const cancelExport = useCallback(() => {
     exportCancelRef.current = true;
-    warpClientRef.current?.cancel();
   }, []);
 
   // 🔒 تنظيف وتصفير حالات التصدير والمعاينة عند إغلاق النافذة
@@ -95,134 +61,52 @@ export function useScannerProcessor(
       setIsPreviewing(false);
       setPreviewSrc(null);
       revokePreviewUrl();
-      warpClientRef.current?.dispose();
-      warpClientRef.current = null;
     }
   }, [open, revokePreviewUrl]);
 
-  // 🧹 تفكيك العامل عند إزالة المكوّن (حماية من تسريب عامل حي).
+  // 🧹 تفكيك: تصفير المراجع (لا عامل ويب يبقى بعد الترحيل — Go يحلّه).
   useEffect(
     () => () => {
-      warpClientRef.current?.dispose();
-      warpClientRef.current = null;
-      if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current);
-        previewUrlRef.current = null;
-      }
+      previewUrlRef.current = null;
     },
     [],
   );
 
-  const generateWarpedForDoc = useCallback(
-    (
-      docCorners: Point[],
-      docAspect: DocumentAspectType,
-      isPreview = false,
-      docRotation?: number,
-      docFilter?: ScannerFilterMode,
-    ): HTMLCanvasElement | null => {
-      const img = imgRef.current;
-      if (!img || docCorners.length !== 4) return null;
-
-      const srcCanvas = document.createElement('canvas');
-      srcCanvas.width = img.naturalWidth;
-      srcCanvas.height = img.naturalHeight;
-      const srcCtx = srcCanvas.getContext('2d');
-      if (!srcCtx) return null;
-      srcCtx.drawImage(img, 0, 0);
-
-      // حساب الأبعاد الحقيقية ديناميكياً للحفاظ على دقة الطباعة الكاملة
-      const { targetW, targetH } = resolveDocTargetDims(docCorners, docAspect, isPreview);
-
-      const effectiveFilter = docFilter || fallbackFilter;
-      let resCanvas: HTMLCanvasElement | null = null;
-      try {
-        resCanvas = warpPerspective(
-          srcCtx,
-          img.naturalWidth,
-          img.naturalHeight,
-          docCorners,
-          targetW,
-          targetH,
-          effectiveFilter,
-        );
-      } catch {
-        srcCanvas.width = 0;
-        srcCanvas.height = 0;
-        toast.error(
-          'تعذر استعدال المنظور — الحل: باعد بين الأركان الأربع ولا تجمعها في نقطة واحدة',
-        );
-        return null;
-      }
-
-      srcCanvas.width = 0;
-      srcCanvas.height = 0;
-
-      const rotToApply = docRotation !== undefined ? docRotation : fallbackRotation;
-      if (rotToApply !== 0 && resCanvas) {
-        return rotateCanvas(resCanvas, rotToApply, true);
-      }
-
-      return resCanvas;
-    },
-    [imgRef, fallbackFilter, fallbackRotation],
-  );
-
   /**
-   * 🔄 الاستعدال عبر العامل (المسار المفضّل) مع رجوع للمسار المتزامن
-   * عند عدم دعم Worker. يُرجع Blob جاهزاً للإدراج.
+   * 🔄 الاستعدال عبر Go — المسار الوحيد (خطة §4.2). يُرجع رابط وسائط محلي
+   * جاهزاً للإدراج، أو null بعد عرض رسالة عربية قابلة للحل.
    */
-  const generateWarpedBlobForDoc = useCallback(
+  const generateWarpedUrlForDoc = useCallback(
     async (
       docCorners: Point[],
       docAspect: DocumentAspectType,
       isPreview = false,
       docRotation?: number,
       docFilter?: ScannerFilterMode,
-    ): Promise<Blob | null> => {
+    ): Promise<string | null> => {
       const img = imgRef.current;
       if (!img || docCorners.length !== 4) return null;
 
-      const client = getWarpClient();
-      if (client) {
-        const { targetW, targetH } = resolveDocTargetDims(docCorners, docAspect, isPreview);
-        const effectiveFilter = docFilter || fallbackFilter;
-        const rotToApply = docRotation !== undefined ? docRotation : fallbackRotation;
+      const effectiveFilter = docFilter || fallbackFilter;
+      const rotToApply = docRotation !== undefined ? docRotation : fallbackRotation;
 
-        try {
-          const response = await fetch(img.currentSrc || img.src);
-          const source = await response.blob();
-          return await client.warp({
-            source,
-            corners: docCorners,
-            targetW,
-            targetH,
-            filterMode: effectiveFilter,
-            rotation: rotToApply,
-          });
-        } catch (error) {
-          if (error instanceof WarpCancelledError) return null;
-          // لا نعود للمسار المتزامن هنا: على صورة 50MP سيجمّد الواجهة مجدداً.
-          toast.error('تعذّر استعدال المستند في الخلفية — أعد المحاولة');
-          return null;
-        }
-      }
-
-      // احتياطي: بيئات بلا Worker/OffscreenCanvas (أو الاختبارات).
-      const warped = generateWarpedForDoc(docCorners, docAspect, isPreview, docRotation, docFilter);
-      if (!warped) return null;
       try {
-        const blob = await canvasToBlob(warped);
-        warped.width = 0;
-        warped.height = 0;
-        return blob;
-      } catch {
-        warped.width = 0;
-        warped.height = 0;
+        const result = await warpDocumentViaGo(
+          img,
+          docCorners,
+          docAspect,
+          isPreview,
+          effectiveFilter,
+          rotToApply,
+        );
+        return result.url;
+      } catch (error) {
+        if (!openRef.current || exportCancelRef.current) return null;
+        toast.error(formatScannerWarpError(error));
         return null;
       }
     },
-    [imgRef, fallbackFilter, fallbackRotation, getWarpClient, generateWarpedForDoc],
+    [imgRef, fallbackFilter, fallbackRotation],
   );
 
   const handleTogglePreview = useCallback(
@@ -235,15 +119,13 @@ export function useScannerProcessor(
 
       setIsPreviewing(true);
       try {
-        const blob = await generateWarpedBlobForDoc(corners, aspect, true);
-        if (!blob || !openRef.current) {
-          if (!blob && (corners.length !== 4 || !imgRef.current)) {
+        const url = await generateWarpedUrlForDoc(corners, aspect, true);
+        if (!url || !openRef.current) {
+          if (!url && (corners.length !== 4 || !imgRef.current)) {
             toast.error('حدّد أركان المستند أولاً — اسحب النقاط أو اضغط إعادة ضبط');
           }
           return;
         }
-        revokePreviewUrl();
-        const url = URL.createObjectURL(blob);
         previewUrlRef.current = url;
         setPreviewSrc(url);
         setIsPreviewMode(true);
@@ -251,24 +133,24 @@ export function useScannerProcessor(
         setIsPreviewing(false);
       }
     },
-    [isPreviewMode, isPreviewing, generateWarpedBlobForDoc, revokePreviewUrl, imgRef],
+    [isPreviewMode, isPreviewing, generateWarpedUrlForDoc, imgRef],
   );
 
   const handleApplyActive = useCallback(
     async (
       corners: Point[],
       aspect: DocumentAspectType,
-      onSave: (blob: Blob) => void,
+      onSave: (url: string) => void,
       onDone: () => void,
     ) => {
       exportCancelRef.current = false;
       setIsExporting(true);
       try {
         await new Promise((resolve) => setTimeout(resolve, 0));
-        const blob = await generateWarpedBlobForDoc(corners, aspect, false);
+        const url = await generateWarpedUrlForDoc(corners, aspect, false);
         if (exportCancelRef.current || !openRef.current) return;
-        if (blob) {
-          onSave(blob);
+        if (url) {
+          onSave(url);
           onDone();
         } else if (corners.length !== 4 || !imgRef.current) {
           toast.error('حدّد أركان المستند أولاً — اسحب النقاط أو اضغط إعادة ضبط');
@@ -277,7 +159,7 @@ export function useScannerProcessor(
         setIsExporting(false);
       }
     },
-    [generateWarpedBlobForDoc, imgRef],
+    [generateWarpedUrlForDoc, imgRef],
   );
 
   const handleApplySelected = useCallback(
@@ -288,7 +170,7 @@ export function useScannerProcessor(
         rotation?: number;
         filterMode?: ScannerFilterMode;
       }[],
-      onSave: (result: Blob | Blob[]) => void,
+      onSave: (result: string | string[]) => void,
       onDone: () => void,
     ) => {
       if (docsToExport.length === 0) {
@@ -300,12 +182,12 @@ export function useScannerProcessor(
       setIsExporting(true);
       setExportProgress({ done: 0, total: docsToExport.length });
       try {
-        const results: Blob[] = [];
+        const results: string[] = [];
         for (let i = 0; i < docsToExport.length; i++) {
           if (exportCancelRef.current || !openRef.current) break;
           await new Promise((resolve) => setTimeout(resolve, 30)); // Yield to UI
           const doc = docsToExport[i];
-          const blob = await generateWarpedBlobForDoc(
+          const url = await generateWarpedUrlForDoc(
             doc.corners,
             doc.aspectType,
             false,
@@ -313,8 +195,8 @@ export function useScannerProcessor(
             doc.filterMode,
           );
           if (exportCancelRef.current || !openRef.current) break;
-          if (blob) {
-            results.push(blob);
+          if (url) {
+            results.push(url);
           }
           setExportProgress({ done: i + 1, total: docsToExport.length });
         }
@@ -331,7 +213,7 @@ export function useScannerProcessor(
         setExportProgress(null);
       }
     },
-    [generateWarpedBlobForDoc],
+    [generateWarpedUrlForDoc],
   );
 
   const resetPreview = useCallback(() => {
@@ -342,7 +224,6 @@ export function useScannerProcessor(
 
   const resetProcessorState = useCallback(() => {
     exportCancelRef.current = true;
-    warpClientRef.current?.cancel();
     setIsExporting(false);
     setIsPreviewMode(false);
     setIsPreviewing(false);
@@ -359,7 +240,7 @@ export function useScannerProcessor(
     exportProgress,
     cancelExport,
     setIsPreviewMode,
-    generateWarpedForDoc,
+    generateWarpedUrlForDoc,
     handleTogglePreview,
     handleApplyActive,
     handleApplySelected,
