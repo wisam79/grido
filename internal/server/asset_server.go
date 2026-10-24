@@ -585,6 +585,10 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/local-image/") {
 		filePath := strings.TrimPrefix(r.URL.Path, "/local-image/")
 		filename := filepath.Base(filepath.Clean(filePath))
+		if filename == "." || filename == ".." || filename == "" || strings.TrimSpace(filePath) == "" {
+			http.Error(w, "Invalid image path", http.StatusBadRequest)
+			return
+		}
 
 		var baseDir string
 		if strings.HasPrefix(filename, "print_") {
@@ -598,8 +602,13 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		absPath := filepath.Join(baseDir, filename)
 
-		if _, err := os.Stat(absPath); err != nil {
+		stat, err := os.Stat(absPath)
+		if err != nil {
 			http.Error(w, "Image not found on disk", http.StatusNotFound)
+			return
+		}
+		if stat.IsDir() {
+			http.Error(w, "Access denied", http.StatusForbidden)
 			return
 		}
 
@@ -611,8 +620,7 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if resolvedBase, err := filepath.EvalSymlinks(baseDir); err == nil {
 			baseDir = resolvedBase
 		}
-		if !strings.HasPrefix(resolvedPath, filepath.Clean(baseDir)+string(filepath.Separator)) &&
-			resolvedPath != filepath.Clean(baseDir) {
+		if !strings.HasPrefix(resolvedPath, filepath.Clean(baseDir)+string(filepath.Separator)) {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
 		}

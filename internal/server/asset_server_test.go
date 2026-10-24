@@ -250,3 +250,44 @@ func TestAssetServer_SetRuntimeBridge_NilIgnored(t *testing.T) {
 		t.Error("SetRuntimeBridge(nil) should not overwrite existing runtime bridge")
 	}
 }
+
+// TestAssetServer_LocalImage_DirectoryListingBlocked يتحقق من حظر سرد محتويات مجلد الوسائط
+func TestAssetServer_LocalImage_DirectoryListingBlocked(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	mediaSvc := service.NewMediaService()
+	mediaDir := mediaSvc.GetMediaDir()
+	_ = os.MkdirAll(mediaDir, 0o755)
+
+	dummyPath := filepath.Join(mediaDir, "test.png")
+	_ = os.WriteFile(dummyPath, []byte("fake-png-content"), 0o644)
+
+	handler := NewAssetHandler(AssetServerDeps{
+		MediaSvc: mediaSvc,
+	})
+
+	blockedPaths := []string{
+		"/local-image/",
+		"/local-image/.",
+		"/local-image/..",
+		"/local-image/%20%20%20",
+	}
+
+	for _, p := range blockedPaths {
+		req := httptest.NewRequest(http.MethodGet, p, nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		if rec.Code == http.StatusOK {
+			t.Errorf("path %q: expected non-200 status (blocked), got 200 with body: %s", p, rec.Body.String())
+		}
+	}
+
+	reqValid := httptest.NewRequest(http.MethodGet, "/local-image/test.png", nil)
+	recValid := httptest.NewRecorder()
+	handler.ServeHTTP(recValid, reqValid)
+	if recValid.Code != http.StatusOK {
+		t.Errorf("expected 200 for valid file, got %d", recValid.Code)
+	}
+}

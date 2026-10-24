@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { sanitizeText } from '@/lib/canvas/text-helpers';
 import { createLogger } from '@/lib/logger';
 import { ProjectSchema } from '@/lib/schema';
+import { sanitizeSvgMarkup } from '@/lib/utils';
 
 const logger = createLogger('project-serializer');
 import { domain } from '../../../wailsjs/go/models';
@@ -165,9 +166,18 @@ export function deserializeProjectFile(raw: unknown): ProjectFileV1 {
   if (Array.isArray((migrated as Record<string, unknown>).elements)) {
     const els = (migrated as { elements: unknown[] }).elements;
     for (const el of els) {
-      if (el && typeof el === 'object' && (el as Record<string, unknown>).type === 'text') {
-        const t = (el as Record<string, unknown>).text;
-        if (typeof t === 'string') (el as Record<string, unknown>).text = sanitizeText(t);
+      if (el && typeof el === 'object') {
+        if ((el as Record<string, unknown>).type === 'text') {
+          const t = (el as Record<string, unknown>).text;
+          if (typeof t === 'string') (el as Record<string, unknown>).text = sanitizeText(t);
+        }
+        const src = (el as Record<string, unknown>).stickerSource;
+        if (src && typeof src === 'object') {
+          const svg = (src as Record<string, unknown>).svg;
+          if (typeof svg === 'string') {
+            (src as Record<string, unknown>).svg = sanitizeSvgMarkup(svg);
+          }
+        }
       }
     }
   }

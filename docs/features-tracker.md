@@ -9,6 +9,20 @@
 
 ---
 
+## 1.44 سجل جلسة التحصين الأمني ومعالجة فحص الثغرات — 24 أكتوبر 2026
+
+**المرجع:** نتائج التدقيق الأمني الشامل للواجهة ونقاط التماس مع الباك إند:
+
+| البند | التنفيذ | الإثبات |
+| --- | --- | --- |
+| ترقية حزمة Zod الإنتاجية | تحديث `zod` إلى الإصدار الآمن `4.6.7` عبر `npm audit fix` لإغلاق ثغرة استنزاف الذاكرة `GHSA-mrhx-c7xc-m3w5`، مع تحديث اعتمادات بيئة التطوير المصاحبة ضمن حدود SemVer الآمنة | `frontend/package-lock.json` و`npm list zod` (4.6.7) ✅ |
+| تهريب نصوص SVG في QR Placeholder | إضافة دالة `escapeXml` في `barcode-svg.ts` وتهريب الـ `label` قبل دمجه في قالب SVG التحذيري لمنع أي حقن لوسوم XML عند إدخال نصوص غير قياسية | `frontend/src/features/stickers/lib/barcode-svg.ts:164` ✅ |
+| استئصال الالتفاف على تعقيم SVG | إزالة معامل السقوط الخاطئ `|| svg` عند فشل التعقيم في `sticker-studio-dialog.tsx` و`use-bg-removal.ts` و`freeform-elements-tab.tsx`، وفرض تعقيم `stickerSource.svg` آلياً عند استيراد المشاريع في `project-serializer.ts` | `sticker-studio-dialog.tsx:253,341,382` و`project-serializer.ts:172` ✅ |
+| حظر سرد المجلدات (Directory Listing) | فحص المسار المطلوب تحت `/local-image/` ورفض المجلدات (`stat.IsDir()`) والمسارات الفارغة أو النسبية (`.` / `..`) مع إلزام بادئة مجلد الوسائط لمنع `http.ServeFile` من توليد قائمة HTML لمحتويات المجلد | `internal/server/asset_server.go:587` و`asset_server_test.go:TestAssetServer_LocalImage_DirectoryListingBlocked` ✅ |
+| بوابات الجودة والتحقق | `tsc --noEmit` نظيف 100% · `eslint` نظيف (0 تحذيرات) · `go vet ./internal/...` نظيف · `go test ./internal/server` ناجح · `docs-gate.mjs --strict-refs` ناجح | 2026-10-24 ✅ |
+
+---
+
 ## 1.43 سجل اعتماد خطة ترحيل الماسح العصبي وتنفيذ المرحلة 0 (شبكة الأمان) — 24 أكتوبر 2026
 
 **المرجع:** مواصفة `docs/plans/neural-scanner-warp-migration-spec.md` — إزالة OpenCV.js WASM (12.7MB) وترحيل الكشف إلى نموذج DocCornerNet ثابت الابتلاع والاستعدال إلى Go بميزانية ذاكرة مفروضة آلياً، استكمالاً لإصلاح انفجار ذاكرة 4GB (الجلسة 1.42).

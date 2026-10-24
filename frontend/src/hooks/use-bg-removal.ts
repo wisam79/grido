@@ -144,7 +144,7 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
           }
 
           await preloadImageIntoCache(finalSrc);
-          const exportableSvg = sanitizeSvgMarkupCached(svg) || svg;
+          const exportableSvg = sanitizeSvgMarkupCached(svg);
           const commit = commitAiImageResult(element, finalSrc, (id, patch) => {
             onUpdateRef.current(id, {
               ...patch,

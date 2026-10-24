@@ -160,10 +160,20 @@ export async function generateQrCodeInnerSvgAsync(
   }
 }
 
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 /** عنصر تحذيري صريح بدل المربع الأسود الوهمي الذي يبدو رمزاً صالحاً وهو غير قابل للمسح */
 function qrWarningPlaceholder(value: string, size: number, fg?: string): string {
   const c = fg || '#cc0000';
-  const label = (value || '').slice(0, 24) || 'QR';
+  const rawLabel = (value || '').slice(0, 24) || 'QR';
+  const label = escapeXml(rawLabel);
   return (
     `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet">` +
     `<rect x="2" y="2" width="${size - 4}" height="${size - 4}" fill="none" stroke="${c}" stroke-width="3" stroke-dasharray="8,5" rx="8"/>` +

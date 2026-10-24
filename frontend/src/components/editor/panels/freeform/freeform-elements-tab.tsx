@@ -174,7 +174,7 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
         } else {
           finalSrc = await blobToDataUrl(pngBlob);
         }
-        const exportableSvg = sanitizeSvgMarkupCached(svg) || svg;
+        const exportableSvg = sanitizeSvgMarkupCached(svg);
 
         addImageElement(finalSrc, template.aspectRatio || 1, {
           templateId: template.id,

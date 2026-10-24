@@ -250,7 +250,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
 
   /** نسخة مُطهَّرة للتصدير/النسخ — تُكتب على القرص أو الحافظة فتُفتح خارج التطبيق */
   const exportableSvg = useMemo(
-    () => (view === 'customize' ? sanitizeSvgMarkup(svgString) || svgString : ''),
+    () => (view === 'customize' ? sanitizeSvgMarkup(svgString) : ''),
     [view, svgString],
   );
 
@@ -338,7 +338,8 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       const pngBlob = await renderSvgToPngBlob(svgString, width, height, [
         params.fontFamily || 'Cairo',
       ]);
-      await handleInsertToCanvas(pngBlob, exportableSvg || svgString);
+      const safeSvg = exportableSvg || sanitizeSvgMarkup(svgString);
+      await handleInsertToCanvas(pngBlob, safeSvg);
       if (cancelledRef.current) return;
       toast.success('أُدرج الملصق');
       onOpenChange(false);
@@ -379,7 +380,8 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         sheetHeightMm: sheetMm.height,
         dpi: 300,
       });
-      await handleInsertToCanvas(sheetPng, exportableSvg || svgString);
+      const safeSvg = exportableSvg || sanitizeSvgMarkup(svgString);
+      await handleInsertToCanvas(sheetPng, safeSvg);
       if (cancelledRef.current) return;
       toast.success(`أُدرج شيت (${gridConfig.rows * gridConfig.cols} ملصقات)`);
       onOpenChange(false);
