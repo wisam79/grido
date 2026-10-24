@@ -23,7 +23,6 @@ type ScannerDetectorService struct {
 	mediaService *MediaService
 
 	mu           sync.Mutex
-	initOnce     sync.Once
 	initErr      error
 	session      *ort.AdvancedSession
 	inputTensor  *ort.Tensor[float32]
@@ -38,11 +37,17 @@ func NewScannerDetectorService(imageProc *ImageProcessorService, mediaService *M
 	}
 }
 
-func (s *ScannerDetectorService) ensureInitialized() error {
-	s.initOnce.Do(func() {
-		s.initErr = s.initEngine()
-	})
-	return s.initErr
+func (s *ScannerDetectorService) ensureInitializedLocked() error {
+	if s.isReady {
+		return nil
+	}
+	if err := s.initEngine(); err != nil {
+		s.initErr = err
+		return err
+	}
+	s.isReady = true
+	s.initErr = nil
+	return nil
 }
 
 func (s *ScannerDetectorService) initEngine() error {
@@ -127,7 +132,7 @@ func (s *ScannerDetectorService) DetectDocumentCorners(imageSrc string) (*Detect
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if err := s.ensureInitialized(); err != nil {
+	if err := s.ensureInitializedLocked(); err != nil {
 		return nil, fmt.Errorf("scanner detector engine not available: %w", err)
 	}
 

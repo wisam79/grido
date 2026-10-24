@@ -90,6 +90,28 @@ export function resolveDocTargetDims(
   return resolveTargetDims(docAspect, isPreview, maxEdgeW, maxEdgeH);
 }
 
+function resolveImageSourceUrl(img: HTMLImageElement): string | null {
+  return (
+    (img as unknown as { __scannerLocalSrc?: string }).__scannerLocalSrc ||
+    img.dataset?.scannerLocalSrc ||
+    extractLocalImagePath(img.getAttribute?.('src')) ||
+    extractLocalImagePath(img.currentSrc) ||
+    extractLocalImagePath(img.src) ||
+    null
+  );
+}
+
+function tagImageSourceUrl(img: HTMLImageElement, sourceUrl: string): void {
+  try {
+    (img as unknown as { __scannerLocalSrc?: string }).__scannerLocalSrc = sourceUrl;
+    if (img.dataset) {
+      img.dataset.scannerLocalSrc = sourceUrl;
+    }
+  } catch {
+    // ignore
+  }
+}
+
 /** ينفّذ الاستعدال عبر Go ويعيد رابط الوسائط المحلي للنتيجة وأبعادها. */
 export async function warpDocumentViaGo(
   img: HTMLImageElement,
@@ -103,10 +125,7 @@ export async function warpDocumentViaGo(
     throw new ScannerWarpClientError('SCN-WARP-01', 'أركان المستند غير مكتملة');
   }
 
-  let sourceUrl =
-    extractLocalImagePath(img.getAttribute?.('src')) ||
-    extractLocalImagePath(img.currentSrc) ||
-    extractLocalImagePath(img.src);
+  let sourceUrl = resolveImageSourceUrl(img);
 
   if (
     !sourceUrl &&
@@ -120,6 +139,9 @@ export async function warpDocumentViaGo(
       const blob = await resp.blob();
       const uploaded = await uploadMediaBlob(blob, 'scanner_input.png');
       sourceUrl = extractLocalImagePath(uploaded.imageSrc);
+      if (sourceUrl) {
+        tagImageSourceUrl(img, sourceUrl);
+      }
     } catch {
       // upload failed — falls through to error check
     }
@@ -199,10 +221,7 @@ export interface NativeDetectResult {
 export async function detectDocumentViaGo(
   img: HTMLImageElement,
 ): Promise<NativeDetectResult | null> {
-  let sourceUrl =
-    extractLocalImagePath(img.getAttribute?.('src')) ||
-    extractLocalImagePath(img.currentSrc) ||
-    extractLocalImagePath(img.src);
+  let sourceUrl = resolveImageSourceUrl(img);
 
   if (
     !sourceUrl &&
@@ -216,6 +235,9 @@ export async function detectDocumentViaGo(
       const blob = await resp.blob();
       const uploaded = await uploadMediaBlob(blob, 'scanner_input.png');
       sourceUrl = extractLocalImagePath(uploaded.imageSrc);
+      if (sourceUrl) {
+        tagImageSourceUrl(img, sourceUrl);
+      }
     } catch {
       // upload failed
     }

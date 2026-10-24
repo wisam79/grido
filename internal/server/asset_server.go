@@ -275,6 +275,10 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		result, err := deps.ScannerDetector.DetectDocumentCorners(req.SourceURL)
 		if err != nil {
+			if strings.Contains(err.Error(), "only supported on Windows") || strings.Contains(err.Error(), "not available") {
+				http.Error(w, "Scanner detect unavailable: "+err.Error(), http.StatusServiceUnavailable)
+				return
+			}
 			http.Error(w, "Scanner detect failed: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
