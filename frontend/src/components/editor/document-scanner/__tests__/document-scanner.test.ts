@@ -297,8 +297,6 @@ describe('Document Scanner - Core Geometry & Vision', () => {
     });
   });
 
-  describe('Vision & Filters', () => {});
-
   describe('Safety, Overlaps & Memory Verification', () => {
     it('computes quad overlap stats safely without negative union area', async () => {
       const { computeQuadOverlapStats } = await import('../core/quad-geometry');

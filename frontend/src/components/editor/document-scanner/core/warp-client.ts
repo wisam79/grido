@@ -1,3 +1,4 @@
+import { uploadMediaBlob } from '@/lib/io/media-upload';
 import { fetchLocalApi } from '@/lib/local-api';
 
 import { resolveTargetDims } from '../core/target-dims';
@@ -15,6 +16,24 @@ import type { DocumentAspectType, Point, ScannerFilterMode } from '../core/types
  */
 
 export const SCANNER_WARP_ENDPOINT = '/api/scanner-warp';
+
+/** يستخرج مسار الوسائط المحلي النظيف (يبدأ بـ /local-image/) من أي رابط مطلق أو نسبي. */
+export function extractLocalImagePath(rawUrl: string | null | undefined): string | null {
+  if (!rawUrl) return null;
+  const trimmed = rawUrl.trim();
+  if (trimmed.startsWith('/local-image/')) {
+    const qIdx = trimmed.indexOf('?');
+    return qIdx !== -1 ? trimmed.slice(0, qIdx) : trimmed;
+  }
+  const marker = '/local-image/';
+  const idx = trimmed.indexOf(marker);
+  if (idx !== -1) {
+    const sub = trimmed.slice(idx);
+    const qIdx = sub.indexOf('?');
+    return qIdx !== -1 ? sub.slice(0, qIdx) : sub;
+  }
+  return null;
+}
 
 export type ScannerWarpErrorCode =
   | 'SCN-WARP-01' // أركان تالفة/خارج الحدود/منحلّة
@@ -83,7 +102,28 @@ export async function warpDocumentViaGo(
     throw new ScannerWarpClientError('SCN-WARP-01', 'أركان المستند غير مكتملة');
   }
 
-  const sourceUrl = img.currentSrc || img.src;
+  let sourceUrl =
+    extractLocalImagePath(img.getAttribute?.('src')) ||
+    extractLocalImagePath(img.currentSrc) ||
+    extractLocalImagePath(img.src);
+
+  if (
+    !sourceUrl &&
+    (img.src?.startsWith('blob:') ||
+      img.src?.startsWith('data:') ||
+      img.currentSrc?.startsWith('blob:'))
+  ) {
+    try {
+      const srcToFetch = img.currentSrc || img.src;
+      const resp = await fetch(srcToFetch);
+      const blob = await resp.blob();
+      const uploaded = await uploadMediaBlob(blob, 'scanner_input.png');
+      sourceUrl = extractLocalImagePath(uploaded.imageSrc);
+    } catch {
+      // upload failed — falls through to error check
+    }
+  }
+
   if (!sourceUrl || !sourceUrl.startsWith('/local-image/')) {
     throw new ScannerWarpClientError(
       'SCN-WARP-03',

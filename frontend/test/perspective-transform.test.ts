@@ -84,6 +84,15 @@ describe('Perspective Transform & Document Scanner Utility Tests', () => {
             return { data, width: gw, height: gh };
           },
           clearRect: () => {},
+          fillRect: () => {},
+          beginPath: () => {},
+          moveTo: () => {},
+          lineTo: () => {},
+          closePath: () => {},
+          fill: () => {},
+          stroke: () => {},
+          save: () => {},
+          restore: () => {},
         } as unknown as CanvasRenderingContext2D;
       }
       return null;

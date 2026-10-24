@@ -75,15 +75,14 @@ describe('منسّق الكشف العصبي (ml-orchestrator)', () => {
     expect(result.method).toBe('scanic');
   });
 
-  it('رفع الأركان: نتيجة فضاء الابتلاع تعود بفضاء المصدر (عكس الـletterbox)', async () => {
-    // صورة 640×480 تُبتلع على 224×224 بletterbox جانبي — استرجاع مصدر 640×480
+  it('رفع الأركان: نتيجة فضاء الابتلاع تعود بفضاء المصدر (عكس التحجيم 224×224)', async () => {
+    // صورة 640×480 تُبتلع بملء الإطار على 224×224 — استرجاع مصدر 640×480
     // يجب أن يعيد إحداثيات المصدر بدقة معقولة (≤ بكسلان)
     const truth = box(64, 48, 512, 384);
-    const scale = Math.min(ML_INGEST_SIZE / 640, ML_INGEST_SIZE / 480); // 224/640? لا: 224/480
-    const drawW = Math.round(640 * scale);
-    const offX = (ML_INGEST_SIZE - drawW) / 2;
-    const ingestQuad = truth.map((p) => ({ x: p.x * scale + offX, y: p.y * scale }));
-    setMlEngineForTesting(async () => ({ corners: ingestQuad, score: 0.9 }));
+    const scaleX = ML_INGEST_SIZE / 640;
+    const scaleY = ML_INGEST_SIZE / 480;
+    const ingestQuad = truth.map((p) => ({ x: p.x * scaleX, y: p.y * scaleY }));
+    setMlEngineForTesting(async () => ({ corners: ingestQuad, score: 0.9, space: 'ingest' }));
 
     const result = await detectDocumentAuto(fakeImage(640, 480), 640, 480, 'single');
     const got = sortCornerPoints(result.documents![0].corners);
@@ -138,8 +137,8 @@ describe('منسّق الكشف العصبي (ml-orchestrator)', () => {
   });
 
   it('NMS يخمد النسخ شبه المتطابقة بين التمريرات', async () => {
-    const q = box(50, 50, 300, 380);
-    const nearDuplicate = box(52, 51, 300, 380);
+    const q = box(50, 50, 200, 300);
+    const nearDuplicate = box(52, 51, 200, 300);
     setMlEngineForTesting(engineWithQuads([q, nearDuplicate]));
     const result = await detectDocumentAuto(fakeImage(640, 480), 640, 480, 'multi');
     expect(result.documents!).toHaveLength(1);
@@ -147,14 +146,14 @@ describe('منسّق الكشف العصبي (ml-orchestrator)', () => {
 
   it('عتبة الثقة: التمريرة الأولى ترفض دون ML_STANDALONE_MIN والإضافية دون ML_ADD_MIN_SCORE', async () => {
     // ثقة 0.5 (< 0.55) في التمريرة الأولى ⇒ لا مستندات
-    setMlEngineForTesting(engineWithQuads([box(50, 50, 300, 380)], [0.5]));
+    setMlEngineForTesting(engineWithQuads([box(50, 50, 200, 300)], [0.5]));
     const weak = await detectDocumentAuto(fakeImage(640, 480), 640, 480, 'single');
     expect(weak.method).toBe('default');
 
     // الأولى قوية (0.9) والثانية 0.58 (< 0.6 عتبة الإضافة) ⇒ مستند واحد فقط
     engineWithQuads.nextIndex = 0;
-    const left = box(10, 40, 260, 360);
-    const right = box(330, 40, 260, 360);
+    const left = box(10, 40, 200, 300);
+    const right = box(330, 40, 200, 300);
     setMlEngineForTesting(engineWithQuads([left, right], [0.9, 0.58]));
     const partial = await detectDocumentAuto(fakeImage(640, 480), 640, 480, 'multi');
     expect(partial.documents).toHaveLength(1);

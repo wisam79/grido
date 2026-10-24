@@ -27,7 +27,13 @@ import {
 } from './quad-geometry';
 import { STACKED_SPLIT_MIN_RATIO, STACKED_SPLIT_MAX_RATIO } from './types';
 
-import type { Point, DetectedDocument, DetectionMode, DetectionResult } from './types';
+import type {
+  Point,
+  DetectedDocument,
+  DetectionMode,
+  DetectionResult,
+  DocumentAspectType,
+} from './types';
 
 const logger = createLogger('ml-orchestrator');
 
@@ -77,6 +83,8 @@ export function defaultInsetCorners(w: number, h: number, insetRatio = 0.05): Po
 export interface MlEngineResult {
   corners: Point[];
   score: number | null;
+  /** فضاء الإحداثيات: مصدر (افتراضي) أو ابتلاع 224×224 يُرفع إلى فضاء المصدر. */
+  space?: 'source' | 'ingest';
 }
 
 export type MlEngine = (
@@ -302,12 +310,31 @@ async function runOnePass(
   minScore: number | undefined,
 ): Promise<ValidatedQuad | null> {
   if (engineOverride) {
-    const ctx = ingest.canvas.getContext('2d') as CanvasRenderingContext2D | null;
-    if (!ctx) return null;
-    const data = ctx.getImageData(0, 0, ingest.size, ingest.size).data;
+    let data: Uint8ClampedArray;
+    try {
+      const ctx = ingest.canvas.getContext('2d') as CanvasRenderingContext2D | null;
+      data =
+        ctx && typeof ctx.getImageData === 'function'
+          ? ctx.getImageData(0, 0, ingest.size, ingest.size).data
+          : new Uint8ClampedArray(ingest.size * ingest.size * 4);
+    } catch {
+      data = new Uint8ClampedArray(ingest.size * ingest.size * 4);
+    }
     const result = await engineOverride(data, ingest.size, ingest.size, minScore);
     if (!result) return null;
-    return validateRawQuad(result.corners, result.score, srcW, srcH, minScore ?? ML_STANDALONE_MIN);
+    const corners =
+      result.space === 'ingest'
+        ? result.corners.map((p) =>
+            ingestPointToSource(
+              p.x,
+              p.y,
+              { scaleX: srcW / ingest.size, scaleY: srcH / ingest.size },
+              srcW,
+              srcH,
+            ),
+          )
+        : result.corners;
+    return validateRawQuad(corners, result.score, srcW, srcH, minScore ?? ML_STANDALONE_MIN);
   }
 
   const frame = captureIngestFrame(ingest, srcW, srcH);
@@ -320,10 +347,14 @@ async function runOnePass(
       minScore,
       getScanicAssetBaseUrl(),
     );
+    if (response.type === 'error') {
+      logger.warn('ML worker returned error:', response.error);
+      return null;
+    }
     if (response.type !== 'success' || !response.corners || response.corners.length !== 4) {
       return null;
     }
-    // الأركان وصلت بفضاء الابتلاع — الرفع لفضاء المصدر المعروض (عكس الـletterbox)
+    // الأركان وصلت بفضاء الابتلاع (224×224) — الرفع لفضاء المصدر المعروض
     const sourceCorners = response.corners.map((p) =>
       ingestPointToSource(p.x, p.y, frame, srcW, srcH),
     );
@@ -335,8 +366,12 @@ async function runOnePass(
   }
 }
 
-function buildDoc(idx: number, quad: ValidatedQuad): DetectedDocument {
-  const aspectType = inferSmartDocumentAspect(quad.corners);
+function buildDoc(
+  idx: number,
+  quad: ValidatedQuad,
+  aspectTypeOverride?: DocumentAspectType,
+): DetectedDocument {
+  const aspectType = aspectTypeOverride ?? inferSmartDocumentAspect(quad.corners);
   return {
     id: `doc-${idx + 1}`,
     corners: quad.corners,
@@ -378,10 +413,11 @@ export async function detectDocumentAuto(
       if (mode === 'multi' && found.length > 0) {
         for (let pass = 1; pass < ML_MAX_PASSES; pass++) {
           const last = found[found.length - 1];
-          const scale = Math.min(ML_INGEST_SIZE / originalWidth, ML_INGEST_SIZE / originalHeight);
+          const scaleX = ML_INGEST_SIZE / originalWidth;
+          const scaleY = ML_INGEST_SIZE / originalHeight;
           const ok = maskQuadOnIngest(
             ingest,
-            last.corners.map((p) => ({ x: p.x * scale, y: p.y * scale })),
+            last.corners.map((p) => ({ x: p.x * scaleX, y: p.y * scaleY })),
           );
           if (!ok) break;
           const next = await runOnePass(ingest, originalWidth, originalHeight, ML_ADD_MIN_SCORE);
@@ -432,7 +468,13 @@ export async function detectDocumentAuto(
         if (splitDocs) {
           const baseIdx = docs.length;
           splitDocs.forEach((card, cardIdx) => {
-            docs.push(buildDoc(baseIdx + cardIdx, { corners: card.corners, score: cand.score }));
+            docs.push(
+              buildDoc(
+                baseIdx + cardIdx,
+                { corners: card.corners, score: cand.score },
+                card.aspectType,
+              ),
+            );
           });
         } else {
           docs.push(buildDoc(docs.length, { corners: cand.quad, score: cand.score }));

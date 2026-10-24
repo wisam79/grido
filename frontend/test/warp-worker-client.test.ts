@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { extractLocalImagePath } from '../src/components/editor/document-scanner/core/warp-client';
 import {
   WarpCancelledError,
   WarpWorkerClient,
@@ -110,5 +111,18 @@ describe('warp-worker-client', () => {
   it('detects worker support from the environment', () => {
     // jsdom لا يوفّر OffscreenCanvas ولا createImageBitmap.
     expect(supportsWorkerWarp()).toBe(false);
+  });
+
+  it('extracts clean /local-image/ path from relative and absolute DOM URLs', () => {
+    expect(extractLocalImagePath('/local-image/abc.png')).toBe('/local-image/abc.png');
+    expect(extractLocalImagePath('/local-image/abc.png?t=123')).toBe('/local-image/abc.png');
+    expect(extractLocalImagePath('http://localhost:5173/local-image/abc.png')).toBe(
+      '/local-image/abc.png',
+    );
+    expect(extractLocalImagePath('http://wails.localhost:9245/local-image/abc.png?v=1')).toBe(
+      '/local-image/abc.png',
+    );
+    expect(extractLocalImagePath('blob:http://localhost:5173/1234')).toBeNull();
+    expect(extractLocalImagePath('')).toBeNull();
   });
 });

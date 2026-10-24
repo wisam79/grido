@@ -112,6 +112,15 @@ export function createMockContext(canvas: MockCanvas) {
     translate: () => {},
     rotate: () => {},
     clearRect: () => {},
+    fillRect: () => {},
+    beginPath: () => {},
+    moveTo: () => {},
+    lineTo: () => {},
+    closePath: () => {},
+    fill: () => {},
+    stroke: () => {},
+    save: () => {},
+    restore: () => {},
   };
 }
 
