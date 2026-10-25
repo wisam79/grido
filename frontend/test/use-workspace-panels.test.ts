@@ -138,6 +138,36 @@ describe('useWorkspacePanels — مزامنة القوالب عند عبور ا�
     expect(result.current.breakpoint).toBe('wide');
     expect(result.current.isTemplatesDrawerOpen).toBe(false);
   });
+
+  it('النقر أو النقر المزدوج المتكرر على التبويب النشط يُبقي الدرج مفتوحاً ولا يقلصه', () => {
+    setWindowWidth(1600);
+    const { result } = renderHook(() => useWorkspacePanels());
+
+    // الدرج مفتوح والتبويب الافتراضي هو custom
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+
+    // نقرة أولى على نفس التبويب النشط
+    act(() => {
+      result.current.selectCollageTab('custom');
+    });
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+
+    // نقرة ثانية (نقر مزدوج سريع)
+    act(() => {
+      result.current.selectCollageTab('custom');
+    });
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+
+    // نفس السلوك في الاستوديو
+    act(() => {
+      result.current.selectStudioTab('stickers');
+    });
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+    act(() => {
+      result.current.selectStudioTab('stickers');
+    });
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+  });
 });
 
 describe('useWorkspacePanels — وضع التركيز (حفظ واستعادة الحالة السابقة)', () => {
