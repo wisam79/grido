@@ -1,272 +1,272 @@
+import { useId, type CSSProperties } from 'react';
+
 import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
 import { useEditorStore } from '@/lib/editor-store';
+import {
+  TEXT_BACKGROUND_DEFAULT_COLOR,
+  TEXT_BACKGROUND_PRESETS,
+  TEXT_CURVE_PRESETS,
+  TEXT_PILL_RADIUS,
+  TEXT_SHADOW_PRESETS,
+  hasTextShadow,
+  matchTextCurvePreset,
+  matchTextShadowPreset,
+  resolveTextBackgroundMode,
+  textShadowPreviewCss,
+  type TextBackgroundMode,
+  type TextCurvePreset,
+  type TextShadowPreset,
+} from '@/lib/templates';
 import { cn } from '@/lib/utils';
 
+import { ControlRow, EffectTile } from './text-controls';
 import { ColorField, ColorPanel } from '../../color-panel';
 
 import type { TextTabProps } from './text-tab-types';
+import type { TextElement } from '@/lib/editor-store';
 
-const SHADOW_PRESETS = [
-  { id: 'none', label: 'بدون', color: '#000000', blur: 0, ox: 0, oy: 0, opacity: 0 },
-  { id: 'soft', label: 'ناعم', color: '#000000', blur: 10, ox: 0, oy: 3, opacity: 0.35 },
-  { id: 'drop', label: 'ساقط', color: '#000000', blur: 14, ox: 4, oy: 4, opacity: 0.6 },
-  { id: 'neon', label: 'توهج', color: '#38bdf8', blur: 22, ox: 0, oy: 0, opacity: 0.9 },
-  { id: '3d', label: '3D', color: '#000000', blur: 2, ox: 3, oy: 3, opacity: 0.85 },
-];
+const pushHistory = () => useEditorStore.getState().pushHistory();
 
-const CURVE_PRESETS = [
-  { label: '0°', value: 0 },
-  { label: '30°', value: 30 },
-  { label: '60°', value: 60 },
-  { label: '-60°', value: -60 },
-  { label: '100°', value: 100 },
-];
+/** مسارات SVG لمعاينة التقويس داخل خلية 64×32 — الشكل نفسه لا رقم الزاوية. */
+const CURVE_PREVIEW_PATHS: Record<TextCurvePreset['id'], string> = {
+  straight: 'M6,19 L58,19',
+  arc: 'M6,25 Q32,3 58,25',
+  dip: 'M6,10 Q32,32 58,10',
+  circle: 'M12,27 A20,15 0 1,1 52,27',
+};
 
-const toggleButtonClassName = (active: boolean) =>
-  cn(
-    'h-7 px-2.5 rounded-md border text-mini font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-    active
-      ? 'bg-primary text-primary-foreground border-primary font-bold'
-      : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/60',
+function TileSample({ element, style }: { element: TextElement; style?: CSSProperties }) {
+  return (
+    <span
+      dir="ltr"
+      className="text-lg font-bold leading-none text-foreground"
+      style={{ fontFamily: element.fontFamily, ...style }}
+    >
+      Aa
+    </span>
   );
-
-/** هل قيم الظل الحالية مطابقة لهذا النمط الجاهز؟ (لإظهار حالة التحديد) */
-const isShadowPresetActive = (
-  element: TextTabProps['element'],
-  p: (typeof SHADOW_PRESETS)[number],
-) =>
-  Math.round(element.shadowBlur ?? 0) === p.blur &&
-  Math.round(element.shadowOffsetX ?? 0) === p.ox &&
-  Math.round(element.shadowOffsetY ?? 0) === p.oy;
+}
 
 export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
-  const hasShadow = (element.shadowBlur ?? 0) > 0 || (element.shadowOpacity ?? 0) > 0;
-  const hasBadge = !!element.textBgColor && element.textBgColor !== 'transparent';
-  const hasCurve = typeof element.curve === 'number' && element.curve !== 0;
+  const shadowActive = hasTextShadow(element);
+  const shadowPreset = matchTextShadowPreset(element);
+  const bgMode = resolveTextBackgroundMode(element);
+  const curve = element.curve ?? 0;
+  const curvePreset = matchTextCurvePreset(curve);
+  // معرّفات مسارات SVG فريدة لكل نسخة من اللوحة (قد تُعرض اللوحة مرتين: سطح مكتب/جوال)
+  const pathIdPrefix = useId().replace(/:/g, '');
+
+  const update = (patch: Partial<TextElement>) => onUpdate(element.id, patch);
+  const commit = (patch: Partial<TextElement>) => {
+    update(patch);
+    pushHistory();
+  };
+
+  const applyShadow = (p: TextShadowPreset) =>
+    commit({
+      shadowColor: p.color,
+      shadowBlur: p.blur,
+      shadowOffsetX: p.ox,
+      shadowOffsetY: p.oy,
+      shadowOpacity: p.opacity,
+    });
+
+  const applyBackground = (mode: TextBackgroundMode) => {
+    if (mode === 'none') {
+      commit({ textBgColor: 'transparent', textBgBorderWidth: 0 });
+      return;
+    }
+    const keepsColor = bgMode !== 'none' ? element.textBgColor : undefined;
+    const currentRadius = element.textBgRadius ?? 0;
+    commit({
+      textBgColor: keepsColor || TEXT_BACKGROUND_DEFAULT_COLOR,
+      textBgRadius:
+        mode === 'pill'
+          ? TEXT_PILL_RADIUS
+          : currentRadius > 0 && currentRadius < TEXT_PILL_RADIUS
+            ? currentRadius
+            : 6,
+      textBgPaddingX: element.textBgPaddingX ?? 12,
+      textBgPaddingY: element.textBgPaddingY ?? 6,
+    });
+  };
 
   return (
     <ColorPanel wheelPosition="top">
       <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo">
-        {/* 🎴 بطاقة 1: الخلفية والشارة */}
-        <FluentSection
-          title="الخلفية والشارة"
-          open={hasBadge}
-          action={
-            <div className="flex items-center gap-1.5">
-              {hasBadge && (
+        <FluentSection title="الظل والتوهج">
+          <div className="grid grid-cols-5 gap-1.5" role="group" aria-label="أنماط الظل">
+            {TEXT_SHADOW_PRESETS.map((p) => (
+              <EffectTile
+                key={p.id}
+                label={p.label}
+                testId={`text-shadow-${p.id}`}
+                active={shadowPreset === p.id}
+                onClick={() => applyShadow(p)}
+              >
+                <TileSample element={element} style={{ textShadow: textShadowPreviewCss(p) }} />
+              </EffectTile>
+            ))}
+          </div>
+
+          {shadowActive && (
+            <div className="space-y-1.5 animate-in fade-in duration-100">
+              <ControlRow label="اللون">
                 <ColorField
-                  color={element.textBgColor || '#2563eb'}
-                  onChange={(val: string) => {
-                    onUpdate(element.id, { textBgColor: val });
-                  }}
-                  onCommit={() => useEditorStore.getState().pushHistory()}
+                  color={element.shadowColor || '#000000'}
+                  onChange={(val) => update({ shadowColor: val })}
+                  onCommit={pushHistory}
+                  swatchOnly
+                  ariaLabel="لون الظل"
+                />
+              </ControlRow>
+              <FluentSliderField
+                layout="inline"
+                label="التمويه"
+                value={element.shadowBlur ?? 10}
+                min={0}
+                max={40}
+                step={1}
+                unit="px"
+                onChange={(val) => update({ shadowBlur: val })}
+                onCommit={pushHistory}
+              />
+              <FluentSliderField
+                layout="inline"
+                label="الكثافة"
+                value={Math.round((element.shadowOpacity ?? 0.5) * 100)}
+                min={0}
+                max={100}
+                step={1}
+                unit="%"
+                onChange={(val) => update({ shadowOpacity: val / 100 })}
+                onCommit={pushHistory}
+              />
+            </div>
+          )}
+        </FluentSection>
+
+        <FluentSection title="الخلفية والشارة">
+          <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="خلفية النص">
+            {TEXT_BACKGROUND_PRESETS.map((p) => (
+              <EffectTile
+                key={p.id}
+                label={p.label}
+                testId={`text-bg-${p.id}`}
+                active={bgMode === p.id}
+                onClick={() => applyBackground(p.id)}
+              >
+                <span
+                  className={cn(
+                    'inline-flex items-center px-2 py-0.5',
+                    p.id === 'box' && 'rounded-sm bg-muted ring-1 ring-border/70',
+                    p.id === 'pill' && 'rounded-full bg-muted ring-1 ring-border/70',
+                  )}
+                >
+                  <TileSample element={element} style={{ fontSize: 15 }} />
+                </span>
+              </EffectTile>
+            ))}
+          </div>
+
+          {bgMode !== 'none' && (
+            <div className="space-y-1.5 animate-in fade-in duration-100">
+              <ControlRow label="اللون">
+                <ColorField
+                  color={element.textBgColor || TEXT_BACKGROUND_DEFAULT_COLOR}
+                  onChange={(val) => update({ textBgColor: val })}
+                  onCommit={pushHistory}
                   swatchOnly
                   ariaLabel="لون خلفية النص"
                 />
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (hasBadge) {
-                    onUpdate(element.id, { textBgColor: 'transparent', textBgBorderWidth: 0 });
-                  } else {
-                    onUpdate(element.id, {
-                      textBgColor: '#2563eb',
-                      textBgRadius: element.textBgRadius ?? 8,
-                      textBgPadding: element.textBgPadding ?? 8,
-                      textBgPaddingX: element.textBgPaddingX ?? 12,
-                      textBgPaddingY: element.textBgPaddingY ?? 6,
-                    });
-                  }
-                  useEditorStore.getState().pushHistory();
-                }}
-                className={toggleButtonClassName(hasBadge)}
-              >
-                {hasBadge ? 'مفعّلة' : 'إضافة'}
-              </button>
-            </div>
-          }
-        >
-          {hasBadge && (
-            <div className="space-y-2.5 animate-in fade-in duration-150">
+              </ControlRow>
               <FluentSliderField
-                label="أفقي (X)"
+                layout="inline"
+                label="حشوة أفقية"
                 value={element.textBgPaddingX ?? element.textBgPadding ?? 12}
                 min={0}
                 max={48}
                 step={1}
                 unit="px"
-                onChange={(val) => onUpdate(element.id, { textBgPaddingX: val })}
-                onCommit={() => useEditorStore.getState().pushHistory()}
+                onChange={(val) => update({ textBgPaddingX: val })}
+                onCommit={pushHistory}
               />
-
               <FluentSliderField
-                label="عمودي (Y)"
+                layout="inline"
+                label="حشوة رأسية"
                 value={element.textBgPaddingY ?? element.textBgPadding ?? 6}
                 min={0}
                 max={36}
                 step={1}
                 unit="px"
-                onChange={(val) => onUpdate(element.id, { textBgPaddingY: val })}
-                onCommit={() => useEditorStore.getState().pushHistory()}
+                onChange={(val) => update({ textBgPaddingY: val })}
+                onCommit={pushHistory}
               />
-
-              <FluentSliderField
-                label="الاستدارة"
-                value={element.textBgRadius ?? 8}
-                min={0}
-                max={64}
-                step={1}
-                unit="px"
-                onChange={(val) => onUpdate(element.id, { textBgRadius: val })}
-                onCommit={() => useEditorStore.getState().pushHistory()}
-              />
+              {bgMode === 'box' && (
+                <FluentSliderField
+                  layout="inline"
+                  label="الاستدارة"
+                  value={element.textBgRadius ?? 6}
+                  min={0}
+                  max={64}
+                  step={1}
+                  unit="px"
+                  onChange={(val) => update({ textBgRadius: val })}
+                  onCommit={pushHistory}
+                />
+              )}
             </div>
           )}
         </FluentSection>
 
-        {/* 🎴 بطاقة 2: الظل والتوهج */}
-        <FluentSection
-          title="الظل والتوهج"
-          open={hasShadow}
-          action={
-            <div className="flex items-center gap-1.5">
-              {hasShadow && (
-                <ColorField
-                  color={element.shadowColor || '#000000'}
-                  onChange={(val: string) => {
-                    onUpdate(element.id, { shadowColor: val });
-                  }}
-                  onCommit={() => useEditorStore.getState().pushHistory()}
-                  swatchOnly
-                  ariaLabel="لون الظل"
-                />
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (hasShadow) {
-                    onUpdate(element.id, { shadowBlur: 0, shadowOpacity: 0 });
-                  } else {
-                    onUpdate(element.id, {
-                      shadowColor: element.shadowColor || '#000000',
-                      shadowBlur: 10,
-                      shadowOpacity: 0.5,
-                      shadowOffsetX: 2,
-                      shadowOffsetY: 2,
-                    });
-                  }
-                  useEditorStore.getState().pushHistory();
-                }}
-                className={toggleButtonClassName(hasShadow)}
-              >
-                {hasShadow ? 'مفعّل' : 'إضافة'}
-              </button>
-            </div>
-          }
-        >
-          {/* أنماط سريعة */}
-          <div className="grid grid-cols-5 gap-1 text-mini">
-            {SHADOW_PRESETS.map((p) => (
-              <button
+        <FluentSection title="تقويس النص">
+          <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="تقويس النص">
+            {TEXT_CURVE_PRESETS.map((p) => (
+              <EffectTile
                 key={p.id}
-                type="button"
-                onClick={() => {
-                  onUpdate(element.id, {
-                    shadowColor: p.color,
-                    shadowBlur: p.blur,
-                    shadowOffsetX: p.ox,
-                    shadowOffsetY: p.oy,
-                    shadowOpacity: p.opacity,
-                  });
-                  useEditorStore.getState().pushHistory();
-                }}
-                className={cn(
-                  'h-7 w-full px-1 rounded-md border text-mini font-bold transition-colors cursor-pointer shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-                  isShadowPresetActive(element, p)
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background hover:bg-primary/10 hover:text-primary hover:border-primary/40 border-border/50 text-muted-foreground',
-                )}
+                label={p.label}
+                testId={`text-curve-${p.id}`}
+                active={curvePreset === p.id}
+                onClick={() => commit({ curve: p.value })}
               >
-                {p.label}
-              </button>
+                <svg viewBox="0 0 64 32" className="h-9 w-full text-foreground" direction="ltr">
+                  <path
+                    id={`${pathIdPrefix}-curve-${p.id}`}
+                    d={CURVE_PREVIEW_PATHS[p.id]}
+                    fill="none"
+                  />
+                  <text
+                    fontSize="10"
+                    fontWeight="700"
+                    fill="currentColor"
+                    style={{ fontFamily: element.fontFamily }}
+                  >
+                    <textPath
+                      href={`#${pathIdPrefix}-curve-${p.id}`}
+                      startOffset="50%"
+                      textAnchor="middle"
+                    >
+                      Aa Aa Aa
+                    </textPath>
+                  </text>
+                </svg>
+              </EffectTile>
             ))}
           </div>
 
-          {hasShadow && (
-            <div className="space-y-1.5 pt-1 animate-in fade-in duration-150">
-              <FluentSliderField
-                label="التمويه"
-                value={element.shadowBlur ?? 10}
-                min={0}
-                max={40}
-                step={2}
-                unit="px"
-                onChange={(val) => onUpdate(element.id, { shadowBlur: val })}
-                onCommit={() => useEditorStore.getState().pushHistory()}
-              />
-            </div>
-          )}
-        </FluentSection>
-
-        {/* 🎴 بطاقة 3: تقويس النص */}
-        <FluentSection
-          title="تقويس النص"
-          open={hasCurve}
-          action={
-            <button
-              type="button"
-              onClick={() => {
-                if (hasCurve) {
-                  onUpdate(element.id, { curve: 0 });
-                } else {
-                  onUpdate(element.id, { curve: 60 });
-                }
-                useEditorStore.getState().pushHistory();
-              }}
-              className={toggleButtonClassName(hasCurve)}
-            >
-              {hasCurve ? 'مفعّل' : 'إضافة'}
-            </button>
-          }
-        >
-          {hasCurve && (
-            <div className="space-y-2 animate-in fade-in duration-150">
-              {/* زوايا جاهزة */}
-              <div className="grid grid-cols-5 gap-1 text-mini">
-                {CURVE_PRESETS.map((cp) => (
-                  <button
-                    key={cp.label}
-                    type="button"
-                    onClick={() => {
-                      onUpdate(element.id, { curve: cp.value });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                    className={cn(
-                      'h-7 w-full px-1 rounded-md border text-mini font-bold transition-colors cursor-pointer shadow-2xs flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-                      (element.curve ?? 0) === cp.value
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background hover:bg-primary/10 text-muted-foreground border-border/50',
-                    )}
-                  >
-                    {cp.label}
-                  </button>
-                ))}
-              </div>
-
-              <FluentSliderField
-                label="زاوية التقويس"
-                value={element.curve ?? 60}
-                min={-100}
-                max={100}
-                step={5}
-                unit="°"
-                onChange={(val) => onUpdate(element.id, { curve: val })}
-                onCommit={() => useEditorStore.getState().pushHistory()}
-              />
-            </div>
+          {curve !== 0 && (
+            <FluentSliderField
+              layout="inline"
+              label="الزاوية"
+              value={curve}
+              min={-100}
+              max={100}
+              step={5}
+              unit="°"
+              onChange={(val) => update({ curve: val })}
+              onCommit={pushHistory}
+              className="animate-in fade-in duration-100"
+            />
           )}
         </FluentSection>
       </div>

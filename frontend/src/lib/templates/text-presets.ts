@@ -16,8 +16,8 @@ export const TEXT_INSERT_GROUPS = [
 ] as const;
 
 export type TextInsertGroup = (typeof TEXT_INSERT_GROUPS)[number]['id'];
-/** decorative تحفظ أنماط لوحة الخصائص السريعة (شارة/ختم) ولا تظهر في كتالوج الإدراج. */
-export type TextPresetGroup = TextInsertGroup | 'decorative';
+/** كل نمط ينتمي لمجموعة إدراج؛ الشارة والختم كتلتا توثيق استوديو منذ جلسة 1.45. */
+export type TextPresetGroup = TextInsertGroup;
 
 export interface TextPresetConfig {
   getText: () => string;
@@ -141,8 +141,8 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
   },
   badge: {
     getText: () => 'استوديو احترافي',
-    label: 'شارة كبسولة',
-    group: 'decorative',
+    label: 'شارة',
+    group: 'studio',
     lineHeight: 1.1,
     fontSize: 20,
     fontWeight: 700,
@@ -157,8 +157,8 @@ export const TEXT_PRESETS: Record<TextPresetType, TextPresetConfig> = {
   },
   'stamp-circle': {
     getText: () => 'استوديو التصوير المعتمد · 2026',
-    label: 'ختم مقوّس',
-    group: 'decorative',
+    label: 'ختم',
+    group: 'studio',
     lineHeight: 1.1,
     fontSize: 26,
     fontWeight: 700,
@@ -179,26 +179,22 @@ export interface TextPresetCatalogItem {
   config: TextPresetConfig;
 }
 
-function isInsertGroup(group: TextPresetGroup): group is TextInsertGroup {
-  return group === 'typography' || group === 'studio';
-}
-
 /**
- * المصدر الوحيد لصفوف الإدراج: الأنماط الطباعية وكتل التوثيق فقط.
- * الأنماط الزخرفية (شارة/ختم) تبقى في TEXT_PRESETS للوحة الخصائص
- * ولا تدخل كتالوج الإدراج.
+ * المصدر الوحيد لصفوف الإدراج بترتيب `TEXT_PRESETS`: الأنماط الطباعية
+ * ثم كتل الاستوديو (تاريخ/حقوق/علامة مائية/شارة/ختم).
+ * التأثيرات المنفردة (ظل/خلفية/تقويس) لا تُدرج هنا — مكانها `text-effects.ts`.
  */
 export const INSERT_TEXT_PRESETS: readonly TextPresetCatalogItem[] = (
   Object.keys(TEXT_PRESETS) as TextPresetType[]
-).flatMap((id) => {
+).map((id) => {
   const config = TEXT_PRESETS[id];
-  if (!isInsertGroup(config.group)) return [];
-  return [
-    {
-      id,
-      label: config.label,
-      group: config.group,
-      config,
-    },
-  ];
+  return { id, label: config.label, group: config.group, config };
 });
+
+/**
+ * حجم معاينة تسمية النمط في التبويب (px): يحفظ هرمية الأحجام الحقيقية
+ * مضغوطةً بين 12 و20 كي يبقى ارتفاع الصف موحّداً.
+ */
+export function textPresetPreviewSize(config: Pick<TextPresetConfig, 'fontSize'>): number {
+  return Math.round(Math.min(20, Math.max(12, 8 + config.fontSize * 0.26)));
+}

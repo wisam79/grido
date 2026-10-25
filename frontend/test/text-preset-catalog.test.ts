@@ -4,11 +4,12 @@ import {
   INSERT_TEXT_PRESETS,
   TEXT_INSERT_GROUPS,
   TEXT_PRESETS,
+  textPresetPreviewSize,
   type TextPresetType,
 } from '../src/lib/templates';
 
 describe('text preset catalog', () => {
-  it('exposes only the professional insert set in a fixed order', () => {
+  it('exposes the professional insert set in a fixed order', () => {
     expect(INSERT_TEXT_PRESETS.map((item) => item.id)).toEqual([
       'heading',
       'subheading',
@@ -17,17 +18,16 @@ describe('text preset catalog', () => {
       'studio-date',
       'photographer-tag',
       'watermark',
+      'badge',
+      'stamp-circle',
     ]);
   });
 
-  it('keeps decorative styles and removed gimmicks out of the insert catalog', () => {
+  it('keeps badge and stamp as studio blocks and removed gimmicks out of the catalog', () => {
+    expect(TEXT_PRESETS.badge.group).toBe('studio');
+    expect(TEXT_PRESETS['stamp-circle'].group).toBe('studio');
+
     const ids = new Set(INSERT_TEXT_PRESETS.map((item) => item.id));
-
-    expect(ids.has('badge')).toBe(false);
-    expect(ids.has('stamp-circle')).toBe(false);
-    expect(TEXT_PRESETS.badge).toBeDefined();
-    expect(TEXT_PRESETS['stamp-circle']).toBeDefined();
-
     for (const removed of [
       'gold-luxury',
       'neon-glow',
@@ -59,5 +59,14 @@ describe('text preset catalog', () => {
       'أنماط النص',
       'توثيق الاستوديو',
     ]);
+  });
+
+  it('previews typography labels with a compressed but ordered size hierarchy', () => {
+    const sizes = (['heading', 'subheading', 'body', 'caption'] as const).map((id) =>
+      textPresetPreviewSize(TEXT_PRESETS[id]),
+    );
+    expect(sizes).toEqual([20, 15, 13, 12]);
+    expect(textPresetPreviewSize({ fontSize: 400 })).toBe(20);
+    expect(textPresetPreviewSize({ fontSize: 4 })).toBe(12);
   });
 });

@@ -33,6 +33,8 @@ describe('FreeformTextTab', () => {
       'تاريخ اليوم',
       'حقوق المصور',
       'علامة مائية',
+      'شارة',
+      'ختم',
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }

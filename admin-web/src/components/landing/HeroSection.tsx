@@ -61,11 +61,11 @@ export function HeroSection() {
 
           {/* Sub-headline */}
           <p className="text-sm sm:text-base md:text-lg text-text-secondary leading-relaxed max-w-2xl mb-8 font-normal text-balance">
-            ضبط تلقائي لمعايير الجوازات والفيزا الدولية (ICAO)، عزل نقي للخلفيات، وتوزيع شبكي يقلل هدر الورق — يعمل محلياً 100% دون إنترنت.
+            ضبط تلقائي لمعايير الجوازات والفيزا الدولية (ICAO)، عزل نقي للخلفيات، وتوزيع شبكي يقلل هدر الورق — معالجة وطباعة محلية بالكامل على جهازك.
           </p>
 
           {/* Action Buttons Row */}
-          <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-4 mb-8 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-4 mb-3 w-full sm:w-auto">
             <a
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
@@ -73,7 +73,7 @@ export function HeroSection() {
               className="btn-primary !h-13 !px-8 text-sm sm:text-base font-bold hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
             >
               <Download className="w-5 h-5" />
-              <span>تحميل مجاني لـ Windows</span>
+              <span>تحميل النسخة التجريبية مجاناً</span>
             </a>
 
             <button
@@ -85,9 +85,13 @@ export function HeroSection() {
             </button>
           </div>
 
+          <p className="text-[11px] text-text-muted mb-7">
+            جرّب كافة ميزات الاستوديو مجاناً على أجهزتك — تفعيل دائم مدى الحياة متاح عند الرغبة.
+          </p>
+
           {/* Unified Trust Strip — فواصل نقطية أنظف */}
           <div className="ds-card-inset flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-2.5 px-5 backdrop-blur-md text-xs text-text-secondary shadow-sm">
-            {['سير عمل أسرع بخطوات أقل', 'خفيف جداً (<120MB ذاكرة)', 'مطابق لمعايير ICAO'].map((label, i) => (
+            {['معالجة وطباعة محلية بالكامل', 'خفيف جداً (<120MB ذاكرة)', 'مطابق لمعايير ICAO الرسمية'].map((label, i) => (
               <div key={label} className="flex items-center gap-1.5 text-white">
                 {i > 0 && <span className="w-1 h-1 rounded-full bg-brand-primary/50 mx-0.5" aria-hidden="true" />}
                 <span className="font-semibold">{label}</span>

@@ -1,47 +1,83 @@
-import { Check, Download, Headphones, Award } from 'lucide-react';
+import { Check, Download, Headphones, Award, MessageCircle } from 'lucide-react';
 import { CURRENCIES, type CurrencyCode } from '../../data/landing-content';
 import { GITHUB_RELEASE_DOWNLOAD_URL } from '../../lib/version';
+import { WHATSAPP_NUMBER } from './WhatsAppButton';
 import { SectionHeader } from './SectionHeader';
 
 const FEATURES = [
   'رخصة أصلية لمدى الحياة (Lifetime)',
   'تحديثات وتطويرات مجانية للأبد',
-  'محرك عزل وترميم الوجوه بلا حدود',
+  'معالجة وطباعة محلية 100% دون إنترنت',
+  'محرك ترميم سحابي اختياري للترميم الفائق',
   'تصدير فائق الدقة (300 DPI - CMYK)',
-  'قوالب الجوازات والفيزا لكافة الدول',
-  'صانع الكولاج والشبكات الحرة',
-  'توفير الورق مع خطوط قص 0.5mm',
-  'عمل محلي 100% دون إنترنت',
-  'دعم فني مباشر وتفعيل فوري',
+  'قوالب الجوازات والفيزا لكافة الدول (ICAO)',
+  'صانع الكولاج والشبكات الحرة ومحاذاة مغناطيسية',
+  'توفير الورق مع خطوط قص دقيقة 0.5mm',
+  'دعم فني مباشر ومساعدة في التثبيت والإعداد',
 ];
 
 const GUARANTEES = [
   {
     title: 'استثمار لمرة واحدة',
-    desc: 'تدفع المبلغ لمرة واحدة فقط وتمتلك البرنامج للأبد مع كافة التحديثات مجاناً دون أي اشتراكات.',
+    desc: 'تدفع المبلغ لمرة واحدة فقط وتمتلك البرنامج للأبد مع كافة التحديثات مجاناً دون أي اشتراكات دورية.',
     icon: Award,
   },
   {
+    title: 'تجربة مجانية قبل الدفع',
+    desc: 'حمّل البرنامج واختبر أدوات القص والتأطير والطباعة على طابعاتك الفعلية قبل اتخاذ قرار الشراء.',
+    icon: Download,
+  },
+  {
     title: 'تفعيل فوري ودعم فني',
-    desc: 'مفتاح ترخيص فوري مع مساعدة في التثبيت والإعداد على كافة أجهزتك من فريق الدعم.',
+    desc: 'مفتاح ترخيص رقمي دائم مع مساعدة في التثبيت وإعداد مقاسات الطابعات من فريق الدعم.',
     icon: Headphones,
   },
 ];
 
 interface PricingSectionProps {
   currency?: CurrencyCode;
+  onCurrencyChange?: (c: CurrencyCode) => void;
 }
 
-export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
+export function PricingSection({ currency = 'IQD', onCurrencyChange }: PricingSectionProps) {
   const currentCurr = CURRENCIES[currency] || CURRENCIES.IQD;
+  const purchaseUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+    `مرحباً، أود طلب مفتاح ترخيص Grido Studio النسخة الكاملة (${currentCurr.priceFormatted} ${currentCurr.unit})`
+  )}`;
 
   return (
     <section id="pricing" className="py-16 md:py-24 relative scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* مبدّل العملة موحّد في حاسبة التوفير (#roi) أعلى الصفحة —
-            إبقاء مبدّل ثانٍ هنا كان يشتت (مبدلان لنفس الغرض في صفحة واحدة) */}
-        <SectionHeader title="استثمر مرة واحدة، واستفد للأبد" description="دفعة واحدة بلا اشتراكات — رخصة دائمة مع تحديثات مجانية للأبد" />
+        <SectionHeader
+          title="استثمر مرة واحدة، واستفد للأبد"
+          description="دفعة واحدة بلا اشتراكات — رخصة دائمة مع تحديثات مجانية للأبد وتجربة مجانية قبل الشراء"
+        />
+
+        {/* Currency Selector Pill */}
+        {onCurrencyChange && (
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-inset border border-border-subtle shadow-xs">
+              {(['IQD', 'SAR', 'USD'] as CurrencyCode[]).map((c) => {
+                const isActive = currency === c;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => onCurrencyChange(c)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-card-hover text-white border border-white/10 shadow-xs'
+                        : 'text-text-secondary hover:text-white'
+                    }`}
+                    aria-pressed={isActive}
+                  >
+                    {CURRENCIES[c].symbol} {CURRENCIES[c].name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* 2-Column Balanced Pricing Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
@@ -57,7 +93,7 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
               
               <div className="text-center pb-5 border-b border-border-subtle mb-6 pt-2">
                 <h3 className="text-2xl font-black text-white mb-1">Grido Studio</h3>
-                <p className="text-xs text-text-secondary mb-5">النسخة الكاملة لاستوديوهات ومراكز الطباعة</p>
+                <p className="text-xs text-text-secondary mb-4">النسخة الكاملة لاستوديوهات ومراكز الطباعة</p>
 
                 {/* Price Row (Dynamic Currency) */}
                 <div className="flex items-baseline justify-center gap-2.5 mb-2.5">
@@ -71,6 +107,7 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
                     <span className="text-sm font-bold text-brand-primary">{currentCurr.unit}</span>
                   </div>
                 </div>
+                <span className="text-[11px] text-text-muted">شراء لمرة واحدة — لا توجد أي اشتراكات دورية</span>
               </div>
 
               {/* Feature List */}
@@ -85,30 +122,44 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
                 ))}
               </div>
 
-              {/* Primary CTA Button */}
+              {/* CTAs: Buy / Activate vs Try Free */}
               <div>
+                <a
+                  href={purchaseUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary w-full !h-12 text-sm sm:text-base justify-center mb-2.5 font-bold cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all shadow-md"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>طلب مفتاح الترخيص ({currentCurr.priceFormatted} {currentCurr.unit})</span>
+                </a>
+
                 <a
                   href={GITHUB_RELEASE_DOWNLOAD_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-primary w-full !h-12 text-sm sm:text-base justify-center mb-3 font-bold cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
+                  className="btn-secondary w-full !h-11 text-xs sm:text-sm justify-center mb-3.5 font-semibold cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
                 >
-                  <Download className="w-4 h-4" />
-                  <span>تحميل وتفعيل رخصتك الآن</span>
+                  <Download className="w-4 h-4 text-brand-light" />
+                  <span>أو حمّل وجرّب مجاناً على جهازك</span>
                 </a>
 
-                <div className="flex flex-wrap items-center justify-center gap-2.5 text-[11px] text-text-secondary">
-                  <span>تنزيل فوري</span>
+                <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-text-secondary">
+                  <span className="flex items-center gap-1 text-status-success font-medium">
+                    <Check className="w-3.5 h-3.5" />
+                    <span>تجربة مجانية متاحة</span>
+                  </span>
+                  <span className="w-1 h-1 rounded-full bg-border-subtle" />
+                  <span>تفعيل فوري بكود رقمي</span>
+                  <span className="w-1 h-1 rounded-full bg-border-subtle" />
+                  <span>نقل الترخيص متاح لأي جهاز</span>
                 </div>
               </div>
 
             </div>
           </div>
 
-          {/* Value & Guarantees Side Panel —
-              كان كل ضمان بطاقة رأسية بـ justify-between تدفع العنوان للأعلى والوصف للأسفل،
-              فتبقى داخل البطاقة الممتدة فراغ ~70px في المنتصف. الآن صف أفقي موسّط رأسياً
-              فيقرأ التمدد كحشوة متعمّدة بدل فجوة. */}
+          {/* Value & Guarantees Side Panel */}
           <div className="lg:col-span-5 flex flex-col justify-between gap-4 pt-3 reveal-stagger">
             {GUARANTEES.map((g) => {
               const Icon = g.icon;
@@ -117,7 +168,7 @@ export function PricingSection({ currency = 'IQD' }: PricingSectionProps) {
                   key={g.title}
                   className="ds-card p-5 sm:p-6 flex items-center gap-4 flex-1 hover:border-brand-primary/40 transition-colors shadow-sm"
                 >
-                  <div className="ds-icon-tile w-11 h-11 text-brand-primary">
+                  <div className="ds-icon-tile w-11 h-11 text-brand-primary shrink-0">
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">

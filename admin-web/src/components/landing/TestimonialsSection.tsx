@@ -76,12 +76,12 @@ export function TestimonialsSection() {
               <span className="relative inline-flex w-2 h-2 rounded-full bg-status-success" />
             </span>
             <span className="text-white font-bold text-xs sm:text-sm">
-              أكثر من 140 استوديو تصوير ومركز طباعة
+              موثوق لدى استوديوهات التصوير ومراكز الطباعة الرقمية في العراق والمنطقة
             </span>
           </div>
 
-          <span className="text-[10px] sm:text-xs font-mono font-bold text-brand-light bg-inset px-3 py-1 rounded-full border border-border-subtle">
-            تقييم الرضا: 99.4%
+          <span className="text-[10px] sm:text-xs font-bold text-status-success bg-inset px-3 py-1 rounded-full border border-border-subtle">
+            تحديثات مستمرة ودعم فني دائم
           </span>
         </div>
 

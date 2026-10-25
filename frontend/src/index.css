@@ -689,23 +689,26 @@
 
   /* ─── Fluent 2 Panel Motion (Spring Curve) ─────────────────── */
   /* حركة فتح/طي الألواح الجانبية بمنحنى الزنبرك المعتمد في Fluent 2
-     (cubic-bezier(0.1, 0.9, 0.2, 1)) بدل ease الخطي — إحساس طبيعي
-     أقرب لنوافذ ويندوز 11 الأصلية. وضع reduced-motion يعطلها تلقائياً
-     عبر القاعدة العامة أعلاه. */
+     (cubic-bezier(0.1, 0.9, 0.2, 1)) — إحساس طبيعي وسلس مطابق لنوافذ ويندوز 11.
+     وضع reduced-motion يعطلها تلقائياً عبر القاعدة العامة أعلاه. */
   .fluent-panel-motion {
     transition:
-      width 100ms ease-out,
-      min-width 100ms ease-out,
-      max-width 100ms ease-out,
-      opacity 100ms ease-out;
+      width 200ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      min-width 200ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      max-width 200ms cubic-bezier(0.1, 0.9, 0.2, 1),
+      border-color 200ms cubic-bezier(0.1, 0.9, 0.2, 1);
     will-change: width;
   }
 
-  /* أنيميشن طي الألواح الجانبية: الحد/الظل يتقلصان مع العرض — بدونها
-     يقفز الخط الفاصل لحظة التبديل بين border-l و border-l-0 */
+  /* أنيميشن طي الألواح الجانبية: تدرج لون الإطار إلى شفاف بدون قفزة في border-width */
   .fluent-panel-motion[data-collapsed='true'] {
-    border-width: 0;
+    border-color: transparent !important;
     box-shadow: none;
+  }
+
+  .fluent-panel-content-motion {
+    transition: transform 200ms cubic-bezier(0.1, 0.9, 0.2, 1);
+    will-change: transform;
   }
 
   /* تلاشي علوي خفيف فوق محتوى اللوح — إشارة بصرية هادئة لقابلية التمرير

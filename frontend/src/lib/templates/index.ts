@@ -4,3 +4,4 @@ export * from './collage-templates';
 export * from './grid-utils';
 export * from './constants';
 export * from './text-presets';
+export * from './text-effects';

@@ -32,6 +32,7 @@ const STAGE_DURATION_MS = 3000;
 export function AppMockup() {
   const [activePreset, setActivePreset] = useState<MockupPreset>(MOCKUP_PRESETS[0]);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [viewMode, setViewMode] = useState<'interactive' | 'real_ui'>('interactive');
   const [stage, setStage] = useState<WorkflowStage>('detect');
   const [timerCycle, setTimerCycle] = useState(0);
   const [litSheets, setLitSheets] = useState(0);
@@ -118,8 +119,74 @@ export function AppMockup() {
 
   return (
     <div ref={rootRef} className="relative w-full max-w-6xl mx-auto">
-      {/* ==================== App Window (bg-background #141414) ==================== */}
-      <div className={`relative h-[490px] xs:h-[530px] sm:h-[600px] lg:h-[640px] rounded-2xl border border-[#333333] bg-[#141414] shadow-[0_24px_70px_rgba(0,0,0,0.85),0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden transition-all duration-300 flex flex-col select-none${isInView ? '' : ' mockups-paused'}`}>
+      {/* View Mode Toggle: Interactive Canvas vs Real Desktop UI */}
+      <div className="flex items-center justify-between gap-3 mb-3.5 px-1 flex-wrap">
+        <div
+          role="group"
+          aria-label="طريقة عرض واجهة التطبيق"
+          className="inline-flex items-center gap-1 p-1 rounded-xl bg-inset border border-border-subtle shadow-xs"
+        >
+          <button
+            type="button"
+            onClick={() => setViewMode('interactive')}
+            aria-pressed={viewMode === 'interactive'}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'interactive'
+                ? 'bg-brand-primary text-white shadow-xs'
+                : 'text-text-secondary hover:text-white'
+            }`}
+          >
+            المحاكاة التفاعلية
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('real_ui')}
+            aria-pressed={viewMode === 'real_ui'}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'real_ui'
+                ? 'bg-brand-primary text-white shadow-xs'
+                : 'text-text-secondary hover:text-white'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>صورة البرنامج الفعلية</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsZoomed(true)}
+          className="text-xs text-text-secondary hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-inset border border-border-subtle transition-colors cursor-pointer"
+        >
+          <Expand className="w-3.5 h-3.5 text-brand-light" />
+          <span>تكبير لشاشة كاملة</span>
+        </button>
+      </div>
+
+      {/* Render Real UI or Interactive Window */}
+      {viewMode === 'real_ui' ? (
+        <div
+          onClick={() => setIsZoomed(true)}
+          className="relative h-[490px] xs:h-[530px] sm:h-[600px] lg:h-[640px] rounded-2xl border border-[#333333] bg-[#141414] shadow-[0_24px_70px_rgba(0,0,0,0.85),0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden cursor-zoom-in group flex flex-col"
+        >
+          <div className="p-2 sm:p-3 bg-[#1A1A1A] border-b border-[#333] flex items-center justify-between text-xs text-white shrink-0">
+            <span className="font-bold flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-status-success inline-block" />
+              لقطة الشاشة الحقيقية لتطبيق Grido Studio
+            </span>
+            <span className="text-[11px] text-text-secondary hidden sm:inline">انقر في أي مكان للتكبير</span>
+          </div>
+          <div className="flex-1 bg-[#101010] p-2 sm:p-4 flex items-center justify-center overflow-hidden">
+            <img
+              src="/grido-desktop-ui.png"
+              alt="واجهة تطبيق Grido Studio الفعلية لسطح المكتب"
+              className="w-full h-full object-contain rounded-lg"
+            />
+          </div>
+        </div>
+      ) : (
+        /* ==================== App Window (bg-background #141414) ==================== */
+        <div className={`relative h-[490px] xs:h-[530px] sm:h-[600px] lg:h-[640px] rounded-2xl border border-[#333333] bg-[#141414] shadow-[0_24px_70px_rgba(0,0,0,0.85),0_8px_24px_rgba(0,0,0,0.6)] overflow-hidden transition-all duration-300 flex flex-col select-none${isInView ? '' : ' mockups-paused'}`}>
 
         {/* ==================== Title Bar (h-9 sm:h-10, bg-sidebar #1A1A1A) ==================== */}
         <div className="h-9 sm:h-10 shrink-0 bg-[#1A1A1A]/95 backdrop-blur-xl border-b border-[#333] px-2.5 sm:px-3.5 flex items-center justify-between" dir="rtl">
@@ -711,6 +778,7 @@ export function AppMockup() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Lightbox — لقطة الواجهة الفعلية */}
       {isZoomed && (

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { CanvasOverlayHost } from '@/components/editor/canvas/canvas-overlay-host';
+import { notifyPanelTransition } from '@/components/editor/canvas/use-stable-viewport-size';
 import { cn } from '@/lib/utils';
 
 import { MobilePanelsSheet } from './mobile-panels-sheet';
@@ -48,6 +49,16 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
   // In Wide mode: templates acts as a left-side drawer
   const isLeftDrawerOpen = isWide && isTemplatesDrawerOpen;
 
+  // 🧭 تتبع تغير حالة ظهور الألواح الجانبية لبدء حلقة المزامنة النشطة للكانفاس فوراً بـ 60fps
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    notifyPanelTransition();
+  }, [isRightPanelOpen, isLeftDrawerOpen]);
+
   // ltr-island موثقة (عقد الاتجاه R37): main ثابت LTR فيزيائياً — Rail
   // يساراً والمفتش يميناً دائماً لاستقرار الكانفس. المحتوى الداخلي لكل
   // لوحة معزول بـ dir="rtl". الفواصل border-e/border-s منطقية لتتبع الاتجاه.
@@ -78,13 +89,19 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           data-testid="workspace-panel-templates"
           data-collapsed={!isLeftDrawerOpen}
           className={cn(
-            'h-full border-e border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
+            'h-full shrink-0 border-e border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
             isLeftDrawerOpen
-              ? 'w-[288px] min-w-[288px] max-w-[288px] opacity-100'
-              : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-e-0 shadow-none',
+              ? 'w-[288px] min-w-[288px] max-w-[288px]'
+              : 'w-0 min-w-0 max-w-0 pointer-events-none',
           )}
         >
-          <div dir="rtl" className="h-full w-[288px] flex flex-col overflow-hidden">
+          <div
+            dir="rtl"
+            className={cn(
+              'h-full w-[288px] flex flex-col overflow-hidden fluent-panel-content-motion',
+              isLeftDrawerOpen ? 'translate-x-0' : '-translate-x-full',
+            )}
+          >
             {templatesContent}
           </div>
         </aside>
@@ -139,10 +156,10 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           data-testid={isStandard ? 'workspace-panel-inspector' : 'workspace-panel-properties'}
           data-collapsed={!isRightPanelOpen}
           className={cn(
-            'h-full border-s border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
+            'h-full shrink-0 border-s border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
             isRightPanelOpen
-              ? 'w-[288px] min-w-[288px] max-w-[288px] opacity-100'
-              : 'w-0 min-w-0 max-w-0 opacity-0 pointer-events-none border-s-0 shadow-none',
+              ? 'w-[288px] min-w-[288px] max-w-[288px]'
+              : 'w-0 min-w-0 max-w-0 pointer-events-none',
           )}
         >
           <div dir="rtl" className="h-full w-[288px] flex flex-col overflow-hidden">

@@ -152,9 +152,15 @@ export function RoiCalculator({ currency = 'IQD', onCurrencyChange }: RoiCalcula
                 <div className="text-xl sm:text-2xl font-mono font-bold text-white">
                   +{monthlyExtraRevenue.toLocaleString()} <span className="text-[11px] text-text-secondary font-sans">{currentCurr.unit}</span>
                 </div>
-                <span className="text-[10px] text-text-secondary mt-1">من تقليل هدر الورق</span>
+                <span className="text-[10px] text-text-secondary mt-1">باستيعاب زبائن أكثر بالوقت الموفر</span>
               </div>
             </div>
+          </div>
+
+          {/* Transparent Assumptions Note */}
+          <div className="mt-6 pt-4 border-t border-border-subtle text-[11px] text-text-secondary leading-relaxed flex items-center gap-2">
+            <span className="text-brand-light font-bold shrink-0">💡 أساس الحسبة:</span>
+            <span>مبني على توفير ~5.5 دقيقة لكل زبون مقارنة بالطرق التقليدية، وافتراض استثمار ربع الوقت الموفر (25%) في خدمة زبائن جدد شهرياً.</span>
           </div>
 
         </div>

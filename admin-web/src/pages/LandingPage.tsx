@@ -5,7 +5,6 @@ import { HeroSection } from '../components/landing/HeroSection';
 import { BentoGrid } from '../components/landing/BentoGrid';
 import { AiSpotlightSection } from '../components/landing/AiSpotlightSection';
 import { Windows11Section } from '../components/landing/Windows11Section';
-import { AudienceSection } from '../components/landing/AudienceSection';
 import { RoiCalculator } from '../components/landing/RoiCalculator';
 import { ComparisonSection } from '../components/landing/ComparisonSection';
 import { TestimonialsSection } from '../components/landing/TestimonialsSection';
@@ -123,11 +122,6 @@ export default function LandingPage() {
           <Windows11Section />
         </div>
 
-        {/* Section 5: Target Audience Segmentation */}
-        <div className="reveal-on-scroll">
-          <AudienceSection />
-        </div>
-
         {/* Interactive ROI Calculator */}
         <div className="reveal-on-scroll">
           <RoiCalculator currency={currency} onCurrencyChange={setCurrency} />
@@ -145,7 +139,7 @@ export default function LandingPage() {
 
         {/* Section 6: Lifetime Pricing & Licensing */}
         <div className="reveal-on-scroll">
-          <PricingSection currency={currency} />
+          <PricingSection currency={currency} onCurrencyChange={setCurrency} />
         </div>
 
         {/* FAQ Accordion */}

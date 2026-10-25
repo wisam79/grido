@@ -147,18 +147,8 @@ export function TextColorTab({ element, onUpdate }: TextTabProps) {
           )}
         </FluentSection>
 
-        {/* 🎴 بطاقة 3: الشفافية */}
-        <FluentSection
-          title="الشفافية"
-          action={
-            <span
-              className="text-mini font-bold font-mono px-2 py-0.5 rounded-md bg-muted/60 border border-border/50 text-foreground/90 tabular-nums select-none"
-              dir="ltr"
-            >
-              {currentOpacity}%
-            </span>
-          }
-        >
+        {/* 🎴 بطاقة 3: الشفافية — القيمة تظهر مرة واحدة داخل المنزلق */}
+        <FluentSection title="الشفافية">
           <FluentSliderField
             label="شفافية النص"
             value={currentOpacity}
