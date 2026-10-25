@@ -46,7 +46,7 @@ function saveStoredPreferences(prefs: StoredPreferences) {
 
 function getBreakpoint(width: number): WorkspaceBreakpoint {
   if (width < 1024) return 'compact';
-  if (width < 1200) return 'standard';
+  if (width < 1440) return 'standard';
   return 'wide';
 }
 
