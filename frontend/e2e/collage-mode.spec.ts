@@ -17,11 +17,9 @@ test.describe('Collage Mode and Filters E2E', () => {
       .first()
       .click();
 
-    const templatesRailBtn = page
-      .getByRole('button', { name: /قوالب الكولاج والشبكة|القوالب|قوالب/ })
-      .first();
-    if (await templatesRailBtn.isVisible()) {
-      await templatesRailBtn.click();
+    const showTemplatesBtn = page.getByRole('button', { name: 'إظهار لوحة القوالب' }).first();
+    if (await showTemplatesBtn.isVisible()) {
+      await showTemplatesBtn.click();
     }
     const presetsTab = page
       .locator('[data-tab="presets"]')

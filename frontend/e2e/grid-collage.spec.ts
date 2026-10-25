@@ -18,12 +18,10 @@ test.describe('Grid Collage Workflow E2E', () => {
       .click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
-    // Open templates panel via rail if collapsed
-    const templatesRailBtn = page
-      .getByRole('button', { name: /قوالب الكولاج والشبكة|القوالب|قوالب/ })
-      .first();
-    if (await templatesRailBtn.isVisible()) {
-      await templatesRailBtn.click();
+    // Open templates panel via header toggle if collapsed
+    const showTemplatesBtn = page.getByRole('button', { name: 'إظهار لوحة القوالب' }).first();
+    if (await showTemplatesBtn.isVisible()) {
+      await showTemplatesBtn.click();
     }
     const presetsTab = page
       .locator('[data-tab="presets"]')

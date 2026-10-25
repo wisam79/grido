@@ -104,10 +104,7 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     await waitForAppReady(page);
 
     // إغلاق الدرج الأيسر لإتاحة أقصى عرض للكانفاس (أكثر من 55% فراغ جانبي)
-    const railFirstTool = page
-      .locator('[data-testid^="rail-collage-"], [data-testid^="rail-studio-"]')
-      .first();
-    await railFirstTool.click();
+    await page.keyboard.press('Control+b');
 
     // الورقة الافتراضية A4 رأسية: الفراغ الجانبي في ملاءمة الارتفاع أكبر من
     // الورقة نفسها، فالوضع التلقائي يختار ملاءمة العرض ويعرضه المؤشر في الشريط

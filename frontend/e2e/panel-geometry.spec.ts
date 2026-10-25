@@ -99,14 +99,6 @@ const STUDIO_RAIL_SECTIONS = [
   'rail-studio-text',
 ];
 
-function activePanel(page: Page): Locator {
-  return page
-    .locator(
-      '[data-testid="workspace-panel-inspector"]:visible, [data-testid="workspace-panel-properties"]:visible',
-    )
-    .first();
-}
-
 /**
  * يفتح كل الأقسام القابلة للطي داخل اللوح حتى تُقاس محتوياتها لا رؤوسها فقط.
  * نستثني عناصر Radix (`data-state`) لأن النقر عليها يفتح قائمة منسدلة تعترض
@@ -131,12 +123,7 @@ async function openRailPanel(page: Page, toolId: string): Promise<Locator | null
   if (!(await tool.count())) return null;
   await tool.click();
   await page.waitForTimeout(300);
-  // النقر على أداة مفتوحة أصلاً يغلق لوحها — نقرتان تفتحانه دائماً
-  if (!(await activePanel(page).count())) {
-    await tool.click();
-    await page.waitForTimeout(300);
-  }
-  const panel = activePanel(page);
+  const panel = page.locator('[data-testid="workspace-panel-templates"]:visible').first();
   if (!(await panel.count())) return null;
   await expandAllSections(panel, page);
   await page.keyboard.press('Escape');
