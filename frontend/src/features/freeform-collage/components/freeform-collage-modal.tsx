@@ -673,8 +673,15 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       const newH = Math.max(64, Math.round((paperHeightMM * dpi) / 25.4));
 
       useEditorStore.setState({
+        mode: 'collage',
         canvasWidth: newW,
         canvasHeight: newH,
+        collageCanvasWidth: newW,
+        collageCanvasHeight: newH,
+        freeformCanvasWidth:
+          store.freeformCanvasWidth || (store.mode === 'single' ? store.canvasWidth : 2480),
+        freeformCanvasHeight:
+          store.freeformCanvasHeight || (store.mode === 'single' ? store.canvasHeight : 3508),
         printSettings: {
           ...(store.printSettings || {
             marginMM: 0,

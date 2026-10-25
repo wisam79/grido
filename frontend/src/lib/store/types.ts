@@ -15,6 +15,18 @@ export interface ProjectStateData {
   backgroundGradientColor2?: string | null;
   /** زاوية التدرج الخطي بالدرجات */
   backgroundGradientAngle?: number;
+  /** أبعاد وخلفية الوضع الحر المعزولة */
+  freeformCanvasWidth?: number;
+  freeformCanvasHeight?: number;
+  freeformBackgroundColor?: string;
+  freeformBackgroundGradientColor2?: string | null;
+  freeformBackgroundGradientAngle?: number;
+  /** أبعاد وخلفية وضع الكولاج المعزولة */
+  collageCanvasWidth?: number;
+  collageCanvasHeight?: number;
+  collageBackgroundColor?: string;
+  collageBackgroundGradientColor2?: string | null;
+  collageBackgroundGradientAngle?: number;
   elements?: CanvasElement[];
   slots?: CanvasSlot[];
   template?: PhotoTemplate | null;
@@ -220,6 +232,16 @@ export interface HistoryEntry {
   collageTemplate?: CollageTemplate | null;
   backgroundGradientColor2?: string | null;
   backgroundGradientAngle?: number;
+  freeformCanvasWidth?: number;
+  freeformCanvasHeight?: number;
+  freeformBackgroundColor?: string;
+  freeformBackgroundGradientColor2?: string | null;
+  freeformBackgroundGradientAngle?: number;
+  collageCanvasWidth?: number;
+  collageCanvasHeight?: number;
+  collageBackgroundColor?: string;
+  collageBackgroundGradientColor2?: string | null;
+  collageBackgroundGradientAngle?: number;
   collageGap?: number;
   collageMargin?: number;
   collageRadius?: number;

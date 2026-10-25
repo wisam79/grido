@@ -54,21 +54,21 @@ export const TemplatePanel = React.memo(function TemplatePanel({
   activeCollageTab = 'custom',
   onActiveCollageTabChange,
 }: TemplatePanelProps) {
-  const { setCollageTemplate, collageTemplate, slots, mode, workflow, elements } = useEditorStore(
+  const { setCollageTemplate, collageTemplate, slots, mode, workflow } = useEditorStore(
     useShallow((state) => ({
       setCollageTemplate: state.setCollageTemplate,
       collageTemplate: state.collageTemplate,
       slots: state.slots,
       mode: state.mode,
       workflow: state.workflow,
-      elements: state.elements,
     })),
   );
 
   const [savedTemplates, setSavedTemplates] = useState<CollageTemplate[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // حوار تأكيد عند تبديل القالب إذا كان سيُسقط صوراً موجودة أو عناصر الوضع الحر (P2-14)
+  // حوار تأكيد عند تبديل القالب إذا كان سيُسقط صوراً موجودة (P2-14).
+  // عناصر الوضع الحر لم تعد تُمس عند تبديل قالب الكولاج (فصل الوضعين) فلا تأكيد لها.
   const [pendingTemplate, setPendingTemplate] = useState<CollageTemplate | null>(null);
 
   const handleSelectTemplate = (t: CollageTemplate) => {
@@ -78,8 +78,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
     // إذا كانت الصور الفريدة أكثر من سعة القالب الجديد، سيتم فقدان صور فريدة حقيقية
     // أما إذا كانت صورة واحدة مكررة أو صور فريدة تتسع بالكامل للقالب الجديد، يتم التبديل مباشرة
     const dropsImages = uniqueImages.size > capacity;
-    const hasFreeElements = mode !== 'collage' && elements.length > 0;
-    if (dropsImages || hasFreeElements) {
+    if (dropsImages) {
       setPendingTemplate(t);
       return;
     }
@@ -240,14 +239,10 @@ export const TemplatePanel = React.memo(function TemplatePanel({
         <AlertDialogContent dir="rtl" className="font-cairo border fluent-specular">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-start text-base font-bold">
-              {droppedCount > 0 ? 'تبديل قالب الكولاج' : 'وضع الكولاج'}
+              تبديل قالب الكولاج
             </AlertDialogTitle>
             <AlertDialogDescription className="text-start text-xs text-muted-foreground leading-relaxed">
-              {droppedCount > 0 && mode === 'collage'
-                ? `سيتم حذف ${droppedCount} ${droppedCount === 1 ? 'صورة' : 'صور'} لا تتسع للقالب الجديد. متابعة؟`
-                : droppedCount > 0
-                  ? `سيتم حذف ${droppedCount} ${droppedCount === 1 ? 'صورة' : 'صور'} ومسح عناصر الوضع الحر. متابعة؟`
-                  : 'سيتم مسح عناصر الوضع الحر عند التحويل للكولاج. متابعة؟'}
+              {`سيتم حذف ${droppedCount} ${droppedCount === 1 ? 'صورة' : 'صور'} لا تتسع للقالب الجديد. متابعة؟`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

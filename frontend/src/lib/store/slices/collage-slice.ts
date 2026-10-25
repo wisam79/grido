@@ -1,5 +1,6 @@
 import { normalizeSelection } from './element-slice';
 import { measureImageAspect } from '../../canvas/measure-image';
+import { recenterElementsOnResize } from '../../canvas/resize-elements';
 import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from '../../templates';
 import { uid } from '../../utils';
 
@@ -157,6 +158,12 @@ type CollageCross = CollageSlice & {
   canvasWidth: number;
   canvasHeight: number;
   backgroundColor: string;
+  freeformCanvasWidth?: number;
+  freeformCanvasHeight?: number;
+  freeformBackgroundColor?: string;
+  collageCanvasWidth?: number;
+  collageCanvasHeight?: number;
+  collageBackgroundColor?: string;
   elements: CanvasElement[];
   selectedId: string | null;
   selectedIds: string[];
@@ -175,11 +182,28 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
 
   setTemplate: (template) => {
     if (template) {
-      const lastImg = get().lastEditedImage;
-      const lastAspect = get().lastEditedImageAspect || 1;
-      const elements: CanvasElement[] = [];
-      if (lastImg) {
+      // 🧱 فصل الوضعين: قالب الصورة يخص الوضع الحر فقط — خانات الكولاج (`slots`)
+      // لا تُمس، وعناصر الوضع الحر الموجودة تُحفظ (يُعاد استدعاء setTemplate عند
+      // تغيير المقاس/الاتجاه في لوحة الأبعاد وكان يستبدل التصميم كله بصورة واحدة).
+      // البذر بآخر صورة معدلة يتم فقط عندما يكون الوضع الحر فارغاً.
+      const s = get();
+      const lastImg = s.lastEditedImage;
+      const lastAspect = s.lastEditedImageAspect || 1;
+      // العناصر الموجودة تحتفظ بأبعادها بالبكسل ومتمركزة في المقاس الجديد
+      // (نسخة دائماً: الدالة تعيد المرجع نفسه عند تطابق الأبعاد و push أدناه يعدّلها)
+      const elements: CanvasElement[] = [
+        ...recenterElementsOnResize(
+          s.elements,
+          s.canvasWidth,
+          s.canvasHeight,
+          template.width,
+          template.height,
+        ),
+      ];
+      let seededId: string | null = null;
+      if (lastImg && elements.length === 0) {
         const id = uid();
+        seededId = id;
         let hPercent = 0.6;
         let wPercent = hPercent * (template.height / template.width) * lastAspect;
 
@@ -211,10 +235,12 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         mode: 'single',
         canvasWidth: template.width,
         canvasHeight: template.height,
+        freeformCanvasWidth: template.width,
+        freeformCanvasHeight: template.height,
         backgroundColor: template.background,
+        freeformBackgroundColor: template.background,
         elements,
-        slots: [],
-        ...normalizeSelection(elements[0]?.id),
+        ...normalizeSelection(seededId),
       });
       get().pushHistory();
     } else {
@@ -225,8 +251,8 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
 
   setCollageTemplate: (template) => {
     if (template) {
-      const currentWidth = get().canvasWidth || 2480;
-      const currentHeight = get().canvasHeight || 3508;
+      const currentWidth = get().collageCanvasWidth || get().canvasWidth || 2480;
+      const currentHeight = get().collageCanvasHeight || get().canvasHeight || 3508;
       const storedDpi = get().printSettings?.dpi || 300;
       const dpi = getEffectiveDpi(currentWidth, currentHeight, storedDpi);
 
@@ -282,14 +308,18 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           dragY: existingSlot?.dragY || 0,
         };
       });
+      // 🧱 فصل الوضعين: الكولاج يملك `slots` فقط وعناصر الوضع الحر (`elements`)
+      // لا تُمس هنا إطلاقاً — كان التبديل يمسحها فيضيع تصميم الوضع الحر بالكامل
+      // عند اختيار أي قالب أو تعديل الشبكة من داخل الكولاج.
       set({
         collageTemplate: template,
         mode: 'collage',
         slots,
-        elements: [],
         ...normalizeSelection([]),
         canvasWidth: currentWidth,
         canvasHeight: currentHeight,
+        collageCanvasWidth: currentWidth,
+        collageCanvasHeight: currentHeight,
       });
       // لا نمسح سجل التراجع — التبديل يُسجل كخطوة واحدة قابلة للتراجع (إصلاح E-2)
       get().pushHistory();

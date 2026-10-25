@@ -173,12 +173,105 @@ describe('CollageSlice Unit Tests', () => {
     expect(singleState.selectedIds).toEqual([singleState.elements[0].id]);
 
     // 2. التحويل إلى كولاج والتأكد من تصفير كل من selectedId و selectedIds بالكامل
+    //    مع بقاء عناصر الوضع الحر سليمة (فصل الوضعين)
     useEditorStore.getState().setCollageTemplate(COLLAGE_TEMPLATES[0]);
 
     const collageState = useEditorStore.getState();
     expect(collageState.mode).toBe('collage');
-    expect(collageState.elements.length).toBe(0);
+    expect(collageState.elements.length).toBe(1);
     expect(collageState.selectedId).toBeNull();
     expect(collageState.selectedIds).toEqual([]);
+  });
+
+  describe('فصل الوضعين: الكولاج لا يمس الوضع الحر والعكس', () => {
+    const freeElement = {
+      id: 'free-1',
+      type: 'text',
+      text: 'تصميم حر',
+      fontSize: 40,
+      x: 0.1,
+      y: 0.1,
+      width: 0.4,
+      height: 0.1,
+      rotation: 0,
+      opacity: 1,
+      zIndex: 1,
+    } as any;
+
+    it('تبديل قالب الكولاج من داخل الكولاج يُبقي عناصر الوضع الحر', () => {
+      useEditorStore.setState({ elements: [freeElement], mode: 'collage' });
+      useEditorStore.getState().setCollageTemplate(COLLAGE_TEMPLATES[1] ?? COLLAGE_TEMPLATES[0]);
+      useEditorStore.getState().setCollageTemplate(COLLAGE_TEMPLATES[0]);
+
+      const s = useEditorStore.getState();
+      expect(s.elements).toHaveLength(1);
+      expect(s.elements[0].id).toBe('free-1');
+
+      // العودة للوضع الحر تجد التصميم كما هو
+      s.setMode('single');
+      expect(useEditorStore.getState().elements[0].id).toBe('free-1');
+    });
+
+    it('setTemplate لا يمسح خانات الكولاج ولا يستبدل تصميماً حراً قائماً', () => {
+      useEditorStore.getState().setCollageTemplate(COLLAGE_TEMPLATES[0]);
+      const slotId = useEditorStore.getState().slots[0].id;
+      useEditorStore.getState().setSlotImage(slotId, 'collage.jpg');
+      useEditorStore.setState({
+        elements: [freeElement],
+        lastEditedImage: 'portrait.jpg',
+        lastEditedImageAspect: 0.75,
+      });
+
+      useEditorStore.getState().setTemplate({
+        id: 'tmpl-2',
+        name: 'Single',
+        width: 1200,
+        height: 1800,
+        background: '#FFFFFF',
+        slots: 1,
+      } as any);
+
+      const s = useEditorStore.getState();
+      expect(s.mode).toBe('single');
+      expect(s.elements).toHaveLength(1);
+      expect(s.elements[0].id).toBe('free-1');
+      expect(s.slots.find((sl) => sl.id === slotId)?.imageSrc).toBe('collage.jpg');
+    });
+
+    it('عزل مقاس الورقة ولون الخلفية تماماً بين الوضع الحر والكولاج', () => {
+      // 1. إعداد الوضع الحر بمقاس وخلفية مخصصين
+      useEditorStore.getState().setMode('single');
+      useEditorStore.getState().setCanvasSize(1000, 800);
+      useEditorStore.getState().setBackgroundColor('#FF0000');
+
+      let s = useEditorStore.getState();
+      expect(s.canvasWidth).toBe(1000);
+      expect(s.canvasHeight).toBe(800);
+      expect(s.backgroundColor).toBe('#FF0000');
+
+      // 2. التبديل إلى الكولاج وتغيير المقاس والخلفية
+      useEditorStore.getState().setMode('collage');
+      useEditorStore.getState().setCanvasSize(2480, 3508);
+      useEditorStore.getState().setBackgroundColor('#00FF00');
+
+      s = useEditorStore.getState();
+      expect(s.canvasWidth).toBe(2480);
+      expect(s.canvasHeight).toBe(3508);
+      expect(s.backgroundColor).toBe('#00FF00');
+
+      // 3. العودة للوضع الحر: استعادة مقاس وخلفية الوضع الحر دون تأثر بتغييرات الكولاج
+      useEditorStore.getState().setMode('single');
+      s = useEditorStore.getState();
+      expect(s.canvasWidth).toBe(1000);
+      expect(s.canvasHeight).toBe(800);
+      expect(s.backgroundColor).toBe('#FF0000');
+
+      // 4. العودة للكولاج: استعادة مقاس وخلفية الكولاج
+      useEditorStore.getState().setMode('collage');
+      s = useEditorStore.getState();
+      expect(s.canvasWidth).toBe(2480);
+      expect(s.canvasHeight).toBe(3508);
+      expect(s.backgroundColor).toBe('#00FF00');
+    });
   });
 });

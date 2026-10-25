@@ -5,6 +5,7 @@ import { DEFAULT_PRINT_SETTINGS } from './print-slice';
 import { clearDisplayCache } from '../../canvas/display-image';
 import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from '../../canvas/fit';
 import { invalidateImageCache } from '../../canvas/image-cache';
+import { recenterElementsOnResize } from '../../canvas/resize-elements';
 import { canvasMm, findPaperByMm } from '../../canvas/units';
 import { hydrateProjectState } from '../../io/project-hydrator';
 import {
@@ -39,6 +40,18 @@ export interface CoreSlice {
   backgroundGradientColor2: string | null;
   /** زاوية التدرج الخطي بالدرجات (0° = يسار→يمين، مع عقارب الساعة) */
   backgroundGradientAngle: number;
+  /** أبعاد وخلفية الوضع الحر المعزولة */
+  freeformCanvasWidth: number;
+  freeformCanvasHeight: number;
+  freeformBackgroundColor: string;
+  freeformBackgroundGradientColor2: string | null;
+  freeformBackgroundGradientAngle: number;
+  /** أبعاد وخلفية وضع الكولاج المعزولة */
+  collageCanvasWidth: number;
+  collageCanvasHeight: number;
+  collageBackgroundColor: string;
+  collageBackgroundGradientColor2: string | null;
+  collageBackgroundGradientAngle: number;
   lastEditedImage: string | null;
   lastEditedImageAspect: number | null;
 
@@ -76,6 +89,16 @@ export const DEFAULT_CORE_STATE = {
   backgroundColor: '#FFFFFF',
   backgroundGradientColor2: null as string | null,
   backgroundGradientAngle: 135,
+  freeformCanvasWidth: 2480,
+  freeformCanvasHeight: 3508,
+  freeformBackgroundColor: '#FFFFFF',
+  freeformBackgroundGradientColor2: null as string | null,
+  freeformBackgroundGradientAngle: 135,
+  collageCanvasWidth: 2480,
+  collageCanvasHeight: 3508,
+  collageBackgroundColor: '#FFFFFF',
+  collageBackgroundGradientColor2: null as string | null,
+  collageBackgroundGradientAngle: 135,
   lastEditedImage: null as string | null,
   lastEditedImageAspect: null as number | null,
   canvasZoom: 1,
@@ -133,23 +156,70 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
   canvasFitMode: readStoredFitMode(),
 
   setMode: (mode) => {
+    if (get().mode === mode) return;
+
     set((s) => {
-      const nextState: Partial<CoreSliceCross> = { mode, selectedId: null, selectedIds: [] };
+      const isSwitchingToCollage = mode === 'collage';
+
+      // 1. حفظ أبعاد وخلفية الوضع الحالي في خانته المعزولة
+      const savedForOutgoing =
+        s.mode === 'collage'
+          ? {
+              collageCanvasWidth: s.canvasWidth,
+              collageCanvasHeight: s.canvasHeight,
+              collageBackgroundColor: s.backgroundColor,
+              collageBackgroundGradientColor2: s.backgroundGradientColor2,
+              collageBackgroundGradientAngle: s.backgroundGradientAngle,
+            }
+          : {
+              freeformCanvasWidth: s.canvasWidth,
+              freeformCanvasHeight: s.canvasHeight,
+              freeformBackgroundColor: s.backgroundColor,
+              freeformBackgroundGradientColor2: s.backgroundGradientColor2,
+              freeformBackgroundGradientAngle: s.backgroundGradientAngle,
+            };
+
+      // 2. استرجاع أبعاد وخلفية الوضع المستهدف
+      const targetWidth = isSwitchingToCollage
+        ? s.collageCanvasWidth || 2480
+        : s.freeformCanvasWidth || 2480;
+      const targetHeight = isSwitchingToCollage
+        ? s.collageCanvasHeight || 3508
+        : s.freeformCanvasHeight || 3508;
+      const targetBgColor = isSwitchingToCollage
+        ? s.collageBackgroundColor || '#FFFFFF'
+        : s.freeformBackgroundColor || '#FFFFFF';
+      const targetGradient2 = isSwitchingToCollage
+        ? s.collageBackgroundGradientColor2
+        : s.freeformBackgroundGradientColor2;
+      const targetGradientAngle = isSwitchingToCollage
+        ? s.collageBackgroundGradientAngle
+        : s.freeformBackgroundGradientAngle;
+
+      const nextState: Partial<CoreSliceCross> = {
+        ...savedForOutgoing,
+        mode,
+        canvasWidth: targetWidth,
+        canvasHeight: targetHeight,
+        backgroundColor: targetBgColor,
+        backgroundGradientColor2: targetGradient2,
+        backgroundGradientAngle: targetGradientAngle,
+        selectedId: null,
+        selectedIds: [],
+      };
 
       // إذا تم الانتقال لوضع الكولاج وكانت الخانات فارغة، نقوم بإعادة بناء الخلايا لتجنب ظهور الكانفس فارغاً
       const buildSlots = (): CanvasSlot[] | undefined => {
         const template = s.collageTemplate || COLLAGE_TEMPLATES[0];
-        const currentWidth = s.canvasWidth || 2480;
-        const currentHeight = s.canvasHeight || 3508;
         const storedDpi = s.printSettings?.dpi || 300;
-        const dpi = getEffectiveDpi(currentWidth, currentHeight, storedDpi);
+        const dpi = getEffectiveDpi(targetWidth, targetHeight, storedDpi);
 
         let cells = template.cells;
         if (template.physicalLayout) {
           const dynamicCells = computeDynamicCollageCells(
             template,
-            currentWidth,
-            currentHeight,
+            targetWidth,
+            targetHeight,
             dpi,
             s.collageGap || 0,
             s.collageMargin || 0,
@@ -176,22 +246,20 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
         }));
       };
 
-      if (mode === 'collage' && (!s.slots || s.slots.length === 0)) {
+      if (isSwitchingToCollage && (!s.slots || s.slots.length === 0)) {
         nextState.slots = buildSlots();
-      } else if (mode === 'collage') {
+      } else if (isSwitchingToCollage) {
         // القوالب الفيزيائية (physicalLayout) تُحسب خلاياها من أبعاد الكانفس
         // الحالية — خانات مبنية لمقاس قديم تبقى مشوهة عند العودة من الوضع الحر
         // بعد تغيير المقاس، لذا نعيد موازنتها مع الحفاظ على الصور والتحويلات
         const template = s.collageTemplate || COLLAGE_TEMPLATES[0];
         if (template.physicalLayout) {
-          const currentWidth = s.canvasWidth || 2480;
-          const currentHeight = s.canvasHeight || 3508;
           const storedDpi = s.printSettings?.dpi || 300;
-          const dpi = getEffectiveDpi(currentWidth, currentHeight, storedDpi);
+          const dpi = getEffectiveDpi(targetWidth, targetHeight, storedDpi);
           const dynamicCells = computeDynamicCollageCells(
             template,
-            currentWidth,
-            currentHeight,
+            targetWidth,
+            targetHeight,
             dpi,
             s.collageGap || 0,
             s.collageMargin || 0,
@@ -233,26 +301,16 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     const oldH = get().canvasHeight;
     if (oldW === w && oldH === h) return;
 
-    const adjustedElements = get().elements.map((el: CanvasElement) => {
-      const oldPxX = el.x * oldW;
-      const oldPxY = el.y * oldH;
-      const oldPxW = el.width * oldW;
-      const oldPxH = el.height * oldH;
+    const mode = get().mode;
+    const isSingle = mode === 'single';
 
-      const newPxX = oldPxX + (w - oldW) / 2;
-      const newPxY = oldPxY + (h - oldH) / 2;
-
-      return {
-        ...el,
-        x: newPxX / w,
-        y: newPxY / h,
-        width: oldPxW / w,
-        height: oldPxH / h,
-      };
-    });
+    // 🧱 فصل الوضعين: في الوضع الحر فقط يُعاد تمركز العناصر بالنسبة للأبعاد الجديدة.
+    // في وضع الكولاج، عناصر الوضع الحر لا تُمَس ولا تُشوه إطلاقاً!
+    const adjustedElements = isSingle
+      ? recenterElementsOnResize(get().elements, oldW, oldH, w, h)
+      : get().elements;
 
     const collageTemplate = get().collageTemplate;
-    const mode = get().mode;
     let adjustedSlots = get().slots || [];
 
     if (mode === 'collage' && collageTemplate) {
@@ -281,6 +339,9 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     set({
       canvasWidth: w,
       canvasHeight: h,
+      ...(isSingle
+        ? { freeformCanvasWidth: w, freeformCanvasHeight: h }
+        : { collageCanvasWidth: w, collageCanvasHeight: h }),
       elements: adjustedElements,
       slots: adjustedSlots,
       printSettings: matchedPaper
@@ -303,16 +364,32 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
   // لا pushHistory هنا — يُستدعى باستمرار أثناء اختيار اللون؛
   // الدفع يتم عند اكتمال التفاعل خارج العجلة/الحقل (إصلاح Bug#2)
   setBackgroundColor: (c) => {
-    set({ backgroundColor: c });
+    const isSingle = get().mode === 'single';
+    set({
+      backgroundColor: c,
+      ...(isSingle ? { freeformBackgroundColor: c } : { collageBackgroundColor: c }),
+    });
   },
 
   // نفس سياسة اللون الأساسي: بلا pushHistory أثناء السحب الحي، والدفع عند الإغلاق/التغيير من الم_picker
   setBackgroundGradientColor2: (c) => {
-    set({ backgroundGradientColor2: c });
+    const isSingle = get().mode === 'single';
+    set({
+      backgroundGradientColor2: c,
+      ...(isSingle
+        ? { freeformBackgroundGradientColor2: c }
+        : { collageBackgroundGradientColor2: c }),
+    });
   },
   setBackgroundGradientAngle: (deg) => {
     const angle = ((Math.round(deg) % 360) + 360) % 360;
-    set({ backgroundGradientAngle: angle });
+    const isSingle = get().mode === 'single';
+    set({
+      backgroundGradientAngle: angle,
+      ...(isSingle
+        ? { freeformBackgroundGradientAngle: angle }
+        : { collageBackgroundGradientAngle: angle }),
+    });
   },
 
   setLastEditedImage: (src) => {
@@ -347,6 +424,16 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       backgroundColor: '#FFFFFF',
       backgroundGradientColor2: null,
       backgroundGradientAngle: 135,
+      freeformCanvasWidth: 2480,
+      freeformCanvasHeight: 3508,
+      freeformBackgroundColor: '#FFFFFF',
+      freeformBackgroundGradientColor2: null,
+      freeformBackgroundGradientAngle: 135,
+      collageCanvasWidth: 2480,
+      collageCanvasHeight: 3508,
+      collageBackgroundColor: '#FFFFFF',
+      collageBackgroundGradientColor2: null,
+      collageBackgroundGradientAngle: 135,
       lastEditedImage: null,
       lastEditedImageAspect: null,
       clipboardElements: [],

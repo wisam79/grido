@@ -90,7 +90,11 @@ export function useKeyboardShortcuts() {
     'delete, backspace',
     (e) => {
       e.preventDefault();
-      const { selectedIds, elements, removeElements, removeElement } = useEditorStore.getState();
+      const { mode, selectedIds, elements, removeElements, removeElement } =
+        useEditorStore.getState();
+      // 🧱 فصل الوضعين: في الكولاج التحديد يشير لخانة لا لعنصر حر — بدون هذا
+      // الحارس يظهر تنبيه «العناصر مقفلة» المضلل عند Delete على خانة
+      if (mode !== 'single') return;
       const removableIds = selectedIds.filter((id) => {
         const el = elements.find((x) => x.id === id);
         return el && !el.locked;

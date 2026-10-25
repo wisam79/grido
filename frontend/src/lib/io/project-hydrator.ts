@@ -41,6 +41,16 @@ export interface HydratedProjectState {
   backgroundColor: string;
   backgroundGradientColor2: string | null;
   backgroundGradientAngle: number;
+  freeformCanvasWidth: number;
+  freeformCanvasHeight: number;
+  freeformBackgroundColor: string;
+  freeformBackgroundGradientColor2: string | null;
+  freeformBackgroundGradientAngle: number;
+  collageCanvasWidth: number;
+  collageCanvasHeight: number;
+  collageBackgroundColor: string;
+  collageBackgroundGradientColor2: string | null;
+  collageBackgroundGradientAngle: number;
   lastEditedImage: string | null;
   lastEditedImageAspect: number | null;
   clipboardElements: CanvasElement[];
@@ -297,6 +307,52 @@ export function hydrateProjectState(
           ? ((Math.round(project.backgroundGradientAngle) % 360) + 360) % 360
           : 135
         : 135,
+    freeformCanvasWidth:
+      project.freeformCanvasWidth ?? (resolvedMode === 'single' ? validWidth : 2480),
+    freeformCanvasHeight:
+      project.freeformCanvasHeight ?? (resolvedMode === 'single' ? validHeight : 3508),
+    freeformBackgroundColor:
+      project.freeformBackgroundColor ??
+      (resolvedMode === 'single' ? project.backgroundColor || '#FFFFFF' : '#FFFFFF'),
+    freeformBackgroundGradientColor2:
+      project.freeformBackgroundGradientColor2 !== undefined
+        ? project.freeformBackgroundGradientColor2
+        : resolvedMode === 'single'
+          ? typeof project.backgroundGradientColor2 === 'string' &&
+            project.backgroundGradientColor2.length > 0
+            ? project.backgroundGradientColor2
+            : null
+          : null,
+    freeformBackgroundGradientAngle:
+      project.freeformBackgroundGradientAngle ??
+      (resolvedMode === 'single' &&
+      typeof project.backgroundGradientAngle === 'number' &&
+      isFinite(project.backgroundGradientAngle)
+        ? ((Math.round(project.backgroundGradientAngle) % 360) + 360) % 360
+        : 135),
+    collageCanvasWidth:
+      project.collageCanvasWidth ?? (resolvedMode === 'collage' ? validWidth : 2480),
+    collageCanvasHeight:
+      project.collageCanvasHeight ?? (resolvedMode === 'collage' ? validHeight : 3508),
+    collageBackgroundColor:
+      project.collageBackgroundColor ??
+      (resolvedMode === 'collage' ? project.backgroundColor || '#FFFFFF' : '#FFFFFF'),
+    collageBackgroundGradientColor2:
+      project.collageBackgroundGradientColor2 !== undefined
+        ? project.collageBackgroundGradientColor2
+        : resolvedMode === 'collage'
+          ? typeof project.backgroundGradientColor2 === 'string' &&
+            project.backgroundGradientColor2.length > 0
+            ? project.backgroundGradientColor2
+            : null
+          : null,
+    collageBackgroundGradientAngle:
+      project.collageBackgroundGradientAngle ??
+      (resolvedMode === 'collage' &&
+      typeof project.backgroundGradientAngle === 'number' &&
+      isFinite(project.backgroundGradientAngle)
+        ? ((Math.round(project.backgroundGradientAngle) % 360) + 360) % 360
+        : 135),
     lastEditedImage: null,
     lastEditedImageAspect: null,
     clipboardElements: [],
