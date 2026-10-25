@@ -631,7 +631,7 @@ export default function App() {
                       ? undefined
                       : () => panelsHook.togglePanel('templates')
                   }
-                  collapseSide={panelsHook.breakpoint === 'wide' ? 'left' : 'right'}
+                  collapseSide="left"
                   hideHeader={panelsHook.breakpoint === 'compact'}
                   activeStudioTab={panelsHook.activeStudioTab}
                   activeCollageTab={panelsHook.activeCollageTab}

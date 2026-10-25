@@ -28,7 +28,6 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
 }: WorkspaceLayoutProps) {
   const {
     breakpoint,
-    activePanel,
     isTemplatesDrawerOpen,
     isMobileSheetOpen,
     mobileActiveTab,
@@ -39,15 +38,10 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
   } = panelsHook;
 
   const isCompact = breakpoint === 'compact';
-  const isStandard = breakpoint === 'standard';
-  const isWide = breakpoint === 'wide';
 
-  // In Standard mode: right container hosts either templates or properties; in Wide mode: right container is inspector
-  const isRightPanelOpen =
-    !isCompact && (isStandard ? activePanel !== null : panelsHook.isInspectorPinned);
-
-  // In Wide mode: templates acts as a left-side drawer
-  const isLeftDrawerOpen = isWide && isTemplatesDrawerOpen;
+  // Desktop sidebars (>= 1024px): Left tools drawer and Right inspector are independent and docked
+  const isLeftDrawerOpen = !isCompact && isTemplatesDrawerOpen;
+  const isRightPanelOpen = !isCompact && panelsHook.isInspectorPinned;
 
   // 🧭 تتبع تغير حالة ظهور الألواح الجانبية لبدء حلقة المزامنة النشطة للكانفاس فوراً بـ 60fps
   const isInitialMount = useRef(true);
@@ -82,8 +76,8 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
         />
       )}
 
-      {/* 2. درج القوالب الأيسر في الشاشات العريضة (Wide Drawer - 296px) */}
-      {isWide && (
+      {/* 2. درج الأدوات والقوالب الأيسر (Left Drawer - 288px) — يظهر في كل شاشات سطح المكتب */}
+      {!isCompact && (
         <aside
           aria-label="لوحة القوالب"
           data-testid="workspace-panel-templates"
@@ -144,16 +138,11 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
         )}
       </section>
 
-      {/* 4. لوحة المفتش / اللوح النشط الأيمن (Right Inspector - 296px) */}
-      {/* اللوحان مركّبان دائماً في Standard ويُبدَّل بينهما بـ CSS فقط —
-          التبديل الشرطي السابق كان يفكّ شجرة اللوحة كاملة ويعيد بناءها
-          (220–285ms مقاسة مع LayoutCount=100)، فصار الفكّ إخفاءً لا إزالة. */}
+      {/* 4. لوحة المفتش والخصائص اليمنى (Right Inspector - 288px) — مثبتة ومستقرة يميناً دائماً */}
       {!isCompact && (
         <aside
-          aria-label={
-            isStandard && activePanel === 'templates' ? 'لوحة القوالب' : 'لوحة خصائص العنصر'
-          }
-          data-testid={isStandard ? 'workspace-panel-inspector' : 'workspace-panel-properties'}
+          aria-label="لوحة خصائص العنصر"
+          data-testid="workspace-panel-properties"
           data-collapsed={!isRightPanelOpen}
           className={cn(
             'h-full shrink-0 border-s border-border bg-sidebar z-(--z-panel) overflow-hidden fluent-panel-motion',
@@ -163,34 +152,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
           )}
         >
           <div dir="rtl" className="h-full w-[288px] flex flex-col overflow-hidden">
-            {isStandard ? (
-              <>
-                <div
-                  data-testid="workspace-panel-templates"
-                  data-collapsed={activePanel !== 'templates'}
-                  aria-hidden={activePanel !== 'templates'}
-                  className={cn(
-                    'h-full flex-col overflow-hidden',
-                    activePanel === 'templates' ? 'flex' : 'hidden',
-                  )}
-                >
-                  {templatesContent}
-                </div>
-                <div
-                  data-testid="workspace-panel-properties"
-                  data-collapsed={activePanel !== 'properties'}
-                  aria-hidden={activePanel !== 'properties'}
-                  className={cn(
-                    'h-full flex-col overflow-hidden',
-                    activePanel === 'properties' ? 'flex' : 'hidden',
-                  )}
-                >
-                  {propertiesContent}
-                </div>
-              </>
-            ) : (
-              propertiesContent
-            )}
+            {propertiesContent}
           </div>
         </aside>
       )}

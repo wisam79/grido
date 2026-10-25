@@ -26,7 +26,7 @@ async function resizeTo(width: number): Promise<void> {
   });
 }
 
-describe('useWorkspacePanels — مزامنة القوالب عند عبور الـ breakpoint', () => {
+describe('useWorkspacePanels — استقرار الألواح عند تغيّر حجم النافذة', () => {
   beforeEach(() => {
     localStorage.clear();
     setWindowWidth(1280);
@@ -62,80 +62,29 @@ describe('useWorkspacePanels — مزامنة القوالب عند عبور ا�
     expect(result.current.isTemplatesDrawerOpen).toBe(false);
   });
 
-  it('wide → standard والدرج مفتوح: القوالب تظهر يميناً', async () => {
+  it('تغيير حجم النافذة (1600px ↔ 1280px): الدرج الأيسر والخصائص يظلان مستقرين في مكانهما', async () => {
     setWindowWidth(1600);
     const { result } = renderHook(() => useWorkspacePanels());
-    expect(result.current.breakpoint).toBe('wide');
-
-    // الدرج مفتوح افتراضياً — نضمن اللوحة اليمنى على الخصائص أولاً
-    act(() => {
-      result.current.setActivePanel('properties');
-    });
-    expect(result.current.activePanel).toBe('properties');
-
-    await resizeTo(1280);
-
-    expect(result.current.breakpoint).toBe('standard');
-    expect(result.current.activePanel).toBe('templates');
-  });
-
-  it('wide → standard والدرج مغلق صراحةً: لا تُفتح القوالب قسراً', async () => {
-    setWindowWidth(1600);
-    const { result } = renderHook(() => useWorkspacePanels());
-
-    act(() => {
-      result.current.setIsTemplatesDrawerOpen(false);
-      result.current.setActivePanel('properties');
-    });
-
-    await resizeTo(1280);
-
-    expect(result.current.breakpoint).toBe('standard');
-    expect(result.current.activePanel).toBe('properties');
-  });
-
-  it('standard → wide واليمنى على القوالب: الدرج يُفتح', async () => {
-    const { result } = renderHook(() => useWorkspacePanels());
-    expect(result.current.breakpoint).toBe('standard');
-    expect(result.current.activePanel).toBe('templates');
-
-    await resizeTo(1600);
-
-    expect(result.current.breakpoint).toBe('wide');
     expect(result.current.isTemplatesDrawerOpen).toBe(true);
-  });
-
-  it('standard → wide واليمنى على الخصائص والدبس مخزّن false: يُزامَن الدبس فلا تختفي اللوحة', async () => {
-    // جلقة سابقة خلّفت الدبس false، ثم فُتحت الخصائص في Standard —
-    // العبور إلى Wide يجب أن يُبقي اللوحة المفتوحة ظاهرة (مزامنة الدبس).
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ isInspectorPinned: false }));
-    const { result } = renderHook(() => useWorkspacePanels());
-    expect(result.current.breakpoint).toBe('standard');
-    expect(result.current.isInspectorPinned).toBe(false);
-
-    act(() => {
-      result.current.setActivePanel('properties');
-    });
-
-    await resizeTo(1600);
-
-    expect(result.current.breakpoint).toBe('wide');
-    expect(result.current.activePanel).toBe('properties');
     expect(result.current.isInspectorPinned).toBe(true);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).isInspectorPinned).toBe(true);
+
+    await resizeTo(1280);
+
+    // الدرج الأيسر واللوحة اليمنى يبقيان مفتوحين في مكانهما دون قفز
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+    expect(result.current.isInspectorPinned).toBe(true);
   });
 
-  it('standard → wide واليمنى على الخصائص: الدرج يبقى مغلقاً', async () => {
+  it('الدرج مغلق صراحةً: لا يُفتح قسراً عند تغيير حجم النافذة', async () => {
+    setWindowWidth(1600);
     const { result } = renderHook(() => useWorkspacePanels());
 
     act(() => {
-      result.current.setActivePanel('properties');
       result.current.setIsTemplatesDrawerOpen(false);
     });
 
-    await resizeTo(1600);
+    await resizeTo(1280);
 
-    expect(result.current.breakpoint).toBe('wide');
     expect(result.current.isTemplatesDrawerOpen).toBe(false);
   });
 
@@ -181,15 +130,10 @@ describe('useWorkspacePanels — وضع التركيز (حفظ واستعادة 
     setWindowWidth(1280);
   });
 
-  it('wide: يحفظ الدرج واللوحة النشطة عند الدخول ويستعيدهما بدقة عند الخروج', () => {
-    setWindowWidth(1600);
+  it('يحفظ الدرج ولوحة الخصائص عند الدخول ويستعيدهما بدقة عند الخروج', () => {
     const { result } = renderHook(() => useWorkspacePanels());
-    expect(result.current.breakpoint).toBe('wide');
-
-    act(() => {
-      result.current.setIsTemplatesDrawerOpen(true);
-      result.current.setActivePanel('properties');
-    });
+    expect(result.current.isTemplatesDrawerOpen).toBe(true);
+    expect(result.current.isInspectorPinned).toBe(true);
     expect(result.current.isZenMode).toBe(false);
 
     act(() => {
@@ -197,50 +141,13 @@ describe('useWorkspacePanels — وضع التركيز (حفظ واستعادة 
     });
     expect(result.current.isZenMode).toBe(true);
     expect(result.current.isTemplatesDrawerOpen).toBe(false);
-    expect(result.current.activePanel).toBeNull();
+    expect(result.current.isInspectorPinned).toBe(false);
 
     act(() => {
       result.current.toggleZenMode();
     });
     expect(result.current.isZenMode).toBe(false);
     expect(result.current.isTemplatesDrawerOpen).toBe(true);
-    expect(result.current.activePanel).toBe('properties');
-  });
-
-  it('standard: يستعيد اللوحة النشطة السابقة بدل فرض «القوالب» عند الخروج', () => {
-    const { result } = renderHook(() => useWorkspacePanels());
-    expect(result.current.breakpoint).toBe('standard');
-
-    act(() => {
-      result.current.setActivePanel('properties');
-    });
-    expect(result.current.isZenMode).toBe(false);
-
-    act(() => {
-      result.current.toggleZenMode();
-    });
-    expect(result.current.isZenMode).toBe(true);
-    expect(result.current.activePanel).toBeNull();
-
-    act(() => {
-      result.current.toggleZenMode();
-    });
-    expect(result.current.isZenMode).toBe(false);
-    expect(result.current.activePanel).toBe('properties');
-  });
-
-  it('standard بلا لوحة سابقة: يعود الافتراضي «القوالب» عند الخروج من وضع التركيز', () => {
-    const { result } = renderHook(() => useWorkspacePanels());
-
-    act(() => {
-      result.current.setActivePanel(null);
-    });
-    expect(result.current.isZenMode).toBe(true);
-
-    act(() => {
-      result.current.toggleZenMode();
-    });
-    expect(result.current.isZenMode).toBe(false);
-    expect(result.current.activePanel).toBe('templates');
+    expect(result.current.isInspectorPinned).toBe(true);
   });
 });

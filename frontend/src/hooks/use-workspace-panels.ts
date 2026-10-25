@@ -140,42 +140,11 @@ export function useWorkspacePanels() {
     };
   }, []);
 
-  // مزامنة القوالب عند عبور عتبة الـ breakpoint: الدرج الأيسر (wide) واللوحة
-  // اليمنى (standard) حالتان مستقلتان، فعبور 1440px كان يُفكّ الدرج ويترك
-  // activePanel على 'properties' — فيبدو أن القوالب اختفت. هنا يتبع المحتوى
-  // المستخدم: درج مفتوح → templates يميناً عند التضييق، وtemplates يميناً →
-  // درج مفتوح عند التوسيع. التفاعل الصريح (إغلاق مقصود) يُحترم: لا نفتح ما
-  // أغلقه المستخدم، فقط ننقل الحالة الظاهرة.
-  // نمط adjust-state-during-render: عند تغيّر الـ breakpoint نحسب الهدف لمرة
-  // واحدة أثناء التصيير (موثّق في React docs كبديل آمن للمزامنة في effect).
+  // مزامنة حالة العبور: في الشاشات العادية والواسعة، درج الأدوات الأيسر
+  // ولوحة الخصائص اليمنى مستقران في مكانهما دائماً ولا يقفزان عبر الشاشة.
   const [prevBreakpoint, setPrevBreakpoint] = useState<WorkspaceBreakpoint>(breakpoint);
   if (prevBreakpoint !== breakpoint) {
     setPrevBreakpoint(breakpoint);
-    if (prevBreakpoint === 'wide' && breakpoint === 'standard') {
-      // كان الدرج الأيسر مفتوحاً (نلتقط القيمة الظاهرة قبل العبور من أول
-      // تصيير بالـ breakpoint الجديد — ما زالت الحالة القديمة حاضرة لأن
-      // setState لم يُطبَّق بعد على isTemplatesDrawerOpen/activePanel).
-      // القراءة هنا للـ state الحالي هي القيمة السابقة للعبور بحكم الترتيب.
-      if (isTemplatesDrawerOpen) {
-        setActivePanelState('templates');
-        saveStoredPreferences({ lastActivePanel: 'templates' });
-      }
-    } else if (prevBreakpoint === 'standard' && breakpoint === 'wide') {
-      if (activePanel === 'templates') {
-        setIsTemplatesDrawerOpenState(true);
-        saveStoredPreferences({ isTemplatesDrawerOpen: true });
-      }
-      // في الوضع العريض أصبح `isInspectorPinned` هو مصدر الحقيقة الوحيد لظهور
-      // لوحة الخصائص (workspace-layout). لو عبّر المستخدم من Standard واللوحة
-      // مفتوحة (activePanel === 'properties') بينما الدبس مخزّن كـ false من
-      // جلسة سابقة، لاختفت اللوحة المفتوحة أمام المستخدم عند التوسيع. نُزامن
-      // الدبس مع الحالة الظاهرة لحفظ ثابت: «في Wide: properties ظاهرة ⇔ pinned».
-      if (activePanel === 'properties' && !isInspectorPinned) {
-        setIsInspectorPinnedState(true);
-        saveStoredPreferences({ isInspectorPinned: true });
-      }
-    }
-    // compact: الورقة تُفتح صراحةً فقط — لا تغيير تلقائي هنا.
   }
 
   const setActivePanel = useCallback((panel: WorkspacePanel) => {
@@ -207,21 +176,10 @@ export function useWorkspacePanels() {
         return;
       }
 
-      if (breakpoint === 'wide') {
-        // النقر أو النقر المزدوج على التبويب يُبقي اللوح مفتوحاً ومستقراً دائماً
-        // لمنع الإغلاق العرضي أثناء العمل؛ الإغلاق محصور بزر السهم الصريح أو Ctrl+B
-        setIsTemplatesDrawerOpen(true);
-        return;
-      }
-
-      // Standard (1024 - 1439px): single active panel rule
-      setActivePanelState('templates');
-      saveStoredPreferences({ lastActivePanel: 'templates' });
+      // في شاشات سطح المكتب: نضمن دائماً فتح اللوح الأيسر وبقاءه مستقراً
+      setIsTemplatesDrawerOpen(true);
     },
-    // isTemplatesDrawerOpen تُقرأ هنا للتبديل المشروط — تبعية حقيقية تُبقي
-    // الـ callback متزامناً مع الدرج وتمنع إغلاق/فتح معكوساً بعد عبور breakpoint.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [breakpoint, isTemplatesDrawerOpen, activeStudioTab, activePanel],
+    [breakpoint, setIsTemplatesDrawerOpen, setIsMobileSheetOpen, setMobileActiveTab],
   );
 
   const setActiveCollageTab = useCallback((tab: CollageTab) => {
@@ -240,20 +198,10 @@ export function useWorkspacePanels() {
         return;
       }
 
-      if (breakpoint === 'wide') {
-        // النقر أو النقر المزدوج على التبويب يُبقي اللوح مفتوحاً ومستقراً دائماً
-        // لمنع الإغلاق العرضي أثناء العمل؛ الإغلاق محصور بزر السهم الصريح أو Ctrl+B
-        setIsTemplatesDrawerOpen(true);
-        return;
-      }
-
-      // Standard (1024 - 1439px): single active panel rule
-      setActivePanelState('templates');
-      saveStoredPreferences({ lastActivePanel: 'templates' });
+      // في شاشات سطح المكتب: نضمن دائماً فتح اللوح الأيسر وبقاءه مستقراً
+      setIsTemplatesDrawerOpen(true);
     },
-    // نفس مبرر selectStudioTab: القراءة المشروطة للدرج تبعية حقيقية.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [breakpoint, isTemplatesDrawerOpen, activeCollageTab, activePanel],
+    [breakpoint, setIsTemplatesDrawerOpen, setIsMobileSheetOpen, setMobileActiveTab],
   );
 
   // Toggle or switch panel
@@ -265,30 +213,13 @@ export function useWorkspacePanels() {
         return;
       }
 
-      if (breakpoint === 'wide') {
-        if (panel === 'templates') {
-          setIsTemplatesDrawerOpen((prev) => !prev);
-        } else {
-          // Properties in wide: الدبس وحده مصدر الحقيقة للظهور
-          // (workspace-layout) — قلب activePanel هنا كان يلوّث اللوحة
-          // الظاهرة عند التضييق إلى standard بلا داعٍ.
-          setIsInspectorPinned((prev) => !prev);
-        }
-        return;
+      if (panel === 'templates') {
+        setIsTemplatesDrawerOpen((prev) => !prev);
+      } else {
+        setIsInspectorPinned((prev) => !prev);
       }
-
-      // Standard (1024 - 1439px): single panel rule
-      setActivePanelState((prev) => {
-        const next = prev === panel ? null : panel;
-        saveStoredPreferences({ lastActivePanel: next });
-        return next;
-      });
     },
-    // setIsTemplatesDrawerOpen مستقرة (useCallback بـ []) — تُستدعى هنا لكن
-    // إضافتها للتبعيات تعيد إنشاء togglePanel بلا داعٍ؛ القراءة الوحيدة
-    // المتغيرة هي breakpoint.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [breakpoint, setIsInspectorPinned],
+    [breakpoint, setIsInspectorPinned, setIsTemplatesDrawerOpen],
   );
 
   const openPanel = useCallback(
@@ -299,45 +230,27 @@ export function useWorkspacePanels() {
         return;
       }
 
-      if (breakpoint === 'wide') {
-        if (panel === 'templates') {
-          setIsTemplatesDrawerOpen(true);
-        } else {
-          setIsInspectorPinned(true);
-          setActivePanel('properties');
-        }
-        return;
+      if (panel === 'templates') {
+        setIsTemplatesDrawerOpen(true);
+      } else {
+        setIsInspectorPinned(true);
+        setActivePanel('properties');
       }
-
-      setActivePanel(panel);
     },
-    // setIsTemplatesDrawerOpen/setActivePanel مستقرتان — التبعية المتغيرة breakpoint فقط.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [breakpoint, setActivePanel, setIsInspectorPinned],
+    [breakpoint, setActivePanel, setIsInspectorPinned, setIsTemplatesDrawerOpen],
   );
 
   const closeActivePanel = useCallback(() => {
-    if (breakpoint === 'wide') {
-      setIsTemplatesDrawerOpen(false);
-      setIsInspectorPinned(false);
-      setActivePanel(null);
-    } else {
-      setActivePanel(null);
-    }
-    // نفس المبرر: دوال مستقرة، والمتغيرة breakpoint فقط.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [breakpoint, setActivePanel, setIsInspectorPinned]);
+    setIsTemplatesDrawerOpen(false);
+    setIsInspectorPinned(false);
+    setActivePanel(null);
+  }, [setActivePanel, setIsInspectorPinned, setIsTemplatesDrawerOpen]);
 
   // Zen Mode toggle: collapse all panels or restore default
   const isZenMode = useMemo(() => {
-    // في compact لا توجد ألواح مثبّتة تُطوى، وإرجاع true كان يمنع تركيب
-    // CompactToolLauncher فيصبح Ctrl+K ميتاً. الـ zen يخصّ standard/wide فقط.
     if (breakpoint === 'compact') return false;
-    if (breakpoint === 'wide') {
-      return !isTemplatesDrawerOpen && !isInspectorPinned;
-    }
-    return activePanel === null;
-  }, [breakpoint, isTemplatesDrawerOpen, isInspectorPinned, activePanel]);
+    return !isTemplatesDrawerOpen && !isInspectorPinned;
+  }, [breakpoint, isTemplatesDrawerOpen, isInspectorPinned]);
 
   const savedZenStateRef = useRef<{
     wasDrawerOpen: boolean;
@@ -352,14 +265,10 @@ export function useWorkspacePanels() {
   const toggleZenMode = useCallback(() => {
     if (isZenMode) {
       // استعادة الحالة السابقة للألواح بدقة
-      if (breakpoint === 'wide') {
-        setIsTemplatesDrawerOpen(savedZenStateRef.current.wasDrawerOpen);
-        setIsInspectorPinned(savedZenStateRef.current.wasInspectorPinned);
-        if (savedZenStateRef.current.lastActivePanel) {
-          setActivePanel(savedZenStateRef.current.lastActivePanel);
-        }
-      } else {
-        setActivePanel(savedZenStateRef.current.lastActivePanel || 'templates');
+      setIsTemplatesDrawerOpen(savedZenStateRef.current.wasDrawerOpen);
+      setIsInspectorPinned(savedZenStateRef.current.wasInspectorPinned);
+      if (savedZenStateRef.current.lastActivePanel) {
+        setActivePanel(savedZenStateRef.current.lastActivePanel);
       }
     } else {
       // حفظ الحالة الحالية قبل طي جميع الألواح
@@ -372,7 +281,6 @@ export function useWorkspacePanels() {
     }
   }, [
     isZenMode,
-    breakpoint,
     isTemplatesDrawerOpen,
     isInspectorPinned,
     activePanel,
