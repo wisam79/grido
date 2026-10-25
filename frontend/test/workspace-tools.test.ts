@@ -152,7 +152,7 @@ describe('سجل وجهات الشريط الجانبي', () => {
       'text',
     ]);
     expect(getDefaultStudioTab('quick')).toBe('layers');
-    expect(getDefaultStudioTab('studio')).toBe('layers');
+    expect(getDefaultStudioTab('studio')).toBe('stickers');
     for (const tool of ['stickers', 'shapes', 'text']) {
       expect(quickSections.some((section) => section.id === tool)).toBe(true);
     }

@@ -291,9 +291,9 @@ export function getSectionsForWorkflow(
   return mode === 'collage' ? COLLAGE_SECTIONS : getStudioSectionsForWorkflow(workflow);
 }
 
-/** التبويب الافتراضي للاستوديو — «الطبقات» افتراضياً لمعاينة وتنظيم عناصر الكانفاس */
-export function getDefaultStudioTab(_workflow: WorkflowMode = 'studio'): FreeformTab {
-  return 'layers';
+/** التبويب الافتراضي للاستوديو — «الطبقات» لمسار الإنتاج السريع، و«الملصقات» لمسار الاستوديو */
+export function getDefaultStudioTab(workflow: WorkflowMode = 'studio'): FreeformTab {
+  return workflow === 'quick' ? 'layers' : 'stickers';
 }
 
 /** وجهة التبويب النشط — تُبقي زر الشريط مضاءً أياً كان التبويب الداخلي */

@@ -90,20 +90,17 @@ export function useKeyboardShortcuts() {
     'delete, backspace',
     (e) => {
       e.preventDefault();
-      const { mode, selectedIds, elements, removeElements, removeElement } =
-        useEditorStore.getState();
-      // 🧱 فصل الوضعين: في الكولاج التحديد يشير لخانة لا لعنصر حر — بدون هذا
-      // الحارس يظهر تنبيه «العناصر مقفلة» المضلل عند Delete على خانة
-      if (mode !== 'single') return;
-      const removableIds = selectedIds.filter((id) => {
-        const el = elements.find((x) => x.id === id);
-        return el && !el.locked;
-      });
+      const { selectedIds, elements, removeElements, removeElement } = useEditorStore.getState();
+      // 🧱 فصل الوضعين: في الكولاج التحديد يشير لخانة لا لعنصر حر — نتحقق
+      // من وجود عناصر حرة محددة فعلاً لتفادي تنبيه «العناصر مقفلة» عند Delete على خانة كولاج
+      const selectedElements = elements.filter((x) => selectedIds.includes(x.id));
+      if (selectedElements.length === 0) return;
+      const removableIds = selectedElements.filter((el) => !el.locked).map((el) => el.id);
       if (removableIds.length === 0) {
         toast.info('العناصر المحددة مقفلة — ألغِ قفلها أولاً للحذف');
         return;
       }
-      if (removableIds.length < selectedIds.length) {
+      if (removableIds.length < selectedElements.length) {
         toast.info('تجاهلنا العناصر المقفلة وحذفنا غير المقفلة فقط');
       }
       if (removableIds.length === 1) {
