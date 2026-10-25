@@ -208,23 +208,15 @@ export function useWorkspacePanels() {
       }
 
       if (breakpoint === 'wide') {
-        // If drawer is open on the exact same tab, clicking again toggles it closed
-        if (isTemplatesDrawerOpen && activeStudioTab === tab) {
-          setIsTemplatesDrawerOpen(false);
-        } else {
-          setIsTemplatesDrawerOpen(true);
-        }
+        // النقر أو النقر المزدوج على التبويب يُبقي اللوح مفتوحاً ومستقراً دائماً
+        // لمنع الإغلاق العرضي أثناء العمل؛ الإغلاق محصور بزر السهم الصريح أو Ctrl+B
+        setIsTemplatesDrawerOpen(true);
         return;
       }
 
       // Standard (1024 - 1439px): single active panel rule
-      if (activePanel === 'templates' && activeStudioTab === tab) {
-        setActivePanelState(null);
-        saveStoredPreferences({ lastActivePanel: null });
-      } else {
-        setActivePanelState('templates');
-        saveStoredPreferences({ lastActivePanel: 'templates' });
-      }
+      setActivePanelState('templates');
+      saveStoredPreferences({ lastActivePanel: 'templates' });
     },
     // isTemplatesDrawerOpen تُقرأ هنا للتبديل المشروط — تبعية حقيقية تُبقي
     // الـ callback متزامناً مع الدرج وتمنع إغلاق/فتح معكوساً بعد عبور breakpoint.
@@ -249,23 +241,15 @@ export function useWorkspacePanels() {
       }
 
       if (breakpoint === 'wide') {
-        // If drawer is open on the exact same tab, clicking again toggles it closed
-        if (isTemplatesDrawerOpen && activeCollageTab === tab) {
-          setIsTemplatesDrawerOpen(false);
-        } else {
-          setIsTemplatesDrawerOpen(true);
-        }
+        // النقر أو النقر المزدوج على التبويب يُبقي اللوح مفتوحاً ومستقراً دائماً
+        // لمنع الإغلاق العرضي أثناء العمل؛ الإغلاق محصور بزر السهم الصريح أو Ctrl+B
+        setIsTemplatesDrawerOpen(true);
         return;
       }
 
       // Standard (1024 - 1439px): single active panel rule
-      if (activePanel === 'templates' && activeCollageTab === tab) {
-        setActivePanelState(null);
-        saveStoredPreferences({ lastActivePanel: null });
-      } else {
-        setActivePanelState('templates');
-        saveStoredPreferences({ lastActivePanel: 'templates' });
-      }
+      setActivePanelState('templates');
+      saveStoredPreferences({ lastActivePanel: 'templates' });
     },
     // نفس مبرر selectStudioTab: القراءة المشروطة للدرج تبعية حقيقية.
     // eslint-disable-next-line react-hooks/exhaustive-deps

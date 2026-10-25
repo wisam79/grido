@@ -259,7 +259,9 @@ export default function App() {
     <FluentIconProvider weight="regular" size={18}>
       <TooltipProvider delayDuration={650} skipDelayDuration={150}>
         <div
-          className={cn('h-screen flex flex-col overflow-hidden font-cairo bg-background/90')}
+          className={cn(
+            'w-full h-full min-w-full min-h-full flex flex-col overflow-hidden font-cairo bg-background/90',
+          )}
           dir="rtl"
         >
           {!isMaximized && <WindowResizeHandles />}
