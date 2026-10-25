@@ -1,10 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 import { openStudioElementsCategory } from './helpers/studio-elements';
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
+
+async function setFontSize(page: Page, size: number) {
+  const input = page.getByRole('textbox', { name: 'حجم الخط' });
+  await input.fill(String(size));
+  await input.press('Enter');
+}
 
 /**
  * حارس انحدار حقيقي لمحرك قياس النص: يعمل داخل Chromium بسياق Canvas فعلي
@@ -211,8 +217,7 @@ test.describe('Text measurement on a real canvas', () => {
     // الصندوق يحيط بالنص لا بحجم ورقة أكبر بكثير
     expect(initial.h).toBeLessThan(140);
 
-    await page.getByRole('combobox', { name: 'حجم الخط', exact: true }).click();
-    await page.getByRole('option', { name: '72px', exact: true }).click();
+    await setFontSize(page, 72);
 
     await expect
       .poll(async () => (await readBox())?.w ?? 0, { timeout: 8000 })
@@ -259,10 +264,7 @@ test.describe('Text measurement on a real canvas', () => {
 
     // خط 200px: صندوق 48px على لوحة 2480 يُعرض بـ47px فقط فتتداخل مقابض
     // الحواف مع الزوايا ويلتقط Konva أقربها بدل المقبض المقصود.
-    await page.getByRole('combobox', { name: 'حجم الخط', exact: true }).click();
-    await page.getByRole('option', { name: '200px', exact: true }).click();
-    await expect(page.getByRole('listbox')).toBeHidden();
-    await page.waitForFunction(() => document.body.style.pointerEvents !== 'none');
+    await setFontSize(page, 200);
 
     const readState = () =>
       page.evaluate(() => {
@@ -409,10 +411,7 @@ test.describe('Text measurement on a real canvas', () => {
     await page.getByRole('button', { name: 'Oswald', exact: true }).click();
     await expect(page.getByRole('button', { name: 'الخط: Oswald', exact: true })).toBeVisible();
 
-    await page.getByRole('combobox', { name: 'حجم الخط', exact: true }).click();
-    await page.getByRole('option', { name: '200px', exact: true }).click();
-    await expect(page.getByRole('listbox')).toBeHidden();
-    await page.waitForFunction(() => document.body.style.pointerEvents !== 'none');
+    await setFontSize(page, 200);
 
     const readState = () =>
       page.evaluate(() => {
@@ -499,10 +498,7 @@ test.describe('Text measurement on a real canvas', () => {
 
     // خط 200px: صندوق 48px على لوحة 2480 يُعرض بـ47px فقط فتتداخل مقابض
     // الحواف مع الزوايا ويلتقط Konva أقربها بدل المقبض المقصود.
-    await page.getByRole('combobox', { name: 'حجم الخط', exact: true }).click();
-    await page.getByRole('option', { name: '200px', exact: true }).click();
-    await expect(page.getByRole('listbox')).toBeHidden();
-    await page.waitForFunction(() => document.body.style.pointerEvents !== 'none');
+    await setFontSize(page, 200);
 
     const readState = () =>
       page.evaluate(() => {

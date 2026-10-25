@@ -140,8 +140,8 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
             />
           </div>
 
-          <div className="grid grid-cols-[4fr_3fr] gap-1.5">
-            <ToggleGroup label="نمط الخط">
+          <div className="flex items-center gap-1.5">
+            <ToggleGroup label="نمط الخط" className="flex-[4]">
               <ToggleItem
                 active={isBold}
                 onClick={() => setWeight(isBold ? 400 : 700)}
@@ -179,7 +179,7 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
               </ToggleItem>
             </ToggleGroup>
 
-            <ToggleGroup label="محاذاة النص">
+            <ToggleGroup label="محاذاة النص" className="flex-[3]">
               {ALIGN_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 const active = textAlign === opt.id;
