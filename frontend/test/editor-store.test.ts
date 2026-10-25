@@ -139,7 +139,7 @@ describe('Workflow slice & rail registry (sidebar de-clutter)', () => {
     expect(allSections).toEqual(['layers', 'stickers', 'shapes', 'text']);
     expect(quickSections).toEqual(allSections);
     expect(getDefaultStudioTab('quick')).toBe('layers');
-    expect(getDefaultStudioTab('studio')).toBe('stickers');
+    expect(getDefaultStudioTab('studio')).toBe('layers');
     // Collage sections unaffected by workflow
     expect(getSectionsForWorkflow('collage', 'quick')).toHaveLength(
       getSectionsForWorkflow('collage', 'studio').length,

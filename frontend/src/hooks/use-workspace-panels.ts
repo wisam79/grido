@@ -46,7 +46,7 @@ function saveStoredPreferences(prefs: StoredPreferences) {
 
 function getBreakpoint(width: number): WorkspaceBreakpoint {
   if (width < 1024) return 'compact';
-  if (width < 1440) return 'standard';
+  if (width < 1200) return 'standard';
   return 'wide';
 }
 
@@ -61,12 +61,10 @@ export function useWorkspacePanels() {
   // Load initial preferences
   const [activePanel, setActivePanelState] = useState<WorkspacePanel>(() => {
     const saved = getStoredPreferences().lastActivePanel;
-    // 🪟 الافتراضي عند الإقلاع: لوحة التبويب الأول مفتوحة — «الملصقات» في الوضع
+    // 🪟 الافتراضي عند الإقلاع: لوحة التبويب الأول مفتوحة — «الطبقات» في الوضع
     // الحر و«الشبكة» في الكولاج (التبويب الافتراضي لوجهة كل وضع في workspace-tools).
     // لا نبدأ بلا لوحة نشطة: قيمة `null` المحفوظة (إغلاق/وضع التركيز في جلسة
     // سابقة) لا تُعطّل الافتراضي، بينما الاختيار الصريح للوح محدد يُحترم.
-    // ملاحظة: هذا يُعدّل معيار الخطة `workspace-layout-repair-plan.md:114,124`
-    // («لا يفتح Drawer القوالب تلقائياً في Wide») بطلب المالك — انظر سجل 0.19.
     return saved === 'templates' || saved === 'properties' ? saved : 'templates';
   });
 
@@ -75,7 +73,7 @@ export function useWorkspacePanels() {
     return saved !== undefined ? saved : true;
   });
 
-  // Active studio tool — «الملصقات» افتراضياً، و«الطبقات» في المسار السريع
+  // Active studio tool — «الطبقات» افتراضياً لمعاينة وتنظيم عناصر الكانفاس
   const [activeStudioTab, setActiveStudioTabState] = useState<FreeformTab>(() => {
     const saved = getStoredPreferences().lastActiveStudioTab;
     // ترحيل التبويبات الموحّدة (elements/presets → stickers) ثم السقوط
