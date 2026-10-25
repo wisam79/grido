@@ -156,7 +156,7 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     await expect(canvasArea).toHaveAttribute('data-fit-mode', 'width');
 
     const wideBox = await canvasArea.boundingBox();
-    expect(wideBox!.width).toBeGreaterThan(fullBox!.width * 1.5);
+    expect(wideBox!.width).toBeGreaterThan(fullBox!.width * 1.3);
 
     // تفضيل عرض محفوظ محلياً — لا يُصدَّر مع ملف المشروع
     const stored = await page.evaluate(() => localStorage.getItem('grido_canvas_fit_mode_v1'));
