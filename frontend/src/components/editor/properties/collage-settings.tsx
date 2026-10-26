@@ -19,9 +19,8 @@ export function CollageSettings() {
     canvasWidth,
     canvasHeight,
     printSettings,
-    previewCollageGap,
-    previewCollageMargin,
-    commitCollageSpacing,
+    setCollageGap,
+    setCollageMargin,
     setCollageRadius,
     setCollageShowCutLines,
     setCollageShowEndCutLine,
@@ -39,9 +38,8 @@ export function CollageSettings() {
       canvasWidth: state.canvasWidth,
       canvasHeight: state.canvasHeight,
       printSettings: state.printSettings,
-      previewCollageGap: state.previewCollageGap,
-      previewCollageMargin: state.previewCollageMargin,
-      commitCollageSpacing: state.commitCollageSpacing,
+      setCollageGap: state.setCollageGap,
+      setCollageMargin: state.setCollageMargin,
       setCollageRadius: state.setCollageRadius,
       setCollageShowCutLines: state.setCollageShowCutLines,
       setCollageShowEndCutLine: state.setCollageShowEndCutLine,
@@ -72,11 +70,8 @@ export function CollageSettings() {
             step={0.1}
             unit="mm"
             defaultValue={0}
-            onChange={(mm) => previewCollageGap(toPx(mm))}
-            onCommit={() => {
-              commitCollageSpacing();
-              useEditorStore.getState().pushHistory();
-            }}
+            onChange={(mm) => setCollageGap(toPx(mm))}
+            onCommit={() => useEditorStore.getState().pushHistory()}
           />
           <FluentSliderField
             label="الهوامش الخارجية"
@@ -86,11 +81,8 @@ export function CollageSettings() {
             step={0.1}
             unit="mm"
             defaultValue={0}
-            onChange={(mm) => previewCollageMargin(toPx(mm))}
-            onCommit={() => {
-              commitCollageSpacing();
-              useEditorStore.getState().pushHistory();
-            }}
+            onChange={(mm) => setCollageMargin(toPx(mm))}
+            onCommit={() => useEditorStore.getState().pushHistory()}
           />
           <FluentSliderField
             label="الزوايا"

@@ -60,7 +60,7 @@ export async function auditPanel(root: Locator): Promise<PanelAudit> {
 
     for (const grid of Array.from(node.querySelectorAll<HTMLElement>('div.grid'))) {
       const cells = Array.from(grid.children).filter(
-        (k) => k instanceof HTMLElement,
+        (k) => k instanceof HTMLElement && getComputedStyle(k).position !== 'absolute',
       ) as HTMLElement[];
       const rows = new Map<number, HTMLElement[]>();
       for (const cell of cells) {

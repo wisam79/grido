@@ -497,46 +497,48 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         >
           <div className="flex items-center justify-center">
             {/* مصفوفة الارتكاز — dir="ltr" مقصودة: خريطة مكانية للورقة لا نص متدفق */}
-            <div
-              role="radiogroup"
-              aria-label="نقطة ارتكاز الصور على الورقة"
-              className="w-[108px] h-[108px] rounded-lg border border-border/60 bg-background/45 p-2 grid grid-cols-3 grid-rows-3 gap-1 select-none relative"
-              dir="ltr"
-            >
+            <div className="relative w-[108px] h-[108px] rounded-lg border border-border/60 bg-background/45 p-2 select-none">
               <div className="absolute inset-2 pointer-events-none border border-dashed border-border/60 rounded-md" />
-              {ALIGNMENT_MATRIX.map((row) =>
-                row.map((alignId) => {
-                  const isActive = gridAlign === alignId;
-                  return (
-                    <button
-                      key={alignId}
-                      type="button"
-                      role="radio"
-                      aria-checked={isActive}
-                      aria-label={ALIGNMENT_LABELS[alignId]}
-                      tabIndex={isActive ? 0 : -1}
-                      onClick={() => onGridAlignChange(alignId)}
-                      onKeyDown={(e) => handleAlignKeyDown(e, alignId)}
-                      title={ALIGNMENT_LABELS[alignId]}
-                      className={cn(
-                        'relative flex items-center justify-center rounded-md transition-colors cursor-pointer hover:bg-muted/70',
-                        FOCUS_RING,
-                      )}
-                    >
-                      <span
-                        aria-hidden="true"
+              <div
+                role="radiogroup"
+                aria-label="نقطة ارتكاز الصور على الورقة"
+                className="grid grid-cols-3 grid-rows-3 gap-1 w-full h-full relative z-1"
+                dir="ltr"
+              >
+                {ALIGNMENT_MATRIX.map((row) =>
+                  row.map((alignId) => {
+                    const isActive = gridAlign === alignId;
+                    return (
+                      <button
+                        key={alignId}
+                        type="button"
+                        role="radio"
+                        aria-checked={isActive}
+                        aria-label={ALIGNMENT_LABELS[alignId]}
+                        tabIndex={isActive ? 0 : -1}
+                        onClick={() => onGridAlignChange(alignId)}
+                        onKeyDown={(e) => handleAlignKeyDown(e, alignId)}
+                        title={ALIGNMENT_LABELS[alignId]}
                         className={cn(
-                          'rounded-full transition-colors duration-150',
-                          isActive
-                            ? 'w-3.5 h-3.5 bg-primary ring-3 ring-primary/25'
-                            : // نقاط كاملة بدل /50: نقاط الارتكاز كائنات رسومية تتطلب 3:1 على الأقل
-                              'w-2.5 h-2.5 bg-muted-foreground/80 border border-border/40',
+                          'relative flex items-center justify-center rounded-md transition-colors cursor-pointer hover:bg-muted/70',
+                          FOCUS_RING,
                         )}
-                      />
-                    </button>
-                  );
-                }),
-              )}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            'rounded-full transition-colors duration-150',
+                            isActive
+                              ? 'w-3.5 h-3.5 bg-primary ring-3 ring-primary/25'
+                              : // نقاط كاملة بدل /50: نقاط الارتكاز كائنات رسومية تتطلب 3:1 على الأقل
+                                'w-2.5 h-2.5 bg-muted-foreground/80 border border-border/40',
+                          )}
+                        />
+                      </button>
+                    );
+                  }),
+                )}
+              </div>
             </div>
           </div>
         </FluentSection>
