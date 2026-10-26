@@ -137,7 +137,7 @@ export const FluentSection = React.memo(
                   weight="bold"
                   className={cn(
                     'size-3.5 shrink-0 transition-transform duration-150 ease-out',
-                    !isOpen && 'rotate-90 rtl:-rotate-90',
+                    !isOpen && '-rotate-90 rtl:rotate-90',
                   )}
                 />
               </div>

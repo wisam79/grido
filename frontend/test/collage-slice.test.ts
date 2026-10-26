@@ -61,6 +61,266 @@ describe('CollageSlice Unit Tests', () => {
     expect(updated?.imageSrc).toBe('photo.jpg');
   });
 
+  it('resizes one slot atomically and preserves manual geometry on undo/redo', () => {
+    const current = useEditorStore.getState();
+    const base = current.slots[0];
+    const firstSlot = { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3 };
+    useEditorStore.setState({
+      collageTemplate: {
+        ...current.collageTemplate!,
+        slots: 2,
+        cells: [
+          { x: 0, y: 0, w: 0.3, h: 0.3 },
+          { x: 0.5, y: 0, w: 0.3, h: 0.3 },
+        ],
+        physicalLayout: { type: 'visa', rows: 1, cols: 2 },
+      },
+      slots: [firstSlot, { ...base, id: 'b', cellIndex: 1, x: 0.5, y: 0, w: 0.3, h: 0.3 }],
+      collageGap: 12,
+      collageMargin: 8,
+    });
+    useEditorStore.getState().pushHistory();
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    const resizeResult = useEditorStore.getState().resizeCollageSlot(firstSlot.id, 0.2, 0.3);
+    expect(resizeResult).toEqual({ ok: true });
+
+    const resized = useEditorStore.getState();
+    expect(resized.slots[0]).toMatchObject({ w: 0.2, h: 0.3, x: firstSlot.x, y: firstSlot.y });
+    expect(resized.slots[0].id).toBe(firstSlot.id);
+    expect(resized.collageTemplate?.cells[0]).toMatchObject({ w: 0.2, h: 0.3 });
+    expect(resized.collageTemplate?.physicalLayout).toBeUndefined();
+    expect(resized.collageGap).toBe(0);
+    expect(resized.collageMargin).toBe(0);
+    expect(resized.historyIndex).toBe(historyBefore + 1);
+
+    resized.undo();
+    expect(useEditorStore.getState().slots[0]).toMatchObject({ w: firstSlot.w, h: firstSlot.h });
+    useEditorStore.getState().redo();
+    expect(useEditorStore.getState().slots[0]).toMatchObject({ w: 0.2, h: 0.3 });
+  });
+
+  it('applies a slot size to all cells in one history step without moving them', () => {
+    const firstSlot = setupCollage();
+    const positions = useEditorStore.getState().slots.map(({ x, y }) => ({ x, y }));
+    useEditorStore.getState().resizeCollageSlot(firstSlot.id, firstSlot.w * 0.8, firstSlot.h * 0.9);
+    const historyBefore = useEditorStore.getState().historyIndex;
+    const source = useEditorStore.getState().slots[0];
+
+    expect(useEditorStore.getState().applyCollageSlotSizeToAll(firstSlot.id).ok).toBe(true);
+
+    const updated = useEditorStore.getState();
+    expect(updated.slots.every((slot) => slot.w === source.w && slot.h === source.h)).toBe(true);
+    expect(updated.slots.map(({ x, y }) => ({ x, y }))).toEqual(positions);
+    expect(updated.historyIndex).toBe(historyBefore + 1);
+  });
+
+  it('rejects apply-to-all when the size would leave the paper', () => {
+    const slots = setupCollage();
+    useEditorStore.getState().updateSlot(slots.id, { w: 0.95, h: 0.95 });
+    const before = useEditorStore.getState();
+    const historyBefore = before.historyIndex;
+
+    const result = useEditorStore.getState().applyCollageSlotSizeToAll(slots.id);
+    expect(result).toEqual({ ok: false, reason: 'out-of-bounds' });
+    expect(useEditorStore.getState().slots).toBe(before.slots);
+    expect(useEditorStore.getState().historyIndex).toBe(historyBefore);
+  });
+
+  it('displaces a neighbor when resize causes overlap and there is room', () => {
+    const base = setupCollage();
+    useEditorStore.setState({
+      collageTemplate: null,
+      collageGap: 0,
+      collageMargin: 0,
+      slots: [
+        { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3 },
+        { ...base, id: 'b', cellIndex: 1, x: 0.4, y: 0, w: 0.3, h: 0.3 },
+      ],
+    });
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    const result = useEditorStore.getState().resizeCollageSlot('a', 0.45, 0.3);
+
+    expect(result).toEqual({ ok: true });
+    const state = useEditorStore.getState();
+    expect(state.slots[0]).toMatchObject({ w: 0.45, h: 0.3 });
+    // الخلية 'b' تُزاح لليمين بمقدار التداخل (0.05) + التباعد الأصلي (0.1) = 0.15
+    expect(state.slots[1]).toMatchObject({ x: 0.55, w: 0.3, h: 0.3 });
+    expect(state.historyIndex).toBe(historyBefore + 1);
+  });
+
+  it('preserves gap between cells during displacement', () => {
+    const base = setupCollage();
+    useEditorStore.setState({
+      collageTemplate: null,
+      collageGap: 20,
+      collageMargin: 10,
+      slots: [
+        { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3 },
+        { ...base, id: 'b', cellIndex: 1, x: 0.4, y: 0, w: 0.3, h: 0.3 },
+      ],
+    });
+
+    const result = useEditorStore.getState().resizeCollageSlot('a', 0.45, 0.3);
+
+    expect(result).toEqual({ ok: true });
+    const state = useEditorStore.getState();
+    // التحقق من أن التباعد بين الخليتين محفوظ
+    const gap = state.slots[1].x - (state.slots[0].x + state.slots[0].w);
+    expect(gap).toBeGreaterThan(0.09); // التباعد الأصلي كان 0.1
+  });
+
+  it('moves a vertically separated neighbor when their horizontal ranges already overlap', () => {
+    const base = setupCollage();
+    useEditorStore.setState({
+      collageTemplate: null,
+      collageGap: 0,
+      collageMargin: 0,
+      slots: [
+        { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.6, h: 0.1 },
+        { ...base, id: 'b', cellIndex: 1, x: 0.4, y: 0.2, w: 0.35, h: 0.1 },
+      ],
+    });
+
+    // تكبير ارتفاع A يخلق تداخلاً عمودياً. بما أن التداخل الأفقي أصغر،
+    // تُزاح B أفقياً رغم أن الخليتين كانتا متداخلتين أفقياً قبل التكبير.
+    const result = useEditorStore.getState().resizeCollageSlot('a', 0.6, 0.8);
+
+    expect(result).toEqual({ ok: true });
+    const state = useEditorStore.getState();
+    expect(state.slots.find((slot) => slot.id === 'b')?.x).toBeCloseTo(0.6);
+    expect(state.slots[0]).toMatchObject({ w: 0.6, h: 0.8 });
+  });
+
+  it('rejects resize when displacement would push neighbor out of bounds', () => {
+    const base = setupCollage();
+    useEditorStore.setState({
+      collageTemplate: null,
+      collageGap: 0,
+      collageMargin: 0,
+      slots: [
+        { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3 },
+        { ...base, id: 'b', cellIndex: 1, x: 0.4, y: 0, w: 0.55, h: 0.3 }, // 'b' at right edge
+      ],
+    });
+    const before = useEditorStore.getState();
+    const historyBefore = before.historyIndex;
+
+    // Resize 'a' to 0.5 — overlap 0.1 + original gap 0.1 = displacement 0.2
+    // 'b' pushed to x=0.6, right edge = 1.15 > 1 → rejected
+    const result = useEditorStore.getState().resizeCollageSlot('a', 0.5, 0.3);
+
+    expect(result).toEqual({ ok: false, reason: 'overlap' });
+    expect(useEditorStore.getState().slots).toBe(before.slots);
+    expect(useEditorStore.getState().historyIndex).toBe(historyBefore);
+  });
+
+  it('rejects apply-to-all when the uniform size would overlap cells', () => {
+    const base = setupCollage();
+    useEditorStore.setState({
+      collageTemplate: null,
+      collageGap: 0,
+      collageMargin: 0,
+      slots: [
+        { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.4, h: 0.3 },
+        { ...base, id: 'b', cellIndex: 1, x: 0.35, y: 0.5, w: 0.2, h: 0.3 },
+        { ...base, id: 'c', cellIndex: 2, x: 0.6, y: 0.5, w: 0.2, h: 0.3 },
+      ],
+    });
+    const before = useEditorStore.getState();
+    const historyBefore = before.historyIndex;
+
+    const result = useEditorStore.getState().applyCollageSlotSizeToAll('a');
+
+    expect(result).toEqual({ ok: false, reason: 'overlap' });
+    expect(useEditorStore.getState().slots).toBe(before.slots);
+    expect(useEditorStore.getState().historyIndex).toBe(historyBefore);
+  });
+
+  it('rejects resize for unknown slot, invalid dimensions, and NaN', () => {
+    const firstSlot = setupCollage();
+    const store = useEditorStore.getState();
+    const before = store.historyIndex;
+
+    expect(store.resizeCollageSlot('nonexistent', 0.3, 0.3)).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+    expect(store.resizeCollageSlot(firstSlot.id, 0, 0.3)).toEqual({ ok: false, reason: 'invalid' });
+    expect(store.resizeCollageSlot(firstSlot.id, 0.3, -1)).toEqual({
+      ok: false,
+      reason: 'invalid',
+    });
+    expect(store.resizeCollageSlot(firstSlot.id, NaN, 0.3)).toEqual({
+      ok: false,
+      reason: 'invalid',
+    });
+    expect(useEditorStore.getState().historyIndex).toBe(before);
+  });
+
+  it('returns ok without pushing history when resizing to the same dimensions', () => {
+    const firstSlot = setupCollage();
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    const result = useEditorStore
+      .getState()
+      .resizeCollageSlot(firstSlot.id, firstSlot.w, firstSlot.h);
+
+    expect(result).toEqual({ ok: true });
+    expect(useEditorStore.getState().historyIndex).toBe(historyBefore);
+  });
+
+  it('clears physicalLayout and zeroes gap/margin even without a prior physical template', () => {
+    const base = setupCollage();
+    useEditorStore.setState({
+      collageTemplate: {
+        ...useEditorStore.getState().collageTemplate!,
+        slots: 2,
+        cells: [
+          { x: 0, y: 0, w: 0.3, h: 0.3 },
+          { x: 0.5, y: 0, w: 0.3, h: 0.3 },
+        ],
+      },
+      collageGap: 10,
+      collageMargin: 5,
+      slots: [
+        { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3 },
+        { ...base, id: 'b', cellIndex: 1, x: 0.5, y: 0, w: 0.3, h: 0.3 },
+      ],
+    });
+
+    const result = useEditorStore.getState().resizeCollageSlot('a', 0.2, 0.3);
+
+    expect(result).toEqual({ ok: true });
+    const state = useEditorStore.getState();
+    expect(state.collageTemplate?.physicalLayout).toBeUndefined();
+    expect(state.collageGap).toBe(0);
+    expect(state.collageMargin).toBe(0);
+  });
+
+  it('clamps the physical-layout margin like manual layouts so cells stay positive', () => {
+    const tmpl = COLLAGE_TEMPLATES.find((t) => t.physicalLayout?.type === 'iq-national-id')!;
+    // ورقة 4×6 إنش (102×152 مم) — هامش 100 مم كان يولّد خلايا سالبة على هذا القياس
+    useEditorStore.setState({
+      mode: 'collage',
+      collageTemplate: tmpl,
+      canvasWidth: 1205,
+      canvasHeight: 1800,
+    });
+    const hugeMarginPx = (100 / 25.4) * 300;
+
+    useEditorStore.getState().previewCollageMargin(hugeMarginPx);
+    const previewed = useEditorStore.getState().collageMargin;
+    expect(previewed).toBeLessThan(hugeMarginPx);
+    expect(previewed).toBeGreaterThan(0);
+
+    useEditorStore.getState().commitCollageSpacing();
+    const slots = useEditorStore.getState().slots;
+    expect(slots.length).toBeGreaterThan(0);
+    expect(slots.every((s) => s.w > 0 && s.h > 0)).toBe(true);
+  });
+
   it('sets slot image directly', () => {
     const firstSlot = setupCollage();
 

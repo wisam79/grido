@@ -126,9 +126,18 @@ export function hydrateProjectState(
     ? (PHOTO_TEMPLATES.find((t) => t.id === project.template?.id) as PhotoTemplate | undefined) ||
       (project.template as PhotoTemplate)
     : null;
-  const restoredCollageTemplate = project.collageTemplate
-    ? (COLLAGE_TEMPLATES.find((t) => t.id === project.collageTemplate?.id) as
-        CollageTemplate | undefined) || (project.collageTemplate as CollageTemplate)
+  const savedCollageTemplate = project.collageTemplate as CollageTemplate | null;
+  const catalogCollageTemplate = savedCollageTemplate
+    ? COLLAGE_TEMPLATES.find((template) => template.id === savedCollageTemplate.id)
+    : undefined;
+  // تعديل خلية في قالب فيزيائي يحوله إلى هندسة يدوية ويحذف physicalLayout.
+  // نحتفظ بهذه النسخة المحفوظة حتى لا يعيد الاسم المطابق في الكتالوج القالب
+  // الفيزيائي الأصلي عند فتح المشروع، وهو ما كان يجعل تغيير المقاس أو DPI
+  // التالي يمحو مواضع المستخدم المخصصة.
+  const restoredCollageTemplate = savedCollageTemplate
+    ? !savedCollageTemplate.physicalLayout && catalogCollageTemplate?.physicalLayout
+      ? savedCollageTemplate
+      : catalogCollageTemplate || savedCollageTemplate
     : null;
 
   const rawElements = (project.elements || []) as CanvasElement[];
@@ -241,9 +250,9 @@ export function hydrateProjectState(
         originalImageSrc: existingSlot?.originalImageSrc,
         bgColor: existingSlot?.bgColor,
         filter: existingSlot?.filter || 'none',
-        brightness: existingSlot?.brightness || 100,
-        contrast: existingSlot?.contrast || 100,
-        saturation: existingSlot?.saturation || 100,
+        brightness: existingSlot?.brightness ?? 100,
+        contrast: existingSlot?.contrast ?? 100,
+        saturation: existingSlot?.saturation ?? 100,
         zoom: existingSlot?.zoom || 1,
         dragX: existingSlot?.dragX || 0,
         dragY: existingSlot?.dragY || 0,

@@ -50,7 +50,10 @@ describe('CollageCustomGridTab Component Suite', () => {
 
     // Section 3: Alignment (مفتوح افتراضياً أيضاً)
     expect(screen.getByText('المحاذاة على الورقة')).toBeInTheDocument();
-    expect(screen.getByText('توسيط')).toBeInTheDocument();
+    expect(
+      screen.getByRole('radiogroup', { name: 'نقطة ارتكاز الصور على الورقة' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'توسيط' })).toBeInTheDocument();
 
     // طي بطاقة مقاس الصورة بشكل مستقل
     fireEvent.click(screen.getByText('مقاس الصورة'));
@@ -59,7 +62,7 @@ describe('CollageCustomGridTab Component Suite', () => {
     });
     // بقية البطاقات تظل مفتوحة ومستقلة ولا تُطوى تلقائياً
     expect(screen.getByText('الصفوف')).toBeInTheDocument();
-    expect(screen.getByText('توسيط')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'توسيط' })).toBeInTheDocument();
 
     // إعادة فتح مقاس الصورة: تفتح وتبقى بقية البطاقات مفتوحة معاً في الوقت نفسه
     fireEvent.click(screen.getByText('مقاس الصورة'));
@@ -67,7 +70,7 @@ describe('CollageCustomGridTab Component Suite', () => {
       expect(screen.getByText('وطنية')).toBeInTheDocument();
     });
     expect(screen.getByText('الصفوف')).toBeInTheDocument();
-    expect(screen.getByText('توسيط')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'توسيط' })).toBeInTheDocument();
 
     // Section 4: Actions
     expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
@@ -138,23 +141,40 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(onApply).toHaveBeenCalledWith(1, 4, 'iq-national-id', 'top-left');
   });
 
-  it('reflects the applied canvas grid on the status badge (not a dead button)', () => {
+  it('keeps the alignment matrix as the only position control (no shortcut buttons)', () => {
+    const onGridAlignChange = vi.fn();
+    render(<CollageCustomGridTab {...defaultProps} onGridAlignChange={onGridAlignChange} />);
+
+    expect(screen.queryByText('ركن القص')).not.toBeInTheDocument();
+    // «توسيط» اسم وصولي لنقطة المصفوفة فقط، لا زر مختصر مرئي
+    expect(screen.queryByText('توسيط')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'أعلى اليمين' }));
+    expect(onGridAlignChange).toHaveBeenCalledWith('top-right');
+  });
+
+  it('reflects the applied canvas grid on the apply button without a status card', () => {
     const { rerender } = render(<CollageCustomGridTab {...defaultProps} />);
-    // قبل التطبيق: زر التطبيق الرئيسي، وبلا شارة الحالة
-    expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
-    expect(screen.queryByText('الشبكة مطبقة')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByTitle('تطبيق الشبكة على الكانفس')).toBeInTheDocument();
 
     rerender(
       <CollageCustomGridTab
         {...defaultProps}
         isCustomActive
-        appliedGrid={{ rows: 2, cols: 3, source: 'physical' }}
+        appliedGrid={{
+          rows: 2,
+          cols: 3,
+          source: 'physical',
+          photoType: 'iq-national-id',
+          align: 'top-left',
+        }}
       />,
     );
-    // بعد التطبيق: شارة حالة حية (role=status) تعرض شبكة الكانفس
-    expect(screen.getByText('الشبكة مطبقة')).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('الشبكة مطبقة');
-    expect(screen.getByRole('status')).toHaveTextContent('2×3');
+    // لا بطاقة حالة: زر التطبيق وحده يعكس أن الشبكة مطابقة للمطبّق
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByText('الشبكة مطبقة')).not.toBeInTheDocument();
+    expect(screen.getByTitle('إعادة تطبيق الشبكة على الكانفس')).toBeInTheDocument();
     expect(screen.getByText('حفظ كقالب')).toBeInTheDocument();
 
     // زر التطبيق يبقى فعلاً حقيقياً: يعيد تطبيق نفس التركيب عبر onApply
@@ -162,7 +182,7 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(defaultProps.onApply).toHaveBeenCalledWith(2, 3, 'iq-national-id', 'top-left');
   });
 
-  it('shows pending changes with the applied canvas grid when the form diverges', () => {
+  it('never renders a status card when the form diverges from the applied grid', () => {
     render(
       <CollageCustomGridTab
         {...defaultProps}
@@ -170,19 +190,34 @@ describe('CollageCustomGridTab Component Suite', () => {
         appliedGrid={{ rows: 6, cols: 5, source: 'cells' }}
       />,
     );
-    // الشارة تصف الكانفس فعلاً (6×5) وتصرّح بأن النموذج (2×3) لم يُطبَّق
-    expect(screen.getByText('تغييرات غير مطبقة')).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('6×5');
-    expect(screen.queryByText('الشبكة مطبقة')).not.toBeInTheDocument();
-    // زر التطبيق الأساسي متاح لإزالة التباعد
-    expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByText('تغييرات غير مطبقة')).not.toBeInTheDocument();
+    expect(screen.getByTitle('تطبيق الشبكة على الكانفس')).toBeInTheDocument();
   });
 
-  it('hides the status badge when the applied grid is irregular or unknown', () => {
+  it('marks the form as pending when the photo type diverges from the applied physical grid', () => {
+    render(
+      <CollageCustomGridTab
+        {...defaultProps}
+        isCustomActive
+        appliedGrid={{
+          rows: 2,
+          cols: 3,
+          source: 'physical',
+          photoType: 'iq-civil-id',
+          align: 'top-left',
+        }}
+      />,
+    );
+    // مقاس النموذج (وطنية) يخالف المطبق (أحوال) — الزر يعود لحالة «تطبيق» الأساسية
+    expect(screen.getByTitle('تطبيق الشبكة على الكانفس')).toBeInTheDocument();
+    expect(screen.queryByTitle('إعادة تطبيق الشبكة على الكانفس')).not.toBeInTheDocument();
+  });
+
+  it('keeps the apply button available when the applied grid is unknown', () => {
     render(<CollageCustomGridTab {...defaultProps} isCustomActive appliedGrid={null} />);
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    expect(screen.queryByText('الشبكة مطبقة')).not.toBeInTheDocument();
-    expect(screen.getByText('تطبيق الشبكة')).toBeInTheDocument();
+    expect(screen.getByTitle('تطبيق الشبكة على الكانفس')).toBeInTheDocument();
   });
 
   it('toggles template save form on clicking save button', () => {

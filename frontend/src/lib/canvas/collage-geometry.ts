@@ -52,7 +52,7 @@ export function getSlotRect(
   return {
     left: geo.margin + slot.x * geo.availW + geo.gap / 2,
     top: geo.margin + slot.y * geo.availH + geo.gap / 2,
-    width: slot.w * geo.availW - geo.gap,
-    height: slot.h * geo.availH - geo.gap,
+    width: Math.max(0, slot.w * geo.availW - geo.gap),
+    height: Math.max(0, slot.h * geo.availH - geo.gap),
   };
 }

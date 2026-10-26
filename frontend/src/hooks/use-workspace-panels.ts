@@ -140,13 +140,6 @@ export function useWorkspacePanels() {
     };
   }, []);
 
-  // مزامنة حالة العبور: في الشاشات العادية والواسعة، درج الأدوات الأيسر
-  // ولوحة الخصائص اليمنى مستقران في مكانهما دائماً ولا يقفزان عبر الشاشة.
-  const [prevBreakpoint, setPrevBreakpoint] = useState<WorkspaceBreakpoint>(breakpoint);
-  if (prevBreakpoint !== breakpoint) {
-    setPrevBreakpoint(breakpoint);
-  }
-
   const setActivePanel = useCallback((panel: WorkspacePanel) => {
     setActivePanelState(panel);
     saveStoredPreferences({ lastActivePanel: panel });
@@ -165,43 +158,35 @@ export function useWorkspacePanels() {
     saveStoredPreferences({ lastActiveStudioTab: tab });
   }, []);
 
-  const selectStudioTab = useCallback(
-    (tab: FreeformTab) => {
-      setActiveStudioTabState(tab);
-      saveStoredPreferences({ lastActiveStudioTab: tab });
-
-      if (breakpoint === 'compact') {
-        setMobileActiveTab('templates');
-        setIsMobileSheetOpen(true);
-        return;
-      }
-
-      // في شاشات سطح المكتب: نضمن دائماً فتح اللوح الأيسر وبقاءه مستقراً
-      setIsTemplatesDrawerOpen(true);
-    },
-    [breakpoint, setIsTemplatesDrawerOpen, setIsMobileSheetOpen, setMobileActiveTab],
-  );
-
   const setActiveCollageTab = useCallback((tab: CollageTab) => {
     setActiveCollageTabState(tab);
     saveStoredPreferences({ lastActiveCollageTab: tab });
   }, []);
 
+  const ensureTemplatesDrawerOpen = useCallback(() => {
+    if (breakpoint === 'compact') {
+      setMobileActiveTab('templates');
+      setIsMobileSheetOpen(true);
+      return;
+    }
+    // في شاشات سطح المكتب: نضمن دائماً فتح اللوح الأيسر وبقاءه مستقراً
+    setIsTemplatesDrawerOpen(true);
+  }, [breakpoint, setIsTemplatesDrawerOpen]);
+
+  const selectStudioTab = useCallback(
+    (tab: FreeformTab) => {
+      setActiveStudioTab(tab);
+      ensureTemplatesDrawerOpen();
+    },
+    [setActiveStudioTab, ensureTemplatesDrawerOpen],
+  );
+
   const selectCollageTab = useCallback(
     (tab: CollageTab) => {
-      setActiveCollageTabState(tab);
-      saveStoredPreferences({ lastActiveCollageTab: tab });
-
-      if (breakpoint === 'compact') {
-        setMobileActiveTab('templates');
-        setIsMobileSheetOpen(true);
-        return;
-      }
-
-      // في شاشات سطح المكتب: نضمن دائماً فتح اللوح الأيسر وبقاءه مستقراً
-      setIsTemplatesDrawerOpen(true);
+      setActiveCollageTab(tab);
+      ensureTemplatesDrawerOpen();
     },
-    [breakpoint, setIsTemplatesDrawerOpen, setIsMobileSheetOpen, setMobileActiveTab],
+    [setActiveCollageTab, ensureTemplatesDrawerOpen],
   );
 
   // Toggle or switch panel

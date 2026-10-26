@@ -4,6 +4,9 @@ export interface DerivedCollageGrid {
   rows: number;
   cols: number;
   source: 'physical' | 'cells';
+  /** للقوالب الفيزيائية فقط: نوع المقاس ونقطة الارتكاز المطبقة — لصدق حالة زر التطبيق */
+  photoType?: string;
+  align?: string;
 }
 
 const roundCoord = (n: number) => Math.round(n * 1000) / 1000;
@@ -31,6 +34,9 @@ export function getTemplateGrid(
       rows: template.physicalLayout.rows,
       cols: template.physicalLayout.cols,
       source: 'physical',
+      photoType: template.physicalLayout.type,
+      // مولّدات الخلايا تعامَل غياب المحاذاة كـ center — نفس الافتراض هنا
+      align: template.physicalLayout.align ?? 'center',
     };
   }
   return deriveGridFromCells(template.cells);

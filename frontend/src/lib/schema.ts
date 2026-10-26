@@ -163,6 +163,7 @@ export const PrintSettingsSchema = z.object({
   // كانتا تُسقطان عند الحفظ/الفتح (zod يحذف المفاتيح غير المعلنة) فيضيع
   // نمط خط القص ومحاذاة الشبكة المختاران ويعودان للافتراضي — إصلاح فقدان إعداد.
   cutLineStyle: z.enum(['dashed', 'dotted', 'solid', 'cropmarks']).optional(),
+  colorSpace: z.enum(['sRGB', 'CMYK']).optional(),
   gridAlign: z
     .enum([
       'top-left',

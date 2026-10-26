@@ -48,6 +48,7 @@ frontend/coverage/
 
 # Agent config (contains API keys — use env vars instead)
 opencode.json
+.workbuddy-ai/
 
 # Third-party build artifacts
 build/windows/installer/CodeFormer-temp/

@@ -24,6 +24,33 @@ export function getEffectiveDpi(W: number, H: number, storedDpi: number = 300): 
   return dpi;
 }
 
+/**
+ * يحدد مقاس الخلية الفيزيائية (مم) لنوع القالب — مصدر واحد تستخدمه مولّدات
+ * الخلايا وحاسبة الهامش الأقصى حتى لا تنحرف ثوابت المقاسات بينهما.
+ */
+function getPhysicalCellSizeMM(
+  type: string,
+  template: Pick<CollageTemplate, 'id'>,
+): { wMM: number; hMM: number } | null {
+  if (type === 'iq-national-id' || type === 'passport') {
+    return { wMM: 35, hMM: 45 };
+  }
+  if (type === 'iq-civil-id') {
+    return { wMM: 32, hMM: 40 };
+  }
+  if (type === 'iq-general-id' || type === 'id') {
+    // قالب «المعاملات العامة» بالكتالوج أفقي 60×40، والبقية عمودية 40×60
+    return template.id === 'collage-iq-general' ? { wMM: 60, hMM: 40 } : { wMM: 40, hMM: 60 };
+  }
+  if (type === 'iq-transactions') {
+    return { wMM: 30, hMM: 40 };
+  }
+  if (type === 'visa') {
+    return { wMM: 35, hMM: 45 };
+  }
+  return null;
+}
+
 function getGridCells(
   cols: number,
   rows: number,
@@ -308,6 +335,13 @@ export function computeDynamicCollageCells(
   const gap = collageGap > 0 ? (collageGap / dpi) * 25.4 : 2.0;
   const margin = collageMargin > 0 ? (collageMargin / dpi) * 25.4 : 4.0;
 
+  // حارس: هامش يبتلع الورقة (>= نصف قياسها) يجعل المساحة المتاحة سالبة، فيخرج
+  // scale سالباً وخلايا بأبعاد سالبة تُكتب في الخانات كما هي وتُحفظ مع المشروع.
+  // إرجاع null يجعل كل المستدعين (`if (dynamicCells)`) يحتفظون بالخلايا السابقة.
+  if (paperW_mm - 2 * margin <= 0 || paperH_mm - 2 * margin <= 0) {
+    return null;
+  }
+
   if (type === 'iq-mixed') {
     return getMixedCells(paperW_mm, paperH_mm, gap, align, margin);
   }
@@ -316,32 +350,54 @@ export function computeDynamicCollageCells(
     return getTravelerCells(paperW_mm, paperH_mm, gap, align, margin);
   }
 
-  let wMM = 35;
-  let hMM = 45;
-
-  if (type === 'iq-national-id' || type === 'passport') {
-    wMM = 35;
-    hMM = 45;
-  } else if (type === 'iq-civil-id') {
-    wMM = 32;
-    hMM = 40;
-  } else if (type === 'iq-general-id' || type === 'id') {
-    if (template.id === 'collage-iq-general') {
-      wMM = 60;
-      hMM = 40;
-    } else {
-      wMM = 40;
-      hMM = 60;
-    }
-  } else if (type === 'iq-transactions') {
-    wMM = 30;
-    hMM = 40;
-  } else if (type === 'visa') {
-    wMM = 35;
-    hMM = 45;
-  } else {
+  const size = getPhysicalCellSizeMM(type, template);
+  if (!size) {
     return null;
   }
 
-  return getGridCells(cols, rows, wMM, hMM, gap, paperW_mm, paperH_mm, align, margin);
+  return getGridCells(cols, rows, size.wMM, size.hMM, gap, paperW_mm, paperH_mm, align, margin);
+}
+
+/**
+ * أقصى هامش (مم) يُسمح به للتخطيط الفيزيائي بحيث تبقى أصغر خلية >= حد أدنى معلوم
+ * بعد تصغير الشبكة، فلا تنتج خلايا سالبة أو شبحية (أقل من 1 مم).
+ * يُعيد null عندما لا يوجد تخطيط فيزيائي أو نوعه غير معروف — عندها لا يُقيَّد الهامش.
+ */
+export function getPhysicalMaxMarginMM(
+  template: CollageTemplate,
+  paperWmm: number,
+  paperHmm: number,
+  gapMM: number,
+  minCellMM: number = 1,
+): number | null {
+  const layout = template.physicalLayout;
+  if (!layout) return null;
+
+  let gridW: number;
+  let gridH: number;
+  let minCellRaw: number;
+  if (layout.type === 'iq-mixed') {
+    // نفس ثوابت getMixedCells: يسار 2×2 من 35×45 + يمين 60×40
+    gridW = 2 * 35 + gapMM + gapMM + 60;
+    gridH = Math.max(2 * 45 + gapMM, 2 * 40 + gapMM);
+    minCellRaw = 35;
+  } else if (layout.type === 'combo-traveler') {
+    // نفس ثوابت getTravelerCells: صف علوي 2×35×45 + شبكة سفلية 2×2 من 35×45
+    gridW = 2 * 35 + gapMM;
+    gridH = 45 + gapMM + (2 * 45 + gapMM);
+    minCellRaw = 35;
+  } else {
+    const size = getPhysicalCellSizeMM(layout.type, template);
+    if (!size) return null;
+    gridW = layout.cols * size.wMM + (layout.cols - 1) * gapMM;
+    gridH = layout.rows * size.hMM + (layout.rows - 1) * gapMM;
+    minCellRaw = Math.min(size.wMM, size.hMM);
+  }
+
+  // المطلوب: scale = min(availW/gridW, availH/gridH) >= minCellMM/minCellRaw
+  const minScale = minCellMM / minCellRaw;
+  return Math.max(
+    0,
+    Math.min((paperWmm - minScale * gridW) / 2, (paperHmm - minScale * gridH) / 2),
+  );
 }

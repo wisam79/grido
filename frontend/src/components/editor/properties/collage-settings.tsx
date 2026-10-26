@@ -68,7 +68,7 @@ export function CollageSettings() {
             label="التباعد بين الصور"
             value={toMm(collageGap)}
             min={0}
-            max={toMm(30)}
+            max={30}
             step={0.1}
             unit="mm"
             defaultValue={0}
@@ -82,7 +82,7 @@ export function CollageSettings() {
             label="الهوامش الخارجية"
             value={toMm(collageMargin)}
             min={0}
-            max={toMm(100)}
+            max={100}
             step={0.1}
             unit="mm"
             defaultValue={0}
@@ -96,7 +96,7 @@ export function CollageSettings() {
             label="الزوايا"
             value={toMm(collageRadius)}
             min={0}
-            max={toMm(50)}
+            max={50}
             step={0.1}
             unit="mm"
             defaultValue={0}

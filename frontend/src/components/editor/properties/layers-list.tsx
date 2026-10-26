@@ -818,7 +818,7 @@ export function LayersList({
         <CaretDown
           className={cn(
             'w-4 h-4 text-muted-foreground transition-transform duration-200',
-            !expanded && '-rotate-90',
+            !expanded && '-rotate-90 rtl:rotate-90',
           )}
           weight="bold"
         />

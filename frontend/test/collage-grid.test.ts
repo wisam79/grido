@@ -64,7 +64,14 @@ describe('getTemplateGrid', () => {
           physicalLayout: { type: 'iq-national-id', rows: 1, cols: 2 },
         }),
       ),
-    ).toEqual({ rows: 1, cols: 2, source: 'physical' });
+    ).toEqual({
+      rows: 1,
+      cols: 2,
+      source: 'physical',
+      photoType: 'iq-national-id',
+      // غياب المحاذاة يُقرأ كافتراض المولّدات: center
+      align: 'center',
+    });
   });
 
   it('يرجع لإحداثيات الخانات عند غياب physicalLayout', () => {

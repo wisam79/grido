@@ -10,6 +10,7 @@ import {
   projectFileToDomainProject,
 } from '../src/lib/io/project-serializer';
 import { DEFAULT_GRID_STATE } from '../src/lib/store/slices/grid-slice';
+import { COLLAGE_TEMPLATES } from '../src/lib/templates/collage-templates';
 import { domain } from '../wailsjs/go/models';
 
 import type { EditorState } from '../src/lib/editor-store';
@@ -353,6 +354,82 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
       expect(hydrateProjectState(null as unknown as ProjectFileV1)).toBeNull();
       expect(hydrateProjectState(undefined as unknown as ProjectFileV1)).toBeNull();
       expect(hydrateProjectState('invalid' as unknown as ProjectFileV1)).toBeNull();
+    });
+
+    it('preserves a saved manual conversion of a built-in physical collage template', () => {
+      const { physicalLayout: _physicalLayout, ...manualTemplate } = COLLAGE_TEMPLATES[0];
+      const cells = [
+        { x: 0.1, y: 0.15, w: 0.25, h: 0.3 },
+        { x: 0.5, y: 0.15, w: 0.3, h: 0.3 },
+      ];
+      const project = {
+        version: 1,
+        mode: 'collage',
+        canvasWidth: 1200,
+        canvasHeight: 1600,
+        backgroundColor: '#FFFFFF',
+        elements: [],
+        collageTemplate: { ...manualTemplate, slots: cells.length, cells },
+        slots: cells.map((cell, cellIndex) => ({
+          id: `manual-slot-${cellIndex}`,
+          cellIndex,
+          ...cell,
+          filter: 'none',
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+          zoom: 1,
+          dragX: 0,
+          dragY: 0,
+        })),
+      };
+
+      const hydrated = hydrateProjectState(project as unknown as ProjectFileV1);
+
+      expect(hydrated?.collageTemplate).toMatchObject({
+        id: COLLAGE_TEMPLATES[0].id,
+        slots: cells.length,
+        cells,
+      });
+      expect(hydrated?.collageTemplate?.physicalLayout).toBeUndefined();
+      expect(hydrated?.slots.map(({ x, y, w, h }) => ({ x, y, w, h }))).toEqual(cells);
+    });
+
+    it('preserves a zero saturation/brightness when reconciling legacy slots', () => {
+      const tmpl = COLLAGE_TEMPLATES[0]; // قالب فيزيائي بـ 8 خلايا — العدد المحفوظ مختلف عمداً
+      const project = {
+        version: 1,
+        mode: 'collage',
+        canvasWidth: 2480,
+        canvasHeight: 3508,
+        backgroundColor: '#FFFFFF',
+        elements: [],
+        collageTemplate: tmpl,
+        slots: [
+          {
+            id: 'legacy-slot',
+            cellIndex: 0,
+            x: 0,
+            y: 0,
+            w: 0.2,
+            h: 0.2,
+            filter: 'none',
+            brightness: 0,
+            contrast: 100,
+            saturation: 0,
+            zoom: 1,
+            dragX: 0,
+            dragY: 0,
+          },
+        ],
+      };
+
+      const hydrated = hydrateProjectState(project as unknown as ProjectFileV1);
+
+      // القيمة الصفرية مشروعة (رمادي كامل/سطوع معدوم) — `|| 100` كان يمحوها إلى 100
+      expect(hydrated?.slots[0]?.saturation).toBe(0);
+      expect(hydrated?.slots[0]?.brightness).toBe(0);
+      expect(hydrated?.slots[0]?.contrast).toBe(100);
     });
 
     it('deduplicates element IDs and slot IDs', () => {

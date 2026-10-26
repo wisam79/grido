@@ -1,9 +1,17 @@
 import { normalizeSelection } from './element-slice';
+import { getCollageGeometry, getSlotRect } from '../../canvas/collage-geometry';
 import { measureImageAspect } from '../../canvas/measure-image';
 import { recenterElementsOnResize } from '../../canvas/resize-elements';
-import { COLLAGE_TEMPLATES, computeDynamicCollageCells, getEffectiveDpi } from '../../templates';
+import { mmToPx } from '../../canvas/units';
+import {
+  COLLAGE_TEMPLATES,
+  computeDynamicCollageCells,
+  getEffectiveDpi,
+  getPhysicalMaxMarginMM,
+} from '../../templates';
 import { uid } from '../../utils';
 
+import type { SlotRect } from '../../canvas/collage-geometry';
 import type {
   CanvasElement,
   CanvasSlot,
@@ -13,6 +21,14 @@ import type {
   HistoryEntry,
 } from '../types';
 import type { StateCreator } from 'zustand';
+
+/** تحمّل الفاصلة العائمة (floating-point) للإحداثيات النسبية [0,1] — يُستخدم في فحص الحدود */
+const EPSILON_BOUNDS = 1e-9;
+/** تحمّل floating-point لفحص التداخل بالبكسل — أصغر من أن يُرى بالعين */
+const EPSILON_OVERLAP = 1e-6;
+
+export type CollageSlotSizeError = 'not-found' | 'invalid' | 'out-of-bounds' | 'overlap';
+export type CollageSlotSizeResult = { ok: true } | { ok: false; reason: CollageSlotSizeError };
 
 export interface CollageSlice {
   template: PhotoTemplate | null;
@@ -31,6 +47,8 @@ export interface CollageSlice {
   setSlotImage: (slotId: string, src: string) => void;
   updateSlot: (slotId: string, patch: Partial<CanvasSlot>) => void;
   updateSlotsBatch: (slotIds: string[], patch: Partial<CanvasSlot>) => void;
+  resizeCollageSlot: (slotId: string, w: number, h: number) => CollageSlotSizeResult;
+  applyCollageSlotSizeToAll: (slotId: string) => CollageSlotSizeResult;
   clearSlots: () => void;
   fillAllSlots: (src: string, sourceSlotId?: string) => void;
   fillRowSlots: (slotId: string, src: string) => void;
@@ -175,6 +193,261 @@ type CollageCross = CollageSlice & {
   printSettings?: PrintSettings;
 };
 
+/** فحص تقاطع مستطيلين محوريين (AABB) بتحمّل floating-point. */
+function rectsIntersect(a: SlotRect, b: SlotRect): boolean {
+  return (
+    a.left < b.left + b.width - EPSILON_OVERLAP &&
+    a.left + a.width > b.left + EPSILON_OVERLAP &&
+    a.top < b.top + b.height - EPSILON_OVERLAP &&
+    a.top + a.height > b.top + EPSILON_OVERLAP
+  );
+}
+
+function hasOverlap(slots: CanvasSlot[], geo: ReturnType<typeof getCollageGeometry>): boolean {
+  const rects = slots.map((slot) => getSlotRect(slot, geo));
+  for (let i = 0; i < rects.length; i++) {
+    for (let j = i + 1; j < rects.length; j++) {
+      if (rectsIntersect(rects[i], rects[j])) return true;
+    }
+  }
+  return false;
+}
+
+/** يثبّت الهندسة اليدوية في القالب حتى لا يمحوها إعادة توليد التخطيط الفيزيائي. */
+function manualGeometryPatch(state: CollageCross, slots: CanvasSlot[]) {
+  const wasPhysical = Boolean(state.collageTemplate?.physicalLayout);
+  const collageTemplate = state.collageTemplate
+    ? {
+        ...state.collageTemplate,
+        cells: slots.map(({ x, y, w, h, presetType, label, rotation }) => ({
+          x,
+          y,
+          w,
+          h,
+          presetType,
+          label,
+          rotation,
+        })),
+      }
+    : null;
+  if (collageTemplate) delete collageTemplate.physicalLayout;
+  return {
+    slots,
+    collageTemplate,
+    // كانت الإحداثيات الفيزيائية تشمل الهوامش والفجوات؛ لا نطبقها مرة ثانية.
+    ...(wasPhysical ? { collageGap: 0, collageMargin: 0 } : {}),
+  };
+}
+
+/**
+ * محاولة إزاحة الخلايا المتداخلة عند تغيير مقاس خلية.
+ * تدفع كل خلية متداخلة في اتجاه أصغر تداخل (أفقي أو عمودي).
+ * إذا تسببت الإزاحة في تداخل جديد، تُزاح الخلية الجديدة بشكل متكرر.
+ * تُرجع مصفوفة الخلايا المُحدّثة أو null إذا تعذّرت الإزاحة.
+ */
+function tryDisplaceOverlappingCells(
+  resizedSlotId: string,
+  resizedSlotNewRect: SlotRect,
+  resizedSlotOriginalRect: SlotRect,
+  slots: CanvasSlot[],
+  geo: ReturnType<typeof getCollageGeometry>,
+  displacedIds: Set<string> = new Set(),
+  depth: number = 0,
+): CanvasSlot[] | null {
+  if (depth > 20) return null; // حارس عمق التكرار لمنع تجاوز سعة المكدس في التداخلات المعقدة
+
+  const overlapping = slots.filter((slot) => {
+    if (slot.id === resizedSlotId || displacedIds.has(slot.id)) return false;
+    return rectsIntersect(resizedSlotNewRect, getSlotRect(slot, geo));
+  });
+
+  if (overlapping.length === 0) return slots;
+
+  let result = [...slots];
+  for (const overlapSlot of overlapping) {
+    const overlapRect = getSlotRect(overlapSlot, geo);
+
+    // حساب مقدار التداخل في كل اتجاه
+    const overlapX = Math.min(
+      resizedSlotNewRect.left + resizedSlotNewRect.width - overlapRect.left,
+      overlapRect.left + overlapRect.width - resizedSlotNewRect.left,
+    );
+    const overlapY = Math.min(
+      resizedSlotNewRect.top + resizedSlotNewRect.height - overlapRect.top,
+      overlapRect.top + overlapRect.height - resizedSlotNewRect.top,
+    );
+
+    // حساب التباعد الأصلي بين الخلية المُعدّلة والخلية المتداخلة
+    // لضمان الحفاظ على المسافة الافتراضية بعد الإزاحة. إذا كانت الخلايا
+    // متداخلة أصلاً على هذا المحور (لكنها منفصلة على المحور الآخر)، فلا
+    // توجد فجوة قابلة للحفظ؛ القيمة السالبة كانت تلغي مقدار الإزاحة المطلوب
+    // وتسمح بحفظ تداخل حقيقي بعد تكبير الخلية.
+    let originalGapX = 0;
+    let originalGapY = 0;
+
+    if (resizedSlotOriginalRect.left < overlapRect.left) {
+      originalGapX =
+        overlapRect.left - (resizedSlotOriginalRect.left + resizedSlotOriginalRect.width);
+    } else {
+      originalGapX = resizedSlotOriginalRect.left - (overlapRect.left + overlapRect.width);
+    }
+
+    if (resizedSlotOriginalRect.top < overlapRect.top) {
+      originalGapY =
+        overlapRect.top - (resizedSlotOriginalRect.top + resizedSlotOriginalRect.height);
+    } else {
+      originalGapY = resizedSlotOriginalRect.top - (overlapRect.top + overlapRect.height);
+    }
+    originalGapX = Math.max(0, originalGapX);
+    originalGapY = Math.max(0, originalGapY);
+
+    // الدفع في اتجاه أصغر تداخل + التباعد الأصلي
+    let dx = 0;
+    let dy = 0;
+
+    if (overlapX < overlapY) {
+      // دفع أفقي
+      if (resizedSlotNewRect.left < overlapRect.left) {
+        dx = (overlapX + originalGapX) / geo.availW; // دفع لليمين
+      } else {
+        dx = -(overlapX + originalGapX) / geo.availW; // دفع لليسار
+      }
+    } else {
+      // دفع عمودي
+      if (resizedSlotNewRect.top < overlapRect.top) {
+        dy = (overlapY + originalGapY) / geo.availH; // دفع للأسفل
+      } else {
+        dy = -(overlapY + originalGapY) / geo.availH; // دفع للأعلى
+      }
+    }
+
+    const newX = overlapSlot.x + dx;
+    const newY = overlapSlot.y + dy;
+
+    // التحقق من أن الإزاحة ضمن الحدود
+    if (
+      newX < -EPSILON_BOUNDS ||
+      newX + overlapSlot.w > 1 + EPSILON_BOUNDS ||
+      newY < -EPSILON_BOUNDS ||
+      newY + overlapSlot.h > 1 + EPSILON_BOUNDS
+    ) {
+      return null; // تعذّرت الإزاحة
+    }
+
+    const displacedSlot = { ...overlapSlot, x: newX, y: newY };
+    result = result.map((s) => (s.id === overlapSlot.id ? displacedSlot : s));
+
+    // التحقق بشكل متكرر من أن الخلية المُزاحة لا تتداخل مع خلايا أخرى
+    const displacedRect = getSlotRect(displacedSlot, geo);
+    const recursiveResult = tryDisplaceOverlappingCells(
+      overlapSlot.id,
+      displacedRect,
+      displacedRect, // الخلية المُزاحة أصبحت الآن "الأصلية" للتداخلات التالية
+      result,
+      geo,
+      new Set([...displacedIds, resizedSlotId]),
+      depth + 1,
+    );
+
+    if (!recursiveResult) return null; // تعذّر حل التداخلات المتسلسلة
+    result = recursiveResult;
+  }
+
+  return result;
+}
+
+/**
+ * نسخ خصائص الصورة البصرية من الخلية المصدر إلى الخلية المستهدفة — مصدر واحد
+ * للحقول المنقولة عند ملء/نسخ الصور (fillAll, fillRow, fillColumn, fillEmpty).
+ * القيم الاحتياطية من الخلية المستهدفة (`sl`) تُحفظ عند غياب مصدر.
+ */
+function deriveSlotImageProps(
+  source: CanvasSlot | null | undefined,
+  sl: CanvasSlot,
+): Partial<CanvasSlot> {
+  return {
+    filter: source?.filter || 'none',
+    brightness: source?.brightness ?? 100,
+    contrast: source?.contrast ?? 100,
+    saturation: source?.saturation ?? 100,
+    zoom: source?.zoom ?? sl.zoom,
+    dragX: source?.dragX ?? sl.dragX,
+    dragY: source?.dragY ?? sl.dragY,
+    flipX: source?.flipX ?? sl.flipX,
+    flipY: source?.flipY ?? sl.flipY,
+    rotation: source?.rotation ?? sl.rotation,
+    bgColor: source?.bgColor ?? sl.bgColor,
+  };
+}
+
+/**
+ * يحسب أقصى فجوة مسموح بها للخلايا اليدوية بحيث لا يهبط مقاس أي خلية عن الحد الأدنى (1 مم).
+ * يمنع إنتاج أبعاد سالبة عند زيادة التباعد في التخطيطات اليدوية (P1).
+ */
+function getManualMaxGap(
+  slots: CanvasSlot[],
+  canvasW: number,
+  canvasH: number,
+  margin: number,
+  minSlotPx: number,
+): number {
+  if (!slots || slots.length === 0) return Number.POSITIVE_INFINITY;
+  const availW = Math.max(1, canvasW - 2 * margin);
+  const availH = Math.max(1, canvasH - 2 * margin);
+  let minSpan = Number.POSITIVE_INFINITY;
+  for (const sl of slots) {
+    const spanW = sl.w * availW;
+    const spanH = sl.h * availH;
+    if (spanW < minSpan) minSpan = spanW;
+    if (spanH < minSpan) minSpan = spanH;
+  }
+  return Math.max(0, minSpan - minSlotPx);
+}
+
+/**
+ * يحسب أقصى هامش مسموح به للخلايا اليدوية بحيث لا تنحسر أبعاد أي خلية عن الحد الأدنى (1 مم).
+ */
+function getManualMaxMargin(
+  slots: CanvasSlot[],
+  canvasW: number,
+  canvasH: number,
+  gap: number,
+  minSlotPx: number,
+): number {
+  if (!slots || slots.length === 0) return Math.min(canvasW, canvasH) / 4;
+  let maxMargin = Math.min(canvasW, canvasH) / 4;
+  for (const sl of slots) {
+    if (sl.w > 0) {
+      const limitW = (canvasW - (gap + minSlotPx) / sl.w) / 2;
+      if (limitW < maxMargin) maxMargin = limitW;
+    }
+    if (sl.h > 0) {
+      const limitH = (canvasH - (gap + minSlotPx) / sl.h) / 2;
+      if (limitH < maxMargin) maxMargin = limitH;
+    }
+  }
+  return Math.max(0, maxMargin);
+}
+
+/**
+ * أقصى هامش مسموح به للتخطيط الفيزيائي (بالبكسل الكانفسي): يمنع الهامش من ابتلاع
+ * الورقة — الذي كان يولّد خلايا سالبة عبر `computeDynamicCollageCells` — ويمنع
+ * انحسار أصغر خلية دون 1 مم، بنفس الحد المطبق على الهوامش اليدوية.
+ * يُعيد null إن لم يوجد تخطيط فيزيائي أو كان نوعه غير معروف — عندها لا يُقيَّد الهامش.
+ */
+function getPhysicalMaxMargin(state: CollageCross): number | null {
+  const template = state.collageTemplate;
+  if (!template?.physicalLayout) return null;
+  const storedDpi = state.printSettings?.dpi || 300;
+  const dpi = getEffectiveDpi(state.canvasWidth, state.canvasHeight, storedDpi);
+  const paperWmm = (state.canvasWidth / dpi) * 25.4;
+  const paperHmm = (state.canvasHeight / dpi) * 25.4;
+  // نفس استبدال الفجوة الافتراضية في computeDynamicCollageCells حتى تتطابق الحدود
+  const gapMM = state.collageGap > 0 ? (state.collageGap / dpi) * 25.4 : 2.0;
+  const maxMarginMM = getPhysicalMaxMarginMM(template, paperWmm, paperHmm, gapMM, 1);
+  return maxMarginMM == null ? null : mmToPx(maxMarginMM, dpi);
+}
+
 export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice> = (set, get) => ({
   ...DEFAULT_COLLAGE_STATE,
 
@@ -300,9 +573,9 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           flipX: existingSlot?.flipX,
           flipY: existingSlot?.flipY,
           filter: existingSlot?.filter || 'none',
-          brightness: existingSlot?.brightness || 100,
-          contrast: existingSlot?.contrast || 100,
-          saturation: existingSlot?.saturation || 100,
+          brightness: existingSlot?.brightness ?? 100,
+          contrast: existingSlot?.contrast ?? 100,
+          saturation: existingSlot?.saturation ?? 100,
           zoom: existingSlot?.zoom || 1,
           dragX: existingSlot?.dragX || 0,
           dragY: existingSlot?.dragY || 0,
@@ -462,6 +735,90 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     }));
   },
 
+  resizeCollageSlot: (slotId, w, h) => {
+    const state = get();
+    const source = state.slots.find((slot) => slot.id === slotId);
+    if (!source) return { ok: false, reason: 'not-found' };
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
+      return { ok: false, reason: 'invalid' };
+    }
+    if (w > 1 - source.x + EPSILON_BOUNDS || h > 1 - source.y + EPSILON_BOUNDS) {
+      return { ok: false, reason: 'out-of-bounds' };
+    }
+    if (Math.abs(source.w - w) < EPSILON_BOUNDS && Math.abs(source.h - h) < EPSILON_BOUNDS) {
+      return { ok: true };
+    }
+    const geo = getCollageGeometry(
+      state.canvasWidth,
+      state.canvasHeight,
+      state.collageMargin,
+      state.collageGap,
+      Boolean(state.collageTemplate?.physicalLayout),
+    );
+    const originalRect = getSlotRect(source, geo);
+    const candidateRect = getSlotRect({ ...source, w, h }, geo);
+    const hasConflict = state.slots.some((slot) => {
+      if (slot.id === slotId) return false;
+      return rectsIntersect(candidateRect, getSlotRect(slot, geo));
+    });
+
+    if (hasConflict) {
+      // محاولة إزاحة الخلايا المتداخلة
+      const displacedSlots = tryDisplaceOverlappingCells(
+        slotId,
+        candidateRect,
+        originalRect,
+        state.slots,
+        geo,
+      );
+      if (!displacedSlots) {
+        return { ok: false, reason: 'overlap' };
+      }
+      // تطبيق التغيير والمقاس الجديد معًا كخطوة واحدة
+      const slots = displacedSlots.map((slot) => (slot.id === slotId ? { ...slot, w, h } : slot));
+      // قد يتداخل أكثر من مسار إزاحة متسلسل؛ لا نعتمد على نجاح كل خطوة
+      // منفردة، بل نتحقق من الهندسة النهائية قبل تسجيل أي حالة في السجل.
+      if (hasOverlap(slots, geo)) return { ok: false, reason: 'overlap' };
+      set(manualGeometryPatch(state, slots));
+      get().pushHistory();
+      return { ok: true };
+    }
+
+    const slots = state.slots.map((slot) => (slot.id === slotId ? { ...slot, w, h } : slot));
+    set(manualGeometryPatch(state, slots));
+    get().pushHistory();
+    return { ok: true };
+  },
+
+  applyCollageSlotSizeToAll: (slotId) => {
+    const state = get();
+    const source = state.slots.find((slot) => slot.id === slotId);
+    if (!source) return { ok: false, reason: 'not-found' };
+    // المقاس الموحّد لا يجوز أن يدفع أي خلية خارج الورقة؛ لا نغيّر مواضعها ضمنياً.
+    const fits = state.slots.every(
+      (slot) => slot.x + source.w <= 1 + EPSILON_BOUNDS && slot.y + source.h <= 1 + EPSILON_BOUNDS,
+    );
+    if (!fits) return { ok: false, reason: 'out-of-bounds' };
+    const changed = state.slots.some(
+      (slot) =>
+        Math.abs(slot.w - source.w) > EPSILON_BOUNDS ||
+        Math.abs(slot.h - source.h) > EPSILON_BOUNDS,
+    );
+    if (!changed) return { ok: true };
+    const slots = state.slots.map((slot) => ({ ...slot, w: source.w, h: source.h }));
+    const geo = getCollageGeometry(
+      state.canvasWidth,
+      state.canvasHeight,
+      state.collageMargin,
+      state.collageGap,
+      Boolean(state.collageTemplate?.physicalLayout),
+    );
+    if (hasOverlap(slots, geo)) return { ok: false, reason: 'overlap' };
+    set(manualGeometryPatch(state, slots));
+    get().pushHistory();
+    return { ok: true };
+  },
+
   clearSlots: () => {
     set((state) => ({
       slots: state.slots.map((sl: CanvasSlot) => ({ ...sl, imageSrc: undefined })),
@@ -477,19 +834,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       slots: state.slots.map((sl: CanvasSlot) => ({
         ...sl,
         imageSrc: src,
-        // 🔁 نسخ كامل تعديلات الخلية المصدر (كان ينقل المرشّح/الألوان فقط
-        // فيبقى اقتصاص zoom/drag والقلب من الصورة السابقة على بقية الخلايا)
-        filter: targetSlot?.filter || 'none',
-        brightness: targetSlot?.brightness ?? 100,
-        contrast: targetSlot?.contrast ?? 100,
-        saturation: targetSlot?.saturation ?? 100,
-        zoom: targetSlot?.zoom ?? sl.zoom,
-        dragX: targetSlot?.dragX ?? sl.dragX,
-        dragY: targetSlot?.dragY ?? sl.dragY,
-        flipX: targetSlot?.flipX ?? sl.flipX,
-        flipY: targetSlot?.flipY ?? sl.flipY,
-        rotation: targetSlot?.rotation ?? sl.rotation,
-        bgColor: targetSlot?.bgColor ?? sl.bgColor,
+        ...deriveSlotImageProps(targetSlot, sl),
       })),
     }));
     get().pushHistory();
@@ -504,19 +849,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           ? {
               ...sl,
               imageSrc: src,
-              filter: targetSlot.filter || 'none',
-              brightness: targetSlot.brightness ?? 100,
-              contrast: targetSlot.contrast ?? 100,
-              saturation: targetSlot.saturation ?? 100,
-              // 🔁 نفس حقول fillAllSlots تماماً: بدون zoom/drag/flip/rotation
-              // كانت الصورة الجديدة ترث اقتصاص الصورة السابقة داخل الخانة
-              zoom: targetSlot.zoom ?? sl.zoom,
-              dragX: targetSlot.dragX ?? sl.dragX,
-              dragY: targetSlot.dragY ?? sl.dragY,
-              flipX: targetSlot.flipX ?? sl.flipX,
-              flipY: targetSlot.flipY ?? sl.flipY,
-              rotation: targetSlot.rotation ?? sl.rotation,
-              bgColor: targetSlot.bgColor ?? sl.bgColor,
+              ...deriveSlotImageProps(targetSlot, sl),
             }
           : sl,
       ),
@@ -533,19 +866,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           ? {
               ...sl,
               imageSrc: src,
-              filter: targetSlot.filter || 'none',
-              brightness: targetSlot.brightness ?? 100,
-              contrast: targetSlot.contrast ?? 100,
-              saturation: targetSlot.saturation ?? 100,
-              // 🔁 نفس حقول fillAllSlots تماماً: بدون zoom/drag/flip/rotation
-              // كانت الصورة الجديدة ترث اقتصاص الصورة السابقة داخل الخانة
-              zoom: targetSlot.zoom ?? sl.zoom,
-              dragX: targetSlot.dragX ?? sl.dragX,
-              dragY: targetSlot.dragY ?? sl.dragY,
-              flipX: targetSlot.flipX ?? sl.flipX,
-              flipY: targetSlot.flipY ?? sl.flipY,
-              rotation: targetSlot.rotation ?? sl.rotation,
-              bgColor: targetSlot.bgColor ?? sl.bgColor,
+              ...deriveSlotImageProps(targetSlot, sl),
             }
           : sl,
       ),
@@ -558,24 +879,38 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       let adjustedSlots = s.slots || [];
       const collageTemplate = s.collageTemplate;
       const mode = s.mode;
+      let effectiveGap = Math.max(0, gap);
 
-      if (mode === 'collage' && collageTemplate && collageTemplate.physicalLayout) {
+      if (mode === 'collage') {
         const storedDpi = s.printSettings?.dpi || 300;
         const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
-        const dynamicCells = computeDynamicCollageCells(
-          collageTemplate,
-          s.canvasWidth,
-          s.canvasHeight,
-          dpi,
-          gap,
-          s.collageMargin,
-        );
-        if (dynamicCells) {
-          adjustedSlots = remapSlotsToCells(s.slots || [], dynamicCells);
+
+        if (collageTemplate && collageTemplate.physicalLayout) {
+          const dynamicCells = computeDynamicCollageCells(
+            collageTemplate,
+            s.canvasWidth,
+            s.canvasHeight,
+            dpi,
+            gap,
+            s.collageMargin,
+          );
+          if (dynamicCells) {
+            adjustedSlots = remapSlotsToCells(s.slots || [], dynamicCells);
+          }
+        } else if (s.slots?.length > 0) {
+          const minSlotPx = Math.max(1, mmToPx(1, dpi));
+          const maxGap = getManualMaxGap(
+            s.slots,
+            s.canvasWidth,
+            s.canvasHeight,
+            s.collageMargin,
+            minSlotPx,
+          );
+          effectiveGap = Math.min(effectiveGap, maxGap);
         }
       }
       return {
-        collageGap: gap,
+        collageGap: effectiveGap,
         slots: adjustedSlots,
       };
     });
@@ -586,10 +921,46 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   // الخلايا (O(خلايا×خانات) + مصفوفة slots جديدة كل إطار تسقط طبقة الكولاج).
   // التثبيت الحسابي يتم مرة واحدة في commitCollageSpacing عند الإفلات.
   previewCollageGap: (gap) => {
-    set({ collageGap: gap });
+    const s = get();
+    let effectiveGap = Math.max(0, gap);
+    if (s.mode === 'collage' && !s.collageTemplate?.physicalLayout && s.slots?.length > 0) {
+      const storedDpi = s.printSettings?.dpi || 300;
+      const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
+      const minSlotPx = Math.max(1, mmToPx(1, dpi));
+      const maxGap = getManualMaxGap(
+        s.slots,
+        s.canvasWidth,
+        s.canvasHeight,
+        s.collageMargin,
+        minSlotPx,
+      );
+      effectiveGap = Math.min(effectiveGap, maxGap);
+    }
+    set({ collageGap: effectiveGap });
   },
   previewCollageMargin: (margin) => {
-    set({ collageMargin: margin });
+    const s = get();
+    let effectiveMargin = Math.max(0, margin);
+    if (s.mode === 'collage') {
+      if (s.collageTemplate?.physicalLayout) {
+        // التخطيط الفيزيائي أيضاً: الهامش لا يجوز أن يبتلع الورقة فيولّد خلايا سالبة
+        const maxMargin = getPhysicalMaxMargin(s);
+        if (maxMargin != null) effectiveMargin = Math.min(effectiveMargin, maxMargin);
+      } else if (s.slots?.length > 0) {
+        const storedDpi = s.printSettings?.dpi || 300;
+        const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
+        const minSlotPx = Math.max(1, mmToPx(1, dpi));
+        const maxMargin = getManualMaxMargin(
+          s.slots,
+          s.canvasWidth,
+          s.canvasHeight,
+          s.collageGap,
+          minSlotPx,
+        );
+        effectiveMargin = Math.min(effectiveMargin, maxMargin);
+      }
+    }
+    set({ collageMargin: effectiveMargin });
   },
   commitCollageSpacing: () => {
     const s = get();
@@ -614,24 +985,42 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       let adjustedSlots = s.slots || [];
       const collageTemplate = s.collageTemplate;
       const mode = s.mode;
+      let effectiveMargin = Math.max(0, margin);
 
-      if (mode === 'collage' && collageTemplate && collageTemplate.physicalLayout) {
+      if (mode === 'collage') {
         const storedDpi = s.printSettings?.dpi || 300;
         const dpi = getEffectiveDpi(s.canvasWidth, s.canvasHeight, storedDpi);
-        const dynamicCells = computeDynamicCollageCells(
-          collageTemplate,
-          s.canvasWidth,
-          s.canvasHeight,
-          dpi,
-          s.collageGap,
-          margin,
-        );
-        if (dynamicCells) {
-          adjustedSlots = remapSlotsToCells(s.slots || [], dynamicCells);
+
+        if (collageTemplate && collageTemplate.physicalLayout) {
+          // قيّد الهامش أولاً ثم أعد بناء الخلايا منه — حتى تطابق الخلايا المخزنة
+          // القيمة المخزنة ولا تُكتب خلايا سالبة في سجل التراجع.
+          const maxMargin = getPhysicalMaxMargin(s);
+          if (maxMargin != null) effectiveMargin = Math.min(effectiveMargin, maxMargin);
+          const dynamicCells = computeDynamicCollageCells(
+            collageTemplate,
+            s.canvasWidth,
+            s.canvasHeight,
+            dpi,
+            s.collageGap,
+            effectiveMargin,
+          );
+          if (dynamicCells) {
+            adjustedSlots = remapSlotsToCells(s.slots || [], dynamicCells);
+          }
+        } else if (s.slots?.length > 0) {
+          const minSlotPx = Math.max(1, mmToPx(1, dpi));
+          const maxMargin = getManualMaxMargin(
+            s.slots,
+            s.canvasWidth,
+            s.canvasHeight,
+            s.collageGap,
+            minSlotPx,
+          );
+          effectiveMargin = Math.min(effectiveMargin, maxMargin);
         }
       }
       return {
-        collageMargin: margin,
+        collageMargin: effectiveMargin,
         slots: adjustedSlots,
       };
     });
@@ -717,19 +1106,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         return {
           ...sl,
           imageSrc: src,
-          filter: sourceSlot?.filter || 'none',
-          brightness: sourceSlot?.brightness ?? 100,
-          contrast: sourceSlot?.contrast ?? 100,
-          saturation: sourceSlot?.saturation ?? 100,
-          // 🔁 نفس حقول fillAllSlots تماماً: بدون zoom/drag/flip/rotation
-          // كانت الصورة الجديدة ترث اقتصاص الصورة السابقة داخل الخانة
-          zoom: sourceSlot?.zoom ?? sl.zoom,
-          dragX: sourceSlot?.dragX ?? sl.dragX,
-          dragY: sourceSlot?.dragY ?? sl.dragY,
-          flipX: sourceSlot?.flipX ?? sl.flipX,
-          flipY: sourceSlot?.flipY ?? sl.flipY,
-          rotation: sourceSlot?.rotation ?? sl.rotation,
-          bgColor: sourceSlot?.bgColor ?? sl.bgColor,
+          ...deriveSlotImageProps(sourceSlot, sl),
         };
       }),
     }));
