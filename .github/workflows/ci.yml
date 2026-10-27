@@ -262,7 +262,7 @@ jobs:
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/go/bin/staticcheck
-          key: ${{ runner.os }}-staticcheck-2025.1.1
+          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-staticcheck-v0.8.2
 
       - name: Add Go Bin to PATH
         run: echo "$HOME/go/bin" >> $GITHUB_PATH
@@ -286,12 +286,12 @@ jobs:
             exit 1
           fi
 
-      # Pinned release (verified: dominikh/go-tools 2025.1.1) — `@latest`
+      # Pinned release (verified: dominikh/go-tools v0.8.2 supporting Go 1.26+) — `@latest`
       # silently moves the toolchain under CI and breaks reproducibility.
       - name: Install staticcheck
         id: install_staticcheck
         if: steps.cache-staticcheck.outputs.cache-hit != 'true'
-        run: go install honnef.co/go/tools/cmd/staticcheck@2025.1.1
+        run: go install honnef.co/go/tools/cmd/staticcheck@v0.8.2
 
       - name: Run staticcheck
         id: staticcheck
