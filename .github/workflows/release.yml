@@ -102,7 +102,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
-          go-version: '1.25.0'
+          go-version: '1.26.4'
           cache: true
 
       - name: Setup Node
@@ -121,7 +121,7 @@ jobs:
         with:
           path: |
             C:\Users\runneradmin\go\bin
-          key: ${{ runner.os }}-go-bin-wails-3.0.0-beta.28-v1
+          key: ${{ runner.os }}-go-bin-wails-3.0.0-v1
 
       - name: Cache NSIS Compiler
         id: cache-nsis
@@ -211,7 +211,7 @@ jobs:
         shell: pwsh
         run: |
           if (-not (Get-Command wails3 -ErrorAction SilentlyContinue)) {
-            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
+            go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
           }
           # التحقق صريح من الإصدار المثبّت فعلاً (لا مجرد وجود الأمر): الهدف كشف
           # أي ثنائي wails3 قديم يُسرّه كاش بمفتاح ثابت. `wails3 version` يطبع
@@ -220,8 +220,8 @@ jobs:
           wails3 version > $verFile 2>&1
           $v = (Get-Content $verFile -Raw).Trim()
           Write-Host "wails3 version => $v"
-          if ($v -notmatch '3\.0\.0-beta\.28') {
-            throw "إصدار wails3 CLI غير مطابق للمثبّت (المتوقع 3.0.0-beta.28، الفعلي '$v') — امسح كاش go/bin وأعد المحاولة."
+          if ($v -notmatch '3\.0\.0') {
+            throw "إصدار wails3 CLI غير مطابق للمثبّت (المتوقع 3.0.0، الفعلي '$v') — امسح كاش go/bin وأعد المحاولة."
           }
 
       - name: Generate Wails v3 Bindings

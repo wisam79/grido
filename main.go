@@ -463,7 +463,7 @@ func main() {
 
 	// ── إغلاق النافذة: حفظ الحالة ثم خروج نظيف (عقد app:quit-requested) ──
 	//
-	// ⚠️ سجل SDK (v3.0.0-beta.28): `Windows.WindowClosing` لا يُلغى من مسار
+	// ⚠️ سجل SDK (v3.0.0): `Windows.WindowClosing` لا يُلغى من مسار
 	// الإغلاق الأصلي (زر X / Alt+F4): معالج WM_CLOSE يبثّ الحدث فقط ويعيد 0،
 	// والمستمع الافتراضي في NewWindow هو من يُغلق النافذة فعلياً. لكن
 	// RegisterHook يعمل **متزامناً قبل** كل المستمعين، ونداء event.Cancel()
