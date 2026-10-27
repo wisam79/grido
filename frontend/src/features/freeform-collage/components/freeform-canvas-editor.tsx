@@ -1,5 +1,6 @@
 import React, { useRef, useCallback, useState, useEffect, memo } from 'react';
 
+import { clamp } from '@/lib/clamp';
 import { cn } from '@/lib/utils';
 
 import { FreeformSlotCard } from './freeform-slot-card';
@@ -109,8 +110,8 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
             const moveSet = new Set(groupIds);
             next = st.origSlots.map((item) => {
               if (!moveSet.has(item.id)) return item;
-              const nx = Math.min(1 - item.w, Math.max(0, item.x + dx));
-              const ny = Math.min(1 - item.h, Math.max(0, item.y + dy));
+              const nx = clamp(item.x + dx, 0, 1 - item.w);
+              const ny = clamp(item.y + dy, 0, 1 - item.h);
               return { ...item, x: nx, y: ny };
             });
           }

@@ -48,6 +48,7 @@ import {
   projectFileToDomainProject,
   domainProjectToProjectFile,
 } from '@/lib/io/project-serializer';
+import { classifySaveResult } from '@/lib/io/save-result';
 import { createLogger } from '@/lib/logger';
 import { uid } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
@@ -271,9 +272,10 @@ export function ProjectsDialog({
         'Grido Backup (*.json)',
         '*.json',
       );
-      if (res === 'success') {
+      const outcome = classifySaveResult(res);
+      if (outcome === 'success') {
         toast.success('تم تصدير النسخة الاحتياطية');
-      } else if (res === '') {
+      } else if (outcome === 'cancel') {
         toast.info('تم إلغاء التصدير');
       }
     } catch (err) {

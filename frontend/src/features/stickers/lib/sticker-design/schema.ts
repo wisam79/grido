@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { clamp } from '@/lib/clamp';
 import { sanitizeStickerColor, sanitizeStickerFontFamily } from '../svg-safety';
 import {
   buildDefaultStickerParams,
@@ -83,10 +84,6 @@ export function stripDangerousKeys(input: unknown, depth = 4): unknown {
     results[key] = stripDangerousKeys(value, depth - 1);
   }
   return results;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
 
 function coerceColor(value: unknown, fallback: string): string {

@@ -28,6 +28,7 @@ import {
   runCmykExport,
   CanvasTooLargeError,
 } from '@/lib/export';
+import { classifySaveResult } from '@/lib/io/save-result';
 import { createLogger } from '@/lib/logger';
 import { triggerMemoryTrim } from '@/lib/memory-trim';
 import { toErrorMessage } from '@/lib/wails-error';
@@ -207,11 +208,12 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           SetTaskbarProgress(0, 'none').catch(() => {});
           // المستخدم أغلق أثناء حوار الحفظ — لا رسائل مضللة بعد الإغلاق
           if (shouldStop()) return;
-          if (res === 'success') {
+          const outcome = classifySaveResult(res);
+          if (outcome === 'success') {
             toast.success(`تم تصدير ${cmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} بنظام CMYK`);
             SendNotification('Grido Studio', 'تم تصدير ملف CMYK وحفظه', '').catch(() => {});
             onOpenChange(false);
-          } else if (res === '') {
+          } else if (outcome === 'cancel') {
             toast.info('تم إلغاء التصدير');
           } else {
             toast.error('فشل حفظ ملف CMYK');
@@ -246,8 +248,12 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               const ext = format === 'png' ? 'png' : 'jpg';
               const name = `collage-photo-${i + 1}-${Date.now()}.${ext}`;
               const res = await downloadBlob(blob, name, targetDir, exportDpi);
-              if (res === 'success') successCount++;
-              else if (res === '') break;
+              const outcome = classifySaveResult(res);
+              if (outcome === 'success') {
+                successCount++;
+              } else if (outcome === 'cancel') {
+                break;
+              }
             }
             if (shouldStop()) break;
             const pct = Math.round(((i + 1) / validSlots.length) * 100);
@@ -308,11 +314,12 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             SetTaskbarProgress(0, 'none').catch(() => {});
             // المستخدم أغلق أثناء حوار الحفظ — خروج صامت بدل نجاح/فشل كاذب
             if (shouldStop()) return;
-            if (res === 'success') {
+            const outcome = classifySaveResult(res);
+            if (outcome === 'success') {
               toast.success('تم تصدير الصورة بنجاح');
               SendNotification('Grido Studio', 'تم تصدير الصورة وحفظها', '').catch(() => {});
               onOpenChange(false);
-            } else if (res === '') {
+            } else if (outcome === 'cancel') {
               toast.info('تم إلغاء التصدير');
             } else {
               toast.error('فشل حفظ الصورة');

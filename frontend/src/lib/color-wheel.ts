@@ -1,12 +1,10 @@
+import { clamp } from '@/lib/clamp';
+
 export type HsvColor = {
   h: number;
   s: number;
   v: number;
 };
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 export function normalizeHexColor(value: string): string | null {
   const raw = value.trim().replace(/^#/, '');

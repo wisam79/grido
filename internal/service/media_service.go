@@ -175,7 +175,7 @@ func (s *MediaService) ResolveLocalImagePath(localPath string) (string, error) {
 	if err == nil {
 		baseDir = resolvedBase
 	}
-	if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(baseDir)+string(filepath.Separator)) {
+	if !utils.PathWithinDir(resolved, baseDir) {
 		return "", fmt.Errorf("invalid path: outside allowed directory")
 	}
 

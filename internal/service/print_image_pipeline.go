@@ -82,9 +82,7 @@ func resolveLocalPath(src string) string {
 
 		resolved, err := filepath.EvalSymlinks(fullPath)
 		if err != nil {
-			cleanFull := filepath.Clean(fullPath)
-			cleanBase := filepath.Clean(baseDir)
-			if !strings.HasPrefix(cleanFull, cleanBase+string(filepath.Separator)) && cleanFull != cleanBase {
+			if !utils.PathWithinDirInclusive(fullPath, baseDir) {
 				slog.Warn("Blocked path traversal attempt in resolveLocalPath", "path", src)
 				return ""
 			}
@@ -93,8 +91,7 @@ func resolveLocalPath(src string) string {
 		if resolvedBaseDir, err := filepath.EvalSymlinks(baseDir); err == nil {
 			baseDir = resolvedBaseDir
 		}
-		if !strings.HasPrefix(filepath.Clean(resolved), filepath.Clean(baseDir)+string(filepath.Separator)) &&
-			filepath.Clean(resolved) != filepath.Clean(baseDir) {
+		if !utils.PathWithinDirInclusive(resolved, baseDir) {
 			slog.Warn("Blocked path traversal attempt in resolveLocalPath", "path", src)
 			return ""
 		}
@@ -121,9 +118,7 @@ func resolveLocalPath(src string) string {
 	if err != nil {
 		appBase = appDir
 	}
-	cleanCand := filepath.Clean(candidate)
-	cleanBase := filepath.Clean(appBase)
-	if cleanCand != cleanBase && !strings.HasPrefix(cleanCand, cleanBase+string(filepath.Separator)) {
+	if !utils.PathWithinDirInclusive(candidate, appBase) {
 		slog.Warn("Blocked out-of-scope image path in resolveLocalPath", "path", src)
 		return ""
 	}

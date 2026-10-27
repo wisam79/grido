@@ -3,6 +3,7 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // GetAppDir returns the base directory for all Grido Studio configuration and data.
@@ -20,4 +21,15 @@ func GetAppDir() string {
 	appDir := filepath.Join(configDir, "GridoStudio")
 	_ = os.MkdirAll(appDir, 0755)
 	return appDir
+}
+
+// PathWithinDir reports whether path lies strictly beneath dir.
+// Both sides are cleaned before comparison; symlinks must be resolved by the caller.
+func PathWithinDir(path, dir string) bool {
+	return strings.HasPrefix(filepath.Clean(path), filepath.Clean(dir)+string(filepath.Separator))
+}
+
+// PathWithinDirInclusive reports whether path is dir itself or lies strictly beneath it.
+func PathWithinDirInclusive(path, dir string) bool {
+	return filepath.Clean(path) == filepath.Clean(dir) || PathWithinDir(path, dir)
 }

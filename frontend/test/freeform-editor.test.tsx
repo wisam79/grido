@@ -1,8 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { TooltipProvider } from '../src/components/ui/tooltip';
+import { FreeformCanvasEditor } from '../src/features/freeform-collage/components/freeform-canvas-editor';
+import { FreeformCollageModal } from '../src/features/freeform-collage/components/freeform-collage-modal';
 import {
   FreeformPaperSelector,
   PaperDimInput,
@@ -107,6 +109,92 @@ describe('Freeform Editor Unit & Component Tests', () => {
       const addSlotBtn = buttons[2];
       fireEvent.click(addSlotBtn);
       expect(handleAddSlot).toHaveBeenCalled();
+    });
+  });
+
+  describe('FreeformCanvasEditor free drag clamping', () => {
+    const originalPointerEvent = window.PointerEvent;
+    let rectSpy: { mockRestore(): void };
+
+    beforeEach(() => {
+      // jsdom لا يوفر PointerEvent — نشتق بديلاً من MouseEvent ليحمل clientX/Y
+      class PointerEventPolyfill extends MouseEvent {
+        pointerId: number;
+        constructor(type: string, init: PointerEventInit = {}) {
+          super(type, init);
+          this.pointerId = init.pointerId ?? 1;
+        }
+      }
+      Object.defineProperty(window, 'PointerEvent', {
+        value: PointerEventPolyfill,
+        writable: true,
+        configurable: true,
+      });
+      rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 400,
+        bottom: 400,
+        width: 400,
+        height: 400,
+        toJSON: () => ({}),
+      } as DOMRect);
+    });
+
+    afterEach(() => {
+      rectSpy.mockRestore();
+      if (originalPointerEvent) {
+        Object.defineProperty(window, 'PointerEvent', {
+          value: originalPointerEvent,
+          writable: true,
+          configurable: true,
+        });
+      } else {
+        delete (window as unknown as Record<string, unknown>).PointerEvent;
+      }
+    });
+
+    it('keeps a dragged slot inside the paper when snapping is disabled', () => {
+      const onSlotsChange = vi.fn();
+      render(
+        <FreeformCanvasEditor
+          paperWidthMM={100}
+          paperHeightMM={100}
+          slots={[{ id: 's1', x: 0.1, y: 0.1, w: 0.2, h: 0.2 }]}
+          selectedSlotId={null}
+          enableSnapping={false}
+          onSelectSlot={vi.fn()}
+          onSlotsChange={onSlotsChange}
+        />,
+      );
+
+      const cell = screen.getByRole('button', { name: /خلية 1/ });
+      fireEvent.pointerDown(cell, { clientX: 100, clientY: 100, pointerId: 1 });
+      fireEvent.pointerMove(cell, { clientX: 600, clientY: 600, pointerId: 1 });
+      fireEvent.pointerUp(cell, { clientX: 600, clientY: 600, pointerId: 1 });
+
+      expect(onSlotsChange).toHaveBeenLastCalledWith([expect.objectContaining({ x: 0.8, y: 0.8 })]);
+    });
+  });
+
+  describe('FreeformCollageModal keyboard nudge clamping', () => {
+    it('keeps slots inside the paper with arrow-key nudges', () => {
+      renderWithProviders(<FreeformCollageModal open onOpenChange={vi.fn()} />);
+
+      const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-slot-id]'));
+      expect(cards).toHaveLength(8);
+
+      // خلية أقصى اليمين (x=0.75, w=0.25) — الإزاحة لليمين تُثبَّت عند الحد
+      fireEvent.keyDown(cards[3], { key: 'Enter' });
+      fireEvent.keyDown(window, { key: 'ArrowRight' });
+      expect(cards[3].style.left).toBe('75%');
+
+      // خلية أقصى اليسار (x=0) — الإزاحة لليسار تُثبَّت عند الصفر
+      fireEvent.keyDown(cards[0], { key: 'Enter' });
+      fireEvent.keyDown(window, { key: 'ArrowLeft' });
+      expect(cards[0].style.left).toBe('0%');
     });
   });
 });

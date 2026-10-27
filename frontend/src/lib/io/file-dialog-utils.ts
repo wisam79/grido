@@ -10,6 +10,52 @@ import { wailsIsDesktop } from '../wails-env';
 
 const logger = createLogger('file-dialog-utils');
 
+interface BrowserFilePickerOptions {
+  multiple: boolean;
+  accept?: string;
+  directory?: boolean;
+  filter?: (file: File) => boolean;
+}
+
+/** يفتح منتقي ملفات HTML ويعيد الملفات المختارة (فارغة عند الإلغاء). */
+function pickBrowserFiles(options: BrowserFilePickerOptions): Promise<File[]> {
+  return new Promise<File[]>((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    if (options.accept) input.accept = options.accept;
+    input.multiple = options.multiple;
+    if (options.directory) {
+      (input as HTMLInputElement & { webkitdirectory?: boolean }).webkitdirectory = true;
+      (input as HTMLInputElement & { directory?: boolean }).directory = true;
+    }
+
+    input.onchange = () => {
+      const files = Array.from(input.files || []);
+      resolve(options.filter ? files.filter(options.filter) : files);
+    };
+    input.oncancel = () => resolve([]);
+    input.click();
+  });
+}
+
+async function readFilesAsDataUrls(files: File[], errorMessage: string): Promise<string[]> {
+  const dataUrls: string[] = [];
+  for (const file of files) {
+    try {
+      const dataUrl = await new Promise<string>((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result as string);
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+      dataUrls.push(dataUrl);
+    } catch (e) {
+      logger.error(errorMessage, e);
+    }
+  }
+  return dataUrls;
+}
+
 /**
  * فتح نافذة اختيار الصور بسلاسة ودقة متناهية:
  * - في بيئة Wails Desktop: تستدعي Wails Native File Dialog حصرياً وترجع الناتج (أو مصفوفة فارغة عند الإلغاء) دون الانتقال لمتصفح الويب.
@@ -36,38 +82,8 @@ export async function openImageFileDialog(multiple = false): Promise<string[]> {
   }
 
   // بيئة المتصفح العادي (Browser Mode Only)
-  return new Promise<string[]>((resolve) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.multiple = multiple;
-
-    input.onchange = async () => {
-      const files = Array.from(input.files || []);
-      if (files.length === 0) {
-        resolve([]);
-        return;
-      }
-      const dataUrls: string[] = [];
-      for (const file of files) {
-        try {
-          const dataUrl = await new Promise<string>((res, rej) => {
-            const reader = new FileReader();
-            reader.onload = () => res(reader.result as string);
-            reader.onerror = rej;
-            reader.readAsDataURL(file);
-          });
-          dataUrls.push(dataUrl);
-        } catch (e) {
-          logger.error('Failed to read file:', e);
-        }
-      }
-      resolve(dataUrls);
-    };
-
-    input.oncancel = () => resolve([]);
-    input.click();
-  });
+  const files = await pickBrowserFiles({ multiple, accept: 'image/*' });
+  return readFilesAsDataUrls(files, 'Failed to read file:');
 }
 
 /**
@@ -104,37 +120,10 @@ export async function openDirectoryImageDialog(): Promise<string[]> {
   }
 
   // بيئة المتصفح العادي (Browser Mode Directory Fallback)
-  return new Promise<string[]>((resolve) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    (input as HTMLInputElement & { webkitdirectory?: boolean }).webkitdirectory = true;
-    (input as HTMLInputElement & { directory?: boolean }).directory = true;
-    input.multiple = true;
-
-    input.onchange = async () => {
-      const files = Array.from(input.files || []).filter((f) => f.type.startsWith('image/'));
-      if (files.length === 0) {
-        resolve([]);
-        return;
-      }
-      const dataUrls: string[] = [];
-      for (const file of files) {
-        try {
-          const dataUrl = await new Promise<string>((res, rej) => {
-            const reader = new FileReader();
-            reader.onload = () => res(reader.result as string);
-            reader.onerror = rej;
-            reader.readAsDataURL(file);
-          });
-          dataUrls.push(dataUrl);
-        } catch (e) {
-          logger.error('Failed to read directory file:', e);
-        }
-      }
-      resolve(dataUrls);
-    };
-
-    input.oncancel = () => resolve([]);
-    input.click();
+  const files = await pickBrowserFiles({
+    multiple: true,
+    directory: true,
+    filter: (file) => file.type.startsWith('image/'),
   });
+  return readFilesAsDataUrls(files, 'Failed to read directory file:');
 }

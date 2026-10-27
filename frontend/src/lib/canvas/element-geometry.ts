@@ -171,3 +171,17 @@ export function rotateElementAroundCenter(
     y: newY0 / ch,
   };
 }
+
+/**
+ * رقعة تدوير ربع لفة (90°) جاهزة لـ updateElement: الزاوية الجديدة والموضع
+ * المحسوب حول المركز نفسه.
+ */
+export function getQuarterTurnRotationPatch(
+  element: Pick<CanvasElement, 'x' | 'y' | 'width' | 'height'> & { rotation?: number },
+  canvasWidth: number,
+  canvasHeight: number,
+): { rotation: number; x: number; y: number } {
+  const nextRot = ((element.rotation || 0) + 90) % 360;
+  const { x, y } = rotateElementAroundCenter(element, nextRot, canvasWidth, canvasHeight);
+  return { rotation: nextRot, x, y };
+}

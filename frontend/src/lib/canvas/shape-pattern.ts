@@ -12,6 +12,8 @@
  * أي أن نقطة الصورة u تُرسم في:  p(u) = (patternX, patternY) + R·S·(u − offset)
  */
 
+import { clamp } from '@/lib/clamp';
+
 export type ShapeFillImageFit = 'stretch' | 'cover' | 'contain' | 'tile';
 
 export interface ShapePatternInput {
@@ -46,10 +48,6 @@ export interface ShapePatternTransform {
 export const TILE_SCALE_MIN = 0.05;
 export const TILE_SCALE_MAX = 3;
 export const TILE_SCALE_DEFAULT = 0.5;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 /**
  * يحسم التحويل الكامل لتعبئة الصورة:

@@ -340,7 +340,7 @@ func (s *ImageProcessorService) LoadImage(localImagePath string) (image.Image, e
 	if err == nil {
 		mediaDir = resolvedMediaDir
 	}
-	if !strings.HasPrefix(filepath.Clean(resolvedPath), filepath.Clean(mediaDir)+string(filepath.Separator)) {
+	if !utils.PathWithinDir(resolvedPath, mediaDir) {
 		return nil, fmt.Errorf("invalid image path: outside media directory")
 	}
 

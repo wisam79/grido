@@ -432,7 +432,7 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
       expect(hydrated?.slots[0]?.contrast).toBe(100);
     });
 
-    it('deduplicates element IDs and slot IDs', () => {
+    it('deduplicates element IDs, slot IDs, and user guide IDs', () => {
       const project = {
         version: 1,
         mode: 'single',
@@ -499,6 +499,10 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
             dragY: 0,
           },
         ],
+        userGuides: [
+          { id: 'guide-dup', type: 'h', pos: 0.2 },
+          { id: 'guide-dup', type: 'v', pos: 0.8 },
+        ],
       };
 
       const hydrated = hydrateProjectState(project as unknown as ProjectFileV1, {
@@ -515,6 +519,11 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
       expect(hydrated!.slots[0].id).toBe('slot-dup');
       expect(hydrated!.slots[1].id).not.toBe('slot-dup');
       expect(hydrated!.slots[1].id.startsWith('slot-dup-dup-1-')).toBe(true);
+
+      expect(hydrated!.userGuides).toHaveLength(2);
+      expect(hydrated!.userGuides[0].id).toBe('guide-dup');
+      expect(hydrated!.userGuides[1].id).not.toBe('guide-dup');
+      expect(hydrated!.userGuides[1].id.startsWith('guide-dup-dup-1-')).toBe(true);
     });
 
     it('discards malformed elements, slots, and invalid user guides', () => {

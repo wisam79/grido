@@ -103,9 +103,9 @@ func (s *PrintService) PrintNative(filePath string) error {
 	if absErr != nil {
 		return fmt.Errorf("مسار الطباعة غير صالح: %w", absErr)
 	}
-	inExports := strings.HasPrefix(absClean, filepath.Clean(exportsDir)+string(filepath.Separator))
+	inExports := utils.PathWithinDir(absClean, exportsDir)
 	inPrintTemp := tempErr == nil &&
-		strings.HasPrefix(absClean, filepath.Clean(tempDir)+string(filepath.Separator)) &&
+		utils.PathWithinDir(absClean, tempDir) &&
 		strings.HasPrefix(filepath.Base(absClean), "grido_print_")
 	if !inExports && !inPrintTemp {
 		return fmt.Errorf("مسار الطباعة خارج النطاق المسموح")

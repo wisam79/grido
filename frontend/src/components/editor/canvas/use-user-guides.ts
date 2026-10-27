@@ -82,34 +82,34 @@ export function useUserGuides(
     [elements],
   );
 
-  // بدء سحب خط إرشادي جديد من المسطرة الأفقية
-  const handleStartDragHGuide = useCallback(
-    (e: ReactPointerEvent<SVGSVGElement>) => {
-      if (printMode || !innerRef.current || displayH <= 0 || lockUserGuides) return;
+  // بدء سحب خط إرشادي جديد من المسطرة الأفقية أو الرأسية
+  const startGuideDrag = useCallback(
+    (e: ReactPointerEvent<SVGSVGElement>, type: 'h' | 'v') => {
+      const displayDim = type === 'h' ? displayH : displayW;
+      if (printMode || !innerRef.current || displayDim <= 0 || lockUserGuides) return;
       e.preventDefault();
       const paperRect = innerRef.current.getBoundingClientRect();
-      const relY = (e.clientY - paperRect.top) / displayH;
+      const relPos =
+        type === 'h'
+          ? (e.clientY - paperRect.top) / displayH
+          : (e.clientX - paperRect.left) / displayW;
+      const pixelDim = type === 'h' ? paperRect.height : paperRect.width;
       setDragGuideState({
-        type: 'h',
-        pos: snapGuidePos(snapGuidePosToPixel(relY, paperRect.height), 'h', displayH),
+        type,
+        pos: snapGuidePos(snapGuidePosToPixel(relPos, pixelDim), type, displayDim),
       });
     },
-    [printMode, displayH, lockUserGuides, snapGuidePos, innerRef],
+    [printMode, displayW, displayH, lockUserGuides, snapGuidePos, innerRef],
   );
 
-  // بدء سحب خط إرشادي جديد من المسطرة الرأسية
+  const handleStartDragHGuide = useCallback(
+    (e: ReactPointerEvent<SVGSVGElement>) => startGuideDrag(e, 'h'),
+    [startGuideDrag],
+  );
+
   const handleStartDragVGuide = useCallback(
-    (e: ReactPointerEvent<SVGSVGElement>) => {
-      if (printMode || !innerRef.current || displayW <= 0 || lockUserGuides) return;
-      e.preventDefault();
-      const paperRect = innerRef.current.getBoundingClientRect();
-      const relX = (e.clientX - paperRect.left) / displayW;
-      setDragGuideState({
-        type: 'v',
-        pos: snapGuidePos(snapGuidePosToPixel(relX, paperRect.width), 'v', displayW),
-      });
-    },
-    [printMode, displayW, lockUserGuides, snapGuidePos, innerRef],
+    (e: ReactPointerEvent<SVGSVGElement>) => startGuideDrag(e, 'v'),
+    [startGuideDrag],
   );
 
   const dragGuideStateRef = useRef(dragGuideState);

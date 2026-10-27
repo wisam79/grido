@@ -12,7 +12,10 @@ import { FluentSection, FluentSliderField } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import { ArrowClockwise, FlipHorizontal, FlipVertical } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { rotateElementAroundCenter } from '@/lib/canvas/element-geometry';
+import {
+  getQuarterTurnRotationPatch,
+  rotateElementAroundCenter,
+} from '@/lib/canvas/element-geometry';
 import { scaleElementDecorations } from '@/lib/canvas/scale-decorations';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
@@ -40,15 +43,8 @@ export const ElementArrangeTab = React.memo(function ElementArrangeTab({
   }, []);
 
   const handleRotate90 = useCallback(() => {
-    const currentRot = element.rotation || 0;
-    const nextRot = (currentRot + 90) % 360;
     const { canvasWidth, canvasHeight } = useEditorStore.getState();
-    const newPos = rotateElementAroundCenter(element, nextRot, canvasWidth, canvasHeight);
-    onUpdate(element.id, {
-      rotation: nextRot,
-      x: newPos.x,
-      y: newPos.y,
-    });
+    onUpdate(element.id, getQuarterTurnRotationPatch(element, canvasWidth, canvasHeight));
     useEditorStore.getState().pushHistory();
   }, [element, onUpdate]);
 

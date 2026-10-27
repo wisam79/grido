@@ -34,6 +34,20 @@ function setupCollage() {
   return useEditorStore.getState().slots[0];
 }
 
+// شبكة 2×2 بمعرّفات ثابتة: a/b في صف واحد، a/c في عمود واحد، d منفصلة
+function setupSlotGrid() {
+  setupCollage();
+  const base = useEditorStore.getState().slots[0];
+  useEditorStore.setState({
+    slots: [
+      { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3, imageSrc: undefined },
+      { ...base, id: 'b', cellIndex: 1, x: 0.5, y: 0.0004, w: 0.3, h: 0.3, imageSrc: undefined },
+      { ...base, id: 'c', cellIndex: 2, x: 0, y: 0.5, w: 0.3, h: 0.3, imageSrc: undefined },
+      { ...base, id: 'd', cellIndex: 3, x: 0.6, y: 0.6, w: 0.3, h: 0.3, imageSrc: undefined },
+    ],
+  });
+}
+
 describe('CollageSlice Unit Tests', () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
@@ -337,6 +351,34 @@ describe('CollageSlice Unit Tests', () => {
 
     const allSlots = useEditorStore.getState().slots;
     expect(allSlots.every((s) => s.imageSrc === 'fill.jpg')).toBe(true);
+  });
+
+  it('fills only the matching row and records one history step', () => {
+    setupSlotGrid();
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    useEditorStore.getState().fillRowSlots('a', 'row.jpg');
+
+    const slots = useEditorStore.getState().slots;
+    expect(slots.find((s) => s.id === 'a')?.imageSrc).toBe('row.jpg');
+    expect(slots.find((s) => s.id === 'b')?.imageSrc).toBe('row.jpg');
+    expect(slots.find((s) => s.id === 'c')?.imageSrc).toBeUndefined();
+    expect(slots.find((s) => s.id === 'd')?.imageSrc).toBeUndefined();
+    expect(useEditorStore.getState().historyIndex).toBe(historyBefore + 1);
+  });
+
+  it('fills only the matching column and records one history step', () => {
+    setupSlotGrid();
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    useEditorStore.getState().fillColumnSlots('a', 'column.jpg');
+
+    const slots = useEditorStore.getState().slots;
+    expect(slots.find((s) => s.id === 'a')?.imageSrc).toBe('column.jpg');
+    expect(slots.find((s) => s.id === 'c')?.imageSrc).toBe('column.jpg');
+    expect(slots.find((s) => s.id === 'b')?.imageSrc).toBeUndefined();
+    expect(slots.find((s) => s.id === 'd')?.imageSrc).toBeUndefined();
+    expect(useEditorStore.getState().historyIndex).toBe(historyBefore + 1);
   });
 
   it('clears all slots image data', () => {

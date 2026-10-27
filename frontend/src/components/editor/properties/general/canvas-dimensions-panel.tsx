@@ -44,6 +44,21 @@ const FIELD_SHELL =
 // (المتاح أيضاً في كبسولة شريط العرض السفلي) يظهر هنا «مقاس مخصص» بلا تعرّف.
 const ALL_PAPER_SIZES = [...PAPER_SIZES, ...ADVANCED_PAPER_SIZES];
 
+const PRESET_MATCH_TOLERANCE_MM = 1.5;
+
+function matchesPresetMm(
+  preset: { widthMM: number; heightMM: number },
+  widthMM: number,
+  heightMM: number,
+): boolean {
+  return (
+    (Math.abs(widthMM - preset.widthMM) <= PRESET_MATCH_TOLERANCE_MM &&
+      Math.abs(heightMM - preset.heightMM) <= PRESET_MATCH_TOLERANCE_MM) ||
+    (Math.abs(widthMM - preset.heightMM) <= PRESET_MATCH_TOLERANCE_MM &&
+      Math.abs(heightMM - preset.widthMM) <= PRESET_MATCH_TOLERANCE_MM)
+  );
+}
+
 export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel() {
   const {
     canvasWidth,
@@ -254,25 +269,12 @@ export const CanvasDimensionsPanel = React.memo(function CanvasDimensionsPanel()
     }
   };
 
-  const activePaperPreset = ALL_PAPER_SIZES.find((p) => {
-    const dpi = currentDpi;
-    const currentWMM = pxToMm(canvasWidth, dpi);
-    const currentHMM = pxToMm(canvasHeight, dpi);
-    return (
-      (Math.abs(currentWMM - p.widthMM) <= 1.5 && Math.abs(currentHMM - p.heightMM) <= 1.5) ||
-      (Math.abs(currentWMM - p.heightMM) <= 1.5 && Math.abs(currentHMM - p.widthMM) <= 1.5)
-    );
-  });
-
-  const activeCardPreset = CARD_AND_LABEL_SIZES.find((p) => {
-    const dpi = currentDpi;
-    const currentWMM = pxToMm(canvasWidth, dpi);
-    const currentHMM = pxToMm(canvasHeight, dpi);
-    return (
-      (Math.abs(currentWMM - p.widthMM) <= 1.5 && Math.abs(currentHMM - p.heightMM) <= 1.5) ||
-      (Math.abs(currentWMM - p.heightMM) <= 1.5 && Math.abs(currentHMM - p.widthMM) <= 1.5)
-    );
-  });
+  const currentWMM = pxToMm(canvasWidth, currentDpi);
+  const currentHMM = pxToMm(canvasHeight, currentDpi);
+  const activePaperPreset = ALL_PAPER_SIZES.find((p) => matchesPresetMm(p, currentWMM, currentHMM));
+  const activeCardPreset = CARD_AND_LABEL_SIZES.find((p) =>
+    matchesPresetMm(p, currentWMM, currentHMM),
+  );
 
   const activePreset = activeCardPreset || activePaperPreset;
   const activePresetId = activePreset ? activePreset.id : 'custom';

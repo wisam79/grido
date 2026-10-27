@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 
 import { ScannerSidebar } from './components/scanner-sidebar';
 import { defaultInsetCorners } from './core';
+import { withDocumentRotation } from './core/doc-rotation';
 import { useScannerCanvasRender } from './hooks/use-scanner-canvas-render';
 import { useScannerDetection } from './hooks/use-scanner-detection';
 import { useScannerProcessor } from './hooks/use-scanner-processor';
@@ -279,27 +280,18 @@ export function DocumentScannerDialog({
     toast.info('أُعيد ضبط الأركان');
   }, [imgSize, setDetectedDocs]);
 
-  const handleRotateClockwise = useCallback(() => {
-    const nextRot = (rotation + 90) % 360;
-    setRotation(nextRot);
-    setDetectedDocs((prev) =>
-      prev.map((doc, idx) =>
-        idx === activeDocIndexRef.current ? { ...doc, rotation: nextRot } : doc,
-      ),
-    );
-    resetProcessorPreview();
-  }, [rotation, setDetectedDocs, resetProcessorPreview]);
+  const rotateBy = useCallback(
+    (deltaDeg: number) => {
+      const nextRot = (rotation + deltaDeg) % 360;
+      setRotation(nextRot);
+      setDetectedDocs((prev) => withDocumentRotation(prev, activeDocIndexRef.current, nextRot));
+      resetProcessorPreview();
+    },
+    [rotation, setDetectedDocs, resetProcessorPreview],
+  );
 
-  const handleRotateCounterClockwise = useCallback(() => {
-    const nextRot = (rotation + 270) % 360;
-    setRotation(nextRot);
-    setDetectedDocs((prev) =>
-      prev.map((doc, idx) =>
-        idx === activeDocIndexRef.current ? { ...doc, rotation: nextRot } : doc,
-      ),
-    );
-    resetProcessorPreview();
-  }, [rotation, setDetectedDocs, resetProcessorPreview]);
+  const handleRotateClockwise = useCallback(() => rotateBy(90), [rotateBy]);
+  const handleRotateCounterClockwise = useCallback(() => rotateBy(270), [rotateBy]);
 
   const handleFilterChange = useCallback(
     (newFilter: ScannerFilterMode) => {

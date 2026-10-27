@@ -380,6 +380,27 @@ function deriveSlotImageProps(
   };
 }
 
+/** يملأ الخلايا الواقعة على نفس المحور (صف/عمود) حول خلية مصدر — null إذا لم توجد. */
+function fillSlotsAlongAxis(
+  slots: CanvasSlot[],
+  axis: 'x' | 'y',
+  slotId: string,
+  src: string,
+): CanvasSlot[] | null {
+  const targetSlot = slots.find((sl) => sl.id === slotId);
+  if (!targetSlot) return null;
+  const targetPos = Math.round(targetSlot[axis] * 1000);
+  return slots.map((sl) =>
+    Math.abs(Math.round(sl[axis] * 1000) - targetPos) < 2
+      ? {
+          ...sl,
+          imageSrc: src,
+          ...deriveSlotImageProps(targetSlot, sl),
+        }
+      : sl,
+  );
+}
+
 /**
  * يحسب أقصى فجوة مسموح بها للخلايا اليدوية بحيث لا يهبط مقاس أي خلية عن الحد الأدنى (1 مم).
  * يمنع إنتاج أبعاد سالبة عند زيادة التباعد في التخطيطات اليدوية (P1).
@@ -842,36 +863,16 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   },
 
   fillRowSlots: (slotId, src) => {
-    const targetSlot = get().slots.find((sl) => sl.id === slotId);
-    if (!targetSlot) return;
-    set((state) => ({
-      slots: state.slots.map((sl: CanvasSlot) =>
-        Math.abs(Math.round(sl.y * 1000) - Math.round(targetSlot.y * 1000)) < 2
-          ? {
-              ...sl,
-              imageSrc: src,
-              ...deriveSlotImageProps(targetSlot, sl),
-            }
-          : sl,
-      ),
-    }));
+    const slots = fillSlotsAlongAxis(get().slots, 'y', slotId, src);
+    if (!slots) return;
+    set({ slots });
     get().pushHistory();
   },
 
   fillColumnSlots: (slotId, src) => {
-    const targetSlot = get().slots.find((sl) => sl.id === slotId);
-    if (!targetSlot) return;
-    set((state) => ({
-      slots: state.slots.map((sl: CanvasSlot) =>
-        Math.abs(Math.round(sl.x * 1000) - Math.round(targetSlot.x * 1000)) < 2
-          ? {
-              ...sl,
-              imageSrc: src,
-              ...deriveSlotImageProps(targetSlot, sl),
-            }
-          : sl,
-      ),
-    }));
+    const slots = fillSlotsAlongAxis(get().slots, 'x', slotId, src);
+    if (!slots) return;
+    set({ slots });
     get().pushHistory();
   },
 

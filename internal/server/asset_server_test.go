@@ -85,6 +85,82 @@ func TestAssetHandler_UploadMedia_ReturnsDimensions(t *testing.T) {
 	}
 }
 
+func TestAssetHandler_UploadPrintImage_SavesToExports(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	token := "test-session-token-12345"
+	handler := NewAssetHandler(AssetServerDeps{SessionToken: token})
+
+	img := image.NewRGBA(image.Rect(0, 0, 16, 16))
+	var pngBuf bytes.Buffer
+	if err := png.Encode(&pngBuf, img); err != nil {
+		t.Fatalf("failed to encode png: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/upload-print-image", &pngBuf)
+	req.Host = "localhost:9245"
+	req.Header.Set("Origin", "http://localhost:9245")
+	req.Header.Set(service.LocalApiSessionHeader, token)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var resp struct {
+		Status   string `json:"status"`
+		ImageSrc string `json:"imageSrc"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode json response: %v", err)
+	}
+	if resp.Status != "success" {
+		t.Errorf("expected status 'success', got %q", resp.Status)
+	}
+
+	filename := strings.TrimPrefix(resp.ImageSrc, "/local-image/")
+	if !strings.HasPrefix(filename, "print_upload_") || filepath.Ext(filename) != ".png" {
+		t.Errorf("expected print_upload_*.png imageSrc, got %q", resp.ImageSrc)
+	}
+	if _, err := os.Stat(filepath.Join(tempDir, "Exports", filename)); err != nil {
+		t.Errorf("expected file to exist in Exports dir, got error: %v", err)
+	}
+}
+
+func TestAssetHandler_UploadPrintImage_RejectsNonImage(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tempDir)
+
+	token := "test-session-token-12345"
+	handler := NewAssetHandler(AssetServerDeps{SessionToken: token})
+
+	req := httptest.NewRequest(http.MethodPost, "/api/upload-print-image", strings.NewReader("not an image"))
+	req.Host = "localhost:9245"
+	req.Header.Set("Origin", "http://localhost:9245")
+	req.Header.Set(service.LocalApiSessionHeader, token)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "Uploaded content is not an image") {
+		t.Errorf("expected non-image error message, got %s", rec.Body.String())
+	}
+
+	entries, err := os.ReadDir(filepath.Join(tempDir, "Exports"))
+	if err != nil {
+		t.Fatalf("expected Exports dir to exist, got error: %v", err)
+	}
+	if len(entries) != 0 {
+		t.Errorf("expected no files written for a rejected upload, found %d", len(entries))
+	}
+}
+
 type mockDialogBridge struct {
 	domain.NoopRuntimeBridge
 	calledTitle    string

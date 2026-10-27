@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/icons';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { rotateElementAroundCenter } from '@/lib/canvas/element-geometry';
+import { getQuarterTurnRotationPatch } from '@/lib/canvas/element-geometry';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 
@@ -86,20 +86,11 @@ export const QuickBarElementSection = React.memo(function QuickBarElementSection
               variant="ghost"
               size="sm"
               onClick={() => {
-                const currentRot = element.rotation || 0;
-                const nextRot = (currentRot + 90) % 360;
                 const { canvasWidth, canvasHeight } = useEditorStore.getState();
-                const newPos = rotateElementAroundCenter(
-                  element,
-                  nextRot,
-                  canvasWidth,
-                  canvasHeight,
+                updateElement(
+                  element.id,
+                  getQuarterTurnRotationPatch(element, canvasWidth, canvasHeight),
                 );
-                updateElement(element.id, {
-                  rotation: nextRot,
-                  x: newPos.x,
-                  y: newPos.y,
-                });
                 useEditorStore.getState().pushHistory();
               }}
               aria-label="تدوير 90 درجة"

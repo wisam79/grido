@@ -154,6 +154,65 @@ func writeScannerWarpJSONError(w http.ResponseWriter, status int, message, code 
 	_ = json.NewEncoder(w).Encode(payload)
 }
 
+// uploadSpec يصف ما يختلف بين مساري رفع الصور (المجلد، بادئة الاسم، حد
+// الحجم، رسالة التجاوز، ومصدر الامتداد) بينما تتشارك المسارات القراءة
+// والفحص والكتابة الذرية في saveUploadedImage.
+type uploadSpec struct {
+	dir          string
+	prefix       string
+	limit        int64
+	limitMessage string
+	extFor       func(detectedMime string) string
+}
+
+// saveUploadedImage يقرأ الجسم كصورة، يرفض ما يتجاوز spec.limit، ويكتبه
+// ذرّياً في spec.dir. عند الفشل يكتب رد HTTP المناسب ويعيد ok=false.
+func saveUploadedImage(w http.ResponseWriter, r *http.Request, spec uploadSpec) (string, bool) {
+	// +1 بايت: القارئ الأول كان يقصّ عند الحد تماماً فيخفي التجاوز عن العدّ اللاحق.
+	limitReader := io.LimitReader(r.Body, spec.limit+1)
+	sniffBuf := make([]byte, 512)
+	n, sniffErr := io.ReadFull(limitReader, sniffBuf)
+	if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
+		http.Error(w, "Failed to read upload body", http.StatusBadRequest)
+		return "", false
+	}
+	sniffBuf = sniffBuf[:n]
+	detectedMime := http.DetectContentType(sniffBuf)
+	if !strings.HasPrefix(detectedMime, "image/") {
+		http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
+		return "", false
+	}
+
+	filename := fmt.Sprintf("%s%d%s", spec.prefix, time.Now().UnixNano(), spec.extFor(detectedMime))
+	absPath := filepath.Join(spec.dir, filename)
+
+	af, afErr := utils.CreateAtomic(absPath, 0o644)
+	if afErr != nil {
+		http.Error(w, "Failed to create file", http.StatusInternalServerError)
+		return "", false
+	}
+	defer af.Abort()
+
+	combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
+	// 🖨️ كشف الاقتطاع (RV-Print-09): LimitReader وحده يصمت عن القص —
+	// ننسخ بحد+1 فأي زيادة بايت واحد تعني ملفاً ناقصاً يُجهض بـ 413
+	// بدل حفظ تالف وإرجاع success (كان يسمّم خط الطباعة لاحقاً).
+	written, err := io.Copy(af, io.LimitReader(combined, spec.limit+1))
+	if err != nil {
+		http.Error(w, "Failed to write file", http.StatusInternalServerError)
+		return "", false
+	}
+	if written > spec.limit {
+		http.Error(w, spec.limitMessage, http.StatusRequestEntityTooLarge)
+		return "", false
+	}
+	if err := af.Commit(); err != nil {
+		http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
+		return "", false
+	}
+	return filename, true
+}
+
 func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/api/") && !s.apiGuard.Authorize(w, r) {
 		return
@@ -314,7 +373,7 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if resolvedBase, err := filepath.EvalSymlinks(exportsDir); err == nil {
 					resolvedExports = resolvedBase
 				}
-				if strings.HasPrefix(cleanDir, filepath.Clean(resolvedExports)+string(filepath.Separator)) {
+				if utils.PathWithinDir(cleanDir, resolvedExports) {
 					filePath = filepath.Join(cleanDir, filename)
 				}
 			}
@@ -444,51 +503,20 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// +1 بايت: القارئ الأول كان يقصّ عند الحد تماماً فيخفي التجاوز عن العدّ اللاحق.
-		limitReader := io.LimitReader(r.Body, 60*1024*1024+1)
-		sniffBuf := make([]byte, 512)
-		n, sniffErr := io.ReadFull(limitReader, sniffBuf)
-		if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
-			http.Error(w, "Failed to read upload body", http.StatusBadRequest)
-			return
-		}
-		sniffBuf = sniffBuf[:n]
-		detectedMime := http.DetectContentType(sniffBuf)
-		if !strings.HasPrefix(detectedMime, "image/") {
-			http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
-			return
-		}
-
-		ext := ".png"
-		if strings.HasPrefix(detectedMime, "image/jpeg") {
-			ext = ".jpg"
-		}
-		filename := fmt.Sprintf("print_upload_%d%s", time.Now().UnixNano(), ext)
-		absPath := filepath.Join(exportsDir, filename)
-
-		af, afErr := utils.CreateAtomic(absPath, 0o644)
-		if afErr != nil {
-			http.Error(w, "Failed to create file", http.StatusInternalServerError)
-			return
-		}
-		defer af.Abort()
-
-		combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
-		// 🖨️ كشف الاقتطاع (RV-Print-09): LimitReader وحده يصمت عن القص —
-		// ننسخ بحد+1 فأي زيادة بايت واحد تعني ملفاً ناقصاً يُجهض بـ 413
-		// بدل حفظ تالف وإرجاع success (كان يسمّم خط الطباعة لاحقاً).
 		const printUploadLimit = int64(60 * 1024 * 1024)
-		written, err := io.Copy(af, io.LimitReader(combined, printUploadLimit+1))
-		if err != nil {
-			http.Error(w, "Failed to write file", http.StatusInternalServerError)
-			return
-		}
-		if written > printUploadLimit {
-			http.Error(w, "Uploaded image exceeds 60MB limit", http.StatusRequestEntityTooLarge)
-			return
-		}
-		if err := af.Commit(); err != nil {
-			http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
+		filename, ok := saveUploadedImage(w, r, uploadSpec{
+			dir:          exportsDir,
+			prefix:       "print_upload_",
+			limit:        printUploadLimit,
+			limitMessage: "Uploaded image exceeds 60MB limit",
+			extFor: func(detectedMime string) string {
+				if strings.HasPrefix(detectedMime, "image/jpeg") {
+					return ".jpg"
+				}
+				return ".png"
+			},
+		})
+		if !ok {
 			return
 		}
 
@@ -511,44 +539,14 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		limitReader := io.LimitReader(r.Body, service.MaxFileSize+1)
-		sniffBuf := make([]byte, 512)
-		n, sniffErr := io.ReadFull(limitReader, sniffBuf)
-		if sniffErr != nil && sniffErr != io.ErrUnexpectedEOF {
-			http.Error(w, "Failed to read upload body", http.StatusBadRequest)
-			return
-		}
-		sniffBuf = sniffBuf[:n]
-		detectedMime := http.DetectContentType(sniffBuf)
-		if !strings.HasPrefix(detectedMime, "image/") {
-			http.Error(w, "Uploaded content is not an image", http.StatusBadRequest)
-			return
-		}
-
-		ext := deps.MediaSvc.GetExtensionFromMime(detectedMime)
-		filename := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
-		absPath := filepath.Join(mediaDir, filename)
-
-		af, afErr := utils.CreateAtomic(absPath, 0o644)
-		if afErr != nil {
-			http.Error(w, "Failed to create file", http.StatusInternalServerError)
-			return
-		}
-		defer af.Abort()
-
-		combined := io.MultiReader(bytes.NewReader(sniffBuf), limitReader)
-		// 🖨️ كشف الاقتطاع (RV-Print-09) — نفس عقدة upload-print-image.
-		written, err := io.Copy(af, io.LimitReader(combined, service.MaxFileSize+1))
-		if err != nil {
-			http.Error(w, "Failed to write file", http.StatusInternalServerError)
-			return
-		}
-		if written > service.MaxFileSize {
-			http.Error(w, "Uploaded media exceeds size limit", http.StatusRequestEntityTooLarge)
-			return
-		}
-		if err := af.Commit(); err != nil {
-			http.Error(w, "Failed to finalize file", http.StatusInternalServerError)
+		filename, ok := saveUploadedImage(w, r, uploadSpec{
+			dir:          mediaDir,
+			prefix:       "img_",
+			limit:        service.MaxFileSize,
+			limitMessage: "Uploaded media exceeds size limit",
+			extFor:       deps.MediaSvc.GetExtensionFromMime,
+		})
+		if !ok {
 			return
 		}
 
@@ -620,7 +618,7 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if resolvedBase, err := filepath.EvalSymlinks(baseDir); err == nil {
 			baseDir = resolvedBase
 		}
-		if !strings.HasPrefix(resolvedPath, filepath.Clean(baseDir)+string(filepath.Separator)) {
+		if !utils.PathWithinDir(resolvedPath, baseDir) {
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return
 		}

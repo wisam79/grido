@@ -560,8 +560,8 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
 
         const nextSlots = slotsRef.current.map((s) => {
           if (!moveSet.has(s.id)) return s;
-          const nx = Math.min(1 - s.w, Math.max(0, s.x + dx));
-          const ny = Math.min(1 - s.h, Math.max(0, s.y + dy));
+          const nx = clamp(s.x + dx, 0, 1 - s.w);
+          const ny = clamp(s.y + dy, 0, 1 - s.h);
           return { ...s, x: nx, y: ny };
         });
 

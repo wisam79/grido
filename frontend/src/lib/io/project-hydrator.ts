@@ -33,6 +33,30 @@ export function makeUniqueId(base: string, index: number, seen: Set<string>): st
   return candidate;
 }
 
+/**
+ * يُبقي أول ظهور لكل معرّف ويولّد بديلاً فريداً للمكرّر. المعرّف المفقود
+ * أو غير النصي يُعامل كتكرار ويُبنى على `fallbackBase`.
+ */
+function dedupeIds<T extends { id: string }>(
+  items: T[],
+  fallbackBase: string,
+): { items: T[]; duplicates: number } {
+  const seen = new Set<string>();
+  let duplicates = 0;
+  const deduped = items.map((item, idx) => {
+    const rawId = typeof item.id === 'string' ? item.id : '';
+    if (rawId && !seen.has(rawId)) {
+      seen.add(rawId);
+      return item;
+    }
+    duplicates += 1;
+    const newId = makeUniqueId(rawId || fallbackBase, idx, seen);
+    seen.add(newId);
+    return { ...item, id: newId } as T;
+  });
+  return { items: deduped, duplicates };
+}
+
 export interface HydratedProjectState {
   projectId: string | null;
   mode: EditorMode;
@@ -154,19 +178,10 @@ export function hydrateProjectState(
   // الموروثة قد تحوي معرّفات مكرّرة. كل كتابة في الستور مفهرسة بالمعرّف،
   // فالتكرار يجعل `updateElement`/`removeElement`/`bringToFront` تُطبَّق على
   // السجلين معاً — تعديل واحد يلمس عنصرين. نُبقي الأول ونُلحق لاحقاً فريداً.
-  const seenIds = new Set<string>();
-  let dedupedElementCount = 0;
-  const uniqueElements = validElements.map((el, idx) => {
-    const rawId = typeof el.id === 'string' ? el.id : '';
-    if (rawId && !seenIds.has(rawId)) {
-      seenIds.add(rawId);
-      return el;
-    }
-    dedupedElementCount += 1;
-    const newId = makeUniqueId(rawId || 'element', idx, seenIds);
-    seenIds.add(newId);
-    return { ...el, id: newId };
-  });
+  const { items: uniqueElements, duplicates: dedupedElementCount } = dedupeIds(
+    validElements,
+    'element',
+  );
 
   // وضع موحّد مع الافتراضي: ملفات جديدة/فارغة تبدأ كولاج (مطابقة reset)،
   // بينما الملفات القديمة التي تحتوي عناصر تعديل حر تُحمل كوضع مفرد
@@ -188,19 +203,7 @@ export function hydrateProjectState(
 
   // نفس تفريد المعرّفات للخانات (H8) — الخانات مفهرسة بالمعرّف في كل مسارات
   // الملء والسحب، فتكررها يُطبّق عملية واحدة على خانتين.
-  const seenSlotIds = new Set<string>();
-  let dedupedSlotCount = 0;
-  const uniqueSlots = validSlots.map((sl, idx) => {
-    const rawId = typeof sl.id === 'string' ? sl.id : '';
-    if (rawId && !seenSlotIds.has(rawId)) {
-      seenSlotIds.add(rawId);
-      return sl;
-    }
-    dedupedSlotCount += 1;
-    const newId = makeUniqueId(rawId || 'slot', idx, seenSlotIds);
-    seenSlotIds.add(newId);
-    return { ...sl, id: newId };
-  });
+  const { items: uniqueSlots, duplicates: dedupedSlotCount } = dedupeIds(validSlots, 'slot');
 
   // تكرار المعرّف علة ملف المشروع لا علة تطبيق — يُسجَّل في سجل التشخيص
   // الموحّد (لا console مباشر — قاعدة RV-4) ليصل إلى Go عند استكشاف الأخطاء.
@@ -282,17 +285,7 @@ export function hydrateProjectState(
       pos: g.pos,
     }));
 
-  const seenGuideIds = new Set<string>();
-  const uniqueUserGuides = validUserGuides.map((g, idx) => {
-    const rawId = typeof g.id === 'string' && g.id.trim().length > 0 ? g.id : `guide-${idx}`;
-    if (!seenGuideIds.has(rawId)) {
-      seenGuideIds.add(rawId);
-      return { ...g, id: rawId };
-    }
-    const newId = makeUniqueId(rawId, idx, seenGuideIds);
-    seenGuideIds.add(newId);
-    return { ...g, id: newId };
-  });
+  const { items: uniqueUserGuides } = dedupeIds(validUserGuides, 'guide');
 
   return {
     projectId,

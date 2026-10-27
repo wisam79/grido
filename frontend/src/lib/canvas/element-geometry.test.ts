@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getElementPixelVisualBox,
   getElementVisualBox,
+  getQuarterTurnRotationPatch,
   rotateElementAroundCenter,
 } from './element-geometry';
 
@@ -102,6 +103,38 @@ describe('element-geometry', () => {
       );
       expect(box270.centerX).toBeCloseTo(initialBox.centerX, 4);
       expect(box270.centerY).toBeCloseTo(initialBox.centerY, 4);
+    });
+  });
+
+  describe('getQuarterTurnRotationPatch', () => {
+    const canvasWidth = 1000;
+    const canvasHeight = 1000;
+
+    it('raises rotation by 90° and keeps the visual center fixed', () => {
+      const el = { x: 0.1, y: 0.2, width: 0.3, height: 0.4, rotation: 0 };
+      const patch = getQuarterTurnRotationPatch(el, canvasWidth, canvasHeight);
+      const expectedPos = rotateElementAroundCenter(el, 90, canvasWidth, canvasHeight);
+
+      expect(patch.rotation).toBe(90);
+      expect(patch.x).toBeCloseTo(expectedPos.x, 6);
+      expect(patch.y).toBeCloseTo(expectedPos.y, 6);
+    });
+
+    it('wraps 270° back to 0° and recenters the origin', () => {
+      const el = { x: 0.1, y: 0.2, width: 0.3, height: 0.4, rotation: 270 };
+      const patch = getQuarterTurnRotationPatch(el, canvasWidth, canvasHeight);
+      const expectedPos = rotateElementAroundCenter(el, 0, canvasWidth, canvasHeight);
+
+      expect(patch.rotation).toBe(0);
+      expect(patch.x).toBeCloseTo(expectedPos.x, 6);
+      expect(patch.y).toBeCloseTo(expectedPos.y, 6);
+    });
+
+    it('preserves negative-angle behavior (no normalization change)', () => {
+      const el = { x: 0.1, y: 0.2, width: 0.3, height: 0.4, rotation: -180 };
+      const patch = getQuarterTurnRotationPatch(el, canvasWidth, canvasHeight);
+
+      expect(patch.rotation).toBe(-90);
     });
   });
 

@@ -211,10 +211,10 @@ func (s *ScannerDetectorService) DetectDocumentCorners(imageSrc string) (*Detect
 		sumY := 0.0
 
 		// Local window around peak to avoid distant noise
-		minY := maxInt(0, bestY-8)
-		maxY := minInt(127, bestY+8)
-		minX := maxInt(0, bestX-8)
-		maxX := minInt(127, bestX+8)
+		minY := max(0, bestY-8)
+		maxY := min(127, bestY+8)
+		minX := max(0, bestX-8)
+		maxX := min(127, bestX+8)
 
 		for y := minY; y <= maxY; y++ {
 			rowOff := planeOffset + y*128
@@ -286,18 +286,4 @@ func (s *ScannerDetectorService) Close() error {
 	}
 	s.isReady = false
 	return nil
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

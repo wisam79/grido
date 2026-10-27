@@ -1,5 +1,6 @@
 import { toast } from 'sonner';
 
+import { classifySaveResult } from '@/lib/io/save-result';
 import { fetchLocalApi } from '@/lib/local-api';
 import { createLogger } from '@/lib/logger';
 
@@ -114,9 +115,10 @@ export async function quickExportPNG() {
 
   if (blob) {
     const res = await downloadBlob(blob, `photo-${Date.now()}.png`);
-    if (res === 'success') {
+    const outcome = classifySaveResult(res);
+    if (outcome === 'success') {
       toast.success('تم تصدير الصورة بنجاح');
-    } else if (res === '') {
+    } else if (outcome === 'cancel') {
       toast.info('تم إلغاء تصدير الصورة');
     } else {
       toast.error('فشل تصدير الصورة');
