@@ -3,6 +3,7 @@ package service
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -22,6 +23,9 @@ func TestScannerDetectorService_Lifecycle(t *testing.T) {
 }
 
 func TestScannerDetectorService_DetectDocumentCorners(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("native document corner detection is currently only supported on Windows")
+	}
 	appDir := t.TempDir()
 	t.Setenv("GRIDO_APP_DIR", appDir)
 	mediaDir := filepath.Join(appDir, "Media")
