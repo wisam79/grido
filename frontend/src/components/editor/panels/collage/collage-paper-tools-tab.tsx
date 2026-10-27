@@ -93,10 +93,11 @@ export function CollagePaperToolsTab() {
     columns: setShowColumns,
     ruler: setShowRuler,
   };
-  const activeGuides = GUIDES.filter((g) => guideState[g.key]).length;
-
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div
+      className="flex flex-col gap-3 font-cairo motion-safe:animate-in motion-safe:fade-in duration-150"
+      dir="rtl"
+    >
       {/* النزيف وشكل القص */}
       <FluentSection title="النزيف والقص" collapsible>
         <FluentSettingRow
@@ -149,9 +150,7 @@ export function CollagePaperToolsTab() {
             className="w-3.5 h-3.5 shrink-0 text-muted-foreground"
             weight="duotone"
           />
-          <span className="flex-1 text-start leading-relaxed">
-            سماكة ولون خطوط القص من <b>لوحة الخصائص</b>
-          </span>
+          <span className="flex-1 text-start leading-relaxed">إعدادات إطار الصور وخطوط القص</span>
         </button>
       </FluentSection>
 
@@ -220,11 +219,7 @@ export function CollagePaperToolsTab() {
       </FluentSection>
 
       {/* الإرشادات البصرية — شبكة مدمجة 2×2 بدل 4 صفوف */}
-      <FluentSection
-        title="الإرشادات"
-        subtitle={activeGuides > 0 ? `${activeGuides} مفعّلة` : 'كلها مطفأة'}
-        collapsible
-      >
+      <FluentSection title="الإرشادات" collapsible>
         <div className="grid grid-cols-2 gap-1.5" role="group" aria-label="الإرشادات البصرية">
           {GUIDES.map((guide) => {
             const checked = guideState[guide.key];
@@ -241,7 +236,7 @@ export function CollagePaperToolsTab() {
                 className={cn(
                   'flex items-center gap-2 px-2 py-2 rounded-md border transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
                   checked
-                    ? 'bg-accent-active border-border/80 text-foreground shadow-2xs'
+                    ? 'bg-primary/10 border-primary/50 text-primary'
                     : 'bg-card/40 border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent/60',
                 )}
               >

@@ -24,7 +24,7 @@ export const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           data-testid="toolbar-undo"
           aria-label="تراجع"
           title={!canUndo ? 'لا شيء للتراجع عنه' : undefined}
-          className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer"
+          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer"
         >
           <ArrowUUpLeft className="w-5 h-5" />
         </Button>
@@ -38,7 +38,7 @@ export const ToolbarHistoryTools = React.memo(function ToolbarHistoryTools() {
           data-testid="toolbar-redo"
           aria-label="إعادة"
           title={!canRedo ? 'لا شيء لإعادته' : undefined}
-          className="h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer"
+          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer"
         >
           <ArrowUUpRight className="w-5 h-5" />
         </Button>

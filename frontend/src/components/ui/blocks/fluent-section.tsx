@@ -49,16 +49,11 @@ export const FluentSection = React.memo(
       onOpenChange?.(next);
     };
 
-    // سطح مكتب: قسم لوحة الخصائص صفٌّ مسطّح يفصله خط شعري — لا بطاقة
-    // عائمة بحواف مستديرة وظل، وهي أقوى إشارة بصرية «ويب/جوال» في اللوحة.
-    // الفاصل أقوى قليلاً (border/70)، وهو يقود المجموعة التالية: 12px أسفله
-    // (قبل عنوان المجموعة) و18px فوقه (آخر صف في المجموعة السابقة + فاصل
-    // المسافة) — فالمجموعة تُقرأ ككتلة مستقلة بدل أن تبدو الصفوف متراكمة.
     return (
       <div
         ref={ref}
         className={cn(
-          'border-b border-border/70 pt-3 pb-2 first:pt-0 last:border-b-0 last:pb-0 transition-colors duration-150',
+          'border-b border-border/40 py-2.5 first:pt-0 last:border-b-0 last:pb-0 transition-colors duration-150',
           !isOpen && 'opacity-90',
           className,
         )}
@@ -82,7 +77,7 @@ export const FluentSection = React.memo(
           aria-expanded={collapsible ? isOpen : undefined}
           className={cn(
             'flex items-center justify-between gap-2 select-none min-h-6',
-            isOpen ? 'mb-2.5' : 'mb-0',
+            isOpen ? 'mb-2' : 'mb-0',
             collapsible &&
               'cursor-pointer group/sec-header rounded-sm -mx-1 px-1 py-0.5 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:bg-accent/50',
             headerClassName,
@@ -93,7 +88,7 @@ export const FluentSection = React.memo(
               <div className="flex items-center gap-1.5">
                 <span
                   className={cn(
-                    'text-xs font-bold truncate tracking-tight transition-colors duration-150',
+                    'text-xs font-semibold truncate transition-colors duration-150',
                     isOpen
                       ? 'text-foreground'
                       : 'text-foreground/90 group-hover/sec-header:text-foreground',
@@ -147,7 +142,7 @@ export const FluentSection = React.memo(
 
         {/* Section Body Content — فوري وخفيف وأنيق بنمط وتلاشٍ رشيق */}
         {isOpen && (
-          <div className={cn('space-y-2.5 animate-in fade-in duration-100', contentClassName)}>
+          <div className={cn('space-y-2 animate-in fade-in duration-100', contentClassName)}>
             {children}
           </div>
         )}

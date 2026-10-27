@@ -44,14 +44,17 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   activeTab: propActiveTab,
   onActiveTabChange,
 }: CustomCollageCardProps) {
-  const { canvasWidth, canvasHeight, printSettings, collageTemplate } = useEditorStore(
-    useShallow((state) => ({
-      canvasWidth: state.canvasWidth,
-      canvasHeight: state.canvasHeight,
-      printSettings: state.printSettings,
-      collageTemplate: state.collageTemplate,
-    })),
-  );
+  const { canvasWidth, canvasHeight, printSettings, collageTemplate, collageGap, collageMargin } =
+    useEditorStore(
+      useShallow((state) => ({
+        canvasWidth: state.canvasWidth,
+        canvasHeight: state.canvasHeight,
+        printSettings: state.printSettings,
+        collageTemplate: state.collageTemplate,
+        collageGap: state.collageGap,
+        collageMargin: state.collageMargin,
+      })),
+    );
 
   const storedDpi = printSettings?.dpi || 300;
 
@@ -63,9 +66,6 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     (nextTab: CollageTab) => {
       setLocalActiveTab(nextTab);
       onActiveTabChange?.(nextTab);
-      if (nextTab === 'freeform') {
-        setShowFreeformModal(true);
-      }
     },
     [onActiveTabChange],
   );
@@ -165,6 +165,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           canvasWidth,
           canvasHeight,
           storedDpi,
+          collageGap,
+          collageMargin,
         ),
         icon: GridFour,
         physicalLayout: {
@@ -175,7 +177,16 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         },
       });
     },
-    [canvasWidth, canvasHeight, photoType, gridAlign, onSelect, storedDpi],
+    [
+      canvasWidth,
+      canvasHeight,
+      photoType,
+      gridAlign,
+      onSelect,
+      storedDpi,
+      collageGap,
+      collageMargin,
+    ],
   );
 
   // تطبيق موحّد بنداء واحد: يزامن عناصر التحكم المحلية ثم يطبّق الشبكة مرة واحدة
@@ -204,10 +215,23 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
               canvasWidth,
               canvasHeight,
               storedDpi,
+              collageGap,
+              collageMargin,
             );
       onSaveTemplate(name, cells);
     },
-    [photoType, rows, cols, gridAlign, canvasWidth, canvasHeight, storedDpi, onSaveTemplate],
+    [
+      photoType,
+      rows,
+      cols,
+      gridAlign,
+      canvasWidth,
+      canvasHeight,
+      storedDpi,
+      collageGap,
+      collageMargin,
+      onSaveTemplate,
+    ],
   );
 
   const handleExportAllSaved = useCallback(() => {
@@ -232,9 +256,16 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     }
   }, [savedTemplates]);
 
-  // تصحيح الحدود القصوى عند تبديل المقاس أو نوع الصورة
+  // تصحيح الحدود القصوى عند تبديل المقاس أو نوع الصورة أو المسافات
   useEffect(() => {
-    const { maxRows, maxCols } = getGridLimits(photoType, canvasWidth, canvasHeight, storedDpi);
+    const { maxRows, maxCols } = getGridLimits(
+      photoType,
+      canvasWidth,
+      canvasHeight,
+      storedDpi,
+      collageGap,
+      collageMargin,
+    );
     let changed = false;
     let adjustedRows = rows;
     let adjustedCols = cols;
@@ -263,6 +294,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     applyCustomCollage,
     gridAlign,
     storedDpi,
+    collageGap,
+    collageMargin,
     effectiveTab,
     isCustomActive,
   ]);
@@ -273,27 +306,16 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   const activeSection = useMemo(() => getCollageSectionForTab(effectiveTab), [effectiveTab]);
   const collageTabOptions = useMemo(
     () =>
-      activeSection.tabs.map((tool) => {
-        const isInUse =
-          tool.id === 'custom' ? isCustomActive : tool.id === 'freeform' ? isFreeformActive : false;
-        return {
-          id: tool.id,
-          label: tool.label,
-          icon:
-            activeSection.tabs.length <= 2 ? (
-              <tool.icon className="w-4 h-4" weight="duotone" />
-            ) : undefined,
-          tooltip: tool.title,
-          badge: isInUse ? (
-            <span className="w-2 h-2 rounded-full bg-success ring-2 ring-success/30 animate-pulse" />
-          ) : undefined,
-        };
-      }),
-    [activeSection, isCustomActive, isFreeformActive],
+      activeSection.tabs.map((tool) => ({
+        id: tool.id,
+        label: tool.label,
+        tooltip: tool.title,
+      })),
+    [activeSection],
   );
 
   return (
-    <div className="flex flex-col gap-2.5 font-cairo" dir="rtl">
+    <div className="flex flex-col gap-2 font-cairo" dir="rtl">
       {/* 🧭 شريط تبويبات الوجهة — مبدّل بارز يميّز سطح الوجهة عن تبويباتها الفرعية */}
       {collageTabOptions.length > 1 && (
         <FluentSegmentedControl
@@ -317,6 +339,8 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
           canvasWidth={canvasWidth || 2480}
           canvasHeight={canvasHeight || 3508}
           storedDpi={storedDpi}
+          gapPx={collageGap}
+          marginPx={collageMargin}
           onRowsChange={(r) => {
             // تطبيق فوري بقيمة نهائية واحدة — لا حالة قديمة ولا خطوات تراجع متعددة
             setRows(r);
@@ -355,16 +379,47 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
 
       {/* 3️⃣ تبويب الكولاج الحر بالملم — سطر واحد وزر، بلا شارات تسويقية */}
       {effectiveTab === 'freeform' && (
-        <div className="p-3 rounded-md bg-card border border-border/80 shadow-2xs fluent-specular flex flex-col items-center text-center gap-2.5 animate-in fade-in duration-200">
-          <p className="text-mini text-muted-foreground leading-relaxed">
-            ارسم شبكتك بالمليمتر مع تقسيم ومحاذاة ومغناطيس
+        <div className="flex flex-col gap-4 py-3">
+          <div className="flex justify-center rounded-md bg-muted/25 py-6" aria-hidden="true">
+            <svg viewBox="0 0 120 150" className="h-36 w-28">
+              <rect
+                x="1"
+                y="1"
+                width="118"
+                height="148"
+                rx="3"
+                className="fill-card stroke-border"
+              />
+              {(isFreeformActive && collageTemplate
+                ? collageTemplate.cells
+                : [
+                    { x: 0.08, y: 0.07, w: 0.5, h: 0.52 },
+                    { x: 0.63, y: 0.07, w: 0.29, h: 0.25 },
+                    { x: 0.63, y: 0.36, w: 0.29, h: 0.23 },
+                    { x: 0.08, y: 0.64, w: 0.84, h: 0.29 },
+                  ]
+              ).map((cell, index) => (
+                <rect
+                  key={index}
+                  x={cell.x * 120}
+                  y={cell.y * 150}
+                  width={cell.w * 120}
+                  height={cell.h * 150}
+                  rx="2"
+                  className="fill-primary/15 stroke-primary/60"
+                />
+              ))}
+            </svg>
+          </div>
+          <p className="text-xs text-muted-foreground text-center leading-relaxed">
+            صمّم خانات بمقاسات مختلفة، مع تقسيم ومحاذاة دقيقة بالمليمتر.
           </p>
           <button
             type="button"
             onClick={() => setShowFreeformModal(true)}
-            className="w-full h-8 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="w-full h-9 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
           >
-            <MagicWand className="w-3.5 h-3.5" weight="bold" />
+            <MagicWand className="size-4" />
             <span>فتح المحرر</span>
           </button>
         </div>

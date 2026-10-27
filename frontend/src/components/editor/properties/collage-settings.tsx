@@ -60,7 +60,12 @@ export function CollageSettings() {
   return (
     <div className="flex flex-col font-cairo" dir="rtl">
       {/* 🎴 بطاقة 1: المسافات والاستدارة */}
-      <FluentSection title="المسافات والاستدارة" collapsible defaultOpen={true}>
+      <FluentSection
+        title="المسافات والاستدارة"
+        collapsible
+        defaultOpen={true}
+        className="pb-4 border-border/50"
+      >
         <div className="flex flex-col gap-2.5">
           <FluentSliderField
             label="التباعد بين الصور"
@@ -86,6 +91,8 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="الزوايا"
+            layout="inline"
+            labelWidth="w-12"
             value={toMm(collageRadius)}
             min={0}
             max={50}
@@ -105,6 +112,8 @@ export function CollageSettings() {
               نكرّره في كل صف (كان: إطار الصور ← سُمك الإطار ← لون الإطار). */}
           <FluentSliderField
             label="السُّمك"
+            layout="inline"
+            labelWidth="w-12"
             value={collageStrokeWidth}
             min={0}
             max={15}
@@ -115,10 +124,7 @@ export function CollageSettings() {
           />
 
           {collageStrokeWidth > 0 && (
-            <ColorPanel
-              wheelPosition="bottom"
-              className="rounded-lg border border-border/60 bg-muted/20 p-2.5 animate-in fade-in slide-in-from-top-1 duration-150"
-            >
+            <ColorPanel wheelPosition="bottom" className="pt-1">
               <ColorField
                 color={collageStrokeColor}
                 onChange={(hex) => {
@@ -152,12 +158,7 @@ export function CollageSettings() {
             على الورقة») يكرّران التسمية نفسها بلا معلومة جديدة. */}
         {collageShowCutLines && (
           <FluentSettingRow
-            label={
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-500/30 shrink-0 shadow-xs" />
-                <span>خط نهاية الطباعة</span>
-              </div>
-            }
+            label="خط نهاية الطباعة"
             control={
               <Switch
                 checked={collageShowEndCutLine}

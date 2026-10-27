@@ -153,7 +153,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
   return (
     <div
       className={cn(
-        'w-full flex items-center justify-between gap-3 select-none font-cairo text-xs flex-nowrap overflow-x-auto scrollbar-none',
+        'w-full flex items-center justify-between gap-2 select-none font-cairo text-xs flex-nowrap overflow-x-auto scrollbar-none',
         className,
       )}
       dir="rtl"
@@ -302,7 +302,7 @@ export const CanvasViewportDeck = React.memo(function CanvasViewportDeck({
       </div>
 
       {/* 2. الوسط: كبسولة أدوات المحاذاة والرؤية الموحدة (Fluent 2 Icon Capsule) */}
-      <div className="h-7 flex items-center gap-0.5 select-none border-x border-border/50 px-1.5">
+      <div className="h-7 flex items-center gap-0.5 select-none border-x border-border/50 px-1">
         {/* زر المساطر */}
         <FluentCapsuleButton
           icon={<Ruler className="w-4 h-4" weight={showRuler ? 'fill' : 'regular'} />}

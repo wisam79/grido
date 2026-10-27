@@ -207,8 +207,11 @@ export async function renderCollageBranch(
     // 🖨️ cropmarks: علامات زوايا فقط على الصندوق المحيط (مطابق للمعاينة
     // print-preview التي تبني زواياها من نفس bbox) — لا خطوط كاملة.
     if (collageCutLineStyle === 'cropmarks') {
-      const xs = cutLines.flatMap((l) => [l.x1, l.x2]);
-      const ys = cutLines.flatMap((l) => [l.y1, l.y2]);
+      // الخط الختامي يمتد على عرض الورقة كاملاً (دليل نهاية الطباعة) — إدخاله
+      // في حساب الصندوق المحيط يوسّع الزوايا إلى حدود الورقة بدل حدود الشبكة.
+      const boundsLines = cutLines.filter((l) => !l.isBottomEnd);
+      const xs = boundsLines.flatMap((l) => [l.x1, l.x2]);
+      const ys = boundsLines.flatMap((l) => [l.y1, l.y2]);
       if (xs.length > 0 && ys.length > 0) {
         const minX = Math.min(...xs);
         const maxX = Math.max(...xs);

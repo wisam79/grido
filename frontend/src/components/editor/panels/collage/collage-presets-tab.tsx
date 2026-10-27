@@ -1,15 +1,21 @@
 import React, { useState, useMemo } from 'react';
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { FluentEmptyState, FluentSegmentedControl } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import {
   Check,
-  FolderSimple,
   UploadSimple,
   DownloadSimple,
   Trash,
-  Stack,
-  Star,
   SquaresFour,
   List,
   MagnifyingGlass,
@@ -18,27 +24,21 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { COLLAGE_TEMPLATES } from '@/lib/templates';
 import { cn } from '@/lib/utils';
-
 import {
   ALL_STUDIO_PRESETS,
   STUDIO_COMBO_PRESETS,
   STUDIO_KEEPSAKE_PRESETS,
 } from './collage-preset-data';
-
 import type { CollagePresetCategory, StudioPreset } from './collage-preset-data';
 import type { CollageTemplate } from '@/lib/templates';
 
-/** نمط المقاطع الرقمية داخل جملة عربية (35×45) */
+const FOCUS_RING =
+  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
 const SPEC_NUMBER_PATTERN = /(\d+(?:[.,]\d+)?(?:\s*×\s*\d+(?:[.,]\d+)?)?)/g;
 
-/**
- * عرض مواصفات القالب مع عزل المقاطع الرقمية اتجاهياً (BiDi).
- * بدون هذا العزل تقلب خوارزمية الاتجاه ترتيب المقاسات وتحوّل «(90×130)» إلى «(130×90)»
- * وتنقل الأرقام البادئة («2 جواز…») إلى نهاية السطر — وهي أهم معلومة في البطاقة.
- */
-function SpecText({ spec, className }: { spec: string; className?: string }) {
+function SpecText({ spec }: { spec: string }) {
   return (
-    <span className={className} dir="rtl" title={spec}>
+    <span className="text-mini text-muted-foreground leading-relaxed" dir="rtl" title={spec}>
       {spec.split(SPEC_NUMBER_PATTERN).map((part, index) =>
         /^\d/.test(part) ? (
           <bdi key={index} dir="ltr">
@@ -52,141 +52,58 @@ function SpecText({ spec, className }: { spec: string; className?: string }) {
   );
 }
 
-/** استخلاص المقاسات الملموسة فقط — للعرض الشبكي الضيق حيث لا تتسع الجملة كاملة */
-function specSizes(spec: string): string {
-  const sizes = spec.match(/\d+(?:[.,]\d+)?\s*×\s*\d+(?:[.,]\d+)?/g);
-  return sizes ? sizes.map((size) => size.replace(/\s+/g, '')).join(' · ') : spec;
-}
-
-/**
- * 🎴 المعاينة الفوتوغرافية المصغرة لورقة الاستوديو
- * تحاكي ورقة الطباعة الحقيقية (A4 / 10×15) مع خيال بورتريه واقعي داخل كل خلية
- */
-function StudioPaperThumbnail({
-  templateId,
-  cells: directCells,
+const StudioPaperThumbnail = React.memo(function StudioPaperThumbnail({
+  cells,
   active,
-  scale = 1,
 }: {
-  templateId?: string;
-  cells?: Array<{ x: number; y: number; w: number; h: number }>;
+  cells: CollageTemplate['cells'];
   active: boolean;
-  /** معامل تصغير الورقة داخل الحاوية */
-  scale?: number;
 }) {
-  const tpl = templateId ? COLLAGE_TEMPLATES.find((t) => t.id === templateId) : undefined;
-  const cells = directCells || tpl?.cells || [];
-  const paperW = Math.round(56 * scale);
-  const paperH = Math.round(74 * scale);
-
   return (
-    <div className="flex items-center justify-center select-none shrink-0" aria-hidden="true">
-      <div
-        className={cn(
-          'rounded-md relative transition-colors duration-200 p-0.5 flex items-center justify-center overflow-hidden',
-          active
-            ? 'bg-white dark:bg-card border-2 border-foreground/70 shadow-fluent-8 ring-1 ring-foreground/20'
-            : 'bg-white dark:bg-card border border-border/80 shadow-2xs group-hover:border-foreground/50 group-hover:shadow-xs',
-        )}
-        style={{ width: paperW, height: paperH }}
-        dir="ltr"
-      >
-        <svg
-          viewBox="0 0 100 142"
-          className="w-full h-full block relative z-1"
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden="true"
-        >
-          {/* إطار ورقة الطباعة الرقيق */}
-          <rect
-            x="0.5"
-            y="0.5"
-            width="99"
-            height="141"
-            rx="3"
-            ry="3"
-            fill="none"
-            className="stroke-border/25"
-            strokeWidth="0.5"
-          />
-
-          {cells.map((cell, idx) => {
-            const x = cell.x * 100;
-            const y = cell.y * 142;
-            const w = cell.w * 100;
-            const h = cell.h * 142;
-            const cx = x + w / 2;
-            const cy = y + h / 2;
-            const headRadius = Math.min(w, h) * 0.18;
-            const shoulderW = w * 0.34;
-            const shoulderTop = cy + headRadius * 0.7;
-            const shoulderBottom = cy + h * 0.44;
-
-            const isFamilyLandscape = w > 50 && h > 40;
-            const showPortrait = w >= 13 && h >= 15;
-
-            return (
-              <g key={idx} className="transition-colors duration-150">
-                {/* إطار الصورة الفوتوغرافية */}
-                <rect
-                  x={x}
-                  y={y}
-                  width={w}
-                  height={h}
-                  rx="1.5"
-                  ry="1.5"
-                  className={cn(
-                    'transition-colors duration-150',
-                    active
-                      ? 'fill-primary/[0.14] stroke-primary/80 stroke-[1.2]'
-                      : 'fill-muted stroke-border stroke-[0.8]',
-                  )}
+    <svg viewBox="0 0 100 142" className="h-full max-w-full" aria-hidden="true">
+      <rect x="0.5" y="0.5" width="99" height="141" rx="2" className="fill-card stroke-border" />
+      {cells.map((cell, index) => {
+        const x = 5 + cell.x * 90;
+        const y = 5 + cell.y * 132;
+        const w = cell.w * 90;
+        const h = cell.h * 132;
+        const radius = Math.min(w, h) * 0.16;
+        return (
+          <g key={index}>
+            <rect
+              x={x}
+              y={y}
+              width={w}
+              height={h}
+              rx="1"
+              className={cn(
+                'transition-colors duration-150',
+                active ? 'fill-primary/20 stroke-primary/70' : 'fill-primary/10 stroke-primary/35',
+              )}
+              strokeWidth="0.7"
+            />
+            {w >= 12 && h >= 15 && (
+              <g className={active ? 'fill-primary/70' : 'fill-muted-foreground/50'}>
+                <circle cx={x + w / 2} cy={y + h * 0.36} r={radius} />
+                <path
+                  d={`M ${x + w * 0.2} ${y + h * 0.85} Q ${x + w * 0.2} ${y + h * 0.55} ${x + w / 2} ${y + h * 0.55} Q ${x + w * 0.8} ${y + h * 0.55} ${x + w * 0.8} ${y + h * 0.85} Z`}
                 />
-
-                {/* خيال البورتريه الفوتوغرافي الواقعي */}
-                {showPortrait && !isFamilyLandscape && (
-                  <g
-                    className={cn(
-                      'transition-opacity duration-150',
-                      active ? 'fill-primary/70' : 'fill-muted-foreground/60',
-                    )}
-                  >
-                    <circle cx={cx} cy={cy - headRadius * 0.65} r={headRadius} />
-                    <path
-                      d={`M ${cx - shoulderW} ${shoulderBottom} C ${cx - shoulderW * 0.8} ${shoulderTop}, ${cx + shoulderW * 0.8} ${shoulderTop}, ${cx + shoulderW} ${shoulderBottom} Z`}
-                    />
-                  </g>
-                )}
-
-                {/* خيال البورتريه المزدوج للصور العائلية الكبرى */}
-                {isFamilyLandscape && (
-                  <g className={cn(active ? 'fill-primary/70' : 'fill-muted-foreground/60')}>
-                    <circle cx={cx - 10} cy={cy - 6} r={headRadius * 0.8} />
-                    <path
-                      d={`M ${cx - 20} ${cy + 14} C ${cx - 19} ${cy + 1}, ${cx - 1} ${cy + 1}, ${cx} ${cy + 14} Z`}
-                    />
-                    <circle cx={cx + 10} cy={cy - 5} r={headRadius * 0.75} />
-                    <path
-                      d={`M ${cx} ${cy + 14} C ${cx + 1} ${cy + 2}, ${cx + 19} ${cy + 2}, ${cx + 20} ${cy + 14} Z`}
-                    />
-                  </g>
-                )}
               </g>
-            );
-          })}
-        </svg>
-      </div>
-    </div>
+            )}
+          </g>
+        );
+      })}
+    </svg>
   );
-}
+});
 
 export interface CollagePresetsTabProps {
   presetCategory: CollagePresetCategory;
   onPresetCategoryChange: (category: CollagePresetCategory) => void;
   activeTemplateId: string | undefined;
-  onSelect: (t: CollageTemplate) => void;
+  onSelect: (template: CollageTemplate) => void;
   savedTemplates?: CollageTemplate[];
-  onDeleteTemplate?: (id: string, e: React.MouseEvent) => void;
+  onDeleteTemplate?: (id: string, event: React.MouseEvent) => void;
   onImportClick?: () => void;
   onExportAllClick?: () => void;
 }
@@ -202,300 +119,185 @@ export function CollagePresetsTab({
   onExportAllClick,
 }: CollagePresetsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  // نمط العرض: قائمة عريضة واضحة ومفصلة (الافتراضي)، أو شبكة مصغرة
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-
-  const categories: {
-    id: CollagePresetCategory;
-    label: string;
-    shortLabel: string;
-    icon: React.ElementType;
-    badgeCount?: number;
-  }[] = [
-    {
-      id: 'all',
-      label: 'كل القوالب',
-      shortLabel: 'الكل',
-      icon: SquaresFour,
-      badgeCount: ALL_STUDIO_PRESETS.length,
-    },
-    {
-      id: 'combo',
-      label: 'أطقم رسمية',
-      shortLabel: 'أطقم',
-      icon: Stack,
-      badgeCount: STUDIO_COMBO_PRESETS.length,
-    },
-    {
-      id: 'keepsake',
-      label: 'تذكار وكروت',
-      shortLabel: 'تذكار',
-      icon: Star,
-      badgeCount: STUDIO_KEEPSAKE_PRESETS.length,
-    },
-    {
-      id: 'saved',
-      label: 'قوالب محفوظة',
-      shortLabel: 'محفوظ',
-      icon: FolderSimple,
-      badgeCount: savedTemplates.length > 0 ? savedTemplates.length : undefined,
-    },
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
+  const [pendingDelete, setPendingDelete] = useState<CollageTemplate | null>(null);
+  const categories: { id: CollagePresetCategory; label: string }[] = [
+    { id: 'all', label: 'كل القوالب' },
+    { id: 'combo', label: 'أطقم رسمية' },
+    { id: 'keepsake', label: 'تذكار وكروت' },
+    { id: 'saved', label: 'قوالب محفوظة' },
   ];
+  const query = searchQuery.trim().toLowerCase();
+  const searchResults = useMemo(
+    () =>
+      query
+        ? {
+            official: ALL_STUDIO_PRESETS.filter((preset) =>
+              [preset.title, preset.spec, preset.tag, preset.badge].some((text) =>
+                text?.toLowerCase().includes(query),
+              ),
+            ),
+            saved: savedTemplates.filter(
+              (template) =>
+                template.name.toLowerCase().includes(query) || `${template.slots}`.includes(query),
+            ),
+          }
+        : null,
+    [query, savedTemplates],
+  );
+  const groups =
+    presetCategory === 'combo'
+      ? [{ title: '', presets: STUDIO_COMBO_PRESETS }]
+      : presetCategory === 'keepsake'
+        ? [{ title: '', presets: STUDIO_KEEPSAKE_PRESETS }]
+        : [
+            { title: 'أطقم رسمية', presets: STUDIO_COMBO_PRESETS },
+            { title: 'تذكار وكروت', presets: STUDIO_KEEPSAKE_PRESETS },
+          ];
+  const cardLayout = viewMode === 'grid' ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-2';
 
-  const currentCat = categories.find((c) => c.id === presetCategory) || categories[0];
-
-  // تصفية القوالب بالبحث الفوري
-  const searchResults = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return null;
-
-    const matchedOfficial = ALL_STUDIO_PRESETS.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.spec.toLowerCase().includes(q) ||
-        (p.tag && p.tag.toLowerCase().includes(q)) ||
-        (p.badge && p.badge.toLowerCase().includes(q)),
-    );
-
-    const matchedSaved = savedTemplates.filter(
-      (s) => s.name.toLowerCase().includes(q) || `${s.slots}`.includes(q),
-    );
-
-    return { official: matchedOfficial, saved: matchedSaved };
-  }, [searchQuery, savedTemplates]);
-
-  const activePresetsList: StudioPreset[] = useMemo(() => {
-    switch (presetCategory) {
-      case 'all':
-        return ALL_STUDIO_PRESETS;
-      case 'combo':
-        return STUDIO_COMBO_PRESETS;
-      case 'keepsake':
-        return STUDIO_KEEPSAKE_PRESETS;
-      default:
-        return [];
-    }
-  }, [presetCategory]);
-
-  // أقسام القوالب عند اختيار "الكل" لتنظيم بصري مريح
-  const groupedSections: { title: string; icon: React.ElementType; presets: StudioPreset[] }[] =
-    useMemo(
-      () => [
-        { title: 'أطقم رسمية', icon: Stack, presets: STUDIO_COMBO_PRESETS },
-        { title: 'تذكار وكروت', icon: Star, presets: STUDIO_KEEPSAKE_PRESETS },
-      ],
-      [],
-    );
-
-  // دالة مشتركة لتطبيق القالب
-  const handleApplyPreset = (presetId: string) => {
-    const tpl = COLLAGE_TEMPLATES.find((t) => t.id === presetId);
-    if (tpl) onSelect(tpl);
-  };
-
-  /** بطاقة القالب في نمط القائمة (List View - كاملة العرض بدون أي حشر أو قص) */
-  const renderListCard = (preset: StudioPreset) => {
-    const isActive = activeTemplateId === preset.id;
+  const renderPreset = (preset: StudioPreset) => {
+    const template = COLLAGE_TEMPLATES.find((item) => item.id === preset.id);
+    if (!template) return null;
+    const active = activeTemplateId === preset.id;
     return (
       <button
         key={preset.id}
         type="button"
-        aria-pressed={isActive}
+        aria-pressed={active}
         aria-label={`${preset.title} - ${preset.spec}`}
-        onClick={() => handleApplyPreset(preset.id)}
+        onClick={() => onSelect(template)}
         className={cn(
-          'w-full p-2 rounded-md border text-start transition-colors duration-150 cursor-pointer flex items-center gap-2.5 select-none relative group focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none min-h-[58px] fluent-specular',
-          isActive
-            ? 'border-foreground/70 bg-accent-active text-foreground shadow-xs ring-1 ring-foreground/20'
-            : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-border hover:shadow-xs',
+          'group relative flex min-w-0 rounded-md border p-2 text-start transition-colors duration-150 cursor-pointer',
+          viewMode === 'grid' ? 'flex-col gap-2' : 'items-center gap-3',
+          active
+            ? 'border-primary/60 bg-primary/5'
+            : 'border-border/50 hover:border-primary/40 hover:bg-muted/20',
+          FOCUS_RING,
         )}
       >
-        {/* شارة النشاط المحايدة على الحافة اليمنى */}
-        {isActive && (
-          <span className="absolute inset-y-1 end-0 w-1 bg-foreground/70 rounded-l-full" />
-        )}
-
-        {/* المعاينة المصغرة للورقة الحقيقية */}
-        <div className="shrink-0 w-9 h-12 flex items-center justify-center">
-          <StudioPaperThumbnail templateId={preset.id} active={isActive} scale={0.6} />
-        </div>
-
-        {/* البيانات النصية للقالب — مساحة كاملة ومريحة للقراءة */}
-        <div className="flex-1 min-w-0 flex flex-col items-start gap-0.5 text-start">
-          <div className="w-full flex items-center justify-between gap-1.5 min-w-0">
-            <span className="text-xs font-bold text-foreground truncate group-hover:text-foreground transition-colors">
-              {preset.title}
-            </span>
-            <div className="flex items-center gap-1 shrink-0">
-              {preset.tag && (
-                <span className="text-mini font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60 leading-none">
-                  {preset.tag}
-                </span>
-              )}
-              <span
-                className="text-mini font-mono font-bold text-muted-foreground bg-muted/70 px-2 py-0.5 rounded-full border border-border/40 leading-none"
-                title={`${preset.slots} صور`}
-              >
-                {preset.slots}×
-              </span>
-            </div>
-          </div>
-
-          <SpecText spec={preset.spec} className="text-mini text-muted-foreground font-mono" />
-        </div>
-
-        {/* أيقونة التحديد النشط */}
-        {isActive && (
-          <div className="shrink-0 w-5 h-5 rounded-full bg-foreground text-background flex items-center justify-center shadow-2xs">
-            <Check className="w-3 h-3" weight="bold" />
-          </div>
+        <span
+          className={cn(
+            'flex items-center justify-center rounded-sm bg-muted/30',
+            viewMode === 'grid' ? 'h-24 w-full py-2' : 'h-16 w-12 shrink-0 p-1',
+          )}
+        >
+          <StudioPaperThumbnail cells={template.cells} active={active} />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="text-xs font-semibold leading-relaxed">{preset.title}</span>
+          <SpecText spec={preset.spec} />
+        </span>
+        {active && (
+          <span className="absolute end-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <Check className="size-3" weight="bold" />
+          </span>
         )}
       </button>
     );
   };
 
-  /** بطاقة القالب في نمط الشبكة (Grid View - ثنائية الأعمدة) */
-  const renderGridCard = (preset: StudioPreset) => {
-    const isActive = activeTemplateId === preset.id;
+  const renderSaved = (template: CollageTemplate) => {
+    const active = activeTemplateId === template.id;
     return (
-      <button
-        key={preset.id}
-        type="button"
-        aria-pressed={isActive}
-        aria-label={`${preset.title} - ${preset.spec}`}
-        onClick={() => handleApplyPreset(preset.id)}
+      <div
+        key={template.id}
         className={cn(
-          'p-2 rounded-md border text-center transition-colors duration-150 cursor-pointer flex flex-col items-center justify-between select-none relative focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none group min-h-[120px] fluent-specular',
-          isActive
-            ? 'border-foreground/70 bg-accent-active text-foreground shadow-xs ring-1 ring-foreground/20'
-            : 'bg-card border-border/75 text-foreground shadow-2xs hover:bg-muted/40 hover:border-border hover:shadow-xs',
+          'flex items-center rounded-md border',
+          active ? 'border-primary/60 bg-primary/5' : 'border-border/50',
         )}
       >
-        {/* شارة التحديد النشطة */}
-        {isActive && (
-          <div className="absolute top-1.5 end-1.5 w-4 h-4 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 shadow-2xs z-10">
-            <Check className="w-2.5 h-2.5" weight="bold" />
-          </div>
-        )}
-
-        {/* شارة التصنيف */}
-        {preset.tag && !isActive && (
-          <span className="absolute top-1.5 end-1.5 text-mini font-bold px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground border border-border/50 leading-none z-10">
-            {preset.tag}
+        <button
+          type="button"
+          aria-pressed={active}
+          onClick={() => onSelect(template)}
+          className={cn(
+            'flex min-w-0 flex-1 items-center gap-3 rounded-md p-2 text-start hover:bg-muted/30 cursor-pointer',
+            FOCUS_RING,
+          )}
+        >
+          <span className="flex h-16 w-12 shrink-0 justify-center rounded-sm bg-muted/30 p-1">
+            <StudioPaperThumbnail cells={template.cells} active={active} />
           </span>
-        )}
-
-        {/* المعاينة المصغرة لورقة الطباعة */}
-        <StudioPaperThumbnail templateId={preset.id} active={isActive} scale={0.7} />
-
-        {/* الاسم والمقاس بالملم */}
-        <div className="w-full flex flex-col items-center mt-1 pt-1.5 border-t border-border/40 min-w-0">
-          <div className="flex items-center justify-center gap-1 w-full min-w-0">
-            <span className="text-xs font-bold text-foreground truncate group-hover:text-foreground transition-colors">
-              {preset.title}
-            </span>
-            <span className="text-mini font-mono font-bold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full shrink-0">
-              {preset.slots}×
-            </span>
-          </div>
-          {/* الشبكة الضيقة تعرض المقاسات فقط (أهم معلومة) والمواصفات كاملة في التلميح */}
-          <span
-            className="text-mini text-muted-foreground mt-0.5 w-full text-center font-mono truncate"
-            dir="ltr"
-            title={preset.spec}
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="truncate text-xs font-semibold">{template.name}</span>
+            <span className="text-mini text-muted-foreground">{template.slots} صور</span>
+          </span>
+          {active && <Check className="size-3.5 shrink-0 text-primary" />}
+        </button>
+        {onDeleteTemplate && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="me-1 shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={() => setPendingDelete(template)}
+            title="حذف القالب"
+            aria-label={`حذف القالب ${template.name}`}
           >
-            {specSizes(preset.spec)}
-          </span>
-        </div>
-      </button>
+            <Trash className="size-3.5" />
+          </Button>
+        )}
+      </div>
     );
   };
 
   return (
-    <div className="space-y-2.5 animate-in fade-in duration-150 font-cairo" dir="rtl">
-      {/* 🔍 حقل البحث الفوري المدمج وفق Fluent 2 */}
-      <div className="relative w-full">
-        <MagnifyingGlass className="absolute end-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="بحث في القوالب…"
-          aria-label="بحث في القوالب"
-          className="w-full h-8 pe-8 ps-9 text-xs bg-background/80 border border-border/80 rounded-md text-start font-cairo placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            onClick={() => setSearchQuery('')}
-            className="absolute start-1.5 top-1/2 -translate-y-1/2 size-7 rounded-full bg-muted hover:bg-muted-foreground/20 text-muted-foreground flex items-center justify-center cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-            title="مسح البحث"
-          >
-            <X className="w-2.5 h-2.5" weight="bold" />
-          </button>
-        )}
-      </div>
-
-      {/* 🧭 شريط التحكم الذكي: قائمة التصنيف المنسدلة + زر تبديل نمط العرض (قائمة / شبكة) */}
-      {!searchQuery && (
-        <div className="flex items-center gap-1.5 select-none">
-          {/* قائمة التصنيف المنسدلة وفق Fluent 2 — لا حشر ولا انقطاع */}
-          <div className="flex-1 min-w-0">
-            <Select
-              value={presetCategory}
-              onValueChange={(val) => onPresetCategoryChange(val as CollagePresetCategory)}
+    <div
+      className="space-y-4 font-cairo motion-safe:animate-in motion-safe:fade-in duration-150"
+      dir="rtl"
+    >
+      <div className="space-y-2">
+        <div className="relative">
+          <MagnifyingGlass className="absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="بحث في القوالب…"
+            aria-label="بحث في القوالب"
+            className={cn(
+              'h-9 w-full rounded-md border border-border/60 bg-muted/20 ps-9 pe-9 text-xs placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:appearance-none',
+              FOCUS_RING,
+            )}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className={cn(
+                'absolute end-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted cursor-pointer',
+                FOCUS_RING,
+              )}
+              title="مسح البحث"
+              aria-label="مسح البحث"
             >
-              <SelectTrigger
-                aria-label="فئة قوالب الكولاج"
-                className="w-full h-8 px-2.5 text-xs font-bold bg-card border-border/80 rounded-md shadow-2xs hover:bg-muted/40 transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-2 min-w-0 truncate">
-                  <currentCat.icon
-                    className="w-4 h-4 text-muted-foreground shrink-0"
-                    weight="duotone"
-                  />
-                  <span className="truncate">{currentCat.label}</span>
-                  {currentCat.badgeCount !== undefined && (
-                    <span className="text-mini font-mono font-bold px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground border border-border/60 shrink-0">
-                      {currentCat.badgeCount}
-                    </span>
-                  )}
-                </div>
-              </SelectTrigger>
-              <SelectContent
-                align="start"
-                className="font-cairo min-w-[210px] rounded-lg border border-border bg-popover shadow-fluent-16"
-              >
-                {categories.map((cat) => {
-                  const Icon = cat.icon;
-                  return (
-                    <SelectItem
-                      key={cat.id}
-                      value={cat.id}
-                      className="text-xs font-bold cursor-pointer py-2"
-                    >
-                      <div className="flex items-center justify-between w-full gap-2 min-w-[170px]">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Icon
-                            className="w-4 h-4 text-muted-foreground shrink-0"
-                            weight="duotone"
-                          />
-                          <span className="truncate">{cat.label}</span>
-                        </div>
-                        {cat.badgeCount !== undefined && (
-                          <span className="text-mini font-mono px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-bold shrink-0">
-                            {cat.badgeCount}
-                          </span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* زر التبديل بين نمط القائمة العريضة ونمط الشبكة */}
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Select
+            value={presetCategory}
+            onValueChange={(value) => {
+              onPresetCategoryChange(value as CollagePresetCategory);
+              setSearchQuery('');
+            }}
+          >
+            <SelectTrigger
+              aria-label="فئة قوالب الكولاج"
+              className="min-w-0 flex-1 bg-transparent text-xs"
+            >
+              {categories.find((category) => category.id === presetCategory)?.label}
+            </SelectTrigger>
+            <SelectContent align="start" className="font-cairo">
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id} className="text-xs">
+                  {category.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <FluentSegmentedControl<'list' | 'grid'>
             layoutId="presets-view-mode-pill"
             variant="field"
@@ -503,277 +305,108 @@ export function CollagePresetsTab({
             onChange={setViewMode}
             size="sm"
             fullWidth={false}
-            className="shrink-0 shadow-2xs p-0.5 border-0 h-8"
+            className="shrink-0"
             options={[
-              {
-                id: 'list',
-                icon: (
-                  <List className="w-4 h-4" weight={viewMode === 'list' ? 'bold' : 'regular'} />
-                ),
-                tooltip: 'قائمة مفصلة',
-              },
-              {
-                id: 'grid',
-                icon: (
-                  <SquaresFour
-                    className="w-4 h-4"
-                    weight={viewMode === 'grid' ? 'bold' : 'regular'}
-                  />
-                ),
-                tooltip: 'عرض شبكي',
-              },
+              { id: 'grid', icon: <SquaresFour className="size-4" />, tooltip: 'عرض شبكي' },
+              { id: 'list', icon: <List className="size-4" />, tooltip: 'قائمة مفصلة' },
             ]}
           />
         </div>
-      )}
+      </div>
 
-      {/* 🔍 حالة البحث النشط */}
-      {searchResults !== null ? (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground select-none px-0.5">
-            <span>
-              نتائج البحث:{' '}
-              <strong className="text-foreground">
-                {searchResults.official.length + searchResults.saved.length}
-              </strong>
-            </span>
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="text-mini text-foreground hover:underline font-bold cursor-pointer"
-            >
-              إلغاء البحث
-            </button>
-          </div>
-
-          {searchResults.official.length === 0 && searchResults.saved.length === 0 ? (
+      {searchResults ? (
+        <div className="space-y-3">
+          <p className="text-mini text-muted-foreground" aria-live="polite">
+            نتائج البحث: {searchResults.official.length + searchResults.saved.length}
+          </p>
+          {searchResults.official.length + searchResults.saved.length === 0 ? (
             <FluentEmptyState
-              icon={
-                <MagnifyingGlass className="w-8 h-8 text-muted-foreground/60" weight="duotone" />
-              }
+              icon={<MagnifyingGlass className="size-6" />}
               title="لا توجد نتائج"
               description="جرّب جواز أو وطنية"
             />
           ) : (
-            <div className="space-y-2">
-              {/* نتائج القوالب الرسمية */}
-              {searchResults.official.length > 0 &&
-                (viewMode === 'list' ? (
-                  <div className="space-y-1.5">{searchResults.official.map(renderListCard)}</div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    {searchResults.official.map(renderGridCard)}
-                  </div>
-                ))}
-
-              {/* نتائج القوالب المحفوظة */}
+            <>
+              <div className={cardLayout}>{searchResults.official.map(renderPreset)}</div>
               {searchResults.saved.length > 0 && (
-                <div className="space-y-1.5 pt-1.5 border-t border-border/40">
-                  <span className="text-mini font-bold text-muted-foreground block text-start">
-                    نتائج محفوظة
-                  </span>
-                  {searchResults.saved.map((t) => {
-                    const isActive = activeTemplateId === t.id;
-                    return (
-                      <div
-                        key={t.id}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            onSelect(t);
-                          }
-                        }}
-                        onClick={() => onSelect(t)}
-                        className={cn(
-                          'p-2 rounded-md border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden',
-                          'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                          isActive
-                            ? 'border-foreground/70 bg-accent-active text-foreground font-bold shadow-xs ring-1 ring-foreground/20'
-                            : 'bg-card border-border/70 hover:bg-muted/40 hover:border-border hover:shadow-2xs text-foreground',
-                        )}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 pe-1">
-                          <div className="w-8 h-10 shrink-0 flex items-center justify-center">
-                            <StudioPaperThumbnail cells={t.cells} active={isActive} scale={0.5} />
-                          </div>
-                          <div className="flex flex-col items-start min-w-0 gap-0.5">
-                            <span className="text-xs font-bold truncate text-start">{t.name}</span>
-                            <span className="text-mini font-mono text-muted-foreground">
-                              {t.slots}× صور
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <div className="space-y-2">{searchResults.saved.map(renderSaved)}</div>
               )}
-            </div>
+            </>
           )}
         </div>
       ) : presetCategory === 'saved' ? (
-        /* 🎴 قسم القوالب المحفوظة */
-        savedTemplates.length === 0 ? (
-          <div className="py-7 px-4 rounded-md border border-dashed border-border/70 bg-card/40 flex flex-col items-center text-center gap-2">
-            <div className="w-10 h-10 rounded-md bg-muted/80 dark:bg-white/5 text-muted-foreground flex items-center justify-center shadow-2xs">
-              <FolderSimple className="w-5 h-5" weight="duotone" />
+        <div className="space-y-3">
+          {savedTemplates.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-border/60 px-4 py-8 text-center">
+              <p className="text-sm font-semibold">لا قوالب محفوظة</p>
+              <p className="text-xs text-muted-foreground">خصّص شبكتك ثم اختر «حفظ كقالب».</p>
+              {onImportClick && (
+                <Button variant="outline" onClick={onImportClick}>
+                  <UploadSimple className="size-4" />
+                  <span>استيراد قالب JSON</span>
+                </Button>
+              )}
             </div>
-            <div className="space-y-0.5">
-              <p className="text-xs font-bold text-foreground">لا قوالب محفوظة</p>
-              <p className="text-mini text-muted-foreground max-w-[220px] leading-relaxed">
-                خصص شبكتك ثم احفظها.
-              </p>
-            </div>
-            {onImportClick && (
-              <Button
-                type="button"
-                variant="outline"
-                size="default"
-                onClick={onImportClick}
-                className="mt-1"
-              >
-                <UploadSimple className="w-3.5 h-3.5" weight="bold" />
-                <span>استيراد قالب JSON</span>
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {/* شريط الإجراءات للقوالب المحفوظة */}
-            {/* العدد يظهر أصلاً في مُشغّل الفئة أعلى اللوح — لا نكرّره هنا */}
-            <div className="flex items-center justify-end pb-0.5 select-none">
-              <div className="flex items-center gap-1.5">
+          ) : (
+            <>
+              <div className="flex gap-2">
                 {onImportClick && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={onImportClick}
-                    title="استيراد قوالب"
-                  >
-                    <UploadSimple className="w-3.5 h-3.5" weight="bold" />
-                    <span>استيراد</span>
+                  <Button variant="outline" className="flex-1" onClick={onImportClick}>
+                    <UploadSimple className="size-3.5" />
+                    استيراد
                   </Button>
                 )}
                 {onExportAllClick && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={onExportAllClick}
-                    title="تصدير القوالب"
-                  >
-                    <DownloadSimple className="w-3.5 h-3.5" weight="bold" />
-                    <span>تصدير الكل</span>
+                  <Button variant="outline" className="flex-1" onClick={onExportAllClick}>
+                    <DownloadSimple className="size-3.5" />
+                    تصدير الكل
                   </Button>
                 )}
               </div>
-            </div>
-
-            <div className="space-y-1.5 pe-0.5">
-              {savedTemplates.map((t) => {
-                const isActive = activeTemplateId === t.id;
-                return (
-                  <div
-                    key={t.id}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onSelect(t);
-                      }
-                    }}
-                    onClick={() => onSelect(t)}
-                    className={cn(
-                      'p-2 rounded-md border flex items-center justify-between transition-colors cursor-pointer select-none group relative overflow-hidden',
-                      'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                      isActive
-                        ? 'border-foreground/70 bg-accent-active text-foreground font-bold shadow-xs ring-1 ring-foreground/20'
-                        : 'bg-card border-border/70 hover:bg-muted/40 hover:border-border hover:shadow-2xs text-foreground',
-                    )}
-                  >
-                    {isActive && (
-                      <span className="absolute inset-y-0 end-0 w-1 bg-foreground/70 rounded-l-full" />
-                    )}
-                    <div className="flex items-center gap-2.5 min-w-0 pe-1">
-                      <div className="w-9 h-12 shrink-0 flex items-center justify-center">
-                        <StudioPaperThumbnail cells={t.cells} active={isActive} scale={0.55} />
-                      </div>
-                      <div className="flex flex-col items-start min-w-0 gap-0.5">
-                        <span className="text-xs font-bold truncate w-full text-start">
-                          {t.name}
-                        </span>
-                        <span
-                          className={cn(
-                            'text-mini font-mono',
-                            isActive ? 'text-foreground font-bold' : 'text-muted-foreground',
-                          )}
-                        >
-                          {t.slots}× صور
-                        </span>
-                      </div>
-                    </div>
-                    {onDeleteTemplate && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => onDeleteTemplate(t.id, e)}
-                        title="حذف القالب"
-                        aria-label="حذف القالب"
-                        className="shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-destructive/15 hover:text-destructive"
-                      >
-                        <Trash className="w-3.5 h-3.5" weight="regular" />
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )
-      ) : presetCategory === 'all' ? (
-        /* 🌐 عرض كافة القوالب مقسمة حسب الفئات في نمط القائمة أو الشبكة */
-        <div className="space-y-3.5">
-          {groupedSections.map((section) => {
-            const SectionIcon = section.icon;
-            return (
-              <div key={section.title} className="space-y-1.5">
-                {/* ترويسة القسم الأنيقة */}
-                <div className="flex items-center justify-between text-xs font-bold text-foreground/80 px-1 pt-1 select-none border-b border-border/40 pb-1">
-                  <div className="flex items-center gap-1.5">
-                    <SectionIcon className="w-3.5 h-3.5 text-muted-foreground" weight="duotone" />
-                    <span>{section.title}</span>
-                  </div>
-                  <span
-                    className="text-mini font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full font-bold"
-                    dir="ltr"
-                  >
-                    {section.presets.length}
-                  </span>
-                </div>
-
-                {/* بطاقات القسم */}
-                {viewMode === 'list' ? (
-                  <div className="space-y-1.5">{section.presets.map(renderListCard)}</div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    {section.presets.map(renderGridCard)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              <div className="space-y-2">{savedTemplates.map(renderSaved)}</div>
+            </>
+          )}
         </div>
       ) : (
-        /* 🎴 عرض فئة محددة */
-        <div className={viewMode === 'list' ? 'space-y-1.5' : 'grid grid-cols-2 gap-2'}>
-          {activePresetsList.map(viewMode === 'list' ? renderListCard : renderGridCard)}
+        <div className="space-y-4">
+          {groups.map((group, index) => (
+            <section key={group.title || index} className="space-y-2">
+              {group.title && (
+                <h3 className="text-xs font-semibold text-muted-foreground">{group.title}</h3>
+              )}
+              <div className={cardLayout}>{group.presets.map(renderPreset)}</div>
+            </section>
+          ))}
         </div>
       )}
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent dir="rtl" className="font-cairo">
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف القالب؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيُحذف «{pendingDelete?.name}» من القوالب المحفوظة. لا يمكن التراجع عن الحذف.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                if (pendingDelete) onDeleteTemplate?.(pendingDelete.id, event);
+                setPendingDelete(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

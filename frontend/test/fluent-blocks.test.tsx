@@ -65,11 +65,12 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
     });
   });
 
-  describe('FluentSliderField', () => {
+  describe.each(['stacked', 'inline'] as const)('FluentSliderField (%s)', (layout) => {
     it('renders slider field with editable numeric value and unit', () => {
       const handleChange = vi.fn();
       render(
         <FluentSliderField
+          layout={layout}
           label="الهامش"
           value={15}
           min={0}
@@ -89,6 +90,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
       const handleCommit = vi.fn();
       render(
         <FluentSliderField
+          layout={layout}
           label="الهامش"
           value={15}
           min={0}
@@ -113,6 +115,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
       const handleChange = vi.fn();
       render(
         <FluentSliderField
+          layout={layout}
           label="الهامش"
           value={15}
           min={0}
@@ -134,6 +137,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
       const handleChange = vi.fn();
       const { rerender } = render(
         <FluentSliderField
+          layout={layout}
           label="التباعد"
           value={10}
           min={0}
@@ -148,6 +152,7 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
 
       rerender(
         <FluentSliderField
+          layout={layout}
           label="التباعد"
           value={0}
           min={0}

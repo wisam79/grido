@@ -1,7 +1,13 @@
 /**
  * حسابات شبكة الكولاج الفوتوغرافي — المقاسات الملموسة، حدود الورقة، ومحاذاة الشبكة.
  * كانت هذه الحسابات مكررة ثلاث مرات داخل custom-collage-card (الحدود، التطبيق، الحفظ).
+ *
+ * رياضيات المقاسات والـ DPI تأتي من `grid-utils` — المصدر الوحيد الذي يستخدمه
+ * مولّد الخلايا الديناميكية في المتجر أيضاً، فلا ينحرف ما يعرضه الباني عن
+ * ما يعيد المتجر حسابه عند التطبيق.
  */
+
+import { buildPhysicalGridCellsMM, getEffectiveDpi } from '@/lib/templates';
 
 import type { GridAlignment } from '@/lib/print/print-layout-math';
 // إعادة تصدير للمستهلكين الحاليين (arrange-tab، custom-grid-tab) — المصدر الوحيد print-layout-math.
@@ -23,7 +29,7 @@ export interface PhotoDimensions {
   label: string;
 }
 
-/** مقاسات صور الوثائق العراقية المعتمدة بالمليمتر */
+/** مقاسات صور الوثائق العراقية المعتمدة بالمليمتر + تسمياتها في الواجهة */
 export function getPhotoDimensions(photoType: PhotoGridType): PhotoDimensions {
   switch (photoType) {
     case 'iq-national-id':
@@ -44,46 +50,9 @@ export function getPhotoDimensions(photoType: PhotoGridType): PhotoDimensions {
   }
 }
 
-/** أزواج أبعاد الورق القياسية (ملم) المستخدمة لاستنباط DPI الفعلي من أبعاد البكسل */
-const PAPER_SIZES_MM: [number, number][] = [
-  [210, 297], // A4
-  [148, 210], // A5
-  [100, 150], // 4×6
-  [127, 178], // 5×7
-  [297, 420], // A3
-];
-
-/**
- * استنباط DPI الفعلي من أبعاد الكانفس — إن طابقت ورقة قياسية ضمن 2%
- * نستخرج الدقة من البكسل مقابل المليمتر، وإلا نعتمد DPI المحفوظ.
- */
-export function resolveEffectiveDpi(
-  canvasWidth: number,
-  canvasHeight: number,
-  storedDpi: number,
-): number {
-  const W = canvasWidth;
-  const H = canvasHeight;
-  if (typeof W !== 'number' || typeof H !== 'number' || W <= 0 || H <= 0) {
-    return storedDpi;
-  }
-  for (const [pW, pH] of PAPER_SIZES_MM) {
-    const expectedW = (pW * storedDpi) / 25.4;
-    const expectedH = (pH * storedDpi) / 25.4;
-    // مطابقة عمودية (Portrait)
-    if (Math.abs(W - expectedW) / expectedW < 0.02 && Math.abs(H - expectedH) / expectedH < 0.02) {
-      const dpiFromW = (W * 25.4) / pW;
-      const dpiFromH = (H * 25.4) / pH;
-      return (dpiFromW + dpiFromH) / 2;
-    }
-    // مطابقة أفقية (Landscape)
-    if (Math.abs(W - expectedH) / expectedH < 0.02 && Math.abs(H - expectedW) / expectedW < 0.02) {
-      const dpiFromW = (W * 25.4) / pH;
-      const dpiFromH = (H * 25.4) / pW;
-      return (dpiFromW + dpiFromH) / 2;
-    }
-  }
-  return storedDpi;
+/** تحويل قيمة بكسلية على الكانفس إلى مليمتر بنفس DPI الفعلي المستخدم في الخلايا */
+function pxToMm(px: number, dpi: number): number {
+  return (Math.max(0, px) / dpi) * 25.4;
 }
 
 export interface GridLimits {
@@ -91,57 +60,33 @@ export interface GridLimits {
   maxCols: number;
 }
 
-/** أقصى صفوف/أعمدة تتسع في الورقة عند المقاس الملموس المطلوب */
+/**
+ * أقصى صفوف/أعمدة تتسع في المساحة المتاحة (بعد الهوامش) بمقاس ملموس وفجوة معلومة.
+ * حساب الهامش والفجوة هنا يمنع الواجهة من الوعد بشبكة 7×6 ثم يصغّرها المحرك إلى
+ * 31.67×39.59 مم عند التطبيق لأن الهوامش لم تكن محسوبة في السعة.
+ */
 export function getGridLimits(
   photoType: PhotoGridType,
   canvasWidth: number,
   canvasHeight: number,
   storedDpi: number,
+  gapPx: number = 0,
+  marginPx: number = 0,
 ): GridLimits {
   if (photoType === 'stretch') {
     return { maxRows: 12, maxCols: 12 };
   }
   const W = canvasWidth || 2480;
   const H = canvasHeight || 3508;
-  const dpi = resolveEffectiveDpi(W, H, storedDpi);
+  const dpi = getEffectiveDpi(W, H, storedDpi);
   const { wMM, hMM } = getPhotoDimensions(photoType);
-  const cellW_px = (wMM * dpi) / 25.4;
-  const cellH_px = (hMM * dpi) / 25.4;
-  return {
-    maxRows: Math.max(1, Math.floor(H / cellH_px)),
-    maxCols: Math.max(1, Math.floor(W / cellW_px)),
-  };
-}
-
-/** حساب نقطة بداية الشبكة المطبوعة وفق محاذاة المرساة المطلوبة */
-export function getGridAnchor(
-  align: GridAlignment,
-  totalGridW: number,
-  totalGridH: number,
-): { startX: number; startY: number } {
-  switch (align) {
-    case 'top-left':
-      return { startX: 0, startY: 0 };
-    case 'top-center':
-      return { startX: Math.max(0, (1 - totalGridW) / 2), startY: 0 };
-    case 'top-right':
-      return { startX: Math.max(0, 1 - totalGridW), startY: 0 };
-    case 'center-left':
-      return { startX: 0, startY: Math.max(0, (1 - totalGridH) / 2) };
-    case 'center':
-      return {
-        startX: Math.max(0, (1 - totalGridW) / 2),
-        startY: Math.max(0, (1 - totalGridH) / 2),
-      };
-    case 'center-right':
-      return { startX: Math.max(0, 1 - totalGridW), startY: Math.max(0, (1 - totalGridH) / 2) };
-    case 'bottom-left':
-      return { startX: 0, startY: Math.max(0, 1 - totalGridH) };
-    case 'bottom-center':
-      return { startX: Math.max(0, (1 - totalGridW) / 2), startY: Math.max(0, 1 - totalGridH) };
-    case 'bottom-right':
-      return { startX: Math.max(0, 1 - totalGridW), startY: Math.max(0, 1 - totalGridH) };
-  }
+  const gapMM = pxToMm(gapPx, dpi);
+  const marginMM = pxToMm(marginPx, dpi);
+  const availW = (W / dpi) * 25.4 - 2 * marginMM;
+  const availH = (H / dpi) * 25.4 - 2 * marginMM;
+  const maxCols = Math.max(1, Math.floor((availW + gapMM) / (wMM + gapMM)));
+  const maxRows = Math.max(1, Math.floor((availH + gapMM) / (hMM + gapMM)));
+  return { maxRows, maxCols };
 }
 
 export interface NormalizedCell {
@@ -152,8 +97,9 @@ export interface NormalizedCell {
 }
 
 /**
- * توليد خانات الشبكة الطبيعية (0..1) لمقاس ملموس — تُستخدم في التطبيق على الكانفس
- * وفي حفظ القالب على حد سواء (كانت مكررة في الملف الأصلي).
+ * توليد خانات الشبكة الطبيعية (0..1) لمقاس ملموس — نفس رياضيات
+ * `computeDynamicCollageCells` (هامش + فجوة + تصغير عند التجاوز)، فما يعرضه
+ * الباني هو ما يعيد المتجر حسابه عند التطبيق أو تغيير المسافات.
  */
 export function buildPhysicalGridCells(
   photoType: PhotoGridType,
@@ -163,31 +109,27 @@ export function buildPhysicalGridCells(
   canvasWidth: number,
   canvasHeight: number,
   storedDpi: number,
+  gapPx: number = 0,
+  marginPx: number = 0,
 ): NormalizedCell[] {
+  if (photoType === 'stretch') {
+    return buildStretchGridCells(rows, cols);
+  }
   const W = canvasWidth || 2480;
   const H = canvasHeight || 3508;
-  const dpi = resolveEffectiveDpi(W, H, storedDpi);
+  const dpi = getEffectiveDpi(W, H, storedDpi);
   const { wMM, hMM } = getPhotoDimensions(photoType);
-
-  const cellW_px = (wMM * dpi) / 25.4;
-  const cellH_px = (hMM * dpi) / 25.4;
-  const normW = cellW_px / W;
-  const normH = cellH_px / H;
-
-  const { startX, startY } = getGridAnchor(align, cols * normW, rows * normH);
-
-  const cells: NormalizedCell[] = [];
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      cells.push({
-        x: startX + col * normW,
-        y: startY + row * normH,
-        w: normW,
-        h: normH,
-      });
-    }
-  }
-  return cells;
+  return buildPhysicalGridCellsMM(
+    cols,
+    rows,
+    wMM,
+    hMM,
+    pxToMm(gapPx, dpi),
+    (W / dpi) * 25.4,
+    (H / dpi) * 25.4,
+    align,
+    pxToMm(marginPx, dpi),
+  );
 }
 
 /** توليد خانات تمدد حر متساوية تملأ الورقة بالكامل */

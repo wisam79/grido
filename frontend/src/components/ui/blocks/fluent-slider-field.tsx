@@ -301,7 +301,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
     return (
       <div
         className={cn(
-          'flex items-center gap-2 select-none h-7',
+          'flex min-w-0 items-center gap-2 select-none min-h-8',
           disabled && 'opacity-50 pointer-events-none',
           className,
         )}
@@ -332,7 +332,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
           onValueChange={handleChange}
           onValueCommit={handleValueCommit}
           onPointerDown={handlePointerDown}
-          className="py-1 flex-1"
+          className="py-2 min-w-0 flex-1"
         />
 
         {valueControl}

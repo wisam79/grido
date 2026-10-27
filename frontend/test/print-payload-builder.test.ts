@@ -188,4 +188,19 @@ describe('عقد حمولة الوضع الحر (Single Payload Contract)', () =
       expect(typeof l.y2).toBe('number');
     }
   });
+
+  it('نمط cropmarks: خط النهاية الممتد لا يُرسل — يوسّع صندوق زوايا القص في Go', async () => {
+    const isFullWidthHorizontal = (l: { x1: number; x2: number; y1: number; y2: number }) =>
+      l.y1 === l.y2 && l.x1 === 0 && l.x2 === 210;
+
+    const dashed = await buildSinglePayload({ ...baseCtx });
+    // في النمط المتقطع خط النهاية الممتد على عرض الورقة موجود (مرجع المقارنة)
+    expect(dashed!.cutLines.some(isFullWidthHorizontal)).toBe(true);
+
+    const cropmarks = await buildSinglePayload({ ...baseCtx, printCutLineStyle: 'cropmarks' });
+    expect(cropmarks).not.toBeNull();
+    // خطوط الشبكة الداخلية تبقى، وخط الورقة الممتد يُحجب
+    expect(cropmarks!.cutLines.length).toBeGreaterThan(0);
+    expect(cropmarks!.cutLines.some(isFullWidthHorizontal)).toBe(false);
+  });
 });

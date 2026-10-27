@@ -365,8 +365,11 @@ export function SheetPreview({
 
   const cropMarkElements = isCropMarks
     ? (() => {
-        const xs = rawCutLines.flatMap((l) => [l.x1, l.x2]);
-        const ys = rawCutLines.flatMap((l) => [l.y1, l.y2]);
+        // الخط الختامي يمتد على عرض الورقة كاملاً (دليل نهاية الطباعة) — إدخاله
+        // في حساب الصندوق المحيط يوسّع الزوايا إلى حدود الورقة بدل حدود الشبكة.
+        const boundsLines = rawCutLines.filter((l) => !l.isBottomEnd);
+        const xs = boundsLines.flatMap((l) => [l.x1, l.x2]);
+        const ys = boundsLines.flatMap((l) => [l.y1, l.y2]);
         if (xs.length === 0 || ys.length === 0) return [] as ReactElement[];
 
         const minX = Math.min(...xs);

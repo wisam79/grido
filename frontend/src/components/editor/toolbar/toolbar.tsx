@@ -40,12 +40,7 @@ interface ToolbarProps {
  */
 function CommandGroup({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div
-      className={cn(
-        'h-full shrink-0 flex items-center justify-center gap-0.5 px-1.5 border-e border-border/50 last:border-e-0',
-        className,
-      )}
-    >
+    <div className={cn('h-full shrink-0 flex items-center justify-center gap-0.5 px-1', className)}>
       {children}
     </div>
   );
@@ -78,7 +73,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
     <div
       data-testid="workspace-toolbar"
       dir="rtl"
-      className="relative h-12 shrink-0 border-b border-border bg-sidebar select-none no-print font-cairo"
+      className="relative h-10 shrink-0 border-b border-border bg-sidebar select-none no-print font-cairo"
     >
       <div className="h-full flex items-center justify-between gap-1 px-1.5">
         {/* المجموعات الرئيسية (ملف، تحرير، كولاج، تحديد)
@@ -106,7 +101,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
 
         {/* المجموعة النهائية: الحفظ والطباعة والتصدير في مجموعة أوامر موحدة */}
         <div className="flex items-stretch h-full shrink-0">
-          <CommandGroup className="border-e-0">
+          <CommandGroup>
             <div className="fluent-command-group">
               {/* حفظ (Ctrl+S) — زر أيقوني قياسي موحّد */}
               <TooltipBtn content="حفظ المشروع (Ctrl + S)">

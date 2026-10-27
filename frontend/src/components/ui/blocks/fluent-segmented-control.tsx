@@ -107,7 +107,7 @@ export function FluentSegmentedControl<T extends string = string>({
         variant === 'field'
           ? 'flex-row gap-0.5 p-0.5 rounded-md border border-border/60 bg-muted/40'
           : variant === 'panel'
-            ? 'flex-row gap-1 p-1 rounded-lg border border-border/60 bg-muted/30'
+            ? 'flex-row gap-0.5 p-0.5 rounded-md border border-border/40 bg-muted/20'
             : stacked
               ? 'flex-col gap-0.5 p-0.5 rounded-md border border-border/60 bg-muted/40'
               : 'border-b border-border/60 rounded-none p-0',
@@ -170,7 +170,7 @@ export function FluentSegmentedControl<T extends string = string>({
                           : 'h-8 px-2.5 text-xs',
                       isActive ? 'bg-accent/40' : 'hover:bg-accent/50',
                     ),
-              isActive ? 'text-foreground font-bold' : 'text-muted-foreground font-medium',
+              isActive ? 'text-foreground font-semibold' : 'text-muted-foreground font-normal',
               opt.disabled && 'opacity-40 cursor-not-allowed pointer-events-none',
               opt.className,
             )}
@@ -180,7 +180,7 @@ export function FluentSegmentedControl<T extends string = string>({
                 layoutId={effectiveLayoutId}
                 className={
                   variant === 'panel'
-                    ? 'absolute inset-0 bg-card border border-border/70 dark:border-white/15 rounded-md shadow-2xs -z-10'
+                    ? 'absolute inset-0 bg-card border border-border/50 rounded-sm -z-10'
                     : stacked || variant === 'field'
                       ? 'absolute inset-0 bg-card border border-border/80 dark:border-white/15 rounded-sm shadow-2xs -z-10'
                       : 'absolute inset-x-1 bottom-0 h-0.5 bg-primary rounded-full -z-10'

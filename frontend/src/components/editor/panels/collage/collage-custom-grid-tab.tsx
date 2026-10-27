@@ -3,13 +3,11 @@ import { toast } from 'sonner';
 import { FluentSection } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import {
-  GridFour,
   Plus,
   Minus,
   X,
   BookmarkSimple,
   CornersOut,
-  Rows,
   Check,
   ArrowClockwise,
 } from '@/components/ui/icons';
@@ -19,87 +17,37 @@ import { getGridLimits, getPhotoDimensions } from './collage-grid-math';
 import type { PhotoGridType, GridAlignment } from './collage-grid-math';
 import type { DerivedCollageGrid } from '@/lib/canvas/collage-grid';
 
-/* ═══════════════════════════════════════════════════════════════
-   تبويب الشبكة — تصميم Fluent 2 مريح ومتخصص حصراً في
-   تخطيط وأبعاد ومقاسات شبكة صور الكولاج
-   ═══════════════════════════════════════════════════════════════ */
-
-/** حلقة التركيز المزدوجة الموحّدة (Dual Focus Ring) — المعيار الإلزامي */
 const FOCUS_RING =
   'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none';
-
-/**
- * مفاتيح بطاقات تبويب الشبكة القابلة للطي — تُحفظ حالة الطي محلياً لكل مستخدم
- * فتبقى اللوحة مرتبة كما تركها المستخدم، مع إمكانية فتح أكثر من بطاقة في الوقت نفسه بحرية تامة.
- */
 type CollapseKey = 'dims' | 'photoSize' | 'align';
 const COLLAPSE_PREF_KEY = 'grido-collage-grid-collapse';
-const SOLO_SECTION_PREF_KEY = 'grido-collage-grid-solo-section';
 
 const loadCollapsePrefs = (): Partial<Record<CollapseKey, boolean>> => {
   try {
-    if (typeof localStorage !== 'undefined' && localStorage.getItem(SOLO_SECTION_PREF_KEY)) {
-      localStorage.removeItem(SOLO_SECTION_PREF_KEY);
-    }
-    const raw =
-      typeof localStorage !== 'undefined' ? localStorage.getItem(COLLAPSE_PREF_KEY) : null;
+    const raw = localStorage.getItem(COLLAPSE_PREF_KEY);
     return raw ? (JSON.parse(raw) as Partial<Record<CollapseKey, boolean>>) : {};
   } catch {
-    // خصوصية التصفح أو تخزين تالف — الطي الافتراضي (مفتوح) خيار آمن دائماً
     return {};
   }
 };
 
-/** زر عداد مدمج بمساحة لمس أوضح وحدود خفيفة */
 const COUNTER_BTN = cn(
-  'size-8 rounded-lg border border-border/70 bg-card text-muted-foreground flex items-center justify-center shadow-2xs cursor-pointer transition-all duration-150',
-  'hover:bg-primary/15 hover:text-primary hover:border-primary/35 active:scale-95',
-  'disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:bg-card disabled:hover:text-muted-foreground disabled:hover:border-border/70 disabled:active:scale-100',
+  'size-8 shrink-0 rounded-md text-muted-foreground flex items-center justify-center cursor-pointer transition-colors duration-150',
+  'hover:bg-primary/10 hover:text-primary disabled:opacity-35 disabled:cursor-not-allowed',
   FOCUS_RING,
 );
-
-const SECTION_CLASS = 'border-border/50 px-1 first:pt-1 last:pb-1';
-
-/** مقاس الوثيقة كرسم مصغر متناسق الأبعاد بصرياً */
-function DocumentPresetGraphic({ type, active }: { type: string; active: boolean }) {
-  const activeBorder = active
-    ? 'border-primary/70 bg-primary/15 text-primary'
-    : // نص كامل بدل /70: الرمادي المخفف كان يهبط تحت حد WCAG AA على السطح الداكن
-      'border-border/80 bg-muted/50 text-muted-foreground';
-  if (type === 'stretch') {
-    return (
-      <div
-        className={cn(
-          'w-9 h-9 rounded-md border border-dashed flex items-center justify-center transition-colors',
-          activeBorder,
-        )}
-      >
-        <CornersOut className="w-4 h-4" weight="bold" />
-      </div>
-    );
-  }
-
-  // تمثيل نسبي دقيق لشكل وأبعاد كل وثيقة رسمية
-  const ratioStyles: Record<string, string> = {
-    visa: 'w-6 h-6 rounded-md', // مربع 1:1
-    'iq-national-id': 'w-5 h-7 rounded-md', // 35:45 عمودي
-    'iq-civil-id': 'w-5 h-7 rounded-md', // 32:40 عمودي
-    'iq-general-id': 'w-5 h-8 rounded-md', // 40:60 عمودي مستطيل
-    'iq-transactions': 'w-5 h-6 rounded-md', // 30:40 مدمج
-  };
-  const styleClass = ratioStyles[type] || 'w-4 h-6 rounded-md';
-
-  return (
-    <div aria-hidden="true" className={cn(styleClass, 'border transition-colors', activeBorder)} />
-  );
-}
-
-const ALIGNMENT_MATRIX: GridAlignment[][] = [
-  ['top-left', 'top-center', 'top-right'],
-  ['center-left', 'center', 'center-right'],
-  ['bottom-left', 'bottom-center', 'bottom-right'],
+const SECTION_CLASS = 'border-border/40 px-1 py-2.5';
+const ALIGNMENT_ORDER: GridAlignment[] = [
+  'top-left',
+  'top-center',
+  'top-right',
+  'center-left',
+  'center',
+  'center-right',
+  'bottom-left',
+  'bottom-center',
+  'bottom-right',
 ];
-
 const ALIGNMENT_LABELS: Record<GridAlignment, string> = {
   'top-left': 'أعلى اليسار',
   'top-center': 'أعلى الوسط',
@@ -111,17 +59,13 @@ const ALIGNMENT_LABELS: Record<GridAlignment, string> = {
   'bottom-center': 'أسفل الوسط',
   'bottom-right': 'أسفل اليمين',
 };
-
-/** ترتيب المسح الشبكي لتسهيل تنقل لوحة المفاتيح في مصفوفة 3×3 */
-const ALIGNMENT_ORDER: GridAlignment[] = ALIGNMENT_MATRIX.flat();
-
 const PHOTO_TYPE_OPTIONS = [
-  { value: 'iq-national-id', label: 'وطنية', dim: '35×45', sub: 'مم' },
-  { value: 'iq-civil-id', label: 'أحوال', dim: '32×40', sub: 'مم' },
-  { value: 'visa', label: 'فيزا', dim: '50×50', sub: 'مم' },
-  { value: 'iq-general-id', label: 'عامة', dim: '40×60', sub: 'مم' },
-  { value: 'iq-transactions', label: 'معاملات', dim: '30×40', sub: 'مم' },
-  { value: 'stretch', label: 'تمدد حر', dim: 'ملء الحيز', sub: '' },
+  { value: 'iq-national-id', label: 'وطنية' },
+  { value: 'iq-civil-id', label: 'أحوال' },
+  { value: 'visa', label: 'فيزا' },
+  { value: 'iq-general-id', label: 'عامة' },
+  { value: 'iq-transactions', label: 'معاملات' },
+  { value: 'stretch', label: 'تمدد حر' },
 ] as const;
 
 export interface CollageCustomGridTabProps {
@@ -130,18 +74,19 @@ export interface CollageCustomGridTabProps {
   photoType: PhotoGridType;
   gridAlign: GridAlignment;
   isCustomActive: boolean;
-  /** شبكة القالب المطبقة على الكانفس (مشتقة من خاناته) — null إذا كانت غير منتظمة */
   appliedGrid?: DerivedCollageGrid | null;
   canvasWidth: number;
   canvasHeight: number;
   storedDpi: number;
+  /** المسافات الحالية بالبكسل — تُحسب ضمن السعة حتى يطابق الوعد ما يُطبَّق */
+  gapPx?: number;
+  marginPx?: number;
   onRowsChange: (rows: number) => void;
   onColsChange: (cols: number) => void;
   onApply: (rows: number, cols: number, photoType?: PhotoGridType, align?: GridAlignment) => void;
   onPhotoTypeChange: (photoType: PhotoGridType) => void;
   onGridAlignChange: (align: GridAlignment) => void;
   onSaveCurrentAsTemplate: (name: string) => void;
-  /** اختياري: لون الخلفية يُدار أساسياً في تبويب الورقة */
   backgroundColor?: string;
   onBackgroundColorChange?: (hex: string) => void;
 }
@@ -156,6 +101,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   canvasWidth,
   canvasHeight,
   storedDpi,
+  gapPx = 0,
+  marginPx = 0,
   onRowsChange,
   onColsChange,
   onApply,
@@ -165,8 +112,6 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
 }: CollageCustomGridTabProps) {
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [saveName, setSaveName] = useState('');
-
-  /** حالة طي البطاقات محفوظة محلياً — كل بطاقة تُفتح وتُطوى باستقلالية تامة دون طي البقية */
   const [collapsePrefs, setCollapsePrefs] =
     useState<Partial<Record<CollapseKey, boolean>>>(loadCollapsePrefs);
 
@@ -174,29 +119,22 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
     setCollapsePrefs((prev) => {
       const next = { ...prev, [key]: open };
       try {
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem(COLLAPSE_PREF_KEY, JSON.stringify(next));
-        }
+        localStorage.setItem(COLLAPSE_PREF_KEY, JSON.stringify(next));
       } catch {
-        // التخزين غير متاح — الحالة تبقى في الذاكرة لهذه الجلسة فقط
+        // Panel controls still work when browser storage is unavailable.
       }
       return next;
     });
   };
 
-  const { maxRows, maxCols } = getGridLimits(photoType, canvasWidth, canvasHeight, storedDpi);
-  const maxPhotos = maxRows * maxCols;
-  const totalPhotos = rows * cols;
-  const isMaxFill = rows === maxRows && cols === maxCols;
-  const isCornerStrip = rows === 1 && cols === Math.min(4, maxCols) && gridAlign === 'top-left';
-
-  /**
-   * صدق زر التطبيق: حالة «مطبق» لا تُعرض إلا إذا طابقت شبكة النموذج شبكة القالب
-   * المطبّقة فعلياً على الكانفس (المشتقة من خاناته) — لا شبكة النموذج وحده.
-   * وفي القوالب الفيزيائية يُشترط تطابق نوع المقاس والمحاذاة أيضاً، وإلا بقي
-   * الزرّ في حالة التطبيق بعد أي تغيير عليهما في النموذج دون تطبيقه.
-   * الشبكات غير المنتظمة (بلا صفوف/أعمدة واضحة) تبقي الزرّ في حالة التطبيق.
-   */
+  const { maxRows, maxCols } = getGridLimits(
+    photoType,
+    canvasWidth,
+    canvasHeight,
+    storedDpi,
+    gapPx,
+    marginPx,
+  );
   const isGridApplied =
     isCustomActive &&
     !showSaveForm &&
@@ -205,235 +143,86 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
     appliedGrid.cols === cols &&
     (appliedGrid.source !== 'physical' ||
       (appliedGrid.photoType === photoType && appliedGrid.align === gridAlign));
-
-  // نسبة تغطية الورقة: التمدد الحر يملأ الورقة دائماً 100%،
-  // والمقاسات الفيزيائية تُحسب من مجموع مساحات الصور مقابل مساحة الورقة.
   const coverage = (() => {
     if (photoType === 'stretch') return 100;
     const { wMM, hMM } = getPhotoDimensions(photoType);
     const paperWmm = (canvasWidth / storedDpi) * 25.4;
     const paperHmm = (canvasHeight / storedDpi) * 25.4;
-    const wRel = Math.min(1, wMM / paperWmm);
-    const hRel = Math.min(1, hMM / paperHmm);
-    return Math.min(100, Math.round(totalPhotos * wRel * hRel * 100));
+    return Math.min(
+      100,
+      Math.round(rows * cols * Math.min(1, wMM / paperWmm) * Math.min(1, hMM / paperHmm) * 100),
+    );
   })();
 
-  // تُطبَّق التعبئة السريعة بنداء واحد نهائي (لا حالات وسيطة تُلوّث سجل التراجع)
-  const handleFillSheet = () => {
-    onApply(maxRows, maxCols, photoType, gridAlign);
-  };
-
-  const handleCornerStrip = () => {
-    onApply(1, Math.min(4, maxCols), photoType, 'top-left');
-  };
-
-  const handleSave = () => {
+  const handleSave = (event: React.FormEvent) => {
+    event.preventDefault();
     if (!saveName.trim()) {
       toast.error('أدخل اسم القالب');
       return;
     }
-    onSaveCurrentAsTemplate(saveName);
+    onSaveCurrentAsTemplate(saveName.trim());
     setShowSaveForm(false);
     setSaveName('');
   };
 
-  /** تنقل لوحة المفاتيح داخل مصفوفة المحاذاة (Roving Tabindex) */
-  const handleAlignKeyDown = (e: React.KeyboardEvent, align: GridAlignment) => {
-    // المصفوفة مرسومة داخل جزيرة dir="ltr" (سطر 545)، فالسهم يميناً يزيد
-    // الفهرس. عكس القيم هنا كان يجعل التنقل مرئياً معكوساً.
+  const handleSaveKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      setShowSaveForm(false);
+    }
+  };
+
+  const handleAlignKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    align: GridAlignment,
+  ) => {
     const deltas: Record<string, number> = {
       ArrowLeft: -1,
       ArrowRight: 1,
       ArrowUp: -3,
       ArrowDown: 3,
     };
-    const delta = deltas[e.key];
+    const delta = deltas[event.key];
     if (delta === undefined) return;
-    e.preventDefault();
+    event.preventDefault();
     const nextIndex = Math.max(0, Math.min(8, ALIGNMENT_ORDER.indexOf(align) + delta));
     onGridAlignChange(ALIGNMENT_ORDER[nextIndex]);
+    event.currentTarget.parentElement
+      ?.querySelectorAll<HTMLButtonElement>('[role="radio"]')
+      ?.[nextIndex]?.focus();
   };
 
-  return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
-      {/* ═══ بطاقة 1: أبعاد الشبكة والصفوف والأعمدة ═══ */}
-      <FluentSection
-        title="أبعاد الشبكة"
-        className={SECTION_CLASS}
-        collapsible
-        open={collapsePrefs.dims ?? true}
-        onOpenChange={setCardOpen('dims')}
-        subtitle={
-          <>
-            الحد الأقصى{' '}
-            <span className="font-mono font-bold text-foreground" dir="ltr">
-              {maxRows}×{maxCols}
-            </span>{' '}
-            صور
-          </>
-        }
-        action={
-          <span
-            className="h-5 text-2xs font-mono font-semibold px-2 rounded-full bg-muted/60 text-muted-foreground flex items-center select-none"
-            title="نسبة تغطية الورقة"
-            aria-label="نسبة تغطية الورقة"
-          >
-            {coverage}%
-          </span>
-        }
+  const quickLayouts = (
+    <div className={cn('grid gap-2', photoType === 'stretch' ? 'grid-cols-2' : 'grid-cols-1')}>
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={() => onApply(maxRows, maxCols, photoType, gridAlign)}
+        title={`ملء الورقة فوراً — ${maxRows * maxCols} صورة`}
+        aria-label="ملء الورقة فوراً"
+        className="h-8 min-w-0 justify-between px-2 text-xs font-medium shadow-none"
       >
-        {/* عدادات الصفوف والأعمدة — شبكة ثنائية متوازنة */}
-        <div className="grid grid-cols-2 gap-2">
-          {/* عداد الصفوف */}
-          <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-background/55 p-2.5">
-            {/* الحد الأقصى مذكور مرة واحدة في عنوان القسم — لا نكرّره في كل عدّاد */}
-            <div className="text-mini font-bold text-muted-foreground select-none">الصفوف</div>
-            <div
-              className="flex items-center justify-between gap-1"
-              role="group"
-              aria-label="عدد الصفوف"
-            >
-              <button
-                type="button"
-                disabled={rows <= 1}
-                onClick={() => onRowsChange(Math.max(1, rows - 1))}
-                title="تقليل صف"
-                aria-label="تقليل عدد الصفوف"
-                className={COUNTER_BTN}
-              >
-                <Minus className="w-3 h-3" weight="bold" />
-              </button>
-              <span
-                aria-live="polite"
-                className="min-w-6 text-center text-sm font-mono font-bold text-foreground select-none"
-              >
-                {rows}
-              </span>
-              <button
-                type="button"
-                disabled={rows >= maxRows}
-                onClick={() => onRowsChange(Math.min(maxRows, rows + 1))}
-                title="إضافة صف"
-                aria-label="زيادة عدد الصفوف"
-                className={COUNTER_BTN}
-              >
-                <Plus className="w-3 h-3" weight="bold" />
-              </button>
-            </div>
-          </div>
+        <span>ملء الورقة</span>
+        <span className="tabular-nums text-muted-foreground">{maxRows * maxCols}</span>
+      </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={() => onApply(1, Math.min(4, maxCols), photoType, 'top-left')}
+        title={`صف بـ ${Math.min(4, maxCols)} صور`}
+        className="h-8 min-w-0 justify-between px-2 text-xs font-medium shadow-none"
+      >
+        <span>شريط علوي</span>
+        <span className="tabular-nums text-muted-foreground">{Math.min(4, maxCols)}</span>
+      </Button>
+    </div>
+  );
 
-          {/* عداد الأعمدة */}
-          <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-background/55 p-2.5">
-            <div className="text-mini font-bold text-muted-foreground select-none">الأعمدة</div>
-            <div
-              className="flex items-center justify-between gap-1"
-              role="group"
-              aria-label="عدد الأعمدة"
-            >
-              <button
-                type="button"
-                disabled={cols <= 1}
-                onClick={() => onColsChange(Math.max(1, cols - 1))}
-                title="تقليل عمود"
-                aria-label="تقليل عدد الأعمدة"
-                className={COUNTER_BTN}
-              >
-                <Minus className="w-3 h-3" weight="bold" />
-              </button>
-              <span
-                aria-live="polite"
-                className="min-w-6 text-center text-sm font-mono font-bold text-foreground select-none"
-              >
-                {cols}
-              </span>
-              <button
-                type="button"
-                disabled={cols >= maxCols}
-                onClick={() => onColsChange(Math.min(maxCols, cols + 1))}
-                title="إضافة عمود"
-                aria-label="زيادة عدد الأعمدة"
-                className={COUNTER_BTN}
-              >
-                <Plus className="w-3 h-3" weight="bold" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* اختصارا التعبئة في صف واحد بسيط */}
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={handleFillSheet}
-            title="ملء الورقة فوراً"
-            aria-label="ملء الورقة فوراً"
-            className={cn(
-              'h-8 px-2.5 rounded-lg text-mini font-sans font-medium transition-colors cursor-pointer select-none flex items-center justify-between gap-1.5 border',
-              isMaxFill
-                ? 'bg-primary/15 text-primary border-primary/30 font-semibold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-card/70 border-transparent',
-              FOCUS_RING,
-            )}
-          >
-            <span className="flex items-center gap-1.5 min-w-0 font-sans whitespace-nowrap">
-              <CornersOut
-                className={cn(
-                  'w-3.5 h-3.5 shrink-0',
-                  isMaxFill ? 'text-primary' : 'text-muted-foreground',
-                )}
-                weight="bold"
-              />
-              <span>ملء الورقة</span>
-            </span>
-            <span
-              className={cn(
-                'text-2xs font-mono px-1.5 py-0.5 rounded-sm border shrink-0',
-                isMaxFill
-                  ? 'bg-primary/10 text-primary border-primary/15 font-bold'
-                  : 'bg-muted/50 text-muted-foreground border-border/40',
-              )}
-            >
-              {maxPhotos}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleCornerStrip}
-            title="صف بأربع صور"
-            className={cn(
-              'h-8 px-2.5 rounded-lg text-mini font-sans font-medium transition-colors cursor-pointer select-none flex items-center justify-between gap-1.5 border',
-              isCornerStrip
-                ? 'bg-primary/15 text-primary border-primary/30 font-semibold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-card/70 border-transparent',
-              FOCUS_RING,
-            )}
-          >
-            <span className="flex items-center gap-1.5 min-w-0 font-sans whitespace-nowrap">
-              <Rows
-                className={cn(
-                  'w-3.5 h-3.5 shrink-0',
-                  isCornerStrip ? 'text-primary' : 'text-muted-foreground',
-                )}
-                weight="bold"
-              />
-              <span>شريط علوي</span>
-            </span>
-            <span
-              className={cn(
-                'text-2xs font-mono px-1.5 py-0.5 rounded-sm border shrink-0',
-                isCornerStrip
-                  ? 'bg-primary/10 text-primary border-primary/15 font-bold'
-                  : 'bg-muted/50 text-muted-foreground border-border/40',
-              )}
-            >
-              {Math.min(4, maxCols)}
-            </span>
-          </button>
-        </div>
-      </FluentSection>
-
-      {/* ═══ بطاقة 2: مقاس الوثيقة الرسمي ═══ */}
+  return (
+    <div
+      className="flex flex-col font-cairo motion-safe:animate-in motion-safe:fade-in duration-150"
+      dir="rtl"
+    >
       <FluentSection
         title="مقاس الصورة"
         className={SECTION_CLASS}
@@ -441,52 +230,124 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         open={collapsePrefs.photoSize ?? true}
         onOpenChange={setCardOpen('photoSize')}
       >
-        <div className="grid grid-cols-2 gap-2">
-          {PHOTO_TYPE_OPTIONS.map((opt) => {
-            const isActive = photoType === opt.value;
+        <div className="grid grid-cols-3 gap-2">
+          {PHOTO_TYPE_OPTIONS.map((option) => {
+            const active = photoType === option.value;
+            const dimensions = getPhotoDimensions(option.value);
+            // الأبعاد تُشتق من جدول المقاسات نفسه — كانت مكتوبة يدوياً فتخالف
+            // الوعد (فيزا 50×50 بينما الخلايا 35×45) وتضلّل عند أي تعديل.
+            const dimLabel =
+              option.value === 'stretch' ? 'ملء الحيز' : `${dimensions.wMM}×${dimensions.hMM}`;
             return (
               <button
-                key={opt.value}
+                key={option.value}
                 type="button"
-                aria-pressed={isActive}
-                title={`${opt.label} — ${opt.dim}`}
-                onClick={() => onPhotoTypeChange(opt.value as PhotoGridType)}
+                aria-pressed={active}
+                title={`${option.label} — ${dimLabel}${option.value === 'stretch' ? '' : ' مم'}`}
+                onClick={() => onPhotoTypeChange(option.value)}
                 className={cn(
-                  'relative min-h-[52px] py-2 px-2.5 rounded-lg border font-sans transition-colors cursor-pointer select-none flex items-center gap-2 text-start',
-                  isActive
-                    ? 'border-primary/50 bg-primary/15'
-                    : 'bg-transparent border-border/50 hover:bg-muted/40 hover:border-border/80',
+                  'relative flex min-w-0 flex-col items-center gap-0.5 rounded-md border px-1 py-1.5 transition-colors duration-150 cursor-pointer',
+                  active
+                    ? 'border-primary/60 bg-primary/10 text-primary'
+                    : 'border-border/30 bg-transparent text-muted-foreground hover:border-primary/40 hover:bg-muted/30',
                   FOCUS_RING,
                 )}
               >
-                <DocumentPresetGraphic type={opt.value} active={isActive} />
-                <span className="min-w-0 flex-1 text-start font-sans">
-                  <span
-                    className={cn(
-                      'block text-xs truncate',
-                      isActive ? 'text-foreground font-semibold' : 'text-foreground font-medium',
-                    )}
-                  >
-                    {opt.label}
-                  </span>
-                  <span className="flex items-center gap-1 text-mini text-muted-foreground font-mono mt-0.5 whitespace-nowrap">
-                    <span dir="ltr" className="text-muted-foreground-hover">
-                      {opt.dim}
+                <span className="flex h-6 items-center justify-center" aria-hidden="true">
+                  {option.value === 'stretch' ? (
+                    <CornersOut className="size-6" />
+                  ) : (
+                    <span
+                      className={cn(
+                        'relative block h-5 rounded-sm border overflow-hidden',
+                        active
+                          ? 'border-primary/70 bg-primary/15'
+                          : 'border-muted-foreground/50 bg-muted/60',
+                      )}
+                      style={{ aspectRatio: `${dimensions.wMM} / ${dimensions.hMM}` }}
+                    >
+                      <span className="absolute top-[22%] left-[35%] w-[30%] aspect-square rounded-full bg-current opacity-50" />
+                      <span className="absolute bottom-0 left-[17%] w-2/3 h-[38%] rounded-t-full bg-current opacity-40" />
                     </span>
-                    {opt.sub && <span>{opt.sub}</span>}
-                  </span>
+                  )}
                 </span>
-                {/* تأكيد بصري غير لوني للخيار المحدد بموضع مطلق في زاوية البطاقة لمنع تكسر الأسطر وإزاحة التخطيط */}
-                {isActive && (
-                  <Check className="absolute top-1.5 end-1.5 w-3 h-3 text-primary" weight="bold" />
-                )}
+                <span className="text-xs font-medium text-foreground">{option.label}</span>
+                <span
+                  className="text-mini tabular-nums"
+                  dir={option.value === 'stretch' ? 'rtl' : 'ltr'}
+                >
+                  {dimLabel}
+                  {option.value !== 'stretch' && <span className="ms-1 font-cairo">مم</span>}
+                </span>
+                {active && <Check className="absolute end-1.5 top-1.5 size-3" weight="bold" />}
               </button>
             );
           })}
         </div>
       </FluentSection>
 
-      {/* ═══ بطاقة 3: المحاذاة على الورقة (تظهر فقط عند تثبيت المقاس) ═══ */}
+      <FluentSection
+        title="أبعاد الشبكة"
+        className={SECTION_CLASS}
+        collapsible
+        open={collapsePrefs.dims ?? true}
+        onOpenChange={setCardOpen('dims')}
+        action={
+          <span
+            className="text-mini font-medium tabular-nums text-primary"
+            title="نسبة تغطية الورقة"
+            aria-label="نسبة تغطية الورقة"
+          >
+            {coverage}%
+          </span>
+        }
+      >
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { label: 'الصفوف', value: rows, max: maxRows, change: onRowsChange, single: 'صف' },
+            { label: 'الأعمدة', value: cols, max: maxCols, change: onColsChange, single: 'عمود' },
+          ].map((counter) => (
+            <div key={counter.label} className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-xs text-foreground">{counter.label}</span>
+              <div
+                className="flex items-center justify-between rounded-md border border-border/60 bg-muted/20"
+                role="group"
+                aria-label={`عدد ${counter.label}`}
+                dir="ltr"
+              >
+                <button
+                  type="button"
+                  disabled={counter.value <= 1}
+                  onClick={() => counter.change(Math.max(1, counter.value - 1))}
+                  title={`تقليل ${counter.single}`}
+                  aria-label={`تقليل عدد ${counter.label}`}
+                  className={COUNTER_BTN}
+                >
+                  <Minus className="size-3.5" />
+                </button>
+                <span
+                  aria-live="polite"
+                  className="w-10 text-center text-sm font-semibold tabular-nums"
+                >
+                  {counter.value}
+                </span>
+                <button
+                  type="button"
+                  disabled={counter.value >= counter.max}
+                  onClick={() => counter.change(Math.min(counter.max, counter.value + 1))}
+                  title={`إضافة ${counter.single}`}
+                  aria-label={`زيادة عدد ${counter.label}`}
+                  className={COUNTER_BTN}
+                >
+                  <Plus className="size-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        {photoType === 'stretch' && quickLayouts}
+      </FluentSection>
+
       {photoType !== 'stretch' && (
         <FluentSection
           title="المحاذاة على الورقة"
@@ -495,8 +356,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           open={collapsePrefs.align ?? true}
           onOpenChange={setCardOpen('align')}
         >
-          <div className="flex items-center justify-center">
-            {/* مصفوفة الارتكاز — dir="ltr" مقصودة: خريطة مكانية للورقة لا نص متدفق */}
+          <div className="grid grid-cols-[minmax(0,1fr)_108px] items-center gap-3">
+            {quickLayouts}
             <div className="relative w-[108px] h-[108px] rounded-lg border border-border/60 bg-background/45 p-2 select-none">
               <div className="absolute inset-2 pointer-events-none border border-dashed border-border/60 rounded-md" />
               <div
@@ -505,69 +366,55 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 className="grid grid-cols-3 grid-rows-3 gap-1 w-full h-full relative z-1"
                 dir="ltr"
               >
-                {ALIGNMENT_MATRIX.map((row) =>
-                  row.map((alignId) => {
-                    const isActive = gridAlign === alignId;
-                    return (
-                      <button
-                        key={alignId}
-                        type="button"
-                        role="radio"
-                        aria-checked={isActive}
-                        aria-label={ALIGNMENT_LABELS[alignId]}
-                        tabIndex={isActive ? 0 : -1}
-                        onClick={() => onGridAlignChange(alignId)}
-                        onKeyDown={(e) => handleAlignKeyDown(e, alignId)}
-                        title={ALIGNMENT_LABELS[alignId]}
-                        className={cn(
-                          'relative flex items-center justify-center rounded-md transition-colors cursor-pointer hover:bg-muted/70',
-                          FOCUS_RING,
-                        )}
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            'rounded-full transition-colors duration-150',
-                            isActive
-                              ? 'w-3.5 h-3.5 bg-primary ring-3 ring-primary/25'
-                              : // نقاط كاملة بدل /50: نقاط الارتكاز كائنات رسومية تتطلب 3:1 على الأقل
-                                'w-2.5 h-2.5 bg-muted-foreground/80 border border-border/40',
-                          )}
-                        />
-                      </button>
-                    );
-                  }),
-                )}
+                {ALIGNMENT_ORDER.map((align) => (
+                  <button
+                    key={align}
+                    type="button"
+                    role="radio"
+                    aria-checked={gridAlign === align}
+                    aria-label={ALIGNMENT_LABELS[align]}
+                    tabIndex={gridAlign === align ? 0 : -1}
+                    onClick={() => onGridAlignChange(align)}
+                    onKeyDown={(event) => handleAlignKeyDown(event, align)}
+                    title={ALIGNMENT_LABELS[align]}
+                    className={cn(
+                      'relative flex items-center justify-center rounded-md transition-colors cursor-pointer hover:bg-muted/70',
+                      FOCUS_RING,
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'rounded-full transition-colors duration-150',
+                        gridAlign === align
+                          ? 'w-3.5 h-3.5 bg-primary ring-3 ring-primary/25'
+                          : 'w-2.5 h-2.5 bg-muted-foreground/80 border border-border/40',
+                      )}
+                    />
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         </FluentSection>
       )}
 
-      {/* ═══ بطاقة 4: إجراءات التطبيق والحفظ — مثبتة أسفل اللوحة أثناء التمرير
-          حتى تبقى الأفعال الرئيسية في متناول اليد مهما طالت البطاقات فوقها */}
-      <div className="sticky bottom-0 z-10 border-t border-border/70 bg-card/95 px-2.5 pb-2 pt-3 backdrop-blur-md">
+      <div className="sticky bottom-0 z-10 border-t border-border/60 bg-card px-1 py-2">
         <div className="flex items-center gap-2">
           <Button
             type="button"
-            size="lg"
-            variant={isGridApplied ? 'outline' : 'default'}
-            className="min-h-11 min-w-0 flex-[1.2]"
+            variant={isGridApplied ? 'secondary' : 'default'}
+            className="h-8 min-w-0 flex-1 font-medium shadow-none"
             onClick={() => onApply(rows, cols, photoType, gridAlign)}
             title={isGridApplied ? 'إعادة تطبيق الشبكة على الكانفس' : 'تطبيق الشبكة على الكانفس'}
           >
-            {isGridApplied ? (
-              <ArrowClockwise className="w-4 h-4" weight="bold" />
-            ) : (
-              <GridFour className="w-4 h-4" weight="bold" />
-            )}
+            {isGridApplied && <ArrowClockwise className="size-3.5" />}
             <span>تطبيق الشبكة</span>
           </Button>
           <Button
             type="button"
-            size="lg"
-            variant="outline"
-            className="min-h-11 min-w-0 flex-1"
+            variant="ghost"
+            className="h-8 px-2 font-medium text-muted-foreground"
             onClick={() => {
               setSaveName(
                 `شبكة ${rows}×${cols} — ${getPhotoDimensions(photoType).label.split(' ')[0]}`,
@@ -576,35 +423,36 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
             }}
             title="حفظ في المكتبة"
           >
-            <BookmarkSimple className="w-4 h-4" weight="regular" />
+            <BookmarkSimple className="size-4" />
             <span>حفظ كقالب</span>
           </Button>
         </div>
-        {!showSaveForm ? null : (
-          <div className="mt-2 flex items-center gap-1.5 bg-muted/50 p-1.5 rounded-lg border border-border/80 shadow-2xs animate-in slide-in-from-top-2 duration-200">
+        {showSaveForm && (
+          <form onSubmit={handleSave} className="mt-2 flex items-center gap-1.5">
             <Input
               type="text"
               value={saveName}
-              onChange={(e) => setSaveName(e.target.value)}
+              onChange={(event) => setSaveName(event.target.value)}
               placeholder="اسم القالب"
               aria-label="اسم القالب"
-              className="flex-1 text-start font-cairo"
+              className="min-w-0 flex-1 text-start font-cairo"
+              onKeyDown={handleSaveKeyDown}
             />
+            <Button type="submit" onKeyDown={handleSaveKeyDown}>
+              حفظ
+            </Button>
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={() => setShowSaveForm(false)}
+              onKeyDown={handleSaveKeyDown}
               title="إلغاء"
               aria-label="إلغاء حفظ القالب"
             >
-              <X className="w-3.5 h-3.5" weight="bold" />
+              <X className="size-3.5" />
             </Button>
-            <Button type="button" onClick={handleSave}>
-              <BookmarkSimple className="w-3.5 h-3.5" weight="bold" />
-              <span>حفظ</span>
-            </Button>
-          </div>
+          </form>
         )}
       </div>
     </div>

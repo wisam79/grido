@@ -88,7 +88,9 @@ export const PanelShell = React.memo(function PanelShell({
         <>
           <div className="shrink-0 flex items-center gap-2 px-3 h-9 select-none">
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-bold text-foreground truncate leading-4">{title}</div>
+              <div className="text-xs font-semibold text-foreground truncate leading-4">
+                {title}
+              </div>
               {subtitle && (
                 <div className="text-mini text-muted-foreground truncate leading-4 font-normal">
                   {subtitle}
@@ -127,7 +129,7 @@ export const PanelShell = React.memo(function PanelShell({
           <div className="absolute inset-x-0 top-0 h-2 pointer-events-none z-10 bg-gradient-to-b from-background/70 to-transparent panel-scroll-hint" />
         )}
         <ScrollArea className="h-full">
-          <div className={cn('px-3 py-2 pb-10 font-cairo', bodyClassName)}>{children}</div>
+          <div className={cn('px-3 py-2 pb-4 font-cairo', bodyClassName)}>{children}</div>
         </ScrollArea>
       </div>
 

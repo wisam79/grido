@@ -141,6 +141,16 @@ describe('CollageCustomGridTab Component Suite', () => {
     expect(onApply).toHaveBeenCalledWith(1, 4, 'iq-national-id', 'top-left');
   });
 
+  it('keeps quick layouts available in stretch mode without an alignment matrix', () => {
+    const onApply = vi.fn();
+    render(<CollageCustomGridTab {...defaultProps} photoType="stretch" onApply={onApply} />);
+
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'ملء الورقة فوراً' })).toBeInTheDocument();
+    fireEvent.click(screen.getByText('شريط علوي'));
+    expect(onApply).toHaveBeenCalledWith(1, 4, 'stretch', 'top-left');
+  });
+
   it('keeps the alignment matrix as the only position control (no shortcut buttons)', () => {
     const onGridAlignChange = vi.fn();
     render(<CollageCustomGridTab {...defaultProps} onGridAlignChange={onGridAlignChange} />);

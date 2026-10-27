@@ -15,6 +15,7 @@ import {
   FrameCorners,
 } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
+import { getEffectiveDpi } from '@/lib/templates';
 import { cn } from '@/lib/utils';
 
 import {
@@ -31,7 +32,6 @@ import {
   buildPhysicalGridCells,
   buildStretchGridCells,
   getPhotoDimensions,
-  resolveEffectiveDpi,
 } from './collage-grid-math';
 
 import type { GridAlignment, PhotoGridType } from './collage-grid-math';
@@ -76,6 +76,8 @@ export function CollageArrangeTab() {
     canvasHeight,
     printSettings,
     collageTemplate,
+    collageGap,
+    collageMargin,
     setCollageTemplate,
     pushHistory,
   } = useEditorStore(
@@ -88,6 +90,8 @@ export function CollageArrangeTab() {
       canvasHeight: state.canvasHeight,
       printSettings: state.printSettings,
       collageTemplate: state.collageTemplate,
+      collageGap: state.collageGap,
+      collageMargin: state.collageMargin,
       setCollageTemplate: state.setCollageTemplate,
       pushHistory: state.pushHistory,
     })),
@@ -126,7 +130,7 @@ export function CollageArrangeTab() {
     };
   }, [slots]);
 
-  const effectiveDpi = resolveEffectiveDpi(canvasWidth, canvasHeight, printSettings?.dpi || 300);
+  const effectiveDpi = getEffectiveDpi(canvasWidth, canvasHeight, printSettings?.dpi || 300);
   const imageCount = slots.filter((slot) => slot.imageSrc).length;
 
   const currentSrcMatrix = (): SrcMatrix =>
@@ -221,6 +225,8 @@ export function CollageArrangeTab() {
         canvasWidth,
         canvasHeight,
         effectiveDpi,
+        collageGap,
+        collageMargin,
       );
       setCollageTemplate({
         ...template,

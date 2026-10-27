@@ -132,7 +132,7 @@ export const WorkspaceLayout = React.memo(function WorkspaceLayout({
 
         {/* الشريط السفلي المثبت */}
         {footerContent && (
-          <footer className="h-9 shrink-0 border-t border-border bg-sidebar px-2 flex items-center justify-center relative z-(--z-panel) no-print select-none">
+          <footer className="h-8 shrink-0 border-t border-border bg-sidebar px-2 flex items-center justify-center relative z-(--z-panel) no-print select-none">
             {footerContent}
           </footer>
         )}

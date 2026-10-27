@@ -442,8 +442,9 @@ function getPhysicalMaxMargin(state: CollageCross): number | null {
   const dpi = getEffectiveDpi(state.canvasWidth, state.canvasHeight, storedDpi);
   const paperWmm = (state.canvasWidth / dpi) * 25.4;
   const paperHmm = (state.canvasHeight / dpi) * 25.4;
-  // نفس استبدال الفجوة الافتراضية في computeDynamicCollageCells حتى تتطابق الحدود
-  const gapMM = state.collageGap > 0 ? (state.collageGap / dpi) * 25.4 : 2.0;
+  // نفس تحويل الفجوة الصريحة في computeDynamicCollageCells — الصفر يبقى صفراً
+  // (كان استبدالاً خفياً بـ2 مم يجعل حدّ الهامش لا يطابق الخلايا المولّدة)
+  const gapMM = (Math.max(0, state.collageGap) / dpi) * 25.4;
   const maxMarginMM = getPhysicalMaxMarginMM(template, paperWmm, paperHmm, gapMM, 1);
   return maxMarginMM == null ? null : mmToPx(maxMarginMM, dpi);
 }

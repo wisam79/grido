@@ -26,11 +26,12 @@ export function getEffectiveDpi(W: number, H: number, storedDpi: number = 300): 
 
 /**
  * يحدد مقاس الخلية الفيزيائية (مم) لنوع القالب — مصدر واحد تستخدمه مولّدات
- * الخلايا وحاسبة الهامش الأقصى حتى لا تنحرف ثوابت المقاسات بينهما.
+ * الخلايا وحاسبة الهامش الأقصى وواجهة الشبكة المخصصة حتى لا تنحرف ثوابت
+ * المقاسات بين المسارات (كان `id` يعطي 40×60 هنا و35×45 في الواجهة).
  */
-function getPhysicalCellSizeMM(
+export function getPhysicalCellSizeMM(
   type: string,
-  template: Pick<CollageTemplate, 'id'>,
+  template?: Pick<CollageTemplate, 'id'>,
 ): { wMM: number; hMM: number } | null {
   if (type === 'iq-national-id' || type === 'passport') {
     return { wMM: 35, hMM: 45 };
@@ -38,9 +39,12 @@ function getPhysicalCellSizeMM(
   if (type === 'iq-civil-id') {
     return { wMM: 32, hMM: 40 };
   }
-  if (type === 'iq-general-id' || type === 'id') {
+  if (type === 'iq-general-id') {
     // قالب «المعاملات العامة» بالكتالوج أفقي 60×40، والبقية عمودية 40×60
-    return template.id === 'collage-iq-general' ? { wMM: 60, hMM: 40 } : { wMM: 40, hMM: 60 };
+    return template?.id === 'collage-iq-general' ? { wMM: 60, hMM: 40 } : { wMM: 40, hMM: 60 };
+  }
+  if (type === 'id') {
+    return { wMM: 35, hMM: 45 };
   }
   if (type === 'iq-transactions') {
     return { wMM: 30, hMM: 40 };
@@ -51,7 +55,13 @@ function getPhysicalCellSizeMM(
   return null;
 }
 
-function getGridCells(
+/**
+ * خلايا شبكة فيزيائية منتظمة (0..1) — المصدر الوحيد لبناء الشبكة عند التطبيق
+ * والحفظ وسحب الفواصل. التجاوز عن المساحة المتاحة يُصغّر الشبكة كلها بنسبة
+ * واحدة بدل قصّ أطرافها، ولا يوجد تسامح: أي تجاوز ولو 0.1 مم يعني خلية تخرج
+ * عن الهامش المطلوب.
+ */
+export function buildPhysicalGridCellsMM(
   cols: number,
   rows: number,
   wMM: number,
@@ -60,7 +70,7 @@ function getGridCells(
   paperW: number,
   paperH: number,
   align: string = 'center',
-  marginMM: number = 4,
+  marginMM: number = 0,
 ) {
   const marginX = marginMM;
   const marginY = marginMM;
@@ -71,8 +81,7 @@ function getGridCells(
   const gridH_raw = rows * hMM + (rows - 1) * gapMM;
 
   let scale = 1;
-  const tolerance = 0.15; // 0.15 mm tolerance for floating point rounding
-  if (gridW_raw > availW + tolerance || gridH_raw > availH + tolerance) {
+  if (gridW_raw > availW || gridH_raw > availH) {
     scale = Math.min(availW / gridW_raw, availH / gridH_raw);
   }
 
@@ -131,7 +140,7 @@ function getMixedCells(
   paperH: number,
   gapMM: number,
   align: string = 'center',
-  marginMM: number = 4,
+  marginMM: number = 0,
 ) {
   const marginX = marginMM;
   const marginY = marginMM;
@@ -226,7 +235,7 @@ function getTravelerCells(
   paperH: number,
   gapMM: number,
   align: string = 'center',
-  marginMM: number = 4,
+  marginMM: number = 0,
 ) {
   const marginX = marginMM;
   const marginY = marginMM;
@@ -318,6 +327,13 @@ function getTravelerCells(
   return cells;
 }
 
+/**
+ * خلايا التخطيط الفيزيائي محسوبة من أبعاد الورقة والفواصل المخزنة.
+ *
+ * 🛑 القاعدة: الصفر قيمة صريحة — لا استبدال خفي بقيم افتراضية (2 مم فجوة /
+ * 4 مم هامش). كان ذلك يجعل ورقة «تُعرض بلا هوامش» بينما الخلايا المولّدة
+ * تحمل 4 مم، فتنحرف الحدود التي تراها الواجهة وخلايا التصدير والطباعة.
+ */
 export function computeDynamicCollageCells(
   template: CollageTemplate,
   canvasW: number,
@@ -332,8 +348,8 @@ export function computeDynamicCollageCells(
   const paperW_mm = (canvasW / dpi) * 25.4;
   const paperH_mm = (canvasH / dpi) * 25.4;
 
-  const gap = collageGap > 0 ? (collageGap / dpi) * 25.4 : 2.0;
-  const margin = collageMargin > 0 ? (collageMargin / dpi) * 25.4 : 4.0;
+  const gap = Number.isFinite(collageGap) ? (Math.max(0, collageGap) / dpi) * 25.4 : 0;
+  const margin = Number.isFinite(collageMargin) ? (Math.max(0, collageMargin) / dpi) * 25.4 : 0;
 
   // حارس: هامش يبتلع الورقة (>= نصف قياسها) يجعل المساحة المتاحة سالبة، فيخرج
   // scale سالباً وخلايا بأبعاد سالبة تُكتب في الخانات كما هي وتُحفظ مع المشروع.
@@ -355,7 +371,17 @@ export function computeDynamicCollageCells(
     return null;
   }
 
-  return getGridCells(cols, rows, size.wMM, size.hMM, gap, paperW_mm, paperH_mm, align, margin);
+  return buildPhysicalGridCellsMM(
+    cols,
+    rows,
+    size.wMM,
+    size.hMM,
+    gap,
+    paperW_mm,
+    paperH_mm,
+    align,
+    margin,
+  );
 }
 
 /**

@@ -165,6 +165,7 @@ export function usePrintExport({
       collageStrokeColor,
       collageShowCutLines,
       collageShowEndCutLine,
+      cutLineStyle: printCutLineStyle,
     });
   }, [
     layout,
@@ -179,6 +180,7 @@ export function usePrintExport({
     collageStrokeColor,
     collageShowCutLines,
     collageShowEndCutLine,
+    printCutLineStyle,
   ]);
 
   const buildSingleItems = useCallback(async (): Promise<BuiltItems | null> => {

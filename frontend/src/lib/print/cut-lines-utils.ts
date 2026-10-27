@@ -137,13 +137,16 @@ export function calculatePrintCutLines(params: CalculateCutLinesParams): CutLine
           { gapXMM, gapYMM },
         );
 
+        // بلا تقريب هنا: تقريب الحدود إلى 0.01 مم قبل فحص التداخل يجعل حدّين
+        // متلاصقين (فجوة صفر) يبدوان متداخلين فيُدمجان ويُحذف خط القص بينهما.
+        // التقريب يقع على مواضع الخطوط النهائية فقط داخل axisMidpointCutLines.
         colIntervals.push({
-          start: Math.round(rect.xMM * 100) / 100,
-          end: Math.round((rect.xMM + rect.wMM) * 100) / 100,
+          start: rect.xMM,
+          end: rect.xMM + rect.wMM,
         });
         rowIntervals.push({
-          start: Math.round(rect.yMM * 100) / 100,
-          end: Math.round((rect.yMM + rect.hMM) * 100) / 100,
+          start: rect.yMM,
+          end: rect.yMM + rect.hMM,
         });
       }
     }
@@ -246,8 +249,10 @@ export function calculatePrintCutLines(params: CalculateCutLinesParams): CutLine
 }
 
 // فرق أدنى لاعتبار موضعين خطين مختلفين — يحمي الترتيب التصاعدي الصارم من
-// التكرارات الناتجة عن فجوة صفرية أو حواف متطابقة بعد التقريب.
+// التكرارات الناتجة عن فجوة صفرية أو حواف متطابقة.
 const CUT_LINE_DEDUPE_EPSILON = 1e-6;
+/** تداخل أدنى يُعتبر حقيقياً في mergeIntervals — دونه حدود متلاصقة (خطأ عائم) */
+const INTERVAL_OVERLAP_EPSILON = 1e-6;
 
 /** إسقاط التكرارات من سلسلة مرتبة تصاعدياً (فارغتان أو أكثر بنفس الموضع = خط واحد). */
 function dedupeAscending(values: readonly number[]): number[] {
@@ -261,12 +266,14 @@ function dedupeAscending(values: readonly number[]): number[] {
 /**
  * 🧩 دمج الفترات المتداخلة على محور واحد.
  *
- * - الفترات المتداخلة **تداخلاً صارماً** (start < end السابقة) تُدمج في
- *   واحدة: التداخل يعني أن الصور تتقاطع على هذا المحور فلا يجوز وضع خط
- *   قصّ داخل أيٍّ منها (هذا هو إصلاح «خط القص يمرّ عبر الصورة»).
- * - الفترات **المتلاصقة** (start === end السابقة) تبقى منفصلة: حدّها
- *   المشترك هو خط قصّ حقيقي — وهي الحالة الطبيعية في التخطيط الفيزيائي
- *   حيث الفجوة = 0 فحدود الخانات متلاصقة تماماً.
+ * - الفترات المتداخلة **تداخلاً صارماً** (start < end السابقة بفارق يتجاوز
+ *   تحمّل الفاصلة العائمة) تُدمج في واحدة: التداخل يعني أن الصور تتقاطع على
+ *   هذا المحور فلا يجوز وضع خط قصّ داخل أيٍّ منها (إصلاح «خط القص يمرّ عبر
+ *   الصورة»).
+ * - الفترات **المتلاصقة** (start === end السابقة، أو بفارق 1e-15 من الحساب
+ *   العائم) تبقى منفصلة: حدّها المشترك هو خط قصّ حقيقي — وهي الحالة الطبيعية
+ *   في التخطيط الفيزيائي حيث الفجوة = 0 فحدود الخانات متلاصقة تماماً. المقارنة
+ *   الصارمة كانت تدمجهما لأن `a + b - b !== a` في الفاصلة العائمة.
  */
 function mergeIntervals(intervals: readonly AxisInterval[]): AxisInterval[] {
   const sorted = intervals
@@ -275,7 +282,7 @@ function mergeIntervals(intervals: readonly AxisInterval[]): AxisInterval[] {
   const merged: AxisInterval[] = [];
   for (const iv of sorted) {
     const last = merged[merged.length - 1];
-    if (last && iv.start < last.end) {
+    if (last && iv.start < last.end - INTERVAL_OVERLAP_EPSILON) {
       last.end = Math.max(last.end, iv.end);
     } else {
       merged.push({ start: iv.start, end: iv.end });
@@ -308,7 +315,8 @@ function axisMidpointCutLines(
     lines.push(clamp((merged[i - 1].end + merged[i].start) / 2));
   }
   lines.push(clamp(merged[merged.length - 1].end + gap / 2));
-  return dedupeAscending(lines);
+  // التقريب هنا بعد الدمج — تقريب الفترات قبل فحص التداخل كان يحذف فواصل حقيقية
+  return dedupeAscending(lines.map((v) => Math.round(v * 100) / 100));
 }
 
 /**

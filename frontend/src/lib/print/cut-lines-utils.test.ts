@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import { computeSheetGrid } from '@/lib/print/print-layout-math';
 
-import { calculatePrintCutLines } from './cut-lines-utils';
+import { buildMidpointCutLines, calculatePrintCutLines } from './cut-lines-utils';
 
 const A4 = { paperWidth: 210, paperHeight: 297 };
 
@@ -172,6 +172,46 @@ describe('calculatePrintCutLines', () => {
 
     expect(vertical.map((l) => l.x1)).toEqual([0, 210]);
     expect(horizontal.map((l) => l.y1)).toEqual([0, 297]);
+  });
+
+  it('zero-gap collage: boundaries that merely touch (float error) keep their separator line', () => {
+    // 0.1 + 0.2 = 0.30000000000000004 > 0.3 — التداخل القديم الصارم كان يدمج
+    // الفترتين فيحذف خط القص بين خانتين متلاصقتين (فجوة صفر في التخطيط الفيزيائي).
+    const cut = buildMidpointCutLines({
+      xIntervals: [
+        { start: 0.1, end: 0.1 + 0.2 },
+        { start: 0.3, end: 0.5 },
+      ],
+      yIntervals: [{ start: 0, end: 1 }],
+      gapX: 0,
+      gapY: 0,
+      paperWidth: 1,
+      paperHeight: 1,
+    });
+
+    expect(cut).not.toBeNull();
+    expect(cut!.xCutLines).toHaveLength(3);
+    expect(cut!.xCutLines[1]).toBeCloseTo(0.3, 6);
+  });
+
+  it('real overlap still merges: no cut line may run through overlapping images', () => {
+    const cut = buildMidpointCutLines({
+      xIntervals: [
+        { start: 0.1, end: 0.4 },
+        { start: 0.3, end: 0.5 },
+      ],
+      yIntervals: [{ start: 0, end: 1 }],
+      gapX: 0,
+      gapY: 0,
+      paperWidth: 1,
+      paperHeight: 1,
+    });
+
+    expect(cut).not.toBeNull();
+    // تداخل فعلي 0.1مم ⇒ فترة واحدة [0.1, 0.5] وخطان فقط
+    expect(cut!.xCutLines).toHaveLength(2);
+    expect(cut!.xCutLines[0]).toBeCloseTo(0.1, 6);
+    expect(cut!.xCutLines[1]).toBeCloseTo(0.5, 6);
   });
 
   it('collage mode: 2x2 slots on 100x150mm paper -> 6 cut lines at slot boundaries', () => {

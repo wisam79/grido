@@ -13,11 +13,7 @@ import { paperCaptureRect } from '@/lib/canvas/fit';
 import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
-import {
-  computeBlockPosition,
-  computeSlotAspect,
-  computeSlotRectMM,
-} from '@/lib/print/print-layout-math';
+import { computeBlockPosition, computeSlotRectMM } from '@/lib/print/print-layout-math';
 import { buildSingleComposition } from '@/lib/print/single-print-composition';
 
 import { uploadPrintImage } from './print-transport';
@@ -45,6 +41,7 @@ export interface CollagePayloadContext {
   collageStrokeColor: string;
   collageShowCutLines: boolean;
   collageShowEndCutLine: boolean | undefined;
+  cutLineStyle?: PrintSettings['cutLineStyle'];
 }
 
 export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
@@ -61,6 +58,7 @@ export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
     collageStrokeColor,
     collageShowCutLines,
     collageShowEndCutLine,
+    cutLineStyle,
   } = ctx;
 
   const { imageWidthMM, imageHeightMM, gapMM, actualCopies, paperWidth, paperHeight, grid } =
@@ -86,7 +84,10 @@ export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
         gapMM,
         paperWidth,
         paperHeight,
-        showEndCutLine: collageShowEndCutLine !== false,
+        // نمط cropmarks يرسم أذرع زوايا فقط، والخط الختامي الممتد على عرض الورقة
+        // يوسّع صندوق الإحاطة في Go إلى حدود الورقة — يُحجب عن الحمولة كي
+        // تنطبق الزوايا على حدود الشبكة كما في المعاينة.
+        showEndCutLine: collageShowEndCutLine !== false && cutLineStyle !== 'cropmarks',
         slots,
         collageMargin,
         collageGap,
@@ -117,7 +118,10 @@ export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
       { marginXMM, marginYMM },
       { gapXMM, gapYMM },
     );
-    const slotAspect = computeSlotAspect({ w: slot.w, h: slot.h }, canvasWidth, canvasHeight);
+    // نسبة الخانة المطبوعة بعد الهامش والفجوة — نسبة الإحداثيات الطبيعية
+    // وحدها تتجاهل ما يقتطعه الهامش/الفجوة فتخطئ خانات Go في اقتصاص cover
+    // (مثال: خانة 400×900 بكسل داخل ورقة بهامش تُطبع بنسبة 4:9 لا 0.44).
+    const slotAspect = rect.hMM > 0 ? rect.wMM / rect.hMM : 0;
 
     items.push(
       domain.PrintItem.createFrom({
@@ -236,7 +240,8 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
         gapMM,
         paperWidth,
         paperHeight,
-        showEndCutLine: printShowEndCutLine !== false,
+        // كما في الكولاج: الخط الختامي الممتد يفسد صندوق cropmarks في Go
+        showEndCutLine: printShowEndCutLine !== false && printCutLineStyle !== 'cropmarks',
         cutLineStyle: printCutLineStyle ?? 'dashed',
         grid,
       })

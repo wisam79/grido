@@ -23,12 +23,10 @@ import { Spinner } from '@/components/ui/huge-icon';
 import {
   ArrowsClockwise,
   Check,
-  Columns,
   FolderOpen,
   GridFour,
   Images,
   Minus,
-  Rows,
   Shuffle,
   Trash,
   X,
@@ -320,13 +318,15 @@ export function CollageAutofillTab() {
     <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
       {/* مصدر الصور */}
       <FluentSection
-        title="مصدر الصور"
-        subtitle={
-          autofillImages.length > 0
-            ? `${imageCountLabel(autofillImages.length)} في القائمة`
-            : 'لم تُختَر صور بعد'
+        title="الصور"
+        className="pb-4 border-border/50"
+        badge={
+          autofillImages.length > 0 ? (
+            <span className="text-mini tabular-nums text-muted-foreground">
+              {autofillImages.length}
+            </span>
+          ) : undefined
         }
-        collapsible
         action={
           autofillImages.length > 0 ? (
             <Button
@@ -342,10 +342,23 @@ export function CollageAutofillTab() {
           ) : undefined
         }
       >
-        <div className="grid grid-cols-2 gap-1.5">
+        <div
+          className={cn(
+            'grid gap-2',
+            autofillImages.length > 0
+              ? 'grid-cols-2'
+              : 'rounded-md border border-dashed border-primary/30 bg-primary/5 p-4',
+          )}
+        >
+          {autofillImages.length === 0 && (
+            <p className="pb-1 text-xs text-muted-foreground text-center leading-relaxed">
+              اختر صورك، ثم عاين توزيعها قبل التطبيق.
+            </p>
+          )}
           <Button
             type="button"
             variant="default"
+            className="h-9"
             onClick={() => pickImages(false)}
             disabled={isPicking || atLimit}
             title={atLimit ? `الحد الأقصى ${AUTOFILL_IMAGE_LIMIT} صورة` : 'اختيار صور متعددة'}
@@ -353,7 +366,7 @@ export function CollageAutofillTab() {
             {isPicking ? <Spinner size={14} /> : <Images className="w-4 h-4" weight="bold" />}
             <span>
               {isPicking
-                ? 'جارٍ الاستيراد…'
+                ? 'جاري الاستيراد ...'
                 : autofillImages.length > 0
                   ? 'إضافة صور'
                   : 'اختيار صور'}
@@ -378,7 +391,7 @@ export function CollageAutofillTab() {
               dir="ltr"
               role="list"
               aria-label="ترتيب صور التوزيع"
-              className="flex items-center gap-1.5 overflow-x-auto pb-1"
+              className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto p-0.5"
             >
               {visibleImages.map((src, index) => {
                 const isUnused = usedPoolCount > 0 && index >= usedPoolCount;
@@ -387,7 +400,7 @@ export function CollageAutofillTab() {
                   <div
                     key={`${index}-${src.slice(-24)}`}
                     role="listitem"
-                    className="group relative w-9 h-9 shrink-0"
+                    className="group relative aspect-square min-w-0"
                   >
                     <button
                       type="button"
@@ -466,7 +479,7 @@ export function CollageAutofillTab() {
                       onClick={() => removeImage(src)}
                       title={`حذف صورة ${sourceNumber}`}
                       aria-label={`حذف صورة ${sourceNumber}`}
-                      className="absolute right-0 top-0 w-4 h-4 rounded-bl-sm bg-background/90 border-l border-b border-border/60 flex items-center justify-center text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity cursor-pointer"
+                      className="absolute right-0 top-0 size-7 rounded-md bg-card/95 flex items-center justify-center text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                     >
                       <X className="w-3 h-3" weight="bold" />
                     </button>
@@ -501,195 +514,197 @@ export function CollageAutofillTab() {
       </FluentSection>
 
       {slots.length > 0 && (
-        <FluentSection
-          title="طريقة التوزيع"
-          subtitle={`ممتلئة ${filledCount} · فارغة ${emptyCount}`}
-          collapsible
-        >
-          <FluentSettingRow
-            layout="vertical"
-            label="الخانات المستهدفة"
-            control={
-              <FluentSegmentedControl<FillMode>
-                layoutId="autofill-mode"
-                variant="field"
-                value={mode}
-                onChange={setMode}
-                size="sm"
-                className="p-0.5 border-0 h-8"
-                options={[
-                  { id: 'empty', label: 'الفارغة فقط' },
-                  { id: 'all', label: 'كل الخانات' },
-                ]}
-              />
-            }
-          />
+        <>
+          <FluentSection
+            title="طريقة التوزيع"
+            className="pb-4 border-border/50"
+            subtitle={`ممتلئة ${filledCount} · فارغة ${emptyCount}`}
+          >
+            <FluentSettingRow
+              layout="vertical"
+              label="الخانات المستهدفة"
+              control={
+                <FluentSegmentedControl<FillMode>
+                  layoutId="autofill-mode"
+                  variant="field"
+                  value={mode}
+                  onChange={setMode}
+                  size="sm"
+                  className="p-0.5 border-0 h-8"
+                  options={[
+                    { id: 'empty', label: 'الفارغة فقط' },
+                    { id: 'all', label: 'كل الخانات' },
+                  ]}
+                />
+              }
+            />
 
-          <FluentSettingRow
-            layout="vertical"
-            label="ترتيب التعبئة"
-            control={
-              <FluentSegmentedControl<FillOrder>
-                layoutId="autofill-order"
-                variant="field"
-                iconInline
-                value={order}
-                onChange={setOrder}
-                size="sm"
-                className="p-0.5 border-0 h-8"
-                options={[
-                  {
-                    id: 'row',
-                    label: 'صفوف',
-                    icon: <Rows className="w-4 h-4" weight="duotone" />,
-                    tooltip: 'صف بصف',
-                  },
-                  {
-                    id: 'column',
-                    label: 'أعمدة',
-                    icon: <Columns className="w-4 h-4" weight="duotone" />,
-                    tooltip: 'عمود بعمود',
-                  },
-                ]}
-              />
-            }
-          />
+            <FluentSettingRow
+              layout="vertical"
+              label="ترتيب التعبئة"
+              control={
+                <FluentSegmentedControl<FillOrder>
+                  layoutId="autofill-order"
+                  variant="field"
+                  iconInline
+                  value={order}
+                  onChange={setOrder}
+                  size="sm"
+                  className="p-0.5 border-0 h-8"
+                  options={[
+                    {
+                      id: 'row',
+                      label: 'صفوف',
+                      tooltip: 'صف بصف',
+                    },
+                    {
+                      id: 'column',
+                      label: 'أعمدة',
+                      tooltip: 'عمود بعمود',
+                    },
+                  ]}
+                />
+              }
+            />
 
-          <FluentSettingRow
-            label="تكرار الصور"
-            description="عند نقص الصور"
-            control={
-              <Switch checked={repeat} onCheckedChange={setRepeat} aria-label="تكرار الصور" />
-            }
-          />
+            <FluentSettingRow
+              label="تكرار الصور"
+              description="عند نقص الصور"
+              control={
+                <Switch checked={repeat} onCheckedChange={setRepeat} aria-label="تكرار الصور" />
+              }
+            />
 
-          <FluentSettingRow
-            label="خلط عشوائي"
-            description="ترتيب مختلف كل مرة"
-            control={
-              <div className="flex items-center gap-1">
-                {shuffle && (
+            <FluentSettingRow
+              label="خلط عشوائي"
+              description="ترتيب مختلف كل مرة"
+              control={
+                <div className="flex items-center gap-1">
+                  {shuffle && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={reshuffle}
+                      title="خلط جديد"
+                      aria-label="إعادة الخلط"
+                    >
+                      <Shuffle className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                  <Switch
+                    checked={shuffle}
+                    onCheckedChange={(checked) => {
+                      setShuffle(checked);
+                      if (checked) setShuffleSeed((seed) => seed + 1);
+                    }}
+                    aria-label="خلط عشوائي"
+                  />
+                </div>
+              }
+            />
+          </FluentSection>
+          <FluentSection title="معاينة التوزيع" className="pb-4 border-border/50">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2 px-0.5">
+                <span className="text-mini text-muted-foreground leading-relaxed">
+                  {grid.rows}×{grid.cols} · تُملأ {fillCount}
+                  {preservedCount > 0 ? ` · تبقى ${preservedCount}` : ''}
+                  {skippedCount > 0 ? ` · بلا صورة ${skippedCount}` : ''}
+                </span>
+              </div>
+
+              <div
+                className={cn(
+                  'rounded-lg bg-background/50 border border-border/40 p-1.5',
+                  slots.length > 24 && 'max-h-44 overflow-y-auto',
+                )}
+              >
+                <div
+                  dir="ltr"
+                  className="grid gap-1"
+                  style={{
+                    gridTemplateColumns: `repeat(${Math.max(1, grid.cols)}, minmax(0, 1fr))`,
+                  }}
+                  data-testid="autofill-grid-preview"
+                >
+                  {grid.matrix.flatMap((row, rowIndex) =>
+                    row.map((cell, colIndex) => renderMapCell(cell, rowIndex, colIndex)),
+                  )}
+                </div>
+              </div>
+
+              <p className="text-micro text-muted-foreground/80 leading-tight px-0.5">
+                الرقم = ترتيب التعبئة · الباهت = يبقى · المتقطع = بلا صورة
+              </p>
+            </div>
+          </FluentSection>
+          <div className="sticky bottom-0 z-10 space-y-2 border-t border-border/60 bg-card py-3">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={distribute}
+                disabled={!canApply}
+                title={applyBlockedReason}
+                aria-label="توزيع الصور على الخانات"
+              >
+                {shuffle ? (
+                  <Shuffle className="w-4 h-4" weight="bold" />
+                ) : (
+                  <GridFour className="w-4 h-4" weight="bold" />
+                )}
+                <span>{canApply ? `وزّع ${imageCountLabel(fillCount)}` : 'وزّع الصور'}</span>
+              </Button>
+              {filledCount > 0 && (
+                <>
                   <Button
                     type="button"
                     variant="ghost"
-                    size="icon-sm"
-                    onClick={reshuffle}
-                    title="خلط جديد"
-                    aria-label="إعادة الخلط"
+                    size="icon"
+                    onClick={() => setConfirmClearOpen(true)}
+                    title="إفراغ الخانات"
+                    aria-label="إفراغ كل الخانات"
                   >
-                    <Shuffle className="w-3.5 h-3.5" />
+                    <ArrowsClockwise className="w-4 h-4" />
                   </Button>
-                )}
-                <Switch
-                  checked={shuffle}
-                  onCheckedChange={(checked) => {
-                    setShuffle(checked);
-                    if (checked) setShuffleSeed((seed) => seed + 1);
-                  }}
-                  aria-label="خلط عشوائي"
-                />
-              </div>
-            }
-          />
-
-          {/* خريطة النتيجة الحيّة — ترقيم التعبئة + الصور الفعلية قبل التطبيق */}
-          <div className="space-y-1.5 pt-0.5">
-            <div className="flex items-center justify-between gap-2 px-0.5">
-              <span className="text-mini font-bold text-muted-foreground">خريطة النتيجة</span>
-              <span className="text-mini font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/40 shrink-0">
-                {grid.rows}×{grid.cols} · تُملأ {fillCount}
-                {preservedCount > 0 ? ` · تبقى ${preservedCount}` : ''}
-                {skippedCount > 0 ? ` · بلا صورة ${skippedCount}` : ''}
-              </span>
+                  {/* 🛡️ إجراء مدمّر بتأكيد — مطابقة لحوار «مسح مساحة العمل» */}
+                  <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+                    <AlertDialogContent dir="rtl">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>إفراغ كل الخانات؟</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          ستُزال كل الصور من شبكة الكولاج. يمكن التراجع بـ Ctrl+Z.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>تراجع</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            clearSlots();
+                          }}
+                        >
+                          إفراغ
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
             </div>
 
-            <div
-              className={cn(
-                'rounded-lg bg-background/50 border border-border/40 p-1.5',
-                slots.length > 24 && 'max-h-44 overflow-y-auto',
-              )}
-            >
-              <div
-                dir="ltr"
-                className="grid gap-1"
-                style={{ gridTemplateColumns: `repeat(${Math.max(1, grid.cols)}, minmax(0, 1fr))` }}
-                data-testid="autofill-grid-preview"
-              >
-                {grid.matrix.flatMap((row, rowIndex) =>
-                  row.map((cell, colIndex) => renderMapCell(cell, rowIndex, colIndex)),
-                )}
-              </div>
-            </div>
-
-            <p className="text-micro text-muted-foreground/80 leading-tight px-0.5">
-              الرقم = ترتيب التعبئة · الباهت = يبقى · المتقطع = بلا صورة
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 pt-0.5">
-            <Button
-              type="button"
-              className="flex-1"
-              onClick={distribute}
-              disabled={!canApply}
-              title={applyBlockedReason}
-              aria-label="توزيع الصور على الخانات"
-            >
-              {shuffle ? (
-                <Shuffle className="w-4 h-4" weight="bold" />
-              ) : (
-                <GridFour className="w-4 h-4" weight="bold" />
-              )}
-              <span>{canApply ? `وزّع ${imageCountLabel(fillCount)}` : 'وزّع الصور'}</span>
-            </Button>
-            {filledCount > 0 && (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setConfirmClearOpen(true)}
-                  title="إفراغ الخانات"
-                  aria-label="إفراغ كل الخانات"
-                >
-                  <ArrowsClockwise className="w-4 h-4" />
-                </Button>
-                {/* 🛡️ إجراء مدمّر بتأكيد — مطابقة لحوار «مسح مساحة العمل» */}
-                <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
-                  <AlertDialogContent dir="rtl">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>إفراغ كل الخانات؟</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        ستُزال كل الصور من شبكة الكولاج. يمكن التراجع بـ Ctrl+Z.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>تراجع</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => {
-                          clearSlots();
-                        }}
-                      >
-                        إفراغ
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </>
+            {applyHint && (
+              <p className="text-micro text-amber-600 dark:text-amber-500 leading-tight px-0.5">
+                {applyHint}
+              </p>
+            )}
+            {!canApply && applyBlockedReason && (
+              <p className="text-micro text-muted-foreground/80 leading-tight px-0.5">
+                {applyBlockedReason}
+              </p>
             )}
           </div>
-
-          {applyHint && (
-            <p className="text-micro text-amber-600 dark:text-amber-500 leading-tight px-0.5">
-              {applyHint}
-            </p>
-          )}
-          {!canApply && applyBlockedReason && (
-            <p className="text-micro text-muted-foreground/80 leading-tight px-0.5">
-              {applyBlockedReason}
-            </p>
-          )}
-        </FluentSection>
+        </>
       )}
 
       {slots.length === 0 && (
