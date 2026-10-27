@@ -19,6 +19,11 @@ describe('حارس توحيد ارتفاعات شريط الأدوات العل�
       // باستثناء الأيقونات المصغرة w-7 h-7 داخل القوائم المنسدلة (DropdownMenuItem)
       const lines = content.split('\n');
       lines.forEach((line, idx) => {
+        // تخطي الحاوية الجذرية لشريط الأدوات نفسه (h-10 بارتفاع 40px لشريط الأدوات ككل)
+        if (file === 'toolbar.tsx' && line.includes('bg-sidebar')) {
+          return;
+        }
+
         // فحص الأزرار
         if (line.includes('<Button') || line.includes('className=')) {
           if (/\bh-9\b/.test(line)) {
