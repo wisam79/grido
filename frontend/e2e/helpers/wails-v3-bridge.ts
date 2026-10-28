@@ -67,14 +67,14 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
     for (const p of paths || []) res[p] = { width: 800, height: 600 };
     return res;
   },
-  345087440: async () => MOCK_CUSTOM_TEMPLATES, // GetCustomTemplates
-  1522265743: async () => [], // GetDeviceProfiles
+  345087440: async () => '', // GetClipboardText
+  1522265743: async () => MOCK_CUSTOM_TEMPLATES, // GetCustomTemplates
   // 🔑 توكن جلسة مسارات /api المحلية — قيمة ثابتة في E2E (لا Backend حقيقي يفرضها)
   1585336687: async () => 'e2e-local-api-session-token', // GetLocalApiToken
   143340993: async () => ({ width: 800, height: 600 }), // GetImageDimensions
   896689433: async () => ({ count: 1, size_bytes: 1024 }), // GetMediaStorageStats
-  1794026154: async () => [], // GetPaperTemplates
-  3709429484: async () => ({ isRunning: false, url: '', receivedCount: 0, lastReceived: '' }), // GetPhoneBridgeStatus
+  1794026154: async () => ({ isRunning: false, url: '', receivedCount: 0, lastReceived: '' }), // GetPhoneBridgeStatus
+  3709429484: async () => [], // GetScreensInfo
   3983598326: async () => '', // GetStartupFile
   984446249: async () => '[]', // LoadAiUsageLogs
   1086724551: async () => '', // LoadAutoSave
@@ -88,8 +88,8 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   2863230114: async () => undefined, // SaveAutoSave
   1013443833: async () => 'success', // SaveCustomTemplate
   1411792440: async () => 'success', // SaveCustomTemplateWithMetadata
-  1166008166: async () => 'C:/mock/saved.png', // SaveFile
-  211586642: async () => 'C:/mock/saved.png', // SaveFileDialog
+  1166008166: async () => 'C:/mock/saved.png', // SaveFileDialog
+  211586642: async (b64?: string) => b64 || '/local-image/saved-b64.png', // SaveImageFromBase64
   3958356690: async () => 'C:/mock/export', // SelectExportDirectory
   2207617336: async () => undefined, // SendNotification
   966799716: async () => undefined, // SetClipboardText
