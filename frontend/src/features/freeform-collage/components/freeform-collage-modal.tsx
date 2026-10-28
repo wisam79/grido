@@ -9,22 +9,28 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/huge-icon';
-import { FloppyDisk, DownloadSimple, UploadSimple } from '@/components/ui/icons';
+import { FloppyDisk, DownloadSimple, UploadSimple, Gear, CaretDown } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { clamp } from '@/lib/clamp';
 import { useEditorStore } from '@/lib/editor-store';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { FreeformCanvasEditor } from './freeform-canvas-editor';
+import { FreeformLeftToolsPanel } from './freeform-left-tools-panel';
 import { FreeformPaperSelector } from './freeform-paper-selector';
-import { FreeformSlotInspector } from './freeform-slot-inspector';
-import { FreeformToolbar } from './freeform-toolbar';
+import { FreeformRightInspectorPanel } from './freeform-right-inspector-panel';
+import { FreeformTopActionBar } from './freeform-top-action-bar';
 import {
   splitSlot,
   removeSlot,
@@ -712,32 +718,26 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
 
   const selectedSlot = slots.find((s) => s.id === selectedSlotId);
 
+  const multiCountTotal = multiSelectedIds.length + (selectedSlot ? 1 : 0);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        // 🛡️ بلا min-h ثابت: تحت ~630px كان min-h-[580px] يغلب h-[92vh]
-        // فيحجب الفوتر داخل overflow-hidden — الجسم المرن يتقلص بدلاً من ذلك
-        className="w-[96vw] sm:max-w-[1200px] h-[92vh] max-h-[860px] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular transition-colors duration-150 gap-0"
+        className="w-[98vw] sm:max-w-[1420px] h-[94vh] sm:max-h-[940px] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular transition-colors duration-150 gap-0"
         dir="rtl"
-        // 🛡️ H14: Escape يُبقي إغلاق Radix (لم نستدعِ preventDefault) ويكتفي
-        // بمسح التحديد المتعدد — بلا هذا يمرّ Escape مرتين: إغلاق + مسح.
         onEscapeKeyDown={() => setMultiSelectedIds([])}
       >
-        {/* ═══ الرأس: أيقونة + عنوان + وصف | محدد الورقة | إغلاق ═══ */}
-        <DialogHeader className="px-6 py-3.5 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="min-w-0 text-start">
-                <div className="flex items-center gap-2">
-                  <DialogTitle className="text-base font-bold tracking-tight text-foreground truncate">
-                    الكولاج الحر
-                  </DialogTitle>
-                </div>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
-                  ورقة فارغة بالمليمتر — Shift لتحديد متعدد
-                </DialogDescription>
-              </div>
+        {/* ═══ الرأس: العنوان + محدد الورقة + زر الإغلاق ═══ */}
+        <DialogHeader className="px-5 h-12 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
+          <div className="flex items-center justify-between gap-3 h-full">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <DialogTitle className="text-base font-bold tracking-tight text-foreground truncate">
+                الكولاج الحر
+              </DialogTitle>
+              <span className="text-3xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                تخطيط مخصص
+              </span>
             </div>
 
             <div className="flex items-center gap-2.5 shrink-0">
@@ -751,160 +751,161 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
           </div>
         </DialogHeader>
 
-        {/* ═══ المحتوى ═══ */}
-        <div className="p-4 flex flex-col flex-1 min-h-0 gap-2.5 overflow-hidden">
-          {/* شريط أدوات التحرير — أيقوني مضغوط */}
-          <FreeformToolbar
-            selectedSlotId={selectedSlotId}
-            multiSelectedCount={multiSelectedIds.length + (selectedSlotId ? 1 : 0)}
-            canUndo={historyState.past.length > 0}
-            canRedo={historyState.future.length > 0}
-            showCutLines={showCutLines}
-            enableSnapping={enableSnapping}
+        {/* شريط الإجراءات العلوي */}
+        <FreeformTopActionBar
+          selectedSlotId={selectedSlotId}
+          multiSelectedCount={multiCountTotal}
+          canUndo={historyState.past.length > 0}
+          canRedo={historyState.future.length > 0}
+          showCutLines={showCutLines}
+          enableSnapping={enableSnapping}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onDuplicateSlot={handleDuplicateSlot}
+          onRotateSlot={handleRotateSlot}
+          onRemoveSlot={handleRemoveSlot}
+          onScaleSelection={handleScaleSelection}
+          onSplitHorizontal={handleSplitHorizontal}
+          onSplitVertical={handleSplitVertical}
+          onAlignSlot={handleAlignSlot}
+          onAlignSelectionToEachOther={handleAlignSelectionToEachOther}
+          onDistributeSlots={handleDistributeSlots}
+          onResolveOverlaps={handleResolveOverlaps}
+          onToggleCutLines={() => setShowCutLines((prev) => !prev)}
+          onToggleSnapping={() => setEnableSnapping((prev) => !prev)}
+        />
+
+        {/* ═══ المحتوى: أعمدة جانبية + كانفاس ═══ */}
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+          <FreeformLeftToolsPanel
             packGapMM={packGapMM}
             packMarginMM={packMarginMM}
-            onPackGapChange={setPackGapMM}
-            onPackMarginChange={setPackMarginMM}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            onSplitHorizontal={handleSplitHorizontal}
-            onSplitVertical={handleSplitVertical}
             onAddSlot={handleAddSlot}
             onAddPresetSlot={handleAddPresetSlot}
             onAutoPack={handleAutoPack}
-            onRemoveSlot={handleRemoveSlot}
-            onRotateSlot={handleRotateSlot}
-            onDuplicateSlot={handleDuplicateSlot}
-            onAlignSlot={handleAlignSlot}
-            onAlignSelectionToEachOther={handleAlignSelectionToEachOther}
-            onScaleSelection={handleScaleSelection}
-            onResolveOverlaps={handleResolveOverlaps}
-            onDistributeSlots={handleDistributeSlots}
-            onToggleCutLines={() => setShowCutLines((prev) => !prev)}
-            onToggleSnapping={() => setEnableSnapping((prev) => !prev)}
+            onPackGapChange={setPackGapMM}
+            onPackMarginChange={setPackMarginMM}
           />
 
-          {/* مساحة العمل: الكانفس + المفتش الجانبي */}
-          <div className="flex flex-1 min-h-0 gap-2.5 items-stretch">
-            <div className="flex-1 flex min-h-0">
-              <FreeformCanvasEditor
-                paperWidthMM={paperWidthMM}
-                paperHeightMM={paperHeightMM}
-                slots={slots}
-                selectedSlotId={selectedSlotId}
-                multiSelectedIds={multiSelectedIds}
-                showCutLines={showCutLines}
-                enableSnapping={enableSnapping}
-                onSelectSlot={setSelectedSlotId}
-                onToggleMultiSelect={handleToggleMultiSelect}
-                onDragStart={handleDragStart}
-                onSlotsChange={handleSlotsChange}
-                onDragEnd={handleDragEnd}
-              />
-            </div>
+          <main className="flex-1 min-w-0 min-h-0 flex bg-muted/10">
+            <FreeformCanvasEditor
+              paperWidthMM={paperWidthMM}
+              paperHeightMM={paperHeightMM}
+              slots={slots}
+              selectedSlotId={selectedSlotId}
+              multiSelectedIds={multiSelectedIds}
+              showCutLines={showCutLines}
+              enableSnapping={enableSnapping}
+              onSelectSlot={setSelectedSlotId}
+              onToggleMultiSelect={handleToggleMultiSelect}
+              onDragStart={handleDragStart}
+              onSlotsChange={handleSlotsChange}
+              onDragEnd={handleDragEnd}
+            />
+          </main>
 
-            <div className="w-[230px] shrink-0 flex flex-col justify-start">
-              <FreeformSlotInspector
-                slot={selectedSlot}
-                multiSelectedCount={multiSelectedIds.length + (selectedSlot ? 1 : 0)}
-                paperWidthMM={paperWidthMM}
-                paperHeightMM={paperHeightMM}
-                onUpdateSlot={handleUpdateSlot}
-                onRotateSlot={handleRotateSlot}
-                onDuplicateSlot={handleDuplicateSlot}
-                onRemoveSlot={handleRemoveSlot}
-                onAlignSlot={handleAlignSlot}
-              />
-            </div>
-          </div>
+          <FreeformRightInspectorPanel
+            slot={selectedSlot}
+            multiSelectedCount={multiCountTotal}
+            paperWidthMM={paperWidthMM}
+            paperHeightMM={paperHeightMM}
+            onUpdateSlot={handleUpdateSlot}
+          />
         </div>
 
-        {/* ═══ التذييل: اسم + حفظ/تصدير/استيراد | عداد + إلغاء + تطبيق ═══ */}
-        <DialogFooter className="px-6 py-3 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <Input
-              value={layoutName}
-              onChange={(e) => setLayoutName(e.target.value)}
-              className="h-8 text-xs rounded-md w-[140px] bg-background border-border/60 font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shrink-0"
-              placeholder="اسم التخطيط..."
-            />
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 rounded-md text-xs gap-1.5 cursor-pointer border-border/60 hover:bg-muted font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                onClick={handleSaveAsCustomTemplate}
-                disabled={isSavingTemplate || slots.length === 0}
+        {/* ═══ التذييل: خيارات متقدمة | عداد صور حي | إلغاء + تطبيق بارز ═══ */}
+        <DialogFooter className="px-5 h-12 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5 rounded-md font-semibold text-muted-foreground hover:text-foreground border-border/60 hover:bg-muted cursor-pointer"
+                >
+                  <Gear className="w-3.5 h-3.5 text-primary/70" weight="bold" />
+                  <span>خيارات التخطيط</span>
+                  <CaretDown className="w-2.5 h-2.5 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="w-64 font-cairo text-xs z-(--z-print-toolbar) p-2 space-y-2"
               >
-                {isSavingTemplate ? (
-                  <>
-                    <Spinner size={14} className="text-emerald-500" />
-                    <span>جاري الحفظ ...</span>
-                  </>
-                ) : (
-                  <>
-                    <FloppyDisk className="w-3.5 h-3.5 text-emerald-500" weight="bold" />
-                    <span>حفظ</span>
-                  </>
-                )}
-              </Button>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
+                <DropdownMenuLabel className="text-micro text-muted-foreground font-bold px-1">
+                  حفظ وتصدير التخطيط
+                </DropdownMenuLabel>
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    value={layoutName}
+                    onChange={(e) => setLayoutName(e.target.value)}
+                    className="h-7 text-xs rounded-md bg-background border-border/60 font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 flex-1"
+                    placeholder="اسم التخطيط..."
+                  />
                   <Button
                     variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-md cursor-pointer border-border/60 hover:bg-muted"
+                    size="sm"
+                    className="h-7 px-2.5 rounded-md text-xs gap-1 cursor-pointer border-border/60 hover:bg-muted font-semibold"
+                    onClick={handleSaveAsCustomTemplate}
+                    disabled={isSavingTemplate || slots.length === 0}
+                  >
+                    {isSavingTemplate ? (
+                      <Spinner size={12} className="text-emerald-500" />
+                    ) : (
+                      <FloppyDisk className="w-3.5 h-3.5 text-emerald-500" weight="bold" />
+                    )}
+                    <span>حفظ</span>
+                  </Button>
+                </div>
+
+                <DropdownMenuSeparator />
+
+                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-micro gap-1.5 cursor-pointer border-border/60 hover:bg-muted justify-center"
                     onClick={handleExportLayout}
                     disabled={slots.length === 0}
                   >
                     <DownloadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
+                    <span>تصدير JSON</span>
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="font-cairo text-mini">
-                  تصدير JSON
-                </TooltipContent>
-              </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-md cursor-pointer border-border/60 hover:bg-muted"
+                    size="sm"
+                    className="h-7 text-micro gap-1.5 cursor-pointer border-border/60 hover:bg-muted justify-center"
                     onClick={() => importInputRef.current?.click()}
                   >
                     <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
+                    <span>استيراد JSON</span>
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="font-cairo text-mini">
-                  استيراد JSON
-                </TooltipContent>
-              </Tooltip>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              <input
-                ref={importInputRef}
-                type="file"
-                accept=".json,application/json"
-                className="hidden"
-                onChange={handleImportLayout}
-              />
-            </div>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={handleImportLayout}
+            />
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
-            {/* عدادات حية: الخلايا + التحديد + نسبة الاستغلال */}
-            <div className="flex items-center gap-1.5" dir="rtl">
-              <span className="text-micro font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
-                {slots.length} خلية
+          <div className="flex items-center gap-2" dir="rtl">
+            <span className="text-micro font-mono font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
+              {slots.length} {slots.length === 1 ? 'صورة' : 'صور'}
+            </span>
+            {multiSelectedIds.length > 0 && (
+              <span className="text-micro font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20 animate-in fade-in duration-150">
+                ×{multiSelectedIds.length + 1} محدد
               </span>
-              {multiSelectedIds.length > 0 && (
-                <span className="text-micro font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20 animate-in fade-in duration-150">
-                  ×{multiSelectedIds.length + 1} محدد
-                </span>
-              )}
-            </div>
+            )}
+          </div>
 
+          <div className="flex items-center gap-2 shrink-0">
             <Button
               variant="outline"
               size="sm"
@@ -915,7 +916,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
             </Button>
             <Button
               size="sm"
-              className="h-8 rounded-md text-xs font-semibold gap-1.5 px-5 cursor-pointer shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="h-8.5 rounded-md text-xs font-bold gap-1.5 px-6 cursor-pointer shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               onClick={handleApplyToCanvas}
               disabled={isApplying || slots.length === 0}
             >
@@ -925,7 +926,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
                   <span>جاري التطبيق ...</span>
                 </>
               ) : (
-                <span>تطبيق</span>
+                <span>تطبيق الكولاج</span>
               )}
             </Button>
           </div>

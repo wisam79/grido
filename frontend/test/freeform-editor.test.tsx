@@ -5,11 +5,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { FreeformCanvasEditor } from '../src/features/freeform-collage/components/freeform-canvas-editor';
 import { FreeformCollageModal } from '../src/features/freeform-collage/components/freeform-collage-modal';
+import { FreeformLeftToolsPanel } from '../src/features/freeform-collage/components/freeform-left-tools-panel';
 import {
   FreeformPaperSelector,
   PaperDimInput,
 } from '../src/features/freeform-collage/components/freeform-paper-selector';
-import { FreeformToolbar } from '../src/features/freeform-collage/components/freeform-toolbar';
+import { FreeformTopActionBar } from '../src/features/freeform-collage/components/freeform-top-action-bar';
 
 describe('Freeform Editor Unit & Component Tests', () => {
   const renderWithProviders = (ui: React.ReactElement) => {
@@ -58,31 +59,26 @@ describe('Freeform Editor Unit & Component Tests', () => {
     });
   });
 
-  describe('FreeformToolbar', () => {
-    it('renders action buttons and triggers appropriate callbacks', () => {
-      const handleAddSlot = vi.fn();
+  describe('FreeformTopActionBar', () => {
+    it('disables selection-scoped actions without a selected slot and fires undo', () => {
       const handleUndo = vi.fn();
-      const handleRedo = vi.fn();
+      const handleDuplicateSlot = vi.fn();
 
       renderWithProviders(
-        <FreeformToolbar
+        <FreeformTopActionBar
           selectedSlotId={null}
           multiSelectedCount={0}
           canUndo={true}
           canRedo={false}
           showCutLines={true}
           enableSnapping={true}
-          packGapMM={2}
-          packMarginMM={3}
-          onPackGapChange={vi.fn()}
-          onPackMarginChange={vi.fn()}
           onUndo={handleUndo}
-          onRedo={handleRedo}
+          onRedo={vi.fn()}
           onSplitHorizontal={vi.fn()}
           onSplitVertical={vi.fn()}
-          onAddSlot={handleAddSlot}
-          onAddPresetSlot={vi.fn()}
-          onAutoPack={vi.fn()}
+          onRemoveSlot={vi.fn()}
+          onRotateSlot={vi.fn()}
+          onDuplicateSlot={handleDuplicateSlot}
           onAlignSlot={vi.fn()}
           onAlignSelectionToEachOther={vi.fn()}
           onScaleSelection={vi.fn()}
@@ -90,25 +86,100 @@ describe('Freeform Editor Unit & Component Tests', () => {
           onDistributeSlots={vi.fn()}
           onToggleCutLines={vi.fn()}
           onToggleSnapping={vi.fn()}
-          onRemoveSlot={vi.fn()}
-          onRotateSlot={vi.fn()}
-          onDuplicateSlot={vi.fn()}
         />,
       );
 
       const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThan(0);
 
-      // First button is Undo (enabled)
-      const undoBtn = buttons[0];
-      expect(undoBtn).not.toBeDisabled();
-      fireEvent.click(undoBtn);
+      // الزر الأول هو التراجع (مفعّل) والثاني الإعادة (م معطّل)
+      expect(buttons[0]).not.toBeDisabled();
+      fireEvent.click(buttons[0]);
       expect(handleUndo).toHaveBeenCalled();
+      expect(buttons[1]).toBeDisabled();
 
-      // Third button is AddSlot
-      const addSlotBtn = buttons[2];
-      fireEvent.click(addSlotBtn);
+      // بلا خلية محددة: تكرار/حذف/تدوير معطلة
+      expect(buttons[2]).toBeDisabled();
+      expect(buttons[6]).toBeDisabled();
+    });
+
+    it('enables selection-scoped actions with a selected slot', () => {
+      const handleRemoveSlot = vi.fn();
+
+      renderWithProviders(
+        <FreeformTopActionBar
+          selectedSlotId="s1"
+          multiSelectedCount={1}
+          canUndo={false}
+          canRedo={false}
+          showCutLines={false}
+          enableSnapping={false}
+          onUndo={vi.fn()}
+          onRedo={vi.fn()}
+          onSplitHorizontal={vi.fn()}
+          onSplitVertical={vi.fn()}
+          onRemoveSlot={handleRemoveSlot}
+          onRotateSlot={vi.fn()}
+          onDuplicateSlot={vi.fn()}
+          onAlignSlot={vi.fn()}
+          onAlignSelectionToEachOther={vi.fn()}
+          onScaleSelection={vi.fn()}
+          onResolveOverlaps={vi.fn()}
+          onDistributeSlots={vi.fn()}
+          onToggleCutLines={vi.fn()}
+          onToggleSnapping={vi.fn()}
+        />,
+      );
+
+      // زر الحذف (أيقونة سلة) مفعّل ويعمل
+      const deleteBtn = screen.getByRole('button', { name: 'حذف (Del)' });
+      expect(deleteBtn).not.toBeDisabled();
+      fireEvent.click(deleteBtn);
+      expect(handleRemoveSlot).toHaveBeenCalled();
+    });
+  });
+
+  describe('FreeformLeftToolsPanel', () => {
+    it('fires add-slot and auto-pack from the quick tools column', () => {
+      const handleAddSlot = vi.fn();
+      const handleAutoPack = vi.fn();
+
+      renderWithProviders(
+        <FreeformLeftToolsPanel
+          packGapMM={2}
+          packMarginMM={3}
+          onAddSlot={handleAddSlot}
+          onAddPresetSlot={vi.fn()}
+          onAutoPack={handleAutoPack}
+          onPackGapChange={vi.fn()}
+          onPackMarginChange={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /إضافة خلية فارغة/ }));
       expect(handleAddSlot).toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole('button', { name: /بطاقات هوية/ }));
+      expect(handleAutoPack).toHaveBeenCalledWith('id-max');
+    });
+
+    it('inserts a preset slot from the single preset source', () => {
+      const handleAddPresetSlot = vi.fn();
+
+      renderWithProviders(
+        <FreeformLeftToolsPanel
+          packGapMM={2}
+          packMarginMM={3}
+          onAddSlot={vi.fn()}
+          onAddPresetSlot={handleAddPresetSlot}
+          onAutoPack={vi.fn()}
+          onPackGapChange={vi.fn()}
+          onPackMarginChange={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /بطاقة موحدة \(3\.5×4\.5\)/ }));
+      expect(handleAddPresetSlot).toHaveBeenCalledWith('iq-national-id');
     });
   });
 
