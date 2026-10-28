@@ -285,7 +285,7 @@ export async function setupWailsV3Bridge(
           SaveCustomTemplateWithMetadata: async () => 'success',
           SaveFile: async () => 'C:/mock/saved.png',
           SaveFileDialog: async () => 'C:/mock/saved.png',
-          SaveImageFromBase64: async () => 'success',
+          SaveImageFromBase64: async (b64?: string) => b64 || '/local-image/saved-b64.png',
           SelectExportDirectory: async () => 'C:/mock/export',
           SendNotification: async () => {},
           SetClipboardText: async () => {},
