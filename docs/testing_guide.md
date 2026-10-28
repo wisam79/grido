@@ -8,7 +8,7 @@
 
 - `TestPrintNative_RelativeAppDir` في `internal/service/print_native_test.go` و`TestPrintNative_GDI_RelativeAppDir` في `internal/service/printer_gdi_windows_test.go` يغطيان الملفات النسبية والمطلقة داخل Exports عند `GRIDO_APP_DIR=grido-data`، ورفض الشقيق ExportsEvil. البيئة تُعزل بـ `t.Chdir(t.TempDir())` وتُستعاد تلقائياً، ولا يُطلق اختبار الحارس نافذة طباعة.
 - توسّع اختبار ربط التبويبات في `frontend/test/App.test.tsx` ليفحص وجود لوحة لكل `aria-controls` وعكس `aria-labelledby` وإخفاء الألواح غير النشطة وعدم تركيب محتوى القوالب غير النشط.
-- متابعة CI رقم `40692711882`: نجحت الواجهة والخلفية وE2E وWebKit وبناء Windows، وفشلت حالتا المسارات النسبية على Windows. صُحّح ترتيب التطبيع في الكود (Abs ثم EvalSymlinks للملف أيضاً)، دون تخطي الحالات أو تغيير توقعات الحماية؛ التحقق النهائي ينتظر التشغيل السحابي التالي.
+- التحقق النهائي: التشغيل السحابي `40695205979` على الالتزام `951d1f2` نجح بالكامل في جميع مهام CI المُفعّلة، بما فيها Windows Build Verification واختبارات `TestPrintNative_RelativeAppDir` و`TestPrintNative_GDI_RelativeAppDir`، والواجهة والخلفية وأجزاء E2E الأربعة وWebKit والتوثيق. Admin Web متخطّى آلياً لعدم وجود تغييرات في نطاقه؛ لا ادعاء باختباره في هذه الدفعة.
 - أضيفت الحالات داخل الملفات القائمة؛ لم يتغير عدد ملفات Vitest/E2E/Go. التشغيل التنفيذي موكول إلى GitHub Actions، ولا تُشغّل الحزم الثقيلة محلياً.
 
 ## مراجعة هيكل ومظهر الكولاج — 28 أكتوبر 2026
