@@ -195,6 +195,32 @@ export const PhotoTemplateSchema = z.object({
   notes: z.string().optional(),
 });
 
+const CollageTemplateMetadataSchema = z.object({
+  version: z.literal(1),
+  kind: z.enum(['freeform', 'grid']),
+  paperWidthMM: z.number().positive().max(1000),
+  paperHeightMM: z.number().positive().max(1000),
+  dpi: z.number().positive().max(2400).optional(),
+  gapMM: z.number().min(0).max(100).optional(),
+  marginMM: z.number().min(0).max(500).optional(),
+  showCutLines: z.boolean().optional(),
+  enableSnapping: z.boolean().optional(),
+  packGapMM: z.number().min(0).max(100).optional(),
+  packMarginMM: z.number().min(0).max(500).optional(),
+  slotOptions: z
+    .array(z.object({ color: z.string().optional(), lockAspect: z.boolean().optional() }))
+    .max(200)
+    .optional(),
+  physicalLayout: z
+    .object({
+      type: z.string(),
+      rows: z.number().int().positive(),
+      cols: z.number().int().positive(),
+      align: z.string().optional(),
+    })
+    .optional(),
+});
+
 export const CollageTemplateSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -230,6 +256,7 @@ export const CollageTemplateSchema = z.object({
         .optional(),
     })
     .optional(),
+  metadata: CollageTemplateMetadataSchema.optional(),
 });
 
 export const UserGuideSchema = z.object({
@@ -262,6 +289,17 @@ export const ProjectSchema = z.object({
   collageBackgroundColor: z.string().optional().default('#FFFFFF'),
   collageBackgroundGradientColor2: z.string().nullable().optional(),
   collageBackgroundGradientAngle: z.number().min(0).max(360).optional(),
+  collagePendingImages: z.array(z.string().min(1)).max(500).optional().default([]),
+  autofillSettings: z
+    .object({
+      mode: z.enum(['empty', 'all']).default('empty'),
+      order: z.enum(['row', 'column']).default('row'),
+      repeat: z.boolean().default(true),
+      shuffle: z.boolean().default(false),
+      seed: z.number().int().default(1),
+    })
+    .optional()
+    .default({ mode: 'empty', order: 'row', repeat: true, shuffle: false, seed: 1 }),
   elements: z.array(CanvasElementSchema).default([]),
   slots: z.array(CanvasSlotSchema).default([]),
   template: PhotoTemplateSchema.nullable().default(null),

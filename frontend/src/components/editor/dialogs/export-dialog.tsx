@@ -286,6 +286,38 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             toast.error('تعذر تصدير الصور');
           }
         } else {
+          // 🔍 فحص المحتوى في وضع الكولاج: الصورة غير المقروءة مانعة قبل إنشاء الملف
+          if (mode === 'collage') {
+            const { loadCollageSlotImages, runCollagePreflight, getCachedImageDimensions } =
+              await import('@/lib/export/collage-preflight-helpers');
+            const loadResult = await loadCollageSlotImages(slots);
+            const preflight = runCollagePreflight({
+              slots,
+              canvasWidth,
+              canvasHeight,
+              imageDimensions: new Map(
+                [...new Set(slots.map((slot) => slot.imageSrc).filter(Boolean))]
+                  .map((src) => [src as string, getCachedImageDimensions(src as string)])
+                  .filter((entry): entry is [string, { width: number; height: number }] =>
+                    Boolean(entry[1]),
+                  ),
+              ),
+              failedSlotIds: loadResult.failedSlotIds,
+            });
+            if (preflight.blocking.length > 0) {
+              toast.error(`تعذر التصدير: ${preflight.blocking[0].message}`);
+              SetTaskbarProgress(0, 'none').catch(() => {});
+              return;
+            }
+            if (preflight.warnings.length > 0) {
+              toast.warning(
+                preflight.warnings.length === 1
+                  ? preflight.warnings[0].message
+                  : `${preflight.warnings.length} تنبيهات جودة — سيتم التصدير`,
+              );
+            }
+          }
+
           setProgress(50);
           SetTaskbarProgress(50, 'normal').catch(() => {});
           const blob = await exportCanvas(format, quality / 100, stageRef.current);

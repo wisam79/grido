@@ -9,7 +9,7 @@ import {
   ClearAutoSave,
 } from '@bindings/grido/app';
 
-import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
+import { buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
 import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { addImageFromSrc } from '@/lib/canvas/load-image';
 import { useEditorStore } from '@/lib/editor-store';
@@ -179,13 +179,16 @@ export function useAppBootstrap(): AppBootstrapState {
             const store = useEditorStore.getState();
 
             if (store.mode === 'collage') {
-              const assignments = buildCollageInsertAssignments(
-                store.slots,
-                images,
-                store.selectedId,
-                Boolean(store.collageTemplate?.physicalLayout),
-              );
-              store.setSlotImagesBatch(assignments, images[0] || null);
+              const targetSlotId =
+                store.selectedId && store.slots.some((slot) => slot.id === store.selectedId)
+                  ? store.selectedId
+                  : null;
+              const plan = buildCollageInsertPlan(store.slots, images, {
+                targetSlotId,
+                scope: targetSlotId ? 'target' : 'empty',
+              });
+              await store.setSlotImagesBatch(plan.assignments, images[0] || null);
+              if (plan.remaining.length > 0) store.appendPendingCollageImages(plan.remaining);
             } else {
               if (images.length === 1) {
                 void addImageFromSrc(images[0]);

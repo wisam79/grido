@@ -31,7 +31,7 @@ interface KonvaCanvasProps {
   sortedElements: CanvasElement[];
   handleDoubleClick: (el: CanvasElement) => void;
   setActiveGuides: (guides: SnapGuide[]) => void;
-  handleSlotClick?: (slotId: string) => void;
+  handleSlotClick?: (slotId: string, additive: boolean) => void;
   handleSlotDblClick?: (slotId: string) => void;
   onContextMenu?: (e: KonvaEventObject<MouseEvent>) => void;
 }
@@ -594,6 +594,7 @@ export const KonvaCanvas = React.memo(
             collageShowEndCutLine={collageShowEndCutLine}
             collageTemplate={collageTemplate}
             selectedId={selectedId}
+            selectedIds={selectedIds}
             stageScale={stageScale}
             handleSlotClick={handleSlotClick}
             handleSlotDblClick={handleSlotDblClick}

@@ -27,6 +27,8 @@ export interface ProjectStateData {
   collageBackgroundColor?: string;
   collageBackgroundGradientColor2?: string | null;
   collageBackgroundGradientAngle?: number;
+  collagePendingImages?: string[];
+  autofillSettings?: CollageAutofillSettings;
   elements?: CanvasElement[];
   slots?: CanvasSlot[];
   template?: PhotoTemplate | null;
@@ -218,6 +220,14 @@ export interface CanvasSlot {
 
 export type EditorMode = 'single' | 'collage';
 
+export interface CollageAutofillSettings {
+  mode: 'empty' | 'all';
+  order: 'row' | 'column';
+  repeat: boolean;
+  shuffle: boolean;
+  seed: number;
+}
+
 export interface HistoryEntry {
   elements: CanvasElement[];
   slots: CanvasSlot[];
@@ -242,6 +252,7 @@ export interface HistoryEntry {
   collageBackgroundColor?: string;
   collageBackgroundGradientColor2?: string | null;
   collageBackgroundGradientAngle?: number;
+  collagePendingImages?: string[];
   collageGap?: number;
   collageMargin?: number;
   collageRadius?: number;

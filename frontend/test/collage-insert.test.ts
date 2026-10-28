@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
+import { buildCollageInsertAssignments, buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
 
 import type { CanvasSlot } from '@/lib/store/types';
 
@@ -26,7 +26,7 @@ describe('buildCollageInsertAssignments — توزيع الصور على خان�
     ]);
   });
 
-  it('قالب طباعة فيزيائي بصورة واحدة يعبّئ كل الخانات', () => {
+  it('قالب طباعة فيزيائي بصورة واحدة يعبّئ كل الخانات (تكرار صريح)', () => {
     const slots = [slot('a'), slot('b', 'old')];
     const result = buildCollageInsertAssignments(slots, ['master'], null, true);
 
@@ -36,11 +36,11 @@ describe('buildCollageInsertAssignments — توزيع الصور على خان�
     ]);
   });
 
-  it('القالب العادي دون خانات فارغة يضع الصورة في أول خانة بدل تجاهلها', () => {
+  it('الإدراج العام دون استهداف لا يستبدل شبكة ممتلئة — الصور تبقى متبقية', () => {
     const slots = [slot('a', 'old-a'), slot('b', 'old-b')];
     const result = buildCollageInsertAssignments(slots, ['master'], null, false);
 
-    expect(result).toEqual([{ slotId: 'a', src: 'master' }]);
+    expect(result).toEqual([]);
   });
 
   it('لا يكرّر الصورة على قالب عادي فيه خانات فارغة (بخلاف القالب الفيزيائي)', () => {
@@ -52,5 +52,62 @@ describe('buildCollageInsertAssignments — توزيع الصور على خان�
 
   it('قائمة خانات فارغة تُنتج توزيعاً فارغاً', () => {
     expect(buildCollageInsertAssignments([], ['master'], null, true)).toEqual([]);
+  });
+});
+
+describe('buildCollageInsertPlan — نتيجة كاملة بمتبقي وإحصاء', () => {
+  it('يحفظ الصور الزائدة عن السعة في remaining بدل إسقاطها بصمت', () => {
+    const plan = buildCollageInsertPlan([slot('a'), slot('b')], ['one', 'two', 'three'], {
+      scope: 'empty',
+    });
+
+    expect(plan.assignments).toHaveLength(2);
+    expect(plan.remaining).toEqual(['three']);
+    expect(plan.replaced).toBe(0);
+  });
+
+  it('يستبدل الصور الفارغة فقط افتراضياً ويبقي الممتلئة محفوظة', () => {
+    const plan = buildCollageInsertPlan(
+      [slot('a', 'kept'), slot('b'), slot('c')],
+      ['one', 'two', 'three'],
+      { scope: 'empty' },
+    );
+
+    expect(plan.assignments.map((a) => a.slotId).sort()).toEqual(['b', 'c']);
+    expect(plan.preserved).toBe(1);
+    expect(plan.remaining).toEqual(['three']);
+  });
+
+  it('وضع all يستبدل كل الخانات ويحصي الاستبدال', () => {
+    const plan = buildCollageInsertPlan([slot('a', 'old')], ['new'], { scope: 'all' });
+
+    expect(plan.assignments).toEqual([{ slotId: 'a', src: 'new' }]);
+    expect(plan.replaced).toBe(1);
+  });
+
+  it('التكرار الصريح يعيد استخدام المصادر دورياً بلا متبقي', () => {
+    const plan = buildCollageInsertPlan([slot('a'), slot('b'), slot('c')], ['one'], {
+      scope: 'all',
+      repeat: true,
+    });
+
+    expect(plan.assignments).toHaveLength(3);
+    expect(plan.remaining).toEqual([]);
+  });
+
+  it('النطاق المستهدف يبدأ بالخانة المحددة ثم يملأ بقية الخانات بالترتيب', () => {
+    const plan = buildCollageInsertPlan(
+      [slot('a', 'old-a'), slot('b'), slot('c', 'old-c')],
+      ['one', 'two', 'three'],
+      { targetSlotId: 'b', scope: 'target' },
+    );
+
+    expect(plan.assignments).toEqual([
+      { slotId: 'b', src: 'one' },
+      { slotId: 'a', src: 'two' },
+      { slotId: 'c', src: 'three' },
+    ]);
+    expect(plan.replaced).toBe(2);
+    expect(plan.remaining).toEqual([]);
   });
 });

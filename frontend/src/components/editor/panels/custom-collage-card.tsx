@@ -28,6 +28,7 @@ interface CustomCollageCardProps {
   onSelect: (t: CollageTemplate) => void;
   activeTemplateId: string | undefined;
   onSaveTemplate: (name: string, cells: NormalizedCell[]) => void;
+  onTemplatesChanged?: () => void | Promise<void>;
   savedTemplates?: CollageTemplate[];
   onDeleteTemplate?: (id: string, e: React.MouseEvent) => void;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
@@ -39,6 +40,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   onSelect,
   activeTemplateId,
   onSaveTemplate,
+  onTemplatesChanged,
   savedTemplates = [],
   onDeleteTemplate,
   fileInputRef,
@@ -454,7 +456,11 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         {effectiveTab === 'arrange' && <CollageArrangeTab />}
       </div>
 
-      <FreeformCollageModal open={showFreeformModal} onOpenChange={setShowFreeformModal} />
+      <FreeformCollageModal
+        open={showFreeformModal}
+        onOpenChange={setShowFreeformModal}
+        onTemplateSaved={onTemplatesChanged}
+      />
     </div>
   );
 });

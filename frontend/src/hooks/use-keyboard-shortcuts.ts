@@ -90,7 +90,26 @@ export function useKeyboardShortcuts() {
     'delete, backspace',
     (e) => {
       e.preventDefault();
-      const { selectedIds, elements, removeElements, removeElement } = useEditorStore.getState();
+      const state = useEditorStore.getState();
+      // 🧱 التمييز بالمعرف لا بالوضع: في الكولاج التحديد يشير لخانة فيُفرغ صورتها،
+      // وفي الوضع الحر يشير لعنصراً حرّاً فيُحذف. اختيار عنصر حر داخل الكولاج
+      // (قوائم/اختبارات) يسقط لمسار العناصر.
+      const selectedElementCount = state.elements.filter((x) =>
+        state.selectedIds.includes(x.id),
+      ).length;
+      if (state.mode === 'collage' && selectedElementCount === 0) {
+        const selectedSlotIds = state.selectedIds.filter((id) =>
+          state.slots.some((slot) => slot.id === id),
+        );
+        const imageIds = selectedSlotIds.filter((id) =>
+          state.slots.some((slot) => slot.id === id && slot.imageSrc),
+        );
+        if (imageIds.length === 0) return;
+        state.updateSlotsBatch(imageIds, { imageSrc: undefined, originalImageSrc: undefined });
+        state.pushHistory();
+        return;
+      }
+      const { selectedIds, elements, removeElements, removeElement } = state;
       // 🧱 فصل الوضعين: في الكولاج التحديد يشير لخانة لا لعنصر حر — نتحقق
       // من وجود عناصر حرة محددة فعلاً لتفادي تنبيه «العناصر مقفلة» عند Delete على خانة كولاج
       const selectedElements = elements.filter((x) => selectedIds.includes(x.id));
@@ -136,8 +155,11 @@ export function useKeyboardShortcuts() {
   // Select All: Ctrl+A or Cmd+A (Canvas elements only when outside text inputs and modals)
   useHotkeys('mod+a', (e) => {
     if (shouldIgnoreCanvasAction(e)) return;
-    const { mode, elements, selectAllElements } = useEditorStore.getState();
-    if (mode === 'single' && elements.length > 0) {
+    const { mode, elements, slots, selectAllElements, setSelectedIds } = useEditorStore.getState();
+    if (mode === 'collage' && slots.length > 0) {
+      e.preventDefault();
+      setSelectedIds(slots.map((slot) => slot.id));
+    } else if (mode === 'single' && elements.length > 0) {
       e.preventDefault();
       selectAllElements();
     }
@@ -430,13 +452,47 @@ export function useKeyboardShortcuts() {
       const target = e.target as HTMLElement;
       if (isInteractiveTarget(target)) return;
 
-      const { selectedIds } = useEditorStore.getState();
+      const { selectedIds, mode, elements } = useEditorStore.getState();
+      const selectedElementCount = elements.filter((x) => selectedIds.includes(x.id)).length;
 
       // Escape = Clear selection and stop editing
       if (e.key === 'Escape') {
-        const { setEditingTextId, selectElement } = useEditorStore.getState();
+        const { setEditingTextId, setSelectedIds } = useEditorStore.getState();
         setEditingTextId(null);
-        selectElement(null);
+        setSelectedIds([]);
+        return;
+      }
+
+      // 🧱 تحريك القص للخانات المحددة — بالمعرف لا بالوضع: تحديد عناصر حرة
+      // داخل الكولاج يسقط لمسار العناصر أدناه.
+      if (
+        mode === 'collage' &&
+        selectedIds.length > 0 &&
+        selectedElementCount === 0 &&
+        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)
+      ) {
+        e.preventDefault();
+        const state = useEditorStore.getState();
+        const selectedSet = new Set(selectedIds);
+        const delta = e.shiftKey ? 8 : 2;
+        let dragX = 0;
+        let dragY = 0;
+        if (e.key === 'ArrowUp') dragY = -delta;
+        if (e.key === 'ArrowDown') dragY = delta;
+        if (e.key === 'ArrowLeft') dragX = -delta;
+        if (e.key === 'ArrowRight') dragX = delta;
+        state.slots.forEach((slot) => {
+          if (!selectedSet.has(slot.id) || !slot.imageSrc) return;
+          state.updateSlot(slot.id, {
+            dragX: (slot.dragX ?? 0) + dragX,
+            dragY: (slot.dragY ?? 0) + dragY,
+          });
+        });
+        if (nudgeTimeout) clearTimeout(nudgeTimeout);
+        nudgeTimeout = setTimeout(() => {
+          useEditorStore.getState().pushHistory();
+          nudgeTimeout = null;
+        }, 400);
         return;
       }
 

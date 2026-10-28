@@ -7,6 +7,25 @@ const logger = createLogger('image-dimensions');
 
 // كاش في الذاكرة للنسب الباعية لتفادي أي استدعاءات مكررة للصورة نفسها
 const aspectRatioCache = new Map<string, number>();
+// كاش الأبعاد الكاملة بعد EXIF — يُستخدم في فحص الدقة قبل التصدير/الطباعة
+const dimensionsCache = new Map<string, { width: number; height: number }>();
+
+function rememberDimensions(src: string, width: number, height: number, isRotated?: boolean): void {
+  if (!src || !(width > 0) || !(height > 0)) return;
+  const dims = isRotated ? { width: height, height: width } : { width, height };
+  dimensionsCache.set(src, dims);
+  setCachedImageAspectRatio(src, dims.width / dims.height);
+}
+
+/**
+ * أبعاد المصدر بعد تدوير EXIF — من الكاش المحلي فقط (بلا I/O).
+ * غياب النتيجة يعني «لم تُقس بعد» وليس صورة غير صالحة.
+ */
+export function getCachedImageDimensions(
+  src: string,
+): { width: number; height: number } | undefined {
+  return src ? dimensionsCache.get(src) : undefined;
+}
 
 /**
  * استرجاع النسبة الباعية المخزنة في الكاش إن وجدت
@@ -53,6 +72,7 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
     try {
       const dims = await GetImageDimensions(src);
       if (dims && dims.width > 0 && dims.height > 0) {
+        rememberDimensions(src, dims.width, dims.height, dims.isRotated);
         const aspect = dims.isRotated ? dims.height / dims.width : dims.width / dims.height;
         setCachedImageAspectRatio(src, aspect);
         return aspect;
@@ -76,6 +96,7 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
       const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
       try {
         if (bitmap && bitmap.width > 0 && bitmap.height > 0) {
+          rememberDimensions(src, bitmap.width, bitmap.height);
           const aspect = bitmap.width / bitmap.height;
           setCachedImageAspectRatio(src, aspect);
           return aspect;
@@ -100,6 +121,7 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
       img.src = '';
       if (w > 0 && h > 0) {
         const exif = await getExifOrientation(src);
+        rememberDimensions(src, w, h, exif.isQuarterRotated);
         const aspect = exif.isQuarterRotated ? h / w : w / h;
         setCachedImageAspectRatio(src, aspect);
         resolve(aspect);
@@ -153,6 +175,7 @@ export async function resolveBatchImageAspectRatios(srcs: string[]): Promise<Map
             batchDims as Record<string, { width: number; height: number; isRotated?: boolean }>
           )[src];
           if (dims && dims.width > 0 && dims.height > 0) {
+            rememberDimensions(src, dims.width, dims.height, dims.isRotated);
             const aspect = dims.isRotated ? dims.height / dims.width : dims.width / dims.height;
             setCachedImageAspectRatio(src, aspect);
             result.set(src, aspect);

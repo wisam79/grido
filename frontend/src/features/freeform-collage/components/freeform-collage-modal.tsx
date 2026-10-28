@@ -1,8 +1,18 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 
-import { SaveCustomTemplate } from '@bindings/grido/app';
+import { SaveCustomTemplateWithMetadata } from '@bindings/grido/app';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -22,7 +32,6 @@ import {
 import { Spinner } from '@/components/ui/huge-icon';
 import { FloppyDisk, DownloadSimple, UploadSimple, Gear, CaretDown } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
-import { mmToPx } from '@/lib/canvas/units';
 import { clamp } from '@/lib/clamp';
 import { useEditorStore } from '@/lib/editor-store';
 import { downloadJsonFile } from '@/lib/io/download';
@@ -51,12 +60,14 @@ import {
   exportLayoutFile,
   parseLayoutFile,
   slotsFromFile,
+  slotsFromGridoTemplate,
   newSlotId,
 } from '../lib/freeform-math';
 import { PHOTO_PRESET_LABELS } from '../lib/mixed-presets';
 
 import type {
   FreeformLayout,
+  FreeformDocument,
   FreeformSlot,
   PhotoPresetType,
   SlotAlignment,
@@ -67,6 +78,7 @@ import type {
 interface FreeformCollageModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onTemplateSaved?: () => void | Promise<void>;
 }
 
 const HISTORY_LIMIT = 100;
@@ -100,9 +112,29 @@ function createBlankSheet(paperWidthMM: number, paperHeightMM: number): Freeform
   return slots;
 }
 
+function createDocument(
+  paperWidthMM: number,
+  paperHeightMM: number,
+  slots: FreeformSlot[],
+  partial?: Partial<FreeformDocument>,
+): FreeformDocument {
+  return {
+    id: partial?.id ?? crypto.randomUUID(),
+    name: partial?.name ?? 'كولاج حر مخصص',
+    paperWidthMM,
+    paperHeightMM,
+    slots,
+    showCutLines: partial?.showCutLines ?? false,
+    enableSnapping: partial?.enableSnapping ?? true,
+    packGapMM: partial?.packGapMM ?? 2,
+    packMarginMM: partial?.packMarginMM ?? 2,
+  };
+}
+
 export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
   open,
   onOpenChange,
+  onTemplateSaved,
 }) => {
   const [paperWidthMM, setPaperWidthMM] = useState<number>(100);
   const [paperHeightMM, setPaperHeightMM] = useState<number>(150);
@@ -110,6 +142,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [isApplying, setIsApplying] = useState<boolean>(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState<boolean>(false);
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
   const [showCutLines, setShowCutLines] = useState<boolean>(false);
   const [enableSnapping, setEnableSnapping] = useState<boolean>(true);
 
@@ -121,19 +154,17 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
   const [packGapMM, setPackGapMM] = useState<number>(2);
   const [packMarginMM, setPackMarginMM] = useState<number>(2);
 
-  // سجل التراجع والإعادة — ورقة فارغة نقطة البداية
   const [historyState, setHistoryState] = useState<{
-    past: FreeformSlot[][];
-    present: FreeformSlot[];
-    future: FreeformSlot[][];
-  }>(() => ({
-    past: [],
-    present: createBlankSheet(100, 150),
-    future: [],
-  }));
+    past: FreeformDocument[];
+    present: FreeformDocument;
+    future: FreeformDocument[];
+  }>(() => {
+    const slots = createBlankSheet(100, 150);
+    return { past: [], present: createDocument(100, 150, slots), future: [] };
+  });
 
-  const dragStartSlotsRef = useRef<FreeformSlot[] | null>(null);
-  const slots = historyState.present;
+  const dragStartDocumentRef = useRef<FreeformDocument | null>(null);
+  const slots = historyState.present.slots;
 
   const slotsRef = useRef(slots);
   const selectedSlotIdRef = useRef(selectedSlotId);
@@ -144,39 +175,93 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
     multiSelectedIdsRef.current = multiSelectedIds;
   }, [slots, selectedSlotId, multiSelectedIds]);
 
-  const updateSlotsWithHistory = useCallback((newSlots: FreeformSlot[]) => {
-    setHistoryState((prev) => ({
-      past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), prev.present],
-      present: newSlots,
-      future: [],
-    }));
+  const documentValue = useMemo(
+    () => ({
+      ...historyState.present,
+      name: layoutName,
+      paperWidthMM,
+      paperHeightMM,
+      slots,
+      showCutLines,
+      enableSnapping,
+      packGapMM,
+      packMarginMM,
+    }),
+    [
+      historyState.present,
+      layoutName,
+      paperWidthMM,
+      paperHeightMM,
+      slots,
+      showCutLines,
+      enableSnapping,
+      packGapMM,
+      packMarginMM,
+    ],
+  );
+  const documentValueRef = useRef(documentValue);
+  useEffect(() => {
+    documentValueRef.current = documentValue;
+  }, [documentValue]);
+
+  // لقطة الافتتاح كـ state — المقارنة أثناء الرسم على ref كانت مخالفة لقواعد React
+  const [initialDocument, setInitialDocument] = useState<FreeformDocument | null>(null);
+  const hasDraftChanges =
+    initialDocument !== null && JSON.stringify(documentValue) !== JSON.stringify(initialDocument);
+
+  const restoreDocument = useCallback((document: FreeformDocument) => {
+    setPaperWidthMM(document.paperWidthMM);
+    setPaperHeightMM(document.paperHeightMM);
+    setLayoutName(document.name);
+    setShowCutLines(document.showCutLines);
+    setEnableSnapping(document.enableSnapping);
+    setPackGapMM(document.packGapMM);
+    setPackMarginMM(document.packMarginMM);
   }, []);
+
+  const pushDocumentWithHistory = useCallback(
+    (next: FreeformDocument) => {
+      setHistoryState((prev) => ({
+        past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), documentValueRef.current],
+        present: next,
+        future: [],
+      }));
+      restoreDocument(next);
+    },
+    [restoreDocument],
+  );
+
+  const updateSlotsWithHistory = useCallback(
+    (newSlots: FreeformSlot[]) =>
+      pushDocumentWithHistory({ ...documentValueRef.current, slots: newSlots }),
+    [pushDocumentWithHistory],
+  );
 
   const handleUndo = useCallback(() => {
     setHistoryState((prev) => {
       if (prev.past.length === 0) return prev;
       const previous = prev.past[prev.past.length - 1];
-      const newPast = prev.past.slice(0, prev.past.length - 1);
+      queueMicrotask(() => restoreDocument(previous));
       return {
-        past: newPast,
+        past: prev.past.slice(0, -1),
         present: previous,
-        future: [prev.present, ...prev.future].slice(0, HISTORY_LIMIT),
+        future: [documentValueRef.current, ...prev.future].slice(0, HISTORY_LIMIT),
       };
     });
-  }, []);
+  }, [restoreDocument]);
 
   const handleRedo = useCallback(() => {
     setHistoryState((prev) => {
       if (prev.future.length === 0) return prev;
       const next = prev.future[0];
-      const newFuture = prev.future.slice(1);
+      queueMicrotask(() => restoreDocument(next));
       return {
-        past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), prev.present],
+        past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), documentValueRef.current],
         present: next,
-        future: newFuture,
+        future: prev.future.slice(1),
       };
     });
-  }, []);
+  }, [restoreDocument]);
 
   // تصفير وإعادة ضبط الحالات عند فتح النافذة — ورقة فارغة دائماً
   useEffect(() => {
@@ -184,7 +269,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsApplying(false);
       setIsSavingTemplate(false);
-      dragStartSlotsRef.current = null;
+      dragStartDocumentRef.current = null;
       clipboardRef.current = null;
       const store = useEditorStore.getState();
       const ps = store.printSettings;
@@ -199,30 +284,50 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       const resolvedW = Math.max(10, isLandscape ? Math.max(initW, initH) : Math.min(initW, initH));
       const resolvedH = Math.max(10, isLandscape ? Math.min(initW, initH) : Math.max(initW, initH));
 
-      setPaperWidthMM(resolvedW);
-      setPaperHeightMM(resolvedH);
-      setLayoutName('كولاج حر مخصص');
+      const currentTemplate = store.collageTemplate;
+      const canResume =
+        currentTemplate?.metadata?.kind === 'freeform' ||
+        currentTemplate?.id.startsWith('freeform-');
+      const templateMetadata = currentTemplate?.metadata;
+      const initialSlots =
+        canResume && currentTemplate
+          ? slotsFromGridoTemplate(currentTemplate).map((slot, index) => ({
+              ...slot,
+              sourceSlotId: store.slots[index]?.id,
+            }))
+          : createBlankSheet(resolvedW, resolvedH);
+      const initialDocument = createDocument(
+        templateMetadata?.paperWidthMM ?? resolvedW,
+        templateMetadata?.paperHeightMM ?? resolvedH,
+        initialSlots,
+        {
+          id: currentTemplate?.id ?? crypto.randomUUID(),
+          name: canResume ? currentTemplate?.name : 'كولاج حر مخصص',
+          showCutLines: templateMetadata?.showCutLines ?? store.collageShowCutLines,
+          enableSnapping: templateMetadata?.enableSnapping ?? true,
+          packGapMM: templateMetadata?.packGapMM ?? 2,
+          packMarginMM: templateMetadata?.packMarginMM ?? 2,
+        },
+      );
+      setInitialDocument(initialDocument);
+      restoreDocument(initialDocument);
       setMultiSelectedIds([]);
-
-      const blank = createBlankSheet(resolvedW, resolvedH);
-      setHistoryState({
-        past: [],
-        present: blank,
-        future: [],
-      });
-      setSelectedSlotId(blank[0]?.id || null);
+      setHistoryState({ past: [], present: initialDocument, future: [] });
+      setSelectedSlotId(initialSlots[0]?.id || null);
     } else {
       setIsApplying(false);
       setIsSavingTemplate(false);
-      dragStartSlotsRef.current = null;
+      dragStartDocumentRef.current = null;
       clipboardRef.current = null;
     }
-  }, [open]);
+  }, [open, restoreDocument]);
 
-  const handlePaperDimensionsChange = useCallback((w: number, h: number) => {
-    setPaperWidthMM(w);
-    setPaperHeightMM(h);
-  }, []);
+  const handlePaperDimensionsChange = useCallback(
+    (w: number, h: number) => {
+      pushDocumentWithHistory({ ...documentValueRef.current, paperWidthMM: w, paperHeightMM: h });
+    },
+    [pushDocumentWithHistory],
+  );
 
   const handleSplitHorizontal = useCallback(() => {
     const selectedId = selectedSlotIdRef.current;
@@ -429,7 +534,12 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
   /* ⚡ تصدير التخطيط الحالي كملف JSON للمشاركة */
   const handleExportLayout = useCallback(() => {
     try {
-      const file = exportLayoutFile(layoutName, paperWidthMM, paperHeightMM, slotsRef.current);
+      const file = exportLayoutFile(layoutName, paperWidthMM, paperHeightMM, slotsRef.current, {
+        showCutLines,
+        enableSnapping,
+        packGapMM,
+        packMarginMM,
+      });
       downloadJsonFile(
         file,
         `${(layoutName || 'freeform').replace(/[\\/:*?"<>|]/g, '_')}.grido.json`,
@@ -438,7 +548,15 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
     } catch {
       toast.error('فشل التصدير');
     }
-  }, [layoutName, paperWidthMM, paperHeightMM]);
+  }, [
+    layoutName,
+    paperWidthMM,
+    paperHeightMM,
+    showCutLines,
+    enableSnapping,
+    packGapMM,
+    packMarginMM,
+  ]);
 
   /* ⚡ استيراد تخطيط JSON خارجي */
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -455,21 +573,29 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
           return;
         }
         const imported = slotsFromFile(parsed);
-        setPaperWidthMM(parsed.paperWidthMM);
-        setPaperHeightMM(parsed.paperHeightMM);
-        setLayoutName(parsed.name);
+        const importedDocument = createDocument(
+          parsed.paperWidthMM,
+          parsed.paperHeightMM,
+          imported,
+          {
+            id: crypto.randomUUID(),
+            name: parsed.name,
+            showCutLines: parsed.showCutLines ?? false,
+            enableSnapping: parsed.enableSnapping ?? true,
+            packGapMM: parsed.gapMM ?? 2,
+            packMarginMM: parsed.marginMM ?? 2,
+          },
+        );
         setMultiSelectedIds([]);
-        updateSlotsWithHistory(imported);
+        pushDocumentWithHistory(importedDocument);
         setSelectedSlotId(imported[0]?.id || null);
         toast.success(`أُستورد "${parsed.name}" بـ ${imported.length} خلية`);
       };
       reader.onerror = () => toast.error('فشل القراءة');
       reader.readAsText(file);
     },
-    [updateSlotsWithHistory],
+    [pushDocumentWithHistory],
   );
-
-  // إعادة مزامنة التحديد بعد التراجع/الإعادة/الحذف
   useEffect(() => {
     if (selectedSlotId && !slots.some((s) => s.id === selectedSlotId)) {
       queueMicrotask(() => setSelectedSlotId(slots[0]?.id ?? null));
@@ -568,7 +694,10 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
           return { ...s, x: nx, y: ny };
         });
 
-        setHistoryState((prev) => ({ ...prev, present: nextSlots }));
+        setHistoryState((prev) => ({
+          ...prev,
+          present: { ...prev.present, slots: nextSlots },
+        }));
 
         if (nudgeDebounceTimer.current) clearTimeout(nudgeDebounceTimer.current);
         nudgeDebounceTimer.current = setTimeout(() => {
@@ -594,24 +723,29 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
     try {
       setIsSavingTemplate(true);
       const currentSlots = slotsRef.current;
-      // نضيف أبعاد الورقة للاسم لأن مكتبة القوالب لا تخزنها — ليعرف المستخدم مقاس الورق عند إعادة التطبيق
       const baseName = layoutName.trim() || 'كولاج مخصص';
       const templateName = `${baseName} (${paperWidthMM}×${paperHeightMM}مم)`;
       const gridoTemplate = convertToGridoTemplate({
-        id: 'freeform-' + Date.now(),
+        id: 'freeform-' + crypto.randomUUID(),
         name: templateName,
         paperWidthMM,
         paperHeightMM,
         slots: currentSlots,
+        showCutLines,
+        enableSnapping,
+        packGapMM,
+        packMarginMM,
       });
 
-      if (typeof SaveCustomTemplate === 'function') {
-        await SaveCustomTemplate(
+      if (typeof SaveCustomTemplateWithMetadata === 'function') {
+        await SaveCustomTemplateWithMetadata(
           templateName,
           gridoTemplate.cells.length,
           JSON.stringify(gridoTemplate.cells),
+          JSON.stringify(gridoTemplate.metadata),
         );
         toast.success(`حُفظ القالب "${templateName}" في قوالبك!`);
+        await onTemplateSaved?.();
       } else {
         const raw = localStorage.getItem('grido_custom_templates');
         let saved: Array<{ name: string; template: unknown }> = [];
@@ -629,6 +763,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
         saved.push({ name: templateName, template: gridoTemplate });
         localStorage.setItem('grido_custom_templates', JSON.stringify(saved));
         toast.success(`حُفظ الكولاج "${templateName}"`);
+        await onTemplateSaved?.();
       }
     } catch (err: unknown) {
       toast.error(toErrorMessage(err, 'فشل الحفظ'));
@@ -638,20 +773,20 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
   };
 
   const handleDragStart = useCallback(() => {
-    dragStartSlotsRef.current = slotsRef.current.map((s) => ({ ...s }));
+    dragStartDocumentRef.current = documentValueRef.current;
   }, []);
 
   const handleSlotsChange = useCallback((next: FreeformSlot[]) => {
-    setHistoryState((prev) => ({ ...prev, present: next }));
+    setHistoryState((prev) => ({ ...prev, present: { ...prev.present, slots: next } }));
   }, []);
 
   const handleDragEnd = useCallback((finalSlots: FreeformSlot[]) => {
-    const start = dragStartSlotsRef.current;
-    dragStartSlotsRef.current = null;
+    const start = dragStartDocumentRef.current;
+    dragStartDocumentRef.current = null;
     if (!start) return;
     setHistoryState((prev) => ({
       past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), start],
-      present: finalSlots,
+      present: { ...prev.present, slots: finalSlots },
       future: [],
     }));
   }, []);
@@ -660,8 +795,9 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
     try {
       setIsApplying(true);
       const currentSlots = slotsRef.current;
+      const sourceSlotIds = currentSlots.map((slot) => slot.sourceSlotId);
       const layout: FreeformLayout = {
-        id: 'custom-layout-' + Date.now(),
+        id: 'freeform-' + crypto.randomUUID(),
         name: layoutName || 'كولاج حر مخصص',
         paperWidthMM,
         paperHeightMM,
@@ -671,40 +807,22 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       const gridoTemplate = convertToGridoTemplate(layout);
       const store = useEditorStore.getState();
 
-      const dpi = store.printSettings?.dpi || 300;
-      const newW = Math.max(64, Math.round(mmToPx(paperWidthMM, dpi)));
-      const newH = Math.max(64, Math.round(mmToPx(paperHeightMM, dpi)));
-
-      useEditorStore.setState({
-        mode: 'collage',
-        canvasWidth: newW,
-        canvasHeight: newH,
-        collageCanvasWidth: newW,
-        collageCanvasHeight: newH,
-        freeformCanvasWidth:
-          store.freeformCanvasWidth || (store.mode === 'single' ? store.canvasWidth : 2480),
-        freeformCanvasHeight:
-          store.freeformCanvasHeight || (store.mode === 'single' ? store.canvasHeight : 3508),
-        printSettings: {
-          ...(store.printSettings || {
-            marginMM: 0,
-            gapMM: 0,
-            dpi: 300,
-            copiesPerSheet: 1,
-            showCutLines: false,
-          }),
-          paperId: 'custom',
-          paperWidthMM: Math.min(paperWidthMM, paperHeightMM),
-          paperHeightMM: Math.max(paperWidthMM, paperHeightMM),
-          orientation: paperHeightMM >= paperWidthMM ? 'portrait' : 'landscape',
-        },
-        collageGap: 0,
-        collageMargin: 0,
+      const result = store.commitCollageLayout(gridoTemplate, {
+        paperWidthMM,
+        paperHeightMM,
+        gap: 0,
+        margin: 0,
+        sourceSlotIds,
       });
-
-      store.setCollageTemplate(gridoTemplate);
+      if (result.remaining > 0) {
+        toast.info(
+          `أُبقيت ${result.remaining} ${result.remaining === 1 ? 'صورة' : 'صور'} في قائمة التعبئة`,
+        );
+      }
 
       toast.success(`طُبّق كولاج "${layout.name}" (${paperWidthMM}×${paperHeightMM} مم)`);
+      // نقطة الافتتاح تتقدم بعد التطبيق — الإغلاق التالي لا يسأل عن مسودة مطبقة
+      setInitialDocument(documentValueRef.current);
       onOpenChange(false);
     } catch (err: unknown) {
       toast.error(toErrorMessage(err, 'خطأ أثناء التطبيق'));
@@ -717,8 +835,22 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
 
   const multiCountTotal = multiSelectedIds.length + (selectedSlot ? 1 : 0);
 
+  const requestClose = useCallback(() => {
+    if (hasDraftChanges) setDiscardConfirmOpen(true);
+    else onOpenChange(false);
+  }, [hasDraftChanges, onOpenChange]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && hasDraftChanges) {
+          setDiscardConfirmOpen(true);
+          return;
+        }
+        onOpenChange(next);
+      }}
+    >
       <DialogContent
         showCloseButton={false}
         className="w-[98vw] sm:max-w-[1420px] h-[94vh] sm:max-h-[940px] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular transition-colors duration-150 gap-0"
@@ -743,7 +875,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
                 paperHeightMM={paperHeightMM}
                 onPaperDimensionsChange={handlePaperDimensionsChange}
               />
-              <DialogCloseButton />
+              <DialogCloseButton onClick={requestClose} />
             </div>
           </div>
         </DialogHeader>
@@ -907,7 +1039,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
               variant="outline"
               size="sm"
               className="h-8 rounded-md text-xs px-4 cursor-pointer font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              onClick={() => onOpenChange(false)}
+              onClick={requestClose}
             >
               إلغاء
             </Button>
@@ -928,6 +1060,34 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
             </Button>
           </div>
         </DialogFooter>
+
+        {/* حوار تجاهل المسودة — يظهر فقط عند وجود تغييرات غير مطبقة */}
+        <AlertDialog open={discardConfirmOpen} onOpenChange={setDiscardConfirmOpen}>
+          <AlertDialogContent dir="rtl" className="font-cairo">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-start text-base font-bold">
+                تجاهل تعديلات التخطيط؟
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-start text-xs text-muted-foreground leading-relaxed">
+                لديك تعديلات لم تُطبَّق بعد. الإغلاق سيُلغيها، و«تطبيق الكولاج» يثبّتها على الورقة.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="cursor-pointer rounded-md h-8 text-xs font-semibold">
+                متابعة التحرير
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="cursor-pointer rounded-md h-8 text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  setDiscardConfirmOpen(false);
+                  onOpenChange(false);
+                }}
+              >
+                تجاهل التعديلات
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

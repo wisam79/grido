@@ -269,11 +269,22 @@ export const EditorCanvas = React.memo(
     );
 
     const handleSlotClick = useCallback(
-      (slotId: string) => {
+      (slotId: string, additive: boolean) => {
         if (printMode) return;
-        selectElement(slotId);
+        const state = useEditorStore.getState();
+        if (additive) {
+          const next = state.selectedIds.includes(slotId)
+            ? state.selectedIds.filter((id) => id !== slotId)
+            : [
+                ...state.selectedIds.filter((id) => state.slots.some((slot) => slot.id === id)),
+                slotId,
+              ];
+          state.setSelectedIds(next);
+        } else {
+          state.setSelectedIds([slotId]);
+        }
       },
-      [printMode, selectElement],
+      [printMode],
     );
 
     const handleSlotDblClick = useCallback(

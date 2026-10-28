@@ -22,6 +22,17 @@ export function convertToGridoTemplate(layout: FreeformLayout): CollageTemplate 
       rotation: s.rotation ?? 0,
     })),
     icon: SquaresFour,
+    metadata: {
+      version: 1,
+      kind: 'freeform',
+      paperWidthMM: layout.paperWidthMM,
+      paperHeightMM: layout.paperHeightMM,
+      showCutLines: layout.showCutLines,
+      enableSnapping: layout.enableSnapping,
+      packGapMM: layout.packGapMM,
+      packMarginMM: layout.packMarginMM,
+      slotOptions: layout.slots.map(({ color, lockAspect }) => ({ color, lockAspect })),
+    },
   };
 }
 
@@ -35,6 +46,7 @@ export function exportLayoutFile(
   paperWidthMM: number,
   paperHeightMM: number,
   slots: FreeformSlot[],
+  options?: Pick<FreeformLayout, 'showCutLines' | 'enableSnapping' | 'packGapMM' | 'packMarginMM'>,
 ): FreeformLayoutFile {
   return {
     format: 'grido-freeform',
@@ -50,7 +62,13 @@ export function exportLayoutFile(
       label: s.label,
       presetType: s.presetType,
       rotation: s.rotation ?? 0,
+      color: s.color,
+      lockAspect: s.lockAspect,
     })),
+    showCutLines: options?.showCutLines,
+    enableSnapping: options?.enableSnapping,
+    gapMM: options?.packGapMM,
+    marginMM: options?.packMarginMM,
   };
 }
 
@@ -83,6 +101,8 @@ export function parseLayoutFile(raw: string): FreeformLayoutFile | null {
         rotation: (s.rotation === 90 || s.rotation === 180 || s.rotation === 270
           ? s.rotation
           : 0) as 0 | 90 | 180 | 270,
+        color: typeof s.color === 'string' ? s.color.slice(0, 32) : undefined,
+        lockAspect: Boolean(s.lockAspect),
       }))
       .map((s) => ({ ...s, x: Math.min(s.x, 1 - s.w), y: Math.min(s.y, 1 - s.h) }));
 
@@ -95,6 +115,8 @@ export function parseLayoutFile(raw: string): FreeformLayoutFile | null {
       paperHeightMM: Math.round(ph),
       gapMM: Number(data.gapMM) || 0,
       marginMM: Number(data.marginMM) || 0,
+      showCutLines: Boolean(data.showCutLines),
+      enableSnapping: data.enableSnapping !== false,
       slots,
     };
   } catch {
@@ -113,5 +135,26 @@ export function slotsFromFile(file: FreeformLayoutFile): FreeformSlot[] {
     label: s.label,
     presetType: s.presetType,
     rotation: s.rotation,
+    color: s.color,
+    lockAspect: s.lockAspect,
+  }));
+}
+
+export function slotsFromGridoTemplate(template: CollageTemplate): FreeformSlot[] {
+  const options = template.metadata?.slotOptions ?? [];
+  return template.cells.map((cell, index) => ({
+    id: newSlotId('slot_edit'),
+    sourceSlotId: undefined,
+    x: cell.x,
+    y: cell.y,
+    w: cell.w,
+    h: cell.h,
+    label: cell.label,
+    presetType: cell.presetType as FreeformSlot['presetType'],
+    rotation: (cell.rotation === 90 || cell.rotation === 180 || cell.rotation === 270
+      ? cell.rotation
+      : 0) as 0 | 90 | 180 | 270,
+    color: options[index]?.color,
+    lockAspect: options[index]?.lockAspect,
   }));
 }

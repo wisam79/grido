@@ -69,7 +69,7 @@ interface GridMatrix {
 export function CollageArrangeTab() {
   const {
     slots,
-    setSlotImagesBatch,
+    moveSlotContentsBatch,
     updateSlotsBatch,
     rotateSlotsBatch,
     canvasWidth,
@@ -83,7 +83,7 @@ export function CollageArrangeTab() {
   } = useEditorStore(
     useShallow((state) => ({
       slots: state.slots,
-      setSlotImagesBatch: state.setSlotImagesBatch,
+      moveSlotContentsBatch: state.moveSlotContentsBatch,
       updateSlotsBatch: state.updateSlotsBatch,
       rotateSlotsBatch: state.rotateSlotsBatch,
       canvasWidth: state.canvasWidth,
@@ -133,9 +133,10 @@ export function CollageArrangeTab() {
   const effectiveDpi = getEffectiveDpi(canvasWidth, canvasHeight, printSettings?.dpi || 300);
   const imageCount = slots.filter((slot) => slot.imageSrc).length;
 
+  /** يبني مصفوفة معرفات الخانات الممتلئة كي تنتقل حزمة تعديل الصورة كاملة. */
   const currentSrcMatrix = (): SrcMatrix =>
     grid.matrix.map((row) =>
-      row.map((slotId) => (slotId ? grid.srcBySlot.get(slotId) : undefined)),
+      row.map((slotId) => (slotId && grid.srcBySlot.get(slotId) ? slotId : undefined)),
     );
 
   /**
@@ -148,18 +149,16 @@ export function CollageArrangeTab() {
       return;
     }
 
-    const assignments: { slotId: string; src: string }[] = [];
+    const assignments: { slotId: string; sourceSlotId: string }[] = [];
     for (let row = 0; row < grid.matrix.length; row++) {
       for (let col = 0; col < grid.matrix[row].length; col++) {
         const slotId = grid.matrix[row][col];
-        const src = nextSrc[row]?.[col];
-        if (slotId && src) assignments.push({ slotId, src });
+        const sourceSlotId = nextSrc[row]?.[col];
+        if (slotId && sourceSlotId) assignments.push({ slotId, sourceSlotId });
       }
     }
-    if (assignments.length === 0) {
-      return;
-    }
-    setSlotImagesBatch(assignments, assignments[0].src);
+    if (assignments.length === 0) return;
+    moveSlotContentsBatch(assignments);
   };
 
   const reverseRows = () =>
@@ -179,21 +178,15 @@ export function CollageArrangeTab() {
 
   /** تكرار الصور الحالية على كل الخانات بالتساوي (دورياً) */
   const repeatEverywhere = () => {
-    const unique = [
-      ...new Set(
-        slots
-          .map((slot) => slot.imageSrc)
-          .filter((src): src is string => typeof src === 'string' && src.length > 0),
-      ),
-    ];
-    if (unique.length === 0) {
+    const sourceSlotIds = slots.filter((slot) => slot.imageSrc).map((slot) => slot.id);
+    if (sourceSlotIds.length === 0) {
       toast.info('لا صور');
       return;
     }
     const nextSrc: SrcMatrix = grid.matrix.map((row, r) =>
-      row.map((_, c) => unique[(r * grid.cols + c) % unique.length]),
+      row.map((_, c) => sourceSlotIds[(r * grid.cols + c) % sourceSlotIds.length]),
     );
-    applyMatrix(nextSrc, `وُزعت ${unique.length} صورة`);
+    applyMatrix(nextSrc, `وُزعت ${sourceSlotIds.length} صورة`);
   };
 
   /**
@@ -208,7 +201,7 @@ export function CollageArrangeTab() {
     if (!rows || !cols) return;
 
     // خريطة الصور المطلوبة تُحسب **قبل** إعادة البناء (المعرّفات تتغير بعده)
-    const imageMap = transposeIndexMap(rows, currentSrcMatrix());
+    const contentMap = transposeIndexMap(rows, currentSrcMatrix());
 
     const nextRows = cols;
     const nextCols = rows;
@@ -246,12 +239,12 @@ export function CollageArrangeTab() {
     }
 
     // الخلايا الجديدة تُرتَّب صفاً صفاً بعرض nextCols ⇒ المفهرس = c*nextCols + r
-    if (imageMap.size > 0) {
+    if (contentMap.size > 0) {
       const freshSlots = useEditorStore.getState().slots;
-      const assignments = [...imageMap.entries()]
-        .map(([index, src]) => ({ slotId: freshSlots[index]?.id, src }))
-        .filter((a): a is { slotId: string; src: string } => Boolean(a.slotId));
-      if (assignments.length > 0) setSlotImagesBatch(assignments, assignments[0].src);
+      const assignments = [...contentMap.entries()]
+        .map(([index, sourceSlotId]) => ({ slotId: freshSlots[index]?.id, sourceSlotId }))
+        .filter((a): a is { slotId: string; sourceSlotId: string } => Boolean(a.slotId));
+      if (assignments.length > 0) moveSlotContentsBatch(assignments);
     }
   };
 

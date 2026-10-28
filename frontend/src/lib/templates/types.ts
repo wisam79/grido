@@ -19,6 +19,22 @@ export interface PhotoTemplate {
   icon?: React.ComponentType<Record<string, unknown>>;
 }
 
+export interface CollageTemplateMetadata {
+  version: 1;
+  kind: 'freeform' | 'grid';
+  paperWidthMM: number;
+  paperHeightMM: number;
+  dpi?: number;
+  gapMM?: number;
+  marginMM?: number;
+  showCutLines?: boolean;
+  enableSnapping?: boolean;
+  packGapMM?: number;
+  packMarginMM?: number;
+  slotOptions?: Array<{ color?: string; lockAspect?: boolean }>;
+  physicalLayout?: CollageTemplate['physicalLayout'];
+}
+
 export interface CollageTemplate {
   id: string;
   name: string;
@@ -57,4 +73,5 @@ export interface CollageTemplate {
       | 'bottom-center'
       | 'bottom-right';
   };
+  metadata?: CollageTemplateMetadata;
 }

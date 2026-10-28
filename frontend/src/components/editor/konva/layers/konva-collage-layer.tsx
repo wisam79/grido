@@ -35,9 +35,10 @@ interface KonvaCollageLayerProps {
   collageShowEndCutLine?: boolean;
   collageTemplate?: CollageTemplate | null;
   selectedId: string | null;
+  selectedIds?: string[];
   /** مقياس العرض للسمك الثابت على الشاشة (اختياري — 1 افتراضياً بلا تغيير) */
   stageScale?: number;
-  handleSlotClick?: (slotId: string) => void;
+  handleSlotClick?: (slotId: string, additive: boolean) => void;
   handleSlotDblClick?: (slotId: string) => void;
   handleSlotWheel: (
     slot: { id: string; imageSrc?: string; zoom?: number },
@@ -193,6 +194,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   collageShowEndCutLine = true,
   collageTemplate,
   selectedId,
+  selectedIds = selectedId ? [selectedId] : [],
   stageScale = 1,
   handleSlotClick,
   handleSlotDblClick,
@@ -303,7 +305,8 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
 
         const { left, top, width, height } = getSlotRect(slot, geo);
 
-        const isSelected = selectedId === slot.id;
+        const isSelected = selectedIds.includes(slot.id);
+        const isPrimary = selectedId === slot.id;
 
         return (
           <Group key={slot.id} id={`slot-${slot.id}`}>
@@ -332,8 +335,13 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                 }
                 ctx.closePath();
               }}
-              onClick={() => handleSlotClick?.(slot.id)}
-              onTouchEnd={() => handleSlotClick?.(slot.id)}
+              onClick={(event) =>
+                handleSlotClick?.(
+                  slot.id,
+                  event.evt.ctrlKey || event.evt.metaKey || event.evt.shiftKey,
+                )
+              }
+              onTouchEnd={() => handleSlotClick?.(slot.id, false)}
               onDblClick={() => handleSlotDblClick?.(slot.id)}
               onWheel={(e) => handleSlotWheel(slot, e)}
             >
@@ -364,7 +372,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   flipX={slot.flipX}
                   flipY={slot.flipY}
                   rotation={slot.rotation}
-                  draggable={isSelected}
+                  draggable={isPrimary}
                   cornerRadius={radius}
                   onUpdateOffsets={(x, y) => {
                     updateSlot(slot.id, { dragX: x, dragY: y });
@@ -406,8 +414,9 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   y={top - 1.5}
                   width={width + 3}
                   height={height + 3}
-                  stroke="#0078d4"
-                  strokeWidth={2 / uiScale}
+                  stroke={isPrimary ? '#0078d4' : '#60a5fa'}
+                  strokeWidth={(isPrimary ? 2 : 1.25) / uiScale}
+                  dash={isPrimary ? undefined : [4 / uiScale, 3 / uiScale]}
                   cornerRadius={radius + 1.5}
                   shadowColor="#0078d4"
                   shadowBlur={4 / uiScale}

@@ -87,6 +87,7 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   2892812386: async () => undefined, // SaveAiUsageLogs
   2863230114: async () => undefined, // SaveAutoSave
   1013443833: async () => 'success', // SaveCustomTemplate
+  1411792440: async () => 'success', // SaveCustomTemplateWithMetadata
   1166008166: async () => 'C:/mock/saved.png', // SaveFile
   211586642: async () => 'C:/mock/saved.png', // SaveFileDialog
   3958356690: async () => 'C:/mock/export', // SelectExportDirectory
@@ -281,6 +282,7 @@ export async function setupWailsV3Bridge(
           SaveAiUsageLogs: async () => {},
           SaveAutoSave: async () => {},
           SaveCustomTemplate: async () => 'success',
+          SaveCustomTemplateWithMetadata: async () => 'success',
           SaveFile: async () => 'C:/mock/saved.png',
           SaveFileDialog: async () => 'C:/mock/saved.png',
           SaveImageFromBase64: async () => 'success',

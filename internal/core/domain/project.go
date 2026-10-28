@@ -19,6 +19,7 @@ type Project struct {
 	Template                 JSONText  `gorm:"type:text" json:"template"` // JSON string
 	CollageTemplate          JSONText  `gorm:"type:text" json:"collageTemplate"`
 	PrintSettings            JSONText  `gorm:"type:text" json:"printSettings"`
+	EditorState              JSONText  `gorm:"type:text" json:"editorState"`
 	ShowGrid                 bool      `json:"showGrid"`
 	GridSize                 int       `json:"gridSize"`
 	GridColor                string    `json:"gridColor"`

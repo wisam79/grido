@@ -52,6 +52,8 @@ export function serializeEditorState(
     collageBackgroundColor: state.collageBackgroundColor ?? state.backgroundColor,
     collageBackgroundGradientColor2: state.collageBackgroundGradientColor2 ?? null,
     collageBackgroundGradientAngle: state.collageBackgroundGradientAngle ?? 135,
+    collagePendingImages: [...(state.collagePendingImages ?? [])],
+    autofillSettings: { ...state.autofillSettings },
     elements: state.elements,
     slots: state.slots,
     template: state.template,
@@ -215,6 +217,21 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
   const template = parseSafely(dbProj.template, null);
   const collageTemplate = parseSafely(dbProj.collageTemplate, null);
   const printSettings = parseSafely(dbProj.printSettings, undefined);
+  const editorState = parseSafely<{
+    version?: number;
+    freeformCanvasWidth?: number;
+    freeformCanvasHeight?: number;
+    freeformBackgroundColor?: string;
+    freeformBackgroundGradientColor2?: string | null;
+    freeformBackgroundGradientAngle?: number;
+    collageCanvasWidth?: number;
+    collageCanvasHeight?: number;
+    collageBackgroundColor?: string;
+    collageBackgroundGradientColor2?: string | null;
+    collageBackgroundGradientAngle?: number;
+    collagePendingImages?: string[];
+    autofillSettings?: ProjectFileV1['autofillSettings'];
+  }>(dbProj.editorState, {});
 
   // 🎨 التدرج: العمود الجديد في قاعدة البيانات يبدأ بصفر للمشاريع المحفوظة قبل
   // إضافته، والصفر زاوية صالحة (0° أفقية) — فلا يمكن تمييز «لم تُحفظ قط» من
@@ -240,16 +257,35 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     backgroundColor: dbProj.backgroundColor,
     backgroundGradientColor2: gradientColor2,
     backgroundGradientAngle: gradientAngle,
-    freeformCanvasWidth: dbProj.mode === 'single' ? dbProj.canvasWidth : 2480,
-    freeformCanvasHeight: dbProj.mode === 'single' ? dbProj.canvasHeight : 3508,
-    freeformBackgroundColor: dbProj.mode === 'single' ? dbProj.backgroundColor : '#FFFFFF',
-    freeformBackgroundGradientColor2: dbProj.mode === 'single' ? gradientColor2 : null,
-    freeformBackgroundGradientAngle: dbProj.mode === 'single' ? (gradientAngle ?? 135) : 135,
-    collageCanvasWidth: dbProj.mode === 'collage' ? dbProj.canvasWidth : 2480,
-    collageCanvasHeight: dbProj.mode === 'collage' ? dbProj.canvasHeight : 3508,
-    collageBackgroundColor: dbProj.mode === 'collage' ? dbProj.backgroundColor : '#FFFFFF',
-    collageBackgroundGradientColor2: dbProj.mode === 'collage' ? gradientColor2 : null,
-    collageBackgroundGradientAngle: dbProj.mode === 'collage' ? (gradientAngle ?? 135) : 135,
+    freeformCanvasWidth:
+      editorState.freeformCanvasWidth ?? (dbProj.mode === 'single' ? dbProj.canvasWidth : 2480),
+    freeformCanvasHeight:
+      editorState.freeformCanvasHeight ?? (dbProj.mode === 'single' ? dbProj.canvasHeight : 3508),
+    freeformBackgroundColor:
+      editorState.freeformBackgroundColor ??
+      (dbProj.mode === 'single' ? dbProj.backgroundColor : '#FFFFFF'),
+    freeformBackgroundGradientColor2:
+      editorState.freeformBackgroundGradientColor2 ??
+      (dbProj.mode === 'single' ? gradientColor2 : null),
+    freeformBackgroundGradientAngle:
+      editorState.freeformBackgroundGradientAngle ??
+      (dbProj.mode === 'single' ? (gradientAngle ?? 135) : 135),
+    collageCanvasWidth:
+      editorState.collageCanvasWidth ?? (dbProj.mode === 'collage' ? dbProj.canvasWidth : 2480),
+    collageCanvasHeight:
+      editorState.collageCanvasHeight ?? (dbProj.mode === 'collage' ? dbProj.canvasHeight : 3508),
+    collageBackgroundColor:
+      editorState.collageBackgroundColor ??
+      (dbProj.mode === 'collage' ? dbProj.backgroundColor : '#FFFFFF'),
+    collageBackgroundGradientColor2:
+      editorState.collageBackgroundGradientColor2 ??
+      (dbProj.mode === 'collage' ? gradientColor2 : null),
+    collageBackgroundGradientAngle:
+      editorState.collageBackgroundGradientAngle ??
+      (dbProj.mode === 'collage' ? (gradientAngle ?? 135) : 135),
+    collagePendingImages: editorState.collagePendingImages ?? [],
+    autofillSettings:
+      editorState.autofillSettings ?? ProjectFileSchema.shape.autofillSettings.parse(undefined),
     elements,
     slots,
     template,
@@ -319,6 +355,21 @@ export function projectFileToDomainProject(
     template: file.template ? JSON.stringify(file.template) : '',
     collageTemplate: file.collageTemplate ? JSON.stringify(file.collageTemplate) : '',
     printSettings: file.printSettings ? JSON.stringify(file.printSettings) : '',
+    editorState: JSON.stringify({
+      version: 1,
+      freeformCanvasWidth: file.freeformCanvasWidth,
+      freeformCanvasHeight: file.freeformCanvasHeight,
+      freeformBackgroundColor: file.freeformBackgroundColor,
+      freeformBackgroundGradientColor2: file.freeformBackgroundGradientColor2 ?? null,
+      freeformBackgroundGradientAngle: file.freeformBackgroundGradientAngle ?? 135,
+      collageCanvasWidth: file.collageCanvasWidth,
+      collageCanvasHeight: file.collageCanvasHeight,
+      collageBackgroundColor: file.collageBackgroundColor,
+      collageBackgroundGradientColor2: file.collageBackgroundGradientColor2 ?? null,
+      collageBackgroundGradientAngle: file.collageBackgroundGradientAngle ?? 135,
+      collagePendingImages: file.collagePendingImages ?? [],
+      autofillSettings: file.autofillSettings,
+    }),
     showGrid: file.showGrid ?? false,
     gridSize: file.gridSize ?? 48,
     gridColor: file.gridColor ?? '#000000',

@@ -110,12 +110,23 @@ export const TemplatePanel = React.memo(function TemplatePanel({
           logger.warn(`Template "${t.name}" has corrupt cells JSON — excluded from list`);
         }
         if (parsedCells === null) return []; // استبعاد القوالب ذات البيانات التالفة
+        let parsedMetadata: CollageTemplate['metadata'] | undefined;
+        try {
+          const rawMetadata = typeof t.metadata === 'string' ? JSON.parse(t.metadata) : t.metadata;
+          if (rawMetadata && typeof rawMetadata === 'object') {
+            parsedMetadata = rawMetadata as CollageTemplate['metadata'];
+          }
+        } catch {
+          logger.warn(`Template "${t.name}" has corrupt metadata JSON — using cells only`);
+        }
         return [
           {
             id: 'collage-user-' + t.id,
             name: t.name,
             slots: t.slots,
             cells: parsedCells,
+            metadata: parsedMetadata,
+            physicalLayout: parsedMetadata?.physicalLayout,
           },
         ];
       });
@@ -218,6 +229,7 @@ export const TemplatePanel = React.memo(function TemplatePanel({
             onSelect={handleSelectTemplate}
             activeTemplateId={collageTemplate?.id}
             onSaveTemplate={handleSaveTemplate}
+            onTemplatesChanged={loadTemplates}
             savedTemplates={savedTemplates}
             onDeleteTemplate={handleDeleteTemplate}
             fileInputRef={fileInputRef}
