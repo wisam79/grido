@@ -1,36 +1,32 @@
-import { Check, Download, Headphones, Award, MessageCircle } from 'lucide-react';
-import { CURRENCIES, type CurrencyCode } from '../../data/landing-content';
-import { GITHUB_RELEASE_DOWNLOAD_URL } from '../../lib/version';
-import { WHATSAPP_NUMBER } from './WhatsAppButton';
-import { SectionHeader } from './SectionHeader';
+import { Check, Download, MessageCircle } from "lucide-react";
+import { CURRENCIES, type CurrencyCode } from "../../data/landing-content";
+import { GITHUB_RELEASE_DOWNLOAD_URL } from "../../lib/version";
+import { WHATSAPP_NUMBER } from "./WhatsAppButton";
+import { SectionHeader } from "./SectionHeader";
 
 const FEATURES = [
-  'رخصة أصلية لمدى الحياة (Lifetime)',
-  'تحديثات وتطويرات مجانية للأبد',
-  'معالجة وطباعة محلية 100% دون إنترنت',
-  'محرك ترميم سحابي اختياري للترميم الفائق',
-  'تصدير فائق الدقة (300 DPI - CMYK)',
-  'قوالب الجوازات والفيزا لكافة الدول (ICAO)',
-  'صانع الكولاج والشبكات الحرة ومحاذاة مغناطيسية',
-  'توفير الورق مع خطوط قص دقيقة 0.5mm',
-  'دعم فني مباشر ومساعدة في التثبيت والإعداد',
+  "تحرير وتخطيط وطباعة محلية على جهازك",
+  "ترميم سحابي اختياري يحتاج إلى اتصال عند استخدامه",
+  <>
+    تصدير بدقة <bdi dir="ltr">300 DPI</bdi> ودعم <bdi dir="ltr">CMYK</bdi>
+  </>,
+  "قوالب لمقاسات صور الجوازات والفيزا الشائعة",
+  "كولاج وشبكات حرة ومحاذاة مغناطيسية",
+  "هوامش وخطوط قص قابلة للضبط",
 ];
 
 const GUARANTEES = [
   {
-    title: 'استثمار لمرة واحدة',
-    desc: 'تدفع المبلغ لمرة واحدة فقط وتمتلك البرنامج للأبد مع كافة التحديثات مجاناً دون أي اشتراكات دورية.',
-    icon: Award,
+    title: "جرّب على معداتك قبل الشراء",
+    desc: "اختبر القص والتأطير والطباعة على جهازك وطابعتك الفعلية مجاناً.",
   },
   {
-    title: 'تجربة مجانية قبل الدفع',
-    desc: 'حمّل البرنامج واختبر أدوات القص والتأطير والطباعة على طابعاتك الفعلية قبل اتخاذ قرار الشراء.',
-    icon: Download,
+    title: "تحديثات مجانية للأبد",
+    desc: "ترخيص مدى الحياة يشمل تحديثات البرنامج دون اشتراك دوري.",
   },
   {
-    title: 'تفعيل فوري ودعم فني',
-    desc: 'مفتاح ترخيص رقمي دائم مع مساعدة في التثبيت وإعداد مقاسات الطابعات من فريق الدعم.',
-    icon: Headphones,
+    title: "تفعيل ودعم مباشر",
+    desc: "مفتاح رقمي دائم، مع مساعدة في الإعداد ونقل التفعيل عند تغيير الجهاز.",
   },
 ];
 
@@ -39,151 +35,137 @@ interface PricingSectionProps {
   onCurrencyChange?: (c: CurrencyCode) => void;
 }
 
-export function PricingSection({ currency = 'IQD', onCurrencyChange }: PricingSectionProps) {
+export function PricingSection({
+  currency = "IQD",
+  onCurrencyChange,
+}: PricingSectionProps) {
   const currentCurr = CURRENCIES[currency] || CURRENCIES.IQD;
   const purchaseUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    `مرحباً، أود طلب مفتاح ترخيص Grido Studio النسخة الكاملة (${currentCurr.priceFormatted} ${currentCurr.unit})`
+    `مرحباً، أود طلب مفتاح ترخيص Grido Studio النسخة الكاملة (${currentCurr.priceFormatted} ${currentCurr.unit})`,
   )}`;
 
   return (
-    <section id="pricing" className="py-16 md:py-24 relative scroll-mt-20">
+    <section id="pricing" className="landing-section relative">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        
         <SectionHeader
-          title="استثمر مرة واحدة، واستفد للأبد"
-          description="دفعة واحدة بلا اشتراكات — رخصة دائمة مع تحديثات مجانية للأبد وتجربة مجانية قبل الشراء"
+          title="رخصة دائمة، بدفعة واحدة"
+          description="بلا اشتراكات دورية، مع تجربة مجانية قبل الشراء."
         />
 
-        {/* Currency Selector Pill */}
         {onCurrencyChange && (
           <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-inset border border-border-subtle shadow-xs">
-              {(['IQD', 'SAR', 'USD'] as CurrencyCode[]).map((c) => {
-                const isActive = currency === c;
-                return (
-                  <button
-                    key={c}
-                    onClick={() => onCurrencyChange(c)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      isActive
-                        ? 'bg-card-hover text-white border border-white/10 shadow-xs'
-                        : 'text-text-secondary hover:text-white'
-                    }`}
-                    aria-pressed={isActive}
-                  >
-                    {CURRENCIES[c].symbol} {CURRENCIES[c].name}
-                  </button>
-                );
-              })}
+            <div
+              className="landing-switch"
+              role="group"
+              aria-label="عملة الترخيص"
+            >
+              {(["IQD", "SAR", "USD"] as CurrencyCode[]).map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => onCurrencyChange(code)}
+                  className="min-h-11 min-w-11 px-3 py-2 text-sm font-medium leading-relaxed"
+                  aria-pressed={currentCurr.code === code}
+                >
+                  <bdi>{CURRENCIES[code].symbol}</bdi> {CURRENCIES[code].name}
+                </button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* 2-Column Balanced Pricing Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
-          
-          {/* Main Pricing Card (col-span-12 lg:col-span-7) */}
-          <div className="lg:col-span-7 relative pt-3 flex flex-col">
-            
-            <div className="absolute -top-1 inset-x-0 mx-auto w-max z-20 bg-brand-primary text-white text-[11px] sm:text-xs font-extrabold px-4 py-1 rounded-full whitespace-nowrap border border-white/20 shadow-md">
-              <span>ترخيص مدى الحياة (Lifetime)</span>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          <div className="lg:col-span-7 landing-card p-5 sm:p-8">
+            <div className="pb-6 border-b border-border-subtle">
+              <h3 className="text-xl font-semibold text-text-primary">
+                <bdi dir="ltr">Grido Studio</bdi>
+              </h3>
+              <p className="mt-2 text-sm text-text-secondary leading-relaxed">
+                النسخة الكاملة — ترخيص مدى الحياة
+              </p>
 
-            <div className="rounded-2xl bg-card border border-brand-primary/40 p-6 sm:p-8 shadow-xl relative hover:border-white/20 transition-all duration-300 flex-1 flex flex-col justify-between">
-              
-              <div className="text-center pb-5 border-b border-border-subtle mb-6 pt-2">
-                <h3 className="text-2xl font-black text-white mb-1">Grido Studio</h3>
-                <p className="text-xs text-text-secondary mb-4">النسخة الكاملة لاستوديوهات ومراكز الطباعة</p>
-
-                {/* Price Row (Dynamic Currency) */}
-                <div className="flex items-baseline justify-center gap-2.5 mb-2.5">
-                  <span className="text-sm text-text-muted line-through font-mono">
-                    {currentCurr.originalPriceFormatted}
-                  </span>
-                  <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tight">
+              <div
+                className="mt-5 flex flex-wrap items-baseline gap-3"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                <span className="text-sm text-text-muted">
+                  <span className="sr-only">السعر السابق </span>
+                  <del>
+                    <bdi dir="ltr" className="font-mono tabular-nums">
+                      {currentCurr.originalPriceFormatted}
+                    </bdi>
+                  </del>
+                </span>
+                <span className="text-4xl sm:text-5xl font-semibold text-text-primary">
+                  <span className="sr-only">السعر الحالي </span>
+                  <bdi dir="ltr" className="font-mono tabular-nums">
                     {currentCurr.priceFormatted}
-                  </span>
-                  <div className="flex flex-col items-start text-start">
-                    <span className="text-sm font-bold text-brand-primary">{currentCurr.unit}</span>
-                  </div>
-                </div>
-                <span className="text-[11px] text-text-muted">شراء لمرة واحدة — لا توجد أي اشتراكات دورية</span>
+                  </bdi>
+                </span>
+                <bdi className="text-sm font-medium text-text-secondary">
+                  {currentCurr.unit}
+                </bdi>
               </div>
+            </div>
 
-              {/* Feature List */}
-              <div className="space-y-2.5 mb-6 flex-1">
-                {FEATURES.map((feat) => (
-                  <div key={feat} className="flex items-center gap-2.5 text-xs sm:text-sm text-white">
-                    <div className="w-4 h-4 rounded bg-inset border border-border-subtle flex items-center justify-center text-status-success shrink-0">
-                      <Check className="w-3 h-3" />
-                    </div>
-                    <span className="leading-normal">{feat}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* CTAs: Buy / Activate vs Try Free */}
-              <div>
-                <a
-                  href={purchaseUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary w-full !h-12 text-sm sm:text-base justify-center mb-2.5 font-bold cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all shadow-md"
+            <ul className="space-y-3 py-6">
+              {FEATURES.map((feature, index) => (
+                <li
+                  key={index}
+                  className="flex items-start gap-3 text-sm text-text-primary leading-7"
                 >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>طلب مفتاح الترخيص ({currentCurr.priceFormatted} {currentCurr.unit})</span>
-                </a>
+                  <Check
+                    className="w-4 h-4 mt-1.5 text-text-secondary shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
 
-                <a
-                  href={GITHUB_RELEASE_DOWNLOAD_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary w-full !h-11 text-xs sm:text-sm justify-center mb-3.5 font-semibold cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
-                >
-                  <Download className="w-4 h-4 text-brand-light" />
-                  <span>أو حمّل وجرّب مجاناً على جهازك</span>
-                </a>
-
-                <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-text-secondary">
-                  <span className="flex items-center gap-1 text-status-success font-medium">
-                    <Check className="w-3.5 h-3.5" />
-                    <span>تجربة مجانية متاحة</span>
-                  </span>
-                  <span className="w-1 h-1 rounded-full bg-border-subtle" />
-                  <span>تفعيل فوري بكود رقمي</span>
-                  <span className="w-1 h-1 rounded-full bg-border-subtle" />
-                  <span>نقل الترخيص متاح لأي جهاز</span>
-                </div>
-              </div>
-
+            <div className="space-y-3">
+              <a
+                href={purchaseUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary w-full min-h-12 justify-center gap-2 text-sm leading-relaxed"
+              >
+                <MessageCircle
+                  className="w-4 h-4 shrink-0"
+                  aria-hidden="true"
+                />
+                <span>
+                  طلب مفتاح الترخيص (
+                  <bdi dir="ltr">{currentCurr.priceFormatted}</bdi>{" "}
+                  <bdi>{currentCurr.unit}</bdi>)
+                </span>
+              </a>
+              <a
+                href={GITHUB_RELEASE_DOWNLOAD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary w-full min-h-11 justify-center gap-2 text-sm leading-relaxed"
+              >
+                <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>حمّل وجرّب مجاناً</span>
+              </a>
             </div>
           </div>
 
-          {/* Value & Guarantees Side Panel */}
-          <div className="lg:col-span-5 flex flex-col justify-between gap-4 pt-3 reveal-stagger">
-            {GUARANTEES.map((g) => {
-              const Icon = g.icon;
-              return (
-                <div
-                  key={g.title}
-                  className="ds-card p-5 sm:p-6 flex items-center gap-4 flex-1 hover:border-brand-primary/40 transition-colors shadow-sm"
-                >
-                  <div className="ds-icon-tile w-11 h-11 text-brand-primary shrink-0">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-sm font-bold text-white mb-1">{g.title}</h4>
-                    <p className="text-xs text-text-secondary leading-relaxed">
-                      {g.desc}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
+          <dl className="lg:col-span-5 divide-y divide-border-subtle">
+            {GUARANTEES.map((item) => (
+              <div key={item.title} className="py-6 first:pt-0 last:pb-0">
+                <dt className="text-base font-semibold text-text-primary leading-relaxed">
+                  {item.title}
+                </dt>
+                <dd className="mt-2 text-sm text-text-secondary leading-7">
+                  {item.desc}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
-
       </div>
     </section>
   );

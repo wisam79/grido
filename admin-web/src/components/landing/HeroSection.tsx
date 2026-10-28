@@ -1,114 +1,89 @@
-import { useState, lazy, Suspense } from 'react';
-import { Download, Play } from 'lucide-react';
-import { AppMockup } from './AppMockup';
-import { ErrorBoundary } from '../common/ErrorBoundary';
-import { TourModal } from '../common/TourModal';
-import { useAppVersion, GITHUB_RELEASE_DOWNLOAD_URL } from '../../lib/version';
+import { useState } from "react";
+import { Download } from "lucide-react";
+import { AppMockup } from "./AppMockup";
+import { TourModal } from "../common/TourModal";
+import { useAppVersion, GITHUB_RELEASE_DOWNLOAD_URL } from "../../lib/version";
 
-const Hero3DScene = lazy(() => import('./Hero3DScene').then((m) => ({ default: m.Hero3DScene })));
-
-/** جولة الخطوات الثلاث — تحل محل مودال الفيديو الوهمي بمحتوى حقيقي ملموس */
 const QUICK_TOUR_STEPS = [
   {
-    title: 'اسحب صورة الزبون وأفلتها',
-    description: 'افتح الصورة من الكاميرا أو الجوال — Grido يكتشف الوجه ويقصّه تلقائياً وفق معيار الجواز المختار (عراقي، أمريكي، شينغن).',
+    title: "افتح صورة الزبون",
+    description:
+      "استورد الصورة من الكاميرا أو الجوال، ثم اختر مقاس الجواز أو الفيزا واضبط التأطير.",
   },
   {
-    title: 'عزل الخلفية بضغطة واحدة',
-    description: 'محرك الذكاء الاصطناعي المحلي يعزل الخلفية فورياً — أدق حواف للشعر والأطراف بلا هالات بيضاء، دون إنترنت تماماً.',
+    title: "اعزل الخلفية محلياً",
+    description:
+      "استخدم أداة عزل الخلفية، ثم راجع النتيجة وعدّل اللون قبل الطباعة.",
   },
   {
-    title: 'ورقة طباعة جاهزة في ثوانٍ',
-    description: 'توزيع آلي على ورقة A4 بخطوط قص دقيقة وحدود مستديرة — مطابقة تامة لمعايير الطباعة الرسمية، جاهزة للطابعة مباشرة.',
+    title: "جهّز ورقة الطباعة",
+    description:
+      "اختر توزيع الصور ومقاس الورقة وخطوط القص، ثم أرسل التصميم إلى الطابعة.",
   },
 ];
 
 export function HeroSection() {
   const [showTour, setShowTour] = useState(false);
   const version = useAppVersion();
-  const displayVersion = version ? `إصدار v${version}` : 'إصدار 2026';
 
   return (
-    <section id="top" className="relative pt-8 pb-16 md:pt-14 md:pb-24 overflow-hidden">
-      {/* 3D Atmospheric Three.js Scene */}
-      <ErrorBoundary fallback={null}>
-        <Suspense fallback={null}>
-          <Hero3DScene />
-        </Suspense>
-      </ErrorBoundary>
+    <section id="top" className="landing-hero">
+      <div aria-hidden="true" className="landing-hero-light" />
 
-      {/* Subtle Ambient Top Vignette — إضاءة خافتة جداً ونظيفة بأعلى الصفحة بلا ضبابية */}
-      <div className="absolute top-0 inset-x-0 h-[400px] bg-[radial-gradient(ellipse_60%_35%_at_50%_0%,rgba(59,130,246,0.06),transparent_70%)] pointer-events-none z-0" />
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-
-        {/* Top Header & Conversion Block */}
-        <div className="flex flex-col items-center text-center max-w-5xl mx-auto mb-10 sm:mb-12">
-
-          {/* Version Badge — نسخة مميزة بنقطة نابضة */}
-          <div className="ai-badge ai-badge-pulse mb-4 sm:mb-5 shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-brand-light animate-pulse" />
-            <span className="font-semibold">{displayVersion}</span>
-          </div>
-
-          {/* Grand Main Headline */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-black text-white tracking-tight leading-[1.15] mb-5 text-balance max-w-4xl">
-            <span className="inline-block">استوديو متكامل لصور الهوية والطباعة</span>
-            <span className="block mt-2 sm:mt-3 text-gradient-brand">
-              عزل، تجهيز، وطباعة في ثوانٍ معدودة
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto mb-8 sm:mb-10 flex flex-col items-center text-center">
+          <p className="mb-4 flex min-h-6 items-center gap-3 text-xs font-medium text-text-secondary">
+            <span>
+              Grido Studio لـ <bdi>Windows</bdi>
             </span>
-          </h1>
-
-          {/* Sub-headline */}
-          <p className="text-sm sm:text-base md:text-lg text-text-secondary leading-relaxed max-w-2xl mb-8 font-normal text-balance">
-            ضبط تلقائي لمعايير الجوازات والفيزا الدولية (ICAO)، عزل نقي للخلفيات، وتوزيع شبكي يقلل هدر الورق — معالجة وطباعة محلية بالكامل على جهازك.
+            {version && (
+              <span dir="ltr" className="font-mono text-text-muted">
+                v{version}
+              </span>
+            )}
           </p>
 
-          {/* Action Buttons Row */}
-          <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-4 mb-3 w-full sm:w-auto">
+          <h1 className="text-3xl sm:text-5xl lg:text-[56px] font-bold tracking-tight leading-[1.3] text-balance">
+            صور الهوية والطباعة،
+            <span className="block text-brand-light">في استوديو واحد.</span>
+          </h1>
+
+          <p className="mt-5 max-w-xl text-sm sm:text-base text-text-secondary leading-[1.8] text-balance">
+            عزل الخلفية، تجهيز صور الجوازات والفيزا، وتوزيعها على ورقة الطباعة —
+            بأدوات مصممة لعمل الاستوديو اليومي.
+          </p>
+
+          <div className="mt-6 flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row">
             <a
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary !h-13 !px-8 text-sm sm:text-base font-bold hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
+              className="btn-primary h-12 px-6"
             >
-              <Download className="w-5 h-5" />
+              <Download aria-hidden="true" className="h-4 w-4 shrink-0" />
               <span>تحميل النسخة التجريبية مجاناً</span>
             </a>
-
             <button
+              type="button"
               onClick={() => setShowTour(true)}
-              className="btn-secondary !h-13 !px-6 text-sm font-semibold hover:scale-105 active:scale-95 transition-all w-full sm:w-auto justify-center"
+              className="btn-secondary h-12 px-6"
             >
-              <Play className="w-4 h-4 text-brand-light fill-brand-light" />
-              <span>جولة سريعة: 3 خطوات فقط</span>
+              جولة في 3 خطوات
             </button>
           </div>
 
-          <p className="text-[11px] text-text-muted mb-7">
-            جرّب كافة ميزات الاستوديو مجاناً على أجهزتك — تفعيل دائم مدى الحياة متاح عند الرغبة.
-          </p>
-
-          {/* Unified Trust Strip — فواصل نقطية أنظف */}
-          <div className="ds-card-inset flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-2.5 px-5 backdrop-blur-md text-xs text-text-secondary shadow-sm">
-            {['معالجة وطباعة محلية بالكامل', 'خفيف جداً (<120MB ذاكرة)', 'مطابق لمعايير ICAO الرسمية'].map((label, i) => (
-              <div key={label} className="flex items-center gap-1.5 text-white">
-                {i > 0 && <span className="w-1 h-1 rounded-full bg-brand-primary/50 mx-0.5" aria-hidden="true" />}
-                <span className="font-semibold">{label}</span>
-              </div>
-            ))}
-          </div>
-
+          <ul
+            className="landing-facts mt-6 justify-center"
+            aria-label="معلومات البرنامج"
+          >
+            <li className="landing-fact">عزل وطباعة محليان</li>
+            <li className="landing-fact">ترخيص دائم بدفعة واحدة</li>
+          </ul>
         </div>
 
-        {/* Grand Desktop App Showcase */}
-        <div className="relative w-full pt-2">
-          <AppMockup />
-        </div>
-
+        <AppMockup paused={showTour} />
       </div>
 
-      {/* Interactive Quick Tour Modal — بديل حقيقي متاح لمودال الفيديو الوهمي */}
       <TourModal
         open={showTour}
         onClose={() => setShowTour(false)}

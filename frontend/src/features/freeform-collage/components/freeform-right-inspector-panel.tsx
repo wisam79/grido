@@ -1,24 +1,18 @@
 import React from 'react';
 
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  ArrowsOut,
-  CaretDown,
-  Cursor,
-  LockSimple,
-  LockSimpleOpen,
-  Ruler,
-  SlidersHorizontal,
-} from '@/components/ui/icons';
+import { ArrowClockwise, LockSimple, LockSimpleOpen } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
+import { FreeformToolButton } from './freeform-top-action-bar';
 import { PHOTO_PRESET_DIMENSIONS_MM, PHOTO_PRESET_LABELS } from '../lib/freeform-math';
 
 import type { FreeformSlot, PhotoPresetType } from '../types';
@@ -32,9 +26,7 @@ interface FreeformRightInspectorPanelProps {
   onUpdateSlot: (updated: Partial<FreeformSlot>) => void;
 }
 
-/** حقل رقم ملمي مصمم — ملصق أيقوني مدمج + وحدة مم + تقييد داخل حدود الورقة */
 function MmField({
-  icon,
   label,
   value,
   min,
@@ -42,7 +34,6 @@ function MmField({
   step,
   onChange,
 }: {
-  icon: React.ReactNode;
   label: string;
   value: number;
   min: number;
@@ -50,28 +41,26 @@ function MmField({
   step: number;
   onChange: (v: string) => void;
 }) {
+  const inputId = React.useId();
+
   return (
-    <div className="relative">
-      <span
-        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none"
-        title={label}
-      >
-        {icon}
-      </span>
+    <div className="min-w-0 space-y-1">
+      <label htmlFor={inputId} className="flex items-center justify-between text-muted-foreground">
+        <span>{label}</span>
+        <span className="text-micro">مم</span>
+      </label>
       <Input
+        id={inputId}
         type="number"
         step={step}
         min={min}
         max={max}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-8 pr-7 pl-7 text-center font-mono text-mini font-bold rounded-md bg-input/40 border-border/60 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        className="h-8 min-w-0 rounded-md border-border/60 bg-background px-2 text-center text-xs tabular-nums shadow-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         dir="ltr"
         aria-label={label}
       />
-      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-2xs font-bold text-muted-foreground pointer-events-none font-mono">
-        مم
-      </span>
     </div>
   );
 }
@@ -84,17 +73,15 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
     paperHeightMM,
     onUpdateSlot,
   }) {
+    const presetId = React.useId();
+
     if (!slot) {
       return (
         <aside
-          className="w-[248px] shrink-0 border-s border-border/40 bg-card/60 backdrop-blur-sm h-full min-h-0 overflow-y-auto font-cairo select-none"
+          className="h-full min-h-0 min-w-0 overflow-y-auto bg-card font-cairo text-xs text-muted-foreground"
           dir="rtl"
         >
-          <div className="flex flex-col items-center justify-center h-full min-h-[160px] p-4 text-center gap-1.5 text-muted-foreground">
-            <SlidersHorizontal className="w-6 h-6 opacity-30 text-primary" weight="duotone" />
-            <span className="text-xs font-bold text-foreground">لا خلية محددة</span>
-            <span className="text-micro leading-relaxed">انقر خلية لضبط المقاس والموقع</span>
-          </div>
+          <p className="p-4 text-center">لا خلية محددة</p>
         </aside>
       );
     }
@@ -165,90 +152,78 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
 
     return (
       <aside
-        className="w-[248px] shrink-0 border-s border-border/40 bg-card/60 backdrop-blur-sm h-full min-h-0 overflow-y-auto font-cairo text-xs select-none"
+        className="h-full min-h-0 min-w-0 overflow-y-auto bg-card font-cairo text-xs text-foreground"
         dir="rtl"
       >
-        <div className="space-y-2.5 p-3">
-          {/* الرأس: التسمية + التحديد الجماعي */}
-          <div className="flex items-center justify-between gap-1.5 border-b border-border/40 pb-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-              <span className="font-bold text-foreground truncate">
-                {slot.label || 'خلية مخصصة'}
-              </span>
-            </div>
-            {multiSelectedCount > 1 && (
-              <span
-                className="font-mono text-micro font-black text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.5 shrink-0"
-                dir="ltr"
+        <div className="space-y-3 p-3">
+          <h3 className="border-b border-border/40 pb-3 font-semibold">
+            {multiSelectedCount > 1 ? 'خصائص الخلية الأساسية' : 'خصائص الخلية'}
+          </h3>
+
+          <div className="min-w-0 space-y-2">
+            <label htmlFor={presetId} className="text-muted-foreground">
+              المقاس
+            </label>
+            <div className="flex items-center gap-1 min-w-0">
+              <Select
+                dir="rtl"
+                value={slot.presetType || 'custom'}
+                onValueChange={(value) => handleSelectPreset(value as PhotoPresetType)}
               >
-                ×{multiSelectedCount}
-              </span>
-            )}
+                <SelectTrigger
+                  id={presetId}
+                  aria-label="المقاس"
+                  className="h-8 w-full min-w-0 rounded-md bg-background shadow-none [&_[data-slot=select-value]]:min-w-0"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-(--z-print-toolbar) font-cairo text-xs">
+                  {Object.keys(PHOTO_PRESET_DIMENSIONS_MM).map((key) => (
+                    <SelectItem key={key} value={key} className="min-h-8">
+                      {PHOTO_PRESET_LABELS[key as PhotoPresetType]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FreeformToolButton
+                title="استعادة المقاس"
+                onClick={() => handleSelectPreset(slot.presetType || 'custom')}
+              >
+                <ArrowClockwise className="size-4" />
+              </FreeformToolButton>
+            </div>
           </div>
 
-          {/* قائمة المقاسات */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-full justify-between px-2 text-mini gap-1 rounded-md border-border/70 hover:border-primary/40 cursor-pointer shrink-0 font-bold"
-              >
-                <span className="flex items-center gap-1.5 min-w-0">
-                  <ArrowsOut className="w-3 h-3 text-primary/70" weight="bold" />
-                  <span className="truncate">
-                    {PHOTO_PRESET_LABELS[slot.presetType || 'custom']}
-                  </span>
-                </span>
-                <CaretDown className="w-2.5 h-2.5 opacity-60" weight="bold" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-44 font-cairo text-xs z-(--z-print-toolbar)"
-            >
-              {Object.entries(PHOTO_PRESET_DIMENSIONS_MM).map(([key, dims]) => (
-                <DropdownMenuItem
-                  key={key}
-                  onClick={() => handleSelectPreset(key as PhotoPresetType)}
-                  className="flex items-center justify-between cursor-pointer py-1.5"
-                >
-                  <span>{PHOTO_PRESET_LABELS[key as PhotoPresetType]}</span>
-                  <span className="font-mono text-micro text-muted-foreground" dir="ltr">
-                    {dims.w}×{dims.h}
-                  </span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* الأبعاد مع قفل النسبة */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-micro text-muted-foreground font-bold">
-              <span>الأبعاد</span>
-              <button
-                type="button"
-                onClick={toggleAspectLock}
-                aria-label={slot.lockAspect ? 'فك القفل' : 'قفل النسبة'}
-                className={cn(
-                  'cursor-pointer p-0.5 rounded transition-colors duration-150',
-                  'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-                  slot.lockAspect
-                    ? 'text-primary'
-                    : 'text-muted-foreground/60 hover:text-foreground',
-                )}
-              >
-                {slot.lockAspect ? (
-                  <LockSimple className="w-3 h-3 text-primary" weight="fill" />
-                ) : (
-                  <LockSimpleOpen className="w-3 h-3" weight="bold" />
-                )}
-              </button>
+          <section className="space-y-2 border-t border-border/40 pt-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">الأبعاد</h3>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={toggleAspectLock}
+                    aria-label="قفل النسبة"
+                    aria-pressed={Boolean(slot.lockAspect)}
+                    className={cn(
+                      'flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 hover:bg-primary/10',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                      slot.lockAspect ? 'bg-primary/10 text-primary' : 'text-muted-foreground',
+                    )}
+                  >
+                    {slot.lockAspect ? (
+                      <LockSimple className="h-3.5 w-3.5" weight="fill" aria-hidden="true" />
+                    ) : (
+                      <LockSimpleOpen className="h-3.5 w-3.5" weight="bold" aria-hidden="true" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="z-(--z-print-toolbar)">
+                  {slot.lockAspect ? 'فك قفل النسبة' : 'قفل النسبة'}
+                </TooltipContent>
+              </Tooltip>
             </div>
-            <div className="grid grid-cols-[1fr_20px_1fr] items-center gap-1.5" dir="ltr">
+            <div className="grid min-w-0 grid-cols-2 gap-2">
               <MmField
-                icon={<Ruler className="w-3 h-3" weight="bold" />}
                 label="العرض"
                 value={wMM}
                 min={5}
@@ -256,9 +231,7 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
                 step={0.5}
                 onChange={handleWidthChange}
               />
-              <span className="text-micro font-bold text-muted-foreground/60 text-center">×</span>
               <MmField
-                icon={<Ruler className="w-3 h-3 rotate-90" weight="bold" />}
                 label="الارتفاع"
                 value={hMM}
                 min={5}
@@ -267,14 +240,12 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
                 onChange={handleHeightChange}
               />
             </div>
-          </div>
+          </section>
 
-          {/* الموقع: X , Y */}
-          <div className="space-y-1.5">
-            <span className="text-micro text-muted-foreground font-bold">الموقع (0,0)</span>
-            <div className="grid grid-cols-[1fr_20px_1fr] items-center gap-1.5" dir="ltr">
+          <section className="space-y-2 border-t border-border/40 pt-3">
+            <h3 className="font-semibold">الموقع</h3>
+            <div className="grid min-w-0 grid-cols-2 gap-2" dir="ltr">
               <MmField
-                icon={<Cursor className="w-3 h-3" weight="bold" />}
                 label="الموقع X"
                 value={xMM}
                 min={0}
@@ -282,9 +253,7 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
                 step={0.5}
                 onChange={handleXChange}
               />
-              <span className="text-micro font-bold text-muted-foreground/60 text-center">,</span>
               <MmField
-                icon={<Cursor className="w-3 h-3 rotate-90" weight="bold" />}
                 label="الموقع Y"
                 value={yMM}
                 min={0}
@@ -293,7 +262,7 @@ export const FreeformRightInspectorPanel: React.FC<FreeformRightInspectorPanelPr
                 onChange={handleYChange}
               />
             </div>
-          </div>
+          </section>
         </div>
       </aside>
     );

@@ -1,9 +1,12 @@
 import React, { useRef, useCallback, useState, useEffect, memo } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { Minus, Plus } from '@/components/ui/icons';
 import { clamp } from '@/lib/clamp';
 import { cn } from '@/lib/utils';
 
 import { FreeformSlotCard } from './freeform-slot-card';
+import { FreeformToolButton } from './freeform-top-action-bar';
 import { resizeSlotWithSnap, moveSlot, moveSlots, type ResizeHandle } from '../lib/freeform-math';
 
 import type { FreeformSlot, SnapLine } from '../types';
@@ -59,6 +62,8 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
     const paperRef = useRef<HTMLDivElement>(null);
     const [activeSnapLines, setActiveSnapLines] = useState<SnapLine[]>([]);
     const [isDragging, setIsDragging] = useState(false);
+    const [zoom, setZoom] = useState(1);
+    const viewportRef = useRef<HTMLDivElement>(null);
     const rafId = useRef<number | null>(null);
     const mountedRef = useRef(true);
 
@@ -286,10 +291,6 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
       (pos) => pos > 0.005 && pos < 0.995,
     );
 
-    // 📊 نسبة استغلال مساحة الورقة (Coverage %) — كم من الورقة تغطيه الصور فعلياً
-    const coverage =
-      slots.length > 0 ? Math.round(slots.reduce((acc, s) => acc + s.w * s.h, 0) * 100) : 0;
-
     // 📏 المؤشر الحي: أبعاد الخلية الأساسية بالمليمتر أثناء السحب أو التحجيم
     const liveSlot = slots.find((s) => s.id === selectedSlotId);
     const liveBadge =
@@ -298,102 +299,129 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
         : null;
 
     return (
-      <div className="w-full flex items-center justify-center bg-muted/30 rounded-md relative flex-1 min-h-0 overflow-hidden p-3 border border-border/40 font-cairo select-none">
-        {/* ظل خلفي ناعم يحاكي طاولة الاستوديو */}
-        <div
-          ref={paperRef}
-          className="relative bg-white dark:bg-card rounded-md transition-shadow overflow-hidden touch-none shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.85),0_4px_16px_rgba(0,0,0,0.6)] dark:ring-1 dark:ring-white/12 border border-border/40"
-          style={{
-            width: paperAspect >= 1 ? '97%' : 'auto',
-            height: paperAspect < 1 ? '97%' : 'auto',
-            maxWidth: '100%',
-            maxHeight: '100%',
-            aspectRatio: `${paperWidthMM} / ${paperHeightMM}`,
-          }}
-          onPointerDown={onPaperPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-        >
-          {/* شبكة نقاط خفيفة جداً داخل الورقة */}
-          <div className="absolute inset-0 bg-[radial-gradient(rgba(120,130,150,0.35)_0.5px,transparent_0.5px)] dark:bg-[radial-gradient(rgba(255,255,255,0.12)_0.5px,transparent_0.5px)] [background-size:16px_16px] opacity-30 pointer-events-none" />
-
-          {/* خطوط القص الإرشادية عند التفعيل */}
-          {showCutLines && (
-            <div className="absolute inset-0 pointer-events-none z-(--z-canvas-overlay) opacity-60">
-              {cutLinesHorizontal.map((pos, i) => (
-                <div
-                  key={`cut-h-${i}`}
-                  className="absolute left-0 right-0 border-t border-dashed border-destructive"
-                  style={{ top: `${pos * 100}%` }}
-                />
-              ))}
-              {cutLinesVertical.map((pos, i) => (
-                <div
-                  key={`cut-v-${i}`}
-                  className="absolute top-0 bottom-0 border-s border-dashed border-destructive"
-                  style={{ left: `${pos * 100}%` }}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* خطوط المحاذاة الذكية الإرشادية */}
-          {activeSnapLines.map((line) => (
-            <div
-              key={line.id}
-              className={cn(
-                'absolute bg-primary z-(--z-canvas-guides) pointer-events-none transition-opacity duration-75',
-                line.axis === 'x' ? 'w-px top-0 bottom-0' : 'h-px left-0 right-0',
-              )}
-              style={{
-                [line.axis === 'x' ? 'left' : 'top']: `${line.position * 100}%`,
-              }}
-            />
-          ))}
-
-          {/* شارة أبعاد الورقة المليمترية مع عدد الخلايا ونسبة الاستغلال */}
+      <div className="relative isolate w-full flex-1 min-h-0 min-w-0 bg-muted/40 font-cairo select-none [container-type:size]">
+        <div ref={viewportRef} className="absolute inset-0 overflow-auto" dir="ltr">
           <div
-            className="absolute bottom-1.5 start-1.5 bg-foreground/85 backdrop-blur-sm text-background text-micro px-2 py-0.5 rounded-md font-mono z-(--z-canvas-overlay) pointer-events-none tracking-wide shadow-xs flex items-center gap-1.5"
-            dir="ltr"
+            className="grid place-items-center min-w-full min-h-full w-max p-8 pb-16"
+            onPointerDown={onPaperPointerDown}
           >
-            <span className="font-bold">
-              {paperWidthMM}×{paperHeightMM}mm
-            </span>
-            <span className="opacity-40">|</span>
-            <span>{slots.length} صور</span>
-            <span className="opacity-40">|</span>
-            <span className="font-bold">{coverage}%</span>
-          </div>
-
-          {/* المؤشر الحي بالمليمتر أثناء السحب أو التحجيم */}
-          {liveBadge && (
             <div
-              className="absolute top-1.5 start-1.5 bg-primary text-primary-foreground text-micro px-2 py-0.5 rounded-md font-mono z-(--z-canvas-overlay) pointer-events-none shadow-fluent-8 animate-in fade-in duration-75"
-              dir="ltr"
-            >
-              {liveBadge}
-            </div>
-          )}
-
-          {/* بطاقات خلايا الكولاج التفاعلية */}
-          {slots.map((slot, index) => (
-            <FreeformSlotCard
-              key={slot.id}
-              slot={slot}
-              index={index}
-              isSelected={slot.id === selectedSlotId}
-              isMultiSelected={multiSelectedIds.includes(slot.id)}
-              paperWidthMM={paperWidthMM}
-              paperHeightMM={paperHeightMM}
-              onBodyPointerDown={onBodyPointerDown}
-              onHandlePointerDown={onHandlePointerDown}
+              ref={paperRef}
+              data-testid="freeform-paper"
+              className="relative shrink-0 bg-background touch-none shadow-fluent-8 outline outline-border/60"
+              style={{
+                width: `calc(min(calc(100cqw - 64px), calc((100cqh - 96px) * ${paperAspect})) * ${zoom})`,
+                aspectRatio: `${paperWidthMM} / ${paperHeightMM}`,
+              }}
+              onPointerDown={onPaperPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={endDrag}
               onPointerCancel={endDrag}
-              onKeyDown={onCellKeyDown}
-            />
-          ))}
+            >
+              {/* خطوط القص الإرشادية عند التفعيل */}
+              {showCutLines && (
+                <div className="absolute inset-0 pointer-events-none z-(--z-canvas-overlay) opacity-60">
+                  {cutLinesHorizontal.map((pos, i) => (
+                    <div
+                      key={`cut-h-${i}`}
+                      className="absolute left-0 right-0 border-t border-dashed border-destructive"
+                      style={{ top: `${pos * 100}%` }}
+                    />
+                  ))}
+                  {cutLinesVertical.map((pos, i) => (
+                    <div
+                      key={`cut-v-${i}`}
+                      className="absolute top-0 bottom-0 border-s border-dashed border-destructive"
+                      style={{ left: `${pos * 100}%` }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* خطوط المحاذاة الذكية الإرشادية */}
+              {activeSnapLines.map((line) => (
+                <div
+                  key={line.id}
+                  className={cn(
+                    'absolute bg-primary z-(--z-canvas-guides) pointer-events-none transition-opacity duration-75',
+                    line.axis === 'x' ? 'w-px top-0 bottom-0' : 'h-px left-0 right-0',
+                  )}
+                  style={{
+                    [line.axis === 'x' ? 'left' : 'top']: `${line.position * 100}%`,
+                  }}
+                />
+              ))}
+
+              {/* المؤشر الحي بالمليمتر أثناء السحب أو التحجيم */}
+              {liveBadge && (
+                <div
+                  className="absolute top-1.5 start-1.5 bg-primary text-primary-foreground text-micro px-2 py-0.5 rounded-md font-mono z-(--z-canvas-overlay) pointer-events-none shadow-fluent-8 animate-in fade-in duration-75"
+                  dir="ltr"
+                >
+                  {liveBadge}
+                </div>
+              )}
+
+              {/* بطاقات خلايا الكولاج التفاعلية */}
+              {slots.map((slot, index) => (
+                <FreeformSlotCard
+                  key={slot.id}
+                  slot={slot}
+                  index={index}
+                  isSelected={slot.id === selectedSlotId}
+                  isMultiSelected={multiSelectedIds.includes(slot.id)}
+                  paperWidthMM={paperWidthMM}
+                  paperHeightMM={paperHeightMM}
+                  onBodyPointerDown={onBodyPointerDown}
+                  onHandlePointerDown={onHandlePointerDown}
+                  onPointerMove={onPointerMove}
+                  onPointerUp={endDrag}
+                  onPointerCancel={endDrag}
+                  onKeyDown={onCellKeyDown}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div
+          role="group"
+          aria-label="عرض الورقة"
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 z-(--z-canvas-guides) flex items-center gap-1 bg-card border border-border/60 rounded-lg p-1 shadow-fluent-8"
+          dir="ltr"
+        >
+          <FreeformToolButton
+            title="تصغير العرض"
+            onClick={() => setZoom((value) => Math.max(0.5, value - 0.25))}
+            disabled={zoom <= 0.5 || isDragging}
+          >
+            <Minus className="size-4" />
+          </FreeformToolButton>
+          <span
+            className="w-12 text-center text-mini font-mono tabular-nums"
+            aria-label="تكبير العرض نسبةً للملاءمة"
+          >
+            {Math.round(zoom * 100)}%
+          </span>
+          <FreeformToolButton
+            title="تكبير العرض"
+            onClick={() => setZoom((value) => Math.min(3, value + 0.25))}
+            disabled={zoom >= 3 || isDragging}
+          >
+            <Plus className="size-4" />
+          </FreeformToolButton>
+          <span className="h-4 w-px bg-border/60 mx-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs"
+            disabled={isDragging}
+            onClick={() => {
+              setZoom(1);
+              viewportRef.current?.scrollTo({ top: 0, left: 0 });
+            }}
+          >
+            ملاءمة
+          </Button>
         </div>
       </div>
     );
