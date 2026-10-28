@@ -763,7 +763,10 @@ func sanitizePrintFilePath(filePath string) (string, error) {
 		return "", fmt.Errorf("مسار ملف الطباعة فارغ")
 	}
 
-	cleanPath := filepath.Clean(filePath)
+	cleanPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return "", fmt.Errorf("مسار الملف غير صالح: %w", err)
+	}
 	resolved, err := filepath.EvalSymlinks(cleanPath)
 	if err == nil {
 		cleanPath = resolved
