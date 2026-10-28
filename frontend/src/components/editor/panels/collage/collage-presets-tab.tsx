@@ -67,30 +67,22 @@ const StudioPaperThumbnail = React.memo(function StudioPaperThumbnail({
         const y = 5 + cell.y * 132;
         const w = cell.w * 90;
         const h = cell.h * 132;
-        const radius = Math.min(w, h) * 0.16;
         return (
-          <g key={index}>
-            <rect
-              x={x}
-              y={y}
-              width={w}
-              height={h}
-              rx="1"
-              className={cn(
-                'transition-colors duration-150',
-                active ? 'fill-primary/20 stroke-primary/70' : 'fill-primary/10 stroke-primary/35',
-              )}
-              strokeWidth="0.7"
-            />
-            {w >= 12 && h >= 15 && (
-              <g className={active ? 'fill-primary/70' : 'fill-muted-foreground/50'}>
-                <circle cx={x + w / 2} cy={y + h * 0.36} r={radius} />
-                <path
-                  d={`M ${x + w * 0.2} ${y + h * 0.85} Q ${x + w * 0.2} ${y + h * 0.55} ${x + w / 2} ${y + h * 0.55} Q ${x + w * 0.8} ${y + h * 0.55} ${x + w * 0.8} ${y + h * 0.85} Z`}
-                />
-              </g>
+          <rect
+            key={index}
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            rx="1"
+            className={cn(
+              'transition-colors duration-150',
+              active
+                ? 'fill-primary/20 stroke-primary/60'
+                : 'fill-muted-foreground/10 stroke-muted-foreground/35',
             )}
-          </g>
+            strokeWidth="0.7"
+          />
         );
       })}
     </svg>
@@ -172,7 +164,7 @@ export function CollagePresetsTab({
           viewMode === 'grid' ? 'flex-col gap-2' : 'items-center gap-3',
           active
             ? 'border-primary/60 bg-primary/5'
-            : 'border-border/50 hover:border-primary/40 hover:bg-muted/20',
+            : 'border-border/40 hover:border-border/70 hover:bg-muted/30',
           FOCUS_RING,
         )}
       >
@@ -257,7 +249,7 @@ export function CollagePresetsTab({
             placeholder="بحث في القوالب…"
             aria-label="بحث في القوالب"
             className={cn(
-              'h-9 w-full rounded-md border border-border/60 bg-muted/20 ps-9 pe-9 text-xs placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:appearance-none',
+              'h-8 w-full rounded-md border border-border/50 bg-muted/20 ps-9 pe-9 text-xs placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:appearance-none',
               FOCUS_RING,
             )}
           />

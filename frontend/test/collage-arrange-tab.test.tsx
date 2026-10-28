@@ -82,6 +82,10 @@ describe('CollageArrangeTab — مخطط الشبكة', () => {
     setupGrid(['A', undefined, undefined, undefined]);
     renderTab();
     expect(screen.getByText(/1 صورة · 3 فارغة/)).toBeInTheDocument();
+    const preview = screen.getByTestId('collage-grid-preview');
+    expect(preview).toHaveAttribute('dir', 'ltr');
+    expect(within(preview).getByRole('img', { name: 'خانة 1 ممتلئة' })).toBeInTheDocument();
+    expect(within(preview).getByRole('img', { name: 'خانة 2 فارغة' })).toBeInTheDocument();
   });
 });
 

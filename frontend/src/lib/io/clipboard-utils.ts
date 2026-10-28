@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { resolveImageAspectRatio, setCachedImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { sanitizeText, TEXT_MAX_LENGTH } from '@/lib/canvas/text-helpers';
 import { useEditorStore } from '@/lib/editor-store';
-import { fetchLocalApi } from '@/lib/local-api';
+import { fetchLocalApi, isLocalApiAvailable } from '@/lib/local-api';
 import { createLogger } from '@/lib/logger';
 import { CanvasElementSchema } from '@/lib/schema';
 
@@ -83,12 +83,7 @@ export async function pasteFromClipboardOrStore(): Promise<boolean> {
           let aspect: number | null = null;
 
           // 🚀 1. المسار المكتبي السريع: بث ثنائي مباشر إلى Go عبر /api/upload-media (صفر Base64)
-          if (
-            typeof window !== 'undefined' &&
-            window.location?.origin &&
-            !window.location.origin.startsWith('file:') &&
-            typeof fetch === 'function'
-          ) {
+          if (isLocalApiAvailable()) {
             try {
               const resp = await fetchLocalApi(`${window.location.origin}/api/upload-media`, {
                 method: 'POST',

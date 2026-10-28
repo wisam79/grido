@@ -19,6 +19,7 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { useStageRef } from '@/lib/canvas/stage-context';
+import { MM_PER_INCH, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import {
   exportCanvas,
@@ -168,7 +169,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           // الصورة صامتاً. لذا نأخذ مقاس القالب الفيزيائي فقط حين يطابق الكانفاس عند
           // هذه الدقة (وهو ما يعرضه الحوار في «الحجم الفعلي»)، وإلا نشتق المقاس من
           // البكسلات نفسها.
-          const pxPerMM = dpi / 25.4;
+          const pxPerMM = dpi / MM_PER_INCH;
           const matchesTemplate =
             !!template &&
             template.widthMM > 0 &&
@@ -520,8 +521,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-semibold">الحجم الفعلي:</span>
                   <span className="font-bold">
-                    {Math.round((canvasWidth / printSettings.dpi) * 25.4)}×
-                    {Math.round((canvasHeight / printSettings.dpi) * 25.4)} مم
+                    {Math.round(pxToMm(canvasWidth, printSettings.dpi))}×
+                    {Math.round(pxToMm(canvasHeight, printSettings.dpi))} مم
                   </span>
                 </div>
                 <div className="flex justify-between">

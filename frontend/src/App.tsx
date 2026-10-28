@@ -71,9 +71,13 @@ export default function App() {
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
 
-  const { togglePanel, toggleZenMode, selectCollageTab, selectStudioTab } = panelsHook;
+  const { togglePanel, toggleZenMode, selectCollageTab, selectStudioTab, openPanel } = panelsHook;
 
   useEffect(() => {
+    const handleOpenProperties = () => {
+      useEditorStore.getState().selectElement(null);
+      openPanel('properties');
+    };
     const handleToggleRight = () => togglePanel('templates');
     const handleToggleLeft = () => togglePanel('properties');
     const handleToggleZen = () => toggleZenMode();
@@ -90,6 +94,7 @@ export default function App() {
       }
     };
     window.addEventListener('grido:toggle-right-sidebar', handleToggleRight);
+    window.addEventListener('grido:open-properties-panel', handleOpenProperties);
     window.addEventListener('grido:toggle-left-sidebar', handleToggleLeft);
     window.addEventListener('grido:toggle-zen-mode', handleToggleZen);
     window.addEventListener('grido:select-collage-tab', handleSelectCollageTab);
@@ -97,12 +102,13 @@ export default function App() {
 
     return () => {
       window.removeEventListener('grido:toggle-right-sidebar', handleToggleRight);
+      window.removeEventListener('grido:open-properties-panel', handleOpenProperties);
       window.removeEventListener('grido:toggle-left-sidebar', handleToggleLeft);
       window.removeEventListener('grido:toggle-zen-mode', handleToggleZen);
       window.removeEventListener('grido:select-collage-tab', handleSelectCollageTab);
       window.removeEventListener('grido:select-studio-tab', handleSelectStudioTab);
     };
-  }, [togglePanel, toggleZenMode, selectCollageTab, selectStudioTab]);
+  }, [togglePanel, toggleZenMode, selectCollageTab, selectStudioTab, openPanel]);
 
   const { isMaximized, isFocused, handleMinimize, handleMaximize, handleClose } =
     useWindowControls();

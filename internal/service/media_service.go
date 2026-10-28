@@ -161,7 +161,7 @@ func (s *MediaService) ResolveLocalImagePath(localPath string) (string, error) {
 	// معاينات الطباعة (print_*) تُوجَّه لمجلد Exports في main.go —
 	// فحص baseDir هنا يمنع فشل قراءة أبعاد صور المعاينة ويحمي ضد Path Traversal
 	if strings.HasPrefix(filename, "print_") {
-		baseDir = filepath.Join(utils.GetAppDir(), "Exports")
+		baseDir = utils.GetExportsDir()
 	} else {
 		baseDir = s.GetMediaDir()
 	}

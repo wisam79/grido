@@ -14,6 +14,7 @@
  * الفشل دائماً هادئ: يعيد url فارغاً وتبقى الخانة على تقريب CSS القديم.
  */
 
+import { DEFAULT_DPI } from '@/lib/canvas/units';
 import {
   applyLuminanceThreshold,
   applyNearestPixelate,
@@ -24,9 +25,6 @@ import { buildAdjustmentCSS, type FilterableObject } from '@/lib/utils';
 
 /** سقف الضلع الأطول لكانفاس المعاينة — يكفي حدة الشاشة ويحفظ الذاكرة. */
 const MAX_PREVIEW_PX = 480;
-
-/** أساس حساب أبعاد الطباعة للنسبة — نفس DPI الافتراضي للطباعة. */
-const PREVIEW_DPI = 300;
 
 export interface PixelPreviewResult {
   url: string;
@@ -76,8 +74,8 @@ export function renderPixelFilterPreview(
 
   // أبعاد الطباعة الكاملة للخانة مخفّضة إلى سقف المعاينة — كتلة pixelate تُقاس
   // بنسبة التصغير نفسها فتبقى المكعبات بمقياس المطبوع لا بمقياس المصدر.
-  const printW = Math.max(1, Math.round((slotRectMM.wMM / 25.4) * PREVIEW_DPI));
-  const printH = Math.max(1, Math.round((slotRectMM.hMM / 25.4) * PREVIEW_DPI));
+  const printW = Math.max(1, Math.round((slotRectMM.wMM / 25.4) * DEFAULT_DPI));
+  const printH = Math.max(1, Math.round((slotRectMM.hMM / 25.4) * DEFAULT_DPI));
   const shrink = Math.min(1, MAX_PREVIEW_PX / Math.max(printW, printH));
   const targetW = Math.max(4, Math.round(printW * shrink));
   const targetH = Math.max(4, Math.round(printH * shrink));

@@ -2,10 +2,9 @@ import { ImageSquare, ClipboardText, Stack } from '@/components/ui/icons';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { useEditorStore } from '@/lib/editor-store';
 import { pasteFromClipboardOrStore } from '@/lib/io/clipboard-utils';
-import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { openImageFileDialog, persistPickedImage } from '@/lib/io/file-dialog-utils';
 
 import { menuItemClassName, menuSectionLabelClassName } from './menu-item-styles';
-import { SaveImageFromBase64 } from '../../../../../wailsjs/go/main/App';
 
 /**
  * 🧭 قسم قائمة السياق للمساحة الفارغة: إضافة صورة، لصق، وتحديد الكل —
@@ -31,15 +30,7 @@ export function CanvasMenuSection({
             handleAction(async () => {
               const [b64] = await openImageFileDialog(false);
               if (b64) {
-                let srcToUse = b64;
-                if (b64.startsWith('data:image/')) {
-                  try {
-                    const localPath = await SaveImageFromBase64(b64);
-                    if (localPath) srcToUse = localPath;
-                  } catch {
-                    // Fallback
-                  }
-                }
+                const srcToUse = await persistPickedImage(b64);
                 const aspect = await resolveImageAspectRatio(srcToUse);
                 useEditorStore.getState().addImageElement(srcToUse, aspect);
               }

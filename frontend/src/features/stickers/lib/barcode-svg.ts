@@ -6,6 +6,8 @@ import React from 'react';
 
 import { createLogger } from '@/lib/logger';
 
+import { escapeXml } from './svg-rasterizer';
+
 const logger = createLogger('barcode-svg');
 
 type JsBarcodeFn = (
@@ -158,15 +160,6 @@ export async function generateQrCodeInnerSvgAsync(
     logger.error('Failed to generate QR Code SVG:', err);
     return qrWarningPlaceholder(value, size, options?.fgColor);
   }
-}
-
-function escapeXml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
 }
 
 /** عنصر تحذيري صريح بدل المربع الأسود الوهمي الذي يبدو رمزاً صالحاً وهو غير قابل للمسح */

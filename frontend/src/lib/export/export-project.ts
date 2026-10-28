@@ -1,7 +1,7 @@
 import { toast } from 'sonner';
 
 import { classifySaveResult } from '@/lib/io/save-result';
-import { fetchLocalApi } from '@/lib/local-api';
+import { fetchLocalApi, isLocalApiAvailable } from '@/lib/local-api';
 import { createLogger } from '@/lib/logger';
 
 import { exportCanvas } from './export-image';
@@ -37,12 +37,7 @@ export async function downloadBlob(
 ): Promise<string> {
   try {
     // 🚀 مسار البث الثنائي المباشر: تجنب تحويل الـ Blob إلى Base64 DataURL في V8
-    if (
-      typeof window !== 'undefined' &&
-      window.location?.origin &&
-      !window.location.origin.startsWith('file:') &&
-      typeof fetch === 'function'
-    ) {
+    if (isLocalApiAvailable()) {
       try {
         const query = new URLSearchParams({ filename });
         if (dir) query.set('dir', dir);

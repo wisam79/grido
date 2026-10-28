@@ -23,6 +23,13 @@ func GetAppDir() string {
 	return appDir
 }
 
+// GetExportsDir returns the Exports directory under the app dir, creating it if needed.
+func GetExportsDir() string {
+	exportsDir := filepath.Join(GetAppDir(), "Exports")
+	_ = os.MkdirAll(exportsDir, 0755)
+	return exportsDir
+}
+
 // PathWithinDir reports whether path lies strictly beneath dir.
 // Both sides are cleaned before comparison; symlinks must be resolved by the caller.
 func PathWithinDir(path, dir string) bool {

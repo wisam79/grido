@@ -148,13 +148,7 @@ export function BatchInsertDialog({
         normalizedSrcs.push(src);
       }
 
-      let aspectMap: Map<string, number>;
-      if (typeof resolveBatchImageAspectRatios === 'function') {
-        aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
-      } else {
-        const aspects = await Promise.all(normalizedSrcs.map((s) => resolveImageAspectRatio(s)));
-        aspectMap = new Map(normalizedSrcs.map((s, idx) => [s, aspects[idx]]));
-      }
+      const aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
 
       const newItems: QueuedImage[] = normalizedSrcs.map((src, i) => ({
         id: `img-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
@@ -196,13 +190,7 @@ export function BatchInsertDialog({
         normalizedSrcs.push(src);
       }
 
-      let aspectMap: Map<string, number>;
-      if (typeof resolveBatchImageAspectRatios === 'function') {
-        aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
-      } else {
-        const aspects = await Promise.all(normalizedSrcs.map((s) => resolveImageAspectRatio(s)));
-        aspectMap = new Map(normalizedSrcs.map((s, idx) => [s, aspects[idx]]));
-      }
+      const aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
 
       const newItems: QueuedImage[] = normalizedSrcs.map((src, i) => ({
         id: `dir-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,

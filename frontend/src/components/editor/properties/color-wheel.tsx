@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import { clamp } from '@/lib/clamp';
 import {
   hexToHsv,
   hsvToHex,
@@ -14,10 +15,6 @@ const WHEEL_SIZE = 156;
 const WHEEL_INSET = 8;
 const VALUE_STEP = 1;
 const WHEEL_STEP = 2;
-
-function clampRatio(value: number): number {
-  return Math.min(1, Math.max(0, value));
-}
 
 export function ColorWheel({
   color,
@@ -87,7 +84,7 @@ export function ColorWheel({
         image.data[index] = r;
         image.data[index + 1] = g;
         image.data[index + 2] = b;
-        image.data[index + 3] = Math.round(clampRatio((radius - distance) / edge) * 255);
+        image.data[index + 3] = Math.round(clamp((radius - distance) / edge, 0, 1) * 255);
       }
     }
 
@@ -114,7 +111,7 @@ export function ColorWheel({
     (clientX: number) => {
       const rect = valueRef.current?.getBoundingClientRect();
       if (!rect) return;
-      commit({ ...hsvRef.current, v: clampRatio((clientX - rect.left) / rect.width) });
+      commit({ ...hsvRef.current, v: clamp((clientX - rect.left) / rect.width, 0, 1) });
     },
     [commit],
   );
@@ -134,7 +131,7 @@ export function ColorWheel({
     event.preventDefault();
     const updated = {
       h: ((next.h % 360) + 360) % 360,
-      s: clampRatio(next.s),
+      s: clamp(next.s, 0, 1),
       v: next.v,
     };
     commit(updated);
@@ -154,7 +151,7 @@ export function ColorWheel({
 
     if (!handled) return;
     event.preventDefault();
-    const updated = { ...hsvRef.current, v: clampRatio(value) };
+    const updated = { ...hsvRef.current, v: clamp(value, 0, 1) };
     commit(updated);
     onCommit?.(hsvToHex(updated));
   };

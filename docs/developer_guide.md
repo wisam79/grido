@@ -4,6 +4,14 @@ Welcome to the **Grido Studio** developer guide. This document provides an in-de
 
 ---
 
+## مراجعة توحيد الأدوات وإصلاحات ما قبل الرفع — 28 أكتوبر 2026
+
+- مجلد التصدير يُنشأ عبر `utils.GetExportsDir`، وفحوص نطاق المسارات تشترك في `PathWithinDir` و`PathWithinDirInclusive`. حارسا الطباعة الأصلية وGDI يحوّلان مجلد التصدير إلى مسار مطلق قبل `EvalSymlinks`، حتى يعمل تجاوز `GRIDO_APP_DIR` النسبي مع بقاء رفض المجلد الشقيق `ExportsEvil`.
+- `sanitizeNativePrintFilePath` في `internal/service/print_native.go` يفصل التحقق عن إطلاق برنامج الطباعة؛ `PrintNative` يستعمله فعلياً دون تغيير توقيع IPC، وتختبره حالات الانحدار دون فتح نافذة نظام.
+- توحيد تفاصيل رسم خطوط القص عبر `cutLinePixels`، والتحويل إلى CMYK عبر `rgbToRichCMYK`، ومسار تركيب الورقة في خدمات التصدير والطباعة. هذه إعادة استخدام للمنطق الحالي وليست تغييراً في هندسة الخلايا أو فضاء اللون.
+- الواجهة تستخدم `persistPickedImage` لتثبيت صور DataURL، و`isLocalApiAvailable` لفحص إمكانية استعمال جسر HTTP، و`isAutoFillGridEnabled`/`setAutoFillGridEnabled` للتفضيل المحلي، و`downloadJsonFile` لتنزيل JSON عبر سجل الروابط المؤقتة. تحويلات المليمتر والبكسل تعتمد مكتبة `canvas/units`، وأقصى نسخة عرض يعتمد `MAX_DISPLAY_DIM`، وقائمة الورق المشتركة `ALL_PAPER_SIZES`.
+- ألواح تبويبات الكولاج غير النشطة موجودة كحاويات مخفية بلا محتوى ثقيل، لتبقى مراجع `aria-controls` صحيحة مع استمرار تركيب الأداة النشطة وحدها.
+
 ## 1. Architectural Overview
 
 Grido Studio is built as a hybrid desktop application utilizing **Wails v3** (Go backend) and **React + TypeScript** (Frontend).

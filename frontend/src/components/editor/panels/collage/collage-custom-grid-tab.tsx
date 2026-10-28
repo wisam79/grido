@@ -12,6 +12,7 @@ import {
   ArrowClockwise,
 } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
+import { pxToMm } from '@/lib/canvas/units';
 import { cn } from '@/lib/utils';
 import { getGridLimits, getPhotoDimensions } from './collage-grid-math';
 import type { PhotoGridType, GridAlignment } from './collage-grid-math';
@@ -36,7 +37,7 @@ const COUNTER_BTN = cn(
   'hover:bg-primary/10 hover:text-primary disabled:opacity-35 disabled:cursor-not-allowed',
   FOCUS_RING,
 );
-const SECTION_CLASS = 'border-border/40 px-1 py-2.5';
+const SECTION_CLASS = 'border-border/40 py-2.5';
 const ALIGNMENT_ORDER: GridAlignment[] = [
   'top-left',
   'top-center',
@@ -146,8 +147,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   const coverage = (() => {
     if (photoType === 'stretch') return 100;
     const { wMM, hMM } = getPhotoDimensions(photoType);
-    const paperWmm = (canvasWidth / storedDpi) * 25.4;
-    const paperHmm = (canvasHeight / storedDpi) * 25.4;
+    const paperWmm = pxToMm(canvasWidth, storedDpi);
+    const paperHmm = pxToMm(canvasHeight, storedDpi);
     return Math.min(
       100,
       Math.round(rows * cols * Math.min(1, wMM / paperWmm) * Math.min(1, hMM / paperHmm) * 100),
@@ -246,10 +247,10 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 title={`${option.label} — ${dimLabel}${option.value === 'stretch' ? '' : ' مم'}`}
                 onClick={() => onPhotoTypeChange(option.value)}
                 className={cn(
-                  'relative flex min-w-0 flex-col items-center gap-0.5 rounded-md border px-1 py-1.5 transition-colors duration-150 cursor-pointer',
+                  'relative flex min-w-0 flex-col items-center gap-1 rounded-md border px-1 py-2 transition-colors duration-150 cursor-pointer',
                   active
                     ? 'border-primary/60 bg-primary/10 text-primary'
-                    : 'border-border/30 bg-transparent text-muted-foreground hover:border-primary/40 hover:bg-muted/30',
+                    : 'border-transparent bg-muted/20 text-muted-foreground hover:border-border/60 hover:bg-muted/40',
                   FOCUS_RING,
                 )}
               >
@@ -265,10 +266,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                           : 'border-muted-foreground/50 bg-muted/60',
                       )}
                       style={{ aspectRatio: `${dimensions.wMM} / ${dimensions.hMM}` }}
-                    >
-                      <span className="absolute top-[22%] left-[35%] w-[30%] aspect-square rounded-full bg-current opacity-50" />
-                      <span className="absolute bottom-0 left-[17%] w-2/3 h-[38%] rounded-t-full bg-current opacity-40" />
-                    </span>
+                    />
                   )}
                 </span>
                 <span className="text-xs font-medium text-foreground">{option.label}</span>
@@ -356,10 +354,9 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           open={collapsePrefs.align ?? true}
           onOpenChange={setCardOpen('align')}
         >
-          <div className="grid grid-cols-[minmax(0,1fr)_108px] items-center gap-3">
+          <div className="grid grid-cols-[minmax(0,1fr)_104px] items-center gap-3">
             {quickLayouts}
-            <div className="relative w-[108px] h-[108px] rounded-lg border border-border/60 bg-background/45 p-2 select-none">
-              <div className="absolute inset-2 pointer-events-none border border-dashed border-border/60 rounded-md" />
+            <div className="relative size-[104px] rounded-md border border-border/50 bg-muted/20 p-1 select-none">
               <div
                 role="radiogroup"
                 aria-label="نقطة ارتكاز الصور على الورقة"
@@ -399,7 +396,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         </FluentSection>
       )}
 
-      <div className="sticky bottom-0 z-10 border-t border-border/60 bg-card px-1 py-2">
+      <div className="sticky bottom-0 z-10 border-t border-border/50 bg-sidebar py-2">
         <div className="flex items-center gap-2">
           <Button
             type="button"

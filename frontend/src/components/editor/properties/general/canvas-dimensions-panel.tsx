@@ -14,7 +14,12 @@ import { CaretDown, Check, FrameCorners, Link, LinkBreak } from '@/components/ui
 import { PageOrientationIcon } from '@/components/ui/image-icons';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
-import { PAPER_SIZES, ADVANCED_PAPER_SIZES, CARD_AND_LABEL_SIZES } from '@/lib/templates';
+import {
+  ALL_PAPER_SIZES,
+  PAPER_SIZES,
+  ADVANCED_PAPER_SIZES,
+  CARD_AND_LABEL_SIZES,
+} from '@/lib/templates';
 import { cn } from '@/lib/utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,10 +45,7 @@ const FOCUS_RING =
 const FIELD_SHELL =
   'flex items-center gap-1.5 bg-input/60 hover:bg-input border border-border/80 hover:border-foreground/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background rounded-md px-2 h-8 shadow-2xs transition-colors';
 
-// البحث والعرض في كل المقاسات: كان الاقتصار على PAPER_SIZES يجعل مقاس «Letter»
-// (المتاح أيضاً في كبسولة شريط العرض السفلي) يظهر هنا «مقاس مخصص» بلا تعرّف.
-const ALL_PAPER_SIZES = [...PAPER_SIZES, ...ADVANCED_PAPER_SIZES];
-
+// البحث والعرض في كل المقاسات، فيظهر «Letter» كمقاس قياسي لا «مخصص».
 const PRESET_MATCH_TOLERANCE_MM = 1.5;
 
 function matchesPresetMm(

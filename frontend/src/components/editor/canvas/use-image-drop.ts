@@ -8,7 +8,7 @@ import {
 } from '@/lib/canvas/image-dimensions';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
-import { fetchLocalApi } from '@/lib/local-api';
+import { fetchLocalApi, isLocalApiAvailable } from '@/lib/local-api';
 import { createLogger } from '@/lib/logger';
 
 import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
@@ -55,12 +55,7 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
               }
               try {
                 // 🚀 محاولة البث الثنائي المباشر إلى Go عبر /api/upload-media (صفر Base64، صفر ضغط على الذاكرة)
-                if (
-                  typeof window !== 'undefined' &&
-                  window.location?.origin &&
-                  !window.location.origin.startsWith('file:') &&
-                  typeof fetch === 'function'
-                ) {
+                if (isLocalApiAvailable()) {
                   try {
                     // 🔑 fetchLocalApi يضيف ترويسة توكن الجلسة المفروضة على مسارات /api
                     const resp = await fetchLocalApi(`${window.location.origin}/api/upload-media`, {
@@ -182,10 +177,7 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
             const aspect = await resolveImageAspectRatio(uploadedSrcs[0]);
             freshState.addImageElement(uploadedSrcs[0], aspect);
           } else {
-            const aspectMap =
-              typeof resolveBatchImageAspectRatios === 'function'
-                ? await resolveBatchImageAspectRatios(uploadedSrcs)
-                : new Map<string, number>();
+            const aspectMap = await resolveBatchImageAspectRatios(uploadedSrcs);
             const items = uploadedSrcs.map((src) => ({
               src,
               aspectRatio: aspectMap.get(src) || 1,

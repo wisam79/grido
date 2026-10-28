@@ -51,6 +51,10 @@ export const ADVANCED_PAPER_SIZES: PaperSize[] = [
   },
 ];
 
+// كل المقاسات المعروضة في قوائم تغيير المقاس والطباعة — يشمل «Letter» حتى
+// يُتعرَّف عليه كمقاس قياسي بعد اختياره بدل اعتباره مقاساً مخصصاً.
+export const ALL_PAPER_SIZES: PaperSize[] = [...PAPER_SIZES, ...ADVANCED_PAPER_SIZES];
+
 export interface CardAndLabelSize {
   id: string;
   name: string;

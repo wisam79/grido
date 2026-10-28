@@ -3,7 +3,7 @@
 > **هذا الملف هو مصدر الحقيقة الوحيد لنظام التوثيق:** ماذا نوثّق، وأين، ومتى نُحدّثه، وما الذي **يوقف** الكومت أو الدفع عند الانحراف.
 > أي وكيل أو مطوّر يقرأ هذا الملف **قبل** بدء العمل، ويطبّق البوابات الثلاث في القسم 3.
 
-**آخر تحديث:** 2026-10-20 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md` · **السجل:** `changelog/README.md`
+**آخر تحديث:** 2026-10-28 · **المُشغّل الآلي:** `scripts/docs-gate.mjs` · **القاعدة الحاكمة:** `.agents/AGENTS.md` · **المهارة:** `.agents/skills/grido-docs-sync-guard/SKILL.md` · **السجل:** `changelog/README.md`
 
 ---
 
@@ -111,6 +111,10 @@ docs_files=6
 ```
 
 الأرقام التي تحتاج تشغيل اختبارات لا تُوضع في البلوك الآلي، بل في الجدول التالي وتُحدَّث عند تغيّر الاختبارات:
+
+مراجعة 28 أكتوبر 2026 — ما قبل الرفع: حُدّث دليل المطور لتوحيد الأدوات ومسارات الطباعة وألواح التبويبات، وأضيفت حالات انحدار داخل ملفات الاختبارات القائمة دون تغيير أرقام `docs-metrics` (تُراجع عبر `node scripts/docs-gate.mjs --strict-refs`). دمج المهارات وحذف نسخها المتكررة موثق في سجل الميزات وfragment مستقل؛ إضافة أداة `frontend/src/lib/io/download.ts` مستخدمة من القوالب والكولاج الحر، ولا توجد مراجع تشغيلية معلّقة للمهارات المحذوفة.
+
+مراجعة 28 أكتوبر 2026 — تحسين هيكل ومظهر الكولاج: توسّعت حالات `frontend/test/App.test.tsx` و`frontend/test/collage-arrange-tab.test.tsx` ومواصفة `frontend/e2e/collage-panels.spec.ts` لحماية ربط التبويبات واتجاه المخطط وإعادة فتح المفتش. لم يتغير عدد الملفات في بلوك `docs-metrics`، ولم تُشغّل حزم الاختبارات محلياً؛ نتائج الحالات الكاملة السابقة أدناه تاريخية وليست تحققاً من هذه الجلسة.
 
 مراجعة 24 أكتوبر 2026 — المراحل 0 إلى 3 من ترحيل الماسح العصبي واستئصال OpenCV: أضيف `frontend/test/scanner-warp-golden.test.ts` (18 حالة: 15 Golden للاستعدال + فلاتر + EXIF) و`frontend/test/ml-orchestrator.test.ts`، وحُذفت ملفات اختبارات OpenCV القديمة الأربعة (`document-scanner-real-scenarios.test.ts` و`document-scanner-synthetic-benchmark.test.ts` و`detect-fusion.test.ts` و`opencv-detector.test.ts`) واستُخرج محاكي الكانفاس المشترك إلى `frontend/test/helpers/scanner-canvas-mock.ts` ليصبح عدّاد الواجهة **148**؛ وحُذف ملفا مواصفات probe لعامل OpenCV القديم في e2e (`cv-worker-probe.spec.ts` و`detector-worker-probe.spec.ts`) ليصبح عدّاد e2e هو **30**؛ وفي Go أضيفت ملفات `internal/service/scanner_warp_test.go` و`exif_orientation_test.go` و`internal/server/asset_server_scanner_warp_test.go` (خدمة استعدال الماسح خلف `/api/scanner-warp` بتوازي حرفي مع TS) فصار العدّاد **57**. شُغّل الاستهداف محلياً فمرّ بنجاح في الواجهة واختبارات الماسح كلها في Go (بما فيها HTTP)، مع `go vet` و`gofmt` نظيفين.
 

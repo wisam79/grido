@@ -14,6 +14,7 @@ import {
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
 import { isCornerAnchor } from '@/lib/canvas/transform-anchors';
+import { pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 
 import type { SnapGuide } from '@/lib/canvas/snap-utils';
@@ -91,8 +92,8 @@ export const EditorTransformer = React.memo(function EditorTransformer({
         vBox = getElementPixelVisualBox(nodeX, nodeY, nodeW, nodeH, rotation);
 
         // حساب الأبعاد بالملم (mm) للطباعة الاحترافية
-        const wMM = Math.round((nodeW / dpi) * 25.4);
-        const hMM = Math.round((nodeH / dpi) * 25.4);
+        const wMM = Math.round(pxToMm(nodeW, dpi));
+        const hMM = Math.round(pxToMm(nodeH, dpi));
 
         const rotStr = normalizedRot > 0 ? ` • ${normalizedRot}°` : '';
         textContent = `${wMM} × ${hMM} mm${rotStr}`;
@@ -106,8 +107,8 @@ export const EditorTransformer = React.memo(function EditorTransformer({
           maxY: rect.y + rect.height,
           centerX: rect.x + rect.width / 2,
         };
-        const wMM = Math.round((rect.width / dpi) * 25.4);
-        const hMM = Math.round((rect.height / dpi) * 25.4);
+        const wMM = Math.round(pxToMm(rect.width, dpi));
+        const hMM = Math.round(pxToMm(rect.height, dpi));
         textContent = `${wMM} × ${hMM} mm (${nodes.length})`;
       }
 

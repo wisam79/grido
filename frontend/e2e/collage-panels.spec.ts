@@ -9,6 +9,29 @@ test.describe('Collage Mode Rails & Configuration Panels E2E', () => {
     await waitForAppReady(page);
   });
 
+  test('Paper tools reopen the inspector on collage settings', async ({ page }) => {
+    await page.getByTestId('mode-tab-collage').click();
+    await page.getByTestId('rail-collage-paper').click();
+
+    await page.getByRole('tab', { name: 'إعدادات الورقة', exact: true }).click();
+    await page.getByRole('button', { name: 'إخفاء لوحة الخصائص (Ctrl+Shift+B)' }).click();
+    await expect(page.getByTestId('workspace-panel-properties')).toHaveAttribute(
+      'data-collapsed',
+      'true',
+    );
+
+    await page.getByRole('button', { name: 'الإطار وخطوط القص', exact: true }).click();
+    await expect(page.getByTestId('workspace-panel-properties')).toHaveAttribute(
+      'data-collapsed',
+      'false',
+    );
+    await expect(page.getByRole('tab', { name: 'إعدادات الكولاج', exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.getByText('إطار الصور', { exact: true })).toBeVisible();
+  });
+
   test('Switch collage sections and their internal tabs (no backdrop duplicate)', async ({
     page,
   }) => {

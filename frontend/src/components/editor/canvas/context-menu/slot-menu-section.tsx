@@ -15,7 +15,7 @@ import {
   Rows,
 } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
-import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { openImageFileDialog, persistPickedImage } from '@/lib/io/file-dialog-utils';
 import { createLogger } from '@/lib/logger';
 
 import {
@@ -85,16 +85,7 @@ export function SlotMenuSection({
           onClick={async () => {
             const [b64] = await openImageFileDialog(false);
             if (b64) {
-              let srcToUse = b64;
-              if (b64.startsWith('data:image/')) {
-                try {
-                  const localPath = await SaveImageFromBase64(b64);
-                  if (localPath) srcToUse = localPath;
-                } catch {
-                  // Fallback
-                }
-              }
-              useEditorStore.getState().setSlotImage(targetId, srcToUse);
+              useEditorStore.getState().setSlotImage(targetId, await persistPickedImage(b64));
               onClose();
             }
           }}

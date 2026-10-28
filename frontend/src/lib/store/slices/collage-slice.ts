@@ -2,7 +2,7 @@ import { normalizeSelection } from './element-slice';
 import { getCollageGeometry, getSlotRect } from '../../canvas/collage-geometry';
 import { measureImageAspect } from '../../canvas/measure-image';
 import { recenterElementsOnResize } from '../../canvas/resize-elements';
-import { mmToPx } from '../../canvas/units';
+import { mmToPx, pxToMm } from '../../canvas/units';
 import {
   COLLAGE_TEMPLATES,
   computeDynamicCollageCells,
@@ -461,11 +461,11 @@ function getPhysicalMaxMargin(state: CollageCross): number | null {
   if (!template?.physicalLayout) return null;
   const storedDpi = state.printSettings?.dpi || 300;
   const dpi = getEffectiveDpi(state.canvasWidth, state.canvasHeight, storedDpi);
-  const paperWmm = (state.canvasWidth / dpi) * 25.4;
-  const paperHmm = (state.canvasHeight / dpi) * 25.4;
+  const paperWmm = pxToMm(state.canvasWidth, dpi);
+  const paperHmm = pxToMm(state.canvasHeight, dpi);
   // نفس تحويل الفجوة الصريحة في computeDynamicCollageCells — الصفر يبقى صفراً
   // (كان استبدالاً خفياً بـ2 مم يجعل حدّ الهامش لا يطابق الخلايا المولّدة)
-  const gapMM = (Math.max(0, state.collageGap) / dpi) * 25.4;
+  const gapMM = pxToMm(Math.max(0, state.collageGap), dpi);
   const maxMarginMM = getPhysicalMaxMarginMM(template, paperWmm, paperHmm, gapMM, 1);
   return maxMarginMM == null ? null : mmToPx(maxMarginMM, dpi);
 }

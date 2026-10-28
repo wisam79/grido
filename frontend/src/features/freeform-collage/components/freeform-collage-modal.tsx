@@ -22,8 +22,10 @@ import {
 import { Spinner } from '@/components/ui/huge-icon';
 import { FloppyDisk, DownloadSimple, UploadSimple, Gear, CaretDown } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
+import { mmToPx } from '@/lib/canvas/units';
 import { clamp } from '@/lib/clamp';
 import { useEditorStore } from '@/lib/editor-store';
+import { downloadJsonFile } from '@/lib/io/download';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { FreeformCanvasEditor } from './freeform-canvas-editor';
@@ -428,15 +430,10 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
   const handleExportLayout = useCallback(() => {
     try {
       const file = exportLayoutFile(layoutName, paperWidthMM, paperHeightMM, slotsRef.current);
-      const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${(layoutName || 'freeform').replace(/[\\/:*?"<>|]/g, '_')}.grido.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadJsonFile(
+        file,
+        `${(layoutName || 'freeform').replace(/[\\/:*?"<>|]/g, '_')}.grido.json`,
+      );
       toast.success('صُدّر التخطيط JSON');
     } catch {
       toast.error('فشل التصدير');
@@ -675,8 +672,8 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       const store = useEditorStore.getState();
 
       const dpi = store.printSettings?.dpi || 300;
-      const newW = Math.max(64, Math.round((paperWidthMM * dpi) / 25.4));
-      const newH = Math.max(64, Math.round((paperHeightMM * dpi) / 25.4));
+      const newW = Math.max(64, Math.round(mmToPx(paperWidthMM, dpi)));
+      const newH = Math.max(64, Math.round(mmToPx(paperHeightMM, dpi)));
 
       useEditorStore.setState({
         mode: 'collage',

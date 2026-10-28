@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { FluentSegmentedControl } from '@/components/ui/blocks';
 import { CaretRight } from '@/components/ui/icons';
@@ -46,6 +46,12 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
   );
 
   const [generalTab, setGeneralTab] = useState<'collage' | 'canvas'>('collage');
+
+  useEffect(() => {
+    const showCollageSettings = () => setGeneralTab('collage');
+    window.addEventListener('grido:open-properties-panel', showCollageSettings);
+    return () => window.removeEventListener('grido:open-properties-panel', showCollageSettings);
+  }, []);
 
   // استنباط عنوان اللوح وسياقه ديناميكياً وفق العنصر النشط
   let panelTitle = 'الخصائص';
@@ -165,9 +171,11 @@ export const PropertiesPanel = React.memo(function PropertiesPanel({
                 className="w-full"
               >
                 {/* شريط تبويبات لاصق — يبقي سياق الإعدادات ظاهراً أثناء التمرير */}
-                <div className="sticky top-0 z-20 -mx-3 border-b border-border/40 bg-sidebar/95 px-3 pb-2.5 pt-0.5 backdrop-blur-xl">
+                <div className="sticky top-0 z-20 -mx-3 bg-sidebar px-3 pb-2">
                   <FluentSegmentedControl<'collage' | 'canvas'>
                     layoutId="properties-general-tabs"
+                    variant="tabs"
+                    ariaLabel="خصائص الكولاج والورقة"
                     value={generalTab}
                     onChange={setGeneralTab}
                     size="md"

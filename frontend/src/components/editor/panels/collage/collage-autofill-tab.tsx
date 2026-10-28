@@ -269,7 +269,7 @@ export function CollageAutofillTab() {
         className={cn(
           'relative h-9 rounded-md border flex items-center justify-center overflow-hidden transition-colors select-none',
           assignment
-            ? 'border-primary/50 bg-card text-foreground shadow-2xs'
+            ? 'border-primary/50 bg-primary/10 text-foreground'
             : isPreserved
               ? 'border-border/60 bg-muted/25 text-muted-foreground/70'
               : isSkipped
@@ -315,11 +315,14 @@ export function CollageAutofillTab() {
   };
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div
+      className="flex min-w-0 flex-col font-cairo motion-safe:animate-in motion-safe:fade-in duration-150"
+      dir="rtl"
+    >
       {/* مصدر الصور */}
       <FluentSection
         title="الصور"
-        className="pb-4 border-border/50"
+        className="border-border/40 py-2.5"
         badge={
           autofillImages.length > 0 ? (
             <span className="text-mini tabular-nums text-muted-foreground">
@@ -517,7 +520,7 @@ export function CollageAutofillTab() {
         <>
           <FluentSection
             title="طريقة التوزيع"
-            className="pb-4 border-border/50"
+            className="border-border/40 py-2.5"
             subtitle={`ممتلئة ${filledCount} · فارغة ${emptyCount}`}
           >
             <FluentSettingRow
@@ -604,7 +607,7 @@ export function CollageAutofillTab() {
               }
             />
           </FluentSection>
-          <FluentSection title="معاينة التوزيع" className="pb-4 border-border/50">
+          <FluentSection title="معاينة التوزيع" className="border-border/40 py-2.5">
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2 px-0.5">
                 <span className="text-mini text-muted-foreground leading-relaxed">
@@ -616,7 +619,7 @@ export function CollageAutofillTab() {
 
               <div
                 className={cn(
-                  'rounded-lg bg-background/50 border border-border/40 p-1.5',
+                  'rounded-md bg-muted/20 border border-border/40 p-1.5',
                   slots.length > 24 && 'max-h-44 overflow-y-auto',
                 )}
               >
@@ -639,11 +642,11 @@ export function CollageAutofillTab() {
               </p>
             </div>
           </FluentSection>
-          <div className="sticky bottom-0 z-10 space-y-2 border-t border-border/60 bg-card py-3">
+          <div className="sticky bottom-0 z-10 space-y-2 border-t border-border/50 bg-sidebar py-2">
             <div className="flex items-center gap-2">
               <Button
                 type="button"
-                className="flex-1"
+                className="h-9 min-w-0 flex-1 shadow-none"
                 onClick={distribute}
                 disabled={!canApply}
                 title={applyBlockedReason}

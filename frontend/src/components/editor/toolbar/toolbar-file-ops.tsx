@@ -184,13 +184,7 @@ export function ToolbarFileOps() {
               return finalSrc;
             });
 
-            let aspectMap: Map<string, number>;
-            if (typeof resolveBatchImageAspectRatios === 'function') {
-              aspectMap = await resolveBatchImageAspectRatios(finalSrcs);
-            } else {
-              const aspects = await Promise.all(finalSrcs.map((s) => resolveImageAspectRatio(s)));
-              aspectMap = new Map(finalSrcs.map((s, idx) => [s, aspects[idx]]));
-            }
+            const aspectMap = await resolveBatchImageAspectRatios(finalSrcs);
 
             const items = finalSrcs.map((src) => ({
               src,

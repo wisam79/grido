@@ -23,6 +23,7 @@ import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
+import { isAutoFillGridEnabled, setAutoFillGridEnabled } from '@/lib/local-prefs';
 import { createLogger } from '@/lib/logger';
 import { getEffectiveDpi } from '@/lib/templates';
 import { cn } from '@/lib/utils';
@@ -381,9 +382,7 @@ export const SlotProperties = React.memo(function SlotProperties({
   );
   const [cropOpen, setCropOpen] = useState(false);
   const [lockSlotAspect, setLockSlotAspect] = useState(false);
-  const [autoFill, setAutoFill] = useState(() => {
-    return localStorage.getItem('grido_auto_fill_grid') !== 'false';
-  });
+  const [autoFill, setAutoFill] = useState(isAutoFillGridEnabled);
 
   const handleUseLastImage = () => {
     if (lastEditedImage) {
@@ -405,7 +404,7 @@ export const SlotProperties = React.memo(function SlotProperties({
         checked={autoFill}
         onCheckedChange={(checked) => {
           setAutoFill(checked);
-          localStorage.setItem('grido_auto_fill_grid', String(checked));
+          setAutoFillGridEnabled(checked);
         }}
         aria-label="تعبئة تلقائية"
       />

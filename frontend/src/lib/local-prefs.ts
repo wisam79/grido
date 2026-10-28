@@ -24,3 +24,22 @@ export function writeStoredList(key: string, list: string[]): void {
     /* تجاهل أخطاء التخزين */
   }
 }
+
+const AUTO_FILL_GRID_KEY = 'grido_auto_fill_grid';
+
+/** تعبئة خلايا الشبكة تلقائياً بعد اختيار صورة — مفعّلة افتراضياً. */
+export function isAutoFillGridEnabled(): boolean {
+  try {
+    return localStorage.getItem(AUTO_FILL_GRID_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+export function setAutoFillGridEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(AUTO_FILL_GRID_KEY, String(enabled));
+  } catch {
+    /* تجاهل أخطاء التخزين */
+  }
+}

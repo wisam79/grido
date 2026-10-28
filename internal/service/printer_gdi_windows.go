@@ -789,7 +789,7 @@ func sanitizePrintFilePath(filePath string) (string, error) {
 	// مجلد Exports أو ملفات grido_print_* في Temp — مع تطبيع روابط الرموز
 	// للجانبين معاً (بيئات المسارات 8.3 القصيرة على ويندوز كانت ترفض ملفات
 	// مشروعة) وفاصل مسار إلزامي يمنع تجاوزاً بادئياً مثل ExportsEvil.
-	exportsDir, expErr := filepath.Abs(filepath.Join(utils.GetAppDir(), "Exports"))
+	exportsDir, expErr := filepath.Abs(utils.GetExportsDir())
 	if expErr != nil {
 		return "", fmt.Errorf("خطأ في التحقق من أمان مسار الملف: %w", expErr)
 	}

@@ -10,10 +10,7 @@ import {
 } from '@bindings/grido/app';
 
 import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
-import {
-  resolveImageAspectRatio,
-  resolveBatchImageAspectRatios,
-} from '@/lib/canvas/image-dimensions';
+import { resolveBatchImageAspectRatios } from '@/lib/canvas/image-dimensions';
 import { addImageFromSrc } from '@/lib/canvas/load-image';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
@@ -193,13 +190,7 @@ export function useAppBootstrap(): AppBootstrapState {
               if (images.length === 1) {
                 void addImageFromSrc(images[0]);
               } else {
-                let aspectMap: Map<string, number>;
-                if (typeof resolveBatchImageAspectRatios === 'function') {
-                  aspectMap = await resolveBatchImageAspectRatios(images);
-                } else {
-                  const aspects = await Promise.all(images.map((s) => resolveImageAspectRatio(s)));
-                  aspectMap = new Map(images.map((s, idx) => [s, aspects[idx]]));
-                }
+                const aspectMap = await resolveBatchImageAspectRatios(images);
                 const items = images.map((src) => ({
                   src,
                   aspectRatio: aspectMap.get(src) || 1,
