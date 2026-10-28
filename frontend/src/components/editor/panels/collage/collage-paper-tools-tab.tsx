@@ -6,7 +6,7 @@ import {
   FluentSliderField,
   FluentSegmentedControl,
 } from '@/components/ui/blocks';
-import { Ruler, GridFour, Columns, FrameCorners, SlidersHorizontal } from '@/components/ui/icons';
+import { CaretLeft, Ruler, GridFour, Columns, FrameCorners } from '@/components/ui/icons';
 import { Switch } from '@/components/ui/switch';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
@@ -95,7 +95,7 @@ export function CollagePaperToolsTab() {
   };
   return (
     <div
-      className="flex flex-col gap-3 font-cairo motion-safe:animate-in motion-safe:fade-in duration-150"
+      className="flex min-w-0 flex-col font-cairo motion-safe:animate-in motion-safe:fade-in duration-150"
       dir="rtl"
     >
       {/* النزيف وشكل القص */}
@@ -113,6 +113,7 @@ export function CollagePaperToolsTab() {
 
         <FluentSliderField
           label="هامش النزيف"
+          layout="inline"
           value={bleedMarginMM}
           min={0}
           max={10}
@@ -144,13 +145,10 @@ export function CollagePaperToolsTab() {
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('grido:open-properties-panel'))}
           title="فتح لوحة الخصائص"
-          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md border border-dashed border-border/70 text-mini text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+          className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-xs text-muted-foreground transition-colors duration-150 hover:bg-muted/40 hover:text-foreground cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
         >
-          <SlidersHorizontal
-            className="w-3.5 h-3.5 shrink-0 text-muted-foreground"
-            weight="duotone"
-          />
-          <span className="flex-1 text-start leading-relaxed">إعدادات إطار الصور وخطوط القص</span>
+          <span className="flex-1 text-start">الإطار وخطوط القص</span>
+          <CaretLeft className="size-3.5 shrink-0" />
         </button>
       </FluentSection>
 
@@ -209,6 +207,8 @@ export function CollagePaperToolsTab() {
 
         <FluentSliderField
           label="المسافة بين النسخ"
+          layout="inline"
+          labelWidth="w-24"
           value={gapMM}
           min={0}
           max={20}

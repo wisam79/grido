@@ -138,17 +138,17 @@ func drawPDFCutLines(pdf *gofpdf.Fpdf, req domain.PrintRequest) {
 		return
 	}
 
-	pdf.SetDrawColor(120, 120, 120)
-	pdf.SetLineWidth(0.20)
+	pdf.SetDrawColor(cutLineGray, cutLineGray, cutLineGray)
+	pdf.SetLineWidth(cutLineWidthMM)
 
 	style := strings.ToLower(strings.TrimSpace(req.CutLineStyle))
 	switch style {
 	case "solid", "cropmarks":
 		pdf.SetDashPattern([]float64{}, 0)
 	case "dotted":
-		pdf.SetDashPattern([]float64{0.6, 2.4}, 0)
+		pdf.SetDashPattern([]float64{cutLineDotMM, cutLineDotGapMM}, 0)
 	default: // "dashed" والافتراضي
-		pdf.SetDashPattern([]float64{1.5, 1.5}, 0)
+		pdf.SetDashPattern([]float64{cutLineDashMM, cutLineDashGapMM}, 0)
 	}
 
 	// 🖨️ RV-16-M2: علامات زوايا فقط بدل الخطوط الكاملة

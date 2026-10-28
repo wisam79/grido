@@ -1,5 +1,5 @@
 import { setCachedImageAspectRatio } from '@/lib/canvas/image-dimensions';
-import { fetchLocalApi } from '@/lib/local-api';
+import { fetchLocalApi, isLocalApiAvailable } from '@/lib/local-api';
 
 import { SaveImageFromBase64 } from '../../../wailsjs/go/main/App';
 
@@ -19,12 +19,7 @@ export async function uploadMediaBlob(
   blob: Blob,
   filename = 'image.png',
 ): Promise<UploadMediaResult> {
-  if (
-    typeof window !== 'undefined' &&
-    window.location?.origin &&
-    !window.location.origin.startsWith('file:') &&
-    typeof fetch === 'function'
-  ) {
+  if (isLocalApiAvailable()) {
     const formData = new FormData();
     formData.append('file', blob, filename);
     const resp = await fetchLocalApi(`${window.location.origin}/api/upload-media`, {

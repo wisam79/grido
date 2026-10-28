@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/icons';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
 import {
   resolveImageAspectRatio,
   resolveBatchImageAspectRatios,
@@ -69,14 +70,16 @@ export function BatchInsertDialog({
   const [marginPx, setMarginPx] = useState<number>(40);
   const [centerLastRow, setCenterLastRow] = useState<boolean>(true);
 
-  const { mode, slots, setSlotImagesBatch, addImageElementsBatch } = useEditorStore(
-    useShallow((state) => ({
-      mode: state.mode,
-      slots: state.slots,
-      setSlotImagesBatch: state.setSlotImagesBatch,
-      addImageElementsBatch: state.addImageElementsBatch,
-    })),
-  );
+  const { mode, slots, setSlotImagesBatch, appendPendingCollageImages, addImageElementsBatch } =
+    useEditorStore(
+      useShallow((state) => ({
+        mode: state.mode,
+        slots: state.slots,
+        setSlotImagesBatch: state.setSlotImagesBatch,
+        appendPendingCollageImages: state.appendPendingCollageImages,
+        addImageElementsBatch: state.addImageElementsBatch,
+      })),
+    );
 
   // Reset states when dialog opens / closes (Wait UX Invariant)
   useEffect(() => {
@@ -148,13 +151,7 @@ export function BatchInsertDialog({
         normalizedSrcs.push(src);
       }
 
-      let aspectMap: Map<string, number>;
-      if (typeof resolveBatchImageAspectRatios === 'function') {
-        aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
-      } else {
-        const aspects = await Promise.all(normalizedSrcs.map((s) => resolveImageAspectRatio(s)));
-        aspectMap = new Map(normalizedSrcs.map((s, idx) => [s, aspects[idx]]));
-      }
+      const aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
 
       const newItems: QueuedImage[] = normalizedSrcs.map((src, i) => ({
         id: `img-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
@@ -196,13 +193,7 @@ export function BatchInsertDialog({
         normalizedSrcs.push(src);
       }
 
-      let aspectMap: Map<string, number>;
-      if (typeof resolveBatchImageAspectRatios === 'function') {
-        aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
-      } else {
-        const aspects = await Promise.all(normalizedSrcs.map((s) => resolveImageAspectRatio(s)));
-        aspectMap = new Map(normalizedSrcs.map((s, idx) => [s, aspects[idx]]));
-      }
+      const aspectMap = await resolveBatchImageAspectRatios(normalizedSrcs);
 
       const newItems: QueuedImage[] = normalizedSrcs.map((src, i) => ({
         id: `dir-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
@@ -267,24 +258,25 @@ export function BatchInsertDialog({
         }
       }
 
+      let keepQueueOpen = false;
       if (layoutMode === 'collage' || mode === 'collage') {
-        // Collage mode insertion
-        const assignments: { slotId: string; src: string }[] = [];
-        slots.forEach((slot, index) => {
-          if (index < expandedItems.length) {
-            assignments.push({
-              slotId: slot.id,
-              src: expandedItems[index].src,
-            });
-          }
-        });
-
-        if (assignments.length > 0) {
-          setSlotImagesBatch(assignments, expandedItems[0]?.src || null);
-          toast.success(`تم ملء ${assignments.length} خانة في الكولاج`);
+        const expandedSources = expandedItems.map((item) => item.src);
+        const plan = buildCollageInsertPlan(slots, expandedSources, { scope: 'empty' });
+        if (plan.assignments.length > 0) {
+          await setSlotImagesBatch(plan.assignments, plan.assignments[0]?.src || null);
+        }
+        if (plan.remaining.length > 0) {
+          appendPendingCollageImages(plan.remaining);
+          keepQueueOpen = true;
+        }
+        if (plan.assignments.length === 0) {
+          toast.info('لا توجد خانات فارغة — حُفظت الصور في قائمة التعبئة');
         } else {
-          toast.error('لا توجد خانات كولاج كافية');
-          return;
+          toast.success(
+            plan.remaining.length > 0
+              ? `مُلئت ${plan.assignments.length} خانة · بقيت ${plan.remaining.length} صورة`
+              : `مُلئت ${plan.assignments.length} خانة في الكولاج`,
+          );
         }
       } else {
         // Canvas freeform / grid insertion
@@ -298,8 +290,10 @@ export function BatchInsertDialog({
         toast.success(`تم إدراج ${expandedItems.length} صورة`);
       }
 
-      setImages([]);
-      onOpenChange(false);
+      if (!keepQueueOpen) {
+        setImages([]);
+        onOpenChange(false);
+      }
     } catch (err) {
       logger.error('Execute batch insert error:', err);
       toast.error('فشل تنفيذ الإدراج المتعدد');

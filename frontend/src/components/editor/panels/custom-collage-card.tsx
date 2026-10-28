@@ -6,6 +6,7 @@ import { GridFour, MagicWand } from '@/components/ui/icons';
 import { FreeformCollageModal } from '@/features/freeform-collage';
 import { getTemplateGrid } from '@/lib/canvas/collage-grid';
 import { useEditorStore } from '@/lib/editor-store';
+import { downloadJsonFile } from '@/lib/io/download';
 import { getCollageSectionForTab, type CollageTab } from '@/lib/workspace-tools';
 import { CollageArrangeTab } from './collage/collage-arrange-tab';
 import { CollageAutofillTab } from './collage/collage-autofill-tab';
@@ -27,6 +28,7 @@ interface CustomCollageCardProps {
   onSelect: (t: CollageTemplate) => void;
   activeTemplateId: string | undefined;
   onSaveTemplate: (name: string, cells: NormalizedCell[]) => void;
+  onTemplatesChanged?: () => void | Promise<void>;
   savedTemplates?: CollageTemplate[];
   onDeleteTemplate?: (id: string, e: React.MouseEvent) => void;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
@@ -38,6 +40,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   onSelect,
   activeTemplateId,
   onSaveTemplate,
+  onTemplatesChanged,
   savedTemplates = [],
   onDeleteTemplate,
   fileInputRef,
@@ -241,15 +244,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
     }
     try {
       const exportData = savedTemplates.map((t) => ({ name: t.name, cells: t.cells }));
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `grido-templates-${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadJsonFile(exportData, `grido-templates-${Date.now()}.json`);
       toast.success('تم تصدير القوالب');
     } catch {
       toast.error('فشل التصدير');
@@ -315,126 +310,157 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   );
 
   return (
-    <div className="flex flex-col gap-2 font-cairo" dir="rtl">
-      {/* 🧭 شريط تبويبات الوجهة — مبدّل بارز يميّز سطح الوجهة عن تبويباتها الفرعية */}
+    <div className="flex min-w-0 flex-col gap-2 font-cairo" dir="rtl">
       {collageTabOptions.length > 1 && (
-        <FluentSegmentedControl
-          layoutId={`collage-section-tabs-${activeSection.id}`}
-          variant="panel"
-          options={collageTabOptions}
-          value={effectiveTab}
-          onChange={(val) => handleTabChange(val as CollageTab)}
-        />
-      )}
-
-      {/* 1️⃣ تبويب تخصيص الشبكة الذاتي (صفوف وأعمدة ومقاسات رسمية) */}
-      {effectiveTab === 'custom' && (
-        <CollageCustomGridTab
-          rows={rows}
-          cols={cols}
-          photoType={photoType}
-          gridAlign={gridAlign}
-          isCustomActive={isCustomActive}
-          appliedGrid={appliedGrid}
-          canvasWidth={canvasWidth || 2480}
-          canvasHeight={canvasHeight || 3508}
-          storedDpi={storedDpi}
-          gapPx={collageGap}
-          marginPx={collageMargin}
-          onRowsChange={(r) => {
-            // تطبيق فوري بقيمة نهائية واحدة — لا حالة قديمة ولا خطوات تراجع متعددة
-            setRows(r);
-            applyCustomCollage(r, cols, photoType, gridAlign);
-          }}
-          onColsChange={(c) => {
-            setCols(c);
-            applyCustomCollage(rows, c, photoType, gridAlign);
-          }}
-          onApply={handleApplyFromTab}
-          onPhotoTypeChange={(t) => {
-            setPhotoType(t);
-            applyCustomCollage(rows, cols, t, gridAlign);
-          }}
-          onGridAlignChange={(a) => {
-            setGridAlign(a);
-            applyCustomCollage(rows, cols, photoType, a);
-          }}
-          onSaveCurrentAsTemplate={handleSaveCurrentAsTemplate}
-        />
-      )}
-
-      {/* 2️⃣ تبويب القوالب المنسقة + المحفوظات */}
-      {effectiveTab === 'presets' && (
-        <CollagePresetsTab
-          presetCategory={presetCategory}
-          onPresetCategoryChange={setPresetCategory}
-          activeTemplateId={activeTemplateId}
-          onSelect={onSelect}
-          savedTemplates={savedTemplates}
-          onDeleteTemplate={onDeleteTemplate}
-          onImportClick={() => fileInputRef?.current?.click()}
-          onExportAllClick={handleExportAllSaved}
-        />
-      )}
-
-      {/* 3️⃣ تبويب الكولاج الحر بالملم — سطر واحد وزر، بلا شارات تسويقية */}
-      {effectiveTab === 'freeform' && (
-        <div className="flex flex-col gap-4 py-3">
-          <div className="flex justify-center rounded-md bg-muted/25 py-6" aria-hidden="true">
-            <svg viewBox="0 0 120 150" className="h-36 w-28">
-              <rect
-                x="1"
-                y="1"
-                width="118"
-                height="148"
-                rx="3"
-                className="fill-card stroke-border"
-              />
-              {(isFreeformActive && collageTemplate
-                ? collageTemplate.cells
-                : [
-                    { x: 0.08, y: 0.07, w: 0.5, h: 0.52 },
-                    { x: 0.63, y: 0.07, w: 0.29, h: 0.25 },
-                    { x: 0.63, y: 0.36, w: 0.29, h: 0.23 },
-                    { x: 0.08, y: 0.64, w: 0.84, h: 0.29 },
-                  ]
-              ).map((cell, index) => (
-                <rect
-                  key={index}
-                  x={cell.x * 120}
-                  y={cell.y * 150}
-                  width={cell.w * 120}
-                  height={cell.h * 150}
-                  rx="2"
-                  className="fill-primary/15 stroke-primary/60"
-                />
-              ))}
-            </svg>
-          </div>
-          <p className="text-xs text-muted-foreground text-center leading-relaxed">
-            صمّم خانات بمقاسات مختلفة، مع تقسيم ومحاذاة دقيقة بالمليمتر.
-          </p>
-          <button
-            type="button"
-            onClick={() => setShowFreeformModal(true)}
-            className="w-full h-9 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-          >
-            <MagicWand className="size-4" />
-            <span>فتح المحرر</span>
-          </button>
+        <div className="sticky top-0 z-20 -mx-3 bg-sidebar px-3 pb-2">
+          <FluentSegmentedControl
+            layoutId={`collage-section-tabs-${activeSection.id}`}
+            idPrefix={`collage-section-${activeSection.id}`}
+            ariaLabel={activeSection.title}
+            variant="tabs"
+            size="md"
+            options={collageTabOptions}
+            value={effectiveTab}
+            onChange={(val) => handleTabChange(val as CollageTab)}
+          />
         </div>
       )}
 
-      {/* 4️⃣ ورق وقص — جاهزية الطباعة (نزيف/قص/نسخ/إرشادات) */}
-      {effectiveTab === 'paper' && <CollagePaperToolsTab />}
+      {collageTabOptions.length > 1 &&
+        collageTabOptions
+          .filter((tab) => tab.id !== effectiveTab)
+          .map((tab) => (
+            <div
+              key={tab.id}
+              role="tabpanel"
+              id={`collage-section-${activeSection.id}-content-${tab.id}`}
+              aria-labelledby={`collage-section-${activeSection.id}-trigger-${tab.id}`}
+              hidden
+            />
+          ))}
+      <div
+        role={collageTabOptions.length > 1 ? 'tabpanel' : undefined}
+        id={`collage-section-${activeSection.id}-content-${effectiveTab}`}
+        aria-labelledby={
+          collageTabOptions.length > 1
+            ? `collage-section-${activeSection.id}-trigger-${effectiveTab}`
+            : undefined
+        }
+        className="min-w-0"
+      >
+        {/* 1️⃣ تبويب تخصيص الشبكة الذاتي (صفوف وأعمدة ومقاسات رسمية) */}
+        {effectiveTab === 'custom' && (
+          <CollageCustomGridTab
+            rows={rows}
+            cols={cols}
+            photoType={photoType}
+            gridAlign={gridAlign}
+            isCustomActive={isCustomActive}
+            appliedGrid={appliedGrid}
+            canvasWidth={canvasWidth || 2480}
+            canvasHeight={canvasHeight || 3508}
+            storedDpi={storedDpi}
+            gapPx={collageGap}
+            marginPx={collageMargin}
+            onRowsChange={(r) => {
+              // تطبيق فوري بقيمة نهائية واحدة — لا حالة قديمة ولا خطوات تراجع متعددة
+              setRows(r);
+              applyCustomCollage(r, cols, photoType, gridAlign);
+            }}
+            onColsChange={(c) => {
+              setCols(c);
+              applyCustomCollage(rows, c, photoType, gridAlign);
+            }}
+            onApply={handleApplyFromTab}
+            onPhotoTypeChange={(t) => {
+              setPhotoType(t);
+              applyCustomCollage(rows, cols, t, gridAlign);
+            }}
+            onGridAlignChange={(a) => {
+              setGridAlign(a);
+              applyCustomCollage(rows, cols, photoType, a);
+            }}
+            onSaveCurrentAsTemplate={handleSaveCurrentAsTemplate}
+          />
+        )}
 
-      {/* 5️⃣ معالج التعبئة التلقائية */}
-      {effectiveTab === 'autofill' && <CollageAutofillTab />}
+        {/* 2️⃣ تبويب القوالب المنسقة + المحفوظات */}
+        {effectiveTab === 'presets' && (
+          <CollagePresetsTab
+            presetCategory={presetCategory}
+            onPresetCategoryChange={setPresetCategory}
+            activeTemplateId={activeTemplateId}
+            onSelect={onSelect}
+            savedTemplates={savedTemplates}
+            onDeleteTemplate={onDeleteTemplate}
+            onImportClick={() => fileInputRef?.current?.click()}
+            onExportAllClick={handleExportAllSaved}
+          />
+        )}
 
-      {/* 6️⃣ فرز وترتيب الخانات */}
-      {effectiveTab === 'arrange' && <CollageArrangeTab />}
+        {/* 3️⃣ تبويب الكولاج الحر بالملم — سطر واحد وزر، بلا شارات تسويقية */}
+        {effectiveTab === 'freeform' && (
+          <div className="flex flex-col gap-4 py-3">
+            <div className="flex justify-center rounded-md bg-muted/25 py-6" aria-hidden="true">
+              <svg viewBox="0 0 120 150" className="h-36 w-28">
+                <rect
+                  x="1"
+                  y="1"
+                  width="118"
+                  height="148"
+                  rx="3"
+                  className="fill-card stroke-border"
+                />
+                {(isFreeformActive && collageTemplate
+                  ? collageTemplate.cells
+                  : [
+                      { x: 0.08, y: 0.07, w: 0.5, h: 0.52 },
+                      { x: 0.63, y: 0.07, w: 0.29, h: 0.25 },
+                      { x: 0.63, y: 0.36, w: 0.29, h: 0.23 },
+                      { x: 0.08, y: 0.64, w: 0.84, h: 0.29 },
+                    ]
+                ).map((cell, index) => (
+                  <rect
+                    key={index}
+                    x={cell.x * 120}
+                    y={cell.y * 150}
+                    width={cell.w * 120}
+                    height={cell.h * 150}
+                    rx="2"
+                    className="fill-primary/15 stroke-primary/60"
+                  />
+                ))}
+              </svg>
+            </div>
+            <p className="text-xs text-muted-foreground text-center leading-relaxed">
+              صمّم خانات بمقاسات مختلفة، مع تقسيم ومحاذاة دقيقة بالمليمتر.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowFreeformModal(true)}
+              className="w-full h-9 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            >
+              <MagicWand className="size-4" />
+              <span>فتح المحرر</span>
+            </button>
+          </div>
+        )}
 
-      <FreeformCollageModal open={showFreeformModal} onOpenChange={setShowFreeformModal} />
+        {/* 4️⃣ ورق وقص — جاهزية الطباعة (نزيف/قص/نسخ/إرشادات) */}
+        {effectiveTab === 'paper' && <CollagePaperToolsTab />}
+
+        {/* 5️⃣ معالج التعبئة التلقائية */}
+        {effectiveTab === 'autofill' && <CollageAutofillTab />}
+
+        {/* 6️⃣ فرز وترتيب الخانات */}
+        {effectiveTab === 'arrange' && <CollageArrangeTab />}
+      </div>
+
+      <FreeformCollageModal
+        open={showFreeformModal}
+        onOpenChange={setShowFreeformModal}
+        onTemplateSaved={onTemplatesChanged}
+      />
     </div>
   );
 });

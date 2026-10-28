@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Stack, Folders, DeviceMobileCamera, CaretDown } from '@/components/ui/icons';
 import { AddPhotoIcon } from '@/components/ui/image-icons';
+import { buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
 import {
   resolveImageAspectRatio,
   resolveBatchImageAspectRatios,
@@ -142,18 +143,28 @@ export function ToolbarFileOps() {
             localPaths = b64s;
           }
 
-          if (localPaths.length === 1) {
-            const targetSlotId = freshSelectedId || freshSlots[0]?.id;
-            if (targetSlotId) {
-              freshState.setSlotImage(targetSlotId, localPaths[0]);
-            }
-          } else {
-            // إدراج مجمّع بلقطة تراجع واحدة — الاستدعاء الفردي داخل الحلقة
-            // كان يولد لقطة تاريخ لكل صورة (حتى 24) ويطفح سجل التراجع (30)
-            const assignments = freshSlots
-              .slice(0, localPaths.length)
-              .map((slot, index) => ({ slotId: slot.id, src: localPaths[index] }));
-            freshState.setSlotImagesBatch(assignments, localPaths[localPaths.length - 1]);
+          const targetSlotId =
+            freshSelectedId && freshSlots.some((slot) => slot.id === freshSelectedId)
+              ? freshSelectedId
+              : null;
+          const plan = buildCollageInsertPlan(freshSlots, localPaths, {
+            targetSlotId,
+            scope: targetSlotId ? 'target' : 'empty',
+          });
+          if (plan.assignments.length > 0) {
+            await freshState.setSlotImagesBatch(
+              plan.assignments,
+              plan.assignments[plan.assignments.length - 1].src,
+            );
+          }
+          if (plan.remaining.length > 0) {
+            freshState.appendPendingCollageImages(plan.remaining);
+            toast.info(`أُدرجت ${plan.assignments.length} · بقيت ${plan.remaining.length} صورة`);
+          } else if (plan.assignments.length > 1) {
+            toast.success(`أُدرجت ${plan.assignments.length} صورة في الخانات`);
+          } else if (plan.assignments.length === 0) {
+            toast.info('لا توجد خانات فارغة — بقيت الصور في قائمة التعبئة');
+            freshState.appendPendingCollageImages(localPaths);
           }
         } else {
           // الوضع الحر: عند اختيار صورة واحدة تُدرج كالمعتاد، وعند اختيار أكثر من صورة تُدرج بتوزيع شبكي ذكي وخطوة تراجع واحدة
@@ -184,13 +195,7 @@ export function ToolbarFileOps() {
               return finalSrc;
             });
 
-            let aspectMap: Map<string, number>;
-            if (typeof resolveBatchImageAspectRatios === 'function') {
-              aspectMap = await resolveBatchImageAspectRatios(finalSrcs);
-            } else {
-              const aspects = await Promise.all(finalSrcs.map((s) => resolveImageAspectRatio(s)));
-              aspectMap = new Map(finalSrcs.map((s, idx) => [s, aspects[idx]]));
-            }
+            const aspectMap = await resolveBatchImageAspectRatios(finalSrcs);
 
             const items = finalSrcs.map((src) => ({
               src,

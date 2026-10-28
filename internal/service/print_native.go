@@ -58,11 +58,22 @@ func schedulePrintTempCleanup() {
 
 // PrintNative launches the OS native print dialog for a generated file on disk
 func (s *PrintService) PrintNative(filePath string) error {
+	cleanPath, err := sanitizeNativePrintFilePath(filePath)
+	if err != nil {
+		return err
+	}
+	return launchOSPrint(cleanPath, strings.ToLower(filepath.Ext(cleanPath)))
+}
+
+func sanitizeNativePrintFilePath(filePath string) (string, error) {
 	if filePath == "" {
-		return fmt.Errorf("مسار ملف الطباعة غير صالح")
+		return "", fmt.Errorf("مسار ملف الطباعة غير صالح")
 	}
 
-	cleanPath := filepath.Clean(filePath)
+	cleanPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return "", fmt.Errorf("مسار الطباعة غير صالح: %w", err)
+	}
 	resolved, err := filepath.EvalSymlinks(cleanPath)
 	if err == nil {
 		cleanPath = resolved
@@ -70,10 +81,10 @@ func (s *PrintService) PrintNative(filePath string) error {
 
 	info, err := os.Stat(cleanPath)
 	if err != nil {
-		return fmt.Errorf("ملف الطباعة غير موجود: %w", err)
+		return "", fmt.Errorf("ملف الطباعة غير موجود: %w", err)
 	}
 	if info.IsDir() {
-		return fmt.Errorf("المسار المحدد مجلد وليس ملفاً قابلاً للطباعة")
+		return "", fmt.Errorf("المسار المحدد مجلد وليس ملفاً قابلاً للطباعة")
 	}
 
 	ext := strings.ToLower(filepath.Ext(cleanPath))
@@ -81,14 +92,14 @@ func (s *PrintService) PrintNative(filePath string) error {
 		".png": true, ".jpg": true, ".jpeg": true, ".tiff": true, ".tif": true, ".pdf": true, ".html": true,
 	}
 	if !validExts[ext] {
-		return fmt.Errorf("نوع الملف غير مدعوم للطباعة: %s", ext)
+		return "", fmt.Errorf("نوع الملف غير مدعوم للطباعة: %s", ext)
 	}
 
 	// 🔒 حصر الطباعة في مخرجات التطبيق: مجلد Exports أو ملفات HTML المؤقتة
 	// التي ينشئها التطبيق نفسه — يمنع تمرير أي مسار نظامي من الواجهة.
-	exportsDir, expErr := filepath.Abs(filepath.Join(utils.GetAppDir(), "Exports"))
+	exportsDir, expErr := filepath.Abs(utils.GetExportsDir())
 	if expErr != nil {
-		return fmt.Errorf("تعذر تحديد مجلد التصدير: %w", expErr)
+		return "", fmt.Errorf("تعذر تحديد مجلد التصدير: %w", expErr)
 	}
 	if resolvedBase, err := filepath.EvalSymlinks(exportsDir); err == nil {
 		exportsDir = resolvedBase
@@ -101,15 +112,15 @@ func (s *PrintService) PrintNative(filePath string) error {
 	}
 	absClean, absErr := filepath.Abs(cleanPath)
 	if absErr != nil {
-		return fmt.Errorf("مسار الطباعة غير صالح: %w", absErr)
+		return "", fmt.Errorf("مسار الطباعة غير صالح: %w", absErr)
 	}
 	inExports := utils.PathWithinDir(absClean, exportsDir)
 	inPrintTemp := tempErr == nil &&
 		utils.PathWithinDir(absClean, tempDir) &&
 		strings.HasPrefix(filepath.Base(absClean), "grido_print_")
 	if !inExports && !inPrintTemp {
-		return fmt.Errorf("مسار الطباعة خارج النطاق المسموح")
+		return "", fmt.Errorf("مسار الطباعة خارج النطاق المسموح")
 	}
 
-	return launchOSPrint(cleanPath, ext)
+	return cleanPath, nil
 }

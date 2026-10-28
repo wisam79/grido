@@ -258,6 +258,10 @@ func (a *App) SaveCustomTemplate(name string, slots int, cellsJSON string) (doma
 	return a.autosaveSvc.SaveCustomTemplate(name, slots, cellsJSON)
 }
 
+func (a *App) SaveCustomTemplateWithMetadata(name string, slots int, cellsJSON string, metadataJSON string) (domain.CustomTemplate, error) {
+	return a.autosaveSvc.SaveCustomTemplateWithMetadata(name, slots, cellsJSON, metadataJSON)
+}
+
 func (a *App) GetCustomTemplates() ([]domain.CustomTemplate, error) {
 	return a.autosaveSvc.GetCustomTemplates()
 }

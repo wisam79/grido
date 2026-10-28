@@ -763,7 +763,10 @@ func sanitizePrintFilePath(filePath string) (string, error) {
 		return "", fmt.Errorf("مسار ملف الطباعة فارغ")
 	}
 
-	cleanPath := filepath.Clean(filePath)
+	cleanPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return "", fmt.Errorf("مسار الملف غير صالح: %w", err)
+	}
 	resolved, err := filepath.EvalSymlinks(cleanPath)
 	if err == nil {
 		cleanPath = resolved
@@ -789,7 +792,7 @@ func sanitizePrintFilePath(filePath string) (string, error) {
 	// مجلد Exports أو ملفات grido_print_* في Temp — مع تطبيع روابط الرموز
 	// للجانبين معاً (بيئات المسارات 8.3 القصيرة على ويندوز كانت ترفض ملفات
 	// مشروعة) وفاصل مسار إلزامي يمنع تجاوزاً بادئياً مثل ExportsEvil.
-	exportsDir, expErr := filepath.Abs(filepath.Join(utils.GetAppDir(), "Exports"))
+	exportsDir, expErr := filepath.Abs(utils.GetExportsDir())
 	if expErr != nil {
 		return "", fmt.Errorf("خطأ في التحقق من أمان مسار الملف: %w", expErr)
 	}

@@ -35,13 +35,9 @@ import { CANVAS_FIT_LABELS, type CanvasFitMode } from '@/lib/canvas/fit';
 import { canvasMm, findPaperByMm, formatDimensions, mmToPx } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import { useCanvasContext, useCollageViewFlags, useGridControls } from '@/lib/store/selectors';
-import { PAPER_SIZES, ADVANCED_PAPER_SIZES } from '@/lib/templates';
+import { ALL_PAPER_SIZES, PAPER_SIZES, ADVANCED_PAPER_SIZES } from '@/lib/templates';
 import { useCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
 import { cn } from '@/lib/utils';
-
-// كل المقاسات المعروضة في قائمة تغيير المقاس — تُبحث أيضاً عند تحديد الورقة
-// النشطة (كان اقتصر البحث على PAPER_SIZES فلا يظهر «Letter» مُحدداً بعد اختياره)
-const ALL_PAPER_SIZES = [...PAPER_SIZES, ...ADVANCED_PAPER_SIZES];
 
 export interface CanvasViewportDeckProps {
   className?: string;

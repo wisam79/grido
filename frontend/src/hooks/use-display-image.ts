@@ -1,6 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 
-import { getDisplayImage, ensureDisplayProxy, hasDisplayProxy } from '@/lib/canvas/display-image';
+import {
+  getDisplayImage,
+  ensureDisplayProxy,
+  hasDisplayProxy,
+  MAX_DISPLAY_DIM,
+} from '@/lib/canvas/display-image';
 
 /**
  * useDisplayImage — نسخة عرض تفاعلية غير محجوبة (M16-final)
@@ -32,7 +37,7 @@ export function useDisplayImage(
     if (hasDisplayProxy(image)) return;
     const w = image.naturalWidth || image.width || 0;
     const h = image.naturalHeight || image.height || 0;
-    if (w <= 0 || h <= 0 || Math.max(w, h) <= 2048) return;
+    if (w <= 0 || h <= 0 || Math.max(w, h) <= MAX_DISPLAY_DIM) return;
     // لا createImageBitmap في jsdom → البناء تزامني أصلاً داخل getDisplayImage
     if (typeof createImageBitmap !== 'function') return;
 

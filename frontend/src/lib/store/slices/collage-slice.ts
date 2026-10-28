@@ -1,8 +1,13 @@
 import { normalizeSelection } from './element-slice';
 import { getCollageGeometry, getSlotRect } from '../../canvas/collage-geometry';
+import {
+  applyCollageSlotImageContent,
+  collageSlotImageContentEqual,
+  readCollageSlotImageContent,
+} from '../../canvas/collage-slot-content';
 import { measureImageAspect } from '../../canvas/measure-image';
 import { recenterElementsOnResize } from '../../canvas/resize-elements';
-import { mmToPx } from '../../canvas/units';
+import { mmToPx, pxToMm } from '../../canvas/units';
 import {
   COLLAGE_TEMPLATES,
   computeDynamicCollageCells,
@@ -17,6 +22,7 @@ import type {
   CanvasSlot,
   PhotoTemplate,
   CollageTemplate,
+  CollageAutofillSettings,
   PrintSettings,
   HistoryEntry,
 } from '../types';
@@ -26,9 +32,34 @@ import type { StateCreator } from 'zustand';
 const EPSILON_BOUNDS = 1e-9;
 /** تحمّل floating-point لفحص التداخل بالبكسل — أصغر من أن يُرى بالعين */
 const EPSILON_OVERLAP = 1e-6;
+const replacementEpochBySlot = new Map<string, number>();
+let replacementProjectToken: string | null | undefined;
+
+function beginReplacement(slotId: string, projectId: string | null | undefined): number {
+  if (replacementProjectToken !== projectId) {
+    replacementEpochBySlot.clear();
+    replacementProjectToken = projectId;
+  }
+  const epoch = (replacementEpochBySlot.get(slotId) ?? 0) + 1;
+  replacementEpochBySlot.set(slotId, epoch);
+  return epoch;
+}
 
 export type CollageSlotSizeError = 'not-found' | 'invalid' | 'out-of-bounds' | 'overlap';
 export type CollageSlotSizeResult = { ok: true } | { ok: false; reason: CollageSlotSizeError };
+
+export interface CommitCollageLayoutOptions {
+  paperWidthMM?: number;
+  paperHeightMM?: number;
+  gap?: number;
+  margin?: number;
+  sourceSlotIds?: Array<string | undefined>;
+}
+
+export interface CommitCollageLayoutResult {
+  preserved: number;
+  remaining: number;
+}
 
 export interface CollageSlice {
   template: PhotoTemplate | null;
@@ -44,7 +75,11 @@ export interface CollageSlice {
 
   setTemplate: (template: PhotoTemplate | null) => void;
   setCollageTemplate: (template: CollageTemplate | null) => void;
-  setSlotImage: (slotId: string, src: string) => void;
+  commitCollageLayout: (
+    template: CollageTemplate,
+    options?: CommitCollageLayoutOptions,
+  ) => CommitCollageLayoutResult;
+  setSlotImage: (slotId: string, src: string) => Promise<void>;
   updateSlot: (slotId: string, patch: Partial<CanvasSlot>) => void;
   updateSlotsBatch: (slotIds: string[], patch: Partial<CanvasSlot>) => void;
   resizeCollageSlot: (slotId: string, w: number, h: number) => CollageSlotSizeResult;
@@ -56,10 +91,16 @@ export interface CollageSlice {
   setSlotImagesBatch: (
     assignments: { slotId: string; src: string }[],
     lastEditedSrc?: string | null,
-  ) => void;
+  ) => Promise<void>;
+  moveSlotContentsBatch: (assignments: { slotId: string; sourceSlotId: string }[]) => void;
   /** قائمة صور معالج التعبئة — حالة جلسة تبقى عبر تبويبات لوحة الكولاج */
   autofillImages: string[];
   setAutofillImages: (images: string[]) => void;
+  collagePendingImages: string[];
+  setCollagePendingImages: (images: string[]) => void;
+  appendPendingCollageImages: (images: string[]) => void;
+  autofillSettings: CollageAutofillSettings;
+  setAutofillSettings: (patch: Partial<CollageAutofillSettings>) => void;
 
   setCollageGap: (gap: number) => void;
   setCollageMargin: (margin: number) => void;
@@ -98,6 +139,7 @@ const initialCollage = COLLAGE_TEMPLATES[0];
 export function remapSlotsToCells(
   existing: CanvasSlot[],
   cells: Array<{ x: number; y: number; w: number; h: number }>,
+  sourceSlotIds?: Array<string | undefined>,
 ): CanvasSlot[] {
   const pool = existing.map((slot) => ({
     slot,
@@ -106,15 +148,18 @@ export function remapSlotsToCells(
   }));
 
   return cells.map((cell, index) => {
+    const preferredId = sourceSlotIds?.[index];
+    let bestIndex = preferredId ? pool.findIndex((item) => item.slot.id === preferredId) : -1;
     const cx = cell.x + cell.w / 2;
     const cy = cell.y + cell.h / 2;
-    let bestIndex = -1;
     let bestDistance = Number.POSITIVE_INFINITY;
-    for (let i = 0; i < pool.length; i++) {
-      const distance = (pool[i].cx - cx) ** 2 + (pool[i].cy - cy) ** 2;
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestIndex = i;
+    if (bestIndex < 0) {
+      for (let i = 0; i < pool.length; i++) {
+        const distance = (pool[i].cx - cx) ** 2 + (pool[i].cy - cy) ** 2;
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = i;
+        }
       }
     }
     const matched = bestIndex >= 0 ? pool.splice(bestIndex, 1)[0].slot : undefined;
@@ -169,9 +214,18 @@ export const DEFAULT_COLLAGE_STATE = {
   collageStrokeWidth: 0,
   collageStrokeColor: '#000000',
   autofillImages: [] as string[],
+  collagePendingImages: [] as string[],
+  autofillSettings: {
+    mode: 'empty',
+    order: 'row',
+    repeat: true,
+    shuffle: false,
+    seed: 1,
+  } as CollageAutofillSettings,
 };
 
 type CollageCross = CollageSlice & {
+  projectId?: string | null;
   mode: string;
   canvasWidth: number;
   canvasHeight: number;
@@ -182,6 +236,10 @@ type CollageCross = CollageSlice & {
   collageCanvasWidth?: number;
   collageCanvasHeight?: number;
   collageBackgroundColor?: string;
+  collageBackgroundGradientColor2?: string | null;
+  collageBackgroundGradientAngle?: number;
+  backgroundGradientColor2?: string | null;
+  backgroundGradientAngle?: number;
   elements: CanvasElement[];
   selectedId: string | null;
   selectedIds: string[];
@@ -461,11 +519,11 @@ function getPhysicalMaxMargin(state: CollageCross): number | null {
   if (!template?.physicalLayout) return null;
   const storedDpi = state.printSettings?.dpi || 300;
   const dpi = getEffectiveDpi(state.canvasWidth, state.canvasHeight, storedDpi);
-  const paperWmm = (state.canvasWidth / dpi) * 25.4;
-  const paperHmm = (state.canvasHeight / dpi) * 25.4;
+  const paperWmm = pxToMm(state.canvasWidth, dpi);
+  const paperHmm = pxToMm(state.canvasHeight, dpi);
   // نفس تحويل الفجوة الصريحة في computeDynamicCollageCells — الصفر يبقى صفراً
   // (كان استبدالاً خفياً بـ2 مم يجعل حدّ الهامش لا يطابق الخلايا المولّدة)
-  const gapMM = (Math.max(0, state.collageGap) / dpi) * 25.4;
+  const gapMM = pxToMm(Math.max(0, state.collageGap), dpi);
   const maxMarginMM = getPhysicalMaxMarginMM(template, paperWmm, paperHmm, gapMM, 1);
   return maxMarginMM == null ? null : mmToPx(maxMarginMM, dpi);
 }
@@ -474,6 +532,13 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
   ...DEFAULT_COLLAGE_STATE,
 
   setAutofillImages: (images) => set({ autofillImages: images }),
+  setCollagePendingImages: (images) => set({ collagePendingImages: [...images] }),
+  appendPendingCollageImages: (images) => {
+    if (images.length === 0) return;
+    set((state) => ({ collagePendingImages: [...state.collagePendingImages, ...images] }));
+  },
+  setAutofillSettings: (patch) =>
+    set((state) => ({ autofillSettings: { ...state.autofillSettings, ...patch } })),
 
   setTemplate: (template) => {
     if (template) {
@@ -574,35 +639,25 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         new Set(filledSlots.map((s) => s.imageSrc)).size === 1;
       const singleImgSlot = isSingleImageAllFilled ? filledSlots[0] : null;
 
-      const slots: CanvasSlot[] = cells.map((c, i) => {
-        const existingSlot = existingSlots[i] || singleImgSlot;
+      const mappedSlots = remapSlotsToCells(existingSlots, cells).map((slot, index) => {
+        const cell = cells[index];
         return {
-          id: uid(),
-          cellIndex: i,
-          x: c.x,
-          y: c.y,
-          w: c.w,
-          h: c.h,
-          // الحفاظ على بيانات الخلية من القالب الحر (مقاس/تسمية/تدوير الصورة)
-          presetType: c.presetType ?? existingSlot?.presetType,
-          label: c.label ?? existingSlot?.label,
-          rotation: c.rotation ?? existingSlot?.rotation ?? 0,
-          imageSrc: existingSlot?.imageSrc || undefined,
-          // 🔁 كانت هذه الحقول الأربعة تُسقط عند تبديل القالب: يضيع لون الخلية
-          // والقلب الأفقي/الرأسي ومصدر الصورة الأصلي («استعادة الأصل» يتعطل)
-          originalImageSrc: existingSlot?.originalImageSrc,
-          bgColor: existingSlot?.bgColor,
-          flipX: existingSlot?.flipX,
-          flipY: existingSlot?.flipY,
-          filter: existingSlot?.filter || 'none',
-          brightness: existingSlot?.brightness ?? 100,
-          contrast: existingSlot?.contrast ?? 100,
-          saturation: existingSlot?.saturation ?? 100,
-          zoom: existingSlot?.zoom || 1,
-          dragX: existingSlot?.dragX || 0,
-          dragY: existingSlot?.dragY || 0,
+          ...slot,
+          presetType: cell.presetType ?? slot.presetType,
+          label: cell.label ?? slot.label,
+          rotation: cell.rotation ?? slot.rotation ?? 0,
         };
       });
+      const mappedIds = new Set(mappedSlots.map((slot) => slot.id));
+      const overflowImages = existingSlots
+        .filter((slot) => !mappedIds.has(slot.id) && slot.imageSrc)
+        .map((slot) => slot.imageSrc as string);
+      const masterContent = singleImgSlot ? readCollageSlotImageContent(singleImgSlot) : undefined;
+      const slots = masterContent
+        ? mappedSlots.map((slot) =>
+            slot.imageSrc ? slot : applyCollageSlotImageContent(slot, masterContent),
+          )
+        : mappedSlots;
       // 🧱 فصل الوضعين: الكولاج يملك `slots` فقط وعناصر الوضع الحر (`elements`)
       // لا تُمس هنا إطلاقاً — كان التبديل يمسحها فيضيع تصميم الوضع الحر بالكامل
       // عند اختيار أي قالب أو تعديل الشبكة من داخل الكولاج.
@@ -610,6 +665,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         collageTemplate: template,
         mode: 'collage',
         slots,
+        collagePendingImages: [...get().collagePendingImages, ...overflowImages],
         ...normalizeSelection([]),
         canvasWidth: currentWidth,
         canvasHeight: currentHeight,
@@ -624,122 +680,189 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     }
   },
 
-  setSlotImage: (slotId, src) => {
-    // لقطة الخانات ما قبل العملية غير المتزامنة — المرجع الوحيد لكل قيم «ما قبل
-    // الاستبدال» (المصدر القديم). الحالة الآنية بعد القياس تخلط العمليات
-    // المتداخلة فتُطبّق تصحيحاً لا يخص هذه العملية (H7).
-    const slotsAtBatch = get().slots.map((sl: CanvasSlot) => ({ ...sl }));
-    const prev = slotsAtBatch.find((sl) => sl.id === slotId);
+  commitCollageLayout: (template, options = {}) => {
+    const state = get();
+    const dpi = state.printSettings?.dpi || 300;
+    const paperWidthMM = options.paperWidthMM;
+    const paperHeightMM = options.paperHeightMM;
+    const nextWidth = paperWidthMM
+      ? Math.max(64, Math.round(mmToPx(paperWidthMM, dpi)))
+      : state.canvasWidth;
+    const nextHeight = paperHeightMM
+      ? Math.max(64, Math.round(mmToPx(paperHeightMM, dpi)))
+      : state.canvasHeight;
+    const previousSlots = state.slots;
+    const slots = remapSlotsToCells(previousSlots, template.cells, options.sourceSlotIds);
+    const retainedIds = new Set(slots.map((slot) => slot.id));
+    const overflowImages = previousSlots
+      .filter((slot) => !retainedIds.has(slot.id) && slot.imageSrc)
+      .map((slot) => slot.imageSrc as string);
+    const preserved = slots.filter((slot) => Boolean(slot.imageSrc)).length;
+    const collagePendingImages = [...state.collagePendingImages, ...overflowImages];
+    const printSettings =
+      paperWidthMM && paperHeightMM
+        ? {
+            ...(state.printSettings as PrintSettings),
+            paperId: 'custom',
+            paperWidthMM: Math.min(paperWidthMM, paperHeightMM),
+            paperHeightMM: Math.max(paperWidthMM, paperHeightMM),
+            orientation:
+              paperHeightMM >= paperWidthMM ? ('portrait' as const) : ('landscape' as const),
+          }
+        : state.printSettings;
+
+    set({
+      mode: 'collage',
+      collageTemplate: template,
+      slots,
+      canvasWidth: nextWidth,
+      canvasHeight: nextHeight,
+      collageCanvasWidth: nextWidth,
+      collageCanvasHeight: nextHeight,
+      collageGap: options.gap ?? 0,
+      collageMargin: options.margin ?? 0,
+      collagePendingImages,
+      printSettings,
+      ...normalizeSelection([]),
+    });
+    get().pushHistory();
+    return { preserved, remaining: overflowImages.length };
+  },
+
+  setSlotImage: async (slotId, src) => {
+    const previous = get().slots.find((slot) => slot.id === slotId);
+    if (!previous || previous.imageSrc === src) return;
+    const projectId = get().projectId;
+    const epoch = beginReplacement(slotId, projectId);
+    let resetCrop = false;
+    if (previous.imageSrc) {
+      const [previousAspect, nextAspect] = await Promise.all([
+        measureImageAspect(previous.imageSrc),
+        measureImageAspect(src),
+      ]);
+      resetCrop =
+        Number.isFinite(previousAspect) &&
+        Number.isFinite(nextAspect) &&
+        Math.abs(previousAspect - nextAspect) > 0.001;
+    }
+    if (get().projectId !== projectId || replacementEpochBySlot.get(slotId) !== epoch) return;
+    if (get().slots.find((slot) => slot.id === slotId)?.imageSrc !== previous.imageSrc) return;
     set((state) => ({
-      slots: state.slots.map((sl: CanvasSlot) =>
-        sl.id === slotId
+      slots: state.slots.map((slot) =>
+        slot.id === slotId
           ? {
-              ...sl,
+              ...slot,
               imageSrc: src,
+              originalImageSrc: undefined,
               filter: 'none',
               brightness: 100,
               contrast: 100,
               saturation: 100,
+              ...(resetCrop ? { zoom: 1, dragX: 0, dragY: 0 } : {}),
             }
-          : sl,
+          : slot,
       ),
       lastEditedImage: src,
     }));
     get().pushHistory();
-
-    // استبدال الصورة يُبقي إزاحات القص مضبوطة على أبعاد الصورة السابقة —
-    // عند اختلاف نسبة الأبعاد نُصفّر dragX/dragY/zoom (مع إبقاء flip/rotation)
-    if (!prev?.imageSrc || prev.imageSrc === src) return;
-    void (async () => {
-      const [prevAspect, nextAspect] = await Promise.all([
-        measureImageAspect(prev.imageSrc!),
-        measureImageAspect(src),
-      ]);
-      if (!Number.isFinite(prevAspect) || !Number.isFinite(nextAspect)) return;
-      if (Math.abs(prevAspect - nextAspect) > 0.001) {
-        // حارس قِدم: الحالة الآنية فقط هي ما يكشف أن عملية أحدث استبدلت الصورة
-        // أثناء القياس — وكل قيم «قبل» تأتي من لقطة ما قبل العملية أعلاه.
-        if (get().slots.find((sl) => sl.id === slotId)?.imageSrc !== src) return;
-        // تصحيح واحد مدموج في نفس العملية — العملية كلها خطوة تراجع واحدة (H7):
-        // كانت اللقطة المتأخرة تُسجّل إدخالاً ثانٍ يعكس حالة آنية لا حالة الدفعة
-        set((state) => ({
-          slots: state.slots.map((sl: CanvasSlot) =>
-            sl.id === slotId ? { ...sl, dragX: 0, dragY: 0, zoom: 1 } : sl,
-          ),
-        }));
-      }
-    })();
   },
 
-  setSlotImagesBatch: (assignments, lastEditedSrc) => {
+  setSlotImagesBatch: async (assignments, lastEditedSrc) => {
     if (assignments.length === 0) return;
-    // فهارس O(1) بدل find داخل map — كانت الدفعة O(خانات × إسنادات)
-    // وتُجمّد اللوحة عند توزيع مئات الصور من مجلد واحد.
-    const srcBySlot = new Map<string, string>();
-    for (const a of assignments) srcBySlot.set(a.slotId, a.src);
-    // قيم «قبل» من لقطة ما قبل التحديث — مقارنة ما بعد التحديث كانت
-    // تبطل الكشف عن الاستبدالات دائماً (imageSrc أصبح يساوي الجديد)
-    const prevBySlot = new Map<string, string | undefined>();
-    for (const sl of get().slots) {
-      if (srcBySlot.has(sl.id)) prevBySlot.set(sl.id, sl.imageSrc);
+    const stateAtStart = get();
+    const previousBySlot = new Map(
+      stateAtStart.slots
+        .filter((slot) => assignments.some((assignment) => assignment.slotId === slot.id))
+        .map((slot) => [slot.id, slot] as const),
+    );
+    const applicableAssignments = assignments.filter((assignment) =>
+      previousBySlot.has(assignment.slotId),
+    );
+    if (applicableAssignments.length === 0) return;
+    const epochs = new Map<string, number>();
+    const projectId = stateAtStart.projectId;
+    for (const assignment of applicableAssignments) {
+      const epoch = beginReplacement(assignment.slotId, projectId);
+      epochs.set(assignment.slotId, epoch);
     }
+    const resetIds = new Set<string>();
+    const aspectChecks = applicableAssignments.flatMap((assignment) => {
+      const previous = previousBySlot.get(assignment.slotId);
+      if (!previous?.imageSrc || previous.imageSrc === assignment.src) return [];
+      return [
+        (async () => {
+          const [previousAspect, nextAspect] = await Promise.all([
+            measureImageAspect(previous.imageSrc as string),
+            measureImageAspect(assignment.src),
+          ]);
+          if (
+            Number.isFinite(previousAspect) &&
+            Number.isFinite(nextAspect) &&
+            Math.abs(previousAspect - nextAspect) > 0.001
+          ) {
+            resetIds.add(assignment.slotId);
+          }
+        })(),
+      ];
+    });
+    if (aspectChecks.length > 0) await Promise.all(aspectChecks);
+    const currentById = new Map(get().slots.map((slot) => [slot.id, slot] as const));
+    const validAssignments = applicableAssignments.filter((assignment) => {
+      const previous = previousBySlot.get(assignment.slotId);
+      return (
+        previous &&
+        get().projectId === projectId &&
+        replacementEpochBySlot.get(assignment.slotId) === epochs.get(assignment.slotId) &&
+        currentById.get(assignment.slotId)?.imageSrc === previous.imageSrc
+      );
+    });
+    if (validAssignments.length === 0) return;
+    const srcBySlot = new Map(
+      validAssignments.map((assignment) => [assignment.slotId, assignment.src]),
+    );
     set((state) => ({
-      slots: state.slots.map((sl: CanvasSlot) => {
-        const nextSrc = srcBySlot.get(sl.id);
-        if (nextSrc === undefined) return sl;
+      slots: state.slots.map((slot) => {
+        const src = srcBySlot.get(slot.id);
+        if (src === undefined) return slot;
         return {
-          ...sl,
-          imageSrc: nextSrc,
+          ...slot,
+          imageSrc: src,
+          originalImageSrc: undefined,
           filter: 'none',
           brightness: 100,
           contrast: 100,
           saturation: 100,
+          ...(resetIds.has(slot.id) ? { zoom: 1, dragX: 0, dragY: 0 } : {}),
         };
       }),
       lastEditedImage: lastEditedSrc ?? state.lastEditedImage,
     }));
-    // دفعة كاملة تُسجل كخطوة تراجع واحدة (الإسقاط المتعدد)
     get().pushHistory();
+  },
 
-    // استبدالات تختلف نسبة أبعادها عن السابقة: تصفير إزاحات القص (مطابقة setSlotImage)
-    const replaced = assignments.filter((a) => {
-      const prev = prevBySlot.get(a.slotId);
-      return !!prev && prev !== a.src;
+  moveSlotContentsBatch: (assignments) => {
+    if (assignments.length === 0) return;
+    const state = get();
+    const sourceById = new Map(state.slots.map((slot) => [slot.id, slot] as const));
+    const contentByTarget = new Map(
+      assignments.flatMap((assignment) => {
+        const source = sourceById.get(assignment.sourceSlotId);
+        return source ? [[assignment.slotId, readCollageSlotImageContent(source)] as const] : [];
+      }),
+    );
+    const changed = state.slots.some((slot) => {
+      const next = contentByTarget.get(slot.id);
+      return next && !collageSlotImageContentEqual(readCollageSlotImageContent(slot), next);
     });
-    if (replaced.length === 0) return;
-    void (async () => {
-      const results = await Promise.all(
-        replaced.map(async (a) => {
-          const [prevAspect, nextAspect] = await Promise.all([
-            measureImageAspect(prevBySlot.get(a.slotId) || ''),
-            measureImageAspect(a.src),
-          ]);
-          if (!Number.isFinite(prevAspect) || !Number.isFinite(nextAspect)) return null;
-          if (Math.abs(prevAspect - nextAspect) <= 0.001) return null;
-          return a.slotId;
-        }),
-      );
-      const candidates = results.filter((id): id is string => !!id);
-      if (candidates.length === 0) return;
-      // حارس قِدم: نتجاهل النتيجة إذا استُبدلت الصورة مجدداً أثناء القياس —
-      // كل قيم «قبل» مقروءة من لقطة ما قبل الدفعة (لتُطبَّق على خاناتها لا على
-      // خانات دفعة أحدث تجاورها في نفس المللي ثانية)
-      const currentSrcBySlot = new Map(
-        get().slots.map((sl: CanvasSlot) => [sl.id, sl.imageSrc] as const),
-      );
-      const toReset = candidates.filter((id) => {
-        const nextSrc = srcBySlot.get(id);
-        return nextSrc !== undefined && currentSrcBySlot.get(id) === nextSrc;
-      });
-      if (toReset.length === 0) return;
-      // تصحيح واحد مدموج في نفس الدفعة — لا إدخال سجل ثانٍ (H7): الدفعة كلها
-      // خطوة تراجع واحدة، وكانت اللقطة اللاحقة تدفع إدخالاً يعكس حالة آنية
-      set((state) => ({
-        slots: state.slots.map((sl: CanvasSlot) =>
-          toReset.includes(sl.id) ? { ...sl, dragX: 0, dragY: 0, zoom: 1 } : sl,
-        ),
-      }));
-    })();
+    if (!changed) return;
+    set({
+      slots: state.slots.map((slot) =>
+        contentByTarget.has(slot.id)
+          ? applyCollageSlotImageContent(slot, contentByTarget.get(slot.id))
+          : slot,
+      ),
+    });
+    get().pushHistory();
   },
 
   updateSlot: (slotId, patch) => {
@@ -1050,53 +1173,10 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
 
   swapSlots: (slotIdA: string, slotIdB: string) => {
     if (!slotIdA || !slotIdB || slotIdA === slotIdB) return;
-    const currentSlots = get().slots;
-    const slotA = currentSlots.find((s) => s.id === slotIdA);
-    const slotB = currentSlots.find((s) => s.id === slotIdB);
-    if (!slotA || !slotB) return;
-
-    set((state) => ({
-      slots: state.slots.map((sl) => {
-        if (sl.id === slotIdA) {
-          return {
-            ...sl,
-            imageSrc: slotB.imageSrc,
-            filter: slotB.filter || 'none',
-            brightness: slotB.brightness ?? 100,
-            contrast: slotB.contrast ?? 100,
-            saturation: slotB.saturation ?? 100,
-            zoom: slotB.zoom ?? 1,
-            dragX: slotB.dragX ?? 0,
-            dragY: slotB.dragY ?? 0,
-            flipX: slotB.flipX ?? false,
-            flipY: slotB.flipY ?? false,
-            rotation: slotB.rotation ?? 0,
-            originalImageSrc: slotB.originalImageSrc,
-            bgColor: slotB.bgColor,
-          };
-        }
-        if (sl.id === slotIdB) {
-          return {
-            ...sl,
-            imageSrc: slotA.imageSrc,
-            filter: slotA.filter || 'none',
-            brightness: slotA.brightness ?? 100,
-            contrast: slotA.contrast ?? 100,
-            saturation: slotA.saturation ?? 100,
-            zoom: slotA.zoom ?? 1,
-            dragX: slotA.dragX ?? 0,
-            dragY: slotA.dragY ?? 0,
-            flipX: slotA.flipX ?? false,
-            flipY: slotA.flipY ?? false,
-            rotation: slotA.rotation ?? 0,
-            originalImageSrc: slotA.originalImageSrc,
-            bgColor: slotA.bgColor,
-          };
-        }
-        return sl;
-      }),
-    }));
-    get().pushHistory();
+    get().moveSlotContentsBatch([
+      { slotId: slotIdA, sourceSlotId: slotIdB },
+      { slotId: slotIdB, sourceSlotId: slotIdA },
+    ]);
   },
 
   fillEmptySlots: (src: string, sourceSlotId?: string) => {

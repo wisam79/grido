@@ -60,6 +60,7 @@ import {
   zoomInStore,
   zoomOutStore,
 } from '@/hooks/use-canvas-zoom';
+import { buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
 import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
 import { useEditorStore } from '@/lib/editor-store';
 import { openDirectoryImageDialog } from '@/lib/io/file-dialog-utils';
@@ -150,12 +151,14 @@ export function DesktopMenuBar() {
       if (paths && paths.length > 0) {
         const freshState = useEditorStore.getState();
         if (freshState.mode === 'collage') {
-          const freshSlots = freshState.slots;
-          const assignments = freshSlots
-            .slice(0, paths.length)
-            .map((slot, index) => ({ slotId: slot.id, src: paths[index] }));
-          freshState.setSlotImagesBatch(assignments, paths[0] || null);
-          toast.success(`تم استيراد ${assignments.length} صورة إلى خلايا الكولاج`);
+          const plan = buildCollageInsertPlan(freshState.slots, paths, { scope: 'empty' });
+          await freshState.setSlotImagesBatch(plan.assignments, paths[0] || null);
+          if (plan.remaining.length > 0) freshState.appendPendingCollageImages(plan.remaining);
+          toast.success(
+            plan.remaining.length > 0
+              ? `أُدرجت ${plan.assignments.length} · بقيت ${plan.remaining.length}`
+              : `أُدرجت ${plan.assignments.length} صورة إلى خانات الكولاج`,
+          );
         } else {
           const items: { src: string; aspectRatio: number }[] = [];
           for (const p of paths) {

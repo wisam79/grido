@@ -59,6 +59,44 @@ export interface CollageRenderOptions {
   collageTemplate?: StoreState['collageTemplate'];
 }
 
+/**
+ * نتيجة تحميل صور الخانات قبل الرسم. الصور الفاشلة تُعلَم بمعرّف خانتها كي
+ * يستطيع المستدعي (التصدير اليدوي/الطباعة) إظهار تحذير بدل ملف ناقص صامت.
+ */
+export interface CollageImageLoadResult {
+  loaded: Map<string, HTMLImageElement>;
+  failedSlotIds: string[];
+}
+
+export async function loadCollageSlotImages(
+  slots: StoreState['slots'],
+  timeoutMs = 8000,
+): Promise<CollageImageLoadResult> {
+  const loaded = new Map<string, HTMLImageElement>();
+  const failedSlotIds: string[] = [];
+  await Promise.all(
+    slots
+      .filter((slot) => slot.imageSrc)
+      .map(async (slot) => {
+        try {
+          // مهلة لكل صورة: مصدر معلّق (شبكة متوقف/بيئة اختبار بلا مصغرات)
+          // لا يجوز أن يوقف الفحص أو التصدير إلى الأبد.
+          const img = await Promise.race([
+            loadImage(slot.imageSrc!),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error('image load timeout')), timeoutMs),
+            ),
+          ]);
+          loaded.set(slot.id, img);
+        } catch (e) {
+          logger.error('Failed to pre-load slot image:', slot.imageSrc, e);
+          failedSlotIds.push(slot.id);
+        }
+      }),
+  );
+  return { loaded, failedSlotIds };
+}
+
 export async function renderCollageBranch(
   ctx: CanvasRenderingContext2D,
   opts: CollageRenderOptions,
@@ -87,17 +125,8 @@ export async function renderCollageBranch(
   const borderW = collageStrokeWidth;
 
   const slotImageMap: Record<string, HTMLImageElement> = {};
-  const slotLoadPromises = slots
-    .filter((slot) => slot.imageSrc)
-    .map(async (slot) => {
-      try {
-        const img = await loadImage(slot.imageSrc!);
-        slotImageMap[slot.id] = img;
-      } catch (e) {
-        logger.error('Failed to pre-load slot image:', slot.imageSrc, e);
-      }
-    });
-  await Promise.all(slotLoadPromises);
+  const loadResult = await loadCollageSlotImages(slots);
+  for (const [id, img] of loadResult.loaded) slotImageMap[id] = img;
 
   for (const slot of slots) {
     // مستطيل الخانة من print-layout-math — نفس المصدر المستخدم في معاينة الطباعة
@@ -124,6 +153,7 @@ export async function renderCollageBranch(
         ctx.rect(left, top, width, height);
       }
       ctx.clip();
+      // خلفية الخانة جزء مقصود من التصميم — تُرسم حتى عند فشل الصورة
       if (slot.bgColor && slot.bgColor !== 'transparent') {
         ctx.fillStyle = slot.bgColor;
         ctx.fillRect(left, top, width, height);

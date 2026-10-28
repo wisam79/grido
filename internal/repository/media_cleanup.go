@@ -144,6 +144,7 @@ func collectReferencedImages(projects []domain.Project, appDir string) (map[stri
 		extractImagesFromText(string(p.Template), referencedImages)
 		extractImagesFromText(string(p.CollageTemplate), referencedImages)
 		extractImagesFromText(string(p.PrintSettings), referencedImages)
+		extractImagesFromText(string(p.EditorState), referencedImages)
 	}
 
 	// 2. فحص مسار الصورة في مسودة التخزين التلقائي autosave.json

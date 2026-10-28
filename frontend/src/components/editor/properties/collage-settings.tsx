@@ -59,16 +59,12 @@ export function CollageSettings() {
 
   return (
     <div className="flex flex-col font-cairo" dir="rtl">
-      {/* 🎴 بطاقة 1: المسافات والاستدارة */}
-      <FluentSection
-        title="المسافات والاستدارة"
-        collapsible
-        defaultOpen={true}
-        className="pb-4 border-border/50"
-      >
-        <div className="flex flex-col gap-2.5">
+      <FluentSection title="المسافات والاستدارة" collapsible defaultOpen>
+        <div className="space-y-2">
           <FluentSliderField
-            label="التباعد بين الصور"
+            label="التباعد"
+            layout="inline"
+            labelWidth="w-14"
             value={toMm(collageGap)}
             min={0}
             max={30}
@@ -79,7 +75,9 @@ export function CollageSettings() {
             onCommit={() => useEditorStore.getState().pushHistory()}
           />
           <FluentSliderField
-            label="الهوامش الخارجية"
+            label="الهوامش"
+            layout="inline"
+            labelWidth="w-14"
             value={toMm(collageMargin)}
             min={0}
             max={100}
@@ -92,7 +90,7 @@ export function CollageSettings() {
           <FluentSliderField
             label="الزوايا"
             layout="inline"
-            labelWidth="w-12"
+            labelWidth="w-14"
             value={toMm(collageRadius)}
             min={0}
             max={50}
@@ -105,15 +103,12 @@ export function CollageSettings() {
         </div>
       </FluentSection>
 
-      {/* 🎴 بطاقة 2: إطار وحدود الخلايا */}
-      <FluentSection title="إطار الصور" collapsible defaultOpen={true}>
-        <div className="space-y-2.5">
-          {/* التسمية مختصرة: عنوان القسم «إطار الصور» يحمل السياق، فلا
-              نكرّره في كل صف (كان: إطار الصور ← سُمك الإطار ← لون الإطار). */}
+      <FluentSection title="إطار الصور" collapsible defaultOpen>
+        <div className="space-y-2">
           <FluentSliderField
             label="السُّمك"
             layout="inline"
-            labelWidth="w-12"
+            labelWidth="w-14"
             value={collageStrokeWidth}
             min={0}
             max={15}

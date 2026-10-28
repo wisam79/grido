@@ -19,6 +19,7 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { useStageRef } from '@/lib/canvas/stage-context';
+import { MM_PER_INCH, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import {
   exportCanvas,
@@ -168,7 +169,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           // الصورة صامتاً. لذا نأخذ مقاس القالب الفيزيائي فقط حين يطابق الكانفاس عند
           // هذه الدقة (وهو ما يعرضه الحوار في «الحجم الفعلي»)، وإلا نشتق المقاس من
           // البكسلات نفسها.
-          const pxPerMM = dpi / 25.4;
+          const pxPerMM = dpi / MM_PER_INCH;
           const matchesTemplate =
             !!template &&
             template.widthMM > 0 &&
@@ -285,6 +286,38 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             toast.error('تعذر تصدير الصور');
           }
         } else {
+          // 🔍 فحص المحتوى في وضع الكولاج: الصورة غير المقروءة مانعة قبل إنشاء الملف
+          if (mode === 'collage') {
+            const { loadCollageSlotImages, runCollagePreflight, getCachedImageDimensions } =
+              await import('@/lib/export/collage-preflight-helpers');
+            const loadResult = await loadCollageSlotImages(slots);
+            const preflight = runCollagePreflight({
+              slots,
+              canvasWidth,
+              canvasHeight,
+              imageDimensions: new Map(
+                [...new Set(slots.map((slot) => slot.imageSrc).filter(Boolean))]
+                  .map((src) => [src as string, getCachedImageDimensions(src as string)])
+                  .filter((entry): entry is [string, { width: number; height: number }] =>
+                    Boolean(entry[1]),
+                  ),
+              ),
+              failedSlotIds: loadResult.failedSlotIds,
+            });
+            if (preflight.blocking.length > 0) {
+              toast.error(`تعذر التصدير: ${preflight.blocking[0].message}`);
+              SetTaskbarProgress(0, 'none').catch(() => {});
+              return;
+            }
+            if (preflight.warnings.length > 0) {
+              toast.warning(
+                preflight.warnings.length === 1
+                  ? preflight.warnings[0].message
+                  : `${preflight.warnings.length} تنبيهات جودة — سيتم التصدير`,
+              );
+            }
+          }
+
           setProgress(50);
           SetTaskbarProgress(50, 'normal').catch(() => {});
           const blob = await exportCanvas(format, quality / 100, stageRef.current);
@@ -520,8 +553,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground font-semibold">الحجم الفعلي:</span>
                   <span className="font-bold">
-                    {Math.round((canvasWidth / printSettings.dpi) * 25.4)}×
-                    {Math.round((canvasHeight / printSettings.dpi) * 25.4)} مم
+                    {Math.round(pxToMm(canvasWidth, printSettings.dpi))}×
+                    {Math.round(pxToMm(canvasHeight, printSettings.dpi))} مم
                   </span>
                 </div>
                 <div className="flex justify-between">

@@ -118,14 +118,7 @@ func ApplyPureBlackCutLines(cmykImg *image.CMYK, req domain.PrintRequest) {
 		return
 	}
 
-	lineWidth := mmToPx(0.20, req.DPI)
-	if lineWidth < 1.0 {
-		lineWidth = 1.0
-	}
-	dashSize := mmToPx(1.5, req.DPI)
-	if dashSize < 1.0 {
-		dashSize = 1.0
-	}
+	lineWidth, dashSize := cutLinePixels(req.DPI)
 
 	bounds := cmykImg.Bounds()
 	maxW, maxH := bounds.Dx(), bounds.Dy()

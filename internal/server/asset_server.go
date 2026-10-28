@@ -363,7 +363,7 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var filePath string
 		dir := r.URL.Query().Get("dir")
 		if dir != "" {
-			exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
+			exportsDir := utils.GetExportsDir()
 			cleanDir := filepath.Clean(dir)
 			if fi, err := os.Stat(cleanDir); err == nil && fi.IsDir() {
 				if resolvedDir, err := filepath.EvalSymlinks(cleanDir); err == nil {
@@ -425,7 +425,7 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Invalid export source filename", http.StatusBadRequest)
 				return
 			}
-			exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
+			exportsDir := utils.GetExportsDir()
 			srcPath := filepath.Join(exportsDir, cleanSource)
 			srcFile, openErr := os.Open(srcPath)
 			if openErr != nil {
@@ -497,7 +497,7 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost && r.URL.Path == "/api/upload-print-image" {
-		exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
+		exportsDir := utils.GetExportsDir()
 		if err := os.MkdirAll(exportsDir, 0755); err != nil {
 			http.Error(w, "Failed to create exports dir", http.StatusInternalServerError)
 			return
@@ -590,7 +590,7 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		var baseDir string
 		if strings.HasPrefix(filename, "print_") {
-			baseDir = filepath.Join(utils.GetAppDir(), "Exports")
+			baseDir = utils.GetExportsDir()
 		} else {
 			if deps.MediaSvc == nil {
 				http.Error(w, "Media service unavailable", http.StatusInternalServerError)

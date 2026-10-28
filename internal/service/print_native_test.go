@@ -10,6 +10,46 @@ import (
 	"grido/internal/utils"
 )
 
+func setupRelativePrintExports(t *testing.T) (string, string) {
+	t.Helper()
+	t.Chdir(t.TempDir())
+	t.Setenv("GRIDO_APP_DIR", "grido-data")
+	exportsFile := filepath.Join(utils.GetExportsDir(), "print_test.png")
+	evilFile := filepath.Join("grido-data", "ExportsEvil", "print_test.png")
+	if err := os.MkdirAll(filepath.Dir(evilFile), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{exportsFile, evilFile} {
+		if err := os.WriteFile(path, []byte("fake-png"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return exportsFile, evilFile
+}
+
+func TestPrintNative_RelativeAppDir(t *testing.T) {
+	exportsFile, evilFile := setupRelativePrintExports(t)
+	for _, path := range []string{exportsFile, evilFile} {
+		for _, absolute := range []bool{false, true} {
+			candidate := path
+			if absolute {
+				var err error
+				candidate, err = filepath.Abs(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			_, err := sanitizeNativePrintFilePath(candidate)
+			if path == exportsFile && err != nil {
+				t.Errorf("legitimate export %q rejected: %v", candidate, err)
+			}
+			if path == evilFile && (err == nil || !strings.Contains(err.Error(), "خارج النطاق")) {
+				t.Errorf("sibling export %q must be rejected, got: %v", candidate, err)
+			}
+		}
+	}
+}
+
 func TestPrintNative_ValidationGuards(t *testing.T) {
 	svc := NewPrintService()
 
@@ -72,7 +112,7 @@ func TestPrintNative_PathTraversalDefense(t *testing.T) {
 func TestPrintNative_CompanionHTMLResolution(t *testing.T) {
 	// Verify that in the Exports directory, when a .png has a companion .html,
 	// the companion is detected.
-	exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
+	exportsDir := utils.GetExportsDir()
 	if err := os.MkdirAll(exportsDir, 0755); err != nil {
 		t.Fatalf("failed to create exports dir: %v", err)
 	}

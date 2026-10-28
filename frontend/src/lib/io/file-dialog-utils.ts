@@ -101,6 +101,21 @@ export async function pickLocalImage(): Promise<string | null> {
 }
 
 /**
+ * نسخة متسامحة لمسارات الإدراج الفوري (الشريط السريع وقوائم السياق):
+ * عند فشل الحفظ المحلي يبقى dataURL صالحاً بدل إسقاط العملية. تختلف عن
+ * pickLocalImage التي تُبلّغ الخطأ ليعرضه المستدعي في toast.
+ */
+export async function persistPickedImage(picked: string): Promise<string> {
+  if (!picked.startsWith('data:image/')) return picked;
+  try {
+    return (await SaveImageFromBase64(picked)) || picked;
+  } catch (e) {
+    logger.error('Failed to save image locally:', e);
+    return picked;
+  }
+}
+
+/**
  * فتح نافذة اختيار مجلد كامل واستيراد كافة الصور الموجودة داخله
  */
 export async function openDirectoryImageDialog(): Promise<string[]> {

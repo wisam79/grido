@@ -38,7 +38,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 import { triggerMemoryTrim } from '@/lib/memory-trim';
 import { DEFAULT_PRINT_SETTINGS } from '@/lib/store/slices/print-slice';
-import { PAPER_SIZES, ADVANCED_PAPER_SIZES } from '@/lib/templates/constants';
+import { ALL_PAPER_SIZES } from '@/lib/templates/constants';
 import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 import {
@@ -52,7 +52,6 @@ import { usePrintExport } from '../print/use-print-export';
 import type { SupportedPaperInfo } from '@bindings/grido/internal/core/domain';
 import type Konva from 'konva';
 
-const ALL_PRINT_PAPER_SIZES = [...PAPER_SIZES, ...ADVANCED_PAPER_SIZES];
 const logger = createLogger('print-dialog');
 
 /** مفتاح حفظ الطابعة المختارة بين الجلسات (هدف «الخصائص» والطباعة المباشرة). */
@@ -436,7 +435,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     }
 
     if (sanitizedDriverPapers.length > 0) {
-      const std = ALL_PRINT_PAPER_SIZES.find((p) => p.id === currentId);
+      const std = ALL_PAPER_SIZES.find((p) => p.id === currentId);
       const targetW = std ? std.widthMM : printSettings.paperWidthMM;
       const targetH = std ? std.heightMM : printSettings.paperHeightMM;
 
@@ -461,7 +460,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       if (matched) return getDriverPaperKey(matched);
     }
 
-    if (ALL_PRINT_PAPER_SIZES.some((p) => p.id === currentId)) {
+    if (ALL_PAPER_SIZES.some((p) => p.id === currentId)) {
       return currentId;
     }
 
@@ -796,7 +795,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     }
                   }
 
-                  const selected = ALL_PRINT_PAPER_SIZES.find((p) => p.id === val);
+                  const selected = ALL_PAPER_SIZES.find((p) => p.id === val);
                   if (selected) {
                     setPrintSettings({
                       paperId: selected.id,
@@ -848,7 +847,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                           </SelectItem>
                         );
                       })
-                    : ALL_PRINT_PAPER_SIZES.map((size) => (
+                    : ALL_PAPER_SIZES.map((size) => (
                         <SelectItem
                           key={size.id}
                           value={size.id}

@@ -22,6 +22,7 @@ import type {
   ProjectFileV1,
   CanvasElement,
   CanvasSlot,
+  CollageAutofillSettings,
   PrintSettings,
   HistoryEntry,
 } from '../types';
@@ -112,6 +113,8 @@ type CoreSliceCross = CoreSlice & {
   editingTextId: string | null;
   slots: CanvasSlot[];
   autofillImages: string[];
+  collagePendingImages: string[];
+  autofillSettings: CollageAutofillSettings;
   template: PhotoTemplate | null;
   collageTemplate: CollageTemplate | null;
   printSettings: PrintSettings;
@@ -454,6 +457,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       collageStrokeWidth: 0,
       collageStrokeColor: '#000000',
       autofillImages: [],
+      collagePendingImages: [],
+      autofillSettings: { ...DEFAULT_COLLAGE_STATE.autofillSettings },
       showGrid: false,
       gridSize: 48,
       gridColor: '#000000',

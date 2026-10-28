@@ -32,6 +32,29 @@ import (
 //      int16 (عُشر المليمتر) بدل اللفّ الصامت إلى سالب داخل devmode.
 // ─────────────────────────────────────────────────────────────────────────────
 
+func TestPrintNative_GDI_RelativeAppDir(t *testing.T) {
+	exportsFile, evilFile := setupRelativePrintExports(t)
+	for _, path := range []string{exportsFile, evilFile} {
+		for _, absolute := range []bool{false, true} {
+			candidate := path
+			if absolute {
+				var err error
+				candidate, err = filepath.Abs(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			_, err := sanitizePrintFilePath(candidate)
+			if path == exportsFile && err != nil {
+				t.Errorf("legitimate export %q rejected: %v", candidate, err)
+			}
+			if path == evilFile && (err == nil || !strings.Contains(err.Error(), "غير مصرح")) {
+				t.Errorf("sibling export %q must be rejected, got: %v", candidate, err)
+			}
+		}
+	}
+}
+
 func TestSanitizePrintFilePath_GDI(t *testing.T) {
 	appDir := t.TempDir()
 	t.Setenv("GRIDO_APP_DIR", appDir)

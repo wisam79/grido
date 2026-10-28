@@ -11,8 +11,10 @@ import type { FreeformSlot } from '../../types';
 
 /** حذف مجموعة خلايا محددة — يُبقي خلية واحدة على الأقل دائماً */
 export function removeSlotsByIds(slots: FreeformSlot[], ids: string[]): FreeformSlot[] {
-  if (slots.length <= ids.length) return slots.length > 1 ? slots.slice(0, 1) : slots;
-  return slots.filter((s) => !ids.includes(s.id));
+  const selected = new Set(ids);
+  const remaining = slots.filter((s) => !selected.has(s.id));
+  if (remaining.length > 0 || slots.length === 0) return remaining;
+  return slots.slice(0, 1);
 }
 
 /** مضاعفة مجموعة خلايا بإزاحة تلقائية دون تداخل مع الأصل */
@@ -47,6 +49,7 @@ export function duplicateSlotsByIds(
     return {
       ...t,
       id,
+      sourceSlotId: undefined,
       x: clamp(t.x - minX + baseX, 0, 1 - t.w),
       y: clamp(t.y - minY + baseY, 0, 1 - t.h),
       label: t.label ? `${t.label} (نسخة)` : undefined,

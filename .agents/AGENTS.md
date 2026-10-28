@@ -40,32 +40,38 @@
 
 ---
 
-## 4. فهرس المهارات المعمارية (Architectural Skills Index)
+## 4. فهرس المهارات المعمارية الموحدة (Consolidated Architectural Skills Index)
 للحصول على توجيهات تفصيلية، استعن بالمهارات المرجعية المتخصصة في `.agents/skills/`:
-- [`fluent2-design-system`](file:///c:/projects/grido/.agents/skills/fluent2-design-system/SKILL.md): معايير وتوكنات Microsoft Fluent 2.
-- [`grido-ui-designer-guide`](file:///c:/projects/grido/.agents/skills/grido-ui-designer-guide/SKILL.md): دليل الواجهات وتجربة المستخدم والأيقونات والاختصارات.
+
+### أ. الواجهة ونظام التصميم (Frontend & Fluent Design)
+- [`fluent2-design-system`](file:///c:/projects/grido/.agents/skills/fluent2-design-system/SKILL.md): معايير وتوكنات Microsoft Fluent 2 لـ Grido Studio.
+- [`grido-ui-designer-guide`](file:///c:/projects/grido/.agents/skills/grido-ui-designer-guide/SKILL.md): دليل الواجهات وتجربة المستخدم والأيقونات والاختصارات والـ Portals.
+- [`tailwind-v4-theme-engine`](file:///c:/projects/grido/.agents/skills/tailwind-v4-theme-engine/SKILL.md): هندسة سمات ومتغيرات محرك Tailwind CSS v4.
+- [`radix-ui-accessibility-ux`](file:///c:/projects/grido/.agents/skills/radix-ui-accessibility-ux/SKILL.md): أصول إمكانية الوصول ونوافذ وقوائم Radix UI.
+
+### ب. محرك الكانفاس وتصدير الطباعة (Canvas Engine & Hi-Res Print)
 - [`konva-rendering-invariants`](file:///c:/projects/grido/.agents/skills/konva-rendering-invariants/SKILL.md): ثوابت الرسم والأداء ومجموعات Konva وطبقة السحب الرسمية.
-- [`konva-text-typography-fx`](file:///c:/projects/grido/.agents/skills/konva-text-typography-fx/SKILL.md): تصيير النصوص ودورة الارتفاع وجاهزية الخط ومطابقة التحرير وفلتر التمدد الشكلي للحدود (`dilate`).
-- [`wails-konva-hi-res-export`](file:///c:/projects/grido/.agents/skills/wails-konva-hi-res-export/SKILL.md): تصدير الطباعة فائق الدقة ومطابقة الهندسة.
-- [`wails-v3-runtime-mastery`](file:///c:/projects/grido/.agents/skills/wails-v3-runtime-mastery/SKILL.md): رنتايم وأحداث ونوافذ Wails v3.
-- [`wails-v3-architecture-reference`](file:///c:/projects/grido/.agents/skills/wails-v3-architecture-reference/SKILL.md): سجل ومرجع الفروقات المعمارية لانتقال Grido Studio إلى Wails v3.
-- [`wails-v3-multiwindow-sync`](file:///c:/projects/grido/.agents/skills/wails-v3-multiwindow-sync/SKILL.md): إدارة ومزامنة النوافذ المتعددة المستقلة وتدفق الحالة اللحظية.
-- [`wails-v3-native-io-streaming`](file:///c:/projects/grido/.agents/skills/wails-v3-native-io-streaming/SKILL.md): تدفق البيانات الثنائية والميديا وحماية مسارات AssetServer.
-- [`wails-v3-system-integration-ux`](file:///c:/projects/grido/.agents/skills/wails-v3-system-integration-ux/SKILL.md): الاندماج العميق مع Windows 11 ومعايير Fluent 2 الأصلية.
-- [`wails-cross-compiler`](file:///c:/projects/grido/.agents/skills/wails-cross-compiler/SKILL.md): بناء وحزم التطبيق مع NSIS وتصغير الحجم.
-- [`supabase-security-and-migrations`](file:///c:/projects/grido/.agents/skills/supabase-security-and-migrations/SKILL.md): تأمين RLS وهجرات Supabase والمصادقة.
-- [`opencv-mediapipe-ai-tuner`](file:///c:/projects/grido/.agents/skills/opencv-mediapipe-ai-tuner/SKILL.md): تكامل نماذج الذكاء الاصطناعي ومعالجة صور الهوية.
-- [`zustand-state-patterns`](file:///c:/projects/grido/.agents/skills/zustand-state-patterns/SKILL.md): أنماط Zustand v5 وتفادي Stale Closures.
-- [`tailwind-v4-theme-engine`](file:///c:/projects/grido/.agents/skills/tailwind-v4-theme-engine/SKILL.md): هندسة سمات Tailwind v4.
-- [`radix-ui-accessibility-ux`](file:///c:/projects/grido/.agents/skills/radix-ui-accessibility-ux/SKILL.md): أصول إمكانية الوصول ونوافذ Radix UI.
-- [`grido-docs-sync-guard`](file:///c:/projects/grido/.agents/skills/grido-docs-sync-guard/SKILL.md): بوابات التوثيق الإلزامية والتحقق الآلي.
-- [`grido-qa-security-auditor`](file:///c:/projects/grido/.agents/skills/grido-qa-security-auditor/SKILL.md): الجودة والأمان وهندسة الإصدارات.
-- [`grido-architecture-navigator`](file:///c:/projects/grido/.agents/skills/grido-architecture-navigator/SKILL.md): خريطة الكود ومعمارية التدفق.
-- [`grido-performance-checklist`](file:///c:/projects/grido/.agents/skills/grido-performance-checklist/SKILL.md): قائمة فحص الأداء السريعة.
-- [`canvas-export-qa`](file:///c:/projects/grido/.agents/skills/canvas-export-qa/SKILL.md): فحص محرك الرسم وجودة التصدير فائق الدقة (300+ DPI) والقص والنزيف (`/canvas-export-qa`).
-- [`database-migration`](file:///c:/projects/grido/.agents/skills/database-migration/SKILL.md): صياغة وفحص وتطبيق هجرات Supabase وتأمين RLS (`/database-migration`).
-- [`release-deployment`](file:///c:/projects/grido/.agents/skills/release-deployment/SKILL.md): ترفيع وإطلاق الإصدارات ومزامنة التكوين والـ CI (`/release-deployment`).
-- [`security-audit`](file:///c:/projects/grido/.agents/skills/security-audit/SKILL.md): الجولة الأمنية الدورية لفحص المصادقة والجلسات وتطهير السجلات (`/security-audit`).
+- [`konva-text-typography-fx`](file:///c:/projects/grido/.agents/skills/konva-text-typography-fx/SKILL.md): تصيير النصوص ودورة الارتفاع وجاهزية الخط وفلتر التمدد الشكلي للحدود (`dilate`).
+- [`wails-konva-hi-res-export`](file:///c:/projects/grido/.agents/skills/wails-konva-hi-res-export/SKILL.md): تصدير الطباعة فائق الدقة (300+ DPI) ومطابقة الهندسة والقص والنزيف.
+- [`canvas-export-qa`](file:///c:/projects/grido/.agents/skills/canvas-export-qa/SKILL.md): فحص محرك الرسم وجودة التصدير فائق الدقة والقص والنزيف (`/canvas-export-qa`).
+
+### ج. الباك إند ورنتايم سطح المكتب (Backend & Desktop Runtime)
+- [`wails-v3-runtime-mastery`](file:///c:/projects/grido/.agents/skills/wails-v3-runtime-mastery/SKILL.md): المرجع الشامل لرنتايم Wails v3 (دورة الحياة، النوافذ المتعددة، تدفق AssetServer، وتكامل Windows 11).
+- [`wails-cross-compiler`](file:///c:/projects/grido/.agents/skills/wails-cross-compiler/SKILL.md): بناء وحزم التطبيق مع مثبت NSIS وتصغير الحجم.
+
+### د. السحابة والبيانات والذكاء الاصطناعي (Cloud, Data & AI)
+- [`supabase-security-and-migrations`](file:///c:/projects/grido/.agents/skills/supabase-security-and-migrations/SKILL.md): تأمين RLS ودوال SECURITY DEFINER وهندسة هجرات Supabase (`/database-migration`).
+- [`opencv-mediapipe-ai-tuner`](file:///c:/projects/grido/.agents/skills/opencv-mediapipe-ai-tuner/SKILL.md): تكامل نماذج الذكاء الاصطناعي وكاشف المستندات وترميم صور الهوية.
+
+### هـ. إدارة الحالة والمعمارية (State & Architecture)
+- [`zustand-state-patterns`](file:///c:/projects/grido/.agents/skills/zustand-state-patterns/SKILL.md): أنماط Zustand v5 وتفادي Stale Closures وعزل الشرائح.
+- [`grido-architecture-navigator`](file:///c:/projects/grido/.agents/skills/grido-architecture-navigator/SKILL.md): خريطة الكود ومعمارية تدفق البيانات بين Go و React.
+
+### و. الجودة والتوثيق والإصدارات (Quality, Governance & Release)
+- [`grido-docs-sync-guard`](file:///c:/projects/grido/.agents/skills/grido-docs-sync-guard/SKILL.md): بوابات التوثيق الإلزامية والتحقق الآلي ومصفوفة المزامنة.
+- [`grido-qa-security-auditor`](file:///c:/projects/grido/.agents/skills/grido-qa-security-auditor/SKILL.md): الجودة والأمان وهندسة الإصدارات والجولة الأمنية الدورية (`/security-audit`).
+- [`release-deployment`](file:///c:/projects/grido/.agents/skills/release-deployment/SKILL.md): ترفيع وإطلاق الإصدارات ونشرها على GitHub (`/release-deployment`).
+- [`grido-performance-checklist`](file:///c:/projects/grido/.agents/skills/grido-performance-checklist/SKILL.md): قائمة فحص الأداء السريعة لمكونات الواجهة والخلفية.
 
 ---
 

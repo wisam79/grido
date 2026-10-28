@@ -154,9 +154,7 @@ func (w *dpiPNGWriter) Write(p []byte) (int, error) {
 }
 
 func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (string, string, error) {
-	appDir := utils.GetAppDir()
-	outDir := filepath.Join(appDir, "Exports")
-	_ = os.MkdirAll(outDir, 0755)
+	outDir := utils.GetExportsDir()
 
 	// 🧹 تنظيف المخرجات القديمة (أقدم من 24 ساعة) في الخلفية لتفادي امتلاء القرص
 	// دون تأخير الطلب الحالي أو حذف ملف حوار طباعة ما زال مفتوحاً في المقدمة.
@@ -346,7 +344,7 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	if _, statErr := os.Stat(absImagePath); statErr != nil {
 		slog.Warn("print image missing on disk; checking fallback in Exports", "path", absImagePath, "error", statErr)
 		// الملف غير موجود — نبحث في مجلد Exports البديل (print_upload_*)
-		exportsDir := filepath.Join(utils.GetAppDir(), "Exports")
+		exportsDir := utils.GetExportsDir()
 		altPath := filepath.Join(exportsDir, htmlImageName)
 		// سقف التضمين: فوقه نُبقي مسار الملف بدل مضاعفة الصورة كاملة في HTML
 		if info, statErr := os.Stat(altPath); statErr == nil && info.Size() > 0 && info.Size() <= maxFallbackEmbedBytes {

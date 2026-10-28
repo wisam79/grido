@@ -1,5 +1,5 @@
 // النوع القانوني في lib/canvas/units — يُعاد تصديره هنا للتوافقية
-import type { RulerUnit } from '@/lib/canvas/units';
+import { DEFAULT_DPI, MM_PER_INCH, mmToPx, type RulerUnit } from '@/lib/canvas/units';
 export type { RulerUnit };
 
 /**
@@ -70,9 +70,9 @@ export function getRulerSteps(pixelsPerUnit: number, unit: RulerUnit) {
  * حساب المدى الإجمالي للورقة بحسب الوحدة المختارة
  */
 export function getUnitSpan(mm: number, px: number | undefined, unit: RulerUnit): number {
-  if (unit === 'px') return px || (mm * 300) / 25.4;
+  if (unit === 'px') return px || mmToPx(mm, DEFAULT_DPI);
   if (unit === 'cm') return mm / 10;
-  if (unit === 'in') return mm / 25.4;
+  if (unit === 'in') return mm / MM_PER_INCH;
   return mm; // mm
 }
 

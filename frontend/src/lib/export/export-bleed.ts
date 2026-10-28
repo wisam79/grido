@@ -3,6 +3,7 @@
  * مستخرجة من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
 import { previewWhite, TEXT_COLOR_DEFAULT } from '@/lib/canvas/canvas-colors';
+import { mmToPx } from '@/lib/canvas/units';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 
 function renderBleedCanvas(
@@ -17,7 +18,7 @@ function renderBleedCanvas(
   fallbackBlob: Blob,
 ): Promise<Blob> {
   return new Promise((resolve) => {
-    const bleedPx = Math.round((bleedMM * dpi) / 25.4);
+    const bleedPx = Math.round(mmToPx(bleedMM, dpi));
     const canvas = document.createElement('canvas');
     canvas.width = imgWidth + bleedPx * 2;
     canvas.height = imgHeight + bleedPx * 2;
@@ -162,7 +163,7 @@ export async function applyBleedAndCropMarks(
   // منطقة النزيف حصراً (offset = markLen = bleedPx). فحين لا يوجد نزيف
   // مرسوم لا معالم أيضاً — وكان المخرج حينها لوحةً بنفس الأبعاد أُعيد ترميزها
   // بلا أي تغيير (فقدان JPEG حراري بلا مقابل). نعيد البلوب الأصلي كما هو.
-  const bleedPx = Math.round((bleedMM * dpi) / 25.4);
+  const bleedPx = Math.round(mmToPx(bleedMM, dpi));
   const drawsBleed = bleedPx > 0;
   // العلامات مشروطة بوجود مساحة نزيف — حاجز واحد يطابق الحاجز في renderBleedCanvas
   const drawsCropMarks = showCropMarks && drawsBleed;

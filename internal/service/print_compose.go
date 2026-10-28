@@ -75,6 +75,32 @@ func mmToPx(mm float64, dpi int) float64 {
 	return (mm * float64(dpi)) / 25.4
 }
 
+// قيم خطوط القص مشتركة بين المعاينة (drawCutLines) وCMYK
+// (ApplyPureBlackCutLines) وPDF (drawPDFCutLines) — تعديلها هنا يسري على
+// المسارات الثلاثة معاً بدل نسخها في كل ملف.
+const (
+	cutLineWidthMM   = 0.20
+	cutLineDashMM    = 1.5
+	cutLineDashGapMM = 1.5
+	cutLineDotMM     = 0.6
+	cutLineDotGapMM  = 2.4
+	cutLineGray      = 120
+	cutLineMinPx     = 1.0
+)
+
+// cutLinePixels يعيد عرض الخط وطول الشرطة بالبكسل مع الحد الأدنى البصري.
+func cutLinePixels(dpi int) (lineWidth, dashSize float64) {
+	lineWidth = mmToPx(cutLineWidthMM, dpi)
+	if lineWidth < cutLineMinPx {
+		lineWidth = cutLineMinPx
+	}
+	dashSize = mmToPx(cutLineDashMM, dpi)
+	if dashSize < cutLineMinPx {
+		dashSize = cutLineMinPx
+	}
+	return lineWidth, dashSize
+}
+
 // drawCutLines يرسم خطوط القص على الكانفس بالرمادي 120 (نفس درجة PDF في
 // drawPDFCutLines) مع إزاحة حافة أمان. المسار CMYK يعيد رسمها أسودَ نقياً
 // فوق ذلك في ApplyPureBlackCutLines (print_cmyk.go) — هذا فارق مقصود:
@@ -83,15 +109,8 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 	if !req.ShowCutLines {
 		return
 	}
-	dc.SetColor(color.RGBA{R: 120, G: 120, B: 120, A: 255})
-	lineWidth := mmToPx(0.20, req.DPI)
-	if lineWidth < 1.0 {
-		lineWidth = 1.0
-	}
-	dashSize := mmToPx(1.5, req.DPI)
-	if dashSize < 1.0 {
-		dashSize = 1.0
-	}
+	dc.SetColor(color.RGBA{R: cutLineGray, G: cutLineGray, B: cutLineGray, A: 255})
+	lineWidth, dashSize := cutLinePixels(req.DPI)
 	dc.SetLineWidth(lineWidth)
 
 	style := strings.ToLower(strings.TrimSpace(req.CutLineStyle))

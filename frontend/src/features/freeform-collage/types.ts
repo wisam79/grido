@@ -36,6 +36,8 @@ export interface FreeformSlot {
   color?: string;
   rotation?: 0 | 90 | 180 | 270; // درجة تدوير الخلية
   lockAspect?: boolean;
+  /** Original canvas slot identity; never exported to portable layout files. */
+  sourceSlotId?: string;
 }
 
 export interface FreeformLayout {
@@ -45,6 +47,18 @@ export interface FreeformLayout {
   paperWidthMM: number;
   paperHeightMM: number;
   slots: FreeformSlot[];
+  showCutLines?: boolean;
+  enableSnapping?: boolean;
+  packGapMM?: number;
+  packMarginMM?: number;
+}
+
+/** Complete local editor document; selection is intentionally not undoable. */
+export interface FreeformDocument extends FreeformLayout {
+  showCutLines: boolean;
+  enableSnapping: boolean;
+  packGapMM: number;
+  packMarginMM: number;
 }
 
 export interface SnapLine {
@@ -62,5 +76,12 @@ export interface FreeformLayoutFile {
   paperHeightMM: number;
   gapMM?: number;
   marginMM?: number;
-  slots: Array<Pick<FreeformSlot, 'x' | 'y' | 'w' | 'h' | 'label' | 'presetType' | 'rotation'>>;
+  showCutLines?: boolean;
+  enableSnapping?: boolean;
+  slots: Array<
+    Pick<
+      FreeformSlot,
+      'x' | 'y' | 'w' | 'h' | 'label' | 'presetType' | 'rotation' | 'color' | 'lockAspect'
+    >
+  >;
 }

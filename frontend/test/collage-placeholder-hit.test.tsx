@@ -174,7 +174,8 @@ describe('خلية الكولاج الفارغة تستقبل الفأرة', () 
     const background = (placeholder!.getChildren() as unknown as Konva.Rect[])[0];
 
     background.fire('click', { evt: {} }, true);
-    expect(handleSlotClick).toHaveBeenCalledWith('slot-a');
+    // الوسيط الثاني «additive» مشتق من المعدّلات — بلا Ctrl/Shift يكون undefined في هذا الحدث
+    expect(handleSlotClick).toHaveBeenCalledWith('slot-a', undefined);
     // معالج واحد فقط على مستوى مجموعة القص الأب — لا تكرار مع صعود الحدث من الابن
     expect(handleSlotClick).toHaveBeenCalledTimes(1);
 

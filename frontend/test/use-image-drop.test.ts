@@ -111,7 +111,8 @@ describe('useImageDrop Hook Tests', () => {
       ],
     });
 
-    // innerRef is null, so targetSlotId is null (general drop)
+    // الإسقاط العام (بلا استهداف) يملأ الخانات الفارغة — الشبكة فارغة فتمتلئ كلها
+    // بالصورة نفسها، والكرر الصريح مسار مستقل لا أثر جانبي للاستبدال.
     const innerRef = { current: null };
     const { result } = renderHook(() => useImageDrop(innerRef));
 

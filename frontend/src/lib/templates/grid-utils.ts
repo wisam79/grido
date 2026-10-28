@@ -1,3 +1,5 @@
+import { mmToPx, pxToMm } from '@/lib/canvas/units';
+
 import { PAPER_SIZES } from './constants';
 
 import type { CollageTemplate } from './types';
@@ -8,8 +10,8 @@ export function getEffectiveDpi(W: number, H: number, storedDpi: number = 300): 
       [paper.widthMM, paper.heightMM],
       [paper.heightMM, paper.widthMM],
     ] as [number, number][]) {
-      const expectedW = (pW * storedDpi) / 25.4;
-      const expectedH = (pH * storedDpi) / 25.4;
+      const expectedW = mmToPx(pW, storedDpi);
+      const expectedH = mmToPx(pH, storedDpi);
       if (
         Math.abs(W - expectedW) / expectedW < 0.02 &&
         Math.abs(H - expectedH) / expectedH < 0.02
@@ -345,11 +347,11 @@ export function computeDynamicCollageCells(
   if (!template.physicalLayout) return null;
 
   const { type, rows, cols, align = 'center' } = template.physicalLayout;
-  const paperW_mm = (canvasW / dpi) * 25.4;
-  const paperH_mm = (canvasH / dpi) * 25.4;
+  const paperW_mm = pxToMm(canvasW, dpi);
+  const paperH_mm = pxToMm(canvasH, dpi);
 
-  const gap = Number.isFinite(collageGap) ? (Math.max(0, collageGap) / dpi) * 25.4 : 0;
-  const margin = Number.isFinite(collageMargin) ? (Math.max(0, collageMargin) / dpi) * 25.4 : 0;
+  const gap = Number.isFinite(collageGap) ? pxToMm(Math.max(0, collageGap), dpi) : 0;
+  const margin = Number.isFinite(collageMargin) ? pxToMm(Math.max(0, collageMargin), dpi) : 0;
 
   // حارس: هامش يبتلع الورقة (>= نصف قياسها) يجعل المساحة المتاحة سالبة، فيخرج
   // scale سالباً وخلايا بأبعاد سالبة تُكتب في الخانات كما هي وتُحفظ مع المشروع.

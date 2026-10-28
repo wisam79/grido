@@ -26,9 +26,9 @@ const logger = createLogger('project-hydrator');
  * حتى يبقى أثر الملف الأصلي مقروءاً في المشروع المُحمَّل (H8).
  */
 export function makeUniqueId(base: string, index: number, seen: Set<string>): string {
-  let candidate = `${base}-dup-${index}-${Math.random().toString(36).slice(2, 8)}`;
+  let candidate = `${base}-dup-${index}-${crypto.randomUUID()}`;
   while (seen.has(candidate)) {
-    candidate = `${base}-dup-${index}-${Math.random().toString(36).slice(2, 8)}`;
+    candidate = `${base}-dup-${index}-${crypto.randomUUID()}`;
   }
   return candidate;
 }
@@ -114,6 +114,9 @@ export interface HydratedProjectState {
   collageShowEndCutLine: boolean;
   collageStrokeWidth: number;
   collageStrokeColor: string;
+  collagePendingImages: string[];
+  autofillImages: string[];
+  autofillSettings: ProjectFileV1['autofillSettings'];
 }
 
 export interface HydrateProjectOptions {
@@ -424,5 +427,8 @@ export function hydrateProjectState(
     collageShowEndCutLine: project.collageShowEndCutLine ?? true,
     collageStrokeWidth: project.collageStrokeWidth ?? 0,
     collageStrokeColor: project.collageStrokeColor ?? '#000000',
+    collagePendingImages: [...(project.collagePendingImages ?? [])],
+    autofillImages: [...(project.collagePendingImages ?? [])],
+    autofillSettings: project.autofillSettings,
   };
 }

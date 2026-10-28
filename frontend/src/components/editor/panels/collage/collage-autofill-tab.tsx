@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -87,27 +87,47 @@ function slotCountLabel(count: number): string {
 }
 
 export function CollageAutofillTab() {
-  const { slots, autofillImages, setAutofillImages, setSlotImagesBatch, clearSlots } =
-    useEditorStore(
-      useShallow((state) => ({
-        slots: state.slots,
-        autofillImages: state.autofillImages,
-        setAutofillImages: state.setAutofillImages,
-        setSlotImagesBatch: state.setSlotImagesBatch,
-        clearSlots: state.clearSlots,
-      })),
-    );
+  const {
+    slots,
+    autofillImages,
+    collagePendingImages,
+    setAutofillImages,
+    setCollagePendingImages,
+    autofillSettings,
+    setAutofillSettings,
+    setSlotImagesBatch,
+    clearSlots,
+  } = useEditorStore(
+    useShallow((state) => ({
+      slots: state.slots,
+      autofillImages: state.autofillImages,
+      collagePendingImages: state.collagePendingImages,
+      setAutofillImages: state.setAutofillImages,
+      setCollagePendingImages: state.setCollagePendingImages,
+      autofillSettings: state.autofillSettings,
+      setAutofillSettings: state.setAutofillSettings,
+      setSlotImagesBatch: state.setSlotImagesBatch,
+      clearSlots: state.clearSlots,
+    })),
+  );
 
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
-  const [mode, setMode] = useState<FillMode>('empty');
-  const [order, setOrder] = useState<FillOrder>('row');
-  const [repeat, setRepeat] = useState(true);
-  const [shuffle, setShuffle] = useState(false);
-  const [shuffleSeed, setShuffleSeed] = useState(1);
+  const mode = autofillSettings.mode;
+  const order = autofillSettings.order;
+  const repeat = autofillSettings.repeat;
+  const shuffle = autofillSettings.shuffle;
+  const shuffleSeed = autofillSettings.seed;
   const [isPicking, setIsPicking] = useState(false);
   const [showAllImages, setShowAllImages] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (collagePendingImages.length === 0) return;
+    const merged = [...autofillImages, ...collagePendingImages];
+    setAutofillImages(merged.slice(0, AUTOFILL_IMAGE_LIMIT));
+    setCollagePendingImages(merged.slice(AUTOFILL_IMAGE_LIMIT));
+  }, [collagePendingImages, autofillImages, setAutofillImages, setCollagePendingImages]);
 
   const plan = useMemo(
     () =>
@@ -214,9 +234,9 @@ export function CollageAutofillTab() {
     [autofillImages, setAutofillImages],
   );
 
-  const reshuffle = () => setShuffleSeed((seed) => seed + 1);
+  const reshuffle = () => setAutofillSettings({ seed: shuffleSeed + 1 });
 
-  const distribute = () => {
+  const distribute = async () => {
     if (!canApply) {
       if (applyBlockedReason) toast.info(applyBlockedReason);
       return;
@@ -232,7 +252,7 @@ export function CollageAutofillTab() {
     }
 
     const assignments = plan.assignments.map(({ slotId, src }) => ({ slotId, src }));
-    setSlotImagesBatch(assignments, assignments[assignments.length - 1].src);
+    await setSlotImagesBatch(assignments, assignments[assignments.length - 1].src);
 
     const notes: string[] = [];
     if (repeats > 0) notes.push(`تكررت ${repeats}`);
@@ -269,7 +289,7 @@ export function CollageAutofillTab() {
         className={cn(
           'relative h-9 rounded-md border flex items-center justify-center overflow-hidden transition-colors select-none',
           assignment
-            ? 'border-primary/50 bg-card text-foreground shadow-2xs'
+            ? 'border-primary/50 bg-primary/10 text-foreground'
             : isPreserved
               ? 'border-border/60 bg-muted/25 text-muted-foreground/70'
               : isSkipped
@@ -315,11 +335,14 @@ export function CollageAutofillTab() {
   };
 
   return (
-    <div className="flex flex-col gap-3 font-cairo animate-in fade-in duration-200" dir="rtl">
+    <div
+      className="flex min-w-0 flex-col font-cairo motion-safe:animate-in motion-safe:fade-in duration-150"
+      dir="rtl"
+    >
       {/* مصدر الصور */}
       <FluentSection
         title="الصور"
-        className="pb-4 border-border/50"
+        className="border-border/40 py-2.5"
         badge={
           autofillImages.length > 0 ? (
             <span className="text-mini tabular-nums text-muted-foreground">
@@ -517,7 +540,7 @@ export function CollageAutofillTab() {
         <>
           <FluentSection
             title="طريقة التوزيع"
-            className="pb-4 border-border/50"
+            className="border-border/40 py-2.5"
             subtitle={`ممتلئة ${filledCount} · فارغة ${emptyCount}`}
           >
             <FluentSettingRow
@@ -528,7 +551,7 @@ export function CollageAutofillTab() {
                   layoutId="autofill-mode"
                   variant="field"
                   value={mode}
-                  onChange={setMode}
+                  onChange={(value) => setAutofillSettings({ mode: value })}
                   size="sm"
                   className="p-0.5 border-0 h-8"
                   options={[
@@ -548,7 +571,7 @@ export function CollageAutofillTab() {
                   variant="field"
                   iconInline
                   value={order}
-                  onChange={setOrder}
+                  onChange={(value) => setAutofillSettings({ order: value })}
                   size="sm"
                   className="p-0.5 border-0 h-8"
                   options={[
@@ -571,7 +594,11 @@ export function CollageAutofillTab() {
               label="تكرار الصور"
               description="عند نقص الصور"
               control={
-                <Switch checked={repeat} onCheckedChange={setRepeat} aria-label="تكرار الصور" />
+                <Switch
+                  checked={repeat}
+                  onCheckedChange={(checked) => setAutofillSettings({ repeat: checked })}
+                  aria-label="تكرار الصور"
+                />
               }
             />
 
@@ -595,8 +622,10 @@ export function CollageAutofillTab() {
                   <Switch
                     checked={shuffle}
                     onCheckedChange={(checked) => {
-                      setShuffle(checked);
-                      if (checked) setShuffleSeed((seed) => seed + 1);
+                      setAutofillSettings({
+                        shuffle: checked,
+                        ...(checked ? { seed: shuffleSeed + 1 } : {}),
+                      });
                     }}
                     aria-label="خلط عشوائي"
                   />
@@ -604,7 +633,7 @@ export function CollageAutofillTab() {
               }
             />
           </FluentSection>
-          <FluentSection title="معاينة التوزيع" className="pb-4 border-border/50">
+          <FluentSection title="معاينة التوزيع" className="border-border/40 py-2.5">
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2 px-0.5">
                 <span className="text-mini text-muted-foreground leading-relaxed">
@@ -616,7 +645,7 @@ export function CollageAutofillTab() {
 
               <div
                 className={cn(
-                  'rounded-lg bg-background/50 border border-border/40 p-1.5',
+                  'rounded-md bg-muted/20 border border-border/40 p-1.5',
                   slots.length > 24 && 'max-h-44 overflow-y-auto',
                 )}
               >
@@ -639,11 +668,11 @@ export function CollageAutofillTab() {
               </p>
             </div>
           </FluentSection>
-          <div className="sticky bottom-0 z-10 space-y-2 border-t border-border/60 bg-card py-3">
+          <div className="sticky bottom-0 z-10 space-y-2 border-t border-border/50 bg-sidebar py-2">
             <div className="flex items-center gap-2">
               <Button
                 type="button"
-                className="flex-1"
+                className="h-9 min-w-0 flex-1 shadow-none"
                 onClick={distribute}
                 disabled={!canApply}
                 title={applyBlockedReason}

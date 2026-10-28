@@ -155,13 +155,31 @@ async function runPrint(
   return result;
 }
 
+class FakeImage {
+  crossOrigin = 'anonymous';
+  width = 800;
+  height = 600;
+  onload: (() => void) | null = null;
+  onerror: ((e: unknown) => void) | null = null;
+  private _src = '';
+  set src(v: string) {
+    this._src = v;
+    queueMicrotask(() => this.onload?.());
+  }
+  get src() {
+    return this._src;
+  }
+}
+
 describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('Image', FakeImage);
     document.body.style.pointerEvents = '';
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     document.body.style.pointerEvents = '';
   });
 

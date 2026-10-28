@@ -7,6 +7,7 @@
  * ما يعيد المتجر حسابه عند التطبيق.
  */
 
+import { pxToMm } from '@/lib/canvas/units';
 import { buildPhysicalGridCellsMM, getEffectiveDpi } from '@/lib/templates';
 
 import type { GridAlignment } from '@/lib/print/print-layout-math';
@@ -50,11 +51,6 @@ export function getPhotoDimensions(photoType: PhotoGridType): PhotoDimensions {
   }
 }
 
-/** تحويل قيمة بكسلية على الكانفس إلى مليمتر بنفس DPI الفعلي المستخدم في الخلايا */
-function pxToMm(px: number, dpi: number): number {
-  return (Math.max(0, px) / dpi) * 25.4;
-}
-
 export interface GridLimits {
   maxRows: number;
   maxCols: number;
@@ -80,10 +76,10 @@ export function getGridLimits(
   const H = canvasHeight || 3508;
   const dpi = getEffectiveDpi(W, H, storedDpi);
   const { wMM, hMM } = getPhotoDimensions(photoType);
-  const gapMM = pxToMm(gapPx, dpi);
-  const marginMM = pxToMm(marginPx, dpi);
-  const availW = (W / dpi) * 25.4 - 2 * marginMM;
-  const availH = (H / dpi) * 25.4 - 2 * marginMM;
+  const gapMM = pxToMm(Math.max(0, gapPx), dpi);
+  const marginMM = pxToMm(Math.max(0, marginPx), dpi);
+  const availW = pxToMm(W, dpi) - 2 * marginMM;
+  const availH = pxToMm(H, dpi) - 2 * marginMM;
   const maxCols = Math.max(1, Math.floor((availW + gapMM) / (wMM + gapMM)));
   const maxRows = Math.max(1, Math.floor((availH + gapMM) / (hMM + gapMM)));
   return { maxRows, maxCols };
@@ -124,11 +120,11 @@ export function buildPhysicalGridCells(
     rows,
     wMM,
     hMM,
-    pxToMm(gapPx, dpi),
-    (W / dpi) * 25.4,
-    (H / dpi) * 25.4,
+    pxToMm(Math.max(0, gapPx), dpi),
+    pxToMm(W, dpi),
+    pxToMm(H, dpi),
     align,
-    pxToMm(marginPx, dpi),
+    pxToMm(Math.max(0, marginPx), dpi),
   );
 }
 

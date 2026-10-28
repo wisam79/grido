@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { pxToMm } from '@/lib/canvas/units';
 import { computeSheetGrid } from '@/lib/print/print-layout-math';
 
 import type { PrintSettings, EditorMode } from '@/lib/editor-store';
@@ -25,8 +26,8 @@ export function usePrintLayout({
 }: UsePrintLayoutProps) {
   return useMemo(() => {
     const dpi = template ? template.dpi : printSettings.dpi;
-    const originalImageWidthMM = template ? template.widthMM : (canvasWidth / dpi) * 25.4;
-    const originalImageHeightMM = template ? template.heightMM : (canvasHeight / dpi) * 25.4;
+    const originalImageWidthMM = template ? template.widthMM : pxToMm(canvasWidth, dpi);
+    const originalImageHeightMM = template ? template.heightMM : pxToMm(canvasHeight, dpi);
 
     const isCanvasPaper = printSettings.paperId === 'canvas';
     const baseW = isCanvasPaper ? originalImageWidthMM : printSettings.paperWidthMM;

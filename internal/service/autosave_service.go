@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,10 +32,32 @@ func (s *AutosaveService) GetSavePath() string {
 }
 
 func (s *AutosaveService) SaveCustomTemplate(name string, slots int, cellsJSON string) (domain.CustomTemplate, error) {
+	return s.SaveCustomTemplateWithMetadata(name, slots, cellsJSON, "")
+}
+
+func (s *AutosaveService) SaveCustomTemplateWithMetadata(name string, slots int, cellsJSON string, metadataJSON string) (domain.CustomTemplate, error) {
+	if metadataJSON != "" {
+		var metadata struct {
+			Version       int     `json:"version"`
+			Kind          string  `json:"kind"`
+			PaperWidthMM  float64 `json:"paperWidthMM"`
+			PaperHeightMM float64 `json:"paperHeightMM"`
+		}
+		if err := json.Unmarshal([]byte(metadataJSON), &metadata); err != nil {
+			return domain.CustomTemplate{}, fmt.Errorf("invalid template metadata: %w", err)
+		}
+		if metadata.Version != 1 || (metadata.Kind != "freeform" && metadata.Kind != "grid") {
+			return domain.CustomTemplate{}, fmt.Errorf("unsupported template metadata")
+		}
+		if metadata.PaperWidthMM <= 0 || metadata.PaperHeightMM <= 0 || metadata.PaperWidthMM > 1000 || metadata.PaperHeightMM > 1000 {
+			return domain.CustomTemplate{}, fmt.Errorf("invalid template paper dimensions")
+		}
+	}
 	tmpl := domain.CustomTemplate{
-		Name:  name,
-		Slots: slots,
-		Cells: domain.JSONText(cellsJSON),
+		Name:     name,
+		Slots:    slots,
+		Cells:    domain.JSONText(cellsJSON),
+		Metadata: domain.JSONText(metadataJSON),
 	}
 	err := s.templates.Create(&tmpl)
 	return tmpl, err

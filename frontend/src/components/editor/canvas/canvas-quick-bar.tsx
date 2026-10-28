@@ -9,14 +9,14 @@ import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
 import { getElementVisualBox } from '@/lib/canvas/element-geometry';
 import { useEditorStore } from '@/lib/editor-store';
-import { openImageFileDialog } from '@/lib/io/file-dialog-utils';
+import { openImageFileDialog, persistPickedImage } from '@/lib/io/file-dialog-utils';
+import { isAutoFillGridEnabled } from '@/lib/local-prefs';
 import { createLogger } from '@/lib/logger';
 
 import { useCanvasOverlayHost } from './canvas-overlay-host';
 import { QuickBarElementSection } from './quick-bar/quick-bar-element-section';
 import { QuickBarMultiSelectionSection } from './quick-bar/quick-bar-multi-selection-section';
 import { QuickBarSlotSection } from './quick-bar/quick-bar-slot-section';
-import { SaveImageFromBase64 } from '../../../../wailsjs/go/main/App';
 
 import type { CanvasElement } from '@/lib/store/types';
 
@@ -220,18 +220,9 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
     try {
       const [b64] = await openImageFileDialog(false);
       if (b64) {
-        let srcToUse = b64;
-        if (b64.startsWith('data:image/')) {
-          try {
-            const localPath = await SaveImageFromBase64(b64);
-            if (localPath) srcToUse = localPath;
-          } catch (e) {
-            logger.error('Failed to save image locally:', e);
-          }
-        }
+        const srcToUse = await persistPickedImage(b64);
         setSlotImage(selectedSlot.id, srcToUse);
-        const autoFill = localStorage.getItem('grido_auto_fill_grid') !== 'false';
-        if (autoFill) {
+        if (isAutoFillGridEnabled()) {
           fillAllSlots(srcToUse, selectedSlot.id);
         }
       }

@@ -2,7 +2,7 @@
  * نسخة العرض المخفّضة للكانفاس (Display-Resolution Image Proxy).
  * M16-final: getDisplayImage غير محجوب في المتصفح الحقيقي.
  */
-const MAX_DISPLAY_DIM = 2048;
+export const MAX_DISPLAY_DIM = 2048;
 const CACHE_LIMIT = 24;
 // 2048×2048×4 ≈ 16 MiB للنسخة الواحدة؛ 24 نسخة تعني ~384 MiB. الميزانية
 // تُبقي أحدث النسخ فقط بغض النظر عن العدد، وتُحرَّر مع مستند جديد.

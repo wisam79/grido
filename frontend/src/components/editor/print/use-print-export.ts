@@ -10,8 +10,11 @@ import {
 } from '@bindings/grido/internal/handlers/printhandler';
 
 import { previewWhite } from '@/lib/canvas/canvas-colors';
+import { getCachedImageDimensions } from '@/lib/canvas/image-dimensions';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
+import { runCollagePreflight } from '@/lib/export/collage-preflight';
+import { loadCollageSlotImages } from '@/lib/export/export-canvas-collage';
 import { CanvasTooLargeError } from '@/lib/export/export-limits';
 import { createLogger } from '@/lib/logger';
 
@@ -251,6 +254,37 @@ export function usePrintExport({
           return;
         }
 
+        // 🔍 فحص المحتوى قبل الطباعة: الصور غير المقروءة مانعة، والفراغ المقصود
+        // والدقة المنخفضة تحذيرات تستمر بعد تنبيه واحد.
+        if (mode === 'collage') {
+          const loadResult = await loadCollageSlotImages(slots);
+          const preflight = runCollagePreflight({
+            slots,
+            canvasWidth,
+            canvasHeight,
+            imageDimensions: new Map(
+              [...new Set(slots.map((slot) => slot.imageSrc).filter(Boolean))]
+                .map((src) => [src as string, getCachedImageDimensions(src as string)])
+                .filter((entry): entry is [string, { width: number; height: number }] =>
+                  Boolean(entry[1]),
+                ),
+            ),
+            failedSlotIds: loadResult.failedSlotIds,
+          });
+          if (preflight.blocking.length > 0) {
+            toast.error(`لا يمكن الطباعة: ${preflight.blocking[0].message}`);
+            setExporting(false);
+            return;
+          }
+          if (preflight.warnings.length > 0) {
+            toast.warning(
+              preflight.warnings.length === 1
+                ? preflight.warnings[0].message
+                : `${preflight.warnings.length} تنبيهات جودة (فراغ/دقة) — تتم الطباعة`,
+            );
+          }
+        }
+
         const { items, cutLines, composition } = built;
 
         // 🖨️ حارس حدود الورقة (RV-Print-24): Go يرفض W/H الأكبر من الورقة (fail-closed)
@@ -451,6 +485,9 @@ export function usePrintExport({
     },
     [
       mode,
+      slots,
+      canvasWidth,
+      canvasHeight,
       buildItems,
       buildSingleItems,
       paperWidth,

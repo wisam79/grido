@@ -274,6 +274,21 @@ describe('Component Testing: UI Rendering', () => {
     expect(await screen.findByText('شبكة الكولاج')).toBeInTheDocument();
     // التحقق من أن محتوى تبويب الشبكة هو التبويب الافتراضي عند فتح التطبيق
     expect(await screen.findByText('أبعاد الشبكة')).toBeInTheDocument();
+    const activeTab = screen.getByRole('tab', { name: 'مخصص' });
+    expect(activeTab).toHaveAttribute('aria-controls', 'collage-section-grid-content-custom');
+    expect(screen.getByRole('tabpanel', { name: 'مخصص' })).toHaveAttribute(
+      'id',
+      'collage-section-grid-content-custom',
+    );
+    for (const tab of screen.getAllByRole('tab')) {
+      const panelId = tab.getAttribute('aria-controls');
+      expect(panelId).not.toBeNull();
+      const panel = document.getElementById(panelId!);
+      expect(panel).not.toBeNull();
+      expect(panel).toHaveAttribute('aria-labelledby', tab.id);
+      expect(panel?.hidden).toBe(tab.getAttribute('aria-selected') !== 'true');
+    }
+    expect(screen.queryByText('طقم سفر')).not.toBeInTheDocument();
   }, 15000);
 
   it('renders collage presets panel correctly', async () => {

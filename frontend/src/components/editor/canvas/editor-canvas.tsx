@@ -6,7 +6,7 @@ import { OpenFile, SaveImageFromBase64 } from '@bindings/grido/app';
 import { Spinner } from '@/components/ui/huge-icon';
 import { guideCenter, guideEdge } from '@/lib/canvas/canvas-colors';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
-import { formatGuideMeasurement } from '@/lib/canvas/units';
+import { DEFAULT_DPI, formatGuideMeasurement, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 import { publishCanvasFitStatus } from '@/lib/ui/canvas-fit-status';
@@ -195,12 +195,12 @@ export const EditorCanvas = React.memo(
 
     const widthMM = useMemo(() => {
       if (template) return template.widthMM;
-      return (canvasWidth / (printSettings?.dpi || 300)) * 25.4;
+      return pxToMm(canvasWidth, printSettings?.dpi || DEFAULT_DPI);
     }, [template, canvasWidth, printSettings]);
 
     const heightMM = useMemo(() => {
       if (template) return template.heightMM;
-      return (canvasHeight / (printSettings?.dpi || 300)) * 25.4;
+      return pxToMm(canvasHeight, printSettings?.dpi || DEFAULT_DPI);
     }, [template, canvasHeight, printSettings]);
 
     const marginPxX = useMemo(() => {
@@ -269,11 +269,22 @@ export const EditorCanvas = React.memo(
     );
 
     const handleSlotClick = useCallback(
-      (slotId: string) => {
+      (slotId: string, additive: boolean) => {
         if (printMode) return;
-        selectElement(slotId);
+        const state = useEditorStore.getState();
+        if (additive) {
+          const next = state.selectedIds.includes(slotId)
+            ? state.selectedIds.filter((id) => id !== slotId)
+            : [
+                ...state.selectedIds.filter((id) => state.slots.some((slot) => slot.id === id)),
+                slotId,
+              ];
+          state.setSelectedIds(next);
+        } else {
+          state.setSelectedIds([slotId]);
+        }
       },
-      [printMode, selectElement],
+      [printMode],
     );
 
     const handleSlotDblClick = useCallback(

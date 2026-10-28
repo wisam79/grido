@@ -478,7 +478,7 @@ const StickerDesignV2 = z.object({
 
 - [ ] Fuzz لتعقيم SVG (Corpus: script/onload/foreignObject/external href/data:text/css/url()/prototype).
 - [ ] Fuzz لمخطط Zod (قيم سالبة/NaN/ضخمة/مفاتيح خطرة).
-- [ ] مراجعة أمنية وفق `.agents/skills/security-audit/SKILL.md`.
+- [ ] مراجعة أمنية وفق `.agents/skills/grido-qa-security-auditor/SKILL.md`.
 - [ ] Bundle analysis: لا تدخل مكتبات ثقيلة إلى Chunk الرئيسي؛ كلها Dynamic Import.
 - [ ] CI كامل: typecheck + lint + unit + E2E + Go tests + docs-gate + bundle budget.
 - [ ] تحديث:

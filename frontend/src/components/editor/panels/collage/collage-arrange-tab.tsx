@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
+import { FluentSection } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import {
   ArrowsDownUp,
@@ -12,7 +13,6 @@ import {
   Columns,
   Repeat,
   ArrowsOutCardinal,
-  FrameCorners,
 } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { getEffectiveDpi } from '@/lib/templates';
@@ -69,7 +69,7 @@ interface GridMatrix {
 export function CollageArrangeTab() {
   const {
     slots,
-    setSlotImagesBatch,
+    moveSlotContentsBatch,
     updateSlotsBatch,
     rotateSlotsBatch,
     canvasWidth,
@@ -83,7 +83,7 @@ export function CollageArrangeTab() {
   } = useEditorStore(
     useShallow((state) => ({
       slots: state.slots,
-      setSlotImagesBatch: state.setSlotImagesBatch,
+      moveSlotContentsBatch: state.moveSlotContentsBatch,
       updateSlotsBatch: state.updateSlotsBatch,
       rotateSlotsBatch: state.rotateSlotsBatch,
       canvasWidth: state.canvasWidth,
@@ -133,9 +133,10 @@ export function CollageArrangeTab() {
   const effectiveDpi = getEffectiveDpi(canvasWidth, canvasHeight, printSettings?.dpi || 300);
   const imageCount = slots.filter((slot) => slot.imageSrc).length;
 
+  /** يبني مصفوفة معرفات الخانات الممتلئة كي تنتقل حزمة تعديل الصورة كاملة. */
   const currentSrcMatrix = (): SrcMatrix =>
     grid.matrix.map((row) =>
-      row.map((slotId) => (slotId ? grid.srcBySlot.get(slotId) : undefined)),
+      row.map((slotId) => (slotId && grid.srcBySlot.get(slotId) ? slotId : undefined)),
     );
 
   /**
@@ -148,18 +149,16 @@ export function CollageArrangeTab() {
       return;
     }
 
-    const assignments: { slotId: string; src: string }[] = [];
+    const assignments: { slotId: string; sourceSlotId: string }[] = [];
     for (let row = 0; row < grid.matrix.length; row++) {
       for (let col = 0; col < grid.matrix[row].length; col++) {
         const slotId = grid.matrix[row][col];
-        const src = nextSrc[row]?.[col];
-        if (slotId && src) assignments.push({ slotId, src });
+        const sourceSlotId = nextSrc[row]?.[col];
+        if (slotId && sourceSlotId) assignments.push({ slotId, sourceSlotId });
       }
     }
-    if (assignments.length === 0) {
-      return;
-    }
-    setSlotImagesBatch(assignments, assignments[0].src);
+    if (assignments.length === 0) return;
+    moveSlotContentsBatch(assignments);
   };
 
   const reverseRows = () =>
@@ -179,21 +178,15 @@ export function CollageArrangeTab() {
 
   /** تكرار الصور الحالية على كل الخانات بالتساوي (دورياً) */
   const repeatEverywhere = () => {
-    const unique = [
-      ...new Set(
-        slots
-          .map((slot) => slot.imageSrc)
-          .filter((src): src is string => typeof src === 'string' && src.length > 0),
-      ),
-    ];
-    if (unique.length === 0) {
+    const sourceSlotIds = slots.filter((slot) => slot.imageSrc).map((slot) => slot.id);
+    if (sourceSlotIds.length === 0) {
       toast.info('لا صور');
       return;
     }
     const nextSrc: SrcMatrix = grid.matrix.map((row, r) =>
-      row.map((_, c) => unique[(r * grid.cols + c) % unique.length]),
+      row.map((_, c) => sourceSlotIds[(r * grid.cols + c) % sourceSlotIds.length]),
     );
-    applyMatrix(nextSrc, `وُزعت ${unique.length} صورة`);
+    applyMatrix(nextSrc, `وُزعت ${sourceSlotIds.length} صورة`);
   };
 
   /**
@@ -208,7 +201,7 @@ export function CollageArrangeTab() {
     if (!rows || !cols) return;
 
     // خريطة الصور المطلوبة تُحسب **قبل** إعادة البناء (المعرّفات تتغير بعده)
-    const imageMap = transposeIndexMap(rows, currentSrcMatrix());
+    const contentMap = transposeIndexMap(rows, currentSrcMatrix());
 
     const nextRows = cols;
     const nextCols = rows;
@@ -246,12 +239,12 @@ export function CollageArrangeTab() {
     }
 
     // الخلايا الجديدة تُرتَّب صفاً صفاً بعرض nextCols ⇒ المفهرس = c*nextCols + r
-    if (imageMap.size > 0) {
+    if (contentMap.size > 0) {
       const freshSlots = useEditorStore.getState().slots;
-      const assignments = [...imageMap.entries()]
-        .map(([index, src]) => ({ slotId: freshSlots[index]?.id, src }))
-        .filter((a): a is { slotId: string; src: string } => Boolean(a.slotId));
-      if (assignments.length > 0) setSlotImagesBatch(assignments, assignments[0].src);
+      const assignments = [...contentMap.entries()]
+        .map(([index, sourceSlotId]) => ({ slotId: freshSlots[index]?.id, sourceSlotId }))
+        .filter((a): a is { slotId: string; sourceSlotId: string } => Boolean(a.slotId));
+      if (assignments.length > 0) moveSlotContentsBatch(assignments);
     }
   };
 
@@ -354,24 +347,16 @@ export function CollageArrangeTab() {
 
   return (
     <div
-      className="flex flex-col gap-2.5 font-cairo select-none animate-in fade-in duration-150"
+      className="flex min-w-0 flex-col font-cairo select-none motion-safe:animate-in motion-safe:fade-in duration-150"
       dir="rtl"
     >
-      {/* 📐 المخطط الهيكلي التجريدي للشبكة — مخطط هندسي نظيف برقم الخانة بدون تكرار الصور المعروضة على الكانفاس */}
-      <div className="bg-card/60 border border-border/80 rounded-md p-2.5 shadow-2xs space-y-2 select-none">
-        <div className="flex items-center justify-between px-0.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <FrameCorners className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
-            <span className="text-xs font-bold text-foreground">مخطط الشبكة</span>
-          </div>
-          <span className="text-mini font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/40 shrink-0">
-            {grid.rows}×{grid.cols} · {imageCount} صورة · {emptyCount} فارغة
-          </span>
-        </div>
-
-        {/* خلايا مجردة أنيقة برقم الخانة فقط بدون تكرار الصور */}
+      <FluentSection
+        title="مخطط الشبكة"
+        subtitle={`${grid.rows}×${grid.cols} · ${imageCount} صورة · ${emptyCount} فارغة`}
+      >
         <div
-          className="grid gap-1.5 p-1 rounded-lg bg-background/50 border border-border/40"
+          dir="ltr"
+          className="grid max-h-52 gap-1 overflow-y-auto rounded-md bg-muted/20 p-1.5"
           style={{ gridTemplateColumns: `repeat(${Math.max(1, grid.cols)}, minmax(0, 1fr))` }}
           data-testid="collage-grid-preview"
         >
@@ -386,10 +371,10 @@ export function CollageArrangeTab() {
                   role="img"
                   aria-label={isFilled ? `خانة ${index} ممتلئة` : `خانة ${index} فارغة`}
                   className={cn(
-                    'h-7 rounded-md border text-xs font-mono font-bold flex items-center justify-center transition-colors select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                    'flex h-7 min-w-0 items-center justify-center rounded-sm border text-mini tabular-nums transition-colors',
                     isFilled
-                      ? 'border-border/80 bg-card text-foreground shadow-2xs'
-                      : 'border-dashed border-border/40 bg-muted/20 text-muted-foreground/40',
+                      ? 'border-primary/30 bg-primary/10 text-foreground'
+                      : 'border-dashed border-border/60 text-muted-foreground',
                   )}
                 >
                   <span>{index}</span>
@@ -398,71 +383,56 @@ export function CollageArrangeTab() {
             }),
           )}
         </div>
-      </div>
+      </FluentSection>
 
-      {/* 🧭 عمليات فرز وترتيب الصور والتحويلات الجماعية */}
-      <div className="bg-card/60 border border-border/80 rounded-md p-2.5 shadow-2xs space-y-3 select-none">
-        {/* قسم ترتيب الصور */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between px-0.5">
-            <span className="text-mini font-bold text-muted-foreground">ترتيب الصور</span>
-            {!grid.isComplete && (
-              <span className="text-mini text-muted-foreground/70">العمليات على الممتلئة فقط</span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-1.5">
-            {arrangeActions.map((action) => (
-              <Button
-                key={action.id}
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={action.disabled}
-                title={action.hint}
-                onClick={action.onClick}
-                className={cn(
-                  'h-8 px-2 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors',
-                  action.fullWidth ? 'col-span-2 justify-center' : 'justify-start text-start',
-                )}
-              >
-                <span className="text-muted-foreground shrink-0">{action.icon}</span>
-                <span className="truncate">{action.label}</span>
-              </Button>
-            ))}
-          </div>
+      <FluentSection title="ترتيب الصور">
+        {!grid.isComplete && (
+          <p className="text-mini text-muted-foreground">العمليات على الممتلئة فقط</p>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          {arrangeActions.map((action) => (
+            <Button
+              key={action.id}
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={action.disabled}
+              title={action.hint}
+              onClick={action.onClick}
+              className={cn(
+                'h-8 min-w-0 justify-start gap-2 rounded-md px-2 text-start text-xs font-normal shadow-none',
+                action.fullWidth && 'col-span-2',
+              )}
+            >
+              <span className="shrink-0 text-muted-foreground">{action.icon}</span>
+              <span className="truncate">{action.label}</span>
+            </Button>
+          ))}
         </div>
+      </FluentSection>
 
-        {/* قسم التحويلات الجماعية */}
-        <div className="space-y-1.5 pt-2 border-t border-border/40">
-          <div className="px-0.5">
-            <span className="text-mini font-bold text-muted-foreground">تحويلات جماعية</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-1.5">
-            {transformActions.map((action) => (
-              <Button
-                key={action.id}
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={action.disabled}
-                title={action.hint}
-                onClick={action.onClick}
-                className={cn(
-                  'h-8 px-2 rounded-lg border-border/70 bg-card/40 hover:bg-card hover:border-foreground/30 text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors',
-                  action.fullWidth
-                    ? 'col-span-2 justify-center text-muted-foreground hover:text-foreground'
-                    : 'justify-start text-start',
-                )}
-              >
-                <span className="text-muted-foreground shrink-0">{action.icon}</span>
-                <span className="truncate">{action.label}</span>
-              </Button>
-            ))}
-          </div>
+      <FluentSection title="تحويلات جماعية">
+        <div className="grid grid-cols-2 gap-2">
+          {transformActions.map((action) => (
+            <Button
+              key={action.id}
+              type="button"
+              variant={action.fullWidth ? 'ghost' : 'secondary'}
+              size="sm"
+              disabled={action.disabled}
+              title={action.hint}
+              onClick={action.onClick}
+              className={cn(
+                'h-8 min-w-0 justify-start gap-2 rounded-md px-2 text-start text-xs font-normal shadow-none',
+                action.fullWidth && 'col-span-2 text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <span className="shrink-0 text-muted-foreground">{action.icon}</span>
+              <span className="truncate">{action.label}</span>
+            </Button>
+          ))}
         </div>
-      </div>
+      </FluentSection>
     </div>
   );
 }

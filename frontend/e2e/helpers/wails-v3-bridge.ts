@@ -67,14 +67,14 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
     for (const p of paths || []) res[p] = { width: 800, height: 600 };
     return res;
   },
-  345087440: async () => MOCK_CUSTOM_TEMPLATES, // GetCustomTemplates
-  1522265743: async () => [], // GetDeviceProfiles
+  345087440: async () => '', // GetClipboardText
+  1522265743: async () => MOCK_CUSTOM_TEMPLATES, // GetCustomTemplates
   // 🔑 توكن جلسة مسارات /api المحلية — قيمة ثابتة في E2E (لا Backend حقيقي يفرضها)
   1585336687: async () => 'e2e-local-api-session-token', // GetLocalApiToken
   143340993: async () => ({ width: 800, height: 600 }), // GetImageDimensions
   896689433: async () => ({ count: 1, size_bytes: 1024 }), // GetMediaStorageStats
-  1794026154: async () => [], // GetPaperTemplates
-  3709429484: async () => ({ isRunning: false, url: '', receivedCount: 0, lastReceived: '' }), // GetPhoneBridgeStatus
+  1794026154: async () => ({ isRunning: false, url: '', receivedCount: 0, lastReceived: '' }), // GetPhoneBridgeStatus
+  3709429484: async () => [], // GetScreensInfo
   3983598326: async () => '', // GetStartupFile
   984446249: async () => '[]', // LoadAiUsageLogs
   1086724551: async () => '', // LoadAutoSave
@@ -87,8 +87,9 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   2892812386: async () => undefined, // SaveAiUsageLogs
   2863230114: async () => undefined, // SaveAutoSave
   1013443833: async () => 'success', // SaveCustomTemplate
-  1166008166: async () => 'C:/mock/saved.png', // SaveFile
-  211586642: async () => 'C:/mock/saved.png', // SaveFileDialog
+  1411792440: async () => 'success', // SaveCustomTemplateWithMetadata
+  1166008166: async () => 'C:/mock/saved.png', // SaveFileDialog
+  211586642: async () => '/local-image/saved-b64.png', // SaveImageFromBase64
   3958356690: async () => 'C:/mock/export', // SelectExportDirectory
   2207617336: async () => undefined, // SendNotification
   966799716: async () => undefined, // SetClipboardText
@@ -165,6 +166,7 @@ export async function setupWailsV3Bridge(
   customHandlers?: Record<number, (...args: any[]) => any>,
 ) {
   const handlers = { ...WAILS_V3_METHOD_HANDLERS, ...customHandlers };
+  const chunkedRequests = new Map<string, (Buffer | null)[]>();
 
   // 1. اعتراض مسار استدعاءات Wails v3 Runtime Network Requests
   await page.route('**/wails/runtime', async (route) => {
@@ -174,7 +176,38 @@ export async function setupWailsV3Bridge(
     }
 
     try {
-      const payload = request.postDataJSON();
+      let payload: any;
+      const headers = request.headers();
+      const chunkId = headers['x-wails-chunk-id'];
+
+      if (chunkId) {
+        const chunkIndex = parseInt(headers['x-wails-chunk-index'] || '0', 10);
+        const chunkTotal = parseInt(headers['x-wails-chunk-total'] || '1', 10);
+        let chunks = chunkedRequests.get(chunkId);
+        if (!chunks) {
+          chunks = new Array(chunkTotal).fill(null);
+          chunkedRequests.set(chunkId, chunks);
+        }
+        chunks[chunkIndex] = request.postDataBuffer();
+
+        // القطع الوسيطة تُجاب بـ 200 OK فارغ حسب معيار Wails v3
+        if (chunkIndex < chunkTotal - 1) {
+          return route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: 'true',
+          });
+        }
+
+        // القطعة الختامية: تجميع كافة أجزاء الطلب وفك تشفير JSON
+        chunkedRequests.delete(chunkId);
+        const validBuffers = chunks.filter((b): b is Buffer => Boolean(b));
+        const assembled = Buffer.concat(validBuffers).toString('utf-8');
+        payload = JSON.parse(assembled);
+      } else {
+        payload = request.postDataJSON();
+      }
+
       // payload: { object: number, method: number, args?: { "call-id"?: string, methodID?: number, args?: any[] } }
       const objectId = payload?.object ?? 0;
       const rpcArgs = payload?.args;
@@ -281,9 +314,10 @@ export async function setupWailsV3Bridge(
           SaveAiUsageLogs: async () => {},
           SaveAutoSave: async () => {},
           SaveCustomTemplate: async () => 'success',
+          SaveCustomTemplateWithMetadata: async () => 'success',
           SaveFile: async () => 'C:/mock/saved.png',
           SaveFileDialog: async () => 'C:/mock/saved.png',
-          SaveImageFromBase64: async () => 'success',
+          SaveImageFromBase64: async () => '/local-image/saved-b64.png',
           SelectExportDirectory: async () => 'C:/mock/export',
           SendNotification: async () => {},
           SetClipboardText: async () => {},

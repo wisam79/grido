@@ -8,6 +8,19 @@ import { getStageClampBounds } from './use-canvas-viewport';
 const STEP_DELTA_PX = 40;
 const MIN_THUMB_PX = 28;
 
+/** موضع التمرير الجديد من نقرة على المسار — نفس معادلة المحورين. */
+function scrollPosFromTrackClick(
+  clickOffset: number,
+  thumbLength: number,
+  maxOffset: number,
+  span: number,
+  maxPos: number,
+): number {
+  const targetThumbOffset = clickOffset - thumbLength / 2;
+  const clampedOffset = Math.max(0, Math.min(maxOffset, targetThumbOffset));
+  return maxPos - (clampedOffset / maxOffset) * span;
+}
+
 export interface CanvasHorizontalScrollbarProps {
   viewportWidth: number;
   displayW: number;
@@ -127,12 +140,9 @@ export const CanvasHorizontalScrollbar = React.memo(function CanvasHorizontalScr
       const track = trackRef.current;
       if (!track || maxOffset <= 0 || spanX <= 0) return;
       const rect = track.getBoundingClientRect();
-      const clickOffset = e.clientX - rect.left;
-      const targetThumbOffset = clickOffset - thumbLength / 2;
-      const clampedOffset = Math.max(0, Math.min(maxOffset, targetThumbOffset));
-      const targetT = clampedOffset / maxOffset;
-      const targetPos = maxX - targetT * spanX;
-      onScrollX(targetPos);
+      onScrollX(
+        scrollPosFromTrackClick(e.clientX - rect.left, thumbLength, maxOffset, spanX, maxX),
+      );
     },
     [maxOffset, spanX, thumbLength, maxX, onScrollX],
   );
@@ -292,12 +302,7 @@ export const CanvasVerticalScrollbar = React.memo(function CanvasVerticalScrollb
       const track = trackRef.current;
       if (!track || maxOffset <= 0 || spanY <= 0) return;
       const rect = track.getBoundingClientRect();
-      const clickOffset = e.clientY - rect.top;
-      const targetThumbOffset = clickOffset - thumbLength / 2;
-      const clampedOffset = Math.max(0, Math.min(maxOffset, targetThumbOffset));
-      const targetT = clampedOffset / maxOffset;
-      const targetPos = maxY - targetT * spanY;
-      onScrollY(targetPos);
+      onScrollY(scrollPosFromTrackClick(e.clientY - rect.top, thumbLength, maxOffset, spanY, maxY));
     },
     [maxOffset, spanY, thumbLength, maxY, onScrollY],
   );
