@@ -1,12 +1,12 @@
 ---
 name: supabase-security-and-migrations
-description: تأمين RLS ودوال SECURITY DEFINER وهجرات Supabase، والتحقق الحيّ عبر MCP (Supabase Authz, RLS & Migration Safety)
+description: تأمين RLS ودوال SECURITY DEFINER وهندسة هجرات Supabase والتحقق الحيّ عبر MCP (`/database-migration`)
 ---
 
 # 🔐 تأمين قاعدة البيانات والتفويض على Supabase (Authz, RLS & Migrations)
 
 استخدم هذا الدليل عند أي عمل على `supabase/migrations/` أو سياسات RLS أو دوال `SECURITY DEFINER` أو التحقق من الإنتاج عبر Supabase MCP.
-الدروس هنا مستخلصة من ثغرتين حيّتين أُغلقتا في 2026-09-26 (التفاصيل: `docs/reviews/09-admin-app-review-2026-09-26.md` و`docs/reviews/10-critical-authz-bypass-2026-09-26.md`).
+> **أمر التشغيل المباشر للهجرات:** يمكن استدعاء مسار العمل المنهجي بكتابة `/database-migration` في صندوق المحادثة.
 
 ---
 
@@ -53,16 +53,38 @@ RETURN (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
 
 ---
 
-## 4. الهجرات — الفشل الصامت والثبات
+## 4. مسار عمل صياغة وتطبيق الهجرات (Migration SOP — `/database-migration`)
 
-ثلاث هجرات في 2026-07 كانت **غير قابلة للتطبيق من الأساس** لكنها ظهرت «مُنجَزة» في تاريخ الإنتاج:
-1. `OLD.` داخل `WITH CHECK` (`42P01`).
-2. `GRANT EXECUTE` على توقيع دالة لا يُنشئه أي ملف (`42883`).
+### الخطوة 1: صياغة ملف الهجرة
+أنشئ ملف هجرة جديد في مجلد `supabase/migrations/` بالاسم القياسي المعتمد على الطابع الزمني `YYYYMMDDHHMMSS_<name>.sql`:
+- تفعيل RLS إجبارياً على أي جدول جديد: `ALTER TABLE public.<table_name> ENABLE ROW LEVEL SECURITY;`.
+- سياسات `USING` و `WITH CHECK` صريحة ومقيدة.
+- أي دالة `SECURITY DEFINER` تضبط: `SET search_path = ''` وتشتق الهوية من `auth.uid()`.
+- التحقق بشرط `IS NOT TRUE` لا `IF NOT fn()`.
 
-القواعد:
-- **الهجرة المطبَّقة غير قابلة للتعديل:** الإصلاح يكون **بهجرة جديدة** لا بتعديل القديمة (تعديلها يُنشئ انحرافاً بين الملف وتاريخ الإنتاج). بوابة الثبات `scripts/migration-lint.mjs` مع بصمات `supabase/migrations.manifest.json` تفشل عند أي تعديل؛ بعد إضافة هجرة جديدة شغّل `node scripts/migration-lint.mjs --update-manifest`.
-- **تحقّق أن كل `GRANT` يشير إلى توقيع موجود** (التوقيعات تُجمَع من كل الملفات).
-- **لا تحفظ توقيعاً مُخمَّناً:** بعد `CREATE OR REPLACE`، استخرج التوقيع الحقيقي بـ`pg_get_function_identity_arguments` أو `p.oid::regprocedure::text`.
+### الخطوة 2: الفحص والتحقق التجريبي عبر Supabase MCP
+اختبر الدوال والسياسات داخل معاملة تجريبية تُلغى (Rollback Transaction):
+```sql
+BEGIN;
+-- تنفيذ أوامر الهجرة هنا
+-- اختبار صلاحيات anon و authenticated
+SET LOCAL ROLE authenticated;
+SET LOCAL "request.jwt.claims" = '{"sub": "00000000-0000-0000-0000-000000000001"}';
+-- تنفيذ الاستعلام والتأكد من الحجب أو المنح
+ROLLBACK;
+```
+
+### الخطوة 3: دفع الهجرة للسيرفر السحابي
+```bash
+supabase db push --yes
+```
+
+### الخطوة 4: تحديث مانيفست الهجرات وبوابة التوثيق
+```bash
+node scripts/migration-lint.mjs --update-manifest
+node scripts/docs-gate.mjs --strict-refs
+```
+> **تنبيه حاسم:** الهجرة المطبقة لا تُعدّل إطلاقاً. الإصلاح يكون دائماً بهجرة جديدة لضمان عدم حدوث انحراف في المانيفست.
 
 ---
 
@@ -85,24 +107,12 @@ select public.admin_create_license_key('pro', 12, 'PROBE') as result;  -- يجب
 rollback;
 ```
 - كرّر السيناريو بدور `anon` وبمستخدم مصادق غير مسؤول.
-- تحقّق أيضاً من المسارات الشرعية (المالك لا يزال يعمل) لضمان عدم الانحدار.
 - راقب `IS NULL` على نتيجة `is_admin()` تحديداً — هي إشارة الخطر.
-
-**ج. قياس المستشارات قبل/بعد:** `get_advisors(type: 'security'|'performance')`.
-
----
-
-## 6. بنود مساندة يجب تذكّرها
-
-- **ربط الترخيص بالجهاز:** `activate_license(p_key, p_device_id)` تستقبل `p_device_id` لكنها **تهمله** — لا ربط بالجهاز ولا تتبّع (فجوة مفتوحة).
-- **تشفير محلي لا يحمي فعلاً:** مفتاح تشفير التوكن/الترخيص مشتق من معرّف الجهاز (`MachineGuid` على ويندوز)، وهو مقروء من أي عملية محلية ⇒ توكنات Supabase وتوقيع الترخيص قابلان للاستخراج/التزوير محلياً. لا تعتمد عليه كحماية حقيقية.
-- **منح الجداول:** `anon`/`authenticated` يحملان `TRUNCATE, REFERENCES, TRIGGER` على كل الجداول (صلاحية زائدة لا تُستغل عبر PostgREST لكن يُستحسن سحبها).
-- **حماية كلمات المرور المسرّبة** (`auth_leaked_password_protection`) إعداد في خدمة Auth باللوحة لا يُفعَّل بـSQL.
-- **مُحصّن SVG:** `frontend/src/lib/utils.ts` (`sanitizeSvgMarkup`) يزيل العناصر المحظورة وسمات `on*` لكنه لا يفحص قيم حركات SMIL (`values/to/from`) ولا محتوى `<style>` المضمّن.
+- قياس المستشارات قبل/بعد: `get_advisors(type: 'security'|'performance')`.
 
 ---
 
-## 7. مصفوفة اختبار التخويل المختصرة (Regression Matrix)
+## 6. مصفوفة اختبار التخويل المختصرة (Regression Matrix)
 
 | # | السيناريو | النتيجة المتوقعة |
 |---|---|---|
@@ -116,16 +126,11 @@ rollback;
 
 ---
 
-## 8. أمان المصادقة والـ Edge Functions (Auth & Functions Hardening)
+## 7. أمان المصادقة والـ Edge Functions (Auth & Functions Hardening)
 
 1. **مواءمة سياسات Auth بين السحابة والعميل:**
    - تحقق دائماً من مطابقة إعدادات `minimum_password_length` و `password_requirements` في `supabase/config.toml` ولوحة Supabase Auth مع دوال التحقق في العميل المحلي (`auth_flows.go` و `use-auth-forms.ts`).
-   - تعريب رسائل خطأ كلمات المرور الضعيفة يجب أن يعكس بدقة الشروط المطلوبة (مثلاً: "8 أحرف على الأقل وتتضمن حروفاً وأرقاماً").
-
 2. **تقليص سطح الهجوم للدوال الميتة (Zero Orphan Edge Functions):**
    - يُمنع إبقاء أي دالة Edge منشورة بصلاحية `SUPABASE_SERVICE_ROLE_KEY` إذا لم تكن مستخدمة فعلياً من العميل.
-   - تذكّر أن استدعاءات RPC المباشرة عبر Service Role تفقد سياق المستخدم (`auth.uid() = NULL`)، مما يتسبب في فشل أي دالة تشترط التحقق من هوية المستدعي.
-
 3. **حظر تسريب التوكنات في سجلات التطبيق:**
    - عند التعامل مع استجابات `/auth/v1/verify` أو التدوير، لا تطبع محتوى الاستجابة الخام في `slog` لتجنب حفظ التوكنات في ملفات السجلات المحلية على جهاز المستخدم.
-

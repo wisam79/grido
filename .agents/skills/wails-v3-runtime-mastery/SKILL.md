@@ -1,15 +1,16 @@
 ---
 name: wails-v3-runtime-mastery
-description: دليل وخريطة مهارة Wails v3 الشاملة لتطبيقات سطح المكتب (Architecture, Runtime APIs, Security Hardening, Windows Fluent Integration, Drag & Drop, Multi-Monitor & IPC) — المشروع يعمل حالياً على v3.0.0
+description: دليل وخريطة مهارة Wails v3 الشاملة لتطبيقات سطح المكتب (Architecture, Multi-Window Sync, Asset Streaming, Security, Windows Fluent Integration, Drag & Drop, & IPC) — v3.0.0 GA
 ---
 
 # 🚀 دليل احتراف محرك Wails v3 الشامل (Wails Runtime Mastery)
 
 يقدم هذا الدليل المرجعي كافة التقنيات والمعايير الهندسية المعتمدة لاستغلال أقصى قدرات محرك **Wails v3** ودمجه بسلاسة مع الواجهة الرسومية (React + Konva) والأنظمة الأساسية (خاصة Windows 10/11).
 
-> **الإصدار الفعلي:** `github.com/wailsapp/wails/v3 v3.0.0`
+> **الإصدار الفعلي:** `github.com/wailsapp/wails/v3 v3.0.0` (GA المستقرة)
 > **أداة البناء:** `wails3` CLI مع `Taskfile.yml`
 > **الحزمة الرئيسية:** `github.com/wailsapp/wails/v3/pkg/application`
+> **جسور الواجهة المعتمدة:** `frontend/wailsjs/runtime/runtime.ts` كنقطة استيراد موحدة
 
 ---
 
@@ -101,18 +102,75 @@ app := application.New(application.Options{
 
 ---
 
-## 🛡️ 2. الأمان المتقدم (Windows Security & WebView2)
+## 🪟 2. إدارة ومزامنة النوافذ المتعددة (Multi-Window & Event Bus Sync)
 
-### 2.1 حماية مسارات الصور المحلية (Symlink Path Traversal)
+### 2.1 إنشاء واستعادة النوافذ الذرية
+```go
+func (a *App) ShowOrCreateAuxiliaryWindow(name, title, route string, w, h int) *application.WebviewWindow {
+    app := application.Get()
+    if win, exists := app.Window.GetByName(name); exists {
+        win.Restore()
+        win.Show()
+        win.Focus()
+        return win
+    }
+
+    win := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
+        Name:      name,
+        Title:     title,
+        Width:     w,
+        Height:    h,
+        URL:       route,
+        Frameless: true,
+        Windows: application.WindowsWindow{
+            BackdropType:           application.Mica,
+            NonClientRegionSupport: true,
+        },
+    })
+    return win
+}
+```
+
+### 2.2 جسر المزامنة اللحظي (Event Bus Syncing)
+عند تحديث الكانفاس في النافذة الرئيسية، يتم بث التحديثات إلى النوافذ الثانوية عبر قنوات الأحداث:
+
+```typescript
+// في النافذة الرئيسية (Sender):
+// بث الأحداث عبر جسر wailsjs/runtime الموحد (EventsEmit) — الواجهة لا تستورد @wailsio/runtime مباشرة
+import { EventsEmit } from "../wailsjs/runtime/runtime";
+
+export function syncCanvasToAuxiliary(windowName: string, state: Partial<CanvasState>) {
+  EventsEmit(`sync:canvas:${windowName}`, state);
+}
+
+// في النافذة الثانوية (Receiver):
+import { EventsOn, EventsOff } from "@/wailsjs/runtime/runtime";
+
+useEffect(() => {
+  const unsubscribe = EventsOn("sync:canvas:preview", (payload) => {
+    updatePreviewStore(payload.data);
+  });
+  return () => {
+    if (typeof unsubscribe === "function") unsubscribe();
+    else EventsOff("sync:canvas:preview");
+  };
+}, []);
+```
+
+---
+
+## 🛡️ 3. الأمان المتقدم وتدفق الوسائط (Native I/O & Asset Server)
+
+### 3.1 حماية مسارات الصور المحلية (Symlink Path Traversal)
 > **النمط الإلزامي الموحد** (مطابق للتنفيذ الفعلي في `internal/service/media_service.go`):
 > لا تمرّر مساراً كاملاً من العميل أبداً؛ استخرج اسم الملف فقط (`filepath.Base`)، ادمجه مع مجلد مسموح، ثم افحص الطرفين بـ `EvalSymlinks` وقارن بـ `filepath.Clean` على الطرفين مع `filepath.Separator` (لمنع تجاوز البادئة مثل `baseDir_evil`).
 
 ```go
 func safeLocalImageHandler(w http.ResponseWriter, r *http.Request, baseDir string) {
-    // 1. تطبيع الخطوط المائلة العكسية قبل أي استخراج (انظر Cross-Platform Path Normalization)
+    // 1. تطبيع الخطوط المائلة العكسية قبل أي استخراج
     normalized := strings.ReplaceAll(r.URL.Query().Get("file"), "\\", "/")
 
-    // 2. استخراج اسم الملف فقط — يمنع أي مسار مطلق أو \r
+    // 2. استخراج اسم الملف فقط — يمنع أي مسار مطلق أو تجاوز مجلدات
     filename := filepath.Base(filepath.Clean(strings.TrimPrefix(normalized, "/local-image/")))
 
     // 3. البناء داخل المجلد المسموح فقط
@@ -132,12 +190,17 @@ func safeLocalImageHandler(w http.ResponseWriter, r *http.Request, baseDir strin
         return
     }
 
+    w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
     w.Header().Set("X-Content-Type-Options", "nosniff")
     http.ServeFile(w, r, resolved)
 }
 ```
 
-### 2.2 رؤوس CSP للـ WebView2
+### 3.2 حظر Base64 للميديا الضخمة
+* يُمنع تحويل صور الكاميرا أو المشاريع إلى Base64 لنقلها عبر RPC لتفادي إجهاد Garbage Collector وانفجار الذاكرة.
+* يتم التعامل حصراً مع المسارات المحلية عبر معالج ميديا `wails://` أو التدفق الثنائي المباشر.
+
+### 3.3 رؤوس CSP للـ WebView2
 ```go
 const cspHeader = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; " +
     "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
@@ -146,44 +209,37 @@ const cspHeader = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; " +
 
 ---
 
-## ⚡ 3. واجهات وقت التشغيل (Runtime APIs)
+## 🎨 4. الاندماج العميق مع Windows 11 و Fluent 2
 
-### 3.1 النوافذ المتعددة (Multi-Window)
-```go
-func (a *App) OpenPrintPreviewWindow(previewData any) {
-    app := application.Get()
-    if win, exists := app.Window.GetByName("print-preview"); exists {
-        win.Restore(); win.Focus(); return
-    }
-    previewWin := app.NewWebviewWindowWithOptions(application.WebviewWindowOptions{
-        Name:   "print-preview",
-        Title:  "معاينة الطباعة - Grido Studio",
-        Width:  1100, Height: 800,
-        URL:    "/print-preview",
-        Windows: application.WindowsWindow{BackdropType: application.Mica},
-    })
-    previewWin.OnWindowEvent(events.Common.WindowRuntimeReady, func(_ *application.WindowEvent) {
-        previewWin.EmitEvent("init-print-data", previewData)
-    })
-}
-```
-
-### 3.2 خامات Windows 11 الأصلية (Mica & Acrylic)
+### 4.1 شريط العنوان وسحب النافذة الأصلي
+في كود Go:
 ```go
 Windows: application.WindowsWindow{
     BackdropType:           application.Mica, // أو application.Acrylic
-    NonClientRegionSupport: true,
+    NonClientRegionSupport: true,             // تفعيل السحب الأصلي من شريط العنوان
 }
 ```
 
-### 3.3 السحب والإفلات الأصلي (Native File Drag & Drop)
+في كود React:
+```tsx
+// استخدام خاصية CSS المعتمدة لسحب النافذة عبر الويندوز مباشرة
+<header className="h-12 flex items-center justify-between px-4" style={{ '--wails-draggable': 'drag' } as any}>
+  <div className="flex items-center gap-2" style={{ '--wails-draggable': 'no-drag' } as any}>
+    {/* عناصر التحكم والأزرار تستثنى من السحب */}
+    <Logo />
+    <MenuBar />
+  </div>
+</header>
+```
+
+### 4.2 السحب والإفلات الأصلي (Native File Drag & Drop)
 ```go
 mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.WindowEvent) {
     ctx := e.Context()
     if ctx == nil {
         return
     }
-    files := ctx.DroppedFiles() // سياق أحداث النافذة لا يوفر إحداثيات المؤشر
+    files := ctx.DroppedFiles()
     processed, _ := app.mediaSvc.ProcessMultipleOpenedFiles(files)
     mainWindow.EmitEvent("native-file-drop", map[string]any{
         "images": processed,
@@ -191,104 +247,60 @@ mainWindow.OnWindowEvent(events.Common.WindowFilesDropped, func(e *application.W
 })
 ```
 
-### 3.4 الإشعارات الأصلية (Windows Toast Notifications)
+### 4.3 الإشعارات التفاعلية وصينية النظام (Notifications & System Tray)
 ```go
 import "github.com/wailsapp/wails/v3/pkg/services/notifications"
 
-// استخدم SendNotificationWithActions مع فئة مسجلة مسبقاً (RegisterNotificationCategory)
-// لربط الأزرار، واستقبل النقرات عبر OnNotificationResponse (انظر التنفيذ الفعلي في
-// internal/service/desktop_windows.go و app.go)
+// إشعارات ويندوز مع أزرار استجابة
 notifSvc.SendNotificationWithActions(notifications.NotificationOptions{
-    Title: "اكتمل التصدير",
-    Body:  fmt.Sprintf("تم تصدير %d صورة بنجاح.", count),
-    CategoryID: "EXPORT_DONE", // فئة مسجلة عبر RegisterNotificationCategory
+    Title:      "اكتمل التصدير",
+    Body:       fmt.Sprintf("تم تصدير %d صورة بنجاح.", count),
+    CategoryID: "EXPORT_DONE",
+})
+
+// صينية النظام
+tray := app.SystemTray.New()
+tray.SetIcon(trayIconBytes)
+tray.SetTooltip("Grido Studio")
+tray.OnDoubleClick(func() {
+    if win, ok := app.Window.GetByName("main"); ok { win.Show(); win.Focus() }
 })
 ```
 
-### 3.5 صينية النظام (System Tray)
-```go
-func SetupSystemTray(app *application.App) {
-    tray := app.SystemTray.New()
-    tray.SetIcon(trayIconBytes)
-    tray.SetTooltip("Grido Studio")
+---
 
-    menu := app.NewMenu()
-    menu.Add("إظهار التطبيق").OnClick(func(_ *application.Context) {
-        if win, ok := app.Window.GetByName("main"); ok { win.Show(); win.Focus() }
-    })
-    menu.AddSeparator()
-    menu.Add("إنهاء").OnClick(func(_ *application.Context) { app.Quit() })
-    tray.SetMenu(menu)
-    tray.OnDoubleClick(func() {
-        if win, ok := app.Window.GetByName("main"); ok { win.Show(); win.Focus() }
-    })
-}
+## 🛠️ 5. أوامر التشغيل وهندسة الربطات (CLI & Bindings Pipeline)
+
+```powershell
+# 1. تثبيت أداة Wails3 CLI الرسمية المعتمدة
+go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+
+# 2. تشغيل وضع التطوير المحلي مع Hot Reload
+wails3 task dev
+
+# 3. توليد ربطات TypeScript بعد أي تعديل على دوال Go
+wails3 generate bindings -ts -clean=true
+
+# 4. بناء الملف التنفيذي للإنتاج محلياً
+wails3 task build
+
+# 5. بناء مثبت الويندوز NSIS للإنتاج
+wails3 task package
 ```
 
-### 3.6 الشاشات المتعددة والحافظة
-```go
-// الشاشات
-screens := application.Get().Screen.GetAll()
-// screen.Size.Width, screen.Size.Height, screen.IsPrimary
-
-// الحافظة
-text, _ := application.Get().Clipboard.Text() // تعيد (string, bool)
-application.Get().Clipboard.SetText("نص منسوخ")
-```
+### خط أنابيب الربطات والجسور:
+1. **الربطات الأصلية (`frontend/bindings/`):** تُولّد تلقائياً عبر `wails3 generate bindings` ومستثناة من Git في `.gitignore`. تستخدم `$Call.ByID(...)` من `@wailsio/runtime`.
+2. **جسور الواجهة (`frontend/wailsjs/`):** ملفات جسور يدوية متتبعة في Git تعيد تصدير الربطات وتوفر واجهة برمجية مستقرة للمكونات دون التأثر بإعادة التوليد.
 
 ---
 
-## 📡 4. جسر الأحداث وإلغاء العمليات (IPC & Cancellable RPC)
-
-| النمط | الاستخدام | التوجيه |
-|:---|:---|:---|
-| **RPC (Go Service Bind)** | فتح الملفات، الحفظ، البيانات | دوال تُرجع `(result, error)` |
-| **EmitEvent / OnWindowEvent** | إشعارات خلفية، اكتمال معالجة | أحداث غير متزامنة |
-| **AssetServer Handler** | بث الصور والملفات الضخمة | HTTP مع `Cache-Control` |
-| **Cancellable Context** | عمليات AI طويلة | `ctx.Done()` في goroutine |
-
-```go
-// Go — قابل للإلغاء من الواجهة
-func (s *ImageService) ProcessBatchAI(ctx context.Context, photoIDs []string) error {
-    for _, id := range photoIDs {
-        select {
-        case <-ctx.Done():
-            return errors.New("تم إلغاء العملية")
-        default:
-            // متابعة المعالجة
-        }
-    }
-    return nil
-}
-```
-
-```typescript
-// TypeScript
-const call = ImageService.ProcessBatchAI(selectedIds);
-cancelBtn.onclick = () => call.cancel();
-```
-
----
-
-## 🔧 5. أخطاء شائعة وحلولها
-
-| المشكلة | السبب | الحل |
-|:---|:---|:---|
-| النافذة تنغلق فوراً | `CGO_ENABLED=0` مع `go-sqlite3` | تأكد من GCC + `CGO_ENABLED: '1'` في Taskfile |
-| وضع التطوير يفتح المتصفح فقط | انهيار Go في الخلفية | راجع `%AppData%\GridoStudio\logs\grido.log` |
-| متغيرات البيئة لا تُحقن | Wails v3 لا يحقنها تلقائياً | استخدم `ldflags` صريحة في `Taskfile.yml` |
-| تحذيرات `uname`/`tail` | قوالب ios/android في includes | استبعدها من `Taskfile.yml` |
-
----
-
-## 🎯 6. قائمة تحقق الجودة
+## 🎯 6. قائمة فحص الجودة لمحرك Wails v3
 
 - [x] الخدمات مسجّلة عبر `application.NewService(...)` في `Options.Services`
 - [x] كاش WebView2 مخصص داخل AppData عبر `WebviewUserDataPath`
-- [x] النافذة Frameless مع Mica أو Acrylic على Windows 11
-- [x] قفل المثيل يوجه وسائط CLI للنافذة الأولى
-- [x] فحص مسارات الصور ضد Symlink Path Traversal
-- [x] دعم السحب والإفلات عبر `WindowFilesDropped`
-- [x] استعادة موضع النافذة مشروطة بوجود النقطة داخل شاشة متصلة
-- [x] رؤوس CSP تدعم `wasm-unsafe-eval`
-- [x] `CGO_ENABLED=1` في جميع مهام البناء
+- [x] النافذة Frameless مع Mica أو Acrylic على Windows 11 و `NonClientRegionSupport: true`
+- [x] شريط العنوان يستخدم `--wails-draggable: drag` مع `--wails-draggable: no-drag` لعناصر التحكم
+- [x] قفل المثيل الفردي يوجه وسائط CLI للنافذة الأولى
+- [x] فحص مسارات الصور ضد Symlink Path Traversal وتجنب Base64 للميديا الضخمة
+- [x] جسور الأحداث في الواجهة تستورد حصراً من `frontend/wailsjs/runtime/runtime`
+- [x] `CGO_ENABLED=1` في جميع مهام البناء (لدعم SQLite و CGO)
