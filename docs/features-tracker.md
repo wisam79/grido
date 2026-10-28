@@ -19,7 +19,7 @@
 - **ميتاداتا القوالب المخصصة في Go:** إضافة `SaveCustomTemplateWithMetadata` مع تحقق صارم في `autosave_service.go` واختبارات وحدة كاملة في `autosave_template_metadata_test.go` وربط جسر Wails v3.
 - **محرك فحص ما قبل التصدير والطباعة (Preflight):** إنشاء `frontend/src/lib/export/collage-preflight.ts` للتحقق من سلامة المصادر (مانع للتصدير) والتنبيه بالدقة المنخفضة والخانات الفارغة في حواري التصدير والطباعة.
 - **إدارة الصور الفائضة والتحديد المتعدد:** حفظ الصور المتبقية في `collagePendingImages` عند الإدراج الدفعي والإسقاط، ودعم التحديد التراكمي (Shift/Ctrl+Click)، وتخصيص اختصارات Delete لتفريغ محتوى الخانة دون حذفها وأسهم الكيبورد لتحريك القص.
-- **مواءمة محاكي جسر E2E:** تصحيح `SaveImageFromBase64` وخريطة معرّفات الدوال الرقمية `$Call.ByID` في `frontend/e2e/helpers/wails-v3-bridge.ts` (معرّف 211586642) لإرجاع مسار صالح/dataURL بدلاً من مسار وهمي لـ SaveFileDialog حتى يقبله محرك فحص ما قبل الطباعة في اختبارات E2E.
+- **مواءمة محاكي جسر E2E:** تصحيح `SaveImageFromBase64` وخريطة معرّفات الدوال الرقمية `$Call.ByID` في `frontend/e2e/helpers/wails-v3-bridge.ts` (معرّف 211586642) ودعم تجميع طلبات RPC المجزأة (Wails Chunked Transport عبر رؤوس `x-wails-chunk-*`) حتى تمر حمولات التصدير والطباعة الكبيرة بسلاسة.
 - **التحقق:** نجح `tsc --noEmit` و`eslint` و`format:check` و`gofmt` و`go vet` و`go test ./internal/service ./internal/repository` وحزمة Vitest (بما فيها `print-export-payload.test.ts` و`collage-slice.test.ts` و`freeform-editor.test.tsx`)، ونجحت بوابة التوثيق `node scripts/docs-gate.mjs --strict-refs` بعد تحديث `go_test_files=60`.
 
 ---
