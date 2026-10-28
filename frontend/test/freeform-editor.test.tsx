@@ -1,4 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -10,6 +11,7 @@ import {
   FreeformPaperSelector,
   PaperDimInput,
 } from '../src/features/freeform-collage/components/freeform-paper-selector';
+import { FreeformRightInspectorPanel } from '../src/features/freeform-collage/components/freeform-right-inspector-panel';
 import { FreeformTopActionBar } from '../src/features/freeform-collage/components/freeform-top-action-bar';
 
 describe('Freeform Editor Unit & Component Tests', () => {
@@ -144,23 +146,25 @@ describe('Freeform Editor Unit & Component Tests', () => {
       const handleAddSlot = vi.fn();
       const handleAutoPack = vi.fn();
 
-      renderWithProviders(
-        <FreeformLeftToolsPanel
-          packGapMM={2}
-          packMarginMM={3}
-          onAddSlot={handleAddSlot}
-          onAddPresetSlot={vi.fn()}
-          onAutoPack={handleAutoPack}
-          onPackGapChange={vi.fn()}
-          onPackMarginChange={vi.fn()}
-        />,
-      );
+      const props = {
+        packGapMM: 2,
+        packMarginMM: 3,
+        onAddSlot: handleAddSlot,
+        onAddPresetSlot: vi.fn(),
+        onAutoPack: handleAutoPack,
+        onPackGapChange: vi.fn(),
+        onPackMarginChange: vi.fn(),
+      };
+      const { rerender } = renderWithProviders(<FreeformLeftToolsPanel {...props} />);
 
       fireEvent.click(screen.getByRole('button', { name: /إضافة خلية فارغة/ }));
       expect(handleAddSlot).toHaveBeenCalled();
 
-      fireEvent.click(screen.getByRole('button', { name: /بطاقات هوية/ }));
-      expect(handleAutoPack).toHaveBeenCalledWith('id-max');
+      rerender(<FreeformLeftToolsPanel {...props} mode="pack" />);
+      fireEvent.click(screen.getByRole('radio', { name: 'جوازات سفر' }));
+      expect(handleAutoPack).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: 'تعبئة الورقة' }));
+      expect(handleAutoPack).toHaveBeenCalledWith('passport-max');
     });
 
     it('inserts a preset slot from the single preset source', () => {
@@ -180,6 +184,25 @@ describe('Freeform Editor Unit & Component Tests', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /بطاقة موحدة \(3\.5×4\.5\)/ }));
       expect(handleAddPresetSlot).toHaveBeenCalledWith('iq-national-id');
+    });
+  });
+
+  describe('FreeformRightInspectorPanel', () => {
+    it('reapplies the selected preset after resizing without changing its key', () => {
+      const onUpdateSlot = vi.fn();
+      renderWithProviders(
+        <FreeformRightInspectorPanel
+          slot={{ id: 's1', x: 0, y: 0, w: 0.2, h: 0.3, presetType: 'iq-national-id' }}
+          multiSelectedCount={1}
+          paperWidthMM={100}
+          paperHeightMM={100}
+          onUpdateSlot={onUpdateSlot}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'استعادة المقاس' }));
+      expect(onUpdateSlot).toHaveBeenCalledWith(
+        expect.objectContaining({ presetType: 'iq-national-id', w: 0.35, h: 0.45 }),
+      );
     });
   });
 
@@ -229,7 +252,7 @@ describe('Freeform Editor Unit & Component Tests', () => {
 
     it('keeps a dragged slot inside the paper when snapping is disabled', () => {
       const onSlotsChange = vi.fn();
-      render(
+      renderWithProviders(
         <FreeformCanvasEditor
           paperWidthMM={100}
           paperHeightMM={100}
@@ -251,6 +274,36 @@ describe('Freeform Editor Unit & Component Tests', () => {
   });
 
   describe('FreeformCollageModal keyboard nudge clamping', () => {
+    it('navigates sidebar tabs with arrows without nudging slots', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<FreeformCollageModal open onOpenChange={vi.fn()} />);
+      const slot = document.querySelector<HTMLElement>('[data-slot-id]')!;
+      const position = { left: slot.style.left, top: slot.style.top };
+      await user.click(screen.getByRole('tab', { name: 'إدراج' }));
+      await user.keyboard('{ArrowLeft}');
+      await waitFor(() =>
+        expect(screen.getByRole('tab', { name: 'تعبئة' })).toHaveAttribute('aria-selected', 'true'),
+      );
+      expect({ left: slot.style.left, top: slot.style.top }).toEqual(position);
+    });
+
+    it('opens contextual properties and preserves the draft when collapsing the dock', () => {
+      renderWithProviders(<FreeformCollageModal open onOpenChange={vi.fn()} />);
+      expect(screen.getByRole('tab', { name: 'إدراج' })).toHaveAttribute('aria-selected', 'true');
+      const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-slot-id]'));
+      fireEvent.keyDown(cards[0], { key: 'Enter' });
+      expect(screen.getByRole('tab', { name: 'خصائص' })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.getByRole('spinbutton', { name: 'العرض' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'إخفاء لوحة الأدوات' }));
+      expect(screen.getByRole('button', { name: 'إظهار لوحة الأدوات' })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      );
+      expect(document.querySelectorAll('[data-slot-id]')).toHaveLength(cards.length);
+      fireEvent.click(screen.getByRole('button', { name: 'إظهار لوحة الأدوات' }));
+      expect(screen.getByRole('tab', { name: 'خصائص' })).toHaveAttribute('aria-selected', 'true');
+    });
+
     it('keeps slots inside the paper with arrow-key nudges', () => {
       renderWithProviders(<FreeformCollageModal open onOpenChange={vi.fn()} />);
 

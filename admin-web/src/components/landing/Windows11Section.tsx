@@ -1,135 +1,80 @@
-import { Monitor, Sliders, Cpu, Zap, HardDrive, Printer } from 'lucide-react';
-import { SectionHeader } from './SectionHeader';
+import { SectionHeader } from "./SectionHeader";
 
 const PERKS = [
   {
-    title: 'واجهة داكنة مريحة',
-    desc: 'تصميم أنيق لساعات العمل الطويلة داخل الاستوديو.',
-    icon: Monitor,
+    title: "واجهة داكنة، تفاصيل واضحة",
+    desc: "لوحات مرتبة ومساحة للصورة أثناء التحرير.",
   },
   {
-    title: 'إقلاع لحظي وسرعة خارقة',
-    desc: 'يفتح فوراً باستهلاك خفيف أقل من 120MB ذاكرة.',
-    icon: Zap,
+    title: "حفظ تلقائي للمسودة",
+    desc: "يساعدك على استعادة المسودة؛ احفظ نسخة من المشاريع المهمة.",
   },
   {
-    title: 'حفظ تلقائي مستمر',
-    desc: 'عملك محفوظ دائماً ولن تضيع أي صورة حتى عند انقطاع الكهرباء.',
-    icon: HardDrive,
-  },
-  {
-    title: 'متوافق مع طابعات الاستوديو',
-    desc: 'طباعة فورية لطابعات DNP و Epson و Canon و Citizen.',
-    icon: Printer,
+    title: "إعدادات طباعة مرنة",
+    desc: "اضبط مقاس الورق والهوامش واختر الطابعة من إعدادات ويندوز.",
   },
 ];
 
 export function Windows11Section() {
   return (
-    <section id="windows-experience" className="py-16 md:py-24 relative scroll-mt-20">
+    <section id="windows-experience" className="landing-section relative">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          
-          {/* Right Column: Title & Feature List */}
-          <div className="lg:col-span-6 flex flex-col items-start text-start">
+          <div className="lg:col-span-6 text-start">
             <SectionHeader
-              title="برنامج خفيف وسريع، لا يثقل جهازك"
-              description="تجربة سطح مكتب أصلية على ويندوز: إقلاع فوري، استهلاك أخف من 120MB، وحفظ تلقائي مستمر"
+              title="مساحة عمل مريحة على ويندوز"
+              description="أدوات سطح مكتب تجمع التحرير والتخطيط والطباعة في برنامج واحد."
               align="start"
               size="lg"
               gap="none"
             />
 
-            {/* 4 Feature Cards */}
-            <div className="w-full space-y-3 mt-6">
-              {PERKS.map((perk) => {
-                const Icon = perk.icon;
-                return (
-                  <div
-                    key={perk.title}
-                    className="ds-card flex items-start gap-3.5 p-3.5 hover:border-white/20 transition-all duration-200 shadow-sm"
-                  >
-                    <div className="ds-icon-tile w-10 h-10 text-brand-primary mt-0.5 shadow-xs">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-xs sm:text-sm font-bold text-white mb-0.5">{perk.title}</h4>
-                      <p className="text-xs text-text-secondary leading-relaxed">{perk.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <dl className="mt-6 divide-y divide-border-subtle">
+              {PERKS.map((perk) => (
+                <div key={perk.title} className="py-4 first:pt-0 last:pb-0">
+                  <dt className="text-sm font-semibold text-text-primary leading-relaxed">
+                    {perk.title}
+                  </dt>
+                  <dd className="mt-1 text-sm text-text-secondary leading-7">
+                    {perk.desc}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
 
-          {/* Left Column: System Monitor Card */}
-          <div className="lg:col-span-6 relative flex justify-center">
-            <div className="ds-card w-full max-w-lg p-6 sm:p-8 shadow-md">
-              
-              {/* Header Bar */}
-              <div className="flex items-center justify-between pb-4 border-b border-border-subtle mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="ds-icon-tile w-10 h-10 text-brand-primary">
-                    <Sliders className="w-5 h-5" />
-                  </div>
-                  <h4 className="text-sm font-bold text-white">كفاءة تشغيل الاستوديو</h4>
-                </div>
-                <span className="text-xs font-bold text-status-success bg-inset px-3 py-1 rounded-full border border-border-subtle">
-                  جاهز للعمل
-                </span>
+          <div className="lg:col-span-6 landing-card p-5 sm:p-8">
+            <h3 className="text-base font-semibold text-text-primary leading-relaxed">
+              على جهازك، وباختيارك
+            </h3>
+            <dl className="mt-5 divide-y divide-border-subtle">
+              <div className="py-4 first:pt-0">
+                <dt className="text-sm font-medium text-text-primary">
+                  التحرير والتخطيط والطباعة
+                </dt>
+                <dd className="mt-2 text-sm text-text-secondary leading-7">
+                  تعمل محلياً على جهازك.
+                </dd>
               </div>
-
-              {/* Metrics */}
-              <div className="space-y-3 text-xs">
-                
-                {/* Metric 1: RAM */}
-                <div className="p-3.5 rounded-xl bg-inset border border-border-subtle flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-white font-medium">
-                      <Zap className="w-4 h-4 text-brand-primary" />
-                      <span>استهلاك الذاكرة</span>
-                    </div>
-                    <span className="font-mono text-status-success font-bold text-xs">118 MB فقط</span>
-                  </div>
-                  <div className="w-full h-1.5 rounded-full bg-card overflow-hidden">
-                    <div className="h-full w-[12%] bg-status-success rounded-full" />
-                  </div>
-                </div>
-
-                {/* Metric 2: Printing Quality */}
-                <div className="p-3.5 rounded-xl bg-inset border border-border-subtle flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-white font-medium">
-                    <Cpu className="w-4 h-4 text-brand-light" />
-                    <span>ألوان الطباعة</span>
-                  </div>
-                  <span className="font-bold text-white text-xs bg-card px-2.5 py-1 rounded-lg border border-border-subtle">
-                    مطابقة للشاشة 100%
-                  </span>
-                </div>
-
-                {/* Metric 3: Safe Save */}
-                <div className="p-3.5 rounded-xl bg-inset border border-border-subtle flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-white font-medium">
-                      <HardDrive className="w-4 h-4 text-status-warning" />
-                    <span>الحفظ التلقائي</span>
-                  </div>
-                  <span className="text-status-success font-bold text-xs">
-                    مفعل دائماً
-                  </span>
-                </div>
+              <div className="py-4">
+                <dt className="text-sm font-medium text-text-primary">
+                  أدوات الذكاء الاصطناعي السحابية
+                </dt>
+                <dd className="mt-2 text-sm text-text-secondary leading-7">
+                  اختيارية وتتطلب اتصالاً عند استخدامها.
+                </dd>
               </div>
-
-              {/* Status Footer */}
-              <div className="mt-5 pt-4 border-t border-border-subtle flex items-center justify-between text-xs text-text-secondary">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-status-success" />
-                  <span className="text-white">ويندوز 11 و 10 و 7</span>
-                </div>
-                <span className="text-brand-light font-bold text-xs">100% أوفلاين</span>
+              <div className="py-4 last:pb-0">
+                <dt className="text-sm font-medium text-text-primary">
+                  ألوان الطباعة
+                </dt>
+                <dd className="mt-2 text-sm text-text-secondary leading-7">
+                  تعتمد على ملف الألوان والورق والطابعة، وقد تختلف عن الشاشة.
+                  جرّب إعداداتك الفعلية قبل اعتماد النتائج.
+                </dd>
               </div>
-            </div>
+            </dl>
           </div>
-
         </div>
       </div>
     </section>

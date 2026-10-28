@@ -63,6 +63,92 @@ describe('PrintDialog Backstage View Tests', () => {
     expect(screen.getByText('الورقة والاتجاه')).toBeInTheDocument();
   });
 
+  it('shows an empty-state message and one DPI value without claiming a 1:1 preview', () => {
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+    expect(screen.getByText('لا يوجد محتوى للطباعة')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'طباعة الورقة' })).toBeDisabled();
+    expect(screen.getAllByText('300 DPI')).toHaveLength(1);
+    expect(screen.queryByText('1:1')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('المعاينة مطابقة للورقة')).not.toBeInTheDocument();
+  });
+
+  it('fits both orientations and reconnects observation after reopening without changing print settings', async () => {
+    const OriginalResizeObserver = globalThis.ResizeObserver;
+    const observedViewports: Element[] = [];
+    const disconnect = vi.fn();
+    let notifyResize: ((width: number, height: number) => void) | undefined;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        private target?: Element;
+        constructor(private callback: ResizeObserverCallback) {}
+        observe(target: Element) {
+          if (target.getAttribute('data-testid') !== 'print-preview-viewport') return;
+          this.target = target;
+          observedViewports.push(target);
+          notifyResize = (width, height) =>
+            this.callback(
+              [{ target, contentRect: { width, height } } as ResizeObserverEntry],
+              this as unknown as ResizeObserver,
+            );
+        }
+        unobserve() {}
+        disconnect() {
+          if (this.target) disconnect(this.target);
+        }
+      },
+    );
+    try {
+      act(() =>
+        useEditorStore.getState().setPrintSettings({
+          paperId: 'a4',
+          paperWidthMM: 210,
+          paperHeightMM: 297,
+          orientation: 'portrait',
+        }),
+      );
+      const view = renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+      const firstViewport = screen.getByTestId('print-preview-viewport');
+      expect(notifyResize).toBeDefined();
+      act(() => notifyResize!(640, 480));
+      const paper = screen.getByTestId('print-preview-paper');
+      const scrollTo = vi.fn();
+      Object.defineProperty(screen.getByTestId('print-preview-viewport'), 'scrollTo', {
+        value: scrollTo,
+      });
+      expect(parseFloat(paper.style.height)).toBeCloseTo(416, 1);
+      expect(parseFloat(paper.style.width) / parseFloat(paper.style.height)).toBeCloseTo(210 / 297);
+      fireEvent.click(screen.getByRole('button', { name: 'اتجاه أفقي (عرضي)' }));
+      expect(parseFloat(paper.style.width)).toBeCloseTo(576, 1);
+      expect(parseFloat(paper.style.height)).toBeLessThanOrEqual(416);
+      const settings = { ...useEditorStore.getState().printSettings };
+      fireEvent.click(screen.getByRole('button', { name: 'تكبير المعاينة' }));
+      expect(parseFloat(paper.style.width)).toBeCloseTo(576 * 1.1, 1);
+      expect(useEditorStore.getState().printSettings).toEqual(settings);
+      fireEvent.click(screen.getByRole('button', { name: 'ملاءمة' }));
+      expect(parseFloat(paper.style.width)).toBeCloseTo(576, 1);
+      expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0 });
+      view.rerender(
+        <TooltipProvider>
+          <PrintDialog open={false} onOpenChange={vi.fn()} />
+        </TooltipProvider>,
+      );
+      await waitFor(() => expect(disconnect).toHaveBeenCalledWith(firstViewport));
+      view.rerender(
+        <TooltipProvider>
+          <PrintDialog open={true} onOpenChange={vi.fn()} />
+        </TooltipProvider>,
+      );
+      const nextViewport = await screen.findByTestId('print-preview-viewport');
+      expect(nextViewport).not.toBe(firstViewport);
+      expect(observedViewports).toContain(nextViewport);
+      view.unmount();
+      expect(disconnect).toHaveBeenCalledWith(nextViewport);
+    } finally {
+      vi.stubGlobal('ResizeObserver', OriginalResizeObserver);
+    }
+  });
+
   it('does not render redundant imposition controls in collage mode, keeping print backstage focused', () => {
     act(() => {
       useEditorStore.getState().setMode('collage');

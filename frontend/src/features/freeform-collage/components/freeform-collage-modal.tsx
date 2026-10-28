@@ -19,29 +19,29 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogCloseButton,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
+  DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/huge-icon';
-import { FloppyDisk, DownloadSimple, UploadSimple, Gear, CaretDown } from '@/components/ui/icons';
+import { DownloadSimple, UploadSimple, CaretDown, SidebarSimple } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { clamp } from '@/lib/clamp';
 import { useEditorStore } from '@/lib/editor-store';
 import { downloadJsonFile } from '@/lib/io/download';
+import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { FreeformCanvasEditor } from './freeform-canvas-editor';
 import { FreeformLeftToolsPanel } from './freeform-left-tools-panel';
 import { FreeformPaperSelector } from './freeform-paper-selector';
 import { FreeformRightInspectorPanel } from './freeform-right-inspector-panel';
-import { FreeformTopActionBar } from './freeform-top-action-bar';
+import { FreeformTopActionBar, FreeformToolButton } from './freeform-top-action-bar';
 import {
   splitSlot,
   removeSlot,
@@ -145,6 +145,14 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
   const [showCutLines, setShowCutLines] = useState<boolean>(false);
   const [enableSnapping, setEnableSnapping] = useState<boolean>(true);
+  const [panelTab, setPanelTab] = useState('insert');
+  const [panelOpen, setPanelOpen] = useState(true);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectSlot = useCallback((id: string | null) => {
+    setSelectedSlotId(id);
+    if (id) setPanelTab('properties');
+  }, []);
 
   // ⚡ التحديد المتعدد: مجموعة خلايا نشطة إضافة للخلية الأساسية
   const [multiSelectedIds, setMultiSelectedIds] = useState<string[]>([]);
@@ -622,7 +630,10 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
         (activeEl.tagName === 'INPUT' ||
           activeEl.tagName === 'TEXTAREA' ||
           activeEl.tagName === 'SELECT' ||
-          activeEl.isContentEditable)
+          activeEl.isContentEditable ||
+          activeEl.closest(
+            '[role="tablist"], [role="menu"], [role="listbox"], [role="combobox"], [role="alertdialog"]',
+          ))
       ) {
         return;
       }
@@ -852,71 +863,190 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       }}
     >
       <DialogContent
+        ref={dialogRef}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          dialogRef.current?.focus();
+        }}
         showCloseButton={false}
-        className="w-[98vw] sm:max-w-[1420px] h-[94vh] sm:max-h-[940px] flex flex-col p-0 overflow-hidden bg-card border border-border/80 dark:border-white/10 rounded-xl shadow-fluent-16 font-cairo fluent-specular transition-colors duration-150 gap-0"
+        className="w-[calc(100vw-16px)] max-w-none sm:max-w-[1600px] h-[calc(100dvh-16px)] flex flex-col p-0 overflow-hidden bg-card border border-border/80 rounded-xl shadow-fluent-16 font-cairo gap-0"
         dir="rtl"
+        aria-describedby={undefined}
         onEscapeKeyDown={() => setMultiSelectedIds([])}
       >
-        {/* ═══ الرأس: العنوان + محدد الورقة + زر الإغلاق ═══ */}
-        <DialogHeader className="px-5 h-12 border-b border-border/40 bg-card/80 backdrop-blur-md shrink-0">
-          <div className="flex items-center justify-between gap-3 h-full">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <DialogTitle className="text-base font-bold tracking-tight text-foreground truncate">
-                الكولاج الحر
-              </DialogTitle>
-              <span className="text-3xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                تخطيط مخصص
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2.5 shrink-0">
-              <FreeformPaperSelector
-                paperWidthMM={paperWidthMM}
-                paperHeightMM={paperHeightMM}
-                onPaperDimensionsChange={handlePaperDimensionsChange}
-              />
-              <DialogCloseButton onClick={requestClose} />
-            </div>
+        <DialogHeader className="px-3 py-2 border-b border-border/60 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <DialogTitle className="text-sm font-semibold whitespace-nowrap">
+              الكولاج الحر
+            </DialogTitle>
+            <div className="hidden sm:block h-5 w-px bg-border/60 mx-1" />
+            <Input
+              value={layoutName}
+              onChange={(e) => setLayoutName(e.target.value)}
+              aria-label="اسم التخطيط"
+              className="h-8 w-full order-last sm:order-none sm:w-48 min-w-0 border-transparent bg-transparent text-xs shadow-none hover:border-border focus-visible:border-primary"
+            />
+            <div className="flex-1" />
+            <DropdownMenu dir="rtl">
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-7 sm:w-auto gap-1 px-1 sm:px-3 text-xs"
+                  aria-label="خيارات التخطيط"
+                >
+                  <span className="hidden sm:inline">ملف</span>
+                  <CaretDown className="size-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 font-cairo">
+                <DropdownMenuItem onSelect={() => importInputRef.current?.click()}>
+                  <UploadSimple className="size-4" />
+                  استيراد JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleExportLayout} disabled={slots.length === 0}>
+                  <DownloadSimple className="size-4" />
+                  تصدير JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={handleSaveAsCustomTemplate}
+              disabled={isSavingTemplate || slots.length === 0}
+            >
+              {isSavingTemplate ? <Spinner size={14} /> : null}
+              حفظ قالب
+            </Button>
+            <Button
+              size="sm"
+              className="h-8 text-xs px-3 sm:px-5"
+              onClick={handleApplyToCanvas}
+              disabled={isApplying || slots.length === 0}
+            >
+              {isApplying ? <Spinner size={14} /> : null}
+              {isApplying ? 'جاري التطبيق ...' : 'تطبيق الكولاج'}
+            </Button>
+            <div className="hidden sm:block h-5 w-px bg-border/60 mx-1" />
+            <DialogCloseButton onClick={requestClose} />
           </div>
         </DialogHeader>
-
-        {/* شريط الإجراءات العلوي */}
-        <FreeformTopActionBar
-          selectedSlotId={selectedSlotId}
-          multiSelectedCount={multiCountTotal}
-          canUndo={historyState.past.length > 0}
-          canRedo={historyState.future.length > 0}
-          showCutLines={showCutLines}
-          enableSnapping={enableSnapping}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onDuplicateSlot={handleDuplicateSlot}
-          onRotateSlot={handleRotateSlot}
-          onRemoveSlot={handleRemoveSlot}
-          onScaleSelection={handleScaleSelection}
-          onSplitHorizontal={handleSplitHorizontal}
-          onSplitVertical={handleSplitVertical}
-          onAlignSlot={handleAlignSlot}
-          onAlignSelectionToEachOther={handleAlignSelectionToEachOther}
-          onDistributeSlots={handleDistributeSlots}
-          onResolveOverlaps={handleResolveOverlaps}
-          onToggleCutLines={() => setShowCutLines((prev) => !prev)}
-          onToggleSnapping={() => setEnableSnapping((prev) => !prev)}
+        <input
+          ref={importInputRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={handleImportLayout}
         />
 
-        {/* ═══ المحتوى: أعمدة جانبية + كانفاس ═══ */}
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          <FreeformLeftToolsPanel
-            packGapMM={packGapMM}
-            packMarginMM={packMarginMM}
-            onAddSlot={handleAddSlot}
-            onAddPresetSlot={handleAddPresetSlot}
-            onAutoPack={handleAutoPack}
-            onPackGapChange={setPackGapMM}
-            onPackMarginChange={setPackMarginMM}
+        <div className="flex flex-wrap items-center justify-between border-b border-border/60 shrink-0">
+          <FreeformTopActionBar
+            selectedSlotId={selectedSlotId}
+            multiSelectedCount={multiCountTotal}
+            canUndo={historyState.past.length > 0}
+            canRedo={historyState.future.length > 0}
+            showCutLines={showCutLines}
+            enableSnapping={enableSnapping}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onDuplicateSlot={handleDuplicateSlot}
+            onRotateSlot={handleRotateSlot}
+            onRemoveSlot={handleRemoveSlot}
+            onScaleSelection={handleScaleSelection}
+            onSplitHorizontal={handleSplitHorizontal}
+            onSplitVertical={handleSplitVertical}
+            onAlignSlot={handleAlignSlot}
+            onAlignSelectionToEachOther={handleAlignSelectionToEachOther}
+            onDistributeSlots={handleDistributeSlots}
+            onResolveOverlaps={handleResolveOverlaps}
+            onToggleCutLines={() => setShowCutLines((prev) => !prev)}
+            onToggleSnapping={() => setEnableSnapping((prev) => !prev)}
           />
 
-          <main className="flex-1 min-w-0 min-h-0 flex bg-muted/10">
+          <div className="flex items-center gap-2 px-3 py-1.5 min-w-0">
+            <FreeformToolButton
+              onClick={() => setPanelOpen((value) => !value)}
+              active={panelOpen}
+              title={panelOpen ? 'إخفاء لوحة الأدوات' : 'إظهار لوحة الأدوات'}
+            >
+              <SidebarSimple className="size-4" />
+            </FreeformToolButton>
+            <FreeformPaperSelector
+              paperWidthMM={paperWidthMM}
+              paperHeightMM={paperHeightMM}
+              onPaperDimensionsChange={handlePaperDimensionsChange}
+              className="min-w-0"
+            />
+          </div>
+        </div>
+
+        <div className="relative flex flex-1 min-h-0 overflow-hidden">
+          <aside
+            aria-label="لوحة الكولاج"
+            className={cn(
+              'w-[280px] max-w-[85%] shrink-0 border-e border-border/60 bg-card min-h-0 flex-col absolute inset-y-0 start-0 z-30 shadow-fluent-16 md:static md:shadow-none',
+              panelOpen ? 'flex' : 'hidden',
+            )}
+          >
+            <Tabs
+              value={panelTab}
+              onValueChange={setPanelTab}
+              dir="rtl"
+              className="gap-0 flex-1 min-h-0"
+            >
+              <TabsList
+                aria-label="أدوات الكولاج"
+                className="h-11 w-full shrink-0 rounded-none border-0 border-b border-border/60 bg-transparent dark:bg-transparent p-0 gap-0"
+              >
+                {(
+                  [
+                    ['insert', 'إدراج'],
+                    ['pack', 'تعبئة'],
+                    ['properties', 'خصائص'],
+                  ] as const
+                ).map(([value, label]) => (
+                  <TabsTrigger
+                    key={value}
+                    value={value}
+                    className="rounded-none h-full text-xs data-[state=active]:border-0 data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                  >
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              {(['insert', 'pack'] as const).map((mode) => (
+                <TabsContent
+                  key={mode}
+                  value={mode}
+                  forceMount
+                  className="min-h-0 overflow-y-auto data-[state=inactive]:hidden"
+                >
+                  <FreeformLeftToolsPanel
+                    mode={mode}
+                    packGapMM={packGapMM}
+                    packMarginMM={packMarginMM}
+                    onAddSlot={handleAddSlot}
+                    onAddPresetSlot={handleAddPresetSlot}
+                    onAutoPack={handleAutoPack}
+                    onPackGapChange={setPackGapMM}
+                    onPackMarginChange={setPackMarginMM}
+                  />
+                </TabsContent>
+              ))}
+              <TabsContent value="properties" className="min-h-0 overflow-y-auto">
+                <FreeformRightInspectorPanel
+                  slot={selectedSlot}
+                  multiSelectedCount={multiCountTotal}
+                  paperWidthMM={paperWidthMM}
+                  paperHeightMM={paperHeightMM}
+                  onUpdateSlot={handleUpdateSlot}
+                />
+              </TabsContent>
+            </Tabs>
+          </aside>
+          <main aria-label="مساحة تخطيط الكولاج" className="flex-1 min-w-0 min-h-0 flex">
             <FreeformCanvasEditor
               paperWidthMM={paperWidthMM}
               paperHeightMM={paperHeightMM}
@@ -925,141 +1055,23 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
               multiSelectedIds={multiSelectedIds}
               showCutLines={showCutLines}
               enableSnapping={enableSnapping}
-              onSelectSlot={setSelectedSlotId}
+              onSelectSlot={handleSelectSlot}
               onToggleMultiSelect={handleToggleMultiSelect}
               onDragStart={handleDragStart}
               onSlotsChange={handleSlotsChange}
               onDragEnd={handleDragEnd}
             />
           </main>
-
-          <FreeformRightInspectorPanel
-            slot={selectedSlot}
-            multiSelectedCount={multiCountTotal}
-            paperWidthMM={paperWidthMM}
-            paperHeightMM={paperHeightMM}
-            onUpdateSlot={handleUpdateSlot}
-          />
         </div>
 
-        {/* ═══ التذييل: خيارات متقدمة | عداد صور حي | إلغاء + تطبيق بارز ═══ */}
-        <DialogFooter className="px-5 h-12 border-t border-border/40 bg-card/80 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs gap-1.5 rounded-md font-semibold text-muted-foreground hover:text-foreground border-border/60 hover:bg-muted cursor-pointer"
-                >
-                  <Gear className="w-3.5 h-3.5 text-primary/70" weight="bold" />
-                  <span>خيارات التخطيط</span>
-                  <CaretDown className="w-2.5 h-2.5 opacity-60" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-64 font-cairo text-xs z-(--z-print-toolbar) p-2 space-y-2"
-              >
-                <DropdownMenuLabel className="text-micro text-muted-foreground font-bold px-1">
-                  حفظ وتصدير التخطيط
-                </DropdownMenuLabel>
-                <div className="flex items-center gap-1.5">
-                  <Input
-                    value={layoutName}
-                    onChange={(e) => setLayoutName(e.target.value)}
-                    className="h-7 text-xs rounded-md bg-background border-border/60 font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 flex-1"
-                    placeholder="اسم التخطيط..."
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2.5 rounded-md text-xs gap-1 cursor-pointer border-border/60 hover:bg-muted font-semibold"
-                    onClick={handleSaveAsCustomTemplate}
-                    disabled={isSavingTemplate || slots.length === 0}
-                  >
-                    {isSavingTemplate ? (
-                      <Spinner size={12} className="text-emerald-500" />
-                    ) : (
-                      <FloppyDisk className="w-3.5 h-3.5 text-emerald-500" weight="bold" />
-                    )}
-                    <span>حفظ</span>
-                  </Button>
-                </div>
-
-                <DropdownMenuSeparator />
-
-                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-micro gap-1.5 cursor-pointer border-border/60 hover:bg-muted justify-center"
-                    onClick={handleExportLayout}
-                    disabled={slots.length === 0}
-                  >
-                    <DownloadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
-                    <span>تصدير JSON</span>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-micro gap-1.5 cursor-pointer border-border/60 hover:bg-muted justify-center"
-                    onClick={() => importInputRef.current?.click()}
-                  >
-                    <UploadSimple className="w-3.5 h-3.5 text-primary" weight="bold" />
-                    <span>استيراد JSON</span>
-                  </Button>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <input
-              ref={importInputRef}
-              type="file"
-              accept=".json,application/json"
-              className="hidden"
-              onChange={handleImportLayout}
-            />
-          </div>
-
-          <div className="flex items-center gap-2" dir="rtl">
-            <span className="text-micro font-mono font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
-              {slots.length} {slots.length === 1 ? 'صورة' : 'صور'}
-            </span>
-            {multiSelectedIds.length > 0 && (
-              <span className="text-micro font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20 animate-in fade-in duration-150">
-                ×{multiSelectedIds.length + 1} محدد
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 rounded-md text-xs px-4 cursor-pointer font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              onClick={requestClose}
-            >
-              إلغاء
-            </Button>
-            <Button
-              size="sm"
-              className="h-8.5 rounded-md text-xs font-bold gap-1.5 px-6 cursor-pointer shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              onClick={handleApplyToCanvas}
-              disabled={isApplying || slots.length === 0}
-            >
-              {isApplying ? (
-                <>
-                  <Spinner size={14} />
-                  <span>جاري التطبيق ...</span>
-                </>
-              ) : (
-                <span>تطبيق الكولاج</span>
-              )}
-            </Button>
-          </div>
-        </DialogFooter>
+        <footer className="h-8 px-3 border-t border-border/60 flex items-center gap-4 shrink-0 text-mini text-muted-foreground tabular-nums">
+          <span>{slots.length} خلايا</span>
+          {multiCountTotal > 0 && <span>{multiCountTotal} محدد</span>}
+          <div className="flex-1" />
+          <Button variant="ghost" size="sm" className="h-7 text-mini" onClick={requestClose}>
+            إلغاء
+          </Button>
+        </footer>
 
         {/* حوار تجاهل المسودة — يظهر فقط عند وجود تغييرات غير مطبقة */}
         <AlertDialog open={discardConfirmOpen} onOpenChange={setDiscardConfirmOpen}>

@@ -26,7 +26,6 @@ import {
   PushPin,
   Rows,
   Scissors,
-  SquaresFour,
   Trash,
 } from '@/components/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -62,7 +61,7 @@ interface FreeformTopActionBarProps {
 }
 
 /** زر أيقونة موحد Fluent 2 مدمج (28px) مع Tooltip وحلقة تركيز مزدوجة */
-const ToolBtn: React.FC<{
+export const FreeformToolButton: React.FC<{
   onClick: () => void;
   disabled?: boolean;
   active?: boolean;
@@ -78,11 +77,11 @@ const ToolBtn: React.FC<{
         onClick={onClick}
         disabled={disabled}
         aria-label={title}
+        aria-pressed={active}
         className={cn(
-          'h-7 w-7 rounded-md cursor-pointer shrink-0 transition-colors duration-150',
+          'h-8 w-8 rounded-md cursor-pointer shrink-0 transition-colors duration-150',
           'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none',
-          active &&
-            'text-foreground bg-card border border-border/80 dark:border-white/15 shadow-xs font-bold',
+          active && 'text-primary bg-primary/10 hover:bg-primary/15',
           destructive &&
             'text-destructive hover:bg-destructive/10 hover:text-destructive focus-visible:ring-destructive',
         )}
@@ -125,74 +124,74 @@ export const FreeformTopActionBar: React.FC<FreeformTopActionBarProps> = React.m
 
     return (
       <div
-        className="h-10 px-3 border-b border-border/40 bg-card/80 backdrop-blur-md flex items-center gap-0.5 shrink-0 font-cairo select-none"
+        className="min-h-11 px-3 py-1 bg-card flex flex-wrap items-center gap-0.5 font-cairo select-none"
+        role="group"
+        aria-label="تحرير الخلايا"
         dir="rtl"
       >
         {/* ── المحفوظات ── */}
-        <ToolBtn onClick={onUndo} disabled={!canUndo} title="تراجع (Ctrl+Z)">
+        <FreeformToolButton onClick={onUndo} disabled={!canUndo} title="تراجع (Ctrl+Z)">
           <ArrowUUpLeft className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
-        <ToolBtn onClick={onRedo} disabled={!canRedo} title="إعادة (Ctrl+Y)">
+        </FreeformToolButton>
+        <FreeformToolButton onClick={onRedo} disabled={!canRedo} title="إعادة (Ctrl+Y)">
           <ArrowUUpRight className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
+        </FreeformToolButton>
 
         <Divider />
 
         {/* ── تحرير الخلية المحددة ── */}
-        <ToolBtn onClick={onDuplicateSlot} disabled={!selectedSlotId} title="تكرار (Ctrl+D)">
+        <FreeformToolButton
+          onClick={onDuplicateSlot}
+          disabled={!selectedSlotId}
+          title="تكرار (Ctrl+D)"
+        >
           <Copy className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
-        <ToolBtn onClick={() => onScaleSelection(1.1)} disabled={!selectedSlotId} title="تكبير 10%">
+        </FreeformToolButton>
+        <FreeformToolButton
+          onClick={() => onScaleSelection(1.1)}
+          disabled={!selectedSlotId}
+          title="تكبير 10%"
+        >
           <ArrowsOut className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
-        <ToolBtn
+        </FreeformToolButton>
+        <FreeformToolButton
           onClick={() => onScaleSelection(1 / 1.1)}
           disabled={!selectedSlotId}
           title="تصغير 10%"
         >
           <ArrowsIn className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
-        <ToolBtn onClick={onRotateSlot} disabled={!selectedSlotId} title="تدوير 90°">
+        </FreeformToolButton>
+        <FreeformToolButton onClick={onRotateSlot} disabled={!selectedSlotId} title="تدوير 90°">
           <ArrowClockwise className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
-        <ToolBtn onClick={onRemoveSlot} disabled={!selectedSlotId} title="حذف (Del)" destructive>
+        </FreeformToolButton>
+        <FreeformToolButton
+          onClick={onRemoveSlot}
+          disabled={!selectedSlotId}
+          title="حذف (Del)"
+          destructive
+        >
           <Trash className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
+        </FreeformToolButton>
 
         <Divider />
 
         {/* ── التقسيم ── */}
-        <ToolBtn onClick={onSplitVertical} disabled={!selectedSlotId} title="تقسيم لصفين">
+        <FreeformToolButton
+          onClick={onSplitVertical}
+          disabled={!selectedSlotId}
+          title="تقسيم لصفين"
+        >
           <Rows className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
-        <ToolBtn onClick={onSplitHorizontal} disabled={!selectedSlotId} title="تقسيم لعمودين">
+        </FreeformToolButton>
+        <FreeformToolButton
+          onClick={onSplitHorizontal}
+          disabled={!selectedSlotId}
+          title="تقسيم لعمودين"
+        >
           <Columns className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
+        </FreeformToolButton>
 
         <Divider />
-
-        {/* ── المحاذاة في الورقة ── */}
-        <ToolBtn
-          onClick={() => onAlignSlot('center-h')}
-          disabled={!selectedSlotId}
-          title="توسيط أفقي في الورقة"
-        >
-          <AlignCenterHorizontal className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
-        <ToolBtn
-          onClick={() => onAlignSlot('center-v')}
-          disabled={!selectedSlotId}
-          title="توسيط عمودي في الورقة"
-        >
-          <AlignCenterVertical className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
-        <ToolBtn
-          onClick={() => onAlignSlot('top-left')}
-          disabled={!selectedSlotId}
-          title="ركن القص (أعلى اليمين)"
-        >
-          <span className="text-micro font-bold text-primary leading-none">ركن</span>
-        </ToolBtn>
 
         {/* قائمة الترتيب المتقدم: توزيع + محاذاة جماعية */}
         <DropdownMenu>
@@ -211,17 +210,8 @@ export const FreeformTopActionBar: React.FC<FreeformTopActionBarProps> = React.m
                       'text-foreground bg-card border border-border/80 dark:border-white/15 shadow-xs font-bold',
                   )}
                 >
-                  <SquaresFour className="w-3.5 h-3.5 text-primary/80" weight="bold" />
                   <span>ترتيب</span>
-                  {isMulti && (
-                    <span
-                      className="min-w-3.5 h-3.5 px-1 rounded-full bg-primary text-primary-foreground text-3xs font-black flex items-center justify-center"
-                      dir="ltr"
-                    >
-                      ×{multiSelectedCount}
-                    </span>
-                  )}
-                  <CaretDown className="w-2.5 h-2.5 opacity-60" />
+                  <CaretDown className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
@@ -233,6 +223,19 @@ export const FreeformTopActionBar: React.FC<FreeformTopActionBarProps> = React.m
             align="start"
             className="w-52 font-cairo text-xs z-(--z-print-toolbar)"
           >
+            <DropdownMenuLabel className="text-mini text-muted-foreground">
+              محاذاة في الورقة
+            </DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => onAlignSlot('center-h')}>
+              <AlignCenterHorizontal className="size-4" />
+              توسيط أفقي
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onAlignSlot('center-v')}>
+              <AlignCenterVertical className="size-4" />
+              توسيط عمودي
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onAlignSlot('top-left')}>ركن الورقة</DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => onDistributeSlots('horizontal')}
               className="cursor-pointer gap-2 py-1.5 font-semibold"
@@ -292,23 +295,23 @@ export const FreeformTopActionBar: React.FC<FreeformTopActionBarProps> = React.m
         <Divider />
 
         {/* ── مساعدات الكانفاس ── */}
-        <ToolBtn
+        <FreeformToolButton
           onClick={onToggleCutLines}
           active={showCutLines}
           title={showCutLines ? 'إخفاء خطوط القص' : 'إظهار خطوط القص للطباعة'}
         >
           <Scissors className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
-        <ToolBtn
+        </FreeformToolButton>
+        <FreeformToolButton
           onClick={onToggleSnapping}
           active={enableSnapping}
           title={enableSnapping ? 'المغناطيس نشط' : 'المغناطيس معطل'}
         >
           <PushPin className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
-        <ToolBtn onClick={onResolveOverlaps} title="تنظيم وتفادي التداخلات">
+        </FreeformToolButton>
+        <FreeformToolButton onClick={onResolveOverlaps} title="تنظيم وتفادي التداخلات">
           <Broom className="w-3.5 h-3.5" weight="bold" />
-        </ToolBtn>
+        </FreeformToolButton>
       </div>
     );
   },

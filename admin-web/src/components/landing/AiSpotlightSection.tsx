@@ -1,240 +1,223 @@
-import { useState, useRef, useCallback } from 'react';
-import { Upload, Wand2, FileCheck } from 'lucide-react';
-import { SectionHeader } from './SectionHeader';
+import {
+  useState,
+  useRef,
+  useId,
+  useCallback,
+  type KeyboardEvent,
+  type PointerEvent,
+} from "react";
+import { SectionHeader } from "./SectionHeader";
 
 const STEPS = [
   {
-    step: '01',
-    title: 'إسقاط الصورة',
-    desc: 'مباشرة من الكاميرا أو الهاتف دون تعديل مسبق.',
-    icon: Upload,
-    tag: 'JPG / PNG / RAW',
+    step: "01",
+    title: "أضف الصورة",
+    desc: "استورد الصورة من جهازك لبدء القص والتأطير.",
   },
   {
-    step: '02',
-    title: 'عزل وترميم فوري',
-    desc: 'إزالة نقية للخلفية وتنعيم طبيعي للبشرة.',
-    icon: Wand2,
-    tag: 'عزل نقي',
+    step: "02",
+    title: "اعزل وحسّن",
+    desc: "راجع العزل واضبط الصورة؛ الترميم السحابي خيار إضافي يتطلب اتصالاً.",
   },
   {
-    step: '03',
-    title: 'جاهز للطباعة',
-    desc: 'مقاسات دولية معتمدة مع خطوط قص 0.5mm.',
-    icon: FileCheck,
-    tag: 'جاهز للطباعة',
+    step: "03",
+    title: "جهّز للطباعة",
+    desc: "اختر المقاس، وزّع الصور وأضف خطوط القص قبل الطباعة.",
   },
 ];
 
 export function AiSpotlightSection() {
+  // The clipped layer is the original image: 100 reveals BEFORE, not AFTER.
   const [sliderPos, setSliderPos] = useState(50);
-  const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dragPointerId = useRef<number | null>(null);
+  const hintId = useId();
 
   const handlePointerMove = useCallback((clientX: number) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    setSliderPos(percentage);
+    if (rect.width <= 0) return;
+    const percentage = Math.round(((clientX - rect.left) / rect.width) * 100);
+    setSliderPos(Math.max(0, Math.min(100, percentage)));
   }, []);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSliderPos((prev) => Math.max(0, prev - 5));
-    } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSliderPos((prev) => Math.min(100, prev + 5));
-    } else if (e.key === 'Home') {
-      e.preventDefault();
-      setSliderPos(0);
-    } else if (e.key === 'End') {
-      e.preventDefault();
-      setSliderPos(100);
-    } else if (e.key === 'PageDown') {
-      e.preventDefault();
-      setSliderPos((prev) => Math.max(0, prev - 20));
-    } else if (e.key === 'PageUp') {
-      e.preventDefault();
-      setSliderPos((prev) => Math.min(100, prev + 20));
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+    switch (event.key) {
+      case "ArrowLeft":
+      case "ArrowDown":
+        event.preventDefault();
+        setSliderPos((previous) => Math.max(0, previous - 5));
+        break;
+      case "ArrowRight":
+      case "ArrowUp":
+        event.preventDefault();
+        setSliderPos((previous) => Math.min(100, previous + 5));
+        break;
+      case "Home":
+        event.preventDefault();
+        setSliderPos(0);
+        break;
+      case "End":
+        event.preventDefault();
+        setSliderPos(100);
+        break;
+      case "PageDown":
+        event.preventDefault();
+        setSliderPos((previous) => Math.max(0, previous - 20));
+        break;
+      case "PageUp":
+        event.preventDefault();
+        setSliderPos((previous) => Math.min(100, previous + 20));
+        break;
     }
   };
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-    handlePointerMove(e.clientX);
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || dragPointerId.current !== null) return;
+    dragPointerId.current = event.pointerId;
+    event.currentTarget.focus({ preventScroll: true });
+    event.currentTarget.setPointerCapture(event.pointerId);
+    handlePointerMove(event.clientX);
   };
 
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (isDragging) {
-      handlePointerMove(e.clientX);
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (dragPointerId.current === event.pointerId) {
+      handlePointerMove(event.clientX);
     }
   };
 
-  /**
-   * الخطوة البارزة تتبع ما يعرضه الإطار فعلاً: المقبض على 100 يُظهر الصورة
-   * الأصلية كاملة ← «إسقاط الصورة»؛ وعلى 0 تظهر النتيجة المعالجة ← «جاهز للطباعة»؛
-   * وبينهما يقع حدّ العزل نفسه ← «عزل وترميم فوري». فيتقدّم المسار مع سحب المقبض.
-   */
-  const activeStep = sliderPos > 66 ? 0 : sliderPos > 33 ? 1 : 2;
-
-  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    setIsDragging(false);
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {
-      // ignore
+  const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    if (dragPointerId.current !== event.pointerId) return;
+    dragPointerId.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
     }
   };
 
   return (
-    <section id="ai-engine" className="py-16 md:py-24 relative overflow-hidden scroll-mt-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section id="ai-engine" className="landing-section relative">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionHeader
+          title="أدوات ذكية، والنتيجة تحت تحكمك"
+          description="عزل الخلفية وتحسين الصورة، مع ترميم سحابي اختياري عند الحاجة."
+        />
 
-        <SectionHeader title="محرك الذكاء الاصطناعي الثنائي" description="ثلاث خطوات تلقائية تحوّل صورة الزبون الخام إلى طقم طباعة معتمد — دون أي تعديل يدوي" />
-
-        {/* Live Showcase + Step Rail
-            كان المعرض سابقاً في بطاقة بعرض كامل بينما الوسائط `max-w-md` (448px) موسّطة،
-            فبقي ~330px فراغاً ميتاً على كل جانب والخطوات الثلاث في صف منفصل تحته.
-            الآن عمودان متوازنان: الوسائط المتفاعلة بجانب مسار الخطوات العمودي. */}
-        <div className="ds-card w-full p-4 sm:p-5 lg:p-6 shadow-xl relative overflow-hidden">
-          <div className="pb-3.5 border-b border-border-subtle">
-            <h3 className="text-sm sm:text-base font-bold text-white truncate">معاينة حية للمقارنة (1:1)</h3>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center pt-5">
-            {/* Media Column */}
-            <div className="lg:col-span-5">
-              {/* Interactive Split View Container */}
+        <div className="landing-card grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center p-5 sm:p-8">
+          <figure className="lg:col-span-5 min-w-0">
+            <div
+              ref={containerRef}
+              dir="ltr"
+              role="slider"
+              tabIndex={0}
+              aria-label="نسبة ظهور الصورة الأصلية في مقارنة قبل وبعد عزل الخلفية"
+              aria-describedby={hintId}
+              aria-orientation="horizontal"
+              aria-valuenow={sliderPos}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuetext={`${sliderPos}% من الصورة الأصلية، ${100 - sliderPos}% بعد المعالجة`}
+              onKeyDown={handleKeyDown}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerUp}
+              onLostPointerCapture={(event) => {
+                if (dragPointerId.current === event.pointerId)
+                  dragPointerId.current = null;
+              }}
+              className="landing-visual relative w-full max-w-sm mx-auto lg:max-w-none aspect-[3/4] overflow-hidden select-none cursor-ew-resize touch-pan-y focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-inset focus-visible:outline-none"
+            >
               <div
-                ref={containerRef}
-                dir="ltr"
-                role="slider"
-                tabIndex={0}
-                aria-label="مقارنة الصورة قبل وبعد المعالجة بالذكاء الاصطناعي"
-                aria-valuenow={Math.round(sliderPos)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuetext={`${Math.round(sliderPos)}% بعد المعالجة`}
-                onKeyDown={handleKeyDown}
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
-                className="relative w-full max-w-sm mx-auto lg:max-w-none aspect-[3/4] rounded-2xl overflow-hidden border border-border-subtle bg-inset select-none shadow-[0_20px_60px_-15px_rgba(0,0,0,0.9)] flex items-center justify-center cursor-ew-resize touch-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-inset focus-visible:outline-none"
+                className="absolute inset-0 pointer-events-none"
+                aria-hidden="true"
               >
-                {/* Layer 1: AFTER Image */}
-                <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-inset">
-                  <img
-                    src="/sample-passport-after.png"
-                    alt="بعد معالجة الذكاء الاصطناعي — عزل خلفية نقي"
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover object-top pointer-events-none"
-                    draggable={false}
-                  />
-                  <div
-                    dir="rtl"
-                    className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-white font-bold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-border-subtle shadow-lg pointer-events-none z-10"
-                  >
-                    بعد المعالجة
-                  </div>
-                </div>
-
-                {/* Layer 2: BEFORE Image */}
-                <div
-                  className="absolute inset-0 w-full h-full flex items-center justify-center bg-inset pointer-events-none overflow-hidden"
-                  style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+                <img
+                  src="/sample-passport-after.png"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover object-top"
+                  draggable={false}
+                />
+                <span
+                  dir="rtl"
+                  className="absolute top-3 right-3 rounded-md bg-inset/95 text-text-primary text-xs font-medium px-3 py-1.5"
                 >
-                  <img
-                    src="/sample-passport-before.png"
-                    alt="الصورة الأصلية قبل المعالجة"
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover object-top pointer-events-none"
-                    draggable={false}
-                  />
-                  <div
-                    dir="rtl"
-                    className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-text-secondary font-semibold text-[10px] sm:text-xs px-2.5 py-1 rounded-lg border border-border-subtle shadow-lg pointer-events-none z-10"
-                  >
-                    الأصل
-                  </div>
-                </div>
-
-                {/* Draggable Divider Line */}
-                <div
-                  className="absolute inset-y-0 w-0.5 bg-white shadow-[0_0_12px_rgba(255,255,255,0.9)] z-30 pointer-events-none flex items-center justify-center"
-                  style={{ left: `${sliderPos}%` }}
-                >
-                  <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-2xl font-bold text-xs border-2 border-brand-primary">
-                    ↔
-                  </div>
-                </div>
+                  بعد المعالجة
+                </span>
               </div>
 
-              <p className="pt-3 text-[11px] text-text-secondary">اسحب المقبض لمشاهدة دقة العزل.</p>
+              <div
+                className="absolute inset-0 pointer-events-none overflow-hidden"
+                style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
+                aria-hidden="true"
+              >
+                <img
+                  src="/sample-passport-before.png"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover object-top"
+                  draggable={false}
+                />
+                <span
+                  dir="rtl"
+                  className="absolute top-3 left-3 rounded-md bg-inset/95 text-text-primary text-xs font-medium px-3 py-1.5"
+                >
+                  الأصل
+                </span>
+              </div>
+
+              <div
+                className="absolute inset-y-0 w-px bg-white pointer-events-none"
+                style={{ left: `${sliderPos}%` }}
+                aria-hidden="true"
+              />
+              <div
+                className="absolute top-1/2 w-11 h-11 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white text-black flex items-center justify-center text-lg pointer-events-none"
+                style={{
+                  left: `clamp(22px, ${sliderPos}%, calc(100% - 22px))`,
+                }}
+                aria-hidden="true"
+              >
+                ↔
+              </div>
             </div>
+            <figcaption
+              id={hintId}
+              className="mt-3 text-xs text-text-secondary leading-relaxed"
+            >
+              اسحب أو استخدم الأسهم للمقارنة. مثال توضيحي؛ النتيجة تختلف حسب
+              الصورة.
+            </figcaption>
+          </figure>
 
-            {/* Step Rail Column — مرتبط بموضع مقبض المقارنة لحظياً */}
-            <ol className="lg:col-span-7 flex flex-col gap-3.5">
-              {STEPS.map((item, index) => {
-                const Icon = item.icon;
-                const isActive = index === activeStep;
-                return (
-                  <li
-                    key={item.step}
-                    aria-current={isActive ? 'step' : undefined}
-                    className={`group relative rounded-2xl border p-4 sm:p-5 transition-colors duration-300 ${
-                      isActive
-                        ? 'bg-sidebar border-brand-primary/50'
-                        : 'bg-inset border-border-subtle hover:border-brand-primary/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3 mb-2.5">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className={`ds-icon-tile w-10 h-10 transition-colors ${
-                            isActive
-                              ? 'bg-card border-brand-primary/50 text-brand-light'
-                              : 'text-brand-primary group-hover:border-brand-primary/40'
-                          }`}
-                        >
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <h3 className="text-sm sm:text-base font-bold text-white truncate">
-                          {item.title}
-                        </h3>
-                      </div>
-                      <span
-                        className={`text-xl font-mono font-black leading-none tabular-nums shrink-0 transition-colors ${
-                          isActive ? 'text-brand-light' : 'text-text-muted'
-                        }`}
-                      >
-                        {item.step}
-                      </span>
-                    </div>
-
-                    <p className="text-text-secondary text-xs leading-relaxed">{item.desc}</p>
-
-                    <div
-                      className={`mt-3.5 pt-3 border-t text-[11px] font-semibold transition-colors ${
-                        isActive
-                          ? 'border-brand-primary/30 text-white'
-                          : 'border-border-subtle text-brand-light'
-                      }`}
-                    >
-                      <span className="font-mono">{item.tag}</span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
+          <ol className="lg:col-span-7 divide-y divide-border-subtle">
+            {STEPS.map((item) => (
+              <li
+                key={item.step}
+                className="flex items-start gap-4 py-5 first:pt-0 last:pb-0"
+              >
+                <bdi
+                  dir="ltr"
+                  className="font-mono text-sm text-text-muted tabular-nums pt-1 shrink-0"
+                >
+                  {item.step}
+                </bdi>
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold text-text-primary leading-relaxed">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2 text-sm text-text-secondary leading-7">
+                    {item.desc}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
-
       </div>
     </section>
   );

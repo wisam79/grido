@@ -1,40 +1,34 @@
-import { Download } from 'lucide-react';
-import { GITHUB_RELEASE_DOWNLOAD_URL } from '../../lib/version';
+import { Download } from "lucide-react";
+import { GITHUB_RELEASE_DOWNLOAD_URL } from "../../lib/version";
+import { SectionHeader } from "./SectionHeader";
 
 export function CtaBanner() {
   return (
-    <section className="py-16 md:py-24 relative overflow-hidden">
-      {/* هالة ختامية محيطة — تعطي شريط الدعوة الأخير ثقلاً بصرياً بدل صندوق مسطّح */}
-      <div aria-hidden="true" className="aurora-bg" />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
-        <div className="ds-card card-specular-edge w-full p-6 sm:p-12 text-center shadow-xl relative overflow-hidden">
-          
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white mb-2.5 tracking-tight">
-            سرّع عمل استوديو التصوير اليوم
-          </h2>
-
-          <p className="text-sm sm:text-base text-text-secondary max-w-lg mx-auto mb-6 leading-relaxed">
-            وفّر ساعات من العمل، قلل هدر الورق، وقدّم صور هوية فورية بجودة معتمدة.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-3.5 mb-5">
+    <section className="landing-section">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="landing-card grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <SectionHeader
+            title="جرّب جريدو في استوديوك"
+            description="حمّل النسخة التجريبية، وجهّز أول ورقة طباعة."
+            align="start"
+            size="lg"
+            gap="none"
+          />
+          <div className="flex flex-col items-stretch gap-1 sm:items-start lg:items-center">
             <a
               href={GITHUB_RELEASE_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary !h-12 !px-8 text-sm sm:text-base font-bold cursor-pointer hover:scale-105 active:scale-95 transition-all"
+              className="btn-primary h-12 px-6"
             >
-              <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Download aria-hidden="true" className="h-4 w-4 shrink-0" />
               <span>تحميل مباشر لـ Windows</span>
             </a>
-          </div>
-
-          <div className="flex items-center justify-center text-[11px] text-text-muted">
-            <span>حجم البرنامج ~45 MB</span>
+            <a href="#pricing" className="landing-text-link justify-center">
+              عرض الترخيص والأسعار
+            </a>
           </div>
         </div>
-
       </div>
     </section>
   );

@@ -1,9 +1,121 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { X, ChevronRight, ChevronLeft } from "lucide-react";
 
 export interface TourStep {
   title: string;
   description: string;
+}
+
+interface LandingModalProps {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+  wide?: boolean;
+}
+
+let scrollLocks = 0;
+let savedOverflow = "";
+let savedOverflowPriority = "";
+
+export function LandingModal({
+  title,
+  onClose,
+  children,
+  wide = false,
+}: LandingModalProps) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  const titleId = useId();
+  const backdropPointer = useRef<number | null>(null);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const opener =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    dialog.showModal();
+    if (scrollLocks++ === 0) {
+      savedOverflow = document.body.style.getPropertyValue("overflow");
+      savedOverflowPriority =
+        document.body.style.getPropertyPriority("overflow");
+      document.body.style.setProperty("overflow", "hidden");
+    }
+    closeRef.current?.focus({ preventScroll: true });
+    return () => {
+      if (dialog.open) dialog.close();
+      if (--scrollLocks === 0) {
+        if (savedOverflow)
+          document.body.style.setProperty(
+            "overflow",
+            savedOverflow,
+            savedOverflowPriority,
+          );
+        else document.body.style.removeProperty("overflow");
+      }
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
+  }, []);
+
+  return createPortal(
+    <dialog
+      ref={dialogRef}
+      dir="rtl"
+      aria-labelledby={titleId}
+      className="landing-shell fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-2xl overflow-auto rounded-xl border border-border-subtle bg-card p-0 text-text-primary shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm"
+      style={wide ? { maxWidth: "72rem" } : undefined}
+      onCancel={(event) => {
+        event.preventDefault();
+        onCloseRef.current();
+      }}
+      onPointerDown={(event) => {
+        backdropPointer.current =
+          event.target === event.currentTarget ? event.pointerId : null;
+      }}
+      onPointerCancel={() => {
+        backdropPointer.current = null;
+      }}
+      onPointerUp={(event) => {
+        if (
+          backdropPointer.current === event.pointerId &&
+          event.target === event.currentTarget
+        ) {
+          const rect = event.currentTarget.getBoundingClientRect();
+          if (
+            event.clientX < rect.left ||
+            event.clientX > rect.right ||
+            event.clientY < rect.top ||
+            event.clientY > rect.bottom
+          )
+            onCloseRef.current();
+        }
+        backdropPointer.current = null;
+      }}
+    >
+      <div className="flex items-center justify-between gap-4 border-b border-border-subtle px-4 py-2 sm:px-5">
+        <h2 id={titleId} className="text-sm font-semibold leading-relaxed">
+          {title}
+        </h2>
+        <button
+          ref={closeRef}
+          type="button"
+          onClick={onClose}
+          aria-label="إغلاق النافذة"
+          className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-card-hover hover:text-white"
+        >
+          <X aria-hidden="true" className="size-4" />
+        </button>
+      </div>
+      {children}
+    </dialog>,
+    document.body,
+  );
 }
 
 interface TourModalProps {
@@ -13,152 +125,80 @@ interface TourModalProps {
   title: string;
 }
 
-/**
- * نافذة جولة تفاعلية متوافقة تماماً مع WCAG:
- * role=dialog + aria-modal، إغلاق بـ Escape، حصر التركيز داخل النافذة
- * (focus trap)، استعادة التركيز للعنصر المُطلق عند الإغلاق، وإدارة
- * tab-index للخلفية أثناء الفتح (inert).
- */
-export function TourModal({ open, onClose, steps, title }: TourModalProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const closeBtnRef = useRef<HTMLButtonElement>(null);
-  const openerRef = useRef<Element | null>(null);
+function TourContent({
+  onClose,
+  steps,
+}: Pick<TourModalProps, "onClose" | "steps">) {
   const [current, setCurrent] = useState(0);
-
-  // فتح/إغلاق: حفظ مصدر التركيز، قفل الخلفية، وإعادة التركيز عند الإغلاق
-  useEffect(() => {
-    if (!open) return;
-
-    setCurrent(0);
-    openerRef.current = document.activeElement;
-    closeBtnRef.current?.focus();
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = '';
-      (openerRef.current as HTMLElement | null)?.focus?.();
-    };
-  }, [open]);
-
-  // إغلاق بـ Escape + حصر Tab داخل النافذة (Focus Trap)
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-      if (e.key === 'Tab') {
-        const dialog = dialogRef.current;
-        if (!dialog) return;
-        const focusables = dialog.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusables.length === 0) {
-          e.preventDefault();
-          return;
-        }
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
-
-  const goPrev = useCallback(() => setCurrent((i) => Math.max(0, i - 1)), []);
-  const goNext = useCallback(
-    () => setCurrent((i) => (i === steps.length - 1 ? i : i + 1)),
-    [steps.length]
-  );
-
-  if (!open) return null;
-
-  const step = steps[Math.min(current, steps.length - 1)];
-  const isLast = current === steps.length - 1;
-
+  const index = Math.min(current, steps.length - 1);
+  const step = steps[index];
+  const isLast = index === steps.length - 1;
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fadeIn"
-      onClick={onClose}
-    >
+    <div className="p-4 sm:p-6">
       <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        onClick={(e) => e.stopPropagation()}
-        className="ds-card relative w-full max-w-2xl p-5 shadow-2xl"
+        aria-live="polite"
+        aria-atomic="true"
+        className="flex min-h-44 flex-col items-center justify-center px-2 py-6 text-center"
       >
-        <div className="flex items-center justify-between pb-3 border-b border-[#2C2C2C] mb-4">
-          <h3 className="text-sm font-bold text-white">{title}</h3>
-          <button
-            ref={closeBtnRef}
-            onClick={onClose}
-            aria-label="إغلاق النافذة"
-            className="w-7 h-7 rounded-lg bg-[#262626] hover:bg-[#333333] text-white flex items-center justify-center text-xs font-bold cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* محتوى الخطوة */}
-        <div className="min-h-[120px] flex flex-col items-center justify-center text-center p-6 rounded-xl bg-[#141414] border border-[#262626]">
-          <span className="text-[10px] font-mono font-bold text-[#60a5fa] bg-[#60a5fa]/10 border border-[#60a5fa]/30 px-2 py-0.5 rounded-full mb-3">
-            خطوة {current + 1} من {steps.length}
-          </span>
-          <p className="text-base font-black text-white mb-2">{step.title}</p>
-          <p className="text-sm text-[#9E9E9E] leading-relaxed max-w-md">
-            {step.description}
-          </p>
-        </div>
-
-        {/* شريط التنقل */}
-        <div className="flex items-center justify-between gap-3 pt-4">
-          <button
-            onClick={goPrev}
-            disabled={current === 0}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#262626] hover:bg-[#333333] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold cursor-pointer transition-colors"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span>السابق</span>
-          </button>
-
-          {/* مؤشرات النقاط */}
-          <div className="flex items-center gap-1.5" role="tablist" aria-label="خطوات الجولة">
-            {steps.map((s, i) => (
-              <button
-                key={s.title}
-                role="tab"
-                aria-selected={i === current}
-                aria-label={`الخطوة ${i + 1}: ${s.title}`}
-                onClick={() => setCurrent(i)}
-                className={`w-2 h-2 rounded-full cursor-pointer transition-all ${
-                  i === current ? 'bg-[#3b82f6] scale-125' : 'bg-[#404040] hover:bg-[#5a5a5a]'
-                }`}
+        <span className="mb-3 text-xs text-brand-light">
+          خطوة {index + 1} من {steps.length}
+        </span>
+        <h3 className="mb-2 text-lg font-semibold text-text-primary">
+          {step.title}
+        </h3>
+        <p className="max-w-md text-sm leading-relaxed text-text-secondary">
+          {step.description}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-4">
+        <button
+          type="button"
+          onClick={() => setCurrent(Math.max(0, index - 1))}
+          disabled={index === 0}
+          className="btn-secondary disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ChevronRight aria-hidden="true" className="size-4" />
+          السابق
+        </button>
+        <div
+          role="group"
+          aria-label="خطوات الجولة"
+          className="order-last flex w-full justify-center sm:order-none sm:w-auto"
+        >
+          {steps.map((item, itemIndex) => (
+            <button
+              key={item.title}
+              type="button"
+              aria-pressed={itemIndex === index}
+              aria-label={`الخطوة ${itemIndex + 1}: ${item.title}`}
+              onClick={() => setCurrent(itemIndex)}
+              className="flex size-11 cursor-pointer items-center justify-center rounded-lg hover:bg-card-hover"
+            >
+              <span
+                aria-hidden="true"
+                className={`size-2 rounded-full ${itemIndex === index ? "bg-brand-light" : "bg-text-muted/45"}`}
               />
-            ))}
-          </div>
-
-          <button
-            onClick={isLast ? onClose : goNext}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#3b82f6] hover:bg-[#2563eb] text-white text-xs font-bold cursor-pointer transition-colors"
-          >
-            <span>{isLast ? 'إنهاء الجولة' : 'التالي'}</span>
-            {!isLast && <ChevronLeft className="w-3.5 h-3.5" />}
-          </button>
+            </button>
+          ))}
         </div>
+        <button
+          type="button"
+          onClick={isLast ? onClose : () => setCurrent(index + 1)}
+          className="btn-primary"
+        >
+          {isLast ? "إنهاء الجولة" : "التالي"}
+          {!isLast && <ChevronLeft aria-hidden="true" className="size-4" />}
+        </button>
       </div>
     </div>
+  );
+}
+
+export function TourModal({ open, onClose, steps, title }: TourModalProps) {
+  if (!open || steps.length === 0) return null;
+  return (
+    <LandingModal title={title} onClose={onClose}>
+      <TourContent onClose={onClose} steps={steps} />
+    </LandingModal>
   );
 }

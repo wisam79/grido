@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Ruler } from '@/components/ui/icons';
+import { ArrowClockwise } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 
 import { COMMON_PAPER_PRESETS } from './freeform-paper-presets';
+import { FreeformToolButton } from './freeform-top-action-bar';
 
 const clampPaperDim = (value: number): number => {
   if (!Number.isFinite(value)) return 20;
@@ -74,22 +75,15 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
     onPaperDimensionsChange,
     className,
   }) {
-    const currentPresetId =
-      COMMON_PAPER_PRESETS.find(
-        (p) =>
-          (p.w === paperWidthMM && p.h === paperHeightMM) ||
-          (p.w === paperHeightMM && p.h === paperWidthMM),
-      )?.id || 'custom';
+    const currentPreset = COMMON_PAPER_PRESETS.find(
+      (p) =>
+        (p.w === paperWidthMM && p.h === paperHeightMM) ||
+        (p.w === paperHeightMM && p.h === paperWidthMM),
+    );
+    const currentPresetId = currentPreset?.id || 'custom';
 
     return (
-      <div
-        className={cn(
-          'flex items-center gap-1.5 bg-muted/40 px-2 py-1 rounded-lg border border-border/50 text-xs font-cairo shadow-2xs',
-          className,
-        )}
-      >
-        <Ruler className="w-3.5 h-3.5 text-primary shrink-0" weight="duotone" />
-
+      <div className={cn('flex flex-wrap items-center gap-2 text-xs font-cairo', className)}>
         <Select
           value={currentPresetId}
           onValueChange={(val) => {
@@ -104,7 +98,7 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
             aria-label="مقاس الورق"
             className="h-7 text-mini font-bold rounded-md bg-background border-border/60 min-w-[110px] shrink-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
-            <SelectValue placeholder="مقاس الورق" />
+            <SelectValue>{currentPreset?.name.replace(/\s*\(.*\)$/, '') || 'مخصص'}</SelectValue>
           </SelectTrigger>
           <SelectContent className="font-cairo z-(--z-print-toolbar) rounded-lg border-border/60 max-h-64">
             <SelectItem value="custom" className="text-mini font-bold rounded-md">
@@ -132,8 +126,14 @@ export const FreeformPaperSelector: React.FC<FreeformPaperSelectorProps> = React
             ariaLabel="ارتفاع الورقة"
             onCommit={(h) => onPaperDimensionsChange(paperWidthMM, h)}
           />
-          <span className="text-2xs font-bold text-muted-foreground font-cairo">مم</span>
+          <span className="text-mini text-muted-foreground font-cairo">مم</span>
         </div>
+        <FreeformToolButton
+          title="تدوير الورقة"
+          onClick={() => onPaperDimensionsChange(paperHeightMM, paperWidthMM)}
+        >
+          <ArrowClockwise className="size-4" />
+        </FreeformToolButton>
       </div>
     );
   },

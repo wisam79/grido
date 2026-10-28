@@ -3,28 +3,31 @@
    — كان الاستيراد هنا يكرر الطلب ذاته ويضاعف زمن التحميل. */
 
 @theme inline {
-  --font-sans: 'IBM Plex Sans Arabic', 'Cairo', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-arabic: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
-  --font-latin: 'Inter', 'Segoe UI Variable', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Space Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-sans:
+    "IBM Plex Sans Arabic", "Cairo", "Inter", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-arabic: "IBM Plex Sans Arabic", "Cairo", sans-serif;
+  --font-latin: "Inter", "Segoe UI Variable", system-ui, sans-serif;
+  --font-mono:
+    "JetBrains Mono", "Space Mono", ui-monospace, SFMono-Regular, monospace;
 
   /* Grido Studio Pro Harmonic Palette */
   --color-workspace: #121212;
   --color-sidebar: #171717;
-  --color-card: #1E1E1E;
+  --color-card: #1e1e1e;
   --color-card-hover: #262626;
   --color-inset: #141414;
-  
-  --color-border-subtle: #2C2C2C;
+
+  --color-border-subtle: #2c2c2c;
   --color-border-specular: rgba(255, 255, 255, 0.08);
 
   --color-brand-primary: #3b82f6;
   --color-brand-hover: #2563eb;
   --color-brand-light: #60a5fa;
 
-  --color-text-primary: #F5F5F5;
-  --color-text-secondary: #9E9E9E;
-  --color-text-muted: #8A8A8A;
+  --color-text-primary: #f5f5f5;
+  --color-text-secondary: #9e9e9e;
+  --color-text-muted: #8a8a8a;
 
   --color-status-success: #10b981;
   --color-status-warning: #f59e0b;
@@ -36,32 +39,33 @@
 :root {
   /* Unified Pure Neutral Charcoal Identity */
   --grido-workspace-canvas: #121212;
-  --grido-surface-sidebar:   #171717;
-  --grido-surface-card:      #1E1E1E;
-  --grido-surface-card-hover:#262626;
-  --grido-surface-inset:     #141414;
-  --grido-border-subtle:     #2C2C2C;
-  --grido-border-specular:   rgba(255, 255, 255, 0.08);
+  --grido-surface-sidebar: #171717;
+  --grido-surface-card: #1e1e1e;
+  --grido-surface-card-hover: #262626;
+  --grido-surface-inset: #141414;
+  --grido-border-subtle: #2c2c2c;
+  --grido-border-specular: rgba(255, 255, 255, 0.08);
 
   /* Unified Single Signature Blue */
-  --grido-brand-primary:     #3b82f6;
-  --grido-brand-hover:       #2563eb;
-  --grido-brand-light:       #60a5fa;
+  --grido-brand-primary: #3b82f6;
+  --grido-brand-hover: #2563eb;
+  --grido-brand-light: #60a5fa;
 
   /* Typography Colors */
-  --grido-text-primary:      #F5F5F5;
-  --grido-text-secondary:    #9E9E9E;
-  --grido-text-muted:        #8A8A8A;
+  --grido-text-primary: #f5f5f5;
+  --grido-text-secondary: #9e9e9e;
+  --grido-text-muted: #8a8a8a;
 
   /* Status Colors */
-  --grido-status-success:    #10b981;
-  --grido-status-warning:    #f59e0b;
-  --grido-status-error:      #ef4444;
+  --grido-status-success: #10b981;
+  --grido-status-warning: #f59e0b;
+  --grido-status-error: #ef4444;
 
   /* Typography Fonts */
-  --font-arabic: 'IBM Plex Sans Arabic', 'Cairo', 'Segoe UI Variable', sans-serif;
-  --font-latin: 'Inter', 'Segoe UI Variable', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Space Mono', monospace;
+  --font-arabic:
+    "IBM Plex Sans Arabic", "Cairo", "Segoe UI Variable", sans-serif;
+  --font-latin: "Inter", "Segoe UI Variable", sans-serif;
+  --font-mono: "JetBrains Mono", "Space Mono", monospace;
 
   /* Radii */
   --radius-sm: 4px;
@@ -85,7 +89,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   font-family: var(--font-arabic);
   margin: 0;
   padding: 0;
@@ -99,30 +104,34 @@ html, body {
 }
 
 /* Headings Typography */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-arabic);
-  font-feature-settings: "liga" 1, "calt" 1;
+  font-feature-settings:
+    "liga" 1,
+    "calt" 1;
   text-rendering: optimizeLegibility;
   color: var(--grido-text-primary);
 }
 
 .font-display {
-  font-family: 'Cairo', 'IBM Plex Sans Arabic', sans-serif;
+  font-family: "Cairo", "IBM Plex Sans Arabic", sans-serif;
   font-weight: 800;
 }
 
-.font-mono, code, pre {
+.font-mono,
+code,
+pre {
   font-family: var(--font-mono) !important;
 }
 
 /* ==========================================================================
    Microsoft Fluent 2 Materials (Zero Button Glow)
    ========================================================================== */
-
-.fluent-specular {
-  border: 1px solid var(--grido-border-subtle);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-}
 
 /* ==========================================================================
    Buttons (Clean & Modern - Zero Glows)
@@ -135,7 +144,7 @@ h1, h2, h3, h4, h5, h6 {
 @layer components {
   .btn-primary {
     background: var(--grido-brand-primary);
-    color: #FFFFFF;
+    color: #ffffff;
     font-family: var(--font-arabic);
     font-size: 14px;
     font-weight: 600;
@@ -147,7 +156,9 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     gap: 8px;
     cursor: pointer;
-    transition: background-color 0.15s ease, transform 0.15s ease;
+    transition:
+      background-color 0.15s ease,
+      transform 0.15s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 
@@ -174,7 +185,10 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     gap: 8px;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      transform 0.15s ease;
   }
 
   .btn-secondary:hover {
@@ -186,29 +200,6 @@ h1, h2, h3, h4, h5, h6 {
   .btn-secondary:active {
     transform: scale(0.98);
   }
-}
-
-/* وميض ضوئي يكتسح زر الإجراء الرئيسي عند التحويم (Premium Sheen) */
-.cta-shine {
-  position: relative;
-  overflow: hidden;
-}
-
-.cta-shine::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -60%;
-  width: 38%;
-  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.32), transparent);
-  transform: skewX(-18deg);
-  transition: left 0.55s ease;
-  pointer-events: none;
-}
-
-.cta-shine:hover::after {
-  left: 130%;
 }
 
 /* ==========================================================================
@@ -238,7 +229,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   /* في الاتجاه RTL ينعكس المنزلق (الحد الأدنى يميناً) فينعكس اتجاه التعبئة معه */
-  [dir='rtl'] .ds-range {
+  [dir="rtl"] .ds-range {
     background-image: linear-gradient(
       to left,
       var(--range-accent, var(--grido-brand-primary)) 0,
@@ -255,7 +246,7 @@ h1, h2, h3, h4, h5, h6 {
     height: 18px;
     border-radius: 9999px;
     background: var(--range-accent, var(--grido-brand-primary));
-    border: 2px solid #FFFFFF;
+    border: 2px solid #ffffff;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
     transition: transform 0.15s ease;
   }
@@ -273,7 +264,7 @@ h1, h2, h3, h4, h5, h6 {
     height: 14px;
     border-radius: 9999px;
     background: var(--range-accent, var(--grido-brand-primary));
-    border: 2px solid #FFFFFF;
+    border: 2px solid #ffffff;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
     transition: transform 0.15s ease;
   }
@@ -285,134 +276,42 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Pill badge (Clean Neutral - Zero Glow) */
-.ai-badge {
-  background: rgba(30, 30, 30, 0.85);
-  color: var(--grido-brand-light);
-  border: 1px solid var(--grido-border-subtle);
-  border-radius: 9999px;
-  padding: 4px 14px;
-  font-size: 12px;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* Pill badge — متغير مميز بنقطة نابضة */
-.ai-badge-pulse {
-  background: rgba(59, 130, 246, 0.12);
-  border-color: rgba(59, 130, 246, 0.35);
-  color: #93c5fd;
-}
-
 /* ==========================================================================
    Motion & Animation
    ========================================================================== */
-.reveal-on-scroll {
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
+/* Landing entrances only enhance already-visible cards; never hide whole sections. */
+@keyframes landing-content-enter {
+  from {
+    opacity: 0.72;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.reveal-on-scroll.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
+@layer components {
+  @media (prefers-reduced-motion: no-preference) {
+    .landing-shell .landing-reveal-enter {
+      animation: landing-content-enter 0.28s ease-out;
+    }
 
-/* كشف متتابع لبطاقات الشبكات — يبدأ بعد كشف القسم الأب (.reveal-on-scroll) */
-.reveal-stagger > * {
-  opacity: 0;
-  transform: translateY(12px);
-  /* انتقالات التحويم القصيرة (حدود/خلفية/ظل) تُحفظ بعد تجاوز transition-all */
-  transition:
-    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.3s ease,
-    background-color 0.3s ease,
-    box-shadow 0.3s ease;
+    .landing-shell .landing-floating-download {
+      animation: landing-content-enter 0.18s ease-out;
+    }
+  }
 }
-
-.reveal-on-scroll.is-visible .reveal-stagger > * {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* التأخير يخص كشف الدخول فقط (opacity/transform) — التحويم بلا تأخير */
-.reveal-stagger > *:nth-child(1) { transition-delay: 80ms, 80ms, 0ms, 0ms, 0ms; }
-.reveal-stagger > *:nth-child(2) { transition-delay: 140ms, 140ms, 0ms, 0ms, 0ms; }
-.reveal-stagger > *:nth-child(3) { transition-delay: 200ms, 200ms, 0ms, 0ms, 0ms; }
-.reveal-stagger > *:nth-child(4) { transition-delay: 260ms, 260ms, 0ms, 0ms, 0ms; }
-.reveal-stagger > *:nth-child(5) { transition-delay: 320ms, 320ms, 0ms, 0ms, 0ms; }
-.reveal-stagger > *:nth-child(6) { transition-delay: 380ms, 380ms, 0ms, 0ms, 0ms; }
-.reveal-stagger > *:nth-child(7) { transition-delay: 440ms, 440ms, 0ms, 0ms, 0ms; }
-.reveal-stagger > *:nth-child(8) { transition-delay: 500ms, 500ms, 0ms, 0ms, 0ms; }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-fadeIn {
   animation: fadeIn 0.25s ease-out both;
-}
-
-/* دخول عناصر قائمة الجوال بتتابع خفيف */
-@keyframes dropIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-dropIn {
-  animation: dropIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-/* ==========================================================================
-   Visual Polish Primitives — تدرج نصي، حد علوي مضيء، حلقة تتبع المؤشر
-   ========================================================================== */
-
-/* نص متدرج احترافي — بلا توهج زائد */
-.text-gradient-brand {
-  background: linear-gradient(120deg, #ffffff 20%, #93c5fd 55%, #38bdf8 90%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* حد علوي مضيء للبطاقات الرئيسية (Specular top edge) */
-.card-specular-edge {
-  position: relative;
-}
-.card-specular-edge::before {
-  content: '';
-  position: absolute;
-  inset-inline: 12%;
-  top: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(147, 197, 253, 0.35), transparent);
-  pointer-events: none;
-}
-
-/* حلقة توهج تتبع المؤشر على البطاقات (Spotlight) — يستعمل --mouse-x/y */
-.spotlight-hover {
-  position: relative;
-  overflow: hidden;
-}
-.spotlight-hover::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(240px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(59, 130, 246, 0.06), transparent 65%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-.spotlight-hover:hover::after {
-  opacity: 1;
 }
 
 /* تمرير سلس مع موضع الأقسام المثبتة */
@@ -446,77 +345,13 @@ html {
     scroll-behavior: auto;
   }
 
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
     transition-delay: 0ms !important;
   }
-}
-
-/* ==========================================================================
-   Grido Studio Landing Design System v2 — طبقة مكونات مشتركة موحدة
-   تُنهي تكرار الأنماط اليدوية (bg-[#1E1E1E] border-[#2C2C2C] ...) المنتشرة
-   في 15 مكوناً، وتوحّد البطاقات والشارات والأزرار العائمة على توكن واحد.
-   ========================================================================== */
-
-/* !!! داخل @layer components عن قصد !!!
-   بدائيات CSS غير الطبقية تغلب utilities في Tailwind v4 (الطبقات تُحسم قبل
-   النوعية)، فكان `.ds-card` غير الطبقي يبتلع `hover:border-*` و`bg-[#171717]`
-   ويفسد حالة فتح الأسئلة الشائعة. وضعها في `components` يجعل utilities الطبقة
-   المتأخرة قادرة على تجاوزها عند الحاجة، وهو ما تعتمده Tailwind v4. */
-@layer components {
-  /* بطاقة القسم القياسية — سطح card + حد subtle + استدارة موحدة */
-  .ds-card {
-    background: var(--grido-surface-card);
-    border: 1px solid var(--grido-border-subtle);
-    border-radius: var(--radius-2xl);
-  }
-
-  /* بطاقة غائرة (inset) للحقول والقيم الرقمية */
-  .ds-card-inset {
-    background: var(--grido-surface-inset);
-    border: 1px solid var(--grido-border-subtle);
-    border-radius: var(--radius-lg);
-  }
-
-  /* بلاطة أيقونة قياسية — كانت `rounded-xl bg-[#141414] border border-[#2C2C2C]
-     flex items-center justify-center` مكررة في 9 مواضع؛ المقاس واللون يبقيان utilities. */
-  .ds-icon-tile {
-    background: var(--grido-surface-inset);
-    border: 1px solid var(--grido-border-subtle);
-    border-radius: var(--radius-xl);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  /* حالة التحويم الموحدة للبطاقات القابلة للنقر (بدون توهج) */
-  .ds-card-interactive {
-    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
-  }
-  .ds-card-interactive:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    background: var(--grido-surface-card-hover);
-  }
-  .ds-card-interactive:active {
-    transform: scale(0.99);
-  }
-
-  /* سلّم الارتفاع المسموح (Fluent 2 Elevation) — درجات مسمّاة بدل shadow-* الحرفية:
-     rest الساكن · raised التحويم/القوائم · overlay العوائم والعناصر العائمة · dialog النوافذ الحوارية.
-     "Zero Button Glow": لا ظلال ملونة — الإبراز بالأزرق عند الحدود فقط. */
-  .ds-elevate-rest { box-shadow: var(--material-shadow-2); }
-  .ds-elevate-raised { box-shadow: var(--material-shadow-4); }
-  .ds-elevate-overlay { box-shadow: var(--material-shadow-8); }
-  .ds-elevate-dialog { box-shadow: var(--material-shadow-16); }
-}
-
-/* حلقة تركيز موحّدة WCAG — تستخدم مع كل عنصر تفاعلي مخصص */
-.ds-focusable:focus-visible {
-  outline: 2px solid var(--grido-brand-primary);
-  outline-offset: 2px;
-  border-radius: var(--radius-md);
 }
 
 /* ==========================================================================
@@ -527,7 +362,9 @@ html {
    تُطبَّق تلقائياً على كل عنصر تفاعلي داخل اللوحة فلا تبقى عناصر بلا مؤشر لوحة مفاتيح. */
 .admin-shell :is(button, a, input, select, textarea, [tabindex]):focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--grido-workspace-canvas), 0 0 0 4px var(--grido-brand-primary);
+  box-shadow:
+    0 0 0 2px var(--grido-workspace-canvas),
+    0 0 0 4px var(--grido-brand-primary);
 }
 
 /* ==========================================================================
@@ -546,7 +383,7 @@ html {
 }
 
 .spotlight-card::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
@@ -574,8 +411,16 @@ html {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(720px circle at 86% -8%, rgba(59, 130, 246, 0.13), transparent 60%),
-    radial-gradient(560px circle at 6% 104%, rgba(139, 92, 246, 0.10), transparent 58%);
+    radial-gradient(
+      720px circle at 86% -8%,
+      rgba(59, 130, 246, 0.13),
+      transparent 60%
+    ),
+    radial-gradient(
+      560px circle at 6% 104%,
+      rgba(139, 92, 246, 0.1),
+      transparent 58%
+    );
 }
 
 /* بطاقة تسجيل الدخول — مادة mica بحدّ علوي لامع (Specular) */
@@ -585,12 +430,17 @@ html {
   -webkit-backdrop-filter: blur(24px) saturate(115%);
   border: 1px solid var(--grido-border-subtle);
   border-radius: var(--radius-2xl);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), var(--material-shadow-8);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+    var(--material-shadow-8);
 }
 
 /* شارة/زر ممغنط — ارتفاع طفيف عند التحويم وانضغاط عند النقر */
 .magnetic-pill {
-  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .magnetic-pill:hover {
@@ -603,8 +453,14 @@ html {
 
 /* دخول محتوى التبويب — انزلاق ناعم بدل التبديل المفاجئ */
 @keyframes tabReveal {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .tab-content-reveal {
@@ -617,33 +473,372 @@ html {
 }
 
 /* ==========================================================================
-   Landing Shell — حلقة التركيز المزدوجة الموحّدة (AGENTS.md)
-   كانت روابط الترويسة والتذييل والأسئلة الشائعة بلا أي مؤشر لوحة مفاتيح.
+   Landing-only studio surfaces. Shared Admin primitives and tokens stay intact.
+   Component-layer rules intentionally remain overridable by Tailwind utilities.
    ========================================================================== */
-.landing-shell :is(a, button, [role='button'], summary, input, select, textarea):focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--grido-workspace-canvas), 0 0 0 4px var(--grido-brand-primary);
+@layer components {
+  .landing-shell {
+    --landing-z-floating: 30;
+    --landing-z-header: 40;
+    --landing-z-skip: 60;
+    background: var(--grido-workspace-canvas);
+    color: var(--grido-text-primary);
+  }
+
+  .landing-shell .landing-section {
+    position: relative;
+    padding-block: 3.5rem;
+    /* html already supplies 6rem anchor clearance; do not double that offset. */
+    scroll-margin-block-start: 0;
+  }
+
+  .landing-shell .landing-card {
+    min-width: 0;
+    background: var(--grido-surface-card);
+    border: 1px solid var(--grido-border-subtle);
+    border-radius: var(--radius-lg);
+  }
+
+  .landing-shell .landing-visual {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+    background:
+      radial-gradient(
+        ellipse at 50% 0%,
+        rgba(255, 255, 255, 0.04),
+        transparent 70%
+      ),
+      var(--grido-surface-inset);
+    border: 1px solid var(--grido-border-subtle);
+    border-radius: var(--radius-lg);
+  }
+
+  .landing-shell .landing-switch {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 4px;
+    background: var(--grido-surface-inset);
+    border: 1px solid var(--grido-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .landing-shell .landing-switch > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--grido-text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.5;
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .landing-shell .landing-switch > button[aria-pressed="true"] {
+    background: var(--grido-surface-card-hover);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: var(--grido-text-primary);
+  }
+
+  .landing-shell .landing-switch > button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .landing-shell .landing-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--grido-text-secondary);
+    font-size: 0.75rem;
+    line-height: 1.75;
+  }
+
+  .landing-shell .landing-fact {
+    padding-inline: 16px;
+    border-inline-start: 1px solid var(--grido-border-subtle);
+  }
+
+  .landing-shell .landing-fact:first-child {
+    border-inline-start: 0;
+  }
+
+  .landing-shell :is(.btn-primary, .btn-secondary) {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    line-height: 1.5;
+    box-shadow: none;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  /* The darker brand action keeps normal-size white button labels legible. */
+  .landing-shell .btn-primary {
+    background: var(--grido-brand-hover);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .landing-shell .btn-primary:hover {
+    background: color-mix(in srgb, var(--grido-brand-hover) 88%, black);
+  }
+
+  .landing-shell :is(.btn-primary, .btn-secondary):is(:hover, :active) {
+    transform: none;
+  }
+
+  .landing-shell .landing-header {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--landing-z-header);
+    background: rgba(18, 18, 18, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--grido-border-subtle);
+  }
+
+  .landing-shell .landing-nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--grido-text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .landing-shell .landing-nav-link[aria-current="location"] {
+    background: var(--grido-surface-card-hover);
+    color: var(--grido-text-primary);
+  }
+
+  .landing-shell .landing-mobile-nav {
+    position: absolute;
+    inset-inline: 16px;
+    inset-block-start: calc(100% + 8px);
+    max-height: calc(100dvh - 96px);
+    padding: 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--grido-surface-sidebar);
+    border: 1px solid var(--grido-border-subtle);
+    border-radius: var(--radius-md);
+    box-shadow: var(--material-shadow-4);
+  }
+
+  .landing-shell .landing-mobile-nav[hidden] {
+    display: none;
+  }
+
+  .landing-shell .landing-text-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-block: 8px;
+    border-radius: var(--radius-sm);
+    color: var(--grido-text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    text-underline-offset: 4px;
+    transition: color 0.15s ease;
+  }
+
+  .landing-shell .landing-hero {
+    position: relative;
+    padding-block: 3rem 3.5rem;
+  }
+
+  .landing-shell .landing-hero-light {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    height: 36rem;
+    max-height: 100%;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 65% 60% at 50% 0%,
+      rgba(255, 255, 255, 0.045),
+      transparent 80%
+    );
+  }
+
+  .landing-shell .landing-hero-light::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent calc(8rem - 1px),
+      rgba(255, 255, 255, 0.035) calc(8rem - 1px),
+      rgba(255, 255, 255, 0.035) 8rem
+    );
+    mask-image: radial-gradient(
+      ellipse 50% 65% at 50% 0%,
+      black,
+      transparent 90%
+    );
+    -webkit-mask-image: radial-gradient(
+      ellipse 50% 65% at 50% 0%,
+      black,
+      transparent 90%
+    );
+  }
+
+  .landing-shell .landing-footer {
+    padding-block: 40px calc(88px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--grido-border-subtle);
+    background: var(--grido-surface-inset);
+  }
+
+  .landing-shell :is(.landing-floating-download, .landing-floating-contact) {
+    position: fixed;
+    inset-block-end: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: var(--landing-z-floating);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.5;
+    box-shadow: var(--material-shadow-2);
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .landing-shell .landing-floating-download {
+    inset-inline-end: 16px;
+  }
+
+  .landing-shell .landing-floating-contact {
+    inset-inline-start: 16px;
+    padding-inline: 12px;
+    background: var(--grido-surface-card);
+    color: var(--grido-text-primary);
+  }
+
+  .landing-shell .skip-to-content {
+    position: absolute;
+    inset-block-start: 12px;
+    inset-inline-start: 12px;
+    z-index: var(--landing-z-skip);
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    background: var(--grido-brand-hover);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transform: translateY(-200%);
+  }
+
+  .landing-shell .skip-to-content:focus {
+    transform: translateY(0);
+  }
+
+  @media (min-width: 40rem) {
+    .landing-shell :is(.landing-floating-download, .landing-floating-contact) {
+      inset-block-end: calc(24px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .landing-shell .landing-floating-download {
+      inset-inline-end: 24px;
+    }
+    .landing-shell .landing-floating-contact {
+      inset-inline-start: 24px;
+    }
+    .landing-shell .landing-mobile-nav {
+      inset-inline: 24px;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .landing-shell .landing-section {
+      padding-block: 4.5rem;
+    }
+    .landing-shell .landing-hero {
+      padding-block: 4rem 4.5rem;
+    }
+  }
+
+  @media (hover: hover) {
+    .landing-shell
+      .landing-switch
+      > button:not([aria-pressed="true"]):not(:disabled):hover,
+    .landing-shell .landing-nav-link:hover,
+    .landing-shell .landing-floating-contact:hover {
+      background: var(--grido-surface-card-hover);
+      color: var(--grido-text-primary);
+    }
+
+    .landing-shell .landing-text-link:hover {
+      color: var(--grido-text-primary);
+      text-decoration: underline;
+    }
+  }
 }
 
-/* رابط التخطي إلى المحتوى — مخفي بصرياً ويظهر عند التركيز بلوحة المفاتيح فقط */
-.skip-to-content {
-  position: absolute;
-  top: 0.75rem;
-  inset-inline-start: 0.75rem;
-  z-index: 100;
-  transform: translateY(-200%);
-  transition: transform 0.2s ease;
-  background: var(--grido-brand-primary);
-  color: #FFFFFF;
-  font-family: var(--font-arabic);
-  font-weight: 700;
-  font-size: 12px;
-  padding: 8px 14px;
-  border-radius: var(--radius-md);
+/* Accessibility invariants are intentionally independent of utility overrides. */
+.landing-shell
+  :is(
+    a,
+    button,
+    [role="button"],
+    summary,
+    input,
+    select,
+    textarea,
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
+  outline: 2px solid var(--grido-brand-light);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--grido-workspace-canvas);
 }
 
-.skip-to-content:focus {
-  transform: translateY(0);
+@media (prefers-reduced-motion: reduce) {
+  .landing-shell *,
+  .landing-shell *::before,
+  .landing-shell *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ==========================================================================
@@ -667,7 +862,7 @@ html {
 }
 
 .animate-mockup-laser {
-  animation: mockup-laser-sweep 2.0s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: mockup-laser-sweep 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 /* إيقاف كل حركات المحاكاة عندما تكون النافذة خارج الشاشة (انضباط حركة + توفير GPU) */
@@ -675,13 +870,4 @@ html {
 .mockups-paused *::before,
 .mockups-paused *::after {
   animation-play-state: paused !important;
-}
-
-/* Hide scrollbar for clean horizontal mobile strips */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
 }
