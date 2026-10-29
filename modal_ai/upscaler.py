@@ -11,9 +11,27 @@ import urllib.error
 import cv2
 import numpy as np
 import uuid
-from gradio_client import Client, handle_file
 
-# تعريف بيئة العمل السحابية الخفيفة المخصصة للبوابة
+def download_models():
+    """تنزيل مسبق لنماذج YuNet و CodeFormer ONNX فائقة السرعة أثناء بناء صورة الحاوية لتعمل ذاتياً 100% على الـ CPU دون أي مزود خارجي"""
+    import os
+    import urllib.request
+
+    yunet_path = "/root/yunet.onnx"
+    if not os.path.exists(yunet_path):
+        print("Pre-baking yunet.onnx during image build...")
+        yunet_url = "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx"
+        urllib.request.urlretrieve(yunet_url, yunet_path)
+        print("yunet.onnx cached successfully, size:", os.path.getsize(yunet_path))
+
+    codeformer_path = "/root/codeformer.onnx"
+    if not os.path.exists(codeformer_path):
+        print("Pre-baking codeformer.onnx during image build...")
+        cf_url = "https://huggingface.co/facefusion/models-3.0.0/resolve/main/codeformer.onnx"
+        urllib.request.urlretrieve(cf_url, codeformer_path)
+        print("codeformer.onnx cached successfully, size:", os.path.getsize(codeformer_path))
+
+# تعريف بيئة العمل السحابية الخفيفة المستقلة 100% والمشغلة على معالج CPU دون بطاقات GPU أو اعتمادات خارجية
 image = (
     modal.Image.debian_slim(python_version="3.10")
     .apt_install("libgl1-mesa-glx", "libglib2.0-0")
@@ -21,30 +39,59 @@ image = (
         "fastapi",
         "pillow",
         "opencv-python-headless",
-        "requests",
-        "gradio_client"
+        "onnxruntime",
+        "numpy",
+        "requests"
     )
+    .run_function(download_models)
 )
 
 app = modal.App("grido-ai-upscaler")
 
 @app.cls(
     image=image,
-    cpu=1.0,
-    memory=1024,
-    scaledown_window=2,
+    cpu=4.0,
+    memory=2048,
+    scaledown_window=5,
     timeout=300,
     max_containers=3,
     secrets=[
         modal.Secret.from_name("grido-ai-secret"),
-        modal.Secret.from_name("supabase-auth"),
-        modal.Secret.from_name("hf-secret")
+        modal.Secret.from_name("supabase-auth")
     ]
 )
 class ImageEnhancer:
     @modal.enter()
     def load_model(self):
-        print("Grido AI Gateway initialized with wisam99/CodeFormer GPU Space.")
+        import onnxruntime as ort
+        print("Initializing YuNet and CodeFormer ONNX runtime on CPU...")
+        self.yunet_path = "/root/yunet.onnx"
+        self.codeformer_path = "/root/codeformer.onnx"
+
+        # ArcFace / RetinaFace 5 canonical landmarks for standard 512x512 face space
+        self.standard_5landmarks = np.array([
+            [192.98138, 239.94708],
+            [318.90277, 240.1736],
+            [256.0102, 314.01935],
+            [201.26117, 371.41043],
+            [313.08905, 371.15118]
+        ], dtype=np.float32)
+
+        # Pre-create soft elliptical blending mask
+        mask = np.zeros((512, 512), dtype=np.float32)
+        cv2.ellipse(mask, (256, 270), (160, 200), 0, 0, 360, 1.0, -1)
+        mask = cv2.GaussianBlur(mask, (51, 51), 0)
+        self.mask_3ch = np.stack([mask] * 3, axis=2)
+
+        # Initialize ONNX Runtime session for CodeFormer
+        so = ort.SessionOptions()
+        so.intra_op_num_threads = 4
+        so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+        self.session = ort.InferenceSession(self.codeformer_path, so)
+        inputs = self.session.get_inputs()
+        self.input_name0 = inputs[0].name
+        self.input_name1 = inputs[1].name
+        print("YuNet & CodeFormer ONNX loaded successfully into memory on CPU!")
 
     @modal.fastapi_endpoint(method="POST")
     async def enhance(self, request: Request):
@@ -53,8 +100,7 @@ class ImageEnhancer:
             # 🛡️ حماية السيرفر عبر توثيق Supabase (Direct JWT Verification)
             SUPABASE_URL = os.environ.get("SUPABASE_URL")
             SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
-            HF_TOKEN = os.environ.get("HF_TOKEN")
-            
+
             if not SUPABASE_URL or not SUPABASE_ANON_KEY:
                 print("CRITICAL: SUPABASE_URL or SUPABASE_ANON_KEY environment variable is not set!")
                 return Response(
@@ -71,7 +117,7 @@ class ImageEnhancer:
                     media_type="application/json",
                     status_code=401
                 )
-                
+
             jwt_token = auth_header.replace("Bearer ", "")
 
             # Verify user token with Supabase directly
@@ -96,7 +142,7 @@ class ImageEnhancer:
                     status_code=401
                 )
 
-            # 🛡️ سقف حجم الدخل قبل قراءة الجسم — جسم ضخم كان يُقرأ كاملاً في RAM قبل أي فحص.
+            # 🛡️ سقف حجم الدخل قبل قراءة الجسم — جسم ضخم كان يُقرأ كاملاً في RAM قبل أي فحص
             max_request_bytes = 30 * 1024 * 1024
             content_length = request.headers.get("Content-Length")
             if content_length is not None:
@@ -216,39 +262,62 @@ class ImageEnhancer:
                 img_bgr = cv2.resize(img_bgr, (new_w, new_h), interpolation=cv2.INTER_AREA)
                 if has_alpha and alpha_mask is not None:
                     alpha_mask = cv2.resize(alpha_mask, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                h_orig, w_orig = img_bgr.shape[:2]
 
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-                tmp_path = tmp_file.name
+            # 🎯 كشف الوجه ومحاذاة الملامح الخمسة بدقة فائقة عبر YuNet
+            detector = cv2.FaceDetectorYN.create(self.yunet_path, "", (w_orig, h_orig))
+            _, faces = detector.detect(img_bgr)
 
-            cv2.imwrite(tmp_path, img_bgr)
+            restored_img = img_bgr.copy()
 
-            try:
-                # استدعاء السبيس الخاص بك wisam99/CodeFormer على كرت A10G المخصص لحسابك
-                hf_client = Client("wisam99/CodeFormer", token=HF_TOKEN)
-                result = hf_client.predict(
-                    image=handle_file(tmp_path),
-                    face_align=True,
-                    background_enhance=True,
-                    face_upsample=True,
-                    upscale=2,
-                    codeformer_fidelity=0.90,
-                    api_name="/inference"
-                )
-                output_image_path = result[0]
-                restored_img = cv2.imread(output_image_path)
-                if restored_img is None:
-                    raise Exception("Failed to read restored image from wisam99/CodeFormer")
+            if faces is not None and len(faces) > 0:
+                print(f"YuNet detected {len(faces)} face(s). Proceeding with CodeFormer ONNX restoration on CPU...")
+                for face in faces:
+                    score = face[14]
+                    if score < 0.4:
+                        continue
 
-                # 🌟 الحفاظ على نغمات البشرة الأصلية ولون العيون الطبيعي (90% وضوح وترميم + 10% أصل)
-                rh, rw = restored_img.shape[:2]
-                orig_scaled = cv2.resize(img_bgr, (rw, rh), interpolation=cv2.INTER_LANCZOS4)
-                restored_img = cv2.addWeighted(restored_img, 0.90, orig_scaled, 0.10, 0)
-            finally:
-                if os.path.exists(tmp_path):
-                    try:
-                        os.remove(tmp_path)
-                    except Exception:
-                        pass
+                    # استخراج النقاط الخمس: العينين، طرف الأنف، زاويتي الفم
+                    landmarks = face[4:14].reshape(5, 2).astype(np.float32)
+
+                    # محاذاة جزئية دقيقة لمطابقة مساحة تدريب CodeFormer (512x512)
+                    M, _ = cv2.estimateAffinePartial2D(landmarks, self.standard_5landmarks)
+                    if M is None:
+                        continue
+
+                    cropped_face = cv2.warpAffine(img_bgr, M, (512, 512), borderMode=cv2.BORDER_REFLECT)
+
+                    # تجهيز المدخل لـ CodeFormer ONNX
+                    face_rgb = cv2.cvtColor(cropped_face, cv2.COLOR_BGR2RGB)
+                    face_norm = (face_rgb.astype(np.float32) / 255.0 - 0.5) / 0.5
+                    input_tensor = np.expand_dims(face_norm.transpose(2, 0, 1), axis=0).astype(np.float32)
+
+                    # تشغيل النموذج على المعالج CPU مع fidelity=0.90 للحفاظ التام على هوية الشخص الطبيعية
+                    output = self.session.run(
+                        None,
+                        {
+                            self.input_name0: input_tensor,
+                            self.input_name1: np.array([0.90], dtype=np.double)
+                        }
+                    )[0]
+
+                    tensor = output[0].clip(-1, 1)
+                    tensor = (tensor - (-1)) / (1 - (-1))
+                    restored_face = (tensor.transpose(1, 2, 0) * 255.0).round().astype(np.uint8)
+                    restored_face = cv2.cvtColor(restored_face, cv2.COLOR_RGB2BGR)
+
+                    # مزج 85% من الوجه المرمم مع 15% من الوجه الأصلي للحفاظ على تفاصيل ومسامات البشرة الحقيقية ولون العيون الأصلي
+                    restored_face = cv2.addWeighted(restored_face, 0.85, cropped_face, 0.15, 0)
+
+                    # إعادة الوجه المرمم إلى إحداثياته الأصلية في الصورة الكاملة عبر التحويل الهندسي المعكوس (Inverse Affine)
+                    M_inv = cv2.invertAffineTransform(M)
+                    restored_warped = cv2.warpAffine(restored_face, M_inv, (w_orig, h_orig), borderMode=cv2.BORDER_REFLECT)
+                    mask_warped = cv2.warpAffine(self.mask_3ch, M_inv, (w_orig, h_orig), borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))
+
+                    # دمج ناعم وخفي تماماً بدون أي حواف قاطعة
+                    restored_img = (restored_warped * mask_warped + restored_img * (1.0 - mask_warped)).astype(np.uint8)
+            else:
+                print("No face detected by YuNet; returning original image gracefully.")
 
             if has_alpha and alpha_mask is not None:
                 restored_h, restored_w = restored_img.shape[:2]
@@ -273,8 +342,8 @@ class ImageEnhancer:
             exec_seconds = round(time.time() - start_time, 2)
             cost_usd = 0.0
             total_cost_usd = 0.0
-            
-            print(f"Enhancement completed on wisam99/CodeFormer GPU in {exec_seconds}s. Cost: $0.0")
+
+            print(f"Self-hosted CPU Enhancement completed in {exec_seconds}s. Cost: $0.0")
 
             usage_recorded = False
             try:
@@ -334,7 +403,7 @@ class ImageEnhancer:
                 "usage_recorded": usage_recorded,
                 "request_id": request_id
             }
-            
+
         except Exception as e:
             print("Error during enhancement:", str(e))
             return Response(content='{"error": "فشل ترميم الصورة (500)"}', media_type="application/json", status_code=500)
