@@ -225,16 +225,34 @@ class ImageEnhancer:
             cv2.imwrite(tmp_path, img_bgr)
             
             try:
-                hf_client = Client("sczhou/CodeFormer", token=HF_TOKEN)
-                result = hf_client.predict(
-                    image=handle_file(tmp_path),
-                    face_align=True,
-                    background_enhance=True,
-                    face_upsample=True,
-                    upscale=2,
-                    codeformer_fidelity=0.90,
-                    api_name="/inference"
-                )
+                try:
+                    hf_client = Client("sczhou/CodeFormer", token=HF_TOKEN)
+                    result = hf_client.predict(
+                        image=handle_file(tmp_path),
+                        face_align=True,
+                        background_enhance=False,
+                        face_upsample=True,
+                        upscale=2,
+                        codeformer_fidelity=0.90,
+                        api_name="/inference"
+                    )
+                except Exception as hf_err:
+                    err_msg = str(hf_err).lower()
+                    if "quota" in err_msg or "exceeded" in err_msg:
+                        print("HF Token quota reached, falling back to public ZeroGPU pool...")
+                        hf_client = Client("sczhou/CodeFormer")
+                        result = hf_client.predict(
+                            image=handle_file(tmp_path),
+                            face_align=True,
+                            background_enhance=False,
+                            face_upsample=True,
+                            upscale=2,
+                            codeformer_fidelity=0.90,
+                            api_name="/inference"
+                        )
+                    else:
+                        raise hf_err
+
                 output_image_path = result[0]
                 restored_img = cv2.imread(output_image_path)
                 if restored_img is None:
