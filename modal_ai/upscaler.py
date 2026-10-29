@@ -232,13 +232,18 @@ class ImageEnhancer:
                     background_enhance=True,
                     face_upsample=True,
                     upscale=2,
-                    codeformer_fidelity=0.7,
+                    codeformer_fidelity=0.90,
                     api_name="/inference"
                 )
                 output_image_path = result[0]
                 restored_img = cv2.imread(output_image_path)
                 if restored_img is None:
                     raise Exception("Failed to read restored image from Hugging Face backend")
+
+                # 🌟 الحفاظ التام على هوية وملامح ولون عيون الشخص الحقيقية (90% وضوح وترميم + 10% نغمات الأصل الطبيعية)
+                rh, rw = restored_img.shape[:2]
+                orig_scaled = cv2.resize(img_bgr, (rw, rh), interpolation=cv2.INTER_LANCZOS4)
+                restored_img = cv2.addWeighted(restored_img, 0.90, orig_scaled, 0.10, 0)
             finally:
                 if os.path.exists(tmp_path):
                     try:
