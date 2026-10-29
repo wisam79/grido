@@ -11,8 +11,9 @@ import urllib.error
 import cv2
 import numpy as np
 import uuid
+from gradio_client import Client, handle_file
 
-# تعريف بيئة العمل السحابية الخفيفة بالـ CPU (بدون الحاجة لكرت شاشة محلي أو بطاقة بنكية)
+# تعريف بيئة العمل السحابية الخفيفة المخصصة للبوابة
 image = (
     modal.Image.debian_slim(python_version="3.10")
     .apt_install("libgl1-mesa-glx", "libglib2.0-0")
@@ -43,7 +44,7 @@ app = modal.App("grido-ai-upscaler")
 class ImageEnhancer:
     @modal.enter()
     def load_model(self):
-        print("Grido AI Gateway initialized with Hugging Face ZeroGPU backend.")
+        print("Grido AI Gateway initialized with wisam99/CodeFormer GPU Space.")
 
     @modal.fastapi_endpoint(method="POST")
     async def enhance(self, request: Request):
@@ -178,7 +179,7 @@ class ImageEnhancer:
                     status_code=429
                 )
             except Exception as e:
-                print(f"Quota reservation failed (failing closed): {e}", flush=True)
+                print(f"Quota reservation failed: {e}", flush=True)
                 return Response(
                     content='{"error": "تعذر التحقق من الحصة اليومية لاستخدام الذكاء الاصطناعي (خدمة التحقق غير متاحة مؤقتاً)"}',
                     media_type="application/json",
@@ -216,49 +217,29 @@ class ImageEnhancer:
                 if has_alpha and alpha_mask is not None:
                     alpha_mask = cv2.resize(alpha_mask, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
-            # معالجة الصورة عبر خادم Hugging Face ZeroGPU (CodeFormer + Real-ESRGAN)
-            from gradio_client import Client, handle_file
-            
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
                 tmp_path = tmp_file.name
-            
-            cv2.imwrite(tmp_path, img_bgr)
-            
-            try:
-                try:
-                    hf_client = Client("sczhou/CodeFormer", token=HF_TOKEN)
-                    result = hf_client.predict(
-                        image=handle_file(tmp_path),
-                        face_align=True,
-                        background_enhance=False,
-                        face_upsample=True,
-                        upscale=2,
-                        codeformer_fidelity=0.90,
-                        api_name="/inference"
-                    )
-                except Exception as hf_err:
-                    err_msg = str(hf_err).lower()
-                    if "quota" in err_msg or "exceeded" in err_msg:
-                        print("HF Token quota reached, falling back to public ZeroGPU pool...")
-                        hf_client = Client("sczhou/CodeFormer")
-                        result = hf_client.predict(
-                            image=handle_file(tmp_path),
-                            face_align=True,
-                            background_enhance=False,
-                            face_upsample=True,
-                            upscale=2,
-                            codeformer_fidelity=0.90,
-                            api_name="/inference"
-                        )
-                    else:
-                        raise hf_err
 
+            cv2.imwrite(tmp_path, img_bgr)
+
+            try:
+                # استدعاء السبيس الخاص بك wisam99/CodeFormer على كرت A10G المخصص لحسابك
+                hf_client = Client("wisam99/CodeFormer", token=HF_TOKEN)
+                result = hf_client.predict(
+                    image=handle_file(tmp_path),
+                    face_align=True,
+                    background_enhance=True,
+                    face_upsample=True,
+                    upscale=2,
+                    codeformer_fidelity=0.90,
+                    api_name="/inference"
+                )
                 output_image_path = result[0]
                 restored_img = cv2.imread(output_image_path)
                 if restored_img is None:
-                    raise Exception("Failed to read restored image from Hugging Face backend")
+                    raise Exception("Failed to read restored image from wisam99/CodeFormer")
 
-                # 🌟 الحفاظ التام على هوية وملامح ولون عيون الشخص الحقيقية (90% وضوح وترميم + 10% نغمات الأصل الطبيعية)
+                # 🌟 الحفاظ على نغمات البشرة الأصلية ولون العيون الطبيعي (90% وضوح وترميم + 10% أصل)
                 rh, rw = restored_img.shape[:2]
                 orig_scaled = cv2.resize(img_bgr, (rw, rh), interpolation=cv2.INTER_LANCZOS4)
                 restored_img = cv2.addWeighted(restored_img, 0.90, orig_scaled, 0.10, 0)
@@ -293,7 +274,7 @@ class ImageEnhancer:
             cost_usd = 0.0
             total_cost_usd = 0.0
             
-            print(f"Enhancement completed via Hugging Face GPU in {exec_seconds}s. Cost: $0.0")
+            print(f"Enhancement completed on wisam99/CodeFormer GPU in {exec_seconds}s. Cost: $0.0")
 
             usage_recorded = False
             try:
