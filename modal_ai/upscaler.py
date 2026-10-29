@@ -160,6 +160,11 @@ class ImageEnhancer:
             data = await request.json()
             image_b64 = data.get("image", "")
             daily_limit = data.get("dailyLimit", 2)
+            try:
+                fidelity = float(data.get("fidelity", 0.78))
+                fidelity = max(0.1, min(1.0, fidelity))
+            except (ValueError, TypeError):
+                fidelity = 0.78
             request_id = str(uuid.uuid4())
 
             if not image_b64:
@@ -292,12 +297,12 @@ class ImageEnhancer:
                     face_norm = (face_rgb.astype(np.float32) / 255.0 - 0.5) / 0.5
                     input_tensor = np.expand_dims(face_norm.transpose(2, 0, 1), axis=0).astype(np.float32)
 
-                    # تشغيل النموذج على المعالج CPU مع fidelity=0.90 للحفاظ التام على هوية الشخص الطبيعية
+                    # تشغيل النموذج على المعالج CPU مع fidelity المحسوبة (افتراضياً 0.78 لتوضيح معالم الوجه بحدة طبيعية فائقة)
                     output = self.session.run(
                         None,
                         {
                             self.input_name0: input_tensor,
-                            self.input_name1: np.array([0.90], dtype=np.double)
+                            self.input_name1: np.array([fidelity], dtype=np.double)
                         }
                     )[0]
 
