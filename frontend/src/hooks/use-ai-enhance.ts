@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { create } from 'zustand';
 
-import { SaveImageFromBase64, EnhanceImageWithAI } from '@bindings/grido/app';
+import { SaveImageFromBase64, EnhanceImageWithAI, GetImageDimensions } from '@bindings/grido/app';
 
 import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
 import {
@@ -78,10 +78,41 @@ function loadImageElement(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
+    const settle = (value: HTMLImageElement | null) => {
+      clearTimeout(timer);
+      img.onload = null;
+      img.onerror = null;
+      resolve(value);
+    };
+    const timer = setTimeout(() => settle(null), 10_000);
+    img.onload = () => settle(img);
+    img.onerror = () => settle(null);
     img.src = src;
   });
+}
+
+/** قياس المصدر الفعلي والناتج المحفوظ، بلا افتراض ×2 أو العودة لأصل أقدم. */
+async function measureAiImageDimensions(src: string): Promise<AiImageDimensions> {
+  let dimensions: AiImageDimensions;
+  if (src.startsWith('/local-image/')) {
+    const measured = await GetImageDimensions(src);
+    dimensions = measured.isRotated
+      ? { width: measured.height, height: measured.width }
+      : { width: measured.width, height: measured.height };
+  } else {
+    // الأبعاد الطبيعية في المتصفح موجهة بـ EXIF بالفعل؛ لا ندوّرها مرة ثانية.
+    const image = await loadImageElement(src);
+    dimensions = { width: image?.naturalWidth ?? 0, height: image?.naturalHeight ?? 0 };
+  }
+  if (
+    !Number.isFinite(dimensions.width) ||
+    !Number.isFinite(dimensions.height) ||
+    dimensions.width <= 0 ||
+    dimensions.height <= 0
+  ) {
+    throw new Error('تعذر التحقق من أبعاد الصورة؛ لم تُطبّق النتيجة حفاظاً على قصّ الكولاج.');
+  }
+  return dimensions;
 }
 
 /**
@@ -208,6 +239,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { toErrorMessage } from '@/lib/wails-error';
+import type { AiImageDimensions } from '@/lib/ai/ai-result-commit';
 
 export function useAiEnhance(
   onUpdate: (id: string, patch: Partial<Record<string, unknown>>) => void,
@@ -305,6 +337,14 @@ export function useAiEnhance(
 
     try {
       setEnhanceProgress(20);
+      const state = useEditorStore.getState();
+      const isCollageTarget =
+        !state.elements.some((item) => item.id === element.id) &&
+        state.slots.some((slot) => slot.id === element.id);
+      // فشل قياس المصدر يوقف الطلب قبل استهلاك الحصة؛ الإزاحات نفسها تُقرأ عند التطبيق.
+      const sourceDimensions = isCollageTarget
+        ? await measureAiImageDimensions(element.imageSrc)
+        : undefined;
       let base64Image: string;
       if (element.imageSrc.startsWith('/local-image/')) {
         // 🚀 مسار Go المباشر: نمرر مسار الصورة المحلي لـ Go ليقرأه ويهيئه ذاتياً
@@ -374,13 +414,16 @@ export function useAiEnhance(
         // 🛡️ حماية الشفافية: استعادة قناع الشفافية الأصلي في حال تحول الخلفية لأسود
         const finalImagePayload = await ensureTransparencyPreserved(element.imageSrc, result.image);
         const localPath = await SaveImageFromBase64(finalImagePayload);
+        const resize = sourceDimensions
+          ? { source: sourceDimensions, result: await measureAiImageDimensions(localPath) }
+          : undefined;
 
         // 🛡️ حارس الطزاثة الموحّد (`commitAiImageResult`, H3 من تدقيق 2026-10-08):
         // دورة الترميم السحابية تستغرق دقائق، فيُلغى التطبيق بصمت إن استُبدلت
         // الصورة أو تم التراجع أثناء الانتظار. يبحث المساعد في العناصر والخانات
         // معاً، ويتحقق من بقاء الهدف وطزاجة صورته، ثم يطبّق الرقعة ويدفع خطوة
         // تراجع واحدة (كان البحث في elements وحده يُسقط نتائج الكولاج).
-        const commit = commitAiImageResult(element, localPath, onUpdateRef.current);
+        const commit = commitAiImageResult(element, localPath, onUpdateRef.current, resize);
         if (commit === 'not-found') {
           toast.info('تم إلغاء الترميم: العنصر لم يعد موجوداً.');
           return;
@@ -398,7 +441,8 @@ export function useAiEnhance(
           serviceName: 'ترميم الوجوه بالذكاء الاصطناعي (CodeFormer)',
           source: 'Grido Studio Desktop (Windows)',
           durationSec: result.execution_seconds || 2.4,
-          costUsd: result.total_cost_usd || 0.001329,
+          // حقول التكلفة القديمة ليست فاتورة Modal؛ نحفظ الصفر ولا نخترع مبلغاً عند الغياب.
+          costUsd: result.total_cost_usd ?? result.cost_usd ?? 0,
           status: 'success',
         });
 

@@ -112,6 +112,8 @@ docs_files=6
 
 الأرقام التي تحتاج تشغيل اختبارات لا تُوضع في البلوك الآلي، بل في الجدول التالي وتُحدَّث عند تغيّر الاختبارات:
 
+مراجعة 29 أكتوبر 2026 — المسار السحابي المزدوج: أضيف `modal_ai/test_upscaler.py` (19 حالة Python سريعة ناجحة) و`modal_ai/benchmark_upscaler.py` لقياس CPU الحقيقي؛ هذه خارج عدّادات Vitest/E2E/Go في بلوك `docs-metrics` فلا يتغير الجرد. توسعت اختبارات توافق الكولاج داخل الملفات القائمة. الأمر المرجعي: `python -m unittest modal_ai.test_upscaler -v`؛ قياس المقاسات والمراحل موثق في `docs/testing_guide.md`، وبوابة المراجع `node scripts/docs-gate.mjs --strict-refs`.
+
 مراجعة 29 أكتوبر 2026 — إعادة بناء صفحة الهبوط والمجسمات: ملف اختبار جديد في `admin-web/src/lib/landing/studio-scene.test.ts` (16 حالة) — عدادات `docs-metrics` تحصر Vitest في `frontend/` فقط فلا يتغير الجرد، ويُتحقق منه بـ `node scripts/docs-gate.mjs --strict-refs`. حُذف `admin-web/src/components/landing/Hero3DScene.tsx` وحُدّث دستور التصميم `admin-web/design.md` (v2.7) وسجل الميزات (جلسة 1.60)؛ لا مراجع متبقية للمكوّن المحذوف. التحقق التنفيذي: `tsc` و`oxlint` و16/16 Vitest مستهدفة نجحت، والحزمة الكاملة موكولة إلى CI.
 
 مراجعة 28 أكتوبر 2026 — تحسين حوار الطباعة: أضيفت حالات إلى `frontend/test/print-dialog-backstage.test.tsx` للملاءمة في الاتجاهين ودورة مراقب القياس وحالة الفراغ وبيانات المعاينة؛ عدد الملفات في `docs-metrics` باقٍ دون تغيير، والتحقق عبر `node scripts/docs-gate.mjs --strict-refs`. لم تُشغّل الحزم التنفيذية محلياً.
