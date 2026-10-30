@@ -1,5 +1,9 @@
 import { normalizeSelection } from './element-slice';
-import { getCollageGeometry, getSlotRect } from '../../canvas/collage-geometry';
+import {
+  computeAdjacentSlotCandidate,
+  getCollageGeometry,
+  getSlotRect,
+} from '../../canvas/collage-geometry';
 import {
   applyCollageSlotImageContent,
   collageSlotImageContentEqual,
@@ -8,6 +12,7 @@ import {
 import { measureImageAspect } from '../../canvas/measure-image';
 import { recenterElementsOnResize } from '../../canvas/resize-elements';
 import { mmToPx, pxToMm } from '../../canvas/units';
+import { clamp } from '../../clamp';
 import { AUTOFILL_IMAGE_LIMIT } from '../../schema';
 import {
   COLLAGE_TEMPLATES,
@@ -17,7 +22,7 @@ import {
 } from '../../templates';
 import { uid } from '../../utils';
 
-import type { SlotRect } from '../../canvas/collage-geometry';
+import type { AdjacentSlotDirection, SlotRect } from '../../canvas/collage-geometry';
 import type {
   CanvasElement,
   CanvasSlot,
@@ -85,6 +90,10 @@ export interface CollageSlice {
   updateSlotsBatch: (slotIds: string[], patch: Partial<CanvasSlot>) => void;
   resizeCollageSlot: (slotId: string, w: number, h: number) => CollageSlotSizeResult;
   applyCollageSlotSizeToAll: (slotId: string) => CollageSlotSizeResult;
+  addAdjacentCollageSlot: (
+    slotId: string,
+    direction: AdjacentSlotDirection,
+  ) => CollageSlotSizeResult & { newSlotId?: string };
   clearSlots: () => void;
   fillAllSlots: (src: string, sourceSlotId?: string) => void;
   fillRowSlots: (slotId: string, src: string) => void;
@@ -280,6 +289,7 @@ function manualGeometryPatch(state: CollageCross, slots: CanvasSlot[]) {
   const collageTemplate = state.collageTemplate
     ? {
         ...state.collageTemplate,
+        slots: slots.length,
         cells: slots.map(({ x, y, w, h, presetType, label, rotation }) => ({
           x,
           y,
@@ -343,75 +353,87 @@ function tryDisplaceOverlappingCells(
     // متداخلة أصلاً على هذا المحور (لكنها منفصلة على المحور الآخر)، فلا
     // توجد فجوة قابلة للحفظ؛ القيمة السالبة كانت تلغي مقدار الإزاحة المطلوب
     // وتسمح بحفظ تداخل حقيقي بعد تكبير الخلية.
-    let originalGapX = 0;
-    let originalGapY = 0;
+    const rawGapX =
+      resizedSlotOriginalRect.left <= overlapRect.left
+        ? overlapRect.left - (resizedSlotOriginalRect.left + resizedSlotOriginalRect.width)
+        : resizedSlotOriginalRect.left - (overlapRect.left + overlapRect.width);
+    const rawGapY =
+      resizedSlotOriginalRect.top <= overlapRect.top
+        ? overlapRect.top - (resizedSlotOriginalRect.top + resizedSlotOriginalRect.height)
+        : resizedSlotOriginalRect.top - (overlapRect.top + overlapRect.height);
 
-    if (resizedSlotOriginalRect.left < overlapRect.left) {
-      originalGapX =
-        overlapRect.left - (resizedSlotOriginalRect.left + resizedSlotOriginalRect.width);
-    } else {
-      originalGapX = resizedSlotOriginalRect.left - (overlapRect.left + overlapRect.width);
-    }
+    const wasSeparatedX = rawGapX >= -EPSILON_OVERLAP;
+    const wasSeparatedY = rawGapY >= -EPSILON_OVERLAP;
+    const originalGapX = Math.max(0, rawGapX);
+    const originalGapY = Math.max(0, rawGapY);
 
-    if (resizedSlotOriginalRect.top < overlapRect.top) {
-      originalGapY =
-        overlapRect.top - (resizedSlotOriginalRect.top + resizedSlotOriginalRect.height);
-    } else {
-      originalGapY = resizedSlotOriginalRect.top - (overlapRect.top + overlapRect.height);
-    }
-    originalGapX = Math.max(0, originalGapX);
-    originalGapY = Math.max(0, originalGapY);
+    // تحديد اتجاه الدفع على كل محور بناءً على الموضع النسبي الأصلي أولاً ثم الجديد
+    const pushRight =
+      resizedSlotOriginalRect.left < overlapRect.left ||
+      (resizedSlotOriginalRect.left === overlapRect.left &&
+        resizedSlotNewRect.left <= overlapRect.left);
+    const pushDown =
+      resizedSlotOriginalRect.top < overlapRect.top ||
+      (resizedSlotOriginalRect.top === overlapRect.top &&
+        resizedSlotNewRect.top <= overlapRect.top);
 
-    // الدفع في اتجاه أصغر تداخل + التباعد الأصلي
-    let dx = 0;
-    let dy = 0;
+    // المسافة الفعلية الكاملة لإخراج الجار خارج حافة الخلية المُعدّلة + الفجوة الأصلية
+    // (يمنع بقاء الجار داخل الخلية إذا ابتلعته بالكامل أثناء التكبير الكبير).
+    const shiftPxX = pushRight
+      ? resizedSlotNewRect.left + resizedSlotNewRect.width - overlapRect.left + originalGapX
+      : overlapRect.left + overlapRect.width - resizedSlotNewRect.left + originalGapX;
+    const shiftPxY = pushDown
+      ? resizedSlotNewRect.top + resizedSlotNewRect.height - overlapRect.top + originalGapY
+      : overlapRect.top + overlapRect.height - resizedSlotNewRect.top + originalGapY;
 
-    if (overlapX < overlapY) {
-      // دفع أفقي
-      if (resizedSlotNewRect.left < overlapRect.left) {
-        dx = (overlapX + originalGapX) / geo.availW; // دفع لليمين
-      } else {
-        dx = -(overlapX + originalGapX) / geo.availW; // دفع لليسار
+    const candidateAxes: Array<'x' | 'y'> =
+      wasSeparatedX && !wasSeparatedY ? ['x'] : overlapX < overlapY ? ['x', 'y'] : ['y', 'x'];
+
+    let resolvedResult: CanvasSlot[] | null = null;
+    for (const axis of candidateAxes) {
+      const dx = axis === 'x' ? (pushRight ? shiftPxX : -shiftPxX) / geo.availW : 0;
+      const dy = axis === 'y' ? (pushDown ? shiftPxY : -shiftPxY) / geo.availH : 0;
+      const newX = overlapSlot.x + dx;
+      const newY = overlapSlot.y + dy;
+
+      // التحقق من أن الإزاحة ضمن الحدود
+      if (
+        newX < -EPSILON_BOUNDS ||
+        newX + overlapSlot.w > 1 + EPSILON_BOUNDS ||
+        newY < -EPSILON_BOUNDS ||
+        newY + overlapSlot.h > 1 + EPSILON_BOUNDS
+      ) {
+        continue;
       }
-    } else {
-      // دفع عمودي
-      if (resizedSlotNewRect.top < overlapRect.top) {
-        dy = (overlapY + originalGapY) / geo.availH; // دفع للأسفل
-      } else {
-        dy = -(overlapY + originalGapY) / geo.availH; // دفع للأعلى
+
+      const displacedSlot = {
+        ...overlapSlot,
+        x: clamp(newX, 0, Math.max(0, 1 - overlapSlot.w)),
+        y: clamp(newY, 0, Math.max(0, 1 - overlapSlot.h)),
+      };
+      const nextSlots = result.map((s) => (s.id === overlapSlot.id ? displacedSlot : s));
+
+      // التحقق بشكل متكرر من أن الخلية المُزاحة لا تتداخل مع خلايا أخرى،
+      // مع تمرير `overlapRect` كمستطيل أصلي للحفاظ على الفجوات الأصلية في سلسلة الدومينو.
+      const displacedRect = getSlotRect(displacedSlot, geo);
+      const recursiveResult = tryDisplaceOverlappingCells(
+        overlapSlot.id,
+        displacedRect,
+        overlapRect,
+        nextSlots,
+        geo,
+        new Set([...displacedIds, resizedSlotId]),
+        depth + 1,
+      );
+
+      if (recursiveResult) {
+        resolvedResult = recursiveResult;
+        break;
       }
     }
 
-    const newX = overlapSlot.x + dx;
-    const newY = overlapSlot.y + dy;
-
-    // التحقق من أن الإزاحة ضمن الحدود
-    if (
-      newX < -EPSILON_BOUNDS ||
-      newX + overlapSlot.w > 1 + EPSILON_BOUNDS ||
-      newY < -EPSILON_BOUNDS ||
-      newY + overlapSlot.h > 1 + EPSILON_BOUNDS
-    ) {
-      return null; // تعذّرت الإزاحة
-    }
-
-    const displacedSlot = { ...overlapSlot, x: newX, y: newY };
-    result = result.map((s) => (s.id === overlapSlot.id ? displacedSlot : s));
-
-    // التحقق بشكل متكرر من أن الخلية المُزاحة لا تتداخل مع خلايا أخرى
-    const displacedRect = getSlotRect(displacedSlot, geo);
-    const recursiveResult = tryDisplaceOverlappingCells(
-      overlapSlot.id,
-      displacedRect,
-      displacedRect, // الخلية المُزاحة أصبحت الآن "الأصلية" للتداخلات التالية
-      result,
-      geo,
-      new Set([...displacedIds, resizedSlotId]),
-      depth + 1,
-    );
-
-    if (!recursiveResult) return null; // تعذّر حل التداخلات المتسلسلة
-    result = recursiveResult;
+    if (!resolvedResult) return null; // تعذّر حل التداخلات على كلا المحورين
+    result = resolvedResult;
   }
 
   return result;
@@ -953,12 +975,26 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
       return { ok: false, reason: 'invalid' };
     }
-    if (w > 1 - source.x + EPSILON_BOUNDS || h > 1 - source.y + EPSILON_BOUNDS) {
+    if (w > 1 + EPSILON_BOUNDS || h > 1 + EPSILON_BOUNDS) {
       return { ok: false, reason: 'out-of-bounds' };
     }
     if (Math.abs(source.w - w) < EPSILON_BOUNDS && Math.abs(source.h - h) < EPSILON_BOUNDS) {
       return { ok: true };
     }
+    const clampedW = Math.min(w, 1);
+    const clampedH = Math.min(h, 1);
+    // إذا كانت الخلية قريبة من الحافة اليمنى أو السفلية وطلبت مقاساً يتجاوز حافة الورقة،
+    // نزح نقطة ارتكازها (x/y) للداخل أولاً ليتسع المقاس الجديد ويدفع جيرانه للداخل تلقائياً.
+    const nextX = source.x + clampedW > 1 + EPSILON_BOUNDS ? Math.max(0, 1 - clampedW) : source.x;
+    const nextY = source.y + clampedH > 1 + EPSILON_BOUNDS ? Math.max(0, 1 - clampedH) : source.y;
+    const resizedSource: CanvasSlot = {
+      ...source,
+      x: nextX,
+      y: nextY,
+      w: clampedW,
+      h: clampedH,
+    };
+
     const geo = getCollageGeometry(
       state.canvasWidth,
       state.canvasHeight,
@@ -967,7 +1003,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       Boolean(state.collageTemplate?.physicalLayout),
     );
     const originalRect = getSlotRect(source, geo);
-    const candidateRect = getSlotRect({ ...source, w, h }, geo);
+    const candidateRect = getSlotRect(resizedSource, geo);
     const hasConflict = state.slots.some((slot) => {
       if (slot.id === slotId) return false;
       return rectsIntersect(candidateRect, getSlotRect(slot, geo));
@@ -986,7 +1022,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         return { ok: false, reason: 'overlap' };
       }
       // تطبيق التغيير والمقاس الجديد معًا كخطوة واحدة
-      const slots = displacedSlots.map((slot) => (slot.id === slotId ? { ...slot, w, h } : slot));
+      const slots = displacedSlots.map((slot) => (slot.id === slotId ? resizedSource : slot));
       // قد يتداخل أكثر من مسار إزاحة متسلسل؛ لا نعتمد على نجاح كل خطوة
       // منفردة، بل نتحقق من الهندسة النهائية قبل تسجيل أي حالة في السجل.
       if (hasOverlap(slots, geo)) return { ok: false, reason: 'overlap' };
@@ -995,7 +1031,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       return { ok: true };
     }
 
-    const slots = state.slots.map((slot) => (slot.id === slotId ? { ...slot, w, h } : slot));
+    const slots = state.slots.map((slot) => (slot.id === slotId ? resizedSource : slot));
     set(manualGeometryPatch(state, slots));
     get().pushHistory();
     return { ok: true };
@@ -1005,7 +1041,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     const state = get();
     const source = state.slots.find((slot) => slot.id === slotId);
     if (!source) return { ok: false, reason: 'not-found' };
-    // المقاس الموحّد لا يجوز أن يدفع أي خلية خارج الورقة؛ لا نغيّر مواضعها ضمنياً.
+    // المقاس الموحّد لا يجوز أن يدفع أي خلية خارج الورقة في موضعها الحالي.
     const fits = state.slots.every(
       (slot) => slot.x + source.w <= 1 + EPSILON_BOUNDS && slot.y + source.h <= 1 + EPSILON_BOUNDS,
     );
@@ -1016,7 +1052,6 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         Math.abs(slot.h - source.h) > EPSILON_BOUNDS,
     );
     if (!changed) return { ok: true };
-    const slots = state.slots.map((slot) => ({ ...slot, w: source.w, h: source.h }));
     const geo = getCollageGeometry(
       state.canvasWidth,
       state.canvasHeight,
@@ -1024,10 +1059,128 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       state.collageGap,
       Boolean(state.collageTemplate?.physicalLayout),
     );
-    if (hasOverlap(slots, geo)) return { ok: false, reason: 'overlap' };
-    set(manualGeometryPatch(state, slots));
+    const uniformSlots = state.slots.map((slot) => ({ ...slot, w: source.w, h: source.h }));
+    if (!hasOverlap(uniformSlots, geo)) {
+      set(manualGeometryPatch(state, uniformSlots));
+      get().pushHistory();
+      return { ok: true };
+    }
+
+    // عند حدوث تداخل بسبب تعميم مقاس أكبر، نحاول تطبيق الإزاحة الذكية المتسلسلة
+    // بترتيب القراءة (من الأعلى للأسفل ومن اليسار لليمين) قبل رفض العملية.
+    const orderedIds = [...state.slots]
+      .sort((a, b) => (Math.abs(a.y - b.y) > EPSILON_BOUNDS ? a.y - b.y : a.x - b.x))
+      .map((slot) => slot.id);
+
+    let workingSlots = [...state.slots];
+    for (const id of orderedIds) {
+      const currentSlot = workingSlots.find((s) => s.id === id);
+      if (!currentSlot) continue;
+      if (
+        currentSlot.x < -EPSILON_BOUNDS ||
+        currentSlot.y < -EPSILON_BOUNDS ||
+        currentSlot.x + source.w > 1 + EPSILON_BOUNDS ||
+        currentSlot.y + source.h > 1 + EPSILON_BOUNDS
+      ) {
+        return { ok: false, reason: 'overlap' };
+      }
+      if (
+        Math.abs(currentSlot.w - source.w) <= EPSILON_BOUNDS &&
+        Math.abs(currentSlot.h - source.h) <= EPSILON_BOUNDS
+      ) {
+        continue;
+      }
+      const originalRect = getSlotRect(currentSlot, geo);
+      const resizedSlot: CanvasSlot = { ...currentSlot, w: source.w, h: source.h };
+      const candidateRect = getSlotRect(resizedSlot, geo);
+      const nextWorking = workingSlots.map((s) => (s.id === id ? resizedSlot : s));
+
+      const displaced = tryDisplaceOverlappingCells(
+        id,
+        candidateRect,
+        originalRect,
+        nextWorking,
+        geo,
+      );
+      if (!displaced) {
+        return { ok: false, reason: 'overlap' };
+      }
+      workingSlots = displaced;
+    }
+
+    if (hasOverlap(workingSlots, geo)) return { ok: false, reason: 'overlap' };
+    set(manualGeometryPatch(state, workingSlots));
     get().pushHistory();
     return { ok: true };
+  },
+
+  addAdjacentCollageSlot: (slotId, direction) => {
+    const state = get();
+    const source = state.slots.find((slot) => slot.id === slotId);
+    if (!source) return { ok: false, reason: 'not-found' };
+
+    const hasPhysicalLayout = Boolean(state.collageTemplate?.physicalLayout);
+    const geo = getCollageGeometry(
+      state.canvasWidth,
+      state.canvasHeight,
+      state.collageMargin,
+      state.collageGap,
+      hasPhysicalLayout,
+    );
+
+    const candidate = computeAdjacentSlotCandidate(
+      source,
+      direction,
+      state.slots,
+      geo,
+      state.collageGap,
+      hasPhysicalLayout,
+    );
+    if (!candidate) {
+      return { ok: false, reason: 'out-of-bounds' };
+    }
+
+    const baseSlot: CanvasSlot = {
+      id: uid(),
+      cellIndex: state.slots.length,
+      x: candidate.x,
+      y: candidate.y,
+      w: candidate.w,
+      h: candidate.h,
+      presetType: source.presetType,
+      label: source.label,
+      bgColor: source.bgColor ?? 'transparent',
+      filter: 'none',
+      brightness: 100,
+      contrast: 100,
+      saturation: 100,
+      zoom: 1,
+      dragX: 0,
+      dragY: 0,
+      flipX: false,
+      flipY: false,
+      rotation: 0,
+    };
+
+    const newSlot = source.imageSrc
+      ? applyCollageSlotImageContent(baseSlot, readCollageSlotImageContent(source))
+      : baseSlot;
+
+    const slots = [...state.slots, newSlot].map((slot, index) => ({
+      ...slot,
+      cellIndex: index,
+    }));
+
+    if (hasOverlap(slots, geo)) {
+      return { ok: false, reason: 'overlap' };
+    }
+
+    set({
+      ...manualGeometryPatch(state, slots),
+      ...normalizeSelection(newSlot.id),
+    });
+    get().pushHistory();
+    return { ok: true, newSlotId: newSlot.id };
   },
 
   clearSlots: () => {

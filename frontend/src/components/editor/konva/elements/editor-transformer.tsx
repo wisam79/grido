@@ -13,7 +13,7 @@ import {
 } from '@/lib/canvas/canvas-colors';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { getElementPixelVisualBox } from '@/lib/canvas/element-geometry';
-import { isCornerAnchor } from '@/lib/canvas/transform-anchors';
+import { constrainTransformerBox } from '@/lib/canvas/transform-anchors';
 import { pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 
@@ -350,40 +350,9 @@ export const EditorTransformer = React.memo(function EditorTransformer({
             anchor.strokeWidth(2);
           }
         }}
-        boundBoxFunc={(oldBox, newBox) => {
-          // حد أدنى للعرض في كل الحالات؛ ارتفاع النص مشتق من المحتوى فقد يكون
-          // أصغر من 10px (سطر بحجم 8px) دون أن يكون ذلك تحجيماً غير صالح.
-          if (Math.abs(newBox.width) < 10) return oldBox;
-          if (isText) {
-            // زاوية السحب: تحجيم متناسب لكل الكتلة. نسمح للارتفاع بالتغيّر أثناء
-            // الإيماءة (العقدة تُعرض بمقياسها) ثم يُترجم المقياس إلى fontSize في
-            // نهاية التحويل؛ رفض تغيّر الارتفاع هنا كان يجعل تحجيم الخط مستحيلاً.
-            if (isCornerAnchor(trRef.current?.getActiveAnchor?.())) {
-              if (Math.abs(newBox.height) < 10) return oldBox;
-              return newBox;
-            }
-            // منتصفات الحواف: العرض فقط؛ الارتفاع يتبع المحتوى دائماً.
-            // تثبيت الارتفاع وحده لا يكفي: مقابض top-* تحرّك الحافة العليا فيُترجم
-            // الصندوق كاملاً رأسياً (انزياح واضح للنص) رغم ثبات الارتفاع.
-            // الحل: إسقاط إزاحة أصل الصندوق على محور x المحلي — إزالة المكوّن
-            // العمودي المحلي فقط — فتبقى الحافة العليا على خطها الأصلي. الإسقاط
-            // يجري في فضاء الصندوق المحلي لذا يبقى صحيحاً مع تدوير العنصر.
-            if (!Number.isFinite(oldBox.x) || !Number.isFinite(oldBox.y)) return newBox;
-            const cos = Math.cos(newBox.rotation);
-            const sin = Math.sin(newBox.rotation);
-            const dx = newBox.x - oldBox.x;
-            const dy = newBox.y - oldBox.y;
-            const alongWidth = dx * cos + dy * sin;
-            return {
-              ...newBox,
-              x: oldBox.x + alongWidth * cos,
-              y: oldBox.y + alongWidth * sin,
-              height: oldBox.height,
-            };
-          }
-          if (Math.abs(newBox.height) < 10) return oldBox;
-          return newBox;
-        }}
+        boundBoxFunc={(oldBox, newBox) =>
+          constrainTransformerBox(oldBox, newBox, isText, trRef.current?.getActiveAnchor?.())
+        }
         onTransformEnd={onTransformEnd}
       />
 

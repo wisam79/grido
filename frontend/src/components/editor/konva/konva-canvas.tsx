@@ -106,6 +106,7 @@ export const KonvaCanvas = React.memo(
     const toggleElementSelection = useEditorStore((s) => s.toggleElementSelection);
     const updateElement = useEditorStore((s) => s.updateElement);
     const updateSlot = useEditorStore((s) => s.updateSlot);
+    const addAdjacentCollageSlot = useEditorStore((s) => s.addAdjacentCollageSlot);
     const pushHistory = useEditorStore((s) => s.pushHistory);
 
     const handleSlotWheel = React.useCallback(
@@ -601,6 +602,7 @@ export const KonvaCanvas = React.memo(
             handleSlotWheel={handleSlotWheel}
             updateSlot={updateSlot}
             pushHistory={pushHistory}
+            onAddAdjacentSlot={addAdjacentCollageSlot}
           />
         )}
 

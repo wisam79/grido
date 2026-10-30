@@ -184,4 +184,63 @@ describe('خلية الكولاج الفارغة تستقبل الفأرة', () 
 
     unmount();
   });
+
+  it('يعرض أزرار (+) فقط على الجهات المتاحة للخلية المحددة ويمرّر الاتجاه عند النقر', () => {
+    let stage: Konva.Stage | null = null;
+    const onAddAdjacentSlot = vi.fn();
+    const topCornerSlot: CanvasSlot = {
+      id: 'slot-corner',
+      cellIndex: 0,
+      x: 0,
+      y: 0,
+      w: 0.3,
+      h: 0.3,
+      bgColor: 'transparent',
+    };
+
+    const { unmount } = render(
+      <Stage
+        ref={(s: Konva.Stage | null) => {
+          stage = s;
+        }}
+        width={800}
+        height={1000}
+      >
+        <KonvaCollageLayer
+          slots={[topCornerSlot]}
+          canvasWidth={800}
+          canvasHeight={1000}
+          collageMargin={0}
+          collageGap={0}
+          collageRadius={4}
+          collageStrokeWidth={1}
+          collageStrokeColor="#94a3b8"
+          collageShowCutLines={false}
+          selectedId="slot-corner"
+          selectedIds={['slot-corner']}
+          handleSlotWheel={noop}
+          updateSlot={noop}
+          pushHistory={noop}
+          onAddAdjacentSlot={onAddAdjacentSlot}
+        />
+      </Stage>,
+    );
+
+    const s = stage as unknown as Konva.Stage;
+    // الخلية في أقصى أعلى اليسار (0,0) → الأعلى واليسار خارج الورقة، واليمين والأسفل متاحان فقط
+    expect(s.findOne('.slot-add-handle-top')).toBeFalsy();
+    expect(s.findOne('.slot-add-handle-left')).toBeFalsy();
+    const rightHandle = s.findOne<Konva.Group>('.slot-add-handle-right');
+    const bottomHandle = s.findOne<Konva.Group>('.slot-add-handle-bottom');
+    expect(rightHandle).toBeTruthy();
+    expect(bottomHandle).toBeTruthy();
+
+    rightHandle!.fire('click', { evt: {} }, true);
+    expect(onAddAdjacentSlot).toHaveBeenCalledWith('slot-corner', 'right');
+
+    bottomHandle!.fire('click', { evt: {} }, true);
+    expect(onAddAdjacentSlot).toHaveBeenCalledWith('slot-corner', 'bottom');
+
+    unmount();
+  });
 });

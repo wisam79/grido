@@ -576,4 +576,196 @@ describe('CollageSlice Unit Tests', () => {
       expect(s.backgroundColor).toBe('#00FF00');
     });
   });
+
+  describe('إضافة خلية مجاورة مباشرة عبر أزرار (+) حول الخلية المحددة', () => {
+    it('يضيف خلية مجاورة بنفس المقاس الفيزيائي وينسخ صورة الخلية المحددة وينقل التحديد إليها', () => {
+      useEditorStore.setState({
+        mode: 'collage',
+        canvasWidth: 1000,
+        canvasHeight: 1000,
+        collageMargin: 0,
+        collageGap: 0,
+        collageTemplate: {
+          id: 'collage-custom',
+          name: 'مخصص',
+          slots: 1,
+          cells: [{ x: 0.1, y: 0.1, w: 0.3, h: 0.4 }],
+        },
+        slots: [
+          {
+            id: 'slot-1',
+            cellIndex: 0,
+            x: 0.1,
+            y: 0.1,
+            w: 0.3,
+            h: 0.4,
+            imageSrc: 'id-photo.jpg',
+            filter: 'bw',
+            brightness: 110,
+            contrast: 105,
+            saturation: 90,
+            zoom: 1.25,
+            dragX: 12,
+            dragY: -8,
+            flipX: true,
+            flipY: false,
+            rotation: 90,
+          },
+        ],
+        selectedId: 'slot-1',
+        selectedIds: ['slot-1'],
+      });
+      const historyBefore = useEditorStore.getState().historyIndex;
+
+      const res = useEditorStore.getState().addAdjacentCollageSlot('slot-1', 'right');
+      expect(res.ok).toBe(true);
+
+      const s = useEditorStore.getState();
+      expect(s.slots).toHaveLength(2);
+      const added = s.slots[1];
+      expect(added.x).toBeCloseTo(0.4, 5);
+      expect(added.y).toBeCloseTo(0.1, 5);
+      expect(added.w).toBeCloseTo(0.3, 5);
+      expect(added.h).toBeCloseTo(0.4, 5);
+      expect(added.imageSrc).toBe('id-photo.jpg');
+      expect(added.filter).toBe('bw');
+      expect(added.brightness).toBe(110);
+      expect(added.zoom).toBe(1.25);
+      expect(added.flipX).toBe(true);
+      expect(added.rotation).toBe(90);
+      expect(s.selectedId).toBe(added.id);
+      expect(s.selectedIds).toEqual([added.id]);
+      expect(s.historyIndex).toBe(historyBefore + 1);
+    });
+
+    it('يرفض الإضافة عندما تتجاوز حدود الورقة أو تتصادم مع خلية قائمة', () => {
+      useEditorStore.setState({
+        mode: 'collage',
+        canvasWidth: 1000,
+        canvasHeight: 1000,
+        collageMargin: 0,
+        collageGap: 0,
+        slots: [
+          { id: 'slot-tl', cellIndex: 0, x: 0, y: 0, w: 0.4, h: 0.4 },
+          { id: 'slot-tr', cellIndex: 1, x: 0.4, y: 0, w: 0.4, h: 0.4 },
+        ],
+      });
+
+      // أعلى ويسار الخلية الأولى خارج حدود الورقة
+      expect(useEditorStore.getState().addAdjacentCollageSlot('slot-tl', 'top')).toEqual({
+        ok: false,
+        reason: 'out-of-bounds',
+      });
+      expect(useEditorStore.getState().addAdjacentCollageSlot('slot-tl', 'left')).toEqual({
+        ok: false,
+        reason: 'out-of-bounds',
+      });
+      // يمين الخلية الأولى مشغول بـ slot-tr
+      expect(useEditorStore.getState().addAdjacentCollageSlot('slot-tl', 'right')).toEqual({
+        ok: false,
+        reason: 'out-of-bounds',
+      });
+      // أسفل الخلية الأولى متاح وفارغ
+      const bottomRes = useEditorStore.getState().addAdjacentCollageSlot('slot-tl', 'bottom');
+      expect(bottomRes.ok).toBe(true);
+      expect(useEditorStore.getState().slots).toHaveLength(3);
+    });
+  });
+
+  describe('smart displacement upgrades', () => {
+    it('يحفظ جميع الفجوات الأصلية في سلسلة الدومينو من 3 خلايا (A -> B -> C)', () => {
+      const base = setupCollage();
+      useEditorStore.setState({
+        collageTemplate: null,
+        collageGap: 0,
+        collageMargin: 0,
+        slots: [
+          { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.2, h: 0.3 },
+          { ...base, id: 'b', cellIndex: 1, x: 0.25, y: 0, w: 0.2, h: 0.3 },
+          { ...base, id: 'c', cellIndex: 2, x: 0.5, y: 0, w: 0.2, h: 0.3 },
+        ],
+      });
+
+      const result = useEditorStore.getState().resizeCollageSlot('a', 0.3, 0.3);
+      expect(result).toEqual({ ok: true });
+
+      const state = useEditorStore.getState();
+      const slotA = state.slots.find((s) => s.id === 'a')!;
+      const slotB = state.slots.find((s) => s.id === 'b')!;
+      const slotC = state.slots.find((s) => s.id === 'c')!;
+
+      expect(slotA.x).toBeCloseTo(0, 5);
+      expect(slotB.x).toBeCloseTo(0.35, 5); // فجوة AB الأصلية (0.05) محفوظة
+      expect(slotC.x).toBeCloseTo(0.6, 5); // فجوة BC الأصلية (0.05) محفوظة أيضاً
+    });
+
+    it('يدفع الجار الأفقي في نفس الصف أفقياً حتى لو كان التداخل الأفقي أكبر من العمودي أو ابتلعه بالكامل', () => {
+      const base = setupCollage();
+      useEditorStore.setState({
+        collageTemplate: null,
+        collageGap: 0,
+        collageMargin: 0,
+        slots: [
+          { ...base, id: 'a', cellIndex: 0, x: 0, y: 0.1, w: 0.2, h: 0.2 },
+          { ...base, id: 'b', cellIndex: 1, x: 0.25, y: 0.1, w: 0.2, h: 0.2 },
+        ],
+      });
+
+      // تكبير عرض A إلى 0.55 يبتلع B بالكامل ويجعل overlapX > overlapY، ومع ذلك يجب إزاحة B أفقياً في نفس الصف
+      const result = useEditorStore.getState().resizeCollageSlot('a', 0.55, 0.2);
+      expect(result).toEqual({ ok: true });
+
+      const slotB = useEditorStore.getState().slots.find((s) => s.id === 'b')!;
+      expect(slotB.y).toBeCloseTo(0.1, 5);
+      expect(slotB.x).toBeCloseTo(0.6, 5); // 0.55 + الفجوة الأصلية 0.05
+    });
+
+    it('يسمح بتكبير خلية على الحافة اليمنى عبر إزاحة ارتكازها للداخل ودفع جارها لليسار', () => {
+      const base = setupCollage();
+      useEditorStore.setState({
+        collageTemplate: null,
+        collageGap: 0,
+        collageMargin: 0,
+        slots: [
+          { ...base, id: 'left', cellIndex: 0, x: 0.3, y: 0, w: 0.3, h: 0.3 },
+          { ...base, id: 'right', cellIndex: 1, x: 0.65, y: 0, w: 0.35, h: 0.3 },
+        ],
+      });
+
+      const result = useEditorStore.getState().resizeCollageSlot('right', 0.5, 0.3);
+      expect(result).toEqual({ ok: true });
+
+      const state = useEditorStore.getState();
+      const leftSlot = state.slots.find((s) => s.id === 'left')!;
+      const rightSlot = state.slots.find((s) => s.id === 'right')!;
+
+      expect(rightSlot.x).toBeCloseTo(0.5, 5);
+      expect(rightSlot.w).toBeCloseTo(0.5, 5);
+      expect(leftSlot.x).toBeCloseTo(0.15, 5); // دُفعت لليسار مع الحفاظ على فجوة 0.05
+    });
+
+    it('ينجح applyCollageSlotSizeToAll عبر الإزاحة الذكية المتسلسلة عندما تتوفر مساحة على الورقة', () => {
+      const base = setupCollage();
+      useEditorStore.setState({
+        collageTemplate: null,
+        collageGap: 0,
+        collageMargin: 0,
+        slots: [
+          { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.35, h: 0.3 },
+          { ...base, id: 'b', cellIndex: 1, x: 0.25, y: 0.5, w: 0.2, h: 0.3 },
+          { ...base, id: 'c', cellIndex: 2, x: 0.5, y: 0.5, w: 0.2, h: 0.3 },
+        ],
+      });
+
+      const result = useEditorStore.getState().applyCollageSlotSizeToAll('a');
+      expect(result).toEqual({ ok: true });
+
+      const state = useEditorStore.getState();
+      expect(state.slots.every((s) => s.w === 0.35 && s.h === 0.3)).toBe(true);
+      const slotB = state.slots.find((s) => s.id === 'b')!;
+      const slotC = state.slots.find((s) => s.id === 'c')!;
+      expect(slotB.x).toBeCloseTo(0.25, 5);
+      expect(slotC.x).toBeCloseTo(0.65, 5); // دُفعت لليمين مع الحفاظ على الفجوة الأصلية 0.05
+    });
+  });
 });

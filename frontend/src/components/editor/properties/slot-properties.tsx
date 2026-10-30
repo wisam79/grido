@@ -156,8 +156,8 @@ function SlotSizeFields({
       if (axis === 'width') nextH = nextW / ratio;
       else nextW = nextH * ratio;
     }
-    const maxW = pxToMm((1 - slot.x) * geo.availW - geo.gap, dpi);
-    const maxH = pxToMm((1 - slot.y) * geo.availH - geo.gap, dpi);
+    const maxW = pxToMm(geo.availW - geo.gap, dpi);
+    const maxH = pxToMm(geo.availH - geo.gap, dpi);
     if (maxW < 1 || maxH < 1) {
       toast.error('لا توجد مساحة كافية لهذه الخلية على الورقة');
       resetDraft();

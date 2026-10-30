@@ -6,7 +6,11 @@ import { Button } from '@/components/ui/button';
 import { X } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
-import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
+import {
+  getAvailableAdjacentSlotDirections,
+  getCollageGeometry,
+  getSlotRect,
+} from '@/lib/canvas/collage-geometry';
 import { getElementVisualBox } from '@/lib/canvas/element-geometry';
 import { useEditorStore } from '@/lib/editor-store';
 import { openImageFileDialog, persistPickedImage } from '@/lib/io/file-dialog-utils';
@@ -70,6 +74,12 @@ function pixelBoxOfElement(
 
 const GAP_PX = 5; // فجوة الشريط عن الصندوق المحيط
 const EDGE_PX = 4; // هامش أمان من حواف الورقة
+/**
+ * 🧭 مسافة الخلوص الإضافية لمقبض التدوير (`rotater`) في المحوّل:
+ * يمتد مقبض التدوير في `EditorTransformer` بـ `rotateAnchorOffset = 26px`
+ * مع نصف قطر مقبض `7px` وحشوة إطار `padding = 3px` (أي ~36px في فضاء العرض).
+ */
+const ROTATE_ANCHOR_CLEARANCE_PX = 38;
 
 export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   printMode = false,
@@ -289,15 +299,18 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   // 📐 صندوق المرساة (بكسل داخل الورقة): الخلية المحددة، أو الاتحاد المحيط
   // للعناصر المحددة (يشمل AABB بعد الدوران لكل عنصر)
   let anchor: AnchorBox | null = null;
+  let topClearancePx = GAP_PX;
+  let bottomClearancePx = GAP_PX;
   if (mode === 'collage' && selectedSlot) {
     // 📐 نفس هندسة المرسم بالضبط (collage-geometry) لكن بالبكسل الكانفسي،
     // ثم تُقاس إلى بكسل العرض — فلا ينحرف الشريط عن الخلية المرسومة فعلاً.
+    const hasPhysicalLayout = Boolean(collageTemplate?.physicalLayout);
     const geo = getCollageGeometry(
       canvasWidth,
       canvasHeight,
       collageMargin,
       collageGap,
-      Boolean(collageTemplate?.physicalLayout),
+      hasPhysicalLayout,
     );
     const rect = getSlotRect(selectedSlot, geo);
     const sx = canvasWidth > 0 ? canvasBox.width / canvasWidth : 1;
@@ -308,6 +321,17 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
       width: Math.max(1, rect.width * sx),
       height: Math.max(1, rect.height * sy),
     };
+    if (selectedIds.length <= 1) {
+      const availableDirs = getAvailableAdjacentSlotDirections(
+        selectedSlot,
+        slots,
+        geo,
+        collageGap,
+        hasPhysicalLayout,
+      );
+      if (availableDirs.includes('top')) topClearancePx = GAP_PX + 24;
+      if (availableDirs.includes('bottom')) bottomClearancePx = GAP_PX + 24;
+    }
   } else if (mode === 'single') {
     const ids = selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : [];
     const chosen = elements.filter((e) => ids.includes(e.id));
@@ -326,6 +350,23 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
           height: Math.max(acc.top + acc.height, box.top + box.height) - minY,
         };
       }, null);
+
+      const allLocked = chosen.every((el) => el.locked);
+      if (!allLocked) {
+        // عندما يكون العنصر الفردي مقلوباً (قريباً من 180°)، يتجه مقبض التدوير للأسفل
+        // بدلاً من الأعلى؛ وفي جميع الحالات الأخرى يتجه للأعلى فيتطلب خلوصاً علوياً.
+        if (chosen.length === 1) {
+          const rot = (((chosen[0].rotation ?? 0) % 360) + 360) % 360;
+          const rotaterPointsDown = rot >= 135 && rot <= 225;
+          if (rotaterPointsDown) {
+            bottomClearancePx = GAP_PX + ROTATE_ANCHOR_CLEARANCE_PX;
+          } else {
+            topClearancePx = GAP_PX + ROTATE_ANCHOR_CLEARANCE_PX;
+          }
+        } else {
+          topClearancePx = GAP_PX + ROTATE_ANCHOR_CLEARANCE_PX;
+        }
+      }
     }
   }
 
@@ -345,10 +386,10 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   let barLeft = anchor.left + anchor.width / 2 - effW / 2;
   barLeft = Math.max(EDGE_PX, Math.min(barLeft, cw - effW - EDGE_PX));
 
-  let barTop = anchor.top - barH - GAP_PX;
+  let barTop = anchor.top - barH - topClearancePx;
   let originY: 'bottom' | 'top' = 'bottom';
   if (barTop < EDGE_PX) {
-    const below = anchor.top + anchor.height + GAP_PX;
+    const below = anchor.top + anchor.height + bottomClearancePx;
     if (below + barH <= ch - EDGE_PX) {
       barTop = below;
       originY = 'top';

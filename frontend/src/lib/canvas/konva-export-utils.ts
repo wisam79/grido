@@ -163,6 +163,8 @@ export async function withHiddenOverlays<T>(
   // 🔲 لبنات الخلايا الفارغة إشارة واجهة لا محتوى مطبوع/مصدَّر: إخفاؤها يجعل
   // التقاط الطباعة يطابق مسار التصدير (الذي لا يرسم أي بديل للخلايا الفارغة)
   const slotPlaceholders = stage.find('.slot-placeholder') as unknown as KonvaNodeLike[];
+  // ➕ أزرار إضافة الخلية المجاورة إشارة واجهة تحريرية — تُخفى عند الالتقاط والطباعة
+  const slotAddHandles = stage.find('.slot-add-handles') as unknown as KonvaNodeLike[];
   // 📄 ظل الورقة المخصص لشاشة التحرير — يُخفى تماماً عند التصدير لتبقى الصورة نقية
   const paperShadows = stage.find('.paper-shadow-rect') as unknown as KonvaNodeLike[];
   // 🛠️ طبقة الأدوات والمحوّل ومستطيل التحديد — تُخفى كاملة بنقرة واحدة
@@ -173,6 +175,7 @@ export async function withHiddenOverlays<T>(
     for (const gl of gridLayers) gl.hide();
     for (const cl of columnsLayers) cl.hide();
     for (const ph of slotPlaceholders) ph.hide();
+    for (const ah of slotAddHandles) ah.hide();
     for (const ps of paperShadows) ps.hide();
     for (const ot of overlayTools) ot.hide();
 
@@ -184,6 +187,7 @@ export async function withHiddenOverlays<T>(
     for (const gl of gridLayers) gl.show();
     for (const cl of columnsLayers) cl.show();
     for (const ph of slotPlaceholders) ph.show();
+    for (const ah of slotAddHandles) ah.show();
     for (const ps of paperShadows) ps.show();
     for (const ot of overlayTools) ot.show();
 

@@ -7,6 +7,7 @@ import {
   resolveTextBoxAnchorOffsetPx,
   resolveTextSizing,
 } from '../src/lib/canvas/text-fit';
+import { constrainTransformerBox } from '../src/lib/canvas/transform-anchors';
 
 describe('text-fit — sizing rules', () => {
   it('treats legacy elements as fixed and only an explicit auto as auto', () => {
@@ -75,5 +76,42 @@ describe('text-fit — resize anchor offsets', () => {
       expect(offset.dxPx).toBeCloseTo(0, 6);
       expect(offset.dyPx).toBeCloseTo(0, 6);
     }
+  });
+});
+
+describe('constrainTransformerBox — text rotation around center', () => {
+  it('preserves Konva rotateAroundCenter coordinates when activeAnchor is rotater', () => {
+    const oldBox = { x: 100, y: 200, width: 300, height: 80, rotation: 0 };
+    // مركز الصندوق الأصلي = (250, 240). عند الدوران 90° (π/2 rad) حول المركز،
+    // يصبح أصل الصندوق الجديد (250 + 40, 240 - 150) = (290, 90)
+    const rad = Math.PI / 2;
+    const rotatedBox = {
+      x: 290,
+      y: 90,
+      width: 300,
+      height: 80,
+      rotation: rad,
+    };
+
+    const result = constrainTransformerBox(oldBox, rotatedBox, true, 'rotater');
+    expect(result).toEqual(rotatedBox);
+
+    // التحقق من ثبات المركز الهندسي بعد تطبيق القيد
+    const centerAfterX =
+      result.x + (result.width * Math.cos(rad) - result.height * Math.sin(rad)) / 2;
+    const centerAfterY =
+      result.y + (result.width * Math.sin(rad) + result.height * Math.cos(rad)) / 2;
+    expect(centerAfterX).toBeCloseTo(250, 6);
+    expect(centerAfterY).toBeCloseTo(240, 6);
+  });
+
+  it('still projects side/top handles onto the local width axis for text', () => {
+    const oldBox = { x: 100, y: 200, width: 300, height: 80, rotation: 0 };
+    const draggedTopCenter = { x: 100, y: 160, width: 300, height: 120, rotation: 0 };
+
+    const result = constrainTransformerBox(oldBox, draggedTopCenter, true, 'top-center');
+    expect(result.x).toBeCloseTo(100, 6);
+    expect(result.y).toBeCloseTo(200, 6);
+    expect(result.height).toBeCloseTo(80, 6);
   });
 });

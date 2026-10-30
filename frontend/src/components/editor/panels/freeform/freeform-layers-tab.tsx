@@ -227,10 +227,10 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
       dir="rtl"
     >
       {/* 🎛️ شريط أدوات الطبقات الموحد الرشيق */}
-      <div className="flex items-center justify-between h-8 px-2 rounded-lg border border-border/70 bg-card/60 shadow-2xs">
+      <div className="flex items-center justify-between h-8 px-1.5 rounded-md border border-border/60 bg-card/40">
         {/* عدّاد فقط — رأس اللوح يحمل اسم «الطبقات» فلا نكرّره هنا؛
             والباقي من عرض الصف يعود لأزرار الإجراءات. */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 ps-0.5">
           <span className="sr-only">{hasSelection ? 'العناصر المحددة' : 'عدد العناصر'}</span>
           <span
             title={
@@ -238,7 +238,12 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
                 ? `المحدد ${selectedIds.length} من ${elements.length}`
                 : `${elements.length} عنصر`
             }
-            className="text-3xs font-mono font-semibold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40 shrink-0"
+            className={cn(
+              'text-3xs font-mono font-semibold tabular-nums px-1.5 py-0.5 rounded-md border shrink-0 transition-colors',
+              hasSelection
+                ? 'bg-primary/10 text-primary border-primary/25'
+                : 'bg-muted/60 text-muted-foreground border-border/50',
+            )}
           >
             {selectedIds.length > 0 ? `${selectedIds.length}/${elements.length}` : elements.length}
           </span>
@@ -325,7 +330,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
                       onClick={runRasterize}
                     >
                       <ImageStack className="w-3.5 h-3.5" />
-                      {isRasterizing ? 'جارٍ التسطيح…' : 'تسطيح كصورة'}
+                      {isRasterizing ? 'جاري التسطيح ...' : 'تسطيح كصورة'}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -379,7 +384,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
 
       {/* 🧭 شريط المحاذاة المشروط: يظهر فقط عند وجود عناصر محددة بتصميم رشيق مدمج */}
       {hasSelection && (
-        <div className="flex items-center justify-between h-7 px-1.5 rounded-lg border border-border/50 bg-muted/30 shadow-2xs animate-in fade-in duration-150">
+        <div className="flex items-center justify-between h-8 px-1 rounded-md border border-border/60 bg-card/40 animate-in fade-in duration-150">
           <div className="flex items-center gap-0.5">
             <QuickActionBtn
               content={
@@ -387,13 +392,13 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               }
               onClick={() => alignSelectedElements('right')}
             >
-              <AlignRight className="w-3 h-3" />
+              <AlignRight className="w-3.5 h-3.5" />
             </QuickActionBtn>
             <QuickActionBtn
               content={hasMultipleSelected ? 'توسيط العناصر أفقياً' : 'توسيط أفقي في لوحة العمل'}
               onClick={() => alignSelectedElements('center')}
             >
-              <AlignCenterHorizontal className="w-3 h-3" />
+              <AlignCenterHorizontal className="w-3.5 h-3.5" />
             </QuickActionBtn>
             <QuickActionBtn
               content={
@@ -401,7 +406,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               }
               onClick={() => alignSelectedElements('left')}
             >
-              <AlignLeft className="w-3 h-3" />
+              <AlignLeft className="w-3.5 h-3.5" />
             </QuickActionBtn>
           </div>
 
@@ -414,13 +419,13 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               }
               onClick={() => alignSelectedElements('top')}
             >
-              <AlignTop className="w-3 h-3" />
+              <AlignTop className="w-3.5 h-3.5" />
             </QuickActionBtn>
             <QuickActionBtn
               content={hasMultipleSelected ? 'توسيط العناصر عمودياً' : 'توسيط عمودي في لوحة العمل'}
               onClick={() => alignSelectedElements('middle')}
             >
-              <AlignCenterVertical className="w-3 h-3" />
+              <AlignCenterVertical className="w-3.5 h-3.5" />
             </QuickActionBtn>
             <QuickActionBtn
               content={
@@ -428,7 +433,7 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
               }
               onClick={() => alignSelectedElements('bottom')}
             >
-              <AlignBottom className="w-3 h-3" />
+              <AlignBottom className="w-3.5 h-3.5" />
             </QuickActionBtn>
           </div>
 
@@ -440,13 +445,13 @@ export const FreeformLayersTab = React.memo(function FreeformLayersTab() {
                   content="توزيع أفقي"
                   onClick={() => distributeSelectedElements('horizontal')}
                 >
-                  <ArrowsHorizontal className="w-3 h-3" />
+                  <ArrowsHorizontal className="w-3.5 h-3.5" />
                 </QuickActionBtn>
                 <QuickActionBtn
                   content="توزيع عمودي"
                   onClick={() => distributeSelectedElements('vertical')}
                 >
-                  <ArrowsVertical className="w-3 h-3" />
+                  <ArrowsVertical className="w-3.5 h-3.5" />
                 </QuickActionBtn>
               </div>
             </>

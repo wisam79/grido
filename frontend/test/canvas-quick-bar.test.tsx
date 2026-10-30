@@ -269,4 +269,62 @@ describe('CanvasQuickBar Component Tests', () => {
     );
     expect(container.firstChild).not.toBeNull();
   });
+
+  it('adds vertical clearance above the rotation handle in single mode so it does not cover the rotater', () => {
+    const canvasArea = document.createElement('div');
+    canvasArea.id = 'canvas-area';
+    canvasArea.getBoundingClientRect = () =>
+      ({
+        left: 0,
+        top: 0,
+        right: 1000,
+        bottom: 1000,
+        width: 1000,
+        height: 1000,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    document.body.appendChild(canvasArea);
+
+    try {
+      useEditorStore.setState({
+        mode: 'single',
+        canvasWidth: 1000,
+        canvasHeight: 1000,
+        selectedId: 'el-rot',
+        selectedIds: ['el-rot'],
+        elements: [
+          {
+            id: 'el-rot',
+            type: 'image',
+            x: 0.2,
+            y: 0.3,
+            width: 0.4,
+            height: 0.4,
+            rotation: 0,
+            opacity: 1,
+            zIndex: 1,
+            imageSrc: 'test.jpg',
+          },
+        ],
+      });
+
+      render(
+        <TooltipProvider>
+          <CanvasOverlayHost>
+            <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+          </CanvasOverlayHost>
+        </TooltipProvider>,
+      );
+
+      const bar = screen.getByTestId('canvas-quick-bar');
+      // قمة العنصر عند 300px (0.3 * 1000)، ومع خلوص مقبض التدوير (GAP_PX 5 + ROTATE_ANCHOR_CLEARANCE_PX 38 = 43px)
+      // يتموضع الشريط عند 300 - h - 43 (وفي بيئة jsdom حيث offsetHeight=0 يكون 257px مقابل 295px بدون الخلوص).
+      const topPx = Number.parseFloat(bar.style.top);
+      expect(topPx).toBeLessThanOrEqual(260);
+    } finally {
+      canvasArea.remove();
+    }
+  });
 });

@@ -13,7 +13,12 @@ import {
   slotPlaceholderIcon,
   slotPlaceholderIconHover,
 } from '@/lib/canvas/canvas-colors';
-import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
+import {
+  getAvailableAdjacentSlotDirections,
+  getCollageGeometry,
+  getSlotRect,
+  type AdjacentSlotDirection,
+} from '@/lib/canvas/collage-geometry';
 import { buildMidpointCutLines, type AxisInterval } from '@/lib/print/cut-lines-utils';
 
 import { KonvaCollageImage } from '../elements/collage-image';
@@ -46,6 +51,7 @@ interface KonvaCollageLayerProps {
   ) => void;
   updateSlot: (id: string, patch: Partial<Slot>) => void;
   pushHistory: () => void;
+  onAddAdjacentSlot?: (slotId: string, direction: AdjacentSlotDirection) => void;
 }
 
 interface CollageEmptySlotPlaceholderProps {
@@ -181,6 +187,95 @@ const CollageEmptySlotPlaceholder = React.memo(function CollageEmptySlotPlacehol
   );
 });
 
+interface CollageSlotAddHandleProps {
+  x: number;
+  y: number;
+  uiScale: number;
+  direction: AdjacentSlotDirection;
+  onAdd: (direction: AdjacentSlotDirection) => void;
+}
+
+// ➕ زر إضافة خلية مجاورة على حافة الخلية المحددة (Fluent 2 Action Badge):
+// معزول بحالة المرور داخلياً حتى لا يعيد تصيير الطبقة عند دخول/خروج المؤشر.
+const CollageSlotAddHandle = React.memo(function CollageSlotAddHandle({
+  x,
+  y,
+  uiScale,
+  direction,
+  onAdd,
+}: CollageSlotAddHandleProps) {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const radius = (isHovered ? 11.5 : 10.5) / uiScale;
+  const hitRadius = 15 / uiScale;
+  const arm = 4.25 / uiScale;
+  const strokeW = 1.75 / uiScale;
+
+  return (
+    <Group
+      name={`slot-add-handle slot-add-handle-${direction}`}
+      x={x}
+      y={y}
+      onMouseDown={(e) => {
+        e.cancelBubble = true;
+      }}
+      onTouchStart={(e) => {
+        e.cancelBubble = true;
+      }}
+      onClick={(e) => {
+        e.cancelBubble = true;
+        onAdd(direction);
+      }}
+      onTap={(e) => {
+        e.cancelBubble = true;
+        onAdd(direction);
+      }}
+      onMouseEnter={(e) => {
+        setIsHovered(true);
+        const stage = e.target.getStage();
+        const cursor = stage?.container().style.cursor;
+        if (stage && cursor !== 'grab' && cursor !== 'grabbing') {
+          stage.container().style.cursor = 'pointer';
+        }
+      }}
+      onMouseLeave={(e) => {
+        setIsHovered(false);
+        const stage = e.target.getStage();
+        if (stage) stage.container().style.cursor = '';
+      }}
+    >
+      {/* هدف نقر موسع غير مرئي لسهولة الالتقاط بالماوس واللمس */}
+      <Circle x={0} y={0} radius={hitRadius} fill="rgba(0,0,0,0.001)" />
+      <Circle
+        x={0}
+        y={0}
+        radius={radius}
+        fill={isHovered ? '#0078d4' : slotPlaceholderBadge()}
+        stroke="#0078d4"
+        strokeWidth={1.5 / uiScale}
+        shadowColor="rgba(0, 0, 0, 0.18)"
+        shadowBlur={5 / uiScale}
+        shadowOffset={{ x: 0, y: 1 / uiScale }}
+        shadowForStrokeEnabled={false}
+        listening={false}
+      />
+      <Line
+        points={[-arm, 0, arm, 0]}
+        stroke={isHovered ? '#ffffff' : '#0078d4'}
+        strokeWidth={strokeW}
+        lineCap="round"
+        listening={false}
+      />
+      <Line
+        points={[0, -arm, 0, arm]}
+        stroke={isHovered ? '#ffffff' : '#0078d4'}
+        strokeWidth={strokeW}
+        lineCap="round"
+        listening={false}
+      />
+    </Group>
+  );
+});
+
 export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   slots,
   canvasWidth,
@@ -201,6 +296,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
   handleSlotWheel,
   updateSlot,
   pushHistory,
+  onAddAdjacentSlot,
 }: KonvaCollageLayerProps) {
   // 🛡️ سمك شاشة ثابت لحلقة التحديد (يطابق marquee طبقة single) — القيمة
   // الافتراضية 1 تُبقي أي مستدعٍ قديم بلا تغيير سلوكي.
@@ -427,6 +523,54 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
           </Group>
         );
       })}
+      {onAddAdjacentSlot &&
+        selectedId &&
+        selectedIds.length <= 1 &&
+        (() => {
+          const primarySlot = slots.find((s) => s.id === selectedId);
+          if (!primarySlot) return null;
+          const hasPhysicalLayout = Boolean(collageTemplate?.physicalLayout);
+          const availableDirs = getAvailableAdjacentSlotDirections(
+            primarySlot,
+            slots,
+            geo,
+            collageGap,
+            hasPhysicalLayout,
+          );
+          if (availableDirs.length === 0) return null;
+
+          const { left, top, width, height } = getSlotRect(primarySlot, geo);
+          const offset = 14 / uiScale;
+          const safePad = 13 / uiScale;
+          const clampX = (val: number) =>
+            Math.max(safePad, Math.min(Math.max(safePad, canvasWidth - safePad), val));
+          const clampY = (val: number) =>
+            Math.max(safePad, Math.min(Math.max(safePad, canvasHeight - safePad), val));
+
+          return (
+            <Group name="slot-add-handles">
+              {availableDirs.map((dir) => {
+                let hx = left + width / 2;
+                let hy = top + height / 2;
+                if (dir === 'top') hy = top - offset;
+                else if (dir === 'bottom') hy = top + height + offset;
+                else if (dir === 'left') hx = left - offset;
+                else if (dir === 'right') hx = left + width + offset;
+
+                return (
+                  <CollageSlotAddHandle
+                    key={dir}
+                    x={clampX(hx)}
+                    y={clampY(hy)}
+                    uiScale={uiScale}
+                    direction={dir}
+                    onAdd={(direction) => onAddAdjacentSlot(primarySlot.id, direction)}
+                  />
+                );
+              })}
+            </Group>
+          );
+        })()}
     </Layer>
   );
 });
