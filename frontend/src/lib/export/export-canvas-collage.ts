@@ -6,7 +6,7 @@ import { collageCut, collageEndCut } from '@/lib/canvas/canvas-colors';
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { createLogger } from '@/lib/logger';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
-import { computeSheetGrid, computeSlotRectMM } from '@/lib/print/print-layout-math';
+import { computeSheetGrid, computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
 import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 
 import { renderWithPixelFilter } from './export-pixel-filter';
@@ -119,7 +119,6 @@ export async function renderCollageBranch(
   // القوالب الفيزيائية (physicalLayout) تُخبز الهامش والفجوة داخل إحداثيات
   // الخلايا نفسها — تطبيقها مجدداً هنا يضاعفها ويُباعد التصدير عن المعاينة
   const hasPhysical = Boolean(collageTemplate?.physicalLayout);
-  const margin = hasPhysical ? 0 : collageMargin;
   const gap = hasPhysical ? 0 : collageGap;
   const radius = collageRadius;
   const borderW = collageStrokeWidth;
@@ -131,13 +130,15 @@ export async function renderCollageBranch(
   for (const slot of slots) {
     // مستطيل الخانة من print-layout-math — نفس المصدر المستخدم في معاينة الطباعة
     // وخطوط القص ومسار Go. الوحدات هنا بكسل لكن الصيغة نسبة بحتة (block عند 0,0)
-    const rect = computeSlotRectMM(
-      { xMM: 0, yMM: 0 },
-      { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
-      { widthMM: canvasWidth, heightMM: canvasHeight },
-      { marginXMM: margin, marginYMM: margin },
-      { gapXMM: gap, gapYMM: gap },
-    );
+    const rect = computeCollageSlotRectMM(slot, {
+      canvasWidth,
+      canvasHeight,
+      imageWidthMM: canvasWidth,
+      imageHeightMM: canvasHeight,
+      collageMargin,
+      collageGap,
+      hasPhysical,
+    });
     const left = rect.xMM;
     const top = rect.yMM;
     const width = rect.wMM;

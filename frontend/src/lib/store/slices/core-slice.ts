@@ -7,6 +7,7 @@ import { type CanvasFitMode, readStoredFitMode, writeStoredFitMode } from '../..
 import { invalidateImageCache } from '../../canvas/image-cache';
 import { recenterElementsOnResize } from '../../canvas/resize-elements';
 import { canvasMm, findPaperByMm } from '../../canvas/units';
+import { advanceDocumentSession } from '../../io/document-session';
 import { hydrateProjectState } from '../../io/project-hydrator';
 import {
   COLLAGE_TEMPLATES,
@@ -417,6 +418,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
     // عند فتح/إغلاق عدة مشاريع في الجلسة الواحدة.
     invalidateImageCache();
     clearDisplayCache();
+    advanceDocumentSession();
     set({
       projectId: null,
       projectName: null,
@@ -494,6 +496,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
   ) => {
     const hydrated = hydrateProjectState(project, { projectId });
     if (!hydrated) return;
+    advanceDocumentSession();
     // مشروع محمّل = نقطة حفظ نظيفة: لا تعديلات معلّقة فوق محتواه
     set({ ...hydrated, projectName, isDirty: false });
     set(seedHistorySnapshot(get()));

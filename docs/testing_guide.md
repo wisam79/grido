@@ -4,6 +4,20 @@
 
 ---
 
+## تنفيذ خطة الإصلاح الشاملة — 29 أكتوبر 2026
+
+- **Go — حماية مراجع التنظيف:** `TestCleanupUnusedMedia_EditorStateReferenceIsProtected` في `internal/repository/db_test.go` يفتح SQLite مؤقتة ويمرّر صف مشروع حقيقياً إلى `cleanupProjects` ثم يشغّل المسارين: `runCleanupMedia` (عتبة 7 أيام) و`CleanUnusedMediaNow` (عتبة 24 ساعة). يثبت بقاء صورة مذكورة داخل `EditorState` فقط ونقل اليتيمة إلى `MediaTrash`. الأمر: `go test ./internal/repository -run TestCleanupUnusedMedia_EditorStateReferenceIsProtected -v` — ناجح محلياً.
+- **Vitest — قوائم التعبئة:** `frontend/test/collage-autofill-tab.test.tsx` (12 حالة) تغطي حفظ التكرار المقصود، سقف 500، تحويل الفائض إلى `collagePendingImages`، تعطيل أزرار الالتقاط والاستيعاب عند السقف، والاستيعاب بعد الحذف. `frontend/test/collage-autofill-plan.test.ts` يغطي تخطيط التعبئة.
+- **Vitest — الحفظ والاستعادة:** حالة round-trip جديدة في `frontend/test/project-serializer.test.ts` (17 حالة) تثبت حفظ `autofillImages` و`collagePendingImages` عبر ملف المشروع و`domain.Project` مع الحفاظ على التكرار.
+- **Vitest — الطباعة:** `frontend/test/print-physical-parity.test.ts` (مقارنة تقريبية 8 خانات عشرية) و`frontend/test/print-export-payload.test.ts` و`frontend/test/export-dialog.test.tsx` تغطي هندسة الخانة الفيزيائية المشتركة في RGB/CMYK/الطباعة.
+- **Vitest — الواجهة:** `frontend/test/App.test.tsx` (7 حالات) تثبت فتح حوار الكولاج الحر من `AppDialogsHost` وإعادة تحميل القوالب عند الحفظ؛ `frontend/test/freeform-editor.test.tsx` يغطي دورة المحرر.
+- **Vitest — AI:** `frontend/test/ai-enhance-collage.test.tsx` و`ai-result-commit.test.ts` يغطيان المعاينة غير المدمرة وربط الناتج بالهدف الحالي (23 حالة AI مستهدفة ناجحة).
+- **CI — Python:** مهمة `validate-modal-ai` في `.github/workflows/ci.yml` (Python 3.10) تثبت `modal_ai/requirements-runtime.txt` و`requirements-tooling.txt` وتشغّل `python -m unittest modal_ai.test_upscaler -v`. تُفعَّل عند تغيير `modal_ai/**` أو ملفات workflows أو يدوياً؛ لم تُشغّل سحابياً بعد لأن الدفع غير مأذون.
+- **حدود التحقق:** نجحت `tsc --noEmit` وESLint `--max-warnings 0` و`oxlint` و`go vet`/`gofmt`/`build` والوحدات المستهدفة. لم تُشغَّل الحزم الكاملة أو E2E أو البناء أو CI السحابي محلياً؛ لا يُعد ذلك قبولاً بصرياً أو تحققاً من WebView2 أو Modal.
+- **العداد المرجعي الحالي (يُتحقق آلياً):** 155 ملف Vitest و30 ملف مواصفة E2E و60 ملف اختبار Go و6 مستندات — بلوك `docs-metrics` في `docs/DOCUMENTATION_MAP.md`؛ الأعداد المذكورة داخل الرسم أدناه تاريخية بتاريخها.
+
+---
+
 ## المسار السحابي المزدوج على CPU — 29 أكتوبر 2026
 
 - `python -m unittest modal_ai.test_upscaler -v`: **19/19 ناجحة**؛ اختبارات affine عبر الدوران والتحجيم والإزاحة (خطأ النقاط ≤1e-9 بكسل في العينات)، مطابقة ROI للدمج الكامل، مقاسات فردية ووصلات tiles، غياب الوجه، JPEG Quality 98/4:4:4، Alpha 8/16-bit بمطابقة Lanczos، عقد weight scalar، حجز واحد وتسجيل واحد ورفض replay وفشل التسجيل والمدخل الكبير/التالف. المصادقة وRPC محاكيان؛ لا دليل اتصال حيّ بـ Supabase.

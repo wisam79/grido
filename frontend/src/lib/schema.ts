@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+export const AUTOFILL_IMAGE_LIMIT = 500;
+// Queues contain durable local paths or existing image data, never session-only Blob URLs.
+const queuedImageSchema = z
+  .string()
+  .min(1)
+  .refine((src) => !/^blob:/i.test(src), {
+    message: 'Queued images must use durable sources',
+  });
+
 export const CanvasElementSchema = z.object({
   id: z.string(),
   type: z.enum(['image', 'text', 'shape']),
@@ -289,7 +298,8 @@ export const ProjectSchema = z.object({
   collageBackgroundColor: z.string().optional().default('#FFFFFF'),
   collageBackgroundGradientColor2: z.string().nullable().optional(),
   collageBackgroundGradientAngle: z.number().min(0).max(360).optional(),
-  collagePendingImages: z.array(z.string().min(1)).max(500).optional().default([]),
+  collagePendingImages: z.array(queuedImageSchema).optional().default([]),
+  autofillImages: z.array(queuedImageSchema).max(AUTOFILL_IMAGE_LIMIT).optional().default([]),
   autofillSettings: z
     .object({
       mode: z.enum(['empty', 'all']).default('empty'),

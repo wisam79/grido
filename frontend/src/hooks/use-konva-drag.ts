@@ -46,6 +46,12 @@ export function useKonvaDrag({
     gridSnap?: { stepX: number; stepY: number };
   } | null>(null);
   const dragStartPositionsRef = React.useRef<Record<string, { x: number; y: number }>>({});
+  const compositeBoundsOffsetRef = React.useRef<{
+    minOffsetX: number;
+    minOffsetY: number;
+    width: number;
+    height: number;
+  } | null>(null);
   const prevGuidesRef = React.useRef<SnapGuide[]>([]);
   // 🚀 أدلة آخر تمريرة سناب — dragBoundFunc تحسب الموضع والأدلة معاً،
   // وonDragMove يعيد استخدامها بدل إعادة الحساب المكلفة لكل حدث.
@@ -115,6 +121,51 @@ export function useKonvaDrag({
       }
     });
     dragStartPositionsRef.current = startPositions;
+
+    // 📐 حساب الصندوق البصري الموحّد (Composite AABB) لكافة العناصر المحددة القابلة للتحريك:
+    // يضمن توقف التحديد المتعدد ككتلة صلبة واحدة عند هامش الكانفاس (25%) دون انضغاط التابعين.
+    const elW0 = element.width * canvasWidth;
+    const elH0 = element.height * canvasHeight;
+    const leaderStartX = startPositions[element.id]?.x ?? element.x * canvasWidth;
+    const leaderStartY = startPositions[element.id]?.y ?? element.y * canvasHeight;
+    const leaderBox0 = getElementPixelVisualBox(
+      leaderStartX,
+      leaderStartY,
+      elW0,
+      elH0,
+      element.rotation || 0,
+    );
+    let compMinX = leaderBox0.minX;
+    let compMinY = leaderBox0.minY;
+    let compMaxX = leaderBox0.maxX;
+    let compMaxY = leaderBox0.maxY;
+
+    selectedIds.forEach((id) => {
+      if (id === element.id) return;
+      const el = currentElements.find((e) => e.id === id);
+      if (!el || el.locked) return;
+      const pos = startPositions[id];
+      const fx = pos ? pos.x : el.x * canvasWidth;
+      const fy = pos ? pos.y : el.y * canvasHeight;
+      const fBox = getElementPixelVisualBox(
+        fx,
+        fy,
+        el.width * canvasWidth,
+        el.height * canvasHeight,
+        el.rotation || 0,
+      );
+      compMinX = Math.min(compMinX, fBox.minX);
+      compMinY = Math.min(compMinY, fBox.minY);
+      compMaxX = Math.max(compMaxX, fBox.maxX);
+      compMaxY = Math.max(compMaxY, fBox.maxY);
+    });
+
+    compositeBoundsOffsetRef.current = {
+      minOffsetX: compMinX - leaderStartX,
+      minOffsetY: compMinY - leaderStartY,
+      width: compMaxX - compMinX,
+      height: compMaxY - compMinY,
+    };
 
     // 🚀 رفع العقد المحددة (+ المحوّل والشارة) إلى طبقة السحب الرسمية —
     // تُرسم عقدة واحدة لكل إطار بدل الطبقة كاملة (Konva drag-layer pattern).
@@ -226,39 +277,45 @@ export function useKonvaDrag({
       pendingGuidesRef.current = [];
     }
 
-    const margin = 0.25;
-    const currentVisualX = xLogical + vBox.offsetX;
-    const currentVisualY = yLogical + vBox.offsetY;
+    const comp = compositeBoundsOffsetRef.current;
+    const boundOffsetX = comp ? comp.minOffsetX : vBox.offsetX;
+    const boundOffsetY = comp ? comp.minOffsetY : vBox.offsetY;
+    const boundWidth = comp ? comp.width : vBox.width;
+    const boundHeight = comp ? comp.height : vBox.height;
 
-    // 🎯 حدود السحب الحر لعناصر التصميم:
+    const margin = 0.25;
+    const currentVisualX = xLogical + boundOffsetX;
+    const currentVisualY = yLogical + boundOffsetY;
+
+    // 🎯 حدود السحب الحر لعناصر التصميم (أو الكتلة الموحدة للتحديد المتعدد):
     // للعناصر العادية (أصغر من الورقة): احترام هامش 25% حول الورقة لمنع ضياع العنصر.
     // للعناصر المكبرة (W > canvasWidth أو H > canvasHeight — مثل صورة شخصية مكبرة لتأطير الوجه):
     // السماح بتمرير كامل مساحة الصورة بحرية عبر الكانفاس ليتمكن المصمم من إظهار أي جزء مطلوب
     // دون أن تُحبس الصورة أو تُجمَّد الحركة نتيجة انعكاس حدود Math.min/max:
     let minVisualX = -canvasWidth * margin;
-    let maxVisualX = canvasWidth * (1 + margin) - vBox.width;
+    let maxVisualX = canvasWidth * (1 + margin) - boundWidth;
     if (minVisualX > maxVisualX) {
-      minVisualX = canvasWidth * margin - vBox.width;
+      minVisualX = canvasWidth * margin - boundWidth;
       maxVisualX = canvasWidth * (1 - margin);
-    } else if (vBox.width > canvasWidth) {
-      minVisualX = Math.min(minVisualX, canvasWidth * margin - vBox.width);
+    } else if (boundWidth > canvasWidth) {
+      minVisualX = Math.min(minVisualX, canvasWidth * margin - boundWidth);
       maxVisualX = Math.max(maxVisualX, canvasWidth * (1 - margin));
     }
 
     let minVisualY = -canvasHeight * margin;
-    let maxVisualY = canvasHeight * (1 + margin) - vBox.height;
+    let maxVisualY = canvasHeight * (1 + margin) - boundHeight;
     if (minVisualY > maxVisualY) {
-      minVisualY = canvasHeight * margin - vBox.height;
+      minVisualY = canvasHeight * margin - boundHeight;
       maxVisualY = canvasHeight * (1 - margin);
-    } else if (vBox.height > canvasHeight) {
-      minVisualY = Math.min(minVisualY, canvasHeight * margin - vBox.height);
+    } else if (boundHeight > canvasHeight) {
+      minVisualY = Math.min(minVisualY, canvasHeight * margin - boundHeight);
       maxVisualY = Math.max(maxVisualY, canvasHeight * (1 - margin));
     }
 
     const clampedVisualX = Math.max(minVisualX, Math.min(maxVisualX, currentVisualX));
     const clampedVisualY = Math.max(minVisualY, Math.min(maxVisualY, currentVisualY));
-    xLogical = clampedVisualX - vBox.offsetX;
-    yLogical = clampedVisualY - vBox.offsetY;
+    xLogical = clampedVisualX - boundOffsetX;
+    yLogical = clampedVisualY - boundOffsetY;
 
     return {
       x: stageX + xLogical * stageScale,
@@ -271,7 +328,8 @@ export function useKonvaDrag({
     const draggedId = element.id;
     const startPos = dragStartPositionsRef.current[draggedId];
 
-    // 1. تحريك كافة العناصر المحددة الأخرى التابعة للمجموعة في نفس الوقت
+    // 1. تحريك كافة العناصر المحددة الأخرى التابعة للمجموعة ككتلة صلبة بنفس الإزاحة (dx, dy)
+    // بعد أن قيّدت dragBoundFunc الصندوق البصري الموحّد للمجموعة كاملة.
     if (startPos) {
       const dx = draggedNode.x() - startPos.x;
       const dy = draggedNode.y() - startPos.y;
@@ -280,7 +338,6 @@ export function useKonvaDrag({
       // 🚀 Map بالمعرفات مرة واحدة لكل إطار — find لكل محدد/إطار كان O(Selected×Elements)
       // ×60/ث مع كثافة عناصر عالية
       const elementsById = new Map(currentElements.map((e) => [e.id, e]));
-      const margin = 0.25;
       selectedIds.forEach((id) => {
         if (id === draggedId) return;
         const node = getKonvaNode(id);
@@ -288,27 +345,8 @@ export function useKonvaDrag({
         if (node && nodeStart) {
           const followerEl = elementsById.get(id);
           if (followerEl?.locked) return;
-          const fW = (followerEl?.width ?? element.width) * canvasWidth;
-          const fH = (followerEl?.height ?? element.height) * canvasHeight;
-          const targetNodeX = nodeStart.x + dx;
-          const targetNodeY = nodeStart.y + dy;
-          const fBox = getElementPixelVisualBox(
-            targetNodeX,
-            targetNodeY,
-            fW,
-            fH,
-            followerEl?.rotation || 0,
-          );
-          const clampedVisualX = Math.max(
-            -canvasWidth * margin,
-            Math.min(canvasWidth * (1 + margin) - fBox.width, fBox.minX),
-          );
-          const clampedVisualY = Math.max(
-            -canvasHeight * margin,
-            Math.min(canvasHeight * (1 + margin) - fBox.height, fBox.minY),
-          );
-          node.x(clampedVisualX - fBox.offsetX);
-          node.y(clampedVisualY - fBox.offsetY);
+          node.x(nodeStart.x + dx);
+          node.y(nodeStart.y + dy);
         }
       });
       e.target.getLayer?.()?.batchDraw?.();
@@ -388,6 +426,7 @@ export function useKonvaDrag({
       pushHistory();
     }
     dragStartPositionsRef.current = {};
+    compositeBoundsOffsetRef.current = null;
   };
 
   return {

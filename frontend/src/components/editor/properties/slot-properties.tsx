@@ -25,7 +25,7 @@ import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import { isAutoFillGridEnabled, setAutoFillGridEnabled } from '@/lib/local-prefs';
 import { createLogger } from '@/lib/logger';
-import { getEffectiveDpi } from '@/lib/templates';
+import { getEffectiveDpi, IMAGE_FILTERS, filterShortName } from '@/lib/templates';
 import { cn } from '@/lib/utils';
 import { wailsIsDesktop } from '@/lib/wails-env';
 import { toErrorMessage } from '@/lib/wails-error';
@@ -530,12 +530,13 @@ export const SlotProperties = React.memo(function SlotProperties({
               <FluentSliderField
                 label="السطوع"
                 layout="inline"
-                labelWidth="w-12"
+                labelWidth="w-14"
                 value={slot.brightness ?? 100}
                 min={0}
                 max={200}
                 step={1}
                 unit="%"
+                defaultValue={100}
                 onChange={(v) => onUpdate(slot.id, { brightness: v })}
                 onCommit={() => {
                   useRenderQuality.getState().setIsDraggingFilter(false);
@@ -547,12 +548,13 @@ export const SlotProperties = React.memo(function SlotProperties({
               <FluentSliderField
                 label="التباين"
                 layout="inline"
-                labelWidth="w-12"
+                labelWidth="w-14"
                 value={slot.contrast ?? 100}
                 min={0}
                 max={200}
                 step={1}
                 unit="%"
+                defaultValue={100}
                 onChange={(v) => onUpdate(slot.id, { contrast: v })}
                 onCommit={() => {
                   useRenderQuality.getState().setIsDraggingFilter(false);
@@ -564,12 +566,13 @@ export const SlotProperties = React.memo(function SlotProperties({
               <FluentSliderField
                 label="التشبع"
                 layout="inline"
-                labelWidth="w-12"
+                labelWidth="w-14"
                 value={slot.saturation ?? 100}
                 min={0}
                 max={200}
                 step={1}
                 unit="%"
+                defaultValue={100}
                 onChange={(v) => onUpdate(slot.id, { saturation: v })}
                 onCommit={() => {
                   useRenderQuality.getState().setIsDraggingFilter(false);
@@ -578,6 +581,61 @@ export const SlotProperties = React.memo(function SlotProperties({
                 onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, slot.id)}
                 onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
               />
+            </div>
+
+            <div className="space-y-1.5 border-t border-border/30 pt-2">
+              <div className="flex items-center justify-between">
+                <span className="text-mini text-muted-foreground">المرشحات</span>
+                {slot.filter && slot.filter !== 'none' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onUpdate(slot.id, { filter: 'none' });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    className="text-mini text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    إزالة
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {IMAGE_FILTERS.map((filter) => {
+                  const isActive = slot.filter === filter.id;
+                  return (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => {
+                        onUpdate(slot.id, { filter: filter.id });
+                        useEditorStore.getState().pushHistory();
+                      }}
+                      aria-pressed={isActive}
+                      aria-label={filter.name}
+                      title={filter.name}
+                      className={cn(
+                        'flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer',
+                        'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                        isActive
+                          ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
+                          : 'border-border/60 bg-card hover:bg-accent text-muted-foreground',
+                      )}
+                    >
+                      <span className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
+                        <img
+                          src={slot.imageSrc}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          style={{ filter: filter.css }}
+                        />
+                      </span>
+                      <span className="text-mini w-full text-center leading-tight truncate">
+                        {filterShortName(filter.name)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <Button

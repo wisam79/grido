@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { createStudioLoop } from "./scene-loop";
+import { areLandingDialogsOpen, subscribeLandingDialogs } from "./dialog-state";
 import {
   clampStudioPointer,
   fitStudioView,
@@ -104,6 +105,7 @@ export function createStudioScene(
   let update: ((frame: StudioFrame) => void) | undefined;
   let resizeObserver: ResizeObserver | undefined;
   let intersectionObserver: IntersectionObserver | undefined;
+  let unsubscribeDialogs: (() => void) | undefined;
 
   const loop = createStudioLoop((time, delta, animated) => {
     if (!started || failed || disposed) return;
@@ -128,7 +130,13 @@ export function createStudioScene(
 
   const syncVisibility = () => {
     const active =
-      started && visible && hasSize && !document.hidden && !failed && !disposed;
+      started &&
+      visible &&
+      hasSize &&
+      !document.hidden &&
+      !areLandingDialogsOpen() &&
+      !failed &&
+      !disposed;
     loop.setVisible(active);
     if (!active) {
       stopDragging();
@@ -245,6 +253,7 @@ export function createStudioScene(
     stopDragging();
     resizeObserver?.disconnect();
     intersectionObserver?.disconnect();
+    unsubscribeDialogs?.();
     window.removeEventListener("resize", resize);
     document.removeEventListener("visibilitychange", syncVisibility);
     media.removeEventListener("change", syncMotion);
@@ -292,6 +301,7 @@ export function createStudioScene(
     container.addEventListener("keydown", onKeyDown);
     media.addEventListener("change", syncMotion);
     document.addEventListener("visibilitychange", syncVisibility);
+    unsubscribeDialogs = subscribeLandingDialogs(syncVisibility);
     window.addEventListener("resize", resize, { passive: true });
     if (typeof ResizeObserver !== "undefined") {
       resizeObserver = new ResizeObserver(resize);

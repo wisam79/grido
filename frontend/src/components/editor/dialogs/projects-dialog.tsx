@@ -188,9 +188,18 @@ export function ProjectsDialog({
       setProjectName('');
       // تحديث المعرف في الستور ليكون هذا المعرف إذا كان جديداً — فقط إن لم
       // يتغير المشروع المفتوح خلال الانتظار (تحميل/تفريغ موازٍ)
-      if (useEditorStore.getState().projectId === projectIdBefore) {
-        // نقطة حفظ نظيفة: الهوية والاسم يظهران في شريط العنوان وتزول علامة التعديل
-        useEditorStore.getState().markProjectSaved(currentId, projectName.trim());
+      const live = useEditorStore.getState();
+      // A reset/load replaces the history seed even when both documents have a null ID.
+      // Compare saved content too: edits made during IPC must remain dirty.
+      if (live.projectId === projectIdBefore && live.history[0] === state.history[0]) {
+        const unchanged =
+          JSON.stringify({ ...serializeEditorState(live), savedAt: undefined }) ===
+          JSON.stringify({ ...projectFile, savedAt: undefined });
+        useEditorStore.setState({
+          projectId: currentId,
+          projectName: projectName.trim(),
+          isDirty: !unchanged,
+        });
       }
       fetchProjects();
       setActiveTab('list'); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ

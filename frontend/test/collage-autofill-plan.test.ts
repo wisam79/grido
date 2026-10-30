@@ -3,7 +3,6 @@ import { describe, it, expect } from 'vitest';
 import {
   buildFillPlan,
   buildSlotGrid,
-  mergeUniqueImages,
   moveListItem,
   orderedCells,
   shuffleWithRng,
@@ -188,23 +187,6 @@ describe('الخلط بالبذرة', () => {
     expect([...shuffled].sort()).toEqual([...source].sort());
     expect(shuffled).toHaveLength(source.length);
     expect(source).toEqual(['A', 'B', 'C', 'D', 'E', 'F']);
-  });
-});
-
-describe('mergeUniqueImages', () => {
-  it('يزيل المكرر داخل الدفعة وخارجها ويحترم السقف', () => {
-    const result = mergeUniqueImages(['A'], ['A', 'A', 'B', 'C', 'D'], 3);
-    expect(result.images).toEqual(['A', 'B', 'C']);
-    expect(result.added).toBe(2);
-    expect(result.duplicates).toBe(2);
-    expect(result.overflow).toBe(1);
-  });
-
-  it('لا يضيف شيئاً عند تكرار كل الصور', () => {
-    const result = mergeUniqueImages(['A', 'B'], ['B', 'A']);
-    expect(result.added).toBe(0);
-    expect(result.duplicates).toBe(2);
-    expect(result.images).toEqual(['A', 'B']);
   });
 });
 

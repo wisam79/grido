@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -39,12 +39,7 @@ import { createLogger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
-import {
-  AUTOFILL_IMAGE_LIMIT,
-  buildFillPlan,
-  mergeUniqueImages,
-  moveListItem,
-} from './collage-autofill-plan';
+import { AUTOFILL_IMAGE_LIMIT, buildFillPlan, moveListItem } from './collage-autofill-plan';
 
 import type { FillMode, FillOrder } from './collage-autofill-plan';
 
@@ -92,7 +87,7 @@ export function CollageAutofillTab() {
     autofillImages,
     collagePendingImages,
     setAutofillImages,
-    setCollagePendingImages,
+    absorbPendingCollageImages,
     autofillSettings,
     setAutofillSettings,
     setSlotImagesBatch,
@@ -103,7 +98,7 @@ export function CollageAutofillTab() {
       autofillImages: state.autofillImages,
       collagePendingImages: state.collagePendingImages,
       setAutofillImages: state.setAutofillImages,
-      setCollagePendingImages: state.setCollagePendingImages,
+      absorbPendingCollageImages: state.absorbPendingCollageImages,
       autofillSettings: state.autofillSettings,
       setAutofillSettings: state.setAutofillSettings,
       setSlotImagesBatch: state.setSlotImagesBatch,
@@ -121,13 +116,6 @@ export function CollageAutofillTab() {
   const [showAllImages, setShowAllImages] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (collagePendingImages.length === 0) return;
-    const merged = [...autofillImages, ...collagePendingImages];
-    setAutofillImages(merged.slice(0, AUTOFILL_IMAGE_LIMIT));
-    setCollagePendingImages(merged.slice(AUTOFILL_IMAGE_LIMIT));
-  }, [collagePendingImages, autofillImages, setAutofillImages, setCollagePendingImages]);
 
   const plan = useMemo(
     () =>
@@ -183,34 +171,25 @@ export function CollageAutofillTab() {
   const pickImages = async (fromFolder: boolean) => {
     if (isPicking) return;
     setIsPicking(true);
+    const before = useEditorStore.getState();
     try {
       const picked = fromFolder
         ? await openDirectoryImageDialog()
         : await openImageFileDialog(true);
       if (picked.length === 0) return;
 
-      const result = mergeUniqueImages(autofillImages, picked, AUTOFILL_IMAGE_LIMIT);
-      if (result.added > 0) {
-        setAutofillImages(result.images);
-        setShowAllImages(false);
-      }
-
-      if (result.added > 0) {
-        const notes = [`أُضيفت ${imageCountLabel(result.added)}`];
-        if (result.duplicates > 0) notes.push(`تجاهل ${result.duplicates} مكررة`);
-        if (result.overflow > 0) notes.push(`تجاوز الحد ${result.overflow}`);
-        toast.success(notes.join(' · '));
-        return;
-      }
-      if (result.overflow > 0) {
-        toast.info(`الحد الأقصى ${AUTOFILL_IMAGE_LIMIT} صورة`);
-        return;
-      }
-      if (result.duplicates > 0) {
-        toast.info(`كل الصور المختارة مكررة (${result.duplicates})`);
-        return;
-      }
-      toast.info('لم تُختر صور');
+      const live = useEditorStore.getState();
+      if (live.projectId !== before.projectId || live.history[0] !== before.history[0]) return;
+      const added = Math.min(
+        picked.length,
+        Math.max(0, AUTOFILL_IMAGE_LIMIT - live.autofillImages.length),
+      );
+      // Preserve intentional copies and queue overflow in the same undo step.
+      live.setAutofillImages([...live.autofillImages, ...picked]);
+      setShowAllImages(false);
+      const notes = [`أُضيفت ${imageCountLabel(added)}`];
+      if (picked.length > added) notes.push(`معلقة ${picked.length - added}`);
+      toast.success(notes.join(' · '));
     } catch (error) {
       logger.error(error);
       toast.error(toErrorMessage(error, 'فشل اختيار الصور'));
@@ -220,10 +199,12 @@ export function CollageAutofillTab() {
   };
 
   const removeImage = useCallback(
-    (src: string) => {
-      setAutofillImages(autofillImages.filter((item) => item !== src));
+    (displayIndex: number) => {
+      const sourceIndex = shuffle ? plan.poolIndices[displayIndex] : displayIndex;
+      const live = useEditorStore.getState();
+      live.setAutofillImages(live.autofillImages.filter((_, index) => index !== sourceIndex));
     },
-    [autofillImages, setAutofillImages],
+    [shuffle, plan.poolIndices],
   );
 
   const moveImage = useCallback(
@@ -407,6 +388,19 @@ export function CollageAutofillTab() {
           </Button>
         </div>
 
+        {collagePendingImages.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={absorbPendingCollageImages}
+            disabled={atLimit}
+            title={atLimit ? `الحد الأقصى ${AUTOFILL_IMAGE_LIMIT} صورة` : undefined}
+            aria-label="استيعاب الصور المعلقة"
+          >
+            استيعاب الصور المعلقة ({collagePendingImages.length})
+          </Button>
+        )}
+
         {autofillImages.length > 0 && (
           <div className="space-y-1.5">
             {/* ترتيب الصور = ترتيب التعبئة: يُسحب أفقياً ويُحذف من نفس الشريط */}
@@ -467,7 +461,7 @@ export function CollageAutofillTab() {
                           moveImage(index, index + 1);
                         } else if (event.key === 'Delete' || event.key === 'Backspace') {
                           event.preventDefault();
-                          removeImage(src);
+                          removeImage(index);
                         }
                       }}
                       className={cn(
@@ -499,7 +493,7 @@ export function CollageAutofillTab() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => removeImage(src)}
+                      onClick={() => removeImage(index)}
                       title={`حذف صورة ${sourceNumber}`}
                       aria-label={`حذف صورة ${sourceNumber}`}
                       className="absolute right-0 top-0 size-7 rounded-md bg-card/95 flex items-center justify-center text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"

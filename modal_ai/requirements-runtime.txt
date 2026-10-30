@@ -1,0 +1,6 @@
+# Shared container/CI dependencies; verified PyPI releases with Python 3.10 wheels.
+# Direct dependencies are pinned; transitive dependencies remain resolver-managed.
+fastapi==0.139.0
+numpy==2.2.6
+onnxruntime==1.23.2
+opencv-python-headless==5.0.0.93

@@ -178,6 +178,8 @@ const estimateEntryBytes = (entry: HistoryEntry): number => {
     // كانت مُهمَلة فيقدّر السقف نصف الحجم الفعلي عند وجود صورة أصلية محفوظة
     if (typeof sl.originalImageSrc === 'string') total += sl.originalImageSrc.length;
   }
+  for (const src of entry.autofillImages ?? []) total += src.length;
+  for (const src of entry.collagePendingImages ?? []) total += src.length;
   return total;
 };
 

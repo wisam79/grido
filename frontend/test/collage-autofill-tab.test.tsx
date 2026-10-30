@@ -191,7 +191,7 @@ describe('CollageAutofillTab — قائمة المصدر', () => {
     expect(screen.getByTestId('autofill-image-29')).toBeInTheDocument();
   });
 
-  it('تدمج الاستيراد بلا تكرار وتحدّث القائمة', async () => {
+  it('تحفظ كل استيراد بما فيه النسخ المتطابقة بدل إسقاطها', async () => {
     setupGrid();
     useEditorStore.setState({ autofillImages: ['X'] });
     openImageFileDialogMock.mockResolvedValue(['X', 'Y', 'Y', 'Z']);
@@ -200,7 +200,32 @@ describe('CollageAutofillTab — قائمة المصدر', () => {
     fireEvent.click(screen.getByText('إضافة صور'));
 
     await waitFor(() => {
-      expect(store().autofillImages).toEqual(['X', 'Y', 'Z']);
+      expect(store().autofillImages).toEqual(['X', 'X', 'Y', 'Y', 'Z']);
     });
+  });
+
+  it('يقيّد القائمة بالسقف ويحوّل الفائض إلى قائمة معلقة قابلة للاستيعاب', () => {
+    setupGrid();
+    store().setAutofillImages([
+      ...Array.from({ length: 500 }, (_, i) => `img-${i}`),
+      'new-1',
+      'new-2',
+    ]);
+    expect(store().autofillImages).toHaveLength(500);
+    expect(store().autofillImages).not.toContain('new-1');
+    expect(store().collagePendingImages).toEqual(['new-1', 'new-2']);
+
+    renderTab();
+    expect(screen.getByText('إضافة صور').closest('button')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'استيعاب الصور المعلقة' })).toBeDisabled();
+
+    fireEvent.click(screen.getByLabelText('حذف صورة 1'));
+    fireEvent.click(screen.getByLabelText('حذف صورة 1'));
+    expect(store().autofillImages).toHaveLength(498);
+
+    fireEvent.click(screen.getByRole('button', { name: 'استيعاب الصور المعلقة' }));
+    expect(store().autofillImages).toHaveLength(500);
+    expect(store().autofillImages.slice(-2)).toEqual(['new-1', 'new-2']);
+    expect(store().collagePendingImages).toEqual([]);
   });
 });

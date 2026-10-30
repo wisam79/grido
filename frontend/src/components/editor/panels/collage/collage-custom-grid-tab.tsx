@@ -2,15 +2,7 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { FluentSection } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
-import {
-  Plus,
-  Minus,
-  X,
-  BookmarkSimple,
-  CornersOut,
-  Check,
-  ArrowClockwise,
-} from '@/components/ui/icons';
+import { Plus, Minus, X, BookmarkSimple, CornersOut, ArrowClockwise } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { pxToMm } from '@/lib/canvas/units';
 import { cn } from '@/lib/utils';
@@ -249,8 +241,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                 className={cn(
                   'relative flex min-w-0 flex-col items-center gap-1 rounded-md border px-1 py-2 transition-colors duration-150 cursor-pointer',
                   active
-                    ? 'border-primary/60 bg-primary/10 text-primary'
-                    : 'border-transparent bg-muted/20 text-muted-foreground hover:border-border/60 hover:bg-muted/40',
+                    ? 'border-primary/70 bg-primary/10 text-primary'
+                    : 'border-border/50 bg-card/35 text-muted-foreground hover:border-border/80 hover:bg-muted/40',
                   FOCUS_RING,
                 )}
               >
@@ -277,7 +269,6 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                   {dimLabel}
                   {option.value !== 'stretch' && <span className="ms-1 font-cairo">مم</span>}
                 </span>
-                {active && <Check className="absolute end-1.5 top-1.5 size-3" weight="bold" />}
               </button>
             );
           })}
@@ -292,11 +283,11 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         onOpenChange={setCardOpen('dims')}
         action={
           <span
-            className="text-mini font-medium tabular-nums text-primary"
+            className="font-mono text-mini font-normal tabular-nums text-muted-foreground"
             title="نسبة تغطية الورقة"
             aria-label="نسبة تغطية الورقة"
           >
-            {coverage}%
+            تغطية {coverage}%
           </span>
         }
       >
@@ -354,13 +345,13 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           open={collapsePrefs.align ?? true}
           onOpenChange={setCardOpen('align')}
         >
-          <div className="grid grid-cols-[minmax(0,1fr)_104px] items-center gap-3">
-            {quickLayouts}
-            <div className="relative size-[104px] rounded-md border border-border/50 bg-muted/20 p-1 select-none">
+          <div className="flex items-center gap-2.5">
+            <div className="flex-1 min-w-0">{quickLayouts}</div>
+            <div className="relative size-[72px] shrink-0 rounded-md border border-border/50 bg-muted/20 p-1 select-none">
               <div
                 role="radiogroup"
                 aria-label="نقطة ارتكاز الصور على الورقة"
-                className="grid grid-cols-3 grid-rows-3 gap-1 w-full h-full relative z-1"
+                className="grid grid-cols-3 grid-rows-3 gap-0.5 w-full h-full relative z-1"
                 dir="ltr"
               >
                 {ALIGNMENT_ORDER.map((align) => (
@@ -375,7 +366,7 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                     onKeyDown={(event) => handleAlignKeyDown(event, align)}
                     title={ALIGNMENT_LABELS[align]}
                     className={cn(
-                      'relative flex items-center justify-center rounded-md transition-colors cursor-pointer hover:bg-muted/70',
+                      'relative flex items-center justify-center rounded-sm transition-colors cursor-pointer hover:bg-muted/70',
                       FOCUS_RING,
                     )}
                   >
@@ -384,8 +375,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
                       className={cn(
                         'rounded-full transition-colors duration-150',
                         gridAlign === align
-                          ? 'w-3.5 h-3.5 bg-primary ring-3 ring-primary/25'
-                          : 'w-2.5 h-2.5 bg-muted-foreground/80 border border-border/40',
+                          ? 'w-2.5 h-2.5 bg-primary ring-2 ring-primary/25'
+                          : 'w-2 h-2 bg-muted-foreground/70 border border-border/40',
                       )}
                     />
                   </button>
@@ -400,8 +391,12 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
         <div className="flex items-center gap-2">
           <Button
             type="button"
-            variant={isGridApplied ? 'secondary' : 'default'}
-            className="h-8 min-w-0 flex-1 font-medium shadow-none"
+            variant={isGridApplied ? 'ghost' : 'default'}
+            className={cn(
+              'h-8 min-w-0 flex-1 font-medium shadow-none',
+              isGridApplied &&
+                'border border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground',
+            )}
             onClick={() => onApply(rows, cols, photoType, gridAlign)}
             title={isGridApplied ? 'إعادة تطبيق الشبكة على الكانفس' : 'تطبيق الشبكة على الكانفس'}
           >

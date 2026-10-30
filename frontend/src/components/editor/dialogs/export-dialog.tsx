@@ -19,7 +19,7 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { useStageRef } from '@/lib/canvas/stage-context';
-import { MM_PER_INCH, pxToMm } from '@/lib/canvas/units';
+import { pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import {
   exportCanvas,
@@ -107,6 +107,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     mode,
     printSettings,
     slots,
+    collageTemplate,
+    collageMargin,
+    collageGap,
     showBleedGuides,
     bleedMarginMM,
     backgroundColor,
@@ -118,6 +121,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       mode: state.mode,
       printSettings: state.printSettings,
       slots: state.slots,
+      collageTemplate: state.collageTemplate,
+      collageMargin: state.collageMargin,
+      collageGap: state.collageGap,
       showBleedGuides: state.showBleedGuides,
       bleedMarginMM: state.bleedMarginMM,
       backgroundColor: state.backgroundColor,
@@ -160,24 +166,45 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         // إعدادات طباعة → 300). تُرسل لمسار الحفظ ليحقنها في بايتات PNG/JPEG
         // لكل ملف (المفرد والمُجلَّد) — TIFF/CMYK لا يحمل بيانات كثافة.
         const exportDpi = template?.dpi || printSettings.dpi || 300;
+        // All branches must validate sources before rendering or opening a save dialog.
+        if (mode === 'collage') {
+          const {
+            loadCollageSlotImages,
+            runCollagePreflight,
+            getLoadedImageDimensions,
+            getCollageExportSlotRectsMM,
+          } = await import('@/lib/export/collage-preflight-helpers');
+          const loadResult = await loadCollageSlotImages(slots);
+          if (shouldStop()) return;
+          const preflight = runCollagePreflight({
+            slots,
+            slotRectsMM: getCollageExportSlotRectsMM(
+              { slots, canvasWidth, canvasHeight, collageTemplate, collageMargin, collageGap },
+              exportDpi,
+              colorSpace === 'rgb' && batchExport,
+            ),
+            imageDimensions: getLoadedImageDimensions(slots, loadResult.loaded),
+            failedSlotIds: loadResult.failedSlotIds,
+          });
+          if (preflight.blocking.length > 0) {
+            toast.error(`تعذر التصدير: ${preflight.blocking[0].message}`);
+            return;
+          }
+          if (preflight.warnings.length > 0) {
+            toast.warning(
+              preflight.warnings.length === 1
+                ? preflight.warnings[0].message
+                : `${preflight.warnings.length} تنبيهات جودة — سيتم التصدير`,
+            );
+          }
+        }
         // 🎨 مسار CMYK: يُنفَّذ في الخلفية (Go) عبر ExportPrintSheet — لا يدعم
         // تصدير الخلايا المنفصلة، لذا يسبق فرع الدفعات ويُخرج التصميم كملف واحد.
         if (colorSpace === 'cmyk') {
           const dpi = exportDpi;
-          // 🖨️ هندسة صفرية الانحراف: مقاس الورقة المُرسل لـGo يجب أن يُنتج نفس أبعاد
-          // اللقطة بالبكسل (mmToPx(mm, dpi) == canvasPx) وإلا أعاد محرك الطباعة تشكيل
-          // الصورة صامتاً. لذا نأخذ مقاس القالب الفيزيائي فقط حين يطابق الكانفاس عند
-          // هذه الدقة (وهو ما يعرضه الحوار في «الحجم الفعلي»)، وإلا نشتق المقاس من
-          // البكسلات نفسها.
-          const pxPerMM = dpi / MM_PER_INCH;
-          const matchesTemplate =
-            !!template &&
-            template.widthMM > 0 &&
-            template.heightMM > 0 &&
-            Math.abs(template.widthMM * pxPerMM - canvasWidth) <= 1 &&
-            Math.abs(template.heightMM * pxPerMM - canvasHeight) <= 1;
-          const widthMM = matchesTemplate ? template.widthMM : canvasWidth / pxPerMM;
-          const heightMM = matchesTemplate ? template.heightMM : canvasHeight / pxPerMM;
+          // Match the actual RGB capture and preflight, not nominal template millimeters.
+          const widthMM = pxToMm(canvasWidth, dpi);
+          const heightMM = pxToMm(canvasHeight, dpi);
 
           setProgress(50);
           SetTaskbarProgress(50, 'normal').catch(() => {});
@@ -286,38 +313,6 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             toast.error('تعذر تصدير الصور');
           }
         } else {
-          // 🔍 فحص المحتوى في وضع الكولاج: الصورة غير المقروءة مانعة قبل إنشاء الملف
-          if (mode === 'collage') {
-            const { loadCollageSlotImages, runCollagePreflight, getCachedImageDimensions } =
-              await import('@/lib/export/collage-preflight-helpers');
-            const loadResult = await loadCollageSlotImages(slots);
-            const preflight = runCollagePreflight({
-              slots,
-              canvasWidth,
-              canvasHeight,
-              imageDimensions: new Map(
-                [...new Set(slots.map((slot) => slot.imageSrc).filter(Boolean))]
-                  .map((src) => [src as string, getCachedImageDimensions(src as string)])
-                  .filter((entry): entry is [string, { width: number; height: number }] =>
-                    Boolean(entry[1]),
-                  ),
-              ),
-              failedSlotIds: loadResult.failedSlotIds,
-            });
-            if (preflight.blocking.length > 0) {
-              toast.error(`تعذر التصدير: ${preflight.blocking[0].message}`);
-              SetTaskbarProgress(0, 'none').catch(() => {});
-              return;
-            }
-            if (preflight.warnings.length > 0) {
-              toast.warning(
-                preflight.warnings.length === 1
-                  ? preflight.warnings[0].message
-                  : `${preflight.warnings.length} تنبيهات جودة — سيتم التصدير`,
-              );
-            }
-          }
-
           setProgress(50);
           SetTaskbarProgress(50, 'normal').catch(() => {});
           const blob = await exportCanvas(format, quality / 100, stageRef.current);
@@ -329,7 +324,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
               showCropMarks,
               format,
               quality / 100,
-              printSettings.dpi,
+              exportDpi,
             );
             if (shouldStop()) {
               SetTaskbarProgress(0, 'none').catch(() => {});

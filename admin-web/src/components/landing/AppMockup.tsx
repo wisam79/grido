@@ -703,10 +703,7 @@ export function AppMockup({ paused = false }: { paused?: boolean }) {
                       stage === "isolate"
                         ? isSelected
                         : stage === "print"
-                          ? reducedMotion ||
-                            userPaused ||
-                            isSelected ||
-                            i < litSheets
+                          ? reducedMotion || isSelected || i < litSheets
                           : false;
 
                     // حساب الأبعاد بدقة هندسية:

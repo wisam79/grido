@@ -45,7 +45,6 @@ import {
   type CollageTab,
   type FreeformTab,
 } from '@/hooks/use-workspace-panels';
-import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useEditorStore } from '@/lib/editor-store';
 import { useOperationStatusStore } from '@/lib/ui/operation-status';
 import { cn } from '@/lib/utils';
@@ -60,16 +59,20 @@ export default function App() {
 
   const panelsHook = useWorkspacePanels();
   const isTemplatesOpen =
-    panelsHook.breakpoint === 'wide'
+    panelsHook.breakpoint !== 'compact'
       ? panelsHook.isTemplatesDrawerOpen
-      : panelsHook.activePanel === 'templates';
+      : panelsHook.isMobileSheetOpen && panelsHook.mobileActiveTab === 'templates';
   const isPropertiesOpen =
-    panelsHook.breakpoint === 'wide'
+    panelsHook.breakpoint !== 'compact'
       ? panelsHook.isInspectorPinned
-      : panelsHook.activePanel === 'properties';
+      : panelsHook.isMobileSheetOpen && panelsHook.mobileActiveTab === 'properties';
   const { theme, themeMode, toggleTheme } = useTheme();
   const activeOperation = useOperationStatusStore((s) => s.activeOperation);
   const cancelActiveOperation = useOperationStatusStore((s) => s.cancelActiveOperation);
+  const isInlineAiOperation =
+    activeOperation?.type === 'ai_enhance' ||
+    activeOperation?.type === 'bg_removal' ||
+    activeOperation?.type === 'face_frame';
 
   const { togglePanel, toggleZenMode, selectCollageTab, selectStudioTab, openPanel } = panelsHook;
 
@@ -158,10 +161,10 @@ export default function App() {
 
   useEffect(() => {
     if (selectedId && selectedId !== prevSelectedIdRef.current) {
-      // 🛡️ مزامنة التحديد ثنائية الاتجاه لجميع العروض: كان القيد standard-only
-      // فيُهمل wide (الدبس غير مثبّت) وcompact (ورقة الجوال) رغم أن openPanel
-      // يدعم الفروع الثلاثة — الآن يُفتح الأنسب لكل breakpoint.
-      if (panelsHook.activePanel !== 'properties') {
+      // 🛡️ مزامنة التحديد ثنائية الاتجاه لجميع العروض: فحص حالة ظهور لوح الخصائص
+      // الفعلية (isPropertiesOpen) بدلاً من activePanel وحده حتى يفتح المفتش
+      // على شاشات standard و wide عند تحديد خلية أو عنصر إذا كان مطوياً.
+      if (!isPropertiesOpen) {
         panelsOpenPanel('properties');
       }
     }
@@ -183,10 +186,6 @@ export default function App() {
   const setAccountModalOpen = useEditorStore((state) => state.setAccountModalOpen);
   const activateLicenseKey = useEditorStore((state) => state.activateLicenseKey);
   const logoutAccount = useEditorStore((state) => state.logoutAccount);
-
-  // شريط الحالة: "جاهز" مرتبطة بحالة فعلية الآن — تعمل مؤشرات الذكاء الاصطناعي
-  // على تعيين enhancingElementId أثناء المعالجة
-  const isBusy = useRenderQuality((s) => s.enhancingElementId !== null);
 
   // أوامر لوحة الأدوات التي مصدرها هذا المكوّن وحده: الثيم (مصدره useTheme هنا)
   // ونافذة الحساب — فلا تملك اللوحة نسخة ثانية من حالة الثيم أو المودال.
@@ -665,7 +664,7 @@ export default function App() {
               </ErrorBoundary>
             }
             floatingFeedback={
-              activeOperation ? (
+              activeOperation && (!isInlineAiOperation || panelsHook.isZenMode) ? (
                 <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 ps-3 pe-1.5 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-auto">
                   <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse shrink-0" />
                   <span className="text-xs font-bold text-foreground truncate max-w-xs">
@@ -681,11 +680,6 @@ export default function App() {
                       إلغاء
                     </Button>
                   )}
-                </div>
-              ) : isBusy ? (
-                <div className="absolute top-4 end-4 z-(--z-quick-bar) font-cairo animate-in fade-in slide-in-from-top-2 duration-200 no-print flex items-center gap-2 bg-card/95 backdrop-blur-xl h-8 px-3 rounded-lg border border-border/80 shadow-fluent-8 fluent-specular pointer-events-none">
-                  <span className="w-2 h-2 rounded-full bg-muted-foreground animate-pulse shrink-0" />
-                  <span className="text-xs font-bold text-foreground">جاري الترميم ...</span>
                 </div>
               ) : null
             }

@@ -60,6 +60,8 @@ describe('history-slice', () => {
       collageBackgroundGradientColor2: null,
       collageBackgroundGradientAngle: 135,
       collagePendingImages: DEFAULT_COLLAGE_STATE.collagePendingImages,
+      autofillImages: DEFAULT_COLLAGE_STATE.autofillImages,
+      autofillSettings: DEFAULT_COLLAGE_STATE.autofillSettings,
       lastEditedImage: null,
       lastEditedImageAspect: null,
       printSettings: DEFAULT_PRINT_SETTINGS,

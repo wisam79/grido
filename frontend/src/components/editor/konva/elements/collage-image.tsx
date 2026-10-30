@@ -132,7 +132,7 @@ export const KonvaCollageImage = React.memo(
     const hasFilters = filterResult.filters.length > 0;
     const hasTransform = flipX || flipY || rotation !== 0;
 
-    useFilterCache({
+    const recacheFilters = useFilterCache({
       targetId: id,
       nodeRef: imageRef,
       image: displayImage as unknown as HTMLImageElement,
@@ -296,16 +296,10 @@ export const KonvaCollageImage = React.memo(
             }
             dragXfRef.current = null;
             if (draggable && accumulatedDrag.current) {
-              // إعادة بناء الكاش بعد استقرار الإزاحة — الفلاتر تعود للعمل
-              // بدقة الشاشة العادية بعد الحركة
-              const node = imageRef.current;
-              if (node && hasFilters && typeof node.cache === 'function') {
-                try {
-                  node.cache({ pixelRatio: Math.max(1, window.devicePixelRatio || 1) });
-                  node.getLayer()?.batchDraw();
-                } catch {
-                  // تجاهل آمن — الكاش تحسين وليس شرطاً للرسم
-                }
+              // إعادة بناء الكاش بعد استقرار الإزاحة عبر useFilterCache
+              // لاحترام مقياس المسرح (stage.scaleX) وسقف الذاكرة MAX_CACHE_PIXELS (24MP)
+              if (hasFilters) {
+                recacheFilters(true);
               }
               // ✍️ الكتابة للستور بفضاء الأصل: الإزاحة المعروضة في فضاء نسخة
               // العرض تُعاد قياسها بالتناسب، فتُفسَّر في drawSlotImage على أبعاد

@@ -8,6 +8,12 @@ import { UpdateNotifier } from '@/components/editor/system/update-notifier';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+import { FreeformCollageModal } from '@/features/freeform-collage';
+import {
+  notifyFreeformTemplateSaved,
+  setFreeformDialogOpen,
+  useFreeformDialogState,
+} from '@/features/freeform-collage/lib/freeform-dialog-state';
 
 import type { CrashReport } from '@bindings/grido/internal/service/models';
 
@@ -63,8 +69,18 @@ export function AppDialogsHost({
   onRecoverCrash,
   onDismissCrash,
 }: AppDialogsHostProps) {
+  const freeformOpen = useFreeformDialogState((state) => state.open);
+
   return (
     <>
+      <ErrorBoundary>
+        <FreeformCollageModal
+          open={freeformOpen}
+          onOpenChange={setFreeformDialogOpen}
+          onTemplateSaved={notifyFreeformTemplateSaved}
+        />
+      </ErrorBoundary>
+
       {/* نافذة التصدير */}
       <ErrorBoundary>
         <Suspense fallback={exportOpen ? <DialogLazyFallback /> : null}>

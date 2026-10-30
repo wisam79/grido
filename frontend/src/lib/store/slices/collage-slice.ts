@@ -8,6 +8,7 @@ import {
 import { measureImageAspect } from '../../canvas/measure-image';
 import { recenterElementsOnResize } from '../../canvas/resize-elements';
 import { mmToPx, pxToMm } from '../../canvas/units';
+import { AUTOFILL_IMAGE_LIMIT } from '../../schema';
 import {
   COLLAGE_TEMPLATES,
   computeDynamicCollageCells,
@@ -91,11 +92,13 @@ export interface CollageSlice {
   setSlotImagesBatch: (
     assignments: { slotId: string; src: string }[],
     lastEditedSrc?: string | null,
+    pendingImages?: string[],
   ) => Promise<void>;
   moveSlotContentsBatch: (assignments: { slotId: string; sourceSlotId: string }[]) => void;
-  /** قائمة صور معالج التعبئة — حالة جلسة تبقى عبر تبويبات لوحة الكولاج */
+  /** Reusable image pool, persisted separately from the unplaced overflow. */
   autofillImages: string[];
   setAutofillImages: (images: string[]) => void;
+  absorbPendingCollageImages: () => void;
   collagePendingImages: string[];
   setCollagePendingImages: (images: string[]) => void;
   appendPendingCollageImages: (images: string[]) => void;
@@ -531,14 +534,59 @@ function getPhysicalMaxMargin(state: CollageCross): number | null {
 export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice> = (set, get) => ({
   ...DEFAULT_COLLAGE_STATE,
 
-  setAutofillImages: (images) => set({ autofillImages: images }),
-  setCollagePendingImages: (images) => set({ collagePendingImages: [...images] }),
+  setAutofillImages: (images) => {
+    const state = get();
+    if (
+      images.length === state.autofillImages.length &&
+      images.every((src, index) => src === state.autofillImages[index])
+    )
+      return;
+    set({
+      autofillImages: images.slice(0, AUTOFILL_IMAGE_LIMIT),
+      collagePendingImages:
+        images.length > AUTOFILL_IMAGE_LIMIT
+          ? [...state.collagePendingImages, ...images.slice(AUTOFILL_IMAGE_LIMIT)]
+          : state.collagePendingImages,
+    });
+    get().pushHistory();
+  },
+  absorbPendingCollageImages: () => {
+    const state = get();
+    const count = Math.min(
+      AUTOFILL_IMAGE_LIMIT - state.autofillImages.length,
+      state.collagePendingImages.length,
+    );
+    if (count <= 0) return;
+    set({
+      autofillImages: [...state.autofillImages, ...state.collagePendingImages.slice(0, count)],
+      collagePendingImages: state.collagePendingImages.slice(count),
+    });
+    get().pushHistory();
+  },
+  setCollagePendingImages: (images) => {
+    const previous = get().collagePendingImages;
+    if (images.length === previous.length && images.every((src, index) => src === previous[index]))
+      return;
+    set({ collagePendingImages: [...images] });
+    get().pushHistory();
+  },
   appendPendingCollageImages: (images) => {
     if (images.length === 0) return;
     set((state) => ({ collagePendingImages: [...state.collagePendingImages, ...images] }));
+    get().pushHistory();
   },
-  setAutofillSettings: (patch) =>
-    set((state) => ({ autofillSettings: { ...state.autofillSettings, ...patch } })),
+  setAutofillSettings: (patch) => {
+    const previous = get().autofillSettings;
+    const next = { ...previous, ...patch };
+    if (
+      (Object.keys(next) as (keyof CollageAutofillSettings)[]).every(
+        (key) => next[key] === previous[key],
+      )
+    )
+      return;
+    set({ autofillSettings: next });
+    get().pushHistory();
+  },
 
   setTemplate: (template) => {
     if (template) {
@@ -767,8 +815,8 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     get().pushHistory();
   },
 
-  setSlotImagesBatch: async (assignments, lastEditedSrc) => {
-    if (assignments.length === 0) return;
+  setSlotImagesBatch: async (assignments, lastEditedSrc, pendingImages) => {
+    if (assignments.length === 0 && !pendingImages?.length) return;
     const stateAtStart = get();
     const previousBySlot = new Map(
       stateAtStart.slots
@@ -778,7 +826,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     const applicableAssignments = assignments.filter((assignment) =>
       previousBySlot.has(assignment.slotId),
     );
-    if (applicableAssignments.length === 0) return;
+    if (applicableAssignments.length === 0 && pendingImages === undefined) return;
     const epochs = new Map<string, number>();
     const projectId = stateAtStart.projectId;
     for (const assignment of applicableAssignments) {
@@ -806,6 +854,7 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       ];
     });
     if (aspectChecks.length > 0) await Promise.all(aspectChecks);
+    if (get().projectId !== projectId || get().history[0] !== stateAtStart.history[0]) return;
     const currentById = new Map(get().slots.map((slot) => [slot.id, slot] as const));
     const validAssignments = applicableAssignments.filter((assignment) => {
       const previous = previousBySlot.get(assignment.slotId);
@@ -816,7 +865,17 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         currentById.get(assignment.slotId)?.imageSrc === previous.imageSrc
       );
     });
-    if (validAssignments.length === 0) return;
+    // An import owns its overflow too. Keep any no-longer-applicable occurrences
+    // rather than losing them while replacement aspect checks were in flight.
+    const valid = new Set(validAssignments);
+    const remaining =
+      pendingImages === undefined
+        ? []
+        : [
+            ...assignments.filter((assignment) => !valid.has(assignment)).map(({ src }) => src),
+            ...pendingImages,
+          ];
+    if (validAssignments.length === 0 && remaining.length === 0) return;
     const srcBySlot = new Map(
       validAssignments.map((assignment) => [assignment.slotId, assignment.src]),
     );
@@ -835,7 +894,14 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
           ...(resetIds.has(slot.id) ? { zoom: 1, dragX: 0, dragY: 0 } : {}),
         };
       }),
-      lastEditedImage: lastEditedSrc ?? state.lastEditedImage,
+      lastEditedImage:
+        validAssignments.length > 0
+          ? (lastEditedSrc ?? state.lastEditedImage)
+          : state.lastEditedImage,
+      collagePendingImages:
+        remaining.length > 0
+          ? [...state.collagePendingImages, ...remaining]
+          : state.collagePendingImages,
     }));
     get().pushHistory();
   },

@@ -23,16 +23,19 @@ const logger = createLogger('useAutoSave');
 export function isPristineWorkspace(): boolean {
   const s = useEditorStore.getState();
   return (
-    s.projectId === null &&
-    s.elements.length === 0 &&
-    (s.slots?.every((slot) => !slot.imageSrc) ?? true) &&
-    s.historyIndex === 0 &&
-    s.history.length <= 1
+    s.projectId === null && isEmptyWorkspace(s) && s.historyIndex === 0 && s.history.length <= 1
   );
 }
 
-function isEmptyWorkspace(data: { elements: unknown[]; slots?: unknown[] }): boolean {
+function isEmptyWorkspace(data: {
+  elements: unknown[];
+  slots?: unknown[];
+  autofillImages?: string[];
+  collagePendingImages?: string[];
+}): boolean {
   return (
+    (data.autofillImages?.length ?? 0) === 0 &&
+    (data.collagePendingImages?.length ?? 0) === 0 &&
     data.elements.length === 0 &&
     (!data.slots || data.slots.every((s) => !(s as { imageSrc?: string }).imageSrc))
   );
@@ -258,9 +261,7 @@ export function useAutoSave() {
       const runSave = () => {
         if (disposed) return; // منع كتابة مسودة قديمة بعد إلغاء التنشيط
         const projectData = serializeEditorState(state);
-        const isEmptyCanvas =
-          projectData.elements.length === 0 &&
-          (!projectData.slots || projectData.slots.every((s) => !s.imageSrc));
+        const isEmptyCanvas = isEmptyWorkspace(projectData);
 
         if (isEmptyCanvas) {
           // مساحة العمل فارغة تماماً (تم مسح الكانفس أو الإعادة للوضع الافتراضي) — لا نحفظ مسودة فارغة
@@ -325,9 +326,7 @@ export function useAutoSave() {
       // حفظ فوري للحالة الحالية قبل إلغاء التنشيط لمنع فقدان أي تعديلات
       const currentState = useEditorStore.getState();
       const projectData = serializeEditorState(currentState);
-      const isEmptyCanvas =
-        projectData.elements.length === 0 &&
-        (!projectData.slots || projectData.slots.every((s) => !s.imageSrc));
+      const isEmptyCanvas = isEmptyWorkspace(projectData);
 
       if (!isEmptyCanvas) {
         const currentString = JSON.stringify(projectData);

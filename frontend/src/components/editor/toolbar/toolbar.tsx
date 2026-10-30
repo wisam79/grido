@@ -117,7 +117,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 </Button>
               </TooltipBtn>
 
-              {/* طباعة (Ctrl+P) — زر أيقوني قياسي موحّد */}
+              {/* طباعة (Ctrl+P) — إجراء الإخراج الأساسي بتمييز بصري واضح وأبعاد موحدة 32×32 */}
               <TooltipBtn content="طباعة المستند (Ctrl + P)">
                 <Button
                   variant="ghost"
@@ -125,9 +125,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onPrint}
                   data-testid="toolbar-print"
                   aria-label="طباعة المستند"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-colors duration-150 group"
+                  className="h-8 w-8 p-0 flex items-center justify-center bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary rounded-md cursor-pointer transition-colors duration-150 group"
                 >
-                  <Printer className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground transition-colors" />
+                  <Printer className="w-4 h-4 text-primary transition-colors" weight="duotone" />
                 </Button>
               </TooltipBtn>
 
@@ -139,9 +139,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onExport}
                   data-testid="toolbar-export"
                   aria-label="تصدير صورة"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-colors duration-150 group"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-foreground/85 hover:text-primary hover:bg-primary/10 rounded-md cursor-pointer transition-colors duration-150 group"
                 >
-                  <Export className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground transition-colors" />
+                  <Export className="w-4 h-4 text-foreground/85 group-hover:text-primary transition-colors" />
                 </Button>
               </TooltipBtn>
             </div>

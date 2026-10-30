@@ -31,19 +31,20 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
 }: AiToolsToolbarGroupProps = {}) {
   const { selectedItem } = useEditorStore(
     useShallow((state) => {
-      const el = state.elements.find((e) => e.id === state.selectedId);
+      // في الوضع الحر توجد أدوات الذكاء الاصطناعي ومؤشراتها في رأس لوح الخصائص؛
+      // يظهر شريط AI العلوي في الكولاج فقط حيث لا يحتوي مفتش الخلية على قسم AI.
+      if (state.mode !== 'collage') return { selectedItem: null };
       const slot = state.slots?.find((s) => s.id === state.selectedId);
-      const target = state.mode === 'collage' ? slot : el?.type === 'image' ? el : null;
-      return { selectedItem: target };
+      return { selectedItem: slot ?? null };
     }),
   );
 
   const onUpdate = React.useCallback((id: string, patch: Partial<Record<string, unknown>>) => {
     const store = useEditorStore.getState();
-    if (store.mode === 'collage') {
-      store.updateSlot(id, patch);
-    } else {
+    if (store.elements.some((element) => element.id === id)) {
       store.updateElement(id, patch);
+    } else {
+      store.updateSlot(id, patch);
     }
   }, []);
 

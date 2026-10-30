@@ -6,12 +6,12 @@ import { EnhanceImageWithAI, GetImageDimensions, SaveImageFromBase64 } from '@bi
 import { useAiEnhance, useAiEnhanceState } from '../src/hooks/use-ai-enhance';
 import { useRenderQuality } from '../src/lib/canvas/render-quality';
 import { useEditorStore } from '../src/lib/editor-store';
+import { advanceDocumentSession } from '../src/lib/io/document-session';
 import { useOperationStatusStore } from '../src/lib/ui/operation-status';
 
 import type { CanvasSlot } from '../src/lib/editor-store';
 
 const { getImageDimensionsMock } = vi.hoisted(() => ({
-  // These tests await measurements but never use Wails cancellation methods.
   getImageDimensionsMock:
     vi.fn<
       (
@@ -73,7 +73,6 @@ beforeEach(() => {
     .mockResolvedValueOnce(mockDimensions(1000, 750))
     .mockResolvedValueOnce(mockDimensions(2000, 1500));
 
-  // Tiny deterministic image mocks: no canvas rasterization or real decoding/network.
   vi.stubGlobal(
     'Image',
     class {
@@ -116,7 +115,7 @@ afterEach(() => {
 });
 
 describe('useAiEnhance — dimension-safe collage results', () => {
-  it('applies a collage result using the actual source and saved-result dimensions', async () => {
+  it('applies a collage result directly using the actual source and saved-result dimensions', async () => {
     const onUpdate = await enhanceSlot();
     expect(GetImageDimensions).toHaveBeenNthCalledWith(1, sourcePath);
     expect(GetImageDimensions).toHaveBeenNthCalledWith(2, resultPath);
@@ -127,6 +126,7 @@ describe('useAiEnhance — dimension-safe collage results', () => {
       originalImageSrc: sourcePath,
     });
     expect(pushHistory).toHaveBeenCalledTimes(1);
+    expect(useEditorStore.getState().slots[0].imageSrc).toBe(resultPath);
   });
 
   it('preserves live user pans, zoom, rotation and flips while doubling source resolution', async () => {
@@ -177,6 +177,14 @@ describe('useAiEnhance — dimension-safe collage results', () => {
 
   it('measures nonlocal sources without applying EXIF rotation twice', async () => {
     const src = 'data:image/jpeg;base64,AAA';
+    const opaqueContext = {
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high',
+      drawImage: vi.fn(),
+      getImageData: () => ({ data: new Uint8ClampedArray([0, 0, 0, 255]) }),
+    };
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(opaqueContext as never);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(src);
     setSlot({ imageSrc: src, dragX: 20, dragY: -10 });
     getImageDimensionsMock.mockReset().mockResolvedValue(mockDimensions(2000, 1500));
     const onUpdate = vi.fn();
@@ -204,10 +212,14 @@ describe('useAiEnhance — dimension-safe collage results', () => {
       const onUpdate = await enhanceSlot();
       expect(onUpdate).not.toHaveBeenCalled();
       expect(pushHistory).not.toHaveBeenCalled();
-      expect(logAiUsage).not.toHaveBeenCalled();
       expect(useEditorStore.getState().slots[0].imageSrc).toBe(sourcePath);
       expect(useAiEnhanceState.getState().isEnhancing).toBe(false);
-      if (stage === 'source') expect(EnhanceImageWithAI).not.toHaveBeenCalled();
+      if (stage === 'source') {
+        expect(EnhanceImageWithAI).not.toHaveBeenCalled();
+        expect(logAiUsage).not.toHaveBeenCalled();
+      } else {
+        expect(logAiUsage).toHaveBeenCalledTimes(1);
+      }
     },
   );
 
@@ -241,7 +253,7 @@ describe('useAiEnhance — dimension-safe collage results', () => {
       const onUpdate = await enhanceSlot();
       expect(onUpdate).not.toHaveBeenCalled();
       expect(pushHistory).not.toHaveBeenCalled();
-      expect(logAiUsage).not.toHaveBeenCalled();
+      expect(logAiUsage).toHaveBeenCalledTimes(1);
     },
   );
 
@@ -265,7 +277,7 @@ describe('useAiEnhance — dimension-safe collage results', () => {
     });
   });
 
-  it('leaves freeform layout unchanged and skips collage dimension reads', async () => {
+  it('leaves freeform layout unchanged and applies the element result directly', async () => {
     useEditorStore.setState({
       slots: [],
       elements: [
@@ -288,11 +300,36 @@ describe('useAiEnhance — dimension-safe collage results', () => {
     await act(async () => {
       await hook.result.current.handleEnhance({ id: 'el-1', imageSrc: '/local-image/free.png' });
     });
-    expect(GetImageDimensions).not.toHaveBeenCalled();
     expect(onUpdate).toHaveBeenCalledExactlyOnceWith('el-1', {
       imageSrc: resultPath,
       originalImageSrc: '/local-image/free.png',
     });
+  });
+
+  it('treats a stale document session as changed and never commits', async () => {
+    getImageDimensionsMock
+      .mockReset()
+      .mockResolvedValueOnce(mockDimensions(1000, 750))
+      .mockImplementationOnce(async () => {
+        advanceDocumentSession();
+        return mockDimensions(2000, 1500);
+      });
+    const onUpdate = await enhanceSlot();
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(useEditorStore.getState().slots[0].imageSrc).toBe(sourcePath);
+  });
+
+  it('drops the enhancement without committing when the project changes mid-inference', async () => {
+    getImageDimensionsMock
+      .mockReset()
+      .mockResolvedValueOnce(mockDimensions(1000, 750))
+      .mockImplementationOnce(async () => {
+        useEditorStore.setState({ projectId: 'other-project' });
+        return mockDimensions(2000, 1500);
+      });
+    const onUpdate = await enhanceSlot();
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(useEditorStore.getState().slots[0].imageSrc).toBe(sourcePath);
   });
 });
 

@@ -14,6 +14,8 @@ import {
   type PrintExportContext,
   type PrintExecuteOptions,
 } from '../src/components/editor/print/use-print-export';
+import * as imageDimensions from '../src/lib/canvas/image-dimensions';
+import { useEditorStore } from '../src/lib/editor-store';
 
 import type { usePrintLayout } from '../src/hooks/use-print-layout';
 import type { CanvasSlot } from '../src/lib/store/types';
@@ -156,7 +158,12 @@ async function runPrint(
 }
 
 class FakeImage {
+  static decodedWidth = 800;
+  static decodedHeight = 600;
+  static fail = false;
   crossOrigin = 'anonymous';
+  naturalWidth = FakeImage.decodedWidth;
+  naturalHeight = FakeImage.decodedHeight;
   width = 800;
   height = 600;
   onload: (() => void) | null = null;
@@ -164,7 +171,9 @@ class FakeImage {
   private _src = '';
   set src(v: string) {
     this._src = v;
-    queueMicrotask(() => this.onload?.());
+    queueMicrotask(() =>
+      FakeImage.fail ? this.onerror?.(new Error('decode failed')) : this.onload?.(),
+    );
   }
   get src() {
     return this._src;
@@ -174,6 +183,9 @@ class FakeImage {
 describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    FakeImage.decodedWidth = 800;
+    FakeImage.decodedHeight = 600;
+    FakeImage.fail = false;
     vi.stubGlobal('Image', FakeImage);
     document.body.style.pointerEvents = '';
   });
@@ -181,6 +193,62 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     document.body.style.pointerEvents = '';
+  });
+
+  it.each(['cold', 'warm'] as const)(
+    'R-04: uses decoded images with a %s cache and the fitted print size',
+    async (cache) => {
+      const cached = vi
+        .spyOn(imageDimensions, 'getCachedImageDimensions')
+        .mockReturnValue(cache === 'warm' ? { width: 9000, height: 9000 } : undefined);
+      const oldZoom = useEditorStore.getState().canvasZoom;
+      try {
+        FakeImage.decodedWidth = 1200;
+        FakeImage.decodedHeight = 1200;
+        const context = makeContext({
+          canvasWidth: 4800,
+          canvasHeight: 4800,
+          printDpi: 600,
+          layout: makeLayout({ imageWidthMM: 101.6, imageHeightMM: 101.6 }),
+        });
+        for (const viewportZoom of [0.25, 1, 4]) {
+          useEditorStore.setState({ canvasZoom: viewportZoom });
+          await runPrint(context);
+        }
+        expect(mockExportPrintSheet).toHaveBeenCalledTimes(3);
+        expect(mockToastWarning).not.toHaveBeenCalled();
+        await runPrint({ ...context, slots: context.slots.map((slot) => ({ ...slot, zoom: 2 })) });
+        expect(mockExportPrintSheet).toHaveBeenCalledTimes(4);
+        expect(mockToastWarning).toHaveBeenCalledWith(expect.stringContaining('≈ 150DPI'));
+        expect(cached).not.toHaveBeenCalled();
+      } finally {
+        cached.mockRestore();
+        useEditorStore.setState({ canvasZoom: oldZoom });
+      }
+    },
+  );
+
+  it.each(['sRGB', 'CMYK'] as const)(
+    'R-04: unreadable sources block %s output and direct printing',
+    async (printColorSpace) => {
+      FakeImage.fail = true;
+      const result = await runPrint(makeContext({ printColorSpace }));
+      expect(mockExportPrintSheet).not.toHaveBeenCalled();
+      expect(mockPrintDirect).not.toHaveBeenCalled();
+      expect(mockToastError).toHaveBeenCalledWith(
+        expect.stringContaining('تعذر قراءة صورة الخانة'),
+      );
+      expect(result.current.isExporting).toBe(false);
+    },
+  );
+
+  it('R-04: empty slots remain warnings, not print blockers', async () => {
+    await runPrint(
+      makeContext({ slots: makeSlots().map((slot) => ({ ...slot, imageSrc: undefined })) }),
+    );
+    expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
+    expect(mockToastWarning).toHaveBeenCalledWith(expect.stringContaining('فارغة'));
+    expect(mockToastError).not.toHaveBeenCalled();
   });
 
   it('يرسل الصيغة JPEG وخلفية الكولاج وأبعاد الورقة والعناصر وعلامات القص', async () => {

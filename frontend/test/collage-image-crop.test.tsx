@@ -5,6 +5,7 @@ import { Stage, Layer } from 'react-konva';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { KonvaCollageImage } from '../src/components/editor/konva/elements/collage-image';
+import { captureStageBlob } from '../src/lib/canvas/konva-export-utils';
 
 import type Konva from 'konva';
 import type { Root } from 'react-dom/client';
@@ -259,5 +260,39 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
     expect(onUpdateOffsets).toHaveBeenCalledWith(200, 0);
     // الإطار ثابت بعد دورة صفرية: لا قفزة من خلط الفضاءين
     expect(node.cropX()).toBe(100);
+  });
+
+  it('captureStageBlob(useFullResolution): يحجّم cropX/cropWidth لأبعاد الأصل أثناء الالتقاط ثم يستعيدهما', async () => {
+    const node = await mountSlot({
+      srcW: 4096,
+      srcH: 4096,
+      slotW: 300,
+      slotH: 300,
+      zoom: 2,
+      dragX: 200,
+    });
+    const stage = node.getStage()!;
+    expect(node.cropX()).toBe(100);
+    expect(node.cropWidth()).toBe(1024);
+
+    let capturedCropX = 0;
+    let capturedCropW = 0;
+    const origToCanvas = stage.toCanvas.bind(stage);
+    vi.spyOn(stage, 'toCanvas').mockImplementation((cfg) => {
+      capturedCropX = node.cropX();
+      capturedCropW = node.cropWidth();
+      const c = origToCanvas(cfg);
+      c.toBlob = (cb) => cb(new Blob(['ok'], { type: 'image/png' }));
+      return c;
+    });
+
+    await captureStageBlob(stage, 2, 'image/png', 1, undefined, { useFullResolution: true });
+
+    // أثناء الالتقاط بدقة الأصل (4096 = 2× نسخة العرض 2048): القص يُضرب بـ 2
+    expect(capturedCropX).toBe(200);
+    expect(capturedCropW).toBe(2048);
+    // بعد انتهاء الالتقاط: تعود إحداثيات القص لنسخة العرض المخفّضة
+    expect(node.cropX()).toBe(100);
+    expect(node.cropWidth()).toBe(1024);
   });
 });

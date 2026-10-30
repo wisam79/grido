@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentSegmentedControl } from '@/components/ui/blocks';
 import { GridFour, MagicWand } from '@/components/ui/icons';
-import { FreeformCollageModal } from '@/features/freeform-collage';
+import { setFreeformDialogOpen } from '@/features/freeform-collage/lib/freeform-dialog-state';
 import { getTemplateGrid } from '@/lib/canvas/collage-grid';
 import { useEditorStore } from '@/lib/editor-store';
 import { downloadJsonFile } from '@/lib/io/download';
@@ -28,7 +28,6 @@ interface CustomCollageCardProps {
   onSelect: (t: CollageTemplate) => void;
   activeTemplateId: string | undefined;
   onSaveTemplate: (name: string, cells: NormalizedCell[]) => void;
-  onTemplatesChanged?: () => void | Promise<void>;
   savedTemplates?: CollageTemplate[];
   onDeleteTemplate?: (id: string, e: React.MouseEvent) => void;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
@@ -40,7 +39,6 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   onSelect,
   activeTemplateId,
   onSaveTemplate,
-  onTemplatesChanged,
   savedTemplates = [],
   onDeleteTemplate,
   fileInputRef,
@@ -80,7 +78,6 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
   const [cols, setCols] = useState(4);
   const [photoType, setPhotoType] = useState<PhotoGridType>('iq-national-id');
   const [gridAlign, setGridAlign] = useState<GridAlignment>('top-left');
-  const [showFreeformModal, setShowFreeformModal] = useState(false);
 
   const isCustomActive = activeTemplateId === 'collage-custom';
   const isFreeformActive =
@@ -437,7 +434,7 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
             </p>
             <button
               type="button"
-              onClick={() => setShowFreeformModal(true)}
+              onClick={() => setFreeformDialogOpen(true)}
               className="w-full h-9 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             >
               <MagicWand className="size-4" />
@@ -455,12 +452,6 @@ const CustomCollageCard = React.memo(function CustomCollageCard({
         {/* 6️⃣ فرز وترتيب الخانات */}
         {effectiveTab === 'arrange' && <CollageArrangeTab />}
       </div>
-
-      <FreeformCollageModal
-        open={showFreeformModal}
-        onOpenChange={setShowFreeformModal}
-        onTemplateSaved={onTemplatesChanged}
-      />
     </div>
   );
 });

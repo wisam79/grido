@@ -114,6 +114,7 @@ export function CollageSettings() {
             max={15}
             step={1}
             unit="px"
+            defaultValue={0}
             onChange={setCollageStrokeWidth}
             onCommit={() => useEditorStore.getState().pushHistory()}
           />
@@ -134,13 +135,10 @@ export function CollageSettings() {
         </div>
       </FluentSection>
 
-      {/* 🎴 بطاقة 3: خطوط القص — العنوان يكفي، ومفتاح التشغيل في رأس القسم
-          بدل صف يعيد العنوان نفسه ثلاث مرات (خطوط القص ← خطوط القص ←
-          خطوط القص بين الصور). */}
+      {/* 🎴 بطاقة 3: خطوط القص — بدون collapsible حتى يتحاذى مفتاحا التبديل
+          على محور عمودي واحد تماماً دون إزاحة بسبب سهم الطي. */}
       <FluentSection
         title="خطوط القص"
-        collapsible
-        defaultOpen={true}
         action={
           <Switch
             checked={collageShowCutLines}

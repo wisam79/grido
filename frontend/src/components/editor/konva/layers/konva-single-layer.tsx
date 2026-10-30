@@ -118,16 +118,25 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
       {sortedElements.map((el) => {
         if (el.visible === false) return null;
 
-        // حذف خارج الكانفس مع مراعاة الدوران ونسبة أبعاد الكانفس في فضاء البكسل
-        const box = getElementVisualBox(el, canvasWidth, canvasHeight);
-        const minX = box.x;
-        const maxX = box.x + box.width;
-        const minY = box.y;
-        const maxY = box.y + box.height;
+        const isSelected = selectedIds.includes(el.id);
 
-        // استبعاد العناصر البعيدة جداً خارج مساحة العمل (Pasteboard)
-        if (minX > 5 || minY > 5 || maxX < -4 || maxY < -4) {
-          return null;
+        // حذف خارج الكانفس مع مراعاة الدوران والظلال ونسبة أبعاد الكانفس في فضاء البكسل
+        // (تبقى العناصر المحددة مُركّبة دائماً لضمان اتصال مقابض Transformer بها)
+        if (!isSelected) {
+          const box = getElementVisualBox(el, canvasWidth, canvasHeight);
+          const minX = box.x;
+          const maxX = box.x + box.width;
+          const minY = box.y;
+          const maxY = box.y + box.height;
+
+          const shadowPadPxX = (el.shadowBlur || 0) * 2 + Math.abs(el.shadowOffsetX || 0) + 32;
+          const shadowPadPxY = (el.shadowBlur || 0) * 2 + Math.abs(el.shadowOffsetY || 0) + 32;
+          const padX = Math.max(0.25, shadowPadPxX / Math.max(1, canvasWidth));
+          const padY = Math.max(0.25, shadowPadPxY / Math.max(1, canvasHeight));
+
+          if (minX > 1 + padX || minY > 1 + padY || maxX < -padX || maxY < -padY) {
+            return null;
+          }
         }
 
         const handleMouseDown = createElementMouseDown(el.id);
@@ -135,7 +144,7 @@ export const KonvaSingleLayer = React.memo(function KonvaSingleLayer({
 
         const elementProps = {
           element: el,
-          isSelected: selectedIds.includes(el.id),
+          isSelected,
           onMouseDown: handleMouseDown,
           onTouchStart: handleMouseDown as unknown as (e: KonvaEventObject<TouchEvent>) => void,
           onClick: handleClick,

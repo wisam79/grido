@@ -10,13 +10,16 @@ import {
 } from '@bindings/grido/internal/handlers/printhandler';
 
 import { previewWhite } from '@/lib/canvas/canvas-colors';
-import { getCachedImageDimensions } from '@/lib/canvas/image-dimensions';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
-import { runCollagePreflight } from '@/lib/export/collage-preflight';
-import { loadCollageSlotImages } from '@/lib/export/export-canvas-collage';
+import {
+  getLoadedImageDimensions,
+  loadCollageSlotImages,
+  runCollagePreflight,
+} from '@/lib/export/collage-preflight-helpers';
 import { CanvasTooLargeError } from '@/lib/export/export-limits';
 import { createLogger } from '@/lib/logger';
+import { computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
 
 import { extractPrintImageSrc, generatePrintPageStyle } from './print-page-style';
 import { buildCollagePayload, buildSinglePayload, type BuiltItems } from './print-payload-builder';
@@ -258,17 +261,24 @@ export function usePrintExport({
         // والدقة المنخفضة تحذيرات تستمر بعد تنبيه واحد.
         if (mode === 'collage') {
           const loadResult = await loadCollageSlotImages(slots);
+          if (attempt !== attemptRef.current) return;
           const preflight = runCollagePreflight({
             slots,
-            canvasWidth,
-            canvasHeight,
-            imageDimensions: new Map(
-              [...new Set(slots.map((slot) => slot.imageSrc).filter(Boolean))]
-                .map((src) => [src as string, getCachedImageDimensions(src as string)])
-                .filter((entry): entry is [string, { width: number; height: number }] =>
-                  Boolean(entry[1]),
-                ),
+            slotRectsMM: new Map(
+              slots.map((slot) => [
+                slot.id,
+                computeCollageSlotRectMM(slot, {
+                  canvasWidth,
+                  canvasHeight,
+                  imageWidthMM: layout.imageWidthMM,
+                  imageHeightMM: layout.imageHeightMM,
+                  collageMargin,
+                  collageGap,
+                  hasPhysical: Boolean(collageTemplate?.physicalLayout),
+                }),
+              ]),
             ),
+            imageDimensions: getLoadedImageDimensions(slots, loadResult.loaded),
             failedSlotIds: loadResult.failedSlotIds,
           });
           if (preflight.blocking.length > 0) {
@@ -493,6 +503,11 @@ export function usePrintExport({
       paperWidth,
       paperHeight,
       layout.gapMM,
+      layout.imageWidthMM,
+      layout.imageHeightMM,
+      collageMargin,
+      collageGap,
+      collageTemplate,
       printDpi,
       backgroundColor,
       collageShowCutLines,

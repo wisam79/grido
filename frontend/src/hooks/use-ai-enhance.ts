@@ -4,19 +4,26 @@ import { create } from 'zustand';
 
 import { SaveImageFromBase64, EnhanceImageWithAI, GetImageDimensions } from '@bindings/grido/app';
 
-import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
+import { commitAiImageResult, findLiveAiTarget } from '@/lib/ai/ai-result-commit';
 import {
   aiPlanDailyLimit,
   parseQuotaSnapshotFromResponse,
   resolveAiQuota,
   type AiQuotaSnapshot,
 } from '@/lib/ai/quota';
+import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { useEditorStore } from '@/lib/editor-store';
+import { getDocumentSession } from '@/lib/io/document-session';
+import { createLogger } from '@/lib/logger';
+import { useOperationStatusStore } from '@/lib/ui/operation-status';
+import { toErrorMessage } from '@/lib/wails-error';
+
+import type { AiImageDimensions } from '@/lib/ai/ai-result-commit';
 
 interface AiEnhanceState {
   isEnhancing: boolean;
   enhanceProgress: number;
   enhanceProgressText: string;
-  /** آخر لقطة حصة خادمية (used_today/daily_limit) — المصدر الحاكم للعرض */
   serverQuota: AiQuotaSnapshot | null;
   setIsEnhancing: (val: boolean) => void;
   setEnhanceProgress: (val: number | ((prev: number) => number)) => void;
@@ -38,9 +45,8 @@ export const useAiEnhanceState = create<AiEnhanceState>((set) => ({
   setServerQuota: (snapshot) => set({ serverQuota: snapshot }),
 }));
 
-/** تصفير لقطة الحصة الخادمية فوراً (عند الخروج أو تبديل الحساب). */
 export function resetAiEnhanceQuota(): void {
-  useAiEnhanceState.getState().setServerQuota(null);
+  useAiEnhanceState.setState({ serverQuota: null });
 }
 
 if (typeof window !== 'undefined') {
@@ -51,25 +57,14 @@ if (typeof window !== 'undefined') {
 // واحتياطي محلي على **يوم UTC** قبل أول عملية في اليوم — لا اشتقاق محلي موازٍ
 // بيوم محلي (كان يعرض رصيداً متبقياً بينما يرفض الخادم الطلب — التدقيق 12/F-01).
 
-/**
- * يفحص ما إذا كان الكانفاس يحتوي على بكسلات شفافة (قناة ألفا < 250).
- * فحص عينات سريعة كل 16 بكسل لتفادي أي إجهاد للـ CPU/DOM.
- */
 function checkCanvasHasAlpha(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
 ): boolean {
-  try {
-    const imgData = ctx.getImageData(0, 0, width, height);
-    const data = imgData.data;
-    for (let i = 3; i < data.length; i += 16) {
-      if (data[i] < 250) {
-        return true;
-      }
-    }
-  } catch {
-    return false;
+  const { data } = ctx.getImageData(0, 0, width, height);
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] < 255) return true;
   }
   return false;
 }
@@ -191,55 +186,23 @@ export async function prepareImageForAiUpload(
   maxDim = 2048,
   quality = 0.92,
 ): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      let w = img.naturalWidth || img.width;
-      let h = img.naturalHeight || img.height;
-
-      if (w > maxDim || h > maxDim) {
-        if (w > h) {
-          h = Math.round((h * maxDim) / w);
-          w = maxDim;
-        } else {
-          w = Math.round((w * maxDim) / h);
-          h = maxDim;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve(src);
-        return;
-      }
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, w, h);
-
-      // فحص وجود قناة ألفا للحفاظ على الشفافية بصيغة PNG
-      const hasAlpha = checkCanvasHasAlpha(ctx, w, h);
-      if (hasAlpha) {
-        resolve(canvas.toDataURL('image/png'));
-      } else {
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      }
-    };
-    img.onerror = () => resolve(src);
-    img.src = src;
-  });
+  const img = await loadImageElement(src);
+  if (!img) throw new Error('تعذر تحميل الصورة للتحسين.');
+  const width = img.naturalWidth || img.width;
+  const height = img.naturalHeight || img.height;
+  const scale = Math.min(1, maxDim / Math.max(width, height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('تعذر تجهيز الصورة للتحسين.');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return checkCanvasHasAlpha(ctx, canvas.width, canvas.height)
+    ? canvas.toDataURL('image/png')
+    : canvas.toDataURL('image/jpeg', quality);
 }
-
-import { useRenderQuality } from '@/lib/canvas/render-quality';
-import { useEditorStore } from '@/lib/editor-store';
-import { createLogger } from '@/lib/logger';
-import { useOperationStatusStore } from '@/lib/ui/operation-status';
-import { toErrorMessage } from '@/lib/wails-error';
-import type { AiImageDimensions } from '@/lib/ai/ai-result-commit';
 
 export function useAiEnhance(
   onUpdate: (id: string, patch: Partial<Record<string, unknown>>) => void,
@@ -318,158 +281,172 @@ export function useAiEnhance(
       return;
     }
 
+    const requestState = useEditorStore.getState();
+    const target = { id: element.id, imageSrc: element.imageSrc };
+    if (findLiveAiTarget(target.id)?.imageSrc !== target.imageSrc) return;
+    const kind = requestState.elements.some((item) => item.id === target.id) ? 'element' : 'slot';
+    const documentSession = getDocumentSession();
+    const projectId = requestState.projectId;
+    const userEmail = requestState.user?.email;
     const opId = useOperationStatusStore.getState().startOperation({
       type: 'ai_enhance',
-      title: 'جاري تحسين الصورة بالذكاء الاصطناعي ...',
-      targetId: element.id,
+      title: 'جاري ترميم الصورة ...',
+      targetId: target.id,
       canCancel: false,
     });
-
     setIsEnhancing(true);
-    useRenderQuality.getState().setEnhancingElementId(element.id);
-    setEnhanceProgress(10);
+    useRenderQuality.getState().setEnhancingElementId(target.id);
+    setEnhanceProgress(0);
     setEnhanceProgressText('جاري تجهيز الصورة ...');
+    const AI_ENHANCE_TIMEOUT_MS = 200000;
+    const started = performance.now();
+    const deadline = started + AI_ENHANCE_TIMEOUT_MS;
+    const withinDeadline = async <T>(operation: () => Promise<T>): Promise<T> => {
+      const remaining = deadline - performance.now();
+      const error = new Error('تأخر الطلب. تحقق من حصتك اليومية — قد تكون المحاولة احتُسبت.');
+      if (remaining <= 0) throw error;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        return await Promise.race([
+          operation(),
+          new Promise<never>((_, reject) => {
+            timer = setTimeout(() => reject(error), remaining);
+          }),
+        ]);
+      } finally {
+        clearTimeout(timer);
+      }
+    };
 
     let progressTimer: ReturnType<typeof setInterval> | null = null;
-    // لا يدعم ربط Wails الإلغاء الفعلي — نستبدل AbortController الوهمي بمهلة
-    // حقيقية عبر Promise.race ليعود للمستخدم خطأ واضح بدل انتظار لا نهائي
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
     try {
-      setEnhanceProgress(20);
-      const state = useEditorStore.getState();
-      const isCollageTarget =
-        !state.elements.some((item) => item.id === element.id) &&
-        state.slots.some((slot) => slot.id === element.id);
-      // فشل قياس المصدر يوقف الطلب قبل استهلاك الحصة؛ الإزاحات نفسها تُقرأ عند التطبيق.
-      const sourceDimensions = isCollageTarget
-        ? await measureAiImageDimensions(element.imageSrc)
-        : undefined;
-      let base64Image: string;
-      if (element.imageSrc.startsWith('/local-image/')) {
-        // 🚀 مسار Go المباشر: نمرر مسار الصورة المحلي لـ Go ليقرأه ويهيئه ذاتياً
-        // دون الحاجة لفتح DOM Image وتخصيص Canvas وتشفيره بـ toDataURL في المتصفح
-        base64Image = element.imageSrc;
-      } else {
-        base64Image = await prepareImageForAiUpload(element.imageSrc, 2048, 0.92);
-      }
+      setEnhanceProgress(10);
+      setEnhanceProgressText('جاري فحص وتجهيز الصورة ...');
+      const sourceDimensions = await withinDeadline(() =>
+        measureAiImageDimensions(target.imageSrc),
+      );
+      const base64Image = target.imageSrc.startsWith('/local-image/')
+        ? target.imageSrc
+        : await withinDeadline(() => prepareImageForAiUpload(target.imageSrc));
+      if (
+        documentSession !== getDocumentSession() ||
+        userEmail !== useEditorStore.getState().user?.email
+      )
+        return;
 
-      const loadingMessages = [
-        'جاري تجهيز النموذج ...',
-        'جاري تجهيز الصورة ...',
-        'جاري الترميم ...',
-        'جاري معالجة التفاصيل ...',
-        'جاري تحسين الجودة ...',
-        'جاري الإنهاء ...',
-      ];
+      setEnhanceProgress(25);
+      setEnhanceProgressText('إرسال الصورة إلى سيرفر المعالجة ...');
 
-      setEnhanceProgress(15);
-      setEnhanceProgressText(loadingMessages[0]);
-
-      let ticks = 0;
+      // عداد التقدم الديناميكي أثناء معالجة الخادم السحابي
       progressTimer = setInterval(() => {
-        ticks++;
-        setEnhanceProgress((prev) => (prev < 90 ? prev + 2 : prev));
+        setEnhanceProgress((prev) => {
+          if (prev < 45) {
+            setEnhanceProgressText('كشف معالم الوجه ومحاذاة البكسلات ...');
+            return prev + 5;
+          }
+          if (prev < 75) {
+            setEnhanceProgressText('ترميم العيون والملامح وتكبير الدقة ...');
+            return prev + 3;
+          }
+          if (prev < 90) {
+            setEnhanceProgressText('إنهاء اللمسات الأخيرة واسترجاع النتيجة ...');
+            return prev + 1;
+          }
+          return prev;
+        });
+      }, 350);
 
-        // تغيير الرسالة كل 4 ثواني تقريباً (5 دورات * 800 مللي ثانية)
-        const msgIndex = Math.floor(ticks / 5);
-        if (msgIndex < loadingMessages.length) {
-          setEnhanceProgressText(loadingMessages[msgIndex]);
-        }
-      }, 800);
+      const resultStr = await withinDeadline(() =>
+        EnhanceImageWithAI(base64Image, requestState.user?.token || '', dailyLimit),
+      );
 
-      const token = user?.token || '';
-      // RV-7: مهلة الواجهة كانت 120s بينما الخلفية 3 دقائق (aiEnhanceClient) وحاوية
-      // Modal حتى 600s والتسجيل بعد المعالجة — فطلب بارد 130s كان يُظهر فشلاً بلا
-      // صورة بينما يكتمل الخادم ويخصم الحصة. نمهل 200s (>180s خلفية + هامش) ليرى
-      // المستخدم النتيجة متى نجحت، مع رسالة صريحة أن الحصة قد تكون احتُسبت.
-      const AI_ENHANCE_TIMEOUT_MS = 200000;
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(
-          () => reject(new Error('تأخر الطلب. تحقق من حصتك اليومية — قد تكون المحاولة احتُسبت.')),
-          AI_ENHANCE_TIMEOUT_MS, // مواءمة مع مهلة الخلفية 3 دقائق + هامش
-        );
-      });
-      const resultStr = await Promise.race([
-        EnhanceImageWithAI(base64Image, token, dailyLimit),
-        timeoutPromise,
-      ]);
-
-      clearInterval(progressTimer);
-      progressTimer = null;
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = null;
-
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
+      setEnhanceProgress(92);
       const result = JSON.parse(resultStr);
+      if (
+        !result ||
+        typeof result.image !== 'string' ||
+        !/^data:image\/(png|jpeg);base64,/.test(result.image)
+      ) {
+        throw new Error('أعاد خادم الترميم نتيجة غير صالحة.');
+      }
+      if (userEmail !== useEditorStore.getState().user?.email) return;
+      const snapshot = parseQuotaSnapshotFromResponse(result, Date.now(), userEmail);
+      if (snapshot) useAiEnhanceState.getState().setServerQuota(snapshot);
+      const duration = result.execution_seconds;
+      const cost = result.total_cost_usd ?? result.cost_usd;
+      useEditorStore.getState().logAiUsage({
+        email: userEmail || 'unknown',
+        serviceName: 'ترميم الوجوه بالذكاء الاصطناعي (CodeFormer)',
+        source: 'Grido Studio Desktop',
+        durationSec:
+          typeof duration === 'number' && Number.isFinite(duration) && duration >= 0
+            ? duration
+            : (performance.now() - started) / 1000,
+        costUsd: typeof cost === 'number' && Number.isFinite(cost) && cost >= 0 ? cost : 0,
+        status: 'success',
+      });
+      if (
+        documentSession !== getDocumentSession() ||
+        projectId !== useEditorStore.getState().projectId
+      )
+        return;
+      const live = findLiveAiTarget(target.id);
+      if (!live) {
+        toast.info('تم إلغاء الترميم: العنصر لم يعد موجوداً.');
+        return;
+      }
+      if (live.imageSrc !== target.imageSrc) {
+        toast.info('تم إلغاء الترميم: تغيّرت الصورة أثناء المعالجة.');
+        return;
+      }
+      setEnhanceProgress(96);
+      setEnhanceProgressText('جاري تطبيق الصورة ...');
+      const payload = await withinDeadline(() =>
+        ensureTransparencyPreserved(target.imageSrc, result.image),
+      );
+      const imageSrc = await withinDeadline(() => SaveImageFromBase64(payload));
+      const resultDimensions = await withinDeadline(() => measureAiImageDimensions(imageSrc));
 
-      // 📊 قيم الحصة الخادمية (used_today/daily_limit) تُعتمد فوراً كمصدر العرض
-      const snapshot = parseQuotaSnapshotFromResponse(result, Date.now(), user?.email);
-      if (snapshot) {
-        useAiEnhanceState.getState().setServerQuota(snapshot);
+      if (
+        documentSession !== getDocumentSession() ||
+        projectId !== useEditorStore.getState().projectId ||
+        userEmail !== useEditorStore.getState().user?.email
+      ) {
+        return;
       }
 
-      if (result.image) {
-        setEnhanceProgress(95);
-        setEnhanceProgressText('جاري حفظ الصورة ...');
-        // 🛡️ حماية الشفافية: استعادة قناع الشفافية الأصلي في حال تحول الخلفية لأسود
-        const finalImagePayload = await ensureTransparencyPreserved(element.imageSrc, result.image);
-        const localPath = await SaveImageFromBase64(finalImagePayload);
-        const resize = sourceDimensions
-          ? { source: sourceDimensions, result: await measureAiImageDimensions(localPath) }
-          : undefined;
-
-        // 🛡️ حارس الطزاثة الموحّد (`commitAiImageResult`, H3 من تدقيق 2026-10-08):
-        // دورة الترميم السحابية تستغرق دقائق، فيُلغى التطبيق بصمت إن استُبدلت
-        // الصورة أو تم التراجع أثناء الانتظار. يبحث المساعد في العناصر والخانات
-        // معاً، ويتحقق من بقاء الهدف وطزاجة صورته، ثم يطبّق الرقعة ويدفع خطوة
-        // تراجع واحدة (كان البحث في elements وحده يُسقط نتائج الكولاج).
-        const commit = commitAiImageResult(element, localPath, onUpdateRef.current, resize);
-        if (commit === 'not-found') {
-          toast.info('تم إلغاء الترميم: العنصر لم يعد موجوداً.');
-          return;
-        }
-        if (commit === 'changed') {
-          toast.info('تم إلغاء الترميم: تغيّرت الصورة أثناء المعالجة.');
-          return;
-        }
-        setEnhanceProgress(100);
-
-        // 🌟 1. توثيق وتسجيل الطلب في سجلات تدقيق قاعدة البيانات الحية
-        const currentUser = useEditorStore.getState().user;
-        useEditorStore.getState().logAiUsage({
-          email: currentUser?.email || 'unknown',
-          serviceName: 'ترميم الوجوه بالذكاء الاصطناعي (CodeFormer)',
-          source: 'Grido Studio Desktop (Windows)',
-          durationSec: result.execution_seconds || 2.4,
-          // حقول التكلفة القديمة ليست فاتورة Modal؛ نحفظ الصفر ولا نخترع مبلغاً عند الغياب.
-          costUsd: result.total_cost_usd ?? result.cost_usd ?? 0,
-          status: 'success',
-        });
-
-        // 🌟 2. عرض إشعار النجاح الأنيق مع الرصيد الدقيق المتبقي — قراءة طازجة
-        // من الستور لحظة الحدث (منع القراءات القديمة) بعد تسجيل العملية أعلاه:
-        // لقطة الخادم أولاً، وإلا العدّاد المحلي (يوم UTC) الذي يشمل هذه العملية.
-        const freshQuota = resolveAiQuota({
-          snapshot: useAiEnhanceState.getState().serverQuota,
-          plan: useEditorStore.getState().user?.plan,
-          logs: useEditorStore.getState().aiUsageLogs,
-          userEmail: useEditorStore.getState().user?.email,
-        });
-        const remText = ` (المتبقي اليوم: ${freshQuota.remaining}/${freshQuota.limit})`;
-        toast.success(`تم ترميم وتحسين دقة الصورة بنجاح!${remText}`);
+      const commit = commitAiImageResult(
+        target,
+        imageSrc,
+        onUpdateRef.current,
+        kind === 'slot' ? { source: sourceDimensions, result: resultDimensions } : undefined,
+      );
+      if (commit === 'not-found') {
+        toast.info('تم إلغاء الترميم: العنصر لم يعد موجوداً.');
+        return;
       }
+      if (commit === 'changed') {
+        toast.info('تم إلغاء الترميم: تغيّرت الصورة أثناء المعالجة.');
+        return;
+      }
+      setEnhanceProgress(100);
+      toast.success('تم ترميم الصورة بنجاح وتطبيقها مباشرة! (يمكنك التراجع بـ Ctrl+Z)');
     } catch (err) {
-      if (progressTimer) clearInterval(progressTimer);
-      if (timeoutId) clearTimeout(timeoutId);
-      // RV-4: توجيه مسار الفشل للوجر الموحّد (سجل Go) بدل console المعزول
-      createLogger('ai-enhance').error('AI Enhance failed:', err);
-      if (err instanceof Error && /طويلاً/.test(err.message)) {
-        toast.error(err.message);
-      } else {
-        const errorMsg = toErrorMessage(err, 'فشل تحسين الصورة بالذكاء الاصطناعي');
-        toast.error(errorMsg);
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
       }
+      createLogger('ai-enhance').error('AI Enhance failed:', err);
+      toast.error(toErrorMessage(err, 'فشل تحسين الصورة بالذكاء الاصطناعي'));
     } finally {
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
       useOperationStatusStore.getState().finishOperation(opId);
       setIsEnhancing(false);
       useRenderQuality.getState().setEnhancingElementId(null);

@@ -13,7 +13,7 @@ import { paperCaptureRect } from '@/lib/canvas/fit';
 import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
-import { computeBlockPosition, computeSlotRectMM } from '@/lib/print/print-layout-math';
+import { computeBlockPosition, computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
 import { buildSingleComposition } from '@/lib/print/single-print-composition';
 
 import { uploadPrintImage } from './print-transport';
@@ -66,14 +66,16 @@ export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
 
   const items: domain.PrintItem[] = [];
   const hasPhysical = Boolean(collageTemplate?.physicalLayout);
-  const marginPx = hasPhysical ? 0 : collageMargin;
-  const gapPx = hasPhysical ? 0 : collageGap;
   const scaleXPxToMM = imageWidthMM / canvasWidth;
-  const scaleYPxToMM = imageHeightMM / canvasHeight;
-  const marginXMM = marginPx * scaleXPxToMM;
-  const marginYMM = marginPx * scaleYPxToMM;
-  const gapXMM = gapPx * scaleXPxToMM;
-  const gapYMM = gapPx * scaleYPxToMM;
+  const slotGeometry = {
+    canvasWidth,
+    canvasHeight,
+    imageWidthMM,
+    imageHeightMM,
+    collageMargin,
+    collageGap,
+    hasPhysical,
+  };
 
   const rawCutLines = collageShowCutLines
     ? calculatePrintCutLines({
@@ -111,13 +113,7 @@ export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
   const stepYMM = actualCopies > 1 ? grid.cellHeight : 0;
 
   for (const slot of slotTemplates) {
-    const rect = computeSlotRectMM(
-      firstBlock,
-      { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
-      { widthMM: imageWidthMM, heightMM: imageHeightMM },
-      { marginXMM, marginYMM },
-      { gapXMM, gapYMM },
-    );
+    const rect = computeCollageSlotRectMM(slot, slotGeometry, firstBlock);
     // نسبة الخانة المطبوعة بعد الهامش والفجوة — نسبة الإحداثيات الطبيعية
     // وحدها تتجاهل ما يقتطعه الهامش/الفجوة فتخطئ خانات Go في اقتصاص cover
     // (مثال: خانة 400×900 بكسل داخل ورقة بهامش تُطبع بنسبة 4:9 لا 0.44).

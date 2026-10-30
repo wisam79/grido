@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { FluentSection, FluentSegmentedControl, FluentSliderField } from '@/components/ui/blocks';
+import {
+  FluentSection,
+  FluentSegmentedControl,
+  FluentSettingRow,
+  FluentSliderField,
+} from '@/components/ui/blocks';
 import {
   Select,
   SelectContent,
@@ -116,10 +121,16 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
         {activeGridTab === 'grid' && (
           <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
             {/* مفتاح تفعيل الشبكة الرئيسي */}
-            <div className="flex items-center justify-between bg-card/70 hover:bg-card px-2.5 h-8 rounded-lg border border-border/70 transition-colors select-none">
-              <span className="text-xs font-semibold text-foreground">إظهار الشبكة</span>
-              <Switch checked={showGrid} onCheckedChange={setShowGrid} aria-label="إظهار الشبكة" />
-            </div>
+            <FluentSettingRow
+              label="إظهار الشبكة"
+              control={
+                <Switch
+                  checked={showGrid}
+                  onCheckedChange={setShowGrid}
+                  aria-label="إظهار الشبكة"
+                />
+              }
+            />
 
             {showGrid ? (
               <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
@@ -202,6 +213,8 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                 {/* شريط الشفافية القياسي */}
                 <FluentSliderField
                   label="الشفافية"
+                  layout="inline"
+                  labelWidth="w-16"
                   value={Math.round(gridOpacity * 100)}
                   min={5}
                   max={100}
@@ -235,14 +248,16 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
         {activeGridTab === 'columns' && (
           <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
             {/* مفتاح تفعيل الأعمدة الرئيسي */}
-            <div className="flex items-center justify-between bg-card/70 hover:bg-card px-2.5 h-8 rounded-lg border border-border/70 transition-colors select-none">
-              <span className="text-xs font-semibold text-foreground">إظهار الأعمدة</span>
-              <Switch
-                checked={showColumns}
-                onCheckedChange={setShowColumns}
-                aria-label="إظهار الأعمدة"
-              />
-            </div>
+            <FluentSettingRow
+              label="إظهار الأعمدة"
+              control={
+                <Switch
+                  checked={showColumns}
+                  onCheckedChange={setShowColumns}
+                  aria-label="إظهار الأعمدة"
+                />
+              }
+            />
 
             {showColumns ? (
               <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
@@ -343,14 +358,16 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
         {activeGridTab === 'bleed' && (
           <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
             {/* مفتاح تفعيل خطوط النزيف والقص */}
-            <div className="flex items-center justify-between bg-card/70 hover:bg-card px-2.5 h-8 rounded-lg border border-border/70 transition-colors select-none">
-              <span className="text-xs font-semibold text-foreground">إظهار هوامش القص</span>
-              <Switch
-                checked={showBleedGuides}
-                onCheckedChange={setShowBleedGuides}
-                aria-label="إظهار هوامش القص"
-              />
-            </div>
+            <FluentSettingRow
+              label="إظهار هوامش القص"
+              control={
+                <Switch
+                  checked={showBleedGuides}
+                  onCheckedChange={setShowBleedGuides}
+                  aria-label="إظهار هوامش القص"
+                />
+              }
+            />
 
             {showBleedGuides ? (
               <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">

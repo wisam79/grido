@@ -6,17 +6,17 @@ import {
   FluentSliderField,
   FluentSegmentedControl,
 } from '@/components/ui/blocks';
-import { CaretLeft, Ruler, GridFour, Columns, FrameCorners } from '@/components/ui/icons';
+import { CaretLeft } from '@/components/ui/icons';
 import { Switch } from '@/components/ui/switch';
 import { useEditorStore } from '@/lib/editor-store';
-import { cn } from '@/lib/utils';
 
 /* ═══════════════════════════════════════════════════════════════
    أداة الورق والقص — وصول سريع من الشريط الجانبي لكل ما يخص
    جاهزية الورقة للطباعة ولا يوجد في العمود الأيمن: النزيف، شكل
-   القص، النسخ، والإرشادات البصرية.
-   قاعدة عدم التكرار: خطوط القص وسماكتها ولونها مملوكة للوحـة
-   الخصائص (CollageSettings) فلا تُكرر هنا — يوجد سطر تنقل لها.
+   القص، والنسخ على الورقة.
+   قاعدة عدم التكرار: خطوط القص مملوكة للوحة الخصائص (CollageSettings)
+   وأدوات العرض الإرشادية (الشبكة/الالتقاط/الأعمدة/المساطر) مملوكة
+   لشريط الحالة السفلي (CanvasViewportDeck) فلا تُكرر هنا.
    ═══════════════════════════════════════════════════════════════ */
 
 const CUT_SHAPES = [
@@ -31,13 +31,6 @@ const REPEAT_MODES = [
   { id: 'column', label: 'أعمدة' },
 ] as const;
 
-const GUIDES = [
-  { key: 'grid', label: 'الشبكة', icon: GridFour },
-  { key: 'snap', label: 'الالتقاط', icon: FrameCorners },
-  { key: 'columns', label: 'الأعمدة', icon: Columns },
-  { key: 'ruler', label: 'المساطر', icon: Ruler },
-] as const;
-
 export function CollagePaperToolsTab() {
   const {
     showBleedGuides,
@@ -48,14 +41,6 @@ export function CollagePaperToolsTab() {
     setCutShapeType,
     printSettings,
     setPrintSettings,
-    showGrid,
-    setShowGrid,
-    snapToGrid,
-    setSnapToGrid,
-    showColumns,
-    setShowColumns,
-    showRuler,
-    setShowRuler,
   } = useEditorStore(
     useShallow((state) => ({
       showBleedGuides: state.showBleedGuides,
@@ -66,14 +51,6 @@ export function CollagePaperToolsTab() {
       setCutShapeType: state.setCutShapeType,
       printSettings: state.printSettings,
       setPrintSettings: state.setPrintSettings,
-      showGrid: state.showGrid,
-      setShowGrid: state.setShowGrid,
-      snapToGrid: state.snapToGrid,
-      setSnapToGrid: state.setSnapToGrid,
-      showColumns: state.showColumns,
-      setShowColumns: state.setShowColumns,
-      showRuler: state.showRuler,
-      setShowRuler: state.setShowRuler,
     })),
   );
 
@@ -81,18 +58,6 @@ export function CollagePaperToolsTab() {
   const repeatMode = printSettings?.repeatMode ?? 'all';
   const gapMM = printSettings?.gapMM ?? 0;
 
-  const guideState: Record<(typeof GUIDES)[number]['key'], boolean> = {
-    grid: showGrid,
-    snap: snapToGrid,
-    columns: showColumns,
-    ruler: showRuler,
-  };
-  const guideSetters: Record<(typeof GUIDES)[number]['key'], (v: boolean) => void> = {
-    grid: setShowGrid,
-    snap: setSnapToGrid,
-    columns: setShowColumns,
-    ruler: setShowRuler,
-  };
   return (
     <div
       className="flex min-w-0 flex-col font-cairo motion-safe:animate-in motion-safe:fade-in duration-150"
@@ -214,50 +179,9 @@ export function CollagePaperToolsTab() {
           max={20}
           step={1}
           unit="مم"
+          defaultValue={0}
           onChange={(value) => setPrintSettings({ gapMM: value })}
         />
-      </FluentSection>
-
-      {/* الإرشادات البصرية — شبكة مدمجة 2×2 بدل 4 صفوف */}
-      <FluentSection title="الإرشادات" collapsible>
-        <div className="grid grid-cols-2 gap-1.5" role="group" aria-label="الإرشادات البصرية">
-          {GUIDES.map((guide) => {
-            const checked = guideState[guide.key];
-            const GuideIcon = guide.icon;
-            return (
-              <button
-                key={guide.key}
-                type="button"
-                role="switch"
-                aria-checked={checked}
-                aria-label={guide.label}
-                title={guide.label}
-                onClick={() => guideSetters[guide.key](!checked)}
-                className={cn(
-                  'flex items-center gap-2 px-2 py-2 rounded-md border transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
-                  checked
-                    ? 'bg-primary/10 border-primary/50 text-primary'
-                    : 'bg-card/40 border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent/60',
-                )}
-              >
-                <GuideIcon
-                  className={cn('w-4 h-4 shrink-0', checked && 'text-foreground')}
-                  weight={checked ? 'duotone' : 'regular'}
-                />
-                <span className="flex-1 text-start text-xs font-semibold truncate">
-                  {guide.label}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'w-1.5 h-1.5 rounded-full shrink-0 transition-colors',
-                    checked ? 'bg-foreground' : 'bg-border',
-                  )}
-                />
-              </button>
-            );
-          })}
-        </div>
       </FluentSection>
     </div>
   );

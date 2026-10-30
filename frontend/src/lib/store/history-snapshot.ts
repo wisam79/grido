@@ -42,6 +42,8 @@ export const SNAPSHOT_KEYS = [
   'collageBackgroundGradientColor2',
   'collageBackgroundGradientAngle',
   'collagePendingImages',
+  'autofillImages',
+  'autofillSettings',
   'collageGap',
   'collageMargin',
   'collageRadius',
@@ -122,6 +124,23 @@ export const SNAPSHOT_FIELDS: { readonly [K in SnapshotKey]: SnapshotFieldSpec<K
     default: DEFAULT_COLLAGE_STATE.collagePendingImages,
     clone: (v) => [...v],
     equals: (a, b) => a.length === b.length && a.every((value, index) => value === b[index]),
+  },
+  autofillImages: {
+    default: DEFAULT_COLLAGE_STATE.autofillImages,
+    normalize: (v) => v ?? [],
+    clone: (v) => [...v],
+    equals: (a, b) => a.length === b.length && a.every((value, index) => value === b[index]),
+  },
+  autofillSettings: {
+    default: DEFAULT_COLLAGE_STATE.autofillSettings,
+    normalize: (v) => v ?? DEFAULT_COLLAGE_STATE.autofillSettings,
+    clone: (v) => ({ ...v }),
+    equals: (a, b) =>
+      a.mode === b.mode &&
+      a.order === b.order &&
+      a.repeat === b.repeat &&
+      a.shuffle === b.shuffle &&
+      a.seed === b.seed,
   },
   collageGap: { default: 0 },
   collageMargin: { default: 0 },
