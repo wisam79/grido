@@ -1,5 +1,20 @@
 import type { CanvasSlot } from '@/lib/store/types';
 
+/** الخانة المزخرفة محتوى مقصود حتى دون صورة؛ الفراغ الحقيقي لا يُطبع كعنصر. */
+export function hasCollageSlotContent(
+  slot: Pick<CanvasSlot, 'imageSrc' | 'bgColor'>,
+  borderWidth = 0,
+  borderColor = '',
+): boolean {
+  const isVisibleColor = (color: string | undefined) =>
+    Boolean(color?.trim() && color.trim().toLowerCase() !== 'transparent');
+  return Boolean(
+    slot.imageSrc ||
+    isVisibleColor(slot.bgColor) ||
+    (borderWidth > 0 && isVisibleColor(borderColor)),
+  );
+}
+
 /**
  * محتوى الصورة القابل للنقل بين الخانات. هندسة الخانة وهويتها ولونها
  * خصائص للتخطيط، لذلك لا تنتقل مع الصورة عند الفرز أو التبديل.

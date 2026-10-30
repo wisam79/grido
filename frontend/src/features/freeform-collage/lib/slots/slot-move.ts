@@ -128,6 +128,30 @@ export function moveSlot(
   return { slots: updatedSlots, snapLines: Array.from(uniqueSnapLinesMap.values()) };
 }
 
+/** Clamp the selection's AABB once so every member keeps the same translation. */
+export function moveSlotsWithinBounds(
+  slots: FreeformSlot[],
+  targetIds: readonly string[],
+  dx: number,
+  dy: number,
+): FreeformSlot[] {
+  const selected = new Set(targetIds);
+  const targets = slots.filter((slot) => selected.has(slot.id));
+  if (targets.length === 0) return slots;
+
+  const minX = Math.min(...targets.map((slot) => slot.x));
+  const minY = Math.min(...targets.map((slot) => slot.y));
+  const maxX = Math.max(...targets.map((slot) => slot.x + slot.w));
+  const maxY = Math.max(...targets.map((slot) => slot.y + slot.h));
+  const shiftX = clamp(dx, -minX, 1 - maxX);
+  const shiftY = clamp(dy, -minY, 1 - maxY);
+  if (Math.abs(shiftX) < 1e-12 && Math.abs(shiftY) < 1e-12) return slots;
+
+  return slots.map((slot) =>
+    selected.has(slot.id) ? { ...slot, x: slot.x + shiftX, y: slot.y + shiftY } : slot,
+  );
+}
+
 /**
  * نقل مجموعة خلايا معاً (سحب جماعي) — الخلية القائدة تلتقط المغناطيس والباقي يتبعها
  */

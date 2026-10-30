@@ -284,20 +284,62 @@ describe('export-image manual fallback — golden tests', () => {
     expect(strokeStyles.map((c) => c.args[0])).toEqual([collageCut(), collageEndCut()]);
   });
 
-  it('drawSlotImage handles 90 and 270 degree rotations with inverted slotAspect', () => {
+  it.each([90, 270, -90, 450])(
+    'drawSlotImage preserves cover and proportions at %s degrees',
+    (rotation) => {
+      const { ctx, calls } = makeRecordingContext();
+      const fakeImg = { width: 400, height: 200 } as unknown as HTMLImageElement;
+      drawSlotImage(ctx, fakeImg, 10, 20, 100, 200, { rotation, flipX: true });
+
+      expect(calls.find((c) => c.op === 'drawImage')?.args).toEqual([
+        fakeImg,
+        0,
+        0,
+        400,
+        200,
+        0,
+        0,
+        200,
+        100,
+      ]);
+      expect(calls.filter((c) => c.op === 'translate').map((c) => c.args)).toEqual([
+        [60, 120],
+        [-100, -50],
+      ]);
+      expect(calls.findIndex((c) => c.op === 'rotate')).toBeLessThan(
+        calls.findIndex((c) => c.op === 'scale'),
+      );
+    },
+  );
+
+  it.each([0, 180])('keeps local dimensions unchanged at %s degrees', (rotation) => {
     const { ctx, calls } = makeRecordingContext();
-    const fakeImg = { width: 400, height: 200 } as unknown as HTMLImageElement;
+    const fakeImg = { width: 200, height: 400 } as unknown as HTMLImageElement;
+    drawSlotImage(ctx, fakeImg, 10, 20, 100, 200, { rotation });
+    expect(calls.find((c) => c.op === 'drawImage')?.args).toEqual([
+      fakeImg,
+      0,
+      0,
+      200,
+      400,
+      0,
+      0,
+      100,
+      200,
+    ]);
+  });
 
-    // slot with 90 degree rotation (w: 100, h: 200) -> slotAspect becomes 200/100 = 2
-    // imgAspect is 400/200 = 2. Since imgAspect == slotAspect, sw = 400, sh = 200, defaultSx = 0, defaultSy = 0
-    drawSlotImage(ctx, fakeImg, 10, 20, 100, 200, { rotation: 90 });
-
-    const drawImgCall = calls.find((c) => c.op === 'drawImage');
-    expect(drawImgCall).toBeDefined();
-    // args: [img, sx, sy, sw, sh, dx, dy, dw, dh]
-    expect(drawImgCall?.args[1]).toBe(0); // sx
-    expect(drawImgCall?.args[2]).toBe(0); // sy
-    expect(drawImgCall?.args[3]).toBe(400); // sw
-    expect(drawImgCall?.args[4]).toBe(200); // sh
+  it('exports a colored empty slot with its clip and border without fabricating an image', async () => {
+    setupCollageState([baseSlot({ imageSrc: undefined, bgColor: '#2468ac' })]);
+    useEditorStore.setState({ collageRadius: 12, collageStrokeWidth: 2 });
+    recordContext();
+    expect(await exportCanvas('png', 0.95, null)).not.toBeNull();
+    expect(calls.some((c) => c.op === 'setFillStyle' && c.args[0] === '#2468ac')).toBe(true);
+    expect(calls.some((c) => c.op === 'fillRect' && c.args.join(',') === '125,125,1090,3258')).toBe(
+      true,
+    );
+    expect(calls.some((c) => c.op === 'roundRect' && c.args[4] === 12)).toBe(true);
+    expect(calls.filter((c) => c.op === 'drawImage')).toHaveLength(0);
+    expect(calls.some((c) => c.op === 'stroke')).toBe(true);
   });
 });

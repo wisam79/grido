@@ -318,6 +318,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     id: 'collage-combo-student',
     name: 'طقم التقديم والجامعات (بطاقة + معاملات + بورتريه)',
     slots: 7,
+    isBaked: true,
     cells: [
       {
         x: 0.025,
@@ -347,6 +348,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     id: 'collage-combo-family',
     name: 'طقم الاستوديو العائلي (صورة رئيسية + شخصية)',
     slots: 7,
+    isBaked: true,
     cells: [
       { x: 0.025, y: 0.025, w: 0.68, h: 0.655, presetType: 'photo-10x15', label: 'صورة عائلية' },
       { x: 0.725, y: 0.025, w: 0.25, h: 0.3175, presetType: 'id', label: 'شخصية 1' },
@@ -364,6 +366,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     id: 'collage-wallet-cards',
     name: 'طبعة بطاقات المحفظة (بطاقتان + 4 شخصية)',
     slots: 6,
+    isBaked: true,
     cells: [
       { x: 0.025, y: 0.025, w: 0.465, h: 0.64, presetType: 'wallet', label: 'بطاقة محفظة 1' },
       { x: 0.51, y: 0.025, w: 0.465, h: 0.64, presetType: 'wallet', label: 'بطاقة محفظة 2' },
@@ -378,6 +381,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     id: 'collage-photobooth-strip',
     name: 'شريط فوتوبوث ستوديو (شريطان × 3 لقطات)',
     slots: 6,
+    isBaked: true,
     cells: [
       { x: 0.025, y: 0.025, w: 0.465, h: 0.3, presetType: 'custom', label: 'فوتوبوث 1A' },
       { x: 0.025, y: 0.345, w: 0.465, h: 0.3, presetType: 'custom', label: 'فوتوبوث 1B' },
@@ -392,6 +396,7 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     id: 'collage-flush-cut-8',
     name: 'شبكة متلاصقة للقص الفوري (8 صور - صفر هدر)',
     slots: 8,
+    isBaked: true,
     cells: [
       { x: 0, y: 0, w: 0.25, h: 0.5, presetType: 'iq-national-id', label: '1' },
       { x: 0.25, y: 0, w: 0.25, h: 0.5, presetType: 'iq-national-id', label: '2' },

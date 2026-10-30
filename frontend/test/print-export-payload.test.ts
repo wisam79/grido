@@ -251,6 +251,88 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     expect(mockToastError).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { decoration: 'fill', bgColor: '#224466', collageStrokeWidth: 0 },
+    { decoration: 'border', bgColor: undefined, collageStrokeWidth: 5 },
+  ])('exports imageless $decoration slots with repeated-copy data', async (style) => {
+    // Decoration must not go through image decoding (or need a synthetic source).
+    FakeImage.fail = true;
+    await runPrint(
+      makeContext({
+        layout: makeLayout({ actualCopies: 2 }),
+        slots: makeSlots().map((slot) => ({
+          ...slot,
+          imageSrc: undefined,
+          bgColor: style.bgColor,
+        })),
+        collageRadius: 12,
+        collageStrokeWidth: style.collageStrokeWidth,
+        collageStrokeColor: '#112233',
+      }),
+    );
+
+    expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
+    expect(mockToastError).not.toHaveBeenCalled();
+    expect(mockExportPrintSheet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            imageSrc: '',
+            bgColor: style.bgColor || '',
+            x: 14,
+            y: 14,
+            w: 90,
+            h: 120,
+            borderWidthMM: style.collageStrokeWidth / 10,
+            borderColor: '#112233',
+            copies: 2,
+            copyCols: 2,
+            copyStepX: 92,
+            copyStepY: 122,
+          }),
+        ],
+      }),
+    );
+  });
+
+  it('keeps mixed images and fills while skipping unstyled empties in repeated copies', async () => {
+    const photo = makeSlots()[0];
+    await runPrint(
+      makeContext({
+        layout: makeLayout({ actualCopies: 2 }),
+        slots: [
+          { ...photo, w: 0.5 },
+          { ...photo, id: 'fill', imageSrc: undefined, bgColor: '#ff8800', x: 0.5, w: 0.5 },
+          { ...photo, id: 'empty', imageSrc: undefined },
+        ],
+      }),
+    );
+
+    expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
+    const payload = mockExportPrintSheet.mock.calls[0][0];
+    expect(payload.items).toHaveLength(2);
+    expect(payload.items.map((item) => item.imageSrc)).toEqual([SLOT_SRC, '']);
+    expect(payload.items[1].bgColor).toBe('#ff8800');
+    for (const item of payload.items) {
+      expect(item.copies).toBe(2);
+      expect(item.copyCols).toBe(2);
+    }
+  });
+
+  it('still rejects an unreadable source when the same slot has decoration', async () => {
+    FakeImage.fail = true;
+    await runPrint(
+      makeContext({
+        slots: makeSlots().map((slot) => ({ ...slot, bgColor: '#224466' })),
+        collageStrokeWidth: 5,
+      }),
+    );
+
+    expect(mockExportPrintSheet).not.toHaveBeenCalled();
+    expect(mockPrintDirect).not.toHaveBeenCalled();
+    expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('تعذر قراءة صورة الخانة'));
+  });
+
   it('يرسل الصيغة JPEG وخلفية الكولاج وأبعاد الورقة والعناصر وعلامات القص', async () => {
     await runPrint(makeContext());
 

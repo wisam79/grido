@@ -33,6 +33,8 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePrintLayout } from '@/hooks/use-print-layout';
+import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
+import { hasCollageSlotContent } from '@/lib/canvas/collage-slot-content';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
@@ -354,7 +356,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
   }, [printSettings.marginMM]);
 
   const hasContent =
-    mode === 'collage' ? slots.some((s) => Boolean(s.imageSrc)) : elements.length > 0;
+    mode === 'collage'
+      ? slots.some((slot) => hasCollageSlotContent(slot, collageStrokeWidth, collageStrokeColor))
+      : elements.length > 0;
 
   // 🛡️ بلا جراحة DOM: الإزالة اليدوية عبر querySelector كانت تحذف عقدة
   // أول حوار في المستند — مع تكديس المودالات قد تمحو حواراً آخر وتكسر
@@ -1156,7 +1160,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                       collageStrokeColor={collageStrokeColor}
                       canvasWidth={canvasWidth}
                       canvasHeight={canvasHeight}
-                      hasPhysical={!!collageTemplate?.physicalLayout}
+                      hasPhysical={isBakedCollageLayout(collageTemplate)}
                       scaleFactor={scaleFactor}
                     />
                   </div>

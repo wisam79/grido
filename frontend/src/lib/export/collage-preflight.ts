@@ -1,6 +1,6 @@
 import { MM_PER_INCH } from '@/lib/canvas/units';
 
-import { computeSlotCrop } from './export-primitives';
+import { computeSlotCrop, getSlotLocalSize } from './export-primitives';
 
 import type { useEditorStore } from '@/lib/editor-store';
 import type { SlotRectMM } from '@/lib/print/print-layout-math';
@@ -73,8 +73,8 @@ export function runCollagePreflight(input: CollagePreflightInput): CollagePrefli
     if (!rect || !(rect.wMM > 0) || !(rect.hMM > 0)) continue;
     const { wMM: widthMM, hMM: heightMM } = rect;
 
-    // computeSlotCrop handles user rotation; drawSlotImageLocal still draws to w × h.
-    // Compare each source crop axis to that LOCAL dimension, not a rotated bounding box.
+    // نقارن محوري قصّ المصدر بأبعاد الرسم قبل الدوران، لا أبعاد الخانة بعده.
+    const localSize = getSlotLocalSize(widthMM, heightMM, slot.rotation);
     const crop = computeSlotCrop(dims, widthMM, heightMM, {
       zoom: slot.zoom,
       dragX: slot.dragX,
@@ -83,8 +83,8 @@ export function runCollagePreflight(input: CollagePreflightInput): CollagePrefli
       flipY: slot.flipY,
       rotation: slot.rotation,
     });
-    const dpiX = crop.sw / (widthMM / MM_PER_INCH);
-    const dpiY = crop.sh / (heightMM / MM_PER_INCH);
+    const dpiX = crop.sw / (localSize.width / MM_PER_INCH);
+    const dpiY = crop.sh / (localSize.height / MM_PER_INCH);
     const effectiveDpi = Math.min(dpiX, dpiY);
     if (Number.isFinite(effectiveDpi) && effectiveDpi < minDpi) {
       warnings.push({

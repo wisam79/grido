@@ -7,6 +7,8 @@ import {
   slotsFromFile,
   moveSlot,
   moveSlots,
+  moveSlotsWithinBounds,
+  normalizeSlotSelection,
   distributeSlots,
   alignSlotsToEachOther,
   scaleSlotsByIds,
@@ -84,6 +86,63 @@ describe('slots barrel — previously uncovered units', () => {
     const direct = moveSlot(group, 'a', 0.1, 0.05);
     expect(viaGroup.slots).toEqual(direct.slots);
     expect(viaGroup.snapLines).toEqual(direct.snapLines);
+  });
+
+  it('normalizes primary and secondary membership without duplicates or input mutation', () => {
+    const secondary = ['b', 'a', 'b', 'c'];
+    expect(normalizeSlotSelection('a', secondary)).toEqual({
+      selectedSlotId: 'a',
+      multiSelectedIds: ['b', 'c'],
+      selectedIds: ['a', 'b', 'c'],
+    });
+    expect(secondary).toEqual(['b', 'a', 'b', 'c']);
+    expect(normalizeSlotSelection('b', ['a', 'b', 'c']).selectedIds).toEqual(['b', 'a', 'c']);
+    expect(normalizeSlotSelection(null, ['b', 'b'])).toEqual({
+      selectedSlotId: 'b',
+      multiSelectedIds: [],
+      selectedIds: ['b'],
+    });
+    expect(normalizeSlotSelection(null)).toEqual({
+      selectedSlotId: null,
+      multiSelectedIds: [],
+      selectedIds: [],
+    });
+  });
+
+  it.each([
+    { dx: 10, dy: 10, shiftX: 0.1, shiftY: 0.15 },
+    { dx: -10, dy: -10, shiftX: -0.1, shiftY: -0.2 },
+    { dx: 0.015, dy: -0.007, shiftX: 0.015, shiftY: -0.007 },
+  ])('clamps a free group by one AABB delta ($dx, $dy)', ({ dx, dy, shiftX, shiftY }) => {
+    const group = [
+      slot({ id: 'a', x: 0.1, y: 0.2, w: 0.2, h: 0.3 }),
+      slot({ id: 'b', x: 0.6, y: 0.65, w: 0.3, h: 0.2 }),
+      slot({ id: 'outside', x: 0, y: 0.95, w: 0.05, h: 0.05 }),
+    ];
+    const moved = moveSlotsWithinBounds(group, ['b', 'a', 'a', 'missing'], dx, dy);
+    for (const index of [0, 1]) {
+      expect(moved[index].x - group[index].x).toBeCloseTo(shiftX);
+      expect(moved[index].y - group[index].y).toBeCloseTo(shiftY);
+      expect(moved[index].w).toBe(group[index].w);
+      expect(moved[index].h).toBe(group[index].h);
+      expect(moved[index].x).toBeGreaterThanOrEqual(-1e-12);
+      expect(moved[index].y).toBeGreaterThanOrEqual(-1e-12);
+      expect(moved[index].x + moved[index].w).toBeLessThanOrEqual(1 + 1e-12);
+      expect(moved[index].y + moved[index].h).toBeLessThanOrEqual(1 + 1e-12);
+    }
+    expect(moved[1].x - moved[0].x).toBeCloseTo(0.5);
+    expect(moved[1].y - moved[0].y).toBeCloseTo(0.45);
+    expect(moved[2]).toBe(group[2]);
+    expect(group[0].x).toBe(0.1);
+    expect(group[1].y).toBe(0.65);
+  });
+
+  it('returns the same slots for empty, missing, zero, or edge-blocked movement', () => {
+    const group = [slot({ id: 'a', x: 0.8, y: 0, w: 0.2, h: 0.2 })];
+    expect(moveSlotsWithinBounds(group, [], 0.1, 0.1)).toBe(group);
+    expect(moveSlotsWithinBounds(group, ['missing'], 0.1, 0.1)).toBe(group);
+    expect(moveSlotsWithinBounds(group, ['a'], 0, 0)).toBe(group);
+    expect(moveSlotsWithinBounds(group, ['a'], 0.005, -0.005)).toBe(group);
   });
 
   it('distributeSlots_pair_returns_unchanged_guard', () => {

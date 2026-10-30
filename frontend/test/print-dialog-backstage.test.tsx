@@ -72,6 +72,54 @@ describe('PrintDialog Backstage View Tests', () => {
     expect(screen.queryByLabelText('المعاينة مطابقة للورقة')).not.toBeInTheDocument();
   });
 
+  it.each([
+    { decoration: 'fill', bgColor: '#224466', collageStrokeWidth: 0 },
+    { decoration: 'border', bgColor: undefined, collageStrokeWidth: 5 },
+  ])('enables printing an imageless collage $decoration and previews it', (style) => {
+    act(() => {
+      useEditorStore.getState().setMode('collage');
+      useEditorStore.setState({
+        slots: [
+          {
+            id: 'decoration',
+            cellIndex: 0,
+            x: 0.1,
+            y: 0.1,
+            w: 0.5,
+            h: 0.4,
+            bgColor: style.bgColor,
+          },
+        ],
+        collageStrokeWidth: style.collageStrokeWidth,
+        collageStrokeColor: '#112233',
+        collageRadius: 12,
+      });
+    });
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+
+    expect(screen.queryByText('لا يوجد محتوى للطباعة')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'طباعة الورقة' })).toBeEnabled();
+    const paper = screen.getByTestId('print-preview-paper');
+    expect(paper.querySelector('div.shadow-xs')).not.toBeNull();
+    expect(paper.querySelector('img')).toBeNull();
+  });
+
+  it('keeps unstyled empty collage slots non-printable and hidden in preview', () => {
+    act(() => {
+      useEditorStore.getState().setMode('collage');
+      useEditorStore.setState({
+        slots: [{ id: 'empty', cellIndex: 0, x: 0, y: 0, w: 1, h: 1, bgColor: ' TRANSPARENT ' }],
+        collageStrokeWidth: 3,
+        collageStrokeColor: 'transparent',
+      });
+    });
+    renderWithProviders(<PrintDialog open={true} onOpenChange={vi.fn()} />);
+
+    expect(screen.getByText('لا يوجد محتوى للطباعة')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'طباعة الورقة' })).toBeDisabled();
+    expect(screen.getByTestId('print-preview-paper').querySelector('div.shadow-xs')).toBeNull();
+  });
+
   it('fits both orientations and reconnects observation after reopening without changing print settings', async () => {
     const OriginalResizeObserver = globalThis.ResizeObserver;
     const observedViewports: Element[] = [];

@@ -1,6 +1,6 @@
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 
-import { PAPER_SIZES } from './constants';
+import { PAPER_SIZES, DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from './constants';
 
 import type { CollageTemplate } from './types';
 export function getEffectiveDpi(W: number, H: number, storedDpi: number = 300): number {
@@ -341,8 +341,8 @@ export function computeDynamicCollageCells(
   canvasW: number,
   canvasH: number,
   dpi: number,
-  collageGap: number = 0,
-  collageMargin: number = 0,
+  collageGap: number = DEFAULT_COLLAGE_GAP_PX,
+  collageMargin: number = DEFAULT_COLLAGE_MARGIN_PX,
 ): { x: number; y: number; w: number; h: number }[] | null {
   if (!template.physicalLayout) return null;
 

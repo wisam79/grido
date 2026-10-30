@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { sanitizeText } from '@/lib/canvas/text-helpers';
 import { createLogger } from '@/lib/logger';
 import { ProjectSchema } from '@/lib/schema';
+import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from '@/lib/templates';
 import { sanitizeSvgMarkup } from '@/lib/utils';
 
 const logger = createLogger('project-serializer');
@@ -163,8 +164,8 @@ export function migrateProject(raw: unknown): ProjectFileV1 {
     cutShapeType: (['rectangle', 'circle', 'rounded-rect'].includes(record.cutShapeType as string)
       ? record.cutShapeType
       : 'rectangle') as 'rectangle' | 'circle' | 'rounded-rect',
-    collageGap: record.collageGap ?? 0,
-    collageMargin: record.collageMargin ?? 0,
+    collageGap: record.collageGap ?? DEFAULT_COLLAGE_GAP_PX,
+    collageMargin: record.collageMargin ?? DEFAULT_COLLAGE_MARGIN_PX,
     collageRadius: record.collageRadius ?? 0,
     collageStrokeWidth: record.collageStrokeWidth ?? 0,
   };
@@ -326,8 +327,8 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     cutShapeType: (['rectangle', 'circle', 'rounded-rect'].includes(dbProj.cutShapeType)
       ? dbProj.cutShapeType
       : 'rectangle') as 'rectangle' | 'circle' | 'rounded-rect',
-    collageGap: dbProj.collageGap ?? 0,
-    collageMargin: dbProj.collageMargin ?? 0,
+    collageGap: dbProj.collageGap ?? DEFAULT_COLLAGE_GAP_PX,
+    collageMargin: dbProj.collageMargin ?? DEFAULT_COLLAGE_MARGIN_PX,
     collageRadius: dbProj.collageRadius ?? 0,
     collageShowCutLines: dbProj.collageShowCutLines ?? false,
     collageShowEndCutLine: dbProj.collageShowEndCutLine ?? true,
@@ -395,8 +396,8 @@ export function projectFileToDomainProject(
     bleedMarginMM: file.bleedMarginMM ?? 2,
     safeMarginMM: file.safeMarginMM ?? 2,
     cutShapeType: file.cutShapeType ?? 'rectangle',
-    collageGap: file.collageGap ?? 0,
-    collageMargin: file.collageMargin ?? 0,
+    collageGap: file.collageGap ?? DEFAULT_COLLAGE_GAP_PX,
+    collageMargin: file.collageMargin ?? DEFAULT_COLLAGE_MARGIN_PX,
     collageRadius: file.collageRadius ?? 0,
     collageShowCutLines: file.collageShowCutLines ?? false,
     collageShowEndCutLine: file.collageShowEndCutLine ?? true,

@@ -5,6 +5,12 @@ import { getDisplaySource } from './display-image';
 import type Konva from 'konva';
 
 const logger = createLogger('konva-export-utils');
+const activeStageCaptures = new WeakMap<object, number>();
+
+/** يحمي كاش الالتقاط من مؤقتات التحرير وتغييرات القص المؤقتة. */
+export function isStageCaptureActive(stage: object | null | undefined): boolean {
+  return Boolean(stage && activeStageCaptures.has(stage));
+}
 
 interface CachedImageNode {
   clearCache: () => void;
@@ -210,7 +216,9 @@ function upgradeCachesForExport(stage: Konva.Stage, targetPixelRatio: number): C
   const cachedNodes: CachedImageNode[] = [];
   try {
     stage.find((node: Konva.Node) => {
-      if (node && typeof node.isCached === 'function' && node.isCached()) {
+      const filteredImage =
+        node.getClassName?.() === 'Image' && ((node as Konva.Image).filters()?.length ?? 0) > 0;
+      if (node && typeof node.isCached === 'function' && (node.isCached() || filteredImage)) {
         cachedNodes.push(node as unknown as CachedImageNode);
       }
     });
@@ -270,21 +278,21 @@ export async function captureStageBlob(
   captureRect?: { x: number; y: number; width: number; height: number },
   options?: CaptureStageOptions,
 ): Promise<Blob | null> {
-  // 🔄 ترقية الصور إلى الدقة الكاملة أولاً قبل إعادة بناء كاش الفلاتر،
-  // حتى يُخبز كاش التصدير من الصورة الأصلية الكاملة وإحداثيات قصّها المحجّمة.
-  const upgradedImages = options?.useFullResolution ? upgradeImagesToFullResolution(stage) : [];
-  const cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
-
-  // 🧭 في معمارية Viewport Canvas: الـ Stage يحمل إزاحة وزوم مؤقتين.
-  // نحفظ الموضع والمقياس ونعيدهما إلى (0,0) و scale=1 لحظياً أثناء الالتقاط لضمان
-  // التقاط الورقة بأبعادها المنطقية الأصلية بالضبط 1:1 وبلا أي انحراف عن المركز.
+  const captureCount = activeStageCaptures.get(stage) ?? 0;
+  activeStageCaptures.set(stage, captureCount + 1);
   const prevPos = { x: stage.x(), y: stage.y() };
   const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
-  stage.position({ x: 0, y: 0 });
-  stage.scale({ x: 1, y: 1 });
-  stage.batchDraw();
+  let upgradedImages: UpgradedImageRecord[] = [];
+  let cachedNodes: CachedImageNode[] = [];
 
   try {
+    // تُرقّى المصادر والقص قبل الكاش، بما فيه كاش أُبطل قبل اكتمال إيماءة التحرير.
+    upgradedImages = options?.useFullResolution ? upgradeImagesToFullResolution(stage) : [];
+    cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
+    stage.position({ x: 0, y: 0 });
+    stage.scale({ x: 1, y: 1 });
+    stage.batchDraw();
+
     const blob = await withHiddenOverlays(stage, targetPixelRatio, async () => {
       // 🛡️ حاجز الأمان الحقيقي هو حد الميجابكسل الكلي (assertExportablePixels
       // في export-image.ts) الذي يمنع OOM — سقف النسبة هنا يحمي العرض
@@ -304,12 +312,16 @@ export async function captureStageBlob(
 
     return blob;
   } finally {
-    stage.position(prevPos);
-    stage.scale(prevScale);
-    stage.batchDraw();
-    // إعادة نسخ العرض المخفّضة أولاً ثم كاش الشاشة للحفاظ على سلاسة الأداء وخفة الذاكرة
-    restoreImageNodes(upgradedImages);
-    restoreScreenCache(cachedNodes);
-    if (upgradedImages.length > 0) stage.batchDraw();
+    try {
+      stage.position(prevPos);
+      stage.scale(prevScale);
+      restoreImageNodes(upgradedImages);
+      restoreScreenCache(cachedNodes);
+      stage.batchDraw();
+    } finally {
+      const remaining = (activeStageCaptures.get(stage) ?? 1) - 1;
+      if (remaining > 0) activeStageCaptures.set(stage, remaining);
+      else activeStageCaptures.delete(stage);
+    }
   }
 }

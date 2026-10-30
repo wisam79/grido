@@ -225,8 +225,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
             targetWidth,
             targetHeight,
             dpi,
-            s.collageGap || 0,
-            s.collageMargin || 0,
+            s.collageGap ?? DEFAULT_COLLAGE_STATE.collageGap,
+            s.collageMargin ?? DEFAULT_COLLAGE_STATE.collageMargin,
           );
           if (dynamicCells) {
             cells = dynamicCells;
@@ -265,8 +265,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
             targetWidth,
             targetHeight,
             dpi,
-            s.collageGap || 0,
-            s.collageMargin || 0,
+            s.collageGap ?? DEFAULT_COLLAGE_STATE.collageGap,
+            s.collageMargin ?? DEFAULT_COLLAGE_STATE.collageMargin,
           );
           if (dynamicCells && dynamicCells.length === s.slots.length) {
             const stale = dynamicCells.some((c, i) => {
@@ -326,8 +326,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
           w,
           h,
           dpi,
-          get().collageGap,
-          get().collageMargin,
+          get().collageGap ?? DEFAULT_COLLAGE_STATE.collageGap,
+          get().collageMargin ?? DEFAULT_COLLAGE_STATE.collageMargin,
         );
         if (dynamicCells) {
           adjustedSlots = remapSlotsToCells(get().slots || [], dynamicCells);

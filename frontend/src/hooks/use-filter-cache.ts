@@ -1,5 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 
+import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
+import { isStageCaptureActive } from '@/lib/canvas/konva-export-utils';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
@@ -10,6 +12,10 @@ export interface CacheableKonvaNode {
   getStage?: () => { width: () => number; scaleX?: () => number } | null;
   width?: () => number;
   height?: () => number;
+  isDragging?: () => boolean;
+  getLayer?: () => { batchDraw: () => void } | null;
+  on?: (events: string, callback: () => void) => unknown;
+  off?: (events: string) => unknown;
   isCached?: () => boolean;
   clearCache?: () => void;
   cache?: (opts: {
@@ -28,9 +34,14 @@ interface UseFilterCacheOptions {
   hasFilters: boolean;
   canvasWidth: number;
   filterKey?: string | number;
+  /** إبطال قصّ الصورة بأحداث العقدة، دون ربط الكاش بإحداثيات كل إطار. */
+  observeCropChanges?: boolean;
 }
 
 const ZOOM_DEBOUNCE_MS = 120;
+const CROP_DEBOUNCE_MS = 500;
+const CROP_EVENTS =
+  'cropXChange.filterCache cropYChange.filterCache cropWidthChange.filterCache cropHeightChange.filterCache widthChange.filterCache heightChange.filterCache';
 // سقف بكسلات كاش العقدة الواحدة: عقدة 2480×3508 بنسبة 2.5 تعني 218 MiB —
 // تكفي وحدها لإغراق VRAM. 24MP (≈96 MiB) تحافظ على حِدّة العرض بلا انفجار.
 const MAX_CACHE_PIXELS = 24_000_000;
@@ -45,6 +56,7 @@ export function useFilterCache({
   hasFilters,
   canvasWidth,
   filterKey,
+  observeCropChanges = false,
 }: UseFilterCacheOptions) {
   const isDraggingFilter = useRenderQuality((s) => {
     if (!s.isDraggingFilter) return false;
@@ -58,6 +70,8 @@ export function useFilterCache({
     );
   });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cropTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cropPendingRef = useRef(false);
   const lastRatioRef = useRef(0);
   const lastDimsRef = useRef({ w: 0, h: 0 });
 
@@ -70,8 +84,21 @@ export function useFilterCache({
   const recache = useCallback(
     (force = false) => {
       const node = nodeRef.current;
-      if (!node) return;
+      if (!node || !hasFilters) return;
       const stage = node.getStage?.();
+      if (observeCropChanges) {
+        const interaction = useCanvasInteraction.getState();
+        if (
+          cropPendingRef.current ||
+          node.isDragging?.() ||
+          interaction.isDragging ||
+          interaction.isTransforming ||
+          isStageCaptureActive(stage)
+        ) {
+          cropPendingRef.current = true;
+          return;
+        }
+      }
       const stageScaleX = stage && typeof stage.scaleX === 'function' ? stage.scaleX() : 0;
       const stageW = stage && typeof stage.width === 'function' ? stage.width() : 0;
       // 🛡️ في مسرح Konva بملء الحاوية (Option B)، يمثّل stage.scaleX() مقياس الورقة الفعلي
@@ -100,7 +127,7 @@ export function useFilterCache({
       const previous = lastRatioRef.current;
       const dimsChanged = nodeW !== lastDimsRef.current.w || nodeH !== lastDimsRef.current.h;
       const needsUpgrade = ratio > previous * ZOOM_UPGRADE_MARGIN;
-      if (!force && previous > 0 && !needsUpgrade && !dimsChanged) {
+      if (!force && previous > 0 && !needsUpgrade && !dimsChanged && node.isCached?.()) {
         return;
       }
 
@@ -113,12 +140,69 @@ export function useFilterCache({
         }
         lastRatioRef.current = ratio;
         lastDimsRef.current = { w: nodeW, h: nodeH };
+        node.getLayer?.()?.batchDraw();
       } catch (err) {
         logger.warn('Failed to cache Konva image', err);
       }
     },
-    [nodeRef, canvasWidth, isDraggingFilter],
+    [nodeRef, canvasWidth, isDraggingFilter, hasFilters, observeCropChanges],
   );
+
+  // أحداث Konva تلتقط القص البرمجي والتراجع أيضاً؛ لا نخبز الكاش أثناء الإيماءة.
+  useEffect(() => {
+    const node = nodeRef.current;
+    if (!observeCropChanges || !hasFilters || !node?.on) return;
+
+    const settle = () => {
+      cropTimerRef.current = null;
+      if (!cropPendingRef.current) return;
+      const interaction = useCanvasInteraction.getState();
+      if (
+        node.isDragging?.() ||
+        interaction.isDragging ||
+        interaction.isTransforming ||
+        isStageCaptureActive(node.getStage?.())
+      ) {
+        cropTimerRef.current = setTimeout(settle, CROP_DEBOUNCE_MS);
+        return;
+      }
+      cropPendingRef.current = false;
+      recache(true);
+    };
+    const schedule = () => {
+      if (cropTimerRef.current) clearTimeout(cropTimerRef.current);
+      cropTimerRef.current = setTimeout(settle, CROP_DEBOUNCE_MS);
+    };
+    const invalidate = () => {
+      // التصدير يدير ترقية القص والكاش بنفسه ويستعيدهما في finally.
+      if (isStageCaptureActive(node.getStage?.())) return;
+      cropPendingRef.current = true;
+      if (node.isCached?.()) node.clearCache?.();
+      node.getLayer?.()?.batchDraw();
+      schedule();
+    };
+
+    node.on(CROP_EVENTS, invalidate);
+    node.on('dragstart.filterCache dragend.filterCache', invalidate);
+    const unsubscribe = useCanvasInteraction.subscribe((state, previous) => {
+      if (
+        cropPendingRef.current &&
+        (state.isDragging !== previous.isDragging ||
+          state.isTransforming !== previous.isTransforming)
+      ) {
+        schedule();
+      }
+    });
+    if (cropPendingRef.current) schedule();
+
+    return () => {
+      node.off?.('.filterCache');
+      unsubscribe();
+      if (cropTimerRef.current) clearTimeout(cropTimerRef.current);
+      cropTimerRef.current = null;
+      cropPendingRef.current = false;
+    };
+  }, [observeCropChanges, hasFilters, image, nodeRef, recache]);
 
   // إعادة الكاش فوراً عند تغيّر الصورة/الفلاتر/مفتاح الفلتر/سحب شريط الفلتر
   useEffect(() => {

@@ -5,6 +5,9 @@ import (
 	"image/color"
 	"testing"
 
+	"github.com/disintegration/imaging"
+	"github.com/fogleman/gg"
+
 	"grido/internal/core/domain"
 )
 
@@ -133,6 +136,45 @@ func TestApplyImageProcessingRotation180(t *testing.T) {
 	// بعد 180° يصبح الأحمر في أسفل اليمين
 	if !sameColor(out.At(1, 1), red) {
 		t.Errorf("after 180° red should be at bottom-right, got %v", out.At(1, 1))
+	}
+}
+
+func TestDrawItemImageQuarterTurnFillsCollageAndCentersLegacy(t *testing.T) {
+	red := color.NRGBA{R: 255, A: 255}
+	src := imaging.New(60, 40, red)
+	for _, tc := range []struct {
+		name        string
+		rotation    float64
+		slotAspect  float64
+		left, right int
+	}{
+		{name: "collage90", rotation: 90, slotAspect: 1.5, left: 10, right: 70},
+		{name: "collage270", rotation: 270, slotAspect: 1.5, left: 10, right: 70},
+		{name: "legacy90", rotation: 90, left: 20, right: 60},
+		{name: "legacy270", rotation: 270, left: 20, right: 60},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			item := neutralItem()
+			item.X, item.Y, item.W, item.H = 1, 1, 6, 4
+			item.Rotation, item.SlotAspect = tc.rotation, tc.slotAspect
+			processed := applyImageProcessing(src, item, 60, 40)
+			dc := gg.NewContext(100, 70)
+			dc.SetColor(color.White)
+			dc.Clear()
+			drawItemImage(dc, processed, item, 254) // 10 px/mm
+
+			for y := 0; y < 70; y++ {
+				for x := 0; x < 100; x++ {
+					var want color.Color = color.White
+					if x >= tc.left && x < tc.right && y >= 10 && y < 50 {
+						want = red
+					}
+					if got := dc.Image().At(x, y); !sameColor(got, want) {
+						t.Fatalf("pixel (%d,%d) = %v, want %v (fixed slot clip and centered image)", x, y, got, want)
+					}
+				}
+			}
+		})
 	}
 }
 

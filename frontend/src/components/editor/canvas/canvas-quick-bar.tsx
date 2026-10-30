@@ -10,6 +10,7 @@ import {
   getAvailableAdjacentSlotDirections,
   getCollageGeometry,
   getSlotRect,
+  isBakedCollageLayout,
 } from '@/lib/canvas/collage-geometry';
 import { getElementVisualBox } from '@/lib/canvas/element-geometry';
 import { useEditorStore } from '@/lib/editor-store';
@@ -304,7 +305,7 @@ export const CanvasQuickBar = React.memo(function CanvasQuickBar({
   if (mode === 'collage' && selectedSlot) {
     // 📐 نفس هندسة المرسم بالضبط (collage-geometry) لكن بالبكسل الكانفسي،
     // ثم تُقاس إلى بكسل العرض — فلا ينحرف الشريط عن الخلية المرسومة فعلاً.
-    const hasPhysicalLayout = Boolean(collageTemplate?.physicalLayout);
+    const hasPhysicalLayout = isBakedCollageLayout(collageTemplate);
     const geo = getCollageGeometry(
       canvasWidth,
       canvasHeight,

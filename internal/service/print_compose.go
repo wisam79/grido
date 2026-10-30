@@ -186,6 +186,15 @@ func (s *PrintService) drawCutLines(dc *gg.Context, req domain.PrintRequest) {
 // ⚠️ gg v1.3.0: Pop() لا يستعيد القناع (mask) — يُبقيه متراكماً، لذا يجب مسحه يدوياً
 // وإلا تتراكم مناطق القص وتصبح الخلايا التالية مقصوصة بالكامل (لا تُرسم إلا الأولى)
 func drawItemImage(dc *gg.Context, img image.Image, item domain.PrintItem, dpi int) {
+	bgColor := strings.TrimSpace(item.BgColor)
+	borderColor := strings.TrimSpace(item.BorderColor)
+	hasBackground := bgColor != "" && !strings.EqualFold(bgColor, "transparent")
+	hasBorder := item.BorderWidthMM > 0 && borderColor != "" && !strings.EqualFold(borderColor, "transparent")
+	// Empty slots without decoration remain a no-op, including clip allocation.
+	if img == nil && !hasBackground && !hasBorder {
+		return
+	}
+
 	xPx := float64(int(math.Round(mmToPx(item.X, dpi))))
 	yPx := float64(int(math.Round(mmToPx(item.Y, dpi))))
 	wPx := float64(int(math.Round(mmToPx(item.W, dpi))))
@@ -202,8 +211,8 @@ func drawItemImage(dc *gg.Context, img image.Image, item domain.PrintItem, dpi i
 
 	// 🎨 إذا كان للعنصر لون خلفية مخصص (مثل خلفية صورة الهوية المعزولة أزرق/أبيض/رمادي)،
 	// نقوم بملء مستطيل الخانة بلون الخلفية أولاً تحت الصورة المعزولة
-	if item.BgColor != "" && !strings.EqualFold(item.BgColor, "transparent") {
-		dc.SetColor(parseColor(item.BgColor))
+	if hasBackground {
+		dc.SetColor(parseColor(bgColor))
 		if item.CornerRadiusMM > 0 {
 			rPx := mmToPx(item.CornerRadiusMM, dpi)
 			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
@@ -213,22 +222,23 @@ func drawItemImage(dc *gg.Context, img image.Image, item domain.PrintItem, dpi i
 		dc.Fill()
 	}
 
-	// 🛡️ إصلاح: الصورة المدوّرة 90/270 بُعدها المبدّل أكبر/أصغر من الخلية؛ تُرسم
-	// متمركزة على الخلية لتطابق المحرر (Konva يدور حول المركز) — كان الرسم
-	// بمحاذاة الزاوية فيزيح المحتوى المدوّر عن موضعه في المعاينة
-	drawX, drawY := xPx, yPx
-	if isQuarterRotation(item.Rotation) {
-		drawX = xPx + (wPx-float64(img.Bounds().Dx()))/2
-		drawY = yPx + (hPx-float64(img.Bounds().Dy()))/2
+	// Legacy quarter-turned images can have swapped bounds; center only the
+	// image content, never the fixed slot background/clip/border.
+	if img != nil {
+		drawX, drawY := xPx, yPx
+		if isQuarterRotation(item.Rotation) {
+			drawX = xPx + (wPx-float64(img.Bounds().Dx()))/2
+			drawY = yPx + (hPx-float64(img.Bounds().Dy()))/2
+		}
+		dc.DrawImage(img, int(drawX), int(drawY))
 	}
-	dc.DrawImage(img, int(drawX), int(drawY))
 	dc.ResetClip()
 	dc.Pop()
 
-	if item.BorderWidthMM > 0 && item.BorderColor != "" {
+	if hasBorder {
 		bPx := mmToPx(item.BorderWidthMM, dpi)
 		rPx := mmToPx(item.CornerRadiusMM, dpi)
-		dc.SetHexColor(item.BorderColor)
+		dc.SetColor(parseColor(borderColor))
 		dc.SetLineWidth(bPx)
 		dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
 		dc.Stroke()

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"testing"
@@ -46,6 +47,57 @@ func expectedFlipThenRotate(x, y, w, h int, flipX, flipY bool, rotation int) (in
 		return fy, w - 1 - fx
 	}
 	return fx, fy
+}
+
+// A collage quarter turn crops in the inverse slot aspect, then rotates back
+// into the final W x H. Check every colored pixel without a resize so a second
+// dimension swap, missing crop, or rotation-before-flip cannot pass unnoticed.
+func TestCollageQuarterTurnKeepsTargetDimensionsAndFlipOrder(t *testing.T) {
+	geometries := []struct {
+		name                       string
+		srcW, srcH                 int
+		cropX, cropY, cropW, cropH int
+		targetW, targetH           int
+	}{
+		{name: "landscape", srcW: 10, srcH: 6, cropX: 3, cropY: 0, cropW: 4, cropH: 6, targetW: 6, targetH: 4},
+		{name: "portrait", srcW: 6, srcH: 10, cropX: 0, cropY: 3, cropW: 6, cropH: 4, targetW: 4, targetH: 6},
+	}
+
+	for _, geom := range geometries {
+		for _, rotation := range []int{90, 270, -90, 450} {
+			for _, flipX := range []bool{false, true} {
+				for _, flipY := range []bool{false, true} {
+					name := fmt.Sprintf("%s/rot%d/flipX%t/flipY%t", geom.name, rotation, flipX, flipY)
+					t.Run(name, func(t *testing.T) {
+						src := image.NewNRGBA(image.Rect(0, 0, geom.srcW, geom.srcH))
+						for y := 0; y < geom.srcH; y++ {
+							for x := 0; x < geom.srcW; x++ {
+								src.SetNRGBA(x, y, color.NRGBA{R: uint8(20 + x*20), G: uint8(20 + y*20), B: uint8(20 + (x+y)*8), A: 255})
+							}
+						}
+
+						item := neutralItem()
+						item.SlotAspect = float64(geom.targetW) / float64(geom.targetH)
+						item.Rotation = float64(rotation)
+						item.FlipX, item.FlipY = flipX, flipY
+						out := applyImageProcessing(src, item, geom.targetW, geom.targetH)
+						if out.Bounds().Dx() != geom.targetW || out.Bounds().Dy() != geom.targetH {
+							t.Fatalf("collage output = %v, want %dx%d", out.Bounds(), geom.targetW, geom.targetH)
+						}
+						for y := 0; y < geom.cropH; y++ {
+							for x := 0; x < geom.cropW; x++ {
+								wantX, wantY := expectedFlipThenRotate(x, y, geom.cropW, geom.cropH, flipX, flipY, rotation)
+								want := src.At(geom.cropX+x, geom.cropY+y)
+								if got := out.At(wantX, wantY); !sameColor(got, want) {
+									t.Errorf("pixel (%d,%d) = %v, want cropped source color %v", wantX, wantY, got, want)
+								}
+							}
+						}
+					})
+				}
+			}
+		}
+	}
 }
 
 // TestFlipRotationOrderMatchesEditor يثبت ترتيب قلب-ثم-تدوير على صورة غير

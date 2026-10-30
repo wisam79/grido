@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 
 import { formatGradientCss } from '@/components/editor/properties/gradient-utils';
+import { hasCollageSlotContent } from '@/lib/canvas/collage-slot-content';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { computeBlockPosition, computeSlotRectMM } from '@/lib/print/print-layout-math';
 import { buildAdjustmentCSS, buildCSSFilter, cn } from '@/lib/utils';
@@ -130,7 +131,7 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
   const pixelPreviewSrc =
     pixelPreview && pixelPreview.key === pixelPreviewKey ? pixelPreview.url : '';
 
-  if (!activeSrc) return null;
+  if (!hasCollageSlotContent(slot, collageStrokeWidth, collageStrokeColor)) return null;
 
   const left_pct = (rect.xMM / Math.max(1, paperWidthMM)) * 100;
   const top_pct = (rect.yMM / Math.max(1, paperHeightMM)) * 100;
@@ -141,8 +142,9 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
   const radiusPx = collageRadius * pxPerCanvasPx * sf;
   // 🖨️ حد أدنى 1px (RV-Print-24): القيمة الكسرية < 1 كانت تُترجم لحد غير
   // مرئي حسب المتصفح — اختلاف غير ثابت بين المعاينة والمطبوع.
-  const borderPx =
-    collageStrokeWidth > 0 ? Math.max(1, collageStrokeWidth * pxPerCanvasPx * sf) : 0;
+  const borderPx = hasCollageSlotContent({}, collageStrokeWidth, collageStrokeColor)
+    ? Math.max(1, collageStrokeWidth * pxPerCanvasPx * sf)
+    : 0;
 
   const zoomVal = slot.zoom && slot.zoom > 0 ? slot.zoom : 1;
   const normRot = (((slot.rotation || 0) % 360) + 360) % 360;
@@ -197,42 +199,46 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
         height: `${height_pct}%`,
         borderRadius: radiusPx > 0 ? `${radiusPx}px` : undefined,
         border: borderPx > 0 ? `${borderPx}px solid ${collageStrokeColor}` : undefined,
-        backgroundColor: slot.bgColor && slot.bgColor !== 'transparent' ? slot.bgColor : undefined,
+        backgroundColor: hasCollageSlotContent({ bgColor: slot.bgColor })
+          ? slot.bgColor?.trim()
+          : undefined,
       }}
     >
-      <img
-        src={pixelPreviewSrc || activeSrc}
-        alt=""
-        className={cn('w-full h-full object-cover', imgPos.position === 'absolute' && 'absolute')}
-        style={{
-          ...imgPos,
-          width: imgWidth,
-          height: imgHeight,
-          transform: imgTransform,
-          // 🖨️ RV-16-L7: معاينة البكسل الحقيقية جاهزة؟ التعديلات خُبزت في الـ
-          // canvas فلا CSS filter؛ وإلا fallback تقريب CSS القديم أثناء التحميل
-          filter: pixelFilter
-            ? pixelPreviewSrc
-              ? 'none'
-              : buildCSSFilter(slot)
-            : buildCSSFilter(slot),
-        }}
-        onLoad={(e) => {
-          const el = e.currentTarget;
-          if (pixelFilter) {
-            // أبعاد المصدر الأصلية (لا أبعاد كانفاس المعاينة المصغّر) — منطق
-            // السحب dragX/dragY يحتاج أبعاد المصدر الحقيقية
-            const dims = getPixelPreviewNaturalSize(activeSrc);
-            if (dims && dims.w > 0 && dims.h > 0) {
-              onNaturalSize(slot.id, dims.w, dims.h);
-              return;
+      {activeSrc && (
+        <img
+          src={pixelPreviewSrc || activeSrc}
+          alt=""
+          className={cn('w-full h-full object-cover', imgPos.position === 'absolute' && 'absolute')}
+          style={{
+            ...imgPos,
+            width: imgWidth,
+            height: imgHeight,
+            transform: imgTransform,
+            // 🖨️ RV-16-L7: معاينة البكسل الحقيقية جاهزة؟ التعديلات خُبزت في الـ
+            // canvas فلا CSS filter؛ وإلا fallback تقريب CSS القديم أثناء التحميل
+            filter: pixelFilter
+              ? pixelPreviewSrc
+                ? 'none'
+                : buildCSSFilter(slot)
+              : buildCSSFilter(slot),
+          }}
+          onLoad={(e) => {
+            const el = e.currentTarget;
+            if (pixelFilter) {
+              // أبعاد المصدر الأصلية (لا أبعاد كانفاس المعاينة المصغّر) — منطق
+              // السحب dragX/dragY يحتاج أبعاد المصدر الحقيقية
+              const dims = getPixelPreviewNaturalSize(activeSrc);
+              if (dims && dims.w > 0 && dims.h > 0) {
+                onNaturalSize(slot.id, dims.w, dims.h);
+                return;
+              }
             }
-          }
-          if (el.naturalWidth > 0 && el.naturalHeight > 0) {
-            onNaturalSize(slot.id, el.naturalWidth, el.naturalHeight);
-          }
-        }}
-      />
+            if (el.naturalWidth > 0 && el.naturalHeight > 0) {
+              onNaturalSize(slot.id, el.naturalWidth, el.naturalHeight);
+            }
+          }}
+        />
+      )}
     </div>
   );
 });

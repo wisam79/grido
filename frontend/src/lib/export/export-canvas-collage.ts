@@ -3,6 +3,7 @@
  * مستخرج من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
 import { collageCut, collageEndCut } from '@/lib/canvas/canvas-colors';
+import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { createLogger } from '@/lib/logger';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
@@ -15,6 +16,7 @@ import {
   drawRoundRect,
   drawSlotImage,
   drawSlotImageLocal,
+  getSlotLocalSize,
   loadImage,
 } from './export-primitives';
 
@@ -116,9 +118,9 @@ export async function renderCollageBranch(
     collageTemplate,
   } = opts;
 
-  // القوالب الفيزيائية (physicalLayout) تُخبز الهامش والفجوة داخل إحداثيات
+  // القوالب الفيزيائية والمخبوزة تُخبز الهامش والفجوة داخل إحداثيات
   // الخلايا نفسها — تطبيقها مجدداً هنا يضاعفها ويُباعد التصدير عن المعاينة
-  const hasPhysical = Boolean(collageTemplate?.physicalLayout);
+  const hasPhysical = isBakedCollageLayout(collageTemplate);
   const gap = hasPhysical ? 0 : collageGap;
   const radius = collageRadius;
   const borderW = collageStrokeWidth;
@@ -144,31 +146,38 @@ export async function renderCollageBranch(
     const width = rect.wMM;
     const height = rect.hMM;
 
+    if (!(width > 0 && height > 0)) continue;
+    ctx.save();
+    ctx.beginPath();
+    if (radius > 0) {
+      drawRoundRect(ctx, left, top, width, height, radius);
+    } else {
+      ctx.rect(left, top, width, height);
+    }
+    ctx.clip();
+    // خلفية الخانة مستقلة عن الصورة؛ الخانة الملونة الفارغة جزء من التصميم.
+    if (slot.bgColor && slot.bgColor !== 'transparent') {
+      ctx.fillStyle = slot.bgColor;
+      ctx.fillRect(left, top, width, height);
+    }
     if (slot.imageSrc && slotImageMap[slot.id]) {
       const img = slotImageMap[slot.id];
-      ctx.save();
-      ctx.beginPath();
-      if (radius > 0) {
-        drawRoundRect(ctx, left, top, width, height, radius);
-      } else {
-        ctx.rect(left, top, width, height);
-      }
-      ctx.clip();
-      // خلفية الخانة جزء مقصود من التصميم — تُرسم حتى عند فشل الصورة
-      if (slot.bgColor && slot.bgColor !== 'transparent') {
-        ctx.fillStyle = slot.bgColor;
-        ctx.fillRect(left, top, width, height);
-      }
+      const localSize = getSlotLocalSize(width, height, slot.rotation);
       // مرشّحات البكسل تُطبَّق في الفضاء المحلي قبل القلب/الدوران (ترتيب Konva)
       if (isPixelFilter(slot.filter)) {
-        const off = renderWithPixelFilter(width, height, slot.filter, (octx) => {
-          // تعديلات اللون قبل مرشّح البكسل (ترتيب Go)
-          octx.filter = buildAdjustmentCSS(slot);
-          drawSlotImageLocal(octx, img, width, height, slot);
-        });
+        const off = renderWithPixelFilter(
+          localSize.width,
+          localSize.height,
+          slot.filter,
+          (octx) => {
+            // تعديلات اللون قبل مرشّح البكسل (ترتيب Go)
+            octx.filter = buildAdjustmentCSS(slot);
+            drawSlotImageLocal(octx, img, width, height, slot);
+          },
+        );
         if (off) {
           applySlotTransform(ctx, left, top, width, height, slot);
-          ctx.drawImage(off, 0, 0, width, height);
+          ctx.drawImage(off, 0, 0, localSize.width, localSize.height);
         }
       } else {
         // يطبّق zoom/dragX/dragY/flipX/flipY/rotation كما في عقدة Konva (إصلاح E-7)
@@ -179,8 +188,8 @@ export async function renderCollageBranch(
         drawSlotImage(ctx, img, left, top, width, height, slot);
         ctx.filter = 'none';
       }
-      ctx.restore();
     }
+    ctx.restore();
 
     if (borderW > 0) {
       ctx.save();

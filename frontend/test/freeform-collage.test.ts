@@ -10,6 +10,7 @@ import {
   resolveOverlaps,
   moveSlots,
   convertToGridoTemplate,
+  slotsFromGridoTemplate,
   resizeSlot,
   resizeSlotWithSnap,
   moveSlot,
@@ -95,6 +96,59 @@ describe('Freeform Collage Feature Unit Tests (10x Suite)', () => {
     expect(gridoTemplate.cells[0].label).toBe('جواز 3.5×4.5');
     expect(gridoTemplate.cells[0].rotation).toBe(90);
   });
+
+  it.each([true, false])(
+    'preserves explicit document options and aspect metadata through template conversion (%s)',
+    (showCutLines) => {
+      const layout: FreeformLayout = {
+        id: 'options-roundtrip',
+        name: 'Options',
+        paperWidthMM: 150,
+        paperHeightMM: 100,
+        showCutLines,
+        enableSnapping: false,
+        packGapMM: 0,
+        packMarginMM: 7,
+        slots: [
+          {
+            id: 'source',
+            sourceSlotId: 'canvas-source',
+            x: 0.1,
+            y: 0.2,
+            w: 0.3,
+            h: 0.4,
+            lockAspect: true,
+            color: '#ff8800',
+            rotation: 90,
+          },
+        ],
+      };
+      const template = convertToGridoTemplate(layout);
+      expect(template.metadata).toMatchObject({
+        kind: 'freeform',
+        paperWidthMM: 150,
+        paperHeightMM: 100,
+        showCutLines,
+        enableSnapping: false,
+        packGapMM: 0,
+        packMarginMM: 7,
+        slotOptions: [{ lockAspect: true, color: '#ff8800' }],
+      });
+      const resumed = slotsFromGridoTemplate(template);
+      expect(resumed[0]).toMatchObject({
+        x: 0.1,
+        y: 0.2,
+        w: 0.3,
+        h: 0.4,
+        lockAspect: true,
+        color: '#ff8800',
+        rotation: 90,
+      });
+      expect(resumed[0].id).not.toBe('source');
+      expect(resumed[0].sourceSlotId).toBeUndefined();
+      expect(template.cells[0]).not.toHaveProperty('sourceSlotId');
+    },
+  );
 
   it('moves a slot position and detects center snap lines with linePos 0.5', () => {
     const slots: FreeformSlot[] = [{ id: 'slot1', x: 0.1, y: 0.1, w: 0.4, h: 0.4 }];

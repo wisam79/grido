@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { SheetPreview } from '../src/components/editor/print/print-preview';
 
 import type { CanvasSlot } from '../src/lib/store/types';
+import type { ComponentProps } from 'react';
 
 /* ═══════════════════════════════════════════════════════════════
    ترتيب تحويل صورة الخانة في معاينة الطباعة — WYSIWYG مع Konva
@@ -43,8 +44,11 @@ const grid = {
   cellHeight: 150,
 };
 
-function renderPreview(slot: CanvasSlot): HTMLImageElement {
-  const { container } = render(
+function renderSheet(
+  slots: CanvasSlot[],
+  overrides: Partial<ComponentProps<typeof SheetPreview>> = {},
+) {
+  return render(
     <SheetPreview
       grid={grid}
       count={1}
@@ -56,13 +60,92 @@ function renderPreview(slot: CanvasSlot): HTMLImageElement {
       mode="collage"
       backgroundColor="#FFFFFF"
       previewImageSrc=""
-      slots={[slot]}
+      slots={slots}
+      {...overrides}
     />,
   );
+}
+
+function renderPreview(slot: CanvasSlot): HTMLImageElement {
+  const { container } = renderSheet([slot]);
   const img = container.querySelector('img');
   if (!img) throw new Error('slot preview image not rendered');
   return img as HTMLImageElement;
 }
+
+describe('Decorative collage print preview', () => {
+  it('renders an imageless fill at the slot size with its radius and no image placeholder', () => {
+    const { container } = renderSheet(
+      [{ ...baseSlot, imageSrc: undefined, bgColor: '#224466', filter: 'pixelate' }],
+      {
+        canvasWidth: 1000,
+        canvasHeight: 1500,
+        paperWidthMM: 100,
+        paperHeightMM: 150,
+        collageRadius: 12,
+        scaleFactor: 2,
+      },
+    );
+    const box = container.querySelector<HTMLDivElement>('div.shadow-xs');
+    expect(box).not.toBeNull();
+    expect(box).toHaveStyle({
+      left: '10%',
+      top: '10%',
+      width: '80%',
+      height: '80%',
+      backgroundColor: '#224466',
+    });
+    expect(parseFloat(box!.style.borderRadius)).toBeCloseTo(2.4);
+    expect(box!.style.transform).toBe('');
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('[aria-busy="true"]')).toBeNull();
+  });
+
+  it('renders a border-only slot without inventing a background or image', () => {
+    const { container } = renderSheet([{ ...baseSlot, imageSrc: '', bgColor: 'transparent' }], {
+      collageStrokeWidth: 5,
+      collageStrokeColor: '#112233',
+      canvasWidth: 1000,
+      scaleFactor: 2,
+    });
+    const box = container.querySelector<HTMLDivElement>('div.shadow-xs');
+    expect(box).not.toBeNull();
+    expect(box).toHaveStyle({ borderWidth: '1px', borderStyle: 'solid', borderColor: '#112233' });
+    expect(box!.style.backgroundColor).toBe('');
+    expect(container.querySelector('img')).toBeNull();
+  });
+
+  it('repeats mixed images and fills while omitting genuinely empty slots', () => {
+    const { container } = renderSheet(
+      [
+        baseSlot,
+        { ...baseSlot, id: 'fill', imageSrc: undefined, bgColor: '#224466' },
+        { ...baseSlot, id: 'empty', imageSrc: undefined },
+      ],
+      { count: 2 },
+    );
+    expect(container.querySelectorAll('div.shadow-xs')).toHaveLength(4);
+    expect(container.querySelectorAll('img')).toHaveLength(2);
+    expect(
+      [...container.querySelectorAll<HTMLDivElement>('div.shadow-xs')].filter(
+        (box) => box.style.backgroundColor === 'rgb(34, 68, 102)',
+      ),
+    ).toHaveLength(2);
+  });
+
+  it.each([
+    { bgColor: undefined, collageStrokeWidth: 0, collageStrokeColor: '#112233' },
+    { bgColor: ' TRANSPARENT ', collageStrokeWidth: 2, collageStrokeColor: 'transparent' },
+    { bgColor: '', collageStrokeWidth: 2, collageStrokeColor: '' },
+  ])('omits an unstyled empty slot ($bgColor, $collageStrokeColor)', (style) => {
+    const { container } = renderSheet(
+      [{ ...baseSlot, imageSrc: undefined, bgColor: style.bgColor }],
+      style,
+    );
+    expect(container.querySelector('div.shadow-xs')).toBeNull();
+    expect(container.querySelector('img')).toBeNull();
+  });
+});
 
 describe('Print preview slot transform order (flip before rotate)', () => {
   it('quarter rotation lists rotate before the flip scales', () => {

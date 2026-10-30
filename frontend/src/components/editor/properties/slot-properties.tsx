@@ -31,7 +31,11 @@ import {
 } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
+import {
+  getCollageGeometry,
+  getSlotRect,
+  isBakedCollageLayout,
+} from '@/lib/canvas/collage-geometry';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
@@ -123,7 +127,7 @@ function SlotSizeFields({
       canvasHeight: state.canvasHeight,
       collageGap: state.collageGap,
       collageMargin: state.collageMargin,
-      hasPhysicalLayout: Boolean(state.collageTemplate?.physicalLayout),
+      hasPhysicalLayout: isBakedCollageLayout(state.collageTemplate),
       storedDpi: state.printSettings.dpi || 300,
       resizeCollageSlot: state.resizeCollageSlot,
     })),

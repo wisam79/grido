@@ -1,4 +1,5 @@
 /** Shared image/geometry adapters for print and the lazy-loaded export dialog. */
+import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { pxToMm } from '@/lib/canvas/units';
 import { computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
 
@@ -56,7 +57,7 @@ export function getCollageExportSlotRectsMM(
           imageHeightMM: pxToMm(opts.canvasHeight, dpi),
           collageMargin: opts.collageMargin ?? 0,
           collageGap: opts.collageGap ?? 0,
-          hasPhysical: Boolean(opts.collageTemplate?.physicalLayout),
+          hasPhysical: isBakedCollageLayout(opts.collageTemplate),
         }),
       ];
     }),

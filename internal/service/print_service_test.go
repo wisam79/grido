@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/disintegration/imaging"
+	"github.com/fogleman/gg"
 
 	"grido/internal/core/domain"
 	"grido/internal/utils"
@@ -421,6 +422,127 @@ func TestPrintService_EmptySrcItemsSkippedWithoutComposition(t *testing.T) {
 	defer os.Remove(outPath)
 	if strings.HasSuffix(outPath, ".html") {
 		defer os.Remove(strings.TrimSuffix(outPath, ".html") + ".png")
+	}
+}
+
+func TestDrawItemImageDecorationWithoutSource(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		item      domain.PrintItem
+		center    color.Color
+		topBorder color.Color
+	}{
+		{name: "fill", item: domain.PrintItem{BgColor: "#ff0000"}, center: color.RGBA{R: 255, A: 255}, topBorder: color.RGBA{R: 255, A: 255}},
+		{name: "border", item: domain.PrintItem{BorderWidthMM: 0.4, BorderColor: "#0000ff"}, center: color.White, topBorder: color.RGBA{B: 255, A: 255}},
+		{name: "fill-and-border", item: domain.PrintItem{BgColor: "#ff0000", BorderWidthMM: 0.4, BorderColor: "#0000ff"}, center: color.RGBA{R: 255, A: 255}, topBorder: color.RGBA{B: 255, A: 255}},
+		{name: "empty", center: color.White, topBorder: color.White},
+		{name: "transparent", item: domain.PrintItem{BgColor: " TRANSPARENT ", BorderWidthMM: 0.4, BorderColor: "Transparent"}, center: color.White, topBorder: color.White},
+		{name: "missing-border-color", item: domain.PrintItem{BgColor: " ", BorderWidthMM: 0.4}, center: color.White, topBorder: color.White},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dc := gg.NewContext(120, 80)
+			dc.SetColor(color.White)
+			dc.Clear()
+			item := tc.item
+			item.X, item.Y, item.W, item.H = 1, 1, 6, 4
+			item.CornerRadiusMM, item.Rotation = 1, 90
+			drawItemImage(dc, nil, item, 254) // 10 px/mm, including a nil quarter-turn image
+
+			for _, point := range []struct {
+				x, y int
+				want color.Color
+			}{
+				{40, 30, tc.center},
+				{40, 11, tc.topBorder},
+				{10, 10, color.White}, // rounded corner is not filled
+				{5, 30, color.White},  // outside the fixed slot rectangle
+			} {
+				if got := dc.Image().At(point.x, point.y); !sameColor(got, point.want) {
+					t.Errorf("pixel (%d,%d) = %v, want %v", point.x, point.y, got, point.want)
+				}
+			}
+
+			// A nil-image decoration must not leave its clip mask on the next item.
+			next := domain.PrintItem{X: 8, Y: 1, W: 2, H: 4, BgColor: "#00ff00"}
+			drawItemImage(dc, nil, next, 254)
+			if got := dc.Image().At(90, 30); !sameColor(got, color.RGBA{G: 255, A: 255}) {
+				t.Errorf("next slot was clipped by the decoration: %v", got)
+			}
+		})
+	}
+}
+
+func TestPrintService_DecorativeSlotsAndMixedCopies(t *testing.T) {
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	blue := color.RGBA{B: 255, A: 255}
+	red := color.RGBA{R: 255, A: 255}
+	green := color.RGBA{G: 255, A: 255}
+	src := stagePrintTestImage(t, "mixed-decoration", 30, 20, blue)
+	req := domain.PrintRequest{
+		PaperWidthMM: 40, PaperHeightMM: 40, DPI: 254,
+		BackgroundColor: "#ffffff", ExportFormat: "png",
+		Items: []domain.PrintItem{
+			{X: 2, Y: 2, W: 6, H: 4, BgColor: "#ff0000", CornerRadiusMM: 1, Rotation: 90},
+			{ImageSrc: src, X: 10, Y: 2, W: 6, H: 4, SlotAspect: 1.5, Rotation: 270, FlipX: true, Brightness: 100, Contrast: 100, Saturation: 100},
+			{X: 2, Y: 9, W: 6, H: 4, BorderWidthMM: 0.4, BorderColor: "#00ff00", CornerRadiusMM: 1, Rotation: 270},
+			{X: 10, Y: 9, W: 6, H: 4},
+		},
+	}
+	for i := range req.Items {
+		req.Items[i].Copies, req.Items[i].CopyCols = 4, 2
+		req.Items[i].CopyStepX, req.Items[i].CopyStepY = 18, 16
+	}
+
+	outPath, _, err := NewPrintService().GeneratePrintSheet(req)
+	if err != nil {
+		t.Fatalf("mixed decorative print failed: %v", err)
+	}
+	pngPath := strings.TrimSuffix(outPath, ".html")
+	if pngPath != outPath {
+		pngPath += ".png"
+	}
+	out, err := imaging.Open(pngPath)
+	if err != nil {
+		t.Fatalf("open mixed decorative print: %v", err)
+	}
+	if out.Bounds().Dx() != 400 || out.Bounds().Dy() != 400 {
+		t.Fatalf("sheet dimensions = %v, want 400x400", out.Bounds())
+	}
+
+	for copyIndex := 0; copyIndex < 4; copyIndex++ {
+		dx, dy := float64(copyIndex%2)*18, float64(copyIndex/2)*16
+		for _, point := range []struct {
+			x, y float64
+			want color.Color
+		}{
+			{5, 4, red},
+			{2.1, 2.1, color.White}, // rounded fill corner
+			{10.3, 4, blue},         // rotated image covers both ends of the non-square slot
+			{15.7, 4, blue},
+			{5, 9.1, green},       // border-only slot survives expansion and batching
+			{5, 11, color.White},  // no fake image or fill inside that border
+			{13, 11, color.White}, // genuinely empty slot is still skipped
+		} {
+			x := int(math.Round(mmToPx(point.x+dx, req.DPI)))
+			y := int(math.Round(mmToPx(point.y+dy, req.DPI)))
+			if got := out.At(x, y); !sameColor(got, point.want) {
+				t.Errorf("copy %d pixel (%d,%d) = %v, want %v", copyIndex, x, y, got, point.want)
+			}
+		}
+	}
+}
+
+func TestPrintService_DecorationDoesNotHideUnreadableImage(t *testing.T) {
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+	req := domain.PrintRequest{
+		PaperWidthMM: 40, PaperHeightMM: 40, DPI: 100,
+		BackgroundColor: "#ffffff", ExportFormat: "png",
+		Items: []domain.PrintItem{
+			{X: 2, Y: 2, W: 6, H: 4, ImageSrc: "data:image/png;base64,broken", BgColor: "#ff0000", BorderWidthMM: 0.4, BorderColor: "#0000ff"},
+		},
+	}
+	if _, _, err := NewPrintService().GeneratePrintSheet(req); err == nil {
+		t.Fatal("an unreadable image with decoration must still fail the print request")
 	}
 }
 

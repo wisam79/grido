@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { buildSinglePayload } from '../src/components/editor/print/print-payload-builder';
+import {
+  buildCollagePayload,
+  buildSinglePayload,
+  type CollagePayloadContext,
+} from '../src/components/editor/print/print-payload-builder';
 
 import type { usePrintLayout } from '../src/hooks/use-print-layout';
-import type { ImageElement } from '../src/lib/store/types';
+import type { CanvasSlot, ImageElement } from '../src/lib/store/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // print-payload-builder.test.ts — عقد حمولة الوضع الحر (Single Mode Contract)
@@ -46,6 +50,133 @@ const makeLayout = (overrides: Partial<Record<string, unknown>> = {}) =>
     },
     ...overrides,
   }) as unknown as ReturnType<typeof usePrintLayout>;
+
+const makeSlot = (overrides: Partial<CanvasSlot> = {}): CanvasSlot => ({
+  id: 'slot-1',
+  cellIndex: 0,
+  x: 0.1,
+  y: 0.2,
+  w: 0.5,
+  h: 0.4,
+  ...overrides,
+});
+
+const makeCollageContext = (
+  overrides: Partial<CollagePayloadContext> = {},
+): CollagePayloadContext => ({
+  layout: makeLayout(),
+  slots: [makeSlot()],
+  canvasWidth: 900,
+  canvasHeight: 1200,
+  collageTemplate: null,
+  collageMargin: 0,
+  collageGap: 0,
+  collageRadius: 12,
+  collageStrokeWidth: 0,
+  collageStrokeColor: '#112233',
+  collageShowCutLines: false,
+  collageShowEndCutLine: false,
+  ...overrides,
+});
+
+describe('Decorative collage print payload', () => {
+  it('keeps an imageless fill with its geometry, radius and copy template', () => {
+    const built = buildCollagePayload(
+      makeCollageContext({
+        layout: makeLayout({ actualCopies: 4 }),
+        slots: [makeSlot({ bgColor: '#224466', rotation: 270, flipX: true })],
+      }),
+    );
+
+    expect(built.items).toHaveLength(1);
+    expect(built.items[0]).toMatchObject({
+      imageSrc: '',
+      bgColor: '#224466',
+      x: 23,
+      y: 38,
+      w: 45,
+      h: 48,
+      slotAspect: 45 / 48,
+      borderWidthMM: 0,
+      borderColor: '#112233',
+      rotation: 270,
+      flipX: true,
+      copies: 4,
+      copyCols: 2,
+      copyStepX: 92,
+      copyStepY: 122,
+    });
+    expect(built.items[0].cornerRadiusMM).toBeCloseTo(1.2);
+    expect(built.composition).toBeUndefined();
+  });
+
+  it('keeps border-only slots without inserting a fake source or fill', () => {
+    const built = buildCollagePayload(
+      makeCollageContext({
+        slots: [makeSlot({ bgColor: 'transparent' })],
+        collageStrokeWidth: 5,
+      }),
+    );
+
+    expect(built.items).toHaveLength(1);
+    expect(built.items[0]).toMatchObject({
+      imageSrc: '',
+      bgColor: 'transparent',
+      borderWidthMM: 0.5,
+      borderColor: '#112233',
+      x: 23,
+      y: 38,
+      w: 45,
+      h: 48,
+      copies: 1,
+      copyStepX: 0,
+      copyStepY: 0,
+    });
+  });
+
+  it('preserves mixed image and decoration order without expanding repeated copies over IPC', () => {
+    const built = buildCollagePayload(
+      makeCollageContext({
+        layout: makeLayout({ actualCopies: 4 }),
+        slots: [
+          makeSlot({ id: 'photo', imageSrc: '/local-image/photo.png', flipY: true }),
+          makeSlot({ id: 'fill', bgColor: '#ff8800', x: 0.5 }),
+          makeSlot({ id: 'empty' }),
+          makeSlot({ id: 'transparent', bgColor: ' TRANSPARENT ' }),
+        ],
+      }),
+    );
+
+    expect(built.items).toHaveLength(2);
+    expect(built.items.map((item) => item.imageSrc)).toEqual(['/local-image/photo.png', '']);
+    expect(built.items[0].flipY).toBe(true);
+    expect(built.items[1].bgColor).toBe('#ff8800');
+    expect(built.items[1].x).toBe(59);
+    for (const item of built.items) {
+      expect(item.copies).toBe(4);
+      expect(item.copyCols).toBe(2);
+      expect(item.copyStepX).toBe(92);
+      expect(item.copyStepY).toBe(122);
+    }
+  });
+
+  it.each([
+    { bgColor: undefined, borderWidth: 0, borderColor: '#112233' },
+    { bgColor: '', borderWidth: 2, borderColor: '' },
+    { bgColor: 'transparent', borderWidth: 2, borderColor: ' TRANSPARENT ' },
+    { bgColor: '  ', borderWidth: 0, borderColor: '#112233' },
+  ])('skips unstyled empty slots ($bgColor, $borderWidth, $borderColor)', (style) => {
+    const built = buildCollagePayload(
+      makeCollageContext({
+        slots: [makeSlot({ bgColor: style.bgColor })],
+        collageStrokeWidth: style.borderWidth,
+        collageStrokeColor: style.borderColor,
+      }),
+    );
+
+    expect(built.items).toEqual([]);
+  });
+});
 
 const makeImageElement = (overrides: Partial<ImageElement> = {}): ImageElement =>
   ({

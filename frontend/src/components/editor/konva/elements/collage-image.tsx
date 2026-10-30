@@ -6,6 +6,7 @@ import { useDisplayImage } from '@/hooks/use-display-image';
 import { useFilterCache } from '@/hooks/use-filter-cache';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
+import { getSlotLocalSize } from '@/lib/export/export-primitives';
 import { getKonvaFilters } from '@/lib/filters/konva-filters';
 
 import { liftToDragLayer, dropFromDragLayer, findLiftRoot } from '../drag-layer';
@@ -132,13 +133,14 @@ export const KonvaCollageImage = React.memo(
     const hasFilters = filterResult.filters.length > 0;
     const hasTransform = flipX || flipY || rotation !== 0;
 
-    const recacheFilters = useFilterCache({
+    useFilterCache({
       targetId: id,
       nodeRef: imageRef,
-      image: displayImage as unknown as HTMLImageElement,
+      image: (displayImage ?? image) as HTMLImageElement | null,
       hasFilters,
       canvasWidth,
       filterKey,
+      observeCropChanges: true,
     });
 
     if (!image) return null;
@@ -150,14 +152,13 @@ export const KonvaCollageImage = React.memo(
     // أبعاد الأصل كان يترك القصّة خارج نطاق النسخة المخفّضة فتظهر الصورة
     // مصغَّرة ومزاحة داخل الخلية — أوضح مع لقطة نقل الكولاج (2480px+).
     const shown = displayImage ?? image;
-    const normRot = ((rotation % 360) + 360) % 360;
-    const isRotated90or270 = normRot === 90 || normRot === 270;
+    const localSize = getSlotLocalSize(width, height, rotation);
     // `.width`/`.height` صحيحان لكلي النوعين: على العنصر غير المُركَّب في DOM
     // يعيدان الأبعاد الطبيعية، وعلى نسخة Canvas يعيدان أبعادها الفعلية.
     const shownW = shown.width;
     const shownH = shown.height;
     const shownAspect = shownW / shownH;
-    const slotAspect = isRotated90or270 ? height / width : width / height;
+    const slotAspect = localSize.width / localSize.height;
     let sw = shownW;
     let sh = shownH;
 
@@ -195,7 +196,10 @@ export const KonvaCollageImage = React.memo(
     sh = Math.round(sh);
 
     const content = (
-      <Group x={hasTransform ? -width / 2 : 0} y={hasTransform ? -height / 2 : 0}>
+      <Group
+        x={hasTransform ? -localSize.width / 2 : 0}
+        y={hasTransform ? -localSize.height / 2 : 0}
+      >
         <KonvaImage
           draggable={draggable}
           onDragStart={() => {
@@ -248,8 +252,8 @@ export const KonvaCollageImage = React.memo(
             const startX = dragStartRef.current.dragX;
             const startY = dragStartRef.current.dragY;
 
-            const proposedX = startX - dxLocal * (sw / width);
-            const proposedY = startY - dyLocal * (sh / height);
+            const proposedX = startX - dxLocal * (sw / localSize.width);
+            const proposedY = startY - dyLocal * (sh / localSize.height);
 
             // 🛡️ منطقة ميتة محدودة: الثابت 8 (بكسل وكيل) كان يبتلع الضبط
             // الدقيق قرب المركز عندما يكون النطاق ضيقاً (تغطية محكمة) —
@@ -296,11 +300,7 @@ export const KonvaCollageImage = React.memo(
             }
             dragXfRef.current = null;
             if (draggable && accumulatedDrag.current) {
-              // إعادة بناء الكاش بعد استقرار الإزاحة عبر useFilterCache
-              // لاحترام مقياس المسرح (stage.scaleX) وسقف الذاكرة MAX_CACHE_PIXELS (24MP)
-              if (hasFilters) {
-                recacheFilters(true);
-              }
+              // الكاش يُعاد مرة واحدة بعد تثبيت القص عبر مستمع أحداث useFilterCache.
               // ✍️ الكتابة للستور بفضاء الأصل: الإزاحة المعروضة في فضاء نسخة
               // العرض تُعاد قياسها بالتناسب، فتُفسَّر في drawSlotImage على أبعاد
               // الأصل تماماً كما عُرضت — مطابقة تامة بين الشاشة والطباعة/التصدير.
@@ -319,8 +319,8 @@ export const KonvaCollageImage = React.memo(
           cropHeight={sh}
           x={0}
           y={0}
-          width={width}
-          height={height}
+          width={localSize.width}
+          height={localSize.height}
           cornerRadius={cornerRadius}
           perfectDrawEnabled={false}
           filters={filterResult.filters}
@@ -337,7 +337,13 @@ export const KonvaCollageImage = React.memo(
           ref={imageRef}
         />
         {isEnhancing && (
-          <MagicAiScanner x={0} y={0} width={width} height={height} cornerRadius={cornerRadius} />
+          <MagicAiScanner
+            x={0}
+            y={0}
+            width={localSize.width}
+            height={localSize.height}
+            cornerRadius={cornerRadius}
+          />
         )}
       </Group>
     );

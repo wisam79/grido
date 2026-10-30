@@ -615,8 +615,8 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 	return img, nil
 }
 
-// isQuarterRotation يعيد true عندما يكون التدوير 90° أو 270° (mod 360)
-// — عندها يتبدل بُعد الصورة المعالجة وتُرسم متمركزة على الخلية
+// isQuarterRotation يعيد true عندما يكون التدوير 90° أو 270° (mod 360).
+// تُعكس نسبة القص للخانة؛ تبديل أبعاد المخرج يخص الصور الحرة القديمة فقط.
 func isQuarterRotation(rotation float64) bool {
 	rotDeg := int(math.Round(rotation)) % 360
 	if rotDeg < 0 {
@@ -735,18 +735,14 @@ func applyImageProcessing(img image.Image, item domain.PrintItem, targetW, targe
 		img = imaging.FlipV(img)
 	}
 
-	// 🛡️ إصلاح: تدوير الصورة قبل التحجيم وتبديل الأبعاد المستهدفة عند 90/270 درجة
-	// كان التدوير يُطبّق بعد التحجيم مما يسبب عدم تطابق الأبعاد للصور المدوّرة 90/270
+	// SlotAspect > 0 already crops against the inverse aspect for quarter turns,
+	// so rotation restores the final slot aspect and its target W/H must stay put.
+	// SlotAspect == 0 keeps the legacy/free-image rotated-size contract.
 	if item.Rotation != 0 {
 		// 🛡️ إصلاح: imaging.Rotate يدور عكس عقارب الساعة للزوايا الموجبة، بينما
 		// Konva/CSS/Canvas تدور مع عقارب الساعة — النفي يجعل الطباعة تطابق المحرر
 		img = imaging.Rotate(img, -item.Rotation, color.Transparent)
-		rotDeg := int(math.Round(item.Rotation)) % 360
-		rotAbs := rotDeg
-		if rotAbs < 0 {
-			rotAbs = -rotAbs
-		}
-		if rotAbs == 90 || rotAbs == 270 {
+		if item.SlotAspect <= 0 && isQuarterRotation(item.Rotation) {
 			targetW, targetH = targetH, targetW
 		}
 	}

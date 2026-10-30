@@ -4,6 +4,17 @@
 
 ---
 
+## إصلاحات مراجعة موثوقية الكولاج — 30 أكتوبر 2026
+
+- **Vitest — مصادر الصور والهندسة:** توسّعت `frontend/test/collage-slice.test.ts` و`frontend/test/grid-utils.test.ts` لانتقال `originalImageSrc` مع صورته في التعبئة للكل/الصف/العمود/الفارغ (ومسح الأصل القديم عند الاستبدال)، الفاصل المجاور الفعلي المخبوز بعد تصغير الشبكة (صفر/متباعد/عبر المحور)، حد 1مم للمقاس المرئي مع رفض ذري، وتكافؤ الهندسة قبل/بعد الخبز اليدوي مع حفظ التفضيلات الصفرية الصريحة.
+- **Vitest — المحرر الحر:** توسّعت `frontend/test/freeform-editor.test.tsx` و`frontend/test/freeform-collage.test.ts` و`frontend/test/freeform-slots-coverage.test.tsx` لدفع لقطة التراجع ذرياً قبل أول حركة أسهم (Ctrl+Z فوري ومتأخر)، إغلاق الدفعة عند Undo/Redo/الإغلاق، السحب الجماعي للتحديد المتعدد مع تقييد الصندوق ككتلة، وخيارات Apply (قص/التقاط/فجوة/هامش) التي تُستعاد عند إعادة فتح القالب.
+- **Vitest — الكاش والتدوير:** توسّعت `frontend/test/collage-image-crop.test.tsx` لإبطال كاش الفلاتر عند تغيّر القص وإعادة الخبز الواحدة بعد الاستقرار وحاجز الالتقاط، وربع الدورة يملأ الخانة غير المربعة؛ و`frontend/test/export-image-fallback.test.ts` يقفل أبعاد الرسم المحلية H×W عند 90/270 مع القلب ورسم الخلفية المزخرفة بلا صورة؛ و`frontend/test/print-physical-parity.test.ts` يحدث توقع DPI لقياس المحاور المحلية قبل التدوير.
+- **Vitest — الحمولة والمعاينة:** توسّعت `frontend/test/print-payload-builder.test.ts` و`frontend/test/print-export-payload.test.ts` و`frontend/test/print-dialog-backstage.test.tsx` و`frontend/test/print-preview-transform-order.test.tsx` لقبول الخانات المزخرفة بلا صورة في الحمولة والمعاينة والحوار مع استبعاد الفارغ الحقيقي.
+- **Go — الطباعة:** توسّعت `internal/service/print_rotation_test.go` و`print_flip_rotation_order_test.go` و`print_service_test.go` لأبعاد مخرج الكولاج المدوّر غير المربع (مع بقاء عقد الصور الحرة `SlotAspect=0`)، ورسم خلفية/إطار عنصر بلا صورة مع تكرار النسخ، وبقاء العناصر الفارغة غير المنسقة مستبعدة.
+- لم تُشغَّل الحزم الكاملة محلياً (دستور CI السحابي)؛ بلوك `docs-metrics` بلا تغيير — كل الإضافات داخل الملفات القائمة (155 Vitest / 30 E2E / 60 Go). بوابة المراجع: `node scripts/docs-gate.mjs --strict-refs`.
+
+---
+
 ## تنفيذ خطة الإصلاح الشاملة — 29 أكتوبر 2026
 
 - **Go — حماية مراجع التنظيف:** `TestCleanupUnusedMedia_EditorStateReferenceIsProtected` في `internal/repository/db_test.go` يفتح SQLite مؤقتة ويمرّر صف مشروع حقيقياً إلى `cleanupProjects` ثم يشغّل المسارين: `runCleanupMedia` (عتبة 7 أيام) و`CleanUnusedMediaNow` (عتبة 24 ساعة). يثبت بقاء صورة مذكورة داخل `EditorState` فقط ونقل اليتيمة إلى `MediaTrash`. الأمر: `go test ./internal/repository -run TestCleanupUnusedMedia_EditorStateReferenceIsProtected -v` — ناجح محلياً.

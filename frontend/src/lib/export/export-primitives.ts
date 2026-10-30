@@ -13,6 +13,14 @@ export interface SlotTransform {
   rotation?: number;
 }
 
+/** أبعاد الصورة قبل التدوير؛ يبقى مستطيل الخانة النهائي دون تبديل. */
+export function getSlotLocalSize(width: number, height: number, rotation = 0) {
+  const normalized = ((rotation % 360) + 360) % 360;
+  return normalized === 90 || normalized === 270
+    ? { width: height, height: width }
+    : { width, height };
+}
+
 // تحميل صورة من رابط أو DataURL
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -66,10 +74,9 @@ export function computeSlotCrop(
   h: number,
   slot: SlotTransform,
 ): SlotCrop {
-  const normRot = (((slot.rotation || 0) % 360) + 360) % 360;
-  const isRotated90or270 = normRot === 90 || normRot === 270;
+  const localSize = getSlotLocalSize(w, h, slot.rotation);
   const imgAspect = img.width / img.height;
-  const slotAspect = isRotated90or270 ? h / w : w / h;
+  const slotAspect = localSize.width / localSize.height;
   let sw = img.width;
   let sh = img.height;
   if (imgAspect > slotAspect) {
@@ -105,7 +112,8 @@ export function applySlotTransform(
   ctx.rotate(((slot.rotation || 0) * Math.PI) / 180);
   if (slot.flipX) ctx.scale(-1, 1);
   if (slot.flipY) ctx.scale(1, -1);
-  ctx.translate(-w / 2, -h / 2);
+  const localSize = getSlotLocalSize(w, h, slot.rotation);
+  ctx.translate(-localSize.width / 2, -localSize.height / 2);
 }
 
 // رسم الصورة المقصوصة في الفضاء المحلي (بلا قلب/دوران) — يُستخدم كطبقة
@@ -118,7 +126,8 @@ export function drawSlotImageLocal(
   slot: SlotTransform,
 ): void {
   const { sx, sy, sw, sh } = computeSlotCrop(img, w, h, slot);
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+  const localSize = getSlotLocalSize(w, h, slot.rotation);
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, localSize.width, localSize.height);
 }
 
 // رسم صورة الخانة مع القص (zoom/drag) والقلب والدوران —

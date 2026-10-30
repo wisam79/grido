@@ -17,6 +17,7 @@ import {
   getAvailableAdjacentSlotDirections,
   getCollageGeometry,
   getSlotRect,
+  isBakedCollageLayout,
   type AdjacentSlotDirection,
 } from '@/lib/canvas/collage-geometry';
 import { buildMidpointCutLines, type AxisInterval } from '@/lib/print/cut-lines-utils';
@@ -310,7 +311,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
     canvasHeight,
     collageMargin,
     collageGap,
-    Boolean(collageTemplate?.physicalLayout),
+    isBakedCollageLayout(collageTemplate),
   );
   const { margin, gap, availW, availH } = geo;
 
@@ -529,7 +530,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
         (() => {
           const primarySlot = slots.find((s) => s.id === selectedId);
           if (!primarySlot) return null;
-          const hasPhysicalLayout = Boolean(collageTemplate?.physicalLayout);
+          const hasPhysicalLayout = isBakedCollageLayout(collageTemplate);
           const availableDirs = getAvailableAdjacentSlotDirections(
             primarySlot,
             slots,

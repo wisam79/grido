@@ -147,6 +147,19 @@ export function hydrateProjectState(
       ? project.canvasHeight
       : 3508;
 
+  const effectiveProjectGap =
+    typeof project.collageGap === 'number' &&
+    Number.isFinite(project.collageGap) &&
+    (project.collageGap > 0 || (project.collageMargin ?? 0) > 0)
+      ? project.collageGap
+      : DEFAULT_COLLAGE_STATE.collageGap;
+  const effectiveProjectMargin =
+    typeof project.collageMargin === 'number' &&
+    Number.isFinite(project.collageMargin) &&
+    (project.collageMargin > 0 || (project.collageGap ?? 0) > 0)
+      ? project.collageMargin
+      : DEFAULT_COLLAGE_STATE.collageMargin;
+
   // قالب غير موجود في الكتالوج (إصدار أحدث/إضافة مخصصة) يُحتفظ به كما هو —
   // بياناته كاملة بعد التحقق، وإسقاطه كان يترك الكانفس بلا قالب
   const restoredTemplate = project.template
@@ -234,8 +247,8 @@ export function hydrateProjectState(
         validWidth,
         validHeight,
         dpi,
-        project.collageGap ?? 0,
-        project.collageMargin ?? 0,
+        effectiveProjectGap,
+        effectiveProjectMargin,
       );
       if (dynamicCells) cells = dynamicCells;
     }
@@ -420,8 +433,8 @@ export function hydrateProjectState(
     cutShapeType: (['rectangle', 'circle', 'rounded-rect'].includes(project.cutShapeType as string)
       ? project.cutShapeType
       : DEFAULT_GRID_STATE.cutShapeType) as 'rectangle' | 'circle' | 'rounded-rect',
-    collageGap: project.collageGap ?? 0,
-    collageMargin: project.collageMargin ?? 0,
+    collageGap: effectiveProjectGap,
+    collageMargin: effectiveProjectMargin,
     collageRadius: project.collageRadius ?? 0,
     collageShowCutLines: project.collageShowCutLines ?? false,
     collageShowEndCutLine: project.collageShowEndCutLine ?? true,

@@ -2,12 +2,17 @@ import React, { useRef, useCallback, useState, useEffect, memo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Minus, Plus } from '@/components/ui/icons';
-import { clamp } from '@/lib/clamp';
 import { cn } from '@/lib/utils';
 
 import { FreeformSlotCard } from './freeform-slot-card';
 import { FreeformToolButton } from './freeform-top-action-bar';
-import { resizeSlotWithSnap, moveSlot, moveSlots, type ResizeHandle } from '../lib/freeform-math';
+import {
+  resizeSlotWithSnap,
+  moveSlots,
+  moveSlotsWithinBounds,
+  normalizeSlotSelection,
+  type ResizeHandle,
+} from '../lib/freeform-math';
 
 import type { FreeformSlot, SnapLine } from '../types';
 
@@ -31,6 +36,7 @@ interface DragState {
   mode: 'resize' | 'move';
   handle?: ResizeHandle;
   slotId: string;
+  groupIds: string[];
   startClientX: number;
   startClientY: number;
   lastClientX: number;
@@ -98,27 +104,12 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
           next = res.slots;
           snapLines = res.snapLines;
         } else if (st.mode === 'move') {
-          // سحب جماعي: الخلية الأساسية + التحديد المتعدد يتحركون ككتلة واحدة
-          const groupIds =
-            multiSelectedIds.length > 0 && multiSelectedIds.includes(st.slotId)
-              ? [st.slotId, ...multiSelectedIds.filter((id) => id !== st.slotId)]
-              : [st.slotId];
-
           if (enableSnapping) {
-            const res =
-              groupIds.length > 1
-                ? moveSlots(st.origSlots, groupIds, dx, dy)
-                : moveSlot(st.origSlots, st.slotId, dx, dy);
+            const res = moveSlots(st.origSlots, st.groupIds, dx, dy);
             next = res.slots;
             snapLines = res.snapLines;
           } else {
-            const moveSet = new Set(groupIds);
-            next = st.origSlots.map((item) => {
-              if (!moveSet.has(item.id)) return item;
-              const nx = clamp(item.x + dx, 0, 1 - item.w);
-              const ny = clamp(item.y + dy, 0, 1 - item.h);
-              return { ...item, x: nx, y: ny };
-            });
+            next = moveSlotsWithinBounds(st.origSlots, st.groupIds, dx, dy);
           }
         }
 
@@ -128,7 +119,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
         onSlotsChange(next);
         if (mountedRef.current) setActiveSnapLines(snapLines);
       },
-      [onSlotsChange, enableSnapping, paperWidthMM, paperHeightMM, multiSelectedIds],
+      [onSlotsChange, enableSnapping, paperWidthMM, paperHeightMM],
     );
 
     useEffect(() => {
@@ -154,10 +145,17 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
         const paper = paperRef.current;
         if (!paper) return;
         const rect = paper.getBoundingClientRect();
+        const { selectedIds } = normalizeSlotSelection(selectedSlotId, multiSelectedIds);
+        // Capture membership before selecting the grabbed card can change the primary.
+        const groupIds =
+          mode === 'move' && selectedIds.includes(slotId)
+            ? [slotId, ...selectedIds.filter((id) => id !== slotId)]
+            : [slotId];
         dragState.current = {
           mode,
           handle,
           slotId,
+          groupIds,
           startClientX: e.clientX,
           startClientY: e.clientY,
           lastClientX: e.clientX,
@@ -178,7 +176,7 @@ export const FreeformCanvasEditor: React.FC<FreeformCanvasEditorProps> = memo(
           dragState.current.captureEl = null;
         }
       },
-      [slots, onDragStart],
+      [slots, onDragStart, selectedSlotId, multiSelectedIds],
     );
 
     const onHandlePointerDown = useCallback(

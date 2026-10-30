@@ -1,5 +1,6 @@
 import { useCallback, useState, type DragEvent, type RefObject } from 'react';
 
+import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
 import {
   resolveImageAspectRatio,
@@ -145,7 +146,7 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
             const scale = rect.width / freshCanvasWidth;
             const logicalX = (e.clientX - rect.left) / scale;
             const logicalY = (e.clientY - rect.top) / scale;
-            const hasPhysical = freshCollageTemplate?.physicalLayout;
+            const hasPhysical = isBakedCollageLayout(freshCollageTemplate);
             const margin = hasPhysical ? 0 : freshCollageMargin;
             const gap = hasPhysical ? 0 : freshCollageGap;
             const availW = freshCanvasWidth - 2 * margin;
@@ -164,7 +165,7 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
           }
 
           // ورقة الهوية الفيزيائية بصورة واحدة = تكرار الشيت الصريح (سير عمل مقصود)
-          const hasPhysical = Boolean(freshCollageTemplate?.physicalLayout);
+          const hasPhysical = isBakedCollageLayout(freshCollageTemplate);
           const plan = buildCollageInsertPlan(freshSlots, uploadedSrcs, {
             targetSlotId,
             scope: targetSlotId ? 'target' : 'empty',

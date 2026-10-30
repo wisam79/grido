@@ -151,20 +151,31 @@ describe('R-04: collage preflight uses final physical local draw rectangles', ()
     expect(zoomed.warnings[0].message).toContain('≈ 150DPI');
   });
 
-  it.each([0, 45, 90, 270, -90])(
-    'compares crop axes to local draw axes at rotation %s',
-    (rotation) => {
-      // A quarter turn crops to 1200×2400, drawn LOCALLY to 101.6×50.8mm.
-      // Using its rotated bounding box (50.8×101.6) would incorrectly report 600 DPI.
-      const result = check(
+  it.each([
+    [0, 300],
+    [45, 300],
+    [90, 600],
+    [180, 300],
+    [270, 600],
+    [-90, 600],
+  ])('compares crop axes to the pre-rotation draw size at %s degrees', (rotation, expectedDpi) => {
+    // ربع الدورة يرسم 1200×2400 محلياً في 50.8×101.6 مم ثم يدور داخل الخانة.
+    const result = check(
+      { ...square, hMM: 50.8 },
+      { width: 1200, height: 2400 },
+      { rotation, flipY: true },
+      expectedDpi + 1,
+    );
+    expect(result.warnings[0].message).toContain(`≈ ${expectedDpi}DPI`);
+    expect(
+      check(
         { ...square, hMM: 50.8 },
         { width: 1200, height: 2400 },
-        { rotation, flipY: true },
-        301,
-      );
-      expect(result.warnings[0].message).toContain('≈ 300DPI');
-    },
-  );
+        { rotation, flipX: true, zoom: 2 },
+        expectedDpi,
+      ).warnings[0].message,
+    ).toContain(`≈ ${expectedDpi / 2}DPI`);
+  });
 
   it.each([90, 270])(
     'uses already EXIF-%s-oriented natural dimensions without swapping again',

@@ -10,6 +10,7 @@ import {
 } from '@bindings/grido/internal/handlers/printhandler';
 
 import { previewWhite } from '@/lib/canvas/canvas-colors';
+import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
 import {
@@ -274,7 +275,7 @@ export function usePrintExport({
                   imageHeightMM: layout.imageHeightMM,
                   collageMargin,
                   collageGap,
-                  hasPhysical: Boolean(collageTemplate?.physicalLayout),
+                  hasPhysical: isBakedCollageLayout(collageTemplate),
                 }),
               ]),
             ),

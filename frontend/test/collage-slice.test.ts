@@ -1,7 +1,22 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
+import {
+  getCollageGeometry,
+  getSlotRect,
+  isBakedCollageLayout,
+  type SlotRect,
+} from '../src/lib/canvas/collage-geometry';
+import { mmToPx } from '../src/lib/canvas/units';
 import { useEditorStore } from '../src/lib/editor-store';
+import {
+  DEFAULT_COLLAGE_GAP_PX,
+  DEFAULT_COLLAGE_MARGIN_PX,
+  computeDynamicCollageCells,
+  getEffectiveDpi,
+} from '../src/lib/templates';
 import { COLLAGE_TEMPLATES } from '../src/lib/templates/collage-templates';
+
+import type { CanvasSlot, CollageTemplate } from '../src/lib/store/types';
 
 // محاكاة Image بأبعاد تعكس اسم الصورة (portrait=أطول، landscape=أعرض)
 // — يتيح اختبار منطق إعادة ضبط القص عند تغيّر نسبة الأبعاد
@@ -48,6 +63,50 @@ function setupSlotGrid() {
   });
 }
 
+function renderedRects(state = useEditorStore.getState()): SlotRect[] {
+  const geo = getCollageGeometry(
+    state.canvasWidth,
+    state.canvasHeight,
+    state.collageMargin,
+    state.collageGap,
+    isBakedCollageLayout(state.collageTemplate),
+  );
+  return state.slots.map((slot) => getSlotRect(slot, geo));
+}
+
+function expectRectClose(actual: SlotRect, expected: SlotRect) {
+  for (const key of ['left', 'top', 'width', 'height'] as const) {
+    expect(actual[key]).toBeCloseTo(expected[key], 8);
+  }
+}
+
+function setupManualSizeCase(baked: boolean) {
+  const cells = [
+    { x: 0.1, y: 0.1, w: 0.2, h: 0.2 },
+    { x: 0.6, y: 0.6, w: 0.2, h: 0.2 },
+  ];
+  useEditorStore.setState({
+    mode: 'collage',
+    canvasWidth: 2500,
+    canvasHeight: 3530,
+    collageGap: 20,
+    collageMargin: 100,
+    collageTemplate: { id: 'size-test', name: 'Size test', slots: 2, cells, isBaked: baked },
+    slots: cells.map((cell, index) => ({ ...cell, id: index === 0 ? 'a' : 'b', cellIndex: index })),
+    printSettings: { ...useEditorStore.getState().printSettings, dpi: 300 },
+  });
+  const state = useEditorStore.getState();
+  const geo = getCollageGeometry(
+    state.canvasWidth,
+    state.canvasHeight,
+    state.collageMargin,
+    state.collageGap,
+    baked,
+  );
+  const dpi = getEffectiveDpi(state.canvasWidth, state.canvasHeight, state.printSettings.dpi);
+  return { geo, dpi };
+}
+
 describe('CollageSlice Unit Tests', () => {
   beforeEach(() => {
     useEditorStore.getState().reset();
@@ -64,6 +123,134 @@ describe('CollageSlice Unit Tests', () => {
 
     expect(useEditorStore.getState().collageTemplate?.id).toBe(tmpl.id);
     expect(useEditorStore.getState().slots.length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    { gap: 0, margin: 0 },
+    { gap: 0, margin: 14 },
+    { gap: 18, margin: 0 },
+    { gap: 18, margin: 14 },
+  ])('retains explicit spacing through template selection: %j', ({ gap, margin }) => {
+    const physical: CollageTemplate = {
+      id: 'physical-spacing',
+      name: 'Physical spacing',
+      slots: 2,
+      cells: [],
+      physicalLayout: { type: 'visa', rows: 1, cols: 2, align: 'top-left' },
+    };
+    useEditorStore.setState({ collageGap: gap, collageMargin: margin });
+    useEditorStore.getState().setCollageTemplate(physical);
+    const state = useEditorStore.getState();
+    const dpi = getEffectiveDpi(state.canvasWidth, state.canvasHeight, state.printSettings.dpi);
+    const expected = computeDynamicCollageCells(
+      physical,
+      state.canvasWidth,
+      state.canvasHeight,
+      dpi,
+      gap,
+      margin,
+    )!;
+    expect(state.collageGap).toBe(gap);
+    expect(state.collageMargin).toBe(margin);
+    expect(state.slots.map(({ x, y, w, h }) => ({ x, y, w, h }))).toEqual(expected);
+    const rects = renderedRects(state);
+    expect(rects[0].left).toBeCloseTo(margin, 8);
+    expect(rects[1].left - rects[0].left - rects[0].width).toBeCloseTo(gap, 8);
+
+    state.resizeCollageSlot(state.slots[0].id, state.slots[0].w * 0.9, state.slots[0].h);
+    useEditorStore.getState().setCollageTemplate(physical);
+    expect(useEditorStore.getState().collageGap).toBe(gap);
+    expect(useEditorStore.getState().collageMargin).toBe(margin);
+    expect(useEditorStore.getState().slots.map(({ x, y, w, h }) => ({ x, y, w, h }))).toEqual(
+      expected,
+    );
+  });
+
+  it.each([
+    { gap: NaN, margin: 0, expectedGap: DEFAULT_COLLAGE_GAP_PX, expectedMargin: 0 },
+    { gap: 0, margin: Infinity, expectedGap: 0, expectedMargin: DEFAULT_COLLAGE_MARGIN_PX },
+    {
+      gap: undefined,
+      margin: undefined,
+      expectedGap: DEFAULT_COLLAGE_GAP_PX,
+      expectedMargin: DEFAULT_COLLAGE_MARGIN_PX,
+    },
+  ])(
+    'defaults only missing or nonfinite spacing, independently: %j',
+    ({ gap, margin, expectedGap, expectedMargin }) => {
+      useEditorStore.setState({ collageGap: gap, collageMargin: margin });
+      setupCollage();
+      expect(useEditorStore.getState().collageGap).toBe(expectedGap);
+      expect(useEditorStore.getState().collageMargin).toBe(expectedMargin);
+    },
+  );
+
+  it.each([
+    { beforeCuts: false, appliedCuts: true },
+    { beforeCuts: true, appliedCuts: false },
+    { beforeCuts: true, appliedCuts: undefined },
+  ])(
+    'commits cut-line metadata and retained spacing atomically with undo/redo: %j',
+    ({ beforeCuts, appliedCuts }) => {
+      setupSlotGrid();
+      useEditorStore.setState({
+        collageGap: 18,
+        collageMargin: 14,
+        collageShowCutLines: beforeCuts,
+      });
+      useEditorStore.getState().pushHistory();
+      const before = useEditorStore.getState();
+      const template: CollageTemplate = {
+        id: 'freeform-commit',
+        name: 'Freeform',
+        slots: 1,
+        cells: [{ x: 0.1, y: 0.2, w: 0.3, h: 0.4 }],
+        metadata: {
+          version: 1,
+          kind: 'freeform',
+          paperWidthMM: 100,
+          paperHeightMM: 150,
+          showCutLines: appliedCuts,
+        },
+      };
+      before.commitCollageLayout(template);
+      const after = useEditorStore.getState();
+      expect(after.collageShowCutLines).toBe(appliedCuts ?? beforeCuts);
+      expect(after.collageGap).toBe(18);
+      expect(after.collageMargin).toBe(14);
+      expect(after.historyIndex).toBe(before.historyIndex + 1);
+      expectRectClose(renderedRects(after)[0], {
+        left: 0.1 * after.canvasWidth,
+        top: 0.2 * after.canvasHeight,
+        width: 0.3 * after.canvasWidth,
+        height: 0.4 * after.canvasHeight,
+      });
+      after.undo();
+      expect(useEditorStore.getState().collageShowCutLines).toBe(beforeCuts);
+      expect(useEditorStore.getState().slots).toEqual(before.slots);
+      expect(useEditorStore.getState().collageTemplate).toEqual(before.collageTemplate);
+      useEditorStore.getState().redo();
+      expect(useEditorStore.getState().collageShowCutLines).toBe(after.collageShowCutLines);
+      expect(useEditorStore.getState().slots).toEqual(after.slots);
+      expect(useEditorStore.getState().collageTemplate).toEqual(template);
+    },
+  );
+
+  it('accepts explicit zero overrides when committing a layout', () => {
+    setupSlotGrid();
+    useEditorStore.setState({ collageGap: 18, collageMargin: 14 });
+    useEditorStore.getState().commitCollageLayout(
+      {
+        id: 'zero-layout',
+        name: 'Zero layout',
+        slots: 1,
+        isBaked: true,
+        cells: [{ x: 0, y: 0, w: 1, h: 1 }],
+      },
+      { gap: 0, margin: 0 },
+    );
+    expect(useEditorStore.getState().collageGap).toBe(0);
+    expect(useEditorStore.getState().collageMargin).toBe(0);
   });
 
   it('updates slot properties', () => {
@@ -104,14 +291,37 @@ describe('CollageSlice Unit Tests', () => {
     expect(resized.slots[0].id).toBe(firstSlot.id);
     expect(resized.collageTemplate?.cells[0]).toMatchObject({ w: 0.2, h: 0.3 });
     expect(resized.collageTemplate?.physicalLayout).toBeUndefined();
-    expect(resized.collageGap).toBe(0);
-    expect(resized.collageMargin).toBe(0);
+    expect(resized.collageTemplate?.isManual).toBe(true);
+    expect(resized.collageGap).toBe(12);
+    expect(resized.collageMargin).toBe(8);
+    expectRectClose(renderedRects(resized)[0], {
+      left: firstSlot.x * resized.canvasWidth,
+      top: firstSlot.y * resized.canvasHeight,
+      width: 0.2 * resized.canvasWidth,
+      height: 0.3 * resized.canvasHeight,
+    });
+    expectRectClose(renderedRects(resized)[1], {
+      left: 0.5 * resized.canvasWidth,
+      top: 0,
+      width: 0.3 * resized.canvasWidth,
+      height: 0.3 * resized.canvasHeight,
+    });
     expect(resized.historyIndex).toBe(historyBefore + 1);
 
     resized.undo();
-    expect(useEditorStore.getState().slots[0]).toMatchObject({ w: firstSlot.w, h: firstSlot.h });
-    useEditorStore.getState().redo();
-    expect(useEditorStore.getState().slots[0]).toMatchObject({ w: 0.2, h: 0.3 });
+    const restored = useEditorStore.getState();
+    expect(restored.slots[0]).toMatchObject({ w: firstSlot.w, h: firstSlot.h });
+    expect(restored.collageTemplate?.physicalLayout).toBeDefined();
+    expect(restored.collageTemplate?.isManual).toBeUndefined();
+    expect(restored.collageGap).toBe(12);
+    expect(restored.collageMargin).toBe(8);
+    restored.redo();
+    const redone = useEditorStore.getState();
+    expect(redone.slots).toEqual(resized.slots);
+    expect(redone.collageTemplate).toEqual(resized.collageTemplate);
+    expect(renderedRects(redone)).toEqual(renderedRects(resized));
+    expect(redone.collageGap).toBe(12);
+    expect(redone.collageMargin).toBe(8);
   });
 
   it('applies a slot size to all cells in one history step without moving them', () => {
@@ -273,6 +483,106 @@ describe('CollageSlice Unit Tests', () => {
     expect(useEditorStore.getState().historyIndex).toBe(before);
   });
 
+  describe.each([false, true])('rendered minimum size (baked=%s)', (baked) => {
+    it.each(['w', 'h'] as const)('rejects sub-millimetre %s before changing anything', (axis) => {
+      const { geo, dpi } = setupManualSizeCase(baked);
+      expect(dpi).not.toBe(300);
+      const before = useEditorStore.getState();
+      const dimensions = { w: before.slots[0].w, h: before.slots[0].h };
+      // Above the stored-DPI threshold, but below 1 mm at the effective paper DPI.
+      dimensions[axis] = (mmToPx(0.999, dpi) + geo.gap) / (axis === 'w' ? geo.availW : geo.availH);
+      expect(before.resizeCollageSlot('a', dimensions.w, dimensions.h)).toEqual({
+        ok: false,
+        reason: 'invalid',
+      });
+      expect(useEditorStore.getState()).toBe(before);
+    });
+
+    it.each([0, 0.999])('rejects an existing %s mm size even on both no-op paths', (sizeMM) => {
+      const { geo, dpi } = setupManualSizeCase(baked);
+      const w = (mmToPx(sizeMM, dpi) + geo.gap) / geo.availW;
+      const h = (mmToPx(sizeMM, dpi) + geo.gap) / geo.availH;
+      useEditorStore.setState({
+        slots: useEditorStore.getState().slots.map((slot) => ({ ...slot, w, h })),
+      });
+      useEditorStore.getState().pushHistory();
+      const before = useEditorStore.getState();
+      expect(before.resizeCollageSlot('a', w, h)).toEqual({ ok: false, reason: 'invalid' });
+      expect(before.applyCollageSlotSizeToAll('a')).toEqual({ ok: false, reason: 'invalid' });
+      expect(useEditorStore.getState()).toBe(before);
+    });
+
+    it('accepts exactly 1 mm, preserves it on apply-all, and leaves valid no-ops untouched', () => {
+      const { geo, dpi } = setupManualSizeCase(baked);
+      const w = (mmToPx(1, dpi) + geo.gap) / geo.availW;
+      const h = (mmToPx(1, dpi) + geo.gap) / geo.availH;
+      expect(useEditorStore.getState().resizeCollageSlot('a', w, h)).toEqual({ ok: true });
+      expect(useEditorStore.getState().applyCollageSlotSizeToAll('a')).toEqual({ ok: true });
+      renderedRects().forEach((rect) => {
+        expect(rect.width).toBeCloseTo(mmToPx(1, dpi), 8);
+        expect(rect.height).toBeCloseTo(mmToPx(1, dpi), 8);
+      });
+      const before = useEditorStore.getState();
+      expect(before.resizeCollageSlot('a', before.slots[0].w, before.slots[0].h)).toEqual({
+        ok: true,
+      });
+      expect(before.applyCollageSlotSizeToAll('a')).toEqual({ ok: true });
+      expect(useEditorStore.getState()).toBe(before);
+    });
+  });
+
+  it.each([
+    { w: NaN },
+    { h: Infinity },
+    { w: -Infinity },
+    { h: NaN },
+    { w: 0 },
+    { h: -0.1 },
+    { x: NaN },
+    { y: Infinity },
+  ])('rejects invalid stored geometry atomically before no-op detection: %j', (patch) => {
+    setupManualSizeCase(false);
+    useEditorStore.setState({
+      slots: useEditorStore.getState().slots.map((slot) => ({ ...slot, ...patch })),
+    });
+    const before = useEditorStore.getState();
+    expect(before.resizeCollageSlot('a', before.slots[0].w, before.slots[0].h)).toEqual({
+      ok: false,
+      reason: 'invalid',
+    });
+    expect(before.applyCollageSlotSizeToAll('a')).toEqual({ ok: false, reason: 'invalid' });
+    expect(useEditorStore.getState()).toBe(before);
+  });
+
+  it('rejects a nonfinite target rather than treating its size difference as a no-op', () => {
+    setupManualSizeCase(false);
+    useEditorStore.getState().updateSlot('b', { w: NaN });
+    const before = useEditorStore.getState();
+    expect(before.resizeCollageSlot('a', before.slots[0].w, before.slots[0].h)).toEqual({
+      ok: false,
+      reason: 'invalid',
+    });
+    expect(before.applyCollageSlotSizeToAll('a')).toEqual({ ok: false, reason: 'invalid' });
+    expect(useEditorStore.getState()).toBe(before);
+  });
+
+  it('does not bake or mutate a standard template when displacement is rejected', () => {
+    setupManualSizeCase(false);
+    useEditorStore.setState({
+      slots: [
+        { id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3 },
+        { id: 'b', cellIndex: 1, x: 0.4, y: 0, w: 0.55, h: 0.3 },
+      ],
+    });
+    useEditorStore.getState().pushHistory();
+    const before = useEditorStore.getState();
+    const originalSlots = before.slots.map((slot) => ({ ...slot }));
+    expect(before.resizeCollageSlot('a', 0.5, 0.3)).toEqual({ ok: false, reason: 'overlap' });
+    expect(useEditorStore.getState()).toBe(before);
+    expect(before.slots).toEqual(originalSlots);
+    expect(before.collageTemplate?.isManual).toBeUndefined();
+  });
+
   it('returns ok without pushing history when resizing to the same dimensions', () => {
     const firstSlot = setupCollage();
     const historyBefore = useEditorStore.getState().historyIndex;
@@ -285,32 +595,112 @@ describe('CollageSlice Unit Tests', () => {
     expect(useEditorStore.getState().historyIndex).toBe(historyBefore);
   });
 
-  it('clears physicalLayout and zeroes gap/margin even without a prior physical template', () => {
+  it('bakes standard geometry exactly once without changing rendered spacing or preferences', () => {
     const base = setupCollage();
+    const cells = [
+      { x: 0, y: 0, w: 0.3, h: 0.3 },
+      { x: 0.5, y: 0, w: 0.3, h: 0.3 },
+    ];
+    const template: CollageTemplate = { id: 'standard', name: 'Standard', slots: 2, cells };
     useEditorStore.setState({
-      collageTemplate: {
-        ...useEditorStore.getState().collageTemplate!,
-        slots: 2,
-        cells: [
-          { x: 0, y: 0, w: 0.3, h: 0.3 },
-          { x: 0.5, y: 0, w: 0.3, h: 0.3 },
-        ],
-      },
+      collageTemplate: template,
       collageGap: 10,
       collageMargin: 5,
-      slots: [
-        { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3 },
-        { ...base, id: 'b', cellIndex: 1, x: 0.5, y: 0, w: 0.3, h: 0.3 },
-      ],
+      slots: cells.map((cell, index) => ({
+        ...base,
+        ...cell,
+        id: index ? 'b' : 'a',
+        cellIndex: index,
+      })),
+    });
+    useEditorStore.getState().pushHistory();
+    const before = useEditorStore.getState();
+    const expected = renderedRects({
+      ...before,
+      slots: before.slots.map((slot) => (slot.id === 'a' ? { ...slot, w: 0.2 } : slot)),
     });
 
-    const result = useEditorStore.getState().resizeCollageSlot('a', 0.2, 0.3);
+    expect(before.resizeCollageSlot('a', 0.2, 0.3)).toEqual({ ok: true });
 
-    expect(result).toEqual({ ok: true });
     const state = useEditorStore.getState();
     expect(state.collageTemplate?.physicalLayout).toBeUndefined();
-    expect(state.collageGap).toBe(0);
-    expect(state.collageMargin).toBe(0);
+    expect(state.collageTemplate?.isManual).toBe(true);
+    expect(isBakedCollageLayout(state.collageTemplate)).toBe(true);
+    expect(state.collageGap).toBe(10);
+    expect(state.collageMargin).toBe(5);
+    renderedRects(state).forEach((rect, index) => expectRectClose(rect, expected[index]));
+    state.slots.forEach(({ x, y, w, h }, index) => {
+      expect(state.collageTemplate?.cells[index]).toMatchObject({ x, y, w, h });
+    });
+    expect(before.slots[0].w).toBe(0.3);
+    expect(template.isManual).toBeUndefined();
+    expect(template.cells).toEqual(cells);
+    expect(state.historyIndex).toBe(before.historyIndex + 1);
+
+    state.undo();
+    const undone = useEditorStore.getState();
+    expect(undone.slots).toEqual(before.slots);
+    expect(undone.collageTemplate).toEqual(template);
+    expect(renderedRects(undone)).toEqual(renderedRects(before));
+    undone.redo();
+    expect(useEditorStore.getState().slots).toEqual(state.slots);
+    expect(renderedRects()).toEqual(renderedRects(state));
+
+    // تحرير ثانٍ لا يعيد خبز الهامش والفجوة على الإحداثيات المثبتة.
+    expect(
+      useEditorStore.getState().resizeCollageSlot('a', state.slots[0].w * 0.9, state.slots[0].h),
+    ).toEqual({ ok: true });
+    const repeated = renderedRects();
+    expectRectClose(repeated[0], { ...expected[0], width: expected[0].width * 0.9 });
+    expectRectClose(repeated[1], expected[1]);
+    expect(useEditorStore.getState().collageGap).toBe(10);
+    expect(useEditorStore.getState().collageMargin).toBe(5);
+  });
+
+  it('keeps the source and every position visually stable when applying a standard size to all', () => {
+    setupManualSizeCase(false);
+    useEditorStore.getState().updateSlot('b', { w: 0.25, h: 0.3 });
+    useEditorStore.getState().pushHistory();
+    const before = useEditorStore.getState();
+    const rects = renderedRects(before);
+    const result = before.applyCollageSlotSizeToAll('a');
+    expect(result).toEqual({ ok: true });
+    const after = useEditorStore.getState();
+    renderedRects(after).forEach((rect, index) => {
+      expectRectClose(rect, { ...rects[index], width: rects[0].width, height: rects[0].height });
+    });
+    expect(after.collageTemplate?.isManual).toBe(true);
+    expect(after.collageGap).toBe(before.collageGap);
+    expect(after.collageMargin).toBe(before.collageMargin);
+    expect(after.historyIndex).toBe(before.historyIndex + 1);
+    after.undo();
+    expect(renderedRects()).toEqual(rects);
+    useEditorStore.getState().redo();
+    expect(renderedRects()).toEqual(renderedRects(after));
+  });
+
+  it('preserves standard geometry and copies the rendered gap when adding the first manual neighbor', () => {
+    setupManualSizeCase(false);
+    useEditorStore.getState().pushHistory();
+    const before = useEditorStore.getState();
+    const rects = renderedRects(before);
+    const result = before.addAdjacentCollageSlot('a', 'right');
+    expect(result.ok).toBe(true);
+    const after = useEditorStore.getState();
+    const updated = renderedRects(after);
+    rects.forEach((rect, index) => expectRectClose(updated[index], rect));
+    expectRectClose(updated[2], {
+      ...rects[0],
+      left: rects[0].left + rects[0].width + before.collageGap,
+    });
+    expect(after.collageTemplate?.isManual).toBe(true);
+    expect(after.collageGap).toBe(before.collageGap);
+    expect(after.collageMargin).toBe(before.collageMargin);
+    expect(after.historyIndex).toBe(before.historyIndex + 1);
+    after.undo();
+    expect(renderedRects()).toEqual(rects);
+    useEditorStore.getState().redo();
+    expect(renderedRects()).toEqual(updated);
   });
 
   it('clamps the physical-layout margin like manual layouts so cells stay positive', () => {
@@ -380,6 +770,156 @@ describe('CollageSlice Unit Tests', () => {
     expect(slots.find((s) => s.id === 'd')?.imageSrc).toBeUndefined();
     expect(useEditorStore.getState().historyIndex).toBe(historyBefore + 1);
   });
+
+  describe.each(['all', 'row', 'column', 'empty'] as const)(
+    'bulk image provenance: %s',
+    (action) => {
+      const fill = () => {
+        const state = useEditorStore.getState();
+        if (action === 'all') state.fillAllSlots('edited.png', 'a');
+        else if (action === 'row') state.fillRowSlots('a', 'edited.png');
+        else if (action === 'column') state.fillColumnSlots('a', 'edited.png');
+        else state.fillEmptySlots('edited.png', 'a');
+      };
+      const isTarget = (slot: CanvasSlot) => {
+        if (action === 'all') return true;
+        if (action === 'row') return slot.id === 'a' || slot.id === 'b';
+        if (action === 'column') return slot.id === 'a' || slot.id === 'c';
+        return !slot.imageSrc;
+      };
+      const sourceProps = {
+        imageSrc: 'edited.png',
+        originalImageSrc: 'original.png',
+        filter: 'bw',
+        brightness: 115,
+        contrast: 80,
+        saturation: 65,
+        zoom: 1.6,
+        dragX: 14,
+        dragY: -9,
+        flipX: true,
+        flipY: true,
+        rotation: 90,
+        bgColor: '#123456',
+      };
+      const setup = () => {
+        setupSlotGrid();
+        useEditorStore.getState().updateSlot('a', sourceProps);
+        useEditorStore.getState().updateSlotsBatch(['b', 'c', 'd'], {
+          imageSrc: action === 'empty' ? undefined : 'previous.png',
+          originalImageSrc: 'previous-original.png',
+          bgColor: '#654321',
+        });
+      };
+
+      it('copies matching provenance and visual properties with undo/redo in one step', () => {
+        setup();
+        useEditorStore.getState().pushHistory();
+        const before = useEditorStore.getState();
+        fill();
+        const after = useEditorStore.getState();
+        after.slots.forEach((slot, index) => {
+          const previous = before.slots[index];
+          const { id, cellIndex, x, y, w, h } = previous;
+          expect(slot).toMatchObject({ id, cellIndex, x, y, w, h });
+          if (isTarget(previous)) expect(slot).toMatchObject(sourceProps);
+          else expect(slot).toBe(previous);
+        });
+        expect(after.historyIndex).toBe(before.historyIndex + 1);
+        after.undo();
+        expect(useEditorStore.getState().slots).toEqual(before.slots);
+        useEditorStore.getState().redo();
+        expect(useEditorStore.getState().slots).toEqual(after.slots);
+      });
+
+      it.each([
+        { imageSrc: 'unrelated.png', originalImageSrc: 'unrelated-original.png' },
+        { imageSrc: undefined, originalImageSrc: 'orphan-original.png' },
+        { imageSrc: 'edited.png', originalImageSrc: undefined },
+      ])('clears stale provenance for an unproven source %j', (source) => {
+        setup();
+        useEditorStore.getState().updateSlot('a', { ...source, bgColor: undefined });
+        useEditorStore.getState().pushHistory();
+        const before = useEditorStore.getState();
+        fill();
+        const after = useEditorStore.getState();
+        after.slots.forEach((slot, index) => {
+          const previous = before.slots[index];
+          if (!isTarget(previous)) {
+            expect(slot).toBe(previous);
+            return;
+          }
+          expect(slot.imageSrc).toBe('edited.png');
+          expect(slot.originalImageSrc).toBeUndefined();
+          expect(slot).toHaveProperty('originalImageSrc');
+          expect(slot).toMatchObject({
+            zoom: 1.6,
+            dragX: 14,
+            dragY: -9,
+            rotation: 90,
+            flipX: true,
+          });
+          expect(slot.bgColor).toBe(previous.bgColor);
+        });
+        expect(after.historyIndex).toBe(before.historyIndex + 1);
+        after.undo();
+        expect(useEditorStore.getState().slots).toEqual(before.slots);
+        useEditorStore.getState().redo();
+        expect(useEditorStore.getState().slots).toEqual(after.slots);
+      });
+    },
+  );
+
+  it.each([
+    { action: 'all', sourceSlotId: undefined },
+    { action: 'all', sourceSlotId: 'missing' },
+    { action: 'empty', sourceSlotId: undefined },
+    { action: 'empty', sourceSlotId: 'missing' },
+  ])(
+    'clears provenance but retains target transforms without a source: %j',
+    ({ action, sourceSlotId }) => {
+      setupSlotGrid();
+      const transforms = {
+        zoom: 1.8,
+        dragX: 18,
+        dragY: -3,
+        flipX: true,
+        flipY: true,
+        rotation: 180,
+        bgColor: '#fedcba',
+      };
+      useEditorStore.getState().updateSlotsBatch(['a', 'b', 'c', 'd'], {
+        ...transforms,
+        originalImageSrc: 'stale.png',
+        filter: 'bw',
+        brightness: 60,
+        contrast: 80,
+        saturation: 70,
+      });
+      useEditorStore.getState().pushHistory();
+      const before = useEditorStore.getState();
+      if (action === 'all') before.fillAllSlots('new.png', sourceSlotId);
+      else before.fillEmptySlots('new.png', sourceSlotId);
+      const after = useEditorStore.getState();
+      after.slots.forEach((slot) => {
+        expect(slot).toMatchObject({
+          ...transforms,
+          imageSrc: 'new.png',
+          filter: 'none',
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+        });
+        expect(slot.originalImageSrc).toBeUndefined();
+        expect(slot).toHaveProperty('originalImageSrc');
+      });
+      expect(after.historyIndex).toBe(before.historyIndex + 1);
+      after.undo();
+      expect(useEditorStore.getState().slots).toEqual(before.slots);
+      useEditorStore.getState().redo();
+      expect(useEditorStore.getState().slots).toEqual(after.slots);
+    },
+  );
 
   it('clears all slots image data', () => {
     const firstSlot = setupCollage();
@@ -600,6 +1140,7 @@ describe('CollageSlice Unit Tests', () => {
             w: 0.3,
             h: 0.4,
             imageSrc: 'id-photo.jpg',
+            originalImageSrc: 'original-id-photo.jpg',
             filter: 'bw',
             brightness: 110,
             contrast: 105,
@@ -615,9 +1156,11 @@ describe('CollageSlice Unit Tests', () => {
         selectedId: 'slot-1',
         selectedIds: ['slot-1'],
       });
-      const historyBefore = useEditorStore.getState().historyIndex;
+      useEditorStore.getState().pushHistory();
+      const before = useEditorStore.getState();
+      const historyBefore = before.historyIndex;
 
-      const res = useEditorStore.getState().addAdjacentCollageSlot('slot-1', 'right');
+      const res = before.addAdjacentCollageSlot('slot-1', 'right');
       expect(res.ok).toBe(true);
 
       const s = useEditorStore.getState();
@@ -628,6 +1171,7 @@ describe('CollageSlice Unit Tests', () => {
       expect(added.w).toBeCloseTo(0.3, 5);
       expect(added.h).toBeCloseTo(0.4, 5);
       expect(added.imageSrc).toBe('id-photo.jpg');
+      expect(added.originalImageSrc).toBe('original-id-photo.jpg');
       expect(added.filter).toBe('bw');
       expect(added.brightness).toBe(110);
       expect(added.zoom).toBe(1.25);
@@ -636,6 +1180,10 @@ describe('CollageSlice Unit Tests', () => {
       expect(s.selectedId).toBe(added.id);
       expect(s.selectedIds).toEqual([added.id]);
       expect(s.historyIndex).toBe(historyBefore + 1);
+      s.undo();
+      expect(useEditorStore.getState().slots).toEqual(before.slots);
+      useEditorStore.getState().redo();
+      expect(useEditorStore.getState().slots).toEqual(s.slots);
     });
 
     it('يرفض الإضافة عندما تتجاوز حدود الورقة أو تتصادم مع خلية قائمة', () => {

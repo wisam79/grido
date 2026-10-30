@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Minus, X, BookmarkSimple, CornersOut, ArrowClockwise } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { pxToMm } from '@/lib/canvas/units';
+import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from '@/lib/templates';
 import { cn } from '@/lib/utils';
 import { getGridLimits, getPhotoDimensions } from './collage-grid-math';
 import type { PhotoGridType, GridAlignment } from './collage-grid-math';
@@ -94,8 +95,8 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
   canvasWidth,
   canvasHeight,
   storedDpi,
-  gapPx = 0,
-  marginPx = 0,
+  gapPx = DEFAULT_COLLAGE_GAP_PX,
+  marginPx = DEFAULT_COLLAGE_MARGIN_PX,
   onRowsChange,
   onColsChange,
   onApply,

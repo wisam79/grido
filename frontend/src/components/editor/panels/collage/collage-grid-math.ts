@@ -8,7 +8,12 @@
  */
 
 import { pxToMm } from '@/lib/canvas/units';
-import { buildPhysicalGridCellsMM, getEffectiveDpi } from '@/lib/templates';
+import {
+  buildPhysicalGridCellsMM,
+  getEffectiveDpi,
+  DEFAULT_COLLAGE_GAP_PX,
+  DEFAULT_COLLAGE_MARGIN_PX,
+} from '@/lib/templates';
 
 import type { GridAlignment } from '@/lib/print/print-layout-math';
 // إعادة تصدير للمستهلكين الحاليين (arrange-tab، custom-grid-tab) — المصدر الوحيد print-layout-math.
@@ -105,8 +110,8 @@ export function buildPhysicalGridCells(
   canvasWidth: number,
   canvasHeight: number,
   storedDpi: number,
-  gapPx: number = 0,
-  marginPx: number = 0,
+  gapPx: number = DEFAULT_COLLAGE_GAP_PX,
+  marginPx: number = DEFAULT_COLLAGE_MARGIN_PX,
 ): NormalizedCell[] {
   if (photoType === 'stretch') {
     return buildStretchGridCells(rows, cols);

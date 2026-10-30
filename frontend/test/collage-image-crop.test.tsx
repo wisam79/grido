@@ -5,7 +5,12 @@ import { Stage, Layer } from 'react-konva';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { KonvaCollageImage } from '../src/components/editor/konva/elements/collage-image';
-import { captureStageBlob } from '../src/lib/canvas/konva-export-utils';
+import {
+  useCanvasInteraction,
+  resetCanvasInteraction,
+} from '../src/lib/canvas/canvas-interaction-store';
+import { captureStageBlob, isStageCaptureActive } from '../src/lib/canvas/konva-export-utils';
+import { useEditorStore } from '../src/lib/editor-store';
 
 import type Konva from 'konva';
 import type { Root } from 'react-dom/client';
@@ -127,11 +132,27 @@ async function mountSlot(
     dragX: number;
     dragY: number;
     draggable: boolean;
+    rotation: number;
+    flipX: boolean;
+    brightness: number;
     onUpdateOffsets: (x: number, y: number) => void;
   }>,
 ): Promise<Konva.Image> {
-  const { srcW, srcH, slotW, slotH, zoom, dragX, dragY, draggable, onUpdateOffsets } = props;
-  const keyParts = [srcW, srcH, slotW, slotH, zoom ?? 1, dragX ?? 0, dragY ?? 0, draggable ? 1 : 0];
+  const {
+    srcW,
+    srcH,
+    slotW,
+    slotH,
+    zoom,
+    dragX,
+    dragY,
+    draggable,
+    rotation,
+    flipX,
+    brightness,
+    onUpdateOffsets,
+  } = props;
+  const keyParts = [srcW, srcH];
   const src = `test://crop-${keyParts.join('x')}.png`;
   imageDims.set(src, { w: srcW, h: srcH });
 
@@ -156,14 +177,22 @@ async function mountSlot(
             dragX={dragX}
             dragY={dragY}
             draggable={draggable}
+            rotation={rotation}
+            flipX={flipX}
+            brightness={brightness}
             onUpdateOffsets={onUpdateOffsets}
           />
         </Layer>
       </Stage>,
     );
     // إفراغ الميكرومهام: تحميل useAsyncImage + نسخة العرض المخفّضة
-    await new Promise((r) => setTimeout(r, 0));
+    await Promise.resolve();
   });
+
+  const immediateFound = stageRef.current?.find('Image') ?? [];
+  if (immediateFound.length > 0) {
+    return immediateFound[0] as Konva.Image;
+  }
 
   // العقدة لا تُركَّب إلا بعد تحميل الصورة (useAsyncImage) — ننتظر ظهورها
   return await waitFor(() => {
@@ -178,6 +207,8 @@ let container: HTMLDivElement;
 
 describe('KonvaCollageImage — إطار الصورة داخل الخانة (فضاء نسخة العرض)', () => {
   beforeEach(() => {
+    resetCanvasInteraction();
+    useEditorStore.setState({ canvasZoom: 1 });
     installCanvasMock();
     globalThis.Image = MockImage as unknown as typeof Image;
     document.body.innerHTML = '<div id="root"></div>';
@@ -187,7 +218,10 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
   });
 
   afterEach(() => {
-    root.unmount();
+    act(() => root.unmount());
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    resetCanvasInteraction();
     container.remove();
     globalThis.Image = RealImage;
     imageDims.clear();
@@ -253,13 +287,160 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
       node.fire('dragstart', { target: node });
       node.fire('dragmove', { target: node });
       node.fire('dragend', { target: node });
-      await new Promise((r) => setTimeout(r, 0));
+      await Promise.resolve();
     });
 
     expect(onUpdateOffsets).toHaveBeenCalledTimes(1);
     expect(onUpdateOffsets).toHaveBeenCalledWith(200, 0);
     // الإطار ثابت بعد دورة صفرية: لا قفزة من خلط الفضاءين
     expect(node.cropX()).toBe(100);
+  });
+
+  it.each([90, 270, -90, 450])(
+    'ربع الدورة %s يملأ الخانة غير المربعة دون تمديد',
+    async (rotation) => {
+      const node = await mountSlot({
+        srcW: 400,
+        srcH: 200,
+        slotW: 200,
+        slotH: 400,
+        rotation,
+        flipX: true,
+      });
+      expect(node.width()).toBe(400);
+      expect(node.height()).toBe(200);
+      expect(node.cropWidth()).toBe(400);
+      expect(node.cropHeight()).toBe(200);
+      const box = node.getClientRect({ relativeTo: node.getLayer()! });
+      expect(box.x).toBeCloseTo(0);
+      expect(box.y).toBeCloseTo(0);
+      expect(box.width).toBeCloseTo(200);
+      expect(box.height).toBeCloseTo(400);
+    },
+  );
+
+  it('يبطل الكاش عند تعديل القص ويعيده مرة واحدة بعد استقرار التغييرات البرمجية', async () => {
+    const props = { srcW: 600, srcH: 800, slotW: 200, slotH: 400, brightness: 120 };
+    const node = await mountSlot(props);
+    expect(node.isCached()).toBe(true);
+    const cache = vi.spyOn(node, 'cache');
+    vi.useFakeTimers();
+
+    expect(await mountSlot({ ...props, zoom: 2 })).toBe(node);
+    expect(node.isCached()).toBe(false);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(499);
+    });
+    expect(cache).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(cache).toHaveBeenCalledTimes(1);
+    expect(node.isCached()).toBe(true);
+
+    // تغيير القص أثناء نافذة التسوية يعيد ضبط المؤقت ولا يخبز مرتين.
+    cache.mockClear();
+    await mountSlot({ ...props, zoom: 2, dragX: 20, dragY: 10 });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    await mountSlot(props);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(499);
+    });
+    expect(cache).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(cache).toHaveBeenCalledTimes(1);
+
+    // الاستعادة عبر props (مسار Undo/Redo) تغيّر القص ولو بقيت أبعاد العقدة ثابتة.
+    cache.mockClear();
+    await mountSlot({ ...props, zoom: 2, dragX: 20 });
+    expect(node.isCached()).toBe(false);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(cache).toHaveBeenCalledTimes(1);
+  });
+
+  it('لا يعيد الكاش أثناء السحب وينظف المؤقت عند فك العقدة', async () => {
+    const props = {
+      srcW: 600,
+      srcH: 800,
+      slotW: 200,
+      slotH: 400,
+      brightness: 120,
+      draggable: true,
+    };
+    const node = await mountSlot(props);
+    const cache = vi.spyOn(node, 'cache');
+    vi.useFakeTimers();
+    await act(async () => {
+      node.fire('dragstart', { target: node });
+      node.cropX(30);
+      useEditorStore.setState({ canvasZoom: 2 });
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+    expect(useCanvasInteraction.getState().isDragging).toBe(true);
+    expect(cache).not.toHaveBeenCalled();
+    await act(async () => {
+      node.fire('dragend', { target: node });
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(cache).toHaveBeenCalledTimes(1);
+
+    cache.mockClear();
+    await act(async () => {
+      node.cropX(40);
+      root.render(null);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(cache).not.toHaveBeenCalled();
+  });
+
+  it('يلتقط الفلاتر من الأصل حتى قبل انتهاء مؤقت القص ولا يغيّر الكاش أثناء الالتقاط', async () => {
+    const node = await mountSlot({
+      srcW: 4096,
+      srcH: 4096,
+      slotW: 300,
+      slotH: 300,
+      brightness: 120,
+      zoom: 2,
+    });
+    const stage = node.getStage()!;
+    vi.useFakeTimers();
+    await act(async () => {
+      node.cropX(100);
+    });
+    expect(node.isCached()).toBe(false);
+    let finish: BlobCallback | undefined;
+    vi.spyOn(stage, 'toCanvas').mockImplementation(() => {
+      expect(isStageCaptureActive(stage)).toBe(true);
+      expect(node.isCached()).toBe(true);
+      expect(node.cropX()).toBe(200);
+      const canvas = document.createElement('canvas');
+      canvas.toBlob = (callback) => {
+        finish = callback;
+      };
+      return canvas;
+    });
+    const cache = vi.spyOn(node, 'cache');
+    const capture = captureStageBlob(stage, 2, 'image/png', 1, undefined, {
+      useFullResolution: true,
+    });
+    const captureCalls = cache.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1500);
+    });
+    expect(cache).toHaveBeenCalledTimes(captureCalls);
+    finish!(new Blob(['ok']));
+    await capture;
+    expect(isStageCaptureActive(stage)).toBe(false);
+    expect(node.cropX()).toBe(100);
+    expect(node.isCached()).toBe(true);
   });
 
   it('captureStageBlob(useFullResolution): يحجّم cropX/cropWidth لأبعاد الأصل أثناء الالتقاط ثم يستعيدهما', async () => {

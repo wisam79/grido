@@ -39,6 +39,10 @@ export interface CollageTemplate {
   id: string;
   name: string;
   slots: number;
+  /** هل إحداثيات الخلايا محددة ومخبوزة مسبقاً بالنسبة للكانفس */
+  isBaked?: boolean;
+  /** هل القالب ناتج عن تحرير يدوي لخلايا الكولاج (تثبيت هندسة فردية) */
+  isManual?: boolean;
   cells: {
     x: number;
     y: number;

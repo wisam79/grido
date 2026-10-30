@@ -9,6 +9,8 @@
 import * as domain from '@bindings/grido/internal/core/domain';
 
 import { previewWhite } from '@/lib/canvas/canvas-colors';
+import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
+import { hasCollageSlotContent } from '@/lib/canvas/collage-slot-content';
 import { paperCaptureRect } from '@/lib/canvas/fit';
 import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { assertExportablePixels } from '@/lib/export/export-limits';
@@ -65,7 +67,7 @@ export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
     layout;
 
   const items: domain.PrintItem[] = [];
-  const hasPhysical = Boolean(collageTemplate?.physicalLayout);
+  const hasPhysical = isBakedCollageLayout(collageTemplate);
   const scaleXPxToMM = imageWidthMM / canvasWidth;
   const slotGeometry = {
     canvasWidth,
@@ -107,7 +109,9 @@ export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
     y2: l.y2,
   }));
 
-  const slotTemplates = slots.filter((slot) => slot.imageSrc);
+  const slotTemplates = slots.filter((slot) =>
+    hasCollageSlotContent(slot, collageStrokeWidth, collageStrokeColor),
+  );
   const firstBlock = computeBlockPosition(0, grid);
   const stepXMM = actualCopies > 1 ? grid.cellWidth : 0;
   const stepYMM = actualCopies > 1 ? grid.cellHeight : 0;
@@ -121,7 +125,7 @@ export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
 
     items.push(
       domain.PrintItem.createFrom({
-        imageSrc: slot.imageSrc,
+        imageSrc: slot.imageSrc || '',
         x: rect.xMM,
         y: rect.yMM,
         w: rect.wMM,

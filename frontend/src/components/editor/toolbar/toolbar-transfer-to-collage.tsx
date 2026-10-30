@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/huge-icon';
 import { TableArrowRepeatAll } from '@/components/ui/icons';
 import { Separator } from '@/components/ui/separator';
+import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { buildCollageInsertAssignments } from '@/lib/canvas/collage-insert';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
@@ -90,7 +91,7 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
         collage.slots,
         [finalSrc],
         null,
-        Boolean(collage.collageTemplate?.physicalLayout),
+        isBakedCollageLayout(collage.collageTemplate),
       );
       if (assignments.length === 0) {
         toast.error('تعذر إدراج التصميم في الكولاج');

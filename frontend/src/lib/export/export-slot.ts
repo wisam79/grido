@@ -3,6 +3,7 @@
  * مستخرج من export-image.ts (P1 تفكيك الملفات) بلا أي تغيير سلوكي.
  */
 import { previewWhite } from '@/lib/canvas/canvas-colors';
+import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { useEditorStore } from '@/lib/editor-store';
 import { assertExportablePixels, CanvasTooLargeError } from '@/lib/export/export-limits';
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
@@ -15,6 +16,7 @@ import {
   applySlotTransform,
   drawSlotImage,
   drawSlotImageLocal,
+  getSlotLocalSize,
   loadImage,
 } from './export-primitives';
 
@@ -38,7 +40,7 @@ export function getSlotExportSize(
     imageHeightMM: opts.canvasHeight,
     collageMargin: opts.collageMargin ?? 0,
     collageGap: opts.collageGap ?? 0,
-    hasPhysical: Boolean(opts.collageTemplate?.physicalLayout),
+    hasPhysical: isBakedCollageLayout(opts.collageTemplate),
   });
   // Canvas dimensions truncate fractional pixels. Draw into those same integer bounds.
   return { width: Math.max(1, Math.floor(rect.wMM)), height: Math.max(1, Math.floor(rect.hMM)) };
@@ -88,9 +90,10 @@ export async function exportSlotCanvas(
       ctx.fillRect(0, 0, exportWidth, exportHeight);
     }
 
+    const localSize = getSlotLocalSize(exportWidth, exportHeight, slot.rotation);
     // مرشّحات البكسل تُطبَّق في الفضاء المحلي قبل القلب/الدوران (ترتيب Konva)
     if (isPixelFilter(slot.filter)) {
-      const off = renderWithPixelFilter(exportWidth, exportHeight, slot.filter, (octx) => {
+      const off = renderWithPixelFilter(localSize.width, localSize.height, slot.filter, (octx) => {
         // تعديلات اللون قبل مرشّح البكسل (ترتيب Go)
         octx.filter = buildAdjustmentCSS(slot);
         drawSlotImageLocal(octx, img, exportWidth, exportHeight, slot);
@@ -98,7 +101,7 @@ export async function exportSlotCanvas(
       if (off) {
         ctx.save();
         applySlotTransform(ctx, 0, 0, exportWidth, exportHeight, slot);
-        ctx.drawImage(off, 0, 0, exportWidth, exportHeight);
+        ctx.drawImage(off, 0, 0, localSize.width, localSize.height);
         ctx.restore();
       }
     } else {

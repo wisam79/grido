@@ -267,6 +267,8 @@ export const CollageTemplateSchema = z.object({
         .optional(),
     })
     .optional(),
+  isBaked: z.boolean().optional(),
+  isManual: z.boolean().optional(),
   metadata: CollageTemplateMetadataSchema.optional(),
 });
 

@@ -19,6 +19,32 @@ export interface CollageGeometry {
   availH: number;
 }
 
+/**
+ * يتحقق مما إذا كان قالب الكولاج يملك إحداثيات خلايا محسوبة ومخبوزة مسبقاً
+ * (تخطيط فيزيائي، كولاج حر، تعديل يدوي للخانات، أو نماذج أطقم بأبعاد محددة).
+ * في هذه الحالات، تكون مواضع الخانات محددة بالفعل بالنسبة للكانفس فلا تُطبَّق
+ * الهوامش أو الفجوات مرة ثانية في `getCollageGeometry`.
+ */
+export function isBakedCollageLayout(
+  template:
+    | {
+        physicalLayout?: unknown;
+        isBaked?: boolean;
+        isManual?: boolean;
+        metadata?: { kind?: string };
+      }
+    | null
+    | undefined,
+): boolean {
+  if (!template) return false;
+  return Boolean(
+    template.physicalLayout ||
+    template.isBaked ||
+    template.isManual ||
+    template.metadata?.kind === 'freeform',
+  );
+}
+
 export function getCollageGeometry(
   canvasWidth: number,
   canvasHeight: number,
@@ -26,7 +52,7 @@ export function getCollageGeometry(
   collageGap: number,
   hasPhysicalLayout: boolean,
 ): CollageGeometry {
-  // 📐 التخطيط الفيزيائي (قوالب جاهزة) يحدّد مواضع الخلايا بنفسه: لا هوامش ولا فجوات
+  // 📐 التخطيط الفيزيائي والمخبوز يحدّد مواضع الخلايا بنفسه: لا هوامش ولا فجوات مضاعفة
   const margin = hasPhysicalLayout ? 0 : collageMargin;
   const gap = hasPhysicalLayout ? 0 : collageGap;
   return {
@@ -87,7 +113,7 @@ function inferNormalizedNeighborGaps(
   source: Pick<CanvasSlot, 'id' | 'x' | 'y' | 'w' | 'h'>,
   slots: ReadonlyArray<Pick<CanvasSlot, 'id' | 'x' | 'y' | 'w' | 'h'>>,
   geo: CollageGeometry,
-): { gapX: number; gapY: number } {
+): { gapX: number | null; gapY: number | null } {
   let minDx: number | null = null;
   let minDy: number | null = null;
 
@@ -104,7 +130,7 @@ function inferNormalizedNeighborGaps(
       } else if (source.x >= other.x + other.w - ADJACENT_EPSILON_BOUNDS) {
         dx = Math.max(0, source.x - (other.x + other.w));
       }
-      if (dx !== null && dx <= source.w * 0.5 && (minDx === null || dx < minDx)) {
+      if (dx !== null && (minDx === null || dx < minDx)) {
         minDx = dx;
       }
     }
@@ -119,14 +145,15 @@ function inferNormalizedNeighborGaps(
       } else if (source.y >= other.y + other.h - ADJACENT_EPSILON_BOUNDS) {
         dy = Math.max(0, source.y - (other.y + other.h));
       }
-      if (dy !== null && dy <= source.h * 0.5 && (minDy !== null ? dy < minDy : true)) {
+      if (dy !== null && (minDy === null || dy < minDy)) {
         minDy = dy;
       }
     }
   }
 
-  let gapX = minDx ?? 0;
-  let gapY = minDy ?? 0;
+  // null يعني غياب جار قابل للقياس، بينما الصفر فجوة متلاصقة صريحة.
+  let gapX = minDx;
+  let gapY = minDy;
 
   if (minDx !== null && minDy === null && geo.availH > 0) {
     gapY = (minDx * geo.availW) / geo.availH;
@@ -156,13 +183,14 @@ export function computeAdjacentSlotCandidate(
   let normGapX = 0;
   let normGapY = 0;
 
-  if (hasPhysicalLayout && collageGap > 0) {
-    normGapX = Math.max(0, collageGap) / geo.availW;
-    normGapY = Math.max(0, collageGap) / geo.availH;
-  } else if (geo.gap === 0) {
+  if (geo.gap === 0) {
+    // التخطيط الفيزيائي قد يصغّر الفجوة مع الخلايا؛ القياس الفعلي (حتى الصفر)
+    // يسبق التفضيل المخزن، ويُنقل للمحور الآخر عبر البكسل لا كنسبة مطبّعة.
     const inferred = inferNormalizedNeighborGaps(source, slots, geo);
-    normGapX = inferred.gapX;
-    normGapY = inferred.gapY;
+    const fallbackGap =
+      hasPhysicalLayout && Number.isFinite(collageGap) ? Math.max(0, collageGap) : 0;
+    normGapX = inferred.gapX ?? fallbackGap / geo.availW;
+    normGapY = inferred.gapY ?? fallbackGap / geo.availH;
   }
 
   let nx = source.x;

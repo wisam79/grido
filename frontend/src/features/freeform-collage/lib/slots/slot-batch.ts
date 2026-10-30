@@ -9,6 +9,19 @@ import type { FreeformSlot } from '../../types';
 /*  عمليات التحديد المتعدد والتحرير الجماعي (Multi-Select & Batch Editing)      */
 /* ========================================================================== */
 
+/** Keep the primary and secondary selection disjoint, with one ordered, deduplicated set. */
+export function normalizeSlotSelection(
+  primaryId: string | null,
+  secondaryIds: readonly string[] = [],
+): { selectedSlotId: string | null; multiSelectedIds: string[]; selectedIds: string[] } {
+  const selectedIds = [...new Set(primaryId ? [primaryId, ...secondaryIds] : secondaryIds)];
+  return {
+    selectedSlotId: selectedIds[0] ?? null,
+    multiSelectedIds: selectedIds.slice(1),
+    selectedIds,
+  };
+}
+
 /** حذف مجموعة خلايا محددة — يُبقي خلية واحدة على الأقل دائماً */
 export function removeSlotsByIds(slots: FreeformSlot[], ids: string[]): FreeformSlot[] {
   const selected = new Set(ids);

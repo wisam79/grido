@@ -375,16 +375,11 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 	drawItem := func(i int, img image.Image) {
 		item := req.Items[i]
 		if item.ImageSrc == "" {
-			// عنصر بلا صورة: إذا وُجد تركيب كانفاس (وضع حر من العناصر) نرسمه في الخلية،
-			// وإلا نستبقيه فارغاً (السلوك التاريخي)
-			if composedCanvas != nil {
-				drawItemImage(dc, composedCanvas, item, req.DPI)
-			}
-			return
+			// Preserve free-canvas placeholders. Without a composition, a nil image
+			// still draws the slot's background/border; unstyled empties are a no-op.
+			img = composedCanvas
 		}
-		if img != nil {
-			drawItemImage(dc, img, item, req.DPI)
-		}
+		drawItemImage(dc, img, item, req.DPI)
 	}
 
 	for start := 0; start < len(req.Items); start += batchSize {
