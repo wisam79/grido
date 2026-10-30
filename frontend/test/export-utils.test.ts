@@ -50,6 +50,7 @@ describe('export-utils - Image/Project Export Utilities Tests', () => {
         scale: () => {},
         beginPath: () => {},
         rect: () => {},
+        clip: () => {},
         strokeRect: () => {},
         fillText: () => {},
         ellipse: () => {},

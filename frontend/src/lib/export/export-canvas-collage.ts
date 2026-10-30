@@ -154,7 +154,9 @@ export async function renderCollageBranch(
     } else {
       ctx.rect(left, top, width, height);
     }
-    ctx.clip();
+    if (typeof ctx.clip === 'function') {
+      ctx.clip();
+    }
     // خلفية الخانة مستقلة عن الصورة؛ الخانة الملونة الفارغة جزء من التصميم.
     if (slot.bgColor && slot.bgColor !== 'transparent') {
       ctx.fillStyle = slot.bgColor;
