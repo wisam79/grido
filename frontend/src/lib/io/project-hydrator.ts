@@ -1,5 +1,5 @@
 import { createLogger } from '../logger';
-import { generateInitialSlots } from '../store/slices/collage-slice';
+import { DEFAULT_COLLAGE_STATE, generateInitialSlots } from '../store/slices/collage-slice';
 import { DEFAULT_GRID_STATE, type RulerUnit, type UserGuide } from '../store/slices/grid-slice';
 import { DEFAULT_PRINT_SETTINGS } from '../store/slices/print-slice';
 import {
@@ -428,7 +428,7 @@ export function hydrateProjectState(
     collageStrokeWidth: project.collageStrokeWidth ?? 0,
     collageStrokeColor: project.collageStrokeColor ?? '#000000',
     collagePendingImages: [...(project.collagePendingImages ?? [])],
-    autofillImages: [...(project.collagePendingImages ?? [])],
-    autofillSettings: project.autofillSettings,
+    autofillImages: [...(project.autofillImages ?? [])],
+    autofillSettings: { ...DEFAULT_COLLAGE_STATE.autofillSettings, ...project.autofillSettings },
   };
 }

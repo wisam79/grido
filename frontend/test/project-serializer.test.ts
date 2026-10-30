@@ -65,6 +65,28 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
     expect(serialized.showGrid).toBe(false);
   });
 
+  it('should persist autofill images and pending overflow through file and DB round-trips', () => {
+    // التكرار مقصود: القائمتان تحفظان الاستيراد كما هو دون إزالة نسخ متطابقة.
+    const state = {
+      ...mockEditorState,
+      autofillImages: ['/local-image/a.jpg', '/local-image/a.jpg'],
+      collagePendingImages: ['/local-image/b.jpg'],
+    } as EditorState;
+
+    const serialized = serializeEditorState(state);
+    expect(serialized.autofillImages).toEqual(['/local-image/a.jpg', '/local-image/a.jpg']);
+    expect(serialized.collagePendingImages).toEqual(['/local-image/b.jpg']);
+
+    const hydrated = hydrateProjectState(serialized);
+    expect(hydrated?.autofillImages).toEqual(['/local-image/a.jpg', '/local-image/a.jpg']);
+    expect(hydrated?.collagePendingImages).toEqual(['/local-image/b.jpg']);
+
+    const dbProject = projectFileToDomainProject(serialized, 'p-round-trip', 'Round Trip');
+    const backToFile = domainProjectToProjectFile(dbProject);
+    expect(backToFile.autofillImages).toEqual(['/local-image/a.jpg', '/local-image/a.jpg']);
+    expect(backToFile.collagePendingImages).toEqual(['/local-image/b.jpg']);
+  });
+
   it('should migrate legacy projects without version to current V1 version', () => {
     const legacyProject = {
       mode: 'single',

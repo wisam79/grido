@@ -48,6 +48,10 @@ class PipelineTests(unittest.TestCase):
         full = pipeline.upscale_background(image, tile_size=256)
         self.assertEqual(tiled.shape, (182, 226, 3))
         np.testing.assert_array_equal(tiled, full)
+        neural_tiled = pipeline.upscale_background_neural(image, tile_size=40)
+        neural_full = pipeline.upscale_background_neural(image, tile_size=256)
+        self.assertEqual(neural_tiled.shape, (182, 226, 3))
+        np.testing.assert_array_equal(neural_tiled, neural_full)
 
     def test_no_faces_still_upscales(self):
         pipeline = module.StudioPipeline()
@@ -66,7 +70,7 @@ class PipelineTests(unittest.TestCase):
         self.assertAlmostEqual(float(result[8]), (29+.5)*1103/640-.5, places=4)
         self.assertAlmostEqual(float(result[9]), (31+.5)*731/detect_h-.5, places=4)
 
-    def test_png_alpha_exact_lanczos_and_254_preserved(self):
+    def test_png_alpha_exact_linear_and_254_preserved(self):
         for value in (0, 254, 255):
             raw = np.full((9, 11, 4), value, dtype=np.uint8)
             _, alpha = module.split_image(raw)
@@ -74,11 +78,11 @@ class PipelineTests(unittest.TestCase):
             encoded, mime = module.encode_output(np.zeros((18, 22, 3), dtype=np.uint8), alpha)
             decoded = cv2.imdecode(encoded, cv2.IMREAD_UNCHANGED)
             self.assertEqual(mime, "image/png")
-            np.testing.assert_array_equal(decoded[:, :, 3], cv2.resize(alpha, (22, 18), interpolation=cv2.INTER_LANCZOS4))
+            np.testing.assert_array_equal(decoded[:, :, 3], cv2.resize(alpha, (22, 18), interpolation=cv2.INTER_LINEAR))
         alpha = np.random.default_rng(9).integers(0, 256, (9, 11), dtype=np.uint8)
         encoded, _ = module.encode_output(np.zeros((18, 22, 3), dtype=np.uint8), alpha)
         decoded = cv2.imdecode(encoded, cv2.IMREAD_UNCHANGED)
-        np.testing.assert_array_equal(decoded[:, :, 3], cv2.resize(alpha, (22, 18), interpolation=cv2.INTER_LANCZOS4))
+        np.testing.assert_array_equal(decoded[:, :, 3], cv2.resize(alpha, (22, 18), interpolation=cv2.INTER_LINEAR))
 
     def test_16bit_alpha_preserved_without_quantization(self):
         raw = np.random.default_rng(3).integers(0, 65536, (9, 11, 4), dtype=np.uint16)
@@ -86,7 +90,7 @@ class PipelineTests(unittest.TestCase):
         encoded, _ = module.encode_output(cv2.resize(image, (22, 18)), alpha)
         decoded = cv2.imdecode(encoded, cv2.IMREAD_UNCHANGED)
         self.assertEqual(decoded.dtype, np.uint16)
-        np.testing.assert_array_equal(decoded[:, :, 3], cv2.resize(raw[:, :, 3], (22, 18), interpolation=cv2.INTER_LANCZOS4))
+        np.testing.assert_array_equal(decoded[:, :, 3], cv2.resize(raw[:, :, 3], (22, 18), interpolation=cv2.INTER_LINEAR))
 
     def test_jpeg_quality_98_and_444(self):
         original = cv2.imencode
@@ -191,10 +195,12 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(calls), 4)
 
-    async def test_finalize_failure_never_returns_pixels(self):
+    async def test_finalize_failure_still_returns_image_with_unrecorded_usage(self):
         response, _ = await self.call_endpoint(self.image_payload(), [{"id": "user"}, {"success": True}, OSError("offline"), OSError("offline")])
-        self.assertEqual(response.status_code, 503)
-        self.assertNotIn("image", json.loads(response.body))
+        self.assertEqual(response.status_code, 200)
+        payload = json.loads(response.body)
+        self.assertIn("image", payload)
+        self.assertFalse(payload["usage_recorded"])
 
     async def test_oversized_dimensions_rejected_before_reservation(self):
         response, calls = await self.call_endpoint(self.image_payload((1, 2049, 3)), [{"id": "user"}])
@@ -207,9 +213,62 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(calls), 1)
 
     async def test_pipeline_failure_is_not_finalized(self):
-        response, calls = await self.call_endpoint(self.image_payload(), [{"id": "user"}, {"success": True}], pipeline_error=True)
+        response, calls = await self.call_endpoint(
+            self.image_payload(),
+            [{"id": "user"}, {"success": True}, {"success": True, "released": True}],
+            pipeline_error=True
+        )
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(calls), 3)
+        cancel_call = json.loads(calls[2].data)
+        self.assertEqual(cancel_call["p_user_id"], "user")
+        self.assertIn("p_request_id", cancel_call)
+
+    async def test_client_request_id_passed_and_sanitized(self):
+        fixed_uuid = "a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d"
+        payload = self.image_payload()
+        payload["requestId"] = fixed_uuid
+        response, calls = await self.call_endpoint(
+            payload,
+            [{"id": "user"}, {"success": True, "state": "reserved"}, {"success": True, "state": "finalized"}]
+        )
+        self.assertEqual(response.status_code, 200)
+        reserve_data = json.loads(calls[1].data)
+        self.assertEqual(reserve_data["p_request_id"], fixed_uuid)
+
+    def test_max_faces_limited_to_three(self):
+        pipeline = module.StudioPipeline()
+        std_lm = np.array([
+            [192.98138, 239.94708], [318.90277, 240.1736],
+            [256.0102, 314.01935], [201.26117, 371.41043],
+            [313.08905, 371.15118],
+        ], dtype=np.float32)
+        pipeline.standard_5landmarks = std_lm
+        lm_flat = std_lm.flatten()
+
+        def make_mock_face(w, h):
+            arr = np.zeros(15, dtype=np.float32)
+            arr[2], arr[3] = w, h
+            arr[4:14] = lm_flat
+            arr[14] = 0.99
+            return arr
+
+        # 5 detected faces with varying bounding box sizes
+        mock_faces = [
+            make_mock_face(20, 20),
+            make_mock_face(50, 50),
+            make_mock_face(80, 80),
+            make_mock_face(30, 30),
+            make_mock_face(60, 60),
+        ]
+        pipeline.detect_faces = lambda _: mock_faces
+        pipeline.upscale_background = lambda img: cv2.resize(img, None, fx=2, fy=2)
+        pipeline.restore_face = lambda cropped, fidelity, **kwargs: cropped
+        pipeline.blend_face = lambda res, face, mat: None
+
+        _, timings = pipeline.process(np.zeros((100, 100, 3), dtype=np.uint8))
+        # Total restored count must be capped by MAX_FACES_RESTORE (3)
+        self.assertEqual(timings["faces_restored"], 3)
 
 
 if __name__ == "__main__":

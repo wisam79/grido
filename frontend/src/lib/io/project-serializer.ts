@@ -53,6 +53,7 @@ export function serializeEditorState(
     collageBackgroundGradientColor2: state.collageBackgroundGradientColor2 ?? null,
     collageBackgroundGradientAngle: state.collageBackgroundGradientAngle ?? 135,
     collagePendingImages: [...(state.collagePendingImages ?? [])],
+    autofillImages: [...(state.autofillImages ?? [])],
     autofillSettings: { ...state.autofillSettings },
     elements: state.elements,
     slots: state.slots,
@@ -230,6 +231,7 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
     collageBackgroundGradientColor2?: string | null;
     collageBackgroundGradientAngle?: number;
     collagePendingImages?: string[];
+    autofillImages?: string[];
     autofillSettings?: ProjectFileV1['autofillSettings'];
   }>(dbProj.editorState, {});
 
@@ -284,6 +286,7 @@ export function domainProjectToProjectFile(dbProj: domain.Project): ProjectFileV
       editorState.collageBackgroundGradientAngle ??
       (dbProj.mode === 'collage' ? (gradientAngle ?? 135) : 135),
     collagePendingImages: editorState.collagePendingImages ?? [],
+    autofillImages: editorState.autofillImages ?? [],
     autofillSettings:
       editorState.autofillSettings ?? ProjectFileSchema.shape.autofillSettings.parse(undefined),
     elements,
@@ -368,6 +371,7 @@ export function projectFileToDomainProject(
       collageBackgroundGradientColor2: file.collageBackgroundGradientColor2 ?? null,
       collageBackgroundGradientAngle: file.collageBackgroundGradientAngle ?? 135,
       collagePendingImages: file.collagePendingImages ?? [],
+      autofillImages: file.autofillImages ?? [],
       autofillSettings: file.autofillSettings,
     }),
     showGrid: file.showGrid ?? false,

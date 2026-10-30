@@ -51,7 +51,7 @@ function actOnSelection(
 
 /** أدوات العناصر المحددة (تكرار/ذكاء اصطناعي/تجميع/محاذاة/حذف). */
 export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
-  const { hasSelection, isImageSelected, canGroup, canUngroup } = useEditorStore(
+  const { hasSelection, isImageSelected, isCollageMode, canGroup, canUngroup } = useEditorStore(
     useShallow((state) => {
       const hasSel = !!state.selectedId || state.selectedIds.length > 0;
       const selectedEl = state.elements.find((e) => e.id === state.selectedId);
@@ -66,6 +66,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
       return {
         hasSelection: hasSel,
         isImageSelected: !!isImg,
+        isCollageMode: state.mode === 'collage',
         canGroup: idsCount >= 2,
         canUngroup: hasGroup,
       };
@@ -100,7 +101,9 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
       {isImageSelected && (
         <>
           <AiToolsToolbarGroup />
-          <Separator orientation="vertical" className="h-4 bg-border/60 mx-0.5" />
+          {isCollageMode && (
+            <Separator orientation="vertical" className="h-4 bg-border/60 mx-0.5" />
+          )}
         </>
       )}
 

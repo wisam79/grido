@@ -7,7 +7,7 @@ import { useEditorStore } from '@/lib/editor-store';
 import { assertExportablePixels, CanvasTooLargeError } from '@/lib/export/export-limits';
 import { isPixelFilter } from '@/lib/filters/pixel-filters';
 import { createLogger } from '@/lib/logger';
-import { computeSlotRectMM } from '@/lib/print/print-layout-math';
+import { computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
 import { buildAdjustmentCSS, buildCSSFilter } from '@/lib/utils';
 
 import { renderWithPixelFilter } from './export-pixel-filter';
@@ -18,7 +18,31 @@ import {
   loadImage,
 } from './export-primitives';
 
+import type { CollageRenderOptions } from './export-canvas-collage';
+import type { SlotFractions } from '@/lib/print/print-layout-math';
+
 const logger = createLogger('export-slot');
+
+/** Exact integer bitmap size, shared with batch-export preflight (not the page size). */
+export function getSlotExportSize(
+  slot: SlotFractions,
+  opts: Pick<
+    CollageRenderOptions,
+    'canvasWidth' | 'canvasHeight' | 'collageMargin' | 'collageGap' | 'collageTemplate'
+  >,
+): { width: number; height: number } {
+  const rect = computeCollageSlotRectMM(slot, {
+    canvasWidth: opts.canvasWidth,
+    canvasHeight: opts.canvasHeight,
+    imageWidthMM: opts.canvasWidth,
+    imageHeightMM: opts.canvasHeight,
+    collageMargin: opts.collageMargin ?? 0,
+    collageGap: opts.collageGap ?? 0,
+    hasPhysical: Boolean(opts.collageTemplate?.physicalLayout),
+  });
+  // Canvas dimensions truncate fractional pixels. Draw into those same integer bounds.
+  return { width: Math.max(1, Math.floor(rect.wMM)), height: Math.max(1, Math.floor(rect.hMM)) };
+}
 
 export async function exportSlotCanvas(
   slotId: string,
@@ -39,21 +63,13 @@ export async function exportSlotCanvas(
   try {
     const img = await loadImage(slot.imageSrc);
 
-    // مزامنة القص مع هوامش/فجوات الكولاج الفعلية — تطبيق القيم الحقيقية
-    // (وليس صفراً) يطابق نسبة الخلية المعروضة في المحرر وإلا انحرف القص
-    // واقتطع أجزاء من رأس/وجه الشخص خلافاً للمعاينة
-    const hasPhysical = Boolean(collageTemplate?.physicalLayout);
-    const marginPx = hasPhysical ? 0 : collageMargin;
-    const gapPx = hasPhysical ? 0 : collageGap;
-    const rect = computeSlotRectMM(
-      { xMM: 0, yMM: 0 },
-      { x: slot.x, y: slot.y, w: slot.w, h: slot.h },
-      { widthMM: canvasWidth, heightMM: canvasHeight },
-      { marginXMM: marginPx, marginYMM: marginPx },
-      { gapXMM: gapPx, gapYMM: gapPx },
-    );
-    const exportWidth = Math.max(1, rect.wMM);
-    const exportHeight = Math.max(1, rect.hMM);
+    const { width: exportWidth, height: exportHeight } = getSlotExportSize(slot, {
+      canvasWidth,
+      canvasHeight,
+      collageMargin,
+      collageGap,
+      collageTemplate,
+    });
 
     // خانة واحدة قد تتجاوز الحد إذا كان الكانفاس ضخماً (w=1 يعني الكانفاس كاملاً)
     assertExportablePixels(exportWidth, exportHeight);

@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { CaretLeft, CaretRight } from '@/components/ui/icons';
+import { useFreeformDialogState } from '@/features/freeform-collage/lib/freeform-dialog-state';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/wails-error';
@@ -136,9 +137,10 @@ export const TemplatePanel = React.memo(function TemplatePanel({
     }
   }, []);
 
+  const templatesRevision = useFreeformDialogState((state) => state.templatesRevision);
   useEffect(() => {
     loadTemplates();
-  }, [loadTemplates]);
+  }, [loadTemplates, templatesRevision]);
 
   const handleSaveTemplate = async (name: string, cells: NormalizedCell[]) => {
     try {
@@ -229,7 +231,6 @@ export const TemplatePanel = React.memo(function TemplatePanel({
             onSelect={handleSelectTemplate}
             activeTemplateId={collageTemplate?.id}
             onSaveTemplate={handleSaveTemplate}
-            onTemplatesChanged={loadTemplates}
             savedTemplates={savedTemplates}
             onDeleteTemplate={handleDeleteTemplate}
             fileInputRef={fileInputRef}

@@ -258,21 +258,25 @@ export const FluentSliderField = React.memo(function FluentSliderField({
 
   const valueControl = (
     <div dir="ltr" className="flex items-center gap-0.5 shrink-0">
-      {canReset && (
-        <button
-          type="button"
-          onClick={resetToDefault}
-          aria-label="إعادة تعيين إلى القيمة الافتراضية"
-          title="إعادة تعيين"
-          className="h-7 w-7 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-        >
-          <ArrowCounterClockwise className="w-3 h-3" weight="bold" />
-        </button>
+      {defaultValue !== undefined && (
+        <span className="inline-flex h-6 w-6 items-center justify-center shrink-0">
+          {canReset && (
+            <button
+              type="button"
+              onClick={resetToDefault}
+              aria-label="إعادة تعيين إلى القيمة الافتراضية"
+              title="إعادة تعيين"
+              className="h-6 w-6 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+            >
+              <ArrowCounterClockwise className="w-3 h-3" weight="bold" />
+            </button>
+          )}
+        </span>
       )}
       <span
         dir="ltr"
         title={editable ? `من ${min} إلى ${max}${unit ? ` ${unit}` : ''}` : undefined}
-        className="flex items-center gap-1 font-mono text-mini tabular-nums bg-muted/60 dark:bg-muted/40 ps-1.5 pe-1 py-0.5 rounded border border-border/40 text-muted-foreground select-none shrink-0 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40"
+        className="flex min-w-14 items-center justify-between gap-1 font-mono text-mini tabular-nums bg-muted/60 dark:bg-muted/40 ps-1.5 pe-1 py-0.5 rounded border border-border/40 text-muted-foreground select-none shrink-0 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/40"
       >
         {editable ? (
           <input
@@ -287,7 +291,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleNumericKeyDown}
             disabled={disabled}
-            className="w-10 bg-transparent text-center outline-none font-mono text-mini tabular-nums text-inherit"
+            className="w-9 bg-transparent text-center outline-none font-mono text-mini tabular-nums text-inherit"
           />
         ) : (
           <span className="text-center px-0.5">{displayVal}</span>

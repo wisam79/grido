@@ -137,6 +137,8 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
           <div className="space-y-1.5 pt-1">
             <FluentSliderField
               label={isLine ? 'سمك الخط' : 'سماكة الحد'}
+              layout="inline"
+              labelWidth="w-20"
               value={
                 isLine
                   ? element.strokeWidth && element.strokeWidth > 0
@@ -264,6 +266,8 @@ export function ShapeStyleProperties({ element, onUpdate, onNavigateTab }: Shape
                 <div className="space-y-1.5 pt-2 border-t border-border/30">
                   <FluentSliderField
                     label="الزوايا"
+                    layout="inline"
+                    labelWidth="w-16"
                     value={uniformRadius}
                     min={0}
                     max={50}
@@ -583,11 +587,14 @@ export function ShapeColorProperties({ element, onUpdate }: ShapePropertiesProps
         <FluentSection title="الشفافية">
           <FluentSliderField
             label="شفافية الشكل"
+            layout="inline"
+            labelWidth="w-24"
             value={currentOpacity}
             min={0}
             max={100}
             step={1}
             unit="%"
+            defaultValue={100}
             onChange={(v) => onUpdate(element.id, { opacity: v / 100 })}
             onCommit={() => useEditorStore.getState().pushHistory()}
           />

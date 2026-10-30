@@ -28,5 +28,6 @@
   "20261019120200_profiles_identity_columns_guard.sql": "d9f9ac2419b6ffdd35ae8b7f12cce6862317d3e5e2c2490cfb7084ac1d323312",
   "20261019120300_profile_repair_email_conflict_selfheal.sql": "54756cef58ff53d54f6ec10438a3859fbfbc111a465d54dabe6bc60f300909b9",
   "20261019130000_phone_bridge_storage_policies.sql": "0c4c26ee9c71ea4fde6d41b188ce96c88bcf4aae667cdb5e67854b6668583340",
-  "20261019140000_reclaim_orphan_email_revoke_anon.sql": "2a8dfda0e476cdd60b36429bf4156cba68527a3208160c8936c9f10dea9a8b43"
+  "20261019140000_reclaim_orphan_email_revoke_anon.sql": "2a8dfda0e476cdd60b36429bf4156cba68527a3208160c8936c9f10dea9a8b43",
+  "20261029220000_cancel_ai_quota_reservation.sql": "80b02c152854fb529efc7492e42a46426b8917b61fd9e9d08795fa7dca67fbb0"
 }

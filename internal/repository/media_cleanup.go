@@ -14,6 +14,8 @@ import (
 
 	"grido/internal/core/domain"
 	"grido/internal/utils"
+
+	"gorm.io/gorm"
 )
 
 var (
@@ -134,6 +136,13 @@ func collectImageFilenames(elementsStr, slotsStr string, referenced map[string]b
 	}
 }
 
+// cleanupProjects keeps both cleanup entrypoints aligned with every reference source below.
+func cleanupProjects(db *gorm.DB) ([]domain.Project, error) {
+	var projects []domain.Project
+	err := db.Select("elements", "slots", "template", "collage_template", "print_settings", "editor_state").Find(&projects).Error
+	return projects, err
+}
+
 // collectReferencedImages يجمع كل الصور المشار إليها في المشاريع وقاعدة البيانات ومسودة autosave.json
 func collectReferencedImages(projects []domain.Project, appDir string) (map[string]bool, error) {
 	referencedImages := make(map[string]bool)
@@ -164,6 +173,8 @@ func collectReferencedImages(projects []domain.Project, appDir string) (map[stri
 		} else {
 			return nil, fmt.Errorf("corrupt autosave.json encountered: %w", err)
 		}
+	} else if !os.IsNotExist(err) {
+		return nil, fmt.Errorf("read autosave.json: %w", err)
 	}
 
 	// 3. فحص مسارات الصور في القوالب المخصصة المحفوظة بقاعدة البيانات لمنع مسح أصول القوالب
@@ -178,6 +189,8 @@ func collectReferencedImages(projects []domain.Project, appDir string) (map[stri
 				collectImageFilenames("", string(t.Cells), referencedImages)
 				extractImagesFromText(string(t.Cells), referencedImages)
 			}
+		} else {
+			return nil, fmt.Errorf("read custom templates: %w", err)
 		}
 	}
 
@@ -322,8 +335,8 @@ func runCleanupMedia() {
 		return
 	}
 
-	var projects []domain.Project
-	if err := db.Select("elements, slots").Find(&projects).Error; err != nil {
+	projects, err := cleanupProjects(db)
+	if err != nil {
 		return
 	}
 
@@ -351,8 +364,8 @@ func CleanUnusedMediaNow() (cleanedCount int, freedBytes int64, err error) {
 		return 0, 0, errors.New("database not initialized")
 	}
 
-	var projects []domain.Project
-	if err := db.Select("elements, slots").Find(&projects).Error; err != nil {
+	projects, err := cleanupProjects(db)
+	if err != nil {
 		return 0, 0, err
 	}
 

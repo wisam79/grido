@@ -147,6 +147,37 @@ export function computeSlotRectMM(
   };
 }
 
+/** Final size of one collage copy; spacing remains in project pixels. */
+export interface CollageSlotGeometry {
+  canvasWidth: number;
+  canvasHeight: number;
+  imageWidthMM: number;
+  imageHeightMM: number;
+  collageMargin: number;
+  collageGap: number;
+  hasPhysical: boolean;
+}
+
+/** Shared by print payloads and export/preflight; physical cells already include spacing. */
+export function computeCollageSlotRectMM(
+  slot: SlotFractions,
+  geometry: CollageSlotGeometry,
+  block: { xMM: number; yMM: number } = { xMM: 0, yMM: 0 },
+): SlotRectMM {
+  const { canvasWidth, canvasHeight, imageWidthMM, imageHeightMM, hasPhysical } = geometry;
+  const marginPx = hasPhysical ? 0 : geometry.collageMargin;
+  const gapPx = hasPhysical ? 0 : geometry.collageGap;
+  const scaleX = imageWidthMM / canvasWidth;
+  const scaleY = imageHeightMM / canvasHeight;
+  return computeSlotRectMM(
+    block,
+    slot,
+    { widthMM: imageWidthMM, heightMM: imageHeightMM },
+    { marginXMM: marginPx * scaleX, marginYMM: marginPx * scaleY },
+    { gapXMM: gapPx * scaleX, gapYMM: gapPx * scaleY },
+  );
+}
+
 // نسبة أبعاد الخانة على الكانفاس (لحساب الاقتصاص cover في Go)
 export function computeSlotAspect(
   slot: Pick<SlotFractions, 'w' | 'h'>,

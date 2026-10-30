@@ -1,6 +1,9 @@
+import { MM_PER_INCH } from '@/lib/canvas/units';
+
 import { computeSlotCrop } from './export-primitives';
 
 import type { useEditorStore } from '@/lib/editor-store';
+import type { SlotRectMM } from '@/lib/print/print-layout-math';
 
 /* ═══════════════════════════════════════════════════════════════
    فحص محتوى الكولاج قبل الطباعة والتصدير — مصدر واحد للتحذيرات.
@@ -14,10 +17,10 @@ type StoreState = ReturnType<typeof useEditorStore.getState>;
 
 export interface CollagePreflightInput {
   slots: StoreState['slots'];
-  canvasWidth: number;
-  canvasHeight: number;
-  /** أبعاد المصدر الفعلية بعد EXIF — من GetImageDimensions أو الكاش */
-  imageDimensions: Map<string, { width: number; height: number }>;
+  /** Final physical LOCAL draw rect per slot, not a rotated bounding box or page size. */
+  slotRectsMM: ReadonlyMap<string, SlotRectMM>;
+  /** Full-resolution decoded dimensions, already oriented by EXIF (never swap again). */
+  imageDimensions: ReadonlyMap<string, { width: number; height: number }>;
   /** مصادر فشل تحميلها فعلياً (من loadCollageSlotImages) */
   failedSlotIds?: string[];
   /** أصغر دقة مقبولة للطباعة (افتراضي 250DPI للطباعة الاحترافية) */
@@ -35,26 +38,13 @@ export interface CollagePreflightResult {
   warnings: CollagePreflightIssue[];
 }
 
-const MM_PER_INCH = 25.4;
-
 export function runCollagePreflight(input: CollagePreflightInput): CollagePreflightResult {
-  const {
-    slots,
-    canvasWidth,
-    canvasHeight,
-    imageDimensions,
-    failedSlotIds = [],
-    minDpi = 250,
-  } = input;
+  const { slots, slotRectsMM, imageDimensions, failedSlotIds = [], minDpi = 250 } = input;
   const blocking: CollagePreflightIssue[] = [];
   const warnings: CollagePreflightIssue[] = [];
   const failedSet = new Set(failedSlotIds);
 
   for (const slot of slots) {
-    const widthMM = slot.w * canvasWidth;
-    const heightMM = slot.h * canvasHeight;
-    if (!(widthMM > 0) || !(heightMM > 0)) continue;
-
     if (!slot.imageSrc) {
       warnings.push({
         slotId: slot.id,
@@ -64,7 +54,13 @@ export function runCollagePreflight(input: CollagePreflightInput): CollagePrefli
       continue;
     }
 
-    if (failedSet.has(slot.id)) {
+    const dims = imageDimensions.get(slot.imageSrc);
+    if (
+      failedSet.has(slot.id) ||
+      !dims ||
+      !(dims.width > 0 && Number.isFinite(dims.width)) ||
+      !(dims.height > 0 && Number.isFinite(dims.height))
+    ) {
       blocking.push({
         slotId: slot.id,
         kind: 'unreadable',
@@ -73,13 +69,13 @@ export function runCollagePreflight(input: CollagePreflightInput): CollagePrefli
       continue;
     }
 
-    const dims = imageDimensions.get(slot.imageSrc);
-    if (!dims || !(dims.width > 0) || !(dims.height > 0)) continue;
+    const rect = slotRectsMM.get(slot.id);
+    if (!rect || !(rect.wMM > 0) || !(rect.hMM > 0)) continue;
+    const { wMM: widthMM, hMM: heightMM } = rect;
 
-    // الدقة الفعلية: أبعاد المصدر بعد منطقة القص (zoom/drag) مقابل المقاس الفيزيائي.
-    // نستخدم نفس هندسة القص في التصدير (computeSlotCrop) عبر SlotTransform المكافئ.
-    const mockImg = { width: dims.width, height: dims.height } as HTMLImageElement;
-    const crop = computeSlotCrop(mockImg, widthMM, heightMM, {
+    // computeSlotCrop handles user rotation; drawSlotImageLocal still draws to w × h.
+    // Compare each source crop axis to that LOCAL dimension, not a rotated bounding box.
+    const crop = computeSlotCrop(dims, widthMM, heightMM, {
       zoom: slot.zoom,
       dragX: slot.dragX,
       dragY: slot.dragY,

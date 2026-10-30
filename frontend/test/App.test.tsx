@@ -1,10 +1,17 @@
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import App from '../src/App';
 import { TemplatePanel } from '../src/components/editor/panels/template-panel';
+import { AppDialogsHost } from '../src/components/editor/workspace/app-dialogs-host';
+import { TooltipProvider } from '../src/components/ui/tooltip';
+import {
+  notifyFreeformTemplateSaved,
+  setFreeformDialogOpen,
+} from '../src/features/freeform-collage/lib/freeform-dialog-state';
 import { useEditorStore } from '../src/lib/editor-store';
+import { GetCustomTemplates } from '../wailsjs/go/main/App';
 
 // Mock Wails v3 generated bindings — هوية الوحدات التي تستوردها App وحقاخها
 // (useAppBootstrap/useAutoSave/useKeyboardShortcuts/logger) مباشرةً عبر @bindings/grido/app.
@@ -22,6 +29,7 @@ vi.mock('@bindings/grido/app', () => ({
   EnhanceImageWithAI: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
   ApplyMaskToImage: vi.fn(() => Promise.resolve('data:image/png;base64,mocked')),
   SetTaskbarProgress: vi.fn(() => Promise.resolve()),
+  SaveCustomTemplateWithMetadata: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock Wails backend functions (شيم wailsjs/go/main/App — تستورده license-slice وبقية الوحدات غير المُرحَّلة)
@@ -245,6 +253,7 @@ describe('Component Testing: UI Rendering', () => {
   });
 
   afterEach(() => {
+    act(() => setFreeformDialogOpen(false));
     cleanup();
   });
 
@@ -297,6 +306,34 @@ describe('Component Testing: UI Rendering', () => {
 
     // التحقق من عرض محتوى تبويب القوالب مباشرة
     expect(await screen.findByText('طقم سفر')).toBeInTheDocument();
+  }, 15000);
+
+  it('opens the freeform collage dialog from the shared app host', async () => {
+    useEditorStore.setState({ accountModalOpen: false });
+    render(
+      <TooltipProvider>
+        <AppDialogsHost
+          exportOpen={false}
+          onExportOpenChange={vi.fn()}
+          printOpen={false}
+          onPrintOpenChange={vi.fn()}
+          crashReport={null}
+          onRecoverCrash={async () => {}}
+          onDismissCrash={async () => {}}
+        />
+      </TooltipProvider>,
+    );
+    expect(screen.queryByRole('dialog', { name: 'الكولاج الحر' })).not.toBeInTheDocument();
+    act(() => setFreeformDialogOpen(true));
+    expect(await screen.findByRole('dialog', { name: 'الكولاج الحر' })).toBeInTheDocument();
+  }, 15000);
+
+  it('reloads custom templates when the freeform editor saves a template', async () => {
+    const callsBefore = vi.mocked(GetCustomTemplates).mock.calls.length;
+    render(<TemplatePanel activeCollageTab="presets" />);
+    await waitFor(() => expect(GetCustomTemplates).toHaveBeenCalledTimes(callsBefore + 1));
+    act(() => notifyFreeformTemplateSaved());
+    await waitFor(() => expect(GetCustomTemplates).toHaveBeenCalledTimes(callsBefore + 2));
   }, 15000);
 
   it('hides only the duplicated panel header when embedded in the compact sheet', async () => {

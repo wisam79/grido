@@ -432,8 +432,8 @@ const CODE_ASSERTIONS = [
   {
     label: 'BUG-CRIT-01 — لا خصم مزدوج لحصة AI (تسجيل واحد في Modal فقط)',
     file: 'internal/service/ai_service.go',
-    mustContain: ['callAIUsageRPC(token, userID, inputImageBytes, true)'],
-    mustNotContain: ['callAIUsageRPC(token, userID, inputImageBytes, false)'],
+    mustContain: ['callAIUsageRPC(ctx, token, userID, inputImageBytes, true)'],
+    mustNotContain: ['callAIUsageRPC(ctx, token, userID, inputImageBytes, false)'],
   },
   {
     label: 'BUG-HIGH-04 — فساد autosave.json يُرجَع خطأً فيوقف التنظيف',

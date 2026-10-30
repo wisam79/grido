@@ -28,6 +28,7 @@ export interface ProjectStateData {
   collageBackgroundGradientColor2?: string | null;
   collageBackgroundGradientAngle?: number;
   collagePendingImages?: string[];
+  autofillImages?: string[];
   autofillSettings?: CollageAutofillSettings;
   elements?: CanvasElement[];
   slots?: CanvasSlot[];
@@ -253,6 +254,8 @@ export interface HistoryEntry {
   collageBackgroundGradientColor2?: string | null;
   collageBackgroundGradientAngle?: number;
   collagePendingImages?: string[];
+  autofillImages?: string[];
+  autofillSettings?: CollageAutofillSettings;
   collageGap?: number;
   collageMargin?: number;
   collageRadius?: number;

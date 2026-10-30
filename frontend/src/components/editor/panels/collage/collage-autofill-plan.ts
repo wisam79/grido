@@ -63,6 +63,8 @@ export interface FillPlan {
   assignments: FillAssignment[];
   /** الصور بترتيب الاستخدام (بعد الخلط إن فُعّل) */
   pool: string[];
+  /** Display occurrence → source occurrence, including identical paths. */
+  poolIndices: number[];
   stats: FillPlanStats;
 }
 
@@ -147,41 +149,7 @@ export function shuffleWithRng<T>(items: readonly T[], rng: () => number): T[] {
   return next;
 }
 
-export const AUTOFILL_IMAGE_LIMIT = 500;
-
-export interface MergeImagesResult {
-  images: string[];
-  added: number;
-  duplicates: number;
-  overflow: number;
-}
-
-/** دمج صور الاستيراد بلا تكرار مع سقف صريح بدل نمو غير محدود */
-export function mergeUniqueImages(
-  existing: readonly string[],
-  picked: readonly string[],
-  limit = AUTOFILL_IMAGE_LIMIT,
-): MergeImagesResult {
-  const seen = new Set(existing);
-  const images = [...existing];
-  let duplicates = 0;
-  let overflow = 0;
-
-  for (const src of picked) {
-    if (seen.has(src)) {
-      duplicates += 1;
-      continue;
-    }
-    if (images.length >= limit) {
-      overflow += 1;
-      continue;
-    }
-    seen.add(src);
-    images.push(src);
-  }
-
-  return { images, added: images.length - existing.length, duplicates, overflow };
-}
+export { AUTOFILL_IMAGE_LIMIT } from '@/lib/schema';
 
 /** نقل عنصر داخل قائمة — يعيد نسخة جديدة حتى عند الرفض لتفادي تعديل الأصل */
 export function moveListItem<T>(items: readonly T[], from: number, to: number): T[] {
@@ -207,8 +175,9 @@ export function buildFillPlan({
   const ordered = orderedCells(grid, order);
   const targets = selectTargets(ordered, mode);
 
-  const uniqueImages = [...new Set(images.filter((src) => src.length > 0))];
-  const pool = shuffle ? shuffleWithRng(uniqueImages, mulberry32(seed)) : [...uniqueImages];
+  const sourceIndices = images.flatMap((src, index) => (src.length > 0 ? [index] : []));
+  const poolIndices = shuffle ? shuffleWithRng(sourceIndices, mulberry32(seed)) : sourceIndices;
+  const pool = poolIndices.map((index) => images[index]);
 
   const assignments: FillAssignment[] = [];
   let repeats = 0;
@@ -240,6 +209,7 @@ export function buildFillPlan({
     targets,
     assignments,
     pool,
+    poolIndices,
     stats: {
       targetCount: targets.length,
       fillCount: assignments.length,

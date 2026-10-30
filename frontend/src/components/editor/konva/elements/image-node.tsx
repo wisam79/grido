@@ -121,6 +121,35 @@ export const URLImage = React.memo(function URLImage({
   const nodeY = element.y * canvasHeight;
   const nodeW = element.width * canvasWidth;
   const nodeH = element.height * canvasHeight;
+  const shown = displayImage ?? image;
+
+  // ⚖️ مطابقة object-fit: cover مع مسار التصدير اليدوي (drawImageCover في export-primitives.ts):
+  // يمنع مطّ وتشويه الوجوه عند تغيير أبعاد الصورة بمقابض الجوانب ويوحّد المعاينة والتصدير 100%.
+  const coverCrop = React.useMemo(() => {
+    if (!shown || nodeW <= 0 || nodeH <= 0) return undefined;
+    const shownW = shown.width || (shown as HTMLImageElement).naturalWidth || 0;
+    const shownH = shown.height || (shown as HTMLImageElement).naturalHeight || 0;
+    if (shownW <= 0 || shownH <= 0) return undefined;
+    const imgRatio = shownW / shownH;
+    const boxRatio = nodeW / nodeH;
+    let cw = shownW;
+    let ch = shownH;
+    let cx = 0;
+    let cy = 0;
+    if (imgRatio > boxRatio) {
+      cw = shownH * boxRatio;
+      cx = (shownW - cw) / 2;
+    } else if (imgRatio < boxRatio) {
+      ch = shownW / boxRatio;
+      cy = (shownH - ch) / 2;
+    }
+    return {
+      cropX: Math.round(cx),
+      cropY: Math.round(cy),
+      cropWidth: Math.max(1, Math.round(cw)),
+      cropHeight: Math.max(1, Math.round(ch)),
+    };
+  }, [shown, nodeW, nodeH]);
 
   // 🚀 إطفاء الظلال أثناء السحب بلا إعادة رسم React (انظر drag-shadow.ts و konva-rendering-invariants).
   const { handleStart: handleShadowlessStart, handleEnd: handleShadowlessEnd } = withShadowlessDrag(
@@ -240,7 +269,11 @@ export const URLImage = React.memo(function URLImage({
         )}
         <KonvaImage
           ref={imageNodeRef as unknown as React.RefObject<Konva.Image>}
-          image={(displayImage ?? image) as unknown as HTMLImageElement}
+          image={shown as unknown as HTMLImageElement}
+          cropX={coverCrop?.cropX}
+          cropY={coverCrop?.cropY}
+          cropWidth={coverCrop?.cropWidth}
+          cropHeight={coverCrop?.cropHeight}
           x={0}
           y={0}
           width={nodeW}

@@ -1,12 +1,19 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { toast } from 'sonner';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { ExportDialog } from '../src/components/editor/dialogs/export-dialog';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { useEditorStore } from '../src/lib/editor-store';
-import { exportCanvas, downloadBlob, runCmykExport } from '../src/lib/export';
+import {
+  exportCanvas,
+  exportSlotCanvas,
+  downloadBlob,
+  runCmykExport,
+  applyBleedAndCropMarks,
+} from '../src/lib/export';
+import { SelectExportDirectory } from '../wailsjs/go/main/App';
 
 // مسار CMYK: لقطة الكانفاس تُرفع ثم يحوّلها محرك الطباعة في Go، فنقرأ الملف الناتج.
 vi.mock('../src/lib/export', () => ({
@@ -49,12 +56,35 @@ const clickExportAndSettle = async () => {
     fireEvent.click(screen.getByRole('button', { name: 'تصدير' }));
     await new Promise((r) => setTimeout(r, 90));
   });
+  await waitFor(() => expect(screen.getByRole('button', { name: 'تصدير' })).toBeEnabled());
 };
+
+class DecodedImage {
+  static fail = false;
+  naturalWidth = 1200;
+  naturalHeight = 1200;
+  width = 120;
+  height = 120;
+  onload: (() => void) | null = null;
+  onerror: ((e: unknown) => void) | null = null;
+  set src(_value: string) {
+    queueMicrotask(() =>
+      DecodedImage.fail ? this.onerror?.(new Error('unreadable')) : this.onload?.(),
+    );
+  }
+}
 
 describe('ExportDialog Component Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useEditorStore.getState().reset();
+    DecodedImage.fail = false;
+    vi.stubGlobal('Image', DecodedImage);
+    vi.mocked(SelectExportDirectory).mockResolvedValue('C:/mock/export');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   const renderWithProviders = (ui: React.ReactElement) => {
@@ -93,6 +123,125 @@ describe('ExportDialog Component Tests', () => {
     fireEvent.click(cancelBtn);
 
     expect(handleOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  describe('R-04: preflight covers every export branch', () => {
+    const setupCollage = (zoom = 1) => {
+      useEditorStore.setState({
+        mode: 'collage',
+        template: null,
+        collageTemplate: null,
+        canvasWidth: 2400,
+        canvasHeight: 1200,
+        collageMargin: 0,
+        collageGap: 0,
+        slots: [
+          {
+            id: 'photo',
+            cellIndex: 0,
+            x: 0,
+            y: 0,
+            w: 0.5,
+            h: 1,
+            imageSrc: '/local-image/photo.jpg',
+            zoom,
+            dragX: 0,
+            dragY: 0,
+          },
+        ],
+        printSettings: { ...useEditorStore.getState().printSettings, dpi: 300 },
+      });
+    };
+    const selectBranch = (branch: string) => {
+      if (branch === 'cmyk') fireEvent.click(screen.getByText('CMYK'));
+      if (branch === 'batch')
+        fireEvent.click(screen.getByRole('switch', { name: 'تصدير الصور كملفات منفصلة' }));
+    };
+
+    it.each(['rgb', 'cmyk', 'batch'])(
+      'blocks unreadable sources before rendering or saving in %s',
+      async (branch) => {
+        setupCollage();
+        DecodedImage.fail = true;
+        renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+        selectBranch(branch);
+        await clickExportAndSettle();
+        expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('تعذر قراءة صورة الخانة'));
+        expect(mockExportCanvas).not.toHaveBeenCalled();
+        expect(mockRunCmykExport).not.toHaveBeenCalled();
+        expect(exportSlotCanvas).not.toHaveBeenCalled();
+        expect(SelectExportDirectory).not.toHaveBeenCalled();
+        expect(mockDownloadBlob).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(['rgb', 'cmyk', 'batch'])(
+      'uses per-slot physical size with a cold cache in %s',
+      async (branch) => {
+        setupCollage();
+        renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+        selectBranch(branch);
+        await clickExportAndSettle();
+        // The slot is 1200px = 101.6mm, not the 2400px page (203.2mm).
+        expect(toast.warning).not.toHaveBeenCalled();
+        expect(toast.error).not.toHaveBeenCalled();
+        expect(mockDownloadBlob).toHaveBeenCalledTimes(1);
+        if (branch === 'batch') expect(exportSlotCanvas).toHaveBeenCalledWith('photo', 'png', 0.95);
+        if (branch === 'cmyk')
+          expect(mockRunCmykExport).toHaveBeenCalledWith(
+            expect.objectContaining({
+              paperWidthMM: 203.2,
+              paperHeightMM: 101.6,
+              dpi: 300,
+            }),
+          );
+      },
+    );
+
+    it.each(['rgb', 'cmyk', 'batch'])('warns at zoom 2 without blocking %s', async (branch) => {
+      setupCollage(2);
+      renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+      selectBranch(branch);
+      await clickExportAndSettle();
+      expect(toast.warning).toHaveBeenCalledWith(expect.stringContaining('≈ 150DPI'));
+      expect(mockDownloadBlob).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses exported DPI rather than different project DPI for geometry and bleed', async () => {
+      setupCollage();
+      useEditorStore.setState({
+        template: {
+          id: 'custom',
+          name: 'Custom',
+          width: 2400,
+          height: 1200,
+          widthMM: 999,
+          heightMM: 999,
+          dpi: 150,
+          category: 'collage',
+          background: '#fff',
+          backgroundHint: '',
+        },
+        printSettings: { ...useEditorStore.getState().printSettings, dpi: 600 },
+      });
+      renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
+      await clickExportAndSettle();
+      expect(toast.warning).toHaveBeenCalledWith(expect.stringContaining('≈ 150DPI'));
+      expect(applyBleedAndCropMarks).toHaveBeenCalledWith(
+        expect.any(Blob),
+        0,
+        false,
+        'png',
+        0.95,
+        150,
+      );
+      expect(mockDownloadBlob).toHaveBeenCalledWith(
+        expect.any(Blob),
+        expect.any(String),
+        undefined,
+        150,
+      );
+    });
   });
 
   describe('مدخل فضاء الألوان CMYK', () => {

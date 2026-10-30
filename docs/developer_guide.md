@@ -170,6 +170,18 @@ Background removal is powered by **`selfie_multiclass.tflite`** running entirely
 - **Real Cancellation:** Cancel = hard `terminate()` of the Worker from the host (`use-bg-removal.ts`), aborting inference instantly; a fresh Worker is spawned per operation.
 - **Blob-to-Base64 Offloading:** Converting the mask bytes to a `base64` string is performed **inside the Web Worker** using a chunked array buffer loop. The base64 data is then sent to Wails, bypassing the slow synchronous `FileReader` blocking on the main UI thread.
 
+### Cloud AI Restoration (Modal) — النقل والتطبيق المباشر
+
+- **مهلة كلية واحدة:** `EnhanceImageWithAI` يفتح `context.WithTimeout` بـ `aiEnhancementBudget = 180s` في `internal/service/ai_service.go` ويستخدمه في طلب Modal واستدعاء حصة Supabase؛ مهلة الواجهة 200s أطول عمداً فلا تقطع الخادم. لا إعادة محاولة تلقائية للاستدلال (قد تستهلك محاولة حصة ثانية).
+- **تسجيل الحصة:** `callAIUsageRPC(ctx, token, userID, inputImageBytes, true)` فحص `check_only` قبل الطلب، والحجز النهائي داخل Modal. لا خصم مزدوج في Go، وتُحسب الحصة ذرياً بعد نجاح الاستدلال.
+- **تطبيق مباشر بتراجع موحد:** `use-ai-enhance.ts` يطبّق الناتج مباشرة على الكانفاس عبر `commitAiImageResult` (خطوة تراجع واحدة بـ Ctrl+Z) مع عداد تقدم سلس وتفادي الاستبدال العشوائي عبر فحص مطابقة جلسة المستند وهوية الهدف عبر `document-session.ts` و`findLiveAiTarget`.
+- **حدود:** لا يعفي هذا من قبول الجودة البصري أو ترخيص CodeFormer التجاري أو التحقق الحيّ عبر Modal.
+
+### تنظيف الوسائط — حماية كل حقول المراجع
+
+- `cleanupProjects` في `internal/repository/media_cleanup.go` يجلب `elements, slots, template, collage_template, print_settings, editor_state` صراحةً، ويستخدمه مسارا `runCleanupMedia` و`CleanUnusedMediaNow`. أي حقل مراجع جديد في `collectReferencedImages` يجب أن يُضاف إلى هذا الاستعلام وإلا اعتُبرت صوره يتيمة.
+- فشل قراءة autosave أو القوالب المخصصة يوقف التنظيف (fail-closed) بدل اعتبار صور العمل الجاري مهجورة.
+
 ---
 
 ## 5. Build, Run, & Test

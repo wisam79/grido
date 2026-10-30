@@ -36,11 +36,13 @@ interface TextEditingOverlayProps {
   setEditingTextId: (id: string | null) => void;
 }
 
-function cssGradientStops(stops: Array<number | string> | undefined): string {
+function cssGradientStops(stops: Array<number | string> | undefined, minRatio = 0): string {
   const list = stops && stops.length >= 4 ? stops : [0, gradientStart(), 1, gradientEnd()];
+  const clampedMin = Math.max(0, Math.min(1, minRatio));
   const parts: string[] = [];
   for (let i = 0; i + 1 < list.length; i += 2) {
-    const pos = Math.max(0, Math.min(1, Number(list[i])));
+    const rawPos = Math.max(0, Math.min(1, Number(list[i])));
+    const pos = clampedMin + rawPos * (1 - clampedMin);
     parts.push(`${String(list[i + 1])} ${(pos * 100).toFixed(2)}%`);
   }
   return parts.join(', ');
@@ -65,9 +67,15 @@ function buildFillStyle(el: TextElement, w: number, h: number): CSSProperties {
   }
   if (el.fillType === 'radial') {
     const start = el.fillRadialGradientStartPoint || { x: 0.5, y: 0.5 };
-    const radius = (el.fillRadialGradientEndRadius ?? 0.5) * Math.max(w, h);
+    const endRadiusNorm = Math.max(0.0001, el.fillRadialGradientEndRadius ?? 0.5);
+    const startRadiusNorm = Math.max(
+      0,
+      Math.min(endRadiusNorm, el.fillRadialGradientStartRadius ?? 0),
+    );
+    const radius = endRadiusNorm * Math.max(w, h);
+    const minRatio = startRadiusNorm / endRadiusNorm;
     return {
-      backgroundImage: `radial-gradient(circle ${radius}px at ${start.x * 100}% ${start.y * 100}%, ${cssGradientStops(el.fillRadialGradientColorStops)})`,
+      backgroundImage: `radial-gradient(circle ${radius}px at ${start.x * 100}% ${start.y * 100}%, ${cssGradientStops(el.fillRadialGradientColorStops, minRatio)})`,
       backgroundClip: 'text',
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',

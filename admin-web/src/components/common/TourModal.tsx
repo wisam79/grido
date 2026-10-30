@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
+import { acquireLandingDialog } from "../../lib/landing/dialog-state";
 
 export interface TourStep {
   title: string;
@@ -13,10 +14,6 @@ interface LandingModalProps {
   children: ReactNode;
   wide?: boolean;
 }
-
-let scrollLocks = 0;
-let savedOverflow = "";
-let savedOverflowPriority = "";
 
 export function LandingModal({
   title,
@@ -41,24 +38,11 @@ export function LandingModal({
         ? document.activeElement
         : null;
     dialog.showModal();
-    if (scrollLocks++ === 0) {
-      savedOverflow = document.body.style.getPropertyValue("overflow");
-      savedOverflowPriority =
-        document.body.style.getPropertyPriority("overflow");
-      document.body.style.setProperty("overflow", "hidden");
-    }
+    const releaseDialog = acquireLandingDialog();
     closeRef.current?.focus({ preventScroll: true });
     return () => {
       if (dialog.open) dialog.close();
-      if (--scrollLocks === 0) {
-        if (savedOverflow)
-          document.body.style.setProperty(
-            "overflow",
-            savedOverflow,
-            savedOverflowPriority,
-          );
-        else document.body.style.removeProperty("overflow");
-      }
+      releaseDialog();
       if (opener?.isConnected) opener.focus({ preventScroll: true });
     };
   }, []);

@@ -547,6 +547,87 @@ func TestCleanUnusedMediaNow(t *testing.T) {
 	}
 }
 
+func TestCleanupUnusedMedia_EditorStateReferenceIsProtected(t *testing.T) {
+	tempDir := t.TempDir()
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	t.Setenv("GRIDO_APP_DIR", appDir)
+
+	mediaDir := filepath.Join(appDir, "Media")
+	trashDir := filepath.Join(appDir, "MediaTrash")
+	_ = os.MkdirAll(mediaDir, 0755)
+
+	autoProtected := filepath.Join(mediaDir, "editor-state-auto.jpg")
+	autoOrphan := filepath.Join(mediaDir, "orphan-auto.jpg")
+	manualProtected := filepath.Join(mediaDir, "editor-state-manual.jpg")
+	manualOrphan := filepath.Join(mediaDir, "orphan-manual.jpg")
+	_ = os.WriteFile(autoProtected, []byte("editor-auto"), 0644)
+	_ = os.WriteFile(autoOrphan, []byte("orphan-auto-data"), 0644)
+	_ = os.WriteFile(manualProtected, []byte("editor-manual"), 0644)
+	_ = os.WriteFile(manualOrphan, []byte("orphan-manual-data"), 0644)
+
+	tenDaysAgo := time.Now().Add(-10 * 24 * time.Hour)
+	twoDaysAgo := time.Now().Add(-48 * time.Hour)
+	for _, path := range []string{autoProtected, autoOrphan} {
+		if err := os.Chtimes(path, tenDaysAgo, tenDaysAgo); err != nil {
+			t.Fatalf("failed to chtimes %s: %v", path, err)
+		}
+	}
+	for _, path := range []string{manualProtected, manualOrphan} {
+		if err := os.Chtimes(path, twoDaysAgo, twoDaysAgo); err != nil {
+			t.Fatalf("failed to chtimes %s: %v", path, err)
+		}
+	}
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open test db: %v", err)
+	}
+	_ = db.AutoMigrate(&domain.Project{}, &domain.CustomTemplate{})
+
+	// الصور مذكورة فقط داخل EditorState — لا في Elements ولا Slots.
+	// الاستعلام يجب أن يجلب editor_state من الصف الفعلي لا من كائن ذاكرة فارغ.
+	p := &domain.Project{
+		ID:          "proj-editor-state",
+		Name:        "Editor State References",
+		Elements:    `[]`,
+		Slots:       `[]`,
+		EditorState: `{"autofillImages":["/local-image/editor-state-auto.jpg","/local-image/editor-state-manual.jpg"]}`,
+	}
+	_ = db.Save(p)
+
+	dbMu.Lock()
+	dbInstance = db
+	dbMu.Unlock()
+	defer func() {
+		dbMu.Lock()
+		dbInstance = nil
+		dbMu.Unlock()
+	}()
+
+	runCleanupMedia()
+
+	if _, err := os.Stat(autoProtected); os.IsNotExist(err) {
+		t.Error("expected EditorState-referenced editor-state-auto.jpg to remain in Media/")
+	}
+	if _, err := os.Stat(filepath.Join(trashDir, "orphan-auto.jpg")); os.IsNotExist(err) {
+		t.Error("expected unreferenced orphan-auto.jpg to be moved to MediaTrash/")
+	}
+
+	cleanedCount, _, err := CleanUnusedMediaNow()
+	if err != nil {
+		t.Fatalf("CleanUnusedMediaNow returned error: %v", err)
+	}
+	if cleanedCount != 1 {
+		t.Errorf("expected 1 cleaned file in manual cleanup, got %d", cleanedCount)
+	}
+	if _, err := os.Stat(manualProtected); os.IsNotExist(err) {
+		t.Error("expected EditorState-referenced editor-state-manual.jpg to remain in Media/")
+	}
+	if _, err := os.Stat(filepath.Join(trashDir, "orphan-manual.jpg")); os.IsNotExist(err) {
+		t.Error("expected unreferenced orphan-manual.jpg to be moved to MediaTrash/")
+	}
+}
+
 func TestCollectReferencedImages_EdgeCases(t *testing.T) {
 	tempDir := t.TempDir()
 	appDir := filepath.Join(tempDir, "GridoStudio")

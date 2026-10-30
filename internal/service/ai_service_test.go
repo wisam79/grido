@@ -1,12 +1,17 @@
 package service
 
 import (
+	"bytes"
+	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"image"
 	"image/color"
+	"image/jpeg"
 	"image/png"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -17,9 +22,83 @@ import (
 	"time"
 )
 
+type aiTestRoundTripper func(*http.Request) (*http.Response, error)
+
+func (f aiTestRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+// No test may fall back to production endpoints, even with build-time credentials.
+func isolateAITransport(t *testing.T) {
+	t.Helper()
+	oldURL, oldKey, oldModal := SupabaseURL, SupabaseAnonKey, ModalAIURL
+	oldAuth, oldUsage, oldEnhance := aiSupabaseClient, aiUsageClient, aiEnhanceClient
+	userPlanCacheMu.Lock()
+	oldCache := userPlanCache
+	userPlanCache = make(map[string]userPlanCacheEntry)
+	userPlanCacheMu.Unlock()
+	SupabaseURL, SupabaseAnonKey, ModalAIURL = "", "", "http://127.0.0.1:1"
+	transport := aiTestRoundTripper(func(r *http.Request) (*http.Response, error) {
+		if host := r.URL.Hostname(); host != "127.0.0.1" && host != "::1" && host != "localhost" {
+			return nil, fmt.Errorf("non-loopback HTTP is forbidden in AI tests")
+		}
+		return http.DefaultTransport.RoundTrip(r)
+	})
+	aiSupabaseClient = &http.Client{Transport: transport, Timeout: 10 * time.Second}
+	aiUsageClient = &http.Client{Transport: transport, Timeout: 15 * time.Second}
+	aiEnhanceClient = &http.Client{Transport: transport, Timeout: aiEnhancementBudget}
+	t.Cleanup(func() {
+		SupabaseURL, SupabaseAnonKey, ModalAIURL = oldURL, oldKey, oldModal
+		aiSupabaseClient, aiUsageClient, aiEnhanceClient = oldAuth, oldUsage, oldEnhance
+		userPlanCacheMu.Lock()
+		userPlanCache = oldCache
+		userPlanCacheMu.Unlock()
+	})
+}
+
+func aiTestPNG(t *testing.T) string {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, image.NewNRGBA(image.Rect(0, 0, 3, 2))); err != nil {
+		t.Fatal(err)
+	}
+	return "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+}
+
+func aiTestResponse(body string) *http.Response {
+	return &http.Response{
+		StatusCode: http.StatusOK, Header: make(http.Header),
+		Body: io.NopCloser(strings.NewReader(body)), ContentLength: int64(len(body)),
+	}
+}
+
+func aiTestSuccessBody(t *testing.T) string {
+	t.Helper()
+	body, err := json.Marshal(map[string]interface{}{
+		"success": true, "usage_recorded": true, "image": aiTestPNG(t),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(body)
+}
+
+func assertAILocalCount(t *testing.T, token string, want int) {
+	t.Helper()
+	key := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))[:16]
+	GlobalAIRateLimiter.mu.Lock()
+	defer GlobalAIRateLimiter.mu.Unlock()
+	count := 0
+	if entry := GlobalAIRateLimiter.usage[key]; entry != nil {
+		count = entry.Count
+	}
+	if count != want {
+		t.Errorf("local count = %d, want %d", count, want)
+	}
+}
+
 // TestEnhanceImageWithAI_Success verifies end-to-end connection, payload structure,
 // User-Agent header, trailing slash cleanup, and successful JSON response parsing.
 func TestEnhanceImageWithAI_Success(t *testing.T) {
+	isolateAITransport(t)
 	tempDir := t.TempDir()
 	t.Setenv("GRIDO_APP_DIR", tempDir)
 
@@ -71,14 +150,14 @@ func TestEnhanceImageWithAI_Success(t *testing.T) {
 			return
 		}
 
-		if reqPayload.Image != "data:image/jpeg;base64,sample" {
+		if reqPayload.Image != aiTestPNG(t) {
 			t.Errorf("Unexpected image data: %s", reqPayload.Image)
 		}
 
 		// 5. Send Successful 200 OK Response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"image": "data:image/jpeg;base64,enhanced", "execution_seconds": 2.4, "total_cost_usd": 0.0012}`))
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"image": aiTestPNG(t), "execution_seconds": 2.4, "total_cost_usd": 0.0012})
 	}))
 	defer ts.Close()
 
@@ -87,7 +166,7 @@ func TestEnhanceImageWithAI_Success(t *testing.T) {
 	defer func() { ModalAIURL = "" }()
 
 	aiSvc := NewAIService()
-	respStr, err := aiSvc.EnhanceImageWithAI("data:image/jpeg;base64,sample", "test-jwt-token", 5)
+	respStr, err := aiSvc.EnhanceImageWithAI(aiTestPNG(t), "test-jwt-token", 5)
 
 	if err != nil {
 		t.Fatalf("EnhanceImageWithAI failed unexpectedly: %v", err)
@@ -101,7 +180,7 @@ func TestEnhanceImageWithAI_Success(t *testing.T) {
 		t.Fatalf("Failed to parse returned JSON: %v", err)
 	}
 
-	if resp.Image != "data:image/jpeg;base64,enhanced" {
+	if resp.Image != aiTestPNG(t) {
 		t.Errorf("Expected enhanced image, got '%s'", resp.Image)
 	}
 }
@@ -109,7 +188,7 @@ func TestEnhanceImageWithAI_Success(t *testing.T) {
 // TestEnhanceImageWithAI_Unauthenticated verifies that empty tokens are rejected immediately.
 func TestEnhanceImageWithAI_Unauthenticated(t *testing.T) {
 	aiSvc := NewAIService()
-	_, err := aiSvc.EnhanceImageWithAI("data:image/jpeg;base64,sample", "", 5)
+	_, err := aiSvc.EnhanceImageWithAI(aiTestPNG(t), "", 5)
 	if err == nil {
 		t.Error("Expected error for empty token, got nil")
 	}
@@ -120,6 +199,7 @@ func TestEnhanceImageWithAI_Unauthenticated(t *testing.T) {
 
 // TestEnhanceImageWithAI_HTTPError_Rollback verifies rate limit rollback on HTTP 404 or 500 error.
 func TestEnhanceImageWithAI_HTTPError_Rollback(t *testing.T) {
+	isolateAITransport(t)
 	tempDir := t.TempDir()
 	t.Setenv("GRIDO_APP_DIR", tempDir)
 
@@ -148,7 +228,7 @@ func TestEnhanceImageWithAI_HTTPError_Rollback(t *testing.T) {
 	defer func() { ModalAIURL = "" }()
 
 	aiSvc := NewAIService()
-	_, err := aiSvc.EnhanceImageWithAI("data:image/jpeg;base64,sample", "test-jwt-rollback", 5)
+	_, err := aiSvc.EnhanceImageWithAI(aiTestPNG(t), "test-jwt-rollback", 5)
 
 	if err == nil {
 		t.Error("Expected error for 404 response, got nil")
@@ -296,6 +376,7 @@ func TestAIRateLimiter_SyncFromServerIsAuthoritative(t *testing.T) {
 
 // TestCallAIUsageRPC_ParsesServerQuota يُثبت أن لقطة الحصة الخادمية تُقرأ من الرد.
 func TestCallAIUsageRPC_ParsesServerQuota(t *testing.T) {
+	isolateAITransport(t)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasSuffix(r.URL.Path, "/rpc/check_and_record_ai_usage") {
 			t.Errorf("unexpected path: %s", r.URL.Path)
@@ -312,7 +393,7 @@ func TestCallAIUsageRPC_ParsesServerQuota(t *testing.T) {
 	SupabaseURL, SupabaseAnonKey = ts.URL, "test-anon-key"
 	defer func() { SupabaseURL, SupabaseAnonKey = oldURL, oldKey }()
 
-	snapshot, err := callAIUsageRPC("quota-token", "user-1", 1024, true)
+	snapshot, err := callAIUsageRPC(context.Background(), "quota-token", "user-1", 1024, true)
 	if err != nil {
 		t.Fatalf("callAIUsageRPC failed: %v", err)
 	}
@@ -328,6 +409,7 @@ func TestCallAIUsageRPC_ParsesServerQuota(t *testing.T) {
 // الحصة الخادمية (used_today/daily_limit) في نفس رد التحسين، وأن المُقيِّد المحلي
 // يُزامن عليها — فلا تحسب الواجهة حصتها بنفسها.
 func TestEnhanceImageWithAI_InjectsServerQuotaSnapshot(t *testing.T) {
+	isolateAITransport(t)
 	isolateGlobalRateLimiter(t)
 
 	supabase := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -347,7 +429,7 @@ func TestEnhanceImageWithAI_InjectsServerQuotaSnapshot(t *testing.T) {
 
 	modal := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"image": "data:image/jpeg;base64,enhanced", "execution_seconds": 2.4, "total_cost_usd": 0.0012}`))
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"image": aiTestPNG(t), "execution_seconds": 2.4, "total_cost_usd": 0.0012})
 	}))
 	defer modal.Close()
 
@@ -357,7 +439,7 @@ func TestEnhanceImageWithAI_InjectsServerQuotaSnapshot(t *testing.T) {
 
 	token := "test-jwt-quota-inject"
 	aiSvc := NewAIService()
-	respStr, err := aiSvc.EnhanceImageWithAI("data:image/jpeg;base64,sample", token, 5)
+	respStr, err := aiSvc.EnhanceImageWithAI(aiTestPNG(t), token, 5)
 	if err != nil {
 		t.Fatalf("EnhanceImageWithAI failed: %v", err)
 	}
@@ -370,7 +452,7 @@ func TestEnhanceImageWithAI_InjectsServerQuotaSnapshot(t *testing.T) {
 	if err := json.Unmarshal([]byte(respStr), &resp); err != nil {
 		t.Fatalf("failed to parse response: %v", err)
 	}
-	if resp.Image != "data:image/jpeg;base64,enhanced" {
+	if resp.Image != aiTestPNG(t) {
 		t.Errorf("expected the Modal image to be preserved, got %q", resp.Image)
 	}
 	// العدّاد الخادمي قبل الطلب = 2، وهذه العملية مسجَّلة مرة واحدة ⇒ 3
@@ -458,6 +540,7 @@ func TestAIRateLimiter_DiskPersistence(t *testing.T) {
 // TestEnhanceImageWithAI_LocalImagePath verifies that /local-image/... paths are resolved directly
 // from disk, resized and encoded to JPEG in Go without requiring frontend pre-encoding.
 func TestEnhanceImageWithAI_LocalImagePath(t *testing.T) {
+	isolateAITransport(t)
 	tempDir := t.TempDir()
 	t.Setenv("GRIDO_APP_DIR", tempDir)
 
@@ -512,7 +595,7 @@ func TestEnhanceImageWithAI_LocalImagePath(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"image": "data:image/png;base64,mock_enhanced",
+			"image": aiTestPNG(t),
 		})
 	}))
 	defer ts.Close()
@@ -530,14 +613,15 @@ func TestEnhanceImageWithAI_LocalImagePath(t *testing.T) {
 	if !strings.HasPrefix(receivedImagePayload, "data:image/jpeg;base64,") {
 		t.Errorf("Expected payload to start with data:image/jpeg;base64, got %s", receivedImagePayload[:min(30, len(receivedImagePayload))])
 	}
-	if !strings.Contains(respStr, "mock_enhanced") {
-		t.Errorf("Expected response to contain mock_enhanced, got %s", respStr)
+	if !strings.Contains(respStr, aiTestPNG(t)) {
+		t.Error("Expected response to contain the enhanced PNG")
 	}
 }
 
 // TestEnhanceImageWithAI_LocalImagePath_TransparentPNG verifies that transparent PNG images
 // preserve their alpha channel and are sent as data:image/png;base64 to prevent black backgrounds.
 func TestEnhanceImageWithAI_LocalImagePath_TransparentPNG(t *testing.T) {
+	isolateAITransport(t)
 	tempDir := t.TempDir()
 	t.Setenv("GRIDO_APP_DIR", tempDir)
 
@@ -596,7 +680,7 @@ func TestEnhanceImageWithAI_LocalImagePath_TransparentPNG(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"image": "data:image/png;base64,mock_enhanced_png",
+			"image": aiTestPNG(t),
 		})
 	}))
 	defer ts.Close()
@@ -614,7 +698,154 @@ func TestEnhanceImageWithAI_LocalImagePath_TransparentPNG(t *testing.T) {
 	if !strings.HasPrefix(receivedImagePayload, "data:image/png;base64,") {
 		t.Errorf("Expected payload to start with data:image/png;base64, got %s", receivedImagePayload[:min(30, len(receivedImagePayload))])
 	}
-	if !strings.Contains(respStr, "mock_enhanced_png") {
-		t.Errorf("Expected response to contain mock_enhanced_png, got %s", respStr)
+	if !strings.Contains(respStr, aiTestPNG(t)) {
+		t.Error("Expected response to contain the enhanced PNG")
+	}
+}
+
+func TestEnhanceImageWithAI_AlphaAndFitRegressions(t *testing.T) {
+	for _, tc := range []struct {
+		name, ext string
+		alpha     uint8
+		isolated  bool
+		width     int
+		wantType  string
+	}{
+		{"alpha250", ".png", 250, false, 16, "png"},
+		{"alpha251", ".png", 251, false, 16, "png"},
+		{"alpha252", ".png", 252, false, 16, "png"},
+		{"alpha253", ".png", 253, false, 16, "png"},
+		{"alpha254", ".png", 254, false, 16, "png"},
+		{"off-grid", ".png", 0, true, 16, "png"},
+		{"misnamed-png", ".jpg", 0, true, 16, "png"},
+		{"opaque", ".png", 255, false, 16, "jpeg"},
+		{"opaque-fit", ".png", 255, false, 4096, "jpeg"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			isolateAITransport(t)
+			isolateGlobalRateLimiter(t)
+			mediaDir := filepath.Join(os.Getenv("GRIDO_APP_DIR"), "Media")
+			if err := os.MkdirAll(mediaDir, 0755); err != nil {
+				t.Fatal(err)
+			}
+			img := image.NewNRGBA(image.Rect(0, 0, tc.width, 16))
+			for y := 0; y < 16; y++ {
+				for x := 0; x < tc.width; x++ {
+					a := tc.alpha
+					if tc.isolated && (x != 1 || y != 1) {
+						a = 255
+					}
+					img.SetNRGBA(x, y, color.NRGBA{R: 200, G: 100, B: 50, A: a})
+				}
+			}
+			var source bytes.Buffer
+			if err := png.Encode(&source, img); err != nil {
+				t.Fatal(err)
+			}
+			name := "fixture" + tc.ext
+			if err := os.WriteFile(filepath.Join(mediaDir, name), source.Bytes(), 0600); err != nil {
+				t.Fatal(err)
+			}
+			var sent string
+			aiEnhanceClient.Transport = aiTestRoundTripper(func(r *http.Request) (*http.Response, error) {
+				var payload struct{ Image string }
+				if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+					return nil, err
+				}
+				sent = payload.Image
+				return aiTestResponse(aiTestSuccessBody(t)), nil
+			})
+			if _, err := NewAIService().EnhanceImageWithAI("/local-image/"+name, "alpha-token", 5); err != nil {
+				t.Fatal(err)
+			}
+			if !strings.HasPrefix(sent, "data:image/"+tc.wantType+";base64,") {
+				t.Fatalf("wrong transport image format, wanted %s", tc.wantType)
+			}
+			_, encoded, _ := strings.Cut(sent, ",")
+			data, err := base64.StdEncoding.DecodeString(encoded)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got, _, err := image.Decode(bytes.NewReader(data))
+			if err != nil {
+				t.Fatal(err)
+			}
+			wantWidth, wantHeight := tc.width, 16
+			if tc.width > 2048 {
+				wantWidth, wantHeight = 2048, 8
+			}
+			if got.Bounds().Dx() != wantWidth || got.Bounds().Dy() != wantHeight {
+				t.Fatalf("bounds = %v, want %dx%d", got.Bounds(), wantWidth, wantHeight)
+			}
+			if tc.wantType == "png" {
+				for y := 0; y < 16; y++ {
+					for x := 0; x < tc.width; x++ {
+						_, _, _, a := got.At(x, y).RGBA()
+						want := uint32(img.NRGBAAt(x, y).A) * 257
+						if a != want {
+							t.Fatalf("alpha at (%d,%d) = %d, want %d", x, y, a, want)
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestEnhanceImageWithAI_EXIFOrientation(t *testing.T) {
+	isolateAITransport(t)
+	isolateGlobalRateLimiter(t)
+	mediaDir := filepath.Join(os.Getenv("GRIDO_APP_DIR"), "Media")
+	if err := os.MkdirAll(mediaDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	img := image.NewNRGBA(image.Rect(0, 0, 40, 20))
+	for y := 0; y < 20; y++ {
+		for x := 0; x < 40; x++ {
+			c := color.NRGBA{R: 255, A: 255}
+			if x >= 20 {
+				c = color.NRGBA{B: 255, A: 255}
+			}
+			img.SetNRGBA(x, y, c)
+		}
+	}
+	var jpegData bytes.Buffer
+	if err := jpeg.Encode(&jpegData, img, &jpeg.Options{Quality: 95}); err != nil {
+		t.Fatal(err)
+	}
+	// APP1: little-endian TIFF, one SHORT orientation tag (6 = rotate 90 CW).
+	exif := []byte{'E', 'x', 'i', 'f', 0, 0, 'I', 'I', 42, 0, 8, 0, 0, 0,
+		1, 0, 0x12, 1, 3, 0, 1, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0}
+	source := append([]byte{0xff, 0xd8, 0xff, 0xe1, 0, byte(len(exif) + 2)}, exif...)
+	source = append(source, jpegData.Bytes()[2:]...)
+	if err := os.WriteFile(filepath.Join(mediaDir, "oriented.jpg"), source, 0600); err != nil {
+		t.Fatal(err)
+	}
+	aiEnhanceClient.Transport = aiTestRoundTripper(func(r *http.Request) (*http.Response, error) {
+		var payload struct{ Image string }
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			return nil, err
+		}
+		_, encoded, _ := strings.Cut(payload.Image, ",")
+		data, err := base64.StdEncoding.DecodeString(encoded)
+		if err != nil {
+			return nil, err
+		}
+		got, _, err := image.Decode(bytes.NewReader(data))
+		if err != nil {
+			return nil, err
+		}
+		if got.Bounds().Dx() != 20 || got.Bounds().Dy() != 40 {
+			t.Errorf("EXIF was not applied: %v", got.Bounds())
+		}
+		rTop, _, bTop, _ := got.At(10, 5).RGBA()
+		rBottom, _, bBottom, _ := got.At(10, 35).RGBA()
+		if rTop <= bTop || bBottom <= rBottom {
+			t.Error("EXIF rotation did not move the red/blue halves to top/bottom")
+		}
+		return aiTestResponse(aiTestSuccessBody(t)), nil
+	})
+	if _, err := NewAIService().EnhanceImageWithAI("/local-image/oriented.jpg", "orientation-token", 5); err != nil {
+		t.Fatal(err)
 	}
 }

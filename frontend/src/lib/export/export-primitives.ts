@@ -61,7 +61,7 @@ export interface SlotCrop {
 // في الفضاء المحلي قبل القلب/الدوران (وهو ترتيب Konva: الفلاتر تُطبَّق على
 // صورة العقدة ثم يُطبَّق تحويل العقدة).
 export function computeSlotCrop(
-  img: HTMLImageElement,
+  img: Pick<HTMLImageElement, 'width' | 'height'>,
   w: number,
   h: number,
   slot: SlotTransform,

@@ -11,7 +11,7 @@
 - **الواجهة الأمامية (Frontend):** React 19 + TypeScript + Vite + Tailwind CSS v4 + Zustand v5 + Microsoft Fluent 2 Design System.
 - **محرك الكانفاس (Canvas Engine):** Konva + React-Konva مع معالجة رياضية فائقة الدقة للطباعة (300+ DPI).
 - **الباك إند وسطح المكتب (Backend & Desktop Runtime):** Go 1.26 + Wails v3 (`v3.0.0`) + SQLite (عبر CGO).
-- **الذكاء الاصطناعي السحابي (Cloud AI):** Modal CPU فقط (YuNet + CodeFormer ONNX + Real-ESRGAN compact، ناتج 2x) مقترن مع Supabase Auth & RPC؛ إعداد `cpu=(2,2)` يعادل 4 vCPU وفق تعريف Modal. تفاصيل المسار والهندسة في مهارة `opencv-mediapipe-ai-tuner` و`docs/AI_ARCHITECTURE.md`.
+- **الذكاء الاصطناعي السحابي (Cloud AI):** Modal CPU فقط (YuNet + CodeFormer ONNX مع تكبير خلفية Lanczos4 فائق السرعة، ناتج 2x وسقف 3 وجوه) مقترن مع Supabase Auth & RPC بحجز ذري وتحرير تلقائي (`cancel_ai_quota_reservation`) عند الفشل ومفتاح تكرار من العميل لمنع التكرار (409)؛ إعداد `cpu=(2,2)` يعادل 4 vCPU وفق تعريف Modal. ميزانية الخلفية 180 ثانية (`context.WithTimeout`) ومهلة الواجهة 200 ثانية أطول منها عمداً، ولا إعادة محاولة تلقائية للاستدلال. النتائج تُطبَّق مباشرةً على الكانفاس بحارس طزاثة وتراجع موحد (Ctrl+Z)، وحصة الاستدلال الناجح تُسجَّل ذرياً دون حجب الصورة حال تعثر الاتصال النهائي. تفاصيل المسار والهندسة في مهارة `opencv-mediapipe-ai-tuner` و`docs/AI_ARCHITECTURE.md`.
 - **لوحة الإدارة وصفحة الهبوط (Web & Admin):** React 19 + TypeScript + Vite + Tailwind CSS v4 منشور على GitHub Pages (`grido.cloud-ip.cc`).
 
 ---

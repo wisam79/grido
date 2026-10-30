@@ -13,6 +13,17 @@ import {
 } from '../src/features/freeform-collage/components/freeform-paper-selector';
 import { FreeformRightInspectorPanel } from '../src/features/freeform-collage/components/freeform-right-inspector-panel';
 import { FreeformTopActionBar } from '../src/features/freeform-collage/components/freeform-top-action-bar';
+import { useEditorStore } from '../src/lib/editor-store';
+
+function FreeformSession() {
+  const [open, setOpen] = React.useState(true);
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Reopen editor</button>
+      <FreeformCollageModal open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
 
 describe('Freeform Editor Unit & Component Tests', () => {
   const renderWithProviders = (ui: React.ReactElement) => {
@@ -270,6 +281,71 @@ describe('Freeform Editor Unit & Component Tests', () => {
       fireEvent.pointerUp(cell, { clientX: 600, clientY: 600, pointerId: 1 });
 
       expect(onSlotsChange).toHaveBeenLastCalledWith([expect.objectContaining({ x: 0.8, y: 0.8 })]);
+    });
+  });
+
+  describe('FreeformCollageModal session dismissal', () => {
+    beforeEach(() => useEditorStore.getState().reset());
+    afterEach(() => {
+      vi.restoreAllMocks();
+      useEditorStore.getState().reset();
+    });
+
+    it('closes an untouched draft without a discard prompt', () => {
+      renderWithProviders(<FreeformSession />);
+      fireEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: 'الكولاج الحر' })).not.toBeInTheDocument();
+    });
+
+    it.each(['إلغاء', 'إغلاق'])(
+      'confirms %s and keeps the draft when discard is rejected',
+      async (label) => {
+        const commit = vi.spyOn(useEditorStore.getState(), 'commitCollageLayout');
+        renderWithProviders(<FreeformSession />);
+        fireEvent.click(screen.getByRole('button', { name: /إضافة خلية فارغة/ }));
+        fireEvent.change(screen.getByRole('textbox', { name: 'اسم التخطيط' }), {
+          target: { value: 'مسودة غير مطبقة' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: label }));
+        expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+        expect(commit).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: 'متابعة التحرير' }));
+        expect(screen.getByRole('textbox', { name: 'اسم التخطيط' })).toHaveValue('مسودة غير مطبقة');
+        expect(document.querySelectorAll('[data-slot-id]')).toHaveLength(9);
+        fireEvent.click(screen.getByRole('button', { name: 'إلغاء' }));
+        fireEvent.click(screen.getByRole('button', { name: 'تجاهل التعديلات' }));
+        await waitFor(() =>
+          expect(screen.queryByRole('dialog', { name: 'الكولاج الحر' })).not.toBeInTheDocument(),
+        );
+        expect(commit).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: 'Reopen editor' }));
+        expect(document.querySelectorAll('[data-slot-id]')).toHaveLength(8);
+        expect(screen.getByRole('textbox', { name: 'اسم التخطيط' })).toHaveValue('كولاج حر مخصص');
+      },
+    );
+
+    it('guards Escape on a modified draft', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<FreeformSession />);
+      await user.click(screen.getByRole('button', { name: /إضافة خلية فارغة/ }));
+      await user.keyboard('{Escape}');
+      expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'متابعة التحرير' }));
+      expect(document.querySelectorAll('[data-slot-id]')).toHaveLength(9);
+    });
+
+    it('applies once and closes without a second discard prompt', async () => {
+      const commit = vi.spyOn(useEditorStore.getState(), 'commitCollageLayout');
+      renderWithProviders(<FreeformSession />);
+      fireEvent.click(screen.getByRole('button', { name: /إضافة خلية فارغة/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'تطبيق الكولاج' }));
+      expect(commit).toHaveBeenCalledTimes(1);
+      expect(commit.mock.calls[0][0].cells).toHaveLength(9);
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog', { name: 'الكولاج الحر' })).not.toBeInTheDocument(),
+      );
     });
   });
 

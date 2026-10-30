@@ -23,24 +23,80 @@ interface KonvaImageNodeLike {
     (): CanvasImageSource | undefined;
     (image: CanvasImageSource): void;
   };
+  cropX?: {
+    (): number;
+    (val: number): void;
+  };
+  cropY?: {
+    (): number;
+    (val: number): void;
+  };
+  cropWidth?: {
+    (): number;
+    (val: number): void;
+  };
+  cropHeight?: {
+    (): number;
+    (val: number): void;
+  };
+}
+
+interface UpgradedImageRecord {
+  node: KonvaImageNodeLike;
+  image: CanvasImageSource;
+  crop?: { x: number; y: number; width: number; height: number };
+}
+
+function getSourceDimensions(src: CanvasImageSource): { width: number; height: number } {
+  const img = src as HTMLImageElement & { width?: number; height?: number };
+  return {
+    width: img.naturalWidth || img.width || 0,
+    height: img.naturalHeight || img.height || 0,
+  };
 }
 
 /**
- * يستبدل نسخ العرض المخفّضة (2048px) بالصور الأصلية قبل الالتقاط.
- * بدون ذلك كان الطباعة/التصدير يكبّرون نسخة العرض فينخفض الحساب الفعلي
- * تحت 300DPI رغم طلب نسبة عالية. يعيد قائمة الاستعادة.
+ * يستبدل نسخ العرض المخفّضة (2048px) بالصور الأصلية قبل الالتقاط،
+ * مع تحجيم إحداثيات القص (cropX/Y/Width/Height) بالتناسب مع أبعاد الأصل.
+ * بدون ذلك كان الطباعة/التصدير يكبّرون نسخة العرض أو يقصّون الزاوية العلوية
+ * فقط من الصورة الكاملة. يعيد قائمة الاستعادة.
  */
-function upgradeImagesToFullResolution(
-  stage: Konva.Stage,
-): { node: KonvaImageNodeLike; image: CanvasImageSource }[] {
-  const restored: { node: KonvaImageNodeLike; image: CanvasImageSource }[] = [];
+function upgradeImagesToFullResolution(stage: Konva.Stage): UpgradedImageRecord[] {
+  const restored: UpgradedImageRecord[] = [];
   try {
     const nodes = stage.find('Image') as unknown as KonvaImageNodeLike[];
     for (const node of nodes) {
       const current = node.image();
       const source = getDisplaySource(current as HTMLCanvasElement | null);
       if (source && current !== source) {
-        restored.push({ node, image: current as CanvasImageSource });
+        const record: UpgradedImageRecord = { node, image: current as CanvasImageSource };
+        const curDims = getSourceDimensions(current as CanvasImageSource);
+        const srcDims = getSourceDimensions(source);
+        const cw = typeof node.cropWidth === 'function' ? node.cropWidth() : 0;
+        const ch = typeof node.cropHeight === 'function' ? node.cropHeight() : 0;
+        if (
+          cw > 0 &&
+          ch > 0 &&
+          curDims.width > 0 &&
+          curDims.height > 0 &&
+          srcDims.width > 0 &&
+          srcDims.height > 0 &&
+          typeof node.cropX === 'function' &&
+          typeof node.cropY === 'function' &&
+          typeof node.cropWidth === 'function' &&
+          typeof node.cropHeight === 'function'
+        ) {
+          const cx = node.cropX();
+          const cy = node.cropY();
+          record.crop = { x: cx, y: cy, width: cw, height: ch };
+          const sx = srcDims.width / curDims.width;
+          const sy = srcDims.height / curDims.height;
+          node.cropX(Math.round(cx * sx));
+          node.cropY(Math.round(cy * sy));
+          node.cropWidth(Math.round(cw * sx));
+          node.cropHeight(Math.round(ch * sy));
+        }
+        restored.push(record);
         node.image(source);
       }
     }
@@ -51,12 +107,22 @@ function upgradeImagesToFullResolution(
   return restored;
 }
 
-function restoreImageNodes(
-  restored: { node: KonvaImageNodeLike; image: CanvasImageSource }[],
-): void {
+function restoreImageNodes(restored: UpgradedImageRecord[]): void {
   for (const item of restored) {
     try {
       item.node.image(item.image);
+      if (
+        item.crop &&
+        typeof item.node.cropX === 'function' &&
+        typeof item.node.cropY === 'function' &&
+        typeof item.node.cropWidth === 'function' &&
+        typeof item.node.cropHeight === 'function'
+      ) {
+        item.node.cropX(item.crop.x);
+        item.node.cropY(item.crop.y);
+        item.node.cropWidth(item.crop.width);
+        item.node.cropHeight(item.crop.height);
+      }
     } catch {
       // تجاهل عقدة دُمّرت أثناء الالتقاط
     }
@@ -200,8 +266,10 @@ export async function captureStageBlob(
   captureRect?: { x: number; y: number; width: number; height: number },
   options?: CaptureStageOptions,
 ): Promise<Blob | null> {
-  const cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
+  // 🔄 ترقية الصور إلى الدقة الكاملة أولاً قبل إعادة بناء كاش الفلاتر،
+  // حتى يُخبز كاش التصدير من الصورة الأصلية الكاملة وإحداثيات قصّها المحجّمة.
   const upgradedImages = options?.useFullResolution ? upgradeImagesToFullResolution(stage) : [];
+  const cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
 
   // 🧭 في معمارية Viewport Canvas: الـ Stage يحمل إزاحة وزوم مؤقتين.
   // نحفظ الموضع والمقياس ونعيدهما إلى (0,0) و scale=1 لحظياً أثناء الالتقاط لضمان
@@ -235,9 +303,9 @@ export async function captureStageBlob(
     stage.position(prevPos);
     stage.scale(prevScale);
     stage.batchDraw();
-    // إعادة كاش العناصر للعرض العادي على الشاشة للحفاظ على سلاسة الأداء وخفة الذاكرة
-    restoreScreenCache(cachedNodes);
+    // إعادة نسخ العرض المخفّضة أولاً ثم كاش الشاشة للحفاظ على سلاسة الأداء وخفة الذاكرة
     restoreImageNodes(upgradedImages);
+    restoreScreenCache(cachedNodes);
     if (upgradedImages.length > 0) stage.batchDraw();
   }
 }

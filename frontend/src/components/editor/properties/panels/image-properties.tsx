@@ -94,66 +94,80 @@ export function ImageAdjustProperties({
           </div>
         </div>
 
-        <FluentSliderField
-          label="السطوع"
-          value={element.brightness ?? 100}
-          min={0}
-          max={200}
-          step={1}
-          unit="%"
-          onChange={(v) => onUpdate(element.id, { brightness: v })}
-          onCommit={() => {
-            useRenderQuality.getState().setIsDraggingFilter(false);
-            useEditorStore.getState().pushHistory();
-          }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
-          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-        />
-        <FluentSliderField
-          label="التباين"
-          value={element.contrast ?? 100}
-          min={0}
-          max={200}
-          step={1}
-          unit="%"
-          onChange={(v) => onUpdate(element.id, { contrast: v })}
-          onCommit={() => {
-            useRenderQuality.getState().setIsDraggingFilter(false);
-            useEditorStore.getState().pushHistory();
-          }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
-          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-        />
-        <FluentSliderField
-          label="التشبع"
-          value={element.saturation ?? 100}
-          min={0}
-          max={200}
-          step={1}
-          unit="%"
-          onChange={(v) => onUpdate(element.id, { saturation: v })}
-          onCommit={() => {
-            useRenderQuality.getState().setIsDraggingFilter(false);
-            useEditorStore.getState().pushHistory();
-          }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
-          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-        />
-        <FluentSliderField
-          label="الضبابية"
-          value={element.blur ?? 0}
-          min={0}
-          max={20}
-          step={1}
-          unit="px"
-          onChange={(v) => onUpdate(element.id, { blur: v })}
-          onCommit={() => {
-            useRenderQuality.getState().setIsDraggingFilter(false);
-            useEditorStore.getState().pushHistory();
-          }}
-          onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
-          onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
-        />
+        <div className="space-y-1.5 pt-1">
+          <FluentSliderField
+            label="السطوع"
+            layout="inline"
+            labelWidth="w-14"
+            value={element.brightness ?? 100}
+            min={0}
+            max={200}
+            step={1}
+            unit="%"
+            defaultValue={100}
+            onChange={(v) => onUpdate(element.id, { brightness: v })}
+            onCommit={() => {
+              useRenderQuality.getState().setIsDraggingFilter(false);
+              useEditorStore.getState().pushHistory();
+            }}
+            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
+            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+          />
+          <FluentSliderField
+            label="التباين"
+            layout="inline"
+            labelWidth="w-14"
+            value={element.contrast ?? 100}
+            min={0}
+            max={200}
+            step={1}
+            unit="%"
+            defaultValue={100}
+            onChange={(v) => onUpdate(element.id, { contrast: v })}
+            onCommit={() => {
+              useRenderQuality.getState().setIsDraggingFilter(false);
+              useEditorStore.getState().pushHistory();
+            }}
+            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
+            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+          />
+          <FluentSliderField
+            label="التشبع"
+            layout="inline"
+            labelWidth="w-14"
+            value={element.saturation ?? 100}
+            min={0}
+            max={200}
+            step={1}
+            unit="%"
+            defaultValue={100}
+            onChange={(v) => onUpdate(element.id, { saturation: v })}
+            onCommit={() => {
+              useRenderQuality.getState().setIsDraggingFilter(false);
+              useEditorStore.getState().pushHistory();
+            }}
+            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
+            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+          />
+          <FluentSliderField
+            label="الضبابية"
+            layout="inline"
+            labelWidth="w-14"
+            value={element.blur ?? 0}
+            min={0}
+            max={20}
+            step={1}
+            unit="px"
+            defaultValue={0}
+            onChange={(v) => onUpdate(element.id, { blur: v })}
+            onCommit={() => {
+              useRenderQuality.getState().setIsDraggingFilter(false);
+              useEditorStore.getState().pushHistory();
+            }}
+            onDragStart={() => useRenderQuality.getState().setIsDraggingFilter(true, element.id)}
+            onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
+          />
+        </div>
 
         {showReset && (
           <Button
@@ -181,11 +195,14 @@ export function ImageAdjustProperties({
       <FluentSection title="الشفافية">
         <FluentSliderField
           label="شفافية الصورة"
+          layout="inline"
+          labelWidth="w-24"
           value={currentOpacity}
           min={0}
           max={100}
           step={1}
           unit="%"
+          defaultValue={100}
           onChange={(v) => onUpdate(element.id, { opacity: v / 100 })}
           onCommit={() => useEditorStore.getState().pushHistory()}
         />
@@ -380,7 +397,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 variant={isRemovingBg ? 'destructive' : 'outline'}
                 title={isRemovingBg ? 'إلغاء العزل' : 'عزل الخلفية'}
                 className={cn(
-                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
+                  'relative overflow-hidden h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
                   isRemovingBg &&
                     'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent',
                 )}
@@ -391,7 +408,24 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 ) : (
                   <Sparkle className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 )}
-                <span className="text-xs font-bold">{isRemovingBg ? 'إلغاء' : 'عزل الخلفية'}</span>
+                <span className="text-xs font-bold">
+                  {isRemovingBg
+                    ? bgProgress > 0
+                      ? `إلغاء (${Math.round(bgProgress)}%)`
+                      : 'إلغاء'
+                    : 'عزل الخلفية'}
+                </span>
+                {isRemovingBg && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 bottom-0 h-0.5 bg-destructive-foreground/30"
+                  >
+                    <span
+                      className="block h-full bg-destructive-foreground transition-[width] duration-300"
+                      style={{ width: `${Math.round(bgProgress)}%` }}
+                    />
+                  </span>
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -407,8 +441,9 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 title={`ترميم الوجه (${remainingQuota}/${dailyLimit})`}
                 disabled={isEnhancing || isRemovingBg}
                 className={cn(
-                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
-                  (isEnhancing || isRemovingBg) && 'opacity-50 cursor-not-allowed',
+                  'relative overflow-hidden h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
+                  isEnhancing && 'border-primary/40 bg-primary/10 text-primary opacity-100',
+                  !isEnhancing && isRemovingBg && 'opacity-50 cursor-not-allowed',
                 )}
                 onClick={() => handleEnhance(element)}
               >
@@ -417,13 +452,30 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 ) : (
                   <MagicWand className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 )}
-                <span className="text-xs font-bold">
-                  {isEnhancing ? 'جاري الترميم ...' : 'ترميم الوجه'}
+                <span className="text-xs font-bold tabular-nums">
+                  {isEnhancing
+                    ? enhanceProgress > 0
+                      ? `جاري الترميم ${Math.round(enhanceProgress)}%`
+                      : 'جاري الترميم…'
+                    : 'ترميم الوجه'}
                 </span>
+                {isEnhancing && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/20"
+                  >
+                    <span
+                      className="block h-full bg-primary transition-[width] duration-300"
+                      style={{ width: `${Math.round(enhanceProgress)}%` }}
+                    />
+                  </span>
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              {`ترميم الوجه (${remainingQuota}/${dailyLimit} اليوم)`}
+              {isEnhancing
+                ? enhanceProgressText || 'جاري ترميم الوجه'
+                : `ترميم الوجه (${remainingQuota}/${dailyLimit} اليوم)`}
             </TooltipContent>
           </Tooltip>
 
@@ -434,7 +486,7 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 variant={isFraming ? 'destructive' : 'outline'}
                 title={isFraming ? 'إلغاء ضبط الوجه' : 'تأطير الوجه تلقائياً'}
                 className={cn(
-                  'h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
+                  'relative overflow-hidden h-9 flex items-center justify-center gap-2 rounded-md border border-border/70 hover:border-primary/40 bg-muted/30 hover:bg-primary/10 text-foreground transition-colors cursor-pointer px-2.5 shadow-2xs',
                   isFraming &&
                     'bg-destructive text-destructive-foreground hover:bg-destructive/90 border-transparent',
                 )}
@@ -445,7 +497,24 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
                 ) : (
                   <UserFocus className="w-4 h-4 text-primary shrink-0" weight="duotone" />
                 )}
-                <span className="text-xs font-bold">{isFraming ? 'إلغاء' : 'تأطير الوجه'}</span>
+                <span className="text-xs font-bold">
+                  {isFraming
+                    ? frameProgress > 0
+                      ? `إلغاء (${Math.round(frameProgress)}%)`
+                      : 'إلغاء'
+                    : 'تأطير الوجه'}
+                </span>
+                {isFraming && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-0 bottom-0 h-0.5 bg-destructive-foreground/30"
+                  >
+                    <span
+                      className="block h-full bg-destructive-foreground transition-[width] duration-300"
+                      style={{ width: `${Math.round(frameProgress)}%` }}
+                    />
+                  </span>
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -469,52 +538,6 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
             <TooltipContent side="top">مسح وتقويم المستند</TooltipContent>
           </Tooltip>
         </div>
-
-        {/* أشرطة تقدم العمليات */}
-        {isRemovingBg && (
-          <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-mini font-bold text-primary">
-              <span className="animate-pulse">{bgProgressText}</span>
-              <span>{Math.round(bgProgress)}%</span>
-            </div>
-            <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-[width] duration-300"
-                style={{ width: `${bgProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {isEnhancing && (
-          <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-mini font-bold text-primary">
-              <span className="animate-pulse">{enhanceProgressText}</span>
-              <span>{Math.round(enhanceProgress)}%</span>
-            </div>
-            <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-[width] duration-300"
-                style={{ width: `${enhanceProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {isFraming && (
-          <div className="p-2 rounded-lg bg-primary/[0.05] border border-primary/10 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200 fluent-specular">
-            <div className="flex justify-between items-center text-mini font-bold text-primary">
-              <span className="animate-pulse">{frameProgressText}</span>
-              <span>{Math.round(frameProgress)}%</span>
-            </div>
-            <div className="h-1.5 bg-primary/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-[width] duration-300"
-                style={{ width: `${frameProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
       </FluentSection>
 
       {/* 🎴 بطاقة 2: خلفية الصورة — متقدمة، مطوية افتراضياً (كشف تدريجي) */}
@@ -655,11 +678,14 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       <FluentSection title="استدارة وقناع القص">
         <FluentSliderField
           label="الزوايا"
+          layout="inline"
+          labelWidth="w-14"
           value={element.cornerRadius || 0}
           min={0}
           max={200}
           step={1}
           unit="px"
+          defaultValue={0}
           onChange={(v) => onUpdate(element.id, { cornerRadius: v })}
           onCommit={() => useEditorStore.getState().pushHistory()}
         />

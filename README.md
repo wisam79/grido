@@ -142,8 +142,8 @@ Grido Studio
 │   │   ├── hooks/             # Custom hooks (autosave, bg-removal, AI enhance)
 │   │   ├── lib/store/         # Zustand store — 7 slices
 │   │   └── lib/templates/     # قوالب الصور والكولاج
-│   ├── test/                  # اختبارات Vitest (122 ملف اختبار — الأرقام المرجعية في docs/DOCUMENTATION_MAP.md)
-│   └── e2e/                   # اختبارات Playwright (27 ملف مواصفة / 165 حالة)
+│   ├── test/                  # اختبارات Vitest (155 ملف اختبار — الأرقام المرجعية في docs/DOCUMENTATION_MAP.md)
+│   └── e2e/                   # اختبارات Playwright (30 ملف مواصفة)
 ├── supabase/                  # Edge functions + SQL migrations
 ├── modal_ai/                  # خادم Modal AI (CodeFormer + Real-ESRGAN)
 ├── admin-web/                 # صفحة هبوط + لوحة تحكم (React + Netlify)
@@ -193,7 +193,7 @@ npm run format          # Prettier (كتابة)
 
 > 🧱 **معايير الكود الملزمة:** `.editorconfig` يحكم المسافات ونهايات الأسطر · ESLint يفرض ترتيب الاستيراد (`import-x/order`)، واستيراد الأنواع الصريح (`import type`)، ومنع المتغيرات غير المستخدمة، و`no-console` خارج sink التسجيل · Go يُنسَّق بـ`gofmt` · رسائل الالتزام تتبع Conventional Commits عبر `.husky/commit-msg` و`scripts/commit-msg-lint.mjs` (الأنواع المسموحة: `feat/fix/perf/refactor/docs/security/release/build/ci/chore/test/style`).
 
-> 🤖 كل الوظائف أعلاه تعمل في CI على كل push وPR — بوابة التوثيق دائماً، والوظائف الثقيلة فقط عند تغيّر ملفاتها (فلترة المسارات في `ci.yml`).
+> 🤖 كل الوظائف أعلاه تعمل في CI على كل push وPR — بوابة التوثيق دائماً، والوظائف الثقيلة فقط عند تغيّر ملفاتها (فلترة المسارات في `ci.yml`). تغييرات `modal_ai/**` تُشغّل مهمة `validate-modal-ai` (Python 3.10 + `unittest` بلا أسرار أو نماذج).
 
 ---
 
