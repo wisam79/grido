@@ -345,9 +345,9 @@ export const CollageCustomGridTab = React.memo(function CollageCustomGridTab({
           open={collapsePrefs.align ?? true}
           onOpenChange={setCardOpen('align')}
         >
-          <div className="grid grid-cols-[minmax(0,1fr)_72px] items-center gap-2.5">
-            {quickLayouts}
-            <div className="relative size-[72px] rounded-md border border-border/50 bg-muted/20 p-1 select-none">
+          <div className="flex items-center gap-2.5">
+            <div className="flex-1 min-w-0">{quickLayouts}</div>
+            <div className="relative size-[72px] shrink-0 rounded-md border border-border/50 bg-muted/20 p-1 select-none">
               <div
                 role="radiogroup"
                 aria-label="نقطة ارتكاز الصور على الورقة"

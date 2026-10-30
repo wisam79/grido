@@ -197,7 +197,7 @@ func TestCleanupUnusedMedia(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
-	_ = db.AutoMigrate(&domain.Project{})
+	_ = db.AutoMigrate(&domain.Project{}, &domain.CustomTemplate{})
 
 	// إعداد المشاريع
 	p := &domain.Project{
@@ -364,7 +364,7 @@ func TestCleanupUnusedMedia_CorruptAutosave(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
-	_ = db.AutoMigrate(&domain.Project{})
+	_ = db.AutoMigrate(&domain.Project{}, &domain.CustomTemplate{})
 
 	dbMu.Lock()
 	dbInstance = db
@@ -672,7 +672,7 @@ func TestProjectRepository_ImportProjects(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
-	_ = db.AutoMigrate(&domain.Project{})
+	_ = db.AutoMigrate(&domain.Project{}, &domain.CustomTemplate{})
 
 	repo := NewProjectRepository(db)
 
