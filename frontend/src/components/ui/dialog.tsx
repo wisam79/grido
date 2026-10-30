@@ -61,37 +61,58 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
     showCloseButton?: boolean;
+    closeOnOutsideClick?: boolean;
   }
->(({ className, children, showCloseButton = true, ...props }, ref) => (
-  <DialogPortal data-slot="dialog-portal">
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      // عقد الاتجاه: Portal يُزرع في body فيرث html (rtl)، والتثبيت الصريح
-      // يمنع الوراثة الخاطئة من جزيرة ltr مستدعية (الكانفس/الهيدر).
-      dir="rtl"
-      data-slot="dialog-content"
-      className={cn(
-        // كثافة سطح المكتب: حشوة 20px وحواف 10px وفراغ داخلي 12px — كانت
-        // 24px/16px فتبدو النافذة كبطاقة ويب عائمة.
-        'bg-card text-card-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100vh-3rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-3 rounded-xl border border-border p-5 shadow-fluent-16 duration-100 sm:max-w-lg fluent-specular pointer-events-auto',
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close
-          data-slot="dialog-close"
-          className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer pointer-events-auto"
-        >
-          <X className="size-4 shrink-0" weight="bold" />
-          <span className="sr-only">إغلاق</span>
-        </DialogPrimitive.Close>
-      )}
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
+>(
+  (
+    {
+      className,
+      children,
+      showCloseButton = true,
+      closeOnOutsideClick = false,
+      onPointerDownOutside,
+      ...props
+    },
+    ref,
+  ) => (
+    <DialogPortal data-slot="dialog-portal">
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        // عقد الاتجاه: Portal يُزرع في body فيرث html (rtl)، والتثبيت الصريح
+        // يمنع الوراثة الخاطئة من جزيرة ltr مستدعية (الكانفس/الهيدر).
+        dir="rtl"
+        data-slot="dialog-content"
+        onPointerDownOutside={(e) => {
+          // 🛡️ حماية سطح المكتب: منع إغلاق النافذة الحوارية عند النقر في الخارج أو
+          // عند إغلاق قائمة منسدلة منبثقة فوقها — الإغلاق يتم حصراً عبر X أو زر إلغاء أو Escape
+          if (!closeOnOutsideClick) {
+            e.preventDefault();
+          }
+          onPointerDownOutside?.(e);
+        }}
+        className={cn(
+          // كثافة سطح المكتب: حشوة 20px وحواف 10px وفراغ داخلي 12px — كانت
+          // 24px/16px فتبدو النافذة كبطاقة ويب عائمة.
+          'bg-card text-card-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100vh-3rem)] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-3 rounded-xl border border-border p-5 shadow-fluent-16 duration-100 sm:max-w-lg fluent-specular pointer-events-auto',
+          className,
+        )}
+        {...props}
+      >
+        {children}
+        {showCloseButton && (
+          <DialogPrimitive.Close
+            data-slot="dialog-close"
+            className="absolute top-4 right-4 rtl:right-auto rtl:left-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 cursor-pointer pointer-events-auto"
+          >
+            <X className="size-4 shrink-0" weight="bold" />
+            <span className="sr-only">إغلاق</span>
+          </DialogPrimitive.Close>
+        )}
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  ),
+);
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {

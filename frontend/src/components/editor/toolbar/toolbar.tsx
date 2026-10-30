@@ -149,6 +149,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                 align="end"
                 className="w-48 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5"
               >
+                <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 select-none">
+                  خيارات المستند
+                </div>
                 <DropdownMenuItem
                   onClick={() =>
                     window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))
