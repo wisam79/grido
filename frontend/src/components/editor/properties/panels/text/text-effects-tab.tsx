@@ -110,7 +110,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
           </div>
 
           {shadowActive && (
-            <div className="space-y-1.5 animate-in fade-in duration-100">
+            <div className="space-y-2.5 animate-in fade-in duration-100">
               <ControlRow label="اللون">
                 <ColorField
                   color={element.shadowColor || '#000000'}
@@ -121,7 +121,6 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                 />
               </ControlRow>
               <FluentSliderField
-                layout="inline"
                 label="التمويه"
                 value={element.shadowBlur ?? 10}
                 min={0}
@@ -132,7 +131,6 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                 onCommit={pushHistory}
               />
               <FluentSliderField
-                layout="inline"
                 label="الكثافة"
                 value={Math.round((element.shadowOpacity ?? 0.5) * 100)}
                 min={0}
@@ -170,7 +168,7 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
           </div>
 
           {bgMode !== 'none' && (
-            <div className="space-y-1.5 animate-in fade-in duration-100">
+            <div className="space-y-2.5 animate-in fade-in duration-100">
               <ControlRow label="اللون">
                 <ColorField
                   color={element.textBgColor || TEXT_BACKGROUND_DEFAULT_COLOR}
@@ -181,7 +179,6 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                 />
               </ControlRow>
               <FluentSliderField
-                layout="inline"
                 label="حشوة أفقية"
                 value={element.textBgPaddingX ?? element.textBgPadding ?? 12}
                 min={0}
@@ -192,7 +189,6 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
                 onCommit={pushHistory}
               />
               <FluentSliderField
-                layout="inline"
                 label="حشوة رأسية"
                 value={element.textBgPaddingY ?? element.textBgPadding ?? 6}
                 min={0}
@@ -204,7 +200,6 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
               />
               {bgMode === 'box' && (
                 <FluentSliderField
-                  layout="inline"
                   label="الاستدارة"
                   value={element.textBgRadius ?? 6}
                   min={0}
@@ -256,7 +251,6 @@ export function TextEffectsTab({ element, onUpdate }: TextTabProps) {
 
           {curve !== 0 && (
             <FluentSliderField
-              layout="inline"
               label="الزاوية"
               value={curve}
               min={-100}

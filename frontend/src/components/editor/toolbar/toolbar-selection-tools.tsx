@@ -94,38 +94,31 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
   return (
     <div
       data-testid="toolbar-selection-group"
-      className="flex items-center gap-1 animate-in fade-in-0 slide-in-from-right-2 duration-200 ease-out"
+      className="flex items-center gap-0.5 animate-in fade-in-0 duration-100"
     >
-      <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
+      <Separator orientation="vertical" className="h-4 mx-1 bg-border/60" />
 
       {isImageSelected && (
         <>
           <AiToolsToolbarGroup />
-          {isCollageMode && (
-            <Separator orientation="vertical" className="h-4 bg-border/60 mx-0.5" />
-          )}
+          {isCollageMode && <Separator orientation="vertical" className="h-4 bg-border/60 mx-1" />}
         </>
       )}
 
-      <div className="fluent-command-group shadow-2xs">
+      <div className="fluent-command-group">
         <TooltipBtn content="تكرار العناصر">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => actOnSelection(duplicateElement, duplicateElements)}
             aria-label="تكرار"
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
           >
-            <Copy className="w-5 h-5" />
+            <Copy className="w-4 h-4" />
           </Button>
         </TooltipBtn>
 
-        {isImageSelected && (
-          <>
-            <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
-            <ImageFiltersPopover />
-          </>
-        )}
+        {isImageSelected && <ImageFiltersPopover />}
 
         {canGroup && (
           <TooltipBtn content="تجميع العناصر">
@@ -135,9 +128,9 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               onClick={groupSelectedElements}
               aria-label="تجميع"
               // 🎨 رمادي في الراحة → داكن عند التمرير (اتساق أيقونات الشريط)
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
             >
-              <Link className="w-5 h-5" />
+              <Link className="w-4 h-4" />
             </Button>
           </TooltipBtn>
         )}
@@ -151,11 +144,10 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
               aria-label="فك التجميع"
               className="h-8 w-8 p-0 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-md transition-colors cursor-pointer"
             >
-              <LinkBreak className="w-5 h-5" />
+              <LinkBreak className="w-4 h-4" />
             </Button>
           </TooltipBtn>
         )}
-        <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
 
         {/* محاذاة */}
         <DropdownMenu>
@@ -163,11 +155,11 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer gap-1"
+              className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer gap-1"
               aria-label="محاذاة"
             >
-              <AlignCenterHorizontalIcon className="w-5 h-5" />
-              <CaretDown className="w-3.5 h-3.5 opacity-60" />
+              <AlignCenterHorizontalIcon className="w-4 h-4" />
+              <CaretDown className="w-3 h-3 opacity-60" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -198,8 +190,6 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Separator orientation="vertical" className="h-4 bg-border/40 mx-0.5" />
-
         {/* حذف — أيقونة محايدة في الراحة وتتحول للأحمر عند التمرير لمنع التشتت البصري */}
         <TooltipBtn content="حذف (Delete)">
           <Button
@@ -209,7 +199,7 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
             aria-label="حذف"
             className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer"
           >
-            <Trash className="w-5 h-5" />
+            <Trash className="w-4 h-4" />
           </Button>
         </TooltipBtn>
       </div>

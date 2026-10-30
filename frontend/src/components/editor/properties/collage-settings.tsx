@@ -60,11 +60,9 @@ export function CollageSettings() {
   return (
     <div className="flex flex-col font-cairo" dir="rtl">
       <FluentSection title="المسافات والاستدارة" collapsible defaultOpen>
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <FluentSliderField
             label="التباعد"
-            layout="inline"
-            labelWidth="w-14"
             value={toMm(collageGap)}
             min={0}
             max={30}
@@ -76,8 +74,6 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="الهوامش"
-            layout="inline"
-            labelWidth="w-14"
             value={toMm(collageMargin)}
             min={0}
             max={100}
@@ -89,8 +85,6 @@ export function CollageSettings() {
           />
           <FluentSliderField
             label="الزوايا"
-            layout="inline"
-            labelWidth="w-14"
             value={toMm(collageRadius)}
             min={0}
             max={50}
@@ -104,11 +98,9 @@ export function CollageSettings() {
       </FluentSection>
 
       <FluentSection title="إطار الصور" collapsible defaultOpen>
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <FluentSliderField
             label="السُّمك"
-            layout="inline"
-            labelWidth="w-14"
             value={collageStrokeWidth}
             min={0}
             max={15}

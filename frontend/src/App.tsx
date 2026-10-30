@@ -439,7 +439,7 @@ export default function App() {
                 </div>
 
                 <div
-                  className="flex items-center gap-1.5 h-full title-bar-controls"
+                  className="flex items-center gap-1 h-full title-bar-controls"
                   onDoubleClick={(e) => e.stopPropagation()}
                 >
                   <Tooltip>
@@ -448,14 +448,14 @@ export default function App() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setAccountModalOpen(true)}
-                        className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 relative rounded-md"
+                        className="h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 relative rounded-md transition-colors cursor-pointer"
                         aria-label="الحساب والتراخيص"
                       >
                         <User className="w-4 h-4 text-muted-foreground" />
                         {user?.plan === 'trial' ? (
-                          <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-background" />
+                          <span className="absolute top-1 left-1 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-background" />
                         ) : isLicenseActive ? (
-                          <span className="absolute top-1.5 left-1.5 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-background" />
+                          <span className="absolute top-1 left-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-background" />
                         ) : null}
                       </Button>
                     </TooltipTrigger>
@@ -472,7 +472,7 @@ export default function App() {
                         variant="ghost"
                         size="sm"
                         onClick={toggleTheme}
-                        className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:bg-muted/80 rounded-md"
+                        className="h-7 w-7 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md transition-colors cursor-pointer"
                         aria-label={
                           themeMode === 'system'
                             ? 'مظهر النظام تلقائي'
@@ -510,10 +510,10 @@ export default function App() {
                         size="sm"
                         onClick={() => panelsHook.togglePanel('templates')}
                         className={cn(
-                          'hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-colors',
+                          'hidden lg:flex h-7 w-7 p-0 items-center justify-center rounded-md cursor-pointer transition-colors',
                           isTemplatesOpen
                             ? 'text-foreground bg-accent-active'
-                            : 'text-muted-foreground hover:bg-muted/80',
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
                         )}
                         aria-label={
                           isTemplatesOpen
@@ -559,10 +559,10 @@ export default function App() {
                         size="sm"
                         onClick={() => panelsHook.togglePanel('properties')}
                         className={cn(
-                          'hidden lg:flex h-8 w-8 p-0 items-center justify-center rounded-md cursor-pointer transition-colors',
+                          'hidden lg:flex h-7 w-7 p-0 items-center justify-center rounded-md cursor-pointer transition-colors',
                           isPropertiesOpen
                             ? 'text-foreground bg-accent-active'
-                            : 'text-muted-foreground hover:bg-muted/80',
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/80',
                         )}
                         aria-label={isPropertiesOpen ? 'إخفاء لوحة الخصائص' : 'إظهار لوحة الخصائص'}
                       >
@@ -590,7 +590,7 @@ export default function App() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="lg:hidden gap-1.5 h-8 px-2.5 rounded-md"
+                    className="lg:hidden gap-1.5 h-7 px-2.5 rounded-md"
                     onClick={() => panelsHook.openPanel('templates')}
                   >
                     <SidebarSimple className="w-4 h-4" />
@@ -600,7 +600,7 @@ export default function App() {
                   </Button>
 
                   {/* Separator */}
-                  <div className="w-px h-5 bg-border/60 mx-1" />
+                  <div className="w-px h-4 bg-border/60 mx-1" />
 
                   {/* Window Buttons */}
                   <WindowControls

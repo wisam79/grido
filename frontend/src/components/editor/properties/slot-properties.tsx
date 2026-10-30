@@ -16,7 +16,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Crop, FlipVertical, Crosshair, Copy, Lock, CaretDown } from '@/components/ui/icons';
+import {
+  ArrowCounterClockwise,
+  ArrowsLeftRight,
+  CaretDown,
+  Check,
+  Copy,
+  Crop,
+  Crosshair,
+  FlipVertical,
+  GridFour,
+  LockSimple,
+  LockSimpleOpen,
+} from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { getCollageGeometry, getSlotRect } from '@/lib/canvas/collage-geometry';
@@ -44,7 +56,7 @@ const CropDialog = lazy(() =>
 );
 
 const SIZE_INPUT_CLASS =
-  'h-8 min-w-0 ps-2 pe-7 text-start font-mono text-sm tabular-nums border-border/70 shadow-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none';
+  'h-8 min-w-0 ps-2 pe-7 text-start font-mono text-sm tabular-nums border-border/60 shadow-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none';
 
 /** مقاسات الصور الجاهزة للاختيار السريع — نفس المقاسات في لوحة الشبكة */
 const PRESET_PHOTO_TYPES: PhotoGridType[] = [
@@ -54,6 +66,22 @@ const PRESET_PHOTO_TYPES: PhotoGridType[] = [
   'iq-general-id',
   'iq-transactions',
 ];
+
+/** تسامح مطابقة أبعاد الخلية الحالية مع المقاسات القياسية بالمليمتر */
+const PRESET_MATCH_TOLERANCE_MM = 0.25;
+
+function findMatchingPreset(widthMM: number, heightMM: number) {
+  for (const type of PRESET_PHOTO_TYPES) {
+    const dims = getPhotoDimensions(type);
+    if (
+      Math.abs(widthMM - dims.wMM) <= PRESET_MATCH_TOLERANCE_MM &&
+      Math.abs(heightMM - dims.hMM) <= PRESET_MATCH_TOLERANCE_MM
+    ) {
+      return { type, ...dims };
+    }
+  }
+  return null;
+}
 
 /** رسائل فشل تعديل مقاس الخلية — مصدر واحد بدل نسخة في كل مستهلك. */
 const SIZE_ERROR_MESSAGES: Record<CollageSlotSizeError, string> = {
@@ -88,9 +116,7 @@ function SlotSizeFields({
     collageMargin,
     hasPhysicalLayout,
     storedDpi,
-    slotsCount,
     resizeCollageSlot,
-    applyCollageSlotSizeToAll,
   } = useEditorStore(
     useShallow((state) => ({
       canvasWidth: state.canvasWidth,
@@ -99,9 +125,7 @@ function SlotSizeFields({
       collageMargin: state.collageMargin,
       hasPhysicalLayout: Boolean(state.collageTemplate?.physicalLayout),
       storedDpi: state.printSettings.dpi || 300,
-      slotsCount: state.slots.length,
       resizeCollageSlot: state.resizeCollageSlot,
-      applyCollageSlotSizeToAll: state.applyCollageSlotSizeToAll,
     })),
   );
   const dpi = useMemo(
@@ -137,6 +161,8 @@ function SlotSizeFields({
       setHeight(heightMM.toFixed(1));
     }
   }
+
+  const matchedPreset = findMatchingPreset(widthMM, heightMM);
 
   const resetDraft = () => {
     setWidth(widthMM.toFixed(1));
@@ -234,32 +260,51 @@ function SlotSizeFields({
   };
 
   return (
-    <div className="space-y-2.5" dir="rtl">
-      {/* قائمة المقاسات الجاهزة */}
+    <div className="space-y-2" dir="rtl">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 w-full justify-between px-2.5 text-xs font-sans border-border/70 hover:bg-accent/70 shadow-none"
+            className="h-8 w-full justify-between gap-2 px-2.5 text-xs font-sans border-border/60 shadow-none"
             title={hasPhysicalLayout ? 'تغيير المقاس يحوّل القالب إلى تخطيط مخصص' : undefined}
           >
-            <span className="flex-1 text-start text-muted-foreground">اختر مقاسًا...</span>
+            <span
+              className={cn(
+                'truncate',
+                matchedPreset ? 'font-medium text-foreground' : 'text-muted-foreground',
+              )}
+            >
+              {matchedPreset ? matchedPreset.label : 'اختر مقاسًا...'}
+            </span>
             <CaretDown className="size-3.5 shrink-0 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 font-cairo text-xs">
           {PRESET_PHOTO_TYPES.map((type) => {
             const { wMM, hMM, label } = getPhotoDimensions(type);
+            const isSelected = matchedPreset?.type === type;
             return (
               <DropdownMenuItem
                 key={type}
                 onClick={() => applyPresetSize(type)}
-                className="cursor-pointer flex items-center justify-between py-1.5"
+                className={cn(
+                  'cursor-pointer flex items-center justify-between gap-2 py-1.5',
+                  isSelected && 'bg-primary/10 text-primary font-semibold',
+                )}
               >
-                <span className="font-semibold">{label}</span>
-                <span className="text-mini text-muted-foreground font-mono" dir="ltr">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <Check
+                    className={cn(
+                      'size-3.5 shrink-0',
+                      isSelected ? 'text-primary opacity-100' : 'opacity-0',
+                    )}
+                    weight="bold"
+                  />
+                  <span className="truncate font-medium">{label}</span>
+                </span>
+                <span className="text-mini text-muted-foreground font-mono shrink-0" dir="ltr">
                   {wMM}×{hMM} مم
                 </span>
               </DropdownMenuItem>
@@ -268,7 +313,7 @@ function SlotSizeFields({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-1.5">
         <FluentSettingRow
           label={<label htmlFor={`slot-width-${slot.id}`}>العرض</label>}
           layout="vertical"
@@ -302,7 +347,11 @@ function SlotSizeFields({
             )}
             onClick={onLockAspectChange}
           >
-            <Lock className="size-3.5" weight={lockAspect ? 'fill' : 'regular'} />
+            {lockAspect ? (
+              <LockSimple className="size-3.5" weight="fill" />
+            ) : (
+              <LockSimpleOpen className="size-3.5" weight="regular" />
+            )}
           </Button>
         </FluentTooltip>
 
@@ -326,26 +375,6 @@ function SlotSizeFields({
           </div>
         </FluentSettingRow>
       </div>
-
-      {slotsCount > 1 && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 w-full justify-center gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/60"
-          onClick={() => {
-            const result = applyCollageSlotSizeToAll(slot.id);
-            if (result.ok) {
-              toast.success('تم توحيد مقاس الخلايا');
-            } else {
-              toast.error(APPLY_ALL_ERROR_MESSAGES[result.reason]);
-            }
-          }}
-        >
-          <Copy className="size-3.5 text-primary" />
-          <span>تطبيق على الكل</span>
-        </Button>
-      )}
     </div>
   );
 }
@@ -364,9 +393,7 @@ export const SlotProperties = React.memo(function SlotProperties({
     fillEmptySlots,
     setSlotImage,
     lastEditedImage,
-    printSettings,
-    canvasWidth,
-    canvasHeight,
+    applyCollageSlotSizeToAll,
   } = useEditorStore(
     useShallow((state) => ({
       slots: state.slots,
@@ -375,14 +402,27 @@ export const SlotProperties = React.memo(function SlotProperties({
       fillEmptySlots: state.fillEmptySlots,
       setSlotImage: state.setSlotImage,
       lastEditedImage: state.lastEditedImage,
-      printSettings: state.printSettings,
-      canvasWidth: state.canvasWidth,
-      canvasHeight: state.canvasHeight,
+      applyCollageSlotSizeToAll: state.applyCollageSlotSizeToAll,
     })),
   );
   const [cropOpen, setCropOpen] = useState(false);
   const [lockSlotAspect, setLockSlotAspect] = useState(false);
   const [autoFill, setAutoFill] = useState(isAutoFillGridEnabled);
+
+  const hasEmptySlots = useMemo(() => slots.some((s) => !s.imageSrc), [slots]);
+  const hasColorChanges =
+    (slot.brightness ?? 100) !== 100 ||
+    (slot.contrast ?? 100) !== 100 ||
+    (slot.saturation ?? 100) !== 100 ||
+    Boolean(slot.filter && slot.filter !== 'none');
+
+  const activeFilterObj = useMemo(
+    () =>
+      slot.filter && slot.filter !== 'none'
+        ? IMAGE_FILTERS.find((f) => f.id === slot.filter)
+        : undefined,
+    [slot.filter],
+  );
 
   const handleUseLastImage = () => {
     if (lastEditedImage) {
@@ -393,35 +433,32 @@ export const SlotProperties = React.memo(function SlotProperties({
     }
   };
 
-  const dpi = useMemo(
-    () => getEffectiveDpi(canvasWidth, canvasHeight, printSettings?.dpi || 300),
-    [canvasWidth, canvasHeight, printSettings?.dpi],
-  );
-
-  const renderAutoFillToggle = () => (
-    <FluentSettingRow label="تعبئة تلقائية" className="border-t border-border/30 pt-2 pb-0">
-      <Switch
-        checked={autoFill}
-        onCheckedChange={(checked) => {
-          setAutoFill(checked);
-          setAutoFillGridEnabled(checked);
-        }}
-        aria-label="تعبئة تلقائية"
-      />
-    </FluentSettingRow>
-  );
-
   return (
     <div className="min-w-0 font-cairo select-none pb-2" dir="rtl">
+      {/* 1. مقاس الخلية — زر «تطبيق على الكل» مدمج بهدوء في رأس القسم لتوفير المساحة الرأسية */}
       <FluentSection
         title="مقاس الخلية"
         collapsible
         defaultOpen
         className="border-border/40 py-2.5"
-        badge={
-          <span className="font-mono text-mini font-normal text-muted-foreground" dir="ltr">
-            {Math.round(dpi)} DPI
-          </span>
+        action={
+          slots.length > 1 ? (
+            <button
+              type="button"
+              onClick={() => {
+                const result = applyCollageSlotSizeToAll(slot.id);
+                if (result.ok) {
+                  toast.success('تم توحيد مقاس الخلايا');
+                } else {
+                  toast.error(APPLY_ALL_ERROR_MESSAGES[result.reason]);
+                }
+              }}
+              className="inline-flex items-center gap-1 text-mini text-primary hover:text-primary/80 transition-colors cursor-pointer px-1 py-0.5 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            >
+              <Copy className="size-3 shrink-0" />
+              <span>تطبيق على الكل</span>
+            </button>
+          ) : undefined
         }
       >
         <SlotSizeFields
@@ -432,26 +469,27 @@ export const SlotProperties = React.memo(function SlotProperties({
         />
       </FluentSection>
 
+      {/* 2. الصورة — شريط نظيف بلا خطوط داخلية مزدوجة */}
       <FluentSection title="الصورة" collapsible defaultOpen className="border-border/40 py-2.5">
         {slot.imageSrc ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
-              className="h-8 min-w-0 flex-1 gap-1.5 px-2 text-xs shadow-none"
+              className="h-8 min-w-0 flex-1 gap-1.5 px-2 text-xs border-border/60 shadow-none"
               onClick={() => setCropOpen(true)}
               aria-label="قص الصورة"
             >
-              <Crop className="size-4 text-primary" weight="bold" />
+              <Crop className="size-4 text-primary shrink-0" weight="bold" />
               <span>قص</span>
             </Button>
 
             <FluentTooltip content="قلب عمودي" side="top">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 className={cn(
-                  'size-8 shrink-0',
-                  slot.flipY && 'text-primary bg-primary/10 hover:text-primary',
+                  'size-8 shrink-0 border-border/60 shadow-none',
+                  slot.flipY && 'border-primary/45 text-primary bg-primary/10 hover:text-primary',
                 )}
                 onClick={() => {
                   onUpdate(slot.id, { flipY: !slot.flipY });
@@ -464,11 +502,11 @@ export const SlotProperties = React.memo(function SlotProperties({
               </Button>
             </FluentTooltip>
 
-            <FluentTooltip content="توسيط" side="top">
+            <FluentTooltip content="إعادة توسيط الصورة" side="top">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="size-8 shrink-0"
+                className="size-8 shrink-0 border-border/60 shadow-none"
                 onClick={() => {
                   onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
                   useEditorStore.getState().pushHistory();
@@ -487,25 +525,56 @@ export const SlotProperties = React.memo(function SlotProperties({
               onClick={handleUseLastImage}
               aria-label="آخر صورة"
             >
-              <Copy className="size-3.5 text-muted-foreground" />
+              <Copy className="size-3.5 text-muted-foreground shrink-0" />
               <span>آخر صورة</span>
             </Button>
           )
         )}
 
-        {renderAutoFillToggle()}
+        <FluentSettingRow label="تعبئة تلقائية" className="py-0.5">
+          <Switch
+            checked={autoFill}
+            onCheckedChange={(checked) => {
+              setAutoFill(checked);
+              setAutoFillGridEnabled(checked);
+            }}
+            aria-label="تعبئة تلقائية"
+          />
+        </FluentSettingRow>
       </FluentSection>
 
       {slot.imageSrc && (
         <>
+          {/* 3. ألوان الصورة — بلا فواصل داخلية زائدة، وزر الاستعادة في الرأس عند التغيير */}
           <FluentSection
             title="ألوان الصورة"
             collapsible
             defaultOpen
             className="border-border/40 py-2.5"
+            action={
+              hasColorChanges ? (
+                <button
+                  type="button"
+                  aria-label="إعادة تعيين الألوان"
+                  onClick={() => {
+                    onUpdate(slot.id, {
+                      filter: 'none',
+                      brightness: 100,
+                      contrast: 100,
+                      saturation: 100,
+                    });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className="inline-flex items-center gap-1 text-mini text-muted-foreground hover:text-foreground transition-colors cursor-pointer px-1 py-0.5 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                >
+                  <ArrowCounterClockwise className="size-3 shrink-0" />
+                  <span>إعادة تعيين</span>
+                </button>
+              ) : undefined
+            }
           >
             <FluentSettingRow label="الخلفية" className="py-0">
-              <ColorPanel wheelPosition="bottom" className="w-48">
+              <ColorPanel wheelPosition="bottom">
                 <ColorField
                   color={slot.bgColor ?? 'transparent'}
                   onChange={(val: string) => {
@@ -520,17 +589,15 @@ export const SlotProperties = React.memo(function SlotProperties({
                     }
                   }}
                   onCommit={() => useEditorStore.getState().pushHistory()}
-                  className="w-full bg-transparent shadow-none"
+                  className="w-full border-border/60 shadow-none"
                   ariaLabel="لون الخلفية"
                 />
               </ColorPanel>
             </FluentSettingRow>
 
-            <div className="space-y-1.5 border-t border-border/30 pt-2">
+            <div className="space-y-2.5 pt-1">
               <FluentSliderField
                 label="السطوع"
-                layout="inline"
-                labelWidth="w-14"
                 value={slot.brightness ?? 100}
                 min={0}
                 max={200}
@@ -547,8 +614,6 @@ export const SlotProperties = React.memo(function SlotProperties({
               />
               <FluentSliderField
                 label="التباين"
-                layout="inline"
-                labelWidth="w-14"
                 value={slot.contrast ?? 100}
                 min={0}
                 max={200}
@@ -565,8 +630,6 @@ export const SlotProperties = React.memo(function SlotProperties({
               />
               <FluentSliderField
                 label="التشبع"
-                layout="inline"
-                labelWidth="w-14"
                 value={slot.saturation ?? 100}
                 min={0}
                 max={200}
@@ -582,122 +645,123 @@ export const SlotProperties = React.memo(function SlotProperties({
                 onDragEnd={() => useRenderQuality.getState().setIsDraggingFilter(false)}
               />
             </div>
-
-            <div className="space-y-1.5 border-t border-border/30 pt-2">
-              <div className="flex items-center justify-between">
-                <span className="text-mini text-muted-foreground">المرشحات</span>
-                {slot.filter && slot.filter !== 'none' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onUpdate(slot.id, { filter: 'none' });
-                      useEditorStore.getState().pushHistory();
-                    }}
-                    className="text-mini text-muted-foreground hover:text-foreground cursor-pointer"
-                  >
-                    إزالة
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {IMAGE_FILTERS.map((filter) => {
-                  const isActive = slot.filter === filter.id;
-                  return (
-                    <button
-                      key={filter.id}
-                      type="button"
-                      onClick={() => {
-                        onUpdate(slot.id, { filter: filter.id });
-                        useEditorStore.getState().pushHistory();
-                      }}
-                      aria-pressed={isActive}
-                      aria-label={filter.name}
-                      title={filter.name}
-                      className={cn(
-                        'flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer',
-                        'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
-                        isActive
-                          ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
-                          : 'border-border/60 bg-card hover:bg-accent text-muted-foreground',
-                      )}
-                    >
-                      <span className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
-                        <img
-                          src={slot.imageSrc}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          style={{ filter: filter.css }}
-                        />
-                      </span>
-                      <span className="text-mini w-full text-center leading-tight truncate">
-                        {filterShortName(filter.name)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-full text-xs font-medium shadow-none"
-              onClick={() => {
-                onUpdate(slot.id, {
-                  filter: 'none',
-                  brightness: 100,
-                  contrast: 100,
-                  saturation: 100,
-                });
-                useEditorStore.getState().pushHistory();
-              }}
-            >
-              إعادة تعيين الألوان
-            </Button>
           </FluentSection>
 
+          {/* 4. المرشحات — مطوية افتراضياً لمنع الازدحام البصري، مع إظهار اسم المرشح النشط في الرأس */}
           <FluentSection
-            title="توزيع الصورة"
+            title="المرشحات"
             collapsible
             defaultOpen={false}
             className="border-border/40 py-2.5"
+            badge={
+              activeFilterObj ? (
+                <span className="text-mini font-normal text-primary">
+                  · {filterShortName(activeFilterObj.name)}
+                </span>
+              ) : undefined
+            }
+            action={
+              activeFilterObj ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdate(slot.id, { filter: 'none' });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  className="text-mini text-muted-foreground hover:text-foreground transition-colors cursor-pointer px-1 rounded-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                >
+                  إزالة
+                </button>
+              ) : undefined
+            }
           >
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 w-full min-w-0 gap-1.5 px-2 text-xs font-medium shadow-none"
-              onClick={() => {
-                if (slot.imageSrc) fillEmptySlots(slot.imageSrc, slot.id);
-              }}
-              aria-label="تعبئة الخلايا الفارغة"
-            >
-              تعبئة الفارغ
-            </Button>
+            <div className="grid grid-cols-3 gap-1.5">
+              {IMAGE_FILTERS.map((filter) => {
+                const isActive = (slot.filter || 'none') === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => {
+                      onUpdate(slot.id, { filter: filter.id });
+                      useEditorStore.getState().pushHistory();
+                    }}
+                    aria-pressed={isActive}
+                    aria-label={filter.name}
+                    title={filter.name}
+                    className={cn(
+                      'flex flex-col items-center gap-1 p-1 rounded-md border transition-colors duration-150 cursor-pointer',
+                      'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                      isActive
+                        ? 'border-primary bg-primary/10 text-primary font-semibold'
+                        : 'border-border/60 bg-card/60 hover:bg-accent/60 text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <span className="w-full aspect-4/3 rounded-sm overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
+                      <img
+                        src={slot.imageSrc}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        style={{ filter: filter.css }}
+                      />
+                    </span>
+                    <span className="text-mini w-full text-center leading-tight truncate px-0.5">
+                      {filterShortName(filter.name)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </FluentSection>
 
-            {slots.length > 1 && (
-              <FluentSettingRow label="تبديل مع" className="border-t border-border/40 pt-2.5 pb-0">
+          {/* 5. توزيع الصورة — مطوي افتراضياً ومرتب في صف واحد نظيف عند الفتح */}
+          {slots.length > 1 && (
+            <FluentSection
+              title="توزيع الصورة"
+              collapsible
+              defaultOpen={false}
+              className="border-border/40 py-2.5"
+            >
+              <div className="grid grid-cols-2 gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!hasEmptySlots}
+                  className="h-8 min-w-0 gap-1.5 px-2 text-xs font-medium border-border/60 shadow-none"
+                  onClick={() => {
+                    if (slot.imageSrc) fillEmptySlots(slot.imageSrc, slot.id);
+                  }}
+                  aria-label="تعبئة الخلايا الفارغة"
+                >
+                  <GridFour className="size-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate">تعبئة الفارغ</span>
+                </Button>
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 gap-1.5 px-2 text-xs shadow-none"
+                      className="h-8 min-w-0 justify-between gap-1 px-2 text-xs font-medium border-border/60 shadow-none"
                       aria-label="تبديل مع خلية أخرى"
                     >
-                      <span>خلية أخرى</span>
-                      <CaretDown className="size-3.5" />
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <ArrowsLeftRight className="size-3.5 text-muted-foreground shrink-0" />
+                        <span className="truncate">تبديل مع</span>
+                      </span>
+                      <CaretDown className="size-3 shrink-0 text-muted-foreground" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40 font-cairo text-xs">
+                  <DropdownMenuContent align="end" className="w-44 font-cairo text-xs">
                     {slots
                       .filter((s) => s.id !== slot.id)
                       .map((otherSlot, idx) => (
                         <DropdownMenuItem
                           key={otherSlot.id}
                           onClick={() => swapSlots(slot.id, otherSlot.id)}
-                          className="cursor-pointer flex items-center justify-between text-xs py-1"
+                          className="cursor-pointer flex items-center justify-between text-xs py-1.5"
                         >
-                          <span>
+                          <span className="font-medium">
                             الخلية #
                             {otherSlot.cellIndex !== undefined ? otherSlot.cellIndex + 1 : idx + 1}
                           </span>
@@ -708,9 +772,9 @@ export const SlotProperties = React.memo(function SlotProperties({
                       ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </FluentSettingRow>
-            )}
-          </FluentSection>
+              </div>
+            </FluentSection>
+          )}
         </>
       )}
 

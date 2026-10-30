@@ -78,7 +78,6 @@ export function CollagePaperToolsTab() {
 
         <FluentSliderField
           label="هامش النزيف"
-          layout="inline"
           value={bleedMarginMM}
           min={0}
           max={10}
@@ -172,8 +171,6 @@ export function CollagePaperToolsTab() {
 
         <FluentSliderField
           label="المسافة بين النسخ"
-          layout="inline"
-          labelWidth="w-24"
           value={gapMM}
           min={0}
           max={20}

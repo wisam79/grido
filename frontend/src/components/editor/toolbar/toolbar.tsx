@@ -6,16 +6,9 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import {
-  Broom,
-  FloppyDisk,
-  Printer,
-  Export,
-  DotsThreeVertical,
-  Folders,
-} from '@/components/ui/icons';
+import { Broom, FloppyDisk, Printer, Export, DotsThreeVertical } from '@/components/ui/icons';
+import { Separator } from '@/components/ui/separator';
 import { useEditorStore } from '@/lib/editor-store';
 import { cn } from '@/lib/utils';
 
@@ -34,13 +27,13 @@ interface ToolbarProps {
 }
 
 /**
- * مجموعة أوامر — أزرار متجاورة يفصلها خط شعري رقيق. بلا عنوان مرئي:
- * الأزرار التي تحتاج اسماً تحمله (مثل «إدراج»)، والبقية تُشرح بـTooltip
- * عند التحويم — عناوين المجموعات كانت تكراراً بصرياً بلا معلومة إضافية.
+ * مجموعة أوامر — أزرار متجاورة على سطح شريط الأدوات الموحد (Fluent 2 CommandBar).
+ * بلا صناديق متداخلة حول كل مجموعة: الفواصل الشعرية الرقيقة (Separator) تفصل
+ * بين المجموعات المنطقية بهدوء بصري واستقرار كامل.
  */
 function CommandGroup({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('h-full shrink-0 flex items-center justify-center gap-0.5 px-1', className)}>
+    <div className={cn('h-full shrink-0 flex items-center justify-center gap-0.5', className)}>
       {children}
     </div>
   );
@@ -49,24 +42,11 @@ function CommandGroup({ children, className }: { children: React.ReactNode; clas
 /**
  * شريط الأدوات العلوي — توزيع احترافي بمنطق «ثابت → سياقي → أوامر»:
  *
- *   [ملف] | [تراجع/إعادة] | [نقل للكولاج]  ← يمين (RTL)
+ *   [إدراج | المشاريع] | [تراجع/إعادة] | [نقل للكولاج]  ← يمين (RTL)
  *   [أدوات التحديد السياقية — تظهر عند التحديد]
- *                                        [حفظ | طباعة | تصدير] [⋯] ← يسار
- *
- * - الترتيب من اليمين يتبع تدفق عمل المستخدم: إدخال → تعديل → إخراج.
- * - مجموعات مفصولة بخطوط رقيقة ومساحة تنفس، وشريط حالة في المنتصف — لغة
- *   أوامر سطح مكتب لا صفحة ويب.
- * - لا شريط بحث في الشريط: لوحة الأدوات (Ctrl+K) هي المرجع الوحيد للبحث
- *   عن أمر، فلا تتكرر القدرة ولا يظهر الحقل الفارغ وسط الأوامر
- *   (قاعدة «لوحة واحدة» في AGENTS.md).
- * - زر «مسح مساحة العمل» الأحمر انتقل إلى قائمة «المزيد» (⋯) — الإجراءات
- *   المدمِّرة لا تُثبَّت في الشريط الرئيسي (مبدأ Fluent: تقليل الخطورة الدائمة).
+ *                                        [حفظ | تصدير | طباعة] | [⋮] ← يسار
  */
-// 🚀 memo: الترويسة تستقبل دوال معالجات ثابتة من App — بلا memo كانت أي إعادة
-// رسم في App (فتح حوار، toast، حالة تشغيل) تجرف الشريط كاملاً وأدواته الفرعية.
 export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }: ToolbarProps) {
-  // مجموعة «نقل إلى الكولاج» ترجع null خارج وضع التعديل الحر، فإبقاء عنوانها
-  // كان يترك تسمية معلّقة فوق فراغ.
   const isSingleMode = useEditorStore((s) => s.mode === 'single');
 
   return (
@@ -75,14 +55,16 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
       dir="rtl"
       className="relative h-10 shrink-0 border-b border-border bg-sidebar select-none no-print font-cairo"
     >
-      <div className="h-full flex items-center justify-between gap-1 px-1.5">
+      <div className="h-full flex items-center justify-between gap-1.5 px-2.5">
         {/* المجموعات الرئيسية (ملف، تحرير، كولاج، تحديد)
             ⚠️ عند ضيق النافذة تُمرَّر هذه المجموعة أفقياً بلا شريط ظهور
             بدل أن يُقطع الطرف الآخر (الحفظ/الطباعة/التصدير). */}
-        <div className="flex items-stretch h-full min-w-0 flex-1 overflow-x-auto scrollbar-none">
+        <div className="flex items-center h-full min-w-0 flex-1 overflow-x-auto scrollbar-none">
           <CommandGroup>
             <ToolbarFileOps />
           </CommandGroup>
+
+          <Separator orientation="vertical" className="h-4 mx-1.5 bg-border/60 shrink-0" />
 
           <CommandGroup>
             <ToolbarHistoryTools />
@@ -99,8 +81,8 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
           </CommandGroup>
         </div>
 
-        {/* المجموعة النهائية: الحفظ والطباعة والتصدير في مجموعة أوامر موحدة */}
-        <div className="flex items-stretch h-full shrink-0">
+        {/* المجموعة النهائية: الحفظ والتصدير والطباعة في مجموعة أوامر متناسقة */}
+        <div className="flex items-center h-full shrink-0 gap-1">
           <CommandGroup>
             <div className="fluent-command-group">
               {/* حفظ (Ctrl+S) — زر أيقوني قياسي موحّد */}
@@ -111,23 +93,9 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onSave}
                   data-testid="toolbar-save"
                   aria-label="حفظ المشروع"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md cursor-pointer transition-colors duration-150 group"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md cursor-pointer transition-colors duration-150 group"
                 >
-                  <FloppyDisk className="w-4 h-4 text-muted-foreground/80 group-hover:text-foreground transition-colors" />
-                </Button>
-              </TooltipBtn>
-
-              {/* طباعة (Ctrl+P) — إجراء الإخراج الأساسي بتمييز بصري واضح وأبعاد موحدة 32×32 */}
-              <TooltipBtn content="طباعة المستند (Ctrl + P)">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onPrint}
-                  data-testid="toolbar-print"
-                  aria-label="طباعة المستند"
-                  className="h-8 w-8 p-0 flex items-center justify-center bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary rounded-md cursor-pointer transition-colors duration-150 group"
-                >
-                  <Printer className="w-4 h-4 text-primary transition-colors" weight="duotone" />
+                  <FloppyDisk className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground transition-colors" />
                 </Button>
               </TooltipBtn>
 
@@ -139,14 +107,30 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                   onClick={onExport}
                   data-testid="toolbar-export"
                   aria-label="تصدير صورة"
-                  className="h-8 w-8 p-0 flex items-center justify-center text-foreground/85 hover:text-primary hover:bg-primary/10 rounded-md cursor-pointer transition-colors duration-150 group"
+                  className="h-8 w-8 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md cursor-pointer transition-colors duration-150 group"
                 >
-                  <Export className="w-4 h-4 text-foreground/85 group-hover:text-primary transition-colors" />
+                  <Export className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground transition-colors" />
+                </Button>
+              </TooltipBtn>
+
+              {/* طباعة (Ctrl+P) — إجراء الإخراج الأساسي بأبعاد موحدة 32×32 */}
+              <TooltipBtn content="طباعة المستند (Ctrl + P)">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onPrint}
+                  data-testid="toolbar-print"
+                  aria-label="طباعة المستند"
+                  className="h-8 w-8 p-0 flex items-center justify-center bg-primary/15 text-primary hover:bg-primary/25 hover:text-primary border border-primary/25 rounded-md cursor-pointer transition-colors duration-150 group"
+                >
+                  <Printer className="w-4 h-4 text-primary transition-colors" weight="duotone" />
                 </Button>
               </TooltipBtn>
             </div>
 
-            {/* قائمة المزيد: الخيارات الإضافية للمستند والمشاريع */}
+            <Separator orientation="vertical" className="h-4 mx-1 bg-border/60 shrink-0" />
+
+            {/* قائمة المزيد: مسح مساحة العمل معزول في قائمة التأكيد (دون تكرار زر المشاريع الموجود يميناً) */}
             <DropdownMenu>
               <TooltipBtn content="المزيد من الخيارات">
                 <DropdownMenuTrigger asChild>
@@ -155,7 +139,7 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
                     size="icon"
                     data-testid="toolbar-more"
                     aria-label="المزيد من الخيارات"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-md transition-colors cursor-pointer"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
                   >
                     <DotsThreeVertical className="w-4 h-4" weight="bold" />
                   </Button>
@@ -163,28 +147,8 @@ export const Toolbar = React.memo(function Toolbar({ onPrint, onExport, onSave }
               </TooltipBtn>
               <DropdownMenuContent
                 align="end"
-                className="w-52 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5 space-y-1"
+                className="w-48 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1.5"
               >
-                <div className="px-2.5 py-1 text-mini font-bold text-muted-foreground/70 select-none">
-                  خيارات المستند
-                </div>
-
-                <DropdownMenuItem
-                  onClick={() => {
-                    window.dispatchEvent(
-                      new CustomEvent('grido:open-projects-dialog', { detail: { tab: 'list' } }),
-                    );
-                  }}
-                  className="flex items-center justify-between p-2 text-xs rounded-md cursor-pointer hover:bg-accent/80 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Folders className="w-4 h-4 text-muted-foreground" weight="duotone" />
-                    <span className="font-semibold">مكتبة المشاريع</span>
-                  </div>
-                </DropdownMenuItem>
-
-                {/* مسح مساحة العمل — إجراء مدمِّر معزول في قائمة التأكيد */}
-                <DropdownMenuSeparator className="my-1 border-border/50" />
                 <DropdownMenuItem
                   onClick={() =>
                     window.dispatchEvent(new CustomEvent('grido:clear-canvas-request'))

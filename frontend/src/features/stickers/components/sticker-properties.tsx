@@ -428,9 +428,7 @@ export const StickerProperties = React.memo(function StickerProperties({
 
               {/* Font Scale Slider */}
               <FluentSliderField
-                layout="inline"
                 label="حجم الخط"
-                labelWidth="w-16"
                 value={params.fontScale ?? 1}
                 min={0.8}
                 max={1.3}
@@ -553,11 +551,9 @@ export const StickerProperties = React.memo(function StickerProperties({
             </div>
 
             {/* Sliders */}
-            <div className="p-2.5 rounded-md bg-card/40 border border-border/30 space-y-2">
+            <div className="p-2.5 rounded-md bg-card/40 border border-border/30 space-y-2.5">
               <FluentSliderField
-                layout="inline"
                 label="صفوف"
-                labelWidth="w-12"
                 value={gridConfig.rows}
                 min={1}
                 max={8}
@@ -565,9 +561,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                 onChange={(val) => onChangeGridConfig((prev) => ({ ...prev, rows: val }))}
               />
               <FluentSliderField
-                layout="inline"
                 label="أعمدة"
-                labelWidth="w-12"
                 value={gridConfig.cols}
                 min={1}
                 max={8}
@@ -575,9 +569,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                 onChange={(val) => onChangeGridConfig((prev) => ({ ...prev, cols: val }))}
               />
               <FluentSliderField
-                layout="inline"
                 label="مسافة"
-                labelWidth="w-12"
                 value={gridConfig.spacingMm}
                 min={0}
                 max={20}

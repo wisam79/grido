@@ -115,8 +115,8 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
 
   return (
     <>
-      <Separator orientation="vertical" className="h-4 mx-0.5 bg-border/60" />
-      <div className="fluent-command-group shadow-2xs">
+      <Separator orientation="vertical" className="h-4 mx-1 bg-border/60" />
+      <div className="fluent-command-group">
         <TooltipBtn
           content={elementsCount === 0 ? 'الكانفس فارغ — أضف عناصر أولاً' : 'تكرار في الكولاج'}
         >
@@ -128,7 +128,7 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
             data-testid="toolbar-transfer-to-collage"
             aria-label="تكرار في الكولاج"
             title={elementsCount === 0 ? 'الكانفس فارغ — أضف عناصر أولاً' : undefined}
-            className="h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer flex items-center justify-center disabled:opacity-40"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer flex items-center justify-center disabled:opacity-40"
           >
             {isTransferring ? (
               <Spinner className="w-4 h-4 animate-spin" />
@@ -137,7 +137,7 @@ export const ToolbarTransferToCollage = React.memo(function ToolbarTransferToCol
               // عند التمرير). اللون الأساسي محجوز لحالة التفعيل الحقيقية
               // (راجع نمط «مفعّل» في toolbar-image-filters) فلا توحي أيقونة
               // زرقاء في الراحة بأن الزر مُفعَّل.
-              <TableArrowRepeatAll className="w-5 h-5" weight="bold" />
+              <TableArrowRepeatAll className="w-4 h-4" weight="bold" />
             )}
           </Button>
         </TooltipBtn>

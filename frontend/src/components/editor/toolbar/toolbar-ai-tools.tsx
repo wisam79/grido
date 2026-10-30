@@ -110,7 +110,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
   // 3. حالة ترميم الوجه جارية
   if (isEnhancing) {
     return (
-      <div className="fluent-command-group font-cairo bg-primary/10 border-primary/30 shadow-2xs">
+      <div className="fluent-command-group font-cairo bg-primary/10 border border-primary/30 rounded-md shadow-2xs">
         <div
           className={cn(
             compact ? 'h-7 px-2' : 'h-8 px-2.5',
@@ -129,7 +129,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
   // 4. الحالة الطبيعية: Split Button أنيق ومدمج يجمع الإجراء السريع والقائمة الذكية
   return (
     <>
-      <div className="fluent-command-group font-cairo bg-primary/5 dark:bg-primary/10 border-primary/25 dark:border-primary/30 shadow-2xs">
+      <div className="fluent-command-group font-cairo bg-primary/5 dark:bg-primary/10 border border-primary/25 dark:border-primary/30 rounded-md overflow-hidden shadow-2xs">
         {/* الزر الرئيسي السريع: عزل الخلفية الذكي */}
         <TooltipBtn content="عزل الخلفية الذكي">
           <Button
@@ -138,7 +138,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
             aria-label="عزل الخلفية"
             className={cn(
               compact ? 'h-7 px-2' : 'h-8 px-2.5',
-              'gap-1.5 font-bold text-xs text-primary hover:text-primary hover:bg-primary/10 rounded-s-md rounded-e-none border-e border-primary/20 transition-colors cursor-pointer flex items-center select-none group',
+              'gap-1.5 font-bold text-xs text-primary hover:text-primary hover:bg-primary/10 rounded-none border-e border-primary/20 transition-colors cursor-pointer flex items-center select-none group',
             )}
             onClick={() => handleRemoveBg(selectedItem)}
           >
@@ -157,7 +157,7 @@ export const AiToolsToolbarGroup = React.memo(function AiToolsToolbarGroup({
                 aria-label="المزيد من أدوات الذكاء الاصطناعي"
                 className={cn(
                   compact ? 'h-7 px-1' : 'h-8 px-1.5',
-                  'text-primary hover:text-primary hover:bg-primary/10 rounded-s-none rounded-e-md transition-colors cursor-pointer flex items-center justify-center',
+                  'text-primary hover:text-primary hover:bg-primary/10 rounded-none transition-colors cursor-pointer flex items-center justify-center',
                 )}
               >
                 <CaretDown className="w-3.5 h-3.5 opacity-80" />

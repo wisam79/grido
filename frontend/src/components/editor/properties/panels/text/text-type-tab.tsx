@@ -239,7 +239,6 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
 
         <FluentSection title="التباعد" collapsible defaultOpen={true}>
           <FluentSliderField
-            layout="inline"
             label="ارتفاع السطر"
             value={currentLineHeight}
             min={0.8}
@@ -250,7 +249,6 @@ export function TextTypeTab({ element, onUpdate }: TextTabProps) {
             onCommit={pushHistory}
           />
           <FluentSliderField
-            layout="inline"
             label={isArabic ? 'تباعد الكلمات' : 'تباعد الحروف'}
             value={currentSpacing}
             min={isArabic ? 0 : -5}

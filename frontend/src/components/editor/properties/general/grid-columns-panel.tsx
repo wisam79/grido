@@ -213,8 +213,6 @@ export const GridColumnsPanel = React.memo(function GridColumnsPanel() {
                 {/* شريط الشفافية القياسي */}
                 <FluentSliderField
                   label="الشفافية"
-                  layout="inline"
-                  labelWidth="w-16"
                   value={Math.round(gridOpacity * 100)}
                   min={5}
                   max={100}

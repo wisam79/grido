@@ -94,11 +94,9 @@ export function ImageAdjustProperties({
           </div>
         </div>
 
-        <div className="space-y-1.5 pt-1">
+        <div className="space-y-2.5 pt-1">
           <FluentSliderField
             label="السطوع"
-            layout="inline"
-            labelWidth="w-14"
             value={element.brightness ?? 100}
             min={0}
             max={200}
@@ -115,8 +113,6 @@ export function ImageAdjustProperties({
           />
           <FluentSliderField
             label="التباين"
-            layout="inline"
-            labelWidth="w-14"
             value={element.contrast ?? 100}
             min={0}
             max={200}
@@ -133,8 +129,6 @@ export function ImageAdjustProperties({
           />
           <FluentSliderField
             label="التشبع"
-            layout="inline"
-            labelWidth="w-14"
             value={element.saturation ?? 100}
             min={0}
             max={200}
@@ -151,8 +145,6 @@ export function ImageAdjustProperties({
           />
           <FluentSliderField
             label="الضبابية"
-            layout="inline"
-            labelWidth="w-14"
             value={element.blur ?? 0}
             min={0}
             max={20}
@@ -195,8 +187,6 @@ export function ImageAdjustProperties({
       <FluentSection title="الشفافية">
         <FluentSliderField
           label="شفافية الصورة"
-          layout="inline"
-          labelWidth="w-24"
           value={currentOpacity}
           min={0}
           max={100}
@@ -236,9 +226,9 @@ export function ImageFiltersSection({ element, onUpdate }: ImagePropertiesProps)
         ) : undefined
       }
     >
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-3 gap-1.5">
         {IMAGE_FILTERS.map((filter) => {
-          const isActive = element.filter === filter.id;
+          const isActive = (element.filter || 'none') === filter.id;
           return (
             <button
               key={filter.id}
@@ -251,14 +241,14 @@ export function ImageFiltersSection({ element, onUpdate }: ImagePropertiesProps)
               aria-label={filter.name}
               title={filter.name}
               className={cn(
-                'flex flex-col items-center gap-1 p-1 rounded-md border transition-colors cursor-pointer',
+                'flex flex-col items-center gap-1 p-1 rounded-md border transition-colors duration-150 cursor-pointer',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
                 isActive
-                  ? 'border-primary bg-primary/10 text-primary font-bold shadow-xs'
-                  : 'border-border/60 bg-card hover:bg-accent text-muted-foreground',
+                  ? 'border-primary bg-primary/10 text-primary font-semibold'
+                  : 'border-border/60 bg-card/60 hover:bg-accent/60 text-muted-foreground hover:text-foreground',
               )}
             >
-              <span className="w-full aspect-square rounded-md overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
+              <span className="w-full aspect-4/3 rounded-sm overflow-hidden shrink-0 border border-foreground/10 bg-muted relative">
                 <img
                   src={element.imageSrc}
                   alt=""
@@ -266,7 +256,7 @@ export function ImageFiltersSection({ element, onUpdate }: ImagePropertiesProps)
                   style={{ filter: filter.css }}
                 />
               </span>
-              <span className="text-mini w-full text-center leading-tight">
+              <span className="text-mini w-full text-center leading-tight truncate px-0.5">
                 {filterShortName(filter.name)}
               </span>
             </button>
@@ -678,8 +668,6 @@ export function ImageStyleProperties({ element, onUpdate }: ImagePropertiesProps
       <FluentSection title="استدارة وقناع القص">
         <FluentSliderField
           label="الزوايا"
-          layout="inline"
-          labelWidth="w-14"
           value={element.cornerRadius || 0}
           min={0}
           max={200}

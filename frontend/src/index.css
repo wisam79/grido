@@ -790,9 +790,9 @@
     outline-offset: 2px !important;
   }
 
-  /* ─── Fluent 2 Command Groups ────────────────────────────── */
+  /* ─── Fluent 2 Command Groups (Flat CommandBar Cluster) ─── */
   .fluent-command-group {
-    @apply flex items-center gap-0 bg-muted/50 dark:bg-background/90 border border-border/60 dark:border-border p-0.5 rounded-md;
+    @apply flex items-center gap-0.5;
   }
 
   /* ─── Native Visual Depth & High-Contrast System (4-Tier Hierarchy) ─── */

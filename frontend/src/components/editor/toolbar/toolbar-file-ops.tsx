@@ -232,9 +232,9 @@ export function ToolbarFileOps() {
   return (
     <>
       {/* مجموعة الإدراج والمشاريع */}
-      <div className="fluent-command-group shadow-2xs">
+      <div className="fluent-command-group gap-1">
         {/* زر الإدراج المنقسم: فتح صورة فوري + قائمة منسدلة للدفعة والكاميرا */}
-        <div className="flex items-center rounded-md overflow-hidden">
+        <div className="flex items-center rounded-md border border-border/70 bg-card/50 hover:bg-card/80 transition-colors overflow-hidden shadow-2xs">
           <TooltipBtn content="إدراج صورة جديدة (Ctrl + O)">
             <Button
               variant="ghost"
@@ -242,9 +242,9 @@ export function ToolbarFileOps() {
               onClick={handleOpenFile}
               data-testid="toolbar-insert"
               aria-label="إدراج صورة جديدة"
-              className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-s-md rounded-e-none hover:bg-background/80 transition-colors cursor-pointer text-xs flex items-center justify-center select-none group border-e border-border/40"
+              className="h-8 px-2.5 gap-1.5 text-foreground hover:text-primary font-bold rounded-none hover:bg-muted/60 transition-colors cursor-pointer text-xs flex items-center justify-center select-none group border-e border-border/50"
             >
-              <AddPhotoIcon className="w-4 h-4 text-foreground" />
+              <AddPhotoIcon className="w-4 h-4 text-foreground group-hover:text-primary transition-colors" />
               <span>إدراج</span>
             </Button>
           </TooltipBtn>
@@ -256,7 +256,7 @@ export function ToolbarFileOps() {
                   variant="ghost"
                   size="sm"
                   aria-label="خيارات الإدراج"
-                  className="h-8 px-1.5 text-muted-foreground hover:text-foreground rounded-s-none rounded-e-md hover:bg-background/80 transition-colors cursor-pointer"
+                  className="h-8 px-1.5 text-muted-foreground hover:text-foreground rounded-none hover:bg-muted/60 transition-colors cursor-pointer"
                 >
                   <CaretDown className="w-3.5 h-3.5 opacity-70" />
                 </Button>
@@ -344,7 +344,7 @@ export function ToolbarFileOps() {
             }}
             data-testid="toolbar-projects"
             aria-label="مكتبة المشاريع"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-md transition-colors cursor-pointer group"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer group"
           >
             <Folders
               className="w-4 h-4 text-muted-foreground/90 group-hover:text-foreground transition-colors"
