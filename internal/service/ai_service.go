@@ -452,7 +452,7 @@ func decodeAIImagePayload(payload string, maxEncoded, maxDecoded int) ([]byte, e
 	if strings.HasPrefix(payload, "data:") {
 		header, data, ok := strings.Cut(payload, ",")
 		if !ok || !strings.HasPrefix(header, "data:image/") || !strings.HasSuffix(header, ";base64") {
-			return nil, fmt.Errorf("invalid image data URL; expected data:image/...;base64,...")
+			return nil, fmt.Errorf("invalid image data URL; expected data:image/<type>;base64,<payload>")
 		}
 		mediaType := strings.TrimSuffix(strings.TrimPrefix(header, "data:image/"), ";base64")
 		if mediaType == "" || strings.ContainsAny(mediaType, "; \t\r\n") {

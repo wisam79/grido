@@ -81,20 +81,6 @@ func aiTestSuccessBody(t *testing.T) string {
 	return string(body)
 }
 
-func assertAILocalCount(t *testing.T, token string, want int) {
-	t.Helper()
-	key := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))[:16]
-	GlobalAIRateLimiter.mu.Lock()
-	defer GlobalAIRateLimiter.mu.Unlock()
-	count := 0
-	if entry := GlobalAIRateLimiter.usage[key]; entry != nil {
-		count = entry.Count
-	}
-	if count != want {
-		t.Errorf("local count = %d, want %d", count, want)
-	}
-}
-
 // TestEnhanceImageWithAI_Success verifies end-to-end connection, payload structure,
 // User-Agent header, trailing slash cleanup, and successful JSON response parsing.
 func TestEnhanceImageWithAI_Success(t *testing.T) {

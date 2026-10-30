@@ -411,6 +411,14 @@ export function useAiEnhance(
       const imageSrc = await withinDeadline(() => SaveImageFromBase64(payload));
       const resultDimensions = await withinDeadline(() => measureAiImageDimensions(imageSrc));
 
+      if (
+        documentSession !== getDocumentSession() ||
+        projectId !== useEditorStore.getState().projectId ||
+        userEmail !== useEditorStore.getState().user?.email
+      ) {
+        return;
+      }
+
       const commit = commitAiImageResult(
         target,
         imageSrc,
