@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from './templates/constants';
+
 export const AUTOFILL_IMAGE_LIMIT = 500;
 // Queues contain durable local paths or existing image data, never session-only Blob URLs.
 const queuedImageSchema = z
@@ -346,8 +348,8 @@ export const ProjectSchema = z.object({
   cutShapeType: z.enum(['rectangle', 'circle', 'rounded-rect']).optional().default('rectangle'),
 
   // تخصيصات الكولاج
-  collageGap: z.number().optional().default(0),
-  collageMargin: z.number().optional().default(0),
+  collageGap: z.number().optional().default(DEFAULT_COLLAGE_GAP_PX),
+  collageMargin: z.number().optional().default(DEFAULT_COLLAGE_MARGIN_PX),
   collageRadius: z.number().optional().default(0),
   collageShowCutLines: z.boolean().optional().default(false),
   // يطابق DEFAULT_COLLAGE_STATE.collageShowEndCutLine (true)

@@ -142,8 +142,8 @@ export const SNAPSHOT_FIELDS: { readonly [K in SnapshotKey]: SnapshotFieldSpec<K
       a.shuffle === b.shuffle &&
       a.seed === b.seed,
   },
-  collageGap: { default: 0 },
-  collageMargin: { default: 0 },
+  collageGap: { default: DEFAULT_COLLAGE_STATE.collageGap },
+  collageMargin: { default: DEFAULT_COLLAGE_STATE.collageMargin },
   collageRadius: { default: 0 },
   collageShowCutLines: { default: false },
   collageShowEndCutLine: { default: true },

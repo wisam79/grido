@@ -4,7 +4,11 @@ import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components
 import { Switch } from '@/components/ui/switch';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
-import { getEffectiveDpi } from '@/lib/templates';
+import {
+  DEFAULT_COLLAGE_GAP_MM,
+  DEFAULT_COLLAGE_MARGIN_MM,
+  getEffectiveDpi,
+} from '@/lib/templates';
 import { ColorField, ColorPanel } from './color-panel';
 
 export function CollageSettings() {
@@ -68,7 +72,7 @@ export function CollageSettings() {
             max={30}
             step={0.1}
             unit="mm"
-            defaultValue={0}
+            defaultValue={DEFAULT_COLLAGE_GAP_MM}
             onChange={(mm) => setCollageGap(toPx(mm))}
             onCommit={() => useEditorStore.getState().pushHistory()}
           />
@@ -79,7 +83,7 @@ export function CollageSettings() {
             max={100}
             step={0.1}
             unit="mm"
-            defaultValue={0}
+            defaultValue={DEFAULT_COLLAGE_MARGIN_MM}
             onChange={(mm) => setCollageMargin(toPx(mm))}
             onCommit={() => useEditorStore.getState().pushHistory()}
           />

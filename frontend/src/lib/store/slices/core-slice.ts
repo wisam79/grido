@@ -449,8 +449,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       template: null,
       collageTemplate: COLLAGE_TEMPLATES[0],
       slots: freshSlots,
-      collageGap: 0,
-      collageMargin: 0,
+      collageGap: DEFAULT_COLLAGE_STATE.collageGap,
+      collageMargin: DEFAULT_COLLAGE_STATE.collageMargin,
       collageRadius: 0,
       collageShowCutLines: false,
       // 🛡️ كان السطر الوحيد الناقص من الافتراضيات هنا: `reset()` يُبقي القيمة

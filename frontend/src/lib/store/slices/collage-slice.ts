@@ -16,6 +16,8 @@ import { clamp } from '../../clamp';
 import { AUTOFILL_IMAGE_LIMIT } from '../../schema';
 import {
   COLLAGE_TEMPLATES,
+  DEFAULT_COLLAGE_GAP_PX,
+  DEFAULT_COLLAGE_MARGIN_PX,
   computeDynamicCollageCells,
   getEffectiveDpi,
   getPhysicalMaxMarginMM,
@@ -196,7 +198,16 @@ export function remapSlotsToCells(
 }
 
 export function generateInitialSlots(): CanvasSlot[] {
-  return initialCollage.cells.map((c, i) => ({
+  const dynamicCells = computeDynamicCollageCells(
+    initialCollage,
+    2480,
+    3508,
+    300,
+    DEFAULT_COLLAGE_GAP_PX,
+    DEFAULT_COLLAGE_MARGIN_PX,
+  );
+  const cells = dynamicCells || initialCollage.cells;
+  return cells.map((c, i) => ({
     // uid() (crypto.randomUUID) مثل بقية التطبيق بدل Math.random
     id: uid(),
     cellIndex: i,
@@ -218,8 +229,8 @@ export const DEFAULT_COLLAGE_STATE = {
   template: null as PhotoTemplate | null,
   collageTemplate: initialCollage,
   slots: generateInitialSlots(),
-  collageGap: 0,
-  collageMargin: 0,
+  collageGap: DEFAULT_COLLAGE_GAP_PX,
+  collageMargin: DEFAULT_COLLAGE_MARGIN_PX,
   collageRadius: 0,
   collageShowCutLines: false,
   collageShowEndCutLine: true,
