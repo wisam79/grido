@@ -13,6 +13,7 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 600,
     defaultHeight: 400,
     aspectRatio: 600 / 400,
+    defaultMm: { width: 120, height: 80 },
     defaultColors: {
       primary: '#DC2626',
       secondary: '#1F2937',
@@ -88,6 +89,7 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 400,
     defaultHeight: 500,
     aspectRatio: 400 / 500,
+    defaultMm: { width: 80, height: 100 },
     defaultColors: {
       primary: '#0F172A',
       secondary: '#0284C7',
@@ -137,6 +139,7 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 400,
     defaultHeight: 500,
     aspectRatio: 400 / 500,
+    defaultMm: { width: 80, height: 100 },
     defaultColors: {
       primary: '#0284C7',
       secondary: '#0F172A',
@@ -198,6 +201,7 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 400,
     aspectRatio: 500 / 400,
+    defaultMm: { width: 100, height: 80 },
     defaultColors: {
       primary: '#EA580C',
       secondary: '#1E293B',
@@ -262,6 +266,7 @@ export const SHIPPING_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 420,
     defaultHeight: 480,
     aspectRatio: 420 / 480,
+    defaultMm: { width: 84, height: 96 },
     defaultColors: {
       primary: '#E11D48',
       secondary: '#0F172A',

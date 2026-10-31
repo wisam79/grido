@@ -67,19 +67,40 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
   const cached = aspectRatioCache.get(src);
   if (cached !== undefined) return cached;
 
+  const dims = await resolveImageDimensions(src);
+  return dims ? dims.width / dims.height : 1;
+}
+
+/**
+ * قياس الأبعاد الكاملة (بعد EXIF) لمصدر واحد — النسخة الموجهة للأبعاد لا للنسبة:
+ * تفحص كاش الأبعاد أولاً، ثم Go للصور المحلية، ثم createImageBitmap للذاكرة،
+ * ثم HTMLImageElement احتياطياً. الفشل يعيد null (يختلف عن النسبة التي تعيد 1).
+ */
+export async function resolveImageDimensions(
+  src: string,
+): Promise<{ width: number; height: number } | null> {
+  if (!src) return null;
+
+  const cached = dimensionsCache.get(src);
+  if (cached) return cached;
+
   // 1. استخدام Go Backend السريع للصور المحلية (/local-image/) مع قراءة EXIF في Go مباشرة
   if (typeof GetImageDimensions === 'function' && src.startsWith('/local-image/')) {
     try {
       const dims = await GetImageDimensions(src);
       if (dims && dims.width > 0 && dims.height > 0) {
         rememberDimensions(src, dims.width, dims.height, dims.isRotated);
-        const aspect = dims.isRotated ? dims.height / dims.width : dims.width / dims.height;
-        setCachedImageAspectRatio(src, aspect);
-        return aspect;
+        setCachedImageAspectRatio(
+          src,
+          dims.isRotated ? dims.height / dims.width : dims.width / dims.height,
+        );
+        return dims.isRotated
+          ? { width: dims.height, height: dims.width }
+          : { width: dims.width, height: dims.height };
       }
     } catch (e) {
       logger.warn(
-        '[resolveImageAspectRatio] Go backend GetImageDimensions failed, falling back to browser decoder:',
+        '[resolveImageDimensions] Go backend GetImageDimensions failed, falling back to browser decoder:',
         e,
       );
     }
@@ -97,9 +118,8 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
       try {
         if (bitmap && bitmap.width > 0 && bitmap.height > 0) {
           rememberDimensions(src, bitmap.width, bitmap.height);
-          const aspect = bitmap.width / bitmap.height;
-          setCachedImageAspectRatio(src, aspect);
-          return aspect;
+          setCachedImageAspectRatio(src, bitmap.width / bitmap.height);
+          return { width: bitmap.width, height: bitmap.height };
         }
       } finally {
         // إغلاق دائماً (بما فيه مسار القياس الصفري) — كان يتسرب قبل السقوط
@@ -111,7 +131,7 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
   }
 
   // 3. المسار القياسي الاحتياطي عبر HTMLImageElement مع EXIF check
-  return new Promise<number>((resolve) => {
+  return new Promise<{ width: number; height: number } | null>((resolve) => {
     const img = new Image();
     img.onload = async () => {
       const w = img.naturalWidth || img.width;
@@ -122,21 +142,85 @@ export async function resolveImageAspectRatio(src: string): Promise<number> {
       if (w > 0 && h > 0) {
         const exif = await getExifOrientation(src);
         rememberDimensions(src, w, h, exif.isQuarterRotated);
-        const aspect = exif.isQuarterRotated ? h / w : w / h;
-        setCachedImageAspectRatio(src, aspect);
-        resolve(aspect);
+        setCachedImageAspectRatio(src, exif.isQuarterRotated ? h / w : w / h);
+        resolve(exif.isQuarterRotated ? { width: h, height: w } : { width: w, height: h });
       } else {
-        resolve(1);
+        resolve(null);
       }
     };
     img.onerror = () => {
       img.onload = null;
       img.onerror = null;
       img.src = '';
-      resolve(1);
+      resolve(null);
     };
     img.src = src;
   });
+}
+
+/**
+ * قياس الأبعاد الكاملة لمجموعة مصادر دفعة واحدة: كاش الأبعاد أولاً، ثم
+ * GetBatchImageDimensions في Go بنداء IPC واحد للمحليات، ثم القياس الفردي
+ * لما تبقى. يملأ كاش الأبعاد الكاملة لكل مصدر نجح — أساس فحوص الجودة
+ * (preflight) وإعادة الراسترة التي تحتاج عرض المصدر الحقيقي بالبكسل.
+ */
+export async function resolveBatchImageDimensions(
+  srcs: string[],
+): Promise<Map<string, { width: number; height: number }>> {
+  const result = new Map<string, { width: number; height: number }>();
+  if (!srcs || srcs.length === 0) return result;
+
+  const uncached: string[] = [];
+  for (const src of srcs) {
+    if (!src) continue;
+    const cached = dimensionsCache.get(src);
+    if (cached) {
+      result.set(src, cached);
+    } else {
+      uncached.push(src);
+    }
+  }
+
+  if (uncached.length === 0) {
+    return result;
+  }
+
+  const localSrcs = uncached.filter((s) => s.startsWith('/local-image/'));
+
+  if (localSrcs.length > 0 && typeof GetBatchImageDimensions === 'function') {
+    try {
+      const batchDims = await GetBatchImageDimensions(localSrcs);
+      if (batchDims && typeof batchDims === 'object') {
+        for (const src of localSrcs) {
+          const dims = (
+            batchDims as Record<string, { width: number; height: number; isRotated?: boolean }>
+          )[src];
+          if (dims && dims.width > 0 && dims.height > 0) {
+            rememberDimensions(src, dims.width, dims.height, dims.isRotated);
+            const oriented = dims.isRotated
+              ? { width: dims.height, height: dims.width }
+              : { width: dims.width, height: dims.height };
+            setCachedImageAspectRatio(src, oriented.width / oriented.height);
+            result.set(src, oriented);
+          }
+        }
+      }
+    } catch (e) {
+      logger.warn('[resolveBatchImageDimensions] Go batch call failed, will fallback:', e);
+    }
+  }
+
+  const stillUnresolved = uncached.filter((s) => !result.has(s));
+  if (stillUnresolved.length > 0) {
+    await Promise.all(
+      stillUnresolved.map(async (src) => {
+        const dims = await resolveImageDimensions(src);
+        if (dims) result.set(src, dims);
+      }),
+    );
+  }
+
+  return result;
 }
 
 /**

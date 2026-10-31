@@ -335,9 +335,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         selectedTemplate.aspectRatio,
         selectedTemplate.defaultMm,
       );
-      const pngBlob = await renderSvgToPngBlob(svgString, width, height, [
-        params.fontFamily || 'Cairo',
-      ]);
+      const pngBlob = await renderSvgToPngBlob(
+        svgString,
+        width,
+        height,
+        [params.fontFamily || 'Cairo'],
+        { dpi: 300 },
+      );
       const safeSvg = exportableSvg || sanitizeSvgMarkup(svgString);
       await handleInsertToCanvas(pngBlob, safeSvg);
       if (cancelledRef.current) return;
@@ -366,9 +370,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         selectedTemplate.aspectRatio,
         selectedTemplate.defaultMm,
       );
-      const singlePng = await renderSvgToPngBlob(svgString, width, height, [
-        params.fontFamily || 'Cairo',
-      ]);
+      const singlePng = await renderSvgToPngBlob(
+        svgString,
+        width,
+        height,
+        [params.fontFamily || 'Cairo'],
+        { dpi: 300 },
+      );
       // شيت يطابق نسبة ورق الطباعة الحالية (A4 الافتراضي 210×297) بدل مربع ثابت —
       // يُدرج على الكانفس بلا هوامش فارغة، وعلامات القص بالمليمتر النظامي
       const sheetMm = resolveStickerSheetMm();
@@ -379,6 +387,10 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         sheetWidthMm: sheetMm.width,
         sheetHeightMm: sheetMm.height,
         dpi: 300,
+        // ✂️ السقف الفيزيائي: الملصق يُطبع بمقاسه المعلن لا بمقاس الخلية —
+        // التمدد كان يكبّره فوق راستر 300DPI فيلين الحواف
+        stickerWidthMm: selectedTemplate.defaultMm?.width,
+        stickerHeightMm: selectedTemplate.defaultMm?.height,
       });
       const safeSvg = exportableSvg || sanitizeSvgMarkup(svgString);
       await handleInsertToCanvas(sheetPng, safeSvg);
@@ -514,9 +526,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
           selectedTemplate.defaultMm,
           dpi,
         );
-        const pngBlob = await renderSvgToPngBlob(svgString, width, height, [
-          params.fontFamily || 'Cairo',
-        ]);
+        const pngBlob = await renderSvgToPngBlob(
+          svgString,
+          width,
+          height,
+          [params.fontFamily || 'Cairo'],
+          { dpi },
+        );
         if (cancelledRef.current) return;
         downloadBlob(pngBlob, `${selectedTemplate.id}-${dpi}dpi.png`);
         toast.success(
@@ -545,9 +561,13 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
         selectedTemplate.aspectRatio,
         selectedTemplate.defaultMm,
       );
-      const pngUrl = await renderSvgToPngDataUrl(svgString, width, height, [
-        params.fontFamily || 'Cairo',
-      ]);
+      const pngUrl = await renderSvgToPngDataUrl(
+        svgString,
+        width,
+        height,
+        [params.fontFamily || 'Cairo'],
+        { dpi: 300 },
+      );
       const ok = await copyPngDataUrlToClipboard(pngUrl);
       if (cancelledRef.current) return;
       if (ok) {

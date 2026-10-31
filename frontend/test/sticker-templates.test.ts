@@ -130,6 +130,21 @@ describe('Modular Stickers Architecture (features/stickers)', () => {
     });
   });
 
+  it('should give every template an explicit physical defaultMm (print raster anchor)', () => {
+    // 🖨️ راستر الملصق يُحسب من defaultMm (stickerRasterSize) — غيابه كان يعني
+    // افتراض 50مم تخمينياً ودقة طباعة غير مقصودة. التدقيق الآلي
+    // (scripts/sticker-template-audit.mjs) يبلغ 83/83؛ هذا الحارس يمنع عودة الفجوة.
+    const missing = ALL_STICKER_TEMPLATES.filter(
+      (t) =>
+        !t.defaultMm ||
+        !(t.defaultMm.width > 0) ||
+        !Number.isFinite(t.defaultMm.width) ||
+        !(t.defaultMm.height > 0) ||
+        !Number.isFinite(t.defaultMm.height),
+    );
+    expect(missing.map((t) => t.id)).toEqual([]);
+  });
+
   it('should find templates by id correctly', () => {
     const gold = getStickerTemplateById('seal_gold_guarantee');
     expect(gold).toBeDefined();

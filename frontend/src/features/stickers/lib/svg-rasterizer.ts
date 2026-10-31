@@ -7,6 +7,7 @@
  */
 
 import { blobToDataUrl, canvasToBlob } from '@/lib/canvas/canvas-blob';
+import { injectPngDpiBlob } from '@/lib/canvas/png-dpi';
 import { registerObjectUrl } from '@/lib/io/object-url-registry';
 
 import { assertRasterBudget } from './export-limits';
@@ -93,19 +94,23 @@ async function rasterizeSvgToCanvas(
   }
 }
 
-/** يصيّر SVG إلى PNG Blob — المسار المفضّل لكل تصدير/إدراج جديد. */
+/** يصيّر SVG إلى PNG Blob — المسار المفضّل لكل تصدير/إدراج جديد.
+ * `options.dpi` يحقن كتلة pHYs في البايتات كي يقرأ الخارج المقاس الفيزيائي
+ * الصحيح (canvas.toBlob وحدها تكتب PNG بلا كثافة). */
 export async function renderSvgToPngBlob(
   svgString: string,
   width: number = 1200,
   height: number = 1200,
   fontFamilies?: string[],
+  options?: { dpi?: number },
 ): Promise<Blob> {
   if (typeof window === 'undefined' || typeof Blob === 'undefined') {
     // Fallback غير متصفحي: نُبقي SVG كما هو بدل ادعاء PNG غير موجود.
     return new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
   }
   const canvas = await rasterizeSvgToCanvas(svgString, width, height, fontFamilies);
-  return canvasToBlob(canvas, 'image/png');
+  const blob = await canvasToBlob(canvas, 'image/png');
+  return options?.dpi ? injectPngDpiBlob(blob, options.dpi) : blob;
 }
 
 /** توافق خلفي: Data URL من نفس مسار Blob (Base64 عند الحدود فقط). */
@@ -114,8 +119,9 @@ export async function renderSvgToPngDataUrl(
   width: number = 1200,
   height: number = 1200,
   fontFamilies?: string[],
+  options?: { dpi?: number },
 ): Promise<string> {
-  const blob = await renderSvgToPngBlob(svgString, width, height, fontFamilies);
+  const blob = await renderSvgToPngBlob(svgString, width, height, fontFamilies, options);
   if (blob.type === 'image/svg+xml') {
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
   }

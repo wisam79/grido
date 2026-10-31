@@ -711,6 +711,7 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#AE884D',
       secondary: '#5D4637',
@@ -771,6 +772,7 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 560,
     defaultHeight: 420,
     aspectRatio: 560 / 420,
+    defaultMm: { width: 112, height: 84 },
     defaultColors: {
       primary: '#513A2B',
       secondary: '#BFA17E',
@@ -827,6 +829,7 @@ export const FRAME_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#2B6D68',
       secondary: '#BB915B',

@@ -168,6 +168,8 @@ export interface SinglePayloadContext {
   printShowCutLines: boolean;
   printShowEndCutLine: boolean | undefined;
   printCutLineStyle: PrintSettings['cutLineStyle'];
+  /** استبدال مصادر الملصقات المُرقّاة بدقة الطباعة (من ensureStickerPrintResolution) */
+  stickerSrcMap?: ReadonlyMap<string, string>;
 }
 
 export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<BuiltItems | null> {
@@ -183,6 +185,7 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
     printShowCutLines,
     printShowEndCutLine,
     printCutLineStyle,
+    stickerSrcMap,
   } = ctx;
 
   if (!stage) return null;
@@ -270,7 +273,9 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
     for (const compItem of comp.items) {
       items.push(
         domain.PrintItem.createFrom({
-          imageSrc: compItem.imageSrc,
+          // 🖨️ ترقية دقة الملصقات: المصدر المُرقّى (أصل طباعة مؤقت بـ DPI الورقة)
+          // يحل محل راستر الإدراج المنخفض — إن وُجد في خريطة الاستبدال
+          imageSrc: stickerSrcMap?.get(compItem.imageSrc) ?? compItem.imageSrc,
           x: firstBlock.xMM + compItem.x * scaleX,
           y: firstBlock.yMM + compItem.y * scaleY,
           w: compItem.w * scaleX,

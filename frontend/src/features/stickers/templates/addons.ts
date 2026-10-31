@@ -14,6 +14,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#347985',
       secondary: '#203F55',
@@ -82,6 +83,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#BD6E72',
       secondary: '#844B55',
@@ -146,6 +148,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#6D8954',
       secondary: '#304B3C',
@@ -214,6 +217,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 520,
     aspectRatio: 500 / 520,
+    defaultMm: { width: 100, height: 104 },
     defaultColors: {
       primary: '#B47C37',
       secondary: '#5B402B',
@@ -468,6 +472,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#2F405F',
       secondary: '#92703A',
@@ -658,6 +663,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#47877B',
       secondary: '#2D514B',
@@ -733,6 +739,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#BE4934',
       secondary: '#683F2D',
@@ -817,6 +824,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 600,
     defaultHeight: 400,
     aspectRatio: 600 / 400,
+    defaultMm: { width: 120, height: 80 },
     defaultColors: {
       primary: '#BC512E',
       secondary: '#513B2C',
@@ -899,6 +907,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#A87832',
       secondary: '#5D472D',
@@ -981,6 +990,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 600,
     defaultHeight: 450,
     aspectRatio: 600 / 450,
+    defaultMm: { width: 120, height: 90 },
     defaultColors: {
       primary: '#BC841F',
       secondary: '#624524',
@@ -1061,6 +1071,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#285D50',
       secondary: '#876535',
@@ -1133,6 +1144,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#895E6E',
       secondary: '#7D694C',
@@ -1211,6 +1223,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#5B8393',
       secondary: '#3F626E',
@@ -1295,6 +1308,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#515872',
       secondary: '#8C6B45',
@@ -1358,6 +1372,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 600,
     defaultHeight: 400,
     aspectRatio: 600 / 400,
+    defaultMm: { width: 120, height: 80 },
     defaultColors: {
       primary: '#3E7595',
       secondary: '#294B63',
@@ -1452,6 +1467,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#CC9238',
       secondary: '#70513A',
@@ -1525,6 +1541,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 600,
     defaultHeight: 400,
     aspectRatio: 600 / 400,
+    defaultMm: { width: 120, height: 80 },
     defaultColors: {
       primary: '#28786D',
       secondary: '#244E49',
@@ -1612,6 +1629,7 @@ export const ADDON_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 600,
     defaultHeight: 400,
     aspectRatio: 600 / 400,
+    defaultMm: { width: 120, height: 80 },
     defaultColors: {
       primary: '#357C9C',
       secondary: '#264F66',

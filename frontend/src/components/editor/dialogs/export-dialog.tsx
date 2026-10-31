@@ -105,6 +105,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     canvasWidth,
     canvasHeight,
     mode,
+    elements,
     printSettings,
     slots,
     collageTemplate,
@@ -119,6 +120,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       canvasWidth: state.canvasWidth,
       canvasHeight: state.canvasHeight,
       mode: state.mode,
+      elements: state.elements,
       printSettings: state.printSettings,
       slots: state.slots,
       collageTemplate: state.collageTemplate,
@@ -185,6 +187,32 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             ),
             imageDimensions: getLoadedImageDimensions(slots, loadResult.loaded),
             failedSlotIds: loadResult.failedSlotIds,
+          });
+          if (preflight.blocking.length > 0) {
+            toast.error(`تعذر التصدير: ${preflight.blocking[0].message}`);
+            return;
+          }
+          if (preflight.warnings.length > 0) {
+            toast.warning(
+              preflight.warnings.length === 1
+                ? preflight.warnings[0].message
+                : `${preflight.warnings.length} تنبيهات جودة — سيتم التصدير`,
+            );
+          }
+        } else {
+          // 🔍 فحص عناصر الصور الحرة (الملصقات/الأختام) — كانت تُصدَّر بلا أي
+          // حراسة: التكبير فوق قدرة المصدر كان يخفض الدقة الفعالة بصمت.
+          const { resolveFreeformImageDimensions, runFreeformPreflight } =
+            await import('@/lib/export/freeform-preflight');
+          const dims = await resolveFreeformImageDimensions(elements);
+          if (shouldStop()) return;
+          const preflight = runFreeformPreflight({
+            elements,
+            canvasWidthMM: pxToMm(canvasWidth, exportDpi),
+            canvasHeightMM: pxToMm(canvasHeight, exportDpi),
+            canvasWidthPx: canvasWidth,
+            canvasHeightPx: canvasHeight,
+            imageDimensions: dims,
           });
           if (preflight.blocking.length > 0) {
             toast.error(`تعذر التصدير: ${preflight.blocking[0].message}`);

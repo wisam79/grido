@@ -66,9 +66,13 @@ export async function renderVdpBatch(
     try {
       const svg = buildStickerSvg(template, rowParams);
       const { width, height } = stickerRasterSize(template.aspectRatio, template.defaultMm, 300);
-      const pngBlob = await renderSvgToPngBlob(svg, width, height, [
-        rowParams.fontFamily || 'Cairo',
-      ]);
+      const pngBlob = await renderSvgToPngBlob(
+        svg,
+        width,
+        height,
+        [rowParams.fontFamily || 'Cairo'],
+        { dpi: 300 },
+      );
       if (options.signal?.aborted) {
         aborted = true;
         break;

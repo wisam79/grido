@@ -12,6 +12,7 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 600,
     defaultHeight: 340,
     aspectRatio: 600 / 340,
+    defaultMm: { width: 120, height: 68 },
     defaultColors: {
       primary: '#263441',
       secondary: '#315A6F',
@@ -78,6 +79,7 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 380,
     aspectRatio: 500 / 380,
+    defaultMm: { width: 100, height: 76 },
     defaultColors: {
       primary: '#A74856',
       secondary: '#493B3B',
@@ -139,6 +141,7 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 600,
     defaultHeight: 240,
     aspectRatio: 600 / 240,
+    defaultMm: { width: 120, height: 48 },
     defaultColors: {
       primary: '#28312D',
       secondary: '#896222',
@@ -191,6 +194,7 @@ export const PACKAGING_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 460,
     defaultHeight: 460,
     aspectRatio: 1,
+    defaultMm: { width: 92, height: 92 },
     defaultColors: {
       primary: '#286947',
       secondary: '#254735',

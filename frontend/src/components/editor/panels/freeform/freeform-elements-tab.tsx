@@ -160,9 +160,13 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
         }
 
         const { width, height } = stickerRasterSize(template.aspectRatio, template.defaultMm);
-        const pngBlob = await renderSvgToPngBlob(svg, width, height, [
-          params.fontFamily || 'Cairo',
-        ]);
+        const pngBlob = await renderSvgToPngBlob(
+          svg,
+          width,
+          height,
+          [params.fontFamily || 'Cairo'],
+          { dpi: 300 },
+        );
         let finalSrc: string;
         if (wailsIsDesktop()) {
           try {

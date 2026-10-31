@@ -20,6 +20,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 500,
     aspectRatio: 1,
+    defaultMm: { width: 100, height: 100 },
     defaultColors: {
       primary: '#A77B36',
       secondary: '#3B3021',
@@ -72,6 +73,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 560,
     aspectRatio: 500 / 560,
+    defaultMm: { width: 100, height: 112 },
     defaultColors: {
       primary: '#A98552',
       secondary: '#233F40',
@@ -124,6 +126,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
+    defaultMm: { width: 96, height: 96 },
     defaultColors: {
       primary: '#A45D4E',
       secondary: '#563C35',
@@ -173,6 +176,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
+    defaultMm: { width: 96, height: 96 },
     defaultColors: {
       primary: '#587451',
       secondary: '#2D4638',
@@ -229,6 +233,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
+    defaultMm: { width: 96, height: 96 },
     defaultColors: {
       primary: '#B73C43',
       secondary: '#F6DAA1',
@@ -269,6 +274,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
+    defaultMm: { width: 96, height: 96 },
     defaultColors: {
       primary: '#476D79',
       secondary: '#233E4D',
@@ -318,6 +324,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 480,
     defaultHeight: 480,
     aspectRatio: 1,
+    defaultMm: { width: 96, height: 96 },
     defaultColors: {
       primary: '#A77455',
       secondary: '#433B38',

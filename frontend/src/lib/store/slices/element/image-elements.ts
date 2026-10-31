@@ -86,8 +86,10 @@ export const createImageElementsSlice: StateCreator<
         });
 
     let currentZ = nextZIndex(state.elements);
-    const newElements: CanvasElement[] = placedItems.map((placed) => {
+    const newElements: CanvasElement[] = placedItems.map((placed, i) => {
       const elId = uid();
+      // ترتيب الموضعات مطابق لترتيب items في الفرعين (إحداثيات جاهزة أو تخطيط شبكي)
+      const stickerSource = items[i]?.stickerSource;
       const el: CanvasElement = {
         id: elId,
         type: 'image',
@@ -104,6 +106,7 @@ export const createImageElementsSlice: StateCreator<
         contrast: 100,
         saturation: 100,
         blur: 0,
+        ...(stickerSource ? { stickerSource } : {}),
       };
       currentZ += 10;
       return el;

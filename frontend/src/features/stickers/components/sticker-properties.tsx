@@ -556,7 +556,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                 label="صفوف"
                 value={gridConfig.rows}
                 min={1}
-                max={8}
+                max={12}
                 step={1}
                 onChange={(val) => onChangeGridConfig((prev) => ({ ...prev, rows: val }))}
               />
@@ -564,7 +564,7 @@ export const StickerProperties = React.memo(function StickerProperties({
                 label="أعمدة"
                 value={gridConfig.cols}
                 min={1}
-                max={8}
+                max={12}
                 step={1}
                 onChange={(val) => onChangeGridConfig((prev) => ({ ...prev, cols: val }))}
               />

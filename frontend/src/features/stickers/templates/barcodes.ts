@@ -13,6 +13,7 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 500,
     defaultHeight: 300,
     aspectRatio: 500 / 300,
+    defaultMm: { width: 100, height: 60 },
     defaultColors: {
       primary: '#0F172A',
       secondary: '#0284C7',
@@ -79,6 +80,7 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 460,
     defaultHeight: 280,
     aspectRatio: 460 / 280,
+    defaultMm: { width: 92, height: 56 },
     defaultColors: {
       primary: '#111827',
       secondary: '#15803D',
@@ -144,6 +146,7 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 440,
     defaultHeight: 480,
     aspectRatio: 440 / 480,
+    defaultMm: { width: 88, height: 96 },
     defaultColors: {
       primary: '#0F172A',
       secondary: '#2563EB',
@@ -212,6 +215,7 @@ export const BARCODE_TEMPLATES: StickerTemplate[] = [
     defaultWidth: 600,
     defaultHeight: 380,
     aspectRatio: 600 / 380,
+    defaultMm: { width: 120, height: 76 },
     defaultColors: {
       primary: '#1E293B',
       secondary: '#047857',

@@ -1,12 +1,19 @@
 import { describe, it, expect } from 'vitest';
 
-import { autoFitSheetGrid } from '@/features/stickers/lib/sheet-generator';
+import { computeTargetRasterPx } from '@/features/stickers/lib/print-rerasterize';
+import {
+  autoFitSheetGrid,
+  computeSheetCellLayout,
+  DEFAULT_SHEET_MARGIN_MM,
+  SHEET_CUT_MARK_COLOR,
+} from '@/features/stickers/lib/sheet-generator';
 import {
   contrastRatio,
   isLowContrastPair,
   textColorRoles,
 } from '@/features/stickers/lib/sticker-a11y';
 import {
+  mmToPx,
   normalizeArabicQuery,
   namespaceStickerSvgIds,
   postProcessStickerSvg,
@@ -124,5 +131,73 @@ describe('sticker-quality: sheet auto-fit', () => {
     });
     expect(fit.rows).toBeGreaterThanOrEqual(1);
     expect(fit.cols).toBeGreaterThanOrEqual(1);
+  });
+
+  it('anchors the default sheet padding to the same 8mm margin as auto-fit', () => {
+    // ✂️ علامات القص تمتد 7مم خارج الملصق (2مم إزاحة + 5مم طول) — هامش 8مم
+    // يضمن بقاؤها كاملة داخل الورقة عند الخلايا الحدودية.
+    expect(DEFAULT_SHEET_MARGIN_MM).toBe(8);
+    expect(mmToPx(DEFAULT_SHEET_MARGIN_MM)).toBeGreaterThan(mmToPx(7));
+    expect(SHEET_CUT_MARK_COLOR).toBe('#111827');
+  });
+
+  it('caps sheet cells at the declared physical sticker size (no stretch)', () => {
+    // ✂️ خلية أكبر من الملصق كانت تمدده ليملأها فيكبّره فوق راستر 300DPI
+    const A4W = mmToPx(210);
+    const A4H = mmToPx(297);
+    const stickerW = mmToPx(50);
+    const capped = computeSheetCellLayout({
+      sheetWidthPx: A4W,
+      sheetHeightPx: A4H,
+      rows: 3,
+      cols: 3,
+      gapPx: mmToPx(4),
+      paddingPx: mmToPx(8),
+      imgAspect: 1,
+      stickerWidthPx: stickerW,
+      stickerHeightPx: stickerW,
+    });
+    expect(capped.drawW).toBe(stickerW);
+    expect(capped.drawH).toBe(stickerW);
+
+    // بلا سقف: السلوك القديم — التمدد لملء الخلية
+    const uncapped = computeSheetCellLayout({
+      sheetWidthPx: A4W,
+      sheetHeightPx: A4H,
+      rows: 3,
+      cols: 3,
+      gapPx: mmToPx(4),
+      paddingPx: mmToPx(8),
+      imgAspect: 1,
+    });
+    expect(uncapped.drawW).toBeGreaterThan(stickerW);
+  });
+
+  it('preserves sticker aspect when the cell is narrower than the cap', () => {
+    const capped = computeSheetCellLayout({
+      sheetWidthPx: mmToPx(210),
+      sheetHeightPx: mmToPx(297),
+      rows: 6,
+      cols: 6,
+      gapPx: mmToPx(4),
+      paddingPx: mmToPx(8),
+      imgAspect: 2, // ملصق عريض 2:1
+      stickerWidthPx: mmToPx(100),
+      stickerHeightPx: mmToPx(50),
+    });
+    // الخلية أصغر من السقف → ملاءمة contain داخل الخلية بنسبة 2:1
+    expect(capped.drawW / capped.drawH).toBeCloseTo(2, 5);
+    expect(capped.drawW).toBeLessThanOrEqual(capped.cellW);
+  });
+
+  it('computes print-target raster pixels with the 50MP budget guard', () => {
+    expect(computeTargetRasterPx(100, 100, 300)).toEqual({
+      width: mmToPx(100, 300),
+      height: mmToPx(100, 300),
+    });
+    // 1000مم عند 300DPI يتجاوز ميزانية 50MP → null بدل انفجار ذاكرة
+    expect(computeTargetRasterPx(1000, 1000, 300)).toBeNull();
+    expect(computeTargetRasterPx(0, 100, 300)).toBeNull();
+    expect(computeTargetRasterPx(100, 100, 0)).toBeNull();
   });
 });

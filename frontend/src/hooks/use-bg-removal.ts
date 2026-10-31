@@ -128,9 +128,13 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
             namespace: `transparent-${template.id}`,
           });
           const { width, height } = stickerRasterSize(template.aspectRatio, template.defaultMm);
-          const pngBlob = await renderSvgToPngBlob(svg, width, height, [
-            nextParams.fontFamily || 'Cairo',
-          ]);
+          const pngBlob = await renderSvgToPngBlob(
+            svg,
+            width,
+            height,
+            [nextParams.fontFamily || 'Cairo'],
+            { dpi: 300 },
+          );
           let finalSrc: string;
           if (wailsIsDesktop()) {
             try {

@@ -9,6 +9,7 @@ import {
   PollJobStatus,
 } from '@bindings/grido/internal/handlers/printhandler';
 
+import { ensureStickerPrintResolution } from '@/features/stickers/lib/print-rerasterize';
 import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { useStageRef } from '@/lib/canvas/stage-context';
@@ -19,8 +20,13 @@ import {
   runCollagePreflight,
 } from '@/lib/export/collage-preflight-helpers';
 import { CanvasTooLargeError } from '@/lib/export/export-limits';
+import {
+  resolveFreeformImageDimensions,
+  runFreeformPreflight,
+} from '@/lib/export/freeform-preflight';
 import { createLogger } from '@/lib/logger';
 import { computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
+import { buildSingleComposition } from '@/lib/print/single-print-composition';
 
 import { extractPrintImageSrc, generatePrintPageStyle } from './print-page-style';
 import { buildCollagePayload, buildSinglePayload, type BuiltItems } from './print-payload-builder';
@@ -29,6 +35,7 @@ import {
   withTimeout,
   EXPORT_TIMEOUT_MS,
   UPLOAD_TIMEOUT_MS,
+  uploadPrintImage,
 } from './print-transport';
 
 import type { usePrintLayout } from '@/hooks/use-print-layout';
@@ -190,52 +197,56 @@ export function usePrintExport({
     printCutLineStyle,
   ]);
 
-  const buildSingleItems = useCallback(async (): Promise<BuiltItems | null> => {
-    const stage = stageRef.current;
-    if (!stage) {
-      toast.error('تعذر الوصول إلى محتوى الكانفاس');
-      return null;
-    }
-
-    try {
-      return await buildSinglePayload({
-        stage,
-        layout,
-        elements,
-        canvasWidth,
-        canvasHeight,
-        backgroundColor,
-        backgroundGradientColor2: useEditorStore.getState().backgroundGradientColor2,
-        printDpi,
-        printShowCutLines,
-        printShowEndCutLine,
-        printCutLineStyle,
-      });
-    } catch (e) {
-      if (e instanceof CanvasTooLargeError) {
-        // أرقام البكسل والميجابكسل من الحقول المحمولة في الخطأ نفسه (لا نعيد حسابها هنا)
-        const megapixels = (e.pixelCount / 1e6).toFixed(1);
-        toast.error(
-          `أبعاد الطباعة كبيرة جداً (${e.width}×${e.height} بكسل ≈ ${megapixels} ميجابكسل) — الحد الأقصى 50 ميجابكسل. قلّل DPI أو مقاس الورقة.`,
-        );
+  const buildSingleItems = useCallback(
+    async (stickerSrcMap?: ReadonlyMap<string, string>): Promise<BuiltItems | null> => {
+      const stage = stageRef.current;
+      if (!stage) {
+        toast.error('تعذر الوصول إلى محتوى الكانفاس');
         return null;
       }
-      logger.error('Single composition capture failed:', e);
-      toast.error('فشل تجهيز الصورة للطباعة: ' + String(e));
-      return null;
-    }
-  }, [
-    stageRef,
-    layout,
-    elements,
-    canvasWidth,
-    canvasHeight,
-    backgroundColor,
-    printDpi,
-    printShowCutLines,
-    printShowEndCutLine,
-    printCutLineStyle,
-  ]);
+
+      try {
+        return await buildSinglePayload({
+          stage,
+          layout,
+          elements,
+          canvasWidth,
+          canvasHeight,
+          backgroundColor,
+          backgroundGradientColor2: useEditorStore.getState().backgroundGradientColor2,
+          printDpi,
+          printShowCutLines,
+          printShowEndCutLine,
+          printCutLineStyle,
+          stickerSrcMap,
+        });
+      } catch (e) {
+        if (e instanceof CanvasTooLargeError) {
+          // أرقام البكسل والميجابكسل من الحقول المحمولة في الخطأ نفسه (لا نعيد حسابها هنا)
+          const megapixels = (e.pixelCount / 1e6).toFixed(1);
+          toast.error(
+            `أبعاد الطباعة كبيرة جداً (${e.width}×${e.height} بكسل ≈ ${megapixels} ميجابكسل) — الحد الأقصى 50 ميجابكسل. قلّل DPI أو مقاس الورقة.`,
+          );
+          return null;
+        }
+        logger.error('Single composition capture failed:', e);
+        toast.error('فشل تجهيز الصورة للطباعة: ' + String(e));
+        return null;
+      }
+    },
+    [
+      stageRef,
+      layout,
+      elements,
+      canvasWidth,
+      canvasHeight,
+      backgroundColor,
+      printDpi,
+      printShowCutLines,
+      printShowEndCutLine,
+      printCutLineStyle,
+    ],
+  );
 
   const executePrint = useCallback(
     async (effectiveMarginMM: number, onDone: () => void, options?: PrintExecuteOptions) => {
@@ -252,7 +263,71 @@ export function usePrintExport({
         // مجمدة أثناء التقاط كانفاس 50MP المتزامن على خيط UI قبل أن يُرسم المؤشر
         await new Promise((r) => requestAnimationFrame(() => r(null)));
 
-        const built = mode === 'collage' ? await buildItems() : await buildSingleItems();
+        // 🔍 فحص جودة الوضع الحر + ترقية دقة الملصقات — قبل أي التقاط/رفع مكلف.
+        // عناصر الصور الحرة (الملصقات) كانت تُطبع بلا حراسة: تكبيرها فوق قدرة
+        // راسترها كان يخفض DPI الفعالة بصمت. الترقية تُطبَّق على مسار التركيب
+        // السريع فقط؛ مسار الالتقاط يُصيّر الكانفس كما هو فتبقى تحذيرات
+        // preflight هي الغلاف الأمين هناك.
+        let stickerSrcMap: ReadonlyMap<string, string> | undefined;
+        if (mode !== 'collage') {
+          const dims = await resolveFreeformImageDimensions(elements);
+          if (attempt !== attemptRef.current) return;
+
+          const canvasWidthMM = layout.imageWidthMM;
+          const canvasHeightMM = layout.imageHeightMM;
+          const fastPathEligible = buildSingleComposition({
+            elements,
+            canvasWidth,
+            canvasHeight,
+            canvasWidthMM,
+            canvasHeightMM,
+            backgroundColor,
+            backgroundGradientColor2: useEditorStore.getState().backgroundGradientColor2,
+          }).eligible;
+
+          const reraster = fastPathEligible
+            ? await ensureStickerPrintResolution(elements, {
+                canvasWidthMM,
+                canvasHeightMM,
+                targetDpi: printDpi || 300,
+                imageDimensions: dims,
+                upload: uploadPrintImage,
+              })
+            : {
+                srcMap: new Map<string, string>(),
+                newDimensions: new Map<string, { width: number; height: number }>(),
+                notes: [] as string[],
+              };
+          if (attempt !== attemptRef.current) return;
+
+          for (const [src, upgraded] of reraster.newDimensions) dims.set(src, upgraded);
+          stickerSrcMap = reraster.srcMap;
+
+          const preflight = runFreeformPreflight({
+            elements,
+            canvasWidthMM,
+            canvasHeightMM,
+            canvasWidthPx: canvasWidth,
+            canvasHeightPx: canvasHeight,
+            imageDimensions: dims,
+          });
+          if (preflight.blocking.length > 0) {
+            toast.error(`لا يمكن الطباعة: ${preflight.blocking[0].message}`);
+            setExporting(false);
+            return;
+          }
+          const notices = [...reraster.notes, ...preflight.warnings.map((w) => w.message)];
+          if (notices.length > 0) {
+            toast.warning(
+              notices.length === 1
+                ? notices[0]
+                : `${notices.length} تنبيهات جودة (دقة) — تتم الطباعة`,
+            );
+          }
+        }
+
+        const built =
+          mode === 'collage' ? await buildItems() : await buildSingleItems(stickerSrcMap);
         if (!built) {
           setExporting(false);
           return;
@@ -497,6 +572,7 @@ export function usePrintExport({
     [
       mode,
       slots,
+      elements,
       canvasWidth,
       canvasHeight,
       buildItems,

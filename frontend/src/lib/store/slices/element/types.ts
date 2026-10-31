@@ -20,6 +20,8 @@ export interface BatchImageItem {
   y?: number;
   width?: number;
   height?: number;
+  /** مصدر ملصق اختياري لكل بطاقة (صفوف VDP) — يفعّل إعادة التحرير وترقية الدقة وقت الطباعة */
+  stickerSource?: StickerElementSource;
 }
 
 export interface ElementSlice {

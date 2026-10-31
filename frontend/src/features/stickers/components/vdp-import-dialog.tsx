@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import { renderVdpBatch } from '../lib/vdp-batch';
-import { parseVdpFile, VDP_MAX_ROWS } from '../lib/vdp-parser';
+import { applyRowToParams, parseVdpFile, VDP_MAX_ROWS } from '../lib/vdp-parser';
 
 import type { VdpDataset } from '../lib/vdp-parser';
 import type { StickerTemplate, StickerParams } from '../types';
@@ -43,6 +43,10 @@ interface VdpBufferedCard {
   y: number;
   width: number;
   height: number;
+  stickerSource?: {
+    templateId: string;
+    params: StickerParams;
+  };
 }
 
 export interface VdpImportDialogProps {
@@ -143,7 +147,7 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
         setProgress,
         {
           signal: controller.signal,
-          onRendered: (src) => {
+          onRendered: (src, rowIndex) => {
             const cell = placedCells[placedCursor++];
             if (!cell) return;
             buffer.push({
@@ -153,6 +157,13 @@ export const VdpImportDialog = React.memo(function VdpImportDialog({
               y: cell.y,
               width: cell.width,
               height: cell.height,
+              // ربط كل بطاقة بمعاملات صفها (بلا SVG — إعادة التوليد من القالب
+              // أرخص من تخزين 500 متجه في ملف المشروع): يفعّل إعادة التحرير
+              // وترقية الدقة التلقائية وقت الطباعة لمسار print-rerasterize
+              stickerSource: {
+                templateId: template.id,
+                params: applyRowToParams(baseParams, mapping, dataset.rows[rowIndex]),
+              },
             });
             insertedCount++;
             if (buffer.length >= VDP_INSERT_CHUNK) flushBuffer();
