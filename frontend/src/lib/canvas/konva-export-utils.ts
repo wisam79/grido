@@ -135,6 +135,76 @@ function restoreImageNodes(restored: UpgradedImageRecord[]): void {
   }
 }
 
+/** محمّل صورة خام محلي — بلا اعتماد على طبقة lib/export (اتجاه الطبقات) */
+function loadImageElement(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (e) => reject(e);
+    img.src = src;
+  });
+}
+
+/**
+ * 🖨️ استبدال مؤقت لصور عقد Konva بمصادر مُرقّاة قبل التقاط الطباعة/التصدير —
+ * الند التلو لعذر `upgradeImagesToFullResolution`: نسخ العرض تكفي الشاشة
+ * لكن ملصقاً أُعيد راسترته بدقة الطباعة لا يصل للالتقاط عبر srcMap وحده،
+ * فكان يُرسم من راستر إدراجه الصغير مهما بلغت ترقيته.
+ * يعيد دالة استعادة تُرجع كل عقدة لصورتها السابقة (استدعِها في finally).
+ */
+export async function swapNodeImagesForCapture(
+  stage: Konva.Stage,
+  overrides: Array<{ nodeId: string; src: string }>,
+  timeoutMs = 8000,
+): Promise<() => void> {
+  const applied: Array<{ node: KonvaImageNodeLike; image: CanvasImageSource }> = [];
+  const loaded = new Map<string, HTMLImageElement>();
+
+  await Promise.all(
+    overrides.map(async ({ nodeId, src }) => {
+      if (!nodeId || !src || loaded.has(src)) return;
+      try {
+        const img = await Promise.race([
+          loadImageElement(src),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('image load timeout')), timeoutMs),
+          ),
+        ]);
+        loaded.set(src, img);
+      } catch (e) {
+        // فشل تحميل بديل واحد لا يوقف الالتقاط — تبقى العقدة على مصدرها
+        logger.warn('Failed to preload upgraded print image:', src, e);
+      }
+    }),
+  );
+
+  for (const { nodeId, src } of overrides) {
+    const image = loaded.get(src);
+    if (!image) continue;
+    try {
+      const node = stage.findOne(`#${nodeId}`) as unknown as KonvaImageNodeLike | null;
+      if (!node || typeof node.image !== 'function') continue;
+      applied.push({ node, image: node.image() as CanvasImageSource });
+      node.image(image);
+    } catch (e) {
+      logger.warn('Failed to swap node image for capture:', nodeId, e);
+    }
+  }
+  if (applied.length > 0) stage.batchDraw();
+
+  return () => {
+    for (const item of applied) {
+      try {
+        item.node.image(item.image);
+      } catch {
+        // تجاهل عقدة دُمّرت أثناء الالتقاط
+      }
+    }
+    if (applied.length > 0) stage.batchDraw();
+  };
+}
+
 function getScreenPixelRatio(node: CachedImageNode): number {
   const screenRatio = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   const stageScale = node.getStage()?.scaleX() || 1;

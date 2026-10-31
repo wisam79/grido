@@ -28,6 +28,7 @@ vi.mock('../src/components/editor/print/print-transport', () => ({
 
 vi.mock('../src/lib/canvas/konva-export-utils', () => ({
   captureStageBlob: vi.fn(async () => new Blob(['png-bytes'], { type: 'image/png' })),
+  swapNodeImagesForCapture: vi.fn(async () => () => {}),
 }));
 
 const makeLayout = (overrides: Partial<Record<string, unknown>> = {}) =>

@@ -2,7 +2,7 @@ import Konva from 'konva';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { isSpaceHandledByTarget } from '../src/components/editor/canvas/use-canvas-viewport';
-import { withHiddenOverlays } from '../src/lib/canvas/konva-export-utils';
+import { swapNodeImagesForCapture, withHiddenOverlays } from '../src/lib/canvas/konva-export-utils';
 import {
   RING_INNER_RATIO,
   resolveRingInnerRadius,
@@ -313,5 +313,107 @@ describe('Canvas Core Rendering & Image Algorithms', () => {
       });
       expect(parsed.success).toBe(true);
     });
+  });
+});
+
+describe('swapNodeImagesForCapture — ترقية دقة الملصقات في مسار الالتقاط (جلسة 1.68)', () => {
+  function makeFakeStage(nodes: Map<string, { image: (...args: unknown[]) => unknown }>) {
+    return {
+      findOne: (sel: string) => nodes.get(sel.slice(1)) ?? null,
+      batchDraw: vi.fn(),
+    } as unknown as Konva.Stage;
+  }
+
+  function makeNode(initial: unknown) {
+    const holder: { current: unknown } = { current: initial };
+    const node = {
+      image: (...args: unknown[]) => {
+        if (args.length > 0) holder.current = args[0];
+        return holder.current;
+      },
+    };
+    return { holder, node };
+  }
+
+  /** يعترض تعيين src (لا يُمرر للمنشئ) فيطلق onload/onerror فوراً */
+  function stubImageLoad(mode: 'ok' | 'fail-broken-src') {
+    return vi.spyOn(globalThis, 'Image').mockImplementation(function (this: HTMLImageElement) {
+      const img = this as HTMLImageElement & {
+        onerror: ((e: unknown) => void) | null;
+        onload: (() => void) | null;
+      };
+      let current = '';
+      Object.defineProperty(img, 'src', {
+        configurable: true,
+        get: () => current,
+        set: (v: string) => {
+          current = v;
+          queueMicrotask(() => {
+            if (mode === 'fail-broken-src' && v.includes('broken')) {
+              img.onerror?.(new Error('decode failed'));
+            } else {
+              img.onload?.();
+            }
+          });
+        },
+      });
+      return img;
+    } as unknown as typeof Image);
+  }
+
+  it('يستبدل صورة العقدة بالمصدر المُرقّى ويعيدها بعد الاستعادة', async () => {
+    const original = { name: 'original-591px' };
+    const { holder, node } = makeNode(original);
+    const nodes = new Map([['sticker-1', node]]);
+    const stage = makeFakeStage(nodes);
+    const spy = stubImageLoad('ok');
+    try {
+      const restore = await swapNodeImagesForCapture(stage, [
+        { nodeId: 'sticker-1', src: '/local-image/print_upgraded.png' },
+      ]);
+      expect(holder.current).not.toBe(original);
+      restore();
+      expect(holder.current).toBe(original);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('يتخطى العقدة المفقودة بصمت ولا يرمي', async () => {
+    const stage = makeFakeStage(new Map());
+    const spy = stubImageLoad('ok');
+    try {
+      const restore = await swapNodeImagesForCapture(stage, [
+        { nodeId: 'ghost', src: '/local-image/whatever.png' },
+      ]);
+      expect(typeof restore).toBe('function');
+      expect(() => restore()).not.toThrow();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('يتخطى مصدراً فاشل التحميل ويكمل البقية', async () => {
+    const original = { name: 'keep-me' };
+    const bad = makeNode(original);
+    const good = makeNode(original);
+    const nodes = new Map<string, { image: (...args: unknown[]) => unknown }>([
+      ['bad', bad.node],
+      ['good', good.node],
+    ]);
+    const stage = makeFakeStage(nodes);
+    const spy = stubImageLoad('fail-broken-src');
+    try {
+      const restore = await swapNodeImagesForCapture(stage, [
+        { nodeId: 'bad', src: '/local-image/broken.png' },
+        { nodeId: 'good', src: '/local-image/good.png' },
+      ]);
+      expect(bad.holder.current).toBe(original);
+      expect(good.holder.current).not.toBe(original);
+      restore();
+      expect(good.holder.current).toBe(original);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

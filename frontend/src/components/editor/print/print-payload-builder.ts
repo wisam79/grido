@@ -12,7 +12,7 @@ import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { hasCollageSlotContent } from '@/lib/canvas/collage-slot-content';
 import { paperCaptureRect } from '@/lib/canvas/fit';
-import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
+import { captureStageBlob, swapNodeImagesForCapture } from '@/lib/canvas/konva-export-utils';
 import { assertExportablePixels } from '@/lib/export/export-limits';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { computeBlockPosition, computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
@@ -21,7 +21,13 @@ import { buildSingleComposition } from '@/lib/print/single-print-composition';
 import { uploadPrintImage } from './print-transport';
 
 import type { usePrintLayout } from '@/hooks/use-print-layout';
-import type { CanvasSlot, CanvasElement, CollageTemplate, PrintSettings } from '@/lib/store/types';
+import type {
+  CanvasSlot,
+  CanvasElement,
+  ImageElement,
+  CollageTemplate,
+  PrintSettings,
+} from '@/lib/store/types';
 import type Konva from 'konva';
 
 export interface BuiltItems {
@@ -220,14 +226,34 @@ export async function buildSinglePayload(ctx: SinglePayloadContext): Promise<Bui
     // هو مقاس العرض المرئي فيتغير حجم الطباعة بمجرد تكبير المستخدم.
     const captureRect = paperCaptureRect(canvasWidth, canvasHeight);
     const targetPixelRatio = canvasWidth > 0 ? printPixelW / canvasWidth : 1;
-    const capturedBlob = await captureStageBlob(
-      stage,
-      targetPixelRatio,
-      'image/png',
-      undefined,
-      captureRect,
-      { useFullResolution: true },
-    );
+    // 🖨️ ترقية دقة الملصقات في مسار الالتقاط أيضاً: كانت إعادة الراسترة
+    // مسارَ التركيب السريع حصراً، وأغلب كانفسات الوضع الحر الواقعية غير
+    // مؤهلة له (نص/دوران/ظل/خلفية متدرجة) فتُطبع الملصقات المكبّرة من
+    // راستر إدراجها الصغير. استبدال صور العقد مؤقتاً بالمصادر المُرقّاة —
+    // الند التلو لعذر upgradeImagesToFullResolution — مع استعادة فورية.
+    const nodeOverrides =
+      stickerSrcMap && stickerSrcMap.size > 0
+        ? elements
+            .filter(
+              (el): el is ImageElement =>
+                el.type === 'image' && !!el.imageSrc && stickerSrcMap.has(el.imageSrc),
+            )
+            .map((el) => ({ nodeId: el.id, src: stickerSrcMap.get(el.imageSrc)! }))
+        : [];
+    const restoreStickerNodes = await swapNodeImagesForCapture(stage, nodeOverrides);
+    let capturedBlob: Blob | null = null;
+    try {
+      capturedBlob = await captureStageBlob(
+        stage,
+        targetPixelRatio,
+        'image/png',
+        undefined,
+        captureRect,
+        { useFullResolution: true },
+      );
+    } finally {
+      restoreStickerNodes();
+    }
     if (!capturedBlob) {
       throw new Error('stage capture returned no blob');
     }

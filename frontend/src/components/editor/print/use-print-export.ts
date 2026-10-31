@@ -26,7 +26,6 @@ import {
 } from '@/lib/export/freeform-preflight';
 import { createLogger } from '@/lib/logger';
 import { computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
-import { buildSingleComposition } from '@/lib/print/single-print-composition';
 
 import { extractPrintImageSrc, generatePrintPageStyle } from './print-page-style';
 import { buildCollagePayload, buildSinglePayload, type BuiltItems } from './print-payload-builder';
@@ -267,9 +266,10 @@ export function usePrintExport({
 
         // 🔍 فحص جودة الوضع الحر + ترقية دقة الملصقات — قبل أي التقاط/رفع مكلف.
         // عناصر الصور الحرة (الملصقات) كانت تُطبع بلا حراسة: تكبيرها فوق قدرة
-        // راسترها كان يخفض DPI الفعالة بصمت. الترقية تُطبَّق على مسار التركيب
-        // السريع فقط؛ مسار الالتقاط يُصيّر الكانفس كما هو فتبقى تحذيرات
-        // preflight هي الغلاف الأمين هناك.
+        // راسترها كان يخفض DPI الفعالة بصمت. الترقية للكلا المسارين: التركيب
+        // السريع يستبدل المصدر في PrintItem، ومسار الالتقاط يستبدل صورة عقدة
+        // Konva مؤقتاً (swapNodeImagesForCapture) — إذ أغلب الكانفسات الواقعية
+        // غير مؤهلة للمسار السريع وكانت الملصقات تُطبع من راستر إدراجها.
         let stickerSrcMap: ReadonlyMap<string, string> | undefined;
         if (mode !== 'collage') {
           const dims = await resolveFreeformImageDimensions(elements);
@@ -277,29 +277,14 @@ export function usePrintExport({
 
           const canvasWidthMM = layout.imageWidthMM;
           const canvasHeightMM = layout.imageHeightMM;
-          const fastPathEligible = buildSingleComposition({
-            elements,
-            canvasWidth,
-            canvasHeight,
+
+          const reraster = await ensureStickerPrintResolution(elements, {
             canvasWidthMM,
             canvasHeightMM,
-            backgroundColor,
-            backgroundGradientColor2: useEditorStore.getState().backgroundGradientColor2,
-          }).eligible;
-
-          const reraster = fastPathEligible
-            ? await ensureStickerPrintResolution(elements, {
-                canvasWidthMM,
-                canvasHeightMM,
-                targetDpi: printDpi || 300,
-                imageDimensions: dims,
-                upload: uploadPrintImage,
-              })
-            : {
-                srcMap: new Map<string, string>(),
-                newDimensions: new Map<string, { width: number; height: number }>(),
-                notes: [] as string[],
-              };
+            targetDpi: printDpi || 300,
+            imageDimensions: dims,
+            upload: uploadPrintImage,
+          });
           if (attempt !== attemptRef.current) return;
 
           for (const [src, upgraded] of reraster.newDimensions) dims.set(src, upgraded);
