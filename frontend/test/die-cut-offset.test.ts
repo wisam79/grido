@@ -118,3 +118,49 @@ describe('die-cut-offset library', () => {
     expect(res.pathData).not.toContain('27.00');
   });
 });
+
+describe('die-cut-offset: declared cutShape (جلسة 1.67)', () => {
+  const badgeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480">
+    <circle cx="240" cy="240" r="220" fill="#fff"/>
+  </svg>`;
+
+  it('follows a declared circle instead of the viewBox rectangle', () => {
+    // نزف 4% من 480 = 19.2 → نصف القطر الموسّع 220 + 19.2 = 239.2
+    const result = generateDieCutContour(badgeSvg, {
+      cutShape: { kind: 'circle', cx: 240, cy: 240, r: 220 },
+    });
+    expect(result.pathData).toContain('A 239.20 239.20');
+    expect(result.pathData).not.toContain('H ');
+  });
+
+  it('expands a declared rounded rect by the bleed symmetrically', () => {
+    const result = generateDieCutContour(badgeSvg, {
+      cutShape: { kind: 'roundedRect', x: 23, y: 23, width: 434, height: 434, rx: 92 },
+    });
+    // المستطيل الموسّع: 23-19.2=3.8 وحجمه 434+38.4=472.4 — البداية (x+rx, y)
+    expect(result.pathData).toContain('M 95.80 3.80');
+    expect(result.pathData).toContain('A 92.00 92.00');
+  });
+
+  it('uses a declared path verbatim without geometric transformation', () => {
+    const d = 'M 55,25 H 425 L 455,55 V 425 L 425,455 H 55 L 25,425 V 55 Z';
+    const result = generateDieCutContour(badgeSvg, { cutShape: { kind: 'path', d } });
+    expect(result.pathData).toBe(d);
+  });
+
+  it('derives physical mm size for the standalone plotter file', () => {
+    const result = generateDieCutContour(badgeSvg, {
+      physicalMm: { width: 96, height: 96 },
+    });
+    // هامش التوسيع ceil(19.2+3)=23 → 526/480 = 1.09583 → 96×1.09583 = 105.20مم
+    expect(result.standaloneContourSvg).toContain('width="105.20mm"');
+    expect(result.standaloneContourSvg).toContain('height="105.20mm"');
+  });
+
+  it('keeps the rectangle fallback when no cutShape is declared', () => {
+    const result = generateDieCutContour(badgeSvg);
+    expect(result.pathData).toContain('H ');
+    // بلا physicalMm لا مقاس فيزيائي في ملف البلوتر (stroke-width ليست width=)
+    expect(result.standaloneContourSvg).not.toContain(' width="');
+  });
+});

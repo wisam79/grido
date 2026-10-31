@@ -25,6 +25,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   cutLineStyle: 'dashed',
   orientation: 'portrait',
   colorSpace: 'sRGB',
+  outputFormat: 'jpeg',
   fitToPage: false,
   repeatMode: 'all',
   gridAlign: 'top-left',

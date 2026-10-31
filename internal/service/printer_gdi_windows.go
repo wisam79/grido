@@ -191,9 +191,12 @@ func queryDeviceMetrics(hdc windows.Handle) deviceMetrics {
 //  1. ترتيب الألوان BGRA (32-bit).
 //  2. محاذاة الأسطر على حدود 4 بايت محققة تلقائياً (width * 4).
 //  3. ترتيب الأسطر Bottom-Up (الصف الأخير في الصورة يكون أول صف في الذاكرة) لتفادي انهيار تعريفات الطابعات.
-//  4. إزالة أثر الشفافية (un-premultiply): image.Image.RGBA يعيد قيماً مضروبة
-//     مسبقاً بقناة A، بينما DIB بنمط BI_RGB يتجاهل قناة A ويعرض RGB كما هو —
-//     بلا هذه التسوية تُطبع البكسلات شبه الشفافة أغمق من أصلها.
+//  4. تسطيح الشفافية على الأبيض: BI_RGB يتجاهل قناة A فيطبع RGB كما هو —
+//     البكسل شبه الشفاف كان يُطبع أغمق من أصله (يُزال أثر الضرب المسبق) والبكسل
+//     الشفاف كلياً كان يُطبع **أسود** (RGB=0 في المخزن). الآن يُدمج كل بكسل
+//     a<255 فوق أبيض بنفس معادلة مسار CMYK (F = premul + (255−a)) فتخرج
+//     الشفافيات بيضاء مطابقة لورقة الطباعة والمعاينة.
+//     جلسة 1.67 — الحالة الحدية الموثقة لطباعة PNG شفاف مباشرة عبر GDI.
 func convertToBottomUpDIB(img image.Image) ([]byte, bitmapInfo) {
 	bounds := img.Bounds()
 	width := bounds.Dx()
@@ -214,15 +217,13 @@ func convertToBottomUpDIB(img image.Image) ([]byte, bitmapInfo) {
 				g := uint32(src.Pix[srcPixOffset+1])
 				b := uint32(src.Pix[srcPixOffset+2])
 				a := uint32(src.Pix[srcPixOffset+3])
-				if a != 0 && a != 0xFF {
-					r = (r * 0xFF) / a
-					g = (g * 0xFF) / a
-					b = (b * 0xFF) / a
-				}
+				// القيم مضروبة مسبقاً: premul + (255−a) هو دمجها فوق أبيض حرفياً
+				// — الشفاف كلياً (a=0) يخرج أبيض 255 بدل أسود BI_RGB
+				w := 0xFF - a
 				dstPixOffset := dstRowOffset + x*4
-				buf[dstPixOffset+0] = byte(b)
-				buf[dstPixOffset+1] = byte(g)
-				buf[dstPixOffset+2] = byte(r)
+				buf[dstPixOffset+0] = byte(b + w)
+				buf[dstPixOffset+1] = byte(g + w)
+				buf[dstPixOffset+2] = byte(r + w)
 				buf[dstPixOffset+3] = byte(a)
 			}
 		}
@@ -234,18 +235,21 @@ func convertToBottomUpDIB(img image.Image) ([]byte, bitmapInfo) {
 			dstRowOffset := y * stride
 			for x := 0; x < width; x++ {
 				srcPixOffset := srcRowOffset + x*4
-				a := src.Pix[srcPixOffset+3]
+				a := uint32(src.Pix[srcPixOffset+3])
 				dstPixOffset := dstRowOffset + x*4
 				if a == 0 {
-					buf[dstPixOffset+0] = 0
-					buf[dstPixOffset+1] = 0
-					buf[dstPixOffset+2] = 0
+					// شفاف كلياً = أبيض الورقة (كان أسود تحت BI_RGB)
+					buf[dstPixOffset+0] = 0xFF
+					buf[dstPixOffset+1] = 0xFF
+					buf[dstPixOffset+2] = 0xFF
 					buf[dstPixOffset+3] = 0
 				} else {
-					buf[dstPixOffset+0] = src.Pix[srcPixOffset+2] // Blue
-					buf[dstPixOffset+1] = src.Pix[srcPixOffset+1] // Green
-					buf[dstPixOffset+2] = src.Pix[srcPixOffset+0] // Red
-					buf[dstPixOffset+3] = a                       // Alpha
+					// دمج اللون غير المضروب فوق أبيض: c·a/255 + (255−a) بالتقريب
+					compose := func(c uint32) uint32 { return (c*a+127)/255 + (0xFF - a) }
+					buf[dstPixOffset+0] = byte(compose(uint32(src.Pix[srcPixOffset+2]))) // Blue
+					buf[dstPixOffset+1] = byte(compose(uint32(src.Pix[srcPixOffset+1]))) // Green
+					buf[dstPixOffset+2] = byte(compose(uint32(src.Pix[srcPixOffset+0]))) // Red
+					buf[dstPixOffset+3] = byte(a)                                        // Alpha
 				}
 			}
 		}
@@ -277,17 +281,13 @@ func convertToBottomUpDIB(img image.Image) ([]byte, bitmapInfo) {
 			for x := 0; x < width; x++ {
 				srcX := bounds.Min.X + x
 				r, g, b, a := img.At(srcX, srcY).RGBA()
-				// r/g/b مضمونة ≤ a (قيم مسبوقة بالضرب) فيصح القسمة بلا تجاوز.
-				if a != 0 && a != 0xFFFF {
-					r = r * 0xFFFF / a
-					g = g * 0xFFFF / a
-					b = b * 0xFFFF / a
-				}
+				// قيم مسبوقة بالضرب ≤ a — الدمج فوق أبيض: premul + (65535−a)
+				w16 := uint32(0xFFFF - a)
 				dstPixOffset := dstRowOffset + x*4
-				buf[dstPixOffset+0] = byte(b >> 8) // Blue
-				buf[dstPixOffset+1] = byte(g >> 8) // Green
-				buf[dstPixOffset+2] = byte(r >> 8) // Red
-				buf[dstPixOffset+3] = byte(a >> 8) // Alpha / Padding
+				buf[dstPixOffset+0] = byte((b + w16) >> 8) // Blue
+				buf[dstPixOffset+1] = byte((g + w16) >> 8) // Green
+				buf[dstPixOffset+2] = byte((r + w16) >> 8) // Red
+				buf[dstPixOffset+3] = byte(a >> 8)         // Alpha / Padding
 			}
 		}
 	}

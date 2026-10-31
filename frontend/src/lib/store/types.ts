@@ -296,6 +296,9 @@ export interface PrintSettings {
   orientation: 'portrait' | 'landscape';
   /** فضاء الألوان: sRGB للطباعة الرقمية، CMYK للمطابع — يحدد صيغة الملف تلقائياً (jpeg/tiff) */
   colorSpace?: 'sRGB' | 'CMYK';
+  /** صيغة مخرجات sRGB: jpeg افتراضياً (أسرع/أصغر)، png للنصوص والباركود
+   * الملصقي بلا ضجيج ضغط — تعديل مقصود للقرار المحمي رقم 4 (جلسة 1.67) */
+  outputFormat?: 'jpeg' | 'png';
   fitToPage?: boolean;
   repeatMode?: 'all' | 'row' | 'column';
   gridAlign?:

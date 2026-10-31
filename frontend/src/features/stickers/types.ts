@@ -83,6 +83,17 @@ export interface StickerParams {
   overrides?: Record<string, StickerLayoutOverride>;
 }
 
+/**
+ * شكل خط القص المعلن صراحةً من القالب (بوحدات viewBox) — جلسة 1.67.
+ * يعلنه القالب نفسه ولا يُستدل عليه من بنية العمل الفني إطلاقاً (القرار
+ * المحمي B-7 يمنع الاستدلال بعد عيب قصٍّ في موضع خاطئ). غيابه يعني سلوك
+ * المستطيل المشتق من viewBox كما هو.
+ */
+export type StickerCutShape =
+  | { kind: 'circle'; cx: number; cy: number; r: number }
+  | { kind: 'roundedRect'; x: number; y: number; width: number; height: number; rx: number }
+  | { kind: 'path'; d: string };
+
 export interface StickerTemplate {
   id: string;
   name: string;
@@ -94,6 +105,8 @@ export interface StickerTemplate {
   defaultHeight: number;
   aspectRatio: number;
   defaultMm?: { width: number; height: number };
+  /** هندسة القص المعلنة — تمكّن مقصّات الفينيل من متابعة الشكل بدل المستطيل */
+  cutShape?: StickerCutShape;
   defaultColors: StickerColors;
   fields: StickerField[];
   generateSvg: (params: StickerParams) => string;

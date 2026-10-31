@@ -294,6 +294,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
     printCutLineStyle: printSettings.cutLineStyle || 'dashed',
     printOrientation: printSettings.orientation,
     printColorSpace: printSettings.colorSpace || 'sRGB',
+    printOutputFormat: printSettings.outputFormat,
   });
   const { isExporting, cancelExport, handlePrint } = exporter;
 
@@ -932,6 +933,43 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
                     setPrintSettings({ marginMM: checked ? 0 : lastNonZeroMargin });
                   }}
                 />
+              </div>
+
+              {/* مبدل صيغة المخرجات (sRGB فقط — CMYK يفرض TIFF في مسار التصدير) */}
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-border/30">
+                <Label className="text-xs font-semibold text-foreground">صيغة المخرجات</Label>
+                <div className="grid grid-cols-2 p-0.5 rounded-md bg-muted/40 border border-border/40 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPrintSettings({ outputFormat: 'jpeg' })}
+                    title="JPEG: أسرع ترميزاً وملف أصغر — مناسب للصور الفوتوغرافية"
+                    aria-label="صيغة JPEG"
+                    aria-pressed={printSettings.outputFormat !== 'png'}
+                    className={cn(
+                      'h-7 rounded-md text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                      printSettings.outputFormat !== 'png'
+                        ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
+                    )}
+                  >
+                    <span>JPEG (أسرع)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrintSettings({ outputFormat: 'png' })}
+                    title="PNG: بلا ضجيج ضغط — أدق للنصوص والباركود والملصقات (ملف أكبر)"
+                    aria-label="صيغة PNG"
+                    aria-pressed={printSettings.outputFormat === 'png'}
+                    className={cn(
+                      'h-7 rounded-md text-xs font-semibold flex items-center justify-center transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none',
+                      printSettings.outputFormat === 'png'
+                        ? 'bg-background text-foreground shadow-2xs font-bold border border-border/40'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-background/40',
+                    )}
+                  >
+                    <span>PNG (أدق للنص)</span>
+                  </button>
+                </div>
               </div>
 
               {/* صف خطوط وعلامات القص */}

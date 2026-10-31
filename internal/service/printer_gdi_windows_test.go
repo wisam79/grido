@@ -170,25 +170,33 @@ func TestConvertToBottomUpDIB_BGRA_RowOrder_Alpha(t *testing.T) {
 		t.Fatalf("top-right BGRA = %v, want [0 255 0 255]", topRight)
 	}
 
-	// البكسل شبه الشفاف: يجب استعادة قيم RGB الأصلية (un-premultiply) لا قيماً مظلمة
+	// البكسل شبه الشفاف: BI_RGB يتجاهل الألفا فيُدمج اللون فوق أبيض الورقة
+	// (جلسة 1.67): compose(c) = (c·a+127)/255 + (255−a)
+	// B: (200·128+127)/255=100 ثم +127 = 227
+	// G: (150·128+127)/255=75  ثم +127 = 202
+	// R: (100·128+127)/255=50  ثم +127 = 177
 	semi := buf[4:8]
-	near := func(got, want byte) bool {
-		diff := int(got) - int(want)
-		return diff >= -1 && diff <= 1
-	}
-	if !near(semi[0], 200) || !near(semi[1], 150) || !near(semi[2], 100) {
-		t.Fatalf("semi-transparent BGRA = %v, want ~[200 150 100]", semi)
+	if semi[0] != 227 || semi[1] != 202 || semi[2] != 177 {
+		t.Fatalf("semi-transparent flattened BGRA = %v, want [227 202 177]", semi)
 	}
 	if semi[3] != 128 {
 		t.Fatalf("semi-transparent alpha = %d, want 128", semi[3])
 	}
 
-	// بكسل شفاف تماماً: قنوات صفرية بلا قسمة على صفر
+	// بكسل شفاف تماماً: أبيض الورقة لا أسود BI_RGB (كان RGB=0 يُطبع أسوداً)
 	transparent := image.NewNRGBA(image.Rect(0, 0, 1, 1))
 	transparent.SetNRGBA(0, 0, color.NRGBA{R: 255, G: 0, B: 0, A: 0})
 	tbuf, _ := convertToBottomUpDIB(transparent)
-	if tbuf[0] != 0 || tbuf[1] != 0 || tbuf[2] != 0 || tbuf[3] != 0 {
-		t.Fatalf("transparent pixel = %v, want zeros", tbuf[:4])
+	if tbuf[0] != 255 || tbuf[1] != 255 || tbuf[2] != 255 || tbuf[3] != 0 {
+		t.Fatalf("transparent pixel = %v, want [255 255 255 0] (white)", tbuf[:4])
+	}
+
+	// مسار *image.RGBA المضروب مسبقاً: شفاف كلياً يخرج أبيضاً أيضاً
+	premul := image.NewRGBA(image.Rect(0, 0, 1, 1))
+	premul.SetRGBA(0, 0, color.RGBA{R: 0, G: 0, B: 0, A: 0})
+	pbuf, _ := convertToBottomUpDIB(premul)
+	if pbuf[0] != 255 || pbuf[1] != 255 || pbuf[2] != 255 {
+		t.Fatalf("premultiplied transparent = %v, want white RGB", pbuf[:4])
 	}
 }
 
@@ -422,19 +430,26 @@ func TestConvertToBottomUpDIB_NRGBA_TransparentPixelZeroing(t *testing.T) {
 	if buf[3] != 128 {
 		t.Fatalf("pixel (0,1) alpha = %d, want 128", buf[3])
 	}
-	// البكسل (1, 1) شفاف A=0 في bytes [4:8] -> جميع القنوات يجب أن تكون 0
-	for i := 4; i < 8; i++ {
-		if buf[i] != 0 {
-			t.Fatalf("pixel (1,1) byte %d = %d, want 0 for transparent pixel", i, buf[i])
+	// البكسل (1, 1) شفاف A=0 في bytes [4:8] -> أبيض الورقة (جلسة 1.67:
+	// تسطيح الشفافية على أبيض بدل أسود BI_RGB)
+	for i := 4; i < 7; i++ {
+		if buf[i] != 255 {
+			t.Fatalf("pixel (1,1) byte %d = %d, want 255 (white) for transparent pixel", i, buf[i])
 		}
+	}
+	if buf[7] != 0 {
+		t.Fatalf("pixel (1,1) alpha = %d, want 0", buf[7])
 	}
 
 	// الصف 1 في الذاكرة (bytes 8..15) يقابل srcY=0 (السطر العلوي من الصورة):
-	// البكسل (0, 0) شفاف A=0 في bytes [8:12] -> جميع القنوات يجب أن تكون 0
-	for i := 8; i < 12; i++ {
-		if buf[i] != 0 {
-			t.Fatalf("pixel (0,0) byte %d = %d, want 0 for transparent pixel", i, buf[i])
+	// البكسل (0, 0) شفاف A=0 في bytes [8:12] -> أبيض الورقة (RGB=255، ألفا 0)
+	for i := 8; i < 11; i++ {
+		if buf[i] != 255 {
+			t.Fatalf("pixel (0,0) byte %d = %d, want 255 (white) for transparent pixel", i, buf[i])
 		}
+	}
+	if buf[11] != 0 {
+		t.Fatalf("pixel (0,0) alpha = %d, want 0", buf[11])
 	}
 	// البكسل (1, 0) معتم A=255 في bytes [12:16] -> BGRA = [64, 128, 255, 255]
 	if buf[12] != 64 || buf[13] != 128 || buf[14] != 255 || buf[15] != 255 {
@@ -843,8 +858,13 @@ func TestConvertToBottomUpDIB_ExtremeAlphaCases(t *testing.T) {
 		t.Fatalf("buffer length %d want 16", len(buf))
 	}
 	for i, b := range buf {
-		if b != 0 {
-			t.Fatalf("transparent byte at %d is %d, want 0", i, b)
+		// جلسة 1.67: الشفاف الكلي يُدمج فوق أبيض الورقة (RGB=255) وألفا 0
+		if i%4 == 3 {
+			if b != 0 {
+				t.Fatalf("transparent alpha at %d is %d, want 0", i, b)
+			}
+		} else if b != 255 {
+			t.Fatalf("transparent RGB byte at %d is %d, want 255 (white)", i, b)
 		}
 	}
 

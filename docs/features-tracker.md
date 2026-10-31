@@ -22,10 +22,14 @@
 | defaultMm للقوالب | إكمال القوالب الـ41 الناقصة باصطلاح 0.2مم/وحدة viewBox (مطابق لإخوة frames/retail/packaging) — الجرد 83/83، مع حارس بنيوي يمنع عودة الفجوة وإعادة توليد تقرير التدقيق | `templates/*.ts` + `sticker-templates.test.ts` + `docs/plans/sticker-template-audit.md` ✅ |
 | حقن DPI في PNG (B-15) | `injectPngDpi` مرآة طرفية لـ `setPNGDPI` (pHYs بعد IHDR + CRC32، يتخطى الموجود، مدى 36–2400) موصولة بكل مخارج PNG للملصقات: تنزيل 300/600، الإدراج، الشيت، VDP، النسخ للحافظة، عزل الخلفية | `lib/canvas/png-dpi.ts` + `svg-rasterizer.ts` + `sheet-generator.ts` ✅ |
 | أبعاد كاملة مشتركة | `resolveImageDimensions`/`resolveBatchImageDimensions` في image-dimensions مع إعادة توجيه `resolveImageAspectRatio` إليهما — سلوك محفوظ ومصدر واحد للأبعاد بعد EXIF | `lib/canvas/image-dimensions.ts` ✅ |
+| خيار PNG في حوار الطباعة (الدفعة 2) | `outputFormat: 'jpeg' | 'png'` في printSettings ومبدّل مقطعي في «خيارات الطباعة» — JPEG يبقى الافتراضي، وPNG اختياري للنصوص والباركود. **تعديل مقصود للقرار المحمي رقم 4** بقرار المالك؛ Go يدعم png في saveOutput مع حقن pHYs بلا تعديل باك-إند | `types.ts` + `print-dialog.tsx` + `use-print-export.ts` ✅ |
+| شكل قص معلن cutShape (الدفعة 2) | `StickerCutShape` (دائرة/مستطيل مدور/مسار حرفي) يعلنه القالب ويستخدمه `generateDieCutContour` عند توفره بدل مستطيل viewBox، والملف المستقل يكتسب مقاساً فيزيائياً من defaultMm — تصريح فقط بلا استدلال (B-7 باقٍ)؛ تبنٍّ أول على 6 شارات (الوشاح يبقى مستطيلاً لعتمة ذيوله) | `types.ts` + `die-cut-offset.ts` + `badges.ts` ✅ |
+| تسطيح ألفا GDI على أبيض (الدفعة 2) | BI_RGB يتجاهل الألفا فكان الشفاف يُطبع أسود وشبه الشفاف أغمق — الدمج فوق أبيض الورقة بنفس معادلة مسار CMYK في المسارات الثلاثة (RGBA/NRGBA/العام) | `printer_gdi_windows.go:190` + تحديث اختبارات الألفا الثلاثة ✅ |
 
-**التحقق:** `tsc --noEmit` وESLint (صفر تحذيرات) وPrettier على ملفات الجلسة و141 حالة Vitest موجهة عبر 8 ملفات ملموسة (كانvas/export/print/stickers/templates/image-dimensions) كلها ناجحة. الحزم الكاملة وE2E والبناء موكولة إلى CI السحابي وفق الدستور.
+**التحقق (الدفعة 1):** `tsc --noEmit` وESLint (صفر تحذيرات) وPrettier و141 حالة Vitest موجهة عبر 8 ملفات ملموسة — كلها ناجحة، ثم CI سحابية ناجحة 100% (`41199893340`).
+**التحقق (الدفعة 2):** `tsc --noEmit` وESLint نظيفان و`gofmt -l` صفر انحراف و`go vet ./internal/service` ناجح وحزمة `internal/service` كاملة (24s) ناجحة واختبارات موجهة للداي-كات وعقد الطباعة والاستوديو ناجحة. الحزم الكاملة وE2E موكولة إلى CI السحابي.
 
-**فجوات متبقية:** ترقية الدقة لا تغطي مسار الالتقاط (عناصر بدوران/ظل/تدرج — يبقى تحذير preflight)؛ B-15 أُغلقت لمسارات الملصقات فقط؛ لا تغيير على عقد Go أو الربطات في هذه الدفعة.
+**فجوات متبقية:** ترقية الدقة لا تغطي مسار الالتقاط (عناصر بدوران/ظل/تدرج — يبقى تحذير preflight)؛ B-15 أُغلقت لمسارات الملصقات فقط؛ تبنّي cutShape على بقية قوالب `shape: 'circle'` (cafe/addons ≈10) مؤجل لدفعة تالية؛ لا تغيير على عقد IPC أو الربطات.
 
 ---
 

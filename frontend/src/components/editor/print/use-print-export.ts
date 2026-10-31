@@ -83,6 +83,7 @@ export interface PrintExportContext {
   printCutLineStyle: PrintSettings['cutLineStyle'];
   printOrientation: PrintSettings['orientation'];
   printColorSpace?: PrintSettings['colorSpace'];
+  printOutputFormat?: PrintSettings['outputFormat'];
 }
 
 export function usePrintExport({
@@ -107,6 +108,7 @@ export function usePrintExport({
   printCutLineStyle,
   printOrientation,
   printColorSpace,
+  printOutputFormat,
 }: PrintExportContext) {
   const stageRef = useStageRef();
   const [isExporting, setIsExportingState] = useState(false);
@@ -433,10 +435,13 @@ export function usePrintExport({
               // (solid/dotted) فتُطبع الورقة بنمط مختلف عن المعاينة (WYSIWYG مكسور).
               cutLineStyle: printCutLineStyle ?? 'dashed',
               colorSpace: printColorSpace === 'CMYK' ? 'CMYK' : 'sRGB',
-              // 🖨️ JPEG لا PNG: ترميزه أسرع عدة مرات وملفه أصغر 3-5× — ورقة 50MP
-              // بصيغة PNG تُثقل ذاكرة WebView2 وتقترب من مهلة التصدير (RV-Print-05).
+              // 🖨️ RV-Print-05 معدّل (جلسة 1.67 بقرار مالك): JPEG يبقى الافتراضي
+              // (أسرع ترميزاً وملفه أصغر 3-5× لورقة 50MP)، مع خيار PNG اختياري
+              // للنصوص والباركود الملصقي بلا ضجيج ضغط — Go يدعم png في saveOutput
+              // مع حقن pHYs جاهزاً بلا أي تعديل باك-إند.
               // CMYK يفرض TIFF (الحامل الحقيقي لفصل الأحبار؛ JPEG يبقى RGB عند المُرمِّز).
-              exportFormat: printColorSpace === 'CMYK' ? 'tiff' : 'jpeg',
+              exportFormat:
+                printColorSpace === 'CMYK' ? 'tiff' : printOutputFormat === 'png' ? 'png' : 'jpeg',
               orientation: printOrientation || 'portrait',
               cutLines,
               items,
@@ -592,6 +597,7 @@ export function usePrintExport({
       printCutLineStyle,
       printOrientation,
       printColorSpace,
+      printOutputFormat,
       setExporting,
       later,
     ],

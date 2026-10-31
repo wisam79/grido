@@ -484,6 +484,9 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
       setBusyExport(true);
       const dieCut = generateDieCutContour(exportableSvg || svgString, {
         bleedPercent: DEFAULT_BLEED_PERCENT,
+        // ✂️ الشكل المعلن من القالب يسبق مستطيل viewBox — دوائر الشارات تقص دائرةً
+        cutShape: selectedTemplate.cutShape,
+        physicalMm: selectedTemplate.defaultMm,
       });
       const portable = await embedStickerFonts(dieCut.fullSvgWithContour, [
         params.fontFamily || 'Cairo',
@@ -498,13 +501,15 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     } finally {
       setBusyExport(false);
     }
-  }, [exportableSvg, svgString, selectedTemplate.id, params.fontFamily]);
+  }, [exportableSvg, svgString, selectedTemplate, params.fontFamily]);
 
   const handleDownloadPureCutContour = useCallback(async () => {
     try {
       setBusyExport(true);
       const dieCut = generateDieCutContour(exportableSvg || svgString, {
         bleedPercent: DEFAULT_BLEED_PERCENT,
+        cutShape: selectedTemplate.cutShape,
+        physicalMm: selectedTemplate.defaultMm,
       });
       const blob = new Blob([dieCut.standaloneContourSvg], { type: 'image/svg+xml;charset=utf-8' });
       downloadBlob(blob, `${selectedTemplate.id}-plotter-contour.svg`);
@@ -515,7 +520,7 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     } finally {
       setBusyExport(false);
     }
-  }, [exportableSvg, svgString, selectedTemplate.id]);
+  }, [exportableSvg, svgString, selectedTemplate]);
 
   const handleDownloadPng = useCallback(
     async (dpi: 300 | 600 = 300) => {

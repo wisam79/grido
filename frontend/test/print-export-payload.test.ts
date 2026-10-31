@@ -333,13 +333,24 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
     expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('تعذر قراءة صورة الخانة'));
   });
 
+  it('يرسل PNG في sRGB عند اختيار outputFormat صراحةً (تعديل القرار المحمي 4 — جلسة 1.67)', async () => {
+    await runPrint(makeContext({ printOutputFormat: 'png' }));
+
+    expect(mockExportPrintSheet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        exportFormat: 'png',
+        colorSpace: 'sRGB',
+      }),
+    );
+  });
+
   it('يرسل الصيغة JPEG وخلفية الكولاج وأبعاد الورقة والعناصر وعلامات القص', async () => {
     await runPrint(makeContext());
 
     expect(mockExportPrintSheet).toHaveBeenCalledTimes(1);
     expect(mockExportPrintSheet).toHaveBeenCalledWith(
       expect.objectContaining({
-        // 1) الصيغة: JPEG لا PNG (يبقى هذا السطر حارس الانحدار)
+        // 1) الصيغة: JPEG يبقى الافتراضي (حارس الانحدار) — PNG يصبح اختيارياً فقط
         exportFormat: 'jpeg',
         // 2) خلفية الورقة من لون كانفاس المستخدم — لا أبيض صلباً
         backgroundColor: '#123456',

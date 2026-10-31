@@ -19,6 +19,8 @@
  * (SVG متجه ⇒ لا دقة ثابتة)، أو إعدادات الطباعة في التطبيق.
  */
 
+import type { StickerCutShape } from '../types';
+
 /** حافة الأمان الافتراضية كنسبة مئوية من أصغر بُعد للـ viewBox (~4% ≈ 2 مم على ملصق 50 مم). */
 export const DEFAULT_BLEED_PERCENT = 4;
 
@@ -34,6 +36,14 @@ export interface DieCutOptions {
   strokeWidth?: number;
   /** نصف قطر انحناء الحواف كنسبة من أصغر بُعد (افتراضي 6%) */
   cornerRadiusPercent?: number;
+  /**
+   * ✂️ هندسة القص المعلنة من القالب (جلسة 1.67) — عند توفرها تُستخدم حرفياً
+   * (الدائرة/المستطيل المدور تُوسَّع بالنزف، والمسار يُستخدم كما هو) بدل
+   * المستطيل المشتق من viewBox. لا استدلال من بنية العمل الفني — تصريح فقط.
+   */
+  cutShape?: StickerCutShape;
+  /** المقاس الفيزيائي للملصق بالمم — يضيف width/height لملف القص المستقل */
+  physicalMm?: { width: number; height: number };
 }
 
 export interface DieCutResult {
@@ -103,11 +113,44 @@ function generateRoundedRectPath(
   ].join(' ');
 }
 
+/** يبني مسار دائرة كاملة بصيغة SVG (قوسان) بنصف قطر مُوسَّع بالنزف. */
+function declaredCircleArcPath(cx: number, cy: number, r: number): string {
+  const rr = Math.max(0, r);
+  const fmt = (n: number) => n.toFixed(2);
+  return [
+    `M ${fmt(cx + rr)} ${fmt(cy)}`,
+    `A ${fmt(rr)} ${fmt(rr)} 0 1 1 ${fmt(cx - rr)} ${fmt(cy)}`,
+    `A ${fmt(rr)} ${fmt(rr)} 0 1 1 ${fmt(cx + rr)} ${fmt(cy)}`,
+    'Z',
+  ].join(' ');
+}
+
+/** يوسّع هندسة القص المعلنة بالنزف ويعيد بيانات المسار، أو null لغير المدعوم تحويلياً. */
+function generateDeclaredCutPath(shape: StickerCutShape, bleedPx: number): string {
+  switch (shape.kind) {
+    case 'circle':
+      return declaredCircleArcPath(shape.cx, shape.cy, shape.r + bleedPx);
+    case 'roundedRect':
+      return generateRoundedRectPath(
+        shape.x - bleedPx,
+        shape.y - bleedPx,
+        shape.width + bleedPx * 2,
+        shape.height + bleedPx * 2,
+        shape.rx,
+      );
+    case 'path':
+      // مسار معلن حرفياً من القالب — لا تحويل هندسي فوقه
+      return shape.d;
+  }
+}
+
 /**
  * يولّد حدود القص المتجه (Die-Cut Vector Contour) حول مساحة عمل الملصق.
  *
- * الحدّ = الـ viewBox موسَّعاً بنسبة نزف محسوبة من أصغر بُعد، فضمن احتواء محتوى
- * الملصق كاملاً مهما كان شكله (دائري أو نجمة أو بيضاوي أو غير منتظم).
+ * الحدّ الافتراضي = الـ viewBox موسَّعاً بنسبة نزف محسوبة من أصغر بُعد، فضمن
+ * احتواء محتوى الملصق كاملاً مهما كان شكله (دائري أو نجمة أو بيضاوي أو غير منتظم).
+ * وعند توفّر `cutShape` معلناً من القالب يُتّبع الشكل المعلن (دائرة/مستطيل مدور/
+ * مسار) بدلاً من المستطيل — كي يقصّ البلوتر الملصق الدائري دائرةً لا مستطيلاً.
  */
 export function generateDieCutContour(
   svgString: string,
@@ -125,11 +168,17 @@ export function generateDieCutContour(
   const bleedPx = (bleedPercent / 100) * minDim;
   const cornerRadiusPx = (cornerRadiusPercent / 100) * minDim;
 
-  const x = viewBox.x - bleedPx;
-  const y = viewBox.y - bleedPx;
-  const w = viewBox.width + bleedPx * 2;
-  const h = viewBox.height + bleedPx * 2;
-  const pathData = generateRoundedRectPath(x, y, w, h, cornerRadiusPx);
+  // الشكل المعلن يسبق المستطيل الافتراضي — بلا أي استدلال
+  const declaredPath = options.cutShape ? generateDeclaredCutPath(options.cutShape, bleedPx) : null;
+  const pathData =
+    declaredPath ??
+    generateRoundedRectPath(
+      viewBox.x - bleedPx,
+      viewBox.y - bleedPx,
+      viewBox.width + bleedPx * 2,
+      viewBox.height + bleedPx * 2,
+      cornerRadiusPx,
+    );
 
   // توسيع حدود الـ viewBox ليتسع لخط القص وهامش الأمان.
   const margin = Math.ceil(bleedPx + strokeWidth * 2);
@@ -172,8 +221,22 @@ export function generateDieCutContour(
 
   // 2. توليد SVG خط القص فقط (Standalone Vector Cut Path) — بلا عرض فيزيائي:
   //    المشغّل يحدّد الحجم النهائي عند الاستيراد (SVG متجه ⇒ لا دقة ثابتة).
+  //    ومع توفّر physicalMm تُشتق المقاس الفيزيائي للـ viewBox الموسّع تناسبياً
+  //    كي يفتح الملف على مقاسه الصحيح مباشرة في برنامج المقص.
+  let physicalAttrs = '';
+  if (
+    options.physicalMm &&
+    options.physicalMm.width > 0 &&
+    options.physicalMm.height > 0 &&
+    viewBox.width > 0 &&
+    viewBox.height > 0
+  ) {
+    const wMm = (options.physicalMm.width * (expVb.width / viewBox.width)).toFixed(2);
+    const hMm = (options.physicalMm.height * (expVb.height / viewBox.height)).toFixed(2);
+    physicalAttrs = ` width="${wMm}mm" height="${hMm}mm"`;
+  }
   const standaloneContourSvg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="${expVbStr}">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"${physicalAttrs} viewBox="${expVbStr}">
   ${cutLayer}
 </svg>`;
 

@@ -21,6 +21,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 500,
     aspectRatio: 1,
     defaultMm: { width: 100, height: 100 },
+    cutShape: { kind: 'circle', cx: 250, cy: 250, r: 225 },
     defaultColors: {
       primary: '#A77B36',
       secondary: '#3B3021',
@@ -127,6 +128,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 96, height: 96 },
+    cutShape: { kind: 'roundedRect', x: 23, y: 23, width: 434, height: 434, rx: 92 },
     defaultColors: {
       primary: '#A45D4E',
       secondary: '#563C35',
@@ -177,6 +179,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 96, height: 96 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 220 },
     defaultColors: {
       primary: '#587451',
       secondary: '#2D4638',
@@ -234,6 +237,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 96, height: 96 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 225 },
     defaultColors: {
       primary: '#B73C43',
       secondary: '#F6DAA1',
@@ -275,6 +279,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 96, height: 96 },
+    cutShape: { kind: 'circle', cx: 240, cy: 240, r: 218 },
     defaultColors: {
       primary: '#476D79',
       secondary: '#233E4D',
@@ -325,6 +330,7 @@ export const BADGE_TEMPLATES: StickerTemplate[] = [
     defaultHeight: 480,
     aspectRatio: 1,
     defaultMm: { width: 96, height: 96 },
+    cutShape: { kind: 'path', d: 'M 55,25 H 425 L 455,55 V 425 L 425,455 H 55 L 25,425 V 55 Z' },
     defaultColors: {
       primary: '#A77455',
       secondary: '#433B38',
