@@ -35,6 +35,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { usePrintLayout } from '@/hooks/use-print-layout';
 import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { hasCollageSlotContent } from '@/lib/canvas/collage-slot-content';
+import {
+  upgradeImagesToFullResolution,
+  restoreImageNodes,
+  type UpgradedImageRecord,
+} from '@/lib/canvas/konva-export-utils';
 import { useStageRef } from '@/lib/canvas/stage-context';
 import { useEditorStore } from '@/lib/editor-store';
 import { createLogger } from '@/lib/logger';
@@ -545,12 +550,20 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       stage.position({ x: 0, y: 0 });
       stage.scale({ x: 1, y: 1 });
 
+      let upgradedImages: UpgradedImageRecord[] = [];
+
       try {
         const { canvasWidth: cw, canvasHeight: ch } = useEditorStore.getState();
         const paperW = Math.max(cw || 1, 1);
         const paperH = Math.max(ch || 1, 1);
-        const targetWidth = 400;
-        const pRatio = Math.min(1, targetWidth / paperW);
+        // 🖨️ RV-Print-WYSIWYG: معاينة الوضع الحر تعكس الدقة الحقيقية الكاملة للكانفاس (1:1 وبجودة PNG نقية)
+        // مع ترقية مصادر الصور للأصلية الكاملة، بدل تقليصها إلى 400 بكسل ومطّها ضبابياً.
+        // سقف أمان 4096 بكسل يمنع OOM في الكانفسات الفائقة مع ضمان 100% دقة للأحجام القياسية.
+        const maxPreviewDim = 4096;
+        const maxDim = Math.max(paperW, paperH);
+        const pRatio = maxDim > maxPreviewDim ? maxPreviewDim / maxDim : 1;
+
+        upgradedImages = upgradeImagesToFullResolution(stage);
 
         transformers.forEach((tr: Konva.Node) => tr.hide());
         gridLayers.forEach((gl: Konva.Node) => gl.hide());
@@ -566,8 +579,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           width: paperW,
           height: paperH,
           pixelRatio: pRatio,
-          mimeType: 'image/jpeg',
-          quality: 0.8,
+          mimeType: 'image/png',
         });
 
         if (cancelled) return;
@@ -585,6 +597,7 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
           setPreviewImageSrc(firstImg.imageSrc);
         }
       } finally {
+        restoreImageNodes(upgradedImages);
         transformers.forEach((tr: Konva.Node) => tr.show());
         gridLayers.forEach((gl: Konva.Node) => gl.show());
         columnsLayers.forEach((cl: Konva.Node) => cl.show());

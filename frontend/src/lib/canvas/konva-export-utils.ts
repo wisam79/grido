@@ -47,7 +47,7 @@ interface KonvaImageNodeLike {
   };
 }
 
-interface UpgradedImageRecord {
+export interface UpgradedImageRecord {
   node: KonvaImageNodeLike;
   image: CanvasImageSource;
   crop?: { x: number; y: number; width: number; height: number };
@@ -67,7 +67,7 @@ function getSourceDimensions(src: CanvasImageSource): { width: number; height: n
  * بدون ذلك كان الطباعة/التصدير يكبّرون نسخة العرض أو يقصّون الزاوية العلوية
  * فقط من الصورة الكاملة. يعيد قائمة الاستعادة.
  */
-function upgradeImagesToFullResolution(stage: Konva.Stage): UpgradedImageRecord[] {
+export function upgradeImagesToFullResolution(stage: Konva.Stage): UpgradedImageRecord[] {
   const restored: UpgradedImageRecord[] = [];
   try {
     const nodes = stage.find('Image') as unknown as KonvaImageNodeLike[];
@@ -113,7 +113,7 @@ function upgradeImagesToFullResolution(stage: Konva.Stage): UpgradedImageRecord[
   return restored;
 }
 
-function restoreImageNodes(restored: UpgradedImageRecord[]): void {
+export function restoreImageNodes(restored: UpgradedImageRecord[]): void {
   for (const item of restored) {
     try {
       item.node.image(item.image);
