@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { SaveCustomTemplateWithMetadata } from '@bindings/grido/app';
@@ -31,9 +31,7 @@ import { Spinner } from '@/components/ui/huge-icon';
 import { DownloadSimple, UploadSimple, CaretDown, SidebarSimple } from '@/components/ui/icons';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { clamp } from '@/lib/clamp';
 import { useEditorStore } from '@/lib/editor-store';
-import { downloadJsonFile } from '@/lib/io/download';
 import { cn } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
@@ -43,99 +41,24 @@ import { FreeformPaperSelector } from './freeform-paper-selector';
 import { FreeformRightInspectorPanel } from './freeform-right-inspector-panel';
 import { FreeformTopActionBar, FreeformToolButton } from './freeform-top-action-bar';
 import {
-  splitSlot,
-  removeSlot,
-  removeSlotsByIds,
-  duplicateSlotsByIds,
-  addDefaultSlot,
-  addPresetSlot,
-  autoPackSlots,
-  distributeSlots,
   convertToGridoTemplate,
-  rotateSlot,
-  alignSlot,
-  alignSlotsToEachOther,
-  scaleSlotsByIds,
-  resolveOverlaps,
-  exportLayoutFile,
-  parseLayoutFile,
-  slotsFromFile,
   slotsFromGridoTemplate,
-  newSlotId,
   normalizeSlotSelection,
-  moveSlotsWithinBounds,
 } from '../lib/freeform-math';
-import { PHOTO_PRESET_LABELS } from '../lib/mixed-presets';
+import {
+  useFreeformDocumentHistory,
+  createBlankSheet,
+  createDocument,
+} from '../lib/use-freeform-document-history';
+import { useFreeformKeyboard } from '../lib/use-freeform-keyboard';
+import { useFreeformSlotActions } from '../lib/use-freeform-slot-actions';
 
-import type {
-  FreeformLayout,
-  FreeformDocument,
-  FreeformSlot,
-  PhotoPresetType,
-  SlotAlignment,
-  DistributionAxis,
-  AutoPackStrategy,
-} from '../types';
+import type { FreeformDocument, FreeformLayout } from '../types';
 
 interface FreeformCollageModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTemplateSaved?: () => void | Promise<void>;
-}
-
-const HISTORY_LIMIT = 100;
-
-type Clipboard = FreeformSlot[] | null;
-type DocumentHistory = {
-  past: FreeformDocument[];
-  present: FreeformDocument;
-  future: FreeformDocument[];
-};
-
-/**
- * ورقة البداية الفارغة — شبكة بسيطة 2×4 كنقطة انطلاق قابلة للتعديل فوراً
- * (ليست "قالباً جاهزاً" بل مجرد مساحة عمل أولية يحررها المستخدم كما يشاء)
- */
-function createBlankSheet(paperWidthMM: number, paperHeightMM: number): FreeformSlot[] {
-  const slots: FreeformSlot[] = [];
-  const w = 0.25;
-  const h = 0.5;
-  for (let r = 0; r < 2; r++) {
-    for (let c = 0; c < 4; c++) {
-      slots.push({
-        id: newSlotId('slot_blank'),
-        x: c * w,
-        y: r * h,
-        w,
-        h,
-        presetType: 'iq-national-id',
-        label: 'خلية',
-        rotation: 0,
-      });
-    }
-  }
-  void paperWidthMM;
-  void paperHeightMM;
-  return slots;
-}
-
-function createDocument(
-  paperWidthMM: number,
-  paperHeightMM: number,
-  slots: FreeformSlot[],
-  partial?: Partial<FreeformDocument>,
-): FreeformDocument {
-  return {
-    id: partial?.id ?? crypto.randomUUID(),
-    name: partial?.name ?? 'كولاج حر مخصص',
-    paperWidthMM,
-    paperHeightMM,
-    slots,
-    showCutLines: partial?.showCutLines ?? false,
-    enableSnapping: partial?.enableSnapping ?? true,
-    packGapMM: partial?.packGapMM ?? 2,
-    packMarginMM: partial?.packMarginMM ?? 2,
-  };
 }
 
 export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
@@ -158,35 +81,55 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
 
   // التحديد المتعدد: مجموعة خلايا نشطة إضافة للخلية الأساسية
   const [multiSelectedIds, setMultiSelectedIds] = useState<string[]>([]);
-  const clipboardRef = useRef<Clipboard>(null);
 
   // إعدادات التعبئة الذكية: فجوة وهامش بالمليمتر
   const [packGapMM, setPackGapMM] = useState<number>(2);
   const [packMarginMM, setPackMarginMM] = useState<number>(2);
 
-  const [historyState, setHistoryState] = useState<DocumentHistory>(() => {
-    const slots = createBlankSheet(100, 150);
-    return { past: [], present: createDocument(100, 150, slots), future: [] };
-  });
-
-  const historyStateRef = useRef(historyState);
-  const dragStartDocumentRef = useRef<FreeformDocument | null>(null);
-  const nudgeStartDocumentRef = useRef<FreeformDocument | null>(null);
-  const nudgeDebounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const slots = historyState.present.slots;
-
-  const slotsRef = useRef(slots);
   const selectedSlotIdRef = useRef(selectedSlotId);
   const multiSelectedIdsRef = useRef(multiSelectedIds);
 
-  // The first effective nudge already owns its undo baseline; timers never write a document.
-  const finishNudgeBurst = useCallback(() => {
-    if (nudgeDebounceTimer.current !== null) {
-      clearTimeout(nudgeDebounceTimer.current);
-      nudgeDebounceTimer.current = null;
-    }
-    nudgeStartDocumentRef.current = null;
+  const applyDocumentToUI = useCallback((document: FreeformDocument) => {
+    setPaperWidthMM(document.paperWidthMM);
+    setPaperHeightMM(document.paperHeightMM);
+    setLayoutName(document.name);
+    setShowCutLines(document.showCutLines);
+    setEnableSnapping(document.enableSnapping);
+    setPackGapMM(document.packGapMM);
+    setPackMarginMM(document.packMarginMM);
   }, []);
+
+  const {
+    historyState,
+    slots,
+    slotsRef,
+    documentValueRef,
+    dragStartDocumentRef,
+    replaceHistory,
+    updateDocumentOptions,
+    updateSlotsWithHistory,
+    pushDocumentWithHistory,
+    handleUndo,
+    handleRedo,
+    finishNudgeBurst,
+    handleNudge,
+    handleDragStart,
+    handleSlotsChange,
+    handleDragEnd,
+  } = useFreeformDocumentHistory({
+    ui: {
+      paperWidthMM,
+      paperHeightMM,
+      layoutName,
+      showCutLines,
+      enableSnapping,
+      packGapMM,
+      packMarginMM,
+    },
+    applyDocumentToUI,
+    selectedSlotIdRef,
+    multiSelectedIdsRef,
+  });
 
   const setSlotSelection = useCallback(
     (primaryId: string | null, secondaryIds: readonly string[] = []) => {
@@ -212,8 +155,67 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
     [setSlotSelection],
   );
 
-  const documentValue = useMemo(
-    () => ({
+  const {
+    clipboardRef,
+    importInputRef,
+    handlePaperDimensionsChange,
+    handleSplitHorizontal,
+    handleSplitVertical,
+    handleAddSlot,
+    handleAddPresetSlot,
+    handleAutoPack,
+    handleRemoveSlot,
+    handleRotateSlot,
+    handleDuplicateSlot,
+    handleAlignSlot,
+    handleDistributeSlots,
+    handleUpdateSlot,
+    handleToggleMultiSelect,
+    handleCopySelection,
+    handlePasteClipboard,
+    handleScaleSelection,
+    handleAlignSelectionToEachOther,
+    handleResolveOverlaps,
+    handleExportLayout,
+    handleImportLayout,
+  } = useFreeformSlotActions({
+    slotsRef,
+    selectedSlotIdRef,
+    multiSelectedIdsRef,
+    documentValueRef,
+    updateSlotsWithHistory,
+    pushDocumentWithHistory,
+    setSlotSelection,
+    finishNudgeBurst,
+    paperWidthMM,
+    paperHeightMM,
+    packGapMM,
+    packMarginMM,
+    showCutLines,
+    enableSnapping,
+    layoutName,
+  });
+
+  useFreeformKeyboard({
+    open,
+    handleUndo,
+    handleRedo,
+    handleDuplicateSlot,
+    handleRemoveSlot,
+    handleCopySelection,
+    handlePasteClipboard,
+    handleNudge,
+    finishNudgeBurst,
+    setSlotSelection,
+    slotsRef,
+    selectedSlotIdRef,
+  });
+
+  // لقطة الافتتاح كـ state — المقارنة أثناء الرسم على ref كانت مخالفة لقواعد React
+  const [initialDocument, setInitialDocument] = useState<FreeformLayout | null>(null);
+  const hasDraftChanges =
+    initialDocument !== null &&
+    JSON.stringify({
       ...historyState.present,
       name: layoutName,
       paperWidthMM,
@@ -223,103 +225,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       enableSnapping,
       packGapMM,
       packMarginMM,
-    }),
-    [
-      historyState.present,
-      layoutName,
-      paperWidthMM,
-      paperHeightMM,
-      slots,
-      showCutLines,
-      enableSnapping,
-      packGapMM,
-      packMarginMM,
-    ],
-  );
-  const documentValueRef = useRef(documentValue);
-
-  // Keep event readers current before React batches another input, timer, or undo.
-  const replaceHistory = useCallback((next: DocumentHistory) => {
-    historyStateRef.current = next;
-    documentValueRef.current = next.present;
-    slotsRef.current = next.present.slots;
-    setHistoryState(next);
-  }, []);
-
-  // لقطة الافتتاح كـ state — المقارنة أثناء الرسم على ref كانت مخالفة لقواعد React
-  const [initialDocument, setInitialDocument] = useState<FreeformDocument | null>(null);
-  const hasDraftChanges =
-    initialDocument !== null && JSON.stringify(documentValue) !== JSON.stringify(initialDocument);
-
-  const restoreDocument = useCallback((document: FreeformDocument) => {
-    setPaperWidthMM(document.paperWidthMM);
-    setPaperHeightMM(document.paperHeightMM);
-    setLayoutName(document.name);
-    setShowCutLines(document.showCutLines);
-    setEnableSnapping(document.enableSnapping);
-    setPackGapMM(document.packGapMM);
-    setPackMarginMM(document.packMarginMM);
-  }, []);
-
-  const pushDocumentWithHistory = useCallback(
-    (next: FreeformDocument) => {
-      finishNudgeBurst();
-      dragStartDocumentRef.current = null;
-      const prev = historyStateRef.current;
-      replaceHistory({
-        past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), prev.present],
-        present: next,
-        future: [],
-      });
-      restoreDocument(next);
-    },
-    [finishNudgeBurst, replaceHistory, restoreDocument],
-  );
-
-  const updateDocumentOptions = useCallback(
-    (patch: Partial<Omit<FreeformDocument, 'id' | 'slots'>>) => {
-      finishNudgeBurst();
-      const prev = historyStateRef.current;
-      const next = { ...prev.present, ...patch };
-      replaceHistory({ ...prev, present: next, future: [] });
-      restoreDocument(next);
-    },
-    [finishNudgeBurst, replaceHistory, restoreDocument],
-  );
-
-  const updateSlotsWithHistory = useCallback(
-    (newSlots: FreeformSlot[]) =>
-      pushDocumentWithHistory({ ...documentValueRef.current, slots: newSlots }),
-    [pushDocumentWithHistory],
-  );
-
-  const handleUndo = useCallback(() => {
-    finishNudgeBurst();
-    dragStartDocumentRef.current = null;
-    const prev = historyStateRef.current;
-    if (prev.past.length === 0) return;
-    const previous = prev.past[prev.past.length - 1];
-    replaceHistory({
-      past: prev.past.slice(0, -1),
-      present: previous,
-      future: [prev.present, ...prev.future].slice(0, HISTORY_LIMIT),
-    });
-    restoreDocument(previous);
-  }, [finishNudgeBurst, replaceHistory, restoreDocument]);
-
-  const handleRedo = useCallback(() => {
-    finishNudgeBurst();
-    dragStartDocumentRef.current = null;
-    const prev = historyStateRef.current;
-    if (prev.future.length === 0) return;
-    const next = prev.future[0];
-    replaceHistory({
-      past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), prev.present],
-      present: next,
-      future: prev.future.slice(1),
-    });
-    restoreDocument(next);
-  }, [finishNudgeBurst, replaceHistory, restoreDocument]);
+    }) !== JSON.stringify(initialDocument);
 
   // Reset local transactions and resume the applied document on every opening.
   useEffect(() => {
@@ -369,7 +275,7 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
         },
       );
       setInitialDocument(initialDocument);
-      restoreDocument(initialDocument);
+      applyDocumentToUI(initialDocument);
       setDiscardConfirmOpen(false);
       replaceHistory({ past: [], present: initialDocument, future: [] });
       setSlotSelection(initialSlots[0]?.id ?? null);
@@ -383,286 +289,16 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       finishNudgeBurst();
       dragStartDocumentRef.current = null;
     };
-  }, [open, finishNudgeBurst, replaceHistory, restoreDocument, setSlotSelection]);
-
-  const handlePaperDimensionsChange = useCallback(
-    (w: number, h: number) => {
-      pushDocumentWithHistory({ ...documentValueRef.current, paperWidthMM: w, paperHeightMM: h });
-    },
-    [pushDocumentWithHistory],
-  );
-
-  const handleSplitHorizontal = useCallback(() => {
-    const selectedId = selectedSlotIdRef.current;
-    if (!selectedId) return;
-    updateSlotsWithHistory(splitSlot(slotsRef.current, selectedId, 'horizontal'));
-  }, [updateSlotsWithHistory]);
-
-  const handleSplitVertical = useCallback(() => {
-    const selectedId = selectedSlotIdRef.current;
-    if (!selectedId) return;
-    updateSlotsWithHistory(splitSlot(slotsRef.current, selectedId, 'vertical'));
-  }, [updateSlotsWithHistory]);
-
-  const handleAddSlot = useCallback(() => {
-    const updated = addDefaultSlot(slotsRef.current);
-    updateSlotsWithHistory(updated);
-    setSlotSelection(updated[updated.length - 1].id);
-  }, [setSlotSelection, updateSlotsWithHistory]);
-
-  const handleAddPresetSlot = useCallback(
-    (presetType: PhotoPresetType) => {
-      const updated = addPresetSlot(slotsRef.current, presetType, paperWidthMM, paperHeightMM);
-      updateSlotsWithHistory(updated);
-      setSlotSelection(updated[updated.length - 1].id);
-      toast.success(`أُضيفت ${PHOTO_PRESET_LABELS[presetType]} للورقة`);
-    },
-    [setSlotSelection, updateSlotsWithHistory, paperWidthMM, paperHeightMM],
-  );
-
-  const handleAutoPack = useCallback(
-    (strategy: AutoPackStrategy) => {
-      const updated = autoPackSlots(strategy, paperWidthMM, paperHeightMM, packGapMM, packMarginMM);
-      updateSlotsWithHistory(updated);
-      setSlotSelection(updated[0]?.id ?? null);
-      toast.success(`عُبئت الورقة بـ ${updated.length} صورة!`);
-    },
-    [
-      setSlotSelection,
-      updateSlotsWithHistory,
-      paperWidthMM,
-      paperHeightMM,
-      packGapMM,
-      packMarginMM,
-    ],
-  );
-
-  const handleRemoveSlot = useCallback(() => {
-    const selectedId = selectedSlotIdRef.current;
-    if (!selectedId) return;
-
-    // حذف جماعي عند وجود تحديد متعدد
-    const { selectedIds } = normalizeSlotSelection(selectedId, multiSelectedIdsRef.current);
-    if (selectedIds.length > 1) {
-      const updated = removeSlotsByIds(slotsRef.current, selectedIds);
-      if (updated.length === slotsRef.current.length) return;
-      updateSlotsWithHistory(updated);
-      setSlotSelection(updated[0]?.id ?? null);
-      return;
-    }
-
-    if (slotsRef.current.length <= 1) return;
-    const updated = removeSlot(slotsRef.current, selectedId);
-    if (updated.length === slotsRef.current.length) return;
-    updateSlotsWithHistory(updated);
-    setSlotSelection(updated[0]?.id ?? null);
-  }, [setSlotSelection, updateSlotsWithHistory]);
-
-  const handleRotateSlot = useCallback(() => {
-    const selectedId = selectedSlotIdRef.current;
-    if (!selectedId) return;
-    updateSlotsWithHistory(rotateSlot(slotsRef.current, selectedId, paperWidthMM, paperHeightMM));
-  }, [updateSlotsWithHistory, paperWidthMM, paperHeightMM]);
-
-  const handleDuplicateSlot = useCallback(() => {
-    const selectedId = selectedSlotIdRef.current;
-    if (!selectedId) return;
-
-    // مضاعفة جماعية للتحديد المتعدد
-    const { selectedIds: ids } = normalizeSlotSelection(selectedId, multiSelectedIdsRef.current);
-    const { slots: updated, newIds } = duplicateSlotsByIds(slotsRef.current, ids);
-    if (newIds.length === 0) return;
-    updateSlotsWithHistory(updated);
-    setSlotSelection(newIds[0], newIds.slice(1));
-  }, [setSlotSelection, updateSlotsWithHistory]);
-
-  const handleAlignSlot = useCallback(
-    (alignment: SlotAlignment) => {
-      const selectedId = selectedSlotIdRef.current;
-      if (!selectedId) return;
-      updateSlotsWithHistory(alignSlot(slotsRef.current, selectedId, alignment));
-    },
-    [updateSlotsWithHistory],
-  );
-
-  const handleDistributeSlots = useCallback(
-    (axis: DistributionAxis) => {
-      if (slotsRef.current.length <= 2) return;
-      updateSlotsWithHistory(distributeSlots(slotsRef.current, axis));
-      toast.success(axis === 'horizontal' ? 'وُزعت المسافات أفقياً' : 'وُزعت المسافات عمودياً');
-    },
-    [updateSlotsWithHistory],
-  );
-
-  const handleUpdateSlot = useCallback(
-    (updated: Partial<FreeformSlot>) => {
-      const selectedId = selectedSlotIdRef.current;
-      if (!selectedId) return;
-      const nextSlots = slotsRef.current.map((s) =>
-        s.id === selectedId ? { ...s, ...updated } : s,
-      );
-      updateSlotsWithHistory(nextSlots);
-    },
-    [updateSlotsWithHistory],
-  );
-
-  /* التحديد المتعدد: تبديل العضوية مع ترقية خلية باقية عند إزالة الأساسية */
-  const handleToggleMultiSelect = useCallback(
-    (slotId: string) => {
-      const { selectedIds } = normalizeSlotSelection(
-        selectedSlotIdRef.current,
-        multiSelectedIdsRef.current,
-      );
-      const nextIds = selectedIds.includes(slotId)
-        ? selectedIds.filter((id) => id !== slotId)
-        : [...selectedIds, slotId];
-      setSlotSelection(nextIds[0] ?? null, nextIds.slice(1));
-    },
-    [setSlotSelection],
-  );
-
-  /* ⚡ لوح النسخ واللصق الداخلي */
-  const handleCopySelection = useCallback(() => {
-    finishNudgeBurst();
-    const selectedId = selectedSlotIdRef.current;
-    if (!selectedId) return;
-    const { selectedIds: ids } = normalizeSlotSelection(selectedId, multiSelectedIdsRef.current);
-    clipboardRef.current = slotsRef.current
-      .filter((s) => ids.includes(s.id))
-      .map((s) => ({ ...s }));
-    toast.success(`نُسخت ${ids.length} ${ids.length === 1 ? 'خلية' : 'خلايا'} للحافظة`);
-  }, [finishNudgeBurst]);
-
-  const handlePasteClipboard = useCallback(() => {
-    const clip = clipboardRef.current;
-    if (!clip || clip.length === 0) return;
-    const { slots: updated, newIds } = duplicateSlotsByIds(
-      slotsRef.current,
-      clip.map((s) => s.id),
-    );
-    if (newIds.length === 0) {
-      // المعرفات قديمة (منسوخة) — نعيد التوليد يدوياً كنسخ جديدة
-      const copies = clip.map((s) => ({
-        ...s,
-        id: newSlotId('slot_paste'),
-        x: clamp(s.x + 0.03, 0, 1 - s.w),
-        y: clamp(s.y + 0.03, 0, 1 - s.h),
-        label: s.label ? `${s.label} (نسخة)` : undefined,
-      }));
-      updateSlotsWithHistory([...slotsRef.current, ...copies]);
-      setSlotSelection(
-        copies[0]?.id ?? null,
-        copies.slice(1).map((c) => c.id),
-      );
-      toast.success(`لُصقت ${copies.length} خلية`);
-      return;
-    }
-    updateSlotsWithHistory(updated);
-    setSlotSelection(newIds[0], newIds.slice(1));
-    toast.success(`لُصقت ${newIds.length} خلية`);
-  }, [setSlotSelection, updateSlotsWithHistory]);
-
-  /* ⚡ تحرير جماعي: تكبير/تصغير وقياس موحد */
-  const handleScaleSelection = useCallback(
-    (factor: number) => {
-      const selectedId = selectedSlotIdRef.current;
-      if (!selectedId) return;
-      const { selectedIds: ids } = normalizeSlotSelection(selectedId, multiSelectedIdsRef.current);
-      const updated = scaleSlotsByIds(slotsRef.current, ids, factor, paperWidthMM, paperHeightMM);
-      updateSlotsWithHistory(updated);
-    },
-    [updateSlotsWithHistory, paperWidthMM, paperHeightMM],
-  );
-
-  const handleAlignSelectionToEachOther = useCallback(
-    (alignment: 'left' | 'right' | 'top' | 'bottom' | 'center-h' | 'center-v' | 'same-size') => {
-      const selectedId = selectedSlotIdRef.current;
-      if (!selectedId) return;
-      const { selectedIds: ids } = normalizeSlotSelection(selectedId, multiSelectedIdsRef.current);
-      if (ids.length < 2) {
-        toast.info('حدد خليتين (Shift+نقرة) للمحاذاة');
-        return;
-      }
-      const updated = alignSlotsToEachOther(slotsRef.current, ids, alignment);
-      updateSlotsWithHistory(updated);
-    },
-    [updateSlotsWithHistory],
-  );
-
-  /* ⚡ إزالة كافة التداخلات بضغطة واحدة */
-  const handleResolveOverlaps = useCallback(() => {
-    const updated = resolveOverlaps(slotsRef.current);
-    updateSlotsWithHistory(updated);
-    toast.success('أُزيلت التداخلات');
-  }, [updateSlotsWithHistory]);
-
-  /* ⚡ تصدير التخطيط الحالي كملف JSON للمشاركة */
-  const handleExportLayout = useCallback(() => {
-    finishNudgeBurst();
-    try {
-      const file = exportLayoutFile(layoutName, paperWidthMM, paperHeightMM, slotsRef.current, {
-        showCutLines,
-        enableSnapping,
-        packGapMM,
-        packMarginMM,
-      });
-      downloadJsonFile(
-        file,
-        `${(layoutName || 'freeform').replace(/[\\/:*?"<>|]/g, '_')}.grido.json`,
-      );
-      toast.success('صُدّر التخطيط JSON');
-    } catch {
-      toast.error('فشل التصدير');
-    }
   }, [
-    layoutName,
-    paperWidthMM,
-    paperHeightMM,
-    showCutLines,
-    enableSnapping,
-    packGapMM,
-    packMarginMM,
+    open,
     finishNudgeBurst,
+    replaceHistory,
+    applyDocumentToUI,
+    setSlotSelection,
+    dragStartDocumentRef,
+    clipboardRef,
   ]);
 
-  /* ⚡ استيراد تخطيط JSON خارجي */
-  const importInputRef = useRef<HTMLInputElement>(null);
-  const handleImportLayout = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      finishNudgeBurst();
-      const file = e.target.files?.[0];
-      e.target.value = '';
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const parsed = parseLayoutFile(String(reader.result || ''));
-        if (!parsed) {
-          toast.error('ملف غير صالح — ليس ملف كولاج Grido');
-          return;
-        }
-        const imported = slotsFromFile(parsed);
-        const importedDocument = createDocument(
-          parsed.paperWidthMM,
-          parsed.paperHeightMM,
-          imported,
-          {
-            id: crypto.randomUUID(),
-            name: parsed.name,
-            showCutLines: parsed.showCutLines ?? false,
-            enableSnapping: parsed.enableSnapping ?? true,
-            packGapMM: parsed.gapMM ?? 2,
-            packMarginMM: parsed.marginMM ?? 2,
-          },
-        );
-        pushDocumentWithHistory(importedDocument);
-        setSlotSelection(imported[0]?.id ?? null);
-        toast.success(`أُستورد "${parsed.name}" بـ ${imported.length} خلية`);
-      };
-      reader.onerror = () => toast.error('فشل القراءة');
-      reader.readAsText(file);
-    },
-    [finishNudgeBurst, pushDocumentWithHistory, setSlotSelection],
-  );
   useEffect(() => {
     const existingIds = new Set(slots.map((slot) => slot.id));
     const validSecondary = multiSelectedIds.filter((id) => existingIds.has(id));
@@ -675,125 +311,6 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       );
     }
   }, [slots, selectedSlotId, multiSelectedIds, setSlotSelection]);
-
-  const handleNudge = useCallback(
-    (dx: number, dy: number) => {
-      const { selectedIds } = normalizeSlotSelection(
-        selectedSlotIdRef.current,
-        multiSelectedIdsRef.current,
-      );
-      const prev = historyStateRef.current;
-      const nextSlots = moveSlotsWithinBounds(prev.present.slots, selectedIds, dx, dy);
-      if (nextSlots === prev.present.slots) return;
-
-      const startsBurst = nudgeStartDocumentRef.current === null;
-      const baseline = nudgeStartDocumentRef.current ?? prev.present;
-      nudgeStartDocumentRef.current = baseline;
-      replaceHistory({
-        past: startsBurst ? [...prev.past.slice(-(HISTORY_LIMIT - 1)), baseline] : prev.past,
-        present: { ...prev.present, slots: nextSlots },
-        future: [],
-      });
-      if (nudgeDebounceTimer.current !== null) clearTimeout(nudgeDebounceTimer.current);
-      nudgeDebounceTimer.current = setTimeout(finishNudgeBurst, 150);
-    },
-    [finishNudgeBurst, replaceHistory],
-  );
-
-  // اختصارات لوحة المفاتيح
-  useEffect(() => {
-    if (!open) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const keyLower = e.key.toLowerCase();
-      const isArrowKey = ['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(keyLower);
-      if (!isArrowKey) finishNudgeBurst();
-      const activeEl = document.activeElement as HTMLElement | null;
-      if (
-        activeEl &&
-        (activeEl.tagName === 'INPUT' ||
-          activeEl.tagName === 'TEXTAREA' ||
-          activeEl.tagName === 'SELECT' ||
-          activeEl.isContentEditable ||
-          activeEl.closest(
-            '[role="tablist"], [role="menu"], [role="listbox"], [role="combobox"], [role="alertdialog"]',
-          ))
-      ) {
-        finishNudgeBurst();
-        return;
-      }
-
-      const isCmdOrCtrl = e.ctrlKey || e.metaKey;
-
-      // 🛡️ H14 من تدقيق 2026-10-08: Escape كان ضمن المفاتيح المحتجزة بـ
-      // `stopImmediatePropagation` على مستوى capture، فلا يصله مستمع Radix على
-      // document فلا يُغلق الحوار إطلاقاً (X/Escape الطبيعي معطّل). Escape
-      // يُترك لطبقة DismissableLayer، والمسح يحدث في `onEscapeKeyDown` أدناه.
-      const isHandledKey =
-        (isCmdOrCtrl && ['z', 'y', 'd', 'c', 'v', 'a'].includes(keyLower)) ||
-        ['delete', 'backspace'].includes(keyLower) ||
-        ['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(keyLower);
-
-      if (isHandledKey) {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-
-      if (isCmdOrCtrl && keyLower === 'z') {
-        e.preventDefault();
-        if (e.shiftKey) handleRedo();
-        else handleUndo();
-      } else if (isCmdOrCtrl && keyLower === 'y') {
-        e.preventDefault();
-        handleRedo();
-      } else if (isCmdOrCtrl && keyLower === 'd') {
-        e.preventDefault();
-        handleDuplicateSlot();
-      } else if (isCmdOrCtrl && keyLower === 'c') {
-        e.preventDefault();
-        handleCopySelection();
-      } else if (isCmdOrCtrl && keyLower === 'v') {
-        e.preventDefault();
-        handlePasteClipboard();
-      } else if (isCmdOrCtrl && keyLower === 'a') {
-        e.preventDefault();
-        const first = slotsRef.current[0]?.id ?? null;
-        setSlotSelection(
-          first,
-          slotsRef.current.slice(1).map((s) => s.id),
-        );
-      } else if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault();
-        handleRemoveSlot();
-      } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        const selectedId = selectedSlotIdRef.current;
-        if (!selectedId) return;
-        e.preventDefault();
-        const step = e.shiftKey ? 0.025 : 0.005;
-        let dx = 0;
-        let dy = 0;
-        if (e.key === 'ArrowLeft') dx = -step;
-        if (e.key === 'ArrowRight') dx = step;
-        if (e.key === 'ArrowUp') dy = -step;
-        if (e.key === 'ArrowDown') dy = step;
-
-        handleNudge(dx, dy);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
-    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [
-    open,
-    handleUndo,
-    handleRedo,
-    handleDuplicateSlot,
-    handleRemoveSlot,
-    handleCopySelection,
-    handlePasteClipboard,
-    handleNudge,
-    finishNudgeBurst,
-    setSlotSelection,
-  ]);
 
   const handleSaveAsCustomTemplate = async () => {
     finishNudgeBurst();
@@ -848,35 +365,6 @@ export const FreeformCollageModal: React.FC<FreeformCollageModalProps> = ({
       setIsSavingTemplate(false);
     }
   };
-
-  const handleDragStart = useCallback(() => {
-    finishNudgeBurst();
-    dragStartDocumentRef.current = documentValueRef.current;
-  }, [finishNudgeBurst]);
-
-  const handleSlotsChange = useCallback(
-    (next: FreeformSlot[]) => {
-      const prev = historyStateRef.current;
-      if (!dragStartDocumentRef.current || next === prev.present.slots) return;
-      replaceHistory({ ...prev, present: { ...prev.present, slots: next }, future: [] });
-    },
-    [replaceHistory],
-  );
-
-  const handleDragEnd = useCallback(
-    (finalSlots: FreeformSlot[]) => {
-      const start = dragStartDocumentRef.current;
-      dragStartDocumentRef.current = null;
-      if (!start || start.slots.every((slot, index) => slot === finalSlots[index])) return;
-      const prev = historyStateRef.current;
-      replaceHistory({
-        past: [...prev.past.slice(-(HISTORY_LIMIT - 1)), start],
-        present: { ...prev.present, slots: finalSlots },
-        future: [],
-      });
-    },
-    [replaceHistory],
-  );
 
   const handleApplyToCanvas = () => {
     finishNudgeBurst();
