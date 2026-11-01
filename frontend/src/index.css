@@ -197,6 +197,11 @@
   --canvas-gradient-end: #8b5cf6;
   --canvas-collage-cut: #94a3b8;
   --canvas-collage-end-cut: #3b82f6;
+  --canvas-collage-selection-primary: #0078d4;
+  --canvas-collage-selection-secondary: #60a5fa;
+  --canvas-collage-selection-shadow: #0078d4;
+  --canvas-collage-handle: #0078d4;
+  --canvas-collage-handle-foreground: #ffffff;
   --canvas-slot-placeholder-bg: rgba(241, 245, 249, 0.88);
   --canvas-slot-placeholder-border: #94a3b8;
   --canvas-slot-placeholder-border-hover: #0078d4;
@@ -328,6 +333,11 @@
   --canvas-gradient-end: #a78bfa;
   --canvas-collage-cut: #525252;
   --canvas-collage-end-cut: #60a5fa;
+  --canvas-collage-selection-primary: #60a5fa;
+  --canvas-collage-selection-secondary: #93c5fd;
+  --canvas-collage-selection-shadow: #60a5fa;
+  --canvas-collage-handle: #60a5fa;
+  --canvas-collage-handle-foreground: #ffffff;
   --canvas-slot-placeholder-bg: rgba(30, 41, 59, 0.72);
   --canvas-slot-placeholder-border: #64748b;
   --canvas-slot-placeholder-border-hover: #60a5fa;

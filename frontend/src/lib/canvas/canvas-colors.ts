@@ -101,6 +101,13 @@ export const slotPlaceholderIcon = () => css('--canvas-slot-placeholder-icon', '
 export const slotPlaceholderIconHover = () =>
   css('--canvas-slot-placeholder-icon-hover', '#0078d4');
 export const slotPlaceholderText = slotPlaceholderIcon;
+// حلقة تحديد الخلية وأزرار الإضافة — ألوان دلالية بدل hex صلبة داخل المرسم
+export const collageSelectionPrimary = () => css('--canvas-collage-selection-primary', '#0078d4');
+export const collageSelectionSecondary = () =>
+  css('--canvas-collage-selection-secondary', '#60a5fa');
+export const collageSelectionShadow = () => css('--canvas-collage-selection-shadow', '#0078d4');
+export const collageHandle = () => css('--canvas-collage-handle', '#0078d4');
+export const collageHandleForeground = () => css('--canvas-collage-handle-foreground', '#ffffff');
 
 // ── Magic AI Scanner ─────────────────────────────────────────────────────────
 export const scannerBeam = () => css('--canvas-scanner-beam', '#0ea5e9');

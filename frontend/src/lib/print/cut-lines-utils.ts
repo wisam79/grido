@@ -299,22 +299,22 @@ function mergeIntervals(intervals: readonly AxisInterval[]): AxisInterval[] {
  * منتصف كل فجوة **فعلية** بين مجموعتين غير متداخلتين. الفجوة الصفرية
  * (خانات متلاصقة) تعطي الحدّ المشترك نفسه — وهو الخط المطلوب.
  */
-function axisMidpointCutLines(
-  intervals: readonly AxisInterval[],
-  gap: number,
-  paperSize: number,
-): number[] {
+function axisMidpointCutLines(intervals: readonly AxisInterval[], paperSize: number): number[] {
   // القص حد الورقة إلزامي: أي إحداثي خارجها يُقصّ صامتاً في الكانفاس النهائي
   // فيختفي الخط من الطباعة تماماً (ثابت محرك الرسم).
   const clamp = (v: number) => Math.min(paperSize, Math.max(0, v));
   const merged = mergeIntervals(intervals);
   if (merged.length === 0) return [];
 
-  const lines: number[] = [clamp(merged[0].start - gap / 2)];
+  // مستقبلات شبكة الكولاج تُرجع حدود الخلايا الفعلية بعد الهامش والفجوة
+  // (getSlotRect / computeSlotRectMM)، لذا الحدّ الخارجي هو بداية أول فترة
+  // ونهاية آخر فترة مباشرةً. الإضافة/الطرح نصف فجوة (السلوك القديم) كانت
+  // تعوّض إزاحة نصف فجوة داخل المستطيل نفسه، وتصبح اليوم خطاً خارج الشبكة.
+  const lines: number[] = [clamp(merged[0].start)];
   for (let i = 1; i < merged.length; i++) {
     lines.push(clamp((merged[i - 1].end + merged[i].start) / 2));
   }
-  lines.push(clamp(merged[merged.length - 1].end + gap / 2));
+  lines.push(clamp(merged[merged.length - 1].end));
   // التقريب هنا بعد الدمج — تقريب الفترات قبل فحص التداخل كان يحذف فواصل حقيقية
   return dedupeAscending(lines.map((v) => Math.round(v * 100) / 100));
 }
@@ -329,17 +329,16 @@ function axisMidpointCutLines(
  * النتيجة `null` حين لا توجد حواف يسرى/علوية صالحة (لا خلايا مرسومة).
  */
 export function buildMidpointCutLines(input: MidpointCutLinesInput): MidpointCutLines | null {
-  // حواجز أخيرة: قيمة غير منتهية في الفجوة أو الورقة تُفسد كل المواضع،
-  // فنسقط إلى قيم محيّدة (فجوة صفرية / بلا قصّ للحدود) بدل تمرير NaN إلى Go.
-  const gapX = Number.isFinite(input.gapX) ? input.gapX : 0;
-  const gapY = Number.isFinite(input.gapY) ? input.gapY : 0;
+  // حواجز أخيرة: أبعاد الورق غير المنتهية تُفسد كل المواضع، فنسقط إلى قيمة
+  // محيّدة بدل تمرير NaN إلى Go. الفجوة لم تعد تدخل في حساب الحدود الخارجية
+  // (مستطيلات الخلايا تحملها فعلياً)، لكنها تبقى في الواجهة للتوافق.
   const paperWidth = Number.isFinite(input.paperWidth) ? input.paperWidth : Number.MAX_SAFE_INTEGER;
   const paperHeight = Number.isFinite(input.paperHeight)
     ? input.paperHeight
     : Number.MAX_SAFE_INTEGER;
 
-  const xCutLines = axisMidpointCutLines(input.xIntervals, gapX, paperWidth);
-  const yCutLines = axisMidpointCutLines(input.yIntervals, gapY, paperHeight);
+  const xCutLines = axisMidpointCutLines(input.xIntervals, paperWidth);
+  const yCutLines = axisMidpointCutLines(input.yIntervals, paperHeight);
 
   if (xCutLines.length === 0 || yCutLines.length === 0) return null;
 

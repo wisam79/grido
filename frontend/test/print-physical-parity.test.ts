@@ -11,6 +11,7 @@ import {
   getLoadedImageDimensions,
 } from '../src/lib/export/collage-preflight-helpers';
 import { getSlotExportSize } from '../src/lib/export/export-slot';
+import { computeSlotPreviewPan } from '../src/lib/print/preview-pan';
 import { computeCollageSlotRectMM } from '../src/lib/print/print-layout-math';
 import { COLLAGE_TEMPLATES } from '../src/lib/templates';
 
@@ -231,10 +232,11 @@ describe('R-04: collage preflight uses final physical local draw rectangles', ()
         hasPhysical: false,
       },
     );
-    expect(rect.xMM).toBeCloseTo(27.94, 8);
-    expect(rect.yMM).toBeCloseTo(13.97, 8);
-    expect(rect.wMM).toBeCloseTo(96.52, 8);
-    expect(rect.hMM).toBeCloseTo(226.06, 8);
+    // track = avail + gap؛ الهامش يبدأ عند حدّه تماماً والفجوة تُطرح من العرض.
+    expect(rect.xMM).toBeCloseTo(25.4, 8);
+    expect(rect.yMM).toBeCloseTo(12.7, 8);
+    expect(rect.wMM).toBeCloseTo(99.06, 8);
+    expect(rect.hMM).toBeCloseTo(228.6, 8);
     const opts = {
       slots: [{ ...slot, w: 0.5 }],
       canvasWidth: 1000,
@@ -243,8 +245,8 @@ describe('R-04: collage preflight uses final physical local draw rectangles', ()
       collageGap: 20,
     };
     const exportRect = getCollageExportSlotRectsMM(opts, dpi, false).get(slot.id)!;
-    expect(exportRect.wMM).toBeCloseTo(pxToMm(380, dpi), 8);
-    expect(exportRect.hMM).toBeCloseTo(pxToMm(1780, dpi), 8);
+    expect(exportRect.wMM).toBeCloseTo(pxToMm(390, dpi), 8);
+    expect(exportRect.hMM).toBeCloseTo(pxToMm(1800, dpi), 8);
   });
 
   it('batch geometry uses each integer output bitmap, not fractions of the page', () => {
@@ -261,8 +263,8 @@ describe('R-04: collage preflight uses final physical local draw rectangles', ()
       expect(rect.wMM).toBeCloseTo(pxToMm(size.width, 300), 8);
       expect(rect.hMM).toBeCloseTo(pxToMm(size.height, 300), 8);
     }
-    expect(getSlotExportSize(slots[0], opts)).toEqual({ width: 385, height: 482 });
-    expect(getSlotExportSize(slots[1], opts)).toEqual({ width: 582, height: 971 });
+    expect(getSlotExportSize(slots[0], opts)).toEqual({ width: 387, height: 485 });
+    expect(getSlotExportSize(slots[1], opts)).toEqual({ width: 585, height: 978 });
   });
 
   it.each([false, true])(
@@ -366,4 +368,26 @@ describe('R-04: collage preflight uses final physical local draw rectangles', ()
       expect(check(rect, undefined, {}, 301).warnings[0].message).toContain('≈ 300DPI');
     },
   );
+});
+
+describe('SheetPreview pan helper shares one convention between both rotation branches', () => {
+  const naturalSize = { w: 1200, h: 800 };
+
+  it('applies drag offsets in the quarter-turn branch instead of centering', () => {
+    const slot = { zoom: 2, dragX: 200, dragY: 0 };
+    // نسبة المقاس المحلي بعد 90 (المتبدلة) مقابل نسبة الخانة النهائية.
+    const quarter = computeSlotPreviewPan(slot, naturalSize, 600 / 400);
+    const straight = computeSlotPreviewPan(slot, naturalSize, 400 / 600);
+    expect(quarter.panX).not.toBe(0);
+    expect(quarter.panX).toBeCloseTo((100 * 2 * 200) / 1200, 9);
+    expect(straight.panX).toBeCloseTo((100 * 2 * 200) / (800 * (400 / 600)), 9);
+  });
+
+  it('stays centered when no drag is stored or zoom is 1', () => {
+    expect(computeSlotPreviewPan({ zoom: 2 }, naturalSize, 1.5)).toEqual({ panX: 0, panY: 0 });
+    expect(computeSlotPreviewPan({ zoom: 1, dragX: 200 }, naturalSize, 1.5)).toEqual({
+      panX: 0,
+      panY: 0,
+    });
+  });
 });

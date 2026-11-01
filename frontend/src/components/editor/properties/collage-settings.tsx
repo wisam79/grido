@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
 import { Switch } from '@/components/ui/switch';
+import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { mmToPx, pxToMm } from '@/lib/canvas/units';
 import { useEditorStore } from '@/lib/editor-store';
 import {
@@ -20,6 +21,7 @@ export function CollageSettings() {
     collageShowEndCutLine,
     collageStrokeWidth,
     collageStrokeColor,
+    collageTemplate,
     canvasWidth,
     canvasHeight,
     printSettings,
@@ -39,6 +41,7 @@ export function CollageSettings() {
       collageShowEndCutLine: state.collageShowEndCutLine,
       collageStrokeWidth: state.collageStrokeWidth,
       collageStrokeColor: state.collageStrokeColor,
+      collageTemplate: state.collageTemplate,
       canvasWidth: state.canvasWidth,
       canvasHeight: state.canvasHeight,
       printSettings: state.printSettings,
@@ -61,6 +64,12 @@ export function CollageSettings() {
   const toMm = useCallback((px: number) => Math.round(pxToMm(px, dpi) * 10) / 10, [dpi]);
   const toPx = useCallback((mm: number) => Math.round(mmToPx(mm, dpi)), [dpi]);
 
+  // 🧱 القوالب المخبوزة (أطقم جاهزة/تعديل يدوي/كولاج حر) تحمل فواصلها داخل
+  // إحداثيات الخلايا، وجيومترية العرض تتجاهل الفجوة والهامش فيها. إبقاء
+  // المنزلقين نشطين كان يوهم المستخدم بتغيير لا يحدث؛ نعطّلهما ونشرح السبب.
+  // التخطيطات الفيزيائية مستثناة لأن مولّد الخلايا يعيد حسابها فعلياً.
+  const spacingLocked = isBakedCollageLayout(collageTemplate) && !collageTemplate?.physicalLayout;
+
   return (
     <div className="flex flex-col font-cairo" dir="rtl">
       <FluentSection title="المسافات والاستدارة" collapsible defaultOpen>
@@ -73,6 +82,7 @@ export function CollageSettings() {
             step={0.1}
             unit="mm"
             defaultValue={DEFAULT_COLLAGE_GAP_MM}
+            disabled={spacingLocked}
             onChange={(mm) => setCollageGap(toPx(mm))}
             onCommit={() => useEditorStore.getState().pushHistory()}
           />
@@ -84,9 +94,16 @@ export function CollageSettings() {
             step={0.1}
             unit="mm"
             defaultValue={DEFAULT_COLLAGE_MARGIN_MM}
+            disabled={spacingLocked}
             onChange={(mm) => setCollageMargin(toPx(mm))}
             onCommit={() => useEditorStore.getState().pushHistory()}
           />
+          {spacingLocked && (
+            <p className="text-mini leading-5 text-muted-foreground">
+              التباعد والهوامش مخبوزة داخل هذا القالب. عدّل الخلايا يدوياً أو اختر قالباً فيزيائياً
+              لتغيير المسافات.
+            </p>
+          )}
           <FluentSliderField
             label="الزوايا"
             value={toMm(collageRadius)}

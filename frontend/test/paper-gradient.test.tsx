@@ -318,16 +318,16 @@ describe('Collage geometry (shared by Konva layer and quick bar)', () => {
     const geo = getCollageGeometry(1000, 1400, 20, 10, false);
     const rect = getSlotRect({ x: 0.5, y: 0.25, w: 0.5, h: 0.25 }, geo);
 
-    expect(rect.left).toBeCloseTo(20 + 0.5 * 960 + 5);
-    expect(rect.top).toBeCloseTo(20 + 0.25 * 1360 + 5);
-    expect(rect.width).toBeCloseTo(0.5 * 960 - 10);
-    expect(rect.height).toBeCloseTo(0.25 * 1360 - 10);
+    expect(rect.left).toBeCloseTo(20 + 0.5 * (960 + 10));
+    expect(rect.top).toBeCloseTo(20 + 0.25 * (1360 + 10));
+    expect(rect.width).toBeCloseTo(0.5 * (960 + 10) - 10);
+    expect(rect.height).toBeCloseTo(0.25 * (1360 + 10) - 10);
 
     // نفس بكسل الكانفاس التي يرسم بها Konva تُقاس إلى بكسل العرض في الشريط
-    // (505 = 20 هامش + 480 موضع + 5 نصف فجوة، بضرب 0.25 لمقاس العرض)
+    // (505 = 20 هامش + 0.5 × مسار 970، بضرب 0.25 لمقاس العرض)
     const displayScale = 0.25;
     expect(rect.left * displayScale).toBeCloseTo(126.25);
-    expect(rect.width * displayScale).toBeCloseTo(117.5);
+    expect(rect.width * displayScale).toBeCloseTo(118.75);
   });
 
   it('keeps the normalized helpers the rest of the app already relies on', () => {

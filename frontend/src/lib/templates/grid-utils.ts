@@ -26,6 +26,59 @@ export function getEffectiveDpi(W: number, H: number, storedDpi: number = 300): 
   return dpi;
 }
 
+/** الحد الأدنى لأي خلية تولّدها مولّدات الشبكة الفيزيائية (مم) — نفس حارس
+ * `getPhysicalMaxMarginMM` للمسار اليدوي حتى تتفق مسارات الهامش والفجوة. */
+export const MIN_GENERATED_CELL_MM = 1;
+
+interface FixedGapScaleInput {
+  contentW: number;
+  contentH: number;
+  gapCountX: number;
+  gapCountY: number;
+  gapMM: number;
+  availW: number;
+  availH: number;
+  smallestCellMM: number;
+}
+
+/**
+ * مقياس الخلايا والفجوة النهائي لمولّدات التخطيط الفيزيائي.
+ *
+ * القاعدة: الفجوة المطلوبة تبقى ثابتة وتُصغَّر الخلايا وحدها (سلوك `gap`
+ * في CSS Grid) — بشرط ألا تنحسر أصغر خلية عن `MIN_GENERATED_CELL_MM`.
+ * عندها تُثبَّت الخلايا عند حدها الأدنى وتُضغط الفجوة بالمساحة المتبقية
+ * (رفع الفجوة على هوامش كبيرة كان يُنتج خلايا مجهرية دون 1مم)، وإن استحال
+ * حتى ذلك (ورقة أضيق من الخلية الدنيا نفسها) صُغِّر الكل تناسبياً كحل أخير
+ * بلا خلايا سالبة.
+ */
+function resolveFixedGapScale(input: FixedGapScaleInput): { scale: number; finalGap: number } {
+  const { contentW, contentH, gapCountX, gapCountY, gapMM, availW, availH, smallestCellMM } = input;
+  const scaleFixedGap = Math.min(
+    1,
+    (availW - gapCountX * gapMM) / contentW,
+    (availH - gapCountY * gapMM) / contentH,
+  );
+  // سقف المقياس 1: لا تكبير فوق المقاس المعلن، وحماية من قسمة صفرية.
+  const minScale = Math.min(1, MIN_GENERATED_CELL_MM / Math.max(smallestCellMM, Number.EPSILON));
+  if (scaleFixedGap >= minScale) {
+    return { scale: scaleFixedGap, finalGap: gapMM };
+  }
+  const scale = Math.max(0, minScale);
+  const gapFitX =
+    gapCountX > 0 ? (availW - contentW * scale) / gapCountX : Number.POSITIVE_INFINITY;
+  const gapFitY =
+    gapCountY > 0 ? (availH - contentH * scale) / gapCountY : Number.POSITIVE_INFINITY;
+  const gapFit = Math.min(gapFitX, gapFitY);
+  if (gapFit >= 0) {
+    return { scale, finalGap: Math.min(gapMM, gapFit) };
+  }
+  // حتى بلا فجوة لا تتسع الخلايا الدنيا — تصغير تناسبي أخير (السلوك الاحتياطي القديم).
+  const rawW = contentW + gapCountX * gapMM;
+  const rawH = contentH + gapCountY * gapMM;
+  const scaleProportional = Math.min(availW / rawW, availH / rawH);
+  return { scale: scaleProportional, finalGap: gapMM * scaleProportional };
+}
+
 /**
  * يحدد مقاس الخلية الفيزيائية (مم) لنوع القالب — مصدر واحد تستخدمه مولّدات
  * الخلايا وحاسبة الهامش الأقصى وواجهة الشبكة المخصصة حتى لا تنحرف ثوابت
@@ -59,9 +112,12 @@ export function getPhysicalCellSizeMM(
 
 /**
  * خلايا شبكة فيزيائية منتظمة (0..1) — المصدر الوحيد لبناء الشبكة عند التطبيق
- * والحفظ وسحب الفواصل. التجاوز عن المساحة المتاحة يُصغّر الشبكة كلها بنسبة
- * واحدة بدل قصّ أطرافها، ولا يوجد تسامح: أي تجاوز ولو 0.1 مم يعني خلية تخرج
- * عن الهامش المطلوب.
+ * والحفظ وسحب الفواصل. التجاوز عن المساحة المتاحة يُصغّر الخلايا وحدها مع
+ * الإبقاء على الفجوة المطلوبة ثابتة (كسلوك `gap` في CSS Grid)، بدل تصغير
+ * الفجوة معها فيختفي التباعد الذي اختاره المستخدم بصمت. لا يوجد تسامح: أي
+ * تجاوز ولو 0.1 مم يعني خلية تخرج عن الهامش المطلوب. إذا استهلكت الفجوة
+ * المساحة كلها (بسبب هامش/عدد أعمدة متطرف) نعود لتصغير الاثنين معاً حتى
+ * لا تنتج خلايا بأبعاد سالبة.
  */
 export function buildPhysicalGridCellsMM(
   cols: number,
@@ -79,17 +135,22 @@ export function buildPhysicalGridCellsMM(
   const availW = paperW - 2 * marginX;
   const availH = paperH - 2 * marginY;
 
-  const gridW_raw = cols * wMM + (cols - 1) * gapMM;
-  const gridH_raw = rows * hMM + (rows - 1) * gapMM;
+  const contentW = cols * wMM;
+  const contentH = rows * hMM;
 
-  let scale = 1;
-  if (gridW_raw > availW || gridH_raw > availH) {
-    scale = Math.min(availW / gridW_raw, availH / gridH_raw);
-  }
+  const { scale, finalGap } = resolveFixedGapScale({
+    contentW,
+    contentH,
+    gapCountX: cols - 1,
+    gapCountY: rows - 1,
+    gapMM,
+    availW,
+    availH,
+    smallestCellMM: Math.min(wMM, hMM),
+  });
 
   const finalCellW = wMM * scale;
   const finalCellH = hMM * scale;
-  const finalGap = gapMM * scale;
 
   const gridW = cols * finalCellW + (cols - 1) * finalGap;
   const gridH = rows * finalCellH + (rows - 1) * finalGap;
@@ -149,24 +210,30 @@ function getMixedCells(
   const availW = paperW - 2 * marginX;
   const availH = paperH - 2 * marginY;
 
-  const leftW = 2 * 35 + gapMM;
-  const leftH = 2 * 45 + gapMM;
+  const leftW = 2 * 35;
+  const leftH = 2 * 45;
   const rightW = 60;
-  const rightH = 2 * 40 + gapMM;
+  const rightH = 2 * 40;
 
-  const totalW_raw = leftW + gapMM + rightW;
-  const totalH_raw = Math.max(leftH, rightH);
+  const contentW = leftW + rightW;
+  const contentH = Math.max(leftH, rightH);
 
-  let scale = 1;
-  if (totalW_raw > availW || totalH_raw > availH) {
-    scale = Math.min(availW / totalW_raw, availH / totalH_raw);
-  }
+  // نفس قاعدة buildPhysicalGridCellsMM مع حارس الحد الأدنى للخلية.
+  const { scale, finalGap } = resolveFixedGapScale({
+    contentW,
+    contentH,
+    gapCountX: 2,
+    gapCountY: 1,
+    gapMM,
+    availW,
+    availH,
+    smallestCellMM: Math.min(35, 45, 60, 40),
+  });
 
   const final35 = 35 * scale;
   const final45 = 45 * scale;
   const final60 = 60 * scale;
   const final40 = 40 * scale;
-  const finalGap = gapMM * scale;
 
   const finalLeftW = 2 * final35 + finalGap;
   const finalLeftH = 2 * final45 + finalGap;
@@ -245,22 +312,28 @@ function getTravelerCells(
   const availH = paperH - 2 * marginY;
 
   // الصف العلوي: جوازات رسمية 35×45 (المصدر الموحد photo-templates.ts) — كان 50×50 خطأً.
-  const topW = 2 * 35 + gapMM;
+  const topW = 2 * 35;
   const topH = 45;
-  const bottomW = 2 * 35 + gapMM;
-  const bottomH = 2 * 45 + gapMM;
+  const bottomW = 2 * 35;
+  const bottomH = 2 * 45;
 
-  const totalW_raw = Math.max(topW, bottomW);
-  const totalH_raw = topH + gapMM + bottomH;
+  const contentW = Math.max(topW, bottomW);
+  const contentH = topH + bottomH;
 
-  let scale = 1;
-  if (totalW_raw > availW || totalH_raw > availH) {
-    scale = Math.min(availW / totalW_raw, availH / totalH_raw);
-  }
+  // نفس قاعدة buildPhysicalGridCellsMM مع حارس الحد الأدنى للخلية.
+  const { scale, finalGap } = resolveFixedGapScale({
+    contentW,
+    contentH,
+    gapCountX: 1,
+    gapCountY: 2,
+    gapMM,
+    availW,
+    availH,
+    smallestCellMM: Math.min(35, 45),
+  });
 
   const final35 = 35 * scale;
   const final45 = 45 * scale;
-  const finalGap = gapMM * scale;
 
   const finalTopW = 2 * final35 + finalGap;
   const finalTopH = final45;
@@ -401,31 +474,39 @@ export function getPhysicalMaxMarginMM(
   const layout = template.physicalLayout;
   if (!layout) return null;
 
-  let gridW: number;
-  let gridH: number;
+  let contentW: number;
+  let contentH: number;
+  let gapCountW: number;
+  let gapCountH: number;
   let minCellRaw: number;
   if (layout.type === 'iq-mixed') {
     // نفس ثوابت getMixedCells: يسار 2×2 من 35×45 + يمين 60×40
-    gridW = 2 * 35 + gapMM + gapMM + 60;
-    gridH = Math.max(2 * 45 + gapMM, 2 * 40 + gapMM);
+    contentW = 2 * 35 + 60;
+    contentH = Math.max(2 * 45, 2 * 40);
+    gapCountW = 2; // فجوة داخل العمودين + فجوة بين الكتلتين
+    gapCountH = 1; // فجوة بين صفي البطاقات اليسرى
     minCellRaw = 35;
   } else if (layout.type === 'combo-traveler') {
     // نفس ثوابت getTravelerCells: صف علوي 2×35×45 + شبكة سفلية 2×2 من 35×45
-    gridW = 2 * 35 + gapMM;
-    gridH = 45 + gapMM + (2 * 45 + gapMM);
+    contentW = 2 * 35;
+    contentH = 45 + 2 * 45;
+    gapCountW = 1; // بين الجوازين
+    gapCountH = 2; // بين الصف العلوي والكتلة السفلية + بين صفيها
     minCellRaw = 35;
   } else {
     const size = getPhysicalCellSizeMM(layout.type, template);
     if (!size) return null;
-    gridW = layout.cols * size.wMM + (layout.cols - 1) * gapMM;
-    gridH = layout.rows * size.hMM + (layout.rows - 1) * gapMM;
+    contentW = layout.cols * size.wMM;
+    contentH = layout.rows * size.hMM;
+    gapCountW = layout.cols - 1;
+    gapCountH = layout.rows - 1;
     minCellRaw = Math.min(size.wMM, size.hMM);
   }
 
-  // المطلوب: scale = min(availW/gridW, availH/gridH) >= minCellMM/minCellRaw
+  // الفجوة تبقى ثابتة عند التصغير، لذا المساحة المطلوبة =
+  // (محتوى الخلايا × مقياس الحد الأدنى) + (عدد الفجوات × الفجوة الكاملة).
   const minScale = minCellMM / minCellRaw;
-  return Math.max(
-    0,
-    Math.min((paperWmm - minScale * gridW) / 2, (paperHmm - minScale * gridH) / 2),
-  );
+  const requiredW = minScale * contentW + gapCountW * gapMM;
+  const requiredH = minScale * contentH + gapCountH * gapMM;
+  return Math.max(0, Math.min((paperWmm - requiredW) / 2, (paperHmm - requiredH) / 2));
 }

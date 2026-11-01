@@ -70,16 +70,29 @@ export interface SlotRect {
   height: number;
 }
 
-/** مستطيل الخلية بالبكسل الكانفسي — المعادلة الحاكمة لكل من الرسم والتقاط الموضع */
+/**
+ * مستطيل الخلية بالبكسل الكانفسي — المعادلة الحاكمة لكل من الرسم والتقاط الموضع.
+ *
+ * الإحداثيات المطبّعة تمثل مساراً كاملاً `avail + gap` بحيث تستهلك كل خانة
+ * فجوة واحدة داخلياً، ثم تُطرح الفجوة الأخيرة من عرضها. النتيجة مطابقة لشبكة
+ * CSS: الهامش الخارجي يبقى `margin` بالضبط، والفجوة بين خانتين متجاورتين
+ * `gap` بالضبط، والخانة الممتدة (w=1 أو h=1) تملأ المساحة المتاحة كاملة.
+ * الصيغة القديمة (`x*avail + gap/2`) كانت تُزيح أول خانة نصف فجوة خارج
+ * الهامش وتقصّ الخانة الممتدة بمقدار gap كامل؛ الفجوة بين خانتين متجاورتين
+ * كانت صحيحة (gap بالضبط) — الانحراف كان في الحدود الخارجية والخانات
+ * الممتدة لا في الفواصل الداخلية.
+ */
 export function getSlotRect(
   slot: Pick<CanvasSlot, 'x' | 'y' | 'w' | 'h'>,
   geo: CollageGeometry,
 ): SlotRect {
+  const trackW = Math.max(0, geo.availW + geo.gap);
+  const trackH = Math.max(0, geo.availH + geo.gap);
   return {
-    left: geo.margin + slot.x * geo.availW + geo.gap / 2,
-    top: geo.margin + slot.y * geo.availH + geo.gap / 2,
-    width: Math.max(0, slot.w * geo.availW - geo.gap),
-    height: Math.max(0, slot.h * geo.availH - geo.gap),
+    left: geo.margin + slot.x * trackW,
+    top: geo.margin + slot.y * trackH,
+    width: Math.max(0, slot.w * trackW - geo.gap),
+    height: Math.max(0, slot.h * trackH - geo.gap),
   };
 }
 

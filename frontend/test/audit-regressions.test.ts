@@ -119,7 +119,7 @@ describe('collage-slice — سلامة بيانات الخلايا', () => {
     expect(distance(holder!)).toBeCloseTo(nearest, 5);
   });
 
-  it('rotateSlot يُصفّر zoom الاقتصاص مع الإزاحات', () => {
+  it('rotateSlot يحافظ على zoom الاقتصاص والإزاحات', () => {
     store().setCollageTemplate(COLLAGE_TEMPLATES[0]);
     const id = store().slots[0].id;
     store().updateSlot(id, { zoom: 2.5, dragX: 12, dragY: -8 });
@@ -128,9 +128,9 @@ describe('collage-slice — سلامة بيانات الخلايا', () => {
 
     const rotated = store().slots.find((s) => s.id === id)!;
     expect(rotated.rotation).toBe(90);
-    expect(rotated.zoom).toBe(1);
-    expect(rotated.dragX).toBe(0);
-    expect(rotated.dragY).toBe(0);
+    expect(rotated.zoom).toBe(2.5);
+    expect(rotated.dragX).toBe(12);
+    expect(rotated.dragY).toBe(-8);
   });
 });
 

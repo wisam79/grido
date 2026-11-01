@@ -176,9 +176,15 @@ export const KonvaCollageImage = React.memo(
     const defaultSx = shownAspect > slotAspect ? (shownW - sw) / 2 : 0;
     const defaultSy = shownAspect > slotAspect ? 0 : (shownH - sh) / 2;
 
-    // Max bounds for offset X and Y
-    const maxDragX = Math.max(0, (shownW - sw) / 2);
-    const maxDragY = Math.max(0, (shownH - sh) / 2);
+    // مدى الإزاحة الصحيح يعتمد على موضع البدء (مركز أو حافة): النافذة النهائية
+    // يجب أن تبقى داخل حدود الصورة. التقييم المتماثل حول الصفر كان يسمح بمصدر
+    // سالب بعد تدوير الخانة 90/270 مع إبقاء pan المستخدم (شريط فارغ في الرسم).
+    const rangeX = Math.max(0, shownW - sw);
+    const rangeY = Math.max(0, shownH - sh);
+    const minOffsetX = -defaultSx;
+    const maxOffsetX = rangeX - defaultSx;
+    const minOffsetY = -defaultSy;
+    const maxOffsetY = rangeY - defaultSy;
 
     // 🧭 props dragX/dragY بفضاء الصورة الأصلية (الستور + drawSlotImage يفسرها
     // على أبعاد الأصل) — نحوّلها لفضاء نسخة العرض بالتناسب عبر النسبة المحسوبة
@@ -187,11 +193,11 @@ export const KonvaCollageImage = React.memo(
     const dragYShown = dragY * srcToShown;
 
     // Clamp the drag offsets to ensure crop window stays within the image boundaries
-    const dragXClamped = Math.max(-maxDragX, Math.min(maxDragX, dragXShown));
-    const dragYClamped = Math.max(-maxDragY, Math.min(maxDragY, dragYShown));
+    const dragXClamped = Math.max(minOffsetX, Math.min(maxOffsetX, dragXShown));
+    const dragYClamped = Math.max(minOffsetY, Math.min(maxOffsetY, dragYShown));
 
-    const sx = Math.round(defaultSx + dragXClamped);
-    const sy = Math.round(defaultSy + dragYClamped);
+    const sx = Math.max(0, Math.min(rangeX, Math.round(defaultSx + dragXClamped)));
+    const sy = Math.max(0, Math.min(rangeY, Math.round(defaultSy + dragYClamped)));
     sw = Math.round(sw);
     sh = Math.round(sh);
 
@@ -259,12 +265,14 @@ export const KonvaCollageImage = React.memo(
             // الدقيق قرب المركز عندما يكون النطاق ضيقاً (تغطية محكمة) —
             // يُسقف بنسبة من النطاق فلا يتجاوز التآكلُ الكسريَّ أبداً.
             let snapX = proposedX;
-            if (Math.abs(snapX) < maxDragX * 0.05 + Math.min(8, maxDragX * 0.1)) snapX = 0;
+            if (Math.abs(snapX) < (rangeX / 2) * 0.05 + Math.min(8, (rangeX / 2) * 0.1)) snapX = 0;
             let snapY = proposedY;
-            if (Math.abs(snapY) < maxDragY * 0.05 + Math.min(8, maxDragY * 0.1)) snapY = 0;
+            if (Math.abs(snapY) < (rangeY / 2) * 0.05 + Math.min(8, (rangeY / 2) * 0.1)) snapY = 0;
 
-            const clampedX = Math.max(-maxDragX, Math.min(maxDragX, snapX));
-            const clampedY = Math.max(-maxDragY, Math.min(maxDragY, snapY));
+            // نطاق الإزاحة غير متماثل حول الصفر حين تكون نقطة البدء حافةً
+            // (بعد ربع دوران) — التقييد على الموضع النهائي هو المرجع.
+            const clampedX = Math.max(minOffsetX, Math.min(maxOffsetX, snapX));
+            const clampedY = Math.max(minOffsetY, Math.min(maxOffsetY, snapY));
 
             accumulatedDrag.current = { dragX: clampedX, dragY: clampedY };
 
@@ -278,8 +286,8 @@ export const KonvaCollageImage = React.memo(
             const currentX = accumulatedDrag.current.dragX;
             const currentY = accumulatedDrag.current.dragY;
 
-            const dragXClamped = Math.max(-maxDragX, Math.min(maxDragX, currentX));
-            const dragYClamped = Math.max(-maxDragY, Math.min(maxDragY, currentY));
+            const dragXClamped = Math.max(minOffsetX, Math.min(maxOffsetX, currentX));
+            const dragYClamped = Math.max(minOffsetY, Math.min(maxOffsetY, currentY));
 
             const newSx = Math.round(defaultSx + dragXClamped);
             const newSy = Math.round(defaultSy + dragYClamped);

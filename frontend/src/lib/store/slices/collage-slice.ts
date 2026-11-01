@@ -445,8 +445,13 @@ function tryDisplaceOverlappingCells(
 
     let resolvedResult: CanvasSlot[] | null = null;
     for (const axis of candidateAxes) {
-      const dx = axis === 'x' ? (pushRight ? shiftPxX : -shiftPxX) / geo.availW : 0;
-      const dy = axis === 'y' ? (pushDown ? shiftPxY : -shiftPxY) / geo.availH : 0;
+      // عكس معادلة getSlotRect: الموضع المطبّع يُقاس على المسار الكامل
+      // (avail + gap) وليس المساحة المتاحة وحدها — القسمة على avail وحدها
+      // كانت تدفع الجيران أبعد من اللازم فترفض إزاحات كان يمكن قبولها.
+      const trackW = Math.max(1, geo.availW + geo.gap);
+      const trackH = Math.max(1, geo.availH + geo.gap);
+      const dx = axis === 'x' ? (pushRight ? shiftPxX : -shiftPxX) / trackW : 0;
+      const dy = axis === 'y' ? (pushDown ? shiftPxY : -shiftPxY) / trackH : 0;
       const newX = overlapSlot.x + dx;
       const newY = overlapSlot.y + dy;
 
@@ -540,6 +545,10 @@ function fillSlotsAlongAxis(
 /**
  * يحسب أقصى فجوة مسموح بها للخلايا اليدوية بحيث لا يهبط مقاس أي خلية عن الحد الأدنى (1 مم).
  * يمنع إنتاج أبعاد سالبة عند زيادة التباعد في التخطيطات اليدوية (P1).
+ *
+ * بعكس معادلة `getSlotRect`: العرض = w*(avail+gap) - gap، لذا الحد الأدنى
+ * للعرض يعطي: gap <= (w*avail - minPx)/(1-w) لكل خانة (w<1). الخانة الممتدة
+ * (w=1) لا تتأثر بالفجوة لأن عرضها يبقى avail بالكامل.
  */
 function getManualMaxGap(
   slots: CanvasSlot[],
@@ -551,18 +560,24 @@ function getManualMaxGap(
   if (!slots || slots.length === 0) return Number.POSITIVE_INFINITY;
   const availW = Math.max(1, canvasW - 2 * margin);
   const availH = Math.max(1, canvasH - 2 * margin);
-  let minSpan = Number.POSITIVE_INFINITY;
+  let maxGap = Number.POSITIVE_INFINITY;
   for (const sl of slots) {
-    const spanW = sl.w * availW;
-    const spanH = sl.h * availH;
-    if (spanW < minSpan) minSpan = spanW;
-    if (spanH < minSpan) minSpan = spanH;
+    if (sl.w > 0 && sl.w < 1) {
+      const limitW = (sl.w * availW - minSlotPx) / (1 - sl.w);
+      if (limitW < maxGap) maxGap = limitW;
+    }
+    if (sl.h > 0 && sl.h < 1) {
+      const limitH = (sl.h * availH - minSlotPx) / (1 - sl.h);
+      if (limitH < maxGap) maxGap = limitH;
+    }
   }
-  return Math.max(0, minSpan - minSlotPx);
+  return Number.isFinite(maxGap) ? Math.max(0, maxGap) : Number.POSITIVE_INFINITY;
 }
 
 /**
  * يحسب أقصى هامش مسموح به للخلايا اليدوية بحيث لا تنحسر أبعاد أي خلية عن الحد الأدنى (1 مم).
+ * من معادلة العرض = w*(canvas - 2*margin + gap) - gap، يكون الحد:
+ * margin <= (canvas + gap - (gap + minPx)/w) / 2 لكل محور.
  */
 function getManualMaxMargin(
   slots: CanvasSlot[],
@@ -575,11 +590,11 @@ function getManualMaxMargin(
   let maxMargin = Math.min(canvasW, canvasH) / 4;
   for (const sl of slots) {
     if (sl.w > 0) {
-      const limitW = (canvasW - (gap + minSlotPx) / sl.w) / 2;
+      const limitW = (canvasW + gap - (gap + minSlotPx) / sl.w) / 2;
       if (limitW < maxMargin) maxMargin = limitW;
     }
     if (sl.h > 0) {
-      const limitH = (canvasH - (gap + minSlotPx) / sl.h) / 2;
+      const limitH = (canvasH + gap - (gap + minSlotPx) / sl.h) / 2;
       if (limitH < maxMargin) maxMargin = limitH;
     }
   }
@@ -1506,14 +1521,12 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
         if (sl.id !== slotId) return sl;
         const currentRot = sl.rotation || 0;
         const newRot = (((currentRot + angleDelta) % 360) + 360) % 360;
-        // التدوير يبدّل المحاور: نُصفّر أيضاً zoom كما نُصفّر الإزاحات
-        // (وإلا بقي اقتصاص الصورة السابق داخل إطار مقلوب)
+        // نحافظ على zoom/إزاحات الاقتصاص: حساب القصّة في KonvaCollageImage
+        // يتم نسبةً إلى المقاس المحلي بعد الدوران، فإعادة التصفير كانت تمحو
+        // تأطير المستخدم بلا سبب عند كل تدوير.
         return {
           ...sl,
           rotation: newRot,
-          dragX: 0,
-          dragY: 0,
-          zoom: 1,
         };
       }),
     }));
@@ -1527,13 +1540,10 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
       slots: state.slots.map((sl) => {
         if (!idSet.has(sl.id)) return sl;
         const currentRot = sl.rotation || 0;
-        // مطابقة rotateSlot: التدوير يبدّل المحاور فيُصفَّر التكبير والإزاحات
+        // مطابقة rotateSlot: الدوران لا يمسّ اقتصاص الصورة أو تكبيرها.
         return {
           ...sl,
           rotation: (((currentRot + angleDelta) % 360) + 360) % 360,
-          dragX: 0,
-          dragY: 0,
-          zoom: 1,
         };
       }),
     }));

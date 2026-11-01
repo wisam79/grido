@@ -5,6 +5,11 @@ import {
   useCanvasColors,
   collageCut,
   collageEndCut,
+  collageSelectionPrimary,
+  collageSelectionSecondary,
+  collageSelectionShadow,
+  collageHandle,
+  collageHandleForeground,
   slotPlaceholderBg,
   slotPlaceholderBorder,
   slotPlaceholderBorderHover,
@@ -61,6 +66,8 @@ interface CollageEmptySlotPlaceholderProps {
   radius: number;
   bgColor?: string;
   isSelected: boolean;
+  /** مقياس العرض — زخارف الشاشة تُقسم عليه لتبقى ثابتة الحجم عند أي زوم */
+  uiScale: number;
 }
 
 // 📦 مكوّن حاوية الإفلات القياسية المعزول (Fluent 2 Dropzone Container):
@@ -71,8 +78,10 @@ const CollageEmptySlotPlaceholder = React.memo(function CollageEmptySlotPlacehol
   radius,
   bgColor,
   isSelected,
+  uiScale,
 }: CollageEmptySlotPlaceholderProps) {
   const [isHovered, setIsHovered] = React.useState(false);
+  const inset = 0.75 / uiScale;
 
   return (
     <Group
@@ -106,43 +115,45 @@ const CollageEmptySlotPlaceholder = React.memo(function CollageEmptySlotPlacehol
         listening
       />
 
-      {/* 2. إطار متقطع واضح المعالم (Dashed Dropzone Border) */}
+      {/* 2. إطار متقطع واضح المعالم (Dashed Dropzone Border) — سماكة الشاشة ثابتة */}
       <Rect
-        x={0.75}
-        y={0.75}
-        width={Math.max(0, width - 1.5)}
-        height={Math.max(0, height - 1.5)}
+        x={inset}
+        y={inset}
+        width={Math.max(0, width - 2 * inset)}
+        height={Math.max(0, height - 2 * inset)}
         stroke={isHovered || isSelected ? slotPlaceholderBorderHover() : slotPlaceholderBorder()}
-        strokeWidth={1.5}
-        dash={[6, 4]}
-        cornerRadius={Math.max(0, radius - 0.75)}
+        strokeWidth={1.5 / uiScale}
+        dash={[6 / uiScale, 4 / uiScale]}
+        cornerRadius={Math.max(0, radius - inset)}
         listening={false}
       />
 
       {/* 3. شارة مركزية عائمة بأيقونة الزائد عالية التباين */}
       {(() => {
-        const minDim = Math.min(width, height);
-        if (minDim < 16) return null;
+        // قرار إظهار الزخرفة يعتمد على الحجم على الشاشة لا على بكسل المستند:
+        // خانة صغيرة عند 100% يجب أن تُخفي الشارة حتى لو كانت كبيرة بالبكسل.
+        const screenMinDim = Math.min(width, height) * uiScale;
+        if (screenMinDim < 16) return null;
 
         const cx = width / 2;
         const cy = height / 2;
         const isHoveredOrSelected = isHovered || isSelected;
 
         // في الخلايا متناهية الصغر نكتفي بالزائد فقط
-        if (minDim < 36) {
-          const arm = Math.max(4, minDim * 0.2);
+        if (screenMinDim < 36) {
+          const arm = Math.max(4, screenMinDim * 0.2) / uiScale;
           return (
             <Group listening={false}>
               <Line
                 points={[cx - arm, cy, cx + arm, cy]}
                 stroke={isHoveredOrSelected ? slotPlaceholderIconHover() : slotPlaceholderIcon()}
-                strokeWidth={1.5}
+                strokeWidth={1.5 / uiScale}
                 lineCap="round"
               />
               <Line
                 points={[cx, cy - arm, cx, cy + arm]}
                 stroke={isHoveredOrSelected ? slotPlaceholderIconHover() : slotPlaceholderIcon()}
-                strokeWidth={1.5}
+                strokeWidth={1.5 / uiScale}
                 lineCap="round"
               />
             </Group>
@@ -150,7 +161,7 @@ const CollageEmptySlotPlaceholder = React.memo(function CollageEmptySlotPlacehol
         }
 
         // في الخلايا القياسية: شارة دائرية خفيفة مع أيقونة الزائد
-        const badgeRadius = Math.max(14, Math.min(20, minDim * 0.16));
+        const badgeRadius = Math.max(14, Math.min(20, screenMinDim * 0.16)) / uiScale;
         const arm = badgeRadius * 0.44;
 
         return (
@@ -163,22 +174,22 @@ const CollageEmptySlotPlaceholder = React.memo(function CollageEmptySlotPlacehol
               stroke={
                 isHoveredOrSelected ? slotPlaceholderBorderHover() : slotPlaceholderBadgeBorder()
               }
-              strokeWidth={1}
+              strokeWidth={1 / uiScale}
               shadowColor="rgba(0, 0, 0, 0.12)"
-              shadowBlur={4}
-              shadowOffset={{ x: 0, y: 1 }}
+              shadowBlur={4 / uiScale}
+              shadowOffset={{ x: 0, y: 1 / uiScale }}
               shadowForStrokeEnabled={false}
             />
             <Line
               points={[cx - arm, cy, cx + arm, cy]}
               stroke={isHoveredOrSelected ? slotPlaceholderIconHover() : slotPlaceholderIcon()}
-              strokeWidth={2}
+              strokeWidth={2 / uiScale}
               lineCap="round"
             />
             <Line
               points={[cx, cy - arm, cx, cy + arm]}
               stroke={isHoveredOrSelected ? slotPlaceholderIconHover() : slotPlaceholderIcon()}
-              strokeWidth={2}
+              strokeWidth={2 / uiScale}
               lineCap="round"
             />
           </Group>
@@ -250,8 +261,8 @@ const CollageSlotAddHandle = React.memo(function CollageSlotAddHandle({
         x={0}
         y={0}
         radius={radius}
-        fill={isHovered ? '#0078d4' : slotPlaceholderBadge()}
-        stroke="#0078d4"
+        fill={isHovered ? collageHandle() : slotPlaceholderBadge()}
+        stroke={collageHandle()}
         strokeWidth={1.5 / uiScale}
         shadowColor="rgba(0, 0, 0, 0.18)"
         shadowBlur={5 / uiScale}
@@ -261,14 +272,14 @@ const CollageSlotAddHandle = React.memo(function CollageSlotAddHandle({
       />
       <Line
         points={[-arm, 0, arm, 0]}
-        stroke={isHovered ? '#ffffff' : '#0078d4'}
+        stroke={isHovered ? collageHandleForeground() : collageHandle()}
         strokeWidth={strokeW}
         lineCap="round"
         listening={false}
       />
       <Line
         points={[0, -arm, 0, arm]}
-        stroke={isHovered ? '#ffffff' : '#0078d4'}
+        stroke={isHovered ? collageHandleForeground() : collageHandle()}
         strokeWidth={strokeW}
         lineCap="round"
         listening={false}
@@ -395,7 +406,6 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
       clipWidth={canvasWidth}
       clipHeight={canvasHeight}
     >
-      {renderCutLines()}
       {slots.map((slot) => {
         const radius = collageRadius;
         const borderW = collageStrokeWidth;
@@ -485,6 +495,7 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
                   radius={radius}
                   bgColor={slot.bgColor}
                   isSelected={isSelected}
+                  uiScale={uiScale}
                 />
               )}
             </Group>
@@ -503,27 +514,39 @@ export const KonvaCollageLayer = React.memo(function KonvaCollageLayer({
               />
             )}
 
-            {/* Selection indicator Ring */}
-            {isSelected && (
-              <Group listening={false}>
-                <Rect
-                  x={left - 1.5}
-                  y={top - 1.5}
-                  width={width + 3}
-                  height={height + 3}
-                  stroke={isPrimary ? '#0078d4' : '#60a5fa'}
-                  strokeWidth={(isPrimary ? 2 : 1.25) / uiScale}
-                  dash={isPrimary ? undefined : [4 / uiScale, 3 / uiScale]}
-                  cornerRadius={radius + 1.5}
-                  shadowColor="#0078d4"
-                  shadowBlur={4 / uiScale}
-                  shadowOpacity={0.4}
-                />
-              </Group>
-            )}
+            {/* Selection indicator Ring — إشارة تحرير تُخفى من التصدير والطباعة.
+                تُرسم داخل حدود الخلية بحيث تبقى حافتها الخارجية داخل قصّ الورقة:
+                كانت تُرسم خارجها (1.5 بكسل شاشة) فتختفي كلياً عند الخلايا
+                الملاصقة لحافة الورقة لأن الطبقة كلها مقصوصة على حدودها. */}
+            {isSelected &&
+              (() => {
+                const ringStroke = (isPrimary ? 2 : 1.25) / uiScale;
+                const ringInset = ringStroke / 2 + 0.5 / uiScale;
+                return (
+                  <Group name="collage-selection-ring" listening={false}>
+                    <Rect
+                      x={left + ringInset}
+                      y={top + ringInset}
+                      width={Math.max(0, width - 2 * ringInset)}
+                      height={Math.max(0, height - 2 * ringInset)}
+                      stroke={isPrimary ? collageSelectionPrimary() : collageSelectionSecondary()}
+                      strokeWidth={ringStroke}
+                      dash={isPrimary ? undefined : [4 / uiScale, 3 / uiScale]}
+                      cornerRadius={Math.max(0, radius - ringInset)}
+                      shadowColor={collageSelectionShadow()}
+                      shadowBlur={4 / uiScale}
+                      shadowOpacity={0.4}
+                    />
+                  </Group>
+                );
+              })()}
           </Group>
         );
       })}
+      {/* ✂️ خطوط القص تُرسم بعد محتوى الخلايا (مطابقة لمعاينة الطباعة والتصدير
+          الاحتياطي ومسار Go) — كانت تُرسم قبلها فتغطيها الإطارات المعتمة
+          والصور عند حدود الخلايا الخارجية وتختفي من المحرر ومن تصدير Stage. */}
+      {renderCutLines()}
       {onAddAdjacentSlot &&
         selectedId &&
         selectedIds.length <= 1 &&

@@ -87,13 +87,17 @@ export function computeSlotCrop(
   const zoom = slot.zoom && slot.zoom > 0 ? slot.zoom : 1;
   sw /= zoom;
   sh /= zoom;
-  const sx = imgAspect > slotAspect ? (img.width - sw) / 2 : 0;
-  const sy = imgAspect > slotAspect ? 0 : (img.height - sh) / 2;
-  const maxDragX = (img.width - sw) / 2;
-  const maxDragY = (img.height - sh) / 2;
+  const defaultSx = imgAspect > slotAspect ? (img.width - sw) / 2 : 0;
+  const defaultSy = imgAspect > slotAspect ? 0 : (img.height - sh) / 2;
+  // نافذة القصّة النهائية تُقيَّد بحدود الصورة نفسها لا بإزاحة متماثلة حول
+  // نقطة البدء: بعد تدوير 90/270 يتبدل موضع البدء (حافة بدل مركز) فكانت
+  // القيود المتماثلة تسمح بمصدر سالب يرسم شريطاً فارغاً في التصدير اليدوي،
+  // بينما تقصم Go النافذة وتمدّدها — المساران الآن يقيّدان الموضع النهائي ذاته.
+  const maxSx = Math.max(0, img.width - sw);
+  const maxSy = Math.max(0, img.height - sh);
   return {
-    sx: sx + Math.max(-maxDragX, Math.min(maxDragX, slot.dragX || 0)),
-    sy: sy + Math.max(-maxDragY, Math.min(maxDragY, slot.dragY || 0)),
+    sx: Math.max(0, Math.min(maxSx, defaultSx + (slot.dragX || 0))),
+    sy: Math.max(0, Math.min(maxSy, defaultSy + (slot.dragY || 0))),
     sw,
     sh,
   };

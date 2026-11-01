@@ -11,6 +11,7 @@ import { COLLAGE_TEMPLATES } from '../src/lib/templates/collage-templates';
 import { DEFAULT_COLLAGE_GAP_PX, DEFAULT_COLLAGE_MARGIN_PX } from '../src/lib/templates/constants';
 import {
   getEffectiveDpi,
+  buildPhysicalGridCellsMM,
   computeDynamicCollageCells,
   getPhysicalMaxMarginMM,
 } from '../src/lib/templates/grid-utils';
@@ -110,7 +111,7 @@ describe('GridUtils Unit Tests', () => {
       expect(rect).toEqual(
         baked
           ? { left: 100, top: 300, width: 300, height: 600 }
-          : { left: 134, top: 328, width: 262, height: 556 },
+          : { left: 126, top: 322, width: 268, height: 564 },
       );
     },
   );
@@ -184,8 +185,8 @@ describe('GridUtils Unit Tests', () => {
           : second.top - first.top - first.height;
         const scale = first.width / mmToPx(35, 300);
         expect(scale).toBeLessThan(1);
-        expect(observedGap).toBeCloseTo(requestedGap * scale, 8);
-        if (gapMM > 0) expect(observedGap).toBeLessThan(requestedGap);
+        // التصغير يقتصر على الخلايا: الفجوة المطلوبة تبقى كما هي تماماً.
+        expect(observedGap).toBeCloseTo(requestedGap, 8);
 
         // For zero, deliberately retain a nonzero preference to prove zero beats the fallback.
         const preference = gapMM === 0 ? mmToPx(8, 300) : requestedGap;
@@ -304,5 +305,23 @@ describe('GridUtils Unit Tests', () => {
     const minHmm = Math.min(...cells.map((c) => c.h)) * paperHmm;
     expect(minWmm).toBeGreaterThanOrEqual(0.99);
     expect(minHmm).toBeGreaterThanOrEqual(0.99);
+  });
+
+  it('keeps generated cells at or above 1 mm when a larger gap would swallow them', () => {
+    // A4 بهامش 100مم (الحد الأقصى المسموح في الواجهة) وفجوة مرفوعة إلى 3مم:
+    // كان التصغير الثابت للفجوة يُنتج خلايا بعرض 0.25مم دون الحد الأدنى.
+    const cells = buildPhysicalGridCellsMM(4, 2, 35, 45, 3, 210, 297, 'center', 100);
+
+    for (const cell of cells) {
+      expect(cell.w * 210).toBeGreaterThanOrEqual(1 - 1e-9);
+      expect(cell.h * 297).toBeGreaterThanOrEqual(1 - 1e-9);
+    }
+    // الفجوة تُضغط بدل الخلايا: أقل من 3مم المطلوبة لكنها باقية.
+    const gapMM = cells[1].x * 210 - (cells[0].x * 210 + cells[0].w * 210);
+    expect(gapMM).toBeGreaterThan(0);
+    expect(gapMM).toBeLessThan(3);
+    // الشبكة كاملة داخل المساحة المتاحة بعد الهامش (100مم لكل جهة).
+    const rightEdge = (cells[3].x + cells[3].w) * 210;
+    expect(rightEdge).toBeLessThanOrEqual(110 + 1e-9);
   });
 });

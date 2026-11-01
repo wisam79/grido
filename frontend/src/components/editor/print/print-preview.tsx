@@ -3,6 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useState, type ReactElement } fr
 import { formatGradientCss } from '@/components/editor/properties/gradient-utils';
 import { hasCollageSlotContent } from '@/lib/canvas/collage-slot-content';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
+import { computeSlotPreviewPan } from '@/lib/print/preview-pan';
 import { computeBlockPosition, computeSlotRectMM } from '@/lib/print/print-layout-math';
 import { buildAdjustmentCSS, buildCSSFilter, cn } from '@/lib/utils';
 
@@ -167,24 +168,21 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
       left: `${(100 - boxWpct) / 2}%`,
       top: `${(100 - boxHpct) / 2}%`,
     };
-    imgTransform = `scale(${zoomVal}) rotate(${slot.rotation || 0}deg) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1})`;
+    // 🖨️ التحويم في الاتجاه الربعي يُحسب على نسبة المقاس المحلي (المتبدل
+    // بعد التدوير) — كان الفرع يتجاهل dragX/dragY كلياً فيعرض قصّة ممركزة
+    // بينما المحرر والطباعة يحترمان pan المستخدم.
+    const { panX, panY } = computeSlotPreviewPan(
+      slot,
+      naturalSize,
+      rect.hMM / Math.max(0.01, rect.wMM),
+    );
+    imgTransform = `translate(${panX}%, ${panY}%) scale(${zoomVal}) rotate(${slot.rotation || 0}deg) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1})`;
   } else {
-    let panX = 0;
-    let panY = 0;
-    if (naturalSize && naturalSize.w > 0 && naturalSize.h > 0 && zoomVal > 1) {
-      const imgAspect = naturalSize.w / naturalSize.h;
-      const boxAspect = rect.wMM / Math.max(0.01, rect.hMM);
-      const coverW = imgAspect > boxAspect ? naturalSize.h * boxAspect : naturalSize.w;
-      const coverH = imgAspect > boxAspect ? naturalSize.h : naturalSize.w / boxAspect;
-      const sw = coverW / zoomVal;
-      const sh = coverH / zoomVal;
-      const maxDragX = Math.max(0, (naturalSize.w - sw) / 2);
-      const maxDragY = Math.max(0, (naturalSize.h - sh) / 2);
-      const dx = Math.max(-maxDragX, Math.min(maxDragX, slot.dragX || 0));
-      const dy = Math.max(-maxDragY, Math.min(maxDragY, slot.dragY || 0));
-      panX = (100 * zoomVal * dx) / coverW;
-      panY = (100 * zoomVal * dy) / coverH;
-    }
+    const { panX, panY } = computeSlotPreviewPan(
+      slot,
+      naturalSize,
+      rect.wMM / Math.max(0.01, rect.hMM),
+    );
     imgPos = { position: 'absolute' as const, left: 0, top: 0 };
     imgTransform = `translate(${panX}%, ${panY}%) scale(${zoomVal}) rotate(${slot.rotation || 0}deg) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1})`;
   }

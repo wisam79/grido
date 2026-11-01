@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { collageCut, collageEndCut } from '../src/lib/canvas/canvas-colors';
 import { useEditorStore } from '../src/lib/editor-store';
 import { exportCanvas, drawSlotImage } from '../src/lib/export/export-image';
+import { computeSlotCrop } from '../src/lib/export/export-primitives';
 import { calculatePrintCutLines } from '../src/lib/print/cut-lines-utils';
 import { computeSlotRectMM, computeSheetGrid } from '../src/lib/print/print-layout-math';
 
@@ -258,15 +259,16 @@ describe('export-image manual fallback — golden tests', () => {
     await exportCanvas('png', 0.95, null);
 
     // قيم محسوبة يدوياً: margin 100، gap 50، canvas 2480×3508
-    // s1: left = 100 + 0×2280 + 25 = 125، width = 0.5×2280 − 50 = 1090
-    // s2: left = 100 + 0.5×2280 + 25 = 1265
+    // track = (2480 − 2×100) + 50 = 2330
+    // s1: left = 100، width = 0.5×2330 − 50 = 1115 → center = 657.5
+    // s2: left = 100 + 0.5×2330 = 1265 → center = 1822.5
     const translates = calls
       .filter((c) => c.op === 'translate')
       .map((c) => [c.args[0], c.args[1]] as number[])
       .filter((_, i) => i % 2 === 0);
     expect(translates).toEqual([
-      [125 + 545, 125 + 1629], // s1 center (670, 1754)
-      [1265 + 545, 125 + 1629], // s2 center (1810, 1754)
+      [100 + 1115 / 2, 100 + 3308 / 2], // s1 center (657.5, 1754)
+      [1265 + 1115 / 2, 100 + 3308 / 2], // s2 center (1822.5, 1754)
     ]);
 
     const segments = recordedCutLineSegments(calls);
@@ -335,11 +337,42 @@ describe('export-image manual fallback — golden tests', () => {
     recordContext();
     expect(await exportCanvas('png', 0.95, null)).not.toBeNull();
     expect(calls.some((c) => c.op === 'setFillStyle' && c.args[0] === '#2468ac')).toBe(true);
-    expect(calls.some((c) => c.op === 'fillRect' && c.args.join(',') === '125,125,1090,3258')).toBe(
+    expect(calls.some((c) => c.op === 'fillRect' && c.args.join(',') === '100,100,1115,3308')).toBe(
       true,
     );
     expect(calls.some((c) => c.op === 'roundRect' && c.args[4] === 12)).toBe(true);
     expect(calls.filter((c) => c.op === 'drawImage')).toHaveLength(0);
     expect(calls.some((c) => c.op === 'stroke')).toBe(true);
+  });
+});
+
+describe('computeSlotCrop clamps the final window inside the image', () => {
+  const img = { width: 1200, height: 800 };
+
+  it('keeps a preserved pan valid when the slot is rotated a quarter turn', () => {
+    // خانة 400×600 مدورة 90: المقاس المحلي 600×400 بنسبة مطابقة للصورة —
+    // كان التقييم المتماثل حول نقطة البدء (الحافة) يسمح بمصدر سالب بعد
+    // إبقاء pan المستخدم عبر rotateSlot.
+    const crop = computeSlotCrop(img, 400, 600, { rotation: 90, zoom: 2, dragX: -200, dragY: 0 });
+    expect(crop.sx).toBe(0);
+    expect(crop.sy).toBe(200);
+    expect(crop.sw).toBe(600);
+    expect(crop.sh).toBe(400);
+  });
+
+  it('clamps the window to the true far edge instead of a symmetric half-range', () => {
+    const crop = computeSlotCrop(img, 400, 600, { rotation: 90, zoom: 2, dragX: 700, dragY: 300 });
+    expect(crop.sx).toBe(600);
+    expect(crop.sy).toBe(400);
+    expect(crop.sx + crop.sw).toBeLessThanOrEqual(1200);
+    expect(crop.sy + crop.sh).toBeLessThanOrEqual(800);
+  });
+
+  it('preserves the centered-window behavior for unrotated slots', () => {
+    const crop = computeSlotCrop(img, 400, 600, { zoom: 2, dragX: 100, dragY: 50 });
+    expect(crop.sx).toBeCloseTo(466.6667 + 100, 3);
+    expect(crop.sy).toBe(50);
+    expect(crop.sw).toBeCloseTo(266.6667, 3);
+    expect(crop.sh).toBe(400);
   });
 });

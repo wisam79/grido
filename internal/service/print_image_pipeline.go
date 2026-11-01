@@ -669,14 +669,15 @@ func computeCropFromSlot(item domain.PrintItem, img image.Image) (cropX, cropY, 
 			defaultSy = (imgH - sh) / 2
 		}
 
-		maxDragX := (imgW - sw) / 2
-		maxDragY := (imgH - sh) / 2
-
-		dragXClamped := math.Max(-maxDragX, math.Min(maxDragX, item.DragX))
-		dragYClamped := math.Max(-maxDragY, math.Min(maxDragY, item.DragY))
-
-		cropX = defaultSx + dragXClamped
-		cropY = defaultSy + dragYClamped
+		// نافذة القصّة النهائية تُقيَّد بحدود الصورة نفسها لا بإزاحة متماثلة
+		// حول نقطة البدء — بعد ربع دوران يتبدل موضع البدء (حافة بدل مركز)
+		// فكانت القيود المتماثلة تسمح بمصدر سالب. مطابق لمسار الواجهة
+		// (computeSlotCrop) الذي يقيّد الموضع النهائي ذاته فيبقى مقاس
+		// النافذة كما هو بلا قلص ولا تمديد.
+		maxCropX := math.Max(0, imgW-sw)
+		maxCropY := math.Max(0, imgH-sh)
+		cropX = math.Max(0, math.Min(maxCropX, defaultSx+item.DragX))
+		cropY = math.Max(0, math.Min(maxCropY, defaultSy+item.DragY))
 		cropW = sw
 		cropH = sh
 	}

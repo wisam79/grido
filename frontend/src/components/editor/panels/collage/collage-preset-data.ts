@@ -15,7 +15,7 @@ export const STUDIO_COMBO_PRESETS: StudioPreset[] = [
   {
     id: 'collage-combo-traveler',
     title: 'طقم سفر',
-    spec: '2 جواز (50×50) + 4 فيزا (35×45 مم)',
+    spec: '2 جواز + 4 فيزا (35×45 مم)',
     badge: 'سفر وفيزا',
     slots: 6,
     category: 'combo',
@@ -24,7 +24,7 @@ export const STUDIO_COMBO_PRESETS: StudioPreset[] = [
   {
     id: 'collage-combo-student',
     title: 'طقم تقديم',
-    spec: 'معاملات (40×60) + هوية (35×45 مم)',
+    spec: '4 هوية (35×45) + بورتريه 4×6″ + 2 معاملة (30×40 مم)',
     badge: 'تقديم وجامعات',
     slots: 7,
     category: 'combo',
@@ -33,7 +33,7 @@ export const STUDIO_COMBO_PRESETS: StudioPreset[] = [
   {
     id: 'collage-combo-family',
     title: 'طقم عائلي',
-    spec: 'بورتريه كبير (90×130) + 6 شخصية',
+    spec: 'بورتريه 10×15 سم + 6 شخصية (35×45 مم)',
     badge: 'عائلي',
     slots: 7,
     category: 'combo',
@@ -73,7 +73,7 @@ export const STUDIO_KEEPSAKE_PRESETS: StudioPreset[] = [
   {
     id: 'collage-wallet-cards',
     title: 'كروت محفظة',
-    spec: '2 بطاقة (54×86) + 4 مصغرة',
+    spec: 'بطاقتا محفظة (54×86) + 4 شخصية (35×45 مم)',
     badge: 'محفظة جيب',
     slots: 6,
     category: 'keepsake',

@@ -1,6 +1,10 @@
 import { useCallback, useState, type DragEvent, type RefObject } from 'react';
 
-import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
+import {
+  getCollageGeometry,
+  getSlotRect,
+  isBakedCollageLayout,
+} from '@/lib/canvas/collage-geometry';
 import { buildCollageInsertPlan } from '@/lib/canvas/collage-insert';
 import {
   resolveImageAspectRatio,
@@ -142,22 +146,28 @@ export function useImageDrop(innerRef: RefObject<HTMLDivElement | null>) {
           if (!targetSlotId && innerRef.current) {
             const rect = innerRef.current.getBoundingClientRect();
             // إحداثيات منطقية بمساحة الكانفس (مثل konva-collage-layer) بدل نسبة عرض الشاشة —
-            // القانون يشمل هوامش الكولاج وفجواته: margin + slot.x * availW + gap/2
+            // النقطة تُمرَّر إلى نفس دالة الهندسة المشتركة فلا تنحرف عن الرسم عند
+            // أي تغيير في قواعد الهامش أو الفجوة.
             const scale = rect.width / freshCanvasWidth;
             const logicalX = (e.clientX - rect.left) / scale;
             const logicalY = (e.clientY - rect.top) / scale;
             const hasPhysical = isBakedCollageLayout(freshCollageTemplate);
-            const margin = hasPhysical ? 0 : freshCollageMargin;
-            const gap = hasPhysical ? 0 : freshCollageGap;
-            const availW = freshCanvasWidth - 2 * margin;
-            const availH = freshCanvasHeight - 2 * margin;
+            const geo = getCollageGeometry(
+              freshCanvasWidth,
+              freshCanvasHeight,
+              freshCollageMargin,
+              freshCollageGap,
+              hasPhysical,
+            );
 
             const matched = freshSlots.find((s) => {
-              const sx = margin + s.x * availW + gap / 2;
-              const sy = margin + s.y * availH + gap / 2;
-              const sw = s.w * availW - gap;
-              const sh = s.h * availH - gap;
-              return logicalX >= sx && logicalX <= sx + sw && logicalY >= sy && logicalY <= sy + sh;
+              const sr = getSlotRect(s, geo);
+              return (
+                logicalX >= sr.left &&
+                logicalX <= sr.left + sr.width &&
+                logicalY >= sr.top &&
+                logicalY <= sr.top + sr.height
+              );
             });
             if (matched) {
               targetSlotId = matched.id;

@@ -2,6 +2,31 @@ import { SquaresFour, GridFour } from '@/components/ui/icons';
 
 import type { CollageTemplate } from './types';
 
+/** أبعاد A4 بالمليمتر — القوالب المخبوزة أدناه تُقاس عليها ثم تُطبَّع (0..1). */
+const A4_WIDTH_MM = 210;
+const A4_HEIGHT_MM = 297;
+
+/**
+ * خلية مخبوزة من قياس ملموس على A4. القوالب المخبوزة لا تمرّ على مولّد
+ * الشبكة الفيزيائي، لذا يجب أن تحمل إحداثياتها صراحةً بنفس المقاسات التي
+ * يعلنها القالب — لا كسوراً اعتباطية تنحرف عن نسب الصور الحقيقية.
+ */
+function a4Cell(
+  xMM: number,
+  yMM: number,
+  wMM: number,
+  hMM: number,
+  extra: Pick<CollageTemplate['cells'][number], 'presetType' | 'label' | 'rotation'> = {},
+): CollageTemplate['cells'][number] {
+  return {
+    x: xMM / A4_WIDTH_MM,
+    y: yMM / A4_HEIGHT_MM,
+    w: wMM / A4_WIDTH_MM,
+    h: hMM / A4_HEIGHT_MM,
+    ...extra,
+  };
+}
+
 export const COLLAGE_TEMPLATES: CollageTemplate[] = [
   // --- 🎴 قوالب الاستوديو الرسمية (شيت كامل) ---
   {
@@ -319,28 +344,18 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     name: 'طقم التقديم والجامعات (بطاقة + معاملات + بورتريه)',
     slots: 7,
     isBaked: true,
+    // 4 هويات 35×45 في صف علوي + بورتريه 4×6″ (101.6×152.4) +
+    // معاملا 30×40 مرتّبتان عمودياً بجانبه. القياسات على A4 ثم مطبّعة.
     cells: [
-      {
-        x: 0.025,
-        y: 0.025,
-        w: 0.465,
-        h: 0.3,
-        presetType: 'iq-national-id',
-        label: 'بطاقة 3.5×4.5',
-      },
-      { x: 0.51, y: 0.025, w: 0.465, h: 0.3, presetType: 'iq-national-id', label: 'بطاقة 3.5×4.5' },
-      {
-        x: 0.025,
-        y: 0.345,
-        w: 0.465,
-        h: 0.3,
-        presetType: 'iq-national-id',
-        label: 'بطاقة 3.5×4.5',
-      },
-      { x: 0.51, y: 0.345, w: 0.465, h: 0.3, presetType: 'iq-national-id', label: 'بطاقة 3.5×4.5' },
-      { x: 0.025, y: 0.665, w: 0.465, h: 0.31, presetType: 'portrait-4x6', label: 'بورتريه 4×6' },
-      { x: 0.51, y: 0.665, w: 0.465, h: 0.145, presetType: 'iq-transactions', label: 'معاملة 3×4' },
-      { x: 0.51, y: 0.83, w: 0.465, h: 0.145, presetType: 'iq-transactions', label: 'معاملة 3×4' },
+      ...Array.from({ length: 4 }, (_, i) =>
+        a4Cell(30.5 + i * 38, 44.8, 35, 45, {
+          presetType: 'iq-national-id',
+          label: 'بطاقة 3.5×4.5',
+        }),
+      ),
+      a4Cell(36.7, 99.8, 101.6, 152.4, { presetType: 'portrait-4x6', label: 'بورتريه 4×6' }),
+      a4Cell(143.3, 99.8, 30, 40, { presetType: 'iq-transactions', label: 'معاملة 3×4' }),
+      a4Cell(143.3, 142.8, 30, 40, { presetType: 'iq-transactions', label: 'معاملة 3×4' }),
     ],
     icon: SquaresFour,
   },
@@ -349,14 +364,15 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     name: 'طقم الاستوديو العائلي (صورة رئيسية + شخصية)',
     slots: 7,
     isBaked: true,
+    // بورتريه 10×15 سم (100×150) + 6 هويات 35×45 في شبكة 2×3 بجانبه.
     cells: [
-      { x: 0.025, y: 0.025, w: 0.68, h: 0.655, presetType: 'photo-10x15', label: 'صورة عائلية' },
-      { x: 0.725, y: 0.025, w: 0.25, h: 0.3175, presetType: 'id', label: 'شخصية 1' },
-      { x: 0.725, y: 0.3625, w: 0.25, h: 0.3175, presetType: 'id', label: 'شخصية 2' },
-      { x: 0.025, y: 0.7, w: 0.226, h: 0.275, presetType: 'id', label: 'شخصية 3' },
-      { x: 0.266, y: 0.7, w: 0.226, h: 0.275, presetType: 'id', label: 'شخصية 4' },
-      { x: 0.507, y: 0.7, w: 0.226, h: 0.275, presetType: 'id', label: 'شخصية 5' },
-      { x: 0.749, y: 0.7, w: 0.226, h: 0.275, presetType: 'id', label: 'شخصية 6' },
+      a4Cell(16, 73.5, 100, 150, { presetType: 'photo-10x15', label: 'صورة عائلية' }),
+      ...Array.from({ length: 6 }, (_, i) =>
+        a4Cell(121 + (i % 2) * 38, 78 + Math.floor(i / 2) * 48, 35, 45, {
+          presetType: 'id',
+          label: `شخصية ${i + 1}`,
+        }),
+      ),
     ],
     icon: SquaresFour,
   },
@@ -367,13 +383,16 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     name: 'طبعة بطاقات المحفظة (بطاقتان + 4 شخصية)',
     slots: 6,
     isBaked: true,
+    // بطاقتا محفظة 54×86 في الأعلى + 4 هويات 35×45 في صف أسفلهما.
     cells: [
-      { x: 0.025, y: 0.025, w: 0.465, h: 0.64, presetType: 'wallet', label: 'بطاقة محفظة 1' },
-      { x: 0.51, y: 0.025, w: 0.465, h: 0.64, presetType: 'wallet', label: 'بطاقة محفظة 2' },
-      { x: 0.025, y: 0.685, w: 0.226, h: 0.29, presetType: 'id', label: 'مصغرة 1' },
-      { x: 0.266, y: 0.685, w: 0.226, h: 0.29, presetType: 'id', label: 'مصغرة 2' },
-      { x: 0.507, y: 0.685, w: 0.226, h: 0.29, presetType: 'id', label: 'مصغرة 3' },
-      { x: 0.749, y: 0.685, w: 0.226, h: 0.29, presetType: 'id', label: 'مصغرة 4' },
+      a4Cell(49.5, 80.5, 54, 86, { presetType: 'wallet', label: 'بطاقة محفظة 1' }),
+      a4Cell(106.5, 80.5, 54, 86, { presetType: 'wallet', label: 'بطاقة محفظة 2' }),
+      ...Array.from({ length: 4 }, (_, i) =>
+        a4Cell(30.5 + i * 38, 171.5, 35, 45, {
+          presetType: 'id',
+          label: `مصغرة ${i + 1}`,
+        }),
+      ),
     ],
     icon: SquaresFour,
   },
@@ -397,16 +416,14 @@ export const COLLAGE_TEMPLATES: CollageTemplate[] = [
     name: 'شبكة متلاصقة للقص الفوري (8 صور - صفر هدر)',
     slots: 8,
     isBaked: true,
-    cells: [
-      { x: 0, y: 0, w: 0.25, h: 0.5, presetType: 'iq-national-id', label: '1' },
-      { x: 0.25, y: 0, w: 0.25, h: 0.5, presetType: 'iq-national-id', label: '2' },
-      { x: 0.5, y: 0, w: 0.25, h: 0.5, presetType: 'iq-national-id', label: '3' },
-      { x: 0.75, y: 0, w: 0.25, h: 0.5, presetType: 'iq-national-id', label: '4' },
-      { x: 0, y: 0.5, w: 0.25, h: 0.5, presetType: 'iq-national-id', label: '5' },
-      { x: 0.25, y: 0.5, w: 0.25, h: 0.5, presetType: 'iq-national-id', label: '6' },
-      { x: 0.5, y: 0.5, w: 0.25, h: 0.5, presetType: 'iq-national-id', label: '7' },
-      { x: 0.75, y: 0.5, w: 0.25, h: 0.5, presetType: 'iq-national-id', label: '8' },
-    ],
+    // 8 خلايا 35×45 مم متلاصقة (4×2) على A4، بلا أي فجوة بينها.
+    // كانت سابقاً كسور 0.25×0.5 فتُنتج 52.5×148.5 مم — لا 35×45.
+    cells: Array.from({ length: 8 }, (_, i) =>
+      a4Cell(35 + (i % 4) * 35, 103.5 + Math.floor(i / 4) * 45, 35, 45, {
+        presetType: 'iq-national-id',
+        label: String(i + 1),
+      }),
+    ),
     icon: GridFour,
   },
 ];

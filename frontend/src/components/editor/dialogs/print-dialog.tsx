@@ -544,6 +544,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
       const guideLayers = stage.find('.guides-layer, .guide-line, .user-guide-line');
       const paperShadows = stage.find('.paper-shadow-rect');
       const overlayTools = stage.find('.overlay-tools-layer');
+      const slotPlaceholders = stage.find('.slot-placeholder');
+      const slotAddHandles = stage.find('.slot-add-handles');
+      const collageSelectionRings = stage.find('.collage-selection-ring');
 
       const prevPos = { x: stage.x(), y: stage.y() };
       const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
@@ -571,6 +574,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         guideLayers.forEach((gl: Konva.Node) => gl.hide());
         paperShadows.forEach((ps: Konva.Node) => ps.hide());
         overlayTools.forEach((ot: Konva.Node) => ot.hide());
+        slotPlaceholders.forEach((ph: Konva.Node) => ph.hide());
+        slotAddHandles.forEach((ah: Konva.Node) => ah.hide());
+        collageSelectionRings.forEach((ring: Konva.Node) => ring.hide());
         stage.batchDraw();
 
         const previewUrl = stage.toDataURL({
@@ -604,6 +610,9 @@ export function PrintDialog({ open, onOpenChange }: PrintDialogProps) {
         guideLayers.forEach((gl: Konva.Node) => gl.show());
         paperShadows.forEach((ps: Konva.Node) => ps.show());
         overlayTools.forEach((ot: Konva.Node) => ot.show());
+        slotPlaceholders.forEach((ph: Konva.Node) => ph.show());
+        slotAddHandles.forEach((ah: Konva.Node) => ah.show());
+        collageSelectionRings.forEach((ring: Konva.Node) => ring.show());
         stage.position(prevPos);
         stage.scale(prevScale);
         stage.batchDraw();

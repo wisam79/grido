@@ -153,10 +153,11 @@ describe('computeSlotRectMM', () => {
       { marginXMM: 2, marginYMM: 2 },
       { gapXMM: 1, gapYMM: 1 },
     );
-    expect(rect.xMM).toBe(22.5 + 2 + 0.5);
-    expect(rect.yMM).toBe(86 + 2 + 0.5);
-    expect(rect.wMM).toBe(0.5 * 76 - 1);
-    expect(rect.hMM).toBe(0.5 * 56 - 1);
+    // المسار الكامل = المساحة المتاحة + فجوة واحدة (76 + 1)، والفجوة تُطرح من العرض.
+    expect(rect.xMM).toBe(22.5 + 2);
+    expect(rect.yMM).toBe(86 + 2);
+    expect(rect.wMM).toBe(0.5 * 77 - 1);
+    expect(rect.hMM).toBe(0.5 * 57 - 1);
   });
 
   it('is bit-identical to the mm-domain formula used by buildItems/cut-lines', () => {
@@ -171,10 +172,10 @@ describe('computeSlotRectMM', () => {
     const availWMM = image.widthMM - 2 * marginMM;
     const availHMM = image.heightMM - 2 * marginMM;
     const expected = {
-      xMM: block.xMM + marginMM + slot.x * availWMM + gapMMv / 2,
-      yMM: block.yMM + marginMM + slot.y * availHMM + gapMMv / 2,
-      wMM: slot.w * availWMM - gapMMv,
-      hMM: slot.h * availHMM - gapMMv,
+      xMM: block.xMM + marginMM + slot.x * (availWMM + gapMMv),
+      yMM: block.yMM + marginMM + slot.y * (availHMM + gapMMv),
+      wMM: slot.w * (availWMM + gapMMv) - gapMMv,
+      hMM: slot.h * (availHMM + gapMMv) - gapMMv,
     };
 
     const actual = computeSlotRectMM(
@@ -218,10 +219,10 @@ describe('computeSlotRectMM', () => {
       );
 
       const expected = {
-        xMM: block.xMM + (marginX_pct + slot.x * availW_pct + gapX_pct / 2) * image.widthMM,
-        yMM: block.yMM + (marginY_pct + slot.y * availH_pct + gapY_pct / 2) * image.heightMM,
-        wMM: (slot.w * availW_pct - gapX_pct) * image.widthMM,
-        hMM: (slot.h * availH_pct - gapY_pct) * image.heightMM,
+        xMM: block.xMM + (marginX_pct + slot.x * (availW_pct + gapX_pct)) * image.widthMM,
+        yMM: block.yMM + (marginY_pct + slot.y * (availH_pct + gapY_pct)) * image.heightMM,
+        wMM: (slot.w * (availW_pct + gapX_pct) - gapX_pct) * image.widthMM,
+        hMM: (slot.h * (availH_pct + gapY_pct) - gapY_pct) * image.heightMM,
       };
 
       expect(Math.abs(actual.xMM - expected.xMM)).toBeLessThan(1e-9);

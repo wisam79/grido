@@ -395,6 +395,29 @@ describe('CollageSlice Unit Tests', () => {
     expect(gap).toBeGreaterThan(0.09); // التباعد الأصلي كان 0.1
   });
 
+  it('displaces a neighbor across a nonzero gap without hitting the paper edge', () => {
+    const base = setupCollage();
+    useEditorStore.setState({
+      collageTemplate: null,
+      collageGap: 24,
+      collageMargin: 35,
+      slots: [
+        { ...base, id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3 },
+        { ...base, id: 'b', cellIndex: 1, x: 0.4, y: 0, w: 0.3, h: 0.3 },
+      ],
+    });
+
+    // عكس معادلة getSlotRect يقسم إزاحة الجار على المسار الكامل (avail+gap):
+    // القسمة على avail وحدها كانت تدفع 'b' خارج حافة الورقة فيُرفض التكبير
+    // بخطأ تداخل رغم وجود تخطيط صحيح.
+    const result = useEditorStore.getState().resizeCollageSlot('a', 0.6, 0.3);
+
+    expect(result).toEqual({ ok: true });
+    const state = useEditorStore.getState();
+    expect(state.slots.find((slot) => slot.id === 'b')?.x).toBeCloseTo(0.7, 6);
+    expect(state.slots[0]).toMatchObject({ w: 0.6, h: 0.3 });
+  });
+
   it('moves a vertically separated neighbor when their horizontal ranges already overlap', () => {
     const base = setupCollage();
     useEditorStore.setState({
@@ -490,7 +513,9 @@ describe('CollageSlice Unit Tests', () => {
       const before = useEditorStore.getState();
       const dimensions = { w: before.slots[0].w, h: before.slots[0].h };
       // Above the stored-DPI threshold, but below 1 mm at the effective paper DPI.
-      dimensions[axis] = (mmToPx(0.999, dpi) + geo.gap) / (axis === 'w' ? geo.availW : geo.availH);
+      dimensions[axis] =
+        (mmToPx(0.999, dpi) + geo.gap) /
+        (axis === 'w' ? geo.availW + geo.gap : geo.availH + geo.gap);
       expect(before.resizeCollageSlot('a', dimensions.w, dimensions.h)).toEqual({
         ok: false,
         reason: 'invalid',
@@ -500,8 +525,8 @@ describe('CollageSlice Unit Tests', () => {
 
     it.each([0, 0.999])('rejects an existing %s mm size even on both no-op paths', (sizeMM) => {
       const { geo, dpi } = setupManualSizeCase(baked);
-      const w = (mmToPx(sizeMM, dpi) + geo.gap) / geo.availW;
-      const h = (mmToPx(sizeMM, dpi) + geo.gap) / geo.availH;
+      const w = (mmToPx(sizeMM, dpi) + geo.gap) / (geo.availW + geo.gap);
+      const h = (mmToPx(sizeMM, dpi) + geo.gap) / (geo.availH + geo.gap);
       useEditorStore.setState({
         slots: useEditorStore.getState().slots.map((slot) => ({ ...slot, w, h })),
       });
@@ -514,8 +539,8 @@ describe('CollageSlice Unit Tests', () => {
 
     it('accepts exactly 1 mm, preserves it on apply-all, and leaves valid no-ops untouched', () => {
       const { geo, dpi } = setupManualSizeCase(baked);
-      const w = (mmToPx(1, dpi) + geo.gap) / geo.availW;
-      const h = (mmToPx(1, dpi) + geo.gap) / geo.availH;
+      const w = (mmToPx(1, dpi) + geo.gap) / (geo.availW + geo.gap);
+      const h = (mmToPx(1, dpi) + geo.gap) / (geo.availH + geo.gap);
       expect(useEditorStore.getState().resizeCollageSlot('a', w, h)).toEqual({ ok: true });
       expect(useEditorStore.getState().applyCollageSlotSizeToAll('a')).toEqual({ ok: true });
       renderedRects().forEach((rect) => {

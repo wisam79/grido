@@ -139,11 +139,17 @@ export function computeSlotRectMM(
 ): SlotRectMM {
   const availWMM = image.widthMM - 2 * margins.marginXMM;
   const availHMM = image.heightMM - 2 * margins.marginYMM;
+  // مطابق لـ getSlotRect في collage-geometry (بكسل) بعد التحويل للمليمتر:
+  // مسار كامل avail + gap لكل محور، ثم تُطرح فجوة واحدة من عرض الخانة.
+  // هذا يحافظ على الهامش الخارجي والخانة الممتدة بالضبط بدل نصف الفجوة
+  // الخارجية وقصّ gap كامل في الصيغة القديمة (الفجوة الداخلية كانت صحيحة).
+  const trackWMM = Math.max(0, availWMM + gaps.gapXMM);
+  const trackHMM = Math.max(0, availHMM + gaps.gapYMM);
   return {
-    xMM: block.xMM + margins.marginXMM + slot.x * availWMM + gaps.gapXMM / 2,
-    yMM: block.yMM + margins.marginYMM + slot.y * availHMM + gaps.gapYMM / 2,
-    wMM: slot.w * availWMM - gaps.gapXMM,
-    hMM: slot.h * availHMM - gaps.gapYMM,
+    xMM: block.xMM + margins.marginXMM + slot.x * trackWMM,
+    yMM: block.yMM + margins.marginYMM + slot.y * trackHMM,
+    wMM: slot.w * trackWMM - gaps.gapXMM,
+    hMM: slot.h * trackHMM - gaps.gapYMM,
   };
 }
 

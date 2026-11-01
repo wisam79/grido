@@ -186,8 +186,10 @@ function SlotSizeFields({
       if (axis === 'width') nextH = nextW / ratio;
       else nextW = nextH * ratio;
     }
-    const maxW = pxToMm(geo.availW - geo.gap, dpi);
-    const maxH = pxToMm(geo.availH - geo.gap, dpi);
+    // أقصى عرض/ارتفاع مطبّع هو 1 (= المساحة المتاحة كاملة)؛ الفجوة تُطرح من
+    // عرض الخانة الناتج وليست من سقف المساحة، وإلا مُنع المستخدم من ملء الورقة.
+    const maxW = pxToMm(geo.availW, dpi);
+    const maxH = pxToMm(geo.availH, dpi);
     if (maxW < 1 || maxH < 1) {
       toast.error('لا توجد مساحة كافية لهذه الخلية على الورقة');
       resetDraft();
@@ -208,8 +210,9 @@ function SlotSizeFields({
       resetDraft();
       return;
     }
-    const nextNormalizedW = (mmToPx(nextW, dpi) + geo.gap) / geo.availW;
-    const nextNormalizedH = (mmToPx(nextH, dpi) + geo.gap) / geo.availH;
+    // عكس معادلة getSlotRect: w = (px + gap) / (avail + gap).
+    const nextNormalizedW = (mmToPx(nextW, dpi) + geo.gap) / (geo.availW + geo.gap);
+    const nextNormalizedH = (mmToPx(nextH, dpi) + geo.gap) / (geo.availH + geo.gap);
     const result = resizeCollageSlot(slot.id, nextNormalizedW, nextNormalizedH);
     if (!result.ok) {
       toast.error(SIZE_ERROR_MESSAGES[result.reason]);
@@ -251,8 +254,8 @@ function SlotSizeFields({
   /** تطبيق مقاس جاهز على الخلية — يحوّل المليمتر إلى إحداثيات طبيعية ويطبّقها. */
   const applyPresetSize = (photoType: PhotoGridType) => {
     const { wMM, hMM } = getPhotoDimensions(photoType);
-    const normalizedW = (mmToPx(wMM, dpi) + geo.gap) / geo.availW;
-    const normalizedH = (mmToPx(hMM, dpi) + geo.gap) / geo.availH;
+    const normalizedW = (mmToPx(wMM, dpi) + geo.gap) / (geo.availW + geo.gap);
+    const normalizedH = (mmToPx(hMM, dpi) + geo.gap) / (geo.availH + geo.gap);
     const result = resizeCollageSlot(slot.id, normalizedW, normalizedH);
     if (!result.ok) {
       toast.error(SIZE_ERROR_MESSAGES[result.reason]);
