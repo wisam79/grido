@@ -160,36 +160,26 @@ describe('computeSlotRectMM', () => {
     expect(rect.hMM).toBe(0.5 * 57 - 1);
   });
 
-  it('is bit-identical to the mm-domain formula used by buildItems/cut-lines', () => {
-    const canvasWidth = 2480;
-    const collageMargin = 120;
-    const collageGap = 60;
-    const slot = { x: 0.25, y: 0.1, w: 0.4, h: 0.7 };
-
-    const scalePxToMM = image.widthMM / canvasWidth;
-    const marginMM = collageMargin * scalePxToMM;
-    const gapMMv = collageGap * scalePxToMM;
-    const availWMM = image.widthMM - 2 * marginMM;
-    const availHMM = image.heightMM - 2 * marginMM;
-    const expected = {
-      xMM: block.xMM + marginMM + slot.x * (availWMM + gapMMv),
-      yMM: block.yMM + marginMM + slot.y * (availHMM + gapMMv),
-      wMM: slot.w * (availWMM + gapMMv) - gapMMv,
-      hMM: slot.h * (availHMM + gapMMv) - gapMMv,
-    };
-
+  it('matches hand-derived golden values for the mm-domain contract (independent anchor)', () => {
+    // 🔒 الإصلاح (الدفعة 6.3): كان الاختبار يقارن الصيغة بنسخة منها (مرجعية
+    // ذاتية تخفي خطأ مشتركاً). الآن قيم مغلقة مشتقة يدوياً بمسار مستقل:
+    // scale = 80/2480 = 1/31 بالضبط → margin = 120/31، gap = 60/31
+    // trackW = 2240/31 + 60/31 = 2300/31، trackH = 1620/31 + 60/31 = 1680/31
+    // x = 22.5 + margin + 0.25·trackW = 22.5 + 695/31
+    // y = 86 + margin + 0.1·trackH = 86 + 288/31
+    // w = 0.4·trackW − gap = 860/31، h = 0.7·trackH − gap = 1116/31 = 36 بالضبط
     const actual = computeSlotRectMM(
       block,
-      slot,
+      { x: 0.25, y: 0.1, w: 0.4, h: 0.7 },
       image,
-      { marginXMM: marginMM, marginYMM: marginMM },
-      { gapXMM: gapMMv, gapYMM: gapMMv },
+      { marginXMM: 120 / 31, marginYMM: 120 / 31 },
+      { gapXMM: 60 / 31, gapYMM: 60 / 31 },
     );
 
-    expect(actual.xMM).toBe(expected.xMM);
-    expect(actual.yMM).toBe(expected.yMM);
-    expect(actual.wMM).toBe(expected.wMM);
-    expect(actual.hMM).toBe(expected.hMM);
+    expect(actual.xMM).toBeCloseTo(22.5 + 695 / 31, 10);
+    expect(actual.yMM).toBeCloseTo(86 + 288 / 31, 10);
+    expect(actual.wMM).toBeCloseTo(860 / 31, 10);
+    expect(actual.hMM).toBeCloseTo(36, 10);
   });
 
   it('is equivalent to the per-axis percentage formula used by the collage preview', () => {
