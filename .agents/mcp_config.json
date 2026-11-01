@@ -4,10 +4,13 @@
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-postgres",
-        "${SUPABASE_DB_URL}"
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=m2ovehnyvoiawvwaurav",
+        "--features=database"
       ],
-      "env": {}
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
+      }
     }
   }
 }

@@ -43,6 +43,11 @@ jobs:
       - name: Build site
         run: npm run build
         working-directory: admin-web
+        # 🔒 القيم العامة (URL + anon key) تُخبز وقت البناء من أسرار المستودع —
+        # لا مفتاح مخبوز في الكود المصدري إطلاقاً (إغلاق تدقيق 2026-11-01).
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
       - name: Create 404 fallback and SPA route entrypoints
         run: |

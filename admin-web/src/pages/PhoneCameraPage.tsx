@@ -16,8 +16,10 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://mvovehnyvoiawvwaurav.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12b3ZlaG55dm9pYXd2d2F1cmF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3Nzg2MjQsImV4cCI6MjA5OTM1NDYyNH0.DrZxhJkwjHrk1qP1kJ6JtwAo5AJZegOvFol2L-pGuUg';
+// 🔒 القيم تُخبز وقت البناء من أسرار المستودع (deploy-pages.yml → VITE_*) —
+// لا سقوط مخبوز في الكود المصدري (إغلاق تدقيق 2026-11-01، SECURITY_NOTICE.md).
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 interface FocusPoint {
   x: number;
@@ -89,7 +91,30 @@ function playShutterSound() {
   }
 }
 
+// 🛡️ بوابة الإعداد: الصفحة لا تعمل بلا متغيري البناء VITE_SUPABASE_URL و
+// VITE_SUPABASE_ANON_KEY (يُحقنان من أسرار المستودع في deploy-pages.yml).
+// الغلاف الخارجي يفحص الإعداد قبل تركيب المكون الداخلي لتجنب كسر قواعد Hooks.
 export default function PhoneCameraPage() {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return (
+      <div dir="rtl" className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+        <div className="max-w-md text-center space-y-3">
+          <AlertCircle className="w-10 h-10 mx-auto text-amber-400" aria-hidden="true" />
+          <h1 className="text-lg font-bold">إعداد ناقص لصفحة الكاميرا</h1>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            متغيرا البيئة{' '}
+            <code className="font-mono text-amber-300">VITE_SUPABASE_URL</code> و{' '}
+            <code className="font-mono text-amber-300">VITE_SUPABASE_ANON_KEY</code> مطلوبان وقت
+            بناء الصفحة — يُضبطان من أسرار المستودع (SUPABASE_URL / SUPABASE_ANON_KEY).
+          </p>
+        </div>
+      </div>
+    );
+  }
+  return <PhoneCameraPageInner />;
+}
+
+function PhoneCameraPageInner() {
   const [sessionId, setSessionId] = useState<string>('');
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
