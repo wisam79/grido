@@ -1,29 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 
-import {
-  FluentSection,
-  FluentSettingRow,
-  FluentSliderField,
-  FluentSegmentedControl,
-} from '@/components/ui/blocks';
-import { Button } from '@/components/ui/button';
-import {
-  ArrowCounterClockwise,
-  Sparkle,
-  BookmarkSimple,
-  FloppyDisk,
-  Trash,
-  Plus,
-} from '@/components/ui/icons';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-
-import { CURATED_PALETTES } from '../constants';
-import { StickerFontSelector } from './sticker-font-selector';
+import { FluentSegmentedControl } from '@/components/ui/blocks';
+import { StickerDesignTab } from './sticker-design-tab';
+import { StickerPresetsTab } from './sticker-presets-tab';
+import { StickerSheetTab } from './sticker-sheet-tab';
 import {
   loadStickerPresets,
   saveStickerPreset,
@@ -34,13 +15,7 @@ import { autoFitSheetGrid } from '../lib/sheet-generator';
 import { contrastRatio, textColorRoles } from '../lib/sticker-a11y';
 import { buildStickerSvg } from '../lib/sticker-design/build-svg';
 
-import type {
-  StickerTemplate,
-  StickerParams,
-  SheetGridConfig,
-  StickerFinish,
-  StickerUserPreset,
-} from '../types';
+import type { StickerTemplate, StickerParams, SheetGridConfig, StickerUserPreset } from '../types';
 
 export interface StickerPropertiesProps {
   template: StickerTemplate;
@@ -56,46 +31,6 @@ export interface StickerPropertiesProps {
   hiddenFieldIds?: string[];
   /** أبعاد ورقة الطباعة بالمم لحساب الملاءمة التلقائية (اختياري — A4 افتراضياً) */
   sheetMm?: { width: number; height: number };
-}
-
-const FINISH_OPTIONS: { id: StickerFinish; label: string }[] = [
-  { id: 'standard', label: 'عادي' },
-  { id: 'glossy', label: 'لامع' },
-  { id: 'matte', label: 'مطفي' },
-  { id: 'holographic', label: 'هولوغرام' },
-];
-
-interface ColorRoleButtonProps {
-  label: string;
-  color: string;
-  disabled?: boolean;
-  onChange: (color: string) => void;
-}
-
-function ColorRoleButton({ label, color, disabled, onChange }: ColorRoleButtonProps) {
-  return (
-    <div
-      className={cn(
-        'relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md bg-card/60 border transition-colors',
-        disabled
-          ? 'opacity-35 pointer-events-none border-border/40'
-          : 'border-border/40 hover:border-primary/60 cursor-pointer group',
-      )}
-      title={`${label}: ${color}`}
-    >
-      <div className="relative w-6 h-6 rounded-md border border-black/15 shadow-2xs overflow-hidden shrink-0">
-        <span className="w-full h-full block" style={{ backgroundColor: color }} />
-        <input
-          type="color"
-          value={color.startsWith('#') && color.length === 7 ? color : '#000000'}
-          onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-          title={label}
-        />
-      </div>
-      <span className="text-micro font-semibold text-foreground/80">{label}</span>
-    </div>
-  );
 }
 
 export const StickerProperties = React.memo(function StickerProperties({
@@ -256,459 +191,33 @@ export const StickerProperties = React.memo(function StickerProperties({
       {/* ── Tab Content ── */}
       <div className="flex-1 overflow-y-auto scrollbar-none p-3 space-y-3">
         {activeTab === 'design' ? (
-          <>
-            {/* 1. النصوص */}
-            {template.fields.length > 0 && (
-              <FluentSection title="النصوص" collapsible defaultOpen>
-                <div className="space-y-2">
-                  {template.fields.map((field) => {
-                    const val = params.fields[field.id] ?? field.defaultValue;
-                    const isModified = val !== field.defaultValue;
-                    return (
-                      <div key={field.id} className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <Label
-                            htmlFor={`sticker-field-${field.id}`}
-                            className="text-mini font-semibold text-foreground/85"
-                          >
-                            {field.label}
-                          </Label>
-                          {isModified && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button
-                                  type="button"
-                                  onClick={() => handleFieldChange(field.id, field.defaultValue)}
-                                  className="w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer rounded transition-colors"
-                                >
-                                  <ArrowCounterClockwise className="w-3 h-3" />
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top" className="text-xs font-cairo">
-                                استعادة
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                        </div>
-                        <Input
-                          id={`sticker-field-${field.id}`}
-                          value={val}
-                          onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                          placeholder={field.placeholder || field.label}
-                          className="h-8 text-xs rounded-md bg-background border-border/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none text-foreground"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </FluentSection>
-            )}
-
-            {/* 2. الألوان */}
-            <FluentSection title="الألوان" collapsible defaultOpen>
-              <div className="grid grid-cols-4 gap-1.5">
-                <ColorRoleButton
-                  label="الأساسي"
-                  color={params.primaryColor}
-                  onChange={(c) => handleColorChange('primaryColor', c)}
-                />
-                <ColorRoleButton
-                  label="الثانوي"
-                  color={params.secondaryColor}
-                  onChange={(c) => handleColorChange('secondaryColor', c)}
-                />
-                <ColorRoleButton
-                  label="الخلفية"
-                  color={params.backgroundColor}
-                  disabled={params.isTransparent}
-                  onChange={(c) => handleColorChange('backgroundColor', c)}
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    onChangeParams((prev) => ({ ...prev, isTransparent: !prev.isTransparent }))
-                  }
-                  className={cn(
-                    'relative flex flex-col items-center justify-center gap-1.5 p-2 rounded-md border transition-colors cursor-pointer text-center',
-                    params.isTransparent
-                      ? 'bg-card text-foreground border border-border/80 dark:border-white/15 shadow-xs font-bold ring-1 ring-primary/40'
-                      : 'bg-card/60 border-border/40 text-muted-foreground hover:text-foreground hover:bg-card',
-                  )}
-                  title={params.isTransparent ? 'مفرغة (انقر للإلغاء)' : 'تفريغ'}
-                >
-                  <div
-                    className={cn(
-                      'w-6 h-6 rounded-md border flex items-center justify-center shrink-0 text-xs font-bold',
-                      params.isTransparent
-                        ? 'border-primary bg-primary/20 text-primary'
-                        : 'border-border/50 bg-muted/40 text-muted-foreground',
-                    )}
-                  >
-                    ∅
-                  </div>
-                  <span className="text-micro font-semibold">
-                    {params.isTransparent ? 'مفرغة' : 'شفافة'}
-                  </span>
-                </button>
-              </div>
-
-              {/* تحذير التباين المنخفض للطباعة */}
-              {contrastWarning && (
-                <p
-                  role="note"
-                  className="text-micro leading-relaxed px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300"
-                >
-                  تباين منخفض قد يُطبع باهتاً: {contrastWarning} — جرّب لوحة أغمق أو خلفية أفتح.
-                </p>
-              )}
-
-              {/* Curated Quick Palettes */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
-                {CURATED_PALETTES.map((palette) => {
-                  const isActive =
-                    params.primaryColor.toLowerCase() === palette.primary.toLowerCase() &&
-                    params.secondaryColor.toLowerCase() === palette.secondary.toLowerCase() &&
-                    params.backgroundColor.toLowerCase() === palette.background.toLowerCase() &&
-                    !params.isTransparent;
-
-                  return (
-                    <Tooltip key={palette.id}>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            commit((prev) => ({
-                              ...prev,
-                              primaryColor: palette.primary,
-                              secondaryColor: palette.secondary,
-                              backgroundColor: palette.background,
-                              isTransparent: false,
-                            }))
-                          }
-                          className={cn(
-                            'h-7 px-2 rounded-md border flex items-center gap-1 shrink-0 transition-colors cursor-pointer',
-                            isActive
-                              ? 'bg-primary/15 border-primary shadow-2xs ring-1 ring-primary/40'
-                              : 'bg-background/60 hover:bg-background border-border/40 hover:border-border/70',
-                          )}
-                          aria-label={palette.name}
-                        >
-                          <span
-                            className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
-                            style={{ backgroundColor: palette.primary }}
-                          />
-                          <span
-                            className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
-                            style={{ backgroundColor: palette.secondary }}
-                          />
-                          <span
-                            className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0"
-                            style={{ backgroundColor: palette.background }}
-                          />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs font-cairo font-medium">
-                        {palette.name}
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-              </div>
-            </FluentSection>
-
-            {/* 3. المظهر */}
-            <FluentSection title="المظهر" collapsible defaultOpen>
-              {/* Font Selector */}
-              <StickerFontSelector
-                value={params.fontFamily || 'Cairo'}
-                onChange={(family) => {
-                  commit((prev) => ({ ...prev, fontFamily: family }));
-                }}
-              />
-
-              {/* Font Scale Slider */}
-              <FluentSliderField
-                label="حجم الخط"
-                value={params.fontScale ?? 1}
-                min={0.8}
-                max={1.3}
-                step={0.05}
-                unit="x"
-                valueFormatter={(v) => `${v.toFixed(2)}x`}
-                onChange={(val) => onChangeParams((prev) => ({ ...prev, fontScale: val }))}
-              />
-
-              {/* Finish Options */}
-              <div className="pt-1 border-t border-border/30 space-y-1.5">
-                <span className="text-mini font-bold text-muted-foreground block">اللمسة</span>
-                <FluentSegmentedControl
-                  layoutId="sticker-finish-tabs"
-                  value={params.finish || 'standard'}
-                  onChange={(finish) =>
-                    onChangeParams((prev) => ({ ...prev, finish: finish as StickerFinish }))
-                  }
-                  options={FINISH_OPTIONS.map((f) => ({ id: f.id, label: f.label }))}
-                  ariaLabel="لمسة الملصق"
-                  className="w-full"
-                />
-              </div>
-
-              {/* Die-cut Cutline Toggle */}
-              <FluentSettingRow
-                label="إطار القص"
-                tooltip="خط القص حول الملصق لقصه آلياً في المطابع"
-                control={
-                  <Switch
-                    id="diecut-toggle"
-                    checked={params.dieCutBorder ?? true}
-                    onCheckedChange={(checked) =>
-                      onChangeParams((prev) => ({ ...prev, dieCutBorder: checked }))
-                    }
-                  />
-                }
-              />
-            </FluentSection>
-          </>
+          <StickerDesignTab
+            template={template}
+            params={params}
+            onChangeParams={onChangeParams}
+            commit={commit}
+            contrastWarning={contrastWarning}
+            onFieldChange={handleFieldChange}
+            onColorChange={handleColorChange}
+          />
         ) : activeTab === 'sheet' ? (
-          /* ── شيت الطباعة Tab ── */
-          <div className="space-y-3">
-            {/* Miniature Sheet Grid Preview */}
-            <div className="relative w-full h-28 rounded-md bg-muted/25 border border-border/40 p-2 flex items-center justify-center overflow-hidden">
-              <div
-                className="relative bg-card/95 rounded-lg border border-border/60 shadow-xs flex items-center justify-center p-1.5 transition-colors duration-200"
-                style={{ width: '130px', height: '80px' }}
-              >
-                <div
-                  className="grid w-full h-full gap-1 items-center justify-center"
-                  style={{
-                    gridTemplateColumns: `repeat(${gridConfig.cols}, minmax(0, 1fr))`,
-                    gridTemplateRows: `repeat(${gridConfig.rows}, minmax(0, 1fr))`,
-                  }}
-                >
-                  {Array.from({ length: Math.min(32, gridConfig.rows * gridConfig.cols) }).map(
-                    (_, idx) => (
-                      <div
-                        key={idx}
-                        className={cn(
-                          'w-full h-full max-w-[14px] max-h-[14px] mx-auto border transition-colors duration-150 shadow-2xs',
-                          template.shape === 'circle'
-                            ? 'rounded-full'
-                            : template.shape === 'rect'
-                              ? 'rounded-sm'
-                              : 'rounded-md',
-                        )}
-                        style={{
-                          backgroundColor: params.primaryColor,
-                          borderColor: params.secondaryColor || 'rgba(0,0,0,0.2)',
-                        }}
-                      />
-                    ),
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* ملاءمة تلقائية من مقاس الملصق وورقة الطباعة */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAutoFitSheet}
-              className="w-full h-8 text-xs font-bold rounded-md gap-1.5 cursor-pointer border-primary/40 text-primary hover:bg-primary/10"
-              title="أكبر شبكة تتسع على ورقة الطباعة"
-            >
-              <Sparkle className="w-3.5 h-3.5" weight="duotone" />
-              <span>ملاءمة تلقائية على الورقة</span>
-            </Button>
-
-            {/* Grid Presets */}
-            <div className="grid grid-cols-4 gap-1 bg-muted/60 dark:bg-black/35 p-1 rounded-md border border-border/70 dark:border-white/10 fluent-specular shadow-2xs">
-              {[
-                { r: 2, c: 2, label: '2×2' },
-                { r: 3, c: 3, label: '3×3' },
-                { r: 4, c: 2, label: '4×2' },
-                { r: 5, c: 3, label: '5×3' },
-              ].map((p) => {
-                const isActive = gridConfig.rows === p.r && gridConfig.cols === p.c;
-                return (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() =>
-                      onChangeGridConfig((prev) => ({ ...prev, rows: p.r, cols: p.c }))
-                    }
-                    className={cn(
-                      'h-7 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center justify-center select-none',
-                      isActive
-                        ? 'bg-card text-foreground font-bold border border-border/80 dark:border-white/15 shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-card/40 dark:hover:bg-white/5 border-transparent font-medium',
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Sliders */}
-            <div className="p-2.5 rounded-md bg-card/40 border border-border/30 space-y-2.5">
-              <FluentSliderField
-                label="صفوف"
-                value={gridConfig.rows}
-                min={1}
-                max={12}
-                step={1}
-                onChange={(val) => onChangeGridConfig((prev) => ({ ...prev, rows: val }))}
-              />
-              <FluentSliderField
-                label="أعمدة"
-                value={gridConfig.cols}
-                min={1}
-                max={12}
-                step={1}
-                onChange={(val) => onChangeGridConfig((prev) => ({ ...prev, cols: val }))}
-              />
-              <FluentSliderField
-                label="مسافة"
-                value={gridConfig.spacingMm}
-                min={0}
-                max={20}
-                step={1}
-                unit="مم"
-                onChange={(val) => onChangeGridConfig((prev) => ({ ...prev, spacingMm: val }))}
-              />
-            </div>
-          </div>
+          <StickerSheetTab
+            template={template}
+            params={params}
+            gridConfig={gridConfig}
+            onChangeGridConfig={onChangeGridConfig}
+            onAutoFitSheet={handleAutoFitSheet}
+          />
         ) : (
-          /* ── 3. تبويب قوالبي المحفوظة (Presets Tab) ── */
-          <div className="space-y-3">
-            {/* حفظ التخصيص الحالي */}
-            <div className="p-3 rounded-md bg-card/60 border border-border/40 space-y-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                <FloppyDisk className="w-4 h-4 text-primary" weight="duotone" />
-                <span>حفظ التخصيص</span>
-              </div>
-              <p className="text-mini text-muted-foreground leading-relaxed">
-                احفظ النصوص والألوان والخط لاسترجاعها لاحقاً.
-              </p>
-              <div className="flex items-center gap-1.5">
-                <Input
-                  type="text"
-                  value={newPresetName}
-                  onChange={(e) => setNewPresetName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSavePreset();
-                  }}
-                  placeholder="اسم القالب"
-                  className="h-8 text-xs font-medium rounded-md flex-1 bg-background/80"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleSavePreset}
-                  className="h-8 px-3 rounded-md text-xs font-bold gap-1 cursor-pointer shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <Plus className="w-3.5 h-3.5" weight="bold" />
-                  <span>حفظ</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* قائمة القوالب المحفوظة */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between px-0.5">
-                <span className="text-xs font-bold text-foreground">
-                  القوالب المحفوظة ({templatePresets.length})
-                </span>
-                {presets.length > templatePresets.length && (
-                  <span className="text-micro text-muted-foreground">
-                    {presets.length} قالب إجمالي
-                  </span>
-                )}
-              </div>
-
-              {templatePresets.length > 0 ? (
-                <div className="space-y-2">
-                  {templatePresets.map((preset) => (
-                    <div
-                      key={preset.id}
-                      className="p-2.5 rounded-md bg-card/60 hover:bg-card border border-border/40 hover:border-primary/40 transition-colors space-y-2"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span
-                          className="text-xs font-bold text-foreground truncate"
-                          title={preset.name}
-                        >
-                          {preset.name}
-                        </span>
-
-                        {/* Color Dots */}
-                        <div className="flex items-center gap-1 shrink-0">
-                          <span
-                            className="w-3 h-3 rounded-full border border-black/10 shadow-2xs"
-                            style={{ backgroundColor: preset.params.primaryColor }}
-                            title={`الرئيسي: ${preset.params.primaryColor}`}
-                          />
-                          <span
-                            className="w-3 h-3 rounded-full border border-black/10 shadow-2xs"
-                            style={{ backgroundColor: preset.params.secondaryColor }}
-                            title={`الثانوي: ${preset.params.secondaryColor}`}
-                          />
-                          <span
-                            className="w-3 h-3 rounded-full border border-black/10 shadow-2xs"
-                            style={{ backgroundColor: preset.params.backgroundColor }}
-                            title={`الخلفية: ${preset.params.backgroundColor}`}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/20">
-                        <span className="text-micro text-muted-foreground font-mono">
-                          {new Date(preset.createdAt).toLocaleDateString('ar-EG', {
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-
-                        <div className="flex items-center gap-1.5">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeletePreset(preset.id, preset.name)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md cursor-pointer"
-                            title="حذف"
-                          >
-                            <Trash className="w-3.5 h-3.5" />
-                          </Button>
-
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => handleApplyPreset(preset)}
-                            className="h-7 px-3 text-xs font-bold rounded-md cursor-pointer bg-primary/15 text-primary hover:bg-primary hover:text-primary-foreground transition-colors gap-1"
-                          >
-                            <span>تطبيق</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 rounded-md bg-card/30 border border-dashed border-border/50 text-center space-y-1.5">
-                  <BookmarkSimple
-                    className="w-7 h-7 mx-auto text-muted-foreground/60"
-                    weight="duotone"
-                  />
-                  <p className="text-xs font-semibold text-foreground/80">لا قوالب محفوظة</p>
-                  <p className="text-mini text-muted-foreground leading-relaxed">
-                    اكتب اسماً بالأعلى واضغط "حفظ" لاستخدامه لاحقاً.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          <StickerPresetsTab
+            templatePresets={templatePresets}
+            presetsTotal={presets.length}
+            newPresetName={newPresetName}
+            setNewPresetName={setNewPresetName}
+            onSavePreset={handleSavePreset}
+            onDeletePreset={handleDeletePreset}
+            onApplyPreset={handleApplyPreset}
+          />
         )}
       </div>
     </div>
