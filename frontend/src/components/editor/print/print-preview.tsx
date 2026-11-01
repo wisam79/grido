@@ -170,13 +170,15 @@ const CollageSlotPreview = memo(function CollageSlotPreview({
     };
     // 🖨️ التحويم في الاتجاه الربعي يُحسب على نسبة المقاس المحلي (المتبدل
     // بعد التدوير) — كان الفرع يتجاهل dragX/dragY كلياً فيعرض قصّة ممركزة
-    // بينما المحرر والطباعة يحترمان pan المستخدم.
+    // بينما المحرر والطباعة يحترمان pan المستخدم. بلا تحويم يبقى نص التحويل
+    // بلا بادئة translate مطابقاً لعقد ترتيب التحويل المُختبر حرفياً.
     const { panX, panY } = computeSlotPreviewPan(
       slot,
       naturalSize,
       rect.hMM / Math.max(0.01, rect.wMM),
     );
-    imgTransform = `translate(${panX}%, ${panY}%) scale(${zoomVal}) rotate(${slot.rotation || 0}deg) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1})`;
+    const panPrefix = panX || panY ? `translate(${panX}%, ${panY}%) ` : '';
+    imgTransform = `${panPrefix}scale(${zoomVal}) rotate(${slot.rotation || 0}deg) scaleX(${slot.flipX ? -1 : 1}) scaleY(${slot.flipY ? -1 : 1})`;
   } else {
     const { panX, panY } = computeSlotPreviewPan(
       slot,
