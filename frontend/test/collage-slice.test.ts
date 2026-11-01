@@ -1342,3 +1342,107 @@ describe('CollageSlice Unit Tests', () => {
     });
   });
 });
+
+describe('removeCollageSlot — حذف الخلية المضافة من الشبكة', () => {
+  it('يحذف الخلية ويعيد الترقيم وينقل التحديد مع خطوة تراجع واحدة', () => {
+    useEditorStore.setState({
+      mode: 'collage',
+      canvasWidth: 1000,
+      canvasHeight: 1000,
+      collageTemplate: null,
+      collageMargin: 0,
+      collageGap: 0,
+      slots: [
+        { id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3 },
+        { id: 'b', cellIndex: 1, x: 0.4, y: 0, w: 0.3, h: 0.3, imageSrc: 'b.png' },
+        { id: 'c', cellIndex: 2, x: 0, y: 0.4, w: 0.3, h: 0.3 },
+      ],
+      selectedId: 'b',
+      selectedIds: ['a', 'b'],
+    });
+    useEditorStore.getState().pushHistory();
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    const res = useEditorStore.getState().removeCollageSlot('b');
+    expect(res).toEqual({ ok: true, removedSlotId: 'b' });
+
+    const s = useEditorStore.getState();
+    expect(s.slots.map((sl) => sl.id)).toEqual(['a', 'c']);
+    expect(s.slots.map((sl) => sl.cellIndex)).toEqual([0, 1]);
+    // الأساسي كان المحذوف نفسه → ينتقل لأول خانة باقية
+    expect(s.selectedId).toBe('a');
+    expect(s.selectedIds).toEqual(['a']);
+    expect(s.historyIndex).toBe(historyBefore + 1);
+
+    s.undo();
+    const undone = useEditorStore.getState();
+    expect(undone.slots).toHaveLength(3);
+    expect(undone.slots.map((sl) => sl.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('يُبقي الأساسي عند حذف خانة ثانوية من تحديد متعدد', () => {
+    useEditorStore.setState({
+      mode: 'collage',
+      canvasWidth: 1000,
+      canvasHeight: 1000,
+      collageTemplate: null,
+      collageMargin: 0,
+      collageGap: 0,
+      slots: [
+        { id: 'a', cellIndex: 0, x: 0, y: 0, w: 0.3, h: 0.3 },
+        { id: 'b', cellIndex: 1, x: 0.4, y: 0, w: 0.3, h: 0.3 },
+        { id: 'c', cellIndex: 2, x: 0, y: 0.4, w: 0.3, h: 0.3 },
+      ],
+      selectedId: 'a',
+      selectedIds: ['a', 'c'],
+    });
+
+    const res = useEditorStore.getState().removeCollageSlot('c');
+    expect(res).toEqual({ ok: true, removedSlotId: 'c' });
+
+    const s = useEditorStore.getState();
+    expect(s.selectedId).toBe('a');
+    expect(s.selectedIds).toEqual(['a']);
+  });
+
+  it('يرفض حذف الخلية الأخيرة بلا مساس بالحالة أو التراجع', () => {
+    useEditorStore.setState({
+      mode: 'collage',
+      canvasWidth: 1000,
+      canvasHeight: 1000,
+      collageTemplate: null,
+      collageMargin: 0,
+      collageGap: 0,
+      slots: [{ id: 'only', cellIndex: 0, x: 0, y: 0, w: 1, h: 1 }],
+      selectedId: 'only',
+      selectedIds: ['only'],
+    });
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    expect(useEditorStore.getState().removeCollageSlot('only')).toEqual({
+      ok: false,
+      reason: 'last-slot',
+    });
+    expect(useEditorStore.getState().slots).toHaveLength(1);
+    expect(useEditorStore.getState().historyIndex).toBe(historyBefore);
+  });
+
+  it('يخبز الخلايا الباقية كقالب يدوي عند حذف خانة من قالب فيزيائي', () => {
+    const tmpl = COLLAGE_TEMPLATES.find((t) => t.physicalLayout?.type === 'iq-national-id');
+    if (!tmpl) return;
+    useEditorStore.getState().setCollageTemplate(tmpl);
+    const before = useEditorStore.getState();
+    expect(before.slots.length).toBeGreaterThan(1);
+
+    const removed = before.slots[1];
+    const res = useEditorStore.getState().removeCollageSlot(removed.id);
+    expect(res).toEqual({ ok: true, removedSlotId: removed.id });
+
+    const s = useEditorStore.getState();
+    expect(s.slots).toHaveLength(before.slots.length - 1);
+    expect(s.slots.every((sl, i) => sl.cellIndex === i)).toBe(true);
+    expect(s.collageTemplate?.isManual).toBe(true);
+    expect(s.collageTemplate?.physicalLayout).toBeUndefined();
+    expect(s.collageTemplate?.cells).toHaveLength(before.slots.length - 1);
+  });
+});

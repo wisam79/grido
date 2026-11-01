@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  ArrowClockwise,
   ArrowCounterClockwise,
   ArrowsLeftRight,
   CaretDown,
@@ -24,6 +25,7 @@ import {
   Copy,
   Crop,
   Crosshair,
+  FlipHorizontal,
   FlipVertical,
   GridFour,
   LockSimple,
@@ -401,6 +403,9 @@ export const SlotProperties = React.memo(function SlotProperties({
     setSlotImage,
     lastEditedImage,
     applyCollageSlotSizeToAll,
+    rotateSlot,
+    flipSlotX,
+    flipSlotY,
   } = useEditorStore(
     useShallow((state) => ({
       slots: state.slots,
@@ -410,6 +415,9 @@ export const SlotProperties = React.memo(function SlotProperties({
       setSlotImage: state.setSlotImage,
       lastEditedImage: state.lastEditedImage,
       applyCollageSlotSizeToAll: state.applyCollageSlotSizeToAll,
+      rotateSlot: state.rotateSlot,
+      flipSlotX: state.flipSlotX,
+      flipSlotY: state.flipSlotY,
     })),
   );
   const [cropOpen, setCropOpen] = useState(false);
@@ -476,53 +484,82 @@ export const SlotProperties = React.memo(function SlotProperties({
         />
       </FluentSection>
 
-      {/* 2. الصورة — شريط نظيف بلا خطوط داخلية مزدوجة */}
+      {/* 2. الصورة — صف القص والتوسيط ثم صف تحويلات موحّد (تدوير + قلبان) */}
       <FluentSection title="الصورة" collapsible defaultOpen className="border-border/40 py-2.5">
         {slot.imageSrc ? (
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="outline"
-              className="h-8 min-w-0 flex-1 gap-1.5 px-2 text-xs border-border/60 shadow-none"
-              onClick={() => setCropOpen(true)}
-              aria-label="قص الصورة"
-            >
-              <Crop className="size-4 text-primary shrink-0" weight="bold" />
-              <span>قص</span>
-            </Button>
-
-            <FluentTooltip content="قلب عمودي" side="top">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
-                size="icon"
-                className={cn(
-                  'size-8 shrink-0 border-border/60 shadow-none',
-                  slot.flipY && 'border-primary/45 text-primary bg-primary/10 hover:text-primary',
-                )}
-                onClick={() => {
-                  onUpdate(slot.id, { flipY: !slot.flipY });
-                  useEditorStore.getState().pushHistory();
-                }}
-                aria-label="قلب عمودي"
-                aria-pressed={Boolean(slot.flipY)}
+                className="h-8 min-w-0 flex-1 gap-1.5 px-2 text-xs border-border/60 shadow-none"
+                onClick={() => setCropOpen(true)}
+                aria-label="قص الصورة"
               >
-                <FlipVertical className="size-4" weight={slot.flipY ? 'fill' : 'regular'} />
+                <Crop className="size-4 text-primary shrink-0" weight="bold" />
+                <span>قص</span>
               </Button>
-            </FluentTooltip>
 
-            <FluentTooltip content="إعادة توسيط الصورة" side="top">
-              <Button
-                variant="outline"
-                size="icon"
-                className="size-8 shrink-0 border-border/60 shadow-none"
-                onClick={() => {
-                  onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
-                  useEditorStore.getState().pushHistory();
-                }}
-                aria-label="توسيط"
-              >
-                <Crosshair className="size-4" />
-              </Button>
-            </FluentTooltip>
+              <FluentTooltip content="إعادة توسيط الصورة" side="top">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-8 shrink-0 border-border/60 shadow-none"
+                  onClick={() => {
+                    onUpdate(slot.id, { dragX: 0, dragY: 0, zoom: 1 });
+                    useEditorStore.getState().pushHistory();
+                  }}
+                  aria-label="توسيط"
+                >
+                  <Crosshair className="size-4" />
+                </Button>
+              </FluentTooltip>
+            </div>
+
+            {/* التحويلات: أزرار أيقونية متساوية — القلبان مفاتيح حالة (aria-pressed)
+                والتدوير فعل مباشر. الفعل عبر أدوات الخانة في الستور بخطوة تراجع واحدة. */}
+            <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="تحويلات الصورة">
+              <FluentTooltip content="تدوير 90 درجة" side="top">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-full border-border/60 shadow-none"
+                  onClick={() => rotateSlot(slot.id, 90)}
+                  aria-label="تدوير 90 درجة"
+                >
+                  <ArrowClockwise className="size-4" weight="bold" />
+                </Button>
+              </FluentTooltip>
+
+              <FluentTooltip content="قلب أفقي" side="top">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-pressed={Boolean(slot.flipX)}
+                  className={cn(
+                    'h-8 w-full border-border/60 shadow-none',
+                    slot.flipX && 'border-primary/45 text-primary bg-primary/10 hover:text-primary',
+                  )}
+                  onClick={() => flipSlotX(slot.id)}
+                >
+                  <FlipHorizontal className="size-4" weight={slot.flipX ? 'fill' : 'regular'} />
+                </Button>
+              </FluentTooltip>
+
+              <FluentTooltip content="قلب عمودي" side="top">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-pressed={Boolean(slot.flipY)}
+                  className={cn(
+                    'h-8 w-full border-border/60 shadow-none',
+                    slot.flipY && 'border-primary/45 text-primary bg-primary/10 hover:text-primary',
+                  )}
+                  onClick={() => flipSlotY(slot.id)}
+                >
+                  <FlipVertical className="size-4" weight={slot.flipY ? 'fill' : 'regular'} />
+                </Button>
+              </FluentTooltip>
+            </div>
           </div>
         ) : (
           lastEditedImage && (

@@ -97,6 +97,10 @@ export interface CollageSlice {
     slotId: string,
     direction: AdjacentSlotDirection,
   ) => CollageSlotSizeResult & { newSlotId?: string };
+  /** حذف خانة من الشبكة كلياً — عكس addAdjacentCollageSlot. */
+  removeCollageSlot: (
+    slotId: string,
+  ) => { ok: true; removedSlotId: string } | { ok: false; reason: 'not-found' | 'last-slot' };
   clearSlots: () => void;
   fillAllSlots: (src: string, sourceSlotId?: string) => void;
   fillRowSlots: (slotId: string, src: string) => void;
@@ -1290,6 +1294,38 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     });
     get().pushHistory();
     return { ok: true, newSlotId: newSlot.id };
+  },
+
+  removeCollageSlot: (slotId) => {
+    const state = get();
+    // الشبكة تحتاج خانة واحدة على الأقل — حذف الأخيرة يترك كولاجاً بلا محتوى.
+    if (state.slots.length <= 1) {
+      return { ok: false, reason: 'last-slot' };
+    }
+    const remaining = state.slots.filter((slot) => slot.id !== slotId);
+    if (remaining.length === state.slots.length) {
+      return { ok: false, reason: 'not-found' };
+    }
+    const slots = remaining.map((slot, index) => ({ ...slot, cellIndex: index }));
+
+    // التحديد ينتقل لأول خانة باقية فقط إذا كانت المحذوفة هي الأساسي؛ وإذا كانت
+    // ضمن تحديد متعدد يُعاد بناء القائمة بلا معها مع بقاء الأساسي كما هو.
+    let selectionPatch: { selectedIds: string[]; selectedId: string | null } | null = null;
+    if (state.selectedId === slotId) {
+      selectionPatch = normalizeSelection(slots[0].id);
+    } else if (state.selectedIds.includes(slotId)) {
+      selectionPatch = normalizeSelection(
+        state.selectedIds.filter((id) => id !== slotId),
+        state.selectedId,
+      );
+    }
+
+    set({
+      ...manualGeometryPatch(state, slots),
+      ...(selectionPatch ?? {}),
+    });
+    get().pushHistory();
+    return { ok: true, removedSlotId: slotId };
   },
 
   clearSlots: () => {

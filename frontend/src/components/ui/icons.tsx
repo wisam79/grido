@@ -57,14 +57,16 @@ import {
   ArrowExpand16Regular as _ArrowExpand16Regular,
   ArrowExpand20Filled as _ArrowExpand20Filled,
   ArrowExpand20Regular as _ArrowExpand20Regular,
+  ArrowExpand24Filled as _ArrowExpand24Filled,
+  ArrowExpand24Regular as _ArrowExpand24Regular,
   ArrowExpandAll16Filled as _ArrowExpandAll16Filled,
   ArrowExpandAll16Regular as _ArrowExpandAll16Regular,
   ArrowExportLtr20Filled as _ArrowExportLtr20Filled,
   ArrowExportLtr20Regular as _ArrowExportLtr20Regular,
   ArrowExportUp16Filled as _ArrowExportUp16Filled,
   ArrowExportUp16Regular as _ArrowExportUp16Regular,
-  ArrowFitIn16Filled as _ArrowFitIn16Filled,
-  ArrowFitIn16Regular as _ArrowFitIn16Regular,
+  ArrowFitIn20Filled as _ArrowFitIn20Filled,
+  ArrowFitIn20Regular as _ArrowFitIn20Regular,
   ArrowLeft16Filled as _ArrowLeft16Filled,
   ArrowLeft16Regular as _ArrowLeft16Regular,
   ArrowMinimize16Filled as _ArrowMinimize16Filled,
@@ -73,8 +75,6 @@ import {
   ArrowMinimizeVertical20Regular as _ArrowMinimizeVertical20Regular,
   ArrowRedo16Filled as _ArrowRedo16Filled,
   ArrowRedo16Regular as _ArrowRedo16Regular,
-  ArrowRedo20Filled as _ArrowRedo20Filled,
-  ArrowRedo20Regular as _ArrowRedo20Regular,
   ArrowRepeatAll16Filled as _ArrowRepeatAll16Filled,
   ArrowRepeatAll16Regular as _ArrowRepeatAll16Regular,
   ArrowRight16Filled as _ArrowRight16Filled,
@@ -89,8 +89,6 @@ import {
   ArrowSync16Regular as _ArrowSync16Regular,
   ArrowUndo16Filled as _ArrowUndo16Filled,
   ArrowUndo16Regular as _ArrowUndo16Regular,
-  ArrowUndo20Filled as _ArrowUndo20Filled,
-  ArrowUndo20Regular as _ArrowUndo20Regular,
   ArrowUp16Filled as _ArrowUp16Filled,
   ArrowUp16Regular as _ArrowUp16Regular,
   ArrowUpLeft20Filled as _ArrowUpLeft20Filled,
@@ -125,6 +123,8 @@ import {
   Calendar20Regular as _Calendar20Regular,
   Camera16Filled as _Camera16Filled,
   Camera16Regular as _Camera16Regular,
+  Camera20Filled as _Camera20Filled,
+  Camera20Regular as _Camera20Regular,
   Checkmark12Filled as _Checkmark12Filled,
   Checkmark12Regular as _Checkmark12Regular,
   Checkmark16Filled as _Checkmark16Filled,
@@ -157,10 +157,8 @@ import {
   CircleHalfFill20Regular as _CircleHalfFill20Regular,
   Clipboard16Filled as _Clipboard16Filled,
   Clipboard16Regular as _Clipboard16Regular,
-  Clock12Filled as _Clock12Filled,
-  Clock12Regular as _Clock12Regular,
-  Clock16Filled as _Clock16Filled,
-  Clock16Regular as _Clock16Regular,
+  Clock20Filled as _Clock20Filled,
+  Clock20Regular as _Clock20Regular,
   Cloud16Filled as _Cloud16Filled,
   Cloud16Regular as _Cloud16Regular,
   Code16Filled as _Code16Filled,
@@ -179,8 +177,6 @@ import {
   ContactCard20Regular as _ContactCard20Regular,
   Copy16Filled as _Copy16Filled,
   Copy16Regular as _Copy16Regular,
-  Copy20Filled as _Copy20Filled,
-  Copy20Regular as _Copy20Regular,
   Crop16Filled as _Crop16Filled,
   Crop16Regular as _Crop16Regular,
   CropInterim20Filled as _CropInterim20Filled,
@@ -213,8 +209,8 @@ import {
   DismissCircle16Regular as _DismissCircle16Regular,
   DividerTall20Filled as _DividerTall20Filled,
   DividerTall20Regular as _DividerTall20Regular,
-  DocumentAdd16Filled as _DocumentAdd16Filled,
-  DocumentAdd16Regular as _DocumentAdd16Regular,
+  DocumentAdd20Filled as _DocumentAdd20Filled,
+  DocumentAdd20Regular as _DocumentAdd20Regular,
   DocumentText16Filled as _DocumentText16Filled,
   DocumentText16Regular as _DocumentText16Regular,
   DocumentText20Filled as _DocumentText20Filled,
@@ -249,8 +245,8 @@ import {
   Flash16Regular as _Flash16Regular,
   FlipHorizontal16Filled as _FlipHorizontal16Filled,
   FlipHorizontal16Regular as _FlipHorizontal16Regular,
-  FlipVertical20Filled as _FlipVertical20Filled,
-  FlipVertical20Regular as _FlipVertical20Regular,
+  FlipVertical16Filled as _FlipVertical16Filled,
+  FlipVertical16Regular as _FlipVertical16Regular,
   Folder16Filled as _Folder16Filled,
   Folder16Regular as _Folder16Regular,
   Folder20Filled as _Folder20Filled,
@@ -315,24 +311,16 @@ import {
   Layer24Regular as _Layer24Regular,
   Link16Filled as _Link16Filled,
   Link16Regular as _Link16Regular,
-  Link20Filled as _Link20Filled,
-  Link20Regular as _Link20Regular,
   LinkDismiss16Filled as _LinkDismiss16Filled,
   LinkDismiss16Regular as _LinkDismiss16Regular,
-  LinkDismiss20Filled as _LinkDismiss20Filled,
-  LinkDismiss20Regular as _LinkDismiss20Regular,
   List16Filled as _List16Filled,
   List16Regular as _List16Regular,
-  LockClosed12Filled as _LockClosed12Filled,
-  LockClosed12Regular as _LockClosed12Regular,
   LockClosed16Filled as _LockClosed16Filled,
   LockClosed16Regular as _LockClosed16Regular,
   LockClosed20Filled as _LockClosed20Filled,
   LockClosed20Regular as _LockClosed20Regular,
   LockClosed48Filled as _LockClosed48Filled,
   LockClosed48Regular as _LockClosed48Regular,
-  LockOpen12Filled as _LockOpen12Filled,
-  LockOpen12Regular as _LockOpen12Regular,
   LockOpen16Filled as _LockOpen16Filled,
   LockOpen16Regular as _LockOpen16Regular,
   Mail16Filled as _Mail16Filled,
@@ -341,14 +329,12 @@ import {
   Merge16Regular as _Merge16Regular,
   MoreVertical16Filled as _MoreVertical16Filled,
   MoreVertical16Regular as _MoreVertical16Regular,
-  NumberSymbol16Filled as _NumberSymbol16Filled,
-  NumberSymbol16Regular as _NumberSymbol16Regular,
+  NumberSymbol20Filled as _NumberSymbol20Filled,
+  NumberSymbol20Regular as _NumberSymbol20Regular,
   Options16Filled as _Options16Filled,
   Options16Regular as _Options16Regular,
   Options20Filled as _Options20Filled,
   Options20Regular as _Options20Regular,
-  Options24Filled as _Options24Filled,
-  Options24Regular as _Options24Regular,
   PaintBrush16Filled as _PaintBrush16Filled,
   PaintBrush16Regular as _PaintBrush16Regular,
   PaintBrush20Filled as _PaintBrush20Filled,
@@ -383,12 +369,8 @@ import {
   RenameA20Regular as _RenameA20Regular,
   RowTriple20Filled as _RowTriple20Filled,
   RowTriple20Regular as _RowTriple20Regular,
-  Ruler12Filled as _Ruler12Filled,
-  Ruler12Regular as _Ruler12Regular,
   Ruler16Filled as _Ruler16Filled,
   Ruler16Regular as _Ruler16Regular,
-  Ruler20Filled as _Ruler20Filled,
-  Ruler20Regular as _Ruler20Regular,
   Save16Filled as _Save16Filled,
   Save16Regular as _Save16Regular,
   Scan16Filled as _Scan16Filled,
@@ -401,8 +383,8 @@ import {
   Search16Regular as _Search16Regular,
   Search20Filled as _Search20Filled,
   Search20Regular as _Search20Regular,
-  Search32Filled as _Search32Filled,
-  Search32Regular as _Search32Regular,
+  Search24Filled as _Search24Filled,
+  Search24Regular as _Search24Regular,
   SelectAllOn16Filled as _SelectAllOn16Filled,
   SelectAllOn16Regular as _SelectAllOn16Regular,
   SelectObject20Filled as _SelectObject20Filled,
@@ -441,14 +423,8 @@ import {
   SquaresNested20Regular as _SquaresNested20Regular,
   Stack16Filled as _Stack16Filled,
   Stack16Regular as _Stack16Regular,
-  Stack20Filled as _Stack20Filled,
-  Stack20Regular as _Stack20Regular,
-  Star12Filled as _Star12Filled,
-  Star12Regular as _Star12Regular,
   Star16Filled as _Star16Filled,
   Star16Regular as _Star16Regular,
-  Star20Filled as _Star20Filled,
-  Star20Regular as _Star20Regular,
   Sticker16Filled as _Sticker16Filled,
   Sticker16Regular as _Sticker16Regular,
   Subtract12Filled as _Subtract12Filled,
@@ -457,18 +433,26 @@ import {
   Subtract16Regular as _Subtract16Regular,
   TableArrowRepeatAll20Filled as _TableArrowRepeatAll20Filled,
   TableArrowRepeatAll20Regular as _TableArrowRepeatAll20Regular,
+  TableInsertColumn16Filled as _TableInsertColumn16Filled,
+  TableInsertColumn16Regular as _TableInsertColumn16Regular,
+  TableInsertRow16Filled as _TableInsertRow16Filled,
+  TableInsertRow16Regular as _TableInsertRow16Regular,
   Tag16Filled as _Tag16Filled,
   Tag16Regular as _Tag16Regular,
-  Tag20Filled as _Tag20Filled,
-  Tag20Regular as _Tag20Regular,
   Target16Filled as _Target16Filled,
   Target16Regular as _Target16Regular,
   TextAlignCenter16Filled as _TextAlignCenter16Filled,
   TextAlignCenter16Regular as _TextAlignCenter16Regular,
+  TextAlignCenter20Filled as _TextAlignCenter20Filled,
+  TextAlignCenter20Regular as _TextAlignCenter20Regular,
   TextAlignLeft16Filled as _TextAlignLeft16Filled,
   TextAlignLeft16Regular as _TextAlignLeft16Regular,
+  TextAlignLeft20Filled as _TextAlignLeft20Filled,
+  TextAlignLeft20Regular as _TextAlignLeft20Regular,
   TextAlignRight16Filled as _TextAlignRight16Filled,
   TextAlignRight16Regular as _TextAlignRight16Regular,
+  TextAlignRight20Filled as _TextAlignRight20Filled,
+  TextAlignRight20Regular as _TextAlignRight20Regular,
   TextBold16Filled as _TextBold16Filled,
   TextBold16Regular as _TextBold16Regular,
   TextDescription20Filled as _TextDescription20Filled,
@@ -724,14 +708,8 @@ export const ArrowRight: Icon = createIcon({ 16: [_ArrowRight16Regular, _ArrowRi
 export const ArrowSquareOut: Icon = createIcon({
   20: [_ArrowSquareUpRight20Regular, _ArrowSquareUpRight20Filled],
 });
-export const ArrowUUpLeft: Icon = createIcon({
-  16: [_ArrowUndo16Regular, _ArrowUndo16Filled],
-  20: [_ArrowUndo20Regular, _ArrowUndo20Filled],
-});
-export const ArrowUUpRight: Icon = createIcon({
-  16: [_ArrowRedo16Regular, _ArrowRedo16Filled],
-  20: [_ArrowRedo20Regular, _ArrowRedo20Filled],
-});
+export const ArrowUUpLeft: Icon = createIcon({ 16: [_ArrowUndo16Regular, _ArrowUndo16Filled] });
+export const ArrowUUpRight: Icon = createIcon({ 16: [_ArrowRedo16Regular, _ArrowRedo16Filled] });
 export const ArrowUp: Icon = createIcon({ 16: [_ArrowUp16Regular, _ArrowUp16Filled] });
 export const ArrowUpLeft: Icon = createIcon({ 20: [_ArrowUpLeft20Regular, _ArrowUpLeft20Filled] });
 export const ArrowsClockwise: Icon = createIcon({ 16: [_ArrowSync16Regular, _ArrowSync16Filled] });
@@ -748,7 +726,7 @@ export const ArrowsHorizontal: Icon = createIcon({
 });
 export const ArrowsIn: Icon = createIcon({ 16: [_ArrowMinimize16Regular, _ArrowMinimize16Filled] });
 export const ArrowsInLineHorizontal: Icon = createIcon({
-  16: [_ArrowFitIn16Regular, _ArrowFitIn16Filled],
+  20: [_ArrowFitIn20Regular, _ArrowFitIn20Filled],
 });
 export const ArrowsInLineVertical: Icon = createIcon({
   20: [_ArrowMinimizeVertical20Regular, _ArrowMinimizeVertical20Filled],
@@ -770,10 +748,7 @@ export const ArrowsOutSimple: Icon = createIcon({
   20: [_ExpandUpRight20Regular, _ExpandUpRight20Filled],
 });
 export const ArrowsVertical: Icon = createIcon({ 16: [_ArrowSort16Regular, _ArrowSort16Filled] });
-export const Article: Icon = createIcon({
-  16: [_DocumentText16Regular, _DocumentText16Filled],
-  20: [_DocumentText20Regular, _DocumentText20Filled],
-});
+export const Article: Icon = createIcon({ 20: [_DocumentText20Regular, _DocumentText20Filled] });
 export const Barcode: Icon = createIcon({
   16: [_BarcodeScanner16Regular, _BarcodeScanner16Filled],
 });
@@ -789,7 +764,7 @@ export const Calendar: Icon = createIcon({
   16: [_Calendar16Regular, _Calendar16Filled],
 });
 export const CalendarBlank: Icon = createIcon({ 20: [_Calendar20Regular, _Calendar20Filled] });
-export const Camera: Icon = createIcon({ 16: [_Camera16Regular, _Camera16Filled] });
+export const Camera: Icon = createIcon({ 20: [_Camera20Regular, _Camera20Filled] });
 export const CaretDown: Icon = createIcon({
   12: [_ChevronDown12Regular, _ChevronDown12Filled],
   16: [_ChevronDown16Regular, _ChevronDown16Filled],
@@ -821,10 +796,7 @@ export const CircleHalfTilt: Icon = createIcon({
   20: [_CircleHalfFill20Regular, _CircleHalfFill20Filled],
 });
 export const ClipboardText: Icon = createIcon({ 16: [_Clipboard16Regular, _Clipboard16Filled] });
-export const Clock: Icon = createIcon({
-  12: [_Clock12Regular, _Clock12Filled],
-  16: [_Clock16Regular, _Clock16Filled],
-});
+export const Clock: Icon = createIcon({ 20: [_Clock20Regular, _Clock20Filled] });
 export const ClockCounterClockwise: Icon = createIcon({
   20: [_History20Regular, _History20Filled],
 });
@@ -835,12 +807,12 @@ export const Columns: Icon = createIcon({ 20: [_ColumnTriple20Regular, _ColumnTr
 export const Compass: Icon = createIcon({
   16: [_CompassNorthwest16Regular, _CompassNorthwest16Filled],
 });
-export const Copy: Icon = createIcon({
-  16: [_Copy16Regular, _Copy16Filled],
-  20: [_Copy20Regular, _Copy20Filled],
-});
+export const Copy: Icon = createIcon({ 16: [_Copy16Regular, _Copy16Filled] });
 export const Copyright: Icon = createIcon({ 20: [_Circle20Regular, _Circle20Filled] });
-export const CornersOut: Icon = createIcon({ 16: [_ArrowExpand16Regular, _ArrowExpand16Filled] });
+export const CornersOut: Icon = createIcon({
+  20: [_ArrowExpand20Regular, _ArrowExpand20Filled],
+  24: [_ArrowExpand24Regular, _ArrowExpand24Filled],
+});
 export const Crop: Icon = createIcon({ 16: [_Crop16Regular, _Crop16Filled] });
 export const Crosshair: Icon = createIcon({ 16: [_Target16Regular, _Target16Filled] });
 export const Crown: Icon = createIcon({ 20: [_Crown20Regular, _Crown20Filled] });
@@ -887,7 +859,7 @@ export const Faders: Icon = createIcon({
   20: [_Options20Regular, _Options20Filled],
 });
 export const FadersHorizontal: Icon = createIcon({ 16: [_Options16Regular, _Options16Filled] });
-export const FilePlus: Icon = createIcon({ 16: [_DocumentAdd16Regular, _DocumentAdd16Filled] });
+export const FilePlus: Icon = createIcon({ 20: [_DocumentAdd20Regular, _DocumentAdd20Filled] });
 export const FilePng: Icon = createIcon({ 16: [_Image16Regular, _Image16Filled] });
 export const FileSvg: Icon = createIcon({ 16: [_Image16Regular, _Image16Filled] });
 export const FileText: Icon = createIcon({ 16: [_DocumentText16Regular, _DocumentText16Filled] });
@@ -895,15 +867,12 @@ export const FlipHorizontal: Icon = createIcon({
   16: [_FlipHorizontal16Regular, _FlipHorizontal16Filled],
 });
 export const FlipVertical: Icon = createIcon({
-  20: [_FlipVertical20Regular, _FlipVertical20Filled],
+  16: [_FlipVertical16Regular, _FlipVertical16Filled],
 });
 export const FloppyDisk: Icon = createIcon({ 16: [_Save16Regular, _Save16Filled] });
 export const Folder: Icon = createIcon({ 20: [_Folder20Regular, _Folder20Filled] });
 export const FolderOpen: Icon = createIcon({ 16: [_FolderOpen16Regular, _FolderOpen16Filled] });
-export const FolderSimple: Icon = createIcon({
-  16: [_Folder16Regular, _Folder16Filled],
-  20: [_Folder20Regular, _Folder20Filled],
-});
+export const FolderSimple: Icon = createIcon({ 16: [_Folder16Regular, _Folder16Filled] });
 export const FolderSimpleDashed: Icon = createIcon({
   20: [_FolderOpen20Regular, _FolderOpen20Filled],
 });
@@ -925,7 +894,7 @@ export const GroupDismiss: Icon = createIcon({
   20: [_GroupDismiss20Regular, _GroupDismiss20Filled],
 });
 export const Hand: Icon = createIcon({ 16: [_HandLeft16Regular, _HandLeft16Filled] });
-export const Hash: Icon = createIcon({ 16: [_NumberSymbol16Regular, _NumberSymbol16Filled] });
+export const Hash: Icon = createIcon({ 20: [_NumberSymbol20Regular, _NumberSymbol20Filled] });
 export const Heart: Icon = createIcon({ 16: [_Heart16Regular, _Heart16Filled] });
 export const Hexagon: Icon = createIcon({ 20: [_Hexagon20Regular, _Hexagon20Filled] });
 export const IdentificationBadge: Icon = createIcon({
@@ -957,32 +926,22 @@ export const Layer: Icon = createIcon({
 });
 export const Lightning: Icon = createIcon({ 16: [_Flash16Regular, _Flash16Filled] });
 export const LineSegment: Icon = createIcon({ 20: [_DividerTall20Regular, _DividerTall20Filled] });
-export const Link: Icon = createIcon({
-  16: [_Link16Regular, _Link16Filled],
-  20: [_Link20Regular, _Link20Filled],
-});
-export const LinkBreak: Icon = createIcon({
-  16: [_LinkDismiss16Regular, _LinkDismiss16Filled],
-  20: [_LinkDismiss20Regular, _LinkDismiss20Filled],
-});
+export const Link: Icon = createIcon({ 16: [_Link16Regular, _Link16Filled] });
+export const LinkBreak: Icon = createIcon({ 16: [_LinkDismiss16Regular, _LinkDismiss16Filled] });
 export const List: Icon = createIcon({ 16: [_List16Regular, _List16Filled] });
 export const Lock: Icon = createIcon({ 16: [_LockClosed16Regular, _LockClosed16Filled] });
 export const LockSimple: Icon = createIcon({
-  12: [_LockClosed12Regular, _LockClosed12Filled],
   16: [_LockClosed16Regular, _LockClosed16Filled],
   20: [_LockClosed20Regular, _LockClosed20Filled],
   48: [_LockClosed48Regular, _LockClosed48Filled],
 });
-export const LockSimpleOpen: Icon = createIcon({
-  12: [_LockOpen12Regular, _LockOpen12Filled],
-  16: [_LockOpen16Regular, _LockOpen16Filled],
-});
+export const LockSimpleOpen: Icon = createIcon({ 16: [_LockOpen16Regular, _LockOpen16Filled] });
 export const MagicWand: Icon = createIcon({ 16: [_Wand16Regular, _Wand16Filled] });
 export const Magnet: Icon = createIcon({ 16: [_Attach16Regular, _Attach16Filled] });
 export const MagnifyingGlass: Icon = createIcon({
   16: [_Search16Regular, _Search16Filled],
   20: [_Search20Regular, _Search20Filled],
-  32: [_Search32Regular, _Search32Filled],
+  24: [_Search24Regular, _Search24Filled],
 });
 export const MagnifyingGlassMinus: Icon = createIcon({ 16: [_ZoomOut16Regular, _ZoomOut16Filled] });
 export const MagnifyingGlassPlus: Icon = createIcon({ 16: [_ZoomIn16Regular, _ZoomIn16Filled] });
@@ -1018,11 +977,7 @@ export const Rectangle: Icon = createIcon({
 export const RenameA: Icon = createIcon({ 20: [_RenameA20Regular, _RenameA20Filled] });
 export const Repeat: Icon = createIcon({ 16: [_ArrowRepeatAll16Regular, _ArrowRepeatAll16Filled] });
 export const Rows: Icon = createIcon({ 20: [_RowTriple20Regular, _RowTriple20Filled] });
-export const Ruler: Icon = createIcon({
-  12: [_Ruler12Regular, _Ruler12Filled],
-  16: [_Ruler16Regular, _Ruler16Filled],
-  20: [_Ruler20Regular, _Ruler20Filled],
-});
+export const Ruler: Icon = createIcon({ 16: [_Ruler16Regular, _Ruler16Filled] });
 export const Scan: Icon = createIcon({
   16: [_Scan16Regular, _Scan16Filled],
   20: [_Scan20Regular, _Scan20Filled],
@@ -1060,11 +1015,7 @@ export const ShieldCheck: Icon = createIcon({
 export const Shuffle: Icon = createIcon({ 16: [_ArrowShuffle16Regular, _ArrowShuffle16Filled] });
 export const SidebarSimple: Icon = createIcon({ 16: [_PanelLeft16Regular, _PanelLeft16Filled] });
 export const SignOut: Icon = createIcon({ 16: [_ArrowExit16Regular, _ArrowExit16Filled] });
-export const SlidersHorizontal: Icon = createIcon({
-  16: [_Options16Regular, _Options16Filled],
-  20: [_Options20Regular, _Options20Filled],
-  24: [_Options24Regular, _Options24Filled],
-});
+export const SlidersHorizontal: Icon = createIcon({ 16: [_Options16Regular, _Options16Filled] });
 export const Sparkle: Icon = createIcon({
   12: [_Sparkle12Regular, _Sparkle12Filled],
   16: [_Sparkle16Regular, _Sparkle16Filled],
@@ -1074,39 +1025,38 @@ export const Square: Icon = createIcon({ 16: [_Square16Regular, _Square16Filled]
 export const SquaresFour: Icon = createIcon({
   20: [_SquaresNested20Regular, _SquaresNested20Filled],
 });
-export const Stack: Icon = createIcon({
-  16: [_Stack16Regular, _Stack16Filled],
-  20: [_Stack20Regular, _Stack20Filled],
-});
+export const Stack: Icon = createIcon({ 16: [_Stack16Regular, _Stack16Filled] });
 export const Stamp: Icon = createIcon({
   16: [_Bookmark16Regular, _Bookmark16Filled],
   20: [_Bookmark20Regular, _Bookmark20Filled],
   28: [_Bookmark28Regular, _Bookmark28Filled],
 });
-export const Star: Icon = createIcon({
-  12: [_Star12Regular, _Star12Filled],
-  16: [_Star16Regular, _Star16Filled],
-  20: [_Star20Regular, _Star20Filled],
-});
+export const Star: Icon = createIcon({ 16: [_Star16Regular, _Star16Filled] });
 export const Sticker: Icon = createIcon({ 16: [_Sticker16Regular, _Sticker16Filled] });
 export const Sun: Icon = createIcon({ 16: [_WeatherSunny16Regular, _WeatherSunny16Filled] });
 export const Swatches: Icon = createIcon({ 20: [_Color20Regular, _Color20Filled] });
 export const TableArrowRepeatAll: Icon = createIcon({
   20: [_TableArrowRepeatAll20Regular, _TableArrowRepeatAll20Filled],
 });
-export const Tag: Icon = createIcon({
-  16: [_Tag16Regular, _Tag16Filled],
-  20: [_Tag20Regular, _Tag20Filled],
+export const TableInsertColumn: Icon = createIcon({
+  16: [_TableInsertColumn16Regular, _TableInsertColumn16Filled],
 });
+export const TableInsertRow: Icon = createIcon({
+  16: [_TableInsertRow16Regular, _TableInsertRow16Filled],
+});
+export const Tag: Icon = createIcon({ 16: [_Tag16Regular, _Tag16Filled] });
 export const TextAa: Icon = createIcon({ 16: [_TextFont16Regular, _TextFont16Filled] });
 export const TextAlignCenter: Icon = createIcon({
   16: [_TextAlignCenter16Regular, _TextAlignCenter16Filled],
+  20: [_TextAlignCenter20Regular, _TextAlignCenter20Filled],
 });
 export const TextAlignLeft: Icon = createIcon({
   16: [_TextAlignLeft16Regular, _TextAlignLeft16Filled],
+  20: [_TextAlignLeft20Regular, _TextAlignLeft20Filled],
 });
 export const TextAlignRight: Icon = createIcon({
   16: [_TextAlignRight16Regular, _TextAlignRight16Filled],
+  20: [_TextAlignRight20Regular, _TextAlignRight20Filled],
 });
 export const TextB: Icon = createIcon({ 16: [_TextBold16Regular, _TextBold16Filled] });
 export const TextHOne: Icon = createIcon({ 20: [_TextHeader120Regular, _TextHeader120Filled] });

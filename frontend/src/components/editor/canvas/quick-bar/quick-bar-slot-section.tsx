@@ -7,13 +7,12 @@ import { Spinner } from '@/components/ui/huge-icon';
 import {
   ImageSquare,
   GridFour,
-  Rows,
-  Columns,
-  ArrowClockwise,
-  FlipHorizontal,
+  TableInsertRow,
+  TableInsertColumn,
   ArrowCounterClockwise,
   Eye,
   Broom,
+  Trash,
 } from '@/components/ui/icons';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
@@ -27,8 +26,9 @@ import type { CanvasSlot } from '@/lib/store/types';
  * QuickBarSlotSection — قسم الخلية المحددة في وضع الكولاج.
  *
  * 🧭 نطاق الشريط السريع العائم: عمليات الخلية الحركية وسلوك الشبكة فقط
- * (رفع/استبدال، تعبئة صف/عمود/الكل، تدوير، قلب، معاينة الأصل، وتفريغ الخلية).
- * المعالجات الثقيلة تبقى في شريط الأدوات العلوي واللوح الجانبي.
+ * (رفع/استبدال، تعبئة صف/عمود/الكل، معاينة الأصل، تفريغ الخلية، وحذف الخلية
+ * المضافة من الشبكة). التدوير والقلب انتقلا إلى لوح خصائص الخلية، والمعالجات
+ * الثقيلة تبقى في شريط الأدوات العلوي.
  */
 interface QuickBarSlotSectionProps {
   slot: CanvasSlot;
@@ -41,17 +41,30 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
   onOpenFileForSlot,
   isBusy = false,
 }: QuickBarSlotSectionProps) {
-  const { fillAllSlots, fillRowSlots, fillColumnSlots, updateSlot, rotateSlot, flipSlotX } =
+  const { fillAllSlots, fillRowSlots, fillColumnSlots, updateSlot, removeCollageSlot, slotsCount } =
     useEditorStore(
       useShallow((s) => ({
         fillAllSlots: s.fillAllSlots,
         fillRowSlots: s.fillRowSlots,
         fillColumnSlots: s.fillColumnSlots,
         updateSlot: s.updateSlot,
-        rotateSlot: s.rotateSlot,
-        flipSlotX: s.flipSlotX,
+        removeCollageSlot: s.removeCollageSlot,
+        slotsCount: s.slots.length,
       })),
     );
+
+  const isLastSlot = slotsCount <= 1;
+
+  const handleRemoveSlot = () => {
+    const result = removeCollageSlot(slot.id);
+    if (!result.ok) {
+      toast.error(
+        result.reason === 'last-slot'
+          ? 'لا يمكن حذف الخلية الأخيرة في الشبكة'
+          : 'الخلية غير موجودة',
+      );
+    }
+  };
 
   // 🛡️ أمان المعاينة المستمرة: فكّ التركيب أثناء الضغط (تبديل وضع/إغلاق)
   // كان يُبقي صورة المعاينة دائمة بلا تراجع — الاستعادة عند التنظيف.
@@ -123,7 +136,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                   aria-label="تعبئة الصف"
                   className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
-                  <Rows className="w-3.5 h-3.5" weight="regular" />
+                  <TableInsertRow className="w-3.5 h-3.5" weight="regular" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تعبئة الصف بهذه الصورة</TooltipContent>
@@ -138,48 +151,14 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
                   aria-label="تعبئة العمود"
                   className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                 >
-                  <Columns className="w-3.5 h-3.5" weight="regular" />
+                  <TableInsertColumn className="w-3.5 h-3.5" weight="regular" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">تعبئة العمود بهذه الصورة</TooltipContent>
             </Tooltip>
           </QuickBarGroup>
 
-          {/* 3. التحويلات */}
-          <Separator orientation="vertical" className="h-3.5 bg-border/40 mx-0.5" />
-          <QuickBarGroup>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => rotateSlot(slot.id, 90)}
-                  aria-label="تدوير 90 درجة"
-                  className="h-6 w-6 p-0 rounded-md hover:bg-muted/60 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                >
-                  <ArrowClockwise className="w-3.5 h-3.5" weight="bold" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">تدوير 90 درجة</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => flipSlotX(slot.id)}
-                  aria-label="قلب أفقي"
-                  className="h-6 w-6 p-0 rounded-md hover:bg-muted/60 text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                >
-                  <FlipHorizontal className="w-3.5 h-3.5" weight="bold" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">قلب أفقي</TooltipContent>
-            </Tooltip>
-          </QuickBarGroup>
-
-          {/* 4. استعادة ومعاينة الأصل */}
+          {/* 3. استعادة ومعاينة الأصل */}
           {slot.originalImageSrc && (
             <QuickBarGroup>
               <Tooltip>
@@ -239,7 +218,7 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
             </QuickBarGroup>
           )}
 
-          {/* 5. تفريغ الخلية */}
+          {/* 4. تفريغ الخلية */}
           <Separator orientation="vertical" className="h-3.5 bg-border/40 mx-0.5" />
           <Tooltip>
             <TooltipTrigger asChild>
@@ -260,6 +239,27 @@ export const QuickBarSlotSection = React.memo(function QuickBarSlotSection({
           </Tooltip>
         </>
       )}
+
+      {/* 5. حذف الخلية من الشبكة — متاح حتى للخانة الفارغة (عكس زر + المجاور)،
+          ولا يظهر فعلياً للخلية الأخيرة إذ تبقى الشبكة بخانة واحدة على الأقل. */}
+      <Separator orientation="vertical" className="h-3.5 bg-border/40 mx-0.5" />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRemoveSlot}
+            disabled={isBusy || isLastSlot}
+            aria-label="حذف الخلية"
+            className="h-6 w-6 p-0 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer disabled:opacity-60 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+          >
+            <Trash className="w-3.5 h-3.5" weight="regular" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          {isLastSlot ? 'لا يمكن حذف الخلية الأخيرة' : 'حذف هذه الخلية من الشبكة'}
+        </TooltipContent>
+      </Tooltip>
     </>
   );
 });

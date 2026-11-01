@@ -11,8 +11,8 @@ import {
   FlipHorizontal,
   Crosshair,
   GridFour,
-  Columns,
-  Rows,
+  TableInsertColumn,
+  TableInsertRow,
 } from '@/components/ui/icons';
 import { useEditorStore } from '@/lib/editor-store';
 import { openImageFileDialog, persistPickedImage } from '@/lib/io/file-dialog-utils';
@@ -312,7 +312,7 @@ export function SlotMenuSection({
                 )
               }
             >
-              <Rows
+              <TableInsertRow
                 className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
                 weight="regular"
               />
@@ -329,7 +329,7 @@ export function SlotMenuSection({
                 )
               }
             >
-              <Columns
+              <TableInsertColumn
                 className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary shrink-0"
                 weight="regular"
               />
