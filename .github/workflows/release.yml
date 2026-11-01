@@ -23,6 +23,10 @@ jobs:
     permissions:
       contents: write
       actions: write
+      # 🔏 إثبات المنشأ المشفر (sigstore) لثنائيات الإصدار — يُتحقق به لاحقاً:
+      #    gh attestation verify <file> -R wisam79/grido
+      id-token: write
+      attestations: write
 
     steps:
       - name: Checkout code
@@ -417,6 +421,17 @@ jobs:
           }
           Write-Host "التوقيع:"; Get-Content 'bin\grido-checksums.txt.sig'
           "sig=bin/grido-checksums.txt.sig" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      # 🔎 إثبات المنشأ المشفر (بنمط sigstore): يربط كل exe نهائي بتشغيلة CI
+      #    هذه تحديداً — تحقق مستقل عن التوقيع التجاري ويعمل بلا شهادة:
+      #    gh attestation verify GridoStudio.exe -R wisam79/grido
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
+        with:
+          subject-path: |
+            bin/GridoStudio.exe
+            bin/GridoStudio-installer.exe
+            bin/Grido Studio Setup.exe
 
       # 🛑 fail_on_unmatched_files: بلا ملف مطابق = إصدار ناقص، فلا يُنشر بصمت.
       #    سطر `.sig` فارغ عند غياب السرّ يُفلتره الإجراء تلقائياً.
