@@ -143,6 +143,8 @@ type CoreSliceCross = CoreSlice & {
   cutShapeType: 'rectangle' | 'circle' | 'rounded-rect';
   history: HistoryEntry[];
   historyIndex: number;
+  lastSavedEntry: HistoryEntry | null;
+  markHistorySaved: () => void;
   collageGap: number;
   collageMargin: number;
   collageRadius: number;
@@ -489,6 +491,8 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       printImageSrc: null,
       history: [{ elements: [], slots: freshSlots, ...DEFAULT_HISTORY_ENTRY_EXTRAS }],
       historyIndex: 0,
+      // مستند جديد لم يُحفظ قط — المرساة تنهار إلى بذرة الافتراض فيشتق isDirty
+      lastSavedEntry: null,
     });
   },
 
@@ -507,5 +511,7 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
 
   markProjectSaved: (projectId, projectName) => {
     set({ projectId, projectName, isDirty: false });
+    // تثبيت مرساة آخر حفظ — اشتقاق isDirty اللاحق يقارن بها (التزامن مع الحفظ)
+    get().markHistorySaved();
   },
 });

@@ -17,6 +17,14 @@ export { DEFAULT_HISTORY_ENTRY_EXTRAS };
 export interface HistorySlice {
   history: HistoryEntry[];
   historyIndex: number;
+  /**
+   * لقطة آخر حفظ — مرساة اشتقاق isDirty بال مقارنة بدل الأعمى:
+   * null تعني «لم يُحفظ شيئاً بعد» فتُقارن الرأس ببذرة المستند الجديد،
+   * ويضبطها markHistorySaved عند نجاح الحفظ وseedHistorySnapshot عند
+   * تحميل مشروع (المحمّل نقطة حفظ نظيفة).
+   */
+  lastSavedEntry: HistoryEntry | null;
+  markHistorySaved: () => void;
   pushHistory: () => void;
   undo: () => void;
   redo: () => void;
@@ -33,7 +41,15 @@ export const DEFAULT_HISTORY_STATE = {
     },
   ],
   historyIndex: 0,
+  lastSavedEntry: null,
 };
+
+/**
+ * مرساة اشتقاق isDirty — آخر حفظ إن وُجد وإلا بذرة المستند الجديد
+ * (مساحة عمل لم تُحفظ قط تكون نظيفة عند مطابقة البذرة فقط).
+ */
+const dirtyAnchor = (lastSavedEntry: HistoryEntry | null): HistoryEntry =>
+  lastSavedEntry ?? DEFAULT_HISTORY_STATE.history[0];
 
 // حقول اللقطة (mode..printSettings) مشتقة من سجل history-snapshot — مطلوبة
 // كاملة في نوع الحالة (لا optional) فلا يسقط حقل جديد من اللقطة بصمت.
@@ -44,7 +60,7 @@ export type HistoryCross = HistorySlice &
     selectedId: string | null;
     selectedIds: string[];
     editingTextId: string | null;
-    /** علامة التعديل منذ آخر حفظ — يملكها core-slice ويحدّثها سجل التاريخ */
+    /** علامة التعديل منذ آخر حفظ — تُشتق الآن بمقارنة اللقطة مع lastSavedEntry */
     isDirty: boolean;
   };
 
@@ -71,10 +87,15 @@ const restoreEntry = (entry: HistoryEntry): RestoredSnapshot => {
  * يبذر رأس سجل التراجع من حالة كاملة بعد التسوية (loadProject) — اللقطة الأولى
  * تطابق الحالة الفعلية بالضبط فتبقى قابلة للعكس كاملاً ويمر الـ dedupe أول مرة.
  */
-export const seedHistorySnapshot = (source: SnapshotSource) => ({
-  history: [captureHistoryEntry(source)],
-  historyIndex: 0,
-});
+export const seedHistorySnapshot = (source: SnapshotSource) => {
+  const entry = captureHistoryEntry(source);
+  return {
+    history: [entry],
+    historyIndex: 0,
+    // المشروع المحمّل نقطة حفظ نظيفة — المرساة تصبح لقطة بذرة السجل نفسها
+    lastSavedEntry: entry as HistoryEntry,
+  };
+};
 
 /**
  * 🚀 مقارنة عميقة بلا تسلسل JSON — كانت pushHistory تُسلسل اللقطة كاملة
@@ -225,11 +246,21 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
       const dropped = newHistory.shift();
       if (dropped) totalBytes -= cachedEntryBytes(dropped);
     }
-    set({ history: newHistory, historyIndex: newHistory.length - 1, isDirty: true });
+    // اشتقاق بال مقارنة مع مرساة آخر حفظ — كانت true أعمى فتبقى العلامة
+    // مضاءة حتى بعد التراجع إلى الحالة المحفوظة نفسها
+    set({
+      history: newHistory,
+      historyIndex: newHistory.length - 1,
+      isDirty: !isSameSnapshot(snapshot, dirtyAnchor(state.lastSavedEntry)),
+    });
+  },
+
+  markHistorySaved: () => {
+    set({ lastSavedEntry: captureHistoryEntry(get()) });
   },
 
   undo: () => {
-    const { history, historyIndex } = get();
+    const { history, historyIndex, lastSavedEntry } = get();
     if (historyIndex <= 0) return;
     const prev = history[historyIndex - 1];
     set({
@@ -238,12 +269,13 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
       selectedId: null,
       selectedIds: [],
       editingTextId: null,
-      isDirty: true,
+      // العودة إلى لقطة تطابق آخر حفظ (أو بذرة المستند الجديد) = نظيف
+      isDirty: !isSameSnapshot(prev, dirtyAnchor(lastSavedEntry)),
     } as Partial<HistoryCross>);
   },
 
   redo: () => {
-    const { history, historyIndex } = get();
+    const { history, historyIndex, lastSavedEntry } = get();
     if (historyIndex >= history.length - 1) return;
     const next = history[historyIndex + 1];
     set({
@@ -252,7 +284,7 @@ export const createHistorySlice: StateCreator<HistoryCross, [], [], HistorySlice
       selectedId: null,
       selectedIds: [],
       editingTextId: null,
-      isDirty: true,
+      isDirty: !isSameSnapshot(next, dirtyAnchor(lastSavedEntry)),
     } as Partial<HistoryCross>);
   },
 });

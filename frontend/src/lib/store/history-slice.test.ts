@@ -139,10 +139,35 @@ describe('history-slice', () => {
     store.getState().pushHistory();
     expect(store.getState().isDirty).toBe(true);
 
-    // التراجع والإعادة يبقيان تعديلاً غير محفوظ حتى لو عاد المحتوى لحالته
+    // الاشتقاق بالمقارنة: التراجع يعود لبذرة المستند الجديد (لا حفظ سابق) = نظيف،
+    // والإعادة تبتعد عنها = تعديل غير محفوظ مجدداً
     store.getState().undo();
-    expect(store.getState().isDirty).toBe(true);
+    expect(store.getState().isDirty).toBe(false);
     store.getState().redo();
+    expect(store.getState().isDirty).toBe(true);
+  });
+
+  it('derives isDirty from the last-saved anchor across undo/redo', () => {
+    // حفظ عند الحالة الحالية (لقطة) ثم تعديل جديد — النظافة تتبع المرساة
+    store.getState().markHistorySaved();
+    expect(store.getState().isDirty).toBe(false);
+
+    store.setState({ elements: [{ id: '2', type: 'shape' }] as CanvasElement[] });
+    store.getState().pushHistory();
+    expect(store.getState().isDirty).toBe(true);
+
+    // التراجع إلى لقطة الحفظ نفسها = نظيف (كان true الأعمى يبقيها مضاءة)
+    store.getState().undo();
+    expect(store.getState().isDirty).toBe(false);
+
+    // والإعادة إلى بعد الحفظ = تعديل غير محفوظ
+    store.getState().redo();
+    expect(store.getState().isDirty).toBe(true);
+
+    // حفظ الحالة الجديدة ينقل المرساة — التراجع عندها يصبح تعديلاً (فقد الحفظ القديم؟ لا:
+    // المرساة صارت الحالة الحالية، فالتراجع يبتعد عنها = غير محفوظ)
+    store.getState().markHistorySaved();
+    store.getState().undo();
     expect(store.getState().isDirty).toBe(true);
   });
 

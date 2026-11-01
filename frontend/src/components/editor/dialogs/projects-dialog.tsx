@@ -200,6 +200,9 @@ export function ProjectsDialog({
           projectName: projectName.trim(),
           isDirty: !unchanged,
         });
+        // الحفظ الناجح يثبّت مرساة آخر حفظ — اشتقاق isDirty اللاحق يقارن بها
+        // (فرع «غير متغيّر» فقط: تعديلات أثناء الانتظار تبقى غير محفوظة)
+        if (!unchanged) useEditorStore.getState().markHistorySaved();
       }
       fetchProjects();
       setActiveTab('list'); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ
