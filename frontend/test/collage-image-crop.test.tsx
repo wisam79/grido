@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { Stage, Layer } from 'react-konva';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import golden from '../../test-fixtures/print-crop-golden.json';
 import { KonvaCollageImage } from '../src/components/editor/konva/elements/collage-image';
 import {
   useCanvasInteraction,
@@ -509,5 +510,34 @@ describe('قوانين الخصائص — computeSlotCrop (fast-check)', () => {
       ),
       { numRuns: 300 },
     );
+  });
+});
+
+// ═══ الحاضنة الذهبية المشتركة TS/Go (الدفعة 6.3) — test-fixtures/print-crop-golden.json ═══
+// وُلدت من computeSlotCrop ولا تُعاد توليدها؛ Go يقارنها بـ computeCropFromSlot في
+// print_rotation_test.go — أي تعديل على هذا الملف يتطلب مراجعة المالك.
+
+describe('الحاضنة الذهبية المشتركة TS/Go — نافذة القصّة', () => {
+  it('كل حالة من الحاضنة تطابق computeSlotCrop حرفياً', async () => {
+    const { computeSlotCrop } = await import('../src/lib/export/export-primitives');
+    expect(golden.cases.length).toBeGreaterThanOrEqual(8);
+    for (const tc of golden.cases) {
+      const crop = computeSlotCrop(
+        { width: tc.input.imgW, height: tc.input.imgH },
+        tc.input.wMM,
+        tc.input.hMM,
+        {
+          zoom: tc.input.zoom,
+          dragX: tc.input.dragX,
+          dragY: tc.input.dragY,
+          rotation: tc.input.rotation,
+        },
+      );
+      const tol = golden.tolerance;
+      expect(Math.abs(crop.sx - tc.expected.cropX)).toBeLessThanOrEqual(tol);
+      expect(Math.abs(crop.sy - tc.expected.cropY)).toBeLessThanOrEqual(tol);
+      expect(Math.abs(crop.sw - tc.expected.cropW)).toBeLessThanOrEqual(tol);
+      expect(Math.abs(crop.sh - tc.expected.cropH)).toBeLessThanOrEqual(tol);
+    }
   });
 });

@@ -1,0 +1,158 @@
+{
+  "_comment": "حاضنة ذهبية مشتركة TS/Go لنوافذ قصّ الخانات — وُلدت من computeSlotCrop (المرجع الواجهي) ولا تُعاد توليدها أبداً. يقارنها Go بـ computeCropFromSlot: أي انحراف = انحراف طباعة حقيقي. تحديثها يتطلب مراجعة المالك.",
+  "tolerance": 1e-9,
+  "cases": [
+    {
+      "name": "cover-basic",
+      "input": {
+        "imgW": 800,
+        "imgH": 600,
+        "wMM": 45,
+        "hMM": 48,
+        "zoom": 1,
+        "dragX": 0,
+        "dragY": 0,
+        "rotation": 0
+      },
+      "expected": {
+        "cropX": 118.75,
+        "cropY": 0,
+        "cropW": 562.5,
+        "cropH": 600
+      }
+    },
+    {
+      "name": "aspect-flipped-with-drag",
+      "input": {
+        "imgW": 800,
+        "imgH": 600,
+        "wMM": 48,
+        "hMM": 45,
+        "zoom": 1,
+        "dragX": 0.3,
+        "dragY": -0.2,
+        "rotation": 0
+      },
+      "expected": {
+        "cropX": 80.3,
+        "cropY": 0,
+        "cropW": 640,
+        "cropH": 600
+      }
+    },
+    {
+      "name": "quarter-90-zoom-drag",
+      "input": {
+        "imgW": 800,
+        "imgH": 600,
+        "wMM": 45,
+        "hMM": 48,
+        "zoom": 1.25,
+        "dragX": 0.1,
+        "dragY": 0,
+        "rotation": 90
+      },
+      "expected": {
+        "cropX": 144.1,
+        "cropY": 0,
+        "cropW": 512,
+        "cropH": 480
+      }
+    },
+    {
+      "name": "portrait-slot-270",
+      "input": {
+        "imgW": 1200,
+        "imgH": 800,
+        "wMM": 35,
+        "hMM": 90,
+        "zoom": 1,
+        "dragX": -0.5,
+        "dragY": 0.4,
+        "rotation": 270
+      },
+      "expected": {
+        "cropX": 0,
+        "cropY": 167.0666666666667,
+        "cropW": 1200,
+        "cropH": 466.66666666666663
+      }
+    },
+    {
+      "name": "min-image",
+      "input": {
+        "imgW": 1,
+        "imgH": 1,
+        "wMM": 50,
+        "hMM": 50,
+        "zoom": 1,
+        "dragX": 0,
+        "dragY": 0,
+        "rotation": 0
+      },
+      "expected": {
+        "cropX": 0,
+        "cropY": 0,
+        "cropW": 1,
+        "cropH": 1
+      }
+    },
+    {
+      "name": "tall-image-zoom2-180",
+      "input": {
+        "imgW": 500,
+        "imgH": 5000,
+        "wMM": 80,
+        "hMM": 60,
+        "zoom": 2,
+        "dragX": 0,
+        "dragY": 1.5,
+        "rotation": 180
+      },
+      "expected": {
+        "cropX": 0,
+        "cropY": 2407.75,
+        "cropW": 250,
+        "cropH": 187.5
+      }
+    },
+    {
+      "name": "zoom-below-one",
+      "input": {
+        "imgW": 300,
+        "imgH": 200,
+        "wMM": 200,
+        "hMM": 100,
+        "zoom": 0.5,
+        "dragX": 0,
+        "dragY": 0,
+        "rotation": 0
+      },
+      "expected": {
+        "cropX": 0,
+        "cropY": 0,
+        "cropW": 600,
+        "cropH": 300
+      }
+    },
+    {
+      "name": "square-big-drag-90",
+      "input": {
+        "imgW": 640,
+        "imgH": 640,
+        "wMM": 45,
+        "hMM": 45,
+        "zoom": 3,
+        "dragX": 2,
+        "dragY": -2,
+        "rotation": 90
+      },
+      "expected": {
+        "cropX": 2,
+        "cropY": 211.33333333333331,
+        "cropW": 213.33333333333334,
+        "cropH": 213.33333333333334
+      }
+    }
+  ]
+}

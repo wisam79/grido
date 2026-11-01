@@ -1,8 +1,12 @@
 package service
 
 import (
+	"encoding/json"
 	"image"
 	"image/color"
+	"math"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/disintegration/imaging"
@@ -182,4 +186,68 @@ func sameColor(a, b color.Color) bool {
 	ar, ag, ab, aa := a.RGBA()
 	br, bg, bb, ba := b.RGBA()
 	return ar == br && ag == bg && ab == bb && aa == ba
+}
+
+// 🧮 الحاضنة الذهبية المشتركة TS/Go (الدفعة 6.3): test-fixtures/print-crop-golden.json
+// وُلدت من computeSlotCrop الواجهي ولا تُعاد توليدها — أي انحراف بين هذا
+// الاشتقاق في Go وبين القيم الذهبية = انحراف طباعة حقيقي يوقف الاختبار.
+func TestComputeCropFromSlot_GoldenFixtures(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "test-fixtures", "print-crop-golden.json"))
+	if err != nil {
+		t.Fatalf("قراءة الحاضنة الذهبية فشلت: %v", err)
+	}
+
+	var fixture struct {
+		Tolerance float64 `json:"tolerance"`
+		Cases     []struct {
+			Name  string `json:"name"`
+			Input struct {
+				ImgW     float64 `json:"imgW"`
+				ImgH     float64 `json:"imgH"`
+				WMM      float64 `json:"wMM"`
+				HMM      float64 `json:"hMM"`
+				Zoom     float64 `json:"zoom"`
+				DragX    float64 `json:"dragX"`
+				DragY    float64 `json:"dragY"`
+				Rotation float64 `json:"rotation"`
+			} `json:"input"`
+			Expected struct {
+				CropX float64 `json:"cropX"`
+				CropY float64 `json:"cropY"`
+				CropW float64 `json:"cropW"`
+				CropH float64 `json:"cropH"`
+			} `json:"expected"`
+		} `json:"cases"`
+	}
+	if err := json.Unmarshal(data, &fixture); err != nil {
+		t.Fatalf("تفكيك الحاضنة الذهبية فشل: %v", err)
+	}
+
+	for _, tc := range fixture.Cases {
+		tc := tc
+		t.Run(tc.Name, func(t *testing.T) {
+			img := image.NewRGBA(image.Rect(0, 0, int(tc.Input.ImgW), int(tc.Input.ImgH)))
+			item := domain.PrintItem{
+				// نفس ما ترسله الواجهة: نسبة المستطيل النهائي — Go يبدّلها
+				// داخلياً في فرع ربع الدوران (مطابق لـ getSlotLocalSize)
+				SlotAspect: tc.Input.WMM / tc.Input.HMM,
+				Zoom:       tc.Input.Zoom,
+				DragX:      tc.Input.DragX,
+				DragY:      tc.Input.DragY,
+				Rotation:   tc.Input.Rotation,
+			}
+
+			cx, cy, cw, ch := computeCropFromSlot(item, img)
+			tol := fixture.Tolerance
+			if math.Abs(cx-tc.Expected.CropX) > tol ||
+				math.Abs(cy-tc.Expected.CropY) > tol ||
+				math.Abs(cw-tc.Expected.CropW) > tol ||
+				math.Abs(ch-tc.Expected.CropH) > tol {
+				t.Errorf(
+					"انحراف عن الذهبية [%s]: got (cropX=%v, cropY=%v, cropW=%v, cropH=%v) want (cropX=%v, cropY=%v, cropW=%v, cropH=%v)",
+					tc.Name, cx, cy, cw, ch, tc.Expected.CropX, tc.Expected.CropY, tc.Expected.CropW, tc.Expected.CropH,
+				)
+			}
+		})
+	}
 }
