@@ -176,6 +176,18 @@ export async function renderFittedBranch(
             drawImageCover(octx, img, 0, 0, off.width, off.height);
             octx.filter = 'none';
             ctx.drawImage(off, 0, 0, w, h);
+          } else {
+            // 🛡️ تعذر توفير كانفس وسيط (ندرة 2D context): قص مباشر على السياق
+            // المشترك كمسار احتياطي يرسم الحواف المستديرة — بدل إسقاط الصورة صامتاً
+            // بلا سجل (تدقيق 2026-11-01).
+            logger.warn('export-canvas-fitted: rounded pool unavailable; direct clip fallback');
+            ctx.save();
+            drawRoundRect(ctx, 0, 0, w, h, radius);
+            ctx.clip();
+            if (filterStr && filterStr !== 'none') ctx.filter = filterStr;
+            drawImageCover(ctx, img, 0, 0, w, h);
+            ctx.filter = 'none';
+            ctx.restore();
           }
         } else {
           ctx.filter = filterStr;
@@ -197,10 +209,12 @@ export async function renderFittedBranch(
       if (!isCurved) {
         ctx.font = `${fontStyle}${el.fontWeight || 400} ${fontSize}px ${fontFamily}`;
         ctx.direction = direction;
-        // letterSpacing: متاح في Chromium/Electron (بيئة Wails)
-        if (letterSpacing) {
-          (ctx as unknown as Record<string, unknown>).letterSpacing = `${letterSpacing}px`;
-        }
+        // letterSpacing: متاح في Chromium/Electron (بيئة Wails) — يُضبط صراحةً لكل
+        // عنصر نص (0px عند غيابه) فلا يتسرب تباعد العنصر السابق إلى التالي على
+        // السياق المشترك (تسريب صامت في مسار التصدير اليدوي، تدقيق 2026-11-01).
+        (ctx as unknown as Record<string, unknown>).letterSpacing = letterSpacing
+          ? `${letterSpacing}px`
+          : '0px';
         // التقسيم يطابق خوارزمية Konva بما فيها قطع الكلمة الأعرض من السطر
         wrappedLines = wrapTextLines(ctx, rawText, w, el.wrap || 'word');
         contentHeight = wrappedLines.length * lineHeight;

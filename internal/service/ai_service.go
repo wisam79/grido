@@ -234,6 +234,10 @@ func resolveUserInfoForToken(ctx context.Context, tokenHash string, token string
 	userID := ""
 	plan := "free"
 	limit := planLimitFree
+	// 🛡️ فشل عابر غير مهلة في جلب الخطة: نخدم الطلب بحد free (فشل مغلق) لكن
+	//    بلا تخزين — تخزين الانخفاض كان يثبّت خطة free خمس دقائق كاملة على
+	//    المشتركين خلال أي عطل Supabase مؤقت (بلاغ تدقيق 2026-11-01).
+	cacheable := true
 	if SupabaseURL != "" && SupabaseAnonKey != "" && token != "" {
 		if fetchedID, fetchedPlan, err := fetchSupabaseUserInfo(ctx, token); err == nil {
 			userID = fetchedID
@@ -241,20 +245,24 @@ func resolveUserInfoForToken(ctx context.Context, tokenHash string, token string
 			limit = planDailyLimit(plan)
 		} else if ctx.Err() != nil || os.IsTimeout(err) {
 			return "", 0, err
+		} else {
+			cacheable = false
 		}
 	}
 	if err := ctx.Err(); err != nil {
 		return "", 0, err
 	}
 
-	userPlanCacheMu.Lock()
-	userPlanCache[tokenHash] = userPlanCacheEntry{
-		userID:  userID,
-		plan:    plan,
-		limit:   limit,
-		expires: time.Now().Add(userPlanCacheTTL),
+	if cacheable {
+		userPlanCacheMu.Lock()
+		userPlanCache[tokenHash] = userPlanCacheEntry{
+			userID:  userID,
+			plan:    plan,
+			limit:   limit,
+			expires: time.Now().Add(userPlanCacheTTL),
+		}
+		userPlanCacheMu.Unlock()
 	}
-	userPlanCacheMu.Unlock()
 	return userID, limit, nil
 }
 
@@ -496,15 +504,18 @@ func validateAIImage(ctx context.Context, data []byte, maxSide int) error {
 }
 
 // generateUUID generates a standard version 4 UUID using crypto/rand for client idempotency.
-func generateUUID() string {
+// فشل العشوائية يعيد خطأً بدل معرّف زمني مزيّف — Idempotency الضعيف عند تعثر
+// crypto/rand كان يهدد حصص المستخدمين (بلاغ تدقيق 2026-11-01)؛ المستدعي يفشل
+// الطلب صريحاً بـ 503 بدل إضعاف الحماية من التكرار.
+func generateUUID() (string, error) {
 	var b [16]byte
 	if _, err := io.ReadFull(rand.Reader, b[:]); err != nil {
-		return fmt.Sprintf("%08x-%04x-4000-8000-%012x", time.Now().Unix(), time.Now().Nanosecond()&0xffff, time.Now().UnixNano())
+		return "", fmt.Errorf("crypto/rand unavailable for request idempotency: %w", err)
 	}
 	b[6] = (b[6] & 0x0f) | 0x40 // Version 4
 	b[8] = (b[8] & 0x3f) | 0x80 // Variant 10
 	return fmt.Sprintf("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-		b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15])
+		b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15]), nil
 }
 
 func marshalAIRequest(imagePayload string, serverLimit int, requestID ...string) ([]byte, error) {
@@ -703,7 +714,11 @@ func (s *AIService) enhanceImageWithAI(ctx context.Context, base64Image string, 
 		modalURL = defaultModalAIURL
 	}
 
-	clientRequestID := generateUUID()
+	clientRequestID, err := generateUUID()
+	if err != nil {
+		// 🔒 بلا عشوائية آمنة لا Idempotency صحيحة — رفض صريح بدل معرّف قابل للتصادم
+		return "", fmt.Errorf("AI request rejected: %w", err)
+	}
 	payload, err := marshalAIRequest(modalImagePayload, serverLimit, clientRequestID)
 	if err != nil {
 		return "", err

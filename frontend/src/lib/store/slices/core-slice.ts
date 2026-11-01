@@ -426,6 +426,9 @@ export const createCoreSlice: StateCreator<CoreSliceCross, [], [], CoreSlice> = 
       mode: 'collage' as EditorMode,
       canvasWidth: 2480,
       canvasHeight: 3508,
+      // مستند جديد يبدأ من ملاءمة افتراضية — إرث تكبير المشروع السابق كان يبقى
+      // معلقاً لأن reset لم يدرج canvasZoom في قائمة التصفير (تدقيق 2026-11-01).
+      canvasZoom: 1,
       backgroundColor: '#FFFFFF',
       backgroundGradientColor2: null,
       backgroundGradientAngle: 135,

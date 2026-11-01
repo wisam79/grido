@@ -435,7 +435,7 @@ jobs:
 
   # ───────────────────────────────────────────────
   # Job 4: Playwright E2E Tests (Linux - 4 Shards Parallel Matrix)
-  #   → 4 parallel shards executing 41 tests simultaneously
+  #   → 4 parallel shards executing 75 tests simultaneously
   # ───────────────────────────────────────────────
   e2e-tests:
     name: Playwright E2E (Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})

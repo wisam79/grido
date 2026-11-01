@@ -613,8 +613,30 @@ class ImageEnhancer(StudioPipeline):
                     _post_usage()
                     usage_recorded = True
             except Exception as e:
-                logging.warning(f"Failed to record usage in Supabase DB: {e}; returning enhanced image.")
+                logging.warning(f"Failed to record usage in Supabase DB: {e}; attempting reservation release.")
                 usage_recorded = False
+                # 🔓 فشل التسجيل النهائي يترك حجز الحصة pending حتى مهلة الساعة —
+                #    نحرره فوراً بعقد cancel_ai_quota_reservation (p_user_id + p_request_id)
+                #    كي لا يتضاعف احتجاز المقاعد عند إعادة محاولة المستخدم بمعرّف جديد.
+                try:
+                    cancel_req = urllib.request.Request(
+                        f"{SUPABASE_URL}/rest/v1/rpc/cancel_ai_quota_reservation",
+                        data=json.dumps({"p_user_id": user_id, "p_request_id": request_id}).encode("utf-8"),
+                        headers={
+                            "Authorization": f"Bearer {jwt_token}",
+                            "apikey": SUPABASE_ANON_KEY,
+                            "Content-Type": "application/json",
+                            "Prefer": "return=minimal"
+                        },
+                        method="POST",
+                    )
+                    with urllib.request.urlopen(cancel_req, timeout=15):
+                        logging.info("Pending quota reservation released after failed finalization.")
+                except Exception as cancel_err:
+                    logging.error(
+                        f"Failed to release pending reservation: {cancel_err}; "
+                        "slot remains held until the stale-reclaim window."
+                    )
 
             payload = {
                 "success": True,

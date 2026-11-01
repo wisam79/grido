@@ -99,7 +99,12 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
       bumpFontEpoch();
       const node = textRef.current;
       if (node) {
-        (node as Konva.Text & { _setTextData?: () => void })._setTextData?.();
+        // 📐 إعادة القياس عبر الواجهة العامة فقط: تمرير فارغ ثم القيمة الحقيقية
+        // (الثابت المختصر لنفس القيمة كان يُبطل التمرير المتماثل) — poking
+        // `_setTextData` الخاص يتحول no-op صامتاً عند أي ترقية Konva.
+        const current = node.text();
+        node.text('');
+        node.text(current);
         node.getLayer()?.batchDraw();
       }
     };
