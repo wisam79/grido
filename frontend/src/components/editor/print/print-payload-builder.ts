@@ -12,8 +12,10 @@ import { previewWhite } from '@/lib/canvas/canvas-colors';
 import { isBakedCollageLayout } from '@/lib/canvas/collage-geometry';
 import { hasCollageSlotContent } from '@/lib/canvas/collage-slot-content';
 import { paperCaptureRect } from '@/lib/canvas/fit';
+import { resolveImageDimensions } from '@/lib/canvas/image-dimensions';
 import { captureStageBlob, swapNodeImagesForCapture } from '@/lib/canvas/konva-export-utils';
 import { assertExportablePixels } from '@/lib/export/export-limits';
+import { computeSlotCrop } from '@/lib/export/export-primitives';
 import { calculatePrintCutLines } from '@/lib/print/cut-lines-utils';
 import { computeBlockPosition, computeCollageSlotRectMM } from '@/lib/print/print-layout-math';
 import { buildSingleComposition } from '@/lib/print/single-print-composition';
@@ -29,6 +31,9 @@ import type {
   PrintSettings,
 } from '@/lib/store/types';
 import type Konva from 'konva';
+
+/** مهلة قراءة أبعاد صورة الخانة لأجل نافذة القصّة — بعدها يُسقط إلى اشتقاق Go */
+const CROP_DIMS_TIMEOUT_MS = 2_000;
 
 export interface BuiltItems {
   items: domain.PrintItem[];
@@ -52,7 +57,7 @@ export interface CollagePayloadContext {
   cutLineStyle?: PrintSettings['cutLineStyle'];
 }
 
-export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
+export async function buildCollagePayload(ctx: CollagePayloadContext): Promise<BuiltItems> {
   const {
     layout,
     slots,
@@ -129,6 +134,33 @@ export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
     // (مثال: خانة 400×900 بكسل داخل ورقة بهامش تُطبع بنسبة 4:9 لا 0.44).
     const slotAspect = rect.hMM > 0 ? rect.wMM / rect.hMM : 0;
 
+    // 🧮 «احسب مرة واحدة، مرّر البيانات»: نافذة القصّة النهائية تُحسب هنا
+    // (بنفس مسار preflight والتصدير اليدوي) وتُمرَّر لـGo جاهزة — Go يفضّل
+    // الحقول المرسلة حين cropW/cropH > 0 ويُلغي فئة إعادة الاشتقاق المزدوجة
+    // بين TS وGo. عند تعذر قراءة الأبعاد تبقى الأصفار = فرع الاشتقاق القديم
+    // (تدهور آمن مطابق للسلوك السابق).
+    let cropWindow: { cropX: number; cropY: number; cropW: number; cropH: number } | null = null;
+    if (slot.imageSrc) {
+      // 🛡️ مهلة قصيرة: مصدر صامت (يتلف ولا يطلق onload/onerror) لا يجوز أن
+      // يعلّق مسار الطباعة كلها — انتهاء المهلة يعيد null فيسقط الاشتقاق
+      // إلى فرع Go القديم (تدهور آمن مطابق للسلوك السابق)
+      const dims = await Promise.race([
+        resolveImageDimensions(slot.imageSrc),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), CROP_DIMS_TIMEOUT_MS)),
+      ]);
+      if (dims && dims.width > 0 && dims.height > 0) {
+        const crop = computeSlotCrop(dims, rect.wMM, rect.hMM, {
+          zoom: slot.zoom,
+          dragX: slot.dragX,
+          dragY: slot.dragY,
+          flipX: slot.flipX,
+          flipY: slot.flipY,
+          rotation: slot.rotation,
+        });
+        cropWindow = { cropX: crop.sx, cropY: crop.sy, cropW: crop.sw, cropH: crop.sh };
+      }
+    }
+
     items.push(
       domain.PrintItem.createFrom({
         imageSrc: slot.imageSrc || '',
@@ -141,6 +173,7 @@ export function buildCollagePayload(ctx: CollagePayloadContext): BuiltItems {
         contrast: slot.contrast ?? 100,
         saturation: slot.saturation ?? 100,
         slotAspect,
+        ...(cropWindow ?? {}),
         zoom: slot.zoom || 1,
         dragX: slot.dragX || 0,
         dragY: slot.dragY || 0,

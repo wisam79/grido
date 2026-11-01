@@ -31,6 +31,11 @@ vi.mock('../src/lib/canvas/konva-export-utils', () => ({
   swapNodeImagesForCapture: vi.fn(async () => () => {}),
 }));
 
+vi.mock('../src/lib/canvas/image-dimensions', () => ({
+  // أبعاد ثابتة لكل مصدر صورة — تثبت أرقام نافذة القصّة الذهبية في العقد أدناه
+  resolveImageDimensions: vi.fn(async (src: string) => (src ? { width: 800, height: 600 } : null)),
+}));
+
 const makeLayout = (overrides: Partial<Record<string, unknown>> = {}) =>
   ({
     imageWidthMM: 90,
@@ -81,8 +86,8 @@ const makeCollageContext = (
 });
 
 describe('Decorative collage print payload', () => {
-  it('keeps an imageless fill with its geometry, radius and copy template', () => {
-    const built = buildCollagePayload(
+  it('keeps an imageless fill with its geometry, radius and copy template', async () => {
+    const built = await buildCollagePayload(
       makeCollageContext({
         layout: makeLayout({ actualCopies: 4 }),
         slots: [makeSlot({ bgColor: '#224466', rotation: 270, flipX: true })],
@@ -111,8 +116,28 @@ describe('Decorative collage print payload', () => {
     expect(built.composition).toBeUndefined();
   });
 
-  it('keeps border-only slots without inserting a fake source or fill', () => {
-    const built = buildCollagePayload(
+  it('6.2: نافذة القصّة النهائية تُرسل محسوبة مرة واحدة (عقد احسب-مرة-واحدة)', async () => {
+    // اشتقاق ذهبي يدوي: أبعاد الصورة الموكلة 800×600، الخانة 45×48مم بروت 90
+    // (المحلي 48×45) → نافذة cover 640×600 → زوم 1.25 → 512×480 →
+    // sx = (800−512)/2 + 0.1 = 144.1، sy = 0
+    const built = await buildCollagePayload(
+      makeCollageContext({
+        slots: [
+          makeSlot({ imageSrc: '/local-image/photo.png', zoom: 1.25, dragX: 0.1, rotation: 90 }),
+        ],
+      }),
+    );
+    expect(built.items[0]).toMatchObject({
+      imageSrc: '/local-image/photo.png',
+      cropX: 144.1,
+      cropY: 0,
+      cropW: 512,
+      cropH: 480,
+    });
+  });
+
+  it('keeps border-only slots without inserting a fake source or fill', async () => {
+    const built = await buildCollagePayload(
       makeCollageContext({
         slots: [makeSlot({ bgColor: 'transparent' })],
         collageStrokeWidth: 5,
@@ -135,8 +160,8 @@ describe('Decorative collage print payload', () => {
     });
   });
 
-  it('preserves mixed image and decoration order without expanding repeated copies over IPC', () => {
-    const built = buildCollagePayload(
+  it('preserves mixed image and decoration order without expanding repeated copies over IPC', async () => {
+    const built = await buildCollagePayload(
       makeCollageContext({
         layout: makeLayout({ actualCopies: 4 }),
         slots: [
@@ -166,8 +191,8 @@ describe('Decorative collage print payload', () => {
     { bgColor: '', borderWidth: 2, borderColor: '' },
     { bgColor: 'transparent', borderWidth: 2, borderColor: ' TRANSPARENT ' },
     { bgColor: '  ', borderWidth: 0, borderColor: '#112233' },
-  ])('skips unstyled empty slots ($bgColor, $borderWidth, $borderColor)', (style) => {
-    const built = buildCollagePayload(
+  ])('skips unstyled empty slots ($bgColor, $borderWidth, $borderColor)', async (style) => {
+    const built = await buildCollagePayload(
       makeCollageContext({
         slots: [makeSlot({ bgColor: style.bgColor })],
         collageStrokeWidth: style.borderWidth,

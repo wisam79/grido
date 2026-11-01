@@ -269,7 +269,7 @@ describe('R-04: collage preflight uses final physical local draw rectangles', ()
 
   it.each([false, true])(
     'print payload and export share spacing (physical template: %s)',
-    (physical) => {
+    async (physical) => {
       const collageTemplate = physical ? COLLAGE_TEMPLATES.find((t) => t.physicalLayout)! : null;
       const slots = [{ ...slot, x: 0.1, y: 0.1, w: 0.4, h: 0.8, zoom: 2 }];
       const opts = {
@@ -293,7 +293,7 @@ describe('R-04: collage preflight uses final physical local draw rectangles', ()
           }),
         }),
       );
-      const payload = buildCollagePayload({
+      const payload = await buildCollagePayload({
         ...opts,
         layout: result.current,
         collageRadius: 0,
