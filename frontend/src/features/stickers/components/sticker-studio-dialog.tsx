@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, useDeferredValue } from 'react';
-import { toast } from 'sonner';
+import React, { useState, useCallback, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -34,38 +33,17 @@ import {
   GridFour as TableIcon,
 } from '@/components/ui/icons';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
-import { resolveImageAspectRatio } from '@/lib/canvas/image-dimensions';
-import { useEditorStore } from '@/lib/editor-store';
-import { uploadMediaBlob } from '@/lib/io/media-upload';
-import { createLogger } from '@/lib/logger';
-import { sanitizeSvgMarkup } from '@/lib/utils';
-import { wailsIsDesktop } from '@/lib/wails-env';
-import { toErrorMessage } from '@/lib/wails-error';
 
 import { StickerCatalog } from './sticker-catalog';
 import { StickerPreview } from './sticker-preview';
 import { StickerProperties } from './sticker-properties';
 import { VdpImportDialog } from './vdp-import-dialog';
-import { copyPngDataUrlToClipboard, copySvgCodeToClipboard } from '../lib/clipboard-utils';
-import { generateDieCutContour, DEFAULT_BLEED_PERCENT } from '../lib/die-cut-offset';
-import { useStickerParamsHistory } from '../lib/params-history';
-import { generateStickerSheetBlob } from '../lib/sheet-generator';
-import { buildDefaultStickerParams, buildStickerSvg } from '../lib/sticker-design/build-svg';
-import { migrateStickerParams } from '../lib/sticker-design/schema';
-import { embedStickerFonts } from '../lib/sticker-font-embed';
-import { stickerRasterSize } from '../lib/sticker-text';
-import { renderSvgToPngBlob, renderSvgToPngDataUrl, downloadBlob } from '../lib/svg-rasterizer';
+import { useStickerCustomization } from '../lib/use-sticker-customization';
+import { useStickerExportActions } from '../lib/use-sticker-export-actions';
+import { resolveStickerSheetMm, useStickerInsertActions } from '../lib/use-sticker-insert-actions';
 import { ALL_STICKER_TEMPLATES } from '../templates';
-import { findHiddenFieldIds } from '../templates/svg-elements';
-import type {
-  StickerCategory,
-  StickerCategoryGroupId,
-  StickerShape,
-  StickerTemplate,
-  SheetGridConfig,
-} from '../types';
-import type { StickerElementSource, CanvasElement } from '@/lib/store/types';
+import type { StickerCategory, StickerCategoryGroupId, StickerShape } from '../types';
+import type { StickerElementSource } from '@/lib/store/types';
 
 export interface StickerStudioDialogProps {
   open: boolean;
@@ -78,146 +56,79 @@ export interface StickerStudioDialogProps {
   editingElement?: { id: string; source: StickerElementSource } | null;
 }
 
-/** ورق الشيت = أبعاد الطباعة الفعالة (A4 الافتراضي) مع احترام الاتجاه — لا مربع ثابت */
-function resolveStickerSheetMm(): { width: number; height: number } {
-  const s = useEditorStore.getState().printSettings;
-  let w = s.paperWidthMM > 0 ? s.paperWidthMM : 210;
-  let h = s.paperHeightMM > 0 ? s.paperHeightMM : 297;
-  if (s.orientation === 'landscape' && h > w) [w, h] = [h, w];
-  else if (s.orientation === 'portrait' && w > h) [w, h] = [h, w];
-  return { width: w, height: h };
-}
-
-const logger = createLogger('StickerStudioDialog');
-
 export const StickerStudioDialog = React.memo(function StickerStudioDialog({
   open,
   onOpenChange,
   initialCategory = 'all',
   editingElement = null,
 }: StickerStudioDialogProps) {
-  // Stage state: "gallery" for picking templates, "customize" for fine-tuning & inserting
-  const [view, setView] = useState<'gallery' | 'customize'>('gallery');
-
   const [selectedCategory, setSelectedCategory] = useState<
     StickerCategoryGroupId | StickerCategory | 'all'
   >(initialCategory);
   const [selectedShape, setSelectedShape] = useState<StickerShape | 'all'>('all');
-  const [selectedTemplate, setSelectedTemplate] = useState<StickerTemplate>(() => {
-    if (editingElement) {
-      const match = ALL_STICKER_TEMPLATES.find((t) => t.id === editingElement.source.templateId);
-      if (match) return match;
-    }
-    if (initialCategory !== 'all') {
-      const match = ALL_STICKER_TEMPLATES.find((t) => t.category === initialCategory);
-      if (match) return match;
-    }
-    return ALL_STICKER_TEMPLATES[0];
-  });
   const [searchQuery, setSearchQuery] = useState('');
   const [isVdpOpen, setIsVdpOpen] = useState(false);
-  const [isInserting, setIsInserting] = useState(false);
-  const [isGeneratingSheet, setIsGeneratingSheet] = useState(false);
-  const [busyExport, setBusyExport] = useState(false);
-
-  const [gridConfig, setGridConfig] = useState<SheetGridConfig>({
-    rows: 3,
-    cols: 3,
-    spacingMm: 4,
-  });
 
   // حارس الإلغاء: أي دالة غير متزامنة (إدراج/شيت/تصدير) لا تُنتج عنصراً ولا
   // تُظهر رسالة نجاح إذا أُغلقت النافذة أثناء انتظارها
   const cancelledRef = useRef(false);
 
-  // سجل التراجع/الإعادة — كل تعديل يلتزم كسجل قابل للرجوع مثل أدوات التصميم الاحترافية
-  const { params, canUndo, canRedo, setParams, commitParams, resetParams, undo, redo } =
-    useStickerParamsHistory(() => {
-      // وضع إعادة التحرير: نبدأ بتخصيصات العنصر المحفوظة لا بافتراضيات القالب
-      if (editingElement) {
-        const template = ALL_STICKER_TEMPLATES.find(
-          (t) => t.id === editingElement.source.templateId,
-        );
-        if (template) {
-          setSelectedTemplate(template);
-          return migrateStickerParams(editingElement.source.params, template);
-        }
-      }
-      return buildDefaultStickerParams(ALL_STICKER_TEMPLATES[0]);
-    });
+  const {
+    view,
+    setView,
+    selectedTemplate,
+    params,
+    canUndo,
+    canRedo,
+    setParams,
+    commitParams,
+    undo,
+    redo,
+    handleSelectTemplate,
+    handleBackToGallery,
+    handleResetDefaults,
+    handleChangeField,
+    handleChangeColor,
+    handleResetField,
+    svgString,
+    exportableSvg,
+    hiddenFieldIds,
+  } = useStickerCustomization({ open, initialCategory, editingElement, cancelledRef });
 
-  // وضع إعادة التحرير: نبدأ مباشرة في وضع التخصيص (لا معنى للمعرض)
-  useEffect(() => {
-    if (open && editingElement) setView('customize');
-  }, [open, editingElement]);
+  const {
+    isInserting,
+    isGeneratingSheet,
+    gridConfig,
+    setGridConfig,
+    handleInsertSingle,
+    handleInsertSheet,
+  } = useStickerInsertActions({
+    open,
+    editingElement,
+    selectedTemplate,
+    params,
+    svgString,
+    exportableSvg,
+    cancelledRef,
+    onOpenChange,
+  });
 
-  // Reset loading state and restore gallery on dialog close (rule: Modal loading state cleanup)
-  useEffect(() => {
-    if (!open) {
-      cancelledRef.current = true;
-      setIsInserting(false);
-      setIsGeneratingSheet(false);
-      setBusyExport(false);
-      setView('gallery');
-    } else {
-      cancelledRef.current = false;
-    }
-  }, [open]);
-
-  // اختيار قالب: يحدّث الحقول من افتراضيات القالب الجديد وينتقل مباشرة لوضع التخصيص
-  const handleSelectTemplate = useCallback(
-    (template: StickerTemplate) => {
-      setSelectedTemplate(template);
-      resetParams(buildDefaultStickerParams(template));
-      setView('customize');
-    },
-    [resetParams],
-  );
-
-  // اختصار لوحة المفاتيح: Ctrl+Z تراجع / Ctrl+Y أو Ctrl+Shift+Z إعادة (وضع التخصيص فقط)
-  useEffect(() => {
-    if (!open || view !== 'customize') return;
-    const handleUndoKeys = (e: KeyboardEvent) => {
-      if (!((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z')) return;
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
-      ) {
-        // داخل حقل نص: التراجع الأصلي للحقل له الأولوية
-        return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.shiftKey) redo();
-      else undo();
-    };
-    const handleRedoKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
-        // 🛡️ نفس حارس التراجع أعلاه: داخل حقل نص الإعادة الأصلية للحقل أولاً
-        const target = e.target as HTMLElement | null;
-        if (
-          target &&
-          (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
-        ) {
-          return;
-        }
-        e.preventDefault();
-        e.stopPropagation();
-        redo();
-      }
-    };
-    window.addEventListener('keydown', handleUndoKeys);
-    window.addEventListener('keydown', handleRedoKey);
-    return () => {
-      window.removeEventListener('keydown', handleUndoKeys);
-      window.removeEventListener('keydown', handleRedoKey);
-    };
-  }, [open, view, undo, redo]);
-
-  const handleBackToGallery = useCallback(() => {
-    setView('gallery');
-  }, []);
+  const {
+    busyExport,
+    handleDownloadSvg,
+    handleDownloadCutContour,
+    handleDownloadPureCutContour,
+    handleDownloadPng,
+    handleCopyImage,
+    handleCopySvgCode,
+  } = useStickerExportActions({
+    open,
+    selectedTemplate,
+    params,
+    svgString,
+    exportableSvg,
+    cancelledRef,
+  });
 
   const handleChangeCategory = useCallback(
     (cat: StickerCategoryGroupId | StickerCategory | 'all') => {
@@ -226,395 +137,9 @@ export const StickerStudioDialog = React.memo(function StickerStudioDialog({
     [],
   );
 
-  // إعادة الضبط تلتزم كخطوة في السجل — تُتراجع بـ Ctrl+Z بدل أن تمحو العمل نهائياً
-  const handleResetDefaults = useCallback(() => {
-    commitParams(buildDefaultStickerParams(selectedTemplate));
-  }, [selectedTemplate, commitParams]);
-
-  // الكتابة الحية تُؤجَّل عن الرسم: الحقول تستجيب فوراً بينما يُعاد توليد
-  // الـ SVG الثقيل (80+ قالباً بفلاتر) بقيمة مؤجلة فلا يتقطّع الإدخال
-  const deferredParams = useDeferredValue(params);
-
-  const svgString = useMemo(() => {
-    if (view === 'gallery') return '';
-    try {
-      // نقطة التوليد الوحيدة: تعقيم + RTL/ملاءمة + فضّ معرّفات
-      return buildStickerSvg(selectedTemplate, deferredParams, {
-        namespace: `live-${selectedTemplate.id}`,
-      });
-    } catch (err) {
-      logger.error('Failed to generate SVG:', err);
-      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><text x="200" y="200" text-anchor="middle">Error</text></svg>`;
-    }
-  }, [view, selectedTemplate, deferredParams]);
-
-  /** نسخة مُطهَّرة للتصدير/النسخ — تُكتب على القرص أو الحافظة فتُفتح خارج التطبيق */
-  const exportableSvg = useMemo(
-    () => (view === 'customize' ? sanitizeSvgMarkup(svgString) : ''),
-    [view, svgString],
-  );
-
-  const hiddenFieldIds = useMemo(
-    () =>
-      view === 'customize'
-        ? findHiddenFieldIds(
-            svgString,
-            selectedTemplate.fields.map((f) => f.id),
-          )
-        : [],
-    [view, svgString, selectedTemplate.fields],
-  );
-
-  const handleInsertToCanvas = useCallback(
-    async (png: Blob, vectorSvg?: string) => {
-      // مسار ثنائي أولاً: على سطح المكتب نرفع Blob مباشرة إلى خادم الوسائط
-      // (صفر Base64 في V8). على الويب نعود إلى Data URL للتوافق مع الستور.
-      let finalSrc: string;
-      if (wailsIsDesktop()) {
-        try {
-          const uploaded = await uploadMediaBlob(png, `${selectedTemplate.id}.png`);
-          if (cancelledRef.current) return;
-          finalSrc = uploaded.imageSrc;
-        } catch (e) {
-          // فشل خادم الوسائط والاحتياطي معاً لا يضيع عمل المستخدم — نرتد
-          // إلى Data URL كما يفعل مسار VDP، والإدراج يكمل.
-          logger.error('Failed to save sticker locally on desktop:', e);
-          finalSrc = await blobToDataUrl(png);
-        }
-      } else {
-        finalSrc = await blobToDataUrl(png);
-      }
-      if (cancelledRef.current) return;
-
-      const aspect = await resolveImageAspectRatio(finalSrc);
-      if (cancelledRef.current) return;
-      const store = useEditorStore.getState();
-
-      // وضع إعادة التحرير: نُحدّث صورة العنصر نفسه مع تحديث مصدر الملصق المُعاد ربطه
-      if (editingElement) {
-        const el = store.elements.find((e) => e.id === editingElement.id);
-        if (el && el.type === 'image') {
-          // العنصر القيد إعادة تحريره قد يكون اختفى عن العرض لأن المستخدم دخل وضع
-          // الكولاج بعد إدراجه (طبقة العناصر الحرة ترسم في single فقط). نعيده
-          // للوضع الحر ليرا نتيجة تعديله فوراً بدل تحديث صامت غير مرئي.
-          if (store.mode !== 'single') store.setMode('single');
-          store.updateElement(el.id, {
-            imageSrc: finalSrc,
-            stickerSource: {
-              templateId: selectedTemplate.id,
-              params: { ...params },
-              ...(vectorSvg ? { svg: vectorSvg } : {}),
-            },
-          } as Partial<CanvasElement>);
-          store.pushHistory();
-          return;
-        }
-        // العنصر حُذف أثناء التعديل: نسقط إلى الإدراج كعنصر جديد
-      }
-
-      // الإدراج في وضع الكولاج كان يضيف عنصراً غير مرئي (طبقة العناصر ترسم في
-      // single فقط) ثم يُمسح صامتاً عند أي تبديل وضع (مسح عناصر الحر P1-19).
-      // نفس علاج addImageFromSrc: ننتقل للوضع الحر قبل الإدراج ليبقى عمل المستخدم.
-      if (store.mode !== 'single') {
-        store.setMode('single');
-        toast.info('انتقلت إلى وضع التعديل الحر لإدراج الملصق');
-      }
-      store.addImageElement(finalSrc, aspect, {
-        templateId: selectedTemplate.id,
-        params: { ...params },
-        ...(vectorSvg ? { svg: vectorSvg } : {}),
-      });
-    },
-    [editingElement, selectedTemplate.id, params],
-  );
-
-  const handleInsertSingle = useCallback(async () => {
-    try {
-      setIsInserting(true);
-      const { width, height } = stickerRasterSize(
-        selectedTemplate.aspectRatio,
-        selectedTemplate.defaultMm,
-      );
-      const pngBlob = await renderSvgToPngBlob(
-        svgString,
-        width,
-        height,
-        [params.fontFamily || 'Cairo'],
-        { dpi: 300 },
-      );
-      const safeSvg = exportableSvg || sanitizeSvgMarkup(svgString);
-      await handleInsertToCanvas(pngBlob, safeSvg);
-      if (cancelledRef.current) return;
-      toast.success('أُدرج الملصق');
-      onOpenChange(false);
-    } catch (err) {
-      logger.error('Sticker insert failed:', err);
-      toast.error(toErrorMessage(err, 'فشل الإدراج'));
-    } finally {
-      setIsInserting(false);
-    }
-  }, [
-    svgString,
-    exportableSvg,
-    selectedTemplate.aspectRatio,
-    selectedTemplate.defaultMm,
-    params.fontFamily,
-    handleInsertToCanvas,
-    onOpenChange,
-  ]);
-
-  const handleInsertSheet = useCallback(async () => {
-    try {
-      setIsGeneratingSheet(true);
-      const { width, height } = stickerRasterSize(
-        selectedTemplate.aspectRatio,
-        selectedTemplate.defaultMm,
-      );
-      const singlePng = await renderSvgToPngBlob(
-        svgString,
-        width,
-        height,
-        [params.fontFamily || 'Cairo'],
-        { dpi: 300 },
-      );
-      // شيت يطابق نسبة ورق الطباعة الحالية (A4 الافتراضي 210×297) بدل مربع ثابت —
-      // يُدرج على الكانفس بلا هوامش فارغة، وعلامات القص بالمليمتر النظامي
-      const sheetMm = resolveStickerSheetMm();
-      const sheetPng = await generateStickerSheetBlob(singlePng, {
-        rows: gridConfig.rows,
-        cols: gridConfig.cols,
-        spacingMm: gridConfig.spacingMm,
-        sheetWidthMm: sheetMm.width,
-        sheetHeightMm: sheetMm.height,
-        dpi: 300,
-        // ✂️ السقف الفيزيائي: الملصق يُطبع بمقاسه المعلن لا بمقاس الخلية —
-        // التمدد كان يكبّره فوق راستر 300DPI فيلين الحواف
-        stickerWidthMm: selectedTemplate.defaultMm?.width,
-        stickerHeightMm: selectedTemplate.defaultMm?.height,
-      });
-      const safeSvg = exportableSvg || sanitizeSvgMarkup(svgString);
-      await handleInsertToCanvas(sheetPng, safeSvg);
-      if (cancelledRef.current) return;
-      toast.success(`أُدرج شيت (${gridConfig.rows * gridConfig.cols} ملصقات)`);
-      onOpenChange(false);
-    } catch (err) {
-      logger.error('Sticker sheet generation failed:', err);
-      toast.error(toErrorMessage(err, 'فشل توليد الشيت'));
-    } finally {
-      setIsGeneratingSheet(false);
-    }
-  }, [
-    svgString,
-    exportableSvg,
-    selectedTemplate.aspectRatio,
-    selectedTemplate.defaultMm,
-    params.fontFamily,
-    gridConfig,
-    handleInsertToCanvas,
-    onOpenChange,
-  ]);
-
-  const handleChangeField = useCallback(
-    (fieldId: string, value: string) => {
-      setParams((prev) => ({
-        ...prev,
-        fields: {
-          ...prev.fields,
-          [fieldId]: value,
-        },
-      }));
-    },
-    [setParams],
-  );
-
-  const handleChangeColor = useCallback(
-    (role: 'primary' | 'secondary' | 'background', color: string) => {
-      setParams((prev) => {
-        switch (role) {
-          case 'primary':
-            return { ...prev, primaryColor: color };
-          case 'secondary':
-            return { ...prev, secondaryColor: color };
-          case 'background':
-            return { ...prev, backgroundColor: color };
-        }
-      });
-    },
-    [setParams],
-  );
-
-  const handleResetField = useCallback(
-    (fieldId: string) => {
-      const field = selectedTemplate.fields.find((f) => f.id === fieldId);
-      if (!field) return;
-      setParams((prev) => ({
-        ...prev,
-        fields: {
-          ...prev.fields,
-          [fieldId]: field.defaultValue,
-        },
-      }));
-    },
-    [selectedTemplate.fields, setParams],
-  );
-
-  const handleDownloadSvg = useCallback(async () => {
-    try {
-      setBusyExport(true);
-      // تضمين الخط داخل الملف ليعمل خارج التطبيق — يسقط برشاقة للأصل عند الفشل
-      const portable = await embedStickerFonts(exportableSvg || svgString, [
-        params.fontFamily || 'Cairo',
-      ]);
-      if (cancelledRef.current) return;
-      const blob = new Blob([portable], { type: 'image/svg+xml;charset=utf-8' });
-      downloadBlob(blob, `${selectedTemplate.id}.svg`);
-      toast.success(
-        portable !== (exportableSvg || svgString) ? 'نُزّل SVG بخط مضمّن' : 'نُزّل ملف SVG',
-      );
-    } catch (err) {
-      logger.error('SVG download failed:', err);
-      toast.error(toErrorMessage(err, 'فشل تنزيل SVG'));
-    } finally {
-      setBusyExport(false);
-    }
-  }, [exportableSvg, svgString, selectedTemplate.id, params.fontFamily]);
-
-  const handleDownloadCutContour = useCallback(async () => {
-    try {
-      setBusyExport(true);
-      const dieCut = generateDieCutContour(exportableSvg || svgString, {
-        bleedPercent: DEFAULT_BLEED_PERCENT,
-        // ✂️ الشكل المعلن من القالب يسبق مستطيل viewBox — دوائر الشارات تقص دائرةً
-        cutShape: selectedTemplate.cutShape,
-        physicalMm: selectedTemplate.defaultMm,
-      });
-      const portable = await embedStickerFonts(dieCut.fullSvgWithContour, [
-        params.fontFamily || 'Cairo',
-      ]);
-      if (cancelledRef.current) return;
-      const blob = new Blob([portable], { type: 'image/svg+xml;charset=utf-8' });
-      downloadBlob(blob, `${selectedTemplate.id}-cutcontour.svg`);
-      toast.success('نُزّل SVG مع طبقة خط القص (CutContour) للمطابع');
-    } catch (err) {
-      logger.error('Cut contour download failed:', err);
-      toast.error(toErrorMessage(err, 'فشل تنزيل ملف خط القص'));
-    } finally {
-      setBusyExport(false);
-    }
-  }, [exportableSvg, svgString, selectedTemplate, params.fontFamily]);
-
-  const handleDownloadPureCutContour = useCallback(async () => {
-    try {
-      setBusyExport(true);
-      const dieCut = generateDieCutContour(exportableSvg || svgString, {
-        bleedPercent: DEFAULT_BLEED_PERCENT,
-        cutShape: selectedTemplate.cutShape,
-        physicalMm: selectedTemplate.defaultMm,
-      });
-      const blob = new Blob([dieCut.standaloneContourSvg], { type: 'image/svg+xml;charset=utf-8' });
-      downloadBlob(blob, `${selectedTemplate.id}-plotter-contour.svg`);
-      toast.success('نُزّل مسار خط القص النقي لماكينة القص (Plotter)');
-    } catch (err) {
-      logger.error('Plotter contour download failed:', err);
-      toast.error(toErrorMessage(err, 'فشل تنزيل خط القص'));
-    } finally {
-      setBusyExport(false);
-    }
-  }, [exportableSvg, svgString, selectedTemplate]);
-
-  const handleDownloadPng = useCallback(
-    async (dpi: 300 | 600 = 300) => {
-      try {
-        setBusyExport(true);
-        const { width, height } = stickerRasterSize(
-          selectedTemplate.aspectRatio,
-          selectedTemplate.defaultMm,
-          dpi,
-        );
-        const pngBlob = await renderSvgToPngBlob(
-          svgString,
-          width,
-          height,
-          [params.fontFamily || 'Cairo'],
-          { dpi },
-        );
-        if (cancelledRef.current) return;
-        downloadBlob(pngBlob, `${selectedTemplate.id}-${dpi}dpi.png`);
-        toast.success(
-          dpi === 600 ? 'صُدّر PNG فائق الدقة (600 DPI)' : 'صُدّر PNG عالي الدقة (300 DPI)',
-        );
-      } catch (err) {
-        logger.error('PNG export failed:', err);
-        toast.error(toErrorMessage(err, 'فشل التصدير'));
-      } finally {
-        setBusyExport(false);
-      }
-    },
-    [
-      svgString,
-      selectedTemplate.aspectRatio,
-      selectedTemplate.defaultMm,
-      selectedTemplate.id,
-      params.fontFamily,
-    ],
-  );
-
-  const handleCopyImage = useCallback(async () => {
-    try {
-      setBusyExport(true);
-      const { width, height } = stickerRasterSize(
-        selectedTemplate.aspectRatio,
-        selectedTemplate.defaultMm,
-      );
-      const pngUrl = await renderSvgToPngDataUrl(
-        svgString,
-        width,
-        height,
-        [params.fontFamily || 'Cairo'],
-        { dpi: 300 },
-      );
-      const ok = await copyPngDataUrlToClipboard(pngUrl);
-      if (cancelledRef.current) return;
-      if (ok) {
-        toast.success('نُسخت الصورة للحافظة');
-      } else {
-        await copySvgCodeToClipboard(exportableSvg);
-        if (cancelledRef.current) return;
-        toast.success('نُسخ كود SVG');
-      }
-    } catch (err) {
-      logger.error('Image copy failed:', err);
-      toast.error(toErrorMessage(err, 'فشل النسخ'));
-    } finally {
-      setBusyExport(false);
-    }
-  }, [
-    svgString,
-    selectedTemplate.aspectRatio,
-    selectedTemplate.defaultMm,
-    params.fontFamily,
-    exportableSvg,
-  ]);
-
-  const handleCopySvgCode = useCallback(async () => {
-    try {
-      const ok = await copySvgCodeToClipboard(exportableSvg);
-      if (cancelledRef.current) return;
-      if (ok) {
-        toast.success('نُسخ كود SVG المتجه');
-      } else {
-        toast.error('تعذر نسخ SVG');
-      }
-    } catch (err) {
-      logger.error('SVG code copy failed:', err);
-      toast.error(toErrorMessage(err, 'فشل نسخ SVG'));
-    }
-  }, [exportableSvg]);
-
   // أبعاد ورقة الطباعة الفعالة لزر «ملاءمة تلقائية» في تبويب الشيت
   // (قراءة خفيفة من المتجر عند كل render — الورق لا يتغير والحوار مفتوح عادةً)
   const sheetMm = resolveStickerSheetMm();
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
