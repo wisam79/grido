@@ -32,7 +32,11 @@ import type {
 } from '@/lib/store/types';
 import type Konva from 'konva';
 
-/** مهلة قراءة أبعاد صورة الخانة لأجل نافذة القصّة — بعدها يُسقط إلى اشتقاق Go */
+/**
+ * مهلة قراءة أبعاد صورة الخانة لأجل نافذة القصّة — بعدها يُسقط إلى اشتقاق Go.
+ * العقد الذهبي لهذا المسار (144.1/0/512/480 لدخل 800×600 بروت 90 زوم 1.25)
+ * مُقفل في print-payload-builder.test.ts ويُتحقق سحابياً بحزمة Frontend كاملة.
+ */
 const CROP_DIMS_TIMEOUT_MS = 2_000;
 
 export interface BuiltItems {
