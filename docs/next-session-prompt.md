@@ -6,70 +6,65 @@
 
 # استكمال خطة إصلاحات وتطوير Grido Studio
 
-أنت تكمل عملاً في مشروع `C:\projects\grido` (Grido Studio — تطبيق سطح مكتب Wails v3: Go backend + React/TypeScript/Konva frontend + صفحة هبوط admin-web بـ React+Vite+Tailwind v4 على Netlify).
+أنت تكمل عملاً في مشروع `C:\projects\grido` (Grido Studio — تطبيق سطح مكتب Wails v3.0.0 GA / Go 1.26.10: Go backend + React 19/TS/Konva frontend + صفحة هبوط ولوحة إدارة admin-web منشورة على **GitHub Pages** عبر `deploy-pages.yml`).
 
-اقرأ أولاً هذه الملفات قبل أي كود: `.agents/AGENTS.md` (قواعد إلزامية)، `docs/DOCUMENTATION_MAP.md` (**خريطة التوثيق الإلزامية — الجرد + مصفوفة المزامنة + الأرقام المرجعية + البوابات**)، `docs/features-tracker.md` (حالة الميزات والإصلاحات المنفذة والمتبقية)، وملف المهمة الحالية عند الحاجة.
+اقرأ أولاً هذه الملفات قبل أي كود: `.agents/AGENTS.md` (قواعد إلزامية)، `docs/DOCUMENTATION_MAP.md` (**خريطة التوثيق الإلزامية — الجرد + مصفوفة المزامنة + الأرقام المرجعية + البوابات**)، `docs/features-tracker.md` (**الجلسات 1.70–1.74 في رأسه = حالة يوم 2026-11-01**)، و`SECURITY_NOTICE.md` (إدخال 2026-11-01).
 
-> 🔒 **إلزام:** قبل بدء العمل أعلن المستندات التي سيتغيّرها العمل، وقبل أي كومت/دفع شغّل `node scripts/docs-gate.mjs --strict-refs` (مفروض آلياً عبر `.husky/pre-commit` و`.husky/pre-push` وخطوة `Documentation Gate` في CI). **لا رقم من الذاكرة** — الأرقام المرجعية في الخريطة القسم 4 بأوامرها.
+> 🔒 **إلزام:** قبل بدء العمل أعلن المستندات التي سيتغيّرها العمل، وقبل أي كومت/دفع شغّل `node scripts/docs-gate.mjs --strict-refs` (مفروض آلياً عبر husky وخطوة Documentation Gate في CI). **لا رقم من الذاكرة.** رسائل الالتزام `type(scope): وصف` — النطاق كلمة واحدة (رفض hook صيغة `fix(ai,auth)`).
 
-> 🧰 **حزمة معايير الكود P0 (الجلسة 1.22):** أُضيفت بوابات Prettier و`gofmt` إلى CI، وتقوية ESLint (ترتيب الاستيراد، `import type`، منع المتغيرات غير المستخدمة و`no-console`)، وخطاف Conventional Commits (`.husky/commit-msg`). قبل الكومت: `npm --prefix frontend run format:check` و`npm --prefix frontend run lint`، ورسالة الالتزام بصيغة `type(scope): وصف`.
+## ما أُنجز في الجلسات 1.70–1.74 (2026-11-01 — 12 التزاماً على main، آخرها 8a0547c9، CI أخضر)
 
-## ما أُنجز في الجلسة السابقة (موجود في شجرة العمل — تم التحقق منه بالقياس الميداني)
+1. **إصلاحات مراجعة هندسة الكولاج والطباعة (1.70 + b6fe589f/c9011fdf):** عكس إزاحة الجيران على المسار الكامل (avail+gap)؛ حارس 1مم لمولّدات الشبكة الفيزيائية (`resolveFixedGapScale`)؛ تقييد نافذة القصّة داخل حدود الصورة في المسارات الثلاثة (Konva/تصدير يدوي/Go `computeCropFromSlot`)؛ تحويم ربع الدوران في SheetPreview عبر مساعد مشترك `computeSlotPreviewPan` (lib/print/preview-pan.ts) مع إبقاء نص التحويل الربعي بلا translate عند صفر التحويم (عقد print-preview-transform-order)؛ خطوط القص فوق المحتوى؛ إطار التحديد داخل قصّ الورقة.
+2. **ميزات (1.71/1.72 + 15991707):** `removeCollageSlot` (حارس آخر خانة، خبز يدوي، ترقيم، نقل تحديد) + زر حذف بالشريط السريع؛ نقل التدوير/القلب لصف تحويلات في لوح خصائص الخلية؛ أيقونات تعبئة الصف/العمود `TableInsertRow/Column` مولّدة على شبكة 16.
+3. **الدفعة الأمنية (1.73 + d8b696a9/b58d1f02):** حذف سقوط مفتاح anon المخبوز من PhoneCameraPage — القيم تُخبز في deploy-pages.yml من `secrets.SUPABASE_URL/ANON_KEY` وبوابة «إعداد ناقص»؛ **govulncheck v1.1.4** في مهمة Backend + **npm audit --audit-level=high** في Frontend/Admin (فشل صارم) — البوابة أمسكت GO-2026-6809/6617 فور أول تشغيل فرفعت **Go إلى 1.26.10** في ci.yml وrelease.yml؛ MCP الرسمي `@supabase/mcp-server-supabase`.
+4. **الدفعة الثانية (1.74 + 2d0f6a61):** هجرة `20261101120000` تمدد الاشتراك من نهايته السارية (`GREATEST(COALESCE(...))`)؛ `upscaler.py` يحرر الحجز المعلق عبر `cancel_ai_quota_reservation` عند فشل التسجيل؛ كاش خطة Go لا يخزن فشلاً عابراً؛ `generateUUID` يفشل الطلب عند تعذر crypto/rand؛ letterSpacing صراحةً لكل عنصر نص؛ fallback مسجّل للقص المستدير؛ إعادة قياس النص عبر الواجهة العامة؛ `canvasZoom: 1` في reset.
+5. **النشر والمصالحة (d0e667c7/8a0547c9 — Management API بموافقة المالك وتوكنه):** هجرتا 20261029220000 (cancel RPC — كانت غير منشورة منذ 29 أكتوبر!) و20261101120000 طُبّقتا في الإنتاج داخل معاملات مسجّلة، والتحقق: `pg_get_functiondef` يحقق `GREATEST(COALESCE(...))` + مصفوفة ساري/منتهي/NULL كلها true؛ **مصالحة التاريخ:** 9 ملفات ظلية مسترجعة من `schema_migrations` (لوحة SQL) → **التطابق 41=41 في الاتجاهين** وmanifest بكل البصمات.
 
-1. **معالجة ازدواجية صور جسر الهاتف والالتقاط اللحظي (Phone Bridge Deduplication & Zero-Lag Shutter):**
-   - إضافة جدول تتبع للكائنات المعالجة `processedFiles` في دورة استطلاع رنتايم Go (`pollCloudSession`)؛ تخطي أي ملف جاري أو تم تنزيله فورياً، مما يمنع تنزيل الملف نفسه مرتين أثناء زمن رحلة حذف السحابة غير المتزامن (HTTP DELETE).
-   - إزالة حظر الهاردوير وتجميد المستشعر الناتج عن `ImageCapture.takePhoto()` والتقاط الإطار فورياً (0ms) من عنصر الفيديو المباشر إلى الكانفاس، وضبط أبعاد التصدير القصوى إلى 2560px وجودة 0.85 لضغط الصور إلى ~400KB ونقلها في أقل من 200ms مع الحفاظ التام على دقة 300+ DPI.
-   - إضافة قفل مرجعي `isCapturingRef` وتعطيل زر الغالق أثناء الرفع لمنع تكرار الإرسال العفوي من شاشة اللمس.
+## قرارات محمية وأوضاع خاصة (لا تنقضها بلا موافقة المالك)
 
-2. **إصلاح شريط تقدم تحديثات التطبيق (Updater Progress & Timeline Fix):**
-   - بث أحداث التقدم بصيغة ثنائية (الرقم المباشر وخريطة كائن `update:progress`)، والتعامل الآمن مع غياب `Content-Length` عبر تقدير الحجم، ودعم قراءة كافة صيغ بيانات الأحداث في React مع حد أدنى بصري للتحميل (4%) حتى لا يبدو الشريط معلقاً.
+- حدود الحصة 5/15/50 متكررة عمداً في 3 مواضع متزامنة؛ B-7 (لا استدلال cutShape من بنية العمل)؛ تعديل القرار 4 (PNG في الطباعة) موثّق بقرار المالك.
+- ملفات `frontend/wailsjs/` **جسور يدوية مُتتبَّعة** تعيد التصدير من `frontend/bindings/` المولّدة — **لا `wails generate module` (v2) ولا تعديل يدوي**؛ التوليد: `wails3 generate bindings -ts -clean=true` + تسجيل Mock في جسر E2E.
+- **سحب `anon EXECUTE` من دوال admin** قرار معلّق بيد المالك (نقاش 2026-11-01: المالك يرى مفتاح anon عام بلا خطر؛ البديل المتفق عليه عند البقاء: نار Canary في CI تستدعي دوال الأدمن بدور anon وتفشل عند النجاح).
+- **`GRIDO_AI_SECRET_KEY`** يبقى في أسرار المستودع **بقرار المالك** (مقبول المخاطرة، موثق في SECURITY_NOTICE 2026-11-01) — يُمنع استهلاكه في البناء (قاعدة C-02).
+- ملفات `netlify/functions/` ومراجع netlify التاريخية بقايا عصر ما قبل Pages — مسارات `/api/version` و`/api/download` تُخبز **ساكنة** في `deploy-pages.yml`؛ لا تُعدّل منطق الخبز دون فهم الم Consumers في سطح المكتب.
+- القيم العامة (URL/anon) تُخبز وقت البناء من أسرار المستودع — لا مفتاح مخبوز في أي كود مصدري إطلاقاً (بوابة 2026-11-01).
 
-**قرارات يجب عدم نقضها:** `getSnapPositions` ليست ميتة (تستخدمها اختبارات)؛ حدود الحصة 5/15/50 متكررة عمداً في 3 مواضع متزامنة؛ ملفات `frontend/wailsjs/` **جسور يدوية مُتتبَّعة في Git** (وليست مولّدة) تعيد التصدير من `frontend/bindings/` المولَّدة والمُستثناة — **لا تشغّل `wails generate module` (أمر v2) ولا تعدّل `wailsjs/` يدوياً**؛ التوليد الصحيح: `wails3 generate bindings -ts -clean=true`.
+## المهام المتبقية (نفّذها بالترتيب — الدفعتان 4 و5 ثم 6)
 
-## المهام المتبقية (نفّذها بالترتيب)
+### الدفعة 4 — عمق E2E (الأضعف في التقييم: 6/10)
+1. قتل نمط التخطي الفارغ `if (await x.isVisible()) { click }` في 14 مواصفة (مثال: `e2e/collage-mode.spec.ts:21,28,36`) — استبدله بـ `await expect(x).toBeVisible()` + نقرات إلزامية تفشل صريحاً.
+2. رفع ~10 مواصفات smoke بحالة واحدة وتوقع واحد (مثال `bg-removal.spec.ts:25` يفحص ظهور الزر فقط ولا يجرب العزل) إلى سلوك فعلي.
+3. تصحيح أي تعليق أعداد قديم في ci.yml (نمط: «41 tests» صُحح إلى 75 — راجع البقية).
 
-### 1. E-6 — استكمال مسار التصدير الاحتياطي اليدوي
-الملف: `frontend/src/lib/export/export-image.ts` (حلقة العناصر ~السطور 323-384). أضف: `ctx.shadow*`, `globalCompositeOperation`, تدرجات fillType (linear/radial) للأشكال, رسم `path` عبر Path2D بقياس viewBox (استخدم VECTOR_SHAPES كما في shape-node), قص cornerRadius للصور (clip مثل الخانات), إطار النص (strokeText) وزخرفته (underline/line-through يدوياً). خلفية النص وflipY أُضيفا فعلاً.
+### الدفعة 5 — الدين الهيكلي
+1. تفكيك `freeform-collage-modal.tsx` (1191 سطراً) و`sticker-studio-dialog.tsx` (929) و`sticker-properties.tsx` (718) إلى شرائح/hooks بنمط المشروع.
+2. غلاف موحد لإجراءات المصادقة الستة المتشابهة في `license-slice.ts:242-356`.
+3. `isDirty` بمقارنة اللقطة مع آخر حفظ بدل `true` الأعمى في undo/redo (`history-slice.ts:241,255`).
+4. توحيد 3 ازدواجيات محتوى في `.agents` (workflows/security-audit ≈ مهارة qa-security-auditor §2، workflows/canvas-export-qa ≈ مهارتها، workflows/release-deployment ≈ مهارتها) بالإحالة لا النسخ + بند قاعدة `anon EXECUTE` عند حسم القرار.
 
-### 2. E-7 — زاوية التدرج
-الملف: `frontend/src/components/editor/properties/gradient-picker.tsx` — أضف سلايدر زاوية (0-360°) للتدرج الخطي يحدّث `fillLinearGradientStartPoint/EndPoint` (حساب من المركز بالزاوية).
+### الدفعة 6 — الحماية المستقبلية (توصيات نقاش 2026-11-01 الصباحي — لم تُنفذ بعد)
+1. **fast-check** قوانين الخصائص في ملفات الاختبارات القائمة (لا ملفات جديدة حفاظاً على عدّاد docs-metrics): عكس getSlotRect round-trip · كل مخرجات buildPhysicalGridCellsMM ≥ 1مم وداخل الورقة · نافذة computeSlotCrop داخل الصورة دائماً · بعد أي إزاحة لا تداخل وفجوات محفوظة.
+2. **«احسب مرة واحدة، مرّر البيانات»**: إرسال القصّة النهائية (CropX/Y/W/H) محسوبة من الواجهة في PrintItem دائماً — Go يستخدمها مباشرة (الحقول موجودة والمنطق يفضّلها) فتُلغى فئة إعادة الاشتقاق المزدوج.
+3. **fixtures تطابق TS/Go**: بصمات ذهبية مشتركة تُشغّل في Vitest واختبارات Go — مع إصلاح اختبار «bit-identical» ذاتي المرجع في print-layout-math.test.ts:163 (يقارن صيغة بنسخة منها).
 
-### 3. تجميليات صغيرة
-- خيار وحدة mm/px في `ruler.tsx` (عرض بديل للتدرجات).
-- حذف الأصول الميتة: `frontend/public/models/esrgan-slim/` (AI-4)، `supabase/functions/ai-enhance/` (AI-5)، `frontend/src/assets/fonts/nunito-v16-latin-regular.woff2` (L-5) — تحقق أولاً بغrep من غياب أي مرجع لها.
+### أعمال مكتملة الحالة تنتظر قرار/إجراء المالك
+- **إصدار v1.28.1** عبر `node scripts/release.mjs patch` (كل إصلاحات اليوم على main بعد v1.28.0؛ آخر CI أخضر) — ثم مراقبة release.yml وتوقيع SignPath.
+- **إبطال توكن الإدارة** الذي شاركه المالك في المحادثة (2026-11-01) إن لم يُبطل بعد.
+- سحب `anon EXECUTE` أو نار Canary (أعلاه).
+- مراجعة PRs Dependabot المفتوحة.
+- 9 هجرات إنتاج بلا تاريخ محلي كانت فجوة — **أُغلقت** بالملفات الظلية (لا تعيد فتحها).
 
-### 4. توحيد انحرافات README/CHANGELOG مع الكود
-README: `selfie_multiclass.tflite` بدل RMBG-1.4 (مع Web Worker — صار صحيحاً الآن)، 1024px بدل 2048، 12 عائلة خط بدل 26، الحصص 5/15/50 بدل 3/25/100. CHANGELOG: سقف التراجع 30 بدل 20. ثم أضف قسماً جديداً في CHANGELOG تحت [Unreleased] يوثق إصلاحات هذه الجلسة بإيجاز.
+## أوامر التحقق (المسموح محلياً حصراً + البوابات)
 
-### 5. إعادة تصميم صفحة الهبوط — «احترافية بشكل خيالي»
-المكان: `C:\projects\grido\admin-web`. دستور التصميم الإلزامي: `admin-web/design.md` (SpaceX/Vercel/Linear — أحادية داكنة، حركة وظيفية، RTL).
-
-**مشاكل واجبة الإصلاح (اكتُشفت بالمراجعة):**
-- classes ميتة: `brand-*` (ألوان التوهج/الأزرار لا تعمل أصلاً في Tailwind v4)، `xs:` breakpoint، `bg-ink-950` — عرّفها في `@theme` داخل `index.css` أو صحّحها.
-- رقم الإصدار 1.2.3 مشفر يدوياً في 3 مواضع (HeroSection, CtaBanner) — اجلبه من `/api/version`.
-- `og:image` يشير لملف غير موجود — أنشئ `public/og-image.jpg` (1200×630) أو صحح المسار؛ ازدواج title/meta بين index.html وLandingPage؛ أضف canonical/og:url/robots/JSON-LD.
-- أداء: `mousemove` عام ينفذ `getBoundingClientRect()` لكل بطاقة في كل حدث — خزّن البطاقات أو راقب الأقرب فقط، مع `passive: true`.
-- خطوط: Cairo محمّل وغير مستخدم + AlYamama مستورد مرتين (main.tsx وindex.css) — احذف الزائد؛ عرّف font-mono حقيقي أو صححه لخطوط النظام.
-- a11y: أدوار ARIA للتبويبات في FeaturesTabs/Testimonials، `aria-label` لسلايدر قبل/بعد، رابط «تخطَّ إلى المحتوى».
-- أصول ميتة: `src/App.css`, `src/assets/hero.png/react.svg/vite.svg`, `public/favicon.svg`, `public/icons.svg`, `public/dribbble-3d-demo.mp4`, 5 ملفات `.jpg` مكررة من PNG، مكوّنا Three.js الميتان (`Embedded3D.tsx`, `StudioHero3D.tsx`) + اعتماديات `three`, `@react-three/fiber`, `@react-three/drei`, `@types/three` (احذفها من package.json).
-- نص «أسرع من الطرق التنفيذية» → «اليدوية»؛ روابط فوتر `href="#"` — انقلها لصفحات فعلية أو احذفها.
-- `tailwind.config.js` غير مقروء في v4 (إلا بـ @config) — انقل محتواه لـ `@theme` أو احذفه.
-
-**محظورات لا تمسّها أبداً:** مسارات `/api/download` و`/api/version` وتوجيهات `public/_redirects` و`netlify.toml`، ملف `public/callback/index.html` (OAuth)، `dir="rtl"`، أصول `sample-passport.png` و`favicon.png`، ومتغيرات `VITE_SUPABASE_*` و`GITHUB_TOKEN`.
-
-**مستوى الإبداع المطلوب:** Hero سينمائي غير مسبوق محلياً (إخراج خط رئيسي درامي، تأثيرات ضوئية طبقية، Mockup ثلاثي الأبعاد متفاعل محسوس الجودة)، أقسام: مميزات/سيناريوهات/مقارنة/أسعار/شهادات/FAQ/CTA بنسخ بيعي قوي مباشر (سرعة ونتائج لأصحاب الاستوديوهات والمطابع — القاعدة 49 في AGENTS.md). حافظ على نظام الحركات الحالي (spotlight/magnetic/reveal/aurora) وحسّنه، واحترم `prefers-reduced-motion`. تجاوبية كاملة (بديل موبايل فعلي للـ Mockup).
-
-### 6. التحقق الشامل النهائي
 ```bash
-cd C:\projects\grido && go test -race ./internal/... && go vet ./internal/... && go build .
-cd frontend && npm run test && npm run typecheck && npm run lint
-cd ../admin-web && npm ci && npm run build && npm run lint
+npm --prefix frontend run typecheck        # سريع مسموح
+npm --prefix frontend run lint             # سريع مسموح
+node scripts/docs-gate.mjs --strict-refs   # إلزامي قبل أي كومت
+node scripts/migration-lint.mjs            # بعد أي هجرة (--update-manifest)
+# الاختبارات المستهدفة الخفيفة متاحة بقياس (نمط الجلسات 1.67/1.74):
+npm --prefix frontend run test -- test/<ملفات مستهدفة>
+go test ./internal/service/ -run '<Targeted>' -count=1
+# الكامل (Vitest/E2E/Build) سحابي حصراً: git push ثم gh run watch
 ```
-> ℹ️ `go vet ./...` و`go build ./...` يعملان بصورة تامة بعد تنظيف سقالات الهواتف غير المستخدمة (`build/ios` و`build/android`).
-ثم حدّث `docs/features-tracker.md` بنتائجك.
 
-### 7. ملاحظات نشر (لا تنفذها بلا إذن المستخدم)
-تطبيق migration على Supabase، إعادة نشر upscaler.py على Modal، Tag إصدار جديد لاختبار التحديث end-to-end، وcommit/push (اطلب الإذن صراحةً قبل أي git mutation).
-
-## أسلوب العمل
-تغييرات دنيا مركزة، نمط كود المشروع الحالي، تعليقات عربية كما هو معتاد، لا تلمس الاختبارات إلا لإصلاح كسر واجهة، وعند أي شك في إحداثيات Konva استخدم المعايرة الذاتية لا الافتراض.
+**الحالة المرجعية للنشر (2026-11-01):** الإنتاج `mvovehnyvoiawvwaurav` (Postgres 17.6) — schema_migrations = 41 إدخالاً مطابقة 1:1 للمستودع؛ آخر CI أخضر كامل 12/12؛ الشجرة نظيفة بلا معلق.
