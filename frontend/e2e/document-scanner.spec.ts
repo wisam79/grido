@@ -10,26 +10,14 @@ test.describe('Document Scanner Workflow E2E', () => {
   });
 
   test('Open document scanner dialog via image properties or menu', async ({ page }) => {
-    // Add an image first
-    await page
-      .getByTestId('mode-tab-single')
-      .or(page.getByRole('tab', { name: 'تعديل حر' }))
-      .first()
-      .click();
-    await page
-      .getByTestId('toolbar-insert')
-      .or(page.getByRole('button', { name: /إدراج/ }))
-      .first()
-      .click();
+    // Add an image first — الإدراج الموكول يحدد العنصر ويفتح خصائصه
+    await page.getByTestId('mode-tab-single').click();
+    await page.getByTestId('toolbar-insert').click();
 
-    // Look for document scanner action button in image properties
+    // زر «مسح المستند» قسم ثابت في خصائص الصورة (image-properties) — ظهوره إلزامي
+    // (التخطي المسجل القديم كان مبنية على فرضية غياب الصورة، والإدراج يعمل عبر الـmock)
     const scannerBtn = page.getByRole('button', { name: /مسح المستند|ماسح المستندات/ }).first();
-    if (!(await scannerBtn.isVisible())) {
-      // تخطٍّ صريح مسجل في التقرير بدل النجاح الصامت السابق — غياب الزر
-      // هنا يعني غياب صورة مدخلة في بيئة الـ mock، لا نجاح المسار.
-      test.skip(true, 'No image present in Wails mock environment — scanner entry not reachable');
-      return;
-    }
+    await expect(scannerBtn).toBeVisible();
     await scannerBtn.click();
     const scannerModal = page.getByRole('dialog').first();
     await expect(scannerModal).toBeVisible({ timeout: 10000 });

@@ -7,7 +7,9 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
     await setupWailsMock(page);
   });
 
-  test('Open app, upload image, and save project', async ({ page }) => {
+  test('Open app, upload image, save project, and read it back in the library', async ({
+    page,
+  }) => {
     await page.goto('/');
 
     await waitForAppReady(page);
@@ -30,5 +32,9 @@ test.describe('Professional E2E & Visual Testing Suite', () => {
     await page.getByRole('button', { name: /حفظ المشروع|حفظ في قاعدة البيانات/ }).click();
 
     await expect(page.getByText('تم حفظ المشروع بنجاح في قاعدة البيانات المحلية')).toBeVisible();
+
+    // قراءة فعلية للمكتبة: النداء الموكول GetAllProjects يرسم المشروع المرجعي
+    await page.getByRole('tab', { name: /المشاريع/ }).click();
+    await expect(page.getByText('مشروع اختباري أول')).toBeVisible();
   });
 });

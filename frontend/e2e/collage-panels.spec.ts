@@ -43,37 +43,34 @@ test.describe('Collage Mode Rails & Configuration Panels E2E', () => {
       .click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
-    // 1. Grid section: custom + presets + freeform on one surface
+    // 1. Grid section: custom + presets + freeform on one surface — الوجوه الثلاثة حتمية في الكولاج
     const gridBtn = page.getByTestId('rail-collage-grid');
-    if (await gridBtn.isVisible()) {
-      // النقر على وجهة مفتوحة أصلاً يطوي لوحها — نقرتان تضمنان الفتح
+    await expect(gridBtn).toBeVisible();
+    // النقر على وجهة مفتوحة أصلاً يطوي لوحها — نقرتان تضمنان الفتح
+    await gridBtn.click();
+    if (!(await page.getByTestId('segmented-custom').isVisible())) {
       await gridBtn.click();
-      if (!(await page.getByTestId('segmented-custom').isVisible())) {
-        await gridBtn.click();
-      }
-      await expect(page.getByTestId('segmented-custom')).toBeVisible();
-      await expect(page.getByTestId('segmented-presets')).toBeVisible();
-      await expect(page.getByTestId('segmented-freeform')).toBeVisible();
-
-      await page.getByTestId('segmented-presets').click();
-      await expect(page.getByTestId('segmented-presets')).toHaveAttribute('aria-selected', 'true');
     }
+    await expect(page.getByTestId('segmented-custom')).toBeVisible();
+    await expect(page.getByTestId('segmented-presets')).toBeVisible();
+    await expect(page.getByTestId('segmented-freeform')).toBeVisible();
+
+    await page.getByTestId('segmented-presets').click();
+    await expect(page.getByTestId('segmented-presets')).toHaveAttribute('aria-selected', 'true');
 
     // 2. Slots section: autofill + arrange
     const slotsBtn = page.getByTestId('rail-collage-slots');
-    if (await slotsBtn.isVisible()) {
-      await slotsBtn.click();
-      await expect(page.getByTestId('segmented-autofill')).toBeVisible();
-      await page.getByTestId('segmented-arrange').click();
-      await expect(page.getByTestId('segmented-arrange')).toHaveAttribute('aria-selected', 'true');
-    }
+    await expect(slotsBtn).toBeVisible();
+    await slotsBtn.click();
+    await expect(page.getByTestId('segmented-autofill')).toBeVisible();
+    await page.getByTestId('segmented-arrange').click();
+    await expect(page.getByTestId('segmented-arrange')).toHaveAttribute('aria-selected', 'true');
 
     // 3. Paper section: single tab hides the internal switcher
     const paperBtn = page.getByTestId('rail-collage-paper');
-    if (await paperBtn.isVisible()) {
-      await paperBtn.click();
-      await expect(page.getByTestId('segmented-paper')).toHaveCount(0);
-    }
+    await expect(paperBtn).toBeVisible();
+    await paperBtn.click();
+    await expect(page.getByTestId('segmented-paper')).toHaveCount(0);
 
     // 4. Backdrop tab deleted — every control lives in the right column
     // (CollageSettings/GeneralSettings/SlotProperties); no rail button remains

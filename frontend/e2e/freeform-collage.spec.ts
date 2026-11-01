@@ -25,16 +25,16 @@ test.describe('Freeform Collage & Elements Workflow E2E', () => {
     // Text element is inserted and properties panel displays text properties
     await expect(page.locator('#canvas-area')).toBeVisible();
 
-    // Verify tabs are available
+    // تبويبات المفتش حتمية بعد تحديد عنصر — والتنقل بينها فعلي بحالة aria-selected
     const styleTab = page.getByRole('tab', { name: /تنسيق|التنسيق/ }).first();
-    if (await styleTab.isVisible()) {
-      await expect(styleTab).toBeVisible();
-    }
+    await expect(styleTab).toBeVisible();
+    await styleTab.click();
+    await expect(styleTab).toHaveAttribute('aria-selected', 'true');
 
     const colorsTab = page.getByRole('tab', { name: /ألوان|الألوان/ }).first();
-    if (await colorsTab.isVisible()) {
-      await expect(colorsTab).toBeVisible();
-    }
+    await expect(colorsTab).toBeVisible();
+    await colorsTab.click();
+    await expect(colorsTab).toHaveAttribute('aria-selected', 'true');
   });
 
   test('Add shape element and inspect geometry controls', async ({ page }) => {

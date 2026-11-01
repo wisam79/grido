@@ -25,11 +25,10 @@ test.describe('Phone Bridge & Camera Sync E2E', () => {
     const qrSvg = dialog.locator('svg').first();
     await expect(qrSvg).toBeVisible();
 
-    // Verify copy button works
+    // Verify copy button works — الزر ثابت داخل الحوار
     const copyBtn = dialog.getByRole('button', { name: /نسخ/ }).first();
-    if (await copyBtn.isVisible()) {
-      await copyBtn.click();
-    }
+    await expect(copyBtn).toBeVisible();
+    await copyBtn.click();
 
     // Dismiss with Escape key
     await page.keyboard.press('Escape');

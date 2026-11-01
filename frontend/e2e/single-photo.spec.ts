@@ -9,7 +9,7 @@ test.describe('Single Photo Workflow E2E', () => {
     await waitForAppReady(page);
   });
 
-  test('Single photo mode loads with canvas, toolbar and bottom deck', async ({ page }) => {
+  test('Single photo mode loads with canvas, toolbar and working zoom', async ({ page }) => {
     await expect(page.locator('#canvas-area')).toBeVisible();
     await expect(
       page
@@ -19,19 +19,19 @@ test.describe('Single Photo Workflow E2E', () => {
     ).toBeVisible();
     await expect(page.getByTestId('canvas-zoom-in').or(page.getByLabel('تكبير'))).toBeVisible();
     await expect(page.getByTestId('canvas-zoom-out')).toBeVisible();
+
+    // الزوم سلوك فعلي: نسبة العرض الرقمية تتغير بعد تكبير
+    const zoomIndicator = page.getByRole('button', { name: 'إعادة تعيين المقياس إلى 100%' });
+    await expect(zoomIndicator).toBeVisible();
+    const before = (await zoomIndicator.textContent()) ?? '';
+    await page.getByTestId('canvas-zoom-in').click();
+    await expect(zoomIndicator).not.toHaveText(before);
   });
 
   test('Add image, view properties panel and image controls', async ({ page }) => {
     // Switch to freeform mode and add image
-    await page
-      .getByTestId('mode-tab-single')
-      .or(page.getByRole('tab', { name: 'تعديل حر' }))
-      .click();
-    await page
-      .getByTestId('toolbar-insert')
-      .or(page.getByRole('button', { name: /إدراج/ }))
-      .first()
-      .click();
+    await page.getByTestId('mode-tab-single').click();
+    await page.getByTestId('toolbar-insert').click();
 
     // Verify properties panel appears with action buttons
     await expect(page.getByRole('button', { name: 'قص وتدوير' })).toBeVisible();

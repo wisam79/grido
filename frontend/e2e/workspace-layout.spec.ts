@@ -78,12 +78,12 @@ test.describe('Workspace Layout & Responsive Contract E2E', () => {
     const isOverflowing = await toolbar.evaluate((el) => el.scrollWidth > el.clientWidth);
     expect(isOverflowing).toBe(false);
 
-    // Verification: More ("المزيد") menu opens correctly with dropdown items
-    const moreBtn = page.getByRole('button', { name: /المزيد من الخيارات|المزيد/ }).first();
-    if (await moreBtn.isVisible()) {
-      await moreBtn.click();
-      await expect(page.getByText('خيارات المستند')).toBeVisible();
-    }
+    // Verification: More ("المزيد") menu opens correctly with dropdown items —
+    // الزر ثابت في الشريط بلا شرط عرض (toolbar-more)
+    const moreBtn = page.getByTestId('toolbar-more');
+    await expect(moreBtn).toBeVisible();
+    await moreBtn.click();
+    await expect(page.getByText('خيارات المستند')).toBeVisible();
   });
 
   test('Canvas is clean and unobstructed without intrusive overlay cards', async ({ page }) => {

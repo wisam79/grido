@@ -43,14 +43,12 @@ test.describe('مدخل لوحة الأدوات وأوامرها الحقيقي�
   });
 
   test('أمر «الحساب والتراخيص» يفتح نافذته فعلاً', async ({ page }) => {
-    const dialog = page.getByRole('dialog').first();
-    if (await dialog.isVisible().catch(() => false)) {
-      await page.keyboard.press('Escape');
-      await expect(dialog).toBeHidden();
-    }
+    // البيئة حتمية: لا حوار مفتوحاً عند الإقلاع — إثبات بلا تسامح صامت
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('grido:open-account')));
 
+    const dialog = page.getByRole('dialog').first();
     await expect(dialog).toBeVisible();
   });
 

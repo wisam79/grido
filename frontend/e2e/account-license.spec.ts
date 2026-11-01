@@ -23,25 +23,17 @@ test.describe('Account, Authentication & License Management E2E', () => {
     // Verify dialog header
     await expect(dialog.getByText(/الحساب والترخيص/)).toBeVisible();
 
-    // Verify tabs exist (FluentSegmentedControl buttons)
-    const licenseTab = dialog
-      .getByRole('button', { name: /الترخيص/ })
-      .or(dialog.getByText('الترخيص'))
-      .first();
-    const authTab = dialog
-      .getByRole('button', { name: /الحساب/ })
-      .or(dialog.getByText('الحساب'))
-      .first();
+    // Verify tabs exist — المبدّل يُخرج role="tab" حقيقية (tablist موثّق في الكود)
+    const licenseTab = dialog.getByRole('tab', { name: 'الترخيص' });
+    const authTab = dialog.getByRole('tab', { name: 'الحساب' });
 
-    if (await licenseTab.isVisible()) {
-      await expect(licenseTab).toBeVisible();
-      await licenseTab.click();
-    }
+    await expect(licenseTab).toBeVisible();
+    await licenseTab.click();
+    await expect(licenseTab).toHaveAttribute('aria-selected', 'true');
 
-    if (await authTab.isVisible()) {
-      await expect(authTab).toBeVisible();
-      await authTab.click();
-    }
+    await expect(authTab).toBeVisible();
+    await authTab.click();
+    await expect(authTab).toHaveAttribute('aria-selected', 'true');
 
     // Dismiss with Escape key (Fluent 2 invariant)
     await page.keyboard.press('Escape');

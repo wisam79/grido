@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { applyCollagePreset } from './helpers/collage-presets';
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Collage Mode and Filters E2E', () => {
@@ -11,33 +12,14 @@ test.describe('Collage Mode and Filters E2E', () => {
     await page.goto('/');
 
     await waitForAppReady(page);
-    await page
-      .getByTestId('mode-tab-collage')
-      .or(page.getByRole('tab', { name: 'كولاج', exact: true }))
-      .first()
-      .click();
+    await page.getByTestId('mode-tab-collage').click();
+    await expect(page.locator('#canvas-area')).toBeVisible();
 
-    const showTemplatesBtn = page.getByRole('button', { name: 'إظهار لوحة القوالب' }).first();
-    if (await showTemplatesBtn.isVisible()) {
-      await showTemplatesBtn.click();
-    }
-    const presetsTab = page
-      .locator('[data-tab="presets"]')
-      .or(page.getByRole('tab', { name: /قوالب جاهزة|نماذج|القوالب/ }))
-      .first();
-    if (await presetsTab.isVisible()) {
-      await presetsTab.click();
-    }
+    // تطبيق قالب رسمي فعلي («طقم سفر») من تبويب القوالب الجاهزة — كل خطوة إلزامية
+    await applyCollagePreset(page, 'طقم سفر');
 
-    // لوحة القوالب تعرض بطاقات القوالب الجاهزة مباشرة
-    const gridTemplateCard = page
-      .getByRole('button', { name: /طقم سفر|طقم تقديم|شيت|4 صور|شبكة/ })
-      .first();
-    if (await gridTemplateCard.isVisible()) {
-      await gridTemplateCard.click();
-    }
-
-    // الكانفس يظل ظاهراً ومستقراً بعد تطبيق القالب
+    // الكانفس يظل ظاهراً ومستقراً بعد تطبيق القالب، والقالب صار نشطاً
+    // (تأكيد aria-pressed=true داخل applyCollagePreset)
     await expect(page.locator('#canvas-area')).toBeVisible();
   });
 });

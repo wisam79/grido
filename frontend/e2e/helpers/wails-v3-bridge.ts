@@ -59,7 +59,11 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   1006108175: async () => undefined, // DeleteCustomTemplate
   2108673700: async () => undefined, // DismissCrashReport
   2440793480: async () => undefined, // DownloadAndInstallUpdate
-  2111291824: async () => MOCK_PNG_BASE64, // EnhanceImageWithAI
+  // EnhanceImageWithAI يعيد JSON بنفس عقد الخادم الحقيقي ({image, execution_seconds,
+  // total_cost_usd} — مرآة internal/service/ai_service_test.go:146) — سلسلة خام
+  // كانت تُسقط مسار الترميم في JSON.parse فلا تُطبَّق نتيجة قط في E2E
+  2111291824: async () =>
+    JSON.stringify({ image: MOCK_PNG_BASE64, execution_seconds: 1.2, total_cost_usd: 0.0012 }),
   2950359501: async () => 'C:/mock/logs.txt', // ExportSupportLogs
   4177774687: async (paths: string[]) => {
     // GetBatchImageDimensions

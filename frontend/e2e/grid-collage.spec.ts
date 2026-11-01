@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { applyCollagePreset } from './helpers/collage-presets';
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 test.describe('Grid Collage Workflow E2E', () => {
@@ -11,40 +12,16 @@ test.describe('Grid Collage Workflow E2E', () => {
 
   test('Switch to grid collage mode and verify template settings', async ({ page }) => {
     // Ensure collage mode
-    await page
-      .getByTestId('mode-tab-collage')
-      .or(page.getByRole('tab', { name: 'كولاج', exact: true }))
-      .first()
-      .click();
+    await page.getByTestId('mode-tab-collage').click();
     await expect(page.locator('#canvas-area')).toBeVisible();
 
-    // Open templates panel via header toggle if collapsed
-    const showTemplatesBtn = page.getByRole('button', { name: 'إظهار لوحة القوالب' }).first();
-    if (await showTemplatesBtn.isVisible()) {
-      await showTemplatesBtn.click();
-    }
-    const presetsTab = page
-      .locator('[data-tab="presets"]')
-      .or(page.getByRole('tab', { name: /قوالب جاهزة|نماذج|القوالب/ }))
-      .first();
-    if (await presetsTab.isVisible()) {
-      await presetsTab.click();
-    }
-    const templateCard = page
-      .getByRole('button', { name: /طقم سفر|طقم تقديم|شيت|4 صور|شبكة/ })
-      .first();
-    if (await templateCard.isVisible()) {
-      await templateCard.click();
-    }
+    // تطبيق قالب جاهز مختلف («طقم تقديم») — تطبيق إلزامي بحالة نشطة مؤكدة
+    await applyCollagePreset(page, 'طقم تقديم');
     await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
   test('Verify collage controls and canvas stability', async ({ page }) => {
-    await page
-      .getByTestId('mode-tab-collage')
-      .or(page.getByRole('tab', { name: 'كولاج', exact: true }))
-      .first()
-      .click();
+    await page.getByTestId('mode-tab-collage').click();
     await expect(page.locator('#canvas-area')).toBeVisible();
     await expect(page.getByTestId('canvas-zoom-in').or(page.getByLabel('تكبير'))).toBeVisible();
     await expect(page.getByTestId('canvas-zoom-out')).toBeVisible();

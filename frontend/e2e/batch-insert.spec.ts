@@ -9,7 +9,7 @@ test.describe('Batch Photo Insert Workflow E2E', () => {
     await waitForAppReady(page);
   });
 
-  test('Open batch insert dialog via custom event and inspect layout controls', async ({
+  test('Open batch insert dialog, add mocked images and inspect layout controls', async ({
     page,
   }) => {
     // Open Batch Insert dialog via custom event
@@ -25,6 +25,12 @@ test.describe('Batch Photo Insert Workflow E2E', () => {
 
     // Verify empty state guidance
     await expect(dialog.getByText(/قائمة الصور فارغة/)).toBeVisible();
+
+    // سلوك فعلي: «اختيار صور» يستدعي النداء الموكول OpenMultipleFiles فتمتلئ القائمة
+    const addImagesBtn = dialog.getByRole('button', { name: /اختيار صور/ }).first();
+    await expect(addImagesBtn).toBeVisible();
+    await addImagesBtn.click();
+    await expect(dialog.getByText(/قائمة الصور فارغة/)).toBeHidden();
 
     // Dismiss with Escape key
     await page.keyboard.press('Escape');

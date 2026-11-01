@@ -55,14 +55,13 @@ test.describe('Studio Panels & Workspace Tool Rail E2E', () => {
       await expect(page.getByTestId(segmentedId)).toHaveCount(0);
     }
 
-    // 4. Zen mode toggle
+    // 4. Zen mode toggle — الزر مصيَّر دائماً في ذيل الشريط («لا تمرّ أبداً» في الكود)
     const zenBtn = page.getByTestId('rail-zen-mode');
-    if (await zenBtn.isVisible()) {
-      await zenBtn.click(); // Toggle on
-      await expect(page.locator('#canvas-area')).toBeVisible();
-      await zenBtn.click(); // Toggle off
-      await expect(page.locator('#canvas-area')).toBeVisible();
-    }
+    await expect(zenBtn).toBeVisible();
+    await zenBtn.click(); // Toggle on
+    await expect(page.locator('#canvas-area')).toBeVisible();
+    await zenBtn.click(); // Toggle off
+    await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
   test('Open rail tool launcher popover and list the four studio tools', async ({ page }) => {
@@ -73,20 +72,19 @@ test.describe('Studio Panels & Workspace Tool Rail E2E', () => {
       .click();
 
     const launcherBtn = page.getByTestId('rail-tool-launcher');
-    if (await launcherBtn.isVisible()) {
-      await launcherBtn.click();
-      const popover = page
-        .getByRole('dialog')
-        .or(page.locator('[data-radix-popper-content-wrapper]'))
-        .first();
-      await expect(popover).toBeVisible();
-      for (const tool of ['layers', 'stickers', 'shapes', 'text']) {
-        await expect(page.getByTestId(`launcher-${tool}`)).toBeVisible();
-      }
-      await expect(page.getByTestId('launcher-content')).toHaveCount(0);
-
-      // Dismiss by pressing Escape
-      await page.keyboard.press('Escape');
+    await expect(launcherBtn).toBeVisible();
+    await launcherBtn.click();
+    const popover = page
+      .getByRole('dialog')
+      .or(page.locator('[data-radix-popper-content-wrapper]'))
+      .first();
+    await expect(popover).toBeVisible();
+    for (const tool of ['layers', 'stickers', 'shapes', 'text']) {
+      await expect(page.getByTestId(`launcher-${tool}`)).toBeVisible();
     }
+    await expect(page.getByTestId('launcher-content')).toHaveCount(0);
+
+    // Dismiss by pressing Escape
+    await page.keyboard.press('Escape');
   });
 });

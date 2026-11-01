@@ -1,11 +1,13 @@
 import { test, expect } from '@playwright/test';
 
+import { applyCollagePreset } from './helpers/collage-presets';
 import { openStudioElementsCategory } from './helpers/studio-elements';
 import { setupWailsMock, waitForAppReady } from './helpers/wails-mock';
 
 /**
  * سيناريوهات E2E إضافية — تغطي حلقات العمل الأساسية للمحرر:
  * التراجع/الإعادة، الزوم، إضافة نص، حوار الاختصارات، وتبديل الأوضاع.
+ * كل التفاعلات إلزامية — فشل أي عنصر ظهوره متوقع فشل صريح للاختبار.
  */
 test.describe('Editor Core Workflows E2E', () => {
   test.beforeEach(async ({ page }) => {
@@ -30,36 +32,31 @@ test.describe('Editor Core Workflows E2E', () => {
   });
 
   test('Add-text is available, theme toggle works', async ({ page }) => {
-    await page
-      .getByTestId('mode-tab-single')
-      .or(page.getByRole('tab', { name: 'تعديل حر' }))
-      .first()
-      .click();
+    await page.getByTestId('mode-tab-single').click();
     await openStudioElementsCategory(page, 'text');
     const addText = page.getByTestId('element-add-text-heading');
     await expect(addText).toBeEnabled();
 
-    // تبديل الوضع المضيء/الداكن لا يكسر التطبيق
+    // تبديل المظهر تفعل حقيقي: صنف .dark على الجذر ينقلب فعلاً
+    const isDark = () => page.evaluate(() => document.documentElement.classList.contains('dark'));
+    const before = await isDark();
     const themeToggle = page
-      .getByRole('button', { name: /الوضع المضيء|الوضع الداكن|تبديل المظهر/ })
+      .getByRole('button', { name: /مظهر النظام|الوضع المضيء|الوضع الداكن/ })
       .first();
-    if (await themeToggle.isVisible()) {
-      await themeToggle.click();
-      await expect(page.locator('#canvas-area')).toBeVisible();
-    }
+    await expect(themeToggle).toBeVisible();
+    await themeToggle.click();
+    await expect.poll(isDark, { timeout: 5000 }).toBe(!before);
   });
 
   test('Keyboard shortcuts dialog opens and closes', async ({ page }) => {
-    const shortcutsBtn = page
-      .getByRole('button', { name: /اختصارات لوحة المفاتيح|اختصارات/ })
-      .first();
-    if (await shortcutsBtn.isVisible()) {
-      await shortcutsBtn.click();
-      await expect(page.getByRole('dialog')).toContainText(/اختصارات/);
+    // الزر مدمج في كبسولة الزوم أسفل الكانفس — ظهوره حتمي
+    const shortcutsBtn = page.getByRole('button', { name: 'اختصارات لوحة المفاتيح' }).first();
+    await expect(shortcutsBtn).toBeVisible();
+    await shortcutsBtn.click();
+    await expect(page.getByRole('dialog')).toContainText(/اختصارات/);
 
-      await page.keyboard.press('Escape');
-      await expect(page.getByRole('dialog')).not.toBeVisible();
-    }
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
   test('Undo/redo buttons stay stable across mode switch', async ({ page }) => {
@@ -67,48 +64,25 @@ test.describe('Editor Core Workflows E2E', () => {
     const redo = page.getByRole('button', { name: 'إعادة' }).first();
 
     await expect(undo).toBeVisible();
-    await page
-      .getByTestId('mode-tab-collage')
-      .or(page.getByRole('tab', { name: 'كولاج', exact: true }))
-      .click();
+    await page.getByTestId('mode-tab-collage').click();
     await expect(redo).toBeVisible();
-    await page
-      .getByTestId('mode-tab-single')
-      .or(page.getByRole('tab', { name: 'تعديل حر' }))
-      .click();
+    await page.getByTestId('mode-tab-single').click();
     await expect(undo).toBeVisible();
   });
 
   test('Ruler toggle button toggles ruler visibility', async ({ page }) => {
+    // زر المساطر جزء ثابت من سطح العرض أسفل الكانفس
     const rulerButton = page.getByRole('button', { name: /المساطر/ }).first();
-    if (await rulerButton.isVisible()) {
-      await rulerButton.click();
-      await expect(page.locator('#canvas-area')).toBeVisible();
-    }
+    await expect(rulerButton).toBeVisible();
+    await rulerButton.click();
+    await expect(page.locator('#canvas-area')).toBeVisible();
   });
 
   test('Apply a quick collage template from the panel', async ({ page }) => {
-    await page
-      .getByTestId('mode-tab-collage')
-      .or(page.getByRole('tab', { name: 'كولاج', exact: true }))
-      .first()
-      .click();
-    const showTemplatesBtn = page.getByRole('button', { name: 'إظهار لوحة القوالب' }).first();
-    if (await showTemplatesBtn.isVisible()) {
-      await showTemplatesBtn.click();
-    }
-    const presetsTab = page
-      .locator('[data-tab="presets"]')
-      .or(page.getByRole('tab', { name: /قوالب جاهزة|نماذج|القوالب/ }))
-      .first();
-    if (await presetsTab.isVisible()) {
-      await presetsTab.click();
-    }
-    const card = page.getByRole('button', { name: /طقم سفر|طقم تقديم|شيت|4 صور|شبكة/ }).first();
-    if (await card.isVisible()) {
-      await card.click();
-    }
-    // الكانفس يظل ظاهراً ومستقراً بعد تطبيق القالب
+    await page.getByTestId('mode-tab-collage').click();
+
+    // تطبيق إلزامي لقالب جاهز عبر المساعد المشترك (بدل المحدد الميت القديم)
+    await applyCollagePreset(page, 'طقم عائلي');
     await expect(page.locator('#canvas-area')).toBeVisible();
   });
 });
