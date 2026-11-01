@@ -153,6 +153,40 @@ function invalidateInFlightLicenseCheck(): void {
   inFlightCheck = null;
 }
 
+/** مُضيّق نوع معيّن الحالة لغلاف الإجراءات — يستقبل partial فقط */
+type LicenseStateSetter = (partial: Partial<LicenseSlice>) => void;
+
+/**
+ * غلاف موحد لإجراءات المصادقة المرتِّبة لملف تعريف — كانت ستة إجراءات
+ * (تسجيل، دخول، Google، تفعيل مفتاح، تحقق OTP، تعيين كلمة مرور جديدة)
+ * تكرر يدوياً النمط نفسه (~110 أسطر): تحميل ← نداء الربط ← رفض نتيجة فارغة
+ * برسالة السياق ← إبطال الفحص المعلق ← تعيين الجلسة ← إعادة رمي الخطأ برسالة
+ * السياق نفسها. خيارا الانحراف الموثقان للإجراء الشاذ (resendOTP): يعيد
+ * الملف دون تعيين جلسة (لا مستخدم جديد في مرحلة التسجيل بعد) ودون إبطال
+ * الفحص المعلق (سلوكه الأصلي المقصود).
+ */
+async function runProfileAuthAction(
+  set: LicenseStateSetter,
+  call: () => Promise<UserProfile | null>,
+  errorContext: string,
+  {
+    applyProfile = true,
+    invalidateCheck = true,
+  }: { applyProfile?: boolean; invalidateCheck?: boolean } = {},
+): Promise<UserProfile> {
+  set({ licenseLoading: true });
+  try {
+    const profile = await call();
+    if (!profile) throw new Error(errorContext);
+    if (invalidateCheck) invalidateInFlightLicenseCheck();
+    set(applyProfile ? { user: profile, licenseLoading: false } : { licenseLoading: false });
+    return profile;
+  } catch (err: unknown) {
+    set({ licenseLoading: false });
+    throw new Error(toErrorMessage(err, errorContext));
+  }
+}
+
 export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice> = (set, get) => ({
   user: null,
   licenseLoading: false,
@@ -239,95 +273,44 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     return inFlightCheck;
   },
 
-  registerAccount: async (name, email, password) => {
-    set({ licenseLoading: true });
-    try {
-      const profile = await LicenseHandler.RegisterAccount(name, email, password);
-      if (!profile) throw new Error('فشل إنشاء الحساب');
-      invalidateInFlightLicenseCheck();
-      set({ user: profile, licenseLoading: false });
-      return profile;
-    } catch (err: unknown) {
-      set({ licenseLoading: false });
-      const msg = toErrorMessage(err, 'فشل إنشاء الحساب');
-      throw new Error(msg);
-    }
-  },
+  registerAccount: (name, email, password) =>
+    runProfileAuthAction(
+      set,
+      () => LicenseHandler.RegisterAccount(name, email, password),
+      'فشل إنشاء الحساب',
+    ),
 
-  verifyOTP: async (email, otp) => {
-    set({ licenseLoading: true });
-    try {
-      const profile = await LicenseHandler.VerifyOTP(email, otp);
-      if (!profile) throw new Error('رمز التحقق غير صحيح');
-      invalidateInFlightLicenseCheck();
-      set({ user: profile, licenseLoading: false });
-      return profile;
-    } catch (err: unknown) {
-      set({ licenseLoading: false });
-      const msg = toErrorMessage(err, 'رمز التحقق غير صحيح');
-      throw new Error(msg);
-    }
-  },
+  verifyOTP: (email, otp) =>
+    runProfileAuthAction(set, () => LicenseHandler.VerifyOTP(email, otp), 'رمز التحقق غير صحيح'),
 
-  resendOTP: async (email) => {
-    set({ licenseLoading: true });
-    try {
-      const profile = await LicenseHandler.ResendOTP(email);
-      if (!profile) throw new Error('فشل إعادة إرسال رمز التحقق');
-      set({ licenseLoading: false });
-      return profile;
-    } catch (err: unknown) {
-      set({ licenseLoading: false });
-      const msg = toErrorMessage(err, 'فشل إعادة إرسال رمز التحقق');
-      throw new Error(msg);
-    }
-  },
+  resendOTP: (email) =>
+    runProfileAuthAction(set, () => LicenseHandler.ResendOTP(email), 'فشل إعادة إرسال رمز التحقق', {
+      applyProfile: false,
+      invalidateCheck: false,
+    }),
 
-  loginAccount: async (email, password) => {
-    set({ licenseLoading: true });
-    try {
-      const profile = await LicenseHandler.LoginAccount(email, password);
-      if (!profile) throw new Error('بريد إلكتروني أو كلمة مرور غير صحيحة');
-      invalidateInFlightLicenseCheck();
-      set({ user: profile, licenseLoading: false });
-      return profile;
-    } catch (err: unknown) {
-      set({ licenseLoading: false });
-      const msg = toErrorMessage(err, 'بريد إلكتروني أو كلمة مرور غير صحيحة');
-      throw new Error(msg);
-    }
-  },
+  loginAccount: (email, password) =>
+    runProfileAuthAction(
+      set,
+      () => LicenseHandler.LoginAccount(email, password),
+      'بريد إلكتروني أو كلمة مرور غير صحيحة',
+    ),
 
-  loginWithGoogle: async () => {
-    set({ licenseLoading: true });
-    try {
-      const profile = await LicenseHandler.LoginWithGoogle();
-      if (!profile) throw new Error('فشل تسجيل الدخول بواسطة Google');
-      invalidateInFlightLicenseCheck();
-      set({ user: profile, licenseLoading: false });
-      return profile;
-    } catch (err: unknown) {
-      set({ licenseLoading: false });
-      const msg = toErrorMessage(err, 'فشل تسجيل الدخول بواسطة Google');
-      throw new Error(msg);
-    }
-  },
+  loginWithGoogle: () =>
+    runProfileAuthAction(
+      set,
+      () => LicenseHandler.LoginWithGoogle(),
+      'فشل تسجيل الدخول بواسطة Google',
+    ),
 
-  activateLicenseKey: async (key) => {
-    set({ licenseLoading: true });
-    try {
-      const profile = await LicenseHandler.ActivateLicenseKey(key);
-      if (!profile) throw new Error('مفتاح تفعيل غير صالحة أو مستخدم سابقاً');
-      invalidateInFlightLicenseCheck();
-      set({ user: profile, licenseLoading: false });
-      return profile;
-    } catch (err: unknown) {
-      set({ licenseLoading: false });
-      const msg = toErrorMessage(err, 'مفتاح تفعيل غير صالحة أو مستخدم سابقاً');
-      throw new Error(msg);
-    }
-  },
+  activateLicenseKey: (key) =>
+    runProfileAuthAction(
+      set,
+      () => LicenseHandler.ActivateLicenseKey(key),
+      'مفتاح تفعيل غير صالحة أو مستخدم سابقاً',
+    ),
 
+  // إجراء بلا ملف تعريف (بذري فقط) — شكله مختلف عن الغلاف فيُبقى صريحاً
   resetPassword: async (email) => {
     set({ licenseLoading: true });
     try {
@@ -340,20 +323,12 @@ export const createLicenseSlice: StateCreator<LicenseSlice, [], [], LicenseSlice
     }
   },
 
-  verifyRecoveryOTP: async (email, token, newPassword) => {
-    set({ licenseLoading: true });
-    try {
-      const profile = await LicenseHandler.VerifyRecoveryOTP(email, token, newPassword);
-      if (!profile) throw new Error('فشل تعيين كلمة المرور الجديدة');
-      invalidateInFlightLicenseCheck();
-      set({ user: profile, licenseLoading: false });
-      return profile;
-    } catch (err: unknown) {
-      set({ licenseLoading: false });
-      const msg = toErrorMessage(err, 'فشل تعيين كلمة المرور الجديدة');
-      throw new Error(msg);
-    }
-  },
+  verifyRecoveryOTP: (email, token, newPassword) =>
+    runProfileAuthAction(
+      set,
+      () => LicenseHandler.VerifyRecoveryOTP(email, token, newPassword),
+      'فشل تعيين كلمة المرور الجديدة',
+    ),
 
   logoutAccount: async () => {
     // إبطال أي فحص ترخيص in-flight حتى لا يعيد الجلسة بعد الخروج (إصلاح Bug#4)
