@@ -477,3 +477,37 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
     expect(node.cropWidth()).toBe(1024);
   });
 });
+
+// ═══ قانون الخصائص (fast-check) — الدفعة 6: نافذة القصّة داخل حدود الصورة ═══
+describe('قوانين الخصائص — computeSlotCrop (fast-check)', () => {
+  it('نافذة القصّة دائماً موجبة وداخل حدود الصورة لأي تحويل', async () => {
+    const fc = (await import('fast-check')).default;
+    const { computeSlotCrop } = await import('../src/lib/export/export-primitives');
+    fc.assert(
+      fc.property(
+        fc.record({
+          width: fc.integer({ min: Math.fround(1), max: 5000 }),
+          height: fc.integer({ min: Math.fround(1), max: 5000 }),
+        }),
+        fc.record({
+          w: fc.float({ min: Math.fround(10), max: Math.fround(2000), noNaN: true }),
+          h: fc.float({ min: Math.fround(10), max: Math.fround(2000), noNaN: true }),
+          zoom: fc.float({ min: Math.fround(1), max: Math.fround(8), noNaN: true }), // واجهة الخانة لا تنتج zoom<1
+          dragX: fc.float({ min: Math.fround(-2), max: Math.fround(2), noNaN: true }),
+          dragY: fc.float({ min: Math.fround(-2), max: Math.fround(2), noNaN: true }),
+          rotation: fc.constantFrom(0, 90, 180, 270),
+        }),
+        (img, slot) => {
+          const crop = computeSlotCrop(img, slot.w, slot.h, slot);
+          expect(crop.sx).toBeGreaterThanOrEqual(-1e-9);
+          expect(crop.sy).toBeGreaterThanOrEqual(-1e-9);
+          expect(crop.sx + crop.sw).toBeLessThanOrEqual(img.width + 1e-9);
+          expect(crop.sy + crop.sh).toBeLessThanOrEqual(img.height + 1e-9);
+          expect(crop.sw).toBeGreaterThan(0);
+          expect(crop.sh).toBeGreaterThan(0);
+        },
+      ),
+      { numRuns: 300 },
+    );
+  });
+});

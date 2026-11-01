@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { describe, it, expect } from 'vitest';
 
 import {
@@ -323,5 +324,149 @@ describe('GridUtils Unit Tests', () => {
     // الشبكة كاملة داخل المساحة المتاحة بعد الهامش (100مم لكل جهة).
     const rightEdge = (cells[3].x + cells[3].w) * 210;
     expect(rightEdge).toBeLessThanOrEqual(110 + 1e-9);
+  });
+
+  // ═══ قوانين الخصائص (fast-check) — الدفعة 6: كل خلية ≥1مم وداخل الورقة ═══
+  describe('قوانين الخصائص — buildPhysicalGridCellsMM (fast-check)', () => {
+    it('لكل المدخلات القابلة للتنفيذ: كل خلية ≥1مم والشبكة كاملة داخل الورقة', () => {
+      const cellMeta = fc.record({
+        cols: fc.integer({ min: 1, max: 10 }),
+        rows: fc.integer({ min: 1, max: 10 }),
+        wMM: fc.integer({ min: 20, max: 297 }),
+        hMM: fc.integer({ min: 20, max: 297 }),
+        gapMM: fc.integer({ min: 0, max: 10 }),
+        marginMM: fc.integer({ min: 0, max: 15 }),
+      });
+      fc.assert(
+        fc.property(
+          cellMeta,
+          fc.integer({ min: 0, max: 200 }),
+          fc.constantFrom('center', 'start'),
+          (m, slack, align) => {
+            // ورقة قابلة للتنفيذ كحد أدنى: الهوامش + صف/عمود واحد بمقاس التصريح + رَخَص
+            const minNeed = 2 * m.marginMM + Math.min(m.wMM, m.hMM);
+            const paperW = 2 * m.marginMM + m.cols * (m.wMM + m.gapMM) + slack;
+            const paperH = 2 * m.marginMM + m.rows * (m.hMM + m.gapMM) + slack;
+            const cells = buildPhysicalGridCellsMM(
+              m.cols,
+              m.rows,
+              m.wMM,
+              m.hMM,
+              m.gapMM,
+              paperW,
+              paperH,
+              align,
+              m.marginMM,
+            );
+            void minNeed;
+            expect(cells.length).toBe(m.cols * m.rows);
+            for (const c of cells) {
+              expect(c.w * paperW).toBeGreaterThanOrEqual(1 - 1e-9);
+              expect(c.h * paperH).toBeGreaterThanOrEqual(1 - 1e-9);
+              expect(c.x * paperW).toBeGreaterThanOrEqual(-1e-9);
+              expect(c.y * paperH).toBeGreaterThanOrEqual(-1e-9);
+              expect((c.x + c.w) * paperW).toBeLessThanOrEqual(paperW + 1e-9);
+              expect((c.y + c.h) * paperH).toBeLessThanOrEqual(paperH + 1e-9);
+            }
+          },
+        ),
+        { numRuns: 200 },
+      );
+    });
+  });
+
+  describe('قوانين الخصائص — الضغط الشديد والمعتدل (fast-check)', () => {
+    it('ضغط شديد: خلايا موجبة والشبكة كاملة داخل الورقة (التصغير التناسبي مطابق للتصميم)', () => {
+      fc.assert(
+        fc.property(
+          fc.record({
+            cols: fc.integer({ min: 1, max: 8 }),
+            rows: fc.integer({ min: 1, max: 8 }),
+            wMM: fc.integer({ min: 25, max: 150 }),
+            hMM: fc.integer({ min: 25, max: 150 }),
+            gapMM: fc.integer({ min: 1, max: 8 }),
+            marginMM: fc.integer({ min: 0, max: 10 }),
+          }),
+          (m) => {
+            // ورقة بين أرضية 35مم والحاجة المعلنة — الضغط حتى ~13× يدخل الطور
+            // الثالث الموثق (التصغير التناسبي) الذي يقلّص المحورين معاً، فليس
+            // مضموناً بقاء كل خلية ≥1مم بل بقاءها موجبة داخل الورقة
+            const minW = Math.max(2 * m.marginMM + m.cols, 35);
+            const maxW = 2 * m.marginMM + m.cols * (m.wMM + m.gapMM);
+            const minH = Math.max(2 * m.marginMM + m.rows, 35);
+            const maxH = 2 * m.marginMM + m.rows * (m.hMM + m.gapMM);
+            if (maxW <= minW || maxH <= minH) return;
+            const paperW = minW + (((maxW - minW) * 7919) % Math.max(1, maxW - minW));
+            const paperH = minH + (((maxH - minH) * 104729) % Math.max(1, maxH - minH));
+            const cells = buildPhysicalGridCellsMM(
+              m.cols,
+              m.rows,
+              m.wMM,
+              m.hMM,
+              m.gapMM,
+              paperW,
+              paperH,
+              'center',
+              m.marginMM,
+            );
+            expect(cells.length).toBe(m.cols * m.rows);
+            for (const c of cells) {
+              expect(c.w * paperW).toBeGreaterThan(0);
+              expect(c.h * paperH).toBeGreaterThan(0);
+              expect(c.x * paperW).toBeGreaterThanOrEqual(-1e-9);
+              expect(c.y * paperH).toBeGreaterThanOrEqual(-1e-9);
+              expect((c.x + c.w) * paperW).toBeLessThanOrEqual(paperW + 1e-9);
+              expect((c.y + c.h) * paperH).toBeLessThanOrEqual(paperH + 1e-9);
+            }
+          },
+        ),
+        { numRuns: 300 },
+      );
+    });
+
+    it('ضغط معتدل (الورقة ≥80% من الحاجة المعلنة): كل خلية ≥1مم وداخل الورقة', () => {
+      fc.assert(
+        fc.property(
+          fc.record({
+            cols: fc.integer({ min: 1, max: 8 }),
+            rows: fc.integer({ min: 1, max: 8 }),
+            wMM: fc.integer({ min: 25, max: 150 }),
+            hMM: fc.integer({ min: 25, max: 150 }),
+            gapMM: fc.integer({ min: 0, max: 8 }),
+            marginMM: fc.integer({ min: 0, max: 10 }),
+          }),
+          fc.integer({ min: 0, max: 40 }),
+          (m, shrink) => {
+            // نطاق عمل الحارس: الورقة قريبة من الحاجة فتُضغط الفجوة وتُثبَّت
+            // الخلايا على أرضية 1مم دون دخول التصغير التناسبي العميق
+            const needW = m.cols * (m.wMM + m.gapMM);
+            const needH = m.rows * (m.hMM + m.gapMM);
+            const paperW = 2 * m.marginMM + needW - Math.min(shrink, Math.floor(needW * 0.2));
+            const paperH = 2 * m.marginMM + needH - Math.min(shrink, Math.floor(needH * 0.2));
+            const cells = buildPhysicalGridCellsMM(
+              m.cols,
+              m.rows,
+              m.wMM,
+              m.hMM,
+              m.gapMM,
+              paperW,
+              paperH,
+              'center',
+              m.marginMM,
+            );
+            expect(cells.length).toBe(m.cols * m.rows);
+            for (const c of cells) {
+              expect(c.w * paperW).toBeGreaterThanOrEqual(1 - 1e-9);
+              expect(c.h * paperH).toBeGreaterThanOrEqual(1 - 1e-9);
+              expect(c.x * paperW).toBeGreaterThanOrEqual(-1e-9);
+              expect(c.y * paperH).toBeGreaterThanOrEqual(-1e-9);
+              expect((c.x + c.w) * paperW).toBeLessThanOrEqual(paperW + 1e-9);
+              expect((c.y + c.h) * paperH).toBeLessThanOrEqual(paperH + 1e-9);
+            }
+          },
+        ),
+        { numRuns: 300 },
+      );
+    });
   });
 });

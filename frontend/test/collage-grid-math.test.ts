@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { describe, it, expect } from 'vitest';
 
 import {
@@ -142,5 +143,44 @@ describe('collage-grid-math — هندسة الباني مطابقة لمحرك 
       const dim = getPhotoDimensions(type);
       expect(getPhysicalCellSizeMM(type)).toEqual({ wMM: dim.wMM, hMM: dim.hMM });
     }
+  });
+});
+
+// ═══ قوانين الخصائص (fast-check) — الدفعة 6: عكس getSlotRect round-trip ═══
+describe('قوانين الخصائص — getSlotRect round-trip (fast-check)', () => {
+  it('المعكوس الهندسي يستعيد إحداثيات الخانة الأصلية لأي هندسة', async () => {
+    const { getSlotRect } = await import('../src/lib/canvas/collage-geometry');
+    fc.assert(
+      fc.property(
+        fc
+          .record({
+            x: fc.float({ min: Math.fround(0), max: Math.fround(1), noNaN: true }),
+            y: fc.float({ min: Math.fround(0), max: Math.fround(1), noNaN: true }),
+            w: fc.float({ min: Math.fround(0.06), max: Math.fround(1), noNaN: true }),
+            h: fc.float({ min: Math.fround(0.06), max: Math.fround(1), noNaN: true }),
+          })
+          .filter((sl) => sl.x + sl.w <= 1 && sl.y + sl.h <= 1),
+        fc.record({
+          margin: fc.float({ min: Math.fround(0), max: Math.fround(80), noNaN: true }),
+          gap: fc.float({ min: Math.fround(0), max: Math.fround(10), noNaN: true }),
+          availW: fc.float({ min: Math.fround(300), max: Math.fround(2000), noNaN: true }),
+          availH: fc.float({ min: Math.fround(300), max: Math.fround(2000), noNaN: true }),
+        }),
+        (slot, geo) => {
+          const rect = getSlotRect(slot, geo);
+          const trackW = geo.availW + geo.gap;
+          const trackH = geo.availH + geo.gap;
+          const invX = (rect.left - geo.margin) / trackW;
+          const invY = (rect.top - geo.margin) / trackH;
+          const invW = (rect.width + geo.gap) / trackW;
+          const invH = (rect.height + geo.gap) / trackH;
+          expect(invX).toBeCloseTo(slot.x, 4);
+          expect(invY).toBeCloseTo(slot.y, 4);
+          expect(invW).toBeCloseTo(slot.w, 4);
+          expect(invH).toBeCloseTo(slot.h, 4);
+        },
+      ),
+      { numRuns: 300 },
+    );
   });
 });
