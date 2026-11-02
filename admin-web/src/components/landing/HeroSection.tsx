@@ -31,7 +31,7 @@ export function HeroSection() {
       <div aria-hidden="true" className="landing-hero-light" />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto mb-8 sm:mb-10 flex flex-col items-center text-center">
+        <div className="max-w-3xl mx-auto mb-0 md:mb-10 flex flex-col items-center text-center">
           <p className="mb-4 flex min-h-6 items-center gap-3 text-xs font-medium text-text-secondary">
             <span>
               Grido Studio لـ <bdi>Windows</bdi>
@@ -81,7 +81,9 @@ export function HeroSection() {
           </ul>
         </div>
 
-        <AppMockup paused={showTour} />
+        <div className="hidden md:block">
+          <AppMockup paused={showTour} />
+        </div>
       </div>
 
       <TourModal

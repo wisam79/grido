@@ -104,6 +104,13 @@ ORIGINAL_REQUEST.md
 
 # Promotional marketing assets (local only)
 promo/
+.remotion/
+.agents/skills/remotion-*/
+
+# Temporary caches & attachments
+.cache/
+.cloud-attachments/
+skills-lock.json
 
 # Audit screenshots (local only)
 screenshots/
