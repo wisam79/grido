@@ -7,7 +7,7 @@ description: "خطة وإجراءات ترفيع وإطلاق إصدارات Gri
 
 > **الهدف:** توفير مسار عمل آلي صارم وخالٍ من الأخطاء لإنشاء وترفيع إصدارات Grido Studio ونشرها على GitHub و SignPath.
 > **إثبات المنشأ (2026-11-02):** كل إصدار يُرفق بإثبات بناء مشفر (sigstore) لثنائياته — التحقق:
-> `gh attestation verify <exe> -R wisam79/grido` — يعمل بلا توقيع تجاري ويُكمّل checksums وتوقيع SignPath عند تهيئته.
+> `gh attestation verify <exe> -R wisam79/grido` — يعمل بلا توقيع تجاري ويُكمّل checksums وتوقيع SignPath عند تهيئته (يتخطى السقوط بـ`continue-on-error: true` في المستودعات الفردية الخاصة حيث يقيد GitHub خدمة Sigstore).
 > **أمر التشغيل المباشر:** يمكن استدعاء هذا الإجراء في أي وقت بكتابة `/release-deployment` في صندوق المحادثة.
 
 ---

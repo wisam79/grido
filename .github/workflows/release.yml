@@ -427,6 +427,7 @@ jobs:
       #    gh attestation verify GridoStudio.exe -R wisam79/grido
       - name: Attest Build Provenance
         uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
+        continue-on-error: true
         with:
           subject-path: |
             bin/GridoStudio.exe
