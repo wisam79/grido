@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import golden from '../../test-fixtures/print-crop-golden.json';
 import { KonvaCollageImage } from '../src/components/editor/konva/elements/collage-image';
 import { SlotProperties } from '../src/components/editor/properties/slot-properties';
+import { TooltipProvider } from '../src/components/ui/tooltip';
 import {
   useCanvasInteraction,
   resetCanvasInteraction,
@@ -581,7 +582,11 @@ describe('SlotProperties — حفظ قص خانة الكولاج', () => {
     const onUpdate = vi.fn();
     const pushHistory = vi.spyOn(useEditorStore.getState(), 'pushHistory');
 
-    render(<SlotProperties slot={slot} onUpdate={onUpdate} />);
+    render(
+      <TooltipProvider>
+        <SlotProperties slot={slot} onUpdate={onUpdate} />
+      </TooltipProvider>,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'قص الصورة' }));
     fireEvent.click(await screen.findByRole('button', { name: 'تأكيد القص التجريبي' }));
 
