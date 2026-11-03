@@ -45,10 +45,10 @@ vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
   ),
   PrintNative: vi.fn(() => Promise.resolve({ success: true })),
   PrintDirect: vi.fn(() =>
-    Promise.resolve({ success: true, jobId: 42, status: 'Printed', error: '' }),
+    Promise.resolve({ success: true, jobId: 0, status: 'Printed', error: '' }),
   ),
   PollJobStatus: vi.fn(() =>
-    Promise.resolve({ success: true, jobId: 42, status: 'Completed', error: '' }),
+    Promise.resolve({ success: true, jobId: 0, status: 'Completed', error: '' }),
   ),
   GetSupportedPapers: vi.fn(() => Promise.resolve({ success: true, papers: [], error: '' })),
 }));
@@ -183,6 +183,8 @@ class FakeImage {
 describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.clearAllTimers();
+    vi.useRealTimers();
     FakeImage.decodedWidth = 800;
     FakeImage.decodedHeight = 600;
     FakeImage.fail = false;
@@ -191,6 +193,8 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   });
 
   afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     document.body.style.pointerEvents = '';
   });
@@ -757,23 +761,28 @@ describe('عقد حمولة الطباعة (PrintRequest Contract)', () => {
   });
 
   it('يعرض اسم الطابعة المخصصة ورقم المهمة بدقة في إشعار النجاح', async () => {
-    mockPrintDirect.mockResolvedValueOnce({
-      success: true,
-      jobId: 105,
-      status: 'Spooling',
-      error: '',
-    } as Awaited<ReturnType<typeof PrintDirect>>);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      mockPrintDirect.mockResolvedValueOnce({
+        success: true,
+        jobId: 105,
+        status: 'Spooling',
+        error: '',
+      } as Awaited<ReturnType<typeof PrintDirect>>);
 
-    await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
-      directPrint: true,
-      printerName: 'Epson Stylus Pro 4900',
-    });
+      await runPrint(makeContext({ printColorSpace: 'sRGB' }), () => {}, {
+        directPrint: true,
+        printerName: 'Epson Stylus Pro 4900',
+      });
 
-    expect(mockToastSuccess).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'تم إرسال الورقة بنجاح إلى طابعة Epson Stylus Pro 4900 (المهمة #105)',
-      ),
-    );
+      expect(mockToastSuccess).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'تم إرسال الورقة بنجاح إلى طابعة Epson Stylus Pro 4900 (المهمة #105)',
+        ),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('يتجاهل استدعاء PollJobStatus إذا أعادت الطباعة المباشرة jobId صفرياً أو غير معرف', async () => {
