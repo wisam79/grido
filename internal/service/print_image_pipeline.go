@@ -567,7 +567,10 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 			} else if capErr := checkDecodedPixelCap(cfg, "base64 image"); capErr != nil {
 				return nil, capErr
 			}
-			img, err = imaging.Decode(io.LimitReader(bytes.NewReader(data), 100*1024*1024))
+			img, err = imaging.Decode(
+				io.LimitReader(bytes.NewReader(data), 100*1024*1024),
+				imaging.AutoOrientation(true),
+			)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode image from base64 data: %w", err)
 			}
@@ -590,9 +593,9 @@ func loadRawImage(filePath string, cacheKey string, imgCache *imageCache) (image
 				_ = f.Close()
 				return nil, fmt.Errorf("failed to rewind image %s: %w", filepath.Base(filePath), seekErr)
 			}
-			// imaging.Decode على المقبض المفتوح = سلوك imaging.Open نفسه
-			// (نفس المسار والتسجيلات) مع إعادة الاستخدام بدل فتح ثانٍ.
-			img, err = imaging.Decode(f)
+			// التطبيع مع EXIF هنا يطابق أبعاد createImageBitmap(from-image) التي
+			// بنت الواجهة عليها إحداثيات القص، بما في ذلك تبديل الأبعاد 5-8.
+			img, err = imaging.Decode(f, imaging.AutoOrientation(true))
 			closeErr := f.Close()
 			if err != nil {
 				return nil, fmt.Errorf("failed to open image %s: %w", filepath.Base(filePath), err)

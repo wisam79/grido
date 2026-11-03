@@ -836,7 +836,14 @@ export const SlotProperties = React.memo(function SlotProperties({
                 if (wailsIsDesktop() && cropped.startsWith('data:image/')) {
                   localPath = await SaveImageFromBase64(cropped);
                 }
-                onUpdate(slot.id, { imageSrc: localPath });
+                onUpdate(slot.id, {
+                  imageSrc: localPath,
+                  dragX: 0,
+                  dragY: 0,
+                  zoom: 1,
+                  originalImageSrc: slot.originalImageSrc || slot.imageSrc,
+                });
+                useEditorStore.getState().pushHistory();
               } catch (err) {
                 logger.error('Failed to save cropped slot image:', err);
                 toast.error(toErrorMessage(err, 'فشل حفظ القص'));

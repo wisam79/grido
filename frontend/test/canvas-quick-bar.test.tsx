@@ -66,6 +66,29 @@ describe('CanvasQuickBar Component Tests', () => {
     expect(screen.queryByText('عزل الخلفية')).not.toBeInTheDocument();
   });
 
+  it('does not expose free-element distribution for collage slot selections', () => {
+    useEditorStore.setState({
+      mode: 'collage',
+      selectedId: 'slot-1',
+      selectedIds: ['slot-1', 'slot-2', 'slot-3'],
+      slots: [
+        { id: 'slot-1', cellIndex: 0, x: 0, y: 0, w: 0.33, h: 1, imageSrc: 'one.jpg' },
+        { id: 'slot-2', cellIndex: 1, x: 0.33, y: 0, w: 0.33, h: 1, imageSrc: 'two.jpg' },
+        { id: 'slot-3', cellIndex: 2, x: 0.66, y: 0, w: 0.34, h: 1, imageSrc: 'three.jpg' },
+      ],
+    });
+
+    render(
+      <TooltipProvider>
+        <CanvasQuickBar printMode={false} isContextMenuOpen={false} />
+      </TooltipProvider>,
+    );
+
+    expect(screen.getByLabelText('3 عناصر محددة')).toBeInTheDocument();
+    expect(screen.queryByLabelText('توزيع أفقي')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('توزيع عمودي')).not.toBeInTheDocument();
+  });
+
   const selectSingleImage = () =>
     useEditorStore.setState({
       mode: 'single',

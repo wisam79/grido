@@ -51,27 +51,37 @@ function actOnSelection(
 
 /** أدوات العناصر المحددة (تكرار/ذكاء اصطناعي/تجميع/محاذاة/حذف). */
 export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools() {
-  const { hasSelection, isImageSelected, isCollageMode, canGroup, canUngroup } = useEditorStore(
-    useShallow((state) => {
-      const hasSel = !!state.selectedId || state.selectedIds.length > 0;
-      const selectedEl = state.elements.find((e) => e.id === state.selectedId);
-      const selectedSlot = state.slots?.find((s) => s.id === state.selectedId);
-      const isImg =
-        (selectedEl && selectedEl.type === 'image') ||
-        (state.mode === 'collage' && selectedSlot && !!selectedSlot.imageSrc);
+  const { hasSelection, isImageSelected, isSlotSelection, hasSlotImage, canGroup, canUngroup } =
+    useEditorStore(
+      useShallow((state) => {
+        const hasSel = !!state.selectedId || state.selectedIds.length > 0;
+        const selectedEl = state.elements.find((e) => e.id === state.selectedId);
+        const selectedSlot = state.slots?.find((s) => s.id === state.selectedId);
+        const hasSelectedElements = state.elements.some((element) =>
+          state.selectedIds.includes(element.id),
+        );
+        const selectedSlots = state.slots.filter((slot) => state.selectedIds.includes(slot.id));
+        const slotSelection =
+          state.mode === 'collage' && !hasSelectedElements && selectedSlots.length > 0;
+        const isImg =
+          (selectedEl && selectedEl.type === 'image') ||
+          (slotSelection && selectedSlot && !!selectedSlot.imageSrc);
 
-      const idsCount = state.selectedIds.length;
-      const hasGroup = state.elements.some((el) => state.selectedIds.includes(el.id) && el.groupId);
+        const idsCount = state.selectedIds.length;
+        const hasGroup = state.elements.some(
+          (el) => state.selectedIds.includes(el.id) && el.groupId,
+        );
 
-      return {
-        hasSelection: hasSel,
-        isImageSelected: !!isImg,
-        isCollageMode: state.mode === 'collage',
-        canGroup: idsCount >= 2,
-        canUngroup: hasGroup,
-      };
-    }),
-  );
+        return {
+          hasSelection: hasSel,
+          isImageSelected: !!isImg,
+          isSlotSelection: slotSelection,
+          hasSlotImage: slotSelection && selectedSlots.some((slot) => !!slot.imageSrc),
+          canGroup: !slotSelection && idsCount >= 2,
+          canUngroup: hasGroup,
+        };
+      }),
+    );
   const duplicateElement = useEditorStore((state) => state.duplicateElement);
   const duplicateElements = useEditorStore((state) => state.duplicateElements);
   const groupSelectedElements = useEditorStore((state) => state.groupSelectedElements);
@@ -89,7 +99,21 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
     [],
   );
 
-  if (!hasSelection) return null;
+  if (!hasSelection || (isSlotSelection && !hasSlotImage)) return null;
+
+  const deleteSelection = () => {
+    const state = useEditorStore.getState();
+    if (isSlotSelection) {
+      const imageIds = state.selectedIds.filter((id) =>
+        state.slots.some((slot) => slot.id === id && slot.imageSrc),
+      );
+      if (imageIds.length === 0) return;
+      state.updateSlotsBatch(imageIds, { imageSrc: undefined, originalImageSrc: undefined });
+      state.pushHistory();
+      return;
+    }
+    actOnSelection(removeElement, removeElements, true);
+  };
 
   return (
     <div
@@ -101,22 +125,26 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
       {isImageSelected && (
         <>
           <AiToolsToolbarGroup />
-          {isCollageMode && <Separator orientation="vertical" className="h-4 bg-border/60 mx-1" />}
+          {isSlotSelection && (
+            <Separator orientation="vertical" className="h-4 bg-border/60 mx-1" />
+          )}
         </>
       )}
 
       <div className="fluent-command-group">
-        <TooltipBtn content="تكرار العناصر">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => actOnSelection(duplicateElement, duplicateElements)}
-            aria-label="تكرار"
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
-          >
-            <Copy className="w-4 h-4" />
-          </Button>
-        </TooltipBtn>
+        {!isSlotSelection && (
+          <TooltipBtn content="تكرار العناصر">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => actOnSelection(duplicateElement, duplicateElements)}
+              aria-label="تكرار"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer"
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+          </TooltipBtn>
+        )}
 
         {isImageSelected && <ImageFiltersPopover />}
 
@@ -149,54 +177,55 @@ export const ToolbarSelectionTools = React.memo(function ToolbarSelectionTools()
           </TooltipBtn>
         )}
 
-        {/* محاذاة */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer gap-1"
-              aria-label="محاذاة"
+        {!isSlotSelection && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-md transition-colors cursor-pointer gap-1"
+                aria-label="محاذاة"
+              >
+                <AlignCenterHorizontalIcon className="w-4 h-4" />
+                <CaretDown className="w-3 h-3 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="w-40 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1 space-y-0.5"
             >
-              <AlignCenterHorizontalIcon className="w-4 h-4" />
-              <CaretDown className="w-3 h-3 opacity-60" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="w-40 font-cairo [direction:rtl] rounded-lg bg-popover text-popover-foreground border border-border shadow-fluent-16 fluent-specular p-1 space-y-0.5"
-          >
-            <DropdownMenuItem
-              onClick={() => alignElement('left')}
-              className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
-            >
-              <AlignLeftIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="font-semibold">محاذاة لليسار</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => alignElement('center')}
-              className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
-            >
-              <AlignCenterHorizontalIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="font-semibold">توسيط أفقي</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => alignElement('right')}
-              className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
-            >
-              <AlignRightIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="font-semibold">محاذاة لليمين</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem
+                onClick={() => alignElement('left')}
+                className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
+              >
+                <AlignLeftIcon className="w-4 h-4 text-muted-foreground" />
+                <span className="font-semibold">محاذاة لليسار</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => alignElement('center')}
+                className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
+              >
+                <AlignCenterHorizontalIcon className="w-4 h-4 text-muted-foreground" />
+                <span className="font-semibold">توسيط أفقي</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => alignElement('right')}
+                className="gap-2.5 text-xs cursor-pointer rounded-lg p-2 text-foreground/90 hover:text-foreground"
+              >
+                <AlignRightIcon className="w-4 h-4 text-muted-foreground" />
+                <span className="font-semibold">محاذاة لليمين</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         {/* حذف — أيقونة محايدة في الراحة وتتحول للأحمر عند التمرير لمنع التشتت البصري */}
-        <TooltipBtn content="حذف (Delete)">
+        <TooltipBtn content={isSlotSelection ? 'تفريغ الصورة (Delete)' : 'حذف (Delete)'}>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => actOnSelection(removeElement, removeElements, true)}
-            aria-label="حذف"
+            onClick={deleteSelection}
+            aria-label={isSlotSelection ? 'تفريغ الصورة' : 'حذف'}
             className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors cursor-pointer"
           >
             <Trash className="w-4 h-4" />

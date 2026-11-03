@@ -141,12 +141,16 @@ export function useKeyboardShortcuts() {
   useHotkeys(
     'mod+d',
     (e) => {
+      const state = useEditorStore.getState();
+      const selectedElementIds = state.selectedIds.filter((id) =>
+        state.elements.some((element) => element.id === id),
+      );
+      if (selectedElementIds.length === 0) return;
       e.preventDefault();
-      const { selectedIds, duplicateElements, duplicateElement } = useEditorStore.getState();
-      if (selectedIds.length === 1) {
-        duplicateElement(selectedIds[0]);
-      } else if (selectedIds.length > 1) {
-        duplicateElements(selectedIds);
+      if (selectedElementIds.length === 1) {
+        state.duplicateElement(selectedElementIds[0]);
+      } else {
+        state.duplicateElements(selectedElementIds);
       }
     },
     { ignoreEventWhen: shouldIgnoreCanvasAction },
@@ -168,20 +172,26 @@ export function useKeyboardShortcuts() {
   // Copy: Ctrl+C or Cmd+C
   useHotkeys('mod+c', (e) => {
     if (shouldIgnoreCanvasAction(e)) return;
-    const { selectedIds, copySelectedElements } = useEditorStore.getState();
-    if (selectedIds.length > 0) {
+    const state = useEditorStore.getState();
+    const selectedElementIds = state.selectedIds.filter((id) =>
+      state.elements.some((element) => element.id === id),
+    );
+    if (selectedElementIds.length > 0) {
       e.preventDefault();
-      copySelectedElements(selectedIds);
+      state.copySelectedElements(selectedElementIds);
     }
   });
 
   // Cut: Ctrl+X or Cmd+X
   useHotkeys('mod+x', (e) => {
     if (shouldIgnoreCanvasAction(e)) return;
-    const { selectedIds, cutSelectedElements } = useEditorStore.getState();
-    if (selectedIds.length > 0) {
+    const state = useEditorStore.getState();
+    const selectedElementIds = state.selectedIds.filter((id) =>
+      state.elements.some((element) => element.id === id),
+    );
+    if (selectedElementIds.length > 0) {
       e.preventDefault();
-      cutSelectedElements(selectedIds);
+      state.cutSelectedElements(selectedElementIds);
     }
   });
 
@@ -196,9 +206,12 @@ export function useKeyboardShortcuts() {
   useHotkeys(
     'mod+g',
     (e) => {
+      const state = useEditorStore.getState();
+      if (!state.selectedIds.some((id) => state.elements.some((element) => element.id === id))) {
+        return;
+      }
       e.preventDefault();
-      const { selectedIds, groupSelectedElements } = useEditorStore.getState();
-      if (selectedIds.length > 0) groupSelectedElements();
+      state.groupSelectedElements();
     },
     { ignoreEventWhen: shouldIgnoreCanvasAction },
   );
@@ -207,9 +220,12 @@ export function useKeyboardShortcuts() {
   useHotkeys(
     'shift+mod+g',
     (e) => {
+      const state = useEditorStore.getState();
+      if (!state.selectedIds.some((id) => state.elements.some((element) => element.id === id))) {
+        return;
+      }
       e.preventDefault();
-      const { selectedIds, ungroupSelectedElements } = useEditorStore.getState();
-      if (selectedIds.length > 0) ungroupSelectedElements();
+      state.ungroupSelectedElements();
     },
     { ignoreEventWhen: shouldIgnoreCanvasAction },
   );
@@ -483,9 +499,16 @@ export function useKeyboardShortcuts() {
         if (e.key === 'ArrowRight') dragX = delta;
         state.slots.forEach((slot) => {
           if (!selectedSet.has(slot.id) || !slot.imageSrc) return;
+          const radians = ((slot.rotation ?? 0) * Math.PI) / 180;
+          const cos = Math.cos(radians);
+          const sin = Math.sin(radians);
+          let localX = cos * dragX + sin * dragY;
+          let localY = -sin * dragX + cos * dragY;
+          if (slot.flipX) localX = -localX;
+          if (slot.flipY) localY = -localY;
           state.updateSlot(slot.id, {
-            dragX: (slot.dragX ?? 0) + dragX,
-            dragY: (slot.dragY ?? 0) + dragY,
+            dragX: (slot.dragX ?? 0) + localX,
+            dragY: (slot.dragY ?? 0) + localY,
           });
         });
         if (nudgeTimeout) clearTimeout(nudgeTimeout);

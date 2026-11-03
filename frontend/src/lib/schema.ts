@@ -175,6 +175,7 @@ export const PrintSettingsSchema = z.object({
   // نمط خط القص ومحاذاة الشبكة المختاران ويعودان للافتراضي — إصلاح فقدان إعداد.
   cutLineStyle: z.enum(['dashed', 'dotted', 'solid', 'cropmarks']).optional(),
   colorSpace: z.enum(['sRGB', 'CMYK']).optional(),
+  outputFormat: z.enum(['jpeg', 'png']).optional(),
   gridAlign: z
     .enum([
       'top-left',

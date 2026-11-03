@@ -117,6 +117,25 @@ describe('useKeyboardShortcuts - Keyboard Shortcuts Hook Tests', () => {
     duplicateElementSpy.mockRestore();
   });
 
+  it('should not route collage slots to free-element duplication on Ctrl+D', async () => {
+    const duplicateElementSpy = vi.spyOn(useEditorStore.getState(), 'duplicateElement');
+    const duplicateElementsSpy = vi.spyOn(useEditorStore.getState(), 'duplicateElements');
+    useEditorStore.setState({
+      mode: 'collage',
+      selectedId: 'slot-1',
+      selectedIds: ['slot-1'],
+      slots: [{ id: 'slot-1', cellIndex: 0, x: 0, y: 0, w: 1, h: 1, imageSrc: 'test.jpg' }],
+    });
+
+    renderHook(() => useKeyboardShortcuts());
+    await user.keyboard('{Control>}d{/Control}');
+
+    expect(duplicateElementSpy).not.toHaveBeenCalled();
+    expect(duplicateElementsSpy).not.toHaveBeenCalled();
+    duplicateElementSpy.mockRestore();
+    duplicateElementsSpy.mockRestore();
+  });
+
   it('should open projects dialog on Ctrl+S', async () => {
     const listener = vi.fn();
     window.addEventListener('grido:open-projects-dialog', listener);
@@ -154,6 +173,42 @@ describe('useKeyboardShortcuts - Keyboard Shortcuts Hook Tests', () => {
 
     updateElementSpy.mockRestore();
   });
+
+  it.each([
+    { rotation: 90, flipX: false, flipY: false, expectedX: 0, expectedY: -2 },
+    { rotation: 0, flipX: true, flipY: false, expectedX: -2, expectedY: 0 },
+    { rotation: 90, flipX: false, flipY: true, expectedX: 0, expectedY: 2 },
+  ])(
+    'should nudge a collage crop window in screen space with rotation=$rotation flipX=$flipX flipY=$flipY',
+    async ({ rotation, flipX, flipY, expectedX, expectedY }) => {
+      useEditorStore.setState({
+        mode: 'collage',
+        selectedId: 'slot-1',
+        selectedIds: ['slot-1'],
+        slots: [
+          {
+            id: 'slot-1',
+            cellIndex: 0,
+            x: 0,
+            y: 0,
+            w: 1,
+            h: 1,
+            imageSrc: 'test.jpg',
+            rotation,
+            flipX,
+            flipY,
+          },
+        ],
+      });
+
+      renderHook(() => useKeyboardShortcuts());
+      await user.keyboard('{ArrowRight}');
+
+      const slot = useEditorStore.getState().slots[0];
+      expect(slot.dragX).toBeCloseTo(expectedX);
+      expect(slot.dragY).toBeCloseTo(expectedY);
+    },
+  );
 
   it('should ignore shortcuts when typing inside inputs or contentEditable', async () => {
     const undoSpy = vi.spyOn(useEditorStore.getState(), 'undo');

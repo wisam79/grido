@@ -2,6 +2,7 @@ import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { ToolbarSelectionTools } from '../src/components/editor/toolbar/toolbar-selection-tools';
 import { ToolbarTransferToCollage } from '../src/components/editor/toolbar/toolbar-transfer-to-collage';
 import { TooltipProvider } from '../src/components/ui/tooltip';
 import { useEditorStore } from '../src/lib/editor-store';
@@ -19,6 +20,14 @@ vi.mock('../wailsjs/go/main/App', () => ({
 // المرحلة لا تُلمس في هذا الاختبار: exportCanvas مُحاكاة، والمكوّن يتحقق فقط من وجودها
 vi.mock('../src/lib/canvas/stage-context', () => ({
   useStageRef: () => ({ current: { width: () => 2480 } }),
+}));
+
+vi.mock('../src/components/editor/toolbar/toolbar-ai-tools', () => ({
+  AiToolsToolbarGroup: () => null,
+}));
+
+vi.mock('../src/components/editor/toolbar/toolbar-image-filters', () => ({
+  ImageFiltersPopover: () => null,
 }));
 
 describe('ToolbarTransferToCollage — نقل التصميم إلى الكولاج', () => {
@@ -108,5 +117,57 @@ describe('ToolbarTransferToCollage — نقل التصميم إلى الكولا
     useEditorStore.getState().setMode('collage');
     renderButton();
     expect(screen.queryByTestId('toolbar-transfer-to-collage')).toBeNull();
+  });
+});
+
+describe('ToolbarSelectionTools — أوامر خانات الكولاج', () => {
+  beforeEach(() => {
+    useEditorStore.getState().reset();
+    useEditorStore.setState({
+      mode: 'collage',
+      selectedId: 'slot-1',
+      selectedIds: ['slot-1', 'slot-2'],
+      slots: [
+        {
+          id: 'slot-1',
+          cellIndex: 0,
+          x: 0,
+          y: 0,
+          w: 0.5,
+          h: 1,
+          imageSrc: 'one.jpg',
+          originalImageSrc: 'original-one.jpg',
+        },
+        {
+          id: 'slot-2',
+          cellIndex: 1,
+          x: 0.5,
+          y: 0,
+          w: 0.5,
+          h: 1,
+          imageSrc: 'two.jpg',
+          originalImageSrc: 'original-two.jpg',
+        },
+      ],
+    });
+  });
+
+  it('يخفي أوامر العناصر الحرة ويفرّغ الصور المحددة بخطوة تراجع واحدة', () => {
+    render(
+      <TooltipProvider>
+        <ToolbarSelectionTools />
+      </TooltipProvider>,
+    );
+
+    expect(screen.queryByLabelText('تكرار')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('تجميع')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('محاذاة')).not.toBeInTheDocument();
+
+    const historyLength = useEditorStore.getState().history.length;
+    fireEvent.click(screen.getByRole('button', { name: 'تفريغ الصورة' }));
+
+    const state = useEditorStore.getState();
+    expect(state.slots.every((slot) => !slot.imageSrc && !slot.originalImageSrc)).toBe(true);
+    expect(state.history.length).toBe(historyLength + 1);
   });
 });

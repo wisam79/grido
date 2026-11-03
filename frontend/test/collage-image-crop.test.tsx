@@ -1,4 +1,4 @@
-import { waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Stage, Layer } from 'react-konva';
@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import golden from '../../test-fixtures/print-crop-golden.json';
 import { KonvaCollageImage } from '../src/components/editor/konva/elements/collage-image';
+import { SlotProperties } from '../src/components/editor/properties/slot-properties';
 import {
   useCanvasInteraction,
   resetCanvasInteraction,
@@ -15,6 +16,16 @@ import { useEditorStore } from '../src/lib/editor-store';
 
 import type Konva from 'konva';
 import type { Root } from 'react-dom/client';
+
+vi.mock('../src/lib/wails-env', () => ({ wailsIsDesktop: () => false }));
+
+vi.mock('../src/components/editor/dialogs/crop-dialog', () => ({
+  CropDialog: ({ onCropSave }: { onCropSave: (cropped: string) => void | Promise<void> }) => (
+    <button type="button" onClick={() => void onCropSave('data:image/png;base64,Y3JvcHBlZA==')}>
+      تأكيد القص التجريبي
+    </button>
+  ),
+}));
 
 /**
  * انحدار إطار الصورة داخل خانة الكولاج:
@@ -539,5 +550,50 @@ describe('الحاضنة الذهبية المشتركة TS/Go — نافذة ا
       expect(Math.abs(crop.sw - tc.expected.cropW)).toBeLessThanOrEqual(tol);
       expect(Math.abs(crop.sh - tc.expected.cropH)).toBeLessThanOrEqual(tol);
     }
+  });
+});
+
+describe('SlotProperties — حفظ قص خانة الكولاج', () => {
+  beforeEach(() => {
+    useEditorStore.getState().reset();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('يعيد ضبط الإزاحة والزوم ويحفظ الأصل ويدفع خطوة تراجع', async () => {
+    const slot = {
+      id: 'slot-crop',
+      cellIndex: 0,
+      x: 0,
+      y: 0,
+      w: 1,
+      h: 1,
+      imageSrc: 'working.jpg',
+      originalImageSrc: 'original.jpg',
+      dragX: 40,
+      dragY: -15,
+      zoom: 2,
+    };
+    useEditorStore.setState({ mode: 'collage', slots: [slot] });
+    const onUpdate = vi.fn();
+    const pushHistory = vi.spyOn(useEditorStore.getState(), 'pushHistory');
+
+    render(<SlotProperties slot={slot} onUpdate={onUpdate} />);
+    fireEvent.click(screen.getByRole('button', { name: 'قص الصورة' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'تأكيد القص التجريبي' }));
+
+    await waitFor(() =>
+      expect(onUpdate).toHaveBeenCalledWith('slot-crop', {
+        imageSrc: 'data:image/png;base64,Y3JvcHBlZA==',
+        dragX: 0,
+        dragY: 0,
+        zoom: 1,
+        originalImageSrc: 'original.jpg',
+      }),
+    );
+    expect(pushHistory).toHaveBeenCalledTimes(1);
   });
 });

@@ -87,6 +87,29 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
     expect(backToFile.collagePendingImages).toEqual(['/local-image/b.jpg']);
   });
 
+  it('should preserve zero collage spacing and PNG output through validation and hydration', () => {
+    const state = {
+      ...mockEditorState,
+      printSettings: { ...mockEditorState.printSettings!, outputFormat: 'png' as const },
+    } as EditorState;
+
+    const deserialized = deserializeProjectFile(serializeEditorState(state));
+    expect(deserialized.collageGap).toBe(0);
+    expect(deserialized.collageMargin).toBe(0);
+    expect(deserialized.printSettings?.outputFormat).toBe('png');
+
+    const hydrated = hydrateProjectState(deserialized);
+    expect(hydrated?.collageGap).toBe(0);
+    expect(hydrated?.collageMargin).toBe(0);
+    expect(hydrated?.printSettings.outputFormat).toBe('png');
+
+    const dbProject = projectFileToDomainProject(deserialized, 'p-settings', 'Settings');
+    const backToFile = domainProjectToProjectFile(dbProject);
+    expect(backToFile.collageGap).toBe(0);
+    expect(backToFile.collageMargin).toBe(0);
+    expect(backToFile.printSettings?.outputFormat).toBe('png');
+  });
+
   it('should migrate legacy projects without version to current V1 version', () => {
     const legacyProject = {
       mode: 'single',

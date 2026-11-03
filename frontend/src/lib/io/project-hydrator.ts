@@ -150,13 +150,13 @@ export function hydrateProjectState(
   const effectiveProjectGap =
     typeof project.collageGap === 'number' &&
     Number.isFinite(project.collageGap) &&
-    (project.collageGap > 0 || (project.collageMargin ?? 0) > 0)
+    project.collageGap >= 0
       ? project.collageGap
       : DEFAULT_COLLAGE_STATE.collageGap;
   const effectiveProjectMargin =
     typeof project.collageMargin === 'number' &&
     Number.isFinite(project.collageMargin) &&
-    (project.collageMargin > 0 || (project.collageGap ?? 0) > 0)
+    project.collageMargin >= 0
       ? project.collageMargin
       : DEFAULT_COLLAGE_STATE.collageMargin;
 

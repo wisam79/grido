@@ -20,8 +20,9 @@ interface QuickBarMultiSelectionSectionProps {
 export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSelectionSection({
   selectedIds,
 }: QuickBarMultiSelectionSectionProps) {
-  const { distributeSelectedElements } = useEditorStore(
+  const { mode, distributeSelectedElements } = useEditorStore(
     useShallow((s) => ({
+      mode: s.mode,
       distributeSelectedElements: s.distributeSelectedElements,
     })),
   );
@@ -43,8 +44,8 @@ export const QuickBarMultiSelectionSection = React.memo(function QuickBarMultiSe
 
       <Separator orientation="vertical" className="h-3 bg-border/40" />
 
-      {/* التوزيع المتساوي (عند تحديد 3 عناصر أو أكثر) */}
-      {selectedIds.length >= 3 && (
+      {/* التوزيع المتساوي للعناصر الحرة فقط؛ هندسة خانات الكولاج مترابطة */}
+      {mode === 'single' && selectedIds.length >= 3 && (
         <>
           <Tooltip>
             <TooltipTrigger asChild>

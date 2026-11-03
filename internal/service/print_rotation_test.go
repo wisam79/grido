@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"image"
 	"image/color"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
@@ -186,6 +188,35 @@ func sameColor(a, b color.Color) bool {
 	ar, ag, ab, aa := a.RGBA()
 	br, bg, bb, ba := b.RGBA()
 	return ar == br && ag == bg && ab == bb && aa == ba
+}
+
+func TestLoadRawImageNormalizesExifBeforeCrop(t *testing.T) {
+	for n := 1; n <= 8; n++ {
+		t.Run(orientationName(n), func(t *testing.T) {
+			src := "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(loadExifFixture(t, n))
+			cache := &imageCache{images: make(map[string]image.Image), access: make(map[string]time.Time)}
+			img, err := loadRawImage(src, "print-exif-"+orientationName(n), cache)
+			if err != nil {
+				t.Fatalf("فك صورة الطباعة: %v", err)
+			}
+
+			wantW, wantH := exifFixtureW, exifFixtureH
+			if n >= 5 {
+				wantW, wantH = wantH, wantW
+			}
+			if img.Bounds().Dx() != wantW || img.Bounds().Dy() != wantH {
+				t.Fatalf("أبعاد الصورة المطبعة = %dx%d، المتوقع %dx%d", img.Bounds().Dx(), img.Bounds().Dy(), wantW, wantH)
+			}
+
+			normalized, ok := img.(*image.NRGBA)
+			if !ok {
+				normalized = imaging.Clone(img)
+			}
+			if quadrant := detectRedQuadrant(t, normalized); quadrant != redQuadrantAfterOrientation[n] {
+				t.Fatalf("الربع الأحمر بعد التطبيع = %s، المتوقع %s", quadrant, redQuadrantAfterOrientation[n])
+			}
+		})
+	}
 }
 
 // 🧮 الحاضنة الذهبية المشتركة TS/Go (الدفعة 6.3): test-fixtures/print-crop-golden.json
