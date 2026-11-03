@@ -72,6 +72,9 @@ export function useFilterCache({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cropTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cropPendingRef = useRef(false);
+  // #16 — جسر يتيح لمسار الرفض المبكر في recache برمجة نفس مؤقّت التسوية
+  // (settle) الذي تُبرمه بقية المسارات داخل أثر أحداث القصّ أدناه.
+  const scheduleSettleRef = useRef<(() => void) | null>(null);
   const lastRatioRef = useRef(0);
   const lastDimsRef = useRef({ w: 0, h: 0 });
 
@@ -96,6 +99,11 @@ export function useFilterCache({
           isStageCaptureActive(stage)
         ) {
           cropPendingRef.current = true;
+          // #16 — كان هذا المسار يعود دون برمجة أي موعد تسوية: لو استُدعي
+          // recache أثناء التقاط المسرح (تصدير) بقي العلم عالقاً true للأبد
+          // فتُتجاهل كل تغييرات الفلاتر لاحقاً ويبقى الـ bitmap مجمّداً. نفس
+          // آلية settle/إعادة المحاولة تضمن إعادة الخبز فور انتهاء الالتقاط.
+          scheduleSettleRef.current?.();
           return;
         }
       }
@@ -173,6 +181,8 @@ export function useFilterCache({
       if (cropTimerRef.current) clearTimeout(cropTimerRef.current);
       cropTimerRef.current = setTimeout(settle, CROP_DEBOUNCE_MS);
     };
+    // #16 — إتاحة نفس آلية التسوية لمسار الرفض المبكر في recache
+    scheduleSettleRef.current = schedule;
     const invalidate = () => {
       // التصدير يدير ترقية القص والكاش بنفسه ويستعيدهما في finally.
       if (isStageCaptureActive(node.getStage?.())) return;
@@ -201,6 +211,7 @@ export function useFilterCache({
       if (cropTimerRef.current) clearTimeout(cropTimerRef.current);
       cropTimerRef.current = null;
       cropPendingRef.current = false;
+      scheduleSettleRef.current = null;
     };
   }, [observeCropChanges, hasFilters, image, nodeRef, recache]);
 

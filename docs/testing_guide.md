@@ -38,7 +38,7 @@
 - **Vitest — AI:** `frontend/test/ai-enhance-collage.test.tsx` و`ai-result-commit.test.ts` يغطيان المعاينة غير المدمرة وربط الناتج بالهدف الحالي (23 حالة AI مستهدفة ناجحة).
 - **CI — Python:** مهمة `validate-modal-ai` في `.github/workflows/ci.yml` (Python 3.10) تثبت `modal_ai/requirements-runtime.txt` و`requirements-tooling.txt` وتشغّل `python -m unittest modal_ai.test_upscaler -v`. تُفعَّل عند تغيير `modal_ai/**` أو ملفات workflows أو يدوياً؛ لم تُشغّل سحابياً بعد لأن الدفع غير مأذون.
 - **حدود التحقق:** نجحت `tsc --noEmit` وESLint `--max-warnings 0` و`oxlint` و`go vet`/`gofmt`/`build` والوحدات المستهدفة. لم تُشغَّل الحزم الكاملة أو E2E أو البناء أو CI السحابي محلياً؛ لا يُعد ذلك قبولاً بصرياً أو تحققاً من WebView2 أو Modal.
-- **العداد المرجعي الحالي (يُتحقق آلياً):** 155 ملف Vitest و30 ملف مواصفة E2E و60 ملف اختبار Go و6 مستندات — بلوك `docs-metrics` في `docs/DOCUMENTATION_MAP.md`؛ الأعداد المذكورة داخل الرسم أدناه تاريخية بتاريخها.
+- **العداد المرجعي الحالي (يُتحقق آلياً):** 157 ملف Vitest و30 ملف مواصفة E2E و60 ملف اختبار Go و6 مستندات — بلوك `docs-metrics` في `docs/DOCUMENTATION_MAP.md`؛ الأعداد المذكورة داخل الرسم أدناه تاريخية بتاريخها.
 
 ---
 

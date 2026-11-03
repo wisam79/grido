@@ -146,19 +146,31 @@ function loadImageElement(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** إطار القص بفضاء مصدر الصورة الحالي — نفس شكل crop في UpgradedImageRecord. */
+interface CropRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /**
  * 🖨️ استبدال مؤقت لصور عقد Konva بمصادر مُرقّاة قبل التقاط الطباعة/التصدير —
  * الند التلو لعذر `upgradeImagesToFullResolution`: نسخ العرض تكفي الشاشة
  * لكن ملصقاً أُعيد راسترته بدقة الطباعة لا يصل للالتقاط عبر srcMap وحده،
  * فكان يُرسم من راستر إدراجه الصغير مهما بلغت ترقيته.
- * يعيد دالة استعادة تُرجع كل عقدة لصورتها السابقة (استدعِها في finally).
+ * مع كل استبدال تُعاد قياس قصّة العقدة (cropX/Y/Width/Height) بنسبة أبعاد
+ * الراستر الجديد إلى القديم — القصّة محسوبة بفضاء نسخة العرض القديمة،
+ * وبلا إعادة قياس يبقى الإطار الصغير عالقاً في الزاوية العلوية فيُطبع مكبَّراً مقطعاً.
+ * يعيد دالة استعادة تُرجع كل عقدة لصورتها وقصّتها السابقتين (استدعِها في finally).
  */
 export async function swapNodeImagesForCapture(
   stage: Konva.Stage,
   overrides: Array<{ nodeId: string; src: string }>,
   timeoutMs = 8000,
 ): Promise<() => void> {
-  const applied: Array<{ node: KonvaImageNodeLike; image: CanvasImageSource }> = [];
+  const applied: Array<{ node: KonvaImageNodeLike; image: CanvasImageSource; crop?: CropRect }> =
+    [];
   const loaded = new Map<string, HTMLImageElement>();
 
   await Promise.all(
@@ -185,7 +197,42 @@ export async function swapNodeImagesForCapture(
     try {
       const node = stage.findOne(`#${nodeId}`) as unknown as KonvaImageNodeLike | null;
       if (!node || typeof node.image !== 'function') continue;
-      applied.push({ node, image: node.image() as CanvasImageSource });
+      const current = node.image() as CanvasImageSource;
+      const record: { node: KonvaImageNodeLike; image: CanvasImageSource; crop?: CropRect } = {
+        node,
+        image: current,
+      };
+      // إعادة قياس القصّة بنسبة newDims/oldDims تماماً كمنطق
+      // upgradeImagesToFullResolution أعلاه — راستر الطباعة أكبر من المصدر
+      // الذي حُسبت عليه قصّة coverCrop بفضاء نسخة العرض، وبلا ذلك يظل
+      // إطار القص القديم عالقاً في الزاوية العلوية للمكبَّر.
+      const oldDims = getSourceDimensions(current);
+      const newDims = getSourceDimensions(image);
+      const cw = typeof node.cropWidth === 'function' ? node.cropWidth() : 0;
+      const ch = typeof node.cropHeight === 'function' ? node.cropHeight() : 0;
+      if (
+        cw > 0 &&
+        ch > 0 &&
+        oldDims.width > 0 &&
+        oldDims.height > 0 &&
+        newDims.width > 0 &&
+        newDims.height > 0 &&
+        typeof node.cropX === 'function' &&
+        typeof node.cropY === 'function' &&
+        typeof node.cropWidth === 'function' &&
+        typeof node.cropHeight === 'function'
+      ) {
+        const cx = node.cropX();
+        const cy = node.cropY();
+        record.crop = { x: cx, y: cy, width: cw, height: ch };
+        const sx = newDims.width / oldDims.width;
+        const sy = newDims.height / oldDims.height;
+        node.cropX(Math.round(cx * sx));
+        node.cropY(Math.round(cy * sy));
+        node.cropWidth(Math.round(cw * sx));
+        node.cropHeight(Math.round(ch * sy));
+      }
+      applied.push(record);
       node.image(image);
     } catch (e) {
       logger.warn('Failed to swap node image for capture:', nodeId, e);
@@ -197,6 +244,18 @@ export async function swapNodeImagesForCapture(
     for (const item of applied) {
       try {
         item.node.image(item.image);
+        if (
+          item.crop &&
+          typeof item.node.cropX === 'function' &&
+          typeof item.node.cropY === 'function' &&
+          typeof item.node.cropWidth === 'function' &&
+          typeof item.node.cropHeight === 'function'
+        ) {
+          item.node.cropX(item.crop.x);
+          item.node.cropY(item.crop.y);
+          item.node.cropWidth(item.crop.width);
+          item.node.cropHeight(item.crop.height);
+        }
       } catch {
         // تجاهل عقدة دُمّرت أثناء الالتقاط
       }

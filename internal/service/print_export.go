@@ -32,7 +32,8 @@ var exportsCleanup atomic.Bool
 // ─────────────────────────────────────────────────────────────────────────────
 // print_export.go — حفظ مخرجات الطباعة وحقن بيانات DPI
 //
-// يدعم: PNG/JPEG (sRGB) و TIFF/JPEG (CMYK) + معاينة HTML مضمّنة Base64،
+// يدعم: PNG/JPEG (sRGB) و TIFF (CMYK — الصيغة الوحيدة لفصل الأحبار، RV-Print-27)
+// + معاينة HTML مضمّنة Base64،
 // حقن pHYs في PNG و JFIF APP0 في JPEG ليُحترم المقاس الفيزيائي عند الطباعة.
 //
 // الأداء والسلامة: الترميز يتدفق للقرص مباشرة (DPI يُحقن أثناء الكتابة بلا
@@ -193,6 +194,14 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 	var htmlImageName string
 
 	if isCMYK {
+		// 🛡️ RV-Print-27: مُرمِّز JPEG القياسي في Go لا يكتب CMYK — كان يمرّر
+		// *image.CMYK عبر YCbCr فيُنتج JPEG بثلاثة مكوّنات RGB (بلا Adobe APP14)
+		// باسم _CMYK.jpg: تحويل مزدوج يزيح الألوان ويضلّ المطبعة المستقبِلة.
+		// نرفض الطلب صراحةً قبل أي تحويل مكلف؛ TIFF هو الحامل الحقيقي لفصل
+		// الأحبار (مسار الطباعة الرئيسي يفرضه مسبقاً في use-print-export.ts).
+		if strings.EqualFold(req.ExportFormat, "jpeg") || strings.EqualFold(req.ExportFormat, "jpg") {
+			return "", "", fmt.Errorf("تصدير CMYK يتطلب صيغة TIFF — مُرمِّز JPEG لا يحافظ على فصل الأحبار")
+		}
 		// 🖨️ فحص سقف البكسلات على أبعاد الكانفس BEFORE التحويل: التحويل الكامل
 		// (144MP) قبل الرفض كان هدراً حتمياً (RV-Print-03) — وJPEG بلا سقف أصلاً
 		// كان يسمح ذروة ~1.2GB على أكبر الأوراق (RV-16-M4).
@@ -203,44 +212,27 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		cmykImg := ConvertRGBAtoCMYK(dc.Image())
 		ApplyPureBlackCutLines(cmykImg, req)
 
-		if strings.EqualFold(req.ExportFormat, "jpeg") || strings.EqualFold(req.ExportFormat, "jpg") {
-			imageName = baseName + ".jpg"
-			imagePath = filepath.Join(outDir, imageName)
-			af, err := utils.CreateAtomic(imagePath, 0o644)
-			if err != nil {
-				return "", "", fmt.Errorf("create cmyk jpeg: %w", err)
-			}
-			defer af.Abort()
-			// ترميز متدفق مباشر مع حقن JFIF أثناء الكتابة (كان بلا حقن DPI أصلاً)
-			if err := jpeg.Encode(&dpiJPEGWriter{w: af, dpi: req.DPI}, cmykImg, &jpeg.Options{Quality: 90}); err != nil {
-				return "", "", fmt.Errorf("encode cmyk jpeg: %w", err)
-			}
-			if err := af.Commit(); err != nil {
-				return "", "", fmt.Errorf("commit cmyk jpeg: %w", err)
-			}
-		} else {
-			// Default format for CMYK is TIFF — مضغوط Deflate (غير المضغوط كان
-			// يضاعف الذاكرة والقرص) مع سقف 50MP بدل OOM على اللوحات الكبيرة.
-			// 🖨️ TIFF بفصل أحبار حقيقي (photometric=5) عبر encodeCMYKTIFF:
-			// تمرير *image.CMYK إلى مكتبات Go كان يكتب RGB موسوماً photometric=2
-			// فيضيع فصل CMYK تماماً. وسوم الدقة تُحقن داخل نفس المشفّر (RV-Print-04).
-			tagged, err := encodeCMYKTIFF(cmykImg, req.DPI)
-			if err != nil {
-				return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
-			}
-			imageName = baseName + ".tif"
-			imagePath = filepath.Join(outDir, imageName)
-			af, err := utils.CreateAtomic(imagePath, 0o644)
-			if err != nil {
-				return "", "", fmt.Errorf("create cmyk tiff: %w", err)
-			}
-			defer af.Abort()
-			if _, err := af.Write(tagged); err != nil {
-				return "", "", fmt.Errorf("write cmyk tiff: %w", err)
-			}
-			if err := af.Commit(); err != nil {
-				return "", "", fmt.Errorf("commit cmyk tiff: %w", err)
-			}
+		// الصيغة الوحيدة لمسار CMYK هي TIFF — مضغوط Deflate (غير المضغوط كان
+		// يضاعف الذاكرة والقرص) مع سقف 50MP بدل OOM على اللوحات الكبيرة.
+		// 🖨️ TIFF بفصل أحبار حقيقي (photometric=5) عبر encodeCMYKTIFF:
+		// تمرير *image.CMYK إلى مكتبات Go كان يكتب RGB موسوماً photometric=2
+		// فيضيع فصل CMYK تماماً. وسوم الدقة تُحقن داخل نفس المشفّر (RV-Print-04).
+		tagged, err := encodeCMYKTIFF(cmykImg, req.DPI)
+		if err != nil {
+			return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
+		}
+		imageName = baseName + ".tif"
+		imagePath = filepath.Join(outDir, imageName)
+		af, err := utils.CreateAtomic(imagePath, 0o644)
+		if err != nil {
+			return "", "", fmt.Errorf("create cmyk tiff: %w", err)
+		}
+		defer af.Abort()
+		if _, err := af.Write(tagged); err != nil {
+			return "", "", fmt.Errorf("write cmyk tiff: %w", err)
+		}
+		if err := af.Commit(); err != nil {
+			return "", "", fmt.Errorf("commit cmyk tiff: %w", err)
 		}
 
 		// 🌟 معاينة PNG متصفح-متوافقة لنافذة الطباعة HTML (المتصفحات لا تفك TIFF في <img>)

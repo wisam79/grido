@@ -130,8 +130,31 @@ export function useAutoSave() {
             // حالته الحالية (كانت المسودة تطمس العمل الجديد بصمت).
             if (!isPristineWorkspace()) {
               draftLoaded = true;
+              // تدقيق 2026-11-03 (Bug#3): سباق ملف الإقلاع — وصول المسودة بعد بدء
+              // العمل كان يُتجاهل بخيار حذف فقط، والحفظ المنظم المزاح يكتب فوق ملف
+              // المسودة بعد ثانيتين فلا يبقى لها أثر على القرص. نلتقط نص المسودة
+              // لحظة الإشعار (قبض على المحتوى قبل السباق) وزر «استعادة المسودة»
+              // يطبّقه عبر نفس مسار التحميل أعلاه (parse + loadProject)؛ وإن تعذّر
+              // التحليل عند النقر أُبلغ المستخدم بإخلاص بدل فشل صامت.
+              const skippedDraft = saved;
               toast.info('تم تجاهل مسودة سابقة لأن العمل بدأ بالفعل', {
                 action: {
+                  label: 'استعادة المسودة',
+                  onClick: () => {
+                    try {
+                      const parsed = deserializeProjectFile(JSON.parse(skippedDraft));
+                      useEditorStore.getState().loadProject(parsed, parsed.projectId ?? null);
+                      toast.info('تم استعادة مسودة العمل السابقة');
+                    } catch (e) {
+                      logger.error('Failed to restore skipped autosave draft', e);
+                      toast.error('تعذّر استعادة المسودة', {
+                        description:
+                          'لم يعد يمكن قراءة محتواها الملتقط عند الإقلاع. أعد المحاولة بعد إعادة فتح التطبيق أو ابدأ مشروعاً جديداً.',
+                      });
+                    }
+                  },
+                },
+                cancel: {
                   label: 'حذف المسودة',
                   onClick: () => {
                     void ClearAutoSave().catch((err: unknown) => {

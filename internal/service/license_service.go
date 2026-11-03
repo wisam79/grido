@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"grido/internal/core/domain"
@@ -28,8 +29,21 @@ import (
 //   - oauth_server.go    : خادم OAuth المحلي (loopback) لدخول Google
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ErrRefreshTokenRotated خطأ قابل لإعادة المحاولة: نداء متزامن آخر دوّر refresh
+// token وحفظه في المخزن قبل ندائنا (SEC-08) — نتبنّى الحالة الجديدة من المخزن
+// بدل مسح الجلسة، فالتدوير من نداء أخ لا يعني أن جلستنا باطلة.
+var ErrRefreshTokenRotated = errors.New("refresh token rotated by a concurrent session call")
+
 type LicenseService struct {
 	repo domain.LicenseRepository
+	// 🛡️ sessionMu (SEC-08): Wails v3 ينفّذ كل استدعاء binding في goroutine
+	// مستقلة، والواجهة تستدعي CheckStatus تزامنياً (الإقلاع + كل 5 دقائق +
+	// استيقاظ النوم app:resume). بلا تسلسل يقرأ نداءان نفس refresh token من
+	// المخزن، فيدوّره الأول ويحفظه، ويفشل الثاني بـ 400 فيمسح الجلسة (Clear)
+	// فيتسجّل المستخدم خروجاً نهائياً. يُقفل من نقاط الدخول المصدّرة التي تمسّ
+	// الجلسة فقط (CheckStatus/ActivateKey/Logout) — المساعدات الداخلية بلا قفل
+	// لأن sync.Mutex غير قابل لإعادة الدخول (re-entrancy).
+	sessionMu sync.Mutex
 	// browserOpen يفتح رابط تفويض OAuth في المتصفح الافتراضي — منفذ محقون
 	// (MAINT-06). الافتراضي جسر الرنتايم (بلا تطبيق Wails يفشل بخطأ واضح)،
 	// ويُستبدل في الاختبارات بـ SetBrowserOpener أو مباشرةً بالحقل.
@@ -150,6 +164,10 @@ func init() {
 }
 
 func (s *LicenseService) ActivateKey(key string) (*domain.UserProfile, error) {
+	// 🛡️ (SEC-08) تمسّ الجلسة (repo.Get/Save) — تُسلسَل مع بقية نقاط الدخول
+	s.sessionMu.Lock()
+	defer s.sessionMu.Unlock()
+
 	key = strings.TrimSpace(key)
 	if key == "" {
 		return nil, errors.New("مفتاح الترخيص لا يمكن أن يكون فارغاً")
@@ -207,6 +225,12 @@ func (s *LicenseService) ActivateKey(key string) (*domain.UserProfile, error) {
 }
 
 func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
+	// 🛡️ (SEC-08) نقطة الدخول الأكثر تزامناً (الإقلاع + مؤقّت 5 دقائق + app:resume):
+	// القفل هنا يجعل قراءة المخزن ← التدوير ← الحفظ ذريةً أمام النداءات المتوازية
+	// (القفل على نقاط الدخول المصدّرة فقط — refreshTokenIfNeeded بلا قفل).
+	s.sessionMu.Lock()
+	defer s.sessionMu.Unlock()
+
 	local, err := s.repo.Get()
 	if err != nil || local == nil {
 		return &domain.UserProfile{Plan: "free", Status: "none"}, nil
@@ -225,7 +249,11 @@ func (s *LicenseService) CheckStatus() (*domain.UserProfile, error) {
 	prof, err := s.fetchProfile(local.Token, local.ID)
 	if err != nil && errors.Is(err, ErrUnauthorized) {
 		refreshErr := s.refreshTokenIfNeeded(local)
-		if refreshErr == nil {
+		if refreshErr == nil || errors.Is(refreshErr, ErrRefreshTokenRotated) {
+			// 🛡️ (SEC-08) في الحالين local تحمل توكن access صالحاً: nil بعد تدوير
+			// ناجح، أو Rotated بعد تبنّي حالة نداء متزامن دوّر التوكن قبله —
+			// أعِد الجلب مرة واحدة بالتوكن الطازج؛ فشل ثانٍ يعني الاحتفاظ
+			// بالجلسة المخزنة (لا مسح — انظر نهاية الدالة).
 			prof, err = s.fetchProfile(local.Token, local.ID)
 		} else if errors.Is(refreshErr, ErrInvalidRefreshToken) {
 			slog.Warn("Session refresh token revoked or invalid, clearing session", "error", refreshErr)
@@ -273,6 +301,10 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 		return ErrInvalidRefreshToken
 	}
 
+	// 🛡️ (SEC-08) ثبّت التوكن المُرسَل في هذا الطلب — كشف التدوير المتزامن
+	// بعد الفشل يكون بمقارنته مع ما في المخزن لحظة الحكم بالإبطال.
+	usedRefreshToken := local.RefreshToken
+
 	payload, err := json.Marshal(map[string]string{
 		"refresh_token": local.RefreshToken,
 	})
@@ -305,6 +337,20 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 		slog.Warn("Failed to refresh token", "status", resp.StatusCode, "bytes", len(body))
 
 		if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+			// 🛡️ (SEC-08) دفاع عمق: قبل الحكم بالإبطال أعد قراءة المخزن — إن كان
+			// refresh token المخزن مختلفاً عمّا أرسلناه فنداء متزامن آخر دوّره
+			// وحفظ جلسة حديثة، ومسحُها/الحفظُ فوقها (توكن بلا refresh) يمحو جلسة
+			// المستخدم للأبد؛ رفض 400 لتوكن قديم لا يعني أن الجلسة الحالية ميتة.
+			// نتبنّى الحالة الجديدة (Token/RefreshToken) ونعيد خطأً قابلاً للمحاولة.
+			// الإبطال الحقيقي (مسح الجلسة) فقط إذا المخزن ما زال يحمل التوكن نفسه
+			// الذي رفضه الخادم للتو.
+			if stored, getErr := s.repo.Get(); getErr == nil && stored != nil &&
+				stored.RefreshToken != "" && stored.RefreshToken != usedRefreshToken {
+				slog.Info("Refresh token already rotated by a concurrent call — adopting stored session state")
+				local.Token = stored.Token
+				local.RefreshToken = stored.RefreshToken
+				return ErrRefreshTokenRotated
+			}
 			local.RefreshToken = ""
 			_ = s.repo.Save(local)
 			return ErrInvalidRefreshToken
@@ -330,6 +376,11 @@ func (s *LicenseService) refreshTokenIfNeeded(local *domain.UserProfile) error {
 }
 
 func (s *LicenseService) Logout() error {
+	// 🛡️ (SEC-08) تمسّ الجلسة (repo.Clear) — تُسلسَل مع CheckStatus كي لا يحفظ
+	// فحص متزامن جلسة فوق مسحها بعد الخروج
+	s.sessionMu.Lock()
+	defer s.sessionMu.Unlock()
+
 	local, err := s.repo.Get()
 	if err == nil && local != nil && local.Token != "" && SupabaseURL != "" {
 		req, reqErr := http.NewRequest("POST", SupabaseURL+"/auth/v1/logout", nil)

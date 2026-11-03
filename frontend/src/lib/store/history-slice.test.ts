@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { create } from 'zustand';
 
-import { SNAPSHOT_KEYS, DEFAULT_HISTORY_ENTRY_EXTRAS, type SnapshotKey } from './history-snapshot';
+import {
+  SNAPSHOT_KEYS,
+  DEFAULT_HISTORY_ENTRY_EXTRAS,
+  captureHistoryEntry,
+  type SnapshotKey,
+} from './history-snapshot';
 import { DEFAULT_COLLAGE_STATE } from './slices/collage-slice';
 import { DEFAULT_GRID_STATE } from './slices/grid-slice';
 import { createHistorySlice } from './slices/history-slice';
@@ -35,14 +40,8 @@ describe('history-slice', () => {
       collageShowEndCutLine: true,
       collageStrokeWidth: 0,
       collageStrokeColor: '#000000',
-      // حقول الشبكة/الإرشادات تُضاف إلى اللقطة مثلها مثل collage* — بذرة بلا
-      // قيمها الابتدائية تجعل أول مقارنة "مختلفة" فيُدفع إدخال سجل زائف
-      showGrid: DEFAULT_GRID_STATE.showGrid,
-      gridSize: DEFAULT_GRID_STATE.gridSize,
-      gridColor: DEFAULT_GRID_STATE.gridColor,
-      gridOpacity: DEFAULT_GRID_STATE.gridOpacity,
-      gridSubdivisions: DEFAULT_GRID_STATE.gridSubdivisions,
-      gridType: DEFAULT_GRID_STATE.gridType,
+      // تدقيق 2026-11-03 (Bug#2): علامات عرض الشبكة أُخرجت من اللقطة فلم تعد
+      // حقولاً مطلوبة في HistoryCross. الأدلة اليدوية تبقى حقلاً في اللقطة:
       // نفس المرجع (وليس نسخة فارغة) — userGuides تُقارَن بالمرجع
       userGuides: DEFAULT_GRID_STATE.userGuides,
       // بقية حقول اللقطة الصريحة في النوع (تطابق القيم الافتراضية للسجل)
@@ -180,23 +179,52 @@ describe('history-slice', () => {
   it('should lock the registry to every HistoryEntry snapshot field (type-level)', () => {
     // إن أُضيف حقل إلى HistoryEntry دون إدراجه في SNAPSHOT_KEYS يفشل هذا التحقق
     // النوعي عند الـ typecheck — فلا ينزلق حقل من اللقطة بصمت (صنف Bug#1/H4).
-    type Uncovered = Exclude<Exclude<keyof HistoryEntry, 'elements' | 'slots'>, SnapshotKey>;
+    // الاستثناء: علامات عرض الشبكة مستبعدة عمداً من اللقطة (Bug#2 تدقيق 2026-11-03)
+    // — إعدادات عرض/إدخال لا يعكسها التراجع (انظر history-snapshot.ts).
+    type ViewLevelGridFields =
+      'showGrid' | 'gridSize' | 'gridColor' | 'gridOpacity' | 'gridSubdivisions' | 'gridType';
+    type Uncovered = Exclude<
+      Exclude<Exclude<keyof HistoryEntry, 'elements' | 'slots'>, SnapshotKey>,
+      ViewLevelGridFields
+    >;
     const registryCoversAllFields: [Uncovered] extends [never] ? true : never = true;
     expect(registryCoversAllFields).toBe(true);
   });
 
-  it('should restore printSettings and grid state on undo (H4 regression)', () => {
-    store.setState({ printSettings: { ...DEFAULT_PRINT_SETTINGS, dpi: 600 }, showGrid: true });
+  it('should restore printSettings on undo (H4 regression)', () => {
+    store.setState({ printSettings: { ...DEFAULT_PRINT_SETTINGS, dpi: 600 } });
     store.getState().pushHistory();
     store.setState({ printSettings: { ...DEFAULT_PRINT_SETTINGS, dpi: 900 } });
     store.getState().pushHistory();
 
     store.getState().undo();
     expect(store.getState().printSettings?.dpi).toBe(600);
-    expect(store.getState().showGrid).toBe(true);
 
     store.getState().undo();
     expect(store.getState().printSettings?.dpi).toBe(DEFAULT_PRINT_SETTINGS.dpi);
-    expect(store.getState().showGrid).toBe(false);
+  });
+
+  it('keeps view-level grid display flags out of the undo snapshot (Bug#2 regression)', () => {
+    // علامات عرض الشبكة ليست مستندية: لا تُلتقط في اللقطة ولا تُستعاد عند
+    // التراجع — كان التراجع عن تحريك عنصر يعكسها رغم أنها لم تدفع السجل قط
+    for (const key of [
+      'showGrid',
+      'gridSize',
+      'gridColor',
+      'gridOpacity',
+      'gridSubdivisions',
+      'gridType',
+    ] as const) {
+      expect(SNAPSHOT_KEYS).not.toContain(key);
+    }
+    const entry = captureHistoryEntry({
+      ...DEFAULT_HISTORY_ENTRY_EXTRAS,
+      elements: [],
+      slots: [],
+    });
+    expect('showGrid' in entry).toBe(false);
+    expect('gridSize' in entry).toBe(false);
+    // الأدلة اليدوية وثيقة المستند وتبقى تُلتقط
+    expect(entry.userGuides).toEqual([]);
   });
 });

@@ -95,7 +95,9 @@ const LAM_ALEF_MAP: Record<string, [string, string]> = {
 // Strips diacritics for shape matching while preserving them on the glyph
 const TASHKEEL_REGEX = /[\u064B-\u065F\u0670]/g;
 
-function shapeArabicGraphemes(text: string): string[] {
+// مُصدَّرة لاختبارات الانحدار (curved-text-utils.test.ts) فقط — الاستهلاك
+// الفعلي يشكّل النص حصراً عبر buildCurvedGlyphs لتوليد الأشكال السياقية.
+export function shapeArabicGraphemes(text: string): string[] {
   const chars = Array.from(text);
   const out: string[] = [];
 
@@ -105,24 +107,28 @@ function shapeArabicGraphemes(text: string): string[] {
     const diacritics = rawCluster.slice(baseChar.length);
 
     // Look behind & ahead ignoring spaces/diacritics
+    // #14 — التشكيل لا يقطع الاتصال: الحركة تُجرَّد إلى '' فكانت تُلتقط كجارٍ
+    // (نص فارغ = لا اتصال) ويقف المسح قبل بلوغ الحرف الحقيقي، فتتشظّى أشكال
+    // الحروف المتاخمة للتشكيل (مُحَمَّد تُرسم معزولة بدل متصلة). نتجاوز محارف
+    // التشكيل فقط وواصل المسح، ونقف عند أول مسافة أو حرف فعلي.
     let prevChar: string | null = null;
     for (let p = i - 1; p >= 0; p--) {
       const b = chars[p].replace(TASHKEEL_REGEX, '');
-      if (b !== ' ') {
-        prevChar = b;
-        break;
-      }
-      break; // Space breaks connection
+      if (b === '') continue; // حركة/تشكيل — ليست جاراً ولا تقطع المسح
+      if (b === ' ') break; // Space breaks connection
+      prevChar = b;
+      break;
     }
 
     let nextChar: string | null = null;
+    let nextIndex = -1;
     for (let n = i + 1; n < chars.length; n++) {
       const b = chars[n].replace(TASHKEEL_REGEX, '');
-      if (b !== ' ') {
-        nextChar = b;
-        break;
-      }
-      break; // Space breaks connection
+      if (b === '') continue; // حركة/تشكيل — ليست جاراً ولا تقطع المسح
+      if (b === ' ') break; // Space breaks connection
+      nextChar = b;
+      nextIndex = n;
+      break;
     }
 
     // Check Lam-Alef ligature
@@ -131,11 +137,16 @@ function shapeArabicGraphemes(text: string): string[] {
       const prevConnects = prevShapes && (prevShapes[1] || prevShapes[2]);
       const shapedLigature = prevConnects ? LAM_ALEF_MAP[nextChar][1] : LAM_ALEF_MAP[nextChar][0];
       // #13 — إلحاق تشكيل الألف أيضاً (كان يُرمى مع تخطّي حرف الألف)
-      const alefChar = chars[i + 1] || '';
+      // #14 — قد تفصل حركةٌ بين اللام والألف (لَا): الألف عند الجار الفعلي
+      // (nextIndex) لا i+1، والحركات المتخطّاة تُلحق بالرابطة كي لا تُفقد
+      // مع القفز فوقها ولا تُعالَج الألف منفردة بعدها.
+      const alefChar = chars[nextIndex] || '';
       const alefBase = alefChar.replace(TASHKEEL_REGEX, '');
       const alefDiacritics = alefChar.slice(alefBase.length);
-      out.push(shapedLigature + diacritics + alefDiacritics);
-      i++; // Skip alef
+      let ligatureDiacritics = diacritics;
+      for (let k = i + 1; k < nextIndex; k++) ligatureDiacritics += chars[k];
+      out.push(shapedLigature + ligatureDiacritics + alefDiacritics);
+      i = nextIndex; // Skip diacritics + alef
       continue;
     }
 

@@ -2,10 +2,12 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -286,5 +288,219 @@ func TestStartOAuthLocalServer_ExchangeFlow(t *testing.T) {
 	case <-tokenChan:
 		t.Error("duplicate exchange should not deliver a second token")
 	default:
+	}
+}
+
+// newRefreshRaceTestService يهيّئ خدمة ترخيص مع مستودع SQLite حقيقي ومعزول
+// (مجلد بيانات مستقل كي يدور ملف التوكن المشفّر داخل الاختبار فقط).
+func newRefreshRaceTestService(t *testing.T) (*LicenseService, domain.LicenseRepository) {
+	t.Helper()
+	t.Setenv("GRIDO_APP_DIR", t.TempDir())
+
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to connect database: %v", err)
+	}
+	if err := db.AutoMigrate(&domain.UserProfile{}); err != nil {
+		t.Fatalf("failed to migrate: %v", err)
+	}
+	licenseRepo := repository.NewLicenseRepository(db)
+	return NewLicenseService(licenseRepo), licenseRepo
+}
+
+// withSupabaseStub يوجّه SupabaseURL/AnonKey إلى خادم الاختبار ويعيّنهما بعد الانتهاء.
+func withSupabaseStub(t *testing.T, ts *httptest.Server) {
+	t.Helper()
+	oldURL, oldKey := SupabaseURL, SupabaseAnonKey
+	SupabaseURL, SupabaseAnonKey = ts.URL, "test-key"
+	t.Cleanup(func() { SupabaseURL, SupabaseAnonKey = oldURL, oldKey })
+}
+
+// TestLicenseService_ConcurrentCheckStatus_RefreshRaceKeepsSession (SEC-08):
+// نداءان متزامنان لـ CheckStatus — الأول يدوّر التوكن (RT1→RT2)؛ الثاني لو قرأ
+// التوكن القديم لفشل تدويره بـ 400 وكان (قبل الإصلاح) يمسح الجلسة بـ repo.Clear
+// فيتسجّل المستخدم خروجاً نهائياً. العقد: بعد النداءين تبقى الجلسة حيّة بالتوكن
+// المدوَّر، والخادم لم يرَ أي post لتوكن قديم بعد التدوير.
+func TestLicenseService_ConcurrentCheckStatus_RefreshRaceKeepsSession(t *testing.T) {
+	svc, repo := newRefreshRaceTestService(t)
+
+	// جلسة مزروعة بالتوكن القديم RT1
+	seed := &domain.UserProfile{
+		ID:           "race-user",
+		Email:        "race@example.com",
+		Plan:         "pro",
+		Status:       "active",
+		Token:        "AT1",
+		RefreshToken: "RT1",
+		ExpiresAt:    time.Now().Add(24 * time.Hour),
+	}
+	if err := repo.Save(seed); err != nil {
+		t.Fatalf("seed session: %v", err)
+	}
+
+	var mu sync.Mutex
+	rotated := false
+	refreshedWith := make([]string, 0, 2)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.Contains(r.URL.Path, "/rest/v1/profiles"):
+			// التوكن AT1 منتهي (هذا ما يستدعي التدوير أصلاً) — AT2 فقط يعمل
+			if strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ") != "AT2" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			_ = json.NewEncoder(w).Encode([]SupabaseProfile{{Plan: "pro", Status: "active"}})
+		case strings.Contains(r.URL.Path, "/auth/v1/token"):
+			var body struct {
+				RefreshToken string `json:"refresh_token"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			mu.Lock()
+			defer mu.Unlock()
+			refreshedWith = append(refreshedWith, body.RefreshToken)
+			if body.RefreshToken == "RT1" && !rotated {
+				rotated = true
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(SupabaseAuthResponse{AccessToken: "AT2", RefreshToken: "RT2"})
+				return
+			}
+			if body.RefreshToken == "RT2" && rotated {
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(SupabaseAuthResponse{AccessToken: "AT2", RefreshToken: "RT2"})
+				return
+			}
+			// توكن قديم بعد التدوير — بالضبط الطلب الذي كان يمسح الجلسة
+			w.WriteHeader(http.StatusBadRequest)
+		case strings.Contains(r.URL.Path, "/rest/v1/rpc/"):
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"success":true,"active":true}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer ts.Close()
+	withSupabaseStub(t, ts)
+
+	// الإقلاع + المؤقّت الدوري (نفس تداخل الواجهة الحقيقي)
+	const n = 2
+	var wg sync.WaitGroup
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, _ = svc.CheckStatus()
+		}()
+	}
+	wg.Wait()
+
+	// التوكن القديم يُرسَل مرة واحدة كحد أقصى — إرساله مرتين يعني نداءً ثانياً
+	// استعمل توكن مدوَّراً (كان سبب 400 والمسح قبل الإصلاح)
+	mu.Lock()
+	staleReuse := 0
+	for _, used := range refreshedWith {
+		if used == "RT1" {
+			staleReuse++
+		}
+	}
+	mu.Unlock()
+	if staleReuse > 1 {
+		t.Errorf("stale token RT1 was submitted %d times — a concurrent CheckStatus reused it after rotation", staleReuse)
+	}
+
+	// العقد الحرج: الجلسة لم تُمسح — المخزن ما زال يحمل صف المستخدم مع التوكن المدوَّر
+	stored, err := repo.Get()
+	if err != nil {
+		t.Fatalf("session was wiped by the concurrent refresh race: %v", err)
+	}
+	if stored.Token != "AT2" || stored.RefreshToken != "RT2" {
+		t.Errorf("expected rotated tokens AT2/RT2, got AT=%q RT=%q", stored.Token, stored.RefreshToken)
+	}
+	if stored.Plan != "pro" || stored.Status != "active" {
+		t.Errorf("expected pro/active session to survive, got plan=%s status=%s", stored.Plan, stored.Status)
+	}
+}
+
+// TestLicenseService_RefreshTokenRotatedByConcurrentCall (SEC-08) — دفاع العمق:
+// فشل التدوير بـ 400 بينما المخزن يحمل توكن مختلفاً (نداء آخر دوّره وحفظه) يجب
+// ألا يمسح الجلسة ولا يطمسها بنسخة بلا توكن؛ بل يتبنّى الحالة الجديدة ويعيد
+// ErrRefreshTokenRotated القابل لإعادة المحاولة.
+func TestLicenseService_RefreshTokenRotatedByConcurrentCall(t *testing.T) {
+	svc, repo := newRefreshRaceTestService(t)
+
+	// المخزن يحمل RT2 (نداء متزامن فاز بالتدوير) بينما نداؤنا ما زال بيد RT1
+	winner := &domain.UserProfile{
+		ID: "race-user", Email: "race@example.com",
+		Plan: "pro", Status: "active",
+		Token: "AT2", RefreshToken: "RT2",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}
+	if err := repo.Save(winner); err != nil {
+		t.Fatalf("seed winner session: %v", err)
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// الخادم يرفض RT1 بـ 400 حتماً (توكن مستهلك بالتدوير)
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"invalid_grant","error_description":"Invalid Refresh Token"}`))
+	}))
+	defer ts.Close()
+	withSupabaseStub(t, ts)
+
+	local := &domain.UserProfile{ID: "race-user", Token: "AT1", RefreshToken: "RT1"}
+	err := svc.refreshTokenIfNeeded(local)
+	if !errors.Is(err, ErrRefreshTokenRotated) {
+		t.Fatalf("expected ErrRefreshTokenRotated, got %v", err)
+	}
+	if local.Token != "AT2" || local.RefreshToken != "RT2" {
+		t.Errorf("expected local to adopt rotated tokens AT2/RT2, got AT=%q RT=%q", local.Token, local.RefreshToken)
+	}
+
+	// الجلسة الفائزة لم تُطمس بنسخة بلا توكن
+	stored, gerr := repo.Get()
+	if gerr != nil {
+		t.Fatalf("winner session was wiped: %v", gerr)
+	}
+	if stored.Token != "AT2" || stored.RefreshToken != "RT2" {
+		t.Errorf("winner session tokens must be intact, got AT=%q RT=%q", stored.Token, stored.RefreshToken)
+	}
+}
+
+// TestLicenseService_RefreshGenuinelyInvalidClearsSession (SEC-08) — المقابل:
+// المخزن ما زال يحمل التوكن نفسه الذي رفضه الخادم ⇒ إبطال حقيقي ⇒ مسح الجلسة
+// (سلوك الإصلاح لا يغيّر المسار المشروع للتوكن المُبطل فعلاً).
+func TestLicenseService_RefreshGenuinelyInvalidClearsSession(t *testing.T) {
+	svc, repo := newRefreshRaceTestService(t)
+
+	seed := &domain.UserProfile{
+		ID: "solo-user", Email: "solo@example.com",
+		Plan: "pro", Status: "active",
+		Token: "AT1", RefreshToken: "RT1",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}
+	if err := repo.Save(seed); err != nil {
+		t.Fatalf("seed session: %v", err)
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"invalid_grant"}`))
+	}))
+	defer ts.Close()
+	withSupabaseStub(t, ts)
+
+	local := &domain.UserProfile{ID: "solo-user", Token: "AT1", RefreshToken: "RT1"}
+	err := svc.refreshTokenIfNeeded(local)
+	if !errors.Is(err, ErrInvalidRefreshToken) {
+		t.Fatalf("expected ErrInvalidRefreshToken, got %v", err)
+	}
+
+	// الجلسة أُبطلت فعلاً: لا توكنات في المخزن بعد المسح/الحفظ البلا توكن
+	stored, gerr := repo.Get()
+	if gerr != nil {
+		t.Fatalf("profile row should remain after invalidation, got error: %v", gerr)
+	}
+	if stored.RefreshToken != "" {
+		t.Errorf("genuinely invalid refresh token should be wiped, got %q", stored.RefreshToken)
 	}
 }

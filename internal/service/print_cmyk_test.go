@@ -85,6 +85,59 @@ func TestConvertRGBAtoCMYK_VariousImageTypes(t *testing.T) {
 	}
 }
 
+// ─── RV-Print-28: المسار العام كان يتجاهل Bounds().Min للصور الفرعية ───
+
+// rgbaFallbackView غلاف image.Image فوق صورة فرعية *image.RGBA يُجبر المسار
+// العام (غير-RGBA) في ConvertRGBAtoCMYK: SubImage من RGBA يعيد *image.RGBA
+// فيأخذ المسار السريع، والغلاف يُبقي Bounds بأصل غير صفري مع تفويض At كما هو.
+type rgbaFallbackView struct {
+	image.Image
+}
+
+// TestConvertRGBAtoCMYK_SubImageBoundsOrigin: صورة فرعية أصلها (10,20) يجب أن
+// تُحوَّل بمحتواها كما هو — سابقاً كان المسار العام يقرأ At(x,y) بإحداثيات
+// مطلقة فيُزيح المحتوى ويقرأ خارج حدود الصورة (شفاف → أبيض).
+func TestConvertRGBAtoCMYK_SubImageBoundsOrigin(t *testing.T) {
+	base := image.NewRGBA(image.Rect(0, 0, 40, 40))
+	// نمط متدرّج يميّز كل بكسل: (x,y) ← R=x*6, G=y*6, B ثابت, A معتم
+	for y := 0; y < 40; y++ {
+		for x := 0; x < 40; x++ {
+			base.SetRGBA(x, y, color.RGBA{R: uint8(x * 6), G: uint8(y * 6), B: 77, A: 255})
+		}
+	}
+	sub := base.SubImage(image.Rect(10, 20, 30, 40)) // ‏20×20 بأصل (10,20)
+
+	got := ConvertRGBAtoCMYK(rgbaFallbackView{sub})
+	if got.Bounds().Dx() != 20 || got.Bounds().Dy() != 20 {
+		t.Fatalf("sub-image bounds mismatch: expected 20x20, got %dx%d", got.Bounds().Dx(), got.Bounds().Dy())
+	}
+	// كل بكسل في الناتج (x,y) يجب أن يطابق المصدر (10+x, 20+y) — التعيين
+	// المحتمَل يُحسب بنفس دالة rgbToRichCMYK (الألفا معتمة فلا تسطيح).
+	for y := 0; y < 20; y++ {
+		for x := 0; x < 20; x++ {
+			s := base.RGBAAt(10+x, 20+y)
+			wc, wm, wy, wk := rgbToRichCMYK(s.R, s.G, s.B)
+			want := color.CMYK{C: wc, M: wm, Y: wy, K: wk}
+			if c := got.CMYKAt(x, y); c != want {
+				t.Errorf("pixel (%d,%d): got %+v, want %+v (source %d,%d)", x, y, c, want, 10+x, 20+y)
+			}
+		}
+	}
+
+	// المسار السريع RGBA على نفس الصورة الفرعية يتبع نفس العقد (المحتوى يُحفظ)
+	gotFast := ConvertRGBAtoCMYK(sub)
+	if gotFast.Bounds().Dx() != 20 || gotFast.Bounds().Dy() != 20 {
+		t.Fatalf("fast-path sub-image bounds mismatch: got %dx%d", gotFast.Bounds().Dx(), gotFast.Bounds().Dy())
+	}
+	for y := 0; y < 20; y++ {
+		for x := 0; x < 20; x++ {
+			if gotFast.CMYKAt(x, y) != got.CMYKAt(x, y) {
+				t.Fatalf("fast path and fallback disagree on sub-image pixel (%d,%d)", x, y)
+			}
+		}
+	}
+}
+
 func TestApplyPureBlackCutLines_AllStyles(t *testing.T) {
 	w, h := 200, 200
 	cmyk := image.NewCMYK(image.Rect(0, 0, w, h))

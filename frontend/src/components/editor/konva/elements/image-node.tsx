@@ -89,7 +89,10 @@ export const URLImage = React.memo(function URLImage({
   const imageNodeRef = React.useRef<CacheableKonvaNode | null>(null);
   // الأبعاد خارج المفتاح عمداً: التحجيم يعيد الكاش المكلف في كل إطار،
   // ويُعاد بناؤه صراحةً بعد استقرار التحويل (onTransformEnd) والتصدير يرفع الدقة بنفسه
-  const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}`;
+  // 🛡️ cornerRadius داخل المفتاح: الخاصية تُطبَّق على العقدة المُخزَّنة
+  // (`node.cache()`)، فبدونها يظل القص الزاوي القديم مرسوماً في البيت ماپ
+  // حتى يُجبر تغيير الحجم أو الزوم إعادة بناء الكاش (H2 من تدقيق 2026-10-08).
+  const filterKey = `${element.filter}_${element.brightness}_${element.contrast}_${element.saturation}_${element.blur}_${element.cornerRadius || 0}`;
   const hasFilters = filters.length > 0;
 
   const recacheFilters = useFilterCache({

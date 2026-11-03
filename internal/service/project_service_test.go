@@ -1,9 +1,14 @@
 package service
 
 import (
+	"errors"
+	"fmt"
+	"strings"
+	"sync"
+	"testing"
+
 	"grido/internal/core/domain"
 	"grido/internal/repository"
-	"testing"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -197,5 +202,89 @@ func TestProjectService_SaveUpdateCreatedAt(t *testing.T) {
 
 	if retrieved2.CreatedAtStr != createdTime1 {
 		t.Errorf("expected CreatedAtStr to remain '%s', but it changed/cleared to '%s'", createdTime1, retrieved2.CreatedAtStr)
+	}
+}
+
+// TestProjectService_FreePlanConcurrentSavesEnforceLimit (SEC-09): نداءات
+// SaveProject متزامنة بمشاريع جديدة على الخطة المجانية — بلا قفل كان فحص
+// Count() يتسابق مع الحفظ (TOCTOU) فيتخطى الحد. العقد: 3 مشاريع فقط تنجح.
+func TestProjectService_FreePlanConcurrentSavesEnforceLimit(t *testing.T) {
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	repo := repository.NewProjectRepository(db)
+	svc := NewProjectService(repo, repository.NewLicenseRepository(db))
+
+	const n = 6
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	succeeded := 0
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			p := &domain.Project{ID: fmt.Sprintf("race-project-%d", i), Name: "Race Project"}
+			if err := svc.SaveProject(p); err == nil {
+				mu.Lock()
+				succeeded++
+				mu.Unlock()
+			}
+		}(i)
+	}
+	wg.Wait()
+
+	if succeeded > 3 {
+		t.Errorf("free plan limit breached under concurrency: %d projects saved (max 3)", succeeded)
+	}
+	count, err := repo.Count()
+	if err != nil {
+		t.Fatalf("count projects: %v", err)
+	}
+	if count > 3 {
+		t.Errorf("expected at most 3 projects stored, got %d", count)
+	}
+}
+
+// failingLookupRepo مستودع يحقن خطأ عابراً في FindByID لاختبار مسار الأخطاء.
+type failingLookupRepo struct {
+	domain.ProjectRepository
+	findErr error
+}
+
+func (f *failingLookupRepo) FindByID(id string) (*domain.Project, error) {
+	if f.findErr != nil {
+		return nil, f.findErr
+	}
+	return f.ProjectRepository.FindByID(id)
+}
+
+// TestProjectService_TransientLookupErrorIsNotNewProject (SEC-09): خطأ استعلام
+// عابر في FindByID كان يُعامَل «كمشروع جديد» فيتخطى حد الخطة المجانية — يجب
+// أن يُعاد الخطأ للمستخدم بدل التجاوز الصامت. فقط ErrRecordNotFound يعني «جديد».
+func TestProjectService_TransientLookupErrorIsNotNewProject(t *testing.T) {
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	baseRepo := repository.NewProjectRepository(db)
+	svc := NewProjectService(baseRepo, repository.NewLicenseRepository(db))
+
+	// مشروع موجود فعلاً (تحديث مشروع قائم لا يفشل ولا يُحسب جديداً)
+	existing := &domain.Project{ID: "existing-id", Name: "Existing"}
+	if err := svc.SaveProject(existing); err != nil {
+		t.Fatalf("initial save failed: %v", err)
+	}
+
+	// تحديث المشروع القائم يمر — الوجود يُكتشف بـ ErrRecordNotFound حصراً
+	existing.Name = "Updated"
+	if err := svc.SaveProject(existing); err != nil {
+		t.Fatalf("updating an existing project should not fail: %v", err)
+	}
+
+	// خطأ عابر (ليس ErrRecordNotFound) يُعاد بدل التعامل معه كمشروع جديد
+	transient := errors.New("simulated transient disk I/O error")
+	svcErr := NewProjectService(&failingLookupRepo{ProjectRepository: baseRepo, findErr: transient}, repository.NewLicenseRepository(db))
+	err := svcErr.SaveProject(&domain.Project{ID: "brand-new-id", Name: "New"})
+	if err == nil || !strings.Contains(err.Error(), transient.Error()) {
+		t.Fatalf("expected transient lookup error to be surfaced, got %v", err)
 	}
 }

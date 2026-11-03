@@ -203,6 +203,28 @@ func planDailyLimit(plan string) int {
 	}
 }
 
+// resolveModalAIURL يعيد عنوان نقطة نهاية Modal النهائية مع فرض https:// حصراً.
+//
+// 🛡️ (SEC-10) MODAL_AI_URL تُقرأ من .env/بيئة المستخدم، ويُرسَل إليها JWT
+// المستخدم كما هو (Authorization: Bearer) الذي يتحقق منه خادم الذكاء الاصطناعي
+// مع Supabase. قبول http:// أو أي scheme آخر يعني أن قيمة ملقّمة في .env (أو
+// مجلد عمل مهاجم) توجّه توكن جلسة المستخدم إلى خادم غير مشفّر/غريب — تسريب
+// JWT كامل. نفس سياسة المحدّث (updater.go): لا يُكرم إلا https://، وإلا تحذير
+// والارتداد إلى النقطة الرسمية defaultModalAIURL (لا فشل — الميزة اختيارية
+// والتقصير سليم).
+func resolveModalAIURL() string {
+	modalURL := strings.TrimRight(strings.TrimSpace(ModalAIURL), "/")
+	if modalURL == "" {
+		return defaultModalAIURL
+	}
+	if !strings.HasPrefix(strings.ToLower(modalURL), "https://") {
+		slog.Warn("MODAL_AI_URL rejected: only https:// is honored — falling back to the default endpoint",
+			"configured_url", modalURL)
+		return defaultModalAIURL
+	}
+	return modalURL
+}
+
 type userPlanCacheEntry struct {
 	userID  string
 	plan    string
@@ -709,10 +731,7 @@ func (s *AIService) enhanceImageWithAI(ctx context.Context, base64Image string, 
 		}
 	}
 
-	modalURL := strings.TrimRight(ModalAIURL, "/")
-	if modalURL == "" {
-		modalURL = defaultModalAIURL
-	}
+	modalURL := resolveModalAIURL()
 
 	clientRequestID, err := generateUUID()
 	if err != nil {

@@ -89,7 +89,10 @@ func ConvertRGBAtoCMYK(src image.Image) *image.CMYK {
 						// 🖨️ تسطيح ألفا على الأبيض للصور غير RGBA: واجهة
 						// color.Color تُعيد قيماً premultiplied بدقة 16بت —
 						// التركيب فوق أبيض (65535): F = rp + (65535-a).
-						r, g, b, a := src.At(x, y).RGBA()
+						// 🛡️ RV-Print-28: الصور الفرعية (SubImage) أصلها bounds.Min
+						// لا (0,0) — At(x,y) المطلقة كانت تُزيح المحتوى وتقرأ خارج
+						// الحدود؛ نفس عقد المسار السريع RGBA أعلاه وencodeCMYKTIFF.
+						r, g, b, a := src.At(bounds.Min.X+x, bounds.Min.Y+y).RGBA()
 						ia := 65535 - a
 						fr := uint8(min(65535, r+ia) >> 8)
 						fg := uint8(min(65535, g+ia) >> 8)

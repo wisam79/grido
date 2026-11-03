@@ -87,7 +87,7 @@ export const DEFAULT_GRID_STATE = {
 
 let guideCounter = 0;
 
-export const createGridSlice: StateCreator<EditorState, [], [], GridSlice> = (set) => ({
+export const createGridSlice: StateCreator<EditorState, [], [], GridSlice> = (set, get) => ({
   ...DEFAULT_GRID_STATE,
 
   setShowGrid: (showGrid) => set({ showGrid }),
@@ -104,7 +104,12 @@ export const createGridSlice: StateCreator<EditorState, [], [], GridSlice> = (se
   setColumnsGutter: (columnsGutter) => set({ columnsGutter }),
   setShowRuler: (showRuler) => set({ showRuler }),
   setRulerUnit: (rulerUnit) => set({ rulerUnit }),
-  addUserGuide: ({ id, type, pos }) =>
+  // تدقيق 2026-11-03 (Bug#2): الأدلة اليدوية جزء من المستند — تُسلسل في ملف
+  // المشروع وتُستعاد في كل undo/redo لأنها ضمن SNAPSHOT_KEYS. إهمال دفع السجل
+  // كان يجعل تراجع عملية لا صلة لها بالأدلة يمحوها أو يعيدها (خطوة تراجع إضافية).
+  // نفس نمط بقية إجراءات المستند (element/crud، collage-slice): set ثم
+  // pushHistory بعد اكتمال التغيير — والـ dedupe الداخلي يمنع اللقطات المتطابقة.
+  addUserGuide: ({ id, type, pos }) => {
     set((state) => {
       const newGuide: UserGuide = {
         id: id || `guide-${Date.now()}-${++guideCounter}`,
@@ -112,18 +117,27 @@ export const createGridSlice: StateCreator<EditorState, [], [], GridSlice> = (se
         pos: Math.min(1, Math.max(0, pos)),
       };
       return { userGuides: [...state.userGuides, newGuide] };
-    }),
-  updateUserGuide: (id, pos) =>
+    });
+    get().pushHistory();
+  },
+  updateUserGuide: (id, pos) => {
     set((state) => ({
       userGuides: state.userGuides.map((g) =>
         g.id === id ? { ...g, pos: Math.min(1, Math.max(0, pos)) } : g,
       ),
-    })),
-  removeUserGuide: (id) =>
+    }));
+    get().pushHistory();
+  },
+  removeUserGuide: (id) => {
     set((state) => ({
       userGuides: state.userGuides.filter((g) => g.id !== id),
-    })),
-  clearUserGuides: () => set({ userGuides: [] }),
+    }));
+    get().pushHistory();
+  },
+  clearUserGuides: () => {
+    set({ userGuides: [] });
+    get().pushHistory();
+  },
   setShowUserGuides: (showUserGuides) => set({ showUserGuides }),
   setLockUserGuides: (lockUserGuides) => set({ lockUserGuides }),
   setShowBleedGuides: (showBleedGuides) => set({ showBleedGuides }),

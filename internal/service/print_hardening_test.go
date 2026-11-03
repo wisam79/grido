@@ -14,7 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
 
 	"grido/internal/core/domain"
@@ -86,8 +85,10 @@ func TestValidatePrintRequest_RejectsInvalidInput(t *testing.T) {
 	}
 }
 
-// 7. مسار CMYK/JPEG غير المغطى: ملف صالح + وثيقة HTML
-func TestSaveOutput_CMYK_JPEG_Branch(t *testing.T) {
+// 7. مسار CMYK/JPEG يُرفض صراحةً (RV-Print-27): مُرمِّز JPEG القياسي لا يكتب
+// CMYK — كان يُنتج JPEG بصيغة RGB باسم _CMYK.jpg (تحويل مزدوج يزيح الألوان
+// ويضلّ المطبعة)، فأصبح الرفض برسالة عربية واضحة هو العقد بدل ملف مُسمّى كذباً.
+func TestSaveOutput_CMYK_JPEG_Rejected(t *testing.T) {
 	// 🖨️ عقد الإدخال الإنتاجي (RV-Print-07).
 	t.Setenv("GRIDO_APP_DIR", t.TempDir())
 	imgSrc := stagePrintTestImage(t, "photo", 200, 200, color.RGBA{R: 160, G: 40, B: 40, A: 255})
@@ -101,20 +102,19 @@ func TestSaveOutput_CMYK_JPEG_Branch(t *testing.T) {
 		},
 	}
 
-	outPath, htmlDoc, err := svc.GeneratePrintSheet(req)
-	if err != nil {
-		t.Fatalf("CMYK JPEG sheet failed: %v", err)
-	}
-	if !strings.HasSuffix(outPath, ".jpg") {
-		t.Fatalf("expected JPEG output, got: %s", outPath)
-	}
-	defer os.Remove(outPath)
-
-	if _, err := imaging.Open(outPath); err != nil {
-		t.Fatalf("failed to decode CMYK JPEG output: %v", err)
-	}
-	if !strings.HasPrefix(htmlDoc, "<!DOCTYPE html>") {
-		t.Errorf("expected HTML document for iframe print")
+	for _, format := range []string{"jpeg", "jpg", "JPEG"} {
+		req.ExportFormat = format
+		outPath, htmlDoc, err := svc.GeneratePrintSheet(req)
+		if err == nil {
+			os.Remove(outPath)
+			t.Fatalf("CMYK+%s must be rejected (stdlib JPEG cannot preserve ink separation), got nil", format)
+		}
+		if !strings.Contains(err.Error(), "TIFF") {
+			t.Errorf("CMYK+%s: expected descriptive TIFF error, got: %v", format, err)
+		}
+		if htmlDoc != "" {
+			t.Errorf("CMYK+%s: no HTML document must be produced for a rejected request", format)
+		}
 	}
 }
 

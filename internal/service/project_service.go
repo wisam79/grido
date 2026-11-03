@@ -2,13 +2,24 @@ package service
 
 import (
 	"errors"
-	"grido/internal/core/domain"
+	"fmt"
+	"sync"
 	"time"
+
+	"grido/internal/core/domain"
+
+	"gorm.io/gorm"
 )
 
 type ProjectService struct {
 	repo        domain.ProjectRepository
 	licenseRepo domain.LicenseRepository
+	// 🛡️ saveMu (SEC-09): يسلسل فحص حد الخطة المجانية مع الحفظ — Wails v3 ينفّذ
+	// كل binding في goroutine مستقلة، ونداءان متزامنان لـ SaveProject كانا يقرآن
+	// Count() فيمرّان كلاهما من الفحص (TOCTOU) فيولّدان مشروعاً رابعاً في الخطة
+	// المجانية. القفل على نقطة الدخول فقط — لا مساعدات داخلية تُقفل (sync.Mutex
+	// غير قابل لإعادة الدخول).
+	saveMu sync.Mutex
 }
 
 func NewProjectService(repo domain.ProjectRepository, licenseRepo domain.LicenseRepository) *ProjectService {
@@ -24,9 +35,23 @@ func (s *ProjectService) SaveProject(project *domain.Project) error {
 	}
 	project.UpdatedAt = time.Now()
 
+	// 🛡️ (SEC-09) القسم الحرج: فحص الوجود + حد الخطة + الحفظ ذرية تحت القفل —
+	// أي فحص حدٍّ خارج القفل قابل للتسابق مع حفظٍ متوازٍ.
+	s.saveMu.Lock()
+	defer s.saveMu.Unlock()
+
 	// Check if project already exists to determine if it is new and preserve CreatedAt
+	// 🛡️ (SEC-09) «جديد» يعني فقط عدم الوجود فعلاً (gorm.ErrRecordNotFound) —
+	// أي خطأ قاعدة عابر آخر كان يُعامَل كمشروع جديد فيتخطى حد الخطة المجانية
+	// عند فشل الاستعلام؛ يُعاد الخطأ للمستخدم بدل التجاوز الصامت.
 	existing, findErr := s.repo.FindByID(project.ID)
-	isNew := findErr != nil || existing == nil
+	isNew := errors.Is(findErr, gorm.ErrRecordNotFound)
+	if findErr != nil && !isNew {
+		return fmt.Errorf("failed to look up project %s: %w", project.ID, findErr)
+	}
+	if !isNew && existing == nil {
+		isNew = true // دفاعي: مستودع قد يرجع (nil, nil) — اعتبره جديداً
+	}
 
 	// Check licensing limits
 	profile, err := s.licenseRepo.Get()

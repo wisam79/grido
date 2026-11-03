@@ -102,9 +102,15 @@ export const KonvaTextElement = React.memo(function KonvaTextElement({
         // 📐 إعادة القياس عبر الواجهة العامة فقط: تمرير فارغ ثم القيمة الحقيقية
         // (الثابت المختصر لنفس القيمة كان يُبطل التمرير المتماثل) — poking
         // `_setTextData` الخاص يتحول no-op صامتاً عند أي ترقية Konva.
-        const current = node.text();
-        node.text('');
-        node.text(current);
+        // #15 — المرجع قد يكون KonvaShape للنص المنحني (بلا .text())؛ استدعاء
+        // .text() بلا تحقق كان يرمي TypeError فيُفسد إعادة القياس كلها. للمنحني
+        // يكفي bumpFontEpoch أعلاه (يعيد حساب القياسات) ثم batchDraw للرسم.
+        const hasTextApi = typeof (node as { text?: unknown }).text === 'function';
+        if (hasTextApi) {
+          const current = node.text();
+          node.text('');
+          node.text(current);
+        }
         node.getLayer()?.batchDraw();
       }
     };

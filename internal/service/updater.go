@@ -36,8 +36,10 @@ var AppVersion = "dev"
 // خبيثاً وبصمته المطابقة معاً، فتنهار فائدة البصمة كاملة. التوقيع بمفتاح خاص لا
 // يوجد إلا عند الناشر يكسر هذا الاقتران.
 //
-// السياسة: مُهيَّأ ⇒ إلزامي (Fail-closed). غير مُهيَّأ ⇒ السلوك القديم (بصمة فقط)
-// مع تسجيل تحذير صريح — كي لا يتعطّل مسار التحديث لبناءات لم تُهيّأ بعد.
+// السياسة (SEC-11): مُهيَّأ ⇒ التوقيع إلزامي (Fail-closed). غير مُهيَّأ ⇒ في
+// بناء الإنتاج فشل صارم لعملية التثبيت (لا تثبيت بلا قدرة على فرض التوقيع)،
+// وفي بناء التطوير (وسم dev) يُستمر بالبصمة فقط مع تحذير صريح كي لا يتعطّل
+// التطوير المحلي.
 var UpdaterPublicKey = ""
 
 type UpdateInfo struct {
@@ -470,7 +472,8 @@ func (pw *progressWriter) Write(p []byte) (int, error) {
 //
 // سلسلة الثقة ذات مراحل صريحة: (1) رفض بلا بصمة معلنة، (2) رفض إن لم تطابق
 // البصمة الملفَ المنزّل، (3) إن كان مفتاح عام مثبّتاً في البناء فالتوقيع
-// إلزامي — نقصه أو عدم مطابقته يرفض التثبيت (Fail-closed).
+// إلزامي — نقصه أو عدم مطابقته يرفض التثبيت (Fail-closed). في بناء الإنتاج
+// غياب المفتاح المثبّت نفسه فشل صارم (SEC-11)؛ التطوير (وسم dev) يُحذَّر ويُكمل.
 func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL string, expectedSHA256 string, signatureBase64 string) error {
 	// 🛡️ إغلاق حازم: بدون بصمة SHA-256 معلنة لا نثبّت أي ملف تحديث
 	expected := strings.ToLower(strings.TrimSpace(expectedSHA256))
@@ -612,7 +615,18 @@ func (u *UpdaterService) DownloadAndInstall(ctx context.Context, downloadURL str
 	// البصمة وحدها ثقة بالمصدر نفسه (من يزوّر الملف يزوّر بصمته)، والتوقيع
 	// يكسر هذا الاقتران لأنه يلزمه مفتاح خاص لا يوجد إلّا عند الناشر.
 	if strings.TrimSpace(UpdaterPublicKey) == "" {
-		// بناء لم يُهيَّأ بمفتاح عام: نُبقي السلوك القديم (بصمة فقط) لكن بتسجيل
+		if !serviceDevBuild {
+			// 🛡️ (SEC-11) بناء الإنتاج بلا مفتاح عام مثبّت = فشل صارم (Fail-closed):
+			// البصمة تأتي من خادم التوزيع نفسه فلا تكفي وحدها (من يزوّر الملف يزوّر
+			// بصمته)، والتثبيت بلا قدرة على فرض التوقيع يفتح باب RCE عند اختراق
+			// الخادم أو اعتراض DNS. بناءات الإنتاج تُحقن دائماً بالمفتاح عبر ldflags —
+			// غيابه عطل بناء لا يُصمت عنه بتحذير.
+			_ = os.Remove(installerPath)
+			slog.Error("Update rejected: production build has no pinned updater public key — signature verification cannot be enforced",
+				"hint", "inject the key at build time (-X grido/internal/service.UpdaterPublicKey=...)")
+			return fmt.Errorf("رفض تثبيت التحديث: هذا البناء لا يحمل مفتاح التحقق من توقيع المثبّت (UpdaterPublicKey) — لا يمكن إثبات أن الملف من الناشر، حُظر التثبيت")
+		}
+		// بناء التطوير (وسم dev): نُبقي السلوك القديم (بصمة فقط) لكن بتسجيل
 		// صريح حتى لا يبدو الوضع “مُتحقَّقاً منه” وهو ليس كذلك.
 		slog.Warn("Update signature verification disabled: no pinned updater public key in this build",
 			"hint", "inject one at build time (-X grido/internal/service.UpdaterPublicKey=...)")

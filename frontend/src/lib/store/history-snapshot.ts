@@ -51,12 +51,6 @@ export const SNAPSHOT_KEYS = [
   'collageShowEndCutLine',
   'collageStrokeWidth',
   'collageStrokeColor',
-  'showGrid',
-  'gridSize',
-  'gridColor',
-  'gridOpacity',
-  'gridSubdivisions',
-  'gridType',
   'userGuides',
   'lastEditedImage',
   'lastEditedImageAspect',
@@ -149,14 +143,13 @@ export const SNAPSHOT_FIELDS: { readonly [K in SnapshotKey]: SnapshotFieldSpec<K
   collageShowEndCutLine: { default: true },
   collageStrokeWidth: { default: 0 },
   collageStrokeColor: { default: '#000000' },
-  // الشبكة والأدلة — بدونها كان التراجع يستعيد الخانات ويُبقي الشبكة/الأدلة
-  // الجديدة، فتتباعد الحالتان بلا إمكانية عكس التغيير (نفس صنف إصلاح H4)
-  showGrid: { default: DEFAULT_GRID_STATE.showGrid },
-  gridSize: { default: DEFAULT_GRID_STATE.gridSize },
-  gridColor: { default: DEFAULT_GRID_STATE.gridColor },
-  gridOpacity: { default: DEFAULT_GRID_STATE.gridOpacity },
-  gridSubdivisions: { default: DEFAULT_GRID_STATE.gridSubdivisions },
-  gridType: { default: DEFAULT_GRID_STATE.gridType },
+  // تدقيق 2026-11-03 (Bug#2): علامات عرض الشبكة (showGrid/gridSize/gridColor/
+  // gridOpacity/gridSubdivisions/gridType) إعدادات عرض/إدخال لا مستندية — مثل
+  // snapToGrid المستبعدة سلفاً — فأُخرجت من اللقطة حتى لا يعكسها التراجع عن
+  // عملية لا علاقة لها. gridSize لا يعتمد عليه أي حساب داخل اللقطة: الأدلة
+  // مخزنة نسبية (0..1) ومواضع العناصر مطلقة، وال Snap على الشبكة يُطبق لحظة
+  // الإدخال فقط. تبقى ضمن ملف المشروع عبر المسلسل بغرض الاستعادة بين الجلسات.
+  // الأدلة اليدوية وثيقة المستند وتبقى في اللقطة.
   // نفس مرجع مصفوفة الحالة الابتدائية (مثل collageTemplate) — مصفوفة جديدة
   // تجعل مقارنة اللقطتين ترى الإرشادات "مختلفة" فتُدفع لقطة وهمية في كل مرة
   userGuides: { default: DEFAULT_GRID_STATE.userGuides },

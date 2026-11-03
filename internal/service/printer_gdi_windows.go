@@ -67,6 +67,8 @@ const (
 	// GetDeviceCaps indices
 	horzResIdx         = 8
 	vertResIdx         = 10
+	logPixelsXIdx      = 88
+	logPixelsYIdx      = 90
 	physicalWidthIdx   = 110
 	physicalHeightIdx  = 111
 	physicalOffsetXIdx = 112
@@ -170,6 +172,10 @@ type deviceMetrics struct {
 	PrintableHeight int
 	MarginLeft      int
 	MarginTop       int
+	// دقة الطابعة الفعلية (LOGPIXELS) — تلزم لتحويل المساحة القابلة للطباعة من
+	// بكسلات الجهاز إلى مليمترات في تحذير تصغير الورقة (RV-Print-29).
+	DPIX int
+	DPIY int
 }
 
 func queryDeviceMetrics(hdc windows.Handle) deviceMetrics {
@@ -184,6 +190,8 @@ func queryDeviceMetrics(hdc windows.Handle) deviceMetrics {
 		PrintableHeight: getCap(vertResIdx),
 		MarginLeft:      getCap(physicalOffsetXIdx),
 		MarginTop:       getCap(physicalOffsetYIdx),
+		DPIX:            getCap(logPixelsXIdx),
+		DPIY:            getCap(logPixelsYIdx),
 	}
 }
 
@@ -1005,6 +1013,31 @@ func (s *PrintService) PrintImageDirectGDI(req domain.DirectPrintRequest) (int32
 	imgH := img.Bounds().Dy()
 
 	destX, destY, destW, destH := calculatePrintDestRect(metrics, imgW, imgH, req.Borderless)
+
+	// 🖨️ RV-Print-29: احتواء (contain) داخل المساحة القابلة للطباعة في الوضع
+	// العادي يصغّر ورقة مصمّمة على مقاس الورق بالضبط (~1.5%) داخل هوامش العتاد
+	// بلا أي إشارة. نُبقي الاحتواء عمداً — هو السلوك الآمن الوحيد لحماية المحتوى
+	// من القص عبر درايفرات الطابعات المختلفة — لكن نُسجّل تحذيراً تشخيصياً دقيقاً
+	// بالمقاس الاسمي للورقة والمساحة القابلة للطباعة بالمليمتر ومعامل التصغير
+	// الفيزيائي الناتج. التحذير المرئي للمستخدم في الواجهة تحسين مستقبلي (حوار
+	// الطباعة لا يعرف هوامش الطابعة المختارة وقت التصميم). يُحسب مرة واحدة لكل
+	// مهمة طباعة فلا كلفة تُذكر، ويقارن المليمترات الفيزيائية فلا ينذار زوراً
+	// حين يختلف تقريب الطابعة عن DPI التصميم.
+	if !req.Borderless && req.PaperWidthMM > 0 && req.PaperHeightMM > 0 &&
+		metrics.DPIX > 0 && metrics.DPIY > 0 && metrics.PrintableWidth > 0 && metrics.PrintableHeight > 0 {
+		const mmPerInch = 25.4
+		printableWMM := float64(metrics.PrintableWidth) / float64(metrics.DPIX) * mmPerInch
+		printableHMM := float64(metrics.PrintableHeight) / float64(metrics.DPIY) * mmPerInch
+		scaleW := (float64(destW) / float64(metrics.DPIX) * mmPerInch) / req.PaperWidthMM
+		scaleH := (float64(destH) / float64(metrics.DPIY) * mmPerInch) / req.PaperHeightMM
+		fitScale := math.Min(scaleW, scaleH)
+		if fitScale < 0.995 {
+			slog.Warn("GDI direct print: designed sheet scaled down to fit driver printable area",
+				"nominalWMM", req.PaperWidthMM, "nominalHMM", req.PaperHeightMM,
+				"printableWMM", printableWMM, "printableHMM", printableHMM,
+				"scale", fitScale)
+		}
+	}
 
 	// 9. ضخ بكسلات الصورة عبر StretchDIBits
 	rLines, _, lastErr := procStretchDIBits.Call(

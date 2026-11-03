@@ -200,9 +200,12 @@ export function ProjectsDialog({
           projectName: projectName.trim(),
           isDirty: !unchanged,
         });
-        // الحفظ الناجح يثبّت مرساة آخر حفظ — اشتقاق isDirty اللاحق يقارن بها
-        // (فرع «غير متغيّر» فقط: تعديلات أثناء الانتظار تبقى غير محفوظة)
-        if (!unchanged) useEditorStore.getState().markHistorySaved();
+        // الحفظ الناجح يثبّت مرساة آخر حفظ — اشتقاق isDirty اللاحق يقارن بها.
+        // تدقيق 2026-11-03 (Bug#1): كان الشرط معكوساً (!unchanged) فيثبّت الحالة
+        // الحيّة كـ«آخر حفظ» حتى مع تعديلات أحدث من المحفوَث أثناء انتظار الحفظ.
+        // المرساة تُثبَّت في فرع «غير متغيّر» فقط — حين تطابق الحيّ ما حُفظ فعلاً؛
+        // وتعديلات أثناء الانتظار تبقى غير محفوظة (isDirty محسوبة بـ !unchanged).
+        if (unchanged) useEditorStore.getState().markHistorySaved();
       }
       fetchProjects();
       setActiveTab('list'); // الانتقال التلقائي لقائمة المشاريع بعد الحفظ

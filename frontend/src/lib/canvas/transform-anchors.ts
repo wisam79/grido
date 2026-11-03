@@ -63,8 +63,12 @@ export function constrainTransformerBox(
       return newBox;
     }
     if (!Number.isFinite(oldBox.x) || !Number.isFinite(oldBox.y)) return newBox;
-    const cos = Math.cos(newBox.rotation);
-    const sin = Math.sin(newBox.rotation);
+    // صناديق boundBoxFunc في Konva تحمل الدوران بالدرجات — تمريرها مباشرة إلى
+    // Math.cos/sin (راديان) كان صحيحاً عند 0° فقط: أساس الإسقاط يصبح عشوائياً
+    // عند أي تدوير آخر فتُثبَّت إزاحة الأصل الخاطئة على transformend.
+    const rad = (newBox.rotation * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
     const dx = newBox.x - oldBox.x;
     const dy = newBox.y - oldBox.y;
     const alongWidth = dx * cos + dy * sin;

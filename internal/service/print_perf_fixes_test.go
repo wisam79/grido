@@ -237,7 +237,9 @@ func TestSaveOutputCMYK_SmallPreview(t *testing.T) {
 
 	req := domain.PrintRequest{
 		PaperWidthMM: 200, PaperHeightMM: 100, DPI: 300,
-		ColorSpace: "CMYK", ExportFormat: "jpeg",
+		// RV-Print-27: TIFF هو الصيغة الوحيدة لمسار CMYK (JPEG يُرفض صراحةً) —
+		// المعاينة PNG المصغرة تولَّد في الفرعين على السواء فالاختبار لا يتغير سلوكه.
+		ColorSpace: "CMYK", ExportFormat: "tiff",
 	}
 
 	_, _, err := svc.saveOutput(dc, req)

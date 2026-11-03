@@ -54,6 +54,23 @@ func isolateAITransport(t *testing.T) {
 	})
 }
 
+// newHTTPSModalStub خادم Modal للاختبار بشهادة TLS — التطبيق يفرض https:// على
+// MODAL_AI_URL (SEC-10) فلا تكفي خوادم httptest النصية (http://) بعد الآن.
+// يُبدّل aiEnhanceClient مؤقتاً بعميل يثق بشهادة الخادم، ويُنظّف في نهاية الاختبار.
+func newHTTPSModalStub(t *testing.T, handler http.Handler) *httptest.Server {
+	t.Helper()
+	ts := httptest.NewTLSServer(handler)
+	oldEnhance := aiEnhanceClient
+	client := ts.Client()
+	client.Timeout = aiEnhancementBudget
+	aiEnhanceClient = client
+	t.Cleanup(func() {
+		aiEnhanceClient = oldEnhance
+		ts.Close()
+	})
+	return ts
+}
+
 func aiTestPNG(t *testing.T) string {
 	t.Helper()
 	var buf bytes.Buffer
@@ -104,8 +121,8 @@ func TestEnhanceImageWithAI_Success(t *testing.T) {
 		GlobalAIRateLimiter.mu.Unlock()
 	}()
 
-	// Mock Modal AI HTTP Server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Mock Modal AI HTTP Server (TLS — التطبيق يفرض https:// على MODAL_AI_URL)
+	ts := newHTTPSModalStub(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 1. Verify HTTP Method
 		if r.Method != "POST" {
 			t.Errorf("Expected POST method, got %s", r.Method)
@@ -145,7 +162,6 @@ func TestEnhanceImageWithAI_Success(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"image": aiTestPNG(t), "execution_seconds": 2.4, "total_cost_usd": 0.0012})
 	}))
-	defer ts.Close()
 
 	// Override ModalAIURL with trailing slash to test URL normalization
 	ModalAIURL = ts.URL + "///"
@@ -205,10 +221,9 @@ func TestEnhanceImageWithAI_HTTPError_Rollback(t *testing.T) {
 		GlobalAIRateLimiter.mu.Unlock()
 	}()
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := newHTTPSModalStub(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"error": "Endpoint not found"}`, http.StatusNotFound)
 	}))
-	defer ts.Close()
 
 	ModalAIURL = ts.URL
 	defer func() { ModalAIURL = "" }()
@@ -413,11 +428,11 @@ func TestEnhanceImageWithAI_InjectsServerQuotaSnapshot(t *testing.T) {
 	}))
 	defer supabase.Close()
 
-	modal := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// TLS — التطبيق يفرض https:// على MODAL_AI_URL (SEC-10)
+	modal := newHTTPSModalStub(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"image": aiTestPNG(t), "execution_seconds": 2.4, "total_cost_usd": 0.0012})
 	}))
-	defer modal.Close()
 
 	oldURL, oldKey, oldModal := SupabaseURL, SupabaseAnonKey, ModalAIURL
 	SupabaseURL, SupabaseAnonKey, ModalAIURL = supabase.URL, "test-anon-key", modal.URL
@@ -570,7 +585,8 @@ func TestEnhanceImageWithAI_LocalImagePath(t *testing.T) {
 	}()
 
 	var receivedImagePayload string
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// TLS — التطبيق يفرض https:// على MODAL_AI_URL (SEC-10)
+	ts := newHTTPSModalStub(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var reqBody map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -584,7 +600,6 @@ func TestEnhanceImageWithAI_LocalImagePath(t *testing.T) {
 			"image": aiTestPNG(t),
 		})
 	}))
-	defer ts.Close()
 
 	oldModalURL := ModalAIURL
 	ModalAIURL = ts.URL
@@ -655,7 +670,8 @@ func TestEnhanceImageWithAI_LocalImagePath_TransparentPNG(t *testing.T) {
 	}()
 
 	var receivedImagePayload string
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// TLS — التطبيق يفرض https:// على MODAL_AI_URL (SEC-10)
+	ts := newHTTPSModalStub(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var reqBody map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -669,7 +685,6 @@ func TestEnhanceImageWithAI_LocalImagePath_TransparentPNG(t *testing.T) {
 			"image": aiTestPNG(t),
 		})
 	}))
-	defer ts.Close()
 
 	oldModalURL := ModalAIURL
 	ModalAIURL = ts.URL
@@ -833,5 +848,39 @@ func TestEnhanceImageWithAI_EXIFOrientation(t *testing.T) {
 	})
 	if _, err := NewAIService().EnhanceImageWithAI("/local-image/oriented.jpg", "orientation-token", 5); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// TestResolveModalAIURL_HTTPSOnly (SEC-10): MODAL_AI_URL بغير https:// لا يُكرم
+// أبداً — JWT المستخدم يُرسل Bearer لهذه النقطة، وقيمة http:// (أو أي scheme
+// آخر) تسرّب التوكن؛ الارتداد إلزامي للنقطة الرسمية defaultModalAIURL.
+func TestResolveModalAIURL_HTTPSOnly(t *testing.T) {
+	old := ModalAIURL
+	defer func() { ModalAIURL = old }()
+
+	// فارغ → الافتراضي
+	ModalAIURL = ""
+	if got := resolveModalAIURL(); got != defaultModalAIURL {
+		t.Errorf("empty MODAL_AI_URL should fall back to the default endpoint, got %q", got)
+	}
+
+	// https مخصص يُكرم مع تطبيع الشرطات اللاحقة والفراغات
+	ModalAIURL = " https://custom.example/ai///"
+	if got := resolveModalAIURL(); got != "https://custom.example/ai" {
+		t.Errorf("custom https URL should be honored and normalized, got %q", got)
+	}
+
+	// أي scheme آخر غير https يُرفض (تسريب JWT محتمل)
+	for _, bad := range []string{
+		"http://attacker.example/steal",
+		"HTTP://attacker.example/steal",
+		"ftp://attacker.example/file",
+		"javascript:alert(1)",
+		"//attacker.example",
+	} {
+		ModalAIURL = bad
+		if got := resolveModalAIURL(); got != defaultModalAIURL {
+			t.Errorf("non-https MODAL_AI_URL %q must not be honored, got %q", bad, got)
+		}
 	}
 }

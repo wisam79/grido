@@ -2,7 +2,6 @@ package service
 
 import (
 	"image/color"
-	"image/jpeg"
 	"math"
 	"os"
 	"strings"
@@ -15,13 +14,11 @@ import (
 // print_fullpage_cmyk_test.go — عقد حوار التصدير ← المسار الخلفي (CMYK كامل الصفحة)
 //
 // حوار التصدير يبني طلباً بنمط واحد ثابت: عنصر واحد يملأ الورقة (0,0 → W,H)،
-// margin/gap صفر، بلا خطوط قص، colorSpace='cmyk'، وexportFormat='tiff'|'jpeg'.
+// margin/gap صفر، بلا خطوط قص، colorSpace='cmyk'، وexportFormat='tiff' فقط
+// (RV-Print-27: JPEG يُرفض صراحةً في مسار CMYK لأن مُرمِّز JPEG لا يحافظ على
+// فصل الأحبار — كان يُنتج JPEG بصيغة RGB باسم _CMYK.jpg).
 // هذا الاختبار يثبت أن هذا الطلب بالضبط يُنتج ملفاً كامل الصفحة حدّاً-لحدّ
 // (لا قصّ ولا إطار أبيض)، وأن TIFF يخرج بفصل أحبار حقيقي.
-//
-// ⚠️ قيد معروف (لا يُخفيه الاختبار): مُرمِّز JPEG في مكتبة Go القياسية يكتب
-// 3 مكوّنات (YCbCr) دائماً ولا يدعم CMYK، فمخرج JPEG يأتي بفضاء RGB رغم اختيار
-// CMYK. TIFF هو الحامل الحقيقي لفصل الأحبار.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // buildExportDialogCMYKRequest يطابق buildCmykPrintRequest في الواجهة.
@@ -49,7 +46,6 @@ func TestExportDialogCMYCFullPageOutput(t *testing.T) {
 		extension string
 	}{
 		{name: "TIFF", format: "tiff", extension: ".tif"},
-		{name: "JPEG", format: "jpeg", extension: ".jpg"},
 	}
 
 	for _, tc := range cases {
@@ -77,30 +73,9 @@ func TestExportDialogCMYCFullPageOutput(t *testing.T) {
 				t.Errorf("expected HTML print document alongside the file")
 			}
 
-			var width, height int
-			var barePaper func(x, y int) bool
-
-			switch tc.format {
-			case "tiff":
-				img := cmykFromTIFFFile(t, outPath) // يتحقق أيضاً من photometric=5/Samples=4/InkSet
-				width, height = img.Bounds().Dx(), img.Bounds().Dy()
-				barePaper = func(x, y int) bool { return img.CMYKAt(x, y) == color.CMYK{} }
-			default:
-				file, ferr := os.Open(outPath)
-				if ferr != nil {
-					t.Fatalf("open %s: %v", tc.format, ferr)
-				}
-				defer file.Close()
-				img, derr := jpeg.Decode(file)
-				if derr != nil {
-					t.Fatalf("decode %s: %v", tc.format, derr)
-				}
-				width, height = img.Bounds().Dx(), img.Bounds().Dy()
-				barePaper = func(x, y int) bool {
-					r, g, b, _ := img.At(x, y).RGBA()
-					return r>>8 > 240 && g>>8 > 240 && b>>8 > 240
-				}
-			}
+			img := cmykFromTIFFFile(t, outPath) // يتحقق أيضاً من photometric=5/Samples=4/InkSet
+			width, height := img.Bounds().Dx(), img.Bounds().Dy()
+			barePaper := func(x, y int) bool { return img.CMYKAt(x, y) == color.CMYK{} }
 
 			expectedW := int(math.Round(mmToPx(210, 150)))
 			expectedH := int(math.Round(mmToPx(297, 150)))
@@ -122,6 +97,31 @@ func TestExportDialogCMYCFullPageOutput(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// ─── RV-Print-27: طلب CMYK بصيغة JPEG يُرفض برسالة عربية واضحة ───
+
+// TestExportDialogCMYK_RejectsJPEG: مُرمِّز JPEG القياسي لا يكتب CMYK — الطلب
+// يجب أن يفشل صراحةً بدل ملف RGB مُسمّى _CMYK.jpg (الاسم المضلل للمطبعة).
+func TestExportDialogCMYK_RejectsJPEG(t *testing.T) {
+	dir := workshopTempDir(t)
+	src := writeWorkshopPhoto(t, dir, "canvas.png", 100, 100,
+		color.RGBA{R: 200, G: 40, B: 40, A: 255})
+
+	svc := NewPrintService()
+	for _, format := range []string{"jpeg", "jpg", "JPEG"} {
+		outPath, htmlDoc, err := svc.GeneratePrintSheet(buildExportDialogCMYKRequest(src, format))
+		if err == nil {
+			os.Remove(outPath)
+			t.Fatalf("GeneratePrintSheet(%s): expected rejection, got nil", format)
+		}
+		if !strings.Contains(err.Error(), "TIFF") {
+			t.Errorf("GeneratePrintSheet(%s): expected descriptive TIFF error, got: %v", format, err)
+		}
+		if htmlDoc != "" {
+			t.Errorf("GeneratePrintSheet(%s): no HTML document must be produced for a rejected request", format)
+		}
 	}
 }
 

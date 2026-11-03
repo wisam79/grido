@@ -100,7 +100,28 @@ type PhoneBridgeService struct {
 	// cloudErrMsg آخر رسالة خطأ سحابية عربية معروضة للمستخدم (تُمسح عند النجاح)
 	cloudErrMsg         string
 	processedCloudFiles sync.Map
-	mu                  sync.RWMutex
+	// generation جيل الجلسة الحالية: يُزاد عند كل Start لجلسة جديدة وعند كل Stop.
+	// يلتقطه كل معالج (رفع LAN / سحب سحابي / WebSocket) عند الدخول ويُتحقق منه
+	// قبل أي التزام ملف أو بثّ phone:photo-received/phone:status — 🛡️ RV-Bridge-02:
+	// بدونه يُعيد معالج عالق بعد الإيقاف بثّ {isRunning:true} فيتجمّد مؤشر الواجهة
+	// على حالة "قيد التشغيل" الزائفة، ويكتب في جلسة ميّتة.
+	generation uint64
+	mu         sync.RWMutex
+}
+
+// currentGeneration يقرأ جيل الجلسة الحيّ (لقطة المعالج عند الدخول)
+func (s *PhoneBridgeService) currentGeneration() uint64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.generation
+}
+
+// generationMatches يتحقق أن الجيل الملتقط ما زال هو الجيل الحيّ — false تعني
+// أن الجلسة توقفت (أو بدأت جلسة جديدة) فلا يصحّ الالتزام ولا البثّ
+func (s *PhoneBridgeService) generationMatches(captured uint64) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.generation == captured
 }
 
 func NewPhoneBridgeService(mediaSvc *MediaService) *PhoneBridgeService {
@@ -312,6 +333,11 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 	}
 	s.token = hex.EncodeToString(tokenBytes)
 
+	// 🛡️ RV-Bridge-02: جيل جديد لجلسة جديدة — كل معالجات الجلسات السابقة تصبح
+	// باطلة ولا تستطيع الالتزام أو البثّ في الجلسة الحالية. (مسار "يعمل بالفعل"
+	// أعلاه لا يزيد الجيل: هي الجلسة نفسها.)
+	s.generation++
+
 	// 2b. تجهيز رابط الجسر السحابي: يجب أن يحمل بادئة المستخدم
 	// `<uid>/<sessionToken>` لأن سياسات storage.objects تحصر القراءة والحذف على
 	// `(storage.foldername(name))[1] = auth.uid()`. الهاتف يرفع بالمفتاح العام
@@ -333,14 +359,27 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 	}
 
 	// 3. Listen on preferred port (8741) or fallback to dynamic port (:0)
+	// 🛡️ RV-Bridge-03: كان الربط الافتراضي 0.0.0.0 يكشف الجسر (وتوكن الرفع في
+	// رابط الـQR) على كل واجهات الشبكة — نربط الآن على عنوان LAN المكتشف وحده
+	// عندما يكون IPv4 صالحًا غير حلقي (loopback)، مع الرجوع إلى 0.0.0.0 والتحذير
+	// في السجلّ عند فشل الربط (تجاوز عنوان، تغيّر واجهة، إلخ).
 	var listener net.Listener
-	preferredAddr := fmt.Sprintf("0.0.0.0:%d", DefaultPhoneBridgePort)
-	listener, err = net.Listen("tcp", preferredAddr)
-	if err != nil {
-		slog.Warn("Preferred phone bridge port unavailable, using dynamic port", "preferred", DefaultPhoneBridgePort, "error", err)
-		listener, err = net.Listen("tcp", "0.0.0.0:0")
+	if bindIP := net.ParseIP(s.ip); bindIP != nil && bindIP.To4() != nil && !bindIP.IsLoopback() {
+		listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", s.ip, DefaultPhoneBridgePort))
 		if err != nil {
-			return nil, fmt.Errorf("listen on network: %w", err)
+			slog.Warn("phone bridge: bind to LAN IP failed, falling back to all interfaces", "ip", s.ip, "error", err)
+			listener = nil
+		}
+	}
+	if listener == nil {
+		preferredAddr := fmt.Sprintf("0.0.0.0:%d", DefaultPhoneBridgePort)
+		listener, err = net.Listen("tcp", preferredAddr)
+		if err != nil {
+			slog.Warn("Preferred phone bridge port unavailable, using dynamic port", "preferred", DefaultPhoneBridgePort, "error", err)
+			listener, err = net.Listen("tcp", "0.0.0.0:0")
+			if err != nil {
+				return nil, fmt.Errorf("listen on network: %w", err)
+			}
 		}
 	}
 
@@ -350,6 +389,8 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 		return nil, errors.New("failed to acquire TCP listener address")
 	}
 	s.port = tcpAddr.Port
+	// ℹ️ RV-Bridge-03: مخاطرة مقبولة — التوكن في رابط الـQR ضروري لتحميل صفحة
+	// الهاتف بلا تسجيل دخول، ومن يرى الرابط على الشبكة المحلية يملك الرفع أصلًا
 	s.url = fmt.Sprintf("http://%s:%d?token=%s", s.ip, s.port, s.token)
 	s.listener = listener
 
@@ -396,9 +437,14 @@ func (s *PhoneBridgeService) Start() (*BridgeInfo, error) {
 }
 
 func (s *PhoneBridgeService) Stop() error {
+	// 🛡️ RV-Bridge-02: كان القفل الكتابي مسوكًا عبر server.Shutdown — معالج رفع
+	// أثناء الطيران يطلب tokenMatches (RLock) فيحجب خلف القفل بينما Shutdown
+	// ينتظر انتهاء ذلك المعالج: انعكاس ترتيب أقفال يجمد Stop ثوانٍ ويعيد
+	// "context deadline exceeded". كذلك كان cleanCloudSession (شبكة، مهلة 15ث)
+	// يعمل داخل القفل فيجمّد GetStatus/Start/tokenMatches والمزامنة السحابية.
+	// الآن: القفل يُمسك فقط لالتقاط لقطة الحالة وقلبها، ويُطلَق قبل Shutdown
+	// والتنظيف السحابي؛ ومعالجات الطيران تُسكت بحارس الجيل (generation).
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if s.cloudCancel != nil {
 		s.cloudCancel()
 		s.cloudCancel = nil
@@ -412,7 +458,19 @@ func (s *PhoneBridgeService) Stop() error {
 	s.cloudAccessToken = ""
 	s.cloudErrMsg = ""
 
-	if s.server == nil {
+	srv := s.server
+	s.server = nil
+	s.listener = nil
+	s.url = ""
+	s.cloudURL = ""
+	s.token = ""
+	s.pairedDevice = ""
+
+	// زيادة الجيل تُبطل فورًا أي معالج رفع/سحب أثناء الطيران قبل أي التزام أو بثّ
+	s.generation++
+	s.mu.Unlock()
+
+	if srv == nil {
 		if cloudPrefixToClean != "" && cloudTokenToClean != "" {
 			s.cleanCloudSession(cloudPrefixToClean, cloudTokenToClean)
 		}
@@ -424,16 +482,17 @@ func (s *PhoneBridgeService) Stop() error {
 		return nil
 	}
 
+	// الإيقاف الناعم خارج القفل — أي معالج أثناء الطيران يأخذ القفل بحرية ويكمل
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	err := s.server.Shutdown(shutdownCtx)
-	s.server = nil
-	s.listener = nil
-	s.url = ""
-	s.cloudURL = ""
-	s.token = ""
-	s.pairedDevice = ""
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		// 🛡️ RV-Bridge-02: انتهت المهلة واتصالات ما زالت حيّة — إغلاق قسري فلا
+		// يبقى أي معالج على قيد الحياة أصلًا (مع حارس الجيل: حزام وأحذية مطاطية).
+		// الإغلاق القسري علاجٌ مُطبَّق لا فشل: لا نُعيد خطأ زائفًا للمسار الشائع.
+		slog.Warn("phone bridge: graceful shutdown timed out, force-closing active connections", "error", err)
+		_ = srv.Close()
+	}
 
 	if cloudPrefixToClean != "" && cloudTokenToClean != "" {
 		s.cleanCloudSession(cloudPrefixToClean, cloudTokenToClean)
@@ -446,7 +505,7 @@ func (s *PhoneBridgeService) Stop() error {
 	})
 
 	slog.Info("Phone bridge server stopped")
-	return err
+	return nil
 }
 
 func (s *PhoneBridgeService) GetStatus() *BridgeStatus {
@@ -534,6 +593,10 @@ func (s *PhoneBridgeService) handleManifest(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Request) {
+	// 🛡️ RV-Bridge-02: لقطة جيل الجلسة عند الدخول — تُفحص قبل الالتزام وقبل البثّ
+	// حتى لا يُحيي معالج نجا من إيقافٍ متزامن حالة "قيد التشغيل" أو يكتب في جلسة ميّتة
+	uploadGen := s.currentGeneration()
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -586,6 +649,12 @@ func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Re
 	}
 
 	// 5. Store atomically in Media directory
+	// 🛡️ RV-Bridge-02: لا التزام بعد الإيقاف — الجلسة انتهت فلا قيمة للملف
+	if !s.generationMatches(uploadGen) {
+		http.Error(w, "Session ended during upload", http.StatusServiceUnavailable)
+		return
+	}
+
 	mediaDir := s.mediaSvc.GetMediaDir()
 	ext := s.mediaSvc.GetExtensionFromMime(detectedMime)
 	filename := fmt.Sprintf("img_%d%s", time.Now().UnixNano(), ext)
@@ -614,21 +683,27 @@ func (s *PhoneBridgeService) handlePhotoUpload(w http.ResponseWriter, r *http.Re
 
 	virtualPath := "/local-image/" + filename
 
-	s.mu.Lock()
-	s.receivedCount++
-	s.lastReceived = time.Now().Format("15:04:05")
-	count := s.receivedCount
-	lastRec := s.lastReceived
-	s.mu.Unlock()
+	// 🛡️ RV-Bridge-02: بثّ phone:status {isRunning:true} بعد Stop كان يُجمّد
+	// الواجهة على حالة زائفة — ملتقط الجيل صار باطلًا ⇒ لا عدّاد ولا بثّ
+	if !s.generationMatches(uploadGen) {
+		slog.Warn("phone bridge: upload committed but session already stopped, skipping event emission")
+	} else {
+		s.mu.Lock()
+		s.receivedCount++
+		s.lastReceived = time.Now().Format("15:04:05")
+		count := s.receivedCount
+		lastRec := s.lastReceived
+		s.mu.Unlock()
 
-	s.runtime.Emit("phone:photo-received", map[string]string{
-		"path": virtualPath,
-	})
-	s.runtime.Emit("phone:status", map[string]interface{}{
-		"isRunning":     true,
-		"receivedCount": count,
-		"lastReceived":  lastRec,
-	})
+		s.runtime.Emit("phone:photo-received", map[string]string{
+			"path": virtualPath,
+		})
+		s.runtime.Emit("phone:status", map[string]interface{}{
+			"isRunning":     true,
+			"receivedCount": count,
+			"lastReceived":  lastRec,
+		})
+	}
 
 	slog.Info("Phone bridge received photo successfully", "path", virtualPath)
 
@@ -745,6 +820,12 @@ type cloudStorageItem struct {
 // downloadAndSaveCloudPhoto يقوم بسحب كائن صورة محدد من Supabase Storage وحفظه ذرياً
 // في مسار Media المحلي وبثه للكانفاس، ثم حذفه فورياً من السحابة بتفويض المستخدم
 func (s *PhoneBridgeService) downloadAndSaveCloudPhoto(ctx context.Context, objectPath, userJWT string) error {
+	// 🛡️ RV-Bridge-02: لقطة جيل الجلسة عند الدخول — السحب يستغرق ثوانٍ (مهلة
+	// العميل 15ث) وقد يتقاطع مع Stop؛ بلا حارس يُلتزم ملف ويُبثّ {isRunning:true}
+	// لجلسة ميّتة. (لا حاجة لمسح processedCloudFiles عند الرفض: نهاية الجلسة
+	// توقف المزامنة وتنظّف مسارها السحابي كاملًا عبر cleanCloudSession.)
+	cloudGen := s.currentGeneration()
+
 	if objectPath == "" || userJWT == "" || SupabaseURL == "" || SupabaseAnonKey == "" {
 		return errors.New("invalid arguments or credentials")
 	}
@@ -777,17 +858,49 @@ func (s *PhoneBridgeService) downloadAndSaveCloudPhoto(ctx context.Context, obje
 		return fmt.Errorf("download returned status %d", downResp.StatusCode)
 	}
 
+	// 🛡️ RV-Bridge-01: كان خطأ io.ReadFull مُهملًا — انقطاع الاتصال بعد ترويسات
+	// الـ200 يجعل n صفرًا/جزئيًا فيفشل كشف النوع ويُحذف **الأصل السحابي** دون أن
+	// يُحفظ أي شيء محليًا (فقدان دائم للصورة). الآن: خطأ القراءة (أو n == 0)
+	// يعيد خطأ **بدون حذف** — الكائن يُعاد سحبه في الاستقصاء التالي، والحذف يبقى
+	// حصريًا لجسمٍ قُرئ كاملًا وتحقّق أنه ليس صورة.
 	headerBuf := make([]byte, 512)
-	n, _ := io.ReadFull(downResp.Body, headerBuf)
+	n, readErr := io.ReadFull(downResp.Body, headerBuf)
+	if readErr != nil && !(readErr == io.EOF || readErr == io.ErrUnexpectedEOF) {
+		// خطأ نقل حقيقي (إعادة ضبط اتصال/مهلة) — عابر، لا يُحذف الكائن السحابي
+		s.processedCloudFiles.Delete(objectPath)
+		return fmt.Errorf("download interrupted after %d bytes: %w", n, readErr)
+	}
+	if n == 0 {
+		// جسم فارغ: لا يمكن كشف نوعه بأمان — لا يُحذف الكائن، تُجرد المعالجة ويُعاد المحاولة
+		s.processedCloudFiles.Delete(objectPath)
+		return errors.New("downloaded object body is empty")
+	}
+	if readErr != nil {
+		// io.EOF/io.ErrUnexpectedEOF مع n>0: إمّا صورة صغيرة (<512B) اكتملت سليمًا
+		// وإمّا جسم مقطوع. نميّزهما بقراءة بايت إضافي: EOF نظيف ⇒ الجسم اكتمل فعلًا
+		// (net/http لا يُرجع EOF قبل استهلاك Content-Length كاملًا)، وغير ذلك ⇒
+		// جسم مقطوع — عابر، لا يُحذف الكائن السحابي.
+		var probe [1]byte
+		if _, probeErr := downResp.Body.Read(probe[:]); probeErr != io.EOF {
+			s.processedCloudFiles.Delete(objectPath)
+			return fmt.Errorf("download truncated after %d bytes: %w", n, readErr)
+		}
+	}
 	detectedMime := http.DetectContentType(headerBuf[:n])
 
 	if !strings.HasPrefix(detectedMime, "image/") {
+		// جسم قُرئ كاملًا وتحقّق أنه ليس صورة ⇒ الحذف مقصود (تنظيف نفايات الرفع)
 		deleteURL := bucketBase
 		s.deleteCloudObject(deleteURL, objectPath, userJWT)
 		return errors.New("downloaded object is not an image")
 	}
 
 	fullReader := io.MultiReader(bytes.NewReader(headerBuf[:n]), downResp.Body)
+
+	// 🛡️ RV-Bridge-02: لا التزام بعد الإيقاف — الجلسة انتهت والكائن سيمسح معها
+	if !s.generationMatches(cloudGen) {
+		return errors.New("phone bridge session ended during cloud download")
+	}
 
 	mediaDir := s.mediaSvc.GetMediaDir()
 	ext := s.mediaSvc.GetExtensionFromMime(detectedMime)
@@ -821,21 +934,25 @@ func (s *PhoneBridgeService) downloadAndSaveCloudPhoto(ctx context.Context, obje
 
 	virtualPath := "/local-image/" + filename
 
-	s.mu.Lock()
-	s.receivedCount++
-	s.lastReceived = time.Now().Format("15:04:05")
-	cloudCount := s.receivedCount
-	cloudLastRec := s.lastReceived
-	s.mu.Unlock()
+	// 🛡️ RV-Bridge-02: بثّ {isRunning:true} بعد Stop كان يُجمّد الواجهة على حالة
+	// زائفة — ملتقط الجيل صار باطلًا ⇒ لا عدّاد ولا بثّ (الملف الملتزم يبقى بلا ضرر)
+	if s.generationMatches(cloudGen) {
+		s.mu.Lock()
+		s.receivedCount++
+		s.lastReceived = time.Now().Format("15:04:05")
+		cloudCount := s.receivedCount
+		cloudLastRec := s.lastReceived
+		s.mu.Unlock()
 
-	s.runtime.Emit("phone:photo-received", map[string]string{
-		"path": virtualPath,
-	})
-	s.runtime.Emit("phone:status", map[string]interface{}{
-		"isRunning":     true,
-		"receivedCount": cloudCount,
-		"lastReceived":  cloudLastRec,
-	})
+		s.runtime.Emit("phone:photo-received", map[string]string{
+			"path": virtualPath,
+		})
+		s.runtime.Emit("phone:status", map[string]interface{}{
+			"isRunning":     true,
+			"receivedCount": cloudCount,
+			"lastReceived":  cloudLastRec,
+		})
+	}
 
 	slog.Info("Phone bridge received cloud photo successfully", "path", virtualPath)
 
@@ -851,6 +968,10 @@ func (s *PhoneBridgeService) startRealtimeSync(ctx context.Context, sessionToken
 	if SupabaseURL == "" || SupabaseAnonKey == "" {
 		return
 	}
+
+	// 🛡️ RV-Bridge-02: لقطة جيل الجلسة — اتصال WebSocket قد يظل حيًا لحظة الإيقاف
+	// فيُبثّ {isRunning:true} بعد {isRunning:false} فيتجمّد مؤشر الواجهة
+	sessionGen := s.currentGeneration()
 
 	wsURL := strings.Replace(strings.TrimRight(SupabaseURL, "/"), "https://", "wss://", 1)
 	wsURL = strings.Replace(wsURL, "http://", "ws://", 1)
@@ -874,8 +995,15 @@ func (s *PhoneBridgeService) startRealtimeSync(ctx context.Context, sessionToken
 		}
 
 		dialCtx, dialCancel := context.WithTimeout(ctx, 10*time.Second)
-		conn, _, err := websocket.Dial(dialCtx, wsURL, nil)
+		conn, wsResp, err := websocket.Dial(dialCtx, wsURL, nil)
 		dialCancel()
+		// 🛡️ RV-Bridge-04 (bodyclose): جسم استجابة المصافحة مملوك لـ conn عند
+		// النجاح (يُغلق مع conn.Close أسفل الحلقة، وresp.Body يبقى nil هناك)،
+		// وعند الفشل تُغلقه المكتبة نفسها بعد تصريفه — الإغلاق الصريح هنا حارس
+		// بلا ضرر يضمن عدم بقاء أي جسم استجابة مفتوحًا على كل المسارات
+		if wsResp != nil && wsResp.Body != nil {
+			_ = wsResp.Body.Close()
+		}
 
 		if err != nil {
 			slog.Debug("Phone bridge realtime dial failed, retrying", "error", err, "backoff", backoff)
@@ -965,7 +1093,8 @@ func (s *PhoneBridgeService) startRealtimeSync(ctx context.Context, sessionToken
 				switch envelope.Payload.Event {
 				case "paired":
 					device := envelope.Payload.Payload.Device
-					if device != "" {
+					// 🛡️ RV-Bridge-02: لا بثّ اقتران/حالة من اتصال نجا بعد الإيقاف
+					if device != "" && s.generationMatches(sessionGen) {
 						s.mu.Lock()
 						s.pairedDevice = device
 						s.mu.Unlock()
@@ -1006,6 +1135,9 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 		s.disableCloudSync(errPhoneBridgeSignInRequired)
 		return
 	}
+
+	// 🛡️ RV-Bridge-02: لقطة جيل الجلسة — لا بثّ اقتران من استقصاء نجا بعد الإيقاف
+	sessionGen := s.currentGeneration()
 
 	client := phoneBridgeHTTPClient
 	pollInterval := 12 * time.Second
@@ -1117,7 +1249,8 @@ func (s *PhoneBridgeService) pollCloudBridge(ctx context.Context, sessionToken, 
 							}
 							_ = json.NewDecoder(io.LimitReader(dResp.Body, 16*1024)).Decode(&hsData)
 							dResp.Body.Close()
-							if hsData.Device != "" {
+							// 🛡️ RV-Bridge-02: لا بثّ حالة من جيل جلسة باطل
+							if hsData.Device != "" && s.generationMatches(sessionGen) {
 								s.mu.Lock()
 								s.pairedDevice = hsData.Device
 								s.mu.Unlock()

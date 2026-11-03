@@ -56,21 +56,34 @@ function FormatOptionButton({
   title,
   subtitle,
   onClick,
+  disabled = false,
+  hint,
 }: {
   selected: boolean;
   title: string;
   subtitle: string;
   onClick: () => void;
+  /** خيار معطّل: يُرمَّد مع تعطيل النقر ويحمل تلميحاً يشرح السبب (RV-Print-27). */
+  disabled?: boolean;
+  /** نص تلميح التوضيح (title) الذي يظهر عند التحويم على الخيار المعطّل. */
+  hint?: string;
 }) {
   return (
     <button
       type="button"
       aria-pressed={selected}
+      aria-disabled={disabled}
+      disabled={disabled}
+      title={hint}
       onClick={onClick}
-      className={`flex items-center gap-2 p-2 rounded-md border transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none ${
-        selected
-          ? 'border-primary bg-primary/10 font-bold text-primary ring-1 ring-primary/20'
-          : 'border-border hover:border-primary/50 bg-input hover:bg-muted/30 text-foreground'
+      className={`flex items-center gap-2 p-2 rounded-md border transition-colors select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none ${
+        disabled
+          ? 'opacity-50 cursor-not-allowed border-border bg-muted/20 text-muted-foreground'
+          : `cursor-pointer ${
+              selected
+                ? 'border-primary bg-primary/10 font-bold text-primary ring-1 ring-primary/20'
+                : 'border-border hover:border-primary/50 bg-input hover:bg-muted/30 text-foreground'
+            }`
       }`}
     >
       <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center shrink-0">
@@ -229,6 +242,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         // 🎨 مسار CMYK: يُنفَّذ في الخلفية (Go) عبر ExportPrintSheet — لا يدعم
         // تصدير الخلايا المنفصلة، لذا يسبق فرع الدفعات ويُخرج التصميم كملف واحد.
         if (colorSpace === 'cmyk') {
+          // 🛡️ RV-Print-27: مثبّت دفاعي — TIFF هو الصيغة الوحيدة الصالحة لمسار
+          // CMYK (الخلفية ترفض cmyk+jpeg برسالة صريحة والخيار معطّل في الواجهة)،
+          // فلا يبقى أي مسار يُرسل التركيبة المرفوضة.
+          const safeCmykFormat: CmykFormat = cmykFormat === 'jpeg' ? 'tiff' : cmykFormat;
           const dpi = exportDpi;
           // Match the actual RGB capture and preflight, not nominal template millimeters.
           const widthMM = pxToMm(canvasWidth, dpi);
@@ -239,7 +256,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           const { blob: cmykBlob, sourceFilename } = await runCmykExport({
             stage: stageRef.current,
-            format: cmykFormat,
+            format: safeCmykFormat,
             dpi,
             paperWidthMM: widthMM,
             paperHeightMM: heightMM,
@@ -253,7 +270,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             return;
           }
 
-          const ext = cmykFormat === 'tiff' ? 'tif' : 'jpg';
+          const ext = safeCmykFormat === 'tiff' ? 'tif' : 'jpg';
           const dateStr = new Date().toISOString().slice(0, 10);
           const name = template
             ? `Grido_${(template.name || 'Template').replace(/\s+/g, '_')}_${template.widthMM}x${template.heightMM}mm_${dateStr}_CMYK.${ext}`
@@ -266,7 +283,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           if (shouldStop()) return;
           const outcome = classifySaveResult(res);
           if (outcome === 'success') {
-            toast.success(`تم تصدير ${cmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} بنظام CMYK`);
+            toast.success(`تم تصدير ${safeCmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} بنظام CMYK`);
             SendNotification('Grido Studio', 'تم تصدير ملف CMYK وحفظه', '').catch(() => {});
             onOpenChange(false);
           } else if (outcome === 'cancel') {
@@ -474,7 +491,13 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                 selected={colorSpace === 'cmyk'}
                 title="CMYK"
                 subtitle="مطابع الأوفست"
-                onClick={() => setColorSpace('cmyk')}
+                // 🖨️ RV-Print-27: دخول مسار CMYK يُرجع الصيغة إلى TIFF إجبارياً —
+                // مُرمِّز JPEG لا يحافظ على فصل الأحبار والخلفية ترفض الطلب صراحةً،
+                // فلا يبقى أي مسار يُرسل cmyk+jpeg من الحوار.
+                onClick={() => {
+                  setColorSpace('cmyk');
+                  setCmykFormat('tiff');
+                }}
               />
             </div>
           </div>
@@ -514,11 +537,16 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
                     subtitle="فصل أحبار حقيقي — بلا فقد"
                     onClick={() => setCmykFormat('tiff')}
                   />
+                  {/* 🛡️ RV-Print-27: JPEG معطّل مع CMYK — مُرمِّز JPEG لا يدعم
+                      كتابة فصل الأحبار (سيُنتج RGB باسم _CMYK)، فالمسار الوحيد
+                      الصالح هو TIFF. التلميح يشرح السبب عند التحويم. */}
                   <FormatOptionButton
-                    selected={cmykFormat === 'jpeg'}
+                    selected={false}
                     title="JPEG"
-                    subtitle="RGB مضغوط — بلا فصل أحبار"
-                    onClick={() => setCmykFormat('jpeg')}
+                    subtitle="معطّل مع CMYK"
+                    hint="مُرمِّز JPEG لا يدعم فصل الأحبار CMYK — اختر TIFF (الحامل الحقيقي لفصل الأحبار)"
+                    disabled
+                    onClick={() => {}}
                   />
                 </>
               )}
@@ -529,15 +557,16 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             <div className="rounded-md border border-border/80 bg-primary/5 p-3 text-xs space-y-1.5 fluent-specular">
               <div className="font-bold text-foreground/90">تحويل CMYK في الخلفية</div>
               <p className="text-micro text-muted-foreground leading-relaxed">
-                يُلتقط التصميم كاملاً (بنفس دقة التصدير) ثم يحوّله محرك الطباعة إلى CMYK ويُنتج ملف{' '}
-                {cmykFormat === 'tiff' ? 'TIFF' : 'JPEG'} يغطّي حدود التصميم بالضبط (بلا نزيف أو
-                علامات قص). TIFF هو الحامل الحقيقي لفصل أحبار CMYK، أما JPEG فيُسلَّم بفضاء RGB لأن
-                مُرمِّز النظام لا يدعم CMYK.
+                يُلتقط التصميم كاملاً (بنفس دقة التصدير) ثم يحوّله محرك الطباعة إلى CMYK ويُنتج ملف
+                TIFF يغطّي حدود التصميم بالضبط (بلا نزيف أو علامات قص). TIFF هو الحامل الحقيقي لفصل
+                أحبار CMYK — خيار JPEG معطّل لأن مُرمِّز JPEG لا يدعم كتابة فصل الأحبار.
               </p>
             </div>
           )}
 
-          {(colorSpace === 'rgb' ? format === 'jpg' : cmykFormat === 'jpeg') && (
+          {/* 🖨️ RV-Print-27: شريط الجودة لصيغ JPEG/RGB فقط — مسار CMYK أصبح TIFF
+              حصراً (فصل أحبار بلا فقد) فلا معنى لضبط جودة الضغط عنده. */}
+          {colorSpace === 'rgb' && format === 'jpg' && (
             <div className="bg-card p-3 rounded-md border border-border/80 space-y-2 fluent-specular">
               <FluentSliderField
                 label="جودة الصورة"
