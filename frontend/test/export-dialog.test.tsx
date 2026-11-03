@@ -275,14 +275,19 @@ describe('ExportDialog Component Tests', () => {
       expect(screen.queryByText('هامش النزيف والقص')).not.toBeInTheDocument();
     });
 
-    it('يظهر منزلق الجودة لـ JPEG فقط (TIFF بلا فقد)', () => {
+    it('يعطل خيار JPEG في وضع CMYK مع تلميح صريح ولا يظهر منزلق الجودة (RV-Print-27)', () => {
       renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
 
       fireEvent.click(screen.getByText('CMYK'));
       expect(screen.queryByText('جودة الصورة')).not.toBeInTheDocument();
 
-      fireEvent.click(screen.getByText('JPEG'));
-      expect(screen.getByText('جودة الصورة')).toBeInTheDocument();
+      const jpegBtn = screen.getByText('JPEG').closest('button');
+      expect(jpegBtn).toBeDisabled();
+      expect(jpegBtn).toHaveAttribute('aria-disabled', 'true');
+      expect(jpegBtn).toHaveAttribute(
+        'title',
+        'مُرمِّز JPEG لا يدعم فصل الأحبار CMYK — اختر TIFF (الحامل الحقيقي لفصل الأحبار)',
+      );
     });
 
     it('يمرر صيغة CMYK عبر المسار الخلفي ويحفظ بامتداد .tif', async () => {
@@ -316,15 +321,16 @@ describe('ExportDialog Component Tests', () => {
       expect(handleOpenChange).toHaveBeenCalledWith(false);
     });
 
-    it('يحفظ بامتداد .jpg عند اختيار JPEG', async () => {
+    it('يفرض TIFF دائماً حتى لو نُقر JPEG أو كانت الحالة القديمة jpeg (RV-Print-27)', async () => {
       renderWithProviders(<ExportDialog open={true} onOpenChange={vi.fn()} />);
 
       fireEvent.click(screen.getByText('CMYK'));
-      fireEvent.click(screen.getByText('JPEG'));
+      const jpegBtn = screen.getByText('JPEG').closest('button');
+      if (jpegBtn) fireEvent.click(jpegBtn);
       await clickExportAndSettle();
 
-      expect(mockRunCmykExport.mock.calls[0][0].format).toBe('jpeg');
-      expect(String(mockDownloadBlob.mock.calls[0][1])).toMatch(/_CMYK\.jpg$/);
+      expect(mockRunCmykExport.mock.calls[0][0].format).toBe('tiff');
+      expect(String(mockDownloadBlob.mock.calls[0][1])).toMatch(/_CMYK\.tif$/);
     });
 
     it('يعرض خطأً صريحاً عند فشل التحويل الخلفي', async () => {
