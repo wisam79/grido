@@ -33,7 +33,8 @@ func (s *BackupService) writeBackupJSON(w io.Writer) error {
 	}
 
 	// توثيق توافق الصيغة التاريخية: nil يُرمَّز "null" والمصفوفة الفارغة "[]"
-	if projects == nil || len(projects) == 0 {
+	// (len(nil)==0 يدخل الفرع، والفحص الداخلي يفصل ترميز nil عن الفارغة)
+	if len(projects) == 0 {
 		payload := "[]"
 		if projects == nil {
 			payload = "null"
