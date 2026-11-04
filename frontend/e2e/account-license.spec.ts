@@ -12,10 +12,20 @@ test.describe('Account, Authentication & License Management E2E', () => {
   test('Open account modal, verify active Pro status, and switch auth/license tabs', async ({
     page,
   }) => {
-    // Open Account modal from top-right titlebar button
-    const accountBtn = page.getByLabel(/الحساب والتراخيص/).first();
-    await expect(accountBtn).toBeVisible();
-    await accountBtn.click();
+    // Open Account modal from Rail Settings Menu or titlebar button
+    const railSettings = page.getByTestId('rail-settings-menu-trigger');
+    if (await railSettings.isVisible()) {
+      await railSettings.click();
+      const accountItem = page
+        .getByTestId('rail-account-modal-item')
+        .or(page.getByRole('menuitem', { name: /الحساب|الترخيص/ }));
+      await expect(accountItem).toBeVisible();
+      await accountItem.click();
+    } else {
+      const accountBtn = page.getByLabel(/الحساب|الترخيص/).first();
+      await expect(accountBtn).toBeVisible();
+      await accountBtn.click();
+    }
 
     const dialog = page.getByRole('dialog').filter({ hasText: /الحساب|الترخيص/ });
     await expect(dialog).toBeVisible();

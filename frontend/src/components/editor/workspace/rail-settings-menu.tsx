@@ -118,6 +118,7 @@ export const RailSettingsMenu = React.memo(function RailSettingsMenu({
           الحساب والترخيص
         </DropdownMenuLabel>
         <DropdownMenuItem
+          data-testid="rail-account-modal-item"
           onClick={() => setAccountModalOpen(true)}
           className="flex items-center justify-between cursor-pointer py-2 px-2 rounded-md group text-xs font-semibold"
         >
