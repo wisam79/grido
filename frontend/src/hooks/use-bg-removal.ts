@@ -4,10 +4,6 @@ import { create } from 'zustand';
 
 import { RemoveBackground, WarmupBgRemoval } from '@bindings/grido/app';
 
-import { buildStickerSvg } from '@/features/stickers/lib/sticker-design/build-svg';
-import { stickerRasterSize } from '@/features/stickers/lib/sticker-text';
-import { renderSvgToPngBlob } from '@/features/stickers/lib/svg-rasterizer';
-import { getStickerTemplateById } from '@/features/stickers/templates';
 import { commitAiImageResult } from '@/lib/ai/ai-result-commit';
 import { blobToDataUrl } from '@/lib/canvas/canvas-blob';
 import { useEditorStore } from '@/lib/editor-store';
@@ -46,6 +42,68 @@ export const useBgRemovalState = create<BgRemovalState>((set) => ({
 // قفل العملية المشتركة لمنع نقرات مزدوجة متزامنة
 let isOperationBusy = false;
 
+// 🛡️ جلسة العملية الجارية (opId تصاعدي) — تمييز نتائج المكالمات القديمة
+// (ملغاة أو مُهجورة) عن العملية الحالية حتى لا تُطبَّق متأخراً فوق عملية أحدث
+// (كان finally القديم يصفّر حالة عمليةٍ بدأتها نقرة لاحقة).
+interface BgRemovalSession {
+  id: number;
+  /** معرف الخانة في operation-status عند بدء الجلسة */
+  opId: string;
+  targetId?: string;
+  /** عُلِّمت عند طلب الإلغاء — المكالمة الأصلية تستمر حتى تستقر ثم تُسقط نتيجتها */
+  cancelled: boolean;
+  /** معرف خانة «إلغاء جارٍ» المسجلة عند الإلغاء (تُنهى في finally) */
+  cancelOpId: string | null;
+}
+
+let bgSessionCounter = 0;
+let currentBgSession: BgRemovalSession | null = null;
+
+// ⚡ تحميل كسول لوحدات فرع الملصقات المتجهة: قوالب الملصقات ومولدات SVG
+// (تضمين خطوط وتنقيط 300DPI) لا تلزم إلا عند عزل خلفية ملصق فعلياً، فلا تُسحب
+// عند الإقلاع مع مسار عزل صور البورتريه. كاش وحدة للوعد (محاولة واحدة متزامنة)،
+// وفشل التحميل لا يُخزَّن حتى تبقى إعادة المحاولة ممكنة، والخطأ يُصرَّف بوضوح.
+type StickerBuildSvgModule = typeof import('@/features/stickers/lib/sticker-design/build-svg');
+type StickerTextModule = typeof import('@/features/stickers/lib/sticker-text');
+type SvgRasterizerModule = typeof import('@/features/stickers/lib/svg-rasterizer');
+type StickerTemplatesModule = typeof import('@/features/stickers/templates');
+
+interface StickerBgDeps {
+  buildStickerSvg: StickerBuildSvgModule['buildStickerSvg'];
+  stickerRasterSize: StickerTextModule['stickerRasterSize'];
+  renderSvgToPngBlob: SvgRasterizerModule['renderSvgToPngBlob'];
+  getStickerTemplateById: StickerTemplatesModule['getStickerTemplateById'];
+}
+
+let stickerBgDepsPromise: Promise<StickerBgDeps> | null = null;
+
+function loadStickerBgDeps(): Promise<StickerBgDeps> {
+  if (!stickerBgDepsPromise) {
+    stickerBgDepsPromise = Promise.all([
+      import('@/features/stickers/lib/sticker-design/build-svg'),
+      import('@/features/stickers/lib/sticker-text'),
+      import('@/features/stickers/lib/svg-rasterizer'),
+      import('@/features/stickers/templates'),
+    ])
+      .then(([buildSvg, stickerText, rasterizer, templates]): StickerBgDeps => ({
+        buildStickerSvg: buildSvg.buildStickerSvg,
+        stickerRasterSize: stickerText.stickerRasterSize,
+        renderSvgToPngBlob: rasterizer.renderSvgToPngBlob,
+        getStickerTemplateById: templates.getStickerTemplateById,
+      }))
+      .catch((err) => {
+        stickerBgDepsPromise = null;
+        logger.error('Failed to load vector sticker modules:', err);
+        throw new Error(
+          `تعذر تحميل وحدات قوالب الملصقات لعزل الخلفية: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      });
+  }
+  return stickerBgDepsPromise;
+}
+
 // كاش الذاكرة اللحظي لنتائج العزل لنفس الصورة لمنع تكرار الاستدلال
 const bgResultCache = new Map<string, string>();
 // 🛡️ سقف LRU (20): الخريطة كانت تنمو بلا حد مع كل صورة جديدة —
@@ -82,6 +140,50 @@ export function warmupBgRemovalWorker() {
   });
 }
 
+/**
+ * 🛡️ إلغاء صادق لعزل الخلفية — يعمل من أي مسار استدعاء:
+ * - عبر `cancelActiveOperation` (الذي يصفّر `activeOperation` قبل `onCancel`
+ *   منذ إصلاح الجلسة 1.42 لمنع الحلقة اللانهائية — ولا نستدعيه هنا إطلاقاً).
+ * - استدعاءً مباشراً من زر الإلغاء (toolbar/لوحة الخصائص) والخانة ما زالت مسجلة.
+ * لا نصفر الانشغال فوراً: استدعاء `RemoveBackground` ما زال جارياً فعلياً،
+ * ونتيجته تُسقط عند الاستقرار وتتولى `finally` تصفير الحالة ذاتها.
+ */
+function handleCancelBgRemoval(): void {
+  const session = currentBgSession;
+  const bgState = useBgRemovalState.getState();
+  if (!session) {
+    // دفاعي: لا جلسة معروفة — السلوك القديم الآمن (تصفير فوري)
+    isOperationBusy = false;
+    bgState.setIsRemovingBg(false);
+    bgState.setBgProgress(0);
+    bgState.setBgProgressText('');
+    const activeOp = useOperationStatusStore.getState().activeOperation;
+    if (activeOp?.type === 'bg_removal') {
+      useOperationStatusStore.getState().finishOperation(activeOp.id);
+    }
+    toast.info('تم إلغاء العملية.');
+    return;
+  }
+
+  session.cancelled = true;
+  const activeOp = useOperationStatusStore.getState().activeOperation;
+  if (activeOp && activeOp.id === session.opId) {
+    // المسار المباشر: الخانة الأصلية ما زالت مسجلة — تُنهى قبل تسجيل خانة الإلغاء
+    useOperationStatusStore.getState().finishOperation(activeOp.id);
+  }
+  // حالة «إلغاء جارٍ» عبر operation-status: خانة غير قابلة للإلغاء ثانيةً،
+  // تُنهى في finally عند استقرار المكالمة الأصلية (finishOperation يتجاهل
+  // المعرّفات غير المطابقة فلا يُمسّ أي عملية أحدث).
+  session.cancelOpId = useOperationStatusStore.getState().startOperation({
+    type: 'bg_removal',
+    title: 'جاري إلغاء العملية ...',
+    targetId: session.targetId,
+    canCancel: false,
+  });
+  bgState.setBgProgressText('جاري إلغاء العملية ...');
+  toast.info('جاري إلغاء العملية ...');
+}
+
 export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => void) {
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => {
@@ -95,24 +197,15 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
   const setBgProgress = useBgRemovalState((s) => s.setBgProgress);
   const setBgProgressText = useBgRemovalState((s) => s.setBgProgressText);
 
-  const handleCancelBgRemoval = () => {
-    isOperationBusy = false;
-    setIsRemovingBg(false);
-    setBgProgress(0);
-    setBgProgressText('');
-    const activeOp = useOperationStatusStore.getState().activeOperation;
-    if (activeOp?.type === 'bg_removal') {
-      useOperationStatusStore.getState().finishOperation(activeOp.id);
-    }
-    toast.info('تم إلغاء العملية.');
-  };
-
   const handleRemoveBg = async (element: BgRemovalElement) => {
     if (!element.imageSrc) return;
 
     // 🎨 مسار الملصقات المتجهة (Vector Stickers): تفريغ فوري أصلي (isTransparent: true)
     // بدلاً من إرسال الملصق لنموذج الذكاء الاصطناعي للوجوه البشرية (MODNet ONNX).
     if (element.stickerSource) {
+      // ⚡ الوحدات تُجلب هنا فقط عند أول حاجة (كاش وحدة داخل loadStickerBgDeps)
+      const { buildStickerSvg, stickerRasterSize, renderSvgToPngBlob, getStickerTemplateById } =
+        await loadStickerBgDeps();
       const template = getStickerTemplateById(element.stickerSource.templateId);
       if (template) {
         if (element.stickerSource.params?.isTransparent) {
@@ -223,11 +316,29 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
     setBgProgress(25);
     setBgProgressText('جاري عزل الخلفية بالذكاء الاصطناعي (Go Native) ...');
 
+    // 🛡️ جلسة هذه العملية (opId تصاعدي) — المرجع لكل قرارات ما بعد الاستدلال
+    const session: BgRemovalSession = {
+      id: ++bgSessionCounter,
+      opId,
+      targetId: element.id,
+      cancelled: false,
+      cancelOpId: null,
+    };
+    currentBgSession = session;
+
     const startedAt = performance.now();
 
     try {
       setBgProgress(60);
       const localPath = await RemoveBackground(element.imageSrc);
+
+      // 🛡️ إلغاء صادق: جلسة ملغاة أو مُهجورة (ليست الأحدث) → إسقاط النتيجة
+      // بلا تحميل مسبق ولا commit ولا كاش ولا إشعارات — finally يتولى التنظيف.
+      if (session.cancelled || currentBgSession?.id !== session.id) {
+        logger.debug('BG removal result discarded (cancelled/superseded session)');
+        return;
+      }
+
       if (!localPath) {
         throw new Error('لم يتم استرجاع مسار الصورة المعزولة.');
       }
@@ -236,8 +347,15 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
       setBgProgressText('جاري تطبيق النتيجة ...');
       await preloadImageIntoCache(localPath);
 
-      // 🛡️ حارس الطزاثة الموحّد: commitAiImageResult
-      const commit = commitAiImageResult(element, localPath, onUpdateRef.current);
+      // 🛡️ حارس الطزاثة الموحّد: commitAiImageResult مع معيار نشاط الجلسة —
+      // رفض نهائي داخل الcommit نفسه إن أُلغيت الجلسة بعد الفحص أعلاه.
+      const commit = commitAiImageResult(
+        element,
+        localPath,
+        onUpdateRef.current,
+        undefined,
+        () => !session.cancelled && currentBgSession?.id === session.id,
+      );
       if (commit === 'not-found') {
         toast.info('تم إلغاء عزل الخلفية: العنصر لم يعد موجوداً.');
         return;
@@ -264,13 +382,24 @@ export function useBgRemoval(onUpdate: (id: string, patch: BgRemovalPatch) => vo
       });
     } catch (err) {
       logger.error('Failed to remove background:', err);
-      toast.error(toErrorMessage(err, 'فشل عزل الخلفية بالذكاء الاصطناعي.'));
+      // جلسة ملغاة/مُهجورة: لا إشعارات — الخطأ يعود لمكالمة لم يعد أحد ينتظرها
+      if (!session.cancelled && currentBgSession?.id === session.id) {
+        toast.error(toErrorMessage(err, 'فشل عزل الخلفية بالذكاء الاصطناعي.'));
+      }
     } finally {
-      useOperationStatusStore.getState().finishOperation(opId);
-      isOperationBusy = false;
-      setIsRemovingBg(false);
-      setBgProgressText('');
-      setBgProgress(0);
+      // 🧹 إنهاء الخانة المرئية: الأصلية إن لم يُلغَ، أو خانة «إلغاء جارٍ» إن أُلغِيَ.
+      // finishOperation يتجاهل المعرّفات غير المطابقة فلا يصفّر حالة عملية أحدث.
+      useOperationStatusStore.getState().finishOperation(session.cancelOpId ?? opId);
+      if (currentBgSession?.id === session.id) {
+        currentBgSession = null;
+        isOperationBusy = false;
+        setIsRemovingBg(false);
+        setBgProgressText('');
+        setBgProgress(0);
+        if (session.cancelled) {
+          toast.info('تم إلغاء العملية.');
+        }
+      }
       triggerMemoryTrim();
     }
   };

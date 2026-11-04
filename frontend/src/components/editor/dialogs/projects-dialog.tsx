@@ -44,17 +44,17 @@ import { ProjectsSkeleton } from '@/components/ui/skeleton';
 import { isPristineWorkspace } from '@/hooks/use-autosave';
 import { useEditorStore } from '@/lib/editor-store';
 import {
+  buildProjectDocument,
   serializeEditorState,
   projectFileToDomainProject,
   domainProjectToProjectFile,
 } from '@/lib/io/project-serializer';
-import { classifySaveResult } from '@/lib/io/save-result';
 import { createLogger } from '@/lib/logger';
 import { uid } from '@/lib/utils';
 import { toErrorMessage } from '@/lib/wails-error';
 
 import {
-  ExportBackup,
+  ExportBackupToPath,
   ImportBackup,
   ResetLibrary,
 } from '../../../../wailsjs/go/handlers/BackupHandler';
@@ -64,7 +64,6 @@ import {
   GetProject,
   DeleteProject,
 } from '../../../../wailsjs/go/handlers/ProjectHandler';
-import { SaveFileDialog } from '../../../../wailsjs/go/main/App';
 
 import type { domain } from '../../../../wailsjs/go/models';
 
@@ -178,6 +177,10 @@ export function ProjectsDialog({
     try {
       const currentId = state.projectId || uid();
       const projectFile = serializeEditorState(state);
+      // بصمة لقطة الإرسال تُحسب مرة واحدة من اللقطة الجاهزة (بدون savedAt
+      // الزمني) — تُعاد استخدامها في المقارنة اللاحقة بدل تسلسلَين إضافيين
+      // كاملين عند اكتمال الحفظ (كانت لقطة الإرسال تُسلسل من جديد هناك).
+      const sentFingerprint = JSON.stringify({ ...projectFile, savedAt: undefined });
       const projectData = projectFileToDomainProject(projectFile, currentId, projectName);
 
       await SaveProject(projectData);
@@ -193,9 +196,11 @@ export function ProjectsDialog({
       // A reset/load replaces the history seed even when both documents have a null ID.
       // Compare saved content too: edits made during IPC must remain dirty.
       if (live.projectId === projectIdBefore && live.history[0] === state.history[0]) {
-        const unchanged =
-          JSON.stringify({ ...serializeEditorState(live), savedAt: undefined }) ===
-          JSON.stringify({ ...projectFile, savedAt: undefined });
+        // المقارنة تعيد استخدام بصمة لقطة الإرسال المحسوبة أعلاه — الحيّ يُسلسل
+        // مرة واحدة فقط عبر بنية المستند الثابتة (بدون savedAt)، فلا إعادة
+        // تسلسل كاملة ولا تسلسل ثانٍ للقطة المرسلة. (ترتيب المفاتيح متطابق:
+        // JSON.stringify يُسقط savedAt: undefined من بصمة الإرسال.)
+        const unchanged = JSON.stringify(buildProjectDocument(live)) === sentFingerprint;
         useEditorStore.setState({
           projectId: currentId,
           projectName: projectName.trim(),
@@ -279,27 +284,22 @@ export function ProjectsDialog({
   };
 
   // Backup & Import implementations
+  // 🌊 التصدير يبثّ الأرشيف مباشرة من Go إلى المسار المختار في الحوار الأصلي —
+  // لم تعد المكتبة كاملة تُسلسل كسلسلة عبر IPC ثم تعود بbase64 للحفظ.
   const handleExportBackup = async () => {
     setBackupActionLoading(true);
     try {
-      const dataStr = await ExportBackup();
-      if (!dataStr || dataStr === '[]' || dataStr === 'null') {
+      if (projectsList.length === 0) {
         toast.warning('لا توجد مشاريع لتصديرها');
         return;
       }
 
-      const res = await SaveFileDialog(
-        dataStr,
-        'grido_backup.json',
-        'Grido Backup (*.json)',
-        '*.json',
-      );
-      const outcome = classifySaveResult(res);
-      if (outcome === 'success') {
-        toast.success('تم تصدير النسخة الاحتياطية');
-      } else if (outcome === 'cancel') {
+      const savedPath = await ExportBackupToPath('grido_backup.json');
+      if (!savedPath) {
         toast.info('تم إلغاء التصدير');
+        return;
       }
+      toast.success('تم تصدير النسخة الاحتياطية');
     } catch (err) {
       logger.error('Failed to export backup:', err);
       toast.error(toErrorMessage(err, 'فشل تصدير النسخة الاحتياطية'));

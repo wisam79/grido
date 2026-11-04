@@ -1,17 +1,77 @@
 import Konva from 'konva';
 
-import { PIXELATE_BLOCK_PX, THRESHOLD_LEVEL } from './pixel-filters';
-import type { Filter } from 'konva/lib/Node';
-
 // تسجيل المرشّحات المخصصة مسؤوليتنا هنا — الاعتماد على مستوردِعَرَضي في
-// مكان آخر يجعلها undefined في صمت (فتصمت المعاينة بلا خطأ)
-import './custom-filters';
+// مكان آخر يجعلها undefined في صمت (فتصمت المعاينة بلا خطأ).
+// الاستيراد المسمّى ينفّذ تسجيل الوحدة أيضاً (تأثير جانبي مطلوب).
+import { isPerPixelFilter } from './custom-filters';
+import { PIXELATE_BLOCK_PX, THRESHOLD_LEVEL } from './pixel-filters';
+import type { Filter, FilterFunction } from 'konva/lib/Node';
 
 export interface FilterOptions {
   filter?: string;
   brightness?: number;
   contrast?: number;
   saturation?: number;
+}
+
+/** فلتر Konva مركّب يحمل تسلسله المصدر للتحقق والتوثيق. */
+export interface ComposedPixelFilter extends FilterFunction {
+  /** الفلاتر الأصلية بالترتيب الحرفي الذي يحفظه المركّب. */
+  composedFrom: readonly Filter[];
+}
+
+/**
+ * 🚀 مركّب بكسلي بتمريرة واحدة (H1 من خطة أداء كاش الفلاتر).
+ *
+ * حلقة Konva القديمة في `Node._getCachedSceneCanvas` تستدعي getImageData
+ * مرة واحدة ثم لكل فلتر: `filter.call(node, imageData)` **وتحته putImageData
+ * كامل للكانفس** — فتسلسل N فلاتر لونية يدفع N بليت (blit) على كانفس بحجم
+ * W·H·r². هذا المركّب يعيد الفلاتر على نفس ImageData بلا putImageData وسيط،
+ * فيدفع Konva بليتاً واحداً بعد الفلتر المركّب وحده.
+ *
+ * ⛔ قيد المطابقة الحرفي (W3C — قرار محمي من 47bf6320/d7dc47df): الرياضيات
+ * لكل فلتر تُستدعى كما هي بلا إعادة صياغة ولا دمج حلقات داخلية؛ الفلاتر
+ * المكانية (Blur وما يحتاج نافذة جيران) لا تُدمج في تمريرة لكل-بكسل بل تبقى
+ * تمريرات مستقلة بين المجموعات — الترتيب الكلي محفوظ. والنتيجة بكسلياً
+ * مطابقة 100% للمسار المتسلسل القديم: حلقة Konva تمرر نفس كائن ImageData
+ * للفلاتر المتتالية (putImageData الوسيطة لا يعدّل الـ ImageData ولا تُقرأ
+ * بإعادة getImageData داخل الحلقة)، فكل فلتر يرى نفس الحالة التي يراها هنا.
+ *
+ * @returns الفلتر المركّب عند وجود فلترين فأكثر، أو null إن لم يوجد ما
+ * يُركّب (فلتر واحد لا يوفّر أي putImageData لأن Konva يدفع واحداً أصلاً).
+ */
+export function composePixelFilters(fns: readonly Filter[]): ComposedPixelFilter | null {
+  if (fns.length < 2) return null;
+
+  // تجميع الجِيران المتتاليين: الفلاتر اللونية لكل-بكسل المتجاورة تمريرة واحدة،
+  // وكل فلتر مكاني تمريرة مستقلة بمفرده. لا ندمج الحلقات الداخلية — كل فلتر
+  // يحتفظ بحلقته ورياضياته الحرفية، والدمج هو ترتيب الاستدعاء على نفس المخزن.
+  const groups: Filter[][] = [];
+  for (const fn of fns) {
+    const lastGroup = groups[groups.length - 1];
+    if (
+      lastGroup &&
+      lastGroup.length > 0 &&
+      isPerPixelFilter(fn) &&
+      lastGroup.every(isPerPixelFilter)
+    ) {
+      lastGroup.push(fn);
+    } else {
+      groups.push([fn]);
+    }
+  }
+
+  const composed = function (this: Konva.Node, imageData: ImageData) {
+    for (const group of groups) {
+      for (const fn of group) {
+        // this = عقدة Konva (تقرأ attrs مثل sepiaRatio/brightness) — نفس
+        // استدعاء Konva القديم filter.call(node, imageData) حرفياً.
+        (fn as FilterFunction).call(this, imageData);
+      }
+    }
+  } as ComposedPixelFilter;
+  composed.composedFrom = fns;
+  return composed;
 }
 
 export function getKonvaFilters(options: FilterOptions) {
@@ -93,8 +153,15 @@ export function getKonvaFilters(options: FilterOptions) {
     filters.push(konvaFilters.LuminanceThreshold);
   }
 
+  // 🚀 الربط في نقطة تطبيق الفلاتر: image-node.tsx و collage-image.tsx يمرران
+  // المصفوفة هنا إلى `filters={...}` مباشرة (والسحب/Blur في image-node يُلحق
+  // بعدها)، فيكفي تركيب المصفوفة هنا لينال مسارا العرض والتصدير التمريرة
+  // الواحدة دون تعديل أي عقدة. الفلتر المكاني (Blur) يُلحق خارج المركّب
+  // لاحقاً فيبقى تمريرة مستقلة كما كان.
+  const composed = composePixelFilters(filters);
+
   return {
-    filters,
+    filters: composed ? [composed] : filters,
     brightness:
       brightnessFilter === konvaFilters.Brightness
         ? totalBrightness / 100

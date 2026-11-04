@@ -1,6 +1,11 @@
 import { createLogger } from '@/lib/logger';
 
-import { getDisplaySource } from './display-image';
+import {
+  getCapturedOriginal,
+  getDisplaySource,
+  getOriginalForDisplayedElement,
+  releaseCaptureOriginals,
+} from './display-image';
 
 import type Konva from 'konva';
 
@@ -62,10 +67,39 @@ function getSourceDimensions(src: CanvasImageSource): { width: number; height: n
 }
 
 /**
+ * يجلب الأصول الكاملة الغائبة عن الخريطة قبل الترقية المتزامنة — عناصر العرض
+ * المشتقة (2048px من Go، ملكية الصور) لا تحمل أصلها في الخريطة الضعيفة، فيُجلب
+ * هنا انتظاراً عبر getOriginalForDisplayedElement (كاش وعد ومنع تكرار داخل
+ * display-image). captureStageBlob غير متزامنة أصلاً فالانتظار ممكن؛ الفشل
+ * الفردي لا يوقف الالتقاط — العقدة تبقى على مشتقها (fallback كامل).
+ */
+export async function preloadImagesForFullResolution(stage: Konva.Stage): Promise<void> {
+  try {
+    const nodes = stage.find('Image') as unknown as KonvaImageNodeLike[];
+    const jobs: Promise<HTMLImageElement | null>[] = [];
+    for (const node of nodes) {
+      const current = node.image();
+      if (current instanceof HTMLImageElement) {
+        jobs.push(getOriginalForDisplayedElement(current));
+      }
+    }
+    await Promise.all(jobs);
+  } catch (err) {
+    logger.warn('Failed to preload full resolution sources for capture', err);
+  }
+}
+
+/**
  * يستبدل نسخ العرض المخفّضة (2048px) بالصور الأصلية قبل الالتقاط،
  * مع تحجيم إحداثيات القص (cropX/Y/Width/Height) بالتناسب مع أبعاد الأصل.
  * بدون ذلك كان الطباعة/التصدير يكبّرون نسخة العرض أو يقصّون الزاوية العلوية
  * فقط من الصورة الكاملة. يعيد قائمة الاستعادة.
+ *
+ * المصدران المدعومان:
+ * 1. بروكسي كانفس له أصل في الخريطة الضعيفة (مصادر غير محلية، أو fallback
+ *    الأصل عندما يفشل مشتق Go) — متزامن كما كان.
+ * 2. عنصر عرض مشتق من Go (2048px): الأصل الحقيقي في جسر الالتقاط العابر
+ *    المعبأ عبر preloadImagesForFullResolution — قراءة متزامنة لا تنتظر.
  */
 export function upgradeImagesToFullResolution(stage: Konva.Stage): UpgradedImageRecord[] {
   const restored: UpgradedImageRecord[] = [];
@@ -73,7 +107,10 @@ export function upgradeImagesToFullResolution(stage: Konva.Stage): UpgradedImage
     const nodes = stage.find('Image') as unknown as KonvaImageNodeLike[];
     for (const node of nodes) {
       const current = node.image();
-      const source = getDisplaySource(current as HTMLCanvasElement | null);
+      let source = getDisplaySource(current as HTMLCanvasElement | null);
+      if ((!source || source === current) && current instanceof HTMLImageElement) {
+        source = getCapturedOriginal(current);
+      }
       if (source && current !== source) {
         const record: UpgradedImageRecord = { node, image: current as CanvasImageSource };
         const curDims = getSourceDimensions(current as CanvasImageSource);
@@ -270,12 +307,63 @@ function getScreenPixelRatio(node: CachedImageNode): number {
   return Math.max(0.75, Math.min(2.5, stageScale * screenRatio * 1.2));
 }
 
-function restoreScreenCache(previouslyCached: CachedImageNode[]): void {
-  for (const img of previouslyCached) {
+/** عقدة كاش التصدير مع إعدادات كاش الشاشة المحفوظة قبل الترقية. */
+interface ExportCacheNode {
+  node: CachedImageNode;
+  /** نسبة كاش الشاشة المقاسة قبل الترقية — تُستعاد حرفياً بدل الاشتقاق. */
+  screenPixelRatio?: number;
+}
+
+/**
+ * يقيس نسبة كاش الشاشة الحالي من سطح المشهد المخزَّن مقابل أبعاد العقدة —
+ * نفس المقام الذي بنى كاش use-filter-cache منطقته ({x:0,y:0,width:nodeW,
+ * height:nodeH,pixelRatio:ratio})، فالقسمة تعيد النسبة الحرفية المدورة
+ * (±1 بكسل تقريب سطح) بدل اشتقاقها من getScreenPixelRatio الذي قد يعيد
+ * قيمة أكبر مما كُبِي به فعلاً.
+ */
+function readScreenCachePixelRatio(node: CachedImageNode): number | undefined {
+  try {
+    const cache = (
+      node as unknown as {
+        _cache?: Map<string, { scene?: { width?: () => number; height?: () => number } }>;
+      }
+    )._cache;
+    const scene = cache?.get?.('canvas')?.scene;
+    if (!scene || typeof scene.width !== 'function' || typeof scene.height !== 'function') {
+      return undefined;
+    }
+    const sw = scene.width();
+    const sh = scene.height();
+    if (!(sw > 0) || !(sh > 0)) return undefined;
+    const n = node as unknown as { width?: () => number; height?: () => number };
+    const nw = typeof n.width === 'function' ? n.width() : 0;
+    const nh = typeof n.height === 'function' ? n.height() : 0;
+    const pick = (r: number) => (r > 0 && Number.isFinite(r) ? r : undefined);
+    if (nw > 0 && nh > 0) {
+      const rw = sw / nw;
+      const rh = sh / nh;
+      // تقريب سطح الكانفس قد يفصل النسبتين جزرياً — التطابق يعتمد العرض
+      return pick(Math.abs(rw - rh) <= 0.01 ? rw : Math.max(rw, rh));
+    }
+    if (nw > 0) return pick(sw / nw);
+    if (nh > 0) return pick(sh / nh);
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function restoreScreenCache(previouslyCached: ExportCacheNode[]): void {
+  for (const entry of previouslyCached) {
+    const img = entry?.node;
     try {
       if (img && typeof img.clearCache === 'function') {
         img.clearCache();
-        img.cache({ pixelRatio: getScreenPixelRatio(img) });
+        // 🛡️ الاستعادة الحرفية: النسبة المحفوظة قبل الترقية لا الاشتقاق من
+        // getScreenPixelRatio — حتى لا يعود كاش الشاشة أكبر من قبله بعد
+        // التصدير. الإحداثيات (x:0,y:0,width,height) تُعاد من صندوق العقدة
+        // نفسه كما بناها use-filter-cache، فالنسبة هي المقاس الحاكم.
+        img.cache({ pixelRatio: entry.screenPixelRatio ?? getScreenPixelRatio(img) });
       }
     } catch {
       // الإبقاء على سلامة التطبيق في حال تم حظر كاش العناصر التي ألغي تثبيتها
@@ -345,14 +433,17 @@ const EXPORT_CACHE_BUDGET_BYTES = 256 * 1024 * 1024;
  * يجمع كاش العقد على نسبة التصدير ضمن ميزانية ذاكرة إجمالية، وتنازل تدريجي
  * للنسبة عند تجاوزها (كل العقد تخفض معاً لتفادي خلط جودات داخل لقطة واحدة).
  */
-function upgradeCachesForExport(stage: Konva.Stage, targetPixelRatio: number): CachedImageNode[] {
-  const cachedNodes: CachedImageNode[] = [];
+function upgradeCachesForExport(stage: Konva.Stage, targetPixelRatio: number): ExportCacheNode[] {
+  const cachedNodes: ExportCacheNode[] = [];
   try {
     stage.find((node: Konva.Node) => {
       const filteredImage =
         node.getClassName?.() === 'Image' && ((node as Konva.Image).filters()?.length ?? 0) > 0;
       if (node && typeof node.isCached === 'function' && (node.isCached() || filteredImage)) {
-        cachedNodes.push(node as unknown as CachedImageNode);
+        const img = node as unknown as CachedImageNode;
+        // 📸 حفظ إعدادات كاش الشاشة قبل الترقية (النسبة المقاسة من سطح المشهد
+        // الفعلي) — استعادتها حرفياً في restoreScreenCache بدل الاشتقاق.
+        cachedNodes.push({ node: img, screenPixelRatio: readScreenCachePixelRatio(img) });
       }
     });
   } catch (err) {
@@ -362,29 +453,43 @@ function upgradeCachesForExport(stage: Konva.Stage, targetPixelRatio: number): C
 
   if (cachedNodes.length === 0) return cachedNodes;
 
-  // تقدير الاستهلاك: width×height×4 بايت × النسبة² لكل عقدة
+  // تقدير الاستهلاك بالأسطح الفعلية الثلاث لكل عقدة مخزَّنة (فحص مصدر Konva):
+  // مشهد عند r (4WH·r²) + فلتر عند r (4WH·r²) + إصابة عند 1 (4WH) أي
+  // 4WH·(2r²+1) بايت — نفس صيغة H2b في use-filter-cache. التقدير القديم
+  // 4WH·r² كان يحسب مشهد المشهد وحده فترك كانفسي الفلتر والإصابة خارج
+  // الميزانية فسمح بنسب تتجاوز السقف الفعلي بالذروة.
   const estimateFor = (ratio: number) => {
     let total = 0;
-    for (const node of cachedNodes) {
-      const n = node as unknown as { width?: () => number; height?: () => number };
+    for (const entry of cachedNodes) {
+      const n = entry.node as unknown as { width?: () => number; height?: () => number };
       const w = typeof n.width === 'function' ? n.width() : 0;
       const h = typeof n.height === 'function' ? n.height() : 0;
-      total += w * h * 4 * ratio * ratio;
+      if (w > 0 && h > 0) total += w * h * 4 * (2 * ratio * ratio + 1);
     }
     return total;
   };
 
   const MAX_NODE_RATIO = Math.min(4, Math.max(1, targetPixelRatio));
   let exportRatio = MAX_NODE_RATIO;
-  // تنازل تدريجي (خطوة 0.5) حتى الدخول في الميزانية — 1× دائماً ضمن الحد
+  // تنازل تدريجي (خطوة 0.5) حتى الدخول في الميزانية — 1× أرضية النزول
   while (exportRatio > 1 && estimateFor(exportRatio) > EXPORT_CACHE_BUDGET_BYTES) {
     exportRatio = Math.max(1, exportRatio - 0.5);
   }
+  // ⚠️ تحذير الميزانية: بقاء المجموع فوق السقف حتى عند 1× يعني أرضية ثابتة
+  // لا يخفضها التنازل (عدد عقد مخبأة ضخم) — يُسجل بدل الصمت لتشخيص الورقة.
+  if (exportRatio <= 1 && estimateFor(1) > EXPORT_CACHE_BUDGET_BYTES) {
+    logger.warn(
+      'Export cache budget exceeded even at pixelRatio 1 —',
+      `nodes=${cachedNodes.length}`,
+      `estimated=${Math.round(estimateFor(1) / (1024 * 1024))}MiB`,
+      `budget=${Math.round(EXPORT_CACHE_BUDGET_BYTES / (1024 * 1024))}MiB`,
+    );
+  }
 
-  for (const node of cachedNodes) {
+  for (const entry of cachedNodes) {
     try {
-      node.clearCache();
-      node.cache({ pixelRatio: exportRatio });
+      entry.node.clearCache();
+      entry.node.cache({ pixelRatio: exportRatio });
     } catch (e) {
       logger.warn('Failed to upgrade node cache for export', e);
     }
@@ -416,10 +521,15 @@ export async function captureStageBlob(
   const prevPos = { x: stage.x(), y: stage.y() };
   const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
   let upgradedImages: UpgradedImageRecord[] = [];
-  let cachedNodes: CachedImageNode[] = [];
+  let cachedNodes: ExportCacheNode[] = [];
 
   try {
-    // تُرقّى المصادر والقص قبل الكاش، بما فيه كاش أُبطل قبل اكتمال إيماءة التحرير.
+    // ملكية الصور: عناصر العرض المشتقة (2048px من Go) تجلب أصولها الكاملة
+    // انتظاراً أولاً (captureStageBlob غير متزامنة أصلاً فالانتظار ممكن)
+    // ثم تُرقّى المصادر والقص قبل الكاش، بما فيه كاش أُبطل قبل اكتمال إيماءة التحرير.
+    if (options?.useFullResolution) {
+      await preloadImagesForFullResolution(stage);
+    }
     upgradedImages = options?.useFullResolution ? upgradeImagesToFullResolution(stage) : [];
     cachedNodes = upgradeCachesForExport(stage, targetPixelRatio);
     stage.position({ x: 0, y: 0 });
@@ -452,6 +562,9 @@ export async function captureStageBlob(
       restoreScreenCache(cachedNodes);
       stage.batchDraw();
     } finally {
+      // 🛡️ الأصول الكاملة المجلوبة للالتقاط لا تبقى حية بعده — تفريغ جسر
+      // الالتقاط وكاش العود يحرر الذاكرة فوراً ويحفظ مكسب ملكية الصور.
+      releaseCaptureOriginals();
       const remaining = (activeStageCaptures.get(stage) ?? 1) - 1;
       if (remaining > 0) activeStageCaptures.set(stage, remaining);
       else activeStageCaptures.delete(stage);

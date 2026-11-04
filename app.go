@@ -60,9 +60,11 @@ func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) 
 	}
 	service.InitLogger()
 	utils.SafeGo("service.CleanupTempUpdates", service.CleanupTempUpdates)
-	utils.SafeGo("bgRemoval.Warmup", func() {
-		_ = a.bgRemovalSvc.Warmup()
-	})
+	// ⚡ محرك عزل الخلفية الأصلي لا يُسخَّن عند الإقلاع: التهيئة (تحميل نموذج
+	// ONNX وحجز الـ tensors) تحدث عند أول استخدام فعلي داخل RemoveBackground
+	// عبر ensureInitialized (bg_removal_service_windows.go) — Zero Early
+	// Allocation: إقلاع أخف واستهلاك ذاكرة أدنى، والنموذج يُدفع ثمنه فقط
+	// عندما يحتاجه المستخدم. Warmup يبقى متاحاً كربط واجهة صريح عند الحاجة.
 	return nil
 }
 

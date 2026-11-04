@@ -8,6 +8,9 @@
  * دون اختراق حدود الطبقات بين الستور والواجهة.
  */
 
+import { registerDisplayOwnership } from './display-image';
+import { buildDisplaySrcFor } from './thumbnail-src';
+
 const imageCache = new Map<string, HTMLImageElement>();
 
 const MAX_IMAGE_CACHE = 100;
@@ -108,6 +111,13 @@ export function preloadImageIntoCache(src: string, crossOrigin?: string): Promis
     return Promise.resolve();
   }
 
+  // ⚡ ملكية الصور: التسخين يستهلك مشتق العرض 2048px من Go بدل تفكيك الأصل
+  // كامل الدقة، بينما يبقى المفتاح رابط الأصل — فيصيب useAsyncImage الكاش
+  // لاحقاً بلا تحميل ثانٍ وبلا عنصر أصل حي في الذاكرة للعرض. الفشل هنا
+  // صامت كالسابق: useAsyncImage يتكفل fallback الأصل عند تحميله الفعلي.
+  const loadSrc = buildDisplaySrcFor(src);
+  const isDisplayDerivative = loadSrc !== src;
+
   return new Promise<void>((resolve) => {
     const img = new Image();
     if (crossOrigin) img.crossOrigin = crossOrigin;
@@ -115,6 +125,7 @@ export function preloadImageIntoCache(src: string, crossOrigin?: string): Promis
     img.onload = () => {
       const finish = () => {
         setWithLRU(cacheKey, img);
+        if (isDisplayDerivative) registerDisplayOwnership(img, src);
         resolve();
       };
       if (typeof img.decode === 'function') {
@@ -124,6 +135,6 @@ export function preloadImageIntoCache(src: string, crossOrigin?: string): Promis
       }
     };
     img.onerror = () => resolve();
-    img.src = src;
+    img.src = loadSrc;
   });
 }

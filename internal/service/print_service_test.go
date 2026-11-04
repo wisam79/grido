@@ -2,10 +2,13 @@ package service
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"hash/crc32"
 	"image"
 	"image/color"
+	"image/png"
 	"math"
 	"os"
 	"path/filepath"
@@ -743,5 +746,314 @@ func TestPrintService_HiRes300DPI_A4_FullScaleVerification(t *testing.T) {
 		}
 	} else {
 		t.Errorf("Expected valid JFIF APP0 segment in JPEG output")
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🧮 دفعة الأداء C3 — وزن مساحة المصدر المفكوك في تقدير الدفعة: دفعة صغيرة
+// من الأهداف المصغّرة لا تحتشد صوراً عملاقة المصدر (المصدر يبقى حياً أثناء
+// المعالجة إلى جانب الناتج). لا تغيير على حد الدفعة الإجمالي ولا الترتيب.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// writeFakePNGHeader يكتب PNG صغيراً بترويسة تُعلن أبعاداً ضخمة — يكفي
+// image.DecodeConfig (يقرأ IHDR فقط) لتقدير المصدر بلا فك بكسلات.
+func writeFakePNGHeader(t *testing.T, dir, name string, w, h int) string {
+	t.Helper()
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	var buf bytes.Buffer
+	buf.Write([]byte{0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A})
+	chunk := make([]byte, 0, 25)
+	chunk = append(chunk, 0, 0, 0, 13)
+	chunk = append(chunk, []byte("IHDR")...)
+	var dims [8]byte
+	binary.BigEndian.PutUint32(dims[0:4], uint32(w))
+	binary.BigEndian.PutUint32(dims[4:8], uint32(h))
+	chunk = append(chunk, dims[:]...)
+	chunk = append(chunk, 8, 2, 0, 0, 0) // bit depth 8, RGBA
+	crc := crc32.ChecksumIEEE(chunk[4:21])
+	var crcB [4]byte
+	binary.BigEndian.PutUint32(crcB[:], crc)
+	chunk = append(chunk, crcB[:]...)
+	buf.Write(chunk)
+	buf.Write([]byte{0, 0, 0, 0, 'I', 'E', 'N', 'D', 0xAE, 0x42, 0x60, 0x82})
+	path := filepath.Join(dir, name)
+	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
+		t.Fatalf("write fake png: %v", err)
+	}
+	return path
+}
+
+func TestPrintBatchSize_WeightsSourceArea(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tmp)
+
+	// مصدر عملاق معلن: 10000×10000 = 100MP ≈ 400MB RGBA مفكوك
+	huge := writeFakePNGHeader(t, filepath.Join(tmp, "Media"), "huge_src.png", 10000, 10000)
+	// مصدر صغير للتحكم: 100×100
+	tiny := writeFakePNGHeader(t, filepath.Join(tmp, "Media"), "tiny_src.png", 100, 100)
+
+	mkReq := func(src string) domain.PrintRequest {
+		items := make([]domain.PrintItem, 8)
+		for i := range items {
+			items[i] = domain.PrintItem{ImageSrc: "/local-image/" + filepath.Base(src), X: 1, Y: 1, W: 10, H: 10}
+		}
+		return domain.PrintRequest{DPI: 100, Items: items}
+	}
+
+	const maxParallel = 8
+
+	// المصدر العملاق: الهدف 10×10مم @100DPI = 40×40px = 6.4KB فقط — بدون وزن
+	// المصدر كانت الدفعة تتسع لكل الأنوية (maxParallel)؛ الآن وزن 400MB يجعلها 1.
+	if size := printBatchSize(mkReq(huge), maxParallel); size != 1 {
+		t.Fatalf("huge source batch size = %d, want 1 (crowding giant sources in one batch)", size)
+	}
+	// المصدر الصغير: السلوك السابق محفوظ — الدفعة تصل حد الأنوية.
+	if size := printBatchSize(mkReq(tiny), maxParallel); size != maxParallel {
+		t.Fatalf("tiny source batch size = %d, want %d (unchanged behavior)", size, maxParallel)
+	}
+	// بلا صور: لا تغيير.
+	if size := printBatchSize(domain.PrintRequest{Items: []domain.PrintItem{{W: 5, H: 5}}}, maxParallel); size != maxParallel {
+		t.Fatalf("no-image batch size = %d, want %d", size, maxParallel)
+	}
+}
+
+// craftJPEGWithExifOrientation يبني ترويسة JPEG أصغرية صالحة لـ DecodeConfig
+// (SOI + APP1/Exif بوسم الاتجاه + SOF0 بالأبعاد) — تُستخدم لاختبار تطبيع
+// الأبعاد بعد EXIF (الإتجاهات 5-8 تبدّل العرض/الارتفاع).
+func craftJPEGWithExifOrientation(t *testing.T, orientation int, w, h int) []byte {
+	t.Helper()
+	// كتلة TIFF: II 42 + IFD بإدخال واحد (0x0112 SHORT = orientation) —
+	// كل الأعداد صغيرة-النهاية ليتزامن مع توقيع II.
+	tiff := []byte{'I', 'I', 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00}
+	entry := make([]byte, 12)
+	binary.LittleEndian.PutUint16(entry[0:2], 0x0112) // Orientation
+	binary.LittleEndian.PutUint16(entry[2:4], 3)      // SHORT
+	binary.LittleEndian.PutUint32(entry[4:8], 1)      // count
+	binary.LittleEndian.PutUint16(entry[8:10], uint16(orientation))
+	tiff = append(tiff, entry...)
+	tiff = append(tiff, 0x00, 0x00, 0x00, 0x00) // next IFD
+
+	app1 := []byte{0xFF, 0xE1}
+	segLen := 2 + 6 + len(tiff)
+	app1 = append(app1, byte(segLen>>8), byte(segLen))
+	app1 = append(app1, []byte("Exif\x00\x00")...)
+	app1 = append(app1, tiff...)
+
+	sof0 := []byte{0xFF, 0xC0, 0x00, 0x11, 0x08}
+	sof0 = append(sof0, byte(h>>8), byte(h), byte(w>>8), byte(w), 3)
+	sof0 = append(sof0, 1, 0x11, 0, 2, 0x11, 0, 3, 0x11, 0)
+
+	// SOS أصغرية: مفك Go لـ DecodeConfig لا يتوقف إلا عندها.
+	sos := []byte{0xFF, 0xDA, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3F, 0x00}
+
+	out := []byte{0xFF, 0xD8}
+	out = append(out, app1...)
+	out = append(out, sof0...)
+	out = append(out, sos...)
+	out = append(out, 0xFF, 0xD9)
+	return out
+}
+
+func TestSourceDecodedDims_ExactOrientationSwap(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tmp)
+
+	// JPEG عادي 100×200 بلا EXIF اتجاه: بلا تبدويل.
+	plainPath := filepath.Join(tmp, "plain.jpg")
+	if err := os.WriteFile(plainPath, craftJPEGWithExifOrientation(t, 1, 100, 200), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if w, h, ok := sourceDecodedDims(plainPath); !ok || w != 100 || h != 200 {
+		t.Fatalf("plain portrait: w=%d h=%d ok=%v, want 100×200 true", w, h, ok)
+	}
+	// الاتجاه 6 (دوران 90): الأبعاد تتبدل كما يفعل imaging.AutoOrientation.
+	rotPath := filepath.Join(tmp, "rot90.jpg")
+	if err := os.WriteFile(rotPath, craftJPEGWithExifOrientation(t, 6, 100, 200), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if w, h, ok := sourceDecodedDims(rotPath); !ok || w != 200 || h != 100 {
+		t.Fatalf("orientation-6: w=%d h=%d ok=%v, want 200×100 true (EXIF swap)", w, h, ok)
+	}
+	// ملف مفقود: بلا وزن.
+	if _, _, ok := sourceDecodedDims(filepath.Join(tmp, "missing.jpg")); ok {
+		t.Fatal("missing file must yield ok=false")
+	}
+	// ملف غير صورة: بلا وزن.
+	badPath := filepath.Join(tmp, "bad.png")
+	if err := os.WriteFile(badPath, []byte("not an image"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, ok := sourceDecodedDims(badPath); ok {
+		t.Fatal("non-image file must yield ok=false")
+	}
+}
+
+func TestJPEGEXIFOrientation_ParsesAllQuirks(t *testing.T) {
+	if got := jpegEXIFOrientation(craftJPEGWithExifOrientation(t, 8, 10, 10)); got != 8 {
+		t.Fatalf("orientation 8 parsed as %d", got)
+	}
+	if got := jpegEXIFOrientation([]byte{0xFF, 0xD8, 0xFF, 0xD9}); got != 0 {
+		t.Fatalf("bare SOI/EOI parsed as %d, want 0", got)
+	}
+	if got := jpegEXIFOrientation([]byte{0x12, 0x34}); got != 0 {
+		t.Fatalf("non-JPEG parsed as %d, want 0", got)
+	}
+	// TIFF صغير مباشرة: II وMM
+	ii := []byte{'I', 'I', 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00,
+		0x12, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0, 0, 0, 0}
+	if got := tiffIFDOrientation(ii); got != 6 {
+		t.Fatalf("II orientation = %d, want 6", got)
+	}
+	mm := []byte{'M', 'M', 0x00, 0x2A, 0x00, 0x00, 0x00, 0x08, 0x00, 0x01,
+		0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+	if got := tiffIFDOrientation(mm); got != 6 {
+		t.Fatalf("MM orientation = %d, want 6", got)
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🛑 دفعة الأداء C4 — إلغاء مهمة الطباعة: سجل المهام + سياق واعٍ يجعل الإلغاء
+// يوقف العمل فعلياً (انتظار الطابور، بداية عنصر، حد الدفعة، قبل الحفظ) ويرجع
+// خطأً صريحاً، مع مسح المهمة من السجل في كل المخارج.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// waitForNewPrintJob ينتظر ظهور مهمة جديدة في السجل ويعيد معرّفها.
+func waitForNewPrintJob(t *testing.T, known map[string]bool) string {
+	t.Helper()
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		activePrintJobs.mu.Lock()
+		for id := range activePrintJobs.jobs {
+			if !known[id] {
+				activePrintJobs.mu.Unlock()
+				return id
+			}
+		}
+		activePrintJobs.mu.Unlock()
+		time.Sleep(2 * time.Millisecond)
+	}
+	t.Fatal("no print job registered within 3s")
+	return ""
+}
+
+// snapshotPrintJobs يلتقط معرّفات المهام الحالية (عزل عن أي اختبار سابق).
+func snapshotPrintJobs() map[string]bool {
+	activePrintJobs.mu.Lock()
+	defer activePrintJobs.mu.Unlock()
+	out := make(map[string]bool, len(activePrintJobs.jobs))
+	for id := range activePrintJobs.jobs {
+		out[id] = true
+	}
+	return out
+}
+
+func TestPrintJobCancel_WhileWaitingOnSemaphore(t *testing.T) {
+	svc := NewPrintService()
+	req := domain.PrintRequest{PaperWidthMM: 50, PaperHeightMM: 50, DPI: 100, ExportFormat: "png"}
+
+	known := snapshotPrintJobs()
+
+	// احتلال الـsemaphore: المهمة الجديدة تتعطل في الطابور حتماً.
+	printJobSem <- struct{}{}
+	release := false
+	defer func() {
+		if !release {
+			<-printJobSem
+		}
+	}()
+
+	done := make(chan error, 1)
+	go func() {
+		_, _, err := svc.GeneratePrintSheet(req)
+		done <- err
+	}()
+
+	jobID := waitForNewPrintJob(t, known)
+	if err := CancelPrintJob(jobID); err != nil {
+		t.Fatalf("CancelPrintJob: %v", err)
+	}
+
+	select {
+	case err := <-done:
+		if err == nil || !strings.Contains(err.Error(), "cancelled") {
+			t.Fatalf("waiting job must fail with cancelled error, got: %v", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("cancelled job did not return within 10s")
+	}
+
+	// حرر الـsemaphore (المهمة الملغاة لم تكتسبه) وتأكد من مسح السجل.
+	<-printJobSem
+	release = true
+	activePrintJobs.mu.Lock()
+	_, still := activePrintJobs.jobs[jobID]
+	activePrintJobs.mu.Unlock()
+	if still {
+		t.Fatal("cancelled job must be removed from the registry")
+	}
+}
+
+func TestPrintJobCancel_StopsMidGeneration(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("GRIDO_APP_DIR", tmp)
+
+	svc := NewPrintService()
+
+	// مصدر 16MP حقيقي (لون صلب) + هدف 9.4MP: وزن كل عنصر ≈ 100MB ⇒ ميزانية
+	// الدفعة تعطي حجم دفعة صغيراً والتوليد يستغرق مئات المللي ثانية —
+	// يكفي لوصول الإلغاء في منتصف العمل (يُستقبل عادة خلال ~10ms).
+	src := imaging.New(4000, 4000, color.NRGBA{R: 60, G: 120, B: 200, A: 255})
+	var pngBuf bytes.Buffer
+	if err := png.Encode(&pngBuf, src); err != nil {
+		t.Fatal(err)
+	}
+	dataURL := "data:image/png;base64," + base64.StdEncoding.EncodeToString(pngBuf.Bytes())
+
+	items := make([]domain.PrintItem, 2)
+	for i := range items {
+		items[i] = domain.PrintItem{ImageSrc: dataURL, X: 0, Y: 0, W: 240, H: 280}
+	}
+	req := domain.PrintRequest{
+		PaperWidthMM: 240, PaperHeightMM: 280, DPI: 300,
+		ExportFormat: "png", Items: items,
+	}
+
+	known := snapshotPrintJobs()
+
+	done := make(chan error, 1)
+	go func() {
+		_, _, err := svc.GeneratePrintSheet(req) // مسار الإنتاج الحقيقي بلا سياق خارجي
+		done <- err
+	}()
+
+	jobID := waitForNewPrintJob(t, known)
+	if err := CancelPrintJob(jobID); err != nil {
+		t.Fatalf("CancelPrintJob: %v", err)
+	}
+
+	select {
+	case err := <-done:
+		if err == nil || !strings.Contains(err.Error(), "cancelled") {
+			t.Fatalf("mid-generation cancel must yield a cancelled error, got: %v", err)
+		}
+	case <-time.After(60 * time.Second):
+		t.Fatal("cancelled generation did not return within 60s")
+	}
+
+	activePrintJobs.mu.Lock()
+	_, still := activePrintJobs.jobs[jobID]
+	activePrintJobs.mu.Unlock()
+	if still {
+		t.Fatal("cancelled job must be removed from the registry")
+	}
+
+	// معرّف غير موجود = خطأ صريح.
+	if err := CancelPrintJob(jobID); err == nil {
+		t.Fatal("cancelling a finished/unknown job must return an explicit error")
+	}
+	if err := CancelPrintJob(""); err == nil {
+		t.Fatal("cancelling an empty id must return an explicit error")
 	}
 }

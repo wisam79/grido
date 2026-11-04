@@ -51,6 +51,9 @@ vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
     Promise.resolve({ success: true, jobId: 0, status: 'Completed', error: '' }),
   ),
   GetSupportedPapers: vi.fn(() => Promise.resolve({ success: true, papers: [], error: '' })),
+  // 🛑 إلغاء التوليد (عقد C4 الجديد): يُستدعى من cancelExport — no-op في الاختبارات
+  CancelActivePrintJobs: vi.fn(() => Promise.resolve(undefined)),
+  CancelPrintJob: vi.fn(() => Promise.resolve(undefined)),
 }));
 
 // طلب GDI المولّد createFrom يُمرَّر كما هو حتى تظل التأكيدات على القيم المرسلة

@@ -9,6 +9,44 @@ import {
 
 // 🎨 مرشّحات Konva المخصصة لمطابقة معايير W3C CSS filter بنسبة 100%
 // وهي المرجع الموحد بين المعاينة والطباعة والتصدير.
+
+/**
+ * وسم الفلاتر اللونية لكل-بكسل (لا تحتاج نافذة جيران): يتيح لـ composePixelFilters
+ * في konva-filters.ts دمج الجِيران المتتاليين منها في تمريرة واحدة على نفس
+ * ImageData بلا putImageData وسيط. الفلاتر بلا هذا الوسم تُعامل كمكانية
+ * (تمريرة مستقلة) — التصنيف المحافظ يحفظ المطابقة البكسلية مع المسار القديم.
+ */
+export const PER_PIXEL_FILTER_MARKER = '__gridoPerPixelFilter';
+
+type PixelFilterFn = (this: Konva.Node, imageData: ImageData) => void;
+
+/** يوسم فلتراً بأنه لوني لكل-بكسل آمن للتجميع، ويعيده كما هو (بلا تغليف). */
+export function markPerPixelFilter<T extends PixelFilterFn>(fn: T): T {
+  (fn as unknown as { [PER_PIXEL_FILTER_MARKER]?: boolean })[PER_PIXEL_FILTER_MARKER] = true;
+  return fn;
+}
+
+// الفلاتر المدمجة في Konva المؤكدة أنها لونية لكل-بكسل (تعمل على data[i] وحده)
+// — المدمجة المكانية مثل Blur/Emboss/Enhance/Mask/Pixelate مستثناة عمداً.
+const PER_PIXEL_BUILTIN_FILTERS: readonly PixelFilterFn[] = [
+  Konva.Filters.Grayscale,
+  Konva.Filters.Brighten,
+  Konva.Filters.HSL,
+  Konva.Filters.RGB,
+  Konva.Filters.RGBA,
+  Konva.Filters.HSV,
+  Konva.Filters.Invert,
+  Konva.Filters.Posterize,
+] as unknown as readonly PixelFilterFn[];
+
+/** هل هذا الفلتر لوني لكل-بكسل (قابل للدمج في تمريرة واحدة)؟ */
+export function isPerPixelFilter(fn: unknown): boolean {
+  if (typeof fn !== 'function') return false;
+  if ((fn as { [PER_PIXEL_FILTER_MARKER]?: boolean })[PER_PIXEL_FILTER_MARKER] === true)
+    return true;
+  return (PER_PIXEL_BUILTIN_FILTERS as readonly unknown[]).includes(fn);
+}
+
 if (typeof Konva !== 'undefined' && Konva.Filters) {
   const konvaFactory = (
     Konva as unknown as {
@@ -26,7 +64,7 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
   // 1) سبيا بنسبة شدة (0..1) مطابقة لـ CSS filter: sepia(N%)
   // تُقرأ الشدة بأمان من دالة sepiaRatio أو خاصية getAttr('sepiaRatio')
   // مع السقوط الآمن إلى 0 (بدل 1 الذي كان يطبق 100% سبيا قسرياً).
-  (Konva.Filters as unknown as Record<string, unknown>).SepiaBlend = function (
+  (Konva.Filters as unknown as Record<string, unknown>).SepiaBlend = markPerPixelFilter(function (
     this: Konva.Node & {
       sepiaRatio?: () => number;
       getAttr?: (name: string) => unknown;
@@ -53,12 +91,12 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
       d[i + 1] = g + (tg - g) * ratio;
       d[i + 2] = b + (tb - b) * ratio;
     }
-  };
+  });
 
   // 2) السطوع المضاعف (Multiplicative Brightness) — مطابق لـ CSS filter: brightness(B)
   // يضاعف قنوات RGB بعامل B بدل الجمع الإزاحي (+15.3) في Konva.Filters.Brighten
   // الذي كان يحرق درجات البشرة ويفجر الهايلايتس إلى أبيض ناصع.
-  (Konva.Filters as unknown as Record<string, unknown>).Brightness = function (
+  (Konva.Filters as unknown as Record<string, unknown>).Brightness = markPerPixelFilter(function (
     this: Konva.Node & {
       brightness?: () => number;
       getAttr?: (name: string) => unknown;
@@ -79,11 +117,11 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
       d[i + 1] = Math.min(255, d[i + 1] * mult);
       d[i + 2] = Math.min(255, d[i + 2] * mult);
     }
-  };
+  });
 
   // 3) التباين الخطي القياسي — مطابق لـ CSS filter: contrast(C)
   // يطبّق التمدد الخطي حول المنتصف 0.5 دون تربيع العامل (Math.pow(..., 2))
-  (Konva.Filters as unknown as Record<string, unknown>).Contrast = function (
+  (Konva.Filters as unknown as Record<string, unknown>).Contrast = markPerPixelFilter(function (
     this: Konva.Node & {
       contrast?: () => number;
       getAttr?: (name: string) => unknown;
@@ -104,11 +142,11 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
       d[i + 1] = Math.min(255, Math.max(0, ((d[i + 1] / 255 - 0.5) * factor + 0.5) * 255));
       d[i + 2] = Math.min(255, Math.max(0, ((d[i + 2] / 255 - 0.5) * factor + 0.5) * 255));
     }
-  };
+  });
 
   // 4) التشبع اللوني القياسي — مطابق لـ CSS filter: saturate(S)
   // يعتمد أوزان الإضاءة المعيارية Rec. 709 بدل مصفوفة NTSC القديمة
-  (Konva.Filters as unknown as Record<string, unknown>).Saturation = function (
+  (Konva.Filters as unknown as Record<string, unknown>).Saturation = markPerPixelFilter(function (
     this: Konva.Node & {
       saturation?: () => number;
       getAttr?: (name: string) => unknown;
@@ -133,28 +171,31 @@ if (typeof Konva !== 'undefined' && Konva.Filters) {
       d[i + 1] = Math.min(255, Math.max(0, gray + (g - gray) * mult));
       d[i + 2] = Math.min(255, Math.max(0, gray + (b - gray) * mult));
     }
-  };
+  });
 
   // 5) عتبة إضاءة على قناة واحدة مع الحفاظ على الشفافية. فلتر Konva المدمج
   // Threshold يطبّق العتبة على كل قناة RGBA مستقلة فتنقلب الألوان والشفافية.
-  (Konva.Filters as unknown as Record<string, unknown>).LuminanceThreshold = function (
-    this: Konva.Node & {
-      threshold?: () => number;
-      getAttr?: (name: string) => unknown;
+  (Konva.Filters as unknown as Record<string, unknown>).LuminanceThreshold = markPerPixelFilter(
+    function (
+      this: Konva.Node & {
+        threshold?: () => number;
+        getAttr?: (name: string) => unknown;
+      },
+      imageData: ImageData,
+    ) {
+      const raw =
+        typeof this.threshold === 'function'
+          ? this.threshold()
+          : (this.getAttr?.('threshold') ??
+            (this as unknown as { attrs?: { threshold?: number } }).attrs?.threshold);
+      const level = Number.isFinite(Number(raw)) ? Number(raw) : THRESHOLD_LEVEL;
+      applyLuminanceThreshold(imageData.data, level);
     },
-    imageData: ImageData,
-  ) {
-    const raw =
-      typeof this.threshold === 'function'
-        ? this.threshold()
-        : (this.getAttr?.('threshold') ??
-          (this as unknown as { attrs?: { threshold?: number } }).attrs?.threshold);
-    const level = Number.isFinite(Number(raw)) ? Number(raw) : THRESHOLD_LEVEL;
-    applyLuminanceThreshold(imageData.data, level);
-  };
+  );
 
   // 6) تكبير nearest-neighbor بمقدار الكتلة — مطابق لـ applyPixelate في Go.
   // فلتر Konva المدمج Pixelate يجمع (يحسب المتوسط) بكسلات الكتلة بدل nearest-neighbor.
+  // ⚠️ لا يُوسم لكل-بكسل: يقرأ عيّنات من كتل الجيران فهو يبقى تمريرة مستقلة.
   (Konva.Filters as unknown as Record<string, unknown>).NearestNeighborPixelate = function (
     this: Konva.Node & {
       pixelSize?: () => number;

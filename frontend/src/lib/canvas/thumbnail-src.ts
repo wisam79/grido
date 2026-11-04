@@ -11,6 +11,16 @@ const THUMB_PREFIX = '/local-image/thumb/';
 
 export type ThumbnailWidth = 128 | 256 | 512;
 
+/**
+ * عرض مشتق العرض الرسمي للكانفس (2048px) — مولَّد في Go عبر نفس مسار
+ * المصغرات (`EnsureThumbnail`) بنفس الحواجز (فحص ترويسة، سقف 120MP،
+ * singleflight، سيمفور بسعة 2، كتابة ذرية، تصحيح EXIF). القرار المحمي
+ * (الجلسات 1.15/1.66/1.80): المشتق للعرض فقط — القص والتصدير والطباعة
+ * والذكاء الاصطناعي تبقى على الأصل الكامل الموجّه بـEXIF.
+ */
+export type DisplayWidth = 2048;
+export const DISPLAY_DERIVATIVE_WIDTH: DisplayWidth = 2048;
+
 const THUMBNAIL_WIDTHS: readonly ThumbnailWidth[] = [128, 256, 512];
 
 function normalizeWidth(width: number): ThumbnailWidth {
@@ -40,4 +50,24 @@ export function getThumbnailSrc(src: string, width: number = 256): string {
   const filename = extractLocalFilename(src);
   if (!filename) return src;
   return `${THUMB_PREFIX}${encodeURIComponent(filename)}?w=${normalizeWidth(width)}`;
+}
+
+/**
+ * يبني رابط مشتق العرض 2048px من رابط صورة محلي — مدخل فك ترميز الواجهة
+ * بدل الأصل كامل الدقة (ملكية الصور: الواجهة لا تفك الأصل للعرض إطلاقاً).
+ *
+ * يتعامل مع روابط /local-image/ فقط: المصادر غير المحلية (data:/blob:/http)
+ * أو معاينات الطباعة (print_) أو الامتدادات غير المدعومة تُعاد كما هي،
+ * وروابط المشتقات القائمة تمر سليمة (idempotent عبر extractLocalFilename).
+ * Fallback الأصل عند فشل تحميل المشتق تديره طبقة التحميل (use-async-image).
+ */
+export function buildDisplaySrcFor(
+  src: string,
+  width: DisplayWidth = DISPLAY_DERIVATIVE_WIDTH,
+): string {
+  const filename = extractLocalFilename(src);
+  if (!filename) return src;
+  // قيمة مشتق العرض وحيدة 2048 — أي مدخل آخر يعود إليها دفاعياً.
+  const w = width === DISPLAY_DERIVATIVE_WIDTH ? width : DISPLAY_DERIVATIVE_WIDTH;
+  return `${THUMB_PREFIX}${encodeURIComponent(filename)}?w=${w}`;
 }

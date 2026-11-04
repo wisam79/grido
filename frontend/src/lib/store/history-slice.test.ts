@@ -115,6 +115,41 @@ describe('history-slice', () => {
     expect(finalState.history.length).toBe(30);
   });
 
+  it('counts each unique image string once per snapshot when estimating archive bytes', () => {
+    // صورة واحدة 20MiB مشاركة بين 3 عناصر تُخزَّن في الذاكرة بمرجع واحد —
+    // كان التقدير يجمعها بكل تكرار (60MiB) فيتجاوز سقف 50MiB الوهمي ويُسقط
+    // لقطات سليمة أبكر من اللازم. الآن تُحتسب مرة واحدة لكل لقطة عبر Set.
+    const sharedImage = 'x'.repeat(20 * 1024 * 1024);
+    const sharedElement = (id: string): CanvasElement =>
+      ({ id, type: 'image', imageSrc: sharedImage }) as CanvasElement;
+
+    // لقطة أولى بصورة فريدة 10MiB
+    const firstImage = 'y'.repeat(10 * 1024 * 1024);
+    store.setState({
+      elements: [{ id: 'first', type: 'image', imageSrc: firstImage }] as CanvasElement[],
+    });
+    store.getState().pushHistory();
+
+    // لقطة ثانية تحمل الصورة المشتركة ثلاث مرات (عناصر مختلفة بنفس imageSrc)
+    store.setState({
+      elements: [sharedElement('a'), sharedElement('b'), sharedElement('c')] as CanvasElement[],
+    });
+    store.getState().pushHistory();
+
+    const state = store.getState();
+    // التقدير الفريد: 10MiB + 20MiB + مصروف إداري ≈ 30MiB < 50MiB —
+    // كلتا اللقطتين تبقيان مع بذرة السجل (التقدير القديم بالتكرار 70MiB
+    // كان يُسقط اللقطة الأولى ويوقف عند الأخيرة فقط)
+    expect(state.history.length).toBe(3); // البذرة + لقطتان
+    expect(state.history[1].elements.some((el) => el.id === 'first')).toBe(true);
+    expect(state.history[state.history.length - 1].elements).toHaveLength(3);
+    // الصورة المشتركة بمرجع واحد في اللقطة الواحدة — النسخ السطحي لا ينسخ السلاسل
+    const lastEntry = state.history[state.history.length - 1];
+    const srcs = lastEntry.elements.map((el) => (el as { imageSrc?: string }).imageSrc);
+    expect(srcs[0]).toBe(sharedImage);
+    expect(srcs[0]).toBe(srcs[1]);
+  });
+
   it('should not push if the structural state is unchanged', () => {
     store.setState({ elements: [{ id: '1', type: 'shape' }] as CanvasElement[] });
     store.getState().pushHistory();

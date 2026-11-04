@@ -158,9 +158,114 @@ export function hasDisplayProxy(image: HTMLImageElement): boolean {
 export function displayCacheSize(): number {
   return displayCache.size;
 }
+// ─── ملكية الصور: مشتق العرض 2048px من Go وترقية الالتقاط للأصل ───
+//
+// EXIF (استنتاج E1 الموثق): مسار العرض هنا لا يطبّق الاتجاه يدوياً إطلاقاً —
+// لا استدعاء لـgetExifOrientation ولا createImageBitmap مع imageOrientation
+// على هذا المسار؛ المتصفح يطبّق EXIF ضمنياً عند فك ترميز <img>، وcreateImageBitmap
+// من عنصر <img> مُفكوك يستهلك بكسلاته الموجّهة جاهزةً. مشتق Go مولَّد عبر
+// imaging.AutoOrientation(true) فيُخبز الاتجاه داخل البكسلات وينزع وسم
+// Orientation من المخرج، فتعرضه الواجهة كما هو = موجّهاً صحيحاً. لذا التبديل
+// من الأصل إلى المشتق آمن الاتجاه لكل الوسوم 1..8 دون بوابة اتجاه 1، وهو
+// المتسق مع مسار التصدير/الطباعة في Go (AutoOrientation) ومسار القص (نفس
+// فضاء الأبعاد الموجّه في الطرفين).
+//
+// imageSrc في المشروع يبقى الأصل الكامل دون تقليص (قرار محمي) — الخرائط أدناه
+// مطلوبة حصراً لترقية التصدير/الطباعة من مشتق العرض إلى الأصل وقت الالتقاط.
+
+// ملكية العرض: عنصر العرض المشتق ← رابط الأصل الكامل. تُسجَّل عند تحميل
+// المشتق (use-async-image/preloadImageIntoCache) وتقرأ عند بدء الالتقاط.
+const displayOwnership = new WeakMap<HTMLImageElement, string>();
+
+/** يسجل أن عنصر العرض المُمرَّر مشتقٌ من رابط الأصل المُمرَّر (idempotent). */
+export function registerDisplayOwnership(
+  displayElement: HTMLImageElement,
+  originalSrc: string,
+): void {
+  if (!displayElement || !originalSrc) return;
+  if (displayOwnership.has(displayElement)) return;
+  displayOwnership.set(displayElement, originalSrc);
+}
+
+function getRegisteredOriginalSrc(
+  displayElement: HTMLImageElement | null | undefined,
+): string | null {
+  if (!displayElement || !(displayElement instanceof HTMLImageElement)) return null;
+  return displayOwnership.get(displayElement) ?? null;
+}
+
+// جسر الالتقاط العابر: عنصر العرض ← عنصر الأصل المفكوك. يُملأ عبر
+// getOriginalForDisplayedElement قبل ترقية التصدير ويُفرغ في finally بعد
+// الاستعادة (releaseCaptureOriginals) — الأصل كامل الدقة لا يبقى حياً خارج
+// نافذة الالتقاط وإلا أُلغي مكسب الذاكرة كله، لذلك لا WeakMap هنا.
+const captureOriginals = new Map<HTMLImageElement, HTMLImageElement>();
+// كاش وعود جلب الأصول: نداءان متزامنان لنفس الرابط يفكّان ترميزه مرة واحدة.
+const pendingOriginals = new Map<string, Promise<HTMLImageElement | null>>();
+
+function loadOriginalElement(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    if (typeof Image === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+/**
+ * يجلب الأصل الكامل عبر new Image() للرابط المُمرَّر ويخزنه في جسر الالتقاط
+ * عند غيابه، مع كاش الوعد ومنع التكرار. الفشل يعيد null فيبقى المتصل على
+ * نسخة العرض كما هي (fallback كامل — لا استثناءات تُرمى).
+ */
+export function getOriginalForCapture(src: string): Promise<HTMLImageElement | null> {
+  if (!src) return Promise.resolve(null);
+  const cached = pendingOriginals.get(src);
+  if (cached) return cached;
+  const job = loadOriginalElement(src);
+  pendingOriginals.set(src, job);
+  // الفشل يخرج من الكاش ليسمح بمحاولة لاحقة؛ النجاح يبقى داخل نافذة الالتقاط.
+  job.then((el) => {
+    if (!el) pendingOriginals.delete(src);
+  });
+  return job;
+}
+
+/** نسخة عنصر العرض: تقرأ ملكية العرض ثم تجلب الأصل وتملأ الجسر. */
+export async function getOriginalForDisplayedElement(
+  displayElement: HTMLImageElement | null | undefined,
+): Promise<HTMLImageElement | null> {
+  if (!displayElement) return null;
+  const src = getRegisteredOriginalSrc(displayElement);
+  if (!src) return null;
+  const bridged = captureOriginals.get(displayElement);
+  if (bridged) return bridged;
+  const original = await getOriginalForCapture(src);
+  if (original) captureOriginals.set(displayElement, original);
+  return original;
+}
+
+/** قراءة متزامنة من جسر الالتقاط — مسار upgradeImagesToFullResolution. */
+export function getCapturedOriginal(
+  displayElement: HTMLImageElement | null | undefined,
+): HTMLImageElement | null {
+  if (!displayElement || !(displayElement instanceof HTMLImageElement)) return null;
+  return captureOriginals.get(displayElement) ?? null;
+}
+
+/** يفرغ جسر الالتقاط وكاش العود بعد انتهاء التقاط المسرح (استدعِ في finally). */
+export function releaseCaptureOriginals(): void {
+  captureOriginals.clear();
+  pendingOriginals.clear();
+}
+
+/** يفرغ كاش نسخ العرض بالكامل مع جسر الالتقاط — عند استبدال المستند. */
 export function clearDisplayCache(): void {
   displayCache.clear();
   pendingProxy.clear();
   displayBytes.clear();
   totalDisplayBytes = 0;
+  releaseCaptureOriginals();
 }

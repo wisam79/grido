@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"database/sql"
+	"fmt"
 	"log/slog"
 	"path/filepath"
 	"sync"
@@ -9,10 +11,58 @@ import (
 	"grido/internal/core/domain"
 	"grido/internal/utils"
 
+	sqlite3 "github.com/mattn/go-sqlite3"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+// gridoSQLiteDriverName اسم السائق المسجل محلياً في database/sql: غلاف فوق
+// سائق mattn/go-sqlite3 (السائق المثبت في go.mod: gorm.io/driver/sqlite v1.6.0
+// الذي يعتمد github.com/mattn/go-sqlite3 v1.14.48) يطبق PRAGMAs الخاصة بالاتصال
+// غير القابلة للتمرير عبر DSN على كل اتصال جديد — بدل تطبيقها مرة واحدة على
+// اتصال يُستبدل كل 5 دقائق (ConnMaxLifetime) فتضيع على البديل.
+const gridoSQLiteDriverName = "grido-sqlite3"
+
+// connectionOnlyPragmas PRAGMAs لكل اتصال لا يدعم سائق go-sqlite3 v1.14.48
+// تمريرها عبر معاملات DSN (المفحوص في مصدر السائق: المعاملات المدعومة
+// _journal_mode و_foreign_keys و_cache_size و_busy_timeout و_synchronous —
+// ولا وجود لمعامل عام _pragma ولا لـ _temp_store/_mmap_size). يطبقها
+// ConnectHook على كل اتصال جديد، وفشلها يفشل فتح الاتصال (fail-fast).
+var connectionOnlyPragmas = []string{
+	"PRAGMA temp_store=MEMORY;",
+	"PRAGMA mmap_size=268435456;",
+}
+
+// pragmaDriver غلاف سائق يضيف ConnectHook ينفذ connectionOnlyPragmas فوق
+// SQLiteDriver الأصلي — آلية ConnectHook مدعومة أصلياً في go-sqlite3 وتُستدعى
+// لكل اتصال جديد داخل SQLiteDriver.Open.
+type pragmaDriver struct {
+	sqlite3.SQLiteDriver
+}
+
+func newPragmaDriver() *pragmaDriver {
+	return &pragmaDriver{SQLiteDriver: sqlite3.SQLiteDriver{
+		ConnectHook: func(conn *sqlite3.SQLiteConn) error {
+			for _, pragma := range connectionOnlyPragmas {
+				if _, err := conn.Exec(pragma, nil); err != nil {
+					return fmt.Errorf("apply %q on new sqlite connection: %w", pragma, err)
+				}
+			}
+			return nil
+		},
+	}}
+}
+
+var registerGridoSQLiteDriverOnce sync.Once
+
+// registerGridoSQLiteDriver يسجل غلاف السائق مرة واحدة لكل عملية (sql.Register
+// يعمل panic عند إعادة تسجيل الاسم نفسه)
+func registerGridoSQLiteDriver() {
+	registerGridoSQLiteDriverOnce.Do(func() {
+		sql.Register(gridoSQLiteDriverName, newPragmaDriver())
+	})
+}
 
 var (
 	dbInstance *gorm.DB
@@ -31,7 +81,21 @@ func InitDB() (*gorm.DB, error) {
 	appDir := utils.GetAppDir()
 	dbPath := filepath.Join(appDir, "grido.db")
 
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	// ⚡ PRAGMAs الأداء تُعاد الآن على كل اتصال جديد (الـpool يستبدل الاتصال كل
+	// 5 دقائق عبر ConnMaxLifetime):
+	//   - عبر DSN (مدعومة أصلياً في go-sqlite3 v1.14.48 وتُطبق لكل اتصال):
+	//     _journal_mode=WAL (دائم في ملف القاعدة لكنه يضبط القواعد الجديدة
+	//     فور إنشائها) و_foreign_keys=1 و_cache_size=-8000.
+	//   - عبر غلاف السائق أعلاه: temp_store=MEMORY وmmap_size=268435456
+	//     (لا يدعمهما DSN في هذه النسخة من السائق).
+	//   - افتراضيات السائق المطابقة للسلوك السابق بلا تمرير: busy_timeout=5000
+	//     وsynchronous=NORMAL (يضبطهما السائق ذاته لكل اتصال)، و
+	//     wal_autocheckpoint=1000 هو افتراضي SQLite أصلاً فأُسقط من التهيئة
+	//     اليدوية دون تغيير سلوك.
+	dsn := dbPath + "?_journal_mode=WAL&_foreign_keys=1&_cache_size=-8000"
+
+	registerGridoSQLiteDriver()
+	db, err := gorm.Open(sqlite.New(sqlite.Config{DriverName: gridoSQLiteDriverName, DSN: dsn}), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
@@ -39,27 +103,6 @@ func InitDB() (*gorm.DB, error) {
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
-	}
-
-	// ⚡ Enable WAL (Write-Ahead Logging) mode, busy timeout and foreign keys with performance settings
-	pragmas := []struct {
-		query string
-		name  string
-	}{
-		{"PRAGMA journal_mode=WAL;", "journal_mode=WAL"},
-		{"PRAGMA busy_timeout=5000;", "busy_timeout=5000"},
-		{"PRAGMA foreign_keys=ON;", "foreign_keys=ON"},
-		{"PRAGMA synchronous=NORMAL;", "synchronous=NORMAL"},
-		{"PRAGMA cache_size=-8000;", "cache_size=-8000"},
-		{"PRAGMA temp_store=MEMORY;", "temp_store=MEMORY"},
-		{"PRAGMA wal_autocheckpoint=1000;", "wal_autocheckpoint=1000"},
-		{"PRAGMA mmap_size=268435456;", "mmap_size=268435456"},
-	}
-
-	for _, pragma := range pragmas {
-		if _, err := sqlDB.Exec(pragma.query); err != nil {
-			slog.Warn("Failed to execute SQLite PRAGMA", "pragma", pragma.name, "error", err)
-		}
 	}
 
 	// SQLite serializes writes even in WAL mode. Allowing unlimited connections

@@ -67,6 +67,8 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   const pendingRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
   const keyCommitTimerRef = useRef<number | null>(null);
+  // 💓 نبضة أسهم الحقل الرقمي نشطة (ضغطة واحدة على الأقل لم تُلتقط بعد)
+  const keyPulseActiveRef = useRef(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -111,6 +113,20 @@ export const FluentSliderField = React.memo(function FluentSliderField({
     rafRef.current = null;
   }, []);
 
+  // 💓 دلالة النبضة لأسهم الحقل الرقمي: تكرار الأسهم يحدّث onChange فقط،
+  // والالتقاط (onCommit) مرة واحدة عند نهاية النبضة — keyup أو blur أو
+  // انقضاء 400ms بلا ضغط (نفس سلوك أسهم إبهام المنزلق). الالتقاط عند كل
+  // keydown كان يولّد لقطة تراجع لكل ضغطة مفتاح (إصلاح Bug#2).
+  const pulseCommit = useCallback(() => {
+    if (!keyPulseActiveRef.current) return;
+    keyPulseActiveRef.current = false;
+    if (keyCommitTimerRef.current !== null) {
+      window.clearTimeout(keyCommitTimerRef.current);
+      keyCommitTimerRef.current = null;
+    }
+    onCommitRef.current?.(latestValRef.current);
+  }, []);
+
   const handleDragEnd = useCallback(() => {
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
@@ -130,6 +146,9 @@ export const FluentSliderField = React.memo(function FluentSliderField({
   }, []);
 
   const handlePointerDown = useCallback(() => {
+    // 💓 نبضة أسهم الحقل معلقة والمستخدم أمسك المنزلق — تُلتقط هنا مرة واحدة
+    // (السحب نفسه يلتقط قيمته عبر handleDragEnd لاحقاً).
+    pulseCommit();
     if (keyCommitTimerRef.current !== null) {
       window.clearTimeout(keyCommitTimerRef.current);
       keyCommitTimerRef.current = null;
@@ -146,7 +165,7 @@ export const FluentSliderField = React.memo(function FluentSliderField({
     };
     window.addEventListener('pointerup', handleGlobalPointerUp);
     window.addEventListener('pointercancel', handleGlobalPointerUp);
-  }, [handleDragEnd]);
+  }, [handleDragEnd, pulseCommit]);
 
   const handleChange = useCallback(
     (v: number[]) => {
@@ -193,14 +212,15 @@ export const FluentSliderField = React.memo(function FluentSliderField({
 
   // 🛡️ القيمة المكتوبة تُقيَّد بالمدى وتُقرَّب لخانتين، ولا تُدفع أثناء الكتابة
   // (الدفع عند Enter/الخروج من الحقل فقط) منعاً لإعادة رسم الكانفس لكل حرف.
+  // deferCommit: نبضة الأسهم تحدّث onChange فقط وتؤجل onCommit لنهاية النبضة.
   const applyValue = useCallback(
-    (next: number) => {
+    (next: number, options?: { deferCommit?: boolean }) => {
       const bounded = Math.min(max, Math.max(min, Math.round(next * 100) / 100));
       if (Math.abs(bounded - latestValRef.current) < 1e-9) return bounded;
       setLocalValue(bounded);
       latestValRef.current = bounded;
       onChangeRef.current(bounded);
-      onCommitRef.current?.(bounded);
+      if (!options?.deferCommit) onCommitRef.current?.(bounded);
       return bounded;
     },
     [min, max],
@@ -241,12 +261,40 @@ export const FluentSliderField = React.memo(function FluentSliderField({
       } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         event.preventDefault();
         const direction = event.key === 'ArrowUp' ? 1 : -1;
-        const next = applyValue(latestValRef.current + direction * step);
+        // 💓 النبضة: الضغطة الأولى تفتحها وتسلّح مؤقت 400ms، والتكرار يعيد
+        // تسليحه فقط (انقضاء 400ms بلا ضغط = التقاط) — keyup يلتقط مبكراً.
+        if (keyPulseActiveRef.current) {
+          if (keyCommitTimerRef.current !== null) window.clearTimeout(keyCommitTimerRef.current);
+        } else {
+          keyPulseActiveRef.current = true;
+        }
+        keyCommitTimerRef.current = window.setTimeout(() => {
+          keyCommitTimerRef.current = null;
+          pulseCommit();
+        }, 400);
+        const next = applyValue(latestValRef.current + direction * step, { deferCommit: true });
         setDraft(formatNumber(next));
       }
     },
-    [applyValue, commitEditing, step],
+    [applyValue, commitEditing, pulseCommit, step],
   );
+
+  // 💓 نهاية النبضة عند رفع السهم — الالتقاط مرة واحدة لكل نبضة كاملة
+  const handleNumericKeyUp = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        pulseCommit();
+      }
+    },
+    [pulseCommit],
+  );
+
+  // 💓 الخروج من الحقل يلتقط النبضة المعلقة قبل التثبيت النصي — القيمة
+  // المرتدة من الأب أثناء النبضة لم تلمس المؤقت أصلاً (يتجدد عند ضغط سهم فقط).
+  const handleInputBlur = useCallback(() => {
+    pulseCommit();
+    commitEditing();
+  }, [pulseCommit, commitEditing]);
 
   const resetToDefault = useCallback(() => {
     if (defaultValue === undefined) return;
@@ -287,9 +335,10 @@ export const FluentSliderField = React.memo(function FluentSliderField({
             aria-label={typeof label === 'string' ? `قيمة ${label}` : 'قيمة الإعداد'}
             value={isEditing ? draft : formatNumber(localValue)}
             onFocus={beginEditing}
-            onBlur={commitEditing}
+            onBlur={handleInputBlur}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleNumericKeyDown}
+            onKeyUp={handleNumericKeyUp}
             disabled={disabled}
             className="w-9 bg-transparent text-center outline-none font-mono text-mini tabular-nums text-inherit"
           />

@@ -563,8 +563,12 @@ export function useKeyboardShortcuts() {
         if (e.key === 'ArrowDown') dragY = delta;
         if (e.key === 'ArrowLeft') dragX = -delta;
         if (e.key === 'ArrowRight') dragX = delta;
-        state.slots.forEach((slot) => {
-          if (!selectedSet.has(slot.id) || !slot.imageSrc) return;
+        // 🚀 حساب الإزاحة بمعرّف دوران/قلب كل خلية كما هو — والتنفيذ الدفعي
+        // applySlotMoves: set() واحدة عبر slots.map واحدة + خطوة تراجع واحدة
+        // لكل حدث مفتاح، بدل updateSlot لكل خلية (كل نداء يمسح slots كاملة)
+        // وتأجيل دفع التراجع بمؤقت 400ms.
+        const moves = state.slots.flatMap((slot) => {
+          if (!selectedSet.has(slot.id) || !slot.imageSrc) return [];
           const radians = ((slot.rotation ?? 0) * Math.PI) / 180;
           const cos = Math.cos(radians);
           const sin = Math.sin(radians);
@@ -572,16 +576,9 @@ export function useKeyboardShortcuts() {
           let localY = -sin * dragX + cos * dragY;
           if (slot.flipX) localX = -localX;
           if (slot.flipY) localY = -localY;
-          state.updateSlot(slot.id, {
-            dragX: (slot.dragX ?? 0) + localX,
-            dragY: (slot.dragY ?? 0) + localY,
-          });
+          return [{ id: slot.id, dx: localX, dy: localY }];
         });
-        if (nudgeTimeout) clearTimeout(nudgeTimeout);
-        nudgeTimeout = setTimeout(() => {
-          useEditorStore.getState().pushHistory();
-          nudgeTimeout = null;
-        }, 400);
+        state.applySlotMoves(moves);
         return;
       }
 

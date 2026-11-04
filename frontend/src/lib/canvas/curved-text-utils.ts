@@ -277,26 +277,69 @@ function resolveStrokeFilter(strokeWidth: number, stroke: string): string {
 
 // كانفاس مؤقت واحد يُعاد استخدامه بدل تخصيص واحد لكل إطار سحب/زوم.
 // ينمو عند الحاجة فقط دون تقليص متكرر عند تناوب ملصقين منحنيين مختلفي الأبعاد.
-let scratchCanvas: HTMLCanvasElement | null = null;
+// 🛡️ H3 — سقف المساحة المحتفظ بها (16MP): بدون سقف كان المخزون ينمو إلى
+// أكبر عرض تاريخي × أكبر ارتفاع تاريخي ولا يتقلص أبداً. الحاجة فوق السقف
+// (تصدير عملاق عادةً) تستخدم كانفساً مؤقتاً يُحرَّر بعد الرسم مباشرة ولا
+// يُلمس المخزون الدائم — فلا تذبذب تصغير/تكبير كل إطار: المخزون يتصاعد
+// فقط وعندما يبقى تحت السقف، ولا يتقلص أبداً.
+const SCRATCH_RETAINED_PIXEL_CAP = 16_000_000;
 
-function getScratchContext(
-  width: number,
-  height: number,
-): { ctx: CanvasRenderingContext2D; w: number; h: number } | null {
+let scratchCanvas: HTMLCanvasElement | null = null;
+// أبعاد المخزون المحتفظ به تُتتبَّع هنا لتظل قابلة للفحص حتى لو فشل getContext
+let scratchRetainedW = 0;
+let scratchRetainedH = 0;
+
+interface ScratchLease {
+  ctx: CanvasRenderingContext2D;
+  w: number;
+  h: number;
+  /** الكانفس المرسوم عليه (المخزون المشترك أو المؤقت). */
+  canvas: HTMLCanvasElement;
+  /** false = كانفس مؤقت لهذا الاستدعاء فقط — يجب تحريره بعد drawImage. */
+  retained: boolean;
+}
+
+/** مُصدَّرة لاختبارات الانحدار (curved-text.test.ts): مساحة المخزون المحتفظ به بالبكسل (0 إن غاب). */
+export function getRetainedScratchArea(): number {
+  return scratchRetainedW * scratchRetainedH;
+}
+
+/**
+ * مُصدَّرة لاختبارات الانحدار (curved-text.test.ts) — استئجار كانفس الخدود
+ * الموحد. في بيئة بلا محرك رسم (jsdom) يعيد getContext قيمة null فتعود
+ * الدالة null، لكن تتبّع أبعاد المخزون المحتفظ به يبقى صحيحاً قبل ذلك.
+ */
+export function getScratchContext(width: number, height: number): ScratchLease | null {
   if (typeof document === 'undefined') return null;
   try {
-    if (!scratchCanvas) scratchCanvas = document.createElement('canvas');
     const w = Math.max(1, Math.ceil(width));
     const h = Math.max(1, Math.ceil(height));
-    if (scratchCanvas.width < w || scratchCanvas.height < h) {
-      scratchCanvas.width = Math.max(scratchCanvas.width, w);
-      scratchCanvas.height = Math.max(scratchCanvas.height, h);
+    // الحجم بعد النمو المحتمل (اتحاد الأبعاد التاريخية مع الحاجة) — النمو
+    // يُسمح به فقط إذا بقي داخل السقف، وإلا كانفس مؤقت لهذا الاستدعاء.
+    const grownW = Math.max(scratchRetainedW, w);
+    const grownH = Math.max(scratchRetainedH, h);
+    if (grownW * grownH > SCRATCH_RETAINED_PIXEL_CAP) {
+      const temp = document.createElement('canvas');
+      temp.width = w;
+      temp.height = h;
+      const tempCtx = temp.getContext('2d');
+      if (!tempCtx) return null;
+      tempCtx.setTransform(1, 0, 0, 1, 0, 0);
+      tempCtx.clearRect(0, 0, w, h);
+      return { ctx: tempCtx, w, h, canvas: temp, retained: false };
     }
+    if (!scratchCanvas) scratchCanvas = document.createElement('canvas');
+    if (scratchCanvas.width < grownW || scratchCanvas.height < grownH) {
+      scratchCanvas.width = grownW;
+      scratchCanvas.height = grownH;
+    }
+    scratchRetainedW = grownW;
+    scratchRetainedH = grownH;
     const sctx = scratchCanvas.getContext('2d');
     if (!sctx) return null;
     sctx.setTransform(1, 0, 0, 1, 0, 0);
     sctx.clearRect(0, 0, w, h);
-    return { ctx: sctx, w, h };
+    return { ctx: sctx, w, h, canvas: scratchCanvas, retained: true };
   } catch {
     return null;
   }
@@ -590,7 +633,7 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
     );
     const scratch = getScratchContext(boxW * renderScale, boxH * renderScale);
     if (scratch) {
-      const { ctx: offCtx, w: offW, h: offH } = scratch;
+      const { ctx: offCtx, w: offW, h: offH, canvas: scratchEl, retained } = scratch;
       // تحويل واحد: إحداثيات العنصر تبقى كما هي (وهو ما تتوقعه paintGlyphs
       // والتدرجات والنقوش) مع مقياس نقطة يساوي مقياس سياق الهدف.
       offCtx.setTransform(
@@ -608,9 +651,15 @@ export function drawCurvedText(ctx: CanvasRenderingContext2D, options: CurvedTex
       paintGlyphs(offCtx, offFill);
       ctx.save();
       ctx.filter = `url(#${filterId})`;
-      ctx.drawImage(scratchCanvas!, 0, 0, offW, offH, originX, originY, boxW, boxH);
+      ctx.drawImage(scratchEl, 0, 0, offW, offH, originX, originY, boxW, boxH);
       ctx.restore();
       unifiedStroke = true;
+      if (!retained) {
+        // كانفس فوق السقف: مؤقت لهذا الاستدعاء فقط — تصفير الأبعاد يحرر
+        // backing store فوراً بدل انتظار GC، والمخزون الدائم لم يُمَس.
+        scratchEl.width = 0;
+        scratchEl.height = 0;
+      }
     }
   }
 

@@ -100,6 +100,10 @@ vi.mock('../wailsjs/runtime/runtime', () => ({
   LogFatal: vi.fn(),
 }));
 
+// 🚀 عدّادات تحميل وحدات حوارات التصدير/الطباعة — تثبت نمط «التركيب عند أول
+// فتح»: وحدة الحوار لا تُطلب (dynamic import داخل lazy) قبل أول render له.
+const dialogModuleLoads = vi.hoisted(() => ({ exportDialog: 0, printDialog: 0 }));
+
 // Mock ProjectHandler functions
 vi.mock('../wailsjs/go/handlers/ProjectHandler', () => ({
   SaveProject: vi.fn(() => Promise.resolve('success')),
@@ -232,12 +236,15 @@ vi.mock('../src/components/editor/dialogs/projects-dialog', () => ({
 }));
 
 // Mock ExportDialog and PrintDialog to avoid useStageRef errors during testing
-vi.mock('../src/components/editor/dialogs/export-dialog', () => ({
-  ExportDialog: () => null,
-}));
-vi.mock('../src/components/editor/dialogs/print-dialog', () => ({
-  PrintDialog: () => null,
-}));
+// (+ عدّاد التحميل لإثبات «التركيب عند أول فتح» في اختبار AppDialogsHost أدناه)
+vi.mock('../src/components/editor/dialogs/export-dialog', () => {
+  dialogModuleLoads.exportDialog += 1;
+  return { ExportDialog: () => null };
+});
+vi.mock('../src/components/editor/dialogs/print-dialog', () => {
+  dialogModuleLoads.printDialog += 1;
+  return { PrintDialog: () => null };
+});
 
 describe('Component Testing: UI Rendering', () => {
   beforeEach(() => {
@@ -326,6 +333,56 @@ describe('Component Testing: UI Rendering', () => {
     expect(screen.queryByRole('dialog', { name: 'الكولاج الحر' })).not.toBeInTheDocument();
     act(() => setFreeformDialogOpen(true));
     expect(await screen.findByRole('dialog', { name: 'الكولاج الحر' })).toBeInTheDocument();
+  }, 15000);
+
+  it('defers export/print dialog chunks until their first open (mount-on-first-open)', async () => {
+    const baseProps = {
+      onExportOpenChange: vi.fn(),
+      onPrintOpenChange: vi.fn(),
+      crashReport: null,
+      onRecoverCrash: async () => {},
+      onDismissCrash: async () => {},
+    };
+    // قيم أساسية مستقلة عن ترتيب الاختبارات (الوحدات قد تكون طُلبت في اختبار سابق)
+    const exportLoadsBefore = dialogModuleLoads.exportDialog;
+    const printLoadsBefore = dialogModuleLoads.printDialog;
+
+    const view = render(
+      <TooltipProvider>
+        <AppDialogsHost exportOpen={false} printOpen={false} {...baseProps} />
+      </TooltipProvider>,
+    );
+
+    // قبل أي فتح: لا حوار يُركَّب ولا وحدة تُطلب (كانتا تُطلبان حزمهما عند الإقلاع)
+    expect(dialogModuleLoads.exportDialog).toBe(exportLoadsBefore);
+    expect(dialogModuleLoads.printDialog).toBe(printLoadsBefore);
+
+    // أول فتح للتصدير: وحدته تُطلب مرة واحدة فقط، وطباعة تبقى بلا طلب
+    view.rerender(
+      <TooltipProvider>
+        <AppDialogsHost exportOpen={true} printOpen={false} {...baseProps} />
+      </TooltipProvider>,
+    );
+    await waitFor(() => expect(dialogModuleLoads.exportDialog).toBe(exportLoadsBefore + 1));
+    expect(dialogModuleLoads.printDialog).toBe(printLoadsBefore);
+
+    // الإغلاق يُبقي الحوار مركّباً (حركة إغلاق محفوظة) — لا إعادة طلب للوحدة
+    view.rerender(
+      <TooltipProvider>
+        <AppDialogsHost exportOpen={false} printOpen={false} {...baseProps} />
+      </TooltipProvider>,
+    );
+    expect(dialogModuleLoads.exportDialog).toBe(exportLoadsBefore + 1);
+    expect(dialogModuleLoads.printDialog).toBe(printLoadsBefore);
+
+    // أول فتح للطباعة: وحدتها تُطلب الآن فقط
+    view.rerender(
+      <TooltipProvider>
+        <AppDialogsHost exportOpen={false} printOpen={true} {...baseProps} />
+      </TooltipProvider>,
+    );
+    await waitFor(() => expect(dialogModuleLoads.printDialog).toBe(printLoadsBefore + 1));
+    expect(dialogModuleLoads.exportDialog).toBe(exportLoadsBefore + 1);
   }, 15000);
 
   it('reloads custom templates when the freeform editor saves a template', async () => {

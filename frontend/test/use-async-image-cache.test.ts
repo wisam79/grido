@@ -6,6 +6,7 @@ import {
   invalidateImageCache,
   preloadImageIntoCache,
 } from '../src/hooks/use-async-image';
+import { getCachedImage } from '../src/lib/canvas/image-cache';
 
 /**
  * انحدار كاش صور الواجهة (M-3 — تحصين useAsyncImage):
@@ -18,6 +19,8 @@ import {
 // ── محاكاة Image في jsdom: تحميل فوري + تسجيل كل src مُسند ──
 // (عدد الإسنادات = عدد التحميلات الفعلية؛ الإصابة لا تُسند شيئاً)
 const assignedSrcs: string[] = [];
+// مصادر تُجبر على الفشل — لاختبار fallback مشتق العرض إلى الأصل
+const failingSrcs = new Set<string>();
 
 class MockImage {
   onload: ((e: unknown) => void) | null = null;
@@ -31,6 +34,10 @@ class MockImage {
   set src(v: string) {
     this._src = v;
     assignedSrcs.push(v);
+    if (failingSrcs.has(v)) {
+      queueMicrotask(() => this.onerror?.({ target: this }));
+      return;
+    }
     queueMicrotask(() => {
       this.complete = true;
       this.onload?.({ target: this });
@@ -45,6 +52,7 @@ const RealImage = globalThis.Image;
 
 beforeEach(() => {
   assignedSrcs.length = 0;
+  failingSrcs.clear();
   globalThis.Image = MockImage as unknown as typeof Image;
   // حالة بداية حتمية: إفراغ الكاش الوحيد المشترك بين اختبارات الملف
   invalidateImageCache();
@@ -122,5 +130,40 @@ describe('useAsyncImage — كاش LRU', () => {
     const before = assignedSrcs.length;
     await loadViaHook(src);
     expect(assignedSrcs.slice(before)).toEqual([src]);
+  });
+});
+
+describe('useAsyncImage — مشتق العرض 2048px (ملكية الصور E5)', () => {
+  it('المصدر المحلي يُحمَّل من مشتق Go 2048px ويُخزَّن بمفتاح الأصل', async () => {
+    const src = '/local-image/photo-1.jpg';
+    const img = await loadViaHook(src);
+
+    // التحميل الفعلي استهلك المشتق لا الأصل كامل الدقة
+    expect(assignedSrcs).toEqual(['/local-image/thumb/photo-1.jpg?w=2048']);
+    // الكاش تحت مفتاح الأصل يحمل عنصر المشتق (عقد useAsyncImage بلا تغيير)
+    expect(getCachedImage(`${src}__`)).toBe(img);
+    expect(img?.src).toBe('/local-image/thumb/photo-1.jpg?w=2048');
+  });
+
+  it('فشل المشتق يعيد مسار الأصل القديم عبر fallback بنفس الوعد والمفتاح', async () => {
+    const src = '/local-image/photo-2.jpg';
+    failingSrcs.add('/local-image/thumb/photo-2.jpg?w=2048');
+    const img = await loadViaHook(src);
+
+    // محاولة المشتق أولاً ثم الأصل — بلا إعادة تسجيل مكررة بينهما
+    expect(assignedSrcs).toEqual([
+      '/local-image/thumb/photo-2.jpg?w=2048',
+      '/local-image/photo-2.jpg',
+    ]);
+    expect(img?.src).toBe('/local-image/photo-2.jpg');
+    // النتيجة النهائية مخزنة بمفتاح الأصل كالمعتاد
+    expect(getCachedImage(`${src}__`)).toBe(img);
+  });
+
+  it('المصادر غير المحلية تتجاهل مشتق العرض كلياً', async () => {
+    const src = 'data:image/png;base64,abc';
+    const img = await loadViaHook(src);
+    expect(assignedSrcs).toEqual([src]);
+    expect(img?.src).toBe(src);
   });
 });

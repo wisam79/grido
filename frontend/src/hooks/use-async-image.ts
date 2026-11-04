@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { ensureDisplayProxy } from '@/lib/canvas/display-image';
+import { ensureDisplayProxy, registerDisplayOwnership } from '@/lib/canvas/display-image';
 import {
   touchCacheKey,
   setWithLRU,
@@ -8,6 +8,7 @@ import {
   invalidateImageCache,
   preloadImageIntoCache,
 } from '@/lib/canvas/image-cache';
+import { buildDisplaySrcFor } from '@/lib/canvas/thumbnail-src';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('async-image');
@@ -88,47 +89,74 @@ export function useAsyncImage(src: string, crossOrigin?: string) {
       };
     }
 
+    // ⚡ ملكية الصور: التحميل يستهلك مشتق العرض 2048px من Go بدل تفكيك الأصل
+    // كامل الدقة (القرار المحمي: المشتق للعرض فقط، وimageSrc في الستور يبقى
+    // الأصل دون تقليص). المصادر غير المحلية (data:/blob:/http) تُحمَّل كما هي.
+    // EXIF آمن هنا: مشتق Go موجّه أصلاً (AutoOrientation) بلا وسم اتجاه، فلا
+    // تطبيق اتجاه يدوياً ولا ازدواج — انظر توثيق E1 في display-image.ts.
+    const loadSrc = buildDisplaySrcFor(src);
+    const isDisplayDerivative = loadSrc !== src;
+
     const img = new Image();
     if (crossOrigin) {
       img.crossOrigin = crossOrigin;
     }
 
     const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
-      img.onload = () => {
-        const finish = () => {
-          setWithLRU(cacheKey, img);
-          // 🚀 تسخين نسخة العرض المخفّضة خارج طور الرسم مباشرةً بعد فكّ الترميز:
-          //تُبنى النسخة الكبيرة هنا بشكل غير متزامن (M16)، فيصبح أوّل وصول لاحق
-          // لعقدة Konva إصابةً في الكاش بلا حجب ctx.drawImage أثناء الرسم.
-          void ensureDisplayProxy(img);
-          pendingLoads.delete(cacheKey);
-          if (isCurrent) {
-            setImage(img);
-            setStatus('loaded');
-          }
-          resolve(img);
-        };
-
-        if (typeof img.decode === 'function') {
-          img.decode().then(finish).catch(finish);
-        } else {
-          finish();
-        }
-      };
-
-      img.onerror = () => {
+      const finish = (el: HTMLImageElement, derivative: boolean) => {
+        setWithLRU(cacheKey, el);
+        // 🚀 تسخين نسخة العرض المخفّضة خارج طور الرسم مباشرةً بعد فكّ الترميز:
+        //تُبنى النسخة الكبيرة هنا بشكل غير متزامن (M16)، فيصبح أوّل وصول لاحق
+        // لعقدة Konva إصابةً في الكاش بلا حجب ctx.drawImage أثناء الرسم.
+        // (للمشتق ≤2048px هي لا-عمل: exceedsCap يرفضه، والسقوط للمسار القديم
+        // عند fallback الأصل الكبير يبقى كما كان تماماً.)
+        void ensureDisplayProxy(el);
+        // 🖼️ ملكية العرض: المشتق يُسجَّل بمالكه الأصلي لترقيته وقت التصدير/الطباعة.
+        if (derivative) registerDisplayOwnership(el, src);
         pendingLoads.delete(cacheKey);
         if (isCurrent) {
-          logger.error('[useAsyncImage] Failed to load image:', src);
-          setImage(undefined);
-          setStatus('failed');
+          setImage(el);
+          setStatus('loaded');
         }
-        reject(new Error(`Failed to load image: ${src}`));
+        resolve(el);
       };
+
+      const startLoad = (el: HTMLImageElement, url: string, derivative: boolean) => {
+        el.onload = () => {
+          const wrapped = () => finish(el, derivative);
+          if (typeof el.decode === 'function') {
+            el.decode().then(wrapped).catch(wrapped);
+          } else {
+            wrapped();
+          }
+        };
+        el.onerror = () => {
+          if (derivative) {
+            // 🛡️ fallback كامل: فشل تحميل المشتق (وضع تطوير بلا asset server،
+            // أو ملف مفقود من .thumbs) يعيد مسار الأصل القديم كما هو — نفس
+            // الوعد المعلق ونفس مفتاح الكاش، فلا يرى المستدعى أي اختلاف.
+            const retry = new Image();
+            if (crossOrigin) {
+              retry.crossOrigin = crossOrigin;
+            }
+            startLoad(retry, src, false);
+            return;
+          }
+          pendingLoads.delete(cacheKey);
+          if (isCurrent) {
+            logger.error('[useAsyncImage] Failed to load image:', src);
+            setImage(undefined);
+            setStatus('failed');
+          }
+          reject(new Error(`Failed to load image: ${src}`));
+        };
+        el.src = url;
+      };
+
+      startLoad(img, loadSrc, isDisplayDerivative);
     });
 
     pendingLoads.set(cacheKey, loadPromise);
-    img.src = src;
 
     return () => {
       isCurrent = false;

@@ -83,6 +83,28 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
   const imgRef = useRef<HTMLImageElement | null>(null);
   const activeReqIdRef = useRef<number>(0);
 
+  // 🧷 جلسة المالك (owner session): يزداد عند كل تركيب/مصدر صورة جديد وعند كل
+  // تنظيف؛ كل النقاط غير المتزامنة تفحصها كي لا يعيد أي callback متأخر —
+  // بعد الـunmount — إنشاء عامل ML أو تطبيق نتائج قديمة.
+  const sessionRef = useRef(0);
+  // مُلغي التسخين المجدول (idle/timer) الحالي — يستهلكه dispose عند الـunmount
+  const cancelScheduledWarmupRef = useRef<(() => void) | null>(null);
+
+  // 🧹 dispose حصري للـunmount: كان إنهاء عامل ML يمر حصراً عبر فرع open=false،
+  // فإزالة الحوار شرطياً من الشجرة (unmount بدون مرور بـ open=false) كانت تترك
+  // العامل حياً ومكدس WASM مشغولاً والتسخين المجدول بانتظار الخمول. يُستدعى
+  // dispose من تنظيف هذا الأثر وحده: يلغي المجدول، وينهي العامل، ويبطّل كل
+  // callback متأخر (الجلسة تغيّرت فتفشل نقاط الفحص). فرع open=false كما هو.
+  useEffect(() => {
+    return () => {
+      sessionRef.current += 1;
+      cancelScheduledWarmupRef.current?.();
+      cancelScheduledWarmupRef.current = null;
+      activeReqIdRef.current += 1;
+      terminateMlWorker();
+    };
+  }, []);
+
   // مرجع دائم للـ callbacks الحالية — يسمح لـ runDetection بتحديث حالة المكوّن
   // دون إعادة إنشاء الدالة (هوية مستقرة) ودون أحداث DOM مخصصة
   const cbsRef = useRef<DetectionCallbacks>({ onCorners: () => {}, onAspect: () => {} });
@@ -321,19 +343,44 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
     }
   }, [open]);
 
-  // 🔒 تحميل الصورة عند الفتح + تسخين نموذج الذكاء الاصطناعي
+  // 🔒 تحميل الصورة عند الفتح + تسخين نموذج الذكاء الاصطناعي (قابل للإلغاء)
   useEffect(() => {
     if (!open || !imageSrc) return;
+    const session = ++sessionRef.current;
+
+    // 🧹 مُلغي التسخين المجدول: idle المجدول أو المؤقت يُلغى عند التنظيف أو الـunmount
+    // (كان warmup الفوري/المؤجل بلا أي إلغاء — callback متأخر كان يعيد إنشاء العامل).
+    const idleWindow = window as unknown as {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    let idleHandle: number | null = null;
+    let warmupTimer: ReturnType<typeof setTimeout> | null = null;
+    const cancelScheduledWarmup = () => {
+      if (idleHandle !== null && typeof idleWindow.cancelIdleCallback === 'function') {
+        idleWindow.cancelIdleCallback(idleHandle);
+      }
+      idleHandle = null;
+      if (warmupTimer !== null) clearTimeout(warmupTimer);
+      warmupTimer = null;
+    };
+    cancelScheduledWarmupRef.current = cancelScheduledWarmup;
 
     // تسخين نموذج الذكاء الاصطناعي في الخلفية عند الخمول — لا ينافس الكشف
-    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void })
-      .requestIdleCallback;
-    if (typeof ric === 'function') ric.call(window, () => void warmupMlDetector());
-    else setTimeout(() => void warmupMlDetector(), 500);
+    const runIdleWarmup = () => {
+      idleHandle = null;
+      // 🧷 نقطة فحص الجلسة: callback متأخر بعد unmount لا يعيد إنشاء العامل
+      if (sessionRef.current === session) warmupMlDetector();
+    };
+    if (typeof idleWindow.requestIdleCallback === 'function') {
+      idleHandle = idleWindow.requestIdleCallback(runIdleWarmup);
+    } else {
+      warmupTimer = setTimeout(runIdleWarmup, 500);
+    }
 
     // ⚡ تسخين النموذج العصبي داخل عامل ML عند فتح الحوار — لا تهيئة WASM
     // على الخيط الرئيسي إطلاقاً ولا في أول كشف.
-    warmupMlDetector();
+    if (sessionRef.current === session) warmupMlDetector();
 
     let isCancelled = false;
     const img = new Image();
@@ -366,7 +413,12 @@ export function useScannerDetection(open: boolean, imageSrc: string): ScannerDet
     const reqIdAtMount = activeReqIdRef.current;
     return () => {
       isCancelled = true;
-      activeReqIdRef.current = reqIdAtMount + 1;
+      // 🧷 إبطال جلسة هذا التركيب — أي callback مجدول بعدها يفشل الفحص
+      sessionRef.current += 1;
+      cancelScheduledWarmup();
+      cancelScheduledWarmupRef.current = null;
+      // Math.max كي لا يُخفّض العداد عن أي طلب أحدث (حارس reqId يظل صحيحاً)
+      activeReqIdRef.current = Math.max(activeReqIdRef.current, reqIdAtMount + 1);
       img.onload = null;
       img.onerror = null;
       // تحرير الصورة المفكوكة من الذاكرة دون revoke (الـ blob URL ملك المنادي

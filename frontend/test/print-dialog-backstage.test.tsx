@@ -34,6 +34,9 @@ vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
   PrintNative: vi.fn(() => Promise.resolve({ success: true })),
   GetPrinters: vi.fn(() => Promise.resolve({ success: true, printers: [] })),
   OpenPrinterPreferences: vi.fn(() => Promise.resolve({ success: true })),
+  // 🛑 عقد الإلغاء الجديد (C4) — يُستدعى من cancelExport في use-print-export
+  CancelActivePrintJobs: vi.fn(() => Promise.resolve(undefined)),
+  CancelPrintJob: vi.fn(() => Promise.resolve(undefined)),
 }));
 
 vi.mock('@bindings/grido/app', () => ({

@@ -136,29 +136,59 @@ func collectImageFilenames(elementsStr, slotsStr string, referenced map[string]b
 	}
 }
 
-// cleanupProjects keeps both cleanup entrypoints aligned with every reference source below.
-func cleanupProjects(db *gorm.DB) ([]domain.Project, error) {
+// mediaCleanupBatchSize حجم دفعة جلب المشاريع أثناء جمع مراجع التنظيف: جلب
+// كامل المكتبة دفعة واحدة بكل أعمدة المراجع الستة يضاعف ذروة الذاكرة على
+// المكتبات الكبيرة، فتُجلب المشاريع على دفعات (LIMIT/OFFSET) وتُجمع مراجعها
+// تدريجياً في الذاكرة، مع إلزامية اكتمال جمع كل الدفعات قبل بدء أي حذف.
+const mediaCleanupBatchSize = 200
+
+// cleanupProjectsBatch يجلب دفعة مشاريع واحدة بكل حقول المراجع الستة
+// (elements وslots وtemplate وcollage_template وprint_settings وeditor_state
+// — إسقاط أي حقل يعني نقل صورة مستخدم حيّة إلى MediaTrash وفق ثابت «حماية
+// مراجع الوسائط في التنظيف»). ORDER BY إلزامي: بلا ترتيب ثابت لا يضمن SQLite
+// تطابق صفحات LIMIT/OFFSET بين الدفعات.
+func cleanupProjectsBatch(db *gorm.DB, offset int) ([]domain.Project, error) {
 	var projects []domain.Project
-	err := db.Select("elements", "slots", "template", "collage_template", "print_settings", "editor_state").Find(&projects).Error
+	err := db.
+		Select("elements", "slots", "template", "collage_template", "print_settings", "editor_state").
+		Order("id asc").
+		Offset(offset).
+		Limit(mediaCleanupBatchSize).
+		Find(&projects).Error
 	return projects, err
 }
 
-// collectReferencedImages يجمع كل الصور المشار إليها في المشاريع وقاعدة البيانات ومسودة autosave.json
-func collectReferencedImages(projects []domain.Project, appDir string) (map[string]bool, error) {
-	referencedImages := make(map[string]bool)
-
-	// 1. فحص مسارات الصور في المشاريع المحفوظة بقاعدة البيانات (كافة الحقول)
-	for _, p := range projects {
-		collectImageFilenames(string(p.Elements), string(p.Slots), referencedImages)
-		extractImagesFromText(string(p.Template), referencedImages)
-		extractImagesFromText(string(p.CollageTemplate), referencedImages)
-		extractImagesFromText(string(p.PrintSettings), referencedImages)
-		extractImagesFromText(string(p.EditorState), referencedImages)
+// forEachCleanupProjectBatch يمشي على كامل المشاريع دفعةً دفعة ويستدعي fn لكل
+// دفعة حتى دفعة غير ممتلئة (أقل من حجم الدفعة) تعني نهاية المكتبة. أي خطأ في
+// أي دفعة يُعاد فوراً — الجمع غير المكتمل لا يفتح باب الحذف إطلاقاً
+// (fail-closed: امتداد حارس فساد مسودة autosave على كل دفعة على حدة).
+func forEachCleanupProjectBatch(db *gorm.DB, fn func(batch []domain.Project)) error {
+	for offset := 0; ; offset += mediaCleanupBatchSize {
+		batch, err := cleanupProjectsBatch(db, offset)
+		if err != nil {
+			return fmt.Errorf("fetch cleanup projects batch (offset %d): %w", offset, err)
+		}
+		fn(batch)
+		if len(batch) < mediaCleanupBatchSize {
+			return nil
+		}
 	}
+}
 
-	// 2. فحص مسار الصورة في مسودة التخزين التلقائي autosave.json
-	// ملف تالف/غير مكتمل يوقف التنظيف فوراً — إرجاع قائمة فارغة يعني اعتبار
-	// صور العمل الجاري «مهجورة» وحذفها (خطر فقدان بيانات المستخدم)
+// collectProjectReferences يستخرج مراجع الصور من أعمدة المراجع الستة لمشروع واحد
+func collectProjectReferences(p *domain.Project, referenced map[string]bool) {
+	collectImageFilenames(string(p.Elements), string(p.Slots), referenced)
+	extractImagesFromText(string(p.Template), referenced)
+	extractImagesFromText(string(p.CollageTemplate), referenced)
+	extractImagesFromText(string(p.PrintSettings), referenced)
+	extractImagesFromText(string(p.EditorState), referenced)
+}
+
+// collectAutosaveReferences يفحص مسار الصورة في مسودة التخزين التلقائي
+// autosave.json. ملف تالف/غير مكتمل يوقف التنظيف فوراً (خطأ، لا قائمة فارغة) —
+// إرجاع قائمة فارغة يعني اعتبار صور العمل الجاري «مهجورة» وحذفها (خطر فقدان
+// بيانات المستخدم).
+func collectAutosaveReferences(appDir string, referenced map[string]bool) error {
 	autosavePath := filepath.Join(appDir, "autosave.json")
 	if autosaveBytes, err := os.ReadFile(autosavePath); err == nil {
 		var autosaveData struct {
@@ -168,30 +198,63 @@ func collectReferencedImages(projects []domain.Project, appDir string) (map[stri
 		if err := json.Unmarshal(autosaveBytes, &autosaveData); err == nil {
 			elemsBytes, _ := json.Marshal(autosaveData.Elements)
 			slotsBytes, _ := json.Marshal(autosaveData.Slots)
-			collectImageFilenames(string(elemsBytes), string(slotsBytes), referencedImages)
-			extractImagesFromText(string(autosaveBytes), referencedImages)
+			collectImageFilenames(string(elemsBytes), string(slotsBytes), referenced)
+			extractImagesFromText(string(autosaveBytes), referenced)
 		} else {
-			return nil, fmt.Errorf("corrupt autosave.json encountered: %w", err)
+			return fmt.Errorf("corrupt autosave.json encountered: %w", err)
 		}
 	} else if !os.IsNotExist(err) {
-		return nil, fmt.Errorf("read autosave.json: %w", err)
+		return fmt.Errorf("read autosave.json: %w", err)
 	}
+	return nil
+}
 
-	// 3. فحص مسارات الصور في القوالب المخصصة المحفوظة بقاعدة البيانات لمنع مسح أصول القوالب
+// collectCustomTemplateReferences يفحص مسارات الصور في القوالب المخصصة
+// المحفوظة بقاعدة البيانات لمنع مسح أصول القوالب (fail-closed عند فشل القراءة)
+func collectCustomTemplateReferences(referenced map[string]bool) error {
 	dbMu.RLock()
 	currentDB := dbInstance
 	dbMu.RUnlock()
 
-	if currentDB != nil {
-		var templates []domain.CustomTemplate
-		if err := currentDB.Find(&templates).Error; err == nil {
-			for _, t := range templates {
-				collectImageFilenames("", string(t.Cells), referencedImages)
-				extractImagesFromText(string(t.Cells), referencedImages)
-			}
-		} else {
-			return nil, fmt.Errorf("read custom templates: %w", err)
+	if currentDB == nil {
+		return nil
+	}
+
+	var templates []domain.CustomTemplate
+	if err := currentDB.Find(&templates).Error; err != nil {
+		return fmt.Errorf("read custom templates: %w", err)
+	}
+	for _, t := range templates {
+		collectImageFilenames("", string(t.Cells), referenced)
+		extractImagesFromText(string(t.Cells), referenced)
+	}
+	return nil
+}
+
+// collectReferencedImages يجمع كل الصور المشار إليها: المشاريع (جلب على دفعات
+// LIMIT/OFFSET وجمع تدريجي في الذاكرة) ثم مسودة autosave.json ثم القوالب
+// المخصصة. لا يُعاد النداء بنجاح إلا بعد اكتمال جمع كل الدفعات ومصادر المراجع
+// كلها — أي خطأ يُبطل العملية قبل بدء أي حذف (fail-closed).
+func collectReferencedImages(db *gorm.DB, appDir string) (map[string]bool, error) {
+	referencedImages := make(map[string]bool)
+
+	// 1. فحص مسارات الصور في المشاريع المحفوظة بقاعدة البيانات (كافة الحقول)
+	if err := forEachCleanupProjectBatch(db, func(batch []domain.Project) {
+		for i := range batch {
+			collectProjectReferences(&batch[i], referencedImages)
 		}
+	}); err != nil {
+		return nil, err
+	}
+
+	// 2. فحص مسار الصورة في مسودة التخزين التلقائي autosave.json
+	if err := collectAutosaveReferences(appDir, referencedImages); err != nil {
+		return nil, err
+	}
+
+	// 3. فحص مسارات الصور في القوالب المخصصة المحفوظة بقاعدة البيانات
+	if err := collectCustomTemplateReferences(referencedImages); err != nil {
+		return nil, err
 	}
 
 	return referencedImages, nil
@@ -335,18 +398,14 @@ func runCleanupMedia() {
 		return
 	}
 
-	projects, err := cleanupProjects(db)
-	if err != nil {
-		return
-	}
-
 	appDir := utils.GetAppDir()
 	mediaDir := filepath.Join(appDir, "Media")
 	trashDir := filepath.Join(appDir, "MediaTrash")
 
-	referenced, err := collectReferencedImages(projects, appDir)
+	// الجمع على دفعات يكتمل كاملاً قبل أي حذف (fail-closed عند أي دفعة تالفة)
+	referenced, err := collectReferencedImages(db, appDir)
 	if err != nil {
-		slog.Error("Failed to collect referenced images (autosave might be corrupt), aborting cleanup to prevent data loss", "error", err)
+		slog.Error("Failed to collect referenced images (corrupt autosave or unreadable batch), aborting cleanup to prevent data loss", "error", err)
 		return
 	}
 	moveUnreferencedToTrash(mediaDir, trashDir, referenced)
@@ -364,16 +423,12 @@ func CleanUnusedMediaNow() (cleanedCount int, freedBytes int64, err error) {
 		return 0, 0, errors.New("database not initialized")
 	}
 
-	projects, err := cleanupProjects(db)
-	if err != nil {
-		return 0, 0, err
-	}
-
 	appDir := utils.GetAppDir()
 	mediaDir := filepath.Join(appDir, "Media")
 	trashDir := filepath.Join(appDir, "MediaTrash")
 
-	referenced, err := collectReferencedImages(projects, appDir)
+	// الجمع على دفعات يكتمل كاملاً قبل أي حذف (fail-closed عند أي دفعة تالفة)
+	referenced, err := collectReferencedImages(db, appDir)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to collect referenced images: %w", err)
 	}

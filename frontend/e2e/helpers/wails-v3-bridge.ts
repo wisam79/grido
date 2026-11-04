@@ -130,6 +130,8 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
 
   // ── BackupHandler bindings (frontend/bindings/grido/internal/handlers/backuphandler.ts) ──
   1327210012: async () => 'C:/mock/backup.zip', // ExportBackup
+  3760965235: async () => undefined, // ExportBackupToFile
+  1499912742: async () => 'C:/mock/backup.json', // ExportBackupToPath
   824902195: async () => 'success', // ImportBackup
   2659213342: async () => 'success', // ResetLibrary
   377054365: async () => 'success', // ResetSettings
@@ -160,6 +162,8 @@ export const WAILS_V3_METHOD_HANDLERS: Record<number, (...args: any[]) => any> =
   }), // GetSupportedPapers
   1373740449: async () => ({ success: true, jobId: 1, status: 'Completed' }), // PollJobStatus
   1268920029: async () => ({ success: true, jobId: 1, status: 'Spooling' }), // PrintDirect
+  2833362764: async () => undefined, // CancelActivePrintJobs
+  1965354225: async () => undefined, // CancelPrintJob
 };
 
 /**
@@ -406,6 +410,8 @@ export async function setupWailsV3Bridge(
         },
         BackupHandler: {
           ExportBackup: async () => 'C:/mock/backup.zip',
+          ExportBackupToFile: async () => undefined,
+          ExportBackupToPath: async () => 'C:/mock/backup.json',
           ImportBackup: async () => 'success',
           ResetLibrary: async () => 'success',
           ResetSettings: async () => 'success',
@@ -425,6 +431,8 @@ export async function setupWailsV3Bridge(
           }),
           GetSupportedPapers: async () => ({ success: true, papers: [] }),
           PollJobStatus: async () => ({ success: true, jobId: 42, status: 'Printed', error: '' }),
+          CancelActivePrintJobs: async () => undefined,
+          CancelPrintJob: async () => undefined,
         },
       },
     };

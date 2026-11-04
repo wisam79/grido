@@ -1,11 +1,11 @@
 package service
 
 import (
-	"bytes"
 	"compress/zlib"
 	"encoding/binary"
 	"fmt"
 	"image"
+	"io"
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,9 +22,15 @@ import (
 //   284 PlanarConfig=1 · 332 InkSet=1 (CMYK) · 259 Compression=8 (Deflate)
 // ولا وسم ExtraSamples (يُمنع مع photometric=5) ولا قناة ألفا.
 //
-// التخطيط: رأس ← شريط البكسل ← مصفوفة BitsPerSample ← IFD0 في الذيل. وضع
-// الـIFD في الذيل يجعل كل إزاحات القيم قبل نهايته، فيبقى حقن وسوم الدقة
-// (injectTIFFResolution) صالحاً بلا إعادة حساب أي إزاحة.
+// التخطيط: رأس ← شريط البكسل ← مصفوفة BitsPerSample ← IFD0 ← ذيل النسب.
+// وضع الـIFD في الذيل يجعل كل إزاحات القيم قبل نهايته.
+//
+// 🖨️ البث المتدفق (دفعة الأداء): الترميز يكتب مباشرة على io.Writer (ملف مؤقت
+// مفتوح) — الشريط المضغوط يتدفق صفاً-صفاً فلا يوجد أي buffer بحجم الملف كاملاً،
+// ووسوم الدقة (282/283/296) تُبنى داخل IFD0 من أول مرة بتمرير واحد ثم تُرقَّع
+// إزاحة IFD0 (4 بايتات) في الترويسة — فلا نسخة ثانية للملف كاملاً كما كان
+// يفعل injectTIFFResolution. المخرج مطابق بايت-بايت للمسار القديم (الذهبي
+// TestEncodeCMYKTIFF_GoldenBytes يقفل ذلك).
 // ─────────────────────────────────────────────────────────────────────────────
 
 const (
@@ -52,45 +58,113 @@ const (
 
 // encodeCMYKTIFF يرمّز صورة CMYK إلى TIFF بفصل أحبار حقيقي + وسوم الدقة.
 // يعيد خطأً صريحاً بدل ملف ناقص عند أي حالة غير صالحة (أبعاد صفرية أو DPI خارج الحد).
+// التوقيع ([]byte, error) محفوظ لموقع الاستدعاء في print_export.go — الغلاف
+// تمرير واحد فوق encodeCMYKTIFFToWriter: نسخة بايتات واحدة بلا تمرير حقن ثانٍ.
 func encodeCMYKTIFF(img *image.CMYK, dpi int) ([]byte, error) {
+	var buf writeSeekBuffer
+	if err := encodeCMYKTIFFToWriter(img, dpi, &buf); err != nil {
+		return nil, err
+	}
+	return buf.b, nil
+}
+
+// writeSeekBuffer مخزن قابل للبحث يجسّر io.WriteSeeker فوق شريحة بايتات —
+// بمؤشر كتابة صريح: الكتابة فوق محتوى قائم عند البحث للخلف (ترقيع الترويسة)
+// والإلحاق عند البحث للنهاية. يكفي حاجة المشفّر حصراً (لا يحذف نطاقات مفقودة).
+type writeSeekBuffer struct {
+	b   []byte
+	pos int
+}
+
+func (s *writeSeekBuffer) Write(p []byte) (int, error) {
+	end := s.pos + len(p)
+	if end > len(s.b) {
+		s.b = append(s.b, make([]byte, end-len(s.b))...)
+	}
+	copy(s.b[s.pos:end], p)
+	s.pos = end
+	return len(p), nil
+}
+
+func (s *writeSeekBuffer) Seek(offset int64, whence int) (int64, error) {
+	switch whence {
+	case io.SeekStart:
+		s.pos = int(offset)
+	case io.SeekCurrent:
+		s.pos += int(offset)
+	case io.SeekEnd:
+		s.pos = len(s.b) + int(offset)
+	default:
+		return 0, fmt.Errorf("writeSeekBuffer: invalid whence %d", whence)
+	}
+	if s.pos < 0 || s.pos > len(s.b) {
+		return 0, fmt.Errorf("writeSeekBuffer: seek offset %d out of range [0,%d]", s.pos, len(s.b))
+	}
+	return int64(s.pos), nil
+}
+
+// encodeCMYKTIFFToWriter يكتب TIFF مباشرة على io.Writer متدفق (ملف مؤقت مفتوح
+// عبر utils.CreateAtomic مثلاً) — بلا أي buffer بحجم الملف كاملاً وبلا نسخة
+// ثانية لحقن الوسوم. يتطلب io.WriteSeeker لترقيع إزاحة IFD0 في الترويسة
+// (4 بايتات) — ملفات القرص os.File تدعمها أصلاً.
+func encodeCMYKTIFFToWriter(img *image.CMYK, dpi int, dst io.Writer) error {
 	if img == nil {
-		return nil, fmt.Errorf("cmyk tiff: nil image")
+		return fmt.Errorf("cmyk tiff: nil image")
+	}
+	// نفس مدى التحقق الذي كان يفرضه injectTIFFResolution في المسار القديم.
+	if dpi <= 0 || dpi > 9600 {
+		return fmt.Errorf("invalid dpi for tiff resolution tags: %d", dpi)
 	}
 	bounds := img.Bounds()
 	w, h := bounds.Dx(), bounds.Dy()
 	if w <= 0 || h <= 0 {
-		return nil, fmt.Errorf("cmyk tiff: invalid dimensions %dx%d", w, h)
+		return fmt.Errorf("cmyk tiff: invalid dimensions %dx%d", w, h)
+	}
+	seeker, ok := dst.(io.WriteSeeker)
+	if !ok {
+		return fmt.Errorf("cmyk tiff: writer must support seeking (io.WriteSeeker) to patch the IFD0 header offset")
 	}
 
-	// البناء: رأس II/42 ← الشريط المضغوط ← BitsPerSample ← IFD0.
-	// الضغط يتدفق صفاً-صفاً مباشرةً إلى مخزن الملف (بلا نسخة خام كاملة بحجم
+	// البناء: رأس II/42 ← الشريط المضغوط ← BitsPerSample ← IFD0 ← ذيل النسب.
+	// الضغط يتدفق صفاً-صفاً مباشرةً إلى الكاتب (بلا نسخة خام كاملة بحجم
 	// 4×w×h بايت = حتى 200MB عند سقف 50MP): يُمرّر كل صف إلى zlib ويُترك،
 	// مع نسخة صف واحد فقط لمراعاة Stride (قد يكون أكبر من 4×العرض).
-	var out bytes.Buffer
-	out.Grow(8 + w*h*4/2)
-	out.Write([]byte{'I', 'I', 0x2A, 0x00, 0, 0, 0, 0}) // ifdOffset يُرقَّع أدناه
-
-	stripOffset := uint32(out.Len())
-	zw := zlib.NewWriter(&out)
+	if _, err := seeker.Write([]byte{'I', 'I', 0x2A, 0x00, 0, 0, 0, 0}); err != nil { // ifdOffset يُرقَّع أدناه
+		return fmt.Errorf("cmyk tiff: write header: %w", err)
+	}
+	stripOffset := uint32(8)
+	zw := zlib.NewWriter(seeker)
 	row := make([]byte, w*4)
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		off := img.PixOffset(bounds.Min.X, y)
 		copy(row, img.Pix[off:off+w*4])
 		if _, err := zw.Write(row); err != nil {
-			return nil, fmt.Errorf("cmyk tiff: compress row %d: %w", y, err)
+			return fmt.Errorf("cmyk tiff: compress row %d: %w", y, err)
 		}
 	}
 	if err := zw.Close(); err != nil {
-		return nil, fmt.Errorf("cmyk tiff: compress close: %w", err)
+		return fmt.Errorf("cmyk tiff: compress close: %w", err)
 	}
-	stripLen := out.Len() - int(stripOffset)
+	cur, err := seeker.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return fmt.Errorf("cmyk tiff: strip length: %w", err)
+	}
+	stripLen := uint32(cur) - stripOffset
 
-	bitsOffset := uint32(out.Len())
-	out.Write([]byte{8, 0, 8, 0, 8, 0, 8, 0}) // [8,8,8,8] كـ SHORT صغيرة-النهاية
+	bitsOffset := stripOffset + stripLen
+	ifdOffset := bitsOffset + 8
+	// ذيل النسب يلي نهاية IFD0 مباشرة: 2 (العدّ) + 14×12 (الإدخالات) + 4 (next).
+	rationalBase := ifdOffset + 2 + 14*12 + 4
+	xOff := rationalBase
+	yOff := rationalBase + 8
 
-	ifdOffset := uint32(out.Len())
-	binary.LittleEndian.PutUint32(out.Bytes()[4:8], ifdOffset)
+	if _, err := seeker.Write([]byte{8, 0, 8, 0, 8, 0, 8, 0}); err != nil { // [8,8,8,8] كـ SHORT صغيرة-النهاية
+		return fmt.Errorf("cmyk tiff: write bits per sample: %w", err)
+	}
 
+	// IFD0 كامل من أول مرة بوسوم الدقة النهائية (282/283/296) — إدخالات
+	// تصاعدياً بالوسم كما يفرض موصوف TIFF، ومطابق تماماً لما كان ينتجه
+	// المسار القديم (بناء ثم حقن) — الذهبي bit-identical يقفل التطابق.
 	entries := []struct {
 		tag   uint16
 		typ   uint16
@@ -105,14 +179,19 @@ func encodeCMYKTIFF(img *image.CMYK, dpi int) ([]byte, error) {
 		{tiffTagStripOffsets, tiffTypeLong, 1, stripOffset},
 		{tiffTagSamplesPerPix, tiffTypeShort, 1, 4},
 		{tiffTagRowsPerStrip, tiffTypeLong, 1, uint32(h)},
-		{tiffTagStripByteCount, tiffTypeLong, 1, uint32(stripLen)},
+		{tiffTagStripByteCount, tiffTypeLong, 1, stripLen},
+		{tiffTagXResolution, tiffTypeRational, 1, xOff},
+		{tiffTagYResolution, tiffTypeRational, 1, yOff},
 		{tiffTagPlanarConfig, tiffTypeShort, 1, tiffPlanarChunky},
+		{tiffTagResolutionUnit, tiffTypeShort, 1, tiffResolutionUnitInch},
 		{tiffTagInkSet, tiffTypeShort, 1, tiffInkSetCMYK},
 	}
 
 	var countBuf [2]byte
 	binary.LittleEndian.PutUint16(countBuf[:], uint16(len(entries)))
-	out.Write(countBuf[:])
+	if _, err := seeker.Write(countBuf[:]); err != nil {
+		return fmt.Errorf("cmyk tiff: write ifd count: %w", err)
+	}
 
 	var entryBuf [12]byte
 	for _, e := range entries {
@@ -120,14 +199,36 @@ func encodeCMYKTIFF(img *image.CMYK, dpi int) ([]byte, error) {
 		binary.LittleEndian.PutUint16(entryBuf[2:4], e.typ)
 		binary.LittleEndian.PutUint32(entryBuf[4:8], e.count)
 		binary.LittleEndian.PutUint32(entryBuf[8:12], e.value)
-		out.Write(entryBuf[:])
+		if _, err := seeker.Write(entryBuf[:]); err != nil {
+			return fmt.Errorf("cmyk tiff: write ifd entry %d: %w", e.tag, err)
+		}
 	}
-	out.Write([]byte{0, 0, 0, 0}) // لا IFD تالٍ
+	if _, err := seeker.Write([]byte{0, 0, 0, 0}); err != nil { // لا IFD تالٍ
+		return fmt.Errorf("cmyk tiff: write ifd next: %w", err)
+	}
 
-	// وسوم الدقة الفيزيائية (282/283/296) — منطق مُختبَر ومشترك مع بقية المسارات.
-	tagged, err := injectTIFFResolution(out.Bytes(), dpi)
-	if err != nil {
-		return nil, fmt.Errorf("cmyk tiff: resolution tags: %w", err)
+	// ذيل النسب: (dpi/1) لكل من X وY — كما يكتبه injectTIFFResolution حرفياً.
+	var ratBuf [16]byte
+	binary.LittleEndian.PutUint32(ratBuf[0:4], uint32(dpi))
+	binary.LittleEndian.PutUint32(ratBuf[4:8], 1)
+	binary.LittleEndian.PutUint32(ratBuf[8:12], uint32(dpi))
+	binary.LittleEndian.PutUint32(ratBuf[12:16], 1)
+	if _, err := seeker.Write(ratBuf[:]); err != nil {
+		return fmt.Errorf("cmyk tiff: write resolution tail: %w", err)
 	}
-	return tagged, nil
+
+	// 🩹 ترقيع إزاحة صغيرة في الترويسة: ifdOffset في البايتات 4:8.
+	var ifdOffBuf [4]byte
+	binary.LittleEndian.PutUint32(ifdOffBuf[:], ifdOffset)
+	if _, err := seeker.Seek(4, io.SeekStart); err != nil {
+		return fmt.Errorf("cmyk tiff: seek header patch: %w", err)
+	}
+	if _, err := seeker.Write(ifdOffBuf[:]); err != nil {
+		return fmt.Errorf("cmyk tiff: patch header ifd offset: %w", err)
+	}
+	// العودة إلى نهاية الملف حتى تبقى أي كتابة لاحقة من المتصل تسلسلية صحيحة.
+	if _, err := seeker.Seek(0, io.SeekEnd); err != nil {
+		return fmt.Errorf("cmyk tiff: seek back to end: %w", err)
+	}
+	return nil
 }

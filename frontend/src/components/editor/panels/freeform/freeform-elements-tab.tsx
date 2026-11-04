@@ -5,6 +5,7 @@ import { ShapeGlyph } from '@/components/editor/shapes/shape-glyph';
 import { FluentFilterChips } from '@/components/ui/blocks';
 import { Button } from '@/components/ui/button';
 import { Plus, Stamp, CaretRight } from '@/components/ui/icons';
+import { ensureBarcodeLibsReady } from '@/features/stickers/lib/barcode-svg';
 import {
   buildDefaultStickerParams,
   buildStickerSvg,
@@ -153,7 +154,17 @@ const FreeformElementsContent = React.memo(function FreeformElementsContent({
       try {
         setIsInserting(template.id);
         const params = buildQuickStickerParams(template);
-        const svg = getStickerSvgPreview(template);
+        // ⏳ جاهزية مولدات الباركود/QR قبل توليد SVG نهائي يُخزَّن: المعاينة
+        // قد تكون بُنيت قبل تحميل المكتبات الكسولة فتحمل عنصر «جارٍ التجهيز» —
+        // نعيد البناء طازجاً بعد الانتظار كي لا يُخزَّن placeholder نهائياً،
+        // والفشل يترك المولّد يرسم تحذيره الصريح المصمم (بلا كتم سلوكه).
+        await ensureBarcodeLibsReady();
+        let svg = '';
+        try {
+          svg = buildStickerSvg(template, params, { namespace: `quick-${template.id}` });
+        } catch {
+          svg = getStickerSvgPreview(template);
+        }
         if (!svg) {
           toast.error('تعذرت المعاينة');
           return;

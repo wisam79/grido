@@ -200,40 +200,59 @@ func drawItemImage(dc *gg.Context, img image.Image, item domain.PrintItem, dpi i
 	wPx := float64(int(math.Round(mmToPx(item.W, dpi))))
 	hPx := float64(int(math.Round(mmToPx(item.H, dpi))))
 
-	dc.Push()
-	if item.CornerRadiusMM > 0 {
+	if item.CornerRadiusMM <= 0 {
+		// ⚡ المسار السريع المستطيلي (دفعة الأداء): بلا dc.Clip() إطلاقاً — gg v1.3.0
+		// يخصص قناع Alpha بحجم الصفحة كاملة لكل خلية (≈8.3MB لكل خلية A4/300DPI)
+		// وغالبية الخلايا مستطيلة. الخلفية تُملأ بالمستطيل مباشرة، والصورة تُرسم
+		// مقتطعة إلى تقاطع الخانة مع مستطيلها عبر SubImage (بكسلات مشتركة بلا نسخ).
+		// مطابق بكسلياً للمسار المقصوص لأن المستطيلات صحيحة القيم (مربوطة
+		// بـ math.Round) وقالب مستطيل صحيح الحواف يغطي البكسلات نفسها —
+		// يقفل ذلك TestDrawItemImage_RectFastPathMatchesClipPath.
+		dc.Push()
+		dc.ResetClip() // لا قناع للرسم المباشر (نفس حالة ما بعد ResetClip في المسار المعقد)
+		if hasBackground {
+			dc.SetColor(parseColor(bgColor))
+			dc.DrawRectangle(xPx, yPx, wPx, hPx)
+			dc.Fill()
+		}
+		if img != nil {
+			// Legacy quarter-turned images can have swapped bounds; center only
+			// the image content, never the fixed slot background/border.
+			drawX, drawY := xPx, yPx
+			if isQuarterRotation(item.Rotation) {
+				drawX = xPx + (wPx-float64(img.Bounds().Dx()))/2
+				drawY = yPx + (hPx-float64(img.Bounds().Dy()))/2
+			}
+			drawImageSlotIntersection(dc, img, xPx, yPx, wPx, hPx, int(drawX), int(drawY))
+		}
+		dc.Pop()
+	} else {
+		dc.Push()
 		rPx := mmToPx(item.CornerRadiusMM, dpi)
 		dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
-	} else {
-		dc.DrawRectangle(xPx, yPx, wPx, hPx)
-	}
-	dc.Clip()
+		dc.Clip()
 
-	// 🎨 إذا كان للعنصر لون خلفية مخصص (مثل خلفية صورة الهوية المعزولة أزرق/أبيض/رمادي)،
-	// نقوم بملء مستطيل الخانة بلون الخلفية أولاً تحت الصورة المعزولة
-	if hasBackground {
-		dc.SetColor(parseColor(bgColor))
-		if item.CornerRadiusMM > 0 {
-			rPx := mmToPx(item.CornerRadiusMM, dpi)
+		// 🎨 إذا كان للعنصر لون خلفية مخصص (مثل خلفية صورة الهوية المعزولة أزرق/أبيض/رمادي)،
+		// نقوم بملء مستطيل الخانة بلون الخلفية أولاً تحت الصورة المعزولة
+		if hasBackground {
+			dc.SetColor(parseColor(bgColor))
 			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
-		} else {
-			dc.DrawRectangle(xPx, yPx, wPx, hPx)
+			dc.Fill()
 		}
-		dc.Fill()
-	}
 
-	// Legacy quarter-turned images can have swapped bounds; center only the
-	// image content, never the fixed slot background/clip/border.
-	if img != nil {
-		drawX, drawY := xPx, yPx
-		if isQuarterRotation(item.Rotation) {
-			drawX = xPx + (wPx-float64(img.Bounds().Dx()))/2
-			drawY = yPx + (hPx-float64(img.Bounds().Dy()))/2
+		// Legacy quarter-turned images can have swapped bounds; center only the
+		// image content, never the fixed slot background/clip/border.
+		if img != nil {
+			drawX, drawY := xPx, yPx
+			if isQuarterRotation(item.Rotation) {
+				drawX = xPx + (wPx-float64(img.Bounds().Dx()))/2
+				drawY = yPx + (hPx-float64(img.Bounds().Dy()))/2
+			}
+			dc.DrawImage(img, int(drawX), int(drawY))
 		}
-		dc.DrawImage(img, int(drawX), int(drawY))
+		dc.ResetClip()
+		dc.Pop()
 	}
-	dc.ResetClip()
-	dc.Pop()
 
 	if hasBorder {
 		bPx := mmToPx(item.BorderWidthMM, dpi)
@@ -243,6 +262,36 @@ func drawItemImage(dc *gg.Context, img image.Image, item domain.PrintItem, dpi i
 		dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
 		dc.Stroke()
 	}
+}
+
+// drawImageSlotIntersection يرسم جزء الصورة الواقع داخل تقاطع مستطيل الخانة
+// (xPx,yPx,wPx,hPx) مع مستطيل رسمها الكامل عند (ax,ay) — عبر SubImage للمصدر
+// (بكسلات مشتركة بلا نسخ) مرسوماً بنفس المرساة الأصلية: gg يمرر im.Bounds()
+// كاملةً إلى x/image/draw الذي يحترم إحداثيات المصدر المطلقة، فيبقى تحويل
+// البكسل (sx,sy) ← (ax+sx, ay+sy) مطابقاً للرسم الكامل المقصوص بقالب الخانة.
+// لا SubImage (نوع صورة نادر خارج خط الأنابيب) ⇒ يُرسم عبر القالب كما كان.
+func drawImageSlotIntersection(dc *gg.Context, img image.Image, xPx, yPx, wPx, hPx float64, ax, ay int) {
+	b := img.Bounds()
+	// مستطيل الخانة منقول إلى فضاء إحداثيات الصورة (كل القيم أعداد صحيحة)
+	slot := image.Rect(int(xPx)-ax, int(yPx)-ay, int(xPx)-ax+int(wPx), int(yPx)-ay+int(hPx))
+	vis := b.Intersect(slot)
+	if vis.Empty() {
+		return // لا تقاطع — لا رسم
+	}
+	subImager, ok := img.(interface {
+		SubImage(r image.Rectangle) image.Image
+	})
+	if !ok {
+		// احتياط آمن للأنواع النادرة بلا SubImage: القالب القديم كما هو.
+		dc.Push()
+		dc.DrawRectangle(xPx, yPx, wPx, hPx)
+		dc.Clip()
+		dc.DrawImage(img, ax, ay)
+		dc.ResetClip()
+		dc.Pop()
+		return
+	}
+	dc.DrawImage(subImager.SubImage(vis), ax, ay)
 }
 
 // cropMarkSegments يعيد أذرع علامات القص الزاوية (8 قطع: أفقي + رأسي لكل ركن

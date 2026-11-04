@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -278,6 +279,129 @@ func TestComputeCropFromSlot_GoldenFixtures(t *testing.T) {
 					"انحراف عن الذهبية [%s]: got (cropX=%v, cropY=%v, cropW=%v, cropH=%v) want (cropX=%v, cropY=%v, cropW=%v, cropH=%v)",
 					tc.Name, cx, cy, cw, ch, tc.Expected.CropX, tc.Expected.CropY, tc.Expected.CropW, tc.Expected.CropH,
 				)
+			}
+		})
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🧮 دفعة الأداء C1 — المسار السريع المستطيلي بلا قناع قص: مطابقة بكسل-بكسل
+// ضد إعادة بناء المسار المعقد القديم (Push/Clip/DrawImage/ResetClip/Pop)
+// كمرجع اختبار فقط، على حالات: خانة مستطيلة، صورة أكبر/أصغر من الخانة،
+// ربع دوران، خلفية، حدود، تداخل جزئي/معدوم، وخلية دائرية سليمة.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// drawItemImageLegacyClipReference يعيد بناء مسار القص القديم حرفياً (مرجع
+// اختبار فقط — لا يُستدعى من الإنتاج): نفس ترتيب gg حرفياً قبل المسار السريع.
+func drawItemImageLegacyClipReference(dc *gg.Context, img image.Image, item domain.PrintItem, dpi int) {
+	bgColor := strings.TrimSpace(item.BgColor)
+	borderColor := strings.TrimSpace(item.BorderColor)
+	hasBackground := bgColor != "" && !strings.EqualFold(bgColor, "transparent")
+	hasBorder := item.BorderWidthMM > 0 && borderColor != "" && !strings.EqualFold(borderColor, "transparent")
+	if img == nil && !hasBackground && !hasBorder {
+		return
+	}
+	xPx := float64(int(math.Round(mmToPx(item.X, dpi))))
+	yPx := float64(int(math.Round(mmToPx(item.Y, dpi))))
+	wPx := float64(int(math.Round(mmToPx(item.W, dpi))))
+	hPx := float64(int(math.Round(mmToPx(item.H, dpi))))
+
+	dc.Push()
+	if item.CornerRadiusMM > 0 {
+		rPx := mmToPx(item.CornerRadiusMM, dpi)
+		dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+	} else {
+		dc.DrawRectangle(xPx, yPx, wPx, hPx)
+	}
+	dc.Clip()
+
+	if hasBackground {
+		dc.SetColor(parseColor(bgColor))
+		if item.CornerRadiusMM > 0 {
+			rPx := mmToPx(item.CornerRadiusMM, dpi)
+			dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+		} else {
+			dc.DrawRectangle(xPx, yPx, wPx, hPx)
+		}
+		dc.Fill()
+	}
+
+	if img != nil {
+		drawX, drawY := xPx, yPx
+		if isQuarterRotation(item.Rotation) {
+			drawX = xPx + (wPx-float64(img.Bounds().Dx()))/2
+			drawY = yPx + (hPx-float64(img.Bounds().Dy()))/2
+		}
+		dc.DrawImage(img, int(drawX), int(drawY))
+	}
+	dc.ResetClip()
+	dc.Pop()
+
+	if hasBorder {
+		bPx := mmToPx(item.BorderWidthMM, dpi)
+		rPx := mmToPx(item.CornerRadiusMM, dpi)
+		dc.SetColor(parseColor(borderColor))
+		dc.SetLineWidth(bPx)
+		dc.DrawRoundedRectangle(xPx, yPx, wPx, hPx, rPx)
+		dc.Stroke()
+	}
+}
+
+func TestDrawItemImage_RectFastPathMatchesClipPath(t *testing.T) {
+	dpi := 100 // 10 بكسل/مم
+
+	// صورة اختبار: ألوان حادة + بكسلات شبه شفافة لفحص مزج Over وحواف القص.
+	blue := color.NRGBA{R: 30, G: 90, B: 220, A: 255}
+	semi := color.NRGBA{R: 255, G: 140, B: 0, A: 128}
+	img60x30 := imaging.New(60, 30, blue)
+	for y := 0; y < 30; y++ {
+		for x := 0; x < 60; x++ {
+			if (x+y)%3 == 0 {
+				img60x30.Set(x, y, semi)
+			}
+		}
+	}
+	img80x60 := imaging.New(80, 60, color.NRGBA{R: 20, G: 160, B: 60, A: 255})
+	img20x20 := imaging.New(20, 20, color.NRGBA{R: 200, G: 30, B: 30, A: 255})
+	img40x20 := imaging.New(40, 20, color.NRGBA{R: 90, G: 40, B: 200, A: 255})
+	empty := image.NewRGBA(image.Rect(5, 5, 5, 5)) // حدود فارغة — لا تقاطع
+
+	cases := []struct {
+		name string
+		item domain.PrintItem
+		img  image.Image
+	}{
+		{name: "rect-basic", item: domain.PrintItem{X: 1, Y: 1, W: 6, H: 4}, img: img60x30},
+		{name: "img-larger-than-slot", item: domain.PrintItem{X: 2, Y: 1, W: 3, H: 3}, img: img80x60},
+		{name: "img-smaller-than-slot", item: domain.PrintItem{X: 1, Y: 1, W: 8, H: 8}, img: img20x20},
+		{name: "quarter-90-legacy-centering", item: domain.PrintItem{X: 1, Y: 1, W: 4, H: 6, Rotation: 90}, img: img40x20},
+		{name: "quarter-270-legacy-centering", item: domain.PrintItem{X: 1, Y: 1, W: 4, H: 6, Rotation: 270}, img: img40x20},
+		{name: "background-under-image", item: domain.PrintItem{X: 1, Y: 1, W: 5, H: 5, BgColor: "#3366cc"}, img: img20x20},
+		{name: "border-only", item: domain.PrintItem{X: 2, Y: 2, W: 5, H: 4, BorderWidthMM: 0.5, BorderColor: "#cc3366"}},
+		{name: "bg-border-partial-outside", item: domain.PrintItem{X: 6, Y: 2, W: 5, H: 4, BgColor: "#eeeeee", BorderWidthMM: 0.3, BorderColor: "#112233"}, img: img60x30},
+		{name: "empty-bounds-no-draw", item: domain.PrintItem{X: 1, Y: 1, W: 4, H: 4, BgColor: "#ffffff"}, img: empty},
+		{name: "rounded-corner-complex-path", item: domain.PrintItem{X: 1, Y: 1, W: 5, H: 5, CornerRadiusMM: 2, BgColor: "#dddddd"}, img: img20x20},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fast := gg.NewContext(120, 90)
+			fast.SetColor(color.White)
+			fast.Clear()
+			drawItemImage(fast, tc.img, tc.item, dpi)
+
+			ref := gg.NewContext(120, 90)
+			ref.SetColor(color.White)
+			ref.Clear()
+			drawItemImageLegacyClipReference(ref, tc.img, tc.item, dpi)
+
+			fi, ri := fast.Image(), ref.Image()
+			for y := 0; y < 90; y++ {
+				for x := 0; x < 120; x++ {
+					if !sameColor(fi.At(x, y), ri.At(x, y)) {
+						t.Fatalf("pixel (%d,%d): fast=%v clip=%v — المسار السريع انحرف عن مسار القص", x, y, fi.At(x, y), ri.At(x, y))
+					}
+				}
 			}
 		})
 	}

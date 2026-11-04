@@ -13,7 +13,11 @@ import {
   ensureTextStrokeFilter,
   getTextStrokeFilterId,
 } from '../src/lib/canvas/text-stroke-filter';
-import { getKonvaFilters } from '../src/lib/filters/konva-filters';
+import {
+  composePixelFilters,
+  getKonvaFilters,
+  type ComposedPixelFilter,
+} from '../src/lib/filters/konva-filters';
 import {
   applyLuminanceThreshold,
   applyNearestPixelate,
@@ -22,6 +26,7 @@ import {
 } from '../src/lib/filters/pixel-filters';
 import { CanvasElementSchema } from '../src/lib/schema';
 import { buildAdjustmentCSS, buildCSSFilter } from '../src/lib/utils';
+import type { Filter, FilterFunction } from 'konva/lib/Node';
 
 describe('Canvas Core Rendering & Image Algorithms', () => {
   describe('Morphological Text Stroke Filter (ensureTextStrokeFilter)', () => {
@@ -127,15 +132,146 @@ describe('Canvas Core Rendering & Image Algorithms', () => {
       const konvaFilters = Konva.Filters as unknown as Record<string, unknown>;
       const res = getKonvaFilters({ filter: 'pixelate', brightness: 130 });
 
-      const brightnessAt = res.filters.indexOf(
-        konvaFilters.Brightness as unknown as (typeof res.filters)[number],
+      // H1: المركّب الواحد يمثل التسلسل القديم — الترتيب محفوظ حرفياً في composedFrom
+      expect(res.filters).toHaveLength(1);
+      const composed = res.filters[0] as unknown as ComposedPixelFilter;
+      const source = composed.composedFrom;
+      const brightnessAt = source.indexOf(
+        konvaFilters.Brightness as unknown as (typeof source)[number],
       );
-      const pixelateAt = res.filters.indexOf(
-        konvaFilters.NearestNeighborPixelate as unknown as (typeof res.filters)[number],
+      const pixelateAt = source.indexOf(
+        konvaFilters.NearestNeighborPixelate as unknown as (typeof source)[number],
       );
 
       expect(brightnessAt).toBeGreaterThanOrEqual(0);
       expect(pixelateAt).toBeGreaterThan(brightnessAt);
+    });
+  });
+
+  // H1 — المركّب البكسلي بتمريرة واحدة: النتيجة يجب أن تطابق التطبيق
+  // المتسلسل القديم (حلقة Konva في Node._getCachedSceneCanvas) بكسلياً
+  // بتطابق تام على حالات الحافة. الوكالة الموثقة: حلقة Konva تمرر نفس كائن
+  // ImageData للفلاتر المتتالية وputImageData الوسيطة لا يعدّله ولا تُقرأ
+  // بإعادة getImageData داخل الحلقة — لذا المحاكاة الأمينة للمسار القديم هي
+  // استدعاء الفلاتر متتاليةً على نفس الـ ImageData.
+  describe('composePixelFilters — pixel parity with the legacy sequential pass', () => {
+    /** عقدة وهمية تقرأ منها الفلاتر attrs (نفس آلية filter.call(node, imageData)) */
+    const fakeNode = {
+      sepiaRatio: () => 0.1,
+      brightness: () => 1.06,
+      contrast: () => -6,
+      saturation: () => 0.08,
+      blurRadius: () => 4,
+      pixelSize: () => 10,
+      threshold: () => 0.5,
+    } as unknown as Konva.Node;
+
+    interface FakeImageData {
+      width: number;
+      height: number;
+      data: Uint8ClampedArray;
+    }
+
+    /** بذرة حتمية تغطي: شفافية كاملة/جزئية، بشرة دافئة، تشبع عالٍ، حواف 0/255 */
+    function makeImageData(w: number, h: number, seed: number): FakeImageData {
+      const data = new Uint8ClampedArray(w * h * 4);
+      let s = seed >>> 0;
+      for (let p = 0; p < w * h; p++) {
+        s = (Math.imul(s, 1103515245) + 12345) >>> 0;
+        const i = p * 4;
+        data[i] = p % 11 === 0 ? 0 : p % 7 === 0 ? 255 : (s >> 16) & 0xff;
+        data[i + 1] = p % 13 === 0 ? 0 : (s >> 8) & 0xff;
+        data[i + 2] = p % 17 === 0 ? 255 : s & 0xff;
+        data[i + 3] = p % 3 === 0 ? 0 : p % 5 === 0 ? 128 : 255;
+      }
+      return { width: w, height: h, data };
+    }
+
+    function expectPixelIdentical(filters: Filter[]) {
+      const composed = composePixelFilters(filters);
+      expect(composed).not.toBeNull();
+
+      const legacyImg = makeImageData(24, 18, 987654321);
+      const composedImg = makeImageData(24, 18, 987654321);
+
+      // المسار القديم: فلتر فلتر على نفس ImageData (كما تفعل حلقة Konva)
+      for (const f of filters)
+        (f as FilterFunction).call(fakeNode, legacyImg as unknown as ImageData);
+      // المسار الجديد: فلتر واحد مركّب
+      composed!.call(fakeNode, composedImg as unknown as ImageData);
+
+      expect(composedImg.data).toEqual(legacyImg.data);
+    }
+
+    it('matches the legacy pass exactly for the skinGlow color chain over transparency', () => {
+      const konvaFilters = Konva.Filters as unknown as Record<string, Filter>;
+      // وصفة skinGlow الحرفية: سبيا 0.1 + سطوع 106% + تباين 94% + تشبع 108%
+      expectPixelIdentical([
+        konvaFilters.SepiaBlend!,
+        konvaFilters.Brightness!,
+        konvaFilters.Contrast!,
+        konvaFilters.Saturation!,
+      ]);
+    });
+
+    it('matches the legacy pass exactly for extreme saturation with clamped edges', () => {
+      const konvaFilters = Konva.Filters as unknown as Record<string, Filter>;
+      const savedSaturation = (fakeNode as unknown as { saturation: () => number }).saturation;
+      (fakeNode as unknown as { saturation: () => number }).saturation = () => 2.5;
+      try {
+        expectPixelIdentical([konvaFilters.Saturation!, konvaFilters.Contrast!]);
+      } finally {
+        (fakeNode as unknown as { saturation: () => number }).saturation = savedSaturation;
+      }
+    });
+
+    it('keeps Blur as its own standalone pass: color → blur → color stays pixel-identical', () => {
+      const konvaFilters = Konva.Filters as unknown as Record<string, Filter>;
+      expectPixelIdentical([
+        konvaFilters.Brightness!,
+        Konva.Filters.Blur as Filter,
+        konvaFilters.Saturation!,
+      ]);
+    });
+
+    it('keeps NearestNeighborPixelate as its own pass between color filters', () => {
+      const konvaFilters = Konva.Filters as unknown as Record<string, Filter>;
+      expectPixelIdentical([
+        konvaFilters.Brightness!,
+        konvaFilters.NearestNeighborPixelate!,
+        konvaFilters.Contrast!,
+      ]);
+    });
+
+    it('returns the composed wrapper carrying the original order and skips composing a single filter', () => {
+      const konvaFilters = Konva.Filters as unknown as Record<string, Filter>;
+      const chain = [konvaFilters.SepiaBlend!, konvaFilters.Brightness!, konvaFilters.Contrast!];
+      const composed = composePixelFilters(chain);
+      expect(composed).not.toBeNull();
+      expect(composed!.composedFrom).toEqual(chain);
+      expect(composed!.composedFrom.length).toBe(3);
+
+      // فلتر واحد: لا مركّب (Konva يدفع putImageData واحداً أصلاً)
+      expect(composePixelFilters([konvaFilters.Brightness!])).toBeNull();
+      expect(composePixelFilters([])).toBeNull();
+    });
+
+    it('getKonvaFilters hands the node a single composed filter for multi-filter recipes', () => {
+      const konvaFilters = Konva.Filters as unknown as Record<string, Filter>;
+      // skinGlow: 4 فلاتر لونية → مركّب واحد؛ الترتيب الداخلي = ترتيب Go
+      const glow = getKonvaFilters({ filter: 'skinGlow' });
+      expect(glow.filters).toHaveLength(1);
+      expect((glow.filters[0] as unknown as ComposedPixelFilter).composedFrom).toEqual([
+        konvaFilters.SepiaBlend!,
+        konvaFilters.Brightness!,
+        konvaFilters.Contrast!,
+        konvaFilters.Saturation!,
+      ]);
+
+      // الوصفة أحادية الفلتر تبقى كما هي بلا تغليف
+      const mono = getKonvaFilters({ filter: 'threshold' });
+      expect(mono.filters).toHaveLength(1);
+      expect(mono.filters[0]).toBe(konvaFilters.LuminanceThreshold!);
     });
   });
 

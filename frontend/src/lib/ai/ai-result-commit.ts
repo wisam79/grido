@@ -73,6 +73,10 @@ export function findLiveAiTarget(id: string): LiveAiTarget | undefined {
  * @param newImageSrc مسار الصورة الناتجة.
  * @param onUpdate مُطبّق الرقعة (يميّز العنصر عن الخانة عند المستدعي).
  * @param resize أبعاد اختيارية لتحويل إزاحات الكولاج الحيّة مع تبديل الصورة؛ المستدعون السابقون دونها لا يتغيرون.
+ * @param isActive معيار اختياري لنشاط جلسة العملية المالكة للنتيجة (مرجع جلسة
+ * الإلغاء الصادق في use-bg-removal): إن مُرِّر وعاد `false` يُرفض الcommit قبل
+ * أي تطبيق أو خطوة تراجع وتُعاد `'not-found'`. المستدعون السابقون دون هذا
+ * المعامل لا يتغيّر عقدُهم إطلاقاً.
  * @returns حالة التطبيق ليتولّى كل خطاف رسالة المستخدم المناسبة.
  * @throws عند أبعاد أو إزاحات غير صالحة، قبل أي تطبيق أو خطوة تراجع.
  */
@@ -81,7 +85,10 @@ export function commitAiImageResult(
   newImageSrc: string,
   onUpdate: (id: string, patch: AiImagePatch) => void,
   resize?: AiImageResize,
+  isActive?: () => boolean,
 ): AiImageCommitStatus {
+  // 🛡️ معيار النشاط: جلسة ملغاة أو مُهجورة (ليست الأحدث) → لا تطبيق ولا تراجع.
+  if (isActive && !isActive()) return 'not-found';
   const live = findLiveAiTarget(target.id);
   if (!live) return 'not-found';
   if (live.imageSrc !== target.imageSrc) return 'changed';

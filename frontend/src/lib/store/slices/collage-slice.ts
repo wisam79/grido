@@ -91,6 +91,14 @@ export interface CollageSlice {
   setSlotImage: (slotId: string, src: string) => Promise<void>;
   updateSlot: (slotId: string, patch: Partial<CanvasSlot>) => void;
   updateSlotsBatch: (slotIds: string[], patch: Partial<CanvasSlot>) => void;
+  /**
+   * إزاحة دُفعية لمحتوى الخلايا (أسهم تحريك القص): `set()` واحدة عبر `slots.map`
+   * واحدة وخطوة تراجع واحدة لكل نداء عند وجود تغيير فعلي — بدل `updateSlot`
+   * لكل خلية وكل نداء يمسح مصفوفة slots كاملة. الخلايا التي لا تتغير إزاحتها
+   * تبقى بمرجعها (no-op بلا نشر)، والنداءات المتتالية المنفصلة لا تُدمج
+   * (كل حدث مفتاح = لقطة تراجع مستقلة).
+   */
+  applySlotMoves: (moves: Array<{ id: string; dx: number; dy: number }>) => void;
   resizeCollageSlot: (slotId: string, w: number, h: number) => CollageSlotSizeResult;
   applyCollageSlotSizeToAll: (slotId: string) => CollageSlotSizeResult;
   addAdjacentCollageSlot: (
@@ -1050,6 +1058,29 @@ export const createCollageSlice: StateCreator<CollageCross, [], [], CollageSlice
     set((state) => ({
       slots: state.slots.map((sl: CanvasSlot) => (idSet.has(sl.id) ? { ...sl, ...patch } : sl)),
     }));
+  },
+
+  // 🚀 إزاحة دُفعية لمحتوى الخلايا (أسهم تحريك القص): map واحدة + set واحدة +
+  // خطوة تراجع واحدة لكل حدث مفتاح عند وجود تغيير فعلي. الخلية التي لا تتغير
+  // إزاحتها تبقى بمرجعها، والنداء بلا أي تغيير فعلي لا يدفع سجلاً ولا ينشر.
+  applySlotMoves: (moves) => {
+    if (moves.length === 0) return;
+    const state = get();
+    const moveById = new Map(moves.map((move) => [move.id, move] as const));
+    let changed = false;
+    const slots = state.slots.map((sl) => {
+      const move = moveById.get(sl.id);
+      if (!move || (move.dx === 0 && move.dy === 0)) return sl;
+      changed = true;
+      return {
+        ...sl,
+        dragX: (sl.dragX ?? 0) + move.dx,
+        dragY: (sl.dragY ?? 0) + move.dy,
+      };
+    });
+    if (!changed) return;
+    set({ slots });
+    get().pushHistory();
   },
 
   resizeCollageSlot: (slotId, w, h) => {

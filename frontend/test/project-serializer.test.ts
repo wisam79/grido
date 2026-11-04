@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { useEditorStore } from '../src/lib/editor-store';
 import { hydrateProjectState, makeUniqueId } from '../src/lib/io/project-hydrator';
 import {
+  buildProjectDocument,
   serializeEditorState,
   deserializeProjectFile,
   migrateProject,
@@ -63,6 +64,41 @@ describe('project-serializer - Project Serialization and Migration Tests', () =>
     expect(serialized.canvasWidth).toBe(1200);
     expect(serialized.backgroundColor).toBe('#FFFFFF');
     expect(serialized.showGrid).toBe(false);
+  });
+
+  it('builds a stable content fingerprint — equal content yields equal buildProjectDocument despite different savedAt', () => {
+    const docA = buildProjectDocument(mockEditorState as EditorState);
+    const docB = buildProjectDocument(mockEditorState as EditorState);
+
+    // بنية المستند الثابتة لا تحمل metadata الزمنية أصلاً — savedAt خارجها
+    expect('savedAt' in docA).toBe(false);
+    expect(JSON.stringify(docA)).toBe(JSON.stringify(docB));
+
+    // الختم الزمني يحدث في serializeEditorState (الكتابة) فقط — ومحتوى مكافئ
+    // بتاريخين مختلفين يعطي البصمة الثابتة نفسها، وهي أساس تخطي الحفظ
+    // التلقائي المكافئ والمقارنة بعد الحفظ اليدوي.
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-11-05T10:00:00Z'));
+      const stampedMorning = serializeEditorState(mockEditorState as EditorState);
+      vi.setSystemTime(new Date('2026-11-05T18:30:00Z'));
+      const stampedEvening = serializeEditorState(mockEditorState as EditorState);
+
+      expect(stampedMorning.savedAt).not.toBe(stampedEvening.savedAt);
+      expect(JSON.stringify({ ...stampedMorning, savedAt: undefined })).toBe(
+        JSON.stringify({ ...stampedEvening, savedAt: undefined }),
+      );
+      // البصمة المختومة تطابق بنية buildProjectDocument تماماً بعد إسقاط التاريخ
+      expect(JSON.stringify({ ...stampedMorning, savedAt: undefined })).toBe(JSON.stringify(docA));
+    } finally {
+      vi.useRealTimers();
+    }
+
+    // توافق القراءة 100%: بنية بلا savedAt تمر بالسكيما كما هي (savedAt optional)
+    expect(() => deserializeProjectFile(docA)).not.toThrow();
+    const roundTripped = deserializeProjectFile(docA);
+    expect(roundTripped.mode).toBe('collage');
+    expect(roundTripped.canvasWidth).toBe(1200);
   });
 
   it('should persist autofill images and pending overflow through file and DB round-trips', () => {

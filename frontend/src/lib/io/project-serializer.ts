@@ -26,14 +26,18 @@ export const ProjectFileSchema = ProjectSchema.extend({
 
 export type ProjectFileV1 = z.infer<typeof ProjectFileSchema>;
 
-// Serialization from Editor Store state
-export function serializeEditorState(
+/**
+ * بنية المستند الثابتة دون metadata الزمنية (savedAt) — المصدر الواحد لبنية
+ * ملف المشروع. تُستهلك من الكتابة النهائية ومن بصمة الحفظ التلقائي المستقرة:
+ * مقارنة «هل تغيّر المحتوى فعلاً؟» تتم عبر هذه البنية بلا savedAt كي لا يولّد
+ * مرور الزمن وحده بصمة جديدة فيُكتب ملف مكافئ مرتين.
+ */
+export function buildProjectDocument(
   state: EditorState,
   embeddedAssets?: Record<string, string>,
-): ProjectFileV1 {
-  const projectFile: ProjectFileV1 = {
+): Omit<ProjectFileV1, 'savedAt'> {
+  const projectFile: Omit<ProjectFileV1, 'savedAt'> = {
     version: CURRENT_PROJECT_VERSION,
-    savedAt: new Date().toISOString(),
     // 🛡️ معرّف المشروع في المكتبة: بدونه كانت المسودة المستعادة تُحمَّل بـ
     // projectId=null فيطبعها الحفظ التالي كمشروع جديد كل مرة (تكرار في المكتبة)
     projectId: state.projectId ?? null,
@@ -100,6 +104,16 @@ export function serializeEditorState(
     collageStrokeColor: state.collageStrokeColor,
   };
   return projectFile;
+}
+
+// الكتابة الحالية: تبني المستند الثابت ثم تختم savedAt — تُستدعى فقط عند
+// كتابة مقبولة فعلاً (حفظ يدوي/تفريغ/مسودة تجاوزت فحص القبول)، أما مقارنات
+// التخطي فتستخدم buildProjectDocument كي لا يُولَّد تاريخ جديد بلا كتابة.
+export function serializeEditorState(
+  state: EditorState,
+  embeddedAssets?: Record<string, string>,
+): ProjectFileV1 {
+  return { ...buildProjectDocument(state, embeddedAssets), savedAt: new Date().toISOString() };
 }
 
 // Migration from legacy or unknown structures to current version

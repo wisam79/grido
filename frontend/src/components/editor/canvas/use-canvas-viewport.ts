@@ -157,6 +157,9 @@ export function useCanvasViewport(
   const stagePosRef = useRef(stagePos);
   const wheelCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // زوم العجلة يُطبَّق على المسرح فوراً ويُثبَّت في المتجر بعد هدوء الإيماءة.
+  // الهدف المعلق هو أساس تراكم إطارات الإيماءة نفسها، ويُصرَّف عند: اكتمال
+  // مؤقت التثبيت، تبديل نوع الإيماءة (زوم↔تحريك)، إعادة التوسيط، وإلغاء المكون —
+  // بتركه معلقاً كان الإطار التالي يعود لقيمة ملتزمة قديمة فيفقد التراكم (إصلاح Bug#2).
   const pendingZoomRef = useRef<number | null>(null);
   const initialPanPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -309,7 +312,10 @@ export function useCanvasViewport(
 
         const factor = Math.exp(-wheelZoomDelta * 0.003);
         const state = useEditorStore.getState();
-        const currentZ = state.canvasZoom;
+        // 🚀 أساس التراكم: الهدف المعلق للإطار السابق (إن وجد) وليس الزوم الملتزم
+        // في المتجر — state.canvasZoom لا يتحدّث إلا عند التثبيت بعد هدوء الإيماءة،
+        // فكان إطاران بعاملي f1 وf2 ينتجان z0*f2 بدل z0*f1*f2 (إصلاح Bug#2).
+        const currentZ = pendingZoomRef.current ?? state.canvasZoom;
         const nextZ = clampZoomRaw(currentZ * factor);
 
         const nextMetrics = computeCanvasDisplay({
@@ -415,6 +421,14 @@ export function useCanvasViewport(
           }
         }
       } else if (wheelPanX !== 0 || wheelPanY !== 0) {
+        // 🧭 تبديل نوع الإيماءة (زوم ← تحريك): صرّف الهدف المعلق بكتابة واحدة —
+        // مؤقت تثبيت الزوم كان يُستبدل بمؤقت التمرير هنا فلا يُثبَّت الزوم
+        // أبداً ويبقى الهدف المعلق قديماً كأساس للإيماءة التالية.
+        if (pendingZoomRef.current !== null) {
+          const settledZoom = pendingZoomRef.current;
+          pendingZoomRef.current = null;
+          setCanvasZoom(settledZoom);
+        }
         // تمرير إجرائي فوري وسلس (Konva Fast-Path) بلا ارتعاش وبلا رندر متكرر
         const currentStagePos = stagePosRef.current;
         const curW = displayWRef.current;
@@ -566,6 +580,8 @@ export function useCanvasViewport(
         clearTimeout(wheelCommitTimerRef.current);
         wheelCommitTimerRef.current = null;
       }
+      // إلغاء المكون: تصفير الهدف المعلق كي لا يتسرب أساس زوم قديم لمثيل جديد.
+      pendingZoomRef.current = null;
       resetRulerTransforms();
       node.removeEventListener('wheel', handleWheel);
       node.removeEventListener('pointerdown', handlePointerDown);
@@ -587,6 +603,9 @@ export function useCanvasViewport(
         clearTimeout(wheelCommitTimerRef.current);
         wheelCommitTimerRef.current = null;
       }
+      // إعادة التعيين تتكفل بالزوم والملاءمة — الهدف المعلق المعطّل يجب تصفيره
+      // حتى لا يعود أساساً قديماً لإيماءة عجلة تالية.
+      pendingZoomRef.current = null;
       const vW = viewportSizeRef.current.w;
       const vH = viewportSizeRef.current.h;
       const curW = displayWRef.current;
@@ -631,6 +650,7 @@ export function useCanvasViewport(
         clearTimeout(wheelCommitTimerRef.current);
         wheelCommitTimerRef.current = null;
       }
+      pendingZoomRef.current = null;
       const vW = viewportSize.w;
       const vH = viewportSize.h;
       const target = typeof pos === 'function' ? pos(stagePos) : pos;
@@ -661,6 +681,7 @@ export function useCanvasViewport(
         clearTimeout(wheelCommitTimerRef.current);
         wheelCommitTimerRef.current = null;
       }
+      pendingZoomRef.current = null;
       const curOrigin = computeDefaultStageOrigin(
         displayWRef.current,
         displayHRef.current,

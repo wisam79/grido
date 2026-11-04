@@ -444,6 +444,14 @@ describe('KonvaCollageImage — إطار الصورة داخل الخانة (ف�
     const capture = captureStageBlob(stage, 2, 'image/png', 1, undefined, {
       useFullResolution: true,
     });
+    // ملكية الصور: captureStageBlob ينتظر جلب الأصول الغائبة عن الخريطة
+    // (preloadImagesForFullResolution) قبل الترقية المتزامنة — فاستدعاء
+    // cache() الترقية نفسه يقع بعد أول await داخل الالتقاط لا قبله. نفرّغ
+    // المهام الدقيقة أولاً ليلتقط القياس القياسي بعد اكتمال الترقية، ثم
+    // نتحقق أن تقدم مؤقت القص خلال الالتقاط لا يضيف أي cache() إضافي.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
     const captureCalls = cache.mock.calls.length;
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1500);

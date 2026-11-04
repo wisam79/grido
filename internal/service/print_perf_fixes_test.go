@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -432,5 +433,103 @@ func TestSharedRawCache_ByteBudgetEviction(t *testing.T) {
 	sharedRawCache.RUnlock()
 	if total != 4 || count != 1 {
 		t.Errorf("re-put same key: totalBytes=%d count=%d, want 4 and 1 (old bytes must be deducted)", total, count)
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🧠 دفعة الأداء C2 — ميزانية بايتات كاش المعالجة: كانت 16 صورة بلا حد بايتات
+// (16 × 100MP RGBA ≈ 6.4GB أسوأ حالة). الطرد بأقدم الوصول عند تجاوز أي سقف،
+// والصور المشتركة (نفس المؤشر تحت مفتاحين) بعدّ مرة واحدة فقط.
+// ─────────────────────────────────────────────────────────────────────────────
+
+func TestProcessedCache_ByteBudgetEviction(t *testing.T) {
+	origBudget := processedCacheMaxBytes
+	defer func() { processedCacheMaxBytes = origBudget }()
+
+	newCache := func() *processedCache {
+		return &processedCache{
+			images: make(map[processedKey]image.Image),
+			access: make(map[processedKey]time.Time),
+		}
+	}
+	key := func(n string) processedKey { return processedKey{filePath: n} }
+	img := func() image.Image { return image.NewNRGBA(image.Rect(0, 0, 2, 2)) } // 16 بايتاً
+
+	// ميزانية 40 بايتاً: إدخالان معاً (32) يمران، الثالث يطرد الأقدم.
+	processedCacheMaxBytes = 40
+	c := newCache()
+	c.put(key("a"), img())
+	time.Sleep(2 * time.Millisecond)
+	c.put(key("b"), img())
+	c.mu.RLock()
+	if len(c.images) != 2 || c.totalBytes != 32 {
+		c.mu.RUnlock()
+		t.Fatalf("after two puts: count=%d bytes=%d, want 2 and 32", len(c.images), c.totalBytes)
+	}
+	c.mu.RUnlock()
+	time.Sleep(2 * time.Millisecond)
+	c.put(key("c"), img())
+	c.mu.RLock()
+	count, total := len(c.images), c.totalBytes
+	_, hasA := c.images[key("a")]
+	_, hasB := c.images[key("b")]
+	_, hasC := c.images[key("c")]
+	c.mu.RUnlock()
+	if count != 2 || total != 32 || hasA || !hasB || !hasC {
+		t.Fatalf("budget eviction: count=%d bytes=%d hasA=%v hasB=%v hasC=%v — الأقدم يجب أن يُطرد أولًا", count, total, hasA, hasB, hasC)
+	}
+
+	// الاستبدال على مفتاح قائم لا يراكم البايتات (دفاعية: singleflight يمنعه أصلاً).
+	same := img()
+	c2 := newCache()
+	c2.put(key("k"), same)
+	c2.put(key("k"), same)
+	c2.mu.RLock()
+	total2, count2 := c2.totalBytes, len(c2.images)
+	c2.mu.RUnlock()
+	if total2 != 16 || count2 != 1 {
+		t.Fatalf("re-put same key: bytes=%d count=%d, want 16 and 1", total2, count2)
+	}
+
+	// 🔁 الصورة المشتركة (نفس المؤشر تحت مفتاحين): بعدّ مرة واحدة، وإزاحة
+	// مرجع واحد لا تخصم بايتاتها، وإزاحة الأخيرة تخصمها كاملة.
+	c3 := newCache()
+	shared := img()
+	c3.put(key("s1"), shared)
+	c3.put(key("s2"), shared) // نفس المؤشر — بلا بايتات إضافية
+	c3.mu.RLock()
+	total3 := c3.totalBytes
+	c3.mu.RUnlock()
+	if total3 != 16 {
+		t.Fatalf("shared instance double-counted: bytes=%d, want 16", total3)
+	}
+	c3.releaseLocked(shared) // إزاحة المرجع الأول (يدوياً كمحرر الإزاحة)
+	c3.mu.RLock()
+	total3b := c3.totalBytes
+	_, hasS2 := c3.images[key("s2")]
+	c3.mu.RUnlock()
+	if total3b != 16 || !hasS2 {
+		t.Fatalf("evicting one ref of shared instance dropped bytes early: bytes=%d hasS2=%v, want 16 and true", total3b, hasS2)
+	}
+	c3.releaseLocked(shared) // آخر مرجع — الخصم الكامل
+	c3.mu.RLock()
+	total3c := c3.totalBytes
+	c3.mu.RUnlock()
+	if total3c != 0 {
+		t.Fatalf("last ref eviction must clear bytes: bytes=%d, want 0", total3c)
+	}
+
+	// السقف العددي 16 محفوظ كما كان.
+	processedCacheMaxBytes = 1 << 30
+	c4 := newCache()
+	for i := 0; i < 20; i++ {
+		c4.put(key(fmt.Sprintf("n%d", i)), img())
+		time.Sleep(time.Millisecond)
+	}
+	c4.mu.RLock()
+	count4 := len(c4.images)
+	c4.mu.RUnlock()
+	if count4 != 16 {
+		t.Fatalf("count cap: kept %d entries, want 16", count4)
 	}
 }

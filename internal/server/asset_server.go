@@ -96,7 +96,8 @@ func (s *AssetServer) serveThumbnail(w http.ResponseWriter, r *http.Request) {
 	width := 256
 	if rawWidth := r.URL.Query().Get("w"); rawWidth != "" {
 		parsed, err := strconv.Atoi(rawWidth)
-		if err != nil || (parsed != 128 && parsed != 256 && parsed != 512) {
+		// 🖼️ 2048px مشتق العرض الكامل (عرض فقط — القص والتصدير والطباعة على الأصل الكامل)
+		if err != nil || (parsed != 128 && parsed != 256 && parsed != 512 && parsed != 1024 && parsed != 2048) {
 			http.Error(w, "Invalid thumbnail width", http.StatusBadRequest)
 			return
 		}
@@ -461,27 +462,24 @@ func (s *AssetServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			// 🖨️ الجسم يُقرأ كاملاً في الذاكرة بحد+1: أي تجاوز يعني body
-			// ناقصاً أو مفرطاً يُجهض بـ 413 بدل ملف مبتور ناجح ظاهرياً،
-			// ويتيح ذلك نافذة لحقن بيانات الكثافة قبل الالتزام الذري.
-			body, readErr := io.ReadAll(io.LimitReader(r.Body, service.MaxFileSize+1))
-			if readErr != nil {
-				http.Error(w, "Failed to read file: "+readErr.Error(), http.StatusInternalServerError)
+			// 🖨️ كثافة الطباعة: الحقن يجري أثناء النسخ المتدفق إلى الملف الذري
+			// (pHYs لـ PNG قبل أول IDAT / JFIF APP0 لـ JPEG) — بلا قراءة المخرج
+			// كاملاً في الذاكرة، وبلا أي إعادة ترميز أو تغيير بكسل. البايتات
+			// الناتجة مطابقة تماماً لمسار patchImageDPI المخزّني (اختبار
+			// dpi_patch_review يقارن المسارين بيت-بيت).
+			// الجسم محدود بحد+1: أي تجاوز يعني body مفرطاً يُجهض بـ 413
+			// بدل ملف ناجح ظاهرياً (والكتابة الجزئية يجهضها af.Abort).
+			injector := newDPIStreamWriter(af, strings.ToLower(filepath.Ext(filePath)), dpi)
+			written, copyErr := io.Copy(injector, io.LimitReader(r.Body, service.MaxFileSize+1))
+			if cerr := injector.Close(); cerr != nil && copyErr == nil {
+				copyErr = cerr
+			}
+			if copyErr != nil {
+				http.Error(w, "Failed to stream file: "+copyErr.Error(), http.StatusInternalServerError)
 				return
 			}
-			if len(body) > service.MaxFileSize {
+			if written > service.MaxFileSize {
 				http.Error(w, "File exceeds size limit", http.StatusRequestEntityTooLarge)
-				return
-			}
-
-			// 🖨️ كثافة الطباعة: مسار RGB كان يكتب PNG/JPEG كما وردته الواجهة
-			// تماماً بلا بيانات كثافة، فيفترض أدوات الطباعة الخارجية 72/96
-			// DPI وقد تُخرج مقاساً فيزيائياً خاطئاً. الحقن يتم هنا على البايتات
-			// (pHYs لـ PNG / JFIF لـ JPEG) بلا أي إعادة ترميز أو تغيير بكسل.
-			body = patchImageDPI(body, strings.ToLower(filepath.Ext(filePath)), dpi)
-
-			if _, err := af.Write(body); err != nil {
-				http.Error(w, "Failed to write file: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}

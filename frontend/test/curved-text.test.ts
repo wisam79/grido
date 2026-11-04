@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 
-import { drawCurvedText } from '../src/lib/canvas/curved-text-utils';
+import {
+  drawCurvedText,
+  getRetainedScratchArea,
+  getScratchContext,
+} from '../src/lib/canvas/curved-text-utils';
 
 describe('Curved Text Drawing Tests', () => {
   it('does nothing when curve is 0 or text is empty', () => {
@@ -191,5 +195,102 @@ describe('Curved Text Drawing Tests', () => {
     measureSpy.mockClear();
     drawCurvedText(mockCtx, opts);
     expect(measureSpy).toHaveBeenCalledTimes(1);
+  });
+
+  // H3 — سقف المخزون المحتفظ به للكانفس المؤقت (16MP): النمو أعلى-سقف فقط،
+  // والحاجة فوق السقف (أو نمو تاريخي مركب فوق السقف) تستخدم كانفساً مؤقتاً
+  // غير محتفظ به ولا تلمس المخزون الدائم ولا تذبذب بين تصغير وتكبير.
+  // ملاحظة بيئة: jsdom بلا محرك رسم فيعيد getContext('2d') قيمة null وتعود
+  // getScratchContext بقيمة null — لكن تتبّع أبعاد المخزون يتم قبلها وهو محل الفحص.
+  it('caps the retained scratch stock: growth stays under the cap and over-cap needs never raise it', () => {
+    // الملف الحالي لا يمس المخزون في أي اختبار آخر — يبدأ فارغاً
+    expect(getRetainedScratchArea()).toBe(0);
+
+    // 2000×2000 = 4MP ≤ 16MP → يُنشأ مخزون دائم بهذه الحاجة بالضبط
+    expect(getScratchContext(2000, 2000)).toBeNull(); // null = فشل getContext في jsdom فقط
+    expect(getRetainedScratchArea()).toBe(4_000_000);
+
+    // حاجة أصغر: لا انكماش ولا إعادة تخصيص (المخزون يتصاعد فقط)
+    expect(getScratchContext(100, 100)).toBeNull();
+    expect(getRetainedScratchArea()).toBe(4_000_000);
+
+    // نمو ضمن السقف: 3000×3000 = 9MP
+    expect(getScratchContext(3000, 3000)).toBeNull();
+    expect(getRetainedScratchArea()).toBe(9_000_000);
+
+    // حاجة فوق السقف (6000×6000 = 36MP): كانفس مؤقت — المخزون الدائم لم يُمَس
+    expect(getScratchContext(6000, 6000)).toBeNull();
+    expect(getRetainedScratchArea()).toBe(9_000_000);
+
+    // الحاجة نفسها تحت السقف (200×15000 = 3MP) لكن اتحاد الأبعاد التاريخية
+    // 3000×15000 = 45MP فوق السقف → مؤقت ولا نمو دائم (بلا تذبذب)
+    expect(getScratchContext(200, 15000)).toBeNull();
+    expect(getRetainedScratchArea()).toBe(9_000_000);
+  });
+
+  it('draws over-cap unified stroke through the temp canvas path without growing the stock', () => {
+    const before = getRetainedScratchArea();
+
+    // jsdom بلا محرك رسم — نعوض getContext على HTMLCanvasElement ليعيد سياقاً
+    // وهمياً كي يعمل مسار الاستئجار كاملاً (مؤقت فوق السقف + تحرير بعد الرسم).
+    const fakeCanvasCtx = {
+      setTransform: vi.fn(),
+      clearRect: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      fillText: vi.fn(),
+      font: '',
+      textAlign: 'center',
+      textBaseline: 'middle',
+      fillStyle: '#000000',
+    };
+    const ctxSpy = vi
+      .spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockReturnValue(fakeCanvasCtx as unknown as CanvasRenderingContext2D);
+
+    const drawImageSpy = vi.fn();
+    const mockCtx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      fillText: vi.fn(),
+      measureText: vi.fn().mockReturnValue({ width: 3000 }),
+      drawImage: drawImageSpy,
+      filter: 'none',
+      font: '',
+      fillStyle: '#000000',
+    } as unknown as CanvasRenderingContext2D;
+
+    try {
+      drawCurvedText(mockCtx, {
+        text: 'EXPORT',
+        x: 0,
+        y: 0,
+        // صندوق حبر ضخم (خط 20000px على قوس بعرض 5000) → الحاجة بعد مقياس
+        // التصدير تُقيَّد عند MAX_EXPORT_PIXELS (50MP) وهي فوق سقف 16MP
+        width: 5000,
+        height: 5000,
+        fontSize: 20000,
+        fontFamily: 'Cairo',
+        curve: 30,
+        stroke: '#000000',
+        strokeWidth: 40,
+      });
+    } finally {
+      ctxSpy.mockRestore();
+    }
+
+    // المسار الموحّد عمل فعلاً عبر كانفس مستأجر
+    expect(drawImageSpy).toHaveBeenCalledTimes(1);
+    const leased = drawImageSpy.mock.calls[0][0] as HTMLCanvasElement;
+    expect(leased).not.toBeNull();
+    // الكانفس المؤقت يُحرَّر فوراً بعد drawImage بتصفير أبعاده، والمخزون
+    // الدائم لم ينمُّ (ظل عند قيمته قبل الاختبار — النمو أعلى-سقف فقط)
+    expect(leased.width).toBe(0);
+    expect(leased.height).toBe(0);
+    expect(getRetainedScratchArea()).toBe(before);
   });
 });

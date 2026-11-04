@@ -44,7 +44,11 @@ const CROP_EVENTS =
   'cropXChange.filterCache cropYChange.filterCache cropWidthChange.filterCache cropHeightChange.filterCache widthChange.filterCache heightChange.filterCache';
 // سقف بكسلات كاش العقدة الواحدة: عقدة 2480×3508 بنسبة 2.5 تعني 218 MiB —
 // تكفي وحدها لإغراق VRAM. 24MP (≈96 MiB) تحافظ على حِدّة العرض بلا انفجار.
+// H2b: القيمة هي الميزانية الإجمالية لأسطح الكاش الثلاثة (انظر pixelCapRatio
+// أدناه) لا لمسح المشهد وحده.
 const MAX_CACHE_PIXELS = 24_000_000;
+// أرضية نسبة الكاش عند تجاوز العقدة نفسها الميزانية (حتى لا تنزل للصفر).
+const MIN_CACHE_RATIO = 0.25;
 // لا نعيد الكاش للتكبير إلا إذا زادت الحاجة عنه فعلياً بهامش 5%؛ التكبير
 // الطفيف أو التصغير لا يستدعي إعادة خبز (النسخة الأكبر تخدم التصغير بأمان).
 const ZOOM_UPGRADE_MARGIN = 1.05;
@@ -125,10 +129,23 @@ export function useFilterCache({
       const nodeW = typeof node.width === 'function' ? node.width() : 0;
       const nodeH = typeof node.height === 'function' ? node.height() : 0;
 
-      // سقف البكسلات لكل عقدة (يشمل التكبير CSS فلا يتضخم الكاش بلا حد)
-      const pixelCapRatio =
-        nodeW > 0 && nodeH > 0 ? Math.sqrt(MAX_CACHE_PIXELS / (nodeW * nodeH)) : rawRatio;
-      const ratio = Math.max(0.25, Math.min(rawRatio, pixelCapRatio));
+      // 🧮 H2b — سقف واعٍ بالأسطح: كاش Konva يحتفظ بثلاثة كانفسات دائمة لكل
+      // عقدة (فحص node_modules/konva/lib/Node.js → cache() و
+      // _getCachedSceneCanvas): مشهد عند pixelRatio r (W·H·r² بكسل)، وكانفس
+      // فلتر بنفس نسبة r (W·H·r²)، وكانفس إصابة hit عند نسبة 1 (W·H بكسل).
+      // الكلفة التقريبية = 4·W·H·(2r²+1) بايت (4 بايت/بكسل)، والميزانية
+      // MAX_CACHE_PIXELS بكسل أي 4·MAX بايت — لذا نحل 4·W·H·(2r²+1) ≤ 4·MAX:
+      //   r_max = sqrt((MAX/(W·H) − 1) / 2)
+      // (الصيغة القديمة sqrt(MAX/(W·H)) كانت تحسب مسح المشهد وحده فتترك
+      // كانفسي الفلتر والإصابة خارج الميزانية — لعقدة 2480×3508 كانت تسمح
+      // بنسبة 1.66 بينما الميزانية الإجمالية تشترط ≤ 0.94).
+      // العقد الأضخم من الميزانية نفسها تهبط إلى الأرضية MIN_CACHE_RATIO.
+      let pixelCapRatio = rawRatio;
+      if (nodeW > 0 && nodeH > 0) {
+        const surfaceCap = Math.max(0, (MAX_CACHE_PIXELS / (nodeW * nodeH) - 1) / 2);
+        pixelCapRatio = Math.max(MIN_CACHE_RATIO, Math.sqrt(surfaceCap));
+      }
+      const ratio = Math.max(MIN_CACHE_RATIO, Math.min(rawRatio, pixelCapRatio));
 
       // تجنّب إعادة الخبز عند تكبير طفيف: النسخة الحالية كافية بصرياً.
       // تغيّر أبعاد العقدة (تحجيم) يستوجب إعادة خبز مهما كانت النسبة.
@@ -140,6 +157,17 @@ export function useFilterCache({
       }
 
       try {
+        // 🔬 H2a — استنتاج مُحقَّق من المصدر (node_modules/konva/lib/Node.js):
+        // `cache()` يعيد تخصيص الأسطح الثلاث داخلياً في كل استدعاء بلا شرط
+        // (`new SceneCanvas` للمشهد + `new SceneCanvas` 0×0 بـ
+        // willReadFrequently للفلتر + `new HitCanvas` للإصابة) ولا يعيد استخدام
+        // الأسطح القديمة، بل يحذف مدخل CANVAS منها **دون استدعاء
+        // Util.releaseCanvas**. لذلك حذف clearCache() قبل cache() في مسار
+        // إعادة الخبز بسبب قيم الفلاتر فقط لا يقلّص التخصيص المزدوج —
+        // التخصيص الجديد يحدث في cache() أصلاً — بل يؤجل تحرير الأسطح القديمة
+        // إلى جامع القمامة فيرفع ذروة VRAM. الإبقاء على clearCache() أولاً هو
+        // الصحيح: يفرغ الأسطح القديمة فوراً قبل تخصيص الجديدة (الذروة =
+        // الأكبر لا مجموعهما).
         node.clearCache?.();
         if (nodeW > 0 && nodeH > 0) {
           node.cache?.({ x: 0, y: 0, width: nodeW, height: nodeH, pixelRatio: ratio });

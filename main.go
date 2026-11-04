@@ -148,6 +148,8 @@ func main() {
 
 	appInstance := NewApp(repository.NewCustomTemplateRepository(db))
 	appInstance.licenseSvc = licenseSvc
+	// 🧠 جسر العمل الثقيل: توليد ورقة الطباعة يمنع تقليم الذاكرة التلقائي أثناءه
+	service.SetPrintMemoryBridge(appInstance.memorySvc)
 
 	// 🖼️ دعم خيار "فتح باستخدام" وسحب الملفات على أيقونة التطبيق (CLI file open)
 	if len(os.Args) > 1 {
@@ -284,20 +286,17 @@ func main() {
 	appInstance.desktopSvc.SetMainWindow(mainWindow)
 
 	// 🪟 النافذة تُنشأ الآن ظاهرة (Hidden:false + StartState) فلا حاجة لروتين
-	// إظهار مؤجَّل. نكتفي بتأكيد التركيز مرة واحدة وبخنق زمني للتنظيف الأول:
+	// إظهار مؤجَّل. نكتفي بتأكيد التركيز مرة واحدة:
 	// WindowRuntimeReady قد يصل أكثر من مرة (إعادة تحميل/استرجاع WebView2)،
 	// فمرحلة الإقلاع محميّة بـ sync.Once — Once.Do لا يعيد شيئاً أبداً.
+	// 🧹 تقليم ذاكرة الإقلاع مصدره الوحيد MemoryService.StartAutoTrim
+	// (بعد startupTrimDelay) — أُزيل التقليم المزدوج الذي كان هنا، فدورتان
+	// متقاربتان عند الإقلاع هدر بلا فائدة والدمج داخل الخدمة يغطي الباقي.
 	var runtimeReadyOnce sync.Once
 	mainWindow.OnWindowEvent(events.Common.WindowRuntimeReady, func(_ *application.WindowEvent) {
 		runtimeReadyOnce.Do(func() {
 			mainWindow.Show()
 			mainWindow.Focus()
-			// 🧹 تنظيف ذكي لذاكرة الإقلاع بعد استقرار واجهة المستخدم
-			time.AfterFunc(2*time.Second, func() {
-				if appInstance != nil && appInstance.memorySvc != nil {
-					appInstance.memorySvc.TrimNow()
-				}
-			})
 		})
 	})
 

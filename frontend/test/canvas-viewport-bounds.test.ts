@@ -1,11 +1,12 @@
-import { render } from '@testing-library/react';
+import { render, renderHook, act } from '@testing-library/react';
 import React from 'react';
 import { Stage } from 'react-konva';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import {
   clampStagePos,
   computeDefaultStageOrigin,
+  useCanvasViewport,
 } from '../src/components/editor/canvas/use-canvas-viewport';
 import {
   RESET_CANVAS_PAN_EVENT,
@@ -15,6 +16,7 @@ import {
   actualSizeZoomStore,
   resetZoomStore,
 } from '../src/hooks/use-canvas-zoom';
+import { useEditorStore } from '../src/lib/editor-store';
 
 import type Konva from 'konva';
 
@@ -287,5 +289,103 @@ describe('use-canvas-viewport — clampStagePos boundaries', () => {
     expect(handler).toHaveBeenCalledTimes(5);
 
     window.removeEventListener(RESET_CANVAS_PAN_EVENT, handler);
+  });
+});
+
+describe('use-canvas-viewport — تراكم زوم العجلة عبر الهدف المعلق (إصلاح Bug#2)', () => {
+  const rafCallbacks: FrameRequestCallback[] = [];
+
+  beforeEach(() => {
+    installCanvasMock();
+    useEditorStore.getState().reset();
+    vi.useFakeTimers();
+    rafCallbacks.length = 0;
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      rafCallbacks.push(cb);
+      return rafCallbacks.length as unknown as number;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+    useEditorStore.getState().reset();
+  });
+
+  function mountViewport() {
+    const container = document.createElement('div');
+    const inner = document.createElement('div');
+    document.body.appendChild(container);
+    document.body.appendChild(inner);
+    const view = renderHook(() =>
+      useCanvasViewport(
+        { current: container } as React.RefObject<HTMLDivElement | null>,
+        { current: inner } as React.RefObject<HTMLDivElement | null>,
+      ),
+    );
+    return {
+      container,
+      unmount: () => {
+        view.unmount();
+        container.remove();
+        inner.remove();
+      },
+    };
+  }
+
+  function dispatchWheel(node: HTMLElement, opts: { x?: number; y?: number; ctrl?: boolean }) {
+    const event = new MouseEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      ctrlKey: opts.ctrl ?? false,
+    });
+    Object.defineProperty(event, 'deltaX', { value: opts.x ?? 0 });
+    Object.defineProperty(event, 'deltaY', { value: opts.y ?? 0 });
+    node.dispatchEvent(event);
+  }
+
+  function flushLatestFrame() {
+    const cb = rafCallbacks[rafCallbacks.length - 1];
+    act(() => {
+      cb(16);
+    });
+  }
+
+  it('يزوم إطاران بعاملين f1 وf2 بتراكم أسي كامل: z0*f1*f2 لا z0*f2', () => {
+    useEditorStore.setState({ canvasZoom: 2 });
+    const { container, unmount } = mountViewport();
+
+    dispatchWheel(container, { y: -100, ctrl: true });
+    flushLatestFrame(); // الإطار الأول: 2 * e^0.3
+    dispatchWheel(container, { y: -100, ctrl: true });
+    flushLatestFrame(); // الإطار الثاني: (2 * e^0.3) * e^0.3 — الأساس المعلق لا القيمة الملتزمة
+
+    // بلا أي كتابة زوم لكل إطار — قيمة المتجر ما تزال الملتزمة القديمة
+    expect(useEditorStore.getState().canvasZoom).toBe(2);
+
+    act(() => {
+      vi.advanceTimersByTime(150); // اكتمال مؤقت التثبيت (100ms)
+    });
+
+    // السلوك المعيب كان يعطي 2 * e^0.3 ≈ 2.7 — التراكم الصحيح 2 * e^0.6 ≈ 3.644
+    expect(useEditorStore.getState().canvasZoom).toBeCloseTo(2 * Math.exp(0.6), 9);
+    unmount();
+  });
+
+  it('يصرّف الهدف المعلق بكتابة واحدة عند تبديل الإيماءة من زوم إلى تحريك', () => {
+    useEditorStore.setState({ canvasZoom: 2 });
+    const { container, unmount } = mountViewport();
+
+    dispatchWheel(container, { y: -100, ctrl: true });
+    flushLatestFrame(); // هدف معلق: 2 * e^0.3 ومؤقت تثبيت 100ms مسلّح
+    expect(useEditorStore.getState().canvasZoom).toBe(2); // لم يُثبَّت بعد
+
+    dispatchWheel(container, { x: 40 }); // تحريك بلا Ctrl — مؤقت الزوم سيُستبدل بمؤقت التمرير
+    flushLatestFrame();
+
+    // الزوم المطبَّق على المسرح فعلياً يُثبَّت فوراً بكتابة واحدة عند التبديل
+    expect(useEditorStore.getState().canvasZoom).toBeCloseTo(2 * Math.exp(0.3), 9);
+    unmount();
   });
 });

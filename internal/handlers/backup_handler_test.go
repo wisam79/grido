@@ -104,3 +104,84 @@ func TestBackupHandler_ExportAndImport(t *testing.T) {
 		t.Errorf("expected 0 projects after reset, got %d", len(all))
 	}
 }
+
+// TestBackupHandler_ExportBackupToFile يغطي عقد IPC الجديد: الكتابة المباشرة
+// إلى ملف مطابقة لمخرج ExportBackup وصالحة لإعادة الاستيراد
+func TestBackupHandler_ExportBackupToFile(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("failed to open test db: %v", err)
+	}
+	_ = db.AutoMigrate(&domain.Project{})
+
+	repo := repository.NewProjectRepository(db)
+	licenseRepo := repository.NewLicenseRepository(db)
+	handler := NewBackupHandler(service.NewBackupService(repo, licenseRepo))
+
+	// 1. مكتبة فارغة: الملف يحوي "[]" مطابقاً لعقد ExportBackup
+	expected, err := handler.ExportBackup()
+	if err != nil {
+		t.Fatalf("failed to export backup: %v", err)
+	}
+	if expected != "[]" {
+		t.Fatalf("expected empty export \"[]\", got %q", expected)
+	}
+
+	backupDir := t.TempDir()
+	backupPath := filepath.Join(backupDir, "grido-backup.json")
+	if err := handler.ExportBackupToFile(backupPath); err != nil {
+		t.Fatalf("ExportBackupToFile failed on empty library: %v", err)
+	}
+	data, err := os.ReadFile(backupPath)
+	if err != nil {
+		t.Fatalf("failed to read exported file: %v", err)
+	}
+	if string(data) != expected {
+		t.Errorf("expected file content %q, got %q", expected, data)
+	}
+
+	// 2. مكتبة بمشروع: مطابقة بايت-ب-بايت مع ExportBackup وصلاحية الاستيراد
+	proj := domain.Project{ID: "p-file-1", Name: "File Export Item"}
+	if err := repo.Save(&proj); err != nil {
+		t.Fatalf("failed to save project: %v", err)
+	}
+
+	expected, err = handler.ExportBackup()
+	if err != nil {
+		t.Fatalf("failed to export backup: %v", err)
+	}
+	if err := handler.ExportBackupToFile(backupPath); err != nil {
+		t.Fatalf("ExportBackupToFile failed: %v", err)
+	}
+	data, err = os.ReadFile(backupPath)
+	if err != nil {
+		t.Fatalf("failed to read exported file: %v", err)
+	}
+	if string(data) != expected {
+		t.Errorf("ExportBackupToFile output must byte-match ExportBackup output")
+	}
+
+	if _, err := handler.ImportBackup(string(data), "overwrite"); err != nil {
+		t.Fatalf("importing the exported file failed: %v", err)
+	}
+	retrieved, _ := repo.FindByID("p-file-1")
+	if retrieved == nil || retrieved.Name != "File Export Item" {
+		t.Error("expected project to be restored from exported file")
+	}
+
+	// 3. مسار فارغ مرفوض
+	if err := handler.ExportBackupToFile(""); err == nil {
+		t.Error("expected error for empty backup export path")
+	}
+
+	// 4. لا بقايا ملفات مؤقتة .tmp
+	entries, err := os.ReadDir(backupDir)
+	if err != nil {
+		t.Fatalf("failed to read backup dir: %v", err)
+	}
+	for _, e := range entries {
+		if filepath.Ext(e.Name()) == ".tmp" {
+			t.Errorf("leftover temp file %q after atomic export", e.Name())
+		}
+	}
+}

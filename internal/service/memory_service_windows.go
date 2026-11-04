@@ -3,9 +3,10 @@
 package service
 
 import (
+	"log/slog"
 	"os"
-	"runtime"
 	"runtime/debug"
+	"time"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -22,8 +23,11 @@ func trimProcessHandle(h windows.Handle) {
 }
 
 func trimPlatformMemory() {
-	// 1. Force Go GC and return memory pages to OS
-	runtime.GC()
+	start := time.Now()
+
+	// 1. debug.FreeOSMemory يجمع القمامة (runtime.GC داخلياً) ثم يُعيد الصفحات
+	// غير المستخدمة إلى نظام التشغيل — نداء واحد يكفي بدل الزوج السابق
+	// (runtime.GC + debug.FreeOSMemory) الذي كان ينفّذ GC مرتين.
 	debug.FreeOSMemory()
 
 	// 2. Trim our own process working set
@@ -39,6 +43,8 @@ func trimPlatformMemory() {
 			_ = windows.CloseHandle(h)
 		}
 	}
+
+	slog.Debug("Windows platform memory trim finished", "duration", time.Since(start).String())
 }
 
 func getDescendantProcessIDs(parentPid uint32) []uint32 {

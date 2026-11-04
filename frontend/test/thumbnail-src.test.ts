@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { getThumbnailSrc, isLocalThumbnailable } from '../src/lib/canvas/thumbnail-src';
+import {
+  buildDisplaySrcFor,
+  getThumbnailSrc,
+  isLocalThumbnailable,
+} from '../src/lib/canvas/thumbnail-src';
 
 describe('thumbnail-src', () => {
   it('derives a local thumbnail URL and encodes the filename', () => {
@@ -30,5 +34,33 @@ describe('thumbnail-src', () => {
     expect(getThumbnailSrc('/local-image/file.svg')).toBe('/local-image/file.svg');
     expect(isLocalThumbnailable('/local-image/img_1.webp')).toBe(true);
     expect(isLocalThumbnailable('/local-image/nested/img_1.png')).toBe(false);
+  });
+});
+
+describe('thumbnail-src — buildDisplaySrcFor (ملكية الصور E3)', () => {
+  it('builds the 2048px Go display derivative from a local source', () => {
+    expect(buildDisplaySrcFor('/local-image/photo_1.jpg')).toBe(
+      '/local-image/thumb/photo_1.jpg?w=2048',
+    );
+    expect(buildDisplaySrcFor('/local-image/صورة 1.png')).toBe(
+      '/local-image/thumb/%D8%B5%D9%88%D8%B1%D8%A9%201.png?w=2048',
+    );
+    // idempotent: رابط مشتق قائم يمر سليماً ولا يُضاعف المسار
+    expect(buildDisplaySrcFor('/local-image/thumb/photo_1.jpg?w=2048')).toBe(
+      '/local-image/thumb/photo_1.jpg?w=2048',
+    );
+  });
+
+  it('ignores non-local sources, print previews and unsupported extensions', () => {
+    expect(buildDisplaySrcFor('data:image/png;base64,abc')).toBe('data:image/png;base64,abc');
+    expect(buildDisplaySrcFor('blob:http://localhost/abc')).toBe('blob:http://localhost/abc');
+    expect(buildDisplaySrcFor('https://example.com/a.jpg')).toBe('https://example.com/a.jpg');
+    expect(buildDisplaySrcFor('/local-image/print_preview.png')).toBe(
+      '/local-image/print_preview.png',
+    );
+    expect(buildDisplaySrcFor('/local-image/file.svg')).toBe('/local-image/file.svg');
+    expect(buildDisplaySrcFor('/local-image/nested/img_1.png')).toBe(
+      '/local-image/nested/img_1.png',
+    );
   });
 });

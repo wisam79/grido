@@ -240,4 +240,71 @@ describe('commitAiImageResult — حارس الطزاثة والتطبيق', () 
     });
     expect(pushHistory).toHaveBeenCalledTimes(1);
   });
+
+  // 🛡️ معيار isActive الاختياري (الإلغاء الصادق — جلسة use-bg-removal)
+  it('isActive=false: يرفض الcommit لجلسة ملغاة قبل أي تطبيق أو تراجع', () => {
+    useEditorStore.setState({ slots: [makeSlot()] } as never);
+    const onUpdate = vi.fn();
+    const status = commitAiImageResult(
+      { id: 'slot-1', imageSrc: '/img/a.png' },
+      '/img/new.png',
+      onUpdate,
+      undefined,
+      () => false,
+    );
+    expect(status).toBe('not-found');
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(pushHistory).not.toHaveBeenCalled();
+  });
+
+  it('isActive=false يسبق فحوص الطزاثة: هدف محذوف وغير نشط يعيد not-found بلا قراءة إضافية', () => {
+    useEditorStore.setState({ elements: [], slots: [] } as never);
+    const onUpdate = vi.fn();
+    const status = commitAiImageResult(
+      { id: 'el-1', imageSrc: '/img/a.png' },
+      '/img/new.png',
+      onUpdate,
+      undefined,
+      () => false,
+    );
+    expect(status).toBe('not-found');
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(pushHistory).not.toHaveBeenCalled();
+  });
+
+  it('isActive=true: الجلسة النشطة تُطبَّق كالمعتاد (العقد بلا تغيير)', () => {
+    useEditorStore.setState({ slots: [makeSlot()] } as never);
+    const onUpdate = vi.fn();
+    const status = commitAiImageResult(
+      { id: 'slot-1', imageSrc: '/img/a.png' },
+      '/img/new.png',
+      onUpdate,
+      undefined,
+      () => true,
+    );
+    expect(status).toBe('ok');
+    expect(onUpdate).toHaveBeenCalledExactlyOnceWith('slot-1', {
+      imageSrc: '/img/new.png',
+      originalImageSrc: '/img/a.png',
+    });
+    expect(pushHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it('isActive=false يمنع أيضاً تطبيق النتيجة مع بيانات resize صالحة', () => {
+    useEditorStore.setState({ slots: [makeSlot({ dragX: 80 })] } as never);
+    const onUpdate = vi.fn();
+    const status = commitAiImageResult(
+      { id: 'slot-1', imageSrc: '/img/a.png' },
+      '/img/new.png',
+      onUpdate,
+      {
+        source: { width: 1000, height: 750 },
+        result: { width: 2000, height: 1500 },
+      },
+      () => false,
+    );
+    expect(status).toBe('not-found');
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(pushHistory).not.toHaveBeenCalled();
+  });
 });

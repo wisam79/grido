@@ -7,6 +7,7 @@ import {
   ExportPrintSheet,
   PrintDirect,
   PollJobStatus,
+  CancelActivePrintJobs,
 } from '@bindings/grido/internal/handlers/printhandler';
 
 import { ensureStickerPrintResolution } from '@/features/stickers/lib/print-rerasterize';
@@ -143,6 +144,12 @@ export function usePrintExport({
   const cancelExport = useCallback(() => {
     attemptRef.current++;
     setExporting(false);
+    // 🛑 إلغاء التوليد الحسابي في Go فعلياً (الطابور + الرسم + الحفظ) —
+    // لا مهام = no-op صامت؛ النتيجة المتأخرة مصفّاة أصلاً بمرساة attempt.
+    // مهام سبول الطابعة المرسلة أصلاً لها مسار إلغاء النظام الخاص بها.
+    if (typeof CancelActivePrintJobs === 'function') {
+      CancelActivePrintJobs().catch(() => {});
+    }
     SetTaskbarProgress(0, 'none').catch(() => {});
     if (typeof document !== 'undefined' && document.body) {
       document.body.style.pointerEvents = '';

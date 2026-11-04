@@ -210,6 +210,74 @@ describe('useKeyboardShortcuts - Keyboard Shortcuts Hook Tests', () => {
     },
   );
 
+  it('nudges multiple collage slots in one batched move with one undo step per key event', async () => {
+    useEditorStore.setState({
+      mode: 'collage',
+      selectedId: 'slot-1',
+      selectedIds: ['slot-1', 'slot-2'],
+      slots: [
+        {
+          id: 'slot-1',
+          cellIndex: 0,
+          x: 0,
+          y: 0,
+          w: 0.5,
+          h: 0.5,
+          imageSrc: 'a.jpg',
+          rotation: 90,
+          flipX: false,
+          flipY: false,
+        },
+        {
+          id: 'slot-2',
+          cellIndex: 1,
+          x: 0.5,
+          y: 0,
+          w: 0.5,
+          h: 0.5,
+          imageSrc: 'b.jpg',
+          rotation: 0,
+          flipX: true,
+          flipY: false,
+        },
+        { id: 'slot-3', cellIndex: 2, x: 0, y: 0.5, w: 0.5, h: 0.5, imageSrc: 'c.jpg' },
+      ],
+    });
+
+    renderHook(() => useKeyboardShortcuts());
+
+    const untouchedBefore = useEditorStore.getState().slots[2];
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    await user.keyboard('{ArrowRight}');
+
+    const after = useEditorStore.getState();
+    // دوران 90: السهم الأيمن يتحول لإزاحة عمودية (نفس هندسة الاختبار المفرد أعلاه)
+    expect(after.slots[0].dragX).toBeCloseTo(0, 6);
+    expect(after.slots[0].dragY).toBeCloseTo(-2, 6);
+    // قلب أفقي بلا دوران: يعكس اتجاه الإزاحة
+    expect(after.slots[1].dragX).toBeCloseTo(-2, 6);
+    expect(after.slots[1].dragY).toBeCloseTo(0, 6);
+    // الخلية غير المحددة تبقى بمرجعها وقيمها (تخطّي no-op بلا نشر)
+    expect(after.slots[2]).toBe(untouchedBefore);
+    expect(untouchedBefore.dragX ?? 0).toBe(0);
+    expect(untouchedBefore.dragY ?? 0).toBe(0);
+    // خطوة تراجع واحدة لكل حدث مفتاح
+    expect(after.historyIndex).toBe(historyBefore + 1);
+
+    await user.keyboard('{ArrowRight}');
+    expect(useEditorStore.getState().historyIndex).toBe(historyBefore + 2);
+
+    // التراجع يفكّ حدث المفتاح الأخير فقط ولا يدمج الضغطات المتتالية المنفصلة
+    // (restoreEntry يستنسخ الخلايا — نقارن القيم لا المراجع بعد التراجع)
+    useEditorStore.getState().undo();
+    const undone = useEditorStore.getState().slots[0];
+    expect(undone.dragY).toBeCloseTo(-2, 6);
+    const untouchedAfterUndo = useEditorStore.getState().slots[2];
+    expect(untouchedAfterUndo.dragX ?? 0).toBe(0);
+    expect(untouchedAfterUndo.dragY ?? 0).toBe(0);
+  });
+
   it('should ignore shortcuts when typing inside inputs or contentEditable', async () => {
     const undoSpy = vi.spyOn(useEditorStore.getState(), 'undo');
     renderHook(() => useKeyboardShortcuts());

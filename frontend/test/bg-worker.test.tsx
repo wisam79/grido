@@ -161,7 +161,7 @@ describe('ImageStyleProperties - Go Native Background Removal', () => {
     expect(toast.info).not.toHaveBeenCalledWith(expect.stringContaining('لم يعد موجوداً'));
   });
 
-  it('should handle cancel properly during background removal', async () => {
+  it('shows an honest cancelling state and never applies a late result after cancel', async () => {
     let resolveInference: any;
     mockRemoveBackground.mockImplementation(
       () =>
@@ -186,22 +186,89 @@ describe('ImageStyleProperties - Go Native Background Removal', () => {
     const cancelBtn = screen.getByTitle('إلغاء العزل');
     expect(cancelBtn).toBeDefined();
 
-    // نقر زر الإلغاء
+    // نقر زر الإلغاء — الإلغاء الصادق: الانشغال يستمر حتى تستقر المكالمة الأصلية
     await act(async () => {
       fireEvent.click(cancelBtn);
       await Promise.resolve();
     });
 
+    expect(screen.getByTitle('إلغاء العزل')).toBeDefined();
     const { toast } = await import('sonner');
+    expect(toast.info).toHaveBeenCalledWith('جاري إلغاء العملية ...');
+
+    // اكتمال متأخر: النتيجة تُسقط — لا تطبيق ولا إشعار نجاح أو فشل
+    await act(async () => {
+      resolveInference('/local-image/late.png');
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(onUpdateMock).not.toHaveBeenCalled();
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
     expect(toast.info).toHaveBeenCalledWith('تم إلغاء العملية.');
 
-    // يعود الزر للوضع الطبيعي
+    // الحالة صُفِّرت بعد استقرار المكالمة القديمة فقط
     expect(screen.queryByTitle('إلغاء العزل')).toBeNull();
     expect(screen.getByTitle(/عزل الخلفية/)).toBeDefined();
 
-    if (resolveInference) {
-      resolveInference('/local-image/late.png');
-    }
+    const { useOperationStatusStore } = await import('../src/lib/ui/operation-status');
+    const { useBgRemovalState } = await import('../src/hooks/use-bg-removal');
+    expect(useOperationStatusStore.getState().activeOperation).toBeNull();
+    expect(useBgRemovalState.getState().isRemovingBg).toBe(false);
+  });
+
+  it('releases the lock honestly so a fresh removal after cancel applies its own result', async () => {
+    let resolveFirst: any;
+    mockRemoveBackground.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+
+    const onUpdateMock = vi.fn();
+    render(
+      wrapWithTooltip(<ImageStyleProperties element={dummyImageElement} onUpdate={onUpdateMock} />),
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTitle(/عزل الخلفية/));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('إلغاء العزل'));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      resolveFirst('/local-image/late-first.png');
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(onUpdateMock).not.toHaveBeenCalled();
+
+    // القفل تحرّر فعلياً: عملية جديدة كاملة تعمل وتُطبَّق ولا يتداخل فيها الكومِت القديم
+    mockRemoveBackground.mockResolvedValue('/local-image/second.png');
+    await act(async () => {
+      fireEvent.click(screen.getByTitle(/عزل الخلفية/));
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockRemoveBackground).toHaveBeenLastCalledWith('/local-image/test.png');
+    expect(onUpdateMock).toHaveBeenCalledExactlyOnceWith('img-1', {
+      imageSrc: '/local-image/second.png',
+      originalImageSrc: '/local-image/test.png',
+    });
+
+    const { toast } = await import('sonner');
+    expect(toast.success).toHaveBeenCalledWith('تم عزل خلفية الصورة بنجاح');
   });
 
   it('handles backend error gracefully and resets UI without hanging', async () => {

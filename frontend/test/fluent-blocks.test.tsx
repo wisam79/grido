@@ -165,6 +165,77 @@ describe('Fluent 2 UI Blocks Component Suite', () => {
         screen.queryByRole('button', { name: 'إعادة تعيين إلى القيمة الافتراضية' }),
       ).not.toBeInTheDocument();
     });
+
+    it('repeated arrow keydowns update onChange only and commit once on keyup', () => {
+      const handleChange = vi.fn();
+      const handleCommit = vi.fn();
+      render(
+        <FluentSliderField
+          layout={layout}
+          label="الهامش"
+          value={15}
+          min={0}
+          max={50}
+          step={1}
+          unit="mm"
+          onChange={handleChange}
+          onCommit={handleCommit}
+        />,
+      );
+
+      const input = screen.getByRole('textbox', { name: 'قيمة الهامش' });
+      fireEvent.focus(input);
+      fireEvent.keyDown(input, { key: 'ArrowDown' });
+      fireEvent.keyDown(input, { key: 'ArrowDown' });
+      fireEvent.keyDown(input, { key: 'ArrowDown' });
+
+      // النبضة: onChange لكل ضغطة، وبلا أي التقاط أثناء التكرار
+      expect(handleChange).toHaveBeenCalledTimes(3);
+      expect(handleChange).toHaveBeenLastCalledWith(12);
+      expect(handleCommit).not.toHaveBeenCalled();
+
+      // نهاية النبضة (keyup): التقاط واحد بالقيمة النهائية
+      fireEvent.keyUp(input, { key: 'ArrowDown' });
+      expect(handleCommit).toHaveBeenCalledTimes(1);
+      expect(handleCommit).toHaveBeenCalledWith(12);
+
+      // نبضة ثانية منفصلة تُسجل خطوة التقاط مستقلة (لا دمج ولا تضخيم)
+      fireEvent.keyDown(input, { key: 'ArrowUp' });
+      fireEvent.keyUp(input, { key: 'ArrowUp' });
+      expect(handleCommit).toHaveBeenCalledTimes(2);
+      expect(handleCommit).toHaveBeenLastCalledWith(13);
+    });
+
+    it('commits the arrow pulse exactly once on blur without re-applying the draft', () => {
+      const handleChange = vi.fn();
+      const handleCommit = vi.fn();
+      render(
+        <FluentSliderField
+          layout={layout}
+          label="الهامش"
+          value={15}
+          min={0}
+          max={50}
+          step={1}
+          unit="mm"
+          onChange={handleChange}
+          onCommit={handleCommit}
+        />,
+      );
+
+      const input = screen.getByRole('textbox', { name: 'قيمة الهامش' });
+      fireEvent.focus(input);
+      fireEvent.keyDown(input, { key: 'ArrowUp' });
+      expect(handleChange).toHaveBeenCalledTimes(1);
+      expect(handleChange).toHaveBeenCalledWith(16);
+      expect(handleCommit).not.toHaveBeenCalled();
+
+      // blur يلتقط النبضة مرة واحدة — ودفع المسودة بعد القيمة المرتدة no-op
+      fireEvent.blur(input);
+      expect(handleCommit).toHaveBeenCalledTimes(1);
+      expect(handleCommit).toHaveBeenCalledWith(16);
+      expect(handleChange).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('FluentSegmentedControl', () => {

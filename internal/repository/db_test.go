@@ -645,7 +645,7 @@ func TestCollectReferencedImages_EdgeCases(t *testing.T) {
 		},
 	}
 
-	_, err := collectReferencedImages(projects, appDir)
+	err := collectAutosaveReferences(appDir, map[string]bool{})
 	if err == nil {
 		t.Error("expected error when autosave.json is corrupt, got nil")
 	}
@@ -654,8 +654,9 @@ func TestCollectReferencedImages_EdgeCases(t *testing.T) {
 	validAutosave := `{"elements":[{"imageSrc":"/local-image/draft1.jpg"}],"slots":[{"imageSrc":"/local-image/draft2.jpg"}]}`
 	_ = os.WriteFile(autosavePath, []byte(validAutosave), 0644)
 
-	referenced, err := collectReferencedImages(projects, appDir)
-	if err != nil {
+	referenced := map[string]bool{}
+	collectProjectReferences(&projects[0], referenced)
+	if err := collectAutosaveReferences(appDir, referenced); err != nil {
 		t.Fatalf("expected no error with valid autosave: %v", err)
 	}
 
@@ -732,6 +733,101 @@ func TestInitDB_And_CloseDB(t *testing.T) {
 	}
 }
 
+// TestInitDB_ConnectionPragmasSurviveReplacement يتحقق من أن PRAGMAs الخاصة
+// بالاتصال (foreign_keys وcache_size وtemp_store وmmap_size) تُطبق على كل
+// اتصال جديد: الإعداد القديم كان يطبقها مرة واحدة على اتصال ينتهي بعد 5 دقائق
+// (ConnMaxLifetime) فتضيع على البديل. الآن: عبر DSN سائق go-sqlite3 (journal_mode
+// وforeign_keys وcache_size) وعبر ConnectHook غلاف السائق (temp_store وmmap_size)،
+// بينما busy_timeout=5000 وsynchronous=NORMAL افتراضا السائق المطبقان لكل اتصال.
+func TestInitDB_ConnectionPragmasSurviveReplacement(t *testing.T) {
+	tempDir := t.TempDir()
+	appDir := filepath.Join(tempDir, "GridoStudio")
+	t.Setenv("GRIDO_APP_DIR", appDir)
+
+	// بداية نظيفة مهما كان ترتيب تشغيل الاختبارات في الحزمة
+	_ = CloseDB()
+
+	db, err := InitDB()
+	if err != nil {
+		t.Fatalf("InitDB failed: %v", err)
+	}
+	defer func() { _ = CloseDB() }()
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatalf("db.DB() failed: %v", err)
+	}
+
+	assertPragmas := func(t *testing.T, label string) {
+		t.Helper()
+		var journalMode string
+		if err := sqlDB.QueryRow("PRAGMA journal_mode").Scan(&journalMode); err != nil {
+			t.Fatalf("%s: PRAGMA journal_mode failed: %v", label, err)
+		}
+		if journalMode != "wal" {
+			t.Errorf("%s: expected journal_mode=wal, got %q", label, journalMode)
+		}
+
+		var foreignKeys int
+		if err := sqlDB.QueryRow("PRAGMA foreign_keys").Scan(&foreignKeys); err != nil {
+			t.Fatalf("%s: PRAGMA foreign_keys failed: %v", label, err)
+		}
+		if foreignKeys != 1 {
+			t.Errorf("%s: expected foreign_keys=1, got %d", label, foreignKeys)
+		}
+
+		var cacheSize int
+		if err := sqlDB.QueryRow("PRAGMA cache_size").Scan(&cacheSize); err != nil {
+			t.Fatalf("%s: PRAGMA cache_size failed: %v", label, err)
+		}
+		if cacheSize != -8000 {
+			t.Errorf("%s: expected cache_size=-8000, got %d", label, cacheSize)
+		}
+
+		var tempStore int
+		if err := sqlDB.QueryRow("PRAGMA temp_store").Scan(&tempStore); err != nil {
+			t.Fatalf("%s: PRAGMA temp_store failed: %v", label, err)
+		}
+		if tempStore != 2 { // 2 = SQLITE_TEMP_STORE MEMORY
+			t.Errorf("%s: expected temp_store=2 (MEMORY), got %d", label, tempStore)
+		}
+
+		var mmapSize int64
+		if err := sqlDB.QueryRow("PRAGMA mmap_size").Scan(&mmapSize); err != nil {
+			t.Fatalf("%s: PRAGMA mmap_size failed: %v", label, err)
+		}
+		if mmapSize != 268435456 {
+			t.Errorf("%s: expected mmap_size=268435456, got %d", label, mmapSize)
+		}
+
+		var synchronous int
+		if err := sqlDB.QueryRow("PRAGMA synchronous").Scan(&synchronous); err != nil {
+			t.Fatalf("%s: PRAGMA synchronous failed: %v", label, err)
+		}
+		if synchronous != 1 { // 1 = NORMAL (افتراضي السائق المطبق لكل اتصال)
+			t.Errorf("%s: expected synchronous=1 (NORMAL), got %d", label, synchronous)
+		}
+
+		var busyTimeout int
+		if err := sqlDB.QueryRow("PRAGMA busy_timeout").Scan(&busyTimeout); err != nil {
+			t.Fatalf("%s: PRAGMA busy_timeout failed: %v", label, err)
+		}
+		if busyTimeout != 5000 { // افتراضي السائق المطبق لكل اتصال
+			t.Errorf("%s: expected busy_timeout=5000, got %d", label, busyTimeout)
+		}
+	}
+
+	assertPragmas(t, "initial connection")
+
+	// فرض استبدال الاتصال: تقصير عمر الاتصال إلى ما دون الصفر يجبر الـpool
+	// على إنشاء اتصال جديد عند أول استعلام — الـPRAGMAs يجب أن تُعاد عليه
+	// (DSN لسائق go-sqlite3 + ConnectHook غلاف السائق في db.go)
+	sqlDB.SetConnMaxLifetime(time.Nanosecond)
+	defer sqlDB.SetConnMaxLifetime(5 * time.Minute)
+
+	assertPragmas(t, "replaced connection")
+}
+
 func TestStopCleanupUnusedMedia(t *testing.T) {
 	// Should not panic even if no cleanup is running
 	StopCleanupUnusedMedia()
@@ -772,10 +868,6 @@ func TestEmptyMediaTrash(t *testing.T) {
 }
 
 func TestCollectReferencedImages_RegexSafetyNet(t *testing.T) {
-	tempDir := t.TempDir()
-	appDir := filepath.Join(tempDir, "GridoStudio")
-	t.Setenv("GRIDO_APP_DIR", appDir)
-
 	projects := []domain.Project{
 		{
 			ID:              "p-regex",
@@ -786,10 +878,8 @@ func TestCollectReferencedImages_RegexSafetyNet(t *testing.T) {
 		},
 	}
 
-	refs, err := collectReferencedImages(projects, appDir)
-	if err != nil {
-		t.Fatalf("collectReferencedImages failed: %v", err)
-	}
+	refs := map[string]bool{}
+	collectProjectReferences(&projects[0], refs)
 
 	if !refs["img_123456.png"] {
 		t.Errorf("expected img_123456.png to be captured by regex safety net")

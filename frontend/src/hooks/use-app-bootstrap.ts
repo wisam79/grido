@@ -149,12 +149,13 @@ export function useAppBootstrap(): AppBootstrapState {
   }, [checkLicenseStatus, setAccountModalOpen]);
 
   /**
-  /**
-   * ⚡ تسخين النماذج: تم إلغاء التسخين المسبق الإجباري عند إقلاع التطبيق (Zero Early Allocation)
-   * ليبقى استهلاك التطبيق في أدنى مستوياته (<100MB) ولا يُحمَّل النموذج إلا عند نقر المستخدم الفعلي.
+   * ⚡ محرك العزل الأصلي (ONNX) لا يُهيَّأ عند الإقلاع: التهيئة الفعلية تحدث
+   * عند أول استخدام لا عند الإقلاع (lazy init عبر ensureInitialized داخل
+   * خدمة RemoveBackground في Go) — Zero Early Allocation بلا تسخين خلفي
+   * ولا تخصيص مبكر للذاكرة.
    */
   useEffect(() => {
-    // Zero background warmup on startup
+    // لا تسخين خلفي عند الإقلاع — تهيئة محرك العزل مؤجّلة حتى أول استخدام
   }, []);
 
   // ⚡ الاستماع لأحداث محرك Wails وقت التشغيل (Runtime Events):

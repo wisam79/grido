@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"hash/crc32"
+	"io"
 	"strconv"
 	"strings"
+
+	"grido/internal/service"
 )
 
 // 🖨️ حقن كثافة الطباعة (DPI) في ملفات PNG/JPEG على مستوى البايتات.
@@ -135,4 +138,231 @@ func setJPEGDPI(data []byte, dpi int) []byte {
 	copy(out[unitsPos+1:unitsPos+3], density)
 	copy(out[unitsPos+3:unitsPos+5], density)
 	return out
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🚀 النسخ المتدفق (دفعة الأداء): المساران أدناه يحقنان الكثافة أثناء النسخ
+// من جسم الطلب إلى الملف المؤقت — بلا قراءة المخرج كاملاً في الذاكرة. البايتات
+// الناتجة مطابقة تماماً لمسار patchImageDPI المخزّني (اختبار المراجعة يقارن
+// المسارين بيت-بيت على مدخلات سليمة ومبتورة وغير مدعومة).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// newDPIStreamWriter يلف كاتب الملف المؤقت بكاتب يحقن بيانات الكثافة أثناء
+// النسخ حسب الامتداد (pHYs لـ PNG / JFIF APP0 لـ JPEG). الامتداد غير المدعوم
+// أو dpi ≤ 0 يعيد تمريراً مباشراً بلا حقن (نفس عقد patchImageDPI).
+// ⚠️ يجب استدعاء Close بعد اكتمال النسخ لسحب أي بايتات معلقة عند نهاية الدفق
+// (ملف مبتور) — القرارات التي تحتاج نهاية الدفق تُتخذ هناك.
+func newDPIStreamWriter(w io.Writer, ext string, dpi int) io.WriteCloser {
+	if dpi <= 0 {
+		return nopDPIStreamWriter{w}
+	}
+	switch ext {
+	case ".png":
+		return &pngDPIStreamWriter{w: w, dpi: dpi}
+	case ".jpg", ".jpeg":
+		return &jpegDPIStreamWriter{w: w, dpi: dpi}
+	default:
+		return nopDPIStreamWriter{w}
+	}
+}
+
+// nopDPIStreamWriter تمرير مباشر — نفس بايتات الدخل بلا أي حقن.
+type nopDPIStreamWriter struct{ w io.Writer }
+
+func (s nopDPIStreamWriter) Write(p []byte) (int, error) { return s.w.Write(p) }
+func (s nopDPIStreamWriter) Close() error                { return nil }
+
+// pngPhysChunk يبني قطعة pHYs (21 بايتاً) بالـ DPI المطلوب — نفس بايتات
+// الكتلة التي يبنيها setPNGDPI المخزّني حرفياً.
+func pngPhysChunk(dpi int) []byte {
+	ppm := pixelsPerMeter(dpi)
+	ppmBuf := make([]byte, 4)
+	binary.BigEndian.PutUint32(ppmBuf, ppm)
+
+	// الكتلة: الطول(4) + النوع(4) + البيانات(9) + CRC(4)
+	chunk := make([]byte, 0, 21)
+	chunk = append(chunk, 0, 0, 0, 9) // length = 9
+	chunk = append(chunk, "pHYs"...)
+	chunk = append(chunk, ppmBuf...) // X
+	chunk = append(chunk, ppmBuf...) // Y
+	chunk = append(chunk, 1)         // unit = meter
+	crcBuf := make([]byte, 4)
+	binary.BigEndian.PutUint32(crcBuf, crc32.ChecksumIEEE(chunk[4:]))
+	chunk = append(chunk, crcBuf...)
+	return chunk
+}
+
+// pngDPIStreamWriter كاتب متدفق يمسح رأس PNG قطعة-قطعة أثناء مرورها ويزرع pHYs
+// قبل أول IDAT إن لم توجد pHYs سابقة. الذاكرة محدودة بسقف فحص الرأس (MaxFileSize
+// — نفس سقف جسم الطلب) بدل حجم الملف كامل.
+//
+// مطابقة setPNGDPI بيت-بيت لكل الدخل المقبول (≤ MaxFileSize):
+//   - توقيع غير مطابق، أو pHYs موجودة قبل IDAT، أو قطعة مبتورة/طولها فاسد قبل
+//     IDAT، أو لا يوجد IDAT إطلاقاً ⇒ مخرج = الدخل حرفياً (الحقن لا يحدث).
+//   - أول IDAT (قبل فحص سلامة طولها كما في الأصل) ⇒ إدراج pHYs عندها ثم تمرير.
+type pngDPIStreamWriter struct {
+	w    io.Writer
+	dpi  int
+	buf  []byte // بايتات معلقة أثناء فحص الرأس (سقفها MaxFileSize)
+	done bool   // اتُّخذ القرار — تمرير مباشر لما بعده
+}
+
+func (s *pngDPIStreamWriter) Write(p []byte) (int, error) {
+	if s.done {
+		return s.w.Write(p)
+	}
+	s.buf = append(s.buf, p...)
+	if err := s.scan(); err != nil {
+		return 0, err
+	}
+	return len(p), nil
+}
+
+// scan يعالج buf: إما يُقرر (إدراج/تمرير) فيفرغه ويحوّل done، أو ينتظر المزيد.
+func (s *pngDPIStreamWriter) scan() error {
+	pos := 0
+	if len(s.buf) >= len(PNGSignature) {
+		if !bytes.Equal(s.buf[:len(PNGSignature)], PNGSignature) {
+			return s.flushAll()
+		}
+	} else {
+		return nil // انتظر التوقيع كاملاً
+	}
+	pos = len(PNGSignature)
+	for len(s.buf)-pos >= 8 {
+		length := binary.BigEndian.Uint32(s.buf[pos : pos+4])
+		chunkType := s.buf[pos+4 : pos+8]
+		if string(chunkType) == "pHYs" {
+			return s.flushAll() // موجودة مسبقاً — لا تُمسّ (نفس الأصل)
+		}
+		if string(chunkType) == "IDAT" {
+			// نقطة الإدراج: قبل ترويسة IDAT — قبل فحص سلامة طولها كما يفعل الأصل.
+			if _, err := s.w.Write(s.buf[:pos]); err != nil {
+				return err
+			}
+			if _, err := s.w.Write(pngPhysChunk(s.dpi)); err != nil {
+				return err
+			}
+			rest := s.buf[pos:]
+			s.done = true
+			s.buf = nil
+			_, err := s.w.Write(rest)
+			return err
+		}
+		// قطعة طويلة بلا معنى قبل IDAT: الجسم محدود بـ MaxFileSize عند المتصل،
+		// فأي طول أكبر = تالف ⇒ تمرير بلا حقن (الأصل يعيد الدخل كما هو).
+		if length > uint32(service.MaxFileSize) {
+			return s.flushAll()
+		}
+		need := 8 + int(length) + 4 // ترويسة + بيانات + CRC
+		if len(s.buf)-pos < need {
+			break // انتظر اكتمال القطعة (البتر يعالجه Close)
+		}
+		pos += need
+	}
+	return nil
+}
+
+func (s *pngDPIStreamWriter) flushAll() error {
+	s.done = true
+	if len(s.buf) == 0 {
+		return nil
+	}
+	rest := s.buf
+	s.buf = nil
+	_, err := s.w.Write(rest)
+	return err
+}
+
+// Close يسحب البايتات المعلقة عند نهاية الدفق: ملف مبتور أو بلا IDAT يعود
+// كما هو بلا حقن — مطابق للأصل.
+func (s *pngDPIStreamWriter) Close() error {
+	if s.done {
+		return nil
+	}
+	return s.flushAll()
+}
+
+// jpegDPIStreamWriter كاتب متدفق يعيد كتابة حقلَي الكثافة في مقطع JFIF APP0
+// أثناء النسخ. القرار يحتاج المقطع كاملاً (4+segLen بايتات) لأن الأصل يرفض
+// المقطع المبتور — التخزين المؤقت محدود بطول المقطع (≤ 65539 بايت).
+//
+// مطابقة setJPEGDPI بيت-بيت: بلا SOI/APP0، أو بلا توقيع JFIF، أو مقطع مبتور
+// عند نهاية الدفق ⇒ الدخل كما هو بلا تعديل.
+type jpegDPIStreamWriter struct {
+	w    io.Writer
+	dpi  int
+	buf  []byte
+	done bool
+}
+
+func (s *jpegDPIStreamWriter) Write(p []byte) (int, error) {
+	if s.done {
+		return s.w.Write(p)
+	}
+	s.buf = append(s.buf, p...)
+	if err := s.scan(); err != nil {
+		return 0, err
+	}
+	return len(p), nil
+}
+
+func (s *jpegDPIStreamWriter) scan() error {
+	// SOI + APP0 marker
+	if len(s.buf) >= 4 {
+		if s.buf[0] != 0xFF || s.buf[1] != 0xD8 || s.buf[2] != 0xFF || s.buf[3] != 0xE0 {
+			return s.flushAll() // لا مقطع APP0 بعد SOI — لا إدراج مقطع (نفس الأصل)
+		}
+	} else {
+		return nil
+	}
+	if len(s.buf) >= 6 {
+		segLen := int(binary.BigEndian.Uint16(s.buf[4:6]))
+		if segLen < 16 {
+			return s.flushAll() // طول مقطع لا يكفي لحقول الكثافة (نفس الأصل)
+		}
+		if len(s.buf) >= 11 && !bytes.Equal(s.buf[6:11], []byte{'J', 'F', 'I', 'F', 0}) {
+			return s.flushAll()
+		}
+		if len(s.buf) >= 4+segLen {
+			// المقطع موجود كاملاً في الملف — أعد كتابة units+densities فقط.
+			out := make([]byte, len(s.buf))
+			copy(out, s.buf)
+			density := []byte{uint8(s.dpi >> 8), uint8(s.dpi)}
+			const unitsPos = 13
+			out[unitsPos] = 1 // units = pixels per inch
+			copy(out[unitsPos+1:unitsPos+3], density)
+			copy(out[unitsPos+3:unitsPos+5], density)
+			return s.emitRewritten(out)
+		}
+	}
+	return nil
+}
+
+func (s *jpegDPIStreamWriter) emitRewritten(head []byte) error {
+	s.done = true
+	s.buf = nil
+	if _, err := s.w.Write(head); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *jpegDPIStreamWriter) flushAll() error {
+	s.done = true
+	if len(s.buf) == 0 {
+		return nil
+	}
+	rest := s.buf
+	s.buf = nil
+	_, err := s.w.Write(rest)
+	return err
+}
+
+// Close يسحب المقطع المبتور كما هو عند نهاية الدفق — الأصل يرفض الحقن حينها.
+func (s *jpegDPIStreamWriter) Close() error {
+	if s.done {
+		return nil
+	}
+	return s.flushAll()
 }

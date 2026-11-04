@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"image"
 	"log/slog"
@@ -10,6 +11,8 @@ import (
 	"runtime"
 	"runtime/debug"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -56,6 +59,95 @@ var printJobSem = make(chan struct{}, 1)
 // المعالجة السابقة تُبقي كل صور العناصر حيّةً حتى نهاية الرسم (مجموع كامل)،
 // بينما الرسم الآن يجري دفعةً بدفعة فتُحرَّر مراجع الدفعة السابقة فوراً.
 const printBatchBudgetBytes = 512 << 20 // 512 MiB
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🛑 إلغاء مهام الطباعة (C4): سجل المهام الجارية + سياق قابل للإلغاء لكل مهمة.
+// PrintService ليس معروضاً لـ IPC مباشرة (الربطات عبر PrintHandler حصراً) —
+// الواجهة الجديدة هي PrintHandler.CancelPrintJob(jobID) والمتكامل يولّد
+// ربطاتها. لا تغيير على توقيعات الدوال المعرضة الحالية.
+// ─────────────────────────────────────────────────────────────────────────────
+
+var activePrintJobs = struct {
+	mu   sync.Mutex
+	jobs map[string]context.CancelFunc
+}{jobs: make(map[string]context.CancelFunc)}
+
+// printJobSeq مولّد تفرد لمعرّفات المهام (زمنياً + عدّاد) ضد أي تصادم.
+var printJobSeq atomic.Int64
+
+// newPrintJob يسجّل مهمة توليد جديدة في السجل ويعيد (المعرّف، السياق
+// القابل للإلغاء). التسجيل قبل الاستحواذ على الـsemaphore كي يصل الإلغاء
+// حتى وهي في الطابور.
+func newPrintJob(parent context.Context) (string, context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(parent)
+	jobID := fmt.Sprintf("print-%d-%d", time.Now().UnixNano(), printJobSeq.Add(1))
+	activePrintJobs.mu.Lock()
+	activePrintJobs.jobs[jobID] = cancel
+	activePrintJobs.mu.Unlock()
+	return jobID, ctx, cancel
+}
+
+// removePrintJob يمسح المهمة من السجل ويحرر موارد السياق — يُستدعى بـ defer
+// في كل مخارج التوليد.
+func removePrintJob(jobID string, cancel context.CancelFunc) {
+	activePrintJobs.mu.Lock()
+	delete(activePrintJobs.jobs, jobID)
+	activePrintJobs.mu.Unlock()
+	cancel()
+}
+
+// CancelPrintJob يلغي مهمة توليد ورقة طباعة جارية بمعرّفها المسجّل — تتوقف
+// عند أول نقطة تحقق (انتظار الـsemaphore، بدء معالجة عنصر، حد الدفعة، قبل
+// الحفظ). معرّف غير موجود أو مهمة انتهت أصلاً = خطأ صريح واضح.
+func CancelPrintJob(jobID string) error {
+	jobID = strings.TrimSpace(jobID)
+	if jobID == "" {
+		return fmt.Errorf("print job id is empty")
+	}
+	activePrintJobs.mu.Lock()
+	cancel, ok := activePrintJobs.jobs[jobID]
+	activePrintJobs.mu.Unlock()
+	if !ok {
+		return fmt.Errorf("print job not found (unknown id or already finished): %s", jobID)
+	}
+	cancel()
+	return nil
+}
+
+// CancelAllPrintJobs يلغي كل مهام توليد ورقة الطباعة المسجّلة (الجارية
+// والمنتظرة على الـsemaphore) — يُستخدم عند إلغاء المستخدم من حوار الطباعة
+// حيث لا تعرف الواجهة معرّف المهمة الفردي أثناء تنفيذ ExportPrintSheet.
+// الإلغاء يمسّ التوليد الحسابي فقط ولا يمس مهام سبول الطابعة المرسلة أصلاً
+// (لها AbortDoc ومسارات إلغاء النظام الخاصة بها). لا مهام = خطأ صريح،
+// والواجهة تتعامل معه كـno-op صامت.
+func CancelAllPrintJobs() error {
+	activePrintJobs.mu.Lock()
+	cancels := make([]context.CancelFunc, 0, len(activePrintJobs.jobs))
+	for _, cancel := range activePrintJobs.jobs {
+		cancels = append(cancels, cancel)
+	}
+	activePrintJobs.mu.Unlock()
+	if len(cancels) == 0 {
+		return fmt.Errorf("no active print jobs to cancel")
+	}
+	for _, cancel := range cancels {
+		cancel()
+	}
+	return nil
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🧠 جسر العمل الثقيل (C6): علامات MarkHeavyWorkStart/End في MemoryService
+// تجعل التقليم التلقائي يتخطى الفحص كلياً أثناء التوليد. PrintService لا يملك
+// مثال MemoryService (يُبنى في main.go / app.go خارج ملفات هذه الدفعة) —
+// الجسر يُضبط بخط واحد من التكوين الجذري: service.SetPrintMemoryBridge(memorySvc)
+// وقبل ضبطه تبقى العلامات no-op بلا انكسار.
+// ─────────────────────────────────────────────────────────────────────────────
+
+var printMemoryBridge atomic.Pointer[MemoryService]
+
+// SetPrintMemoryBridge يربط خدمة الذاكرة بعلامات العمل الثقيل لمسار الطباعة.
+func SetPrintMemoryBridge(ms *MemoryService) { printMemoryBridge.Store(ms) }
 
 func NewPrintService() *PrintService {
 	return &PrintService{}
@@ -270,14 +362,20 @@ func countGridTemplates(items []domain.PrintItem) int {
 }
 
 // printBatchSize يحدد كم عنصراً تُعالَج صوره قبل رسمها وتحريرها. التقدير
-// يعتمد على وسم العنصر النهائي (W×H بالبكسل عند DPI × 4 بايت)؛ الحد الأدنى 1
-// حتى لا يتجاوز عنصر ضخم وحده الميزانية، والأقصى عدد أنوية المعالجة.
+// يجمع وسم العنصر النهائي (W×H بالبكسل عند DPI × 4 بايت) مع وزن مساحة
+// المصدر المفكوك (أبعاد المصدر بعد EXIF × 4 — C3): المصدر المفكوك يبقى
+// حياً كاملاً أثناء المعالجة إلى جانب الناتج، ودفعة صغيرة من الأهداف
+// المصغّرة كانت تحتشد صوراً عملاقة المصدر. الحد الأدنى 1 حتى لا يتجاوز
+// عنصر ضخم وحده الميزانية، والأقصى عدد أنوية المعالجة. لا يتغير حد الدفعة
+// الإجمالي ولا ترتيب العناصر.
 func printBatchSize(req domain.PrintRequest, maxParallel int) int {
 	if len(req.Items) == 0 || maxParallel < 1 {
 		return 1
 	}
 	var totalBytes int64
 	var counted int64
+	// أبعاد المصدر لكل ImageSrc فريد (ترويسة فقط — بلا فك بكسلات)
+	srcDims := make(map[string][2]int64)
 	for _, item := range req.Items {
 		if item.ImageSrc == "" {
 			continue
@@ -287,7 +385,11 @@ func printBatchSize(req domain.PrintRequest, maxParallel int) int {
 		if w <= 0 || h <= 0 {
 			continue
 		}
-		totalBytes += w * h * 4
+		weight := w * h * 4
+		if srcW, srcH, ok := itemSourceDims(srcDims, item.ImageSrc); ok {
+			weight += srcW * srcH * 4
+		}
+		totalBytes += weight
 		counted++
 	}
 	if counted == 0 {
@@ -307,12 +409,54 @@ func printBatchSize(req domain.PrintRequest, maxParallel int) int {
 	return size
 }
 
+// itemSourceDims يعيد أبعاد صورة المصدر بعد تطبيع EXIF مع كاش لكل مسار
+// فريد داخل استدعاء printBatchSize الواحد. الفشل (ملف مفقود/ترويسة غير
+// مدعومة) يعني لا وزن إضافي — سلوك التقدير السابق.
+func itemSourceDims(cache map[string][2]int64, imageSrc string) (int64, int64, bool) {
+	if d, ok := cache[imageSrc]; ok {
+		return d[0], d[1], d[0] > 0 && d[1] > 0
+	}
+	filePath := resolveLocalPath(imageSrc)
+	w, h, ok := sourceDecodedDims(filePath)
+	cache[imageSrc] = [2]int64{w, h}
+	return w, h, ok
+}
+
 // GeneratePrintSheet يولّد ورقة الطباعة كاملة: تحقق ← تركيب ← معالجة متوازية للصور
 // ← رسم تسلسلي (gg ليس آمناً للتزامن) ← خطوط قص ← حفظ المخرجات.
+// التوقيع محفوظ للربطات الحالية — الإلغاء عبر GeneratePrintSheetWithContext.
 func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, string, error) {
-	// طلب واحد في كل مرة — يمنع مضاعفة ذروة الذاكرة عند نقرتين متتاليتين
-	printJobSem <- struct{}{}
+	return s.generatePrintSheet(context.Background(), req)
+}
+
+// GeneratePrintSheetWithContext نسخة واعية بالسياق لنفس التوليد: تمكّن
+// الإلغاء الخارجي (service.CancelPrintJob) وتوقف العمل فعلياً عند نقاط
+// التحقق. PrintService ليس على سطح عقود IPC فلا يتغير شيء للربطات.
+func (s *PrintService) GeneratePrintSheetWithContext(ctx context.Context, req domain.PrintRequest) (string, string, error) {
+	return s.generatePrintSheet(ctx, req)
+}
+
+func (s *PrintService) generatePrintSheet(ctx context.Context, req domain.PrintRequest) (string, string, error) {
+	// 🛑 سجل المهمة للإلغاء (C4) + المسح الذري في كل المخارج.
+	jobID, jobCtx, cancelJob := newPrintJob(ctx)
+	defer removePrintJob(jobID, cancelJob)
+
+	// طلب واحد في كل مرة — يمنع مضاعفة ذروة الذاكرة عند نقرتين متتاليتين،
+	// والاستحواذ الآن واعٍ بالسياق: إلغاء مهمة معلقة في الطابور يوقفها فوراً.
+	select {
+	case printJobSem <- struct{}{}:
+	case <-jobCtx.Done():
+		return "", "", fmt.Errorf("print job %s cancelled while waiting: %w", jobID, jobCtx.Err())
+	}
 	defer func() { <-printJobSem }()
+
+	// 🧠 علامة العمل الثقيل (C6): تمنع تقليم الذاكرة التلقائي أثناء التوليد
+	// (runtime.GC وإفراغ مجموعات العمل وسط رسم ثقيل يُجمّد الواجهة).
+	// الجسر اختياري — قبل ضبطه (main.go) تبقى العلامات no-op بلا انكسار.
+	if ms := printMemoryBridge.Load(); ms != nil {
+		ms.MarkHeavyWorkStart()
+		defer ms.MarkHeavyWorkEnd()
+	}
 
 	// Ensure logical dimensions match orientation (defensive: callers may send raw 210x297 + landscape or raw 297x210 + portrait)
 	// 🖨️ RV-16-L8: التبديل كان يصحح الأبعاد بصمت فتُطمس دعوات غير متسقة — يُسجَّل
@@ -354,6 +498,12 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 	procCache := &processedCache{
 		images: make(map[processedKey]image.Image),
 		access: make(map[processedKey]time.Time),
+		refs:   make(map[image.Image]int),
+	}
+
+	// 🛑 نقطة تحقق قبل مرحلة التركيب (C4)
+	if err := jobCtx.Err(); err != nil {
+		return "", "", fmt.Errorf("print job %s cancelled: %w", jobID, err)
 	}
 
 	// 0. تركيب كانفاس الوضع الحر (اختياري): يُرسم مرة واحدة بدقة الطباعة
@@ -383,6 +533,11 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 	}
 
 	for start := 0; start < len(req.Items); start += batchSize {
+		// 🛑 نقطة تحقق بين الدفعات (C4): الإلغاء يوقف بدء أي عمل جديد
+		// فوراً — العناصر المتبقية لا تُعالَج ولا يُحفظ مخرج ناقص.
+		if cerr := jobCtx.Err(); cerr != nil {
+			return "", "", fmt.Errorf("print job %s cancelled: %w", jobID, cerr)
+		}
 		end := start + batchSize
 		if end > len(req.Items) {
 			end = len(req.Items)
@@ -397,6 +552,10 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 			}
 			i := i
 			g.Go(func() (err error) {
+				// 🛑 لا تبدأ معالجة عنصر جديد بعد الإلغاء (C4)
+				if cerr := jobCtx.Err(); cerr != nil {
+					return fmt.Errorf("print job %s cancelled: %w", jobID, cerr)
+				}
 				// 🛡️ أي panic داخل عامل المعالجة يتحول لخطأ يصل للمستخدم بدل
 				// إسقاط العملية كاملاً (errgroup لا يلتقط panics بذاته)
 				defer recoverPrintWorkerPanic(i, &err)
@@ -429,8 +588,14 @@ func (s *PrintService) GeneratePrintSheet(req domain.PrintRequest) (string, stri
 
 	imgCache.images = nil
 	procCache.images = nil
+	procCache.refs = nil
 	imgCache = nil
 	procCache = nil
+
+	// 🛑 نقطة تحقق قبل الحفظ (C4): مهمة ملغاة لا تُنتج ملفاً.
+	if err := jobCtx.Err(); err != nil {
+		return "", "", fmt.Errorf("print job %s cancelled: %w", jobID, err)
+	}
 
 	return s.saveOutput(dc, req)
 }

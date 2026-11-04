@@ -133,3 +133,20 @@ func (h *PrintHandler) PollJobStatus(printerName string, jobID int32) domain.Dir
 	}
 	return result
 }
+
+// CancelPrintJob يلغي مهمة توليد ورقة طباعة جارية بمعرّفها المسجّل (C4 —
+// عقد IPC جديد: الوكيل المتكامل يولّد الربطات ولا تُلمس ملفات الواجهة هنا).
+// تتوقف المهمة عند أول نقطة تحقق (انتظار الطابور، بدء عنصر، حد الدفعة، قبل
+// الحفظ) ويرجع خطأ إلى ExportPrintSheet. معرّف غير موجود أو مهمة انتهت
+// أصلاً = خطأ صريح، والنجاح (nil) لا يعني أن الإيقاف اكتمل بل أن طلب
+// الإلغاء وصل للمهمة المسجلة.
+func (h *PrintHandler) CancelPrintJob(jobID string) error {
+	return service.CancelPrintJob(jobID)
+}
+
+// CancelActivePrintJobs يلغي كل مهام التوليد المسجّلة — يُستدعى من إلغاء
+// حوار الطباعة حيث لا تعرف الواجهة المعرّف الفردي أثناء تنفيذ ExportPrintSheet
+// (عقد IPC جديد — توليد الربطات يتكفل به الوكيل المتكامل).
+func (h *PrintHandler) CancelActivePrintJobs() error {
+	return service.CancelAllPrintJobs()
+}

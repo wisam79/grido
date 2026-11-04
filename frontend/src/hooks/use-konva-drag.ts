@@ -331,25 +331,30 @@ export function useKonvaDrag({
     // 1. تحريك كافة العناصر المحددة الأخرى التابعة للمجموعة ككتلة صلبة بنفس الإزاحة (dx, dy)
     // بعد أن قيّدت dragBoundFunc الصندوق البصري الموحّد للمجموعة كاملة.
     if (startPos) {
-      const dx = draggedNode.x() - startPos.x;
-      const dy = draggedNode.y() - startPos.y;
-
       const { selectedIds, elements: currentElements } = useEditorStore.getState();
-      // 🚀 Map بالمعرفات مرة واحدة لكل إطار — find لكل محدد/إطار كان O(Selected×Elements)
-      // ×60/ث مع كثافة عناصر عالية
-      const elementsById = new Map(currentElements.map((e) => [e.id, e]));
-      selectedIds.forEach((id) => {
-        if (id === draggedId) return;
-        const node = getKonvaNode(id);
-        const nodeStart = dragStartPositionsRef.current[id];
-        if (node && nodeStart) {
-          const followerEl = elementsById.get(id);
-          if (followerEl?.locked) return;
-          node.x(nodeStart.x + dx);
-          node.y(nodeStart.y + dy);
-        }
-      });
-      e.target.getLayer?.()?.batchDraw?.();
+      // 🚀 التحديد المفرد: لا تابعين إطلاقاً — يخرج قبل بناء new Map() لكامل
+      // العناصر ومنطق التابعين بالكامل (كانت O(عناصر) تخصيصاً لكل إطار ×60/ث
+      // بلا أي استخدام). القائد يتحرك بواسطة Konva نفسه، والمحاذاة المغناطيسية
+      // أدناه كما هي دون أي تغيير.
+      if (selectedIds.length > 1) {
+        const dx = draggedNode.x() - startPos.x;
+        const dy = draggedNode.y() - startPos.y;
+        // 🚀 Map بالمعرفات مرة واحدة لكل إطار — find لكل محدد/إطار كان O(Selected×Elements)
+        // ×60/ث مع كثافة عناصر عالية
+        const elementsById = new Map(currentElements.map((e) => [e.id, e]));
+        selectedIds.forEach((id) => {
+          if (id === draggedId) return;
+          const node = getKonvaNode(id);
+          const nodeStart = dragStartPositionsRef.current[id];
+          if (node && nodeStart) {
+            const followerEl = elementsById.get(id);
+            if (followerEl?.locked) return;
+            node.x(nodeStart.x + dx);
+            node.y(nodeStart.y + dy);
+          }
+        });
+        e.target.getLayer?.()?.batchDraw?.();
+      }
     }
 
     // 2. معالجة الخطوط الإرشادية — تُستهلك أدلة تمريرة dragBoundFunc

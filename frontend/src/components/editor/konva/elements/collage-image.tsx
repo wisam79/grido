@@ -1,10 +1,11 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { Image as KonvaImage, Group } from 'react-konva';
 
 import { useAsyncImage } from '@/hooks/use-async-image';
 import { useDisplayImage } from '@/hooks/use-display-image';
 import { useFilterCache } from '@/hooks/use-filter-cache';
 import { useCanvasInteraction } from '@/lib/canvas/canvas-interaction-store';
+import { getCachedImageDimensions, resolveImageDimensions } from '@/lib/canvas/image-dimensions';
 import { useRenderQuality } from '@/lib/canvas/render-quality';
 import { getSlotLocalSize } from '@/lib/export/export-primitives';
 import { getKonvaFilters } from '@/lib/filters/konva-filters';
@@ -63,9 +64,33 @@ export const KonvaCollageImage = React.memo(
     const [image] = useAsyncImage(imageSrc);
     // 🚀 نسخة عرض مخفّضة للرسم التفاعلي — المصدر الكامل للتصدير فقط.
     const displayImage = useDisplayImage(image);
+    // 🛡️ ملكية الصور: العنصر المُحمَّل صار مشتق العرض 2048px من Go لا الأصل،
+    // بينما تبقى إزاحات الستور (dragX/dragY) بفضاء الأصل الموجّه بـEXIF
+    // (تُفسَّر في drawSlotImage على أبعاد الأصل). srcToShown يجب أن يقيس
+    // ما يُعرض فعلاً على أبعاد الأصل إذن: الكاش المتزامن من image-dimensions
+    // (يُملأ عند الإدراج) أولاً، وقياس Go واحد مخبأ عند غيابه — لا تفكيك
+    // كامل للأصل هنا إطلاقاً. انظر توثيق EXIF في display-image.ts.
+    const [asyncDims, setAsyncDims] = useState<{
+      src: string;
+      width: number;
+      height: number;
+    } | null>(null);
+    const cachedDims = imageSrc ? getCachedImageDimensions(imageSrc) : undefined;
+    const asyncValid = asyncDims && asyncDims.src === imageSrc ? asyncDims : null;
+    const originalDims = cachedDims ?? asyncValid;
+    useEffect(() => {
+      if (!imageSrc || cachedDims) return;
+      let cancelled = false;
+      void resolveImageDimensions(imageSrc).then((dims) => {
+        if (!cancelled && dims) setAsyncDims({ src: imageSrc, ...dims });
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [imageSrc, cachedDims]);
     // ⚖️ فضاء الإحداثيات الموحّد: نسبة الأصل → العرض. قبل اكتمال التحميل
     // (naturalWidth = 0) تكون النسبة 1 فلا يحدث أي تحويل.
-    const naturalW = image?.naturalWidth || 0;
+    const naturalW = originalDims?.width || image?.naturalWidth || 0;
     const shownForScale = displayImage ?? image;
     const displayW = shownForScale ? shownForScale.width : 0;
     const srcToShown = naturalW > 0 && displayW > 0 ? displayW / naturalW : 1;

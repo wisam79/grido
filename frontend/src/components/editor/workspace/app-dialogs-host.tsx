@@ -82,6 +82,15 @@ export function AppDialogsHost({
   // يبقى المكوّن مركّباً بعد أول فتح حتى تُحفظ حركة الإغلاق.
   if (freeformOpen && !freeformMounted) setFreeformMounted(true);
 
+  // 🚀 نفس نمط freeformMounted للحوارات الثقيلة: كان ExportDialog وPrintDialog
+  // يُركَّبان بمجرد تحميل المنطقة المرخصة رغم open=false فتُطلب حزمهما الكسولة
+  // الفورية عند الإقلاع. يُركَّبان عند أول فتح فقط ويبقيان مركَّبين بعد ذلك
+  // حفاظاً على حركة الإغلاق — بلا تغيير في open/onOpenChange/Boundary/Suspense.
+  const [exportMounted, setExportMounted] = useState(exportOpen);
+  const [printMounted, setPrintMounted] = useState(printOpen);
+  if (exportOpen && !exportMounted) setExportMounted(true);
+  if (printOpen && !printMounted) setPrintMounted(true);
+
   return (
     <>
       {freeformMounted && (
@@ -97,18 +106,22 @@ export function AppDialogsHost({
       )}
 
       {/* نافذة التصدير */}
-      <ErrorBoundary>
-        <Suspense fallback={exportOpen ? <DialogLazyFallback /> : null}>
-          <ExportDialog open={exportOpen} onOpenChange={onExportOpenChange} />
-        </Suspense>
-      </ErrorBoundary>
+      {exportMounted && (
+        <ErrorBoundary>
+          <Suspense fallback={exportOpen ? <DialogLazyFallback /> : null}>
+            <ExportDialog open={exportOpen} onOpenChange={onExportOpenChange} />
+          </Suspense>
+        </ErrorBoundary>
+      )}
 
       {/* نافذة إعدادات الطباعة */}
-      <ErrorBoundary>
-        <Suspense fallback={printOpen ? <DialogLazyFallback /> : null}>
-          <PrintDialog open={printOpen} onOpenChange={onPrintOpenChange} />
-        </Suspense>
-      </ErrorBoundary>
+      {printMounted && (
+        <ErrorBoundary>
+          <Suspense fallback={printOpen ? <DialogLazyFallback /> : null}>
+            <PrintDialog open={printOpen} onOpenChange={onPrintOpenChange} />
+          </Suspense>
+        </ErrorBoundary>
+      )}
 
       <AccountLicenseModal />
       <UpdateNotifier />

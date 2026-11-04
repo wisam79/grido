@@ -1,9 +1,16 @@
 package service
 
 import (
+	"bytes"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
 	"grido/internal/core/domain"
 	"grido/internal/repository"
-	"testing"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -96,5 +103,131 @@ func TestBackupService_ExportAndImport(t *testing.T) {
 	}
 	if len(projects) != 2 {
 		t.Fatalf("expected 2 projects, got %d", len(projects))
+	}
+}
+
+// TestBackupService_ExportBackupToFile_MatchesExportBackupBytes يتحقق من أن
+// ExportBackupToFile ينتج ملفاً صالحاً مطابقاً بايت-ب-بايت لمخرج ExportBackup،
+// وبكتابة أذرعية بلا بقايا .tmp.
+func TestBackupService_ExportBackupToFile_MatchesExportBackupBytes(t *testing.T) {
+	db, cleanup := setupBackupTestDB(t)
+	defer cleanup()
+
+	repo := repository.NewProjectRepository(db)
+	licenseRepo := repository.NewLicenseRepository(db)
+	backupSvc := NewBackupService(repo, licenseRepo)
+
+	// محتوى غني: عربية وHTML (<>/) وأسطر جديدة داخل JSONText — لقفل توافق
+	// صيغة الهروب (HTML escaping) مع json.MarshalIndent التاريخي
+	rich := &domain.Project{
+		ID:       "rich-1",
+		Name:     "مشروع <عربي> & \"اقتباس\"",
+		Mode:     "single",
+		Elements: `{"imageSrc":"/local-image/a.png","label":"سطر1\nسطر2","nested":{"arr":[1,2,{"k":"v&<x>"}]}}`,
+		Slots:    `[{"imageSrc":"/local-image/b.jpg","originalImageSrc":"/local-image/c.webp"}]`,
+	}
+	plain := &domain.Project{ID: "rich-2", Name: "Plain Project", Mode: "collage"}
+	if err := repo.Save(rich); err != nil {
+		t.Fatalf("failed to save rich project: %v", err)
+	}
+	time.Sleep(10 * time.Millisecond) // ضمان ترتيب updated_at مستقر بين الجلبين
+	if err := repo.Save(plain); err != nil {
+		t.Fatalf("failed to save plain project: %v", err)
+	}
+
+	expected, err := backupSvc.ExportBackup()
+	if err != nil {
+		t.Fatalf("ExportBackup failed: %v", err)
+	}
+
+	backupDir := t.TempDir()
+	backupPath := filepath.Join(backupDir, "grido-backup.json")
+	if err := backupSvc.ExportBackupToFile(backupPath); err != nil {
+		t.Fatalf("ExportBackupToFile failed: %v", err)
+	}
+
+	fileBytes, err := os.ReadFile(backupPath)
+	if err != nil {
+		t.Fatalf("failed to read exported file: %v", err)
+	}
+	if !bytes.Equal(fileBytes, []byte(expected)) {
+		t.Fatalf("ExportBackupToFile output must byte-match ExportBackup output\nfile: %q\nipc:  %q", fileBytes, expected)
+	}
+
+	// قفل صيغة المكتبة التاريخية: مطابقة json.MarshalIndent(projects, "", "  ")
+	projects, err := repo.FindAll()
+	if err != nil {
+		t.Fatalf("FindAll failed: %v", err)
+	}
+	legacy, err := json.MarshalIndent(projects, "", "  ")
+	if err != nil {
+		t.Fatalf("MarshalIndent failed: %v", err)
+	}
+	if !bytes.Equal([]byte(expected), legacy) {
+		t.Errorf("backup format drifted from legacy MarshalIndent format")
+	}
+
+	// صلاحية الملف: إعادة استيراده بنجاح (overwrite) يعيد نفس المشروعين
+	if err := backupSvc.ImportBackup(string(fileBytes), "overwrite"); err != nil {
+		t.Fatalf("importing the exported file failed: %v", err)
+	}
+	imported, err := repo.FindAll()
+	if err != nil {
+		t.Fatalf("FindAll after import failed: %v", err)
+	}
+	if len(imported) != 2 {
+		t.Errorf("expected 2 projects after importing exported file, got %d", len(imported))
+	}
+
+	// لا بقايا ملفات مؤقتة .tmp في مجلد الهدف
+	entries, err := os.ReadDir(backupDir)
+	if err != nil {
+		t.Fatalf("failed to read backup dir: %v", err)
+	}
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".tmp") {
+			t.Errorf("leftover temp file %q after atomic export", e.Name())
+		}
+	}
+
+	// الكتابة فوق ملف قائم (الحمولية الذرية تستبدل الهدف)
+	if err := backupSvc.ExportBackupToFile(backupPath); err != nil {
+		t.Fatalf("re-export over existing file failed: %v", err)
+	}
+
+	// مسار فارغ مرفوض
+	if err := backupSvc.ExportBackupToFile("   "); err == nil {
+		t.Error("expected error for empty backup export path")
+	}
+}
+
+// TestBackupService_ExportBackupToFile_EmptyLibrary يثبت صيغة المكتبة الفارغة "[]"
+func TestBackupService_ExportBackupToFile_EmptyLibrary(t *testing.T) {
+	db, cleanup := setupBackupTestDB(t)
+	defer cleanup()
+
+	backupSvc := NewBackupService(
+		repository.NewProjectRepository(db),
+		repository.NewLicenseRepository(db),
+	)
+
+	expected, err := backupSvc.ExportBackup()
+	if err != nil {
+		t.Fatalf("ExportBackup failed: %v", err)
+	}
+	if expected != "[]" {
+		t.Fatalf("expected empty library export to be \"[]\", got %q", expected)
+	}
+
+	path := filepath.Join(t.TempDir(), "empty-backup.json")
+	if err := backupSvc.ExportBackupToFile(path); err != nil {
+		t.Fatalf("ExportBackupToFile failed: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read exported file: %v", err)
+	}
+	if string(data) != "[]" {
+		t.Errorf("expected file content \"[]\", got %q", data)
 	}
 }

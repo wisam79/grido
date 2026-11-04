@@ -186,21 +186,31 @@ const HISTORY_MAX_BYTES = 50 * 1024 * 1024;
 
 // تقدير الحجم دون تسلسل كامل: نحصي أطوال سلاسل الصور (imageSrc/originalImageSrc)
 // لأنها تهيمن على الذاكرة أمام الحقول العددية والمراجع الصغيرة.
+// 🚀 كل سلسلة صورة فريدة تُحتسب مرة واحدة لكل لقطة عبر Set — الصورة الواحدة
+// المشاركة بين عدة عناصر/خانات تُخزَّن في الذاكرة بمرجع واحد، وكانت تُجمع بكل
+// مرات تكرارها فيتضخم التقدير فوق الحجم الفعلي ويُسقط السقف أرشيفاً سليماً
+// أبكر من اللازم.
 const estimateEntryBytes = (entry: HistoryEntry): number => {
   let total = 2048; // مصروف إداري لكل لقطة (مصفوفات + حقول عددية)
+  const counted = new Set<string>();
+  const addImageBytes = (src: unknown): void => {
+    if (typeof src !== 'string' || counted.has(src)) return;
+    counted.add(src);
+    total += src.length;
+  };
   for (const el of entry.elements) {
     if (el.type === 'image') {
-      if (typeof el.imageSrc === 'string') total += el.imageSrc.length;
-      if (typeof el.originalImageSrc === 'string') total += el.originalImageSrc.length;
+      addImageBytes(el.imageSrc);
+      addImageBytes(el.originalImageSrc);
     }
   }
   for (const sl of entry.slots) {
-    if (typeof sl.imageSrc === 'string') total += sl.imageSrc.length;
+    addImageBytes(sl.imageSrc);
     // كانت مُهمَلة فيقدّر السقف نصف الحجم الفعلي عند وجود صورة أصلية محفوظة
-    if (typeof sl.originalImageSrc === 'string') total += sl.originalImageSrc.length;
+    addImageBytes(sl.originalImageSrc);
   }
-  for (const src of entry.autofillImages ?? []) total += src.length;
-  for (const src of entry.collagePendingImages ?? []) total += src.length;
+  for (const src of entry.autofillImages ?? []) addImageBytes(src);
+  for (const src of entry.collagePendingImages ?? []) addImageBytes(src);
   return total;
 };
 

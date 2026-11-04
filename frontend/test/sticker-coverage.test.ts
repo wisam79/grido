@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import {
   generateBarcodeInnerSvg,
@@ -135,6 +135,46 @@ describe('sticker-coverage: barcode and QR generation paths', () => {
     const svg = await generateQrCodeInnerSvgAsync('https://grido.app/s/test', 200);
     expect(svg).toContain('<svg');
     expect(svg).not.toContain('تعذر توليد');
+  });
+
+  // 🚀 التحميل الكسول على أول استخدام: الوعد مخزَّن مرة واحدة وحالة جاهزية للمستدعين
+  it('loads jsbarcode lazily on first use: cold sync call defers explicitly, readiness flips after load', async () => {
+    vi.resetModules();
+    const cold = await import('@/features/stickers/lib/barcode-svg');
+    expect(cold.isBarcodeGeneratorReady()).toBe(false);
+
+    // أول استدعاء متزامن بلا تسخين: عنصر تحذيري صريح لا رمز وهمي، ويُطلق التحميل
+    const deferred = cold.generateBarcodeInnerSvg('TEST123', 'CODE128');
+    expect(deferred).toContain('جارٍ تجهيز الباركود');
+    expect(cold.isBarcodeGeneratorReady()).toBe(false);
+
+    // نفس وعد الوحدة (محاولة واحدة) يكمل الجاهزية — الاستدعاء التالي رمز حقيقي
+    await cold.generateBarcodeInnerSvgAsync('TEST123', 'CODE128');
+    expect(cold.isBarcodeGeneratorReady()).toBe(true);
+    const svg = cold.generateBarcodeInnerSvg('TEST123', 'CODE128');
+    expect(svg).not.toContain('جارٍ تجهيز');
+    expect(svg).toContain('<rect');
+  });
+
+  it('surfaces a clear failure message (and keeps retrying) when the barcode library fails to load', async () => {
+    vi.resetModules();
+    vi.doMock('jsbarcode', () => {
+      throw new Error('chunk fetch failed');
+    });
+    try {
+      const cold = await import('@/features/stickers/lib/barcode-svg');
+      // المسار غير المتزامن يصرّف خطأً واضحاً بدل الفشل الصامت
+      await expect(cold.generateBarcodeInnerSvgAsync('X', 'CODE128')).rejects.toThrow(
+        'تعذر تحميل مكتبة توليد الباركود',
+      );
+      // المسار المتزامن يعرض رسالة الفشل الصريحة (لا «جارٍ التجهيز» للأبد)
+      const svg = cold.generateBarcodeInnerSvg('X', 'CODE128');
+      expect(svg).toContain('تعذر تحميل مكتبة الباركود');
+      expect(svg).not.toContain('جارٍ تجهيز');
+    } finally {
+      vi.doUnmock('jsbarcode');
+      vi.resetModules();
+    }
   });
 });
 

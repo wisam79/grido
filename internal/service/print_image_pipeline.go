@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"fmt"
 	"image"
 	"image/color"
@@ -386,7 +387,85 @@ type processedCache struct {
 	mu     sync.RWMutex
 	images map[processedKey]image.Image
 	access map[processedKey]time.Time
-	group  singleflight.Group
+	// refs يعدّ مرات تخزين نفس مثال الصورة (نفس المؤشر) تحت مفاتيح معالجة
+	// مختلفة — بايتاته تُحسب في الميزانية مرة واحدة ولا تُخصم إلا عند إزاحة
+	// آخر مرجع (دفعة الأداء C2: بعدّ مرتين كانت ميزانية 512MiB تُستنفد وهمياً).
+	refs       map[image.Image]int
+	totalBytes int64
+	group      singleflight.Group
+}
+
+// processedCacheMaxEntries سقف عدد الإدخالات (كما كان 16 سابقاً).
+const processedCacheMaxEntries = 16
+
+// processedCacheMaxBytes ميزانية بايتات كاش المعالجة (512MiB تقديراً
+// W×H×4 بايت/بكسل) — الكاش كان يحتفظ بـ16 صورة بلا حد بايتات:
+// 16 × 100MP RGBA ≈ 6.4GB أسوأ حالة محتفظ بها في طلب واحد.
+// متغير (لا ثابتاً) كي يمكن خفضه في اختبارات الإزاحة.
+var processedCacheMaxBytes = int64(512 << 20)
+
+// put يخزن صورة معالجة تحت مفتاحها مع طرد أقدم الوصول عند تجاوز أيٍّ من
+// سقفَي العدد أو البايتات. الصور المشتركة (نفس المؤشر تحت مفتاحين) تُحسب
+// في الميزانية مرة واحدة.
+func (c *processedCache) put(pKey processedKey, img image.Image) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.refs == nil {
+		c.refs = make(map[image.Image]int)
+	}
+
+	entryBytes := imageDecodedBytes(img)
+	// مفتاح قائم (لا يتكرر عبر singleflight — دفاعية): حدّث الوصول فقط.
+	if _, ok := c.images[pKey]; ok {
+		c.access[pKey] = time.Now()
+		return
+	}
+	additional := entryBytes
+	if c.refs[img] > 0 {
+		additional = 0 // مثال مشترك — بايتاته محسوبة أصلاً
+	}
+	for len(c.images) >= processedCacheMaxEntries ||
+		(c.totalBytes+additional > processedCacheMaxBytes && len(c.images) > 0) {
+		var oldestKey processedKey
+		var oldestTime time.Time
+		first := true
+		for k := range c.images {
+			t := c.access[k]
+			if first || t.Before(oldestTime) {
+				oldestTime = t
+				oldestKey = k
+				first = false
+			}
+		}
+		if first {
+			break
+		}
+		c.releaseLocked(c.images[oldestKey])
+		delete(c.images, oldestKey)
+		delete(c.access, oldestKey)
+	}
+	c.images[pKey] = img
+	c.access[pKey] = time.Now()
+	c.refs[img]++
+	if c.refs[img] == 1 {
+		c.totalBytes += entryBytes
+	}
+}
+
+// releaseLocked يخصم مرجعاً لمثال صورة من الكاش: بايتاته تُخصم من الميزانية
+// فقط عند إزاحة آخر مرجع له. يجب استدعاؤه والحاجز مأخوذاً.
+func (c *processedCache) releaseLocked(img image.Image) {
+	if c.refs[img] <= 0 {
+		return
+	}
+	c.refs[img]--
+	if c.refs[img] == 0 {
+		delete(c.refs, img)
+		c.totalBytes -= imageDecodedBytes(img)
+		if c.totalBytes < 0 {
+			c.totalBytes = 0
+		}
+	}
 }
 
 // كاش خام مشترك عبر طلبات الطباعة — طباعتان متتاليتان لنفس الصور كانتا
@@ -628,6 +707,145 @@ func isQuarterRotation(rotation float64) bool {
 	return rotDeg == 90 || rotDeg == 270
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 🧮 أبعاد المصدر المفكوك لتقدير الدفعات (C3): ترويسة فقط بلا فك بكسلات، مع
+// تطبيع اتجاه EXIF (5-8 تبدّل الأبعاد كما يفعل imaging.AutoOrientation عند
+// الفك الفعلي) — دفعة صغيرة من الأهداف المصغّرة كانت تحتشد صوراً عملاقة المصدر.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// sourceExifHeadLen كافٍ لترويسة الصورة ووسم EXIF الاتجاه في الحالات الواقعية.
+const sourceExifHeadLen = 64 * 1024
+
+// sourceDecodedDims يعيد أبعاد صورة المصدر بعد تطبيع EXIF دون فك البكسلات:
+// image.DecodeConfig يقرأ الترويسة فقط (صفر تخصيص بكسلات). للبيانات Base64
+// يُفك أول جزء من الترويسة تجنباً لفك 50MB كاملة. الفشل يعني (0,0,false)
+// فيُترك وزن المصدر خارج التقدير — سلوك التقدير السابق.
+func sourceDecodedDims(filePath string) (w, h int64, ok bool) {
+	if strings.HasPrefix(filePath, "data:image/") {
+		commaIdx := strings.Index(filePath, ",")
+		if commaIdx == -1 {
+			return 0, 0, false
+		}
+		enc := filePath[commaIdx+1:]
+		if len(enc) > sourceExifHeadLen {
+			enc = enc[:sourceExifHeadLen-sourceExifHeadLen%4] // مضاعف 4 لفك base64 سليم
+		}
+		head, err := base64.StdEncoding.DecodeString(enc)
+		if err != nil {
+			return 0, 0, false
+		}
+		return decodeConfigDimsWithEXIF(head)
+	}
+	f, err := os.Open(filePath)
+	if err != nil {
+		return 0, 0, false
+	}
+	defer f.Close()
+	cfg, _, err := image.DecodeConfig(f)
+	if err != nil {
+		return 0, 0, false
+	}
+	w, h = int64(cfg.Width), int64(cfg.Height)
+	// اتجاه EXIF: نعيد القراءة من البداية لفحص ترويسة JPEG فقط.
+	if _, serr := f.Seek(0, io.SeekStart); serr == nil {
+		head := make([]byte, sourceExifHeadLen)
+		n, _ := io.ReadFull(f, head)
+		if n > 0 {
+			if o := jpegEXIFOrientation(head[:n]); o >= 5 && o <= 8 {
+				w, h = h, w
+			}
+		}
+	}
+	return w, h, true
+}
+
+// decodeConfigDimsWithEXIF يقرأ الأبعاد من ترويسة خام مع تطبيع اتجاه EXIF.
+func decodeConfigDimsWithEXIF(head []byte) (w, h int64, ok bool) {
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(head))
+	if err != nil {
+		return 0, 0, false
+	}
+	w, h = int64(cfg.Width), int64(cfg.Height)
+	if o := jpegEXIFOrientation(head); o >= 5 && o <= 8 {
+		w, h = h, w
+	}
+	return w, h, true
+}
+
+// jpegEXIFOrientation يقرأ وسم الاتجاه (0x0112) من مقطع APP1/Exif في ترويسة
+// JPEG — يكفي أول sourceExifHeadLen بايت. يعيد 0 إن لم يوجد.
+func jpegEXIFOrientation(head []byte) int {
+	if len(head) < 4 || head[0] != 0xFF || head[1] != 0xD8 {
+		return 0
+	}
+	pos := 2
+	for pos+4 <= len(head) {
+		if head[pos] != 0xFF {
+			return 0
+		}
+		marker := head[pos+1]
+		// مقاطع بلا طول: SOI/EOI/RSTn/TEM
+		if marker == 0xD8 || marker == 0xD9 || marker == 0x01 || (marker >= 0xD0 && marker <= 0xD7) {
+			pos += 2
+			continue
+		}
+		if marker == 0xDA { // SOS — بدأت بيانات الصورة، لا EXIF بعد الآن
+			return 0
+		}
+		segLen := int(head[pos+2])<<8 | int(head[pos+3])
+		if segLen < 2 {
+			return 0
+		}
+		segEnd := pos + 2 + segLen
+		if marker == 0xE1 && pos+10 <= len(head) &&
+			bytes.Equal(head[pos+4:pos+10], []byte("Exif\x00\x00")) {
+			return tiffIFDOrientation(head[pos+10 : min(segEnd, len(head))])
+		}
+		if segEnd <= pos { // حماية من طول فاسد يعلّق الحلقة
+			return 0
+		}
+		pos = segEnd
+	}
+	return 0
+}
+
+// tiffIFDOrientation يقرأ وسم الاتجاه 0x0112 من IFD0 في كتلة TIFF (II أو MM).
+func tiffIFDOrientation(tiff []byte) int {
+	if len(tiff) < 8 {
+		return 0
+	}
+	var u16 func([]byte) int
+	switch {
+	case tiff[0] == 'I' && tiff[1] == 'I':
+		u16 = func(b []byte) int { return int(b[0]) | int(b[1])<<8 }
+	case tiff[0] == 'M' && tiff[1] == 'M':
+		u16 = func(b []byte) int { return int(b[0])<<8 | int(b[1]) }
+	default:
+		return 0
+	}
+	if u16(tiff[2:4]) != 42 {
+		return 0
+	}
+	ifdOff := int(binary.BigEndian.Uint32(tiff[4:8]))
+	if tiff[0] == 'I' {
+		ifdOff = int(binary.LittleEndian.Uint32(tiff[4:8]))
+	}
+	if ifdOff < 0 || ifdOff+2 > len(tiff) {
+		return 0
+	}
+	count := u16(tiff[ifdOff : ifdOff+2])
+	for i := 0; i < count; i++ {
+		e := ifdOff + 2 + i*12
+		if e+12 > len(tiff) {
+			return 0
+		}
+		if u16(tiff[e:e+2]) == 0x0112 { // Orientation (SHORT)
+			return u16(tiff[e+8 : e+10])
+		}
+	}
+	return 0
+}
+
 // computeCropFromSlot يحسب منطقة الاقتصاص بناءً على نسبة الخانة والزوم والسحب
 func computeCropFromSlot(item domain.PrintItem, img image.Image) (cropX, cropY, cropW, cropH float64) {
 	cropX = item.CropX
@@ -832,25 +1050,9 @@ func (s *PrintService) loadAndProcessImage(
 
 		processedImg := applyImageProcessing(img, item, effW, effH)
 
-		procCache.mu.Lock()
-		if len(procCache.images) >= 16 {
-			var oldestKey processedKey
-			var oldestTime time.Time
-			first := true
-			for k := range procCache.images {
-				t := procCache.access[k]
-				if first || t.Before(oldestTime) {
-					oldestTime = t
-					oldestKey = k
-					first = false
-				}
-			}
-			delete(procCache.images, oldestKey)
-			delete(procCache.access, oldestKey)
-		}
-		procCache.images[pKey] = processedImg
-		procCache.access[pKey] = time.Now()
-		procCache.mu.Unlock()
+		// 🧠 تخزين بميزانية بايتات (C2): السقف كان عددياً (16) فقط — الآن
+		// سقف بايتات 512MiB يطرد أقدم الوصول، والصور المشتركة بعدّ مرة واحدة.
+		procCache.put(pKey, processedImg)
 
 		return processedImg, nil
 	})

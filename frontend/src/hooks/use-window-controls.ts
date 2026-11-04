@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-import { triggerMemoryTrim } from '@/lib/memory-trim';
-
 import { flushAutoSave } from './use-autosave';
 import {
   WindowMinimise,
@@ -81,9 +79,9 @@ export function useWindowControls() {
     const handleFocus = () => setIsFocused(true);
     const handleBlur = () => {
       setIsFocused(false);
-      // 🧹 عند فقدان التركيز: نفس عقدة main.go/WindowLostFocus — تفريغ
-      // Working Set فوراً. الـ fetch محميّ داخل triggerMemoryTrim (catch+توكن).
-      triggerMemoryTrim();
+      // 🧹 صيانة الذاكرة تُدار حصرياً بواسطة MemoryService في Go بالسياسة
+      // الموحدة (فحص دوري + خنق + حارس عمل ثقيل + دمج الطلبات) — لا تقليم
+      // من أحداث focus/blur في الواجهة إطلاقاً.
     };
     window.addEventListener('focus', handleFocus);
     window.addEventListener('blur', handleBlur);

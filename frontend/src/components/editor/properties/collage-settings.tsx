@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { FluentSection, FluentSettingRow, FluentSliderField } from '@/components/ui/blocks';
 import { Switch } from '@/components/ui/switch';
@@ -25,8 +25,8 @@ export function CollageSettings() {
     canvasWidth,
     canvasHeight,
     printSettings,
-    setCollageGap,
-    setCollageMargin,
+    previewCollageGap,
+    previewCollageMargin,
     setCollageRadius,
     setCollageShowCutLines,
     setCollageShowEndCutLine,
@@ -45,8 +45,8 @@ export function CollageSettings() {
       canvasWidth: state.canvasWidth,
       canvasHeight: state.canvasHeight,
       printSettings: state.printSettings,
-      setCollageGap: state.setCollageGap,
-      setCollageMargin: state.setCollageMargin,
+      previewCollageGap: state.previewCollageGap,
+      previewCollageMargin: state.previewCollageMargin,
       setCollageRadius: state.setCollageRadius,
       setCollageShowCutLines: state.setCollageShowCutLines,
       setCollageShowEndCutLine: state.setCollageShowEndCutLine,
@@ -63,6 +63,53 @@ export function CollageSettings() {
   );
   const toMm = useCallback((px: number) => Math.round(pxToMm(px, dpi) * 10) / 10, [dpi]);
   const toPx = useCallback((mm: number) => Math.round(mmToPx(mm, dpi)), [dpi]);
+
+  // 🚀 فواصل الكولاج بنمط معاينة/تثبيت (القسم 10.5 من ثوابت Konva): onChange
+  // يكتب قيمة عابرة فقط (previewCollageGap/Margin — بلا إعادة حساب الخلايا
+  // الفيزيائية ولا remapSlotsToCells ذي البحث المتداخل O(S²) في كل إطار)،
+  // وعند onCommit تُعاد المطابقة مرة واحدة عبر commitCollageSpacing ثم
+  // pushHistory واحدة. التثبيت يعمل للتخطيط الفيزيائي فقط؛ للتصميم اليدوي
+  // تكفي المعاينة المقيَّدة ثم الدفع.
+  const committedGapPxRef = useRef(collageGap);
+  const committedMarginPxRef = useRef(collageMargin);
+  const previewingRef = useRef({ gap: false, margin: false });
+
+  // 🛡️ مزامنة آخر قيمة ملتزمة مع التغييرات الخارجية (تبديل قالب/مقاس ورقة) —
+  // إطارات المعاينة النشطة مستثناة حتى لا يبتلع الحارس تغيّراً سيُلتقط عند onCommit.
+  useEffect(() => {
+    if (!previewingRef.current.gap) committedGapPxRef.current = collageGap;
+    if (!previewingRef.current.margin) committedMarginPxRef.current = collageMargin;
+  }, [collageGap, collageMargin]);
+
+  const beginGapPreview = useCallback(() => {
+    previewingRef.current.gap = true;
+  }, []);
+
+  const beginMarginPreview = useCallback(() => {
+    previewingRef.current.margin = true;
+  }, []);
+
+  // 🛡️ حارس الالتقاط: إذا لم تتغير القيمة عن آخر قيمة ملتزمة (نقر بلا حراك/
+  // إعادة التقاط لنفس القيمة) فلا commitCollageSpacing ولا pushHistory زائداً.
+  const commitGapSpacing = useCallback(() => {
+    const state = useEditorStore.getState();
+    if (state.collageGap !== committedGapPxRef.current) {
+      state.commitCollageSpacing();
+      useEditorStore.getState().pushHistory();
+      committedGapPxRef.current = useEditorStore.getState().collageGap;
+    }
+    previewingRef.current.gap = false;
+  }, []);
+
+  const commitMarginSpacing = useCallback(() => {
+    const state = useEditorStore.getState();
+    if (state.collageMargin !== committedMarginPxRef.current) {
+      state.commitCollageSpacing();
+      useEditorStore.getState().pushHistory();
+      committedMarginPxRef.current = useEditorStore.getState().collageMargin;
+    }
+    previewingRef.current.margin = false;
+  }, []);
 
   // 🧱 القوالب المخبوزة (أطقم جاهزة/تعديل يدوي/كولاج حر) تحمل فواصلها داخل
   // إحداثيات الخلايا، وجيومترية العرض تتجاهل الفجوة والهامش فيها. إبقاء
@@ -83,8 +130,11 @@ export function CollageSettings() {
             unit="mm"
             defaultValue={DEFAULT_COLLAGE_GAP_MM}
             disabled={spacingLocked}
-            onChange={(mm) => setCollageGap(toPx(mm))}
-            onCommit={() => useEditorStore.getState().pushHistory()}
+            onChange={(mm) => {
+              beginGapPreview();
+              previewCollageGap(toPx(mm));
+            }}
+            onCommit={commitGapSpacing}
           />
           <FluentSliderField
             label="الهوامش"
@@ -95,8 +145,11 @@ export function CollageSettings() {
             unit="mm"
             defaultValue={DEFAULT_COLLAGE_MARGIN_MM}
             disabled={spacingLocked}
-            onChange={(mm) => setCollageMargin(toPx(mm))}
-            onCommit={() => useEditorStore.getState().pushHistory()}
+            onChange={(mm) => {
+              beginMarginPreview();
+              previewCollageMargin(toPx(mm));
+            }}
+            onCommit={commitMarginSpacing}
           />
           {spacingLocked && (
             <p className="text-mini leading-5 text-muted-foreground">

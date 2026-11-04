@@ -36,11 +36,9 @@ export const StickerStudioHost = React.memo(function StickerStudioHost() {
   );
 
   React.useEffect(() => {
-    // تحميل مسبق في وقت خمول الواجهة لضمان الفتح الفوري عند النقر
-    const timer = setTimeout(() => {
-      preloadBarcodeDialog();
-    }, 1500);
-
+    // 🚀 لا تحميل مسبق بمؤقت ثابت عند الإقلاع — حزمة الاستوديو ومولدات
+    // الباركود تُطلب عند أول فتح/إعادة تحرير فقط، والإدراج السريع يضمن
+    // جاهزية المولدات قبل تخزين SVG نهائي (ensureBarcodeLibsReady).
     const openHandler = () => {
       preloadBarcodeDialog();
       setEditingId(null);
@@ -59,7 +57,6 @@ export const StickerStudioHost = React.memo(function StickerStudioHost() {
     window.addEventListener(REEDIT_STICKER_EVENT, reeditHandler);
 
     return () => {
-      clearTimeout(timer);
       window.removeEventListener('grido:open-stickers-dialog', openHandler);
       window.removeEventListener(REEDIT_STICKER_EVENT, reeditHandler);
     };

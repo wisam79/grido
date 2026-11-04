@@ -3,22 +3,20 @@ import { toast } from 'sonner';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { ProjectsDialog } from '../src/components/editor/dialogs/projects-dialog';
-import { SaveFileDialog } from '../wailsjs/go/main/App';
+import { ExportBackupToPath } from '../wailsjs/go/handlers/BackupHandler';
 
 vi.mock('../wailsjs/go/handlers/BackupHandler', () => ({
-  ExportBackup: vi.fn(() => Promise.resolve('[{"id":"p1"}]')),
+  // 🌊 عقد التصدير الجديد: يفتح الحوار الأصلي في Go ويبثّ الأرشيف مباشرة إلى
+  // المسار المختار — السلسلة الفارغة = ألغى المستخدم، والفشل يرفع استثناء.
+  ExportBackupToPath: vi.fn(() => Promise.resolve('C:/mock/backup.json')),
   ImportBackup: vi.fn(() => Promise.resolve('success')),
   ResetLibrary: vi.fn(() => Promise.resolve('success')),
 }));
 
 vi.mock('../wailsjs/go/handlers/ProjectHandler', () => ({
   SaveProject: vi.fn(() => Promise.resolve('success')),
-  GetAllProjects: vi.fn(() => Promise.resolve([])),
+  GetAllProjects: vi.fn(() => Promise.resolve([{ id: 'p1', name: 'مشروع' }])),
   DeleteProject: vi.fn(() => Promise.resolve('success')),
-}));
-
-vi.mock('../wailsjs/go/main/App', () => ({
-  SaveFileDialog: vi.fn(() => Promise.resolve('success')),
 }));
 
 vi.mock('sonner', () => ({
@@ -32,7 +30,7 @@ async function exportBackup() {
   fireEvent.click(screen.getByRole('tab', { name: 'النسخ' }));
   fireEvent.click(await screen.findByRole('button', { name: 'تصدير JSON' }));
 
-  await waitFor(() => expect(SaveFileDialog).toHaveBeenCalled());
+  await waitFor(() => expect(ExportBackupToPath).toHaveBeenCalled());
 }
 
 describe('ProjectsDialog backup export result handling', () => {
@@ -40,8 +38,8 @@ describe('ProjectsDialog backup export result handling', () => {
     vi.clearAllMocks();
   });
 
-  it('shows a success toast when the save dialog reports success', async () => {
-    vi.mocked(SaveFileDialog).mockResolvedValueOnce('success');
+  it('shows a success toast when the backend export completes', async () => {
+    vi.mocked(ExportBackupToPath).mockResolvedValueOnce('C:/mock/backup.json');
 
     await exportBackup();
 
@@ -49,7 +47,7 @@ describe('ProjectsDialog backup export result handling', () => {
   });
 
   it('shows a cancel toast when the user dismisses the save dialog', async () => {
-    vi.mocked(SaveFileDialog).mockResolvedValueOnce('');
+    vi.mocked(ExportBackupToPath).mockResolvedValueOnce('');
 
     await exportBackup();
 
@@ -57,11 +55,12 @@ describe('ProjectsDialog backup export result handling', () => {
     expect(toast.success).not.toHaveBeenCalled();
   });
 
-  it('stays silent when the save dialog reports an error', async () => {
-    vi.mocked(SaveFileDialog).mockResolvedValueOnce('Access is denied.');
+  it('shows the explicit error toast when the backend export rejects', async () => {
+    vi.mocked(ExportBackupToPath).mockRejectedValueOnce(new Error('Access is denied.'));
 
     await exportBackup();
 
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Access is denied.'));
     expect(toast.success).not.toHaveBeenCalled();
     expect(toast.info).not.toHaveBeenCalled();
   });

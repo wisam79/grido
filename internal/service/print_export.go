@@ -217,10 +217,6 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 		// 🖨️ TIFF بفصل أحبار حقيقي (photometric=5) عبر encodeCMYKTIFF:
 		// تمرير *image.CMYK إلى مكتبات Go كان يكتب RGB موسوماً photometric=2
 		// فيضيع فصل CMYK تماماً. وسوم الدقة تُحقن داخل نفس المشفّر (RV-Print-04).
-		tagged, err := encodeCMYKTIFF(cmykImg, req.DPI)
-		if err != nil {
-			return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
-		}
 		imageName = baseName + ".tif"
 		imagePath = filepath.Join(outDir, imageName)
 		af, err := utils.CreateAtomic(imagePath, 0o644)
@@ -228,8 +224,10 @@ func (s *PrintService) saveOutput(dc *gg.Context, req domain.PrintRequest) (stri
 			return "", "", fmt.Errorf("create cmyk tiff: %w", err)
 		}
 		defer af.Abort()
-		if _, err := af.Write(tagged); err != nil {
-			return "", "", fmt.Errorf("write cmyk tiff: %w", err)
+		// 🌊 بثّ الترميز مباشرة إلى الملف المؤقت — لا buffer بحجم الملف الكامل
+		// ولا نسخة ثانية لحقن وسوم الدقة (تُبنى داخل IFD0 أثناء الترميز).
+		if err := encodeCMYKTIFFToWriter(cmykImg, req.DPI, af.File()); err != nil {
+			return "", "", fmt.Errorf("encode cmyk tiff: %w", err)
 		}
 		if err := af.Commit(); err != nil {
 			return "", "", fmt.Errorf("commit cmyk tiff: %w", err)

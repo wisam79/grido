@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"grido/internal/utils"
 )
@@ -47,6 +48,16 @@ func LoadWindowState() (WindowState, error) {
 	return state, err
 }
 
+// lastSavedWindowState يتذكّر آخر سلسلة مُسلسَلة كُتبت فعلاً على القرص.
+// الحفظ الدوري كل 30 ثانية يقارن الحالة الحالية بها ويتخطى الكتابة الذرية
+// كلياً عند التطابق (لا تغيّر في الهندسة أو وضع التكبير) فلا يُلمس الملف
+// بلا داعٍ ولا تُستدعى دورة fsync/rename فارغة. القفل يحمي القيمة ويُسلسل
+// الكتّاب المتزامنين (خيط الإغلاق والحفظ الدوري).
+var (
+	windowStateMu        sync.Mutex
+	lastSavedWindowState string
+)
+
 func SaveWindowState(state WindowState) error {
 	path := GetWindowStatePath()
 	if path == "" {
@@ -60,7 +71,20 @@ func SaveWindowState(state WindowState) error {
 	if err != nil {
 		return err
 	}
-	return utils.AtomicWriteFile(path, data, 0644)
+
+	windowStateMu.Lock()
+	defer windowStateMu.Unlock()
+
+	// الحالة مطابقة تماماً لآخر قيمة محفوظة في الذاكرة — تخطَّ الكتابة
+	// الذرية كلياً (لا .tmp ولا fsync ولا rename).
+	if string(data) == lastSavedWindowState {
+		return nil
+	}
+	if err := utils.AtomicWriteFile(path, data, 0644); err != nil {
+		return err
+	}
+	lastSavedWindowState = string(data)
+	return nil
 }
 
 func GetWebviewCacheDir() string {

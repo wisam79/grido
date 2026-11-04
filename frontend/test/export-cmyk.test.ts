@@ -30,6 +30,9 @@ vi.mock('../src/components/editor/print/print-transport', async (importOriginal)
 
 vi.mock('@bindings/grido/internal/handlers/printhandler', () => ({
   ExportPrintSheet: vi.fn(),
+  // 🛑 عقد الإلغاء الجديد (C4) — يُستدعى من cancelExport في use-print-export
+  CancelActivePrintJobs: vi.fn(() => Promise.resolve(undefined)),
+  CancelPrintJob: vi.fn(() => Promise.resolve(undefined)),
 }));
 
 const mockExportCanvas = vi.mocked(exportCanvas);

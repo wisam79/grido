@@ -18,6 +18,7 @@ import { captureStageBlob } from '@/lib/canvas/konva-export-utils';
 import { mergePaths } from '@/lib/canvas/path-boolean';
 import { shapeElementToSegments } from '@/lib/canvas/shape-to-path';
 import { assertExportablePixels } from '@/lib/export/export-limits';
+import { uploadMediaBlob } from '@/lib/io/media-upload';
 import { createLogger } from '@/lib/logger';
 
 import { normalizeSelection } from './types';
@@ -31,6 +32,22 @@ import type Konva from 'konva';
 import type { StateCreator } from 'zustand';
 
 const logger = createLogger('element-merge');
+
+/**
+ * يرفع ناتج التسطيح إلى مسار الوسائط المحلي ليُخزَّن في العنصر وlastEditedImage
+ * رابطاً مستقراً بدل Data URL ضخم يتكرر في كل لقطة تاريخ لاحقة — والارتداد إلى
+ * Data URL عند تعذر الرفع (خادم الوسائط والاحتياطي معاً) كما يفعل مسار إدراج
+ * الملصقات، فلا يضيع عمل المستخدم.
+ */
+async function uploadRasterBlob(blob: Blob): Promise<string> {
+  try {
+    const uploaded = await uploadMediaBlob(blob, 'rasterized-selection.png');
+    return uploaded.imageSrc;
+  } catch (err) {
+    logger.warn('Media upload failed for rasterized layer — falling back to data URL', err);
+    return blobToDataUrl(blob);
+  }
+}
 
 /** خصائص الطلاء والمؤثرات التي تنتقل من الطبقة الأمامية إلى الشكل المدموج */
 function inheritPaint(front: ShapeElement): Partial<ShapeElement> {
@@ -186,14 +203,14 @@ export const createElementMergeSlice: StateCreator<
     }
     stage.batchDraw();
 
-    let dataUrl: string;
+    let imageSrc: string;
     try {
       // نسبة 1 = بكسلات الورقة المنطقية، فهي الدقة الكاملة المستقلة عن الزوم
       const blob = await captureStageBlob(stage, 1, 'image/png', undefined, rect, {
         useFullResolution: true,
       });
       if (!blob) return 'failed';
-      dataUrl = await blobToDataUrl(blob);
+      imageSrc = await uploadRasterBlob(blob);
     } catch (err) {
       logger.error('Rasterize capture failed', err);
       return 'failed';
@@ -223,7 +240,7 @@ export const createElementMergeSlice: StateCreator<
       zIndex: front.zIndex,
       visible: true,
       locked: false,
-      imageSrc: dataUrl,
+      imageSrc,
       filter: 'none',
       brightness: 100,
       contrast: 100,
@@ -235,7 +252,7 @@ export const createElementMergeSlice: StateCreator<
     set((s) => ({
       elements: [...s.elements.filter((el: CanvasElement) => !keepIds.has(el.id)), flat],
       ...normalizeSelection(flat.id),
-      lastEditedImage: dataUrl,
+      lastEditedImage: imageSrc,
       lastEditedImageAspect: rect.width / rect.height,
     }));
     get().pushHistory();

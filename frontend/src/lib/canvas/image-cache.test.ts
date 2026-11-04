@@ -1,6 +1,11 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { getCachedImage, invalidateImageCache, setWithLRU } from './image-cache';
+import {
+  getCachedImage,
+  invalidateImageCache,
+  preloadImageIntoCache,
+  setWithLRU,
+} from './image-cache';
 
 function fakeImage(width: number, height: number): HTMLImageElement {
   return { naturalWidth: width, naturalHeight: height, width, height } as HTMLImageElement;
@@ -62,5 +67,68 @@ describe('image-cache byte budget', () => {
     }
 
     expect(getCachedImage('next-0')).toBeDefined();
+  });
+});
+
+// ── محاكاة Image محدودة النطاق لاختبار التسخين عبر مشتق العرض ──
+const preloadAssigned: string[] = [];
+
+class PreloadMockImage {
+  onload: ((e?: unknown) => void) | null = null;
+  onerror: ((e?: unknown) => void) | null = null;
+  crossOrigin: string | null = null;
+  private _src = '';
+  decode() {
+    return Promise.resolve();
+  }
+  set src(v: string) {
+    this._src = v;
+    preloadAssigned.push(v);
+    queueMicrotask(() => this.onload?.({ target: this }));
+  }
+  get src() {
+    return this._src;
+  }
+}
+
+describe('preloadImageIntoCache — مشتق العرض 2048px (ملكية الصور E5)', () => {
+  const RealImage = globalThis.Image;
+
+  beforeEach(() => {
+    preloadAssigned.length = 0;
+    invalidateImageCache();
+    globalThis.Image = PreloadMockImage as unknown as typeof Image;
+  });
+
+  afterEach(() => {
+    globalThis.Image = RealImage;
+    invalidateImageCache();
+  });
+
+  it('المصدر المحلي يُسخَّن من مشتق 2048px ويُخزَّن تحت مفتاح الأصل', async () => {
+    const src = '/local-image/warm.jpg';
+    await preloadImageIntoCache(src);
+
+    expect(preloadAssigned).toEqual(['/local-image/thumb/warm.jpg?w=2048']);
+    const el = getCachedImage(`${src}__`);
+    expect(el).toBeDefined();
+    expect(el?.src).toBe('/local-image/thumb/warm.jpg?w=2048');
+  });
+
+  it('المصادر غير المحلية تُسخَّن كما هي دون تحويل', async () => {
+    const src = 'data:image/png;base64,abc';
+    await preloadImageIntoCache(src);
+
+    expect(preloadAssigned).toEqual([src]);
+    expect(getCachedImage(`${src}__`)).toBeDefined();
+  });
+
+  it('الإصابة المسبقة بمفتاح الأصل لا تُسند تحميلاً جديداً', async () => {
+    const src = '/local-image/hot.jpg';
+    await preloadImageIntoCache(src);
+    expect(preloadAssigned).toEqual(['/local-image/thumb/hot.jpg?w=2048']);
+
+    await preloadImageIntoCache(src);
+    expect(preloadAssigned).toEqual(['/local-image/thumb/hot.jpg?w=2048']);
   });
 });

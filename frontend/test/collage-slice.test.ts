@@ -750,6 +750,106 @@ describe('CollageSlice Unit Tests', () => {
     expect(slots.every((s) => s.w > 0 && s.h > 0)).toBe(true);
   });
 
+  it('previewCollageGap does not rebuild slots and commitCollageSpacing remaps once to the direct-call geometry', () => {
+    const tmpl = COLLAGE_TEMPLATES.find((t) => t.physicalLayout)!;
+    useEditorStore.getState().setCollageTemplate(tmpl);
+    const before = useEditorStore.getState().slots;
+    const beforeGap = useEditorStore.getState().collageGap;
+    const nextGap = beforeGap + 8;
+
+    // المعاينة: قيمة عابرة فقط — مصفوفة الخلايا وكائناتها بمراجعها الأصلية
+    useEditorStore.getState().previewCollageGap(nextGap);
+    const previewed = useEditorStore.getState();
+    expect(previewed.collageGap).toBe(nextGap);
+    expect(previewed.slots).toBe(before);
+    before.forEach((slot, index) => expect(previewed.slots[index]).toBe(slot));
+
+    // التثبيت: إعادة مطابقة واحدة بجيومترية مطابقة للاستدعاء المباشر القديم
+    // (setCollageGap كان يبني نفس الخلايا عبر computeDynamicCollageCells + remapSlotsToCells)
+    previewed.commitCollageSpacing();
+    const committed = useEditorStore.getState();
+    const dpi = getEffectiveDpi(
+      committed.canvasWidth,
+      committed.canvasHeight,
+      committed.printSettings.dpi,
+    );
+    const expected = computeDynamicCollageCells(
+      tmpl,
+      committed.canvasWidth,
+      committed.canvasHeight,
+      dpi,
+      nextGap,
+      committed.collageMargin,
+    )!;
+    expect(committed.slots.map(({ x, y, w, h }) => ({ x, y, w, h }))).toEqual(expected);
+  });
+
+  it('previewCollageMargin does not rebuild slots for a physical layout', () => {
+    const tmpl = COLLAGE_TEMPLATES.find((t) => t.physicalLayout)!;
+    useEditorStore.getState().setCollageTemplate(tmpl);
+    const before = useEditorStore.getState().slots;
+    const nextMargin = useEditorStore.getState().collageMargin + 6;
+
+    useEditorStore.getState().previewCollageMargin(nextMargin);
+
+    const previewed = useEditorStore.getState();
+    expect(previewed.collageMargin).toBe(nextMargin);
+    expect(previewed.slots).toBe(before);
+  });
+
+  it('applySlotMoves applies multi-slot moves in one step and skips unchanged slots by reference', () => {
+    setupSlotGrid();
+    const state0 = useEditorStore.getState();
+    useEditorStore.setState({
+      slots: state0.slots.map((s) =>
+        s.id === 'a' || s.id === 'b' ? { ...s, imageSrc: 'p.png' } : s,
+      ),
+    });
+    // المراجع تُلتقط بعد التجهيز (setState ينسخ الخلايا المعدّلة)
+    const slotB = useEditorStore.getState().slots.find((s) => s.id === 'b')!;
+    const slotD = useEditorStore.getState().slots.find((s) => s.id === 'd')!;
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    useEditorStore.getState().applySlotMoves([
+      { id: 'a', dx: 3, dy: -4 },
+      { id: 'b', dx: 0, dy: 0 },
+    ]);
+
+    const after = useEditorStore.getState();
+    const nextA = after.slots.find((s) => s.id === 'a')!;
+    const nextB = after.slots.find((s) => s.id === 'b')!;
+    const nextD = after.slots.find((s) => s.id === 'd')!;
+    expect(nextA.dragX).toBeCloseTo(3, 9);
+    expect(nextA.dragY).toBeCloseTo(-4, 9);
+    // الإزاحة الصفرية تخطّت الخلية بلا نسخ — المرجع محفوظ
+    expect(nextB).toBe(slotB);
+    expect(nextB.dragX ?? 0).toBe(0);
+    // الخلية غير المستهدفة لم تُنسخ أصلاً
+    expect(nextD).toBe(slotD);
+    // خطوة تراجع واحدة للمجموعة كاملة
+    expect(after.historyIndex).toBe(historyBefore + 1);
+
+    after.undo();
+    // التراجع يعيد اللقطة السابقة (خانات القالب — تجهيز الشبكة عبر setState لا يدفع سجلاً)
+    // فلا إزاحة قصّ تبقى على أي خلية
+    const revertedSlots = useEditorStore.getState().slots;
+    expect(revertedSlots.every((s) => (s.dragX ?? 0) === 0 && (s.dragY ?? 0) === 0)).toBe(true);
+  });
+
+  it('applySlotMoves with no effective change is a no-op without publishing or history', () => {
+    setupSlotGrid();
+    const slotsBefore = useEditorStore.getState().slots;
+    const historyBefore = useEditorStore.getState().historyIndex;
+
+    useEditorStore.getState().applySlotMoves([
+      { id: 'a', dx: 0, dy: 0 },
+      { id: 'ghost', dx: 5, dy: 5 },
+    ]);
+
+    expect(useEditorStore.getState().historyIndex).toBe(historyBefore);
+    expect(useEditorStore.getState().slots).toBe(slotsBefore);
+  });
+
   it('sets slot image directly', () => {
     const firstSlot = setupCollage();
 
