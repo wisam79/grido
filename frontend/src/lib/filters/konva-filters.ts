@@ -69,6 +69,8 @@ export function getKonvaFilters(options: FilterOptions) {
   const konvaFilters = Konva.Filters as unknown as {
     SepiaBlend?: Filter;
     Brightness?: Filter;
+    Contrast?: Filter;
+    Saturation?: Filter;
     NearestNeighborPixelate?: Filter;
     LuminanceThreshold?: Filter;
   };
@@ -78,8 +80,10 @@ export function getKonvaFilters(options: FilterOptions) {
   if (useGrayscale) filters.push(Konva.Filters.Grayscale);
   const brightnessFilter = konvaFilters.Brightness || Konva.Filters.Brighten;
   if (totalBrightness !== 100) filters.push(brightnessFilter);
-  if (totalContrast !== 100) filters.push(Konva.Filters.Contrast);
-  if (totalSaturation !== 100) filters.push(Konva.Filters.HSL);
+  const contrastFilter = konvaFilters.Contrast || Konva.Filters.Contrast;
+  if (totalContrast !== 100) filters.push(contrastFilter);
+  const saturationFilter = konvaFilters.Saturation || Konva.Filters.HSL;
+  if (totalSaturation !== 100) filters.push(saturationFilter);
   // الترتيب مطابق لـ Go: تعديلات اللون أولاً ثم مرشّح الأساس
   // (print_image_pipeline.go: applyColorAdjustments ثم applyFilter)
   if (usePixelate && konvaFilters.NearestNeighborPixelate) {

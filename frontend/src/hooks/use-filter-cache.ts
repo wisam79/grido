@@ -226,6 +226,7 @@ export function useFilterCache({
       if (typeof node.isCached === 'function' && node.isCached()) {
         try {
           node.clearCache?.();
+          node.getLayer?.()?.batchDraw();
         } catch {
           // Ignore
         }
