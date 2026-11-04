@@ -10,10 +10,17 @@ import {
 // 🎨 مرشّحات Konva المخصصة لمطابقة معايير W3C CSS filter بنسبة 100%
 // وهي المرجع الموحد بين المعاينة والطباعة والتصدير.
 if (typeof Konva !== 'undefined' && Konva.Filters) {
-  if (Konva.Factory && Konva.Node) {
-    Konva.Factory.addGetterSetter(Konva.Node, 'sepiaRatio', 0);
-    Konva.Factory.addGetterSetter(Konva.Node, 'threshold', THRESHOLD_LEVEL);
-    Konva.Factory.addGetterSetter(Konva.Node, 'pixelSize', PIXELATE_BLOCK_PX);
+  const konvaFactory = (
+    Konva as unknown as {
+      Factory?: {
+        addGetterSetter: (node: unknown, prop: string, def: unknown) => void;
+      };
+    }
+  ).Factory;
+  if (konvaFactory && Konva.Node) {
+    konvaFactory.addGetterSetter(Konva.Node, 'sepiaRatio', 0);
+    konvaFactory.addGetterSetter(Konva.Node, 'threshold', THRESHOLD_LEVEL);
+    konvaFactory.addGetterSetter(Konva.Node, 'pixelSize', PIXELATE_BLOCK_PX);
   }
 
   // 1) سبيا بنسبة شدة (0..1) مطابقة لـ CSS filter: sepia(N%)
